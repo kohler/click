@@ -28,7 +28,6 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <elements/grid/dsdvroutetable.hh>
-#include <elements/grid/delivery_rate_table.hh>
 #include <elements/grid/linkstat.hh>
 #include <elements/grid/gridgatewayinfo.hh>
 #include <elements/grid/timeutils.hh>
@@ -151,16 +150,18 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 #endif
 
 DSDVRouteTable::DSDVRouteTable() : 
-  GridGenericRouteTable(1, 1), _gw_info(0),
-  _link_stat(0), _link_stat2(0), _txfb(0), _log(0), 
+  GridGenericRouteTable(1, 1),
+#if SEQ_METRIC
+  _use_seq_metric(false),
+#endif
+  _gw_info(0), _metric(0), _log(0),
   _seq_no(0), _mtu(2000), _bcast_count(0),
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
   _last_triggered_update(0), 
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
-  _metric_type(MetricEstTxCount),
-  _est_type(EstByMeas), _est_size(150), _verbose(true)
+  _verbose(true)
 {
   MOD_INC_USE_COUNT;
 }
@@ -199,7 +200,6 @@ DSDVRouteTable::cast(const char *n)
 int
 DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String metric("hopcount");
   String logfile;
   int res = cp_va_parse(conf, this, errh,
 			cpUnsigned, "entry timeout (msec)", &_timeout,
@@ -211,18 +211,16 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"VERBOSE", cpBool, "verbose warnings and messages?", &_verbose,
 			"GW", cpElement, "GridGatewayInfo element", &_gw_info,
-			"LS", cpElement, "LinkStat element", &_link_stat,
-			"LS2", cpElement, "LinkStat element", &_link_stat2,
-			"TXFB", cpElement, "TXFeedbackStats element", &_txfb,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
-			"METRIC", cpString, "route metric", &metric,
-			"EST_TYPE", cpUnsigned, "link estimation type (1 or 3)", &_est_type,
-			"EST_SIZE", cpUnsigned, "packet size to estimate links at, in bytes", &_est_size,
+			"METRIC", cpElement, "GridGenericMetric element", &_metric,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
 			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
 			"MTU", cpUnsigned, "interface MTU", &_mtu,
+#if SEQ_METRIC
+			"USE_SEQ_METRIC", cpBool, "use `dsdv_seqs' metric?", &_use_seq_metric,
+#endif
 			0);
 
   if (res < 0)
@@ -246,43 +244,29 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_mtu < sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello)) 
     return errh->error("mtu is too small to send a route ads");
 
-  _metric_type = check_metric_type(metric);
-  if (_metric_type < 0)
-    return errh->error("Unknown metric type ``%s''", metric.cc());
-  if (_est_type != 1 && _est_type != 3 && _est_type != 4)
-    return errh->error("link estimation type must be 1, 3, or 4");
-    
-
   if (_log && _log->cast("GridGenericLogger") == 0) 
     return errh->error("LOG element is not a GridGenericLogger");
   if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0)
     return errh->error("GW element is not a GridGatewayInfo");
-  if (_link_stat && _link_stat->cast("LinkStat") == 0)
-    return errh->error("LS element is not a LinkStat");
-  if (_link_stat2 && _link_stat2->cast("LinkStat") == 0)
-    return errh->error("LS2 element is not a LinkStat");
-  if (_txfb && _txfb->cast("TXFeedbackStats") == 0)
-    return errh->error("TXFB element is not a TXFeedbackStats");
+  if (_metric && _metric->cast("GridGenericMetric") == 0)
+    return errh->error("METRIC element is not a GridGenericMetric");
 
   if (_gw_info == 0 && _verbose)
-    errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
-  if (_link_stat == 0 && _verbose)
-    errh->warning("LinkStat elements not specified, some metrics may not work");
-  if (_txfb == 0 && _verbose)
-    errh->warning("TXFeedbackStats element not specified, some metrics may not work");
+    errh->warning("No GridGatewayInfo element specified, will default to not advertising as gateway");
+  if (_metric == 0 && _verbose)
+    errh->warning("No metric elements specified, will default to minimum hop-count");
+
+#if SEQ_METRIC
+  if (_metric && _use_seq_metric)
+    errh->warning("USE_SEQ_METRIC has been specified, the specified METRIC element will be ignored");
+#endif
 
   return res;
 }
 
 int
-DSDVRouteTable::initialize(ErrorHandler *errh)
+DSDVRouteTable::initialize(ErrorHandler *)
 {
-  if (_est_type == EstByMeas2 && _link_stat && _link_stat2 && 
-      (_link_stat->get_probe_size() != table_sz1 ||
-       _link_stat2->get_probe_size() != table_sz2))
-    errh->warning("LinkStat probe sizes %u and %u don't match sizes %u and %u used in delivery-rate interpolation table",
-		  _link_stat->get_probe_size(), _link_stat->get_probe_size(), table_sz1, table_sz2);
-
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period);
   _log_dump_timer.initialize(this);
@@ -333,162 +317,6 @@ DSDVRouteTable::current_gateway(RouteEntry &gw)
     gw = best;
   } 
   return found_gateway;
-}
-
-bool
-DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rate)
-{
-  switch (_est_type) {
-  case EstByTXFB:
-  case EstByMeas: {
-    if (!_link_stat) 
-      return false;
-
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0)
-      return false;
-#if 0 // LEAVE THIS DISABLED
-    // This test is actually wrong: I used to mistakenly believe that
-    // you must hear new sequence numbers first over 1-hop routes,
-    // ensuring that you would always install the 1-hop route before
-    // even thinking about another route.  But this is false for 2
-    // reasons: 1) 1-hop bcasts might be dropped, so you actually hear
-    // the sequence number first from someone else; 2) in simulators
-    // and emulators, you can delay direct broadcasts.  The bug is
-    // that if you don't hear the first route of a sequence number
-    // over the direct link, you might never be able to get a link
-    // measurement for the 1-hop direct link.
-    if (r->num_hops() > 1) 
-      return false;
-#endif
-    unsigned int tau;
-    struct timeval t;
-    bool res = _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
-    if (res && rate > 100) {
-      click_chatter("DSDVRouteTable %s: ERROR: forward rate %u%% is too high for %s, capping at 100%%",
-		    id().cc(), rate, ip.s().cc());
-      rate = 100;
-    }
-    return res;
-  }
-
-  case EstByMeas2: {
-    if (!_link_stat || !_link_stat2)
-      return false;
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0)
-      return false;
-    unsigned int tau; // we'll ignore tau, t
-    struct timeval t;
-    unsigned rate1, rate2;
-    bool res1 = _link_stat->get_forward_rate(r->dest_eth, &rate1, &tau, &t);
-    bool res2 = _link_stat2->get_forward_rate(r->dest_eth, &rate2, &tau, &t);
-    if (!res1 || !res2) 
-      return false;
-    // lookup data rate in forward direction, must compile in this
-    // size! (e.g. 134 bytes)
-    unsigned r_combined = lookup_delivery_rate(rate1, rate2, 148);
-    if (r_combined > 100)
-      return false;
-    rate = r_combined;
-    return true;
-  }
-
-  default:
-    return false;
-  }
-}
-
-bool
-DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rate)
-{
-  switch (_est_type) {
-  case EstByTXFB:
-  case EstByMeas: {
-    if (!_link_stat)
-      return false;
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0)
-      return false;
-#if 0
-    // see comment in est_forward_delivery_rate()
-    RTEntry *r = _rtes.findp(ip);
-    if (r->num_hops() > 1)
-      return false;
-#endif
-    unsigned int tau;
-    bool res = _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
-    if (res && rate > 100) {
-      click_chatter("DSDVRouteTable %s: ERROR: reverse rate %u%% is too high for %s, capping at 100%%",
-		    id().cc(), rate, ip.s().cc());
-      rate = 100;
-    }
-    return res;
-  }
-
-  case EstByMeas2: {
-    if (!_link_stat || !_link_stat2)
-      return false;
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0)
-      return false;
-    unsigned int tau; // we'll ignore tau
-    unsigned rate1, rate2;
-    bool res1 = _link_stat->get_reverse_rate(r->dest_eth, &rate1, &tau);
-    bool res2 = _link_stat2->get_reverse_rate(r->dest_eth, &rate2, &tau);
-    if (!res1 || !res2) 
-      return false;
-    // lookup ACK rate in reverse direction, pretend it's a 1-byte
-    // data packet (although it's actually smaller...)
-    unsigned r_combined = lookup_delivery_rate(rate1, rate2, 1);
-    if (r_combined > 100)
-      return false;
-    rate = r_combined;
-    return true;
-  }
-
-  default:
-    return false;
-  }
-}
-
-bool
-DSDVRouteTable::interpolate_loss_rate(unsigned r1, unsigned sz1, unsigned r2, unsigned sz2, unsigned sz, unsigned &r)
-{
-  if (r1 > 100) r1 = 100;
-  if (r2 > 100) r2 = 100;
-  if (sz1 > 2500 || sz2 > 2500)
-    return false; // packet sizes should be reasonable
-  if (sz == sz1) {
-    r = r1;
-    return true;
-  }
-  if (sz == sz2) {
-    r = r2;
-    return true;
-  }
-
-  int r1_ = r1;
-  int r2_ = r2;
-  int s1_ = sz1;
-  int s2_ = sz2;
-  int s_ = sz;
-
-#if 0
-  // estimate using exponential fit
-  
-#else  
-  // estimate using linear fit
-  int slope = 100 * (r1_ - r2_) / (s1_ - s2_);
-  int r_ = r1_ + (s_ - s1_) * slope / 100;
-  if (r_ > 100) 
-    r = 100;
-  else if (r_ < 0)
-    r = 0;
-  else 
-    r = (unsigned) r_;
-  return true;  
-#endif
 }
 
 void
@@ -760,96 +588,26 @@ DSDVRouteTable::init_metric(RTEntry &r)
 {
   dsdv_assert(r.num_hops() == 1);
 
-  switch (_metric_type) {
-  case MetricHopCount:
-    r.metric = metric_t(1);
-    break;
-  case MetricEstTxCount: {
-    unsigned fwd_rate = 0;
-    unsigned rev_rate = 0;
-    bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
-    bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
-#if 0
-    click_chatter("%s: XXX init_metric est_tx_count, res=%s, fwd_rate=%u, res2=%s rev_rate=%u\n",
-		  id().cc(), res ? "true" : "false", fwd_rate, res2 ? "true" : "false", rev_rate);
-#endif
-    if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
-      r.metric = metric_t(100 * 100 * 100 / (fwd_rate * rev_rate));
-      if (r.metric.val < 100) 
-	click_chatter("DSDVRouteTable %s: init_metric WARNING: metric %d%% transmissions to %s is too low for one hop",
-		      id().cc(), r.metric.val, r.next_hop_ip.s().cc());
-      if (_est_type == EstByTXFB && _txfb) {
-	// possibly over-ride calculated etx with actual etx to this dest
-#if 0
-	unsigned etx;
-	bool res = _txfb->est_tx_count(r.dest_eth, etx);
-	if (res) {
-	  
-	}
-	else
-	  click_chatter("DSDVRouteTable %s: init_metric WARNING: TXFeedbackStats has no ETX for 1-hop neighbor %s",
-			id().cc(), r.dest_ip.s().cc());
-#endif
-      }
-    } 
-    else 
-      r.metric = _bad_metric;
-    break;
-  }
-  case MetricRevDeliveryRateProduct:
-  case MetricDeliveryRateProduct: {
-    unsigned rate;
-    bool res = false;
-    if (_metric_type == MetricDeliveryRateProduct) 
-      res = est_forward_delivery_rate(r.next_hop_ip, rate);
-    else if (_metric_type == MetricRevDeliveryRateProduct) 
-      res = est_reverse_delivery_rate(r.next_hop_ip, rate);
-    else
-      dsdv_assert(0);
-    if (res)
-      r.metric = metric_t(rate);
-    else
-      r.metric = _bad_metric;
-    break;
-  }
 #if SEQ_METRIC
-  case MetricDSDVSeqs: {
+  if (_use_seq_metric) {
     r.metric = metric_t(r.num_hops());
     DEQueue<unsigned> *q = _seq_history.findp(r.dest_ip);
-    if (!q || q->size() < MAX_BCAST_HISTORY) {
-      r.metric.valid = false;
-      break;
+    if (!q || q->size() < MAX_BCAST_HISTORY)
+      r.metric = _bad_metric;
+    else {
+      dsdv_assert(q->size() == MAX_BCAST_HISTORY);
+      unsigned num_missing = q->back() - (q->front() + MAX_BCAST_HISTORY - 1);
+      if (num_missing > MAX_BCAST_HISTORY - OLD_BCASTS_NEEDED)
+	r.metric = _bad_metric;
     }
-    dsdv_assert(q->size() == MAX_BCAST_HISTORY);
-    unsigned num_missing = q->back() - (q->front() + MAX_BCAST_HISTORY - 1);
-    if (num_missing > MAX_BCAST_HISTORY - OLD_BCASTS_NEEDED)
-      r.metric.valid = false;
-    break;
+    return;
   }
 #endif
-#if ONE_WAY_TXC_METRIC
-  case MetricOneWayTxCount: {
-    unsigned rev_rate = 0;
-    bool res = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
-    if (res && rev_rate > 0) 
-      r.metric = metric_t(100 * 100 / rev_rate);
-    else
-      r.metric = _bad_metric;
-    break;
-  }
-#endif
-  case MetricSymmetricHopCount: {
-    unsigned fwd_rate = 0;
-    bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
-    if (res && fwd_rate >= 50)
-      r.metric = metric_t(1);
-    else
-      r.metric = _bad_metric;
-    break;
-  }
-  default:
-    dsdv_assert(0);
-  }
+
+  if (_metric) 
+    r.metric = _metric->get_link_metric(r.dest_eth);
+  else
+    r.metric = _bad_metric;
 } 
 
 void
@@ -907,69 +665,23 @@ DSDVRouteTable::update_metric(RTEntry &r)
   }
 
 #if ENABLE_SEEN
-  if (_use_seen && next_hop->metric.val == _metric_seen) {
+  if (_use_seen && next_hop->metric.val() == _metric_seen) {
     r.metric = metric_t(_metric_seen, false);
     return;
   }
 #endif
 
-  if (!r.metric.valid)
-    return;
-
-  if (!next_hop->metric.valid) {
-    r.metric = _bad_metric;
-    return;
-  }
-
-  switch (_metric_type) {
-  case MetricHopCount:
-  case MetricSymmetricHopCount:
-    r.metric.val += next_hop->metric.val;
-    if (r.metric.val != r.num_hops())
-      click_chatter("DSDVRouteTable %s: WARNING metric type is %shop count but %s metric doesn't match hopcount",
-		    id().cc(), (_metric_type == MetricSymmetricHopCount ? "symmetric " : ""), next_hop->dest_ip.s().cc());    
-    break;
-
-  case MetricEstTxCount: 
-    if (r.metric.val < (unsigned) 100 * (r.num_hops() - 1))
-      click_chatter("DSDVRouteTable %s: update_metric WARNING received transmission count %u%% is too low for %s (%d hops)",
-		    id().cc(), r.metric.val, r.dest_ip.s().cc(), r.num_hops());
-    if (next_hop->metric.val < 100)
-      click_chatter("DSDVRouteTable %s: update_metric WARNING next hop %s transmission count %u%% is too low for %s",
-		    id().cc(), next_hop->dest_ip.s().cc(), next_hop->metric.val, r.dest_ip.s().cc());
-    r.metric.val += next_hop->metric.val;
-    break;
-
-  case MetricDeliveryRateProduct:
-  case MetricRevDeliveryRateProduct:
-    if (r.metric.val > 100)
-      click_chatter("DSDVRouteTable %s: update_metric WARNING received delivery rate product %u%% is too high for %d",
-		    id().cc(), r.metric.val, r.dest_ip.s().cc());
-    if (next_hop->metric.val > 100)
-      click_chatter("DSDVRouteTable %s: update_metric WARNING next hop %s delivery rate product %u%% is too high for %s",
-		    id().cc(), next_hop->dest_ip.s().cc(), next_hop->metric.val, r.dest_ip.s().cc());
-    r.metric.val *= next_hop->metric.val;
-    r.metric.val /= 100;
-    break;
-
 #if SEQ_METRIC
-  case MetricDSDVSeqs: {
-    r.metric.val += next_hop->metric.val;
-    break;
+  if (_use_seq_metric) {
+    r.metric = metric_t(r.metric.val() + next_hop->metric.val());
+    return;
   }
 #endif
 
-#if ONE_WAY_TXC_METRIC
-  case MetricOneWayTxCount:
-    r.metric.val += next_hop->metric.val;
-    break;
-#endif
-
-
-  default:
-    dsdv_assert(0);
-  }
-  r.metric.valid = true;
+  if (_metric)
+    r.metric = _metric->append_metric(r.metric, next_hop->metric);
+  else
+    r.metric = _bad_metric;
 }
 
 bool
@@ -978,58 +690,53 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
   // true if r1 is preferable to r2
 #if DBG2
   click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().cc(),
-		(r1.metric.valid ? "yes" : "no"), (r2.metric.valid ? "yes" : "no"),
-		(metric_val_lt(r1.metric.val, r2.metric.val) ? "yes" : "no"));
-  click_chatter("\tr1.metric=%u, r2.metric=%u", r1.metric.val, r2.metric.val);
+		(r1.metric.good() ? "yes" : "no"), (r2.metric.good() ? "yes" : "no"),
+		(metric_val_lt(r1.metric.val(), r2.metric.val()) ? "yes" : "no"));
+  click_chatter("\tr1.metric=%u, r2.metric=%u", r1.metric.val(), r2.metric.val());
 #endif
+
   // prefer a route with a valid metric
-  if (r1.metric.valid && !r2.metric.valid)
+  if (r1.metric.good() && !r2.metric.good())
     return true;
-  if (!r1.metric.valid && r2.metric.valid)
+  if (!r1.metric.good() && r2.metric.good())
     return false;
   
   // If neither metric is valid, fall back to hopcount.  Would you
   // prefer a 5-hop route or a 2-hop route, given that you don't have
   // any other information about them?  duh.
-  if (!r1.metric.valid && !r2.metric.valid) {
+  if (!r1.metric.good() && !r2.metric.good())
     return r1.num_hops() < r2.num_hops();
-  }
   
-  dsdv_assert(r1.metric.valid && r2.metric.valid);
-  return metric_val_lt(r1.metric.val, r2.metric.val);
+  dsdv_assert(r1.metric.good() && r2.metric.good());
+  return metric_val_lt(r1.metric, r2.metric);
 }
 
 bool
-DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
+DSDVRouteTable::metric_val_lt(const metric_t &m1, const metric_t &m2)
 {
-  // Better metric should be ``less''
+  assert(m1.good() && m2.good());
 
-  switch (_metric_type) {
-  case MetricHopCount:               return v1 < v2; break;
-  case MetricEstTxCount:             return v1 < v2; break; // + 25; break; // add 0.25 tx count fudge factor
-  case MetricDeliveryRateProduct:    return v1 > v2; break;
-  case MetricRevDeliveryRateProduct: return v1 > v2; break;
+  // Better metric should be ``less''
 #if SEQ_METRIC
-  case MetricDSDVSeqs:               return v1 < v2; break;
+  if (_use_seq_metric) 
+    return m1.val() < m2.val();
 #endif
-#if ONE_WAY_TXC_METRIC
-  case MetricOneWayTxCount:          return v1 < v2; break;
-#endif 
-  case MetricSymmetricHopCount:      return v1 < v2; break;
-  default: dsdv_assert(0);
-  }
-  return false;
+
+  if (_metric)
+    return _metric->metric_val_lt(m1, m2);
+  else
+    return false;
 }
 
 bool
 DSDVRouteTable::metrics_differ(const metric_t &m1, const metric_t &m2)
 {
-  if (!m1.valid && !m2.valid) return false;
-  if (m1.valid && !m2.valid)  return true;
-  if (!m1.valid && m2.valid)  return true;
+  if (!m1.good() && !m2.good()) return false;
+  if (m1.good() && !m2.good())  return true;
+  if (!m1.good() && m2.good())  return true;
   
-  dsdv_assert(m1.valid && m2.valid);
-  return metric_val_lt(m1.val, m2.val) || metric_val_lt(m2.val, m1.val);
+  dsdv_assert(m1.good() && m2.good());
+  return metric_val_lt(m1, m2) || metric_val_lt(m2, m1);
 }
 
 void
@@ -1358,7 +1065,7 @@ DSDVRouteTable::simple_action(Packet *packet)
 		id().cc(), ipaddr.s().cc(), sender_saw_us ? "y" : "n");
 #endif
   if (_use_seen && !sender_saw_us &&
-      (!old || old->metric.val == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
+      (!old || old->metric.val() == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
     new_r.metric = metric_t(_metric_seen, false);
     new_r.advertise_ok_jiffies = jiff;
     new_r.need_metric_ad = true;
@@ -1451,8 +1158,8 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
       + " loc=" + f.dest_loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no())
-      + " metric_valid=" + (f.metric.valid ? "yes" : "no")
-      + " metric=" + String(f.metric.val)
+      + " metric_valid=" + (f.metric.good() ? "yes" : "no")
+      + " metric=" + String(f.metric.val())
       + " ttl=" + String(f.ttl)
       + " wst=" + String((unsigned long) f.wst)
       + " need_seq_ad=" + (f.need_seq_ad ? "yes" : "no")
@@ -1490,7 +1197,7 @@ DSDVRouteTable::print_rtes(Element *e, void *)
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
-      + " metric=" + String(f.metric.val)
+      + " metric=" + String(f.metric.val())
       + " seq=" + String(f.seq_no())
       + "\n";
   }
@@ -1512,8 +1219,8 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
     s += " eth=" + i.value().dest_eth.s();
     char buf[300];
     snprintf(buf, 300, " metric_valid=%s metric=%d if=%d",
-	     i.value().metric.valid ? "yes" : "no", 
-	     i.value().metric.val, (int) i.value().next_hop_interface);
+	     i.value().metric.good() ? "yes" : "no", 
+	     i.value().metric.val(), (int) i.value().next_hop_interface);
     s += buf;
     s += "\n";
   }
@@ -1552,105 +1259,6 @@ DSDVRouteTable::print_eth(Element *e, void *)
 {
   DSDVRouteTable *n = (DSDVRouteTable *) e;
   return n->_eth.s();
-}
-
-String
-DSDVRouteTable::metric_type_to_string(MetricType t)
-{
-  switch (t) {
-  case MetricHopCount:        return "hopcount"; break;
-  case MetricEstTxCount:      return "est_tx_count"; break;
-  case MetricDeliveryRateProduct:    return "delivery_rate_product"; break;
-  case MetricRevDeliveryRateProduct: return "reverse_delivery_rate_product"; break;
-#if SEQ_METRIC
-  case MetricDSDVSeqs:       return "dsdv_seqs"; break;
-#endif
-#if ONE_WAY_TXC_METRIC
-  case MetricOneWayTxCount:  return "one_way_tx_count"; break;
-#endif
-  case MetricSymmetricHopCount:     return "symmetric_hopcount"; break;
-  default: 
-    return "unknown_metric_type";
-  }
-}
-
-String
-DSDVRouteTable::print_metric_type(Element *e, void *)
-{
-  DSDVRouteTable *n = (DSDVRouteTable *) e;
-  return metric_type_to_string(n->_metric_type) + "\n";
-}
-
-DSDVRouteTable::MetricType 
-DSDVRouteTable::check_metric_type(const String &s)
-{
-  String s2 = s.lower();
-  if      (s2 == "hopcount")                return MetricHopCount;
-  else if (s2 == "est_tx_count")            return MetricEstTxCount;
-  else if (s2 == "delivery_rate_product")   return MetricDeliveryRateProduct;
-  else if (s2 == "reverse_delivery_rate_product")   return MetricRevDeliveryRateProduct;
-#if SEQ_METRIC
-  else if (s2 == "dsdv_seqs")               return MetricDSDVSeqs;
-#endif
-#if ONE_WAY_TXC_METRIC
-  else if (s2 == "one_way_tx_count")        return MetricOneWayTxCount;
-#endif
-  else if (s2 == "symmetric_hopcount")      return MetricSymmetricHopCount;
-  else return MetricUnknown;
-}
-
-int
-DSDVRouteTable::write_metric_type(const String &arg, Element *el, 
-				  void *, ErrorHandler *errh)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  String s;
-  if (!cp_word(arg, &s))
-    return errh->error("unable to get metric type from argument ``%s''", ((String) arg).cc());
-  MetricType type = check_metric_type(s);
-  if (type < 0)
-    return errh->error("unknown metric type ``%s''", ((String) arg).cc());
-  
-  if (type != rt->_metric_type) {
-    /* get rid of old metric values */
-    Vector<IPAddress> entries;
-    for (RTIter i = rt->_rtes.begin(); i; i++) {
-      /* skanky, but there's no reason for this to be quick.  i guess
-         the BigHashMap doesn't let you change its values. */
-      entries.push_back(i.key());
-    }
-    
-    for (int i = 0; i < entries.size(); i++) 
-      rt->_rtes.findp(entries[i])->metric = rt->_bad_metric;
-  }
-
-  rt->_metric_type = type;
-  return 0;
-}
-
-String
-DSDVRouteTable::print_est_type(Element *e, void *)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  return String(rt->_est_type) + "\n";
-}
-
-int
-DSDVRouteTable::write_est_type(const String &arg, Element *el, 
-			       void *, ErrorHandler *errh)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  unsigned est_type = 0;
-  if (!cp_unsigned(arg, &est_type))
-    return errh->error("est_type must be unsigned");
-  switch (est_type) {
-  case EstByMeas:
-  case EstByTXFB:
-    rt->_est_type = est_type; break;
-  default:
-    return errh->error("est_type %u is not valid", est_type);
-  }
-  return 0;
 }
 
 String
@@ -1785,34 +1393,6 @@ DSDVRouteTable::print_dump(Element *e, void *)
   return sa.take_string();
 }
 
-String
-DSDVRouteTable::print_links(Element *e, void *)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  
-  String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
-
-  for (RTIter i = rt->_rtes.begin(); i; i++) {
-    const RTEntry &r = i.value();
-    if (!r.dest_eth)
-      continue;
-
-    // XXX what the heck are we trying to do here?
-#if 0
-    char buf[255];
-    int tx_rate = 100 * num_rx;
-    tx_rate -= 50;
-    tx_rate /= num_expected;
-    snprintf(buf, 255, "%s %s metric=%u (%s) rx_sig=%d rx_qual=%d rx_rate=%d tx_sig=%d tx_qual=%d tx_rate=%d\n",
-	     r.dest_ip.s().cc(), r.next_hop_eth.s().cc(), r.metric.val, r.metric.valid ? "valid" : "invalid",
-	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? tx_rate : -1,
-	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) bcast_rate : -1);
-    s += buf;
-#endif
-  }
-  return s;
-}
-
 void
 DSDVRouteTable::add_handlers()
 {
@@ -1823,11 +1403,6 @@ DSDVRouteTable::add_handlers()
   add_read_handler("rtes", print_rtes, 0);
   add_read_handler("ip", print_ip, 0);
   add_read_handler("eth", print_eth, 0);
-  add_read_handler("links", print_links, 0);
-  add_read_handler("metric_type", print_metric_type, 0);
-  add_write_handler("metric_type", write_metric_type, 0);
-  add_read_handler("est_type", print_est_type, 0);
-  add_write_handler("est_type", write_est_type, 0);
   add_read_handler("seqno", print_seqno, 0);
   add_write_handler("seqno", write_seqno, 0);
 #if ENABLE_PAUSE
@@ -1940,14 +1515,14 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
 
   for (int i = 0; i < num_rtes; i++, curr++) 
-    rtes_to_send[i].fill_in(curr, _link_stat);
+    rtes_to_send[i].fill_in(curr);
 
   output(0).push(p);
 }
 
 
 void
-DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
+DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb) const
 {
   check();
   nb->ip = dest_ip;
@@ -1957,8 +1532,8 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no());
-  nb->metric = htonl(metric.val);
-  nb->metric_valid = metric.valid;
+  nb->metric = htonl(metric.val());
+  nb->metric_valid = metric.good();
   nb->is_gateway = is_gateway;
 
   unsigned int jiff = dsdv_jiffies();
@@ -1970,46 +1545,6 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->link_qual = 0;
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
-  if (ls && num_hops() == 1) {
-#if 0 // #ifdef CLICK_USERLEVEL
-    LinkStat::stat_t *s = ls ? ls->_stats.findp(next_hop_eth) : 0;
-#else
-    struct {
-      int qual;
-      int sig;
-      struct timeval when;
-    } *s = 0;
-#endif
-    if (s) {
-      nb->link_qual = htonl(s->qual);
-      nb->link_sig = htonl(s->sig);
-      nb->measurement_time.tv_sec = htonl(s->when.tv_sec);
-      nb->measurement_time.tv_usec = htonl(s->when.tv_usec);
-    }
-    else if (ls)
-      click_chatter("DSDVRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
-		    IPAddress(dest_ip).s().cc());
-
-    nb->num_rx = 0;
-    nb->num_expected = 0;
-    nb->last_bcast.tv_sec = nb->last_bcast.tv_usec = 0;
-    unsigned int window = 0;
-    unsigned int num_rx = 0;
-    unsigned int num_expected = 0;
-    bool res = ls ? ls->get_bcast_stats(next_hop_eth, nb->last_bcast, window, num_rx, num_expected) : 0;
-    if (res) {
-      if (num_rx > 255 || num_expected > 255) {
-	click_chatter("DSDVRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",
-		      IPAddress(dest_ip).s().cc());
-	num_rx = num_expected = 255;
-      }
-      nb->num_rx = num_rx;
-      nb->num_expected = num_expected;
-      nb->last_bcast = hton(nb->last_bcast);
-    }
-  }
-#else
-  ls = 0; // supress warning
 #endif
 }
 
@@ -2047,7 +1582,7 @@ DSDVRouteTable::RTEntry::dump() const
      << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff).cc() << "\n"
      << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff).cc() << "\n"
      << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff).cc() << "\n"
-     << "        metric: " << metric.val << "\n"
+     << "        metric: " << metric.val() << "\n"
      << "need_metric_ad: " << need_metric_ad << "\n"
      << "   need_seq_ad: " << need_seq_ad << "\n"
      << "           wst: " << (unsigned int) wst << "\n";

@@ -8,6 +8,7 @@
 #include <click/timer.hh>
 #include <elements/grid/gridgenericlogger.hh>
 #include <click/dequeue.hh>
+#include <elements/grid/gridgenericmetric.hh>
 CLICK_DECLS
 
 /*
@@ -71,19 +72,6 @@ CLICK_DECLS
  * gateway.  If this argument is not provided, the node is not a
  * gateway.
  *
- * =item LS
- *
- * LinkStat element.  Required to use link metrics other than
- * hopcount.
- *
- * =item LS2
- *
- * LinkStat element.  Required to use two-packet loss rate estimation.
- *
- * =item TXFB
- *
- * TXFeedbackStats element.  Required to use 
- *
  * =item MAX_HOPS
  * 
  * Unsigned integer.  The maximum number of hops for which a route
@@ -91,26 +79,14 @@ CLICK_DECLS
  *
  * =item METRIC
  *
- * String.  The type of metric that should be used to compare two
- * routes.  Allowable values are: `hopcount', `est_tx_count'
- * (estimated transmission count), `delivery_rate_product',
- * `reverse_delivery_rate_product', `symmetric_hopcount'.  Symmetric
- * hop count is like hopcount, but is only valid if all links in the
- * route are good in both directions.  The default is to use
- * est_tx_count.
+ * GridGenericMetric element.  The metric element that should be used
+ * to compare two routes.  If not specified, minimum hop-count is
+ * used.
  *
- * =item EST_TYPE
+ * =item USE_SEQ_METRIC
  *
- * Unsigned int.  Link estimation type.  Allowable values are 1
- * (estimate using broadcast probes combined with actual transmission
- * count feedbach, requires TXFB and LS arguments), 3 (estimate using
- * broadcast probes only, require LS argument), or 4 (estimate using
- * two probe sizes, require LS2 argument).  Defaults to 3.
- *
- * =item EST_SIZE
- *
- * Unsigned int.  Packet size, in bytes.  Produce link estimates for
- * packets of this size.  Defaults to 150 bytes.
+ * Boolean.  Iff true, use the `dsdv_seqs' metric, and ignore the
+ * METRIC keyword.
  *
  * =item LOG
  *
@@ -155,10 +131,6 @@ CLICK_DECLS
  * Print this node's IP address.
  * =h eth read-only
  * Print this node's Ethernet address.
- * =h metric_type read/write
- * Get/set this node's metric type, as in the METRIC keyword.
- * =h est_type read/write
- * Get/set this node's link estimator type (unsigned int).  Only allowable value is 3.
  * =h seqno read/write
  * Get/set this node's current sequence number (unsigned int, must be even).
  *
@@ -184,7 +156,7 @@ CLICK_DECLS
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
- * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
+ * GridGatewayInfo, HopcountMetric, GridLogger, Paint */
 
 // if 1, enable `paused' handler
 #define ENABLE_PAUSE 1
@@ -205,17 +177,12 @@ CLICK_DECLS
 #define MAX_BCAST_HISTORY 3
 #define OLD_BCASTS_NEEDED 2
 
-// if 1, enable `one_way_tx_count' metric, which calculated est. tx
-// count using the reverse loss rate only.
-#define ONE_WAY_TXC_METRIC 1
-
 // if 1, enable `seen' link handshaking, described in Chin, Judge,
 // William, and Kermode 2002.
 #define ENABLE_SEEN 1
 
 class GridGatewayInfo;
-class LinkStat;
-class TXFeedbackStats;
+
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -246,17 +213,11 @@ public:
 private:
 
 #if SEQ_METRIC
+  bool _use_seq_metric; // use the `dsdv_seqs' metric
   BigHashMap<IPAddress, DEQueue<unsigned> > _seq_history;
 #endif
 
-  struct metric_t {
-    static const unsigned int bad_metric = 777777;    
-    bool valid;
-    unsigned int val;
-    metric_t() : valid(false), val(bad_metric) { }
-    metric_t(const metric_t &m) : valid(m.valid), val(m.val) { }
-    metric_t(unsigned int m, bool v = true) : valid(v), val(m) { }
-  };
+  typedef GridGenericMetric::metric_t metric_t;
   
   /* 
    * route table entry
@@ -276,7 +237,6 @@ private:
     // metrics are invalid until updated to incorporate the last hop's
     // link, i.e. by calling initialize_metric or update_metric.
     metric_t            metric;
-
 
     // DSDV book-keeping
     unsigned int        wst;                   // weighted settling time (msecs)
@@ -339,19 +299,19 @@ private:
 		 eth, ip, interface, 
 		 nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
       _init(true), is_gateway(nbr->is_gateway), ttl(nbr->ttl), last_updated_jiffies(jiff), 
-      metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
+      wst(0), last_seq_jiffies(0), 
       advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),
       last_expired_jiffies(nbr->num_hops > 0 ? 0 : jiff)
     {
       loc_err = ntohs(loc_err);
       _seq_no = ntohl(_seq_no);
       ttl = ntohl(ttl);
-      metric.val = ntohl(metric.val);
+      metric = metric_t(htonl(nbr->metric), nbr->metric_valid);
       check();
     }
     
     /* copy data from this into nb, converting to net byte order */
-    void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0) const;
+    void fill_in(grid_nbr_entry *nb) const;
     
   };
   
@@ -386,7 +346,6 @@ private:
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   bool lookup_route(const IPAddress &dest_ip, RTEntry &entry);
  
-
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
   typedef TMap::iterator TMIter;
@@ -435,11 +394,8 @@ private:
   unsigned int _jitter; // msecs
   unsigned int _min_triggered_update_period; // msecs
 
-
   class GridGatewayInfo *_gw_info;
-  class LinkStat        *_link_stat;
-  class LinkStat        *_link_stat2;
-  class TXFeedbackStats *_txfb;
+  class GridGenericMetric *_metric;
 
   /* binary logging */
   class GridGenericLogger  *_log;
@@ -515,13 +471,18 @@ private:
   /* update weight settling time */
   void update_wst(RTEntry *old_r, RTEntry &new_r, const unsigned int jiff);
 
-  /* true iff first route's metric is preferable to second route's
-     metric -- note that this is a strict comparison, if the metrics
-     are equivalent, then the function returns false.  this is
-     necessary to get stability, e.g. when using the hopcount metric */
+  // True iff first route's metric is preferable to second route's
+  // metric -- note that this is a strict comparison, if the metrics
+  // are equivalent, then the function returns false.  This is
+  // necessary to get stability, e.g. when using the hopcount metric.
   bool metric_preferable(const RTEntry &, const RTEntry &);
+
+  // True iff the metrics are different, either in validity or value.
   bool metrics_differ(const metric_t &, const metric_t &);
-  bool metric_val_lt(unsigned int, unsigned int);
+
+  // True iff first metric is strictly `less' than second metric.
+  // Requires both metrics to be valid.
+  bool metric_val_lt(const metric_t &, const metric_t &);
 
   static String print_rtes(Element *e, void *);
   static String print_rtes_v(Element *e, void *);
@@ -529,16 +490,9 @@ private:
   static String print_nbrs_v(Element *e, void *);
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
-  static String print_links(Element *e, void *);
 
   static unsigned int jiff_diff_as_msec(unsigned int j1, unsigned int j2, bool &neg); // j1 - j2, in msecs
   static String jiff_diff_string(unsigned int j1, unsigned int j2);
-
-  static String print_metric_type(Element *e, void *);
-  static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
-
-  static String print_est_type(Element *e, void *);
-  static int write_est_type(const String &, Element *, void *, ErrorHandler *);
 
   static String print_seqno(Element *e, void *);
   static int write_seqno(const String &, Element *, void *, ErrorHandler *);
@@ -547,43 +501,6 @@ private:
   static int write_paused(const String &, Element *, void *, ErrorHandler *);
 
   static String print_dump(Element *e, void *);
-
-  // estimate link delivery rates, as 0-100 percent.  return false if
-  // no good data available for estimation.
-  bool est_forward_delivery_rate(const IPAddress &, unsigned int &);
-  bool est_reverse_delivery_rate(const IPAddress &, unsigned int &);
-
-  bool interpolate_loss_rate(unsigned r1, unsigned sz1, unsigned r2, unsigned sz2, unsigned sz, unsigned &rate);
-
-  enum MetricType {
-    MetricUnknown                = -1,
-    MetricHopCount               =  0, // unsigned int hop count
-    MetricEstTxCount             =  1, // unsigned int expected number of transmission, * 100
-    MetricDeliveryRateProduct    =  2, // unsigned int product of fwd delivery rates, * 100
-    MetricRevDeliveryRateProduct =  3, // unsigned int product of rev delivery rates, * 100
-#if SEQ_METRIC
-    MetricDSDVSeqs               =  4,
-#endif
-#if ONE_WAY_TXC_METRIC
-    MetricOneWayTxCount          =  5,
-#endif
-    MetricSymmetricHopCount      =  6, // unsigned int hop count, but only if all links symmetric
-    MetricLast                   = 99
-  };
-
-  static String metric_type_to_string(MetricType t);
-  static MetricType check_metric_type(const String &);
-  
-  enum MetricType _metric_type;
-  unsigned int    _est_type;
-  unsigned int    _est_size;
-
-  // type of delivery rate estimator to use
-  enum {  
-    EstByTXFB = 1,
-    EstByMeas = 3,
-    EstByMeas2 = 4
-  };
 
   const metric_t _bad_metric; // default value is ``bad''
 

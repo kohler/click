@@ -40,7 +40,7 @@ public:
 
   // Return the route metric resulting from appending the link with
   // metric L to the end of route with metric R.  Either L or R may be
-  // invalid.
+  // invalid, which will result in an invalid combined metric.
   virtual metric_t append_metric(const metric_t &r, const metric_t &l) const = 0;
 };
 
