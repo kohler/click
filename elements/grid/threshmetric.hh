@@ -17,7 +17,7 @@ CLICK_DECLS
  * threshold (specified by the THRESH keyword argument) are considered
  * good; links with a smaller delivery ratio are considered bad.  The
  * metric of a route with all good links is the route's hopcount; a
- * route with at least one bad link is given special `bad' invalid
+ * route with at least one bad link is given the special `bad' invalid
  * metric.  Between two good routes with valid metrics, the route with
  * the smaller hopcount is preferred; between two bad routes with
  * invalid metrics, neither route is preferred and an arbitrary choice
@@ -70,8 +70,10 @@ public:
 
   // generic metric methods
   bool metric_val_lt(const metric_t &, const metric_t &) const;
-  metric_t get_link_metric(const EtherAddress &) const;
+  metric_t get_link_metric(const EtherAddress &, bool) const;
   metric_t append_metric(const metric_t &, const metric_t &) const;
+  metric_t prepend_metric(const metric_t &r, const metric_t &l) const 
+  { return append_metric(r, l); }
 
 private:
   LinkStat *_ls;

@@ -67,7 +67,7 @@ E2ELossMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-E2ELossMetric::get_link_metric(const EtherAddress &e) const
+E2ELossMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_fwd, tau_rev;
   unsigned r_fwd, r_rev;
@@ -75,6 +75,17 @@ E2ELossMetric::get_link_metric(const EtherAddress &e) const
 
   bool res_fwd = _ls->get_forward_rate(e, &r_fwd, &tau_fwd, &t_fwd);
   bool res_rev = _ls->get_reverse_rate(e, &r_rev, &tau_rev);
+
+  // Translate LinkStat forward and reverse rates to data path's
+  // forward and reverse rates.  If data_sender is true, this node is
+  // sending over the link, and the data's forward direction is the
+  // same as LinkStat's forward direction; if not, this node is
+  // receiving data over the link, and the data's forward direction is
+  // actually LinkStat's reverse direction.
+  if (!data_sender) {
+    swap(res_fwd, res_rev);
+    swap(r_fwd, r_rev);
+  }
 
   if (!res_fwd || (_twoway && !res_rev))
     return _bad_metric;

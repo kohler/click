@@ -66,7 +66,7 @@ LIRMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-LIRMetric::get_link_metric(const EtherAddress &) const
+LIRMetric::get_link_metric(const EtherAddress &, bool) const
 {
   // XXX number of nbrs of senders, or number of neighbors of
   // receivers.  that is, for a an n+1 node route with n hops, do we
@@ -84,10 +84,10 @@ LIRMetric::append_metric(const metric_t &r, const metric_t &l) const
   // every node must have at least one 1-hop neighbor, or it wouldn't
   // be part of the network!
   if (r.val() < 1)
-    click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
+    click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% neighbors is too low for route metric",
 		  id().cc(), r.val());
   if (l.val() < 1)
-    click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% transmissions is too low for link metric",
+    click_chatter("LIRMetric %s: append_metric WARNING: metric %u%% neighbors is too low for link metric",
 		  id().cc(), r.val());
 
   return metric_t(r.val() + l.val());

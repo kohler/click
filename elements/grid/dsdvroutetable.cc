@@ -622,7 +622,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 #endif
 
   if (_metric) 
-    r.metric = _metric->get_link_metric(r.dest_eth);
+    r.metric = _metric->get_link_metric(r.dest_eth, true);
   else
     r.metric = _bad_metric;
 } 

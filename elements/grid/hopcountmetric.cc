@@ -58,7 +58,7 @@ HopcountMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-HopcountMetric::get_link_metric(const EtherAddress &) const
+HopcountMetric::get_link_metric(const EtherAddress &, bool) const
 {
   // XXX verify that the specified destination is actually a neighbor?
   return metric_t(1);

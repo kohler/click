@@ -65,8 +65,12 @@ ETXMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-ETXMetric::get_link_metric(const EtherAddress &e) const
+ETXMetric::get_link_metric(const EtherAddress &e, bool) const
 {
+  // ETX ix currently symmetric: it is the same in both directions, so
+  // we ignore the bool parameter.  This would change if the ETX
+  // computation tried to correct for ACK sizes.
+
   unsigned tau_fwd, tau_rev;
   unsigned r_fwd, r_rev;
   struct timeval t_fwd;

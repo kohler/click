@@ -75,7 +75,7 @@ ThresholdMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-ThresholdMetric::get_link_metric(const EtherAddress &e) const
+ThresholdMetric::get_link_metric(const EtherAddress &e, bool data_sender) const
 {
   unsigned tau_fwd, tau_rev;
   unsigned r_fwd, r_rev;
@@ -84,9 +84,16 @@ ThresholdMetric::get_link_metric(const EtherAddress &e) const
   bool res_fwd = _ls->get_forward_rate(e, &r_fwd, &tau_fwd, &t_fwd);
   bool res_rev = _ls->get_reverse_rate(e, &r_rev, &tau_rev);
 
+  // Translate LinkStat fwd/rev data path fwd/rev
+  // reverse.
+  if (!data_sender) {
+    swap(res_fwd, res_rev);
+    swap(r_fwd, r_rev);
+  }
+
   if (!res_fwd || (_twoway && !res_rev))
     return _bad_metric;
-  if (r_fwd == 0 || r_rev == 0)
+  if (r_rev == 0 || r_fwd == 0)
     return _bad_metric;
 
   if (r_fwd >= _thresh && (!_twoway || r_rev >= _thresh))
