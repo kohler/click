@@ -39,6 +39,8 @@ class ElementClassT { public:
     const String &flow_code() const;
     bool requires(const String &) const;
     bool provides(const String &) const;
+    const String &package() const;
+    String documentation_url() const;
 
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 

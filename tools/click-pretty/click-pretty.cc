@@ -30,15 +30,7 @@
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "processingt.hh"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <stdarg.h>
+#include "elementmap.hh"
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -50,14 +42,23 @@
 #define WRITE_TEMPLATE_OPT	307
 #define DEFINE_OPT		308
 
+#define FIRST_DRIVER_OPT	1000
+#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
+#define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
+#define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
+
 static Clp_Option options[] = {
+    { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "class-urls", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
     { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
+    { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
+    { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
     { "template", 't', TEMPLATE_OPT, Clp_ArgString, 0 },
+    { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
     { "write-template", 0, WRITE_TEMPLATE_OPT, 0, Clp_Negate },
 };
@@ -65,6 +66,8 @@ static Clp_Option options[] = {
 static String::Initializer string_initializer;
 static const char *program_name;
 static HashMap<String, String> definitions;
+static int specified_driver = -1;
+static const ElementMap *element_map;
 
 static const char *default_template = "\
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\
@@ -141,9 +144,9 @@ TABLE.conntable {\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td><~processing>&nbsp;input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
   noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td><~processing>&nbsp;output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
   nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
   inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
   outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
@@ -161,9 +164,9 @@ TABLE.conntable {\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td><~processing>&nbsp;input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
   noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td><~processing>&nbsp;output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
   nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
   inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
   outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
@@ -173,6 +176,52 @@ TABLE.conntable {\n\
   /-->\n\
 </body>\n\
 </html>\n";
+
+
+// list of classes
+
+static Vector<ElementClassT *> classes;
+static HashMap<int, String> class_hrefs;
+static String default_class_href;
+
+static void
+notify_class(ElementClassT *c)
+{
+    int uid = c->unique_id();
+    if (uid >= classes.size())
+	classes.resize(uid + 1, 0);
+    classes[uid] = c;
+}
+
+static void
+add_class_href(int class_uid, const String &href)
+{
+    class_hrefs.insert(class_uid, href);
+}
+
+static String
+class_href(ElementClassT *ec)
+{
+    String *sp = class_hrefs.findp(ec->unique_id());
+    if (sp)
+	return *sp;
+    else if (String href = ec->documentation_url()) {
+	add_class_href(ec->unique_id(), href);
+	return href;
+    } else {
+	String href = percent_substitute(default_class_href, 's', ec->name_cc(), 0);
+	add_class_href(ec->unique_id(), href);
+	return href;
+    }
+}
+
+static String
+class_href(int unique_id)
+{
+    ElementClassT *ec = classes[unique_id];
+    assert(ec);
+    return class_href(ec);
+}
 
 
 // handle output items
@@ -195,6 +244,7 @@ struct OutputItem {
 
 static Vector<OutputItem> items;
 static Vector<OutputItem> end_items;
+static bool items_prepared;
 
 inline OutputItem *
 OutputItem::other() const
@@ -260,6 +310,10 @@ item_compar(const void *v1, const void *v2)
 static void
 prepare_items(int last_pos)
 {
+    if (items_prepared)
+	return;
+    items_prepared = true;
+    
     add_item(last_pos + 1, "", last_pos + 1, "");
     assert(items.size() == end_items.size());
 
@@ -285,10 +339,25 @@ prepare_items(int last_pos)
 	    compar_items[i] = new_items[permute[i]];
     }
 
-    // process items, combine those that need to be combined
+    // update class references
+    for (int i = 0; i < items.size(); i++) {
+	OutputItem *s = &items[i], *e = s->other();
+	if (s->text[0] == '{') {
+	    int uid;
+	    cp_integer(s->text.substring(1), &uid);
+	    if (String href = class_href(uid)) {
+		s->text = "<a href='" + href + "'>";
+		e->text = "</a>";
+	    } else
+		s->text = "";
+	}
+    }
+    
+    // combine items that need to be combined (<a href> and <a name>)
     for (int i = 0; i < items.size() - 1; i++) {
 	OutputItem *s1 = &items[i], *e1 = s1->other();
 	OutputItem *s2 = &items[i+1], *e2 = s2->other();
+
 	if (s1->pos != s2->pos || e1->pos != e2->pos)
 	    continue;
 	if (s1->text == s2->text && e1->text == e2->text)
@@ -301,30 +370,6 @@ prepare_items(int last_pos)
 	}
     }
 }
-
-
-static HashMap<int, String> class_hrefs;
-static String default_class_href;
-
-static void
-add_class_href(int class_uid, const String &href)
-{
-    class_hrefs.insert(class_uid, href);
-}
-
-static String
-class_href(ElementClassT *ec)
-{
-    String *sp = class_hrefs.findp(ec->unique_id());
-    if (sp)
-	return *sp;
-    else {
-	String href = percent_substitute(default_class_href, 's', ec->name_cc(), 0);
-	add_class_href(ec->unique_id(), href);
-	return href;
-    }
-}
-
 
 static String
 link_class_decl(ElementClassT *ec)
@@ -365,14 +410,12 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	add_class_href(ec->unique_id(), "#" + link_class_decl(ec));
     }
     void notify_class_extension(ElementClassT *ec, int pos1, int pos2) {
-	String href = class_href(ec);
-	if (href)
-	    add_item(pos1, "<a href='" + href + "'>", pos2, "</a>");
+	notify_class(ec);
+	add_item(pos1, "{" + String(ec->unique_id()), pos2, "");
     }
     void notify_class_reference(ElementClassT *ec, int pos1, int pos2) {
-	String href = class_href(ec);
-	if (href)
-	    add_item(pos1, "<a href='" + href + "'>", pos2, "</a>");
+	notify_class(ec);
+	add_item(pos1, "{" + String(ec->unique_id()), pos2, "");
     }
     void notify_element_declaration(ElementT *e, int pos1, int pos2, int decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
@@ -428,6 +471,8 @@ pretty_read_router(const char *filename, ErrorHandler *errh, String &config)
 
     // clear list of items
     items.clear();
+    end_items.clear();
+    items_prepared = false;
   
     // read router
     if (!config.length())
@@ -482,7 +527,8 @@ output_config(String r_config, FILE *outf)
 {
     // create two sorted lists of objects
     // add sentinel item, sort item lists
-    prepare_items(r_config.length());
+    if (!items_prepared)
+	prepare_items(r_config.length());
 
     // loop over characters
     const char *data = r_config.cc();
@@ -603,7 +649,7 @@ static String type_landmark = "$fake_type$";
 
 class ElementsOutput { public:
 
-    ElementsOutput(RouterT *, const HashMap<String, String> &);
+    ElementsOutput(RouterT *, const ProcessingT &, const HashMap<String, String> &);
     ~ElementsOutput();
 
     void run(ElementT *, FILE *);
@@ -612,6 +658,7 @@ class ElementsOutput { public:
   private:
 
     RouterT *_router;
+    const ProcessingT &_processing;
     const HashMap<String, String> &_main_attrs;
     Vector<ElementT *> _entries;
     Vector<ElementT *> _elements;
@@ -619,14 +666,14 @@ class ElementsOutput { public:
     StringAccum _sa;
     String _sep;
 
-    void run_template(String, ElementT *, int);
-    String expand(const String &, ElementT *, int);
+    void run_template(String, ElementT *, int, bool);
+    String expand(const String &, ElementT *, int, bool);
     
 };
 
 
-ElementsOutput::ElementsOutput(RouterT *r, const HashMap<String, String> &main_attrs)
-    : _router(r), _main_attrs(main_attrs)
+ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const HashMap<String, String> &main_attrs)
+    : _router(r), _processing(processing), _main_attrs(main_attrs)
 {
     bool do_elements = main_attrs["entry"];
     bool do_types = main_attrs["typeentry"];
@@ -659,7 +706,7 @@ ElementsOutput::~ElementsOutput()
 }
 
 void
-ElementsOutput::run_template(String templ_str, ElementT *e, int port)
+ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_output)
 {
     ElementClassT *t = e->type();
     bool is_type = (e->landmark() == type_landmark);
@@ -708,7 +755,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		text = _main_attrs["typeref"];
 	    for (int i = 0; i < _elements.size(); i++)
 		if (_elements[i]->type() == t) {
-		    run_template(text, _elements[i], -1);
+		    run_template(text, _elements[i], -1, false);
 		    _sep = subsep;
 		}
 	} else if (tag == "configlink" && !is_type) {
@@ -717,7 +764,7 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		text = _main_attrs["configlink"];
 	    if (text) {
 		text = "<a href='#" + link_element_decl(e) + "'>" + text + "</a>";
-		run_template(text, e, port);
+		run_template(text, e, port, is_output);
 		next_sep = attrs["sep"];
 	    }
 	} else if (tag == "ninputs" && !is_type) {
@@ -733,14 +780,14 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["noinputentry"];
-		run_template(text, e, -1);
+		run_template(text, e, -1, false);
 	    } else {
 		String subsep = attrs["sep"];
 		String text = attrs["entry"];
 		if (!text)
 		    text = _main_attrs["inputentry"];
 		for (int i = 0; i < e->ninputs(); i++) {
-		    run_template(text, e, i);
+		    run_template(text, e, i, false);
 		    _sep = subsep;
 		}
 	    }
@@ -749,25 +796,25 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["nooutputentry"];
-		run_template(text, e, -1);
+		run_template(text, e, -1, true);
 	    } else {
 		String subsep = attrs["sep"];
 		String text = attrs["entry"];
 		if (!text)
 		    text = _main_attrs["outputentry"];
 		for (int i = 0; i < e->noutputs(); i++) {
-		    run_template(text, e, i);
+		    run_template(text, e, i, true);
 		    _sep = subsep;
 		}
 	    }
-	} else if (tag == "inputconnections" && port >= 0) {
+	} else if (tag == "inputconnections" && port >= 0 && !is_output) {
 	    Vector<int> conn;
 	    _router->find_connections_to(PortT(e, port), conn);
 	    if (conn.size() == 0) {
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["noinputconnection"];
-		run_template(text, e, port);
+		run_template(text, e, port, false);
 	    } else {
 		sort_connections(_router, conn, true);
 		String subsep = attrs["sep"];
@@ -776,18 +823,18 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		    text = _main_attrs["inputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.from_elt(), c.from_port());
+		    run_template(text, c.from_elt(), c.from_port(), true);
 		    _sep = subsep;
 		}
 	    }
-	} else if (tag == "outputconnections" && port >= 0) {
+	} else if (tag == "outputconnections" && port >= 0 && is_output) {
 	    Vector<int> conn;
 	    _router->find_connections_from(PortT(e, port), conn);
 	    if (conn.size() == 0) {
 		String text = attrs["noentry"];
 		if (!text)
 		    text = _main_attrs["nooutputconnection"];
-		run_template(text, e, port);
+		run_template(text, e, port, true);
 	    } else {
 		sort_connections(_router, conn, false);
 		String subsep = attrs["sep"];
@@ -796,40 +843,51 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		    text = _main_attrs["outputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
-		    run_template(text, c.to_elt(), c.to_port());
+		    run_template(text, c.to_elt(), c.to_port(), false);
 		    _sep = subsep;
 		}
 	    }
 	} else if (tag == "port" && port >= 0) {
 	    _sa << _sep << port;
+	} else if (tag == "processing" && port >= 0) {
+	    int p = (is_output ? _processing.output_processing(PortT(e, port))
+		     : _processing.input_processing(PortT(e, port)));
+	    if (p == ProcessingT::VAGNOSTIC)
+		_sa << _sep << "agnostic";
+	    else if (p == ProcessingT::VPUSH)
+		_sa << _sep << "push";
+	    else if (p == ProcessingT::VPULL)
+		_sa << _sep << "pull";
+	    else
+		_sa << _sep << "??";
 	} else if (tag == "if") {
-	    String s = expand(attrs["test"], e, port);
+	    String s = expand(attrs["test"], e, port, is_output);
 	    bool result;
 	    if (attrs["eq"])
-		result = (expand(attrs["eq"], e, port) == s);
+		result = (expand(attrs["eq"], e, port, is_output) == s);
 	    else if (attrs["ne"])
-		result = (expand(attrs["ne"], e, port) != s);
+		result = (expand(attrs["ne"], e, port, is_output) != s);
 	    else if (attrs["gt"])
-		result = (click_strcmp(s, expand(attrs["gt"], e, port)) > 0);
+		result = (click_strcmp(s, expand(attrs["gt"], e, port, is_output)) > 0);
 	    else if (attrs["lt"])
-		result = (click_strcmp(s, expand(attrs["lt"], e, port)) < 0);
+		result = (click_strcmp(s, expand(attrs["lt"], e, port, is_output)) < 0);
 	    else if (attrs["ge"])
-		result = (click_strcmp(s, expand(attrs["ge"], e, port)) >= 0);
+		result = (click_strcmp(s, expand(attrs["ge"], e, port, is_output)) >= 0);
 	    else if (attrs["le"])
-		result = (click_strcmp(s, expand(attrs["le"], e, port)) <= 0);
+		result = (click_strcmp(s, expand(attrs["le"], e, port, is_output)) <= 0);
 	    else
 		result = (s.length() > 0);
 
 	    if (result)
-		run_template(attrs["then"], e, port);
+		run_template(attrs["then"], e, port, is_output);
 	    else
-		run_template(attrs["else"], e, port);
+		run_template(attrs["else"], e, port, is_output);
 	} else if (_main_attrs[tag]) {
 	    String text = attrs[tag];
-	    run_template(text, e, port);
+	    run_template(text, e, port, is_output);
 	} else if (definitions[tag]) {
 	    String text = definitions[tag];
-	    run_template(text, e, port);
+	    run_template(text, e, port, is_output);
 	}
 
 	if (_sa.length() != pre_expansion_pos)
@@ -838,10 +896,10 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 }
 
 String
-ElementsOutput::expand(const String &s, ElementT *e, int port)
+ElementsOutput::expand(const String &s, ElementT *e, int port, bool is_output)
 {
     int pos = _sa.length();
-    run_template(s, e, port);
+    run_template(s, e, port, is_output);
     String result(_sa.data() + pos, _sa.length() - pos);
     _sa.pop_back(_sa.length() - pos);
     return result;
@@ -852,7 +910,7 @@ ElementsOutput::run(ElementT *e, FILE *f)
 {
     bool is_type = e->landmark() == type_landmark;
     String templ = _main_attrs[is_type ? "typeentry" : "entry"];
-    run_template(templ, e, -1);
+    run_template(templ, e, -1, false);
     fputs(_sa.cc(), f);
     _sa.clear();
     _sep = _main_attrs["sep"];
@@ -880,20 +938,9 @@ ElementsOutput::run(FILE *f)
 // main loop
 //
 
-static FILE *
-open_output_file(const char *outfile, ErrorHandler *errh)
-{
-    FILE *outf = stdout;
-    if (outfile && strcmp(outfile, "-") != 0) {
-	outf = fopen(outfile, "w");
-	if (!outf)
-	    errh->error("%s: %s", outfile, strerror(errno));
-    }
-    return outf;
-}
-
 static void
-run_template(const char *templ, RouterT *r, const String &r_config, FILE *outf)
+run_template(const char *templ, RouterT *r, const String &r_config,
+	     const ElementMap &emap, const ProcessingT &processing, FILE *outf)
 {
     String tag;
     HashMap<String, String> attrs;
@@ -904,13 +951,25 @@ run_template(const char *templ, RouterT *r, const String &r_config, FILE *outf)
 	if (tag == "config")
 	    output_config(r_config, outf);
 	else if (tag == "elements") {
-	    ElementsOutput eo(r, attrs);
+	    ElementsOutput eo(r, processing, attrs);
 	    eo.run(outf);
 	} else if (definitions[tag]) {
 	    String text = definitions[tag];
-	    run_template(text, r, r_config, outf);
+	    run_template(text, r, r_config, emap, processing, outf);
 	}
     }
+}
+
+static FILE *
+open_output_file(const char *outfile, ErrorHandler *errh)
+{
+    FILE *outf = stdout;
+    if (outfile && strcmp(outfile, "-") != 0) {
+	outf = fopen(outfile, "w");
+	if (!outf)
+	    errh->error("%s: %s", outfile, strerror(errno));
+    }
+    return outf;
 }
 
 static void
@@ -929,8 +988,38 @@ pretty_process(const char *infile, const char *outfile,
 	return;
     }
 
+    // get element map and processing
+    ElementMap emap;
+    emap.parse_all_files(r, CLICK_SHAREDIR, errh);
+
+    int driver = specified_driver;
+    if (driver < 0) {
+	int driver_mask = 0;
+	for (int d = 0; d < Driver::COUNT; d++)
+	    if (emap.driver_compatible(r, d))
+		driver_mask |= 1 << d;
+	if (driver_mask == 0)
+	    errh->warning("configuration not compatible with any driver");
+	else {
+	    for (int d = Driver::COUNT - 1; d >= 0; d--)
+		if (driver_mask & (1 << d))
+		    driver = d;
+	    if (!emap.driver_indifferent(r, driver_mask, errh))
+		errh->warning("configuration not indifferent to driver; arbitrarily picking %s", Driver::name(driver));
+	}
+    } else if (!emap.driver_compatible(r, driver))
+	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
+
+    emap.set_driver(driver);
+    ProcessingT processing(r, &emap, errh);
+
+    element_map = &emap;
+    ElementMap::push_default(&emap);
+    
     // process template
-    run_template(templ, r, r_config, outf);
+    run_template(templ, r, r_config, emap, processing, outf);
+
+    ElementMap::pop_default();
     
     // close files, return
     if (outf != stdout)
@@ -951,6 +1040,7 @@ Options:\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -o, --output FILE         Write HTML output to FILE.\n\
   -t, --template FILE       Use FILE as the template instead of default.\n\
+  -d, --define NAME=TEXT    Define a new tag, NAME, that expands to TEXT.\n\
   -u, --class-urls URL      Link primitive element classes to URL.\n\
       --write-template      Write template as is, without including router.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
@@ -1041,6 +1131,16 @@ particular purpose.\n");
 	    }
 	    output_file = clp->arg;
 	    output = true;
+	    break;
+
+	  case USERLEVEL_OPT:
+	  case LINUXMODULE_OPT:
+	  case BSDMODULE_OPT:
+	    if (specified_driver >= 0) {
+		p_errh->error("driver specified twice");
+		goto bad_option;
+	    }
+	    specified_driver = opt - FIRST_DRIVER_OPT;
 	    break;
 
 	  bad_option:

@@ -21,16 +21,18 @@ class ProcessingT { public:
     int output_pidx(const PortT &) const;
     int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
     int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
-    
-    int input_processing(int i, int p) const;
-    int output_processing(int i, int p) const;
-    bool input_is_pull(int i, int p) const;
-    bool output_is_push(int i, int p) const;
-    const PortT &input_connection(int i, int p) const;
-    const PortT &output_connection(int i, int p) const;
+
+    int input_processing(const PortT &) const;
+    int output_processing(const PortT &) const;
+    int input_processing(int ei, int p) const;
+    int output_processing(int ei, int p) const;
+    bool input_is_pull(int ei, int p) const;
+    bool output_is_push(int ei, int p) const;
+    const PortT &input_connection(int ei, int p) const;
+    const PortT &output_connection(int ei, int p) const;
 
     bool is_internal_flow(int i, int ip, int op) const;
-  
+
     int reset(const RouterT *, ErrorHandler *);
 
     bool same_processing(int, int) const;
@@ -74,6 +76,18 @@ ProcessingT::output_pidx(const PortT &h) const
 {
     assert(h.router() == _router);
     return output_pidx(h.idx(), h.port);
+}
+
+inline int
+ProcessingT::input_processing(const PortT &h) const
+{
+  return _input_processing[input_pidx(h)];
+}
+
+inline int
+ProcessingT::output_processing(const PortT &h) const
+{
+  return _output_processing[output_pidx(h)];
 }
 
 inline int

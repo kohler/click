@@ -35,11 +35,6 @@ static int unique_id_storage = ElementClassT::UNUSED_UID;
 ElementClassT *ElementClassT::the_unused_type = new ElementClassT("<unused>", UNUSED_UID);
 ElementClassT *ElementClassT::the_tunnel_type = new ElementClassT("<tunnel>", TUNNEL_UID);
 
-static int fake_emap_version;
-ElementMap *ElementClassT::the_emap = 0;
-static Vector<ElementMap *> emap_stack;
-const int *ElementClassT::the_emap_version_ptr = &fake_emap_version;
-
 ElementClassT::ElementClassT(const String &name)
     : _name(name), _use_count(1), _unique_id(unique_id_storage++),
       _traits_version(-1)
@@ -89,6 +84,18 @@ ElementClassT::find_traits() const
 	return *(_traits = &ElementTraits::null_traits());
     else
 	return *(_traits = &em->traits(_name));
+}
+
+const String &
+ElementClassT::package() const
+{
+    return ElementMap::default_map()->package(traits());
+}
+
+String
+ElementClassT::documentation_url() const
+{
+    return ElementMap::default_map()->documentation_url(traits());
 }
 
 

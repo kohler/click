@@ -39,18 +39,14 @@ ElementMap::ElementMap()
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
 {
     _e.push_back(Traits());
-    _def_srcdir.push_back(String());
-    _def_compile_flags.push_back(String());
-    _def_package.push_back(String());
+    _def.push_back(Globals());
 }
 
 ElementMap::ElementMap(const String &str)
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
 {
     _e.push_back(Traits());
-    _def_srcdir.push_back(String());
-    _def_compile_flags.push_back(String());
-    _def_package.push_back(String());
+    _def.push_back(Globals());
     parse(str);
 }
 
@@ -91,6 +87,15 @@ ElementMap::driver_elt_index(int i) const
     while (i > 0 && (_e[i].driver_mask & _driver_mask) == 0)
 	i = _e[i].name_next;
     return i;
+}
+
+String
+ElementMap::documentation_url(const ElementTraits &t) const
+{
+    String name = t.name;
+    return percent_substitute(_def[t.def_index].webdoc,
+			      's', name.cc(),
+			      0);
 }
 
 int
@@ -166,11 +171,10 @@ ElementMap::parse(const String &str, const String &package_name)
     int endp = 0;
 
     int def_index = 0;
-    if (package_name != _def_package[0]) {
-	def_index = _def_srcdir.size();
-	_def_srcdir.push_back(String());
-	_def_compile_flags.push_back(String());
-	_def_package.push_back(package_name);
+    if (package_name != _def[0].package) {
+	def_index = _def.size();
+	_def.push_back(Globals());
+	_def.back().package = package_name;
     }
 
     // set up default data
@@ -197,10 +201,18 @@ ElementMap::parse(const String &str, const String &package_name)
 	// check for $sourcedir
 	if (words[0] == "$sourcedir") {
 	    if (words.size() == 2) {
-		def_index = _def_srcdir.size();
-		_def_srcdir.push_back(cp_unquote(words[1]));
-		_def_compile_flags.push_back(_def_compile_flags[def_index - 1]);
-		_def_package.push_back(package_name);
+		def_index = _def.size();
+		_def.push_back(Globals());
+		_def.back() = _def[def_index - 1];
+		_def.back().srcdir = cp_unquote(words[1]);
+	    }
+
+	} else if (words[0] == "$webdoc") {
+	    if (words.size() == 2) {
+		def_index = _def.size();
+		_def.push_back(Globals());
+		_def.back() = _def[def_index - 1];
+		_def.back().webdoc = cp_unquote(words[1]);
 	    }
 
 	} else if (words[0] == "$provides") {
@@ -412,3 +424,7 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
     else
 	errh->message("Searched in CLICKPATH and `%s'.)", default_path.cc());
 }
+
+// template instance
+#include <click/vector.cc>
+template class Vector<ElementMap::Globals>;

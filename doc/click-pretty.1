@@ -379,6 +379,11 @@ entries.
 Expands to the current port number.
 '
 .TP 5
+.BR "<~processing>"
+Expands to the current port's processing value: either "push", "pull", or
+(for erroneous configurations) "agnostic".
+'
+.TP 5
 .BR "<~inputconnections [entry" "=\fItext" "] [noentry" "=\fItext" "] [sep" "=\fIsep\fR" "]>"
 Expands to a list of the output ports to which this input port is
 connected, separated by \fIsep\fR. The
@@ -450,6 +455,31 @@ will use a built-in default.
 '
 .Sp
 .TP
+.BI \-d "name\fR=\fItext"
+.TP
+.BI \-\-define " name\fR=\fItext"
+Defines a new tag named
+.IR name .
+Occurrences of
+.BI <~ name >
+in the template will be replaced with the expansion of
+.IR text .
+'
+.Sp
+.TP
+.BR \-\-userlevel
+.TP
+.BR \-k ", " \-\-linuxmodule
+.TP
+.BR \-b ", " \-\-bsdmodule
+Specifies the driver for which the configuration was designed. This is
+necessary to discover whether ports are push or pull. Usually, you don't
+have to give any of these options;
+.B click-pretty
+will figure out the right answer by looking at the configuration.
+'
+.Sp
+.TP
 .BI \-u " url"
 .TP
 .BI \-\-class\-urls " url"
@@ -458,6 +488,8 @@ Web documentation for primitive element classes is available at
 The
 .I url
 may contain a single "%s", which is replaced with the element class's name.
+URLs specified in  elementmap files take precedence over
+.BR \-u .
 '
 .Sp
 .TP
@@ -485,6 +517,19 @@ Print usage information and exit.
 Print the version number and some quickie warranty information and exit.
 '
 .PD
+'
+.SH FILES
+.TP 5
+.B CLICKDIR/share/click/elementmap
+.B Click-pretty
+uses elementmap files to determine whether ports are push or pull. You can
+also add `$webdoc URL' lines to elementmap files;
+.B click-pretty
+will use that URL for element classes described in that elementmap. As with
+the
+.B \-u
+option, a $webdoc URL can contain `%s', which is replaced with the element
+class name.
 '
 .SH AUTHOR
 .na

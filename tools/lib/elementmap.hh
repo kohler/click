@@ -30,6 +30,7 @@ class ElementMap { public:
     const String &source_directory(const Traits &) const;
     const String &package(const Traits &) const;
     const String &package(const String &) const;
+    String documentation_url(const Traits &) const;
     
     typedef HashMap<String, int>::Iterator IndexIterator;
     IndexIterator first() const		{ return _name_map.first(); }
@@ -60,12 +61,17 @@ class ElementMap { public:
 
   private:
 
+    struct Globals {
+	String srcdir;
+	String compile_flags;
+	String package;
+	String webdoc;
+    };
+    
     Vector<Traits> _e;
     HashMap<String, int> _name_map;
 
-    Vector<String> _def_srcdir;
-    Vector<String> _def_compile_flags;
-    Vector<String> _def_package;
+    Vector<Globals> _def;
 
     int _use_count;
     int _driver_mask;
@@ -111,85 +117,16 @@ ElementMap::traits_index(const String &name) const
     return i;
 }
 
-#if 0
-inline const String &
-ElementMap::name(const ElementClassT *c) const
-{
-    return elt(c).name;
-}
-
-inline const String &
-ElementMap::cxx(const ElementClassT *c) const
-{
-    return elt(c).cxx;
-}
-
-inline const String &
-ElementMap::header_file(const ElementClassT *c) const
-{
-    return elt(c).header_file;
-}
-
-inline const String &
-ElementMap::source_file(const ElementClassT *c) const
-{
-    return elt(c).source_file;
-}
-
-inline const String &
-ElementMap::processing_code(const ElementClassT *c) const
-{
-    return elt(c).processing_code();
-}
-
-inline const String &
-ElementMap::flow_code(const ElementClassT *c) const
-{
-    return elt(c).flow_code();
-}
-
-inline const String &
-ElementMap::flags(const ElementClassT *c) const
-{
-    return elt(c).flags;
-}
-
-inline const String &
-ElementMap::requirements(const ElementClassT *c) const
-{
-    return elt(c).requirements;
-}
-
-inline bool
-ElementMap::requires(const ElementClassT *c, const String &what) const
-{
-    return elt(c).requires(what);
-}
-
-inline const String &
-ElementMap::provisions(const ElementClassT *c) const
-{
-    return elt(c).provisions;
-}
-
-inline bool
-ElementMap::provides(const ElementClassT *c, const String &what) const
-{
-    return elt(c).provides(what);
-}
-#endif
-
-
 inline const String &
 ElementMap::source_directory(const ElementTraits &t) const
 {
-    return _def_srcdir[t.def_index];
+    return _def[t.def_index].srcdir;
 }
 
 inline const String &
 ElementMap::package(const ElementTraits &t) const
 {
-    return _def_package[t.def_index];
+    return _def[t.def_index].package;
 }
 
 inline const String &
