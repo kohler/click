@@ -1,3 +1,7 @@
+2005-01-03 Monday 13:06  John Bicket <jbicket@mit.edu>
+
+	* lib/master.cc (1.20): bugfix: if no timers, block indefinitely.
+
 2005-01-03 Monday 01:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromdevice.cc (1.50),
