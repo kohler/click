@@ -60,13 +60,14 @@ Signatures::create_phase_0(const ProcessingT &pt)
 void
 Signatures::check_port_numbers(int eid, const ProcessingT &pt)
 {
+  const ElementT *e = _router->element(eid);
   int old_sigid = _sigid[eid];
   if (old_sigid == SIG_NOT_SPECIAL)
     return;
 
   // create new ports array
   Vector<int> new_ports;
-  int ni = pt.ninputs(eid), no = pt.noutputs(eid);
+  int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++) {
     const PortT &h = pt.input_connection(eid, i);
     if (h.elt)
@@ -113,6 +114,7 @@ bool
 Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
 		       const ProcessingT &pt)
 {
+  const ElementT *e = _router->element(eid);
   int old_sigid = _sigid[eid];
   if (old_sigid == SIG_NOT_SPECIAL
       || _sigs[old_sigid]._connections.size() == 0) {
@@ -122,7 +124,7 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
 
   // create new connections
   Vector<int> new_connections;
-  int ni = pt.ninputs(eid), no = pt.noutputs(eid);
+  int ni = e->ninputs(), no = e->noutputs();
   for (int i = 0; i < ni; i++) {
     const PortT &h = pt.input_connection(eid, i);
     if (h.elt)

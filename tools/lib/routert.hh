@@ -37,16 +37,17 @@ class RouterT { public:
     
     int nelements() const		{ return _elements.size(); }
     int real_element_count() const	{ return _real_ecount; }
+    
+    const ElementT *element(const String &) const;
+    const ElementT *elt(const String &) const;
+    ElementT *element(const String &);
+    ElementT *elt(const String &);
     int eindex(const String &s) const	{ return _element_name_map[s]; }
     
     const ElementT *element(int i) const{ return _elements[i]; }
     const ElementT *elt(int i) const	{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
     ElementT *elt(int i)		{ return _elements[i]; }
-    const ElementT *element(const String &) const;
-    const ElementT *elt(const String &) const;
-    ElementT *element(const String &);
-    ElementT *elt(const String &);
     
     bool elive(int ei) const		{ return _elements[ei]->live(); }
     bool edead(int ei) const		{ return _elements[ei]->dead(); }

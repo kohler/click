@@ -235,6 +235,7 @@ bool
 Matcher::next_match()
 {
   while (_pat_m->next_subgraph_isomorphism(_body_m, _match)) {
+    //fprintf(stderr, "NEXT\n");
     if (check_subgraph_isomorphism(_pat, _body, _match)
 	&& check_match())
       return true;

@@ -226,7 +226,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
       if (rover > 0 || !input_r->find_connection_from(output, result))
 	max_rover = -1;
       else {
-	rover = output.idx();
+	rover = result.idx();
 	max_rover = rover + 1;
       }
     } else

@@ -64,14 +64,15 @@ ProcessingT::create_pidx(ErrorHandler *errh)
     _output_pidx.push_back(co);
 
     // create eidxes
-    _input_eidx.clear();
-    _output_eidx.clear();
+    _input_elt.clear();
+    _output_elt.clear();
     ci = 0, co = 0;
     for (int i = 1; i <= ne; i++) {
+	const ElementT *e = _router->element(i - 1);
 	for (; ci < _input_pidx[i]; ci++)
-	    _input_eidx.push_back(i - 1);
+	    _input_elt.push_back(e);
 	for (; co < _output_pidx[i]; co++)
-	    _output_eidx.push_back(i - 1);
+	    _output_elt.push_back(e);
     }
 
     // complain about dead elements with live connections
@@ -140,7 +141,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
 
     int val = 0;
     int last_val = 0;
-    for (int i = 0; i < ninputs(ei); i++) {
+    for (int i = 0; i < e->ninputs(); i++) {
 	if (last_val >= 0)
 	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
 	if (last_val >= 0)
@@ -156,7 +157,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
 	pos++;
 
     last_val = 0;
-    for (int i = 0; i < noutputs(ei); i++) {
+    for (int i = 0; i < e->noutputs(); i++) {
 	if (last_val >= 0)
 	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
 	if (last_val >= 0)
@@ -200,12 +201,12 @@ ProcessingT::check_processing(ErrorHandler *errh)
     Bitvector bv;
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_input_processing[i] == VAGNOSTIC) {
-	    int ei = _input_eidx[i];
-	    ElementT *e = const_cast<ElementT *>(_router->elt(ei));
+	    ElementT *e = const_cast<ElementT *>(_input_elt[i]);
+	    int ei = e->idx();
 	    int port = i - _input_pidx[ei];
 	    int opidx = _output_pidx[ei];
 	    int noutputs = _output_pidx[ei+1] - opidx;
-	    forward_flow(_router->etype(ei)->traits().flow_code(),
+	    forward_flow(e->type()->traits().flow_code(),
 			 port, noutputs, &bv);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
@@ -305,11 +306,10 @@ ProcessingT::check_connections(ErrorHandler *errh)
     // Check for unused inputs and outputs, set _connected_* properly.
     for (int i = 0; i < ninput_pidx(); i++)
 	if (input_used[i] < 0) {
-	    int ei = _input_eidx[i];
-	    const ElementT *e = _router->element(ei);
+	    const ElementT *e = _input_elt[i];
 	    if (e->dead())
 		continue;
-	    int port = i - _input_pidx[ei];
+	    int port = i - _input_pidx[e->idx()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s input %d not connected",
 			 e->name_cc(), processing_name(_input_processing[i]), port);
@@ -317,11 +317,10 @@ ProcessingT::check_connections(ErrorHandler *errh)
 
     for (int i = 0; i < noutput_pidx(); i++)
 	if (output_used[i] < 0) {
-	    int ei = _output_eidx[i];
-	    const ElementT *e = _router->element(ei);
+	    const ElementT *e = _output_elt[i];
 	    if (e->dead())
 		continue;
-	    int port = i - _output_pidx[ei];
+	    int port = i - _output_pidx[e->idx()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s output %d not connected",
 			 e->name_cc(), processing_name(_output_processing[i]), port);
@@ -347,7 +346,7 @@ ProcessingT::reset(const RouterT *r, ErrorHandler *errh)
       errh = ErrorHandler::silent_handler();
   int before = errh->nerrors();
 
-  // create pidx and eidx arrays, warn about dead elements
+  // create pidx and elt arrays, warn about dead elements
   create_pidx(errh);
   
   initial_processing(errh);

@@ -22,9 +22,6 @@ class ProcessingT { public:
     int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
     int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
     
-    int ninputs(int i) const	{ return _input_pidx[i+1] - _input_pidx[i]; }
-    int noutputs(int i) const	{ return _output_pidx[i+1] - _output_pidx[i]; }
-
     int input_processing(int i, int p) const;
     int output_processing(int i, int p) const;
     bool input_is_pull(int i, int p) const;
@@ -47,8 +44,8 @@ class ProcessingT { public:
 
     Vector<int> _input_pidx;
     Vector<int> _output_pidx;
-    Vector<int> _input_eidx;
-    Vector<int> _output_eidx;
+    Vector<const ElementT *> _input_elt;
+    Vector<const ElementT *> _output_elt;
     Vector<int> _input_processing;
     Vector<int> _output_processing;
     Vector<PortT> _connected_input;
