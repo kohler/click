@@ -434,17 +434,13 @@ cp_argvec(const String &conf, Vector<String> &args)
   }
 }
 
-void
-cp_spacevec(const String &conf, Vector<String> &vec)
+static String
+cp_pop_spacevec(const String &conf, int &pos)
 {
   const char *s = conf.data();
   int len = conf.length();
-  int i = 0;
+  int i = pos;
   
-  // common case: no configuration
-  if (len == 0)
-    return;
-
   // dump arguments into `vec'
   int start = -1;
   
@@ -456,9 +452,8 @@ cp_spacevec(const String &conf, Vector<String> &vec)
       if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
 	goto normal;
       if (start >= 0)
-	vec.push_back(conf.substring(start, i - start));
+	goto done;
       i = skip_comment(s, i, len) - 1;
-      start = -1;
       break;
       
      case '\"':
@@ -487,8 +482,7 @@ cp_spacevec(const String &conf, Vector<String> &vec)
      case '\t':
      case '\v':
       if (start >= 0)
-	vec.push_back(conf.substring(start, i - start));
-      start = -1;
+	goto done;
       break;
 
      default:
@@ -499,8 +493,36 @@ cp_spacevec(const String &conf, Vector<String> &vec)
       
     }
 
+ done:
+  pos = i;
   if (start >= 0)
-    vec.push_back(conf.substring(start, len - start));
+    return conf.substring(start, i - start);
+  else
+    return String();
+}
+
+void
+cp_spacevec(const String &conf, Vector<String> &vec)
+{
+  // common case: no configuration
+  if (conf.length() == 0)
+    return;
+
+  // collect arguments with cp_pop_spacevec
+  String s;
+  int pos = 0;
+  while ((s = cp_pop_spacevec(conf, pos)))
+    vec.push_back(s);
+}
+
+String
+cp_pop_spacevec(String &conf)
+{
+  int pos = 0;
+  String answer = cp_pop_spacevec(conf, pos);
+  conf = conf.substring(pos);
+  cp_eat_space(conf);
+  return answer;
 }
 
 String

@@ -28,6 +28,7 @@ void cp_argvec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 String cp_unspacevec(const Vector<String> &);
+String cp_pop_spacevec(String &);
 
 enum CpErrors {
   CPE_OK = 0,
