@@ -143,9 +143,62 @@ IP6Address::full_s() const
 }
 
 
+//the method calculate checksums that requires a pseudoheader (e.g., tcp, udp for ipv4)
+unsigned short 
+in_ip4_cksum(const unsigned  saddr,
+	     const unsigned  daddr,
+	     unsigned short len,
+	     unsigned char proto,
+	     unsigned short ori_csum,
+	     const unsigned char *addr,
+	     unsigned short len2)
+{ 
+	unsigned short answer = 0;
+	unsigned int csum =0;
+	unsigned int carry;
+	
+	
+	//get the sum of source and destination address
+	const unsigned sa = saddr;
+	csum += ntohl(sa);
+ 	carry = (csum < ntohl(sa));
+  	csum += carry;
+	
+	const unsigned da = daddr;
+	csum += ntohl(da);
+	carry = (csum < ntohl(da));
+	csum += carry;
+      
+	//get the sum of other fields:  packet length, protocal
+	csum += len;
+	csum += proto;
+	
+	//get the sum of the upper layer package
+	unsigned short nleft = len2;
+	const unsigned short *w = (const unsigned short *)addr;
+	while (nleft > 1)  { 
+	    unsigned short w2=*w++;
+	    csum += ntohs(w2); 
+	    nleft -=2;
+	 }
+  
+	//mop up an odd byte, if necessary 
+	if (nleft == 1) { 
+	  *(unsigned char *)(&answer) = *(const unsigned char *)w ;
+	  csum += ntohs(answer); 	 
+	}  
+	csum -= ori_csum; //get rid of the effect of ori_csum in the calculation
+        
+	// fold >=32-bit csum to 16-bits 
+	while (csum>>16) {
+	  csum = (csum & 0xffff) + (csum >> 16); 
+	}
+	  
+	answer = ~csum;          // truncate to 16 bits 
+	return answer;
+}
 
-
-// these methods will calculate the checksum field of ICMP6 Message.  
+// those two  methods will calculate the checksum field of ICMP6 Message.  
 
 // The checksum is the 16-bit one's complement 
 // of the one's complement sum of the entire ICMPv6 message starting with the
@@ -161,6 +214,7 @@ IP6Address::full_s() const
 
 // The following methods only differ at how it deal with ip6 address, i.e. add 32 bit 
 // a time or 16 bits a time.
+
 
 unsigned short 
 in6_fast_cksum(const struct click_in6_addr *saddr,
@@ -228,9 +282,9 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 
 //This is the slow way for in6_cksum
 unsigned short 
-in6_cksum(struct click_in6_addr *saddr,
-	  struct click_in6_addr *daddr,
-	  unsigned short len,
+in6_cksum(const struct click_in6_addr *saddr,
+	  const struct click_in6_addr *daddr,
+	  unsigned short len, 
 	  unsigned short proto,
 	  unsigned short ori_csum,
 	  unsigned char *addr,
@@ -266,7 +320,7 @@ in6_cksum(struct click_in6_addr *saddr,
 	    csum += ntohs(w2); 
 	    nleft -=2;
 	 }
-  
+ 
 	 //mop up an odd byte, if necessary 
 	  if (nleft == 1) { 
 	    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
