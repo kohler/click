@@ -539,10 +539,11 @@ GridRouteTable::print_nbrs_v(Element *e, void *)
       continue;
     s += i.key().s();
     s += " eth=" + i.value().next_hop_eth.s();
-    s += " metric_valid=" + i.value().metric_valid;
-    s += " metric=" + i.value().metric;
-    s += " link_qual=" + i.value().link_qual;
-    s += " link_sig=" + i.value().link_sig;
+    char buf[300];
+    snprintf(buf, 300, " metric_valid=%d metric=%d link_qual=%d link_sig=%d",
+	     i.value().metric_valid, i.value().metric,
+	     i.value().link_qual,i.value().link_sig);
+    s += buf;
     s += "\n";
   }
 
