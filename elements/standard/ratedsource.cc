@@ -58,7 +58,7 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   if (_packet) _packet->kill();
   // note: if you change `headroom', change `click-align'
-  unsigned int headroom = 16+20+8;
+  unsigned int headroom = 16+20+24;
   _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
       			 _data.length(), 
 			 Packet::default_tailroom(_data.length()));
