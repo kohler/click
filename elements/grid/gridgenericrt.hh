@@ -49,7 +49,7 @@ public:
   };
 
 
-  // return false if there is no entry for a GW, else fill in entry
+  // return false if there is no entry for a GW, else fill in entry with best choice for gateway
   virtual bool current_gateway(RouteEntry &entry) = 0;
 
   // return false if there is no entry for this dest, else fill in entry
