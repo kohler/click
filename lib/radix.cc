@@ -19,21 +19,33 @@
 
 Radix::Radix()
 {
-  root = new struct node;
+  root = new RadixNode;
   root->info = root->key = 0;
   root->bit_idx = KEYSIZE-1;
   root->valid = false;
   root->left = root->right = root;
 }
 
+void
+Radix::RadixNode::kill()
+{
+  if (bit_idx >= 0) {
+    bit_idx = -1;
+    if (left) left->kill();
+    if (right) right->kill();
+    delete this;
+  }
+}
+
 Radix::~Radix()
 {
+  root->kill();
 }
 
 void
 Radix::insert(KEYTYPE v, INFOTYPE info)
 {
-  struct node *t, *p;
+  RadixNode *t, *p;
   int i;
 
   t = node_lookup(v);
@@ -47,7 +59,7 @@ Radix::insert(KEYTYPE v, INFOTYPE info)
     i--;
 
   // Descend to that level
-  struct node *x = root;
+  RadixNode *x = root;
   do {
     p = x;
     if(bits(v, x->bit_idx, 1) == 0)
@@ -60,7 +72,7 @@ Radix::insert(KEYTYPE v, INFOTYPE info)
   } while(1);
 
   // ... and instert node
-  t = new struct node;
+  t = new RadixNode;
   t->key = v;
   t->bit_idx = i;
   t->info = info;
@@ -85,7 +97,7 @@ Radix::insert(KEYTYPE v, INFOTYPE info)
 bool
 Radix::lookup(KEYTYPE v, INFOTYPE &info)
 {
-  struct node *t;
+  RadixNode *t;
 
   t = node_lookup(v);
   if(t->valid) {
@@ -99,7 +111,7 @@ Radix::lookup(KEYTYPE v, INFOTYPE &info)
 void
 Radix::del(KEYTYPE v)
 {
-  struct node *t;
+  RadixNode *t;
 
   t = node_lookup(v);
 
@@ -111,10 +123,10 @@ Radix::del(KEYTYPE v)
 
 
 // Returns node based on key
-struct Radix::node *
+Radix::RadixNode *
 Radix::node_lookup(KEYTYPE v)
 {
-  struct node *p, *x = root;
+  RadixNode *p, *x = root;
 
   do {
     p = x;

@@ -20,19 +20,24 @@ public:
   bool lookup(KEYTYPE v, INFOTYPE &info);
 
 private:
-  struct node {
+  struct RadixNode {
     KEYTYPE key;
     int bit_idx;
-    struct node *left, *right;
+    RadixNode *left;
+    RadixNode *right;
 
     bool valid;
     INFOTYPE info;
+
+    RadixNode() : left(0), right(0), valid(false) { }
+    void kill();
+    
   };
 
-  struct node *root;
+  struct RadixNode *root;
 
   static KEYTYPE bits(KEYTYPE x, KEYTYPE y, unsigned char idx);
-  struct node *node_lookup(KEYTYPE v);
+  RadixNode *node_lookup(KEYTYPE v);
 };
 
 

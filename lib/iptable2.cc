@@ -25,6 +25,7 @@ IPTable2::IPTable2()
 
 IPTable2::~IPTable2()
 {
+  delete radix;
 }
 
 
