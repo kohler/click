@@ -75,6 +75,8 @@ class String {
   operator const char *()		{ return cc(); }
   
   char operator[](int e) const		{ return _data[e]; }
+  int find_left(int c, int start = 0) const;
+  int find_right(int c, int start = 0x7FFFFFFF) const;
   
   int hashcode() const;
   

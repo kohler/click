@@ -10,9 +10,8 @@ enum {
   lexIdent = 256,
   lexArrow,
   lex2Colon,
+  lexTunnel,
   lexElementclass,
-  lexPseudoports,
-  lexWithprefix,
 };
 
 class Lexeme {
@@ -61,7 +60,7 @@ class LexerT { protected:
   RouterT *_router;
 
   String _element_prefix;
-  int _anonymous_prefixes;
+  int _anonymous_offset;
   
   // errors
   ErrorHandler *_errh;
@@ -93,11 +92,12 @@ class LexerT { protected:
   
   bool yport(int &port);
   bool yelement(int &element, bool comma_ok);
+  bool yelement_upref(int &element);
   void ydeclaration(const String &first_element = "");
   bool yconnection();
   void yelementclass();
-  void ypseudoports();
-  void ywithprefix();
+  void ytunnel();
+  int ylocal();
   bool ystatement(bool nested = false);
     
   RouterT *take_router();

@@ -75,11 +75,13 @@ main(int argc, char **argv)
   signal(SIGINT, catchint);
   
   if (router->initialize(errh) >= 0) {
-    router->print_structure(errh);
-    //errh->message(router->flat_configuration_string());
+    //router->print_structure(errh);
+    errh->message(router->flat_configuration_string());
     if (!quit_immediately)
       while (router->driver())
 	/* nada */;
+    delete router;
+    delete lex;
     exit(0);
   } else
     exit(1);

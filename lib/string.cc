@@ -255,6 +255,26 @@ String::substring(int left, int len) const
 }
 
 int
+String::find_left(int c, int start) const
+{
+  if (start < 0) start = 0;
+  for (int i = start; i < _length; i++)
+    if ((unsigned char)_data[i] == c)
+      return i;
+  return -1;
+}
+
+int
+String::find_right(int c, int start) const
+{
+  if (start >= _length) start = _length - 1;
+  for (int i = start; i >= 0; i--)
+    if ((unsigned char)_data[i] == c)
+      return i;
+  return -1;
+}
+
+int
 String::hashcode() const
 {
   if (!_length)

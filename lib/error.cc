@@ -159,7 +159,7 @@ ErrorHandler::fix_landmark(const String &landmark)
   if (i < 0 || (i < len - 1 && landmark[i] == ':'))
     return landmark;
   // change landmark
-  String lm = landmark.substring(0, i);
+  String lm = landmark.substring(0, i + 1);
   if (landmark[i] != ':')
     lm += ':';
   if (i < len - 1)

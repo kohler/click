@@ -20,12 +20,13 @@ class RouterT : public ElementClassT {
 
   void remove_bad_connections();
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
-  void expand_pseudoport(Vector<Hookup> *, bool is_input, int which,
-			 Vector<Hookup> &results) const;
+  void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
+		     Vector<Hookup> &results) const;
   
  public:
 
-  static const int PSEUDOPORT_TYPE = 0;
+  static const int TUNNEL_TYPE = 0;
+  static const int UPREF_TYPE = 1;
   
   RouterT();
   RouterT(const RouterT &);
@@ -43,12 +44,15 @@ class RouterT : public ElementClassT {
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
   String fname(int findex) const;
+  String fname_upref(int findex) const;
   int ftype(int findex) const;
   String ftype_name(int fi) const;
   const String &fconfiguration(int i) const;
   String &fconfiguration(int i)		{ return _elements[i].configuration; }
   int fflags(int i) const		{ return _elements[i].flags; }
+  
   int get_findex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
+  int get_anon_findex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
   
   int nhookup() const			{ return _hookup_from.size(); }
   const Vector<Hookup> &hookup_from() const { return _hookup_from; }
@@ -57,7 +61,7 @@ class RouterT : public ElementClassT {
   Vector<Hookup> &hookup_to()		{ return _hookup_to; }
   const String &hookup_landmark(int i) const { return _hookup_landmark[i]; }
  
-  void add_pseudoport_pair(String, String, const String &, ErrorHandler *);
+  void add_tunnel(String, String, const String &, ErrorHandler *);
   
   bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
   bool add_connection(int fidx, int fport, int tport, int tidx);
@@ -79,10 +83,13 @@ class RouterT : public ElementClassT {
   void remove_blank_elements(ErrorHandler * = 0);
   void remove_unconnected_elements();
   void remove_duplicate_connections();
-  void remove_pseudoports(ErrorHandler *);
+  void remove_tunnels(ErrorHandler *);
   void remove_compound_elements(ErrorHandler *);
+  void remove_unresolved_uprefs(ErrorHandler *);
 
-  void compound_declaration_string(StringAccum &, const String &);
+  void flatten(ErrorHandler *);
+
+  void compound_declaration_string(StringAccum &, const String &, const String &);
   void configuration_string(StringAccum &, const String & = String()) const;
   String configuration_string() const;
 

@@ -11,8 +11,8 @@ struct ElementT {
   int type;
   String name;
   String configuration;
-  int pseudoport_input;
-  int pseudoport_output;
+  int tunnel_input;
+  int tunnel_output;
   String landmark;
   int flags;
 
@@ -49,7 +49,7 @@ class ElementClassT {
   void unuse()				{ if (--_use_count <= 0) delete this; }
   
   virtual void expand_compound(ElementT &, RouterT *, ErrorHandler *);
-  virtual void compound_declaration_string(StringAccum &, const String &);
+  virtual void compound_declaration_string(StringAccum &, const String &, const String &);
 
   virtual RouterT *cast_router()	{ return 0; }
   

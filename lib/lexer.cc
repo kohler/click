@@ -9,29 +9,29 @@
 #include "glue.hh"
 
 //
-// CLASS LEXER::PSEUDOPORT
+// CLASS LEXER::TUNNELEND
 //
 
-class Lexer::Pseudoport {
+class Lexer::TunnelEnd {
   
   Router::Hookup _port;
   Vector<Router::Hookup> _correspond;
   int _expanded;
   bool _output;
-  Pseudoport *_other;
-  Pseudoport *_next;
+  TunnelEnd *_other;
+  TunnelEnd *_next;
   
  public:
   
-  Pseudoport(const Router::Hookup &, bool, Pseudoport *);
-  ~Pseudoport()				{ delete _next; }
+  TunnelEnd(const Router::Hookup &, bool, TunnelEnd *);
+  ~TunnelEnd()				{ delete _next; }
   
   const Router::Hookup &port() const	{ return _port; }
   bool output() const			{ return _output; }
-  Pseudoport *next() const		{ return _next; }
-  void pair_with(Pseudoport *d)		{ _other = d; d->_other = this; }
+  TunnelEnd *next() const		{ return _next; }
+  void pair_with(TunnelEnd *d)		{ _other = d; d->_other = this; }
   
-  Pseudoport *find(const Router::Hookup &);
+  TunnelEnd *find(const Router::Hookup &);
   void expand(const Lexer *, Vector<Router::Hookup> &);
   
 };
@@ -42,23 +42,36 @@ class Lexer::Pseudoport {
 
 class Lexer::Compound : public Element {
   
-  String _name;
+  mutable String _name;
   String _body;
   unsigned _lineno;
+  int _previous_type;
   
  public:
   
-  Compound(const String &name, const String &body, unsigned lineno)
-    			: _name(name), _body(body), _lineno(lineno) { }
+  Compound(const String &, const String &, unsigned, int);
   
-  const char *class_name() const	{ return "Lexer::Compound"; }
-  const String &name() const		{ return _name; }
-  const String &body() const		{ return _body; }
-  unsigned lineno() const		{ return _lineno; }
-  
+  const char *class_name() const	{ return _name.cc(); }
+  bool is_a(const char *) const;
   Compound *clone() const		{ return 0; }
   
+  const String &body() const		{ return _body; }
+  unsigned lineno() const		{ return _lineno; }
+  int previous_type() const		{ return _previous_type; }
+  
 };
+
+Lexer::Compound::Compound(const String &name, const String &body,
+			  unsigned lineno, int previous_type)
+  : _name(name), _body(body), _lineno(lineno), _previous_type(previous_type)
+{
+}
+
+bool
+Lexer::Compound::is_a(const char *s) const
+{
+  return String("Lexer::Compound") == s || _name == s;
+}
 
 //
 // LEXER
@@ -69,16 +82,18 @@ Lexer::Lexer(ErrorHandler *errh)
     _tpos(0), _tfull(0),
     _element_type_map(-1),
     _default_element_type(new ErrorElement),
-    _pseudoport_element_type(new ErrorElement),
+    _tunnel_element_type(new ErrorElement),
     _reset_element_type_map(-1), _reset_element_types(0),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(errh)
 {
   if (!_errh) _errh = ErrorHandler::default_handler();
-  _default_element_type->use();
-  _pseudoport_element_type->use();
   clear();
+  _element_types.push_back(_default_element_type);
+  _default_element_type->use();
+  _element_types.push_back(_tunnel_element_type);
+  _tunnel_element_type->use();
   add_element_type(new ErrorElement);
   element_types_permanent();
 }
@@ -87,8 +102,7 @@ Lexer::~Lexer()
 {
   _reset_element_types = 0;
   clear();
-  _default_element_type->unuse();
-  _pseudoport_element_type->unuse();
+  // _default_element_type and _tunnel_element_type removed by clear()
 }
 
 void
@@ -135,7 +149,6 @@ Lexer::clear()
   _tfull = 0;
   
   _element_prefix = "";
-  _anonymous_prefixes = 1;
   _anonymous_offset = 0;
 }
 
@@ -246,8 +259,7 @@ Lexer::next_lexeme()
   unsigned word_pos = pos;
   
   // find length of current word
-  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '/'
-      || _data[pos] == '@') {
+  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
     while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
 			  || _data[pos] == '/' || _data[pos] == '@')) {
       if (_data[pos] == '/' && pos < _len - 1
@@ -257,12 +269,10 @@ Lexer::next_lexeme()
     }
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
-    if (word.length() == 12 && word == "elementclass")
+    if (word.length() == 16 && word == "connectiontunnel")
+      return Lexeme(lexTunnel, word);
+    else if (word.length() == 12 && word == "elementclass")
       return Lexeme(lexElementclass, word);
-    else if (word.length() == 11 && word == "pseudoports")
-      return Lexeme(lexPseudoports, word);
-    else if (word.length() == 10 && word == "withprefix")
-      return Lexeme(lexWithprefix, word);
     else
       return Lexeme(lexIdent, word);
   }
@@ -337,7 +347,7 @@ Lexer::lex_compound_body()
       if (_data[pos+1] == '/')
 	pos = skip_line(pos + 2);
       else if (_data[pos+1] == '*')
-	pos = skip_line(pos + 2);
+	pos = skip_slash_star(pos + 2);
     } else if (_data[pos] == '\n')
       _lineno++;
     else if (_data[pos] == '\r') {
@@ -361,6 +371,10 @@ Lexer::lexeme_string(int kind)
     return "`->'";
   else if (kind == lex2Colon)
     return "`::'";
+  else if (kind == lexTunnel)
+    return "`connectiontunnel'";
+  else if (kind == lexElementclass)
+    return "`elementclass'";
   else if (kind >= 32 && kind < 127) {
     sprintf(buf, "`%c'", kind);
     return buf;
@@ -379,9 +393,9 @@ Lexer::lex()
   int p = _tpos;
   if (_tpos == _tfull) {
     _tcircle[p] = next_lexeme();
-    _tfull = (_tfull + 1) % TCircleSize;
+    _tfull = (_tfull + 1) % TCIRCLE_SIZE;
   }
-  _tpos = (_tpos + 1) % TCircleSize;
+  _tpos = (_tpos + 1) % TCIRCLE_SIZE;
   return _tcircle[p];
 }
 
@@ -389,7 +403,7 @@ void
 Lexer::unlex(const Lexeme &t)
 {
   _tcircle[_tfull] = t;
-  _tfull = (_tfull + 1) % TCircleSize;
+  _tfull = (_tfull + 1) % TCIRCLE_SIZE;
   assert(_tfull != _tpos);
 }
 
@@ -421,9 +435,7 @@ Lexer::lerror(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  String l = landmark();
-  if (l) l += ": ";
-  _errh->verror(ErrorHandler::Error, l, format, val);
+  _errh->verror(ErrorHandler::Error, landmark(), format, val);
   va_end(val);
   return -1;
 }
@@ -446,34 +458,23 @@ Lexer::add_element_type(const String &name, Element *f)
   _element_type_map.insert(name, ftid);
   _element_types.push_back(f);
   f->use();
-  return 0;
+  return ftid;
 }
 
-Element *
+int
 Lexer::element_type(const String &s) const
 {
-  int ftid = _element_type_map[s];
-  if (ftid < 0)
-    return 0;
-  else
-    return _element_types[ftid];
+  return _element_type_map[s];
 }
 
-Element *
+int
 Lexer::force_element_type(String s)
 {
   int ftid = _element_type_map[s];
   if (ftid >= 0)
-    return _element_types[ftid];
+    return ftid;
   lerror("unknown element class `%s'", s.cc());
-  add_element_type(s, _default_element_type);
-  return _default_element_type;
-}
-
-Element *
-Lexer::default_element_type() const
-{
-  return _default_element_type;
+  return add_element_type(s, _default_element_type);
 }
 
 void
@@ -487,28 +488,61 @@ Lexer::element_types_permanent()
 // PORT TUNNELS
 
 void
-Lexer::add_pseudoports(String namein, String nameout)
+Lexer::add_tunnel(String namein, String nameout)
 {
-  Hookup hin(fixed_element(namein, _pseudoport_element_type), 0);
-  Hookup hout(fixed_element(nameout, _pseudoport_element_type), 0);
+  Hookup hin(get_element(_element_prefix + namein, TUNNEL_TYPE), 0);
+  Hookup hout(get_element(_element_prefix + nameout, TUNNEL_TYPE), 0);
   
   bool ok = true;
-  if (_elements[hin.idx] != _pseudoport_element_type)
+  if (_elements[hin.idx] != _tunnel_element_type)
     lerror("element `%s' already exists", namein.cc()), ok = 0;
-  if (_elements[hout.idx] != _pseudoport_element_type)
+  if (_elements[hout.idx] != _tunnel_element_type)
     lerror("element `%s' already exists", nameout.cc()), ok = 0;
   if (_definputs && _definputs->find(hin))
-    lerror("input pseudoport `%s' already defined", namein.cc()), ok = 0;
+    lerror("connection tunnel input `%s' already defined", namein.cc()), ok = 0;
   if (_defoutputs && _defoutputs->find(hout))
-    lerror("output pseudoport `%s' already defined", nameout.cc()), ok = 0;
+    lerror("connection tunnel output `%s' already defined", nameout.cc()), ok = 0;
   if (ok) {
-    _definputs = new Pseudoport(hin, false, _definputs);
-    _defoutputs = new Pseudoport(hout, true, _defoutputs);
+    _definputs = new TunnelEnd(hin, false, _definputs);
+    _defoutputs = new TunnelEnd(hout, true, _defoutputs);
     _definputs->pair_with(_defoutputs);
   }
 }
 
 // ELEMENTS
+
+int
+Lexer::get_element(String name, int etype, const String &conf)
+{
+  assert(name && etype >= 0 && etype < _element_types.size());
+  
+  // if an element `name' already exists return it
+  if (_element_map[name] >= 0)
+    return _element_map[name];
+
+  // check type
+  Element *e;
+  Element *et = _element_types[etype];
+  if (etype == DEFAULT_TYPE || etype == TUNNEL_TYPE)
+    e = et;
+  else if ((e = et->clone())) {
+    e->set_id(name);
+    e->set_landmark(landmark());
+  } else if (et->is_a("Lexer::Compound"))
+    return make_compound_element(name, etype, conf);
+  else {
+    lerror("can't clone `%s'", et->declaration().cc());
+    e = 0;
+  }
+
+  int eid = _elements.size();
+  _element_map.insert(name, eid);
+  _element_names.push_back(name);
+  _element_configurations.push_back(conf);
+  _elements.push_back(e);
+  if (e) e->use();
+  return eid;
+}
 
 String
 Lexer::anon_element_name(const String &class_name) const
@@ -519,62 +553,43 @@ Lexer::anon_element_name(const String &class_name) const
 }
 
 int
-Lexer::add_element(String name, Element *f, const String &conf)
+Lexer::make_compound_element(String name, int etype, const String &conf)
 {
-  int fid = _elements.size();
-  
-  if (f && f != _pseudoport_element_type) {
-    if (!name) name = anon_element_name(f->class_name());
-    f->set_id(name);
-  }
-  
-  if (name) _element_map.insert(name, fid);
-  _element_names.push_back(name);
-  _element_configurations.push_back(conf);
-  _elements.push_back(f);
-  if (f) f->use();
-  return fid;
-}
-
-int
-Lexer::fixed_element(String name, Element *element)
-{
-  if (name && _element_prefix)
-    name = _element_prefix + name;
-  if (name && _element_map[name] >= 0)
-    return _element_map[name];
-  else
-    return add_element(name, element, String());
-}
-
-int
-Lexer::make_compound_element(String name, Element *generic_ftype,
-			     const String &conf)
-{
-  Compound *compound = (Compound *)generic_ftype;
+  Compound *compound = (Compound *)_element_types[etype];
   if (!name)
-    name = compound->name() + String("@") + String(_elements.size());
+    name = anon_element_name(compound->class_name());
+  // change `name' to not contain the current prefix
+  name = name.substring(_element_prefix.length());
   
   if (conf)
     lerror("compound elements may not be configured");
+
+  // `name_slash' is `name' constrained to end with a slash
+  String name_slash;
+  if (name[name.length() - 1] == '/')
+    name_slash = name;
+  else
+    name_slash = name + "/";
   
-  int fake_index = fixed_element(name, _pseudoport_element_type);
-  add_pseudoports(name, name + "/input");
-  add_pseudoports(name + "/output", name);
+  int fake_index = get_element(_element_prefix + name, TUNNEL_TYPE);
+  add_tunnel(name, name_slash + "input");
+  add_tunnel(name_slash + "output", name);
   
-  // Save the parser state; reparse the saved compound element's body!
+  // save parser state
   String old_prefix = _element_prefix;
   String old_big_string = _big_string;
   unsigned old_len = _len;
   unsigned old_pos = _pos;
   unsigned old_lineno = _lineno;
-  Lexeme old_tcircle[TCircleSize];
+  Lexeme old_tcircle[TCIRCLE_SIZE];
   old_tcircle = _tcircle;
   int old_tpos = _tpos;
   int old_tfull = _tfull;
   int old_anonymous_offset = _anonymous_offset;
-  
-  _element_prefix = _element_prefix + name + "/";
+  int old_type_count = _element_types.size();
+
+  // reparse the saved compound element's body!
+  _element_prefix += name_slash;
   _big_string = compound->body();
   _data = _big_string.data();
   _len = _big_string.length();
@@ -584,10 +599,13 @@ Lexer::make_compound_element(String name, Element *generic_ftype,
   // manipulate the anonymous offset so anon elements in 2 instances of the
   // compound have identical suffixes
   _anonymous_offset = _elements.size();
+  // lexical scoping of compound name
+  _element_type_map.insert(compound->class_name(), compound->previous_type());
   
   while (ystatement())
     /* do nothing */;
-  
+
+  // restore parser state
   _element_prefix = old_prefix;
   _big_string = old_big_string;
   _data = _big_string.data();
@@ -597,37 +615,27 @@ Lexer::make_compound_element(String name, Element *generic_ftype,
   _tcircle = old_tcircle;
   _tpos = old_tpos;
   _tfull = old_tfull;
-  _anonymous_offset = old_anonymous_offset;
+  _anonymous_offset = old_anonymous_offset + 3;	// 3 to skip pseudoports
+
+  // get rid of new compound elements
+  // must go backwards in case more than one new element class with the same
+  // name -- want to restore earliest one last, to get old definition
+  for (int i = _element_types.size() - 1; i >= old_type_count; i--) {
+    Element *e = _element_types[i];
+    String name = e->class_name();
+    if (_element_type_map[name] == i) {
+      if (e->is_a("Lexer::Compound"))
+	_element_type_map.insert(name, ((Compound *)e)->previous_type());
+      else // can't happen
+	_element_type_map.insert(name, -1);
+    }
+    e->unuse();
+  }
+  _element_types.resize(old_type_count);
+  // restore lexical scoping of compound type name
+  _element_type_map.insert(compound->class_name(), etype);
   
   return fake_index;
-}
-
-int
-Lexer::make_element(String name, Element *ftype, const String &conf)
-{
-  assert(ftype);
-  
-  // if an element `name' already exists return it
-  if (name && _element_map[name] >= 0)
-    return _element_map[name];
-  
-  // check that `ftype' can be cloned
-  Element *f = ftype->clone();
-  if (!f) {
-    if (strcmp(ftype->class_name(), "Lexer::Compound") == 0)
-      return make_compound_element(name, ftype, conf);
-    else
-      lerror("can't clone `%s'", ftype->declaration().cc());
-  } else
-    f->set_landmark(landmark());
-  return add_element(name, f, conf);
-}
-
-int
-Lexer::make_anon_element(const String &class_name, Element *ftype,
-			 const String &conf)
-{
-  return make_element(anon_element_name(class_name), ftype, conf);
 }
 
 void
@@ -649,8 +657,8 @@ Lexer::element_name(int fid) const
   else {
     char buf[100];
     sprintf(buf, "@%d", fid);
-    if (_elements[fid] == _pseudoport_element_type)
-      return "##pseudoport##" + String(buf);
+    if (_elements[fid] == _tunnel_element_type)
+      return "##tunnel##" + String(buf);
     else if (!_elements[fid])
       return "##null##" + String(buf);
     else
@@ -683,9 +691,38 @@ Lexer::yport(int &port)
     port = 0;
     return true;
   } else {
-    lerror("syntax error: expected port ID");
+    lerror("syntax error: expected port number");
     unlex(tword);
     return false;
+  }
+}
+
+bool
+Lexer::yelement_upref(int &element)
+{
+  Lexeme t = lex();
+  if (!t.is(lexIdent)) {
+    lerror("syntax error: expected element name");
+    unlex(t);
+    return false;
+  }
+
+  String prefix = _element_prefix;
+  while (1) {
+    int pos = prefix.find_right('/', prefix.length() - 2);
+    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
+    
+    String name = prefix + t.string();
+    int en = _element_map[name];
+    if (en >= 0) {
+      element = en;
+      return true;
+    }
+
+    if (!prefix) {
+      lerror("`%s' not found in enclosing scopes", t.string().cc());
+      return false;
+    }
   }
 }
 
@@ -693,24 +730,33 @@ bool
 Lexer::yelement(int &element, bool comma_ok)
 {
   Lexeme t = lex();
-  if (!t.is(lexIdent)) {
+  String name;
+  int etype;
+
+  if (t.is('^')) {
+    return yelement_upref(element);
+  } else if (t.is(lexIdent)) {
+    name = t.string();
+    etype = element_type(name);
+  } else if (t.is('{')) {
+    etype = ylocal();
+    name = _element_types[etype]->class_name();
+  } else {
     unlex(t);
     return false;
   }
-  String name = t.string();
   
-  Element *ftype = element_type(name);
   String configuration;
   const Lexeme &tparen = lex();
   if (tparen.is('(')) {
-    if (!ftype) ftype = force_element_type(name);
+    if (!etype) etype = force_element_type(name);
     configuration = lex_config();
     expect(')');
   } else
     unlex(tparen);
   
-  if (ftype)
-    element = make_anon_element(name, ftype, configuration);
+  if (etype >= 0)
+    element = get_element(anon_element_name(name), etype, configuration);
   else {
     String lookup_name = _element_prefix + name;
     element = _element_map[lookup_name];
@@ -721,7 +767,7 @@ Lexer::yelement(int &element, bool comma_ok)
 	ydeclaration(name);
       else {
 	lerror("undeclared element `%s' (first use this block)", name.cc());
-	make_element(lookup_name, default_element_type(), String());
+	get_element(lookup_name, DEFAULT_TYPE);
       }
       element = _element_map[lookup_name];
     }
@@ -760,15 +806,17 @@ Lexer::ydeclaration(const String &first_element)
       return;
     }
   }
-  
+
+  int etype;
   t = lex();
-  if (!t.is(lexIdent)) {
+  if (t.is(lexIdent))
+    etype = force_element_type(t.string());
+  else if (t.is('{'))
+    etype = ylocal();
+  else {
     lerror("missing element type in declaration");
     return;
   }
-  
-  String ftype_name = t.string();
-  Element *ftype = force_element_type(t.string());
   
   String configuration;
   t = lex();
@@ -777,7 +825,7 @@ Lexer::ydeclaration(const String &first_element)
     expect(')');
   } else
     unlex(t);
-  
+
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
     String lookup_name = _element_prefix + name;
@@ -788,7 +836,7 @@ Lexer::ydeclaration(const String &first_element)
     else if (_element_type_map[lookup_name] >= 0)
       lerror("`%s' is an element class", lookup_name.cc());
     else
-      make_element(lookup_name, ftype, configuration);
+      get_element(lookup_name, etype, configuration);
   }
 }
 
@@ -870,18 +918,21 @@ Lexer::yelementclass()
   unsigned original_lineno = _lineno;
   String body = lex_compound_body();
   expect('}');
-  
-  if (tname.is(lexIdent) && _element_type_map[tname.string()] < 0) {
-    Compound *compound = new Compound(tname.string(), body, original_lineno);
-    add_element_type(compound->name(), compound);
-  } else {
-    if (tname.is(lexIdent))
-      lerror("element class `%s' already exists", tname.string().cc());
+
+  if (tname.is(lexIdent)) {
+    String name = tname.string();
+    int previous_type = _element_type_map[name];
+    Compound *c = new Compound(name, body, original_lineno, previous_type);
+
+    int i = _element_types.size();
+    _element_type_map.insert(name, i);
+    _element_types.push_back(c);
+    c->use();
   }
 }
 
 void
-Lexer::ypseudoports()
+Lexer::ytunnel()
 {
   while (true) {
     Lexeme tname1 = lex();
@@ -899,7 +950,7 @@ Lexer::ypseudoports()
     }
     
     if (tname1.is(lexIdent) && tname2.is(lexIdent))
-      add_pseudoports(tname1.string(), tname2.string());
+      add_tunnel(tname1.string(), tname2.string());
     
     const Lexeme &t = lex();
     if (!t.is(',')) {
@@ -909,30 +960,22 @@ Lexer::ypseudoports()
   }
 }
 
-void
-Lexer::ywithprefix()
+int
+Lexer::ylocal()
 {
-  Lexeme tname = lex();
-  if (!tname.is(lexIdent)) {
-    unlex(tname);
-    if (!tname.is('{'))
-      lerror("expected prefix (an identifier)");
-  }
+  // OK because every used ylocal() corresponds to at least one element
+  String name = "@Anon" + String(_elements.size() - _anonymous_offset + 1);
   
-  expect('{');
-  String old_prefix = _element_prefix;
-  if (tname.is(lexIdent))
-    _element_prefix = _element_prefix + tname.string()+"/";
-  else {
-    _element_prefix = _element_prefix + "@@"+String(_anonymous_prefixes)+"@@/";
-    _anonymous_prefixes++;
-  }
-  
-  while (ystatement(true))
-    /* do nothing */;
-  // '}' was consumed already
-  
-  _element_prefix = old_prefix;
+  // opening brace was already read
+  unsigned original_lineno = _lineno;
+  String body = lex_compound_body();
+  expect('}');
+
+  int etid = _element_types.size();
+  Compound *c = new Compound(name, body, original_lineno, -1);
+  _element_types.push_back(c);
+  c->use();
+  return etid;
 }
 
 bool
@@ -948,19 +991,13 @@ Lexer::ystatement(bool nested)
     return true;
     
    case lexElementclass:
-    if (nested || _element_prefix)
-      lerror("nested elementclass");
     yelementclass();
     return true;
     
-   case lexPseudoports:
-    ypseudoports();
+   case lexTunnel:
+    ytunnel();
     return true;
 
-   case lexWithprefix:
-    ywithprefix();
-    return true;
-    
    case ';':
     return true;
     
@@ -1019,14 +1056,13 @@ Lexer::create_router()
   // add elements to router
   Vector<int> router_id;
   for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i] && _elements[i] != _pseudoport_element_type) {
+    if (_elements[i] && _elements[i] != _tunnel_element_type) {
       int fi = router->add(_elements[i], _element_configurations[i]);
       router_id.push_back(fi);
     } else
       router_id.push_back(-1);
   
   // add connections to router
-  // take unlimited input/output elements into account
   for (int i = 0; i < _hookup_from.size(); i++) {
     int fromi = router_id[ _hookup_from[i].idx ];
     int toi = router_id[ _hookup_to[i].idx ];
@@ -1104,21 +1140,21 @@ MemoryLexerSource::more_data(char *buf, unsigned max)
 }
 
 //
-// LEXER::PSEUDOPORT RELATED STUFF
+// LEXER::TUNNELEND RELATED STUFF
 //
 
-Lexer::Pseudoport::Pseudoport(const Router::Hookup &port, bool output,
-			      Pseudoport *next)
+Lexer::TunnelEnd::TunnelEnd(const Router::Hookup &port, bool output,
+			    TunnelEnd *next)
   : _port(port), _expanded(0), _output(output), _other(0), _next(next)
 {
   assert(!next || next->_output == _output);
 }
 
-Lexer::Pseudoport *
-Lexer::Pseudoport::find(const Router::Hookup &h)
+Lexer::TunnelEnd *
+Lexer::TunnelEnd::find(const Router::Hookup &h)
 {
-  Pseudoport *d = this;
-  Pseudoport *parent = 0;
+  TunnelEnd *d = this;
+  TunnelEnd *parent = 0;
   while (d) {
     if (d->_port == h)
       return d;
@@ -1128,8 +1164,8 @@ Lexer::Pseudoport::find(const Router::Hookup &h)
   }
   // didn't find the particular port pair; make a new one if possible
   if (parent) {
-    Pseudoport *new_me = new Pseudoport(h, _output, parent->_next);
-    Pseudoport *new_other = new Pseudoport(h, !_output, parent->_other->_next);
+    TunnelEnd *new_me = new TunnelEnd(h, _output, parent->_next);
+    TunnelEnd *new_other = new TunnelEnd(h, !_output, parent->_other->_next);
     new_me->pair_with(new_other);
     parent->_next = new_me;
     parent->_other->_next = new_other;
@@ -1139,7 +1175,7 @@ Lexer::Pseudoport::find(const Router::Hookup &h)
 }
 
 void
-Lexer::Pseudoport::expand(const Lexer *lexer, Vector<Router::Hookup> &into)
+Lexer::TunnelEnd::expand(const Lexer *lexer, Vector<Router::Hookup> &into)
 {
   if (_expanded == 1)
     return;
@@ -1175,17 +1211,18 @@ void
 Lexer::expand_connection(const Hookup &this_end, bool is_out,
 			 Vector<Hookup> &into) const
 {
-  if (_elements[this_end.idx] != _pseudoport_element_type)
+  if (_elements[this_end.idx] != _tunnel_element_type)
     into.push_back(this_end);
   else {
-    Pseudoport *dp = (is_out ? _defoutputs : _definputs);
+    TunnelEnd *dp = (is_out ? _defoutputs : _definputs);
     if (dp)
       dp = dp->find(this_end);
     if (dp)
       dp->expand(this, into);
     else if ((dp = (is_out ? _definputs : _defoutputs)->find(this_end)))
-      _errh->error("pseudoport `%s' only has %s",
+      _errh->error("connection tunnel %s `%s' used as %s",
 		   element_name(this_end.idx).cc(),
-		   (is_out ? "inputs" : "outputs"));
+		   (is_out ? "input" : "output"),
+		   (is_out ? "output" : "input"));
   }
 }

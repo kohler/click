@@ -10,9 +10,8 @@ enum Lexemes {
   lexIdent = 256,
   lexArrow,
   lex2Colon,
+  lexTunnel,
   lexElementclass,
-  lexPseudoports,
-  lexWithprefix,
 };
 
 class Lexeme {
@@ -35,7 +34,7 @@ class Lexeme {
 
 class Lexer {
   
-  class Pseudoport;
+  class TunnelEnd;
   class Compound;
   typedef Router::Hookup Hookup;
   
@@ -56,8 +55,8 @@ class Lexer {
   static String lexeme_string(int);
   
   // parser
-  static const int TCircleSize = 8;
-  Lexeme _tcircle[TCircleSize];
+  static const int TCIRCLE_SIZE = 8;
+  Lexeme _tcircle[TCIRCLE_SIZE];
   int _tpos;
   int _tfull;
   
@@ -65,7 +64,7 @@ class Lexer {
   HashMap<String, int> _element_type_map;
   Vector<Element *> _element_types;
   Element *_default_element_type;
-  Element *_pseudoport_element_type;
+  Element *_tunnel_element_type;
   HashMap<String, int> _reset_element_type_map;
   int _reset_element_types;
   
@@ -78,12 +77,11 @@ class Lexer {
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
   
-  Pseudoport *_definputs;
-  Pseudoport *_defoutputs;
+  TunnelEnd *_definputs;
+  TunnelEnd *_defoutputs;
   
   // compound elements
   String _element_prefix;
-  int _anonymous_prefixes;
   int _anonymous_offset;
   
   // errors
@@ -92,12 +90,14 @@ class Lexer {
   int lerror(const char *, ...);
 
   String anon_element_name(const String &) const;
-  int add_element(String, Element *, const String &);
-  int fixed_element(String, Element *);
-  int make_compound_element(String, Element *, const String &);
+  int get_element(String, int, const String & = String());
+  int make_compound_element(String, int, const String &);
   void add_router_connections(int, const Vector<int> &, Router *);
   
  public:
+
+  static const int DEFAULT_TYPE = 0;
+  static const int TUNNEL_TYPE = 1;
   
   Lexer(ErrorHandler * = 0);
   virtual ~Lexer();
@@ -114,28 +114,26 @@ class Lexer {
   
   int add_element_type(Element *);
   int add_element_type(const String &, Element *);
-  Element *element_type(const String &) const;
-  Element *force_element_type(String);
-  Element *default_element_type() const;
+  int element_type(const String &) const;
+  int force_element_type(String);
   void element_types_permanent();
 
   int permanent_element_types() const	{ return _reset_element_types; }
   Element *element_type(int i) const	{ return _element_types[i]; }
   
-  int make_element(String, Element *, const String &);
-  int make_anon_element(const String &, Element *, const String &);
   void connect(int f1, int p1, int f2, int p2);
   String element_name(int) const;
   
-  void add_pseudoports(String, String);
+  void add_tunnel(String, String);
   
   bool yport(int &port);
+  bool yelement_upref(int &element);
   bool yelement(int &element, bool comma_ok);
   void ydeclaration(const String &first_element = "");
   bool yconnection();
   void yelementclass();
-  void ypseudoports();
-  void ywithprefix();
+  void ytunnel();
+  int ylocal();
   bool ystatement(bool nested = false);
   
   void clear();

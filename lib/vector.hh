@@ -1,7 +1,7 @@
 #ifndef VECTOR_HH
 #define VECTOR_HH
 #include <assert.h>
-#ifdef xxxHAVE_NEW_H
+#ifdef HAVE_NEW_H
 # include <new.h>
 #else
 inline void *operator new(size_t, void *v) { return v; }

@@ -88,22 +88,22 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	
        case '/':
 	// skip comments
-	if (i < len - 1) {
-	  if (s[i+1] == '/') {
-	    sa << conf.substring(start, i - start);
-	    while (i < len && s[i] != '\n' && s[i] != '\r')
-	      i++;
-	    if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
-	      i++;
-	    start = i + 1;
-	  } else if (s[i+1] == '*') {
-	    sa << conf.substring(start, i - start);
-	    i += 2;
-	    while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
-	      i++;
-	    start = i + 2;
-	  }
+	if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
+	  break;
+	sa << conf.substring(start, i - start);
+	sa << ' ';
+	if (s[i+1] == '/') {
+	  while (i < len && s[i] != '\n' && s[i] != '\r')
+	    i++;
+	  if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
+	    i++;
+	} else {
+	  i += 2;
+	  while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
+	    i++;
+	  i++;
 	}
+	start = i + 1;
 	break;
 	
        case '\\':
@@ -154,6 +154,7 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	   
 	   case '<': {
 	     int c = 0, d = 0;
+	     first_keep_spaces = sa.length();
 	     for (i += 2; i < len; i++) {
 	       if (isspace(s[i]))
 		 continue;
@@ -219,7 +220,7 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
     // add the argument if it is nonempty, or this isn't the first argument
     String arg = sa.take_string();
     if (space_prefix) arg = arg.substring(space_prefix);
-    if (arg || !first_arg)
+    if (arg || comma_pos < len || !first_arg)
       args.push_back(arg);
     
     // bump `i' past the comma
@@ -292,6 +293,8 @@ cp_argprefix(const String &conf, int count)
 	  pos += 2;
 	  while (pos < len && (s[pos] != '*' || pos == len - 1 || s[pos+1] != '/'))
 	    pos++;
+	  if (pos < len - 1)
+	    pos += 2;
 	}
       }
       break;
@@ -351,6 +354,13 @@ cp_integer(String str, int &return_value, String *rest = 0)
   
   int base = 10;
   bool network_byte_order = false;
+  bool negative = false;
+  if (i < len && s[i] == '-') {
+    negative = true;
+    i++;
+  } else if (i < len && s[i] == '+')
+    i++;
+  
   if (i < len && s[i] == '0') {
     if (i < len - 1 && (s[i+1] == 'x' || s[i+1] == 'X')) {
       i += 2;
@@ -368,6 +378,7 @@ cp_integer(String str, int &return_value, String *rest = 0)
   
   char *end;
   return_value = strtol(s + i, &end, base);
+  if (negative) return_value = -return_value;
   
   if (end - s == i)		// no characters in integer
     return false;
@@ -559,7 +570,7 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
 bool
 cp_ethernet_address(String str, EtherAddress &address, String *rest = 0)
 {
-  return cp_ip_address(str, address.data(), rest);
+  return cp_ethernet_address(str, address.data(), rest);
 }
 #endif
 
@@ -754,7 +765,7 @@ cp_va_parsev(Vector<String> &args,
   int nerrors_in = errh->nerrors();
   
   while (int cp_command = va_arg(val, int)) {
-    
+
     if (cp_command > cpLastControl && argno >= args.size() && optional < 0)
       too_few_args = true;
     if (argno == args.size() + 10) {

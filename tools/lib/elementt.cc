@@ -5,14 +5,14 @@
 #include <stdlib.h>
 
 ElementT::ElementT()
-  : type(-1), pseudoport_input(-1), pseudoport_output(-1), flags(0)
+  : type(-1), tunnel_input(-1), tunnel_output(-1), flags(0)
 {
 }
 
 ElementT::ElementT(const String &n, int type_index, const String &config,
 		   const String &lm)
   : type(type_index), name(n), configuration(config),
-    pseudoport_input(-1), pseudoport_output(-1), landmark(lm), flags(0)
+    tunnel_input(-1), tunnel_output(-1), landmark(lm), flags(0)
 {
 }
 
@@ -66,6 +66,6 @@ ElementClassT::expand_compound(ElementT &, RouterT *, ErrorHandler *)
 }
 
 void
-ElementClassT::compound_declaration_string(StringAccum &, const String &)
+ElementClassT::compound_declaration_string(StringAccum &, const String &, const String &)
 {
 }

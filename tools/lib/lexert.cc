@@ -47,7 +47,7 @@ LexerT::clear()
   _tfull = 0;
   
   _element_prefix = "";
-  _anonymous_prefixes = 1;
+  _anonymous_offset = 0;
 }
 
 
@@ -157,8 +157,7 @@ LexerT::next_lexeme()
   unsigned word_pos = pos;
   
   // find length of current word
-  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '/'
-      || _data[pos] == '@') {
+  if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
     while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
 			  || _data[pos] == '/' || _data[pos] == '@')) {
       if (_data[pos] == '/' && pos < _len - 1
@@ -168,12 +167,10 @@ LexerT::next_lexeme()
     }
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
-    if (word.length() == 12 && word == "elementclass")
+    if (word.length() == 16 && word == "connectiontunnel")
+      return Lexeme(lexTunnel, word);
+    else if (word.length() == 12 && word == "elementclass")
       return Lexeme(lexElementclass, word);
-    else if (word.length() == 11 && word == "pseudoports")
-      return Lexeme(lexPseudoports, word);
-    else if (word.length() == 10 && word == "withprefix")
-      return Lexeme(lexWithprefix, word);
     else
       return Lexeme(lexIdent, word);
   }
@@ -235,6 +232,10 @@ LexerT::lexeme_string(int kind)
     return "`->'";
   else if (kind == lex2Colon)
     return "`::'";
+  else if (kind == lexTunnel)
+    return "`connectiontunnel'";
+  else if (kind == lexElementclass)
+    return "`elementclass'";
   else if (kind >= 32 && kind < 127) {
     sprintf(buf, "`%c'", kind);
     return buf;
@@ -324,7 +325,7 @@ String
 LexerT::anon_element_name(const String &class_name) const
 {
   char buf[100];
-  sprintf(buf, "@%d", _router->nelements() + 1);
+  sprintf(buf, "@%d", _router->nelements() - _anonymous_offset + 1);
   return _element_prefix + class_name + String(buf);
 }
 
@@ -386,15 +387,39 @@ LexerT::yport(int &port)
 }
 
 bool
-LexerT::yelement(int &element, bool comma_ok)
+LexerT::yelement_upref(int &element)
 {
   Lexeme t = lex();
   if (!t.is(lexIdent)) {
+    lerror("syntax error: expected element name");
     unlex(t);
     return false;
   }
-  String name = t.string();
-  int ftype = element_type(name);
+
+  element = _router->get_anon_findex
+    (_element_prefix + t.string(), RouterT::UPREF_TYPE, String(), landmark());
+  return true;
+}
+
+bool
+LexerT::yelement(int &element, bool comma_ok)
+{
+  Lexeme t = lex();
+  String name;
+  int ftype;
+
+  if (t.is('^')) {
+    return yelement_upref(element);
+  } else if (t.is(lexIdent)) {
+    name = t.string();
+    ftype = element_type(name);
+  } else if (t.is('{')) {
+    ftype = ylocal();
+    name = _router->type_name(ftype);
+  } else {
+    unlex(t);
+    return false;
+  }
   
   String configuration;
   const Lexeme &tparen = lex();
@@ -458,14 +483,16 @@ LexerT::ydeclaration(const String &first_element)
     }
   }
   
+  int ftype;
   t = lex();
-  if (!t.is(lexIdent)) {
+  if (t.is(lexIdent))
+    ftype = force_element_type(t.string());
+  else if (t.is('{'))
+    ftype = ylocal();
+  else {
     lerror("missing element type in declaration");
     return;
   }
-  
-  String ftype_name = t.string();
-  int ftype = force_element_type(t.string());
   
   String configuration;
   t = lex();
@@ -574,9 +601,11 @@ LexerT::yelementclass()
   
   expect('{');
   RouterT *old_router = _router;
+  int old_offset = _anonymous_offset;
   _router = new RouterT;
-  _router->get_findex("input", RouterT::PSEUDOPORT_TYPE);
-  _router->get_findex("output", RouterT::PSEUDOPORT_TYPE);
+  _router->get_findex("input", RouterT::TUNNEL_TYPE);
+  _router->get_findex("output", RouterT::TUNNEL_TYPE);
+  _anonymous_offset = 2;
 
   while (ystatement(true))
     /* nada */;
@@ -588,10 +617,11 @@ LexerT::yelementclass()
 
   _router->unuse();
   _router = old_router;
+  _anonymous_offset = old_offset;
 }
 
 void
-LexerT::ypseudoports()
+LexerT::ytunnel()
 {
   while (true) {
     Lexeme tname1 = lex();
@@ -609,8 +639,7 @@ LexerT::ypseudoports()
     }
     
     if (tname1.is(lexIdent) && tname2.is(lexIdent))
-      _router->add_pseudoport_pair(tname1.string(), tname2.string(),
-				   landmark(), _errh);
+      _router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
     
     const Lexeme &t = lex();
     if (!t.is(',')) {
@@ -620,30 +649,30 @@ LexerT::ypseudoports()
   }
 }
 
-void
-LexerT::ywithprefix()
+int
+LexerT::ylocal()
 {
-  Lexeme tname = lex();
-  if (!tname.is(lexIdent)) {
-    unlex(tname);
-    if (!tname.is('{'))
-      lerror("expected prefix (an identifier)");
-  }
+  // OK because every used ylocal() corresponds to at least one element
+  String name = "@Anon" + String(_router->nelements() - _anonymous_offset + 1);
   
-  expect('{');
-  String old_prefix = _element_prefix;
-  if (tname.is(lexIdent))
-    _element_prefix = _element_prefix + tname.string()+"/";
-  else {
-    _element_prefix = _element_prefix + "@@"+String(_anonymous_prefixes)+"@@/";
-    _anonymous_prefixes++;
-  }
-  
+  // '{' was already read
+  RouterT *old_router = _router;
+  int old_offset = _anonymous_offset;
+  _router = new RouterT;
+  _router->get_findex("input", RouterT::TUNNEL_TYPE);
+  _router->get_findex("output", RouterT::TUNNEL_TYPE);
+  _anonymous_offset = 2;
+
   while (ystatement(true))
-    /* do nothing */;
-  // '}' was consumed already
+    /* nada */;
   
-  _element_prefix = old_prefix;
+  // '}' was consumed
+
+  int tindex = old_router->get_anon_type_index(name, _router);
+  _router->unuse();
+  _router = old_router;
+  _anonymous_offset = old_offset;
+  return tindex;
 }
 
 bool
@@ -659,19 +688,13 @@ LexerT::ystatement(bool nested)
     return true;
     
    case lexElementclass:
-    if (nested || _element_prefix)
-      lerror("nested elementclass");
     yelementclass();
     return true;
     
-   case lexPseudoports:
-    ypseudoports();
+   case lexTunnel:
+    ytunnel();
     return true;
 
-   case lexWithprefix:
-    ywithprefix();
-    return true;
-    
    case ';':
     return true;
     

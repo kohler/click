@@ -9,8 +9,12 @@
 RouterT::RouterT()
   : _element_type_map(-1), _element_name_map(-1)
 {
-  // add space for pseudoport type
-  _element_type_names.push_back("<pseudoport>");
+  // add space for tunnel type
+  _element_type_names.push_back("<tunnel>");
+  _element_type_map.insert("<tunnel>", TUNNEL_TYPE);
+  _element_classes.push_back(0);
+  _element_type_names.push_back("<upref>");
+  _element_type_map.insert("<upref>", UPREF_TYPE);
   _element_classes.push_back(0);
 }
 
@@ -53,15 +57,13 @@ RouterT::get_type_index(const String &s, ElementClassT *fclass = 0)
 }
 
 int
-RouterT::get_anon_type_index(const String &s, ElementClassT *fclass = 0)
+RouterT::get_anon_type_index(const String &name, ElementClassT *fclass)
 {
-  String n = s;
-  int anonymizer = 0;
-  while (1) {
-    if (_element_type_map[n] < 0)
-      return get_type_index(n, fclass);
-    n = s + "@" + String(anonymizer++);
-  }
+  int i = _element_classes.size();
+  _element_type_names.push_back(name);
+  _element_classes.push_back(fclass);
+  if (fclass) fclass->use();
+  return i;
 }
 
 int
@@ -74,6 +76,15 @@ RouterT::get_findex(const String &s, int type_index, const String &config,
     _elements.push_back(ElementT(s, type_index, config, landmark));
     _element_name_map.insert(s, i);
   }
+  return i;
+}
+
+int
+RouterT::get_anon_findex(const String &s, int type_index, const String &config,
+			 const String &landmark)
+{
+  int i = _elements.size();
+  _elements.push_back(ElementT(s, type_index, config, landmark));
   return i;
 }
 
@@ -134,25 +145,25 @@ RouterT::find_connections_to(const Hookup &h, Vector<Hookup> &v) const
 
 
 void
-RouterT::add_pseudoport_pair(String in, String out, const String &landmark,
-			     ErrorHandler *errh)
+RouterT::add_tunnel(String in, String out, const String &landmark,
+		    ErrorHandler *errh)
 {
-  int in_idx = get_findex(in, PSEUDOPORT_TYPE, String(), landmark);
-  int out_idx = get_findex(out, PSEUDOPORT_TYPE, String(), landmark);
+  int in_idx = get_findex(in, TUNNEL_TYPE, String(), landmark);
+  int out_idx = get_findex(out, TUNNEL_TYPE, String(), landmark);
   if (!errh) errh = ErrorHandler::silent_handler();
   ElementT &fin = _elements[in_idx], &fout = _elements[out_idx];
 
-  if (fin.type != PSEUDOPORT_TYPE)
+  if (fin.type != TUNNEL_TYPE)
     errh->lerror(landmark, "element `%s' already exists", in.cc());
-  else if (fout.type != PSEUDOPORT_TYPE)
+  else if (fout.type != TUNNEL_TYPE)
     errh->lerror(landmark, "element `%s' already exists", out.cc());
-  else if (fin.pseudoport_output >= 0)
-    errh->lerror(landmark, "input pseudoport `%s' already exists", in.cc());
-  else if (_elements[out_idx].pseudoport_input >= 0)
-    errh->lerror(landmark, "output pseudoport `%s' already exists", out.cc());
+  else if (fin.tunnel_output >= 0)
+    errh->lerror(landmark, "connection tunnel input `%s' already exists", in.cc());
+  else if (_elements[out_idx].tunnel_input >= 0)
+    errh->lerror(landmark, "connection tunnel output `%s' already exists", out.cc());
   else {
-    _elements[in_idx].pseudoport_output = out_idx;
-    _elements[out_idx].pseudoport_input = in_idx;
+    _elements[in_idx].tunnel_output = out_idx;
+    _elements[out_idx].tunnel_input = in_idx;
   }
 }
 
@@ -160,7 +171,7 @@ RouterT::add_pseudoport_pair(String in, String out, const String &landmark,
 void
 RouterT::remove_bad_connections()
 {
-  // internal use only
+  // internal use only: invariant -- all connections are good
   int nelements = _elements.size();
   for (int i = 0; i < _hookup_from.size(); i++) {
     Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
@@ -202,19 +213,23 @@ RouterT::finish_remove_elements(Vector<int> &new_findex, ErrorHandler *errh)
   
   // change hookup
   for (int i = 0; i < _hookup_from.size(); i++) {
-    Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
+    Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
     bool bad = false;
-    if (new_findex[hfrom.idx] < 0) {
-      errh->lerror(_hookup_landmark[i], "hookup from removed element `%s'", fname(hfrom.idx).cc());
+    if (hf.idx < 0 || hf.idx >= nelements)
       bad = true;
-    } else if (new_findex[hto.idx] < 0) {
-      errh->lerror(_hookup_landmark[i], "hookup to removed element `%s'", fname(hto.idx).cc());
+    else if (new_findex[hf.idx] < 0) {
+      errh->lerror(_hookup_landmark[i], "connection from removed element `%s'", fname(hf.idx).cc());
+      bad = true;
+    } else if (ht.idx < 0 || ht.idx >= nelements)
+      bad = true;
+    else if (new_findex[ht.idx] < 0) {
+      errh->lerror(_hookup_landmark[i], "connection to removed element `%s'", fname(ht.idx).cc());
       bad = true;
     }
     
     if (!bad) {
-      hfrom.idx = new_findex[hfrom.idx];
-      hto.idx = new_findex[hto.idx];
+      hf.idx = new_findex[hf.idx];
+      ht.idx = new_findex[ht.idx];
     } else {
       remove_connection(i);
       i--;
@@ -225,18 +240,20 @@ RouterT::finish_remove_elements(Vector<int> &new_findex, ErrorHandler *errh)
   for (int i = 0; i < nelements; i++) {
     j = new_findex[i];
     if (j != i) {
-      _element_name_map.insert(_elements[i].name, j);
-      if (j >= 0) _elements[j] = _elements[i];
+      if (_elements[i].type != UPREF_TYPE)
+	_element_name_map.insert(_elements[i].name, j);
+      if (j >= 0)
+	_elements[j] = _elements[i];
     }
   }
 
-  // massage pseudoport pointers
+  // massage tunnel pointers
   for (int i = 0; i < new_nelements; i++) {
     ElementT &fac = _elements[i];
-    if (fac.pseudoport_input >= 0)
-      fac.pseudoport_input = new_findex[fac.pseudoport_input];
-    if (fac.pseudoport_output >= 0)
-      fac.pseudoport_output = new_findex[fac.pseudoport_output];
+    if (fac.tunnel_input >= 0)
+      fac.tunnel_input = new_findex[fac.tunnel_input];
+    if (fac.tunnel_output >= 0)
+      fac.tunnel_output = new_findex[fac.tunnel_output];
   }
 
   // resize element arrays
@@ -283,7 +300,8 @@ RouterT::remove_unused_element_types()
 
   // find new ftypeindexes
   Vector<int> new_ftypeidx(nfactype, -1);
-  new_ftypeidx[0] = 0;		// save PSEUDOPORT_TYPE
+  new_ftypeidx[TUNNEL_TYPE] = TUNNEL_TYPE; // save TUNNEL_TYPE
+  new_ftypeidx[UPREF_TYPE] = UPREF_TYPE; // save UPREF_TYPE
   for (int i = 0; i < nelements; i++)
     if (_elements[i].type >= 0 && _elements[i].type < nfactype)
       new_ftypeidx[ _elements[i].type ] = 0;
@@ -294,7 +312,8 @@ RouterT::remove_unused_element_types()
   int new_nfactype = j;
 
   // return if nothing has changed
-  assert(new_ftypeidx[PSEUDOPORT_TYPE] == PSEUDOPORT_TYPE);
+  assert(new_ftypeidx[TUNNEL_TYPE] == TUNNEL_TYPE);
+  assert(new_ftypeidx[UPREF_TYPE] == UPREF_TYPE);
   if (new_nfactype == nfactype)
     return;
 
@@ -306,7 +325,7 @@ RouterT::remove_unused_element_types()
   for (int i = 0; i < nfactype; i++) {
     j = new_ftypeidx[i];
     if (j != i) {
-      _element_name_map.insert(_element_type_names[i], j);
+      _element_type_map.insert(_element_type_names[i], j);
       if (j >= 0) {
 	_element_type_names[j] = _element_type_names[i];
 	_element_classes[j] = _element_classes[i];
@@ -322,9 +341,9 @@ RouterT::remove_unused_element_types()
 
 
 void
-RouterT::expand_pseudoport(Vector<Hookup> *pp_expansions,
-			   bool is_input, int which,
-			   Vector<Hookup> &results) const
+RouterT::expand_tunnel(Vector<Hookup> *pp_expansions,
+		       bool is_input, int which,
+		       Vector<Hookup> &results) const
 {
   Vector<Hookup> &ppx = pp_expansions[which];
   
@@ -336,16 +355,16 @@ RouterT::expand_pseudoport(Vector<Hookup> *pp_expansions,
     ppx[0].idx = -2;
     Vector<Hookup> expansion;
     Vector<Hookup> cur_expansion;
-    // find connections from the corresponding output pseudoport
+    // find connections from the corresponding tunnel output
     if (is_input)
       find_connections_from(Hookup(-1, which), cur_expansion);
-    else			// or to corresponding input pseudoport
+    else			// or to corresponding tunnel input
       find_connections_to(Hookup(-1, which), cur_expansion);
     // expand them
     for (int i = 0; i < cur_expansion.size(); i++)
       if (cur_expansion[i].idx < 0)
-	expand_pseudoport(pp_expansions, is_input, cur_expansion[i].port,
-			  expansion);
+	expand_tunnel(pp_expansions, is_input, cur_expansion[i].port,
+		      expansion);
       else
 	expansion.push_back(cur_expansion[i]);
     // save results
@@ -358,39 +377,39 @@ RouterT::expand_pseudoport(Vector<Hookup> *pp_expansions,
 }
 
 void
-RouterT::remove_pseudoports(ErrorHandler *errh)
+RouterT::remove_tunnels(ErrorHandler *errh)
 {
-  // find pseudoport connections, mark connections with fidx -1
-  Vector<Hookup> in_pseudoports, out_pseudoports;
+  // find tunnel connections, mark connections with fidx -1
+  Vector<Hookup> tunnel_in, tunnel_out;
   int nhook = _hookup_from.size();
   for (int i = 0; i < nhook; i++) {
     Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
-    int pp_in = _elements[hfrom.idx].pseudoport_input;
-    int pp_out = _elements[hto.idx].pseudoport_output;
+    int pp_in = _elements[hfrom.idx].tunnel_input;
+    int pp_out = _elements[hto.idx].tunnel_output;
     if (pp_in >= 0) {
-      int j = hfrom.index_in(out_pseudoports);
+      int j = hfrom.index_in(tunnel_out);
       if (j < 0) {
-	in_pseudoports.push_back(Hookup(pp_in, hfrom.port));
-	out_pseudoports.push_back(hfrom);
-	j = in_pseudoports.size() - 1;
+	tunnel_in.push_back(Hookup(pp_in, hfrom.port));
+	tunnel_out.push_back(hfrom);
+	j = tunnel_in.size() - 1;
       }
       hfrom.idx = -1;
       hfrom.port = j;
     }
     if (pp_out >= 0) {
-      int j = hto.index_in(in_pseudoports);
+      int j = hto.index_in(tunnel_in);
       if (j < 0) {
-	in_pseudoports.push_back(hto);
-	out_pseudoports.push_back(Hookup(pp_out, hto.port));
-	j = in_pseudoports.size() - 1;
+	tunnel_in.push_back(hto);
+	tunnel_out.push_back(Hookup(pp_out, hto.port));
+	j = tunnel_in.size() - 1;
       }
       hto.idx = -1;
       hto.port = j;
     }
   }
 
-  // expand pseudoports
-  int npp = in_pseudoports.size();
+  // expand tunnels
+  int npp = tunnel_in.size();
   Vector<Hookup> *ppin_expansions = new Vector<Hookup>[npp];
   Vector<Hookup> *ppout_expansions = new Vector<Hookup>[npp];
   for (int i = 0; i < npp; i++) {
@@ -399,7 +418,7 @@ RouterT::remove_pseudoports(ErrorHandler *errh)
     ppout_expansions[i].push_back(Hookup(-1, 0));
   }
   
-  // get rid of connections to pseudoports
+  // get rid of connections to tunnels
   int nelements = _elements.size();
   int old_nhook = _hookup_from.size();
   for (int i = 0; i < old_nhook; i++) {
@@ -413,11 +432,11 @@ RouterT::remove_pseudoports(ErrorHandler *errh)
     // find first-level connections
     Vector<Hookup> new_from, new_to;
     if (hfrom.idx < 0)
-      expand_pseudoport(ppout_expansions, false, hfrom.port, new_from);
+      expand_tunnel(ppout_expansions, false, hfrom.port, new_from);
     else
       new_from.push_back(hfrom);
     if (hto.idx < 0)
-      expand_pseudoport(ppin_expansions, true, hto.port, new_to);
+      expand_tunnel(ppin_expansions, true, hto.port, new_to);
     else
       new_to.push_back(hto);
     
@@ -427,69 +446,92 @@ RouterT::remove_pseudoports(ErrorHandler *errh)
 	add_connection(new_from[j], new_to[k], landmark);
   }
 
-  // kill elements with pseudoport type
-  // but don't kill floating pseudoports (like input & output)
+  // kill elements with tunnel type
+  // but don't kill floating tunnels (like input & output)
   for (int i = 0; i < nelements; i++)
-    if (_elements[i].type == PSEUDOPORT_TYPE
-	&& (_elements[i].pseudoport_output >= 0
-	    || _elements[i].pseudoport_input >= 0))
+    if (_elements[i].type == TUNNEL_TYPE
+	&& (_elements[i].tunnel_output >= 0
+	    || _elements[i].tunnel_input >= 0))
       _elements[i].type = -1;
 
-  // actually remove pseudoport connections and elements
+  // actually remove tunnel connections and elements
   remove_bad_connections();
   remove_blank_elements(errh);
+  remove_duplicate_connections();
 }
 
+
+static int
+resolve_upref(const String &upref, String prefix, RouterT *r)
+{
+  while (prefix) {
+    int pos = prefix.find_right('/', prefix.length() - 2);
+    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
+    
+    String try_name = prefix + upref;
+    int en = r->findex(try_name);
+    if (en >= 0) return en;
+  }
+  return -1;
+}
 
 void
 RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 {
-  assert(compound.name);
-  compound.type = PSEUDOPORT_TYPE;
-
   // complain about configuration string
   if (compound.configuration && errh)
     errh->lwarning(compound.landmark, "compound element cannot have configuration string");
+
+  // create prefix
+  String prefix;
+  assert(compound.name);
+  if (compound.name[compound.name.length() - 1] == '/')
+    prefix = compound.name;
+  else
+    prefix = compound.name + "/";
   
-  // create input/output pseudoports
-  r->add_pseudoport_pair(compound.name, compound.name + "/input",
-			 compound.landmark, errh);
-  r->add_pseudoport_pair(compound.name + "/output", compound.name,
-			 compound.landmark, errh);
+  // create input/output tunnels
+  compound.type = TUNNEL_TYPE;
+  r->add_tunnel(compound.name, prefix + "input", compound.landmark, errh);
+  r->add_tunnel(prefix + "output", compound.name, compound.landmark, errh);
 
   int nelements = _elements.size();
   Vector<int> new_fidx(nelements, -1);
-
-  String prefix = compound.name + "/";
   
-  // add pseudoport pairs
+  // add tunnel pairs and resolve uprefs
   for (int i = 0; i < nelements; i++) {
-    ElementT &fac = _elements[i];
-    if (fac.type == PSEUDOPORT_TYPE && fac.pseudoport_output >= 0
-	&& fac.pseudoport_output < nelements)
-      r->add_pseudoport_pair(prefix + fac.name,
-			     prefix + _elements[fac.pseudoport_output].name,
-			     fac.landmark, errh);
+    ElementT &e = _elements[i];
+    if (e.type == TUNNEL_TYPE && e.tunnel_output >= 0
+	&& e.tunnel_output < nelements)
+      r->add_tunnel(prefix + e.name,
+		    prefix + _elements[e.tunnel_output].name,
+		    e.landmark, errh);
+    else if (e.type == UPREF_TYPE)
+      new_fidx[i] = resolve_upref(e.name, prefix, r);
   }
   
   // add component elements
-  for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i].type != PSEUDOPORT_TYPE) {
-      ElementT &fac = _elements[i];
-      
-      // get element type index. add new "anonymous" element type if needed
-      int ftypi = r->get_type_index(_element_type_names[fac.type],
-				    _element_classes[fac.type]);
-      if (_element_classes[fac.type] != r->_element_classes[ftypi]
-	  && r->_element_classes[ftypi])
-	ftypi = r->get_anon_type_index(_element_type_names[fac.type],
-				       _element_classes[fac.type]);
-      
-      // add element
-      new_fidx[i] = r->get_findex(prefix + fac.name, ftypi, fac.configuration);
-    } else /* _elements[i].type == PSEUDOPORT_TYPE */
-      // set fidx correctly
-      new_fidx[i] = r->get_findex(prefix + _elements[i].name);
+  for (int i = 0; i < _elements.size(); i++) {
+    ElementT &e = _elements[i];
+    if (new_fidx[i] >= 0) continue; // skip elements we've already resolved
+    
+    // get element type index. add new "anonymous" element type if needed
+    int ftypi = r->get_type_index(_element_type_names[e.type],
+				  _element_classes[e.type]);
+    if (_element_classes[e.type] != r->_element_classes[ftypi]
+	&& r->_element_classes[ftypi])
+      ftypi = r->get_anon_type_index(_element_type_names[e.type],
+				     _element_classes[e.type]);
+    
+    // add element
+    if (e.type == UPREF_TYPE)
+      // add unresolved uprefs, but w/o prefix
+      new_fidx[i] = r->get_anon_findex
+	(e.name, UPREF_TYPE, e.configuration, e.landmark);
+    else
+      new_fidx[i] = r->get_findex
+	(prefix + e.name, ftypi, e.configuration, e.landmark);
+  }
   
   // add hookup
   for (int i = 0; i < _hookup_from.size(); i++) {
@@ -514,8 +556,39 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
   remove_unused_element_types();
 }
 
+void
+RouterT::remove_unresolved_uprefs(ErrorHandler *errh)
+{
+  if (!errh) errh = ErrorHandler::silent_handler();
+  
+  int nelements = _elements.size();
+  Vector<int> new_findex(nelements, 0);
+  bool any = false;
+  
+  // find uprefs
+  for (int i = 0; i < nelements; i++) {
+    ElementT &e = _elements[i];
+    if (e.type == UPREF_TYPE) {
+      errh->lerror(e.landmark, "unresolved upref `%s'", e.name.cc());
+      new_findex[i] = -1;
+      any = true;
+    }
+  }
 
-// matches
+  if (any) finish_remove_elements(new_findex, 0);
+}
+
+void
+RouterT::flatten(ErrorHandler *errh)
+{
+  remove_compound_elements(errh);
+  remove_tunnels(errh);
+  remove_unresolved_uprefs(errh);
+}
+
+
+// MATCHES
+
 bool
 RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
 {
@@ -530,8 +603,8 @@ RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
     int pnft = pat->_element_classes.size();
     for (int i = 0; i < pnf; i++) {
       int t = pat->_elements[i].type;
-      if (t == PSEUDOPORT_TYPE)
-	match[i] = -2;		// don't match pseudoports
+      if (t == TUNNEL_TYPE)
+	match[i] = -2;		// don't match tunnels
       else if (t < 0 || t >= pnft)
 	match[i] = -3;		// don't match bad types
     }
@@ -655,36 +728,52 @@ RouterT::next_exclusive_connection_match(RouterT *pat, Vector<int> &match) const
 }
 
 
+// PRINTING
+
 void
-RouterT::compound_declaration_string(StringAccum &sa, const String &name)
+RouterT::compound_declaration_string(StringAccum &sa, const String &name,
+				     const String &indent)
 {
-  sa << "elementclass " << name << " {\n";
-  configuration_string(sa, "  ");
-  sa << "}\n";
+  sa << indent << "elementclass " << name << " {\n";
+  configuration_string(sa, indent + "  ");
+  sa << indent << "}\n";
+}
+
+String
+RouterT::fname_upref(int fidx) const
+{
+  if (fidx >= 0 && fidx < _elements.size()) {
+    if (_elements[fidx].type == UPREF_TYPE)
+      return "^" + _elements[fidx].name;
+    else
+      return _elements[fidx].name;
+  } else
+    return String("/*BAD_") + String(fidx) + String("*/");
 }
 
 void
 RouterT::configuration_string(StringAccum &sa, const String &indent) const
 {
   int nelements = _elements.size();
-  int nfactype = _element_classes.size();
+  int nelemtype = _element_classes.size();
 
   // print element classes
   int old_sa_len = sa.length();
-  for (int i = 0; i < nfactype; i++)
+  for (int i = 0; i < nelemtype; i++)
     if (_element_classes[i])
-      _element_classes[i]->compound_declaration_string(sa, _element_type_names[i]);
+      _element_classes[i]->compound_declaration_string
+	(sa, _element_type_names[i], indent);
   if (sa.length() != old_sa_len)
     sa << "\n";
   
-  // print pseudoport pairs
+  // print tunnel pairs
   old_sa_len = sa.length();
   for (int i = 0; i < nelements; i++)
-    if (_elements[i].type == PSEUDOPORT_TYPE
-	&& _elements[i].pseudoport_output >= 0
-	&& _elements[i].pseudoport_output < nelements) {
-      sa << indent << "pseudoports " << _elements[i].name << " -> "
-	 << _elements[ _elements[i].pseudoport_output ].name << ";\n";
+    if (_elements[i].type == TUNNEL_TYPE
+	&& _elements[i].tunnel_output >= 0
+	&& _elements[i].tunnel_output < nelements) {
+      sa << indent << "connectiontunnel " << _elements[i].name << " -> "
+	 << _elements[ _elements[i].tunnel_output ].name << ";\n";
     }
   if (sa.length() != old_sa_len)
     sa << "\n";
@@ -692,15 +781,16 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   // print element types
   old_sa_len = sa.length();
   for (int i = 0; i < nelements; i++) {
-    const ElementT &fac = _elements[i];
-    if (fac.type == PSEUDOPORT_TYPE) continue; // skip pseudoports
-    sa << indent << fac.name << " :: ";
-    if (fac.type >= 0 && fac.type < nfactype)
-      sa << _element_type_names[fac.type];
+    const ElementT &e = _elements[i];
+    if (e.type == TUNNEL_TYPE || e.type == UPREF_TYPE)
+      continue; // skip tunnels and uprefs
+    sa << indent << e.name << " :: ";
+    if (e.type >= 0 && e.type < nelemtype)
+      sa << _element_type_names[e.type];
     else
-      sa << "/*BAD_TYPE_" << fac.type << "*/";
-    if (fac.configuration)
-      sa << "(" << fac.configuration << ")";
+      sa << "/*BAD_TYPE_" << e.type << "*/";
+    if (e.configuration)
+      sa << "(" << e.configuration << ")";
     sa << ";\n";
   }
   if (sa.length() != old_sa_len)
@@ -735,7 +825,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
       if (used[c] || !startchain[c]) continue;
       
       const Hookup &hf = _hookup_from[c];
-      sa << indent << fname(hf.idx);
+      sa << indent << fname_upref(hf.idx);
       if (hf.port)
 	sa << " [" << hf.port << "]";
       
@@ -746,7 +836,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
 	const Hookup &ht = _hookup_to[d];
 	if (ht.port)
 	  sa << "[" << ht.port << "] ";
-	sa << fname(ht.idx);
+	sa << fname_upref(ht.idx);
 	used[d] = true;
 	d = next[d];
       }

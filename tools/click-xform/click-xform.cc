@@ -52,19 +52,19 @@ Matcher::Matcher(RouterT *pat, RouterT *body, int patid, ErrorHandler *errh)
 {
   _pat->use();
   _body->use();
-  // check pseudoport situation
+  // check tunnel situation
   for (int i = 0; i < _pat->nelements(); i++) {
     ElementT &fac = _pat->element(i);
-    if (fac.type != RouterT::PSEUDOPORT_TYPE)
+    if (fac.type != RouterT::TUNNEL_TYPE)
       continue;
-    else if (fac.pseudoport_input >= 0 || fac.pseudoport_output >= 0)
-      errh->lerror(fac.landmark, "pattern has active pseudoports");
+    else if (fac.tunnel_input >= 0 || fac.tunnel_output >= 0)
+      errh->lerror(fac.landmark, "pattern has active connection tunnels");
     else if (fac.name == "input" && _pat_input_idx < 0)
       _pat_input_idx = i;
     else if (fac.name == "output" && _pat_output_idx < 0)
       _pat_output_idx = i;
     else
-      errh->lerror(fac.landmark, "pseudoport with funny name `%s'", fac.name.cc());
+      errh->lerror(fac.landmark, "connection tunnel with funny name `%s'", fac.name.cc());
   }
 }
 
@@ -86,7 +86,7 @@ Matcher::check_into(const Hookup &houtside, const Hookup &hinside)
     if (pht[i] == phinside && phf[i].idx == _pat_input_idx
 	&& phf[i] < success) {
       Vector<Hookup> pfrom_phf, from_outside;
-      // check that it's valid: all connections from pseudoport are covered
+      // check that it's valid: all connections from tunnels are covered
       // in body
       _pat->find_connections_from(phf[i], pfrom_phf);
       _body->find_connections_from(houtside, from_outside);
@@ -120,7 +120,7 @@ Matcher::check_out_of(const Hookup &hinside, const Hookup &houtside)
     if (phf[i] == phinside && pht[i].idx == _pat_output_idx
 	&& pht[i] < success) {
       Vector<Hookup> pto_pht, to_outside;
-      // check that it's valid: all connections to pseudoport are covered
+      // check that it's valid: all connections to tunnels are covered
       // in body
       _pat->find_connections_to(pht[i], pto_pht);
       _body->find_connections_to(houtside, to_outside);
@@ -158,10 +158,6 @@ Matcher::check_match()
 	return false;
     }
   
-  //fprintf(stderr, "check");
-  //for (int i = 0; i < _match.size(); i++) fprintf(stderr, " %d", _match[i]);
-  //fprintf(stderr, "...\n");
-
   int bnf = _body->nelements();
   _back_match.assign(bnf, -1);
   bool all_previous_match = true;
@@ -198,7 +194,7 @@ Matcher::check_match()
     }
   }
 
-  // check for unconnected pseudoports in the pattern
+  // check for unconnected tunnels in the pattern
   const Vector<Hookup> &phf = _pat->hookup_from();
   const Vector<Hookup> &pht = _pat->hookup_to();
   for (int i = 0; i < phf.size(); i++) {
@@ -283,7 +279,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     replace_config(_body->fconfiguration(i));
   }
 
-  // find input and output, add connections to pseudoports
+  // find input and output, add connections to tunnels
   int new_pp = _body->findex(prefix);
   for (int i = 0; i < _to_pp_from.size(); i++)
     _body->add_connection(_to_pp_from[i], Hookup(new_pp, _to_pp_to[i].port),
@@ -299,8 +295,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   _body->remove_blank_elements();
 
   // cleanup
-  _body->remove_pseudoports(errh);
-  _body->remove_duplicate_connections();
+  _body->flatten(errh);
   _match.clear();
 }
 
@@ -385,9 +380,7 @@ main(int argc, char **argv)
   
   RouterT *r = read_router_file((argc >= 3 ? argv[2] : 0), errh);
   if (!r) exit(1);
-  r->remove_duplicate_connections();
-  r->remove_compound_elements(errh);
-  r->remove_pseudoports(errh);
+  r->flatten(errh);
 
   Vector<RouterT *> patterns;
   Vector<RouterT *> replacements;
@@ -402,8 +395,7 @@ main(int argc, char **argv)
 	RouterT *rep = fclass->cast_router();
 	RouterT *pat = pat_file->element_class(ti)->cast_router();
 	if (rep && pat) {
-	  pat->remove_compound_elements(errh);
-	  pat->remove_pseudoports(errh);
+	  pat->flatten(errh);
 	  patterns.push_back(pat);
 	  replacements.push_back(rep);
 	  pat_names.push_back(name.substring(0, -12));
