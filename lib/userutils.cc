@@ -190,7 +190,7 @@ String
 file_string(const char *filename, ErrorHandler *errh)
 {
   FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
+  if (filename && *filename && strcmp(filename, "-") != 0) {
     f = fopen(filename, "rb");
     if (!f) {
       if (errh)

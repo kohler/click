@@ -98,7 +98,7 @@ read_router_file(const char *filename, bool empty_ok, ErrorHandler *errh)
     return 0;
 
   // set readable filename
-  if (!filename || strcmp(filename, "-") == 0)
+  if (!filename || !*filename || strcmp(filename, "-") == 0)
     filename = "<stdin>";
 
   return read_router_string(s, filename, empty_ok, errh);
