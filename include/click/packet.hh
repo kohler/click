@@ -107,7 +107,7 @@ class Packet { public:
   const click_tcp *tcp_header() const	{ return _h.th; }
   const click_udp *udp_header() const	{ return _h.uh; }
 #endif
-  uint32_t transport_header_offset() const;
+  int transport_header_offset() const;
 
   void set_network_header(const unsigned char *, uint32_t);
   void set_ip_header(const click_ip *, uint32_t);
@@ -189,7 +189,7 @@ class Packet { public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
     union {
-      unsigned dst_ip4;
+      uint32_t dst_ip4;
       unsigned char dst_ip6[16];
     } dst_ip;
     
@@ -609,7 +609,7 @@ Packet::ip6_header_length() const
   return network_header_length();
 }
 
-inline uint32_t
+inline int
 Packet::transport_header_offset() const
 {
   return transport_header() - data();

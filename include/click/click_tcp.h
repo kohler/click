@@ -6,11 +6,6 @@
  * based on a file from one of the BSDs
  */
 
-#ifndef __BYTE_ORDER
-#define __LITTLE_ENDIAN 1234
-#define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
-
 typedef	unsigned int tcp_seq;
 
 struct click_tcp {
@@ -18,11 +13,11 @@ struct click_tcp {
     unsigned short th_dport;		/* 2-3   destination port */
     tcp_seq th_seq;			/* 4-7   sequence number */
     tcp_seq th_ack;			/* 8-11  acknowledgement number */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
     unsigned char th_x2:4;		/* 12    (unused) */
     unsigned char th_off:4;		/*       data offset in words */
 #endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     unsigned char th_off:4;		/* 12    data offset in words */
     unsigned char th_x2:4;		/*       (unused) */
 #endif

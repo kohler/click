@@ -21,17 +21,12 @@ CLICK_CXX_UNPROTECT
  * based on a file from one of the BSDs
  */
 
-#ifndef __BYTE_ORDER
-#define __LITTLE_ENDIAN 1234
-#define __BYTE_ORDER __LITTLE_ENDIAN
-#endif 
-
 struct click_ip {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
     uint8_t	ip_hl : 4;		/* 0     header length */
     uint8_t	ip_v : 4;		/*       version == 4 */
 #endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     uint8_t	ip_v : 4;		/* 0     version == 4 */
     uint8_t	ip_hl : 4;		/*       header length */
 #endif
