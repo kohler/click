@@ -37,6 +37,25 @@
 #define GRID_ROUTE_CB_ANNO(p)           ((p)->user_anno_c(11))
 #define SET_GRID_ROUTE_CB_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
 
+// bytes 10 - 15
+#define WIFI_TX_SUCCESS_ANNO(p)           ((p)->user_anno_c(10))
+#define SET_WIFI_TX_SUCCESS_ANNO(p, v)    ((p)->set_user_anno_c(10, (v)))
+
+#define WIFI_TX_POWER_ANNO(p)           ((p)->user_anno_c(11))
+#define SET_WIFI_TX_POWER_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
+
+#define WIFI_RATE_ANNO(p)           ((p)->user_anno_c(12))
+#define SET_WIFI_RATE_ANNO(p, v)    ((p)->set_user_anno_c(12, (v)))
+
+#define WIFI_RETRIES_ANNO(p)           ((p)->user_anno_c(13))
+#define SET_WIFI_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(13, (v)))
+
+#define WIFI_SIGNAL_ANNO(p)           ((p)->user_anno_c(14))
+#define SET_WIFI_SIGNAL_ANNO(p, v)    ((p)->set_user_anno_c(14, (v)))
+
+#define WIFI_NOISE_ANNO(p)           ((p)->user_anno_c(15))
+#define SET_WIFI_NOISE_ANNO(p, v)    ((p)->set_user_anno_c(15, (v)))
+
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
 #define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))
