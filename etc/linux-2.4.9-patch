@@ -1332,7 +1332,7 @@ Index: drivers/net/tulip/tulip_core.c
 
 Index: drivers/net/eepro100.c
 --- drivers/net/eepro100.c.orig	Mon Jul  2 17:03:04 2001
-+++ drivers/net/eepro100.c	Wed Aug 22 18:49:46 2001
++++ drivers/net/eepro100.c	Thu Aug 23 14:48:51 2001
 @@ -545,6 +545,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -1388,20 +1388,42 @@ Index: drivers/net/eepro100.c
  		reset_mii(dev);
  	} else {
  #else
-@@ -1329,6 +1352,12 @@
+@@ -1329,9 +1352,18 @@
  	long ioaddr = dev->base_addr;
  	int entry;
  
-+	if (dev->polling) {
-+		printk(KERN_ERR "%s: start_xmit while polling\n",
-+		       dev->name);
++#if 0
++	if (dev->polling)
++	{
++		printk(KERN_ERR "%s: start_xmit while polling\n", dev->name);
 +		return 1;
 +	}
++#endif
++    if (test_and_set_bit(0, (void*)&dev->tbusy) != 0)
++		return 1;
 +
  	{	/* Prevent interrupts from changing the Tx ring from underneath us. */
  		unsigned long flags;
+-
+ 		spin_lock_irqsave(&sp->lock, flags);
  
-@@ -1390,6 +1419,12 @@
+ 		/* Check if there are enough space. */
+@@ -1376,12 +1408,13 @@
+ 			netif_stop_queue(dev);
+ 			sp->tx_full = 1;
+ 		}
++		else
++			clear_bit(0, (void*)&dev->tbusy);
+ 
+ 		spin_unlock_irqrestore(&sp->lock, flags);
+ 	}
+ 
+ 	dev->trans_start = jiffies;
+-
+ 	return 0;
+ }
+ 
+@@ -1390,6 +1423,12 @@
  	unsigned int dirty_tx;
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
@@ -1414,17 +1436,44 @@ Index: drivers/net/eepro100.c
  	dirty_tx = sp->dirty_tx;
  	while ((int)(sp->cur_tx - dirty_tx) > 0) {
  		int entry = dirty_tx % TX_RING_SIZE;
-@@ -1460,6 +1495,9 @@
+@@ -1460,6 +1499,11 @@
  	}
  #endif
  
++#if 0
 +	if (dev->polling)
 +		printk(KERN_ERR "%s: interrupt while polling\n", dev->name);
++#endif
 +
  	ioaddr = dev->base_addr;
  	sp = (struct speedo_private *)dev->priv;
  
-@@ -1677,6 +1715,12 @@
+@@ -1488,10 +1532,12 @@
+ 			break;
+ 
+ 		/* Always check if all rx buffers are allocated.  --SAW */
+-		speedo_refill_rx_buffers(dev, 0);
++		if (!dev->polling)
++			speedo_refill_rx_buffers(dev, 0);
+ 
+-		if ((status & 0x5000) ||	/* Packet received, or Rx error. */
+-			(sp->rx_ring_state&(RrNoMem|RrPostponed)) == RrPostponed)
++		if (!dev->polling &&
++			((status & 0x5000) ||	/* Packet received, or Rx error. */
++			 (sp->rx_ring_state&(RrNoMem|RrPostponed)) == RrPostponed))
+ 									/* Need to gather the postponed packet. */
+ 			speedo_rx(dev);
+ 
+@@ -1561,7 +1607,7 @@
+ 		}
+ 
+ 		/* User interrupt, Command/Tx unit interrupt or CU not active. */
+-		if (status & 0xA400) {
++		if (!dev->polling && (status & 0xA400)) {
+ 			spin_lock(&sp->lock);
+ 			speedo_tx_buffer_gc(dev);
+ 			if (sp->tx_full
+@@ -1677,6 +1723,12 @@
  {
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
@@ -1437,7 +1486,7 @@ Index: drivers/net/eepro100.c
  	/* Refill the RX ring. */
  	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
  			speedo_refill_rx_buf(dev, force) != -1);
-@@ -1690,6 +1734,12 @@
+@@ -1690,6 +1742,12 @@
  	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
  	int alloc_ok = 1;
  
@@ -1450,7 +1499,7 @@ Index: drivers/net/eepro100.c
  	if (speedo_debug > 4)
  		printk(KERN_DEBUG " In speedo_rx().\n");
  	/* If we own the next entry, it's a new packet. Send it up. */
-@@ -2273,3 +2323,368 @@
+@@ -2273,3 +2331,369 @@
   *  tab-width: 4
   * End:
   */
@@ -1644,8 +1693,9 @@ Index: drivers/net/eepro100.c
 +static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb) {
 +	struct speedo_private *sp = (struct speedo_private *)dev->priv;
 +	int entry;
-+
-+	spin_lock(&sp->lock);
++    
++	if (test_and_set_bit(0, (void*)&dev->tbusy) != 0)
++		return 1;
 +
 +	/* Check if there are enough space. */
 +	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
@@ -1677,7 +1727,6 @@ Index: drivers/net/eepro100.c
 +
 +	/* Clear the suspend bit on the last command */
 +	clear_suspend(sp->last_cmd);
-+
 +	sp->last_cmd = (struct descriptor *)&sp->tx_ring[entry];
 +
 +	/* Leave room for set_rx_mode(). If there is no more space than
@@ -1687,24 +1736,31 @@ Index: drivers/net/eepro100.c
 +		netif_stop_queue(dev);
 +		sp->tx_full = 1;
 +	}
-+
-+	spin_unlock(&sp->lock);
++	else
++	  	clear_bit(0, (void*)&dev->tbusy);
 +
 +	return 0;
 +}
 +
-+static int speedo_tx_eob(struct net_device *dev) {
-+	/* Start the DMA going again */
-+	wait_for_cmd_done(dev->base_addr + SCBCmd);
-+	outb(CUResume, dev->base_addr + SCBCmd);
++static int speedo_tx_eob(struct net_device *dev)
++{
++	/* benjie: not sure what this is used for... */
++	// wait_for_cmd_done(dev->base_addr + SCBCmd);
 +
-+	/* Bump the trans_start time to keep the net watchdog happy */
++	/* benjie: i suspect this won't cause a race condition because eob
++	 * is called right after the last tx_queue and also we batch a
++	 * bunch of packets, so tx is probably not going to be as fast as
++	 * we are. */
++	outb(CUResume, dev->base_addr + SCBCmd);
 +	dev->trans_start = jiffies;
 +	return 0;
 +}
 +
 +static int speedo_tx_start(struct net_device *dev) {
-+	/* Just bump the trans_start time.. */
++	printk("hard tx_start\n");
++	/* must have been suspended before the last queued DMA ring, so
++	 * this mindless CUResume is probably okay */
++	outb(CUResume, dev->base_addr + SCBCmd);
 +	dev->trans_start = jiffies;
 +	return 0;
 +}
@@ -1714,10 +1770,7 @@ Index: drivers/net/eepro100.c
 +	struct speedo_private *sp = (struct speedo_private *)dev->priv;
 +	struct sk_buff *skb_head, *skb_last;
 +
-+	spin_lock(&sp->lock);
-+
 +	skb_head = skb_last = NULL;
-+
 +	dirty_tx = sp->dirty_tx;
 +	while ((int)(sp->cur_tx - dirty_tx) > 0) {
 +		int entry = dirty_tx % TX_RING_SIZE;
@@ -1787,9 +1840,6 @@ Index: drivers/net/eepro100.c
 +		sp->tx_full = 0;
 +		netif_wake_queue(dev); /* Attention: under a spinlock.  --SAW */
 +	}
-+
-+	spin_unlock(&sp->lock);
-+
 +	return skb_head;
 +}
 +
