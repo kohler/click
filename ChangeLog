@@ -1,3 +1,8 @@
+2002-05-03 Friday 19:39  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: clickfs_core.cc (1.2), proc_element.cc (1.40):
+	clickfs now supports handlers
+
 2002-05-03 Friday 18:01  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/Makefile.in (1.68): oopslet
