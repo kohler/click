@@ -98,19 +98,19 @@ And here are the formatting commands, used inside ordinary text.
 .RS 5
 .PP
 .PD 0
-.IP "\f(CWB<\fItext\f(CW>\fR" 15
+.IP "\f(CWB<\fItext\fR\f(CW>\fR" 15
 boldface
-.IP "\f(CWI<\fItext\f(CW>\fR" 15
+.IP "\f(CWI<\fItext\fR\f(CW>\fR" 15
 italics
-.IP "\f(CWC<\fItext\f(CW>\fR" 15
+.IP "\f(CWC<\fItext\fR\f(CW>\fR" 15
 code (fixed-width)
-.IP "\f(CWF<\fItext\f(CW>\fR" 15
+.IP "\f(CWF<\fItext\fR\f(CW>\fR" 15
 filename (italics)
-.IP "\f(CWL<\fItext\fR|\fIlink\f(CW>\fR" 15
+.IP "\f(CWL<\fItext\fR|\fIlink\fR\f(CW>\fR" 15
 hyperlink
 .IP "\f(CWN<>\fR" 15
 line break
-.IP "\f(CWE<\fIname\f(CW>\fR" 15
+.IP "\f(CWE<\fIname\fR\f(CW>\fR" 15
 entity
 .PD
 .RE
@@ -292,26 +292,26 @@ use several formatting commands inside normal text; they consist of an
 uppercase letter, followed by `\f(CW<\fR', some text, and `\f(CW>\fR'. The
 commands are:
 .TP 10
-\f(CWB<\fItext\f(CW>\fR
+\f(CWB<\fItext\fR\f(CW>\fR
 Print \fItext\fR in \fBboldface\fR.
 .TP 10
-\f(CWI<\fItext\f(CW>\fR
+\f(CWI<\fItext\fR\f(CW>\fR
 Print \fItext\fR in \fIitalic\fR.
 .TP 10
-\f(CWC<\fItext\f(CW>\fR
+\f(CWC<\fItext\fR\f(CW>\fR
 Print \fItext\fR like source code, in a constant-width font.
 .TP 10
-\f(CWF<\fItext\f(CW>\fR
+\f(CWF<\fItext\fR\f(CW>\fR
 Print \fItext\fR like a filename. By default, filenames appear in italics.
 .TP 10
-\f(CWL<\fItext\fR|\fIlink\f(CW>\fR
+\f(CWL<\fItext\fR|\fIlink\fR\f(CW>\fR
 Print \fItext\fR as a hyperlink with destination \fIlink\fR. This usually
 just comes out as \fItext\fR.
 .TP 10
 \f(CWN<>\fR
 Put a line break here.
 .TP 10
-\f(CWE<\fIname\f(CW>\fR
+\f(CWE<\fIname\fR\f(CW>\fR
 '
 Print the HTML-style entity named \fIname\fR. There are six entities:
 \f(CWE<lt>\fR is `<', \f(CWE<gt>\fR is `>', \f(CWE<amp>\fR is `&',
