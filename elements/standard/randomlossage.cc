@@ -65,7 +65,7 @@ RandomLossage::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-RandomLossage::initialize(ErrorHandler *errh)
+RandomLossage::initialize(ErrorHandler *)
 {
   _drops = 0;
   return 0;
