@@ -1,4 +1,3 @@
-// -*- c++ *-
 // grid2.click
 
 // better than grid.click, this configuration uses the PacketSocket
@@ -11,8 +10,8 @@ nb :: Neighbor(2000, 00:E0:98:09:27:C5, 18.26.7.2)
 h :: Hello(500, 100, 00:E0:98:09:27:C5, 18.26.7.2)
 
 // device layer els
-ps :: PacketSocket(eth0, 0)
-q :: Queue -> ps
+ps :: FromDevice(eth0, 0)
+q :: Queue -> ToDevice(eth0)
 
 // linux ip layer els
 linux :: Tun(tap, 18.26.7.2, 255.255.255.0)
