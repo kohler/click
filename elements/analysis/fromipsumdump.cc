@@ -548,25 +548,28 @@ FromIPSummaryDump::pull(int)
     return p;
 }
 
+
+enum { H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_FILESIZE, H_FILEPOS, H_STOP };
+
 String
 FromIPSummaryDump::read_handler(Element *e, void *thunk)
 {
     FromIPSummaryDump *fd = static_cast<FromIPSummaryDump *>(e);
     switch ((int)thunk) {
-      case 0:
+      case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case 1:
+      case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case 2:
+      case H_ENCAP:
 	return "IP\n";
-      case 3: {
+      case H_FILESIZE: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
 	      return String(s.st_size) + "\n";
 	  else
 	      return "-\n";
       }
-      case 4:
+      case H_FILEPOS:
 	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
@@ -579,7 +582,7 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
     FromIPSummaryDump *fd = static_cast<FromIPSummaryDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((int)thunk) {
-      case 1: {
+      case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->_active = active;
@@ -589,6 +592,10 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 	  } else
 	      return errh->error("`active' should be Boolean");
       }
+      case H_STOP:
+	fd->_active = false;
+	fd->router()->please_stop_driver();
+	return 0;
       default:
 	return -EINVAL;
     }
@@ -597,12 +604,13 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 void
 FromIPSummaryDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)0);
-    add_read_handler("active", read_handler, (void *)1);
-    add_write_handler("active", write_handler, (void *)1);
-    add_read_handler("encap", read_handler, (void *)2);
-    add_read_handler("filesize", read_handler, (void *)3);
-    add_read_handler("filepos", read_handler, (void *)4);
+    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
+    add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
+    add_write_handler("stop", write_handler, (void *)H_STOP);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

@@ -112,6 +112,10 @@ length cannot be determined.
 
 Returns FromIPSummaryDump's position in the file, in bytes.
 
+=h stop write-only
+
+When written, sets `active' to false and stops the driver.
+
 =a
 
 ToIPSummaryDump */
