@@ -80,7 +80,8 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 
   // RATES
   int rate;
-  for (int i = 4; i < args.size(); i++) {
+  int i;
+  for (i = 4; i < args.size(); i++) {
     String arg = args[i];
     if(cp_integer(arg, rate) && rate > 0)
       // _rates[0] used for thresh

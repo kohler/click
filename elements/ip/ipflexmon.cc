@@ -185,8 +185,8 @@ IPFlexMonitor::update(IPAddress a, int val)
         c->next_level = tmp;
       }
     } else {
-      c->value = 0;
-      ret = 0;
+      // c->value = 0;
+      // ret = 0;
       c->last_update = click_jiffies();
     }
   }

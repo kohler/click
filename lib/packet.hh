@@ -16,7 +16,7 @@ class Packet {
     char fix_ip_src;    // flag: asks FixIPSrc to set ip_src.
     char param_off;     // for ICMP Parameter Problem, byte offset of error.
     char color;         // one of 255 colors set by Paint element.
-    int siblings;       // written by Monitor, read by Block
+    int siblings;       // written by IPFlexMonitor, read by Block
 #ifdef __KERNEL__
     union {
       cycles_t cycles[4];

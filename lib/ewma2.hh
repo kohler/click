@@ -98,7 +98,8 @@ EWMA2::initialize(int seconds)
   _now_jiffies = click_jiffies();
   _avg = 0;
   _now = 0;
-  for (int j=0; j<METER_SCALE; j++) {
+  int j;
+  for (j=0; j<METER_SCALE; j++) {
     if ((1<<j) > ((seconds*CLICK_HZ+1)/2)) break;
   }
   if (j == METER_SCALE) j--;

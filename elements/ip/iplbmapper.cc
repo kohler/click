@@ -50,7 +50,7 @@ IPLoadBalancingMapper::configure(const String &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   
   for (int i = 0; i < patspecs.size(); i++) {
-    IPRewriter::Pattern *p = IPRewriter::Pattern::make(patspecs[i], 0, errh);
+    IPRewriter::Pattern *p = IPRewriter::Pattern::make(patspecs[i], errh);
     if (p)
       _patterns.push_back(p);
   }

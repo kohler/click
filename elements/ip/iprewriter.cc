@@ -407,7 +407,7 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
 	errh->error("bad input %d spec; expected `drop'", i);
 
     } else if (word == "pattern") {
-      if (Pattern *p = Pattern::make(rest, this, errh)) {
+      if (Pattern *p = Pattern::make(rest, errh)) {
 	_patterns.push_back(p);
 	is.kind = INPUT_SPEC_PATTERN;
 	is.u.pattern = p;
