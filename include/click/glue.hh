@@ -191,6 +191,15 @@ typedef struct device net_device;
 
 #endif /* CLICK_LINUXMODULE */
 
+/* static assert, for compile-time assertion checking */
+#define static_assert(c) switch (c) case 0: case (c):
+
+#ifndef HAVE_MOD_USE_COUNT
+# define MOD_INC_USE_COUNT
+# define MOD_DEC_USE_COUNT
+# define MOD_IN_USE		0
+#endif
+
 #ifndef timercmp
 /* Convenience macros for operations on timevals.
    NOTE: `timercmp' does not work for >= or <=.  */
@@ -225,13 +234,80 @@ typedef struct device net_device;
   } while (0)
 #endif
 
-/* static assert, for compile-time assertion checking */
-#define static_assert(c) switch (c) case 0: case (c):
+// 'struct timeval' operators
 
-#ifndef HAVE_MOD_USE_COUNT
-# define MOD_INC_USE_COUNT
-# define MOD_DEC_USE_COUNT
-# define MOD_IN_USE		0
-#endif
+inline bool
+operator==(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec == b.tv_sec && a.tv_usec == b.tv_usec;
+}
+
+inline bool
+operator!=(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec != b.tv_sec || a.tv_usec != b.tv_usec;
+}
+
+inline bool
+operator<(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec < b.tv_usec);
+}
+
+inline bool
+operator<=(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec <= b.tv_usec);
+}
+
+inline bool
+operator>=(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec >= b.tv_usec);
+}
+
+inline bool
+operator>(const struct timeval &a, const struct timeval &b)
+{
+  return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec > b.tv_usec);
+}
+
+inline struct timeval &
+operator+=(struct timeval &a, const struct timeval &b)
+{
+  a.tv_sec += b.tv_sec;
+  a.tv_usec += b.tv_usec;
+  if (a.tv_usec >= 1000000) {
+    a.tv_sec++;
+    a.tv_usec -= 1000000;
+  }
+  return a;
+}
+
+inline struct timeval &
+operator-=(struct timeval &a, const struct timeval &b)
+{
+  a.tv_sec -= b.tv_sec;
+  a.tv_usec -= b.tv_usec;
+  if (a.tv_usec < 0) {
+    a.tv_sec--;
+    a.tv_usec += 1000000;
+  }
+  return a;
+}
+
+inline struct timeval
+operator+(struct timeval a, const struct timeval &b)
+{
+  a += b;
+  return a;
+}
+
+inline struct timeval
+operator-(struct timeval a, const struct timeval &b)
+{
+  a -= b;
+  return a;
+}
 
 #endif
