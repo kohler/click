@@ -1,3 +1,8 @@
+2001-10-04 Thursday 17:20  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: packet.hh, packet.hh: Deal with chained mbuf's,
+	even if not very efficiently; from Luigi.
+
 2001-10-04 Thursday 15:11  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* config.h.in: Some BSD build fixes, from Luigi Rizzo

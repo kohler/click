@@ -1,3 +1,24 @@
+2001-10-04 Thursday 17:20  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/packet.hh (1.25): Deal with chained mbuf's, even if
+	not very efficiently; from Luigi.
+
+2001-10-04 Thursday 17:19  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/restore-bsd (1.4): cd /sys before starting cleanup
+
+2001-10-04 Thursday 17:19  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/Makefile.in (1.7): Remove the -nostdinc flag, at least
+	for now, since it breaks the build.
+
+2001-10-04 Thursday 16:48  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.10),
+	elements/grid/gridroutetable.hh (1.5), conf/grid.click (1.35):
+	added extended logging of route table updates on a 'routelog'
+	channel
+
 2001-10-04 Thursday 15:11  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* config.h.in (1.15), configure.in (1.148), bsdmodule/Makefile.in
