@@ -128,7 +128,7 @@ IPRouteTable::lookup_route(IPAddress, IPAddress&) const
 }
 
 String
-IPRouteTable::dump_routes() const
+IPRouteTable::dump_routes()
 {
     return String();
 }

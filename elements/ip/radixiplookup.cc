@@ -1,7 +1,7 @@
 // -*- c-basic-offset: 4 -*-
 /*
  * radixiplookup.{cc,hh} -- looks up next-hop address in radix table
- * Thomer M. Gil, Benjie Chen, Eddie Kohler
+ * Eddie Kohler (earlier versions: Thomer M. Gil, Benjie Chen)
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  * Copyright (c) 2002 International Computer Science Institute
@@ -32,7 +32,7 @@ RadixIPLookup::Radix*
 RadixIPLookup::Radix::make_radix(int bitshift, int n)
 {
     if (Radix* r = (Radix*) new unsigned char[sizeof(Radix) + n * sizeof(Child)]) {
-	r->_route_index = 0x7FFFFFFF;
+	r->_route_index = -1;
 	r->_bitshift = bitshift;
 	r->_n = n;
 	r->_nchildren = 0;
@@ -42,6 +42,16 @@ RadixIPLookup::Radix::make_radix(int bitshift, int n)
 	return r;
     } else
 	return 0;
+}
+
+void
+RadixIPLookup::Radix::free_radix(Radix* r)
+{
+    if (r->_nchildren)
+	for (int i = 0; i < r->_n; i++)
+	    if (r->_children[i].child)
+		free_radix(r->_children[i].child);
+    delete[] (unsigned char *)r;
 }
 
 RadixIPLookup::Radix*
@@ -84,7 +94,7 @@ RadixIPLookup::Radix::change(uint32_t addr, uint32_t naddr, int key, uint32_t ke
 
 
 RadixIPLookup::RadixIPLookup()
-    : _default_key(-1), _radix(Radix::make_radix(24, 256))
+    : _vfree(-1), _default_key(-1), _radix(Radix::make_radix(24, 256))
 {
     add_input();
 }
@@ -110,11 +120,13 @@ RadixIPLookup::cleanup(CleanupStage)
 
 
 String
-RadixIPLookup::dump_routes() const
+RadixIPLookup::dump_routes()
 {
     StringAccum sa;
+    for (int j = _vfree; j >= 0; j = _v[j].extra)
+	_v[j].addr = IPAddress(1), _v[j].mask = IPAddress(0);
     for (int i = 0; i < _v.size(); i++)
-	if (_v[i].extra >= 0)
+	if (!_v[i].addr || _v[i].mask)
 	    sa << _v[i] << '\n';
     return sa.take_string();
 }
@@ -123,65 +135,79 @@ RadixIPLookup::dump_routes() const
 int
 RadixIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, ErrorHandler *)
 {
-    int found = _v.size();
-    for (int i = 0; i < _v.size(); i++)
-	if (_v[i].extra < 0)
-	    found = i;
-	else if (_v[i].addr == route.addr && _v[i].mask == route.mask) {
-	    if (!set)
-		return -EEXIST;
-	    if (old_route)
-		*old_route = _v[i];
-	    _v[i].gw = route.gw;
-	    _v[i].port = route.port;
-	    return 0;
-	}
-
-    if (found == _v.size())
-	_v.push_back(route);
-    else
-	_v[found] = route;
-    uint32_t hmask = ntohl(route.mask.addr());
-    if (!hmask)
-	_default_key = found;
-    else {
-	Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, found, hmask);
-	_v[found].extra = r->_route_index;
-	r->_route_index = found;
+    int found;
+    if (_vfree < 0) {
+	found = _v.size();
+	_v.push_back(IPRoute());
+    } else {
+	found = _vfree;
+	_vfree = _v[found].extra;
     }
+    _v[found] = route;
+    _v[found].extra = -1;
+
+    int32_t* pprev;
+    uint32_t hmask = ntohl(route.mask.addr());
+    if (hmask) {
+	Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, found, hmask);
+	pprev = &r->_route_index;
+    } else {
+	_default_key = found;
+	pprev = &_default_key;
+    }
+    
+    for (int32_t j = *pprev; j >= 0; j = *pprev)
+	if (route.addr == _v[j].addr && route.mask == _v[j].mask) {
+	    int r;
+	    if (!set) {
+		_v[found] = _v[j];
+		r = -EEXIST;
+	    } else {
+		if (old_route)
+		    *old_route = _v[j];
+		_v[found].extra = _v[j].extra;
+		r = 0;
+	    }
+	    *pprev = found;
+	    _v[j].extra = _vfree;
+	    _vfree = j;
+	    return r;
+	} else
+	    pprev = &_v[j].extra;
+
+    *pprev = found;
     return 0;
 }
 
 int
 RadixIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler*)
 {
-    for (int i = 0; i < _v.size(); i++)
-	if (_v[i].extra >= 0 && _v[i].addr == route.addr && _v[i].mask == route.mask) {
+    int32_t* pprev;
+    uint32_t hmask = ntohl(route.mask.addr());
+    if (hmask) {
+	Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, -1, hmask);
+	pprev = &r->_route_index;
+    } else {
+	_default_key = -1;
+	pprev = &_default_key;
+    }
+
+    int r = -ENOENT;
+    for (int32_t j = *pprev; j >= 0; j = *pprev)
+	if (route.match(_v[j])) {
 	    if (old_route)
-		*old_route = _v[i];
-	    uint32_t hmask = ntohl(route.mask.addr());
-	    if (!hmask)
-		_default_key = -1;
-	    else {
-		Radix* r = _radix->change(ntohl(route.addr.addr()), ~hmask + 1, -1, hmask);
-		// add back less specific routes
-		int32_t* pprev = &r->_route_index;
-		for (int32_t j = *pprev; j < 0x7FFFFFFF; j = *pprev)
-		    if (j == i)
-			*pprev = _v[i].extra;
-		    else {
-			if (_v[j].contains(_v[i])) {
-			    hmask = ntohl(_v[j].mask.addr());
-			    (void) _radix->change(ntohl(_v[j].addr.addr()), ~hmask + 1, j, hmask);
-			}
-			pprev = &_v[j].extra;
-		    }
-	    }
-	    _v[i].extra = -1;
-	    return 0;
+		*old_route = _v[j];
+	    *pprev = _v[j].extra;
+	    _v[j].extra = _vfree;
+	    _vfree = j;
+	    r = 0;
+	} else {
+	    if (_v[j].contains(route) && (hmask = ntohl(_v[j].mask.addr())))
+		(void) _radix->change(ntohl(_v[j].addr.addr()), ~hmask + 1, j, hmask);
+	    pprev = &_v[j].extra;
 	}
 
-    return -ENOENT;
+    return r;
 }
 
 int

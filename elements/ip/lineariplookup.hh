@@ -90,7 +90,7 @@ class LinearIPLookup : public IPRouteTable { public:
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress&) const;
-    String dump_routes() const;
+    String dump_routes();
 
     bool check() const;
 

@@ -79,19 +79,17 @@ class RadixIPLookup : public IPRouteTable { public:
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress&) const;
-    String dump_routes() const;
+    String dump_routes();
 
   private:
 
     class Radix;
     
-    bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const;
-
     // Simple routing table
     Vector<IPRoute> _v;
-    int _entries;
+    int _vfree;
     
-    int _default_key;
+    int32_t _default_key;
     Radix* _radix;
     
 };
@@ -125,27 +123,17 @@ class RadixIPLookup::Radix { public:
     
 };
 
-inline void
-RadixIPLookup::Radix::free_radix(Radix* r)
-{
-    if (r->_nchildren)
-	for (int i = 0; i < r->_n; i++)
-	    if (r->_children[i].child)
-		free_radix(r->_children[i].child);
-    delete[] (unsigned char *)r;
-}
-
 inline int
-RadixIPLookup::Radix::lookup(const Radix* r, int current, uint32_t addr)
+RadixIPLookup::Radix::lookup(const Radix* r, int cur, uint32_t addr)
 {
     while (r) {
 	int i1 = addr >> r->_bitshift;
 	addr &= (1 << r->_bitshift) - 1;
 	if (r->_children[i1].key >= 0)
-	    current = r->_children[i1].key;
+	    cur = r->_children[i1].key;
 	r = r->_children[i1].child;
     }
-    return current;
+    return cur;
 }
 
 CLICK_ENDDECLS

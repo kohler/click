@@ -196,7 +196,7 @@ LinearIPLookup::lookup_route(IPAddress a, IPAddress &gw) const
 }
 
 String
-LinearIPLookup::dump_routes() const
+LinearIPLookup::dump_routes()
 {
     StringAccum sa;
     for (int i = 0; i < _t.size(); i++)

@@ -471,7 +471,7 @@ TrieIPLookup::lookup_route(IPAddress a, IPAddress &gw) const
 }
 
 String
-TrieIPLookup::dump_routes() const
+TrieIPLookup::dump_routes()
 {
     StringAccum sa;
     for (int i = 0; i < _route_vector.size(); i++)

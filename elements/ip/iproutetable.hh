@@ -56,7 +56,7 @@ Looks up the route associated with address C<dst>. Should set C<gw_return> to
 the resulting gateway and return the relevant output port (or negative if
 there is no route). The default implementation returns -1.
 
-=item C<String B<dump_routes>() const>
+=item C<String B<dump_routes>()>
 
 Returns a textual description of the current routing table. The default
 implementation returns an empty string.
@@ -123,6 +123,7 @@ struct IPRoute {
     inline bool contains(const IPRoute& r) const;
     inline bool mask_as_specific(IPAddress m) const;
     inline bool mask_as_specific(const IPRoute& r) const;
+    inline bool match(const IPRoute& r) const;
     int prefix_len() const	{ return mask.mask_to_prefix_len(); }
 
     String unparse() const;
@@ -138,7 +139,7 @@ class IPRouteTable : public Element { public:
     virtual int add_route(const IPRoute& route, bool allow_replace, IPRoute* replaced_route, ErrorHandler* errh);
     virtual int remove_route(const IPRoute& route, IPRoute* removed_route, ErrorHandler* errh);
     virtual int lookup_route(IPAddress addr, IPAddress& gw) const = 0;
-    virtual String dump_routes() const;
+    virtual String dump_routes();
 
     void push(int port, Packet* p);
 
@@ -179,6 +180,13 @@ inline bool
 IPRoute::mask_as_specific(const IPRoute& r) const
 {
     return mask.mask_as_specific(r.mask);
+}
+
+inline bool
+IPRoute::match(const IPRoute& r) const
+{
+    return addr == r.addr && mask == r.mask
+	&& (port < 0 || (gw == r.gw && port == r.port));
 }
 
 CLICK_ENDDECLS

@@ -311,7 +311,7 @@ DirectIPLookup::flush_handler(const String &, Element *e, void *,
 }
 
 String
-DirectIPLookup::dump_routes() const
+DirectIPLookup::dump_routes()
 {
     uint32_t i;
     int rt_i;

@@ -91,7 +91,7 @@ class DirectIPLookup : public IPRouteTable { public:
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
     static int flush_handler(const String &, Element *, void *, ErrorHandler *);
-    String dump_routes() const;
+    String dump_routes();
 
   protected:
 
