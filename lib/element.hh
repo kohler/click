@@ -102,7 +102,7 @@ class Element : public ElementLink { public:
 
   // for Router::wait() to use to set up event waiting
   virtual bool still_busy() { return false; }
-  virtual struct wait_queue** get_wait_queue() { return 0L; }
+  virtual struct wait_queue** get_wait_queue() { return 0; }
   virtual void do_waiting() {}
   virtual void finish_waiting() {}
   
