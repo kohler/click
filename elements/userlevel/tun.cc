@@ -140,7 +140,7 @@ Tun::push(int, Packet *p)
   memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
   memcpy(big+14, &protocol, 2);
   memcpy(big+16, p->data(), p->length());
-    if(write(_fd, big, p->length()+16) != (int)p->length()+16){
+  if (write(_fd, big, p->length()+16) != (int)p->length()+16){
     perror("write tun");
   }
 #else

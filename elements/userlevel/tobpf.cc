@@ -200,7 +200,7 @@ void
 ToBPF::push(int, Packet *p)
 {
   assert(p->length() >= 14);
-  
+
   int retval;
   const char *syscall;
 
