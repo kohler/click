@@ -117,10 +117,6 @@ while (<grid_config>) {
 	$GRID_IF = $1;
     }
 
-    if (/STATIC_GRID_IP=(\d)/) {
-	$STATIC_IP = $1;
-    }
-
     if (/GW_IF=(\w+)/) {
 	$GW_IF = $1;
     }
@@ -289,20 +285,6 @@ if ( fork () ) {
 	    my_system "/sbin/route add $GW_IP -interface $BOGUS_IP";
 	}
 	
-    }elsif ($SYSTEM_TYPE =~ /Linux/) {
-
-	if ($STATIC_IP) {
-	    my_system "route add -net 10.2.0.0 netmask 255.255.0.0 dev tap0";
-	} else {
-	    my_system "route add -net 18.26.7.0 netmask 255.255.255.0 dev tap0";
-	}
-
-	if (! $IS_GATEWAY) {
-            my_system "/sbin/route add default gw $GRID_IP dev tap0";
-	} else {
-            #linux does not support Grid Gateway at the moment
-	    die print "Linux does not support Grid gateway!\n";
-	}
     }
 
     exit 0;
@@ -369,9 +351,11 @@ sub setup_net_info {
 	    my_system "kill `cat /var/run/dhclient.pid`";
 	}
 
-# set the wireless adapter to ad-hoc mode
+	# set radio parameters 
 	if ($RADIO_TYPE eq 'aironet') {
-	    my_system "ancontrol $ANCIFFLAG $GRID_IF -o 0";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -o 0"; # ad-hoc mode
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -r 1"; # enable RTS/CTS
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -t 1"; # force 1 Mbps
 	    my_system "ancontrol $ANCIFFLAG $GRID_IF -c $GRID_CHANNEL";
 	    my_system "ancontrol $ANCIFFLAG $GRID_IF -n $GRID_SSID";
 	} elsif ($RADIO_TYPE eq 'wavelan') {
@@ -421,82 +405,133 @@ sub setup_net_info {
 	}
 	
     } elsif ($SYSTEM_TYPE == 'Linux') {
-
-	if ($IS_GATEWAY) {
-	   print "Linux does not support Grid Gateway at the Moment!";
-	   exit 1;
-        }
 	
 	# @ADD sysctl ipforwarding...
 
-	$IFCONFIG_OUT = `/sbin/ifconfig $GRID_IF`;
-	$GRID_HW_ADDR = "";
-	$OLD_IP = "";
-	$OLD_NETMASK = "";
-	$OLD_BCAST = "";
-	$OLD_GRID_DEV_GW = "";
-	$OLD_GRID_DEV_NET = "";
-	$TUN_DEV_TYPE = "";
-
-	if (!($IFCONFIG_OUT =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
+	$ifconfig_out = `/sbin/ifconfig $GRID_IF`;
+	$grid_hw_addr = "";
+	$old_ip = "";
+	$old_netmask = "";
+	$old_bcast = "";
+	$old_grid_dev_gw = "";
+	$old_grid_dev_net = "";
+	$tun_dev_type = "";
+	
+	$lan_addr = "";
+	$lan_hw_addr = "";
+	$old_lan_netmask = "";
+	$old_lan_bcast = "";
+	$lan_gw = "";
+	$lan_net = "";
+	
+	if (!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
 	    print "Unable to get Grid device MAC address\n";
 	    exit 1;
 	}
 	else {
-	    $GRID_HW_ADDR = $1;
+	    $grid_hw_addr = $1;
 	}
-
-	if (!($IFCONFIG_OUT =~ /inet addr:(\d+.\d+.\d+.\d+)/)) {
+	if (!($ifconfig_out =~ /inet addr:(\d+.\d+.\d+.\d+)/)) {
 	    print "Unable to get old Grid device IP address\n";
 	}
 	else {
-	    $OLD_IP_ADDR = $1;
-	    if (!($OLD_IP_ADDR =~ /(\d+.\d+.\d+).\d+/)) {
+	    $old_ip_addr = $1;
+	    if (!($old_ip_addr =~ /(\d+.\d+.\d+).\d+/)) {
 		print "Unable to get Grid device net address\n";
 		exit 1;
 	    }
-	    $OLD_GRID_DEV_NET = "$1"; # keep as only the first 3 digits
+	    $old_grid_dev_net = "$1"; # keep as only the first 3 digits
 	}
-	if (!($IFCONFIG_OUT =~ /Mask:(\d+.\d+.\d+.\d+)/)) {
+	if (!($ifconfig_out =~ /Mask:(\d+.\d+.\d+.\d+)/)) {
 	    print "Unable to get old Grid device netmask\n";
 	}
 	else {
-	    $OLD_NETMASK = $1;
+	    $old_netmask = $1;
 	}
-	if (!($IFCONFIG_OUT =~ /Bcast:(\d+.\d+.\d+.\d+)/)) {
+	if (!($ifconfig_out =~ /Bcast:(\d+.\d+.\d+.\d+)/)) {
 	    print "Unable to get old Grid device broadcast address\n";
 	}
 	else {
-	    $OLD_BCAST = $1;
+	    $old_bcast = $1;
 	}
 	
-	#insert ethertap module
-	my_system "modprobe ethertap";
+	# get LAN device params for routing
+	$ifconfig_lan_out = `ifconfig $lan_if`;
+	if (!($ifconfig_lan_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
+	    print "Unable to get LAN device MAC address\n";
+	    exit 1; # we really need to know that...
+	}
+	else {
+	    $lan_hw_addr = $1;
+	}
+	if (!($ifconfig_lan_out =~ /inet addr:(\d+.\d+.\d+.\d+)/)) {
+	    print "Unable to get LAN device IP address\n";
+	    exit 1;
+	}
+	else {
+	    $lan_addr = $1;
+	    if (!($lan_addr =~ /(\d+.\d+.\d+).\d+/)) {
+		print "Unable to get LAN device net address\n";
+		exit 1;
+	    }
+	    $lan_net = "$1"; # keep as only the first 3 digits
+	}
+	if (!($ifconfig_lan_out =~ /Mask:(\d+.\d+.\d+.\d+)/)) {
+	    print "Unable to get LAN device netmask\n";
+	}
+	else {
+	    $old_lan_netmask = $1;
+	}
+	if (!($ifconfig_lan_out =~ /Bcast:(\d+.\d+.\d+.\d+)/)) {
+	    print "Unable to get LAN device broadcast address\n";
+	}
+	else {
+	    $old_lan_bcast = $1;
+	}
 
-	$TUN_DEV = "tap";
+	$route_info = `route -n`;
+	if (!($route_info =~ /\n0.0.0.0\s+($lan_net.\d+)/)) {
+	    print "Unable to get LAN device gateway\n";
+	    exit 1;
+	}
+	else {
+	    $lan_gw = $1;
+	}
+	if (!($route_info =~ /\n0.0.0.0\s+($old_grid_dev_net.\d+)/)) {
+	    print "Unable to get Grid device gateway\n";
+	}
+	else {
+	    $old_grid_dev_gw = $1;
+	}
+
+	$tun_dev = "tap";
 
 
 	# remove all routes through the grid interface, and make sure it is up
-	my_system "ifconfig $GRID_IF down";
-	my_system "ifconfig $GRID_IF 0";
+	my_system "ifconfig $grid_if down";
+	my_system "ifconfig $grid_if 0";
 	
 	# set the adapter to ad-hoc mode
 	if ($RADIO_TYPE eq "wavelan") {
-	    my_system "iwconfig $GRID_IF mode ad-hoc channel $GRID_CHANNEL";
-	    my_system "iwconfig $GRID_IF essid $GRID_SSID";
+	    my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
 	}
 	elsif ($RADIO_TYPE eq "aironet") {
-	    my_system "echo \"Mode: adhoc\" > /proc/aironet/$GRID_IF/Config";
-	    my_system "echo \"Channel: $GRID_CHANNEL\" > /proc/aironet/$GRID_IF/Config";
-	    my_system "echo \"$GRID_SSID\" > /proc/aironet/$GRID_IF/SSID";
+	    my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
+	    my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
+	    my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
 	} else {
 	    die "run_grid: radio type $RADIO_TYPE not supported\n";
 	}
 
+
+	# remove LAN device routes
+	my_system "ifconfig $lan_if down";
+	my_system "ifconfig $lan_if 0";
+
 	# decrease mtu on the kerneltap so we don't get packets too big to encapsulate.  
 	# this is hacky, maybe it should be in the kerneltap code with the ifconfig/route calls.  
 	# but i forget why those are in there at all...
-	my_system "/sbin/ifconfig tap0 mtu 1350";
+	my_system "/sbin/ifconfig tap1 mtu 1400";
 
     } else {
 	
