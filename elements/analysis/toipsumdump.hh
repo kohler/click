@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ToIPSummaryDump(FILENAME [, I<KEYWORDS>])
+ToIPSummaryDump(FILENAME [, I<keywords>])
 
 =s analysis
 
@@ -20,10 +20,10 @@ writes packet summary information to an ASCII file
 =d
 
 Writes summary information about incoming packets to FILENAME in a simple
-ASCII format---each line corresponds to a packet. The CONTENTS keyword
-argument determines what information is written. Writes to standard output if
-FILENAME is a single dash `C<->'. (The BINARY keyword argument writes a packed
-binary format to save space.)
+ASCII format---each line corresponds to a packet.  The CONTENTS keyword
+argument determines what information is written.  Writes to standard output if
+FILENAME is a single dash `C<->'.  The BINARY keyword argument writes a packed
+binary format to save space.
 
 ToIPSummaryDump uses packets' extra-length and extra-packet-count annotations.
 
@@ -102,10 +102,10 @@ below). Defaults to false.
 =item MULTIPACKET
 
 Boolean. If true, and the CONTENTS option doesn't contain 'C<count>', then
-generate multiple summary entries for packets with nonzero packet count
-annotations. For example, if MULTIPACKET is true, and a packet has packet
-count annotation 2, then ToIPSummaryDump will generate 2 identical lines for
-that packet in the dump. False by default.
+generate multiple summary entries for packets with nonzero extra-packets
+annotations. For example, if MULTIPACKET is true, and a packet has
+extra-packets annotation 1, then ToIPSummaryDump will generate 2 identical
+lines for that packet in the dump. False by default.
 
 =item BAD_PACKETS
 
@@ -147,7 +147,7 @@ line, down to one field. Missing fields are treated as 'C<->'.
 =n
 
 The 'C<len>' and 'C<payload_len>' content types use the extra length
-annotation. The 'C<count>' content type uses the packet count annotation.
+annotation. The 'C<count>' content type uses the extra packets annotation.
 
 The characters corresponding to TCP flags are as follows:
 
