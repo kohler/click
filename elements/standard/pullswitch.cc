@@ -104,7 +104,7 @@ PullSwitch::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_SET_SWITCH) {
     int d;
-    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d != 0)
+    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0)
       return -EINVAL;
     _input = (d >= ninputs() ? -1 : d);
     return 0;
