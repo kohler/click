@@ -1,3 +1,9 @@
+2002-04-11 Thursday 15:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridlogger.hh (1.3), gridroutetable.cc (1.44),
+	gridroutetable.hh (1.25): added periodic route table dumps to
+	binary logging.  bug fixes
+
 2002-04-11 Thursday 09:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridlogger.hh (1.2), gridroutetable.cc (1.43),
