@@ -299,7 +299,6 @@ public class ControlSocket {
      *
      * @param el The element name.
      * @return Vector of HandlerInfo structures.
-     * @exception NoSuchHandlerException If there is no handler list read handler.
      * @exception NoSuchElementException If there is no such element in the current configuration.
      * @exception HandlerErrorException If the handler returned an error.
      * @exception PermissionDeniedException If the router would not let us access the handler.
@@ -314,10 +313,16 @@ public class ControlSocket {
      */
     public Vector getElementHandlers(String elementName)
 	throws ClickException, IOException {
-	char[] buf = read(elementName, "handlers");
-	Vector vh = StringUtils.split(buf, 0, '\n');
-	
 	Vector v = new Vector();
+	Vector vh;
+
+	try {
+	    char[] buf = read(elementName, "handlers");
+	    vh = StringUtils.split(buf, 0, '\n');
+	} catch (ClickException.NoSuchHandlerException e) {
+	    return v;
+	}
+	
 	for (int i = 0; i < vh.size(); i++) {
 	    String s = (String) vh.elementAt(i);
 	    int j;

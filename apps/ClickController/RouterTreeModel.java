@@ -76,16 +76,20 @@ public class RouterTreeModel extends DefaultTreeModel {
 	  
 	  Comparator handlerComparator = new HandlerComparator();
 	  for (int i = 0; i < v.size(); i++) {
-	      String elname = (String) v.elementAt(i);
-	      DefaultMutableTreeNode elnode = new DefaultMutableTreeNode(elname);
-	      Vector vh = _cs.getElementHandlers(elname);
-	      Collections.sort(vh, handlerComparator);
-	      for (int j = 0; j < vh.size(); j++) {
-		  ControlSocket.HandlerInfo hi = (ControlSocket.HandlerInfo) vh.elementAt(j);
-		  DefaultMutableTreeNode hnode = new DefaultMutableTreeNode(hi);
-		  insertNodeInto(hnode, elnode, j);
+	      // The element might not actually exist!
+	      try {
+		  String elname = (String) v.elementAt(i);
+		  DefaultMutableTreeNode elnode = new DefaultMutableTreeNode(elname);
+		  Vector vh = _cs.getElementHandlers(elname);
+		  Collections.sort(vh, handlerComparator);
+		  for (int j = 0; j < vh.size(); j++) {
+		      ControlSocket.HandlerInfo hi = (ControlSocket.HandlerInfo) vh.elementAt(j);
+		      DefaultMutableTreeNode hnode = new DefaultMutableTreeNode(hi);
+		      insertNodeInto(hnode, elnode, j);
+		  }
+		  insertNodeInto(elnode, root, nodePos++);
+	      } catch (ClickException e) {
 	      }
-	      insertNodeInto(elnode, root, nodePos++);
 	  }
 	  
 	  insertNodeInto(new DefaultMutableTreeNode
