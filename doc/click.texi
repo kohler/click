@@ -4501,8 +4501,8 @@ functions, the user will typically call @code{fast_reschedule}, which is
 like @code{reschedule} without the locking overhead.
 
 @deftypemethod Task void unschedule ()
-Unschedules the task by removing it from its task queue. If the task is
-already unscheduled, then this method does nothing.
+Unschedules the task by removing it from its task queue. Does nothing if
+if the task is currently unscheduled, or if it was never initialized.
 @end deftypemethod
 
 @deftypemethod Task void reschedule ()
