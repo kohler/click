@@ -174,6 +174,16 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
   String s = cp_uncomment(in_s);
   switch ((int)vparam) {
 
+   case 0: {			// data
+     String data;
+     if (!cp_string(s, &data))
+       return errh->error("data parameter must be string");
+     rs->_data = data;
+     if (rs->_packet) rs->_packet->kill();
+     rs->_packet = Packet::make(data.data(), data.length());
+     break;
+   }
+   
    case 1: {			// rate
      unsigned rate;
      if (!cp_unsigned(s, &rate))
@@ -222,7 +232,7 @@ void
 RatedSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0);
-  add_write_handler("data", reconfigure_write_handler, (void *)0);
+  add_write_handler("data", change_param, (void *)0);
   add_read_handler("rate", read_param, (void *)1);
   add_write_handler("rate", change_param, (void *)1);
   add_read_handler("limit", read_param, (void *)2);

@@ -28,7 +28,7 @@
 #include <click/glue.hh>
 
 InfiniteSource::InfiniteSource()
-  : Element(0, 1), _task(this)
+  : Element(0, 1), _packet(0), _task(this)
 {
   MOD_INC_USE_COUNT;
   _packet = 0;
@@ -104,8 +104,11 @@ InfiniteSource::run_scheduled()
   if (_limit >= 0 && _count + n >= _limit)
     n = _limit - _count;
   if (n > 0) {
-    for (int i = 0; i < n; i++)
-      output(0).push(_packet->clone());
+    for (int i = 0; i < n; i++) {
+      Packet *p = _packet->clone();
+      click_gettimeofday(&p->timestamp_anno());
+      output(0).push(p);
+    }
     _count += n;
     _task.fast_reschedule();
   } else if (_stop)
@@ -123,7 +126,9 @@ InfiniteSource::pull(int)
     return 0;
   }
   _count++;
-  return _packet->clone();
+  Packet *p = _packet->clone();
+  click_gettimeofday(&p->timestamp_anno());
+  return p;
 }
 
 String
@@ -154,12 +159,21 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
   String s = cp_uncomment(in_s);
   switch ((int)vparam) {
 
+   case 0: {			// data
+     String data;
+     if (!cp_string(s, &data))
+       return errh->error("data parameter must be string");
+     is->_data = data;
+     if (is->_packet) is->_packet->kill();
+     is->_packet = Packet::make(data.data(), data.length());
+     break;
+   }
+   
    case 1: {			// limit
      int limit;
      if (!cp_integer(s, &limit))
        return errh->error("limit parameter must be integer");
      is->_limit = limit;
-     is->set_configuration_argument(1, s);
      break;
    }
    
@@ -168,7 +182,6 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_integer(s, &burstsize) || burstsize < 1)
        return errh->error("burstsize parameter must be integer >= 1");
      is->_burstsize = burstsize;
-     is->set_configuration_argument(2, s);
      break;
    }
    
@@ -197,7 +210,7 @@ void
 InfiniteSource::add_handlers()
 {
   add_read_handler("data", read_param, (void *)0);
-  add_write_handler("data", reconfigure_write_handler, (void *)0);
+  add_write_handler("data", change_param, (void *)0);
   add_read_handler("limit", read_param, (void *)1);
   add_write_handler("limit", change_param, (void *)1);
   add_read_handler("burstsize", read_param, (void *)2);

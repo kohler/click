@@ -94,14 +94,14 @@ class InfiniteSource : public Element { public:
 
  protected:
   
-  String _data;
+  Packet *_packet;
   int _burstsize;
   int _limit;
   int _count;
   bool _active : 1;
   bool _stop : 1;
-  Packet *_packet;
   Task _task;
+  String _data;
   
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);
