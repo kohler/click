@@ -69,9 +69,7 @@ class IPReassembler : public Element { public:
 
   private:
 
-    enum { MEM_HIGH_THRESH = 256 * 1024,
-	   MEM_LOW_THRESH  = 192 * 1024,
-	   EXPIRE_TIMEOUT = 30, // seconds
+    enum { EXPIRE_TIMEOUT = 30, // seconds
 	   EXPIRE_TIMER_INTERVAL_MS = 10000, // ms
 	   IPH_MEM_USED = 40 };
 
