@@ -4,8 +4,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/drivers/net/acenic.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** drivers/net/acenic.c	2000/10/31 21:34:03	1.1.1.1
---- drivers/net/acenic.c	2000/10/31 21:37:40	1.2
+*** drivers/net/acenic.c	2000/10/31 22:51:06	1.1.1.1
+--- drivers/net/acenic.c	2000/10/31 22:55:38	1.2
 ***************
 *** 396,402 ****
 --- 396,464 ----
@@ -798,8 +798,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/drivers/net/acenic.h,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** drivers/net/acenic.h	2000/10/31 21:34:03	1.1.1.1
---- drivers/net/acenic.h	2000/10/31 21:37:41	1.2
+*** drivers/net/acenic.h	2000/10/31 22:51:06	1.1.1.1
+--- drivers/net/acenic.h	2000/10/31 22:55:38	1.2
 ***************
 *** 251,256 ****
 --- 251,259 ----
@@ -818,8 +818,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/drivers/net/tulip.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** drivers/net/tulip.c	2000/10/31 21:34:01	1.1.1.1
---- drivers/net/tulip.c	2000/10/31 21:37:41	1.2
+*** drivers/net/tulip.c	2000/10/31 22:51:04	1.1.1.1
+--- drivers/net/tulip.c	2000/10/31 22:55:39	1.2
 ***************
 *** 26,34 ****
   
@@ -1759,8 +1759,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/fs/proc/inode.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** fs/proc/inode.c	2000/10/31 21:33:50	1.1.1.1
---- fs/proc/inode.c	2000/10/31 22:29:45	1.2
+*** fs/proc/inode.c	2000/10/31 22:50:52	1.1.1.1
+--- fs/proc/inode.c	2000/10/31 22:55:39	1.2
 ***************
 *** 265,270 ****
 --- 265,275 ----
@@ -1781,8 +1781,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/include/linux/netdevice.h,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** include/linux/netdevice.h	2000/10/31 21:33:54	1.1.1.1
---- include/linux/netdevice.h	2000/10/31 21:37:42	1.2
+*** include/linux/netdevice.h	2000/10/31 22:50:56	1.1.1.1
+--- include/linux/netdevice.h	2000/10/31 22:55:39	1.2
 ***************
 *** 317,322 ****
 --- 317,363 ----
@@ -1853,8 +1853,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/include/linux/signal.h,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** include/linux/signal.h	2000/10/31 21:33:53	1.1.1.1
---- include/linux/signal.h	2000/10/31 21:37:42	1.2
+*** include/linux/signal.h	2000/10/31 22:50:55	1.1.1.1
+--- include/linux/signal.h	2000/10/31 22:55:39	1.2
 ***************
 *** 189,195 ****
   		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
@@ -1895,8 +1895,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/include/linux/skbuff.h,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** include/linux/skbuff.h	2000/10/31 21:33:54	1.1.1.1
---- include/linux/skbuff.h	2000/10/31 21:37:42	1.2
+*** include/linux/skbuff.h	2000/10/31 22:50:56	1.1.1.1
+--- include/linux/skbuff.h	2000/10/31 22:55:40	1.2
 ***************
 *** 145,150 ****
 --- 145,152 ----
@@ -1959,8 +1959,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/net/netsyms.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** net/netsyms.c	2000/10/31 21:33:59	1.1.1.1
---- net/netsyms.c	2000/10/31 21:37:42	1.2
+*** net/netsyms.c	2000/10/31 22:51:01	1.1.1.1
+--- net/netsyms.c	2000/10/31 22:55:40	1.2
 ***************
 *** 454,459 ****
 --- 454,468 ----
@@ -1996,8 +1996,8 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/net/core/dev.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** net/core/dev.c	2000/10/31 21:33:59	1.1.1.1
---- net/core/dev.c	2000/10/31 21:37:42	1.2
+*** net/core/dev.c	2000/10/31 22:51:01	1.1.1.1
+--- net/core/dev.c	2000/10/31 22:55:40	1.2
 ***************
 *** 151,156 ****
 --- 151,159 ----
@@ -2229,32 +2229,14 @@ RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/net/core/skbuff.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** net/core/skbuff.c	2000/10/31 21:33:59	1.1.1.1
---- net/core/skbuff.c	2000/10/31 21:37:42	1.2
+*** net/core/skbuff.c	2000/10/31 22:51:01	1.1.1.1
+--- net/core/skbuff.c	2000/10/31 22:55:40	1.2
 ***************
-*** 4,10 ****
-   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
-   *			Florian La Roche <rzsfl@rz.uni-sb.de>
-   *
-!  *	Version:	$Id: skbuff.c,v 1.1.1.1 2000/10/31 21:33:59 eddietwo Exp $
-   *
-   *	Fixes:	
-   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
---- 4,10 ----
-   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
-   *			Florian La Roche <rzsfl@rz.uni-sb.de>
-   *
-!  *	Version:	$Id: skbuff.c,v 1.2 2000/10/31 21:37:42 eddietwo Exp $
-   *
-   *	Fixes:	
-   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
-***************
-*** 256,261 ****
---- 256,321 ----
-  	n->destructor = NULL;
+*** 257,262 ****
+--- 257,322 ----
   	return n;
   }
-+ 
+  
 + 
 + /* Click: resets a skb that was recycled */
 + void
@@ -2314,17 +2296,18 @@ diff -c -r1.1.1.1 -r1.2
 +   return 0;
 + }
 + 
-  
++ 
   /*
    *	This is slower, and copies the whole data area 
+   */
 Index: net/sched/sch_generic.c
 ===================================================================
 RCS file: /home/mazu/cvsroot/linux-mazu-2.2.16/net/sched/sch_generic.c,v
 retrieving revision 1.1.1.1
 retrieving revision 1.2
 diff -c -r1.1.1.1 -r1.2
-*** net/sched/sch_generic.c	2000/10/31 21:34:00	1.1.1.1
---- net/sched/sch_generic.c	2000/10/31 21:37:42	1.2
+*** net/sched/sch_generic.c	2000/10/31 22:51:03	1.1.1.1
+--- net/sched/sch_generic.c	2000/10/31 22:55:40	1.2
 ***************
 *** 76,81 ****
 --- 76,99 ----
