@@ -349,6 +349,10 @@ extern "C" {
 static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
+#ifdef NETDEV_GOING_DOWN
+    if (flags == NETDEV_GOING_DOWN)
+	flags = NETDEV_DOWN;
+#endif
     if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
 	bool down = (flags == NETDEV_DOWN);
 	net_device *dev = (net_device *)v;
