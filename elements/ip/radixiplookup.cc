@@ -27,6 +27,16 @@
 #include "radixiplookup.hh"
 CLICK_DECLS
 
+Radix::RadixNode::~RadixNode()
+{
+    bit_idx = -1;
+    if (left && left->bit_idx >= 0)
+	delete left;
+    if (right && right->bit_idx >= 0)
+	delete right;
+}
+
+
 RadixIPLookup::RadixIPLookup()
     : _entries(0)
 {

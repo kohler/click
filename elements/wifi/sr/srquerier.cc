@@ -104,7 +104,7 @@ SRQuerier::send_query(IPAddress dst)
     _queries.insert(dst, DstInfo(dst));
     nfo = _queries.findp(dst);
   }
-  click_gettimeofday(&nfo->_last_query);
+  nfo->_last_query.set_now();
   nfo->_count++;
 
   WritablePacket *p = Packet::make((unsigned)0);

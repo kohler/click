@@ -286,7 +286,7 @@ TrieIPLookup::build_main()
     _trie_vector.clear();
 }
 
-inline void
+void
 TrieIPLookup::build_hash(int index)
 {
     if (-1 == index) return;
@@ -301,7 +301,7 @@ TrieIPLookup::build_hash(int index)
     build_hash(tn.right_child);
 }
 
-inline void
+void
 TrieIPLookup::build_hash_node(TrieNode &tn, const Rope& rope, int upper_bound_inclusive)
 {
     int index;
@@ -391,7 +391,7 @@ TrieIPLookup::build_hash_marker(Marker &new_marker, TrieNode tn, int n_prefix_le
     new_marker.output = tn.output;
 }
 
-inline void
+void
 TrieIPLookup::build_children_lengths(int index)
 {
     // initialize it to 0

@@ -372,13 +372,13 @@ RouterThread::run_os()
 	SET_STATE(S_PAUSED);
 	schedule();
     } else {
-	struct timeval wait;
+	Timestamp wait;
 	if (_id != 0 || !_master->timer_delay(&wait)) {
 	    SET_STATE(S_BLOCKED);
 	    schedule();
-	} else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ)) {
+	} else if (wait._sec > 0 || wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ)) {
 	    SET_STATE(S_TIMER);
-	    (void) schedule_timeout((wait.tv_sec * CLICK_HZ) + (wait.tv_usec * CLICK_HZ / 1000000) - 1);
+	    (void) schedule_timeout((wait._sec * CLICK_HZ) + (wait._subsec * CLICK_HZ / Timestamp::SUBSEC_PER_SEC) - 1);
 	} else {
 	    current->state = TASK_RUNNING;
 	    SET_STATE(S_PAUSED);

@@ -77,7 +77,7 @@ class Radix { public:
 	bool valid;
 	int info;
 	RadixNode() : left(0), right(0), valid(false) { }
-	void kill();
+	~RadixNode();
     };
 
     struct RadixNode *root;
@@ -98,21 +98,10 @@ Radix::Radix()
     root->left = root->right = root;
 }
 
-inline void
-Radix::RadixNode::kill()
-{
-    if (bit_idx >= 0) {
-	bit_idx = -1;
-	if (left) left->kill();
-	if (right) right->kill();
-	delete this;
-    }
-}
-
 inline
 Radix::~Radix()
 {
-    root->kill();
+    delete root;
 }
 
 inline void

@@ -81,8 +81,7 @@ DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@ 
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include \
-	@WIFI_INCLUDES@
+	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

@@ -161,9 +161,9 @@ protected:
     // return the length of the mask of the middle, 0 if no middle
     inline int  build_exists_middle(const TrieNode& parent, const TrieNode& child);
     inline void build_middle(int prefix_length, const TrieNode& parent, const TrieNode& child);
-    inline void build_children_lengths(int);
-    inline void build_hash(int);
-    inline void build_hash_node(TrieNode& tn, const Rope& rope, int upper_bound_inclusive);
+    void build_children_lengths(int);
+    void build_hash(int);
+    void build_hash_node(TrieNode& tn, const Rope& rope, int upper_bound_inclusive);
     inline void build_hash_marker(Marker &new_marker, TrieNode tn, int n_prefix_length,
                                   int n_array_index, int upper_bound_inclusive);
 
