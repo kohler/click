@@ -1,3 +1,4 @@
+
 /*
  * router.{cc,hh} -- a Click router configuration
  * Eddie Kohler
@@ -27,6 +28,7 @@
 #include <click/confparse.hh>
 #include <click/subvector.hh>
 #include <click/timer.hh>
+#include <click/standard/errorelement.hh>
 #include <click/standard/drivermanager.hh>
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
@@ -39,8 +41,8 @@ static int globalh_cap;
 
 Router::Router()
   : _preinitialized(0), _initialized(0), 
-    _have_connections(0), _have_hookpidx(0),
-    _handlers(0), _nhandlers(0), _handlers_cap(0)
+  _have_connections(0), _have_hookpidx(0),
+  _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0)
 {
   _refcount = 0;
   _driver_runcount = 0;
@@ -66,6 +68,7 @@ Router::~Router()
   else
     for (int i = 0; i < _elements.size(); i++)
       delete _elements[i];
+  delete _root_element;
   delete[] _handlers;
 }
 
@@ -109,7 +112,7 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
 Element *
 Router::find(const String &name, Element *context, ErrorHandler *errh) const
 {
-  String prefix = _element_names[context->eindex()];
+  String prefix = ename(context->eindex());
   int slash = prefix.find_right('/');
   return find(name, (slash >= 0 ? prefix.substring(0, slash + 1) : String()), errh);
 }
@@ -155,6 +158,16 @@ Router::elandmark(int ei) const
     return String::null_string();
   else
     return _element_landmarks[ei];
+}
+
+Element *
+Router::root_element()
+{
+  if (!_root_element) {
+    _root_element = new ErrorElement;
+    _root_element->attach_router(this, -1);
+  }
+  return _root_element;
 }
 
 
@@ -842,7 +855,7 @@ Router::initialize_handlers(bool defaults, bool specifics)
 
   _handler_first_by_name.clear();
 
-  _nhandlers = 0;
+  _nhandlers = (defaults || specifics ? 0 : -1);
 
   if (defaults)
     for (int i = 0; i < _elements.size(); i++)

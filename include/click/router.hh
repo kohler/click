@@ -41,6 +41,7 @@ class Router { public:
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(const String &, Element *context, ErrorHandler * = 0) const;
   Element *find(const String &, String prefix, ErrorHandler * = 0) const;
+  Element *root_element();
 
   const Vector<String> &requirements() const	{ return _requirements; }
   void add_requirement(const String &);
@@ -179,6 +180,8 @@ class Router { public:
 
   Vector<String> _attachment_names;
   Vector<void *> _attachments;
+  
+  Element *_root_element;
   
   Router(const Router &);
   Router &operator=(const Router &);
