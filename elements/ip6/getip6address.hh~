@@ -1,0 +1,44 @@
+#ifndef GETIP6ADDRESS_HH
+#define GETIP6ADDRESS_HH
+#include "element.hh"
+#include "ip6address.hh"
+
+/*
+ * =c
+ * GetIP6Address(offset)
+ * =d
+ * Copies 16 bytes from the packet to the destination IP6 address annotation.
+ * The offset is usually 16, to fetch the dst address from
+ * an IP packet (w/o ether header).
+ *
+ * The destination address annotation is used by elements
+ * that need to know where the packet is going.
+ * Such elements include ArpQuerier and SetIPRoute.
+ *
+ * =a ArpQuerier
+ * =a LinuxSetIPRoute
+ * =a SetIPRoute
+ */
+
+
+class GetIP6Address : public Element {
+  
+  int _offset;
+  
+ public:
+  
+  GetIP6Address(int = 0);
+  
+  const char *class_name() const		{ return "GetIP6Address"; }
+  Processing default_processing() const	{ return AGNOSTIC; }
+  
+  GetIP6Address *clone() const;
+  int configure(const String &, ErrorHandler *);
+  
+  inline void smaction(Packet *);
+  void push(int, Packet *p);
+  Packet *pull(int);
+  
+};
+
+#endif

@@ -1,0 +1,50 @@
+/*
+ * setip6address.{cc,hh} -- element sets IP6 destination to value of
+ * destination address annotation
+ * Robert Morris
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include "setip6address.hh"
+#include "confparse.hh"
+#include <string.h>
+
+SetIP6Address::SetIP6Address(unsigned offset = 0)
+  : Element(1, 1), _offset(offset)
+{
+}
+
+SetIP6Address *
+SetIP6Address::clone() const
+{
+  return new SetIP6Address(_offset);
+}
+
+int
+SetIP6Address::configure(const String &conf, ErrorHandler *errh)
+{
+  return cp_va_parse(conf, this, errh,
+		     cpUnsigned, "byte offset of IP6 address", &_offset,
+		     0);
+}
+
+Packet *
+SetIP6Address::simple_action(Packet *p)
+{
+  IP6Address ipa = p->dst_ip6_anno();
+//if (ipa && _offset + 4 <= p->length())
+//  memcpy(p->data() + _offset, &ipa, 4);
+  // XXX error reporting?
+  return p;
+}
+
+EXPORT_ELEMENT(SetIP6Address)
