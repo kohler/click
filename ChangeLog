@@ -1,3 +1,11 @@
+2002-01-11 Friday 02:42  Eddie Kohler <kohler@aciri.org>
+
+	* elements/aqm/adaptivered.cc (1.5), elements/aqm/pi.cc (1.2),
+	elements/aqm/red.cc (1.37), elements/ip/markipce.cc (1.6),
+	elements/userlevel/chattersocket.cc (1.8), lib/confparse.cc (1.92),
+	tools/click-flatten/click-flatten.cc (1.8), userlevel/click.cc
+	(1.64): s/ACIRI/ICSI/g
+
 2002-01-11 Friday 02:40  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/drivermanager.cc (1.18): fix bug found by Anne
