@@ -1,0 +1,271 @@
+/*
+ * WebGen.{cc,hh} -- toy TCP implementation
+ * Robert Morris
+ *
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * Further elaboration of this license, including a DISCLAIMER OF ANY
+ * WARRANTY, EXPRESS OR IMPLIED, is provided in the LICENSE file, which is
+ * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
+ */
+
+#include <click/config.h>
+#include <click/package.hh>
+#include "webgen.hh"
+#include <click/click_tcp.h>
+#include <click/click_ip.h>
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
+
+WebGen::WebGen()
+  : _timer(this)
+{
+  MOD_INC_USE_COUNT;
+
+  add_input();
+  add_output();
+
+  _next_port = 1024;
+  _ncbs = 3;
+  int i;
+  for(i = 0; i < _ncbs; i++){
+    _cbs[i] = new CB;
+    _cbs[i]->reset(_next_port++);
+  }
+}
+
+WebGen::CB::CB()
+{
+}
+
+void
+WebGen::CB::reset(int np)
+{
+  _dport = htons(79); // XXX 80
+  _iss = (random() & 0x0fffffff);
+  _irs = 0;
+  _snd_nxt = _iss;
+  _snd_una = _iss;
+  _sport = htons(1024 + (np % 60000));
+  _do_send = 0;
+  _connected = 0;
+  _got_fin = 0;
+  _closed = 0;
+  _reset = 0;
+  _resends = 0;
+}
+
+WebGen::~WebGen()
+{
+  MOD_DEC_USE_COUNT;
+}
+
+WebGen *
+WebGen::clone() const
+{
+  return new WebGen;
+}
+
+int
+WebGen::initialize(ErrorHandler *)
+{
+  _timer.initialize(this);
+  _timer.schedule_after_ms(1000);
+  return 0;
+}
+
+void
+WebGen::run_scheduled()
+{
+  int i;
+
+  for(i = 0; i < _ncbs; i++){
+    CB *cb = _cbs[i];
+    if(cb->_reset || cb->_closed || cb->_resends > 5)
+      cb->reset(_next_port++);
+    tcp_output(cb, 0);
+    cb->_resends += 1;
+  }
+  _timer.schedule_after_ms(1000);
+}
+
+WebGen::CB *
+WebGen::find_cb(unsigned short sport, unsigned short dport)
+{
+  int i;
+
+  for(i = 0; i < _ncbs; i++){
+    if(sport == _cbs[i]->_sport && dport == _cbs[i]->_dport){
+      return(_cbs[i]);
+    }
+  }
+  return(0);
+}
+
+void
+WebGen::tcp_input(Packet *p)
+{
+  click_tcp *th = (click_tcp *) p->data();
+  int dlen = p->length() - sizeof(click_tcp);
+  unsigned seq, ack;
+
+  if(p->length() < sizeof(*th))
+    return;
+
+  CB *cb = find_cb(th->th_dport, th->th_sport);
+  if(cb == 0 || cb->_reset){
+    p->kill();
+    return;
+  }
+
+  seq = ntohl(th->th_seq);
+  ack = ntohl(th->th_ack);
+
+  if((th->th_flags & (TH_ACK|TH_RST)) == TH_ACK &&
+     ack == cb->_iss + 1 &&
+     cb->_connected == 0){
+    cb->_snd_nxt = cb->_iss + 1;
+    cb->_snd_una = cb->_snd_nxt;
+    cb->_irs = seq;
+    cb->_rcv_nxt = cb->_irs + 1;
+    cb->_connected = 1;
+    cb->_do_send = 1;
+    click_chatter("WebGen connected %d %d",
+                  ntohs(cb->_sport),
+                  ntohs(cb->_dport));
+  } else if(dlen > 0){
+    cb->_do_send = 1;
+    if(seq + dlen > cb->_rcv_nxt)
+      cb->_rcv_nxt = seq + dlen;
+  }    
+
+  if(th->th_flags & TH_ACK){
+    if(ack > cb->_snd_una){
+      cb->_snd_una = ack;
+    }
+    if(cb->_got_fin && ack > cb->_fin_seq){
+      // Our FIN has been ACKed.
+      cb->_closed = 1;
+    }
+  }
+
+  if((th->th_flags & TH_FIN) &&
+     seq + dlen == cb->_rcv_nxt &&
+     cb->_got_fin == 0){
+    cb->_got_fin = 1;
+    cb->_fin_seq = cb->_snd_nxt;
+    cb->_rcv_nxt += 1;
+    cb->_do_send = 1;
+  }
+
+  if(th->th_flags & TH_RST){
+    click_chatter("WebGen: RST %d %d",
+                  ntohs(th->th_sport),
+                  ntohs(th->th_dport));
+    cb->_reset = 1;
+  }
+
+  if(cb->_reset){
+    p->kill();
+  } else {
+    tcp_output(cb, p);
+  }
+
+  if(cb->_reset || cb->_closed){
+    cb->reset(_next_port++);
+    tcp_output(cb, 0);
+  }
+}
+
+Packet *
+WebGen::simple_action(Packet *p)
+{
+  tcp_input(p);
+  return(0);
+}
+
+// Send a suitable TCP packet.
+// xp is a candidate packet buffer, to be re-used or freed.
+void
+WebGen::tcp_output(CB *cb, Packet *xp)
+{
+  int paylen;
+  unsigned int plen;
+  unsigned int headroom = 34;
+  unsigned int seq;
+  WritablePacket *p = 0;
+
+#define STR "GET /\n"
+
+  if(cb->_connected && cb->_snd_una - cb->_iss - 1 < strlen(STR)){
+    paylen = strlen(STR);
+    seq = cb->_iss + 1;
+    cb->_snd_nxt = seq + paylen;
+  } else {
+    paylen = 0;
+    seq = cb->_snd_nxt;
+  }
+  plen = sizeof(click_tcp) + paylen;
+
+  if(cb->_connected == 1 && cb->_do_send == 0 && paylen == 0){
+    if(xp)
+      xp->kill();
+    return;
+  }
+  cb->_do_send = 0;
+
+  if(xp == 0 ||
+     xp->shared() ||
+     xp->headroom() < headroom ||
+     xp->length() + xp->tailroom() < plen){
+    if(xp){
+      xp->kill();
+    }
+    p = Packet::make(headroom, (const unsigned char *)0, plen, 0);
+  } else {
+    p = xp->uniqueify();
+    if(p->length() < plen)
+      p = p->put(plen - p->length());
+    else if(p->length() > plen)
+      p->take(p->length() - plen);
+  }
+
+  click_tcp *th = (click_tcp *) p->data();
+
+  memset(th, '\0', sizeof(*th));
+
+  if(paylen > 0){
+    memcpy(th + 1, STR, paylen);
+  }
+
+  th->th_sport = cb->_sport;
+  th->th_dport = cb->_dport;
+  th->th_seq = htonl(seq);
+  th->th_off = sizeof(click_tcp) >> 2;
+  if(cb->_connected == 0){
+    th->th_flags = TH_SYN;
+  } else {
+    th->th_flags = TH_ACK;
+    if(paylen)
+      th->th_flags |= TH_PUSH;
+    if(cb->_got_fin)
+      th->th_flags |= TH_FIN;
+    th->th_ack = htonl(cb->_rcv_nxt);
+  }
+
+  th->th_win = htons(60*1024);
+
+  output(0).push(p);
+}
+
+EXPORT_ELEMENT(WebGen)
