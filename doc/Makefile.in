@@ -22,12 +22,6 @@ Makefile: $(srcdir)/Makefile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: install-man
-	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) $(top_builddir)/elementmap $(datadir)/elementmap
-	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
-	/bin/rm -rf $(datadir)/src
-	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
-
 install-man:
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man7 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1

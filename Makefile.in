@@ -22,6 +22,7 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
 bindir = @bindir@
+datadir = @datadir@/click
 
 all: @TARGETS@ tools Makefile
 
@@ -39,9 +40,13 @@ install: elementmap click-compile
 	$(mkinstalldirs) $(bindir)
 	@chmod +x click-compile
 	$(INSTALL) click-compile $(bindir)/click-compile
-	@(cd doc && $(MAKE) install)
-	@$(MAKE) install-include
-install-doc: elementmap
+	$(mkinstalldirs) $(datadir)
+	$(INSTALL_DATA) elementmap $(datadir)/elementmap
+	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
+	/bin/rm -rf $(datadir)/src
+	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
+	@$(MAKE) install-doc install-include
+install-doc:
 	@cd doc && $(MAKE) install
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
@@ -52,10 +57,10 @@ install-include:
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
 
-elementmap: mkelementmap.pl
+elementmap: $(srcdir)/mkelementmap.pl
 	/bin/sh $(top_srcdir)/findelements.sh -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > elementmap
 
-click-compile: click-compile.in
+click-compile: $(srcdir)/click-compile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile

@@ -25,11 +25,12 @@ Version 1.1
 ** Changed the third argument to RatedSource. Used to be a duration to send
    packets; now it is the number of packets to send.
 
-** The following elements have been renamed. Hopefully this will never
-   happen again.
+** The following elements have been renamed.
 
 	OLD			NEW
+	------------------	------------------
 	CheckPaint*		PaintTee
+	FromBPF			FromDevice
 	HashDemux*		HashSwitch
 	Meter			BandwidthMeter
 	PacketMeter		Meter
@@ -37,22 +38,19 @@ Version 1.1
 	PullToPush*		Unqueue
 	SetIPAddress+		StoreIPAddress
 	Shaper			BandwidthShaper
+	ToBPF			ToDevice
+	Tun			KernelTap
 
-   *Old element name may still be used for this release, but is deprecated.
-   +A new element has taken the name SetIPAddress.
+   * Old element name may still be used for this release, but is
+     deprecated.
+   + A new element has taken the name SetIPAddress.
 
-** Renamed the SetIPAddress element to StoreIPAddress. Added a different
-   SetIPAddress element.
+   Our apologies. We don't expect this kind of renaming will be a common
+   event.
 
-** Renamed the HashDemux element to HashSwitch, and the CheckPaint element
-   to PaintTee.
-
-** Renamed the Meter and Shaper elements. The elements that measure bytes
-   per second are now named BandwidthMeter and BandwidthShaper. The
-   elements that measure packets per second have taken the names Meter and
-   Shaper.
-
-** Renamed the PullToPush and Burster elements to Unqueue and BurstUnqueue.
+** To reiterate, the elements that measure bytes per second are now named
+   BandwidthMeter and BandwidthShaper. The elements that measure packets
+   per second have taken the names Meter and Shaper.
 
 ** Removed the SaveIPFields and IPsec elements (they were rotting).
 
@@ -117,7 +115,7 @@ Version 1.1
 
 ** Click configurations can contain cpp(1)-style `#line LINENUMBER' or `#
    LINENUMBER' directives. The tools generate them, too, so you will get
-   better error messages than formerly.
+   better error messages than before.
 
 ** Improved element documentation by adding summaries. The generated
    elements(n) manual page now groups the elements by function. Also
@@ -181,7 +179,7 @@ Version 1.1
 
 ** Added AddressInfo element, which supports network address mnemonics. For
    example, you can now say `AddressInfo(butt 18.26.4.44); IPEncap(6, butt,
-   18.26.4.15);'; `butt' in IPEncap's configuration string then means
+   18.26.4.15)'. The `butt' in IPEncap's configuration string then means
    `18.26.4.44'.
 
 ** Added experimental IPv6 elements; `./configure --enable-ip6' to compile

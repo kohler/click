@@ -23,7 +23,7 @@
  * B<rate> and B<active> handlers in conjunction with PokeHandlers.
  *
  * =e
- *   RatedSource(\<0800>, 10, 10) -> Queue -> ...
+ *   RatedSource(\<0800>, 10, 1000) -> Queue -> ...
  *
  * =h count read-only
  * Returns the total number of packets that have been generated.
