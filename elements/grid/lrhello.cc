@@ -20,7 +20,6 @@
 #include <clicknet/ether.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/userlevel/todevice.hh"
 #include <click/router.hh>
 #include "grid.hh"
 CLICK_DECLS
