@@ -3,11 +3,16 @@ SHELL = @SHELL@
 
 # THESE VARIABLES WILL CHANGE FOR EVERY PACKAGE
 
-# SET `clicksrcdir' TO THE TOP-LEVEL CLICK SOURCE DIRECTORY.
+# SET `clicksrcdir' TO THE CLICK SOURCE DIRECTORY.
 # If you are making a standalone package, provide a `--with-click=CLICKPREFIX'
 # configuration option, and set
 #	clicksrcdir := @clickprefix@/share/click/src
 clicksrcdir := @top_srcdir@
+
+# SET `clickincludedir' TO THE CLICK INCLUDE DIRECTORY.
+# If you are making a standalone package, set
+#	clickincludedir := @clickprefix@/include/click
+clickincludedir := @prefix@/include/click
 
 # SET `package' TO THE NAME OF YOUR PACKAGE.
 package := sample
@@ -72,8 +77,8 @@ CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
 DEFS = @DEFS@ 
-K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clicksrcdir) -I$(clicksrcdir)/lib -I$(linuxdir)/include
-U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clicksrcdir) -I$(clicksrcdir)/lib
+K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(clicksrcdir)/lib -I$(linuxdir)/include
+U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(clicksrcdir)/lib
 
 K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
 U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
@@ -102,8 +107,8 @@ kelements.conf:
 uelements.conf:
 	echo . | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
 elements.mk: kelements.conf uelements.conf $(clicksrcdir)/mkelemconf.sh
-	$(clicksrcdir)/mkelemconf.sh -m -d k < kelements.conf > elements.mk
-	$(clicksrcdir)/mkelemconf.sh -m -d u < uelements.conf >> elements.mk
+	$(clicksrcdir)/mkelemconf.sh -m -t kernel < kelements.conf > elements.mk
+	$(clicksrcdir)/mkelemconf.sh -m -t user < uelements.conf >> elements.mk
 kpackage.cc: kelements.conf $(clicksrcdir)/mkelemconf.sh
 	$(clicksrcdir)/mkelemconf.sh -k $(package) < kelements.conf > kpackage.cc
 	@rm -f kpackage.d

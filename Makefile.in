@@ -53,7 +53,7 @@ install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(srcdir)/lib/*.h $(includedir)
+	$(INSTALL_DATA) $(top_builddir)/clickconfig.h $(srcdir)/lib/*.hh $(srcdir)/lib/*.h $(includedir)
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh

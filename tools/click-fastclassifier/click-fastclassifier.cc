@@ -694,8 +694,8 @@ compile_classifiers(RouterT *r, const String &package_name,
   StringAccum header, source;
   header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
 	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
-	 << "#include \"clickpackage.hh\"\n#include \"element.hh\"\n";
-  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n";
+	 << "#include <clickpackage.hh>\n#include <element.hh>\n";
+  source << "#include <clickconfig.h>\n";
   source << "#include \"" << package_name << ".hh\"\n\
 #include \"glue.hh\"\n";
   

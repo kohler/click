@@ -1,6 +1,6 @@
 /* Process this file with autoheader to produce config.h.in */
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CLICK_CONFIG_H
+#define CLICK_CONFIG_H
 
 /* Name of package */
 #define PACKAGE "click"
@@ -106,4 +106,4 @@ inline void *operator new(size_t, void *v) { return v; }
 #endif
 #endif
 
-#endif CONFIG_H
+#endif CLICK_CONFIG_H

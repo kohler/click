@@ -486,3 +486,4 @@ if test ${CONFIG_ELEMLISTS-yes} = yes; then
   /bin/sh mkelemlist.sh
 fi])
 AC_OUTPUT($config_files)
+/bin/ln config.h clickconfig.h
