@@ -1,0 +1,61 @@
+CLICK INSTALLATION INSTRUCTIONS
+===============================
+
+The user-level version of Click should compile and run on Intel x86 systems
+running Unix, using the BPF (Berkeley Packet Filter) system to communicate
+with the network. The Linux kernel module requires a patched Linux 2.2
+system (we've tested on recent Linux kernels like 2.2.10 and 2.2.11).
+
+First, run
+
+	./configure
+
+This will test your system and decide the versions that will work for you
+(user-level, Linux module, or both). To compile Click at user level, you
+must have the pcap library on your system.
+
+Un-tar the Click source and remember where you put it:
+
+  tar xf click.tar
+  cd click
+  set d=`pwd`
+
+You can compile the userlevel version of Click right away:
+
+  cd $d
+  ./configure
+  cd userlevel
+  gmake
+
+Before you can compile or use the Click loadable kernel module, you
+need to install, patch, compile, and boot a compatible Linux kernel.
+Start by making sure you have a copy of Linux 2.2.X sources in (or
+symbolically linked to by) /usr/src/linux. If you need to fetch source
+from www.kernel.org, make sure it's the version of 2.2.X reported by
+uname -r.
+
+Install the Click Linux kernel patch:
+
+  cd /usr/src/linux
+  patch -p0 -b < $d/patch-2.2
+
+Configure and compile the kernel:
+
+  cd /usr/src/linux
+  make menuconfig
+  make dep
+  make bzImage
+make install? so EXTRAVERSION?
+
+Boot the new kernel.
+
+Compile the Click kernel module:
+
+  cd $d
+  ./configure
+  cd linuxmodule
+  gmake
+
+Install the module:
+
+  /sbin/insmod $d/linuxmodule/click.o

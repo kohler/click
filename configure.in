@@ -168,31 +168,63 @@ dnl
 TARGETS=
 AC_SUBST(TARGETS)
 
-dnl check userlevel for pcap.h
+dnl check userlevel for pcap library
 
-PCAP_HEADER_PATH="no"
-AC_SUBST(PCAP_HEADER_PATH)
-AC_CHECK_HEADER(pcap.h, PCAP_HEADER_PATH="")
+if test ${PCAP_HEADER_PATH-NO} != NO; then 
+  ac_cv_pcap_header_path=$PCAP_HEADER_PATH
+else
+  saveflags="$CPPFLAGS"
+  AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path,
+    AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="found",
+     CPPFLAGS="$saveflags -I/usr/include/pcap"
+     AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="-I/usr/include/pcap",
+      CPPFLAGS="$saveflags -I/usr/local/include/pcap"
+      AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="-I/usr/local/include/pcap",
+       ac_cv_pcap_header_path="not found"))))
+  CPPFLAGS="$saveflags"
+  if test "$ac_cv_pcap_header_path" = "found"; then
+    PCAP_HEADER_PATH=""
+  elif test "$ac_cv_pcap_header_path" != "not found"; then
+    PCAP_HEADER_PATH=$ac_cv_pcap_header_path
+  fi
+fi
 
-for i in /usr/include/pcap /usr/local/include/pcap; do
- if test "$PCAP_HEADER_PATH" != no; then break; fi
- save_cppflags=$CPPFLAGS
- CPPFLAGS="$CPPFLAGS -I$i"
- AC_CHECK_HEADER($i/pcap.h, [PCAP_HEADER_PATH="-I$i"])
- CPPFLAGS=$save_cppflags
-done
+if test ${PCAP_LIBRARY_PATH-NO} != NO; then
+  ac_cv_pcap_library_path=$PCAP_LIBRARY_PATH
+else
+  saveflags="$LDFLAGS"
+  savelibs="$LIBS"
+  LIBS="$savelibs -lpcap"
+  AC_CACHE_CHECK(for -lpcap, ac_cv_pcap_library_path,
+    AC_LANG_C
+    AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="found",
+     LDFLAGS="$saveflags -L/usr/local/lib"
+     AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="-L/usr/local/lib",
+      ac_cv_pcap_library_path="not found")))
+  LDFLAGS="$saveflags"
+  LIBS="$savelibs"
+  if test "$ac_cv_pcap_library_path" = "found"; then
+    PCAP_LIBRARY_PATH=""
+  elif test "$ac_cv_pcap_library_path" != "not found"; then
+    PCAP_LIBRARY_PATH="$ac_cv_pcap_library_path"
+  fi
+fi
 
-if test "$PCAP_HEADER_PATH" = no; then
-  PCAP_HEADER_PATH=""
+if test "$ac_cv_pcap_library_path" = "not found" -o "$ac_cv_pcap_library_path" = "not found"; then
+  AC_MSG_WARN(pcap.h or -lpcap not found; can't compile userlevel)
 else
   TARGETS="$TARGETS userlevel"
 fi
+
+AC_SUBST(PCAP_HEADER_PATH)
+AC_SUBST(PCAP_LIBRARY_PATH)
 
 dnl check linuxmodule for Linux
 
 if test `uname` = Linux; then
   AC_CACHE_CHECK(for C++-includable system header files,
     ac_cv_cxx_aware_system,
+    AC_LANG_CPLUSPLUS
     AC_TRY_RUN([#include <signal.h>
 int main(int c, char **v) {
   return 0;
