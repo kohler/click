@@ -80,7 +80,7 @@ class MSQueue : public Element {
 inline void
 MSQueue::prefetch_packet(Packet *p)
 {
-  struct sk_buff *skb = p->steal_skb();
+  struct sk_buff *skb = p->skb();
   asm volatile("prefetcht0 %0" : : "m" (skb->data));
 }
 #endif

@@ -70,7 +70,7 @@ RoundRobinUnqueue::run_task()
 #ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
     if (p_next) {
-      struct sk_buff *skb = p_next->steal_skb();
+      struct sk_buff *skb = p_next->skb();
       asm volatile("prefetcht0 %0" : : "m" (skb->len));
       asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
     }
