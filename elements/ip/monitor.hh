@@ -24,7 +24,9 @@
  * cluster to be changed with the value of VARx. If no VAR is supplied, then
  * Monitor has one input with a weight of 1.
  *
- * Monitor has one output.
+ * Monitor has as many outputs as inputs. A packet coming in on packet n will
+ * leave this element using output n. Connect all outputs to a Funnel element if
+ * there is no need to keep the streams splitted.
  *
  * Monitor should be used together with Classifier to count packets with
  * specific features.
@@ -56,6 +58,7 @@
  * lowered by 2.
  *
  * =a Classifier
+ * =a Funnel
  */
 
 #include "glue.hh"
@@ -79,26 +82,33 @@ public:
 private:
 
 #define SPLIT   0x0001
+
+  struct _stats;
+
   struct _counter {
     unsigned char flags;
-    unsigned int value;
+    union {
+      unsigned int value;
+      struct _stats *next_level;
+    };
   };
-
 
   struct _stats {
     struct _counter counter[256];
   };
 
-  struct _base {
-    int change;
-    struct _stats *stats;
-  };
+  int _max;
+  Vector<int> _inputs;
+  struct _stats *_base;
 
-  Vector<_base *> bases;
+  void clean(_stats *s, int value = 0, bool recurse = false);
+  void update(IPAddress a, int val);
 
-  void clean(_stats *s);
-  void update(IPAddress a);
-  void createbase(int change = 1);
+  static String max_rhandler(Element *e, void *);
+  static int max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static String look_handler(Element *e, void *);
+  static int reset_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  void add_handlers();
 };
 
 #endif /* MONITOR_HH */
