@@ -22,6 +22,12 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <linux/spinlock.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
 static proc_dir_entry **element_pdes = 0;
 
 static String *handler_strings = 0;
