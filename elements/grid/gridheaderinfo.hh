@@ -62,6 +62,7 @@ CLICK_DECLS
  * =h offsetof_grid_hdr_type         read-only
  * =h offsetof_grid_hdr_ip           read-only
  * =h offsetof_grid_hdr_tx_ip        read-only
+ * =h offsetof_grid_hdr_total_len    read-only
  * 
  * =h offsetof_grid_nbr_encap_dst_ip read-only
  * Returns C<offsetof(grid_nbr_encap, dst_ip)>

@@ -58,6 +58,7 @@ handler_info_array[] = {
   { "offsetof_grid_hdr_type"         , offsetof(grid_hdr, type)		, 'd', -1 },
   { "offsetof_grid_hdr_ip"           , offsetof(grid_hdr, ip)		, 'd', -1 },
   { "offsetof_grid_hdr_tx_ip"        , offsetof(grid_hdr, tx_ip)	, 'd', -1 },
+  { "offsetof_grid_hdr_total_len"    , offsetof(grid_hdr, total_len)	, 'd', -1 },
  	
   { "offsetof_grid_nbr_encap_dst_ip" , offsetof(grid_nbr_encap, dst_ip)	, 'd', -1 },
  	
