@@ -116,41 +116,41 @@ IPFilter::Primitive::clear()
 }
 
 void
-IPFilter::Primitive::set_type(int x, int slot, ErrorHandler *errh)
+IPFilter::Primitive::set_type(int x, ErrorHandler *errh)
 {
   if (_type)
-    errh->error("pattern %d: type specified twice", slot);
+    errh->error("type specified twice");
   _type = x;
 }
 
 void
-IPFilter::Primitive::set_srcdst(int x, int slot, ErrorHandler *errh)
+IPFilter::Primitive::set_srcdst(int x, ErrorHandler *errh)
 {
   if (_srcdst)
-    errh->error("pattern %d: `src' or `dst' specified twice", slot);
+    errh->error("`src' or `dst' specified twice");
   _srcdst = x;
 }
 
 void
-IPFilter::Primitive::set_net_proto(int x, int slot, ErrorHandler *errh)
+IPFilter::Primitive::set_net_proto(int x, ErrorHandler *errh)
 {
   if (_net_proto != UNKNOWN && _net_proto != x)
-    errh->error("pattern %d: network protocol specified twice", slot);
+    errh->error("network protocol specified twice");
   _net_proto = x;
 }
 
 void
-IPFilter::Primitive::set_transp_proto(int x, int slot, ErrorHandler *errh)
+IPFilter::Primitive::set_transp_proto(int x, ErrorHandler *errh)
 {
   if (_transp_proto != UNKNOWN)
-    errh->error("pattern %d: transport protocol specified twice", slot);
+    errh->error("transport protocol specified twice");
   _transp_proto = x;
 }
 
 int
-IPFilter::Primitive::set_mask(int *data_store, int full_mask, int shift, int slot, ErrorHandler *errh)
+IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
 {
-  int data = *data_store;
+  int data = _u.i;
   
   if (_op == OP_GT && data == 0) {
     _op = OP_EQ;
@@ -161,29 +161,29 @@ IPFilter::Primitive::set_mask(int *data_store, int full_mask, int shift, int slo
     int pow2 = (_op == OP_GT ? data + 1 : data);
     if ((pow2 & (pow2 - 1)) == 0 && (pow2 - 1) <= full_mask) {
       // have a power of 2
-      *data_store = 0;
+      _u.i = 0;
       _mask = (full_mask & ~(pow2 - 1)) << shift;
       if (_op == OP_GT)
 	_op_negated = !_op_negated;
       return 0;
-    } else if ((_op == OP_LT && data == 0) || (_op == OP_GT && data >= full_mask))
-      return errh->error("pattern %d: value %d out of range", slot, data);
+    } else if ((_op == OP_LT && data == 0) || data >= full_mask)
+      return errh->error("value %d out of range", data);
     else
-      return errh->error("pattern %d: bad relation `%s%s %d'\n\
+      return errh->error("bad relation `%s%s %d'\n\
 (I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n\
-`> POW-1' where POW is a power of 2.)", slot, ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
+`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
 
   if (data < 0 || data > full_mask)
-    return errh->error("pattern %d: value %d out of range", slot, data);
+    return errh->error("value %d out of range", data);
 
-  *data_store = data << shift;
+  _u.i = data << shift;
   _mask = full_mask << shift;
   return 0;
 }
 
 int
-IPFilter::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
+IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 {
   int old_srcdst = _srcdst;
   
@@ -212,7 +212,7 @@ IPFilter::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     } else if (!_data && _transp_proto != UNKNOWN)
       _type = TYPE_PROTO;
     else
-      return errh->error("pattern %d: syntax error, no primitive type", slot);
+      return errh->error("syntax error, no primitive type");
   }
 
   // clear _mask
@@ -221,66 +221,67 @@ IPFilter::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
   // check that _data and _type agree
   if (_type == TYPE_HOST) {
     if (_data != DATA_IP)
-      return errh->error("pattern %d: `host' directive requires IP address", slot);
+      return errh->error("`host' directive requires IP address");
     if (_op != OP_EQ)
-      return errh->error("pattern %d: can't use relational operators with `host'", slot);
+      return errh->error("can't use relational operators with `host'");
     
   } else if (_type == TYPE_NET) {
     if (_data != DATA_IPNET)
-      return errh->error("pattern %d: `net' directive requires IP address and mask", slot);
+      return errh->error("`net' directive requires IP address and mask");
     if (_op != OP_EQ)
-      return errh->error("pattern %d: can't use relational operators with `net'", slot);
+      return errh->error("can't use relational operators with `net'");
     
   } else if (_type == TYPE_PROTO) {
     if (_data == DATA_INT || _data == DATA_PROTO) {
       if (_transp_proto != UNKNOWN)
-	return errh->error("pattern %d: transport protocol specified twice", slot);
-      _transp_proto = _u.i;
+	return errh->error("transport protocol specified twice");
       _data = DATA_NONE;
-    }
+    } else
+      _u.i = _transp_proto;
+    _transp_proto = (_op_negated || _op != OP_EQ ? (int)UNKNOWN : _u.i);
     if (_data != DATA_NONE)
-      return errh->error("pattern %d: `proto' directive requires IP protocol", slot);
-    if (_transp_proto != IP_PROTO_TCP_OR_UDP && _op != OP_EQ)
-      return errh->error("pattern %d: can't use relational operators with `tcp or udp'", slot);
-    if (set_mask(&_transp_proto, 0xFF, 0, slot, errh) < 0)
+      return errh->error("`proto' directive requires IP protocol");
+    if (_u.i == IP_PROTO_TCP_OR_UDP && _op != OP_EQ)
+      return errh->error("can't use relational operators with `tcp or udp'");
+    if (set_mask(0xFF, 0, errh) < 0)
       return -1;
     
   } else if (_type == TYPE_PORT) {
     if (_data == DATA_INT)
       _data = DATA_PORT;
     if (_data != DATA_PORT)
-      return errh->error("pattern %d: `port' directive requires port number (have %d)", slot, _data);
+      return errh->error("`port' directive requires port number (have %d)", _data);
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
     else if (_transp_proto != IP_PROTO_TCP && _transp_proto != IP_PROTO_UDP && _transp_proto != IP_PROTO_TCP_OR_UDP)
-      return errh->error("pattern %d: bad protocol %d for `port' directive", slot, _transp_proto);
-    if (set_mask(&_u.i, 0xFFFF, 0, slot, errh) < 0)
+      return errh->error("bad protocol %d for `port' directive", _transp_proto);
+    if (set_mask(0xFFFF, 0, errh) < 0)
       return -1;
 
   } else if (_type == TYPE_TCPOPT) {
     if (_data == DATA_INT)
       _data = DATA_TCPOPT;
     if (_data != DATA_TCPOPT)
-      return errh->error("pattern %d: `tcp opt' directive requires TCP options", slot);
+      return errh->error("`tcp opt' directive requires TCP options");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP;
     else if (_transp_proto != IP_PROTO_TCP)
-      return errh->error("pattern %d: bad protocol %d for `tcp opt' directive", slot, _transp_proto);
+      return errh->error("bad protocol %d for `tcp opt' directive", _transp_proto);
     if (_op != OP_EQ || _op_negated)
-      return errh->error("pattern %d: can't use relational operators with `tcp opt'", slot);
+      return errh->error("can't use relational operators with `tcp opt'");
     if (_u.i < 0 || _u.i > 255)
-      return errh->error("pattern %d: value %d out of range", slot, _u.i);
+      return errh->error("value %d out of range", _u.i);
 
   } else if (_type == TYPE_TOS) {
     if (_data != DATA_INT)
-      return errh->error("pattern %d: `ip tos' directive requires TOS value", slot);
-    if (set_mask(&_u.i, 0xFF, 0, slot, errh) < 0)
+      return errh->error("`ip tos' directive requires TOS value");
+    if (set_mask(0xFF, 0, errh) < 0)
       return -1;
 
   } else if (_type == TYPE_DSCP) {
     if (_data != DATA_INT)
-      return errh->error("pattern %d: `ip dscp' directive requires TOS value", slot);
-    if (set_mask(&_u.i, 0x3F, 2, slot, errh) < 0)
+      return errh->error("`ip dscp' directive requires TOS value");
+    if (set_mask(0x3F, 2, errh) < 0)
       return -1;
     _type = TYPE_TOS;
 
@@ -288,17 +289,17 @@ IPFilter::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     if (_data == DATA_INT)
       _data = DATA_ICMP_TYPE;
     if (_data != DATA_ICMP_TYPE)
-      return errh->error("pattern %d: `icmp type' directive requires ICMP type", slot);
+      return errh->error("`icmp type' directive requires ICMP type");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_ICMP;
     else if (_transp_proto != IP_PROTO_ICMP)
-      return errh->error("pattern %d: bad protocol %d for `icmp type' directive", slot, _transp_proto);
-    if (set_mask(&_u.i, 0xFF, 0, slot, errh) < 0)
+      return errh->error("bad protocol %d for `icmp type' directive", _transp_proto);
+    if (set_mask(0xFF, 0, errh) < 0)
       return -1;
     
   } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
     if (_data != DATA_NONE)
-      return errh->error("pattern %d: `ip frag' directive takes no data", slot);
+      return errh->error("`ip frag' directive takes no data");
   }
 
   // fix _srcdst
@@ -306,9 +307,21 @@ IPFilter::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     if (_srcdst == 0)
       _srcdst = SD_OR;
   } else if (old_srcdst)
-    errh->warning("pattern %d: `src' or `dst' is meaningless here", slot);
+    errh->warning("`src' or `dst' is meaningless here");
   
   return 0;
+}
+
+static void
+add_exprs_for_proto(int proto, int mask, Classifier *c, Vector<int> &tree)
+{
+  if (mask == 0xFF && proto == IPFilter::IP_PROTO_TCP_OR_UDP) {
+    c->start_expr_subtree(tree);
+    c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
+    c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
+    c->finish_expr_subtree(tree, false);
+  } else
+    c->add_expr(tree, 8, htonl(proto << 16), htonl(mask << 16));
 }
 
 void
@@ -319,17 +332,10 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 
   // handle transport protocol uniformly
   c->start_expr_subtree(tree);
-  if (_transp_proto != UNKNOWN) {
-    if (_transp_proto == IP_PROTO_TCP_OR_UDP) {
-      c->start_expr_subtree(tree);
-      c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
-      c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
-      c->finish_expr_subtree(tree, false);
-    } else {
-      unsigned mask = (_type == TYPE_PROTO ? _mask : 0xFF);
-      c->add_expr(tree, 8, htonl(_transp_proto << 16), htonl(mask << 16));
-    }
-  }
+  if (_type == TYPE_PROTO)
+    add_exprs_for_proto(_u.i, _mask, c, tree);
+  else if (_transp_proto != UNKNOWN)
+    add_exprs_for_proto(_transp_proto, 0xFF, c, tree);
   
   if (_type == TYPE_HOST || _type == TYPE_NET) {
     e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
@@ -455,12 +461,12 @@ IPFilter::notify_noutputs(int n)
 int
 IPFilter::parse_expr(const Vector<String> &words, int pos,
 		     Vector<int> &tree, Primitive &prev_prim,
-		     ErrorHandler *errh, int argno)
+		     ErrorHandler *errh)
 {
   start_expr_subtree(tree);
 
   while (1) {
-    pos = parse_term(words, pos, tree, prev_prim, errh, argno);
+    pos = parse_term(words, pos, tree, prev_prim, errh);
     if (pos >= words.size())
       break;
     if (words[pos] == "or" || words[pos] == "||")
@@ -476,13 +482,13 @@ IPFilter::parse_expr(const Vector<String> &words, int pos,
 int
 IPFilter::parse_term(const Vector<String> &words, int pos,
 		     Vector<int> &tree, Primitive &prev_prim,
-		     ErrorHandler *errh, int argno)
+		     ErrorHandler *errh)
 {
   start_expr_subtree(tree);
 
   bool blank_ok = false;
   while (1) {
-    int next = parse_factor(words, pos, tree, prev_prim, false, errh, argno);
+    int next = parse_factor(words, pos, tree, prev_prim, false, errh);
     if (next == pos)
       break;
     blank_ok = true;
@@ -494,7 +500,7 @@ IPFilter::parse_term(const Vector<String> &words, int pos,
   }
 
   if (!blank_ok)
-    errh->error("pattern %d: missing term", argno);
+    errh->error("missing term");
   finish_expr_subtree(tree, true);
   return pos;
 }
@@ -502,7 +508,7 @@ IPFilter::parse_term(const Vector<String> &words, int pos,
 int
 IPFilter::parse_factor(const Vector<String> &words, int pos,
 		       Vector<int> &tree, Primitive &prev_prim,
-		       bool negated, ErrorHandler *errh, int argno)
+		       bool negated, ErrorHandler *errh)
 {
   // return immediately on last word, ")", "||", "or"
   if (pos >= words.size() || words[pos] == ")" || words[pos] == "||" || words[pos] == "or")
@@ -525,19 +531,19 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   }
   // ! factor
   if (words[pos] == "not" || words[pos] == "!") {
-    int next = parse_factor(words, pos + 1, tree, prev_prim, !negated, errh, argno);
+    int next = parse_factor(words, pos + 1, tree, prev_prim, !negated, errh);
     if (next == pos + 1)
-      errh->error("pattern %d: missing factor after `%s'", argno, String(words[pos]).cc());
+      errh->error("missing factor after `%s'", String(words[pos]).cc());
     return next;
   }
   // ( expr )
   if (words[pos] == "(") {
-    int next = parse_expr(words, pos + 1, tree, prev_prim, errh, argno);
+    int next = parse_expr(words, pos + 1, tree, prev_prim, errh);
     if (next == pos + 1)
-      errh->error("pattern %d: missing expression after `('", argno);
+      errh->error("missing expression after `('");
     if (next >= 0) {
       if (next >= words.size() || words[next] != ")")
-	errh->error("pattern %d: missing `)'", argno);
+	errh->error("missing `)'");
       else
 	next++;
       if (negated)
@@ -558,11 +564,11 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     int wt = (*wordmap)[wd];
 
     if ((wt & WT_TYPE_MASK) == WT_TYPE)
-      prim.set_type(wt & WT_DATA, argno, errh);
+      prim.set_type(wt & WT_DATA, errh);
 
     else if ((wt & WT_TYPE_MASK) == WT_PROTO) {
-      prim.set_net_proto(PROTO_IP, argno, errh);
-      prim.set_transp_proto(wt & WT_DATA, argno, errh);
+      prim.set_net_proto(PROTO_IP, errh);
+      prim.set_transp_proto(wt & WT_DATA, errh);
 
     } else if (wt & WT_TYPE_MASK)
       break;
@@ -570,20 +576,20 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     else if (wd == "src") {
       if (pos < words.size() - 2 && (words[pos+2] == "dst" || words[pos+2] == "dest")) {
 	if (words[pos+1] == "and" || words[pos+1] == "&&") {
-	  prim.set_srcdst(SD_AND, argno, errh);
+	  prim.set_srcdst(SD_AND, errh);
 	  pos += 2;
 	} else if (words[pos+1] == "or" || words[pos+1] == "||") {
-	  prim.set_srcdst(SD_OR, argno, errh);
+	  prim.set_srcdst(SD_OR, errh);
 	  pos += 2;
 	} else
-	  prim.set_srcdst(SD_SRC, argno, errh);
+	  prim.set_srcdst(SD_SRC, errh);
       } else
-	prim.set_srcdst(SD_SRC, argno, errh);
+	prim.set_srcdst(SD_SRC, errh);
     } else if (wd == "dst" || wd == "dest")
-      prim.set_srcdst(SD_DST, argno, errh);
+      prim.set_srcdst(SD_DST, errh);
     
     else if (wd == "ip")
-      prim.set_net_proto(PROTO_IP, argno, errh);
+      prim.set_net_proto(PROTO_IP, errh);
     
     else if (wd == "not" || wd == "!")
       negated = !negated;
@@ -657,11 +663,11 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   }
 
   if (pos == first_pos)
-    return errh->error("pattern %d: empty term near `%s'", argno, wd.cc());
+    return errh->error("empty term near `%s'", wd.cc());
   
   // add if it is valid
   prim._negated = negated;
-  if (prim.check(argno, prev_prim, errh) >= 0) {
+  if (prim.check(prev_prim, errh) >= 0) {
     prim.add_exprs(this, tree);
     prev_prim = prim;
   }
@@ -693,6 +699,8 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
       continue;
     }
 
+    PrefixErrorHandler cerrh(errh, "pattern " + String(argno) + ": ");
+    
     // get slot
     int slot = noutputs();
     {
@@ -700,18 +708,18 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
       if (slotwd == "allow") {
 	slot = 0;
 	if (noutputs() == 0)
-	  errh->error("`allow' is meaningless, element has zero outputs");
+	  cerrh.error("`allow' is meaningless, element has zero outputs");
       } else if (slotwd == "deny")
 	slot = 1;
       else if (slotwd == "drop")
 	slot = noutputs();
       else if (cp_integer(slotwd, &slot)) {
 	if (slot < 0 || slot >= noutputs()) {
-	  errh->error("slot `%d' out of range in pattern %d", slot, argno);
+	  cerrh.error("slot `%d' out of range", slot);
 	  slot = noutputs();
 	}
       } else
-	errh->error("unknown slot ID `%s' in pattern %d", slotwd.cc(), argno);
+	cerrh.error("unknown slot ID `%s'", slotwd.cc());
     }
 
     start_expr_subtree(tree);
@@ -726,9 +734,9 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
       // start with a blank primitive
       Primitive prev_prim;
       
-      int pos = parse_expr(words, 1, tree, prev_prim, errh, argno);
+      int pos = parse_expr(words, 1, tree, prev_prim, &cerrh);
       if (pos < words.size())
-	errh->error("pattern %d: garbage after expression near `%s'", argno, String(words[pos]).cc());
+	cerrh.error("garbage after expression near `%s'", String(words[pos]).cc());
     }
     
     finish_expr_subtree(tree, true, -slot);

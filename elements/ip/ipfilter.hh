@@ -5,9 +5,8 @@
 /*
  * =c
  * IPFilter(ACTION_1 PATTERN_1, ..., ACTION_N PATTERN_N)
- * =s
+ * =s IP, classification
  * filters IP packets by contents
- * V<classification>
  * =d
  *
  * Filters IP packets. IPFilter can have an arbitrary number of filters, which
@@ -101,8 +100,20 @@
  * IPClassifier, Classifier, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
  * AddressInfo, tcpdump(1) */
 
-class IPFilter : public Classifier {
+class IPFilter : public Classifier { public:
+  
+  IPFilter();
+  ~IPFilter();
+  
+  const char *class_name() const		{ return "IPFilter"; }
+  const char *processing() const		{ return PUSH; }
 
+  void notify_noutputs(int);
+  IPFilter *clone() const;
+  int configure(const Vector<String> &, ErrorHandler *);
+  
+  void push(int port, Packet *);
+  
   enum {
     WT_TYPE_MASK = 0xFFFF0000, WT_DATA = 0x0000FFFF,
     WT_TYPE = 0x00010000, WT_PORT = 0x00020000,
@@ -154,41 +165,29 @@ class IPFilter : public Classifier {
     Primitive()	{ clear(); }
     
     void clear();
-    void set_type(int, int slot, ErrorHandler *);
-    void set_srcdst(int, int slot, ErrorHandler *);
-    void set_net_proto(int, int slot, ErrorHandler *);
-    void set_transp_proto(int, int slot, ErrorHandler *);
+    void set_type(int, ErrorHandler *);
+    void set_srcdst(int, ErrorHandler *);
+    void set_net_proto(int, ErrorHandler *);
+    void set_transp_proto(int, ErrorHandler *);
     
-    int set_mask(int *data, int full_mask, int shift, int, ErrorHandler *);
-    int check(int slot, const Primitive &, ErrorHandler *);
+    int set_mask(int full_mask, int shift, ErrorHandler *);
+    int check(const Primitive &, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
     
   };
 
+ private:
+  
   static void initialize_wordmap();
   
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *, int argno);
+		 ErrorHandler *);
   int parse_term(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 ErrorHandler *, int argno);  
+		 ErrorHandler *);  
   int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,
-		 bool negated, ErrorHandler *, int argno);
+		 bool negated, ErrorHandler *);
   
   void length_checked_push(Packet *);
-  
- public:
-  
-  IPFilter();
-  ~IPFilter();
-  
-  const char *class_name() const		{ return "IPFilter"; }
-  const char *processing() const		{ return PUSH; }
-
-  void notify_noutputs(int);
-  IPFilter *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
-  
-  void push(int port, Packet *);
   
 };
 
