@@ -130,6 +130,7 @@ glob_match(const String &str, const String &pattern)
   return (spos == slen && ppos == plen);
 }
 
+#ifdef CLICK_USERLEVEL
 String
 file_string(FILE *f, ErrorHandler *errh)
 {
@@ -173,6 +174,7 @@ file_string(const char *filename, ErrorHandler *errh)
     fclose(f);
   return s;
 }
+#endif
 
 String
 unique_tmpnam(const String &pattern, ErrorHandler *errh)

@@ -1,7 +1,7 @@
 #ifndef ERROR_HH
 #define ERROR_HH
 #include <click/string.hh>
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && !defined(_KERNEL)
 # include <stdio.h>
 #endif
 #include <stdarg.h>
@@ -55,7 +55,7 @@ class ErrorHandler { public:
   
 };
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && !defined(_KERNEL)
 class FileErrorHandler : public ErrorHandler { public:
   
   FileErrorHandler(FILE *, const String & = String());

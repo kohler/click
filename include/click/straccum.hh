@@ -3,9 +3,11 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <assert.h>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <asm/string.h>
-#else
+#elif defined(CLICK_BSDMODULE)
+# include <sys/systm.h>
+#else	/* User-space */
 # include <string.h>
 #endif
 

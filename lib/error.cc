@@ -505,7 +505,7 @@ ErrorHandler::prepend_lines(const String &prepend, const String &text)
   return sa.take_string();
 }
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && !defined(_KERNEL)
 //
 // FILE ERROR HANDLER
 //
@@ -616,7 +616,10 @@ ErrorHandler::static_cleanup()
 ErrorHandler *
 ErrorHandler::default_handler()
 {
-  assert(the_default_handler);
+  /*
+   * If we've done the static cleanup already, just return
+   * the null handler -- callers should check for null.
+   */
   return the_default_handler;
 }
 
