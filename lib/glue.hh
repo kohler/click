@@ -83,7 +83,7 @@ void _leaving_ipb(void);
 
 #define CLICK_HZ HZ
 #define click_gettimeofday(tvp) (do_gettimeofday(tvp))
-#define click_jiffies()		jiffies
+#define click_jiffies()		((unsigned)jiffies)
 
 #else /* not __KERNEL__ */
 
@@ -104,7 +104,7 @@ click_get_cycles(void)
 
 #define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
 #define CLICK_HZ 100		// click_jiffies rate
-extern int click_jiffies();
+extern unsigned click_jiffies();
 
 #endif /* __KERNEL__ */
 

@@ -23,7 +23,7 @@
 
 IPRateMonitor::IPRateMonitor()
   : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _annobydst(true), 
-    _period(1), _thresh(1), _base(NULL)
+    _thresh(1), _base(NULL)
 {
   for (int i=0; i<MAX_PORT_PAIRS; i++)
     _anno[i] = false;
@@ -41,7 +41,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 6)
+  if(args.size() < 5)
     return errh->error("too few arguments.");
 
   // N of PORT PAIRS
@@ -70,28 +70,23 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
     return errh->error
       ("thresh should be non-negative integer.");
  
-  // PERIOD
-  if(!cp_integer(args[4], _period) || _period < 0)
-    return errh->error
-      ("period should be non-negative integer.");
-
   // ANNOBY
-  if(args[5] == "DST")
+  if(args[4] == "DST")
     _annobydst = true;
-  else if(args[5] == "SRC")
+  else if(args[4] == "SRC")
     _annobydst = false;
   else
     return errh->error("ANNOBY should be \"DST\" or \"SRC\".");
 
-  for(int i=6; i < args.size() && i < n+6; i++) {
-    if (!cp_bool(args[i], _anno[i-6]))
+  for(int i=5; i < args.size() && i < n+5; i++) {
+    if (!cp_bool(args[i], _anno[i-5]))
       return errh->error("ANNO_PORT arguments must be bool.");
   }
 
   set_resettime();
 
   // Make _base
-  _base = new Stats(_period);
+  _base = new Stats();
   if(!_base)
     return errh->error("cannot allocate data structure.");
 
@@ -128,11 +123,11 @@ IPRateMonitor::pull(int port)
 // Recursively destroys tables.
 //
 
-IPRateMonitor::Stats::Stats(int period)
+IPRateMonitor::Stats::Stats()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
-    counter[i].dst_rate.initialize(period);
-    counter[i].src_rate.initialize(period);
+    counter[i].dst_rate.initialize();
+    counter[i].src_rate.initialize();
   }
 }
 
@@ -143,13 +138,13 @@ IPRateMonitor::Stats::~Stats()
 }
 
 void
-IPRateMonitor::Stats::clear(int period)
+IPRateMonitor::Stats::clear()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
     delete counter[i].next_level;
     counter[i].next_level = 0;
-    counter[i].dst_rate.initialize(period);
-    counter[i].src_rate.initialize(period);
+    counter[i].dst_rate.initialize();
+    counter[i].src_rate.initialize();
   }
 }
 
@@ -159,7 +154,7 @@ IPRateMonitor::Stats::clear(int period)
 String
 IPRateMonitor::print(Stats *s, String ip = "")
 {
-  int jiffs = click_jiffies();
+  int jiffs = MyEWMA::now();
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
     Counter &c = s->counter[i];
@@ -171,14 +166,14 @@ IPRateMonitor::print(Stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      c.src_rate.update(0, jiffs);
-      c.dst_rate.update(0, jiffs);
+      c.src_rate.update(jiffs, 0);
+      c.dst_rate.update(jiffs, 0);
       ret += "\t"; 
       ret += cp_unparse_real(c.src_rate.average()*CLICK_HZ,
-			     c.src_rate.scale());
+			     c.src_rate.scale);
       ret += "\t"; 
       ret += cp_unparse_real(c.dst_rate.average()*CLICK_HZ, 
-			     c.dst_rate.scale());
+			     c.dst_rate.scale);
       
       ret += "\n";
       if (c.next_level) 
@@ -192,7 +187,7 @@ IPRateMonitor::print(Stats *s, String ip = "")
 inline void
 IPRateMonitor::set_resettime()
 {
-  _resettime = click_jiffies();
+  _resettime = MyEWMA::now();
 }
 
 String
@@ -200,7 +195,7 @@ IPRateMonitor::look_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor*) e;
 
-  String ret = String(click_jiffies() - me->_resettime) + "\n";
+  String ret = String(MyEWMA::now() - me->_resettime) + "\n";
   return ret + me->print(me->_base);
 }
 
@@ -211,19 +206,12 @@ IPRateMonitor::thresh_read_handler(Element *e, void *)
   return String(me->_thresh);
 }
 
-String
-IPRateMonitor::period_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_period);
-}
-
 int
 IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
-  me->_base->clear(me->_period);
+  me->_base->clear();
   me->set_resettime();
   return 0;
 }
@@ -233,7 +221,6 @@ IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
-  add_read_handler("period", period_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
 }

@@ -19,7 +19,7 @@
 
 class Shaper : public Element { protected:
 
-  EWMA _rate;
+  RateEWMA _rate;
   
   int _meter1;
 
@@ -32,7 +32,7 @@ class Shaper : public Element { protected:
   const char *processing() const		{ return PULL; }
 
   int rate() const				{ return _rate.average(); }
-  int rate_scale() const			{ return _rate.scale(); }
+  int rate_scale() const			{ return _rate.scale; }
   
   Shaper *clone() const;
   int configure(const String &, ErrorHandler *);

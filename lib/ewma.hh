@@ -2,77 +2,117 @@
 #define EWMA_HH
 #include "glue.hh"
 
-class EWMA {
+template <int Stability_shift, int Scale>
+class DirectEWMAX {
   
-  int _now_jiffies;
-  int _now;
   int _avg;
-  int _stability_shift;
-
-  static const int METER_SCALE = 10;
   
  public:
 
-  EWMA();
+  DirectEWMAX()				{ _avg = 0; }
 
   int average() const			{ return _avg; }
-  int stability_shift() const		{ return _stability_shift; }
-  int scale() const			{ return METER_SCALE; }
-
-  int set_stability_shift(int);
-
-  void initialize();
+  static const int stability_shift = Stability_shift;
+  static const int scale = Scale;
+  
+  void clear()				{ _avg = 0; }
   
   inline void update_with(int);
-  void update_zero_period(int);
-  inline void update_time();
-  inline void update_now(int delta)	{ _now += delta; }
-  inline void update(int delta);
+  void update_zero_period(unsigned);
+  
 };
 
+template <int Stability_shift, int Scale, class Timer>
+class RateEWMAX {
+  
+  unsigned _now_time;
+  int _now;
+  DirectEWMAX<Stability_shift, Scale> _avg;
+  
+ public:
 
+  RateEWMAX()				{ }
+
+  int average() const			{ return _avg.average(); }
+  static const int stability_shift = Stability_shift;
+  static const int scale = Scale;
+  static unsigned now()			{ return Timer::now(); }
+  
+  void initialize();
+  void initialize(unsigned now);
+  
+  inline void update_time(unsigned now);
+  inline void update_now(int delta)	{ _now += delta; }
+  inline void update(unsigned now, int delta);
+  
+  inline void update_time();
+  inline void update(int delta);
+  
+};
+
+struct JiffiesTimer {
+  static unsigned now()			{ return click_jiffies(); }
+};
+
+typedef DirectEWMAX<4, 10> DirectEWMA;
+typedef RateEWMAX<4, 10, JiffiesTimer> RateEWMA;
+
+template <int stability_shift, int scale>
 inline void
-EWMA::initialize()
+DirectEWMAX<stability_shift, scale>::update_with(int val)
 {
-  _now_jiffies = click_jiffies();
-  _avg = 0;
+  int val_scaled = val << scale;
+  int compensation = 1 << (stability_shift - 1); // round off
+  _avg += (val_scaled - _avg + compensation) >> stability_shift;
+}
+
+template <int stability_shift, int scale, class Timer>
+inline void
+RateEWMAX<stability_shift, scale, Timer>::initialize()
+{
+  _now_time = now();
   _now = 0;
+  _avg.clear();
 }
 
+template <int stability_shift, int scale, class Timer>
 inline void
-EWMA::update_with(int val)
+RateEWMAX<stability_shift, scale, Timer>::update_time(unsigned now)
 {
-  int val_scaled = val << METER_SCALE;
-  int compensation = 1 << (_stability_shift - 1); // round off
-  _avg += (val_scaled - _avg + compensation) >> _stability_shift;
-}
-
-inline void
-EWMA::update_time()
-{
-  int j = click_jiffies();
-  int jj = _now_jiffies;
-  if (j != jj) {
+  unsigned jj = _now_time;
+  if (now != jj) {
     // adjust the average rate using the last measured packets
-    int now_scaled = _now << METER_SCALE;
-    int compensation = 1 << (_stability_shift - 1); // round off
-    _avg += (now_scaled - _avg + compensation) >> _stability_shift;
+    _avg.update_with(_now);
 
-    // adjust for time w/ no packets (XXX: should use table)
-    // (inline copy of update_zero_period)
-    for (int t = jj + 1; t != j; t++)
-      _avg += (-_avg + compensation) >> _stability_shift;
+    // adjust for time w/ no packets
+    if (jj + 1 != now)
+      _avg.update_zero_period(now - jj - 1);
     
-    _now_jiffies = j;
+    _now_time = now;
     _now = 0;
   }
 }
 
+template <int stability_shift, int scale, class Timer>
 inline void
-EWMA::update(int delta)
+RateEWMAX<stability_shift, scale, Timer>::update(unsigned now, int delta)
 {
-  update_time();
+  update_time(now);
   update_now(delta);
+}
+
+template <int stability_shift, int scale, class Timer>
+inline void
+RateEWMAX<stability_shift, scale, Timer>::update_time()
+{
+  update_time(now());
+}
+
+template <int stability_shift, int scale, class Timer>
+inline void
+RateEWMAX<stability_shift, scale, Timer>::update(int delta)
+{
+  update(now(), delta);
 }
 
 #endif

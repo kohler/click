@@ -263,7 +263,7 @@ click_chatter(const char *fmt, ...)
 
 int click_new_count; /* dummy */
 
-int
+unsigned
 click_jiffies()
 {
   struct timeval tv;

@@ -21,7 +21,7 @@
 class Counter : public Element { protected:
   
   int _count;
-  EWMA _rate;
+  RateEWMA _rate;
   
  public:
 
@@ -32,7 +32,7 @@ class Counter : public Element { protected:
   
   int count() const				{ return _count; }
   int rate() const				{ return _rate.average(); }
-  int rate_scale() const			{ return _rate.scale(); }
+  int rate_scale() const			{ return _rate.scale; }
   void reset();
   
   Counter *clone() const			{ return new Counter; }

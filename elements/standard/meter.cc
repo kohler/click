@@ -57,11 +57,11 @@ Meter::configure(const String &conf, ErrorHandler *errh)
     else if (i > 0 && vals[i] <= vals[i-1])
       return errh->error("rate %d must be > rate %d", i+1, i);
   
-  int max_value = ((0xFFFFFFFF<<_rate.scale()) & ~0x80000000);
+  int max_value = ((0xFFFFFFFF<<_rate.scale) & ~0x80000000);
   for (int i = 0; i < args.size(); i++) {
     if (vals[i] > max_value)
       return errh->error("rate %d too large (max %d)", i+1, max_value);
-    vals[i] = (vals[i]<<_rate.scale()) / CLICK_HZ;
+    vals[i] = (vals[i]<<_rate.scale) / CLICK_HZ;
   }
   
   if (vals.size() == 1) {

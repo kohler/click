@@ -43,11 +43,11 @@ Shaper::configure(const String &conf, ErrorHandler *errh)
 		  0) < 0)
     return -1;
   
-  int max_value = ((0xFFFFFFFF<<_rate.scale()) & ~0x80000000);
+  int max_value = ((0xFFFFFFFF<<_rate.scale) & ~0x80000000);
   if (rate > max_value)
     return errh->error("rate too large (max %d)", max_value);
   
-  _meter1 = (rate<<_rate.scale()) / CLICK_HZ;
+  _meter1 = (rate<<_rate.scale) / CLICK_HZ;
   return 0;
 }
 

@@ -34,7 +34,7 @@
 
 class Meter : public Element { protected:
 
-  EWMA _rate;
+  RateEWMA _rate;
 
   int _meter1;
   int *_meters;
@@ -51,7 +51,7 @@ class Meter : public Element { protected:
   const char *processing() const	{ return PUSH; }
   
   int rate() const				{ return _rate.average(); }
-  int rate_scale() const			{ return _rate.scale(); }
+  int rate_scale() const			{ return _rate.scale; }
   
   Meter *clone() const;
   int configure(const String &, ErrorHandler *);

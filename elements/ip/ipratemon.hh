@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPRateMonitor(N, PB, OFF, THRESH, T, ANNOBY [,ANNO_PORT0, ANNO_PORT1, ... ])
+ * IPRateMonitor(N, PB, OFF, THRESH, ANNOBY [,ANNO_PORT0, ANNO_PORT1, ... ])
  * =d
  *
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
@@ -22,9 +22,6 @@
  * THRESH (default to 10): IPRateMonitor further splits a subnet if rate is
  * over THRESH number packets or bytes per second.
  *
- * T (default to 1 second): duration (in seconds) which the rate is kept for
- * (e.g. last 60 seconds).
- *
  * ANNOBY (default to DST): DST or SRC. Annotate by DST or SRC IP address.
  *
  * ANNO_PORTX (default to false): true or false. if true, annotate packet
@@ -38,16 +35,13 @@
  * =h thresh (read)
  * Returns THRESH.
  *
- * =h period (read)
- * Returns T.
- * 
  * =h reset (write)
  * When written, resets all rates.
  *
  * =e
  * Example: 
  *
- * IPRateMonitor(1, PACKETS, 0, 256, 1, DST, true);
+ * IPRateMonitor(1, PACKETS, 0, 256, DST, true);
  *
  * Monitors packet rates for packets coming in on one port. When rate for a
  * network address (e.g. 18.26.*.*) exceeds 1000 packets per second, start
@@ -61,7 +55,7 @@
 #include "glue.hh"
 #include "click_ip.h"
 #include "element.hh"
-#include "ewma2.hh"
+#include "ewma.hh"
 #include "vector.hh"
 
 #if IPVERSION == 4
@@ -71,6 +65,10 @@
 #define MAX_COUNTERS 256
 #define MAX_PORT_PAIRS 16
 
+struct HalfSecondsTimer {
+  static unsigned now()			{ return click_jiffies() >> 4; }
+};
+
 class IPRateMonitor : public Element { public:
 
   IPRateMonitor();
@@ -79,7 +77,7 @@ class IPRateMonitor : public Element { public:
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   
-  void uninitialize() 				{ _base->clear(_period); }
+  void uninitialize() 				{ _base->clear(); }
   int configure(const String &conf, ErrorHandler *errh);
 
   IPRateMonitor *clone() const;
@@ -88,6 +86,8 @@ class IPRateMonitor : public Element { public:
 
 private:
 
+  typedef RateEWMAX<4, 10, HalfSecondsTimer> MyEWMA;
+  
   unsigned char _pb;
 #define COUNT_PACKETS 0
 #define COUNT_BYTES 1
@@ -105,19 +105,18 @@ private:
   // one for each address
   struct Stats;
   struct Counter {
-    EWMA2 dst_rate;
-    EWMA2 src_rate;
+    MyEWMA dst_rate;
+    MyEWMA src_rate;
     struct Stats *next_level;
   };
 
   struct Stats {
     struct Counter counter[MAX_COUNTERS];
-    Stats(int);
+    Stats();
     ~Stats();
-    void clear(int);
+    void clear();
   };
 
-  int _period;
   int _thresh;
   struct Stats *_base;
   long unsigned int _resettime;       // time of last reset
@@ -133,7 +132,6 @@ private:
   static String thresh_read_handler(Element *e, void *);
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
-  static String period_read_handler(Element *e, void *);
 
   static int reset_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
@@ -148,7 +146,7 @@ IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr,
 {
   unsigned int saddr = dstaddr.saddr();
   unsigned int dst = true;
-  int now = click_jiffies();
+  int now = MyEWMA::now();
 
  restart:
   struct Stats *s = _base;
@@ -160,27 +158,27 @@ IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr,
     unsigned char byte = (saddr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
     if (dst) 
-      c->dst_rate.update(val, now);
+      c->dst_rate.update(now, val);
     else 
-      c->src_rate.update(val, now);
+      c->src_rate.update(now, val);
     s = c->next_level;
   }
 
   // annotate src and dst rate for dst address
   int cr;
   if (dst) {
-    cr = (c->dst_rate.average()*CLICK_HZ) >> c->dst_rate.scale();
+    cr = (c->dst_rate.average()*CLICK_HZ) >> c->dst_rate.scale;
     if (_anno[port] && _annobydst) {
       p->set_dst_rate_anno(cr);
       p->set_src_rate_anno
-	((c->src_rate.average()*CLICK_HZ)>>c->src_rate.scale());
+	((c->src_rate.average()*CLICK_HZ)>>c->src_rate.scale);
     }
   }
   else {
-    cr = (c->src_rate.average()*CLICK_HZ) >> c->src_rate.scale();
+    cr = (c->src_rate.average()*CLICK_HZ) >> c->src_rate.scale;
     if (_anno[port] && !_annobydst) {
       p->set_dst_rate_anno
-	((c->dst_rate.average()*CLICK_HZ)>>c->dst_rate.scale());
+	((c->dst_rate.average()*CLICK_HZ)>>c->dst_rate.scale);
       p->set_src_rate_anno(cr);
     }
   }
@@ -188,7 +186,7 @@ IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr,
   // did value get larger than THRESH in the specified period?
   if (cr >= _thresh) {
     if (bitshift < MAX_SHIFT)
-      c->next_level = new Stats(_period);
+      c->next_level = new Stats;
   }
 
   if (dst) {

@@ -126,9 +126,8 @@ RED::initialize(ErrorHandler *errh)
     _queue1 = _queues[0];
 
   // Prepare EWMA stuff
-  _size.initialize();
-  if (_size.scale() != QUEUE_SCALE)
-    return errh->error("fix Click source: EWMA scale not %d", QUEUE_SCALE);
+  _size.clear();
+  assert(_size.scale == QUEUE_SCALE);
   
   _drops = 0;
   _count = -1;
@@ -253,10 +252,10 @@ String
 RED::read_stats(Element *f, void *)
 {
   RED *r = (RED *)f;
-  const EWMA &ewma = r->average_queue_size();
+  const DirectEWMA &ewma = r->average_queue_size();
   return
     String(r->queue_size()) + " current queue\n" +
-    cp_unparse_real(ewma.average(), ewma.scale()) + " avg queue\n" +
+    cp_unparse_real(ewma.average(), ewma.scale) + " avg queue\n" +
     String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
     + String(r->output(0).packet_count()) + " packets\n"

@@ -52,7 +52,7 @@ class RED : public Element {
   unsigned _max_thresh;		// scaled by QUEUE_SCALE
   int _max_p;			// out of 0xFFFF
   
-  EWMA _size;
+  DirectEWMA _size;
   
   int _C1;
   int _C2;
@@ -77,7 +77,7 @@ class RED : public Element {
   void add_handlers();
   
   int queue_size() const;
-  const EWMA &average_queue_size() const	{ return _size; }
+  const DirectEWMA &average_queue_size() const	{ return _size; }
   int drops() const				{ return _drops; }
     
   RED *clone() const;
