@@ -241,16 +241,15 @@ FromDevice::got_skb(struct sk_buff *skb)
 void
 FromDevice::run_scheduled()
 {
-  int i=0;
-  int sent = 0;
-  while (i < _burst && _head != _tail) {
+  int npq = 0;
+  while (npq < _burst && _head != _tail) {
     Packet *p = _queue[_head];
     _head = next_i(_head);
     output(0).push(p);
-    sent++;
+    npq++;
   }
 #if CLICK_DEVICE_ADJUST_TICKETS
-  adjust_tickets(sent);
+  adjust_tickets(npq);
 #endif
   _task.fast_reschedule();
 }
