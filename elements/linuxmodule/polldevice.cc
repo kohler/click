@@ -237,11 +237,11 @@ PollDevice::run_scheduled()
 
     _npackets++;
 #if CLICK_DEVICE_THESIS_STATS
-    _push_cycles -= click_get_cycles();
+    unsigned long long before_push_cycles = click_get_cycles();
 #endif
     output(0).push(p);
 #if CLICK_DEVICE_THESIS_STATS
-    _push_cycles += click_get_cycles();
+    _push_cycles += click_get_cycles() - before_push_cycles;
 #endif
   }
 

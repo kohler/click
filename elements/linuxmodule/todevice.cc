@@ -240,8 +240,8 @@ ToDevice::tx_intr()
       _dev_idle = 0;
   }
 #endif
- 
-#if CLICK_DEVICE_ADJUST_TICKETS
+
+#if CLICK_DEVICE_ADJUST_TICKETS && 0
   int base = tickets()/4;
   if (base < 2) base = 2;
   int adj = 0;
