@@ -1,5 +1,6 @@
 #ifndef REWRITER_HH
 #define REWRITER_HH
+
 #include "element.hh"
 #include "timer.hh"
 #include "hashmap.hh"
@@ -32,11 +33,12 @@
  * =a MappingCreator
  */
 
+class MappingCreator;
+
 class Rewriter : public Element {
 
   class Pattern;
   class Connection;
-  class Mapping;
 
   class Connection {
     // Connection represents a specific TCP or UDP connection, identified
@@ -47,6 +49,7 @@ class Rewriter : public Element {
     short _dport;		// network byte order
 
     Pattern *_pat;
+    int _out;
 
     bool _used;
     bool _removed;
@@ -62,7 +65,9 @@ class Rewriter : public Element {
 	       unsigned long da, unsigned short dp);
     ~Connection() 				{ }
 
-    void set(Packet *p);
+    Connection rev() const;
+
+    void apply(Packet *p);
 
     operator bool() const;
     bool operator==(Connection &c);
@@ -74,6 +79,8 @@ class Rewriter : public Element {
 
     void set_pattern(Pattern *p) 		{ _pat = p; }
     Pattern *pattern() 				{ return _pat; }
+    void set_output(int n)	 		{ _out = n; }
+    int output() 				{ return _out; }
 
     bool used()					{ return _used; }
     void mark_used()				{ _used = true; }
@@ -115,30 +122,18 @@ class Rewriter : public Element {
     operator String() const			{ return (s()); }
   };
 
-  class Mapping {
-    HashMap <Connection, Connection> _fwd;
-    HashMap <Connection, Connection> _rev;
-
-  public:
-    Mapping() : _fwd(), _rev()			{ }
-    ~Mapping()					{ }
-
-    bool add(Packet *p, Pattern *pat);
-    bool apply(Packet *p, int &port);
-    bool rapply(Packet *p);
-
-    void mark_live_tcp();
-    void clean();
-
-    String s();
-  };
-
   Vector<Pattern *> _patterns;
-  Mapping _mapping;
-  Timer _timer;
   int _npat;
+  HashMap <Connection, Connection> _fwd;
+  HashMap <Connection, Connection> _rev;
+
+  Timer _timer;
+  MappingCreator *_mc;
 
   static const int _gc_interval_sec = 10;
+
+  void mark_live_tcp();
+  void clean();
 
 public:
 
@@ -150,13 +145,19 @@ public:
   Processing default_processing() const		{ return PUSH; }
   
   int configure(const String &, ErrorHandler *);
-  void add_handlers();
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
   void run_scheduled();
   
   int npatterns() const				{ return _npat; }
+
   bool establish_mapping(Packet *p, int pat);
+  bool establish_mapping(Connection &in, Connection &out, int output);
+  const Connection &get_mapping(Connection &in) { return _fwd[in]; }
+  bool apply_mapping(Packet *p, int &port);
+  bool rapply_mapping(Packet *p);
+
   void push(int, Packet *);
 
   String dump_table();

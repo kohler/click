@@ -17,6 +17,8 @@
 #include "click_ip.h"
 #include "click_tcp.h"
 #include "click_udp.h"
+#include "elemfilter.hh"
+#include "router.hh"
 #include "confparse.hh"
 #include "error.hh"
 
@@ -63,6 +65,14 @@ Rewriter::Connection::Connection(Packet *p)
   _dport = udph->uh_dport;	// network byte order
 }
 
+Rewriter::Connection
+Rewriter::Connection::rev() const
+{
+  Connection c(_daddr.saddr(), _dport, _saddr.saddr(), _sport);
+  c._pat = _pat;
+  return c;
+}
+
 void
 Rewriter::Connection::fix_csums(Packet *p)
 {
@@ -93,7 +103,7 @@ Rewriter::Connection::fix_csums(Packet *p)
 }
 
 void
-Rewriter::Connection::set(Packet *p)
+Rewriter::Connection::apply(Packet *p)
 {
   click_ip *iph = (click_ip *)p->data();
   iph->ip_src.s_addr = _saddr.saddr();
@@ -219,9 +229,6 @@ Rewriter::Pattern::apply(Connection &in, Connection &out)
   out._daddr = _daddr ? _daddr : in._daddr;
   out._dport = _dport ? htons((short)_dport) : in._dport;
 
-  in.set_pattern(this);
-  out.set_pattern(this);
-
   if (!_sporth) {
     out._sport = in._sport;
     return true;
@@ -269,116 +276,12 @@ Rewriter::Pattern::s(void) const
   return saddr + ":" + sport + " / " + daddr + ":" + dport;
 }
 
-
-//
-// Rewriter::Mapping
-//
-
-bool
-Rewriter::Mapping::add(Packet *p, Pattern *pat)
-{
-  Connection in(p), out;
-  if (!pat->apply(in, out))
-    return false;
-#ifdef debugging
-  click_chatter("mapping::add inserting %s", out.s().cc());
-#endif
-  _fwd.insert(in, out);
-  _rev.insert(out, in);
-  
-  return true;
-}
-
-bool
-Rewriter::Mapping::apply(Packet *p, int &port)
-{
-  Connection in(p), out;
-  if ((out = _fwd[in])) {
-    port = out.pattern()->output();
-    out.set(p);
-#ifdef debugging
-    click_chatter("mapping::apply applied %s", out.s().cc());
-#endif
-    return true;
-  } else {
-#ifdef debugging
-    click_chatter("mapping::apply could not find %s", in.s().cc());
-#endif
-    return false;
-  }
-}
-
-bool
-Rewriter::Mapping::rapply(Packet *p)
-{
-  Connection c;
-  if ((c = _rev[Connection(p)])) {
-    c.set(p);
-    return true;
-  } else
-    return false;
-}
-
-void
-Rewriter::Mapping::mark_live_tcp()
-{
-#ifdef CLICK_LINUXMODULE
-#ifdef HAVE_TCP_PROT
-  start_bh_atomic();
-
-  for (struct sock *sp = tcp_prot.sklist_next;
-       sp != (struct sock *)&tcp_prot;
-       sp = sp->sklist_next) {
-    Connection c(sp->rcv_saddr, ntohs(sp->sport), 
-		 sp->daddr, ntohs(sp->dport));
-    Connection out = _fwd[c];
-    if (out)
-      out.mark_used();
-  }
-
-  end_bh_atomic();
-#endif
-#endif
-}
-
-void
-Rewriter::Mapping::clean()
-{
-  int i = 0;
-  Connection in, out;
-  while (_fwd.each(i, in, out)) {
-    Pattern *p = in.pattern();
-    if (!in.used() && !out.used()) {
-      p->free(in);
-      in.remove();
-      out.remove();
-    } else {
-      in.reset_used();
-      out.reset_used();
-    }
-  }
-}
-
-String
-Rewriter::Mapping::s()
-{
-  String s;
-  int i = 0;
-  Connection in, out;
-
-  while (_fwd.each(i, in, out)) {
-    if (i > 1) s += "\n";
-    s += in.s() + " ==> " + out.s();
-  }
-  return s;
-}
-
 //
 // Rewriter
 //
 
 Rewriter::Rewriter()
-  : _patterns(), _mapping(), _timer(this)
+  : _patterns(), _npat(0), _fwd(), _rev(), _timer(this), _mc(NULL)
 {
 }
 
@@ -416,30 +319,21 @@ Rewriter::configure(const String &conf, ErrorHandler *errh)
   return 0;
 }
 
-static String
-table_dump(Element *f, void *)
-{
-  Rewriter *r = (Rewriter *)f;
-  return r->dump_table();
-}
-
-static String
-patterns_dump(Element *f, void *)
-{
-  Rewriter *r = (Rewriter *)f;
-  return r->dump_patterns();
-}
-
-void
-Rewriter::add_handlers()
-{
-  add_read_handler("rewrite_table", table_dump, (void *)0);
-  add_read_handler("patterns", patterns_dump, (void *)0);
-}
-
 int
-Rewriter::initialize(ErrorHandler *)
+Rewriter::initialize(ErrorHandler *errh)
 {
+  Vector<Element *> mcs;
+  IsaElementFilter filter("MappingCreator");
+  int ok = router()->downstream_elements(this, 0, &filter, mcs);
+  if (ok < 0)
+    return errh->error("downstream_elements failure");
+  filter.filter(mcs);
+  if (mcs.size() == 1)
+    _mc = (MappingCreator *)mcs[0];
+  else if (_npat > 1)
+    return errh->error("Rewriter with multiple patterns must have a "
+		       "MappingCreator on output 0[%d]",mcs.size());
+
   _timer.schedule_after_ms(_gc_interval_sec * 1000);
 #if defined(CLICK_LINUXMODULE) && !defined(HAVE_TCP_PROT)
   click_chatter(
@@ -463,26 +357,147 @@ Rewriter::uninitialize()
   _timer.unschedule();
 }
 
+static String
+table_dump(Element *f, void *)
+{
+  Rewriter *r = (Rewriter *)f;
+  return r->dump_table();
+}
+
+static String
+patterns_dump(Element *f, void *)
+{
+  Rewriter *r = (Rewriter *)f;
+  return r->dump_patterns();
+}
+
+void
+Rewriter::add_handlers()
+{
+  add_read_handler("rewrite_table", table_dump, (void *)0);
+  add_read_handler("patterns", patterns_dump, (void *)0);
+}
+
+void
+Rewriter::mark_live_tcp()
+{
+#ifdef CLICK_LINUXMODULE
+#ifdef HAVE_TCP_PROT
+  start_bh_atomic();
+
+  for (struct sock *sp = tcp_prot.sklist_next;
+       sp != (struct sock *)&tcp_prot;
+       sp = sp->sklist_next) {
+    Connection c(sp->rcv_saddr, ntohs(sp->sport), 
+		 sp->daddr, ntohs(sp->dport));
+    Connection out = _fwd[c];
+    if (out)
+      out.mark_used();
+  }
+
+  end_bh_atomic();
+#endif
+#endif
+}
+
+void
+Rewriter::clean()
+{
+  int i = 0;
+  Connection in, out;
+  while (_fwd.each(i, in, out)) {
+    if (!in.used() && !out.used()) {
+      Pattern *p = out.pattern();
+      if (p)
+	p->free(out);
+      in.remove();
+      out.remove();
+    } else {
+      in.reset_used();
+      out.reset_used();
+    }
+  }
+}
+
 void
 Rewriter::run_scheduled()
 {
 #if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
 #if 0
-  _mapping.mark_live_tcp();
-  _mapping.clean();
+  mark_live_tcp();
+  clean();
   _timer.schedule_after_ms(_gc_interval_sec * 1000);
 #endif
 #endif
 }
 
 bool
-Rewriter::establish_mapping(Packet *p, int pat)
+Rewriter::establish_mapping(Packet *p, int npat)
 {
-  if (pat < 0 || pat >= _npat) {
+  if (npat < 0 || npat >= _npat) {
     click_chatter("rewriter: attempt to make mapping with undefined pattern");
     return false;
   }
-  return _mapping.add(p, _patterns[pat]);
+
+  Pattern *pat = _patterns[npat];
+  Connection in(p), out;
+
+  if (!pat->apply(in, out))
+    return false;
+#ifdef debugging
+  click_chatter("establishing %s", out.s().cc());
+#endif
+
+  out.set_pattern(pat);
+  out.set_output(pat->output());
+  _fwd.insert(in, out);
+  _rev.insert(out.rev(), in.rev());
+  
+  return true;
+}
+
+bool
+Rewriter::establish_mapping(Connection &in, Connection &out, int output)
+{
+#ifdef debugging
+  click_chatter("establishing(2) %s", out.s().cc());
+#endif
+  out.set_pattern(NULL);
+  out.set_output(output);
+  _fwd.insert(in, out);
+  _rev.insert(out.rev(), in.rev());
+  
+  return true;
+}
+
+bool
+Rewriter::apply_mapping(Packet *p, int &port)
+{
+  Connection in(p), out;
+  if ((out = _fwd[in])) {
+    port = out.output();
+    out.apply(p);
+#ifdef debugging
+    click_chatter("mapping::apply applied %s", out.s().cc());
+#endif
+    return true;
+  } else {
+#ifdef debugging
+    click_chatter("mapping::apply could not find %s", in.s().cc());
+#endif
+    return false;
+  }
+}
+
+bool
+Rewriter::rapply_mapping(Packet *p)
+{
+  Connection rev;
+  if ((rev = _rev[Connection(p)])) {
+    rev.apply(p);
+    return true;
+  } else
+    return false;
 }
 
 void
@@ -492,26 +507,23 @@ Rewriter::push(int port, Packet *p)
 
   if (port == 0) {
     int oport;
-    if (_npat == 1) {
-      if (!_mapping.apply(p, oport)) {
+    if (_mc) {
+      if (apply_mapping(p, oport))
+	output(oport).push(p);
+      else
+	output(0).push(p);
+    } else {
+      if (!apply_mapping(p, oport)) {
 	if (!establish_mapping(p, 0)) {
 	  click_chatter("rewriter: out of mappings (dropping packet)"); 
 	  return;
 	}
-	_mapping.apply(p, oport);
+	apply_mapping(p, oport);
       }
-#ifdef debugging
-      click_chatter("Table:\n%s", dump_table().cc());
-#endif
       output(oport).push(p);
-    } else {
-      if (_mapping.apply(p, oport))
-	output(oport).push(p);
-      else
-	output(0).push(p);
     }
   } else {
-    if (_mapping.rapply(p))
+    if (rapply_mapping(p))
       output(noutputs()-1).push(p);
     else
       click_chatter("rewriter: cannot do reverse mapping (dropping packet)");
@@ -521,7 +533,15 @@ Rewriter::push(int port, Packet *p)
 inline String
 Rewriter::dump_table()
 {
-  return _mapping.s();
+  String s;
+  int i = 0;
+  Connection in, out;
+
+  while (_fwd.each(i, in, out)) {
+    if (i > 1) s += "\n";
+    s += in.s() + " ==> " + out.s();
+  }
+  return s;
 }
 
 inline String

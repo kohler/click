@@ -1,6 +1,7 @@
 #ifndef MAPPINGCREATOR_HH
 #define MAPPINGCREATOR_HH
 
+#include "unlimelement.hh"
 #include "rewriter.hh"
 
 /*
@@ -24,23 +25,41 @@
  * =a Rewriter 
  */
 
-class MappingCreator : public Element {
+class MappingCreator : public UnlimitedElement {
   
-  Rewriter *_rw;
-  int _npats;
-  int _curpat;
+  class RWInfo {
+  public:
+    Rewriter *_rw;
+    int _npat;
+    int _cpat;
+
+    RWInfo() : _rw(NULL), _npat(0), _cpat(0) 	{ }
+    RWInfo(Rewriter *rw, int np, int cp);
+    ~RWInfo();
+  };
+
+  Vector<RWInfo> _rwi;
+  HashMap <Rewriter::Connection, Rewriter::Connection> _eqmap;
+  HashMap <Rewriter::Connection, Rewriter::Connection> _rwmap;
   
  public:
 
-  MappingCreator() : Element(1, 1), _rw(NULL)	{ }
+  MappingCreator() : _eqmap(), _rwmap()		{ }
+  ~MappingCreator()				{ }
   
   const char *class_name() const		{ return "MappingCreator"; }
   Processing default_processing() const		{ return PUSH; }
   
   MappingCreator *clone() const			{ return new MappingCreator; }
 
+  bool unlimited_inputs() const			{ return true; }
+  bool unlimited_outputs() const		{ return true; }
+
   virtual int initialize(ErrorHandler *);
-  
+  void add_handlers();
+  static int equiv_handler(const String &s, Element *e, void *thunk,
+			   ErrorHandler *errh);
+
   virtual void push(int port, Packet *);
 };
 
