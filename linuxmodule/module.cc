@@ -238,6 +238,20 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 }
 
 
+static int
+write_stop(const String &s, Element *, void *, ErrorHandler *errh)
+{
+  if (!current_router)
+    errh->message("no router installed");
+  else {
+    int n = 1;
+    (void) cp_integer(cp_uncomment(s), &n);
+    current_router->adjust_driver_reservations(-n);
+  }
+  return 0;
+}
+
+
 extern "C" int
 click_add_element_type(const char *name, Element *e)
 {
@@ -321,6 +335,7 @@ init_module()
   next_root_handler("cycles", read_cycles, 0, 0, 0);
   next_root_handler("threads", read_threads, 0, 0, 0);
   next_root_handler("priority", read_priority, 0, write_priority, 0);
+  next_root_handler("stop", 0, 0, write_stop, 0);
 
   return 0;
 }
