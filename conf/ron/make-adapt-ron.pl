@@ -154,6 +154,8 @@ print "\t-> CheckIPHeader\n";
 print "\t-> fragforA::IPFragmenter(1470)\n";
 print "\t-> Print(InClassPort1)\n";
 print "\t-> IPReassembler\n";
+print "\t-> IPReassembler\n";
+print "\t-> CheckIPHeader\n";
 print "\t-> IPPrint(InClassPort1)\n";
 print "\t-> revPathC;\n\n";
 
