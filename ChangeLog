@@ -1,3 +1,22 @@
+2002-05-03 Friday 13:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.6): bugfix: mark fd as closed
+
+2002-05-03 Friday 13:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.5): bugfix: must flush log buffer
+	even if not writing it
+
+2002-05-03 Friday 13:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridlogger.hh (1.4), gridroutetable.cc (1.46),
+	gridtxerror.cc (1.2), gridtxerror.hh (1.2): modified GridLogger so
+	that multiple elements can share the log
+
+2002-05-03 Friday 13:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlocationinfo.cc (1.16): nitlet
+
 2002-05-03 Friday 12:00  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4 (1.14), aclocal.m4 (1.14): protect config variables
