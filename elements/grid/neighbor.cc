@@ -162,7 +162,7 @@ Neighbor::push(int port, Packet *packet)
     else {
       // encapsulate packet with grid hdr and send it out!
       packet = packet->push(sizeof(click_ether) + sizeof(grid_hdr));
-      bzero(packet->data(), sizeof(click_ether) + sizeof(grid_hdr));
+      memset(packet->data(), 0, sizeof(click_ether) + sizeof(grid_hdr));
       
       click_ether *eh = (click_ether *) packet->data();
       memcpy(eh->ether_dhost, nbr->eth.data(), 6);
