@@ -1,3 +1,10 @@
+2005-03-06 Sunday 18:32  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.13): both internal and external Eth
+	addresses spoofed when putting on bogus ethernet frame headers
+	before sending ToHost; before, everything was to internal eth
+	address.
+
 2005-03-05 Saturday 16:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/directiplookup.hh (1.11), elements/ip/iproutetable.hh
