@@ -22,8 +22,9 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL)
+  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL), _alloced_mem(0)
 {
+  _stats_struct_size = sizeof(Stats);
 }
 
 IPRateMonitor::~IPRateMonitor()
@@ -71,7 +72,6 @@ IPRateMonitor::initialize(ErrorHandler *errh)
   _base = new Stats();
   if(!_base)
     return errh->error("cannot allocate data structure.");
-
   return 0;
 }
 
@@ -112,23 +112,37 @@ IPRateMonitor::Stats::Stats(const MyEWMA &fwd, const MyEWMA &rev)
     counter[i].rev_rate = rev;
     counter[i].next_level = 0;
   }
+
+  _my_size = sizeof(Stats);
 }
 
 IPRateMonitor::Stats::~Stats()
 {
-  for (int i = 0; i < MAX_COUNTERS; i++)
-    delete counter[i].next_level;
 }
 
 void
-IPRateMonitor::Stats::clear()
+IPRateMonitor::Stats::clear(int &alloced_mem)
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
-    delete counter[i].next_level;
-    counter[i].next_level = 0;
+    if(counter[i].next_level) {
+      counter[i].next_level->destroy(alloced_mem);
+      counter[i].next_level = 0;
+    }
     counter[i].rev_rate.initialize();
     counter[i].fwd_rate.initialize();
   }
+}
+
+
+void
+IPRateMonitor::Stats::destroy(int &alloced_mem)
+{
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    if(counter[i].next_level)
+      counter[i].next_level->destroy(alloced_mem);
+  }
+  delete this;
+  alloced_mem -= _my_size;
 }
 
 //
@@ -192,7 +206,7 @@ IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
-  me->_base->clear();
+  me->_base->clear(me->_alloced_mem);
   me->set_resettime();
   return 0;
 }

@@ -54,7 +54,6 @@
 #define BYTES 4
 #define MAX_SHIFT ((BYTES-1)*8)
 #define MAX_COUNTERS 256
-#define MAX_PORT_PAIRS 16
 
 struct HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
@@ -72,7 +71,7 @@ class IPRateMonitor : public Element { public:
   void notify_ninputs(int);  
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize() 				{ _base->clear(); }
+  void uninitialize() 				{ _base->clear(_alloced_mem); }
 
   void push(int port, Packet *p);
   Packet *pull(int port);
@@ -100,12 +99,18 @@ class IPRateMonitor : public Element { public:
     Stats();
     Stats(const MyEWMA &, const MyEWMA &);
     ~Stats();
-    void clear();
+    void clear(int &);
+    void destroy(int &);
+
+    private:
+    int _my_size;
   };
+  int _stats_struct_size;
 
   int _thresh;
   struct Stats *_base;
   long unsigned int _resettime;       // time of last reset
+  int _alloced_mem;
 
   void set_resettime();
   void update_rates(Packet *, bool forward);
@@ -138,14 +143,16 @@ IPRateMonitor::update(IPAddress from_addr, IPAddress, int val,
   int bitshift;
 
   // find entry on correct level
-  for (bitshift = 0; bitshift <= MAX_SHIFT && s; bitshift += 8) {
+  for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
     unsigned char byte = (addr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
     if (forward) 
       c->fwd_rate.update(now, val);
     else 
       c->rev_rate.update(now, val);
-    s = c->next_level;
+
+    if(!(s = c->next_level))
+      break;
   }
 
   // annotate src and dst rate for dst address
@@ -156,8 +163,10 @@ IPRateMonitor::update(IPAddress from_addr, IPAddress, int val,
 
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
-    if (bitshift < MAX_SHIFT)
+    if (bitshift < MAX_SHIFT) {
       c->next_level = new Stats(c->fwd_rate, c->rev_rate);
+      _alloced_mem += _stats_struct_size;
+    }
   }
 }
 
