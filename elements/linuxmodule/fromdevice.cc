@@ -104,7 +104,7 @@ FromDevice::initialize(ErrorHandler *errh)
   /* can't have a PollDevice with the same device */
   for(int fi = 0; fi < router()->nelements(); fi++) {
     Element *f = router()->element(fi);
-    PollDevice *pd = (PollDevice *)f->cast("PollDevice");
+    PollDevice *pd = (PollDevice *)(f->cast("PollDevice"));
     if (pd && pd->ifnum() == _dev->ifindex)
       return errh->error("have PollDevice and FromDevice for device `%s'", 
 	                  _devname.cc());

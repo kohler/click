@@ -137,7 +137,7 @@ ToDevice::initialize(ErrorHandler *errh)
    * extensions */
   for(int fi = 0; fi < router()->nelements(); fi++) {
     Element *f = router()->element(fi);
-    PollDevice *pd = (PollDevice *)f->cast("PollDevice");
+    PollDevice *pd = (PollDevice *) (f->cast("PollDevice"));
     if (pd && pd->ifnum() == _dev->ifindex) {
       click_chatter("todevice: found polling partner");
       _polling = 1;
@@ -265,7 +265,6 @@ ToDevice::tx_intr()
     if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
-    if ((_activations % 2048) == 0) _dev->get_stats(_dev);
   }
 #endif
 

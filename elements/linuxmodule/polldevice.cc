@@ -126,7 +126,7 @@ PollDevice::initialize(ErrorHandler *errh)
    * to manage tx queue as well as rx queue */
   for(int fi = 0; fi < router()->nelements(); fi++) {
     Element *f = router()->element(fi);
-    ToDevice *td = (ToDevice *)f->cast("ToDevice");
+    ToDevice *td = (ToDevice *) (f->cast("ToDevice"));
     if (td && td->ifnum() == _dev->ifindex) {
       _manage_tx = 0;
       break;
@@ -229,8 +229,8 @@ PollDevice::run_scheduled()
   if (_activations > 0 && got > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
-#if _CLICK_STATS_
-    if ((_activations % 2048) == 0) _dev->get_stats(_dev);
+#if _DEV_OVRN_STATS_
+    if ((_activations % 1024) == 0) _dev->get_stats(_dev);
 #endif
   }
 

@@ -29,6 +29,9 @@ Version 1.0.5
 
 * Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
+* TimedSource::initialize now sets tickets, allowing TimedSource to be
+  scheduled.
+
 * Bug fixes in click-xform.
 
 
