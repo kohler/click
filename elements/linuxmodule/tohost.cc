@@ -29,7 +29,7 @@ CLICK_CXX_PROTECT
 #include <linux/if_ether.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
-#if LINUX_VERSION_CODE >= 0x020400
+#if LINUX_VERSION_CODE >= 0x020400 && LINUX_VERSION_CODE < 0x020600
 # include <linux/brlock.h>
 #endif
 CLICK_CXX_UNPROTECT
@@ -142,7 +142,11 @@ ToHost::push(int port, Packet *p)
     skb->mac.raw = skb->data;
     skb_pull(skb, 14);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    const ethhdr *eth = eth_hdr(skb);
+#else
     const ethhdr *eth = skb->mac.ethernet;
+#endif
     if (ntohs(eth->h_proto) >= 1536)
 	skb->protocol = eth->h_proto;
     else {

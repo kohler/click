@@ -73,8 +73,12 @@ FromHost::new_device(const char *name)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_lock(&dev_base_lock);
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    net_device *dev = alloc_netdev(0, name, ether_setup);
+#else
     int errcode;
     net_device *dev = dev_alloc(name, &errcode);
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     read_unlock(&dev_base_lock);
 #endif
@@ -88,7 +92,9 @@ FromHost::new_device(const char *name)
     dev->name = nameptr;
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     ether_setup(dev);
+#endif
     dev->open = fl_open;
     dev->stop = fl_close;
     dev->hard_start_xmit = fl_tx;

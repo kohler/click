@@ -6,6 +6,7 @@
  * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,6 +27,9 @@
 #include <clicknet/wifi.h>
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#include <linux/if_arp.h>
+#endif
 #include <linux/smp_lock.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
