@@ -236,23 +236,23 @@ Task::fast_reschedule()
 	_pass += _stride;
 
 #if 0
-	// look for element before where we should be scheduled
+	// look for 'n' immediately before where we should be scheduled
 	Task *n = _thread->_prev;
-	while (n != _thread && !PASS_GT(_pass, n->_pass))
+	while (n != _thread && PASS_GT(n->_pass, _pass))
 	    n = n->_prev;
 
-	// schedule after `n'
+	// schedule after 'n'
 	_next = n->_next;
 	_prev = n;
 	n->_next = this;
 	_next->_prev = this;
 #else
-	// look for element after where we should be scheduled
+	// look for 'n' immediately after where we should be scheduled
 	Task *n = _thread->_next;
 	while (n != _thread && !PASS_GT(n->_pass, _pass))
 	    n = n->_next;
     
-	// schedule before `n'
+	// schedule before 'n'
 	_prev = n->_prev;
 	_next = n;
 	_prev->_next = this;
