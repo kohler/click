@@ -102,6 +102,6 @@ click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int pac
 
 	opt += opt[1];
     }
-
-    return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_src.s_addr, iph->ip_p, packet_len);
+    
+    return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, packet_len);
 }
