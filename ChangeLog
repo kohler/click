@@ -1,3 +1,8 @@
+2002-08-01 Thursday 14:05  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.28), lib/element.cc (1.73), lib/glue.cc
+	(1.36): nitlets
+
 2002-07-31 Wednesday 21:58  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromflandump.cc (1.5): nitlet
