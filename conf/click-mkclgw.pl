@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.12 2004/08/05 15:13:01 max Exp $
+# $Id: click-mkclgw.pl,v 1.13 2005/03/06 23:32:29 max Exp $
 #
 # click-mkclgw
 #
@@ -1324,7 +1324,10 @@ sub host_setup {
 // ip_to_host: smacks a dummy ethernet header on this packet and
 // sends it to the Host OS.
 // 
-ip_to_host :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
+ip_to_host_int :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
+	-> ToHost;
+
+ip_to_host_ext :: EtherEncap(0x0800, 2:2:2:2:2:2, extern)
 	-> ToHost;
 
 EOF
@@ -1496,11 +1499,11 @@ sub rewriter_plumbing_generic {
     my $ext = $self->{_map}->{EXTERNAL}->mapped_label ();
     print <<EOF;
 rw[0] -> ip_to_extern_class :: IPClassifier(dst host $int, -);
-  ip_to_extern_class[0] -> ip_to_host;
-  ip_to_extern_class[1] -> ip_to_extern
+  ip_to_extern_class[0] -> ip_to_host_int;
+  ip_to_extern_class[1] -> ip_to_extern;
 rw[1] -> ip_to_intern;
 rw[2] -> IPClassifier(dst host $ext)
-      -> ip_to_host;
+      -> ip_to_host_ext;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -1595,7 +1598,7 @@ intern_arp_class[2] -> Strip(14)
 	-> ip_from_intern;
 
 ip_from_intern[0] -> $ix;
-ip_from_intern[1] -> ip_to_host;             // net 10.X stuff, like broadcast
+ip_from_intern[1] -> ip_to_host_int;          // net 10.X stuff, like broadcast
 ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, $pat 0 1)
 		  -> [0]tcp_rw;              // FTP traffic
 ip_from_intern[3] -> ip_from_intern_src;
@@ -1612,7 +1615,7 @@ sub from_int_to_gw_plumbing {
     my $pat = $int->out_pat ();
     my $ix = $int->{_tcp_classifier};
 
-    $int->connect ($ix, $int->{_tcp_portmap}->{_ssh}, "ip_to_host", undef,
+    $int->connect ($ix, $int->{_tcp_portmap}->{_ssh}, "ip_to_host_int", undef,
 		   "SSH to linux");
     my $p1;
     if (defined ($p1 = $int->{_tcp_portmap}->{_dns})) {
@@ -1623,7 +1626,7 @@ sub from_int_to_gw_plumbing {
     $int->connect ($ix, $int->{_tcp_portmap}->{_tcp_or_udp}, "rw",
 		   $self->{_pat_ports}->{_int_to_gw},
 		   "send to linux via rw");
-    $int->connect ($ix, $int->{_tcp_portmap}->{_def}, "ip_to_host", undef,
+    $int->connect ($ix, $int->{_tcp_portmap}->{_def}, "ip_to_host_int", undef,
 		   "non TCP/UDP to linux");
     print "\n";
 }
