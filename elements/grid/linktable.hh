@@ -137,7 +137,6 @@ private:
 
   IPAddress _ip;
 
-  IPAddress extract_min();
   static void _lt_assert_(const char *, int, const char *);
 };
   

@@ -404,10 +404,19 @@ String
 LinkTable::print_routes() 
 {
   StringAccum sa;
+
+  typedef BigHashMap<IPAddress, bool> IPMap;
+  IPMap ip_addrs;
+
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    Vector <IPAddress> r = best_route(n._ip);
-    sa << "route: " << n._ip.s().cc() << " : ";
+    ip_addrs.insert(n._ip, true);
+  }
+  
+  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    const IPAddress &ip = i.key();
+    Vector <IPAddress> r = best_route(ip);
+    sa << "route: " << ip.s().cc() << " : ";
     for (int i = 0; i < r.size(); i++) {
       sa << " " << r[i] << " ";
       if (i != r.size()-1) {
@@ -440,21 +449,6 @@ LinkTable::print_hosts()
   return sa.take_string();
 }
 
-IPAddress
-LinkTable::extract_min()
-{
-
-  IPAddress min = IPAddress();
-  int min_metric = 32000;
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo nfo = iter.value();
-    if (!nfo._marked && nfo._metric && nfo._metric < min_metric) {
-      min = nfo._ip;
-      min_metric = nfo._metric;
-    }
-  }
-  return min;
-}
 
 
 
@@ -463,11 +457,19 @@ LinkTable::dijkstra()
 {
   IPAddress src = _ip;
 
-  /* clear them all initially */
+  typedef BigHashMap<IPAddress, bool> IPMap;
+  IPMap ip_addrs;
+
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    n.clear();
-    _hosts.insert(n._ip, n);
+    ip_addrs.insert(n._ip, true);
+  }
+  
+  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    /* clear them all initially */
+    const IPAddress &ip = i.key();
+    HostInfo *n = _hosts.findp(ip);
+    n->clear();
   }
   HostInfo *root_info = _hosts.findp(src);
 
@@ -483,8 +485,9 @@ LinkTable::dijkstra()
     current_min->_marked = true;
 
 
-    for (HTIter iter = _hosts.begin(); iter; iter++) {
-      HostInfo *neighbor = _hosts.findp(iter.value()._ip);
+    for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+      const IPAddress &ip = i.key();
+      HostInfo *neighbor = _hosts.findp(ip);
       lt_assert(neighbor);
       if (!neighbor->_marked) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
@@ -496,7 +499,17 @@ LinkTable::dijkstra()
 
     }
 
-    current_min_ip = extract_min();
+    current_min_ip = IPAddress();
+    int min_metric = 32000;
+    for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+      const IPAddress &ip = i.key();
+      HostInfo *nfo = _hosts.findp(ip);
+      if (!nfo->_marked && nfo->_metric && nfo->_metric < min_metric) {
+	current_min_ip = nfo->_ip;
+	min_metric = nfo->_metric;
+      }
+    }
+
   }
   
 }
