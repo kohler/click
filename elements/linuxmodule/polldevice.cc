@@ -215,9 +215,10 @@ PollDevice::run_scheduled()
   if (got > 0 || _activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-    _activations++;
     if (got == 0) 
       _empty_polls++;
+    else 
+      _activations++;
   }
 #endif
 
