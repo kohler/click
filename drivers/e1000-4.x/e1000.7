@@ -1,0 +1,180 @@
+.\" LICENSE
+.\"
+.\" This software program is released under the terms of a license agreement between you ('Licensee') and Intel. Do not use or load this software or any associated materials (collectively, the 'Software') until you have carefully read the full terms and conditions of the LICENSE located in this software package. By loading or using the Software, you agree to the terms of this Agreement. If you do not agree with the terms of this Agreement, do not install or use the Software.
+.\"
+.\" * Other names and brands may be claimed as the property of others.
+.\"
+.TH e1000 1 "August 2002"
+
+
+.SH NAME
+e1000 \-This file describes the Linux* Base Driver for the Intel(R) PRO/1000 Family of Adapters, version 4.3.15.
+
+
+.SH SYNOPSIS
+.PD 0.4v
+modprobe e1000 [options]
+.br
+insmod e1000 [options]
+.PD 1v
+.LP
+
+
+.SH DESCRIPTION
+This driver is intended for \fB2.2.x\fR and \fB2.4.x\fR kernels; it is known to build properly on \fB2.2.x\fR kernels through \fB2.2.20\fR and on \fB2.4.x\fR kernels through \fB2.4.18\fR. Intel focused testing on Intel architectures running the \fB2.4.18\fR kernel. This driver includes support for Itanium(TM)-based systems.
+.IP
+NOTE: This driver version contains the final development set for 2.2.x kernels through 2.2.20. Development will continue for 2.4.x kernels and future production kernels.
+.LP
+This driver is only supported as a loadable module at this time. Intel is not supplying patches against the kernel source to allow for static linking of the driver. For questions related to hardware requirements, refer to the documentation supplied with your Intel PRO/1000 adapter. All hardware requirements listed apply to use with Linux.
+.LP
+
+
+.SH OPTIONS
+The following optional parameters are used by entering them on the command line with the modprobe or insmod command. 
+For example, with two PRO/1000 PCI adapters, entering:
+.IP
+.B modprobe e1000 TxDescriptors=80,128
+.LP
+loads the e1000 driver with 80 TX resources for the first adapter and 128 TX resources for the second adapter.
+.PP
+.LP
+.B -AutoNeg\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+0x01-0x0F, 0x20-0x2F
+.br
+.B Default Value: 
+0x2F
+.IP
+bit mask that specifies which speed and duplex settings the board advertises. When AutoNeg is not set to the default, the Speed and Duplex parameters must not be specified. This parameter only applies to adapters using copper connections.
+.IP
+See the section "Speed and Duplex Configuration" in Readme.
+.LP
+.B -Duplex\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+0-2 (0=auto-negotiate, 1=half, 2=full)
+.br
+.B Default Value: 
+0
+.IP
+defines the direction in which data is allowed to flow. Can by either one or two-directional. If both Duplex and the link partner are set to auto-negotiate, the board auto-detects the correct duplex. If the link partner is forced (either full or half), Duplex defaults to half-duplex. This parameter only applies to adapters using copper connections.
+.IP
+See the section "Speed and Duplex Configuration" in Readme.
+.LP
+.B -FlowControl\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+0-3 (0 = none, 1 = Rx only, 2 = Tx only, 3 = Rx and Tx)
+.br
+.B Default Value: 
+Read flow control settings from the EEPROM
+.IP
+controls the automatic generation(Tx) and response(Rx) to Ethernet PAUSE frames.
+.LP
+.B -RxDescriptors\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+80-256 for 82542 and 82543-based adapters, 80-4096 for 82540, 82544, 82545, and 82546-based adapters
+.br
+.B Default Value: 
+80
+.IP
+number of receive descriptors allocated by the driver. Increasing this value allows the driver to buffer more incoming packets.  Each descriptor is 16 bytes.  A receive buffer is also allocated for each descriptor and can be either 2048, 4096, 8192, or 16384 bytes, depending on the MTU setting. The maximum MTU size is 16110.
+.IP
+NOTE: MTU designates the frame size. It only needs to be set for Jumbo Frames.
+.LP
+.B -RxIntDelay\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+0-65535 (0=off)
+.br
+.B Default Value: 
+0
+.IP
+delays the generation of receive interrupts in units of 1.024 microseconds. Receive interrupt reduction can improve CPU efficiency if properly tuned for specific network traffic. Increasing this value adds extra latency to frame reception and can end up decreasing the throughput of TCP traffic. If the system is reporting dropped receives, this value may be set too high, causing the driver to run out of available receive descriptors.
+.LP
+.B - RxAbsIntDelay 
+(82540, 82545, and 82546-based adapters only)
+.IP
+.B Valid Range: 
+0-65535 (0=off)
+.br
+.B Default Value: 
+128
+.IP
+limits the delay in which a transmit interrupt is generated (in units of 1.024 microseconds). Useful only if RxIntDelay is non-zero, this value ensures that an interrupt is generated after the initial packet is received within the set amount of time.  Proper tuning, along with RxIntDelay, may improve traffic throughput in specific network conditions.
+.LP
+.B -Speed\fB[=VAL]\fR
+.IP
+.B Valid Settings: 
+0, 10, 100, 1000
+.br
+.B Default Value: 
+0 (auto-negotiate at all supported speeds)
+.IP
+forces the line speed to the specified value in megabits per second (Mbps). If this parameter is not specified or is set to 0 and the link partner is set to auto-negotiate, the board auto-detects the correct speed. Duplex must also be set when Speed is set to either 10 or 100. This parameter only applies to adapters using copper connections.
+.IP
+See the section "Speed and Duplex Configuration" in Readme.
+.LP
+.B TxIntDelay
+.IP
+.B Valid Range: 
+0-65535 (0=off)
+.br
+.B Default Value: 
+64
+.IP
+delays the generation of transmit interrupts in units of 1.024 microseconds.  Transmit interrupt reduction can improve CPU efficiency if properly tuned for specific network traffic. If the system is reporting dropped transmits, this value may be set too high causing the driver to run out of available transmit descriptors.
+.LP
+.B TxAbsIntDelay 
+(82540, 82545, and 82546-based adapters only)
+.IP
+.B Valid Range: 
+0-65535 (0=off)
+.br
+.B Default Value: 
+64
+.IP
+limits the delay in which a transmit interrupt is generated (in units of 1.024 microseconds). Useful only if TxIntDelay is non-zero, this value ensures that an interrupt is generated after the initial packet is sent on the wire within the set amount of time.  Proper tuning, along with TxIntDelay, may improve traffic throughput in specific network conditions.
+.LP
+.B -TxDescriptors\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+80-256 for 82542 and 82543-based adapters, 80-4096 for 82540, 82544, 82545, and 82546-based adapters
+.br
+.B Default Value: 
+256
+.IP
+number of transmit descriptors allocated by the driver. Increasing this value allows the driver to queue more transmits. Each descriptor is 16 bytes.
+.LP
+.B -XsumRX\fB[=VAL]\fR
+.IP
+.B Valid Range: 
+0-1
+.br
+.B Default Value: 
+1
+.IP
+enables IP checksum offload for received packets (both UDP and TCP) to the adapter hardware when set to 1. This parameter is not available on the PRO/1000 Gigabit Server Adapter.
+.LP
+
+
+.SH JUMBO FRAMES
+.LP
+The driver supports Jumbo Frames for all adapters except 82542-based adapters.  Jumbo Frames support is enabled by changing the MTU to a value larger than the default of 1500.  Use the ifconfig command to increase the MTU size. For example:
+.IP
+ifconfig ethx mtu 9000 up
+.LP
+
+
+.SH SUPPORT
+.LP
+For additional information, including supported adapters, building, and installation, see the Read Me file included with the driver.
+.LP
+For general information, go to the Intel support website at:
+.IP
+.B http://support.intel.com
+.LP
+If an issue is identified with the released source code on the supported kernel with a supported adapter, email the specific information related to the issue to linux.nics@intel.com.
+.LP

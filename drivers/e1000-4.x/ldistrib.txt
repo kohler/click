@@ -1,0 +1,240 @@
+Using Intel(R) Network Adapters with Linux* --
+Information for Specific Linux Distributions
+==============================================
+
+June 3, 2002
+
+
+Contents
+========
+
+- Caldera OpenLinux* 3.1
+  - Installing Intel ANS
+  - Compiling Intel Drivers on Itanium(TM)-Based Systems
+- Red Hat* 7.0
+   - Compiling Intel Drivers
+   - Compiling Intel ANS on the 2.2.16 Kernel and Higher
+- Red Hat 7.0 Enterprise* Edition
+   - Matching the Kernel Source
+- Red Hat 7.2
+   - Driver Installation on Itanium-Based Systems
+- SuSE* 7.1
+  - Compiling Intel ANS or PROCfg on the 2.4.0 Kernel
+- SuSE 8.0 Personal
+  - Compiling Intel Drivers on the 2.4.18 Kernel
+- Support
+
+
+Caldera* OpenLinux 3.1
+======================
+
+  Installing Intel ANS
+  --------------------
+
+  In Caldera OpenLinux* 3.1, the super-user's executable path does not include 
+  /usr/sbin/, which is the default location selected by the makefile for Intel
+  ANS installation. This causes problems later during the configuration stage.
+  To solve this, either permanently add /usr/sbin to root's executable path, 
+  or modify the makefile to set BIN_DIR to a preferred directory that is 
+  super-user specific and that appears in $PATH.
+
+  Compiling Intel Drivers on Itanium(TM)-Based Systems
+  ----------------------------------------------------
+
+  When compiling the e100 and e1000 drivers, various unresolved symbol errors 
+  may appear. These messages may be disregarded as the drivers will install 
+  and function properly on Caldera OpenLinux 3.1 Itanium(TM)-based systems.
+
+
+Red Hat* 7.0
+============
+
+  Compiling Intel Drivers
+  -----------------------
+
+  To install Intel's e100, e1000, and iANS drivers on systems running Red Hat* 
+  Linux 7.0, you MUST have the kernel source package and kgcc. Without kgcc, 
+  the modules compiled for the stock kernel are compiled with gcc and may be 
+  unstable.
+ 
+  You can check for the required packages by typing:
+
+     rpm -q kernel-source
+     rpm -q kgcc
+  
+  If you are missing a package, install it with the following commands:
+
+     mount /dev/cdrom /mnt/cdrom  (or copy from the web)
+     cd /mnt/cdrom/RedHat/RPMS/  (or directory copied from the web)
+     rpm -i kernel-source-2.2.16-22.i386.rpm
+     rpm -i kgcc-1.1.2-40.i386.rpm
+
+  Then, you MUST reboot. This ensures that version.h is updated. You may then
+  install the Intel driver(s) as indicated in the driver's readme file. 
+
+  Compiling Intel ANS on the 2.2.16 Kernel and Higher
+  ---------------------------------------------------
+
+  In single-processor systems, the default kernel source tree configuration 
+  does not match the kernel. This causes errors when compiling the ANS module
+  and might lead to a faulty module.
+
+  As a workaround, make the kernel configuration match the running kernel:
+
+  1. Change to the kernel source directory. Generally, this is /usr/src/linux.
+
+  2. Enter:
+
+        make mrproper
+
+  3. Enter:
+
+        make menuconfig
+
+     CAUTION: When entering the above command, you need to be sure to turn 
+              the versioning on or off as required by the kernel you are 
+              planning to run. If you are running a UP kernel, set SMP and 
+              versioning to off. If you are running a SMP kernel, set SMP and 
+              versioning to on.
+
+  4. Deselect SMP, save, and exit.
+
+  5. Enter:
+
+        make dep
+
+  6. If error messages still appear after performing the above operations, 
+     enter:
+
+        make bzImage
+        make modules
+
+
+Red Hat 7.0 Enterprise* Edition
+==============================
+
+  Matching the Kernel Source
+  --------------------------
+
+  The 7.0 Enterprise* kernel version was built using extra patches and does
+  not match the kernel-RPM installed source. You must install and apply the
+  patches from the kernel SRPM to recreate the proper source tree. 
+
+  NOTE: The Enterprise kernel was developed to allow the 2.2.16 kernel large 
+        memory access and other Enterprise features. If you require Enterprise
+        capability, we strongly suggest using the 2.4.X series of kernels, 
+        which have native large memory support.
+
+  Use the following instructions to recreate the 2.2.16-22 Enterprise kernel
+  source:
+
+  1) Install kernel-2.2.16-22.src.rpm and kernel-source-2.2.16-22.i386.rpm.
+
+  2) Make a copy of the source tree installed from 
+     kernel-source-2.2.16-22.i386.rpm.
+
+  3) Apply the following patches from the kernel SRPM to the new kernel source
+     tree:
+
+        /usr/src/RedHat/SOURCES/linux-2.2.16-lfs.patch
+        /usr/src/RedHat/SOURCES/linux-2.2.16-lfs-bigmem.patch
+
+     NOTE: Unresolved failure message have been observed on some systems. 
+           These message may be ignored as the patches do install cleanly.
+
+  4) Clean out the kernel source tree and reconfigure for the Enterprise 
+     kernel: 
+	
+	make mrproper
+	cp configs/kernel-2.2.16-i686-enterprise.config .config
+	make oldconfig
+	make dep
+
+  5) Ensure /usr/src/linux is a symlink pointing to the new Enterprise kernel
+     source.
+
+  6) Build the driver.
+
+
+Red Hat 7.2
+===========
+
+  Driver Installation on Itanium-Based Systems with Red Hat 7.2 or Higher
+  ---------------------------------------------------------------------------
+
+  When compiling the e100 and e1000 drivers with 'make install', the binary is 
+  installed as:
+  
+     For e100:  /lib/modules/[KERNEL_VERSION]/kernel/drivers/addon/e100.o
+
+     For e1000: /lib/modules/[KERNEL_VERSION]/kernel/drivers/addon/e1000.o
+
+
+SuSE* 7.1
+=========
+
+  Compiling Intel ANS or PROCfg on the 2.4.0 Kernel
+  -------------------------------------------------
+
+  When trying to compile Intel ANS on the 2.4.0 kernel on SuSE* 7.1 systems, a 
+  compilation failure occurs, and a message regarding a missing config.h file 
+  is displayed. This failure occurs because the kernel source trees supplied, 
+  Linux-2.4.0.SuSE and Linux-2.4.0-4GB, are both empty and do not contain the 
+  necessary config.h and version.h files. A possible solution is to install 
+  either a new kernel from http://www.kernel.org or a new kernel tree package 
+  supplied by SuSE.
+
+  When installing and compiling openssl, a prerequisite for PROCfg, a 
+  compilation failure occurs, and a message regarding a missing errno.h file 
+  is displayed. This is another instance of the missing kernel source tree 
+  described above for ANS. Use the solution above to restore the missing 
+  file.
+
+
+SuSE 8.0 Personal
+=================
+
+  Compiling Intel Drivers on the 2.4.18 Kernel
+  --------------------------------------------
+
+  When trying to compile Intel e100, e1000, and ANS drivers on the 2.4.18 
+  kernel on SuSE 8.0 systems a compilation failure occurs, and a message 
+  regarding a mismatch between the running kernel and the kernel source tree 
+  configuration appears. By default, SuSE installs the 2.4.18-64GB-SMP kernel 
+  while the kernel source tree is configured for 2.4.18-4GB. A possible 
+  solution is to issue the following commands:
+
+  	cd /usr/src/linux/include/linux/
+	mv version.h version.h.old
+	cp /boot/vmlinuz.version.h version.h
+	mv autoconf.h autoconf.h.old
+	cp /boot/vmlinuz.autoconf.h autoconf.h
+
+
+Support
+=======
+
+For general information and support, go to the Intel support website at:
+
+     http://support.intel.com
+
+If an issue is identified with the released source code on the supported 
+kernel with a supported adapter, email the specific information related to the 
+issue to linux.nics@intel.com.
+
+
+Copyright and Legal Disclaimers
+===============================
+
+Copyright(c) 2002 Intel Corporation. All rights reserved. 
+
+Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497 
+
+Intel Corporation assumes no responsibility for errors or omissions in this 
+document. Nor does Intel make any commitment to update the information 
+contained herein. 
+
+Intel, Itanium, and Pentium are trademarks or registered trademarks of Intel 
+Corporation or its subsidiaries in the United States and other countries. 
+
+*Other names and brands may be claimed as the property of others.

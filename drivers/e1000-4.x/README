@@ -1,0 +1,404 @@
+Linux* Base Driver for the Intel(R) PRO/1000 Family of Adapters
+===============================================================
+
+August 6, 2002
+
+
+Contents
+========
+
+- In This Release
+- Supported Adapters
+- Building and Installation
+- Command Line Parameters
+- Speed and Duplex Configuration
+- Additional Configurations
+- Known Issues
+- Troubleshooting
+- Support
+
+
+In This Release
+===============
+
+This file describes the Linux* Base Driver for the Intel(R) PRO/1000 Family 
+of Adapters, version 4.3.15. This driver is intended for 2.2.x and 2.4.x 
+kernels; it is known to build properly on 2.2.x kernels through 2.2.20 and 
+on 2.4.x kernels through 2.4.18. Intel focused testing on Intel architectures 
+running the 2.4.18 kernel. This driver includes support for Itanium(TM)-based 
+systems.
+
+NOTE: This driver version contains the final development set for 2.2.x 
+      kernels through 2.2.20. Development will continue for 2.4.x kernels and
+      future production kernels.
+
+This driver is only supported as a loadable module at this time. Intel is not 
+supplying patches against the kernel source to allow for static linking of 
+the driver. For questions related to hardware requirements, refer to the 
+documentation supplied with your Intel PRO/1000 adapter. All hardware 
+requirements listed apply to use with Linux.
+
+This release version includes the following:
+
+   - Hooks for Intel ANS, the Intel Advanced Network Services driver. Some
+     base driver versions within specific distributions, including Red Hat*, 
+     do not include these hooks.
+
+   - Support for the ethtool 1.5 interface. A third-party application can use 
+     the ethtool interface to get and set driver parameters.
+
+   - Zero copy. This feature provides faster data throughput. Enabled by 
+     default in supporting kernels. It is not supported on the Intel(R) 
+     PRO/1000 Gigabit Server Adapter.
+
+   - Wake on LAN* support via ethtool for 82540, 82544, 82545, and 82546-
+     based adapters
+
+   - Adaptive IFS for increased performance at half duplex
+
+
+
+Supported Adapters
+==================
+
+The following Intel network adapters are compatible with the drivers in this 
+release:
+
+   Controller  Adapter Name                         Board IDs
+   ----------  ------------                         ---------
+
+   82542       PRO/1000 Gigabit Server Adapter      700262-xxx, 717037-xxx
+
+   82543       PRO/1000 F Server Adapter            738640-xxx, A38888-xxx
+
+   82543       PRO/1000 T Server Adapter            A19845-xxx, A33948-xxx
+
+   82544       PRO/1000 XT Server Adapter           A51580-xxx
+
+   82544       PRO/1000 XF Server Adapter           A50484-xxx
+
+   82544       PRO/1000 T Desktop Adapter           A62947-xxx
+
+   82540       PRO/1000 MT Desktop Adapter          A78408-xxx
+
+   82545       PRO/1000 MT Server Adapter           A92165-xxx
+
+   82546       PRO/1000 MT Dual Port Server Adapter A92111-xxx
+
+   82545       PRO/1000 MF Server Adapter           A91622-xxx
+
+   82545       PRO/1000 MF Server Adapter(LX)       A91624-xxx
+
+   82546       PRO/1000 MF Dual Port Server Adapter A91620-xxx
+
+
+To verify your Intel adapter is supported, find the board ID number on the 
+adapter. Look for a label that has a barcode and a number in the format of 
+123456-001 (six digits hyphen three digits). Match this to the list of 
+numbers above.
+
+For more information on how to identify your adapter, go to the Adapter & 
+Driver ID Guide at:
+
+    http://support.intel.com/support/network/adapter/pro100/21397.htm
+
+For the latest Intel network drivers for Linux, go to:
+
+    http://downloadfinder.intel.com/scripts-df/support_intel.asp
+
+
+Building and Installation
+=========================
+
+To build a binary RPM* package of this driver, run 'rpm -tb <filename.tar.gz>'. 
+Replace <filename.tar.gz> with the specific filename of the driver.
+
+NOTE: For the build to work properly, the currently running kernel MUST match 
+      the version and configuration of the installed kernel sources. If you 
+      have just recompiled the kernel reboot the system now.
+
+1. Move the base driver tar file to the directory of your choice. For example,
+   use /home/username/e1000 or /usr/local/src/e1000.
+
+2. Untar/unzip archive:
+
+     tar zxf e1000-x.x.x.tar.gz
+
+3. Change to the driver src directory:
+
+     cd e1000-x.x.x/src/
+
+4. Compile the driver module:
+
+     make install
+
+   The binary will be installed as:
+     For Linux 2.2.x systems:
+        /lib/modules/[KERNEL_VERSION]/net/e1000.o
+     For Linux 2.4.x systems:
+        /lib/modules/[KERNEL_VERSION]/kernel/drivers/net/e1000.o
+
+   The install locations listed above are the default locations. They may 
+   not be correct for certain Linux distributions. For more information, 
+   see the ldistrib.txt file included in the driver tar.
+
+5. Install the module:
+
+     insmod e1000 <parameter>=<value>
+
+6. Assign an IP address to the interface by entering the following, where
+   x is interface number:
+
+     ifconfig ethx <IP_address>
+
+7. Verify that the interface works. Enter the following, where <IP_address>
+   is the IP address for another machine on the same subnet as the interface 
+   that is being tested:
+
+     ping  <IP_address>	
+
+
+Command Line Parameters
+=======================
+
+The following optional parameters are used by entering them on the command 
+line with the modprobe or insmod command. For example, with two PRO/1000 PCI 
+adapters, entering:
+
+    insmod e1000 TxDescriptors=80,128
+
+loads the e1000 driver with 80 TX resources for the first adapter and 128 TX 
+resources for the second adapter.
+
+For more information about the AutoNeg, Duplex, and Speed parameters, see the
+"Speed and Duplex Configuration" section in this document.
+
+
+AutoNeg (adapters using copper connections only)
+Valid Range: 0x01-0x0F, 0x20-0x2F
+Default Value: 0x2F
+    This parameter is a bit mask that specifies which speed and duplex
+    settings the board advertises. When this parameter is used, the Speed and
+    Duplex parameters must not be specified.  
+
+Duplex (adapters using copper connections only)
+Valid Range: 0-2 (0=auto-negotiate, 1=half, 2=full)
+Default Value: 0
+    Defines the direction in which data is allowed to flow. Can by either one 
+    or two-directional. If both Duplex and the link partner are set to auto-
+    negotiate, the board auto-detects the correct duplex. If the link partner
+    is forced (either full or half), Duplex defaults to half-duplex.
+
+FlowControl
+Valid Range: 0-3 (0=none, 1=Rx only, 2=Tx only, 3=Rx&Tx)
+Default: Read flow control settings from the EEPROM
+    This parameter controls the automatic generation(Tx) and response(Rx) to 
+    Ethernet PAUSE frames.
+
+RxDescriptors
+Valid Range: 80-256 for 82542 and 82543-based adapters
+             80-4096 for 82540, 82544, 82545, and 82546-based adapters
+Default Value: 80
+    This value is the number of receive descriptors allocated by the driver. 
+    Increasing this value allows the driver to buffer more incoming packets. 
+    Each descriptor is 16 bytes.  A receive buffer is also allocated for each
+    descriptor and can be either 2048, 4096, 8192, or 16384 bytes, depending 
+    on the MTU setting. The maximum MTU size is 16110.
+
+    NOTE: MTU designates the frame size. It only needs to be set for Jumbo 
+          Frames.
+
+RxIntDelay
+Valid Range: 0-65535 (0=off)
+Default Value: 0 (82542, 82543, and 82544-based adapters)
+               128 (82540, 82545, and 82546-based adapters)
+    This value delays the generation of receive interrupts in units of 1.024 
+    microseconds.  Receive interrupt reduction can improve CPU efficiency if 
+    properly tuned for specific network traffic. Increasing this value adds 
+    extra latency to frame reception and can end up decreasing the throughput 
+    of TCP traffic. If the system is reporting dropped receives, this value 
+    may be set too high, causing the driver to run out of available receive 
+    descriptors.
+
+    CAUTION: When setting RxIntDelay to a value other than 0, adapters based 
+             on the Intel 82543 and 82544 LAN controllers may hang (stop 
+             transmitting) under certain network conditions. If this occurs a
+             message is logged in the system event log. In addition, the 
+             controller is automatically reset, restoring the network 
+             connection. To eliminate the potential for the hang ensure that 
+             RxIntDelay is set to 0.
+
+RxAbsIntDelay (82540, 82545, and 82546-based adapters only)
+Valid Range: 0-65535 (0=off)
+Default Value: 128
+    This value, in units of 1.024 microseconds, limits the delay in which a 
+    transmit interrupt is generated. Useful only if RxIntDelay is non-zero, 
+    this value ensures that an interrupt is generated after the initial 
+    packet is received within the set amount of time.  Proper tuning,
+    along with RxIntDelay, may improve traffic throughput in specific network
+    conditions.
+
+Speed (adapters using copper connections only)
+Valid Settings: 0, 10, 100, 1000
+Default Value: 0 (auto-negotiate at all supported speeds)
+    Speed forces the line speed to the specified value in megabits per second
+    (Mbps). If this parameter is not specified or is set to 0 and the link 
+    partner is set to auto-negotiate, the board will auto-detect the correct 
+    speed. Duplex must also be set when Speed is set to either 10 or 100.
+
+TxDescriptors
+Valid Range: 80-256 for 82542 and 82543-based adapters
+             80-4096 for 82540, 82544, 82545, and 82546-based adapters
+Default Value: 256
+    This value is the number of transmit descriptors allocated by the driver.
+    Increasing this value allows the driver to queue more transmits. Each 
+    descriptor is 16 bytes.
+
+TxIntDelay
+Valid Range: 0-65535 (0=off)
+Default Value: 64
+    This value delays the generation of transmit interrupts in units of 
+    1.024 microseconds.  Transmit interrupt reduction can improve CPU
+    efficiency if properly tuned for specific network traffic. If the
+    system is reporting dropped transmits, this value may be set too high
+    causing the driver to run out of available transmit descriptors.
+
+TxAbsIntDelay (82540, 82545, and 82546-based adapters only)
+Valid Range: 0-65535 (0=off)
+Default Value: 64
+    This value, in units of 1.024 microseconds, limits the delay in which a 
+    transmit interrupt is generated. Useful only if TxIntDelay is non-zero, 
+    this value ensures that an interrupt is generated after the initial 
+    packet is sent on the wire within the set amount of time.  Proper tuning,
+    along with TxIntDelay, may improve traffic throughput in specific 
+    network conditions.
+
+XsumRX (not available on the PRO/1000 Gigabit Server Adapter)
+Valid Range: 0-1
+Default Value: 1
+    A value of '1' indicates that the driver should enable IP checksum
+    offload for received packets (both UDP and TCP) to the adapter hardware.
+
+
+Speed and Duplex Configuration
+==============================
+
+Three keywords are used to control the speed and duplex configuration. These 
+keywords are Speed, Duplex, and AutoNeg.
+
+If the board uses a fiber interface, these keywords are ignored, and the 
+fiber interface board only links at 1000 Mbps full-duplex.
+
+For copper-based boards, the keywords interact as follows:
+
+  The default operation is auto-negotiate. The board advertises all supported
+  speed and duplex combinations, and it links at the highest common speed and
+  duplex mode IF the link partner is set to auto-negotiate.
+
+  If Speed = 1000, limited auto-negotiation is enabled and only 1000 Mbps is
+  advertised (The 1000BaseT spec requires auto-negotiation.)
+
+  If Speed = 10 or 100, then both Speed and Duplex must be set. Auto-
+  negotiation is disabled, and the AutoNeg parameter is ignored. Partner MUST
+  also be forced.
+
+The AutoNeg parameter is used when more control is required over the auto-
+negotiation process.  When this parameter is used, Speed and Duplex must not 
+be specified.  This parameter is a bitmap that specifies which speed and 
+duplex settings are advertised to the link partner.
+
+Bit            7      6      5       4       3      2      1       0
+Speed (Mbps)   N/A    N/A    1000    N/A     100    100    10      10
+Duplex                       Full            Full   Half   Full    Half
+
+Note that setting AutoNeg does not guarantee that the board will link at the 
+highest specified speed or duplex mode, but the board will link at the 
+highest possible speed/duplex of the link partner IF the link partner is also
+set to auto-negotiate. If the link partner is forced speed/duplex, the 
+adapter MUST be forced to the same speed/duplex.
+
+
+Additional Configurations
+=========================
+
+Configuring a network driver to load properly when the system is started is
+distribution dependent. Typically, the configuration process involves adding
+an alias line to /etc/modules.conf as well as editing other system startup 
+scripts and/or configuration files. Many popular Linux distributions ship 
+with tools to make these changes for you. To learn the proper way to 
+configure a network device for your system, refer to your distribution 
+documentation. If during this process you are asked for the driver or module 
+name, the name for the Linux Base Driver for the Intel PRO/1000 Family of 
+Adapters is e1000.
+
+Link messages will not be displayed to the console if the distribution is 
+restricting system messages. In order to see network driver link messages on 
+your console, set dmesg to at least seven by entering the following:
+
+     dmesg -n 7
+
+
+  Jumbo Frames
+  ------------
+
+  The driver supports Jumbo Frames for all adapters except 82542-based 
+  adapters.  Jumbo Frames support is enabled by changing the MTU to a value 
+  larger than the default of 1500.  Use the ifconfig command to increase the 
+  MTU size. For example:
+
+        ifconfig ethx mtu 9000 up
+
+
+Known Issues
+============
+
+  Jumbo Frames System Requirement
+  -------------------------------
+
+  Memory allocation failures have been observed on Linux systems with 64 MB 
+  of RAM or less that are running Jumbo Frames. If you are using Jumbo 
+  Frames, your system may require more than the advertised minimum 
+  requirement of 64 MB of system memory.
+
+
+Troubleshooting
+===============
+
+NOTE: For distribution-specific information, see the ldistrib.txt file 
+      included in the driver tar.
+
+When trying to compile the driver by running make install, the following
+error may occur: 
+
+    "Linux kernel source not configured - missing version.h"
+
+To solve this issue, create the version.h file by going to the Linux source 
+tree and entering:
+
+    make include/linux/version.h.
+
+
+Support
+=======
+
+For general information, go to the Intel support website at:
+
+    http://support.intel.com
+
+If an issue is identified with the released source code on the supported
+kernel with a supported adapter, email the specific information related to 
+the issue to linux.nics@intel.com.
+
+
+License
+=======
+
+This software program is released under the terms of a license agreement 
+between you ('Licensee') and Intel. Do not use or load this software or any 
+associated materials (collectively, the 'Software') until you have carefully 
+read the full terms and conditions of the LICENSE located in this software 
+package. By loading or using the Software, you agree to the terms of this 
+Agreement. If you do not agree with the terms of this Agreement, do not 
+install or use the Software.
+
+* Other names and brands may be claimed as the property of others.
