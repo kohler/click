@@ -95,7 +95,7 @@ AnyDevice::intr_reschedule(void)
 {
 #ifdef BSD_NETISRSCHED
     if (!_task.scheduled())
-	_task.fast_reschedule();
+	_task.reschedule();
     if (!polling || (polling && *polling != 2))
 	schednetisr(NETISR_CLICK);
 #else

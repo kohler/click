@@ -325,34 +325,32 @@ void
 Master::timer_reheapify_from(int pos, Timer* t)
 {
     // MUST be called with _timer_lock held
-    int ntimers = _timer_heap.size();
-    Timer* tt;
+    Timer** tbegin = _timer_heap.begin();
+    Timer** tend = _timer_heap.end();
+    int npos;
 
     while (pos > 0
-	   && (tt = _timer_heap.at_u((pos - 1) >> 1))->_expiry > t->_expiry) {
-	tt->_schedpos = pos;
-	_timer_heap.at_u(pos) = tt;
-	pos = (pos-1) >> 1;
+	   && (npos = (pos-1) >> 1, tbegin[npos]->_expiry > t->_expiry)) {
+	tbegin[pos] = tbegin[npos];
+	tbegin[npos]->_schedpos = pos;
+	pos = npos;
     }
 
     while (1) {
-	Timer* largest = t;
-	Timer* tt;
-	int npos = pos*2 + 1;
-	if (npos < ntimers
-	    && (tt = _timer_heap.at_u(npos))->_expiry <= t->_expiry)
-	    largest = tt;
-	if (npos + 1 < ntimers
-	    && (tt = _timer_heap.at_u(npos + 1))->_expiry <= largest->_expiry)
-	    largest = tt, npos++;
+	Timer* smallest = t;
+	Timer** tp = tbegin + 2*pos + 1;
+	if (tp < tend && tp[0]->_expiry <= smallest->_expiry)
+	    smallest = tp[0];
+	if (tp + 1 < tend && tp[1]->_expiry <= smallest->_expiry)
+	    smallest = tp[1], tp++;
 
-	largest->_schedpos = pos;
-	_timer_heap.at_u(pos) = largest;
+	smallest->_schedpos = pos;
+	tbegin[pos] = smallest;
 
-	if (largest == t)
+	if (smallest == t)
 	    break;
 
-	pos = npos;
+	pos = tp - tbegin;
     }
 }
 
