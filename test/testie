@@ -758,7 +758,8 @@ Preserve the temporary directory created for the test.
 
 =item -s, --show FILE
 
-Echo the contents of file FILE on completion.
+Echo the contents of FILE on completion. FILE should be one of the
+filenames specified by %file or %expect, or 'stdout' or 'stderr'.
 
 =back
 
