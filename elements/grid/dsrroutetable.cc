@@ -31,6 +31,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include "dsrroutetable.hh"
 #include "dsr.hh"
+#include "gridgenericmetric.hh"
 
 CLICK_DECLS
 
@@ -43,7 +44,7 @@ DSRRouteTable::DSRRouteTable()
     _sendbuffer_timer(static_sendbuffer_timer_hook, this),
     _sendbuffer_check_routes(false),
     _blacklist_timer(static_blacklist_timer_hook, this),
-    _outq(0), _ls(0), _use_blacklist(true),
+    _outq(0), _metric(0), _use_blacklist(true),
     _debug(false)
 {
   me = new IPAddress;
@@ -93,7 +94,7 @@ DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		      cpElement, "link table", &_link_table, 
 		      cpKeywords,
 		      "OUTQUEUE", cpElement, "SimpleQueue element", &_outq,
-		      "LINKSTAT", cpElement, "LinkStat element", &_ls,
+		      "METRIC", cpElement, "GridGenericMetric element", &_metric,
 		      "USE_BLACKLIST", cpBool, "use blacklist?", &_use_blacklist,
 		      "DEBUG", cpBool, "Debug", &_debug,
 		      0)<0);
@@ -101,8 +102,8 @@ DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_outq && _outq->cast("SimpleQueue") == 0)
     return errh->error("OUTQUEUE element is not a SimpleQueue");
 
-  if (_ls && _ls->cast("LinkStat") == 0)
-    return errh->error("LINKSTAT element is not a LinkStat");
+  if (_metric && _metric->cast("GridGenericMetric") == 0)
+    return errh->error("METRIC element is not a GridGenericMetric");
 }
 
 void
@@ -1875,6 +1876,7 @@ DSRRouteTable::diff_in_ms(timeval t1, timeval t2)
 unsigned char
 DSRRouteTable::get_metric(EtherAddress other)
 {
+#if 0
   unsigned char dft = DSR_INVALID_HOP_METRIC; // default metric
   if (_ls){
     unsigned int tau;
@@ -1902,21 +1904,37 @@ DSRRouteTable::get_metric(EtherAddress other)
     }
 
     return (unsigned char)m;
-  } else {
-    // click_chatter("no link stat!!!!");
-    return 1; // all links have equal metric
+  } 
+#endif
+  if (_metric) {
+    GridGenericMetric::metric_t m = _metric->get_link_metric(other, false);
+    unsigned char c = _metric->scale_to_char(m);
+    if (!m.good() || c == DSR_INVALID_HOP_METRIC)
+      return DSR_INVALID_HOP_METRIC;
+    return c;
+  }
+  else {
+    // default to hop-count, all links have a hop-count of 1
+    return 1; 
   }
 }
 
 bool
 DSRRouteTable::metric_preferable(unsigned short a, unsigned short b) 
 {
-  return (a < b);
+  if (!_metric)
+    return (a < b); // fallback to minimum hop-count
+  else if (a == DSR_INVALID_ROUTE_METRIC || b == DSR_INVALID_ROUTE_METRIC)
+    return a; // make arbitrary choice
+  else
+    return _metric->metric_val_lt(_metric->unscale_from_char(a),
+				  _metric->unscale_from_char(b));
 }
 
 unsigned short
 DSRRouteTable::route_metric(DSRRoute r)
 {
+#if 0
   unsigned short ret = 0;
   // the metric in r[i+1] represents the link between r[i] and r[i+1],
   // so we start at 1
@@ -1926,6 +1944,28 @@ DSRRouteTable::route_metric(DSRRoute r)
     ret += r[i]._metric;
   }
   return ret;
+#endif
+
+  if (r.size() < 2) {
+    click_chatter("DSRRouteTable::route_metric: route is too short, less than two nodes?\n");
+    return DSR_INVALID_ROUTE_METRIC;
+  }
+  if (!_metric) 
+    return r.size(); // fallback to hop-count
+
+  if (r[1]._metric == DSR_INVALID_HOP_METRIC)
+    return DSR_INVALID_ROUTE_METRIC;
+  GridGenericMetric::metric_t m(_metric->unscale_from_char(r[1]._metric));
+
+  for (int i = 2; i < r.size(); i++) {
+     if (r[i]._metric == DSR_INVALID_HOP_METRIC) 
+      return DSR_INVALID_ROUTE_METRIC;
+     m = _metric->append_metric(m, _metric->unscale_from_char(r[i]._metric));
+  }
+  if (m.good())
+    return _metric->scale_to_char(m);
+  else
+    return DSR_INVALID_ROUTE_METRIC;
 }
 
 EtherAddress

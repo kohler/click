@@ -11,7 +11,6 @@
 
 #include "linktable.hh"
 #include <elements/standard/simplequeue.hh>
-#include <elements/grid/linkstat.hh>
 
 #include "dsr.hh"
 
@@ -53,10 +52,10 @@ CLICK_DECLS
  * A SimpleQueue from which the DSRRouteTable element will "yank" packets in the 
  * event of a transmission error or received route error message.
  *
- * =item LINKSTAT
+ * =item METRIC
  * 
- * A LinkStat element to use for obtaining link metrics.  If not present, then 
- * minimum hop-count routing is performed by assigning all links equal metrics.
+ * A GridGenericMetric element to use for obtaining link metrics.  If
+ * not specified, minimum hop-count is used.
  *
  * =item USE_BLACKLIST
  * 
@@ -77,6 +76,7 @@ CLICK_DECLS
    - eliminate metric field when not using ETX; new option type?
 */
    
+class GridGenericMetric;
 
 class DSRRouteTable : public Element
 {
@@ -394,7 +394,7 @@ private:
   u_int16_t _rreq_id;
   
   SimpleQueue *_outq;
-  LinkStat *_ls;
+  GridGenericMetric *_metric;
   bool _use_blacklist;
   
   Packet *add_dsr_header(Packet *, Vector<IPAddress>);
