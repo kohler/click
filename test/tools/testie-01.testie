@@ -1,0 +1,38 @@
+%info
+Meta-test.
+
+%script
+testie -V TEST1 TEST2 TEST3 TEST4 || true
+
+%file -d TEST1
+ %script
+ false
+
+%file -d TEST2
+ %script
+ true
+
+%file -d TEST3
+ %script
+ echo Money >FOO
+ %expect FOO
+ Money
+
+%file -d TEST4
+ %script
+ echo Money >FOO
+ echo Honey >>FOO
+ %expect -a FOO
+ Funny
+ %expect -a FOO
+ Money
+ %ignore FOO
+ Woman
+ %ignore FOO
+ Honey
+
+%expect stderr
+TEST1:1: failure at 'false'
+TEST2: Success!
+TEST3: Success!
+TEST4: Success!

@@ -423,7 +423,7 @@ EOD
     $t;
 }
 
-sub output_error ($$;$$) {
+sub output_error ($$$$) {
     my($tt, $fileref_subr, $script_type, $verbose) = @_;
     my($fp) = $tt->{'errprefix'};
     
@@ -750,7 +750,7 @@ sub execute_test ($$$) {
 
     # if it exited with a bad value, quit
     if ($exitval) {
-	return $tt->output_error(\&out_script_fn_to_fn);
+	return $tt->output_error(\&out_script_fn_to_fn, 'script', $verbose);
     }
 
     # check files
