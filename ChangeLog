@@ -9712,11 +9712,6 @@
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/staticthreadsched.cc (1.1): file
-	staticthreadsched.cc was initially added on branch smp_click.
-
-2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
-
 	* elements/local/threadmonitor.cc (1.1): file threadmonitor.cc was
 	initially added on branch smp_click.
 
@@ -9724,6 +9719,11 @@
 
 	* elements/local/staticthreadsched.hh (1.1): file
 	staticthreadsched.hh was initially added on branch smp_click.
+
+2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/staticthreadsched.cc (1.1): file
+	staticthreadsched.cc was initially added on branch smp_click.
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -9774,12 +9774,12 @@
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.hh (1.1): file fastudpflows.hh
+	* elements/linuxmodule/fastudpflows.cc (1.1): file fastudpflows.cc
 	was initially added on branch smp_click.
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.cc (1.1): file fastudpflows.cc
+	* elements/linuxmodule/fastudpflows.hh (1.1): file fastudpflows.hh
 	was initially added on branch smp_click.
 
 2001-02-22 Thursday 18:50  Eddie Kohler <kohler@aciri.org>
@@ -9790,12 +9790,12 @@
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.cc (1.1): file threadsched.cc was
+	* elements/standard/threadsched.hh (1.1): file threadsched.hh was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.hh (1.1): file threadsched.hh was
+	* elements/standard/threadsched.cc (1.1): file threadsched.cc was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 14:16  Eddie Kohler <kohler@aciri.org>
@@ -10478,12 +10478,12 @@
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.cc (1.1): file duppath.cc was initially
+	* elements/local/duppath.hh (1.1): file duppath.hh was initially
 	added on branch smp_click.
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.hh (1.1): file duppath.hh was initially
+	* elements/local/duppath.cc (1.1): file duppath.cc was initially
 	added on branch smp_click.
 
 2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
@@ -11015,13 +11015,13 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_proc.h (1.1): file e1000_proc.h was initially
-	added on branch smp_click.
+	* drivers/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h
+	was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h
-	was initially added on branch smp_click.
+	* drivers/e1000/e1000_proc.h (1.1): file e1000_proc.h was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -11050,22 +11050,17 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_kcompat.h (1.1): file e1000_kcompat.h was
-	initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
 	* drivers/e1000/e1000_fxhw.h (1.1): file e1000_fxhw.h was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_fxhw.c (1.1): file e1000_fxhw.c was initially
-	added on branch smp_click.
+	* drivers/e1000/e1000_kcompat.h (1.1): file e1000_kcompat.h was
+	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000.h.orig (1.1): file e1000.h.orig was initially
+	* drivers/e1000/e1000_fxhw.c (1.1): file e1000_fxhw.c was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -11075,17 +11070,22 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
+	* drivers/e1000/e1000.h.orig (1.1): file e1000.h.orig was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
 	* drivers/e1000/base_comm.h (1.1): file base_comm.h was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_os.h (1.1): file ans_os.h was initially added
+	* drivers/e1000/ans_os.c (1.1): file ans_os.c was initially added
 	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_os.c (1.1): file ans_os.c was initially added
+	* drivers/e1000/ans_os.h (1.1): file ans_os.h was initially added
 	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -11100,12 +11100,12 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_driver.h (1.1): file ans_driver.h was initially
+	* drivers/e1000/ans_driver.c (1.1): file ans_driver.c was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_driver.c (1.1): file ans_driver.c was initially
+	* drivers/e1000/ans_driver.h (1.1): file ans_driver.h was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -11125,13 +11125,13 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/README (1.1): file README was initially added on
-	branch smp_click.
+	* drivers/e1000/Makefile.orig (1.1): file Makefile.orig was
+	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/Makefile.orig (1.1): file Makefile.orig was
-	initially added on branch smp_click.
+	* drivers/e1000/README (1.1): file README was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -12684,12 +12684,12 @@
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.hh (1.1): file msqueue.hh was initially
+	* elements/standard/msqueue.cc (1.1): file msqueue.cc was initially
 	added on branch smp-benjie.
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.cc (1.1): file msqueue.cc was initially
+	* elements/standard/msqueue.hh (1.1): file msqueue.hh was initially
 	added on branch smp-benjie.
 
 2000-10-05 Thursday 13:01  Eddie Kohler <kohler@aciri.org>
@@ -13108,12 +13108,12 @@
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.hh (1.1): file spinlockinfo.hh was
+	* elements/standard/spinlockinfo.cc (1.1): file spinlockinfo.cc was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.cc (1.1): file spinlockinfo.cc was
+	* elements/standard/spinlockinfo.hh (1.1): file spinlockinfo.hh was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
