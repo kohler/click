@@ -194,6 +194,24 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 }
 
 static void
+skip_over_push(RouterT *r, const Hookup &old_to, const Hookup &new_to)
+{
+  Vector<int> connv;
+  r->find_connections_to(old_to, connv);
+  for (int i = 0; i < connv.size(); i++)
+    r->change_connection_to(connv[i], new_to);
+}
+
+static void
+skip_over_pull(RouterT *r, const Hookup &old_from, const Hookup &new_from)
+{
+  Vector<int> connv;
+  r->find_connections_from(old_from, connv);
+  for (int i = 0; i < connv.size(); i++)
+    r->change_connection_from(connv[i], new_from);
+}
+
+static void
 remove_nulls(RouterT *r, int tindex, ErrorHandler *errh)
 {
   if (tindex < 0)
@@ -213,18 +231,73 @@ remove_nulls(RouterT *r, int tindex, ErrorHandler *errh)
     r->find_connections_from(Hookup(ei, 0), hnext);
     if (hprev.size() > 1 && hnext.size() > 1)
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
-    else if (hprev.size() == 1) {
-      Hookup prev_port = r->hookup_from(hprev[0]);
-      for (int j = 0; j < hnext.size(); j++)
-	r->change_connection_from(hnext[j], prev_port);
-    } else if (hnext.size() == 1) {
-      Hookup next_port = r->hookup_to(hnext[0]);
-      for (int j = 0; j < hprev.size(); j++)
-	r->change_connection_to(hprev[j], next_port);
-    }
+    else if (hprev.size() == 1)
+      skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
+    else if (hnext.size() == 1)
+      skip_over_push(r, Hookup(ei, 0), r->hookup_from(hnext[0]));
 
     r->kill_element(ei);
   }
+}
+
+static bool
+remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
+			    ErrorHandler *errh)
+{
+  if (tindex < 0)
+    return false;
+  int idle_tindex = r->get_type_index("Idle");
+
+  bool changed = false;
+  for (int ei = 0; ei < r->nelements(); ei++) {
+    if (r->etype(ei) != tindex)
+      continue;
+    int nin = r->ninputs(ei), nout = r->noutputs(ei);
+    if (nout != 1) {
+      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+      continue;
+    }
+    
+    Vector<int> hprev;
+    Vector<String> args;
+    r->find_connection_vector_to(ei, hprev);
+    // check configuration string if we need to
+    if (config_eq_ninputs) {
+      cp_argvec(r->econfiguration(ei), args);
+      if (args.size() != hprev.size())
+	continue;
+    }
+    
+    for (int p = 0; p < hprev.size(); p++)
+      if (hprev[p] >= 0 && r->etype( r->hookup_from(hprev[p]).idx ) == idle_tindex) {
+	// remove that scheduler port
+	// check configuration first
+	if (config_eq_ninputs) {
+	  for (int pp = p + 1; pp < hprev.size(); pp++)
+	    args[pp-1] = args[pp];
+	  args.pop_back();
+	  r->econfiguration(ei) = cp_unargvec(args);
+	}
+
+	// now do connections
+	int bad_connection = hprev[p];
+	for (int pp = p + 1; pp < hprev.size(); pp++) {
+	  r->change_connection_to(hprev[pp], Hookup(ei, pp - 1));
+	  hprev[pp - 1] = hprev[pp];
+	}
+	r->kill_connection(bad_connection);
+	hprev.pop_back();
+	p--;
+      }
+
+    if (hprev.size() == 1) {
+      skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
+      r->kill_element(ei);
+      changed = true;
+    }
+  }
+
+  return changed;
 }
 
 static void
@@ -553,6 +626,15 @@ particular purpose.\n");
     
   // hook up blanked-out live ports to a new Idle
   replace_blank_ports(r, processing);
+
+  // remove redundant schedulers
+  while (1) {
+    int nchanges = 0;
+    nchanges += remove_redundant_schedulers(r, r->type_index("RoundRobinSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, r->type_index("PrioSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, r->type_index("StrideSched"), true, default_errh);
+    if (!nchanges) break;
+  }
 
   // NOW remove bad elements
   r->remove_dead_elements();
