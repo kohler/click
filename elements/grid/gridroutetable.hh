@@ -264,19 +264,24 @@ private:
   static String print_nbrs_v(Element *e, void *);
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
+  static String print_links(Element *e, void *);
+
   static String print_metric_type(Element *e, void *);
   static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
+
   static String print_metric_range(Element *e, void *);
   static int write_metric_range(const String &, Element *, void *, ErrorHandler *);
 
-  static int check_metric_type(const String &);
-  
+  static String print_est_type(Element *e, void *);
+  static int write_est_type(const String &, Element *, void *, ErrorHandler *);
+
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);
 
   bool est_delivery_rate(const IPAddress, double &);
 
   enum MetricType {
+    MetricUnknown = -1,
     MetricHopCount = 0,            // unsigned int hop count
     MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
     MetricMinDeliveryRate,         // unsigned int percentage (0-100)
@@ -287,13 +292,16 @@ private:
     MetricEstTxCount               // unsigned int expected number of transmission * 100
   };
 
-  int _metric_type;
+  static String metric_type_to_string(MetricType t);
+  static MetricType check_metric_type(const String &);
   
+  MetricType _metric_type;
+
   /* top and bottom of ranges for qual/sig pct */
   int _max_metric;
   int _min_metric;
   
-  static const int _bad_metric = 666999;
+  static const unsigned int _bad_metric = 7777777;
 
   /* default ranges taken from experiments -- from approx 144 million received packets! */
   /*
@@ -307,6 +315,16 @@ private:
   static const int _min_qual = 0;
   static const int _max_sig = -13; 
   static const int _min_sig = -100;
+
+    
+  enum {
+    EstByQual = 0,
+    EstBySig,
+    EstBySigQual,
+    EstByMeas
+  };
+
+  unsigned int _est_type;
 
 };
 

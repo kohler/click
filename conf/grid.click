@@ -117,7 +117,7 @@ from_grid_if
   -> HostEtherFilter(GRID_MAC_ADDR, 1)
   -> check_grid :: CheckGridHeader
   -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
-  -> ls :: LinkStat(ai)
+  -> ls :: LinkStat(ai, 20000)
   -> lt
   -> grid_demux;
 

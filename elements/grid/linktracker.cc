@@ -169,8 +169,19 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
   if (num_rx < 2)
     return;
 
-  double r = num_rx;
-  r /= num_expected;
+  double num_rx_ = num_rx;
+  double num_expected_ = num_expected;
+
+  /* 
+   * calculate loss rate, being pessimistic.  that is, choose the loss
+   * rate r such that: 
+   *
+   * (r * num_expected) + 0.5 = num_rx
+   *
+   * this makes r the lowest rate such that (r * num_expected) rounds
+   * up to the number of packets actually received.  
+   */
+  double r = (num_rx_ - 0.5) / num_expected_;
     
   struct timeval now;
   gettimeofday(&now, 0);
@@ -320,6 +331,7 @@ void
 LinkTracker::add_handlers()
 {
   add_read_handler("stats", read_stats, 0);
+  add_read_handler("bcast_stats", read_bcast_stats, 0);
   add_read_handler("tau", read_tau, 0);
   add_write_handler("tau", write_tau, 0);
 }

@@ -154,7 +154,7 @@ String
 LinkStat::read_window(Element *xf, void *)
 {
   LinkStat *f = (LinkStat *) xf;
-  return String(f->_window);
+  return String(f->_window) + "\n";
 }
 
 
@@ -188,7 +188,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
       return "Error: inconsistent data structures\n";
 
     char timebuf[80];
-    snprintf(timebuf, 80, " %lu.%06lu", when.tv_sec, when.tv_usec);
+    snprintf(timebuf, 80, "%lu.%06lu", when.tv_sec, when.tv_usec);
     s += i.key().s() + " last=" + timebuf + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
   }
   return s;

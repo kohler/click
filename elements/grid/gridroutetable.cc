@@ -35,7 +35,8 @@ GridRouteTable::GridRouteTable() :
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
   _metric_type(MetricHopCount),
-  _max_metric(0), _min_metric(0)
+  _max_metric(0), _min_metric(0),
+  _est_type(EstByMeas)
 {
   MOD_INC_USE_COUNT;
 }
@@ -191,22 +192,44 @@ GridRouteTable::sig_to_pct(int s)
 bool
 GridRouteTable::est_delivery_rate(const IPAddress ip, double &rate)
 {
-  int sig = 0;
-  int qual = 0;
-  struct timeval last;
-  bool res = _link_tracker->get_stat(ip, sig, qual, last);
-  if (!res)
+  switch (_est_type) {
+  case EstBySig:
+  case EstByQual: 
+  case EstBySigQual: {
+    int sig = 0;
+    int qual = 0;
+    struct timeval last;
+    bool res = _link_tracker->get_stat(ip, sig, qual, last);
+    if (!res)
+      return false;
+    if (_est_type == EstByQual) {
+      static const double m = -1 / 14;
+      static const double b = 20 / 14;
+      
+      rate = m*qual + b;
+      if (rate > 1) 
+	rate = 1;
+      if (rate < 0)
+	rate = 0.01;
+    }
+    else if (_est_type == EstBySig) {
+      return false;
+    }
+    else /* (_est_type == EstBySigQual) */ {
+      return false;
+    }
+    return true;
+    break;
+  }
+  case EstByMeas: {
+    struct timeval last;
+    bool res = _link_tracker->get_bcast_stat(ip, rate, last);
+    return res;
+    break;
+  }
+  default:
     return false;
-  
-  static const double m = -1 / 14;
-  static const double b = 20 / 14;
-
-  rate = m*qual + b;
-  if (rate > 1) 
-    rate = 1;
-  if (rate < 0)
-    rate = 0.01;
-  return true;
+  }
 }
 
 
@@ -704,26 +727,31 @@ GridRouteTable::print_eth(Element *e, void *)
 }
 
 String
-GridRouteTable::print_metric_type(Element *e, void *)
+GridRouteTable::metric_type_to_string(MetricType t)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
-
-  switch (n->_metric_type) {
-  case MetricHopCount: return "hopcount\n"; break;
-  case MetricCumulativeDeliveryRate: return "cumulative_delivery_rate\n"; break;
-  case MetricMinDeliveryRate: return "min_delivery_rate\n"; break;
-  case MetricMinSigStrength: return "min_sig_strength\n"; break;
-  case MetricMinSigQuality: return "min_sig_quality\n"; break;
-  case MetricCumulativeQualPct: return "cumulative_qual_pct\n"; break;
-  case MetricCumulativeSigPct: return "cumulative_sig_pct\n"; break;
-  case MetricEstTxCount:   return "est_tx_count\n"; break;
+  switch (t) {
+  case MetricHopCount: return "hopcount"; break;
+  case MetricCumulativeDeliveryRate: return "cumulative_delivery_rate"; break;
+  case MetricMinDeliveryRate: return "min_delivery_rate"; break;
+  case MetricMinSigStrength: return "min_sig_strength"; break;
+  case MetricMinSigQuality: return "min_sig_quality"; break;
+  case MetricCumulativeQualPct: return "cumulative_qual_pct"; break;
+  case MetricCumulativeSigPct: return "cumulative_sig_pct"; break;
+  case MetricEstTxCount:   return "est_tx_count"; break;
   default: 
-    assert(0);
-    return "";
+    return "unknown_metric_type";
   }
 }
 
-int 
+
+String
+GridRouteTable::print_metric_type(Element *e, void *)
+{
+  GridRouteTable *n = (GridRouteTable *) e;
+  return metric_type_to_string(n->_metric_type) + "\n";
+}
+
+GridRouteTable::MetricType 
 GridRouteTable::check_metric_type(const String &s)
 {
   String s2 = s.lower();
@@ -744,7 +772,7 @@ GridRouteTable::check_metric_type(const String &s)
   else if (s2 == "est_tx_count")
     return MetricEstTxCount;
   else
-    return -1;
+    return MetricUnknown;
 }
 
 int
@@ -752,7 +780,7 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
 				  void *, ErrorHandler *errh)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
-  int type = check_metric_type(arg);
+  MetricType type = check_metric_type(arg);
   if (type < 0)
     return errh->error("unknown metric type ``%s''", ((String) arg).cc());
   
@@ -820,6 +848,62 @@ GridRouteTable::write_metric_range(const String &arg, Element *el,
   return 0;
 }
 
+String
+GridRouteTable::print_est_type(Element *e, void *)
+{
+  GridRouteTable *rt = (GridRouteTable *) e;
+  
+  return String(rt->_est_type) + "\n";
+}
+
+int
+GridRouteTable::write_est_type(const String &arg, Element *el, 
+				   void *, ErrorHandler *)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  rt->_est_type = atoi(((String) arg).cc());
+
+  return 0;
+}
+
+
+String
+GridRouteTable::print_links(Element *e, void *)
+{
+  GridRouteTable *rt = (GridRouteTable *) e;
+  
+  String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
+
+  for (RTIter i = rt->_rtes.first(); i; i++) {
+    const RTEntry &r = i.value();
+    if (r.num_hops > 1)
+      continue;
+
+    /* get our measurements of the link *from* this neighbor */
+    LinkStat::stat_t *s1 = rt->_link_stat->_stats.findp(r.next_hop_eth);
+    struct timeval last;
+    unsigned int window = 0;
+    unsigned int num_rx = 0;
+    unsigned int num_expected = 0;
+    bool res1 = rt->_link_stat->get_bcast_stats(r.next_hop_eth, last, window, num_rx, num_expected);
+
+    /* get estimates of our link *to* this neighbor */
+    int tx_sig = 0;
+    int tx_qual = 0;
+    bool res2 = rt->_link_tracker->get_stat(r.dest_ip, tx_sig, tx_qual, last);
+    double bcast_rate = 0;
+    bool res3 = rt->_link_tracker->get_bcast_stat(r.dest_ip, bcast_rate, last);
+
+    char buf[255];
+    snprintf(buf, 255, "%s %s metric=%u (%s) rx_sig=%d rx_qual=%d rx_rate=%d tx_sig=%d tx_qual=%d tx_rate=%d\n",
+	     r.dest_ip.s().cc(), r.next_hop_eth.s().cc(), r.metric, r.metric_valid ? "valid" : "invalid",
+	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * num_rx / num_expected)) : -1,
+	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) (100 * bcast_rate) : -1);
+    s += buf;
+  }
+  return s;
+}
+
 void
 GridRouteTable::add_handlers()
 {
@@ -830,10 +914,13 @@ GridRouteTable::add_handlers()
   add_read_handler("rtes", print_rtes, 0);
   add_read_handler("ip", print_ip, 0);
   add_read_handler("eth", print_eth, 0);
+  add_read_handler("links", print_links, 0);
   add_read_handler("metric_type", print_metric_type, 0);
   add_write_handler("metric_type", write_metric_type, 0);
   add_read_handler("metric_range", print_metric_range, 0);
   add_write_handler("metric_range", write_metric_range, 0);
+  add_read_handler("est_type", print_est_type, 0);
+  add_write_handler("est_type", write_est_type, 0);
 }
 
 
@@ -1094,7 +1181,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);
   nb->metric = htonl(metric);
-  nb->metric = metric_valid;
+  nb->metric_valid = metric_valid;
   nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
   
