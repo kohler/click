@@ -218,7 +218,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
     }
     
     // parse flags
-    int flags = 0;    
+    int flags = 0;
    flags:
     switch (*++s) {
      case '#': flags |= ALTERNATE_FORM; goto flags;

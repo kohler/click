@@ -9,10 +9,10 @@
 #include "click_ip.h"
 
 unsigned short
-in_cksum(unsigned char *addr, int len)
+in_cksum(const unsigned char *addr, int len)
 {
   int nleft = len;
-  unsigned short *w = (unsigned short *)addr;
+  const unsigned short *w = (const unsigned short *)addr;
   unsigned sum = 0;
   unsigned short answer = 0;
     
@@ -28,7 +28,7 @@ in_cksum(unsigned char *addr, int len)
   
   /* mop up an odd byte, if necessary */
   if (nleft == 1) {
-    *(unsigned char *)(&answer) = *(unsigned char *)w ;
+    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
     sum += answer;
   }
   

@@ -102,7 +102,7 @@ struct click_ip {
 # ifdef __cplusplus
 extern "C"
 # endif
-unsigned short in_cksum(unsigned char *addr, int len);
+unsigned short in_cksum(const unsigned char *addr, int len);
 #endif
 
 #endif

@@ -43,7 +43,8 @@ class StringAccum {
   char *take();
   String take_string();
   
-  StringAccum &operator<<(char c)	{ push(c); return *this; }
+  StringAccum &operator<<(char c)		{ push(c); return *this; }
+  StringAccum &operator<<(unsigned char c)	{ push(c); return *this; }
   StringAccum &operator<<(const char *);
 #ifdef HAVE_PERMSTRING
   StringAccum &operator<<(PermString);
