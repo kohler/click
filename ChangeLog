@@ -1,3 +1,11 @@
+2001-09-25 Tuesday 12:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: ipclassifier.hh (1.23), ipfilter.cc (1.28),
+	ipfilter.hh (1.17): IPClassifier/IPFilter: Support comparisons
+	where the top bits are 1 instead of 0. Clearer error messages on
+	comparisons: suggest closest valid comparisons, warn when a
+	comparison is always true or always false. Also, fix parsing bug.
+
 2001-09-25 Tuesday 04:57  Eddie Kohler <kohler@aciri.org>
 
 	* etc/linux-2.4.9-patch (1.6): don't patch Makefile by default
