@@ -57,9 +57,13 @@ dnl
 dnl How to build linuxmodule driver?
 dnl
 
-AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
+AC_ARG_WITH(linux, [  --with-linux[[=DIR]]      Linux source code is in DIR [[/usr/src/linux]]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
   linuxdir=NONE)
+
+AC_ARG_WITH(linux-map, [  --with-linux-map[[=FILE]] filename for Linux System.map [[LINUXDIR/System.map]]],
+  [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
+  linux_system_map=NONE)
 
 if test "x$linuxdir" = xNONE; then
   if test -d /usr/src/linux; then
@@ -97,8 +101,8 @@ dnl
 dnl How to build bsdmodule driver?
 dnl
 
-AC_ARG_WITH(freebsd, [  --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
-                          include directory is INC [/usr/include]],
+AC_ARG_WITH(freebsd, [  --with-freebsd[[=SRC,INC]] FreeBSD source code is in SRC [[/usr/src/sys]],
+                          include directory is INC [[/usr/include]]],
   [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys,/usr/include; fi],
   freebsddir=NONE)
 
@@ -185,7 +189,7 @@ dnl multithread support?
 dnl
 
 AC_ARG_ENABLE(multithread,
-  [  --enable-multithread[=NUM]
+  [  --enable-multithread[[=NUM]]
                           support kernel multithreading with NUM threads max],
   :, enable_multithread=no)
 
@@ -349,17 +353,21 @@ dnl
 
 if test $ac_have_linux_kernel = y; then
 
-if test ! -f $linuxdir/System.map; then
+if test "$linux_system_map" = NONE; then
+    linux_system_map=$linuxdir/System.map
+fi
+
+if test ! -f $linux_system_map; then
     AC_MSG_ERROR([
 =========================================
 
-Can't find $linuxdir/System.map!
+Can't find Linux System.map file '$linux_system_map'!
 
 =========================================])
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-[if grep register_net_in $linuxdir/System.map >/dev/null 2>&1; then
+[if grep register_net_in $linux_system_map >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
@@ -367,7 +375,7 @@ if test $ac_cv_click_kernel = yes; then
 fi
 
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_linux_read_net_skbcount,
-[if grep read_net_skbcount $linuxdir/System.map >/dev/null 2>&1; then
+[if grep read_net_skbcount $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_read_net_skbcount=yes
 else ac_cv_linux_read_net_skbcount=no; fi])
 if test $ac_cv_linux_read_net_skbcount = yes; then
@@ -375,7 +383,7 @@ if test $ac_cv_linux_read_net_skbcount = yes; then
 fi
 
 AC_CACHE_CHECK(for strlen kernel symbol, ac_cv_linux_strlen_exposed,
-[if grep ' strlen' $linuxdir/System.map >/dev/null 2>&1; then
+[if grep ' strlen' $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_strlen_exposed=yes
 else ac_cv_linux_strlen_exposed=no; fi])
 if test $ac_cv_linux_strlen_exposed = yes; then
@@ -383,7 +391,7 @@ if test $ac_cv_linux_strlen_exposed = yes; then
 fi
 
 AC_CACHE_CHECK(for tulip_interrupt_hook kernel symbol, ac_cv_linux_tulip_intr_hook,
-[if grep ' tulip_interrupt_hook' $linuxdir/System.map >/dev/null 2>&1; then
+[if grep ' tulip_interrupt_hook' $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_tulip_intr_hook=yes
 else ac_cv_linux_tulip_intr_hook=no; fi])
 if test $ac_cv_linux_tulip_intr_hook = yes; then
@@ -530,7 +538,7 @@ dnl expat library
 dnl
 
 explicit_expat=yes
-AC_ARG_WITH(expat, [  --with-expat[=PREFIX]   Prefix where expat library is installed (optional)],
+AC_ARG_WITH(expat, [  --with-expat[[=PREFIX]]   Prefix where expat library is installed (optional)],
   [expatprefix=$withval; if test -z "$withval" -o "$withval" = yes; then expatprefix=; fi],
   expatprefix=; explicit_expat=no)
 
