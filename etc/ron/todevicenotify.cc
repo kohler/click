@@ -1,0 +1,111 @@
+/*
+ * todevicenotify.{cc,hh} -- element writes packets to network via pcap library
+ * Alexander Yip
+ *
+ * Copyright (c) 2002 Massachusetts Institute of Technology
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
+ */
+
+#include <click/config.h>
+#include "todevicenotify.hh"
+#include <click/elemfilter.hh>
+#include <click/error.hh>
+#include <click/etheraddress.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
+#include <click/standard/scheduleinfo.hh>
+
+#include <stdio.h>
+#include <assert.h>
+#include <unistd.h>
+
+#if TODEVICE_BSD_DEV_BPF
+# include <fcntl.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+#elif TODEVICE_LINUX
+# include <sys/socket.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+# include <net/if_packet.h>
+# include <features.h>
+# if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
+#  include <netpacket/packet.h>
+# else
+#  include <linux/if_packet.h>
+# endif
+#endif
+
+
+ToDeviceNotify::ToDeviceNotify() 
+  : ToDevice() 
+{
+}
+
+ToDeviceNotify::~ToDeviceNotify() 
+{
+  MOD_DEC_USE_COUNT;
+  uninitialize();
+}
+
+ToDeviceNotify *
+ToDeviceNotify::clone() const
+{
+  return new ToDeviceNotify;
+}
+
+int
+ToDeviceNotify::initialize(ErrorHandler *errh)
+{
+  int ok, i, ret;
+  Vector<Element *> upstream_queues;
+  CastElementFilter filter("QueueNotify");
+  
+  ret = ToDevice::initialize(errh);
+  if (ret) return ret;
+  _data_ready = false;
+  
+  ok = router()->upstream_elements(this, 0, &filter, upstream_queues);
+  if (ok < 0) 
+    return errh->error("could not find upstream notify queues");
+  
+  for(i=0; i<upstream_queues.size(); i++) {
+    ((QueueNotify*) upstream_queues[i])->subscribe_notification(this);
+  }
+
+  return 0;
+}
+
+void 
+ToDeviceNotify::notify(int signal)
+{  
+  if (signal == QueueNotify::NODATA) 
+    _data_ready = false;
+  else if (signal == QueueNotify::DATAREADY){
+    _data_ready = true;
+    _task.fast_reschedule();
+  }
+}
+
+void
+ToDeviceNotify::run_scheduled()
+{
+  if (Packet *p = input(0).pull())
+    send_packet(p);
+  
+  if (_data_ready)
+    _task.fast_reschedule();
+}
+
+EXPORT_ELEMENT(ToDeviceNotify)
