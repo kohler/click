@@ -55,6 +55,9 @@ class Lexer { public:
 
   ErrorHandler *errh() const		{ return _errh; }
   
+  String remaining_text() const;
+  void set_remaining_text(const String &);
+  
   const Lexeme &lex();
   void unlex(const Lexeme &);
   String lex_config();

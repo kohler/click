@@ -415,6 +415,21 @@ Lexer::end_parse(int cookie)
 
 // LEXING: LOWEST LEVEL
 
+String
+Lexer::remaining_text() const
+{
+  return _big_string.substring(_pos);
+}
+
+void
+Lexer::set_remaining_text(const String &s)
+{
+  _big_string = s;
+  _data = s.data();
+  _pos = 0;
+  _len = s.length();
+}
+
 unsigned
 Lexer::skip_line(unsigned pos)
 {
@@ -707,15 +722,22 @@ Lexer::unlex(const Lexeme &t)
 bool
 Lexer::expect(int kind, bool report_error = true)
 {
-  const Lexeme &t = lex();
-  if (t.is(kind))
-    return true;
-  else {
-    if (report_error)
-      lerror("expected %s", lexeme_string(kind).cc());
-    unlex(t);
-    return false;
+  // Never adds anything to '_tcircle'. This requires a nonobvious
+  // implementation.
+  if (_tpos != _tfull) {
+    if (_tcircle[_tpos].is(kind)) {
+      _tpos = (_tpos + 1) % TCIRCLE_SIZE;
+      return true;
+    }
+  } else {
+    unsigned old_pos = _pos;
+    if (next_lexeme().is(kind))
+      return true;
+    _pos = old_pos;
   }
+  if (report_error)
+    lerror("expected %s", lexeme_string(kind).cc());
+  return false;
 }
 
 
@@ -1141,7 +1163,7 @@ Lexer::yconnection()
       
      case ',':
      case lex2Colon:
-      lerror("syntax error before `%s'", t.string().cc());
+      lerror("syntax error before `%#s'", t.string().cc());
       goto relex;
       
      case lexArrow:
@@ -1168,7 +1190,7 @@ Lexer::yconnection()
       return true;
       
      default:
-      lerror("syntax error near `%s'", t.string().cc());
+      lerror("syntax error near `%#s'", t.string().cc());
       if (t.kind() >= lexIdent)	// save meaningful tokens
 	unlex(t);
       return true;
@@ -1203,7 +1225,7 @@ Lexer::yelementclass()
     add_element_type(name, new Synonym(et));
 
   } else {
-    lerror("syntax error near `%s'", String(tnext.string()).cc());
+    lerror("syntax error near `%#s'", String(tnext.string()).cc());
     add_element_type(name, new ErrorElement);
   }
 }
@@ -1267,7 +1289,7 @@ Lexer::ycompound(String name)
   const Lexeme &t = lex();
   if (t.is(lex3Dot)) {
     if (_element_type_map[name] < 0) {
-      lerror("extending unknwon element class `%s'", name.cc());
+      lerror("extending unknown element class `%s'", name.cc());
       add_element_type(name, new ErrorElement);
     }
     created = _element_types[ _element_type_map[name] ];
@@ -1320,19 +1342,27 @@ Lexer::yrequire()
 {
   if (expect('(')) {
     String requirement = lex_config();
+    expect(')');
+    // pre-read ';' to make it easier to write parsing extensions
+    expect(';', false);
+    
     Vector<String> args;
-    cp_argvec(requirement, args);
     String word;
+    cp_argvec(requirement, args);
     for (int i = 0; i < args.size(); i++) {
-      if (!cp_word(args[i], &word))
-	lerror("bad requirement: should be a single word");
+      Vector<String> words;
+      cp_spacevec(args[i], words);
+      if (words.size() == 0)
+	/* do nothing */;
+      else if (!cp_word(words[0], &word))
+	lerror("bad requirement: not a word");
+      else if (words.size() > 1)
+	lerror("bad requirement: too many words");
       else {
-	if (_lextra)
-	  _lextra->require(word, _errh);
+	if (_lextra) _lextra->require(word, _errh);
 	_requirements.push_back(word);
       }
     }
-    expect(')');
   }
 }
 
@@ -1378,7 +1408,7 @@ Lexer::ystatement(bool nested)
     
    default:
    syntax_error:
-    lerror("syntax error near `%s'", String(t.string()).cc());
+    lerror("syntax error near `%#s'", String(t.string()).cc());
     return true;
     
   }
