@@ -6,7 +6,7 @@
 
 #include "grid-node-info.h"
 
-StaticLocationInfo(0, 0)
+LocationInfo(0, 0)
 
 rh :: ReadHandlerCaller(1) 
 

@@ -11,7 +11,8 @@
  * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
  * North and East, negative is South and West.
  *
- * =h loc read/write Returns or sets the element's location
+ * =h loc read/write
+ * Returns or sets the element's location
  * information, in this format: ``lat, lon''.
  *
  * =a FixSrcLoc */

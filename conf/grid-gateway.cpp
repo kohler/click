@@ -5,7 +5,7 @@
 #include "grid-node-info.h"
 #include "grid-gw-info.h"
 
-StaticLocationInfo(0, 0)
+LocationInfo(0, 0)
 
 // device interface
 eth :: FromDevice(GW_NET_DEVICE, 0)
