@@ -1,3 +1,8 @@
+2002-05-02 Thursday 18:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: added send error
+	ano
+
 2002-04-30 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/scheduleinfo.cc, include/click/element.hh,

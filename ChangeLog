@@ -1,3 +1,17 @@
+2002-05-02 Thursday 18:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/packet_anno.hh (1.9): added send error ano
+
+2002-05-02 Thursday 17:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridtxerror.cc (1.1), gridtxerror.hh (1.1):
+	GridTxError handles errors packets from ToDevice
+
+2002-05-02 Thursday 17:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: todevice.cc (1.24), todevice.hh (1.15):
+	added (optional) error output
+
 2002-05-02 Thursday 16:17  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/: Makefile.in (1.66), module.cc (1.63),
