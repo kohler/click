@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "linuxmodule.hh"
+#include "modulepriv.hh"
 
 #include "lexer.hh"
 #include "router.hh"
@@ -340,17 +340,18 @@ click_unprovide(const char *name)
     }
 }
 
-extern "C" void
+extern "C" int
 click_add_element_type(const char *name, Element *e)
 {
-  lexer->add_element_type(name, e);
+  int i = lexer->add_element_type(name, e);
   lexer->save_element_types();
+  return i;
 }
 
 extern "C" void
-click_remove_element_type(const char *name)
+click_remove_element_type(int i)
 {
-  lexer->remove_element_type(name);
+  lexer->remove_element_type(i);
 }
 
 

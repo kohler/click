@@ -33,10 +33,12 @@
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
+#define OUTPUT_OPT		304
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 'h', HELP_OPT, 0, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -177,9 +179,115 @@ struct Classifion {
     unsigned u;
   } value;
 };
-  
+
+static String
+translate_class_name(const String &s)
+{
+  StringAccum sa;
+  for (int i = 0; i < s.length(); i++)
+    if (s[i] == '_')
+      sa << "_u";
+    else if (s[i] == '@')
+      sa << "_a";
+    else if (s[i] == '/')
+      sa << "_s";
+    else
+      sa << s[i];
+  return sa.take_string();
+}
+
 static void
-analyze_classifier(RouterT *r, int classifier_ei, ErrorHandler *errh)
+write_checked_program(FILE *f, const Vector<Classifion> &cls,
+		      int noutputs, int safe_length, int align_offset)
+{
+  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
+  fprintf(f, "  int l = p->length();\n");
+  fprintf(f, "  assert(l < %d);\n", safe_length);
+  for (int i = 0; i < cls.size(); i++) {
+    const Classifion &e = cls[i];
+    fprintf(f, " lstep_%d:\n", i);
+    
+    int want_l = e.offset + 4;
+    if (!e.mask.c[3]) {
+      want_l--;
+      if (!e.mask.c[2]) {
+	want_l--;
+	if (!e.mask.c[1])
+	  want_l--;
+      }
+    }
+
+    bool switched = (e.yes == i + 1);
+    int branch1 = (switched ? e.no : e.yes);
+    int branch2 = (switched ? e.yes : e.no);
+
+    if (want_l >= safe_length) {
+      branch2 = e.no;
+      goto output_branch2;
+    }
+    
+    if (switched)
+      fprintf(f, "  if (l < %d || (data[%d] & 0x%xU) != 0x%xU)",
+	      want_l, e.offset/4, e.mask.u, e.value.u);
+    else
+      fprintf(f, "  if (l >= %d && (data[%d] & 0x%xU) == 0x%xU)",
+	      want_l, e.offset/4, e.mask.u, e.value.u);
+    if (branch1 <= -noutputs)
+      fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
+    else if (branch1 <= 0)
+      fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
+    else
+      fprintf(f, "\n    goto lstep_%d;\n", branch1);
+
+   output_branch2:
+    if (branch2 <= -noutputs)
+      fprintf(f, "  p->kill();\n  return;\n");
+    else if (branch2 <= 0)
+      fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
+    else if (branch2 != i + 1)
+      fprintf(f, "  goto lstep_%d;\n", branch2);
+  }
+}
+
+static void
+write_unchecked_program(FILE *f, const Vector<Classifion> &cls,
+			int noutputs, int align_offset)
+{
+  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
+  for (int i = 0; i < cls.size(); i++) {
+    const Classifion &e = cls[i];
+    fprintf(f, " step_%d:\n", i);
+    
+    bool switched = (e.yes == i + 1);
+    int branch1 = (switched ? e.no : e.yes);
+    int branch2 = (switched ? e.yes : e.no);
+
+    if (switched)
+      fprintf(f, "  if ((data[%d] & 0x%xU) != 0x%xU)",
+	      e.offset/4, e.mask.u, e.value.u);
+    else
+      fprintf(f, "  if ((data[%d] & 0x%xU) == 0x%xU)",
+	      e.offset/4, e.mask.u, e.value.u);
+    if (branch1 <= -noutputs)
+      fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
+    else if (branch1 <= 0)
+      fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
+    else
+      fprintf(f, "\n    goto step_%d;\n", branch1);
+    if (branch2 <= -noutputs)
+      fprintf(f, "  p->kill();\n  return;\n");
+    else if (branch2 <= 0)
+      fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
+    else if (branch2 != i + 1)
+      fprintf(f, "  goto step_%d;\n", branch2);
+  }
+}
+
+static Vector<String> gen_eclass_names;
+static Vector<String> gen_cxxclass_names;
+
+static void
+analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
 {
   // count number of output ports
   Vector<String> args;
@@ -261,39 +369,50 @@ analyze_classifier(RouterT *r, int classifier_ei, ErrorHandler *errh)
   }
 
   // output corresponding code
+  String class_name = "Classifier@@" + r->ename(classifier_ei);
+  String cxx_name = translate_class_name(class_name);
+  gen_eclass_names.push_back(class_name);
+  gen_cxxclass_names.push_back(cxx_name);
+
+  fprintf(f, "class %s : public Element { public:\n\
+  %s() : Element(1, %d) { MOD_INC_USE_COUNT; }\n\
+  ~%s() { MOD_DEC_USE_COUNT; }\n\
+  const char *class_name() const { return \"%s\"; }\n\
+  Processing default_processing() const { return PUSH; }\n\
+  %s *clone() const { return new %s; }\n",
+	  cxx_name.cc(), cxx_name.cc(), noutputs, cxx_name.cc(),
+	  class_name.cc(), cxx_name.cc(), cxx_name.cc());
+  
   if (output_everything >= 0) {
+    fprintf(f, "  void push(int, Packet *);\n};\n\
+void\n%s::push(int, Packet *p)\n{\n",
+	    cxx_name.cc());
     if (output_everything < noutputs)
-      printf("  output(%d).push(p);\n", output_everything);
+      fprintf(f, "  output(%d).push(p);\n", output_everything);
     else
-      printf("  p->kill();\n");
+      fprintf(f, "  p->kill();\n");
+    fprintf(f, "}\n");
   } else {
-    printf("  if (p->length() < %d)\n    return 0;\n", safe_length);
-    if (cls.size() > 0)
-      printf("  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
-    for (int i = 0; i < cls.size(); i++) {
-      Classifion &e = cls[i];
-      printf(" step_%d:\n", i);
-      
-      bool switched = (e.yes == i + 1);
-      int branch1 = (switched ? e.no : e.yes);
-      int branch2 = (switched ? e.yes : e.no);
-      
-      printf("  if (data[%d] & 0x%xU %s 0x%xU)", e.offset/4, e.mask.u,
-	     (switched ? "!=" : "=="), e.value.u);
-      if (branch1 <= -noutputs)
-	printf(" {\n    p->kill();\n    return;\n  }\n");
-      else if (branch1 <= 0)
-	printf(" {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
-      else
-	printf("\n    goto step_%d;\n", branch1);
-      if (branch2 <= -noutputs)
-	printf("  p->kill();\n  return;\n");
-      else if (branch2 <= 0)
-	printf("  output(%d).push(p);\n  return;\n", -branch2);
-      else if (branch2 != i + 1)
-	printf("  goto step_%d;\n", branch2);
-    }
+    fprintf(f, "  void length_checked_push(Packet *);\n\
+  inline void length_unchecked_push(Packet *);\n\
+  void push(int, Packet *);\n};\n\
+void\n%s::length_checked_push(Packet *p)\n{\n",
+	    cxx_name.cc());
+    write_checked_program(f, cls, noutputs, safe_length, align_offset);
+    fprintf(f, "}\ninline void\n%s::length_unchecked_push(Packet *p)\n{\n",
+	    cxx_name.cc());
+    write_unchecked_program(f, cls, noutputs, align_offset);
+    fprintf(f, "}\nvoid\n%s::push(int, Packet *p)\n{\n\
+  if (p->length() < %d)\n    length_checked_push(p);\n\
+  else\n    length_unchecked_push(p);\n}\n",
+	    cxx_name.cc(), safe_length);
   }
+
+  // add type to router `r' and change element
+  int nclassifier_ti = r->get_type_index(class_name);
+  ElementT &classifier_e = r->element(classifier_ei);
+  classifier_e.type = nclassifier_ti;
+  classifier_e.configuration = String();
 }
 
 
@@ -336,6 +455,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  const char *output_file = 0;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -364,6 +484,14 @@ particular purpose.\n");
       router_file = clp->arg;
       break;
 
+     case OUTPUT_OPT:
+      if (output_file) {
+	errh->error("output file specified twice");
+	goto bad_option;
+      }
+      output_file = clp->arg;
+      break;
+      
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -380,9 +508,16 @@ particular purpose.\n");
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  
   r->flatten(errh);
 
+  // open output file
+  FILE *outf = stdout;
+  if (output_file && strcmp(output_file, "-") != 0) {
+    outf = fopen(output_file, "w");
+    if (!outf)
+      errh->fatal("%s: %s", output_file, strerror(errno));
+  }
+  
   // find Click binary
   click_binary = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
   
@@ -396,10 +531,51 @@ particular purpose.\n");
 	  classifiers.push_back(i);
   }
 
+  // quit early if no Classifiers
+  if (classifiers.size() == 0) {
+    fputs(r->configuration_string().cc(), outf);
+    exit(0);
+  }
+
+  // find name of module
+  String module_name;
+  int uniqueifier = 1;
+  while (1) {
+    module_name = "fastclassifier" + String(uniqueifier);
+    if (!clickpath_find_file(module_name + ".o", "packages", CLICK_PACKAGESDIR))
+      break;
+  }
+  r->add_requirement(module_name);
+  
+  // write C++ header
+  FILE *f = stdout;
+  fprintf(f, "#include \"clickmodule.hh\"\n#include \"element.hh\"\n");
+  
   // write Classifier programs
   for (int i = 0; i < classifiers.size(); i++)
-    analyze_classifier(r, classifiers[i], errh);
-  
+    analyze_classifier(r, classifiers[i], f, errh);
+
+  // write final text
+  int nclasses = gen_cxxclass_names.size();
+  fprintf(f, "static int hatred_of_rebecca[%d];\n\
+extern \"C\" int\ninit_module()\n{\n\
+  click_provide(\"%s\");\n",
+	  nclasses, module_name.cc());
+  for (int i = 0; i < nclasses; i++)
+    fprintf(f, "  hatred_of_rebecca[%d] = click_add_element_type(\"%s\", new %s);\n\
+  MOD_DEC_USE_COUNT;\n",
+	    i, gen_eclass_names[i].cc(), gen_cxxclass_names[i].cc());
+  fprintf(f, "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n");
+  for (int i = 0; i < nclasses; i++)
+    fprintf(f, "  MOD_INC_USE_COUNT;\n\
+  click_remove_element_type(hatred_of_rebecca[%d]);\n",
+	    i);
+  fprintf(f, "  click_unprovide(\"%s\");\n}\n\
+EXPORT_NO_SYMBOLS\n",
+	  module_name.cc());
+
+  // write configuration
+  fputs(r->configuration_string().cc(), outf);
   return 0;
 }
 

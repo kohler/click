@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "linuxmodule.hh"
+#include "modulepriv.hh"
 #include "router.hh"
 
 static int config_write_lock = 0;

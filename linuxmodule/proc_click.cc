@@ -14,7 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "linuxmodule.hh"
+#include "modulepriv.hh"
 #include "router.hh"
 #include "error.hh"
 

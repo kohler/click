@@ -129,7 +129,6 @@ class Lexer {
   void element_type_names(Vector<String> &) const;
   
   void remove_element_type(int);
-  void remove_element_type(const String &);
 
   void connect(int f1, int p1, int f2, int p2);
   String element_name(int) const;

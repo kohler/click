@@ -1,11 +1,10 @@
-#ifndef LINUXMODULE_HH
-#define LINUXMODULE_HH
+#ifndef MODULEPRIV_HH
+#define MODULEPRIV_HH
 #include "element.hh"
+#include "clickmodule.hh"
 
 extern "C" {
-#define __NO_VERSION__
 #define new linux_new
-#include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 #undef new

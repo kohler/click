@@ -519,12 +519,6 @@ Lexer::remove_element_type(int j)
 }
 
 void
-Lexer::remove_element_type(const String &name)
-{
-  remove_element_type(_element_type_map[name]);
-}
-
-void
 Lexer::element_type_names(Vector<String> &v) const
 {
   for (int i = FIRST_REAL_TYPE; i < _reset_element_types; i++)

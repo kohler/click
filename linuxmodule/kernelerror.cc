@@ -15,7 +15,7 @@
 # include <config.h>
 #endif
 #include "kernelerror.hh"
-#include "linuxmodule.hh"
+#include "modulepriv.hh"
 #include "straccum.hh"
 
 static StringAccum *all_errors = 0;

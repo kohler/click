@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "linuxmodule.hh"
+#include "modulepriv.hh"
 #include "string.hh"
 
 static proc_dir_entry *all_pde = 0;
