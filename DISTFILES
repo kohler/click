@@ -336,6 +336,7 @@ string.hh
 sync.hh
 task.hh
 timer.hh
+timestamp.hh
 userutils.hh
 variableenv.hh
 vector.cc
@@ -404,6 +405,7 @@ string.cc
 task.cc
 templatei.cc
 timer.cc
+timestamp.cc
 userutils.cc
 variableenv.cc
 vectorv.cc
