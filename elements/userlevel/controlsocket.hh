@@ -7,8 +7,8 @@ class ControlSocketErrorHandler;
 /*
 =c
 
-ControlSocket("TCP", PORTNUMBER [, READONLY?, I<KEYWORDS>])
-ControlSocket("UNIX", FILENAME [, READONLY?, I<KEYWORDS>])
+ControlSocket("TCP", PORTNUMBER [, I<KEYWORDS>])
+ControlSocket("UNIX", FILENAME [, I<KEYWORDS>])
 
 =s debugging
 
