@@ -36,6 +36,9 @@ init_router_element_procs()
 	const String &id = current_router->element(curelem)->id();
 	char buf[64], nbuf[64];
 
+	/*
+	 * element indexes start from 0, directory entries start from 1
+	 */
 	snprintf(buf, sizeof(buf), "%d", curelem+1);
 	snprintf(nbuf, sizeof(nbuf), "%s", id.data());
 	nbuf[id.length()] = '\0';

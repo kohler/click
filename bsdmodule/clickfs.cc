@@ -56,7 +56,7 @@ clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
 	return error;
 
     MALLOC(cmp, struct clickfs_mount *, sizeof(struct clickfs_mount),
-	   M_TEMP, M_WAITOK);
+	   M_TEMP, M_WAITOK | M_ZERO);
     mp->mnt_data = (qaddr_t) cmp;
 
     mp->mnt_stat.f_bsize  = DEV_BSIZE;
@@ -75,7 +75,7 @@ clickfs_mount(struct mount *mp, char *user_path, caddr_t data,
 
     error = clickfs_rootvnode(mp, &cmp->click_root);
     if (error < 0) {
-	FREE(cmp, M_TEMP);
+	free(cmp, M_TEMP);
 	return error;
     }
 
