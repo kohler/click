@@ -39,6 +39,14 @@ struct click_ip6 {
   struct click_in6_addr ip6_src;	/* 8-23  source address */
   struct click_in6_addr ip6_dst;	/* 24-39 dest address */
 };
+unsigned short 
+in_ip4_cksum(const unsigned  saddr,
+	     const unsigned  daddr,
+	     unsigned short len,
+	     unsigned char proto,
+	     unsigned short ori_csum,
+	     const unsigned char *addr,
+	     unsigned short len2);
 
 
 unsigned short in6_fast_cksum(const struct click_in6_addr *saddr,
