@@ -365,9 +365,12 @@ enddef;
 vardef connectpath(suffix $,#,##,$$) =
   $.out[#]{$.flowvector} .. {$$.flowvector}$$.in[##]
 enddef;
-vardef drawconnect(suffix $,#,##,$$) =
+vardef drawconnectj(suffix $,#,##,$$)(text t) =
   interim linejoin := mitered;
-  drawarrow $.out[#]{$.flowvector} .. {$$.flowvector}$$.in[##] withpen connectionpen
+  drawarrow $.out[#]{$.flowvector} t {$$.flowvector}$$.in[##] withpen connectionpen
+enddef;
+vardef drawconnect(suffix $,#,##,$$) =
+  drawconnectj($,#,##,$$)(..);
 enddef;
 vardef drawconnectna(suffix $,#,##,$$) =
   interim linejoin := mitered;
