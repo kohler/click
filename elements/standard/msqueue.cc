@@ -12,9 +12,9 @@ CLICK_DECLS
 
 
 MSQueue::MSQueue()
-  : Element(1, 1), _q(0)
+    : Element(1, 1), _q(0)
 {
-  _drops = 0;
+    _drops = 0;
 }
 
 MSQueue::~MSQueue()
@@ -24,103 +24,105 @@ MSQueue::~MSQueue()
 void *
 MSQueue::cast(const char *n)
 {
-  if (strcmp(n, "Storage") == 0)
-    return (Storage *)this;
-  else if (strcmp(n, "MSQueue") == 0)
-    return (Element *)this;
-  else
-    return 0;
+    if (strcmp(n, "Storage") == 0)
+	return (Storage *)this;
+    else if (strcmp(n, "MSQueue") == 0)
+	return (Element *)this;
+    else
+	return 0;
 }
 
 int
 MSQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  int new_capacity = 128;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpUnsigned, "maximum queue length", &new_capacity,
-		  cpEnd) < 0)
-    return -1;
-  _capacity = new_capacity;
-  return 0;
+    int new_capacity = 128;
+    if (cp_va_parse(conf, this, errh,
+		    cpOptional,
+		    cpUnsigned, "maximum queue length", &new_capacity,
+		    cpEnd) < 0)
+	return -1;
+    _capacity = new_capacity;
+    return 0;
 }
 
 int
 MSQueue::initialize(ErrorHandler *errh)
 {
-  assert(!_q);
-  _q = new Packet *[_capacity + 1];
-  if (_q == 0)
-    return errh->error("out of memory");
+    assert(!_q);
+    _q = new Packet *[_capacity + 1];
+    if (_q == 0)
+	return errh->error("out of memory");
 
-  for(int i=0; i<=_capacity; i++) _q[i] = 0;
-  _head = 0;
-  _tail = 0;
+    for (int i = 0; i <= _capacity; i++)
+	_q[i] = 0;
+    _head = 0;
+    _tail = 0;
 
-  _can_pull = false;
-  _pulls = 0;
-  return 0;
+    _can_pull = false;
+    _pulls = 0;
+    return 0;
 }
 
 void
 MSQueue::cleanup(CleanupStage)
 {
-  if (_q)
-    for (int i = 0; i <= _capacity; i++)
-      if (_q[i])
-	_q[i]->kill();
-  delete[] _q;
-  _q = 0;
+    if (_q)
+	for (int i = 0; i <= _capacity; i++)
+	    if (_q[i])
+		_q[i]->kill();
+    delete[] _q;
+    _q = 0;
 }
 
 void
 MSQueue::push(int, Packet *p)
 {
-  uint32_t t, n;
-  do {
-    t = _tail.value();
-    n = next_i(t);
-    if (n == _head.value()) {
-      _drops++;
-      p->kill();
-      return;
-    }
-  } while (_tail.compare_and_swap(t, n) != t);
+    uint32_t t, n;
+    do {
+	t = _tail.value();
+	n = next_i(t);
+	if (n == _head.value()) {
+	    _drops++;
+	    p->kill();
+	    return;
+	}
+    } while (_tail.compare_and_swap(t, n) != t);
   
-  _q[t] = p;
+    _q[t] = p;
 }
 
 Packet *
 MSQueue::pull(int)
 {
 #if BATCHING
-  if (size() > BATCH_SZ) 
-    _can_pull = true;
-  if (_can_pull || _pulls >= BATCH_FORCE) {
+    if (size() > BATCH_SZ) 
+	_can_pull = true;
+    if (_can_pull || _pulls >= BATCH_FORCE) {
 #endif
-    uint32_t h = _head.value();
-    if (h != _tail.value() && _q[h] != 0) {
-      Packet *p = _q[h];
-      _q[h] = 0;
-      _head = next_i(h);
+	uint32_t h = _head.value();
+	if (h != _tail.value() && _q[h] != 0) {
+	    Packet *p = _q[h];
+	    _q[h] = 0;
+	    _head = next_i(h);
 #ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU && PREFETCH
-      h = _head.value();
-      if (_q[h] != 0) prefetch_packet(_q[h]);
+	    h = _head.value();
+	    if (_q[h] != 0)
+		prefetch_packet(_q[h]);
 #endif
 #endif
-      return p;
-    }
+	    return p;
+	}
 #if BATCHING
-    else {
-      _pulls = 0;
-      _can_pull = false;
-    }
-  } else
-    _pulls++;
+	else {
+	    _pulls = 0;
+	    _can_pull = false;
+	}
+    } else
+	_pulls++;
 #endif
 
-  return 0;
+    return 0;
 }
 
 String

@@ -83,17 +83,19 @@ CPUQueue::push(int, Packet *p)
 Packet *
 CPUQueue::pull(int port)
 {
-  int n = _last;
-  Packet *p = 0;
-  for (int i=0; i<NUM_CLICK_CPUS; i++) {
-    p = deq(n);
-    n++;
-    if (n == NUM_CLICK_CPUS) n = 0;
-    if (p) {
-      _last = n;
-      return p;
+    int n = _last;
+    Packet *p = 0;
+    for (int i = 0; i < NUM_CLICK_CPUS; i++) {
+	p = deq(n);
+	n++;
+	if (n == NUM_CLICK_CPUS)
+	    n = 0;
+	if (p) {
+	    _last = n;
+	    return p;
+	}
     }
-  }
+    return 0;
 }
 
 String
