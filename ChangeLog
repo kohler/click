@@ -1,3 +1,14 @@
+2005-02-17 Thursday 13:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/directiplookup.cc (1.9), elements/ip/iproutetable.cc
+	(1.14), elements/ip/iproutetable.hh (1.17),
+	elements/ip/lineariplookup.cc (1.12), elements/ip/lineariplookup.hh
+	(1.12), elements/ip/radixiplookup.cc (1.17),
+	elements/ip/sortediplookup.cc (1.10), elements/ip/trieiplookup.cc
+	(1.14), test/ip/RadixIPLookup-01.testie (1.2),
+	test/ip/iplookups-01.testie (1.1): extend regression test to other
+	IP lookup elements, and fix bugs caught therefrom
+
 2005-02-17 Thursday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/radixiplookup.cc (1.16): oops
