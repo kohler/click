@@ -55,7 +55,18 @@ stream, and stops the driver when all the files are exhausted.
 FromDump
 */
 
-class TimeSortedSched : public Element, public Notifier { public:
+class TimeSortedSched : public Element, public PassiveNotifier { public:
+    // NB: Notifier cannot be Active, or we would have rescheduling conflicts.
+    // Example:
+    // 1. We are unscheduled and off.
+    // 2. Upstream Notifier wakes up, reschedules downstream puller.
+    // 3. Downstream puller Task runs, calls our pull() function.
+    // 4. We wake up, call wake_notifiers().
+    // 5. That eventually calls downstream puller Task's fast_reschedule()!!
+    // 6. We return to downstream puller's run_task().
+    // 7. Downstream puller's run_task() calls fast_reschedule()!! Crash.
+    // Principle: Do not call ActiveNotifier::wake_listeners() on a call
+    // from downstream listeners.
 
     TimeSortedSched();
     ~TimeSortedSched();
@@ -71,6 +82,9 @@ class TimeSortedSched : public Element, public Notifier { public:
     void cleanup(CleanupStage);
 
     Packet *pull(int);
+
+    // from Notifier
+    SearchOp notifier_search_op();
     
   private:
 

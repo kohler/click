@@ -39,9 +39,15 @@ void *
 TimeSortedSched::cast(const char *n)
 {
     if (strcmp(n, "Notifier") == 0)
-	return (Notifier *)this;
+	return static_cast<Notifier *>(this);
     else
 	return Element::cast(n);
+}
+
+Notifier::SearchOp
+TimeSortedSched::notifier_search_op()
+{
+    return SEARCH_UPSTREAM_LISTENERS;
 }
 
 void
@@ -53,7 +59,7 @@ TimeSortedSched::notify_ninputs(int n)
 int
 TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    Notifier::initialize(router());
+    PassiveNotifier::initialize(router());
     _stop = false;
     return cp_va_parse(conf, this, errh,
 		       cpKeywords,
@@ -64,13 +70,13 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 int 
 TimeSortedSched::initialize(ErrorHandler *errh)
 {
-    _vec = new Packet *[ninputs() + 1];
-    _signals = new NotifierSignal[ninputs() + 1];
+    _vec = new Packet *[ninputs()];
+    _signals = new NotifierSignal[ninputs()];
     if (!_vec || !_signals)
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); i++) {
 	_vec[i] = 0;
-	_signals[i] = Notifier::upstream_pull_signal(this, i);
+	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
     }
     return 0;
 }
@@ -91,12 +97,12 @@ TimeSortedSched::pull(int)
 {
     int which = -1;
     struct timeval *tv = 0;
-    int signals_on = 0;
+    bool signals_on = false;
     
     for (int i = 0; i < ninputs(); i++) {
 	if (!_vec[i] && _signals[i]) {
 	    _vec[i] = input(i).pull();
-	    signals_on = 1;
+	    signals_on = true;
 	}
 	if (_vec[i]) {
 	    struct timeval *this_tv = &_vec[i]->timestamp_anno();
@@ -107,7 +113,7 @@ TimeSortedSched::pull(int)
 	}
     }
 
-    set_listeners(which >= 0 || signals_on);
+    set_signal_active(which >= 0 || signals_on);
     if (which >= 0) {
 	Packet *p = _vec[which];
 	_vec[which] = input(which).pull();
