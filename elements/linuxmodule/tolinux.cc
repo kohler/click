@@ -81,7 +81,7 @@ ToLinux::push(int port, Packet *p)
   // remove PACKET_CLEAN bit -- packet is becoming dirty
   skb->pkt_type &= PACKET_TYPE_MASK;
 
-  if (skb->dev) 
+  if (skb->dev)
     skb->protocol = eth_type_trans(skb, skb->dev);
 
   // skb->dst may be set if the packet came from Linux originally. In this
@@ -103,9 +103,11 @@ ToLinux::push(int port, Packet *p)
 #ifdef HAVE_CLICK_KERNEL
   skb->nh.raw = skb->data;
   skb->h.raw = 0;
-  start_bh_atomic();
+  //start_bh_atomic();
+  lock_kernel();
   ptype_dispatch(skb, skb->protocol);
-  end_bh_atomic();
+  unlock_kernel();
+  //end_bh_atomic();
 #endif
 }
 

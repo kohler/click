@@ -91,9 +91,11 @@ ToLinuxSniffers::push(int port, Packet *p)
   
 #ifdef HAVE_CLICK_KERNEL
   skb->nh.raw = skb->data;
-  start_bh_atomic();
+  //start_bh_atomic();
+  lock_kernel();
   ptype_dispatch(skb, 0xFFFF);	// an unlikely protocol number
-  end_bh_atomic();
+  unlock_kernel();
+  //end_bh_atomic();
 #endif
 }
 
