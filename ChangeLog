@@ -1,3 +1,20 @@
+2001-12-31 Monday 02:50  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/click-align.cc (1.38),
+	click-combine/click-combine.cc (1.25),
+	click-combine/click-uncombine.cc (1.22),
+	click-fastclassifier/click-fastclassifier.cc (1.47),
+	click-undead/click-undead.cc (1.25), click-xform/adjacency.cc
+	(1.16), click-xform/adjacency.hh (1.8), click-xform/click-xform.cc
+	(1.42): adapt to RouterT changes; leads to cleanups
+
+2001-12-31 Monday 02:47  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: routert.cc (1.54), routert.hh (1.44): progressive
+	ElementT * rewrite: RouterT connection-related methods use
+	ElementT*s and Hookups more consistently, instead of HookupIs and
+	integers
+
 2001-12-31 Monday 02:40  Eddie Kohler <kohler@aciri.org>
 
 	* tools/lib/: processingt.cc (1.17), processingt.hh (1.8):
