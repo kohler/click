@@ -9,7 +9,8 @@ class IPFlowID { public:
 
   IPFlowID();
   IPFlowID(IPAddress, uint16_t, IPAddress, uint16_t);
-  explicit IPFlowID(const Packet *);
+  explicit IPFlowID(const Packet *);	// reads ip_header and udp_header
+  explicit IPFlowID(const click_ip *);	// also reads adjacent TCP/UDP header
 
   operator bool() const;
 
