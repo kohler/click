@@ -1,3 +1,7 @@
+2001-04-05 Thursday 09:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click: [no log message]
+
 2001-04-04 Wednesday 19:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node.openbsd: broken initial version
