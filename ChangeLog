@@ -1,3 +1,12 @@
+2003-04-22 Tuesday 11:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridprobereplyreceiver.cc (1.12), linktracker.cc
+	(1.14), printgrid.cc (1.32), timeutils.hh (1.8): Remove Grid
+	element compile warnings on MacOS X gcc version 3.1.  MacOS X
+	thinks timeval members tv_sec and tv_usec are ints (int_32_t), BSD
+	& Linux think they are longs, MacOS complains when using timeval
+	members in printfs, fix by casting to long.
+
 2003-04-22 Tuesday 09:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.47): Fix packet size check,
