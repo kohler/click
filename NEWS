@@ -4,6 +4,11 @@ Version 1.1
 
 * General
 
+** Rearranged include files. Do not say `#include "element.hh"' any more;
+   say `#include <click/element.hh>' instead, and the same for many other
+   include files. Check under include/click for a full list. This was
+   required to support element packages better.
+
 ** Improved support for element packages. Required changes to the
    configuration shell scripts, and added a new directory,
    `etc/samplepackage', to show how packages should be compiled.
