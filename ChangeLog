@@ -1,3 +1,63 @@
+2002-03-05 Tuesday 19:39  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/: Makefile.in (1.16), Makefile.in (1.17): bsdmodule
+	fixes
+
+2002-03-05 Tuesday 19:38  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.175): fix ./configure --with-freebsd
+
+2002-03-05 Tuesday 19:31  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/Makefile.in (1.15): bsdmodule Makefile fixes
+
+2002-03-05 Tuesday 19:30  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh (1.6), include/click/hashmap.cc (1.7),
+	include/click/llrpc.h (1.13), include/click/straccum.hh (1.18),
+	include/click/sync.hh (1.9), include/click/timer.hh (1.15),
+	include/click/vector.hh (1.4), lib/glue.cc (1.31), lib/packet.cc
+	(1.52), lib/string.cc (1.37), linuxmodule/kernelversion.c (1.8),
+	linuxmodule/skbmgr.cc (1.13): remove references to unneeded
+	#include files
+
+2002-03-05 Tuesday 19:29  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: app/ftpportmapper.cc (1.19), icmp/checkicmpheader.cc
+	(1.11), icmp/icmppingrewriter.cc (1.11), ip/checkipheader.cc
+	(1.42), ip/lookupiproutelinux.cc (1.25), ip/lookupiproutelinux.hh
+	(1.14), ip/lookupiproutemp.cc (1.11), ip/lookupiproutemp.hh (1.5),
+	ip6/checkip6header.cc (1.20), ip6/checkip6header.hh (1.10),
+	linuxmodule/fasttcpflows.cc (1.7), linuxmodule/fastudpflows.cc
+	(1.8), linuxmodule/fastudpsrc.cc (1.13),
+	linuxmodule/fastudpsrcip6.cc (1.12), linuxmodule/schedulelinux.cc
+	(1.20), local/rrunqueue.cc (1.7), standard/msqueue.cc (1.9),
+	standard/msqueue.hh (1.6), standard/print.cc (1.22),
+	standard/print.hh (1.13), standard/unqueue.cc (1.17),
+	standard/unqueue2.cc (1.8), tcpudp/checktcpheader.cc (1.10),
+	tcpudp/checkudpheader.cc (1.10), tcpudp/dynudpipencap.cc (1.10),
+	tcpudp/iprewriter.cc (1.31), tcpudp/iprewriter.hh (1.18),
+	tcpudp/tcpipsend.cc (1.7), tcpudp/tcprewriter.cc (1.19),
+	tcpudp/udpipencap.cc (1.12): s/__KERNEL__/CLICK_LINUXMODULE/g (more
+	consistent symbol usage); also, remove references to unneeded
+	#include files
+
+2002-03-05 Tuesday 19:27  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in (1.5), config-linuxmodule.h.in (1.4),
+	config-userlevel.h.in (1.5): config.h is responsible for defining
+	the assert macro
+
+2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.34): initial support for bsdmodule targets in
+	click-buildtool elem2package
+
+2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.16): initial support for bsdmodule targets
+	when making packages
+
 2002-03-05 Tuesday 14:20  Eddie Kohler <kohler@aciri.org>
 
 	* bsdmodule/clickfs.cc (1.6), bsdmodule/clickfs_element.cc (1.2),

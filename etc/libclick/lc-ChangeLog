@@ -1,3 +1,31 @@
+2002-03-05 Tuesday 19:30  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh, include/click/hashmap.cc,
+	include/click/bitvector.hh, include/click/hashmap.cc,
+	include/click/llrpc.h, include/click/straccum.hh,
+	include/click/sync.hh, include/click/timer.hh,
+	include/click/vector.hh, include/click/llrpc.h,
+	include/click/straccum.hh, include/click/sync.hh,
+	include/click/timer.hh, include/click/vector.hh, libsrc/glue.cc,
+	libsrc/packet.cc, libsrc/string.cc: remove references to unneeded
+	#include files
+
+2002-03-05 Tuesday 19:27  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in, config-linuxmodule.h.in,
+	config-userlevel.h.in: config.h is responsible for defining the
+	assert macro
+
+2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: initial support for bsdmodule targets in
+	click-buildtool elem2package
+
+2002-03-05 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: initial support for bsdmodule targets when
+	making packages
+
 2002-03-05 Tuesday 11:41  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/confparse.hh, include/click/confparse.hh,
