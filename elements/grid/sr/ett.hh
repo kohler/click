@@ -52,6 +52,12 @@ class ETT : public Element {
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
+  static String static_print_current_gateway(Element *e, void *);
+  String print_current_gateway();
+
+  static String static_print_is_gateway(Element *e, void *);
+  String print_is_gateway();
+
 
   void push(int, Packet *);
   void run_timer();
@@ -102,10 +108,11 @@ private:
     IPAddress _src;
     IPAddress _dst;
     u_long _seq;
+    int _metric;
     int _count;
     struct timeval _when; /* when we saw the first query */
-    Seen(IPAddress src, IPAddress dst, u_long seq ) {
-      _src = src; _dst = dst; _seq = seq; _count = 0;
+    Seen(IPAddress src, IPAddress dst, u_long seq, int metric) {
+      _src = src; _dst = dst; _seq = seq; _count = 0; _metric = metric;
     }
     Seen();
   };
@@ -148,9 +155,6 @@ private:
 
 
 
-  static void static_reply_hook(Timer *t, void *v) 
-   { ((ETT *) v)->reply_hook(t); }
-
 
   int find_dst(IPAddress ip, bool create);
   EtherAddress find_arp(IPAddress ip);
@@ -165,7 +169,6 @@ private:
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void send(WritablePacket *);
 
-  void reply_hook(Timer *t);
   void ett_assert_(const char *, int, const char *) const;
 
 };

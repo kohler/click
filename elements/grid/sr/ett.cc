@@ -182,7 +182,7 @@ ETT::send(WritablePacket *p)
   output(0).push(p);
 }
 
-// Ask LinkStat for the metric for the link from other to us.
+
 int
 ETT::get_metric(IPAddress neighbor)
 {
@@ -219,10 +219,12 @@ ETT::process_query(struct sr_pkt *pk1)
 
   Vector<IPAddress> hops;
   Vector<u_short> metrics;
+  int metric = 0;
   for(int i = 0; i < pk1->num_hops(); i++) {
     IPAddress hop = IPAddress(pk1->get_hop(i));
     if (i != pk1->num_hops()-1) {
       metrics.push_back(pk1->get_fwd_metric(i));
+      metric += pk1->get_fwd_metric(i);
     }
     hops.push_back(hop);
     if (hop == _ip) {
@@ -233,6 +235,8 @@ ETT::process_query(struct sr_pkt *pk1)
       return;
     }
   }
+  /* also get the metric from the neighbor */
+  metric += get_metric(pk1->get_hop(pk1->num_hops()-1));
 
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
@@ -241,38 +245,34 @@ ETT::process_query(struct sr_pkt *pk1)
   }
 
   if (si == _seen.size()) {
-    _seen.push_back(Seen(src, dst, seq));
+    _seen.push_back(Seen(src, dst, seq, 0));
   }
   _seen[si]._count++;
+  if (_seen[si]._metric >= metric) {
+    /* the metric is worse that what we've seen*/
+    click_chatter("ETT %s: dropping poor metric %d from %s\n",
+		  _ip.s().cc(),
+		  metric,
+		  src.s().cc());
+    return;
+  }
 
+  click_chatter("ETT %s: better query for me from %s with seq %d\n", 
+		_ip.s().cc(),
+		src.s().cc(), seq);
+  click_gettimeofday(&_seen[si]._when);
+  
   if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
     /* query for me */
     click_chatter("ETT %s: got a query for me from %s\n", 
 		  _ip.s().cc(),
-		  src.s().cc());
-    if (_seen[si]._count > 1) {
-      click_chatter("ETT %s: already seen query\n", 		  
-		    _ip.s().cc());
-      return;
-    } 
-    click_chatter("ETT %s: 1st query for me from %s with seq %d\n", 
-		  _ip.s().cc(),
-		  src.s().cc(), seq);
-    click_gettimeofday(&_seen[si]._when);
-
-    Timer *t = new Timer(static_reply_hook, (void *) this);
-    t->initialize(this);
-    struct timeval expire;
-    timeradd(&_seen[si]._when, &_reply_wait, &expire);
-    t->schedule_at(expire);
-    return;
-  } 
-  /* query for someone else */
-  if  (power_of_two(_seen[si]._count)) { 
+		    src.s().cc());
+    
+    start_reply(src, dst, seq);
+  } else {
+    /* query for someone else */
     click_chatter("ETT %s: forwarding immediately", _ip.s().cc());
     forward_query(_seen[si], hops, metrics);
-  } else {
-    click_chatter("ETT %s: not forwarding", _ip.s().cc());
   }
 
 }
@@ -333,33 +333,6 @@ ETT::forward_reply(struct sr_pkt *pk1)
   pk->set_next(pk1->next() - 1);
 
   send(p);
-
-}
-void 
-ETT::reply_hook(Timer *t)
-{
-  ett_assert(t);
-  struct timeval now;
-
-  click_gettimeofday(&now);
-
-  click_chatter("ETT %s: reply_hook called\n",
-		_ip.s().cc());
-  for(int x = 0; x < _seen.size(); x++) {
-    if (_seen[x]._dst == _ip || (_seen[x]._dst == IPAddress("255.255.255.255") && _is_gw)) {
-      click_chatter("ETT %s: on src %s\n", _ip.s().cc(),
-		    _seen[x]._src.s().cc());
-      struct timeval expire;
-      timeradd(&_seen[x]._when, &_reply_wait, &expire);
-      if (timercmp(&expire, &now, >)) {
-	click_chatter("ETT %s: s hasn't expired\n", 
-		      _ip.s().cc(),
-		      _seen[x]._src.s().cc());
-      } else {
-	start_reply(_seen[x]._src, _seen[x]._dst, _seen[x]._seq);
-      }
-    }
-  }
 
 }
 
@@ -432,7 +405,7 @@ ETT::got_reply(struct sr_pkt *pk)
     q = _queries.findp(dst);
   }
   ett_assert(q);
-  if (q->_metric < metric) {
+  if (!q->_metric || q->_metric > metric) {
     q->_metric = metric;
     if (dst == IPAddress("255.255.255.255")) {
       _gw = pk->get_hop(pk->num_hops() - 1);
@@ -635,6 +608,37 @@ ETT::print_stats()
     String(_bytes_replies) + " bytes of reply sent\n";
 }
 
+String
+ETT::static_print_is_gateway(Element *f, void *)
+{
+  ETT *d = (ETT *) f;
+  return d->print_is_gateway();
+}
+
+String
+ETT::print_is_gateway()
+{
+  
+  if (_is_gw) {
+    return "true\n";
+  }
+  return "false\n";
+}
+
+String
+ETT::static_print_current_gateway(Element *f, void *)
+{
+  ETT *d = (ETT *) f;
+  return d->print_current_gateway();
+}
+
+String
+ETT::print_current_gateway()
+{
+  
+  return _gw.s() + "\n";
+}
+
 int
 ETT::static_clear(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
@@ -686,6 +690,8 @@ void
 ETT::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
+  add_read_handler("current_gateway", static_print_current_gateway, 0);
+  add_read_handler("is_gateway", static_print_is_gateway, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
 }
