@@ -1,2 +1,3 @@
 Makefile *.d
 click-shrink
+click-mkmindriver
