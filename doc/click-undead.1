@@ -1,0 +1,175 @@
+.\" -*- mode: nroff -*-
+.ds V 1.1
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-UNDEAD 1 "28/Aug/2000" "Version \*V"
+.SH NAME
+click-undead \- removes dead code from a Click router configuration
+'
+.SH SYNOPSIS
+.B click-undead
+.RI \%[ options ]
+.RI \%[ router\-file ]
+'
+.SH DESCRIPTION
+The
+.B click-undead
+tool speeds up some Click configurations by removing dead code. This
+includes:
+.IP "\(bu" 3
+Any
+.M Null n ,
+.M StaticSwitch n ,
+and
+.M StaticPullSwitch n
+elements.
+.IP "\(bu" 3
+Any elements not reachable from both a 
+.I source element
+and a
+.IR "sink element" .
+Click packet source elements include
+.M FromDevice n
+and
+.M InfiniteSource n ;
+packet sink elements include
+.M ToDump n ,
+.M ToDevice n ,
+and
+.M Discard n
+(when it is used as a pull element).
+.PP
+.B click-undead
+will not remove any information elements. Connections to removed elements
+are rerouted appropriately.
+.PP
+For example,
+.B click-undead 
+will transform this configuration,
+.Sp
+.nf
+   Idle -> Counter -> td1 :: ToDump(a);
+   Idle -> Counter -> td2 :: ToDump(b);
+   InfiniteSource -> ss :: StaticSwitch(1);
+     ss[0] -> ToDump(c);
+     ss[1] -> td2;
+.fi
+.Sp
+into this configuration:
+.Sp
+.nf
+   InfiniteSource -> td2 :: ToDump(b);
+.fi
+.Sp
+Note that the resulting configuration is not guaranteed to have the same
+semantics as the input configuration. Here, for example, the result
+configuration does not truncate the files `a' and `c'.
+.PP
+The resulting configuration is written to the standard output. 
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-undead
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP
+.BR \-k ", " \-\-kernel
+Check the configuration only for the
+.M click.o 8
+Linux kernel module driver.
+'
+.Sp
+.TP
+.BR \-u ", " \-\-user
+Check the configuration only for the
+.M click 1
+user-level driver.
+'
+.Sp
+.TP 5
+.BR \-c ", " \-\-config
+Output only the new configuration, not any archived packages.
+'
+.Sp
+.TP 5
+.BR \-V ", " \-\-verbose
+Print debugging information about the transformation\*Efor example, which
+elements are chosen as sources and sinks.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 1 ,
+.M click-install 1 ,
+.M click 5 ,
+.M click.o 8 ,
+.M Discard n ,
+.M FromDevice n ,
+.M InfiniteSource n ,
+.M ToDump n ,
+.M ToDevice n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'
