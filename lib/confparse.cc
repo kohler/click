@@ -2941,7 +2941,7 @@ cp_unparse_real2(uint64_t real, int frac_bits)
 {
   assert(frac_bits <= CP_REAL2_MAX_FRAC_BITS);
   String int_part = cp_unparse_unsigned64(real >> frac_bits, 10, false);
-  String frac_part = cp_unparse_real2((uint32_t)(real & ((1 << CP_REAL2_MAX_FRAC_BITS) - 1)), frac_bits);
+  String frac_part = cp_unparse_real2((uint32_t)(real & ((1 << frac_bits) - 1)), frac_bits);
   return int_part + frac_part.substring(1);
 }
 

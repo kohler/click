@@ -44,18 +44,22 @@ These keyword arguments will set the corresponding parameters.
 
 Unsigned. This number determines how stable the average queue size is -- that
 is, how quickly it changes due to fluctuations in the instantaneous queue
-size. Higher numbers mean more stability.
+size. Higher numbers mean more stability. The corresponding conventional RED
+parameter is w_q; STABILITY equals -log_2(w_q).
 
 STABILITY should equal
 
    -log_2 (1 - e^(-1/K)),
 
-where K is the link bandwidth in packets per second.
+where K is the link bandwidth in packets per second. Default STABILITY is 4.
+This is very low (unstable) for most purposes; it corresponds to a link
+bandwidth of roughly 15 packets per second, or a w_q of 0.25. The NS default
+setting for w_q is 0.002, corresponding to a STABILITY of roughly 9.
 
 =back
 
-Keyword arguments MIN_THRESH, MAX_THRESH, MAX_P, and QUEUES can be used to set
-the corresponding parameters. The additional STABILITY
+The RED element implements the Gentle R<RED> variant first proposed by Sally
+Floyd in October 1997.
 
 =e
 
@@ -89,11 +93,14 @@ Returns the current average queue size.
 
 Returns some human-readable statistics.
 
-=a Queue
+=a AdaptiveRED, Queue
 
 Sally Floyd and Van Jacobson. I<Random Early Detection Gateways for
 Congestion Avoidance>. ACM Transactions on Networking, B<1>(4), August
-1993, pp 397-413. */
+1993, pp 397-413.
+
+Sally Floyd. "Optimum functions for computing the drop
+probability", October 1997. L<http://www.aciri.org/floyd/REDfunc.html>. */
 
 class RED : public Element { public:
 

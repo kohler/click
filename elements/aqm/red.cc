@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "red.hh"
-#include "queue.hh"
+#include "elements/standard/queue.hh"
 #include <click/elemfilter.hh>
 #include <click/error.hh>
 #include <click/router.hh>
@@ -221,6 +221,8 @@ RED::configuration(Vector<String> &conf, bool *) const
     for (int i = 0; i < _queue_elements.size(); i++)
 	sa << ' ' << _queue_elements[i]->id();
     conf.push_back(sa.take_string());
+
+    conf.push_back("STABILITY " + String(_size.stability_shift()));
 }
 
 int
@@ -244,7 +246,7 @@ RED::should_drop()
     // (Therefore it contains errors. XXX)
     int s = queue_size();
     if (s) {
-	_size.update_with(s);
+	_size.update_with(s << QUEUE_SCALE);
 	_last_jiffies = 0;
     } else {
 	// do timing stuff for when the queue was empty
