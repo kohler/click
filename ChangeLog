@@ -1,3 +1,18 @@
+2001-11-20 Tuesday 23:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: filterbyhops.cc (1.10), gridlocationinfo.cc
+	(1.11), gridprobereplyreceiver.cc (1.5), gridprobesender.cc (1.5),
+	gridroutetable.cc (1.21), hello.cc (1.37), locationinfo.cc (1.24),
+	locfromfile.cc (1.13), lrhello.cc (1.22), updateroutes.cc (1.24):
+	ah you fool.  the mysteries of the cp_va_parse return values....
+
+2001-11-20 Tuesday 23:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: grid.hh (1.32), gridprobehandler.cc (1.2),
+	gridprobereplyreceiver.cc (1.4), gridprobereplyreceiver.hh (1.3),
+	gridprobesender.cc (1.4): modified grid traceroute els to take care
+	of rtt calculations for route probes
+
 2001-11-19 Monday 09:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyhops.cc (1.9), gridlocationinfo.cc
