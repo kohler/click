@@ -397,19 +397,8 @@ ESRCR::push(int port, Packet *p_in)
   u_short next = ntohs(pk->_next);
 
 
-  /* update the metrics from the packet */
-  unsigned int now = click_jiffies();
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IP6Address a = pk->get_hop(i);
-    IP6Address b = pk->get_hop(i+1);
-    u_short m = 0; //pk->get_metric(i);
-    if (m != 0) {
-      //click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      //_link_table->update_link(a, b, m, now);
-    }
-  }
   
-  IP6Address neighbor = IP6Address(0);
+  IP6Address neighbor = IP6Address();
   switch (type) {
   case PT_QUERY:
     neighbor = IP6Address(pk->get_hop(pk->num_hops() - 1));
@@ -420,12 +409,6 @@ ESRCR::push(int port, Packet *p_in)
   default:
     esrcr_assert(0);
   }
-  u_short m = get_metric(neighbor);
-  //click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-  //_link_table->update_link(IP6Pair(neighbor, _ip), m, now);
-  update_best_metrics();
-
-  _arp_table->insert(neighbor, EtherAddress(pk->ether_shost));
 
   if(type == PT_QUERY){
       process_query(pk);

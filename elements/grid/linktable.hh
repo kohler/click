@@ -11,11 +11,11 @@ CLICK_DECLS
 
 class IP6Pair {
 public:
-  /* a is always numerically less than b */
+
   IP6Address _to;
   IP6Address _from;
 
-  IP6Pair() : _to(0), _from(0) { }
+  IP6Pair() : _to(), _from() { }
 
   IP6Pair(IP6Address to, IP6Address from) {
       _to = to;
@@ -70,18 +70,23 @@ public:
 			  void *, ErrorHandler *errh); 
   void clear();
 
+  static int static_update_link(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+  static int static_dijkstra(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+
   /* other public functions */
-  void update_link(IP6Address from, IP6Address to, u_short metric, unsigned int now);
-  u_short get_hop_metric(IP6Address from, IP6Address to);
+  void update_link(IP6Address from, IP6Address to, int metric);
+  int get_hop_metric(IP6Address from, IP6Address to);
   Vector< Vector<IP6Address> >  update_routes(Vector<Vector<IP6Address> > routes, 
 					     int n, Vector<IP6Address> route);
   bool valid_route(Vector<IP6Address> route);
-  u_short get_route_metric(Vector<IP6Address> route);
+  int get_route_metric(Vector<IP6Address> route);
   void dijkstra();
   Vector<IP6Address> best_route(IP6Address dst);
 
   Vector< Vector<IP6Address> > top_n_routes(IP6Address dst, int n);
-  u_short get_host_metric(IP6Address s);
+  int get_host_metric(IP6Address s);
   Vector<IP6Address> get_hosts();
 private: 
   class LinkInfo {
@@ -89,18 +94,21 @@ private:
     IP6Address _from;
     IP6Address _to;
     int _metric;
-    unsigned int _last_updated;
-    LinkInfo() { _from = IP6Address(); _to = IP6Address(); _metric = 9999; _last_updated = 0; }
+    struct timeval _last_updated;
+    LinkInfo() { _from = IP6Address(); _to = IP6Address(); _metric = 0; _last_updated.tv_sec = 0; }
     
-    LinkInfo(IP6Address from, IP6Address to, int metric, unsigned int now)
+    LinkInfo(IP6Address from, IP6Address to, int metric)
     { 
       _from = from;
       _to = to;
       _metric = metric;
-      _last_updated = now;  
+      click_gettimeofday(&_last_updated);
     }
     LinkInfo(const LinkInfo &p) : _from(p._from), _to(p._to), _metric(p._metric), _last_updated(p._last_updated) { }
-    void update(u_short metric, unsigned int now) { _metric = metric; _last_updated = now; }
+    void update(int metric) { 
+      _metric = metric; 
+      click_gettimeofday(&_last_updated); 
+    }
     
   };
 
@@ -113,10 +121,10 @@ private:
     int _metric;
     IP6Address _prev;
     bool _marked;
-    HostInfo() { _ip = IP6Address(); _prev = IP6Address(); _metric = 9999; _marked = false;}
-    HostInfo(IP6Address p) { _ip = p; _prev = IP6Address(); _metric = 9999; _marked = false; }
+    HostInfo() { _ip = IP6Address(); _prev = IP6Address(); _metric = 0; _marked = false;}
+    HostInfo(IP6Address p) { _ip = p; _prev = IP6Address(); _metric = 0; _marked = false; }
     HostInfo(const HostInfo &p) : _ip(p._ip), _neighbors(p._neighbors), _metric(p._metric), _prev(p._prev), _marked(p._marked) { }
-    void clear() { _prev = IP6Address(); _metric = 9999; _marked = false;}
+    void clear() { _prev = IP6Address(); _metric = 0; _marked = false;}
 
   };
 

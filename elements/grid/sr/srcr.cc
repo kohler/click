@@ -24,7 +24,6 @@
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
-#include <elements/grid/arptable.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
 
@@ -39,7 +38,7 @@ SRCR::SRCR()
      _databytes(0),
      _link_table(0),
      _link_stat(0), 
-     _arp_table(0)
+     _rx_stats(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -59,18 +58,17 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
                     cpIP6Address, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_eth,
-		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "LT", cpElement, "LinkTable element", &_link_table,
-		    "LS", cpElement, "LinkStat element", &_link_stat,
+		    "RX", cpElement, "RXStats element", &_rx_stats,
+		    "ETT", cpElement, "ETT element", &_ett,
                     0);
 
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LT LinkTable element is not a LinkTable");
-  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
-    return errh->error("ARPTable element is not a ARPTable");
-  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
-    return errh->error("LS element is not a LinkStat");
+  if (_rx_stats && _rx_stats->cast("RXStats") == 0) 
+    return errh->error("RX element is not a RXStats");
+  if (_ett && _ett->cast("ETT") == 0) 
+    return errh->error("ETT element is not a ETT");
 
   if (res < 0) {
     return res;
@@ -91,10 +89,21 @@ SRCR::initialize (ErrorHandler *)
 }
 
 // Ask LinkStat for the metric for the link from other to us.
-u_short
-SRCR::get_metric(IP6Address)
+int
+SRCR::get_metric(IP6Address n)
 {
-  return 0;
+  if (_ett) {
+    return _ett->get_metric(n);
+  }
+  return 1;
+}
+void
+SRCR::update_link(IP6Address from, IP6Address to, int metric) 
+{
+  if (_ett) {
+    _ett->update_link(from, to, metric);
+  }
+
 }
 
 
@@ -108,7 +117,11 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IP6Address> r)
   memset(pk, '\0', len);
 
   memcpy(pk->ether_shost, _eth.data(), 6);
-  EtherAddress eth_dest = _arp_table->lookup(r[1]);
+  EtherAddress eth_dest;
+  if (!r[1].ether_address(eth_dest)) {
+    click_chatter("couldn't get mac address for %s!\n", 
+		  r[1].s().cc());
+  }
   memcpy(pk->ether_dhost, eth_dest.data(), 6);
   pk->ether_type = htons(_et);
 
@@ -165,6 +178,8 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
+  click_chatter("SRCR: %s checkpoint 1", 
+		_ip.s().cc());
 
   if(port == 0 && pk->get_hop(pk->next()) != _ip){
     // it's not for me. these are supposed to be unicast,
@@ -177,17 +192,17 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  
+  click_chatter("SRCR: %s: data passed basic checks", 
+		_ip.s().cc());
 
   /* update the metrics from the packet */
-  unsigned int now = click_jiffies();
   for(int i = 0; i < pk->num_hops()-1; i++) {
     IP6Address a = pk->get_hop(i);
     IP6Address b = pk->get_hop(i+1);
     uint8_t m = pk->get_fwd_metric(i);
     if (m != 0 && _link_table) {
       click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      _link_table->update_link(a, b, m, now);
+      update_link(a,b,m);
     }
   }
   
@@ -196,15 +211,13 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  IP6Address neighbor = IP6Address(0);
+  IP6Address neighbor = IP6Address();
   neighbor = IP6Address(pk->get_hop(pk->next()-1));
   u_short m = get_metric(neighbor);
   if (_link_table) {
     click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-    _link_table->update_link(neighbor, _ip, m, now);
+    update_link(neighbor, _ip, m);
   }
-
-  _arp_table->insert(neighbor, EtherAddress(pk->ether_shost));
 
   if(pk->next() == pk->num_hops() - 1){
     //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
@@ -242,7 +255,11 @@ SRCR::push(int port, Packet *p_in)
 
   srcr_assert(pk->next() < 8);
   IP6Address nxt = pk->get_hop(pk->next());
-  EtherAddress eth_dest = _arp_table->lookup(nxt);
+  EtherAddress eth_dest;
+  if (!nxt.ether_address(eth_dest)) {
+    click_chatter("couldn't get mac address for %s!\n", 
+		  nxt.s().cc());
+  }
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
 
   p_in->kill();
