@@ -1,3 +1,13 @@
+2001-08-25 Saturday 01:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: todump.cc (1.32), todump.hh (1.19): FDDI
+	nitlet
+
+2001-08-25 Saturday 01:38  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fakepcap.h (1.7), fromdump.cc (1.41): add
+	attempt at FDDI
+
 2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* include/click/glue.hh (1.18), lib/glue.cc (1.25): BSD performance
