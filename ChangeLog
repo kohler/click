@@ -1,3 +1,13 @@
+2005-02-16 Wednesday 13:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/: DISTFILES (1.26), lc-libsrc-Makefile.in (1.17):
+	include nameinfo in libclick
+
+2005-02-16 Wednesday 13:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/nameinfo.cc (1.2): allow multiple NameDBs with the same
+	prefix
+
 2005-02-16 Wednesday 13:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/: linux-2.4.20-patch (1.10), linux-2.4.21-patch (1.5),
