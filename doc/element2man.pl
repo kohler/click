@@ -556,6 +556,7 @@ sub read_files_from ($) {
     my(@a, @b, $t);
     $t = <IN>;
     close IN;
+    $t =~ s/^#.*//mg;
     @a = split(/\s+/, $t);
     foreach $t (@a) {
       next if $t eq '';
