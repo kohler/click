@@ -4363,6 +4363,7 @@ if test "${with_wifi+set}" = set; then
 else
   wifidir=NONE
 fi;
+WIFI_INCLUDES=
 
 if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
     if test "$wifidir" != NONE && expr "_$wifidir" : '_[^/\\]' >/dev/null; then
@@ -4383,7 +4384,6 @@ You must supply an absolute path starting with /.
    { (exit 1); exit 1; }; }
     elif test -f $wifidir/click_wifi/click_wifi.h; then
 	WIFI_INCLUDES=-I$wifidir/click_wifi
-
 	    else
 	{ { echo "$as_me:$LINENO: error:
 =========================================
@@ -4406,6 +4406,7 @@ the madwifi.stripped driver and supply the correct argument to
    { (exit 1); exit 1; }; }
     fi
 fi
+
 
 
 
@@ -6723,7 +6724,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6726 "configure"
+#line 6727 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
