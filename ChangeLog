@@ -1,3 +1,18 @@
+2002-07-29 Monday 17:06  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* userlevel/click.cc (1.68): avoid warnings on macos x for long
+	timeval args
+
+2002-07-29 Monday 17:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: chattersocket.cc (1.12), controlsocket.cc
+	(1.33), kerneltap.cc (1.32): enable socket code on macos x
+
+2002-07-29 Monday 16:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* config.guess (1.2), config.sub (1.2): detect macos x / darwin
+	systems
+
 2002-07-25 Thursday 16:31  Eddie Kohler <kohler@icir.org>
 
 	* tools/: click-devirtualize/specializer.cc (1.28),

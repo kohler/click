@@ -1,3 +1,7 @@
+2002-07-29 Monday 16:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* config.guess, config.sub: detect macos x / darwin systems
+
 2002-07-23 Tuesday 13:21  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/: element.cc, notifier.cc: use intptr_t when casting
