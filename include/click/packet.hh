@@ -22,7 +22,7 @@ class Packet { public:
   static WritablePacket *make(const unsigned char *, unsigned);
   static WritablePacket *make(unsigned, const unsigned char *, unsigned, unsigned);
   
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   // Packet::make(sk_buff *) wraps a Packet around an existing sk_buff.
   // Packet now owns the sk_buff (ie we don't increment skb->users).
   static Packet *make(struct sk_buff *);
@@ -30,7 +30,17 @@ class Packet { public:
   const struct sk_buff *skb() const	{ return (const struct sk_buff*)this; }
   struct sk_buff *steal_skb()		{ return skb(); }
   void kill();
-#else
+#elif defined(_KERNEL)	/* BSD kernel module */
+  // Packet::make(mbuf *) wraps a Packet around an existing mbuf.
+  // Packet now owns the mbuf.
+  static Packet *make(struct mbuf *);
+  struct mbuf *m()			{ return _m; }
+  const struct mbuf *m() const		{ return (const struct mbuf *)_m; }
+  struct mbuf *steal_m();
+  void kill()				{ if (--_use_count <= 0) delete this; }
+  static void assimilate_mbuf(Packet *p);
+  void assimilate_mbuf();
+#else			/* User-space */
   static WritablePacket *make(unsigned char *, unsigned, void (*destructor)(unsigned char *, size_t));
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
@@ -38,18 +48,18 @@ class Packet { public:
   bool shared() const;
   Packet *clone();
   WritablePacket *uniqueify();
-#ifndef __KERNEL__
+#if !defined(__KERNEL__)
   int use_count() const			{ return _use_count; }
 #endif
   
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *data() const	{ return skb()->data; }
   unsigned length() const		{ return skb()->len; }
   unsigned headroom() const		{ return skb()->data - skb()->head; }
   unsigned tailroom() const		{ return skb()->end - skb()->tail; }
   const unsigned char *buffer_data() const { return skb()->head; }
   unsigned buffer_length() const	{ return skb()->end - skb()->head; }
-#else
+#else			/* Userspace module and BSD kernel module */
   const unsigned char *data() const	{ return _data; }
   unsigned length() const		{ return _tail - _data; }
   unsigned headroom() const		{ return _data - _head; }
@@ -65,16 +75,16 @@ class Packet { public:
   Packet *nonunique_put(unsigned nb);
   void take(unsigned nb);		// Delete bytes from end of pkt.
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && !defined(_KERNEL)
   void change_headroom_and_length(unsigned headroom, unsigned length);
 #endif
 
   // HEADER ANNOTATIONS
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
-#else
+#else			/* User space and BSD kernel module */
   const unsigned char *network_header() const	{ return _nh.raw; }
   const click_ip *ip_header() const		{ return _nh.iph; }
   const click_ip6 *ip6_header() const           { return _nh.ip6h; }
@@ -86,9 +96,9 @@ class Packet { public:
   int ip6_header_offset() const;
   unsigned ip6_header_length() const;
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
-#else
+#else			/* User-space and BSD kernel module */
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
   unsigned transport_header_offset() const;
@@ -102,10 +112,10 @@ class Packet { public:
 
  private:
   struct Anno;
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   const Anno *anno() const		{ return (const Anno *)skb()->cb; }
   Anno *anno()				{ return (Anno *)skb()->cb; }
-#else
+#else			/* User-space and BSD kernel module */
   const Anno *anno() const		{ return (const Anno *)_cb; }
   Anno *anno()				{ return (Anno *)_cb; }
 #endif
@@ -134,13 +144,21 @@ class Packet { public:
   uint64_t perfctr_anno() const		{ return anno()->perfctr; }
   void set_perfctr_anno(uint64_t pc)	{ anno()->perfctr = pc; }
 # endif
-#else
+
+#else			/* User-space and BSD kernel module */
+
   const struct timeval &timestamp_anno() const { return _timestamp; }
   struct timeval &timestamp_anno()	{ return _timestamp; }
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
   void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
+#ifdef CLICK_BSDMODULE	/* BSD kernel module */
+  net_device *device_anno() const	{ if (m()) return m()->m_pkthdr.rcvif;
+					  else return NULL; }
+  void set_device_anno(net_device *dev)	{ if (m()) m()->m_pkthdr.rcvif = dev; }
+#else
   net_device *device_anno() const	{ return 0; }
   void set_device_anno(net_device *)	{ }
+#endif
   PacketType packet_type_anno() const	{ return _pkt_type; }
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
@@ -176,12 +194,15 @@ class Packet { public:
     } user_flags;
     // flag allocations: see packet_anno.hh
     
-#if defined(__KERNEL__) && defined(HAVE_INT64_TYPES)
+#if (defined(_KERNEL) || defined(__KERNEL__)) && defined(HAVE_INT64_TYPES)
     uint64_t perfctr;
 #endif
   };
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__)
+  /*
+   * User-space and BSD kernel module implementations.
+   */
   int _use_count;
   Packet *_data_packet;
   /* mimic Linux sk_buff */
@@ -199,6 +220,9 @@ class Packet { public:
   unsigned char *_h_raw;
   PacketType _pkt_type;
   struct timeval _timestamp;
+#ifdef CLICK_BSDMODULE
+  struct mbuf *_m;
+#endif
 #endif
   
   Packet();
@@ -206,7 +230,7 @@ class Packet { public:
   ~Packet();
   Packet &operator=(const Packet &);
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__)
   Packet(int, int, int)			{ }
   static WritablePacket *make(int, int, int);
   bool alloc_data(unsigned, unsigned, unsigned);
@@ -223,14 +247,14 @@ class Packet { public:
 
 class WritablePacket : public Packet { public:
   
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   unsigned char *data() const			{ return skb()->data; }
   unsigned char *buffer_data() const		{ return skb()->head; }
   unsigned char *network_header() const		{ return skb()->nh.raw; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
-#else
+#else			/* User-space or BSD kernel module */
   unsigned char *data() const			{ return _data; }
   unsigned char *buffer_data() const		{ return _head; }
   unsigned char *network_header() const		{ return _nh.raw; }
@@ -291,12 +315,56 @@ Packet::kill()
 }
 #endif
 
+#ifdef _KERNEL		/* BSD kernel module */
+inline void
+Packet::assimilate_mbuf(Packet *p)
+{
+  struct mbuf *m = p->m();
+
+  if (!m) return;
+  if (m->m_pkthdr.len != m->m_len)
+    click_chatter("assimilate_mbuf(): inconsistent lengths");
+
+  p->_head = (unsigned char *)
+	     (m->m_flags & M_EXT    ? m->m_ext.ext_buf :
+	      m->m_flags & M_PKTHDR ? m->m_pktdat :
+				      m->m_dat);
+  p->_data = (unsigned char *)m->m_data;
+  p->_tail = (unsigned char *)(m->m_data + m->m_len);
+  p->_end = p->_head + (
+		m->m_flags & M_EXT    ? MCLBYTES :
+		m->m_flags & M_PKTHDR ? MHLEN :
+					MLEN);
+}
+
+inline void
+Packet::assimilate_mbuf(void)
+{
+  assimilate_mbuf(this);
+}
+
+inline Packet *
+Packet::make(struct mbuf *m)
+{
+  if (0 == m->m_flags & M_PKTHDR)
+    panic("trying to construct Packet from a non-packet mbuf");
+  if (m->m_next)
+    click_chatter("Yow, constructing Packet from an mbuf chain!");
+
+  Packet *p = new Packet;
+  p->_m = m;
+  assimilate_mbuf(p);
+
+  return p;
+}
+#endif
+
 inline bool
 Packet::shared() const
 {
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   return skb_cloned(const_cast<struct sk_buff *>(skb()));
-#else
+#else			/* User-space or BSD kernel module */
   return (_data_packet || _use_count > 1);
 #endif
 }
@@ -315,10 +383,15 @@ Packet::push(unsigned int nbytes)
 {
   if (headroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
     __skb_push(q->skb(), nbytes);
-#else
+#else			/* User-space and BSD kernel module */
     q->_data -= nbytes;
+#ifdef _KERNEL
+    q->m()->m_data -= nbytes;
+    q->m()->m_len += nbytes;
+    q->m()->m_pkthdr.len += nbytes;
+#endif
 #endif
     return q;
   } else
@@ -329,10 +402,15 @@ inline Packet *
 Packet::nonunique_push(unsigned int nbytes)
 {
   if (headroom() >= nbytes) {
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
     __skb_push(skb(), nbytes);
-#else
+#else			/* User-space and BSD kernel module */
     _data -= nbytes;
+#ifdef _KERNEL
+    m()->m_data -= nbytes;
+    m()->m_len += nbytes;
+    m()->m_pkthdr.len += nbytes;
+#endif
 #endif
     return this;
   } else
@@ -347,10 +425,15 @@ Packet::pull(unsigned int nbytes)
     click_chatter("Packet::pull %d > length %d\n", nbytes, length());
     nbytes = length();
   }
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   __skb_pull(skb(), nbytes);
-#else
+#else			/* User-space and BSD kernel module */
   _data += nbytes;
+#ifdef _KERNEL
+  m()->m_data += nbytes;
+  m()->m_len -= nbytes;
+  m()->m_pkthdr.len -= nbytes;
+#endif
 #endif
 }
 
@@ -359,10 +442,14 @@ Packet::put(unsigned int nbytes)
 {
   if (tailroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
     __skb_put(q->skb(), nbytes);
-#else
+#else			/* User-space and BSD kernel module */
     q->_tail += nbytes;
+#ifdef _KERNEL
+    q->m()->m_len += nbytes;
+    q->m()->m_pkthdr.len += nbytes;
+#endif
 #endif
     return q;
   } else
@@ -373,10 +460,14 @@ inline Packet *
 Packet::nonunique_put(unsigned int nbytes)
 {
   if (tailroom() >= nbytes) {
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
     __skb_put(skb(), nbytes);
-#else
+#else			/* User-space and BSD kernel module */
     _tail += nbytes;
+#ifdef _KERNEL
+    m()->m_len += nbytes;
+    m()->m_pkthdr.len += nbytes;
+#endif
 #endif
     return this;
   } else
@@ -391,15 +482,19 @@ Packet::take(unsigned int nbytes)
     click_chatter("Packet::take %d > length %d\n", nbytes, length());
     nbytes = length();
   }
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   skb()->tail -= nbytes;
   skb()->len -= nbytes;
-#else
+#else			/* User-space and BSD kernel module */
   _tail -= nbytes;
+#ifdef _KERNEL
+  m()->m_len -= nbytes;
+  m()->m_pkthdr.len -= nbytes;
+#endif
 #endif    
 }
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && !defined(_KERNEL)
 inline void
 Packet::change_headroom_and_length(unsigned headroom, unsigned length)
 {
@@ -437,10 +532,10 @@ Packet::set_dst_ip_anno(IPAddress a)
 inline void
 Packet::set_network_header(const unsigned char *h, unsigned len)
 {
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
   skb()->nh.raw = const_cast<unsigned char *>(h);
   skb()->h.raw = const_cast<unsigned char *>(h) + len;
-#else
+#else			/* User-space and BSD kernel module */
   _nh.raw = const_cast<unsigned char *>(h);
   _h_raw = const_cast<unsigned char *>(h) + len;
 #endif

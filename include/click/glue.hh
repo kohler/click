@@ -10,7 +10,7 @@
 // produce debugging output on the console or stderr
 void click_chatter(const char *fmt, ...);
 
-#ifdef CLICK_LINUXMODULE
+#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
 
 #if CLICK_DMALLOC
 extern int click_dmalloc_where;
@@ -18,6 +18,14 @@ extern int click_dmalloc_where;
 #else
 # define CLICK_DMALLOC_REG(s)
 #endif
+
+#endif	/* CLICK_LINUXMODULE || CLICK_BSDMODULE */
+
+#ifdef CLICK_LINUXMODULE
+
+/*
+ * Glue specific to the Linux kernel module
+ */
 
 // ask for ino_t, off_t, &c to be defined
 #define _LOOSE_KERNEL_NAMES 1
@@ -101,7 +109,72 @@ strcmp(const char *a, const char *b)
 #define click_gettimeofday(tvp) (do_gettimeofday(tvp))
 #define click_jiffies()		((unsigned)jiffies)
 
-#else /* not CLICK_LINUXMODULE */
+#elif defined(CLICK_BSDMODULE)
+
+/*
+ * Glue specific to the BSD kernel module.
+ */
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <sys/ctype.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/libkern.h>
+#include <sys/proc.h>
+#include <sys/sysproto.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+#define CLICK_DMALLOC_REG(s)
+
+/* Char-type glue */
+
+#define _U	0x01	/* upper */
+#define	_L	0x02	/* lower */
+#define	_D	0x04	/* digit */
+#define _C	0x08	/* cntrl */
+#define _P	0x10	/* punct */
+#define _S	0x20	/* white space (space/lf/tab) */
+#define	_X	0x40	/* hex digit */
+#define	_SP	0x80	/* hard space (0x20) */
+
+extern unsigned char _ctype[];
+
+#define	__ismask(x)	(_ctype[(int)(unsigned char)(x)])
+#define	isalnum(c)	((__ismask(c)&(_U|_L|_D)) != 0)
+
+#define	strchr(s, c)			index(s, c)
+
+__inline__ uint64_t
+click_get_cycles()
+{
+  uint32_t low, high;
+  uint64_t x;
+  __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
+  x = high;
+  x <<= 32;
+  x |= low;
+  return x;
+}
+
+#define	CLICK_HZ hz
+#define click_gettimeofday(tvp)	(microtime(tvp))
+extern unsigned click_jiffies();
+
+#define	memmove(dst, src, len)		bcopy((src), (dst), (len))
+
+typedef struct ifnet net_device;
+
+#else /* not CLICK_LINUXMODULE || CLICK_BSDMODULE */
+
+/*
+ * User-space glue.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
