@@ -1,6 +1,6 @@
 #ifndef KERNELHANDLERPROXY_HH
 #define KERNELHANDLERPROXY_HH
-#include <click/element.hh>
+#include "elements/userlevel/handlerproxy.hh"
 
 /*
 =c
@@ -49,35 +49,32 @@ SocketHandlerProxy
 
 */
 
-class KernelHandlerProxy : public Element { public:
+class KernelHandlerProxy : public HandlerProxy { public:
 
   KernelHandlerProxy();
   ~KernelHandlerProxy();
 
   const char *class_name() const	{ return "KernelHandlerProxy"; }
   KernelHandlerProxy *clone() const	{ return new KernelHandlerProxy; }
+  void *cast(const char *);
 
   int configure(const Vector<String> &, ErrorHandler *);
   
-  void add_handlers();
-  int local_llrpc(unsigned, void *);
+  int check_handler(const String &, bool write, ErrorHandler *errh);
   
+  void add_handlers();
+
  private:
 
-  struct ErrorReceiver {
-    void (*function)(const String &, int, void *);
-    void *thunk;
-  };
-  
   bool _detailed_error_message;
   bool _verbose;
-  ErrorReceiver *_err_rcvs;
-  int _nerr_rcvs;
   
   static String read_handler(Element *, void *);
   static int write_handler(const String &, Element *, void *, ErrorHandler *);
   static int star_write_handler(const String &, Element *, void *, ErrorHandler *);
-  void complain_to_err_rcvs(int, const String &elt, const String &hname);
+  int complain(ErrorHandler *, const String &h, int errcode, const String &);
+  int complain_about_open(ErrorHandler *, const String &h, int);
+  int check_handler_name(const String &, ErrorHandler *);
   
 };
 

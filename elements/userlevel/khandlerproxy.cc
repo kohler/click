@@ -21,10 +21,9 @@
 #include <click/router.hh>
 #include <click/confparse.hh>
 #include <click/userutils.hh>
-#include <click/llrpc.h>
-#include "elements/userlevel/controlsocket.hh"
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <ctype.h>
 
@@ -39,6 +38,17 @@ KernelHandlerProxy::~KernelHandlerProxy()
   MOD_DEC_USE_COUNT;
 }
 
+void *
+KernelHandlerProxy::cast(const char *n)
+{
+  if (strcmp(n, "HandlerProxy") == 0)
+    return (HandlerProxy *)this;
+  else if (strcmp(n, "KernelHandlerProxy") == 0)
+    return (Element *)this;
+  else
+    return 0;
+}
+
 int
 KernelHandlerProxy::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -49,46 +59,94 @@ KernelHandlerProxy::configure(const Vector<String> &conf, ErrorHandler *errh)
 		     0);
 }
 
-int
-KernelHandlerProxy::local_llrpc(unsigned cmd, void *data)
-{
-  if (cmd == CLICK_LLRPC_ADD_HANDLER_ERROR_PROXY) {
-    ErrorReceiver *nerr_rcvs = new ErrorReceiver[_nerr_rcvs + 1];
-    if (!nerr_rcvs) return -ENOMEM;
-    memcpy(nerr_rcvs, _err_rcvs, sizeof(ErrorReceiver) * _nerr_rcvs);
-    memcpy(nerr_rcvs + _nerr_rcvs, data, sizeof(ErrorReceiver));
-    delete[] _err_rcvs;
-    _err_rcvs = nerr_rcvs;
-    _nerr_rcvs++;
-    return 0;
-  } else
-    return Element::local_llrpc(cmd, data);
-}
-
 void
 KernelHandlerProxy::add_handlers()
 {
   add_write_handler("*", star_write_handler, 0);
 }
 
-int
-KernelHandlerProxy::star_write_handler(const String &in_str, Element *e, void *, ErrorHandler *errh)
-{
-  String str = in_str;
 
-  int dot = str.find_left('.');
-  if (dot < 0 || dot == str.length() - 1)
-    return errh->error("invalid handler name `%#s'", str.cc());
+static void
+complain_to(ErrorHandler *errh, int errcode, const String &complaint)
+{
+  if (errcode >= 0)
+    errh->set_error_code(errcode);
+  errh->verror_text(ErrorHandler::ERR_ERROR, String(), complaint);
+}
+
+int
+KernelHandlerProxy::complain(ErrorHandler *errh, const String &hname,
+			     int errcode, const String &complaint)
+{
+  if (errh)
+    complain_to(errh, errcode, complaint);
+  else {
+    for (int i = 0; i < _nerr_rcvs; i++)
+      if ((errh = _err_rcvs[i].hook(hname, _err_rcvs[i].thunk)))
+	complain_to(errh, errcode, complaint);
+  }
+  return -EINVAL;
+}
+
+int
+KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
+					const String &hname, int errno_val)
+{
+  int dot = hname.find_left('.');
+  String k_elt = hname.substring(0, dot);
+  
+  if (errno_val == ENOENT) {
+    String try_fn = "/proc/click/" + k_elt;
+    if (access("/proc/click", F_OK) < 0)
+      complain(errh, hname, CSERR_NO_ROUTER, "No router installed");
+    else if (k_elt != "0" && access(try_fn.cc(), F_OK) < 0)
+      complain(errh, hname, CSERR_NO_SUCH_ELEMENT, "No element named `" + k_elt.printable() + "'");
+    else
+      complain(errh, hname, CSERR_NO_SUCH_HANDLER, "No handler named `" + hname.printable() + "'");
+  } else if (errno_val == EACCES)
+    complain(errh, hname, CSERR_PERMISSION, "Permission denied for `" + hname.printable() + "'");
+  else
+    complain(errh, hname, CSERR_UNSPECIFIED, "Handler `" + hname.printable() + "' error: " + String(strerror(errno_val)));
+
+  return -errno_val;
+}
+
+int
+KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
+{
+  int dot = hname.find_left('.');
+  if (dot <= 0 || dot == hname.length() - 1)
+    return complain(errh, hname, CSERR_SYNTAX, "Bad handler name `" + hname.printable() + "'");
 
   // check characters for validity -- don't want to screw stuff up
-  const char *s = str.data();
+  const char *s = hname.data();
   for (int i = 0; i < dot; i++)
     if (!isalnum(s[i]) && s[i] != '_' && s[i] != '/' && s[i] != '@')
-      return errh->error("bad character in handler `%#s' element name", str.cc());
-  for (int i = dot + 1; i < str.length(); i++)
-    if (s[i] < 32 || s[i] >= 127)
-      return errh->error("bad character in handler name `%#s'", str.cc());
+      return complain(errh, hname, CSERR_SYNTAX, "Bad character in element name `" + hname.substring(0, dot).printable() + "'");
+  for (int i = dot + 1; i < hname.length(); i++)
+    if (s[i] < 32 || s[i] >= 127 || s[i] == '/')
+      return complain(errh, hname, CSERR_SYNTAX, "Bad character in handler name `" + hname.printable() + "'");
 
+  return 0;
+}
+
+static String
+handler_name_to_file_name(const String &str)
+{
+  if (str[0] == '0' && str[1] == '.')
+    return "/proc/click/" + str.substring(2);
+  else {
+    int dot = str.find_left('.');
+    return "/proc/click/" + str.substring(0, dot) + "/" + str.substring(dot + 1);
+  }
+}
+
+int
+KernelHandlerProxy::star_write_handler(const String &str, Element *e, void *, ErrorHandler *errh)
+{
+  KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
+  if (khp->check_handler_name(str, errh) < 0)
+    return -1;
   int which = e->router()->nhandlers();
   e->add_read_handler(str, read_handler, (void *)which);
   e->add_write_handler(str, write_handler, (void *)which);
@@ -96,24 +154,29 @@ KernelHandlerProxy::star_write_handler(const String &in_str, Element *e, void *,
   return which;
 }
 
-void
-KernelHandlerProxy::complain_to_err_rcvs(int err, const String &k_elt, const String &hname)
+int
+KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler *errh)
 {
-  int complaint = 0;
-  
-  if (err == ENOENT) {
-    String try_fn = "/proc/click/" + k_elt;
-    if (k_elt == "0" || access(try_fn.cc(), F_OK) >= 0)
-      complaint = ControlSocket::CSERR_NO_SUCH_HANDLER;
-    else
-      complaint = ControlSocket::CSERR_NO_SUCH_ELEMENT;
-  } else if (err == EACCES)
-    complaint = ControlSocket::CSERR_PERMISSION;
-  else
-    complaint = ControlSocket::CSERR_UNSPECIFIED;
+  if (check_handler_name(hname, errh) < 0)
+    return 0;
 
-  for (int i = 0; i < _nerr_rcvs; i++)
-    _err_rcvs[i].function(hname, complaint, _err_rcvs[i].thunk);
+  String fn = handler_name_to_file_name(hname);
+  if (access(fn.cc(), (write ? W_OK : R_OK)) < 0) {
+    complain_about_open(errh, hname, errno);
+    return 0;
+  }
+
+  // If accessible, it still might be a directory rather than a handler.
+  struct stat buf;
+  stat(fn.cc(), &buf);
+  if (S_ISDIR(buf.st_mode)) {
+    errh->set_error_code(CSERR_NO_SUCH_HANDLER);
+    errh->error("No handler named `%#s'", hname.printable().cc());
+    return 0;
+  } else {
+    errh->message("Handler `%s' OK", hname.printable().cc());
+    return 1;
+  }
 }
 
 String
@@ -124,22 +187,16 @@ KernelHandlerProxy::read_handler(Element *e, void *thunk)
   int handleri = (int)thunk;
   const Router::Handler &h = r->handler(handleri);
 
-  int dot = h.name.find_left('.');
-  String k_elt = h.name.substring(0, dot);
-  String k_handler = h.name.substring(dot + 1);
-  String fn = "/proc/click/";
-  if (k_elt != "0")
-    fn += k_elt + "/";
-  fn += k_handler;
-
   errno = 0;
+  String fn = handler_name_to_file_name(h.name);
   String s = file_string(fn, 0);
   int err = errno;
 
   if (!s && err != 0) {
     if (khp->_verbose)
-      ErrorHandler::default_handler()->error("%s: %s", fn.cc(), strerror(err));
-    khp->complain_to_err_rcvs(err, k_elt, h.name);
+      khp->complain_about_open(ErrorHandler::default_handler(), h.name, err);
+    // complain to error receivers
+    khp->complain_about_open(0, h.name, err);
   }
   
   return s;
@@ -153,27 +210,11 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
   int handleri = (int)thunk;
   const Router::Handler &h = r->handler(handleri);
 
-  String name = h.name;
-  int dot = name.find_left('.');
-  String k_elt = name.substring(0, dot);
-  String k_handler = name.substring(dot + 1);
-  String fn = "/proc/click/";
-  if (k_elt != "0")
-    fn += k_elt + "/";
-  fn += k_handler;
-
+  String fn = handler_name_to_file_name(h.name);
   int fd = open(fn, O_WRONLY | O_TRUNC);
-  int err = errno;
   
-  if (fd < 0) {
-    khp->complain_to_err_rcvs(err, k_elt, h.name);
-    if (err == ENOENT)
-      return errh->error("no such kernel element `%s'", k_elt.cc());
-    else if (err == EACCES)
-      return errh->error("%s: permission denied", fn.cc());
-    else
-      return errh->error("%s: %s", fn.cc(), strerror(err));
-  }
+  if (fd < 0)
+    return khp->complain_about_open(errh, h.name, errno);
 
   int pos = 0;
   const char *data = str.data();
@@ -182,22 +223,22 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
     ssize_t written = write(fd, data + pos, left);
     if (written < 0 && errno != EINTR) {
       close(fd);
-      return errh->error("%s: %s", fn.cc(), strerror(errno));
+      return khp->complain(errh, h.name, CSERR_UNSPECIFIED, fn + ": " + String(strerror(errno)));
     } else if (written >= 0)
       pos += written;
   }
 
-  err = close(fd);
-  if (err < 0) {
-    errh->error("error executing kernel write handler %s", name.cc());
+  if (close(fd) < 0) {
+    int err = errno;
+    khp->complain(errh, h.name, CSERR_HANDLER_ERROR, "Error executing kernel write handler `" + h.name + "'");
     if (!khp->_detailed_error_message) {
-      errh->message("(check /proc/click/errors for details)");
+      khp->complain(errh, h.name, CSERR_HANDLER_ERROR, "(Check /proc/click/errors for details.)");
       khp->_detailed_error_message = true;
     }
-    return -errno;
+    return -err;
   } else
     return 0;
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel HandlerProxy)
 EXPORT_ELEMENT(KernelHandlerProxy)

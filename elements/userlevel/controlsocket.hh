@@ -1,6 +1,7 @@
 #ifndef CONTROLSOCKET_HH
 #define CONTROLSOCKET_HH
-#include <click/element.hh>
+#include "elements/userlevel/handlerproxy.hh"
+class ControlSocketErrorHandler;
 
 /*
 =c
@@ -39,8 +40,9 @@ The server will accept lines terminated by CR, LF, or CRLF. Its response
 lines are always terminated by CRLF.
 
 When a connection is opened, the server responds by stating its protocol
-version number with a line like "Click::ControlSocket/1.0". The current
-version number is 1.0.
+version number with a line like "Click::ControlSocket/1.1". The current
+version number is 1.1. Changes in minor version number will only add commands
+and functionality to this specification, not change existing functionality.
 
 Keyword arguments are:
 
@@ -78,6 +80,9 @@ decimal integer indicating the length of the read handler data. The I<n>
 bytes immediately following (the CRLF that terminates) the DATA line are
 the handler's results.
 
+I<element> is either an element name or an integer, where the integer is the
+index of the element, starting from 1.
+
 =item READ I<handlername>
 
 Call the global read handler named I<handlername> and return the results as
@@ -85,6 +90,8 @@ in READ I<element>.I<handlername>. There are seven global read handlers,
 named `version', `list', `classes', `config', `flatconfig', `packages', and
 `requirements'. See the handlers of the same name in click.o(8) for more
 information.
+
+A global handler named I<handlername> may also be referred to as `C<0.>I<handlername>'.
 
 =item WRITE I<element>.I<handlername> I<args...>
 
@@ -96,6 +103,16 @@ I<element>, passing the I<args> (if any) as arguments.
 Call the write handler named I<handlername> on the element named
 I<element>. The arguments to pass are the I<n> bytes immediately following
 (the CRLF that terminates) the WRITEDATA line.
+
+You can also write a global handler with WRITE or WRITEDATA.
+
+=item CHECKREAD I<handler>
+
+Returns 1 if I<handler> exists and is readable; 0 if it does not exist, or is write-only; and -1 if ControlSocket can't tell without invoking the handler. I<handler> may be an element handler or a global handler.
+
+=item CHECKWRITE I<handler>
+
+Returns 1 if I<handler> exists and is writable; 0 if it does not exist, or is read-only; and -1 if ControlSocket can't tell without invoking the handler. I<handler> may be an element handler or a global handler.
 
 =item QUIT
 
@@ -123,6 +140,7 @@ Here are some of the particular error messages:
   501 Unimplemented command.
   510 No such element.
   511 No such handler.
+  513 No router installed.
   520 Handler error.
   530 Permission denied.
 
@@ -149,17 +167,20 @@ class ControlSocket : public Element { public:
   void selected(int);
 
   int message(int fd, int code, const String &, bool continuation = false);
+  int transfer_messages(int fd, int default_code, const String &first_message,
+			ControlSocketErrorHandler *);
   
   enum {
     CSERR_OK			= 200,
     CSERR_OK_HANDLER_WARNING	= 220,
-    CSERR_SYNTAX		= 500,
+    CSERR_SYNTAX		= HandlerProxy::CSERR_SYNTAX,          // 500
     CSERR_UNIMPLEMENTED		= 501,
-    CSERR_NO_SUCH_ELEMENT	= 510,
-    CSERR_NO_SUCH_HANDLER	= 511,
-    CSERR_UNSPECIFIED		= 512,
-    CSERR_HANDLER_ERROR		= 520,
-    CSERR_PERMISSION		= 530,
+    CSERR_NO_SUCH_ELEMENT	= HandlerProxy::CSERR_NO_SUCH_ELEMENT, // 510
+    CSERR_NO_SUCH_HANDLER	= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
+    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED,     // 512
+    CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 513
+    CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
+    CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
   };
   
  private:
@@ -169,26 +190,29 @@ class ControlSocket : public Element { public:
   bool _read_only : 1;
   bool _verbose : 1;
   Element *_proxy;
+  HandlerProxy *_full_proxy;
   
   Vector<String> _in_texts;
   Vector<String> _out_texts;
   Vector<int> _flags;
 
-  Vector<String> _herror_handlers;
-  Vector<int> _herror_messages;
+  String _proxied_handler;
+  ErrorHandler *_proxied_errh;
 
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2 };
   static const int ANY_ERR = -1;
 
   static const char * const protocol_version;
 
+  String proxied_handler_name(const String &) const;
   int parse_handler(int fd, const String &, Element **);
   int read_command(int fd, const String &);
   int write_command(int fd, const String &, const String &);
+  int check_command(int fd, const String &, bool write);
   int parse_command(int fd, const String &);
 
   int report_proxy_errors(int fd, const String &);
-  static void proxy_error_function(const String &, int, void *);
+  static ErrorHandler *proxy_error_function(const String &, void *);
 
 };
 

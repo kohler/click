@@ -28,25 +28,30 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-const char * const ControlSocket::protocol_version = "1.0";
+const char * const ControlSocket::protocol_version = "1.1";
 
-struct ControlSocketErrorHandler : public ErrorHandler {
+struct ControlSocketErrorHandler : public ErrorHandler { public:
+
+  ControlSocketErrorHandler()		{ reset_counts(); _error_code = ControlSocket::CSERR_OK; }
+
+  const Vector<String> &messages() const { return _messages; }
+  int error_code() const		{ return _error_code; }
+  
+  int nwarnings() const			{ return _nwarnings; }
+  int nerrors() const			{ return _nerrors; }
+  void reset_counts()			{ _nwarnings = _nerrors = 0; }
+  
+  void handle_text(Seriousness, const String &);
+
+  void set_error_code(int c)		{ _error_code = c; }
+  
+ private:
 
   Vector<String> _messages;
   int _nwarnings;
   int _nerrors;
+  int _error_code;
 
- public:
-
-  ControlSocketErrorHandler()		{ reset_counts(); }
-
-  int nwarnings() const			{ return _nwarnings; }
-  int nerrors() const			{ return _nerrors; }
-  void reset_counts()			{ _nwarnings = _nerrors = 0; }
-  const Vector<String> &messages() const { return _messages; }
-  
-  void handle_text(Seriousness, const String &);
-  
 };
 
 void
@@ -83,6 +88,7 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   _socket_fd = -1;
   bool read_only = false, verbose = false;
   _proxy = 0;
+  _full_proxy = 0;
   
   String socktype;
   if (cp_va_parse(conf, this, errh,
@@ -174,16 +180,13 @@ ControlSocket::initialize(ErrorHandler *errh)
   // nonblocking I/O on the socket
   fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
 
+  // check for a full proxy
+  if (_proxy && _proxy->cast("HandlerProxy"))
+    _full_proxy = (HandlerProxy *)_proxy;
+  
   // ask the proxy to send us errors
-  if (_proxy) {
-    struct {
-      void (*function)(const String &, int, void *);
-      void *thunk;
-    } x;
-    x.function = proxy_error_function;
-    x.thunk = this;
-    _proxy->local_llrpc(CLICK_LLRPC_ADD_HANDLER_ERROR_PROXY, &x);
-  }
+  if (_full_proxy)
+    _full_proxy->add_error_receiver(proxy_error_function, this);
 
   add_select(_socket_fd, SELECT_READ | SELECT_WRITE);
   return 0;
@@ -192,6 +195,8 @@ ControlSocket::initialize(ErrorHandler *errh)
 void
 ControlSocket::uninitialize()
 {
+  if (_full_proxy)
+    _full_proxy->remove_error_receiver(proxy_error_function, this);
   if (_socket_fd >= 0) {
     close(_socket_fd);
     if (_unix_pathname)
@@ -209,79 +214,103 @@ int
 ControlSocket::message(int fd, int code, const String &s, bool continuation)
 {
   assert(code >= 100 && code <= 999);
-  _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s.printable() + "\r\n";
+  if (fd >= 0)
+    _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s.printable() + "\r\n";
   return ANY_ERR;
+}
+
+int
+ControlSocket::transfer_messages(int fd, int default_code, const String &msg,
+				 ControlSocketErrorHandler *errh)
+{
+  int code = errh->error_code();
+  if (code == CSERR_OK)
+    code = default_code;
+  const Vector<String> &messages = errh->messages();
+  
+  if (msg) {
+    if (messages.size() > 0)
+      message(fd, code, msg + ":", true);
+    else
+      message(fd, code, msg, false);
+  }
+    
+  for (int i = 0; i < messages.size(); i++)
+    message(fd, code, messages[i], i < messages.size() - 1);
+  
+  return ANY_ERR;
+}
+
+static String
+canonical_handler_name(const String &n)
+{
+  int dot = n.find_left('.');
+  if (dot == 0 || (dot == 1 && n[0] == '0'))
+    return n.substring(dot + 1);
+  else
+    return n;
+}
+
+String
+ControlSocket::proxied_handler_name(const String &n) const
+{
+  if (_full_proxy && n.find_left('.') < 0)
+    return "0." + n;
+  else
+    return n;
 }
 
 int
 ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 {
-  int dot = full_name.find_left('.');
-  
+  // Parse full_name into element_name and handler_name.
+  String canonical_name = canonical_handler_name(full_name);
+
+  // Check for proxy.
   if (_proxy) {
-    String new_name = (dot < 0 ? "0." + full_name : full_name);
-    int hid = router()->find_handler(_proxy, new_name);
-    if (hid < 0)
+    // collect errors from proxy
+    ControlSocketErrorHandler errh;
+    _proxied_handler = proxied_handler_name(canonical_name);
+    _proxied_errh = &errh;
+    
+    int hid = router()->find_handler(_proxy, _proxied_handler);
+    
+    if (errh.nerrors() > 0)
+      return transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
+    else if (hid < 0)
       return message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named `" + full_name + "'");
+    
     *es = _proxy;
     return hid;
-  } else if (dot < 0) {
-    int hid = router()->find_handler(0, full_name);
-    if (hid < 0)
-      return message(fd, CSERR_NO_SUCH_HANDLER, "No global handler named `" + full_name + "'");
-    *es = 0;
-    return hid;
-  } else {
-    String element = full_name.substring(0, dot);
-    String handler = full_name.substring(dot + 1);
-    Element *e = (_proxy ? _proxy : router()->find(element));
-    if (!e)
-      return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + element + "'");
-    int hid = router()->find_handler(e, handler);
-    if (hid < 0)
-      return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + full_name + "'");
-    *es = e;
-    return hid;
   }
-}
 
-int
-ControlSocket::report_proxy_errors(int fd, const String &handlername)
-{
-  String proxy_name = handlername;
-  if (handlername.find_left('.') < 0) // prepend "0."
-    proxy_name = "0." + handlername;
+  // Otherwise, find element.
+  Element *e = 0;
+  int dot = canonical_name.find_left('.');
+  String hname;
   
-  int num = 0;
-  for (int i = 0; i < _herror_handlers.size(); i++)
-    if (_herror_handlers[i] == proxy_name) {
-      switch (_herror_messages[i]) {
-	
-       case CSERR_NO_SUCH_ELEMENT: {
-	 int dot = handlername.find_left('.');
-	 assert(dot >= 0);
-	 message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + handlername.substring(0, dot) + "'");
-	 break;
-       }
-       
-       case CSERR_NO_SUCH_HANDLER:
-	message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + handlername + "'");
-	break;
-	
-       case CSERR_PERMISSION:
-	message(fd, CSERR_PERMISSION, "Permission denied for `" + handlername + "'");
-	break;
-	
-       case CSERR_UNSPECIFIED:
-       default:
-	message(fd, _herror_messages[i], "Error accessing handler `" + handlername + "'");
-	break;
-	
-      }
-      num++;
+  if (dot >= 0) {
+    String ename = canonical_name.substring(0, dot);
+    e = router()->find(ename);
+    if (!e) {
+      int num;
+      if (cp_integer(ename, &num) && num > 0 && num <= router()->nelements())
+	e = router()->element(num - 1);
     }
+    if (!e)
+      return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + ename + "'");
+    hname = canonical_name.substring(dot + 1);
+  } else
+    hname = canonical_name;
 
-  return -num;
+  // Then find handler.
+  int hid = router()->find_handler(e, hname);
+  if (hid < 0)
+    return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + full_name + "'");
+
+  // Return.
+  *es = e;
+  return hid;
 }
 
 int
@@ -293,13 +322,18 @@ ControlSocket::read_command(int fd, const String &handlername)
     return hid;
   const Router::Handler &h = router()->handler(hid);
   if (!h.read)
-    return message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + handlername + "' write-only");
+    return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' write-only");
+
+  // collect errors from proxy
+  ControlSocketErrorHandler errh;
+  _proxied_handler = h.name;
+  _proxied_errh = &errh;
   
   String data = h.read(e, h.read_thunk);
 
-  // check for error messages from proxy
-  if (_proxy && report_proxy_errors(fd, handlername) < 0)
-    return -1;
+  // did we get an error message?
+  if (errh.nerrors() > 0)
+    return transfer_messages(fd, CSERR_UNSPECIFIED, String(), &errh);
   
   message(fd, CSERR_OK, "Read handler `" + handlername + "' OK");
   _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
@@ -316,44 +350,89 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
     return hid;
   const Router::Handler &h = router()->handler(hid);
   if (!h.write)
-    return message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + handlername + "' read-only");
+    return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' read-only");
 
   if (_read_only)
     return message(fd, CSERR_PERMISSION, "Permission denied for `" + handlername + "'");
   
-  // call handler
   ControlSocketErrorHandler errh;
+  
+  // call handler
   int result = h.write(data, e, h.write_thunk, &errh);
 
-  // check for proxy-related errors
-  if (_proxy && result < 0 && report_proxy_errors(fd, handlername) < 0)
-    return -1;
+  // add a generic error message for certain handler codes
+  int code = errh.error_code();
+  if (code == CSERR_OK) {
+    if (errh.nerrors() > 0 || result < 0)
+      code = CSERR_HANDLER_ERROR;
+    else if (errh.nwarnings() > 0)
+      code = CSERR_OK_HANDLER_WARNING;
+  }
 
-  int code = CSERR_OK;
-  String happened = "OK";
-  if (errh.nerrors() > 0)
-    code = CSERR_HANDLER_ERROR, happened = "error";
-  else if (errh.nwarnings() > 0)
-    code = CSERR_OK_HANDLER_WARNING, happened = "OK with warnings";
+  String msg;
+  if (code == CSERR_OK)
+    msg = "Write handler `" + handlername + "' OK";
+  else if (code == CSERR_OK_HANDLER_WARNING)
+    msg = "Write handler `" + handlername + "' OK with warnings";
+  else if (code == CSERR_HANDLER_ERROR)
+    msg = "Write handler `" + handlername + "' error";
+  transfer_messages(fd, code, msg, &errh);
+  return 0;
+}
 
-  const Vector<String> &messages = errh.messages();
-  if (messages.size() > 0)
-    happened += ":";
-  message(fd, code, "Write handler `" + handlername + "' " + happened, messages.size() > 0);
-  for (int i = 0; i < messages.size(); i++)
-    message(fd, code, messages[i], i < messages.size() - 1);
-  
+int
+ControlSocket::check_command(int fd, const String &hname, bool write)
+{
+  int ok = 0;
+  ControlSocketErrorHandler errh;
+
+  if (_full_proxy) {
+    String phname = canonical_handler_name(hname);
+    if (phname.find_left('.') < 0)
+      phname = "0." + phname;
+    ok = _full_proxy->check_handler(phname, write, &errh);
+  } else {
+    Element *e;
+    int hid = parse_handler(fd, hname, &e);
+    if (hid < 0)
+      return 0;			// error messages already reported
+    const Router::Handler &h = router()->handler(hid);
+    if (write ? h.write == 0 : h.read == 0)
+      return message(fd, CSERR_PERMISSION, "Handler `" + hname + (write ? "' read-only" : "' write-only"));
+  }
+
+  // remember _read_only!
+  if (write && _read_only && ok)
+    return message(fd, CSERR_PERMISSION, "Permission denied for `" + hname + "'");
+  else if (errh.messages().size() > 0)
+    transfer_messages(fd, CSERR_OK, String(), &errh);
+  else if (ok)
+    message(fd, CSERR_OK, "Handler `" + hname + "' OK");
+  else
+    message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + hname + "'");
   return 0;
 }
 
 int
 ControlSocket::parse_command(int fd, const String &line)
 {
+  // split `line' into words; don't use cp_ functions since they strip comments
   Vector<String> words;
-  cp_spacevec(line, words);
+  const char *data = line.data();
+  int len = line.length();
+  for (int pos = 0; pos < len; ) {
+    while (pos < len && isspace(data[pos]))
+      pos++;
+    int first = pos;
+    while (pos < len && !isspace(data[pos]))
+      pos++;
+    if (first < pos)
+      words.push_back(line.substring(first, pos - first));
+  }
   if (words.size() == 0)
     return 0;
-  
+
+  // branch on command
   String command = words[0].upper();
   if (command == "READ" || command == "GET") {
     if (words.size() != 2)
@@ -384,6 +463,16 @@ ControlSocket::parse_command(int fd, const String &line)
     _in_texts[fd] = _in_texts[fd].substring(datalen);
     return write_command(fd, words[1], data);
 
+  } else if (command == "CHECKREAD") {
+    if (words.size() != 2)
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+    return check_command(fd, words[1], false);
+    
+  } else if (command == "CHECKWRITE") {
+    if (words.size() != 2)
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+    return check_command(fd, words[1], true);
+    
   } else if (command == "CLOSE" || command == "QUIT") {
     if (words.size() != 1)
       message(fd, CSERR_SYNTAX, "Bad command syntax");
@@ -473,10 +562,6 @@ ControlSocket::selected(int fd)
     String line = old_text.substring(0, pos);
     _in_texts[fd] = old_text.substring(pos);
 
-    // clear out proxy errors
-    _herror_handlers.clear();
-    _herror_messages.clear();
-    
     // parse each individual command
     if (parse_command(fd, line) > 0) {
       // more data to come, so wait
@@ -512,12 +597,11 @@ ControlSocket::selected(int fd)
 }
 
 
-void
-ControlSocket::proxy_error_function(const String &h, int err, void *thunk)
+ErrorHandler *
+ControlSocket::proxy_error_function(const String &h, void *thunk)
 {
-  ControlSocket *cs = (ControlSocket *)thunk;
-  cs->_herror_handlers.push_back(h);
-  cs->_herror_messages.push_back(err);
+  ControlSocket *cs = static_cast<ControlSocket *>(thunk);
+  return (h == cs->_proxied_handler ? cs->_proxied_errh : 0);
 }
 
 ELEMENT_REQUIRES(userlevel)
