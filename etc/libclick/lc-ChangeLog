@@ -1,3 +1,13 @@
+2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/router.cc: use new click_qsort, and other nits
+
+2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc:
+	glue.hh and glue.cc rearrangement for sense, and add click_qsort
+	(supported at user level and in both kernel modules)
+
 2002-07-09 Tuesday 14:43  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4, config-userlevel.h.in: update checks for uintXX_t by

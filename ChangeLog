@@ -1,3 +1,14 @@
+2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
+
+	* lib/router.cc (1.126), linuxmodule/clickfs.cc (1.13),
+	linuxmodule/module.cc (1.71): use new click_qsort, and other nits
+
+2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.27), lib/glue.cc (1.34): glue.hh and
+	glue.cc rearrangement for sense, and add click_qsort (supported at
+	user level and in both kernel modules)
+
 2002-07-09 Tuesday 14:43  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.15), aclocal.m4 (1.15), config-userlevel.h.in
