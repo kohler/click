@@ -50,7 +50,6 @@ PollDevice::PollDevice(const String &devname)
 
 PollDevice::~PollDevice()
 {
-  click_chatter("%s received %d packets", declaration().cc(), _pkts_received);
 }
 
 void
@@ -117,8 +116,7 @@ PollDevice::uninitialize()
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     click_chatter
-	("PollDevice(%s): waited with intr on %d times", 
-	 _dev->name, _total_intr_wait);
+	("%s: %d intrs, %d rcvd", _dev->name, _total_intr_wait, _pkts_received);
   }
 }
 

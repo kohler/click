@@ -20,7 +20,6 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
-#include "router.hh"
 
 ARPResponder::ARPResponder()
 {

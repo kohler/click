@@ -53,7 +53,6 @@ click_sched(void *thunk)
     {
 	if (signal_pending(current)) 
 	{ 
-	    printk("click_sched: received signal, quiting\n"); 
 #if why_doesnt_this_work 
 	    if (sigismember(&current->signal,SIGKILL))
 #endif 
@@ -103,6 +102,6 @@ kill_click_sched()
 	    schedule();
 	    asm volatile ("" : : : "memory");
 	}
-	tulip_print_stats();
+	// tulip_print_stats();
     }
 }

@@ -71,6 +71,8 @@ class ARPQuerier : public Element {
   bool each(int &i, IPAddress &k, ARPEntry &v) const;
   
  private:
+  int _arp_queries;
+  int _pkts_killed;
  
   HashMap<IPAddress, ARPEntry *> _map;
   EtherAddress _my_en;

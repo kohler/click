@@ -21,17 +21,20 @@
 #include "bitvector.hh"
 #include "error.hh"
 #include "glue.hh"
-#include "router.hh"
 
 ARPQuerier::ARPQuerier()
 {
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
   add_output();/* ether/IP and ether/ARP queries */
+  _arp_queries = 0;
+  _pkts_killed = 0;
 }
 
 ARPQuerier::~ARPQuerier()
 {
+  click_chatter("%s: sent %d arp queries, killed %d packets", 
+      declaration().cc(), _arp_queries, _pkts_killed);
 }
 
 Bitvector
@@ -132,6 +135,7 @@ ARPQuerier::lookup(Packet *p)
     }
     if(ae->ok && ae->polling == 0 && now.tv_sec - ae->when.tv_sec > 60){
       ae->polling = 1;
+      _arp_queries++;
       output(0).push(query_for(p));
     }      
 
@@ -143,10 +147,12 @@ ARPQuerier::lookup(Packet *p)
       e->ether_type = htons(ETHERTYPE_IP);
       return(q);
     } else {
-      // click_chatter("waiting for arp, killing old packet");
-      if(ae->p)
+      if(ae->p) {
         ae->p->kill();
+	_pkts_killed++;
+      }
       ae->p = p;
+      _arp_queries++;
       return(query_for(p));
     }
   } else {
@@ -154,7 +160,8 @@ ARPQuerier::lookup(Packet *p)
     ae->ok = 0;
     ae->p = p;
     _map.insert(ipa, ae);
-    click_chatter("%s sending arp query",declaration().cc());
+    // click_chatter("%s sending arp query",declaration().cc());
+    _arp_queries++;
     return(query_for(p));
   }
 }
