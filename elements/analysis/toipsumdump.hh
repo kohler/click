@@ -55,8 +55,8 @@ contain those fields. Valid field names, with examples, are:
    payload len  Payload length (not including IP/TCP/UDP
                 headers): `34'
    count        Number of packets: `1'
-   direction    Link number (PAINT_ANNO): '2', or 'L'/'>'
-                for paint 0, 'R'/'X'/'<' for paint 1
+   direction    Link number (PAINT_ANNO): '2', or '>'/'L'
+                for paint 0, '<'/'R'/'X' for paint 1
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
 
 If a field does not apply to a particular packet -- for example, `C<sport>' on

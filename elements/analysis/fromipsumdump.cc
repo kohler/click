@@ -527,10 +527,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		break;
 		
 	      case W_LINK:
-		if (data[pos] == 'L' || data[pos] == '>') {
+		if (data[pos] == '>' || data[pos] == 'L') {
 		    u1 = 0;
 		    pos++;
-		} else if (data[pos] == 'R' || data[pos] == 'X' || data[pos] == '<') {
+		} else if (data[pos] == '<' || data[pos] == 'X' || data[pos] == 'R') {
 		    u1 = 1;
 		    pos++;
 		} else {

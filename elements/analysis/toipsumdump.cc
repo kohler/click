@@ -354,9 +354,9 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	  case W_LINK: {
 	      int link = PAINT_ANNO(p);
 	      if (link == 0)
-		  sa << 'L';
+		  sa << '>';
 	      else if (link == 1)
-		  sa << 'R';
+		  sa << '<';
 	      else
 		  sa << link;
 	      break;
