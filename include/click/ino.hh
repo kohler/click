@@ -34,14 +34,14 @@ class ClickIno { public:
     uint32_t generation() const		{ return _generation; }
     
     // All operations should be called with a configuration lock held.
-    inline int prepare(Router *, uint32_t);
+    inline int prepare(Router*, uint32_t);
     int nlink(ino_t);
-    ino_t lookup(ino_t dir, const String &component);
+    ino_t lookup(ino_t dir, const String& component);
 
     // readdir doesn't handle '.' or '..'.
     // It returns 0 for "filldir failed, have more", 1 for "out", <0 on error.
-    typedef bool (*filldir_t)(const char *name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void *thunk);
-    int readdir(ino_t dir, uint32_t &f_pos, filldir_t, void *thunk);
+    typedef bool (*filldir_t)(const char* name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void* thunk);
+    int readdir(ino_t dir, uint32_t& f_pos, filldir_t, void* thunk);
 
 #if INO_DEBUG
     String info() const;
@@ -76,27 +76,27 @@ class ClickIno { public:
 
     enum { X_FAKE = 1, X_HANDLER_CONFLICT = 2, X_SUBDIR_CONFLICTS_CALCULATED = 4 };
     
-    Entry *_x;
+    Entry* _x;
     int _nentries;
     int _cap;
-    Router *_router;
+    Router* _router;
     uint32_t _generation;
 
     inline int xindex(int elementno) const;
     inline int next_xindex(int elementno) const;
     inline int elementno(int xindex) const;
 
-    int name_search(const String &n, int first_xi, int last_xi, int name_offset) const;
+    int name_search(const String& n, int first_xi, int last_xi, int name_offset) const;
     
     int grow(int min_size);
     void calculate_handler_conflicts(int);
-    int true_prepare(Router *, uint32_t);
+    int true_prepare(Router*, uint32_t);
 
 };
 
 
 inline int
-ClickIno::prepare(Router *router, uint32_t generation)
+ClickIno::prepare(Router* router, uint32_t generation)
 {
     if (generation != _generation)
 	return true_prepare(router, generation);
