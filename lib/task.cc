@@ -23,18 +23,6 @@
 #include <click/task.hh>
 #include <click/router.hh>
 
-void
-Task::attach(Router *r)
-{
-  attach(r->task_list());
-}
-
-void
-Task::attach(Element *e)
-{
-  attach(e->router()->task_list());
-}
-
 #ifndef RR_SCHED
 
 void
@@ -45,4 +33,42 @@ Task::set_max_tickets(int n)
   _max_tickets = n;
 }
 
+inline void
+Task::join_scheduler()
+{
+  assert(_list);
+  if (_tickets < 1 || scheduled())
+    return;
+  if (_list->_next == _list)
+    /* nothing on worklist */
+    _pass = 0;
+  else 
+    _pass = _list->_next->_pass;
+  reschedule();
+}
+
+#else
+
+inline void
+Task::join_scheduler()
+{
+  assert(_list);
+  if (!scheduled())
+    reschedule();
+}
+
 #endif
+
+inline void
+Task::join_scheduler(Task *task_list)
+{
+  assert(!_prev && !_next && task_list->is_list());
+  _list = task_list;
+  join_scheduler();
+}
+
+void
+Task::join_scheduler(Router *r)
+{
+  join_scheduler(r->task_list());
+}
