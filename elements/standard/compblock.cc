@@ -35,16 +35,18 @@ CompareBlock::configure(const String &conf, ErrorHandler *errh)
   Vector<String> args;
   cp_argvec(conf, args);
 
-  if(args.size() != 2) {
-    return errh->error("Two arguments expexted");
+  if(args.size() != 3) {
+    return errh->error("Three arguments expexted");
   }
 
   if(!cp_integer(args[0], _dst_weight)) {
     return errh->error("DST_WEIGHT must be an integer");
   }
-  
   if(!cp_integer(args[1], _src_weight)) {
     return errh->error("SRC_WEIGHT must be an integer");
+  }
+  if(!cp_integer(args[2], _thresh)) {
+    return errh->error("THRESH must be an integer");
   }
 
   return 0;
@@ -60,6 +62,7 @@ void
 CompareBlock::push(int, Packet *packet)
 {
   if(_dst_weight == 0 || 
+      (packet->dst_rate_anno()<_thresh && packet->src_rate_anno()<_thresh) ||
      _dst_weight*packet->dst_rate_anno() <= _src_weight*packet->src_rate_anno())
     output(0).push(packet);
   else
@@ -106,6 +109,25 @@ CompareBlock::src_weight_write_handler(const String &conf, Element *e,
   return 0;
 }
 
+int
+CompareBlock::thresh_write_handler(const String &conf, Element *e, 
+    				   void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+  CompareBlock* me = (CompareBlock *) e;
+
+  if(args.size() != 1) {
+    return errh->error("expecting one integer");
+  }
+  int thresh;
+  if(!cp_integer(args[0], thresh)) {
+    return errh->error("not an integer");
+  }
+  me->_thresh = thresh;
+  return 0;
+}
+
 String
 CompareBlock::dst_weight_read_handler(Element *e, void *)
 {
@@ -118,6 +140,13 @@ CompareBlock::src_weight_read_handler(Element *e, void *)
 {
   CompareBlock *me = (CompareBlock *) e;
   return String(me->_src_weight) + "\n";
+}
+
+String
+CompareBlock::thresh_read_handler(Element *e, void *)
+{
+  CompareBlock *me = (CompareBlock *) e;
+  return String(me->_thresh) + "\n";
 }
 
 void
