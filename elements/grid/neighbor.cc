@@ -51,7 +51,7 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 			0);
 
   // convert msecs to jiffies
-  if (msec_timeout < 0) {
+  if (msec_timeout > 0) {
     _timeout_jiffies = (CLICK_HZ * msec_timeout) / 1000;
     if (_timeout_jiffies < 1) 
       return errh->error("timeout interval is too small");
