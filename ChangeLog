@@ -1,3 +1,32 @@
+2004-05-10 Monday 21:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.78), elements/linuxmodule/sortedsched.cc (1.6),
+	elements/linuxmodule/staticthreadsched.cc (1.7),
+	elements/linuxmodule/staticthreadsched.hh (1.5),
+	elements/linuxmodule/threadmonitor.cc (1.5), etc/libclick/DISTFILES
+	(1.19), include/click/router.hh (1.57), include/click/task.hh
+	(1.28), include/click/standard/threadsched.hh (1.1), lib/master.cc
+	(1.13), lib/router.cc (1.161), lib/task.cc (1.30): Task change:
+	remove "all-tasks" list.  Instead of "using all-tasks",
+	StaticThreadSched is called when Tasks are initialized.  Disable
+	SortedThreadSched and ThreadMonitor for now.  Removes locking
+	problem with StaticThreadSched.
+
+2004-05-10 Monday 21:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/standard/LinkUnqueue-01.testie (1.3): fix LinkUnqueue test
+	for new bandwidth syntax
+
+2004-05-10 Monday 21:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/standard/drivermanager.hh (1.20): DriverManager can
+	be virtual
+
+2004-05-10 Monday 21:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/element.hh (1.33), lib/element.cc (1.85): add
+	master() convenience function
+
 2004-05-10 Monday 17:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: todump.cc (1.54), todump.hh (1.33): ToDump
