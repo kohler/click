@@ -34,7 +34,7 @@ inline String
 timeval_to_str(const timeval &tv)
 {
   char buf[80];
-  snprintf(buf, sizeof(buf), "%lu.%06lu", tv.tv_sec, tv.tv_usec);
+  snprintf(buf, sizeof(buf), "%ld.%06ld", (long) tv.tv_sec, (long) tv.tv_usec);
   return buf;
 }
 

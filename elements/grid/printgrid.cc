@@ -111,8 +111,8 @@ PrintGrid::simple_action(Packet *p)
   if (_timestamp) {
     char buf[30];
     snprintf(buf, sizeof(buf), "%ld.%06ld ",
-	     p->timestamp_anno().tv_sec,
-	     p->timestamp_anno().tv_usec);
+	     (long) p->timestamp_anno().tv_sec,
+	     (long) p->timestamp_anno().tv_usec);
     line += buf;
   }
 
