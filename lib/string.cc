@@ -222,7 +222,7 @@ String::append_garbage(int suffix_len)
   
     deref();
     _data = new_data;
-    new_data += _length;
+    new_data += _length;	// now new_data points to the garbage
     _length += suffix_len;
     _memo = new_memo;
     return new_data;
