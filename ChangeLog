@@ -1,3 +1,8 @@
+2003-09-25 Thursday 00:09  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.17): add wifi_packet_failures
+	anno, which indicates how many times a given packet has failed.
+
 2003-09-23 Tuesday 14:46  Eddie Kohler <kohler@icir.org>
 
 	* click-compile.in (1.25): allow multiple "click-compile --package"
