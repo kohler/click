@@ -71,6 +71,8 @@ class PollDevice : public AnyDevice {
   unsigned long long _perfcnt2_refill;
   unsigned long long _perfcnt2_allocskb;
   unsigned long long _perfcnt2_pushing;
+
+  unsigned long _empty_polls;
   unsigned long _activations;
 #endif
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS

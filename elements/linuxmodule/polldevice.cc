@@ -161,6 +161,7 @@ PollDevice::reset_counts()
 
 #if CLICK_DEVICE_STATS
   _activations = 0;
+  _empty_polls = 0;
   _time_poll = 0;
   _time_refill = 0;
   _time_allocskb = 0;
@@ -215,11 +216,13 @@ PollDevice::run_scheduled()
     GET_STATS_RESET(low00, low10, time_now, 
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
     _activations++;
+    if (got == 0) 
+      _empty_polls++;
   }
 #endif
 
   int nskbs = got;
-  if (got == 0) 
+  if (got == 0)
     nskbs = _dev->rx_refill(_dev, 0);
 
   if (nskbs > 0) {
@@ -312,6 +315,7 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_perfcnt2_refill) + " perfctr2 refill\n" +
     String(kw->_perfcnt2_allocskb) + " perfctr2 allocskb\n" +
     String(kw->_perfcnt2_pushing) + " perfctr2 pushing\n" +
+    String(kw->_empty_polls) + " empty polls\n" +
     String(kw->_activations) + " activations\n";
 #else
     String();
