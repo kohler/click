@@ -53,6 +53,9 @@ Task::initialize(Router *r, bool join)
 #if __MTCLICK__
   _thread_preference = _list->thread_id();
 #endif
+#ifndef RR_SCHED
+  set_tickets(DEFAULT_TICKETS);
+#endif
   
   tl->unlock();
 

@@ -15,9 +15,12 @@ class TaskList;
 
 class Task { public:
 
+#ifndef RR_SCHED
   static const unsigned STRIDE1 = 1U<<16;
   static const unsigned MAX_STRIDE = 1U<<31;
-  static const int MAX_TICKETS = 1U<<15;
+  static const int MAX_TICKETS = 1<<15;
+  static const int DEFAULT_TICKETS = 1<<10;
+#endif
   
   Task(TaskHook, void *);
   Task(Element *);			// call element->run_scheduled()
@@ -36,7 +39,6 @@ class Task { public:
   
 #ifndef RR_SCHED
   int tickets() const			{ return _tickets; }
-  
   void set_tickets(int);
   void adj_tickets(int);
 #endif
