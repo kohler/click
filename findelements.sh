@@ -88,21 +88,14 @@ fi
 files=""
 for i in $first_files; do
   pprefix="$prefix"
-  if test -d "${prefix}elements/$i" -a ! -d "${prefix}$i"; then
+  if test -d "${prefix}elements/$i" && echo "$i" | grep -v '^\.' >/dev/null; then
     pprefix="${prefix}elements/"
   fi
   if test -d "${pprefix}$i"; then
-    if echo "$i" | grep '/'; then
-      :
-    else
-      provisions="$i
+    provisions=`echo $i | sed 's/^\.\///'`"
 $provisions"
-      i="${pprefix}$i"
-    fi
-  fi
-  if test -d $i; then
     files="$files
-"`find $i \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
+"`find ${pprefix}$i \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
   else
     files="$files
 $i"
