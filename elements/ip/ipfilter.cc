@@ -362,25 +362,24 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
   }
 
   switch (type) {
-   case TYPE_NONE: sa << "<none> "; break;
-   case TYPE_HOST: sa << "ip host "; break;
-   case TYPE_PROTO: sa << "proto "; break;
-   case TYPE_TOS: sa << "ip tos "; break;
-   case TYPE_TTL: sa << "ip ttl "; break;
-   case TYPE_IPFRAG: sa << "ip frag "; break;
-   case TYPE_IPLEN: sa << "ip len "; break;
-   case TYPE_PORT: sa << "port "; break;
-   case TYPE_TCPOPT: sa << "tcp opt "; break;
-   case TYPE_ICMP_TYPE: sa << "icmp type "; break;
-   case TYPE_NET: sa << "ip net "; break;
-   case TYPE_DSCP: sa << "ip dscp "; break;
-   case TYPE_IPUNFRAG: sa << "ip unfrag "; break;
-   case TYPE_IPECT: sa << "ip ect "; break;
-   case TYPE_IPCE: sa << "ip ce "; break;
-   default: sa << "<unknown type " << type << "> "; break;
+   case TYPE_NONE: sa << "<none>"; break;
+   case TYPE_HOST: sa << "ip host"; break;
+   case TYPE_PROTO: sa << "proto"; break;
+   case TYPE_TOS: sa << "ip tos"; break;
+   case TYPE_TTL: sa << "ip ttl"; break;
+   case TYPE_IPFRAG: sa << "ip frag"; break;
+   case TYPE_IPLEN: sa << "ip len"; break;
+   case TYPE_PORT: sa << "port"; break;
+   case TYPE_TCPOPT: sa << "tcp opt"; break;
+   case TYPE_ICMP_TYPE: sa << "icmp type"; break;
+   case TYPE_NET: sa << "ip net"; break;
+   case TYPE_DSCP: sa << "ip dscp"; break;
+   case TYPE_IPUNFRAG: sa << "ip unfrag"; break;
+   case TYPE_IPECT: sa << "ip ect"; break;
+   case TYPE_IPCE: sa << "ip ce"; break;
+   default: sa << "<unknown type " << type << ">"; break;
   }
 
-  sa.pop_back();
   return sa.take_string();
 }
 

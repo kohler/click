@@ -18,7 +18,7 @@ class StringAccum { public:
   explicit StringAccum(int);
   ~StringAccum()			{ if (_cap >= 0) delete[] _s; }
 
-  const char *data() const		{ return (char *)_s; }
+  const char *data() const		{ return (const char *)_s; }
   char *data()				{ return (char *)_s; }
   int length() const			{ return _len; }
 
@@ -27,8 +27,8 @@ class StringAccum { public:
 
   bool out_of_memory() const		{ return _cap < 0; }
   
-  const char *cc()			{ return c_str(); }
   const char *c_str();
+  const char *cc()			{ return c_str(); }
   
   char operator[](int i) const	{ assert(i>=0&&i<_len); return (char)_s[i]; }
   char &operator[](int i)	{ assert(i>=0&&i<_len); return (char &)_s[i]; }
