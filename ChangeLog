@@ -1,3 +1,17 @@
+2005-01-04 Tuesday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.23): be careful in remove_select():
+	remove_pollfd() can rearrange the pollfds array, so read stuff out
+	of it first
+
+2005-01-04 Tuesday 12:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/controlsocket.cc (1.55): rewhitespace
+
+2005-01-04 Tuesday 12:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.43): autoconf-2.59
+
 2005-01-03 Monday 23:42  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/fromdagdump.cc (1.26), userlevel/fakepcap.cc
