@@ -39,7 +39,8 @@ ICMPPing::make_echo_response(Packet *p)
 {
   click_ether *eth_header = (click_ether *) p->data();
   click_ip *ip_header = (click_ip *) (eth_header+1);
-  struct icmp_echo *icmp = (struct icmp_echo *) (ip_header+1);
+  struct icmp_echo *icmp = (struct icmp_echo *) p->transport_header();
+  unsigned len = ntohs(ip_header->ip_len) - (ip_header->ip_hl << 2);
 
   /* him */
   u_char tha[6]; 
@@ -63,7 +64,7 @@ ICMPPing::make_echo_response(Packet *p)
   icmp->icmp_type = ICMP_ECHO_REPLY;
   
   /* calculate ICMP checksum */
-  icmp->icmp_cksum = in_cksum((unsigned char *)icmp, sizeof(struct icmp_echo));
+  icmp->icmp_cksum = in_cksum((unsigned char *)icmp, len);
 
   int pktlen = sizeof(click_ether)+ntohs(ip_header->ip_len);
   p->take(p->length()-pktlen);
