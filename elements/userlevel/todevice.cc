@@ -103,7 +103,7 @@ ToDevice::initialize(ErrorHandler *errh)
     return(errh->error("open /dev/bpf* for write: %s", strerror(errno)));
 
   struct ifreq ifr;
-  strncpy(ifr.ifr_name, _ifname, sizeof(ifr.ifr_name));
+  strncpy(ifr.ifr_name, _ifname.c_str(), sizeof(ifr.ifr_name));
   ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
     return errh->error("BIOCSETIF %s failed", ifr.ifr_name);
