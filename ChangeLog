@@ -1,3 +1,19 @@
+2005-03-01 Tuesday 03:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.35): xml quoting
+
+2005-03-01 Tuesday 02:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.34): include two stylesheets
+
+2005-03-01 Tuesday 02:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.33), doc/mkwebdoc.pl (1.59),
+	tools/click2xml/clickconfig.dtd (1.6), etc/elementmap.xsl (1.3),
+	tools/lib/elementmap.cc (1.16), tools/lib/elementmap.hh (1.8): a
+	functional elementmap.xsl; includes some elementmap.xml fixes and
+	syntax changes
+
 2005-02-28 Monday 23:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.32), etc/elementmap.xsl (1.2): fix up
