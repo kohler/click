@@ -201,6 +201,8 @@ AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
     int swivel = bi_ffs(a ^ n->aggregate);
     // bitvalue is the value of that bit of 'a'
     int bitvalue = (a >> (32 - swivel)) & 1;
+    // mask masks off all bits before swivel
+    uint32_t mask = (swivel == 1 ? 0 : (0xFFFFFFFFU << (33 - swivel)));
 
     down[bitvalue]->aggregate = a;
     down[bitvalue]->count = 0;
@@ -208,12 +210,14 @@ AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
 
     *down[1 - bitvalue] = *n;	/* copy orig node down one level */
 
-    n->aggregate = down[1]->aggregate; /* NB: 1s to the right (0s to the left) */
-    n->count = down[1]->count;
+    n->aggregate = (down[0]->aggregate & mask);
+    if (down[0]->aggregate == n->aggregate) {
+	n->count = down[0]->count;
+	down[0]->count = 0;
+    } else
+	n->count = 0;
     n->child[0] = down[0];	/* point to children */
     n->child[1] = down[1];
-
-    down[1]->count = 0;
 
     return (n->aggregate == a ? n : down[bitvalue]);
 }
