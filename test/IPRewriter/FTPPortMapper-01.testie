@@ -54,3 +54,4 @@ Hopefully this worked.
 %expect COUNTERS
 0
 0
+%expect stderr

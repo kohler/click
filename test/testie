@@ -449,6 +449,7 @@ sub check_expects ($$) {
 	# ignore differences in amounts of whitespace
 	$text =~ s/\s+\n/\n/g;
 	$text =~ s/\n\n+\Z/\n/;
+	$text =~ s/\A\n//;
 	$exp =~ s/\s+\n/\n/g;
 	$exp =~ s/\n\n\n+/\n\n/g;
 	$exp =~ s/\n\n+\Z/\n/;
@@ -458,6 +459,8 @@ sub check_expects ($$) {
 	my($ignores) = '';
 	$ignores .= $tt->{"i:$efn"} . "\n" if defined($tt->{"i:$efn"});
 	$ignores .= $tt->{"i:all"} . "\n" if defined($tt->{"i:all"});
+	# ignore testie messages
+	$ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
 	if ($ignores ne '') {
 	    $ignores =~ s/([!\#<>])/\\$1/g;
 	    $ignores =~ s{^(\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
@@ -496,7 +499,7 @@ sub check_expects ($$) {
 	    $tp++, $ep++;
 	}
 	next if $tp >= @tl || $ep >= @el;
-	
+
 	_output_expectation_error($fn, $efn, $tp + 1);
 
 	$retval = 1;
