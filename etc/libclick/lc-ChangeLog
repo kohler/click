@@ -1,3 +1,8 @@
+2002-04-14 Sunday 14:20  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4, configure.in: add patches for compiling on Solaris,
+	modified from patches sent by Scott Page <page@cs.utexas.edu>
+
 2002-04-09 Tuesday 02:03  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_ip.h, click_ip.h, click_tcp.h, click_tcp.h:
