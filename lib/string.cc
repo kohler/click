@@ -92,22 +92,25 @@ String::String(unsigned long u)
   assign(buf, -1);
 }
 
+#ifdef HAVE_INT64_TYPES
 // Implemented a lovely [unsigned] long long converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 
-String::String(long long q)
+String::String(int64_t q)
 {
   StringAccum sa;
   sa << q;
   assign(sa.data(), sa.length());
 }
 
-String::String(unsigned long long q)
+String::String(u_int64_t q)
 {
   StringAccum sa;
   sa << q;
   assign(sa.data(), sa.length());
 }
+
+#endif
 
 #ifndef __KERNEL__
 

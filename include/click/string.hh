@@ -27,8 +27,10 @@ class String { public:
   explicit String(unsigned);
   explicit String(long);
   explicit String(unsigned long);
-  explicit String(long long);
-  explicit String(unsigned long long);
+#ifdef HAVE_INT64_TYPES
+  explicit String(int64_t);
+  explicit String(u_int64_t);
+#endif
 #ifndef __KERNEL__
   explicit String(double);
 #endif

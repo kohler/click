@@ -560,6 +560,14 @@ Router::run_timers()
 // DRIVER STOPPAGE
 
 void
+Router::set_driver_reservations(int x)
+{
+  _runcount_lock.acquire();
+  _driver_runcount = x;
+  _runcount_lock.release();
+}
+
+void
 Router::adjust_driver_reservations(int x)
 {
   _runcount_lock.acquire();
@@ -810,6 +818,9 @@ Router::preinitialize()
   _max_select_fd = -1;
   assert(!_selectors.size());
 #endif
+
+  // initialize handlers to empty
+  initialize_handlers(false, false);
   
   // clear attachments
   _attachment_names.clear();
@@ -817,7 +828,7 @@ Router::preinitialize()
 }
 
 void
-Router::initialize_handlers(bool ok_so_far)
+Router::initialize_handlers(bool defaults, bool specifics)
 {
   _ehandler_first_by_element.assign(nelements(), -1);
   _ehandler_to_handler.clear();
@@ -829,11 +840,13 @@ Router::initialize_handlers(bool ok_so_far)
 
   _nhandlers = 0;
 
-  for (int i = 0; i < _elements.size(); i++) {
-    _elements[i]->add_default_handlers(ok_so_far);
-    if (ok_so_far)
+  if (defaults)
+    for (int i = 0; i < _elements.size(); i++)
+      _elements[i]->add_default_handlers(specifics);
+
+  if (specifics)
+    for (int i = 0; i < _elements.size(); i++)
       _elements[i]->add_handlers();
-  }
 }
 
 int
@@ -900,7 +913,7 @@ Router::initialize(ErrorHandler *errh)
 
   // Initialize elements if OK so far.
   if (all_ok) {
-    initialize_handlers(true);
+    initialize_handlers(true, true);
     for (int ord = 0; ord < _elements.size(); ord++) {
       int i = configure_order[ord];
       if (element_ok[i]) {
@@ -934,7 +947,7 @@ Router::initialize(ErrorHandler *errh)
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])
 	_elements[i]->uninitialize();
-    initialize_handlers(false);
+    initialize_handlers(true, false);
     _driver_runcount = 0;
     return -1;
   } else {

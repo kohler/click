@@ -85,7 +85,7 @@ void
 RouterThread::driver()
 {
   const volatile int * const runcount = _router->driver_runcount_ptr();
-  unsigned long long cycles = 0;
+  u_int64_t cycles = 0;
   int iter = 0;
   Task *t;
   

@@ -362,7 +362,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	 unsigned long long qnum = va_arg(val, unsigned long long);
 	 if ((flags & SIGNED) && (long long)qnum < 0)
 	   qnum = -(long long)qnum, flags |= NEGATIVE;
-	 String q = cp_unparse_ulonglong(qnum, base, flags & UPPERCASE);
+	 String q = cp_unparse_unsigned64(qnum, base, flags & UPPERCASE);
 	 s1 = s2 - q.length();
 	 memcpy((char *)s1, q.data(), q.length());
 	 goto got_number;
@@ -698,6 +698,23 @@ String
 PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
   return _errh->decorate_text(seriousness, _prefix + prefix, landmark, text);
+}
+
+
+//
+// INDENT ERROR HANDLER
+//
+
+IndentErrorHandler::IndentErrorHandler(ErrorHandler *errh,
+				       const String &indent)
+  : ErrorVeneer(errh), _indent(indent)
+{
+}
+
+String
+IndentErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
+{
+  return _errh->decorate_text(seriousness, prefix, landmark, _indent + text);
 }
 
 

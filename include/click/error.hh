@@ -117,6 +117,18 @@ class PrefixErrorHandler : public ErrorVeneer { public:
   
 };
 
+class IndentErrorHandler : public ErrorVeneer { public:
+
+  IndentErrorHandler(ErrorHandler *, const String &indent);
+  
+  String decorate_text(Seriousness, const String &, const String &, const String &);
+  
+ private:
+  
+  String _indent;
+  
+};
+
 class LandmarkErrorHandler : public ErrorVeneer { public:
 
   LandmarkErrorHandler(ErrorHandler *, const String &);

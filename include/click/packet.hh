@@ -130,8 +130,10 @@ class Packet { public:
   void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
   PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
-  unsigned long long perfctr_anno() const { return anno()->perfctr; }
-  void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
+# ifdef HAVE_INT64_TYPES
+  u_int64_t perfctr_anno() const	{ return anno()->perfctr; }
+  void set_perfctr_anno(u_int64_t pc)	{ anno()->perfctr = pc; }
+# endif
 #else
   const struct timeval &timestamp_anno() const { return _timestamp; }
   struct timeval &timestamp_anno()	{ return _timestamp; }
@@ -174,8 +176,8 @@ class Packet { public:
     } user_flags;
     // flag allocations: see packet_anno.hh
     
-#ifdef __KERNEL__
-    unsigned long long perfctr;
+#if defined(__KERNEL__) && defined(HAVE_INT64_TYPES)
+    u_int64_t perfctr;
 #endif
   };
 

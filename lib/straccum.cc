@@ -22,8 +22,8 @@
 #endif
 #include <click/straccum.hh>
 #include <click/string.hh>
-#include <click/confparse.hh>
 #include <click/glue.hh>
+#include <click/confparse.hh>
 
 bool
 StringAccum::grow(int want)
@@ -69,7 +69,7 @@ operator<<(StringAccum &sa, const char *s)
 StringAccum &
 operator<<(StringAccum &sa, long i)
 {
-  if (char *x = sa.reserve(256)) {
+  if (char *x = sa.reserve(24)) {
     int len;
     sprintf(x, "%ld%n", i, &len);
     sa.forward(len);
@@ -80,7 +80,7 @@ operator<<(StringAccum &sa, long i)
 StringAccum &
 operator<<(StringAccum &sa, unsigned long u)
 {
-  if (char *x = sa.reserve(256)) {
+  if (char *x = sa.reserve(24)) {
     int len;
     sprintf(x, "%lu%n", u, &len);
     sa.forward(len);
@@ -88,21 +88,21 @@ operator<<(StringAccum &sa, unsigned long u)
   return sa;
 }
 
+#ifdef HAVE_INT64_TYPES
 StringAccum &
-operator<<(StringAccum &sa, long long q)
+operator<<(StringAccum &sa, int64_t q)
 {
-  if (q < 0)
-    sa << '-';
-  String qstr = cp_unparse_ulonglong(-q, 10, false);
+  String qstr = cp_unparse_integer64(q, 10, false);
   return sa << qstr;
 }
 
 StringAccum &
-operator<<(StringAccum &sa, unsigned long long q)
+operator<<(StringAccum &sa, u_int64_t q)
 {
-  String qstr = cp_unparse_ulonglong(q, 10, false);
+  String qstr = cp_unparse_unsigned64(q, 10, false);
   return sa << qstr;
 }
+#endif
 
 #ifndef __KERNEL__
 StringAccum &

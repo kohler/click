@@ -95,6 +95,7 @@ class Router { public:
   // stopping driver
   void please_stop_driver()		{ adjust_driver_reservations(-1); }
   void reserve_driver()			{ adjust_driver_reservations(1); }
+  void set_driver_reservations(int);
   void adjust_driver_reservations(int);
   bool check_driver();
   const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
@@ -185,7 +186,7 @@ class Router { public:
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(const String &, String prefix, ErrorHandler * = 0) const;
-  void initialize_handlers(bool);
+  void initialize_handlers(bool, bool);
   int find_ehandler(int, const String &, bool, bool);
   int put_handler(const Handler &);
   

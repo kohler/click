@@ -199,8 +199,7 @@ swap_config()
   Router *router = parse_router(*current_config);
   if (router) {
     router->preinitialize();
-    if (kernel_errh->nerrors() == before_errors)
-      router->initialize(kernel_errh);
+    router->initialize(kernel_errh);
     install_current_router(router);
     return router->initialized() ? 0 : -EINVAL;
   } else
