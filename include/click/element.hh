@@ -17,9 +17,9 @@ typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 
 class Element { public:
   
-  enum Processing { VAGNOSTIC, VPUSH, VPULL };
   static const char * const AGNOSTIC, * const PUSH, * const PULL;
   static const char * const PUSH_TO_PULL, * const PULL_TO_PUSH;
+  enum Processing { VAGNOSTIC, VPUSH, VPULL };
 
   static const char * const COMPLETE_FLOW;
 
@@ -30,7 +30,7 @@ class Element { public:
     CONFIGURE_PHASE_LAST = 2000
   };
   
-  class Connection;
+  class Port;
   
   Element();
   Element(int ninputs, int noutputs);
@@ -46,47 +46,39 @@ class Element { public:
   String declaration() const;
   String landmark() const;
   
-  Router *router() const		{ return _router; }
-  int eindex() const			{ return _eindex; }
+  Router *router() const			{ return _router; }
+  int eindex() const				{ return _eindex; }
   int eindex(Router *) const;
 
-  // INPUTS
+  // INPUTS AND OUTPUTS
   int ninputs() const				{ return _ninputs; }
-  const Connection &input(int input_id) const;
-  
-  void add_input()				{ set_ninputs(ninputs()+1); }
-  void set_ninputs(int);
-  virtual void notify_ninputs(int);
-  
-  // OUTPUTS
   int noutputs() const				{ return _noutputs; }
-  const Connection &output(int output_id) const;
-  void checked_push_output(int output_id, Packet *) const;
-  
-  void add_output()				{ set_noutputs(noutputs()+1); }
+  void set_ninputs(int);
   void set_noutputs(int);
-  virtual void notify_noutputs(int);
+  void add_input()				{ set_ninputs(ninputs()+1); }
+  void add_output()				{ set_noutputs(noutputs()+1); }
   
-  // FLOW
-  virtual const char *flow_code() const;
+  const Port &input(int) const;
+  const Port &output(int) const;
+  bool input_is_pull(int) const;
+  bool output_is_push(int) const;
   
-  void forward_flow(int, Bitvector *) const;
-  void backward_flow(int, Bitvector *) const;
-  
-  // PUSH OR PULL PROCESSING
+  void checked_output_push(int, Packet *) const;
+
+  // PROCESSING, FLOW, AND FLAGS
   virtual const char *processing() const;
+  virtual const char *flow_code() const;
   virtual const char *flags() const;
   
-  bool output_is_push(int) const;
-  bool input_is_pull(int) const;
-  
-  // CONFIGURATION
+  // CONFIGURATION AND INITIALIZATION
+  virtual void notify_ninputs(int);
+  virtual void notify_noutputs(int);
   virtual int configure_phase() const;
   virtual int configure(const Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();
 
-  // LIVE CONFIGURATION
+  // LIVE RECONFIGURATION
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);
@@ -122,13 +114,16 @@ class Element { public:
 #endif
 
   // METHODS USED BY `ROUTER'
-  void attach_router(Router *r, int n)	{ _router = r; _eindex = n; }
-  
-  int connect_input(int input_id, Element *, int);
-  int connect_output(int output_id, Element *, int);
+  void attach_router(Router *r, int n)		{ _router = r; _eindex = n; }
   
   void processing_vector(Subvector<int> &, Subvector<int> &, ErrorHandler *) const;
-  void set_processing_vector(const Subvector<int> &, const Subvector<int> &);
+  void initialize_ports(const Subvector<int> &, const Subvector<int> &);
+  
+  void forward_flow(int, Bitvector *) const;
+  void backward_flow(int, Bitvector *) const;
+  
+  int connect_input(int which, Element *, int);
+  int connect_output(int which, Element *, int);
 
 #if CLICK_STATS >= 2
   // Statistics
@@ -137,16 +132,14 @@ class Element { public:
   unsigned long long _child_cycles; // Cycles spent in children.
 #endif
   
-  class Connection { public:
+  class Port { public:
 
-    Connection();
-    Connection(Element *);
-    Connection(Element *, Element *, int);
+    Port();
+    Port(Element *, Element *, int);
     
     operator bool() const		{ return _e != 0; }
     bool allowed() const		{ return _port >= 0; }
-    void clear()			{ _e = 0; _port = 0; }
-    void disallow()			{ _e = 0; _port = -1; }
+    bool initialized() const		{ return _port >= -1; }
     
     Element *element() const		{ return _e; }
     int port() const			{ return _port; }
@@ -155,7 +148,7 @@ class Element { public:
     Packet *pull() const;
 
 #if CLICK_STATS >= 1
-    unsigned int packet_count() const	{ return _packets; }
+    unsigned npackets() const		{ return _packets; }
 #endif
 
    private:
@@ -163,12 +156,11 @@ class Element { public:
     Element *_e;
     int _port;
     
-    // Statistics.
 #if CLICK_STATS >= 1
-    mutable int _packets;	// How many packets have we moved?
+    mutable unsigned _packets;		// How many packets have we moved?
 #endif
 #if CLICK_STATS >= 2
-    Element *_owner;		// Whose input or output are we?
+    Element *_owner;			// Whose input or output are we?
 #endif
     
   };
@@ -177,9 +169,9 @@ class Element { public:
   
   static const int INLINE_PORTS = 4;
 
-  Connection *_inputs;
-  Connection *_outputs;
-  Connection _ports0[INLINE_PORTS];
+  Port *_inputs;
+  Port *_outputs;
+  Port _ports0[INLINE_PORTS];
 
   int _ninputs;
   int _noutputs;
@@ -201,14 +193,14 @@ Element::eindex(Router *r) const
   return (router() == r ? eindex() : -1);
 }
 
-inline const Element::Connection &
+inline const Element::Port &
 Element::input(int i) const
 {
   assert(i >= 0 && i < ninputs());
   return _inputs[i];
 }
 
-inline const Element::Connection &
+inline const Element::Port &
 Element::output(int o) const
 {
   assert(o >= 0 && o < noutputs());
@@ -228,37 +220,30 @@ Element::input_is_pull(int i) const
 }
 
 #if CLICK_STATS >= 2
-# define CONNECTION_CTOR_ARG(o) Element *o
-# define CONNECTION_CTOR_INIT(o) , _packets(0), _owner(o)
+# define PORT_CTOR_INIT(o) , _packets(0), _owner(o)
 #else
-# define CONNECTION_CTOR_ARG(o) Element *
 # if CLICK_STATS >= 1
-#  define CONNECTION_CTOR_INIT(o) , _packets(0)
+#  define PORT_CTOR_INIT(o) , _packets(0)
 # else
-#  define CONNECTION_CTOR_INIT(o)
+#  define PORT_CTOR_INIT(o)
 # endif
 #endif
 
 inline
-Element::Connection::Connection()
-  : _e(0), _port(0) CONNECTION_CTOR_INIT(0)
+Element::Port::Port()
+  : _e(0), _port(-2) PORT_CTOR_INIT(0)
 {
 }
 
 inline
-Element::Connection::Connection(CONNECTION_CTOR_ARG(owner))
-  : _e(0), _port(0) CONNECTION_CTOR_INIT(owner)
+Element::Port::Port(Element *owner, Element *e, int p)
+  : _e(e), _port(p) PORT_CTOR_INIT(owner)
 {
-}
-
-inline
-Element::Connection::Connection(CONNECTION_CTOR_ARG(owner), Element *e, int p)
-  : _e(e), _port(p) CONNECTION_CTOR_INIT(owner)
-{
+  (void) owner;
 }
 
 inline void
-Element::Connection::push(Packet *p) const
+Element::Port::push(Packet *p) const
 {
   assert(_e);
 #if CLICK_STATS >= 1
@@ -279,7 +264,7 @@ Element::Connection::push(Packet *p) const
 }
 
 inline Packet *
-Element::Connection::pull() const
+Element::Port::pull() const
 {
   assert(_e);
 #if CLICK_STATS >= 2
@@ -301,7 +286,7 @@ Element::Connection::pull() const
 }
 
 inline void
-Element::checked_push_output(int o, Packet *p) const
+Element::checked_output_push(int o, Packet *p) const
 {
   if ((unsigned)o < (unsigned)noutputs())
     _outputs[o].push(p);
@@ -309,6 +294,5 @@ Element::checked_push_output(int o, Packet *p) const
     p->kill();
 }
 
-#undef CONNECTION_CTOR_ARG
 #undef CONNECTION_CTOR_INIT
 #endif

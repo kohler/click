@@ -56,14 +56,14 @@ int Element::nelements_allocated = 0;
 
 Element::Element()
   : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-    _ninputs(0), _noutputs(0)
+    _ninputs(0), _noutputs(0), _router(0), _eindex(-1)
 {
   nelements_allocated++;
 }
 
 Element::Element(int ninputs, int noutputs)
   : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-    _ninputs(0), _noutputs(0)
+    _ninputs(0), _noutputs(0), _router(0), _eindex(-1)
 {
   set_nports(ninputs, noutputs);
   nelements_allocated++;
@@ -119,10 +119,10 @@ Element::landmark() const
 void
 Element::set_nports(int new_ninputs, int new_noutputs)
 {
-  // exit on bad counts
-  if (new_ninputs < 0 || new_noutputs < 0)
+  // exit on bad counts, or if already initialized
+  if (new_ninputs < 0 || new_noutputs < 0 || _ports0[0].initialized())
     return;
-
+  
   // decide if inputs & outputs were inlined
   bool old_in_inline =
     (_inputs == _ports0);
@@ -133,6 +133,7 @@ Element::set_nports(int new_ninputs, int new_noutputs)
   bool new_in_inline =
     (new_ninputs == 0
      || new_ninputs + new_noutputs <= INLINE_PORTS
+     || (new_ninputs <= INLINE_PORTS && new_noutputs > INLINE_PORTS)
      || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
 	 && processing() == PULL));
   bool new_out_inline =
@@ -140,38 +141,20 @@ Element::set_nports(int new_ninputs, int new_noutputs)
      || new_ninputs + new_noutputs <= INLINE_PORTS
      || (new_noutputs <= INLINE_PORTS && !new_in_inline));
 
-  // save inlined ports
-  Connection ports_storage[INLINE_PORTS];
-  memcpy(ports_storage, _ports0, sizeof(Connection) * INLINE_PORTS);
-
   // create new port arrays
-  Connection *old_inputs =
-    (old_in_inline ? ports_storage : _inputs);
-  Connection *new_inputs =
-    (new_in_inline ? _ports0 : new Connection[new_ninputs]);
+  Port *new_inputs =
+    (new_in_inline ? _ports0 : new Port[new_ninputs]);
   if (!new_inputs)		// out of memory -- return
     return;
 
-  Connection *old_outputs =
-    (old_out_inline ? ports_storage + (_outputs - _ports0) : _outputs);
-  Connection *new_outputs =
+  Port *new_outputs =
     (new_out_inline ? (new_in_inline ? _ports0 + new_ninputs : _ports0)
-     : new Connection[new_noutputs]);
+     : new Port[new_noutputs]);
   if (!new_outputs) {		// out of memory -- return
     if (!new_in_inline)
       delete[] new_inputs;
     return;
   }
-
-  // set up ports
-  int smaller_ninputs = (_ninputs < new_ninputs ? _ninputs : new_ninputs);
-  int smaller_noutputs = (_noutputs < new_noutputs ? _noutputs : new_noutputs);
-  memcpy(new_inputs, old_inputs, sizeof(Connection) * smaller_ninputs);
-  memcpy(new_outputs, old_outputs, sizeof(Connection) * smaller_noutputs);
-  for (int i = _ninputs; i < new_ninputs; i++)
-    new_inputs[i] = Connection(this);
-  for (int i = _noutputs; i < new_noutputs; i++)
-    new_outputs[i] = Connection(this);
 
   // install information
   if (!old_in_inline)
@@ -191,24 +174,14 @@ Element::set_ninputs(int count)
 }
 
 void
-Element::notify_ninputs(int)
-{
-}
-
-int
-Element::connect_input(int i, Element *f, int port)
-{
-  if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
-    _inputs[i] = Connection(this, f, port);
-    return 0;
-  } else
-    return -1;
-}
-
-void
 Element::set_noutputs(int count)
 {
   set_nports(_ninputs, count);
+}
+
+void
+Element::notify_ninputs(int)
+{
 }
 
 void
@@ -216,11 +189,42 @@ Element::notify_noutputs(int)
 {
 }
 
+void
+Element::initialize_ports(const Subvector<int> &in_v,
+			  const Subvector<int> &out_v)
+{
+  // always initialize _ports0[0] so set_nports will know whether to quit
+  if (_inputs != _ports0 && _outputs != _ports0)
+    _ports0[0] = Port(this, 0, -1);
+  
+  for (int i = 0; i < ninputs(); i++) {
+    // allowed iff in_v[i] == VPULL
+    int port = (in_v[i] == VPULL ? 0 : -1);
+    _inputs[i] = Port(this, 0, port);
+  }
+  
+  for (int o = 0; o < noutputs(); o++) {
+    // allowed iff out_v[o] != VPULL
+    int port = (out_v[o] == VPULL ? -1 : 0);
+    _outputs[o] = Port(this, 0, port);
+  }
+}
+
+int
+Element::connect_input(int i, Element *f, int port)
+{
+  if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
+    _inputs[i] = Port(this, f, port);
+    return 0;
+  } else
+    return -1;
+}
+
 int
 Element::connect_output(int o, Element *f, int port)
 {
   if (o >= 0 && o < noutputs() && _outputs[o].allowed()) {
-    _outputs[o] = Connection(this, f, port);
+    _outputs[o] = Port(this, f, port);
     return 0;
   } else
     return -1;
@@ -441,22 +445,6 @@ Element::flags() const
   return "";
 }
 
-void
-Element::set_processing_vector(const Subvector<int> &in_v,
-			       const Subvector<int> &out_v)
-{
-  for (int i = 0; i < ninputs(); i++)
-    if (in_v[i] == VPULL)
-      _inputs[i].clear();
-    else
-      _inputs[i].disallow();
-  for (int o = 0; o < noutputs(); o++)
-    if (out_v[o] != VPULL)
-      _outputs[o].clear();
-    else
-      _outputs[o].disallow();
-}
-
 // CLONING AND CONFIGURING
 
 int
@@ -608,7 +596,7 @@ read_element_icounts(Element *f, void *)
   StringAccum sa;
   for (int i = 0; i < f->ninputs(); i++)
     if (f->input(i).allowed() || CLICK_STATS >= 2)
-      sa << f->input(i).packet_count() << "\n";
+      sa << f->input(i).npackets() << "\n";
     else
       sa << "??\n";
   return sa.take_string();
@@ -620,7 +608,7 @@ read_element_ocounts(Element *f, void *)
   StringAccum sa;
   for (int i = 0; i < f->noutputs(); i++)
     if (f->output(i).allowed() || CLICK_STATS >= 2)
-      sa << f->output(i).packet_count() << "\n";
+      sa << f->output(i).npackets() << "\n";
     else
       sa << "??\n";
   return sa.take_string();
