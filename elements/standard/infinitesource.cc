@@ -59,7 +59,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "active?", &active,
 		  cpKeywords,
 		  "DATA", cpString, "packet data", &data,
-		  "DATASIZE", cpString, "minimum packet size", &datasize,
+		  "DATASIZE", cpInteger, "minimum packet size", &datasize,
 		  "LIMIT", cpInteger, "total packet count", &limit,
 		  "BURST", cpInteger, "burst size (packets per scheduling)", &burstsize,
 		  "ACTIVE", cpBool, "active?", &active,
@@ -70,7 +70,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("burst size must be >= 1");
 
   _data = data;
-  _datasize = _datasize;
+  _datasize = datasize;
   _limit = limit;
   _burstsize = burstsize;
   _count = 0;
@@ -78,14 +78,14 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   _stop = stop;
   if (_packet) _packet->kill();
 
-  if (_datasize > _data.length()) {
+  if (_datasize != -1 && _datasize > _data.length()) {
     // make up some data to fill extra space
     String new_data;
     do {
       new_data += _data;
     }
-    while (new_data.length() < datasize);    
-    _packet = Packet::make(_data.data(), _data.length());
+    while (new_data.length() < _datasize);    
+    _packet = Packet::make(new_data.data(), _datasize);
   }
   else
     _packet = Packet::make(_data.data(), _data.length());
