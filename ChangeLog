@@ -1,3 +1,20 @@
+2003-05-25 Sunday 18:32  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/.cvsignore (1.6): nit
+
+2003-05-25 Sunday 18:31  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.69), etc/samplepackage/acclick.m4 (1.12),
+	etc/samplepackage/aclocal.m4 (1.8): update samplepackage (reported
+	by Jiangbo Li)
+
+2003-05-25 Sunday 18:13  jbicket
+
+	* elements/local/: printdsr.cc (1.1), printdsr.hh (1.1), rtmdsr.cc
+	(1.18), rtmdsr.hh (1.21): Packets now track metric along each hop
+	of a path in DSR, instead of just the overal metric.  Added dsr
+	printing element, PrintDSR, which print dsr headers.  --john
+
 2003-05-23 Friday 20:10  jbicket
 
 	* elements/local/: rtmdsr.cc (1.17), rtmdsr.hh (1.20): Added
