@@ -590,7 +590,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 
   switch (_metric_type) {
   case MetricHopCount:
-    r.metric = metric_t(r.num_hops());
+    r.metric = metric_t(1);
     break;
   case MetricEstTxCount: {
     unsigned fwd_rate = 0;
@@ -653,6 +653,15 @@ DSDVRouteTable::init_metric(RTEntry &r)
     break;
   }
 #endif
+  case MetricSymmetricHopCount: {
+    unsigned fwd_rate = 0;
+    bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
+    if (res && fwd_rate >= 50)
+      r.metric = metric_t(1);
+    else
+      r.metric = _bad_metric;
+    break;
+  }
   default:
     dsdv_assert(0);
   }
@@ -722,10 +731,11 @@ DSDVRouteTable::update_metric(RTEntry &r)
 
   switch (_metric_type) {
   case MetricHopCount:
+  case MetricSymmetricHopCount:
     r.metric.val += next_hop->metric.val;
     if (r.metric.val != r.num_hops())
-      click_chatter("DSDVRouteTable %s: WARNING metric type is hop count but %s metric doesn't match hopcount",
-		    id().cc(), next_hop->dest_ip.s().cc());    
+      click_chatter("DSDVRouteTable %s: WARNING metric type is %shop count but %s metric doesn't match hopcount",
+		    id().cc(), (_metric_type == MetricSymmetricHopCount ? "symmetric " : ""), next_hop->dest_ip.s().cc());    
     break;
 
   case MetricEstTxCount: 
@@ -762,6 +772,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
     r.metric.val += next_hop->metric.val;
     break;
 #endif
+
 
   default:
     dsdv_assert(0);
@@ -812,6 +823,7 @@ DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
 #if ONE_WAY_TXC_METRIC
   case MetricOneWayTxCount:          return v1 < v2; break;
 #endif 
+  case MetricSymmetricHopCount:      return v1 < v2; break;
   default: dsdv_assert(0);
   }
   return false;
@@ -1305,6 +1317,7 @@ DSDVRouteTable::metric_type_to_string(MetricType t)
 #if ONE_WAY_TXC_METRIC
   case MetricOneWayTxCount:  return "one_way_tx_count"; break;
 #endif
+  case MetricSymmetricHopCount:     return "symmetric_hopcount"; break;
   default: 
     return "unknown_metric_type";
   }
@@ -1331,6 +1344,7 @@ DSDVRouteTable::check_metric_type(const String &s)
 #if ONE_WAY_TXC_METRIC
   else if (s2 == "one_way_tx_count")        return MetricOneWayTxCount;
 #endif
+  else if (s2 == "symmetric_hopcount")      return MetricSymmetricHopCount;
   else return MetricUnknown;
 }
 

@@ -85,8 +85,11 @@ CLICK_DECLS
  *
  * String.  The type of metric that should be used to compare two
  * routes.  Allowable values are: ``hopcount'', ``est_tx_count''
- * (estimated transmission count), ``delivery_rate_product'', or
- * ``reverse_delivery_rate_product''.  The default is to use hopcount.
+ * (estimated transmission count), ``delivery_rate_product'',
+ * ``reverse_delivery_rate_product'', ``symmetric_hopcount''.
+ * Symmetric hop count is like hopcount, but is only valid if all
+ * links in the route are symmetric.  The default is to use
+ * est_tx_count.
  *
  * =item LOG
  *
@@ -460,6 +463,8 @@ private:
 #if ONE_WAY_TXC_METRIC
     MetricOneWayTxCount          =  5,
 #endif
+    MetricSymmetricHopCount      =  6, // unsigned int hop count, but only if all links symmetric
+
     MetricLast                   = 99
   };
 
