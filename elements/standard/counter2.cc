@@ -15,26 +15,13 @@
 #endif
 #include "counter2.hh"
 #include "confparse.hh"
+#include "glue.hh"
 #include "error.hh"
 
-static String counter2_read_duration_handler(Element *, void *);
-
-
-static inline unsigned long
-sub_timer(struct timeval *tv2, struct timeval *tv1)
-{
-  struct timeval diff;
-  diff.tv_sec = tv2->tv_sec - tv1->tv_sec;
-  diff.tv_usec = tv2->tv_usec - tv1->tv_usec;
-  if (diff.tv_usec < 0) {
-    diff.tv_sec--;
-    diff.tv_usec += 1000000;
-  }
-  return diff.tv_sec*1000000+diff.tv_usec;
-}
+static String counter2_read_rate_handler(Element *, void *);
 
 Counter2::Counter2()
-  : Element(1, 1), _count(0), _duration(0)
+  : Element(1, 1)
 {
 }
 
@@ -42,7 +29,8 @@ void
 Counter2::reset()
 {
   _count = 0;
-  _duration = 0;
+  _first = 0;
+  _last = 0;
 }
 
 int
@@ -55,12 +43,9 @@ Counter2::initialize(ErrorHandler *)
 Packet *
 Counter2::simple_action(Packet *p)
 {
-  struct timeval _now;
   _count++;
-  click_gettimeofday(&_now);
-  if (_count != 1)
-    _duration += sub_timer(&_now, &_last);
-  _last = _now;
+  if (_first == 0) _first = click_jiffies();
+  _last = click_jiffies();
   return p;
 }
 
@@ -72,10 +57,13 @@ counter2_read_count_handler(Element *e, void *)
 }
 
 static String
-counter2_read_duration_handler(Element *e, void *)
+counter2_read_rate_handler(Element *e, void *)
 {
   Counter2 *c = (Counter2 *)e;
-  return String(c->duration()) + "\n";
+  int d = c->last() - c->first();
+  if (d < 1) d = 1;
+  int rate = c->count() * CLICK_HZ / d;
+  return String(rate) + "\n";
 }
 
 static int
@@ -90,7 +78,7 @@ void
 Counter2::add_handlers()
 {
   add_read_handler("count", counter2_read_count_handler, 0);
-  add_read_handler("duration", counter2_read_duration_handler, 0);
+  add_read_handler("rate", counter2_read_rate_handler, 0);
   add_write_handler("reset", counter2_reset_write_handler, 0);
 }
 

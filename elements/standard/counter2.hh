@@ -13,8 +13,8 @@
  * reception.
  * =h count read-only
  * Returns the number of packets that have passed through.
- * =h duration read-only
- * Returns duration of packet arrival from first to last packet.
+ * =h rate read-only
+ * Returns packet arrival duration.
  * =h reset write-only
  * Resets the count and rate to zero.
  */
@@ -22,8 +22,8 @@
 class Counter2 : public Element { protected:
   
   int _count;
-  unsigned long _duration;
-  struct timeval _last;
+  unsigned long _first;
+  unsigned long _last;
   
  public:
 
@@ -33,17 +33,15 @@ class Counter2 : public Element { protected:
   const char *processing() const		{ return AGNOSTIC; }
   
   int count() const				{ return _count; }
-  unsigned long duration() const		{ return _duration; }
+  unsigned long first() const			{ return _first; }
+  unsigned long last() const			{ return _last; }
   void reset();
   
   Counter2 *clone() const			{ return new Counter2; }
   int initialize(ErrorHandler *);
   void add_handlers();
   
-  /*void push(int port, Packet *);
-    Packet *pull(int port);*/
   Packet *simple_action(Packet *);
-  
 };
 
 #endif
