@@ -734,6 +734,7 @@ cp_unsigned(const String &str, int base, uint32_t *return_value)
   
   uint32_t val = 0;
   cp_errno = CPE_OK;
+  
   while (i < len) {
     // find digit
     int digit;
@@ -743,15 +744,21 @@ cp_unsigned(const String &str, int base, uint32_t *return_value)
       digit = s[i] - 'A' + 10;
     else if (s[i] >= 'a' && s[i] <= 'z')
       digit = s[i] - 'a' + 10;
+    else if (s[i] == '_' && i > 0 && i < len - 1 && s[i+1] != '_')
+      // skip underscores between digits
+      goto next_digit;
     else
       digit = 36;
-    if (digit >= base)
+    if (digit >= base) {
+      cp_errno = CPE_FORMAT;
       return false;
+    }
     // check for overflow
     if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
       cp_errno = CPE_OVERFLOW;
     // assign new value
     val = val * base + digit;
+   next_digit:
     i++;
   }
 
@@ -832,6 +839,7 @@ cp_unsigned64(const String &str, int base, uint64_t *return_value)
 
   uint64_t val = 0;
   cp_errno = CPE_OK;
+  
   while (i < len) {
     // find digit
     int digit;
@@ -841,15 +849,21 @@ cp_unsigned64(const String &str, int base, uint64_t *return_value)
       digit = s[i] - 'A' + 10;
     else if (s[i] >= 'a' && s[i] <= 'z')
       digit = s[i] - 'a' + 10;
+    else if (s[i] == '_' && i > 0 && i < len - 1 && s[i+1] != '_')
+      // skip underscores between digits
+      goto next_digit;
     else
       digit = 36;
-    if (digit >= base)
+    if (digit >= base) {
+      cp_errno = CPE_FORMAT;
       return false;
+    }
     // check for overflow
     if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
       cp_errno = CPE_OVERFLOW;
     // assign new value
     val = val * base + digit;
+   next_digit:
     i++;
   }
 
@@ -921,17 +935,18 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   
   // find integer part of string
   const char *int_s = s;
-  while (s < last && isdigit(*s))
-    s++;
+  for (int_s = s; s < last; s++)
+    if (!(isdigit(*s) || (*s == '_' && s > int_s && s < last - 1 && s[1] != '_')))
+      break;
   int int_chars = s - int_s;
   
   // find fractional part of string
   const char *frac_s;
   int frac_chars;
   if (s < last && *s == '.') {
-    frac_s = ++s;
-    while (s < last && isdigit(*s))
-      s++;
+    for (frac_s = ++s; s < last; s++)
+      if (!(isdigit(*s) || (*s == '_' && s > frac_s && s < last - 1 && s[1] != '_')))
+	break;
     frac_chars = s - frac_s;
   } else
     frac_s = s, frac_chars = 0;
@@ -953,8 +968,11 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
       return false;
     
     // XXX overflow?
-    for (; s < last && isdigit(*s); s++)
-      exponent = 10*exponent + *s - '0';
+    for (; s < last; s++)
+      if (isdigit(*s))
+	exponent = 10*exponent + *s - '0';
+      else if (*s != '_' || s == last - 1 || s[1] == '_')
+	break;
     
     if (negexp)
       exponent = -exponent;
@@ -968,15 +986,17 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   uint32_t int_part = 0;
   cp_errno = CPE_OK;
   exponent += exponent_delta;
+  int digit;
   
   for (int i = 0; i < int_chars + exponent; i++) {
-    int digit;
     if (i < int_chars)
       digit = int_s[i] - '0';
     else if (i - int_chars < frac_chars)
       digit = frac_s[i - int_chars] - '0';
     else
       digit = 0;
+    if (digit == ('_' - '0'))
+      continue;
     if (int_part > 0x19999999U || (int_part == 0x19999999U && digit > 5))
       cp_errno = CPE_OVERFLOW;
     int_part = int_part * 10 + digit;
@@ -984,7 +1004,7 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   
   // determine fraction part
   uint32_t frac_part = 0;
-  int digit = 0;
+  digit = 0;
   
   for (int i = 0; i <= frac_digits; i++) {
     if (i + exponent + int_chars < 0)
@@ -995,6 +1015,8 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
       digit = frac_s[i + exponent] - '0';
     else
       digit = 0;
+    if (digit == ('_' - '0'))
+      continue;
     // skip out on the last digit
     if (i == frac_digits)
       break;
