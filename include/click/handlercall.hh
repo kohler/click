@@ -123,7 +123,7 @@ HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 inline String
 HandlerCall::call_read() const
 {
-    return _h->call_read(_e);
+    return _h->call_read(_e, _value);
 }
 
 inline int
