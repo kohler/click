@@ -1,3 +1,19 @@
+2001-07-26 Thursday 11:58  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.132): avoid builtin(format), OpenBSD m4 doesnt
+	support it (Dan Aguayo reported the bug)
+
+2001-07-26 Thursday 11:55  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/error.hh (1.12), lib/error.cc (1.33), lib/glue.cc
+	(1.23): Add an ErrorHandler::has_default_handler() method to avoid
+	failing assertions in ErrorHandler::default_handler().
+
+2001-07-26 Thursday 11:33  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* lib/packageutils.cc (1.3): Don't include userutils.hh if we're
+	building for a kernel module.
+
 2001-07-26 Thursday 01:04  Eddie Kohler <kohler@aciri.org>
 
 	* doc/Makefile.in (1.35): forgot flags for the new click-buildtool
