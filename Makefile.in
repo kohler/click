@@ -137,34 +137,34 @@ distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
 
 dist: distdir
+	tar czf $(distdir).tar.gz $(distdir)
 distdir: $(srcdir)/configure
 	cd doc && $(MAKE) info
 	cp $(srcdir)/acclick.m4 $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage; cd $(srcdir)/etc/samplepackage; $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
-	@-chmod 777 $(distdir)
+	chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
-	@for file in `cat $(srcdir)/DISTFILES`; do \
-	  d=$(srcdir); \
-	  if test -d "$$d/$$file"; then \
-	    mkdir $(distdir)/$$file; \
-	    chmod 777 $(distdir)/$$file; \
+	@for file in `cat $(srcdir)/DISTFILES | grep .`; do \
+	  if expr "$$file" : '.*:$$' >/dev/null 2>&1; then \
+	    d=`echo $$file | sed 's/:$$//;s/^\.\///'`; \
+	  elif test -d "$(srcdir)/$$d/$$file"; then \
+	    mkdir $(distdir)/$$d/$$file; \
+	    chmod 777 $(distdir)/$$d/$$file; \
 	  else \
-	    for f in `cd $$d && echo $$file`; do \
-	      test -f "$(distdir)/$$f" \
-	      || ln $$d/$$f $(distdir)/$$f 2> /dev/null \
-	      || cp -p $$d/$$f $(distdir)/$$f \
+	    for f in `cd $(srcdir)/$$d && echo $$file`; do \
+	      test -f "$(distdir)/$$d/$$f" \
+	      || ln $(srcdir)/$$d/$$f $(distdir)/$$d/$$f 2> /dev/null \
+	      || cp -p $(srcdir)/$$d/$$f $(distdir)/$$d/$$f \
 	      || echo "Could not copy $$d/$$f!" 1>&2; \
 	  done; fi; \
 	done
 	@echo Copying element files...
-	@mkdir $(distdir)/elements
-	@-chmod 777 $(distdir)/elements
 	@d=$(srcdir); \
 	for dir in `cd $$d && find elements -type d | grep -v 'exopc\|CVS'`; do \
 	  mkdir $(distdir)/$$dir 2>/dev/null; \
 	  chmod 777 $(distdir)/$$dir; \
-	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -name \[^,.]\*.cc -or -name \[^,.]\*.c -or -name \[^,.]\*.hh -or -name \[^,.]\*.h -or -name README \) -print`; do \
+	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -type f -and \( -name \[^,.]\*.cc -or -name \[^,.]\*.c -or -name \[^,.]\*.hh -or -name \[^,.]\*.h -or -name README \) \) -print`; do \
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
 	done
