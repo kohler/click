@@ -125,7 +125,7 @@ Neighbor::push(int port, Packet *packet)
 	nbr->eth = ethaddr;
       }
     }
-    
+
     /*
      * update far nbr info with this hello sender info.
      */
@@ -157,7 +157,6 @@ Neighbor::push(int port, Packet *packet)
      * XXX when do we actually remove expired nbr info, as opposed to
      * just ignore it? eventually we will run out of space!
      */
-
 
     /*
      * perform further packet processing
@@ -203,8 +202,9 @@ Neighbor::push(int port, Packet *packet)
 	
 	// nothing further to do
 	packet->kill();
-	break;
       }
+      break;
+
     case GRID_NBR_ENCAP:
       {
 	/* 
@@ -223,6 +223,8 @@ Neighbor::push(int port, Packet *packet)
 	  forward_grid_packet(packet, encap->dst_ip);
 	}
       }
+      break;
+
     default:
       click_chatter("%s: received unknown Grid packet: %d", id().cc(), (int) gh->type);
       packet->kill();
@@ -242,6 +244,7 @@ Neighbor::push(int port, Packet *packet)
     }
     else {
       // encapsulate packet with grid hdr and try to send it out
+      int old_len = packet->length();
       packet = packet->push(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
       memset(packet->data(), 0, sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
 
@@ -250,7 +253,7 @@ Neighbor::push(int port, Packet *packet)
 
       struct grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
       gh->hdr_len = sizeof(grid_hdr);
-      gh->total_len = packet->length();
+      gh->total_len = sizeof(grid_hdr) + sizeof(grid_nbr_encap) + old_len;
       gh->type = GRID_NBR_ENCAP;
 
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
@@ -330,6 +333,8 @@ Neighbor::forward_grid_packet(Packet *packet, IPAddress dest_ip)
    * MAC addresses.  
    */
 
+  click_chatter("fwding for dst %s", dest_ip.s().cc());
+
   int jiff = click_jiffies();
   struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
 
@@ -337,8 +342,10 @@ Neighbor::forward_grid_packet(Packet *packet, IPAddress dest_ip)
   EtherAddress *next_hop_eth = 0;
   NbrEntry *ne = _addresses.findp(dest_ip);
   if (ne != 0 && 
-      ne->last_updated_jiffies - jiff <= _timeout_jiffies)
+      ne->last_updated_jiffies - jiff <= _timeout_jiffies) {
+    click_chatter("found immediate nbr: %s", ne->ip.s().cc());
     next_hop_eth = &(ne->eth);
+  }
   if (next_hop_eth == 0) {
     // not an immediate nbr, search multihop nbrs
     int i;
@@ -348,6 +355,7 @@ Neighbor::forward_grid_packet(Packet *packet, IPAddress dest_ip)
 	jiff - _nbrs[i].last_updated_jiffies <= _timeout_jiffies) {
       // we know how to get to this dest, look up MAC addr for next hop
       ne = _addresses.findp(IPAddress(_nbrs[i].nbr.next_hop_ip));
+      click_chatter("trying to use next hop %s", ne->ip.s().cc());
       if (ne != 0 &&
 	  ne->last_updated_jiffies - jiff <= _timeout_jiffies)
 	next_hop_eth = &(ne->eth);
@@ -378,4 +386,3 @@ EXPORT_ELEMENT(Neighbor)
 #include "vector.cc"
 template class Vector<Neighbor::far_entry>;
 template class Vector<grid_nbr_entry>;
-

@@ -121,10 +121,9 @@ Hello::make_hello()
 
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->hdr_len = sizeof(grid_hdr);
-  gh->total_len = sizeof(grid_hdr);
+  gh->total_len = sizeof(grid_hdr) + sizeof(grid_nbr_entry)*num_nbrs;
   gh->type = GRID_HELLO;
   memcpy(&gh->ip, _from_ip.data(), 4);
-
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   assert(num_nbrs <= 255);
   hlo->num_nbrs = (unsigned char) num_nbrs;
