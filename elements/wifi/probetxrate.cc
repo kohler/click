@@ -27,8 +27,6 @@
 CLICK_DECLS
 
 
-#define MAX_RETRIES 16
-
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
     _offset(0),
@@ -38,7 +36,6 @@ ProbeTXRate::ProbeTXRate()
 {
   MOD_INC_USE_COUNT;
 
-  /* bleh */
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
 }
@@ -106,7 +103,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   EtherAddress dst = EtherAddress(dst_ptr);
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
 
-  if (dst == _bcast) {
+  if (dst.is_group()) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
       ceh->rate = rates[0];
@@ -128,9 +125,9 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   nfo->trim(old);
   //nfo->check();
   ceh->rate = nfo->pick_rate(_min_sample);
-  ceh->max_retries = (_alt_rate) ? _original_retries : MAX_RETRIES;
+  ceh->max_retries = (_alt_rate) ? _original_retries : WIFI_MAX_RETRIES;
   ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
-  ceh->alt_max_retries = (_alt_rate) ? MAX_RETRIES - _original_retries : 0;
+  ceh->alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - _original_retries : 0;
 
   return;
 }

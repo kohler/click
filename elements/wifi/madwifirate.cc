@@ -85,7 +85,7 @@ MadwifiRate::process_feedback(Packet *p_in)
   struct timeval now;
   click_gettimeofday(&now);
 
-  if (dst == _bcast) {
+  if (dst.is_group()) {
     /* don't record info for bcast packets */
     return;
   }
@@ -196,7 +196,7 @@ MadwifiRate::assign_rate(Packet *p_in)
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
 
 
-  if (dst == _bcast) {
+  if (dst.is_group()) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
       ceh->rate = rates[0];
@@ -222,9 +222,9 @@ MadwifiRate::assign_rate(Packet *p_in)
   }
 
   ceh->rate = nfo->pick_rate();
-  ceh->max_retries = (_alt_rate) ? 3 : 8;
+  ceh->max_retries = (_alt_rate) ? 3 : WIFI_MAX_RETRIES;
   ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  ceh->alt_max_retries = (_alt_rate) ? 4 : 0;
+  ceh->alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 3 : 0;
   return;
   
 }

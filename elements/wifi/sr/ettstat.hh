@@ -45,6 +45,7 @@
  * Unsigned integer.  Total number of bytes in probe packet, including
  * ethernet header and above.  Defaults to 1000.
  *
+ * This element is a disaster and needs to be rewritten.
  *
  * =back
  */
@@ -94,55 +95,54 @@ public:
   
   struct link_probe {
     uint8_t _version;
-    unsigned short cksum;     // internet checksum
-    unsigned short psz;       // total packet size, including eth hdr
+    unsigned short _cksum;     // internet checksum
+    unsigned short _psz;       // total packet size, including eth hdr
 
-    uint16_t rate;
-    uint16_t size;
-    uint32_t ip;
-    uint32_t flags;
-    unsigned int seq;
-    unsigned int period;      // period of this node's probe broadcasts, in msecs
-    unsigned int tau;         // this node's loss-rate averaging period, in msecs
-    unsigned int sent;        // how many probes this node has sent
-    unsigned int num_probes;
-    unsigned int num_links;   // number of wifi_link_entry entries following
+    uint16_t _rate;
+    uint16_t _size;
+    uint32_t _ip;
+    uint32_t _flags;
+    unsigned int _seq;
+    unsigned int _period;      // period of this node's probe broadcasts, in msecs
+    uint32_t _tau;         // this node's loss-rate averaging period, in msecs
+    unsigned int _sent;        // how many probes this node has sent
+    unsigned int _num_probes;
+    unsigned int _num_links;   // number of wifi_link_entry entries following
 
-    link_probe() : cksum(0), psz(0), ip(0), seq(0), period(0), tau(0), sent(0), num_links(0) { }
+    link_probe() { memset(this, 0x0, sizeof(this)); }
 
   };
   
   struct link_info {
-    uint16_t size;
-    uint8_t rate;
-    uint8_t fwd;
-    uint8_t rev;
+    uint16_t _size;
+    uint8_t _rate;
+    uint8_t _fwd;
+    uint8_t _rev;
   };
   struct link_entry {
-    uint32_t ip;
-    uint8_t num_rates;
-    uint32_t seq;
-    uint32_t age;
+    uint32_t _ip;
+    uint8_t _num_rates;
+    uint32_t _seq;
+    uint32_t _age;
     link_entry() { }
-    link_entry(IPAddress __ip) : ip(__ip.addr()) { }
+    link_entry(IPAddress ip) : _ip(ip.addr()) { }
   };
 
-private:
-  unsigned int _window; // sequence numbers
-  unsigned int _tau;    // msecs
+public:
+  uint32_t _tau;    // msecs
   unsigned int _period; // msecs
 
   unsigned int _seq;
   uint32_t _sent;
   EtherAddress _eth;
-public:
+
   IPAddress _ip;
   IPAddress reverse_arp(EtherAddress);
   void take_state(Element *, ErrorHandler *);
   Vector<IPAddress> get_neighbors() {
     return _neighbors;
   }
-private:
+
   class ETTMetric *_ett_metric;
   class TXCountMetric *_etx_metric;
   class ARPTable *_arp_table;
@@ -151,56 +151,57 @@ private:
   struct timeval _start;
   // record probes received from other hosts
   struct probe_t {
-    struct timeval when;  
+    struct timeval _when;  
     uint32_t   _seq;
     uint8_t _rate;
     uint16_t _size;
     probe_t(const struct timeval &t, 
 	    uint32_t s,
 	    uint8_t r,
-	    uint16_t sz) : when(t), _seq(s), _rate(r), _size(sz) { }
+	    uint16_t sz) : _when(t), _seq(s), _rate(r), _size(sz) { }
   };
 
 
   struct probe_list_t {
-    IPAddress ip;
-    int period;   // period of this node's probes, as reported by the node
-    int tau;      // this node's stats averaging period, as reported by the node
-    int sent;
-    uint32_t seq;
-    Vector<RateSize> probe_types;
+    IPAddress _ip;
+    int _period;   // period of this node's probes, as reported by the node
+    uint32_t _tau;      // this node's stats averaging period, as reported by the node
+    int _sent;
+    int _num_probes;
+    uint32_t _seq;
+    Vector<RateSize> _probe_types;
     
     Vector<int> _fwd_rates;
     
-    struct timeval last_rx;
-    DEQueue<probe_t> probes;   // most recently received probes
+    struct timeval _last_rx;
+    DEQueue<probe_t> _probes;   // most recently received probes
     probe_list_t(const IPAddress &p, unsigned int per, unsigned int t) : 
-      ip(p), 
-      period(per), 
-      tau(t),
-      sent(0)
+      _ip(p), 
+      _period(per), 
+      _tau(t),
+      _sent(0)
     { }
-    probe_list_t() : period(0), tau(0) { }
+    probe_list_t() : _period(0), _tau(0) { }
 
     int rev_rate(struct timeval start, int rate, int size) {
       struct timeval now;
-      struct timeval p = { tau / 1000, 1000 * (tau % 1000) };
+      struct timeval p = { _tau / 1000, 1000 * (_tau % 1000) };
       struct timeval earliest;
       click_gettimeofday(&now);
       timersub(&now, &p, &earliest);
 
 
-      if (period == 0) {
+      if (_period == 0) {
 	click_chatter("period is 0\n");
 	return 0;
       }
       int num = 0;
-      for (int i = probes.size() - 1; i >= 0; i--) {
-	if (timercmp(&earliest, &(probes[i].when), >)) {
+      for (int i = _probes.size() - 1; i >= 0; i--) {
+	if (timercmp(&earliest, &(_probes[i]._when), >)) {
 	  break;
 	} 
-	if ( probes[i]._size == size &&
-	    probes[i]._rate == rate) {
+	if ( _probes[i]._size == size &&
+	    _probes[i]._rate == rate) {
 	  num++;
 	}
       }
@@ -208,15 +209,13 @@ private:
       struct timeval since_start;
       timersub(&now, &start, &since_start);
 
-      int ms_since_start = since_start.tv_sec * 1000 + since_start.tv_usec / 1000;
-      if (ms_since_start < tau) {
-	tau = ms_since_start;
-      }
-      assert(probe_types.size());
-      int num_expected = tau / period;
+      uint32_t ms_since_start = MAX(0, since_start.tv_sec * 1000 + since_start.tv_usec / 1000);
+      uint32_t fake_tau = MIN(_tau, ms_since_start);
+      assert(_probe_types.size());
+      int num_expected = fake_tau / _period;
 
-      if (sent < num_expected) {
-	num_expected = sent;
+      if (_sent / _num_probes < num_expected) {
+	num_expected = _sent / _num_probes;
       }
       if (!num_expected) {
 	num_expected = 1;
@@ -227,6 +226,7 @@ private:
     }
   };
 
+public:
   // Per-sender map of received probes.
   typedef HashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
@@ -238,14 +238,6 @@ private:
   int _next_neighbor_to_ad;
 
 
-  // handlers
-  static String read_window(Element *, void *);
-  static String read_period(Element *, void *);
-  static String read_tau(Element *, void *);
-  static int write_window(const String &, Element *, void *, ErrorHandler *);
-  static int write_period(const String &, Element *, void *, ErrorHandler *);
-  static int write_tau(const String &, Element *, void *, ErrorHandler *);
-  
   void add_bcast_stat(IPAddress, const link_probe &);
   
   void update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq);

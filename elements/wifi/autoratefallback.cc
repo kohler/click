@@ -78,14 +78,14 @@ AutoRateFallback::process_feedback(Packet *p_in)
   EtherAddress dst = EtherAddress(dst_ptr);
   struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->all_user_anno();
   bool success = !(eh->flags & WIFI_EXTRA_TX_FAIL);
-  bool used_alt_rate = !(eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
+  bool used_alt_rate = (eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
   int rate = eh->rate;
   int alt_rate = eh->alt_rate;
 
   struct timeval now;
   click_gettimeofday(&now);
   
-  if (dst == _bcast) {
+  if (dst.is_group()) {
     /* don't record info for bcast packets */
     return;
   }
@@ -167,7 +167,7 @@ AutoRateFallback::assign_rate(Packet *p_in)
     struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->all_user_anno();
   eh->magic = WIFI_EXTRA_MAGIC;
 
-  if (dst == _bcast) {
+  if (dst.is_group()) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
       eh->rate = rates[0];
@@ -192,8 +192,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   int rate = nfo->pick_rate();
   int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  int max_retries = (_alt_rate) ? 4 : 8;
-  int alt_max_retries = (_alt_rate) ? 4 : 0;
+  int max_retries = (_alt_rate) ? 3 : WIFI_MAX_RETRIES;
+  int alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 3 : 0;
   eh->rate = rate;
   eh->max_retries = max_retries;
   eh->alt_rate = alt_rate;

@@ -31,12 +31,97 @@ CLICK_DECLS
 #define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
 
 #define min(x,y)      ((x)<(y) ? (x) : (y))
-#define max(x,y)      ((x)>(y) ? (x) : (y));
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
+enum {
+  H_RESET,
+  H_BCAST_STATS,
+  H_BAD_VERSION,
+  H_IP,
+  H_TAU,
+  H_PERIOD,
+  H_PROBES,
+};
+
+static String 
+ETTStat_read_param(Element *e, void *thunk)
+{
+  ETTStat *td = (ETTStat *)e;
+    switch ((uintptr_t) thunk) {
+    case H_BCAST_STATS: return td->read_bcast_stats();
+    case H_BAD_VERSION: return td->bad_nodes();
+    case H_IP: return td->_ip.s() + "\n";
+    case H_TAU: return String(td->_tau) + "\n";
+    case H_PERIOD: return String(td->_period) + "\n";
+    case H_PROBES: {
+      StringAccum sa;
+      for(int x = 0; x < td->_ads_rs.size(); x++) {
+	sa << td->_ads_rs[x]._rate << " " << td->_ads_rs[x]._size << " ";
+      }
+      return sa.take_string() + "\n";
+    }
+    default:
+      return String() + "\n";
+    }
+}
+static int 
+ETTStat_write_param(const String &in_s, Element *e, void *vparam,
+		      ErrorHandler *errh)
+{
+  ETTStat *f = (ETTStat *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_RESET: {    //reset
+    f->reset();
+    break;
+  }
+  case H_TAU: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("tau parameter must be unsigned");
+    f->_tau = m;
+    f->reset();
+  }
+
+  case H_PERIOD: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("period parameter must be unsigned");
+    f->_period = m;
+    f->reset();
+  }
+  case H_PROBES: {
+    Vector<RateSize> ads_rs;
+    Vector<String> a;
+    cp_spacevec(s, a);
+    if (a.size() % 2 != 0) {
+      return errh->error("must provide even number of numbers\n");
+    }
+  for (int x = 0; x < a.size() - 1; x += 2) {
+    int rate;
+    int size;
+    if (!cp_integer(a[x], &rate)) {
+      return errh->error("invalid PROBES rate value\n");
+    }
+    if (!cp_integer(a[x + 1], &size)) {
+      return errh->error("invalid PROBES size value\n");
+    }
+    ads_rs.push_back(RateSize(rate, size));
+  }
+  if (!ads_rs.size()) {
+    return errh->error("no PROBES provided\n");
+  }
+  f->_ads_rs = ads_rs;
+  }
+    
+    
+  }
+  return 0;
+}
 
 
 ETTStat::ETTStat()
-  : _window(100), 
-    _tau(10000), 
+  : _tau(10000), 
     _period(1000), 
     _sent(0),
     _ett_metric(0),
@@ -75,7 +160,6 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 			"IP", cpIPAddress, "IP address", &_ip,
-			"WINDOW", cpUnsigned, "Broadcast loss rate window", &_window,
 			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
@@ -87,27 +171,12 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpEnd);
 
 
-  Vector<String> a;
-  cp_spacevec(probes, a);
-
-  for (int x = 0; x < a.size() - 1; x += 2) {
-    int rate;
-    int size;
-    if (!cp_integer(a[x], &rate)) {
-      return errh->error("invalid PROBES rate value\n");
-    }
-    if (!cp_integer(a[x + 1], &size)) {
-      return errh->error("invalid PROBES size value\n");
-    }
-    _ads_rs.push_back(RateSize(rate, size));
-  }
-
-  if (!_ads_rs.size()) {
-    return errh->error("no PROBES provided\n");
-  }
-  
   if (res < 0)
     return res;
+
+  if ((res = ETTStat_write_param(probes, this, (void *) H_PROBES, errh)) < 0) {
+  return res;
+  }
 
   if (!_et) {
     return errh->error("Must specify ETHTYPE");
@@ -214,15 +283,15 @@ ETTStat::update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<i
 void 
 ETTStat::send_probe_hook() 
 {
-
-  unsigned max_jitter = _period / 10;
+  int p = _period / _ads_rs.size();
+  unsigned max_jitter = p / 10;
 
   send_probe();
   
 
   struct timeval period;
   timerclear(&period);
-  int p = _period / _ads_rs.size();
+
   period.tv_usec += (p * 1000);
   period.tv_sec += period.tv_usec / 1000000;
   period.tv_usec = (period.tv_usec % 1000000);
@@ -248,9 +317,7 @@ ETTStat::send_probe()
 
   _ads_rs_index = (_ads_rs_index + 1) % _ads_rs.size();
 
-  if (_ads_rs_index == 0) {
-    _sent++;
-  }
+  _sent++;
   unsigned min_packet_sz = sizeof(click_ether) + sizeof(struct link_probe);
 
   if ((unsigned) size < min_packet_sz) {
@@ -282,15 +349,15 @@ ETTStat::send_probe()
 
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->_version = _ett_version;
-  lp->ip = _ip.addr();
-  lp->seq = now.tv_sec;
-  lp->period = _period;
-  lp->tau = _tau;
-  lp->sent = _sent;
-  lp->flags = 0;
-  lp->rate = rate;
-  lp->size = size;
-  lp->num_probes = _ads_rs.size();
+  lp->_ip = _ip.addr();
+  lp->_seq = now.tv_sec;
+  lp->_period = _period;
+  lp->_tau = _tau;
+  lp->_sent = _sent;
+  lp->_flags = 0;
+  lp->_rate = rate;
+  lp->_size = size;
+  lp->_num_probes = _ads_rs.size();
   
   uint8_t *ptr =  (uint8_t *) (lp + 1);
   uint8_t *end  = (uint8_t *) p->data() + p->length();
@@ -309,7 +376,7 @@ ETTStat::send_probe()
 	x++;
     }
     ptr += rates.size();
-    lp->flags |= PROBE_AVAILABLE_RATES;
+    lp->_flags |= PROBE_AVAILABLE_RATES;
   }
 
   int num_entries = 0;
@@ -326,55 +393,52 @@ ETTStat::send_probe()
 		    _next_neighbor_to_ad);
     } else {
 
-      int size = probe->probe_types.size()*sizeof(link_info) + sizeof(link_entry);
+      int size = probe->_probe_types.size()*sizeof(link_info) + sizeof(link_entry);
       if (ptr + size > end) {
 	break;
       }
       num_entries++;
       link_entry *entry = (struct link_entry *)(ptr); 
-      entry->ip = probe->ip;
-      entry->seq = probe->seq;	
-      if ((uint32_t) probe->ip > (uint32_t) _ip) {
-	entry->seq = lp->seq;
+      entry->_ip = probe->_ip;
+      entry->_seq = probe->_seq;	
+      if ((uint32_t) probe->_ip > (uint32_t) _ip) {
+	entry->_seq = lp->_seq;
       }
-      entry->num_rates = probe->probe_types.size();
+      entry->_num_rates = probe->_probe_types.size();
       ptr += sizeof(link_entry);
 
       Vector<RateSize> rates;
       Vector<int> fwd;
       Vector<int> rev;
 
-      for (int x = 0; x < probe->probe_types.size(); x++) {
-	RateSize rs = probe->probe_types[x];
+      for (int x = 0; x < probe->_probe_types.size(); x++) {
+	RateSize rs = probe->_probe_types[x];
 	link_info *lnfo = (struct link_info *) (ptr + x*sizeof(link_info));
-	lnfo->size = rs._size;
-	lnfo->rate = rs._rate;
-	lnfo->fwd = probe->_fwd_rates[x];
-	lnfo->rev = probe->rev_rate(_start, rs._rate, rs._size);
+	lnfo->_size = rs._size;
+	lnfo->_rate = rs._rate;
+	lnfo->_fwd = probe->_fwd_rates[x];
+	lnfo->_rev = probe->rev_rate(_start, rs._rate, rs._size);
 	
 	rates.push_back(rs);
-	fwd.push_back(lnfo->fwd);
-	rev.push_back(lnfo->rev);
+	fwd.push_back(lnfo->_fwd);
+	rev.push_back(lnfo->_rev);
       }
-      update_link(_ip, entry->ip, rates, fwd, rev, entry->seq);
+      update_link(_ip, entry->_ip, rates, fwd, rev, entry->_seq);
 
-      ptr += probe->probe_types.size()*sizeof(link_info);
+      ptr += probe->_probe_types.size()*sizeof(link_info);
     }
 
   }
   
-  lp->num_links = num_entries;
-  lp->psz = sizeof(link_probe) + lp->num_links*sizeof(link_entry);
-  lp->cksum = 0;
-  lp->cksum = click_in_cksum((unsigned char *) lp, lp->psz);
+  lp->_num_links = num_entries;
+  lp->_psz = sizeof(link_probe) + lp->_num_links*sizeof(link_entry);
+  lp->_cksum = 0;
+  lp->_cksum = click_in_cksum((unsigned char *) lp, lp->_psz);
   
 
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
   ceh->magic = WIFI_EXTRA_MAGIC;
   ceh->rate = rate;
-  if (rate == 0) {
-    ceh->rate = 2;
-  }
   checked_output_push(0, p);
 }
 
@@ -449,22 +513,25 @@ ETTStat::simple_action(Packet *p)
   }
 
 
-  if (click_in_cksum((unsigned char *) lp, lp->psz) != 0) {
+  if (click_in_cksum((unsigned char *) lp, lp->_psz) != 0) {
     click_chatter("ETTStat %s: failed checksum", id().cc());
     p->kill();
     return 0;
   }
 
 
-  if (p->length() < lp->psz + sizeof(click_ether)) {
+  if (p->length() < lp->_psz + sizeof(click_ether)) {
     click_chatter("ETTStat %s: packet is smaller (%d) than it claims (%u)",
-		  id().cc(), p->length(), lp->psz);
+		  id().cc(), p->length(), lp->_psz);
   }
 
 
-  IPAddress ip = IPAddress(lp->ip);
+  IPAddress ip = IPAddress(lp->_ip);
 
   if (ip == _ip) {
+    click_chatter("%{element} got own packet %s\n",
+		  this,
+		  _ip.s().cc());
     p->kill();
     return 0;
   }
@@ -474,63 +541,75 @@ ETTStat::simple_action(Packet *p)
   }
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
   uint8_t rate = ceh->rate;
-  probe_t probe(now, lp->seq, lp->rate, lp->size);
-  int new_period = lp->period;
+
+  if (ceh->rate != lp->_rate) {
+    click_chatter("%{element} packet says rate %d is %d\n",
+		  this,
+		  lp->_rate,
+		  ceh->rate);
+    p->kill();
+    return 0;
+  }
+
+  probe_t probe(now, lp->_seq, lp->_rate, lp->_size);
+  int new_period = lp->_period;
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
   if (!l) {
-    _bcast_stats.insert(ip, probe_list_t(ip, new_period, lp->tau));
+    _bcast_stats.insert(ip, probe_list_t(ip, new_period, lp->_tau));
     l = _bcast_stats.findp(ip);
-    l->sent = 0;
+    l->_sent = 0;
     /* add into the neighbors vector */
     _neighbors.push_back(ip);
-  } else if (l->period != new_period) {
+  } else if (l->_period != new_period) {
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
-		  id().cc(), ip.s().cc(), l->period, new_period);
-    l->probes.clear();
+		  id().cc(), ip.s().cc(), l->_period, new_period);
+    l->_probes.clear();
+  } else if (l->_tau != lp->_tau) {
+    click_chatter("ETTStat %s: %s has changed its link tau from %u to %u; clearing probe info",
+		  id().cc(), ip.s().cc(), l->_tau, lp->_tau);
+    l->_probes.clear();
+  }
+
+  if (lp->_sent < (unsigned)l->_sent) {
+    click_chatter("ETTStat %s: %s has reset; clearing probe info",
+		  id().cc(), ip.s().cc());
+    l->_probes.clear();
   }
   
-  RateSize rs = RateSize(rate, lp->size);
-  l->period = new_period;
-  l->tau = lp->tau;
-  l->sent = lp->sent;
-  l->last_rx = now;
+  RateSize rs = RateSize(rate, lp->_size);
+  l->_period = new_period;
+  l->_tau = lp->_tau;
+  l->_sent = lp->_sent;
+  l->_last_rx = now;
+  l->_num_probes = lp->_num_probes;
+  l->_probes.push_back(probe);
+  l->_seq = probe._seq;
+
+  /* keep stats for at least the averaging period */
+  while ((unsigned) l->_probes.size() &&
+	 now.tv_sec - l->_probes[0]._when.tv_sec > (signed) (1 + (l->_tau / 1000)))
+    l->_probes.pop_front();
   
-  l->probes.push_back(probe);
-  l->seq = probe._seq;
-  /* only keep stats for last _window *unique* sequence numbers */
-  while ((unsigned) l->probes.size() > _window) 
-    l->probes.pop_front();
 
   
-  for (x = 0; x < l->probe_types.size(); x++) {
-    if (rs == l->probe_types[x]) {
+  for (x = 0; x < l->_probe_types.size(); x++) {
+    if (rs == l->_probe_types[x]) {
       break;
     }
   }
   
-  if (x == l->probe_types.size()) {
-    l->probe_types.push_back(rs);
+  if (x == l->_probe_types.size()) {
+    l->_probe_types.push_back(rs);
     l->_fwd_rates.push_back(0);
   }
-
-  if (lp->sent < (unsigned)l->sent) {
-    click_chatter("ETTStat %s: %s has reset; clearing probe info",
-		  id().cc(), ip.s().cc());
-    l->probes.clear();
-  }
-
-  
-
-
-
 
   uint8_t *ptr =  (uint8_t *) (lp + 1);
 
   uint8_t *end  = (uint8_t *) p->data() + p->length();
 
 
-  if (lp->flags &= PROBE_AVAILABLE_RATES) {
+  if (lp->_flags &= PROBE_AVAILABLE_RATES) {
     int num_rates = ptr[0];
     Vector<int> rates;
     ptr++;
@@ -546,16 +625,16 @@ ETTStat::simple_action(Packet *p)
     }
   }
   int link_number = 0;
-  while (ptr < end && (unsigned) link_number < lp->num_links) {
+  while (ptr < end && (unsigned) link_number < lp->_num_links) {
     link_number++;
     link_entry *entry = (struct link_entry *)(ptr); 
-    IPAddress neighbor = entry->ip;
-    int num_rates = entry->num_rates;
+    IPAddress neighbor = entry->_ip;
+    int num_rates = entry->_num_rates;
     if (0) {
       click_chatter("%{element} on link number %d / %d: neighbor %s, num_rates %d\n",
 		    this,
 		    link_number,
-		    lp->num_links,
+		    lp->_num_links,
 		    neighbor.s().cc(),
 		    num_rates);
     }
@@ -572,34 +651,34 @@ ETTStat::simple_action(Packet *p)
 		      this,
 		      ip.s().cc(),
 		      neighbor.s().cc(),
-		      nfo->size,
-		      nfo->rate,
-		      nfo->fwd,
-		      nfo->rev);
+		      nfo->_size,
+		      nfo->_rate,
+		      nfo->_fwd,
+		      nfo->_rev);
       }
       
-      RateSize rs = RateSize(nfo->rate, nfo->size);
+      RateSize rs = RateSize(nfo->_rate, nfo->_size);
       /* update other link stuff */
       rates.push_back(rs);
-      fwd.push_back(nfo->fwd);
+      fwd.push_back(nfo->_fwd);
       if (neighbor == _ip) {
 	rev.push_back(l->rev_rate(_start, rates[x]._rate, rates[x]._size));
       } else {
-	rev.push_back(nfo->rev);
+	rev.push_back(nfo->_rev);
       }
 
       if (neighbor == _ip) {
 	/* set the fwd rate */
-	for (int x = 0; x < l->probe_types.size(); x++) {
-	  if (rs == l->probe_types[x]) {
-	    l->_fwd_rates[x] = nfo->rev;
+	for (int x = 0; x < l->_probe_types.size(); x++) {
+	  if (rs == l->_probe_types[x]) {
+	    l->_fwd_rates[x] = nfo->_rev;
 	    
 	    break;
 	  }
 	}
       }
     }
-    int seq = entry->seq;
+    int seq = entry->_seq;
     if (neighbor == ip && 
 	((uint32_t) neighbor > (uint32_t) _ip)) {
       seq = now.tv_sec;
@@ -642,19 +721,19 @@ ETTStat::read_bcast_stats()
     } else {
       sa << " ?";
     }
-    for (int x = 0; x < pl->probe_types.size(); x++) {
-      sa << " [ " << pl->probe_types[x]._rate << " ";
-      sa << pl->probe_types[x]._size << " ";
-      int rev_rate = pl->rev_rate(_start, pl->probe_types[x]._rate, 
-				  pl->probe_types[x]._size);
+    for (int x = 0; x < pl->_probe_types.size(); x++) {
+      sa << " [ " << pl->_probe_types[x]._rate << " ";
+      sa << pl->_probe_types[x]._size << " ";
+      int rev_rate = pl->rev_rate(_start, pl->_probe_types[x]._rate, 
+				  pl->_probe_types[x]._size);
       sa << pl->_fwd_rates[x] << " ";
       sa << rev_rate << " ]";
     }
-    sa << " seq " << pl->seq;
-    sa << " period " << pl->period;
-    sa << " tau " << pl->tau;
-    sa << " sent " << pl->sent;
-    sa << " last_rx " << now - pl->last_rx;
+    sa << " seq " << pl->_seq;
+    sa << " period " << pl->_period;
+    sa << " tau " << pl->_tau;
+    sa << " sent " << pl->_sent;
+    sa << " last_rx " << now - pl->_last_rx;
     sa << "\n";
     
   }
@@ -688,7 +767,7 @@ ETTStat::clear_stale()
     IPAddress n = _neighbors[x];
     probe_list_t *l = _bcast_stats.findp(n);
     if (!l || 
-	now.tv_sec - l->last_rx.tv_sec > 120) {
+	now.tv_sec - l->_last_rx.tv_sec > (signed) l->_tau/l->_period) {
       _bcast_stats.remove(n);
     } else {
       new_neighbors.push_back(n);
@@ -711,44 +790,22 @@ ETTStat::reset()
   _sent = 0;
   click_gettimeofday(&_start);
 }
-enum {
-  H_RESET,
-  H_BCAST_STATS,
-  H_BAD_VERSION,
-};
 
-static String 
-ETTStat_read_param(Element *e, void *thunk)
-{
-  ETTStat *td = (ETTStat *)e;
-    switch ((uintptr_t) thunk) {
-    case H_BCAST_STATS: return td->read_bcast_stats();
-    case H_BAD_VERSION: return td->bad_nodes();
-    default:
-      return String() + "\n";
-    }
-}
-static int 
-ETTStat_write_param(const String &in_s, Element *e, void *vparam,
-		      ErrorHandler *)
-{
-  ETTStat *f = (ETTStat *)e;
-  String s = cp_uncomment(in_s);
-  switch((int)vparam) {
-  case H_RESET: {    //reset
-    f->reset();
-    break;
-  }
-  }
-  return 0;
-}
 
 void
 ETTStat::add_handlers()
 {
   add_read_handler("bcast_stats", ETTStat_read_param, (void *) H_BCAST_STATS);
   add_read_handler("bad_version", ETTStat_read_param, (void *) H_BAD_VERSION);
+  add_read_handler("ip", ETTStat_read_param, (void *) H_IP);
+  add_read_handler("tau", ETTStat_read_param, (void *) H_TAU);
+  add_read_handler("period", ETTStat_read_param, (void *) H_PERIOD);
+  add_read_handler("probes", ETTStat_read_param, (void *) H_PROBES);
+
   add_write_handler("reset", ETTStat_write_param, (void *) H_RESET);
+  add_write_handler("tau", ETTStat_write_param, (void *) H_TAU);
+  add_write_handler("period", ETTStat_write_param, (void *) H_PERIOD);
+  add_write_handler("probes", ETTStat_write_param, (void *) H_PROBES);
 
 }
 IPAddress 
