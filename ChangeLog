@@ -1,3 +1,8 @@
+2003-04-19 Saturday 16:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/click-align/click-align.cc (1.44): Teach click-align about
+	GridEncap so Grid configurations get properly aligned.
+
 2003-04-19 Saturday 16:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh (1.48): Change all bool fields in Grid
