@@ -1,3 +1,9 @@
+2003-07-30 Wednesday 13:39  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/ip.h (1.2), lib/in_cksum.c (1.13): add
+	click_in_cksum_pseudohdr(): take a checksum and update it as
+	required for an IPv4 pseudoheader
+
 2003-07-30 Wednesday 00:37  Eddie Kohler <kohler@icir.org>
 
 	* elements/tcpudp/: tcprewriter.cc (1.31), tcprewriter.hh (1.15):
