@@ -23,7 +23,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
-
+#include <click/straccum.hh>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -49,9 +49,7 @@
 CLICK_DECLS
 
 ToDevice::ToDevice()
-  : Element(1, 0), _task(this), _fd(-1), _my_fd(false),
-    _ignore_q_errs(false), _printed_err(false),
-    _use_q(true), 
+  : Element(1, 0), _task(this), _timer(this), _fd(-1), _my_fd(false),
     _q(0)
 {
   MOD_INC_USE_COUNT;
@@ -75,8 +73,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpKeywords,
-		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
-		  "USE_Q", cpBool, "use single packet queue", &_use_q,
+		  "DEBUG", cpBool, "debug", &_debug,
 		  cpEnd) < 0)
     return -1;
   if (!_ifname)
@@ -87,6 +84,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 ToDevice::initialize(ErrorHandler *errh)
 {
+  _timer.initialize(this);
   _fd = -1;
 
 #if TODEVICE_BSD_DEV_BPF
@@ -141,10 +139,8 @@ ToDevice::initialize(ErrorHandler *errh)
     return errh->error("duplicate writer for device `%s'", _ifname.cc());
   used = this;
 
-  if (input_is_pull(0)) {
-    ScheduleInfo::join_scheduler(this, &_task, errh);
-    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
-  }
+  ScheduleInfo::join_scheduler(this, &_task, errh);
+  _signal = Notifier::upstream_empty_signal(this, 0, &_task);
   return 0;
 }
 
@@ -156,70 +152,150 @@ ToDevice::cleanup(CleanupStage)
   _fd = -1;
 }
 
-void
-ToDevice::send_packet(Packet *p)
-{
-  int retval;
-  const char *syscall;
 
+
+/*
+ * Linux select marks datagram fd's as writeable when the socket
+ * buffer has enough space to do a send (sock_writeable() in
+ * sock.h). BSD select always marks datagram fd's as writeable
+ * (bpf_poll() in sys/net/bpf.c) This function should behave
+ * appropriately under both.  It makes use of select if it correctly
+ * tells us when buffers are available, and it schedules a backoff
+ * timer if buffers are not available.  
+ * --jbicket
+ */
+void
+ToDevice::selected(int) 
+{
+  Packet *p = _q;
+  if (!p) {
+    p = input(0).pull();
+  }
+  if (p) {
+    int retval;
+    const char *syscall;
+    
 #if TODEVICE_WRITE
-  retval = (write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
-  syscall = "write";
+    retval = (write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
+    syscall = "write";
 #elif TODEVICE_SEND
-  retval = send(_fd, p->data(), p->length(), 0);
-  syscall = "send";
+    retval = send(_fd, p->data(), p->length(), 0);
+    syscall = "send";
 #else
-  retval = 0;
+    retval = 0;
 #endif
-  
-  if (retval < 0) {
-    if (_use_q && (errno == ENOBUFS || errno == EAGAIN)) {
-      _q = p;
-    } else {
-      if (!_ignore_q_errs || !_printed_err || 
-	  (errno != ENOBUFS && errno != EAGAIN)) {
-	_printed_err = true;
+    
+    if (retval < 0) {
+      if (errno == ENOBUFS || errno == EAGAIN) {
+	struct timeval now;
+	struct timeval after;
+	assert(!_q);
+	_q = p;
+	/* we should backoff */
+	remove_select(_fd, SELECT_WRITE);
+
+	click_gettimeofday(&now);
+	_backoff = (!_backoff) ? 1 : _backoff*2;
+	after.tv_usec = _backoff;
+	after.tv_sec = _backoff % 1000000;
+	timeradd(&now, &after, &after);
+	_timer.schedule_at(after);
+
+	if (_debug) {
+	  StringAccum sa;
+	  sa << now;
+	  click_chatter("%{element} backing off for %d at %s\n",
+			this,
+			_backoff,
+			sa.take_string().cc());
+	}
+	return;
+      } else {
 	click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
+	checked_output_push(1, p);
       }
-      checked_output_push(1, p);
+    } else {
+      _backoff = 0;
+      checked_output_push(0, p);
     }
-  } else {
-    checked_output_push(0, p);
+  }
+  if (!_q && !p && !_signal) {
+    remove_select(_fd, SELECT_WRITE);
   }
 }
 
 void
-ToDevice::push(int, Packet *p)
+ToDevice::run_timer()
 {
-  assert(p->length() >= 14);	// XXX: sizeof()?
-  send_packet(p);
+  if (_debug) {
+    struct timeval now;
+    click_gettimeofday(&now);
+    StringAccum sa;
+    sa << now;
+    click_chatter("%{element} %s at %s\n",
+		  this,
+		  __func__,
+		  sa.take_string().cc());
+  }
+
+  if (_q || _signal) {
+    add_select(_fd, SELECT_WRITE);
+    selected(_fd);
+  }
 }
 
 bool
 ToDevice::run_task()
 {
-  // XXX reduce tickets when idle
-  Packet *p;
-  if (_q) {
-    p = _q;
-    _q = 0;
-  } else {
-    p = input(0).pull();
+  if (_q || _signal) {
+    add_select(_fd, SELECT_WRITE);
+    selected(_fd);
+    return true;
   }
-
-  if (p)
-    send_packet(p);
-  else if (!_signal)
-    return false;
-  _task.fast_reschedule();
-  return p != 0;
+  return false;
 }
 
+
+enum {H_DEBUG };
+
+static String
+ToDevice_read_param(Element *e, void *thunk)
+{
+  ToDevice *td = (ToDevice *)e;
+  switch((uintptr_t) thunk) {
+  case H_DEBUG:
+    return String(td->_debug) + "\n";
+  default:
+    return String();
+  }
+}
+
+static int 
+ToDevice_write_param(const String &in_s, Element *e, void *vparam,
+		     ErrorHandler *errh)
+{
+  ToDevice *td = (ToDevice *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_DEBUG: {
+    bool debug;
+    if (!cp_bool(s, &debug)) 
+      return errh->error("debug parameter must be boolean");
+    td->_debug = debug;
+    break;
+  }
+  }
+  return 0;
+}
 void
 ToDevice::add_handlers()
 {
-  if (input_is_pull(0))
-    add_task_handlers(&_task);
+  add_task_handlers(&_task);
+
+  add_read_handler("debug", ToDevice_read_param, (void *) H_DEBUG);
+
+  add_write_handler("debug", ToDevice_write_param, (void *) H_DEBUG);
+
 }
 
 CLICK_ENDDECLS

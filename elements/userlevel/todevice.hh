@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include <click/notifier.hh>
 #include "elements/userlevel/fromdevice.hh"
 CLICK_DECLS
@@ -25,18 +26,9 @@ CLICK_DECLS
  *
  * =over 8
  *
- * =item USE_Q
+ * =item DEBUG
  * 
- * Boolean.  If true, then writes that fail with errno ENOBUFS or EAGAIN
- * will be put on a single packet queue that is held until the next time
- * run_task is called.
- *
- * =item IGNORE_QUEUE_OVERFLOWS
- *
- * Boolean.  If true, don't print more than one error message when
- * there are queue overflows error when sending packets to the device
- * (e.g. send() or write() produced an ENOBUFS or EAGAIN error).
- * Default is false.
+ * Boolean.  If true, print out debug messages.
  *
  * =back
  *
@@ -77,19 +69,13 @@ extern "C" {
 # endif
 #endif
 
-/*
- * Write packets to the ethernet via the bpf.
- * Expects packets that already have an ether header.
- * Can push or pull.
- */
-
 class ToDevice : public Element { public:
   
   ToDevice();
   ~ToDevice();
   
   const char *class_name() const		{ return "ToDevice"; }
-  const char *processing() const		{ return "a/h"; }
+  const char *processing() const		{ return "l/h"; }
   const char *flags() const			{ return "S2"; }
   
   int configure_phase() const { return FromDevice::CONFIGURE_PHASE_TODEVICE; }
@@ -103,13 +89,12 @@ class ToDevice : public Element { public:
   String ifname() const				{ return _ifname; }
   int fd() const				{ return _fd; }
 
-  void push(int port, Packet *);
   bool run_task();
-
+  void selected(int);
+  void run_timer();
 protected:
   Task _task;
-  void send_packet(Packet *);
-
+  Timer _timer;
 private:
 
   String _ifname;
@@ -117,12 +102,12 @@ private:
   bool _my_fd;
   NotifierSignal _signal;
   
-  bool _ignore_q_errs;
-  bool _printed_err;
 
-
-  bool _use_q;
   Packet *_q;
+public:
+  bool _debug;
+  bool _backoff;
+
 };
 
 CLICK_ENDDECLS
