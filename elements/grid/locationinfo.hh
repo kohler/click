@@ -11,6 +11,10 @@
  * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
  * North and East, negative is South and West.
  *
+ * Only 5 digits of precision are used, the rest are ignored and
+ * rounding is not performed on the remaining digits.  This should
+ * provide about 1 metre of precision near the equator.
+ *
  * If the optional move parameter is 1, the node will move
  * randomly at a few meters per second.
  *
