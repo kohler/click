@@ -1,3 +1,7 @@
+2002-08-12 Monday 20:30  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ipflowid.hh (1.11): add missing const
+
 2002-08-08 Thursday 00:47  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.190), tools/Makefile.in (1.47),
