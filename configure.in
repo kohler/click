@@ -363,8 +363,8 @@ dnl
 AC_LANG_C
 AC_CHECK_HEADERS(sys/mman.h)
 AC_FUNC_MMAP
-AC_CHECK_FUNCS(madvise)
 AC_LANG_CPLUSPLUS
+AC_CHECK_FUNCS(madvise)
 
 
 dnl
