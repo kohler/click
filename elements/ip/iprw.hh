@@ -69,40 +69,43 @@ class IPRw : public Element { public:
 
 class IPRw::Mapping { public:
 
+    enum { F_REVERSE = 1, F_MARKED = 2, F_FLOW_OVER = 4, F_FREE_TRACKED = 8,
+	   F_DST_ANNO = 16 };
+
     Mapping(bool dst_anno);
 
-    void initialize(int ip_p, const IPFlowID&, const IPFlowID&, int, bool, Mapping*);
-    static void make_pair(int ip_p, const IPFlowID&, const IPFlowID&,
-			  int, int, Mapping*, Mapping*);
+    void initialize(int ip_p, const IPFlowID& inf, const IPFlowID& outf, int output, uint16_t flags, Mapping* reverse);
+    static void make_pair(int ip_p, const IPFlowID& inf, const IPFlowID& outf,
+			  int foutput, int routput, Mapping* f, Mapping* r);
 
     const IPFlowID& flow_id() const	{ return _mapto; }
     Pattern* pattern() const		{ return _pat; }
     int output() const 			{ return _output; }
-    bool is_primary() const		{ return !_is_reverse; }
+    bool is_primary() const		{ return !(_flags & F_REVERSE); }
     const Mapping* primary() const { return is_primary() ? this : _reverse; }
     Mapping* primary()		   { return is_primary() ? this : _reverse; }
     Mapping* reverse() const		{ return _reverse; }
 
-    bool used_since(uint32_t) const;
+    inline bool used_since(uint32_t) const;
     void mark_used()			{ _used = click_jiffies(); }
 
-    bool marked() const			{ return _marked; }
-    void mark()				{ _marked = true; }
-    void unmark()			{ _marked = false; }
+    bool marked() const			{ return (_flags & F_MARKED); }
+    void mark()				{ _flags |= F_MARKED; }
+    void unmark()			{ _flags &= ~F_MARKED; }
 
     uint16_t sport() const		{ return _mapto.sport(); } // network
 
     Mapping* free_next() const		{ return _free_next; }
     void set_free_next(Mapping* m)	{ _free_next = m; }
 
-    bool session_over() const		{ return _flow_over && _reverse->_flow_over; }
-    void set_session_over()		{ _flow_over = _reverse->_flow_over = true; }
-    void set_session_flow_over()	{ _flow_over = true; }
-    void clear_session_flow_over()	{ _flow_over = false; }
+    bool session_over() const		{ return (_flags & F_FLOW_OVER) && (_reverse->_flags & F_FLOW_OVER); }
+    void set_session_over()		{ _flags |= F_FLOW_OVER; _reverse->_flags |= F_FLOW_OVER; }
+    void set_session_flow_over()	{ _flags |= F_FLOW_OVER; }
+    void clear_session_flow_over()	{ _flags &= ~F_FLOW_OVER; }
 
-    bool free_tracked() const		{ return _free_tracked; }
-    void add_to_free_tracked_tail(Mapping*& head, Mapping*& tail);
-    void clear_free_tracked();
+    bool free_tracked() const		{ return (_flags & F_FREE_TRACKED); }
+    inline void add_to_free_tracked_tail(Mapping*& head, Mapping*& tail);
+    inline void clear_free_tracked();
 
     void apply(WritablePacket*);
 
@@ -117,11 +120,7 @@ class IPRw::Mapping { public:
 
     Mapping* _reverse;
 
-    bool _is_reverse : 1;
-    bool _marked : 1;
-    bool _flow_over : 1;
-    bool _free_tracked : 1;
-    bool _dst_anno : 1;
+    uint16_t _flags;
     uint8_t _ip_p;
     uint8_t _output;
     unsigned _used;
@@ -135,7 +134,7 @@ class IPRw::Mapping { public:
     friend class IPRw::Pattern;
 
     inline Mapping* free_from_list(Map&, bool notify);
-    void append_to_free(Mapping*& head, Mapping*& tail);
+    inline void append_to_free(Mapping*& head, Mapping*& tail);
 
 };
 
@@ -160,6 +159,7 @@ class IPRw::Pattern { public:
     int nmappings() const	{ return _nmappings; }
   
     operator bool() const	{ return _saddr || _sport || _daddr || _dport; }
+    IPAddress daddr() const	{ return _daddr; }
     bool allow_nat() const	{ return !_is_napt || _variation_top == 0; }
     bool allow_napt() const	{ return _is_napt || _variation_top == 0; }
 
@@ -213,7 +213,7 @@ inline void
 IPRw::Mapping::append_to_free(Mapping*& head, Mapping*& tail)
 {
     assert((!head && !tail)
-	   || (head && tail && head->_free_tracked && tail->_free_tracked));
+	   || (head && tail && (head->_flags & F_FREE_TRACKED) && (tail->_flags & F_FREE_TRACKED)));
     assert(!_free_next && !_reverse->_free_next);
     if (tail)
 	tail = tail->_free_next = this;
@@ -224,15 +224,17 @@ IPRw::Mapping::append_to_free(Mapping*& head, Mapping*& tail)
 inline void
 IPRw::Mapping::add_to_free_tracked_tail(Mapping*& head, Mapping*& tail)
 {
-    assert(!_free_tracked && !_reverse->_free_tracked);
-    _free_tracked = _reverse->_free_tracked = true;
+    assert(!(_flags & F_FREE_TRACKED) && !(_reverse->_flags & F_FREE_TRACKED));
+    _flags |= F_FREE_TRACKED;
+    _reverse->_flags |= F_FREE_TRACKED;
     primary()->append_to_free(head, tail);
 }
 
 inline void
 IPRw::Mapping::clear_free_tracked()
 {
-    _free_tracked = _reverse->_free_tracked = false;
+    _flags &= ~F_FREE_TRACKED;
+    _reverse->_flags &= ~F_FREE_TRACKED;
     _free_next = 0;
     assert(_reverse->_free_next == 0);
 }

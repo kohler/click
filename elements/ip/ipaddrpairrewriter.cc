@@ -35,7 +35,7 @@ IPAddrPairRewriter::IPAddrPairMapping::apply(WritablePacket *p)
     // IP header
     iph->ip_src = _mapto.saddr();
     iph->ip_dst = _mapto.daddr();
-    if (_dst_anno)
+    if (_flags & F_DST_ANNO)
 	p->set_dst_ip_anno(_mapto.daddr());
 
     uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;

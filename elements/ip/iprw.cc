@@ -44,22 +44,20 @@ CLICK_DECLS
 //
 
 IPRw::Mapping::Mapping(bool dst_anno)
-  : _is_reverse(false), /* _used(false), */ _marked(false),
-    _flow_over(false), _free_tracked(false), _dst_anno(dst_anno),
-    _ip_p(0), _pat(0), _free_next(0)
+  : _flags(dst_anno ? F_DST_ANNO : 0), _ip_p(0), _pat(0), _free_next(0)
 {
 }
 
 void
 IPRw::Mapping::initialize(int ip_p, const IPFlowID &in, const IPFlowID &out,
-			  int output, bool is_reverse, Mapping *reverse)
+			  int output, uint16_t flags, Mapping *reverse)
 {
     // set fields
     _ip_p = ip_p;
     _mapto = out;
     _output = output;
     assert(output >= 0 && output < 256);
-    _is_reverse = is_reverse;
+    _flags |= flags;
     _reverse = reverse;
   
     // set checksum deltas
@@ -86,8 +84,8 @@ IPRw::Mapping::make_pair(int ip_p, const IPFlowID &inf, const IPFlowID &outf,
 			 int foutput, int routput,
 			 Mapping *in_map, Mapping *out_map)
 {
-    in_map->initialize(ip_p, inf, outf, foutput, false, out_map);
-    out_map->initialize(ip_p, outf.rev(), inf.rev(), routput, true, in_map);
+    in_map->initialize(ip_p, inf, outf, foutput, 0, out_map);
+    out_map->initialize(ip_p, outf.rev(), inf.rev(), routput, F_REVERSE, in_map);
 }
 
 void
@@ -99,7 +97,7 @@ IPRw::Mapping::apply(WritablePacket *p)
     // IP header
     iph->ip_src = _mapto.saddr();
     iph->ip_dst = _mapto.daddr();
-    if (_dst_anno)
+    if (_flags & F_DST_ANNO)
 	p->set_dst_ip_anno(_mapto.daddr());
 
     unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
@@ -232,7 +230,7 @@ int
 IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 			 Element *e, ErrorHandler *errh)
 {
-    if (words.size() != 2)
+    if (words.size() != 1 && words.size() != 2)
 	return pattern_error(PE_NAT, errh);
   
     IPAddress saddr1, saddr2;
@@ -266,7 +264,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
     }
 
     IPAddress daddr;
-    if (words[1] == "-")
+    if (words.size() == 1 || words[1] == "-")
 	daddr = 0;
     else if (!cp_ip_address(words[1], &daddr, e) || !daddr)
 	return pattern_error(PE_DADDR, errh);
@@ -279,21 +277,21 @@ int
 IPRw::Pattern::parse(const String &conf, Pattern **pstore,
 		     Element *e, ErrorHandler *errh)
 {
-  Vector<String> words;
-  cp_spacevec(conf, words);
+    Vector<String> words;
+    cp_spacevec(conf, words);
 
-  // check for IPRewriterPatterns reference
-  if (words.size() == 1) {
-    String name = cp_unquote(words[0]);
-    if (Pattern *p = IPRewriterPatterns::find(e, name, errh)) {
-      *pstore = p;
-      return 0;
-    } else
-      return -1;
-  } else if (words.size() == 2)
-    return parse_nat(words, pstore, e, errh);
-  else
-    return parse_napt(words, pstore, e, errh);
+    // check for IPRewriterPatterns reference
+    if (words.size() == 1) {
+	String name = cp_unquote(words[0]);
+	if (Pattern *p = IPRewriterPatterns::find(e, name, errh)) {
+	    *pstore = p;
+	    return 0;
+	} else
+	    return -1;
+    } else if (words.size() == 2)
+	return parse_nat(words, pstore, e, errh);
+    else
+	return parse_napt(words, pstore, e, errh);
 }
 
 int
@@ -301,26 +299,26 @@ IPRw::Pattern::parse_with_ports(const String &conf, Pattern **pstore,
 				int *fport_store, int *rport_store,
 				Element *e, ErrorHandler *errh)
 {
-  Vector<String> words;
-  cp_spacevec(conf, words);
-  int32_t fport, rport;
+    Vector<String> words;
+    cp_spacevec(conf, words);
+    int32_t fport, rport;
 
-  if (words.size() <= 2
-      || !cp_integer(words[words.size() - 2], &fport)
-      || !cp_integer(words[words.size() - 1], &rport)
-      || fport < 0 || rport < 0)
-    return errh->error("bad forward and/or reverse ports in pattern spec");
-  words.resize(words.size() - 2);
+    if (words.size() <= 2
+	|| !cp_integer(words[words.size() - 2], &fport)
+	|| !cp_integer(words[words.size() - 1], &rport)
+	|| fport < 0 || rport < 0)
+	return errh->error("bad forward and/or reverse ports in pattern spec");
+    words.resize(words.size() - 2);
 
-  // check for IPRewriterPatterns reference
-  Pattern *p;
-  if (parse(cp_unspacevec(words), &p, e, errh) >= 0) {
-    *pstore = p;
-    *fport_store = fport;
-    *rport_store = rport;
-    return 0;
-  } else
-    return -1;
+    // check for IPRewriterPatterns reference
+    Pattern *p;
+    if (parse(cp_unspacevec(words), &p, e, errh) >= 0) {
+	*pstore = p;
+	*fport_store = fport;
+	*rport_store = rport;
+	return 0;
+    } else
+	return -1;
 }
 
 bool
@@ -345,7 +343,6 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID& in,
 			      Mapping* fmap, Mapping* rmap,
 			      const Map& rev_map)
 {
-    // new design
     IPFlowID out(in);
     if (_saddr)
 	out.set_saddr(_saddr);
@@ -480,64 +477,64 @@ int
 IPRw::parse_input_spec(const String &line, InputSpec &is,
 		       String name, ErrorHandler *errh)
 {
-  PrefixErrorHandler cerrh(errh, name + ": ");
-  String word, rest;
-  if (!cp_word(line, &word, &rest))
-    return cerrh.error("empty argument");
-  cp_eat_space(rest);
+    PrefixErrorHandler cerrh(errh, name + ": ");
+    String word, rest;
+    if (!cp_word(line, &word, &rest))
+	return cerrh.error("empty argument");
+    cp_eat_space(rest);
   
-  is.kind = INPUT_SPEC_DROP;
+    is.kind = INPUT_SPEC_DROP;
   
-  if (word == "pass" || word == "passthrough" || word == "nochange") {
-    int32_t outnum = 0;
-    if (rest && !cp_integer(rest, &outnum))
-      return cerrh.error("syntax error, expected 'nochange [OUTPUT]'");
-    else if (outnum < 0 || outnum >= noutputs())
-      return cerrh.error("output port out of range");
-    is.kind = INPUT_SPEC_NOCHANGE;
-    is.u.output = outnum;
+    if (word == "pass" || word == "passthrough" || word == "nochange") {
+	int32_t outnum = 0;
+	if (rest && !cp_integer(rest, &outnum))
+	    return cerrh.error("syntax error, expected 'nochange [OUTPUT]'");
+	else if (outnum < 0 || outnum >= noutputs())
+	    return cerrh.error("output port out of range");
+	is.kind = INPUT_SPEC_NOCHANGE;
+	is.u.output = outnum;
     
-  } else if (word == "keep") {
-    if (cp_va_space_parse(rest, this, ErrorHandler::silent_handler(),
-		    cpUnsigned, "forward output", &is.u.pattern.fport,
-		    cpUnsigned, "reverse output", &is.u.pattern.rport,
-		    cpEnd) < 0)
-      return cerrh.error("syntax error, expected 'keep FOUTPUT ROUTPUT'");
-    if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
-      return cerrh.error("output port out of range");
-    is.kind = INPUT_SPEC_KEEP;
-    is.u.pattern.p = 0;
+    } else if (word == "keep") {
+	if (cp_va_space_parse(rest, this, ErrorHandler::silent_handler(),
+			      cpUnsigned, "forward output", &is.u.pattern.fport,
+			      cpUnsigned, "reverse output", &is.u.pattern.rport,
+			      cpEnd) < 0)
+	    return cerrh.error("syntax error, expected 'keep FOUTPUT ROUTPUT'");
+	if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
+	    return cerrh.error("output port out of range");
+	is.kind = INPUT_SPEC_KEEP;
+	is.u.pattern.p = 0;
     
-  } else if (word == "drop") {
-    if (rest)
-      return cerrh.error("syntax error, expected 'drop'");
+    } else if (word == "drop") {
+	if (rest)
+	    return cerrh.error("syntax error, expected 'drop'");
     
-  } else if (word == "pattern") {
-    if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, &cerrh) < 0)
-      return -1;
-    if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
-      return cerrh.error("output port out of range");
-    is.u.pattern.p->use();
-    is.kind = INPUT_SPEC_PATTERN;
-    if (notify_pattern(is.u.pattern.p, &cerrh) < 0)
-      return -1;
+    } else if (word == "pattern") {
+	if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, &cerrh) < 0)
+	    return -1;
+	if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
+	    return cerrh.error("output port out of range");
+	is.u.pattern.p->use();
+	is.kind = INPUT_SPEC_PATTERN;
+	if (notify_pattern(is.u.pattern.p, &cerrh) < 0)
+	    return -1;
     
-  } else if (Element *e = cp_element(word, this, 0)) {
-    IPMapper *mapper = (IPMapper *)e->cast("IPMapper");
-    if (rest)
-      return cerrh.error("syntax error, expected 'ELEMENTNAME'");
-    else if (!mapper)
-      return cerrh.error("element is not an IPMapper");
-    else {
-      is.kind = INPUT_SPEC_MAPPER;
-      is.u.mapper = mapper;
-      mapper->notify_rewriter(this, &cerrh);
-    }
+    } else if (Element *e = cp_element(word, this, 0)) {
+	IPMapper *mapper = (IPMapper *)e->cast("IPMapper");
+	if (rest)
+	    return cerrh.error("syntax error, expected 'ELEMENTNAME'");
+	else if (!mapper)
+	    return cerrh.error("element is not an IPMapper");
+	else {
+	    is.kind = INPUT_SPEC_MAPPER;
+	    is.u.mapper = mapper;
+	    mapper->notify_rewriter(this, &cerrh);
+	}
     
-  } else
-    return cerrh.error("unknown specification");
+    } else
+	return cerrh.error("unknown specification");
   
-  return 0;
+    return 0;
 }
 
 

@@ -41,17 +41,16 @@ forms of INPUTSPEC handle input packets as follows:
 
 These INPUTSPECs behave like those in IPRewriter.
 
-=item 'pattern SADDR[-SADDR2] DADDR FOUTPUT ROUTPUT'
+=item 'pattern SADDR[-SADDR2] - FOUTPUT ROUTPUT'
 
-Creates a mapping according to the given pattern, 'SADDR DADDR'.  Either
-pattern field may be a dash '-', in which case the corresponding field is left
-unchanged.  For instance, the pattern '1.0.0.1 -' will rewrite input packets'
-source address, but leave its destination address unchanged.  SADDR may be a
-range 'L-H' or prefix 'ADDR/PFX'; IPRewriter will choose an unallocated
-address in that range, or drop the packet if no address is available.
-Normally addresses are chosen randomly within the range.  To allocate
-addresses sequentially (which can make testing easier), append a pound sign to
-the range, as in '1.0.0.1-1.255.255.254#'.
+Creates a mapping according to the given pattern, 'SADDR -'.  The destination
+address must be a dash '-', since IPAddrRewriter only changes outgoing
+packets' source addresses.  SADDR may be a range 'L-H' or prefix 'ADDR/PFX';
+IPRewriter will choose an unallocated address in that range, or drop the
+packet if no address is available.  Normally addresses are chosen randomly
+within the range.  To allocate addresses sequentially (which can make testing
+easier), append a pound sign to the range, as in '1.0.0.1-1.255.255.254#'.
+SADDR may also be a dash, in which case the source address is left unchanged.
 
 Packets sent from the old source address are rewritten and sent to FOUTPUT,
 and packets sent to the new source address are rewritten back and sent to
