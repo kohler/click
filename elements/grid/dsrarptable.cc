@@ -94,7 +94,7 @@ DSRArpTable::pull(int port)
 
   WritablePacket *q = p_in->push(sizeof(click_ether));
   if (!q) {
-    click_chatter("DSRArpTable::push:  could not push space for ethernet header\n");
+    click_chatter("DSRArpTable::pull(%d):  could not push space for ethernet header\n", port);
     return NULL;
   }
   

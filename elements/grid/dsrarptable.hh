@@ -16,14 +16,39 @@
  *
  * =d 
  * 
- * Packets with ethernet headers are expected on input 1, and are
- * sent out on output 1 unchanged.  IP<->MAC address entries are
- * added for the source MAC address and the source IP address
- * (derived from the various DSR option headers).
+ * Packets with ethernet headers pushed into input 2 are sent out
+ * unchanged on output 2.  IP<->MAC address entries are added to the
+ * ARP table for each pushed packet's source MAC address and source IP
+ * address (derived from the various DSR option headers).
  * 
- * Packets on input 0 have a link-level header added to them and are
- * sent out output 0.  The destination MAC is based on the
- * destination IP annotation.
+ * Pulls on outputs 0 and 1 pull packets from inputs 0 and 1,
+ * respectively.  The pulled packets have a link-level MAC header
+ * added to them and are sent out output 0.  The destination MAC
+ * address is found by using the packet's destination IP annotation to
+ * lookup the MAC in the ARP table.
+ *
+ * Design rant follows (by Doug):
+ *
+ * Why two pull inputs that do exactly the same thing and go to their
+ * respective separate outputs?  I don't know, but I conjecture it's
+ * to allow this element to be used on the output of two separate
+ * queues.  This is a bad design (I was going to write suboptimal, but
+ * it's BAD).  The element should be split into two: DSRArpTable
+ * (which is agnostic and records IP<->MAC) mappings from packets
+ * flowing through it), and DSRLookupArp (which is also agnostic,
+ * takes DSRArpTable element as an argument, and lookups and writes
+ * MAC destination addresses for any packet's passing through it based
+ * on the entries in DSRArpTable).  The advantage of this design is
+ * that you can have as many DSRLookupArps as you want, in either push
+ * or pull paths.  Even better, split DSRArpTable into DSRArpTable,
+ * which never even handles packets, and DSRSnoopARPEntry, which takes
+ * DSRArpTable as an argument: packets passing through
+ * DSRSnoopARPEntry have their IP<->MAC mappings added to DSRArpTable.
+ * Then you can have as many DSRSnoop elements as you like.  Actually,
+ * the Snoop and ArpTable elements might even be completely generic,
+ * and could be shared with regular IP/Ethernet ARP configurations.
+ * Of course, this may be all wrong if you want to do
+ * buffering/timeouts of packets in DSRLookupARP...
  *
  * Regular arguments are:
  *
