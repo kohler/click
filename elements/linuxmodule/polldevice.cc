@@ -365,7 +365,9 @@ PollDevice::run_scheduled()
 
 #endif /* !RR_SCHED */
 
+#ifdef DEV_RXFIFO_STATS
   if ((_activations % 2048)==0) _dev->get_stats(_dev);
+#endif
 
 #endif /* HAVE_POLLING */
 }
