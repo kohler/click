@@ -41,7 +41,6 @@ IPReassembler::IPReassembler()
     : Element(1, 1), _expire_timer(expire_hook, (void *) this)
 {
     MOD_INC_USE_COUNT;
-    _mem_used = 0;
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
     static_assert(sizeof(PacketLink) <= Packet::USER_ANNO_SIZE);
@@ -54,10 +53,24 @@ IPReassembler::~IPReassembler()
 }
 
 int
+IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    _mem_high_thresh = 256 * 1024;
+    if (cp_va_parse(conf, this, errh,
+		    cpKeywords,
+		    "HIMEM", cpUnsigned, "memory consumption limit", &_mem_high_thresh,
+		    0) < 0)
+	return -1;
+    _mem_low_thresh = (_mem_high_thresh >> 2) * 3;
+    return 0;
+}
+
+int
 IPReassembler::initialize(ErrorHandler *)
 {
     _expire_timer.initialize(this);
     _expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
+    _mem_used = 0;
     return 0;
 }
 
@@ -92,11 +105,13 @@ IPReassembler::check(ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::default_handler();
+    uint32_t mem_used = 0;
     for (int b = 0; b < NMAP; b++)
 	for (WritablePacket *q = _map[b]; q; q = PACKET_LINK(q)->bucket_next)
 	    if (const click_ip *qip = q->ip_header()) {
 		if (bucketno(qip) != b)
 		    check_error(errh, b, q, "in wrong bucket");
+		mem_used += IPH_MEM_USED + q->transport_length();
 		ChunkLink *chunk = &PACKET_LINK(q)->chunk;
 		int off = 0;
 #if VERBOSE_DEBUG
@@ -114,7 +129,7 @@ IPReassembler::check(ErrorHandler *errh)
 		while (chunk) {
 		    if (chunk->off >= chunk->lastoff
 			|| chunk->lastoff > q->transport_length()
-			|| chunk->off < off + 8) {
+			|| (off != 0 && chunk->off < off + 8)) {
 			check_error(errh, b, q, "bad chunk (%d, %d) at %d", chunk->off, chunk->lastoff, off);
 			break;
 		    }
@@ -123,6 +138,8 @@ IPReassembler::check(ErrorHandler *errh)
 		}
 	    } else
 		errh->error("buck %d: missing IP header", b);
+    if (mem_used != _mem_used)
+	errh->error("bad mem_used: have %u, claim %u", mem_used, _mem_used);
     return 0;
 }
 
@@ -160,6 +177,7 @@ IPReassembler::emit_whole_packet(WritablePacket *q, WritablePacket **q_pprev,
     *q_pprev = PACKET_LINK(q)->bucket_next;
 
     p_in->kill();
+    _mem_used -= IPH_MEM_USED + q->transport_length();
     return q;
 }
 
@@ -176,6 +194,7 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
 	click_chatter("out of memory");
 	return;
     }
+    _mem_used += IPH_MEM_USED + p_lastoff;
 
     // copy IP header and annotations if appropriate
     q->set_ip_header((click_ip *)q->data(), hl);
@@ -194,6 +213,8 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     PACKET_LINK(q)->bucket_next = *q_pprev;
     *q_pprev = q;
     Q_PACKET_JIFFIES(q) = click_jiffies();
+    
+    check();
 }
 
 IPReassembler::ChunkLink *
@@ -230,11 +251,9 @@ IPReassembler::simple_action(Packet *p)
 
     // otherwise, we need to keep the packet
 
-#if 0
     // clean up memory if necessary
-    if (_mem_used > IPFRAG_HIGH_THRESH)
-	queue_evictor();
-#endif
+    if (_mem_used > _mem_high_thresh)
+	garbage_collect();
 
     // get its Packet queue
     WritablePacket **q_pprev;
@@ -246,25 +265,36 @@ IPReassembler::simple_action(Packet *p)
     WritablePacket *q_bucket_next = PACKET_LINK(q)->bucket_next;
 
     // extend the packet if necessary
-    bool new_last_entry = (p_lastoff > q->transport_length());
-    if (new_last_entry) {
+    if (p_lastoff > q->transport_length()) {
 	// error if packet already completed
 	if (!(q->ip_header()->ip_off & htons(IP_MF))) {
 	    p->kill();
 	    return 0;
 	}
+	// Figure out how much space to request. Add 8 extra bytes to ensure
+	// room for a ChunkLink, and request extra space if this packet has MF
+	// set. XXX This algorithm could result in a number of intermediate
+	// packet copies linear in the final packet length.
 	int old_transport_length = q->transport_length();
 	assert((old_transport_length & 7) == 0);
-	// add 8 extra bytes to ensure room for a ChunkLink
-	if (!(q = q->put(p_lastoff - old_transport_length + 8))) {
+	int want_space = p_lastoff - old_transport_length + 8;
+	if (iph->ip_off & htons(IP_MF))
+	    want_space += (p_lastoff - p_off);
+	// request space
+	if (!(q = q->put(want_space))) {
 	    click_chatter("out of memory");
 	    *q_pprev = q_bucket_next;
 	    p->kill();
+	    _mem_used -= IPH_MEM_USED + old_transport_length;
 	    return 0;
 	}
+	// get rid of extra space
+	q->take(q->transport_length() - p_lastoff);
+	// hook up packet, and add final chunk
 	*q_pprev = q;
 	ChunkLink *last_chunk = (ChunkLink *)(q->transport_header() + old_transport_length);
 	last_chunk->off = last_chunk->lastoff = p_lastoff;
+	_mem_used += p_lastoff - old_transport_length;
     }
 
     // find chunks before and after p
@@ -289,10 +319,6 @@ IPReassembler::simple_action(Packet *p)
     // copy p's data into q
     memcpy(q->transport_header() + p_off, p->transport_header(), p_lastoff - p_off);
 
-    // clip end of packet if necessary
-    if (new_last_entry)
-	q->take(q->transport_length() - p_lastoff);
-
     // copy p's annotations and IP header if it is the first packet
     if (p_off == 0) {
 	int old_ip_off = q->ip_header()->ip_off;
@@ -304,7 +330,7 @@ IPReassembler::simple_action(Packet *p)
 	q->set_ip_header((click_ip *)(q->transport_header() - hl), hl);
 	memcpy(q->ip_header(), p->ip_header(), hl);
 	q->ip_header()->ip_off = old_ip_off;
-	//q->copy_annotations(p); ?
+	//q->copy_annotations(p); XXX
     }
 
     // clear MF if incoming packet has it cleared
@@ -325,39 +351,31 @@ IPReassembler::simple_action(Packet *p)
 }
 
 
-#if 0
 void
-IPReassembler::queue_evictor()
+IPReassembler::garbage_collect()
 {
-  int i, progress;
+    check();
 
- restart:
-  progress = 0;
-  
-  for(i=0; i< NMAP; i++) {
-    struct IPQueue *qp;
+    int now = click_jiffies();
 
-    // if we've cleared enough memory, exit
-    if (_mem_used <= IPFRAG_LOW_THRESH)
-      return;
+    // First throw away fragments at least 10 seconds old, then at least 5
+    // seconds old, then any fragments.
+    for (int delta = 10; delta >= 0; delta -= 5)
+	for (int bucket = 0; bucket < NMAP; bucket++) {
+	    WritablePacket **pprev = &_map[bucket];
+	    for (WritablePacket *q = *pprev; q; q = *pprev)
+		if (Q_PACKET_JIFFIES(q) <= now - delta) {
+		    *pprev = PACKET_LINK(q)->bucket_next;
+		    _mem_used -= IPH_MEM_USED + q->transport_length();
+		    q->kill();
+		    if (_mem_used <= _mem_low_thresh)
+			return;
+		} else
+		    pprev = &PACKET_LINK(q)->bucket_next;
+	}
 
-    qp = _map[i];
-    if (qp) {
-      while (qp->next) // find the last IPQueue
-	qp = qp->next;
-
-      queue_free(qp, 1); // free that one
-
-      progress = 1;
-    }
-  }
-  if (progress)
-    goto restart;
-
-  click_chatter(" panic! queue_evictor: memcount");
-
+    click_chatter("IPReassembler: cannot free enough memory!");
 }
-#endif
 
 
 void
