@@ -40,9 +40,12 @@ Neighbor::cast(const char *n)
 }
 
 int
-Neighbor::configure(const Vector<String> &, ErrorHandler *)
+Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpEthernetAddress, "source Ethernet address", &_ethaddr,
+		     cpIPAddress, "source IP address", &_ipaddr,
+		     0);
 }
 
 int
@@ -89,13 +92,12 @@ Neighbor::push(int port, Packet *packet)
       // this src addr not already in map, so add it
       EtherAddress ea((unsigned char *) eh->ether_shost);
       _addresses.insert(ipaddr, ea);
-      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
+      //      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
     }
 
     // perform further packet processing
     switch (gh->type) {
     case GRID_HELLO:
-      click_chatter("got hello");
       // nothing further to do
       packet->kill();
       break;
