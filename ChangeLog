@@ -1,3 +1,8 @@
+2004-01-12 Monday 17:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: airoinfo.cc (1.12), linktester.cc (1.2): add
+	unistd.h include for close()
+
 2004-01-12 Monday 02:05  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: counterflood.cc (1.4), counterflood.hh (1.4),
