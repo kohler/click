@@ -437,26 +437,46 @@ String::find_right(int c, int start) const
   return -1;
 }
 
+static String
+hard_lower(const String &s, int pos)
+{
+  String new_s(s.data(), s.length());
+  char *x = const_cast<char *>(new_s.data()); // know it's mutable
+  int len = s.length();
+  for (; pos < len; pos++)
+    x[pos] = tolower(x[pos]);
+  return new_s;
+}
+
 String
 String::lower() const
 {
-  String n(_data, _length);
-  char *s = (char *)n._data;
-  int len = n._length;
-  for (int i = 0; i < len; i++)
-    s[i] = tolower(s[i]);
-  return n;
+  // avoid copies
+  for (int i = 0; i < _length; i++)
+    if (_data[i] >= 'A' && _data[i] <= 'Z')
+      return hard_lower(*this, i);
+  return *this;
+}
+
+static String
+hard_upper(const String &s, int pos)
+{
+  String new_s(s.data(), s.length());
+  char *x = const_cast<char *>(new_s.data()); // know it's mutable
+  int len = s.length();
+  for (; pos < len; pos++)
+    x[pos] = toupper(x[pos]);
+  return new_s;
 }
 
 String
 String::upper() const
 {
-  String n(_data, _length);
-  char *s = (char *)n._data;
-  int len = n._length;
-  for (int i = 0; i < len; i++)
-    s[i] = toupper(s[i]);
-  return n;
+  // avoid copies
+  for (int i = 0; i < _length; i++)
+    if (_data[i] >= 'a' && _data[i] <= 'z')
+      return hard_upper(*this, i);
+  return *this;
 }
 
 int
