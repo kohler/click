@@ -45,13 +45,37 @@ CLICK_DECLS
 #define dsdv_assert(e) ((e) ? (void) 0 : dsdv_assert_(__FILE__, __LINE__, #e))
 
 bool
-DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
+DSDVRouteTable::get_one_entry(const IPAddress &dest_ip, RouteEntry &entry)
 {
+  RTEntry r;
+  bool res = lookup_route(dest_ip, r);
+  if (res)
+    entry = r;
+  return res;
+}
+
+bool
+DSDVRouteTable::lookup_route(const IPAddress &dest_ip, RTEntry &entry) 
+{
+#if ENABLE_PAUSE
+  if (_paused) {
+    RTEntry *r =_snapshot_rtes.findp(dest_ip);
+    if (r == 0)
+      return false;
+#if USE_OLD_SEQ
+    if (use_old_route(dest_ip, _snapshot_jiffies))
+      r = _snapshot_old_rtes.findp(dest_ip);
+#endif
+    entry = *r;
+    return true;
+  }
+#endif
+
   RTEntry *r = _rtes.findp(dest_ip);
   if (r == 0)
     return false;
 #if USE_OLD_SEQ
-  if (use_old_route(dest_ip, dsdv_jiffies())) 
+  if (use_old_route(dest_ip, dsdv_jiffies()))
     r = _old_rtes.findp(dest_ip);
 #endif
   entry = *r;
@@ -61,6 +85,23 @@ DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
 void
 DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
+#if ENABLE_PAUSE
+  if (_paused) {
+    for (RTIter iter = _snapshot_rtes.begin(); iter; iter++) {
+      const RTEntry &rte = iter.value();
+#if USE_OLD_SEQ
+      if (use_old_route(rte.dest_ip, _snapshot_jiffies))
+	vec.push_back(_snapshot_old_rtes[rte.dest_ip]);
+      else
+	vec.push_back(rte);
+#else
+      vec.push_back(rte);
+#endif
+    return;
+    }
+  }
+#endif
+
 #if USE_OLD_SEQ
   unsigned jiff = dsdv_jiffies();
 #endif
@@ -87,6 +128,12 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 
   RTEntry *real = _rtes.findp(dst);
   RTEntry *old = _old_rtes.findp(dst);
+#if ENABLE_PAUSE
+  if (_paused) {
+    real = _snapshot_rtes.findp(dst);
+    old = _snapshot_old_rtes.findp(dst);
+  }
+#endif
 #if USE_GOOD_NEW_ROUTES
   // never use an old route if the new one is better
   if (_use_good_new_route && real && old && metric_preferable(*real, *old))
@@ -109,8 +156,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
   _metric_type(MetricEstTxCount),
-  _est_type(EstByMeas),
-  _frozen(false)
+  _est_type(EstByMeas)
 {
   MOD_INC_USE_COUNT;
 }
@@ -211,6 +257,9 @@ DSDVRouteTable::initialize(ErrorHandler *)
   _log_dump_timer.schedule_after_ms(_log_dump_period); 
 
   check_invariants();
+#if ENABLE_PAUSE
+  _paused = false;
+#endif
 #if USE_OLD_SEQ
   _use_old_route = false;
 #if USE_GOOD_NEW_ROUTES
@@ -225,9 +274,23 @@ DSDVRouteTable::current_gateway(RouteEntry &gw)
 {
   RTEntry best;
   bool found_gateway = false;
-  for (RTIter i = _rtes.begin(); i; i++) {
-    if (i.value().is_gateway && (!found_gateway || metric_preferable(i.value(), best))) {
-      best = i.value();
+  Vector<IPAddress> gw_addrs;
+  RTIter i = _rtes.begin();
+#if ENABLE_PAUSE
+  if (_paused)
+    i = _snapshot_rtes.begin();
+#endif  
+  for ( ; i; i++) {
+    if (i.value().is_gateway) 
+      gw_addrs.push_back(i.value().dest_ip);
+  }
+
+  for (Vector<IPAddress>::const_iterator i = gw_addrs.begin(); i != gw_addrs.end(); i++) {
+    RTEntry r;
+    bool res = get_one_entry(*i, r);
+    dsdv_assert(res);
+    if (r.is_gateway && r.good() && (!found_gateway || metric_preferable(r, best))) {
+      best = r;
       found_gateway = true;
     }
   }
@@ -1067,15 +1130,6 @@ DSDVRouteTable::simple_action(Packet *packet)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
   }
   
-#if 0
-  if (_frozen) {
-    if (_log)
-      _log->log_end_recv_advertisement();
-    packet->kill();
-    return 0;
-  }
-#endif
-
   // maybe add new route for message transmitter, sanity check existing entry
   RTEntry *r = _rtes.findp(ipaddr);
   if (!r)
@@ -1407,25 +1461,43 @@ DSDVRouteTable::write_seqno(const String &arg, Element *el,
   return 0;
 }
 
+#if ENABLE_PAUSE
 String
-DSDVRouteTable::print_frozen(Element *e, void *)
+DSDVRouteTable::print_paused(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  return (rt->_frozen ? "true\n" : "false\n");
+  return (rt->_paused ? "true\n" : "false\n");
 }
 
 int
-DSDVRouteTable::write_frozen(const String &arg, Element *el, 
+DSDVRouteTable::write_paused(const String &arg, Element *el, 
 			     void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  if (!cp_bool(arg, &rt->_frozen))
-    return errh->error("`frozen' must be a boolean");
+  bool was_paused = rt->_paused;
+  if (!cp_bool(arg, &rt->_paused))
+    return errh->error("`paused' must be a boolean");
   
-  click_chatter("DSDVRouteTable %s: setting _frozen to %s", 
-		rt->id().cc(), rt->_frozen ? "true" : "false");
+  click_chatter("DSDVRouteTable %s: %s", 
+		rt->id().cc(), rt->_paused ? "pausing packet routes *_paused = true)" : 
+		"unpausing packet routes (_paused = false)");
+
+  if (!was_paused && rt->_paused) {
+    // if we are switching from unpaused to paused, take a snapshot of
+    // the route table.
+    rt->_snapshot_jiffies = dsdv_jiffies();
+    rt->_snapshot_rtes.clear();
+    for (RTIter i = rt->_rtes.begin(); i; i++)
+      rt->_snapshot_rtes.insert(i.key(), i.value());
+#if USE_OLD_SEQ
+    rt->_snapshot_old_rtes.clear();
+    for (RTIter i = rt->_old_rtes.begin(); i; i++)
+      rt->_snapshot_old_rtes.insert(i.key(), i.value());
+#endif
+  }
   return 0;
 }
+#endif
 
 #if USE_OLD_SEQ
 String
@@ -1533,8 +1605,10 @@ DSDVRouteTable::add_handlers()
   add_write_handler("est_type", write_est_type, 0);
   add_read_handler("seqno", print_seqno, 0);
   add_write_handler("seqno", write_seqno, 0);
-  add_read_handler("frozen", print_frozen, 0);
-  add_write_handler("frozen", write_frozen, 0);
+#if ENABLE_PAUSE
+  add_read_handler("paused", print_paused, 0);
+  add_write_handler("paused", write_paused, 0);
+#endif
 #if USE_OLD_SEQ
   add_read_handler("use_old_route", print_use_old_route, 0);
   add_write_handler("use_old_route", write_use_old_route, 0);

@@ -19,7 +19,7 @@ CLICK_DECLS
  *
  * =d 
  *
- * This is meant to be an ``official'' implementation of DSDV.  It is
+ * This is meant to be an `official' implementation of DSDV.  It is
  * intended to exactly replicate the behavior of DSDV as described in
  * the original Perkins paper, the CMU ad-hoc bakeoff paper, and the
  * CMU ns implementation.  I make no guarantees that any of the above
@@ -84,46 +84,99 @@ CLICK_DECLS
  * =item METRIC
  *
  * String.  The type of metric that should be used to compare two
- * routes.  Allowable values are: ``hopcount'', ``est_tx_count''
- * (estimated transmission count), ``delivery_rate_product'',
- * ``reverse_delivery_rate_product'', ``symmetric_hopcount''.
- * Symmetric hop count is like hopcount, but is only valid if all
- * links in the route are symmetric.  The default is to use
+ * routes.  Allowable values are: `hopcount', `est_tx_count'
+ * (estimated transmission count), `delivery_rate_product',
+ * `reverse_delivery_rate_product', `symmetric_hopcount'.  Symmetric
+ * hop count is like hopcount, but is only valid if all links in the
+ * route are good in both directions.  The default is to use
  * est_tx_count.
  *
  * =item LOG
  *
- * GridGenericLogger element.  Object to log Grid events to.
+ * GridGenericLogger element.  If provided, Grid events are logged to
+ * this element.
  *
- * =item WST0 (zero, not ``oh'')
+ * =item WST0 (zero, not `oh')
  * 
- * Unsigned integer.  Initial weighted settling time.  Milliseconds.
+ * Unsigned integer.  Initial weighted settling time in milliseconds.
+ * Defaults to 6,000 (6 seconds).
  *
  * =item ALPHA
  * 
- * Unsigned integer.  DSDV settling time weighting parameter, in percent.  Between 0 and 100 inclusive.
+ * Unsigned integer.  DSDV settling time weighting parameter, in
+ * percent, between 0 and 100 inclusive.  Defaults to 88%.
  *
- * =item SEQ0 (zero, not ``oh'')
+ * =item SEQ0 (zero, not `oh')
  *
  * Unsigned integer.  Initial sequence number used in advertisements.
  * Defaults to 0.  Must be even.
+ *
+ * =back
+ *
+ * =h nbrs read-only
+ * Print 1-hop routes.  `nbrs_v' is more verbose.
+ * =h rtes read-only
+ * Print route table.  `rtes_v' is more verbose.
+ * =h links read-only
+ * Print this node's link table.
+ * =h ip read-only
+ * Print this node's IP address.
+ * =h eth read-only
+ * Print this node's Ethernet address.
+ * =h metric_type read/write
+ * Get/set this node's metric type, as in the METRIC keyword.
+ * =h est_type read/write
+ * Get/set this node's link estimator type (unsigned int).  Only allowable value is 3.
+ * =h seqno read/write
+ * Get/set this node's current sequence number (unsigned int, must be even).
+ *
+ * =h paused read/write
+ *
+ * Get/set this node's pause status (boolean).  After the node is
+ * paused, subsequent data packets are routed using a snapshot of the
+ * route table taken at the pause time; however, the real route table
+ * continues to be updated and route ads continue to be sent.  When
+ * the node becomes unpaused, packets are routed using the real route
+ * table.  The node is initially unpaused.  This functionality may be
+ * disabled at compile-time.
+ *
+ * =h use_old_route read/write
+ *
+ * Unsigned integer 0-2.  If 0 (default), immediately use routes with
+ * newer sequence numbers.  If 1, only use new routes after the
+ * settling time has passed and they can be advertised.  If 2,
+ * immediately use routes with newer sequence numbers only if their
+ * metric is better than the last route; otherwise wait until the
+ * settling time has passed before using the new route.  This
+ * functionality may be disabled at compile-time.
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
  * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
 
+// if 1, enable `paused' handler
+#define ENABLE_PAUSE 1
+
 // if 1, don't use routes until it's also okay to advertise them
+// (enable `use_old_route handler' functionality).
 #define USE_OLD_SEQ 1
 
 // if 1, use new routes even if it's not okay to advertise them, as
-// long as they have a better metric
+// long as they have a better metric.  This is a modification of the
+// USE_OLD_SEQ functionality.
 #define USE_GOOD_NEW_ROUTES 1
 
+// if 1, enable `dsdv_seq' metric, which only uses routes from nodes
+// who deliver OLD_BCASTS_NEEDED out of every MAX_BCAST_HISTORY route
+// ads.
 #define SEQ_METRIC 1
 #define MAX_BCAST_HISTORY 3
 #define OLD_BCASTS_NEEDED 2
 
+// if 1, enable `one_way_tx_count' metric, which calculated est. tx
+// count using the reverse loss rate only.
 #define ONE_WAY_TXC_METRIC 1
+
 
 class GridGatewayInfo;
 class LinkStat;
@@ -133,9 +186,9 @@ class DSDVRouteTable : public GridGenericRouteTable {
 public:
   // generic rt methods
   bool current_gateway(RouteEntry &entry);  
-  bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry);
+  bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
- 
+
   DSDVRouteTable();
   ~DSDVRouteTable();
 
@@ -290,6 +343,9 @@ private:
   void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
   void insert_route(const RTEntry &, const GridGenericLogger::reason_t why);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
+  bool lookup_route(const IPAddress &dest_ip, RTEntry &entry);
+ 
+
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
   typedef TMap::iterator TMIter;
@@ -440,8 +496,8 @@ private:
   static String print_seqno(Element *e, void *);
   static int write_seqno(const String &, Element *, void *, ErrorHandler *);
 
-  static String print_frozen(Element *e, void *);
-  static int write_frozen(const String &, Element *, void *, ErrorHandler *);
+  static String print_paused(Element *e, void *);
+  static int write_paused(const String &, Element *, void *, ErrorHandler *);
 
   static String print_dump(Element *e, void *);
 
@@ -480,7 +536,14 @@ private:
 
   const metric_t _bad_metric; // default value is ``bad''
 
-  bool _frozen;
+#if ENABLE_PAUSE
+  bool _paused;
+  unsigned _snapshot_jiffies;
+  class RTable _snapshot_rtes;
+#if USE_OLD_SEQ
+  class RTable _snapshot_old_rtes;
+#endif
+#endif
 
 #if USE_OLD_SEQ
   bool _use_old_route;
