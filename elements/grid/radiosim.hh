@@ -5,8 +5,7 @@
  * =c
  * RadioSim([lat1 lon1, lat2 lon2, ...])
  * =s
- * duplicates packets
- * V<duplication>
+ * simulates reachability and broadcast in an 802.11-like radio network
  * =d
  * RadioSim simulates reachability and broadcast in an 802.11-like
  * radio network.

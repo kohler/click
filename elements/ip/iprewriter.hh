@@ -83,7 +83,7 @@
  * suggests. When a new flow is detected, the element is given a chance to
  * provide a mapping for that flow. This is called a I<mapping request>. This
  * element must implement the IPMapper interface. One example mapper is
- * IPRoundRobinMapper.
+ * RoundRobinIPMapper.
  *
  * =back
  *
@@ -91,7 +91,7 @@
  * Returns a human-readable description of the IPRewriter's current set of
  * mappings.
  *
- * =a IPRewriterPatterns, IPRoundRobinMapper, TCPRewriter, FTPPortMapper */
+ * =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper */
 
 class IPRewriter : public IPRw {
 

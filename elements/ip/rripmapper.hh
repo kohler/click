@@ -1,10 +1,10 @@
-#ifndef IPRRMAPPER_HH
-#define IPRRMAPPER_HH
+#ifndef RRIPMAPPER_HH
+#define RRIPMAPPER_HH
 #include "elements/ip/iprw.hh"
 
 /*
  * =c
- * IPRoundRobinMapper(PATTERN1, ..., PATTERNn)
+ * RoundRobinIPMapper(PATTERN1, ..., PATTERNn)
  * =s
  * round-robin mapper for IPRewriter(n)
  * V<TCP>
@@ -21,7 +21,7 @@
  *
  * =a IPRewriter, TCPRewriter, IPRewriterPatterns */
 
-class IPRoundRobinMapper : public Element, public IPMapper {
+class RoundRobinIPMapper : public Element, public IPMapper {
 
   Vector<IPRw::Pattern *> _patterns;
   Vector<int> _forward_outputs;
@@ -30,12 +30,12 @@ class IPRoundRobinMapper : public Element, public IPMapper {
   
  public:
 
-  IPRoundRobinMapper()			{ }
+  RoundRobinIPMapper()			{ }
 
-  const char *class_name() const	{ return "IPRoundRobinMapper"; }
+  const char *class_name() const	{ return "RoundRobinIPMapper"; }
   void *cast(const char *);
   
-  IPRoundRobinMapper *clone() const	{ return new IPRoundRobinMapper; }
+  RoundRobinIPMapper *clone() const	{ return new RoundRobinIPMapper; }
   int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
   int configure(const Vector<String> &, ErrorHandler *);
   void uninitialize();

@@ -1,5 +1,5 @@
 /*
- * iprrmapper.{cc,hh} -- round robin IPMapper
+ * rripmapper.{cc,hh} -- round robin IPMapper
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -13,14 +13,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "iprrmapper.hh"
+#include "rripmapper.hh"
 #include "confparse.hh"
 #include "error.hh"
 
 void *
-IPRoundRobinMapper::cast(const char *name)
+RoundRobinIPMapper::cast(const char *name)
 {
-  if (name && strcmp("IPRoundRobinMapper", name) == 0)
+  if (name && strcmp("RoundRobinIPMapper", name) == 0)
     return (Element *)this;
   else if (name && strcmp("IPMapper", name) == 0)
     return (IPMapper *)this;
@@ -29,7 +29,7 @@ IPRoundRobinMapper::cast(const char *name)
 }
 
 int
-IPRoundRobinMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
+RoundRobinIPMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 0)
     return errh->error("no patterns given");
@@ -53,14 +53,14 @@ IPRoundRobinMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-IPRoundRobinMapper::uninitialize()
+RoundRobinIPMapper::uninitialize()
 {
   for (int i = 0; i < _patterns.size(); i++)
     _patterns[i]->unuse();
 }
 
 void
-IPRoundRobinMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
+RoundRobinIPMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
 {
   int no = rw->noutputs();
   for (int i = 0; i < _patterns.size(); i++) {
@@ -71,7 +71,7 @@ IPRoundRobinMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
 }
 
 IPRw::Mapping *
-IPRoundRobinMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
+RoundRobinIPMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
 {
   int first_pattern = _last_pattern;
   do {
@@ -87,4 +87,4 @@ IPRoundRobinMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
 
 
 ELEMENT_REQUIRES(IPRw)
-EXPORT_ELEMENT(IPRoundRobinMapper)
+EXPORT_ELEMENT(RoundRobinIPMapper)

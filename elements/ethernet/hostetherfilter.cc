@@ -30,6 +30,12 @@ HostEtherFilter::~HostEtherFilter()
 {
 }
 
+void
+HostEtherFilter::notify_noutputs(int n)
+{
+  set_noutputs(n < 2 ? 1 : 2);
+}
+
 int
 HostEtherFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -47,21 +53,27 @@ HostEtherFilter::clone() const
 }
 
 Packet *
+HostEtherFilter::drop(Packet *p)
+{
+  if (noutputs() == 2)
+    output(1).push(p);
+  else
+    p->kill();
+  return 0;
+}
+
+Packet *
 HostEtherFilter::simple_action(Packet *p)
 {
   click_ether *e = (click_ether *) p->data();
 
-  if (_drop_own && memcmp(e->ether_shost, _addr, 6) == 0) {
-    p->kill();
-    return 0;
-  }
+  if (_drop_own && memcmp(e->ether_shost, _addr, 6) == 0)
+    return drop(p);
 
-  if ((e->ether_dhost[0] & 0x80) || memcmp(e->ether_dhost, _addr, 6) == 0){
-    return(p);
-  } else {
-    p->kill();
-    return(0);
-  }
+  if ((e->ether_dhost[0] & 0x80) || memcmp(e->ether_dhost, _addr, 6) == 0)
+    return p;
+  else
+    return drop(p);
 }
 
 EXPORT_ELEMENT(HostEtherFilter)
