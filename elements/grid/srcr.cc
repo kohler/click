@@ -828,7 +828,7 @@ SRCR::update_link(IPPair p, u_short m, unsigned int now)
 void
 SRCR::update_best_metrics() 
 {
-  _link_table->dijkstra(_ip);
+  _link_table->dijkstra();
   /* 
    * it should be the case that all dsts in the linktable
    * have a corresponding Dst in _dsts 

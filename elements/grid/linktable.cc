@@ -49,6 +49,8 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpIPAddress, "IP address", &_ip,
                     cpKeywords,
                     0);
+  
+  _hosts.insert(_ip, HostInfo(_ip));
   return ret;
 }
 
@@ -294,8 +296,10 @@ LinkTable::extract_min()
 
 
 void
-LinkTable::dijkstra(IPAddress src) 
+LinkTable::dijkstra() 
 {
+  IPAddress src = _ip;
+
   /* clear them all initially */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();

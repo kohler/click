@@ -79,7 +79,7 @@ public:
   void update_link(IPPair p, u_short metric, unsigned int now);
   u_short get_hop_metric(IPPair p);
   u_short get_route_metric(Vector<IPAddress> route, int size);
-  void dijkstra(IPAddress src);
+  void dijkstra();
   Vector<IPAddress> best_route(IPAddress dst);
   u_short get_host_metric(IPAddress s);
   Vector<IPAddress> get_hosts();
