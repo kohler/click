@@ -141,17 +141,9 @@ RandomUDPIPEncap::simple_action(Packet *p)
   ip->ip_p = IP_PROTO_UDP;
   ip->ip_src = addr->saddr;
   ip->ip_dst = addr->daddr;
-
-  if (p->ip_ttl_anno()) {
-    ip->ip_tos = p->ip_tos_anno();
-    /* We want to preserve the DF flag if set */
-    ip->ip_off = htons(p->ip_off_anno() & IP_RF);
-    ip->ip_ttl = p->ip_ttl_anno();
-  } else {
-    ip->ip_tos = 0;
-    ip->ip_off = 0;
-    ip->ip_ttl = 250; //rtm
-  }
+  ip->ip_tos = 0;
+  ip->ip_off = 0;
+  ip->ip_ttl = 250;
 
   ip->ip_sum = 0;
 #ifdef __KERNEL__

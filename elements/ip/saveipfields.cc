@@ -41,4 +41,5 @@ SaveIPFields::simple_action(Packet *p)
   return p;
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SaveIPFields)

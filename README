@@ -1,5 +1,5 @@
-THE CLICK MODULAR ROUTER RELEASE 1.0.1
-======================================
+THE CLICK MODULAR ROUTER RELEASE 1.1
+====================================
 
     This is the README file for the source release for the Click modular
 software router. The first thing you should do is look for more recent
@@ -20,11 +20,13 @@ CLICKDIR			this directory
 CLICKDIR/conf			configuration files
 CLICKDIR/doc			documentation
 CLICKDIR/elements		element source code
+CLICKDIR/elements/app		... for application-level protocol elements
 CLICKDIR/elements/ethernet	... for Ethernet elements
 CLICKDIR/elements/etherswitch	... for Ethernet-switch elements
 CLICKDIR/elements/ip		... for IP, ICMP, and TCP/UDP elements
-CLICKDIR/elements/ipsec		... for IPsec elements
 CLICKDIR/elements/linuxmodule	... for Linux kernel-specific elements
+CLICKDIR/elements/local		... for your own elements (empty)
+CLICKDIR/elements/radio		... for communicating with wireless radios
 CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/etc			Linux patches
@@ -33,6 +35,7 @@ CLICKDIR/linuxmodule		source code for Linux kernel module
 CLICKDIR/tools			source code for Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
+CLICKDIR/tools/click-combine	... merges routers into combined configuration
 CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
@@ -82,11 +85,11 @@ Linux Kernel Module
 
     See the `doc/click.o.8' manual page for a detailed description. To
 summarize, install a configuration by running `click-install CONFIGFILE'.
-This will install the kernel module itself, if necessary. (But you must
-have run `make install' first.) You can also install the kernel module with
-`/sbin/insmod click.o', and then install a configuration by hand with `cat
-CONFIGFILE > /proc/click/config'. If any errors occurred, they will appear
-in `/proc/click/errors'.
+This will also install the kernel module, if necessary. (But you must run
+`make install' before `click-install' will work.) You can also install the
+kernel module with `/sbin/insmod click.o', and then install a configuration
+by hand with `cat CONFIGFILE > /proc/click/config'. If any errors occurred,
+they will appear in `/proc/click/errors'.
 
 Configurations
 --------------

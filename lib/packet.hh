@@ -10,12 +10,9 @@ class Packet {
 public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
+    IPAddress dst_ip;
     bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
     bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
-    IPAddress dst_ip;
-    unsigned char ip_tos;
-    unsigned char ip_ttl;
-    unsigned short ip_off;
     char param_off;     // for ICMP Parameter Problem, byte offset of error
     char color;         // one of 255 colors set by Paint element
     int fwd_rate;
@@ -137,12 +134,6 @@ private:
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
-  unsigned char ip_tos_anno() const	{ return anno()->ip_tos; }
-  void set_ip_tos_anno(unsigned char t)	{ anno()->ip_tos = t; }
-  unsigned char ip_ttl_anno() const	{ return anno()->ip_ttl; }
-  void set_ip_ttl_anno(unsigned char t)	{ anno()->ip_ttl = t; }
-  unsigned short ip_off_anno() const    { return anno()->ip_off; }
-  void set_ip_off_anno(unsigned short o){ anno()->ip_off = o; }
   bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
   void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
   bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }

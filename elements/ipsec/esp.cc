@@ -113,4 +113,5 @@ Esp::simple_action(Packet *p)
   return(q);
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(Esp)

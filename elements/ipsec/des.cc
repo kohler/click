@@ -623,5 +623,5 @@ Des::des_set_key(des_cblock *key,des_key_schedule schedule)
 	}
 
 
-
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(Des)

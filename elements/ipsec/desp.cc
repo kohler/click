@@ -80,4 +80,5 @@ DeEsp::simple_action(Packet *p)
   return Packet::make(p->data(), p->length() - (blks + 2));
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(DeEsp)

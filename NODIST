@@ -6,6 +6,12 @@ elements/ip/tcpipsend.hh
 elements/ip/tcpipsend.cc
 elements/ip/tcpconnmon.hh
 elements/ip/tcpconnmon.cc
+elements/ipsec/des.hh
+elements/ipsec/des.cc
+elements/ipsec/desp.hh
+elements/ipsec/desp.cc
+elements/ipsec/esp.hh
+elements/ipsec/esp.cc
 elements/standard/block.hh
 elements/standard/block.cc
 elements/standard/compblock.hh

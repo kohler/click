@@ -19,6 +19,8 @@ Version 1.1
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
    SetIPAddress element.
 
+** Removed the SaveIPFields and IPsec elements (they were rotting).
+
 * Incompatible C++ API changes
 
 ** Reorganized Linux kernel polling patches. If you have a previous version
