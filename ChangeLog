@@ -1,3 +1,7 @@
+2004-10-21 Thursday 21:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.35): configurefun
+
 2004-10-21 Thursday 21:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.44), config.h.in (1.26), configure (1.34),
