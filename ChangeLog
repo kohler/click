@@ -1,3 +1,8 @@
+2004-07-07 Wednesday 20:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.19), configure.in (1.237): prevent --with-linux and
+	--with-freebsd directories that are relative paths (Bob)
+
 2004-07-07 Wednesday 15:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/linktable.hh (1.3): remove redundant typedef
