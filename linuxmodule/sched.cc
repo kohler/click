@@ -19,6 +19,7 @@
 #include "kernelerror.hh"
 
 extern "C" {
+void tulip_print_stats();
 #define __NO_VERSION__
 #define new linux_new
 #include <linux/module.h>
@@ -92,5 +93,5 @@ kill_click_sched()
       asm volatile ("" : : : "memory"); 
     } 
   }
-  tulip_print_stats();
+  // tulip_print_stats();
 }

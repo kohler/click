@@ -7,4 +7,4 @@
 #define POLLDEV_MAX_PKTS_PER_RUN 8
 #define TODEV_MAX_PKTS_PER_RUN   16
 
-#define DEV_KEEP_STATS 1
+// #define DEV_KEEP_STATS 1
