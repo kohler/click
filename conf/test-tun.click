@@ -7,7 +7,7 @@
 // run it as root.
 //
 // This configuration should work on FreeBSD, OpenBSD, and Linux. It should
-// produce a stream of `tun-ok' printouts if all goes well. On OpenBSD, you
+// produce a stream of 'tun-ok' printouts if all goes well. On OpenBSD, you
 // may need to run
 //   route add 1.0.0.0 -interface 1.0.0.1
 // after starting the Click configuration.
