@@ -1,3 +1,11 @@
+2004-07-27 Tuesday 02:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromcapdump.cc (1.9), fromcapdump.hh (1.5),
+	fromipsumdump.cc (1.68), fromipsumdump.hh (1.37),
+	fromnetflowsumdump.cc (1.20), fromnetflowsumdump.hh (1.16),
+	fromtcpdump.cc (1.9), fromtcpdump.hh (1.6): ZERO is now the default
+	(it is safer)
+
 2004-07-23 Friday 18:12  John Bicket <jbicket@mit.edu>
 
 	* elements/linuxmodule/anydevice.cc (1.28),
