@@ -1,3 +1,15 @@
+2001-06-01 Friday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.27), include/click/ip6address.hh (1.4),
+	include/click/ipaddress.hh (1.16), lib/confparse.cc (1.74),
+	lib/ip6address.cc (1.23), lib/ipaddress.cc (1.22): rename
+	mask_to_prefix_bits to mask_to_prefix_len
+
+2001-06-01 Friday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/iptable.cc (1.12): must always instantiate
+	Vector<IPTable::Entry>
+
 2001-06-01 Friday 04:14  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/iptable.cc (1.11): protect with EXPLICIT_TEMPLATE_INSTANCES
