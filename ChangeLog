@@ -1,3 +1,49 @@
+2001-07-20 Friday 22:47  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.10),
+	elements/standard/peekhandlers.cc (1.20),
+	elements/standard/pokehandlers.cc (1.19),
+	elements/standard/quitwatcher.cc (1.14),
+	elements/userlevel/controlsocket.cc (1.28),
+	elements/userlevel/khandlerproxy.cc (1.3), lib/confparse.cc (1.78),
+	lib/element.cc (1.61), linuxmodule/module.cc (1.57),
+	linuxmodule/proc_element.cc (1.33), userlevel/click.cc (1.60):
+	adapt to Router::Handler changes (Mz)
+
+2001-07-20 Friday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh (1.17): Add
+	Element::configuration(Vector<String> &) convenience method
+
+2001-07-20 Friday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh (1.18), lib/router.cc (1.98): Router:
+	improve Handler objects. Simpler adding/changing; Router::Handler
+	is a true object with private data (requires changes elsewhere).
+	(Mz)
+
+2001-07-20 Friday 22:45  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/unqueue.hh (1.7): Andrew Gorelik added an
+	"active" handler/ACTIVE keyword argument (Mazu); also changed name
+	of "packets" handler to "count"
+
+2001-07-20 Friday 22:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/unqueue.cc (1.13): Andrew Gorelik added an
+	"active" handler/ACTIVE keyword argument (Mazu)
+
+2001-07-20 Friday 22:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh (1.14), lib/string.cc (1.30): String: add
+	compare(const String &), and operators < <= >= > (Mz)
+
+2001-07-20 Friday 22:43  Eddie Kohler <kohler@aciri.org>
+
+	* apps/ClickController/: ControlSocket.java (1.11),
+	RouterTreeModel.java (1.7): ClickController: more gracefully
+	handles missing handlers (Mz)
+
 2001-07-19 Thursday 23:45  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.32), elements/linuxmodule/polldevice.cc (1.118),
