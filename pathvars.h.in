@@ -26,4 +26,7 @@
 /* Define if the BSD kernel module driver was compiled. */
 #undef HAVE_BSDMODULE_DRIVER
 
+/* Define if the Click kernel module should provide clickfs. */
+#undef HAVE_CLICKFS
+
 #endif

@@ -3,6 +3,7 @@
 #define WANT_MOD_USE_COUNT 1	/* glue.hh should use the actual macros */
 #include <click/router.hh>
 #include <click/driver.hh>
+#include <click/pathvars.h>	/* for HAVE_CLICKFS */
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -33,8 +34,11 @@ void init_proc_click_elements();
 void cleanup_proc_click_elements();
 void init_proc_click_errors();
 void cleanup_proc_click_errors();
-void init_proc_click_dir();
-void cleanup_proc_click_dir();
+
+#ifdef HAVE_CLICKFS
+void init_clickfs();
+void cleanup_clickfs();
+#endif
 
 extern ErrorHandler *kernel_errh;
 extern ErrorHandler *kernel_syslog_errh;

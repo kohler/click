@@ -322,6 +322,9 @@ init_module()
   init_proc_click_config();
   init_proc_click_elements();
   init_proc_click_errors();
+#ifdef HAVE_CLICKFS
+  init_clickfs();
+#endif
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
@@ -350,6 +353,9 @@ cleanup_module()
   
   kill_current_router();
 
+#ifdef HAVE_CLICKFS
+  cleanup_clickfs();
+#endif
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();

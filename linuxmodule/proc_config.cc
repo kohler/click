@@ -27,6 +27,7 @@
 static atomic_t config_write_lock;
 static String *current_config = 0;
 static StringAccum *build_config = 0;
+atomic_t click_config_generation;
 
 
 //
@@ -138,6 +139,7 @@ static void
 set_current_config(const String &s)
 {
   *current_config = s;
+  atomic_inc(&click_config_generation);
 
   // wake up anyone waiting for errors
   wake_up_interruptible(&proc_click_config_wait_queue);
@@ -259,6 +261,7 @@ init_proc_click_config()
   init_waitqueue_head(&proc_click_config_wait_queue);
 #endif
   
+  atomic_set(&click_config_generation, 1);
   current_config = new String;
 }
 
