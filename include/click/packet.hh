@@ -58,6 +58,7 @@ class Packet { public:
   
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *data() const	{ return skb()->data; }
+  const unsigned char *end_data() const	{ return skb()->tail; }
   uint32_t length() const		{ return skb()->len; }
   uint32_t headroom() const		{ return skb()->data - skb()->head; }
   uint32_t tailroom() const		{ return skb()->end - skb()->tail; }
@@ -65,6 +66,7 @@ class Packet { public:
   uint32_t buffer_length() const	{ return skb()->end - skb()->head; }
 #else				/* User-level driver and BSD kernel module */
   const unsigned char *data() const	{ return _data; }
+  const unsigned char *end_data() const	{ return _tail; }
   uint32_t length() const		{ return _tail - _data; }
   uint32_t headroom() const		{ return _data - _head; }
   uint32_t tailroom() const		{ return _end - _tail; }
@@ -350,6 +352,7 @@ class WritablePacket : public Packet { public:
   
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   unsigned char *data() const			{ return skb()->data; }
+  unsigned char *end_data() const		{ return skb()->tail; }
   unsigned char *buffer_data() const		{ return skb()->head; }
   unsigned char *mac_header() const		{ return skb()->mac.raw; }
   click_ether *ether_header() const {return (click_ether*)skb()->mac.ethernet;}
@@ -361,6 +364,7 @@ class WritablePacket : public Packet { public:
   click_udp *udp_header() const		{ return (click_udp*)skb()->h.uh; }
 #else				/* User-space or BSD kernel module */
   unsigned char *data() const			{ return _data; }
+  unsigned char *end_data() const		{ return _tail; }
   unsigned char *buffer_data() const		{ return _head; }
   unsigned char *mac_header() const		{ return _mac.raw; }
   click_ether *ether_header() const		{ return _mac.ethernet; }
