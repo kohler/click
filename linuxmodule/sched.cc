@@ -35,64 +35,68 @@ extern "C" {
 #undef new
 }
 
-pid_t click_sched_pid = -1;  /* kernel thread ID for click scheduler */
-
-extern "C" void start_click_sched(ErrorHandler *);
-extern "C" void kill_click_sched();
-
-void 
-click_sched_die(int signo)
-{
-  extern Router *current_router;
-  printk("click: caught signal %d\n", signo);
-  current_router->please_stop_driver();
-}
+static atomic_t num_click_threads;
 
 static int
 click_sched(void *thunk)
 {
-  Router *router = (Router*) thunk;
+  Router *router = (Router *)thunk;
   current->session = 1;
   current->pgrp = 1;
   sprintf(current->comm, "click");
+  printk("<1>click: starting router %p\n", router);
+  router->use();
 
   router->driver();
 
-  click_sched_pid = -1;
-  printk("click: router stopped, exiting!\n");
+  router->unuse();
+  atomic_dec(&num_click_threads);
+  printk("<1>click: stopping router %p\n", router);
   return 0;
 }
 
-extern "C" void
-start_click_sched(ErrorHandler *kernel_errh)
+int
+start_click_sched(Router *r, ErrorHandler *kernel_errh)
 {
-  extern Router *current_router;
-
-  if (click_sched_pid > 0) { 
-    kernel_errh->error("another click thread running.\n"); 
+  /* if (click_sched_pid > 0) { 
+    kernel_errh->error("another Click thread is already running"); 
     return; 
-  } 
-  click_sched_pid = kernel_thread 
-    (click_sched, current_router, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
-  if (click_sched_pid < 0) { 
-    kernel_errh->error("cannot create kernel thread.\n"); 
-    return; 
-  }
+    } */
+  atomic_inc(&num_click_threads);
+  pid_t pid = kernel_thread 
+    (click_sched, r, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
+  if (pid < 0) {
+    atomic_dec(&num_click_threads);
+    kernel_errh->error("cannot create kernel thread!"); 
+    return -1;
+  } else
+    return 0;
 }
 
-
-extern "C" void
-kill_click_sched()
+void
+kill_click_sched(Router *r)
 {
-  if (click_sched_pid > 0) { 
-    kill_proc(click_sched_pid, SIGTERM, 1); 
-    /* wait for thread to die - paranoid =) */ 
-    while(click_sched_pid > 0) { 
-      schedule();
-#ifdef __i386__
-      asm volatile ("" : : : "memory");
-#endif
-    } 
-  }
-  /* tulip_print_stats(); */
+  r->please_stop_driver();
+}
+
+void
+init_click_sched()
+{
+  atomic_set(&num_click_threads, 0);
+}
+
+int
+cleanup_click_sched()
+{
+  // wait for up to 5 seconds for routers to exit
+  unsigned long out_jiffies = jiffies + 5 * HZ;
+  while (atomic_read(&num_click_threads) > 0 && jiffies < out_jiffies)
+    schedule();
+
+  if (atomic_read(&num_click_threads) > 0) {
+    printk("<1>click: %d threads are still active! Expect a crash!\n",
+	   atomic_read(&num_click_threads));
+    return -1;
+  } else
+    return 0;
 }

@@ -56,6 +56,14 @@ static struct proc_dir_entry proc_click_config_entry = {
   0, &proc_click_config_inode_operations, // inode size, operations
 };
 
+static struct proc_dir_entry proc_click_hotconfig_entry = {
+  0,				// dynamic inode
+  9, "hotconfig",
+  S_IFREG | S_IWUSR | S_IWGRP,
+  1, 0, 0,			// nlink, uid, gid
+  0, &proc_click_config_inode_operations, // inode size, operations
+};
+
 
 //
 // CONFIG
@@ -68,7 +76,9 @@ click_config_open(struct inode *, struct file *filp)
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   if ((filp->f_flags & O_ACCMODE) == O_RDWR
       || (filp->f_flags & O_APPEND)
-      || (writing && !(filp->f_flags & O_TRUNC)))
+      || (writing && !(filp->f_flags & O_TRUNC))
+      || (!writing && filp->f_dentry->d_inode->i_ino ==
+	  proc_click_hotconfig_entry.low_ino))
     return -EACCES;
   
   if (writing) {
@@ -86,33 +96,6 @@ click_config_open(struct inode *, struct file *filp)
   
   MOD_INC_USE_COUNT;
   return 0;
-}
-
-static
-DECLARE_RELEASE_FILEOP(click_config_release)
-{
-  bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
-  
-  if (writing) {
-    if (!config_write_lock)
-      return -EIO;
-    if (build_config) {
-      if (!current_config)
-	current_config = new String;
-      if (current_config) {
-	*current_config = build_config->take_string();
-	initialize_router(*current_config);
-	proc_click_config_entry.size = current_config->length();
-      }
-    }
-    config_write_lock = 0;
-    MOD_DEC_USE_COUNT;
-    return (current_router && current_router->initialized() ? 0 : -EINVAL);
-    
-  } else {
-    MOD_DEC_USE_COUNT;
-    return 0;
-  }
 }
 
 static
@@ -157,6 +140,74 @@ DECLARE_WRITE_FILEOP(click_config_write)
   return count;
 }
 
+static void
+hotswap_config()
+{
+  String s = build_config->take_string();
+  Router *r = parse_router(s);
+  if (!r)
+    return;
+  
+  /* prevent interrupts */
+  unsigned cli_flags;
+  save_flags(cli_flags);
+  cli();
+    
+  if (r->initialize(kernel_errh) >= 0) {
+    // perform hotswap
+    if (current_router && current_router->initialized())
+      r->take_state(current_router, kernel_errh);
+    // install
+    kill_current_router();
+    install_current_router(r);
+    *current_config = s;
+  }
+  
+  /* allow interrupts */
+  restore_flags(cli_flags);
+}
+
+static void
+swap_config()
+{
+  *current_config = build_config->take_string();
+  kill_current_router();
+  Router *router = parse_router(*current_config);
+  if (router) {
+    router->initialize(kernel_errh);
+    install_current_router(router);
+  }
+}
+
+static
+DECLARE_RELEASE_FILEOP(click_config_release)
+{
+  bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
+  if (!writing) {
+    MOD_DEC_USE_COUNT;
+    return 0;
+  }
+  if (!config_write_lock)
+    return -EIO;
+  
+  if (build_config) {
+    if (!current_config)
+      current_config = new String;
+    if (current_config) {
+      reset_proc_click_errors();
+      unsigned inum = filp->f_dentry->d_inode->i_ino;
+      if (inum == proc_click_hotconfig_entry.low_ino)
+	hotswap_config();
+      else
+	swap_config();
+      proc_click_config_entry.size = current_config->length();
+    }
+  }
+  config_write_lock = 0;
+  MOD_DEC_USE_COUNT;
+  return (current_router && current_router->initialized() ? 0 : -EINVAL);
+}
+
 }
 
 
@@ -167,6 +218,7 @@ init_proc_click_config()
   proc_click_config_inode_operations = proc_dir_inode_operations;
   proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
   click_register_pde(&proc_click_entry, &proc_click_config_entry);
+  click_register_pde(&proc_click_entry, &proc_click_hotconfig_entry);
 }
 
 void

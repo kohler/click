@@ -24,10 +24,6 @@
 #include "confparse.hh"
 #include "archive.hh"
 
-extern "C" void start_click_sched(ErrorHandler *);
-extern "C" void kill_click_sched(ErrorHandler *);
-
-
 struct proc_dir_entry proc_click_entry = {
   0,				// dynamic inode
   5, "click",			// name
@@ -63,8 +59,8 @@ LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
   errh->error("unsatisfied requirement `%s'", String(r).cc());
 }
 
-void
-initialize_router(String s)
+Router *
+parse_router(String s)
 {
   // decompose archive
   if (s.length() != 0 && s[0] == '!') {
@@ -78,39 +74,43 @@ initialize_router(String s)
       }
     if (!found) {
       kernel_errh->error("archive has no `config' section");
-      s = String();
+      return 0;
     }
   }
 
-#ifdef HAVE_POLLING
-  kill_click_sched(kernel_errh);
-#endif
-  
-  cleanup_router_element_procs();
-  reset_proc_click_errors();
-  delete current_router;
-  
-  LexerExtra lextra;
+  LinuxModuleLexerExtra lextra;
   int cookie = lexer->begin_parse(s, "line ", &lextra);
-  
   while (lexer->ystatement())
     /* do nothing */;
-  
-  current_router = lexer->create_router();
-  
+  Router *r = lexer->create_router();
   lexer->end_parse(cookie);
   
+  return r;
+}
+
+void
+kill_current_router()
+{
   if (current_router) {
-    current_router->initialize(kernel_errh);
-    // current_router->print_structure(kernel_errh);
-    init_router_element_procs();
-#ifdef HAVE_POLLING
-    if (current_router->initialized())
-      start_click_sched(kernel_errh);
-#endif
+    kill_click_sched(current_router);
+    //printk("<1>  killed\n");
+    cleanup_router_element_procs();
+    //printk("<1>  cleaned\n");
+    current_router->unuse();
+    //printk("<1>  deleted\n");
+    current_router = 0;
   }
 }
 
+void
+install_current_router(Router *r)
+{
+  current_router = r;
+  current_router->use();
+  init_router_element_procs();
+  if (r->initialized())
+    start_click_sched(r, kernel_errh);
+}
 
 /*
  * Count cycles for all of IPB code.
@@ -331,6 +331,7 @@ read_requirements(Element *, void *)
     return "";
 }
 
+#if 0
 static int
 write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
 {
@@ -351,6 +352,7 @@ write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
     current_router->driver_once();
   return 0;
 }
+#endif
 
 
 extern "C" void
@@ -413,6 +415,7 @@ init_module()
   String::static_initialize();
   Element::static_initialize();
   ErrorHandler::static_initialize(new KernelErrorHandler);
+  AnyDevice::static_initialize();
   FromDevice::static_initialize();
   ToDevice::static_initialize();
   kernel_errh = ErrorHandler::default_handler();
@@ -428,6 +431,7 @@ init_module()
   init_proc_click_config();
   init_proc_click_elements();
   init_proc_click_errors();
+  init_click_sched();
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
@@ -438,12 +442,14 @@ init_module()
   next_root_handler("classes", read_classes, 0, 0, 0);
   next_root_handler("packages", read_packages, 0, 0, 0);
   next_root_handler("requirements", read_requirements, 0, 0, 0);
-#ifndef HAVE_POLLING
+#if 0 && !HAVE_POLLING
   next_root_handler("driver", 0, 0, write_driver, 0);
 #endif
 
   return 0;
 }
+
+void print_and_free_chunks();
 
 extern "C" void
 cleanup_module()
@@ -451,33 +457,35 @@ cleanup_module()
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
 
-#ifdef HAVE_POLLING
-  kill_click_sched(kernel_errh);
-  /* tulip_print_stats(); */
-#endif
-  
+  kill_current_router();
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();
   click_unregister_pde(&proc_click_entry);
   cleanup_click_proc();
-  delete current_router;
   delete lexer;
-  
+
+  cleanup_click_sched();
+    
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = 0;
   
   ErrorHandler::static_cleanup();
   FromDevice::static_cleanup();
   ToDevice::static_cleanup();
-  printk("<1>click module exiting\n");
-  printk("<1>still allocated: %d elements\n", Element::nelements_allocated);
   
-  printk("<1>cycles: %s", read_cycles(0, 0).cc());
+  printk("<1>click module exiting\n");
+    
+  // printk("<1>cycles: %s", read_cycles(0, 0).cc());
   
   // must call after all operations that might create strings are done
   String::static_cleanup();
-  printk("<1>outstanding news: %d\n", click_outstanding_news);
+  if (Element::nelements_allocated)
+    printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
+  if (click_outstanding_news) {
+    printk("<1>click error: %d outstanding news\n", click_outstanding_news);
+    print_and_free_chunks();
+  }
 #ifdef HAVE_READ_NET_SKBCOUNT
   printk("<1>net_skbcount: %d\n", read_net_skbcount());
 #endif

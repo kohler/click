@@ -44,8 +44,16 @@ void cleanup_proc_click_errors();
 
 extern ErrorHandler *kernel_errh;
 extern Router *current_router;
-void initialize_router(String);
+Router *parse_router(String);
+void kill_current_router();
+void install_current_router(Router *);
 void reset_proc_click_errors();
+
+extern int click_where;
+void start_click_sched(Router *, ErrorHandler *);
+void kill_click_sched(Router *);
+void init_click_sched();
+int cleanup_click_sched();
 
 #define ROOT_HANDLERS_CAP 16
 extern Router::Handler root_handlers[ROOT_HANDLERS_CAP];
