@@ -1,3 +1,15 @@
+2003-11-14 Friday 11:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/timefilter.hh (1.9), analysis/timerange.hh
+	(1.5), standard/counter.hh (1.28): list keyword arguments in
+	descriptor
+
+2003-11-14 Friday 11:20  Eddie Kohler <kohler@icir.org>
+
+	* include/click/handlercall.hh (1.10), lib/handlercall.cc (1.11):
+	add HandlerCall::call_write(const String &hdesc, const String
+	&value, Router *, ErrorHandler *)
+
 2003-11-11 Tuesday 01:03  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.216), etc/libclick/lc-configure.in (1.26): nits
