@@ -201,7 +201,7 @@ ARPResponder::read_handler(Element *e, void *thunk)
   case 0: {			// table
     StringAccum sa;
     for (int i = 0; i < ar->_v.size(); i++)
-      sa << ar->_v[i].unparse_with_mask(ar->_v[i].mask) << ' ' << ar->_v[i].ena << '\n';
+      sa << ar->_v[i].dst.unparse_with_mask(ar->_v[i].mask) << ' ' << ar->_v[i].ena << '\n';
     return sa.take_string();
   }
 
