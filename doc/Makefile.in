@@ -51,10 +51,10 @@ install-info: $(srcdir)/click.info
 	$(mkinstalldirs) $(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \
-	    echo "  $(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f"; \
+	    echo "$(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f"; \
 	    $(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f || exit 1; fi; \
 	done
-	$(INSTALL_INFO) --info-dir=$(infodir) $(infodir)/click.info
+	-$(INSTALL_INFO) --info-dir=$(infodir) $(infodir)/click.info 2>&1 >/dev/null
 
 info: $(srcdir)/click.info
 	@:
