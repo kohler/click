@@ -1,3 +1,8 @@
+2002-05-29 Wednesday 08:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/ClickController/ControlSocket.java (1.13): toString() should
+	work evenwhen _sock is not initialized.
+
 2002-05-28 Tuesday 22:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.3), dsdvroutetable.hh (1.3),
