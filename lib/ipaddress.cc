@@ -25,7 +25,11 @@
 
 IPAddress::IPAddress(const unsigned char *data)
 {
+#ifdef HAVE_INDIFFERENT_ALIGNMENT
   _addr = *(reinterpret_cast<const unsigned *>(data));
+#else
+  memcpy(&_addr, data, 4);
+#endif
 }
 
 IPAddress::IPAddress(const String &str)
