@@ -148,77 +148,80 @@ sub fixfP ($$) {
 }
 
 sub nroffize_text ($) {
-  my($t) = @_;
-  my($i, $pos);
+    my($t) = @_;
+    my($i, $pos, $s);
 
-  # embolden & manpageize
-  foreach my $r (@Related) {
-      my $l = length($r);
-      for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
- 	  if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
- 	      && (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
- 	      substr($t, $pos, $l) = "L<" . $r . ">";
- 	      $pos += 2 + $l;
- 	  }
-      }
-  }
-  
-  $t =~ s/\\/\\\\/g;
-  $t =~ s/^\./\\&./gm;
-  $t =~ s/^'/\\&'/gm;
-  $t =~ s/^\s*$/.PP\n/gm;
-  $t =~ s/^\.PP\n(?:\.PP\n)+/.PP\n/gm;
-  $t =~ s{\A\s*(?:\.PP\n)?}{}s;
-  if (@Over > 0) {
-    $t =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
-  }
-
-  # get rid of entities
-  $t =~ s{[\200-\377]}{"E<" . ord($1) . ">"}ge;
-  $t =~ s{(E<[^>]*>)}{quote($1)}ge;
-  
-  my $maxnest = 10;
-  while ($maxnest-- && $t =~ /[A-Z]</) {
-    
-    # can't do C font here
-    $t =~ s/([BIR])<($nonest)>/"\\f$1" . fixfP($2, $1) . "\\fP"/eg;
-    
-    # files and filelike refs in italics
-    $t =~ s/F<($nonest)>/I<$1>/g;
-    
-    # LREF: man page references
-    $t =~ s{L<($nonest)\(([\dln])\)>(\S*)(\s*)}{\n.M $1 $2 $3\n}g;
-    
-    $t =~ s/V<($nonest)>//g;
-    
-    # LREF: a la HREF L<show this text|man/section>
-    $t =~ s{L<($nonest)>(\S*)(\s*)}{
-    if ($RelatedSource{$1}) {
-      "\n.M $1 \"$RelatedSource{$1}\" $2\n";
-    } else {
-      $i = index($1, "|");
-      ($i >= 0 ? substr($1, 0, $i) . $2 . $3 : "\\fB$1\\fP$2$3");
+    # embolden & manpageize
+    foreach my $r (@Related) {
+	my $l = length($r);
+	for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
+	    if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
+		&& (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
+		substr($t, $pos, $l) = "L<" . $r . ">";
+		$pos += 2 + $l;
+	    }
+	}
     }
-    }eg;
-    
-    $t =~ s/Z<>/\\&/g;
-    $t =~ s/N<>(\n?)/\n.br\n/g;
-
-    # comes last because not subject to reprocessing
-    $t =~ s/C<($nonest)>/"\\f(CW" . fixfP($1, 'R') . "\\fP"/eg;
-  }
-
-  # replace entities
-  $t =~ s/\305\274([^\276]*)\276/unentity($1)/ge;
   
-  # fix fonts
-  $t =~ s/\\fP/\\fR/g;
-    
-  $t =~ s/\n+/\n/sg;
-  $t =~ s/^\n+//;
-  $t =~ s/\n+$//;
+    $t =~ s/\\/\\\\/g;
+    $t =~ s/^\./\\&./gm;
+    $t =~ s/^'/\\&'/gm;
+    $t =~ s/^\s*$/.PP\n/gm;
+    $t =~ s/^\.PP\n(?:\.PP\n)+/.PP\n/gm;
+    $t =~ s{\A\s*(?:\.PP\n)?}{}s;
+    if (@Over > 0) {
+	$t =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
+    }
 
-  $t;
+    # get rid of entities
+    $t =~ s{[\200-\377]}{"E<" . ord($1) . ">"}ge;
+    $t =~ s{(E<[^>]*>)}{quote($1)}ge;
+  
+    my $maxnest = 10;
+    while ($maxnest-- && $t =~ /[A-Z]</) {
+    
+	# can't do C font here
+	$t =~ s/([BIR])<($nonest)>/"\\f$1" . fixfP($2, $1) . "\\fP"/eg;
+    
+	# files and filelike refs in italics
+	$t =~ s/F<($nonest)>/I<$1>/g;
+    
+	# LREF: man page references
+	$t =~ s{L<($nonest)\(([\dln])\)>(\S*)(\s*)}{\n.M $1 $2 $3\n}g;
+    
+	$t =~ s/V<($nonest)>//g;
+    
+	# LREF: a la HREF L<show this text|man/section>
+	$t =~ s{L<($nonest)>(\S*)(\s*)}{
+	    if (($s = $RelatedSource{$1})) {
+		"\n.M $1 \"$s\" $2\n";
+	    } else {
+		$i = index($1, "|");
+		($i >= 0 ? substr($1, 0, $i) . $2 . $3 : "\\fB$1\\fP$2$3");
+	    }
+	}eg;
+    
+	$t =~ s/Z<>/\\&/g;
+	$t =~ s/N<>(\n?)/\n.br\n/g;
+
+	# comes last because not subject to reprocessing
+	$t =~ s/C<($nonest)>/"\\f(CW" . fixfP($1, 'R') . "\\fP"/eg;
+    }
+
+    # replace entities
+    $t =~ s/\305\274([^\276]*)\276/unentity($1)/ge;
+  
+    # fix fonts
+    $t =~ s/\\fP/\\fR/g;
+
+    # fix manual
+    $t =~ s/\n\.M (\S+) \"(\S+)\" (\(\2\))/\n.M $1 \"$2\" /sg;
+    
+    $t =~ s/\n+/\n/sg;
+    $t =~ s/^\n+//;
+    $t =~ s/\n+$//;
+
+    $t;
 }
 
 sub nroffize ($) {
@@ -767,87 +770,87 @@ close OUT if !$directory;
 #
 
 sub read_elementlist ($) {
-  my($fn) = @_;
-
-  local($/) = "\n";
-  if (!open(IN, $fn)) {
-    print STDERR "$fn: $!\n";
-    return;
-  }
-
-  my($section, $active, $cur_name, $cur_section, %new_summary);
-  $active = 0;
-  while (<IN>) {
-    if (/^\.SS \"(.*)\"/) {
-      $section = $1;
-    } elsif (/^\.TP 20/) {
-      $active = 1;
-    } elsif ($active == 1 && /^\.M (\S+) (\S+)/) {
-      if (!exists $all_outsections{$1}) {
-	$active = 2;
-	$cur_name = $1;
-	$new_summary{$1} = 1;
-	$all_outsections{$1} = $2;
-	$all_roff_summaries{$1} = '';
-	push @{$summaries_by_section{$section}}, $1;
-	push @all_outfiles, $1;
-      } elsif ($new_summary{$1}) {
-	push @{$summaries_by_section{$section}}, $1;
-	$active = 3;
-      } else {
-	$active = 3;
-      }
-    } elsif (/^\.PD/) {
-      $active = 0;
-    } elsif (/^\.SH \"ALPHABETICAL/) {
-      last;
-    } elsif ($active == 2) {
-      $all_roff_summaries{$cur_name} .= $_;
+    my($fn) = @_;
+  
+    local($/) = "\n";
+    if (!open(IN, $fn)) {
+	print STDERR "$fn: $!\n";
+	return;
     }
-  }
+
+    my($section, $active, $cur_name, $cur_section, %new_summary);
+    $active = 0;
+    while (<IN>) {
+	if (/^\.SS \"(.*)\"/) {
+	    $section = $1;
+	} elsif (/^\.TP 20/) {
+	    $active = 1;
+	} elsif ($active == 1 && /^\.M (\S+) (\S+)/) {
+	    if (!exists $all_outsections{$1}) {
+		$active = 2;
+		$cur_name = $1;
+		$new_summary{$1} = 1;
+		$all_outsections{$1} = $2;
+		$all_roff_summaries{$1} = '';
+		push @{$summaries_by_section{$section}}, $1;
+		push @all_outfiles, $1;
+	    } elsif ($new_summary{$1}) {
+		push @{$summaries_by_section{$section}}, $1;
+		$active = 3;
+	    } else {
+		$active = 3;
+	    }
+	} elsif (/^\.PD/) {
+	    $active = 0;
+	} elsif (/^\.SH \"ALPHABETICAL/) {
+	    last;
+	} elsif ($active == 2) {
+	    $all_roff_summaries{$cur_name} .= $_;
+	}
+    }
 }
 
 my(%el_generated);
 sub one_elementlist (@) {
-  my($t);
-  $t .= ".PP\n.PD 0\n";
-  foreach $_ (sort { lc($a) cmp lc($b) } @_) {
-    $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_};
-    $t .= " \" (deprecated)\"" if $deprecated{$_};
-    $t .= "\n";
-    $t .= $all_roff_summaries{$_} if $all_roff_summaries{$_};
-    $el_generated{$_} = 1;
-  }
-  $t . ".PD\n";
+    my($t);
+    $t .= ".PP\n.PD 0\n";
+    foreach $_ (sort { lc($a) cmp lc($b) } @_) {
+	$t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_};
+	$t .= " \" (deprecated)\"" if $deprecated{$_};
+	$t .= "\n";
+	$t .= $all_roff_summaries{$_} if $all_roff_summaries{$_};
+	$el_generated{$_} = 1;
+    }
+    $t . ".PD\n";
 }
 
 my(@Links, $Text);
 
 sub one_summary ($@) {
-  my($name, @elts) = @_;
-  print STDERR "warning: category \`", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
-  my($a) = $name;
-  $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
-  $a =~ tr/ /+/;
-  my($x) = $name;
-  $x =~ s{ }{&nbsp;}g;
-  if (@elts) {
-    push @Links, "<a href=\"#$a\">$x</a>";
-    $Text .= ".SS \"$name\"\n";
-    $Text .= one_elementlist(@elts);
-  }
+    my($name, @elts) = @_;
+    print STDERR "warning: category \`", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
+    my($a) = $name;
+    $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
+    $a =~ tr/ /+/;
+    my($x) = $name;
+    $x =~ s{ }{&nbsp;}g;
+    if (@elts) {
+	push @Links, "<a href=\"#$a\">$x</a>";
+	$Text .= ".SS \"$name\"\n";
+	$Text .= one_elementlist(@elts);
+    }
 }
 
 sub make_elementlist () {
-  if ($directory) {
-    my($fn) = "$directory/elements.$section";
-    read_elementlist($fn) if -r $fn && $elementlist > 1;
-    if (!open(OUT, ">$fn")) {
-      print STDERR "$fn: $!\n";
-      return;
+    if ($directory) {
+	my($fn) = "$directory/elements.$section";
+	read_elementlist($fn) if -r $fn && $elementlist > 1;
+	if (!open(OUT, ">$fn")) {
+	    print STDERR "$fn: $!\n";
+	    return;
+	}
     }
-  }
-  print OUT <<"EOD;";
+    print OUT <<"EOD;";
 .\\" -*- mode: nroff -*-
 .\\" Generated by \`click-elem2man'
 $prologue
@@ -858,40 +861,40 @@ elements \- documented Click element classes
 This page lists all Click element classes that have manual page documentation.
 EOD;
 
-  $Text = "";
-  my(%did_section, $sec);
-  # erase 'Miscellaneous' section, if any
-  delete $summaries_by_section{'Miscellaneous'};
-  foreach $sec ( 'Network Devices', 'Other Sources and Sinks',
-		 'Classification', 'Checking Validity',
-		 'Duplication', 'Storage', 'Dropping',
-		 'Packet Scheduling', 'Encapsulation',
-		 'Modification', 'Annotations', 'Measurement and Profiling',
-		 'Trace Analysis and Manipulation',
-		 'Debugging', 'Informational Elements',
-		 'Ethernet', 'IP, ICMP, and IGMP', 'UDP and TCP',
-		 sort { lc($a) cmp lc($b) } keys(%summaries_by_section) ) {
-    next if $did_section{$sec};
-    one_summary($sec, @{$summaries_by_section{$sec}});
-    $did_section{$sec} = 1;
-  }
-  one_summary('Miscellaneous', grep { !$el_generated{$_} } @all_outfiles);
+    $Text = "";
+    my(%did_section, $sec);
+    # erase 'Miscellaneous' section, if any
+    delete $summaries_by_section{'Miscellaneous'};
+    foreach $sec ( 'Network Devices', 'Other Sources and Sinks',
+		   'Classification', 'Checking Validity',
+		   'Duplication', 'Storage', 'Dropping',
+		   'Packet Scheduling', 'Encapsulation',
+		   'Modification', 'Annotations', 'Measurement and Profiling',
+		   'Trace Analysis and Manipulation',
+		   'Debugging', 'Informational Elements',
+		   'Ethernet', 'IP, ICMP, and IGMP', 'UDP and TCP',
+		   sort { lc($a) cmp lc($b) } keys(%summaries_by_section) ) {
+	next if $did_section{$sec};
+	one_summary($sec, @{$summaries_by_section{$sec}});
+	$did_section{$sec} = 1;
+    }
+    one_summary('Miscellaneous', grep { !$el_generated{$_} } @all_outfiles);
 
-  my($links) = join("&nbsp;- ", @Links);
-  print OUT <<"EOD;";
+    my($links) = join("&nbsp;- ", @Links);
+    print OUT <<"EOD;";
 .\\"html <p><a href="#BY+FUNCTION"><b>By Function</b></a>:
 .\\"html $links<br>
 .\\"html <a href="#ALPHABETICAL+LIST"><b>Alphabetical List</b></a></p>
 EOD;
 
-  print OUT ".SH \"BY FUNCTION\"\n";
-  print OUT $Text;
-  print OUT ".SH \"ALPHABETICAL LIST\"\n";
-  print OUT one_elementlist(@all_outfiles);
+    print OUT ".SH \"BY FUNCTION\"\n";
+    print OUT $Text;
+    print OUT ".SH \"ALPHABETICAL LIST\"\n";
+    print OUT one_elementlist(@all_outfiles);
 
-  close OUT if $directory;
+    close OUT if $directory;
 }
 
 if ($elementlist && @all_outfiles) {
-  make_elementlist();
+    make_elementlist();
 }
