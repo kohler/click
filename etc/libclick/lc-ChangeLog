@@ -1,3 +1,10 @@
+2001-12-26 Wednesday 16:05  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/string.hh,
+	include/click/straccum.hh, include/click/string.hh,
+	libsrc/straccum.cc, libsrc/string.cc: String, StringAccum: improve
+	out-of-memory event handling
+
 2001-12-18 Tuesday 03:35  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/userutils.cc: the null string is another synonym for

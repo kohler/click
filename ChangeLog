@@ -1,3 +1,41 @@
+2001-12-26 Wednesday 16:07  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/alignclass.cc (1.14),
+	click-align/alignclass.hh (1.8), click-align/click-align.cc (1.36),
+	click-combine/click-combine.cc (1.24),
+	click-combine/click-uncombine.cc (1.20),
+	click-devirtualize/click-devirtualize.cc (1.28),
+	click-devirtualize/signature.cc (1.10),
+	click-devirtualize/specializer.cc (1.24),
+	click-fastclassifier/click-fastclassifier.cc (1.45),
+	click-pretty/click-pretty.cc (1.3), click-undead/click-undead.cc
+	(1.22), click-xform/adjacency.cc (1.14), click-xform/click-xform.cc
+	(1.39), lib/eclasst.cc (1.5), lib/elementt.cc (1.21),
+	lib/elementt.hh (1.16), lib/lexert.cc (1.40), lib/processingt.cc
+	(1.14), lib/processingt.hh (1.7), lib/routert.cc (1.51),
+	lib/routert.hh (1.41), lib/vectori.cc (1.9): continuing Tools
+	Rewrite: refactoring functionality from RouterT into ElementT
+
+2001-12-26 Wednesday 16:06  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: proc_config.cc (1.26), proc_element.cc (1.36): use
+	new String and StringAccum out-of-memory handlers
+
+2001-12-26 Wednesday 16:05  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh (1.16), include/click/string.hh (1.18),
+	lib/straccum.cc (1.23), lib/string.cc (1.34): String, StringAccum:
+	improve out-of-memory event handling
+
+2001-12-26 Wednesday 16:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: print.cc (1.20), print.hh (1.11): make Print
+	live-reconfigurable
+
+2001-12-26 Wednesday 16:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/classifier.cc (1.38): nitlet
+
 2001-12-18 Tuesday 13:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc (1.28), gridprobehandler.cc
