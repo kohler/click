@@ -114,9 +114,8 @@ TCPConn::iput(Packet *p)
 void
 TCPConn::oput(Packet *p)
 {
-  if (_listen) {
+  if (!_active || _listen)
     p->kill();
-  }
   else {
     click_ip *iph = p->uniqueify()->ip_header();
     click_tcp *tcph = 
