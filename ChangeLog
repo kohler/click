@@ -1,3 +1,7 @@
+2001-04-27 Friday 19:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipclassifier.hh, lib/error.cc: buglet
+
 2001-04-27 Friday 17:38  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/: error.cc, userutils.cc: PrefixErrorHandler: improve
