@@ -42,9 +42,6 @@ class Specializer {
 
   Vector<SpecializedClass> _specials;
 
-  Vector<String> _specfunction_names;
-  Vector<String> _specfunction_symbols;
-  
   CxxInfo _cxxinfo;
 
   const String &enew_click_type(int) const;

@@ -492,9 +492,7 @@ particular purpose.\n");
   {
     ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
     ae.data = out.take_string();
-
-    if (!config_only)
-      router->add_archive(ae);
+    router->add_archive(ae);
 
     if (compile_kernel > 0) {
       ae.name = package_name + ".ko";
@@ -533,6 +531,10 @@ particular purpose.\n");
   }
   
   // write configuration
-  write_router_file(router, outf, errh);
+  if (config_only) {
+    String s = router->configuration_string();
+    fwrite(s.data(), 1, s.length(), outf);
+  } else
+    write_router_file(router, outf, errh);
   exit(0);
 }

@@ -344,23 +344,17 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   const Vector<Hookup> &hf = _router->hookup_from();
   const Vector<Hookup> &ht = _router->hookup_to();
   int nhook = _router->nhookup();
-  Vector<String> input_function(_ninputs[eindex], String());
-  Vector<String> output_function(_noutputs[eindex], String());
-  Vector<String> input_symbol(_ninputs[eindex], String());
-  Vector<String> output_symbol(_noutputs[eindex], String());
+  Vector<String> input_class(_ninputs[eindex], String());
+  Vector<String> output_class(_noutputs[eindex], String());
   Vector<int> input_port(_ninputs[eindex], -1);
   Vector<int> output_port(_noutputs[eindex], -1);
   for (int i = 0; i < nhook; i++) {
-    if (hf[i].idx == eindex && _specialize[ht[i].idx] >= 0) {
-      output_function[hf[i].port] =
-	"specialized_push_" + enew_cxx_type(ht[i].idx);
-      output_symbol[hf[i].port] = emangle(ht[i].idx, true);
+    if (hf[i].idx == eindex) {
+      output_class[hf[i].port] = enew_cxx_type(ht[i].idx);
       output_port[hf[i].port] = ht[i].port;
     }
-    if (ht[i].idx == eindex && _specialize[hf[i].idx] >= 0) {
-      input_function[ht[i].port] =
-	"specialized_pull_" + enew_cxx_type(hf[i].idx);
-      input_symbol[ht[i].port] = emangle(hf[i].idx, false);
+    if (ht[i].idx == eindex) {
+      input_class[ht[i].port] = enew_cxx_type(hf[i].idx);
       input_port[ht[i].port] = hf[i].port;
     }
   }
@@ -370,7 +364,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     StringAccum sa;
     Vector<int> range1, range2;
     for (int i = 0; i < _ninputs[eindex]; i++)
-      if (i > 0 && input_function[i] == input_function[i-1]
+      if (i > 0 && input_class[i] == input_class[i-1]
 	  && input_port[i] == input_port[i-1])
 	range2.back() = i;
       else {
@@ -379,25 +373,18 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
-      if (!input_function[r1])
+      if (!input_class[r1])
 	continue;
       sa << "\n  ";
       if (r1 == r2)
 	sa << "if (i == " << r1 << ") ";
       else
 	sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
-      sa << "return " << input_function[r1] << "(input(i).element(), "
-	 << input_port[r1] << ");";
+      sa << "return ((" << input_class[r1] << " *)input(i).element())->"
+	 << input_class[r1] << "::pull(" << input_port[r1] << ");";
     }
     sa << "\n  return input(i).pull();\n";
     cxxc->find("pull_input")->set_body(sa.take_string());
-    
-    // save function names
-    for (int i = 0; i < _ninputs[eindex]; i++)
-      if (input_function[i]) {
-	_specfunction_names.push_back(input_function[i]);
-	_specfunction_symbols.push_back(input_symbol[i]);
-      }
   }
 
   // create push_output
@@ -405,7 +392,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     StringAccum sa;
     Vector<int> range1, range2;
     for (int i = 0; i < _noutputs[eindex]; i++)
-      if (i > 0 && output_function[i] == output_function[i-1]
+      if (i > 0 && output_class[i] == output_class[i-1]
 	  && output_port[i] == output_port[i-1])
 	range2.back() = i;
       else {
@@ -414,15 +401,16 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
-      if (!output_function[r1])
+      if (!output_class[r1])
 	continue;
       sa << "\n  ";
       if (r1 == r2)
 	sa << "if (i == " << r1 << ") ";
       else
 	sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
-      sa << "{ " << output_function[r1] << "(output(i).element(), "
-	 << output_port[r1] << ", p); return; }";
+      sa << "{ ((" << output_class[r1] << " *)output(i).element())->"
+	 << output_class[r1] << "::push(" << output_port[r1]
+	 << ", p); return; }";
     }
     sa << "\n  output(i).push(p);\n";
     cxxc->find("push_output")->set_body(sa.take_string());
@@ -431,13 +419,6 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     sa << "\n  if (i < " << _noutputs[eindex] << ")\n    push_output(i, p);\n";
     sa << "  else\n    p->kill();\n";
     cxxc->find("push_output_checked")->set_body(sa.take_string());
-    
-    // save function names
-    for (int i = 0; i < _noutputs[eindex]; i++)
-      if (output_function[i]) {
-	_specfunction_names.push_back(output_function[i]);
-	_specfunction_symbols.push_back(output_symbol[i]);
-      }
   }
 }
 
@@ -538,21 +519,6 @@ Specializer::output(StringAccum &out)
       out << "#include \"" << eti.header_file << "\"\n";
     _specials[i].cxxc->header_text(out);
   }
-
-  // output functions
-  HashMap<String, int> declared(0);
-  for (int i = 0; i < _specfunction_names.size(); i++)
-    if (!declared[_specfunction_names[i]]) {
-      const String &name = _specfunction_names[i];
-      const String &sym = _specfunction_symbols[i];
-      if (sym[2] == 's')		// push
-	out << "extern void " << name << "(Element *, int, Packet *) asm (\""
-	    << sym << "\");\n";
-      else
-	out << "extern Packet *" << name << "(Element *, int) asm (\""
-	    << sym << "\");\n";
-      declared.insert(name, 1);
-    }
 
   // output C++ code
   for (int i = 0; i < _specials.size(); i++) {
