@@ -27,14 +27,14 @@
 
 SetTimestamp::SetTimestamp()
 {
-  // no MOD_INC_USE_COUNT; rely on PerfCountUser
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 SetTimestamp::~SetTimestamp()
 {
-  // no MOD_DEC_USE_COUNT; rely on PerfCountUser
+  MOD_DEC_USE_COUNT;
 }
 
 SetTimestamp *
@@ -43,45 +43,26 @@ SetTimestamp::clone() const
   return new SetTimestamp();
 }
 
-void *
-SetTimestamp::cast(const char *n)
-{
-  if (strcmp(n, "SetTimestamp") == 0)
-    return (Element *)this;
-  else
-    return 0;
-}
-
 int
 SetTimestamp::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _secs = -1;
+  _tv.tv_sec = -1;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpInteger, "seconds", _secs,
-		  cpInteger, "microseconds", _usecs,
+		  cpTimeval, "timestamp", &_tv,
 		  cpEnd) < 0)
     return -1;
-
   return 0;
 }
 
 inline void
 SetTimestamp::smaction(Packet *p)
 {
-  struct timeval tv;
-  if (_secs >= 0) {
-    tv.tv_sec = _secs;
-    tv.tv_usec = _usecs;
-  } 
-  else {
-    int res = gettimeofday(&tv, 0);
-    if (res != 0) {
-      click_chatter("%s: gettimeofday failed", id().cc());
-      return;
-    }
-  }
-  p->set_timestamp_anno(tv);
+  struct timeval &tv = p->timestamp_anno();
+  if (_tv.tv_sec >= 0)
+    tv = _tv;
+  else
+    click_gettimeofday(&tv);
 }
 
 void
@@ -100,5 +81,4 @@ SetTimestamp::pull(int)
   return p;
 }
 
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SetTimestamp)
