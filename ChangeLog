@@ -1,3 +1,7 @@
+2004-06-24 Thursday 16:38  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.22): more wifi annos.
+
 2004-06-23 Wednesday 20:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/aggcounter.cc (1.29),
