@@ -1,3 +1,12 @@
+2004-09-30 Thursday 11:27  John Bicket <jbicket@mit.edu>
+
+	* elements/: wifi/linktable.cc (1.8), wifi/linktable.hh (1.6),
+	wifi/wifidecap.cc (1.9), wifi/sr/ettstat.hh (1.6),
+	wifi/sr/gatewayselector.cc (1.5), wifi/sr/srforwarder.cc (1.6),
+	wifi/sr/srpacket.hh (1.5), wifi/sr/srqueryforwarder.cc (1.4),
+	wifi/sr/srqueryresponder.cc (1.4), grid/dsrroutetable.cc (1.10):
+	make it compile.
+
 2004-09-29 Wednesday 21:04  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/standard/notifier-04.testie (1.1): add nonfull notification
