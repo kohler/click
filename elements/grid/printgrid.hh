@@ -68,6 +68,8 @@ private:
   bool _print_probe_entries;
   String get_probe_entries(const grid_link_probe *) const;
 
+  void print_ether_linkstat(Packet *) const;
+
   bool _verbose;  
   bool _timestamp;
   bool _print_eth;

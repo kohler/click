@@ -26,6 +26,7 @@
 #include <elements/grid/grid.hh>
 #include <elements/grid/timeutils.hh>
 #include <elements/grid/printgrid.hh>
+#include <elements/grid/linkstat.hh>
 CLICK_DECLS
 
 PrintGrid::PrintGrid()
@@ -91,11 +92,16 @@ Packet *
 PrintGrid::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
-  if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
+  if (ntohs(eh->ether_type) != ETHERTYPE_GRID && ntohs(eh->ether_type) != LinkStat::ETHERTYPE_LINKSTAT) {
     click_chatter("PrintGrid %s%s%s : not a Grid packet", 
 		  id().cc(),
 		  _label.cc()[0] ? " " : "",
 		  _label.cc());
+    return p;
+  }
+
+  if (ntohs(eh->ether_type) == LinkStat::ETHERTYPE_LINKSTAT) {
+    print_ether_linkstat(p);
     return p;
   }
 
@@ -225,6 +231,71 @@ PrintGrid::simple_action(Packet *p)
   click_chatter("%s", line.cc());
 
   return p;
+}
+
+void
+PrintGrid::print_ether_linkstat(Packet *p) const
+{
+  StringAccum line;
+  line << "PrintGrid ";
+  if (_verbose)
+    line << id() << " ";
+  if (_label[0] != 0)
+    line << _label << " ";
+  if (_timestamp) {
+    char buf[30];
+    snprintf(buf, sizeof(buf), "%ld.%06ld ",
+	     (long) p->timestamp_anno().tv_sec,
+	     (long) p->timestamp_anno().tv_usec);
+    line << buf;
+  }
+
+  unsigned min_sz = sizeof(click_ether) + LinkStat::link_probe::size;
+  if (p->length() < min_sz) {
+    line << "LinkStat packet is too small";
+    click_chatter("%s", line.c_str());
+    return;
+  }
+
+  if (_print_eth) {
+    click_ether *eh = (click_ether *) p->data();
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%s %s %04hx ", 
+	     EtherAddress(eh->ether_shost).s().cc(), EtherAddress(eh->ether_dhost).s().cc(),
+	     ntohs(eh->ether_type));
+    line << buf;
+  }
+
+  line << ": ETHER_LINK_PROBE ";
+  
+  LinkStat::link_probe lp(p->data() + sizeof(click_ether));
+  if (LinkStat::link_probe::calc_cksum(p->data() + sizeof(click_ether)) != 0) {
+    line << "Bad checksum";
+    click_chatter("%s", line.c_str());
+    return;
+  }
+
+  line << "psz=" << lp.psz << " num_links=" << lp.num_links;
+
+  if (p->length() < lp.psz) 
+    line << " (short packet) ";
+
+  unsigned int max_entries = (p->length() - sizeof(click_ether) - LinkStat::link_probe::size) / LinkStat::link_entry::size;
+  unsigned int num_entries = lp.num_links;
+  if (num_entries > max_entries) {
+    line << " (truncated to " << max_entries << " links)";
+    num_entries = max_entries;
+  }
+
+  if (_print_probe_entries) {
+    const unsigned char *d = p->data() + sizeof(click_ether) + LinkStat::link_probe::size;
+    for (unsigned i = 0; i < num_entries; i++, d += LinkStat::link_entry::size) {
+      LinkStat::link_entry le(d);
+      line << "\n\t" << le.eth << " num_rx=" << le.num_rx;    
+    }
+  }
+
+  click_chatter("%s", line.c_str());
 }
 
 String

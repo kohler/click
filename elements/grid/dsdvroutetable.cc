@@ -341,6 +341,9 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
     if (!_link_stat) 
       return false;
 
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0)
+      return false;
 #if 0 // LEAVE THIS DISABLED
     // This test is actually wrong: I used to mistakenly believe that
     // you must hear new sequence numbers first over 1-hop routes,
@@ -352,13 +355,12 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
     // that if you don't hear the first route of a sequence number
     // over the direct link, you might never be able to get a link
     // measurement for the 1-hop direct link.
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops() > 1) 
+    if (r->num_hops() > 1) 
       return false;
 #endif
     unsigned int tau;
     struct timeval t;
-    bool res = _link_stat->get_forward_rate(ip, &rate, &tau, &t);
+    bool res = _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
     if (res && rate > 100) {
       click_chatter("DSDVRouteTable %s: ERROR: forward rate %u%% is too high for %s, capping at 100%%",
 		    id().cc(), rate, ip.s().cc());
@@ -370,19 +372,22 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
   case EstByMeas2: {
     if (!_link_stat || !_link_stat2)
       return false;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0)
+      return false;
     unsigned int tau; // we'll ignore tau, t
     struct timeval t;
     unsigned rate1, rate2;
-    bool res1 = _link_stat->get_forward_rate(ip, &rate1, &tau, &t);
-    bool res2 = _link_stat2->get_forward_rate(ip, &rate2, &tau, &t);
+    bool res1 = _link_stat->get_forward_rate(r->dest_eth, &rate1, &tau, &t);
+    bool res2 = _link_stat2->get_forward_rate(r->dest_eth, &rate2, &tau, &t);
     if (!res1 || !res2) 
       return false;
     // lookup data rate in forward direction, must compile in this
     // size! (e.g. 134 bytes)
-    unsigned r = lookup_delivery_rate(rate1, rate2, 148);
-    if (r > 100)
+    unsigned r_combined = lookup_delivery_rate(rate1, rate2, 148);
+    if (r_combined > 100)
       return false;
-    rate = r;
+    rate = r_combined;
     return true;
   }
 
@@ -399,14 +404,17 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
   case EstByMeas: {
     if (!_link_stat)
       return false;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0)
+      return false;
 #if 0
     // see comment in est_forward_delivery_rate()
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops() > 1)
+    if (r->num_hops() > 1)
       return false;
 #endif
     unsigned int tau;
-    bool res = _link_stat->get_reverse_rate(ip, &rate, &tau);
+    bool res = _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
     if (res && rate > 100) {
       click_chatter("DSDVRouteTable %s: ERROR: reverse rate %u%% is too high for %s, capping at 100%%",
 		    id().cc(), rate, ip.s().cc());
@@ -418,18 +426,21 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
   case EstByMeas2: {
     if (!_link_stat || !_link_stat2)
       return false;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0)
+      return false;
     unsigned int tau; // we'll ignore tau
     unsigned rate1, rate2;
-    bool res1 = _link_stat->get_reverse_rate(ip, &rate1, &tau);
-    bool res2 = _link_stat2->get_reverse_rate(ip, &rate2, &tau);
+    bool res1 = _link_stat->get_reverse_rate(r->dest_eth, &rate1, &tau);
+    bool res2 = _link_stat2->get_reverse_rate(r->dest_eth, &rate2, &tau);
     if (!res1 || !res2) 
       return false;
     // lookup ACK rate in reverse direction, pretend it's a 1-byte
     // data packet (although it's actually smaller...)
-    unsigned r = lookup_delivery_rate(rate1, rate2, 1);
-    if (r > 100)
+    unsigned r_combined = lookup_delivery_rate(rate1, rate2, 1);
+    if (r_combined > 100)
       return false;
-    rate = r;
+    rate = r_combined;
     return true;
   }
 

@@ -2,7 +2,7 @@
  * linkstat.{cc,hh} -- track per-link delivery rates.
  * Douglas S. J. De Couto
  *
- * Copyright (c) 1999-2002 Massachusetts Institute of Technology
+ * Copyright (c) 1999-2003 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -60,7 +60,6 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"WINDOW", cpUnsigned, "Broadcast loss rate window", &_window,
 			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
-			"IP", cpIPAddress, "Source IP address", &_ip,
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
@@ -68,7 +67,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
   
-  unsigned min_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_link_probe);
+  unsigned min_sz = sizeof(click_ether) + link_probe::size;
   if (_probe_size < min_sz)
     return errh->error("Specified packet size is less than the minimum probe size of %u",
 		       min_sz);
@@ -90,76 +89,55 @@ LinkStat::send_hook()
 
   struct timeval tv;
   click_gettimeofday(&tv);
-#if 0
-  click_chatter("XXX tv = %u.%06u\n", tv.tv_sec, tv.tv_usec);
-#endif
   p->set_timestamp_anno(tv);
   
-  /* fill in ethernet header */
+  // fill in ethernet header 
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
-  eh->ether_type = htons(ETHERTYPE_GRID);
+  eh->ether_type = htons(ETHERTYPE_LINKSTAT);
   memcpy(eh->ether_shost, _eth.data(), 6);
 
-  /* fill in the grid header */
-  grid_hdr *gh = (grid_hdr *) (eh + 1);
-  ASSERT_ALIGNED(gh);
-  gh->hdr_len = sizeof(grid_hdr);
-  gh->total_len = htons(_probe_size - sizeof(click_ether));
-  gh->type = grid_hdr::GRID_LINK_PROBE;
-  gh->ip = gh->tx_ip = _ip;
-  
-  grid_link_probe *glp = (grid_link_probe *) (gh + 1);
-  glp->seq_no = htonl(_seq);
-  _seq++;
-  glp->period = htonl(_period);
-  glp->tau = htonl(_tau);
-  
-  unsigned min_packet_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_link_probe);
-  unsigned max_entries = (_probe_size - min_packet_sz) / sizeof(grid_link_entry);
+  // calculate number of entries
+  unsigned min_packet_sz = sizeof(click_ether) + link_probe::size;
+  unsigned max_entries = (_probe_size - min_packet_sz) / link_entry::size;
   static bool size_warning = false;
   if (!size_warning && max_entries < (unsigned) _bcast_stats.size()) {
     size_warning = true;
     click_chatter("LinkStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
   }
   unsigned num_entries = max_entries < (unsigned) _bcast_stats.size() ? max_entries : _bcast_stats.size();
-  glp->num_links = htonl(num_entries);
-  grid_link_entry *e = (grid_link_entry *) (glp + 1);
+
+  // build packet
+  link_probe lp(_seq, _period, num_entries, _tau, _probe_size);
+  _seq++;
+  unsigned char *d = p->data() + sizeof(click_ether);
+  d += lp.write(d);
+  
   for (ProbeMap::const_iterator i = _bcast_stats.begin(); 
        i && num_entries > 0; 
-       num_entries--, i++, e++) {
+       num_entries--, i++) {
     const probe_list_t &val = i.value();
     if (val.probes.size() == 0) {
       num_entries++;
       continue;
     }
-#ifndef SMALL_GRID_PROBES
-    e->ip = val.ip;
-    e->period = htonl(val.period);
-    const probe_t &p = val.probes.back();
-    e->last_rx_time = hton(p.when);
-    e->last_seq_no = htonl(p.seq_no);
-    e->num_rx = htonl(count_rx(&val));
-#else
-    e->ip = ntohl(val.ip) & 0xff;
-    e->num_rx = count_rx(&val);
-#endif
+    unsigned n = count_rx(&val);
+    if (n > 0xFFff) 
+      click_chatter("LinkStat %s: WARNING, overflow in number of probes received from %s", id().cc(), val.eth.s().cc());
+    link_entry le(val.eth, n & 0xFFff);
+    d += le.write(d);
   }
+
+  link_probe::update_cksum(p->data() + sizeof(click_ether));
   
   unsigned max_jitter = _period / 10;
   long r2 = random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
-#if 0
-  click_chatter("XXX %s:  max_j %u, j %u, -/+ %ld\n", id().cc(), max_jitter, j, r2 & 1);
-#endif
   unsigned int delta_us = 1000 * ((r2 & 1) ? _period - j : _period + j);
   _next_bcast.tv_usec += delta_us;
   _next_bcast.tv_sec +=  _next_bcast.tv_usec / 1000000;
   _next_bcast.tv_usec = (_next_bcast.tv_usec % 1000000);
   _send_timer->schedule_at(_next_bcast);
-#if 0
-  click_chatter("XXX delta = %u, _period = %u\n", delta_ms, _period);
-#endif
 
   checked_output_push(0, p);
 }
@@ -186,9 +164,9 @@ LinkStat::count_rx(const probe_list_t *pl)
 }
 
 unsigned int
-LinkStat::count_rx(const IPAddress &ip) 
+LinkStat::count_rx(const EtherAddress &eth) 
 {
-  probe_list_t *pl = _bcast_stats.findp(ip);
+  probe_list_t *pl = _bcast_stats.findp(eth);
   if (pl)
     return count_rx(pl);
   else
@@ -199,8 +177,8 @@ int
 LinkStat::initialize(ErrorHandler *errh)
 {
   if (noutputs() > 0) {
-    if (!_eth || !_ip) 
-      return errh->error("Source IP and Ethernet address must be specified to send probes");
+    if (!_eth) 
+      return errh->error("Source Ethernet address must be specified to send probes");
     _send_timer = new Timer(static_send_hook, this);
     _send_timer->initialize(this);
     click_gettimeofday(&_next_bcast);
@@ -215,46 +193,50 @@ LinkStat::initialize(ErrorHandler *errh)
 Packet *
 LinkStat::simple_action(Packet *p)
 {
+  unsigned min_sz = sizeof(click_ether) + link_probe::size;
+  if (p->length() < min_sz) {
+    click_chatter("LinkStat %s: packet is too small", id().cc());
+    p->kill(); 
+    return 0;
+  }
+
   click_ether *eh = (click_ether *) p->data();
 
-  if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("LinkStat %s: got non-Grid packet type", id().cc());
+  if (ntohs(eh->ether_type) != ETHERTYPE_LINKSTAT) {
+    click_chatter("LinkStat %s: got non-LinkStat packet type", id().cc());
     p->kill();
     return 0;
   }
 
-  grid_hdr *gh = (grid_hdr *) (eh + 1);
-  if (gh->type != grid_hdr::GRID_LINK_PROBE) {
-    click_chatter("LinkStat %s: got non-Probe packet", id().cc());
+  link_probe lp(p->data() + sizeof(click_ether));
+  if (link_probe::calc_cksum(p->data() + sizeof(click_ether)) != 0) {
+    click_chatter("LinkStat %s: bad checksum from %s", id().cc(), EtherAddress(eh->ether_shost).s().cc());
     p->kill();
     return 0;
   }
 
-  grid_link_probe *lp = (grid_link_probe *) (gh + 1);
-  add_bcast_stat(gh->ip, lp);
+  if (p->length() < lp.psz) 
+    click_chatter("LinkStat %s: packet is smaller (%d) than it claims (%u)",
+		  id().cc(), p->length(), lp.psz);
+  
+  add_bcast_stat(EtherAddress(eh->ether_shost), lp);
 
   // look in received packet for info about our outgoing link
   struct timeval now;
   click_gettimeofday(&now);
-  grid_link_entry *le = (grid_link_entry *) (lp + 1);
-  unsigned int max_entries = (p->length() - sizeof(*eh) - sizeof(*gh) - sizeof(*lp)) / sizeof(*le);
-  unsigned int num_entries = htonl(lp->num_links);
-  static bool warn_num_entries = false;
+  unsigned int max_entries = (p->length() - sizeof(*eh) - link_probe::size) / link_entry::size;
+  unsigned int num_entries = lp.num_links;
   if (num_entries > max_entries) {
+    click_chatter("LinkStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)", 
+		  id().cc(), EtherAddress(eh->ether_shost).s().cc(), max_entries, num_entries);
     num_entries = max_entries;
-    if (!warn_num_entries) {
-      warn_num_entries = true;
-      click_chatter("LinkStat %s: WARNING, xxx probe packet from %s contains fewer link entries (%u) than claimed (%u)", 
-		    id().cc(), IPAddress(gh->ip).s().cc(), max_entries, num_entries);
-    }
   }
-  for (unsigned i = 0; i < num_entries; i++, le++) {
-#ifdef SMALL_GRID_PROBES
-    if ((ntohl(_ip.addr()) & 0xff) == le->ip) {
-#else
-    if (_ip == le->ip && _period == ntohl(le->period)) {
-#endif
-      _rev_bcast_stats.insert(gh->ip, outgoing_link_entry_t(le, now, ntohl(lp->tau)));
+
+  const unsigned char *d = p->data() + sizeof(click_ether) + link_probe::size;
+  for (unsigned i = 0; i < num_entries; i++, d += link_entry::size) {
+    link_entry le(d);
+    if (le.eth == _eth) {
+      _rev_bcast_stats.insert(EtherAddress(eh->ether_shost), outgoing_link_entry_t(le, now, lp.tau));
       break;
     }
   }
@@ -264,10 +246,10 @@ LinkStat::simple_action(Packet *p)
 }
 
 bool
-LinkStat::get_forward_rate(const IPAddress &ip, unsigned int *r, 
+LinkStat::get_forward_rate(const EtherAddress &eth, unsigned int *r, 
 			   unsigned int *tau, struct timeval *t)
 {
-  outgoing_link_entry_t *ol = _rev_bcast_stats.findp(ip);
+  outgoing_link_entry_t *ol = _rev_bcast_stats.findp(eth);
   if (!ol)
     return false;
 
@@ -293,10 +275,10 @@ LinkStat::get_forward_rate(const IPAddress &ip, unsigned int *r,
 }
 
 bool
-LinkStat::get_reverse_rate(const IPAddress &ip, unsigned int *r, 
+LinkStat::get_reverse_rate(const EtherAddress &eth, unsigned int *r, 
 			   unsigned int *tau)
 {
-  probe_list_t *pl = _bcast_stats.findp(ip);
+  probe_list_t *pl = _bcast_stats.findp(eth);
   if (!pl)
     return false;
 
@@ -304,7 +286,7 @@ LinkStat::get_reverse_rate(const IPAddress &ip, unsigned int *r,
     return false;
 
   unsigned num_expected = _tau / pl->period;
-  unsigned num_received = count_rx(ip);
+  unsigned num_received = count_rx(eth);
 
   // will happen if our averaging period is less than the remote
   // host's sending rate.
@@ -321,23 +303,23 @@ LinkStat::get_reverse_rate(const IPAddress &ip, unsigned int *r,
 }
 
 void
-LinkStat::add_bcast_stat(const IPAddress &ip, const grid_link_probe *lp)
+LinkStat::add_bcast_stat(const EtherAddress &eth, const link_probe &lp)
 {
   struct timeval now;
   click_gettimeofday(&now);
-  probe_t probe(now, ntohl(lp->seq_no));
+  probe_t probe(now, lp.seq_no);
   
-  unsigned int new_period = ntohl(lp->period);
+  unsigned int new_period = lp.period;
   
-  probe_list_t *l = _bcast_stats.findp(ip);
+  probe_list_t *l = _bcast_stats.findp(eth);
   if (!l) {
-    probe_list_t l2(ip, new_period, ntohl(lp->tau));
-    _bcast_stats.insert(ip, l2);
-    l = _bcast_stats.findp(ip);
+    probe_list_t l2(eth, new_period, lp.tau);
+    _bcast_stats.insert(eth, l2);
+    l = _bcast_stats.findp(eth);
   }
   else if (l->period != new_period) {
-    click_chatter("LinkStat %s: node %s has changed its link probe period from %u to %u; clearing probe info\n",
-		  id().cc(), ip.s().cc(), l->period, new_period);
+    click_chatter("LinkStat %s: %s has changed its link probe period from %u to %u; clearing probe info\n",
+		  id().cc(), eth.s().cc(), l->period, new_period);
     l->probes.clear();
     l->period = new_period;
     return;
@@ -376,25 +358,25 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 {
   LinkStat *e = (LinkStat *) xf;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
-  IPMap ip_addrs;
+  typedef BigHashMap<EtherAddress, bool> EthMap;
+  EthMap eth_addrs;
   
   for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
-    ip_addrs.insert(i.key(), true);
+    eth_addrs.insert(i.key(), true);
   for (ReverseProbeMap::const_iterator i = e->_rev_bcast_stats.begin(); i; i++)
-    ip_addrs.insert(i.key(), true);
+    eth_addrs.insert(i.key(), true);
 
   struct timeval now;
   click_gettimeofday(&now);
 
   StringAccum sa;
-  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
-    const IPAddress &ip = i.key();
+  for (EthMap::const_iterator i = eth_addrs.begin(); i; i++) {
+    const EtherAddress &eth = i.key();
     
-    probe_list_t *pl = e->_bcast_stats.findp(ip);
-    outgoing_link_entry_t *ol = e->_rev_bcast_stats.findp(ip);
+    probe_list_t *pl = e->_bcast_stats.findp(eth);
+    outgoing_link_entry_t *ol = e->_rev_bcast_stats.findp(eth);
     
-    sa << ip << ' ';
+    sa << eth << ' ';
     
     sa << "fwd ";
     if (ol) {
@@ -476,6 +458,55 @@ LinkStat::add_handlers()
   add_write_handler("window", write_window, 0);
   add_write_handler("tau", write_tau, 0);
   add_write_handler("period", write_period, 0);
+}
+
+
+LinkStat::link_probe::link_probe(const unsigned char *d)
+  : seq_no(uint_at(d + 0)), period(uint_at(d + 4)), num_links(uint_at(d + 8)), 
+  tau(uint_at(d + 12)), cksum(ushort_at(d + 16)), psz(ushort_at(d + 18))
+{
+}
+
+int
+LinkStat::link_probe::write(unsigned char *d) const
+{
+  write_uint_at(d + 0, seq_no);
+  write_uint_at(d + 4, period);
+  write_uint_at(d + 8, num_links);
+  write_uint_at(d + 12, tau);
+  write_ushort_at(d + 16, 0); // cksum will be filled in later -- we don't know what the link_entry data is yet
+  write_ushort_at(d + 18, psz); // cksum will be filled in later -- we don't know what the link_entry data is yet
+  return size;
+}
+
+void
+LinkStat::link_probe::update_cksum(unsigned char *d) 
+{
+  unsigned short cksum = calc_cksum(d);
+  unsigned char *c = (unsigned char *) &cksum;
+  d[cksum_offset] = c[0];
+  d[cksum_offset + 1] = c[1];
+}
+
+unsigned short
+LinkStat::link_probe::calc_cksum(const unsigned char *d) 
+{
+  link_probe lp(d);
+  int nbytes = link_probe::size + lp.num_links * link_entry::size;
+  return click_in_cksum(d, nbytes);  
+}
+
+LinkStat::link_entry::link_entry(const unsigned char *d)
+  : eth(d), num_rx(ushort_at(d + 6))
+{
+}
+
+int
+LinkStat::link_entry::write(unsigned char *d) const
+{
+  memcpy(d, eth.data(), 6);
+  write_ushort_at(d + 6, num_rx);
+  return size;
 }
 
 EXPORT_ELEMENT(LinkStat)

@@ -96,7 +96,7 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_link_stat && _link_stat->cast("LinkStat") == 0) 
     return errh->error("Link element is not a LinkStat");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
-    return errh->error("ARPTable element is not a Arptable");
+    return errh->error("ARPTable element is not an ARPtable");
 
   return ret;
 }
@@ -206,15 +206,15 @@ ETT::get_metric(IPAddress other)
   if (n &&  n->still_bad()) {
     return 9999;
   }
-  if(_link_stat){
+  if(_link_stat && _arp_table){
     unsigned int tau;
     struct timeval tv;
     unsigned int frate, rrate;
-    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
+    bool res = _link_stat->get_forward_rate(_arp_table->lookup(other), &frate, &tau, &tv);
     if(res == false) {
       return dft;
     }
-    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
+    res = _link_stat->get_reverse_rate(_arp_table->lookup(other), &rrate, &tau);
     if(res == false) {
       return dft;
     }

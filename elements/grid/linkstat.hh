@@ -9,22 +9,21 @@
  *
  * =d
  *
- * Expects Grid link probe packets as input.  Records the last WINDOW unique
+ * Expects Link probe packets as input.  Records the last WINDOW unique
  * (not neccessarily sequential) sequence numbers of link probes from
  * each host, and calculates loss rates over the last TAU milliseconds
  * for each host.  If the output is connected, sends probe
- * packets every PERIOD milliseconds.  The source Ethernet and IP
- * addresses (ETH and IP) must be specified if the second output is
+ * packets every PERIOD milliseconds.  The source Ethernet 
+ * address ETH must be specified if the second output is
  * connected.
  *
  * Keyword arguments are:
  *
  * =over 8
  *
- * =item ETH, IP
+ * =item ETH
  *
- * Ethernet and IP addresses of this node, respectively; required if
- * output is connected.
+ * Ethernet address of this node; required if output is connected.
  *
  * =item PERIOD
  *
@@ -43,29 +42,89 @@
  *
  * =item SIZE
  *
- * Unsigned integer.  Total number of bytes in probe packet.  Defaults to 1000.
+ * Unsigned integer.  Total number of bytes in probe packet, including
+ * ethernet header and above.  Defaults to 1000.
  *
  *
  * =back
- *
- * =a
- * LinkTracker, PingPong */
+ */
 
 #include <click/bighashmap.hh>
 #include <click/dequeue.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <elements/grid/timeutils.hh>
-#include <elements/grid/grid.hh>
 
 CLICK_DECLS
 
 class Timer;
-class grid_link_probe;
 
 class LinkStat : public Element {
+
+public:
+
+  // build & extract network byte order values
+  static unsigned uint_at(const unsigned char *c) 
+  { return (c[0] << 24) | (c[1] << 16) | (c[2] << 8) | c[3]; }
+  
+  static unsigned ushort_at(const unsigned char *c) 
+  { return (c[0] << 8) | c[1]; }
+  
+  static void write_uint_at(unsigned char *c, unsigned u) {
+    c[0] = (u >> 24) & 0xff; c[1] = (u >> 16) & 0xff;
+    c[2] = (u >>  8) & 0xff; c[3] = u & 0xff;
+  }
+
+  static void write_ushort_at(unsigned char *c, unsigned u) {
+    c[0] = (u >>  8) & 0xff; c[1] = u & 0xff;
+  }
+
+  // Packet formats:
+
+  // LinkStat packets have a link_probe header immediately following
+  // the ethernet header.  num_links link_entries follow the
+  // link_probe header.
+  static const unsigned short ETHERTYPE_LINKSTAT = 0x7ffe;
+  
+  struct link_probe {
+    static const int size = 20;
+    static const int cksum_offset = 16;
+
+    unsigned int seq_no;
+    unsigned int period;      // period of this node's probe broadcasts, in msecs
+    unsigned int num_links;   // number of grid_link_entry entries following
+    unsigned int tau;         // this node's loss-rate averaging period, in msecs
+    unsigned short cksum;     // internet checksum
+    unsigned short psz;       // total packet size, including eth hdr
+
+    link_probe() : seq_no(0), period(0), num_links(0), tau(0), cksum(0), psz(0) { }
+    link_probe(unsigned s, unsigned p, unsigned n, unsigned t, unsigned short sz) 
+      : seq_no(s), period(p), num_links(n), tau(t), cksum(0), psz(sz) { }
+
+    // build link probe from wire format packet data
+    link_probe(const unsigned char *);
+
+    // write probe in wire format, return number of bytes written
+    int write(unsigned char *) const; 
+
+    // update cksum of packet data whose link_probe starts at D
+    static void update_cksum(unsigned char *d);
+    static unsigned short calc_cksum(const unsigned char *d);
+  };
+  
+  struct link_entry {
+    static const int size = 8;
+
+    struct EtherAddress eth;
+    unsigned short num_rx;    // number of probe bcasts received from node during last tau msecs
+
+    link_entry() : num_rx(0) { }
+    link_entry(const EtherAddress &e, unsigned short n) : eth(e), num_rx(n) { }
+    link_entry(const unsigned char *);
+    int write(unsigned char *) const;
+  };
+
 private:
   unsigned int _window; // sequence numbers
   unsigned int _tau;    // msecs
@@ -74,7 +133,6 @@ private:
   unsigned int _probe_size; // bytes
 
   unsigned int _seq;
-  IPAddress    _ip;
   EtherAddress _eth;
 
 
@@ -86,40 +144,31 @@ private:
   };
 
   struct probe_list_t {
-    unsigned int    ip;
+    EtherAddress    eth;
     unsigned int    period;   // period of this node's probes, as reported by the node
     unsigned int    tau;      // this node's stats averaging period, as reported by the node
     DEQueue<probe_t> probes;   // most recently received probes
-    probe_list_t(unsigned int ip_, unsigned int p, unsigned int t) : ip(ip_), period(p), tau(t) { }
-    probe_list_t() : ip(0), period(0), tau(0) { }
+    probe_list_t(const EtherAddress &e, unsigned int p, unsigned int t) : eth(e), period(p), tau(t) { }
+    probe_list_t() : period(0), tau(0) { }
   };
 
   // Per-sender map of received probes.
-  typedef BigHashMap<IPAddress, probe_list_t> ProbeMap;
+  typedef BigHashMap<EtherAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
   // record delivery rate data about our outgoing links
-  struct outgoing_link_entry_t : public grid_link_entry {
+  struct outgoing_link_entry_t : public link_entry {
     struct timeval received_at;
     unsigned int   tau;
     outgoing_link_entry_t() { memset(this, 0, sizeof(*this)); }
-    outgoing_link_entry_t(grid_link_entry *l, const struct timeval &now, unsigned int t) 
-      : received_at(now), tau(t) {
-#ifndef SMALL_GRID_PROBES
-      ip = l->ip;
-      period = ntohl(l->period);
-      num_rx = ntohl(l->num_rx);
-      last_rx_time = ntoh(l->last_rx_time);
-      last_seq_no = ntohl(l->last_seq_no);
-#else
-      ip = l->ip & 0xff;
-      num_rx = l->num_rx;
-#endif
-    }
+    outgoing_link_entry_t(const link_entry &l, const struct timeval &now, unsigned int t) 
+      : link_entry(l), received_at(now), tau(t) { }
+    outgoing_link_entry_t(const unsigned char *d, const struct timeval &now, unsigned int t) 
+      : link_entry(d), received_at(now), tau(t) { }
   };
 
   // Per-receiver map of delivery rate data
-  typedef BigHashMap<IPAddress, outgoing_link_entry_t> ReverseProbeMap;
+  typedef BigHashMap<EtherAddress, outgoing_link_entry_t> ReverseProbeMap;
   ReverseProbeMap _rev_bcast_stats;
 
   static String read_stats(Element *, void *);
@@ -128,7 +177,6 @@ private:
   // count number of probes received from specified host during last
   // _tau msecs.
   unsigned int count_rx(const EtherAddress &);
-  unsigned int count_rx(const IPAddress &);
   unsigned int count_rx(const probe_list_t *);
   
   // handlers
@@ -139,7 +187,7 @@ private:
   static int write_period(const String &, Element *, void *, ErrorHandler *);
   static int write_tau(const String &, Element *, void *, ErrorHandler *);
   
-  void add_bcast_stat(const IPAddress &, const grid_link_probe *);
+  void add_bcast_stat(const EtherAddress &, const link_probe &);
 
   static void static_send_hook(Timer *, void *e) { ((LinkStat *) e)->send_hook(); }
   void send_hook();
@@ -150,16 +198,17 @@ private:
   static unsigned int calc_pct(unsigned tau, unsigned period, unsigned num_rx);
 
  public:
-  // Get forward delivery rate R to host IP over period TAU
+
+  // Get forward delivery rate R to host ETH over period TAU
   // milliseconds, as recorded at time T.  R is a percentage (0-100).
   // Return true iff we have data.
-  bool get_forward_rate(const IPAddress &ip, unsigned int *r, unsigned int *tau, 
+  bool get_forward_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau, 
 			struct timeval *t);
 
-  // Get reverse delivery rate R from host IP over period TAU
+  // Get reverse delivery rate R from host ETH over period TAU
   // milliseconds, as of now.  R is a percentage 0-100.  Return true
   // iff we have good data.
-  bool get_reverse_rate(const IPAddress &ip, unsigned int *r, unsigned int *tau);
+  bool get_reverse_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau);
 
   unsigned get_probe_size() const { return _probe_size; }
 
