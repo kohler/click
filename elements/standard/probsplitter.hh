@@ -15,7 +15,7 @@
  *
  * =e
  *   ProbSplitter(.2);
- * Pushes packets with 20% probability.
+ * Pushes packets to output 1 with 20% probability.
  *
  * =h prob read/write
  * sample probability
