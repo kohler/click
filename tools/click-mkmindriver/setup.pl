@@ -72,8 +72,7 @@ mkinstalldirs = \@top_srcdir\@/mkinstalldirs
 -include elements.mk
 
 OBJS = \$(ELEMENT_OBJS) elements.o \$(top_srcdir)/userlevel/click.o \\
-	\$(top_srcdir)/userlevel/quitwatcher.o \\
-	\$(top_srcdir)/userlevel/controlsocket.o
+	\$(top_srcdir)/userlevel/quitwatcher.o
 
 CPPFLAGS = \@CPPFLAGS\@ -MD -DCLICK_USERLEVEL
 CFLAGS = \@CFLAGS\@
