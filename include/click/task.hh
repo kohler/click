@@ -124,8 +124,7 @@ class TaskList : public Task { public:
 
   void lock();
   void unlock();
-  bool attempt_lock();
-
+  
  private:
 
   Spinlock _lock;
@@ -313,12 +312,6 @@ inline void
 TaskList::unlock()
 {
   _lock.release();
-}
-
-inline bool 
-TaskList::attempt_lock()
-{
-  return _lock.attempt();
 }
 
 CLICK_ENDDECLS
