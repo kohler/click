@@ -1,6 +1,6 @@
 /*
  * todevice.{cc,hh} -- element writes packets to network via pcap library
- * Douglas S. J. DeCouto, Eddie Kohler, John Jannotti
+ * Douglas S. J. De Couto, Eddie Kohler, John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *

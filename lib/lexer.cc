@@ -668,14 +668,20 @@ Lexer::add_tunnel(String namein, String nameout)
   Hookup hout(get_element(_element_prefix + nameout, TUNNEL_TYPE), 0);
   
   bool ok = true;
-  if (_elements[hin.idx] != _tunnel_element_type)
-    lerror("element `%s' already declared %s", namein.cc(), _elements[hin.idx]->class_name()), ok = 0;
-  if (_elements[hout.idx] != _tunnel_element_type)
-    lerror("element `%s' already declared", nameout.cc()), ok = 0;
+  if (_elements[hin.idx] != _tunnel_element_type) {
+    lerror("redeclaration of element `%s'", namein.cc());
+    _errh->lerror(_elements[hin.idx]->landmark(), "`%s' previously declared here", namein.cc());
+    ok = 0;
+  }
+  if (_elements[hout.idx] != _tunnel_element_type) {
+    lerror("redeclaration of element `%s'", nameout.cc());
+    _errh->lerror(_elements[hout.idx]->landmark(), "`%s' previously declared here", nameout.cc());
+    ok = 0;
+  }
   if (_definputs && _definputs->find(hin))
-    lerror("connection tunnel input `%s' already defined", namein.cc()), ok = 0;
+    lerror("redeclaration of connection tunnel input `%s'", namein.cc()), ok = 0;
   if (_defoutputs && _defoutputs->find(hout))
-    lerror("connection tunnel output `%s' already defined", nameout.cc()), ok = 0;
+    lerror("redeclaration of connection tunnel output `%s'", nameout.cc()), ok = 0;
   if (ok) {
     _definputs = new TunnelEnd(hin, false, _definputs);
     _defoutputs = new TunnelEnd(hout, true, _defoutputs);
@@ -1057,9 +1063,12 @@ Lexer::ydeclaration(const String &first_element)
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
     String lookup_name = _element_prefix + name;
-    if (_element_map[lookup_name] >= 0)
-      lerror("element `%s' already declared", name.cc());
-    else if (_element_type_map[name] >= 0)
+    if (_element_map[lookup_name] >= 0) {
+      int e = _element_map[lookup_name];
+      lerror("redeclaration of element `%s'", name.cc());
+      if (_elements[e] != _tunnel_element_type)
+	_errh->lerror(_elements[e]->landmark(), "element `%s' previously declared here", name.cc());
+    } else if (_element_type_map[name] >= 0)
       lerror("`%s' is an element class", name.cc());
     else if (_element_type_map[lookup_name] >= 0)
       lerror("`%s' is an element class", lookup_name.cc());

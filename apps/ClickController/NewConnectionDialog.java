@@ -1,3 +1,15 @@
+/*
+ * NewConnectionDialog.java -- open a new connection to a ControlSocket
+ * Eddie Kohler
+ *
+ * Copyright (c) 2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;

@@ -510,17 +510,17 @@ LexerT::yelement(int &element, bool comma_ok)
   else {
     String lookup_name = _element_prefix + name;
     element = _router->eindex(lookup_name);
-    if (element < 0) {
-      const Lexeme &t2colon = lex();
-      unlex(t2colon);
-      if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
-	ydeclaration(name);
-	element = _router->eindex(lookup_name);
-      } else {
-	// assume it's an element type
-	ftype = force_element_type(name);
-	element = make_anon_element(name, ftype, configuration, lm);
-      }
+    
+    const Lexeme &t2colon = lex();
+    unlex(t2colon);
+
+    if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
+      ydeclaration(name);
+      element = _router->eindex(lookup_name);
+    } else if (element < 0) {
+      // assume it's an element type
+      ftype = force_element_type(name);
+      element = make_anon_element(name, ftype, configuration, lm);
     }
   }
   
@@ -581,9 +581,11 @@ LexerT::ydeclaration(const String &first_element)
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
     String lookup_name = _element_prefix + name;
-    if (_router->eindex(lookup_name) >= 0)
-      lerror("element `%s' already declared", name.cc());
-    else if (_router->type_index(name) >= 0)
+    int old_eidx = _router->eindex(lookup_name);
+    if (old_eidx >= 0) {
+      lerror("redeclaration of element `%s'", name.cc());
+      _errh->lerror(_router->elandmark(old_eidx), "`%s' previously declared here", _router->edeclaration(old_eidx).cc());
+    } else if (_router->type_index(name) >= 0)
       lerror("`%s' is an element class", name.cc());
     else if (_router->type_index(lookup_name) >= 0)
       lerror("`%s' is an element class", lookup_name.cc());

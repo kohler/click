@@ -1,6 +1,6 @@
 /*
  * kerneltap.{cc,hh} -- element accesses network via /dev/tun device
- * Robert Morris, Douglas S.J. DeCouto, Eddie Kohler
+ * Robert Morris, Douglas S. J. De Couto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *

@@ -38,7 +38,7 @@ IP6Address::IP6Address(const unsigned char *data)
     _addr.s6_addr32[i] = udata[i];
 }
 
-IP6Address::IP6Address(const IPAddress ip)
+IP6Address::IP6Address(IPAddress ip)
 {
   const unsigned char *udata = ip.data();
   for (int i=0; i<10; i++)

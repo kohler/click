@@ -1,6 +1,6 @@
 /*
  * fromdevice.{cc,hh} -- element reads packets live from network via pcap
- * Douglas S. J. DeCouto, Eddie Kohler, John Jannotti
+ * Douglas S. J. De Couto, Eddie Kohler, John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *

@@ -1,5 +1,5 @@
 /*
- * click-undead.cc -- specialize Click classifiers
+ * click-undead.cc -- remove dead code from Click
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -56,6 +56,9 @@ static Clp_Option options[] = {
 static const char *program_name;
 static String::Initializer string_initializer;
 static bool verbose;
+
+static HashMap<String, int> element_ninputs(-1);
+static HashMap<String, int> element_noutputs(-1);
 
 void
 short_usage()
@@ -234,7 +237,7 @@ remove_nulls(RouterT *r, int tindex, ErrorHandler *errh)
     else if (hprev.size() == 1)
       skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
     else if (hnext.size() == 1)
-      skip_over_push(r, Hookup(ei, 0), r->hookup_from(hnext[0]));
+      skip_over_push(r, Hookup(ei, 0), r->hookup_to(hnext[0]));
 
     r->kill_element(ei);
   }
@@ -252,8 +255,7 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
   for (int ei = 0; ei < r->nelements(); ei++) {
     if (r->etype(ei) != tindex)
       continue;
-    int nin = r->ninputs(ei), nout = r->noutputs(ei);
-    if (nout != 1) {
+    if (r->noutputs(ei) != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
       continue;
     }
@@ -269,7 +271,7 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
     }
     
     for (int p = 0; p < hprev.size(); p++)
-      if (hprev[p] >= 0 && r->etype( r->hookup_from(hprev[p]).idx ) == idle_tindex) {
+      if (hprev[p] == -1 || (hprev[p] >= 0 && r->etype(r->hookup_from(hprev[p]).idx) == idle_tindex)) {
 	// remove that scheduler port
 	// check configuration first
 	if (config_eq_ninputs) {
@@ -285,16 +287,22 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
 	  r->change_connection_to(hprev[pp], Hookup(ei, pp - 1));
 	  hprev[pp - 1] = hprev[pp];
 	}
-	r->kill_connection(bad_connection);
+	if (bad_connection >= 0)
+	  r->kill_connection(bad_connection);
 	hprev.pop_back();
 	p--;
       }
-
+    
     if (hprev.size() == 1) {
+      if (verbose)
+	errh->lerror(r->elandmark(ei), "removing redundant scheduler `%s'", r->edeclaration(ei).cc());
       skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
       r->kill_element(ei);
       changed = true;
     }
+
+    // save number of inputs so we don't attach new Idles
+    element_ninputs.insert(r->ename(ei), hprev.size());
   }
 
   return changed;
@@ -325,16 +333,24 @@ find_live_elements(const RouterT *r, const char *filename,
 
   Bitvector sources(r->nelements(), false);
   Bitvector sinks(r->nelements(), false);
+  Bitvector dead(r->nelements(), false);
 
   // find initial sources and sinks
   for (int ei = 0; ei < r->nelements(); ei++) {
     const ElementT &e = r->element(ei);
     if (e.live()) {
+      // save # of outputs
+      int nin = processing.ninputs(ei);
+      element_ninputs.insert(e.name, nin);
+      int nout = processing.noutputs(ei);
+      element_noutputs.insert(e.name, nout);
+      
       int source_flag = em->flag_value(r->type_name(e.type), 'S');
 
-      if (source_flag == 0)	// neither source nor sink
+      if (source_flag == 0) {	// neither source nor sink
+	dead[ei] = true;
 	continue;
-      else if (source_flag == 1) { // source
+      } else if (source_flag == 1) { // source
 	sources[ei] = true;
 	if (verbose)
 	  errh->lmessage(r->elandmark(ei), "`%s' is source", r->edeclaration(ei).cc());
@@ -353,7 +369,6 @@ find_live_elements(const RouterT *r, const char *filename,
 	errh->lwarning(r->elandmark(ei), "`%s' has strange source/sink flag value %d", r->edeclaration(ei).cc(), source_flag);
 
       // if no source/sink flags, make an educated guess
-      int nin = processing.ninputs(ei), nout = processing.noutputs(ei);
       if (nin == 0) {
 	for (int p = 0; p < nout; p++)
 	  if (processing.output_is_push(ei, p)) {
@@ -384,8 +399,9 @@ find_live_elements(const RouterT *r, const char *filename,
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      if (hf[i].idx >= 0 && !sources[ht[i].idx] && sources[hf[i].idx])
-	sources[ht[i].idx] = changed = true;
+      int f = hf[i].idx, t = ht[i].idx;
+      if (f >= 0 && !sources[t] && sources[f] && !dead[t])
+	sources[t] = changed = true;
     }
   }
   
@@ -394,8 +410,9 @@ find_live_elements(const RouterT *r, const char *filename,
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      if (hf[i].idx >= 0 && !sinks[hf[i].idx] && sinks[ht[i].idx])
-	sinks[hf[i].idx] = changed = true;
+      int f = hf[i].idx, t = ht[i].idx;
+      if (f >= 0 && !sinks[f] && sinks[t] && !dead[f])
+	sinks[f] = changed = true;
     }
   }
 
@@ -429,7 +446,7 @@ find_live_elements(const RouterT *r, const char *filename,
 }
 
 static void
-replace_blank_ports(RouterT *r, ProcessingT &processing)
+replace_blank_ports(RouterT *r)
 {
   int ne = r->nelements();
   int idle_index = -1;
@@ -438,9 +455,9 @@ replace_blank_ports(RouterT *r, ProcessingT &processing)
     if (r->edead(ei))
       continue;
     Vector<int> connv;
-    
+
     r->find_connection_vector_to(ei, connv);
-    connv.resize(processing.ninputs(ei), -1);
+    connv.resize(element_ninputs[r->ename(ei)], -1);
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (idle_index < 0)
@@ -449,7 +466,7 @@ replace_blank_ports(RouterT *r, ProcessingT &processing)
       }
 
     r->find_connection_vector_from(ei, connv);
-    connv.resize(processing.noutputs(ei), -1);
+    connv.resize(element_noutputs[r->ename(ei)], -1);
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (idle_index < 0)
@@ -611,9 +628,10 @@ particular purpose.\n");
   Bitvector live_vec = kernel_vec | user_vec;
   if (!live_vec.size() && r->nelements())
     exit(1);
-  
+
+  int idle_tindex = r->get_type_index("Idle");
   for (int i = 0; i < r->nelements(); i++)
-    if (!live_vec[i]) {
+    if (!live_vec[i] || r->etype(i) == idle_tindex) {
       if (verbose)
 	default_errh->lmessage(r->elandmark(i), "removing `%s'", r->edeclaration(i).cc());
       r->kill_element(i);
@@ -623,10 +641,7 @@ particular purpose.\n");
   // the same)
   r->kill_bad_connections();
   r->check();
-    
-  // hook up blanked-out live ports to a new Idle
-  replace_blank_ports(r, processing);
-
+  
   // remove redundant schedulers
   while (1) {
     int nchanges = 0;
@@ -636,6 +651,9 @@ particular purpose.\n");
     if (!nchanges) break;
   }
 
+  // hook up blanked-out live ports to a new Idle
+  replace_blank_ports(r);
+  
   // NOW remove bad elements
   r->remove_dead_elements();
   

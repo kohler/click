@@ -641,7 +641,7 @@ particular purpose.\n");
   int nelements = router->nelements();
   for (int i = 0; i < nelements; i++) {
     Element *e = router->element(i);
-    e->add_default_handlers(false);
+    e->add_default_handlers(true);
     e->add_handlers();
   }
 

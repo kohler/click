@@ -1,6 +1,14 @@
-// ControlSocket.java
-// Douglas S. J. De Couto
-// 15 August 2000
+/*
+ * ControlSocket.java -- class for manipulating ControlSockets
+ * Douglas S. J. De Couto, Eddie Kohler
+ *
+ * Copyright (c) 2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
 
 import java.net.*;
 import java.io.*;

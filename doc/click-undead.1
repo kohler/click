@@ -66,6 +66,15 @@ packet sink elements include
 and
 .M Discard n
 (when it is used as a pull element).
+.IP "\(bu" 3
+Dead ports on scheduler elements 
+.RM ( RoundRobinSched n ,
+.M PrioSched n ,
+.M StrideSched n ,
+and so on) are removed. These are ports that no packet could ever enter.
+.IP "\(bu" 3
+Scheduler elements that have only one attached input are redundant, so they
+are removed.
 .PP
 .B click-undead
 will not remove any information elements. Connections to removed elements
@@ -77,16 +86,17 @@ will transform this configuration,
 .Sp
 .nf
    Idle -> Counter -> td1 :: ToDump(a);
-   Idle -> Counter -> td2 :: ToDump(b);
    InfiniteSource -> ss :: StaticSwitch(1);
      ss[0] -> ToDump(c);
-     ss[1] -> td2;
+     ss[1] -> Queue -> rr :: RoundRobinSched;
+     Idle -> [1]rr;
+     rr -> td2 :: ToDump(b);
 .fi
 .Sp
 into this configuration:
 .Sp
 .nf
-   InfiniteSource -> td2 :: ToDump(b);
+   InfiniteSource -> Queue -> td2 :: ToDump(b);
 .fi
 .Sp
 Note that the resulting configuration is not guaranteed to have the same

@@ -1,11 +1,19 @@
-// RouterTreeModel.java
-// Douglas S. J. De Couto, Eddie Kohler
-// 22 August 2000
+/*
+ * RouterTreeModel.java -- a JTree model for element handlers
+ * Douglas S. J. De Couto, Eddie Kohler
+ *
+ * Copyright (c) 2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
 
 import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
-import java.util.Vector;
+import java.util.*;
 
 public class RouterTreeModel extends DefaultTreeModel {
 
@@ -29,12 +37,11 @@ public class RouterTreeModel extends DefaultTreeModel {
 	}
     }
 
-    private static class HandlerSortProc implements Util.SortProc {
-	HandlerSortProc() { }
-	public boolean lessThanOrEqual(Object o1, Object o2) {
+    private static class HandlerComparator implements Comparator {
+	public int compare(Object o1, Object o2) {
 	    ControlSocket.HandlerInfo h1 = (ControlSocket.HandlerInfo) o1;
 	    ControlSocket.HandlerInfo h2 = (ControlSocket.HandlerInfo) o2;
-	    return h1.handlerName.toLowerCase().compareTo(h2.handlerName.toLowerCase()) <= 0;
+	    return h1.handlerName.toLowerCase().compareTo(h2.handlerName.toLowerCase());
 	}
     }
 
@@ -57,16 +64,15 @@ public class RouterTreeModel extends DefaultTreeModel {
 	      (new HandlerUserObject(null, "flatconfig", "Flat Configuration"));
 	  insertNodeInto(node, root, nodePos++);
 	  
-	  Util.SortProc sp = new Util.IgnoreCaseStringSortProc();
-	  Vector v =_cs.getConfigElementNames();
-	  Util.sort(v, sp);
+	  Vector v = _cs.getConfigElementNames();
+	  Collections.sort(v, new Util.IgnoreCaseStringComparator());
 	  
-	  Util.SortProc hsp = new HandlerSortProc();
+	  Comparator handlerComparator = new HandlerComparator();
 	  for (int i = 0; i < v.size(); i++) {
 	      String elname = (String) v.elementAt(i);
 	      DefaultMutableTreeNode elnode = new DefaultMutableTreeNode(elname);
 	      Vector vh = _cs.getElementHandlers(elname);
-	      Util.sort(vh, hsp);
+	      Collections.sort(vh, handlerComparator);
 	      for (int j = 0; j < vh.size(); j++) {
 		  ControlSocket.HandlerInfo hi = (ControlSocket.HandlerInfo) vh.elementAt(j);
 		  DefaultMutableTreeNode hnode = new DefaultMutableTreeNode(hi);

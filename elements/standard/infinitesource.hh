@@ -56,7 +56,8 @@ class InfiniteSource : public Element { protected:
   InfiniteSource();
   
   const char *class_name() const		{ return "InfiniteSource"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return AGNOSTIC; }
+  const char *flags() const			{ return "S3"; }
   void add_handlers();
   
   InfiniteSource *clone() const;
@@ -66,6 +67,7 @@ class InfiniteSource : public Element { protected:
   void uninitialize();
 
   void run_scheduled();
+  Packet *pull(int);
   
 };
 

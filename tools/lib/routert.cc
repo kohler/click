@@ -687,13 +687,13 @@ RouterT::add_tunnel(String in, String out, const String &landmark,
   ElementT &fin = _elements[in_idx], &fout = _elements[out_idx];
 
   if (fin.type != TUNNEL_TYPE)
-    errh->lerror(landmark, "element `%s' already exists", in.cc());
+    errh->lerror(landmark, "redeclaration of element `%s'", in.cc());
   else if (fout.type != TUNNEL_TYPE)
-    errh->lerror(landmark, "element `%s' already exists", out.cc());
+    errh->lerror(landmark, "redeclaration of element `%s'", out.cc());
   else if (fin.tunnel_output >= 0)
-    errh->lerror(landmark, "connection tunnel input `%s' already exists", in.cc());
+    errh->lerror(landmark, "redeclaration of connection tunnel input `%s'", in.cc());
   else if (fout.tunnel_input >= 0)
-    errh->lerror(landmark, "connection tunnel output `%s' already exists", out.cc());
+    errh->lerror(landmark, "redeclaration of connection tunnel output `%s'", out.cc());
   else {
     fin.tunnel_output = out_idx;
     fout.tunnel_input = in_idx;

@@ -92,6 +92,15 @@ InfiniteSource::run_scheduled()
   }
 }
 
+Packet *
+InfiniteSource::pull(int)
+{
+  if (!_active || (_limit >= 0 && _count + 1 >= _limit))
+    return 0;
+  _count++;
+  return _packet->clone();
+}
+
 String
 InfiniteSource::read_param(Element *e, void *vparam)
 {

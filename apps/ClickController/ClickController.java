@@ -1,3 +1,15 @@
+/*
+ * ClickController.java -- main ClickController program
+ * Eddie Kohler, Douglas S. J. De Couto
+ *
+ * Copyright (c) 2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -183,10 +195,32 @@ class ClickController extends JPanel {
 
 
 
-    private class ChangeButtonAction extends AbstractAction {
-	
-	ChangeButtonAction() {
+
+    private class HandlerSelectAction implements TreeSelectionListener {
+
+	public void valueChanged(TreeSelectionEvent e) {
+	    TreePath path = e.getNewLeadSelectionPath();
+	    if (path == null)
+		return;
+	    
+	    DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+	    Object o = node.getUserObject();
+	    if (o == null)
+		return;
+	    
+	    ControlSocket.HandlerInfo hi = null;
+	    if (o instanceof ControlSocket.HandlerInfo)
+		hi = (ControlSocket.HandlerInfo) o;
+	    else if (o instanceof RouterTreeModel.HandlerUserObject)
+		hi = ((RouterTreeModel.HandlerUserObject) o)._hinfo;
+	    if (hi == null)
+		return;
+	    selectHandler(hi);
 	}
+	
+    }
+
+    private class ChangeButtonAction extends AbstractAction {
 
 	public void actionPerformed(ActionEvent event) {
 	    if (_selectedHandler != null && _selectedHandler.canWrite) {
@@ -237,7 +271,7 @@ class ClickController extends JPanel {
 	    
 	    JTree rtree = new JTree(new RouterTreeModel(cs));
 	    _changeButton.addActionListener(new ChangeButtonAction());
-	    rtree.addTreeSelectionListener(new HandlerSelector(this));
+	    rtree.addTreeSelectionListener(new HandlerSelectAction());
 	    JScrollPane router_scroll = new JScrollPane(rtree);
 	    
 	    JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
