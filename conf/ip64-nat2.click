@@ -64,15 +64,21 @@ rt6 :: LookupIP6Route(
 	::0/96 ::0 3,
   	::0/0 ::c0a8:1 4);
 
+//at :: AddressTranslator(
+//	1,
+//	0,
+//	::ffff:0.0.0.3 ::1.0.0.2,
+//	1, 
+//	1,
+//	0,
+//	::1.0.0.1 6000 6010);
+
 at :: AddressTranslator(
-	1,
 	0,
-	::ffff:0.0.0.3 ::1.0.0.2,
 	1, 
 	1,
 	0,
 	::1.0.0.1 6000 6010);
-
 
 //pt :: ProtocolTranslator();
 pt64 :: ProtocolTranslator64();
@@ -120,11 +126,11 @@ rt[2]	//->Print(rt2, 200)
 rt[3]	->Print(rt3, 200) ->Discard;	
 	
 rt6[0] 	-> Print(route60-ok, 200) -> Discard;
-rt6[1] 	//-> Print(route61-ok, 200) 
+rt6[1] 	-> Print(route61-ok, 200) 
 	-> dh1:: DecIP6HLIM-> [0]nds;
 rt6[2] 	-> dh2:: DecIP6HLIM 
 	-> Print(route62-ok, 200)  -> Discard;
-rt6[3] 	//-> Print(route63-ok, 200) 
+rt6[3] 	-> Print(route63-ok, 200) 
 	-> [0]at;	
 rt6[4] 	-> Print(route64-ok, 200) -> Discard;
 
@@ -132,9 +138,9 @@ dh1[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 	-> Discard;
 dh2[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 	-> Discard;
-at[0]  	//-> Print(after-at0, 200) 
+at[0]  	-> Print(after-at0, 200) 
 	-> [0]pt64;
-at[1]  	//-> Print(after-at1, 200) 
+at[1]  	-> Print(after-at1, 200) 
 	-> CheckIP6Header()
 	-> GetIP6Address(24)
 	-> [0]rt6;
