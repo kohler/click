@@ -1,3 +1,8 @@
+2002-03-07 Thursday 18:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.39), gridroutetable.hh
+	(1.21), linkstat.cc (1.6): sequence number chicanery
+
 2002-03-07 Thursday 14:09  Eddie Kohler <kohler@aciri.org>
 
 	* LICENSE (1.5), click-buildtool (1.35): nitlets
