@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4 -*-
 
 #include <config.h>
 #include <click/config.h>

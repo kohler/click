@@ -32,8 +32,6 @@ AggregateCounter::AggregateCounter()
 AggregateCounter::~AggregateCounter()
 {
     MOD_DEC_USE_COUNT;
-    delete _call_nnz_h;
-    delete _call_count_h;
 }
 
 AggregateCounter::Node *
@@ -145,7 +143,7 @@ AggregateCounter::initialize(ErrorHandler *errh)
 }
 
 void
-AggregateCounter::uninitialize()
+AggregateCounter::cleanup(CleanupStage)
 {
     for (int i = 0; i < _blocks.size(); i++)
 	delete[] _blocks[i];
@@ -332,7 +330,6 @@ AggregateCounter::clear(ErrorHandler *errh)
 	clear_node(_root);
     
     if (!(_root = new_node())) {
-	uninitialize();
 	if (errh)
 	    errh->error("out of memory!");
 	return -1;

@@ -187,7 +187,7 @@ class AggregateCounter : public Element { public:
     void notify_noutputs(int);
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void add_handlers();
 
     inline bool update(Packet *, bool frozen = false);

@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_AGGREGATEIP_HH
 #define CLICK_AGGREGATEIP_HH
 #include <click/element.hh>

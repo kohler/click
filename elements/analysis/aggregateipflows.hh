@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_AGGREGATEFLOWS_HH
 #define CLICK_AGGREGATEFLOWS_HH
 #include <click/element.hh>
