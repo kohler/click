@@ -98,7 +98,8 @@ Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
 
 Options:
   -a, --all                  Include all subdirectories of `elements' rather
-                             than reading standard input.
+                             than reading standard input, and pretend all
+			     requirements are available (except for `-x').
   -V, --verbose              Print more information about dependency checking.
   -p, --prefix PREFIX        Preprend PREFIX to every file and/or directory.
   -r, --provide REQ          Mark requirement(s) REQ as available.
