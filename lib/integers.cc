@@ -20,5 +20,6 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "integers.hh"
+#include <click/config.h>
+#include <click/glue.hh>
+#include <click/integers.hh>
