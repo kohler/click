@@ -1,3 +1,10 @@
+2002-03-26 Tuesday 19:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_fddi.h, click_rfc1483.h, fddi.h, rfc1483.h,
+	click_fddi.h, click_rfc1483.h, fddi.h, rfc1483.h: rename
+	click_fddi.h and click_rfc1483.h to fddi.h and rfc1483.h; adapt to
+	the change
+
 2002-03-14 Thursday 15:45  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/notifier.hh, include/click/notifier.hh,
@@ -203,9 +210,9 @@
 
 2002-01-27 Sunday 20:07  Eddie Kohler <kohler@aciri.org>
 
-	* include/click/: click_fddi.h, click_fddi.h, click_rfc1483.h,
-	click_rfc1483.h: add ATM RFC1483 encapsulation, and FromDAGDump to
-	read Waikato's DAG files
+	* include/click/: click_fddi.h, fddi.h, click_fddi.h, fddi.h,
+	click_rfc1483.h, rfc1483.h, click_rfc1483.h, rfc1483.h: add ATM
+	RFC1483 encapsulation, and FromDAGDump to read Waikato's DAG files
 
 2002-01-24 Thursday 14:20  Eddie Kohler <kohler@aciri.org>
 
@@ -866,8 +873,9 @@
 
 2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
 
-	* include/click/: click_fddi.h, click_fddi.h: add click_fddi.h
-	header for FDDI; use that header in FromDevice and FromDump
+	* include/click/: click_fddi.h, fddi.h, click_fddi.h, fddi.h: add
+	click_fddi.h header for FDDI; use that header in FromDevice and
+	FromDump
 
 2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 

@@ -1,3 +1,58 @@
+2002-03-26 Tuesday 20:28  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdump.cc (1.60), fromdump.hh (1.35):
+	handle initialization errors more carefully; for example, report
+	the error before uninitializing
+
+2002-03-26 Tuesday 19:15  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.52), elements/analysis/fromdagdump.cc (1.3),
+	elements/userlevel/fakepcap.cc (1.3), etc/libclick/DISTFILES (1.9),
+	include/click/click_fddi.h (1.3), include/click/click_rfc1483.h
+	(1.2), include/click/fddi.h (1.3), include/click/rfc1483.h (1.2):
+	rename click_fddi.h and click_rfc1483.h to fddi.h and rfc1483.h;
+	adapt to the change
+
+2002-03-26 Tuesday 18:51  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: app/ftpportmapper.hh (1.13), standard/align.hh (1.13),
+	standard/averagecounter.hh (1.11), standard/bandwidthmeter.hh
+	(1.5), standard/block.hh (1.14), standard/burster.hh (1.14),
+	standard/bwratedsplitter.hh (1.5), standard/bwratedunqueue.hh
+	(1.4), standard/checkcrc32.hh (1.9), standard/checklength.hh
+	(1.12), standard/checkpaint.hh (1.16), standard/compblock.hh
+	(1.14), standard/delayshaper.hh (1.6), standard/devirtualizeinfo.hh
+	(1.6), standard/discard.hh (1.17), standard/discardnofree.hh
+	(1.13), standard/dropbroadcasts.hh (1.16), standard/drr.hh (1.3),
+	standard/frontdropqueue.hh (1.10), standard/hashswitch.hh (1.6),
+	standard/idle.hh (1.15), standard/infinitesource.hh (1.28),
+	standard/meter.hh (1.18), standard/msqueue.hh (1.7),
+	standard/nullelement.hh (1.9), standard/nulls.hh (1.10),
+	standard/paint.hh (1.15), standard/painttee.hh (1.6),
+	standard/priosched.hh (1.11), standard/probsplitter.hh (1.12),
+	standard/pullswitch.hh (1.15), standard/quitwatcher.hh (1.14),
+	standard/randomerror.hh (1.15), standard/randomlossage.hh (1.19),
+	standard/randomsource.hh (1.10), standard/ratedsource.hh (1.24),
+	standard/ratedsplitter.hh (1.17), standard/ratedunqueue.hh (1.11),
+	standard/rrsched.hh (1.12), standard/rrswitch.hh (1.10),
+	standard/setcrc32.hh (1.7), standard/settimestamp.hh (1.3),
+	standard/spinlockacquire.hh (1.4), standard/spinlockinfo.hh (1.5),
+	standard/spinlockrelease.hh (1.4), standard/staticpullswitch.hh
+	(1.7), standard/staticswitch.hh (1.6), standard/stridesched.hh
+	(1.15), standard/strideswitch.hh (1.10), standard/suppressor.hh
+	(1.13), standard/switch.hh (1.18), standard/tee.hh (1.13),
+	standard/timedsink.hh (1.15), standard/timedsource.hh (1.16),
+	standard/unqueue.hh (1.10), standard/unqueue2.hh (1.4),
+	standard/unstrip.hh (1.3), tcpudp/checktcpheader.hh (1.5),
+	tcpudp/checkudpheader.hh (1.5), tcpudp/dynudpipencap.hh (1.5),
+	tcpudp/iprewriter.hh (1.19), tcpudp/settcpchecksum.hh (1.3),
+	tcpudp/snooptcp.hh (1.4), tcpudp/tcpipsend.hh (1.2),
+	tcpudp/tcprewriter.hh (1.9), tcpudp/udpipencap.hh (1.6),
+	userlevel/chattersocket.hh (1.7), userlevel/controlsocket.hh
+	(1.21), userlevel/fromdevice.hh (1.20), userlevel/handlerproxy.hh
+	(1.4), userlevel/kerneltap.hh (1.10), userlevel/khandlerproxy.hh
+	(1.4), userlevel/printold.hh (1.3): anal header nitlets
+
 2002-03-26 Tuesday 17:03  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/classifier.cc (1.40): nitlet
@@ -1136,7 +1191,8 @@
 	elements/userlevel/fromdevice.cc (1.37),
 	elements/userlevel/fromdump.cc (1.58),
 	elements/userlevel/fromdump.hh (1.33), include/click/click_fddi.h
-	(1.2), include/click/click_rfc1483.h (1.1): add ATM RFC1483
+	(1.2), include/click/fddi.h (1.2), include/click/click_rfc1483.h
+	(1.1), include/click/rfc1483.h (1.1): add ATM RFC1483
 	encapsulation, and FromDAGDump to read Waikato's DAG files
 
 2002-01-25 Friday 12:44  Alexander Yip <yipal@pdos.lcs.mit.edu>
@@ -3775,8 +3831,9 @@
 	* DISTFILES (1.38), elements/userlevel/fromdevice.cc (1.29),
 	elements/userlevel/fromdevice.hh (1.15),
 	elements/userlevel/fromdump.cc (1.42), etc/libclick/DISTFILES
-	(1.4), include/click/click_fddi.h (1.1): add click_fddi.h header
-	for FDDI; use that header in FromDevice and FromDump
+	(1.4), include/click/click_fddi.h (1.1), include/click/fddi.h
+	(1.1): add click_fddi.h header for FDDI; use that header in
+	FromDevice and FromDump
 
 2001-08-25 Saturday 14:26  Eddie Kohler <kohler@aciri.org>
 
