@@ -85,9 +85,9 @@ endif
 libclicktool.a: Makefile $(OBJS)
 	$(AR) cru libclicktool.a $(OBJS)
 	$(RANLIB) libclicktool.a
-libclicktool_host.a: Makefile $(BUILDOBJS)
-	$(BUILD_AR) cru libclicktool_host.a $(BUILDOBJS)
-	$(BUILD_RANLIB) libclicktool_host.a
+libclicktool_build.a: Makefile $(BUILDOBJS)
+	$(BUILD_AR) cru libclicktool_build.a $(BUILDOBJS)
+	$(BUILD_RANLIB) libclicktool_build.a
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
