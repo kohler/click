@@ -30,8 +30,8 @@ void
 SpinlockInfo::cleanup(CleanupStage)
 {
   _map.clear();
-  for (int i=0; i<_spinlocks.size(); i++)
-    _spinlocks[i]->unref();
+  for (int i = 0; i < _spinlocks.size(); i++)
+    delete _spinlocks[i];
   _spinlocks.clear();
 }
 
@@ -50,7 +50,6 @@ SpinlockInfo::add_spinlock(const Vector<String> &conf,
       String name = prefix + parts[0];
       if (_map[name] < 0) {
 	Spinlock *l = new Spinlock();
-	l->ref();
 	_map.insert(name, _spinlocks.size());
 	_spinlocks.push_back(l);
       }
@@ -102,4 +101,3 @@ EXPORT_ELEMENT(SpinlockInfo)
 
 // template instance
 #include <click/vector.cc>
-

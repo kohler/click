@@ -12,7 +12,7 @@
 # define my_cpu current->processor
 #endif
 
-// loop-in-cache spinlock implementation: 12 bytes. if the size of this class
+// loop-in-cache spinlock implementation: 8 bytes. if the size of this class
 // changes, change size of padding in ReadWriteLock below.
 
 #if defined(__KERNEL__) && defined(__SMP__)
@@ -25,21 +25,18 @@ class Spinlock { public:
   void acquire();
   void release();
   bool attempt();
-  void ref();
-  void unref();
 
  private:
 
   volatile unsigned short _lock;
   unsigned short _depth;
   int _owner;
-  int _refcnt;
   
 };
 
 inline
 Spinlock::Spinlock()
-  : _lock(0), _depth(0), _owner(-1), _refcnt(0)
+  : _lock(0), _depth(0), _owner(-1)
 {
 #ifndef __i386__
 # error "no multithread support for non i386 click"
@@ -51,19 +48,6 @@ Spinlock::~Spinlock()
 {
   if (_lock != 0) 
     click_chatter("warning: freeing unreleased lock");
-}
-
-inline void
-Spinlock::ref()
-{
-  _refcnt++;
-}
-
-inline void
-Spinlock::unref()
-{
-  if (_refcnt > 0) _refcnt--;
-  if (_refcnt == 0) delete this;
 }
 
 inline void
@@ -140,8 +124,6 @@ class Spinlock { public:
   void acquire()		{ }
   void release()		{ }
   bool attempt()		{ return true; }
-  void ref()			{ }
-  void unref()			{ }
   
 };
 
@@ -164,7 +146,7 @@ class ReadWriteLock {
   // allocate 32 bytes (size of a cache line) for every member
   struct lock_t {
     Spinlock _lock;
-    unsigned char reserved[20];
+    unsigned char reserved[24];
   };
 
   lock_t *_l;

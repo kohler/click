@@ -27,8 +27,6 @@ public:
   void notify_noutputs(int n)		{ set_noutputs(n); }
 
   int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage)		{ if (_lock) _lock->unref(); }
   
   Packet *simple_action(Packet *p)  	{ _lock->release(); return p; }
 };

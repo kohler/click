@@ -35,13 +35,6 @@ SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-int
-SpinlockRelease::initialize(ErrorHandler *)
-{
-  _lock->ref();
-  return 0;
-}
-
 
 EXPORT_ELEMENT(SpinlockRelease)
 
