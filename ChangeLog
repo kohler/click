@@ -1,3 +1,11 @@
+2005-03-03 Thursday 18:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-5.x/src/e1000_main.c (1.6): e1000
+
+2005-03-03 Thursday 18:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-5.x/src/e1000_main.c (1.5): checkin
+
 2005-03-03 Thursday 13:36  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/: access-point.click (1.5), gen_config_roofnet.pl
