@@ -7,7 +7,7 @@
  * =s Grid
  * =d
  * Expects a Grid MAC packet as input.
- * Calculates the Grid header's checksum and sets the checksum header field.
+ * Calculates the Grid header's checksum and sets the version and checksum header fields.
  *
  * =a
  * CheckGridHeader */
