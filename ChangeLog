@@ -1,3 +1,11 @@
+2001-04-24 Tuesday 13:20  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/tcpudp/iprewriter.hh: minor changes
+
+2001-04-24 Tuesday 13:08  Benjie Chen <benjie@lcs.mit.edu>
+
+	* lib/routerthread.cc: only call schedule() on one cpu
+
 2001-04-23 Monday 23:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: settimestamp.cc, settimestamp.hh: set the
