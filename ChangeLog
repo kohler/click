@@ -1,3 +1,29 @@
+2001-04-24 Tuesday 21:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/rfc2507c.cc: don't redefine random()
+
+2001-04-24 Tuesday 21:43  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: fromdevice.cc, polldevice.cc, todevice.cc,
+	tolinux.cc, tolinuxsniffers.cc, tulipstats.cc: better error
+	messages: change "no device" to "unknown device"
+
+2001-04-24 Tuesday 21:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc, ipfilter.hh: add "ip
+	ttl" to IPFilter and IPClassifier
+
+2001-04-24 Tuesday 21:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man: small bug fix: change .PP paragraphs into .IP
+	paragraphs when appropriate
+
+2001-04-24 Tuesday 21:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* acconfig.h, configure.in: add HAVE_INT64_TYPES #define, and
+	define intXX_t types in config.h; also, report "--disable-XXX" for
+	options that are on by default, like other programs do
+
 2001-04-24 Tuesday 13:20  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/tcpudp/iprewriter.hh: minor changes
