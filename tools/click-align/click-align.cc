@@ -174,6 +174,7 @@ prepared_router()
   r->get_type_index("Align", new AlignAlignClass);
   r->get_type_index("Strip", new StripAlignClass);
   r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
+  r->get_type_index("EtherEncap", new AlignClass(new ShifterAligner(-14)));
   Aligner *a = new GeneratorAligner(Alignment(4, 2));
   r->get_type_index("FromDevice", new AlignClass(a));
   r->get_type_index("PollDevice", new AlignClass(a));

@@ -76,7 +76,9 @@ Version 1.0.7
 
 * Tools
 
-** Fixed click-uncombine bugs and changed its order of arguments.
+** Fixed click-uncombine(1) bugs and changed its order of arguments.
+
+** Added PollDevice and EtherEncap specifications to click-align(1).
 
 
 Version 1.0.6   6.May.2000
