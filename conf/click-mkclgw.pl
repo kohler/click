@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.1 2004/02/23 05:30:30 max Exp $
+# $Id: click-mkclgw.pl,v 1.2 2004/02/26 03:42:32 max Exp $
 #
 # click-mkclgw
 #
@@ -87,13 +87,13 @@ package CLGW::Const;
 
 #
 # Woefully inadequate list of ports to specify in a config file
-# Special ports "natp", "info" and "param" have been hacked on --
+# Special ports "napt", "info" and "param" have been hacked on --
 # they specify config file groups more than they specify ports.
 # 
 $CLGW::Const::PORT_ALL = 0;
 $CLGW::Const::PORT_HTTP = 1;
 $CLGW::Const::PORT_SSH = 2;
-$CLGW::Const::PORT_NATP = 3;
+$CLGW::Const::PORT_NAPT = 3;
 $CLGW::Const::INFO = 4;
 $CLGW::Const::PARAM = 5;
 
@@ -105,14 +105,14 @@ $CLGW::Const::ADDR_IPNET = 1;
 $CLGW::Const::ADDR_IP = 2;
 $CLGW::Const::ADDR_IP_CLUSTER = 3;
 
-$CLGW::Const::NATP_PORT_RANGE = "50000-65535";
+$CLGW::Const::NAPT_PORT_RANGE = "50000-65535";
 $CLGW::Const::TAB_IN = 45;  # formatting constant
 
 %CLGW::Const::PORTMAP = ( "*" => $CLGW::Const::PORT_ALL,
 			  "www" => $CLGW::Const::PORT_HTTP,
 			  "http" => $CLGW::Const::PORT_HTTP,
 			  "ssh" => $CLGW::Const::PORT_SSH,
-			  "natp" => $CLGW::Const::PORT_NATP,
+			  "napt" => $CLGW::Const::PORT_NAPT,
 			  "info" => $CLGW::Const::INFO,
 			  "default" => $CLGW::Const::INFO,
 			  "param" => $CLGW::Const::PARAM );
@@ -179,7 +179,7 @@ sub parse_error {
 #
 #  <port-specifier> := (<port1>|<port2>| .... )  |
 #                      (info) |
-#                      (natp) |
+#                      (napt) |
 #                      (param)
 #
 # Returns: 0 on success / -1 on EOF
@@ -250,18 +250,18 @@ sub parse_rule {
     my $ret;
 
     if ($#addrs == 2 and
-	$self->port_typ ($port_arr, $CLGW::Const::PORT_NATP) and
+	$self->port_typ ($port_arr, $CLGW::Const::PORT_NAPT) and
 	$addrs[0]->typ () eq "ip" and
 	$addrs[1]->typ () eq "ip" and
 	$addrs[2]->typ () eq "net" and
 	!$label->iscluster () ) {
 	
 	#
-	# NatP cluster, not accessible from the outside:
+	# NAPT cluster, not accessible from the outside:
 	#
 	#  <label> <ip-addr> <ip-addr> <net-addr>
 	#
-	$ret = CLGW::Rule::NatP->new ( "_ports" => [ @$port_arr ],
+	$ret = CLGW::Rule::NAPT->new ( "_ports" => [ @$port_arr ],
 					"_label" => $label,
 					"_ext_addr" => $addrs[0],
 					"_int_addr" => $addrs[1],
@@ -342,10 +342,10 @@ sub parse_rule {
 	my $int_addr = $addrs[1];
 
 	#
-	# load-balanced natp cluster
+	# load-balanced napt cluster
 	#
 	#   <clust-label> <ip-addr> <ip-addrs> [ <ip-addr> <ip-net> ]
-	#   Cluster Label  ExtIP      IntIPS       IntGW    NatPNet
+	#   Cluster Label  ExtIP      IntIPS       IntGW    NAPTNet
 	#
 	if ($label->iscluster () and !$ext_addr->iscluster ()) {
 
@@ -358,7 +358,7 @@ sub parse_rule {
 		$int_addr->clust_full_size ();
 
 	    
-	    $ret = CLGW::Rule::LBNatP->new ("_ports" => [ @$port_arr ],
+	    $ret = CLGW::Rule::LBNAPT->new ("_ports" => [ @$port_arr ],
 					     "_label" => $label,
 					     "_int_clust" => $int_addr,
 					     "_ext_addr" => $ext_addr );
@@ -673,7 +673,7 @@ sub new {
 package CLGW::Rule;
 @CLGW::Rule::ISA = qw [ CLGW::Base ];
 
-sub is_natp { return 0; }
+sub is_napt { return 0; }
 sub addr_info { return undef; }
 sub lb_mapper { return undef; }
 sub get_int_ips {}
@@ -868,7 +868,7 @@ sub rewriter_pattern {
     return undef unless $self->is_external_iface ;
     my @els = ( $self->out_pat (),
 		$self->mapped_label (), 
-		$CLGW::Const::NATP_PORT_RANGE,
+		$CLGW::Const::NAPT_PORT_RANGE,
 		"-",
 		"-" );
     return join (" ", @els);
@@ -1037,8 +1037,8 @@ sub addr_info {
 }
 
 
-package CLGW::Rule::NatP;
-@CLGW::Rule::NatP::ISA = qw [ CLGW::Rule::NatBase ];
+package CLGW::Rule::NAPT;
+@CLGW::Rule::NAPT::ISA = qw [ CLGW::Rule::NatBase ];
 
 sub net_lab {
     my ($self) = @_;
@@ -1079,7 +1079,7 @@ sub rewriter_pattern {
     my ($self) = @_;
     my @els = ( $self->out_pat (), 
 		$self->ext_lab (),
-		$CLGW::Const::NATP_PORT_RANGE,
+		$CLGW::Const::NAPT_PORT_RANGE,
 		"-",
 		"-" );
     return join (" ", @els);
@@ -1096,26 +1096,26 @@ sub ip_rewriter {
 }
 
 #
-# CLGW::Rule::LBNatP
+# CLGW::Rule::LBNAPT
 #
 # Cluster of servers.  Input traffic is load balanced.  Output traffic
-# is NatP'ed.
+# is NAPT'ed.
 #
-package CLGW::Rule::LBNatP;
-@CLGW::Rule::LBNatP::ISA = qw [ CLGW::Rule::NatP ];
+package CLGW::Rule::LBNAPT;
+@CLGW::Rule::LBNAPT::ISA = qw [ CLGW::Rule::NAPT ];
 
 sub accepting { return 1; }
 
 sub ip_rewriter {
     my ($self, $port, $map) = @_;
-    my $ret =  [ $self->CLGW::Rule::NatP::ip_rewriter ($port, $map) ];
+    my $ret =  [ $self->CLGW::Rule::NAPT::ip_rewriter ($port, $map) ];
     push @$ret, $self->{_mapper};
     $self->{_in_pat_port} = $port + 1;
     return $ret;
 }
 
 #
-# CLGW::Rule::LBNatP
+# CLGW::Rule::LBNAPT
 #
 # Outputs the core lb_mapper element for the input path.  Note that
 # the lb_mapper is of type SourceIPHashMapper.  In future versions 
@@ -1712,7 +1712,7 @@ be all that poor to not be able to afford a $10k Cisco Local Directory.
 
 Output configurations can include simple NAT holes through the firewall,
 and obviously load-balanced clusters.  In the latter case, machines
-in a cluster make connections out via  NatP.  This script will allow
+in a cluster make connections out via  NAPT.  This script will allow
 some control over which IP address such clusters show to the outside
 world when making such connections.  Overlapping server pools are
 supported, but not very well error-checked.  

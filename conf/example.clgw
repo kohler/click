@@ -1,5 +1,5 @@
 # 
-# $Id: example.clgw,v 1.1 2004/02/23 05:30:30 max Exp $
+# $Id: example.clgw,v 1.2 2004/02/26 03:42:33 max Exp $
 #
 #  Script to be processed with click-mkclgw.pl, to make a click configuration
 #
@@ -57,6 +57,6 @@ ws[1-14]/[2,3,5-7]  77.59.77.10	 10.0.11.[11-24]  10.0.11.1  10.0.11.0/24
 #
 # All traffic on 10.0.30.0/24 will be NATed to 77.59.77.40
 #
-{(natp);
+{(napt);
 foo	77.59.77.40 	10.0.30.1 	10.0.30.0/24 
 }
