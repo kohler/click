@@ -113,7 +113,7 @@ handle_router(const char *filename, const ElementMap &default_map, ErrorHandler 
   }
 
   if (nmissing == 1)
-    errh->fatal("%s: cannot locate required element class `%s'\n(This may be due to a missing or out-of-datte elementmap.)", filename, missing_sa.cc());
+    errh->fatal("%s: cannot locate required element class `%s'\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
   else if (nmissing > 1)
     errh->fatal("%s: cannot locate these required element classes:\n  %s\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
 }
