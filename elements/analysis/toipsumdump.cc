@@ -70,8 +70,8 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "VERBOSE", cpBool, "be verbose?", &verbose,
 		    "BANNER", cpString, "banner", &_banner,
 		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &multipacket,
-		    "BAD_PACKETS", cpBool, "output `!bad' messages for non-IP or bad IP packets?", &bad_packets,
-		    "CAREFUL_TRUNC", cpBool, "output `!bad' messages for truncated IP packets?", &careful_trunc,
+		    "BAD_PACKETS", cpBool, "output '!bad' messages for non-IP or bad IP packets?", &bad_packets,
+		    "CAREFUL_TRUNC", cpBool, "output '!bad' messages for truncated IP packets?", &careful_trunc,
 		    "BINARY", cpBool, "output binary data?", &binary,
 		    cpEnd) < 0)
 	return -1;
@@ -93,7 +93,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("cannot use CONTENTS %s with BINARY", word.cc());
 	    _binary_size += s;
 	} else
-	    errh->error("unknown content type `%s'", word.cc());
+	    errh->error("unknown content type '%s'", word.cc());
     }
     if (_contents.size() == 0)
 	errh->error("no contents specified");

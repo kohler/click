@@ -199,7 +199,7 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	    _contents.push_back(what);
 	    all_contents |= (1 << (what - W_NONE));
 	} else if (i > 0 || (word != "!data" && word != "!contents")) {
-	    _ff.warning(errh, "warning: unknown content type '%s'", word.c_str());
+	    _ff.warning(errh, "unknown content type '%s'", word.c_str());
 	    _contents.push_back(W_NONE);
 	}
     }
