@@ -52,7 +52,7 @@ CLICK_DECLS
  * mileage may vary.
  *
  * If there is an error write()ing or send()ing a packet to the
- * device, the packet will be pushed out the (optional) second output.  If
+ * device, the packet will be pushed out the (optional) output.  If
  * the SET_ERROR_ANNO keyword is true, the SEND_ERR annotation of the
  * pushed packet is set to the system error code.
  *
