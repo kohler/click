@@ -16,6 +16,9 @@
  * statistics information about packet count and packet rate using a strict
  * average.
  *
+ * The rate covers only the time between the first and most recent
+ * packets.
+ *
  * =h count read-only
  * Returns the number of packets that have passed through.
  *
