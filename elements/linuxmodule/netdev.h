@@ -9,5 +9,6 @@
 
 // #define DEV_RXFIFO_STATS 1
 // #define DEV_KEEP_STATS 1
-// #define ADJ_TICKETS 1
-// #define BATCH_PKT_PROC 1
+#define ADJ_TICKETS 1
+#define BATCH_PKT_PROC 1
+
