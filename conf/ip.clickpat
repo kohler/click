@@ -25,7 +25,7 @@ elementclass IPOutput {
 }
 
 elementclass IPOutput_Replacement {
-  input -> crud :: IPOutputCrud($paint, $my_ip, $mtu) -> output;
+  input -> crud :: IPOutputCombo($paint, $my_ip, $mtu) -> output;
   crud[1] -> [1]output;
   crud[2] -> [2]output;
   crud[3] -> [3]output;
@@ -44,7 +44,7 @@ elementclass IPInput {
 }
 
 elementclass IPInput_Replacement {
-  input -> BigIn($paint, $bad_addrs) -> output;
+  input -> IPInputCombo($paint, $bad_addrs) -> output;
 }
 
 
@@ -59,7 +59,7 @@ elementclass IPInput2 {
 }
 
 elementclass IPInput2_Replacement {
-  input -> BigIn($paint, $bad_addrs) -> output;
+  input -> IPInputCombo($paint, $bad_addrs) -> output;
   input[1] -> Strip(14)
 	-> CheckIPHeader($bad_addrs)
 	-> GetIPAddress(16)

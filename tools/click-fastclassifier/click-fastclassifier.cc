@@ -96,8 +96,10 @@ click_mktmpdir(ErrorHandler *errh = 0)
   while (1) {
     String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
     int result = mkdir(tmpsubdir.cc(), 0700);
-    if (result >= 0)
+    if (result >= 0) {
+      remove_file_on_exit(tmpsubdir);
       return tmpsubdir;
+    }
     if (result < 0 && errno != EEXIST) {
       if (errh)
 	errh->fatal("cannot create temporary directory: %s", strerror(errno));

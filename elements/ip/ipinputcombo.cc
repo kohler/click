@@ -1,5 +1,5 @@
 /*
- * bigin.{cc,hh} -- IP router input combination element
+ * ipinputcombo.{cc,hh} -- IP router input combination element
  * Robert Morris
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology.
@@ -13,32 +13,32 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "bigin.hh"
+#include "ipinputcombo.hh"
 #include "click_ip.h"
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
 
-BigIn::BigIn()
+IPInputCombo::IPInputCombo()
   : _drops(0), _bad_src(0)
 {
   add_input();
   add_output();
 }
 
-BigIn::~BigIn()
+IPInputCombo::~IPInputCombo()
 {
   delete[] _bad_src;
 }
 
-BigIn *
-BigIn::clone() const
+IPInputCombo *
+IPInputCombo::clone() const
 {
-  return new BigIn();
+  return new IPInputCombo();
 }
 
 int
-BigIn::configure(const String &conf, ErrorHandler *errh)
+IPInputCombo::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -75,7 +75,7 @@ BigIn::configure(const String &conf, ErrorHandler *errh)
 }
 
 inline Packet *
-BigIn::smaction(Packet *p)
+IPInputCombo::smaction(Packet *p)
 {
   unsigned int src;
 
@@ -128,14 +128,14 @@ BigIn::smaction(Packet *p)
 }
 
 void
-BigIn::push(int, Packet *p)
+IPInputCombo::push(int, Packet *p)
 {
   if((p = smaction(p)) != 0)
     output(0).push(p);
 }
 
 Packet *
-BigIn::pull(int)
+IPInputCombo::pull(int)
 {
   Packet *p = input(0).pull();
   if(p)
@@ -144,16 +144,16 @@ BigIn::pull(int)
 }
 
 static String
-BigIn_read_drops(Element *xf, void *)
+IPInputCombo_read_drops(Element *xf, void *)
 {
-  BigIn *f = (BigIn *)xf;
+  IPInputCombo *f = (IPInputCombo *)xf;
   return String(f->drops()) + "\n";
 }
 
 void
-BigIn::add_handlers(HandlerRegistry *fcr)
+IPInputCombo::add_handlers(HandlerRegistry *fcr)
 {
-  fcr->add_read("drops", BigIn_read_drops, 0);
+  fcr->add_read("drops", IPInputCombo_read_drops, 0);
 }
 
-EXPORT_ELEMENT(BigIn)
+EXPORT_ELEMENT(IPInputCombo)

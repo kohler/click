@@ -52,7 +52,7 @@ sub nroffize ($@) {
   $t =~ s/^\.fi\n\.nf\n//mg;
   my($i);
   foreach $i (sort { length($b) <=> length($a) } @_) {
-    $t =~ s/$i/\\fB$i\\fR/g;
+    $t =~ s/\b$i\b/\\fB$i\\fR/g;
   }
   $t;
 }

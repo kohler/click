@@ -1,5 +1,5 @@
 /*
- * ipoutputcrud.{cc,hh} -- IP router output combination element
+ * ipoutputcombo.{cc,hh} -- IP router output combination element
  * Eddie Kohler
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology.
@@ -13,40 +13,40 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ipoutputcrud.hh"
+#include "ipoutputcombo.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
 
-IPOutputCrud::IPOutputCrud()
+IPOutputCombo::IPOutputCombo()
   : Element(1, 5)
 {
 }
 
-IPOutputCrud::~IPOutputCrud()
+IPOutputCombo::~IPOutputCombo()
 {
 }
 
-IPOutputCrud *
-IPOutputCrud::clone() const
+IPOutputCombo *
+IPOutputCombo::clone() const
 {
-  return new IPOutputCrud();
+  return new IPOutputCombo();
 }
 
 int
-IPOutputCrud::configure(const String &conf, ErrorHandler *errh)
+IPOutputCombo::configure(const String &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color (CheckPaint)", &_color,
 		  cpIPAddress, "dest IP address", &_my_ip,
-		  cpUnsigned, "MTU (Fragmenter)", &_mtu,
+		  cpUnsigned, "MTU (IPFragmenter)", &_mtu,
 		  0) < 0)
     return -1;
   return 0;
 }
 
 void
-IPOutputCrud::push(int, Packet *p)
+IPOutputCombo::push(int, Packet *p)
 {
   int do_cksum = 0;
   int problem_offset = -1;
@@ -196,4 +196,4 @@ IPOutputCrud::push(int, Packet *p)
   output(2).push(p);
 }
 
-EXPORT_ELEMENT(IPOutputCrud)
+EXPORT_ELEMENT(IPOutputCombo)

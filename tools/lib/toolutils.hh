@@ -12,6 +12,7 @@ void write_router_file(RouterT *, FILE *, ErrorHandler * = 0);
 int write_router_file(RouterT *, const char *, ErrorHandler * = 0);
 
 String unique_tmpnam(const String &, ErrorHandler * = 0);
+void remove_file_on_exit(const String &);
 String clickpath_find_file(const String &filename, const char *subdir,
 			   const String &default_path, ErrorHandler * = 0);
 

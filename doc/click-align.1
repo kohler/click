@@ -56,15 +56,14 @@ and
 have alignment requirements. The CheckIPHeader element, for example,
 expects that the packet begins with an IP header, and that this IP header
 is four-byte-aligned. Normally, Click does not guarantee this: elements
-cannot guarantee how input packets will be aligned. The
+cannot know how input packets will be aligned. The
 .B click-align
 tool first analyzes the router configuration, then inserts
 .M Align n
-elements as required to guarantee that packets will be properly aligned. It
+elements as required to ensure that packets will be properly aligned. It
 also adds an
 .M AlignmentInfo n
-element so that elements can figure out what packet alignment they can
-expect.
+element so elements can figure out what packet alignment they can expect.
 .PP
 The list of alignment requirements is currently built in to the
 .B click-align

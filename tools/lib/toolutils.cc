@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <dirent.h>
 
 String
 file_string(FILE *f, ErrorHandler *errh)
@@ -194,12 +196,69 @@ unique_tmpnam(const String &pattern, ErrorHandler *errh)
     int result = open(name.cc(), O_WRONLY | O_CREAT | O_EXCL, S_IRWXU);
     if (result >= 0) {
       close(result);
+      remove_file_on_exit(name);
       return name;
     } else if (errno != EEXIST) {
       errh->error("cannot create temporary file: %s", strerror(errno));
       return String();
     }
     uniqueifier++;
+  }
+}
+
+static Vector<String> *remove_files;
+
+static void
+remover(String fn)
+{
+  struct stat s;
+  if (stat(fn.cc(), &s) < 0)
+    return;
+  if (S_ISDIR(s.st_mode)) {
+    DIR *dir = opendir(fn.cc());
+    if (!dir)
+      return;
+    while (struct dirent *d = readdir(dir)) {
+      if (d->d_name[0] == '.'
+	  && (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0))
+	continue;
+      remover(fn + "/" + d->d_name);
+    }
+    closedir(dir);
+    rmdir(fn.cc());
+  } else
+    unlink(fn.cc());
+}
+
+extern "C" {
+static void
+signal_handler(int)
+{
+  exit(2);
+}
+
+static void
+atexit_remover(void)
+{
+  if (remove_files) {
+    for (int i = 0; i < remove_files->size(); i++)
+      remover((*remove_files)[i]);
+  }
+}
+}
+
+void
+remove_file_on_exit(const String &file)
+{
+  if (file) {
+    if (!remove_files) {
+      remove_files = new Vector<String>;
+      signal(SIGINT, signal_handler);
+      signal(SIGTERM, signal_handler);
+      signal(SIGPIPE, signal_handler);
+      atexit(atexit_remover);
+    }
+    remove_files->push_back(file);
   }
 }
 

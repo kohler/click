@@ -171,6 +171,5 @@ PollDevice::woke_up()
   remove_wait_queue(&(_dev->intr_wq), &_self_wq);
 }
 
-
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(PollDevice)
-
