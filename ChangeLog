@@ -1,3 +1,20 @@
+2003-09-05 Friday 21:29  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.55),
+	fromnetflowsumdump.cc (1.16): careful if EXTRA_LENGTH_ANNO isn't
+	big enough for all the multipackets
+
+2003-09-05 Friday 21:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.54), fromipsumdump.hh
+	(1.31), fromnetflowsumdump.cc (1.15), fromnetflowsumdump.hh (1.12):
+	multipacket lengths are handled more correctly; set the UDP length
+	to the correct value (related to Andrew White request)
+
+2003-09-05 Friday 21:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipprint.hh (1.22): nit
+
 2003-09-05 Friday 01:53  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.7), arptable.hh (1.5): add insert
