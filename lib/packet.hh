@@ -43,8 +43,11 @@ private:
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
   unsigned char _cb[48];
-  click_ip *_nh_iph;
-  click_ip6 *_nh_ip6h;
+  union {
+    click_ip *iph;
+    click_ip6 *ip6h;
+    unsigned char *raw;
+  } _nh;
   unsigned char *_h_raw;
 #endif
   
@@ -129,8 +132,8 @@ private:
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
-  const click_ip *ip_header() const		{ return _nh_iph; }
-  const click_ip6 *ip6_header() const           {return _nh_ip6h; }
+  const click_ip *ip_header() const		{ return _nh.iph; }
+  const click_ip6 *ip6_header() const           { return _nh.ip6h; }
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
   void set_ip_header(const click_ip *, unsigned);
@@ -181,12 +184,12 @@ class WritablePacket : public Packet { public:
 #ifdef __KERNEL__
   unsigned char *data() const			{ return skb()->data; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
-  click_ip6 *ip6_header() const         {return (click_ip6 *)skb()->nh.ipv6h; }
+  click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   unsigned char *data() const			{ return _data; }
-  click_ip *ip_header() const			{ return _nh_iph; }
-  click_ip6 *ip6_header() const                 {return _nh_ip6h; }
+  click_ip *ip_header() const			{ return _nh.iph; }
+  click_ip6 *ip6_header() const                 { return _nh.ip6h; }
   unsigned char *transport_header() const	{ return _h_raw; }
 #endif
 
@@ -309,7 +312,7 @@ Packet::set_ip_header(const click_ip *iph, unsigned len)
   skb()->nh.iph = (struct iphdr *)iph;
   skb()->h.raw = (unsigned char *)iph + len;
 #else
-  _nh_iph = (click_ip *)iph;
+  _nh.iph = (click_ip *)iph;
   _h_raw = (unsigned char *)iph + len;
 #endif
 }
@@ -327,7 +330,7 @@ Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
   skb()->nh.ipv6h = (struct ipv6hdr *)ip6h;
   skb()->h.raw = (unsigned char *)ip6h + len;
 #else
-  _nh_ip6h = (click_ip6 *)ip6h;
+  _nh.ip6h = (click_ip6 *)ip6h;
   _h_raw = (unsigned char *)ip6h + len;
 #endif
 }

@@ -60,7 +60,7 @@ Packet::Packet()
   _use_count = 1;
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
-  _nh_iph = 0;
+  _nh.raw = 0;
   _h_raw = 0;
   memset(_cb, 0, sizeof(_cb));
 }
@@ -145,8 +145,7 @@ Packet::clone()
   p->_tail = _tail;
   p->_end = _end;
   p->copy_annotations(this);
-  p->_nh_iph = _nh_iph;
-  p->_nh_ip6h = _nh_ip6h;
+  p->_nh.raw = _nh.raw;
   p->_h_raw = _h_raw;
   // increment our reference count because of _data_packet reference
   _use_count++;
@@ -163,17 +162,11 @@ Packet::uniqueify_copy()
   p->alloc_data(headroom(), length(), tailroom());
   memcpy(p->_data, _data, _tail - _data);
   p->copy_annotations(this);
-  if (_nh_iph) {
-    p->_nh_iph = (click_ip *)(p->_data + ip_header_offset());
+  if (_nh.raw) {
+    p->_nh.raw = p->_data + ip_header_offset();
     p->_h_raw = (unsigned char *)(p->_data + transport_header_offset());
-    p->_nh_iph = 0;
-  } else if (_nh_ip6h) {
-    p->_nh_ip6h = (click_ip6 *)(p->_data);
-    p->_h_raw = (unsigned char *)(p->_data + transport_header_offset());
-    p->_nh_iph = 0;
   } else {
-    p->_nh_iph = 0;
-    p->_nh_ip6h = 0;
+    p->_nh.raw = 0;
     p->_h_raw = 0;
   }
   memcpy(p->_cb, _cb, sizeof(_cb));
@@ -229,8 +222,8 @@ Packet::put(unsigned int nbytes)
     panic("Packet::put");
 #else
     WritablePacket *q = Packet::make(headroom(), data(), length(), tailroom() + nbytes);
-    if (_nh_iph) {
-      q->_nh_iph = (click_ip *)(q->_data + ip_header_offset());
+    if (_nh.raw) {
+      q->_nh.raw = q->_data + ip_header_offset();
       q->_h_raw = (unsigned char *)(q->_data + transport_header_offset());
     }
     q->copy_annotations(this);
