@@ -98,7 +98,12 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   SET_WIFI_FROM_CLICK(p_in);
 
   if (dst == _bcast) {
-    SET_WIFI_RATE_ANNO(p_in, 2);
+    Vector<int> rates = _rtable->lookup(_bcast);
+    if (rates.size()) {
+      SET_WIFI_RATE_ANNO(p_in, rates[0]);
+    } else {
+      SET_WIFI_RATE_ANNO(p_in, 2);
+    }
     return;
   }
   DstInfo *nfo = _neighbors.findp(dst);
@@ -113,7 +118,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
   int rate = nfo->pick_rate();
-  int alt_rate = _aggressive_alt_rate ? nfo->pick_alt_rate() : 2;
+  int alt_rate = nfo->pick_alt_rate();
   SET_WIFI_RATE_ANNO(p_in, rate);
   SET_WIFI_MAX_RETRIES_ANNO(p_in, 3);
   SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);

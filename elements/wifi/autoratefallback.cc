@@ -161,7 +161,12 @@ AutoRateFallback::assign_rate(Packet *p_in)
   SET_WIFI_FROM_CLICK(p_in);
 
   if (dst == _bcast) {
-    SET_WIFI_RATE_ANNO(p_in, 2);
+    Vector<int> rates = _rtable->lookup(_bcast);
+    if (rates.size()) {
+      SET_WIFI_RATE_ANNO(p_in, rates[0]);
+    } else {
+      SET_WIFI_RATE_ANNO(p_in, 2);
+    }
     return;
   }
   DstInfo *nfo = _neighbors.findp(dst);
@@ -179,9 +184,10 @@ AutoRateFallback::assign_rate(Packet *p_in)
   }
 
   int rate = nfo->pick_rate();
+  int alt_rate = nfo->pick_alt_rate();
   SET_WIFI_RATE_ANNO(p_in, rate);
   SET_WIFI_MAX_RETRIES_ANNO(p_in, 4);
-  SET_WIFI_ALT_RATE_ANNO(p_in, 2);
+  SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
   SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 4);
   return;
   

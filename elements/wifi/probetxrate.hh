@@ -252,7 +252,7 @@ class ProbeTXRate : public Element { public:
 	  }
 	}
       }
-      return (found) ? _rates[best_ndx] : 2;
+      return (found) ? _rates[best_ndx] : _rates[0];
     }
 
     int pick_rate() {

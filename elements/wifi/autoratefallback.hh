@@ -109,11 +109,25 @@ class AutoRateFallback : public Element { public:
     }
 
     int pick_rate() {
+      if (_rates.size() == 0) {
+	click_chatter("no rates to pick from for %s\n", 
+		      _eth.s().cc());
+	return 2;
+      }
+
       if (_current_index > 0 && _current_index < _rates.size()) {
 	return _rates[_current_index];
       }
+      return _rates[0];
+    }
 
-      return 2;
+    int pick_alt_rate() {
+      if (_rates.size() == 0) {
+	click_chatter("no rates to pick from for %s\n", 
+		      _eth.s().cc());
+	return 2;
+      }
+      return _rates[0];
     }
   };
   

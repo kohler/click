@@ -242,4 +242,11 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #define	WIFI_RATE_BASIC			0x80
 #define	WIFI_RATE_VAL			0x7f
 
+
+#define WIFI_SEQ_FRAG_MASK                 0x000f
+#define WIFI_SEQ_FRAG_SHIFT                0
+#define WIFI_SEQ_SEQ_MASK                  0xfff0
+#define WIFI_SEQ_SEQ_SHIFT                 4
+
+
 #endif /* !_CLICKNET_WIFI_H_ */
