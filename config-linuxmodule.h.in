@@ -29,6 +29,7 @@
 
 /* Include integer type definitions. */
 #include <linux/types.h>
+typedef unsigned long uintptr_t;
 
 /* Define assert macro. */
 #define assert(x) /* nada */
