@@ -1,0 +1,810 @@
+#!/usr/bin/perl
+
+# # # # # # # # # # # #
+
+$pp_pos = 0;
+@pp_closers = ();
+
+sub pp_open ($$$) {
+  local($o, $f, $c) = @_;
+  
+  if ($pp_pos > 0) {
+    $pp_pos++;
+    print STDERR ' ';
+    if (length($o.$f.$c) + $pp_pos > 79) {
+      print STDERR "\n";
+      $pp_pos = 0;
+    }
+  }
+  
+  $pp_pos += length($o.$f.$c);
+  print STDERR $o, $f;
+  
+  push(@pp_closers, $c);
+}
+
+sub pp_close () {
+  local($c) = pop(@pp_closers);
+  print STDERR $c;
+}
+
+sub pp_end () {
+  print STDERR "\n" if ($pp_pos > 0);
+}
+
+# # # # # # # # # # # #
+
+sub usage () {
+  print STDERR "Usage: man2html [OPTIONS] MANFILES...
+Try `man2html --help' for more information.\n";
+  exit 1;
+}
+
+sub help () {
+  print STDERR <<'EOD;';
+`Man2html' translates UNIX manual pages into HTML.
+
+Usage: man2html [-l] [-t TEMPLATE] [MANFILE] [HTMLFILE]
+       man2html -d DIR [-l] [-t TEMPLATE] MANFILES...
+       man2html -r FILE [-l] [MANFILE]
+
+Options:
+  -t, --template FILE     Use FILE as a template for generated HTML. 
+  -r, --replace FILE      Use FILE as a template for generated HTML and as
+                          output file.
+  -d, --directory DIR     Place generated HTML files in directory DIR.
+  -l, --link              Make hyperlinks for manual page crossreferences.
+  -m, --marker A@B        Hyperlinks to current manual page `<a>text</a>'
+                          replaced with `AtextB'.
+      --no-recursive      Do not search subdirectories.
+  -f, --force             Ignore file errors.
+  -h, --help              Print this message and exit.
+
+Report bugs to <eddietwo@lcs.mit.edu>.
+EOD;
+  exit 0;
+}
+
+undef $directory;
+undef $template;
+undef $output_file;
+$self_link_marker = "";
+$self_link_post_marker = "";
+@files = ();
+$links = 0;
+$recursive = 1;
+$force = 0;
+$QUOTES = 0;
+while (@ARGV) {
+  $_ = shift;
+  if (/^-/) {
+    if (/^-$/) {
+      push @files, "";
+    } elsif (/^-d$/ || /^--directory$/) {
+      die if defined $directory || @ARGV == 0;
+      $directory = shift;
+    } elsif (/^-d(.*)$/ || /^--directory=(.*)$/) {
+      die if defined $directory;
+      $directory = $1;
+    } elsif (/^--no-recursive$/) {
+      $recursive = 0;
+    } elsif (/^-f$/ || /^--force$/) {
+      $force = 1;
+    } elsif (/^-t$/ || /^--template$/) {
+      die if defined $template || @ARGV == 0;
+      $template = shift;
+    } elsif (/^-t(.*)$/ || /^--template=(.*)$/) {
+      die if defined $template;
+      $template = $1;
+    } elsif (/^-r$/ || /^--replace$/) {
+      die if defined $template || @ARGV == 0;
+      $template = $output_file = shift;
+    } elsif (/^-r(.*)$/ || /^--replace=(.*)$/) {
+      die if defined $template;
+      $template = $output_file = $1;
+    } elsif (/^-l$/ || /^--links$/) {
+      $links = 1;
+    } elsif (/^-h$/ || /^--help$/) {
+      help;
+    } elsif (/^-m$/ || /^--marker$/) {
+      die if $self_link_marker || @ARGV == 0;
+      $self_link_marker = shift;
+    } elsif (/^-m(.*)$/ || /^--marker=(.*)$/) {
+      die if $self_link_marker;
+      $self_link_marker = $1;
+    } else {
+      print STDERR "man2html: unrecognized option `$_'\n";
+      usage;
+    }
+  } else {
+    push @files, $_;
+  }
+}
+
+if (@files > 2 && !defined $directory) {
+  die "more than one file and no \`--directory'";
+}
+if (@files != 1 && defined $output_file) {
+  die "--replace requires exactly one input file";
+}
+if (@files == 0) {
+  push @files, '';
+}
+@ffiles = @files; @files = ();
+foreach $dir (@ffiles) {
+  if ($dir ne '' && -d $dir && $recursive) {
+    if (opendir(DIR, $dir)) {
+      push @files, map { "$dir/$_" } grep(/[^.].*.[1-9ln]/, readdir DIR);
+      closedir DIR;
+    } else {
+      print "$dir: $!\n";
+    }
+  } else {
+    push @files, $dir;
+  }
+}
+if (defined $directory) {
+  opendir(DIR, $directory) || die "$directory: $!\n";
+  foreach $i (grep { /^([!.].*\..*)\.html$/ } readdir(DIR)) {
+    $hyperlink_man{$i} = 1;
+  }
+  foreach $i (@files) {
+    $i =~ m{([^/]*)$}s;
+    $hyperlink_man{$1} = 1;
+  }
+}
+if (defined $template) {
+  open T, $template || die "$template: $!\n";
+  undef $/;
+  $template = <T>;
+  close T;
+  $/ = "\n";
+}
+if ($self_link_marker =~ /^(.*)\@(.*)$/) {
+  ($self_link_marker, $self_link_post_marker) = ($1, $2);
+}
+
+
+
+sub error {
+    print STDERR "confusion\n";
+}
+
+sub get_line () {
+    if (@pushed_lines) {
+	$_ = shift @pushed_lines;
+	return defined($_);
+    } else {
+	$_ = <IN>;
+	return 1 if /^\.\\\"/;
+	return 0 if !defined($_);
+	s/\\\\/\300/g;
+	s/\\[|&]/\377/g;
+	s/&/&amp;/g;
+	s/</&lt;/g;
+	s/>/&gt;/g;
+	s/\\e/&backsl;/g;
+	s/\\([-+])/\1/g;
+	s{\\%( *)}{"<tt>&nbsp;</tt>" x length($1)}eg;
+	s/\\\(em/&sp;--&sp;/g;
+	s/\\\(bu/*/g;
+	s/\\~/&nbsp;/g;
+	s#\\f\(CW#<T>#gx;
+	s#\\f\(BI#<Q>#gx;
+	s#\\f([RPIB])#<\1>#gx;
+	s#\\s-1#<SMALL>#gx;
+	s#\\s0#<NORMAL>#gx;
+	s#\\ #&nbsp;#g;
+	s/\\\*\((..)/$STR{$1}/eg;
+	s/\\\*(.)/$STR{$1}/eg;
+	s/\\".*//;
+	tr/\300/\\/;
+	return 1;
+    }
+}
+
+sub get_args () {
+    @args = (undef);
+    while (/\S/) {
+	if (/^\s*\"(([^\"]|\"\")*)\"(.*)/) {
+	    my($x) = $1;
+	    $_ = $3;
+	    $x =~ s/\"\"/\"/g;
+	    $x =~ s{(  +)}{'<tt>&nbsp;</tt>' x length($1)}eg;
+	    push @args, $x;
+	} elsif (/^\s*(\S+)(.*)/) {
+	    push @args, $1;
+	    $_ = $2;
+	}
+    }
+}
+
+sub expand_args ($) {
+    my($line) = @_;
+    map(s/\"/\"\"/g, @args);
+    $line =~ s#\\\$([0-9]+)#$args[$1]#eg;
+    $line = "\n" if $line eq '';
+    $line;
+}
+
+sub call ($$) {
+    my($n, $t) = @_;
+    $_ = $t;
+    if ($n =~ /^[A-Za-z_0-9]+$/) {
+	eval "&dot_$n();";
+    } elsif ($n =~ /^\\\"/) {
+	'';
+    }
+}
+
+sub o ($) {
+    my($x) = $_[0];
+    if ($QUOTES) {
+	$x =~ s/``/&#8220;/g;
+	$x =~ s/''/&#8221;/g;
+	$x =~ s/\`/&#8216;/g;
+	$x =~ s/\'/&#8217;/g;
+    }
+    $T .= $x;
+}
+
+sub line ($) {
+    $_ = $_[0];
+    if (/^[\.\']\s*(\w\S?)\s*(.*)/) {
+	call($1, $2);
+    } elsif (/^\.\\\"html\s+(.*)/) {
+	$T .= $1 . "\n";
+	$no_prologue = 1 if /DOCTYPE/;
+    } elsif (/^[.\']\s*$/ || /^[.\']\\\"/) {
+    } else {
+	o($_);
+    }
+}
+
+
+# . commands
+
+sub dot_ds {
+  if (/^(\S\S?)\s(\"|\s*)(.*)/) {
+    $STR{$1} = $3;
+    $STR{$1} =~ s{ }{&sp;}g;
+    $STR{$1} =~ s{"}{&quot;}g;
+  } else {
+    &error;
+  }
+}
+
+sub dot_de {
+    my($subname, $sub, $save);
+    ($subname) = /^(..?)/;
+    while (get_line) {
+	last if /^\.\./;
+	push @$save, $_;
+    }
+    return if $NO_OVERRIDE{$subname};
+    $DEFS{$subname} = $save;
+    eval "sub dot_$subname {
+	get_args;
+	unshift \@pushed_lines, map(&expand_args(\$_), \@{\$DEFS{'$subname'}});
+    }";
+}
+
+sub dot_if {
+    my($test, $what);
+    my($X) = $_;
+    get_line, $X .= $_ if $X =~ /\\$/;
+    if ($X =~ /\\{/) {
+	get_line, $X .= $_ while $X !~ /\\}/;
+	($test, $what) = ($X =~ /^(\S+)\s+\\{\\?(.*)\\}/s);
+	$what .= "\n";
+    } else {
+	($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
+    }
+    if (defined($test) && $test ne 'n') {
+	unshift @pushed_lines, split(/\n/, $what);
+    }
+}
+
+sub dot_ie {
+    my($test, $what);
+    my($X) = $_;
+    get_line, $X .= $_ if $X =~ /\\$/;
+    if ($X =~ /\\{/) {
+	get_line, $X .= $_ while $X !~ /\\}/;
+	($test, $what) = ($X =~ /^(\S+)\s+\\{\\?(.*)\\}/s);
+	$what .= "\n";
+    } else {
+	($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
+    }
+    if (defined($test) && $test ne 'n') {
+	o("<sup>ie succ</sup>");
+	unshift @pushed_lines, split(/\n/, $what);
+    } else {
+	get_line;
+	s/^([.\']\s*)el/$1if t /;
+	unshift @pushed_lines, $_;
+    }
+}
+
+sub dot_br {
+    o("<br>\n");
+}
+
+my(%dot_TS_aligns) = ( 'c' => "center",
+		       'r' => "right",
+		       'l' => "left" );	# XXX
+
+sub dot_TS {
+    my(@lines);
+    while (get_line) {
+	last if /^\.TE/;
+	push @lines, $_;
+    }
+    
+    my($gopt) = '';
+    $gopt = shift @lines if @lines && $lines[0] =~ /;\s*$/;
+
+    my($tab) = ($gopt =~ /\btab\((.)\)/ ? $1 : "\t");
+    my($center) = ($gopt =~ /\bcenter\b/);
+
+    # parse templates from beginning of tbl specification
+    my(@t);
+  TEMPLATE: while (@lines) {
+	my($t) = lc(shift @lines);
+	while ($t =~ /^(.*?)\s*([,.])\s*(.*)$/) {
+	    push @t, [split($tab, $1)];
+	    last TEMPLATE if $2 eq '.';
+	    $t = $3;
+	}
+    }
+
+    # count spans
+    for (my $i = 0; $i < @t; $i++) {
+	my($t) = $t[$i];
+	for (my $j = 0; $j < @$t; $j++) {
+	    my($colspan) = 1;
+	    $colspan++ while $j + $colspan < @$t && $t->[$j + $colspan] =~ /^s/;
+	    $t->[$j] .= "\@" . $colspan if $colspan > 1;
+	    my($rowspan) = 1;
+	    $rowspan++ while $i + $rowspan < @t && $t[$i + $rowspan]->[$j] && $t[$i + $rowspan]->[$j] =~ /^\^/;
+	    $t->[$j] .= "\$" . $rowspan if $rowspan > 1;
+	}
+    }
+    
+    o("\n<table" . ($center ? " align='center'" : "") . ">");
+
+    my($t) = undef;
+    while (@lines) {
+	$t = shift @t if @t;
+	my(@f) = split($tab, shift @lines);
+	o("\n<tr>");
+	for (my $i = 0; $i < @$t && $i < @f; $i++) {
+	    next if $t->[$i] =~ /^[s^]/;
+	    o("\n<td");
+	    o(" colspan='$1'") if $t->[$i] =~ /\@(\d+)/;
+	    o(" rowspan='$1'") if $t->[$i] =~ /\$(\d+)/;
+	    o(" align='" . $dot_TS_aligns{$1} . "'") if $t->[$i] =~ /^([lcrn])/;
+	    o(">");
+	    o("<" . uc($1) . ">") if $t->[$i] =~ /([bi])/;
+	    o($f[$i]);
+	    o("<R>") if $t->[$i] =~ /b/ || $t->[$i] =~ /i/;
+	    o("&nbsp;&nbsp;</td>");
+	}
+	o("\n</tr>");
+    }
+
+    o("\n</table>\n");
+}
+
+sub dot_RS {
+    o("<_BQ>");
+}
+
+sub dot_RE {
+    o("<_EBQ>");
+}
+
+sub combine_args (&) {
+    my($sub) = @_;
+    &get_args;
+    shift @args;
+    while (@args) {
+	&$sub;
+    }
+}
+
+sub dot_B {
+    combine_args { o("<B>" . shift(@args) . " <R>") };
+}
+
+sub dot_BI {
+    combine_args { o("<B>" . shift(@args) . "<I>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_BR {
+    combine_args { o("<B>" . shift(@args) . "<R>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_I {
+    combine_args { o("<I>" . shift(@args) . " <R>") };
+}
+
+sub dot_IB {
+    combine_args { o("<I>" . shift(@args) . "<B>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_IR {
+    combine_args { o("<I>" . shift(@args) . "<R>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_RB {
+    combine_args { o("<R>" . shift(@args) . "<B>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_RI {
+    combine_args { o("<R>" . shift(@args) . "<I>" . shift(@args) . "<R>") };
+    o(" ");
+}
+
+sub dot_SM {
+    combine_args { o("<small>" . shift(@args) . " </small>") };
+}
+
+sub dot_SH {
+    o("<__>\n<h2>");
+    &get_args;
+    shift @args;
+    my($a) = join(' ', @args);
+    my($sh) = $a;
+    $a =~ s/([+&\#\"\000-\037\177-\377])/sprintf("%%%02X", $1)/g;
+    $a =~ tr/ /+/;
+    o("<a name=\"$a\">");
+    o($sh);
+    o("<E></a></h2>\n<_P>");
+}
+
+sub dot_SS {
+    o("<__>\n<h3>");
+    &get_args;
+    shift @args;
+    my($a) = join(' ', @args);
+    my($sh) = $a;
+    $a =~ s/([+&\#\"\000-\037\177-\377])/sprintf("%%%02X", $1)/g;
+    $a =~ tr/ /+/;
+    o("<a name=\"$a\">");
+    o($sh);
+    o("<E></a></h3>\n<_P>");
+}
+
+sub dot_PP {
+    o("<__>\n<_P>");
+}
+
+sub dot_LP {
+    o("<__>\n<_P>");
+}
+
+sub dot_TP {
+    $_ = '';
+    o("\n<_DT>" . &argline . "<E><_DD>");
+}
+
+sub dot_IP {
+    &get_args;
+    o("\n<_DT>" . $args[1] . "<E><_DD>");
+}
+
+sub dot_sp {
+    o("<_SP>");
+}
+
+sub dot_nf {
+    o("\n<pre>");
+    $QUOTES = 0;
+}
+
+sub dot_fi {
+    o("</pre>");
+    $QUOTES = 1;
+}
+
+$NO_OVERRIDE{'Ix'} = 1;
+sub dot_Ix {
+    o("<_TABLE>");
+    &getvars;
+    o("<tr valign=baseline><td>");
+    o($vars[1]);
+    o(" ...") if $vars[2];
+    o("</td><td><tt>&nbsp;&nbsp;</tt></td><td>");
+    o($vars[2]);
+    o("</td></tr>\n");
+}
+
+if ($links) {
+    $NO_OVERRIDE{'M'} = $NO_OVERRIDE{'RM'} = 1;
+    sub dot_M {
+	&get_args;
+	if ($hyperlink_man{"$args[1].$args[2]"}) {
+	    o("<a href=\"$args[1].$args[2].html\"><B>$args[1]<R>($args[2])</a>" .
+	      $args[3] . " ");
+	} else {
+	    o("<B>$args[1]<R>($args[2])$args[3] ");
+	}
+    }
+    sub dot_RM {
+	&get_args;
+	if ($hyperlink_man{"$args[2].$args[3]"}) {
+	    o($args[1] .
+	      "<a href=\"$args[2].$args[3].html\"><B>$args[2]<R>($args[3])</a>" .
+	      $args[4] . " ");
+	} else {
+	    o("$args[1]<B>$args[2]<R>($args[3])$args[4] ");
+	}
+    }
+}
+
+
+sub argline {
+    my($oldT) = $T;
+    $T = '';
+
+    get_line if !$_;
+    unshift @pushed_lines, undef;
+    line($_);
+    while (get_line()) {
+	line($_);
+    }
+
+    my($X) = $T;
+    $T = $oldT;
+    $X;
+}
+
+sub obscure_email ($) {
+    my($x) = @_;
+    $x =~ s/(.)/"&#" . ord($1) . ";"/ge;
+    $x;
+}
+
+sub finish_text ($) {
+  my($cur, $prev, $inside, $in_par, $i, @a, @relative, $cur_dl, $ndl, $f, $t,
+     $ordered, $bullet);
+
+  # handle spacing
+  @a = split(/(<_[^>]*>)/, $_[0] . "<__>");
+  $t = '';
+  $inside = '';
+  $in_par = 0;
+  @relative = ();
+  $ndl = 0;
+  for ($i = 0; $i < @a; $i += 2) {
+    $t .= $a[$i];
+    $f = $a[$i+1];
+    if ($f eq '<__>') {
+      $t .= "<R></p>" if $in_par;
+      next if @relative && $cur_dl eq $relative[-1];
+      $t .= "<R></dd$cur_dl></dl$cur_dl>" if $inside eq '<_DT>';
+      $t .= "<R></td></tr></table>" if $inside eq '<_TABLE>';
+      $t .= "\n";
+      $in_par = $inside = 0;
+    } elsif ($f eq '<_>') {
+      $t .= "<R></p>\n" if $in_par;
+      $in_par = 0;
+    } elsif ($f eq '<_DT>') {
+      $t .= "<R></p>" if $in_par;
+      $t .= "<R></td></tr></table>" if $inside eq '<_TABLE>';
+      if ($inside ne '<_DT>') {
+	$cur_dl = $ndl++;
+	$t .= "\n<dl$cur_dl>";
+      }
+      $t .= "<R></dd$cur_dl>\n" if $inside eq '<_DT>';
+      $t .= "<dt$cur_dl>";
+      $inside = '<_DT>'; $in_par = 0;
+    } elsif ($f eq '<_DD>') {
+      $t .= "<R>";
+      $t .= "</p>" if $in_par;
+      $t .= "<E></dt$cur_dl>\n<dd$cur_dl><P>";
+      $in_par = 0;
+    } elsif ($f eq '<_BQ>') {
+      push @relative, $inside, $cur_dl;
+      $inside = '' if $inside ne '<_DT>';
+      $t .= "</p>" if $in_par;
+      $t .= "<R>\n";
+      $t .= "<blockquote>" if $inside ne '<_DT>';
+      $in_par = 0;
+    } elsif ($f eq '<_EBQ>') {
+      $t .= "</p>" if $in_par;
+      $t .= "<R><E></dd$cur_dl></dl$cur_dl>\n"
+	  if $inside eq '<_DT>' && $relative[-2] ne '<_DT>';
+      $cur_dl = pop @relative;
+      $inside = pop @relative;
+      $t .= "</blockquote>" if $inside ne '<_DT>';
+      $t .= "\n<p>";
+      $in_par = 1;
+    } elsif ($f eq '<_P>') {
+      $t .= "<R></p>\n" if $in_par;
+      $t .= "<p><P>";
+      $in_par = 1;
+    } elsif ($f eq '<_SP>') {
+      #$t .= "<R></p>\n<p><P>" if $in_par;
+      $t .= "<br><br>";
+    }
+  }
+
+  # handle fonts
+  @a = split(/(<[BIRPTQ]>)/, $t . "<R>");
+  $t = '';
+  $cur = '<R>';
+  $prev = '';
+  for ($i = 0; $i < @a; $i += 2) {
+      $t .= $a[$i];
+      $f = $a[$i+1];
+      $f = $prev if ($a[$i+1] eq '<P>');
+      if ($cur ne $f) {
+	  $t .= "</\L$1\E>" if $cur =~ /^<([BIT])>$/s;
+	  $t .= "</i></b>" if $cur eq "<Q>";
+	  $prev = $cur;
+	  $cur = $f;
+	  $t .= "<\L$1\E>" if $cur =~ /^<([BIT])>$/s;
+	  $t .= "<b><i>" if $cur eq "<Q>";
+      } else {
+	  $prev = $cur;
+      }
+  }
+
+  # no-ops
+  $t =~ s{</b><b>}{}g;
+  $t =~ s{</i><i>}{}g;
+  $t =~ s{<(/?)t>}{<$1tt>}g;
+  $t =~ s{<SMALL>(.*?)<NORMAL>}{<small>$1</small>}g;
+  $t =~ s{<SMALL>(.*)}{<small>$1</small>};
+  $t =~ s{<NORMAL>}{}g;
+  $t =~ s{&sp;}{ }g;
+  $t =~ s{&backsl;}{\\}g;
+  $t =~ tr{\377}{}d;
+  $t =~ s{<p>\s*</p>}{}g;
+  $t =~ s{</p>\s*</p>}{</p>}g;
+  $t =~ s{\s*<E>}{}g;
+
+  # correct definition lists
+  for ($i = 0; $i < $ndl; $i++) {
+    $bullet = 1; $ordered = 1;
+    eval "while (\$t =~ m{<dt$i>(.*?)</dt$i>}sg) {" . '
+  $f = $1;
+  $f =~ s/<[ER]>//g;
+  $bullet = 0 if $bullet && $f !~ m{^\s*(\*|\\\\\(bu)\s*$}s;
+  undef $ordered if defined($ordered) && $f !~ m{^\s*$ordered.?\s*$}s;
+  $ordered++ if defined $ordered;
+}';
+    if ($bullet) {
+      $t =~ s{<dt$i>.*?</dt$i>}{}sg;
+      $t =~ s{dd$i>}{li>}g;
+      $t =~ s{dl$i>}{ul>}g;
+    } elsif (defined $ordered) {
+      $t =~ s{<dt$i>.*?</dt$i>}{}sg;
+      $t =~ s{dd$i>}{li>}g;
+      $t =~ s{dl$i>}{ol>}g;
+    } else {
+      $t =~ s{dt$i>}{dt>}g;
+      $t =~ s{dd$i>}{dd>}g;
+      $t =~ s{dl$i>}{dl>}g;
+    }
+  }
+
+  # get rid of spaces
+  $t =~ s{</pre>\s*<br><br>}{</pre>}sg;
+  $t =~ s{</p>\s*<br><br>}{</p>}sg;
+  $t =~ s{<blockquote>\s*<br><br>}{<blockquote>}sg;
+  $t =~ s{<br><br>\s*</blockquote>}{</blockquote>}sg;
+  $t =~ s{\A(<br>)+}{};
+  #$t =~ s{<blockquote>\s*<([uod])l>}{<$1l>}sg;
+  #$t =~ s{</([uod])l>\s*</blockquote>}{</$1l>}sg;
+
+  # first headline
+  $t =~ s{<h2><a name="NAME">NAME</a></h2>[\s\n]*<p>(.*?) - (.*?)</p>}
+	{<h1 class='NAME'><a name="NAME">$1</a></h1><p>$2</p>}s;
+
+  # http: URLs, and obscure email addresses
+  $t =~ s{ (http://[^\s"&)<]+) (?=[\s")&<]|$) }
+	{<a href="\1">\1</a>}gx;
+  $t =~ s{([\s;(]|^) ([-\w.,]+\@[-\w.]+\.[A-Za-z]+) (?=[\s)<&.,;:!?]|$) }
+	{$1 . obscure_email($2)}egx;
+  $t =~ s{ ([.,])</a> }{</a>$1}gx;
+  $t =~ s{<a\s*href="([^"]*)[.,]">}{<a href="$1">}g;
+
+  $t;
+}
+
+
+my($RUNTIME) = scalar(localtime);
+
+foreach $file (@files) {
+    if (!open(IN, ($file eq '' ? "<&STDIN" : $file))) {
+	next if $force;
+	die "$file: $!\n";
+    }
+    pp_open('[', $file, ']') if $directory;
+
+    @pushed_lines = ();
+    $inlevel = '';
+    $no_prologue = defined($template);
+    $TT = '';
+    $QUOTES = 1;
+    while (get_line()) {
+	$T = '';
+	line($_);
+	$TT .= $T;
+    }
+
+    close IN if $file;
+
+    $TT = finish_text($TT);
+    $TTT = '';
+    if (defined $template) {
+	$TTT = $template;
+	$TTT =~ s{<!-- man2html.*?-->.*?<!-- /man2html -->}
+	{<!-- man2html: automatically generated at $RUNTIME -->$TT<!-- /man2html -->}s;
+    } else {
+	$TTT = <<"EOF;" if !$no_prologue;
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head><title>&mantitle;</title></head>
+
+<body bgcolor="#FFFFFF" text="#000000" link="#FF0000" vlink="#000080">
+
+<!-- man2html: automatically generated at $RUNTIME -->
+EOF;
+	$TTT .= $TT . "\n<!-- /man2html -->\n</body>\n</html>\n";
+    }
+
+    if ($TTT =~ m{<h1 class='NAME'>(.*?)</h1>}s) {
+	$t = $1;
+	$t =~ s{</?a.*?>}{}g;
+	$TTT =~ s{&mantitle;}{$t}g;
+    }
+
+    # figure out where to write this file
+    my($this_output_file);
+    if ($directory && $file) {
+	$file =~ m|([^/]*)$|s;
+	$this_output_file = "$directory/$1.html";
+    } else {
+	$this_output_file = $output_file;
+    }
+
+    # get rid of self-links
+    if (defined $this_output_file) {
+	my($link_text) = m|([^/]*)$|s;
+	$TTT =~ s{<a href="$link_text">(.*?)</a>}
+	{$self_link_marker$1$self_link_post_marker}g;
+    }
+
+    # skip this file if nothing has changed except possibly the datestamp
+    if ($directory && $file && -r $this_output_file) {
+	open TRY, $this_output_file || die;
+	local($/) = undef;
+	my($old_TTT) = <TRY>;
+	close TRY;
+	$old_TTT =~ s{<!-- man2html: automatically generated at .*? -->}
+	{<!-- man2html: automatically generated at $RUNTIME -->}s;
+	if ($old_TTT eq $TTT) {
+	    pp_close;
+	    next;
+	}
+    }
+
+    # write result
+    if (defined $this_output_file) {
+	open OUT, ">$this_output_file" || die "$this_output_file: $!\n";
+	select OUT;
+    }
+    print $TTT;
+    close OUT if ($file && $directory) || $output_file;
+    pp_close if $directory;
+}
+
+pp_end if $directory;
