@@ -74,7 +74,6 @@ PerfCountUser::prepare(const String &name, ErrorHandler *errh)
   PerfCountUser *base = 0;
   for (int ei = 0; ei < router()->nelements() && !base; ei++) {
     Element *e = router()->element(ei);
-    if (e == this) continue;
     if (PerfCountUser *pc = (PerfCountUser *)e->cast("PerfCountUser")) {
       if (pc->is_base())
 	base = pc;
