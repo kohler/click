@@ -1,3 +1,15 @@
+/*
+ * ipencap.{cc,hh} -- element encapsulates packet in IP header
+ * Robert Morris, Eddie Kohler, Alex Snoeren
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -69,7 +81,6 @@ IPEncap::simple_action(Packet *p)
   ip->ip_p = _ip_p;
   ip->ip_src = _ip_src;
   ip->ip_dst = _ip_dst;
-  ip->ip_sum = in_cksum(p->data(), sizeof(struct ip));
 
   if(p->ip_ttl_anno()) {
     ip->ip_ttl = p->ip_ttl_anno();
@@ -81,6 +92,7 @@ IPEncap::simple_action(Packet *p)
     ip->ip_ttl = 250; //rtm
   }
 
+  ip->ip_sum = in_cksum(p->data(), sizeof(struct ip));
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   
   return p;

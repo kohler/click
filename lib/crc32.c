@@ -34,6 +34,7 @@
 /*  The table lookup technique was adapted from the algorithm described */
 /*  by Avram Perez, Byte-wise CRC Calculations, IEEE Micro 3, 40 (1983).*/
 
+/* taken from one of the BSDs, I believe */
 
 #define POLYNOMIAL 0x04c11db7L
 

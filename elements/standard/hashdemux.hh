@@ -25,7 +25,6 @@ class HashDemux : public UnlimitedElement {
  public:
   
   HashDemux();
-  HashDemux(const HashDemux &);
   
   const char *class_name() const		{ return "HashDemux"; }
   Processing default_processing() const	{ return PUSH; }

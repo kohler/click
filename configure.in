@@ -11,18 +11,64 @@ AC_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
 AC_PROG_CPP
+
+AC_PROG_RANLIB
+AC_PROG_INSTALL
+
+dnl
+dnl check for C++
+dnl
+
 AC_PROG_CXX
 AC_PROG_CXXCPP
+
+if test -z "$GXX"; then
+  AC_MSG_WARN(Your C++ compiler ($CXX) is not a GNU C++ compiler!
+Either set the "'`'"CXX' environment variable to tell me where
+[a GNU C++ compiler is, or compile at your own risk.
+(This code uses a few GCC extensions and GCC-specific compiler options,
+and Linux header files are really GCC-specific.)])
+fi
+
+AC_LANG_CPLUSPLUS
+AC_CACHE_CHECK(for recent version of C++, ac_cv_good_cxx,
+  AC_TRY_COMPILE([], [#ifdef __GNUG__
+#if (__GNUC__ == 2) && (__GNUC_MINOR__ <= 7)
+#error "fuckers! fuckers!"
+#endif
+#endif
+return 0;], ac_cv_good_cxx=yes, ac_cv_good_cxx=no))
+if test "$ac_cv_good_cxx" != yes; then
+  AC_MSG_ERROR(Your GNU C++ compiler ($CXX) is too old!
+[Either download a newer compiler, or tell me to use a different compiler
+by setting the "'`'"CXX' environment variable and rerunning me.])
+fi
+
+dnl look for particular things in G++
+
+AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
+  AC_TRY_RUN([#include <new.h>
+int main(int c, char **v) {
+  int a;
+  int *b = new(&a) int;
+  return 0;
+}], ac_cv_good_new_h=yes, ac_cv_good_new_h=no, ac_cv_good_new_h=no))
+if test "$ac_cv_good_new_h" = yes; then
+  AC_DEFINE(HAVE_NEW_H)
+fi
+
+dnl set C++ compiler options
+
 CPPFLAGS="$CPPFLAGS"
 if test -n "$GCC"; then
-  CC="$CC -Wall"; KERNEL_CXX="$CXX -w -Wall"; CXX="$CXX -Wp,-w -W -Wall"
+  CC="$CC -Wall"
+fi
+if test -n "$GXX"; then
+  CXX="$CXX -Wp,-w -W -Wall"; KERNEL_CXX="$CXX -w -Wall"
 else
   KERNEL_CXX="$CXX"
 fi
 AC_SUBST(KERNEL_CXX)
-
-AC_PROG_RANLIB
-AC_PROG_INSTALL
 
 dnl
 dnl autoconf and autoheader
@@ -79,22 +125,6 @@ ELEMENTS_ARG_ENABLE(radio, [include radio elements (yes)], yes)
 
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
-
-dnl
-dnl check C++ stuff
-dnl
-
-AC_LANG_CPLUSPLUS
-AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
-  AC_TRY_RUN([#include <new.h>
-int main(int c, char **v) {
-  int a;
-  int *b = new(&a) int;
-  return 0;
-}], ac_cv_good_new_h=yes, ac_cv_good_new_h=no, ac_cv_good_new_h=no))
-if test "$ac_cv_good_new_h" = yes; then
-  AC_DEFINE(HAVE_NEW_H)
-fi
 
 dnl
 dnl make FLAGS variables without `-g'

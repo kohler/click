@@ -2,6 +2,21 @@
 #define NULLS_HH
 #include "element.hh"
 
+/*
+ * =c
+ * Null1()
+ * Null2()
+ * Null3()
+ * Null4()
+ * Null5()
+ * Null6()
+ * Null7()
+ * Null8()
+ * =d
+ * Copies of Null() that do not share code.
+ * =a Null
+ */
+
 class Null1 : public Element {
   
  public:
@@ -9,7 +24,7 @@ class Null1 : public Element {
   Null1()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null1"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null1 *clone() const				{ return new Null1; }
 
@@ -25,7 +40,7 @@ class Null2 : public Element {
   Null2()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null2"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null2 *clone() const				{ return new Null2; }
 
@@ -41,7 +56,7 @@ class Null3 : public Element {
   Null3()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null3"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null3 *clone() const				{ return new Null3; }
 
@@ -57,7 +72,7 @@ class Null4 : public Element {
   Null4()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null4"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null4 *clone() const				{ return new Null4; }
 
@@ -73,7 +88,7 @@ class Null5 : public Element {
   Null5()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null5"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null5 *clone() const				{ return new Null5; }
 
@@ -89,7 +104,7 @@ class Null6 : public Element {
   Null6()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null6"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null6 *clone() const				{ return new Null6; }
 
@@ -105,7 +120,7 @@ class Null7 : public Element {
   Null7()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null7"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null7 *clone() const				{ return new Null7; }
 
@@ -121,7 +136,7 @@ class Null8 : public Element {
   Null8()					{ add_input(); add_output(); }
   
   const char *class_name() const		{ return "Null8"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Null8 *clone() const				{ return new Null8; }
 

@@ -1,3 +1,16 @@
+/*
+ * infinitesource.{cc,hh} -- element generates configurable infinite stream
+ * of packets
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -47,12 +60,15 @@ InfiniteSource::uninitialize()
 void
 InfiniteSource::run_scheduled()
 {
-  if (_limit >= 0 && _total >= _limit)
+  int count = _count;
+  if (_limit >= 0 && _total + count >= _limit)
+    count = _limit - _total;
+  if (count <= 0)
     router()->please_stop_driver();
   else {
-    for (int i = 0; i < _count; i++)
+    for (int i = 0; i < count; i++)
       output(0).push(Packet::make(_data.data(), _data.length()));
-    _total += _count;
+    _total += count;
     schedule_tail();
   }
 }

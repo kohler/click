@@ -100,6 +100,7 @@ class Lexer {
 
   static const int DEFAULT_TYPE = 0;
   static const int TUNNEL_TYPE = 1;
+  static const int FIRST_REAL_TYPE = 2;
   
   Lexer(ErrorHandler * = 0);
   virtual ~Lexer();
@@ -120,6 +121,7 @@ class Lexer {
   int force_element_type(String);
   void element_types_permanent();
 
+  int first_element_type() const	{ return FIRST_REAL_TYPE; }
   int permanent_element_types() const	{ return _reset_element_types; }
   Element *element_type(int i) const	{ return _element_types[i]; }
   

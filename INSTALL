@@ -3,23 +3,33 @@ CLICK INSTALLATION INSTRUCTIONS
 
 To compile any version of Click, you will need the GNU C compiler; the GNU
 C++ compiler (version 2.8 or above, or a recent version of egcs); and GNU
-Make. (You may have luck with other C++ compilers if you change the
-Makefiles. There is no GNU-specific code, only GNU-specific compiler
-options.)
+Make. The `./configure' script should complain if it cannot find software
+it needs.
 
 The user-level version of Click should compile and run on any Intel x86
 Unix system that has the pcap library. (The pcap library is necessary to
 communicate with the network. See the end of this document for portability
-notes.) The Linux kernel module requires a patched Linux 2.2 system; we've
-tested on recent Linux kernels like 2.2.10 and 2.2.11.
+notes for other architectures.) The Linux kernel module requires a patched
+Linux 2.2 system; we've tested on recent Linux kernels like 2.2.10 and
+2.2.11.
 
 First, run
 
-	./configure
+	./configure [--prefix=PREFIX]
 
 This will test your system and decide the versions that will work for you
 (user-level, Linux module, or both). It will tell you what is wrong if it
-cannot compile a version.
+cannot compile a version. Run
+
+	./configure --help
+
+to see more options for `./configure'.
+
+After running `./configure', the `make install' command will install the
+user-level executable `click', the kernel module `click.o', the
+configuration optimizer `click-xform', and manual pages for the Click
+language, the kernel module, and many of the element classes, all under
+PREFIX (which defaults to /usr/local).
 
 USERLEVEL
 ---------
@@ -34,6 +44,9 @@ passing it the file name of a Click-language router description
 (see doc/click.5); for example,
 
 	./click ../conf/test.ipb
+
+The `conf' directory in this distribution has a few sample configuration
+files.
 
 The configure script may not be able to find your pcap library if it's in a
 nonstandard place. To fix this, set your `PCAP_HEADER_PATH' and
@@ -120,5 +133,7 @@ PORTABILITY
 
 The Click system currently relies on the x86's support for unaligned
 accesses. Click may compile on non-x86 architectures that also support
-unaligned accesses. If you try running it on such an architecture, please
-let us know how it goes.
+unaligned accesses. We've tested it (at user-level) on Alphas, and (a bit)
+on SPARCs running Solaris. If you try running it on such an architecture,
+please let us know how it goes.
+

@@ -22,10 +22,11 @@ Makefile: $(srcdir)/Makefile.in
 
 install: install-man
 install-man:
-	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man5 $(mandir)/mann
+	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man5 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) click.5 $(mandir)/man5/click.5
+	$(INSTALL_DATA) click.o.8 $(mandir)/man8/click.o.8
 	$(INSTALL_DATA) click-xform.1 $(mandir)/man1/click-xform.1
-	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) element2man.pl -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
+	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
 
 clean:
 distclean: clean

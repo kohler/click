@@ -1,3 +1,16 @@
+/*
+ * proc_element.cc -- support /proc/click/ELEMENT directories. Includes
+ * definition of KernelHandlerRegistry				     
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -9,7 +22,7 @@ static proc_dir_entry **element_pdes = 0;
 static char *numbers = 0;
 static int numbers_ndigits = 0;
 
-static struct proc_dir_entry proc_element_facdir_prototype = {
+static struct proc_dir_entry proc_element_elemdir_prototype = {
   0,				// dynamic inode
   0, "",			// name
   S_IFDIR | S_IRUGO | S_IXUGO,
@@ -38,7 +51,7 @@ proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
   return pos + sprintf(page + pos, "%d", (int)pde->data + 1);
 }
 
-static struct proc_dir_entry proc_element_facdir_link_prototype = {
+static struct proc_dir_entry proc_element_elemdir_link_prototype = {
   0,
   0, "",
   S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO,
@@ -475,7 +488,7 @@ make_compound_element_symlink(int fi)
     if (!subdir) {
       // make the directory
       subdir = click_register_new_dynamic_pde
-	(parent_dir, proc_element_facdir_prototype,
+	(parent_dir, proc_element_elemdir_prototype,
 	 last_pos - first_pos, data + first_pos, (void *)0);
       if (parent_dir == &proc_click_entry)
 	element_pdes[fi + nelements] = subdir;
@@ -499,7 +512,7 @@ make_compound_element_symlink(int fi)
 
   // make the link
   proc_dir_entry *link = click_register_new_dynamic_pde
-    (parent_dir, proc_element_facdir_link_prototype,
+    (parent_dir, proc_element_elemdir_link_prototype,
      last_pos - first_pos, data + first_pos, (void *)fi);
   if (parent_dir == &proc_click_entry)
     element_pdes[fi + nelements] = link;
@@ -538,7 +551,7 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++) {
     if (i+1 >= next_namegap) namelen++, next_namegap *= 10;
     element_pdes[i] = click_register_new_dynamic_pde
-      (&proc_click_entry, proc_element_facdir_prototype,
+      (&proc_click_entry, proc_element_elemdir_prototype,
        namelen, numbers + numbers_ndigits * i, (void *)i);
   }
   
@@ -551,7 +564,7 @@ init_router_element_procs()
       else {
 	if (click_find_pde(&proc_click_entry, id)) continue;
 	element_pdes[i + nelements] = click_register_new_dynamic_pde
-	  (&proc_click_entry, proc_element_facdir_link_prototype,
+	  (&proc_click_entry, proc_element_elemdir_link_prototype,
 	   id.length(), id.data(), (void *)i);
       }
     }

@@ -1,3 +1,16 @@
+/*
+ * checkipheader.{cc,hh} -- element checks IP header for correctness
+ * (checksums, lengths, source addresses)
+ * Robert Morris
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -49,27 +62,33 @@ CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-
+  if (args.size() > 1)
+    return errh->error("too many arguments to `CheckIPHeader([ADDRS])'");
+  
   Vector<u_int> ips;
   ips.push_back(0);
   ips.push_back(0xffffffff);
 
-  for (int i = 0; i < args.size(); i++) {
-    u_int a;
-    if (!cp_ip_address(args[i], (unsigned char *)&a))
-      return errh->error("expects IPADDRESS");
-    for (int j = 0; j < ips.size(); j++)
-      if (ips[j] == a)
-	goto repeat;
-    ips.push_back(a);
-   repeat: ;
+  if (args.size()) {
+    String s = args[0];
+    while (s) {
+      u_int a;
+      if (!cp_ip_address(s, (unsigned char *)&a, &s))
+	return errh->error("expects IPADDRESS");
+      cp_eat_space(s);
+      for (int j = 0; j < ips.size(); j++)
+	if (ips[j] == a)
+	  goto repeat;
+      ips.push_back(a);
+     repeat: ;
+    }
   }
-
+  
   _n_bad_src = ips.size();
   _bad_src = new u_int [_n_bad_src];
   memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
 
-  return(0);
+  return 0;
 }
 
 inline Packet *

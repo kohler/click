@@ -2,7 +2,8 @@
 #define CLICK_ETHER_H
 
 /*
- * Our own definitions of ethernet and ARP headers.
+ * click_ether.h -- our own definitions of Ethernet and ARP headers
+ * based on a file from one of the BSDs
  */
 
 struct ether_header {

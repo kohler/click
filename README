@@ -1,49 +1,65 @@
-1. Introduction
+THE CLICK MODULAR ROUTER RELEASE 0.5
+====================================
 
-This is the README file for the Click source distribution of October
-19 1999. Look for more recent information at
+    This is the README file for the Click source distribution of October
+19, 1999. Look for more recent information at
 
   http://www.pdos.lcs.mit.edu/click/
 
-Click is a modular router tool kit. To use it you'll need to know how
-to compile and install the software, how to write router
-configurations, and how to write new elements.
+    Click is a modular router toolkit. To use it you'll need to know how to
+compile and install the software, how to write router configurations, and
+how to write new elements. Our SOSP 1999 paper (available from the Web
+site) is a good place to get a feeling for what Click can do.
 
-2. Installation
+DOCUMENTATION
+-------------
 
-Read and obey the INSTALL file.
+    The `INSTALL' file in this directory contains installation
+instructions. User documentation is in the `doc' subdirectory. This
+directory contains manual pages for the Click language, the Linux kernel
+module, and the `click-xform' configuration optimizer; it also has a script
+that generates manual pages for many of the elements distributed in this
+package. To install these manual pages so you can read them, follow the
+`INSTALL' instructions, but `make install-man' instead of `make install'.
 
-3. Configuration
+RUNNING A CLICK ROUTER
+----------------------
 
-Click has a configuration language you must use to tell it how to
-process packets. The language describes a graph of "elements," or
-packet processing modules. doc/click.5 describes the language.  The
-best introduction to the architecture as a whole is
+    Before playing with a Click router, you should get familiar with the
+Click configuration language. You use this to tell Click how to process
+packets. The language describes a graph of "elements," or packet processing
+modules. See the `doc/click.5' manual page for a detailed description, or
+check the `conf' directory for some simple examples.
 
-  http://www.pdos.lcs.mit.edu/papers/click:sosp99/
+    Click can be compiled as a user-level program, which (when run as the
+superuser) can get copies of arriving packets via the pcap library, or as a
+Linux kernel module, which lives in the kernel and steals packets directly
+from devices.
 
-3.2 Configuring Kernel-Module Click
+User-Level Program
+------------------
 
-Once you've compiled in the linuxmodule subdirectory, install
-the resulting kernel module with
+    Run the user-level program by giving it the name of a configuration
+file: `click CONFIGFILE'. If you have compiled Click with pcap support,
+you'll want to use the FromBPF, ToBPF, FromDump, and ToDump elements. You
+can still play around with Click even without pcap support: check out the
+InfiniteSource and TimedSource elements, or write your own
+packet-generation element.
 
-  /sbin/insmod linuxmodule/click.o
+Linux Kernel Module
+-------------------
 
-As a result the directory /proc/click should appear. Configure the
-kernel module by writing a configuration file to /proc/click/config;
-for example,
+    See the `doc/click.o.8' manual page for a detailed description. To
+summarize, install the module with `insmod PATH/click.o'; then initialize
+it with a configuration with `cat CONFIGFILE > /proc/click/config'. If any
+errors occured, they will appear in `/proc/click/errors'.
 
-  cat configuration-file /proc/click/config
+Configurations
+--------------
 
-If any errors occured, they will apper in /proc/click/errors.
-
-If you wish to remove the Click software from the kernel, and thus
-revert to Linux's ordinary network stack, run
-
-  /sbin/rmmod click
-
-It's easy to create configurations which break Linux's network
-support.
-
-3.1 Configuring User-level Click
-
+    A few configurations are included in the `conf' directory, including a
+Perl script that generated the IP router configurations used in our SOSP
+paper (`conf/make-ip-conf.pl') and a set of patterns for the Click
+optimizer (`conf/ip.clickpat'). The configurations are presently un- or
+under-documented. Please check back to our Web site for more up-to-date
+configurations.

@@ -1,3 +1,15 @@
+/*
+ * router.{cc,hh} -- a Click router configuration
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -981,7 +993,7 @@ Router::element_inputs_string(int fi) const
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_to[c] == h) {
 	sa << sep << _elements[_hookup_from[c].idx]->id();
-	sa << "[" << _hookup_from[c].port << "]";
+	sa << " [" << _hookup_from[c].port << "]";
 	sep = " ";
       }
     sa << "\n";
@@ -1018,7 +1030,7 @@ Router::element_outputs_string(int fi) const
     const char *sep = "";
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_from[c] == h) {
-	sa << sep << "[" << _hookup_from[c].port << "]";
+	sa << sep << "[" << _hookup_from[c].port << "] ";
 	sa << _elements[_hookup_to[c].idx]->id();
 	sep = " ";
       }

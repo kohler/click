@@ -1,6 +1,11 @@
 #ifndef CLICK_UDP_H
 #define CLICK_UDP_H
 
+/*
+ * click_ucp.h -- our own definition of the UDP header
+ * based on a file from one of the BSDs
+ */
+
 struct udphdr {
   unsigned short uh_sport;
   unsigned short uh_dport;

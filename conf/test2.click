@@ -1,7 +1,7 @@
-// userlevel/click < conf/test.ipb
-//
-// This configuration should print this line five times:
-// Print ok | 100 : 45000028 00000000 401177c3 01000001 02000002 13691369
+// test2.click
+
+// This slight tweak on `test.click' adds both push and pull processing,
+// and Random Early Detection dropping.
 
 InfiniteSource(5,\<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 45 00 00 28  00 00 00 00  40 11 77 c3  01 00 00 01  
@@ -10,8 +10,9 @@ InfiniteSource(5,\<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 01 00 00 00  00 00 00 00  00 80 04 08  00 80 04 08  
 53 53 00 00  53 53 00 00  05 00 00 00  00 10 00 00  
 01 00 00 00  54 53 00 00  54 e3 04 08  54 e3 04 08  
-d8 01 00 00>,5)
+d8 01 00 00>,600000)
 	-> Strip(14)
-	-> CheckIPHeader(18.26.4.255, 2.255.255.255, 1.255.255.255)
-        -> Print(ok)
+	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
+	-> RED(10, 100, .5)
+	-> Queue
 	-> Discard;

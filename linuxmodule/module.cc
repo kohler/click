@@ -1,3 +1,15 @@
+/*
+ * module.cc -- Linux kernel module main program
+ * Eddie Kohler, Robert Morris
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -240,7 +252,7 @@ read_classes(Element *, void *)
 {
   int nft = lexer->permanent_element_types();
   StringAccum sa;
-  for (int i = 0; i < nft; i++)
+  for (int i = lexer->first_element_type(); i < nft; i++)
     sa << lexer->element_type(i)->class_name() << "\n";
   return sa.take_string();
 }

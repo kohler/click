@@ -1,3 +1,16 @@
+/*
+ * b8b10.{cc,hh} -- element maps each 8-bit pattern into a 10-bit pattern
+ * with as many 1 bits as 0 bits (for BIM-4xx-RS232 radios)
+ * Robert Morris
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif

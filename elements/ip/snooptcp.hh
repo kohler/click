@@ -34,6 +34,8 @@ class SnoopTCP : public Element { public:
   Bitvector backward_flow(int) const;
   
   SnoopTCP *clone() const;
+
+  int initialize(ErrorHandler *);
   
   void push(int port, Packet *);
   Packet *pull(int port);

@@ -1,0 +1,64 @@
+// ip.clickpat
+
+// Patterns for the Click pattern optimizer (click-xform) that change
+// common sequences of IP-related elements into single combination elements.
+
+// These patterns do not quite work: our CheckIPHeader elements now take
+// configuration arguments to specify invalid source addresses, but we
+// haven't updated BigIn to support this.
+
+elementclass IPOutput {
+  input -> DropBroadcasts
+	-> cp :: CheckPaint($paint)
+	-> gw :: IPGWOptions($my_ip)
+	-> FixIPSrc($my_ip)
+	-> dt :: DecIPTTL
+	-> fr :: IPFragmenter($mtu)
+	-> output;
+  cp[1] -> [1]output;
+  gw[1] -> [2]output;
+  dt[1] -> [3]output;
+  fr[1] -> [4]output;
+}
+
+elementclass IPOutput_Replacement {
+  input -> crud :: IPOutputCrud($paint, $my_ip, $mtu) -> output;
+  crud[1] -> [1]output;
+  crud[2] -> [2]output;
+  crud[3] -> [3]output;
+  crud[4] -> fr :: IPFragmenter($mtu) -> [0]output;
+  fr[1] -> [4]output;
+}
+
+
+// first, case where no one else gets in at the Strip
+elementclass IPInput {
+  input -> Paint($paint)
+	-> Strip(14)
+	-> CheckIPHeader($bad_addrs)
+	-> GetIPAddress(16)
+	-> output;
+}
+
+elementclass IPInput_Replacement {
+  input -> BigIn($paint) -> output;
+}
+
+
+// second, case where someone does get in at the Strip
+elementclass IPInput2 {
+  input -> Paint($paint)
+	-> s :: Strip(14)
+	-> CheckIPHeader($bad_addrs)
+	-> GetIPAddress(16)
+	-> output;
+  input[1] -> s;
+}
+
+elementclass IPInput2_Replacement {
+  input -> BigIn($paint) -> output;
+  input[1] -> Strip(14)
+	-> CheckIPHeader($bad_addrs)
+	-> GetIPAddress(16)
+	-> output;
+}

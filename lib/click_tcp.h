@@ -2,7 +2,8 @@
 #define CLICK_TCP_H
 
 /*
- * Define BSD struct tcphdr portably.
+ * click_tcp.h -- our own definition of the TCP header
+ * based on a file from one of the BSDs
  */
 
 #ifndef __BYTE_ORDER

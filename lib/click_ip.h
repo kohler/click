@@ -3,9 +3,8 @@
 #include "glue.hh"
 
 /*
- * Our own struct ip, so we don't have to depend
- * on non-portable .h files.
- * Structure names mimic BSD.
+ * click_ip.h -- our own definitions of IP headers
+ * based on a file from one of the BSDs
  */
 
 #define IPVERSION 4

@@ -1,3 +1,15 @@
+/*
+ * red.{cc,hh} -- element implements Random Early Detection dropping policy
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -210,9 +222,6 @@ RED::read_stats(Element *f, void *)
   RED *r = (RED *)f;
   const EWMA &ewma = r->average_queue_size();
   return
-    String(r->_min_thresh>>QUEUE_SCALE) + " min_thresh\n" +
-    String(r->_max_thresh>>QUEUE_SCALE) + " max_thresh\n" +
-    String(r->_max_p) + " max_p\n" +
     String(r->queue_size()) + " current queue\n" +
     cp_unparse_real(ewma.average(), ewma.scale()) + " avg queue\n" +
     String(r->drops()) + " drops\n"

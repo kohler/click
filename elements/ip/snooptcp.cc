@@ -1,3 +1,15 @@
+/*
+ * snooptcp.{cc,hh} -- element implements Snoop TCP a la Balakrishnan
+ * Alex Snoeren, Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -59,6 +71,12 @@ SnoopTCP *
 SnoopTCP::clone() const
 {
   return new SnoopTCP;
+}
+
+int
+SnoopTCP::initialize(ErrorHandler *errh)
+{
+  return errh->error("SnoopTCP is not ready to use");
 }
 
 

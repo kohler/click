@@ -2,6 +2,11 @@
 #define CLICK_ICMP_H
 #include "click_ip.h"
 
+/*
+ * click_icmp.h -- our own definitions for ICMP packets
+ * based on a file from one of the BSDs
+ */
+
 /* types for ICMP packets */
 
 #define ICMP_ECHO_REPLY 0

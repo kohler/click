@@ -1,3 +1,15 @@
+/*
+ * click.cc -- user-level Click main program
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -14,16 +26,6 @@ catchint(int)
 {
   /* call exit so -pg file is written */
   exit(0);
-}
-
-void
-print_bitvector(const Bitvector &bv)
-{
-  fprintf(stderr, "%d : ", bv.size());
-  for (int i = 0; i < bv.size(); i++) {
-    fprintf(stderr, (i % 8 == 7 ? "%c " : "%c"), (bv[i] ? '1' : '0'));
-  }
-  fprintf(stderr, "\n");
 }
 
 extern void export_elements(Lexer *);

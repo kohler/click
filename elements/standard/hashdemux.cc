@@ -1,3 +1,16 @@
+/*
+ * hashdemux.{cc,hh} -- element demultiplexes packets based on hash of
+ * specified packet fields
+ * Eddie Kohler
+ *
+ * Copyright (c) 1999 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -10,15 +23,10 @@ HashDemux::HashDemux()
 {
 }
 
-HashDemux::HashDemux(const HashDemux &o)
-  : UnlimitedElement(1, 0), _offset(o._offset), _length(o._length)
-{
-}
-
 HashDemux *
 HashDemux::clone() const
 {
-  return new HashDemux(*this);
+  return new HashDemux;
 }
 
 int

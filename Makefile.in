@@ -54,8 +54,12 @@ distclean:
 	-rm -f config.cache config.log mkelemlist.sh
 
 
-DISTFILES = INSTALL \
-	doc/Makefile.in doc/click.5 doc/click-xform.1 doc/element2man.pl \
+DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE \
+	doc/Makefile.in doc/click.5 doc/click.o.8 doc/click-xform.1 \
+	doc/element2man.pl \
+	conf/make-ip-conf.pl conf/ip.clickpat \
+	conf/sample.click conf/fake-iprouter.click \
+	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
 	etc/linux-2.2-patch \
@@ -109,8 +113,8 @@ distdir:
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	mkdir $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
-	@-chmod 777 $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	mkdir $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@-chmod 777 $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \

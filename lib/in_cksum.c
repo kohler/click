@@ -1,3 +1,8 @@
+/*
+ * in_cksum.c -- Internet checksum
+ * borrowed from one of the BSDs
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif

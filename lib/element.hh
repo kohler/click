@@ -171,8 +171,6 @@ class Element : public ElementLink { public:
   
 };
 
-
-//typedef Element Element;
 typedef String (*ReadHandler)(Element *, void *);
 typedef int (*WriteHandler)(Element *, const String &, void *, ErrorHandler *);
 
