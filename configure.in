@@ -6,6 +6,13 @@ AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
 AC_CONFIG_HEADER(config.h include/click/config.h:config.h.in)
 
+dnl support for cross compiling
+AC_CANONICAL_SYSTEM
+AC_CHECK_TOOL(RANLIB, ranlib)
+AC_CHECK_TOOL(CC, gcc)
+AC_CHECK_TOOL(CXX, g++)
+AC_CHECK_TOOL(AR, ar)
+
 AC_PROG_CC
 AC_PROG_CPP
 
