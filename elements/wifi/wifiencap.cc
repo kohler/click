@@ -90,8 +90,8 @@ WifiEncap::simple_action(Packet *p)
 
 
   p_out->pull(sizeof(struct click_ether));
-  p_out->push(sizeof(struct llc));
-  struct llc *llc = (struct llc *) p_out->data();
+  p_out->push(sizeof(struct click_llc));
+  struct click_llc *llc = (struct click_llc *) p_out->data();
   llc->llc_dsap = llc->llc_ssap = LLC_SNAP_LSAP;
   llc->llc_control = LLC_UI;
   llc->llc_un.type_snap.org_code[0] = 0;

@@ -119,7 +119,7 @@ WifiDecap::simple_action(Packet *p)
   p_out->pull(sizeof(click_wifi));
 
 
-  struct llc *llc = (struct llc *) p_out->data();
+  struct click_llc *llc = (struct click_llc *) p_out->data();
 
   uint16_t ether_type;
   if (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&

@@ -1,5 +1,5 @@
 /*
- * <clicknet/wifi.h> - contains the definitions for llc frames.
+ * <clicknet/llc.h> - contains the definitions for llc frames.
  * It was originally taken from freebsd and modified for click use.
  * John Bicket
  */
@@ -51,42 +51,42 @@
  * compilers.
  */
 
-struct llc {
-	u_char	llc_dsap;
-	u_char	llc_ssap;
+struct click_llc {
+	uint8_t	llc_dsap;
+	uint8_t	llc_ssap;
 	union {
 	    struct {
-		u_char control;
-		u_char format_id;
-	        u_char _class;
-		u_char window_x2;
+		uint8_t control;
+		uint8_t format_id;
+	        uint8_t _class;
+		uint8_t window_x2;
 	    } type_u;
 	    struct {
-		u_char num_snd_x2;
-		u_char num_rcv_x2;
+		uint8_t num_snd_x2;
+		uint8_t num_rcv_x2;
 	    } type_i;
 	    struct {
-		u_char control;
-		u_char num_rcv_x2;
+		uint8_t control;
+		uint8_t num_rcv_x2;
 	    } type_s;
 	    struct {
-	        u_char control;
+	        uint8_t control;
 		struct frmrinfo {
-			u_char rej_pdu_0;
-			u_char rej_pdu_1;
-			u_char frmr_control;
-			u_char frmr_control_ext;
-			u_char frmr_cause;
+			uint8_t rej_pdu_0;
+			uint8_t rej_pdu_1;
+			uint8_t frmr_control;
+			uint8_t frmr_control_ext;
+			uint8_t frmr_cause;
 		} frmrinfo;
 	    } type_frmr;
 	    struct {
-		u_char control;
-		u_char org_code[3];
-		u_short ether_type;
+		uint8_t control;
+		uint8_t org_code[3];
+		uint16_t ether_type;
 	    } type_snap;
 	    struct {
-		u_char control;
-		u_char control_ext;
+		uint8_t control;
+		uint8_t control_ext;
 	    } type_raw;
 	} llc_un;
 };
