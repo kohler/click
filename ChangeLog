@@ -1,3 +1,27 @@
+2001-05-08 Tuesday 20:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in, config.h.in, configure.in,
+	elements/etherswitch/bridgemessage.cc,
+	elements/etherswitch/bridgemessage.hh,
+	elements/etherswitch/spantree.cc, elements/etherswitch/spantree.hh,
+	elements/ip/checkipheader.hh, elements/ip/decipttl.hh,
+	elements/ip/ipfilter.cc, elements/ip/ipfilter.hh,
+	elements/ip/ipfragmenter.hh, elements/ip/ipgwoptions.cc,
+	elements/ip/ipgwoptions.hh, elements/ip/ipinputcombo.hh,
+	elements/ip/ipoutputcombo.cc, elements/ip/setrandipaddress.cc,
+	elements/ipsec/esp.hh, elements/local/webgen.cc,
+	elements/standard/averagecounter.hh,
+	elements/standard/dropbroadcasts.hh, elements/standard/msqueue.cc,
+	elements/standard/randomlossage.hh, elements/standard/rrswitch.cc,
+	elements/userlevel/chattersocket.hh, include/click/atomic.hh,
+	include/click/confparse.hh, include/click/glue.hh,
+	include/click/integers.hh, include/click/ipaddress.hh,
+	include/click/packet.hh, include/click/straccum.hh,
+	include/click/string.hh, lib/confparse.cc, lib/ipaddress.cc,
+	lib/lulea.cc, lib/lulea.hh, lib/routerthread.cc, lib/straccum.cc,
+	lib/string.cc: s/u_int(\d\d)_t/uint\1_t/g (because the uint32_t
+	names are "standard"ized by Posix)
+
 2001-05-08 Tuesday 15:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
