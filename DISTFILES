@@ -13,10 +13,10 @@ acclick.m4
 aclocal.m4
 apps
 bsdmodule
-click.spec
 click-buildtool.in
 click-compile.in
 click-mkelemmap
+click.spec
 conf
 config-bsdmodule.h.in
 config-linuxmodule.h.in
@@ -83,6 +83,7 @@ dnsproxy.click
 example.clgw
 fake-iprouter.click
 fromhost-tunnel.click
+gen_config_roofnet.pl
 grid.click
 ip.clickpat
 kernel.clickpat
@@ -440,6 +441,7 @@ ICMPPingEncap-01.testie
 ./test/linuxmodule:
 ToHost-01.testie
 ToHost-udpsocket-01.testie
+deviceup-01.testie
 
 ./test/standard:
 DelayShaper-notifier-01.testie
@@ -460,12 +462,15 @@ align-01.testie
 combine-01.testie
 lexer-01.testie
 lexer-02.testie
+mkmindriver-01.testie
+mkmindriver-02.testie
 testie-01.testie
 xform-ip-01.testie
 
 ./test/userlevel:
 ControlSocket-llrpc-01.testie
 ControlSocket-llrpc-02.testie
+iprouter-01.testie
 uhotswap-01.testie
 
 ./tools:
