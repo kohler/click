@@ -1,3 +1,7 @@
+2003-01-14 Tuesday 21:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/build-grid-config.sh (1.11): actually implement --m4 option
+
 2003-01-10 Friday 18:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: airoinfo.cc (1.10), airoinfo.hh (1.6): sort out
