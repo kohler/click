@@ -77,8 +77,9 @@ CheckGridHeader::simple_action(Packet *p)
   if (tlen > p->length())
     goto bad;
 
-  if (in_cksum((unsigned char *) gh, tlen) != 0)
+  if (in_cksum((unsigned char *) gh, tlen) != 0) {
     goto bad;
+  }
   return(p);
   
  bad:
