@@ -1,3 +1,27 @@
+2001-10-08 Monday 18:45  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fakepcap.cc (1.1), fakepcap.h (1.9),
+	fakepcap.hh (1.9), fromdevice.cc (1.33), fromdevice.hh (1.17),
+	fromdump.cc (1.47), fromdump.hh (1.26), todump.cc (1.33), todump.hh
+	(1.20): regularize data link type handling with a couple helper
+	functions in fakepcap.cc; add "encap" handlers to FromDevice and
+	FromDump; add "USE_ENCAP_FROM" keyword argument to ToDump. Note:
+	FromDevice(FORCE_IP true) behaves differently than it used to.
+	Formerly , it threw out the link-level header. Now it just adds an
+	IP header annotation.
+
+2001-10-08 Monday 18:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: strip.cc (1.15), strip.hh (1.13),
+	striptonet.cc (1.1), striptonet.hh (1.1): add new
+	StripToNetworkHeader element
+
+2001-10-08 Monday 18:43  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.1 (1.9), userlevel/click.cc (1.61): add "-e" option to
+	"click" driver: run a router configuration you type on the command
+	line
+
 2001-10-08 Monday 14:13  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/glue.hh (1.21), lib/glue.cc (1.26): header
