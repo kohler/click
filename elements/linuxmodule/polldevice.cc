@@ -76,7 +76,7 @@ PollDevice::PollDevice(const String &devname)
 
 PollDevice::~PollDevice()
 {
-  if (_registered) uninitalize();
+  if (_registered) uninitialize();
 }
 
 void
@@ -176,7 +176,7 @@ PollDevice::run_scheduled()
   unsigned long time_now;
   unsigned low00, low10;
 #endif
- 
+
   if (_manage_tx) 
     _dev->tx_clean(_dev);
 
@@ -223,9 +223,13 @@ PollDevice::run_scheduled()
   }
   assert(skb_list == NULL);
 
-  if (_activations > 0 && got > 0)
+  if (_activations > 0 && got > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
+#if _CLICK_STATS_
+    if ((_activations % 1000) == 0) _dev->get_stats(_dev);
+#endif
+  }
 
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS

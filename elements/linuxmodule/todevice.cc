@@ -246,6 +246,7 @@ ToDevice::tx_intr()
     if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
+    if ((_activations % 1000) == 0) _dev->get_stats(_dev);
   }
 #endif
 
