@@ -79,7 +79,9 @@ define(GRID_PROTO_NBR_ENCAP,     03)
 define(GRID_PROTO_LOC_QUERY,     04)
 define(GRID_PROTO_LOC_REPLY,     05)
 define(GRID_PROTO_ROUTE_PROBE,   06)
-define(GRID_PROTO_ROUTE_REPLY,   07)') dnl USE_STATIC_PROTO
+define(GRID_PROTO_ROUTE_REPLY,   07)
+define(GRID_PROTO_GEOCAST,       08)
+define(GRID_PROTO_LINK_PROBE,    09)') dnl USE_STATIC_PROTO
 
 
 dnl 
@@ -136,10 +138,10 @@ dnl Node-specific IP, Ethernet, and geographic forwarding parameters.
 dnl These need to be defined individually for each node.
 dnl
 
-dnl define(POS_LAT, ?)  dnl Latitude and longitude, in decimal degrees. 
+dnl define(POS_LAT, ?)  dnl Latitude and longitude, in integer milliseconds (3,600,000 ms per degree)
 dnl define(POS_LON, ?)  
 dnl define(ARG_LOC_GOOD, ?) dnl Boolean
-dnl define(ARG_LOC_ERR, ?) dnl Metres (unsigned short)
+dnl define(ARG_LOC_ERR, ?) dnl Metres (unsigned short; not decimal)
 dnl define(ARG_LOC_TAG, ?) dnl String tag, no spaces or weird characters
 
 dnl This node's IP address, e.g 18.26.7.96 
@@ -150,7 +152,12 @@ dnl define(GRID_NETMASK, ?)
 dnl This node's Ethernet address, e.g. 00:90:27:e0:23:03 
 dnl define(GRID_MAC_ADDR, ?) 
 
-dnl This node's wireless device, e.g. eth0 
+dnl This node's actual wireless device, e.g. eth0.  Used to obtain signal 
+dnl strength stats.
+dnl define(REAL_NET_DEVICE, ?) 
+
+dnl Device to read and write net packets from and to.  Probably the
+dnl same as REAL_NET_DEVICE
 dnl define(GRID_NET_DEVICE, ?) 
 
 dnl If defined, geographic forwarding (including location queries/replies) is disabled.
@@ -177,6 +184,8 @@ dnl
 define(ICMP_TIMXCEED,            11)
 define(ICMP_TIMXCEED_INTRANS,    0)
 
+dnl Use kernel click queues?
+dnl define(USE_KQ, ?)
 
 dnl
 dnl End file.

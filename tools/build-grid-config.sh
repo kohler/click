@@ -24,9 +24,9 @@ Options:
   --gateway-ip IP         Specify an explicit gateway device IP address.
     
   --no-location           Be location-unaware; this is the default.  
-  --location LAT LON      Specify the node's location as decimal latitude/longitude.
+  --location LAT LON      Specify the node's location as integer latitude/longitude, in milliseconds
 			  This option is not compatible with --no-location.
-  --location-error ERR    Location error radius, in metres.  Defaults to 0.
+  --location-error ERR    Location error radius, in integer metres.  Defaults to 0.
   --loc-tag TAG           Location tag string.  
 
   --disable-gf            Disable geographic forwarding
@@ -97,7 +97,7 @@ case $1 in
 	    echo "Missing latitude or longitude."
 	    usage
 	fi
-	shift 1; lat=$1
+	shift 1; lat=$1;
 	shift 1; lon=$1;
 	shift 1;;
     --location-err|--location-erro|--location-error)
@@ -240,9 +240,11 @@ defines=
 # add location arguments
 if [ $no_loc -eq 1 ]; then
     # XXX needs to be handled correctly
-    defines="$defines -DPOS_LAT=0 -DPOS_LON=0 -DARG_LOC_GOOD=false -DARG_LOC_ERR=0 -DARG_LOC_TAG=$loc_tag"
+    defines="$defines -DPOS_LAT=0 -DPOS_LON=0"
+    defines="$defines -DARG_LOC_GOOD=false -DARG_LOC_ERR=0 -DARG_LOC_TAG=$loc_tag"
 else
-    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon -DARG_LOC_GOOD=true -DARG_LOC_ERR=$loc_err -DARG_LOC_TAG=$loc_tag"
+    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon"
+    defines="$defines -DARG_LOC_GOOD=true -DARG_LOC_ERR=$loc_err -DARG_LOC_TAG=$loc_tag"
 fi
 
 # add Grid device arguments
@@ -250,7 +252,8 @@ no_dot=`echo $grid_ip | sed -e 's/\./ /g'`
 grid_hex_ip=`printf %.2x%.2x%.2x%.2x  $no_dot`
 
 defines="$defines -DGRID_IP=$grid_ip -DGRID_HEX_IP=$grid_hex_ip -DGRID_NETMASK=$grid_netmask"
-defines="$defines -DGRID_MAC_ADDR=$grid_mac -DGRID_NET_DEVICE=$grid_dev"
+defines="$defines -DGRID_MAC_ADDR=$grid_mac -DREAL_NET_DEVICE=$grid_dev"
+defines="$defines -DGRID_NET_DEVICE=$grid_dev"
 
 # optional gateway configuration
 if [ -n "$gw_dev" ]; then
@@ -270,6 +273,8 @@ defines="$defines -DGRID_PROTO_LOC_QUERY=`$click -q -e 'g::GridHeaderInfo' -h g.
 defines="$defines -DGRID_PROTO_LOC_REPLY=`$click -q -e 'g::GridHeaderInfo' -h g.grid_proto_loc_reply`"
 defines="$defines -DGRID_PROTO_ROUTE_PROBE=`$click -q -e 'g::GridHeaderInfo' -h g.grid_proto_route_probe`"
 defines="$defines -DGRID_PROTO_ROUTE_REPLY=`$click -q -e 'g::GridHeaderInfo' -h g.grid_proto_route_reply`"
+defines="$defines -DGRID_PROTO_GEOCAST=`$click -q -e 'g::GridHeaderInfo' -h g.grid_proto_geocast`"
+defines="$defines -DGRID_PROTO_LINK_PROBE=`$click -q -e 'g::GridHeaderInfo' -h g.grid_proto_link_probe`"
 
 # get offset and header size info from Click binary
 sizeof_ether=14
@@ -298,3 +303,4 @@ cat $grid_param_file $click_config_file | $m4 $defines
 # end with a run through sed to fix up the spaces in the classifier patterns
 # sed -e "s/\ \//\//" -e "s/\/\ /\//"
 
+exit 0
