@@ -26,7 +26,7 @@
 #include "tcpconn.hh"
 
 TCPConn::TCPConn()
-  : Element(1, 2)
+  : Element(2, 3)
 {
   MOD_INC_USE_COUNT;
 }
@@ -81,7 +81,16 @@ TCPConn::reset()
 }
 
 void
-TCPConn::push(int, Packet *p)
+TCPConn::push(int port, Packet *p)
+{
+  if (port == 0)
+    iput(p);
+  else
+    oput(p);
+}
+
+void
+TCPConn::iput(Packet *p)
 {
   const click_tcp *tcph = 
     reinterpret_cast<const click_tcp *>(p->transport_header());
@@ -99,6 +108,26 @@ TCPConn::push(int, Packet *p)
     // XXX implement TCB stuff for handling SYN ACK, RST and FIN packets
     // XXX verify sequence range
     output(0).push(p);
+  }
+}
+
+void
+TCPConn::oput(Packet *p)
+{
+  if (_listen) {
+    p->kill();
+  }
+  else {
+    click_ip *iph = p->uniqueify()->ip_header();
+    click_tcp *tcph = 
+      reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
+    unsigned int sa = _flow.saddr();
+    unsigned int da = _flow.daddr();
+    memmove((void *) &(iph->ip_src), (void *) &sa, 4);
+    memmove((void *) &(iph->ip_dst), (void *) &da, 4);
+    tcph->th_sport = _flow.sport();
+    tcph->th_dport = _flow.dport();
+    output(1).push(p);
   }
 }
   
@@ -170,7 +199,7 @@ TCPConn::send_syn()
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
 
-  output(1).push(q);
+  output(2).push(q);
 }
 
 void
@@ -214,11 +243,11 @@ TCPConn::ctrl_write_handler
 
   if (action == "connect")
     if (!(reinterpret_cast<TCPConn*>(e))->connect_handler
-	   (IPFlowID(addr0,port0,addr1,port1)))
+	   (IPFlowID(addr0,htons(port0),addr1,htons(port1))))
       return errh->error("cannot connect");
   else if (action == "listen")
     if (!(reinterpret_cast<TCPConn*>(e))->listen_handler
-           (IPFlowID(addr0,port0,0,0)))
+           (IPFlowID(addr0,htons(port0),0,0)))
       return errh->error("cannot listen");
   else
    return errh->error("action must be connect or listen\n");

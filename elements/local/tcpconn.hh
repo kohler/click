@@ -13,6 +13,9 @@
  * manage tcp connections
  * =d
  * can either start a tcp connection or listen for connections.
+ *
+ * input and output 0 carry incoming packets; input and output 1 carry
+ * outgoing packets; output 2 send out SYNs and SYN ACKs.
  */
 
 class TCPDemux;
@@ -32,6 +35,8 @@ private:
   void send_syn();
 
   void reset();
+  void iput(Packet *p);
+  void oput(Packet *p);
 
 public:
   TCPConn();
