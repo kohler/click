@@ -147,9 +147,9 @@ sub process_file ($) {
     close IN;
 
     my($req, $prov, $exp) = ('', '', '');
-    $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\((.*)\)/mg;
-    $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\((.*)\)/mg;
-    $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\((.*)\)/mg;
+    $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\s*\((.*)\)/mg;
+    $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\s*\((.*)\)/mg;
+    $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\s*\((.*)\)/mg;
     $req =~ s/^\s+//;
     $req =~ s/"/\\"/g;
     $prov =~ s/^\s+//;
