@@ -2,6 +2,13 @@
 #define EWMA2_HH
 #include "glue.hh"
 
+/*
+ * Exponential Weighted Moving Average: unlike EWMA, EWMA2 class uses long
+ * long type and has a METER SCALE of 30. This implies that the stability
+ * factor, which correlates to time period of the average, can be larger as
+ * well.
+ */
+
 class EWMA2 {
   
   int _now_jiffies;
