@@ -1,3 +1,37 @@
+2001-04-27 Friday 17:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/: error.cc, userutils.cc: PrefixErrorHandler: improve
+	behavior of nested Prefix and Context error handlers
+
+2001-04-27 Friday 17:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc: error message fixes
+
+2001-04-27 Friday 17:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/markipce.cc: MarkIPCE: change ECN marking to conform
+	to nonce draft
+
+2001-04-27 Friday 17:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc, ipprint.hh: IPPrint: add TOS and TTL
+	keyword arguments
+
+2001-04-27 Friday 17:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipfilter.cc: IPFilter: add optional data to "ip ect"
+	specifications (for nonce); better error messages
+
+2001-04-27 Friday 17:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/click_ip.h: change ECN definitions to follow nonce
+	draft
+
+2001-04-27 Friday 17:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipencap.cc, ipencap.hh: IPEncap: add a collection
+	of keyword arguments
+
 2001-04-25 Wednesday 20:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/ip/: ipprint.cc, ipprint.hh: user must explicitly
