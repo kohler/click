@@ -27,6 +27,8 @@ class IPAddress { public:
   
   unsigned hashcode() const	{ return _addr; }
   int mask_to_prefix_bits() const;
+  bool matches_prefix(IPAddress addr, IPAddress mask) const;
+  bool mask_more_specific(IPAddress) const;
 
   // bool operator==(IPAddress, IPAddress);
   // bool operator!=(IPAddress, IPAddress);
@@ -121,6 +123,18 @@ IPAddress::operator struct in_addr() const
 
 class StringAccum;
 StringAccum &operator<<(StringAccum &, IPAddress);
+
+inline bool
+IPAddress::matches_prefix(IPAddress a, IPAddress mask) const
+{
+  return (addr() & mask.addr()) == a.addr();
+}
+
+inline bool
+IPAddress::mask_more_specific(IPAddress mask) const
+{
+  return (addr() & mask.addr()) == mask.addr();
+}
 
 inline IPAddress
 operator&(IPAddress a, IPAddress b)
