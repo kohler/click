@@ -237,7 +237,7 @@ private:
   friend class RTEntry;
   
   typedef BigHashMap<IPAddress, RTEntry> RTable;
-  typedef RTable::Iterator RTIter;
+  typedef RTable::const_iterator RTIter;
   
   /* the route table */
   // Invariants: 
