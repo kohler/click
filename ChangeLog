@@ -1,3 +1,8 @@
+2001-04-25 Wednesday 20:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc, ipprint.hh: user must explicitly
+	specify whether to print byte-swapped ICMP sequence numbers
+
 2001-04-25 Wednesday 16:44  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/error.hh, include/click/packet.hh,
