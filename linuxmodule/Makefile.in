@@ -27,10 +27,12 @@ INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
-.SUFFIXES: .S .c .cc .o .s .ii
+.SUFFIXES: .c .cc .o .S .s .i .ii
 
 .c.o:
 	$(COMPILE) -c $<
+.c.i:
+	$(COMPILE) -E $< > $@
 .s.o:
 	$(COMPILE) -c $<
 .S.o:
