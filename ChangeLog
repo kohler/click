@@ -1,3 +1,8 @@
+2003-08-12 Tuesday 12:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/make-linux-wifi-patch (1.1): script creates patch to enable
+	Click WiFi kernel extensions
+
 2003-08-12 Tuesday 09:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* README (1.39), conf/grid.click (1.63), tools/build-grid-config.sh
