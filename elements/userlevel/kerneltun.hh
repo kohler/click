@@ -3,7 +3,7 @@
 
 /*
  * =c
- * KernelTap(ADDR/MASK [, GATEWAY])
+ * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM])
  * =s
  * user-level interface to /dev/tun or ethertap
  * V<devices>
@@ -27,6 +27,9 @@
  * When cleaning up, KernelTap attempts to bring down the device via
  * ifconfig(8).
  *
+ * HEADROOM is the number of bytes left empty before the packet data (to leave
+ * room for additional encapsulation headers). Default HEADROOM is 0.
+ *
  * =a
  * ToLinux, ifconfig(8) */
 
@@ -35,6 +38,7 @@
 
 class KernelTap : public Element {
  public:
+  
   KernelTap();
   ~KernelTap();
   
@@ -60,6 +64,7 @@ class KernelTap : public Element {
   IPAddress _mask;
   IPAddress _gw;
   int _fd;
+  int _headroom;
 
   int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
   void dealloc_tun();

@@ -64,10 +64,13 @@ KernelTap::backward_flow(int) const
 int
 KernelTap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _gw = IPAddress();
+  _headroom = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpIPPrefix, "network address", &_near, &_mask,
 		  cpOptional,
 		  cpIPAddress, "default gateway", &_gw,
+		  cpUnsigned, "packet data headroom", &_headroom,
 		  cpEnd) < 0)
     return -1;
 
@@ -200,18 +203,19 @@ void
 KernelTap::selected(int fd)
 {
   int cc;
-  char b[2048];
+  unsigned char b[2048];
 
   if (fd != _fd)
     return;
   
   cc = read(_fd, b, sizeof(b));
-  if(cc > 0){
+  if (cc > 0) {
 #if defined (__OpenBSD__) || defined(__FreeBSD__)
     // BSDs prefix packet with 32-bit address family.
     int af = ntohl(*(unsigned *)b);
     struct click_ether *e;
-    WritablePacket *p = Packet::make(cc - 4 + sizeof(*e));
+    WritablePacket *p = Packet::make(_headroom + cc - 4 + sizeof(click_ether));
+    p->pull(_headroom);
     e = (struct click_ether *) p->data();
     memset(e, '\0', sizeof(*e));
     if(af == AF_INET){
@@ -223,11 +227,11 @@ KernelTap::selected(int fd)
       p->kill();
       return;
     }
-    memcpy(p->data() + sizeof(*e), b + 4, cc - 4);
+    memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
     output(0).push(p);
 #elif defined (__linux__)
     // Linux prefixes packet 2 bytes of 0, then ether_header.
-    Packet *p = Packet::make(b+2, cc-2);
+    Packet *p = Packet::make(_headroom, b + 2, cc - 2, Packet::default_tailroom(cc - 2));
     output(0).push(p);
 #endif
   } else {
