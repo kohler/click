@@ -85,7 +85,6 @@ class ToHost : public AnyDevice { public:
 
   private:
 
-    net_device *_dev;
     bool _sniffers;
     bool _allow_nonexistent;
     int _drops;

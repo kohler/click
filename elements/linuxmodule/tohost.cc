@@ -92,7 +92,7 @@ ToHost::initialize(ErrorHandler *errh)
     // We find the device here, rather than in 'initialize', to avoid warnings
     // about "device down" with FromHost devices -- FromHost brings up its
     // device during initialize().
-    return find_device(_allow_nonexistent, &to_host_map, errh);
+    return (_devname ? find_device(_allow_nonexistent, &to_host_map, errh) : 0);
 }
 
 void
