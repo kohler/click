@@ -32,7 +32,7 @@ RouterT::RouterT(RouterT *enclosing)
     : _use_count(0), _enclosing_scope(enclosing), _scope_cookie(0),
       _etype_map(-1), _element_name_map(-1),
       _free_element(0), _real_ecount(0), _new_eindex_collector(0),
-      _free_hookup(-1), _archive_map(-1)
+      _free_conn(-1), _archive_map(-1)
 {
     // borrow definitions from `enclosing'
     if (enclosing) {
@@ -55,14 +55,11 @@ void
 RouterT::check() const
 {
     int ne = nelements();
-    int nh = nhookup();
+    int nc = nconnections();
     int nt = _etypes.size();
 
     // check basic sizes
-    assert(_hookup_from.size() == _hookup_to.size()
-	   && _hookup_from.size() == _hookup_landmark.size()
-	   && _hookup_from.size() == _hookup_next.size());
-    assert(_elements.size() == _hookup_first.size());
+    assert(_elements.size() == _first_conn.size());
 
     // check element type names
     int nt_found = 0;
@@ -95,6 +92,7 @@ RouterT::check() const
     // check elements
     for (int i = 0; i < ne; i++) {
 	const ElementT *e = _elements[i];
+	assert(e->router() == this);
 	if (e->live() && e->tunnel_input())
 	    assert(e->tunnel() && e->tunnel_input()->tunnel_output() == e);
 	if (e->live() && e->tunnel_output())
@@ -102,43 +100,46 @@ RouterT::check() const
     }
 
     // check hookup
-    for (int i = 0; i < nh; i++)
-	if (hookup_live(i))
-	    assert(has_connection(_hookup_from[i], _hookup_to[i]));
+    for (int i = 0; i < nc; i++)
+	if (connection_live(i))
+	    assert(has_connection(_conn[i].from(), _conn[i].to()));
 
     // check hookup next pointers, port counts
     for (int i = 0; i < ne; i++)
 	if (elive(i)) {
 	    int ninputs = 0, noutputs = 0;
-	    int j = _hookup_first[i].from;
+	    
+	    int j = _first_conn[i].from;
 	    while (j >= 0) {
-		assert(j < _hookup_from.size());
-		assert(_hookup_from[j].idx == i);
-		if (_hookup_from[j].port >= noutputs)
-		    noutputs = _hookup_from[j].port + 1;
-		j = _hookup_next[j].from;
+		assert(j < _conn.size());
+		assert(_conn[j].from().idx == i);
+		if (_conn[j].from().port >= noutputs)
+		    noutputs = _conn[j].from().port + 1;
+		j = _conn[j].next_from();
 	    }
-	    j = _hookup_first[i].to;
+	    
+	    j = _first_conn[i].to;
 	    while (j >= 0) {
-		assert(j < _hookup_to.size());
-		assert(_hookup_to[j].idx == i && hookup_live(j));
-		if (_hookup_to[j].port >= ninputs)
-		    ninputs = _hookup_to[j].port + 1;
-		j = _hookup_next[j].to;
+		assert(j < _conn.size());
+		assert(_conn[j].to().idx == i && connection_live(j));
+		if (_conn[j].to().port >= ninputs)
+		    ninputs = _conn[j].to().port + 1;
+		j = _conn[j].next_to();
 	    }
+	    
 	    assert(ninputs == _elements[i]->ninputs()
 		   && noutputs == _elements[i]->noutputs());
 	}
 
     // check free hookup pointers
-    Bitvector bv(_hookup_from.size(), true);
-    for (int i = _free_hookup; i >= 0; i = _hookup_next[i].from) {
-	assert(i >= 0 && i < _hookup_from.size());
+    Bitvector bv(_conn.size(), true);
+    for (int i = _free_conn; i >= 0; i = _conn[i].next_from()) {
+	assert(i >= 0 && i < _conn.size());
 	assert(bv[i]);
 	bv[i] = false;
     }
-    for (int i = 0; i < _hookup_from.size(); i++)
-	assert(_hookup_from[i].live() == (bool)bv[i]);
+    for (int i = 0; i < _conn.size(); i++)
+	assert(connection_live(i) == (bool)bv[i]);
 }
 
 bool
@@ -207,16 +208,17 @@ RouterT::add_element(const ElementT &elt_in)
 	i = _free_element->idx();
 	_free_element = _free_element->tunnel_input();
 	delete _elements[i];
-	_hookup_first[i] = Pair(-1, -1);
+	_first_conn[i] = Pair(-1, -1);
     } else {
 	i = _elements.size();
 	_elements.push_back(0);
-	_hookup_first.push_back(Pair(-1, -1));
+	_first_conn.push_back(Pair(-1, -1));
     }
     if (_new_eindex_collector)
 	_new_eindex_collector->push_back(i);
     _elements[i] = elt;
     elt->_idx = i;
+    elt->_owner = this;
     return i;
 }
 
@@ -277,9 +279,9 @@ void
 RouterT::update_noutputs(int e)
 {
     int n = 0;
-    for (int i = _hookup_first[e].from; i >= 0; i = _hookup_next[i].from)
-	if (_hookup_from[i].port >= n)
-	    n = _hookup_from[i].port + 1;
+    for (int i = _first_conn[e].from; i >= 0; i = _conn[i].next_from())
+	if (_conn[i].from().port >= n)
+	    n = _conn[i].from().port + 1;
     _elements[e]->_noutputs = n;
 }
 
@@ -287,37 +289,32 @@ void
 RouterT::update_ninputs(int e)
 {
     int n = 0;
-    for (int i = _hookup_first[e].to; i >= 0; i = _hookup_next[i].to)
-	if (_hookup_to[i].port >= n)
-	    n = _hookup_to[i].port + 1;
+    for (int i = _first_conn[e].to; i >= 0; i = _conn[i].next_to())
+	if (_conn[i].to().port >= n)
+	    n = _conn[i].to().port + 1;
     _elements[e]->_ninputs = n;
 }
 
 bool
-RouterT::add_connection(HookupI hfrom, HookupI hto, const String &landmark)
+RouterT::add_connection(const HookupI &hfrom, const HookupI &hto,
+			const String &landmark)
 {
-    int ne = _elements.size();
-    if (hfrom.idx < 0 || hfrom.idx >= ne || hto.idx < 0 || hto.idx >= ne)
-	return false;
+    assert(hfrom.idx >= 0 && hfrom.idx < _elements.size() && _elements[hfrom.idx]->live()
+	   && hto.idx >= 0 && hto.idx < _elements.size() && _elements[hto.idx]->live());
 
-    Pair &first_from = _hookup_first[hfrom.idx];
-    Pair &first_to = _hookup_first[hto.idx];
+    Pair &first_from = _first_conn[hfrom.idx];
+    Pair &first_to = _first_conn[hto.idx];
 
     int i;
-    if (_free_hookup >= 0) {
-	i = _free_hookup;
-	_free_hookup = _hookup_next[i].from;
-	_hookup_from[i] = hfrom;
-	_hookup_to[i] = hto;
-	_hookup_landmark[i] = landmark;
-	_hookup_next[i] = Pair(first_from.from, first_to.to);
+    if (_free_conn >= 0) {
+	i = _free_conn;
+	_free_conn = _conn[i].next_from();
+	_conn[i] = ConnectionT(hfrom, hto, landmark, first_from.from, first_to.to);
     } else {
-	i = _hookup_from.size();
-	_hookup_from.push_back(hfrom);
-	_hookup_to.push_back(hto);
-	_hookup_landmark.push_back(landmark);
-	_hookup_next.push_back(Pair(first_from.from, first_to.to));
+	i = _conn.size();
+	_conn.push_back(ConnectionT(hfrom, hto, landmark, first_from.from, first_to.to));
     }
+    
     first_from.from = first_to.to = i;
 
     // maintain port counts
@@ -332,71 +329,67 @@ RouterT::add_connection(HookupI hfrom, HookupI hto, const String &landmark)
 void
 RouterT::compact_connections()
 {
-    int nh = _hookup_from.size();
-    Vector<int> new_numbers(nh, -1);
-    int last = nh;
+    int nc = _conn.size();
+    Vector<int> new_numbers(nc, -1);
+    int last = nc;
     for (int i = 0; i < last; i++)
-	if (hookup_live(i))
+	if (connection_live(i))
 	    new_numbers[i] = i;
 	else {
-	    for (last--; last > i && !hookup_live(last); last--)
+	    for (last--; last > i && !connection_live(last); last--)
 		/* nada */;
 	    if (last > i)
 		new_numbers[last] = i;
 	}
 
-    if (last == nh)
+    if (last == nc)
 	return;
 
-    for (int i = 0; i < nh; i++)
-	if (new_numbers[i] >= 0 && new_numbers[i] != i) {
-	    int j = new_numbers[i];
-	    _hookup_from[j] = _hookup_from[i];
-	    _hookup_to[j] = _hookup_to[i];
-	    _hookup_landmark[j] = _hookup_landmark[i];
-	    _hookup_next[j] = _hookup_next[i];
-	}
+    for (int i = 0; i < nc; i++)
+	if (new_numbers[i] >= 0 && new_numbers[i] != i)
+	    _conn[ new_numbers[i] ] = _conn[i];
 
-    _hookup_from.resize(last);
-    _hookup_to.resize(last);
-    _hookup_landmark.resize(last);
-    _hookup_next.resize(last);
+    _conn.resize(last);
     for (int i = 0; i < last; i++) {
-	Pair &n = _hookup_next[i];
-	if (n.from >= 0) n.from = new_numbers[n.from];
-	if (n.to >= 0) n.to = new_numbers[n.to];
+	ConnectionT &c = _conn[i];
+	if (c._next_from >= 0)
+	    c._next_from = new_numbers[c._next_from];
+	if (c._next_to >= 0)
+	    c._next_to = new_numbers[c._next_to];
     }
 
     int ne = nelements();
     for (int i = 0; i < ne; i++) {
-	Pair &n = _hookup_first[i];
-	if (n.from >= 0) n.from = new_numbers[n.from];
-	if (n.to >= 0) n.to = new_numbers[n.to];
+	Pair &n = _first_conn[i];
+	if (n.from >= 0)
+	    n.from = new_numbers[n.from];
+	if (n.to >= 0)
+	    n.to = new_numbers[n.to];
     }
 
-    _free_hookup = -1;
+    _free_conn = -1;
 }
 
 void
 RouterT::unlink_connection_from(int c)
 {
-    int e = _hookup_from[c].idx;
-    int port = _hookup_from[c].port;
+    int e = _conn[c].from().idx;
+    int port = _conn[c].from().port;
 
     // find previous connection
     int prev = -1;
-    int trav = _hookup_first[e].from;
+    int trav = _first_conn[e].from;
     while (trav >= 0 && trav != c) {
 	prev = trav;
-	trav = _hookup_next[trav].from;
+	trav = _conn[trav].next_from();
     }
     assert(trav == c);
 
     // unlink this connection
     if (prev < 0)
-	_hookup_first[e].from = _hookup_next[trav].from;
+	_first_conn[e].from = _conn[trav].next_from();
     else
-	_hookup_next[prev].from = _hookup_next[trav].from;
+	_conn[prev]._next_from = _conn[trav].next_from();
 
     // update port count
     if (_elements[e]->_noutputs == port + 1)
@@ -406,23 +399,23 @@ RouterT::unlink_connection_from(int c)
 void
 RouterT::unlink_connection_to(int c)
 {
-    int e = _hookup_to[c].idx;
-    int port = _hookup_to[c].port;
+    int e = _conn[c].to().idx;
+    int port = _conn[c].to().port;
 
     // find previous connection
     int prev = -1;
-    int trav = _hookup_first[e].to;
+    int trav = _first_conn[e].to;
     while (trav >= 0 && trav != c) {
 	prev = trav;
-	trav = _hookup_next[trav].to;
+	trav = _conn[trav].next_to();
     }
     assert(trav == c);
 
     // unlink this connection
     if (prev < 0)
-	_hookup_first[e].to = _hookup_next[trav].to;
+	_first_conn[e].to = _conn[trav].next_to();
     else
-	_hookup_next[prev].to = _hookup_next[trav].to;
+	_conn[prev]._next_to = _conn[trav].next_to();
 
     // update port count
     if (_elements[e]->_ninputs == port + 1)
@@ -432,15 +425,15 @@ RouterT::unlink_connection_to(int c)
 void
 RouterT::free_connection(int c)
 {
-    _hookup_from[c].idx = -1;
-    _hookup_next[c].from = _free_hookup;
-    _free_hookup = c;
+    _conn[c]._from.idx = -1;
+    _conn[c]._next_from = _free_conn;
+    _free_conn = c;
 }
 
 void
 RouterT::kill_connection(int c)
 {
-    if (hookup_live(c)) {
+    if (connection_live(c)) {
 	unlink_connection_from(c);
 	unlink_connection_to(c);
 	free_connection(c);
@@ -450,12 +443,12 @@ RouterT::kill_connection(int c)
 void
 RouterT::kill_bad_connections()
 {
-    int nh = nhookup();
-    Vector<HookupI> &hf = _hookup_from;
-    Vector<HookupI> &ht = _hookup_to;
-    for (int i = 0; i < nh; i++)
-	if (hf[i].live() && (edead(hf[i].idx) || edead(ht[i].idx)))
+    int nc = nconnections();
+    for (int i = 0; i < nc; i++) {
+	ConnectionT &c = _conn[i];
+	if (c.live() && (edead(c.from().idx) || edead(c.to().idx)))
 	    kill_connection(i);
+    }
 }
 
 void
@@ -463,12 +456,12 @@ RouterT::change_connection_from(int c, HookupI h)
 {
     unlink_connection_from(c);
 
-    _hookup_from[c] = h;
+    _conn[c]._from = h;
     if (h.port >= _elements[h.idx]->_noutputs)
 	_elements[h.idx]->_noutputs = h.port + 1;
 
-    _hookup_next[c].from = _hookup_first[h.idx].from;
-    _hookup_first[h.idx].from = c;
+    _conn[c]._next_from = _first_conn[h.idx].from;
+    _first_conn[h.idx].from = c;
 }
 
 void
@@ -476,22 +469,22 @@ RouterT::change_connection_to(int c, HookupI h)
 {
     unlink_connection_to(c);
 
-    _hookup_to[c] = h;
+    _conn[c]._to = h;
     if (h.port >= _elements[h.idx]->_ninputs)
 	_elements[h.idx]->_ninputs = h.port + 1;
 
-    _hookup_next[c].to = _hookup_first[h.idx].to;
-    _hookup_first[h.idx].to = c;
+    _conn[c]._next_to = _first_conn[h.idx].to;
+    _first_conn[h.idx].to = c;
 }
 
 int
 RouterT::find_connection(const HookupI &hfrom, const HookupI &hto) const
 {
-    int c = _hookup_first[hfrom.idx].from;
+    int c = _first_conn[hfrom.idx].from;
     while (c >= 0) {
-	if (_hookup_from[c] == hfrom && _hookup_to[c] == hto)
+	if (_conn[c].from() == hfrom && _conn[c].to() == hto)
 	    break;
-	c = _hookup_next[c].from;
+	c = _conn[c].next_from();
     }
     return c;
 }
@@ -499,17 +492,17 @@ RouterT::find_connection(const HookupI &hfrom, const HookupI &hto) const
 bool
 RouterT::find_connection_from(const HookupI &h, HookupI &out) const
 {
-    int c = _hookup_first[h.idx].from;
+    int c = _first_conn[h.idx].from;
     int p = h.port;
     out.idx = -1;
     while (c >= 0) {
-	if (_hookup_from[c].port == p) {
+	if (_conn[c].from().port == p) {
 	    if (out.idx == -1)
-		out = _hookup_to[c];
+		out = _conn[c].to();
 	    else
 		out.idx = -2;
 	}
-	c = _hookup_next[c].from;
+	c = _conn[c].next_from();
     }
     return out.idx >= 0;
 }
@@ -517,48 +510,48 @@ RouterT::find_connection_from(const HookupI &h, HookupI &out) const
 void
 RouterT::find_connections_from(const HookupI &h, Vector<HookupI> &v) const
 {
-    int c = _hookup_first[h.idx].from;
+    int c = _first_conn[h.idx].from;
     int p = h.port;
     while (c >= 0) {
-	if (_hookup_from[c].port == p)
-	    v.push_back(_hookup_to[c]);
-	c = _hookup_next[c].from;
+	if (_conn[c].from().port == p)
+	    v.push_back(_conn[c].to());
+	c = _conn[c].next_from();
     }
 }
 
 void
 RouterT::find_connections_from(const HookupI &h, Vector<int> &v) const
 {
-    int c = _hookup_first[h.idx].from;
+    int c = _first_conn[h.idx].from;
     int p = h.port;
     while (c >= 0) {
-	if (_hookup_from[c].port == p)
+	if (_conn[c].from().port == p)
 	    v.push_back(c);
-	c = _hookup_next[c].from;
+	c = _conn[c].next_from();
     }
 }
 
 void
 RouterT::find_connections_to(const HookupI &h, Vector<HookupI> &v) const
 {
-    int c = _hookup_first[h.idx].to;
+    int c = _first_conn[h.idx].to;
     int p = h.port;
     while (c >= 0) {
-	if (_hookup_to[c].port == p)
-	    v.push_back(_hookup_from[c]);
-	c = _hookup_next[c].to;
+	if (_conn[c].to().port == p)
+	    v.push_back(_conn[c].to());
+	c = _conn[c].next_to();
     }
 }
 
 void
 RouterT::find_connections_to(const HookupI &h, Vector<int> &v) const
 {
-    int c = _hookup_first[h.idx].to;
+    int c = _first_conn[h.idx].to;
     int p = h.port;
     while (c >= 0) {
-	if (_hookup_to[c].port == p)
+	if (_conn[c].to().port == p)
 	    v.push_back(c);
-	c = _hookup_next[c].to;
+	c = _conn[c].next_to();
     }
 }
 
@@ -566,16 +559,16 @@ void
 RouterT::find_connection_vector_from(int e, Vector<int> &v) const
 {
     v.clear();
-    int c = _hookup_first[e].from;
+    int c = _first_conn[e].from;
     while (c >= 0) {
-	int p = _hookup_from[c].port;
+	int p = _conn[c].from().port;
 	if (p >= v.size())
 	    v.resize(p + 1, -1);
 	if (v[p] >= 0)
 	    v[p] = -2;
 	else
 	    v[p] = c;
-	c = _hookup_next[c].from;
+	c = _conn[c].next_from();
     }
 }
 
@@ -583,16 +576,16 @@ void
 RouterT::find_connection_vector_to(int e, Vector<int> &v) const
 {
     v.clear();
-    int c = _hookup_first[e].to;
+    int c = _first_conn[e].to;
     while (c >= 0) {
-	int p = _hookup_to[c].port;
+	int p = _conn[c].to().port;
 	if (p >= v.size())
 	    v.resize(p + 1, -1);
 	if (v[p] >= 0)
 	    v[p] = -2;
 	else
 	    v[p] = c;
-	c = _hookup_next[c].to;
+	c = _conn[c].next_to();
     }
 }
 
@@ -601,9 +594,9 @@ RouterT::count_ports(Vector<int> &inputs, Vector<int> &outputs) const
 {
     inputs.assign(_elements.size(), 0);
     outputs.assign(_elements.size(), 0);
-    int nhook = _hookup_from.size();
-    for (int i = 0; i < nhook; i++) {
-	const HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
+    int nc = _conn.size();
+    for (int i = 0; i < nc; i++) {
+	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
 	if (hf.dead())
 	    continue;
 	if (hf.port >= outputs[hf.idx])
@@ -619,10 +612,11 @@ RouterT::insert_before(const HookupI &inserter, const HookupI &h)
     if (!add_connection(inserter, h))
 	return false;
 
-    int i = _hookup_first[h.idx].to;
+    int i = _first_conn[h.idx].to;
     while (i >= 0) {
-	int next = _hookup_next[i].to;
-	if (_hookup_to[i] == h && hookup_live(i) && _hookup_from[i] != inserter)
+	int next = _conn[i].next_to();
+	if (_conn[i].to() == h && connection_live(i)
+	    && _conn[i].from() != inserter)
 	    change_connection_to(i, inserter);
 	i = next;
     }
@@ -635,10 +629,10 @@ RouterT::insert_after(const HookupI &inserter, const HookupI &h)
     if (!add_connection(h, inserter))
 	return false;
 
-    int i = _hookup_first[h.idx].from;
+    int i = _first_conn[h.idx].from;
     while (i >= 0) {
-	int next = _hookup_next[i].from;
-	if (_hookup_from[i] == h && _hookup_to[i] != inserter)
+	int next = _conn[i].next_from();
+	if (_conn[i].from() == h && _conn[i].to() != inserter)
 	    change_connection_from(i, inserter);
 	i = next;
     }
@@ -715,19 +709,19 @@ RouterT::remove_duplicate_connections()
     Vector<int> removers;
 
     for (int i = 0; i < nelem; i++) {
-	int trav = _hookup_first[i].from;
+	int trav = _first_conn[i].from;
 	int next = 0;		// initialize here to avoid gcc warnings
 	while (trav >= 0) {
-	    int prev = _hookup_first[i].from;
-	    int trav_port = _hookup_from[trav].port;
-	    next = _hookup_next[trav].from;
+	    int prev = _first_conn[i].from;
+	    int trav_port = _conn[trav].from().port;
+	    next = _conn[trav].next_from();
 	    while (prev >= 0 && prev != trav) {
-		if (_hookup_from[prev].port == trav_port
-		    && _hookup_to[prev] == _hookup_to[trav]) {
+		if (_conn[prev].from().port == trav_port
+		    && _conn[prev].to() == _conn[trav].to()) {
 		    kill_connection(trav);
 		    goto duplicate;
 		}
-		prev = _hookup_next[prev].from;
+		prev = _conn[prev].next_from();
 	    }
 	  duplicate:
 	    trav = next;
@@ -750,17 +744,17 @@ RouterT::finish_remove_elements(Vector<int> &new_eindex, ErrorHandler *errh)
     int new_nelements = j;
 
     // change hookup
-    int nh = _hookup_from.size();
+    int nh = _conn.size();
     for (int i = 0; i < nh; i++) {
-	HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
+	HookupI &hf = _conn[i]._from, &ht = _conn[i]._to;
 	bool bad = false;
 	if (hf.idx < 0 || hf.idx >= nelements || ht.idx < 0 || ht.idx >= nelements)
 	    bad = true;
 	else if (new_eindex[hf.idx] < 0) {
-	    errh->lerror(_hookup_landmark[i], "connection from removed element `%s'", ename(hf.idx).cc());
+	    errh->lerror(_conn[i].landmark(), "connection from removed element `%s'", ename(hf.idx).cc());
 	    bad = true;
 	} else if (new_eindex[ht.idx] < 0) {
-	    errh->lerror(_hookup_landmark[i], "connection to removed element `%s'", ename(ht.idx).cc());
+	    errh->lerror(_conn[i].landmark(), "connection to removed element `%s'", ename(ht.idx).cc());
 	    bad = true;
 	}
 
@@ -772,7 +766,7 @@ RouterT::finish_remove_elements(Vector<int> &new_eindex, ErrorHandler *errh)
     }
 
     // compress element arrays; wait until now because kill_connection uses
-    // _hookup_first
+    // _first_conn
     for (int i = 0; i < nelements; i++) {
 	j = new_eindex[i];
 	if (j < 0) {
@@ -782,13 +776,13 @@ RouterT::finish_remove_elements(Vector<int> &new_eindex, ErrorHandler *errh)
 	    _element_name_map.insert(_elements[i]->name(), j);
 	    _elements[j] = _elements[i];
 	    _elements[j]->_idx = j;
-	    _hookup_first[j] = _hookup_first[i];
+	    _first_conn[j] = _first_conn[i];
 	}
     }
 
     // resize element arrays
     _elements.resize(new_nelements);
-    _hookup_first.resize(new_nelements);
+    _first_conn.resize(new_nelements);
     _real_ecount = new_nelements;
     _free_element = 0;
 }
@@ -813,8 +807,8 @@ RouterT::finish_free_elements(Vector<int> &new_eindex)
     int nelements = _elements.size();
 
     // change hookup
-    for (int i = 0; i < _hookup_from.size(); i++) {
-	HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
+    for (int i = 0; i < _conn.size(); i++) {
+	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
 	bool bad = false;
 	if (hf.idx < 0 || hf.idx >= nelements || ht.idx < 0 || ht.idx >= nelements)
 	    bad = true;
@@ -844,24 +838,24 @@ RouterT::free_element(int ei)
     
     // first, remove bad connections from other elements' connection lists
     Vector<int> bad_from, bad_to;
-    for (int c = _hookup_first[ei].from; c >= 0; c = _hookup_next[c].from)
+    for (int c = _first_conn[ei].from; c >= 0; c = _conn[c].next_from())
 	unlink_connection_to(c);
-    for (int c = _hookup_first[ei].to; c >= 0; c = _hookup_next[c].to)
+    for (int c = _first_conn[ei].to; c >= 0; c = _conn[c].next_to())
 	unlink_connection_from(c);
 
     // now, free all of this element's connections
-    for (int c = _hookup_first[ei].from; c >= 0; ) {
-	int next = _hookup_next[c].from;
-	if (_hookup_to[c].idx != ei)
+    for (int c = _first_conn[ei].from; c >= 0; ) {
+	int next = _conn[c].next_from();
+	if (_conn[c].to().idx != ei)
 	    free_connection(c);
 	c = next;
     }
-    for (int c = _hookup_first[ei].to; c >= 0; ) {
-	int next = _hookup_next[c].to;
+    for (int c = _first_conn[ei].to; c >= 0; ) {
+	int next = _conn[c].next_to();
 	free_connection(c);
 	c = next;
     }
-    _hookup_first[ei] = Pair(-1, -1);
+    _first_conn[ei] = Pair(-1, -1);
 
     // finally, free the element itself
     ElementT *e = _elements[ei];
@@ -907,12 +901,12 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
 	new_fidx[i] = ElementClassT::expand_element(this, i, tor, env, errh);
 
     // add hookup
-    int nh = _hookup_from.size();
+    int nh = _conn.size();
     for (int i = 0; i < nh; i++) {
-	const HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
-	tor->add_connection(HookupI(new_fidx[hf.idx], hf.port),
-			    HookupI(new_fidx[ht.idx], ht.port),
-			    _hookup_landmark[i]);
+	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
+	tor->add_connection(Hookup(tor->_elements[new_fidx[hf.idx]], hf.port),
+			    Hookup(tor->_elements[new_fidx[ht.idx]], ht.port),
+			    _conn[i].landmark());
     }
 
     // add requirements
@@ -1009,9 +1003,9 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
     // find tunnel connections, mark connections by setting index to 'magice'
     Vector<HookupI> inputs, outputs;
-    int nhook = _hookup_from.size();
+    int nhook = _conn.size();
     for (int i = 0; i < nhook; i++) {
-	const HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
+	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
 	if (hf.idx < 0)
 	    continue;
 	if (_elements[hf.idx]->tunnel() && _elements[hf.idx]->tunnel_input() >= 0)
@@ -1037,9 +1031,9 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
     // get rid of connections to tunnels
     int nelements = _elements.size();
-    int old_nhook = _hookup_from.size();
+    int old_nhook = _conn.size();
     for (int i = 0; i < old_nhook; i++) {
-	HookupI &hf = _hookup_from[i], &ht = _hookup_to[i];
+	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
 
 	// skip if uninteresting
 	if (hf.idx < 0 || !_elements[hf.idx]->tunnel() || _elements[ht.idx]->tunnel())
@@ -1050,11 +1044,13 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
 	// add cross product
 	// hf, ht are invalidated by adding new connections!
-	HookupI safe_ht = ht;
-	String landmark = _hookup_landmark[i]; // must not be reference!
+	Hookup safe_ht(_elements[ht.idx], ht.port);
+	String landmark = _conn[i].landmark(); // must not be reference!
 	const Vector<HookupI> &v = out_expansions[idx];
-	for (int j = 0; j < v.size(); j++)
-	    add_connection(v[j], safe_ht, landmark);
+	for (int j = 0; j < v.size(); j++) {
+	    const HookupI &vj = v[j];
+	    add_connection(Hookup(_elements[vj.idx], vj.port), safe_ht, landmark);
+	}
     }
     
     // kill elements with tunnel type
@@ -1174,23 +1170,23 @@ void
 RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 {
     // mark loser connections
-    int nhookup = _hookup_from.size();
-    Bitvector used(nhookup, false);
-    for (int c = 0; c < nhookup; c++)
-	if (_hookup_from[c].idx < 0)
+    int nc = _conn.size();
+    Bitvector used(nc, false);
+    for (int c = 0; c < nc; c++)
+	if (_conn[c].dead())
 	    used[c] = true;
 
     // prepare hookup chains
-    Vector<int> next(nhookup, -1);
-    Bitvector startchain(nhookup, true);
-    for (int c = 0; c < nhookup; c++) {
-	const HookupI &ht = _hookup_to[c];
+    Vector<int> next(nc, -1);
+    Bitvector startchain(nc, true);
+    for (int c = 0; c < nc; c++) {
+	const HookupI &ht = _conn[c].to();
 	if (ht.port != 0 || used[c]) continue;
 	int result = -1;
-	for (int d = 0; d < nhookup; d++)
-	    if (d != c && _hookup_from[d] == ht && !used[d]) {
+	for (int d = 0; d < nc; d++)
+	    if (d != c && _conn[d].from() == ht && !used[d]) {
 		result = d;
-		if (_hookup_to[d].port == 0)
+		if (_conn[d].to().port == 0)
 		    break;
 	    }
 	if (result >= 0) {
@@ -1214,8 +1210,8 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
     bool done = false;
     while (!done) {
 	// print chains
-	for (int c = 0; c < nhookup; c++) {
-	    const HookupI &hf = _hookup_from[c];
+	for (int c = 0; c < nc; c++) {
+	    const HookupI &hf = _conn[c].from();
 	    if (used[c] || !startchain[c])
 		continue;
 	    
@@ -1229,7 +1225,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 		    sa << " -> ";
 		else
 		    sa << "\n" << indent << "    -> ";
-		const HookupI &ht = _hookup_to[d];
+		const HookupI &ht = _conn[d].to();
 		if (ht.port)
 		    sa << "[" << ht.port << "] ";
 		sa << ename(ht.idx);
@@ -1242,7 +1238,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 
 	// add new chains to include cycles
 	done = true;
-	for (int c = 0; c < nhookup && done; c++)
+	for (int c = 0; c < nc && done; c++)
 	    if (!used[c])
 		startchain[c] = true, done = false;
     }

@@ -144,7 +144,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     if (val < 0 || val >= x->noutputs() || connv_out[val] < 0)
       jump_hook = HookupI(idle, idle_in++);
     else
-      jump_hook = r->hookup_to()[connv_out[val]];
+      jump_hook = r->hookup_to(connv_out[val]);
     
     Vector<HookupI> conns_to;
     r->find_connections_to(HookupI(x->idx(), 0), conns_to);
@@ -194,7 +194,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     if (val < 0 || val >= x->ninputs() || connv_in[val] < 0)
       jump_hook = HookupI(idle, idle_out++);
     else
-      jump_hook = r->hookup_from()[connv_in[val]];
+      jump_hook = r->hookup_from(connv_in[val]);
     
     Vector<HookupI> conns_from;
     r->find_connections_from(HookupI(x->idx(), 0), conns_from);
@@ -446,16 +446,15 @@ find_live_elements(const RouterT *r, const char *filename,
     }
   }
 
-  int nh = r->nhookup();
-  const Vector<HookupI> &hf = r->hookup_from();
-  const Vector<HookupI> &ht = r->hookup_to();
+  int nh = r->nconnections();
+  const Vector<ConnectionT> &conn = r->connections();
   
   // spread sources
   bool changed = true;
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      int f = hf[i].idx, t = ht[i].idx;
+      int f = conn[i].from_idx(), t = conn[i].to_idx();
       if (f >= 0 && !sources[t] && sources[f] && !dead[t])
 	sources[t] = changed = true;
     }
@@ -466,7 +465,7 @@ find_live_elements(const RouterT *r, const char *filename,
   while (changed) {
     changed = false;
     for (int i = 0; i < nh; i++) {
-      int f = hf[i].idx, t = ht[i].idx;
+      int f = conn[i].from_idx(), t = conn[i].to_idx();
       if (f >= 0 && !sinks[f] && sinks[t] && !dead[f])
 	sinks[f] = changed = true;
     }

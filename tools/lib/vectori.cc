@@ -23,5 +23,7 @@
 template class Vector<int>;
 template class Vector<unsigned>;
 template class Vector<String>;
+template class Vector<Hookup>;
 template class Vector<HookupI>;
+template class Vector<ConnectionT>;
 template class Vector<RouterT::Pair>;

@@ -73,14 +73,14 @@ AdjacencyMatrix::init(RouterT *r)
   }
 
   // add connections
-  int nh = r->nhookup();
+  int nh = r->nconnections();
   if (nh) {
-    const HookupI *hf = &(r->hookup_from()[0]);	// avoid bounds checks
-    const HookupI *ht = &(r->hookup_to()[0]);
+    // avoid bounds checks
+    const ConnectionT *conn = &(r->connections()[0]);
     for (int i = 0; i < nh; i++)
-      if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx)
-	_x[ hf[i].idx + (ht[i].idx<<cap) ] |=
-	  connection_indicator(hf[i].port, ht[i].port);
+      if (conn[i].live() && conn[i].from_idx() != conn[i].to_idx())
+	_x[ conn[i].from_idx() + (conn[i].to_idx()<<cap) ] |=
+	  connection_indicator(conn[i].from_port(), conn[i].to_port());
   }
 
   _output_0_of.clear();
@@ -124,14 +124,14 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   }
 
   // now set new connections
-  int nh = r->nhookup();
+  int nh = r->nconnections();
   if (nh) {
-    const HookupI *hf = &(r->hookup_from()[0]);	// avoid bounds checks
-    const HookupI *ht = &(r->hookup_to()[0]);
+    // avoid bounds checks
+    const ConnectionT *conn = &(r->connections()[0]);
     for (int i = 0; i < nh; i++)
-      if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx)
-	_x[ hf[i].idx + (ht[i].idx<<cap) ] |=
-	  connection_indicator(hf[i].port, ht[i].port);
+      if (conn[i].live() && conn[i].from_idx() != conn[i].to_idx())
+	_x[ conn[i].from_idx() + (conn[i].to_idx()<<cap) ] |=
+	  connection_indicator(conn[i].from_port(), conn[i].to_port());
   }
 
   _output_0_of.clear();
@@ -143,15 +143,14 @@ AdjacencyMatrix::init_pattern() const
   // checking for a single connection from output 0
   RouterT *r = _router;
   Vector<int> output_0(_n, -1);
-  const Vector<HookupI> &hf = r->hookup_from();
-  const Vector<HookupI> &ht = r->hookup_to();
-  for (int i = 0; i < hf.size(); i++)
-    if (hf[i].live() && hf[i].port == 0) {
-      int fromi = hf[i].idx;
-      if (ht[i].idx == fromi || output_0[fromi] >= 0)
+  const Vector<ConnectionT> &conn = r->connections();
+  for (int i = 0; i < conn.size(); i++)
+    if (conn[i].live() && conn[i].from_port() == 0) {
+      int fromi = conn[i].from_idx();
+      if (conn[i].to_idx() == fromi || output_0[fromi] >= 0)
 	output_0[fromi] = -2;
       else if (output_0[fromi] == -1)
-	output_0[fromi] = ht[i].idx;
+	output_0[fromi] = conn[i].to_idx();
     }
 
   // set _output_0_of
@@ -278,14 +277,13 @@ check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
 			   const Vector<int> &match)
 {
   // check connections
-  const Vector<HookupI> &hf = pat->hookup_from();
-  const Vector<HookupI> &ht = pat->hookup_to();
-  int nh = hf.size();
+  const Vector<ConnectionT> &conn = pat->connections();
+  int nh = conn.size();
   for (int i = 0; i < nh; i++) {
-    if (match[hf[i].idx] < 0 || match[ht[i].idx] < 0)
+    if (match[conn[i].from_idx()] < 0 || match[conn[i].to_idx()] < 0)
       continue;
-    if (!input->has_connection(HookupI(match[hf[i].idx], hf[i].port),
-			       HookupI(match[ht[i].idx], ht[i].port)))
+    if (!input->has_connection(HookupI(match[conn[i].from_idx()], conn[i].from_port()),
+			       HookupI(match[conn[i].to_idx()], conn[i].to_port())))
       return false;
   }
   return true;

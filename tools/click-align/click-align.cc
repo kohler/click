@@ -141,16 +141,15 @@ RouterAlign::have_output()
 bool
 RouterAlign::have_input()
 {
-  const Vector<HookupI> &hf = _router->hookup_from();
-  const Vector<HookupI> &ht = _router->hookup_to();
-  int nh = hf.size();
+  const Vector<ConnectionT> &conn = _router->connections();
+  int nh = conn.size();
   int nialign = _ialign.size();
 
   Vector<Alignment> new_ialign(nialign, Alignment());
   for (int i = 0; i < nh; i++)
-    if (hf[i].idx >= 0) {
-      int ioff = _ioffset[ht[i].idx] + ht[i].port;
-      int ooff = _ooffset[hf[i].idx] + hf[i].port;
+    if (conn[i].live()) {
+      int ioff = _ioffset[conn[i].to_idx()] + conn[i].to_port();
+      int ooff = _ooffset[conn[i].from_idx()] + conn[i].from_port();
       new_ialign[ioff] |= _oalign[ooff];
     }
 
@@ -175,16 +174,15 @@ RouterAlign::want_input()
 bool
 RouterAlign::want_output()
 {
-  const Vector<HookupI> &hf = _router->hookup_from();
-  const Vector<HookupI> &ht = _router->hookup_to();
-  int nh = hf.size();
+  const Vector<ConnectionT> &conn = _router->connections();
+  int nh = conn.size();
   int noalign = _oalign.size();
 
   Vector<Alignment> new_oalign(noalign, Alignment());
   for (int i = 0; i < nh; i++)
-    if (hf[i].idx >= 0) {
-      int ioff = _ioffset[ht[i].idx] + ht[i].port;
-      int ooff = _ooffset[hf[i].idx] + hf[i].port;
+    if (conn[i].live()) {
+      int ioff = _ioffset[conn[i].to_idx()] + conn[i].to_port();
+      int ooff = _ooffset[conn[i].from_idx()] + conn[i].from_port();
       new_oalign[ooff] &= _ialign[ioff];
     }
   /* for (int i = 0; i < noalign; i++)
@@ -451,24 +449,23 @@ particular purpose.\n");
 
   // remove useless Aligns
   {
-    const Vector<HookupI> &hf = router->hookup_from();
-    const Vector<HookupI> &ht = router->hookup_to();
-    int nhook = hf.size();
+    const Vector<ConnectionT> &conn = router->connections();
+    int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (hf[i].idx >= 0
-	  && router->etype(ht[i].idx) == align_class
-	  && router->etype(hf[i].idx) == align_class) {
+      if (conn[i].live()
+	  && router->etype(conn[i].to_idx()) == align_class
+	  && router->etype(conn[i].from_idx()) == align_class) {
 	// skip over hf[i]
 	Vector<HookupI> above, below;
-	router->find_connections_to(hf[i], above);
-	router->find_connections_from(hf[i], below);
+	router->find_connections_to(conn[i].from(), above);
+	router->find_connections_from(conn[i].from(), below);
 	if (below.size() == 1) {
 	  for (int j = 0; j < nhook; j++)
-	    if (ht[j] == hf[i])
-	      router->change_connection_to(j, ht[i]);
+	    if (conn[j].to() == conn[i].from())
+	      router->change_connection_to(j, conn[i].to());
 	} else if (above.size() == 1) {
 	  for (int j = 0; j < nhook; j++)
-	    if (ht[j] == ht[i])
+	    if (conn[j].to() == conn[i].to())
 	      router->change_connection_from(j, above[0]);
 	}
       }
@@ -517,19 +514,18 @@ particular purpose.\n");
     bool changed = false;
     
     // skip redundant Aligns
-    const Vector<HookupI> &hf = router->hookup_from();
-    const Vector<HookupI> &ht = router->hookup_to();
-    int nhook = hf.size();
+    const Vector<ConnectionT> &conn = router->connections();
+    int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (hf[i].idx >= 0 && router->etype(ht[i].idx) == align_class) {
-	Alignment have = ral._oalign[ ral._ooffset[hf[i].idx] + hf[i].port ];
-	Alignment want = ral._oalign[ ral._ooffset[ht[i].idx] ];
+      if (conn[i].live() && router->etype(conn[i].to_idx()) == align_class) {
+	Alignment have = ral._oalign[ ral._ooffset[conn[i].from_idx()] + conn[i].from_port() ];
+	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_idx()] ];
 	if (have <= want) {
 	  changed = true;
 	  Vector<HookupI> align_dest;
-	  router->find_connections_from(ht[i], align_dest);
+	  router->find_connections_from(conn[i].to(), align_dest);
 	  for (int j = 0; j < align_dest.size(); j++)
-	    router->add_connection(hf[i], align_dest[j]);
+	    router->add_connection(conn[i].from(), align_dest[j]);
 	  router->kill_connection(i);
 	}
       }

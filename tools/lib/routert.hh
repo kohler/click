@@ -63,19 +63,17 @@ class RouterT { public:
 
     void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector=v; }
 
-    int nhookup() const				{ return _hookup_from.size(); }
-    const Vector<HookupI> &hookup_from() const	{ return _hookup_from; }
-    const HookupI &hookup_from(int c) const	{ return _hookup_from[c]; }
-    const Vector<HookupI> &hookup_to() const	{ return _hookup_to; }
-    const HookupI &hookup_to(int c) const	{ return _hookup_to[c]; }
-    const Vector<String> &hookup_landmark() const { return _hookup_landmark; }
-    const String &hookup_landmark(int c) const	{ return _hookup_landmark[c]; }
-    bool hookup_live(int c) const	{ return _hookup_from[c].live(); }
+    int nconnections() const			{ return _conn.size(); }
+    const Vector<ConnectionT> &connections() const { return _conn; }
+    bool connection_live(int c) const		{ return _conn[c].live(); }
+    const HookupI &hookup_from(int c) const	{ return _conn[c].from(); }
+    const HookupI &hookup_to(int c) const	{ return _conn[c].to(); }
+    const String &hookup_landmark(int c) const	{ return _conn[c].landmark(); }
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
 
-    bool add_connection(HookupI, HookupI, const String &landmark = String());
-    bool add_connection(int fidx, int fport, int tport, int tidx);
+    bool add_connection(const HookupI &, const HookupI &, const String &landmark = String());
+    bool add_connection(int, int, int, int, const String &landmark = String());
     void kill_connection(int);
     void kill_bad_connections();
     void compact_connections();
@@ -164,12 +162,9 @@ class RouterT { public:
     int _real_ecount;
     Vector<int> *_new_eindex_collector;
 
-    Vector<HookupI> _hookup_from;
-    Vector<HookupI> _hookup_to;
-    Vector<String> _hookup_landmark;
-    Vector<Pair> _hookup_next;
-    Vector<Pair> _hookup_first;
-    int _free_hookup;
+    Vector<ConnectionT> _conn;
+    Vector<Pair> _first_conn;
+    int _free_conn;
 
     Vector<String> _requirements;
 
@@ -290,9 +285,10 @@ RouterT::econfiguration(int e) const
 }
 
 inline bool
-RouterT::add_connection(int fidx, int fport, int tport, int tidx)
+RouterT::add_connection(int from_idx, int from_port, int to_idx, int to_port,
+			const String &landmark)
 {
-    return add_connection(HookupI(fidx, fport), HookupI(tidx, tport));
+    return add_connection(HookupI(from_idx, from_port), HookupI(to_idx, to_port), landmark);
 }
 
 inline bool

@@ -53,26 +53,12 @@ ProcessingT::create_pidx(ErrorHandler *errh)
     _output_pidx.assign(ne, 0);
 
     // count used input and output ports for each element
-    int nh = _router->nhookup();
-    const Vector<HookupI> &hf = _router->hookup_from();
-    const Vector<HookupI> &ht = _router->hookup_to();
-    for (int i = 0; i < nh; i++) {
-	const HookupI &ho = hf[i];
-	if (ho.idx < 0)
-	    continue;
-	if (ho.port >= _output_pidx[ho.idx])
-	    _output_pidx[ho.idx] = ho.port + 1;
-	const HookupI &hi = ht[i];
-	if (hi.port >= _input_pidx[hi.idx])
-	    _input_pidx[hi.idx] = hi.port + 1;
-    }
-
     int ci = 0, co = 0;
     for (int i = 0; i < ne; i++) {
-	int ni = _input_pidx[i], no = _output_pidx[i];
 	_input_pidx[i] = ci;
 	_output_pidx[i] = co;
-	ci += ni, co += no;
+	ci += _router->element(i)->ninputs();
+	co += _router->element(i)->noutputs();
     }
     _input_pidx.push_back(ci);
     _output_pidx.push_back(co);
@@ -194,7 +180,7 @@ ProcessingT::processing_error(const HookupI &hfrom, const HookupI &hto,
 {
   const char *type1 = (processing_from == VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == VPUSH ? "pull" : "push");
-  if (which < _router->nhookup())
+  if (which < _router->nconnections())
     errh->lerror(_router->hookup_landmark(which),
 		 "`%s' %s output %d connected to `%s' %s input %d",
 		 _router->ename(hfrom.idx).cc(), type1, hfrom.port,
@@ -209,63 +195,61 @@ ProcessingT::processing_error(const HookupI &hfrom, const HookupI &hto,
 void
 ProcessingT::check_processing(ErrorHandler *errh)
 {
-  // add fake connections for agnostics
-  Vector<HookupI> hookup_from = _router->hookup_from();
-  Vector<HookupI> hookup_to = _router->hookup_to();
-  Bitvector bv;
-  for (int i = 0; i < ninput_pidx(); i++)
-    if (_input_processing[i] == VAGNOSTIC) {
-      int ei = _input_eidx[i];
-      int port = i - _input_pidx[ei];
-      int opidx = _output_pidx[ei];
-      int noutputs = _output_pidx[ei+1] - opidx;
-      forward_flow(_router->etype(ei)->traits().flow_code(),
-		   port, noutputs, &bv);
-      for (int j = 0; j < noutputs; j++)
-	if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC) {
-	  hookup_from.push_back(HookupI(ei, j));
-	  hookup_to.push_back(HookupI(ei, port));
+    // add fake connections for agnostics
+    Vector<ConnectionT> conn = _router->connections();
+    Bitvector bv;
+    for (int i = 0; i < ninput_pidx(); i++)
+	if (_input_processing[i] == VAGNOSTIC) {
+	    int ei = _input_eidx[i];
+	    int port = i - _input_pidx[ei];
+	    int opidx = _output_pidx[ei];
+	    int noutputs = _output_pidx[ei+1] - opidx;
+	    forward_flow(_router->etype(ei)->traits().flow_code(),
+			 port, noutputs, &bv);
+	    for (int j = 0; j < noutputs; j++)
+		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
+		    conn.push_back(ConnectionT(HookupI(ei, j), HookupI(ei, port)));
 	}
-    }
-  
-  // spread personalities
-  while (true) {
+
+    // spread personalities
+    while (true) {
     
-    bool changed = false;
-    for (int c = 0; c < hookup_from.size(); c++) {
-      if (hookup_from[c].idx < 0)
-	continue;
-      
-      int offf = output_pidx(hookup_from[c]);
-      int offt = input_pidx(hookup_to[c]);
-      int pf = _output_processing[offf];
-      int pt = _input_processing[offt];
-      
-      switch (pt) {
+	bool changed = false;
+	for (int c = 0; c < conn.size(); c++) {
+	    if (conn[c].dead())
+		continue;
+
+	    int offf = output_pidx(conn[c].from());
+	    int offt = input_pidx(conn[c].to());
+	    int pf = _output_processing[offf];
+	    int pt = _input_processing[offt];
+
+	    switch (pt) {
 	
-       case VAGNOSTIC:
-	if (pf != VAGNOSTIC) {
-	  _input_processing[offt] = pf;
-	  changed = true;
+	      case VAGNOSTIC:
+		if (pf != VAGNOSTIC) {
+		    _input_processing[offt] = pf;
+		    changed = true;
+		}
+		break;
+	
+	      case VPUSH:
+	      case VPULL:
+		if (pf == VAGNOSTIC) {
+		    _output_processing[offf] = pt;
+		    changed = true;
+		} else if (pf != pt) {
+		    processing_error(conn[c].from(), conn[c].to(), c, pf,errh);
+		    conn[c].kill();
+		}
+		break;
+	
+	    }
 	}
-	break;
-	
-       case VPUSH:
-       case VPULL:
-	if (pf == VAGNOSTIC) {
-	  _output_processing[offf] = pt;
-	  changed = true;
-	} else if (pf != pt) {
-	  processing_error(hookup_from[c], hookup_to[c], c, pf, errh);
-	  hookup_from[c].idx = -1;
-	}
-	break;
-	
-      }
+
+	if (!changed)
+	    break;
     }
-    
-    if (!changed) break;
-  }
 }
 
 static const char *
@@ -284,70 +268,71 @@ processing_name(int p)
 void
 ProcessingT::check_connections(ErrorHandler *errh)
 {
-  Vector<int> input_used(ninput_pidx(), -1);
-  Vector<int> output_used(noutput_pidx(), -1);
-  
-  // Check each hookup to ensure it doesn't reuse a port
-  const Vector<HookupI> &hf = _router->hookup_from();
-  const Vector<HookupI> &ht = _router->hookup_to();
-  for (int c = 0; c < hf.size(); c++) {
-    if (hf[c].idx < 0)
-      continue;
-    
-    int fp = output_pidx(hf[c]), tp = input_pidx(ht[c]);
+    Vector<int> input_used(ninput_pidx(), -1);
+    Vector<int> output_used(noutput_pidx(), -1);
 
-    if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
-      errh->lerror(_router->hookup_landmark(c),
-		   "reuse of `%s' push output %d",
-		   _router->ename(hf[c].idx).cc(), hf[c].port);
-      errh->lmessage(_router->hookup_landmark(output_used[fp]),
-		     "  `%s' output %d previously used here",
-		     _router->ename(hf[c].idx).cc(), hf[c].port);
-    } else
-      output_used[fp] = c;
-    
-    if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
-      errh->lerror(_router->hookup_landmark(c),
-		   "reuse of `%s' pull input %d",
-		   _router->ename(ht[c].idx).cc(), ht[c].port);
-      errh->lmessage(_router->hookup_landmark(input_used[tp]),
-		     "  `%s' input %d previously used here",
-		     _router->ename(ht[c].idx).cc(), ht[c].port);
-    } else
-      input_used[tp] = c;
-  }
+    // Check each hookup to ensure it doesn't reuse a port
+    const Vector<ConnectionT> &conn = _router->connections();
+    for (int c = 0; c < conn.size(); c++) {
+	if (conn[c].dead())
+	    continue;
 
-  // Check for unused inputs and outputs, set _connected_* properly.
-  for (int i = 0; i < ninput_pidx(); i++)
-    if (input_used[i] < 0) {
-      int ei = _input_eidx[i];
-      if (_router->edead(ei)) continue;
-      int port = i - _input_pidx[ei];
-      errh->lerror(_router->elandmark(ei),
-		   "`%s' %s input %d not connected",
-		   _router->ename(ei).cc(), processing_name(_input_processing[i]), port);
-    }
-  
-  for (int i = 0; i < noutput_pidx(); i++)
-    if (output_used[i] < 0) {
-      int ei = _output_eidx[i];
-      if (_router->edead(ei)) continue;
-      int port = i - _output_pidx[ei];
-      errh->lerror(_router->elandmark(ei),
-		   "`%s' %s output %d not connected",
-		   _router->ename(ei).cc(), processing_name(_output_processing[i]), port);
+	const HookupI &hf = conn[c].from(), &ht = conn[c].to();
+	int fp = output_pidx(hf), tp = input_pidx(ht);
+
+	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
+	    errh->lerror(conn[c].landmark(),
+			 "reuse of `%s' push output %d",
+			 _router->ename(hf.idx).cc(), hf.port);
+	    errh->lmessage(_router->hookup_landmark(output_used[fp]),
+			   "  `%s' output %d previously used here",
+			   _router->ename(hf.idx).cc(), hf.port);
+	} else
+	    output_used[fp] = c;
+    
+	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
+	    errh->lerror(conn[c].landmark(),
+			 "reuse of `%s' pull input %d",
+			 _router->ename(ht.idx).cc(), ht.port);
+	    errh->lmessage(_router->hookup_landmark(input_used[tp]),
+			   "  `%s' input %d previously used here",
+			   _router->ename(ht.idx).cc(), ht.port);
+	} else
+	    input_used[tp] = c;
     }
 
-  // Set _connected_* properly.
-  HookupI crap(-1, -1);
-  _connected_input.assign(ninput_pidx(), crap);
-  _connected_output.assign(noutput_pidx(), crap);
-  for (int i = 0; i < ninput_pidx(); i++)
-    if (_input_processing[i] == VPULL && input_used[i] >= 0)
-      _connected_input[i] = hf[ input_used[i] ];
-  for (int i = 0; i < noutput_pidx(); i++)
-    if (_output_processing[i] == VPUSH && output_used[i] >= 0)
-      _connected_output[i] = ht[ output_used[i] ];
+    // Check for unused inputs and outputs, set _connected_* properly.
+    for (int i = 0; i < ninput_pidx(); i++)
+	if (input_used[i] < 0) {
+	    int ei = _input_eidx[i];
+	    if (_router->edead(ei))
+		continue;
+	    int port = i - _input_pidx[ei];
+	    errh->lerror(_router->elandmark(ei),
+			 "`%s' %s input %d not connected",
+			 _router->ename(ei).cc(), processing_name(_input_processing[i]), port);
+	}
+
+    for (int i = 0; i < noutput_pidx(); i++)
+	if (output_used[i] < 0) {
+	    int ei = _output_eidx[i];
+	    if (_router->edead(ei)) continue;
+	    int port = i - _output_pidx[ei];
+	    errh->lerror(_router->elandmark(ei),
+			 "`%s' %s output %d not connected",
+			 _router->ename(ei).cc(), processing_name(_output_processing[i]), port);
+	}
+
+    // Set _connected_* properly.
+    HookupI crap(-1, -1);
+    _connected_input.assign(ninput_pidx(), crap);
+    _connected_output.assign(noutput_pidx(), crap);
+    for (int i = 0; i < ninput_pidx(); i++)
+	if (_input_processing[i] == VPULL && input_used[i] >= 0)
+	    _connected_input[i] = conn[ input_used[i] ].from();
+    for (int i = 0; i < noutput_pidx(); i++)
+	if (_output_processing[i] == VPUSH && output_used[i] >= 0)
+	    _connected_output[i] = conn[ output_used[i] ].to();
 }
 
 int

@@ -159,9 +159,8 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   assert(compname.back() == '/');
   
   int ne = r->nelements();
-  int nh = r->nhookup();
-  const Vector<HookupI> &hf = r->hookup_from();
-  const Vector<HookupI> &ht = r->hookup_to();
+  int nh = r->nconnections();
+  const Vector<ConnectionT> &conn = r->connections();
   
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
@@ -178,13 +177,13 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   do {
     changed = false;
     for (int i = 0; i < nh; i++)
-      if (hf[i].dead())
+      if (conn[i].dead())
 	/* nada */;
-      else if (live[hf[i].idx] && !live[ht[i].idx]) {
-	live[ht[i].idx] = 1;
+      else if (live[conn[i].from_idx()] && !live[conn[i].to_idx()]) {
+	live[conn[i].to_idx()] = 1;
 	changed = true;
-      } else if (live[ht[i].idx] && !live[hf[i].idx]) {
-	live[hf[i].idx] = 1;
+      } else if (live[conn[i].to_idx()] && !live[conn[i].from_idx()]) {
+	live[conn[i].from_idx()] = 1;
 	changed = true;
       }
   } while (changed);

@@ -99,18 +99,17 @@ Matcher::~Matcher()
 bool
 Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
 {
-  const Vector<HookupI> &phf = _pat->hookup_from();
-  const Vector<HookupI> &pht = _pat->hookup_to();
+  const Vector<ConnectionT> &pconn = _pat->connections();
   HookupI phinside(_back_match[hinside.idx], hinside.port);
   HookupI success(_pat->nelements(), 0);
   // now look for matches
-  for (int i = 0; i < phf.size(); i++)
-    if (pht[i] == phinside && phf[i].idx == _pat_input_idx
-	&& phf[i] < success) {
+  for (int i = 0; i < pconn.size(); i++)
+    if (pconn[i].to() == phinside && pconn[i].from_idx() == _pat_input_idx
+	&& pconn[i].from() < success) {
       Vector<HookupI> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
       // in body
-      _pat->find_connections_from(phf[i], pfrom_phf);
+      _pat->find_connections_from(pconn[i].from(), pfrom_phf);
       _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
 	HookupI want(_match[pfrom_phf[j].idx], pfrom_phf[j].port);
@@ -118,7 +117,7 @@ Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
 	  goto no_match;
       }
       // success: save it
-      success = phf[i];
+      success = pconn[i].from();
      no_match: ;
     }
   // if succeeded, save it
@@ -133,18 +132,17 @@ Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
 bool
 Matcher::check_out_of(const HookupI &hinside, const HookupI &houtside)
 {
-  const Vector<HookupI> &phf = _pat->hookup_from();
-  const Vector<HookupI> &pht = _pat->hookup_to();
+  const Vector<ConnectionT> &pconn = _pat->connections();
   HookupI phinside(_back_match[hinside.idx], hinside.port);
   HookupI success(_pat->nelements(), 0);
   // now look for matches
-  for (int i = 0; i < phf.size(); i++)
-    if (phf[i] == phinside && pht[i].idx == _pat_output_idx
-	&& pht[i] < success) {
+  for (int i = 0; i < pconn.size(); i++)
+    if (pconn[i].from() == phinside && pconn[i].to_idx() == _pat_output_idx
+	&& pconn[i].to() < success) {
       Vector<HookupI> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
       // in body
-      _pat->find_connections_to(pht[i], pto_pht);
+      _pat->find_connections_to(pconn[i].to(), pto_pht);
       _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
 	HookupI want(_match[pto_pht[j].idx], pto_pht[j].port);
@@ -152,7 +150,7 @@ Matcher::check_out_of(const HookupI &hinside, const HookupI &houtside)
 	  goto no_match;
       }
       // success: save it
-      success = pht[i];
+      success = pconn[i].to();
      no_match: ;
     }
   // if succeeded, save it
@@ -199,14 +197,13 @@ Matcher::check_match()
 
   // find the pattern ports any cross-pattern jumps correspond to
   //fprintf(stderr, "XPJ\n");
-  const Vector<HookupI> &hfrom = _body->hookup_from();
-  const Vector<HookupI> &hto = _body->hookup_to();
-  int nhook = hfrom.size();
+  const Vector<ConnectionT> &conn = _body->connections();
+  int nhook = conn.size();
 
   for (int i = 0; i < nhook; i++) {
-    const HookupI &hf = hfrom[i], &ht = hto[i];
-    if (hf.idx < 0)
+    if (conn[i].dead())
       continue;
+    const HookupI &hf = conn[i].from(), &ht = conn[i].to();
     int pf = _back_match[hf.idx], pt = _back_match[ht.idx];
     if (pf >= 0 && pt >= 0) {
       if (!_pat->has_connection(HookupI(pf, hf.port), HookupI(pt, ht.port)))
@@ -222,12 +219,13 @@ Matcher::check_match()
 
   // check for unconnected tunnels in the pattern
   //fprintf(stderr, "UNC\n");
-  const Vector<HookupI> &phf = _pat->hookup_from();
-  const Vector<HookupI> &pht = _pat->hookup_to();
-  for (int i = 0; i < phf.size(); i++) {
-    if (phf[i].idx == _pat_input_idx && phf[i].index_in(_to_pp_to) < 0)
+  const Vector<ConnectionT> &pconn = _pat->connections();
+  for (int i = 0; i < pconn.size(); i++) {
+    if (pconn[i].from_idx() == _pat_input_idx
+	&& pconn[i].from().index_in(_to_pp_to) < 0)
       return false;
-    if (pht[i].idx == _pat_output_idx && pht[i].index_in(_from_pp_from) < 0)
+    if (pconn[i].to_idx() == _pat_output_idx
+	&& pconn[i].to().index_in(_from_pp_from) < 0)
       return false;
   }
 

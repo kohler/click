@@ -162,9 +162,9 @@ combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
   router->kill_connection(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
     router->change_connection_from(first_hop[i], HookupI(from_i, i + to_words.size() - 1));
-  const Vector<HookupI> &ht = router->hookup_to();
+  const Vector<ConnectionT> &conn = router->connections();
   for (int i = 0; i < second_hop.size(); i++)
-    router->add_connection(HookupI(from_i, from_port + i), ht[second_hop[i]]);
+    router->add_connection(HookupI(from_i, from_port + i), conn[second_hop[i]].to());
 
   return true;
 }
@@ -177,13 +177,13 @@ try_combine_classifiers(RouterT *router, int class_i)
     // cannot combine IPClassifiers yet
     return false;
 
-  const Vector<HookupI> &hf = router->hookup_from();
-  const Vector<HookupI> &ht = router->hookup_to();
-  for (int i = 0; i < hf.size(); i++)
-    if (hf[i].idx == class_i && router->etype(ht[i].idx) == classifier_t
-	&& ht[i].port == 0) {
+  const Vector<ConnectionT> &conn = router->connections();
+  for (int i = 0; i < conn.size(); i++)
+    if (conn[i].from_idx() == class_i
+	&& router->etype(conn[i].to_idx()) == classifier_t
+	&& conn[i].to_port() == 0) {
       // perform a combination
-      if (combine_classifiers(router, class_i, hf[i].port, ht[i].idx)) {
+      if (combine_classifiers(router, class_i, conn[i].from_port(), conn[i].to_idx())) {
 	try_combine_classifiers(router, class_i);
 	return true;
       }

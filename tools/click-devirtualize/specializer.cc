@@ -34,13 +34,9 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
 {
   _etinfo.push_back(ElementTypeInfo());
   
-  const Vector<HookupI> &hf = router->hookup_from();
-  const Vector<HookupI> &ht = router->hookup_to();
-  for (int i = 0; i < hf.size(); i++) {
-    if (hf[i].port >= _noutputs[hf[i].idx])
-      _noutputs[hf[i].idx] = hf[i].port + 1;
-    if (ht[i].port >= _ninputs[ht[i].idx])
-      _ninputs[ht[i].idx] = ht[i].port + 1;
+  for (RouterT::iterator x = router->first_element(); x; x++) {
+    _noutputs[x->idx()] = x->noutputs();
+    _ninputs[x->idx()] = x->ninputs();
   }
 
   // prepare from element map
@@ -340,21 +336,20 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   CxxClass *cxxc = spc.cxxc;
   
   // create mangled names of attached push and pull functions
-  const Vector<HookupI> &hf = _router->hookup_from();
-  const Vector<HookupI> &ht = _router->hookup_to();
-  int nhook = _router->nhookup();
+  const Vector<ConnectionT> &conn = _router->connections();
+  int nhook = _router->nconnections();
   Vector<String> input_class(_ninputs[eindex], String());
   Vector<String> output_class(_noutputs[eindex], String());
   Vector<int> input_port(_ninputs[eindex], -1);
   Vector<int> output_port(_noutputs[eindex], -1);
   for (int i = 0; i < nhook; i++) {
-    if (hf[i].idx == eindex) {
-      output_class[hf[i].port] = enew_cxx_type(ht[i].idx);
-      output_port[hf[i].port] = ht[i].port;
+    if (conn[i].from_idx() == eindex) {
+      output_class[conn[i].from_port()] = enew_cxx_type(conn[i].to_idx());
+      output_port[conn[i].from_port()] = conn[i].to_port();
     }
-    if (ht[i].idx == eindex) {
-      input_class[ht[i].port] = enew_cxx_type(hf[i].idx);
-      input_port[ht[i].port] = hf[i].port;
+    if (conn[i].to_idx() == eindex) {
+      input_class[conn[i].to_port()] = enew_cxx_type(conn[i].from_idx());
+      input_port[conn[i].to_port()] = conn[i].from_port();
     }
   }
 
