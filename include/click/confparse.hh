@@ -191,6 +191,7 @@ int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
 int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse_remove_keywords(Vector<String> &, int, CP_VA_PARSE_ARGS_REST);
 // Takes: cpEnd					end of argument list
 //        cpOptional, cpKeywords, cpIgnore...	manipulators
 //        CpVaParseCmd type_id,			actual argument

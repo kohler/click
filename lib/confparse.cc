@@ -529,12 +529,17 @@ cp_pop_spacevec(String &conf)
 String
 cp_unargvec(const Vector<String> &args)
 {
-  StringAccum sa;
-  for (int i = 0; i < args.size(); i++) {
-    if (i) sa << ", ";
-    sa << args[i];
+  if (args.size() == 0)
+    return String();
+  else if (args.size() == 1)
+    return args[0];
+  else {
+    StringAccum sa;
+    sa << args[0];
+    for (int i = 1; i < args.size(); i++)
+      sa << ", " << args[i];
+    return sa.take_string();
   }
-  return sa.take_string();
 }
 
 String
@@ -2501,6 +2506,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 
 #define CP_VALUES_SIZE 80
 static cp_value *cp_values;
+static Vector<int> *cp_parameter_used;
 
 enum {
   kwSuccess = 0,
@@ -2610,7 +2616,7 @@ cp_va_parsev(const Vector<String> &args,
 	     bool keywords_only,
 	     ErrorHandler *errh, va_list val)
 {
-  if (!cp_values)
+  if (!cp_values || !cp_parameter_used)
     return errh->error("out of memory in cp_va_parse");
 
   int nvalues = 0;
@@ -2619,6 +2625,10 @@ cp_va_parsev(const Vector<String> &args,
   bool mandatory_keywords = false;
   bool ignore_rest = false;
   int nerrors_in = errh->nerrors();
+
+  //
+  // First, parse information about possible arguments from 'val'.
+  //
   
   if (keywords_only) {
     nrequired = npositional = 0;
@@ -2702,18 +2712,23 @@ cp_va_parsev(const Vector<String> &args,
   if (npositional < 0)
     npositional = nvalues;
 
-  // assign arguments to positions
+  //
+  // Next, assign parameters from 'conf' to argument slots.
+  //
+  
   int npositional_supplied = 0;
   StringAccum keyword_error_sa;
   bool any_keywords = false;
+  cp_parameter_used->assign(args.size(), 0);
   
   for (int i = 0; i < args.size(); i++) {
     // check for keyword if past mandatory positional arguments
     if (npositional_supplied >= nrequired) {
       int result = assign_keyword_argument(args[i], npositional, nvalues);
-      if (result == kwSuccess)
+      if (result == kwSuccess) {
+	(*cp_parameter_used)[i] = 1;
 	any_keywords = true;
-      else if (!any_keywords)
+      } else if (!any_keywords)
 	goto positional_argument; // optional argument, or too many arguments
       else if (ignore_rest)
 	/* no error */;
@@ -2724,8 +2739,10 @@ cp_va_parsev(const Vector<String> &args,
 
     // otherwise, assign positional argument
    positional_argument:
-    if (npositional_supplied < npositional)
+    if (npositional_supplied < npositional) {
+      (*cp_parameter_used)[i] = 1;
       cp_values[npositional_supplied].v_string = args[i];
+    }
     npositional_supplied++;
   }
   
@@ -2736,7 +2753,8 @@ cp_va_parsev(const Vector<String> &args,
   // report missing mandatory keywords
   for (int i = npositional; i < nvalues; i++)
     if (cp_values[i].v.i < 0) {
-      if (keyword_error_sa.length()) keyword_error_sa << ", ";
+      if (keyword_error_sa.length())
+	keyword_error_sa << ", ";
       keyword_error_sa << cp_values[i].keyword;
     }
   if (keyword_error_sa.length())
@@ -2891,6 +2909,43 @@ cp_va_parse_keyword(const String &arg,
   int retval = cp_va_parsev(conf, "argument", ", ", true, errh, val);
 #endif
   va_end(val);
+  return retval;
+}
+
+int
+cp_va_parse_remove_keywords(Vector<String> &conf, int first,
+#ifndef CLICK_TOOL
+			    Element *context,
+#endif
+			    ErrorHandler *errh, ...)
+{
+  Vector<String> conf2, *confp = &conf;
+  if (first > 0) {
+    for (int i = first; i < conf.size(); i++)
+      conf2.push_back(conf[i]);
+    confp = &conf2;
+  }
+  
+  va_list val;
+  va_start(val, errh);
+#ifndef CLICK_TOOL
+  int retval = cp_va_parsev(*confp, context, "argument", ", ", true, errh, val);
+#else
+  int retval = cp_va_parsev(*confp, "argument", ", ", true, errh, val);
+#endif
+  va_end(val);
+
+  // remove keywords that were used
+  if (retval >= 0) {
+    int delta = 0;
+    for (int i = first; i < conf.size(); i++)
+      if (!(*cp_parameter_used)[i - first])
+	delta++;
+      else if (delta)
+	conf[i - delta] = conf[i];
+    conf.resize(conf.size() - delta);
+  }
+  
   return retval;
 }
 
@@ -3181,6 +3236,7 @@ cp_va_static_initialize()
 #endif
 
   cp_values = new cp_value[CP_VALUES_SIZE];
+  cp_parameter_used = new Vector<int>;
 
 #ifdef TEST_REAL2
   test_unparse_real2();
@@ -3201,4 +3257,7 @@ cp_va_static_cleanup()
   memset(argtype_hash, 0, sizeof(argtype_hash));
 
   delete[] cp_values;
+  delete cp_parameter_used;
+  cp_values = 0;
+  cp_parameter_used = 0;
 }
