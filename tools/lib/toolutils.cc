@@ -263,7 +263,7 @@ remove_file_on_exit(const String &file)
 }
 
 static String
-path_find_file_2(const String &filename, String path, String default_path,
+path_find_file_2(const String &filename, String path, String &default_path,
 		 String subdir)
 {
   if (subdir && subdir.back() != '/') subdir += "/";
@@ -274,9 +274,10 @@ path_find_file_2(const String &filename, String path, String default_path,
     
     if (!dir && default_path) {
       // look in default path
-      String s = path_find_file_2(filename, default_path, String(), 0);
+      String was_default_path = default_path;
+      default_path = String();
+      String s = path_find_file_2(filename, was_default_path, default_path, 0);
       if (s) return s;
-      default_path = String();	// don't search default path twice
       
     } else if (dir) {
       if (dir.back() != '/') dir += "/";
@@ -302,21 +303,24 @@ path_find_file_2(const String &filename, String path, String default_path,
 
 String
 clickpath_find_file(const String &filename, const char *subdir,
-		    const String &default_path, ErrorHandler *errh = 0)
+		    String default_path, ErrorHandler *errh = 0)
 {
   const char *path = getenv("CLICKPATH");
+  String was_default_path = default_path;
   String s;
   if (path)
     s = path_find_file_2(filename, path, default_path, subdir);
-  else
-    s = path_find_file_2(filename, default_path, "", 0);
+  if (!s && default_path) {
+    default_path = String();
+    s = path_find_file_2(filename, was_default_path, default_path, 0);
+  }
   if (!s && subdir
       && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0)
       && (path = getenv("PATH")))
-    s = path_find_file_2(filename, path, "", 0);
+    s = path_find_file_2(filename, path, default_path, 0);
   if (!s && errh) {
     errh->message("cannot find file `%s'", String(filename).cc());
-    errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
+    errh->fatal("in CLICKPATH or `%s'", was_default_path.cc());
   }
   return s;
 }
