@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 
 #include <click/click_ip.h>
 #include <click/click_icmp.h>
@@ -60,6 +61,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   _label = "";
   bool print_id = false;
   bool print_time = false;
+  bool print_paint = false;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -69,6 +71,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
 		  "NBYTES", cpInteger, "number of bytes to dump", &_bytes,
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
+		  "PAINT", cpBool, "print paint?", &print_paint,
 		  cpEnd) < 0)
     return -1;
 
@@ -84,6 +87,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
 
   _print_id = print_id;
   _print_timestamp = print_time;
+  _print_paint = print_paint;
   
   delete[] _buf;
   _buf = 0;
@@ -129,6 +133,9 @@ IPPrint::simple_action(Packet *p)
   
   if (_print_id)
     sa << "id " << ntohs(iph->ip_id) << ": ";
+
+  if (_print_paint)
+    sa << "paint " << (int)PAINT_ANNO(p) << ": ";
   
   switch (iph->ip_p) {
     

@@ -70,6 +70,7 @@ class IPPrint : public Element { public:
   unsigned _bytes;		// Number of bytes to dump
   bool _print_id : 1;		// Print IP ID?
   bool _print_timestamp : 1;
+  bool _print_paint : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
 
 };
