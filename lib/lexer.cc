@@ -854,11 +854,11 @@ Lexer::lexical_scoping_out(int last)
   int *prev = &_last_element_type;
   while (*prev != last && *prev != ET_NULL) {
     assert(!(*prev & ET_SCOPED));
-    int next = _element_type_next[*prev];
-    if (next & ET_SCOPED)
+    int *next = &_element_type_next[*prev];
+    if (*next & ET_SCOPED)
       remove_element_type(*prev, prev);
     else
-      prev = &_element_type_next[*prev];
+      prev = next;
   }
 }
 
