@@ -233,7 +233,12 @@ PollDevice::run_scheduled()
     nskbs = _dev->rx_refill(_dev, 0);
 
   if (nskbs > 0) {
-    struct sk_buff *new_skbs = skbmgr_allocate_skbs(0, 1536, &nskbs);
+    /*
+     * Extra 16 bytes in the SKB for eepro100 RxFD -- perhaps there
+     * should be some callback to the device driver to query for the
+     * desired packet size.
+     */
+    struct sk_buff *new_skbs = skbmgr_allocate_skbs(0, 1536+16, &nskbs);
 
 #if CLICK_DEVICE_STATS
     if (_activations > 0)
