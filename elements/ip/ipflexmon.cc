@@ -128,7 +128,7 @@ IPFlexMonitor::push(int port, Packet *p)
 {
   IPAddress a;
 
-  click_ip *ip = (click_ip *) (p->data() + _offset);
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + _offset);
   if(_inputs[port]->srcdst == SRC)
     a = IPAddress(ip->ip_src);
   else

@@ -115,9 +115,9 @@ RoundRobinUDPIPEncap::simple_action(Packet *p)
   if (_pos == _naddrs) _pos = 0;
 
   // add to packet
-  p = p->push(sizeof(click_udp) + sizeof(click_ip));
-  click_ip *ip = (click_ip *)p->data();
-  click_udp *udp = (click_udp *)(ip + 1);
+  WritablePacket *q = p->push(sizeof(click_udp) + sizeof(click_ip));
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data());
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   // set up IP header
   ip->ip_v = IPVERSION;
@@ -178,7 +178,7 @@ RoundRobinUDPIPEncap::simple_action(Packet *p)
   } else
     udp->uh_sum = 0;
   
-  return p;
+  return q;
 }
 
 EXPORT_ELEMENT(RoundRobinUDPIPEncap)

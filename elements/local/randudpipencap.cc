@@ -129,9 +129,9 @@ RandomUDPIPEncap::simple_action(Packet *p)
   }
 
   // add to packet
-  p = p->push(sizeof(click_udp) + sizeof(click_ip));
-  click_ip *ip = (click_ip *)p->data();
-  click_udp *udp = (click_udp *)(ip + 1);
+  WritablePacket *q = p->push(sizeof(click_udp) + sizeof(click_ip));
+  click_ip *ip = reinterpret_cast<click_ip *>(q->data());
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   // set up IP header
   ip->ip_v = IPVERSION;
@@ -164,13 +164,13 @@ RandomUDPIPEncap::simple_action(Packet *p)
   }
 #endif
   
-  p->set_dst_ip_anno(IPAddress(addr->daddr));
-  p->set_ip_header(ip, sizeof(click_ip));
+  q->set_dst_ip_anno(IPAddress(addr->daddr));
+  q->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
   udp->uh_sport = htons(addr->sport);
   udp->uh_dport = htons(addr->dport);
-  unsigned short len = p->length() - sizeof(click_ip);
+  unsigned short len = q->length() - sizeof(click_ip);
   udp->uh_ulen = htons(len);
   if (addr->cksum) {
     unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
@@ -192,7 +192,7 @@ RandomUDPIPEncap::simple_action(Packet *p)
   } else
     udp->uh_sum = 0;
   
-  return p;
+  return q;
 }
 
 EXPORT_ELEMENT(RandomUDPIPEncap)

@@ -98,7 +98,7 @@ IPRewriter::Mapping::apply(WritablePacket *p)
 
   // UDP/TCP header
   if (iph->ip_p == IP_PROTO_TCP) {
-    click_tcp *tcph = (click_tcp *)((unsigned *)iph + iph->ip_hl);
+    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
     tcph->th_sport = _mapto.sport();
     tcph->th_dport = _mapto.dport();
     unsigned sum2 = (~ntohs(tcph->th_sum) & 0xFFFF) + _udp_csum_incr;
@@ -106,7 +106,7 @@ IPRewriter::Mapping::apply(WritablePacket *p)
       sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
     tcph->th_sum = ~htons(sum2);
   } else {
-    click_udp *udph = (click_udp *)((unsigned *)iph + iph->ip_hl);
+    click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
     udph->uh_sport = _mapto.sport();
     udph->uh_dport = _mapto.dport();
     if (udph->uh_sum) {		// 0 checksum is no checksum

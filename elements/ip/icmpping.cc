@@ -38,9 +38,10 @@ Packet *
 ICMPPing::make_echo_response(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
-  click_ether *eth_header = (click_ether *) p->data();
-  click_ip *ip_header = (click_ip *) (eth_header+1);
-  struct icmp_echo *icmp = (struct icmp_echo *) p->transport_header();
+  click_ether *eth_header = reinterpret_cast<click_ether *>(p->data());
+  click_ip *ip_header = reinterpret_cast<click_ip *>(eth_header + 1);
+  icmp_echo *icmp = reinterpret_cast<icmp_echo *>(ip_header + 1);
+  // XXX IP options
   unsigned len = ntohs(ip_header->ip_len) - (ip_header->ip_hl << 2);
 
   /* him */
@@ -82,6 +83,7 @@ ICMPPing::simple_action(Packet *p)
     reinterpret_cast<const click_ip *>(eth_header + 1);
   const icmp_generic *icmp =
     reinterpret_cast<const icmp_generic *>(ip_header + 1);
+  // XXX IP options
 
   if (ip_header->ip_p != IP_PROTO_ICMP) {
     click_chatter("icmpresponder: packet not an ICMP packet");

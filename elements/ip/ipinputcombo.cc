@@ -101,7 +101,7 @@ IPInputCombo::smaction(Packet *p)
   p->set_dst_ip_anno(IPAddress(p->data() + 16));
 
   /* CheckIPHeader */
-  click_ip *ip = (click_ip *) p->data();
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned hlen;
   
   if(p->length() < sizeof(click_ip))

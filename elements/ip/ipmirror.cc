@@ -28,7 +28,7 @@ IPMirror::simple_action(Packet *p_in)
   iph->ip_src = iph->ip_dst;
   iph->ip_dst = tmpa;
   
-  click_udp *udph = (click_udp *)p->transport_header();
+  click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
   unsigned short tmpp = udph->uh_sport;
   udph->uh_sport = udph->uh_dport;
   udph->uh_dport = tmpp;

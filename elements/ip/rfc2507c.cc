@@ -111,11 +111,10 @@ RFC2507c::make_compressed(int cid, Packet *p)
   int flags = 0; /* ROIPSAWU */
   int flen = 0;
   char fbuf[512]; /* encode into this buf[flen] */
-  click_ip *ipp = (click_ip *) p->data();
-  struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
+  const click_ip *ipp = p->ip_header();
+  const click_tcp *tcpp = reinterpret_cast<const click_tcp *>(p->transport_header());
   int x;
   struct tcpip *ctx = &_ccbs[cid]._context;
-  WritablePacket *q = 0;
 
   if(ipp->ip_v != ctx->_ip.ip_v ||
      ipp->ip_hl != ctx->_ip.ip_hl ||
@@ -124,13 +123,13 @@ RFC2507c::make_compressed(int cid, Packet *p)
      ipp->ip_ttl != ctx->_ip.ip_ttl ||
      tcpp->th_off != ctx->_tcp.th_off){
     click_chatter("full1");
-    goto full;
+    return make_full(cid, p);
   }
 
   x = encode16(ctx->_tcp.th_urp, tcpp->th_urp, fbuf, flen);
   if(x < 0){
     click_chatter("full urp");
-    goto full;
+    return make_full(cid, p);
   }
   if(x)
     flags |= 1;
@@ -138,7 +137,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   x = encode16(ctx->_tcp.th_win, tcpp->th_win, fbuf, flen);
   if(x < 0){
     click_chatter("full win");
-    goto full;
+    return make_full(cid, p);
   }
   if(x)
     flags |= (1 << 1);
@@ -146,7 +145,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   x = encode32(ctx->_tcp.th_ack, tcpp->th_ack, fbuf, flen);
   if(x < 0){
     click_chatter("full ack");
-    goto full;
+    return make_full(cid, p);
   }
   if(x)
     flags |= (1 << 2);
@@ -154,7 +153,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   x = encode32(ctx->_tcp.th_seq, tcpp->th_seq, fbuf, flen);
   if(x < 0){
     click_chatter("full seq");
-    goto full;
+    return make_full(cid, p);
   }
   if(x)
     flags |= (1 << 3);
@@ -163,7 +162,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
     x = encode16(ctx->_ip.ip_id, ipp->ip_id, fbuf, flen);
     if(x < 0){
       click_chatter("full id");
-      goto full;
+      return make_full(cid, p);
     }
     if(x)
       flags |= (1 << 5);  
@@ -172,9 +171,8 @@ RFC2507c::make_compressed(int cid, Packet *p)
   if(tcpp->th_flags & TH_PUSH)
     flags |= (1 << 4);
     
-  q = Packet::make(p->length() -
-		   sizeof(click_ip) - sizeof(struct click_tcp) +
-		   5 + flen);
+  WritablePacket *q = Packet::make(p->length() - sizeof(click_ip)
+				   - sizeof(struct click_tcp) + 5 + flen);
   q->data()[0] = PT_COMPRESSED_TCP;
   q->data()[1] = cid;
   q->data()[2] = flags;
@@ -183,10 +181,6 @@ RFC2507c::make_compressed(int cid, Packet *p)
   memcpy(q->data() + 5 + flen,
          p->data() + sizeof(click_ip) + sizeof(struct click_tcp),
          p->length() - sizeof(click_ip) - sizeof(struct click_tcp));
-  return(q);
-
- full:
-  q = make_full(cid, p);
   return(q);
 }
 
@@ -220,7 +214,8 @@ RFC2507c::simple_action(Packet *p)
 {
   const click_ip *ipp = p->ip_header();
   assert(ipp && p->ip_header_offset() == 0);
-  struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
+  const click_tcp *tcpp =
+    reinterpret_cast<const click_tcp *>(p->transport_header());
   int cid;
   Packet *q = 0;
   

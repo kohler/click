@@ -163,7 +163,7 @@ RFC2507d::simple_action(Packet *p)
       memcpy(p, q->data(), q->length());
 
       // check IP checksum
-      click_ip *ipp = (click_ip *) p;
+      click_ip *ipp = reinterpret_cast<click_ip *>(p);
       int hlen = ipp->ip_hl << 2;
       if(in_cksum((unsigned char *)ipp, hlen) != 0){
         click_chatter(" ip cksum failed");

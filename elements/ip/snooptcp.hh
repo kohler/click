@@ -96,21 +96,20 @@ struct SnoopTCP::PCB {
   ~PCB();
   
   void clear(bool is_s);
-  void initialize(bool is_s, click_tcp *, int datalen);
+  void initialize(bool is_s, const click_tcp *, int datalen);
   
   int s_cache_size() const	{ return (_head >= _tail ? _head - _tail : S_CACHE_SIZE - (_tail - _head)); }
   
   void clean(unsigned, struct timeval *);
   
-  Packet *s_data(Packet *, click_tcp *, int datalen);
-
-  void s_ack(Packet *, click_tcp *, int datalen);
+  Packet *s_data(Packet *, const click_tcp *, int datalen);
+  void s_ack(Packet *, const click_tcp *, int datalen);
   
-  void mh_data(Packet *, click_tcp *, int datalen);
+  void mh_data(Packet *, const click_tcp *, int datalen);
   
   void mh_new_ack(unsigned ack);
-  Packet *mh_dup_ack(Packet *, click_tcp *, unsigned ack);
-  Packet *mh_ack(Packet *, click_tcp *, int datalen);
+  Packet *mh_dup_ack(Packet *, const click_tcp *, unsigned ack);
+  Packet *mh_ack(Packet *, const click_tcp *, int datalen);
   
 };
 

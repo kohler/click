@@ -115,7 +115,7 @@ IPFragmenter::fragment(Packet *p)
     return;
   }
 
-  int olen = optcopy(ip, (click_ip *)0);
+  int olen = optcopy(ip, 0);
   int h1len = sizeof(*ip) + olen;
   int plen = ntohs(ip->ip_len);
   int off;

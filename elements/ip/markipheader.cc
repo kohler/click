@@ -42,7 +42,7 @@ MarkIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 MarkIPHeader::simple_action(Packet *p)
 {
-  click_ip *ip = (click_ip *)(p->data() + _offset);
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + _offset);
   p->set_ip_header(ip, ip->ip_hl << 2);
   return p;
 }

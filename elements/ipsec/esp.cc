@@ -80,7 +80,7 @@ Esp::simple_action(Packet *p)
   int i;
 
   // Extract Protocol Header 
-  click_ip *ip = (click_ip *) p->data();
+  const click_ip *ip = p->ip_header();
   u_char ip_p = ip->ip_p;
   
   // Make room for ESP header and padding

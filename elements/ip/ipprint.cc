@@ -109,7 +109,8 @@ IPPrint::simple_action(Packet *p)
     break;
   }
   case IP_PROTO_UDP: {
-    click_udp *udph = (click_udp *)p->transport_header();
+    const click_udp *udph =
+      reinterpret_cast<const click_udp *>(p->transport_header());
     unsigned short srcp = ntohs(udph->uh_sport);
     unsigned short dstp = ntohs(udph->uh_dport);
     unsigned len = ntohs(udph->uh_ulen);

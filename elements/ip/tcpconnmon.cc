@@ -50,14 +50,14 @@ TCPConnectionMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 void
 TCPConnectionMonitor::push(int port_number, Packet *p)
 {
-  click_ip *ip = (click_ip *) p->data();
+  const click_ip *ip = p->ip_header();
   if(ip->ip_p == IP_PROTO_TCP) {
     // Identify flow by addresses only. Not ports.
     IPAddress saddr(ip->ip_src);
     IPAddress daddr(ip->ip_dst);
     IPFlowID flid(saddr, 0, daddr, 0);
 
-    click_tcp *tcp = (click_tcp *)((unsigned *)ip + ip->ip_hl);
+    const click_tcp *tcp = reinterpret_cast<const click_tcp *>(p->transport_header());
     unsigned short sport = tcp->th_sport;
     unsigned short dport = tcp->th_dport;
 
