@@ -37,7 +37,7 @@ GENERIC_OBJS = string.o straccum.o \
 	error.o glue.o timer.o \
 	element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o elemfilter.o router.o \
-	crc32.o iptable.o ewma.o
+	crc32.o in_cksum.o iptable.o ewma.o
 
 EXOPC_OBJS = click.o syscall.o
 
@@ -59,6 +59,11 @@ INSTALLDIR=$(EXODEST)/home/benjie/ipb
 
 
 DEFS = @DEFS@ -DEXOPC -DNOTEXOS
+ifdef EXO_SMP
+DEFS += -D__SMP__
+endif
+
+
 INCLUDES = -nostdinc -I$(EXODEST)/usr/include -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib
 LDFLAGS = @LDFLAGS@
@@ -83,7 +88,7 @@ click: Makefile $(OBJS)
 	$(SETMAGIC) click 700
 	mkdir -p $(INSTALLDIR)
 	cp click $(INSTALLDIR)
-	cp samples/*.ipb $(INSTALLDIR)
+	cp samples/* $(INSTALLDIR)
 
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

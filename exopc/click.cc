@@ -24,7 +24,7 @@ print_bitvector(const Bitvector &bv)
   fprintf(stderr, "\n");
 }
 
-extern void export_factions(Lexer *);
+extern void export_elements(Lexer *);
 
 int
 main(int argc, char **argv)
@@ -41,8 +41,8 @@ main(int argc, char **argv)
     fp = new FileLexerSource(argv[1], 0);
   
   Lexer *lex = new Lexer(errh);
-  export_factions(lex);
-  lex->faction_types_permanent();
+  export_elements(lex);
+  lex->element_types_permanent();
   
   lex->reset(fp);
   while (lex->ystatement())
@@ -72,7 +72,7 @@ main(int argc, char **argv)
   
   if (router->initialize(errh) >= 0) {
     router->print_structure(errh);
-    //errh->message(router->flat_configuration());
+    errh->message(router->flat_configuration_string());
     while (router->driver())
       /* nada */;
   } else

@@ -1,0 +1,10 @@
+
+ed0_reader :: xokReader(32, 12/0800 30/121a0462 23/01);  # hera
+ed0_writer :: xokWriter(ed0);
+		        
+de0_reader :: xokReader(32, 12/0800 30/121a045c 23/01);  # plebic
+de0_writer :: xokWriter(de0);
+   
+de0_reader -> ICMPPing -> de0_writer
+ed0_reader -> ICMPPing -> ed0_writer
+
