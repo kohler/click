@@ -320,12 +320,26 @@ void simclick_click_run(simclick_click clickinst,simclick_simstate* state) {
   setsimstate(state);
   //fprintf(stderr,"Hey! Need to implement simclick_click_run!\n");
   // not right - mostly smoke testing for now...
-  ((SimState*)clickinst)->router->master()->thread(0)->driver();
+  Router* r = ((SimState*)clickinst)->router;
+  if (r) {
+    r->master()->thread(0)->driver();
+  }
+  else {
+    click_chatter("simclick_click_run: call with null router");
+  }
 }
 
-void simclick_click_kill(simclick_click, simclick_simstate* state) {
-  fprintf(stderr,"Hey! Need to implement simclick_click_kill!\n");
+void simclick_click_kill(simclick_click clickinst, simclick_simstate* state) {
+  //fprintf(stderr,"Hey! Need to implement simclick_click_kill!\n");
   setsimstate(state);
+  Router *r = ((SimState*)clickinst)->router;
+  if (r) {
+    delete r;
+    ((SimState*)clickinst)->router = 0;
+  }
+  else {
+    click_chatter("simclick_click_kill: call with null router");
+  }
 }
 
 int simclick_gettimeofday(struct timeval* tv) {
@@ -344,9 +358,15 @@ int simclick_click_send(simclick_click clickinst,simclick_simstate* state,
 			simclick_simpacketinfo* pinfo) {
   setsimstate(state);
   int result = 0;
-  
-  ((SimState*)clickinst)->router->sim_incoming_packet(ifid,type,data,len,pinfo);
-  ((SimState*)clickinst)->router->master()->thread(0)->driver();
+  Router* r = ((SimState*)clickinst)->router;
+  if (r) {
+    r->sim_incoming_packet(ifid,type,data,len,pinfo);
+    r->master()->thread(0)->driver();
+  }
+  else {
+    click_chatter("simclick_click_send: called with null router");
+    result = -1;
+  }
   return result;
 }
 
@@ -356,6 +376,10 @@ char* simclick_click_read_handler(simclick_click clickinst,
 				  SIMCLICK_MEM_ALLOC memalloc,
 				  void* memparam) {
     Router *r = ((SimState*)clickinst)->router;
+    if (!r) {
+      click_chatter("simclick_click_read_handler: call with null router");
+      return 0;
+    }
     if (Element *e = r->find(elementname))
 	if (const Handler* h = r->handler(e, handlername))
 	    if (h->read_visible()) {
@@ -377,6 +401,10 @@ int simclick_click_write_handler(simclick_click clickinst,
 				 const char* handlername,
 				 const char* writestring) {
     Router *r = ((SimState*)clickinst)->router;
+    if (!r) {
+      click_chatter("simclick_click_write_handler: call with null router");
+      return -3;
+    }
     if (Element* e = r->find(elementname)) {
 	if (const Handler* h = r->handler(e, handlername))
 	    if (h->write_visible())
