@@ -528,6 +528,28 @@ GridRouteTable::print_rtes(Element *e, void *)
 }
 
 String
+GridRouteTable::print_nbrs_v(Element *e, void *)
+{
+  GridRouteTable *n = (GridRouteTable *) e;
+  
+  String s;
+  for (RTIter i = n->_rtes.first(); i; i++) {
+    /* only print immediate neighbors */
+    if (i.value().num_hops != 1)
+      continue;
+    s += i.key().s();
+    s += " eth=" + i.value().next_hop_eth.s();
+    s += " metric_valid=" + i.value().metric_valid;
+    s += " metric=" + i.value().metric;
+    s += " link_qual=" + i.value().link_qual;
+    s += " link_sig=" + i.value().link_sig;
+    s += "\n";
+  }
+
+  return s;
+}
+
+String
 GridRouteTable::print_nbrs(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
@@ -629,6 +651,7 @@ void
 GridRouteTable::add_handlers()
 {
   add_default_handlers(false);
+  add_read_handler("nbrs_v", print_nbrs_v, 0);
   add_read_handler("nbrs", print_nbrs, 0);
   add_read_handler("rtes_v", print_rtes_v, 0);
   add_read_handler("rtes", print_rtes, 0);

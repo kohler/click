@@ -261,6 +261,7 @@ private:
   static String print_rtes(Element *e, void *);
   static String print_rtes_v(Element *e, void *);
   static String print_nbrs(Element *e, void *);
+  static String print_nbrs_v(Element *e, void *);
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
   static String print_metric_type(Element *e, void *);
