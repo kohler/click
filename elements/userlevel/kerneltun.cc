@@ -35,6 +35,10 @@
 # define KERNELTUN_LINUX 1
 #elif defined(HAVE_NET_IF_TUN_H)
 # define KERNELTUN_NET 1
+#elif defined(__APPLE__)
+# define KERNELTUN_OSX 1 
+// assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
+// this driver doesn't produce or expect packets with an address fmaily prepended
 #endif
 
 #if HAVE_NET_IF_TUN_H
@@ -156,7 +160,7 @@ KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTun::alloc_tun(ErrorHandler *errh)
 {
-#if !KERNELTUN_LINUX && !KERNELTUN_NET
+#if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX
     return errh->error("KernelTun is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
@@ -179,6 +183,9 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 #ifdef __linux__
     _type = LINUX_ETHERTAP;
     String dev_prefix = "tap";
+#elif defined(KERNELTUN_OSX)
+    _type = OSX_TUN;
+    String dev_prefix = "tun";
 #else
     _type = BSD_TUN;
     String dev_prefix = "tun";
@@ -237,7 +244,11 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
+#if KERNELTUN_OSX
+    sprintf(tmp, "/sbin/ifconfig %s %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, _gw.s().cc(), tmp1);
+#else
     sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
+#endif
     if (system(tmp) != 0) {
 # if defined(__linux__)
 	// Is Ethertap available? If it is moduleified, then it might not be.
@@ -252,7 +263,7 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     if (_gw) {
 #if defined(__linux__)
 	sprintf(tmp, "/sbin/route -n add default gw %s", _gw.s().cc());
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 	sprintf(tmp, "/sbin/route -n add default %s", _gw.s().cc());
 #endif
 	if (system(tmp) != 0)
@@ -264,6 +275,8 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 	_mtu_in = _mtu_out + 4;
     else if (_type == BSD_TUN)
 	_mtu_in = _mtu_out + 4;
+    else if (_type == OSX_TUN)
+	_mtu_in = _mtu_out + 4; // + 0?
     else /* _type == LINUX_ETHERTAP */
 	_mtu_in = _mtu_out + 16;
     
@@ -335,6 +348,8 @@ KernelTun::selected(int fd)
 		checked_output_push(1, p->clone());
 	    } else
 		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
+	} else if (_type == OSX_TUN) {
+	    ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
 	} else { /* _type == LINUX_ETHERTAP */
 	    // 2-byte padding followed by a mostly-useless Ethernet header
 	    p->pull(2);
@@ -368,8 +383,6 @@ KernelTun::run_task()
 void
 KernelTun::push(int, Packet *p)
 {
-    // Every packet has a 14-byte Ethernet header.
-    // Extract the packet type, then ignore the Ether header.
     const click_ip *iph = p->ip_header();
     if (!iph) {
 	click_chatter("KernelTun(%s): no network header", _dev_name.cc());
@@ -389,10 +402,13 @@ KernelTun::push(int, Packet *p)
 	    uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
 	    if ((q = p->push(4)))
 		*(uint32_t *)(q->data()) = ethertype;
-	} else if (_type == BSD_TUN) {
+	} else if (_type == BSD_TUN) { 
 	    uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
 	    if ((q = p->push(4)))
 		*(uint32_t *)(q->data()) = af;
+	} else if (_type == OSX_TUN) {
+	    // send raw IP
+	    q = p->uniqueify();
 	} else { /* _type == LINUX_ETHERTAP */
 	    uint16_t ethertype = (iph->ip_v == 4 ? htons(ETHERTYPE_IP) : htons(ETHERTYPE_IP6));
 	    if ((q = p->push(16))) {

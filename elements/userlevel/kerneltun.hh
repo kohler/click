@@ -102,7 +102,7 @@ class KernelTun : public Element { public:
   private:
 
     enum { DEFAULT_MTU = 2048 };
-    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN };
+    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN, OSX_TUN };
 
     int _fd;
     int _mtu_in;
