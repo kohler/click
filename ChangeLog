@@ -1,3 +1,8 @@
+2005-02-08 Tuesday 12:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.4), directiplookup.hh (1.2):
+	DirectIPLookup fixes from Marko
+
 2005-02-08 Tuesday 04:23  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.61): add elem2make --linux26 functionality
