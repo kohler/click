@@ -214,7 +214,7 @@ ICMPError::simple_action(Packet *p)
     goto out;
 
   /* send back IP header and 8 bytes of payload */
-  xlen = p->length();
+  xlen = p->length() - p->network_header_offset();
   if (xlen > hlen + 8)
     xlen = hlen + 8;
 
@@ -245,7 +245,7 @@ ICMPError::simple_action(Packet *p)
     ((struct icmp_redirect *) icp)->gateway = p->dst_ip_anno().addr();
   }
 
-  memcpy((void *)(icp + 1), p->data(), xlen);
+  memcpy((void *)(icp + 1), p->network_header(), xlen);
   icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
