@@ -531,11 +531,11 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	    sa << ((p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec);
 #endif
 	    break;
-	  case W_SRC:
+	  case W_IP_SRC:
 	    if (!iph) goto no_data;
 	    sa << IPAddress(iph->ip_src);
 	    break;
-	  case W_DST:
+	  case W_IP_DST:
 	    if (!iph) goto no_data;
 	    sa << IPAddress(iph->ip_dst);
 	    break;
@@ -547,11 +547,11 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	    if (!iph) goto no_data;
 	    sa << iph->ip_ttl;
 	    break;
-	  case W_FRAG:
+	  case W_IP_FRAG:
 	    if (!iph) goto no_data;
 	    sa << (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
 	    break;
-	  case W_FRAGOFF:
+	  case W_IP_FRAGOFF:
 	    if (!iph) goto no_data;
 	    sa << ((htons(iph->ip_off) & IP_OFFMASK) << 3);
 	    if (iph->ip_off & htons(IP_MF))
@@ -573,11 +573,11 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	    else
 		goto no_data;
 	    break;
-	  case W_IPID:
+	  case W_IP_ID:
 	    if (!iph) goto no_data;
 	    sa << ntohs(iph->ip_id);
 	    break;
-	  case W_PROTO:
+	  case W_IP_PROTO:
 	    if (!iph) goto no_data;
 	    switch (iph->ip_p) {
 	      case IP_PROTO_TCP:	sa << 'T'; break;
@@ -656,7 +656,7 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	    else
 		store_tcp_opt_ascii(tcph, DO_TCPOPT_SACK, sa);
 	    break;
-	  case W_LENGTH: {
+	  case W_IP_LEN: {
 	      uint32_t len;
 	      if (iph)
 		  len = ntohs(iph->ip_len);
@@ -665,7 +665,7 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	      sa << (len + EXTRA_LENGTH_ANNO(p));
 	      break;
 	  }
-	  case W_PAYLOAD_LENGTH: {
+	  case W_PAYLOAD_LEN: {
 	      uint32_t len;
 	      if (iph) {
 		  int32_t off = p->transport_header_offset();
@@ -679,6 +679,12 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	      } else
 		  len = p->length();
 	      sa << (len + EXTRA_LENGTH_ANNO(p));
+	      break;
+	  }
+	  case W_IP_CAPTURE_LEN: {
+	      uint32_t allow_len = (p->network_header() ? p->network_length() : p->length());
+	      uint32_t len = (iph ? ntohs(iph->ip_len) : allow_len);
+	      sa << (len < allow_len ? len : allow_len);
 	      break;
 	  }
 	  case W_PAYLOAD: {
@@ -910,11 +916,11 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	      pos += 8;
 	      break;
 	  }
-	  case W_SRC:
+	  case W_IP_SRC:
 	    if (iph)
 		v = iph->ip_src.s_addr;
 	    goto output_4_net;
-	  case W_DST:
+	  case W_IP_DST:
 	    if (iph)
 		v = iph->ip_dst.s_addr;
 	    goto output_4_net;
@@ -926,19 +932,19 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    if (iph)
 		v = iph->ip_ttl;
 	    goto output_1;
-	  case W_FRAG:
+	  case W_IP_FRAG:
 	    if (iph)
 		v = (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
 	    goto output_1;
-	  case W_FRAGOFF:
+	  case W_IP_FRAGOFF:
 	    if (iph)
 		v = iph->ip_off;
 	    goto output_2_net;
-	  case W_IPID:
+	  case W_IP_ID:
 	    if (iph)
 		v = iph->ip_id;
 	    goto output_2_net;
-	  case W_PROTO:
+	  case W_IP_PROTO:
 	    if (iph)
 		v = iph->ip_p;
 	    goto output_1;
@@ -1010,7 +1016,7 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	      buf = sa.data();
 	      break;
 	  }
-	  case W_LENGTH:
+	  case W_IP_LEN:
 	    if (iph) {
 		v = ntohs(iph->ip_len);
 		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
@@ -1018,7 +1024,7 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    } else
 		v = p->length() + EXTRA_LENGTH_ANNO(p);
 	    goto output_4_host;
-	  case W_PAYLOAD_LENGTH:
+	  case W_PAYLOAD_LEN:
 	    if (iph) {
 		v = ntohs(iph->ip_len);
 		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
@@ -1034,6 +1040,12 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    } else
 		v = p->length() + EXTRA_LENGTH_ANNO(p);
 	    goto output_4_host;
+	  case W_IP_CAPTURE_LEN: {
+	      uint32_t allow_len = (p->network_header() ? p->network_length() : p->length());
+	      uint32_t len = (iph ? ntohs(iph->ip_len) : allow_len);
+	      v = (len < allow_len ? len : allow_len);
+	      goto output_4_host;
+	  }
 	  case W_COUNT:
 	    v = 1 + EXTRA_PACKETS_ANNO(p);
 	    goto output_4_host;

@@ -207,10 +207,10 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
     if (_contents.size() == 0)
 	_ff.error(errh, "no contents specified");
 
-    // If we have W_FRAGOFF, ignore W_FRAG.
-    if (all_contents & (1 << (W_FRAGOFF - W_NONE)))
+    // If we have W_IP_FRAGOFF, ignore W_IP_FRAG.
+    if (all_contents & (1 << (W_IP_FRAGOFF - W_NONE)))
 	for (int i = 0; i < _contents.size(); i++)
-	    if (_contents[i] == W_FRAG)
+	    if (_contents[i] == W_IP_FRAG)
 		_contents[i] = W_NONE;
 
     // recheck whether to use '!flowid' and '!aggregate'
@@ -224,9 +224,9 @@ FromIPSummaryDump::check_defaults()
     _flowid = (_have_flowid ? _given_flowid : IPFlowID());
     _use_aggregate = _have_aggregate;
     for (int i = 0; i < _contents.size(); i++)
-	if (_contents[i] == W_SRC)
+	if (_contents[i] == W_IP_SRC)
 	    _flowid.set_saddr(IPAddress());
-	else if (_contents[i] == W_DST)
+	else if (_contents[i] == W_IP_DST)
 	    _flowid.set_daddr(IPAddress());
 	else if (_contents[i] == W_SPORT)
 	    _flowid.set_sport(0);
@@ -790,26 +790,27 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    break;
 		  case W_TIMESTAMP_SEC:
 		  case W_TIMESTAMP_USEC:
-		  case W_LENGTH:
-		  case W_PAYLOAD_LENGTH:
+		  case W_IP_LEN:
+		  case W_PAYLOAD_LEN:
+		  case W_IP_CAPTURE_LEN:
 		  case W_TCP_SEQ:
 		  case W_TCP_ACK:
 		  case W_COUNT:
 		  case W_AGGREGATE:
-		  case W_SRC:
-		  case W_DST:
+		  case W_IP_SRC:
+		  case W_IP_DST:
 		    u1 = GET4(data);
 		    data += 4;
 		    break;
-		  case W_IPID:
+		  case W_IP_ID:
 		  case W_SPORT:
 		  case W_DPORT:
-		  case W_FRAGOFF:
+		  case W_IP_FRAGOFF:
 		  case W_TCP_WINDOW:
 		    u1 = GET2(data);
 		    data += 2;
 		    break;
-		  case W_PROTO:
+		  case W_IP_PROTO:
 		  case W_TCP_FLAGS:
 		  case W_LINK:
 		  case W_IP_TOS:
@@ -817,7 +818,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    u1 = GET1(data);
 		    data++;
 		    break;
-		  case W_FRAG:
+		  case W_IP_FRAG:
 		    // XXX less checking here
 		    if (*data == 'F')
 			u1 = htons(IP_MF);
@@ -877,9 +878,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		
 	      case W_TIMESTAMP_SEC:
 	      case W_TIMESTAMP_USEC:
-	      case W_LENGTH:
-	      case W_PAYLOAD_LENGTH:
-	      case W_IPID:
+	      case W_IP_LEN:
+	      case W_PAYLOAD_LEN:
+	      case W_IP_CAPTURE_LEN:
+	      case W_IP_ID:
 	      case W_SPORT:
 	      case W_DPORT:
 	      case W_TCP_SEQ:
@@ -905,8 +907,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  break;
 	      }
 		
-	      case W_SRC:
-	      case W_DST:
+	      case W_IP_SRC:
+	      case W_IP_DST:
 		for (int j = 0; j < 4; j++) {
 		    const char *first = data;
 		    int x = 0;
@@ -922,7 +924,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		}
 		break;
 
-	      case W_PROTO:
+	      case W_IP_PROTO:
 		if (*data == 'T') {
 		    u1 = IP_PROTO_TCP;
 		    data++;
@@ -936,7 +938,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    data = cp_unsigned(data, end, 0, &u1);
 		break;
 
-	      case W_FRAG:
+	      case W_IP_FRAG:
 		if (*data == 'F') {
 		    u1 = htons(IP_MF);
 		    data++;
@@ -947,7 +949,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    data++;	// u1 already 0
 		break;
 
-	      case W_FRAGOFF:
+	      case W_IP_FRAGOFF:
 		next = cp_unsigned(data, end, 0, &u1);
 		if (_minor_version == 0) // old-style file
 		    u1 <<= 3;
@@ -1085,25 +1087,30 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 #endif
 		break;
 		
-	      case W_SRC:
+	      case W_IP_SRC:
 		iph->ip_src.s_addr = htonl(u1), ip_ok++;
 		break;
 
-	      case W_DST:
+	      case W_IP_DST:
 		iph->ip_dst.s_addr = htonl(u1), ip_ok++;
 		break;
 		
-	      case W_LENGTH:
+	      case W_IP_LEN:
 		if (u1 <= 0xFFFF)
 		    byte_count = u1, ok++;
 		break;
 		
-	      case W_PAYLOAD_LENGTH:
+	      case W_PAYLOAD_LEN:
 		if (u1 <= 0xFFFF)
 		    payload_len = u1, have_payload_len = true, ok++;
 		break;
+
+	      case W_IP_CAPTURE_LEN:
+		/* XXX do nothing with this for now */
+		ok++;
+		break;
 		
-	      case W_PROTO:
+	      case W_IP_PROTO:
 		if (u1 <= 255)
 		    iph->ip_p = u1, ip_ok++;
 		break;
@@ -1118,16 +1125,16 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    iph->ip_ttl = u1, ip_ok++;
 		break;
 
-	      case W_IPID:
+	      case W_IP_ID:
 		if (u1 <= 0xFFFF)
 		    iph->ip_id = htons(u1), ip_ok++;
 		break;
 
-	      case W_FRAG:
+	      case W_IP_FRAG:
 		iph->ip_off = u1, ip_ok++;
 		break;
 
-	      case W_FRAGOFF:
+	      case W_IP_FRAGOFF:
 		if ((u1 & ~IP_MF) <= IP_OFFMASK)
 		    iph->ip_off = htons(u1), ip_ok++;
 		break;

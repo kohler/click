@@ -66,6 +66,9 @@ contain those fields. Valid field names, with examples, are:
    tcp_window   TCP receive window: '480'
    payload_len  Payload length (not including IP/TCP/UDP
                 headers): '34'
+   ip_capture_len  Portion of IP length that contains
+                actual packet data (as opposed to the extra
+		length annotation): '34'
    count        Number of packets: '1'
    direction    Link number (PAINT_ANNO): '2', or '>'/'L'
                 for paint 0, '<'/'R'/'X' for paint 1
@@ -270,6 +273,7 @@ the 'C<!data>' line, as follows:
    tcp_ntopt        ?    TCP non-timestamp options
    tcp_sack         ?    TCP SACK options
    payload_len      4    payload length
+   ip_capture_len   4    IP capture length
    count            4    packet count
    first_timestamp  8    timestamp sec + usec
 

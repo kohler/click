@@ -27,7 +27,8 @@ static const char *content_names[] = {
     "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
     "count", "ip_frag", "ip_fragoff", "payload", "direction",
     "aggregate", "tcp_sack", "tcp_opt", "tcp_ntopt", "first_timestamp",
-    "tcp_window", "ip_opt", "ip_tos", "ip_ttl", "ts_usec1"
+    "tcp_window", "ip_opt", "ip_tos", "ip_ttl", "ts_usec1",
+    "ip_capture_len"
 };
 
 const char *
@@ -51,23 +52,23 @@ IPSummaryDumpInfo::parse_content(const String &word)
     else if (word == "usec1" || word == "ts_usec1")
 	return W_TIMESTAMP_USEC1;
     else if (word == "src" || word == "ip_src")
-	return W_SRC;
+	return W_IP_SRC;
     else if (word == "dst" || word == "ip_dst")
-	return W_DST;
+	return W_IP_DST;
     else if (word == "sport")
 	return W_SPORT;
     else if (word == "dport")
 	return W_DPORT;
     else if (word == "frag" || word == "ip_frag")
-	return W_FRAG;
+	return W_IP_FRAG;
     else if (word == "fragoff" || word == "ip_fragoff")
-	return W_FRAGOFF;
+	return W_IP_FRAGOFF;
     else if (word == "len" || word == "length" || word == "ip_len")
-	return W_LENGTH;
+	return W_IP_LEN;
     else if (word == "id" || word == "ip_id")
-	return W_IPID;
+	return W_IP_ID;
     else if (word == "proto" || word == "ip_proto" || word == "ip_p")
-	return W_PROTO;
+	return W_IP_PROTO;
     else if (word == "tcp_seq" || word == "tcp_seqno")
 	return W_TCP_SEQ;
     else if (word == "tcp_ack" || word == "tcp_ackno")
@@ -81,7 +82,7 @@ IPSummaryDumpInfo::parse_content(const String &word)
     else if (word == "tcp_ntopt")
 	return W_TCP_NTOPT;
     else if (word == "payload_len" || word == "payload_length")
-	return W_PAYLOAD_LENGTH;
+	return W_PAYLOAD_LEN;
     else if (word == "count" || word == "pkt_count" || word == "packet_count")
 	return W_COUNT;
     else if (word == "payload")
@@ -100,6 +101,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_IP_TOS;
     else if (word == "ip_ttl")
 	return W_IP_TTL;
+    else if (word == "ip_capture_len")
+	return W_IP_CAPTURE_LEN;
     else if (word == "none")
 	return W_NONE;
     else if (find(word, ' ') != word.end()) {
@@ -110,14 +113,16 @@ IPSummaryDumpInfo::parse_content(const String &word)
 }
 
 static int content_binary_sizes[] = {
-    0, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_SRC
-    4, 4, 1, 2, 2,	// W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT
-    2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PL_LEN
-    4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
+    0, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_IP_SRC
+    4, 4, 1, 2, 2,	// W_IP_DST, W_IP_LEN, W_IP_PROTO, W_IP_ID, W_SPORT
+    2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
+			// W_PAYLOAD_LEN
+    4, 1, 2, -10000, 1,	// W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK
     4, 4, 4, 4, 8,      // W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT,
 			// W_FIRST_TIMESTAMP
-    2, 4, 1, 1, 8	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
+    2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
     			// W_TIMESTAMP_USEC1
+    4			// W_IP_CAPTURE_LEN
 };
 
 int
