@@ -88,6 +88,7 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
 		    "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
 		    "MTU", cpInteger, "MTU", &_mtu_out,
+		    "DEV_NAME", cpString, "device name", &_dev_name,
 		    cpEnd) < 0)
 	return -1;
 
@@ -119,6 +120,13 @@ KernelTun::try_linux_universal(ErrorHandler *errh)
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     ifr.ifr_flags = IFF_TUN;
+    if (_dev_name) {
+	/* 
+	 * setting ifr_name this allows us to select an aribitrary 
+	 * interface name. 
+	 */
+	strcpy(ifr.ifr_name, _dev_name.cc());
+    }
     int err = ioctl(fd, TUNSETIFF, (void *)&ifr);
     if (err < 0) {
 	errh->warning("Linux universal tun failed: %s", strerror(errno));
