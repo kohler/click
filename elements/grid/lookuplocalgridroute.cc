@@ -1,5 +1,5 @@
 /*
- * lookupgridroute.{cc,hh} -- Grid multihop local routing element
+ * lookuplocalgridroute.{cc,hh} -- Grid multihop local routing element
  * Douglas S. J. De Couto
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
