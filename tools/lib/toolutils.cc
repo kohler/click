@@ -233,9 +233,6 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 		const String &flags,
 		const String &requirements, const String &provisions)
 {
-  if (!click_name && !cxx_name)
-    return -1;
-
   int old_name = _name_map[click_name];
   int old_cxx = _cxx_map[cxx_name];
 
@@ -250,9 +247,11 @@ ElementMap::add(const String &click_name, const String &cxx_name,
   _driver.push_back(-1);
   if (requirements)
     set_driver(i, requirements);
-  
-  _name_map.insert(click_name, i);
-  _cxx_map.insert(cxx_name, i);
+
+  if (click_name)
+    _name_map.insert(click_name, i);
+  if (cxx_name)
+    _cxx_map.insert(cxx_name, i);
   _name_next.push_back(old_name);
   _cxx_next.push_back(old_cxx);
   

@@ -30,7 +30,7 @@
  *
  * =a IPRewriter, IPRewriterPatterns, FTPPortMapper */
 
-class TCPRewriter : public IPRw {
+class TCPRewriter : public IPRw { public:
 
   class TCPMapping : public Mapping {
 
@@ -57,18 +57,6 @@ class TCPRewriter : public IPRw {
     String s() const;
     
   };
-  
-  Map _tcp_map;
-
-  Vector<InputSpec> _input_specs;
-  Timer _timer;
-
-  static const int GC_INTERVAL_SEC = 3600;
-
-  static String dump_mappings_handler(Element *, void *);
-  static String dump_patterns_handler(Element *, void *);
-  
- public:
 
   TCPRewriter();
   ~TCPRewriter();
@@ -93,6 +81,18 @@ class TCPRewriter : public IPRw {
 
   void add_handlers();
   int llrpc(unsigned, void *);
+
+ private:
+  
+  Map _tcp_map;
+
+  Vector<InputSpec> _input_specs;
+  Timer _timer;
+
+  static const int GC_INTERVAL_SEC = 3600;
+
+  static String dump_mappings_handler(Element *, void *);
+  static String dump_patterns_handler(Element *, void *);
 
 };
 

@@ -117,7 +117,8 @@ inline const V &
 BigHashMap<K, V>::find(const K &key) const
 {
   Elt *e = find_elt(key);
-  return e ? e->v : _default_v;
+  const V *v = (e ? &e->v : &_default_v);
+  return *v;
 }
 
 template <class K, class V>

@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include "ipaddressset.hh"
+#include "glue.hh"
 #include "confparse.hh"
 
 void

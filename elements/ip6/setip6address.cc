@@ -16,13 +16,11 @@
 #endif
 #include "setip6address.hh"
 #include "confparse.hh"
-#include <string.h>
 
 SetIP6Address::SetIP6Address()
   : Element(1, 1)
 {
 }
-
 
 int
 SetIP6Address::configure(const Vector<String> &conf, ErrorHandler *errh)

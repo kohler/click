@@ -18,6 +18,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "grid.hh"
+#include <math.h>
 
 PEP::PEP()
   : _timer(this)

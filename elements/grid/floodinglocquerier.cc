@@ -323,4 +323,5 @@ FloodingLocQuerier::add_handlers()
   add_read_handler("stats", FloodingLocQuerier_read_stats, (void *)0);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FloodingLocQuerier)

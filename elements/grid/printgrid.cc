@@ -102,4 +102,5 @@ PrintGrid::simple_action(Packet *p)
   return p;
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PrintGrid)

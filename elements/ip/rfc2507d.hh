@@ -15,6 +15,16 @@
 
 class RFC2507d : public Element {
 public:
+
+  /* used to store context as well as hash key */
+  struct tcpip {
+    click_ip _ip;
+    click_tcp _tcp;
+    operator bool() const { return(_ip.ip_src.s_addr != 0); }
+    tcpip() { _ip.ip_src.s_addr = 0; }
+    int hashcode();
+  };
+
   RFC2507d();
   ~RFC2507d();
 
@@ -32,15 +42,6 @@ private:
   static const int PT_OTHER = 0; /* ordinary packet (not compressed, no CID) */
   static const int PT_FULL_HEADER = 1; /* one byte CID, then full ip/tcp */
   static const int PT_COMPRESSED_TCP = 2; /* CID, compressed packet */
-
-  /* used to store context as well as hash key */
-  struct tcpip {
-    click_ip _ip;
-    click_tcp _tcp;
-    operator bool() const { return(_ip.ip_src.s_addr != 0); }
-    tcpip() { _ip.ip_src.s_addr = 0; }
-    int hashcode();
-  };
 
   /* per-connection control block, indexed by CID */
   struct ccb {

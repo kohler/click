@@ -7,11 +7,10 @@
 #include "click_ip.h"
 class IPMapper;
 
-class IPRw : public Element { protected:
+class IPRw : public Element { public:
 
   class Pattern;
   class Mapping;
-
   enum InputSpecName {
     INPUT_SPEC_NOCHANGE, INPUT_SPEC_KEEP, INPUT_SPEC_DROP,
     INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER
@@ -33,19 +32,6 @@ class IPRw : public Element { protected:
     } u;
   };
 
-  typedef BigHashMap<IPFlowID, Mapping *> Map;
-  
-  Vector<Pattern *> _all_patterns;
-
-  static const int GC_INTERVAL_SEC = 3600;
-
-  void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
-  void mark_live_tcp(Map &);
-  void clean_map(Map &);
-  void clear_map(Map &);
-
- public:
-
   IPRw();
   ~IPRw();
   
@@ -64,6 +50,19 @@ class IPRw : public Element { protected:
   virtual Mapping *apply_pattern(Pattern *, int, int, bool tcp, const IPFlowID &) = 0;
   virtual Mapping *get_mapping(bool tcp, const IPFlowID &) const = 0;
   
+ protected:
+
+  typedef BigHashMap<IPFlowID, Mapping *> Map;
+  
+  Vector<Pattern *> _all_patterns;
+
+  static const int GC_INTERVAL_SEC = 3600;
+
+  void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
+  void mark_live_tcp(Map &);
+  void clean_map(Map &);
+  void clear_map(Map &);
+
 };
 
 

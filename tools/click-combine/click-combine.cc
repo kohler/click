@@ -387,7 +387,7 @@ particular purpose.\n");
 	read_router(name, next_number, s + 1, errh);
 	next_name = String();
 	next_number++;
-      } else if (const char *s = strchr(clp->arg, '=')) {
+      } else if (strchr(clp->arg, '=') != 0) {
 	link_texts.push_back(clp->arg);
       } else {
 	read_router(next_name, next_number, clp->arg, errh);

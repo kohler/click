@@ -16,7 +16,6 @@
 #endif
 #include "storeipaddress.hh"
 #include "confparse.hh"
-#include <string.h>
 
 StoreIPAddress::StoreIPAddress()
   : Element(1, 1)

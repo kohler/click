@@ -15,6 +15,7 @@
 # include <config.h>
 #endif
 #include "etheraddress.hh"
+#include "glue.hh"
 #if CLICK_LINUXMODULE
 extern "C" {
 # include <linux/kernel.h>

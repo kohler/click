@@ -15,7 +15,7 @@
 #endif
 #include "ripsend.hh"
 #include "confparse.hh"
-#include <string.h>
+#include "glue.hh"
 #include "click_ip.h"
 #include "click_udp.h"
 

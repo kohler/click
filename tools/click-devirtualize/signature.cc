@@ -18,6 +18,7 @@
 #include "toolutils.hh"
 #include "error.hh"
 #include <stdio.h>
+#include <string.h>
 
 // determine an element's signature
 

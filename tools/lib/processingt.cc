@@ -17,6 +17,7 @@
 #include "error.hh"
 #include "toolutils.hh"
 #include <ctype.h>
+#include <string.h>
 
 ProcessingT::ProcessingT()
   : _router(0)

@@ -162,9 +162,9 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
     live[component_endpoints[i]] = 1;
 
   // mark everything named with a `compname' prefix
-  int compl = compname.length();
+  int compname_len = compname.length();
   for (int i = 0; i < ne; i++)
-    if (r->ename(i).substring(0, compl) == compname)
+    if (r->ename(i).substring(0, compname_len) == compname)
       live[i] = 1;
 
   // now find things connected to live elements

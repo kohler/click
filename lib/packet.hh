@@ -109,7 +109,7 @@ class Packet { public:
   unsigned char sniff_flags_anno() const{ return anno()->sniff_flags; }
   void set_sniff_flags_anno(unsigned char c)   { anno()->sniff_flags = c; }
 #ifdef __KERNEL__
-  PacketType packet_type_anno() const	{ return skb()->pkt_type; }
+  PacketType packet_type_anno() const	{ return (PacketType)skb()->pkt_type; }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
   struct device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(struct device *dev) { skb()->dev = dev; }

@@ -72,7 +72,7 @@ class FromLinux : public AnyDevice {
   FromLinux *clone() const;
   const char *processing() const	{ return PUSH; }
 
-  struct enet_statistics *stats() const	{ return &_stats; }
+  enet_statistics *stats()		{ return &_stats; }
 
   int configure_phase() const		{ return FROMLINUX_CONFIGURE_PHASE; }
   int configure(const Vector<String> &, ErrorHandler *);

@@ -312,7 +312,7 @@ fl_tx(struct sk_buff *skb, struct device *dev)
   return -1;
 }
 
-static struct enet_statistics *
+static enet_statistics *
 fl_stats(struct device *dev)
 {
   FromLinux *fl;

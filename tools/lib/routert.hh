@@ -52,8 +52,7 @@ class RouterT : public ElementClassT {
 
  public:
 
-  static const int TUNNEL_TYPE = 0;
-  static const int UPREF_TYPE = 1;
+  enum { TUNNEL_TYPE = 0, UPREF_TYPE = 1 };
   
   RouterT(RouterT * = 0);
   RouterT(const RouterT &);

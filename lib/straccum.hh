@@ -3,7 +3,11 @@
 #include "string.hh"
 #include "glue.hh"
 #include <assert.h>
-#include <string.h>
+#ifdef __KERNEL__
+# include <asm/string.h>
+#else
+# include <string.h>
+#endif
 
 class StringAccum {
   

@@ -71,50 +71,9 @@
  *
  * =a IPClassifier, IPFilter */
 
-class Classifier : public Element { protected:
-  
-  struct Expr {
-    int offset;
-    union {
-      unsigned char c[4];
-      unsigned u;
-    } mask;
-    union {
-      unsigned char c[4];
-      unsigned u;
-    } value;
-    int yes;
-    int no;
-    bool implies(const Expr &) const;
-    bool implies_not(const Expr &) const;
-    bool not_implies(const Expr &) const;
-    bool not_implies_not(const Expr &) const;
-    bool compatible(const Expr &) const;
-    String s() const;
-  };
-  
-  Vector<Expr> _exprs;
-  int _output_everything;
-  unsigned _safe_length;
-  unsigned _align_offset;
+class Classifier : public Element { public:
 
-  void sort_and_expr_subtree(int, int, int);
-  
-  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
-  int check_path(int, bool) const;
-  void drift_expr(int);
-  void combine_compatible_states();
-  bool remove_unused_states();
-  //int count_occurrences(const Expr &, int state, bool first) const;
-  //bool remove_duplicate_states();
-  void unaligned_optimize();
-  void optimize_exprs(ErrorHandler *);
-  
-  static String program_string(Element *, void *);
-  
-  void length_checked_push(Packet *);
-  
- public:
+  class Expr;
   
   Classifier();
   ~Classifier();
@@ -136,6 +95,49 @@ class Classifier : public Element { protected:
   void finish_expr_subtree(Vector<int> &, bool is_and, int success = SUCCESS, int failure = FAILURE);
   
   void push(int port, Packet *);
+  
+  struct Expr {
+    int offset;
+    union {
+      unsigned char c[4];
+      unsigned u;
+    } mask;
+    union {
+      unsigned char c[4];
+      unsigned u;
+    } value;
+    int yes;
+    int no;
+    bool implies(const Expr &) const;
+    bool implies_not(const Expr &) const;
+    bool not_implies(const Expr &) const;
+    bool not_implies_not(const Expr &) const;
+    bool compatible(const Expr &) const;
+    String s() const;
+  };
+
+ protected:
+  
+  Vector<Expr> _exprs;
+  int _output_everything;
+  unsigned _safe_length;
+  unsigned _align_offset;
+
+  void sort_and_expr_subtree(int, int, int);
+  
+  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
+  int check_path(int, bool) const;
+  void drift_expr(int);
+  void combine_compatible_states();
+  bool remove_unused_states();
+  //int count_occurrences(const Expr &, int state, bool first) const;
+  //bool remove_duplicate_states();
+  void unaligned_optimize();
+  void optimize_exprs(ErrorHandler *);
+  
+  static String program_string(Element *, void *);
+  
+  void length_checked_push(Packet *);
   
 };
 

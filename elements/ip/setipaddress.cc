@@ -16,7 +16,6 @@
 #endif
 #include "setipaddress.hh"
 #include "confparse.hh"
-#include <string.h>
 
 SetIPAddress::SetIPAddress()
   : Element(1, 1)

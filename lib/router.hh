@@ -8,11 +8,82 @@
 #endif
 class ElementFilter;
 
-class Router : public ElementLink {
+class Router : public ElementLink { public:
 
-  struct Hookup;
   struct Handler;
+  struct Hookup {
+    int idx;
+    int port;
+    Hookup()					: idx(-1) { }
+    Hookup(int i, int p)			: idx(i), port(p) { }
+  };
+  
+  Router();
+  ~Router();
+  void use()					{ _refcount++; }
+  void unuse();
+  
+  int add_element(Element *, const String &name, const String &conf, const String &landmark);
+  int add_connection(int from_idx, int from_port, int to_idx, int to_port);
+  void add_requirement(const String &);
+  
+  bool initialized() const			{ return _initialized; }
+  
+  int nelements() const				{ return _elements.size(); }
+  Element *element(int) const;
+  const String &ename(int) const;
+  const String &econfiguration(int) const;
+  const String &elandmark(int) const;
+  const Vector<Element *> &elements() const	{ return _elements; }
+  Element *find(const String &, ErrorHandler * = 0) const;
+  Element *find(Element *, const String &, ErrorHandler * = 0) const;
 
+  const Vector<String> &requirements() const	{ return _requirements; }
+
+  int ninput_pidx() const			{ return _input_fidx.size(); }
+  int noutput_pidx() const			{ return _output_fidx.size(); }
+
+  int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
+  int downstream_elements(Element *, int o, Vector<Element *> &);
+  int downstream_elements(Element *, Vector<Element *> &);
+  int upstream_elements(Element *, int i, ElementFilter*, Vector<Element*>&);
+  int upstream_elements(Element *, int i, Vector<Element *> &);  
+  int upstream_elements(Element *, Vector<Element *> &);
+  
+  int initialize(ErrorHandler *);
+  void take_state(Router *, ErrorHandler *);
+
+  void add_read_handler(int, const String &, ReadHandler, void *);
+  void add_write_handler(int, const String &, WriteHandler, void *);
+  int find_handler(Element *, const String &);
+  void element_handlers(int, Vector<int> &) const;
+  int nhandlers() const				{ return _nhandlers; }
+  const Handler &handler(int i) const;
+
+  int live_reconfigure(int, const String &, ErrorHandler *);
+  int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
+  void set_configuration(int, const String &);
+
+  Timer *timer_head()				{ return &_timer_head; }
+
+#if CLICK_USERLEVEL
+  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
+  int add_select(int fd, int element, int mask);
+  int remove_select(int fd, int element, int mask);
+#endif
+  
+  void driver();
+  void driver_once();
+  void wait();
+  
+  String flat_configuration_string() const;
+  String element_list_string() const;
+  String element_ports_string(int) const;
+  
+  void please_stop_driver()			{ _please_stop_driver = 1; }
+  
+ private:
+  
   Timer _timer_head;
   bool _please_stop_driver;
 
@@ -94,83 +165,10 @@ class Router : public ElementLink {
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
 
-  static const unsigned int _max_driver_count = 10000;
+  static const unsigned int MAX_DRIVER_COUNT = 10000;
 
- public:
-  
-  Router();
-  ~Router();
-  void use()					{ _refcount++; }
-  void unuse();
-  
-  int add_element(Element *, const String &name, const String &conf, const String &landmark);
-  int add_connection(int from_idx, int from_port, int to_idx, int to_port);
-  void add_requirement(const String &);
-  
-  bool initialized() const			{ return _initialized; }
-  
-  int nelements() const				{ return _elements.size(); }
-  Element *element(int) const;
-  const String &ename(int) const;
-  const String &econfiguration(int) const;
-  const String &elandmark(int) const;
-  const Vector<Element *> &elements() const	{ return _elements; }
-  Element *find(const String &, ErrorHandler * = 0) const;
-  Element *find(Element *, const String &, ErrorHandler * = 0) const;
-
-  const Vector<String> &requirements() const	{ return _requirements; }
-
-  int ninput_pidx() const			{ return _input_fidx.size(); }
-  int noutput_pidx() const			{ return _output_fidx.size(); }
-
-  int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
-  int downstream_elements(Element *, int o, Vector<Element *> &);
-  int downstream_elements(Element *, Vector<Element *> &);
-  int upstream_elements(Element *, int i, ElementFilter*, Vector<Element*>&);
-  int upstream_elements(Element *, int i, Vector<Element *> &);  
-  int upstream_elements(Element *, Vector<Element *> &);
-  
-  int initialize(ErrorHandler *);
-  void take_state(Router *, ErrorHandler *);
-
-  void add_read_handler(int, const String &, ReadHandler, void *);
-  void add_write_handler(int, const String &, WriteHandler, void *);
-  int find_handler(Element *, const String &);
-  void element_handlers(int, Vector<int> &) const;
-  int nhandlers() const				{ return _nhandlers; }
-  const Handler &handler(int i) const;
-
-  int live_reconfigure(int, const String &, ErrorHandler *);
-  int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
-  void set_configuration(int, const String &);
-
-  Timer *timer_head()				{ return &_timer_head; }
-
-#if CLICK_USERLEVEL
-  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
-  int add_select(int fd, int element, int mask);
-  int remove_select(int fd, int element, int mask);
-#endif
-  
-  void driver();
-  void driver_once();
-  void wait();
-  
-  String flat_configuration_string() const;
-  String element_list_string() const;
-  String element_ports_string(int) const;
-  
-  void please_stop_driver()			{ _please_stop_driver = 1; }
-  
 };
 
-
-struct Router::Hookup {
-  int idx;
-  int port;
-  Hookup()				: idx(-1) { }
-  Hookup(int i, int p)			: idx(i), port(p) { }
-};
 
 struct Router::Handler {
   String name;
