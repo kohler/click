@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-TimeRange(I<KEYWORDS>)
+TimeRange(I<keyword SIMPLE>)
 
 =s measurement, analysis
 

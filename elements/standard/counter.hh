@@ -10,7 +10,7 @@ class HandlerCall;
 /*
 =c
 
-Counter([I<KEYWORDS>])
+Counter([I<keywords COUNT_CALL, BYTE_COUNT_CALL>])
 
 =s measurement
 

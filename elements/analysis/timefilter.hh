@@ -8,7 +8,7 @@ class HandlerCall;
 /*
 =c
 
-TimeFilter(I<KEYWORDS>)
+TimeFilter(I<keywords START, START_AFTER, START_DELAY, END, END_AFTER, END_DELAY, INTERVAL, STOP, END_CALL>)
 
 =s analysis
 
