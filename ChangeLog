@@ -1,3 +1,8 @@
+2002-10-16 Wednesday 18:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/local/: printairo.cc (1.1), printairo.hh (1.1): print
+	aironet packet headers
+
 2002-10-16 Wednesday 14:16  Eddie Kohler <kohler@icir.org>
 
 	* tools/: click2xml/xml2click.cc (1.4), lib/eclasst.cc (1.19):
