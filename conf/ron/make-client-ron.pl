@@ -76,13 +76,22 @@ print "\t-> [1]arpq;\n";
 print "c[1] -> Discard;\n";
 print "\n";
 
+print "sOut :: Switch(0);\n";
+print "sOut[0]  -> setgw;\n";
+print "sIn :: Switch(0);\n";
+print "sIn[0] ->  toktap;\n";
+print "\n";
+
+print "ControlSocket(UNIX, /tmp/clicksocket);\n";
+print "\n";
+
 print "// ------------- Divert Sockets ---------------\n";
 print "// Outgoing TCP Packets\n";
 print "DivertSocket(", $device, ", 4000, 2, 6, ", $meIP, ", 0.0.0.0/0, out)\n";
 print "//\t-> Print(OUT_TCP)\n";
 print "\t-> MarkIPHeader\n";
 print "\t-> SetIPChecksum\n";
-print "\t-> SetIPChecksum\n";
+print "\t-> sOut[1]\n";
 print "\t-> CheckIPHeader\n";
 print "\t-> GetIPAddress(16)\n";
 print "\t-> [0]iprw;\n";
@@ -90,14 +99,15 @@ print "\n";
 
 print "// Incoming TCP Packets\n";
 print "DivertSocket(", $device, ", 4001, 2, 6, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "\t-> sIn[1]\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN__TCP)\n";
 print "\t-> GetIPAddress(16)\n";
 print "\t-> [1]iprw;\n";
 print "\n";
 
-print "// Incoming IP-IP Packets\n";
-print "DivertSocket(", $device, ", 4002, 2, 4, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "// Incoming UDP Encapsulated Packets\n";
+print "DivertSocket(", $device, ", 4002, 2, 17, 0.0.0.0/0, 4001, ", $meIP, ", 4001, in)\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN-ENCAP-RAW)\n";
 print "\t-> GetIPAddress(16)\n";
@@ -137,7 +147,7 @@ print "\n";
 
 for($i=0; $i<$n; $i++) {
     print "rt[", $i+2, "]\t-> IPFragmenter(1400, false)\n";
-    print "\t-> IPEncap(4, ", $meIP, ", ", $servers[$i], ")\n";
+    print "\t-> UDPIPEncap($meIP, 4000, $servers[$i], 4000)\n";
     print "//\t-> IPPrint(OUT_RT_PORT", $i+2, ")\n";
     print "\t-> setgw;\n";
     print "\n";
