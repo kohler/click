@@ -122,6 +122,13 @@ AC_LANG_CPLUSPLUS
 
 
 dnl
+dnl large file support
+dnl
+
+CLICK_CHECK_LARGE_FILE_SUPPORT
+
+
+dnl
 dnl mmap
 dnl
 
