@@ -38,6 +38,11 @@ Keyword arguments are:
 
 Boolean. If true, then count bytes, not packets. Default is false.
 
+=item IP_BYTES
+
+Boolean. If true, then do not count bytes from the link header. Default is
+false.
+
 =item MULTIPACKET
 
 Boolean. If true, and BYTES is false, then use packets' packet count
@@ -107,6 +112,20 @@ pass. It starts out active.
 When any value is written to this handler, AggregateCounter sets `active' to
 false and additionally stops the driver.
 
+=h reaggregate_counts write-only
+
+When any value is written to this handler, AggregateCounter will recalculate
+its counters. The new aggregate identifiers equal the old counts; the new
+counts represent how many times each old count appeared. The old aggregate
+identifiers are thrown away. To put it another way, AggregateCounter creates a
+multiset containing all aggregate counts, then stores each count as an
+aggregate, with its number of occurrences in the multiset as its count.
+
+=h banner read/write
+
+Returns or sets the banner that is written to the head of any output file.
+Default is empty.
+
 =n
 
 The aggregate identifier is stored in host byte order. Thus, the aggregate ID
@@ -154,6 +173,7 @@ class AggregateCounter : public Element { public:
     Packet *pull(int);
 
     int write_file(String, bool, ErrorHandler *) const;
+    void reaggregate_counts();
     
   private:
 
@@ -164,6 +184,7 @@ class AggregateCounter : public Element { public:
     };
 
     bool _bytes : 1;
+    bool _ip_bytes : 1;
     bool _use_packet_count : 1;
     bool _use_extra_length : 1;
     bool _frozen : 1;
@@ -180,12 +201,15 @@ class AggregateCounter : public Element { public:
     uint64_t _call_count;
     HandlerCall *_call_count_h;
 
+    String _output_banner;
+    
     Node *new_node();
     Node *new_node_block();
     void free_node(Node *);
 
     Node *make_peer(uint32_t, Node *, bool frozen);
     Node *find_node(uint32_t, bool frozen = false);
+    void reaggregate_node(Node *);
 
     static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);

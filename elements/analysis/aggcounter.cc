@@ -22,7 +22,6 @@
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
-#include <packet_anno.hh>
 
 AggregateCounter::AggregateCounter()
     : Element(1, 1), _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
@@ -69,6 +68,7 @@ int
 AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
     bool bytes = false;
+    bool ip_bytes = false;
     bool packet_count = true;
     bool extra_length = true;
     uint32_t freeze_nnz, stop_nnz;
@@ -79,6 +79,7 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "BYTES", cpBool, "count bytes?", &bytes,
+		    "IP_BYTES", cpBool, "do not count link header bytes?", &ip_bytes,
 		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
 		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
 		    "FREEZE_AFTER_AGG", cpUnsigned, "freeze after N nonzero aggregates", &freeze_nnz,
@@ -89,6 +90,7 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     
     _bytes = bytes;
+    _ip_bytes = ip_bytes;
     _use_packet_count = packet_count;
     _use_extra_length = extra_length;
 
@@ -264,8 +266,11 @@ AggregateCounter::update(Packet *p, bool frozen)
     uint32_t amount;
     if (!_bytes)
 	amount = (_use_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
-    else
+    else {
 	amount = p->length() + (_use_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+	if (_ip_bytes && p->network_header())
+	    amount -= p->network_header_offset();
+    }
     
     // update _num_nonzero; possibly call handler
     if (amount && !n->count) {
@@ -302,6 +307,36 @@ AggregateCounter::pull(int port)
     if (p && _active)
 	update(p, _frozen || (port == 1));
     return p;
+}
+
+void
+AggregateCounter::reaggregate_node(Node *n)
+{
+    if (n) {
+	Node *l = n->child[0], *r = n->child[1];
+	uint32_t count = n->count;
+	free_node(n);
+	
+	if ((n = find_node(count, false))) {
+	    if (!n->count)
+		_num_nonzero++;
+	    n->count++;
+	    _count++;
+	}
+
+	reaggregate_node(l);
+	reaggregate_node(r);
+    }
+}
+
+void
+AggregateCounter::reaggregate_counts()
+{
+    Node *old_root = _root;
+    _root = 0;
+    _num_nonzero = 0;
+    _count = 0;
+    reaggregate_node(old_root);
 }
 
 static void
@@ -346,7 +381,8 @@ AggregateCounter::write_file(String where, bool binary,
 	f = fopen(where.cc(), (binary ? "wb" : "w"));
     if (!f)
 	return errh->error("%s: %s", where.cc(), strerror(errno));
-    
+
+    fwrite(_output_banner.data(), 1, _output_banner.length(), f);
     fprintf(f, "$num_nonzero %u\n", _num_nonzero);
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     if (binary)
@@ -392,6 +428,8 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(ac->_frozen) + "\n";
       case 1:
 	return cp_unparse_bool(ac->_active) + "\n";
+      case 4:
+	return ac->_output_banner;
       default:
 	return "<error>";
     }
@@ -421,6 +459,16 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	ac->_active = false;
 	ac->router()->please_stop_driver();
 	return 0;
+      case 3:
+	ac->reaggregate_counts();
+	return 0;
+      case 4:
+	ac->_output_banner = data;
+	if (data && data.back() != '\n')
+	    ac->_output_banner += '\n';
+	else if (data && data.length() == 1)
+	    ac->_output_banner = "";
+	return 0;
       default:
 	return errh->error("internal error");
     }
@@ -436,6 +484,9 @@ AggregateCounter::add_handlers()
     add_read_handler("active", read_handler, (void *)1);
     add_write_handler("active", write_handler, (void *)1);
     add_write_handler("stop", write_handler, (void *)2);
+    add_write_handler("reaggregate_counts", write_handler, (void *)3);
+    add_read_handler("banner", read_handler, (void *)4);
+    add_write_handler("banner", write_handler, (void *)4);
 }
 
 ELEMENT_REQUIRES(userlevel HandlerCall)

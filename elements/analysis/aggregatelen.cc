@@ -8,7 +8,6 @@
 #include <click/confparse.hh>
 #include <click/click_ip.h>
 #include <click/packet_anno.hh>
-#include <packet_anno.hh>
 
 AggregateLength::AggregateLength()
     : Element(1, 1)

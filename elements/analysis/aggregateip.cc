@@ -11,7 +11,7 @@
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
 #include <click/click_udp.h>
-#include <packet_anno.hh>
+#include <click/packet_anno.hh>
 
 static HashMap<String, int> *chunkmap;
 static Vector<AggregateIP::Field> chunks;

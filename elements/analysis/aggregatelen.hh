@@ -14,7 +14,7 @@ sets aggregate annotation based on packet length
 
 =d
 
-AggregateIP sets the aggregate annotation on every passing packet to the
+AggregateLength sets the aggregate annotation on every passing packet to the
 packet's length, plus any length stored in the extra length annotation.
 
 Keyword arguments are:
