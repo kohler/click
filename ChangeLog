@@ -1,3 +1,7 @@
+2003-02-06 Thursday 10:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/setgridchecksum.hh (1.6): doc nitlet
+
 2003-02-06 Thursday 10:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.32), dsdvroutetable.hh
