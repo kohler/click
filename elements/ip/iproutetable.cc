@@ -23,8 +23,28 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 #include "iproutetable.hh"
 CLICK_DECLS
+
+StringAccum&
+operator<<(StringAccum& sa, const IPRoute& r)
+{
+    sa << r.addr.unparse_with_mask(r.mask);
+    if (r.gw)
+	sa << ' ' << r.gw;
+    sa << ' ' << r.port;
+    return sa;
+}
+
+String
+IPRoute::unparse() const
+{
+    StringAccum sa;
+    sa << *this;
+    return sa.take_string();
+}
+
 
 void *
 IPRouteTable::cast(const char *name)
@@ -39,25 +59,27 @@ int
 IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
+    IPRoute r;
     for (int i = 0; i < conf.size(); i++) {
 	Vector<String> words;
 	cp_spacevec(conf[i], words);
 
-	IPAddress dst, mask, gw;
-	int32_t port;
 	bool ok = false;
 	if ((words.size() == 2 || words.size() == 3)
-	    && cp_ip_prefix(words[0], &dst, &mask, true, this)
-	    && cp_integer(words.back(), &port)) {
+	    && cp_ip_prefix(words[0], &r.addr, &r.mask, true, this)
+	    && cp_integer(words.back(), &r.port)) {
 	    if (words.size() == 3)
-		ok = cp_ip_address(words[1], &gw, this);
-	    else
+		ok = cp_ip_address(words[1], &r.gw, this);
+	    else {
+		r.gw = IPAddress();
 		ok = true;
+	    }
 	}
 
-	if (ok && port >= 0)
-	    (void) add_route(dst, mask, gw, port, errh);
-	else
+	if (ok && r.port >= 0 && r.port < noutputs()) {
+	    r.addr &= r.mask;
+	    (void) add_route(r, errh);
+	} else
 	    errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
     }
 
@@ -65,14 +87,14 @@ IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-IPRouteTable::add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh)
+IPRouteTable::add_route(const IPRoute&, ErrorHandler *errh)
 {
     // by default, cannot add routes
     return errh->error("cannot add routes to this routing table");
 }
 
 int
-IPRouteTable::remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh)
+IPRouteTable::remove_route(const IPRoute&, ErrorHandler *errh)
 {
     // by default, cannot remove routes
     return errh->error("cannot delete routes from this routing table");
@@ -112,55 +134,62 @@ IPRouteTable::push(int, Packet *p)
 int
 IPRouteTable::add_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
-    IPRouteTable *r = static_cast<IPRouteTable *>(e);
+    IPRouteTable *table = static_cast<IPRouteTable *>(e);
 
     Vector<String> words;
     cp_spacevec(conf, words);
 
-    IPAddress dst, mask, gw;
-    int port, ok;
+    IPRoute r;
+    int ok;
 
     if (words.size() == 2)
-	ok = cp_va_parse(words, r, errh,
-			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
-			 cpInteger, "output port", &port, cpEnd);
+	ok = cp_va_parse(words, table, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &r.addr, &r.mask,
+			 cpInteger, "output port", &r.port, cpEnd);
     else
-	ok = cp_va_parse(words, r, errh,
-			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
-			 cpIPAddress, "gateway address", &gw,
-			 cpInteger, "output port", &port, cpEnd);
+	ok = cp_va_parse(words, table, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &r.addr, &r.mask,
+			 cpIPAddress, "gateway address", &r.gw,
+			 cpInteger, "output port", &r.port, cpEnd);
 
-    if (ok >= 0 && (port < 0 || port >= r->noutputs()))
+    if (ok >= 0 && (r.port < 0 || r.port >= table->noutputs()))
 	ok = errh->error("output port out of range");
-    if (ok >= 0)
-	ok = r->add_route(dst, mask, gw, port, errh);
+    if (ok >= 0) {
+	r.addr &= r.mask;
+	ok = table->add_route(r, errh);
+    }
     return ok;
 }
 
 int
 IPRouteTable::remove_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
-    IPRouteTable *r = static_cast<IPRouteTable *>(e);
+    IPRouteTable *table = static_cast<IPRouteTable *>(e);
 
     Vector<String> words;
     cp_spacevec(conf, words);
 
-    IPAddress a, mask, gw;
-    int port = -1, ok;
+    IPRoute r;
+    r.port = -1;
+    int ok;
 
     if (words.size() <= 2)
-	ok = cp_va_parse(words, r, errh,
-			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
+	ok = cp_va_parse(words, table, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &r.addr, &r.mask,
 			 cpOptional,
-			 cpInteger, "output port", &port, cpEnd);
+			 cpInteger, "output port", &r.port, cpEnd);
     else
-	ok = cp_va_parse(words, r, errh,
-			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
-			 cpIPAddress, "gateway address", &gw,
-			 cpInteger, "output port", &port, cpEnd);
+	ok = cp_va_parse(words, table, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &r.addr, &r.mask,
+			 cpIPAddress, "gateway address", &r.gw,
+			 cpInteger, "output port", &r.port, cpEnd);
 
-    if (ok >= 0)
-	ok = r->remove_route(a, mask, gw, port, errh);
+    if (ok >= 0 && (r.port < -1 || r.port >= table->noutputs()))
+	ok = errh->error("output port out of range");
+    if (ok >= 0) {
+	r.addr &= r.mask;
+	ok = table->remove_route(r, errh);
+    }
     return ok;
 }
 

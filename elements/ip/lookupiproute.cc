@@ -34,23 +34,21 @@ StaticIPLookup::~StaticIPLookup()
 }
 
 int
-StaticIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
-			  int output, ErrorHandler *errh)
+StaticIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 {
     if (ports_frozen())
 	return errh->error("can't add routes dynamically");
     else
-	return LinearIPLookup::add_route(addr, mask, gw, output, errh);
+	return LinearIPLookup::add_route(r, errh);
 }
 
 int
-StaticIPLookup::remove_route(IPAddress addr, IPAddress mask, IPAddress gw,
-			     int output, ErrorHandler *errh)
+StaticIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
 {
     if (ports_frozen())
 	return errh->error("can't remove routes dynamically");
     else
-	return LinearIPLookup::remove_route(addr, mask, gw, output, errh);
+	return LinearIPLookup::remove_route(r, errh);
 }
 
 void

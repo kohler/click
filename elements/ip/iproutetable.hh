@@ -27,21 +27,22 @@ particular routing table elements.
 
 =over 4
 
-=item C<int B<add_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>
+=item C<int B<add_route>(const IPRoute& r, ErrorHandler *errh)>
 
-Adds a route sending packets with destination addresses matching C<dst/mask>
-to gateway C<gw>, via the element's output port C<p>. Any existing route for
-C<dst/mask> is silently overwritten. Any errors are reported to
-C<errh>. Should return 0 on success and negative on failure. The default
-implementation reports an error "cannot add routes to this routing table".
+Adds a route sending packets with destination addresses matching
+C<r.addr/r.mask> to gateway C<r.gw>, via the element's output port
+C<r.port>. Any existing route for C<dst/mask> is silently overwritten. Any
+errors are reported to C<errh>. Should return 0 on success and negative on
+failure. The default implementation reports an error "cannot add routes to
+this routing table".
 
-=item C<int B<remove_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>
+=item C<int B<remove_route>(const IPRoute& r, ErrorHandler *errh)>
 
 Removes the route sending packets with destination addresses matching
-C<dst/mask> to gateway C<gw>, via the element's output port C<p>. Any errors
-are reported to C<errh>. Should return 0 on success and negative on failure.
-The default implementation reports an error "cannot delete routes from this
-routing table".
+C<r.addr/r.mask> to gateway C<r.gw>, via the element's output port
+C<r.port>. Any errors are reported to C<errh>. Should return 0 on success and
+negative on failure.  The default implementation reports an error "cannot
+delete routes from this routing table".
 
 =item C<int B<lookup_route>(IPAddress dst, IPAddress &gw_return) const>
 
@@ -100,13 +101,30 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =a StaticIPLookup, LinearIPLookup, DirectIPLookup */
 
+struct IPRoute {
+    IPAddress addr;
+    IPAddress mask;
+    IPAddress gw;
+    int32_t port;
+
+    IPRoute()			: port(-1) { }
+    IPRoute(IPAddress a, IPAddress m, IPAddress g, int p)
+				: addr(a), mask(m), gw(g), port(p) { }
+
+    bool contains(const IPRoute& r) const { return (r.addr & mask) == mask && r.mask.mask_as_specific(mask); }
+    bool mask_as_specific(IPAddress m) const { return mask.mask_as_specific(m); }
+    int prefix_len() const	{ return mask.mask_to_prefix_len(); }
+
+    String unparse() const;
+};
+
 class IPRouteTable : public Element { public:
 
     void* cast(const char*);
     int configure(Vector<String>&, ErrorHandler*);
 
-    virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
-    virtual int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
+    virtual int add_route(const IPRoute&, ErrorHandler*);
+    virtual int remove_route(const IPRoute&, ErrorHandler*);
     virtual int lookup_route(IPAddress, IPAddress&) const = 0;
     virtual String dump_routes() const;
 
@@ -118,6 +136,8 @@ class IPRouteTable : public Element { public:
     static String table_handler(Element*, void*);
 
 };
+
+StringAccum& operator<<(StringAccum&, const IPRoute&);
 
 CLICK_ENDDECLS
 #endif

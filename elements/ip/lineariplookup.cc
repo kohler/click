@@ -56,13 +56,18 @@ LinearIPLookup::check() const
     bool ok = true;
     
     // 'next' pointers are correct
-    for (int i = 0; i < _t.size(); i++)
+    for (int i = 0; i < _t.size(); i++) {
 	for (int j = i + 1; j < _t[i].next && j < _t.size(); j++)
-	    if ((_t[j].addr & _t[i].mask) == _t[i].addr
-		&& _t[j].mask.mask_as_specific(_t[i].mask)) {
+	    if (_t[i].contains(_t[j])) {
 		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
 		ok = false;
 	    }
+	if (_t[i].next < _t.size())
+	    if (!_t[i].contains(_t[ _t[i].next ])) {
+		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[ _t[i].next ].unparse_addr().cc());
+		ok = false;
+	    }
+    }
 
     // no duplicate routes
     for (int i = 0; i < _t.size(); i++)
@@ -88,26 +93,19 @@ LinearIPLookup::check() const
 }
 
 int
-LinearIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
-			  int output, ErrorHandler *errh)
+LinearIPLookup::add_route(const IPRoute &r, ErrorHandler *)
 {
-    if (output < 0 || output >= noutputs())
-	return errh->error("port number out of range");
-
-    // patch up addr
-    addr &= mask;
-
     // overwrite any existing route
     for (int i = 0; i < _t.size(); i++)
-	if (_t[i].addr == addr && _t[i].mask == mask) {
-	    _t[i].gw = gw;
-	    _t[i].output = output;
+	if (_t[i].addr == r.addr && _t[i].mask == r.mask) {
+	    _t[i].gw = r.gw;
+	    _t[i].port = r.port;
 	    check();
 	    return 0;
 	}
 
     // put it in a slot
-    Entry e(addr, mask, gw, output);
+    Entry e(r);
     int found = -1;
     for (int i = 0; i < _t.size(); i++)
 	if (_t[i].addr && !_t[i].mask) {
@@ -122,13 +120,10 @@ LinearIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
 
     // patch up 'next' pointers
     for (int i = found - 1; i >= 0; i--)
-	if (mask.mask_as_specific(_t[i].mask)
-	    && (addr & _t[i].mask) == _t[i].addr
-	    && _t[i].next > found)
+	if (_t[i].contains(r) && _t[i].next > found)
 	    _t[i].next = found;
     for (int i = found + 1; i < _t.size(); i++)
-	if (_t[i].mask.mask_as_specific(mask)
-	    && (_t[i].addr & mask) == addr) {
+	if (r.contains(_t[i])) {
 	    _t[found].next = i;
 	    break;
 	}
@@ -144,15 +139,15 @@ LinearIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
 }
 
 int
-LinearIPLookup::remove_route(IPAddress a, IPAddress m, IPAddress gw, int output, ErrorHandler *errh)
+LinearIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
 {
     int nremoved = 0;
 
     // remove routes from main table; replace with redundant route, if any
     for (int i = 0; i < _t.size(); i++) {
 	Entry &e = _t[i];
-	if (e.addr == a && e.mask == m
-	    && (output < 0 || (e.gw == gw && e.output == output && !nremoved))) {
+	if (e.addr == r.addr && e.mask == r.mask
+	    && (r.port < 0 || (e.gw == r.gw && e.port == r.port && !nremoved))) {
 	    e.addr = IPAddress(1);
 	    e.mask = IPAddress(0);
 	    nremoved++;
@@ -192,7 +187,7 @@ LinearIPLookup::lookup_route(IPAddress a, IPAddress &gw) const
     int ei = lookup_entry(a);
     if (ei >= 0) {
 	gw = _t[ei].gw;
-	return _t[ei].output;
+	return _t[ei].port;
     } else
 	return -1;
 }
@@ -208,7 +203,7 @@ operator<<(StringAccum &sa, const LinearIPLookup::Entry &e)
     sa << e.gw << '\t';
     if (sa.length() < l + 9)
 	sa << '\t';
-    sa << e.output;
+    sa << e.port;
     return sa;
 }
 
@@ -251,7 +246,7 @@ LinearIPLookup::push(int, Packet *p)
     const Entry &e = _t[ei];
     if (e.gw)
 	p->set_dst_ip_anno(e.gw);
-    output(e.output).push(p);
+    output(e.port).push(p);
 }
 
 void

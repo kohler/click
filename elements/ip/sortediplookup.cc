@@ -47,12 +47,6 @@ SortedIPLookup::check() const
     return ok;
 }
 
-static bool
-entry_subset(const LinearIPLookup::Entry &a, const LinearIPLookup::Entry &b)
-{
-    return ((a.addr & b.mask) == b.addr && a.mask.mask_as_specific(b.mask));
-}
-
 void
 SortedIPLookup::sort_table()
 {
@@ -64,7 +58,7 @@ SortedIPLookup::sort_table()
     Vector<int> dep(_t.size(), 0);
     for (int i = 0; i < _t.size(); i++)
 	for (int j = 0; j < _t.size(); j++)
-	    if (entry_subset(_t[i], _t[j]) && i != j)
+	    if (_t[j].contains(_t[i]) && i != j)
 		dep[j]++;
 
     // Now, create the permutation array.
@@ -85,7 +79,7 @@ SortedIPLookup::sort_table()
 	    int which = permute[qpos];
 	    dep[which] = -1;
 	    for (int i = 0; i < _t.size(); i++)
-		if (dep[i] > 0 && entry_subset(_t[which], _t[i])) {
+		if (dep[i] > 0 && _t[i].contains(_t[which])) {
 		    if (!--dep[i])
 			permute.push_back(i);
 		}
@@ -106,18 +100,18 @@ SortedIPLookup::sort_table()
 }
 
 int
-SortedIPLookup::add_route(IPAddress a, IPAddress m, IPAddress gw, int output, ErrorHandler *errh)
+SortedIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 {
-    if (LinearIPLookup::add_route(a, m, gw, output, errh) < 0)
+    if (LinearIPLookup::add_route(r, errh) < 0)
 	return -1;
     sort_table();
     return 0;
 }
 
 int
-SortedIPLookup::remove_route(IPAddress a, IPAddress m, IPAddress gw, int output, ErrorHandler *errh)
+SortedIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
 {
-    if (LinearIPLookup::remove_route(a, m, gw, output, errh) < 0)
+    if (LinearIPLookup::remove_route(r, errh) < 0)
 	return -1;
     sort_table();
     return 0;
@@ -166,7 +160,7 @@ SortedIPLookup::push(int, Packet *p)
     const Entry &e = _t[ei];
     if (e.gw)
 	p->set_dst_ip_anno(e.gw);
-    output(e.output).push(p);
+    output(e.port).push(p);
 }
 
 #include <click/vector.cc>

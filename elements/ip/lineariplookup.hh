@@ -80,17 +80,16 @@ class LinearIPLookup : public IPRouteTable { public:
 
     void push(int port, Packet *p);
 
-    int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
+    int add_route(const IPRoute&, ErrorHandler *);
+    int remove_route(const IPRoute&, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress &) const;
     String dump_routes() const;
 
     bool check() const;
 
-    struct Entry {
-	IPAddress addr, mask, gw;
-	int output, next;
-	Entry(IPAddress d, IPAddress m, IPAddress g, int o) : addr(d), mask(m), gw(g), output(o), next(0x7FFFFFFF) { }
+    struct Entry : public IPRoute {
+	int next;
+	Entry(const IPRoute& r_) : IPRoute(r_), next(0x7FFFFFFF) { }
 	String unparse_addr() const { return addr.unparse_with_mask(mask); }
     };
 

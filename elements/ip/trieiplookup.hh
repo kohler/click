@@ -71,8 +71,8 @@ public:
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
         
-    int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
+    int add_route(const IPRoute&, ErrorHandler *);
+    int remove_route(const IPRoute&, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress &) const;
     String dump_routes() const;
 
@@ -99,17 +99,6 @@ public:
         }
     };
 
-    struct Prefix {
-        IPAddress addr, mask, gw;
-        int output;
-
-        Prefix(const IPAddress& a, const IPAddress& m, const IPAddress& g, int o) :
-            addr(a), mask(m), gw(g), output(o) {}
-
-        String unparse() const { return addr.unparse_with_mask(mask) +
-                                     " " + gw.unparse() + " " + String(output); }
-    };
-
     struct Marker {
         Rope rope;
         IPAddress gw;
@@ -132,8 +121,7 @@ public:
     typedef HashMap<HashIPAddress, Marker> LengthHash;
 
     struct TrieNode {
-        IPAddress addr, mask, gw;
-        int output;
+	IPRoute r;
 
         long left_child;
         long right_child;
@@ -147,10 +135,7 @@ public:
         String unparse() const
         {
             String str;
-            str += addr.unparse();
-            str += mask.unparse();
-            str += gw.unparse();
-            str += String(output) + String(" ");
+            str += r.unparse() + String(" ");
             str += String("left_child: ") + String(left_child) + String(" ");
             str += String("right_child: ") + String(right_child) + String(" ");
             str += String(children_lengths);
@@ -159,12 +144,11 @@ public:
         }
 
         TrieNode() :
-            addr(0), mask(0), gw(0), output(0), left_child(-1), right_child(-1),
+            left_child(-1), right_child(-1),
             parent(-1), children_lengths(0), is_real(false), index(-1) {}
 
-        TrieNode(const IPAddress& a, const IPAddress& m, const IPAddress& g,
-                 int o, bool real, int i = -1) :
-            addr(a), mask(m), gw(g), output(o), is_real(real), index(i)
+        TrieNode(const IPRoute& r, bool real, int i = -1) :
+            r(r), is_real(real), index(i)
         {
             left_child = -1;
             right_child = -1;
@@ -175,16 +159,16 @@ public:
         inline bool
         operator<(const TrieNode& tn) const
         {
-            return (htonl(addr.addr()) < htonl(tn.addr.addr())) ||
-                (addr.addr() == tn.addr.addr() &&
-                 mask.mask_to_prefix_len() < tn.mask.mask_to_prefix_len());
+            return (htonl(r.addr.addr()) < htonl(tn.r.addr.addr())) ||
+                (r.addr == tn.r.addr &&
+                 r.mask.mask_to_prefix_len() < tn.r.mask.mask_to_prefix_len());
         }
 
     };
 
 protected:
     // helper methods
-    inline int binary_search(const Vector<Prefix> &vec, const Prefix &pf);
+    inline int binary_search(const Vector<IPRoute> &vec, const IPRoute &pf);
 
      // build methods
     void build_main();
@@ -214,7 +198,7 @@ protected:
     // member variables
     Rope _default_rope;
     LengthHash _lengths_array[33];     // array containing a hashmap for each length + 0
-    Vector<Prefix> _route_vector;      // vector of all routes we know about
+    Vector<IPRoute> _route_vector;     // vector of all routes we know about
                                        // must be sorted and no duplicates
     bool _active;		       // true once trie is active
     Vector<TrieNode> _trie_vector;     // used only during build

@@ -86,17 +86,16 @@ RadixIPLookup::dump_routes() const
 
 
 int
-RadixIPLookup::add_route(IPAddress d, IPAddress m, IPAddress g, int port, ErrorHandler *errh)
+RadixIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 {
-    unsigned dst = d.addr();
-    unsigned mask = m.addr();
-    unsigned gw = g.addr();
-    dst &= mask;
+    unsigned dst = r.addr.addr();
+    unsigned mask = r.mask.addr();
+    unsigned gw = r.gw.addr();
 
     for (int i = 0; i < _v.size(); i++)
 	if (_v[i]->valid && (_v[i]->dst == dst) && (_v[i]->mask == mask)) {
 	    _v[i]->gw = gw;
-	    _v[i]->port = port;
+	    _v[i]->port = r.port;
 	    return 0;
 	}
 
@@ -104,7 +103,7 @@ RadixIPLookup::add_route(IPAddress d, IPAddress m, IPAddress g, int port, ErrorH
 	e->dst = dst;
 	e->mask = mask;
 	e->gw = gw;
-	e->port = port;
+	e->port = r.port;
 	e->valid = true;
 	_v.push_back(e);
 	_entries++;
@@ -115,11 +114,11 @@ RadixIPLookup::add_route(IPAddress d, IPAddress m, IPAddress g, int port, ErrorH
 }
 
 int
-RadixIPLookup::remove_route(IPAddress d, IPAddress m, IPAddress, int, ErrorHandler *errh)
+RadixIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
 {
     // XXX
-    unsigned dst = d.addr();
-    unsigned mask = m.addr();
+    unsigned dst = r.addr.addr();
+    unsigned mask = r.mask.addr();
 
     for (int i = 0; i < _v.size(); i++)
 	if (_v[i]->valid && (_v[i]->dst == dst) && (_v[i]->mask == mask)) {

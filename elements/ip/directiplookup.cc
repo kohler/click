@@ -70,23 +70,22 @@ DirectIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
 }
 
 int
-DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
-			    int output, ErrorHandler *errh)
+DirectIPLookup::add_route(const IPRoute& r, ErrorHandler *errh)
 {
-    uint32_t prefix = ntohl(dest.addr() & mask.addr());
-    uint32_t plen = mask.mask_to_prefix_len();
+    uint32_t prefix = ntohl(r.addr.addr());
+    uint32_t plen = r.prefix_len();
     int rt_i = find_entry(prefix, plen);
     uint16_t vport_i;
 
-    if (output >= noutputs() || output < 0)
+    if (r.port >= noutputs() || r.port < 0)
 	return errh->error("Output port out of range");
 
     if (rt_i >= 0) {
 	// Attempt to replace an existing route.  Allowed only when adding
 	// an explicit default route over an implicit discard default.
 	if (rt_i == 0 && _vport[0].port == DISCARD_PORT) {
-	    _vport[0].gw = gw;
-	    _vport[0].port = output;
+	    _vport[0].gw = r.gw;
+	    _vport[0].port = r.port;
 	    return 0;
 	} else 
 	    return errh->error("Entry already exists");
@@ -109,7 +108,7 @@ DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
 	    rt_i = _rt_size++;
 	}
 
-	vport_i = vport_ref(gw, output);
+	vport_i = vport_ref(r.gw, r.port);
 	_rtable[rt_i].prefix = prefix;	// in host-order format
 	_rtable[rt_i].plen = plen;
 	_rtable[rt_i].vport = vport_i;
@@ -196,11 +195,10 @@ DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
 }
 
 int
-DirectIPLookup::remove_route(IPAddress dest, IPAddress mask, IPAddress,
-			       int, ErrorHandler *errh)
+DirectIPLookup::remove_route(const IPRoute& r, ErrorHandler *errh)
 {
-    uint32_t prefix = ntohl(dest.addr() & mask.addr());
-    uint32_t plen = mask.mask_to_prefix_len();
+    uint32_t prefix = ntohl(r.addr.addr());
+    uint32_t plen = r.prefix_len();
     int rt_i = find_entry(prefix, plen);
 
     if (rt_i < 0 || (rt_i == 0 && _vport[0].port == DISCARD_PORT))

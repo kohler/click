@@ -34,8 +34,8 @@ class RadixIPLookup : public IPRouteTable { public:
     void notify_noutputs(int);
     void cleanup(CleanupStage);
 
-    int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
+    int add_route(const IPRoute&, ErrorHandler *);
+    int remove_route(const IPRoute&, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress &) const;
     String dump_routes() const;
 

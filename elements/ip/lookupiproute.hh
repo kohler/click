@@ -34,8 +34,8 @@ class StaticIPLookup : public LinearIPLookup { public:
 
     void add_handlers();
     
-    int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
+    int add_route(const IPRoute&, ErrorHandler *);
+    int remove_route(const IPRoute&, ErrorHandler *);
 
 };
 
