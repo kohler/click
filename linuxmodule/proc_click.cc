@@ -435,7 +435,10 @@ register_handler(proc_dir_entry *directory, int handlerno)
 
   String name = h->name();
   proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
-  // XXX check for NULL
+  if (!pde) {
+    click_chatter("click error: register_handler() couldn't register handler `%s'", name.cc());
+    return;
+  }
 #ifdef LINUX_2_2
   pde->ops = &proc_element_handler_inode_operations;
 #else
