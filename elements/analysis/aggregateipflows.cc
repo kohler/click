@@ -215,7 +215,10 @@ AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInf
 {
     // check whether this indicates the flow is over
     if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
-	&& p->transport_length() >= (int)sizeof(click_tcp)
+	/* 3.Feb.2004 - NLANR dumps do not contain full TCP headers! So relax
+	   the following length check to just make sure the flags are
+	   there. */
+	&& p->transport_length() >= 14
 	&& PAINT_ANNO(p) < 2) {	// ignore ICMP errors
 	if (p->tcp_header()->th_flags & TH_RST)
 	    finfo->_flow_over = 3;
