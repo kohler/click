@@ -515,7 +515,15 @@ dnl Checks endianness of machine.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ENDIAN], [
-    AC_CHECK_HEADERS(endian.h machine/endian.h, endian_hdr=$ac_hdr; break, endian_hdr=no)
+    AC_CHECK_HEADERS(endian.h machine/endian.h, 
+dnl autoconf 2.53 versus autoconf 2.13
+		    if test "x$ac_header" != x; then
+		        endian_hdr=$ac_header
+		    else
+			endian_hdr=$ac_hdr
+		    fi
+		    break
+		    , endian_hdr=no)
     if test "x$endian_hdr" != xno; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
 	    dnl can't use AC_TRY_CPP because it throws out the results
