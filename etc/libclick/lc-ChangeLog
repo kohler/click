@@ -1,3 +1,8 @@
+2002-01-05 Saturday 04:29  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh, include/click/bitvector.hh,
+	libsrc/bitvector.cc: add or_with_difference method
+
 2002-01-04 Friday 21:33  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: hashmap.cc, hashmap.cc: check explicitly that the

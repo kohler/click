@@ -1,3 +1,20 @@
+2002-01-05 Saturday 04:33  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-pretty/click-pretty.cc (1.14), lib/eclasst.cc
+	(1.11), lib/eclasst.hh (1.8), lib/etraits.cc (1.4), lib/etraits.hh
+	(1.3), lib/processingt.cc (1.20), lib/processingt.hh (1.12): add
+	traits for compound elements; calculate compound elements'
+	processing and flow codes when required
+
+2002-01-05 Saturday 04:29  Eddie Kohler <kohler@aciri.org>
+
+	* doc/mkwebdoc.pl (1.26): doc updates
+
+2002-01-05 Saturday 04:29  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh (1.4), lib/bitvector.cc (1.14): add
+	or_with_difference method
+
 2002-01-04 Friday 21:33  Eddie Kohler <kohler@aciri.org>
 
 	* doc/mkwebdoc.pl (1.25), tools/click-align/Makefile.in (1.14),
