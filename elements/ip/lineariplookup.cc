@@ -26,6 +26,7 @@
 CLICK_DECLS
 
 LinearIPLookup::LinearIPLookup()
+    : _zero_route(-1)
 {
     add_input();
 }
@@ -54,25 +55,32 @@ bool
 LinearIPLookup::check() const
 {
     bool ok = true;
+    //click_chatter("%s\n", ((LinearIPLookup*)this)->dump_routes().c_str());
     
     // 'next' pointers are correct
     for (int i = 0; i < _t.size(); i++) {
+	if (!_t[i].real())
+	    continue;
 	for (int j = i + 1; j < _t[i].extra && j < _t.size(); j++)
-	    if (_t[i].contains(_t[j])) {
+	    if (_t[i].contains(_t[j]) && _t[j].real()) {
 		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
 		ok = false;
 	    }
-	if (_t[i].extra < _t.size())
-	    if (!_t[i].contains(_t[ _t[i].extra ])) {
-		click_chatter("%s: bad next pointers: routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[ _t[i].extra ].unparse_addr().cc());
+#if 0
+	// This invariant actually does not hold.
+	int j = _t[i].extra;
+	if (j < _t.size())
+	    if (!_t[i].contains(_t[j]) && _t[j].real()) {
+		click_chatter("%s: bad next pointers': routes %s, %s", declaration().cc(), _t[i].unparse_addr().cc(), _t[j].unparse_addr().cc());
 		ok = false;
 	    }
+#endif
     }
 
     // no duplicate routes
     for (int i = 0; i < _t.size(); i++)
 	for (int j = i + 1; j < _t.size(); j++)
-	    if (_t[i].addr == _t[j].addr && _t[i].mask == _t[j].mask) {
+	    if (_t[i].addr == _t[j].addr && _t[i].mask == _t[j].mask && _t[i].real() && _t[j].real()) {
 		click_chatter("%s: duplicate routes for %s", declaration().cc(), _t[i].unparse_addr().cc());
 		ok = false;
 	    }
@@ -96,30 +104,27 @@ int
 LinearIPLookup::add_route(const IPRoute &r, bool allow_replace, IPRoute* replaced, ErrorHandler *)
 {
     // overwrite any existing route
+    int found = _t.size();
     for (int i = 0; i < _t.size(); i++)
-	if (_t[i].addr == r.addr && _t[i].mask == r.mask) {
-	    if (!allow_replace)
-		return -EEXIST;
+	if (!_t[i].real()) {
+	    if (found == _t.size())
+		found = i;
+	} else if (_t[i].addr == r.addr && _t[i].mask == r.mask) {
 	    if (replaced)
 		*replaced = _t[i];
+	    if (!allow_replace)
+		return -EEXIST;
 	    _t[i].gw = r.gw;
 	    _t[i].port = r.port;
 	    check();
 	    return 0;
 	}
 
-    // put it in a slot
-    int found = -1;
-    for (int i = 0; i < _t.size(); i++)
-	if (_t[i].addr && !_t[i].mask) {
-	    found = i;
-	    _t[i] = r;
-	    break;
-	}
-    if (found < 0) {
-	found = _t.size();
+    // maybe make a new slot
+    if (found == _t.size())
 	_t.push_back(r);
-    }
+    else
+	_t[found] = r;
 
     // patch up next pointers
     _t[found].extra = 0x7FFFFFFF;
@@ -127,10 +132,14 @@ LinearIPLookup::add_route(const IPRoute &r, bool allow_replace, IPRoute* replace
 	if (_t[i].contains(r) && _t[i].extra > found)
 	    _t[i].extra = found;
     for (int i = found + 1; i < _t.size(); i++)
-	if (r.contains(_t[i])) {
+	if (r.contains(_t[i]) && _t[i].real()) {
 	    _t[found].extra = i;
 	    break;
 	}
+
+    // remember zero route
+    if (!r.addr && r.mask.addr() == 0xFFFFFFFFU)
+	_zero_route = found;
 
     // get rid of caches
     _last_addr = IPAddress();
@@ -143,31 +152,33 @@ LinearIPLookup::add_route(const IPRoute &r, bool allow_replace, IPRoute* replace
 }
 
 int
-LinearIPLookup::remove_route(const IPRoute& r, IPRoute* old_route, ErrorHandler *)
+LinearIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
 {
-    // remove routes from main table; replace with redundant route, if any
-    for (int i = 0; i < _t.size(); i++) {
-	IPRoute &e = _t[i];
-	if (e.addr == r.addr && e.mask == r.mask
-	    && (r.port < 0 || (e.gw == r.gw && e.port == r.port))) {
+    for (int i = 0; i < _t.size(); i++)
+	if (route.match(_t[i])) {
 	    if (old_route)
-		*old_route = e;
-	    e.addr = IPAddress(1);
-	    e.mask = IPAddress(0);
-	    goto found;
-	}
-    }
+		*old_route = _t[i];
+	    _t[i].kill();
 
-    return -ENOENT;
-
-  found:
-    // get rid of caches
-    _last_addr = IPAddress();
+	    // need to handle zero routes, bummer
+	    if (i == _zero_route)
+		_zero_route = -1;
+	    else if (i < _zero_route) {
+		IPRoute zero(_t[_zero_route]);
+		_t[_zero_route].kill();
+		int r = add_route(zero, false, 0, errh);
+		assert(r >= 0);
+	    }
+	    
+	    // get rid of caches
+	    _last_addr = IPAddress();
 #ifdef IP_RT_CACHE2
-    _last_addr2 = IPAddress();
+	    _last_addr2 = IPAddress();
 #endif
-    check();
-    return 0;
+	    check();
+	    return 0;
+	}
+    return -ENOENT;
 }
 
 int
@@ -200,8 +211,8 @@ LinearIPLookup::dump_routes()
 {
     StringAccum sa;
     for (int i = 0; i < _t.size(); i++)
-	if (!_t[i].addr || _t[i].mask)
-	    sa << _t[i] << '\n';
+	if (_t[i].real())
+	    _t[i].unparse(sa, true) << '\n';
     return sa.take_string();
 }
 

@@ -5,6 +5,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -56,15 +57,20 @@ SortedIPLookup::sort_table()
     
     // First, count dependencies.
     Vector<int> dep(_t.size(), 0);
-    for (int i = 0; i < _t.size(); i++)
-	for (int j = 0; j < _t.size(); j++)
-	    if (_t[j].contains(_t[i]) && i != j)
-		dep[j]++;
+    int nunreal = 0;
+    for (int i = 0; i < _t.size(); i++) {
+	if (!_t[i].real())
+	    dep[i]++, nunreal++;
+	else
+	    for (int j = 0; j < _t.size(); j++)
+		if (_t[j].contains(_t[i]) && i != j)
+		    dep[j]++;
+    }
 
     // Now, create the permutation array.
     Vector<int> permute;
     int first = 0, qpos = 0;
-    while (permute.size() < _t.size()) {
+    while (permute.size() < _t.size() - nunreal) {
 
 	// Find something on which nothing depends.
 	for (; first < _t.size() && dep[first] != 0; first++)
@@ -79,7 +85,7 @@ SortedIPLookup::sort_table()
 	    int which = permute[qpos];
 	    dep[which] = -1;
 	    for (int i = 0; i < _t.size(); i++)
-		if (dep[i] > 0 && _t[i].contains(_t[which])) {
+		if (dep[i] > 0 && _t[i].contains(_t[which]) && _t[i].real()) {
 		    if (!--dep[i])
 			permute.push_back(i);
 		}
@@ -89,12 +95,14 @@ SortedIPLookup::sort_table()
 
     // Permute the table according to the array.
     Vector<IPRoute> nt(_t);
-    for (int i = 0; i < _t.size(); i++) {
+    for (int i = 0; i < permute.size(); i++) {
 	if (permute[i] != i)
 	    nt[i] = _t[permute[i]];
 	nt[i].extra = 0x7FFFFFFF;
     }
     _t.swap(nt);
+    _t.resize(permute.size());
+    _zero_route = -1;
 
     check();
 }

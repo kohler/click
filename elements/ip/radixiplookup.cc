@@ -124,10 +124,10 @@ RadixIPLookup::dump_routes()
 {
     StringAccum sa;
     for (int j = _vfree; j >= 0; j = _v[j].extra)
-	_v[j].addr = IPAddress(1), _v[j].mask = IPAddress(0);
+	_v[j].kill();
     for (int i = 0; i < _v.size(); i++)
 	if (!_v[i].addr || _v[i].mask)
-	    sa << _v[i] << '\n';
+	    _v[i].unparse(sa, true) << '\n';
     return sa.take_string();
 }
 
@@ -159,12 +159,12 @@ RadixIPLookup::add_route(const IPRoute& route, bool set, IPRoute* old_route, Err
     for (int32_t j = *pprev; j >= 0; j = *pprev)
 	if (route.addr == _v[j].addr && route.mask == _v[j].mask) {
 	    int r;
+	    if (old_route)
+		*old_route = _v[j];
 	    if (!set) {
 		_v[found] = _v[j];
 		r = -EEXIST;
 	    } else {
-		if (old_route)
-		    *old_route = _v[j];
 		_v[found].extra = _v[j].extra;
 		r = 0;
 	    }

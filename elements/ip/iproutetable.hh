@@ -119,6 +119,8 @@ struct IPRoute {
     IPRoute(IPAddress a, IPAddress m, IPAddress g, int p)
 				: addr(a), mask(m), gw(g), port(p) { }
 
+    inline bool real() const	{ return port > (int32_t) -0x80000000; }
+    inline void kill()		{ addr = 0; mask = 0xFFFFFFFFU; port = -0x80000000; }
     inline bool contains(IPAddress a) const;
     inline bool contains(const IPRoute& r) const;
     inline bool mask_as_specific(IPAddress m) const;
@@ -126,6 +128,7 @@ struct IPRoute {
     inline bool match(const IPRoute& r) const;
     int prefix_len() const	{ return mask.mask_to_prefix_len(); }
 
+    StringAccum &unparse(StringAccum&, bool tabs) const;
     String unparse() const;
     String unparse_addr() const	{ return addr.unparse_with_mask(mask); }
 };
@@ -156,7 +159,11 @@ class IPRouteTable : public Element { public:
     
 };
 
-StringAccum& operator<<(StringAccum&, const IPRoute&);
+inline StringAccum&
+operator<<(StringAccum& sa, const IPRoute& route)
+{
+    return route.unparse(sa, false);
+}
 
 inline bool
 IPRoute::contains(IPAddress a) const

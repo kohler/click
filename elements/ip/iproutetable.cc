@@ -56,20 +56,21 @@ cp_ip_route(String s, IPRoute *r_store, bool remove_route, Element *context)
 }
 
 StringAccum&
-operator<<(StringAccum& sa, const IPRoute& r)
+IPRoute::unparse(StringAccum& sa, bool tabs) const
 {
     int l = sa.length();
-    sa << r.addr.unparse_with_mask(r.mask) << '\t';
-    if (sa.length() < l + 17)
+    char tab = (tabs ? '\t' : ' ');
+    sa << addr.unparse_with_mask(mask) << tab;
+    if (sa.length() < l + 17 && tabs)
 	sa << '\t';
     l = sa.length();
-    if (r.gw)
-	sa << r.gw << '\t';
+    if (gw)
+	sa << gw << tab;
     else
-	sa << '-' << '\t';
-    if (sa.length() < l + 9)
+	sa << '-' << tab;
+    if (sa.length() < l + 9 && tabs)
 	sa << '\t';
-    sa << r.port;
+    sa << port;
     return sa;
 }
 

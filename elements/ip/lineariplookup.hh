@@ -97,6 +97,7 @@ class LinearIPLookup : public IPRouteTable { public:
   protected:
 
     Vector<IPRoute> _t;
+    int _zero_route;
 
     IPAddress _last_addr;
     int _last_entry;

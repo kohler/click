@@ -313,24 +313,15 @@ DirectIPLookup::flush_handler(const String &, Element *e, void *,
 String
 DirectIPLookup::dump_routes()
 {
-    uint32_t i;
-    int rt_i;
     StringAccum sa;
-
-    for (i = 0; i < PREF_HASHSIZE; i++)
-	for (rt_i = _rt_hashtbl[i]; rt_i >= 0 ; rt_i = _rtable[rt_i].ll_next)
-	    if (_vport[_rtable[rt_i].vport].port != -1) {
-		int l = sa.length();
-		sa << IPAddress(htonl(_rtable[rt_i].prefix));
-		sa << '/' << _rtable[rt_i].plen << '\t';
-		if (sa.length() < l + 17)
-		    sa << '\t';
-		l = sa.length();
-		sa << _vport[_rtable[rt_i].vport].gw << '\t';
-		if (sa.length() < l + 9)
-		    sa << '\t';
-		sa << _vport[_rtable[rt_i].vport].port << '\n';
+    for (uint32_t i = 0; i < PREF_HASHSIZE; i++)
+	for (int rt_i = _rt_hashtbl[i]; rt_i >= 0 ; rt_i = _rtable[rt_i].ll_next) {
+	    const CleartextEntry& rt = _rtable[rt_i];
+	    if (_vport[rt.vport].port != -1) {
+		IPRoute route(IPAddress(htonl(rt.prefix)), IPAddress::make_prefix(rt.plen), _vport[rt.vport].gw, _vport[rt.vport].port);
+		route.unparse(sa, true) << '\n';
 	    }
+	}
     return sa.take_string();
 }
 

@@ -189,7 +189,7 @@ void
 TrieIPLookup::build_main()
 {
     Timestamp ts = Timestamp::now();
-    click_chatter("starting to init data structure: %d\n", ts.sec());
+    //click_chatter("starting to init data structure: %d\n", ts.sec());
 
     check_route_vector_sorted();
 
@@ -199,21 +199,21 @@ TrieIPLookup::build_main()
     check_init();
 
     ts = Timestamp::now();
-    click_chatter("starting to build trie: %d\n", ts.sec());
+    //click_chatter("starting to build trie: %d\n", ts.sec());
 
     // build trie
     build_trie();
     check_trie(_trie_vector[0]);
 
     ts = Timestamp::now();
-    click_chatter("starting to set children lengths: %d\n", ts.sec());
+    //click_chatter("starting to set children lengths: %d\n", ts.sec());
 
     // set children lengths
     build_children_lengths(0);
     check_lengths(_trie_vector[0]);
 
     ts = Timestamp::now();
-    click_chatter("starting to rebuild hash: %d\n", ts.sec());
+    //click_chatter("starting to rebuild hash: %d\n", ts.sec());
 
     // rebuild hash
     for (int i = 0; i <= 32; i++) {
@@ -222,7 +222,7 @@ TrieIPLookup::build_main()
     build_hash(0);
 
     ts = Timestamp::now();
-    click_chatter("done initializaton: %d\n", ts.sec());
+    //click_chatter("done initializaton: %d\n", ts.sec());
 
     _trie_vector.clear();
 }
@@ -402,10 +402,10 @@ TrieIPLookup::add_route(const IPRoute& pf, bool set, IPRoute* old_route, ErrorHa
     } else {
         int n_compare = prefix_order_compar(&pf, &_route_vector[n_position]);
         if (n_compare == 0) {
-	    if (!set)
-		return -EEXIST;
 	    if (old_route)
 		*old_route = _route_vector[n_position];
+	    if (!set)
+		return -EEXIST;
             _route_vector[n_position] = pf;
         } else {
             assert(n_compare < 0);
@@ -475,7 +475,7 @@ TrieIPLookup::dump_routes()
 {
     StringAccum sa;
     for (int i = 0; i < _route_vector.size(); i++)
-	    sa << _route_vector[i] << '\n';
+	_route_vector[i].unparse(sa, true) << '\n';
     return sa.take_string();
 }
 

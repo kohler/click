@@ -1,0 +1,103 @@
+%script
+
+for rtable in RadixIPLookup LinearIPLookup SortedIPLookup TrieIPLookup; do
+	click -e "
+i :: Idle
+	-> r :: $rtable()
+	-> i; r[1] -> i; r[2] -> i;
+DriverManager(
+	write r.add 18.26/16 1.0.0.1 0,
+	save r.lookup 18.26.4.9 -,
+	write r.add 18.26.0/18 2.0.0.2 1,
+	save r.lookup 18.26.4.9 -,
+	write r.add 18.26.0/17 3.0.0.3 2,
+	save r.lookup 18.26.4.9 -,
+	write r.remove 18.26.0/18 2.0.0.2 1,
+	save r.lookup 18.26.4.9 -,
+	write r.remove 18.26.0/16 1.0.0.1 0,
+	save r.lookup 18.26.4.9 -,
+	write r.add 18.26.0/12 4.0.0.4 0,
+	save r.lookup 18.26.4.9 -,
+	write r.remove 18.26.0/17 3.0.0.3 2,
+	save r.lookup 18.26.4.9 -,
+	write r.add 0.0.0.0/32 99.99.99.99 0,
+	write r.add 18.26.4.9/32 5.0.0.5 0,
+	save r.lookup 18.26.4.9 -,
+	write r.remove 18.26.4.9/32 5.0.0.5 0,
+	save r.lookup 18.26.4.9 -,
+	write r.add 18.26.0/12 6.0.0.6 0,
+	save r.lookup 18.26.4.9 -,
+	write r.set 18.26.0/12 7.0.0.7 0,
+	save r.lookup 18.26.4.9 -,
+	write r.remove 18.26.0/12 7.0.0.7 0,
+	save r.lookup 18.26.4.9 -,
+)
+"
+	echo
+done
+
+%expect stdout
+0 1.0.0.1
+1 2.0.0.2
+1 2.0.0.2
+2 3.0.0.3
+2 3.0.0.3
+2 3.0.0.3
+0 4.0.0.4
+0 5.0.0.5
+0 4.0.0.4
+0 4.0.0.4
+0 7.0.0.7
+-1
+
+0 1.0.0.1
+1 2.0.0.2
+1 2.0.0.2
+2 3.0.0.3
+2 3.0.0.3
+2 3.0.0.3
+0 4.0.0.4
+0 5.0.0.5
+0 4.0.0.4
+0 4.0.0.4
+0 7.0.0.7
+-1
+
+0 1.0.0.1
+1 2.0.0.2
+1 2.0.0.2
+2 3.0.0.3
+2 3.0.0.3
+2 3.0.0.3
+0 4.0.0.4
+0 5.0.0.5
+0 4.0.0.4
+0 4.0.0.4
+0 7.0.0.7
+-1
+
+0 1.0.0.1
+1 2.0.0.2
+1 2.0.0.2
+2 3.0.0.3
+2 3.0.0.3
+2 3.0.0.3
+0 4.0.0.4
+0 5.0.0.5
+0 4.0.0.4
+0 4.0.0.4
+0 7.0.0.7
+-1
+
+%expect stderr
+While calling 'r.add'{{.*}}:
+  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+While calling 'r.add'{{.*}}:
+  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+While calling 'r.add'{{.*}}:
+  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+While calling 'r.add'{{.*}}:
+  conflict with existing route '18.16.0.0/12 4.0.0.4 0'
+
+%ignore
+!.*
