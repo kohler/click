@@ -1,0 +1,29 @@
+%info
+test device up/down
+
+%require
+[ `whoami` = root ]
+ifconfig eth1 >/dev/null 2>&1
+
+%script
+ifconfig eth1 down
+click-install KERNELCONFIG
+usleep 5000
+ifconfig eth1 up
+usleep 5000
+ifconfig eth1 down
+usleep 5000
+click-uninstall
+ifconfig eth1 up
+
+%file KERNELCONFIG
+FromDevice(eth1) -> Idle -> ToDevice(eth1)
+Idle -> ToHost(eth1)
+
+%expect stderr
+KERNELCONFIG:1: While configuring 'ToDevice@3 :: ToDevice':
+  warning: device 'eth1' is down
+KERNELCONFIG:1: While configuring 'FromDevice@1 :: FromDevice':
+  warning: device 'eth1' is down
+KERNELCONFIG:2: While initializing 'ToHost@5 :: ToHost':
+  warning: device 'eth1' is down
