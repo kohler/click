@@ -1,3 +1,8 @@
+2005-01-25 Tuesday 11:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.31): fix generated XML: "<" not allowed in
+	attribute values
+
 2005-01-20 Thursday 11:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromhost.hh (1.5): man page title nit
