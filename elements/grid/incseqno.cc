@@ -82,7 +82,7 @@ IncrementSeqNo::add_handlers() {
 }
 
 int 
-IncrementSeqNo::write_seq(const String &in_s, Element *e, void *vparam,
+IncrementSeqNo::write_seq(const String &in_s, Element *e, void *,
 			  ErrorHandler *errh)
 {
     IncrementSeqNo *e2 = (IncrementSeqNo *) e;
@@ -92,6 +92,7 @@ IncrementSeqNo::write_seq(const String &in_s, Element *e, void *vparam,
       return errh->error("seq must be unsigned");
     }
     e2->_seqno = i;
+    return 0;
 }
 
 String
