@@ -1,3 +1,7 @@
+2004-03-01 Monday 12:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/packetlogger2.hh (1.2): doc typo
+
 2004-03-01 Monday 11:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/msqueue.hh (1.11): doc fixup
