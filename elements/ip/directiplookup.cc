@@ -77,18 +77,23 @@ DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
     uint32_t plen = mask.mask_to_prefix_len();
     int rt_i = find_entry(prefix, plen);
     uint16_t vport_i;
-    bool need_update;
 
     if (output >= noutputs() || output < 0)
 	return errh->error("Output port out of range");
 
-    // If the same prefix/len entry already exists, update only vport
-    // field in _rtable, otherwise add new lookup entries from scratch
     if (rt_i >= 0) {
-	need_update = false;
-	vport_unref(_rtable[rt_i].vport);
+	// Attempt to replace an existing route.  Allowed only when adding
+	// an explicit default route over an implicit discard default.
+	if (rt_i == 0 && _vport[0].port == DISCARD_PORT) {
+	    _vport[0].gw = gw;
+	    _vport[0].port = output;
+	    return 0;
+	} else 
+	    return errh->error("Entry already exists");
     } else {
-	need_update = true;
+	uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
+
+	// Allocate a new _rtable[] entry
 	if (_rt_empty_head >= 0) {
 	    rt_i = _rt_empty_head;
 	    _rt_empty_head = _rtable[_rt_empty_head].ll_next;
@@ -103,15 +108,11 @@ DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
 		return errh->error("Virtual port table size limit exceeded");
 	    rt_i = _rt_size++;
 	}
-    }
 
-    vport_i = vport_ref(gw, output);
-    _rtable[rt_i].prefix = prefix;	// in host-order format
-    _rtable[rt_i].plen = plen;
-    _rtable[rt_i].vport = vport_i;
-
-    if (need_update) {
-	uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
+	vport_i = vport_ref(gw, output);
+	_rtable[rt_i].prefix = prefix;	// in host-order format
+	_rtable[rt_i].plen = plen;
+	_rtable[rt_i].vport = vport_i;
 
 	start = prefix >> 8;
 	if (plen >= 24)
@@ -202,21 +203,21 @@ DirectIPLookup::remove_route(IPAddress dest, IPAddress mask, IPAddress,
     uint32_t plen = mask.mask_to_prefix_len();
     int rt_i = find_entry(prefix, plen);
 
-    if (rt_i < 0)
-	return errh->error("entry not found");
-
-    vport_unref(_rtable[rt_i].vport);
+    if (rt_i < 0 || (rt_i == 0 && _vport[0].port == DISCARD_PORT))
+	return errh->error("Entry not found");
 
     if (plen == 0) {
 	// Default route is a special case.  We never remove it from lookup
 	// tables, but instead only point it to the "discard port".
 	if (rt_i > 0)	// Must never happen, checking it just in case...
 	    return errh->error("BUG: default route rt_i=%d, should be 0", rt_i);
-	_rtable[0].vport = vport_ref(IPAddress(0), DISCARD_PORT);
+	_vport[0].port = DISCARD_PORT;
     } else {
 	uint32_t start, end, i, j, sec_i, sec_start, sec_end;
 	int newent = -1;
 	int newmask, prev, next;
+
+	vport_unref(_rtable[rt_i].vport);
 
 	// Prune our entry from the prefix/len hashtable
 	prev = _rtable[rt_i].ll_prev;

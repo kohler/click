@@ -39,8 +39,7 @@ Outputs a human-readable version of the current routing table.
 
 =h add write-only
 
-Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'. Existing
-entry with the same prefix and prefix length will be silently overwritten.
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
 
 =h remove write-only
 
