@@ -49,9 +49,9 @@ void
 ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 {
   struct Entry e;
-  e._dst = ipa & mask;
-  e._mask = mask;
-  e._ena = ena;
+  e.dst = ipa & mask;
+  e.mask = mask;
+  e.ena = ena;
   _v.push_back(e);
 }
 
@@ -94,7 +94,7 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (!have_ena)
       errh->error("argument %d had no Ethernet addresses", i);
     for (int j = first; j < _v.size(); j++)
-      _v[j]._ena = ena;
+      _v[j].ena = ena;
   }
 
   return (before == errh->nerrors() ? 0 : -1);
@@ -150,23 +150,20 @@ ARPResponder::make_response(u_char tha[6], /* him */
 }
 
 bool
-ARPResponder::lookup(IPAddress a, EtherAddress &ena)
+ARPResponder::lookup(IPAddress a, EtherAddress &ena) const
 {
-  int i, besti = -1;
-
-  for(i = 0; i < _v.size(); i++){
-    if((a.addr() & _v[i]._mask.addr()) == _v[i]._dst.addr()){
-      if(besti == -1 || ~_v[i]._mask.addr() < ~_v[besti]._mask.addr()){
-        besti = i;
-      }
+  int best = -1;
+  for (int i = 0; i < _v.size(); i++)
+    if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
+      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+        best = i;
     }
-  }
 
-  if(besti == -1){
-    return(false);
-  } else {
-    ena = _v[besti]._ena;
-    return(true);
+  if (best < 0)
+    return false;
+  else {
+    ena = _v[best].ena;
+    return true;
   }
 }
 
@@ -207,7 +204,7 @@ ARPResponder::read_handler(Element *e, void *thunk)
   case 0: {			// table
     StringAccum sa;
     for (int i = 0; i < ar->_v.size(); i++)
-      sa << ar->_v[i]._dst << '/' << ar->_v[i]._mask << ' ' << ar->_v[i]._ena << '\n';
+      sa << ar->_v[i].dst << '/' << ar->_v[i].mask << ' ' << ar->_v[i].ena << '\n';
     return sa.take_string();
   }
 

@@ -66,14 +66,14 @@ class ARPResponder : public Element { public:
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
                         unsigned char sha[6], unsigned char spa[4], Packet *);
 
-  bool lookup(IPAddress, EtherAddress &);
+  bool lookup(IPAddress, EtherAddress &) const;
 
 private:
 
   struct Entry {
-    IPAddress _dst;
-    IPAddress _mask;
-    EtherAddress _ena;
+    IPAddress dst;
+    IPAddress mask;
+    EtherAddress ena;
   };
   Vector<Entry> _v;
   
