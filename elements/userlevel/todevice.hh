@@ -32,9 +32,10 @@ CLICK_DECLS
  *
  * =item IGNORE_QUEUE_OVERFLOWS
  *
- * Boolean.  If true, don't print error messages when there is a queue
- * overflow error when sending a packet to the device (e.g. send() or
- * write() produced an ENOBUFS or EAGAIN error).  Default is false.
+ * Boolean.  If true, don't print more than one error message when
+ * there are queue overflows error when sending packets to the device
+ * (e.g. send() or write() produced an ENOBUFS or EAGAIN error).
+ * Default is false.
  *
  * =back
  *
@@ -115,6 +116,7 @@ private:
   
   bool _set_error_anno;
   bool _ignore_q_errs;
+  bool _printed_err;
 };
 
 CLICK_ENDDECLS

@@ -51,7 +51,7 @@ CLICK_DECLS
 
 ToDevice::ToDevice()
   : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false),
-    _ignore_q_errs(false)
+    _ignore_q_errs(false), _printed_err(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -177,8 +177,10 @@ ToDevice::send_packet(Packet *p)
 #endif
   if (retval < 0) {
     int saved_errno = errno;
-    if (!_ignore_q_errs || errno != ENOBUFS || errno != EAGAIN)
+    if (!_ignore_q_errs || !_printed_err || (errno != ENOBUFS && errno != EAGAIN)) {
+      _printed_err = true;
       click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
+    }
     if (_set_error_anno) {
       unsigned char c = saved_errno & 0xFF;
       if (c != saved_errno)
