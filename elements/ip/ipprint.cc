@@ -34,11 +34,19 @@
 #include <click/click_tcp.h>
 #include <click/click_udp.h>
 
+#if CLICK_USERLEVEL
+# include <errno.h>
+# include <stdio.h>
+#endif
+
 IPPrint::IPPrint()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
   _buf = 0;
+#if CLICK_USERLEVEL
+  _outfile = 0;
+#endif
 }
 
 IPPrint::~IPPrint()
@@ -72,6 +80,9 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
 		  "PAINT", cpBool, "print paint?", &print_paint,
+#if CLICK_USERLEVEL
+		  "OUTFILE", cpString, "output filename", &_outfilename,
+#endif
 		  cpEnd) < 0)
     return -1;
 
@@ -101,11 +112,32 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   return 0;
 }
 
+int
+IPPrint::initialize(ErrorHandler *errh)
+{
+#if CLICK_USERLEVEL
+  if (_outfilename) {
+    _outfile = fopen(_outfilename, "wb");
+    if (!_outfile)
+      return errh->error("%s: %s", _outfilename.cc(), strerror(errno));
+  }
+#else
+  (void) errh;
+#endif
+  return 0;
+}
+
 void
 IPPrint::uninitialize()
 {
   delete[] _buf;
   _buf = 0;
+#if CLICK_USERLEVEL
+  if (_outfile) {
+    fclose(_outfile);
+    _outfile = 0;
+  }
+#endif
 }
 
 Packet *
@@ -201,9 +233,6 @@ IPPrint::simple_action(Packet *p)
   
   }
 
-  sa << '\0';
-  click_chatter("%s", sa.data());
-
   const unsigned char *data = p->data();
   if (_contents == 1) {
     int pos = 0;  
@@ -216,11 +245,7 @@ IPPrint::simple_action(Packet *p)
 	_buf[pos++] = ' ';
     }
     _buf[pos++] = '\0';
-#ifdef __KERNEL__
-    printk("  %s\n", _buf);
-#else
-    fprintf(stderr, "  %s\n", _buf);
-#endif
+    sa << "\n  " << _buf;
   } else if (_contents == 2) {
     int pos = 0;  
     for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
@@ -234,11 +259,17 @@ IPPrint::simple_action(Packet *p)
 	_buf[pos++] = ' ';
     }
     _buf[pos++] = '\0';
-#ifdef __KERNEL__
-    printk("  %s\n", _buf);
-#else
-    fprintf(stderr, "  %s\n", _buf);
+    sa << "\n  " << _buf;
+  }
+
+#if CLICK_USERLEVEL
+  if (_outfile) {
+    sa << '\n';
+    fwrite(sa.data(), 1, sa.length(), _outfile);
+  } else
 #endif
+  {
+    click_chatter("%s", sa.cc());
   }
 
   return p;

@@ -45,6 +45,11 @@ false.
 Boolean. Determines whether to print each packet's timestamp in seconds since
 1970. Default is false.
 
+=item OUTFILE
+
+String. Only available at user level. Print information to the file specified
+by OUTFILE instead of standard error.
+
 =back
 
 =a Print, CheckIPHeader */
@@ -59,6 +64,7 @@ class IPPrint : public Element { public:
   
   IPPrint *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void uninitialize();
   
   Packet *simple_action(Packet *);
@@ -72,6 +78,11 @@ class IPPrint : public Element { public:
   bool _print_timestamp : 1;
   bool _print_paint : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
+
+#if CLICK_USERLEVEL
+  String _outfilename;
+  FILE *_outfile;
+#endif
 
 };
 
