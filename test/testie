@@ -269,6 +269,9 @@ sub read (*;$) {
 		$t = _read_file_section($fh, $tt, $args, 'expectv');
 	    } elsif ($command eq 'ignore') {
 		$t = _read_file_section($fh, $tt, $args, 'ignore');
+	    } elsif ($command eq 'eot') {
+		$tt->{'continue'} = 1;
+		last;
 	    } elsif ($command eq 'eof') {
 		last;
 	    } else {
@@ -293,6 +296,12 @@ sub read (*;$) {
 sub have_file ($$) {
     my($tt, $fileref) = @_;
     exists($tt->{"f:$fileref"}) || exists($tt->{"e:$fileref"});
+}
+
+sub empty ($) {
+    my($tt) = @_;
+    !(@{$tt->{'file'}} || @{$tt->{'script'}}
+      || @{$tt->{'expect'}} || @{$tt->{'expectx'}} || @{$tt->{'expectv'}});
 }
 
 sub save_files ($&) {
@@ -559,25 +568,10 @@ sub out_script_fn_to_fn ($) {
     "$dir/$fn";
 }
 
-sub run_test (;$$) {
-    my($fn, $verbose) = @_;
-
-    # read the testie
-    my($tt, $f);
-    if (!defined($fn) || $fn eq '-') {
-	$tt = Testie::read(STDIN, "<stdin>");
-    } elsif (-d $fn) {
-	print STDERR "$fn: is a directory\n";
-	return -1;
-    } else {
-	if (!open(IN, $fn)) {
-	    print STDERR "$fn: $!\n";
-	    return -1;
-	}
-	$tt = Testie::read(IN, $fn);
-	close IN;
-    }
-
+sub execute_test ($$$) {
+    my($tt, $fn, $verbose) = @_;
+    my($f);
+    
     # save the files it names
     $tt->save_files(\&out_script_fn_to_fn);
 
@@ -616,11 +610,50 @@ sub run_test (;$$) {
 	return $exitval;
     }
 
-    if ($verbose) {
+    if ($verbose && !$tt->empty) {
 	print "$fn: success\n";
     }
 
     0;
+}
+
+sub run_test (;$$) {
+    my($fn, $verbose) = @_;
+
+    # read the testie
+    my($tt, $display_fn, $close_in);
+    if (!defined($fn) || $fn eq '-') {
+	if (!open(IN, "<&=STDIN")) {
+	    print STDERR "<stdin>: $!\n";
+	    return -1;
+	}
+	$display_fn = "<stdin>";
+    } elsif (-d $fn) {
+	print STDERR "$fn: is a directory\n";
+	return -1;
+    } else {
+	if (!open(IN, "<", $fn)) {
+	    print STDERR "$fn: $!\n";
+	    return -1;
+	}
+	$display_fn = $fn;
+	$close_in = 1;
+    }
+
+    my($result, $suffix) = (0, '');
+    
+    while (1) {
+	$tt = Testie::read(IN, $display_fn . $suffix);
+	my($this_result) = execute_test($tt, $display_fn . $suffix, $verbose);
+	$result = $this_result if $this_result;
+	last if !$tt->{'continue'};
+	if (!($suffix =~ s/^<(\d+)>$/"<" . ($1+1) . ">"/e)) {
+	    $suffix = "<2>";
+	}
+    }
+
+    close IN if $close_in;
+    $result;
 }
 
 $SIG{'INT'} = $SIG{'QUIT'} = $SIG{'TERM'} = $SIG{'__DIE__'} = sub {
@@ -902,6 +935,11 @@ Perl regular expression. Lines in the supplied FILENAME that match any of
 those regular expressions will not be considered when comparing files with
 %expect[x] data. FILENAME may be 'all', in which case the regular
 expressions will apply to all %expect[x] files.
+
+=item %eot
+
+Marks the end of the current test. The rest of the file will be parsed for
+additional tests.
 
 =item %eof
 
