@@ -71,6 +71,7 @@ class Router { public:
   void element_handlers(int, Vector<int> &) const;
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
+  static int change_handler_flags(Router *, int, const String &, int clear_flags, int set_flags);
   
   enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
   static int nglobal_handlers();
@@ -218,9 +219,8 @@ class Router { public:
   
   void initialize_handlers(bool, bool);
   int find_ehandler(int, const String &, bool star_ok = false) const;
-  Handler fetch_handler(int, const String &) const;
+  static Handler fetch_handler(const Router *, int, const String &);
   void store_handler(int, const Handler &);
-  static Handler fetch_global_handler(const String &);
   static void store_global_handler(const Handler &);
 
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
@@ -234,7 +234,10 @@ class Router::Handler { public:
   Handler();
   Handler(const String &);
 
+  enum { FIRST_USER_FLAG = 1 };
+  
   const String &name() const	{ return _name; }
+  int flags() const		{ return _flags; }
   
   bool readable() const		{ return _read; }
   bool read_visible() const	{ return _read; }
@@ -255,6 +258,7 @@ class Router::Handler { public:
   void *_read_thunk;
   WriteHandler _write;
   void *_write_thunk;
+  int _flags;
   int _use_count;
   int _next_by_name;
 
@@ -265,7 +269,7 @@ class Router::Handler { public:
 };
 
 /* The largest size a write handler is allowed to have. */
-#define LARGEST_HANDLER_WRITE 16384
+#define LARGEST_HANDLER_WRITE 65536
 
 
 #if CLICK_USERLEVEL
@@ -322,14 +326,14 @@ Router::element_handlers(int ei, Vector<int> &hv) const
 inline
 Router::Handler::Handler()
   : _read(0), _read_thunk(0), _write(0), _write_thunk(0),
-    _use_count(0), _next_by_name(-1)
+    _flags(0), _use_count(0), _next_by_name(-1)
 {
 }
 
 inline
 Router::Handler::Handler(const String &name)
   : _name(name), _read(0), _read_thunk(0), _write(0), _write_thunk(0),
-    _use_count(0), _next_by_name(-1)
+    _flags(0), _use_count(0), _next_by_name(-1)
 {
 }
 
@@ -349,7 +353,8 @@ inline bool
 Router::Handler::compatible(const Handler &h) const
 {
   return (_read == h._read && _read_thunk == h._read_thunk
-	  && _write == h._write && _write_thunk == h._write_thunk);
+	  && _write == h._write && _write_thunk == h._write_thunk
+	  && _flags == h._flags);
 }
 
 inline void

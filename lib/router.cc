@@ -1077,17 +1077,18 @@ Router::find_ehandler(int eindex, const String &name, bool call_star) const
 }
 
 Router::Handler
-Router::fetch_handler(int eindex, const String &name) const
+Router::fetch_handler(const Router *r, int eindex, const String &name)
 {
-  // allow global handlers
-  if (eindex < 0)
-    return fetch_global_handler(name);
-  
-  int eh = find_ehandler(eindex, name);
-  if (eh >= 0)
-    return _handlers[_ehandler_to_handler[eh]];
-  else
-    return Handler(name);
+  if (eindex < 0) {		// global handler
+    for (int i = 0; i < nglobalh; i++)
+      if (globalh[i]._name == name)
+	return globalh[i];
+  } else if (r && eindex < r->nelements()) {
+    int eh = r->find_ehandler(eindex, name);
+    if (eh >= 0)
+      return r->_handlers[r->_ehandler_to_handler[eh]];
+  }
+  return Handler(name);
 }
 
 void
@@ -1177,7 +1178,7 @@ void
 Router::add_read_handler(int eindex, const String &name,
 			 ReadHandler read, void *thunk)
 {
-  Handler to_add = fetch_handler(eindex, name);
+  Handler to_add = fetch_handler(this, eindex, name);
   to_add._read = read;
   to_add._read_thunk = thunk;
   store_handler(eindex, to_add);
@@ -1187,10 +1188,25 @@ void
 Router::add_write_handler(int eindex, const String &name,
 			  WriteHandler write, void *thunk)
 {
-  Handler to_add = fetch_handler(eindex, name);
+  Handler to_add = fetch_handler(this, eindex, name);
   to_add._write = write;
   to_add._write_thunk = thunk;
   store_handler(eindex, to_add);
+}
+
+int
+Router::change_handler_flags(Router *r, int eindex, const String &name,
+			     int clear_flags, int set_flags)
+{
+  Handler to_add = fetch_handler(r, eindex, name);
+  if (to_add._use_count > 0) {	// don't create new handlers
+    to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
+    if (eindex < 0)
+      store_global_handler(to_add);
+    else
+      r->store_handler(eindex, to_add);
+  } else
+    return -1;
 }
 
 int
@@ -1225,15 +1241,6 @@ Router::element_handlers(const Router *r, int eindex, Vector<int> &handlers)
 
 // global handlers
 
-Router::Handler
-Router::fetch_global_handler(const String &name)
-{
-  for (int i = 0; i < nglobalh; i++)
-    if (globalh[i]._name == name)
-      return globalh[i];
-  return Handler(name);
-}
-
 void
 Router::store_global_handler(const Handler &h)
 {
@@ -1265,7 +1272,7 @@ void
 Router::add_global_read_handler(const String &name,
 				ReadHandler read, void *thunk)
 {
-  Handler to_add = fetch_global_handler(name);
+  Handler to_add = fetch_handler(0, -1, name);
   to_add._read = read;
   to_add._read_thunk = thunk;
   store_global_handler(to_add);
@@ -1275,7 +1282,7 @@ void
 Router::add_global_write_handler(const String &name,
 				 WriteHandler write, void *thunk)
 {
-  Handler to_add = fetch_global_handler(name);
+  Handler to_add = fetch_handler(0, -1, name);
   to_add._write = write;
   to_add._write_thunk = thunk;
   store_global_handler(to_add);
