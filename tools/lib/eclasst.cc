@@ -212,7 +212,7 @@ ElementClassT::expand_element(
     if (!found_c) {
 	// report error message
 	String lm = e->landmark(), name = e->type_name();
-	errh->lerror(lm, "no match for `%s'", name.cc(), unparse_signature(name, inputs_used, outputs_used, args.size()).cc());
+	errh->lerror(lm, "no match for '%s'", unparse_signature(name, inputs_used, outputs_used, args.size()).cc());
 	Vector<ElementClassT *> overloads;
 	c->collect_overloads(overloads);
 	ContextErrorHandler cerrh(errh, "possibilities are:", "  ", lm);
