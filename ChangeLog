@@ -1,3 +1,8 @@
+2000-12-17 Sunday 15:28  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.c: file skbmgr.c was initially added on branch
+	smp_click.
+
 2000-12-16 Saturday 21:55  Benjie Chen <benjie@lcs.mit.edu>
 
 	* lib/atomic.cc: file atomic.cc was initially added on branch
