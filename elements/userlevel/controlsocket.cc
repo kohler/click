@@ -769,7 +769,7 @@ ControlSocket::selected(int fd)
   flush_write(fd, _in_texts[fd].length() && !blocked);
 
   // maybe close out
-  if (((_flags[fd] & READ_CLOSED) && !_out_texts[fd].length())
+  if (((_flags[fd] & READ_CLOSED) && !_in_texts[fd].length() && !_out_texts[fd].length())
       || (_flags[fd] & WRITE_CLOSED)) {
     close(fd);
     remove_select(fd, SELECT_READ | SELECT_WRITE);
