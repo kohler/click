@@ -1,3 +1,8 @@
+2002-08-14 Wednesday 15:00  mneufeld
+
+	* include/click/: simclick.h, simclick.h: Generic Click/simulator
+	interface header
+
 2002-08-13 Tuesday 18:56  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: glue.hh, glue.hh: add make_timeval() function
