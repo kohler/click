@@ -1,4 +1,3 @@
-// -*- c++ -*-
 // grid-node-info.h
 
 // Grid physical device
