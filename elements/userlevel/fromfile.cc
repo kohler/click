@@ -274,9 +274,10 @@ FromFile::read_line(String &result, ErrorHandler *errh)
 	    if (_len > 0 && _buffer[0] == '\n')
 		sa << '\n', _pos++;
 	    done = true;
-	} else if (errcode == 0)
+	} else if (errcode == 0) {
+	    _pos = _len;
 	    done = true;
-	else {
+	} else {
 	    s = _buffer, e = _buffer + _len;
 	    while (s < e && *s != '\n' && *s != '\r')
 		s++;
