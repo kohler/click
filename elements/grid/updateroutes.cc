@@ -34,9 +34,9 @@
 
 
 UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3), 
-  _hello_timer(hello_hook, (unsigned long) this), 
-  _expire_timer(expire_hook, (unsigned long) this),
-  _sanity_timer(sanity_hook, (unsigned long) this),
+  _hello_timer(hello_hook, this), 
+  _expire_timer(expire_hook, this),
+  _sanity_timer(sanity_hook, this),
   _num_updates_sent(0), _seq_no(0)
 {
   MOD_INC_USE_COUNT;
@@ -397,7 +397,7 @@ UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval) const
 
 
 void
-UpdateGridRoutes::sanity_hook(unsigned long thunk) 
+UpdateGridRoutes::sanity_hook(Timer *, void *thunk) 
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
   
@@ -410,7 +410,7 @@ UpdateGridRoutes::sanity_hook(unsigned long thunk)
 }
 
 void
-UpdateGridRoutes::expire_hook(unsigned long thunk) 
+UpdateGridRoutes::expire_hook(Timer *, void *thunk) 
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
@@ -486,7 +486,7 @@ UpdateGridRoutes::expire_routes()
 
 
 void
-UpdateGridRoutes::hello_hook(unsigned long thunk)
+UpdateGridRoutes::hello_hook(Timer *, void *thunk)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 

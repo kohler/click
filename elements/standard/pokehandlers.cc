@@ -28,7 +28,7 @@
 #include <click/router.hh>
 
 PokeHandlers::PokeHandlers()
-  : _timer(timer_hook, (unsigned long)this)
+  : _timer(timer_hook, this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -107,7 +107,7 @@ PokeHandlers::uninitialize()
 
 
 void
-PokeHandlers::timer_hook(unsigned long thunk)
+PokeHandlers::timer_hook(Timer *, void *thunk)
 {
   PokeHandlers *poke = (PokeHandlers *)thunk;
   ErrorHandler *errh = ErrorHandler::default_handler();

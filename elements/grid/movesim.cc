@@ -30,7 +30,7 @@
 #include <click/error.hh>
 
 MovementSimulator::MovementSimulator() 
-  : _event_timer(event_hook, (unsigned long) this)
+  : _event_timer(event_hook, this)
 {
   MOD_INC_USE_COUNT;
   _events = new event_entry;
@@ -109,7 +109,7 @@ MovementSimulator::initialize(ErrorHandler *)
 
 
 void
-MovementSimulator::event_hook(unsigned long thunk) 
+MovementSimulator::event_hook(Timer *, void *thunk) 
 {
   MovementSimulator *el = (MovementSimulator *) thunk;
   event_entry *next_event = el->_events->next;

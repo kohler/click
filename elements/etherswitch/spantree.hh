@@ -67,7 +67,7 @@ private:
   Vector<PortInfo> _port;
 
   Timer _hello_timer;
-  static void hello_hook(unsigned long x);
+  static void hello_hook(Timer *, void *);
 
 };
 

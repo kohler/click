@@ -32,7 +32,7 @@
 #include <click/glue.hh>
 
 ARPQuerier::ARPQuerier()
-  : _expire_timer(expire_hook, (unsigned long)this)
+  : _expire_timer(expire_hook, this)
 {
   MOD_INC_USE_COUNT;
   add_input(); /* IP packets */
@@ -156,7 +156,7 @@ ARPQuerier::take_state(Element *e, ErrorHandler *)
 
 
 void
-ARPQuerier::expire_hook(unsigned long thunk)
+ARPQuerier::expire_hook(Timer *, void *thunk)
 {
   ARPQuerier *arpq = (ARPQuerier *)thunk;
   int jiff = click_jiffies();

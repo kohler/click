@@ -181,9 +181,9 @@ class IPRewriter : public IPRw { public:
   int _udp_gc_interval;
   Timer _udp_gc_timer;
   
-  static void tcp_gc_hook(unsigned long);
-  static void udp_gc_hook(unsigned long);
-  static void tcp_done_gc_hook(unsigned long);
+  static void tcp_gc_hook(Timer *, void *);
+  static void udp_gc_hook(Timer *, void *);
+  static void tcp_done_gc_hook(Timer *, void *);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_tcp_done_mappings_handler(Element *, void *);

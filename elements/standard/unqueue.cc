@@ -90,7 +90,7 @@ Unqueue::run_scheduled()
 }
 
 String
-Unqueue::read_param(Element *e, void *junk)
+Unqueue::read_param(Element *e, void *)
 {
   Unqueue *u = (Unqueue *)e;
   return String(u->_packets) + " packets\n";

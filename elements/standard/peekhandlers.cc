@@ -28,7 +28,7 @@
 #include <click/router.hh>
 
 PeekHandlers::PeekHandlers()
-  : _timer(timer_hook, (unsigned long)this)
+  : _timer(timer_hook, this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -102,7 +102,7 @@ PeekHandlers::uninitialize()
 
 
 void
-PeekHandlers::timer_hook(unsigned long thunk)
+PeekHandlers::timer_hook(Timer *, void *thunk)
 {
   PeekHandlers *peek = (PeekHandlers *)thunk;
   ErrorHandler *errh = ErrorHandler::default_handler();

@@ -158,9 +158,9 @@ private:
 
   unsigned int _seq_no;
 
-  static void expire_hook(unsigned long);
-  static void hello_hook(unsigned long);
-  static void sanity_hook(unsigned long);
+  static void expire_hook(Timer *, void *);
+  static void hello_hook(Timer *, void *);
+  static void sanity_hook(Timer *, void *);
 
   Vector<grid_nbr_entry> expire_routes();
   void send_routing_update(Vector<grid_nbr_entry> &rte_info, bool);

@@ -97,7 +97,7 @@ class FloodingLocQuerier : public Element {
 
   static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
   int _timeout_jiffies;
-  static void expire_hook(unsigned long);
+  static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
   static String read_seqs(Element *, void *);
   

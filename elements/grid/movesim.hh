@@ -59,7 +59,7 @@ private:
 
   event_entry *_events; // sentinel for events list
 
-  static void event_hook(unsigned long);
+  static void event_hook(Timer *, void *);
   bool find_entry(unsigned int t, event_entry **retval);
 };
 

@@ -101,7 +101,7 @@ class IP6NDSolicitor : public Element {
   void handle_response(Packet *);
 
   static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
-  static void expire_hook(unsigned long);
+  static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
   
 };

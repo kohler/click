@@ -32,7 +32,7 @@
 #include <click/glue.hh>
 
 IP6NDSolicitor::IP6NDSolicitor()
-: _expire_timer(expire_hook, (unsigned long)this)
+: _expire_timer(expire_hook, this)
 {
   MOD_INC_USE_COUNT;
   add_input(); /* IP6 packets */
@@ -126,7 +126,7 @@ IP6NDSolicitor::take_state(Element *e, ErrorHandler *)
 }
 
 void
-IP6NDSolicitor::expire_hook(unsigned long thunk)
+IP6NDSolicitor::expire_hook(Timer *, void *thunk)
 {
   IP6NDSolicitor *arpq = (IP6NDSolicitor *)thunk;
   int jiff = click_jiffies();

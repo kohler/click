@@ -32,7 +32,7 @@ EtherSpanTree::EtherSpanTree()
   : _input_sup(0), _output_sup(0), _topology_change(0),
     _bridge_priority(0xdead),	// Make it very unlikely to be root
     _long_cache_timeout(5*60),
-    _hello_timer(hello_hook, (unsigned long)this)
+    _hello_timer(hello_hook, this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -266,9 +266,9 @@ EtherSpanTree::push(int source, Packet* p) {
 }
 
 void
-EtherSpanTree::hello_hook(unsigned long v)
+EtherSpanTree::hello_hook(Timer *, void *thunk)
 {
-  EtherSpanTree *e = (EtherSpanTree *)v;
+  EtherSpanTree *e = (EtherSpanTree *)thunk;
   e->periodic();
   for (int i = 0; i < e->noutputs(); i++) {
     Packet* p = e->generate_packet(i);

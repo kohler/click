@@ -29,24 +29,24 @@ Timer::Timer()
 {
 }
 
-Timer::Timer(Timer *head, TimerHook hook, unsigned long thunk)
+Timer::Timer(Timer *head, TimerHook hook, void *thunk)
   : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(head)
 {
   assert(_head->is_head());
 }
 
-Timer::Timer(TimerHook hook, unsigned long thunk)
+Timer::Timer(TimerHook hook, void *thunk)
   : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(0)
 {
 }
 
 Timer::Timer(Element *e)
-  : _prev(0), _next(0), _hook(element_hook), _thunk((unsigned long)e), _head(0)
+  : _prev(0), _next(0), _hook(element_hook), _thunk(e), _head(0)
 {
 }
 
 void
-Timer::head_hook(unsigned long)
+Timer::head_hook(Timer *, void *)
 {
   assert(0);
 }
@@ -60,11 +60,10 @@ Timer::head_hook(unsigned long)
  */
 
 void
-Timer::element_hook(unsigned long thunk)
+Timer::element_hook(Timer *, void *thunk)
 {
   Element *e = (Element *)thunk;
-  /* put itself on the work list */
-  e->schedule_immediately();	// might not have tickets
+  e->run_scheduled();
 }
 
 void
@@ -141,7 +140,7 @@ Timer::run()
     _next = t->_next;
     _next->_prev = this;
     t->_prev = 0;
-    t->_hook(t->_thunk);
+    t->_hook(t, t->_thunk);
   }
 }
 

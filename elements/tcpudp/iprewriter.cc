@@ -35,9 +35,9 @@
 
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0),
-    _tcp_done_gc_timer(tcp_done_gc_hook, (unsigned long) this),
-    _tcp_gc_timer(tcp_gc_hook, (unsigned long) this),
-    _udp_gc_timer(udp_gc_hook, (unsigned long) this)
+    _tcp_done_gc_timer(tcp_done_gc_hook, this),
+    _tcp_gc_timer(tcp_gc_hook, this),
+    _udp_gc_timer(udp_gc_hook, this)
 {
   // no MOD_INC_USE_COUNT; rely on IPRw
 }
@@ -170,27 +170,27 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-IPRewriter::tcp_gc_hook(unsigned long thunk)
+IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   rw->clean_map(rw->_tcp_map);
-  rw->_tcp_gc_timer.schedule_after_ms(rw->_tcp_gc_interval);
+  timer->schedule_after_ms(rw->_tcp_gc_interval);
 }
 
 void
-IPRewriter::tcp_done_gc_hook(unsigned long thunk)
+IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
-  rw->_tcp_done_gc_timer.schedule_after_ms(rw->_tcp_done_gc_interval);
+  timer->schedule_after_ms(rw->_tcp_done_gc_interval);
 }
 
 void
-IPRewriter::udp_gc_hook(unsigned long thunk)
+IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   rw->clean_map(rw->_udp_map);
-  rw->_udp_gc_timer.schedule_after_ms(rw->_udp_gc_interval);
+  timer->schedule_after_ms(rw->_udp_gc_interval);
 }
 
 IPRw::Mapping *

@@ -4,14 +4,15 @@
 #include <assert.h>
 class Element;
 class Router;
+class Timer;
 
-typedef void (*TimerHook)(unsigned long);
+typedef void (*TimerHook)(Timer *, void *);
 
 class Timer { public:
 
   Timer();				// create head
-  Timer(Timer *, TimerHook, unsigned long);
-  Timer(TimerHook, unsigned long);
+  Timer(Timer *, TimerHook, void *);
+  Timer(TimerHook, void *);
   Timer(Element *);
   ~Timer()				{ if (scheduled()) unschedule(); }
 
@@ -36,7 +37,7 @@ class Timer { public:
   Timer *_next;
   struct timeval _expires;
   TimerHook _hook;
-  unsigned long _thunk;
+  void *_thunk;
   Timer *_head;
 
   Timer(const Timer &);
@@ -44,8 +45,8 @@ class Timer { public:
 
   void finish_schedule();
   
-  static void element_hook(unsigned long);
-  static void head_hook(unsigned long);
+  static void element_hook(Timer *, void *);
+  static void head_hook(Timer *, void *);
   
 };
 

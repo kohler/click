@@ -114,8 +114,8 @@ class TCPRewriter : public IPRw { public:
   int _tcp_done_gc_interval;
   Timer _tcp_done_gc_timer;
 
-  static void tcp_gc_hook(unsigned long);
-  static void tcp_done_gc_hook(unsigned long);
+  static void tcp_gc_hook(Timer *, void *);
+  static void tcp_done_gc_hook(Timer *, void *);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);

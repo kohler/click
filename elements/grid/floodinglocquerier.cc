@@ -35,7 +35,7 @@
 #define NOISY 1
 
 FloodingLocQuerier::FloodingLocQuerier()
-  : _expire_timer(expire_hook, (unsigned long)this)
+  : _expire_timer(expire_hook, this)
 {
   MOD_INC_USE_COUNT;
   add_input(); /* GRID_NBR_ENCAP packets */
@@ -87,7 +87,7 @@ FloodingLocQuerier::uninitialize()
 
 
 void
-FloodingLocQuerier::expire_hook(unsigned long thunk)
+FloodingLocQuerier::expire_hook(Timer *, void *thunk)
 { 
   /* yes, this function won't expire entries exactly on the dot */
   FloodingLocQuerier *locq = (FloodingLocQuerier *)thunk;

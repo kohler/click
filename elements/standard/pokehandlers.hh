@@ -37,7 +37,7 @@ class PokeHandlers : public Element {
   Vector<int> _h_timeout;
   Timer _timer;
 
-  static void timer_hook(unsigned long);
+  static void timer_hook(Timer *, void *);
   
  public:
 

@@ -35,7 +35,7 @@
 #define NOISY 1
 
 LocQueryResponder::LocQueryResponder()
-  : _expire_timer(expire_hook, (unsigned long) this)
+  : _expire_timer(expire_hook, this)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -71,7 +71,7 @@ LocQueryResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-LocQueryResponder::expire_hook(unsigned long thunk)
+LocQueryResponder::expire_hook(Timer *, void *thunk)
 { 
   LocQueryResponder *resp = (LocQueryResponder *)thunk;
   int jiff = click_jiffies();

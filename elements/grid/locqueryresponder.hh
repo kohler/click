@@ -49,7 +49,7 @@ private:
 
   static const int EXPIRE_TIMEOUT_MS = 2 * 1000;
   int _timeout_jiffies;
-  static void expire_hook(unsigned long);
+  static void expire_hook(Timer *, void *);
 
   struct seq_t {
     unsigned int seq_no;
