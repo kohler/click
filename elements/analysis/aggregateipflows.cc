@@ -121,6 +121,7 @@ AggregateFlows::simple_action(Packet *p)
     Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
     FlowInfo *finfo = m.findp_force(flow);
     int paint;
+    uint32_t old_next = _next;
     unsigned p_sec = p->timestamp_anno().tv_sec;
 
     if (!finfo) {
@@ -133,9 +134,8 @@ AggregateFlows::simple_action(Packet *p)
 	rfinfo->uu.other = finfo;
 	rfinfo->_reverse = true;
 	paint = 0;
-	notify(_next, AggregateListener::NEW_AGG, p);
 	_next++;		// XXX check for 2^32
-	goto new_flow;
+	goto flow_is_fresh;
     } else if (finfo->reverse()) {
 	finfo = finfo->uu.other;
 	paint = 1;
@@ -166,17 +166,16 @@ AggregateFlows::simple_action(Packet *p)
 	    }
 	    finfo->_aggregate = _next;
 	    finfo->flow_over = 0;
-	    notify(_next, AggregateListener::NEW_AGG, p);
 	    _next++;
 	}
     }
 
-  new_flow:
+  flow_is_fresh:
     if (p_sec)
 	_active_sec = finfo->uu.active_sec = p_sec;
 
     // check whether this indicates the flow is over
-    if (iph->ip_p == IP_PROTO_TCP
+    if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)
 	&& p->transport_length() >= (int)sizeof(click_tcp)) {
 	if (p->tcp_header()->th_flags & TH_RST)
 	    finfo->flow_over = 3;
@@ -190,8 +189,13 @@ AggregateFlows::simple_action(Packet *p)
     SET_AGGREGATE_ANNO(p, finfo->aggregate());
     SET_PAINT_ANNO(p, paint);
 
+    // notify about the new flow if necessary
+    if (_next != old_next)
+	notify(_next - 1, AggregateListener::NEW_AGG, p);
+    // GC if necessary
     if (_active_sec >= _gc_sec)
 	reap();
+    
     return p;
 }
 
