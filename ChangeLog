@@ -1,3 +1,49 @@
+2000-11-11 Saturday 13:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* acconfig.h, configure.in, elements/userlevel/todevice.hh: we no
+	longer need libpcap at all on Linux, so don't link with it
+
+2000-11-11 Saturday 12:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: fromdump.cc, fromdump.hh: FromDump no longer
+	uses libpcap directly; instead, it duplicates the tcpdump file
+	format (people don't need to have libpcap around to use tcpdump
+	files) (Mazu again)
+
+2000-11-11 Saturday 12:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: checkipheader.cc, checktcpheader.cc,
+	ipclassifier.hh, ipfilter.cc, ipfilter.hh, iprewriter.hh,
+	setipdscp.cc: improved incremental checksum computations, added
+	mnemonics for ICMP types to IPFilter
+
+2000-11-11 Saturday 12:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipprint.cc, include/click/click_icmp.h,
+	include/click/ipaddress.hh, lib/ipaddress.cc: improved IPPrint
+	messages for ICMP, and added operator<<(StringAccum &, IPAddress)
+
+2000-11-11 Saturday 12:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in, configure.in, tools/lib/Makefile.in: added new
+	--enable-icmp argument to configure (yes by default), and try to
+	install include files only if they've changed (causes fewer
+	recompilations on dependent packages) (Mazu)
+
+2000-11-11 Saturday 12:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ip/icmperror.cc, ip/icmperror.hh, ip/icmpping.cc,
+	ip/icmpping.hh, icmp/checkicmpheader.cc, icmp/checkicmpheader.hh,
+	icmp/icmperror.cc, icmp/icmperror.hh, icmp/icmppingresponder.cc,
+	icmp/icmppingresponder.hh, icmp/icmppingrewriter.cc,
+	icmp/icmppingrewriter.hh, ip/icmpsendpings.cc, ip/icmpsendpings.hh,
+	icmp/icmprewriter.cc, icmp/icmprewriter.hh, icmp/icmpsendpings.cc,
+	icmp/icmpsendpings.hh: Great ICMP Rewrite: moved ICMP elements into
+	their own directory, replaced ICMPPing with ICMPPingResponder (no
+	Ethernet silliness), added CheckICMPHeader to check for errors, and
+	added ICMPRewriter and ICMPPingRewriter to allow ICMP packets
+	through NAT (all Mazu)
+
 2000-11-10 Friday 14:12  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/linuxmodule/fastudpsrc.cc: Chopped liver.
