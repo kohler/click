@@ -1,3 +1,14 @@
+2002-07-06 Saturday 04:41  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.32), include/click/llrpc.h (1.15),
+	linuxmodule/clickfs.cc (1.12), linuxmodule/proc_click.cc (1.47):
+	fix ioctl bugs
+
+2002-07-06 Saturday 04:41  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplellrpc/click-readcounter.c (1.2): samplellrpc progam
+	compiles, and can handle either /proc/click or /click
+
 2002-07-05 Friday 19:22  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/anonipaddr.cc (1.6),
