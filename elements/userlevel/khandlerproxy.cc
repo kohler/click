@@ -147,7 +147,7 @@ KernelHandlerProxy::star_write_handler(const String &str, Element *e, void *, Er
     KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
     if (khp->check_handler_name(str, errh) < 0)
 	return -1;
-    khp->set_handler(str, Handler::READ | Handler::WRITE, handler_hook);
+    khp->set_handler(str, Handler::OP_READ | Handler::OP_WRITE, handler_hook);
     return Router::hindex(e, str);
 }
 
@@ -183,7 +183,7 @@ KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler*
     const String& hname = handler->name();
     String fn = handler_name_to_file_name(hname);
 
-    if (op == Handler::READ) {
+    if (op == Handler::OP_READ) {
 	errno = 0;
 	str = file_string(fn, 0);
 	int err = errno;
@@ -195,7 +195,7 @@ KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler*
 	}
 	return -err;
 	
-    } else if (op == Handler::WRITE) {
+    } else if (op == Handler::OP_WRITE) {
 	int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
 	if (fd < 0)
 	    return khp->complain_about_open(errh, hname, errno);

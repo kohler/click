@@ -254,7 +254,7 @@ class Router { public:
 class Handler { public:
 
     enum {
-	ONE_HOOK = 1, READ = 2, WRITE = 4, SELECT = 8,
+	OP_READ = 1, OP_WRITE = 2, OP_SELECT = 4, ONE_HOOK = 8,
 	DRIVER_FLAG_0 = 16, DRIVER_FLAG_1 = 32, DRIVER_FLAG_2 = 64,
 	DRIVER_FLAG_3 = 128,
 	USER_FLAG_SHIFT = 8, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
@@ -263,11 +263,11 @@ class Handler { public:
     const String& name() const	{ return _name; }
     uint32_t flags() const	{ return _flags; }
 
-    bool readable() const	{ return _flags & READ; }
-    bool read_visible() const	{ return _flags & READ; }
-    bool writable() const	{ return _flags & WRITE; }
-    bool write_visible() const	{ return _flags & WRITE; }
-    bool visible() const	{ return _flags & (READ | WRITE); }
+    bool readable() const	{ return _flags & OP_READ; }
+    bool read_visible() const	{ return _flags & OP_READ; }
+    bool writable() const	{ return _flags & OP_WRITE; }
+    bool write_visible() const	{ return _flags & OP_WRITE; }
+    bool visible() const	{ return _flags & (OP_READ | OP_WRITE); }
 
     String call_read(Element*) const;
     int call_write(const String&, Element*, ErrorHandler*) const;

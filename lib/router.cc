@@ -994,11 +994,11 @@ Router::set_hotswap_router(Router *r)
 String
 Handler::call_read(Element* e) const
 {
-    if ((_flags & (ONE_HOOK | READ)) == READ)
+    if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk);
-    else if (_flags & READ) {
+    else if (_flags & OP_READ) {
 	String s;
-	return (_hook.h(READ, s, e, this, ErrorHandler::silent_handler()) >= 0 ? s : String());
+	return (_hook.h(OP_READ, s, e, this, ErrorHandler::silent_handler()) >= 0 ? s : String());
     } else
 	return String();
 }
@@ -1008,11 +1008,11 @@ Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
-    if ((_flags & (ONE_HOOK | WRITE)) == WRITE)
+    if ((_flags & (ONE_HOOK | OP_WRITE)) == OP_WRITE)
 	return _hook.rw.w(s, e, _thunk2, errh);
-    else if (_flags & WRITE) {
+    else if (_flags & OP_WRITE) {
 	String s_copy(s);
-	return _hook.h(WRITE, s_copy, e, this, errh);
+	return _hook.h(OP_WRITE, s_copy, e, this, errh);
     } else {
 	errh->error("not a write handler");
 	return -EACCES;
@@ -1289,11 +1289,11 @@ Router::add_read_handler(const Element* e, const String& name, ReadHandler hook,
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
-	to_add._flags &= ~(Handler::ONE_HOOK | Handler::WRITE | Handler::SELECT);
+	to_add._flags &= ~(Handler::ONE_HOOK | Handler::OP_WRITE | Handler::OP_SELECT);
     }
     to_add._hook.rw.r = hook;
     to_add._thunk = thunk;
-    to_add._flags |= Handler::READ;
+    to_add._flags |= Handler::OP_READ;
     store_handler(e, to_add);
 }
 
@@ -1304,11 +1304,11 @@ Router::add_write_handler(const Element* e, const String& name, WriteHandler hoo
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk = 0;
-	to_add._flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::SELECT);
+	to_add._flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_SELECT);
     }
     to_add._hook.rw.w = hook;
     to_add._thunk2 = thunk;
-    to_add._flags |= Handler::WRITE;
+    to_add._flags |= Handler::OP_WRITE;
     store_handler(e, to_add);
 }
 
@@ -1329,8 +1329,8 @@ Router::change_handler_flags(const Element* e, const String& name,
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	clear_flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::WRITE | Handler::SELECT);
-	set_flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::WRITE | Handler::SELECT);
+	clear_flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_WRITE | Handler::OP_SELECT);
+	set_flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_WRITE | Handler::OP_SELECT);
 	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
 	store_handler(e, to_add);
 	return 0;
