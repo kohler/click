@@ -1,6 +1,5 @@
 #ifndef ETHERADDRESS_HH
 #define ETHERADDRESS_HH
-
 #include "string.hh"
 
 class EtherAddress {
@@ -13,13 +12,12 @@ class EtherAddress {
   explicit EtherAddress(unsigned char *);
   
   operator bool() const;
-  
-  unsigned char *data()			{ return (unsigned char *)_data; }
-  const unsigned char *data() const	{ return (const unsigned char *)_data; }
+  bool is_group() const;
+    
+  unsigned char *data();
+  const unsigned char *data() const;
   const unsigned short *sdata() const	{ return _data; }
 
-  bool is_group();
-  
   unsigned hashcode() const;
   
   String s() const;
@@ -29,6 +27,24 @@ inline
 EtherAddress::operator bool() const
 {
   return _data[0] || _data[1] || _data[2];
+}
+
+inline const unsigned char *
+EtherAddress::data() const
+{
+  return reinterpret_cast<const unsigned char *>(_data);
+}
+
+inline unsigned char *
+EtherAddress::data()
+{
+  return reinterpret_cast<unsigned char *>(_data);
+}
+
+inline bool
+EtherAddress::is_group() const
+{
+  return data()[0] & 1;
 }
 
 inline unsigned

@@ -6,13 +6,14 @@
 class IP6Address {
  
   click_in6_addr _addr;
-  
+
  public:
   
   IP6Address();
   explicit IP6Address(const click_in6_addr &a)	: _addr(a) { }
   explicit IP6Address(const unsigned char *);
   explicit IP6Address(const String &);		// "fec0:0:0:1::1"
+  static IP6Address make_prefix(int);
 
   operator bool() const;
   

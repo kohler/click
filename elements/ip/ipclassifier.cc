@@ -92,19 +92,18 @@ IPClassifier::Primitive::set_mask(int *data_store, int full_mask, int shift, int
   }
   
   if (_op == OP_GT || _op == OP_LT) {
-    for (int what = 1, mask_away = 0;
-	 (what - 1) <= full_mask;
-	 what <<= 1, mask_away = (mask_away<<1) | 1)
-      if ((_op == OP_GT ? data + 1 : data) == what) {
-	*data_store = 0;
-	_mask = (full_mask & ~mask_away) << shift;
-	if (_op == OP_GT)
-	  _op_negated = !_op_negated;
-	return 0;
-      }
-    if ((_op == OP_LT && data == 0) || (_op == OP_GT && data >= full_mask))
+    int pow2 = (_op == OP_GT ? data + 1 : data);
+    if ((pow2 & (pow2 - 1)) == 0 && (pow2 - 1) <= full_mask) {
+      // have a power of 2
+      *data_store = 0;
+      _mask = (full_mask & ~(pow2 - 1)) << shift;
+      if (_op == OP_GT)
+	_op_negated = !_op_negated;
+      return 0;
+    } else if ((_op == OP_LT && data == 0) || (_op == OP_GT && data >= full_mask))
       return errh->error("pattern %d: value %d out of range", slot, data);
-    return errh->error("pattern %d: bad relation `%s%s %d'\n\
+    else
+      return errh->error("pattern %d: bad relation `%s%s %d'\n\
 (I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n\
 `> POW-1' where POW is a power of 2.)", slot, ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
@@ -270,12 +269,15 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
     e.value.u = _u.ip.s_addr;
     c->start_expr_subtree(tree);
-    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
+    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
       c->add_expr(tree, 12, e.value.u, e.mask.u);
-    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
+      if (_op_negated) c->negate_expr_subtree(tree);
+    }
+    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
       c->add_expr(tree, 16, e.value.u, e.mask.u);
+      if (_op_negated) c->negate_expr_subtree(tree);
+    }
     c->finish_expr_subtree(tree, _srcdst != SD_OR);
-    if (_op_negated) c->negate_expr_subtree(tree);
     
   } else if (_type == TYPE_PORT) {
     unsigned mask = (htons(_mask) << 16) | htons(_mask);
@@ -283,14 +285,17 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     
     // enforce first fragment: fragmentation offset == 0
     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
-    
+
     c->start_expr_subtree(tree);
-    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
+    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
-    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
+      if (_op_negated) c->negate_expr_subtree(tree);
+    }
+    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
+      if (_op_negated) c->negate_expr_subtree(tree);
+    }
     c->finish_expr_subtree(tree, _srcdst != SD_OR);
-    if (_op_negated) c->negate_expr_subtree(tree);
 
   } else if (_type == TYPE_TCPOPT) {
     // enforce first fragment: fragmentation offset == 0
@@ -542,7 +547,7 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 	  prim._data = DATA_IPMASK;
 	} else
 	  prim._data = DATA_IP;
-      } else if (cp_ip_address_mask(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+      } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
 	prim._data = DATA_IPMASK;
       else if (cp_integer(wd, &prim._u.i))
 	prim._data = DATA_INT;

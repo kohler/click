@@ -1,7 +1,7 @@
 #ifndef IPADDRESS_HH
 #define IPADDRESS_HH
 #include "string.hh"
-#include "glue.hh"
+#include "click_ip.h"
 
 class IPAddress {
   

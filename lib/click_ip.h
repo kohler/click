@@ -1,6 +1,24 @@
 #ifndef CLICK_IP_H
 #define CLICK_IP_H
-#include "glue.hh"
+// get struct in_addr
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if CLICK_LINUXMODULE
+# ifdef __cplusplus
+#  define new xxx_new
+# endif
+# include <net/checksum.h>
+# include <linux/in.h>
+# undef new
+# define in_cksum(addr, len) ip_compute_csum((addr), (len))
+#else
+# include <netinet/in.h>
+unsigned short in_cksum(const unsigned char *addr, int len);
+#endif
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * click_ip.h -- our own definitions of IP headers
@@ -25,10 +43,10 @@ struct click_ip {
   unsigned short ip_len;		/* 2-3   total length */
   unsigned short ip_id;			/* 4-5   identification */
   unsigned short ip_off;		/* 6-7   fragment offset field */
-#define	IP_RF 0x8000			/* reserved fragment flag */
-#define	IP_DF 0x4000			/* dont fragment flag */
-#define	IP_MF 0x2000			/* more fragments flag */
-#define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
+#define	IP_RF 0x8000			/*         reserved fragment flag */
+#define	IP_DF 0x4000			/*         don't fragment flag */
+#define	IP_MF 0x2000			/*         more fragments flag */
+#define	IP_OFFMASK 0x1fff		/*         mask for fragmenting bits */
   unsigned char ip_ttl;			/* 8     time to live */
   unsigned char ip_p;			/* 9     protocol */
   unsigned short ip_sum;		/* 10-11 checksum */
@@ -82,28 +100,14 @@ struct click_ip {
 #define IP_PROTO_WBMON		78
 #define IP_PROTO_WBEXPAK	79
 
-#define	IPOPT_EOL		0		/* end of option list */
-#define	IPOPT_NOP		1		/* no operation */
-#define IPOPT_RR        7       /* record packet route */
-#define IPOPT_TS        68      /* timestamp */
-#define IPOPT_SECURITY      130     /* provide s,c,h,tcc */
-#define IPOPT_LSRR      131     /* loose source route */
-#define IPOPT_SATID     136     /* satnet id */
-#define IPOPT_SSRR      137     /* strict source route */
-#define IPOPT_RA        148     /* router alert */
-
-#ifdef CLICK_LINUXMODULE
-# define new xxx_new
-extern "C" {
-# include <net/checksum.h>
-}
-# undef new
-# define in_cksum(addr, len)	ip_compute_csum(addr, len)
-#else
-# ifdef __cplusplus
-extern "C"
-# endif
-unsigned short in_cksum(const unsigned char *addr, int len);
-#endif
+#define	IPOPT_EOL		0	/* end of option list */
+#define	IPOPT_NOP		1	/* no operation */
+#define IPOPT_RR		7	/* record packet route */
+#define IPOPT_TS		68	/* timestamp */
+#define IPOPT_SECURITY		130	/* provide s,c,h,tcc */
+#define IPOPT_LSRR		131	/* loose source route */
+#define IPOPT_SATID		136	/* satnet id */
+#define IPOPT_SSRR		137	/* strict source route */
+#define IPOPT_RA		148	/* router alert */
 
 #endif

@@ -17,11 +17,11 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "straccum.hh"
+#include "ipaddress.hh"
+#include "ip6address.hh"
+#include "etheraddress.hh"
 #ifndef CLICK_TOOL
 # include "router.hh"
-# include "ipaddress.hh"
-# include "ip6address.hh"
-# include "etheraddress.hh"
 # include "elements/standard/addressinfo.hh"
 # define CP_CONTEXT_ARG , Element *context = 0
 # define CP_PASS_CONTEXT , context
@@ -838,13 +838,13 @@ cp_ip_address(const String &str, unsigned char *return_value
 
 
 static bool
-bad_ip_address_mask(const String &str,
-		    unsigned char *return_value, unsigned char *return_mask,
-		    bool allow_bare_address
-		    CP_CONTEXT_ARG)
+bad_ip_prefix(const String &str,
+	      unsigned char *return_value, unsigned char *return_mask,
+	      bool allow_bare_address
+	      CP_CONTEXT_ARG)
 {
 #ifndef CLICK_TOOL
-  if (AddressInfo::query_ip_mask(str, return_value, return_mask, context))
+  if (AddressInfo::query_ip_prefix(str, return_value, return_mask, context))
     return true;
   else if (allow_bare_address
 	   && AddressInfo::query_ip(str, return_value, context)) {
@@ -859,10 +859,9 @@ bad_ip_address_mask(const String &str,
 }
 
 bool
-cp_ip_address_mask(const String &str,
-		   unsigned char *return_value, unsigned char *return_mask,
-		   bool allow_bare_address
-		   CP_CONTEXT_ARG)
+cp_ip_prefix(const String &str,
+	     unsigned char *return_value, unsigned char *return_mask,
+	     bool allow_bare_address  CP_CONTEXT_ARG)
 {
   unsigned char value[4], mask[4];
 
@@ -872,12 +871,12 @@ cp_ip_address_mask(const String &str,
     ip_part = str.substring(0, slash);
     mask_part = str.substring(slash + 1);
   } else if (!allow_bare_address)
-    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
   else
     ip_part = str;
   
   if (!cp_ip_address(ip_part, value  CP_PASS_CONTEXT))
-    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 
   // move past /
   if (allow_bare_address && !mask_part.length()) {
@@ -908,14 +907,13 @@ cp_ip_address_mask(const String &str,
     /* OK */;
     
   } else
-    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 
   memcpy(return_value, value, 4);
   memcpy(return_mask, mask, 4);
   return true;
 }
 
-#ifndef CLICK_TOOL
 bool
 cp_ip_address(const String &str, IPAddress &address
 	      CP_CONTEXT_ARG)
@@ -925,15 +923,13 @@ cp_ip_address(const String &str, IPAddress &address
 }
 
 bool
-cp_ip_address_mask(const String &str, IPAddress &address, IPAddress &mask,
-		   bool allow_bare_address
-		   CP_CONTEXT_ARG)
+cp_ip_prefix(const String &str, IPAddress &address, IPAddress &mask,
+	     bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  return cp_ip_address_mask(str, address.data(), mask.data(),
-			    allow_bare_address
-			    CP_PASS_CONTEXT);
+  return cp_ip_prefix(str, address.data(), mask.data(),
+		      allow_bare_address  CP_PASS_CONTEXT);
 }
-#endif
+
 
 static bool
 bad_ip6_address(const String &str, unsigned char *return_value
@@ -1010,15 +1006,117 @@ cp_ip6_address(const String &str, unsigned char *return_value
   }
 }
 
+
+static bool
+bad_ip6_prefix(const String &str,
+	      unsigned char *return_value, int *return_bits,
+	      bool allow_bare_address
+	      CP_CONTEXT_ARG)
+{
 #ifndef CLICK_TOOL
+  if (AddressInfo::query_ip6_prefix(str, return_value, return_bits, context))
+    return true;
+  else if (allow_bare_address
+	   && AddressInfo::query_ip6(str, return_value, context)) {
+    *return_bits = 128;
+    return true;
+  }
+#else
+  // shut up, compiler!
+  (void)str, (void)return_value, (void)return_bits, (void)allow_bare_address;
+#endif
+  return false;
+}
+
+bool
+cp_ip6_prefix(const String &str,
+	      unsigned char *return_value, int *return_bits,
+	      bool allow_bare_address  CP_CONTEXT_ARG)
+{
+  unsigned char value[16], mask[16];
+
+  int slash = str.find_right('/');
+  String ip_part, mask_part;
+  if (slash >= 0) {
+    ip_part = str.substring(0, slash);
+    mask_part = str.substring(slash + 1);
+  } else if (!allow_bare_address)
+    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+  else
+    ip_part = str;
+  
+  if (!cp_ip6_address(ip_part, value  CP_PASS_CONTEXT))
+    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+
+  // move past /
+  if (allow_bare_address && !mask_part.length()) {
+    memcpy(return_value, value, 16);
+    *return_bits = 64;
+    return true;
+  }
+
+  // check for complete IP address
+  int relevant_bits = 0;
+  if (cp_ip6_address(mask_part, mask  CP_PASS_CONTEXT)) {
+    // check that it really is a prefix. if not, return false right away
+    // (don't check with AddressInfo)
+    int pos = 0;
+    for (; pos < 16 && mask[pos] == 255; pos++)
+      relevant_bits += 8;
+    if (pos < 16) {
+      int comp_plus_1 = ((~mask[pos]) & 255) + 1;
+      for (int i = 0; i < 8; i++)
+	if (comp_plus_1 == (1 << (8-i))) {
+	  relevant_bits += i;
+	  pos++;
+	  break;
+	}
+    }
+    for (; pos < 16 && mask[pos] == 0; pos++)
+      pos++;
+    if (pos < 16)
+      return false;
+    
+  } else if (cp_integer(mask_part, &relevant_bits)
+	     && relevant_bits >= 0 && relevant_bits <= 64)
+    /* OK */;
+    
+  else
+    return bad_ip6_prefix(str, return_value, return_bits, allow_bare_address CP_PASS_CONTEXT);
+
+  memcpy(return_value, value, 16);
+  *return_bits = relevant_bits;
+  return true;
+}
+
+bool
+cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
+	      bool allow_bare_address  CP_CONTEXT_ARG)
+{
+  int bits;
+  if (cp_ip6_prefix(str, address, &bits, allow_bare_address  CP_PASS_CONTEXT)) {
+    IP6Address m = IP6Address::make_prefix(bits);
+    memcpy(mask, m.data(), 16);
+    return true;
+  } else
+    return false;
+}
+
 bool
 cp_ip6_address(const String &str, IP6Address &address
 	       CP_CONTEXT_ARG)
 {
-  return cp_ip6_address(str, address.data()
-			CP_PASS_CONTEXT);
+  return cp_ip6_address(str, address.data()  CP_PASS_CONTEXT);
 }
-#endif
+
+bool
+cp_ip6_prefix(const String &str, IP6Address &address, IP6Address &prefix,
+	      bool allow_bare_address  CP_CONTEXT_ARG)
+{
+  return cp_ip6_prefix(str, address.data(), prefix.data(), allow_bare_address
+		       CP_PASS_CONTEXT);
+}
+
 
 bool
 cp_ethernet_address(const String &str, unsigned char *return_value
@@ -1057,8 +1155,6 @@ cp_ethernet_address(const String &str, unsigned char *return_value
 #endif
 }
 
-
-#ifndef CLICK_TOOL
 bool
 cp_ethernet_address(const String &str, EtherAddress &address
 		    CP_CONTEXT_ARG)
@@ -1066,7 +1162,7 @@ cp_ethernet_address(const String &str, EtherAddress &address
   return cp_ethernet_address(str, address.data()
 			     CP_PASS_CONTEXT);
 }
-#endif
+
 
 #ifndef CLICK_TOOL
 Element *
@@ -1132,7 +1228,7 @@ struct Values {
     bool b;
     int i;
     unsigned long ul;
-    unsigned char address[8];
+    unsigned char address[32];
 #ifndef CLICK_TOOL
     Element *element;
 #endif
@@ -1160,9 +1256,11 @@ cp_command_name(int cp_command)
    case cpWord: return "word";
    case cpArgument: return "??";
    case cpIPAddress: return "IP address";
-   case cpIPAddressMask: return "IP address with netmask";
-   case cpIPAddressOptMask: return "IP address with optional netmask";
-   case cpIP6Address: return "IP6 address";
+   case cpIPPrefix: return "IP address prefix";
+   case cpIPAddressOrPrefix: return "IP address or address prefix";
+   case cpIP6Address: return "IPv6 address";
+   case cpIP6Prefix: return "IPv6 address prefix";
+   case cpIP6AddressOrPrefix: return "IPv6 address or address prefix";
    case cpEthernetAddress: return "Ethernet address";
    case cpElement: return "element name";
    case cpDesCblock: return "DES encryption block";
@@ -1217,7 +1315,7 @@ store_value(int cp_command, Values &v)
     address_bytes = 4;
     goto address;
     
-  case cpIP6Address:
+   case cpIP6Address:
     address_bytes = 16;
     goto address;
 
@@ -1235,12 +1333,21 @@ store_value(int cp_command, Values &v)
      break;
    }
 
-   case cpIPAddressMask:
-   case cpIPAddressOptMask: {
+   case cpIPPrefix:
+   case cpIPAddressOrPrefix: {
      unsigned char *addrstore = (unsigned char *)v.store;
      memcpy(addrstore, v.v.address, 4);
      unsigned char *maskstore = (unsigned char *)v.store2;
      memcpy(maskstore, v.v.address + 4, 4);
+     break;
+   }
+
+   case cpIP6Prefix:
+   case cpIP6AddressOrPrefix: {
+     unsigned char *addrstore = (unsigned char *)v.store;
+     memcpy(addrstore, v.v.address, 16);
+     unsigned char *maskstore = (unsigned char *)v.store2;
+     memcpy(maskstore, v.v.address + 16, 16);
      break;
    }
 
@@ -1433,28 +1540,40 @@ cp_va_parsev(const Vector<String> &args,
        break;
      }     
     
-     case cpIPAddressMask:
-     case cpIPAddressOptMask: {
+     case cpIPPrefix:
+     case cpIPAddressOrPrefix: {
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);
        v.store2 = va_arg(val, unsigned char *);
        if (skip) break;
-       bool mask_optional = (cp_command == cpIPAddressOptMask);
-       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4, mask_optional CP_PASS_CONTEXT))
-	 errh->error("%s %d should be %s (IP network address)", argname, argno+1, desc);
+       bool mask_optional = (cp_command == cpIPAddressOrPrefix);
+       if (!cp_ip_prefix(args[argno], v.v.address, v.v.address + 4, mask_optional CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (IP address prefix)", argname, argno+1, desc);
        break;
      }
      
-      case cpIP6Address: {
+     case cpIP6Address: {
       const char *desc = va_arg(val, const char *);
       v.store = va_arg(val, unsigned char *);  
       if (skip) break;
       if (!cp_ip6_address(args[argno], (unsigned char *)v.v.address))
-	errh->error("%s %d should be %s (IP6 address)", argname, argno+1, desc);
+	errh->error("%s %d should be %s (IPv6 address)", argname, argno+1, desc);
       else
 	break;
      }
 
+     case cpIP6Prefix:
+     case cpIP6AddressOrPrefix: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, unsigned char *);
+       v.store2 = va_arg(val, unsigned char *);
+       if (skip) break;
+       bool mask_optional = (cp_command == cpIP6AddressOrPrefix);
+       if (!cp_ip6_prefix(args[argno], v.v.address, v.v.address + 16, mask_optional CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (IPv6 address prefix)", argname, argno+1, desc);
+       break;
+     }
+     
      case cpEthernetAddress: {
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);

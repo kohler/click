@@ -16,6 +16,13 @@
 #endif
 #include "ipaddress.hh"
 #include "confparse.hh"
+#if CLICK_LINUXMODULE
+extern "C" {
+# include <linux/kernel.h>
+}
+#else
+# include <stdio.h>
+#endif
 
 IPAddress::IPAddress(const unsigned char *data)
 {

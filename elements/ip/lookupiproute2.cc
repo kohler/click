@@ -77,7 +77,7 @@ LookupIPRoute2::add_route_handler(const String &conf, Element *e, void *, ErrorH
     cp_spacevec(args[i], words);
     unsigned int dst, mask, gw;
     if (words.size() == 2
-	&& cp_ip_address_mask(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, me) // allow bare IP addresses
+	&& cp_ip_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, me) // allow bare IP addresses
         && cp_ip_address(words[1], (unsigned char *)&gw, me))
       me->_t.add(dst, mask, gw);
     else {
@@ -100,7 +100,7 @@ LookupIPRoute2::del_route_handler(const String &conf, Element *e, void *, ErrorH
 
   for (int i = 0; i < args.size(); i++) {
     unsigned int dst, mask;
-    if (cp_ip_address_mask(args[i], (unsigned char *)&dst, (unsigned char *)&mask, true, me))
+    if (cp_ip_prefix(args[i], (unsigned char *)&dst, (unsigned char *)&mask, true, me))
       me->_t.del(dst, mask);
     else {
       errh->error("expects DST/MASK");

@@ -70,7 +70,7 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpString, "interface name", &_devname,
-			cpIPAddressMask, "destination IP address and netmask", &_destaddr, &_destmask,
+			cpIPPrefix, "destination IP prefix", &_destaddr, &_destmask,
 			cpEnd);
   if (res < 0)
     return res;

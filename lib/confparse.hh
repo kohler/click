@@ -38,16 +38,24 @@ bool cp_word(const String &, String *, String *rest = 0);
 bool cp_string(const String &, String *, String *rest = 0);
 
 // network addresses
+class IPAddress;
 bool cp_ip_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ip6_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ip_address_mask(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
-bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
-#ifndef CLICK_TOOL
-class IPAddress; class IP6Address; class EtherAddress;
 bool cp_ip_address(const String &, IPAddress &  CP_CONTEXT);
+bool cp_ip_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip_prefix(const String &, IPAddress &, IPAddress &, bool allow_bare_address = false  CP_CONTEXT);
+
+class IP6Address;
+bool cp_ip6_address(const String &, unsigned char *  CP_CONTEXT);
 bool cp_ip6_address(const String &, IP6Address &  CP_CONTEXT);
-bool cp_ip_address_mask(const String &, IPAddress &, IPAddress &, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, unsigned char *, int *, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &, bool allow_bare_address = false  CP_CONTEXT);
+
+class EtherAddress;
+bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
 bool cp_ethernet_address(const String &, EtherAddress &  CP_CONTEXT);
+
+#ifndef CLICK_TOOL
 Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
 
@@ -74,12 +82,14 @@ enum CpVaParseCmd {
   cpWord,	// String *value
   cpArgument,	// String *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
-  cpIPAddressMask, // unsigned char value[4], unsigned char mask[4]
-  cpIPAddressOptMask, // unsigned char value[4], unsigned char mask[4]
-  cpEthernetAddress, // unsigned char value[6] (or EtherAddress *)
+  cpIPPrefix,	// unsigned char value[4], unsigned char mask[4]
+  cpIPAddressOrPrefix,	// unsigned char value[4], unsigned char mask[4]
+  cpEthernetAddress,	// unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]
-  cpIP6Address  // unsigned char value[16] (or IP6Address *)
+  cpIP6Address,	// unsigned char value[16] (or IP6Address *)
+  cpIP6Prefix,	// unsigned char value[16], unsigned char mask[16]
+  cpIP6AddressOrPrefix	// unsigned char value[16], unsigned char mask[16]
 };
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);

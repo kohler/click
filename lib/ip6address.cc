@@ -1,9 +1,9 @@
 /*
  * ip6address.{cc,hh} -- an IP6 address class. Useful for its hashcode()
  * method
- * Robert Morris / John Jannotti / Peilei Fan
+ * Peilei Fan, Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -17,6 +17,13 @@
 #include "ip6address.hh"
 #include "ipaddress.hh"
 #include "confparse.hh"
+#if CLICK_LINUXMODULE
+extern "C" {
+# include <linux/kernel.h>
+}
+#else
+# include <stdio.h>
+#endif
 
 IP6Address::IP6Address()
 {
@@ -36,6 +43,17 @@ IP6Address::IP6Address(const String &str)
   if (!cp_ip6_address(str, *this))
     for (int i = 0; i < 4; i++)
       _addr.s6_addr32[i] = 0;
+}
+
+IP6Address
+IP6Address::make_prefix(int prefix)
+{
+  assert(prefix >= 0 && prefix <= 128);
+  static const unsigned char data[] = { 0, 128, 192, 224, 240, 248, 252, 254, 255 };
+  IP6Address a;
+  for (int i = 0; i < 16 && prefix > 0; i++, prefix -= 8)
+    a._addr.s6_addr[i] = (prefix > 8 ? 255 : data[prefix]);
+  return a;
 }
 
 bool

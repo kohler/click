@@ -63,7 +63,7 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], words);
     
     for (int j = 0; j < words.size(); j++)
-      if (cp_ip_address_mask(words[j], ipa, mask, this))
+      if (cp_ip_prefix(words[j], ipa, mask, this))
 	add_map(ipa, mask, EtherAddress());
       else if (cp_ip_address(words[j], ipa, this))
 	add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());

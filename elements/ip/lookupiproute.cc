@@ -51,7 +51,7 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], words);
     
     if ((words.size() == 2 || words.size() == 3)
-	&& cp_ip_address_mask(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) // allow base IP addresses
+	&& cp_ip_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) // allow base IP addresses
 	&& cp_integer(words.back(), &output_num)) {
       if (words.size() == 3)
 	ok = cp_ip_address(words[1], (unsigned char *)&gw, this);

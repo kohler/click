@@ -31,7 +31,7 @@ RIPSend::configure(const Vector<String> &conf, ErrorHandler *errh)
   int ret = cp_va_parse(conf, this, errh,
                         cpIPAddress, "source addr", &_src,
                         cpIPAddress, "dst addr", &_dst,
-                        cpIPAddressMask, "advertised address", &_what, &_mask,
+                        cpIPPrefix, "advertised address", &_what, &_mask,
                         cpInteger, "metric", &_metric,
                         0);
   if(ret < 0)

@@ -8,39 +8,36 @@
  */
 
 /* IPv6 address , same as from /usr/include/netinet/in.h  */
-struct click_in6_addr
-  {
-    union
-      {
-	uint8_t		u6_addr8[16];
-	uint16_t	u6_addr16[8];
-	uint32_t	u6_addr32[4];
+struct click_in6_addr {
+  union {
+    uint8_t u6_addr8[16];
+    uint16_t u6_addr16[8];
+    uint32_t u6_addr32[4];
 #if ULONG_MAX > 0xffffffff
-	uint64_t	u6_addr64[2];
+    uint64_t u6_addr64[2];
 #endif
-      } in6_u;
+  } in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
 #define s6_addr32		in6_u.u6_addr32
 #define s6_addr64		in6_u.u6_addr64
-  };
-
+};
 
 struct click_ip6 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned char ip6_pri:4;			/* 0   priority */
-    unsigned char ip6_v:4;			/*     version == 6 */
+    unsigned char ip6_pri:4;		/* 0     priority */
+    unsigned char ip6_v:4;		/*       version == 6 */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-    unsigned char ip6_v:4;			/* 0   version == 6 */
-    unsigned char ip6_pri:4;			/*     priority */
+    unsigned char ip6_v:4;		/* 0     version == 6 */
+    unsigned char ip6_pri:4;		/*       priority */
 #endif
-    uint8_t ip6_flow[3];             /* 1-3   flow label -follow the example from ip6.h */
+    unsigned char ip6_flow[3];		/* 1-3   flow label */
     unsigned short ip6_plen;		/* 4-5   payload length */
     unsigned char ip6_nxt;		/* 6     next header */
     unsigned char ip6_hlim;     	/* 7     hop limit  */
-    struct click_in6_addr ip6_src;		/* 8-23  source address */
-    struct click_in6_addr ip6_dst;		/* 24-39 dest address */
+    struct click_in6_addr ip6_src;	/* 8-23  source address */
+    struct click_in6_addr ip6_dst;	/* 24-39 dest address */
 };
 
 

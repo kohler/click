@@ -2,6 +2,7 @@
 #define ADDRESSINFO_HH
 #include "element.hh"
 #include "hashmap.hh"
+#include "ip6address.hh"
 
 /*
  * =c
@@ -12,8 +13,8 @@
  * None
  * =d
  *
- * Lets you use mnemonic names for IPv4 and IPv6 addresses, IPv4 network
- * addresses, and Ethernet addresses. Each argument has the form `NAME
+ * Lets you use mnemonic names for IPv4 and IPv6 addresses, IPv4 and IPv6
+ * address prefixes, and Ethernet addresses. Each argument has the form `NAME
  * ADDRESS [ADDRESS...]', which associates the given ADDRESSes with NAME. For
  * example, if a configuration contains this AddressInfo element,
  *
@@ -44,15 +45,17 @@
  *
  * An optional suffix makes the context unambiguous. C<NAME> is an ambiguous
  * reference to some address, but C<NAME:ip> is always an IPv4 address,
- * C<NAME:ipnet> is always an IP network address, C<NAME:ip6> is always an
- * IPv6 address, and C<NAME:eth> is always an Ethernet address. */
+ * C<NAME:ipnet> is always an IPv4 network address (IPv4 address prefix),
+ * C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
+ * network address, and C<NAME:eth> is always an Ethernet address. */
 
 class AddressInfo : public Element {
 
   static const unsigned INFO_IP = 1;
-  static const unsigned INFO_IP_MASK = 2;
+  static const unsigned INFO_IP_PREFIX = 2;
   static const unsigned INFO_IP6 = 4;
-  static const unsigned INFO_ETHER = 8;
+  static const unsigned INFO_IP6_PREFIX = 8;
+  static const unsigned INFO_ETHER = 16;
   
   struct Info {
     unsigned have;
@@ -60,7 +63,8 @@ class AddressInfo : public Element {
       unsigned u;
       unsigned char c[4];
     } ip, ip_mask;
-    unsigned char ip6[16];
+    IP6Address ip6;
+    int ip6_prefix;
     unsigned char ether[6];
     Info() : have(0) { }
   };
@@ -83,8 +87,9 @@ class AddressInfo : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
 
   static bool query_ip(String, unsigned char *, Element *);
-  static bool query_ip_mask(String, unsigned char *, unsigned char *, Element *);
+  static bool query_ip_prefix(String, unsigned char *, unsigned char *, Element *);
   static bool query_ip6(String, unsigned char *, Element *);
+  static bool query_ip6_prefix(String, unsigned char *, int *, Element *);
   static bool query_ethernet(String, unsigned char *, Element *);
   
 };
