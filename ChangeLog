@@ -1,3 +1,8 @@
+2001-08-04 Saturday 03:38  Eddie Kohler <kohler@aciri.org>
+
+	* lib/confparse.cc (1.80): support abbreviated IP prefix strings
+	like "18.26/16" (requested by Vern Paxson)
+
 2001-08-04 Saturday 01:52  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/: module.cc (1.58), modulepriv.hh (1.23), sched.cc
