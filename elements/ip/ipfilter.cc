@@ -126,42 +126,56 @@ accum_wt_names(HashMap<String, int> *wordmap, String word, StringAccum &sa)
 }
 
 int
-IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, String word, ErrorHandler *errh)
+IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto, String word, ErrorHandler *errh)
 {
   String orig_word = word;
   int t = (*wordmap)[word];
   if (t == 0)
     return -1;
 
-  // no type known? return it right away, or complain about ambiguity
-  if (type == 0) {
-    if (!(t & WT_MORE))
-      return t;
-    
-    if (errh) {
-      StringAccum sa;
-      accum_wt_names(wordmap, word, sa);
-      errh->error("`%s' is ambiguous; specify %s", word.cc(), sa.cc());
-    }
-    return -2;
-  }
+  int num_matches = 0;
+  int last_match = -1;
+  int transp_dropped = 0;
 
-  // look for matching type
   while (t != 0) {
-    if (WT_TYPE(t) == type)
-      return (t & ~WT_MORE);
+    if (type != 0 && WT_TYPE(t) != type)
+      /* not interesting */;
+    else if (WT_TYPE(t) == TYPE_TCPOPT && transp_proto != UNKNOWN && transp_proto != IP_PROTO_TCP && transp_proto != IP_PROTO_TCP_OR_UDP) {
+      /* not interesting */
+      transp_dropped++;
+    } else if (WT_TYPE(t) == TYPE_ICMP_TYPE && transp_proto != UNKNOWN && transp_proto != IP_PROTO_ICMP) {
+      /* not interesting */
+      transp_dropped++;
+    } else if (WT_TYPE(t) == TYPE_PORT && transp_proto != UNKNOWN && transp_proto != IP_PROTO_TCP && transp_proto != IP_PROTO_UDP && transp_proto != IP_PROTO_TCP_OR_UDP) {
+      /* not interesting */
+      transp_dropped++;
+    } else {
+      num_matches++;
+      last_match = t;
+    }
+
     word += "+";
     t = (*wordmap)[word];
   }
 
-  // no matching type
-  if (errh) {
+  if (num_matches == 1)
+    return last_match;
+  else if (num_matches > 1) {
+    if (errh) {
+      StringAccum sa;
+      accum_wt_names(wordmap, orig_word, sa);
+      errh->error("`%s' is ambiguous; specify %s", orig_word.cc(), sa.cc());
+    }
+    return -2;
+  } else {
     String tn = Primitive::unparse_type(0, type);
+    String tr = Primitive::unparse_transp_proto(transp_proto);
+    if (tr) tr += " ";
     StringAccum sa;
     accum_wt_names(wordmap, orig_word, sa);
-    errh->error("`%s %s' is meaningless; specify %s with %s", tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+    errh->error("`%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+    return -2;
   }
-  return -2;
 }
 
 IPFilter::IPFilter()
@@ -169,6 +183,8 @@ IPFilter::IPFilter()
   // no MOD_INC_USE_COUNT; rely on Classifier
   if (ip_filter_count == 0)
     wordmap = create_wordmap();
+  else
+    assert(wordmap);
   ip_filter_count++;
 }
 
@@ -176,8 +192,10 @@ IPFilter::~IPFilter()
 {
   // no MOD_DEC_USE_COUNT; rely on Classifier
   ip_filter_count--;
-  if (ip_filter_count == 0)
+  if (ip_filter_count == 0) {
     delete wordmap;
+    wordmap = 0;
+  }
 }
 
 IPFilter *
@@ -285,6 +303,21 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
 
   sa.pop();
   return sa.take_string();
+}
+
+String
+IPFilter::Primitive::unparse_transp_proto(int transp_proto)
+{
+  switch (transp_proto) {
+   case UNKNOWN: return "";
+   case IP_PROTO_ICMP: return "icmp";
+   case IP_PROTO_IGMP: return "igmp";
+   case IP_PROTO_IPIP: return "ipip";
+   case IP_PROTO_TCP: return "tcp";
+   case IP_PROTO_UDP: return "udp";
+   case IP_PROTO_TCP_OR_UDP: return "(tcp || udp)";
+   default: return "ip proto " + String(transp_proto);
+  }
 }
 
 String
@@ -699,7 +732,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // collect qualifiers
   for (; pos < words.size(); pos++) {
     String wd = words[pos];
-    int wt = lookup_word(wordmap, 0, wd, 0);
+    int wt = lookup_word(wordmap, 0, UNKNOWN, wd, 0);
 
     if (wt >= 0 && WT_TYPE(wt) == TYPE_TYPE)
       prim.set_type(wt & WT_DATA, errh);
@@ -764,7 +797,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // now collect the actual data
   if (pos < words.size()) {
     wd = words[pos];
-    int wt = lookup_word(wordmap, prim._type, wd, errh);
+    int wt = lookup_word(wordmap, prim._type, prim._transp_proto, wd, errh);
     pos++;
     
     if (wt == -2)		// ambiguous or incorrect word type

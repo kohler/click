@@ -116,7 +116,7 @@ class IPFilter : public Classifier { public:
   void push(int port, Packet *);
   
   static HashMap<String, int> *create_wordmap();
-  static int lookup_word(HashMap<String, int> *wordmap, int type, String word, ErrorHandler *errh);
+  static int lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto, String word, ErrorHandler *errh);
   
   enum {
     WT_TYPE_MASK = 0x3FFF0000,
@@ -139,7 +139,6 @@ class IPFilter : public Classifier { public:
     TYPE_IPUNFRAG = 12,
     
     UNKNOWN = -1000,
-    NONE = 0,
     
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
 
@@ -184,6 +183,7 @@ class IPFilter : public Classifier { public:
 
     String unparse_type() const;
     static String unparse_type(int srcdst, int type);
+    static String unparse_transp_proto(int transp_proto);
     
   };
 
