@@ -1,3 +1,12 @@
+2004-05-26 Wednesday 17:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/averagecounter.cc (1.12): whitespace
+
+2004-05-26 Wednesday 16:58  John Bicket <jbicket@mit.edu>
+
+	* elements/linuxmodule/fromhost.cc (1.46): fixed bug so fromhost
+	doesn't hog cpu.
+
 2004-05-26 Wednesday 15:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/master.hh (1.5), lib/task.cc (1.31): fix
