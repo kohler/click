@@ -282,14 +282,12 @@ ToDevice::tx_intr()
     adj_tickets(0-n);
   }
 
-#if 0
-#if CLICK_POLLDEV
-  if (busy || _idle <= TODEV_IDLE_LIMIT || tx_left != 0)
+#ifdef CLICK_POLLDEV
+  reschedule();
 #else
   if (busy || _idle <= TODEV_IDLE_LIMIT)
-#endif
-#endif
     reschedule();
+#endif
 }
 
 void
