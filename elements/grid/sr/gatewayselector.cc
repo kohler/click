@@ -33,7 +33,10 @@ CLICK_DECLS
 
 GatewaySelector::GatewaySelector()
   :  Element(1,1),
-     _warmup(0),
+     _ip(),
+     _en(),
+     _et(0),
+     _link_table(0),
      _srcr_stat(0),
      _arp_table(0),
      _timer(this)
@@ -64,40 +67,43 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   _is_gw = false;
   _period = 15;
   ret = cp_va_parse(conf, this, errh,
-		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
-		    cpEtherAddress, "EtherAddress", &_en,
-		    cpElement, "LinkTable element", &_link_table,
-		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+                    "IP", cpIPAddress, "IP address", &_ip,
+		    "ETH", cpEtherAddress, "EtherAddress", &_en,
+		    "LT", cpElement, "LinkTable element", &_link_table,
+		    "ARP", cpElement, "ARPTable element", &_arp_table,
+		    /* not required */
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
                     0);
 
-  if (_link_table && _link_table->cast("LinkTable") == 0) 
+  if (!_et) 
+    return errh->error("ETHTYPE not specified");
+  if (!_ip) 
+    return errh->error("IP not specified");
+  if (!_en) 
+    return errh->error("ETH not specified");
+  if (!_link_table) 
+    return errh->error("LT not specified");
+  if (!_arp_table) 
+    return errh->error("ARPTable not specified");
+
+
+  if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
+  if (_arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not an ARPtable");
+
   if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SrcrStat");
-  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
-    return errh->error("ARPTable element is not an ARPtable");
 
   _gw_expire.tv_usec = 0;
   _gw_expire.tv_sec = _period*4;
 
   struct timeval now;
   click_gettimeofday(&now);
-
-  struct timeval warmup_forward;
-  warmup_forward.tv_sec = _period;
-  warmup_forward.tv_usec = 0;
-  timeradd(&now, &warmup_forward, &_warmup_forward_expire);
-
-  struct timeval warmup;
-  warmup.tv_sec = _period*2;
-  warmup.tv_usec = 0;
-  timeradd(&now, &warmup, &_warmup_expire);
-
 
   return ret;
 }

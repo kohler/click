@@ -149,6 +149,42 @@ struct sr_pkt {
 
 
 
+
+struct extra_link_info {
+  uint8_t _nhops;
+  uint8_t _foo1;
+  uint16_t _foo2;
+
+  int num_hops() {
+    return _nhops;
+  }
+  void set_num_hops(uint8_t n) {
+    _nhops = n;
+  }
+  
+  uint16_t get_metric(int h) { 
+    uint16_t *ndx = (uint16_t *) (this+1);
+    return ndx[h + num_hops()*2];
+  }
+  
+  void set_metric(int hop, uint16_t s) { 
+    uint16_t *ndx = (uint16_t *) (this+1);
+    ndx[hop + num_hops()*2] = s;
+  }
+  
+  IPAddress get_hop(int h) { 
+    in_addr *ndx = (in_addr *) (this + 1);
+    return IPAddress(ndx[h]);
+  }
+  
+  void  set_hop(int hop, IPAddress p) { 
+    in_addr *ndx = (in_addr *) (this + 1);
+    ndx[hop] = p.in_addr();
+  }
+
+};
+
+
 class SRCR : public Element {
  public:
   

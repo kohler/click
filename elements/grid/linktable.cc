@@ -73,11 +73,14 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   int stale_period = 60;
   ret = cp_va_parse(conf, this, errh,
-                    cpIPAddress, "IP address", &_ip,
-                    cpKeywords,
+		    cpKeywords,
+                    "IP", cpIPAddress, "IP address", &_ip,
 		    "STALE", cpUnsigned, "Stale info timeout", &stale_period,
                     0);
   
+  if (!_ip) 
+    return errh->error("IP not specified");
+
   _stale_timeout.tv_sec = stale_period;
   _stale_timeout.tv_usec = 0;
 

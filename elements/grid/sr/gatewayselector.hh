@@ -107,12 +107,9 @@ private:
   int MaxHops;   // Max hop count for queries.
   struct timeval _gw_expire;
   u_long _seq;      // Next query sequence number to use.
-  int _warmup;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
-  struct timeval _warmup_expire;
-  struct timeval _warmup_forward_expire;
   unsigned int _period; // msecs
 
   EtherAddress _bcast;

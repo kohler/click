@@ -35,6 +35,9 @@ CLICK_DECLS
 
 SRCR::SRCR()
   :  Element(1,2), 
+     _ip(),
+     _eth(),
+     _et(0),
      _datas(0), 
      _databytes(0),
      _link_table(0),
@@ -60,18 +63,29 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int res;
   res = cp_va_parse(conf, this, errh,
-		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
-		    cpEtherAddress, "Ethernet Address", &_eth,
-		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+                    "IP", cpIPAddress, "IP address", &_ip,
+		    "ETH", cpEtherAddress, "Ethernet Address", &_eth,
+		    "ARP", cpElement, "ARPTable element", &_arp_table,
+		    /* below not required */
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
 		    "ETT", cpElement, "ETT element", &_ett,
 		    "LT", cpElement, "LinkTable element", &_link_table,
                     0);
 
-  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
+  if (!_et) 
+    return errh->error("ETHTYPE not specified");
+  if (!_ip) 
+    return errh->error("IP not specified");
+  if (!_eth) 
+    return errh->error("ETH not specified");
+  if (!_arp_table) 
+    return errh->error("ARPTable not specified");
+
+  if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a Arptable");
+
   if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SrcrStat");
   if (_ett && _ett->cast("ETT") == 0) 

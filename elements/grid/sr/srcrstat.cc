@@ -64,8 +64,8 @@ int
 SrcrStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpUnsigned, "Ethernet encapsulation type", &_et,
 			cpKeywords,
+			"ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 			"IP", cpIPAddress, "IP address", &_ip,
 			"WINDOW", cpUnsigned, "Broadcast loss rate window", &_window,
 			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
@@ -83,6 +83,9 @@ SrcrStat::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("Specified packet size is less than the minimum probe size of %u",
 		       min_sz);
 
+  if (!_et) {
+    return errh->error("Must specify ETHTYPE");
+  }
   if (!_ip) {
     return errh->error("Invalid IPAddress specified\n");
   }

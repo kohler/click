@@ -34,6 +34,9 @@ CLICK_DECLS
 ETT::ETT()
   :  Element(3,2),
      _timer(this), 
+     _ip(),
+     _en(),
+     _et(0),
      _srcr_stat(0),
      _arp_table(0),
      _num_queries(0),
@@ -76,24 +79,39 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
-		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
-		    cpEtherAddress, "EtherAddress", &_en,
-		    cpElement, "SRCR element", &_srcr,
-		    cpElement, "LinkTable element", &_link_table,
-		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+                    "IP", cpIPAddress, "IP address", &_ip,
+		    "ETH", cpEtherAddress, "EtherAddress", &_en,
+		    "SRCR", cpElement, "SRCR element", &_srcr,
+		    "LT", cpElement, "LinkTable element", &_link_table,
+		    "ARP", cpElement, "ARPTable element", &_arp_table,
+		    /* below not required */
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
                     0);
 
-  if (_srcr && _srcr->cast("SRCR") == 0) 
+  if (!_et) 
+    return errh->error("ETHTYPE not specified");
+  if (!_ip) 
+    return errh->error("IP not specified");
+  if (!_en) 
+    return errh->error("ETH not specified");
+  if (!_srcr) 
+    return errh->error("SRCR not specified");
+  if (!_link_table) 
+    return errh->error("LT not specified");
+  if (!_arp_table) 
+    return errh->error("ARPTable not specified");
+
+
+  if (_srcr->cast("SRCR") == 0) 
     return errh->error("SRCR element is not a SRCR");
-  if (_link_table && _link_table->cast("LinkTable") == 0) 
+  if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
+  if (_arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not a Arptable");
   if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SrcrStat");
-  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
-    return errh->error("ARPTable element is not an ARPtable");
 
   return ret;
 }
