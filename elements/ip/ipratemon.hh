@@ -87,7 +87,7 @@ public:
   void uninitialize();
 
   void set_resettime()                          { _resettime = MyEWMA::now(); }
-  void set_anno_level(IPAddress saddr, unsigned level, unsigned when);
+  void set_anno_level(unsigned addr, unsigned level, unsigned when);
 
   void push(int port, Packet *p);
   Packet *pull(int port);
@@ -178,16 +178,17 @@ private:
 };
 
 inline void
-IPRateMonitor::set_anno_level(IPAddress saddr, unsigned level, unsigned when)
+IPRateMonitor::set_anno_level(unsigned addr, unsigned level, unsigned when)
 {
-  unsigned int addr = saddr.addr();
   struct Stats *s = _base;
   Counter *c = 0;
   int bitshift;
 
+  addr = ntohl(addr);
+
   // zoom in to the specified level
-  for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
-    unsigned char byte = (addr >> bitshift) & 0x000000ff;
+  for (bitshift = 24; bitshift >= 0; bitshift -= 8) {
+    unsigned char byte = (addr >> bitshift) & 255;
 
     if (!(c = s->counter[byte]))
       return;
@@ -271,6 +272,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
       ((bitshift > 0) &&
       (!_memmax || (_alloced_mem+sizeof(Counter)+sizeof(Stats)) <= _memmax)))
   {
+    bitshift -= 8;
     unsigned char next_byte = (addr >> bitshift) & 255;
     if (!(c->next_level = new Stats(this)) ||
        !make_counter(c->next_level, next_byte, &c->fwd_and_rev_rate))

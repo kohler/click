@@ -469,8 +469,9 @@ IPRateMonitor::anno_level_write_handler
   start_bh_atomic();
 #endif
   me->_lock->acquire();
-  me->set_anno_level(a, static_cast<unsigned>(level), 
-                        static_cast<unsigned>(when));
+  unsigned addr = a.addr();
+  me->set_anno_level(addr, static_cast<unsigned>(level), 
+                     static_cast<unsigned>(when));
   me->_lock->release();
 #ifdef __KERNEL__
   end_bh_atomic();
@@ -527,19 +528,67 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     ipaddr = ntohl(ipaddr);
     for (int bitshift = 24; bitshift > 0 && level > 0; bitshift -= 8, level--) {
       unsigned char b = (ipaddr >> bitshift) & 255;
-      if (!s->counter[b] && !s->counter[b]->next_level)
+      if (!s->counter[b] || !s->counter[b]->next_level)
 	return -EAGAIN;
       s = s->counter[b]->next_level;
     }
 
-    for (int i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++) {
+      unsigned freq = s->counter[0]->fwd_and_rev_rate.freq();
+      unsigned scale = s->counter[0]->fwd_and_rev_rate.scale;
       if (s->counter[i])
-	averages[i] = s->counter[i]->fwd_and_rev_rate.average(which);
+	averages[i] = 
+	  (s->counter[i]->fwd_and_rev_rate.average(which) * freq) >> scale;
       else
 	averages[i] = -1;
+    }
     return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
     
-  } else
+  } 
+
+  else if (command == CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG) {
+    
+    // Data	: int data[9]
+    // Incoming : data[0] is the network-byte-order IP address to drill down
+    //            on. data[1...8] are ignored.
+    // Outgoing : data[0] specifies how many level of rates are returned. for
+    //            example, if user request data for 18.26.4.10, and only rates
+    //            upto 18.26.4 is available, returns 3. data[1...9] contain
+    //            rates, starting with the highest order byte (e.g. 18).
+
+    unsigned *udata = (unsigned *)data;
+    unsigned ipaddr;
+    if (CLICK_LLRPC_GET(ipaddr, udata) < 0)
+      return -EFAULT;
+    
+    int averages[9];
+    int n = 0;
+    
+    // ipaddr is in network order
+    Stats *s = _base;
+    ipaddr = ntohl(ipaddr);
+    for (int bitshift = 24; bitshift >= 0; bitshift -= 8) {
+      unsigned char b = (ipaddr >> bitshift) & 255;
+      if (!s->counter[b]) 
+	break;
+      
+      unsigned freq = s->counter[b]->fwd_and_rev_rate.freq();
+      unsigned scale = s->counter[b]->fwd_and_rev_rate.scale;
+      averages[n*2+1] = 
+	(s->counter[b]->fwd_and_rev_rate.average(0) * freq) >> scale;
+      averages[n*2+2] = 
+	(s->counter[b]->fwd_and_rev_rate.average(1) * freq) >> scale;
+      n++;
+
+      if (!s->counter[b]->next_level)
+	break;
+      s = s->counter[b]->next_level;
+    }
+    averages[0] = n;
+    return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
+  }
+  
+  else
     return Element::llrpc(command, data);
 }
 
