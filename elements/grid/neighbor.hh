@@ -3,13 +3,24 @@
 
 /*
  * =c
- * Neighbor(TIMEOUT, ETH, IP [, MAX-HOPS])
+ * Neighbor(TIMEOUT, PERIOD, JITTER, ETH, IP [, MAX-HOPS])
  * =d
+ *
+ * Maintain local routing table, with entry timeout of TIMEOUT
+ * millseconds.
+ *
+ * Every PERIOD millseconds (+/- a jitter bounded by JITTER
+ * milliseconds), emit a Grid protocol ``LR_HELLO'' packet for the
+ * Grid node at address IP with MAC address ETH, advertising any
+ * neighbors within MAX-HOPS of the node, as reported by the Neighbor
+ * element named by the 5th argument.  MAX-HOPS defaults to 1.  PERIOD
+ * must be greater than 0, JITTER must be positive and less than
+ * JITTER.  Produces Ethernet packets.
  *
  * =a Hello 
  * =a FixSrcLoc 
  * =a SetGridChecksum
- * =a LocalRoute
+ * =a LocalRoute 
  */
 
 
@@ -19,6 +30,7 @@
 #include "etheraddress.hh"
 #include "ipaddress.hh"
 #include "grid.hh"
+#include "timer.hh"
 
 class Neighbor : public Element {
 
@@ -67,6 +79,10 @@ public:
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void get_nbrs(Vector<grid_nbr_entry> *retval) const;
 
+  Packet *make_hello();
+  
+  void run_scheduled();
+
   int _timeout_jiffies; // -1 if we are not timing out entries
 private:
   String get_nbrs();
@@ -75,7 +91,15 @@ private:
   EtherAddress _ethaddr;
   int _max_hops;
 
+  int _period;
+  int _jitter;
+  Timer _timer;
+  unsigned int _seq_no;
 };
 
 #endif
+
+
+
+
 

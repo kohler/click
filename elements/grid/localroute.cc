@@ -99,7 +99,7 @@ LocalRoute::push(int port, Packet *packet)
     grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
     switch (gh->type) {
 
-    case GRID_NBR_ENCAP:
+    case grid_hdr::GRID_NBR_ENCAP:
       {/* 
 	* try to either receive the packet or forward it
 	*/
@@ -150,7 +150,7 @@ LocalRoute::push(int port, Packet *packet)
       struct grid_hdr *gh = (grid_hdr *) (new_packet->data() + sizeof(click_ether));
       gh->hdr_len = sizeof(grid_hdr);
       gh->total_len = new_packet->length() - sizeof(click_ether); // encapsulate everything we get, don't look inside it for length info
-      gh->type = GRID_NBR_ENCAP;
+      gh->type = grid_hdr::GRID_NBR_ENCAP;
 
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;

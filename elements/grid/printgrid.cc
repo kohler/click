@@ -67,7 +67,7 @@ PrintGrid::simple_action(Packet *p)
 
   char *buf = 0;
 
-  if(gh->type == GRID_LR_HELLO) {
+  if(gh->type == grid_hdr::GRID_LR_HELLO) {
     grid_hello *h = (grid_hello *) (gh + 1);
     grid_nbr_entry *na = (grid_nbr_entry *) (h + 1);
     buf = new char [h->num_nbrs * 100 + 1];

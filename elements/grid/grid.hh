@@ -3,6 +3,9 @@
 
 // XXX when these settle, we can reorder, align and pack the fields etc...
 
+/* All mltibyte values sent over the wire in network byte order,
+   unless otherwise noted (e.g. IP addresses) */
+
 // A geographical position.
 // Suitable for including inside a packet.
 struct grid_location {
@@ -54,9 +57,9 @@ struct grid_hdr {
   unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
 
   unsigned char type;
-#define GRID_HELLO     1    // no additional info in packet beyond header
-#define GRID_LR_HELLO  2    // followed by grid_hello and grid_nbr_entries
-#define GRID_NBR_ENCAP 3    // followed by grid_nbr_encap
+  static const int GRID_HELLO     = 1;  // no additional info in packet beyond header
+  static const int GRID_LR_HELLO  = 2;  // followed by grid_hello and grid_nbr_entries
+  static const int GRID_NBR_ENCAP = 3;  // followed by grid_nbr_encap
 
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
@@ -75,14 +78,16 @@ struct grid_nbr_entry {
   unsigned int next_hop_ip;
   unsigned char num_hops; // what does 0 indicate? XXX
   grid_location loc;
+  unsigned int seq_no;
 
-  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0) { }
+  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) { }
 
-  grid_nbr_entry(unsigned int _ip, unsigned int _nhip, unsigned char h)
-    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0) { } 
+  grid_nbr_entry(unsigned int _ip, unsigned int _nhip, unsigned char h, unsigned int s)
+    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0), seq_no(s) { } 
 };
 
 struct grid_hello {
+  unsigned int seq_no;
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
@@ -94,6 +99,7 @@ struct grid_hello {
 struct grid_nbr_encap {
   unsigned int dst_ip;
   unsigned char hops_travelled;
+  unsigned int seq_no;
 };
 
 

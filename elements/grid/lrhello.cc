@@ -121,7 +121,7 @@ LocalRouteHello::make_hello()
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = psz - sizeof(click_ether);
-  gh->type = GRID_LR_HELLO;
+  gh->type = grid_hdr::GRID_LR_HELLO;
   memcpy(&gh->ip, _from_ip.data(), 4);
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   assert(num_nbrs <= 255);

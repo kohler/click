@@ -3,9 +3,9 @@
 
 /*
  * =c
- * Tun(dev-prefix, near-address, netmask)
+ * Tun(dev-prefix, address, netmask [, default-gw])
  * =d
- * Reads and writes packets from/to the /dev/<dev-name> device.
+ * Reads and writes packets from/to a /dev/<dev-prefix>* device.
  * This allows a user-level Click to hand packets to the
  * ordinary kernel IP packet processing code.
  * A Tun will also transfer packets from the kernel IP
@@ -14,12 +14,14 @@
  *
  * Tun produces and expects IP packets.
  * 
- * Tun allocates a /dev/tun device (this might fail) and
- * runs ifconfig to set the interface's local (ie kernel)
- * address to near-address and the netmask to netmask.
+ * Tun allocates a /dev/<dev-prefix>* device (this might fail) and
+ * runs ifconfig to set the interface's local (i.e. kernel) address to
+ * address and the netmask to netmask.  If a default-gw IP address
+ * (which must be on the same network as the tun) is specified (that
+ * is not 0.0.0.0), Tun tries to set up a default route through that
+ * host.
  *
- * =a ToLinux
- */
+ * =a ToLinux */
 
 #include "element.hh"
 #include "ipaddress.hh"
@@ -44,7 +46,8 @@ class Tun : public Element {
  private:
   String _dev_prefix;
   IPAddress _near;
-  IPAddress _far;
+  IPAddress _mask;
+  IPAddress _gw;
   int _fd;
 
   int alloc_tun(const char *dev_name, struct in_addr near, struct in_addr far, ErrorHandler *errh);

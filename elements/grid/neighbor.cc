@@ -19,9 +19,11 @@
 #include "error.hh"
 #include "click_ether.h"
 #include "click_ip.h"
+#include "elements/standard/scheduleinfo.hh"
+#include "router.hh"
 #include "grid.hh"
 
-Neighbor::Neighbor() : Element(1, 1), _max_hops(3)
+Neighbor::Neighbor() : Element(1, 2), _max_hops(3), _timer(this), _seq_no(0)
 {
 }
 
@@ -44,6 +46,8 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
   int msec_timeout = 0;
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &msec_timeout,
+			cpInteger, "Hello broadcast period (msec)", &_period,
+			cpInteger, "Hello broadcast jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
 			cpOptional,
@@ -58,12 +62,26 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
   else // never timeout
     _timeout_jiffies = -1;
+
+  if (_period <= 0)
+    return errh->error("period must be greater than 0");
+  if (_jitter < 0)
+    return errh->error("period must be positive");
+  if (_jitter > _period)
+    return errh->error("jitter is bigger than period");
+  if (_max_hops < 0)
+    return errh->error("max hops must be greater than 0");
+
   return res;
 }
 
 int
-Neighbor::initialize(ErrorHandler *)
+Neighbor::initialize(ErrorHandler *errh)
 {
+  ScheduleInfo::join_scheduler(this, errh);
+  _timer.attach(this);
+  _timer.schedule_after_ms(_period); // Send periodically
+
   return 0;
 }
 
@@ -118,7 +136,11 @@ Neighbor::simple_action(Packet *packet)
     ; // do it
   if (i == _nbrs.size()) {
     // we don't already know about it, so add it
-    _nbrs.push_back(far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1)));
+
+    // XXX shit how to deal with seq num????? maybe don't mix
+    // immediate nbrs info with routing table info?
+
+    _nbrs.push_back(far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, 0)));
     _nbrs[i].last_updated_jiffies = jiff;
     _nbrs[i].nbr.loc = gh->loc;
   } else { 
@@ -138,7 +160,7 @@ Neighbor::simple_action(Packet *packet)
    * perform further packet processing
    */
   switch (gh->type) {
-  case GRID_LR_HELLO:
+  case grid_hdr::GRID_LR_HELLO:
     {    /* 
 	  * add this sender's nbrs to our far neighbor list.  
 	  */
@@ -161,7 +183,8 @@ Neighbor::simple_action(Packet *packet)
 	  ; // do it
 	if (j == _nbrs.size()) {
 	  // we don't already know about this nbr
-	  _nbrs.push_back(far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1)));
+	  _nbrs.push_back(far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, 
+							 curr->num_hops + 1, ntohl(curr->seq_no))));
 	  _nbrs[j].nbr.loc = curr->loc;
 	  _nbrs[j].last_updated_jiffies = jiff;
 	}
@@ -170,6 +193,9 @@ Neighbor::simple_action(Packet *packet)
 	  // if next hop is the same as in the old entry; if the next
 	  // hop is different, only update if old info is timed out or
 	  // more hops away.
+
+	  // XXX check seq num stuff!!
+
 	  if (_nbrs[j].nbr.next_hop_ip == gh->ip ||
 	      jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies ||
 	      _nbrs[j].nbr.num_hops > curr->num_hops) {
@@ -289,11 +315,76 @@ Neighbor::get_nbrs(Vector<grid_nbr_entry> *retval) const
   assert(retval != 0);
   int jiff = click_jiffies();
   for (int i = 0; i < _nbrs.size(); i++) 
-    if (_timeout_jiffies < 0 ||
-	jiff - _nbrs[i].last_updated_jiffies < _timeout_jiffies)
+    if ((_timeout_jiffies < 0 ||
+	 jiff - _nbrs[i].last_updated_jiffies < _timeout_jiffies) &&
+	_nbrs[i].nbr.num_hops <= _max_hops)
       retval->push_back(_nbrs[i].nbr);
 }
 
+
+void
+Neighbor::run_scheduled()
+{
+  output(0).push(make_hello());
+
+  // XXX this random stuff is not right i think... wouldn't it be nice
+  // if click had a phat RNG like ns?
+  int r2 = random();
+  double r = (double) (r2 >> 1);
+  int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
+  if (r2 & 1)
+    jitter *= -1;
+  _timer.schedule_after_ms(_period + (int) jitter);
+}
+
+Packet *
+Neighbor::make_hello()
+{
+  int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
+  int num_nbrs = 0;
+  Vector<grid_nbr_entry> nbrs;
+  get_nbrs(&nbrs);
+
+  psz += sizeof(grid_nbr_entry) * nbrs.size();
+
+  WritablePacket *p = Packet::make(psz);
+  memset(p->data(), 0, p->length());
+
+  click_ether *eh = (click_ether *) p->data();
+  memset(eh->ether_dhost, 0xff, 6); // broadcast
+  eh->ether_type = htons(ETHERTYPE_GRID);
+  memcpy(eh->ether_shost, _ethaddr.data(), 6);
+
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  gh->hdr_len = sizeof(grid_hdr);
+  gh->total_len = psz - sizeof(click_ether);
+  gh->type = grid_hdr::GRID_LR_HELLO;
+  memcpy(&gh->ip, _ipaddr.data(), 4);
+
+  grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
+  assert(num_nbrs <= 255);
+  hlo->num_nbrs = (unsigned char) num_nbrs;
+#if 1
+  click_chatter("num_nbrs = %d , _hops = %d, nbrs.size() = %d",
+		num_nbrs, _max_hops, nbrs.size());
+#endif
+  hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
+  hlo->seq_no = htonl(_seq_no);
+  _seq_no += 2;
+
+  grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
+					     sizeof(grid_hdr) + sizeof(grid_hello));
+  for (int i = 0; i < nbrs.size(); i++) {
+    // only include nbrs that are not too many hops away
+    if (nbrs[i].num_hops <= _max_hops) {
+      memcpy(curr, &nbrs[i], sizeof(grid_nbr_entry));
+      curr->seq_no = htonl(curr->seq_no);
+      curr++;
+    }
+  }
+
+  return p;
+}
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Neighbor)

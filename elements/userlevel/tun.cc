@@ -51,18 +51,30 @@ Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "device name prefix", &_dev_prefix,
-		  cpIPAddress, "near address", &_near,
-		  cpIPAddress, "far address", &_far,
+		  cpIPAddress, "address", &_near,
+		  cpIPAddress, "netmask", &_mask,
+		  cpOptional,
+		  cpIPAddress, "default gateway", &_gw,
 		  cpEnd) < 0)
     return -1;
 
+  if (_gw) { // then it was set to non-zero by arg
+    // check net part matches 
+    unsigned int g = _gw.in_addr().s_addr;
+    unsigned int m = _mask.in_addr().s_addr;
+    unsigned int n = _near.in_addr().s_addr;
+    if ((g & m) != (n & m)) {
+      _gw = 0;
+      errh->warning("%s: not setting up default route, tun address and gateway address are on different networks", id().cc());
+    }
+  }
   return 0;
 }
 
 int
 Tun::initialize(ErrorHandler *errh)
 {
-  _fd = alloc_tun(_dev_prefix.cc(), _near, _far, errh);
+  _fd = alloc_tun(_dev_prefix.cc(), _near, _mask, errh);
   if (_fd < 0)
     return -1;
   if (input_is_pull(0))
@@ -171,44 +183,58 @@ Tun::push(int, Packet *p)
  * Exits on failure.
  */
 int
-Tun::alloc_tun(const char *dev_name, struct in_addr near, struct in_addr far,
+Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
                ErrorHandler *errh)
 {
   int fd, yes = 1;
   char tmp[512], tmp0[64], tmp1[64];;
 
-  sprintf(tmp, "/dev/%s", dev_name);
-  fd = open(tmp, 2);
-  if(fd >= 0){
-    if(ioctl(fd, FIONBIO, &yes) < 0){
-      close(fd);
-      return errh->error("FIONBIO failed");
-    }
-    
-#if defined(TUNSIFMODE) || defined(__FreeBSD__)
-    {
-      int mode = IFF_BROADCAST;
-      if(ioctl(fd, TUNSIFMODE, &mode) != 0){
-	perror("Tun: TUNSIFMODE");
-	return errh->error("cannot set TUNSIFMODE");
+  for (int i = 0; i < 32; i++) {
+    sprintf(tmp, "/dev/%s%d", dev_prefix, i);
+    fd = open(tmp, 2);
+    if(fd >= 0){
+      if(ioctl(fd, FIONBIO, &yes) < 0){
+	close(fd);
+	return errh->error("FIONBIO failed");
       }
-    }
+      
+#if defined(TUNSIFMODE) || defined(__FreeBSD__)
+      {
+	int mode = IFF_BROADCAST;
+	if(ioctl(fd, TUNSIFMODE, &mode) != 0){
+	  perror("Tun: TUNSIFMODE");
+	  return errh->error("cannot set TUNSIFMODE");
+	}
+      }
 #endif
+      
+      strcpy(tmp0, inet_ntoa(near));
+      strcpy(tmp1, inet_ntoa(mask));
+      
+      sprintf(tmp, "ifconfig %s%d %s netmask %s up", dev_prefix, i, tmp0, tmp1);
+      
+      if(system(tmp) != 0){
+	close(fd);
+	return errh->error("failed: %s", tmp);
+      }
 
-    strcpy(tmp0, inet_ntoa(near));
-    strcpy(tmp1, inet_ntoa(far));
-    
-    // treat far address as netmask 
-    sprintf(tmp, "ifconfig %s %s netmask %s up", dev_name, tmp0, tmp1);
-    
-    if(system(tmp) != 0){
-      close(fd);
-      return errh->error("failed: %s", tmp);
+      if (_gw) {
+#if defined(__linux__)
+	sprintf(tmp, "route add default gw %s", _gw.s().cc());
+#else
+#error Not supported on this system
+#endif
+	if (system(tmp) != 0){
+	  close(fd);
+	  return errh->error("failed: %s", tmp);
+	}
+      }
+
+      return(fd);
     }
-    return(fd);
   }
 
-  return errh->error("could not allocate the /dev/%s device", dev_name);
+  return errh->error("could not allocate a /dev/%s* device", dev_prefix);
 }
 
 ELEMENT_REQUIRES(userlevel)
