@@ -1,3 +1,11 @@
+2003-01-23 Thursday 14:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.27): two fixes: 1) remember to
+	convert jiffies to msecs when calculating next time to send a
+	triggered update; 2) weighted_settling_time delay (wst) should
+	start from the first time a particular sequence number is heard,
+	not every time a route is heard.
+
 2003-01-23 Thursday 12:30  Eddie Kohler <kohler@icir.org>
 
 	* elements/ethernet/arpresponder.cc (1.43): ARPResponder correctly
