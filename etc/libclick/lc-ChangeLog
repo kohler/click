@@ -1,3 +1,24 @@
+2002-05-21 Tuesday 22:28  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ether.h, click_ether.h, click_icmp.h,
+	click_icmp6.h, click_ip.h, click_ip6.h, click_tcp.h, click_udp.h,
+	click_icmp.h, click_icmp6.h, click_ip.h, click_ip6.h, click_tcp.h,
+	click_udp.h: remove deprecated <click/click_*.h> network headers
+
+2002-05-21 Tuesday 22:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: remove deprecated methods
+
+2002-05-21 Tuesday 22:27  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/in_cksum.c: use <clicknet/ip.h>; missed this one
+
+2002-05-21 Tuesday 22:26  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: Click 1.2.4 released! Update version number to
+	1.2.4a
+
 2002-05-21 Tuesday 21:04  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/packet.cc: Linux 2.4 support (cross fingers)
