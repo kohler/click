@@ -709,10 +709,16 @@ Appends an ASCII decimal representation of the number @var{n} to
 @subsection Appending Data Types
 
 @code{StringAccum} comes with @code{operator<<} definitions for the
-@code{struct timeval}, @code{IPAddress}, and @code{EtherAddress} types.
-Of course, you can write your own @code{operator<<} functions for other
-data types, either using existing @code{operator<<}s or the manipulation
-functions described in the next section.
+@code{bool}, @code{struct timeval}, @code{IPAddress}, and
+@code{EtherAddress} types. Of course, you can write your own
+@code{operator<<} functions for other data types, either using existing
+@code{operator<<}s or the manipulation functions described in the next
+section.
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{bool &@var{val}})
+Appends the string @code{true} or @code{false} to @var{sa}, according to
+the value of @var{val}.
+@end deftypefun
 
 @deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{const struct timeval &@var{tv}})
 Appends an ASCII decimal representation of the time value @var{tv} to

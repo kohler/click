@@ -72,6 +72,7 @@ StringAccum &operator<<(StringAccum &, const StringAccum &);
 StringAccum &operator<<(StringAccum &, PermString);
 #endif
 
+StringAccum &operator<<(StringAccum &, bool);
 StringAccum &operator<<(StringAccum &, short);
 StringAccum &operator<<(StringAccum &, unsigned short);
 StringAccum &operator<<(StringAccum &, int);
@@ -166,6 +167,12 @@ operator<<(StringAccum &sa, unsigned char c)
 {
   sa.append(c);
   return sa;
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, bool b)
+{
+  return sa << (b ? "true" : "false");
 }
 
 inline StringAccum &
