@@ -46,7 +46,7 @@ void
 DirectIPLookup::push(int, Packet *p)
 {
     IPAddress gw;
-    int port = lookup_route(p->dst_ip_anno(), gw);
+    int port = DirectIPLookup::lookup_route(p->dst_ip_anno(), gw);
 
     if (port >= 0) {
         if (gw)
