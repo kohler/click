@@ -1,3 +1,19 @@
+2002-06-14 Friday 14:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.16), dsdvroutetable.hh
+	(1.13): allow configuration to specify the initial sequence number;
+	useful to work around some protocol bugs without rebooting
+	network...
+
+2002-06-14 Friday 13:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.15): handle reboots and seq_no
+	wraparounds
+
+2002-06-14 Friday 13:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.18): [no log message]
+
 2002-06-13 Thursday 09:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/ackresponder.hh (1.2): doc nitlet
