@@ -77,7 +77,7 @@ class AutoRateFallback : public Element { public:
   int _stepup;
   int _stepdown;
   bool _debug;
-  int _packet_size_threshold;
+  unsigned _packet_size_threshold;
 
   struct DstInfo {
   public:

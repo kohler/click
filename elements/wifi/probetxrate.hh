@@ -46,10 +46,15 @@ CLICK_DECLS
  * SetTXRate, WifiTXFeedback
  */
 
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+
 static inline int calc_usecs_packet(int length, int rate, int retries) {
   assert(rate);
   assert(length);
-  assert(retries < 0);
+  assert(retries >= 0);
 
   if (!rate || !length || retries < 0) {
     return 1;
@@ -88,9 +93,9 @@ static inline int calc_usecs_packet(int length, int rate, int retries) {
   int expected_backoff = 0;
 
   /* there is backoff, even for the first packet */
-  for (int x = -1; x < retries; x++) {
+  for (int x = 0; x <= retries; x++) {
     expected_backoff += t_slot * cw / 2;
-    cw = (cw + 1) * 2;
+    cw = min(cw_max, (cw + 1) * 2);
   }
 
   return expected_backoff + t_difs + (retries + 1) * (
@@ -127,13 +132,13 @@ class ProbeTXRate : public Element { public:
   struct tx_result {
     struct timeval _when;
     int _rate;
-    int _tries;
+    int _retries;
     bool _success;
     
-    tx_result(const struct timeval &t, int rate, int tries, bool success) : 
+    tx_result(const struct timeval &t, int rate, int retries, bool success) : 
       _when(t), 
       _rate(rate), 
-      _tries(tries), 
+      _retries(retries), 
       _success(success)
     { }
     tx_result() {}
@@ -152,12 +157,24 @@ class ProbeTXRate : public Element { public:
     Vector<int> _total_usecs;
     Vector<int> _total_tries;
     Vector<int> _total_success;
+    Vector<int> _total_fail;
+    Vector<int> _perfect_usecs;
 
     DstInfo() { 
     }
 
-    DstInfo(EtherAddress eth) { 
+    DstInfo(EtherAddress eth, Vector<int> rates) { 
       _eth = eth;
+      _rates = rates;
+      _total_usecs = Vector<int>(_rates.size(), 0);
+      _total_tries = Vector<int>(_rates.size(), 0);
+      _total_success = Vector<int>(_rates.size(), 0);
+      _total_fail = Vector<int>(_rates.size(), 0);
+      _perfect_usecs = Vector<int>(_rates.size(), 0);
+      
+      for (int x = 0; x < _rates.size(); x++) {
+	_perfect_usecs[x] = calc_usecs_packet(1500, _rates[x], 0);
+      }
     }
 
     int rate_index(int rate) {
@@ -185,23 +202,21 @@ class ProbeTXRate : public Element { public:
 	}
 	if (t._success) {
 	  _total_success[ndx]--;
+	} else {
+	  _total_fail[ndx]--;
 	}
-	int usecs = calc_usecs_packet(1500, t._rate, t._tries - 1);
+	int usecs = calc_usecs_packet(1500, t._rate, t._retries);
 	_total_usecs[ndx] -= usecs;
-	_total_tries[ndx] -= t._tries;
+	_total_tries[ndx] -= (t._retries + 1);
 	
       }
     }
-
-
-    int pick_rate() {
+    int best_rate_ndx() {
       int best_ndx = -1;
       int best_usecs = 0;
       bool found = false;
       if (!_rates.size()) {
-	click_chatter("no rates for %s\n",
-		      _eth.s().cc());
-	return 2;
+	return -1;
       }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x]) {
@@ -213,29 +228,62 @@ class ProbeTXRate : public Element { public:
 	  }
 	}
       }
+      return (found) ? best_ndx : -1;
+    }
+
+    int random_fast_ndx(int best_ndx) {
+      int r;
+      Vector<int> potential_ndx;
+      int best_usecs = _total_usecs[best_ndx] / _total_success[best_ndx];
+      for (int x = 0; x < _rates.size(); x++) {
+	if (_perfect_usecs[x] <= best_usecs) {
+	  potential_ndx.push_back(x);
+	}
+      }
+      r = random() % potential_ndx.size();
+      if (r < 0 || r > potential_ndx.size()) {
+	click_chatter("weird random rates for %s, index %d\n",
+		      _eth.s().cc(), r);
+	return -1;
+      }
+      return potential_ndx[r];
+    }
+    int pick_rate(bool filter_low_rates) {
+      int best_ndx = best_rate_ndx();
+
+      if (_rates.size() == 0) {
+	click_chatter("no rates to pick from for %s\n", 
+		      _eth.s().cc());
+	return 2;
+      }
       
-      if (random() % 23 == 0) {
-	int r = random() % _rates.size();
-	//click_chatter("picking random %d\n", r);
-	if (r < 0 || r > _rates.size()) {
-	  click_chatter("weird random rates for %s, index %d\n",
-			_eth.s().cc(), r);
-	  return 2;
-	}
-	return _rates[r];
-      }
       if (best_ndx < 0) {
-	int r = random() % _rates.size();
-	click_chatter("no rates to pick from for %s ..random %d\n", 
-		      _eth.s().cc(),
-		      r);
+	for (int x = _rates.size() - 1; x >= 0; x--) {
+	  /* pick the first rate that hasn't failed yet */
+	  if (_total_tries[x] == 0) {
+	    click_chatter("picking unfailed rate for %s %d\n",
+			  _eth.s().cc(),
+			  _rates[x]);
+			  
+	    return _rates[x];
+	  }
+	}
+	/* no rate has had a successful packet yet. 
+	 * pick the lowest rate possible */
+	return _rates[0];
+      }
+      
+      if (random() % 11 == 0) {
+	int r = (filter_low_rates) ? random_fast_ndx(best_ndx) : 
+	  random() % _rates.size();
 	if (r < 0 || r > _rates.size()) {
-	  click_chatter("weird random rates for %s, index %d\n",
+	  click_chatter("weird random_fast_ndx for %s, index %d\n",
 			_eth.s().cc(), r);
-	  return 2;
+	  return _rates[0];
 	}
 	return _rates[r];
       }
+
 
       return _rates[best_ndx];
     }
@@ -246,12 +294,16 @@ class ProbeTXRate : public Element { public:
       if (ndx < 0 || ndx > _rates.size()){
 	return;
       }
+      assert(rate);
+      assert(retries >= 0);
       _total_usecs[ndx] += calc_usecs_packet(1500, rate, retries);
       _total_tries[ndx] += retries + 1;
       if (success) {
 	_total_success[ndx]++;
+      } else {
+	_total_fail[ndx]++;
       }
-      _results.push_back(tx_result(now, rate, retries + 1, success));
+      _results.push_back(tx_result(now, rate, retries, success));
     }
   };
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
@@ -263,7 +315,7 @@ class ProbeTXRate : public Element { public:
   struct timeval _rate_window;
 
   class AvailableRates *_rtable;
-
+  bool _filter_low_rates;
 };
 
 CLICK_ENDDECLS

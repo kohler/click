@@ -60,7 +60,7 @@ OpenAuthRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-OpenAuthRequester::push(int port, Packet *p)
+OpenAuthRequester::push(int, Packet *p)
 {
 
   uint8_t dir;
@@ -152,10 +152,6 @@ OpenAuthRequester::send_auth_request()
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_AUTH;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

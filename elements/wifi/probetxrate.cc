@@ -26,14 +26,12 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
 
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
+    _packet_size_threshold(0),
     _rate_window_ms(0),
-    _rtable(0),
-    _packet_size_threshold(0)
+    _rtable(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -50,12 +48,14 @@ ProbeTXRate::~ProbeTXRate()
 int
 ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned int rate_window;
+  _filter_low_rates = false;
+
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"WINDOW", cpUnsigned, "window", &_rate_window_ms,
 			"THRESHOLD", cpUnsigned, "window", &_packet_size_threshold,
 			"RT", cpElement, "availablerates", &_rtable,
+			"FILTER_LOW_RATES", cpBool, "foo", &_filter_low_rates,
 			0);
   if (ret < 0) {
     return ret;
@@ -96,12 +96,8 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   }
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
-    _neighbors.insert(dst, DstInfo(dst));
+    _neighbors.insert(dst, DstInfo(dst, _rtable->lookup(dst)));
     nfo = _neighbors.findp(dst);
-    nfo->_rates = _rtable->lookup(dst);
-    nfo->_total_usecs = Vector<int>(nfo->_rates.size(), 0);
-    nfo->_total_tries = Vector<int>(nfo->_rates.size(), 0);
-    nfo->_total_success = Vector<int>(nfo->_rates.size(), 0);
   }
 
   struct timeval now;
@@ -109,10 +105,11 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   click_gettimeofday(&now);
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
-  int rate = nfo->pick_rate();
+  int rate = nfo->pick_rate(_filter_low_rates);
   SET_WIFI_RATE_ANNO(p_in, rate);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, 3);
   SET_WIFI_ALT_RATE_ANNO(p_in, 2);
-  SET_WIFI_ALT_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 3);
   return;
 }
 
@@ -147,6 +144,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     /* rate wasn't set */
     return;
   }
+  
   if (!status && p_in->length() < _packet_size_threshold) {
     /* 
      * don't deal with short packets, 
@@ -161,6 +159,11 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
+  if ((status & WIFI_TX_STATUS_USED_ALT_RATE)) {
+    click_chatter("%{element} used alt rate status %d\n",
+		  this,
+		  status);
+  }
   nfo->add_result(now, rate, retries , (status == 0));
 
   return ;
@@ -205,12 +208,13 @@ ProbeTXRate::print_rates()
       sa << " " << nfo._total_tries[x];
       sa << " " << nfo._total_success[x];
       sa << " " << nfo._total_usecs[x];
+      sa << " " << nfo._perfect_usecs[x];
       sa << " ";
       if (nfo._total_success[x]) {
 	int usecs = nfo._total_usecs[x] / nfo._total_success[x];
 	sa << usecs;
       } else {
-	sa << "* *";
+	sa << "*";
       }
       sa << "\n";
     }
@@ -219,7 +223,7 @@ ProbeTXRate::print_rates()
 }
 
 
-enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET};
+enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET, H_FILTER_LOW_RATES};
 
 
 static String
@@ -231,6 +235,8 @@ ProbeTXRate_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_THRESHOLD:
     return String(td->_packet_size_threshold) + "\n";
+  case H_FILTER_LOW_RATES:
+    return String(td->_filter_low_rates) + "\n";
   case H_RATES: {
     return td->print_rates();
   }
@@ -250,6 +256,13 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     if (!cp_bool(s, &debug)) 
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
+    break;
+  }
+  case H_FILTER_LOW_RATES: {
+    bool filter_low_rates;
+    if (!cp_bool(s, &filter_low_rates)) 
+      return errh->error("filter_low_rates parameter must be boolean");
+    f->_filter_low_rates = filter_low_rates;
     break;
   }
   case H_THRESHOLD: {
@@ -274,10 +287,12 @@ ProbeTXRate::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", ProbeTXRate_read_param, (void *) H_DEBUG);
+  add_read_handler("filter_low_rates", ProbeTXRate_read_param, (void *) H_FILTER_LOW_RATES);
   add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);
 
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
+  add_write_handler("filter_low_rates", ProbeTXRate_write_param, (void *) H_FILTER_LOW_RATES);
   add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
   add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
   

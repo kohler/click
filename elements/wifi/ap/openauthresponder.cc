@@ -59,9 +59,9 @@ OpenAuthResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-OpenAuthResponder::push(int port, Packet *p)
+OpenAuthResponder::push(int, Packet *p)
 {
-
+  
   uint8_t dir;
   uint8_t type;
   uint8_t subtype;
@@ -151,10 +151,6 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_AUTH;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

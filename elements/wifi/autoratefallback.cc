@@ -56,7 +56,7 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 			"STEPUP", cpInteger, "0-100", &_stepup,
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
-			"THRESHOLD", cpInteger, "xxx", &_packet_size_threshold,
+			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
 			0);
   return ret;
 }
@@ -71,7 +71,6 @@ AutoRateFallback::process_feedback(Packet *p_in)
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = WIFI_RETRIES_ANNO(p_in);
   int rate = WIFI_RATE_ANNO(p_in);
 
   struct timeval now;
@@ -79,11 +78,6 @@ AutoRateFallback::process_feedback(Packet *p_in)
 
   if (dst == _bcast) {
     /* don't record info for bcast packets */
-    if (_debug) {
-      click_chatter("%{element}: discarding bcast %s\n",
-		    this,
-		    dst.s().cc());
-    }
     return;
   }
 
@@ -174,8 +168,9 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   int rate = nfo->pick_rate();
   SET_WIFI_RATE_ANNO(p_in, rate);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, 4);
   SET_WIFI_ALT_RATE_ANNO(p_in, 2);
-  SET_WIFI_ALT_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 4);
   return;
   
 }

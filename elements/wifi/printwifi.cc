@@ -122,7 +122,7 @@ PrintWifi::simple_action(Packet *p)
     case WIFI_FC0_SUBTYPE_DEAUTH:
       sa << "deauth ";
       break;
-    defuault:
+    default:
       sa << "??unknown subtype";
       break;
     }
