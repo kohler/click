@@ -1,3 +1,35 @@
+2003-06-05 Thursday 15:13  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.47), linuxmodule/clickfs.cc (1.33),
+	linuxmodule/sched.cc (1.42), userlevel/Makefile.in (1.71): other
+	nits for Mazu parity
+
+2003-06-05 Thursday 15:12  Eddie Kohler <kohler@icir.org>
+
+	* lib/: bighashmap_arena.cc (1.11), routerthread.cc (1.33): fix
+	typos
+
+2003-06-05 Thursday 15:12  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: vector.cc (1.6), vector.hh (1.8): add
+	Vector::iterator and Vector::const_iterator
+
+2003-06-05 Thursday 15:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/sync.hh (1.12): #if particulars
+
+2003-06-05 Thursday 15:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh (1.26): String nits
+
+2003-06-05 Thursday 15:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/floodinglocquerier.cc (1.38),
+	elements/grid/gridroutetable.cc (1.66),
+	elements/grid/gridroutetable.hh (1.37), include/click/bighashmap.hh
+	(1.18), include/click/hashmap.hh (1.12): remove Iterator/first()
+	compatibility entries
+
 2003-06-04 Wednesday 13:30  Eddie Kohler <kohler@icir.org>
 
 	* click-mkelemmap (1.23), doc/click-elem2man (1.23),
