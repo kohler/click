@@ -89,6 +89,12 @@ Element::cast(const char *name)
     return 0;
 }
 
+Master *
+Element::master() const
+{
+  return _router->master();
+}
+
 String
 Element::id() const
 {

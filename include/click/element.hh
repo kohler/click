@@ -7,6 +7,7 @@
 #include <click/packet.hh>
 CLICK_DECLS
 class Router;
+class Master;
 class Task;
 class Element;
 class ErrorHandler;
@@ -60,6 +61,7 @@ class Element { public:
   String landmark() const;
   
   Router *router() const			{ return _router; }
+  Master *master() const;
   int eindex() const				{ return _eindex; }
   int eindex(Router *) const;
 
