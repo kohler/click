@@ -1,3 +1,17 @@
+2001-11-16 Friday 13:28  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-server-ron.pl (1.5): changed divert to not add ipfw
+	rule
+
+2001-11-16 Friday 12:59  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/lookupiprouteron.cc (1.13): removed printf
+
+2001-11-16 Friday 12:59  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.15), divertsocket.hh (1.9): added
+	setuid
+
 2001-11-15 Thursday 16:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc (1.19), gridroutetable.hh
