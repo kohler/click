@@ -53,7 +53,8 @@ always:
 	@:
 
 clean:
+	rm -f click.aux click.cp click.cps click.dvi click.fn click.ky click.pg click.tmp click.toc click.tp click.tps click.vr *.log
 distclean: clean
-	-rm -f Makefile
+	-rm -f Makefile click.info*
 
 .PHONY: all clean distclean install install-man always

@@ -38,6 +38,7 @@ doc/click-undead.1
 doc/click-uninstall.1
 doc/click-xform.1
 doc/elementdoc.7
+doc/texinfo.tex
 
 conf
 conf/make-ip-conf.pl

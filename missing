@@ -45,6 +45,7 @@ Supported PROGRAM values:
   flex         create \`lex.yy.c', if possible, from existing .c
   lex          create \`lex.yy.c', if possible, from existing .c
   makeinfo     touch the output file
+  texi2dvi     run \`tex FILENAME'
   yacc         create \`y.tab.[ch]', if possible, from existing .[ch]"
     ;;
 
@@ -173,6 +174,25 @@ WARNING: \`$1' is missing on your system.  You should only need it if
       file=`sed -n '/^@setfilename/ { s/.* \([^ ]*\) *$/\1/; p; q; }' $file`
     fi
     touch $file
+    ;;
+
+  texi2dvi)
+    echo 1>&2 "\
+WARNING: \`$1' is missing on your system; trying to use plain \`tex'
+         instead.  You might want to install the latest \`Texinfo' package;
+         grab it from any GNU archive site."
+    file=`echo "$*" | sed -n 's/.*-o \([^ ]*\).*/\1/p'`
+    if test -z "$file"; then
+      file=`echo "$*" | sed 's/.* \([^ ]*\) *$/\1/'`
+    fi
+    dir=`echo "$file" | sed 's/\/[^/]*$//'`
+    if test "$dir" != "$file" -a "$dir" != "./"; then
+      TEXINPUTS=$dir:${TEXINPUTS-}
+      export TEXINPUTS
+    fi
+    tex $file
+    tex $file
+    tex $file
     ;;
 
   *)
