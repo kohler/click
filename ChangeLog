@@ -1,3 +1,7 @@
+2001-12-18 Tuesday 10:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridprobehandler.cc (1.9): [no log message]
+
 2001-12-18 Tuesday 03:35  Eddie Kohler <kohler@aciri.org>
 
 	* lib/userutils.cc (1.19), tools/lib/toolutils.cc (1.43): the null
