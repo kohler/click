@@ -51,6 +51,7 @@ class ElementLink {
 #endif
   
   void join_scheduler();
+  void schedule_immediately();
   void unschedule();
   void reschedule();
 
@@ -143,6 +144,21 @@ ElementLink::join_scheduler()
   reschedule();
 }
 
+inline void
+ElementLink::schedule_immediately()
+{
+  // should not be scheduled at this point
+  if (_next) {
+    _next->_prev = _prev;
+    _prev->_next = _next;
+  }
+
+  _next = _list->_next;
+  _prev = _list;
+  _list->_next = this;
+  _next->_prev = this;
+}
+
 #else /* RR_SCHED */
 
 inline void
@@ -163,31 +179,5 @@ ElementLink::join_scheduler()
 }
 
 #endif /* RR_SCHED */
-
-
-
-
-#if 0 /* old RR_SCHED */
-
-class Router;
-class ElementLink {
-  bool _scheduled;
-
-protected:
-  Router *_router;
-
-public:
-
-  ElementLink()	: _scheduled(false) { }
-
-  bool scheduled() const		{ return _scheduled; }
-  void initialize_link(Router *r) 	{ _router = r; }
-
-  void join_scheduler() 		{ _scheduled = true; }
-  void reschedule()			{ }
-  void unschedule() 			{ }
-};
-
-#endif
 
 #endif
