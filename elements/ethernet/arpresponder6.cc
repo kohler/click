@@ -66,26 +66,33 @@ ARPResponder6::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], words);
     
     for (int j = 0; j < words.size(); j++)
-      /*if (cp_ip6_address(arg, (unsigned char *)&ipa, &arg)
-	&& cp_eat_space(arg)
-        && cp_ip6_address(arg, (unsigned char *)&mask, &arg))
-	//(cp_ip_address_mask(arg, ipa, mask, &arg)) 
-	{ add_map(ipa, mask, EtherAddress());
-	}
-	else */
-      if (cp_ethernet_address(words[j], ena)) {
+      if (cp_ip6_prefix(words[j], (unsigned char *)&ipa, (unsigned char *)&mask, true, this))
+	add_map(ipa, mask, EtherAddress());
+      else if (cp_ip6_address(words[j], ipa, this))
+	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
+      else if (cp_ethernet_address(words[j], ena, this)) {	
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;
-      } else if (cp_ip6_address(words[j], ipa)) {
-	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
       } else {
-	errh->error("argument %d should be `IPADDR MASK ETHADDR'", i);
+	errh->error("argument %d should be `IP6/MASK ETHADDR'", i);
 	j = words.size();
       }
 
+	
+    //    if (cp_ethernet_address(words[j], ena)) {
+//  	if (have_ena)
+//  	  errh->error("argument %d has more than one Ethernet address", i);
+//  	have_ena = true;
+//        } else if (cp_ip6_address(words[j], ipa)) {
+//  	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
+//        } else {
+//  	errh->error("argument %d should be `IP6ADDR MASK ETHADDR'", i);
+//  	j = words.size();
+//        } 
+
     if (first == _v.size())
-      errh->error("argument %d had no IP address and masks", i);
+      errh->error("argument %d had no IP6 address and masks", i);
     for (int j = first; j < _v.size(); j++)
       _v[j]._ena = ena;
   }
