@@ -55,7 +55,7 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
-LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o
+LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o exportstub.o
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
 	errorelement.o portinfo.o scheduleinfo.o
 

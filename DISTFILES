@@ -375,6 +375,7 @@ elemfilter.cc
 error.cc
 etheraddress.cc
 ewma64.cc
+exportstub.cc
 gaprate.cc
 glue.cc
 handlercall.cc
