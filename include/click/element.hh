@@ -58,6 +58,7 @@ class Element { public:
   void set_noutputs(int);
   void add_input()				{ set_ninputs(ninputs()+1); }
   void add_output()				{ set_noutputs(noutputs()+1); }
+  bool ports_frozen() const;
   
   const Port &input(int) const;
   const Port &output(int) const;

@@ -177,6 +177,12 @@ Element::set_noutputs(int count)
   set_nports(_ninputs, count);
 }
 
+bool
+Element::ports_frozen() const
+{
+  return _ports0[0].initialized();
+}
+
 void
 Element::notify_ninputs(int)
 {
