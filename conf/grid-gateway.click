@@ -2,6 +2,7 @@
 // to be used with tools/run-grid-gateway
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
+ChatterSocket(tcp, 7776);
 
 li :: GridLocationInfo(POS_LAT, POS_LON);
 
