@@ -43,8 +43,8 @@ EtherMirror::simple_action(Packet *p)
   click_ether *ethh = (click_ether *)p->data();
   unsigned char tmpa[6];
   tmpa = ethh->ether_dhost;
-  ethh->ether_shost = ethh->ether_dhost;
-  ethh->ether_dhost = tmpa;
+  ethh->ether_dhost = ethh->ether_shost;
+  ethh->ether_shost = tmpa;
   return p;
 }
 
