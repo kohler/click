@@ -645,7 +645,9 @@ sub one_summary ($&) {
   my($a) = $name;
   $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
   $a =~ tr/ /+/;
-  push @Links, "<a href=\"#$a\">$name</a>";
+  my($x) = $name;
+  $x =~ s{ }{&nbsp;}g;
+  push @Links, "<a href=\"#$a\">$x</a>";
   $Text .= ".SS \"$name\"\n";
   $Text .= one_elementlist(grep(&$func, @all_outfiles));
 };
@@ -690,7 +692,7 @@ EOD;
   one_summary('IPv6',			sub { $s->{$_} =~ /\bIPv6\b/i });
   one_summary('Miscellaneous',		sub { !$el_generated{$_} });
 
-  my($links) = join(" - ", @Links);
+  my($links) = join("&nbsp;- ", @Links);
   print OUT <<"EOD;";
 .\\"html <p><a href="#BY+FUNCTION"><b>By Function</b></a>:
 .\\"html $links<br>
