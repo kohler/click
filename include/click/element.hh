@@ -33,7 +33,7 @@ class Element : public ElementLink { public:
   Element(int ninputs, int noutputs);
   virtual ~Element();
   static int nelements_allocated;
-  
+
   // CHARACTERISTICS
   virtual const char *class_name() const = 0;
   virtual void *cast(const char *);
@@ -130,22 +130,8 @@ class Element : public ElementLink { public:
   unsigned long long _child_cycles; // Cycles spent in children.
 #endif
   
-  class Connection {
-   public:
-    
-    Element *_e;
-    int _port;
-    
-    // Statistics.
-#if CLICK_STATS >= 1
-    mutable int _packets;	// How many packets have we moved?
-#endif
-#if CLICK_STATS >= 2
-    Element *_owner;		// Whose input or output are we?
-#endif
-    
-   public:
-    
+  class Connection { public:
+
     Connection();
     Connection(Element *);
     Connection(Element *, Element *, int);
@@ -163,6 +149,19 @@ class Element : public ElementLink { public:
 
 #if CLICK_STATS >= 1
     unsigned int packet_count() const	{ return _packets; }
+#endif
+
+   private:
+    
+    Element *_e;
+    int _port;
+    
+    // Statistics.
+#if CLICK_STATS >= 1
+    mutable int _packets;	// How many packets have we moved?
+#endif
+#if CLICK_STATS >= 2
+    Element *_owner;		// Whose input or output are we?
 #endif
     
   };
