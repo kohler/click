@@ -124,7 +124,6 @@ new_inode(struct super_block *sb)
     if (inode) {
 	inode->i_sb = sb;
 	inode->i_dev = sb->s_dev;
-	inode->i_blkbits = sb->s_blocksize_bits;
     }
     return inode;
 }
