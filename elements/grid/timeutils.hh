@@ -35,6 +35,7 @@
 #include <sys/time.h>
 #include <cstdio>
 #include <click/string.hh>
+#include <click/glue.hh>	/* for htonl() and ntohl() */
 CLICK_DECLS
 
 inline timeval
