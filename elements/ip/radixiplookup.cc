@@ -123,7 +123,7 @@ RadixIPLookup::remove_route(IPAddress d, IPAddress m, IPAddress, int, ErrorHandl
 
     for (int i = 0; i < _v.size(); i++)
 	if (_v[i]->valid && (_v[i]->dst == dst) && (_v[i]->mask == mask)) {
-	    _v[i]->valid = 0;
+	    _v[i]->valid = false;
 	    _entries--;
 	    _radix->del(dst & mask);
 	    return 0;
@@ -156,7 +156,7 @@ bool
 RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const
 {
     assert(i >= 0 && i < _v.size());
-    if(i < 0 || i >= _v.size() || _v[i]->valid == 0) {
+    if(i < 0 || i >= _v.size() || _v[i]->valid == false) {
 	dst = mask = gw = port = 0;
 	return false;
     }

@@ -89,6 +89,13 @@ class Radix { public:
 };
 
 
+// returns j bytes which appear k from rhe right. Rightmost bit has index 0.
+inline unsigned
+Radix::bits(unsigned x, unsigned k, unsigned char j)
+{
+    return (x >> k) & (0xffffffff >> (KEYSIZE-j));
+}
+
 inline
 Radix::Radix()
 {
@@ -198,13 +205,6 @@ Radix::node_lookup(unsigned v)
     } while (x->bit_idx < p->bit_idx);
 
     return x;
-}
-
-// returns j bytes which appear k from rhe right. Rightmost bit has index 0.
-inline unsigned
-Radix::bits(unsigned x, unsigned k, unsigned char j)
-{
-    return (x >> k) & (0xffffffff >> (KEYSIZE-j));
 }
 
 CLICK_ENDDECLS
