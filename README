@@ -1,5 +1,5 @@
-THE CLICK MODULAR ROUTER RELEASE 1.2.4
-======================================
+THE CLICK MODULAR ROUTER RELEASE 1.3
+====================================
 
     This is the README file for the source release for the Click modular
 software router. The first thing you should do is look for more recent
@@ -38,6 +38,7 @@ CLICKDIR/elements/ip6		... for IPv6 elements
 CLICKDIR/elements/ipsec		... for IPsec elements
 CLICKDIR/elements/linuxmodule	... for Linux kernel-specific elements
 CLICKDIR/elements/local		... for your own elements (empty)
+CLICKDIR/elements/ns		... for 'ns'-specific elements
 CLICKDIR/elements/radio		... for communicating with wireless radios
 CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/tcpudp	... for TCP and UDP elements
@@ -52,6 +53,7 @@ CLICKDIR/include/click		common header files
 CLICKDIR/include/clicknet	header files defining network headers
 CLICKDIR/lib			common non-element source code
 CLICKDIR/linuxmodule		Linux kernel module driver
+CLICKDIR/ns			'ns' driver (integrates with the ns simulator)
 CLICKDIR/tools			Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
@@ -113,6 +115,11 @@ work.)
 then install a configuration by hand with `cat CONFIGFILE >
 /proc/click/config'. If any errors occurred, they will appear in
 `/proc/click/errors'. But `click-install' is easier.
+
+NS Simulator
+............
+
+    Give `./configure' the `--enable-ns' option. XXXX.
 
 Configurations
 ..............

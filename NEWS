@@ -1,11 +1,153 @@
 Click NEWS
 
-Version 1.2.5
+Version 1.3pre1
+
+* Incompatible changes
+
+** The 'Queue' element is now a NotifierQueue. To access a queue without
+   notification, use 'SimpleQueue'.
+
+** The semantics of IPFilter 'deny' arguments have changed. Now, 'deny'
+   means the same thing as 'drop'. The old behavior was inappropriately
+   surprising.
+
+** Deprecated KernelTap element in favor of KernelTun.
+
+** '--enable-clickfs' is the default. (Clickfs provides a symlink from
+   /proc/click to /click to make upgrading easier.)
+
+** Removed elements deprecated in 1.2.4. This includes LookupIPRoute,
+   LookupIPRouteLinux, FromLinux, ToLinux, ToLinuxSniffers, PeekHandlers,
+   ProbSplitter, and RandomLossage.
+
+** The 'void Element::run_scheduled()' method has been deprecated; use
+   'bool Element::run_task()' or 'void Element::run_timer()' instead.
+   'run_task()'s bool return value should be true iff the task managed to
+   do some useful work. (This helps the adaptive scheduler.)
+
+** HandlerCall's interface has changed. So have the raw functions for
+   accessing handlers from a Router object.
+
+** Element map files now use an XML format, and are called 'elementmap.xml'
+   or 'elementmap-PACKAGE.xml', not 'elementmap' or 'elementmap.PACKAGE'.
+
+** LLRPCs now explicitly encode the amount of data they transfer to and
+   from the caller, using the same mechanism as ioctl(). This made it
+   possible to remove the local_llrpc() virtual method.
+
+** Removed deprecated header files like <click/click_ip.h>.
+
+** Changed ICMP structure and macro names in <clicknet/icmp.h>.
+
+** Removed deprecated Element methods and method signatures, including
+   'Element::uninitialize()', 'Element::configure(const Vector<String> &)',
+   and 'Element::live_reconfigure(const Vector<String> &)'.
+
+** Click declarations and definitions are now surrounded with CLICK_DECLS
+   and CLICK_ENDDECLS macros (see any source file for an example). These
+   macros normally do nothing. In the 'ns' driver, though, they drop all
+   Click declarations into a separate namespace.
+
+** Removed 'String::operator const char *()', which caused problems with
+   newer GCCs.
+
+* Drivers
+
+** Add an optional adaptive task scheduler, written initially by Petros
+   Zerfos <pzerfos@cs.ucla.edu>. Give 'configure' the '--enable-adaptive'
+   option to turn it on. The adaptive scheduler takes less CPU time when
+   Click isn't busy, and lets you control the minimum and maximum shares
+   that Click will take of the CPU. This is particularly useful for the
+   Linux kernel module, on a uniprocessor, for running user-level programs
+   (tcpdump, for instance) as well as Click.
+
+** Add support for Linux 2.4.20 and a newer Intel E1000 driver (4.3.15).
+
+** Linux kernel module driver notices when other processes are waiting to
+   access the task list (to unschedule a task, for example), and explicitly
+   waits to give them a chance.
+
+** Various Linux kernel module bug fixes, including a serious one in the
+   SKB manager (mismeasured packet sizes could cause a kernel crash
+   eventually).
+
+** Add 'Task::strong_unschedule()', which moves tasks to the quiescent
+   thread; that way, tasks will not run even if they are rescheduled.
+   Useful in the presence of notification.
+
+** Integrated the 'nsclick' driver from the University of Colorado, and
+   particularly by Michael Neufeld. This driver lets you integrate a Click
+   router with an ns simulation; Click can accept ns packets and return
+   packets to ns. See configure's '--enable-ns' option and the 'ns'
+   subdirectory.
+
+** Improve performance of add_select() and remove_select() at user level.
+
+* Elements
+
+** Add SetUDPChecksum, TimestampAccum, PaintSwitch, KernelTun, MixedQueue.
+
+** Added notification support to ToDevice, DelayUnqueue, Unqueue,
+   ToIPSummaryDump, ToDump.
+
+** FromIPSummaryDump and ToIPSummaryDump: Add optional binary format to
+   save space and speed processing. Add 'aggregate', 'tcp_opt', 'tcp_sack',
+   'tcp_window', and 'first_timestamp' content types. FromIPSummaryDump
+   understands '!flowid' and '!aggregate' lines.
+
+** FromDump and friends support 802.11 link types and the IPv6 Ethernet type.
+
+** Extended or changed functionality for ToDump (optional output port),
+   Counter (different keyword argument names), CycleCountAccum and
+   PerfCountAccum (different handler names), ControlSocket (different
+   select() plan for writes reduces needless spinning; READONLY is a
+   keyword argument), DelayUnqueue (supports combination of long delays and
+   fast rates), IPFragmenter (HONOR_DF is a keyword argument), SetIPAddress
+   (supports live reconfiguration), UDPIPEncap (supports live
+   reconfiguration), IPGWOptions (lazy packet copying and better behavior
+   on bad options), ICMPError (accept mnemonic names for ICMP error types
+   and codes), IPReassembler (optionally emit dead fragments to output 1).
+
+** Bug fixes to FromIPSummaryDump, ToIPSummaryDump, IPReassembler,
+   FromDump, ICMPRewriter, ICMPPingRewriter, ProgressBar, TCPRewriter,
+   AddressInfo, ARPResponder, ToHost, ToHostSniffers, Classifier,
+   InfiniteSource.
 
 * Tools
 
+** Add click2xml tool, for translating a Click configuration into an XML
+   format, and a preliminary version of xml2click, which goes the other
+   way.
+
 ** Changed meaning of click-mkmindriver's `-e' option. Now `-e' means
    `--expression' for consistency. `-E' means `--elements'.
+
+** click-install supports the BSD kernel module.
+
+** Bug fixes to click-devirtualize, click-install, click-xform,
+   click-buildtool.
+
+* Internals
+
+** Add 'typename' where required to support newer GCCs.
+
+** Add Packet::shrink_data(), Packet::icmp_header(), and some others.
+
+** Change interface to BigHashMap iterators and BigHashMap_Arenas.
+
+** At user-level, ErrorHandler supports '%[efgEFG]' conversions for
+   doubles. To print an element declaration, say '%{element}' (not '%e').
+
+** Bug fixes to CLP, BigHashMap,
+
+** Compiles cleanly on machines with 64-bit longs.
+
+* Acknowledgements
+
+** Thanks to AUTHORS, and (in no particular order) to YongKang Zhu, Filip
+   Henderieckx, Vlemincx Koen, David Scott Page, Wang Po-Cheng, Adam Smith,
+   Ryan Menezes, Gordon Lee, Chip Coldwell, Xiao Phong, Jose Vasconcellos,
+   Tomasz Jaskolski, Bart Samwel, and anyone we've missed.
 
 
 Version 1.2.4   21.May.2002

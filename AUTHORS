@@ -15,7 +15,8 @@ Eddie Kohler
 kohler@icir.org
 design, core, language, Linux /proc interface, Linux kernel module,
 standard elements, tools, documentation, distribution, IP rewriting
-elements, ClickController, other elements, Tasks, Linux 2.4, clickfs
+elements, ClickController, other elements, Tasks, Linux 2.4, clickfs, 
+adaptive task scheduler
 
 Mazu Networks, Inc.
 http://www.mazunetworks.com/
@@ -25,6 +26,10 @@ Robert Morris
 rtm@lcs.mit.edu
 design, Ethernet, IP, Linux kernel module, radio elements, Linux kernel 
 patches, IP router configuration, element documentation, other elements
+
+Michael Neufeld
+Michael.Neufeld@cs.colorado.edu
+NS network simulator integration
 
 Massimiliano Poletto
 maxp@mazunetworks.com
@@ -37,6 +42,10 @@ FreeBSD kernel module
 Nickolai B. Zeldovich
 kolya@lcs.mit.edu
 Linux 2.4, BSD kernel module
+
+Petros Zerfos
+pzerfos@cs.ucla.edu
+adaptive task scheduler
 
 
 Thanks to:
@@ -66,7 +75,7 @@ yipal@pdos.lcs.mit.edu
 IP reassembler, other changes
 
 
-Thanks for patches and comments:
+Thanks for patches and comments (not a complete list):
 
 Joe Elliott
 joe@inetd.com

@@ -1,0 +1,37 @@
+%info
+
+This test installs a configuration with conflicting handler names.
+
+%script
+click-install KERNELCONFIG
+ls -R /click >HANDLERS
+click-uninstall
+
+%file KERNELCONFIG
+config :: Idle;
+i :: Idle;
+i/i1 :: Idle;
+i/name :: Idle;
+
+%expect HANDLERS
+/click:
+1
+2
+3
+4
+classes
+config
+config
+cycles
+errors
+flatconfig
+hotconfig
+i
+list
+meminfo
+packages
+priority
+requirements
+stop
+threads
+version

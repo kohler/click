@@ -12,10 +12,8 @@ A. Yes.
 Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. We currently distribute pactches
-   for Linux 2.2.18, 2.2.19 [patch also works for 2.2.20 and 2.2.21], and
-   2.4.4. Most of the patch will apply no matter what version of Linux 2.2
-   you use. The problems are with device drivers, which seem to change a
-   lot between versions.
+   for Linux 2.2.18, 2.2.19 [patch also works for 2.2.20 and 2.2.21],
+   2.4.18, and 2.4.20. These patches may also work for later versions.
 
 
 Q. How fast can Click route packets?
@@ -42,13 +40,6 @@ Q. How does Click run inside a Linux kernel?
 A. As a kernel thread. It continually loops over a list of things to do,
    and does them---basically busy waiting. Other processes on the machine
    will get run, but not as often as on a machine without Click.
-
-
-Q. Is there a version of Click for Linux 2.4?
-
-A. Click now compiles under a patched version of Linux 2.4! (We supply the
-   patch.) Your mileage may vary; we still use Linux 2.2 for most of our
-   work.
 
 
 SECTION 2: QUESTIONS ABOUT POLLING
