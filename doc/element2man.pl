@@ -272,7 +272,7 @@ sub process_processing ($) {
   if (exists($processing_constants{$t})) {
     $t = $processing_constants{$t};
   }
-  $t =~ tr/\"\s//d;
+  $t =~ tr/\" \t//d;
   $t =~ s{\A([^/]*)\Z}{$1/$1};
   if (exists($processing_text{$t})) {
     return $processing_text{$t};
