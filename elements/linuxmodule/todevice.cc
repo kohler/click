@@ -143,12 +143,25 @@ ToDevice::uninitialize()
  * as idle. What do we do with a rejected packet?
  */
 
+#if LINUX_VERSION_CODE < 0x020400
+# define netif_queue_stopped(dev)	((dev)->tbusy)
+#endif
+
 void
 ToDevice::run_scheduled()
 {
   int busy;
   int sent = 0;
-  
+
+#if LINUX_VERSION_CODE >= 0x020400
+  if (!spin_trylock(&_dev->xmit_lock)) {
+    _task.fast_reschedule();
+    return;
+  }
+
+  _dev->xmit_lock_owner = smp_processor_id();
+#endif
+
 #if CLICK_DEVICE_STATS
   unsigned low00, low10;
   unsigned long long time_now;
@@ -182,7 +195,7 @@ ToDevice::run_scheduled()
   SET_STATS(low00, low10, time_now);
 
   /* try to send from click */
-  while (sent < _burst && (busy = _dev->tbusy) == 0) {
+  while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
 
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     unsigned long long before_pull_cycles = click_get_cycles();
@@ -245,6 +258,10 @@ ToDevice::run_scheduled()
   }
 #endif
 
+#if LINUX_VERSION_CODE >= 0x020400
+  spin_unlock(&_dev->xmit_lock);
+#endif
+  
   adjust_tickets(sent);
   _task.fast_reschedule();
 }
