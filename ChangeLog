@@ -1,3 +1,18 @@
+2000-11-02 Thursday 14:39  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/scheduleinfo.cc, include/click/elemlink.hh,
+	lib/element.cc: getting it to compile with RR_SCHED again
+
+2000-11-02 Thursday 13:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man, elements/linuxmodule/perfcountinfo.cc,
+	elements/linuxmodule/perfcountinfo.hh,
+	elements/linuxmodule/perfcountuser.cc,
+	elements/linuxmodule/perfcountuser.hh,
+	elements/linuxmodule/setperfcount.hh,
+	elements/standard/alignmentinfo.hh: added PerfCountInfo element for
+	Benjie, documentation generation fixes (Mazu)
+
 2000-11-01 Wednesday 20:10  Douglas De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: finally got the traceroute / decrement
