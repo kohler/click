@@ -93,3 +93,4 @@ ARPFaker6::make_response(u_char tha[6], /* him */
 }
 
 EXPORT_ELEMENT(ARPFaker6)
+ELEMENT_REQUIRES(false)

@@ -225,7 +225,7 @@ ARPResponder6::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(ARPResponder6)
-
+ELEMENT_REQUIRES(false)
 
 // generate Vector template instance
 #include "vector.cc"

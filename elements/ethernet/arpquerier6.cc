@@ -303,4 +303,4 @@ ARPQuerier6::add_handlers()
 }
 
 EXPORT_ELEMENT(ARPQuerier6)
-
+ELEMENT_REQUIRES(false)
