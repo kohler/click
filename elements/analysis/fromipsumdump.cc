@@ -981,6 +981,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		q->tcp_header()->th_sport = flowid.sport();
 	    if (flowid.dport() && IP_FIRSTFRAG(iph))
 		q->tcp_header()->th_dport = flowid.dport();
+	    if (_use_aggregate)
+		SET_AGGREGATE_ANNO(q, _aggregate);
 	} else if (!ip_ok)
 	    q->set_network_header(0, 0);
 	
