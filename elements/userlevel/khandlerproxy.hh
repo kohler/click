@@ -1,6 +1,7 @@
 #ifndef CLICK_KERNELHANDLERPROXY_HH
 #define CLICK_KERNELHANDLERPROXY_HH
 #include "elements/userlevel/handlerproxy.hh"
+#include <click/straccum.hh>
 CLICK_DECLS
 
 /*
@@ -52,30 +53,31 @@ SocketHandlerProxy
 
 class KernelHandlerProxy : public HandlerProxy { public:
 
-  KernelHandlerProxy();
-  ~KernelHandlerProxy();
+    KernelHandlerProxy();
+    ~KernelHandlerProxy();
 
-  const char *class_name() const	{ return "KernelHandlerProxy"; }
-  void *cast(const char *);
+    const char* class_name() const	{ return "KernelHandlerProxy"; }
+    void* cast(const char*);
 
-  int configure(Vector<String> &, ErrorHandler *);
+    int configure(Vector<String>&, ErrorHandler*);
   
-  int check_handler(const String &, bool write, ErrorHandler *errh);
+    int check_handler(const String&, bool write, ErrorHandler* errh);
   
-  void add_handlers();
-  int llrpc(unsigned, void *);
+    void add_handlers();
+    int llrpc(unsigned, void*);
 
- private:
+  private:
 
-  bool _detailed_error_message;
-  bool _verbose;
+    bool _detailed_error_message;
+    bool _verbose;
+    StringAccum _name_sa;
   
-  static String read_handler(Element *, void *);
-  static int write_handler(const String &, Element *, void *, ErrorHandler *);
-  static int star_write_handler(const String &, Element *, void *, ErrorHandler *);
-  int complain(ErrorHandler *, const String &h, int errcode, const String &);
-  int complain_about_open(ErrorHandler *, const String &h, int);
-  int check_handler_name(const String &, ErrorHandler *);
+    static String read_handler(Element*, void*);
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
+    int complain(ErrorHandler*, const String&, int errcode, const String&);
+    int complain_about_open(ErrorHandler*, const String&, int);
+    int check_handler_name(const String&, ErrorHandler*);
   
 };
 
