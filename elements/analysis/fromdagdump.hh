@@ -3,6 +3,7 @@
 #define CLICK_FROMDAGDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include "elements/userlevel/fromfile.hh"
 CLICK_DECLS
 class HandlerCall;
 
@@ -177,22 +178,15 @@ class FromDAGDump : public Element { public:
     
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
-    
-    int _fd;
-    const unsigned char *_buffer;
-    uint32_t _pos;
-    uint32_t _len;
-    
-    WritablePacket *_data_packet;
+
+    FromFile _ff;
+
     Packet *_packet;
 
     bool _swapped : 1;
     bool _timing : 1;
     bool _stop : 1;
     bool _force_ip : 1;
-#ifdef ALLOW_MMAP
-    bool _mmap : 1;
-#endif
     bool _have_first_time : 1;
     bool _have_last_time : 1;
     bool _have_any_times : 1;
@@ -203,12 +197,6 @@ class FromDAGDump : public Element { public:
     unsigned _sampling_prob;
     int _linktype;
 
-#ifdef ALLOW_MMAP
-    static const uint32_t WANT_MMAP_UNIT = 4194304; // 4 MB
-    size_t _mmap_unit;
-    off_t _mmap_off;
-#endif
-
     struct timeval _first_time;
     struct timeval _last_time;
     HandlerCall *_last_time_h;
@@ -216,16 +204,7 @@ class FromDAGDump : public Element { public:
     Task _task;
 
     struct timeval _time_offset;
-    String _filename;
-    FILE *_pipe;
-    off_t _file_offset;
 
-    int error_helper(ErrorHandler *, const char *, const char * = 0);
-#ifdef ALLOW_MMAP
-    int read_buffer_mmap(ErrorHandler *);
-#endif
-    int read_buffer(ErrorHandler *);
-    int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
 
     void stamp_to_timeval(uint64_t, struct timeval &) const;

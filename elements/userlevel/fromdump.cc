@@ -43,8 +43,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-    : Element(0, 1), _fd(-1), _buffer(0), _data_packet(0), _packet(0),
-      _last_time_h(0), _task(this), _pipe(0)
+    : Element(0, 1), _packet(0), _last_time_h(0), _task(this)
 {
     MOD_INC_USE_COUNT;
 }
@@ -75,11 +74,6 @@ int
 FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
-#ifdef __linux__
-    bool mmap = false;
-#else
-    bool mmap = true;
-#endif
     struct timeval first_time, first_time_off, last_time, last_time_off, interval;
     timerclear(&first_time);
     timerclear(&first_time_off);
@@ -91,16 +85,17 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool per_node = false;
 #endif
     _packet_filepos = 0;
-    
+
+    if (_ff.configure_keywords(conf, 1, this, errh) < 0)
+	return -1;
     if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_filename,
+		    cpFilename, "dump file name", &_ff.filename(),
 		    cpOptional,
 		    cpBool, "use original packet timing?", &timing,
 		    cpKeywords,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
-		    "MMAP", cpBool, "access file with mmap()?", &mmap,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
 		    "START", cpTimeval, "starting time", &first_time,
@@ -157,12 +152,6 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _timing = timing;
     _stop = stop;
     _force_ip = force_ip;
-#ifdef ALLOW_MMAP
-    _mmap = mmap;
-#else
-    if (mmap)
-	errh->warning("`MMAP' is not supported on this platform");
-#endif
 
 #ifdef CLICK_NS
     if (per_node) {
@@ -199,182 +188,13 @@ swap_packet_header(const fake_pcap_pkthdr *hp, fake_pcap_pkthdr *outp)
     outp->len = SWAPLONG(hp->len);
 }
 
-int
-FromDump::error_helper(ErrorHandler *errh, const char *x, const char *y)
-{
-    if (!errh)
-	errh = ErrorHandler::default_handler();
-    return errh->error("%s: %s%s", _filename.cc(), x, (y ? y : ""));
-}
-
-#ifdef ALLOW_MMAP
-static void
-munmap_destructor(unsigned char *data, size_t amount)
-{
-    if (munmap((caddr_t)data, amount) < 0)
-	click_chatter("FromDump: munmap: %s", strerror(errno));
-}
-
-int
-FromDump::read_buffer_mmap(ErrorHandler *errh)
-{
-    if (_mmap_unit == 0) {  
-	size_t page_size = getpagesize();
-	_mmap_unit = (WANT_MMAP_UNIT / page_size) * page_size;
-	_mmap_off = 0;
-	// don't report most errors on the first time through
-	errh = ErrorHandler::silent_handler();
-    }
-
-    // get length of file
-    struct stat statbuf;
-    if (fstat(_fd, &statbuf) < 0)
-	return error_helper(errh, "stat: ", strerror(errno));
-
-    // check for end of file
-    // But return -1 if we have not mmaped before: it might be a pipe, not
-    // true EOF.
-    if (_mmap_off >= statbuf.st_size)
-	return (_mmap_off == 0 ? -1 : 0);
-
-    // actually mmap
-    _len = _mmap_unit;
-    if ((off_t)(_mmap_off + _len) > statbuf.st_size)
-	_len = statbuf.st_size - _mmap_off;
-    
-    void *mmap_data = mmap(0, _len, PROT_READ, MAP_SHARED, _fd, _mmap_off);
-
-    if (mmap_data == MAP_FAILED)
-	return error_helper(errh, "mmap: ", strerror(errno));
-
-    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
-    _buffer = _data_packet->data();
-    _file_offset = _mmap_off;
-    _mmap_off += _len;
-
-#ifdef HAVE_MADVISE
-    // don't care about errors
-    (void) madvise((caddr_t)mmap_data, _len, MADV_SEQUENTIAL);
-#endif
-    
-    return 1;
-}
-#endif
-
-int
-FromDump::read_buffer(ErrorHandler *errh)
-{
-    if (_data_packet)
-	_data_packet->kill();
-    _data_packet = 0;
-
-    _file_offset += _len;
-    _pos -= _len;		// adjust _pos by _len: it might validly point
-				// beyond _len
-    _len = 0;
-
-#ifdef ALLOW_MMAP
-    if (_mmap) {
-	int result = read_buffer_mmap(errh);
-	if (result >= 0)
-	    return result;
-	// else, try a regular read
-	_mmap = false;
-	(void) lseek(_fd, _mmap_off, SEEK_SET);
-	_len = 0;
-    }
-#endif
-    
-    _data_packet = Packet::make(0, 0, BUFFER_SIZE, 0);
-    if (!_data_packet)
-	return errh->error("out of memory!");
-    _buffer = _data_packet->data();
-    unsigned char *data = _data_packet->data();
-    assert(_data_packet->headroom() == 0);
-    
-    while (_len < BUFFER_SIZE) {
-	ssize_t got = read(_fd, data + _len, BUFFER_SIZE - _len);
-	if (got > 0)
-	    _len += got;
-	else if (got == 0)	// premature end of file
-	    return _len;
-	else if (got < 0 && errno != EINTR && errno != EAGAIN)
-	    return error_helper(errh, strerror(errno));
-    }
-    
-    return _len;
-}
-
-int
-FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
-{
-    unsigned char *data = reinterpret_cast<unsigned char *>(vdata);
-    uint32_t dpos = 0;
-
-    while (dpos < dlen) {
-	if (_pos < _len) {
-	    uint32_t howmuch = dlen - dpos;
-	    if (howmuch > _len - _pos)
-		howmuch = _len - _pos;
-	    memcpy(data + dpos, _buffer + _pos, howmuch);
-	    dpos += howmuch;
-	    _pos += howmuch;
-	}
-	if (dpos < dlen && read_buffer(errh) <= 0)
-	    return dpos;
-    }
-
-    return dlen;
-}
-
 FromDump *
 FromDump::hotswap_element() const
 {
     if (Element *e = Element::hotswap_element())
 	if (FromDump *fd = static_cast<FromDump *>(e->cast("FromDump")))
-	    if (fd->_filename == _filename)
+	    if (fd->_ff.filename() == _ff.filename())
 		return fd;
-    return 0;
-}
-
-int
-FromDump::skip_ahead(ErrorHandler *errh)
-{
-    off_t want = _packet_filepos;
-    _packet_filepos = 0;
-    
-    if (want < _len) {
-	_pos = want;
-	return 0;
-    }
-    
-#ifdef ALLOW_MMAP
-    if (_mmap) {
-	_mmap_off = (want / _mmap_unit) * _mmap_unit;
-	_pos = _len + want - _mmap_off;
-	return 0;
-    }
-#endif
-
-    // check length of file
-    struct stat statbuf;
-    if (fstat(_fd, &statbuf) < 0)
-	return error_helper(errh, "stat: ", strerror(errno));
-    if (S_ISREG(statbuf.st_mode) && statbuf.st_size && _packet_filepos > statbuf.st_size)
-	return errh->error("FILEPOS out of range");
-
-    // try to seek
-    if (lseek(_fd, want, SEEK_SET) != (off_t) -1) {
-	_pos = _len;
-	_file_offset = want - _len;
-	return 0;
-    }
-
-    // otherwise, read data
-    while (_file_offset + _len < want && _len)
-	if (read_buffer(errh) < 0)
-	    return -1;
-    _pos = want - _file_offset;
     return 0;
 }
 
@@ -396,43 +216,14 @@ FromDump::initialize(ErrorHandler *errh)
 	return 0;
     
     // open file
-    if (_filename == "-") {
-	_fd = STDIN_FILENO;
-	_filename = "<stdin>";
-    } else
-	_fd = open(_filename.cc(), O_RDONLY);
-    if (_fd < 0)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
-
-  retry_file:
-#ifdef ALLOW_MMAP
-    _mmap_unit = 0;
-#endif
-    _file_offset = 0;
-    _pos = _len = 0;
-    int result = read_buffer(errh);
-    if (result < 0)
+    if (_ff.initialize(errh) < 0)
 	return -1;
-    else if (result == 0)
-	return errh->error("%s: empty file", _filename.cc());
-    else if (_len < sizeof(fake_pcap_file_header))
-	return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
-
-    // check for a gziped or bzip2d dump
-    if (_fd == STDIN_FILENO || _pipe)
-	/* cannot handle gzip or bzip2 */;
-    else if (compressed_data(_buffer, _len)) {
-	close(_fd);
-	_fd = -1;
-	if (!(_pipe = open_uncompress_pipe(_filename, _buffer, _len, errh)))
-	    return -1;
-	_fd = fileno(_pipe);
-	goto retry_file;
-    }
     
     // check magic number
     fake_pcap_file_header swapped_fh;
-    const fake_pcap_file_header *fh = (const fake_pcap_file_header *)_buffer;
+    const fake_pcap_file_header *fh = (const fake_pcap_file_header *)_ff.get_aligned(sizeof(fake_pcap_file_header), &swapped_fh);
+    if (!fh)
+	return _ff.error(errh, "not a tcpdump file (too short)");
 
     if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_MODIFIED_PCAP_MAGIC)
 	_swapped = false;
@@ -442,32 +233,31 @@ FromDump::initialize(ErrorHandler *errh)
 	fh = &swapped_fh;
     }
     if (fh->magic != FAKE_PCAP_MAGIC && fh->magic != FAKE_MODIFIED_PCAP_MAGIC)
-	return errh->error("%s: not a tcpdump file (bad magic number)", _filename.cc());
+	return _ff.error(errh, "not a tcpdump file (bad magic number)");
     // compensate for extra crap appended to packet headers
     _extra_pkthdr_crap = (fh->magic == FAKE_PCAP_MAGIC ? 0 : sizeof(fake_modified_pcap_pkthdr) - sizeof(fake_pcap_pkthdr));
 
     if (fh->version_major != FAKE_PCAP_VERSION_MAJOR)
-	return errh->error("%s: unknown major version %d", _filename.cc(), fh->version_major);
+	return _ff.error(errh, "unknown major version %d", fh->version_major);
     _minor_version = fh->version_minor;
     _linktype = fh->linktype;
 
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
+	    return _ff.error(errh, "unknown linktype %s; can't force IP packets", _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
     } else if (_linktype == FAKE_DLT_RAW)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
-    // done
-    _pos = sizeof(fake_pcap_file_header);
-
     // maybe skip ahead in the file
-    if (_packet_filepos != 0)
-	return skip_ahead(errh);
-    else
+    if (_packet_filepos != 0) {
+	int result = _ff.seek(_packet_filepos, errh);
+	_packet_filepos = 0;
+	return result;
+    } else
 	return 0;
 }
 
@@ -476,14 +266,8 @@ FromDump::take_state(Element *e, ErrorHandler *errh)
 {
     FromDump *o = static_cast<FromDump *>(e); // checked by hotswap_element()
 
-    _fd = o->_fd;
-    o->_fd = -1;
-    _buffer = o->_buffer;
-    _pos = o->_pos;
-    _len = o->_len;
+    _ff.take_state(o->_ff, errh);
 
-    _data_packet = o->_data_packet;
-    o->_data_packet = 0;
     _packet = o->_packet;
     o->_packet = 0;
 
@@ -495,37 +279,19 @@ FromDump::take_state(Element *e, ErrorHandler *errh)
     if (_linktype == FAKE_DLT_RAW)
 	_force_ip = true;
     else if (_force_ip && !fake_pcap_dlt_force_ipable(_linktype))
-	errh->warning("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
-
-#ifdef ALLOW_MMAP
-    if (_mmap != o->_mmap)
-	errh->warning("different MMAP states");
-    _mmap = o->_mmap;
-    _mmap_unit = o->_mmap_unit;
-    _mmap_off = o->_mmap_off;
-#endif
+	_ff.warning(errh, "unknown linktype %d; can't force IP packets", _linktype);
 
     _time_offset = o->_time_offset;
-    _pipe = o->_pipe;
-    o->_pipe = 0;
-    _file_offset = o->_file_offset;
     _packet_filepos = o->_packet_filepos;
 }
 
 void
 FromDump::cleanup(CleanupStage)
 {
-    if (_pipe)
-	pclose(_pipe);
-    else if (_fd >= 0 && _fd != STDIN_FILENO)
-	close(_fd);
-    _pipe = 0;
-    _fd = -1;
+    _ff.cleanup();
     if (_packet)
 	_packet->kill();
-    if (_data_packet)
-	_data_packet->kill();
-    _packet = _data_packet = 0;
+    _packet = 0;
 }
 
 void
@@ -576,28 +342,11 @@ FromDump::read_packet(ErrorHandler *errh)
 	return true;
 
     // record file position
-    _packet_filepos = _file_offset + _pos;
-    
-    // we may need to read bits of the file
-    if (_pos + sizeof(*ph) <= _len) {
-#if HAVE_INDIFFERENT_ALIGNMENT
-	ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
-#else
-	// make a copy if required for alignment
-	if (((uintptr_t)(_buffer + _pos) & 3) == 0)
-	    ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
-	else {
-	    ph = &swapped_ph;
-	    memcpy(&swapped_ph, _buffer + _pos, sizeof(*ph));
-	}
-#endif
-	_pos += sizeof(*ph);
-    } else {
-	ph = &swapped_ph;
-	if (read_into(&swapped_ph, sizeof(*ph), errh) < (int)sizeof(*ph))
-	    return false;
-    }
+    _packet_filepos = _ff.file_pos();
 
+    // read the packet header
+    if (!(ph = reinterpret_cast<const fake_pcap_pkthdr *>(_ff.get_aligned(sizeof(*ph), &swapped_ph))))
+	return false;
     if (_swapped) {
 	swap_packet_header(ph, &swapped_ph);
 	ph = &swapped_ph;
@@ -618,7 +367,7 @@ FromDump::read_packet(ErrorHandler *errh)
     // should be fixed, but we hack around the problem here, as does
     // tcpdump itself.
     if (caplen > 65535) {
-	error_helper(errh, "bad packet header; giving up");
+	_ff.error(errh, "bad packet header; giving up");
 	return false;
     } else if (caplen > len) {
 	skiplen = caplen - len;
@@ -626,7 +375,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
 
     // compensate for modified pcap versions
-    _pos += _extra_pkthdr_crap;
+    _ff.shift_pos(_extra_pkthdr_crap);
 
     // check times
   check_times:
@@ -634,7 +383,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	prepare_times(ph->ts);
     if (_have_first_time) {
 	if (timercmp(&ph->ts, &_first_time, <)) {
-	    _pos += caplen + skiplen;
+	    _ff.shift_pos(caplen + skiplen);
 	    goto retry;
 	} else
 	    _have_first_time = false;
@@ -647,7 +396,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	// unscheduled.
 	_task.fast_unschedule();
 	if (!_active) {
-	    _pos += caplen + skiplen;
+	    _ff.shift_pos(caplen + skiplen);
 	    return false;
 	}
 	// retry _last_time in case someone changed it
@@ -657,40 +406,15 @@ FromDump::read_packet(ErrorHandler *errh)
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
-	_pos += caplen + skiplen;
+	_ff.shift_pos(caplen + skiplen);
 	goto retry;
     }
     
     // create packet
-    if (_pos + caplen <= _len) {
-	p = _data_packet->clone();
-	if (!p) {
-	    error_helper(errh, "out of memory!");
-	    return false;
-	}
-	p->shrink_data(_buffer + _pos, caplen);
-	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(p, len - caplen);
-	_pos += caplen + skiplen;
-	
-    } else {
-	WritablePacket *wp = Packet::make(0, 0, caplen, 0);
-	if (!wp) {
-	    error_helper(errh, "out of memory!");
-	    return false;
-	}
-	// set annotations now: may unmap earlier memory!
-	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(wp, len - caplen);
-	if (read_into(wp->data(), caplen, errh) < caplen) {
-	    // XXX error message too annoying
-	    // error_helper(errh, "short packet");
-	    wp->kill();
-	    return false;
-	}
-	_pos += skiplen;
-	p = wp;
-    }
+    p = _ff.get_packet(caplen, ph->ts.tv_sec, ph->ts.tv_usec, errh);
+    if (!p)
+	return false;
+    _ff.shift_pos(skiplen);
 
     p->set_mac_header(p->data());
     
@@ -765,8 +489,8 @@ FromDump::pull(int)
 }
 
 enum {
-    H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP,
-    H_FILENAME, H_FILESIZE, H_FILEPOS, H_PACKET_FILEPOS, H_EXTEND_INTERVAL
+    H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP, H_PACKET_FILEPOS,
+    H_EXTEND_INTERVAL
 };
 
 String
@@ -780,18 +504,7 @@ FromDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
-      case H_FILENAME:
-	return fd->_filename + "\n";
 #ifdef HAVE_INT64_TYPES
-      case H_FILESIZE: {
-	  struct stat s;
-	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
-	      return String(s.st_size) + "\n";
-	  else
-	      return "-\n";
-      }
-      case H_FILEPOS:
-	return String(fd->_file_offset + fd->_pos) + "\n";
       case H_PACKET_FILEPOS:
 	return String(fd->_packet_filepos) + "\n";
 #endif
@@ -836,15 +549,13 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 void
 FromDump::add_handlers()
 {
+    _ff.add_handlers(this);
     add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
     add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP);
-    add_read_handler("filename", read_handler, (void *)H_FILENAME);
 #ifdef HAVE_INT64_TYPES
-    add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
-    add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
     add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
 #endif
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
@@ -853,5 +564,5 @@ FromDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel|ns FakePcap)
+ELEMENT_REQUIRES(userlevel|ns FakePcap FromFile)
 EXPORT_ELEMENT(FromDump)

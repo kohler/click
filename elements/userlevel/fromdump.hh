@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
+#include "fromfile.hh"
 CLICK_DECLS
 class HandlerCall;
 
@@ -195,22 +196,15 @@ class FromDump : public Element { public:
   private:
 
     enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
+
+    FromFile _ff;
     
-    int _fd;
-    const unsigned char *_buffer;
-    uint32_t _pos;
-    uint32_t _len;
-    
-    WritablePacket *_data_packet;
     Packet *_packet;
 
     bool _swapped : 1;
     bool _timing : 1;
     bool _stop : 1;
     bool _force_ip : 1;
-#ifdef ALLOW_MMAP
-    bool _mmap : 1;
-#endif
     bool _have_first_time : 1;
     bool _have_last_time : 1;
     bool _have_any_times : 1;
@@ -223,12 +217,6 @@ class FromDump : public Element { public:
     int _minor_version;
     int _linktype;
 
-#ifdef ALLOW_MMAP
-    enum { WANT_MMAP_UNIT = 4194304 }; // 4 MB
-    size_t _mmap_unit;
-    off_t _mmap_off;
-#endif
-
     struct timeval _first_time;
     struct timeval _last_time;
     HandlerCall *_last_time_h;
@@ -237,19 +225,9 @@ class FromDump : public Element { public:
     ActiveNotifier _notifier;
 
     struct timeval _time_offset;
-    String _filename;
-    FILE *_pipe;
-    off_t _file_offset;
     off_t _packet_filepos;
 
-    int error_helper(ErrorHandler *, const char *, const char * = 0);
-#ifdef ALLOW_MMAP
-    int read_buffer_mmap(ErrorHandler *);
-#endif
-    int read_buffer(ErrorHandler *);
-    int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
-    int skip_ahead(ErrorHandler *);
 
     void prepare_times(const struct fake_bpf_timeval &);
 

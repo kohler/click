@@ -42,8 +42,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDAGDump::FromDAGDump()
-    : Element(0, 1), _fd(-1), _buffer(0), _data_packet(0), _packet(0),
-      _last_time_h(0), _task(this), _pipe(0)
+    : Element(0, 1), _packet(0), _last_time_h(0), _task(this)
 {
     MOD_INC_USE_COUNT;
     static_assert(sizeof(DAGCell) == 64);
@@ -66,11 +65,6 @@ int
 FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
-#ifdef __linux__
-    bool mmap = false;
-#else
-    bool mmap = true;
-#endif
     struct timeval first_time, first_time_off, last_time, last_time_off, interval;
     timerclear(&first_time);
     timerclear(&first_time_off);
@@ -78,14 +72,15 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     timerclear(&last_time_off);
     timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    
+
+    if (_ff.configure_keywords(conf, 1, this, errh) < 0)
+	return -1;
     if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_filename,
+		    cpFilename, "dump file name", &_ff.filename(),
 		    cpKeywords,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
-		    "MMAP", cpBool, "access file with mmap()?", &mmap,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
 		    "START", cpTimeval, "starting time", &first_time,
@@ -139,185 +134,20 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _stop = stop;
     _force_ip = force_ip;
     _linktype = FAKE_DLT_ATM_RFC1483;
-#ifdef ALLOW_MMAP
-    _mmap = mmap;
-#else
-    if (mmap)
-	errh->warning("`MMAP' is not supported on this platform");
-#endif
     _active = active;
     return 0;
 }
 
 int
-FromDAGDump::error_helper(ErrorHandler *errh, const char *x, const char *y)
-{
-    if (!errh)
-	errh = ErrorHandler::default_handler();
-    return errh->error("%s: %s%s", _filename.cc(), x, (y ? y : ""));
-}
-
-#ifdef ALLOW_MMAP
-static void
-munmap_destructor(unsigned char *data, size_t amount)
-{
-    if (munmap((caddr_t)data, amount) < 0)
-	click_chatter("FromDAGDump: munmap: %s", strerror(errno));
-}
-
-int
-FromDAGDump::read_buffer_mmap(ErrorHandler *errh)
-{
-    if (_mmap_unit == 0) {  
-	size_t page_size = getpagesize();
-	_mmap_unit = (WANT_MMAP_UNIT / page_size) * page_size;
-	_mmap_off = 0;
-	// don't report most errors on the first time through
-	errh = ErrorHandler::silent_handler();
-    }
-
-    // get length of file
-    struct stat statbuf;
-    if (fstat(_fd, &statbuf) < 0)
-	return error_helper(errh, "stat: ", strerror(errno));
-
-    // check for end of file
-    // But return -1 if we have not mmaped before: it might be a pipe, not
-    // true EOF.
-    if (_mmap_off >= statbuf.st_size)
-	return (_mmap_off == 0 ? -1 : 0);
-
-    // actually mmap
-    _len = _mmap_unit;
-    if ((off_t)(_mmap_off + _len) > statbuf.st_size)
-	_len = statbuf.st_size - _mmap_off;
-    
-    void *mmap_data = mmap(0, _len, PROT_READ, MAP_SHARED, _fd, _mmap_off);
-
-    if (mmap_data == MAP_FAILED)
-	return error_helper(errh, "mmap: ", strerror(errno));
-
-    _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
-    _buffer = _data_packet->data();
-    _file_offset = _mmap_off;
-    _mmap_off += _len;
-
-#ifdef HAVE_MADVISE
-    // don't care about errors
-    (void) madvise((caddr_t)mmap_data, _len, MADV_SEQUENTIAL);
-#endif
-    
-    return 1;
-}
-#endif
-
-int
-FromDAGDump::read_buffer(ErrorHandler *errh)
-{
-    if (_data_packet)
-	_data_packet->kill();
-    _data_packet = 0;
-
-    _file_offset += _len;
-    _pos -= _len;		// adjust _pos by _len: it might validly point
-				// beyond _len
-    _len = 0;
-
-#ifdef ALLOW_MMAP
-    if (_mmap) {
-	int result = read_buffer_mmap(errh);
-	if (result >= 0)
-	    return result;
-	// else, try a regular read
-	_mmap = false;
-	(void) lseek(_fd, _mmap_off, SEEK_SET);
-	_len = 0;
-    }
-#endif
-    
-    _data_packet = Packet::make(0, 0, BUFFER_SIZE, 0);
-    if (!_data_packet)
-	return errh->error("out of memory!");
-    _buffer = _data_packet->data();
-    unsigned char *data = _data_packet->data();
-    assert(_data_packet->headroom() == 0);
-    
-    while (_len < BUFFER_SIZE) {
-	ssize_t got = read(_fd, data + _len, BUFFER_SIZE - _len);
-	if (got > 0)
-	    _len += got;
-	else if (got == 0)	// premature end of file
-	    return _len;
-	else if (got < 0 && errno != EINTR && errno != EAGAIN)
-	    return error_helper(errh, strerror(errno));
-    }
-    
-    return _len;
-}
-
-int
-FromDAGDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
-{
-    unsigned char *data = reinterpret_cast<unsigned char *>(vdata);
-    uint32_t dpos = 0;
-
-    while (dpos < dlen) {
-	if (_pos < _len) {
-	    uint32_t howmuch = dlen - dpos;
-	    if (howmuch > _len - _pos)
-		howmuch = _len - _pos;
-	    memcpy(data + dpos, _buffer + _pos, howmuch);
-	    dpos += howmuch;
-	    _pos += howmuch;
-	}
-	if (dpos < dlen && read_buffer(errh) <= 0)
-	    return dpos;
-    }
-
-    return dlen;
-}
-
-int
 FromDAGDump::initialize(ErrorHandler *errh)
 {
-    if (_filename == "-") {
-	_fd = STDIN_FILENO;
-	_filename = "<stdin>";
-    } else
-	_fd = open(_filename.cc(), O_RDONLY);
-    if (_fd < 0)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
-
-  retry_file:
-#ifdef ALLOW_MMAP
-    _mmap_unit = 0;
-#endif
-    _file_offset = 0;
-    _pos = _len = 0;
-    int result = read_buffer(errh);
-    if (result < 0)
+    if (_ff.initialize(errh) < 0)
 	return -1;
-    else if (result == 0)
-	return errh->error("%s: empty file", _filename.cc());
-
-    // check for a gziped or bzip2d dump
-    if (_fd == STDIN_FILENO || _pipe)
-	/* cannot handle gzip or bzip2 */;
-    else if (compressed_data(_buffer, _len)
-	     && (_len < DAGCell::PAYLOAD_OFFSET + RFC1483_SNAP_EXPECTED_LEN
-		 || memcmp(_buffer + DAGCell::PAYLOAD_OFFSET, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) != 0)) {
-	close(_fd);
-	_fd = -1;
-	if (!(_pipe = open_uncompress_pipe(_filename, _buffer, _len, errh)))
-	    return -1;
-	_fd = fileno(_pipe);
-	goto retry_file;
-    }
     
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
+	    return _ff.error(errh, "unknown linktype %d; can't force IP packets", _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
     }
@@ -327,7 +157,6 @@ FromDAGDump::initialize(ErrorHandler *errh)
 	return -1;
     
     // try reading a packet
-    _pos = 0;
     if (read_packet(errh)) {
 	struct timeval now;
 	click_gettimeofday(&now);
@@ -342,17 +171,10 @@ FromDAGDump::initialize(ErrorHandler *errh)
 void
 FromDAGDump::cleanup(CleanupStage)
 {
-    if (_pipe)
-	pclose(_pipe);
-    else if (_fd >= 0 && _fd != STDIN_FILENO)
-	close(_fd);
-    _fd = -1;
-    _pipe = 0;
+    _ff.cleanup();
     if (_packet)
 	_packet->kill();
-    if (_data_packet)
-	_data_packet->kill();
-    _packet = _data_packet = 0;
+    _packet = 0;
 }
 
 void
@@ -419,14 +241,9 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	return false;
     
     // we may need to read bits of the file
-    if (_pos + sizeof(DAGCell) <= _len) {
-	cell = reinterpret_cast<const DAGCell *>(_buffer + _pos);
-	_pos += sizeof(DAGCell);
-    } else {
-	cell = &static_cell;
-	if (read_into(&static_cell, sizeof(DAGCell), errh) < (int)sizeof(DAGCell))
-	    return false;
-    }
+    cell = reinterpret_cast<const DAGCell *>(_ff.get_aligned(sizeof(DAGCell), &static_cell, errh));
+    if (!cell)
+	return false;
 
     // check times
   check_times:
@@ -458,26 +275,9 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	goto retry;
     
     // create packet
-    if (cell != &static_cell) {
-	p = _data_packet->clone();
-	if (!p) {
-	    error_helper(errh, "out of memory!");
-	    return false;
-	}
-	p->shrink_data(&cell->payload[0], sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
-	p->set_timestamp_anno(tv);
-	
-    } else {
-	WritablePacket *wp = Packet::make(0, 0, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET, 0);
-	if (!wp) {
-	    error_helper(errh, "out of memory!");
-	    return false;
-	}
-	memcpy(wp->data(), &cell->payload, sizeof(cell->payload));
-	wp->set_timestamp_anno(tv);
-	
-	p = wp;
-    }
+    p = _ff.get_packet_from_data(&cell->payload, sizeof(cell->payload), tv.tv_sec, tv.tv_usec, errh);
+    if (!p)
+	return false;
 
     if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
 	checked_output_push(1, p);
@@ -547,7 +347,7 @@ FromDAGDump::pull(int)
 
 enum {
     SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    FILENAME_THUNK, FILESIZE_THUNK, FILEPOS_THUNK, EXTEND_INTERVAL_THUNK
+    EXTEND_INTERVAL_THUNK
 };
 
 String
@@ -561,17 +361,6 @@ FromDAGDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case ENCAP_THUNK:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
-      case FILENAME_THUNK:
-	return fd->_filename + "\n";
-      case FILESIZE_THUNK: {
-	  struct stat s;
-	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
-	      return String(s.st_size) + "\n";
-	  else
-	      return "-\n";
-      }
-      case FILEPOS_THUNK:
-	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -618,14 +407,12 @@ FromDAGDump::add_handlers()
     add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
     add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
     add_write_handler("stop", write_handler, (void *)STOP_THUNK);
-    add_read_handler("filename", read_handler, (void *)FILENAME_THUNK);
-    add_read_handler("filesize", read_handler, (void *)FILESIZE_THUNK);
-    add_read_handler("filepos", read_handler, (void *)FILEPOS_THUNK);
     add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
+    _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel int64 FakePcap)
+ELEMENT_REQUIRES(userlevel int64 FakePcap FromFile)
 EXPORT_ELEMENT(FromDAGDump)

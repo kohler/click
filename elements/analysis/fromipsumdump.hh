@@ -5,6 +5,7 @@
 #include <click/task.hh>
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
+#include "elements/userlevel/fromfile.hh"
 #include "ipsumdumpinfo.hh"
 CLICK_DECLS
 
@@ -151,26 +152,20 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
 	   DO_IPOPT_UNKNOWN = 32,
 	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
-    static int parse_ip_opt_ascii(const char *, int, String *, int);
+    static const char *parse_ip_opt_ascii(const char *begin, const char *end, String *, int);
 
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
 	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
 	   DO_TCPOPT_UNKNOWN = 32,
 	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU,
 	   DO_TCPOPT_NTALL = 0xFFFFFFEEU };
-    static int parse_tcp_opt_ascii(const char *, int, String *, int);
+    static const char *parse_tcp_opt_ascii(const char *begin, const char *end, String *, int);
     
   private:
 
-    enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
-    
-    int _fd;
-    char *_buffer;
-    int _pos;
-    int _len;
-    int _buffer_len;
-    int _save_char;
-    int _recordno;
+    enum { SAMPLING_SHIFT = 28 };
+
+    FromFile _ff;
 
     Vector<int> _contents;
     uint16_t _default_proto;
@@ -197,16 +192,11 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     Task _task;
     ActiveNotifier _notifier;
 
-    String _filename;
-    FILE *_pipe;
-    off_t _file_offset;
     int _minor_version;
     IPFlowID _given_flowid;
 
-    int error_helper(ErrorHandler *, const char *);
-    int read_buffer(ErrorHandler *);
-    int read_line(String &, ErrorHandler *);
-
+    int read_binary(String &, ErrorHandler *);
+    
     void bang_data(const String &, ErrorHandler *);
     void bang_flowid(const String &, click_ip *, ErrorHandler *);
     void bang_aggregate(const String &, ErrorHandler *);

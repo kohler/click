@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
+#include "elements/userlevel/fromfile.hh"
 CLICK_DECLS
 
 /*
@@ -130,12 +131,7 @@ class FromNetFlowSummaryDump : public Element { public:
 
   private:
 
-    static const uint32_t BUFFER_SIZE = 32768;
-    
-    int _fd;
-    String _buffer;
-    int _pos;
-    int _len;
+    FromFile _ff;
 
     Vector<int> _contents;
     
@@ -153,13 +149,6 @@ class FromNetFlowSummaryDump : public Element { public:
     ActiveNotifier _notifier;
 
     struct timeval _time_offset;
-    String _filename;
-    FILE *_pipe;
-    off_t _file_offset;
-
-    int error_helper(ErrorHandler *, const char *);
-    int read_buffer(ErrorHandler *);
-    int read_line(String &, ErrorHandler *);
 
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);

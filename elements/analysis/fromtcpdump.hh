@@ -7,6 +7,7 @@
 #include <click/ipflowid.hh>
 #include <click/hashmap.hh>
 #include <clicknet/tcp.h>
+#include "elements/userlevel/fromfile.hh"
 #include "ipsumdumpinfo.hh"
 CLICK_DECLS
 
@@ -131,15 +132,9 @@ class FromTcpdump : public Element, public IPSummaryDumpInfo { public:
     
   private:
 
-    enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
-    
-    int _fd;
-    char *_buffer;
-    int _pos;
-    int _len;
-    int _buffer_len;
-    int _save_char;
-    int _lineno;
+    enum { SAMPLING_SHIFT = 28 };
+
+    FromFile _ff;
 
     uint32_t _sampling_prob;
 
@@ -161,16 +156,9 @@ class FromTcpdump : public Element, public IPSummaryDumpInfo { public:
     Task _task;
     ActiveNotifier _notifier;
 
-    String _filename;
-    FILE *_pipe;
-    off_t _file_offset;
-
-    int error_helper(ErrorHandler *, const char *);
-    int read_buffer(ErrorHandler *);
-    int read_line(String &, ErrorHandler *);
-
     Packet *read_packet(ErrorHandler *);
-    const char *read_tcp_line(WritablePacket *&, const String &, const char *s, int *data_len);
+    const char *read_tcp_line(WritablePacket *&, const char *begin, const char *end, int *data_len);
+    const char *read_udp_line(WritablePacket *&, const char *begin, const char *end, int *data_len);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

@@ -17,7 +17,13 @@ class FromFile { public:
     
     const String &filename() const	{ return _filename; }
     String &filename()			{ return _filename; }
+
+    void set_landmark_pattern(const String &lp) { _landmark_pattern = lp; }
+    String landmark(const String &landmark_pattern) const;
+    String landmark() const		{ return landmark(_landmark_pattern); }
     String print_filename() const;
+    int lineno() const			{ return _lineno; }
+    void set_lineno(int lineno)		{ _lineno = lineno; }
 
     off_t file_pos() const		{ return _file_offset + _pos; }
 
@@ -30,12 +36,18 @@ class FromFile { public:
     int seek(off_t want, ErrorHandler *);
 
     int read(void *, uint32_t, ErrorHandler * = 0);
+    const uint8_t *get_unaligned(size_t, void *, ErrorHandler * = 0);
     const uint8_t *get_aligned(size_t, void *, ErrorHandler * = 0);
+    String get_string(size_t, ErrorHandler * = 0);
     Packet *get_packet(size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
     Packet *get_packet_from_data(const void *, size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
     void shift_pos(int delta)		{ _pos += delta; }
+
+    int read_line(String &, ErrorHandler *);
+    int peek_line(String &, ErrorHandler *);
     
     int error(ErrorHandler *, const char *format, ...) const;
+    int warning(ErrorHandler *, const char *format, ...) const;
     
   private:
 
@@ -61,6 +73,8 @@ class FromFile { public:
     String _filename;
     FILE *_pipe;
     off_t _file_offset;
+    String _landmark_pattern;
+    int _lineno;
 
 #ifdef ALLOW_MMAP
     int read_buffer_mmap(ErrorHandler *);

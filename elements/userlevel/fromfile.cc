@@ -5,6 +5,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2004 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/element.hh>
+#include <click/straccum.hh>
 #include <click/userutils.hh>
 #include "fakepcap.hh"
 #include <unistd.h>
@@ -42,7 +44,7 @@ FromFile::FromFile()
       _mmap(true),
 # endif
 #endif
-      _filename(), _pipe(0)
+      _filename(), _pipe(0), _landmark_pattern("%f"), _lineno(1)
 {
 }
 
@@ -76,6 +78,26 @@ FromFile::print_filename() const
 	return _filename;
 }
 
+String
+FromFile::landmark(const String &landmark_pattern) const
+{
+    StringAccum sa;
+    const char *e = landmark_pattern.end();
+    for (const char *s = landmark_pattern.begin(); s < e; s++)
+	if (s < e - 1 && s[0] == '%' && s[1] == 'f') {
+	    sa << print_filename();
+	    s++;
+	} else if (s < e - 1 && s[0] == '%' && s[1] == 'l') {
+	    sa << _lineno;
+	    s++;
+	} else if (s < e - 1 && s[0] == '%' && s[1] == '%') {
+	    sa << '%';
+	    s++;
+	} else
+	    sa << *s;
+    return sa.take_string();
+}
+
 int
 FromFile::error(ErrorHandler *errh, const char *format, ...) const
 {
@@ -83,7 +105,19 @@ FromFile::error(ErrorHandler *errh, const char *format, ...) const
 	errh = ErrorHandler::default_handler();
     va_list val;
     va_start(val, format);
-    errh->verror(ErrorHandler::ERR_ERROR, print_filename(), format, val);
+    errh->verror(ErrorHandler::ERR_ERROR, landmark(), format, val);
+    va_end(val);
+    return ErrorHandler::ERROR_RESULT;
+}
+
+int
+FromFile::warning(ErrorHandler *errh, const char *format, ...) const
+{
+    if (!errh)
+	errh = ErrorHandler::default_handler();
+    va_list val;
+    va_start(val, format);
+    errh->verror(ErrorHandler::ERR_WARNING, landmark(), format, val);
     va_end(val);
     return ErrorHandler::ERROR_RESULT;
 }
@@ -206,6 +240,75 @@ FromFile::read(void *vdata, uint32_t dlen, ErrorHandler *errh)
     }
 
     return dlen;
+}
+
+int
+FromFile::read_line(String &result, ErrorHandler *errh)
+{
+    // first, try to read a line from the current buffer
+    const unsigned char *s = _buffer + _pos;
+    const unsigned char *e = _buffer + _len;
+    while (s < e && *s != '\n' && *s != '\r')
+	s++;
+    if (s < e && (*s == '\n' || s + 1 < e)) {
+	s += (*s == '\r' && s[1] == '\n' ? 2 : 1);
+	int new_pos = s - _buffer;
+	result = String::stable_string((const char *) (_buffer + _pos), new_pos - _pos);
+	_pos = new_pos;
+	_lineno++;
+	return 1;
+    }
+
+    // otherwise, build up a line
+    StringAccum sa;
+    sa.append(_buffer + _pos, _len - _pos);
+
+    while (1) {
+	int errcode = read_buffer(errh);
+	if (errcode < 0 || (errcode == 0 && !sa))
+	    return errcode;
+
+	// check doneness
+	bool done;
+	if (sa && sa.back() == '\r') {
+	    if (_len > 0 && _buffer[0] == '\n')
+		sa << '\n', _pos++;
+	    done = true;
+	} else if (errcode == 0)
+	    done = true;
+	else {
+	    s = _buffer, e = _buffer + _len;
+	    while (s < e && *s != '\n' && *s != '\r')
+		s++;
+	    if (s < e && (*s == '\n' || s + 1 < e)) {
+		s += (*s == '\r' && s[1] == '\n' ? 2 : 1);
+		sa.append(_buffer, s - _buffer);
+		_pos = s - _buffer;
+		done = true;
+	    } else {
+		sa.append(_buffer, _len);
+		done = false;
+	    }
+	}
+
+	if (done) {
+	    result = sa.take_string();
+	    _lineno++;
+	    return 1;
+	}
+    }
+}
+
+int
+FromFile::peek_line(String &result, ErrorHandler *errh)
+{
+    int before_pos = _pos;
+    int retval = read_line(result, errh);
+    if (retval > 0) {
+	_pos = before_pos;
+	_lineno--;
+    }
+    return retval;
 }
 
 int
@@ -346,6 +449,37 @@ FromFile::get_aligned(size_t size, void *buffer, ErrorHandler *errh)
 	return reinterpret_cast<uint8_t *>(buffer);
     else
 	return 0;
+}
+
+const uint8_t *
+FromFile::get_unaligned(size_t size, void *buffer, ErrorHandler *errh)
+{
+    // we may need to read bits of the file
+    if (_pos + size <= _len) {
+	const uint8_t *chunk = _buffer + _pos;
+	_pos += size;
+	return reinterpret_cast<const uint8_t *>(chunk);
+    } else if (read(buffer, size, errh) == (int)size)
+	return reinterpret_cast<uint8_t *>(buffer);
+    else
+	return 0;
+}
+
+String
+FromFile::get_string(size_t size, ErrorHandler *errh)
+{
+    // we may need to read bits of the file
+    if (_pos + size <= _len) {
+	const uint8_t *chunk = _buffer + _pos;
+	_pos += size;
+	return String::stable_string((const char *) chunk, size);
+    } else {
+	String s = String::garbage_string(size);
+	if (read(s.mutable_data(), size, errh) == (int) size)
+	    return s;
+	else
+	    return String();
+    }
 }
 
 Packet *

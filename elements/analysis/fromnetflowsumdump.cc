@@ -36,10 +36,10 @@
 CLICK_DECLS
 
 FromNetFlowSummaryDump::FromNetFlowSummaryDump()
-    : Element(0, 1), _fd(-1), _pos(0), _len(0), _work_packet(0),
-      _task(this), _pipe(0)
+    : Element(0, 1), _work_packet(0), _task(this)
 {
     MOD_INC_USE_COUNT;
+    _ff.set_landmark_pattern("%f:%l");
 }
 
 FromNetFlowSummaryDump::~FromNetFlowSummaryDump()
@@ -63,7 +63,7 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = false, multipacket = false;
     
     if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump file name", &_filename,
+		    cpFilename, "dump file name", &_ff.filename(),
 		    cpKeywords,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
@@ -80,121 +80,17 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-FromNetFlowSummaryDump::error_helper(ErrorHandler *errh, const char *x)
-{
-    if (errh)
-	errh->error("%s: %s", _filename.cc(), x);
-    else
-	click_chatter("%s: %s", id().cc(), x);
-    return -1;
-}
-
-int
-FromNetFlowSummaryDump::read_buffer(ErrorHandler *errh)
-{
-    if (_pos == 0 && _len == _buffer.length())
-	_buffer.append_garbage(BUFFER_SIZE);
-
-    unsigned char *data = (unsigned char *)_buffer.mutable_data();
-    int buffer_len = _buffer.length();
-
-    if (_len == buffer_len) {
-	memmove(data, data + _pos, _len - _pos);
-	_len -= _pos;
-	_file_offset += _pos;
-	_pos = 0;
-    }
-    int initial_len = _len;
-    
-    while (_len < buffer_len) {
-	ssize_t got = read(_fd, data + _len, buffer_len - _len);
-	if (got > 0)
-	    _len += got;
-	else if (got == 0)	// premature end of file
-	    return _len - initial_len;
-	else if (got < 0 && errno != EINTR && errno != EAGAIN)
-	    return error_helper(errh, strerror(errno));
-    }
-    
-    return _len - initial_len;
-}
-
-int
-FromNetFlowSummaryDump::read_line(String &result, ErrorHandler *errh)
-{
-    int epos = _pos;
-
-    while (1) {
-	bool done = false;
-	
-	if (epos >= _len) {
-	    int delta = epos - _pos;
-	    int errcode = read_buffer(errh);
-	    if (errcode < 0 || (errcode == 0 && delta == 0))	// error
-		return errcode;
-	    else if (errcode == 0)
-		done = true;
-	    epos = _pos + delta;
-	}
-
-	const char *d = _buffer.data();
-	while (epos < _len && d[epos] != '\n' && d[epos] != '\r')
-	    epos++;
-
-	if (epos < _len || done) {
-	    result = _buffer.substring(_pos, epos - _pos);
-	    if (epos < _len && d[epos] == '\r')
-		epos++;
-	    if (epos < _len && d[epos] == '\n')
-		epos++;
-	    _pos = epos;
-	    return 1;
-	}
-    }
-}
-
-int
 FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
 {
     if (!output_is_push(0))
 	_notifier.initialize(router());
-    
-    _pipe = 0;
-    if (_filename == "-") {
-	_fd = STDIN_FILENO;
-	_filename = "<stdin>";
-    } else
-	_fd = open(_filename.cc(), O_RDONLY);
 
-  retry_file:
-    if (_fd < 0)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
-
-    _pos = _len = _file_offset = 0;
-    _buffer = String();
-    int result = read_buffer(errh);
-    if (result < 0)
+    if (_ff.initialize(errh) < 0)
 	return -1;
-    else if (result == 0)
-	return errh->error("%s: empty file", _filename.cc());
-
-    // check for a gziped or bzip2d dump
-    if (_fd == STDIN_FILENO || _pipe)
-	/* cannot handle gzip or bzip2 */;
-    else if (compressed_data(reinterpret_cast<const unsigned char *>(_buffer.data()), _len)) {
-	close(_fd);
-	_fd = -1;
-	if (!(_pipe = open_uncompress_pipe(_filename, reinterpret_cast<const unsigned char *>(_buffer.data()), _len, errh)))
-	    return -1;
-	_fd = fileno(_pipe);
-	goto retry_file;
-    }
 
     String line;
-    if (read_line(line, errh) < 0)
+    if (_ff.peek_line(line, errh) < 0)
 	return -1;
-    else
-	_pos = 0;
     
     _format_complaint = false;
     if (output_is_push(0))
@@ -205,16 +101,10 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
 void
 FromNetFlowSummaryDump::cleanup(CleanupStage)
 {
-    if (_pipe)
-	pclose(_pipe);
-    else if (_fd >= 0 && _fd != STDIN_FILENO)
-	close(_fd);
-    _fd = -1;
-    _pipe = 0;
+    _ff.cleanup();
     if (_work_packet)
 	_work_packet->kill();
     _work_packet = 0;
-    _buffer = String();
 }
 
 Packet *
@@ -222,7 +112,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 {
     WritablePacket *q = Packet::make((const char *)0, sizeof(click_ip) + sizeof(click_tcp));
     if (!q) {
-	error_helper(errh, "out of memory!");
+	_ff.error(errh, strerror(ENOMEM));
 	return 0;
     }
     if (_zero)
@@ -239,7 +129,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
     
     while (1) {
 
-	if (read_line(line, errh) <= 0) {
+	if (_ff.read_line(line, errh) <= 0) {
 	    q->kill();
 	    return 0;
 	}
@@ -321,7 +211,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 
     // bad format if we get here
     if (!_format_complaint) {
-	error_helper(errh, "bad format");
+	_ff.error(errh, "bad format");
 	_format_complaint = true;
     }
     if (q)
@@ -438,7 +328,7 @@ FromNetFlowSummaryDump::pull(int)
 }
 
 
-enum { H_ACTIVE, H_ENCAP, H_FILESIZE, H_FILEPOS };
+enum { H_ACTIVE, H_ENCAP };
 
 String
 FromNetFlowSummaryDump::read_handler(Element *e, void *thunk)
@@ -449,15 +339,6 @@ FromNetFlowSummaryDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return "IP\n";
-      case H_FILESIZE: {
-	  struct stat s;
-	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
-	      return String(s.st_size) + "\n";
-	  else
-	      return "-\n";
-      }
-      case H_FILEPOS:
-	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -493,12 +374,11 @@ FromNetFlowSummaryDump::add_handlers()
     add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
-    add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
-    add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
+    _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel FromFile)
 EXPORT_ELEMENT(FromNetFlowSummaryDump)
