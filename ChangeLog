@@ -1,3 +1,14 @@
+2004-05-09 Sunday 21:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.30),
+	include/click/standard/drivermanager.hh (1.19): DriverManager
+	accepts "write HANDLER ARG ARG..." instructions
+
+2004-05-09 Sunday 21:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.48), lib/confparse.cc (1.127): add
+	cp_unspacevec(const String *begin, const String *end)
+
 2004-05-09 Sunday 15:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/ratedsplitter.cc (1.19),
