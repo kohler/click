@@ -689,27 +689,40 @@ Router::context_message(int element_no, const char *message) const
   return s;
 }
 
-static int
+static void
 partition_configure_order(Vector<int> &order, const Vector<int> &phase,
-			  int left, int right)
+			  int left, int right,
+			  int &split_left, int &split_right)
 {
-  int pivot_idx = (left + right) / 2;
-  int pivot = order[pivot_idx];
-  order[pivot_idx] = order[right];
-  int pivot_phase = phase[pivot];
+  // Dutch national flag algorithm
+  int middle = left;
+  int pivot = phase[order[(left + right) / 2]];
 
-  while (left < right) {
-    if (phase[order[left]] <= pivot_phase)
+  // loop invariant:
+  // phase[order[i]] < pivot for all left_init <= i < left
+  // phase[order[i]] > pivot for all right < i <= right_init
+  // phase[order[i]] == pivot for all left <= i < middle
+  while (middle <= right) {
+    int p = phase[order[middle]];
+    if (p < pivot) {
+      int t = order[left];
+      order[left] = order[middle];
+      order[middle] = t;
       left++;
-    else {
-      order[right] = order[left];
-      order[left] = order[right - 1];
+      middle++;
+    } else if (p > pivot) {
+      int t = order[right];
+      order[right] = order[middle];
+      order[middle] = t;
       right--;
-    }
+    } else
+      middle++;
   }
 
-  order[right] = pivot;
-  return right;
+  // afterwards, middle == right + 1
+  // so phase[order[i]] == pivot for all left <= i <= right
+  split_left = left - 1;
+  split_right = right + 1;
 }
 
 static void
@@ -717,9 +730,10 @@ qsort_configure_order(Vector<int> &order, const Vector<int> &phase,
 		      int left, int right)
 {
   if (left < right) {
-    int split = partition_configure_order(order, phase, left, right);
-    qsort_configure_order(order, phase, left, split - 1);
-    qsort_configure_order(order, phase, split + 1, right);
+    int split_left, split_right;
+    partition_configure_order(order, phase, left, right, split_left, split_right);
+    qsort_configure_order(order, phase, left, split_left);
+    qsort_configure_order(order, phase, split_right, right);
   }
 }
 
