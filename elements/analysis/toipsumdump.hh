@@ -21,6 +21,8 @@ ASCII format---each line corresponds to a packet. The CONTENTS keyword
 argument determines what information is written. Writes to standard output if
 FILENAME is a single dash `C<->'.
 
+ToIPSummaryDump uses packets' extra-length and extra-packet-count annotations.
+
 Keyword arguments are:
 
 =over 8

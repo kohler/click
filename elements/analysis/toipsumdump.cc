@@ -152,14 +152,14 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
     // Check that the IP header fields are valid.
     if (!iph || iph->ip_v != 4 || iph->ip_hl < (sizeof(click_ip) >> 2)
 	|| p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2))
-	|| p->length() < (uint32_t)(p->network_header_offset() + ntohs(iph->ip_len))) {
+	|| p->length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(p->network_header_offset() + ntohs(iph->ip_len))) {
 	if (_bad_packets) {
 	    if (!iph)
 		sa << "!bad no IP header\n";
 	    else if (iph->ip_v != 4)
-		sa << "!bad IP version " << iph->ip_v << '\n';
+		sa << "!bad IP version " << (int)iph->ip_v << '\n';
 	    else if (iph->ip_hl < (sizeof(click_ip) >> 2) || p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2)))
-		sa << "!bad IP header length " << iph->ip_hl << '\n';
+		sa << "!bad IP header length " << (int)iph->ip_hl << '\n';
 	    else
 		sa << "!bad IP length " << ntohs(iph->ip_len) << '\n';
 	    return true;
@@ -197,6 +197,17 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	udph = 0;
     }
 
+    // Adjust extra length, since we calculate lengths here based on ip_len.
+    if (iph && EXTRA_LENGTH_ANNO(p) > 0) {
+	int32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
+	if (ntohs(iph->ip_len) + 8 >= full_len - p->network_header_offset())
+	    SET_EXTRA_LENGTH_ANNO(p, 0);
+	else {
+	    full_len = full_len - ntohs(iph->ip_len);
+	    SET_EXTRA_LENGTH_ANNO(p, full_len);
+	}
+    }
+    
     // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
 	if (i)
@@ -315,6 +326,8 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 		  else if (udph)
 		      off += sizeof(click_udp);
 		  len = ntohs(iph->ip_len) - off + p->network_header_offset();
+		  if (len + off > p->length()) // EXTRA_LENGTH?
+		      len = p->length() - off;
 	      } else {
 		  off = 0;
 		  len = p->length();
