@@ -4,7 +4,7 @@
 click -e "
 FromIPSummaryDump(IN1, STOP true, ZERO true)
 	-> IPPrint(a)
-	-> ip :: IPRewriter(pattern 21.0.0.1 1024-65535 - - 0 0)
+	-> ip :: IPRewriter(pattern 21.0.0.1 1024-65535# - - 0 0)
 	-> IPPrint(b)
 	-> ICMPError(19.19.19.19, timeexceeded)
 	-> IPPrint(c)

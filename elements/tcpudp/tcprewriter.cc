@@ -342,7 +342,7 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   if (forward && reverse) {
     if (!pattern)
       Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
+    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, _tcp_map))
       goto failure;
     
     IPFlowID reverse_flow = forward->flow_id().rev();

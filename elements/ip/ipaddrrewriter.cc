@@ -162,7 +162,7 @@ IPAddrRewriter::apply_pattern(Pattern *pattern, int,
   if (forward && reverse) {
     if (!pattern)
       Mapping::make_pair(0, flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(0, flow, fport, rport, forward, reverse))
+    else if (!pattern->create_mapping(0, flow, fport, rport, forward, reverse, _map))
       goto failure;
 
     IPFlowID reverse_flow = forward->flow_id().rev();

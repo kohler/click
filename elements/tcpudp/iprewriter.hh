@@ -41,12 +41,13 @@ through the IPRewriter, they will be rewritten to look as if they came from
 2.0.0.2; this corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20)
 => (2.0.0.2, 30, 1.0.0.1, 20).
 
-When it is first initialized, IPRewriter has no mappings. Mappings are created
-on the fly as new flows are encountered in the form of packets with unknown
-flow IDs. This process is controlled by the INPUTSPECs. There are as many
-input ports as INPUTSPEC configuration arguments. Each INPUTSPEC specifies
-whether and how a mapping should be created when a new flow is encountered on
-the corresponding input port. There are six forms of INPUTSPEC:
+When it is first initialized, IPRewriter has no mappings.  Mappings are
+created on the fly as new flows are encountered in the form of packets with
+unknown flow IDs.  This process is controlled by the INPUTSPECs.  There are as
+many input ports as INPUTSPEC configuration arguments.  Each INPUTSPEC
+specifies whether and how a mapping should be created when a new flow is
+encountered on the corresponding input port.  There are six forms of
+INPUTSPEC:
 
 =over 5
 
@@ -61,28 +62,23 @@ are installed.
 
 =item `keep FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are sent to output port FOUTPUT. A mapping
-is installed that keeps the packet's flow ID the same. Reply packets are
-mapped to ROUTPUT.
+Creates a mapping that preserves the flow ID.  Request packets are sent to
+FOUTPUT, reply packets to ROUTPUT.
 
 =item `pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are rewritten according to the given pattern,
-`SADDR SPORT DADDR DPORT'. The SADDR and DADDR portions may be fixed IP
-addresses (in which case the corresponding packet field is set to that
-address) or a dash `-' (in which case the corresponding packet field is left
-unchanged). Similarly, DPORT is a port number or `-'. The SPORT field may be a
-port number, `-', or a port range `L-H', in which case a port number in the
-range L-H is chosen. IPRewriter makes sure that the chosen port number was not
-used by any of that pattern's existing mappings. If all ports are in use, the
-packet is dropped. (Two different patterns with matching SADDR, SPORT, and
-DADDR and overlapping DPORT ranges might pick the same destination port
-number, resulting in an ambiguous mapping. You should probably avoid this
-situation.)
+Creates a mapping according to the given pattern, 'SADDR SPORT DADDR DPORT'.
+Any pattern field may be a dash '-', in which case the packet's corresponding
+field is left unchanged.  Packets whose flow is like the input packet's are
+rewritten and sent to FOUTPUT; packets in the reply flow are rewritten and
+sent to ROUTPUT.
 
-A new mapping is installed. Packets whose flow is like the input packet's
-are rewritten and sent to FOUTPUT; packets in the reply flow are rewritten
-and sent to ROUTPUT.
+SPORT may be a port range 'L-H'.  IPRewriter will choose a source port in that
+range so that the resulting mappings don't conflict with any existing
+mappings.  If no source port is available, the packet is dropped.  Normally
+source ports are chosen randomly from within the range.  To allocate source
+ports sequentially (which can make testing easier), append a pound sign to the
+range, as in '1024-65535#'.
 
 =item `pattern PATNAME FOUTPUT ROUTPUT'
 

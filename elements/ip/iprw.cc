@@ -47,7 +47,7 @@ CLICK_DECLS
 IPRw::Mapping::Mapping(bool dst_anno)
   : _is_reverse(false), /* _used(false), */ _marked(false),
     _flow_over(false), _free_tracked(false), _dst_anno(dst_anno),
-    _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
+    _ip_p(0), _pat(0), _free_next(0)
 {
 }
 
@@ -155,11 +155,16 @@ IPRw::Mapping::unparse() const
 // IPRw::Pattern
 //
 
-IPRw::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
-		       const IPAddress &daddr, int dport)
-  : _saddr(saddr), _sportl(sportl), _sporth(sporth), _daddr(daddr),
-    _dport(dport), _rover(0), _is_napt(true), _refcount(0), _nmappings(0)
+IPRw::Pattern::Pattern(const IPAddress &saddr, int sport,
+		       const IPAddress &daddr, int dport,
+		       bool is_napt, bool sequential, uint32_t variation_top)
+    : _saddr(saddr), _sport(sport), _daddr(daddr), _dport(dport),
+      _variation_top(variation_top), _next_variation(0), _is_napt(is_napt),
+      _sequential(sequential), _refcount(0), _nmappings(0)
 {
+    if (_variation_top > 0)
+	for (_variation_mask = 1; _variation_mask < _variation_top; )
+	    _variation_mask = (_variation_mask << 1) | 1;
 }
 
 namespace {
@@ -183,41 +188,45 @@ int
 IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
 			  Element *e, ErrorHandler *errh)
 {
-  if (words.size() != 4)
-    return pattern_error(PE_NAPT, errh);
+    if (words.size() != 4)
+	return pattern_error(PE_NAPT, errh);
   
-  IPAddress saddr, daddr;
-  int32_t sportl, sporth, dport;
+    IPAddress saddr, daddr;
+    int32_t sportl, sporth, dport;
+    bool sequential = false;
   
-  if (words[0] == "-")
-    saddr = 0;
-  else if (!cp_ip_address(words[0], &saddr, e))
-    return pattern_error(PE_SADDR, errh);
+    if (words[0] == "-")
+	saddr = 0;
+    else if (!cp_ip_address(words[0], &saddr, e))
+	return pattern_error(PE_SADDR, errh);
   
-  if (words[1] == "-")
-    sportl = sporth = 0;
-  else {
-    const char *dash = find(words[1], '-');
-    if (!(cp_integer(words[1].substring(words[1].begin(), dash), &sportl)
-	  && sportl > 0 && sportl <= 0xFFFF
-	  && (dash == words[1].end() ? (sporth = sportl)
-	      : (cp_integer(words[1].substring(dash + 1, words[1].end()), &sporth)
-		 && sporth >= sportl && sporth <= 0xFFFF))))
-	return pattern_error(PE_SPORT, errh);
-  }
+    if (words[1] == "-")
+	sportl = sporth = 0;
+    else {
+	const char* end = words[1].end();
+	if (end > words[1].begin() && end[-1] == '#')
+	    sequential = true, end--;
+	const char* dash = find(words[1].begin(), end, '-');
+	if (!(cp_integer(words[1].substring(words[1].begin(), dash), &sportl)
+	      && sportl > 0 && sportl <= 0xFFFF
+	      && (dash == end ? (sporth = sportl)
+		  : (cp_integer(words[1].substring(dash + 1, end), &sporth)
+		     && sporth >= sportl && sporth <= 0xFFFF))))
+	    return pattern_error(PE_SPORT, errh);
+    }
 
-  if (words[2] == "-")
-    daddr = 0;
-  else if (!cp_ip_address(words[2], &daddr, e))
-    return pattern_error(PE_DADDR, errh);
+    if (words[2] == "-")
+	daddr = 0;
+    else if (!cp_ip_address(words[2], &daddr, e))
+	return pattern_error(PE_DADDR, errh);
   
-  if (words[3] == "-")
-    dport = 0;
-  else if (!cp_integer(words[3], &dport) || dport <= 0 || dport > 0xFFFF)
-    return pattern_error(PE_DPORT, errh);
+    if (words[3] == "-")
+	dport = 0;
+    else if (!cp_integer(words[3], &dport) || dport <= 0 || dport > 0xFFFF)
+	return pattern_error(PE_DPORT, errh);
 
-  *pstore = new Pattern(saddr, sportl, sporth, daddr, dport);
-  return 0;
+    *pstore = new Pattern(saddr, htons(sportl), daddr, htons(dport), true, sequential, sporth - sportl);
+    return 0;
 }
 
 int
@@ -227,13 +236,17 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
     if (words.size() != 2)
 	return pattern_error(PE_NAT, errh);
   
-    IPAddress saddr1, saddr2;  
+    IPAddress saddr1, saddr2;
+    bool sequential = false;
     if (words[0] == "-")
 	saddr1 = saddr2 = 0;
     else {
-	const char* dash = find(words[0], '-');
-	if (dash == words[0].end()) {
-	    if (!cp_ip_prefix(words[0], &saddr1, &saddr2, true, e) || !saddr1 || !saddr2)
+	const char* end = words[0].end();
+	if (end > words[0].begin() && end[-1] == '#')
+	    sequential = true, end--;
+	const char* dash = find(words[0].begin(), end, '-');
+	if (dash == end) {
+	    if (!cp_ip_prefix(words[0].substring(words[0].begin(), end), &saddr1, &saddr2, true, e) || !saddr1 || !saddr2)
 		return pattern_error(PE_SADDR, errh);
 	    if (saddr2 == IPAddress(0xFFFFFFFFU))
 		saddr2 = saddr1;
@@ -241,28 +254,16 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 		saddr1 &= saddr2;
 		saddr2 = saddr1 | IPAddress(htonl(0x00000001U));
 	    } else {
-		unsigned s1 = saddr1 & saddr2;
-		unsigned s2 = saddr1 | ~saddr2;
+		uint32_t s1 = saddr1 & saddr2;
+		uint32_t s2 = saddr1 | ~saddr2;
 		// don't count PREFIX.0 and PREFIX.255
 		saddr1 = htonl(ntohl(s1) + 1);
 		saddr2 = htonl(ntohl(s2) - 1);
 	    }
 	} else if (!cp_ip_address(words[0].substring(words[0].begin(), dash), &saddr1, e)
-		   || !cp_ip_address(words[0].substring(dash+1, words[0].end()), &saddr2, e))
+		   || !cp_ip_address(words[0].substring(dash+1, end), &saddr2, e)
+		   || ntohl(saddr1.addr()) > ntohl(saddr2.addr()))
 	    return pattern_error(PE_SADDR, errh);
-    }
-
-    // check that top 16 bits agree
-    int sportl = 0, sporth = 0;
-    if (saddr1 != saddr2) {
-	IPAddress prefix(htonl(0xFFFF0000U));
-	if ((saddr1 ^ saddr2) & prefix)
-	    return errh->error("source addresses '%s' and '%s' too far apart;\nmust agree in at least top 16 bits", saddr1.s().cc(), saddr2.s().cc());
-	sportl = ntohl((unsigned)(saddr1 & ~prefix));
-	sporth = ntohl((unsigned)(saddr2 & ~prefix));
-	if (sportl > sporth || sportl == 0)
-	    return pattern_error(PE_SADDR, errh);
-	saddr1 &= prefix;
     }
 
     IPAddress daddr;
@@ -271,8 +272,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
     else if (!cp_ip_address(words[1], &daddr, e) || !daddr)
 	return pattern_error(PE_DADDR, errh);
     
-    *pstore = new Pattern(saddr1, sportl, sporth, daddr, 0);
-    (*pstore)->_is_napt = false;
+    *pstore = new Pattern(saddr1, 0, daddr, 0, false, sequential, ntohl(saddr2.addr()) - ntohl(saddr1.addr()));
     return 0;
 }
 
@@ -327,83 +327,60 @@ IPRw::Pattern::parse_with_ports(const String &conf, Pattern **pstore,
 bool
 IPRw::Pattern::can_accept_from(const Pattern &o) const
 {
-  return (_saddr == o._saddr
-	  && _daddr == o._daddr
-	  && _dport == o._dport
-	  && _sportl <= o._sportl
-	  && o._sporth <= _sporth);
-}
-
-inline unsigned short
-IPRw::Pattern::find_sport()
-{
-    if (_sportl == _sporth || !_rover)
-	return _sportl;
-
-    // search for empty port number starting at '_rover'
-    Mapping *r = _rover;
-    uint16_t this_sport = ntohs(r->sport());
-    do {
-	Mapping *next = r->_pat_next;
-	uint16_t next_sport = ntohs(next->sport());
-	if (next_sport > this_sport + 1)
-	    goto found;
-	else if (next_sport <= this_sport) {
-	    if (this_sport < _sporth)
-		goto found;
-	    else if (next_sport > _sportl) {
-		this_sport = _sportl - 1;
-		goto found;
-	    }
-	}
-	r = next;
-	this_sport = next_sport;
-    } while (r != _rover);
-
-    // nothing found
-    return 0;
-
-  found:
-    _rover = r;
-    return this_sport + 1;
+    if (_daddr != o._daddr || _dport != o._dport || _is_napt != o._is_napt
+	|| (_is_napt ? _saddr != o._saddr : _sport != o._sport))
+	return false;
+    uint32_t low, o_low;
+    if (_is_napt)
+	low = ntohs(_sport), o_low = ntohs(o._sport);
+    else
+	low = ntohl(_saddr.addr()), o_low = ntohl(o._saddr.addr());
+    uint32_t high = low + _variation_top;
+    uint32_t o_high = o_low + _variation_top;
+    return low <= o_low && o_high <= high;
 }
 
 bool
-IPRw::Pattern::create_mapping(int ip_p, const IPFlowID &in,
+IPRw::Pattern::create_mapping(int ip_p, const IPFlowID& in,
 			      int fport, int rport,
-			      Mapping *fmap, Mapping *rmap)
+			      Mapping* fmap, Mapping* rmap,
+			      const Map& rev_map)
 {
-    uint16_t new_sport = 0;
-    if (_sportl) {
-	new_sport = find_sport();
-	if (!new_sport)
-	    return false;
-    }
-  
+    // new design
     IPFlowID out(in);
-
-    if (_saddr) {
-	if (_is_napt || _sportl == _sporth)
-	    out.set_saddr(_saddr);
-	else {
-	    assert(ip_p == 0);
-	    unsigned new_saddr = ntohl((unsigned)_saddr);
-	    new_saddr |= new_sport;
-	    out.set_saddr(htonl(new_saddr));
-	}
-    }
-
-    if (_sportl && _is_napt)
-	out.set_sport(htons(new_sport));
-
+    if (_saddr)
+	out.set_saddr(_saddr);
+    if (_sport)
+	out.set_sport(_sport);
     if (_daddr)
 	out.set_daddr(_daddr);
+    if (_dport)
+	out.set_dport(_dport);
 
-    if (_dport) {
-	uint16_t new_dport = htons((short)_dport);
-	out.set_dport(new_dport);
+    if (_variation_top) {
+	uint32_t val = (_sequential ? _next_variation : random() & _variation_mask);
+	uint32_t step = (_sequential ? 1 : random() | 1);
+	uint32_t base = (_is_napt ? ntohs(_sport) : ntohl(_saddr.addr()));
+	IPFlowID lookup = out.rev();
+	for (uint32_t count = 0; count <= _variation_mask; count++, val = (val + step) & _variation_mask)
+	    if (val <= _variation_top) {
+		if (_is_napt)
+		    lookup.set_dport(htons(base + val));
+		else
+		    lookup.set_daddr(htonl(base + val));
+		if (!rev_map.findp(lookup)) {
+		    if (_is_napt)
+			out.set_sport(lookup.dport());
+		    else
+			out.set_saddr(lookup.daddr());
+		    _next_variation = val + 1;
+		    goto found;
+		}
+	    }
+	return false;
     }
 
+  found:
     Mapping::make_pair(ip_p, in, out, fport, rport, fmap, rmap);
     accept_mapping(fmap);
     return true;
@@ -413,26 +390,12 @@ void
 IPRw::Pattern::accept_mapping(Mapping *m)
 {
     m->_pat = this;
-    if (_rover) {
-	m->_pat_prev = _rover;
-	m->_pat_next = _rover->_pat_next;
-	_rover->_pat_next = m->_pat_next->_pat_prev = m;
-    } else
-	m->_pat_prev = m->_pat_next = m;
-    _rover = m;
     _nmappings++;
 }
 
 inline void
 IPRw::Pattern::mapping_freed(Mapping *m)
 {
-    if (_rover == m) {
-	_rover = m->_pat_next;
-	if (_rover == m)
-	    _rover = 0;
-    }
-    m->_pat_next->_pat_prev = m->_pat_prev;
-    m->_pat_prev->_pat_next = m->_pat_next;
     _nmappings--;
 }
 
@@ -440,9 +403,9 @@ String
 IPRw::Pattern::unparse() const
 {
     StringAccum sa;
-    if (!_is_napt && _sportl != _sporth)
-	sa << IPAddress(htonl(ntohl(_saddr.addr()) + _sportl)) << '-'
-	   << IPAddress(htonl(ntohl(_saddr.addr()) + _sporth));
+    if (!_is_napt && _variation_top)
+	sa << _saddr << '-'
+	   << IPAddress(htonl(ntohl(_saddr.addr()) + _variation_top));
     else if (_saddr)
 	sa << _saddr;
     else
@@ -450,12 +413,12 @@ IPRw::Pattern::unparse() const
 
     if (!_is_napt)
 	/* nada */;
-    else if (!_sporth)
+    else if (!_sport)
 	sa << " -";
-    else if (_sportl == _sporth)
-	sa << ' ' << _sporth;
+    else if (_variation_top)
+	sa << ' ' << ntohs(_sport) << '-' << (ntohs(_sport) + _variation_top);
     else
-	sa << ' ' << _sportl << '-' << _sporth;
+	sa << ' ' << ntohs(_sport);
 
     if (_daddr)
 	sa << ' ' << _daddr;
@@ -467,7 +430,7 @@ IPRw::Pattern::unparse() const
     else if (!_dport)
 	sa << " -";
     else
-	sa << ' ' << _dport;
+	sa << ' ' << ntohs(_dport);
 
     sa << " [" << _nmappings << ']';
 

@@ -5,7 +5,7 @@ numbers and checksums, even for SACK blocks.
 
 %script
 click -e "
-IPRewriterPatterns(pat 1.0.0.1 1024-65535 - -)
+IPRewriterPatterns(pat 1.0.0.1 1024-65535# - -)
 rw :: TCPRewriter(pattern pat 0 0)
 FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
 	-> CheckIPHeader(VERBOSE true)

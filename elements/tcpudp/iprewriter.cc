@@ -266,19 +266,15 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   Mapping *reverse = new Mapping(_dst_anno);
 
   if (forward && reverse) {
+    Map& map = (ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
+
     if (!pattern)
       Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
+    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse, map))
       goto failure;
 
-    IPFlowID reverse_flow = forward->flow_id().rev();
-    if (ip_p == IP_PROTO_TCP) {
-      _tcp_map.insert(flow, forward);
-      _tcp_map.insert(reverse_flow, reverse);
-    } else {
-      _udp_map.insert(flow, forward);
-      _udp_map.insert(reverse_flow, reverse);
-    }
+    map.insert(flow, forward);
+    map.insert(forward->flow_id().rev(), reverse);
     return forward;
   }
 

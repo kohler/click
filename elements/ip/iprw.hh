@@ -128,8 +128,6 @@ class IPRw::Mapping { public:
 
     // these variables maintained by IPRw::Pattern
     Pattern* _pat;
-    Mapping* _pat_prev;
-    Mapping* _pat_next;
 
     Mapping* _free_next;
 
@@ -151,7 +149,7 @@ class IPRw::Pattern { public:
     // Any Pattern component can be '-', which means that the corresponding
     // IPFlowID component is left unchanged. 
 
-    Pattern(const IPAddress&, int, int, const IPAddress&, int);
+    Pattern(const IPAddress&, int, const IPAddress&, int, bool is_napt, bool sequential, uint32_t variation);
     static int parse(const String&, Pattern**, Element*, ErrorHandler*);
     static int parse_with_ports(const String&, Pattern**,
 				int*, int*, Element*, ErrorHandler*);
@@ -161,38 +159,37 @@ class IPRw::Pattern { public:
 
     int nmappings() const	{ return _nmappings; }
   
-    operator bool() const { return _saddr || _sporth || _daddr || _dport; }
-    bool allow_nat() const	{ return !_is_napt || _sportl == _sporth; }
-    bool allow_napt() const	{ return _is_napt || _sportl == _sporth; }
+    operator bool() const	{ return _saddr || _sport || _daddr || _dport; }
+    bool allow_nat() const	{ return !_is_napt || _variation_top == 0; }
+    bool allow_napt() const	{ return _is_napt || _variation_top == 0; }
 
     bool can_accept_from(const Pattern&) const;
 
-    bool create_mapping(int ip_p, const IPFlowID&, int fport, int rport, Mapping*, Mapping*);
+    bool create_mapping(int ip_p, const IPFlowID&, int fport, int rport, Mapping*, Mapping*, const Map&);
     void accept_mapping(Mapping*);
-    void mapping_freed(Mapping*);
-
-    Mapping* rover()		{ return _rover; }
+    inline void mapping_freed(Mapping*);
 
     String unparse() const;
 
   public:
 
     IPAddress _saddr;
-    int _sportl;		// host byte order
-    int _sporth;		// host byte order
+    int _sport;			// host byte order
     IPAddress _daddr;
     int _dport;			// host byte order
 
-    Mapping* _rover;		// walks along circular list ordered by port
+    uint32_t _variation_top;
+    uint32_t _variation_mask;
+    uint32_t _next_variation;
+
     bool _is_napt;
+    bool _sequential;
 
     int _refcount;
     int _nmappings;
 
     Pattern(const Pattern&);
     Pattern& operator=(const Pattern&);
-
-    unsigned short find_sport();
 
     static int parse_napt(Vector<String>&, Pattern**, Element*, ErrorHandler*);
     static int parse_nat(Vector<String>&, Pattern**, Element*, ErrorHandler*);

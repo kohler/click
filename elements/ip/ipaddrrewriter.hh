@@ -49,8 +49,7 @@ Packets with no existing mapping are rewritten according to the given pattern.
 IPAddrRewriter patterns are like IPRewriter patterns minus the source and
 destination ports. The source address can also be a range of IP addresses,
 SADDR-SADDR2, in which case a new IP address is chosen for each unique source
-address. The two addresses SADDR and SADDR2 must lie within a single /16
-network.
+address.
 
 Packets with source address like the input packet's are rewritten and sent to
 FOUTPUT; packets sent to the resulting source address are rewritten and sent

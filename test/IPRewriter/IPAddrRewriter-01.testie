@@ -3,17 +3,17 @@ click -e "
 i :: Idle
 rw :: IPAddrRewriter(pattern 1.0.0.1 - 0 1,
   pattern 1.0.0.1-1.0.255.255 - 0 1,
-  pattern 1.0.0.1/24 - 0 1)
-i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw
+  pattern 1.0.0.1/24 - 0 1,
+  pattern 1.0.0.1/8 - 0 1)
+i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw i[3] -> [3]rw
 rw[0] -> i rw[1] -> i
 " -h rw.patterns -q
 
 click -e "
 i :: Idle
 rw :: IPAddrRewriter(pattern 1.0.0.x - 0 1,
-  pattern 1.0.0.0-1.0.255.255 - 0 1,
-  pattern 1.0.0.1/8 - 0 1)
-i -> [0]rw i[1] -> [1]rw i[2] -> [2]rw
+  pattern 1.255.0.0-1.0.255.255 - 0 1)
+i -> [0]rw i[1] -> [1]rw
 rw[0] -> i rw[1] -> i
 " 2>X || true
 
@@ -21,12 +21,11 @@ rw[0] -> i rw[1] -> i
 1.0.0.1 - [0]
 1.0.0.1-1.0.255.255 - [0]
 1.0.0.1-1.0.0.254 - [0]
+1.0.0.1-1.255.255.254 - [0]
 
 %expect X
   input spec 0: bad source address
   input spec 1: bad source address
-  input spec 2: source addresses '1.0.0.1' and '1.255.255.254' too far apart;
-  input spec 2: must agree in at least top 16 bits
 Router could not be initialized!
 
 %ignore X
