@@ -1,3 +1,42 @@
+2001-08-17 Friday 22:33  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.36), etc/linux-2.4.9-patch (1.1): initial version of
+	2.4.9 patch
+
+2001-08-17 Friday 22:02  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.139): more obvious error messages
+
+2001-08-17 Friday 21:59  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/module.cc (1.59): fix 2.4 bug: use user_path_walk
+	instead of lookup_one
+
+2001-08-17 Friday 21:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: glue.hh (1.17), perfctr.hh (1.4): glue.hh,
+	perfctr.hh: make safe for non-i386 machines
+
+2001-08-17 Friday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/lookupiproute.hh (1.15): LookupIPRoute is push, duh
+	(Benjie found)
+
+2001-08-17 Friday 20:58  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: anydevice.hh (1.34), cyclecount.cc (1.12),
+	cyclecount.hh (1.9), fromlinux.cc (1.35), perfcount.cc (1.16),
+	perfcount.hh (1.11), perfcountaccum.cc (1.8), perfcountuser.cc
+	(1.12), perfinfo.cc (1.22), perfinfo.hh (1.12), polldevice.cc
+	(1.121), setperfcount.cc (1.8), todevice.cc (1.117): use new "i586"
+	requirement, so elements are not compiled when building for ARM;
+	also #if __i386__ in a couple places
+
+2001-08-17 Friday 20:55  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.138): add target CPU type provisions, like
+	"i386", "i586"
+
 2001-08-17 Friday 20:28  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* bsdmodule/clickfs_vnops.cc (1.3): Fix writes into element
