@@ -1,3 +1,8 @@
+2002-06-12 Wednesday 16:37  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: getipaddress.hh (1.16), lookupiproute.hh (1.19):
+	documentation nits
+
 2002-06-12 Wednesday 09:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc (1.41): 1. don't use log
