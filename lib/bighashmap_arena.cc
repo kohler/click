@@ -1,9 +1,10 @@
-// -*- related-file-name: "../include/click/bighashmap_arena.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/bighashmap_arena.hh" -*-
 /*
- * bighashmap_arena.{cc,hh} -- a hash table template that supports removal
+ * bighashmap_arena.{cc,hh} -- memory allocation for hash tables, etc.
  * Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -18,22 +19,119 @@
 
 #include <click/config.h>
 #include <click/bighashmap_arena.hh>
+#include <click/glue.hh>
 CLICK_DECLS
 
-BigHashMap_Arena *
-BigHashMap_Arena::new_arena(unsigned esize)
+BigHashMap_Arena::BigHashMap_Arena(uint32_t element_size)
+    : _free(0),
+      _cur_buffer(0), _buffer_pos(0),
+      _element_size(element_size < sizeof(Link) ? sizeof(Link) : element_size),
+      _buffers(new char *[8]), _nbuffers(0), _buffers_cap(8)
 {
-  BigHashMap_Arena *arena =
-    reinterpret_cast<BigHashMap_Arena *>(new unsigned char[offsetof(BigHashMap_Arena, _x) + esize*SIZE]);
-  if (arena)
-    arena->_first = 0;
-  return arena;
+}
+
+BigHashMap_Arena::~BigHashMap_Arena()
+{
+    for (int i = 0; i < _nbuffers; i++)
+	delete[] _buffers[i];
+    delete[] _buffers;
+}
+
+void *
+BigHashMap_Arena::hard_alloc()
+{
+    assert(_buffer_pos == 0);
+    
+    if (_nbuffers == _buffers_cap) {
+	char **new_buffers = new char *[_buffers_cap * 2];
+	if (!new_buffers)
+	    return 0;
+	memcpy(new_buffers, _buffers, _buffers_cap * sizeof(char *));
+	delete[] _buffers;
+	_buffers = new_buffers;
+	_buffers_cap *= 2;
+    }
+    
+    char *new_buffer = new char[_element_size * NELEMENTS];
+    if (!new_buffer)
+	return 0;
+    _buffers[_nbuffers] = _cur_buffer = new_buffer;
+    _nbuffers++;
+    _buffer_pos = _element_size * (NELEMENTS - 1);
+    return _cur_buffer + _buffer_pos;
+}
+
+//
+
+BigHashMap_ArenaFactory *BigHashMap_ArenaFactory::the_factory = 0;
+static const uint32_t min_large = 256;
+static const int shifts[2] = { 2, 7 };
+static const int offsets[2] = { (1 << shifts[0]) - 1, (1 << shifts[1]) - 1 };
+
+BigHashMap_ArenaFactory::BigHashMap_ArenaFactory()
+{
+    _arenas[0] = _arenas[1] = 0;
+    _narenas[0] = _narenas[1] = 0;
+}
+
+BigHashMap_ArenaFactory::~BigHashMap_ArenaFactory()
+{
+    for (int which = 0; which < 2; which++) {
+	for (int i = 0; i < _narenas[which]; i++)
+	    delete _arenas[which][i];
+	delete[] _arenas[which];
+    }
 }
 
 void
-BigHashMap_Arena::delete_arena(BigHashMap_Arena *arena)
+BigHashMap_ArenaFactory::static_initialize()
 {
-  delete[] reinterpret_cast<unsigned char *>(arena);
+    if (!the_factory)
+	the_factory = new BigHashMap_ArenaFactory;
+}
+
+void
+BigHashMap_ArenaFactory::static_cleanup()
+{
+    delete the_factory;
+    the_factory = 0;
+}
+
+BigHashMap_Arena *
+BigHashMap_ArenaFactory::get_arena(uint32_t element_size, BigHashMap_ArenaFactory *factory)
+{
+    if (!the_factory)
+	static_initialize();
+    if (!factory)
+	factory = the_factory;
+    return the_factory->get_arena_func(element_size);
+}
+
+BigHashMap_Arena *
+BigHashMap_ArenaFactory::get_arena_func(uint32_t element_size)
+{
+    int which = (element_size < min_large ? 0 : 1);
+    int arenanum = (element_size + offsets[which]) >> shifts[which];
+
+    int new_narenas = _narenas[which];
+    while (new_narenas <= arenanum)
+	new_narenas = (new_narenas ? new_narenas * 2 : 32);
+    if (new_narenas != _narenas[which]) {
+	if (BigHashMap_Arena **new_a = new BigHashMap_Arena *[new_narenas]) {
+	    for (int i = 0; i < new_narenas; i++)
+		new_a[i] = (i < _narenas[which] ? _arenas[which][i] : (BigHashMap_Arena *)0);
+	    delete[] _arenas[which];
+	    _arenas[which] = new_a;
+	    _narenas[which] = new_narenas;
+	} else
+	    return 0;
+    }
+
+    if (!_arenas[which][arenanum]
+	&& !(_arenas[which][arenanum] = new BigHashMap_Arena(arenanum << shifts[which])))
+	return 0;
+
+    return _arenas[which][arenanum];
 }
 
 CLICK_ENDDECLS

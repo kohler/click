@@ -116,7 +116,7 @@ class IPRw::Mapping { public:
     void apply(WritablePacket *);
 
     String s() const;
-  
+
   protected:
 
     IPFlowID _mapto;

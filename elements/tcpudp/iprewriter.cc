@@ -125,6 +125,10 @@ IPRewriter::initialize(ErrorHandler *)
   _udp_gc_timer.schedule_after_s(_udp_gc_interval);
   _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
 
+  // release memory to system on cleanup
+  _tcp_map.set_arena(router()->arena_factory());
+  _udp_map.set_arena(router()->arena_factory());
+  
   return 0;
 }
 

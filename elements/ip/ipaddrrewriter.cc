@@ -23,6 +23,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+#include <click/router.hh>
 CLICK_DECLS
 
 void
@@ -122,6 +123,10 @@ IPAddrRewriter::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+
+  // release memory to system on cleanup
+  _map.set_arena(router()->arena_factory());
+  
   return 0;
 }
 

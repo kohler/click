@@ -25,6 +25,7 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/bighashmap_arena.hh>
 
 int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
@@ -280,6 +281,9 @@ cleanup_module()
   click_logged_errh = syslog_errh = 0;
   
   printk("<1>click module exiting\n");
+
+  // HashMap
+  BigHashMap_ArenaFactory::static_cleanup();
   
   // String (after any operations that might create Strings)
   String::static_cleanup();

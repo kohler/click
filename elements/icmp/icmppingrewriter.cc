@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/router.hh>
 CLICK_DECLS
 
 ICMPPingRewriter::ICMPPingRewriter()
@@ -75,6 +76,11 @@ ICMPPingRewriter::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+
+  // release memory to system on cleanup
+  _request_map.set_arena(router()->arena_factory());
+  _reply_map.set_arena(router()->arena_factory());
+  
   return 0;
 }
 

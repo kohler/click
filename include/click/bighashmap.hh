@@ -1,7 +1,8 @@
 #ifndef CLICK_BIGHASHMAP_HH
 #define CLICK_BIGHASHMAP_HH
-#include <click/bighashmap_arena.hh>
 CLICK_DECLS
+class BigHashMap_Arena;
+class BigHashMap_ArenaFactory;
 
 // K AND V REQUIREMENTS:
 //
@@ -21,8 +22,10 @@ template <class K, class V>
 class BigHashMap { public:
   
   BigHashMap();
-  explicit BigHashMap(const V &);
+  explicit BigHashMap(const V &, BigHashMap_ArenaFactory * = 0);
   ~BigHashMap();
+
+  void set_arena(BigHashMap_ArenaFactory *);
   
   int size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
@@ -71,20 +74,12 @@ class BigHashMap { public:
   int _n;
   int _capacity;
 
-  Elt *_free;
-  int _free_arena;
-  BigHashMap_Arena **_arenas;
-  int _narenas;
-  int _arenas_cap;
+  BigHashMap_Arena *_arena;
 
-  void initialize();
+  void initialize(BigHashMap_ArenaFactory *);
   void resize0(int = -1);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
-
-  Elt *alloc();
-  Elt *slow_alloc();
-  void free(Elt *);
 
   enum { MAX_NBUCKETS = 32767 };
   
@@ -174,8 +169,10 @@ template <class K>
 class BigHashMap<K, void *> { public:
 
   BigHashMap();
-  explicit BigHashMap(void *);
+  explicit BigHashMap(void *, BigHashMap_ArenaFactory * = 0);
   ~BigHashMap();
+  
+  void set_arena(BigHashMap_ArenaFactory *);
   
   int nbuckets() const			{ return _nbuckets; }
   int size() const			{ return _n; }
@@ -225,20 +222,12 @@ class BigHashMap<K, void *> { public:
   int _n;
   int _capacity;
 
-  Elt *_free;
-  int _free_arena;
-  BigHashMap_Arena **_arenas;
-  int _narenas;
-  int _arenas_cap;
+  BigHashMap_Arena *_arena;
 
-  void initialize();
+  void initialize(BigHashMap_ArenaFactory *);
   void resize0(int = -1);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
-
-  Elt *alloc();
-  Elt *slow_alloc();
-  void free(Elt *);
 
   enum { MAX_NBUCKETS = 32767 };
   
@@ -331,8 +320,11 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   typedef BigHashMap<K, void *> inherited;
   
   BigHashMap()				: inherited() { }
-  explicit BigHashMap(T *def)		: inherited(def) { }
+  explicit BigHashMap(T *def, BigHashMap_ArenaFactory *factory = 0)
+					: inherited(def, factory) { }
   ~BigHashMap()				{ }
+  
+  void set_arena(BigHashMap_ArenaFactory *af) { inherited::set_arena(af); }
   
   int nbuckets() const			{ return inherited::nbuckets(); }
   int size() const			{ return inherited::size(); }

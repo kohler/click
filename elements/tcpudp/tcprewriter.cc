@@ -24,6 +24,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+#include <click/router.hh>
 CLICK_DECLS
 
 // TCPMapping
@@ -201,6 +202,10 @@ TCPRewriter::initialize(ErrorHandler *)
   _tcp_gc_timer.schedule_after_s(_tcp_gc_interval);
   _tcp_done_gc_timer.initialize(this);
   _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
+
+  // release memory to system on cleanup
+  _tcp_map.set_arena(router()->arena_factory());
+  
   _nmapping_failures = 0;
   return 0;
 }

@@ -18,6 +18,7 @@
 CLICK_DECLS
 class ElementFilter;
 class RouterThread;
+class BigHashMap_ArenaFactory;
 
 class Router { public:
 
@@ -114,6 +115,7 @@ class Router { public:
   void *set_attachment(const String &, void *);
 
   ErrorHandler *chatter_channel(const String &) const;
+  BigHashMap_ArenaFactory *arena_factory() const;
 
   void unparse(StringAccum &, const String & = String()) const;
   void unparse_requirements(StringAccum &, const String & = String()) const;
@@ -218,6 +220,8 @@ class Router { public:
   Vector<void *> _attachments;
   
   Element *_root_element;
+
+  BigHashMap_ArenaFactory *_arena_factory;
   
   Router(const Router &);
   Router &operator=(const Router &);
@@ -398,6 +402,12 @@ inline void
 Router::run_timers()
 {
   _timer_list.run();
+}
+
+inline BigHashMap_ArenaFactory *
+Router::arena_factory() const
+{
+  return _arena_factory;
 }
 
 CLICK_ENDDECLS

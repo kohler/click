@@ -20,13 +20,14 @@
 
 CLICK_ENDDECLS
 #include <click/bighashmap.hh>
+#include <click/bighashmap_arena.hh>
 CLICK_DECLS
 
 #define BIGHASHMAP_REARRANGE_ON_FIND 1
 
 template <class K, class V>
 void
-BigHashMap<K, V>::initialize()
+BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory)
 {
   _buckets = new Elt *[127];
   _nbuckets = 127;
@@ -36,25 +37,21 @@ BigHashMap<K, V>::initialize()
 
   _n = 0;
 
-  _free = 0;
-  _free_arena = -1;
-  _arenas = new BigHashMap_Arena *[4];
-  _narenas = 0;
-  _arenas_cap = 4;
+  set_arena(factory);
 }
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap()
   : _default_v()
 {
-  initialize();
+  initialize(0);
 }
 
 template <class K, class V>
-BigHashMap<K, V>::BigHashMap(const V &def)
+BigHashMap<K, V>::BigHashMap(const V &def, BigHashMap_ArenaFactory *factory)
   : _default_v(def)
 {
-  initialize();
+  initialize(factory);
 }
 
 template <class K, class V>
@@ -66,9 +63,6 @@ BigHashMap<K, V>::~BigHashMap()
       e->v.~V();
     }
   delete[] _buckets;
-  for (int i = 0; i < _narenas; i++)
-    BigHashMap_Arena::delete_arena(_arenas[i]);
-  delete[] _arenas;
 }
 
 template <class K, class V>
@@ -79,55 +73,12 @@ BigHashMap<K, V>::set_dynamic_resizing(bool on)
 }
 
 template <class K, class V>
-BigHashMap<K, V>::Elt *
-BigHashMap<K, V>::slow_alloc()
+void
+BigHashMap<K, V>::set_arena(BigHashMap_ArenaFactory *factory)
 {
-  // XXX malloc failures
-  while (_free_arena >= 0 && _free_arena < _narenas) {
-    Elt *e = reinterpret_cast<Elt *>(_arenas[_free_arena]->alloc(sizeof(Elt)));
-    if (e) return e;
-    _free_arena++;
-  }
-
-  // add an Arena
-  if (_narenas >= _arenas_cap) {
-    _arenas_cap *= 2;
-    BigHashMap_Arena **new_arenas = new BigHashMap_Arena *[_arenas_cap];
-    memcpy(new_arenas, _arenas, sizeof(BigHashMap_Arena *) * _narenas);
-    delete[] _arenas;
-    _arenas = new_arenas;
-  }
-
-  BigHashMap_Arena *new_arena = BigHashMap_Arena::new_arena(sizeof(Elt));
-  if (new_arena) {
-    _arenas[_narenas++] = new_arena;
-    _free_arena = _narenas - 1;
-    return reinterpret_cast<Elt *>(new_arena->alloc(sizeof(Elt)));
-  } else
-    return 0;
+  assert(empty());
+  _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
 }
-
-template <class K, class V>
-inline BigHashMap<K, V>::Elt *
-BigHashMap<K, V>::alloc()
-{
-  if (_free) {
-    Elt *e = _free;
-    _free = e->next;
-    return e;
-  } else {
-    return slow_alloc();
-  }
-}
-
-template <class K, class V>
-inline void
-BigHashMap<K, V>::free(Elt *e)
-{
-  e->next = _free;
-  _free = e;
-}
-
 
 template <class K, class V>
 inline int
@@ -216,7 +167,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
     resize0(((_nbuckets + 1) << 1) - 1);
     b = bucket(key);
   }
-  Elt *e = alloc();
+  Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
   new(reinterpret_cast<void *>(&e->key)) K(key);
   new(reinterpret_cast<void *>(&e->v)) V(value);
   e->next = _buckets[b];
@@ -243,7 +194,7 @@ BigHashMap<K, V>::remove(const K &key)
       _buckets[b] = e->next;
     e->key.~K();
     e->v.~V();
-    free(e);
+    _arena->free(e);
     _n--;
     return true;
   } else
@@ -258,7 +209,7 @@ BigHashMap<K, V>::findp_force(const K &key)
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return &e->v;
-  if (Elt *e = alloc()) {
+  if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     new(reinterpret_cast<void *>(&e->v)) V(_default_v);
     e->next = _buckets[b];
@@ -274,28 +225,26 @@ void
 BigHashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
-    for (Elt *e = _buckets[i]; e; e = e->next) {
+    for (Elt *e = _buckets[i]; e; ) {
+      Elt *next = e->next;
       e->key.~K();
       e->v.~V();
+      _arena->free(e);
+      e = next;
     }
     _buckets[i] = 0;
   }
-  _free = 0;
   _n = 0;
-  for (int i = 0; i < _narenas; i++)
-    _arenas[i]->clear();
-  _free_arena = (_narenas > 0 ? 0 : -1);
-  // click_chatter("clear: %d arenas, free at %d", _narenas, _free_arena);
 }
 
 template <class K, class V>
 void
 BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
 {
-  Elt **t_elts, *t_elt;
+  Elt **t_elts;
   V t_v;
   int t_int;
-  BigHashMap_Arena **t_arenas;
+  BigHashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
@@ -304,11 +253,7 @@ BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
   t_int = _n; _n = o._n; o._n = t_int;
   t_int = _capacity; _n = o._capacity; o._capacity = t_int;
 
-  t_elt = _free; _free = o._free; o._free = t_elt;
-  t_int = _free_arena; _free_arena = o._free_arena; o._free_arena = t_int;
-  t_arenas = _arenas; _arenas = o._arenas; o._arenas = t_arenas;
-  t_int = _narenas; _narenas = o._narenas; o._narenas = t_int;
-  t_int = _arenas_cap; _arenas_cap = o._arenas_cap; o._arenas_cap = t_int;
+  t_arena = _arena; _arena = o._arena; o._arena = t_arena;
 }
 
 template <class K, class V>
@@ -383,7 +328,7 @@ BigHashMap_qsort_elts(void **elts, int left, int right)
 
 template <class K>
 void
-BigHashMap<K, void *>::initialize()
+BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory)
 {
   _buckets = new Elt *[127];
   _nbuckets = 127;
@@ -393,25 +338,21 @@ BigHashMap<K, void *>::initialize()
 
   _n = 0;
 
-  _free = 0;
-  _free_arena = -1;
-  _arenas = new BigHashMap_Arena *[4];
-  _narenas = 0;
-  _arenas_cap = 4;
+  set_arena(factory);
 }
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap()
   : _default_v(0)
 {
-  initialize();
+  initialize(0);
 }
 
 template <class K>
-BigHashMap<K, void *>::BigHashMap(void *def)
+BigHashMap<K, void *>::BigHashMap(void *def, BigHashMap_ArenaFactory *factory)
   : _default_v(def)
 {
-  initialize();
+  initialize(factory);
 }
 
 template <class K>
@@ -421,9 +362,6 @@ BigHashMap<K, void *>::~BigHashMap()
     for (Elt *e = _buckets[i]; e; e = e->next)
       e->key.~K();
   delete[] _buckets;
-  for (int i = 0; i < _narenas; i++)
-    BigHashMap_Arena::delete_arena(_arenas[i]);
-  delete[] _arenas;
 }
 
 template <class K>
@@ -434,55 +372,12 @@ BigHashMap<K, void *>::set_dynamic_resizing(bool on)
 }
 
 template <class K>
-BigHashMap<K, void *>::Elt *
-BigHashMap<K, void *>::slow_alloc()
+void
+BigHashMap<K, void *>::set_arena(BigHashMap_ArenaFactory *factory)
 {
-  // XXX malloc failures
-  while (_free_arena >= 0 && _free_arena < _narenas) {
-    Elt *e = reinterpret_cast<Elt *>(_arenas[_free_arena]->alloc(sizeof(Elt)));
-    if (e) return e;
-    _free_arena++;
-  }
-
-  // add an Arena
-  if (_narenas >= _arenas_cap) {
-    _arenas_cap *= 2;
-    BigHashMap_Arena **new_arenas = new BigHashMap_Arena *[_arenas_cap];
-    memcpy(new_arenas, _arenas, sizeof(BigHashMap_Arena *) * _narenas);
-    delete[] _arenas;
-    _arenas = new_arenas;
-  }
-
-  BigHashMap_Arena *new_arena = BigHashMap_Arena::new_arena(sizeof(Elt));
-  if (new_arena) {
-    _arenas[_narenas++] = new_arena;
-    _free_arena = _narenas - 1;
-    return reinterpret_cast<Elt *>(new_arena->alloc(sizeof(Elt)));
-  } else
-    return 0;
+  assert(empty());
+  _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
 }
-
-template <class K>
-inline BigHashMap<K, void *>::Elt *
-BigHashMap<K, void *>::alloc()
-{
-  if (_free) {
-    Elt *e = _free;
-    _free = e->next;
-    return e;
-  } else {
-    return slow_alloc();
-  }
-}
-
-template <class K>
-inline void
-BigHashMap<K, void *>::free(Elt *e)
-{
-  e->next = _free;
-  _free = e;
-}
-
 
 template <class K>
 inline int
@@ -571,7 +466,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
     resize0(((_nbuckets + 1) << 1) - 1);
     b = bucket(key);
   }
-  Elt *e = alloc();
+  Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
   new(reinterpret_cast<void *>(&e->key)) K(key);
   e->v = value;
   e->next = _buckets[b];
@@ -597,7 +492,7 @@ BigHashMap<K, void *>::remove(const K &key)
     else
       _buckets[b] = e->next;
     e->key.~K();
-    free(e);
+    _arena->free(e);
     _n--;
     return true;
   } else
@@ -612,7 +507,7 @@ BigHashMap<K, void *>::findp_force(const K &key)
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return &e->v;
-  if (Elt *e = alloc()) {
+  if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     e->v = _default_v;
     e->next = _buckets[b];
@@ -628,26 +523,25 @@ void
 BigHashMap<K, void *>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
-    for (Elt *e = _buckets[i]; e; e = e->next)
+    for (Elt *e = _buckets[i]; e; ) {
+      Elt *next = e->next;
       e->key.~K();
+      _arena->free(e);
+      e = next;
+    }
     _buckets[i] = 0;
   }
-  _free = 0;
   _n = 0;
-  for (int i = 0; i < _narenas; i++)
-    _arenas[i]->clear();
-  _free_arena = (_narenas > 0 ? 0 : -1);
-  // click_chatter("clear: %d arenas, free at %d", _narenas, _free_arena);
 }
 
 template <class K>
 void
 BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
 {
-  Elt **t_elts, *t_elt;
+  Elt **t_elts;
   void *t_v;
   int t_int;
-  BigHashMap_Arena **t_arenas;
+  BigHashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
@@ -656,11 +550,7 @@ BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
   t_int = _n; _n = o._n; o._n = t_int;
   t_int = _capacity; _n = o._capacity; o._capacity = t_int;
 
-  t_elt = _free; _free = o._free; o._free = t_elt;
-  t_int = _free_arena; _free_arena = o._free_arena; o._free_arena = t_int;
-  t_arenas = _arenas; _arenas = o._arenas; o._arenas = t_arenas;
-  t_int = _narenas; _narenas = o._narenas; o._narenas = t_int;
-  t_int = _arenas_cap; _arenas_cap = o._arenas_cap; o._arenas_cap = t_int;
+  t_arena = _arena; _arena = o._arena; o._arena = t_arena;
 }
 
 

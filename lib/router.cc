@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <click/subvector.hh>
 #include <click/timer.hh>
+#include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
 #include <click/standard/drivermanager.hh>
 #include <stdarg.h>
@@ -46,7 +47,8 @@ static int globalh_cap;
 Router::Router()
   : _preinitialized(false), _initialized(false), _initialize_attempted(false),
     _cleaned(false), _have_connections(false), _have_hookpidx(false),
-    _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0)
+    _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
+    _arena_factory(new BigHashMap_ArenaFactory)
 {
   _refcount = 0;
   _driver_runcount = 0;
@@ -58,7 +60,6 @@ Router::Router()
   _clickinst = 0;
   _siminst = 0;
 #endif
-
 }
 
 Router::~Router()
@@ -93,6 +94,8 @@ Router::~Router()
   
   delete _root_element;
   delete[] _handlers;
+
+  delete _arena_factory;
 }
 
 void
