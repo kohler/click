@@ -526,9 +526,9 @@ IPClassifier::push(int, Packet *p)
     int off = ex[pos].offset;
     unsigned data;
     if (off >= TRANSP_FAKE_OFFSET)
-      data = *((unsigned *)transph_data + off - TRANSP_FAKE_OFFSET);
+      data = *(unsigned *)(transph_data + off - TRANSP_FAKE_OFFSET);
     else
-      data = *((unsigned *)neth_data + off);
+      data = *(unsigned *)(neth_data + off);
     if ((data & ex[pos].mask.u)	== ex[pos].value.u)
       pos = ex[pos].yes;
     else
