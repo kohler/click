@@ -72,6 +72,10 @@ String cp_unparse_unsigned64(uint64_t, int base, bool uppercase);
 #endif
 String cp_unparse_real2(int32_t, int frac_bits);
 String cp_unparse_real2(uint32_t, int frac_bits);
+#ifdef HAVE_INT64_TYPES
+String cp_unparse_real2(int64_t, int frac_bits);
+String cp_unparse_real2(uint64_t, int frac_bits);
+#endif
 String cp_unparse_real10(int32_t, int frac_digits);
 String cp_unparse_real10(uint32_t, int frac_digits);
 String cp_unparse_milliseconds(uint32_t);

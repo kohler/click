@@ -2935,6 +2935,26 @@ cp_unparse_real2(int32_t real, int frac_bits)
     return cp_unparse_real2(static_cast<uint32_t>(real), frac_bits);
 }
 
+#ifdef HAVE_INT64_TYPES
+String
+cp_unparse_real2(uint64_t real, int frac_bits)
+{
+  assert(frac_bits <= CP_REAL2_MAX_FRAC_BITS);
+  String int_part = cp_unparse_unsigned64(real >> frac_bits, 10, false);
+  String frac_part = cp_unparse_real2((uint32_t)(real & ((1 << CP_REAL2_MAX_FRAC_BITS) - 1)), frac_bits);
+  return int_part + frac_part.substring(1);
+}
+
+String
+cp_unparse_real2(int64_t real, int frac_bits)
+{
+  if (real < 0)
+    return "-" + cp_unparse_real2(static_cast<uint64_t>(-real), frac_bits);
+  else
+    return cp_unparse_real2(static_cast<uint64_t>(real), frac_bits);
+}
+#endif
+
 String
 cp_unparse_real10(uint32_t real, int frac_digits)
 {
