@@ -70,6 +70,9 @@ class CounterFlood : public Element {
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
+  static String static_print_packets(Element *e, void *);
+  String print_packets();
+
   void push(int, Packet *);
 
   void add_handlers();
@@ -84,6 +87,7 @@ private:
     int _num_rx;
     struct timeval _first_rx;
     bool _forwarded;
+    bool _actually_sent;
     Timer *t;
     struct timeval _to_send;
 

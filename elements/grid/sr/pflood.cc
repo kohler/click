@@ -137,7 +137,7 @@ PFlood::forward(Broadcast *bcast) {
     memcpy(pk->data(), pk_in->data(), pk_in->data_len());
     pk->set_data_len(pk_in->data_len());
   }
-  bcast->_forwarded = true;
+  bcast->_actually_sent = true;
   _packets_tx++;
   
   eh->ether_type = htons(_et);
@@ -159,9 +159,8 @@ PFlood::forward_hook()
 	/* we haven't forwarded this packet yet */
 	if (random() % 100 <= _p) {
 	  forward(&_packets[x]);
-	} else {
-	  _packets[x]._forwarded = true;
-	}
+	} 
+	_packets[x]._forwarded = true;
       }
     }
   }
@@ -201,7 +200,8 @@ PFlood::push(int port, Packet *p_in)
     _packets[index]._p = p_in;
     _packets[index]._num_rx = 0;
     _packets[index]._first_rx = now;
-    _packets[index]._forwarded = false;
+    _packets[index]._forwarded = true;
+    _packets[index]._actually_sent = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
     forward(&_packets[index]);
@@ -231,6 +231,7 @@ PFlood::push(int port, Packet *p_in)
       _packets[index]._num_rx = 1;
       _packets[index]._first_rx = now;
       _packets[index]._forwarded = false;
+      _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
 
       /* schedule timer */
@@ -298,11 +299,36 @@ PFlood::static_print_debug(Element *f, void *)
   sa << d->_debug << "\n";
   return sa.take_string();
 }
+
+String
+PFlood::print_packets()
+{
+  StringAccum sa;
+  for (int x = 0; x < _packets.size(); x++) {
+    sa << "seq " << _packets[x]._seq;
+    sa << " originated " << _packets[x]._originated;
+    sa << " num_rx " << _packets[x]._num_rx;
+    sa << " first_rx " << _packets[x]._first_rx;
+    sa << " forwarded " << _packets[x]._forwarded;
+    sa << " actually_sent " << _packets[x]._actually_sent;
+    sa << " to_send " << _packets[x]._to_send;
+    sa << "\n";
+  }
+  return sa.take_string();
+}
+String
+PFlood::static_print_packets(Element *f, void *)
+{
+  PFlood *d = (PFlood *) f;
+  return d->print_packets();
+}
+
 void
 PFlood::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
+  add_read_handler("packets", static_print_packets, 0);
 
   add_write_handler("debug", static_write_debug, 0);
 }

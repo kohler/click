@@ -93,6 +93,11 @@ ETTMetric::take_state(Element *e, ErrorHandler *)
   if (!q) return;
   _links = q->_links;
 }
+
+Vector<IPAddress>
+ETTMetric::get_neighbors() {
+  return _ett_stat->get_neighbors();
+}
 int 
 ETTMetric::get_tx_rate(EtherAddress eth) 
 {
@@ -235,6 +240,17 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   click_gettimeofday(&now);
   
 
+  nfo->_fwd_small = fwd_small;
+  nfo->_fwd_1 = fwd_1;
+  nfo->_fwd_2 = fwd_2;
+  nfo->_fwd_5 = fwd_5;
+  nfo->_fwd_11 = fwd_11;
+
+  nfo->_rev_small = rev_small;
+  nfo->_rev_1 = rev_1;
+  nfo->_rev_2 = rev_2;
+  nfo->_rev_5 = rev_5;
+  nfo->_rev_11 = rev_11;
   
   nfo->_fwd = fwd;
   nfo->_rev = rev;
@@ -261,6 +277,34 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
 		    to.s().cc());
     }
   }
+}
+
+int
+ETTMetric::get_delivery_rate(int rate, IPAddress from, IPAddress to)
+{
+  struct timeval now;
+  click_gettimeofday(&now);
+  IPOrderedPair p = IPOrderedPair(from, to);
+  LinkInfo *nfo = _links.findp(p);
+  if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
+    switch (rate) {
+    case 0:
+      return p.first(from) ? nfo->_fwd_small : nfo->_rev_small;
+    case 1:
+      return p.first(from) ? nfo->_fwd_1 : nfo->_rev_1;
+    case 2:
+      return p.first(from) ? nfo->_fwd_2 : nfo->_rev_2;
+    case 5:
+      return p.first(from) ? nfo->_fwd_5 : nfo->_rev_5;
+    case 11:
+      return p.first(from) ? nfo->_fwd_11 : nfo->_rev_11;
+    default:
+      return 0;
+    }
+    return  p.first(_ip) ? nfo->_fwd : nfo->_rev;
+  }
+  return 0;
+
 }
 int 
 ETTMetric::get_fwd_metric(IPAddress ip)

@@ -123,6 +123,9 @@ public:
   IPAddress _ip;
   IPAddress reverse_arp(EtherAddress);
   void take_state(Element *, ErrorHandler *);
+  Vector<IPAddress> get_neighbors() {
+    return _neighbors;
+  }
 private:
   class ETTMetric *_ett_metric;
   class ARPTable *_arp_table;

@@ -74,7 +74,7 @@ public:
   int get_fwd_metric(IPAddress ip);
   int get_rev_metric(IPAddress ip);
 
-
+  Vector <IPAddress> get_neighbors();
   void update_link(IPAddress from, IPAddress to, 
 		   int fwd_small, int rev_small,
 		   int fwd_1, int rev_1,
@@ -82,6 +82,8 @@ public:
 		   int fwd_5, int rev_5,
 		   int fwd_11, int rev_11
 		   ); 
+
+  int ETTMetric::get_delivery_rate(int rate, IPAddress from, IPAddress to);
 
   int get_tx_rate(EtherAddress);
   void get_rate_and_tput(int *tput, int *rate, 
@@ -102,6 +104,19 @@ public:
     int _rev;
     int _fwd_rate;
     int _rev_rate;
+
+    int _fwd_small;
+    int _fwd_1;
+    int _fwd_2;
+    int _fwd_5;
+    int _fwd_11;
+
+
+    int _rev_small;
+    int _rev_1;
+    int _rev_2;
+    int _rev_5;
+    int _rev_11;
 
     struct timeval _last;
     LinkInfo() { }

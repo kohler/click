@@ -1,5 +1,5 @@
-#ifndef CLICK_PFLOOD_HH
-#define CLICK_PFLOOD_HH
+#ifndef CLICK_FLASHFLOOD_HH
+#define CLICK_FLASHFLOOD_HH
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
@@ -11,13 +11,13 @@
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
-#include "pflood.hh"
+#include "flashflood.hh"
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
 /*
  * =c
- * PFlood(ETHTYPE eth, IP ip, BCAST_IP ip, ETH eth, P int, 
+ * FlashFlood(ETHTYPE eth, IP ip, BCAST_IP ip, ETH eth, COUNT int, 
  *              MAX_DELAY int, 
  *              [DEBUG bool], [HISTORY int]);
  * =d
@@ -29,11 +29,11 @@ CLICK_DECLS
  *
  * =over 8
  *
- * =item P
+ * =item COUNT
  * 
- * value of 0 to 100 where P is the probability that this
- * element will forward any particular packet. It will only
- * forward it once.
+ * count of x indicates don't forward if you've recieved x packets
+ * Count of 0 indicates always forward
+ * Count of 1 indicates never forward; like a local broadcast
  * 
  * 
  * =item MAX_DELAY
@@ -50,16 +50,16 @@ CLICK_DECLS
  */
 
 
-class PFlood : public Element {
+class FlashFlood : public Element {
  public:
   
-  PFlood();
-  ~PFlood();
+  FlashFlood();
+  ~FlashFlood();
   
-  const char *class_name() const		{ return "PFlood"; }
+  const char *class_name() const		{ return "FlashFlood"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  PFlood *clone() const;
+  FlashFlood *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 
@@ -78,6 +78,7 @@ class PFlood : public Element {
   void add_handlers();
 private:
 
+  typedef HashMap<IPAddress, int> IPProbMap;
 
   class Broadcast {
   public:
@@ -87,9 +88,10 @@ private:
     int _num_rx;
     struct timeval _first_rx;
     bool _forwarded;
-    bool _actually_sent;
     Timer *t;
     struct timeval _to_send;
+
+    IPProbMap _neighbors;
 
     void del_timer() {
       if (t) {
@@ -117,7 +119,7 @@ private:
   int _packets_tx;
   int _packets_rx;
 
-  int _p;
+  int _count;
   int _max_delay_ms;
 
   int _history;
@@ -126,7 +128,7 @@ private:
   void forward_hook();
   void trim_packets();
   static void static_forward_hook(Timer *, void *e) { 
-    ((PFlood *) e)->forward_hook(); 
+    ((FlashFlood *) e)->forward_hook(); 
   }
 };
 

@@ -1,8 +1,8 @@
 /*
- * CounterFlood.{cc,hh} -- DSR implementation
+ * FlashFlood.{cc,hh} -- DSR implementation
  * John Bicket
  *
- * Copyright (c) 1999-2001 Massachuscounterfloods Institute of Technology
+ * Copyright (c) 1999-2001 Massachusflashfloods Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "counterflood.hh"
+#include "flashflood.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -26,7 +26,7 @@
 #include "srpacket.hh"
 CLICK_DECLS
 
-CounterFlood::CounterFlood()
+FlashFlood::FlashFlood()
   :  Element(2,2),
      _en(),
      _et(0),
@@ -40,13 +40,13 @@ CounterFlood::CounterFlood()
   _bcast = EtherAddress(bcast_addr);
 }
 
-CounterFlood::~CounterFlood()
+FlashFlood::~FlashFlood()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
+FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _debug = false;
@@ -78,20 +78,20 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-CounterFlood *
-CounterFlood::clone () const
+FlashFlood *
+FlashFlood::clone () const
 {
-  return new CounterFlood;
+  return new FlashFlood;
 }
 
 int
-CounterFlood::initialize (ErrorHandler *)
+FlashFlood::initialize (ErrorHandler *)
 {
   return 0;
 }
 
 void
-CounterFlood::forward(Broadcast *bcast) {
+FlashFlood::forward(Broadcast *bcast) {
   Packet *p_in = bcast->_p;
   click_ether *eh_in = (click_ether *) p_in->data();
   struct srpacket *pk_in = (struct srpacket *) (eh_in+1);
@@ -134,7 +134,7 @@ CounterFlood::forward(Broadcast *bcast) {
     memcpy(pk->data(), pk_in->data(), pk_in->data_len());
     pk->set_data_len(pk_in->data_len());
   }
-  bcast->_actually_sent = true;
+  bcast->_forwarded = true;
   _packets_tx++;
   
   eh->ether_type = htons(_et);
@@ -145,7 +145,7 @@ CounterFlood::forward(Broadcast *bcast) {
 }
 
 void
-CounterFlood::forward_hook() 
+FlashFlood::forward_hook() 
 {
   struct timeval now;
   click_gettimeofday(&now);
@@ -157,14 +157,13 @@ CounterFlood::forward_hook()
 	/* we haven't forwarded this packet yet */
 	forward(&_packets[x]);
       }
-      _packets[x]._forwarded= true;
     }
   }
 }
 
 
 void
-CounterFlood::trim_packets() {
+FlashFlood::trim_packets() {
   /* only keep track of the last _max_packets */
   while ((_packets.size() > _history)) {
     /* unschedule and remove packet*/
@@ -181,7 +180,7 @@ CounterFlood::trim_packets() {
   }
 }
 void
-CounterFlood::push(int port, Packet *p_in)
+FlashFlood::push(int port, Packet *p_in)
 {
   struct timeval now;
   click_gettimeofday(&now);
@@ -196,8 +195,7 @@ CounterFlood::push(int port, Packet *p_in)
     _packets[index]._p = p_in;
     _packets[index]._num_rx = 0;
     _packets[index]._first_rx = now;
-    _packets[index]._forwarded = true;
-    _packets[index]._actually_sent = false;
+    _packets[index]._forwarded = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
     forward(&_packets[index]);
@@ -227,7 +225,6 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._num_rx = 1;
       _packets[index]._first_rx = now;
       _packets[index]._forwarded = false;
-      _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
 
       /* schedule timer */
@@ -257,14 +254,14 @@ CounterFlood::push(int port, Packet *p_in)
 
 
 String
-CounterFlood::static_print_stats(Element *f, void *)
+FlashFlood::static_print_stats(Element *f, void *)
 {
-  CounterFlood *d = (CounterFlood *) f;
+  FlashFlood *d = (FlashFlood *) f;
   return d->print_stats();
 }
 
 String
-CounterFlood::print_stats()
+FlashFlood::print_stats()
 {
   StringAccum sa;
 
@@ -275,10 +272,10 @@ CounterFlood::print_stats()
 }
 
 int
-CounterFlood::static_write_debug(const String &arg, Element *e,
+FlashFlood::static_write_debug(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
-  CounterFlood *n = (CounterFlood *) e;
+  FlashFlood *n = (FlashFlood *) e;
   bool b;
 
   if (!cp_bool(arg, &b))
@@ -288,16 +285,16 @@ CounterFlood::static_write_debug(const String &arg, Element *e,
   return 0;
 }
 String
-CounterFlood::static_print_debug(Element *f, void *)
+FlashFlood::static_print_debug(Element *f, void *)
 {
   StringAccum sa;
-  CounterFlood *d = (CounterFlood *) f;
+  FlashFlood *d = (FlashFlood *) f;
   sa << d->_debug << "\n";
   return sa.take_string();
 }
 
 String
-CounterFlood::print_packets()
+FlashFlood::print_packets()
 {
   StringAccum sa;
   for (int x = 0; x < _packets.size(); x++) {
@@ -306,21 +303,20 @@ CounterFlood::print_packets()
     sa << " num_rx " << _packets[x]._num_rx;
     sa << " first_rx " << _packets[x]._first_rx;
     sa << " forwarded " << _packets[x]._forwarded;
-    sa << " actually_sent " << _packets[x]._actually_sent;
     sa << " to_send " << _packets[x]._to_send;
     sa << "\n";
   }
   return sa.take_string();
 }
 String
-CounterFlood::static_print_packets(Element *f, void *)
+FlashFlood::static_print_packets(Element *f, void *)
 {
-  CounterFlood *d = (CounterFlood *) f;
+  FlashFlood *d = (FlashFlood *) f;
   return d->print_packets();
 }
 
 void
-CounterFlood::add_handlers()
+FlashFlood::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
@@ -333,8 +329,8 @@ CounterFlood::add_handlers()
 #include <click/vector.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<CounterFlood::Broadcast>;
+template class Vector<FlashFlood::Broadcast>;
 #endif
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(CounterFlood)
+EXPORT_ELEMENT(FlashFlood)
