@@ -207,7 +207,7 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
-  timer->schedule_after_ms(1000);
+  timer->schedule_after_ms(5000);
 }
 
 IPRw::Mapping *
