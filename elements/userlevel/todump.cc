@@ -60,6 +60,9 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     String use_encap_from;
     _snaplen = 2000;
     _extra_length = true;
+#if CLICK_NS
+    bool per_node = false;
+#endif
   
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump filename", &_filename,
@@ -71,6 +74,9 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ENCAP", cpWord, "encapsulation type", &encap_type,
 		    "USE_ENCAP_FROM", cpArgument, "use encapsulation from elements", &use_encap_from,
 		    "EXTRA_LENGTH", cpBool, "record extra length?", &_extra_length,
+#if CLICK_NS
+		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
+#endif
 		    0) < 0)
 	return -1;
 
@@ -90,6 +96,16 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_encap_type = FAKE_DLT_EN10MB;
     else if ((_encap_type = fake_pcap_parse_dlt(encap_type)) < 0)
 	return errh->error("bad encapsulation type, expected `ETHER', `IP', or `FDDI'");
+
+#ifdef CLICK_NS
+    if (per_node) {
+	Router* myrouter = router();
+	simclick_sim mysiminst = myrouter->get_siminst();
+	char tmp[255];
+	simclick_sim_get_node_name(mysiminst,tmp,255);
+	_filename = String(tmp) + String("_") +  _filename;
+    }
+#endif
 
     return 0;
 }

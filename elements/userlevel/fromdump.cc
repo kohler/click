@@ -77,6 +77,9 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     timerclear(&last_time_off);
     timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
+#if CLICK_NS
+    bool per_node = false;
+#endif
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -95,6 +98,9 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
+#if CLICK_NS
+		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
+#endif
 		    0) < 0)
 	return -1;
 
@@ -145,6 +151,17 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     if (mmap)
 	errh->warning("`MMAP' is not supported on this platform");
 #endif
+
+#ifdef CLICK_NS
+    if (per_node) {
+	Router* myrouter = router();
+	simclick_sim mysiminst = myrouter->get_siminst();
+	char tmp[255];
+	simclick_sim_get_node_name(mysiminst,tmp,255);
+	_filename = String(tmp) + String("_") +  _filename;
+    }
+#endif
+
     _active = active;
     return 0;
 }
@@ -702,5 +719,5 @@ FromDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap)
+ELEMENT_REQUIRES(userlevel|ns FakePcap)
 EXPORT_ELEMENT(FromDump)

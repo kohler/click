@@ -338,7 +338,7 @@ SimState::simmain(simclick_sim siminst,const char *router_file)
   int cookie = lexer->begin_parse(config_str, router_file, &lextra);
   while (lexer->ystatement())
     /* do nothing */;
-  newstate->router = lexer->create_router(newstate);
+  newstate->router = lexer->create_router();
   newstate->router->set_clickinst((simclick_click)newstate);
   newstate->router->set_siminst(siminst);
   lexer->end_parse(cookie);

@@ -32,11 +32,20 @@ CLICK_DECLS
 
 #define DEBUG_RT_SCHED		0
 
+#ifdef CLICK_NS
+#define DRIVER_TASKS_PER_ITER 256
+#else
 #define DRIVER_TASKS_PER_ITER	128
+#endif
 #define PROFILE_ELEMENT		20
 
+#ifdef CLICK_NS
+#define DRIVER_ITER_ANY		1
+#define DRIVER_ITER_TIMERS	1
+#else
 #define DRIVER_ITER_ANY		32
 #define DRIVER_ITER_TIMERS	32
+#endif
 #define DRIVER_ITER_SELECT	64
 #define DRIVER_ITER_LINUXSCHED	256
 #define DRIVER_ITER_BSDSCHED	256
@@ -204,8 +213,15 @@ RouterThread::driver()
       iter++;
       if (iter % DRIVER_ITER_ANY == 0)
 	wait(iter);
+#ifdef CLICK_NS
+      // The simulator layer should only go once around
+      break;
+#endif
     }
-
+#ifdef CLICK_NS
+    // The simulator layer should only go once around
+    break;
+#endif
   } while (_router->check_driver());
 
   unlock_tasks();
@@ -258,8 +274,20 @@ RouterThread::wait(int iter)
     lock_tasks();
   }
 
-  if (iter % DRIVER_ITER_TIMERS == 0)
-    router()->run_timers();
+  if (iter % DRIVER_ITER_TIMERS == 0) {
+      router()->run_timers();
+#ifdef CLICK_NS
+      // If there's another timer, tell the simulator to make us
+      // run when it's due to go off.
+      struct timeval now, nextdelay, nexttime;
+      if (router()->timer_list()->get_next_delay(&nextdelay)) {
+	click_gettimeofday(&now);
+	timeradd(&now,&nextdelay,&nexttime);
+	simclick_sim_schedule(router()->get_siminst(),
+			      router()->get_clickinst(),&nexttime);
+      }
+#endif
+  }
 }
 
 void
@@ -271,5 +299,4 @@ RouterThread::unschedule_all_tasks()
     t->fast_unschedule();
   unlock_tasks();
 }
-
 CLICK_ENDDECLS

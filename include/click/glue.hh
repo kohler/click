@@ -60,13 +60,17 @@ CLICK_CXX_UNPROTECT
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <sys/time.h>
+# ifdef CLICK_NS
+# include "simclick.h"
+# endif
 
 #endif
 
 
 // DEBUGGING OUTPUT
-
+CLICK_DECLS
 void click_chatter(const char *fmt, ...);
+CLICK_ENDDECLS
 
 
 // DEBUG MALLOC
@@ -81,7 +85,9 @@ extern int click_dmalloc_where;
 
 // RANDOMNESS
 
+CLICK_DECLS
 extern void click_random_srandom(); // srand(), but use true randomness
+CLICK_ENDDECLS
 
 #if CLICK_LINUXMODULE
 extern "C" {
@@ -197,8 +203,14 @@ typedef struct device net_device;
 # define click_jiffies()		((unsigned)ticks)
 # define CLICK_HZ			hz
 #else
+#ifndef CLICK_NS
 # define click_gettimeofday(tvp)	(gettimeofday(tvp, (struct timezone *)0))
+#else
+# define click_gettimeofday(tvp)	(simclick_gettimeofday(tvp))
+#endif
+CLICK_DECLS
 unsigned click_jiffies();
+CLICK_ENDDECLS
 # define CLICK_HZ			100
 #endif
 
@@ -355,11 +367,13 @@ click_get_cycles()
 
 # else
 
+CLICK_DECLS
 inline uint64_t
 click_get_cycles()
 {
   return 0;
 }
+CLICK_ENDDECLS
 
 # endif
 #endif

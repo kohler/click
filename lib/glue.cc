@@ -86,7 +86,7 @@ click_check_header_sizes()
 CLICK_USING_DECLS
 
 void
-click_chatter(const char *fmt, ...)
+CLICK_NAME(click_chatter)(const char *fmt, ...)
 {
   va_list val;
   va_start(val, fmt);
@@ -418,7 +418,7 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 # endif
 
 unsigned
-click_jiffies()
+CLICK_NAME(click_jiffies)()
 {
   struct timeval tv;
   click_gettimeofday(&tv);
@@ -575,4 +575,5 @@ size_t strlen(const char * s)
     return sc - s;
 }
 }
+
 #endif

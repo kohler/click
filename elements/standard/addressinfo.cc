@@ -62,7 +62,30 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	_as.push_back(Info());
       }
       Info &a = _as[_map[name]];
+#ifdef CLICK_NS
+      // Maybe get info from the simulator...
+      String simif = parts[1];
+      String simip;
+      String simeth;
+      const char* simsuffix = ":simnet";
+      Router* myrouter = router();
+      simclick_sim mysiminst = myrouter->get_siminst();
 
+      int colon = simif.find_right(':');
+      if ((colon >= 0) && (simif.substring(colon).lower() == simsuffix)) {
+	parts.pop_back();
+	char tmp[255];
+	
+	simif = simif.substring(0,colon);
+	simclick_sim_ipaddr_from_name(mysiminst,simif,tmp,255);
+	simip = tmp;
+	simclick_sim_macaddr_from_name(mysiminst,simif,tmp,255);
+	simeth = tmp;
+
+	parts.push_back(simip);
+	parts.push_back(simeth);
+      }
+#endif
       for (int j = 1; j < parts.size(); j++)
 	if (cp_ip_address(parts[j], &scrap.ip.c[0])) {
 	  if ((a.have & INFO_IP) && scrap.ip.u != a.ip.u)

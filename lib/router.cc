@@ -33,6 +33,10 @@
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
 #endif
+#ifdef CLICK_NS
+#include "../elements/ns/fromsimdevice.hh"
+#endif
+
 CLICK_DECLS
 
 static Router::Handler *globalh;
@@ -49,6 +53,12 @@ Router::Router()
   // RouterThreads will add themselves to _threads
   (void) new RouterThread(this);	// quiescent thread
   (void) new RouterThread(this);	// first normal thread
+
+#ifdef CLICK_NS
+  _clickinst = 0;
+  _siminst = 0;
+#endif
+
 }
 
 Router::~Router()
@@ -1417,7 +1427,7 @@ Router::run_selects(bool more_tasks)
 
   fd_set read_mask = _read_select_fd_set;
   fd_set write_mask = _write_select_fd_set;
-  
+
   // never wait if anything is scheduled; otherwise, if no timers, block
   // indefinitely.
   struct timeval wait, *wait_ptr = &wait;
@@ -1426,6 +1436,10 @@ Router::run_selects(bool more_tasks)
     wait.tv_sec = wait.tv_usec = 0;
   else if (!timers)
     wait_ptr = 0;
+#ifdef CLICK_NS
+  // Never block if we're running in the simulator.
+  wait.tv_sec = wait.tv_usec = 0;
+#endif
 
   int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
   
@@ -1636,9 +1650,64 @@ Router::element_ports_string(int ei) const
   return sa.take_string();
 }
 
+
+#ifdef CLICK_NS
+
+int
+Router::sim_get_ifid(const char* ifname) {
+  return simclick_sim_ifid_from_name(_siminst,ifname);
+}
+
+int
+Router::sim_listen(int ifid,int element) {
+  int result = 0;
+
+  // Got a vector for the ifid? Add the element to it
+  // if it isn't there already.
+  int n = _ifidmap[ifid].size();
+  int i = 0;
+  for (i=0;i<n;i++) {
+    if (element == _ifidmap[ifid][i]) {
+      break;
+    }
+  }
+
+  if (i>=n) {
+    //fprintf(stderr,"router %d element %d listening to ifid %d\n",(int)this,element,ifid);
+    _ifidmap[ifid].push_back(element);
+  }
+  return result;
+}
+
+int
+Router::sim_write(int ifid,int ptype,const unsigned char* data,int len,
+		     simclick_simpacketinfo* pinfo) {
+  return simclick_sim_send_to_if(_siminst,_clickinst,ifid,ptype,data,len,pinfo);
+}
+
+int
+Router::sim_if_ready(int ifid) {
+  return simclick_sim_if_ready(_siminst,_clickinst,ifid);
+}
+
+int
+Router::sim_incoming_packet(int ifid,int ptype,const unsigned char* data,
+			       int len,simclick_simpacketinfo* pinfo) {
+  int result = 0;
+  vector<int> ifidlist = _ifidmap[ifid];
+  int n = ifidlist.size();
+  int i = 0;
+  for (i=0;i<n;i++) {
+    // XXX Should really use rtti casting
+    ((FromSimDevice*)element(ifidlist[i]))->incoming_packet(ifid,ptype,data,
+							    len,pinfo);
+  }
+  return result;
+}
+#endif // CLICK_NS
+
 #if CLICK_USERLEVEL
 // Vector template instance
 # include <click/vector.cc>
 #endif
-
 CLICK_ENDDECLS
