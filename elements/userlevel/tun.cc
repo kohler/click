@@ -63,7 +63,7 @@ Tun::initialize(ErrorHandler *errh)
     return -1;
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
-  add_select(_fd, SELECT_READ | SELECT_WRITE);
+  add_select(_fd, SELECT_READ);
   return 0;
 }
 
@@ -73,7 +73,7 @@ Tun::uninitialize()
   unschedule();
   if (_fd >= 0) {
     close(_fd);
-    remove_select(_fd, SELECT_READ | SELECT_WRITE);
+    remove_select(_fd, SELECT_READ);
   }
 }
 
@@ -97,7 +97,7 @@ Tun::selected(int fd)
 #endif
     output(0).push(p);
   } else {
-    if (errno != EAGAIN)
+    //    if (errno != EAGAIN)
       perror("Tun read");
   }
 }
