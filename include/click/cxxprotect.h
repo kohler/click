@@ -5,6 +5,9 @@
 #define class		xxx_class
 #define virtual		xxx_virtual
 #define typename	xxx_typename
+#define private		xxx_private
+#define protected	xxx_protected
+#define public		xxx_public
 #endif
 
 #ifndef CLICK_CXX_PROTECT
