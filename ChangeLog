@@ -1,3 +1,16 @@
+2003-08-08 Friday 15:32  Eddie Kohler <kohler@icir.org>
+
+	* lib/lexer.cc (1.67): nit
+
+2003-08-08 Friday 14:56  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/config.cc (1.8), include/click/lexer.hh (1.14),
+	lib/lexer.cc (1.66), linuxmodule/config.cc (1.10), ns/nsclick.cc
+	(1.13): fix bugs with new lexer plan: must be careful of "scope"
+	even when a new element type is "scopeless". Solution: add a bit to
+	_element_type_next indicating whether or not a given type was
+	scoped.
+
 2003-08-08 Friday 13:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* README (1.38): changed my name!
