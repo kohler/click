@@ -60,8 +60,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static int e1000_debug_level = E1000_DEBUG_DEFAULT;
 
 /* global defines */
-#define MAX_TCB      80            /* number of transmit descriptors */
-#define MAX_RFD      80            /* number of receive descriptors */
+#define MAX_TCB      256            /* number of transmit descriptors */
+#define MAX_RFD      256            /* number of receive descriptors */
 
 /* includes */
 #ifdef MODULE
@@ -3467,6 +3467,7 @@ e1000_sw_init(bd_config_t * bdp)
         (~(REQ_RX_DESCRIPTOR_MULTIPLE - 1));
 
     Adapter->NumRxDescriptors = RxDescriptors[Adapter->bd_number];
+    printk("adapter: %d rx descriptors\n", Adapter->NumRxDescriptors);
 
     if(!(Adapter->RxSkBuffs =
          (struct sk_buff **) malloc_contig(sizeof(struct sk_buff *) *
