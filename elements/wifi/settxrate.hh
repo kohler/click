@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <elements/wifi/autotxrate.hh>
-#include <elements/grid/sr/ettmetric.hh>
+#include <elements/wifi/sr/ettmetric.hh>
 CLICK_DECLS
 
 /*

@@ -52,18 +52,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  switch (_rate) {
-  case 0:
-    /* fallthrough */
-  case 1:
-    /* fallthrough */
-  case 2:
-    /* fallthrough */
-  case 5:
-    /* fallthrough */
-  case 11:
-    break;
-  default:
+  if (_rate < 0) {
     return errh->error("RATE must be 0, 1,2,5, or 11");
   }
 
@@ -127,18 +116,8 @@ SetTXRate::rate_write_handler(const String &arg, Element *e,
 
   if (!cp_integer(arg, &b))
     return errh->error("`rate' must be an integer");
-  switch (b) {
-  case 0:
-    /* fallthrough */
-  case 1:
-    /* fallthrough */
-  case 2:
-    /* fallthrough */
-  case 5:
-    /* fallthrough */
-  case 11:
-    break;
-  default:
+
+  if (b < 0) {
     return errh->error("RATE must be 0, 1,2,5, or 11");
   }
   n->_rate = b;
