@@ -13,6 +13,9 @@ class StringAccum {
   
   bool grow(int);
   void erase()				{ _s = 0; _len = 0; _cap = 0; }
+
+  StringAccum(const StringAccum &);
+  StringAccum &operator=(const StringAccum &);
   
  public:
   
