@@ -1,3 +1,15 @@
+2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: support cpConfirmKeywords; clearer
+	documentation in the header file
+
+2002-06-10 Monday 19:54  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/element.cc: change task handler implementation to use
+	offsets instead of Task pointers as thunks; should reduce the
+	number of handlers required. Everyone cares so much.
+
 2002-06-09 Sunday 02:29  Eddie Kohler <kohler@icir.org>
 
 	* INSTALL: include patch for Linux 2.4.18

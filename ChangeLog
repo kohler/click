@@ -1,3 +1,29 @@
+2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromflandump.cc (1.1), fromflandump.hh (1.1):
+	begin work on FromFlanDump
+
+2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromdagdump.cc (1.7), fromdagdump.hh (1.5):
+	nitlets
+
+2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.31), lib/confparse.cc (1.100):
+	support cpConfirmKeywords; clearer documentation in the header file
+
+2002-06-10 Monday 19:54  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/pokehandlers.cc (1.26): allow "print" as a
+	substitute for "read"
+
+2002-06-10 Monday 19:54  Eddie Kohler <kohler@icir.org>
+
+	* lib/element.cc (1.69): change task handler implementation to use
+	offsets instead of Task pointers as thunks; should reduce the
+	number of handlers required. Everyone cares so much.
+
 2002-06-10 Monday 14:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.60), elements/grid/dsdvroutetable.cc (1.11),
