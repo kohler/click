@@ -1,3 +1,29 @@
+2001-02-24 Saturday 10:12  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: forceudp.cc, forceudp.hh: ForceUDP corrects the
+	UDP checksum.
+
+2001-02-24 Saturday 09:51  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: forcetcp.cc, forcetcp.hh: ForceTCP can set TCP
+	flags now.
+
+2001-02-24 Saturday 09:11  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/standard/: randomsource.cc, randomsource.hh: Make
+	RandomSource AGNOSTIC.
+
+2001-02-24 Saturday 09:05  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/ip/: setrandipaddress.cc, setrandipaddress.hh:
+	SetRandIPAddress creates a random dest IP annotation, according to
+	a given prefix.
+
+2001-02-24 Saturday 09:04  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: forceip.cc, forcetcp.cc, forcetcp.hh: Make
+	ForceIP set_ip_header().  Give ForceTCP an option to set dest port.
+
 2001-02-23 Friday 12:46  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: toytcp.cc, toytcp.hh: Re-start ToyTCP after an
