@@ -1,6 +1,6 @@
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/drivers/net/eepro100.c ./drivers/net/eepro100.c
---- ../x/linux-2.4.18-pure/drivers/net/eepro100.c	Mon Feb 25 11:37:59 2002
-+++ ./drivers/net/eepro100.c	Sun May 26 23:41:38 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/drivers/net/eepro100.c ./drivers/net/eepro100.c
+--- ../x/linux-2.4.18-pure/drivers/net/eepro100.c	2002-06-08 23:28:47.000000000 -0700
++++ ./drivers/net/eepro100.c	2002-05-26 23:41:38.000000000 -0700
 @@ -549,6 +549,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -524,9 +524,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
 +	return 0;
 +}
 +
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
---- ../x/linux-2.4.18-pure/drivers/net/tulip/interrupt.c	Fri Nov  9 13:45:35 2001
-+++ ./drivers/net/tulip/interrupt.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
+--- ../x/linux-2.4.18-pure/drivers/net/tulip/interrupt.c	2002-06-08 23:28:47.000000000 -0700
++++ ./drivers/net/tulip/interrupt.c	2002-05-26 23:34:57.000000000 -0700
 @@ -292,6 +292,10 @@
  }
  
@@ -883,9 +883,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
 +	*want = got;
 +	return skb_head;
  }
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/drivers/net/tulip/tulip_core.c ./drivers/net/tulip/tulip_core.c
---- ../x/linux-2.4.18-pure/drivers/net/tulip/tulip_core.c	Mon Feb 25 11:38:00 2002
-+++ ./drivers/net/tulip/tulip_core.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/drivers/net/tulip/tulip_core.c ./drivers/net/tulip/tulip_core.c
+--- ../x/linux-2.4.18-pure/drivers/net/tulip/tulip_core.c	2002-06-08 23:28:47.000000000 -0700
++++ ./drivers/net/tulip/tulip_core.c	2002-05-26 23:34:57.000000000 -0700
 @@ -251,6 +251,16 @@
  static void set_rx_mode(struct net_device *dev);
  
@@ -1120,9 +1120,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
 +	return 0;
 +}
 +
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/fs/proc/inode.c ./fs/proc/inode.c
---- ../x/linux-2.4.18-pure/fs/proc/inode.c	Sat Nov 17 11:24:32 2001
-+++ ./fs/proc/inode.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/fs/proc/inode.c ./fs/proc/inode.c
+--- ../x/linux-2.4.18-pure/fs/proc/inode.c	2002-06-08 23:28:47.000000000 -0700
++++ ./fs/proc/inode.c	2002-05-26 23:34:57.000000000 -0700
 @@ -147,6 +147,11 @@
  	if (!inode)
  		goto out_fail;
@@ -1135,9 +1135,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  	inode->u.generic_ip = (void *) de;
  	if (de) {
  		if (de->mode) {
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
---- ../x/linux-2.4.18-pure/include/asm-i386/highmem.h	Thu Nov 22 11:46:19 2001
-+++ ./include/asm-i386/highmem.h	Thu May 30 00:07:42 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
+--- ../x/linux-2.4.18-pure/include/asm-i386/highmem.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/asm-i386/highmem.h	2002-10-22 06:24:46.000000000 -0700
 @@ -91,7 +91,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -1157,9 +1157,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  	if (vaddr < FIXADDR_START) // FIXME
  		return;
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
---- ../x/linux-2.4.18-pure/include/asm-i386/rwlock.h	Mon Feb 25 11:38:12 2002
-+++ ./include/asm-i386/rwlock.h	Sun May 26 23:39:49 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
+--- ../x/linux-2.4.18-pure/include/asm-i386/rwlock.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/asm-i386/rwlock.h	2002-05-26 23:39:49.000000000 -0700
 @@ -33,7 +33,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -1178,9 +1178,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  #define __build_write_lock_const(rw, helper) \
  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/asm-i386/string.h ./include/asm-i386/string.h
---- ../x/linux-2.4.18-pure/include/asm-i386/string.h	Thu Nov 22 11:46:18 2001
-+++ ./include/asm-i386/string.h	Thu May 30 00:07:24 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/asm-i386/string.h ./include/asm-i386/string.h
+--- ../x/linux-2.4.18-pure/include/asm-i386/string.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/asm-i386/string.h	2002-05-30 00:07:24.000000000 -0700
 @@ -29,6 +29,7 @@
   *		consider these trivial functions to be PD.
   */
@@ -1229,9 +1229,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  static inline void * __memcpy(void * to, const void * from, size_t n)
  {
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/highmem.h ./include/linux/highmem.h
---- ../x/linux-2.4.18-pure/include/linux/highmem.h	Mon Feb 25 11:38:13 2002
-+++ ./include/linux/highmem.h	Thu May 30 00:07:42 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/highmem.h ./include/linux/highmem.h
+--- ../x/linux-2.4.18-pure/include/linux/highmem.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/highmem.h	2002-10-22 06:24:46.000000000 -0700
 @@ -18,7 +18,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -1261,9 +1261,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  	copy_user_page(vto, vfrom, vaddr);
  	kunmap_atomic(vfrom, KM_USER0);
  	kunmap_atomic(vto, KM_USER1);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/inetdevice.h ./include/linux/inetdevice.h
---- ../x/linux-2.4.18-pure/include/linux/inetdevice.h	Thu Jul 26 13:52:39 2001
-+++ ./include/linux/inetdevice.h	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/inetdevice.h ./include/linux/inetdevice.h
+--- ../x/linux-2.4.18-pure/include/linux/inetdevice.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/inetdevice.h	2002-05-26 23:34:57.000000000 -0700
 @@ -122,7 +122,7 @@
  	struct in_device *in_dev;
  
@@ -1273,9 +1273,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  	if (in_dev)
  		atomic_inc(&in_dev->refcnt);
  	read_unlock(&inetdev_lock);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/mm.h ./include/linux/mm.h
---- ../x/linux-2.4.18-pure/include/linux/mm.h	Fri Dec 21 09:42:03 2001
-+++ ./include/linux/mm.h	Thu May 30 00:07:25 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/mm.h ./include/linux/mm.h
+--- ../x/linux-2.4.18-pure/include/linux/mm.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/mm.h	2002-10-22 06:24:36.000000000 -0700
 @@ -509,7 +509,6 @@
  		return 0;
  }
@@ -1284,9 +1284,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  /* filemap.c */
  extern void remove_inode_page(struct page *);
  extern unsigned long page_unuse(struct page *);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/netdevice.h ./include/linux/netdevice.h
---- ../x/linux-2.4.18-pure/include/linux/netdevice.h	Mon Feb 25 11:38:13 2002
-+++ ./include/linux/netdevice.h	Thu May 30 00:09:32 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/netdevice.h ./include/linux/netdevice.h
+--- ../x/linux-2.4.18-pure/include/linux/netdevice.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/netdevice.h	2002-10-22 06:25:55.000000000 -0700
 @@ -415,6 +415,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -1344,9 +1344,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  extern int		dev_new_index(void);
  extern struct net_device	*dev_get_by_index(int ifindex);
  extern struct net_device	*__dev_get_by_index(int ifindex);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/skbuff.h ./include/linux/skbuff.h
---- ../x/linux-2.4.18-pure/include/linux/skbuff.h	Thu Nov 22 11:46:26 2001
-+++ ./include/linux/skbuff.h	Thu May 30 00:07:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/skbuff.h ./include/linux/skbuff.h
+--- ../x/linux-2.4.18-pure/include/linux/skbuff.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/skbuff.h	2002-10-22 06:24:54.000000000 -0700
 @@ -126,15 +126,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -1448,9 +1448,36 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  {
  	if (len > skb_headlen(skb) &&
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/linux/swap.h ./include/linux/swap.h
---- ../x/linux-2.4.18-pure/include/linux/swap.h	Thu Nov 22 11:46:19 2001
-+++ ./include/linux/swap.h	Thu May 30 00:07:25 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/spinlock.h ./include/linux/spinlock.h
+--- ../x/linux-2.4.18-pure/include/linux/spinlock.h	2001-11-22 11:46:19.000000000 -0800
++++ ./include/linux/spinlock.h	2002-10-22 10:11:09.000000000 -0700
+@@ -55,7 +55,11 @@
+  */
+ #if (__GNUC__ > 2)
+   typedef struct { } spinlock_t;
++# ifdef __cplusplus
++  #define SPIN_LOCK_UNLOCKED spinlock_t()
++# else
+   #define SPIN_LOCK_UNLOCKED (spinlock_t) { }
++# endif
+ #else
+   typedef struct { int gcc_is_buggy; } spinlock_t;
+   #define SPIN_LOCK_UNLOCKED (spinlock_t) { 0 }
+@@ -118,7 +122,11 @@
+  */
+ #if (__GNUC__ > 2)
+   typedef struct { } rwlock_t;
++# ifdef __cplusplus
++  #define RW_LOCK_UNLOCKED rwlock_t()
++# else
+   #define RW_LOCK_UNLOCKED (rwlock_t) { }
++# endif
+ #else
+   typedef struct { int gcc_is_buggy; } rwlock_t;
+   #define RW_LOCK_UNLOCKED (rwlock_t) { 0 }
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/swap.h ./include/linux/swap.h
+--- ../x/linux-2.4.18-pure/include/linux/swap.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/linux/swap.h	2002-10-22 06:24:36.000000000 -0700
 @@ -98,7 +98,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -1460,9 +1487,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  /* linux/mm/swap.c */
  extern void FASTCALL(lru_cache_add(struct page *));
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/include/net/route.h ./include/net/route.h
---- ../x/linux-2.4.18-pure/include/net/route.h	Mon Feb 25 11:38:13 2002
-+++ ./include/net/route.h	Thu May 30 00:11:23 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/include/net/route.h ./include/net/route.h
+--- ../x/linux-2.4.18-pure/include/net/route.h	2002-06-08 23:28:47.000000000 -0700
++++ ./include/net/route.h	2002-10-22 06:26:58.000000000 -0700
 @@ -136,7 +136,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)
@@ -1477,9 +1504,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  	return ip_route_output_key(rp, &key);
  }
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/kernel/ksyms.c ./kernel/ksyms.c
---- ../x/linux-2.4.18-pure/kernel/ksyms.c	Mon Feb 25 11:38:13 2002
-+++ ./kernel/ksyms.c	Sat Jun  8 21:04:22 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/kernel/ksyms.c ./kernel/ksyms.c
+--- ../x/linux-2.4.18-pure/kernel/ksyms.c	2002-06-08 23:28:47.000000000 -0700
++++ ./kernel/ksyms.c	2002-06-08 21:04:22.000000000 -0700
 @@ -516,6 +516,8 @@
  EXPORT_SYMBOL(is_bad_inode);
  EXPORT_SYMBOL(event);
@@ -1489,9 +1516,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  
  #ifdef CONFIG_UID16
  EXPORT_SYMBOL(overflowuid);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/net/core/dev.c ./net/core/dev.c
---- ../x/linux-2.4.18-pure/net/core/dev.c	Mon Feb 25 11:38:14 2002
-+++ ./net/core/dev.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/net/core/dev.c ./net/core/dev.c
+--- ../x/linux-2.4.18-pure/net/core/dev.c	2002-06-08 23:28:47.000000000 -0700
++++ ./net/core/dev.c	2002-05-26 23:34:57.000000000 -0700
 @@ -181,6 +181,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -1698,9 +1725,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  		}
  
  		dev_put(rx_dev);
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/net/core/skbuff.c ./net/core/skbuff.c
---- ../x/linux-2.4.18-pure/net/core/skbuff.c	Fri Dec 21 09:42:05 2001
-+++ ./net/core/skbuff.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/net/core/skbuff.c ./net/core/skbuff.c
+--- ../x/linux-2.4.18-pure/net/core/skbuff.c	2002-06-08 23:28:47.000000000 -0700
++++ ./net/core/skbuff.c	2002-05-26 23:34:57.000000000 -0700
 @@ -443,6 +443,65 @@
  #endif
  }
@@ -1767,9 +1794,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  /**
   *	skb_copy	-	create private copy of an sk_buff
   *	@skb: buffer to copy
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/net/ipv4/arp.c ./net/ipv4/arp.c
---- ../x/linux-2.4.18-pure/net/ipv4/arp.c	Fri Sep  7 11:01:20 2001
-+++ ./net/ipv4/arp.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/net/ipv4/arp.c ./net/ipv4/arp.c
+--- ../x/linux-2.4.18-pure/net/ipv4/arp.c	2002-06-08 23:28:47.000000000 -0700
++++ ./net/ipv4/arp.c	2002-05-26 23:34:57.000000000 -0700
 @@ -318,6 +318,7 @@
  {
  	u32 saddr;
@@ -1798,9 +1825,9 @@ diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-p
  }
  
  static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
-diff -r -u --exclude=.depend --exclude=*.o --exclude=*.flags ../x/linux-2.4.18-pure/net/netsyms.c ./net/netsyms.c
---- ../x/linux-2.4.18-pure/net/netsyms.c	Mon Feb 25 11:38:14 2002
-+++ ./net/netsyms.c	Sun May 26 23:34:57 2002
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.flags' ../x/linux-2.4.18-pure/net/netsyms.c ./net/netsyms.c
+--- ../x/linux-2.4.18-pure/net/netsyms.c	2002-06-08 23:28:47.000000000 -0700
++++ ./net/netsyms.c	2002-05-26 23:34:57.000000000 -0700
 @@ -277,6 +277,11 @@
  EXPORT_SYMBOL(register_inetaddr_notifier);
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
