@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "esrcr.hh"
-#include <click/ipaddress.hh>
+#include <click/ip6address.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -49,8 +49,8 @@ ESRCR::ESRCR()
   /**
    *  These are in ms
    */
-  QueryInterval = 10000;
-  QueryLife = 3000; 
+  _reply_wait.tv_sec = 2;
+  _reply_wait.tv_usec = 0;
 
   // Pick a starting sequence number that we have not used before.
   struct timeval tv;
@@ -73,13 +73,13 @@ ESRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
+                    cpIP6Address, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
                     "LS", cpElement, "LinkStat element", &_link_stat,
-                    "LSNET", cpIPAddress, "LinkStat net", &_ls_net,
+                    "LSNET", cpIP6Address, "LinkStat net", &_ls_net,
                     0);
   return ret;
 }
@@ -106,7 +106,7 @@ ESRCR::run_timer ()
 }
 
 void
-ESRCR::start_query(IPAddress dstip)
+ESRCR::start_query(IP6Address dstip)
 {
   Dst *dst = _dsts.findp(dstip);
   if (!dst) {
@@ -127,11 +127,11 @@ ESRCR::start_query(IPAddress dstip)
   pk->_qdst = dst->_ip;
   pk->_seq = htonl(++_seq);
   pk->_nhops = htons(1);
-  pk->set_hop(0,_ip.in_addr());
+  pk->set_hop(0,_ip);
   
   dst->_seq = _seq;
 
-  _seen.push_back(Seen(_ip.in_addr(), dstip, pk->_seq));
+  _seen.push_back(Seen(_ip, dstip, pk->_seq));
 
   send(p);
 }
@@ -158,8 +158,7 @@ ESRCR::send(WritablePacket *p)
   } else if(type == PT_REPLY){
     u_short next = ntohs(pk->_next);
     esrcr_assert(next < MaxHops + 2);
-    struct in_addr nxt = pk->get_hop(next);
-    EtherAddress eth_dest = _arp_table->lookup(IPAddress(nxt));
+    EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
     memcpy(pk->ether_dhost, eth_dest.data(), 6);
     _replies++;
     _replybytes += p->length();
@@ -173,32 +172,9 @@ ESRCR::send(WritablePacket *p)
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-ESRCR::get_metric(IPAddress next_hop)
+ESRCR::get_metric(IP6Address)
 {
-  IPAddress other = IPAddress(_ls_net.addr() | 
-			      (next_hop.addr() & 0xffffff00));
-  u_short dft = 9999; // default metric
-  if(_link_stat){
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
-    if(res == false) {
-      return dft;
-    }
-    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
-    if(res == false) {
-      return dft;
-    }
-    if(frate == 0 || rrate == 0) {
-      return dft;
-    }
-    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
-    return m;
-  } else {
-    click_chatter("no link stat!!!!");
-    return dft;
-  }
+  return 0;
 }
 
 
@@ -216,17 +192,17 @@ static inline bool power_of_two(int x)
 void
 ESRCR::process_query(struct sr_pkt *pk1)
 {
-  IPAddress src(pk1->get_hop(0));
-  IPAddress dst(pk1->_qdst);
+  IP6Address src(pk1->get_hop(0));
+  IP6Address dst(pk1->_qdst);
   u_long seq = ntohl(pk1->_seq);
   int si;
 
-  Vector<IPAddress> hops;
+  Vector<IP6Address> hops;
   Vector<u_short> metrics;
   for(int i = 0; i < pk1->num_hops(); i++) {
-    IPAddress hop = IPAddress(pk1->get_hop(i));
+    IP6Address hop = IP6Address(pk1->get_hop(i));
     if (i != pk1->num_hops()-1) {
-      metrics.push_back(pk1->get_metric(i));
+      //metrics.push_back(pk1->get_metric(i));
     }
     hops.push_back(hop);
     if (hop == _ip) {
@@ -238,8 +214,13 @@ ESRCR::process_query(struct sr_pkt *pk1)
   if (dst == _ip) {
     Src *s = _srcs.findp(src);
     if (s && s->_seq == seq) {
+      click_chatter("ESRCR: already seen seq %d for %s\n", 
+		    seq, src.s().cc());
       return;
     }
+
+    click_chatter("ESRCR: scheduling reply for seq %d for %s\n", 
+		  seq, src.s().cc());
     _srcs.insert(dst, Src(dst, seq));
     s = _srcs.findp(src);
     click_gettimeofday(&s->_when);
@@ -267,7 +248,7 @@ ESRCR::process_query(struct sr_pkt *pk1)
 
 }
 void
-ESRCR::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
+ESRCR::forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics)
 {
   u_short nhops = hops.size();
 
@@ -290,7 +271,7 @@ ESRCR::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, metrics[i]);
+    pk->set_fwd_metric(i, metrics[i]);
   }
 
 
@@ -330,7 +311,7 @@ ESRCR::reply_hook(Timer *t)
 {
   esrcr_assert(t);
   struct timeval now;
-
+  click_chatter("reply_hook called\n");
   click_gettimeofday(&now);
 
   SrcTable _src;
@@ -349,9 +330,9 @@ ESRCR::reply_hook(Timer *t)
 
 }
 void
-ESRCR::start_reply(IPAddress)
+ESRCR::start_reply(IP6Address dst)
 {
-
+  click_chatter("ESRCR: start_reply called for %s\n", dst.s().cc());
 }
 
 // Got a reply packet whose ultimate consumer is us.
@@ -359,11 +340,11 @@ ESRCR::start_reply(IPAddress)
 void
 ESRCR::got_reply(struct sr_pkt *pk)
 {
-  Dst *dst = _dsts.findp(IPAddress(pk->_qdst));
+  Dst *dst = _dsts.findp(IP6Address(pk->_qdst));
   if(!dst){
     click_chatter("ESRCR %s: reply but no Dst %s",
                   _ip.s().cc(),
-                  IPAddress(pk->_qdst).s().cc());
+                  IP6Address(pk->_qdst).s().cc());
     return;
   }
   if(ntohl(pk->_seq) != dst->_seq){
@@ -378,7 +359,7 @@ ESRCR::got_reply(struct sr_pkt *pk)
 
 
 String 
-ESRCR::route_to_string(Vector<IPAddress> s) 
+ESRCR::route_to_string(Vector<IP6Address> s) 
 {
   StringAccum sa;
   sa << "[ ";
@@ -419,29 +400,29 @@ ESRCR::push(int port, Packet *p_in)
   /* update the metrics from the packet */
   unsigned int now = click_jiffies();
   for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    u_short m = pk->get_metric(i);
+    IP6Address a = pk->get_hop(i);
+    IP6Address b = pk->get_hop(i+1);
+    u_short m = 0; //pk->get_metric(i);
     if (m != 0) {
       //click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      _link_table->update_link(IPPair(a,b), m, now);
+      //_link_table->update_link(a, b, m, now);
     }
   }
   
-  IPAddress neighbor = IPAddress(0);
+  IP6Address neighbor = IP6Address(0);
   switch (type) {
   case PT_QUERY:
-    neighbor = IPAddress(pk->get_hop(pk->num_hops() - 1));
+    neighbor = IP6Address(pk->get_hop(pk->num_hops() - 1));
     break;
   case PT_REPLY:
-    neighbor = IPAddress(pk->get_hop(pk->next()+1));
+    neighbor = IP6Address(pk->get_hop(pk->next()+1));
     break;
   default:
     esrcr_assert(0);
   }
   u_short m = get_metric(neighbor);
   //click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-  _link_table->update_link(IPPair(neighbor, _ip), m, now);
+  //_link_table->update_link(IP6Pair(neighbor, _ip), m, now);
   update_best_metrics();
 
   _arp_table->insert(neighbor, EtherAddress(pk->ether_shost));
@@ -449,14 +430,14 @@ ESRCR::push(int port, Packet *p_in)
   if(type == PT_QUERY){
       process_query(pk);
   } else if(type == PT_REPLY && next < nhops){
-    if(pk->get_hop(next) != _ip.in_addr()){
+    if(pk->get_hop(next) != _ip){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
       click_chatter("ESRCR %s: reply not for me %d/%d %s",
                     _ip.s().cc(),
                     ntohs(pk->_next),
                     ntohs(pk->_nhops),
-                    IPAddress(pk->get_hop(next)).s().cc());
+                    IP6Address(pk->get_hop(next)).s().cc());
       return;
     }
     if(next == 0){
@@ -527,31 +508,24 @@ ESRCR::clear()
 }
 
 int
-ESRCR::static_start(const String &arg, Element *e,
+ESRCR::static_start_query(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
   ESRCR *n = (ESRCR *) e;
-  IPAddress dst;
+  IP6Address dst = IP6Address();
+  
+  if (!cp_ip6_address(arg, &dst))
+    return errh->error("dst must be an IP6Address");
 
-  if (!cp_ip_address(arg, &dst))
-    return errh->error("dst must be an IPAddress");
-
-  n->start(dst);
+  n->start_query(dst);
   return 0;
 }
-void
-ESRCR::start(IPAddress dst) 
-{
-  click_chatter("write handler called with dst %s", dst.s().cc());
-  start_query(dst);
-}
-
 void
 ESRCR::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_write_handler("clear", static_clear, 0);
-  add_write_handler("start", static_start, 0);
+  add_write_handler("start_query", static_start_query, 0);
 }
 
 void
@@ -577,8 +551,8 @@ ESRCR::esrcr_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<ESRCR::IPAddresss>;
-template class HashMap<IPAddress, ESRCR::Dst>;
+template class Vector<ESRCR::IP6Addresss>;
+template class HashMap<IP6Address, ESRCR::Dst>;
 #endif
 
 CLICK_ENDDECLS

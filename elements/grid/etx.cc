@@ -32,34 +32,27 @@ CLICK_DECLS
 
 
 ETX::ETX()
-  :  _timer(this), 
+  :  Element(2,2),
+     _timer(this), 
      _link_stat(0),
-     _queries(0), _querybytes(0),
-     _replies(0), _replybytes(0)
+     _num_queries(0),
+     _bytes_queries(0),
+     _num_replies(0), 
+     _bytes_replies(0)
 {
   MOD_INC_USE_COUNT;
 
-  add_input();
-  add_input();
-  add_output();
-  add_output();
-
   MaxSeen = 200;
   MaxHops = 30;
-  /**
-   *  These are in ms
-   */
-  QueryInterval = 10000;
-  QueryLife = 3000; 
 
   // Pick a starting sequence number that we have not used before.
   struct timeval tv;
   click_gettimeofday(&tv);
   _seq = tv.tv_usec;
 
-  /* bleh */
-  static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-  _bcast = EtherAddress(bcast_addr);
+  _query_wait.tv_sec = 5;
+  _query_wait.tv_usec = 0;
+
 }
 
 ETX::~ETX()
@@ -73,14 +66,25 @@ ETX::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
+                    cpIP6Address, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
+		    cpElement, "SRCR element", &_srcr,
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
+		    cpBool, "Gateway", &_is_gw,
                     cpKeywords,
                     "LS", cpElement, "LinkStat element", &_link_stat,
-                    "LSNET", cpIPAddress, "LinkStat net", &_ls_net,
                     0);
+
+  if (_srcr && _srcr->cast("SRCR") == 0) 
+    return errh->error("SRCR element is not a SRCR");
+  if (_link_table && _link_table->cast("LinkTable") == 0) 
+    return errh->error("LinkTable element is not a LinkTable");
+  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not a ARPTable");
+  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
+    return errh->error("LS element is not a LinkStat");
+
   return ret;
 }
 
@@ -106,15 +110,19 @@ ETX::run_timer ()
 }
 
 void
-ETX::start_query(IPAddress dstip)
+ETX::start_query(IP6Address dstip)
 {
-  Dst *dst = _dsts.findp(dstip);
-  if (!dst) {
-    _dsts.insert(dstip, Dst(dstip));
-    dst = _dsts.findp(dstip);
+  Query *q = _queries.findp(dstip);
+  if (!q) {
+    Query foo = Query(dstip);
+    _queries.insert(dstip, foo);
+    q = _queries.findp(dstip);
   }
-  etx_assert(dst);
 
+  q->_seq = _seq;
+  click_gettimeofday(&q->_last_query);
+
+  click_chatter("ETX: starting query for %s", dstip.s().cc());
 
   int len = sr_pkt::len_wo_data(1);
   WritablePacket *p = Packet::make(len);
@@ -124,15 +132,10 @@ ETX::start_query(IPAddress dstip)
   memset(pk, '\0', len);
   pk->_type = PT_QUERY;
   pk->_flags = 0;
-  pk->_qdst = dst->_ip;
+  pk->_qdst = dstip;
   pk->_seq = htonl(++_seq);
   pk->_nhops = htons(1);
-  pk->set_hop(0,_ip.in_addr());
-  
-  dst->_seq = _seq;
-
-  _seen.push_back(Seen(_ip.in_addr(), dstip, pk->_seq));
-
+  pk->set_hop(0,_ip);
   send(p);
 }
 
@@ -151,54 +154,29 @@ ETX::send(WritablePacket *p)
 
   u_char type = pk->_type;
   if(type == PT_QUERY){
-    //memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
-    memcpy(pk->ether_dhost, _bcast.data(), 6);
-    _queries++;
-    _querybytes += p->length();
+    memset(pk->ether_dhost, 0xff, 6);
+    _num_queries++;
+    _bytes_queries += p->length();
   } else if(type == PT_REPLY){
     u_short next = ntohs(pk->_next);
     etx_assert(next < MaxHops + 2);
-    struct in_addr nxt = pk->get_hop(next);
-    EtherAddress eth_dest = _arp_table->lookup(IPAddress(nxt));
+    EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
     memcpy(pk->ether_dhost, eth_dest.data(), 6);
-    _replies++;
-    _replybytes += p->length();
+    _num_replies++;
+    _bytes_replies += p->length();
   } else {
     etx_assert(0);
     return;
   }
 
-  output(1).push(p);
+  output(0).push(p);
 }
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-ETX::get_metric(IPAddress next_hop)
+ETX::get_metric(IP6Address )
 {
-  IPAddress other = IPAddress(_ls_net.addr() | 
-			      (next_hop.addr() & 0xffffff00));
-  u_short dft = 9999; // default metric
-  if(_link_stat){
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
-    if(res == false) {
-      return dft;
-    }
-    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
-    if(res == false) {
-      return dft;
-    }
-    if(frate == 0 || rrate == 0) {
-      return dft;
-    }
-    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
-    return m;
-  } else {
-    click_chatter("no link stat!!!!");
-    return dft;
-  }
+  return 0;
 }
 
 
@@ -216,62 +194,70 @@ static inline bool power_of_two(int x)
 void
 ETX::process_query(struct sr_pkt *pk1)
 {
-  IPAddress src(pk1->get_hop(0));
-  IPAddress dst(pk1->_qdst);
+  IP6Address src(pk1->get_hop(0));
+  IP6Address dst(pk1->_qdst);
   u_long seq = ntohl(pk1->_seq);
   int si;
 
-  Vector<IPAddress> hops;
+  Vector<IP6Address> hops;
   Vector<u_short> metrics;
   for(int i = 0; i < pk1->num_hops(); i++) {
-    IPAddress hop = IPAddress(pk1->get_hop(i));
+    IP6Address hop = IP6Address(pk1->get_hop(i));
     if (i != pk1->num_hops()-1) {
-      metrics.push_back(pk1->get_metric(i));
+      metrics.push_back(pk1->get_fwd_metric(i));
     }
     hops.push_back(hop);
     if (hop == _ip) {
+      click_chatter("I'm already in this query from %s to %s!  - dropping\n",
+		    src.s().cc(), dst.s().cc());
       /* I'm already in this route! */
       return;
     }
   }
 
-  if (dst == _ip) {
-    Src *s = _srcs.findp(src);
-    if (s && s->_seq == seq) {
-      return;
-    }
-    _srcs.insert(dst, Src(dst, seq));
-    s = _srcs.findp(src);
-    click_gettimeofday(&s->_when);
-    Timer *t = new Timer(static_reply_hook, (void *) this);
-    t->initialize(this);
-    struct timeval expire;
-    timeradd(&s->_when, &_reply_wait, &expire);
-    t->schedule_at(expire);
-
-  }
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
       break;
     }
   }
+
   if (si == _seen.size()) {
     _seen.push_back(Seen(src, dst, seq));
   }
   _seen[si]._count++;
 
-  if (power_of_two(_seen[si]._count)) { 
-    //click_chatter("ETX %s: forwarding immediately", _ip.s().cc());
+  if (dst == _ip || (dst == IP6Address("255.255.255.255") && _is_gw)) {
+    /* query for me */
+    click_chatter("got a query for me from %s\n", src.s().cc());
+    if (_seen[si]._count > 1) {
+      click_chatter("already seen query\n");
+      return;
+    } 
+    click_chatter("1st query for me from %s with seq %d\n", src.s().cc(), seq);
+    click_gettimeofday(&_seen[si]._when);
+
+    Timer *t = new Timer(static_reply_hook, (void *) this);
+    t->initialize(this);
+    struct timeval expire;
+    timeradd(&_seen[si]._when, &_reply_wait, &expire);
+    t->schedule_at(expire);
+    return;
+  } 
+  /* query for someone else */
+  if  (power_of_two(_seen[si]._count)) { 
+    click_chatter("ETX %s: forwarding immediately", _ip.s().cc());
     forward_query(_seen[si], hops, metrics);
+  } else {
+    click_chatter("ETX %s: not forwarding", _ip.s().cc());
   }
 
 }
 void
-ETX::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
+ETX::forward_query(Seen s, Vector<IP6Address> hops, Vector<u_short> metrics)
 {
   u_short nhops = hops.size();
 
-  click_chatter("forward query called");
+  //click_chatter("forward query called");
   int len = sr_pkt::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -290,7 +276,7 @@ ETX::forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics)
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, metrics[i]);
+    pk->set_fwd_metric(i, metrics[i]);
   }
 
 
@@ -304,7 +290,7 @@ ETX::forward_reply(struct sr_pkt *pk1)
   u_char type = pk1->_type;
   
   etx_assert(type == PT_REPLY);
-
+  click_chatter("ETX: forwarding reply\n");
   if(pk1->next() >= pk1->num_hops()) {
     click_chatter("ETX %s: forward_reply strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
@@ -333,25 +319,60 @@ ETX::reply_hook(Timer *t)
 
   click_gettimeofday(&now);
 
-  SrcTable _src;
-
-  for(SrcTable::iterator iter = _src.begin(); iter; iter++) {
-    Src s = iter.value();
-    struct timeval expire;
-    timeradd(&s._when, &_reply_wait, &expire);
-    if (timercmp(&expire, &now, >)) {
-      _src.insert(s._ip, s);
-    } else {
-      start_reply(s._ip);
-
+  click_chatter("reply_hook called\n");
+  for(int x = 0; x < _seen.size(); x++) {
+    if (_seen[x]._dst == _ip || (_seen[x]._dst == _bcast_ip && _gw)) {
+      click_chatter("on src %s\n", _seen[x]._src.s().cc());
+      struct timeval expire;
+      timeradd(&_seen[x]._when, &_reply_wait, &expire);
+      if (timercmp(&expire, &now, >)) {
+	click_chatter("s hasn't expired\n", _seen[x]._src.s().cc());
+      } else {
+	start_reply(_seen[x]._src, _seen[x]._dst, _seen[x]._seq);
+      }
     }
   }
 
 }
-void
-ETX::start_reply(IPAddress)
-{
 
+void ETX::start_reply(IP6Address src, IP6Address dst, u_long seq)
+{
+  click_chatter("ETX: start_reply called for %s\n", src.s().cc());
+  _link_table->dijkstra();
+  Path path = _link_table->best_route(src);
+  click_chatter("start_reply: found path to %s: [%s]\n", src.s().cc(), path_to_string(path).cc());
+  if (!_link_table->valid_route(path)) {
+    click_chatter("couldn't reply to %s becuase no valid route!\n", 
+		  src.s().cc());
+    return;
+  }
+
+
+  int len = sr_pkt::len_wo_data(path.size());
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+
+  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  memset(pk, '\0', len);
+  pk->_type = PT_REPLY;
+  pk->_flags = 0;
+  pk->_qdst = dst;
+  pk->_seq = seq;
+  pk->_nhops = htons(path.size());
+  
+  int i;
+  for(i = 0; i < path.size(); i++) {
+    pk->set_hop(i, path[path.size() - 1 - i]);
+    //click_chatter("reply: set hop %d to %s\n", i, pk->get_hop(i).s().cc());
+  }
+
+  for(i = 0; i < path.size() - 1; i++) {
+    u_short m = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
+    pk->set_fwd_metric(i, m);
+  }
+
+  send(p);
 }
 
 // Got a reply packet whose ultimate consumer is us.
@@ -359,26 +380,13 @@ ETX::start_reply(IPAddress)
 void
 ETX::got_reply(struct sr_pkt *pk)
 {
-  Dst *dst = _dsts.findp(IPAddress(pk->_qdst));
-  if(!dst){
-    click_chatter("ETX %s: reply but no Dst %s",
-                  _ip.s().cc(),
-                  IPAddress(pk->_qdst).s().cc());
-    return;
-  }
-  if(ntohl(pk->_seq) != dst->_seq){
-    click_chatter("ETX %s: reply but wrong seq %d %d",
-                  _ip.s().cc(),
-                  ntohl(pk->_seq),
-                  dst->_seq);
-    return;
-  }
-
+  click_chatter("ETX: got reply from %s\n", IP6Address(pk->_qdst).s().cc());
+  _link_table->dijkstra();
 }
 
 
 String 
-ETX::route_to_string(Vector<IPAddress> s) 
+ETX::route_to_string(Vector<IP6Address> s) 
 {
   StringAccum sa;
   sa << "[ ";
@@ -391,75 +399,119 @@ ETX::route_to_string(Vector<IPAddress> s)
 void
 ETX::push(int port, Packet *p_in)
 {
-  if (port == 1) {
+  if (port == 2 || port == 3) {
+    bool sent_packet = false;
+    IP6Address dst = p_in->dst_ip6_anno();
+    if (port == 3) {
+      dst = _gw;
+    }
+    Path p = _link_table->best_route(dst);
+    if (_link_table->valid_route(p)) {
+      Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
+      if (p_out) {
+	sent_packet = true;
+	output(1).push(p_out);
+      }
+    }
+    
+    u_short metric = _link_table->get_route_metric(p);
+    //click_chatter("no route to %s\n", dst.s().cc());
+    Query *q = _queries.findp(dst);
+    if (!q) {
+      Query foo = Query(dst);
+      _queries.insert(dst, foo);
+      q = _queries.findp(dst);
+    }
+    etx_assert(q);
+    
+    if (sent_packet && q->_metric && metric * 2 > q->_metric) {
+      p_in->kill();
+      return;
+    }
+    
+    struct timeval n;
+    click_gettimeofday(&n);
+    struct timeval expire;
+    timeradd(&q->_last_query, &_query_wait, &expire);
+    if (timercmp(&expire, &n, <)) {
+      click_chatter("calling start_query to %s\n", dst.s().cc());
+      if (port == 3) {
+	start_query(IP6Address("255.255.255.255"));
+      } else {
+	start_query(dst);
+      }
+    } else {
+	//click_chatter("recent query to %s, so discarding packet\n", dst.s().cc());
+    }
     p_in->kill();
     return;
-  } else if (port == 0) {
-      struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
-  //click_chatter("ETX %s: got sr packet", _ip.s().cc());
-  if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
-    click_chatter("ETX %s: bad sr_pkt len %d, expected %d",
-                  _ip.s().cc(),
-                  p_in->length(),
-		  pk->hlen_wo_data());
-    return;
-  }
-  if(pk->ether_type != htons(_et)) {
-    click_chatter("ETX %s: bad ether_type %04x",
-                  _ip.s().cc(),
-                  ntohs(pk->ether_type));
-    return;
-  }
+  } else if (port ==  0 || port == 1) {
+    struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
+    if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
+      click_chatter("ETX %s: bad sr_pkt len %d, expected %d",
+		    _ip.s().cc(),
+		    p_in->length(),
+		    pk->hlen_wo_data());
+      p_in->kill();
+      return;
+    }
+    if(pk->ether_type != htons(_et)) {
+      click_chatter("ETX %s: bad ether_type %04x",
+		    _ip.s().cc(),
+		    ntohs(pk->ether_type));
+      p_in->kill();
+      return;
+    }
 
   u_char type = pk->_type;
-  u_short nhops = ntohs(pk->_nhops);
-  u_short next = ntohs(pk->_next);
-
 
   /* update the metrics from the packet */
   unsigned int now = click_jiffies();
   for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    u_short m = pk->get_metric(i);
+    IP6Address a = pk->get_hop(i);
+    IP6Address b = pk->get_hop(i+1);
+    u_short m = pk->get_fwd_metric(i);
     if (m != 0) {
-      //click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      _link_table->update_link(IPPair(a,b), m, now);
+      click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
+      _link_table->update_link(a, b, m, now);
     }
   }
   
-  IPAddress neighbor = IPAddress(0);
+
+  if (port == 1) {
+    p_in->kill();
+    return;
+  }
+  IP6Address neighbor = IP6Address();
   switch (type) {
   case PT_QUERY:
-    neighbor = IPAddress(pk->get_hop(pk->num_hops() - 1));
+    neighbor = pk->get_hop(pk->num_hops() - 1);
     break;
   case PT_REPLY:
-    neighbor = IPAddress(pk->get_hop(pk->next()+1));
+    neighbor = pk->get_hop(pk->next()+1);
     break;
   default:
     etx_assert(0);
   }
   u_short m = get_metric(neighbor);
-  //click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-  _link_table->update_link(IPPair(neighbor, _ip), m, now);
-  update_best_metrics();
-
+  click_chatter("updating %s <%d> %s", neighbor.s().cc(), m, _ip.s().cc());
+  _link_table->update_link(neighbor, _ip, m, now);
   _arp_table->insert(neighbor, EtherAddress(pk->ether_shost));
-
   if(type == PT_QUERY){
       process_query(pk);
-  } else if(type == PT_REPLY && next < nhops){
-    if(pk->get_hop(next) != _ip.in_addr()){
+
+  } else if(type == PT_REPLY){
+    if(pk->get_hop(pk->next()) != _ip){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
       click_chatter("ETX %s: reply not for me %d/%d %s",
                     _ip.s().cc(),
-                    ntohs(pk->_next),
-                    ntohs(pk->_nhops),
-                    IPAddress(pk->get_hop(next)).s().cc());
+                    pk->next(),
+                    pk->num_hops(),
+                    pk->get_hop(pk->next()).s().cc());
       return;
     }
-    if(next == 0){
+    if(pk->next() == 0){
       // I'm the ultimate consumer of this reply. Add to routing tbl.
       got_reply(pk);
     } else {
@@ -492,10 +544,10 @@ ETX::print_stats()
 {
   
   return
-    String(_queries) + " queries sent\n" +
-    String(_querybytes) + " bytes of query sent\n" +
-    String(_replies) + " replies sent\n" +
-    String(_replybytes) + " bytes of reply sent\n";
+    String(_num_queries) + " queries sent\n" +
+    String(_bytes_queries) + " bytes of query sent\n" +
+    String(_num_replies) + " replies sent\n" +
+    String(_bytes_replies) + " bytes of reply sent\n";
 }
 
 int
@@ -517,13 +569,12 @@ void
 ETX::clear() 
 {
   _link_table->clear();
-  _dsts.clear();
   _seen.clear();
 
-  _queries = 0;
-  _querybytes = 0;
-  _replies = 0;
-  _replybytes = 0;
+  _num_queries = 0;
+  _bytes_queries = 0;
+  _num_replies = 0;
+  _bytes_replies = 0;
 }
 
 int
@@ -531,16 +582,16 @@ ETX::static_start(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
   ETX *n = (ETX *) e;
-  IPAddress dst;
+  IP6Address dst;
 
-  if (!cp_ip_address(arg, &dst))
-    return errh->error("dst must be an IPAddress");
+  if (!cp_ip6_address(arg, &dst))
+    return errh->error("dst must be an IP6Address");
 
   n->start(dst);
   return 0;
 }
 void
-ETX::start(IPAddress dst) 
+ETX::start(IP6Address dst) 
 {
   click_chatter("write handler called with dst %s", dst.s().cc());
   start_query(dst);
@@ -555,11 +606,6 @@ ETX::add_handlers()
 }
 
 void
-ETX::update_best_metrics() 
-{
-  _link_table->dijkstra();
-}
- void
 ETX::etx_assert_(const char *file, int line, const char *expr) const
 {
   click_chatter("ETX %s assertion \"%s\" failed: file %s, line %d",
@@ -577,8 +623,7 @@ ETX::etx_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<ETX::IPAddresss>;
-template class HashMap<IPAddress, ETX::Dst>;
+template class Vector<ETX::IP6Address>;
 #endif
 
 CLICK_ENDDECLS

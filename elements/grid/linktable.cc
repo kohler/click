@@ -26,7 +26,7 @@
 CLICK_DECLS
 
 #ifndef lt_assert
-#define lt_assert(e) ((e) ? (void) 0 : lt_assert_(__FILE__, __LINE__, #e))
+#define lt_assert(e) ((e) ? (void) 0 : _lt_assert_(__FILE__, __LINE__, #e))
 #endif /* dsr_assert */
 
 LinkTable::LinkTable() 
@@ -41,12 +41,20 @@ LinkTable::~LinkTable()
   MOD_DEC_USE_COUNT;
 }
 
+void *
+LinkTable::cast(const char *n)
+{
+  if (strcmp(n, "LinkTable") == 0)
+    return (LinkTable *) this;
+  else
+    return 0;
+}
 int
 LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
-                    cpIPAddress, "IP address", &_ip,
+                    cpIP6Address, "IP address", &_ip,
                     cpKeywords,
                     0);
   
@@ -90,37 +98,40 @@ LinkTable::clear()
 
 }
 void 
-LinkTable::update_link(IPPair p, u_short metric, unsigned int now)
+LinkTable::update_link(IP6Address from, IP6Address to, u_short metric, unsigned int now)
 {
   /* make sure both the hosts exist */
-  HostInfo *hnfo_a = _hosts.findp(p._a);
-  if (!hnfo_a) {
-    HostInfo foo = HostInfo(p._a);
-    _hosts.insert(p._a, foo);
-    hnfo_a = _hosts.findp(p._a);
+  HostInfo *nfrom = _hosts.findp(from);
+  if (!nfrom) {
+    HostInfo foo = HostInfo(to);
+    _hosts.insert(from, foo);
+    nfrom = _hosts.findp(from);
   }
-  HostInfo *hnfo_b = _hosts.findp(p._b);
-  if (!hnfo_b) {
-    _hosts.insert(p._b, HostInfo(p._b));
-    hnfo_b = _hosts.findp(p._b);
+  HostInfo *nto = _hosts.findp(to);
+  if (!nto) {
+    _hosts.insert(to, HostInfo(to));
+    nto = _hosts.findp(to);
   }
   
-  hnfo_a->_neighbors.insert(p._b, p._b);
-  hnfo_b->_neighbors.insert(p._a, p._a);
+  lt_assert(nfrom);
+  lt_assert(nto);
 
+  nfrom->_neighbors.insert(from, to);
+
+  IP6Pair p = IP6Pair(from, to);
   LinkInfo *lnfo = _links.findp(p);
   if (!lnfo) {
-    _links.insert(p, LinkInfo(p, metric, now));
+    _links.insert(p, LinkInfo(from, to, metric, now));
   } else {
     lnfo->update(metric, now);
   }
   
 }
 
-Vector<IPAddress> 
+Vector<IP6Address> 
 LinkTable::get_hosts()
 {
-  Vector<IPAddress> v;
+  Vector<IP6Address> v;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
     v.push_back(n._ip);
@@ -128,7 +139,7 @@ LinkTable::get_hosts()
   return v;
 }
 u_short 
-LinkTable::get_host_metric(IPAddress s)
+LinkTable::get_host_metric(IP6Address s)
 {
   HostInfo *nfo = _hosts.findp(s);
   if (!nfo) {
@@ -138,8 +149,9 @@ LinkTable::get_host_metric(IPAddress s)
 }
 
 u_short 
-LinkTable::get_hop_metric(IPPair p) 
+LinkTable::get_hop_metric(IP6Address from, IP6Address to) 
 {
+  IP6Pair p = IP6Pair(from, to);
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
     return 9999;
@@ -150,11 +162,11 @@ LinkTable::get_hop_metric(IPPair p)
   
   
 u_short 
-LinkTable::get_route_metric(Vector<IPAddress> route) 
+LinkTable::get_route_metric(Vector<IP6Address> route) 
 {
   u_short metric = 0;
   for (int i = 0; i < route.size() - 1; i++) {
-    metric += get_hop_metric(IPPair(route[i], route[i+1]));
+    metric += get_hop_metric(route[i], route[i+1]);
   }
   return metric;
   
@@ -162,14 +174,18 @@ LinkTable::get_route_metric(Vector<IPAddress> route)
 
 
 bool
-LinkTable::valid_route(Vector<IPAddress> route) 
+LinkTable::valid_route(Vector<IP6Address> route) 
 {
+  if (route.size() < 1) {
+    return false;
+  }
+  /* ensure the metrics are all valid */
   if (get_route_metric(route) >= 9999){
     return false;
   }
 
+  /* ensure that a node appears no more than once */
   for (int x = 0; x < route.size(); x++) {
-    
     for (int y = x + 1; y < route.size(); y++) {
       if (route[x] == route[y]) {
 	return false;
@@ -179,11 +195,11 @@ LinkTable::valid_route(Vector<IPAddress> route)
 
   return true;
 }
-Vector<IPAddress> 
-LinkTable::best_route(IPAddress dst)
+Vector<IP6Address> 
+LinkTable::best_route(IP6Address dst)
 {
-  Vector<IPAddress> reverse_route;
-  Vector<IPAddress> route;
+  Vector<IP6Address> reverse_route;
+  Vector<IP6Address> route;
   HostInfo *nfo = _hosts.findp(dst);
   
   while (nfo && nfo->_metric != 9999 && nfo->_metric != 0) {
@@ -201,8 +217,8 @@ LinkTable::best_route(IPAddress dst)
 
   return route;
 }
-Vector<Vector<IPAddress> > 
-LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPAddress> route)
+Vector<Vector<IP6Address> > 
+LinkTable::update_routes(Vector<Vector<IP6Address> > routes, int size, Vector<IP6Address> route)
 {
   int x = 0;
   int y = 0;
@@ -232,12 +248,12 @@ LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPA
   routes[x] = route;
   return routes;
 }
-Vector <Vector <IPAddress> >
-LinkTable::top_n_routes(IPAddress dst, int n)
+Vector <Vector <IP6Address> >
+LinkTable::top_n_routes(IP6Address dst, int n)
 {
-  Vector<Vector<IPAddress> > routes;
+  Vector<Vector<IP6Address> > routes;
   {
-    Vector<IPAddress> route;
+    Vector<IP6Address> route;
     route.push_back(_ip);
     route.push_back(dst);
     update_routes(routes, n, route);
@@ -245,7 +261,7 @@ LinkTable::top_n_routes(IPAddress dst, int n)
 
   /* two hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
-    Vector<IPAddress> route;
+    Vector<IP6Address> route;
 
     HostInfo h = iter.value();
     route.push_back(_ip);
@@ -257,7 +273,7 @@ LinkTable::top_n_routes(IPAddress dst, int n)
   /* three hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     for (HTIter iter2 = _hosts.begin(); iter; iter++) {
-      Vector<IPAddress> route;
+      Vector<IP6Address> route;
       
       HostInfo h = iter.value();
       HostInfo h2 = iter2.value();
@@ -273,7 +289,7 @@ LinkTable::top_n_routes(IPAddress dst, int n)
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     for (HTIter iter2 = _hosts.begin(); iter; iter++) {
       for (HTIter iter3 = _hosts.begin(); iter; iter++) {
-      Vector<IPAddress> route;
+      Vector<IP6Address> route;
       
       HostInfo h = iter.value();
       HostInfo h2 = iter2.value();
@@ -329,7 +345,7 @@ LinkTable::print_links()
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo n = iter.value();
     sa << "link: ";
-    sa << n._p._a.s().cc() << " " << n._p._b.s().cc() << " : ";
+    sa << n._from.s().cc() << " " << n._to.s().cc() << " : ";
     sa << n._metric << " " << " " << (now - n._last_updated)/100 << "\n";
   }
   return sa.take_string();
@@ -350,12 +366,12 @@ LinkTable::print_routes()
   StringAccum sa;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    Vector <IPAddress> r = best_route(n._ip);
+    Vector <IP6Address> r = best_route(n._ip);
     sa << "route: " << n._ip.s().cc() << " : ";
     for (int i = 0; i < r.size(); i++) {
       sa << " " << r[i] << " ";
       if (i != r.size()-1) {
-	LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
+	LinkInfo *l = _links.findp(IP6Pair(r[i], r[i+1]));
 	lt_assert(l);
 	sa << "<" << l->_metric << ">";
       }
@@ -384,11 +400,11 @@ LinkTable::print_hosts()
   return sa.take_string();
 }
 
-IPAddress
+IP6Address
 LinkTable::extract_min()
 {
 
-  IPAddress min = IPAddress(0);
+  IP6Address min = IP6Address(0);
   u_short min_metric = 9999;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo nfo = iter.value();
@@ -405,7 +421,7 @@ LinkTable::extract_min()
 void
 LinkTable::dijkstra() 
 {
-  IPAddress src = _ip;
+  IP6Address src = _ip;
 
   /* clear them all initially */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
@@ -421,9 +437,9 @@ LinkTable::dijkstra()
   
   root_info->_prev = root_info->_ip;
   root_info->_metric = 0;
-  IPAddress current_min_ip = root_info->_ip;
+  IP6Address current_min_ip = root_info->_ip;
 
-  while (current_min_ip != IPAddress(0)) {
+  while (current_min_ip != IP6Address(0)) {
     HostInfo *current_min = _hosts.findp(current_min_ip);
     lt_assert(current_min);
 
@@ -434,7 +450,7 @@ LinkTable::dijkstra()
       HostInfo *neighbor = _hosts.findp(iter.value());
       lt_assert(neighbor);
       if (!neighbor->_marked) {
-	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
+	LinkInfo *lnfo = _links.findp(IP6Pair(current_min->_ip, neighbor->_ip));
 	lt_assert(lnfo);
 
 	if (neighbor->_metric > current_min->_metric + lnfo->_metric) {
@@ -452,7 +468,7 @@ LinkTable::dijkstra()
 
 
 void
-LinkTable::lt_assert_(const char *file, int line, const char *expr) const
+LinkTable::_lt_assert_(const char *file, int line, const char *expr)
 {
   click_chatter("LinkTable assertion \"%s\" failed: file %s, line %d",
 		expr, file, line);
@@ -468,9 +484,9 @@ LinkTable::lt_assert_(const char *file, int line, const char *expr) const
 #include <click/hashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IPAddress, IPAddress>;
-template class BigHashMap<IPPair, LinkTable::LinkInfo>;
-template class BigHashMap<IPAddress, LinkTable::HostInfo>;
+template class BigHashMap<IP6Address, IP6Address>;
+template class BigHashMap<IP6Pair, LinkTable::LinkInfo>;
+template class BigHashMap<IP6Address, LinkTable::HostInfo>;
 #endif
 EXPORT_ELEMENT(LinkTable)
 CLICK_ENDDECLS

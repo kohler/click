@@ -45,7 +45,14 @@ ARPTable::clone() const
 {
   return new ARPTable;
 }
-
+void *
+ARPTable::cast(const char *n)
+{
+  if (strcmp(n, "ARPTable") == 0)
+    return (ARPTable *) this;
+  else
+    return 0;
+}
 int
 ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -58,7 +65,7 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 EtherAddress 
-ARPTable::lookup(IPAddress ip)
+ARPTable::lookup(IP6Address ip)
 {
   DstInfo *dst = _table.findp(ip);
   if (dst) {
@@ -69,14 +76,13 @@ ARPTable::lookup(IPAddress ip)
 
 
 void
-ARPTable::insert(IPAddress ip, EtherAddress eth) 
+ARPTable::insert(IP6Address ip, EtherAddress eth) 
 {
   DstInfo *dst = _table.findp(ip);
   if (!dst) {
-    _table.insert(ip, DstInfo());
+    _table.insert(ip, DstInfo(ip));
     dst = _table.findp(ip);
   }
-  dst->_ip = ip;
   dst->_eth = eth;
   click_gettimeofday(&dst->_when);
 }
@@ -113,7 +119,7 @@ ARPTable::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IPAddress, ARPTable::DstInfo>;
+template class BigHashMap<IP6Address, ARPTable::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPTable)

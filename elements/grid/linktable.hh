@@ -1,6 +1,6 @@
 #ifndef CLICK_LINKTABLE_HH
 #define CLICK_LINKTABLE_HH
-#include <click/ipaddress.hh>
+#include <click/ip6address.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/element.hh>
@@ -9,43 +9,38 @@
 CLICK_DECLS
 
 
-class IPPair {
+class IP6Pair {
 public:
-    /* a is always numerically less than b */
-  IPAddress _a;
-  IPAddress _b;
+  /* a is always numerically less than b */
+  IP6Address _to;
+  IP6Address _from;
 
-  IPPair() : _a(0), _b(0) { }
+  IP6Pair() : _to(0), _from(0) { }
 
-  IPPair(IPAddress a, IPAddress b) {
-    if (a.addr() < b.addr()) {
-      _a = b;
-      _b = a;      
-    } else {
-      _a = a;
-      _b = b;
-    }
+  IP6Pair(IP6Address to, IP6Address from) {
+      _to = to;
+      _from = from;
   }
-  
-  bool contains(IPAddress foo) {
-    return ((foo == _a) || (foo == _b));
+
+  bool contains(IP6Address foo) {
+    return ((foo == _to) || (foo == _from));
   }
-  bool other(IPAddress foo) { return ((_a == foo) ? _b : _a); }
+  bool other(IP6Address foo) { return ((_to == foo) ? _from : _to); }
 
 
   inline bool
-  operator==(IPPair other)
+  operator==(IP6Pair other)
   {
-    return (other._a == _a && other._b == _b);
+    return (other._to == _to && other._from == _from);
   }
 
 };
 
-  inline unsigned
-  hashcode(IPPair p) 
-  {
-    return hashcode(p._a) + hashcode(p._b);
-  }
+inline unsigned
+hashcode(IP6Pair p) 
+{
+return hashcode(p._to) + hashcode(p._from);
+}
 
 
 
@@ -61,7 +56,7 @@ public:
   const char* class_name() const { return "LinkTable"; }
   LinkTable *clone() const { return new LinkTable(); }
   int configure(Vector<String> &conf, ErrorHandler *errh);
-
+  void *cast(const char *n);
   /* read/write handlers */
   static String static_print_routes(Element *e, void *);
   String print_routes();
@@ -76,67 +71,69 @@ public:
   void clear();
 
   /* other public functions */
-  void update_link(IPPair p, u_short metric, unsigned int now);
-  u_short get_hop_metric(IPPair p);
-  Vector< Vector<IPAddress> >  update_routes(Vector<Vector<IPAddress> > routes, 
-					     int n, Vector<IPAddress> route);
-  bool valid_route(Vector<IPAddress> route);
-  u_short get_route_metric(Vector<IPAddress> route);
+  void update_link(IP6Address from, IP6Address to, u_short metric, unsigned int now);
+  u_short get_hop_metric(IP6Address from, IP6Address to);
+  Vector< Vector<IP6Address> >  update_routes(Vector<Vector<IP6Address> > routes, 
+					     int n, Vector<IP6Address> route);
+  bool valid_route(Vector<IP6Address> route);
+  u_short get_route_metric(Vector<IP6Address> route);
   void dijkstra();
-  Vector<IPAddress> best_route(IPAddress dst);
+  Vector<IP6Address> best_route(IP6Address dst);
 
-  Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
-  u_short get_host_metric(IPAddress s);
-  Vector<IPAddress> get_hosts();
+  Vector< Vector<IP6Address> > top_n_routes(IP6Address dst, int n);
+  u_short get_host_metric(IP6Address s);
+  Vector<IP6Address> get_hosts();
 private: 
   class LinkInfo {
   public:
-    IPPair _p;
-    u_short _metric;
+    IP6Address _from;
+    IP6Address _to;
+    int _metric;
     unsigned int _last_updated;
-    LinkInfo() { _p = IPPair();  _metric = 9999;  _last_updated = 0; }
+    LinkInfo() { _from = IP6Address(); _to = IP6Address(); _metric = 9999; _last_updated = 0; }
     
-    LinkInfo(IPPair p, u_short metric, unsigned int now)
+    LinkInfo(IP6Address from, IP6Address to, int metric, unsigned int now)
     { 
+      _from = from;
+      _to = to;
       _metric = metric;
-      _p = IPPair(p._a, p._b);
       _last_updated = now;  
     }
-    
+    LinkInfo(const LinkInfo &p) : _from(p._from), _to(p._to), _metric(p._metric), _last_updated(p._last_updated) { }
     void update(u_short metric, unsigned int now) { _metric = metric; _last_updated = now; }
-    bool contains(IPAddress foo) { return _p.contains(foo); }
-    IPPair get_pair() { return _p; }
+    
   };
 
-  typedef HashMap<IPAddress, IPAddress> IPTable;
+  typedef HashMap<IP6Address, IP6Address> IPTable;
   
   class HostInfo {
   public:
-    IPAddress _ip;
+    IP6Address _ip;
     IPTable _neighbors;
-    u_short _metric;
-    IPAddress _prev;
+    int _metric;
+    IP6Address _prev;
     bool _marked;
-    HostInfo() { _ip = IPAddress(0); _prev = IPAddress(0); _metric = 9999; _marked = false;}
-    HostInfo(IPAddress p) { _ip = p; _prev = IPAddress(0); _metric = 9999; _marked = false; }
-    void clear() { _prev = IPAddress(0); _metric = 9999; _marked = false;}
+    HostInfo() { _ip = IP6Address(); _prev = IP6Address(); _metric = 9999; _marked = false;}
+    HostInfo(IP6Address p) { _ip = p; _prev = IP6Address(); _metric = 9999; _marked = false; }
+    HostInfo(const HostInfo &p) : _ip(p._ip), _neighbors(p._neighbors), _metric(p._metric), _prev(p._prev), _marked(p._marked) { }
+    void clear() { _prev = IP6Address(); _metric = 9999; _marked = false;}
 
   };
 
-  typedef BigHashMap<IPAddress, HostInfo> HTable;
+  typedef BigHashMap<IP6Address, HostInfo> HTable;
   typedef HTable::const_iterator HTIter;
   
 
-  typedef BigHashMap<IPPair, LinkInfo> LTable;
+  typedef BigHashMap<IP6Pair, LinkInfo> LTable;
   typedef LTable::const_iterator LTIter;
 
   class HTable _hosts;
   class LTable _links;
 
-  IPAddress _ip;
+  IP6Address _ip;
 
-  IPAddress extract_min();
-  void lt_assert_(const char *, int, const char *) const;
+  IP6Address extract_min();
+  static void _lt_assert_(const char *, int, const char *);
 };
   
 

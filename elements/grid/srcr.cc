@@ -34,8 +34,13 @@ CLICK_DECLS
 
 
 SRCR::SRCR()
-  :  Element(1,2), _datas(0), _databytes(0),
-     _link_stat(0), _arp_table(0)
+  :  Element(2,2), 
+     _datas(0), 
+     _databytes(0),
+     _link_table(0),
+     _link_stat(0), 
+     _arp_table(0)
+
 {
   MOD_INC_USE_COUNT;
 }
@@ -45,20 +50,27 @@ SRCR::~SRCR()
   MOD_DEC_USE_COUNT;
 }
 
+
 int
 SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int res;
   res = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
+                    cpIP6Address, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_eth,
-		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "LT", cpElement, "LinkTable element", &_link_table,
 		    "LS", cpElement, "LinkStat element", &_link_stat,
-                    "LSNET", cpIPAddress, "LinkStat net", &_ls_net,
                     0);
+
+  if (_link_table && _link_table->cast("LinkTable") == 0) 
+    return errh->error("LT LinkTable element is not a LinkTable");
+  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not a ARPTable");
+  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
+    return errh->error("LS element is not a LinkStat");
 
   if (res < 0) {
     return res;
@@ -80,51 +92,34 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-SRCR::get_metric(IPAddress next_hop)
+SRCR::get_metric(IP6Address)
 {
-  IPAddress other = IPAddress(_ls_net.addr() | 
-			      (next_hop.addr() & 0xffffff00));
-  
-  u_short dft = 9999; // default metric
-  if(_link_stat){
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
-    if(res == false) {
-      return dft;
-    }
-    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
-    if(res == false) {
-      return dft;
-    }
-    if(frate == 0 || rrate == 0) {
-      return dft;
-    }
-    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
-    return m;
-  } else {
-    click_chatter("no link stat!!!!");
-    return dft;
-  }
+  return 0;
 }
 
 
 Packet *
-SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
+SRCR::encap(const u_char *payload, u_long payload_len, Vector<IP6Address> r)
 {
   int hops = r.size();
   int len = sr_pkt::len_with_data(hops, payload_len);
   WritablePacket *p = Packet::make(len);
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
+
+  memcpy(pk->ether_shost, _eth.data(), 6);
+  EtherAddress eth_dest = _arp_table->lookup(r[1]);
+  memcpy(pk->ether_dhost, eth_dest.data(), 6);
+  pk->ether_type = htons(_et);
+
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
-  pk->_nhops = htons(hops);
-  pk->_next = htons(1);
+
+  pk->set_num_hops(r.size());
+  pk->set_next(1);
   int i;
   for(i = 0; i < hops; i++) {
-    pk->set_hop(i, r[i].in_addr());
+    pk->set_hop(i, r[i]);
   }
   memcpy(pk->data(), payload, payload_len);
   return p;
@@ -133,7 +128,7 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
 void
 SRCR::push(int port, Packet *p_in)
 {
-  if (port != 0) {
+  if (port > 1) {
     p_in->kill();
     return;
   }
@@ -163,33 +158,22 @@ SRCR::push(int port, Packet *p_in)
     return ;
   }
 
-  u_short nhops = ntohs(pk->_nhops);
-  u_short next = ntohs(pk->_next);
 
-  if (next >= nhops){
+  if (pk->next() >= pk->num_hops()){
+    click_chatter("SRCR %s: data with bad next hop\n", 
+		  _ip.s().cc());
     p_in->kill();
     return;
   }
 
-  if(pk->next() + 1 >= pk->num_hops()) {
-    click_chatter("SRCR %s: forward_data strange next=%d, nhops=%d", 
-		  _ip.s().cc(), 
-		  pk->next() + 1,
-		  pk->num_hops());
-    p_in->kill();
-    return ;
-  }
-
-
-
-  if(pk->get_hop(next) != _ip.in_addr()){
+  if(port == 0 && pk->get_hop(pk->next()) != _ip){
     // it's not for me. these are supposed to be unicast,
     // so how did this get to me?
     click_chatter("SRCR %s: data not for me %d/%d %s",
 		  _ip.s().cc(),
-		  ntohs(pk->_next),
-		  ntohs(pk->_nhops),
-		  IPAddress(pk->get_hop(next)).s().cc());
+		  pk->next(),
+		  pk->num_hops(),
+		  pk->get_hop(pk->next()).s().cc());
     p_in->kill();
     return;
   }
@@ -198,32 +182,47 @@ SRCR::push(int port, Packet *p_in)
   /* update the metrics from the packet */
   unsigned int now = click_jiffies();
   for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    u_short m = pk->get_metric(i);
-    if (m != 0) {
-      //click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
-      update_link(IPPair(a,b), m, now);
+    IP6Address a = pk->get_hop(i);
+    IP6Address b = pk->get_hop(i+1);
+    uint8_t m = pk->get_fwd_metric(i);
+    if (m != 0 && _link_table) {
+      click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
+      _link_table->update_link(a, b, m, now);
     }
   }
   
-  IPAddress neighbor = IPAddress(0);
-  neighbor = IPAddress(pk->get_hop(pk->next()-1));
+  if (port == 1) {
+    /* we're just sniffing this packet */
+    p_in->kill();
+    return;
+  }
+  IP6Address neighbor = IP6Address(0);
+  neighbor = IP6Address(pk->get_hop(pk->next()-1));
   u_short m = get_metric(neighbor);
-  //click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-  update_link(IPPair(neighbor, _ip), m, now);
+  if (_link_table) {
+    click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
+    _link_table->update_link(neighbor, _ip, m, now);
+  }
 
   _arp_table->insert(neighbor, EtherAddress(pk->ether_shost));
 
-  if(next == nhops -1){
+  if(pk->next() == pk->num_hops() - 1){
+    //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
     // I'm the ultimate consumer of this data.
-    output(1).push(p_in);
+    /* need to decap */
+    WritablePacket *p_out = Packet::make(pk->data_len());
+    if (p_out == 0){
+      return;
+    }
+    memcpy(p_out->data(), pk->data(), pk->data_len());
+    output(1).push(p_out);
     return;
   } 
 
-  
+  click_chatter("forwarding packet from %d to %d\n", 
+		pk->get_hop(0).s().cc(), pk->get_hop(pk->num_hops() - 1).s().cc());
   /* add the last hop's data onto the metric */
-  u_short last_hop_metric = get_metric(IPAddress(pk->get_hop(pk->next() - 1)));
+  u_short last_hop_metric = get_metric(IP6Address(pk->get_hop(pk->next() - 1)));
 
   int len = pk->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -235,15 +234,15 @@ SRCR::push(int port, Packet *p_in)
   memcpy(pk_out, pk, len);
 
   
-  pk_out->set_metric(pk->next() - 1, last_hop_metric);
+  pk_out->set_fwd_metric(pk->next() - 1, last_hop_metric);
   pk_out->set_next(pk->next() + 1);
 
   pk_out->ether_type = htons(_et);
   memcpy(pk_out->ether_shost, _eth.data(), 6);
 
-  srcr_assert(next < 8);
-  struct in_addr nxt = pk->get_hop(next);
-  EtherAddress eth_dest = _arp_table->lookup(IPAddress(nxt));
+  srcr_assert(pk->next() < 8);
+  IP6Address nxt = pk->get_hop(pk->next());
+  EtherAddress eth_dest = _arp_table->lookup(nxt);
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
 
   p_in->kill();
@@ -275,11 +274,7 @@ SRCR::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
 }
-void
-SRCR::update_link(IPPair p, u_short m, unsigned int now)
-{
-  _link_table->update_link(p, m, now);
-}
+
 
 void
 SRCR::srcr_assert_(const char *file, int line, const char *expr) const
