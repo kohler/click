@@ -8,80 +8,90 @@
 CLICK_DECLS
 
 /*
- * =c
- *
- * KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, MTU, IGNORE_QUEUE_OVERFLOWS])
- *
- * =s devices
- *
- * user-level interface to /dev/tun or ethertap
- *
- * =d
- *
- * Reads IP packets from and writes IP packets to a /dev/net/tun, /dev/tun*,
- * or /dev/tap* device. This allows a user-level Click to hand packets to the
- * ordinary kernel IP processing code. KernelTun will also install a routing
- * table entry so that the kernel can pass packets to the KernelTun device.
- *
- * KernelTun produces and expects IP packets. If, for some reason, the kernel
- * passes up a non-IP packet (or an invalid IP packet), KernelTun will emit
- * that packet on its second output, or drop it if there is no second output.
- *
- * KernelTun allocates a /dev/net/tun, /dev/tun*, or /dev/tap* device (this
- * might fail) and runs ifconfig(8) to set the interface's local (i.e.,
- * kernel) address to ADDR and the netmask to MASK. If a nonzero GATEWAY IP
- * address (which must be on the same network as the tun) is specified, then
- * KernelTun tries to set up a default route through that host.
- *
- * When cleaning up, KernelTun attempts to bring down the device via
- * ifconfig(8).
- *
- * Keyword arguments are:
- *
- * =over 8
- *
- * =item HEADROOM
- *
- * Integer. The number of bytes left empty before the packet data to leave
- * room for additional encapsulation headers. Default is 28.
- *
- * =item MTU
- *
- * Integer. The interface's MTU. KernelTun will refuse to send packets larger
- * than the MTU. Default is 2048.
- *
- * =item IGNORE_QUEUE_OVERFLOWS
- *
- * Boolean.  If true, don't print more than one error message when
- * there are queue overflows error when sending/receiving packets
- * to/from the tun device (e.g. there was an ENOBUFS error).  Default
- * is false.
- *
- * =item DEV_NAME
- *
- * String. If specified, try to alloc a tun device with name DEV_NAME.
- * Otherwise, we'll just take the first virtual device we find. This option
- * only works with the Linux Universal TUN/TAP driver.
- *
- * =back
- *
- * =n
- *
- * This element replaces the KernelTap element, which generated and required
- * Ethernet headers in addition to IP headers.
- *
- * Make sure that your kernel has tun support enabled before running
- * KernelTun. Initialization errors like "no such device" or "no such file or
- * directory" may indicate that your kernel isn't set up, or that some
- * required kernel module hasn't been loaded (on Linux, the relevant module is
- * "tun").
- *
- * This element differs from KernelTap in that it produces and expects IP
- * packets, not IP-in-Ethernet packets.
- *
- * =a
- *
- * FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
+=c
+
+KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, MTU, IGNORE_QUEUE_OVERFLOWS])
+
+=s devices
+
+user-level interface to /dev/tun or ethertap
+
+=d
+
+Reads IP packets from and writes IP packets to a /dev/net/tun, /dev/tun*,
+or /dev/tap* device.  This allows a user-level Click to hand packets to the
+ordinary kernel IP processing code.  KernelTun will also install a routing
+table entry so that the kernel can pass packets to the KernelTun device.
+
+KernelTun produces and expects IP packets.  If, for some reason, the kernel
+passes up a non-IP packet (or an invalid IP packet), KernelTun will emit
+that packet on its second output, or drop it if there is no second output.
+
+KernelTun allocates a /dev/net/tun, /dev/tun*, or /dev/tap* device (this
+might fail) and runs ifconfig(8) to set the interface's local (i.e.,
+kernel) address to ADDR and the netmask to MASK.  If a nonzero GATEWAY IP
+address (which must be on the same network as the tun) is specified, then
+KernelTun tries to set up a default route through that host.
+
+When cleaning up, KernelTun attempts to bring down the device via
+ifconfig(8).
+
+Keyword arguments are:
+
+=over 8
+
+=item HEADROOM
+
+Integer. The number of bytes left empty before the packet data to leave
+room for additional encapsulation headers. Default is 28.
+
+=item MTU
+
+Integer. The interface's MTU. KernelTun will refuse to send packets larger
+than the MTU. Default is 2048.
+
+=item IGNORE_QUEUE_OVERFLOWS
+
+Boolean.  If true, don't print more than one error message when
+there are queue overflows error when sending/receiving packets
+to/from the tun device (e.g. there was an ENOBUFS error).  Default
+is false.
+
+=item DEV_NAME
+
+String. If specified, try to alloc a tun device with name DEV_NAME.
+Otherwise, we'll just take the first virtual device we find. This option
+only works with the Linux Universal TUN/TAP driver.
+
+=back
+
+=n
+
+Make sure that your kernel has tun support enabled before running
+KernelTun.  Initialization errors like "no such device" or "no such file or
+directory" may indicate that your kernel isn't set up, or that some
+required kernel module hasn't been loaded (on Linux, the relevant module is
+"tun").
+
+Packets sent to ADDR will be processed by the host kernel stack; packets sent
+to any other address in ADDR/MASK will be sent to KernelTun.  Say you run this
+configuration:
+
+    tun :: KernelTun(1.0.0.1/8);
+    tun -> IPClassifier(icmp type echo) -> ICMPPingResponder
+        -> IPPrint -> tun;
+
+If you then "C<ping 1.0.0.1>", I<your own kernel> will respond.  Click will
+never see the packets, so it won't print anything.  But if you "C<ping
+1.0.0.2>", the pings are sent to Click.  You should see printouts from Click,
+and C<ping> should print Click's responses.
+
+This element differs from KernelTap in that it produces and expects IP
+packets, not IP-in-Ethernet packets.
+
+=a
+
+FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelTun : public Element { public:
   
