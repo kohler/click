@@ -183,7 +183,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     if (dst == _any_gateway_ip && _gw_info->is_gateway()) {
       //     output();
       packet->kill();
-    } if (dst == _ipaddr) {
+    } else if (dst == _ipaddr) {
       click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().cc());
       output(1).push(packet);
     } else {
