@@ -1,3 +1,20 @@
+2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ether.h (1.5), click_ip.h (1.8): nitlets
+
+2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.38), elements/userlevel/fromdevice.cc (1.29),
+	elements/userlevel/fromdevice.hh (1.15),
+	elements/userlevel/fromdump.cc (1.42), etc/libclick/DISTFILES
+	(1.4), include/click/click_fddi.h (1.1): add click_fddi.h header
+	for FDDI; use that header in FromDevice and FromDump
+
+2001-08-25 Saturday 14:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/local/mergebyts.cc (1.2): bug fix: fill empty slot
+	early, so that NULL_IS_DEAD works properly
+
 2001-08-25 Saturday 01:57  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: todump.cc (1.32), todump.hh (1.19): FDDI
