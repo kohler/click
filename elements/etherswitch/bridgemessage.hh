@@ -9,11 +9,11 @@ public:
   struct wire;
 
   BridgeMessage()			{ expire (); }
-  BridgeMessage(const wire* msg)	{ from_wire(msg); }
+  BridgeMessage(wire* msg)		{ from_wire(msg); }
 
 
   void reset(u_int64_t bridge_id);
-  void from_wire(const wire* msg);
+  void from_wire(wire* msg);
   void to_wire(wire* msg) const;
   static void fill_tcm(wire* msg);
 
@@ -29,43 +29,49 @@ public:
   // question, "If *I* sent this message on a certain port, how would
   // it compare?"
   int compare(const BridgeMessage* other) const;
-  int compare(const wire* other) const;
+  int compare(wire* other) const;
   int compare(const BridgeMessage* other,
 	      u_int64_t _bridge_id, u_int16_t _port_id) const;
 
   String s(String tag = "") const;
 
-#define PACKED __attribute__((packed))
   struct wire {
   public:
-    u_int8_t dst[6] PACKED;	// 12
-    u_int8_t src[6] PACKED;
+    u_int8_t dst[6];		// 12
+    u_int8_t src[6];
 
-    u_int16_t length PACKED;	// 5
-    u_int16_t sap PACKED;
-    u_int8_t ctl PACKED;
+    u_int16_t length;		// 5
+    u_int16_t sap;
+    u_int8_t ctl;
 
-
-    u_int16_t protocol PACKED;	// 35
-    u_int8_t version PACKED;
-    u_int8_t type PACKED;
-    u_int8_t tc:1 PACKED;
-    u_int8_t reserved:6 PACKED;
-    u_int8_t tca:1 PACKED;
-    u_int64_t root PACKED;
-    u_int32_t cost PACKED;
-    u_int64_t bridge_id PACKED;
-    u_int16_t port_id PACKED;
-    u_int16_t message_age PACKED;
-    u_int16_t max_age PACKED;
-    u_int16_t hello_time PACKED;
-    u_int16_t forward_delay PACKED;
+    u_int8_t xxx_protocol[2];	// 35
+    u_int8_t version;
+    u_int8_t type;
+    u_int8_t tc:1;
+    u_int8_t reserved:6;
+    u_int8_t tca:1;
+    u_int8_t xxx_root[8];
+    u_int8_t xxx_cost[4];
+    u_int8_t xxx_bridge_id[8];
+    u_int8_t xxx_port_id[2];
+    u_int8_t xxx_message_age[2];
+    u_int8_t xxx_max_age[2];
+    u_int8_t xxx_hello_time[2];
+    u_int8_t xxx_forward_delay[2];
 
     u_int8_t padding[8];	// 8
 
-    //    u_int32_t fcs PACKED;	// we never actually see this
+    String s(String tag = "");
 
-    String s(String tag = "") const;
+    u_int16_t &protocol()	{ return (u_int16_t &)*&xxx_protocol[0]; }
+    u_int64_t &root()		{ return (u_int64_t &)*&xxx_root[0]; }
+    u_int32_t &cost()		{ return (u_int32_t &)*&xxx_cost[0]; }
+    u_int64_t &bridge_id()	{ return (u_int64_t &)*&xxx_bridge_id[0]; }
+    u_int16_t &port_id()	{ return (u_int16_t &)*&xxx_port_id[0]; }
+    u_int16_t &message_age()	{ return (u_int16_t &)*&xxx_message_age[0]; }
+    u_int16_t &max_age()	{ return (u_int16_t &)*&xxx_max_age[0]; }
+    u_int16_t &hello_time()	{ return (u_int16_t &)*&xxx_hello_time[0]; }
+    u_int16_t &forward_delay()	{ return (u_int16_t &)*&xxx_forward_delay[0]; }
   };
 
   // Parameters that get propagated

@@ -289,8 +289,8 @@ EtherSpanTree::generate_packet(int output)
   } else {
     // We are designated bridge for this port, send _best.
     _best.to_wire(msg);
-    msg->bridge_id = htonq(((u_int64_t)_bridge_priority << 48) | _bridge_id);
-    msg->port_id = htons(output);
+    msg->bridge_id() = htonq(((u_int64_t)_bridge_priority << 48) | _bridge_id);
+    msg->port_id() = htons(output);
     if (_topology_change) {
       timeval cutoff;
       click_gettimeofday(&cutoff);

@@ -36,11 +36,11 @@ BridgeMessage::compare(const BridgeMessage* other) const {
 
 
 int
-BridgeMessage::compare(const BridgeMessage::wire* other) const {
-  COMPARE(_root, ntohq(other->root), 4);
-  COMPARE(_cost, ntohl(other->cost), 3);
-  COMPARE(_bridge_id, ntohq(other->bridge_id), 2);
-  COMPARE(_port_id, ntohs(other->port_id), 1);
+BridgeMessage::compare(BridgeMessage::wire* other) const {
+  COMPARE(_root, ntohq(other->root()), 4);
+  COMPARE(_cost, ntohl(other->cost()), 3);
+  COMPARE(_bridge_id, ntohq(other->bridge_id()), 2);
+  COMPARE(_port_id, ntohs(other->port_id()), 1);
   return 0;
 }
 
@@ -84,17 +84,17 @@ void BridgeMessage::expire() {
 }
 
 void
-BridgeMessage::from_wire(const BridgeMessage::wire* msg) {
-  _root = ntohq(msg->root);
-  _cost = ntohl(msg->cost);
-  _bridge_id = ntohq(msg->bridge_id);
-  _port_id = ntohs(msg->port_id);
+BridgeMessage::from_wire(BridgeMessage::wire* msg) {
+  _root = ntohq(msg->root());
+  _cost = ntohl(msg->cost());
+  _bridge_id = ntohq(msg->bridge_id());
+  _port_id = ntohs(msg->port_id());
 
   click_gettimeofday(&_timestamp);
 
   // How stale is this message?
   const int million = 1000000;
-  int lateness = (ntohs(msg->message_age) * million)/256;
+  int lateness = (ntohs(msg->message_age()) * million)/256;
   _timestamp.tv_sec -= lateness / million;
   _timestamp.tv_usec -= lateness % million;
   if (_timestamp.tv_usec < 0) {
@@ -105,9 +105,9 @@ BridgeMessage::from_wire(const BridgeMessage::wire* msg) {
   _tc = msg->tc;
 
   // Propagate Parameters
-  _max_age = ntohs(msg->max_age) / 256;
-  _hello_time =  ntohs(msg->hello_time) / 256;
-  _forward_delay =  ntohs(msg->forward_delay) / 256;
+  _max_age = ntohs(msg->max_age()) / 256;
+  _hello_time =  ntohs(msg->hello_time()) / 256;
+  _forward_delay =  ntohs(msg->forward_delay()) / 256;
 }
 
 void
@@ -118,33 +118,33 @@ BridgeMessage::to_wire(BridgeMessage::wire* msg) const {
   msg->tca = 0;
   msg->reserved = 0;
   msg->tc = _tc;
-  msg->root = htonq(_root);
-  msg->cost = htonl(_cost);
+  msg->root() = htonq(_root);
+  msg->cost() = htonl(_cost);
   // Actually, these two will be overwritten
-  msg->bridge_id = htonq(_bridge_id);
-  msg->port_id = htons(_port_id);
+  msg->bridge_id() = htonq(_bridge_id);
+  msg->port_id() = htons(_port_id);
   // How stale is this message?
   const int million = 1000000;
   if (_timestamp.tv_sec == ~(1<<31)) { // Special "do not expire" value
-    msg->message_age = htons(0);
+    msg->message_age() = htons(0);
   } else {
     timeval t;
     click_gettimeofday(&t);
     t.tv_sec -= _timestamp.tv_sec;
     t.tv_usec -= _timestamp.tv_usec;
-    msg->message_age = htons((t.tv_usec * 256)/million);
-    msg->message_age += htons(t.tv_sec * 256);
+    msg->message_age() = htons((t.tv_usec * 256)/million);
+    msg->message_age() += htons(t.tv_sec * 256);
   }
 
   // Propagate Parameters
-  msg->max_age = htons(256 * _max_age);
-  msg->hello_time =  htons(256 * _hello_time);
-  msg->forward_delay =  htons(256 * _forward_delay);
+  msg->max_age() = htons(256 * _max_age);
+  msg->hello_time() =  htons(256 * _hello_time);
+  msg->forward_delay() =  htons(256 * _forward_delay);
 }
 
 
 String
-BridgeMessage::wire::s(String tag) const {
+BridgeMessage::wire::s(String tag) {
   char* buf = new char[256];
   String s;
 
@@ -161,12 +161,12 @@ BridgeMessage::wire::s(String tag) const {
 	    "a/m/h/d: %hx/%hx/%hx/%hx",
 	    tag.cc(),
 	    type ? "???" : "CFG",
-	    cp_unparse_ulonglong(ntohq(bridge_id),16,false).cc(),
-	    ntohs(port_id),
+	    cp_unparse_ulonglong(ntohq(bridge_id()),16,false).cc(),
+	    ntohs(port_id()),
 	    tca ? "TCA":"tca", tc ? "TC" : "tc",
-	    ntohl(cost), cp_unparse_ulonglong(ntohq(root),16,false).cc(),
-	    ntohs(message_age), ntohs(max_age),
-	    ntohs(hello_time), ntohs(forward_delay));
+	    ntohl(cost()), cp_unparse_ulonglong(ntohq(root()),16,false).cc(),
+	    ntohs(message_age()), ntohs(max_age()),
+	    ntohs(hello_time()), ntohs(forward_delay()));
   s = buf;
   delete [] buf;
   return s;
@@ -177,7 +177,7 @@ void BridgeMessage::prep_msg(BridgeMessage::wire* msg) {
   memcpy(msg->dst, _all_bridges, 6);
   msg->sap = 0x4242;		// Bridge Messaging Protocol
   msg->ctl = 3;			// "Unnumbered information"
-  msg->protocol = 0;
+  msg->protocol() = 0;
   msg->version = 0;
 }
 
