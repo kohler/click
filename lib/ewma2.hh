@@ -49,6 +49,7 @@ class EWMA2 {
   int average() const	{ return (int) (_avg >> (METER_SCALE-FRAC_BITS)); }
   int stability_shift() const 		{ return _stability_shift; }
   int scale() const			{ return FRAC_BITS; }
+  int now() const			{ return _now_jiffies; }
 
   void initialize(int seconds);
   inline void update(int delta);

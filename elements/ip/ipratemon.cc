@@ -194,6 +194,7 @@ IPRateMonitor::set_thresh(String str)
 String
 IPRateMonitor::print(_stats *s, String ip = "")
 {
+  int jiffs = click_jiffies();
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
     if (s->counter[i].flags != CLEAN) {
@@ -211,15 +212,19 @@ IPRateMonitor::print(_stats *s, String ip = "")
       }
 
       if (nonzero) {
+	bool updated = false;
 	for(int j = 1; j < _no_of_rates; j++) { 
-	  if ((s->counter[i].values[j].average() >> 
-	       s->counter[i].values[j].scale()) > 1) 
+	  if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
 	    s->counter[i].values[j].update(0);
+	    updated = true;
+	  }
 	  ret += "\t"; 
 	  ret += cp_unparse_real 
 	    (s->counter[i].values[j].average() * CLICK_HZ, 
 	     s->counter[i].values[j].scale());
         }
+	if (updated) 
+	  s->counter[i].last_update = s->counter[i].values[1].now();
       } else
 	for(int j = 1; j < _no_of_rates; j++) ret += "\t0";
     
