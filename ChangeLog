@@ -1,3 +1,18 @@
+2001-08-23 Thursday 16:10  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/: freebsd-4.3-patch (1.6), make-bsd-patch (1.3), restore-bsd
+	(1.3): Fix the wx FreeBSD driver to work with our later revision
+	gigabit cards
+
+2001-08-23 Thursday 15:28  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/: linux-2.2.18-patch (1.11), linux-2.4.9-patch (1.5): fixes
+
+2001-08-23 Thursday 14:50  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.4.9-patch (1.4): move improvements to eepro100 from
+	2.2.18 to 2.4.9
+
 2001-08-23 Thursday 14:28  Benjie Chen <benjie@lcs.mit.edu>
 
 	* etc/linux-2.2.18-patch (1.10): some improvements to make eepro100
