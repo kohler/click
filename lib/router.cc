@@ -47,7 +47,7 @@ static int globalh_cap;
 
 Router::Router(const String &configuration, Master *m)
   : _master(m), _state(ROUTER_NEW),
-    _allow_star_handler(true), _running(false),
+    _allow_star_handler(true), _running(RUNNING_INACTIVE),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
     _configuration(configuration), _arena_factory(new HashMap_ArenaFactory),
     _hotswap_router(0), _next_router(0)
@@ -933,7 +933,7 @@ Router::initialize(ErrorHandler *errh)
 void
 Router::activate(ErrorHandler *errh)
 {
-  if (_state != ROUTER_LIVE || _running)
+  if (_state != ROUTER_LIVE || _running != RUNNING_PAUSED)
     return;
   
   // Take state if appropriate
@@ -956,8 +956,7 @@ Router::activate(ErrorHandler *errh)
   }
 
   // Activate router
-  _running = true;
-  master()->run_router(this);
+  master()->run_router(this);	// sets _running to RUNNING_ACTIVE
 }
 
 

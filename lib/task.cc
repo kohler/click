@@ -141,13 +141,15 @@ Task::add_pending(int p)
 {
     Master *m = _router->master();
     m->_task_lock.acquire();
-    _pending |= p;
-    if (!_pending_next && _pending) {
-	_pending_next = m->_task_list._pending_next;
-	m->_task_list._pending_next = this;
+    if (_router->_running >= Router::RUNNING_ACTIVE) {
+	_pending |= p;
+	if (!_pending_next && _pending) {
+	    _pending_next = m->_task_list._pending_next;
+	    m->_task_list._pending_next = this;
+	}
+	if (_pending)
+	    _thread->add_pending();
     }
-    if (_pending)
-	_thread->add_pending();
     m->_task_lock.release();
 }
 
@@ -170,7 +172,7 @@ void
 Task::true_reschedule()
 {
     assert(_thread);
-    if (_router->running() && attempt_lock_tasks()) {
+    if (_router->_running == Router::RUNNING_ACTIVE && attempt_lock_tasks()) {
 	if (!scheduled()) {
 	    fast_schedule();
 	    _thread->unsleep();

@@ -92,7 +92,7 @@ class Router { public:
 
   // MASTER
   Master *master() const			{ return _master; }
-  bool running() const				{ return _running; }
+  enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_ACTIVE = 0, RUNNING_PAUSED = 1 };
   
   // DRIVER RESERVATIONS
   void please_stop_driver()		{ adjust_driver_reservations(-1); }
@@ -229,6 +229,7 @@ class Router { public:
   static String router_read_handler(Element *, void *);
 
   friend class Master;
+  friend class Task;
   
 };
 

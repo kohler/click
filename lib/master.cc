@@ -95,16 +95,19 @@ Master::register_router(Router *router)
     _master_paused++;
 
     // add router to the list
-    assert(!router->_next_router);
+    assert(router && router->_running == Router::RUNNING_INACTIVE && !router->_next_router);
+    router->_running = Router::RUNNING_PAUSED;
     router->_next_router = _routers;
     _routers = router;
     _master_lock.release();
 }
 
 void
-Master::run_router(Router *)
+Master::run_router(Router *router)
 {
+    assert(router->_running == Router::RUNNING_PAUSED);
     _master_lock.acquire();
+    router->_running = Router::RUNNING_ACTIVE;
     _master_paused--;
     _master_lock.release();
 }
@@ -112,9 +115,18 @@ Master::run_router(Router *)
 void
 Master::remove_router(Router *router)
 {
-    _master_lock.acquire();
-    if (router->_running)
+    int was_running = router->_running;
+    router->_running = Router::RUNNING_DEAD;
+    if (was_running == Router::RUNNING_ACTIVE) {
+	_master_lock.acquire();
 	_master_paused++;
+	_master_lock.release();
+    } else if (was_running == Router::RUNNING_PAUSED)
+	/* nada */;
+    else {
+	assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
+	return;
+    }
 
     // Remove router, fix runcount
     {
@@ -133,9 +145,11 @@ Master::remove_router(Router *router)
 	*pprev = 0;
 	_runcount_lock.release();
 	if (!found) {
-	    if (router->_running)
+	    if (was_running == Router::RUNNING_ACTIVE) {
+		_master_lock.acquire();
 		_master_paused--;
-	    _master_lock.release();
+		_master_lock.release();
+	    }
 	    return;
 	}
     }
@@ -179,16 +193,14 @@ Master::remove_router(Router *router)
 	prev = &_task_list;
 	Task *t;
 	for (t = prev->_all_next; t != &_task_list; t = t->_all_next)
-	    if (t->_router == router)
-		t->_router = 0;
-	    else {
+	    if (t->_router != router) {
 		prev->_all_next = t;
 		t->_all_prev = prev;
 		prev = t;
 	    }
 	prev->_all_next = t;
 	t->_all_prev = prev;
-	
+    
 	_task_lock.release();
     }
     
@@ -243,6 +255,7 @@ Master::remove_router(Router *router)
     _select_lock.release();
 #endif
 
+    _master_lock.acquire();
     _master_paused--;
     _master_lock.release();
 
@@ -260,7 +273,7 @@ Master::check_driver()
     if (_runcount <= 0) {
 	_runcount = 0;
 	for (Router *r = _routers; r; r = r->_next_router) {
-	    if (r->_runcount <= 0 && r->running()) {
+	    if (r->_runcount <= 0 && r->_running == Router::RUNNING_ACTIVE) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
 		if (dm)
 		    while (1) {
