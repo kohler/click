@@ -140,11 +140,9 @@ $i"
 	awk_exports=`echo "$exports1"'
 '"$exports2"'
 '"$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`
-	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;
+	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;
 }
 {
-  sub(/ELEMENT_REQUIRES\(/, "", $2);
-  sub(/\)/, "", $2);
   split($2, deps, / +/);
   for (j in deps) {
     i = deps[j]
@@ -354,14 +352,12 @@ EOF
     # output files!
     if test -n "$package"; then
 	# also search /dev/null so there are always at least two files
-	grep '^EXPORT_ELEMENT' $files /dev/null | $awk -F: 'BEGIN {
+	grep '^EXPORT_ELEMENT' $files /dev/null | sed 's/EXPORT_ELEMENT(\(.*\)).*/\1/' | $awk -F: 'BEGIN {
   OFS = ""; nrebecca = 0; packname="'"$package"'";
 }
 {
   sub(/\.cc/, ".hh", $1);
   INCLUDES[$1] = 1;
-  sub(/EXPORT_ELEMENT\(/, "", $2);
-  sub(/\)/, "", $2);
   B = B "  CLICK_DMALLOC_REG(\"" $2 "\");\n  hatred_of_rebecca[" nrebecca "] = click_add_element_type(0, new " $2 ");\n";
   C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
   nrebecca++;
