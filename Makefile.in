@@ -30,6 +30,7 @@ $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 	cd $(srcdir); $(AUTOHEADER)
 	cd $(srcdir); $(AUTOCONF)
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
+	touch $(srcdir)/configure.in $(srcdir)/acconfig.h
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	@if echo "$?" | grep -q configure 2>/dev/null; then :; else \
 	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status; fi

@@ -91,8 +91,8 @@ int main(int c, char **v) {
   int *b = new(&a) int;
   return 0;
 }], ac_cv_good_new_h=yes, ac_cv_good_new_h=no, ac_cv_good_new_h=no))
-if test $ac_cv_good_new_h = yes; then
-  AC_DEFINE_UNQUOTED(HAVE_NEW_H, 1)
+if test "$ac_cv_good_new_h" = yes; then
+  AC_DEFINE(HAVE_NEW_H)
 fi
 
 dnl
