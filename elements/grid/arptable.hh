@@ -37,6 +37,8 @@ class ARPTable : public Element { public:
   /* returns ff:ff:ff:ff:ff:ff if none is found */
   EtherAddress lookup(IPAddress ip);
 
+  IPAddress reverse_lookup(EtherAddress eth);
+
   void insert(IPAddress ip, EtherAddress eth);
  private:
   
@@ -57,10 +59,11 @@ class ARPTable : public Element { public:
   };
   
   typedef BigHashMap<IPAddress, DstInfo> ATable;
+  typedef BigHashMap<EtherAddress, IPAddress> RTable;
   typedef ATable::const_iterator ARPIter;
   
   ATable _table;
-
+  RTable _rev_table;
   EtherAddress _bcast;
   
 };

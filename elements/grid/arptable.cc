@@ -74,7 +74,17 @@ ARPTable::lookup(IPAddress ip)
   return _bcast;
 }
 
+IPAddress
+ARPTable::reverse_lookup(EtherAddress eth)
+{
+  IPAddress *ip = _rev_table.findp(eth);
 
+  if (ip) {
+    return _rev_table[eth];
+  }
+  return IPAddress();
+
+}
 void
 ARPTable::insert(IPAddress ip, EtherAddress eth) 
 {
@@ -85,6 +95,9 @@ ARPTable::insert(IPAddress ip, EtherAddress eth)
   }
   dst->_eth = eth;
   click_gettimeofday(&dst->_when);
+
+
+  _rev_table.insert(eth, ip);
 }
 String
 ARPTable::static_print_mappings(Element *e, void *)

@@ -186,11 +186,12 @@ SRCR::push(int port, Packet *p_in)
   if(port == 0 && pk->get_hop(pk->next()) != _ip){
     // it's not for me. these are supposed to be unicast,
     // so how did this get to me?
-    click_chatter("SRCR %s: data not for me %d/%d %s",
+    click_chatter("SRCR %s: data not for me %d/%d %s %s",
 		  _ip.s().cc(),
 		  pk->next(),
 		  pk->num_hops(),
-		  pk->get_hop(pk->next()).s().cc());
+		  pk->get_hop(pk->next()).s().cc(),
+		  pk->get_dhost().s().cc());
     p_in->kill();
     return;
   }

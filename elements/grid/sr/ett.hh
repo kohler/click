@@ -49,6 +49,14 @@ class ETT : public Element {
 			  void *, ErrorHandler *errh); 
   void start(IPAddress dst);
 
+
+
+  static int static_link_failure(const String &arg, Element *e,
+				 void *, ErrorHandler *errh); 
+  void link_failure(EtherAddress dst);
+
+
+
   static String static_print_stats(Element *e, void *);
   String print_stats();
 

@@ -701,6 +701,37 @@ ETT::start(IPAddress dst)
   start_query(dst);
 }
 
+
+int
+ETT::static_link_failure(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  ETT *n = (ETT *) e;
+  EtherAddress dst;
+  String foo = arg;
+  if (!cp_ethernet_address(arg, &dst))
+    return errh->error("ETT link_falure handler: dst not etheraddress");
+
+  n->link_failure(dst);
+  return 0;
+}
+void
+ETT::link_failure(EtherAddress dst) 
+{
+  click_chatter("ETT %s: link_failure called for with dst %s", 
+		id().cc(), dst.s().cc());
+  IPAddress ip = _arp_table->reverse_lookup(dst);
+
+  if (ip == IPAddress()) {
+    click_chatter("ETT %s: reverse arp found no ip\n",
+		  id().cc());
+  } else {
+    click_chatter("ETT %s: reverse arp found %s\n",
+		  id().cc(),
+		  ip.s().cc());
+  }
+}
+
 void
 ETT::add_handlers()
 {
@@ -709,6 +740,7 @@ ETT::add_handlers()
   add_read_handler("is_gateway", static_print_is_gateway, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
+  add_write_handler("link_failure", static_link_failure, 0);
 }
 
 void

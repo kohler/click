@@ -31,7 +31,7 @@ enum SRCRPacketType { PT_QUERY = (1<<0),
 
 
 
-static const uint8_t _srcr_version = 0x03;
+static const uint8_t _srcr_version = 0x04;
 
 // Packet format.
 struct sr_pkt {
@@ -40,7 +40,9 @@ struct sr_pkt {
   uint16_t      ether_type;
 
   uint8_t _version; /* see _srcr_version */
-  uint32_t _link_seq;
+  uint16_t _ttl;
+  uint16_t _chksum;
+
   uint8_t _type;  /* see enum SRCRPacketType */
   uint16_t _flags; 
 
@@ -52,7 +54,7 @@ struct sr_pkt {
   
   in_addr extra1;
   in_addr extra2;
-  uint8_t extra;
+  uint16_t extra;
   
   uint32_t _seq;   // Originator's sequence number.
 
@@ -68,12 +70,6 @@ struct sr_pkt {
   }
   void set_dhost(EtherAddress _eth) {
     memcpy(ether_dhost, _eth.data(), 6);
-  }
-  void set_link_seq(int x) {
-    _link_seq = htonl(x);
-  }
-  int get_link_seq() {
-    return htonl(_link_seq);
   }
   void set_shost(EtherAddress _eth) {
     memcpy(ether_shost, _eth.data(), 6);
