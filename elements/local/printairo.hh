@@ -11,7 +11,8 @@ Print([TAG, I<KEYWORDS>])
 
 =s debugging
 
-prints Aironet header contents
+Prints raw Aironet header contents including 802.11 PLCP information,
+returns the underlying 802.11 packet.
 
 =d
 
@@ -22,14 +23,24 @@ Keyword arguments are:
 
 =item TIMESTAMP
 
-Boolean. Determines whether to print each packet's timestamp in seconds since
-1970. Default is false.
+Boolean.  Determines whether to print each packet's timestamp in seconds since
+1970.  Default is false.
+
+=item QUIET
+
+Boolean.  If true, don't print any Aironet header info, just
+decapsulate the 802.11 packet and pass it through.  Default is false.
+
+=item VERBOSE
+
+Boolean.  If true, print some extra information from the PLCP header.
+Default is false.  This argument has no effect if QUIET is true.
 
 =back
 
 =a
 
-Print, IPPrint */
+Print, IPPrint, Print80211 */
 
 class PrintAiro : public Element { public:
 
@@ -49,6 +60,8 @@ class PrintAiro : public Element { public:
   
   String _label;
   bool _timestamp;
+  bool _quiet;
+  bool _verbose;
 };
 
 CLICK_ENDDECLS
