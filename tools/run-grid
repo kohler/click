@@ -34,8 +34,10 @@ $DO_CLEANUP = 1;
 
 $CLICK_DEBUG = "cat";
 
-$GRID_CHANNEL = "5";
-$GRID_SSID = "grid";
+$GRID_CHANNEL = "2";
+$GRID_SSID = "pij6";
+
+$BOGUS_IP = "10.3.4.5";
 
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
@@ -44,11 +46,6 @@ $HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "100"; # always run DSDV -- assumer less than 100 hops in net ;>
 
 $RANGE = "-1"; # don't filter
-$GRID_GW = "";
-
-$GRID_NETMASK = "255.255.255.0";
-$GRID_NET = "18.26.7.0";
-$GRID_NET_HEX = "121a07"; # 18.26.7.*
 
 $NBR_TIMEOUT = "3200"; # msecs
 $HELLO_PERIOD = "500"; # msecs
@@ -69,23 +66,15 @@ sub ip_to_hex {
 	
 sub my_system {
     if ($DEBUG) {
-	print stderr "run_grid:  ", @_, "\n";
+	print stderr "+rg:  ", @_, "\n";
  	system @_;   
     } else {
+	print stderr "+rg:  ", @_, "\n";
 	system @_;
     }
 }
 
 $SYSTEM_TYPE = `uname`;
-
-#if ($ARGV[0] eq "-config") {
-#    if (@ARGV < 2) {
-#	print "usage: $0 -config <config-file>\n";
-#	exit 1;
-#    }
-#
-#    $GRID_CONFIG_FILE = $ARGV[1];
-#}
 
 print "run_grid:  using config file $GRID_CONFIG_FILE\n";
 open(grid_config, "$GRID_CONFIG_FILE") || die "run_grid: can't open config file ", $GRID_CONFIG_FILE, "\n";
@@ -95,10 +84,6 @@ print "run_grid:  system type is $SYSTEM_TYPE\n";
 $IS_GATEWAY = 0;
 
 while (<grid_config>) {
-    # print;
-#    if (/^\#/) {
-#	continue;
-#    }
 
     if (/IDENTIFIER=(.+)/) {
 	$IDENTIFIER = $1;
@@ -118,24 +103,18 @@ while (<grid_config>) {
 	print "run_grid:  GRID_GW is deprecated\n";
 	exit -1;
     }
-	
-    if (/GW=(\d+\.\d+\.\d+\.\d+)/) {
-	$GRID_GW = $1;
-	
-	print "run_grid:  setting gateway to $GRID_GW\n";
-    }
     
     if (/GW_IP=(\d+\.\d+\.\d+\.\d+)/) {
 	$GW_IP = $1;
     }
     
+    if (/GW_NETMASK=(\d+\.\d+\.\d+\.\d+)/) {
+	$GW_NETMASK = $1;
+    }
+
     if (/GRID_IP=(\d+\.\d+\.\d+\.\d+)/) {
 	$GRID_IP = $1;
     }
-
-#    if (/ROUTED_IP=(\d+\.\d+\.\d+\.\d+)/) {
-#	$ROUTED_IP = $1;
-#    }
     
     if (/LOC_AWARE=(-?\d+\.?\d*|\.d+)/) {
 	$LOC_AWARE = $1;
@@ -148,7 +127,6 @@ while (<grid_config>) {
 
     if (/LON=(-?\d+\.?\d*|\.d+)/) {
 	$POS_LON = $1;
-#	print ("XXX $POS_LON\n");
     }
 
     if (/GRID_IF=(\w+)/) {
@@ -182,10 +160,10 @@ print "run_grid:  GRID_IF = $GRID_IF\n";
 print "run_grid:  RADIO_TYPE = $RADIO_TYPE\n";
       
 print "run_grid:  IS_GATEWAY = $IS_GATEWAY\n";
-# print "run_grid:  GRID_GW = $GRID_GW\n";
 print "run_grid:  GW_IF = $GW_IF\n";
 print "run_grid:  GW_IP = $GW_IP\n";
-      
+print "run_grid:  GW_NETMASK = $GW_NETMASK\n";
+
 print "run_grid:  LOC_AWARE = $LOC_AWARE\n";
 print "run_grid:  POS_LAT = $POS_LAT\n";
 print "run_grid:  POS_LON = $POS_LON\n";
@@ -207,7 +185,7 @@ if (!defined $GRID_IP) {
 }
 
 if (!defined $IS_GATEWAY) {
-    print "run_grid:  gateway-ness (IS_GATEWAY) not defined in configuration\n";
+    print "run_grid:  IS_GATEWAY not defined in configuration\n";
     exit -1;
 }
 
@@ -226,8 +204,8 @@ if (!defined $RADIO_TYPE) {
     exit -1;
 }
 
-if ($IS_GATEWAY && (!defined $GW_IF || !defined $GW_IP)) {
-    print "run_grid:  no IP for gateway interface\n";
+if ($IS_GATEWAY && (!defined $GW_IF || !defined $GW_IP || !defined $GW_NETMASK)) {
+    print "run_grid:  one or more of the following not defined for gateway: GW_IF, GW_IP, GW_NETMASK\n";
     exit -1;
 }
 
@@ -236,31 +214,17 @@ if (!$LOC_AWARE && (defined $POS_LAT || defined $POS_LON)) {
     exit -1;
 }
 
-if (!($GRID_IP =~ /18.26.7.\d+/)) {
-    print "run_grid:  bad grid address `$GRID_IP'; must be in 18.26.7/24\n";
+if ($GRID_IP =~ /18.26.7.\d+/) {
+    $GRID_NETMASK = "255.255.255.0";
+} elsif  ($GRID_IP =~ /10.2.\d+.\d+/) {
+    $GRID_NETMASK = "255.255.0.0";
+} else {
+    print "run_grid:  bad grid address `$GRID_IP'; must be in 18.26.7/24 or 10.2/16\n";
     exit -1;
 }
 
 print "run_grid:  running grid with IP $GRID_IP on interface $GRID_IF ($RADIO_TYPE);\n";
 print "run_grid:     ad-hoc channel/SSID $GRID_CHANNEL/$GRID_SSID.\n";
-
-# open click config, run click.
-
-#if ($IS_GATEWAY) {
-#    $CLICK_CONFIG = "grid-gateway.click";
-#} else {	     
-#    $CLICK_CONFIG = "grid.click";
-#}
-
-$CLICK_CONFIG = "grid.click";
-
-if ($IS_GATEWAY) {
-    open (click_config, "cpp -DCPP_IS_GATEWAY $CLICK_CONFIG |") || 
-	"can't preprocess click configuration (cpp -DIS_GATEWAY $CLICK_CONFIG)\n";
-} else {
-    open (click_config, "cpp $CLICK_CONFIG |") || 
-	"can't preprocess click configuration (cpp $CLICK_CONFIG)\n";
-}
 
 # system specific stuff here
 setup_net_info();
@@ -275,7 +239,19 @@ if ($DEBUG) {
     $CLICK = $CLICK_DEBUG;
 }
 
-open(P, "| $CLICK");
+# open click config, run click.
+
+$CLICK_CONFIG = "grid.click";
+$CLICK_CONFIG_OUT = "runtime_grid.click";
+
+$CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
+
+open (click_config, "$CLICK_CONFIG_CMD |") || 
+    die "can't preprocess click configuration ($CLICK_CONFIG_CMD)\n";
+
+open (click_config_out, "> $CLICK_CONFIG_OUT") ||
+    die "can't open click configuration output file ($CLICK_CONFIG_OUT)\n";
+
 while(<click_config>) {
 
     s/LOC_DB/$LOC_DB/;
@@ -287,7 +263,6 @@ while(<click_config>) {
     s/POS_LAT/$POS_LAT/;
     s/POS_LON/$POS_LON/;
     s/GRID_NETMASK/$GRID_NETMASK/;
-    s/GRID_NET_HEX/$GRID_NET_HEX/;
     s/NBR_TIMEOUT/$NBR_TIMEOUT/;
     s/HELLO_PERIOD/$HELLO_PERIOD/;
     s/HELLO_JITTER/$HELLO_JITTER/;
@@ -298,35 +273,70 @@ while(<click_config>) {
     s/GRID_LOC_QUERY_PROTO/$GRID_LOC_QUERY_PROTO/;
     s/GRID_LOC_REPLY_PROTO/$GRID_LOC_REPLY_PROTO/;
     s/GRID_LR_HELLO_PROTO/$GRID_LR_HELLO_PROTO/;
-    s/GRID_GW/$GRID_GW/;
     s/GRID_IP/$GRID_IP/;
     s/GRID_HEX_IP/$GRID_IP_HEX/;
     s/WI_NET_DEVICE/$GRID_IF/;
 
+    s/GRID_NET1_HEX/121A07/;
+    s/GRID_NET2_HEX/0A02/;
+
     s/GRID_MAC_ADDR/$GRID_HW_ADDR/;
 
+    s/GRID_ANY_GATEWAY_IP/18.26.7.254/;
+    s/GRID_HEX_ANY_GATEWAY_IP/121a07fe/;
+
+    s/BOGUS_IP/$BOGUS_IP/;
+    s/BOGUS_NETMASK/255.255.255.255/;
+
     s/GW_IP/$GW_IP/;
-    s/GW_NETMASK/255.255.255.0/;
+    s/GW_NETMASK/$GW_NETMASK/;
     s/GW_HEX_IP/$GW_IP_HEX/;
     s/GW_HEX_NET/$GW_NET_HEX/;
-    s/GW_REAL_IP/$GW_GATEWAY/;
     s/GW_NET_DEVICE/$GW_IF/;
     s/GW_MAC_ADDR/$GW_HW_ADDR/;
-    s/GRID_NET/$GRID_NET/;
 
-    print P $_;
+    print click_config_out $_;
 }
 
-close P;
-close click_config_file;
+close click_config;
+close click_config_out;
 
-print stderr "run_grid:  click died.\n";
+# $OLDFH = select(P); $| = 1; select($OLDFH);
 
-if ($DO_CLEANUP) {
-    do_cleanup ();
+if ( fork () ) {
+    my_system "$CLICK $CLICK_CONFIG_OUT";
+
+    print stderr "run_grid:  click exited.\n";
+    
+    if ($DO_CLEANUP) {
+	do_cleanup ();
+    }
+
+    exit 0;
+
+} else {
+##  MORE SYSTEM-SPECIFIC STUFF HERE
+    
+    sleep 10;
+    
+    if ($SYSTEM_TYPE =~ /OpenBSD/) {
+	
+	if ($STATIC_IP) {
+	    my_system "route add 10.2.0.0/16 -interface $GRID_IP";
+	} else {
+	    my_system "route add 18.26.7.0/24 -interface $GRID_IP";
+	}
+	
+	if (! $IS_GATEWAY) {
+	    my_system "/sbin/route add default -interface $GRID_IP";
+	} else {
+	    my_system "/sbin/route add $GW_IP -interface $BOGUS_IP";
+	}
+	
+    }
+
+    exit 0;
 }
-
-exit 0;
 
 sub setup_net_info {
     
@@ -337,8 +347,9 @@ sub setup_net_info {
 	
 	$GRID_HW_ADDR = "";
 	$GW_HW_ADDR = "";
-	$GW_IP = "";
-	$GW_GATEWAY = "";
+
+	$OLD_GW_IP = "";
+	$OLD_GW_GATEWAY = "";
 
 	$GRID_IFCONFIG_OUT = `/sbin/ifconfig $GRID_IF`;
 
@@ -352,63 +363,62 @@ sub setup_net_info {
 
 	$ROUTE_INFO = `route -n get default`;
 	if (!($ROUTE_INFO =~ /\n\s+interface: (\S+)/)) {
-	    print "run_grid:  unable to determine default interface\n";
-#	    do_cleanup ();
-	    exit -1;
+	    print "run_grid:  warning: unable to determine default interface\n";
+	    print "run_grid:  ROUTE_INFO is /$ROUTE_INFO/\n";
+	    $DEFAULT_IF = "none";
 	} else {
 	    $DEFAULT_IF = $1;
 	}
+
+	my_system "ifconfig an0 up";
 	
 	if ($IS_GATEWAY) {
+
 	    print "run_grid:  determining gateway-specific variables\n";
 	    
 	    if (!(`netstat -I $GW_IF -n` =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
 		print "run_grid:  unable to determine MAC address for gateway interface $GRID_IF\n";
-#		do_cleanup ();
 		exit -1;
 	    } else {
 		$GW_HW_ADDR = $1;
 	    }
 
-	    $GW_IFCONFIG_OUT = `/sbin/ifconfig $GW_IF`;
-	    
-	    if (!($GW_IFCONFIG_OUT =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)) {
-		print "run_grid:  unable to determine wired IP address\n";
-#		do_cleanup ();
-		exit -1;
-	    } else {
-		$GW_IP = $1;
-
-		# "XXX" -- assuming netmask is 0xffffff00?
-		# also below.
-
-		if (!($GW_IP =~ /(\d+.\d+.\d+).\d+/)) {
-		    print "run_grid:  unable to get wired net address\n";
-#		    do_cleanup ();
-		    exit -1;
-		}
-		$GW_NET = "$1"; # keep as only the first 3 digits
-	    }
-	    
-	    print "run_grid:  decided wired net is $GW_NET/24\n";
-
-	    $ROUTE_INFO = `route -n get default`;
-	    if (!($ROUTE_INFO =~ /\n\s+gateway: ($GW_NET.\d+)/)) {
-		print "run_grid:  unable to determine wired gateway\n";
-#		do_cleanup ();
-		exit -1;
-	    } else {
-		$GW_GATEWAY = $1;
-	    }
-	}
+	} # IS_GATEWAY
 
 	print "run_grid:  GRID_HW_ADDR = $GRID_HW_ADDR\n";
 	print "run_grid:  DEFAULT_IF = $DEFAULT_IF\n";
-	
+
+	# XXX assumption: only interface on which dhclient could be running is GRID_IF
+
 	if ($IS_GATEWAY) {
 	    print "run_grid:  GW_HW_ADDR = $GW_HW_ADDR\n";
-	    print "run_grid:  GW_IP = $GW_IP\n";
-	    print "run_grid:  GW_GATEWAY = $GW_GATEWAY\n";
+	}
+
+	if (-e '/var/run/dhclient.pid') {
+	    print "run_grid:  trying to kill dhclient ...\n";
+	    my_system "kill `cat /var/run/dhclient.pid`";
+	}
+
+# set the wireless adapter to ad-hoc mode
+	if ($RADIO_TYPE eq 'aironet') {
+	    my_system "ancontrol $GRID_IF -o 0";
+	    my_system "ancontrol $GRID_IF -c $GRID_CHANNEL";
+	    my_system "ancontrol $GRID_IF -n $GRID_SSID";
+	} elsif ($RADIO_TYPE eq 'wavelan') {
+	    
+	    print "-----------------------------------------------------------------------------\n";
+	    print " note: as of 1 August 2001 there is no obvious indication that wavelan cards \n";
+	    print " running under *bsd can interoperate in ad hoc mode with aironet cards under \n";
+	    print " openbsd.  so if you're running the same driver that we're running now,      \n";
+	    print " there is a good chance grid will not work.                                  \n";
+	    print "-----------------------------------------------------------------------------\n";
+
+	    my_system "wicontrol $GRID_IF -p 3"; # ad hoc
+	    my_system "wicontrol $GRID_IF -n $GRID_SSID";
+	    my_system "wicontrol $GRID_IF -f $GRID_CHANNEL";
+	} else {
+	    print "radio type $RADIO_TYPE not supported\n";
+	    exit -1;
 	}
 	
 # turn off routing etc. for grid interface
@@ -416,32 +426,28 @@ sub setup_net_info {
 	
 # remove all routes through the grid interface, and make sure it is up
 	
-	if ($DEFAULT_IF == $GRID_IF) {
+	if ($DEFAULT_IF eq $GRID_IF) {
 
-# decouto: assume the default route was the one through the adapter!
-# XXX [should be fixed by this if ()?  but untested.  this probably
-# shouldn't matter if gateways are properly configured.]
+# assume the default route was the one through the adapter!  XXX
+
+# [update (01/30/07) should be fixed by this 'if'...  but untested.
+# this probably shouldn't matter if gateways are properly configured.]
 
 	    my_system "/sbin/route -n delete default";
+	} else {
+	    print "default route does not appear to be through grid interface; not deleting\n";
 	}
-	
-	my_system "/sbin/ifconfig $GRID_IF 0";
-		
-# set the wireless adapter to ad-hoc mode
-	my_system "ancontrol $GRID_IF -o 0";
-	my_system "ancontrol $GRID_IF -c $GRID_CHANNEL";
-	my_system "ancontrol $GRID_IF -n $GRID_SSID";
-	
+
+	my_system "/sbin/ifconfig $GRID_IF delete";
+
 # set mtu to account for grid encapsulation
 # XXX how do we know we get tun0? 
 	
 	my_system "ifconfig tun0 mtu 1350";
 
-#	my_system "route -n delete default $lan_gw";
-	
 	if ($IS_GATEWAY) {
 	    my_system "sysctl -w net.inet.ip.forwarding=1";
-            my_system "ifconfig tun1 mtu 1350"; # interface to grid net
+            my_system "ifconfig tun1 mtu 1350";
 	}
 	
     } elsif ($SYSTEM_TYPE == 'Linux') {
@@ -702,16 +708,26 @@ sub do_cleanup {
     
     if ($SYSTEM_TYPE == 'OpenBSD') {	
 
-	my_system "/sbin/ifconfig tun0 0";
+	my_system "/sbin/ifconfig tun0 delete";
 	my_system "/sbin/ifconfig tun0 down";
 
 	if ($IS_GATEWAY) {
-	    my_system "/sbin/ifconfig tun1 0";
+	    my_system "/sbin/ifconfig tun1 delete";
 	    my_system "/sbin/ifconfig tun1 down";
 	}
 
-	my_system "/sbin/route delete default";
-	my_system "/sbin/route flush";	
+	if ($RADIO_TYPE eq 'aironet') {
+	    my_system "ancontrol $GRID_IF -o 1";
+	    my_system "ancontrol $GRID_IF -c 1";
+	    my_system "ancontrol $GRID_IF -n ''";
+	} elsif ($RADIO_TYPE eq 'wavelan') {
+	    my_system "wicontrol $GRID_IF -p 1"; # infra
+	    my_system "wicontrol $GRID_IF -n ''";
+	} else {
+	    print "radio type $RADIO_TYPE not supported in cleanup?  this should not occur.\n";
+	}
+
+	my_system "/sbin/route -n flush";	
 	my_system "sh /etc/netstart";
 
     } elsif ($SYSTEM_TYPE == 'Linux') {
