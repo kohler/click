@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * rrsched.{cc,hh} -- round robin scheduler element
+ * simplepriosched.{cc,hh} -- priority scheduler element
  * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -17,60 +17,36 @@
  */
 
 #include <click/config.h>
-#include <click/error.hh>
-#include "rrsched.hh"
+#include "simplepriosched.hh"
 CLICK_DECLS
 
-RRSched::RRSched()
-    : Element(0, 1), _next(0), _signals(0)
+SimplePrioSched::SimplePrioSched()
 {
     MOD_INC_USE_COUNT;
+    add_output();
 }
 
-RRSched::~RRSched()
+SimplePrioSched::~SimplePrioSched()
 {
     MOD_DEC_USE_COUNT;
 }
 
 void
-RRSched::notify_ninputs(int i)
+SimplePrioSched::notify_ninputs(int i)
 {
     set_ninputs(i);
 }
 
-int 
-RRSched::initialize(ErrorHandler *errh)
-{
-    if (!(_signals = new NotifierSignal[ninputs()]))
-	return errh->error("out of memory!");
-    for (int i = 0; i < ninputs(); i++)
-	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
-    return 0;
-}
-
-void
-RRSched::cleanup(CleanupStage)
-{
-    delete[] _signals;
-}
-
 Packet *
-RRSched::pull(int)
+SimplePrioSched::pull(int)
 {
-    int n = ninputs();
-    int i = _next;
-    for (int j = 0; j < n; j++) {
-	Packet *p = (_signals[i] ? input(i).pull() : 0);
-	i++;
-	if (i >= n)
-	    i = 0;
-	if (p) {
-	    _next = i;
+    for (int i = 0; i < ninputs(); i++) {
+	if (Packet *p = input(i).pull())
 	    return p;
-	}
     }
     return 0;
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(RRSched)
+EXPORT_ELEMENT(SimplePrioSched)
+ELEMENT_MT_SAFE(SimplePrioSched)

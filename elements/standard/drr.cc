@@ -1,8 +1,10 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * drr.{cc,hh} -- deficit round-robin scheduler
  * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,81 +23,112 @@
 CLICK_DECLS
 
 DRRSched::DRRSched()
-  : _quantum(500), _head(0), _deficit(0), _next(0)
+    : _quantum(500), _head(0), _deficit(0), _signals(0), _next(0)
 {
-  MOD_INC_USE_COUNT;
-  add_output();
+    MOD_INC_USE_COUNT;
+    add_output();
 }
 
 DRRSched::~DRRSched()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
+}
+
+void *
+DRRSched::cast(const char *n)
+{
+    if (strcmp(n, "Notifier") == 0)
+	return static_cast<Notifier *>(this);
+    else
+	return Element::cast(n);
+}
+
+Notifier::SearchOp
+DRRSched::notifier_search_op()
+{
+    return SEARCH_UPSTREAM_LISTENERS;
 }
 
 void
 DRRSched::notify_ninputs(int i)
 {
-  set_ninputs(i);
+    set_ninputs(i);
+}
+
+int
+DRRSched::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+    PassiveNotifier::initialize(router());
+    return Element::configure(conf, errh);
 }
 
 int
 DRRSched::initialize(ErrorHandler *errh)
 {
-  _head = new Packet *[ninputs()];
-  _deficit = new unsigned[ninputs()];
-  if (!_head || !_deficit)
-    return errh->error("out of memory!");
+    _head = new Packet *[ninputs()];
+    _deficit = new unsigned[ninputs()];
+    _signals = new NotifierSignal[ninputs()];
+    if (!_head || !_deficit || !_signals)
+	return errh->error("out of memory!");
 
-  for (int i = 0; i < ninputs(); i++) {
-    _head[i] = 0;
-    _deficit[i] = 0;
-  }
-  _next = 0;
-  return 0;
+    for (int i = 0; i < ninputs(); i++) {
+	_head[i] = 0;
+	_deficit[i] = 0;
+	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
+    }
+    _next = 0;
+    return 0;
 }
 
 void
 DRRSched::cleanup(CleanupStage)
 {
-  if (_head)
-    for (int j = 0; j < ninputs(); j++)
-      if (_head[j])
-        _head[j]->kill();
-  delete[] _head;
-  delete[] _deficit;
+    if (_head)
+	for (int j = 0; j < ninputs(); j++)
+	    if (_head[j])
+		_head[j]->kill();
+    delete[] _head;
+    delete[] _deficit;
+    delete[] _signals;
 }
 
 Packet *
 DRRSched::pull(int)
 {
-  int n = ninputs();
+    int n = ninputs();
+    bool signals_on = false;
 
-  // Look at each input once, starting at the *same*
-  // one we left off on last time.
-  for (int j = 0; j < n; j++) {
-    Packet *p;
-    if(_head[_next]){
-      p = _head[_next];
-      _head[_next] = 0;
-    } else {
-      p = input(_next).pull();
-    }
-    if(p == 0){
-      _deficit[_next] = 0;
-    } else if(p->length() <= _deficit[_next]){
-      _deficit[_next] -= p->length();
-      return(p);
-    } else {
-      _head[_next] = p;
+    // Look at each input once, starting at the *same*
+    // one we left off on last time.
+    for (int j = 0; j < n; j++) {
+	Packet *p;
+	if (_head[_next]) {
+	    p = _head[_next];
+	    _head[_next] = 0;
+	    signals_on = true;
+	} else if (_signals[_next]) {
+	    p = input(_next).pull();
+	    signals_on = true;
+	} else
+	    p = 0;
+
+	if (p == 0)
+	    _deficit[_next] = 0;
+	else if (p->length() <= _deficit[_next]) {
+	    _deficit[_next] -= p->length();
+	    set_signal_active(true);
+	    return p;
+	} else
+	    _head[_next] = p;
+
+	_next++;
+	if (_next >= n)
+	    _next = 0;
+	_deficit[_next] += _quantum;
     }
 
-    _next++;
-    if(_next >= n)
-      _next = 0;
-    _deficit[_next] += _quantum;
-  }
-  
-  return 0;
+    set_signal_active(signals_on);
+    return 0;
 }
 
 CLICK_ENDDECLS

@@ -1,8 +1,10 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * priosched.{cc,hh} -- priority scheduler element
  * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -16,35 +18,51 @@
  */
 
 #include <click/config.h>
+#include <click/error.hh>
 #include "priosched.hh"
 CLICK_DECLS
 
 PrioSched::PrioSched()
+    : Element(0, 1), _signals(0)
 {
-  MOD_INC_USE_COUNT;
-  add_output();
+    MOD_INC_USE_COUNT;
 }
 
 PrioSched::~PrioSched()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 void
 PrioSched::notify_ninputs(int i)
 {
-  set_ninputs(i);
+    set_ninputs(i);
+}
+
+int 
+PrioSched::initialize(ErrorHandler *errh)
+{
+    if (!(_signals = new NotifierSignal[ninputs()]))
+	return errh->error("out of memory!");
+    for (int i = 0; i < ninputs(); i++)
+	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
+    return 0;
+}
+
+void
+PrioSched::cleanup(CleanupStage)
+{
+    delete[] _signals;
 }
 
 Packet *
 PrioSched::pull(int)
 {
-  for (int i = 0; i < ninputs(); i++) {
-    Packet *p = input(i).pull();
-    if (p)
-      return p;
-  }
-  return 0;
+    Packet *p;
+    for (int i = 0; i < ninputs(); i++)
+	if (_signals[i] && (p = input(i).pull()))
+	    return p;
+    return 0;
 }
 
 CLICK_ENDDECLS

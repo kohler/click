@@ -2,6 +2,7 @@
 #define CLICK_STRIDESCHED_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -21,6 +22,9 @@ CLICK_DECLS
  * an input that produces a packet, if any, is found as soon as possible,
  * consistently with the stride scheduler ordering.
  *
+ * The inputs usually come from Queues or other pull schedulers.
+ * StrideSched uses notification to avoid pulling from empty inputs.
+ *
  * =h tickets0...ticketsI<N-1> read/write
  * Returns or sets the number of tickets for each input port.
  *
@@ -36,7 +40,8 @@ class StrideSched : public Element { public:
   const char *processing() const		{ return PULL; }
   StrideSched *clone() const			{ return new StrideSched; }
   
-  int configure(Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   void add_handlers();
 
@@ -50,18 +55,18 @@ class StrideSched : public Element { public:
   
   struct Client {
 
-    Client *_p;
-    Client *_n;
+    Client *_prev;
+    Client *_next;
     unsigned _pass;
     unsigned _stride;
     int _tickets;
-    int _id;
+    NotifierSignal _signal;
+    int _port;
     Client *_list;
     
-    Client() : _p(0), _n(0), _pass(0), _stride(0), _tickets(-1), _id(-1) {}
-    Client(int id, int tickets);
+    Client() : _prev(0), _next(0), _pass(0), _stride(0), _tickets(-1), _port(-1) {}
+    Client(int port, int tickets);
     
-    int id() const 				{ return _id; }
     void set_tickets(int);
     
     void make_head();
@@ -77,40 +82,39 @@ class StrideSched : public Element { public:
 };
 
 inline
-StrideSched::Client::Client(int id, int tickets)
+StrideSched::Client::Client(int port, int tickets)
+  : _prev(0), _next(0), _pass(0), _stride(STRIDE1 / tickets),
+    _tickets(tickets), _port(port)
 {
-  _tickets = tickets;
-  _stride = STRIDE1 / tickets;
   _pass = _stride;
-  _id = id;
 }
 
-inline
-void StrideSched::Client::make_head()
+inline void
+StrideSched::Client::make_head()
 {
-  _p = _n = _list = this;
+  _prev = _next = _list = this;
 }
 
 inline void
 StrideSched::Client::insert(Client *c)
 {
   assert(this == _list);
-  Client *x = _n;
+  Client *x = _next;
   while (x != _list && PASS_GT(c->_pass, x->_pass))
-    x = x->_n;
+    x = x->_next;
   // insert c before x
-  c->_n = x;
-  c->_p = x->_p;
-  c->_p->_n = c;
-  x->_p = c;
+  c->_next = x;
+  c->_prev = x->_prev;
+  c->_prev->_next = c;
+  x->_prev = c;
 }
 
 inline void
 StrideSched::Client::remove()
 {
-  _n->_p = _p;
-  _p->_n = _n;
-  _n = _p = 0;
+  _next->_prev = _prev;
+  _prev->_next = _next;
+  _next = _prev = 0;
 }
 
 inline void

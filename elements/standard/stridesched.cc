@@ -3,6 +3,7 @@
  * Max Poletto, Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -65,12 +66,20 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
   return (errh->nerrors() == before ? 0 : -1);
 }
 
+int
+StrideSched::initialize(ErrorHandler *)
+{
+  for (Client *c = _list->_next; c != _list; c = _list->_next)
+    c->_signal = Notifier::upstream_pull_signal(this, c->_port, 0);
+  return 0;
+}
+
 void
 StrideSched::cleanup(CleanupStage)
 {
-  while (_list->_n != _list) {
-    Client *c = _list->_n;
-    _list->_n->remove();
+  while (_list->_next != _list) {
+    Client *c = _list->_next;
+    _list->_next->remove();
     delete c;
   }
 }
@@ -79,22 +88,23 @@ Packet *
 StrideSched::pull(int)
 {
   // go over list until we find a packet, striding as we go
-  Client *stridden = _list->_n;
+  Client *stridden = _list->_next;
   Client *c = stridden;
   Packet *p = 0;
   while (c != _list && !p) {
-    p = input(c->id()).pull();
+    if (c->_signal)
+      p = input(c->_port).pull();
     c->stride();
-    c = c->_n;
+    c = c->_next;
   }
 
   // remove stridden portion from list
-  _list->_n = c;
-  c->_p = _list;
+  _list->_next = c;
+  c->_prev = _list;
 
   // reinsert stridden portion into list
   while (stridden != c) {
-    Client *next = stridden->_n;
+    Client *next = stridden->_next;
     _list->insert(stridden);	// `insert' is OK even when `stridden's next
 				// and prev pointers are garbage
     stridden = next;
@@ -106,8 +116,8 @@ StrideSched::pull(int)
 int
 StrideSched::tickets(int port) const
 {
-  for (Client *c = _list->_n; c != _list; c = c->_n)
-    if (c->_id == port)
+  for (Client *c = _list->_next; c != _list; c = c->_next)
+    if (c->_port == port)
       return c->_tickets;
   if (port >= 0 && port < ninputs())
     return 0;
@@ -128,8 +138,8 @@ StrideSched::set_tickets(int port, int tickets, ErrorHandler *errh)
 
   if (tickets == 0) {
     // delete Client
-    for (Client *c = _list; c != _list; c = c->_n)
-      if (c->_id == port) {
+    for (Client *c = _list; c != _list; c = c->_next)
+      if (c->_port == port) {
 	c->remove();
 	delete c;
 	return 0;
@@ -137,13 +147,13 @@ StrideSched::set_tickets(int port, int tickets, ErrorHandler *errh)
     return 0;
   }
 
-  for (Client *c = _list->_n; c != _list; c = c->_n)
-    if (c->_id == port) {
+  for (Client *c = _list->_next; c != _list; c = c->_next)
+    if (c->_port == port) {
       c->set_tickets(tickets);
       return 0;
     }
   Client *c = new Client(port, tickets);
-  c->_pass = _list->_n->_pass;
+  c->_pass = _list->_next->_pass;
   _list->insert(c);
   return 0;
 }

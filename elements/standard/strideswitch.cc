@@ -45,13 +45,13 @@ void
 StrideSwitch::push(int, Packet *p)
 {
   // go over list until we find a packet, striding as we go
-  Client *stridden = _list->_n;
-  int o = stridden->id();
+  Client *stridden = _list->_next;
+  int o = stridden->_port;
   stridden->stride();
 
   // remove stridden portion from list
-  _list->_n = stridden->_n;
-  stridden->_n->_p = _list;
+  _list->_next = stridden->_next;
+  stridden->_next->_prev = _list;
   _list->insert(stridden);
 
   output(o).push(p);

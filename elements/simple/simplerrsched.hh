@@ -2,12 +2,11 @@
 #ifndef CLICK_RRSCHED_HH
 #define CLICK_RRSCHED_HH
 #include <click/element.hh>
-#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
  * =c
- * RoundRobinSched
+ * SimpleRoundRobinSched
  * =s packet scheduling
  * pulls from round-robin inputs
  * =io
@@ -18,32 +17,29 @@ CLICK_DECLS
  * comes in, it starts from the input after the one that
  * last produced a packet. This amounts to a round robin
  * scheduler.
- *
+ * 
  * The inputs usually come from Queues or other pull schedulers.
- * RoundRobinSched uses notification to avoid pulling from empty inputs.
+ * SimpleRoundRobinSched does not use notification.
  *
- * =a PrioSched, StrideSched, DRRSched, RoundRobinSwitch, SimpleRoundRobinSched
+ * =a RoundRobinSched, PrioSched, StrideSched, DRRSched, RoundRobinSwitch
  */
 
-class RRSched : public Element { public:
+class SimpleRRSched : public Element { public:
   
-    RRSched();
-    ~RRSched();
+    SimpleRRSched();
+    ~SimpleRRSched();
   
-    const char *class_name() const	{ return "RoundRobinSched"; }
+    const char *class_name() const	{ return "SimpleRoundRobinSched"; }
     const char *processing() const	{ return PULL; }
-    RRSched *clone() const		{ return new RRSched; }
+    SimpleRRSched *clone() const	{ return new SimpleRRSched; }
   
     void notify_ninputs(int);
-    int initialize(ErrorHandler *);
-    void cleanup(CleanupStage);
   
     Packet *pull(int port);
 
   private:
 
     int _next;
-    NotifierSignal *_signals;
   
 };
 
