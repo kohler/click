@@ -34,17 +34,10 @@ class RXStats : public Element { public:
   Packet *simple_action(Packet *);
 
   void add_handlers();
-  static String static_print_stats(Element *e, void *);
-  String print_stats();
 
-  int get_rate(EtherAddress);
- private:
-
-  
   class DstInfo {
   public:
     EtherAddress _eth;
-    bool _rate_guessed;
     int _rate;
     int _noise;
     int _signal;
@@ -66,6 +59,11 @@ class RXStats : public Element { public:
   class NeighborTable _neighbors;
   EtherAddress _bcast;
   int _tau;
+
+
+  int _sum_signal;
+  int _sum_noise;
+  int _packets;
 };
 
 CLICK_ENDDECLS

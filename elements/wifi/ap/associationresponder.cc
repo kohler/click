@@ -117,20 +117,13 @@ AssociationResponder::recv_association_request(Packet *p)
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
-    //uint8_t *cap_info = ptr;
+  /*capabilty */
+  uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-
-  //uint16_t capability = cap_info[0] + (cap_info[1] << 8);
-
-
-  //uint8_t *lint_info = ptr;
+  
+  /* listen interval */
+  uint16_t lint = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-
-  //uint16_t listen_interval = lint_info[0] + (lint_info[1] << 8);
-
-
-
-
 
   uint8_t *end  = (uint8_t *) p->data() + p->length();
 
@@ -157,6 +150,24 @@ AssociationResponder::recv_association_request(Packet *p)
 
   }
 
+
+  Vector<int> basic_rates;
+  Vector<int> rates;
+  Vector<int> all_rates;
+  if (rates_l) {
+    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+      uint8_t rate = rates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      } else {
+	rates.push_back((int)(rate & WIFI_RATE_VAL));
+      }
+      all_rates.push_back((int)(rate & WIFI_RATE_VAL));
+    }
+  }
+
+
   String ssid;
   if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
@@ -166,13 +177,65 @@ AssociationResponder::recv_association_request(Packet *p)
   }
 
 
-  if (ssid != _ssid) {
+    /* respond to blank ssid probes also */
+  if (ssid != "" && ssid != _ssid) {
+    if (_debug) {
+      click_chatter("%{element}: other ssid %s wanted %s\n",
+		    this,
+		    ssid.cc(),
+		    _ssid.cc());
+    }
     p->kill();
     return;
   }
 
+  StringAccum sa;
 
+
+  EtherAddress dst = EtherAddress(w->i_addr1);
   EtherAddress src = EtherAddress(w->i_addr2);
+  EtherAddress bssid = EtherAddress(w->i_addr3);
+
+  sa << "src " << src;
+  sa << " dst " << dst;
+  sa << " bssid " << bssid;
+  sa << "[ ";
+  if (capability & WIFI_CAPINFO_ESS) {
+    sa << "ESS ";
+  }
+  if (capability & WIFI_CAPINFO_IBSS) {
+    sa << "IBSS ";
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLABLE) {
+    sa << "CF_POLLABLE ";
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLREQ) {
+    sa << "CF_POLLREQ ";
+  }
+  if (capability & WIFI_CAPINFO_PRIVACY) {
+    sa << "PRIVACY ";
+  }
+  sa << "] ";
+
+  sa << " listen_int " << lint << " ";
+
+  sa << "( { ";
+  for (int x = 0; x < basic_rates.size(); x++) {
+    sa << basic_rates[x] << " ";
+  }
+  sa << "} ";
+  for (int x = 0; x < rates.size(); x++) {
+    sa << rates[x] << " ";
+  }
+
+  sa << ")\n";
+
+  click_chatter("%{element}: request %s\n",
+		this,
+		sa.take_string().cc());
+
+
+
   uint16_t associd = 0xc000 | _associd++;
 
   if (_debug) {
@@ -227,11 +290,6 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
-  /* timestamp is set in the hal. ??? */
-  memset(ptr, 0, 8);
-  ptr += 8;
-
-  
   uint16_t cap_info = 0;
   cap_info |= WIFI_CAPINFO_ESS;
   *(uint16_t *)ptr = cpu_to_le16(cap_info);
@@ -239,7 +297,6 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
 
   *(uint16_t *)ptr = cpu_to_le16(status);
   ptr += 2;
-
 
   *(uint16_t *)ptr = cpu_to_le16(associd);
   ptr += 2;

@@ -73,7 +73,6 @@ AssociationRequester::send_assoc_req()
   int len = sizeof (struct click_wifi) + 
     2 + /* cap_info */
     2 + /* listen_int */
-    6 + /* current_ap */
     2 + _ssid.length() +
     2 + min(8, rates.size());
     
@@ -133,7 +132,7 @@ AssociationRequester::send_assoc_req()
   ptr += 2;
   for (int x = 0; x < min(8, rates.size()); x++) {
     ptr[x] = rates[x];
-    if (1 || ptr[x] == 2) {
+    if (ptr[x] == 2) {
       ptr[x] |= WIFI_RATE_BASIC;
     }
   }
@@ -188,19 +187,14 @@ AssociationRequester::push(int, Packet *p)
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
-  uint8_t *cap_l = ptr;
+  uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-  uint16_t capability = cap_l[0] + (cap_l[1] << 8);
 
-
-  uint8_t *status_l = ptr;
+  uint16_t status = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-  uint16_t status = status_l[0] + (status_l[1] << 8);
 
-
-  uint8_t *associd_l = ptr;
+  uint16_t associd = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
-  uint16_t associd = associd_l[0] + (associd_l[1] << 8);
   
   uint8_t *rates_l = ptr;
   
@@ -255,7 +249,7 @@ AssociationRequester::push(int, Packet *p)
     sa << rates[x] << " ";
   }
 
-  sa << ")\n";
+  sa << ")";
 
   click_chatter("%{element}: response %s\n",
 		this,

@@ -145,7 +145,19 @@ AvailableRates::insert(EtherAddress eth, Vector<int> rates)
     dst = _rtable.findp(eth);
   }
   dst->_eth = eth;
-  dst->_rates = rates;
+  dst->_rates.clear();
+  if (_default_rates.size()) {
+    /* only add rates that are in the default rates */
+    for (int x = 0; x < rates.size(); x++) {
+      for (int y = 0; y < _default_rates.size(); y++) {
+	if (rates[x] == _default_rates[y]) {
+	  dst->_rates.push_back(rates[x]);
+	}
+      }
+    }
+  } else {
+    dst->_rates = rates;
+  }
   return 0;
 }
 

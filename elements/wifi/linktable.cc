@@ -437,7 +437,7 @@ LinkTable::update_routes(Vector<Path> routes, int size, Vector<IPAddress> route)
     return routes;
   }
 
-  int route_m = get_route_metric(route);
+  unsigned route_m = get_route_metric(route);
   
   for (x = 0; x < size; x++) {
     if (!valid_route(routes[x])) {

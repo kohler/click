@@ -284,7 +284,6 @@ SRQuerier_read_param(Element *e, void *thunk)
 	  sa << path_to_string(dst._p);
 	  sa << " ]";
 	  Path best = td->_link_table->best_route(dst._ip);
-	  bool best_valid = td->_link_table->valid_route(best);
 	  int best_metric = td->_link_table->get_route_metric(best);
 	  sa << " best_metric " << best_metric;
 	  sa << " best_route [ ";

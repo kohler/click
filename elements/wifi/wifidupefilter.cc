@@ -63,7 +63,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
   click_wifi *w = (click_wifi *) p_in->data();
   EtherAddress src = EtherAddress(w->i_addr2);
   uint16_t seq = le16_to_cpu(*(uint16_t *) w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
-  uint8_t fragno = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;
+  //uint8_t fragno = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;
   DstInfo *nfo = _table.findp(src);
 
   click_gettimeofday(&now);

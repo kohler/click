@@ -324,7 +324,7 @@ SRQueryForwarder::forward_query(Seen *s)
 }
 
 void
-SRQueryForwarder::push(int port, Packet *p_in)
+SRQueryForwarder::push(int, Packet *p_in)
 {
 
   click_ether *eh = (click_ether *) p_in->data();

@@ -88,14 +88,14 @@ WifiDecap::simple_action(Packet *p)
     bssid = EtherAddress(w->i_addr3);
     break;
   case WIFI_FC1_DIR_TODS:
-    dst = EtherAddress(w->i_addr1);
+    bssid = EtherAddress(w->i_addr1);
     src = EtherAddress(w->i_addr2);
-    bssid = EtherAddress(w->i_addr3);
+    dst = EtherAddress(w->i_addr3);
     break;
   case WIFI_FC1_DIR_FROMDS:
     dst = EtherAddress(w->i_addr1);
-    src = EtherAddress(w->i_addr3);
     bssid = EtherAddress(w->i_addr2);
+    src = EtherAddress(w->i_addr3);
     break;
   case WIFI_FC1_DIR_DSTODS:
     dst = EtherAddress(w->i_addr1);

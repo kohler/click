@@ -451,7 +451,7 @@ FlashFlood::process_packet(Packet *p_in)
     }
 
     for (int x = 0; x < pk->num_hops(); x++) {
-      IPAddress prev_src = pk->get_hop(x);
+      //IPAddress prev_src = pk->get_hop(x);
       //uint32_t prev_link_seq = pk->get_hop_seq(x);
       //update_probs(seq, prev_link_seq, prev_src);
     }
