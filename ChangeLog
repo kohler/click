@@ -1,3 +1,10 @@
+2005-02-25 Friday 16:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* COPYING (1.1), DISTFILES (1.94), LICENSE (1.8), README (1.48),
+	linuxmodule/clickfs.cc (1.40), linuxmodule/proclikefs.c (1.12),
+	linuxmodule/sched.cc (1.50), linuxmodule/skbmgr.cc (1.16): more
+	COPYING/LICENSE bs
+
 2005-02-25 Friday 16:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* LICENSE (1.7), README (1.47): README/LICENSE updates
