@@ -115,6 +115,7 @@ ToDevice::initialize(ErrorHandler *errh)
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
     _signal = Notifier::upstream_pull_signal(this, 0, &_task);
+
 #ifdef HAVE_STRIDE_SCHED
     // user specifies max number of tickets; we start with default
     _max_tickets = _task.tickets();
@@ -170,169 +171,163 @@ ToDevice::cleanup(CleanupStage)
 bool
 ToDevice::run_task()
 {
-  int busy;
-  int sent = 0;
+    int busy;
+    int sent = 0;
 
 #if LINUX_VERSION_CODE >= 0x020400
-  local_bh_disable();
-  if (!spin_trylock(&_dev->xmit_lock)) {
-    local_bh_enable();
-    _task.fast_reschedule();
-    return false;
-  }
+    local_bh_disable();
+    if (!spin_trylock(&_dev->xmit_lock)) {
+	local_bh_enable();
+	_task.fast_reschedule();
+	return false;
+    }
 
-  _dev->xmit_lock_owner = smp_processor_id();
+    _dev->xmit_lock_owner = smp_processor_id();
 #endif
 
 #if CLICK_DEVICE_STATS
-  unsigned low00, low10;
-  uint64_t time_now;
+    unsigned low00, low10;
+    uint64_t time_now;
+    SET_STATS(low00, low10, time_now);
 #endif
-
-  SET_STATS(low00, low10, time_now);
  
 #if HAVE_LINUX_POLLING
-  bool is_polling = (_dev->polling > 0);
-  if (is_polling) {
-    struct sk_buff *skbs = _dev->tx_clean(_dev);
-
+    bool is_polling = (_dev->polling > 0);
+    if (is_polling) {
+	struct sk_buff *skbs = _dev->tx_clean(_dev);
 # if CLICK_DEVICE_STATS
-    if (_activations > 0 && skbs) {
-      GET_STATS_RESET(low00, low10, time_now, 
-		      _perfcnt1_clean, _perfcnt2_clean, _time_clean);
-    }
+	if (_activations > 0 && skbs)
+	    GET_STATS_RESET(low00, low10, time_now, 
+			    _perfcnt1_clean, _perfcnt2_clean, _time_clean);
 # endif
-
-    if (skbs)
-      skbmgr_recycle_skbs(skbs);
-    
+	if (skbs)
+	    skbmgr_recycle_skbs(skbs);
 # if CLICK_DEVICE_STATS
-    if (_activations > 0 && skbs) {
-      GET_STATS_RESET(low00, low10, time_now, 
-		      _perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
-    }
+	if (_activations > 0 && skbs)
+	    GET_STATS_RESET(low00, low10, time_now, 
+			    _perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
 # endif
-  }
+    }
 #endif
   
-  SET_STATS(low00, low10, time_now);
-
-  /* try to send from click */
-  while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
-
+    /* try to send from click */
+    while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-    uint64_t before_pull_cycles = click_get_cycles();
+	uint64_t before_pull_cycles = click_get_cycles();
 #endif
-  
-    Packet *p = input(0).pull();
-    if (!p)
-      break;
-    
-    _npackets++;
-#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-    _pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
-#endif
-    
-    GET_STATS_RESET(low00, low10, time_now, 
-		    _perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
-    
-    int r = queue_packet(p);
-    
-    GET_STATS_RESET(low00, low10, time_now, 
-		    _perfcnt1_queue, _perfcnt2_queue, _time_queue);
 
-    if (r < 0) break;
-    sent++;
-  }
+	Packet *p = input(0).pull();
+	if (!p)
+	    break;
+
+	_npackets++;
+#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
+	_pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
+#endif
+
+	GET_STATS_RESET(low00, low10, time_now, 
+			_perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
+
+	busy = queue_packet(p);
+
+	GET_STATS_RESET(low00, low10, time_now, 
+			_perfcnt1_queue, _perfcnt2_queue, _time_queue);
+
+	if (busy)
+	    break;
+	sent++;
+    }
 
 #if HAVE_LINUX_POLLING
-  if (is_polling && sent > 0)
-    _dev->tx_eob(_dev);
+    if (is_polling && sent > 0)
+	_dev->tx_eob(_dev);
 
-  // If Linux tried to send a packet, but saw tbusy, it will
-  // have left it on the queue. It'll just sit there forever
-  // (or until Linux sends another packet) unless we poke
-  // net_bh(), which calls qdisc_restart(). We are not allowed
-  // to call qdisc_restart() ourselves, outside of net_bh().
-  if (is_polling && !busy && _dev->qdisc->q.qlen) {
-    _dev->tx_eob(_dev);
-    netif_wake_queue(_dev);
-  }
+    // If Linux tried to send a packet, but saw tbusy, it will
+    // have left it on the queue. It'll just sit there forever
+    // (or until Linux sends another packet) unless we poke
+    // net_bh(), which calls qdisc_restart(). We are not allowed
+    // to call qdisc_restart() ourselves, outside of net_bh().
+    if (is_polling && !busy && _dev->qdisc->q.qlen) {
+	_dev->tx_eob(_dev);
+	netif_wake_queue(_dev);
+    }
 #endif
 
 #if CLICK_DEVICE_STATS
-  if (sent > 0) _activations++;
+    if (sent > 0)
+	_activations++;
 #endif
 
-  if (busy) _busy_returns++;
+    if (busy)
+	_busy_returns++;
 
 #if HAVE_LINUX_POLLING
-  if (is_polling) {
-    if (busy && sent == 0) {
-      _dev_idle++;
-      if (_dev_idle==1024) {
-        /* device didn't send anything, ping it */
-        _dev->tx_start(_dev);
-        _dev_idle=0;
-        _hard_start++;
-      }
-    } else
-      _dev_idle = 0;
-  }
+    if (is_polling) {
+	if (busy && sent == 0) {
+	    _dev_idle++;
+	    if (_dev_idle == 1024) {
+		/* device didn't send anything, ping it */
+		_dev->tx_start(_dev);
+		_dev_idle = 0;
+		_hard_start++;
+	    }
+	} else
+	    _dev_idle = 0;
+    }
 #endif
 
 #if LINUX_VERSION_CODE >= 0x020400
-  spin_unlock(&_dev->xmit_lock);
-  local_bh_enable();
+    spin_unlock(&_dev->xmit_lock);
+    local_bh_enable();
 #endif
   
-  adjust_tickets(sent);
-  // If we're polling, never go to sleep! We're relying on ToDevice to clean
-  // the transmit ring.
-  if (sent > 0 || is_polling || _signal)
-      _task.fast_reschedule();
-  return sent > 0;
+    adjust_tickets(sent);
+    // If we're polling, never go to sleep! We're relying on ToDevice to clean
+    // the transmit ring.
+    // Also don't go to sleep if the transmitting device was busy (as opposed
+    // to the queue being empty).
+    if (is_polling || sent > 0 || busy || _signal)
+	_task.fast_reschedule();
+    return sent > 0;
 }
 
 int
 ToDevice::queue_packet(Packet *p)
 {
-  struct sk_buff *skb1 = p->skb();
+    struct sk_buff *skb1 = p->skb();
   
-  /*
-   * Ensure minimum ethernet packet size (14 hdr + 46 data).
-   * I can't figure out where Linux does this, so I don't
-   * know the correct procedure.
-   */
-
-  if(skb1->len < 60){
-    if(skb_tailroom(skb1) < 60 - skb1->len){
-      printk("ToDevice: too small: len %d tailroom %d\n",
-             skb1->len, skb_tailroom(skb1));
-      kfree_skb(skb1);
-      return -1;
+    /*
+     * Ensure minimum ethernet packet size (14 hdr + 46 data).
+     * I can't figure out where Linux does this, so I don't
+     * know the correct procedure.
+     */
+    if (skb1->len < 60) {
+	if (skb_tailroom(skb1) < 60 - skb1->len) {
+	    printk("ToDevice: too small: len %d tailroom %d\n",
+		   skb1->len, skb_tailroom(skb1));
+	    kfree_skb(skb1);
+	    return -1;
+	}
+	skb_put(skb1, 60 - skb1->len);
     }
-    // printk("padding %d:%d:%d\n", skb1->truesize, skb1->len, 60-skb1->len);
-    skb_put(skb1, 60 - skb1->len);
-  }
 
-  int ret;
+    int ret;
 #if HAVE_LINUX_POLLING
-  if (_dev->polling > 0)
-    ret = _dev->tx_queue(_dev, skb1);
-  else 
+    if (_dev->polling > 0)
+	ret = _dev->tx_queue(_dev, skb1);
+    else
 #endif
-  {
-    ret = _dev->hard_start_xmit(skb1, _dev);
-    _hard_start++;
-  }
-  if(ret != 0){
-    if(_rejected == 0)
-      printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
-    kfree_skb(skb1);
-    _rejected++;
-  }
-  return ret;
+	{
+	    ret = _dev->hard_start_xmit(skb1, _dev);
+	    _hard_start++;
+	}
+    if (ret != 0) {
+	if (_rejected == 0)
+	    printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
+	kfree_skb(skb1);
+	_rejected++;
+    }
+    return ret;
 }
 
 void
@@ -369,29 +364,30 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 static String
 ToDevice_read_calls(Element *f, void *)
 {
-  ToDevice *td = (ToDevice *)f;
-  return
-    String(td->_rejected) + " packets rejected\n" +
-    String(td->_hard_start) + " hard start xmit\n" +
-    String(td->_busy_returns) + " device busy returns\n" +
-    String(td->_npackets) + " packets sent\n" +
+    ToDevice *td = (ToDevice *)f;
+    return
+	String(td->_rejected) + " packets rejected\n" +
+	String(td->_hard_start) + " hard start xmit\n" +
+	String(td->_busy_returns) + " device busy returns\n" +
+	String(td->_npackets) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
-    String(td->_pull_cycles) + " cycles pull\n" +
-    String(td->_time_clean) + " cycles clean\n" +
-    String(td->_time_freeskb) + " cycles freeskb\n" +
-    String(td->_time_queue) + " cycles queue\n" +
-    String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
-    String(td->_perfcnt1_clean) + " perfctr1 clean\n" +
-    String(td->_perfcnt1_freeskb) + " perfctr1 freeskb\n" +
-    String(td->_perfcnt1_queue) + " perfctr1 queue\n" +
-    String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
-    String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
-    String(td->_perfcnt2_freeskb) + " perfctr2 freeskb\n" +
-    String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
-    String(td->_activations) + " transmit activations\n";
+	String(td->_pull_cycles) + " cycles pull\n" +
+	String(td->_time_clean) + " cycles clean\n" +
+	String(td->_time_freeskb) + " cycles freeskb\n" +
+	String(td->_time_queue) + " cycles queue\n" +
+	String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
+	String(td->_perfcnt1_clean) + " perfctr1 clean\n" +
+	String(td->_perfcnt1_freeskb) + " perfctr1 freeskb\n" +
+	String(td->_perfcnt1_queue) + " perfctr1 queue\n" +
+	String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
+	String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
+	String(td->_perfcnt2_freeskb) + " perfctr2 freeskb\n" +
+	String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
+	String(td->_activations) + " transmit activations\n"
 #else
-    String();
+	String()
 #endif
+	;
 }
 
 static String
@@ -428,17 +424,17 @@ ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 void
 ToDevice::add_handlers()
 {
-  add_read_handler("calls", ToDevice_read_calls, 0);
-  add_read_handler("packets", ToDevice_read_stats, 0);
+    add_read_handler("calls", ToDevice_read_calls, 0);
+    add_read_handler("packets", ToDevice_read_stats, 0);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
+    add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
 #endif
 #if CLICK_DEVICE_STATS
-  add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)2);
-  add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)3);
+    add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)2);
+    add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)3);
 #endif
-  add_write_handler("reset_counts", ToDevice_write_stats, 0);
-  add_task_handlers(&_task);
+    add_write_handler("reset_counts", ToDevice_write_stats, 0);
+    add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
