@@ -3196,8 +3196,9 @@ Finally, the @samp{#} character is also a valid port code, and may be
 used within brackets. One @samp{#} matches another @samp{#} only when
 they represent the same port number---for example, when one @samp{#}
 corresponds to input port 2 and the other to output port 2. @samp{#}
-never matches any letter. Thus, the flow code @strcode{"##/##"} behaves
-like @strcode{"xy/xy"}.
+never matches any letter. Thus, for an element with exactly 2 inputs and
+2 outputs, the flow code @strcode{"##/##"} behaves like
+@strcode{"xy/xy"}.
 
 @var{Inputspec} and @var{outputspec} need not have the correct numbers
 of port codes. The last code in each specification is duplicated as many
@@ -3215,7 +3216,7 @@ use this flow code.
 @item "xy/x"
 Packets arriving on input port 0 may travel to any output port, but
 those arriving on other input ports will not be emitted on any output.
-@click{ARPQuerier} uses this flow code, for example.
+@click{ARPQuerier} uses this flow code.
 
 @item "x/y"
 Packets never travel between input and output ports. @click{Idle} and
@@ -3247,7 +3248,7 @@ The default implementation for @code{Element::processing} returns
 The @code{flow_code} method should be declared on a single line in the
 element's class definition. It should return a C string constant or
 @code{COMPLETE_FLOW}. These guidelines make the element's flow code easy
-to automatically extract from the source code. 
+to extract from the source code.
 
 Here is a typical @code{flow_code} method.
 
