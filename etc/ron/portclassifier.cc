@@ -68,7 +68,7 @@ PortClassifier::push(int, Packet *p)
   if (port >= noutputs())
     port = noutputs()-1;
 
-  click_chatter("  sport: %d, dport: %d chose: %d", sport, dport, port);
+  //click_chatter("  sport: %d, dport: %d chose: %d", sport, dport, port);
   output(port).push(p);
   return;
 }

@@ -16,6 +16,7 @@
  */
 #include <sys/time.h>
 #include "ronroutemodular.hh"
+#define HISTORY 300
 
 class PolicyProbe : public RONRouteModular::Policy {
 
@@ -36,10 +37,17 @@ public:
 
   void expire_hook(Timer *, void *thunk) ;
 
+  static long double gettime() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + (long double)((long double) tv.tv_usec 
+				      / (long double)1000000);
+  }
 protected:
   class FlowTable;
   class FlowTableEntry;  
   class TimerQueue;
+  class RTTHistory;
   
   FlowTable *_flowtable;
   TimerQueue *_timerqueue;
@@ -48,7 +56,32 @@ protected:
     return tv->tv_sec + (long double)((long double) tv->tv_usec 
 				      / (long double)1000000);
   }
+};
 
+class PolicyProbe::RTTHistory {
+protected:
+  struct entry {
+    long double timestamp;
+    long double rtt;
+  };
+  Vector<entry> _history[15];
+  
+  void punt_old(int port) {
+    int i=0, j=0;
+    long double now = gettime();
+    for (i=0; i<_history[port].size() && _history[port][i].timestamp + HISTORY < now; i++);
+    for (j=0; j<_history[port].size()-i; j++)
+      _history[port][j] = _history[port][j+i];
+    for(j=0; j<i; j++)
+      _history[port].pop_back();
+  }
+  void add_history(int port, long double rtt) {
+    struct entry e;
+    e.timestamp = gettime();
+    e.rtt = rtt;
+    punt_old(port);
+    _history[port].push_back(e);
+  }
 };
 
 class PolicyProbe::TimerQueue {
@@ -140,6 +173,15 @@ public:
     ports_tried.push_back(port);
     sent_time.push_back(time);
     assert(ports_tried.size() == sent_time.size());
+  }
+  long double get_syn_time(int port) {
+    int i;
+    for(i=0; i<ports_tried.size(); i++) {
+      if (ports_tried[i] == port){
+	return sent_time[i];
+      }
+    }
+    return -1;
   }
 };
 

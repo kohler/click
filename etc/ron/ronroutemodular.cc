@@ -79,7 +79,6 @@ void RONRouteModular::notify_noutputs(int n) {
 
 void RONRouteModular::push(int inport, Packet *p)
 {
-  d2printf("push color = %d", PAINT_ANNO(p));
 
   if (inport == 0) {
     push_forward_packet(p);
@@ -93,6 +92,8 @@ void RONRouteModular::push_forward_packet(Packet *p)
 {
   const click_tcp *tcph;
   int policy = PAINT_ANNO(p);
+
+  click_chatter("SAW FORWARD PKT color: %d",  PAINT_ANNO(p) );
 
   // Verify policy is in valid range.
   //d2printf("policies size: %d", _policies.size());
@@ -110,6 +111,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   }
 
   // Switch on TCP packet type
+  // TODO: save seq number
   tcph = p->tcp_header();
   _flowtable->insert(IPAddress(p->ip_header()->ip_src), ntohs(tcph->th_sport),
 		     IPAddress(p->ip_header()->ip_dst), ntohs(tcph->th_dport), 
@@ -149,6 +151,7 @@ void RONRouteModular::push_reverse_packet(int inport, Packet *p)
 			     
   if (!entry) {
     d2printf(" Could not find flow");
+    // TODO: send reset
     p->kill();
     return;
   }

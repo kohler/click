@@ -25,6 +25,7 @@
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/bitvector.hh>
+#include <click/packet_anno.hh>
 
 #define dprintf if(0)printf
 #define DELAY .400
@@ -46,8 +47,7 @@ void PolicyProbe::push_forward_syn(Packet *p) {
   FlowTableEntry *entry;
   struct timeval tv;
   const click_tcp *tcph= p->tcp_header();
-
-  click_chatter("SAW FORWARD PKT");
+  click_chatter("Forward SYN");
 
   // Lookup this flow
   entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_src),
@@ -66,13 +66,12 @@ void PolicyProbe::push_forward_syn(Packet *p) {
 
   // if it's the first syn, remember <now> for sending on the direct path
   if (first_syn) {
-    gettimeofday(&tv, NULL);
-    entry->sent_syn(1, tolongdouble(&tv));
+    entry->sent_syn(1, gettime());
     entry->syn_pkt = p->clone(); // save the pkt for later
   }
 
   // schedule a probe3 timeout for this packet
-  _timerqueue->insert(gettimeofday(&tv, NULL) + DELAY, 0, entry);
+  _timerqueue->insert(gettime() + DELAY, 0, entry);
 
   // push along direct path
   _parent->output(1).push(p);
@@ -85,6 +84,32 @@ void PolicyProbe::push_forward_rst(Packet *p) {
 void PolicyProbe::push_forward_normal(Packet *p) {
 }
 void PolicyProbe::push_reverse_synack(int inport, Packet *p) {
+  long double rtt=0;
+  FlowTableEntry *entry=NULL;
+  const click_tcp *tcph= p->tcp_header();
+  click_chatter("Reverse SYN-ACK");
+
+  entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_src), 
+			     ntohs(tcph->th_sport),
+			     IPAddress(p->ip_header()->ip_dst),
+			     ntohs(tcph->th_dport));
+  if (!entry) {
+    click_chatter("PoliyProbe: can't find match");
+    // TODO: sent rst
+    p->kill();
+    return;
+  }
+  
+  if (entry->get_syn_time(inport) < 0) {
+    click_chatter("PoliyProbe: dont remember when syn was sent");
+    p->kill();
+    return;
+  }
+
+  rtt = gettime() - entry->get_syn_time(inport);
+  
+  
+  
 }
 void PolicyProbe::push_reverse_fin(Packet *p) {
 }
