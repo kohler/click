@@ -108,7 +108,7 @@ ToBPF::initialize(ErrorHandler *errh)
     if (!_pcap)
       return errh->error("%s: %s", _ifname.cc(), ebuf);
 # else
-    errh->warning("can't handle packets: not compiled with pcap support");
+    errh->warning("dropping all packets: not compiled with pcap support");
 # endif
     _fd = pcap_fileno(_pcap);
   }
