@@ -447,7 +447,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -520,7 +520,7 @@ particular purpose.\n");
   router = lexer->create_router();
   lexer->end_parse(cookie);
 
-  // handle stop option
+  // handle stop option by adding a QuitWatcher element
   if (stop && stop_guess) {
     for (int i = 0; i < router->nelements(); i++) {
       Element *e = router->element(i);
