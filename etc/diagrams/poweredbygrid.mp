@@ -101,11 +101,9 @@ beginfig(2);
   enddef;
   
   elementit.c(btex \element{\textbf{Click!}} etex, 1, 1, push);
-  if version = 0:
-    c.c = (1w,1.5w);
-  else:
-    c.n = (1w,2w); c.s = (1w,1w); c.e = (2w,1.5w); c.w = (0w,1.5w);
-  fi;
+  c.width = 2w; c.height = w; c.sw = (0w,1w);
+  %c.dx = 15; c.dy = 7; (3w,1.5w) - c.out[0] = (.6w,-1);
+  c.borderscale := 2 / 0.9;
   
   label.urt(btex \textsf{POWERED BY} etex scaled 0.7, (0w,2w));
   h := .1w; s := 2.2;
@@ -114,6 +112,7 @@ beginfig(2);
   label(btex \textsf{R} etex scaled s, (1.5w,.5w));
   label(btex \textsf{I} etex scaled s, (2.5w,.5w));
   label(btex \textsf{d} etex scaled s, (3.5w,.5w));
+  label(btex \textsf{\&} etex scaled (s/2), (3.75w,1.25w));
 
   pickup pencircle scaled 2;
   drawelement(c);
@@ -136,13 +135,8 @@ beginfig(2);
   draw xbox(3,1,.25);
   draw xbox(3.25,1.25,.25);
 
-  fill xbox(2,1,1) withcolor white;
-  label(btex \textsf{\&} etex scaled .8s, (2.5w,1.5w));
-
   pickup pencircle scaled 2;
-  draw xbox(0,0,2);
   draw xbox(0,0,1);
-  if version = 0: draw xbox(2,1,1); fi;
   draw xbox(1,0,1);
   draw xbox(2,0,1);
   draw xbox(3,0,1);
