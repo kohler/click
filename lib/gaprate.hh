@@ -87,7 +87,6 @@ GapRate::need_update(const struct timeval &now)
     }
     _last = now;
 #endif
-    _sec_count++;
     return true;
   } else
     return false;
