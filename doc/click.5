@@ -633,42 +633,39 @@ kernel module will not accept archives; use
 '
 .IR stmts " ::= " stmts " " stmt " | " empty
 .br
-.IR stmt " ::= " declaration
+.IR stmt " ::= " declaration " | " connection
 .br
-.RI "    | " connection
-.br
-.RI "    | " tunnelstmt
-.br
-.RI "    | " elementclassstmt
-.br
-.RI "    | " requirestmt
+.RI "    | " tunnelstmt " | " elementclassstmt " | " requirestmt
 .br
 .RI "    | "";"""
 .br
-.IR declaration " ::= " elements " ""::"" "
-.IR elementclass " " opt-config
+.IR declaration " ::= " element-names " ""::"" "
+.IR class " " opt-config
 .br
-.IR connection " ::= " celement " " conntail
+.IR connection " ::= " element " " conntail
 .br
-.IR conntail " ::= " opt-port " ""->"" " opt-port " " celement " " opt-conntail
+.IR conntail " ::= " opt-port " ""->"" " opt-port " " element " " opt-conntail
 .br
 .IR opt-conntail " ::= " conntail " | " empty
 .br
-.IR celement " ::= " element
+.IR element " ::= " element-name
 .br
-.RI "    | " element " ""::"" " elementclass " " opt-config
+.RI "    | " element-name " ""::"" " class " " opt-config
 .br
-.RI "    | " elementclass " " opt-config
+.RI "    | " class " " opt-config
 .br
 .IR opt-config " ::= " config " | " empty
 .br
 .IR config " ::= ""("" configstring "")"""
 .br
-.IR elements " ::= " element " | " elements " "","" " element
+.IR element-names " ::= " element-name
 .br
-.IR element " ::= identifier | ""^"" identifier"
+.RI "    | " element-names " "","" " element-name
 .br
-.IR elementclass " ::= identifier"
+.IR element-name " ::= identifier
+.\" | ""^"" identifier
+.br
+.IR class " ::= identifier"
 .br
 .RI "    | ""{"" " opt-formals " " stmts " ""}"""
 .br
@@ -682,9 +679,7 @@ kernel module will not accept archives; use
 .br
 .RI "    | " tunneltail " "","" identifier ""->"" identifier"
 .br
-.IR elementclassstmt " ::= ""elementclass"" identifier "
-.br
-.RI "        ""{"" " opt-formals " " stmts " ""}"""
+.IR elementclassstmt " ::= ""elementclass"" identifier " class
 .br
 .IR opt-formals " ::= " formals " ""|"" | " empty
 .br

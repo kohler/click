@@ -59,21 +59,26 @@ class Lexer::Compound : public Element {
   String _filename;
   unsigned _lineno;
   Vector<String> _arguments;
+  int _scope;
   
  public:
   
   Compound(const String &, const String &, const String &, unsigned,
 	   const Vector<String> &);
+  Compound(const Compound &);
   
   const char *class_name() const	{ return _name.cc(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
+
+  void set_scope(int s)			{ _scope = s; }
   
   const String &body() const		{ return _body; }
   const String &filename() const	{ return _filename; }
   unsigned lineno() const		{ return _lineno; }
   int narguments() const		{ return _arguments.size(); }
   const String &argument(int i) const	{ return _arguments[i]; }
+  int scope() const			{ return _scope; }
   
 };
 
@@ -81,7 +86,13 @@ Lexer::Compound::Compound(const String &name, const String &body,
 			  const String &filename, unsigned lineno,
 			  const Vector<String> &args)
   : _name(name), _body(body), _filename(filename), _lineno(lineno),
-    _arguments(args)
+    _arguments(args), _scope(-1)
+{
+}
+
+Lexer::Compound::Compound(const Compound &o)
+  : Element(), _name(o._name), _body(o._body), _filename(o._filename),
+    _lineno(o._lineno), _arguments(o._arguments), _scope(o._scope)
 {
 }
 
@@ -630,19 +641,9 @@ Lexer::remove_element_type(int removed)
 void
 Lexer::element_type_names(Vector<String> &v) const
 {
-  // stop at 2 to avoid <default> and <tunnel>
-  for (int t = _last_element_type; t >= 2; t = _element_type_next[t]) {
-    const String &name = _element_type_names[t];
-    if (_element_type_map[name] == t)
-      v.push_back(String());
-  }
-
-  int pos = v.size() - 1;
-  for (int t = _last_element_type; t >= 2; t = _element_type_next[t]) {
-    const String &name = _element_type_names[t];
-    if (_element_type_map[name] == t)
-      v[pos--] = _element_type_names[t];
-  }
+  for (HashMap<String, int>::Iterator i = _element_type_map.first(); i; i++)
+    if (i.value() >= 0 && i.key() != "<tunnel>")
+      v.push_back(i.key());
 }
 
 
@@ -817,7 +818,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   // lexical scoping of types
   int cookie = lexical_scoping_in();
   Vector<int> lexical_scoping_help;
-  lexical_scoping_back(etype, lexical_scoping_help);
+  lexical_scoping_back(compound->scope(), lexical_scoping_help);
   
   while (ystatement())
     /* do nothing */;
@@ -1134,9 +1135,32 @@ Lexer::yelementclass()
     unlex(tname);
     lerror("expected element type name");
   }
-  
-  expect('{');
-  ylocal(name);
+
+  Lexeme tnext = lex();
+  if (tnext.is('{'))
+    ylocal(name);
+    
+  else if (tnext.is(lexIdent)) {
+    // Go through some rigamarole because other code always assumes that
+    // _element_type_map[x] == _element_type_map[y] <==>
+    int t = force_element_type(tnext.string());
+    Element *et = _element_types[t];
+    Element *e = et->clone();
+    if (!e) {
+      Compound *comp = static_cast<Compound *>(et->cast("Lexer::Compound"));
+      if (comp)
+	e = new Compound(*comp);
+    }
+    if (!e) {
+      lerror("can't clone `%s'", et->declaration().cc());
+      add_element_type(name, new ErrorElement);
+    } else
+      add_element_type(name, e);
+
+  } else {
+    lerror("expected element class");
+    add_element_type(name, new ErrorElement);
+  }
 }
 
 void
@@ -1199,8 +1223,11 @@ Lexer::ylocal(String name)
   String body = lex_compound_body();
   expect('}');
 
-  return add_element_type
-    (name, new Compound(name, body, body_filename, body_lineno, arguments));
+  Compound *c =
+    new Compound(name, body, body_filename, body_lineno, arguments);
+  int t = add_element_type(name, c);
+  c->set_scope(t);
+  return t;
 }
 
 void

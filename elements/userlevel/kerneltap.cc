@@ -1,6 +1,6 @@
 /*
- * tun.{cc,hh} -- element accesses network via /dev/tun device
- * Robert Morris
+ * kerneltap.{cc,hh} -- element accesses network via /dev/tun device
+ * Robert Morris, Douglas S.J. DeCouto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -13,9 +13,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "tun.hh"
+#include "kerneltap.hh"
 #include "error.hh"
 #include "packet.hh"
+#include "bitvector.hh"
 #include "confparse.hh"
 #include "glue.hh"
 #include "click_ether.h"
@@ -30,29 +31,41 @@
 #include <net/if_tun.h>
 #endif
 
-Tun::Tun()
+KernelTap::KernelTap()
 {
   add_input();
   add_output();
   _fd = -1;
 }
 
-Tun::~Tun()
+KernelTap::~KernelTap()
 {
 }
 
-Tun *
-Tun::clone() const
+KernelTap *
+KernelTap::clone() const
 {
-  return new Tun();
+  return new KernelTap();
+}
+
+Bitvector
+KernelTap::forward_flow(int) const
+{
+  // packets never travel from input to output
+  return Bitvector(1, false);
+}
+
+Bitvector
+KernelTap::backward_flow(int) const
+{
+  return Bitvector(1, false);
 }
 
 int
-Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
+KernelTap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpIPAddress, "address", &_near,
-		  cpIPAddress, "netmask", &_mask,
+		  cpIPPrefix, "network address", &_near, &_mask,
 		  cpOptional,
 		  cpIPAddress, "default gateway", &_gw,
 		  cpEnd) < 0)
@@ -65,14 +78,14 @@ Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
     unsigned int n = _near.in_addr().s_addr;
     if ((g & m) != (n & m)) {
       _gw = 0;
-      errh->warning("%s: not setting up default route, tun address and gateway address are on different networks", id().cc());
+      errh->warning("not setting up default route\n(network address and gateway are on different networks)");
     }
   }
   return 0;
 }
 
 int
-Tun::initialize(ErrorHandler *errh)
+KernelTap::initialize(ErrorHandler *errh)
 {
   _fd = alloc_tun(_near, _mask, errh);
   if (_fd < 0)
@@ -84,19 +97,18 @@ Tun::initialize(ErrorHandler *errh)
 }
 
 void
-Tun::uninitialize()
+KernelTap::uninitialize()
 {
   unschedule();
   if (_fd >= 0) {
     close(_fd);
     remove_select(_fd, SELECT_READ);
   }
-
   dealloc_tun();
 }
 
 void
-Tun::selected(int fd)
+KernelTap::selected(int fd)
 {
   int cc;
   char b[2048];
@@ -118,7 +130,7 @@ Tun::selected(int fd)
     } else if(af == AF_INET6){
       e->ether_type = htons(ETHERTYPE_IP6);
     } else {
-      click_chatter("Tun: don't know af %d", af);
+      click_chatter("KernelTap: don't know af %d", af);
       p->kill();
       return;
     }
@@ -131,12 +143,12 @@ Tun::selected(int fd)
 #endif
     output(0).push(p);
   } else {
-    perror("Tun read");
+    perror("KernelTap read");
   }
 }
 
 void
-Tun::run_scheduled()
+KernelTap::run_scheduled()
 {
   if (Packet *p = input(0).pull()) {
     push(0, p); 
@@ -145,14 +157,14 @@ Tun::run_scheduled()
 }
 
 void
-Tun::push(int, Packet *p)
+KernelTap::push(int, Packet *p)
 {
   // Every packet has a 14-byte Ethernet header.
   // Extract the packet type, then ignore the Ether header.
 
   click_ether *e = (click_ether *) p->data();
   if(p->length() < sizeof(*e)){
-    click_chatter("Tun: packet to small");
+    click_chatter("KernelTap: packet to small");
     p->kill();
     return;
   }
@@ -169,13 +181,13 @@ Tun::push(int, Packet *p)
   } else if(type == ETHERTYPE_IP6){
     af = AF_INET6;
   } else {
-    click_chatter("Tun: unknown ether type %04x", type);
+    click_chatter("KernelTap: unknown ether type %04x", type);
     p->kill();
     return;
   }
 
   if(length+4 >= sizeof(big)){
-    click_chatter("Tun: packet too big (%d bytes)", length);
+    click_chatter("KernelTap: packet too big (%d bytes)", length);
     p->kill();
     return;
   }
@@ -187,9 +199,8 @@ Tun::push(int, Packet *p)
   }
 #elif defined(__linux__)
   /*
-   * Ethertap is linux equivalent of Tun; wants ethernet header plus 2
-   * alignment bytes 
-   */
+   * Ethertap is linux equivalent of/dev/tun; wants ethernet header plus 2
+   * alignment bytes */
   char big[2048];
   /*
    * ethertap driver is very picky about what address we use here.
@@ -225,8 +236,8 @@ Tun::push(int, Packet *p)
  * Exits on failure.
  */
 int
-Tun::alloc_tun(struct in_addr near, struct in_addr mask,
-               ErrorHandler *errh)
+KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
+		     ErrorHandler *errh)
 {
   int fd, yes = 1;
   char tmp[512], tmp0[64], tmp1[64], dev_prefix[64];
@@ -241,14 +252,13 @@ Tun::alloc_tun(struct in_addr near, struct in_addr mask,
   for (int i = 0; i < 32; i++) {
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, 2);
-    if(fd < 0){
+    if (fd < 0) {
       if(saved_errno == 0 || errno != ENOENT)
         saved_errno = errno;
-    }
-    if(fd >= 0){
+    } else {
       if(ioctl(fd, FIONBIO, &yes) < 0){
 	close(fd);
-	return errh->error("FIONBIO failed");
+	return errh->error("FIONBIO failed: %s", strerror(errno));
       }
 
       _dev_name = String(dev_prefix) + String(i);
@@ -256,20 +266,16 @@ Tun::alloc_tun(struct in_addr near, struct in_addr mask,
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
       {
 	int mode = IFF_BROADCAST;
-	if(ioctl(fd, TUNSIFMODE, &mode) != 0){
-	  perror("Tun: TUNSIFMODE");
-	  return errh->error("cannot set TUNSIFMODE");
-	}
+	if(ioctl(fd, TUNSIFMODE, &mode) != 0)
+	  return errh->error("TUNSIFMODE failed: %s", strerror(errno));
       }
 #endif
 
 #if defined(TUNSIFHEAD) || defined(__FreeBSD__)
       // Each read/write prefixed with a 32-bit address family,
       // just as in OpenBSD.
-      if(ioctl(fd, TUNSIFHEAD, &yes) != 0){
-        perror("Tun: TUNSIFHEAD");
-        return errh->error("cannot set TUNSIFHEAD");
-      }
+      if (ioctl(fd, TUNSIFHEAD, &yes) != 0)
+	return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
 #endif        
       
       strcpy(tmp0, inet_ntoa(near));
@@ -277,9 +283,9 @@ Tun::alloc_tun(struct in_addr near, struct in_addr mask,
       
       sprintf(tmp, "ifconfig %s %s netmask %s up", _dev_name.cc(), tmp0, tmp1);
       
-      if(system(tmp) != 0){
+      if (system(tmp) != 0) {
 	close(fd);
-	return errh->error("failed: %s", tmp);
+	return errh->error("%s: %s", tmp, strerror(errno));
       }
 
       if (_gw) {
@@ -288,32 +294,29 @@ Tun::alloc_tun(struct in_addr near, struct in_addr mask,
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
 	sprintf(tmp, "route -n add default %s", _gw.s().cc());
 #else
-#error Not supported on this system
+#error "Not supported on this system"
 #endif
-	if (system(tmp) != 0){
+	if (system(tmp) != 0) {
 	  close(fd);
-	  return errh->error("failed: %s", tmp);
+	  return errh->error("%s: %s", tmp, strerror(errno));
 	}
       }
 
-      return(fd);
+      return fd;
     }
   }
 
   return errh->error("could not allocate a /dev/%s* device: %s",
-                     dev_prefix,
-                     strerror(saved_errno));
+                     dev_prefix, strerror(saved_errno));
 }
 
-
 void
-Tun::dealloc_tun()
+KernelTap::dealloc_tun()
 {
   String cmd = "ifconfig " + _dev_name + " down";
   if (system(cmd.cc()) != 0) 
     click_chatter("%s: failed: %s", id().cc(), cmd.cc());
 }
 
-
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(Tun)
+EXPORT_ELEMENT(KernelTap)

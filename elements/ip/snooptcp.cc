@@ -637,6 +637,7 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 }
 #endif
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SnoopTCP)
 
 #include "hashmap.cc"

@@ -63,6 +63,7 @@ class HashMapIterator {
   void operator++(int = 0);
   
   const K &key() const			{ return _hm->_e[_pos].k; }
+  V &value()				{ return _hm->_e[_pos].v; }
   const V &value() const		{ return _hm->_e[_pos].v; }
   
 };
