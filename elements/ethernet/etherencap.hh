@@ -37,7 +37,7 @@ Returns or sets the DST parameter.
 
 =a
 
-ARPQuerier */
+ARPQuerier, EnsureEther */
 
 #include <click/element.hh>
 #include <click/click_ether.h>
