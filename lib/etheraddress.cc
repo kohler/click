@@ -22,13 +22,13 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 
-EtherAddress::EtherAddress(unsigned char *addr)
+EtherAddress::EtherAddress(const unsigned char *addr)
 {
   memcpy(data(), addr, 6);
 }
 
 String
-EtherAddress::s() const
+EtherAddress::unparse() const
 {
   char buf[24];
   const unsigned char *p = this->data();

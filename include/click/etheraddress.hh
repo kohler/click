@@ -9,7 +9,7 @@ class EtherAddress {
  public:
   
   EtherAddress()			{ _data[0] = _data[1] = _data[2] = 0; }
-  explicit EtherAddress(unsigned char *);
+  explicit EtherAddress(const unsigned char *);
   
   operator bool() const;
   bool is_group() const;
@@ -18,7 +18,11 @@ class EtherAddress {
   const unsigned char *data() const;
   const unsigned short *sdata() const	{ return _data; }
 
-  String s() const;
+  String unparse() const;
+
+  operator String() const		{ return unparse(); }
+  String s() const			{ return unparse(); }
+  
 };
 
 inline
