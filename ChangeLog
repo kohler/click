@@ -1,3 +1,8 @@
+2002-07-08 Monday 15:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/glue.hh (1.26), elements/userlevel/fromdump.cc
+	(1.66): don't compile 64-bit types when --disable-int64 is used
+
 2002-07-08 Monday 14:02  Eddie Kohler <kohler@icir.org>
 
 	* elements/aqm/red.cc (1.41): avoid spurious warnings

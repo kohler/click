@@ -1,3 +1,8 @@
+2002-07-08 Monday 15:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/: glue.hh, glue.hh: don't compile 64-bit types when
+	--disable-int64 is used
+
 2002-07-06 Saturday 04:44  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: llrpc.h, llrpc.h, llrpc.h, llrpc.h: add
