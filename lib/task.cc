@@ -53,7 +53,7 @@ Task::initialize(Router *r, bool join)
 #if __MTCLICK__
   _thread_preference = _list->thread_id();
 #endif
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   set_tickets(DEFAULT_TICKETS);
 #endif
   
@@ -71,9 +71,10 @@ Task::initialize(Element *e, bool join)
 
 void
 Task::uninitialize()
-{ 
-  assert(!scheduled());
+{
   if (initialized()) {
+    unschedule();
+    
     _all_list->lock();
 
     _all_prev->_all_next = _all_next; 
@@ -142,7 +143,7 @@ Task::reschedule()
   assert(_list);
   if (!scheduled()) {
     if (_list->attempt_lock_tasks()) {
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
       if (_tickets >= 1) {
 	_pass = _list->_next->_pass;
 	fast_reschedule();
