@@ -18,6 +18,10 @@ class StringAccum { public:
   char *data() const			{ return (char *)_s; }
   int length() const			{ return _len; }
   int capacity() const			{ return _cap; }
+
+  operator bool()			{ return _len != 0; }
+  operator bool() const			{ return _len != 0; }
+  
   const char *cc()			{ return c_str(); }
   const char *c_str();
   
