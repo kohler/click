@@ -133,6 +133,8 @@ PollDevice::initialize(ErrorHandler *errh)
   if (l->next() == 0) {
     /* turn off interrupt if interrupts weren't already off */
     _dev->poll_on(_dev);
+    if (_dev->polling != 1)
+      return errh->error("PollDevice detected wrong version of polling patch");
   }
  
   if (_promisc) dev_set_promiscuity(_dev, 1);
