@@ -1,3 +1,9 @@
+2004-07-30 Friday 01:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/khandlerproxy.cc (1.21),
+	include/click/router.hh (1.66), lib/router.cc (1.169): shouldve
+	tried to compile on linuxmodule: some symbols were defined
+
 2004-07-29 Thursday 18:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/khandlerproxy.cc (1.20),
