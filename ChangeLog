@@ -1,3 +1,17 @@
+2001-03-15 Thursday 17:52  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/kerneltap.cc: Get correct KernelTap behavior
+	on OpenBSD (as described in KernelTap man page)
+
+2001-03-15 Thursday 17:51  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid-gateway.openbsd: new script to work with BSD net
+	configuration tools
+
+2001-03-15 Thursday 17:51  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: ignore own grid packets
+
 2001-03-15 Thursday 12:51  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi: nitlet
