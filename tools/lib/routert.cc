@@ -1263,17 +1263,12 @@ RouterT::const_iterator::step(const RouterT *r, int idx)
 	_e = 0;
 }
 
-RouterT::type_iterator::type_iterator(RouterT *r, ElementClassT *type)
-    : _type(type ? type : ElementClassT::unused_type())
-{
-    step(r, 0);
-}
-
 void
-RouterT::type_iterator::step(RouterT *r, int idx)
+RouterT::type_iterator::step(RouterT *r, ElementClassT *type, int idx)
 {
+    assert(type);
     int n = (r ? r->nelements() : -1);
-    while (idx < n && (_e = r->element(idx), _e->type() != _type))
+    while (idx < n && (_e = r->element(idx), _e->type() != type))
 	idx++;
     if (idx >= n)
 	_e = 0;

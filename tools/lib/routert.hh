@@ -33,6 +33,8 @@ class RouterT { public:
     iterator begin_elements();
     const_iterator begin_elements() const;
     type_iterator begin_elements(ElementClassT *);
+    iterator end_elements();
+    const_iterator end_elements() const;
     
     int nelements() const		{ return _elements.size(); }
     int real_element_count() const	{ return _real_ecount; }
@@ -190,8 +192,10 @@ class RouterT::const_iterator { public:
     void operator++()			{ (*this)++; }
     operator const ElementT *() const	{ return _e; }
     const ElementT *operator->() const	{ return _e; }
+    const ElementT &operator*() const	{ return *_e; }
   private:
     const ElementT *_e;
+    const_iterator()			: _e(0) { }
     const_iterator(const RouterT *r, int ei) { step(r, ei); }
     void step(const RouterT *, int);
     friend class RouterT;
@@ -201,7 +205,9 @@ class RouterT::const_iterator { public:
 class RouterT::iterator : public RouterT::const_iterator { public:
     operator ElementT *() const		{ return const_cast<ElementT *>(_e); }
     ElementT *operator->() const	{ return const_cast<ElementT *>(_e); }
+    ElementT &operator*() const		{ return const_cast<ElementT &>(*_e); }
   private:
+    iterator()				: const_iterator() { }
     iterator(RouterT *r, int ei)	: const_iterator(r, ei) { }
     friend class RouterT;
 };
@@ -209,15 +215,16 @@ class RouterT::iterator : public RouterT::const_iterator { public:
 class RouterT::type_iterator { public:
     operator bool() const		{ return _e; }
     int idx() const			{ return _e->idx(); }
-    void operator++(int)		{ if (_e) step(_e->router(), idx()+1);}
-    void operator++()			{ (*this)++; }
+    void operator++(int);
+    void operator++();
     operator ElementT *() const		{ return _e; }
     ElementT *operator->() const	{ return _e; }
+    ElementT &operator*() const		{ return *_e; }
   private:
     ElementT *_e;
-    ElementClassT *_type;
-    type_iterator(RouterT *, ElementClassT *);
-    void step(RouterT *, int);
+    type_iterator()			: _e(0) { }
+    type_iterator(RouterT *r, ElementClassT *t, int i) { step(r, t, i); }
+    void step(RouterT *, ElementClassT *, int);
     friend class RouterT;
 };
 
@@ -237,7 +244,32 @@ RouterT::begin_elements() const
 inline RouterT::type_iterator
 RouterT::begin_elements(ElementClassT *t)
 {
-    return type_iterator(this, t);
+    return type_iterator(this, t, 0);
+}
+
+inline RouterT::const_iterator
+RouterT::end_elements() const
+{
+    return const_iterator();
+}
+
+inline RouterT::iterator
+RouterT::end_elements()
+{
+    return iterator();
+}
+
+inline void
+RouterT::type_iterator::operator++(int)
+{
+    if (_e)
+	step(_e->router(), _e->type(), _e->idx() + 1);
+}
+
+inline void
+RouterT::type_iterator::operator++()
+{
+    (*this)++;
 }
 
 inline const ElementT *
@@ -325,6 +357,36 @@ inline ElementClassT *
 ElementT::enclosing_type() const
 {
     return (_owner ? _owner->enclosing_type() : 0);
+}
+
+inline bool
+operator==(const RouterT::const_iterator &i, const RouterT::const_iterator &j)
+{
+    return i.operator->() == j.operator->();
+}
+
+inline bool
+operator!=(const RouterT::const_iterator &i, const RouterT::const_iterator &j)
+{
+    return i.operator->() != j.operator->();
+}
+
+inline bool
+operator==(const RouterT::type_iterator &i, const RouterT::type_iterator &j)
+{
+    return i.operator->() == j.operator->();
+}
+
+inline bool
+operator!=(const RouterT::type_iterator &i, const RouterT::type_iterator &j)
+{
+    return i.operator->() != j.operator->();
+}
+
+inline bool
+operator!=(const RouterT::type_iterator &i, const RouterT::const_iterator &j)
+{
+    return i.operator->() != j.operator->();
 }
 
 #endif
