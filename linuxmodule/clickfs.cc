@@ -402,7 +402,7 @@ click_inode(struct super_block *sb, unsigned long ino)
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
 #ifdef LINUX_2_4
-	inode->i_fop = &click_handler_file_ops;
+	inode->i_fop = &click_dir_file_ops;
 #endif
 	calculate_inode_nlink(inode);
     }
@@ -654,7 +654,8 @@ click_read_inode(struct inode *inode)
 
     // XXX can do better for some handlers, particularly 'config'
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-    
+
+#ifdef LINUX_2_2
     inode->i_blocks = 0;
     inode->i_blksize = 1024;
     inode->i_op = 0;
@@ -663,6 +664,7 @@ click_read_inode(struct inode *inode)
     inode->i_gid = 0;
     inode->i_nlink = 1;
     inode->i_size = 0;
+#endif
 
     // Why don't we fill out the inode more completely? This is weird.
     proclikefs_read_inode(inode);
@@ -686,13 +688,15 @@ click_put_inode(struct inode *inode)
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
-    lock_super(sb);
+    MDEBUG("click_read_super");
+    MDEBUG("post lock_super");
     
     sb->s_blocksize = 1024;
     sb->s_blocksize_bits = 10;
     //sb->s_magic = PROC_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
+    MDEBUG("got root inode %p", root_inode);
     if (!root_inode)
 	goto out_no_root;
 #ifdef LINUX_2_4
@@ -703,16 +707,16 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     if (!sb->s_root)
 	goto out_no_root;
     // XXX options
-    
-    unlock_super(sb);
+
+    MDEBUG("got root directory");
     proclikefs_read_super(sb);
+    MDEBUG("done click_read_super");
     return sb;
 
   out_no_root:
     printk("<1>click_read_super: get root inode failed\n");
     iput(root_inode);
     sb->s_dev = 0;
-    unlock_super(sb);
     return 0;
 }
 
@@ -732,7 +736,7 @@ click_reread_super(struct super_block *sb)
     unlock_super(sb);
 }
 
-#ifdef CLICK_2_4
+#ifdef LINUX_2_4
 static int
 click_delete_dentry(struct dentry *)
 {

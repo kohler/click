@@ -24,6 +24,12 @@ CLICK_CXX_UNPROTECT
 # define LINUX_2_4 1
 #endif
 
+#if 0
+# define MDEBUG(args...) do { printk("<1>kclick: " args); printk("\n"); } while (0)
+#else
+# define MDEBUG(args...) /* nada */
+#endif
+
 #define HANDLER_REREAD			(Router::Handler::FIRST_USER_FLAG)
 #define HANDLER_NEED_READ		(Router::Handler::FIRST_USER_FLAG << 1)
 #define HANDLER_SPECIAL_INODE		(Router::Handler::FIRST_USER_FLAG << 2)

@@ -491,6 +491,8 @@ particular purpose.\n");
     }
     
     // mount Click file system
+    if (verbose)
+      errh->message("Mounting Click module at %s", clickfs_prefix);
 # if FOR_BSDMODULE
     int mount_retval = mount("click", clickfs_prefix, 0, 0);
 # else

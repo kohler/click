@@ -29,6 +29,12 @@
 #include <linux/locks.h>
 #include <linux/file.h>
 
+#if 0
+# define DEBUG(args...) do { printk("<1>proclikefs: " args); printk("\n"); } while (0)
+#else
+# define DEBUG(args...) /* nada */
+#endif
+
 struct proclikefs_file_system {
     struct file_system_type fs;
     struct list_head fs_list;
@@ -42,6 +48,7 @@ struct proclikefs_file_system {
 static LIST_HEAD(fs_list);
 static spinlock_t fslist_lock;
 extern spinlock_t inode_lock;
+extern spinlock_t sb_lock;
 
 static struct super_operations proclikefs_null_super_operations;
 
@@ -55,6 +62,7 @@ EXPORT_SYMBOL(proclikefs_delete_inode);
 static struct super_block *
 proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
 {
+    DEBUG("null_read_super");
     sb->s_dev = 0;
     return 0;
 }
@@ -97,6 +105,10 @@ proclikefs_register_filesystem(const char *name,
 	atomic_set(&newfs->nsuper, 0);
 	newfs->fs.name = newfs->name;
 	newfs->fs.next = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+	newfs->fs.owner = THIS_MODULE;
+	INIT_LIST_HEAD(&newfs->fs.fs_supers);
+#endif
 	newfs_is_new = 1;
     }
 
@@ -107,12 +119,25 @@ proclikefs_register_filesystem(const char *name,
     if (newfs_is_new)
 	register_filesystem(&newfs->fs); /* XXX check return value */
     else if (reread_super) {
-	struct super_block *sb;
 	/* transfer superblocks */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+	struct list_head *p;
+	spin_lock(&sb_lock);
+	for (p = newfs->fs.fs_supers.next; p != &newfs->fs.fs_supers; p = p->next) {
+	    struct super_block *sb = list_entry(p, struct super_block, s_instances);
+	    if (sb->s_type == &newfs->fs)
+		(*reread_super)(sb);
+	    else
+		printk("<1>proclikefs confusion\n");
+	}
+	spin_unlock(&sb_lock);
+#else
+	struct super_block *sb;
 	for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
 	     sb = sb_entry(sb->s_list.next))
 	    if (sb->s_type == &newfs->fs)
 		(*reread_super)(sb);
+#endif
     }
     
     MOD_INC_USE_COUNT;
@@ -125,9 +150,10 @@ static void
 proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
 {
     struct dentry *dentry, *all_dentries;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     struct list_head *p;
+
+    DEBUG("killing files");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     file_list_lock();
     for (p = sb->s_files.next; p != &sb->s_files; p = p->next) {
 	struct file *filp = list_entry(p, struct file, f_list);
@@ -136,6 +162,7 @@ proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
     file_list_unlock();
 #else
     (void) dummy_inode;
+    (void) p;
 #endif
 
     lock_super(sb);
@@ -146,6 +173,7 @@ proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
     /* clear out dentries, starting from the root */
     /* XXX locking? */
     
+    DEBUG("killing dentries");
     all_dentries = sb->s_root;
     if (all_dentries) {
 	d_drop(all_dentries);
@@ -168,6 +196,7 @@ proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
     }
 
     unlock_super(sb);
+    DEBUG("done killing super");
 }
 
 void
@@ -176,6 +205,7 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     struct super_block *sb;
     struct inode *inode, dummy_inode;
     struct file *filp;
+    struct list_head *p;
     
     if (!pfs)
 	return;
@@ -185,7 +215,10 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     /* Borrow make_bad_inode's file operations. */
     make_bad_inode(&dummy_inode);
     
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    /* file operations cleared out superblock by superblock, below */
+    (void) filp;
+#else
     /* clear out file operations */
     /* inuse_filps is protected by the single kernel lock */
     /* XXX locking? */
@@ -198,9 +231,6 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	    continue;
 	filp->f_op = dummy_inode.i_op->default_file_ops;
     }
-#else
-    /* file operations cleared out superblock by superblock, below */
-    (void) filp;
 #endif
     
     spin_lock(&pfs->lock);
@@ -217,12 +247,22 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     }
     
     /* clear out superblock operations */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    spin_lock(&sb_lock);
+    for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
+	sb = list_entry(p, struct super_block, s_instances);
+	proclikefs_kill_super(sb, &dummy_inode);
+    }
+    spin_unlock(&sb_lock);
+#else
     for (sb = sb_entry(super_blocks.next); sb != sb_entry(&super_blocks); 
 	 sb = sb_entry(sb->s_list.next)) {
 	if (sb->s_type != &pfs->fs)
 	    continue;
 	proclikefs_kill_super(sb, &dummy_inode);
     }
+    (void) p;
+#endif
 
     pfs->live = 0;
     pfs->fs.read_super = proclikefs_null_read_super;
@@ -237,6 +277,7 @@ proclikefs_read_super(struct super_block *sb)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_inc(&pfs->nsuper);
+    DEBUG("read_super for %s", pfs->fs.name);
     MOD_INC_USE_COUNT;
 }
 
@@ -245,6 +286,7 @@ proclikefs_put_super(struct super_block *sb)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_dec(&pfs->nsuper);
+    DEBUG("put_super for %s", pfs->fs.name);
     MOD_DEC_USE_COUNT;
     spin_lock(&fslist_lock);
     if (!pfs->live && atomic_read(&pfs->nsuper) == 0) {
@@ -272,6 +314,10 @@ proclikefs_delete_inode(struct inode *inode)
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (inode->i_sb->s_type);
     struct proclikefs_inode_info *inode_info = (struct proclikefs_inode_info *) (&inode->u);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    inode->i_state = I_CLEAR;
+#endif
+    
     spin_lock(&pfs->lock);
     list_del(&inode_info->fsi_list);
     spin_unlock(&pfs->lock);

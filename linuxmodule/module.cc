@@ -196,6 +196,7 @@ init_module()
 #endif
   
   // C++ static initializers
+  MDEBUG("static initializers");
   String::static_initialize();
   cp_va_static_initialize();
 
@@ -209,8 +210,11 @@ init_module()
   error_log = new StringAccum;
 
   // config manager, thread manager, sk_buff manager
+  MDEBUG("config init");
   click_init_config();
+  MDEBUG("sched init");
   click_init_sched();
+  MDEBUG("skbmgr init");
   skbmgr_init();
   
   // global handlers defined here
@@ -236,6 +240,7 @@ init_module()
   click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
 
 #ifdef HAVE_CLICKFS
+  MDEBUG("clickfs");
   init_clickfs();
 #endif
 
@@ -243,6 +248,7 @@ init_module()
   init_proc_click();
 #endif
 
+  MDEBUG("done init");
   return 0;
 }
 

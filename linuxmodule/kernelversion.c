@@ -35,6 +35,10 @@ MODULE_PARM(threads, "i");
 MODULE_PARM_DESC(threads, "number of Click threads per router [1]");
 #endif
 
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("Dual BSD/GPL");
+#endif
+
 int
 click_accessible(void)
 {
