@@ -41,6 +41,11 @@ pushed out on output 1; otherwise, they are dropped.) Default is false.
 Boolean. If true, then FromDump will ask the router to stop when it is done
 reading its tcpdump file. Default is false.
 
+=item ACTIVE
+
+Boolean. If false, then FromDump will not emit packets (until the `C<active>'
+handler is written). Default is true.
+
 =item TIMING
 
 Boolean. Same as the TIMING argument.
@@ -65,6 +70,10 @@ such.
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).
+
+=h active read/write
+
+Value is a Boolean.
 
 =a
 
@@ -107,6 +116,7 @@ class FromDump : public Element { public:
 #ifdef ALLOW_MMAP
     bool _mmap : 1;
 #endif
+    bool _active;
     unsigned _extra_pkthdr_crap;
     unsigned _sampling_prob;
     int _minor_version;
@@ -133,6 +143,7 @@ class FromDump : public Element { public:
     Packet *read_packet(ErrorHandler *);
 
     static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
 

@@ -62,7 +62,7 @@ FromDump::notify_noutputs(int n)
 int
 FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-    bool timing = false, stop = false, force_ip = false;
+    bool timing = false, stop = false, active = true, force_ip = false;
 #ifdef __linux__
     bool mmap = false;
 #else
@@ -77,6 +77,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,
+		    "ACTIVE", cpBool, "start active?", &active,
 		    "MMAP", cpBool, "access file with mmap()?", &mmap,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", 28, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
@@ -98,6 +99,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (mmap)
 	errh->warning("`MMAP' is not supported on this platform");
 #endif
+    _active = active;
     return 0;
 }
 
@@ -315,7 +317,8 @@ FromDump::initialize(ErrorHandler *errh)
 	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
     }
 
-    ScheduleInfo::join_scheduler(this, &_task, errh);
+    if (output_is_push(0))
+	ScheduleInfo::join_scheduler(this, &_task, _active, errh);
     return 0;
 }
 
@@ -449,6 +452,8 @@ FromDump::read_packet(ErrorHandler *errh)
 void
 FromDump::run_scheduled()
 {
+    if (!_active)
+	return;
     if (!_packet) {
 	if (_stop)
 	    router()->please_stop_driver();
@@ -473,6 +478,8 @@ FromDump::run_scheduled()
 Packet *
 FromDump::pull(int)
 {
+    if (!_active)
+	return 0;
     if (!_packet) {
 	if (_stop)
 	    router()->please_stop_driver();
@@ -495,12 +502,35 @@ FromDump::pull(int)
 String
 FromDump::read_handler(Element *e, void *thunk)
 {
-    FromDump *fd = (FromDump *)e;
+    FromDump *fd = static_cast<FromDump *>(e);
     switch ((int)thunk) {
       case 0:
 	return cp_unparse_real2(fd->_sampling_prob, 28) + "\n";
+      case 1:
+	return cp_unparse_bool(fd->_active) + "\n";
       default:
 	return "<error>\n";
+    }
+}
+
+int
+FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+{
+    FromDump *fd = static_cast<FromDump *>(e);
+    String s = cp_uncomment(s_in);
+    switch ((int)thunk) {
+      case 1: {
+	  bool active;
+	  if (cp_bool(s, &active)) {
+	      fd->_active = active;
+	      if (active && fd->output_is_push(0) && !fd->_task.scheduled())
+		  fd->_task.reschedule();
+	      return 0;
+	  } else
+	      return errh->error("`active' should be Boolean");
+      }
+      default:
+	return -EINVAL;
     }
 }
 
@@ -508,6 +538,8 @@ void
 FromDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, (void *)0);
+    add_read_handler("active", read_handler, (void *)1);
+    add_write_handler("active", write_handler, (void *)1);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }
