@@ -308,7 +308,9 @@ FromDump::initialize(ErrorHandler *errh)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
   retry_file:
+#ifdef ALLOW_MMAP
     _mmap_unit = 0;
+#endif
     _pos = 0;
     _file_offset = 0;
     int result = read_buffer(errh);
