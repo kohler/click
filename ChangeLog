@@ -1,3 +1,8 @@
+2001-06-26 Tuesday 20:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/mkwebdoc.pl (1.12): add "--enable" arguments, to get all
+	elements
+
 2001-06-26 Tuesday 20:35  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in (1.124): Click-1.2.1 released!
