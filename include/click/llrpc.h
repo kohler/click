@@ -23,9 +23,9 @@
 
 #define CLICK_LLRPC_COUNTS_SIZE 8
 struct click_llrpc_counts_st {
-  unsigned n;
-  unsigned keys[CLICK_LLRPC_COUNTS_SIZE];
-  unsigned values[CLICK_LLRPC_COUNTS_SIZE];
+  uint32_t n;
+  uint32_t keys[CLICK_LLRPC_COUNTS_SIZE];
+  uint32_t values[CLICK_LLRPC_COUNTS_SIZE];
 };
 
 
