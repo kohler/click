@@ -1,3 +1,36 @@
+2004-03-20 Saturday 02:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click2xml/: click2xml.cc (1.15), clickconfig.dtd (1.5),
+	xml2click.cc (1.15): s/prevclass{name,id}/overloadclass{name,id}/;
+	bug fixes
+
+2004-03-20 Saturday 02:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/lib/: routert.cc (1.78), runparse.cc (1.8): fix crash,
+	print formal types in unparse
+
+2004-03-20 Saturday 02:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/driver.hh (1.4), lib/driver.cc (1.19),
+	tools/click-align/click-align.cc (1.51),
+	tools/click-check/click-check.cc (1.26),
+	tools/click-combine/click-combine.cc (1.37),
+	tools/click-combine/click-uncombine.cc (1.32),
+	tools/click-devirtualize/click-devirtualize.cc (1.42),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.63),
+	tools/click-flatten/click-flatten.cc (1.19),
+	tools/click-install/click-install.cc (1.55),
+	tools/click-install/click-uninstall.cc (1.23),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.29),
+	tools/click-pretty/click-pretty.cc (1.26),
+	tools/click-undead/click-undead.cc (1.36),
+	tools/click-xform/click-xform.cc (1.57): add
+	click_static_initialize() in CLICK_TOOL case; use it
+
+2004-03-20 Saturday 02:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/lexer.cc (1.75): renaming nit
+
 2004-03-19 Friday 04:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/: mkwebdoc.pl (1.45), mkwebdoc.pl (1.46), mkwebdoc.pl (1.47):
