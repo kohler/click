@@ -1,3 +1,7 @@
+2004-05-27 Thursday 02:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* FAQ (1.18): add FAQ entry, suggested by paolo Pisati
+
 2004-05-26 Wednesday 17:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/averagecounter.cc (1.12): whitespace
