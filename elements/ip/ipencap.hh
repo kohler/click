@@ -9,13 +9,8 @@
  * PROTOCOL, source address SADDR, and destination address DADDR.
  * This is most useful for IP-in-IP encapsulation.
  *
- * If the input packet has TTL and TOS annotations, these
- * are copied into the encapsulating header. If those
- * annotations don't exist, the TTL and TOS header fields
- * are set to 250 and 0 respectively.
- *
- * The packet's destination, TOS, TTL, and OFF annotations
- * are set from the resulting IP encapsulation header's fields.
+ * The packet's TTL and TOS header fields are set to 250 and 0 respectively.
+ * Its destination annotation is set to DADDR.
  *
  * The Strip element can be used by the receiver to get rid
  * of the encapsulation header.
@@ -26,8 +21,7 @@
  *
  * = IPEncap(4, 18.26.4.24, 140.247.60.147)
  *
- * =a Strip
- */
+ * =a Strip */
 
 #include "element.hh"
 #include "glue.hh"
