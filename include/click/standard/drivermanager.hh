@@ -67,6 +67,11 @@ go to the next instruction. DATA defaults to the empty string.
 
 Call ELEMENT's read handler named HANDLER and print the result.
 
+=item `C<write_skip>' ELEMENT.HANDLER [DATA]'
+
+Same as `C<write>', except that this directive is skipped when there is
+another driver pause pending.
+
 =back
 
 DriverManager adds an implicit `C<stop>' instruction to the end of its
@@ -107,7 +112,8 @@ class DriverManager : public Element { public:
 
   private:
 
-    enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ };
+    enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ,
+		INSN_WRITE_SKIP, INSN_IGNORE };
 
     Vector<int> _insns;
     Vector<int> _args;
