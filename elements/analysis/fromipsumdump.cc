@@ -193,9 +193,9 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
     for (int i = 0; i < words.size(); i++) {
 	String word = cp_unquote(words[i]);
 	int what = parse_content(word);
-	if (what > W_NONE && what < W_LAST) {
+	if (what >= W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
-	    all_contents |= (1 << (what - W_NONE - 1));
+	    all_contents |= (1 << (what - W_NONE));
 	} else if (i > 0 || word != "!data") {
 	    _ff.warning(errh, "warning: unknown content type '%s'", word.c_str());
 	    _contents.push_back(W_NONE);
@@ -206,12 +206,12 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	_ff.error(errh, "no contents specified");
 
     // If we have W_FRAGOFF, ignore W_FRAG.
-    if (all_contents & (1 << (W_FRAGOFF - W_NONE - 1)))
+    if (all_contents & (1 << (W_FRAGOFF - W_NONE)))
 	for (int i = 0; i < _contents.size(); i++)
 	    if (_contents[i] == W_FRAG)
 		_contents[i] = W_NONE;
 
-    // recheck whether to use `!flowid' and `!aggregate'
+    // recheck whether to use '!flowid' and '!aggregate'
     check_defaults();
 }
 
@@ -570,7 +570,7 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *begin, const char *end, Strin
 	    s += 4;
 	    while (1) {
 		const char *t = cp_unsigned(s, end, 0, &u1);
-		if (t >= end || *t != ':')
+		if (t >= end || (*t != ':' && *t != '-'))
 		    goto bad_opt;
 		t = cp_unsigned(t + 1, end, 0, &u2);
 		append_net_uint32_t(sa, u1);
@@ -723,7 +723,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     StringAccum payload;
     String ip_opt;
     String tcp_opt;
-    
+
     while (1) {
 
 	bool binary = _binary;
@@ -775,6 +775,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    // check binary case
 	    if (binary) {
 		switch (_contents[i]) {
+		  case W_NONE:
+		    break;
 		  case W_TIMESTAMP:
 		  case W_FIRST_TIMESTAMP:
 		    u1 = GET4(data);
@@ -845,6 +847,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    // otherwise, ascii
 	    // first, parse contents
 	    switch (_contents[i]) {
+
+	      case W_NONE:
+		while (data < end && !isspace(*data))
+		    data++;
+		break;
 
 	      case W_TIMESTAMP:
 	      case W_FIRST_TIMESTAMP:
@@ -1198,7 +1205,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	
 	// set data from flow ID
 	if (_use_flowid) {
-	    IPFlowID flowid = (PAINT_ANNO(q) ? _flowid.rev() : _flowid);
+	    IPFlowID flowid = (PAINT_ANNO(q) & 1 ? _flowid.rev() : _flowid);
 	    if (flowid.saddr())
 		iph->ip_src = flowid.saddr();
 	    if (flowid.daddr())
@@ -1396,7 +1403,7 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 		  fd->_notifier.set_listeners(active);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("'active' should be Boolean");
       }
       case H_STOP:
 	fd->_active = false;

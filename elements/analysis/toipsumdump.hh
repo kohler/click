@@ -211,7 +211,7 @@ Single TCP option fields have the following representations.
     MSS             'mss1400'
     Window scale    'wscale10'
     SACK permitted  'sackok'
-    SACK            'sack95:98'; each SACK block
+    SACK            'sack95-98'; each SACK block
                     is listed separately
     Timestamp       'ts669063908:38382731'
     Other options   '98' (option 98, no data),

@@ -81,7 +81,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     for (int i = 0; i < v.size(); i++) {
 	String word = cp_unquote(v[i]);
 	int what = parse_content(word);
-	if (what > W_NONE && what < W_LAST) {
+	if (what >= W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
 	    int s = content_binary_size(what);
 	    if (s == 4 || s == 8)
@@ -391,7 +391,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	      for (opt += 2; opt < end_sack; opt += 8) {
 		  uint32_t buf[2];
 		  memcpy(&buf[0], opt, 8);
-		  sa << sep << "sack" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
+		  sa << sep << "sack" << ntohl(buf[0]) << '-' << ntohl(buf[1]);
 		  sep = ";";
 	      }
 	      break;
@@ -511,6 +511,9 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	
 	switch (_contents[i]) {
 
+	  case W_NONE:
+	    sa << '-';
+	    break;
 	  case W_TIMESTAMP:
 	    sa << p->timestamp_anno();
 	    break;
@@ -869,6 +872,8 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
     for (int i = 0; i < _contents.size(); i++) {
 	uint32_t v = 0;
 	switch (_contents[i]) {
+	  case W_NONE:
+	    break;
 	  case W_TIMESTAMP:
 	    PUT4(buf + pos, p->timestamp_anno().tv_sec);
 	    PUT4(buf + pos + 4, p->timestamp_anno().tv_usec);
