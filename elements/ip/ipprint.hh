@@ -5,7 +5,7 @@
 
 /*
  * =c
- * IPPrint(TAG [, CONTENTS [, NBYTES]])
+ * IPPrint([TAG, CONTENTS, NBYTES])
  * =s pretty-prints IP packets
  * V<debugging>
  * =d

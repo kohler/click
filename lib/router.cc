@@ -1139,6 +1139,7 @@ Router::wait()
   bool timers = _timer_head.get_next_delay(&wait);
   if (!selects && !timers)
     return;
+  
   // never wait if anything is scheduled
   // otherwise, if no timers, block indefinitely
   if (scheduled_next() != this)

@@ -17,10 +17,12 @@
  */
 
 #include <click/element.hh>
+#include <click/timer.hh>
 
 class QuitWatcher : public Element {
 
   Vector<Element *> _e;
+  Timer _timer;
   
  public:
   

@@ -26,6 +26,7 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
@@ -55,9 +56,10 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
 {
   _bytes = 1500;
   String contents = "no";
+  _label = "";
   if (cp_va_parse(conf, this, errh,
-		  cpString, "label", &_label,
 		  cpOptional,
+		  cpString, "label", &_label,
 		  cpWord, "print packet contents (no/hex/ascii)", &contents,
 		  cpInteger, "number of bytes to dump", &_bytes,
 		  cpEnd) < 0)
@@ -105,9 +107,15 @@ IPPrint::simple_action(Packet *p)
 
   IPAddress src(iph->ip_src.s_addr);
   IPAddress dst(iph->ip_dst.s_addr);
+  unsigned ip_len = ntohs(iph->ip_len);
   //  unsigned char tos = iph->ip_tos;
+
+  StringAccum sa;
+  if (_label)
+    sa << _label << ": ";
   
   switch (iph->ip_p) {
+    
   case IP_PROTO_TCP: {
     const click_tcp *tcph =
       reinterpret_cast<const click_tcp *>(p->transport_header());
@@ -116,48 +124,53 @@ IPPrint::simple_action(Packet *p)
     unsigned seq = ntohl(tcph->th_seq);
     unsigned ack = ntohl(tcph->th_ack);
     unsigned win = ntohs(tcph->th_win);
+    unsigned seqlen = ip_len - (iph->ip_hl << 2) - (tcph->th_off << 2);
     int ackp = tcph->th_flags & TH_ACK;
     String flag = "";
+    if (tcph->th_flags & TH_SYN)
+      flag += "S", seqlen++;
     if (tcph->th_flags & TH_FIN)
-      flag = "F";
-    else if (tcph->th_flags & TH_SYN)
-      flag = "S";
-    else if (tcph->th_flags & TH_RST)
-      flag = "R";
+      flag += "F", seqlen++;
+    if (tcph->th_flags & TH_RST)
+      flag += "R";
     if (tcph->th_flags & TH_PUSH)
       flag += "P";
-    if (flag.length() == 0) flag = ".";
-    s = src.s() + ":" + String((int)srcp) + " > "
-      + dst.s() + ":" + String((int)dstp) + " : "
-      + flag + " " + String(seq);
+    if (flag.length() == 0)
+      flag = ".";
+    sa << src.s() << '.' << srcp << " > " << dst.s() << '.' << dstp
+       << ": " << flag << ' ' << seq << ':' << (seq + seqlen)
+       << '(' << seqlen << ',' << p->length() << ',' << ip_len << ')';
     if (ackp)
-      s += " ack " + String(ack);
-    s += " win " + String(win);
-    s += " len " + String(ntohs(iph->ip_len)-iph->ip_hl*4-tcph->th_off*4);
+      sa << " ack " << ack;
+    sa << " win " << win;
     break;
   }
+  
   case IP_PROTO_UDP: {
     const click_udp *udph =
       reinterpret_cast<const click_udp *>(p->transport_header());
     unsigned short srcp = ntohs(udph->uh_sport);
     unsigned short dstp = ntohs(udph->uh_dport);
     unsigned len = ntohs(udph->uh_ulen);
-    s = src.s() + ":" + String((int)srcp) + " > "
-      + dst.s() + ":" + String((int)dstp) 
-      + " : UDP; len " + String(len);
+    sa << src.s() << '.' << srcp << " > "
+       << dst.s() << '.' << dstp << ": udp " << len;
     break;
   }
+  
   case IP_PROTO_ICMP: {
-    s = src.s() + " > " + dst.s() + " : ICMP";
+    sa << src.s() << " > " << dst.s() << ": icmp";
     break;
   }
+  
   default: {
-    s = src.s() + " > " + dst.s() + " : unknown protocol";
+    sa << src.s() << " > " << dst.s() << ": ip protocol " << iph->ip_p;
     break;
   }
+  
   }
 
-  click_chatter("%s: %s", _label.cc(), s.cc());
+  sa << '\0';
+  click_chatter("%s", sa.data());
 
   const unsigned char *data = p->data();
   if (_contents == 1) {

@@ -31,6 +31,7 @@
 #include "elements/standard/scheduleinfo.hh"
 
 QuitWatcher::QuitWatcher()
+  : _timer(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -52,16 +53,17 @@ QuitWatcher::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-QuitWatcher::initialize(ErrorHandler *errh)
+QuitWatcher::initialize(ErrorHandler *)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  _timer.attach(this);
+  _timer.schedule_after_ms(2);
   return 0;
 }
 
 void
 QuitWatcher::uninitialize()
 {
-  unschedule();
+  _timer.unschedule();
 }
 
 void
@@ -72,7 +74,7 @@ QuitWatcher::run_scheduled()
       router()->please_stop_driver();
       return;
     }
-  reschedule();
+  _timer.schedule_after_ms(2);
 }
 
 EXPORT_ELEMENT(QuitWatcher)

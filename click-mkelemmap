@@ -29,7 +29,7 @@ sub process_file ($) {
   my($headername) = $filename;
   $headername =~ s/\.cc$/\.hh/;
   if (!open(IN, $headername)) {
-    print STDERR "$headername: $!\n";
+    print STDERR "$headername: $!\n" if $headername eq $filename;
     return;
   }
   my $text = <IN>;

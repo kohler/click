@@ -32,6 +32,9 @@ class Packet { public:
   bool shared() const;
   Packet *clone();
   WritablePacket *uniqueify();
+#ifndef __KERNEL__
+  int use_count() const			{ return _use_count; }
+#endif
   
 #ifdef __KERNEL__
   const unsigned char *data() const	{ return skb()->data; }

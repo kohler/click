@@ -20,10 +20,10 @@ struct click_tcp {
     tcp_seq th_ack;			/* 8-11  acknowledgement number */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     unsigned char th_x2:4;		/* 12    (unused) */
-    unsigned char th_off:4;		/*       data offset */
+    unsigned char th_off:4;		/*       data offset in words */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-    unsigned char th_off:4;		/* 12    data offset */
+    unsigned char th_off:4;		/* 12    data offset in words */
     unsigned char th_x2:4;		/*       (unused) */
 #endif
     unsigned char th_flags;		/* 13    flags */
