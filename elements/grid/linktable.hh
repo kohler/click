@@ -80,6 +80,11 @@ public:
   String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
   void update_link(IPAddress from, IPAddress to, int metric);
+  void update_both_links(IPAddress a, IPAddress b, int metric) {
+    update_link(a,b,metric);
+    update_link(b,a,metric);
+  }
+
   int get_hop_metric(IPAddress from, IPAddress to);
   Vector< Vector<IPAddress> >  update_routes(Vector<Vector<IPAddress> > routes, 
 					     int n, Vector<IPAddress> route);
