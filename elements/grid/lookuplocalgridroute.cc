@@ -44,9 +44,6 @@ LookupLocalGridRoute::LookupLocalGridRoute()
 LookupLocalGridRoute::~LookupLocalGridRoute()
 {
   MOD_DEC_USE_COUNT;
-
-  if (_log)
-    delete _log;
 }
 
 void *
@@ -70,7 +67,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"LOG", cpElement, "GridLogger element", &_log,
 			0);
-  _any_gateway_ip = (_ipaddr.addr() & 0xFFffFF00) | 254;
+  _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
   return res;
 }
 
@@ -344,7 +341,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
     struct timeval tv = { 0, 0 };
     gettimeofday(&tv, 0);
-    _log->log_no_route(packet, tv);
+    if (_log)
+      _log->log_no_route(packet, tv);
 
     output(2).push(packet);
   }
