@@ -98,9 +98,9 @@ PerfCount_read_cycles(Element *f, void *)
 }
 
 void
-PerfCount::add_handlers(HandlerRegistry *fcr)
+PerfCount::add_handlers()
 {
-  fcr->add_read("stats", PerfCount_read_cycles, 0);
+  add_read_handler("stats", PerfCount_read_cycles, 0);
 }
 
 EXPORT_ELEMENT(PerfCount)

@@ -363,7 +363,7 @@ cp_spacevec(const String &conf, Vector<String> &vec)
 bool
 cp_bool(String str, bool &return_value, String *rest = 0)
 {
-  const char *s = str.cc();
+  const char *s = str.data();
   int len = str.length();
   int take;
   
@@ -559,6 +559,22 @@ cp_real2(const String &str, int frac_bits, int &value, String *rest = 0)
       }
     return 0;
   }
+}
+
+bool
+cp_word(String str, String &return_value, String *rest = 0)
+{
+  const char *s = str.data();
+  int len = str.length();
+  int pos = 0;
+  while (pos < len && !isspace(s[pos]))
+    pos++;
+  return_value = str.substring(0, pos);
+  if (rest) {
+    *rest = str.substring(pos);
+    return true;
+  } else
+    return pos == len;
 }
 
 bool

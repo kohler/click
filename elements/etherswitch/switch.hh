@@ -13,7 +13,7 @@ class EtherSwitch : public Element {
   EtherSwitch *clone() const;
   
   const char *class_name() const		{ return "EtherSwitch"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   void notify_ninputs(int);
   void notify_noutputs(int);
   Bitvector forward_flow(int) const;
@@ -21,7 +21,7 @@ class EtherSwitch : public Element {
   void push(int port, Packet* p);
 
   static String read_table(Element* f, void *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
 
   void set_timeout(int seconds)			{ _timeout = seconds; }
 

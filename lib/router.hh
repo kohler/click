@@ -1,17 +1,13 @@
 #ifndef ROUTER_HH
 #define ROUTER_HH
-
 #include "element.hh"
 #include "bitvector.hh"
 class ElementFilter;
 
-class Router 
-#ifndef RR_SCHED
-  : public ElementLink 
-#endif
-{
+class Router : public ElementLink {
 
   struct Hookup;
+  struct Handler;
   typedef Element::Connection Connection;
   
   Vector<Element *> _elements;
@@ -33,6 +29,11 @@ class Router
   bool _initialized: 1;
   bool _have_connections: 1;
   bool _have_hookpidx: 1;
+
+  Vector<int> _handler_offset;
+  Handler *_handlers;
+  int _nhandlers;
+  int _handlers_cap;
   
   bool _please_stop_driver;
   
@@ -64,6 +65,7 @@ class Router
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
+  int find_handler(Element *, const char *, int, bool);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
@@ -103,10 +105,17 @@ class Router
   int upstream_elements(Element *, Vector<Element *> &);
   
   int initialize(ErrorHandler *);
+
+  void add_read_handler(Element *, const char *, int, ReadHandler, void *);
+  void add_write_handler(Element *, const char *, int, WriteHandler, void *);
+  int find_handler(Element *, const String &);
+  int nhandlers() const				{ return _nhandlers; }
+  const Handler &handler(int i) const;
   
   int live_reconfigure(int, const String &, ErrorHandler *);
   
-  void driver(unsigned count = _max_driver_count);
+  void driver();
+  void driver_once();
   void wait();
   
   void print_structure(ErrorHandler *);
@@ -126,6 +135,18 @@ struct Router::Hookup {
   Hookup(int i, int p)			: idx(i), port(p) { }
 };
 
+struct Router::Handler {
+  Element *element;
+  const char *name;
+  int namelen;
+  ReadHandler read;
+  void *read_thunk;
+  WriteHandler write;
+  void *write_thunk;
+  int next;
+};
+  
+
 inline bool
 operator==(const Router::Hookup &a, const Router::Hookup &b)
 {
@@ -142,6 +163,13 @@ inline Element *
 Router::find(const String &name, ErrorHandler *errh) const
 {
   return find("", name, errh);
+}
+
+inline const Router::Handler &
+Router::handler(int i) const
+{
+  assert(i>=0 && i<_nhandlers);
+  return _handlers[i];
 }
 
 #endif

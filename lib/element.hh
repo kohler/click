@@ -1,19 +1,21 @@
 #ifndef ELEMENT_HH
 #define ELEMENT_HH
-
 #include "glue.hh"
 #include "vector.hh"
 #include "string.hh"
 #include "packet.hh"
 #include "elemlink.hh"
 class Router;
+class Element;
 class ErrorHandler;
 class Bitvector;
+
+typedef String (*ReadHandler)(Element *, void *);
+typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 
 class Element : public ElementLink { public:
   
   enum Processing { AGNOSTIC, PUSH, PULL, PUSH_TO_PULL, PULL_TO_PUSH };
-  class HandlerRegistry;
   class Connection;
   
   Element();
@@ -39,11 +41,8 @@ class Element : public ElementLink { public:
   
   int number() const				{ return _number; }
   void set_number(int n)			{ _number = n; }
-#ifndef RR_SCHED
   Router *router() const		{ return (Router *)scheduled_list(); }
-#else
-  Router *router() const		{ return _router; }
-#endif
+
   // INPUTS
   int ninputs() const				{ return _ninputs; }
   const Connection &input(int input_id) const;
@@ -93,8 +92,10 @@ class Element : public ElementLink { public:
   virtual int live_reconfigure(const String &, ErrorHandler *);
   
   // HANDLERS
-  void add_default_handlers(HandlerRegistry *, bool allow_write_config);
-  virtual void add_handlers(HandlerRegistry *);
+  void add_read_handler(const char *, ReadHandler, void *);
+  void add_write_handler(const char *, WriteHandler, void *);
+  void add_default_handlers(bool allow_write_config);
+  virtual void add_handlers();
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,
 				       ErrorHandler *);
@@ -152,7 +153,7 @@ class Element : public ElementLink { public:
 #endif
     
   };
-  
+
  private:
   
   static const int INLINE_PORTS = 4;
@@ -173,25 +174,6 @@ class Element : public ElementLink { public:
   Element &operator=(const Element &);
   
   void set_nports(int, int);
-  
-};
-
-typedef String (*ReadHandler)(Element *, void *);
-typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
-
-class Element::HandlerRegistry { public:
-  
-  HandlerRegistry()			{ }
-  virtual ~HandlerRegistry()		{ }
-  
-  virtual void add_read(const char *name, int namelen, ReadHandler, void *);
-  virtual void add_write(const char *name, int namelen, WriteHandler, void *);
-  virtual void add_read_write(const char *name, int namelen,
-			      ReadHandler, void *, WriteHandler, void *);
-
-  void add_read(const char *, ReadHandler, void *);
-  void add_write(const char *, WriteHandler, void *);
-  void add_read_write(const char *, ReadHandler, void *, WriteHandler, void *);
   
 };
 

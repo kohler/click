@@ -37,7 +37,7 @@ class Counter : public Element { protected:
   
   Counter *clone() const			{ return new Counter; }
   int initialize(ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   /*void push(int port, Packet *);
     Packet *pull(int port);*/

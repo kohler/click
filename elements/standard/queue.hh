@@ -69,7 +69,7 @@ class Queue : public Storage {
   void uninitialize();
   bool can_live_reconfigure() const		{ return true; }
   int live_reconfigure(const String &, ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   void push(int port, Packet *);
   Packet *pull(int port);

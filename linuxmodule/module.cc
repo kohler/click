@@ -43,6 +43,9 @@ ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
 Router *current_router = 0;
 
+Router::Handler root_handlers[ROOT_HANDLERS_CAP];
+int nroot_handlers = 0;
+
 static Vector<String> packages;
 
 
@@ -344,7 +347,8 @@ write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
     return -EINVAL;
   }
   printk("driving %d times\n", num);
-  current_router->driver(num);
+  for (int i = 0; i < num; i++)
+    current_router->driver_once();
   return 0;
 }
 
@@ -384,6 +388,24 @@ click_remove_element_type(int i)
 
 extern void export_elements(Lexer *);
 
+static void
+next_root_handler(const char *name, ReadHandler read, void *read_thunk,
+		  WriteHandler write, void *write_thunk)
+{
+  if (nroot_handlers >= ROOT_HANDLERS_CAP)
+    return;
+  root_handlers[nroot_handlers].element = 0;
+  root_handlers[nroot_handlers].name = name;
+  root_handlers[nroot_handlers].namelen = strlen(name);
+  root_handlers[nroot_handlers].read = read;
+  root_handlers[nroot_handlers].read_thunk = read_thunk;
+  root_handlers[nroot_handlers].write = write;
+  root_handlers[nroot_handlers].write_thunk = write_thunk;
+  root_handlers[nroot_handlers].next = -1;
+  register_handler(&proc_click_entry, &root_handlers[nroot_handlers]);
+  nroot_handlers++;
+}
+
 extern "C" int
 init_module()
 {
@@ -409,16 +431,15 @@ init_module()
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
-  KernelHandlerRegistry kfr(&proc_click_entry);
-  kfr.add_read("meminfo", read_meminfo, 0);
-  kfr.add_read("cycles", read_cycles, 0);
-  kfr.add_read("flatconfig", read_flatconfig, 0);
-  kfr.add_read("list", read_list, 0);
-  kfr.add_read("classes", read_classes, 0);
-  kfr.add_read("packages", read_packages, 0);
-  kfr.add_read("requirements", read_requirements, 0);
+  next_root_handler("meminfo", read_meminfo, 0, 0, 0);
+  next_root_handler("cycles", read_cycles, 0, 0, 0);
+  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
+  next_root_handler("list", read_list, 0, 0, 0);
+  next_root_handler("classes", read_classes, 0, 0, 0);
+  next_root_handler("packages", read_packages, 0, 0, 0);
+  next_root_handler("requirements", read_requirements, 0, 0, 0);
 #ifndef HAVE_POLLING
-  kfr.add_write("driver", write_driver, 0);
+  next_root_handler("driver", 0, 0, write_driver, 0);
 #endif
 
   return 0;

@@ -405,28 +405,38 @@ read_element_cycles(Element *f, void *)
 #endif
 
 void
-Element::add_default_handlers(HandlerRegistry *hr, bool allow_write_config)
+Element::add_read_handler(const char *name, ReadHandler h, void *thunk)
 {
-  hr->add_read("class", read_element_class, 0);
-  hr->add_read("name", read_element_name, 0);
+  router()->add_read_handler(this, name, strlen(name), h, thunk);
+}
+
+void
+Element::add_write_handler(const char *name, WriteHandler h, void *thunk)
+{
+  router()->add_write_handler(this, name, strlen(name), h, thunk);
+}
+
+void
+Element::add_default_handlers(bool allow_write_config)
+{
+  add_read_handler("class", read_element_class, 0);
+  add_read_handler("name", read_element_name, 0);
+  add_read_handler("config", read_element_config, 0);
   if (allow_write_config && can_live_reconfigure())
-    hr->add_read_write("config", read_element_config, 0,
-		       write_element_config, 0);
-  else
-    hr->add_read("config", read_element_config, 0);
-  hr->add_read("inputs", read_element_inputs, 0);
-  hr->add_read("outputs", read_element_outputs, 0);
+    add_write_handler("config", write_element_config, 0);
+  add_read_handler("inputs", read_element_inputs, 0);
+  add_read_handler("outputs", read_element_outputs, 0);
 #if CLICK_STATS >= 1
-  hr->add_read("icounts", element_read_icounts, 0);
-  hr->add_read("ocounts", element_read_ocounts, 0);
+  add_read_handler("icounts", element_read_icounts, 0);
+  add_read_handler("ocounts", element_read_ocounts, 0);
 # if CLICK_STATS >= 2
-  hr->add_read("cycles", element_read_cycles, 0);
+  add_read_handler("cycles", element_read_cycles, 0);
 # endif
 #endif
 }
 
 void
-Element::add_handlers(HandlerRegistry *)
+Element::add_handlers()
 {
 }
 
@@ -467,43 +477,6 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
     return 0;
 }
 
-void
-Element::HandlerRegistry::add_read(const char *n, int l, ReadHandler f, void *t)
-{
-  add_read_write(n, l, f, t, 0, 0);
-}
-
-void
-Element::HandlerRegistry::add_write(const char *n, int l, WriteHandler f, void *t)
-{
-  add_read_write(n, l, 0, 0, f, t);
-}
-
-void
-Element::HandlerRegistry::add_read_write(const char *, int, ReadHandler,
-					 void *, WriteHandler, void *)
-{
-}
-
-void
-Element::HandlerRegistry::add_read(const char *n, ReadHandler f, void *t)
-{
-  add_read(n, strlen(n), f, t);
-}
-
-void
-Element::HandlerRegistry::add_write(const char *n, WriteHandler f, void *t)
-{
-  add_write(n, strlen(n), f, t);
-}
-
-void
-Element::HandlerRegistry::add_read_write(const char *n, ReadHandler rf,
-					 void *rt, WriteHandler wf, void *wt)
-{
-  add_read_write(n, strlen(n), rf, rt, wf, wt);
-}
-
 // RUNNING
 
 void
@@ -532,5 +505,3 @@ Element::run_scheduled()
 {
   assert(0 && "bad run_scheduled");
 }
-
-

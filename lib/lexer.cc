@@ -554,14 +554,15 @@ Lexer::remove_element_type(int removed)
 void
 Lexer::element_type_names(Vector<String> &v) const
 {
-  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
+  // stop at 2 to avoid <default> and <tunnel>
+  for (int t = _last_element_type; t >= 2; t = _element_type_next[t]) {
     const String &name = _element_type_names[t];
     if (_element_type_map[name] == t)
       v.push_back(String());
   }
 
   int pos = v.size() - 1;
-  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
+  for (int t = _last_element_type; t >= 2; t = _element_type_next[t]) {
     const String &name = _element_type_names[t];
     if (_element_type_map[name] == t)
       v[pos--] = _element_type_names[t];

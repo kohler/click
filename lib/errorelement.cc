@@ -55,7 +55,7 @@ ErrorElement::backward_flow(int) const
 }
 
 void
-ErrorElement::add_handlers(HandlerRegistry *)
+ErrorElement::add_handlers()
 {
   /* no handlers whatsoever -- not even the defaults */
 }

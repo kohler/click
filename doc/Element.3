@@ -374,36 +374,81 @@ and returns its value.
 .SH "HANDLERS"
 .PD 0
 .TP 5
-.BR "virtual void add_handlers(" "HandlerRegistry *\fIregistry" )
-Called on every element during Router initialization. Called after every
-element has been successfully
-.BR initialize() d.
-Should call functions on the HandlerRegistry \fIregistry\fP (see
-.M HandlerRegistry 3 )
-to add handlers for the element. Handlers are user access points that
-return information about the element, or change its behavior. They are
+.BR "virtual void add_handlers()"
+Called after an element has been
+.BR initialize() d
+so it can register its handlers. Handlers are user access points that
+return information about the element or change its behavior. They are
 identified by name, and may be read-only, write-only, or read/write; in the
 Linux kernel module (see
 .M click.o 8 ),
-they are implemented as files in a /proc/click/ELEMENT directory. The
-default implementation adds "class", "config", "inputs", "name", and
-"outputs" handlers (see
-.M click.o 8
-for their descriptions). Any overriding definition should call the old
-definition,
-.BI Element::add_handlers( registry )\fR,
-to add these default handlers as well as its own.
+they are implemented as files in a /proc/click/ELEMENT directory. Within
+this function, register a handler by calling
+.BR add_read_handler() ,
+.BR add_write_handler() ,
+or both. These methods are described below. The default
+.BR add_handlers()
+implementation does nothing. (The default "class", "config", "inputs",
+"name", and "outputs" handlers, described in
+.M click.o 8 ,
+are added by the
+.BR add_default_handlers()
+method.)
+'
+.Sp
+.TP
+.BR "void add_read_handler(" "const char *\fIname\fP,"
+.TP
+.RB "\%            ReadHandler \fIhandler\fP, void *\fIthunk\fP" )
+'
+Registers a read handler named
+.I name
+for this element. Read handlers are functions with type
+.br
+\%   String (*ReadHandler)(Element *\fIe\fP, void *\fIthunk\fP).
+.br
+The first argument passed to this function is the relevant element; the
+second,
+.IR thunk ,
+is the same as the
+.IR thunk
+argument to
+.BR add_read_handler() .
+The handler function should return a string representing the value read.
+'
+.Sp
+.TP
+.BR "void add_write_handler(" "const char *\fIname\fP,"
+.TP
+.RB "\%            WriteHandler \fIhandler\fP, void *\fIthunk\fP" )
+'
+Registers a write handler named
+.I name
+for this element. Write handlers are functions with type
+.br
+\%   int (*WriteHandler)(const String &\fIs\fP, Element *\fIe\fP,
+.br
+\%              void *\fIthunk\fP, ErrorHandler *\fIerrh\fP).
+.br
+The string written is passed to this handler function as its first
+argument. The second argument is the relevant element; the third,
+.IR thunk ,
+is the same as the
+.IR thunk
+argument to
+.BR add_write_handler() .
+The handler function should report any errors using the fourth argument, an
+ErrorHandler. It should return 0 if the write succeeded or a negative
+number if there was an error.
 '
 .Sp
 .TP
 .BR "static String configuration_read_handler(" "Element *\fIe\fP,"
 .TP
 .RB "\%            void *\fIthunk\fP" )
-This generic read handler (see 
-.M HandlerRegistry 3 )
-is provided as a convenience. It implements the common case where a read
-handler returns a single argument in a multi-argument configuration string.
-The
+This generic read handler is provided as a convenience. It implements the
+common case where a read handler returns a single argument in a
+multi-argument configuration string. The
 .B configuration_read_handler()
 function determines the argument number by casting \fIthunk\fP to an
 integer; it decomposes the current configuration string and returns the
@@ -424,11 +469,9 @@ handler.
 .RB "\%            Element *\fIe\fP, void *\fIthunk\fP,"
 .TP
 .RB "\%            ErrorHandler *\fIerrh\fP" )
-This generic write handler (see 
-.M HandlerRegistry 3 )
-is provided as a convenience. It implements the common case where a write
-handler changes a single argument in a multi-argument configuration string.
-The
+This generic write handler is provided as a convenience. It implements the
+common case where a write handler changes a single argument in a
+multi-argument configuration string. The
 .B reconfigure_write_handler()
 function determines the argument number by casting \fIthunk\fP to an
 integer; it decomposes the current configuration string, replaces the
@@ -467,18 +510,23 @@ return 0 for no packet. (If it returns 0 or a different packet, it is
 responsible for freeing the input packet with `p->kill()'.) The default
 implementation just returns \fIp\fP.
 .PD
-.SH "WORK LIST"
+.SH "SCHEDULING"
 .PD 0
 .TP 5
-.BR "void schedule_tail()"
-Schedules this element at the end of the work list. If the element is
-already in the work list, this call does not change its position.
+.BR "void join_scheduler()"
+Adds this element to the schedule.
+'
+.Sp
+.TP 5
+.BR "void reschedule()"
+Reschedules this element. The element must have joined the scheduler
+before.
 '
 .Sp
 .TP
 .BR "void unschedule()"
-Removes this element from the work list. Does nothing if the element isn't
-on the work list.
+Removes this element from the schedule. Does nothing if the element isn't
+scheduled.
 '
 .Sp
 .TP
@@ -492,7 +540,6 @@ implementation reports an error.
 '
 .SH "SEE ALSO"
 .M Connection 3 ,
-.M HandlerRegistry 3 ,
 .M click 5 ,
 .M click.o 8 ,
 .M elements n ,

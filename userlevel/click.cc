@@ -202,40 +202,6 @@ click_remove_element_type(int which)
 
 // register handlers
 
-struct Handler {
-  Element *element;
-  String name;
-  ReadHandler read;
-  void *read_thunk;
-  WriteHandler write;
-  void *write_thunk;
-};
-
-static Vector<Handler> handlers;
-
-class UserHandlerRegistry : public Element::HandlerRegistry {
-  
-  Element *_element;
-  
- public:
-  
-  UserHandlerRegistry() : _element(0) { }
-  void set_element(Element *e) { _element = e; }
-  void add_read_write(const char *, int, ReadHandler, void *,
-		      WriteHandler, void *);
-  
-};
-
-void
-UserHandlerRegistry::add_read_write(const char *n, int l, ReadHandler r,
-				    void *rt, WriteHandler w, void *wt)
-{
-  Handler h;
-  h.element = _element; h.name = String(n, l);
-  h.read = r; h.read_thunk = rt; h.write = w; h.write_thunk = wt;
-  handlers.push_back(h);
-}
-
 static int
 call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh)
 {
@@ -248,21 +214,21 @@ call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh)
   Element *e = r->find(element_name, errh);
   if (!e)
     return -1;
-
-  for (int i = 0; i < handlers.size(); i++)
-    if (handlers[i].element == e && handlers[i].name == handler_name) {
-      if (!handlers[i].read)
-	return errh->error("`%s' is a write handler", s.cc());
-      String result = handlers[i].read(e, handlers[i].read_thunk);
-      if (print_name)
-	fprintf(stdout, "%s:\n", s.cc());
-      fputs(result.cc(), stdout);
-      if (print_name)
-	fputs("\n", stdout);
-      return 0;
-    }
-
-  return errh->error("no `%s' handler for element `%s'", handler_name.cc(), element_name.cc());
+  
+  int hi = r->find_handler(e, handler_name);
+  if (hi < 0)
+    return errh->error("no `%s' handler for element `%s'", handler_name.cc(), element_name.cc());
+  
+  const Router::Handler &rh = r->handler(hi);
+  if (!rh.read)
+    return errh->error("`%s' is a write handler", s.cc());
+  String result = rh.read(e, rh.read_thunk);
+  if (print_name)
+    fprintf(stdout, "%s:\n", s.cc());
+  fputs(result.cc(), stdout);
+  if (print_name)
+    fputs("\n", stdout);
+  return 0;
 }
 
 // main
@@ -450,6 +416,14 @@ particular purpose.\n");
   getrusage(RUSAGE_SELF, &before);
   gettimeofday(&before_time, 0);
 
+  // register handlers
+  int nelements = router->nelements();
+  for (int i = 0; i < nelements; i++) {
+    Element *e = router->element(i);
+    e->add_default_handlers(false);
+    e->add_handlers();
+  }
+
   // run driver
   if (!quit_immediately)
     router->driver();
@@ -471,14 +445,6 @@ particular purpose.\n");
   
   // call handlers
   if (call_handlers.size()) {
-    int nelements = router->nelements();
-    UserHandlerRegistry uhr;
-    for (int i = 0; i < nelements; i++) {
-      Element *e = router->element(i);
-      uhr.set_element(e);
-      e->add_default_handlers(&uhr, false);
-      e->add_handlers(&uhr);
-    }
     int nerrors = errh->nerrors();
     for (int i = 0; i < call_handlers.size(); i++)
       call_read_handler(call_handlers[i], router, call_handlers.size() > 1,
@@ -491,7 +457,3 @@ particular purpose.\n");
   delete lexer;
   exit(exit_value);
 }
-
-// generate Vector template instance
-#include "vector.cc"
-template class Vector<Handler>;

@@ -43,7 +43,7 @@ class DecIPTTL : public Element {
   int drops()					{ return _drops; }
   
   DecIPTTL *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
   Packet *simple_action(Packet *);
   /*inline Packet *smaction(Packet *);

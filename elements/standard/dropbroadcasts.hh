@@ -22,7 +22,7 @@ class DropBroadcasts : public Element {
   const char *class_name() const		{ return "DropBroadcasts"; }
   Processing default_processing() const	{ return AGNOSTIC; }
   DropBroadcasts *clone() const;
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
 
   int drops() const { return(_drops); }
 

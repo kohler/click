@@ -53,7 +53,7 @@ class IPFragmenter : public Element {
   int fragments() const				{ return _fragments; }
   
   IPFragmenter *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
   void push(int, Packet *);
   

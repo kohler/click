@@ -93,9 +93,9 @@ StoreCycles_read_cycles(Element *f, void *)
 }
 
 void
-StoreCycles::add_handlers(HandlerRegistry *fcr)
+StoreCycles::add_handlers()
 {
-  fcr->add_read("cycles", StoreCycles_read_cycles, 0);
+  add_read_handler("cycles", StoreCycles_read_cycles, 0);
 }
 
 EXPORT_ELEMENT(StoreCycles)

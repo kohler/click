@@ -118,13 +118,13 @@ random_lossage_read(Element *f, void *vwhich)
 }
 
 void
-RandomLossage::add_handlers(HandlerRegistry *fcr)
+RandomLossage::add_handlers()
 {
-  fcr->add_read_write("p_drop", random_lossage_read, (void *)0,
-		      reconfigure_write_handler, (void *)0);
-  fcr->add_read_write("active", random_lossage_read, (void *)1,
-		      reconfigure_write_handler, (void *)1);
-  fcr->add_read("drops", random_lossage_read, (void *)2);
+  add_read_handler("p_drop", random_lossage_read, (void *)0);
+  add_write_handler("p_drop", reconfigure_write_handler, (void *)0);
+  add_read_handler("active", random_lossage_read, (void *)1);
+  add_write_handler("active", reconfigure_write_handler, (void *)1);
+  add_read_handler("drops", random_lossage_read, (void *)2);
 }
 
 EXPORT_ELEMENT(RandomLossage)

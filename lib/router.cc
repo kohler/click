@@ -28,11 +28,9 @@
 
 Router::Router()
   : _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
-    _please_stop_driver(0)
+    _handlers(0), _nhandlers(0), _handlers_cap(0), _please_stop_driver(0)
 {
-#ifndef RR_SCHED
   initialize_head();
-#endif
 }
 
 Router::~Router()
@@ -42,10 +40,9 @@ Router::~Router()
       _elements[i]->uninitialize();
   for (int i = 0; i < _elements.size(); i++)
     _elements[i]->unuse();
+  delete[] _handlers;
 #ifdef __KERNEL__
-#ifndef RR_SCHED
   initialize_head();		// get rid of scheduled wait queue
-#endif
   _please_stop_driver = true;	// XXX races?
 #endif
 }
@@ -733,7 +730,10 @@ Router::initialize(ErrorHandler *errh)
 	  cerrh.error("unspecified error");
       }
     }
-  
+
+  // clear handler offsets
+  _handler_offset.assign(nelements(), -1);
+
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
   if (!all_ok) {
@@ -746,6 +746,76 @@ Router::initialize(ErrorHandler *errh)
     _initialized = true;
     return 0;
   }
+}
+
+
+// HANDLERS
+
+int
+Router::find_handler(Element *element, const char *name, int namelen,
+		     bool force)
+{
+  int prev = -1, o = _handler_offset[element->number()];
+  while (o >= 0 && (_handlers[o].namelen != namelen
+		    || memcmp(_handlers[o].name, name, namelen) != 0)) {
+    prev = o;
+    o = _handlers[o].next;
+  }
+
+  if (o < 0 && force) {
+    if (_nhandlers >= _handlers_cap) {
+      _handlers_cap = (_handlers_cap ? 2*_handlers_cap : 6*nelements());
+      Handler *new_handlers = new Handler[_handlers_cap];
+      if (new_handlers)
+	memcpy(new_handlers, _handlers, sizeof(Handler) * _nhandlers);
+      delete[] _handlers;
+      _handlers = new_handlers;
+      if (!_handlers)		// out of memory
+	return -1;
+    }
+    o = _nhandlers;
+    if (prev < 0)
+      _handler_offset[element->number()] = o;
+    else
+      _handlers[prev].next = o;
+    _handlers[o].element = element;
+    _handlers[o].name = name;
+    _handlers[o].namelen = namelen;
+    _handlers[o].read = 0;
+    _handlers[o].write = 0;
+    _handlers[o].next = -1;
+    _nhandlers++;
+  }
+
+  return o;
+}
+
+void
+Router::add_read_handler(Element *element, const char *name, int namelen,
+			 ReadHandler read, void *thunk)
+{
+  int o = find_handler(element, name, namelen, true);
+  if (o >= 0) {
+    _handlers[o].read = read;
+    _handlers[o].read_thunk = thunk;
+  }
+}
+
+void
+Router::add_write_handler(Element *element, const char *name, int namelen,
+			  WriteHandler write, void *thunk)
+{
+  int o = find_handler(element, name, namelen, true);
+  if (o >= 0) {
+    _handlers[o].write = write;
+    _handlers[o].write_thunk = thunk;
+  }
+}
+
+int
+Router::find_handler(Element *element, const String &name)
+{
+  return find_handler(element, name.data(), name.length(), false);
 }
 
 
@@ -791,10 +861,6 @@ Router::wait()
     }
   }
 
-#ifndef RR_SCHED
-  if (scheduled_next() != this)
-    return;
-#endif
   tv.tv_sec = 1;
   tv.tv_usec = 0;
   if (!any && !Timer::get_next_delay(&tv))
@@ -802,20 +868,20 @@ Router::wait()
   
   n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
   
-  if(n < 0) {
+  if (n < 0) {
     perror("select");
     sleep(1);
-  }
-  else {
+  } else {
     for (i = 0; i < _elements.size(); i++) {
       Element *f = _elements[i];
       int fd = f->select_fd();
-      if(fd >= 0 && FD_ISSET(fd, &mask))
+      if (fd >= 0 && FD_ISSET(fd, &mask))
         f->selected(fd);
     }
   }
   Timer::run_timers();
-#else
+  
+#else /* __KERNEL__ */
   schedule();
   if (signal_pending(current)) please_stop_driver();
 #endif
@@ -824,55 +890,33 @@ Router::wait()
 
 // WORK LIST
 
-#ifndef RR_SCHED
 void
-Router::driver(unsigned count)
+Router::driver()
 {
-  unsigned c = count;
+  unsigned c = 10000;
   ElementLink *fl;
-  while (fl=scheduled_next(), fl != this && !_please_stop_driver) {
+  while (fl = scheduled_next(), fl != this && !_please_stop_driver) {
     fl->unschedule();
     ((Element *)fl)->run_scheduled();
-    if (count-- == 0) {
-#if !defined(__KERNEL__) || defined(HAVE_POLLING)
-      count = c;
+    if (c-- == 0) {
+      c = 10000;
       wait();
-#else
-      break;
-#endif
     }
   }
 }
-#else
+
 void
-Router::driver(unsigned count)
+Router::driver_once()
 {
-  int i,j;
-  unsigned c = count;
-  Element * todo[_elements.size()];
-
-  for (i = 0, j = 0; i < _elements.size(); i++)
-    if (_elements[i]->scheduled())
-      todo[j++] = _elements[i];
-  if (!j)
+  if (_please_stop_driver)
     return;
-
-  i = 0;
-  while (!_please_stop_driver) {
-    todo[i]->run_scheduled();
-    if (count-- == 0) {
-#if !defined(__KERNEL__) || defined(HAVE_POLLING)
-      count = c;
-      wait();
-#else
-      break;
-#endif
-    }
-    if (++i == j)
-      i = 0;
+  ElementLink *fl = scheduled_next();
+  if (fl != this) {
+    fl->unschedule();
+    ((Element *)fl)->run_scheduled();
   }
 }
-#endif
+
 
 // PRINTING
 

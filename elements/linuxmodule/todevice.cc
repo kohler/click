@@ -465,9 +465,9 @@ ToDevice_read_calls(Element *f, void *)
 }
 
 void
-ToDevice::add_handlers(HandlerRegistry *fcr)
+ToDevice::add_handlers()
 {
-  fcr->add_read("calls", ToDevice_read_calls, 0);
+  add_read_handler("calls", ToDevice_read_calls, 0);
 }
 
 EXPORT_ELEMENT(ToDevice)

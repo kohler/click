@@ -44,7 +44,7 @@ class CheckIPHeader : public Element {
   int drops() const				{ return _drops; }
   
   CheckIPHeader *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
   Packet *simple_action(Packet *);
   /* inline Packet *smaction(Packet *);

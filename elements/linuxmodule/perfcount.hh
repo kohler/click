@@ -31,7 +31,7 @@ class PerfCount : public Element {
   const char *class_name() const		{ return "PerfCount"; }
   Processing default_processing() const		{ return AGNOSTIC; }
   PerfCount *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
   int configure(const String &, ErrorHandler *);
   

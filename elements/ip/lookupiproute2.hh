@@ -55,7 +55,7 @@ public:
   static int add_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static int del_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static String look_route_handler(Element *, void *);
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
 private:
 

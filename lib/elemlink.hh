@@ -3,10 +3,7 @@
 #include "glue.hh"
 #include <assert.h>
 
-
 #define PASS_GT(a, b)	((int)(a - b) > 0)
-
-#ifndef RR_SCHED
 
 class ElementLink {
 
@@ -15,22 +12,26 @@ class ElementLink {
 
   ElementLink *_prev;
   ElementLink *_next;
+#ifndef RR_SCHED
   unsigned _pass;
   unsigned _stride;
   int _tickets;
   int _max_tickets;
+#endif
   ElementLink *_list;
 
  public:
-
 
   static const unsigned STRIDE1 = 1U<<16;
   static const unsigned MAX_STRIDE = 1U<<31;
   static const int MAX_TICKETS = 1U<<15;
   
   ElementLink()				
-    : _prev(0), _next(0), _pass(0), 
-      _stride(0), _tickets(-1), _max_tickets(-1) { }
+    : _prev(0), _next(0)
+#ifndef RR_SCHED
+    , _pass(0), _stride(0), _tickets(-1), _max_tickets(-1)
+#endif
+    { }
 
   bool scheduled() const		{ return _prev; }
   ElementLink *scheduled_next() const	{ return _next; }
@@ -39,13 +40,15 @@ class ElementLink {
   
   void initialize_link(ElementLink *);
   void initialize_head()		{ _prev = _next = _list = this; }
-  
+
+#ifndef RR_SCHED
   int tickets() const			{ return _tickets; }
   int max_tickets() const		{ return _max_tickets; }
   
   void set_max_tickets(int);
   void set_tickets(int);
   void adj_tickets(int);
+#endif
   
   void join_scheduler();
   void unschedule();
@@ -70,6 +73,8 @@ ElementLink::unschedule()
   }
   _next = _prev = 0;
 }
+
+#ifndef RR_SCHED
 
 inline void 
 ElementLink::set_tickets(int n)
@@ -138,7 +143,31 @@ ElementLink::join_scheduler()
   reschedule();
 }
 
-#else
+#else /* RR_SCHED */
+
+inline void
+ElementLink::reschedule()
+{
+  ElementLink *n = _list->_next;
+  _prev = _list->_prev;
+  _next = _list;
+  _list->_prev = this;
+  _prev->_next = this;
+}
+
+inline void
+ElementLink::join_scheduler()
+{
+  if (!scheduled())
+    reschedule();
+}
+
+#endif /* RR_SCHED */
+
+
+
+
+#if 0 /* old RR_SCHED */
 
 class Router;
 class ElementLink {
@@ -162,4 +191,3 @@ public:
 #endif
 
 #endif
-

@@ -26,7 +26,7 @@ class StoreCycles : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

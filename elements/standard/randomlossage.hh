@@ -39,7 +39,7 @@ class RandomLossage : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   void push(int port, Packet *);
   Packet *pull(int port);

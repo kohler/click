@@ -24,7 +24,7 @@ public:
   void uninitialize();
 
   static String read_msgs(Element* f, void *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   
   void periodic();

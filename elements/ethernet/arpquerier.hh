@@ -52,7 +52,7 @@ class ARPQuerier : public Element {
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   void notify_noutputs(int);
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
   
   ARPQuerier *clone() const;
   int configure(const String &, ErrorHandler *);

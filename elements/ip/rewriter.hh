@@ -66,7 +66,7 @@ public:
   Processing default_processing() const		{ return PUSH; }
   
   int configure(const String &, ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   int initialize(ErrorHandler *);
   void uninitialize();
   void run_scheduled();

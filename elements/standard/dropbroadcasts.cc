@@ -91,9 +91,9 @@ dropbroadcasts_read_drops(Element *f, void *)
 }
 
 void
-DropBroadcasts::add_handlers(HandlerRegistry *fcr)
+DropBroadcasts::add_handlers()
 {
-  fcr->add_read("drops", dropbroadcasts_read_drops, 0);
+  add_read_handler("drops", dropbroadcasts_read_drops, 0);
 }
 
 EXPORT_ELEMENT(DropBroadcasts)

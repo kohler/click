@@ -37,7 +37,7 @@ class Shaper : public Element { protected:
   Shaper *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
 
   Packet *pull(int);
   

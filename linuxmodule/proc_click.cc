@@ -69,27 +69,6 @@ static struct proc_dir_entry proc_element_elemdir_link_prototype = {
 // PER-ELEMENT STUFF
 //
 
-struct Handler {
-
-  const char *name;
-  int namelen;
-  ReadHandler read;
-  void *rthunk;
-  WriteHandler write;
-  void *wthunk;
-  
-  void set(const char *n, int l, ReadHandler r, void *rt, WriteHandler w, void *wt) {
-    name=n; namelen=l; read=r; rthunk=rt; write=w; wthunk=wt;
-  }
-  
-};
-
-static Handler *handlers = 0;
-static int nhandlers = 0;
-static int nroot_handlers = 0;
-static int handlers_cap = 0;
-
-
 static int proc_element_handler_open(struct inode *, struct file *);
 static DECLARE_READ_FILEOP(proc_element_handler_read);
 static DECLARE_WRITE_FILEOP(proc_element_handler_write);
@@ -143,18 +122,36 @@ static struct proc_dir_entry proc_element_read_write_handler_prototype = {
 
 // OPERATIONS
 
+static const Router::Handler *
+find_handler(int elementno, int handlerno)
+{
+  if (handlerno < 0)
+    return 0;
+  if (elementno < 0) {
+    if (handlerno >= nroot_handlers)
+      return 0;
+    else
+      return &root_handlers[handlerno];
+  } else {
+    if (handlerno >= current_router->nhandlers())
+      return 0;
+    else
+      return &current_router->handler(handlerno);
+  }
+}
+
 static int
-prepare_handler_read(int elementno, int handler, String **store)
+prepare_handler_read(int elementno, int handlerno, String **store)
 {
   Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
   String s;
   int out_of_memory = String::out_of_memory_count();
-  
-  if (handler < 0 || handler >= nhandlers)
+
+  const Router::Handler *h = find_handler(elementno, handlerno);
+  if (!h)
     return -ENOENT;
-  Handler *h = &handlers[handler];
-  if (h->read)
-    s = h->read(e, h->rthunk);
+  else if (h->read)
+    s = h->read(e, h->read_thunk);
   else
     return -EPERM;
   
@@ -169,30 +166,30 @@ prepare_handler_read(int elementno, int handler, String **store)
 }
 
 static int
-prepare_handler_write(int elementno, int handler)
+prepare_handler_write(int elementno, int handlerno)
 {
-  if (handler < 0 || handler >= nhandlers)
+  const Router::Handler *h = find_handler(elementno, handlerno);
+  if (!h)
     return -ENOENT;
-  Handler *h = &handlers[handler];
-  if (h->write)
+  else if (h->write)
     return 0;
   else
     return -EPERM;
 }
 
 static int
-finish_handler_write(int elementno, int handler, String *s)
+finish_handler_write(int elementno, int handlerno, String *s)
 {
   Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
-  if (handler < 0 || handler >= nhandlers)
+  const Router::Handler *h = find_handler(elementno, handlerno);
+  if (!h)
     return -ENOENT;
-  Handler *h = &handlers[handler];
-  if (h->write) {
+  else if (h->write) {
     String context_string = "While writing `"
       + String(h->name, h->namelen) + "'";
     if (e) context_string += String(" for `") + e->declaration() + "'";
     ContextErrorHandler cerrh(kernel_errh, context_string + ":");
-    return h->write(*s, e, h->wthunk, &cerrh);
+    return h->write(*s, e, h->write_thunk, &cerrh);
   } else
     return -EPERM;
 }
@@ -316,45 +313,25 @@ DECLARE_RELEASE_FILEOP(proc_element_handler_release)
 // CREATING HANDLERS
 //
 
-KernelHandlerRegistry::KernelHandlerRegistry(proc_dir_entry *directory)
-  : _directory(directory)
-{
-}
-
-int
-KernelHandlerRegistry::grow_handlers()
-{
-  handlers_cap = (handlers_cap ? handlers_cap*2 : 16);
-  Handler *new_handlers = kmalloc(sizeof(Handler)*handlers_cap, GFP_ATOMIC);
-  if (!new_handlers) return -1;
-  memcpy(new_handlers, handlers, sizeof(Handler)*nhandlers);
-  kfree(handlers);
-  handlers = new_handlers;
-  return 0;
-}
-
 void
-KernelHandlerRegistry::add_read_write(const char *name, int namelen,
-				      ReadHandler rcall, void *rthunk,
-				      WriteHandler wcall, void *wthunk)
+register_handler(proc_dir_entry *directory, const Router::Handler *h)
 {
   const proc_dir_entry *pattern = 0;
-  if (rcall && wcall)
+  if (h->read && h->write)
     pattern = &proc_element_read_write_handler_prototype;
-  else if (wcall)
+  else if (h->write)
     pattern = &proc_element_write_handler_prototype;
-  else if (rcall)
+  else if (h->read)
     pattern = &proc_element_read_handler_prototype;
   else
     return;
-  
-  if (nhandlers >= handlers_cap && grow_handlers() < 0)
-    return;
-  handlers[nhandlers].set(name, namelen, rcall, rthunk, wcall, wthunk);
-  nhandlers++;
-  
+  int which;
+  if (h->element)
+    which = (h - &current_router->handler(0));
+  else
+    which = (h - root_handlers);
   click_register_new_dynamic_pde
-    (_directory, pattern, namelen, name, (void *)(nhandlers - 1));
+    (directory, pattern, h->namelen, h->name, which);
 }
 
 //
@@ -369,7 +346,6 @@ cleanup_router_element_procs()
   for (int i = 0; i < 2*nelements; i++)
     if (element_pdes[i])
       click_kill_dynamic_pde(element_pdes[i]);
-  nhandlers = nroot_handlers;	// don't delete handlers in the root directory
   kfree(element_pdes);
   element_pdes = 0;
 }
@@ -456,7 +432,6 @@ void
 init_router_element_procs()
 {
   int nelements = current_router->nelements();
-  nroot_handlers = nhandlers;	// save # of handlers in the root directory
   
   int ndigits = 2;
   int top;
@@ -505,16 +480,23 @@ init_router_element_procs()
 
   bool add_per_element = current_router->initialized();
   
-  // add per-element proc entries
+  // add handlers
   for (int i = 0; i < nelements; i++)
     if (proc_dir_entry *fpde = element_pdes[i]) {
       Element *element = current_router->element(i);
       if (element->is_a("Error")) continue;
-      KernelHandlerRegistry kfr(fpde);
-      element->add_default_handlers(&kfr, add_per_element);
-      if (add_per_element)
-	element->add_handlers(&kfr);
+      element->add_default_handlers(add_per_element);
+      if (add_per_element) element->add_handlers();
     }
+
+  // hook up per-element proc entries
+  int nhandlers = current_router->nhandlers();
+  for (int i = 0; i < nhandlers; i++) {
+    const Router::Handler &h = current_router->handler(i);
+    int which = h.element->number();
+    if (proc_dir_entry *fpde = element_pdes[which])
+      register_handler(fpde, &h);
+  }
 }
 
 
@@ -531,5 +513,4 @@ cleanup_proc_click_elements()
 {
   cleanup_router_element_procs();
   kfree(numbers);
-  kfree(handlers);
 }

@@ -128,10 +128,10 @@ read_rate_handler(Element *f, void *)
 }
 
 void
-Meter::add_handlers(HandlerRegistry *fcr)
+Meter::add_handlers()
 {
-  fcr->add_read("rate", read_rate_handler, 0);
-  fcr->add_read("meters", Meter::meters_read_handler, 0);
+  add_read_handler("rate", read_rate_handler, 0);
+  add_read_handler("meters", Meter::meters_read_handler, 0);
 }
 
 EXPORT_ELEMENT(Meter)

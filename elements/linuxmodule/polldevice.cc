@@ -312,9 +312,9 @@ PollDevice_read_calls(Element *f, void *)
 }
 
 void
-PollDevice::add_handlers(HandlerRegistry *fcr)
+PollDevice::add_handlers()
 {
-  fcr->add_read("calls", PollDevice_read_calls, 0);
+  add_read_handler("calls", PollDevice_read_calls, 0);
 }
 
 EXPORT_ELEMENT(PollDevice)

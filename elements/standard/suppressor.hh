@@ -22,7 +22,7 @@ public:
   Packet *pull(int port);
 
   static String read_status(Element* f, void *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   bool suppressed(int output) const { return FD_ISSET(output, &_suppressed); }
   void suppress(int output) { FD_SET(output, &_suppressed); }

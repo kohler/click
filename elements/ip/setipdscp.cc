@@ -89,10 +89,10 @@ SetIPDSCP_read_dscp(Element *xf, void *)
 }
 
 void
-SetIPDSCP::add_handlers(HandlerRegistry *fcr)
+SetIPDSCP::add_handlers()
 {
-  fcr->add_read_write("value", SetIPDSCP_read_dscp, (void *)0,
-		      reconfigure_write_handler, (void *)0);
+  add_read_handler("value", SetIPDSCP_read_dscp, (void *)0);
+  add_write_handler("value", reconfigure_write_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(SetIPDSCP)

@@ -45,7 +45,7 @@ class ToDevice : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   void run_scheduled();
   

@@ -190,14 +190,14 @@ random_bit_errors_read(Element *f, void *vwhich)
 }
 
 void
-RandomBitErrors::add_handlers(HandlerRegistry *fcr)
+RandomBitErrors::add_handlers()
 {
-  fcr->add_read_write("p_bit_error", random_bit_errors_read, (void *)0,
-		      reconfigure_write_handler, (void *)0);
-  fcr->add_read_write("error_kind", random_bit_errors_read, (void *)1,
-		      reconfigure_write_handler, (void *)1);
-  fcr->add_read_write("active", random_bit_errors_read, (void *)2,
-		      reconfigure_write_handler, (void *)2);
+  add_read_handler("p_bit_error", random_bit_errors_read, (void *)0);
+  add_write_handler("p_bit_error", reconfigure_write_handler, (void *)0);
+  add_read_handler("error_kind", random_bit_errors_read, (void *)1);
+  add_write_handler("error_kind", reconfigure_write_handler, (void *)1);
+  add_read_handler("active", random_bit_errors_read, (void *)2);
+  add_write_handler("active", reconfigure_write_handler, (void *)2);
 }
 
 EXPORT_ELEMENT(RandomBitErrors)

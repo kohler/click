@@ -38,7 +38,7 @@ class RandomBitErrors : public Element {
   RandomBitErrors *clone() const		{ return new RandomBitErrors; }
   int configure(const String &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   Packet *simple_action(Packet *);
   

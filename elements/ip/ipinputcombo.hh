@@ -43,7 +43,7 @@ class IPInputCombo : public Element {
   
   int drops() const				{ return(_drops); }
   IPInputCombo *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
   int configure(const String &, ErrorHandler *);
 
   inline Packet *smaction(Packet *);

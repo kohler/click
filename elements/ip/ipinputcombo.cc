@@ -151,9 +151,9 @@ IPInputCombo_read_drops(Element *xf, void *)
 }
 
 void
-IPInputCombo::add_handlers(HandlerRegistry *fcr)
+IPInputCombo::add_handlers()
 {
-  fcr->add_read("drops", IPInputCombo_read_drops, 0);
+  add_read_handler("drops", IPInputCombo_read_drops, 0);
 }
 
 EXPORT_ELEMENT(IPInputCombo)

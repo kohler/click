@@ -122,7 +122,7 @@ class Classifier : public Element {
   
   Classifier *clone() const;
   int configure(const String &, ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   void push(int port, Packet *);
   

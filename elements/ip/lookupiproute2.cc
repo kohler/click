@@ -128,11 +128,11 @@ LookupIPRoute2::look_route_handler(Element *e, void *)
 
 
 void
-LookupIPRoute2::add_handlers(HandlerRegistry *fcr)
+LookupIPRoute2::add_handlers()
 {
-  fcr->add_write("add", add_route_handler, 0);
-  fcr->add_write("del", del_route_handler, 0);
-  fcr->add_read("look", look_route_handler, 0);
+  add_write_handler("add", add_route_handler, 0);
+  add_write_handler("del", del_route_handler, 0);
+  add_read_handler("look", look_route_handler, 0);
 }
 
 EXPORT_ELEMENT(LookupIPRoute2)

@@ -46,7 +46,7 @@ class Meter : public Element { protected:
   Meter *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   void push(int port, Packet *);
   

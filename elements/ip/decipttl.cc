@@ -143,9 +143,9 @@ DecIPTTL_read_drops(Element *xf, void *)
 }
 
 void
-DecIPTTL::add_handlers(HandlerRegistry *fcr)
+DecIPTTL::add_handlers()
 {
-  fcr->add_read("drops", DecIPTTL_read_drops, 0);
+  add_read_handler("drops", DecIPTTL_read_drops, 0);
 }
 
 EXPORT_ELEMENT(DecIPTTL)

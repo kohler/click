@@ -177,9 +177,9 @@ CheckIPHeader2_read_drops(Element *xf, void *)
 }
 
 void
-CheckIPHeader2::add_handlers(HandlerRegistry *fcr)
+CheckIPHeader2::add_handlers()
 {
-  fcr->add_read("drops", CheckIPHeader2_read_drops, 0);
+  add_read_handler("drops", CheckIPHeader2_read_drops, 0);
 }
 
 EXPORT_ELEMENT(CheckIPHeader2)

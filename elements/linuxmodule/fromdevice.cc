@@ -233,7 +233,10 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
       called_times++;
       if (called_times == 4 || backlog_len == 0) {
 	extern Router *current_router; // module.cc
-	current_router->driver(4);
+	current_router->driver_once();
+	current_router->driver_once();
+	current_router->driver_once();
+	current_router->driver_once();
 	called_times = 0;
       }
 #endif

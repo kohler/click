@@ -1,6 +1,6 @@
 #ifndef MODULEPRIV_HH
 #define MODULEPRIV_HH
-#include "element.hh"
+#include "router.hh"
 #include "clickpackage.hh"
 
 extern "C" {
@@ -47,19 +47,9 @@ extern Router *current_router;
 void initialize_router(String);
 void reset_proc_click_errors();
 
-class KernelHandlerRegistry : public Element::HandlerRegistry {
-  
-  proc_dir_entry *_directory;
-  
- public:
-  
-  KernelHandlerRegistry(proc_dir_entry *directory);
-  
-  int grow_handlers();
-  
-  void add_read_write(const char *, int, ReadHandler, void *,
-		      WriteHandler, void *);
-  
-};
+#define ROOT_HANDLERS_CAP 16
+extern Router::Handler root_handlers[ROOT_HANDLERS_CAP];
+extern int nroot_handlers;
+void register_handler(proc_dir_entry *, const Router::Handler *);
 
 #endif

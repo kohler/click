@@ -45,7 +45,7 @@ class IPGWOptions : public Element {
   void notify_noutputs(int);
   void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   IPGWOptions *clone() const;
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
 
   int drops() { return(_drops); }
   

@@ -71,10 +71,9 @@ Rewriter::configure(const String &conf, ErrorHandler *errh)
 }
 
 void
-Rewriter::add_handlers(HandlerRegistry *fcr)
+Rewriter::add_handlers()
 {
-  Element::add_handlers(fcr);
-  fcr->add_read("rewrite_table", rewriter_dump, (void *)0);
+  add_read_handler("rewrite_table", rewriter_dump, (void *)0);
 }
 
 int

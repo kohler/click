@@ -282,10 +282,10 @@ ARPQuerier_read_stats(Element *e, void *)
 }
 
 void
-ARPQuerier::add_handlers(HandlerRegistry *hr)
+ARPQuerier::add_handlers()
 {
-  hr->add_read("table", read_table, (void *)0);
-  hr->add_read("stats", ARPQuerier_read_stats, (void *)0);
+  add_read_handler("table", read_table, (void *)0);
+  add_read_handler("stats", ARPQuerier_read_stats, (void *)0);
 }
 
 EXPORT_ELEMENT(ARPQuerier)

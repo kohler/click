@@ -247,17 +247,17 @@ RED::read_queues(Element *f, void *)
 }
 
 void
-RED::add_handlers(HandlerRegistry *fcr)
+RED::add_handlers()
 {
-  fcr->add_read("drops", red_read_drops, 0);
-  fcr->add_read("stats", read_stats, 0);
-  fcr->add_read("queues", read_queues, 0);
-  fcr->add_read_write("min_thresh", read_parameter, (void *)0,
-		      reconfigure_write_handler, (void *)0);
-  fcr->add_read_write("max_thresh", read_parameter, (void *)1,
-		      reconfigure_write_handler, (void *)1);
-  fcr->add_read_write("max_p", read_parameter, (void *)2,
-		      reconfigure_write_handler, (void *)2);
+  add_read_handler("drops", red_read_drops, 0);
+  add_read_handler("stats", read_stats, 0);
+  add_read_handler("queues", read_queues, 0);
+  add_read_handler("min_thresh", read_parameter, (void *)0);
+  add_write_handler("min_thresh", reconfigure_write_handler, (void *)0);
+  add_read_handler("max_thresh", read_parameter, (void *)1);
+  add_write_handler("max_thresh", reconfigure_write_handler, (void *)1);
+  add_read_handler("max_p", read_parameter, (void *)2);
+  add_write_handler("max_p", reconfigure_write_handler, (void *)2);
 }
 
 ELEMENT_REQUIRES(Storage)

@@ -71,7 +71,7 @@ class RED : public Element {
   
   const char *class_name() const		{ return "RED"; }
   Processing default_processing() const	{ return AGNOSTIC; }
-  void add_handlers(HandlerRegistry *fcr);
+  void add_handlers();
   
   int queue_size() const;
   const EWMA &average_queue_size() const	{ return _size; }

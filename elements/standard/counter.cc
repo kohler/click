@@ -15,6 +15,7 @@
 #endif
 #include "counter.hh"
 #include "confparse.hh"
+#include "error.hh"
 
 static String counter_read_rate_handler(Element *, void *);
 
@@ -89,11 +90,11 @@ counter_reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
 }
 
 void
-Counter::add_handlers(HandlerRegistry *fcr)
+Counter::add_handlers()
 {
-  fcr->add_read("count", counter_read_count_handler, 0);
-  fcr->add_read("rate", counter_read_rate_handler, 0);
-  fcr->add_write("reset", counter_reset_write_handler, 0);
+  add_read_handler("count", counter_read_count_handler, 0);
+  add_read_handler("rate", counter_read_rate_handler, 0);
+  add_write_handler("reset", counter_reset_write_handler, 0);
 }
 
 

@@ -42,7 +42,7 @@ class PollDevice : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  void add_handlers(HandlerRegistry *);
+  void add_handlers();
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
