@@ -20,7 +20,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#if __i386__
 #include <asm/msr.h>
+#endif
 
 PerfCountAccum::PerfCountAccum()
 {
@@ -73,11 +75,15 @@ PerfCountAccum::initialize(ErrorHandler *errh)
 inline void
 PerfCountAccum::smaction(Packet *p)
 {
+#if __i386__
   unsigned l, h;
   rdpmc(_which, l, h);
   unsigned long long delta =
     p->perfctr_anno() - (((unsigned long long)h << 32) | l);
   _accum += delta;
+#else
+  // add other architectures here
+#endif
   _npackets++;
 }
 

@@ -20,7 +20,7 @@ CLICK_CXX_UNPROTECT
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
 
-#if CLICK_DEVICE_PRFCTR
+#if CLICK_DEVICE_PRFCTR && __i386__
 
 #define CLICK_DEVICE_STATS 1
 #define SET_STATS(p0mark, p1mark, time_mark) \

@@ -111,7 +111,6 @@ new_fromlinux_device(const char *name)
     dev->stop = fl_close;
     dev->hard_start_xmit = fl_tx;
     dev->get_stats = fl_stats;
-    dev->priv = (void *)1;
     return dev;
 }
 
@@ -142,10 +141,7 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 	    _dev = 0;
 	    return errh->error("device `%s' already exists", _devname.cc());
 	} else {
-	    //lock_kernel();	// XXX too much locking
-	    uint32_t count = (uint32_t)(_dev->priv);
-	    _dev->priv = (void *)(count + 1);
-	    //unlock_kernel();
+	    fromlinux_map.insert(this);
 	    return 0;
 	}
     }
@@ -162,6 +158,7 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
 
     dev_hold(_dev);
+    fromlinux_map.insert(this);
     return 0;
 }
 
@@ -239,13 +236,9 @@ FromLinux::initialize(ErrorHandler *errh)
 	    res = dev_updown(_dev, 1, errh);
     }
 
-    if (res < 0) {
+    if (res < 0)
 	uninitialize();
-	return res;
-    } else {
-	fromlinux_map.insert(this);
-	return 0;
-    }
+    return res;
 }
 
 void
@@ -254,9 +247,7 @@ FromLinux::uninitialize()
     fromlinux_map.remove(this);
     if (_dev) {
 	dev_put(_dev);
-	uint32_t count = (uint32_t)(_dev->priv);
-	_dev->priv = (void *)(count - 1);
-	if (count > 1) {
+	if (fromlinux_map.lookup(_dev, 0)) {
 	    _dev = 0;
 	    return;		// do not free device; still in use
 	}

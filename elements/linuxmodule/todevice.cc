@@ -33,7 +33,9 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <net/pkt_sched.h>
+#if __i386__
 #include <asm/msr.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 

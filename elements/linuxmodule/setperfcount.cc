@@ -20,7 +20,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#if __i386__
 #include <asm/msr.h>
+#endif
 
 SetPerfCount::SetPerfCount()
 {
@@ -66,10 +68,14 @@ SetPerfCount::configure(const Vector<String> &conf, ErrorHandler *errh)
 inline void
 SetPerfCount::smaction(Packet *p)
 {
+#if __i386__
   unsigned l, h;
   rdpmc(_which, l, h);
   unsigned long long hq = h;
   p->set_perfctr_anno((hq << 32) | l);
+#else
+  // code for other architectures
+#endif
 }
 
 void
