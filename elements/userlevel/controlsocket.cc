@@ -107,16 +107,14 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   socktype = socktype.upper();
   if (socktype == "TCP") {
-    unsigned portno;
+    unsigned short portno;
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
-		    cpUnsigned, "port number", &portno,
+		    cpUnsignedShort, "port number", &portno,
 		    cpOptional,
 		    cpBool, "read-only?", &_read_only,
 		    cpEnd) < 0)
       return -1;
-    if (portno > 65535)
-      return errh->error("port number out of range");
 
     // open socket, set options
     _socket_fd = socket(PF_INET, SOCK_STREAM, 0);
@@ -215,7 +213,7 @@ ControlSocket::global_read_handler(int fd, const String &name, String *data)
   StringAccum sa;
   int ok = 0;
   if (name == "version")
-    *data = String(CLICK_VERSION) + "\n";
+    *data = String(CLICK_VERSION "\n");
   else if (name == "list")
     *data = router()->element_list_string();
   else if (name == "classes")
