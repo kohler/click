@@ -1,3 +1,22 @@
+2001-10-04 Thursday 15:11  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* config.h.in: Some BSD build fixes, from Luigi Rizzo
+
+2001-10-04 Thursday 15:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/: packet.cc, routerthread.cc: Minor cleanup in Packet and
+	possibly better yield() in routerthread
+
+2001-10-04 Thursday 15:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: glue.hh, glue.hh: Use rdtsc() in BSD kernel for
+	click_get_cycles
+
+2001-10-04 Thursday 14:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/clp.h, include/click/clp.h, libsrc/clp.c: more
+	easily usable Clp_CurOptionName
+
 2001-10-01 Monday 15:26  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/packet.hh, include/click/packet.hh,

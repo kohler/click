@@ -1,3 +1,23 @@
+2001-10-04 Thursday 15:11  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* config.h.in (1.15), configure.in (1.148), bsdmodule/Makefile.in
+	(1.6): Some BSD build fixes, from Luigi Rizzo
+
+2001-10-04 Thursday 15:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* lib/: packet.cc (1.49), routerthread.cc (1.16): Minor cleanup in
+	Packet and possibly better yield() in routerthread
+
+2001-10-04 Thursday 15:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/glue.hh (1.20): Use rdtsc() in BSD kernel for
+	click_get_cycles
+
+2001-10-04 Thursday 14:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/clp.h (1.8), lib/clp.c (1.9): more easily usable
+	Clp_CurOptionName
+
 2001-10-02 Tuesday 20:30  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdevice.cc (1.32): update for BSD
