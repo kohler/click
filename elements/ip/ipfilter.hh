@@ -140,19 +140,25 @@ class IPFilter : public Classifier { public:
     
     TYPE_HOST	= 10,		// expression types
     TYPE_PROTO	= 11,
-    TYPE_TOS	= 12,
-    TYPE_TTL	= 13,
-    TYPE_IPFRAG	= 14,
-    TYPE_IPLEN	= 15,
-    TYPE_PORT	= 16,
-    TYPE_TCPOPT = 17,
-    TYPE_ICMP_TYPE = 18,
+    TYPE_IPFRAG	= 12,
+    TYPE_PORT	= 13,
+    TYPE_TCPOPT = 14,
+    TYPE_ICMP_TYPE = 15,
+    TYPE_FIELD	= 0x2000,
     
     TYPE_NET	= 30,		// shorthands
-    TYPE_DSCP	= 31,
-    TYPE_IPUNFRAG = 32,
-    TYPE_IPECT	= 33,
-    TYPE_IPCE	= 34,
+    TYPE_IPUNFRAG = 31,
+    TYPE_IPECT	= 32,
+    TYPE_IPCE	= 33,
+
+    FIELD_CSUM	= 0,
+    FIELD_IPLEN	= 1,
+    FIELD_ID	= 2,
+    FIELD_VERSION = 3,
+    FIELD_HL	= 4,
+    FIELD_TOS	= 5,
+    FIELD_DSCP	= 6,
+    FIELD_TTL	= 7,
     
     UNKNOWN = -1000,
     
@@ -237,7 +243,7 @@ IPFilter::Primitive::negation_is_simple() const
   else if (_transp_proto >= 0)
     return false;
   else
-    return _type == TYPE_HOST || _type == TYPE_TOS || _type == TYPE_IPFRAG;
+    return _type == TYPE_HOST || (_type & TYPE_FIELD) || _type == TYPE_IPFRAG;
 }
 
 CLICK_ENDDECLS

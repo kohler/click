@@ -28,6 +28,17 @@
 #include <click/integers.hh>
 CLICK_DECLS
 
+static const int field_def[] = {
+  ((10*8+ 0)<<16) | 16,		// checksum
+  ((2*8 + 0)<<16) | 16,		// len
+  ((4*8 + 0)<<16) | 16,		// id
+  ((0*8 + 0)<<16) | 4,		// version
+  ((0*8 + 4)<<16) | 4,		// hl
+  ((1*8 + 0)<<16) | 8,		// tos
+  ((1*8 + 0)<<16) | 6,		// dscp
+  ((8*8 + 0)<<16) | 8,		// ttl
+};
+
 static HashMap<String, int> *wordmap;
 static int ip_filter_count;
 #define WT(t, d)		((t << WT_TYPE_SHIFT) | d)
@@ -43,15 +54,18 @@ IPFilter::create_wordmap()
   wordmap->insert("port",	WT(TYPE_TYPE, TYPE_PORT));
   wordmap->insert("proto",	WT(TYPE_TYPE, TYPE_PROTO));
   wordmap->insert("opt",	WT(TYPE_TYPE, TYPE_TCPOPT));
-  wordmap->insert("tos",	WT(TYPE_TYPE, TYPE_TOS));
-  wordmap->insert("ttl",	WT(TYPE_TYPE, TYPE_TTL));
-  wordmap->insert("dscp",	WT(TYPE_TYPE, TYPE_DSCP));
+  wordmap->insert("tos",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_TOS));
+  wordmap->insert("ttl",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_TTL));
+  wordmap->insert("dscp",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_DSCP));
   wordmap->insert("type",	WT(TYPE_TYPE, TYPE_ICMP_TYPE));
   wordmap->insert("frag",	WT(TYPE_TYPE, TYPE_IPFRAG));
   wordmap->insert("unfrag",	WT(TYPE_TYPE, TYPE_IPUNFRAG));
   wordmap->insert("ect",	WT(TYPE_TYPE, TYPE_IPECT));
   wordmap->insert("ce",		WT(TYPE_TYPE, TYPE_IPCE));
-  wordmap->insert("len",	WT(TYPE_TYPE, TYPE_IPLEN));
+  wordmap->insert("len",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_IPLEN));
+  wordmap->insert("vers",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_VERSION));
+  wordmap->insert("hl",		WT(TYPE_TYPE, TYPE_FIELD | FIELD_HL));
+  wordmap->insert("id",		WT(TYPE_TYPE, TYPE_FIELD | FIELD_ID));
   
   wordmap->insert("icmp",	WT(TYPE_PROTO, IP_PROTO_ICMP));
   wordmap->insert("igmp",	WT(TYPE_PROTO, IP_PROTO_IGMP));
@@ -336,24 +350,34 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
    case SD_OR: sa << "src or dst "; break;
    case SD_AND: sa << "src and dst "; break;
   }
-
+  
   switch (type) {
    case TYPE_NONE: sa << "<none>"; break;
    case TYPE_HOST: sa << "ip host"; break;
    case TYPE_PROTO: sa << "proto"; break;
-   case TYPE_TOS: sa << "ip tos"; break;
-   case TYPE_TTL: sa << "ip ttl"; break;
    case TYPE_IPFRAG: sa << "ip frag"; break;
-   case TYPE_IPLEN: sa << "ip len"; break;
    case TYPE_PORT: sa << "port"; break;
    case TYPE_TCPOPT: sa << "tcp opt"; break;
    case TYPE_ICMP_TYPE: sa << "icmp type"; break;
    case TYPE_NET: sa << "ip net"; break;
-   case TYPE_DSCP: sa << "ip dscp"; break;
    case TYPE_IPUNFRAG: sa << "ip unfrag"; break;
    case TYPE_IPECT: sa << "ip ect"; break;
    case TYPE_IPCE: sa << "ip ce"; break;
-   default: sa << "<unknown type " << type << ">"; break;
+   default:
+    if (type & TYPE_FIELD) {
+      switch (type & ~TYPE_FIELD) {
+       case FIELD_IPLEN: sa << "ip len"; break;
+       case FIELD_ID: sa << "ip id"; break;
+       case FIELD_VERSION: sa << "ip vers"; break;
+       case FIELD_HL: sa << "ip hl"; break;
+       case FIELD_TOS: sa << "ip tos"; break;
+       case FIELD_DSCP: sa << "ip dscp"; break;
+       case FIELD_TTL: sa << "ip ttl"; break;
+       default: sa << "<unknown type " << type << ">";
+      }
+    } else
+      sa << "<unknown type " << type << ">";
+    break;
   }
 
   return sa.take_string();
@@ -437,8 +461,8 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      case TYPE_INT:
-      if (p._type != TYPE_PROTO && p._type != TYPE_PORT && p._type != TYPE_ICMP_TYPE && p._type != TYPE_IPLEN)
-	return errh->error("specify `proto', `port', `icmp type', or `ip len'");
+      if (!(p._type & TYPE_FIELD) && p._type != TYPE_PORT && p._type != TYPE_ICMP_TYPE)
+	return errh->error("specify header field, 'port', or 'icmp type'");
       _data = p._type;
       goto retry;
 
@@ -524,21 +548,6 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     _mask.i = _u.i;
     break;
 
-   case TYPE_TOS:
-    if (_data != TYPE_INT)
-      return errh->error("TOS value missing in `ip tos' directive");
-    if (set_mask(0xFF, 0, errh) < 0)
-      return -1;
-    break;
-
-   case TYPE_DSCP:
-    if (_data != TYPE_INT)
-      return errh->error("DSCP missing in `ip dscp' directive");
-    if (set_mask(0x3F, 2, errh) < 0)
-      return -1;
-    _type = TYPE_TOS;
-    break;
-
    case TYPE_IPECT:
     if (_data == TYPE_NONE) {
       _mask.u = IP_ECNMASK;
@@ -549,7 +558,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 	return -1;
     } else
       return errh->error("weird data given to `ip ect' directive");
-    _type = TYPE_TOS;
+    _type = TYPE_FIELD | FIELD_TOS;
     break;
 
    case TYPE_IPCE:
@@ -557,21 +566,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("`ip ce' directive takes no data");
     _mask.u = IP_ECNMASK;
     _u.u = IP_ECN_CE;
-    _type = TYPE_TOS;
-    break;
-
-   case TYPE_TTL:
-    if (_data != TYPE_INT)
-      return errh->error("TTL value missing in `ip ttl' directive");
-    if (set_mask(0xFF, 0, errh) < 0)
-      return -1;
-    break;
-
-   case TYPE_IPLEN:
-    if (_data != TYPE_INT)
-      return errh->error("length value missing in `ip len' directive");
-    if (set_mask(0xFFFF, 0, errh) < 0)
-      return -1;
+    _type = TYPE_FIELD | FIELD_TOS;
     break;
 
    case TYPE_ICMP_TYPE:
@@ -599,6 +594,17 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     _op_negated = true;
     _mask.u = 1; // don't want mask to be 0
     _type = TYPE_IPFRAG;
+    break;
+
+   default:
+    if (_type & TYPE_FIELD) {
+      if (_data != TYPE_INT)
+	return errh->error("value missing in '%s' directive", unparse_type().c_str());
+      int nbits = field_def[_type & ~TYPE_FIELD] & 0xFFFF;
+      uint32_t mask = (nbits == 32 ? 0xFFFFFFFFU : (1 << nbits) - 1);
+      if (set_mask(mask, 0, errh) < 0)
+	return -1;
+    }
     break;
     
   }
@@ -723,22 +729,10 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
       add_comparison_exprs(c, tree, 8, 16);
     break;
 
-   case TYPE_TOS:
-    add_comparison_exprs(c, tree, 0, 16);
-    break;
-
-   case TYPE_TTL:
-    add_comparison_exprs(c, tree, 8, 24);
-    break;
-
    case TYPE_IPFRAG:
     c->add_expr(tree, 4, 0, htonl(0x00003FFF));
     if (!_op_negated)
       c->negate_expr_subtree(tree);
-    break;
-
-   case TYPE_IPLEN:
-    add_comparison_exprs(c, tree, 0, 0);
     break;
 
    case TYPE_PORT:
@@ -759,7 +753,14 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     break;
 
    default:
-    assert(0);
+    if (_type & TYPE_FIELD) {
+      int field = field_def[_type & ~TYPE_FIELD];
+      int offset = field >> 16, length = field & 0xFFFF;
+      int word_offset = (offset >> 3) & ~3, bit_offset = offset & 0x1F;
+      add_comparison_exprs(c, tree, word_offset, 32 - (bit_offset + length));
+    } else
+      assert(0);
+    break;
 
   }
 

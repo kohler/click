@@ -44,10 +44,19 @@ PORT is a TCP or UDP port name (see below) or number and SRCORDST is as
 above. Matches packets sent to and/or from the given TCP or UDP port. If
 you leave out `tcp' or `udp', then either TCP or UDP is accepted.
 
-=item B<tcp opt TCPOPT>
+=item B<ip vers VERSION>
 
-TCPOPT is a TCP option name (see below). Matches TCP packets with the given
-option.
+VERSION is a value between 0 and 15. Matches IP packets with the given
+version.
+
+=item B<ip hl HL>
+
+HL is a value between 0 and 15. Matches IP packets with the given header
+length.
+
+=item B<ip id ID>
+
+ID is a value between 0 and 65535. Matches IP packets with the given IP ID.
 
 =item B<ip tos TOS>
 
@@ -79,6 +88,11 @@ set and/or a nonzero fragment offset).
 =item B<ip unfrag>
 
 Equivalent to `not ip frag'.
+
+=item B<tcp opt TCPOPT>
+
+TCPOPT is a TCP option name (see below). Matches TCP packets with the given
+option.
 
 =item B<icmp type TYPE>
 
