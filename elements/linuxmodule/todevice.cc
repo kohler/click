@@ -366,6 +366,9 @@ ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
   ToDevice *td = (ToDevice *)e;
   td->_npackets = 0;
+  td->_rejected = 0;
+  td->_hard_start = 0;
+  td->_busy_returns = 0;
 #if CLICK_DEVICE_THESIS_STATS
   td->_pull_cycles = 0;
 #endif
