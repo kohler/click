@@ -248,6 +248,7 @@ RouterT::add_anon_element(ElementClassT *type, const String &config,
 void
 RouterT::change_ename(int ei, const String &new_name)
 {
+    assert(new_name);
     ElementT &e = *_elements[ei];
     if (e.live()) {
 	if (_element_name_map[e.name()] == ei)
