@@ -1,9 +1,9 @@
 %script
 
-click IPR > OUT
+click-align IPR | click > OUT
 echo '++p' | cat OUT - | dc > OUTA
 
-click-xform -p IPR_PAT IPR | click > OUT
+click-xform -p IPR_PAT IPR | click-align | click > OUT
 echo '++p' | cat OUT - | dc > OUTB
 
 %file IPR
