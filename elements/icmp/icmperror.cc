@@ -1,8 +1,9 @@
 /*
  * icmperror.{cc,hh} -- element constructs ICMP error packets
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
