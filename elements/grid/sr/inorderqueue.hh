@@ -4,6 +4,7 @@
 #include <elements/standard/notifierqueue.hh>
 #include <click/bighashmap.hh>
 #include <elements/grid/sr/path.hh>
+#include <elements/grid/sr/srpacket.hh>
 CLICK_DECLS
 
 /*
