@@ -1,5 +1,5 @@
 /*
- * iplbmapper.{cc,hh} -- load balancing IPMapper
+ * iprrmapper.{cc,hh} -- round robin IPMapper
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -13,14 +13,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "iplbmapper.hh"
+#include "iprrmapper.hh"
 #include "confparse.hh"
 #include "error.hh"
 
 void *
-IPLoadBalancingMapper::cast(const char *name)
+IPRoundRobinMapper::cast(const char *name)
 {
-  if (name && strcmp("IPLoadBalancingMapper", name) == 0)
+  if (name && strcmp("IPRoundRobinMapper", name) == 0)
     return (Element *)this;
   else if (name && strcmp("IPMapper", name) == 0)
     return (IPMapper *)this;
@@ -29,7 +29,7 @@ IPLoadBalancingMapper::cast(const char *name)
 }
 
 int
-IPLoadBalancingMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPRoundRobinMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 0)
     return errh->error("no patterns given");
@@ -53,14 +53,14 @@ IPLoadBalancingMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-IPLoadBalancingMapper::uninitialize()
+IPRoundRobinMapper::uninitialize()
 {
   for (int i = 0; i < _patterns.size(); i++)
     _patterns[i]->unuse();
 }
 
 void
-IPLoadBalancingMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v,
+IPRoundRobinMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v,
 				       IPRewriter *) const
 {
   for (int i = 0; i < _patterns.size(); i++)
@@ -68,7 +68,7 @@ IPLoadBalancingMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v,
 }
 
 IPRewriter::Mapping *
-IPLoadBalancingMapper::get_map(bool tcp, const IPFlowID &flow, IPRewriter *rw)
+IPRoundRobinMapper::get_map(bool tcp, const IPFlowID &flow, IPRewriter *rw)
 {
   IPRewriter::Mapping *forward, *reverse;
   int first_pattern = _last_pattern;
@@ -87,4 +87,4 @@ IPLoadBalancingMapper::get_map(bool tcp, const IPFlowID &flow, IPRewriter *rw)
 
 
 ELEMENT_REQUIRES(IPRewriter)
-EXPORT_ELEMENT(IPLoadBalancingMapper)
+EXPORT_ELEMENT(IPRoundRobinMapper)

@@ -22,7 +22,7 @@ class HostEtherFilter : public Element {
   ~HostEtherFilter();
 
   const char *class_name() const		{ return "HostEtherFilter"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   HostEtherFilter *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

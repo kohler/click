@@ -21,24 +21,26 @@
  * In summary: Assume that an FTP packet with source address and port
  * 1.0.0.2:6587 and destination address and port 2.0.0.2:21 contains a command
  * `PORT 1,0,0,2,3,9' (that is, 1.0.0.2:777). Furthermore assume that the
- * PATTERN is `1.0.0.1 9000-14000 - -'. Then FTPPortMapper will perform the
+ * PATTERN is `1.0.0.1 9000-14000 - -'. Then FTPPortMapper performs the
  * following actions:
  *
- * (*) Create a new mapping using the PATTERN. Say it returns 9000 as the
+ * (*) Creates a new mapping using the PATTERN. Say it returns 9000 as the
  * new source port.
  *
  * (*) Installs the following mappings into the rewriter:
  *
- * (1) (1.0.0.2, 777, 2.0.0.2, 20) => (1.0.0.1, 9000, 2.0.0.2, 20) with output
+ * (  1.) (1.0.0.2, 777, 2.0.0.2, 20) => (1.0.0.1, 9000, 2.0.0.2, 20) with output
  * port FOUTPUT.
  *
- * (2) (2.0.0.2, 20, 1.0.0.1, 9000) => (2.0.0.2, 20, 1.0.0.2, 777) with output
+ * (  2.) (2.0.0.2, 20, 1.0.0.1, 9000) => (2.0.0.2, 20, 1.0.0.2, 777) with output
  * port ROUTPUT.
  *
  * (*) Rewrites the PORT command to `PORT 1,0,0,1,35,40' (that is,
  * 1.0.0.1:9000).
  *
- * (*) Does NOT rewrite the packet headers's addresses or port numbers.
+ * (*) Updates the packet's IP and TCP checksums.
+ *
+ * (*) Does <i>not</i> rewrite the packet header's addresses or port numbers.
  *
  * For a PORT command to be recognized, it must be completely contained within
  * one packet, and it must be the first command in the packet. This is usually

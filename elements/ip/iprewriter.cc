@@ -19,6 +19,7 @@
 #include "click_tcp.h"
 #include "click_udp.h"
 #include "confparse.hh"
+#include "straccum.hh"
 #include "error.hh"
 
 #include <limits.h>
@@ -626,23 +627,23 @@ IPRewriter::push(int port, Packet *p_in)
 String
 IPRewriter::dump_table()
 {
-  String tcps, udps;
+  StringAccum tcps, udps;
   int i = 0;
   IPFlowID2 in;
   Mapping *m;
   while (_tcp_map.each(i, in, m))
     if (m && !m->is_reverse())
-      tcps += in.s() + " ==> " + m->flow_id().s() + " [" + String(m->output()) + "]\n";
+      tcps << in.s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
   i = 0;
   while (_udp_map.each(i, in, m))
     if (m && !m->is_reverse())
-      udps += in.s() + " ==> " + m->flow_id().s() + " [" + String(m->output()) + "]\n";
-  if (tcps && udps)
-    return "TCP:\n" + tcps + "\nUDP:\n" + udps;
-  else if (tcps)
-    return "TCP:\n" + tcps;
-  else if (udps)
-    return "UDP:\n" + udps;
+      udps << in.s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
+  if (tcps.length() && udps.length())
+    return "TCP:\n" + tcps.take_string() + "\nUDP:\n" + udps.take_string();
+  else if (tcps.length())
+    return "TCP:\n" + tcps.take_string();
+  else if (udps.length())
+    return "UDP:\n" + udps.take_string();
   else
     return String();
 }
