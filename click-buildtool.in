@@ -545,8 +545,8 @@ EOF
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
     name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
-    B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n";
-    C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
+    B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n  " ans[1] "::static_initialize();\n";
+    C = C "  " ans[1] "::static_cleanup();\n  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
     D = D "   case " nrebecca ": return new " ans[1] ";\n";
     nrebecca++;
   }
@@ -581,7 +581,8 @@ END {
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
     name = "\"" ans[2] "\""
-    B = B "  (void) click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n";
+    B = B "  (void) click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n  " ans[1] "::static_initialize();\n";
+    C = C "  " ans[1] "::static_cleanup();\n";
     D = D "   case " nrebecca ": return new " ans[1] ";\n";
     nrebecca++;
   }
@@ -594,8 +595,8 @@ END {
   }
   print "CLICK_USING_DECLS";
   print "static Element *\nbeetlemonkey(uintptr_t heywood)\n{\n  switch (heywood) {\n", D, "   default: return 0;\n  }\n}\n";
-  print "void\nclick_export_elements()\n{";
-  print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}";
+  print "void\nclick_export_elements()\n{\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}\n";
+  print "void\nclick_unexport_elements()\n{\n", C, "}";
 }
 '
     fi

@@ -40,6 +40,9 @@ class Element { public:
   virtual ~Element();
   static int nelements_allocated;
 
+  static void static_initialize()	{ }
+  static void static_cleanup()		{ }
+
   // RUNTIME
   virtual void push(int port, Packet *);
   virtual Packet *pull(int port);
