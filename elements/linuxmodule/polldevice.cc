@@ -94,9 +94,11 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
     _dev = find_device_by_ether_address(_devname);
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
-  if (_dev->polling < 0) 
+  // must check both _dev->polling and _dev->poll_on as some drivers
+  // memset() their device structures to all zero
+  if (_dev->polling < 0 || !_dev->poll_on)
     return errh->error("device `%s' not pollable", _devname.cc());
-#endif  
+#endif
   return 0;
 }
 
@@ -135,7 +137,7 @@ PollDevice::initialize(ErrorHandler *errh)
     /* turn off interrupt if interrupts weren't already off */
     _dev->poll_on(_dev);
   }
-
+ 
   if (_promisc) dev_set_promiscuity(_dev, 1);
 
 #ifndef RR_SCHED
@@ -150,7 +152,7 @@ PollDevice::initialize(ErrorHandler *errh)
 #endif
 
   join_scheduler();
-  
+
   return 0;
 #else
   errh->warning("can't get packets: not compiled with polling extensions");

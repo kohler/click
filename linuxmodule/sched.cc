@@ -35,7 +35,7 @@ extern "C" {
 #undef new
 }
 
-static atomic_t num_click_threads;
+atomic_t num_click_threads;
 
 static int
 click_sched(void *thunk)

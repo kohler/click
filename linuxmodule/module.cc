@@ -101,11 +101,6 @@ unsigned long long click_cycles = 0;
 unsigned int click_calls = 0;
 unsigned long long click_enter_time;
 int click_entered;
-int rtm_ipackets, rtm_opackets;
-unsigned long long rtm_ibytes, rtm_obytes;
-unsigned long long rtm_t0;
-unsigned long long rtm_dev_packets;
-unsigned long long rtm_dev_bytes;
 
 static unsigned long cli_flags;
 
@@ -147,99 +142,11 @@ static String
 read_cycles(Element *, void *)
 {
   StringAccum sa;
-
-#if 0
-  extern unsigned int rtm_irq_calls, rtm_bh_calls, rtm_tulip_calls;
-  extern unsigned long long rtm_irq_cycles, rtm_bh_cycles, rtm_tulip_cycles;
-  unsigned int cli_flags;
-  unsigned int fn0, fn1;
-  unsigned long long val0, val1;
-  
-  save_flags(cli_flags);
-  cli();
-  unsigned long long now = click_get_cycles();
-  unsigned long long t = now - rtm_t0;
-  rtm_t0 = now;
-  click_cycle_counter(0, &fn0, &val0);
-  click_cycle_counter(1, &fn1, &val1);
-  restore_flags(cli_flags);
-  
-  unsigned long long top = 0;
-  unsigned long long tob = 0;
-  struct device *dev;
-  for(dev = dev_base; dev; dev = dev->next){
-    if(dev->get_stats){
-      struct net_device_stats *stats = dev->get_stats(dev);
-      top += stats->tx_packets;
-      tob += stats->tx_bytes;
-    }
-  }
-  
-  char tmp[128];
-  sprintf(tmp, "0x%x %u %u, 0x%x %u %u\n",
-          fn0,
-          (int)(val0 >> 32),
-          (int)val0,
-          fn1,
-          (int)(val1 >> 32),
-          (int)val1);          
-  
-  sa << t << " cycles\n";
-  sa << tmp;
-  sa << rtm_ipackets << " in packets\n";
-  sa << rtm_ibytes << " in bytes\n";
-  sa << rtm_opackets << " out packets\n";
-  sa << rtm_obytes << " out bytes\n";
-  sa << (int)(top - rtm_dev_packets) << " device outputs\n";
-  sa << (tob - rtm_dev_bytes) << " device output bytes\n";
-  sa << click_calls << " ipb calls\n";
-  sa << click_cycles << " ipb cycles\n";
-  sa << rtm_irq_calls << " do_IRQ calls\n";
-  sa << rtm_irq_cycles << " interrupt cycles\n";
-  sa << rtm_tulip_calls << " tulip interrupts\n";
-  sa << rtm_tulip_cycles << " tulip interrupt cycles\n";
-  sa << rtm_bh_calls << " net_bh calls\n";
-  sa << rtm_bh_cycles << " net_bh cycles\n";
-  rtm_ipackets = rtm_opackets = 0;
-  rtm_irq_calls = rtm_tulip_calls = rtm_bh_calls = 0;
-  rtm_irq_cycles = rtm_tulip_cycles = rtm_bh_cycles = 0;
-  rtm_dev_packets = top;
-  rtm_dev_bytes = tob;
-#endif
-  
   sa << click_get_cycles() << " cycles\n";
   sa << click_calls << " ipb calls\n";
   sa << click_cycles << " ipb cycles\n";
   click_calls = 0;
   click_cycles = 0;
-
-#if 0 && defined(HAVE_CLICK_KERNEL)
-  extern unsigned int rtm_irq_calls;
-  extern unsigned long long rtm_irq_cycles;
-  sa << rtm_irq_calls << " irq calls\n";
-  sa << rtm_irq_cycles << " irq cycles\n";
-  rtm_irq_calls = 0;
-  rtm_irq_cycles = 0;
-
-  extern unsigned int rtm_ip_calls;
-  extern unsigned long long rtm_ip_cycles;
-  sa << rtm_ip_calls << " ip calls\n";
-  sa << rtm_ip_cycles << " ip cycles\n";
-  rtm_ip_calls = 0;
-  rtm_ip_cycles = 0;
-
-  extern unsigned int rtm_tulip_calls;
-  extern unsigned long long rtm_tulip_cycles;
-  sa << rtm_tulip_calls << " tulip calls\n";
-  sa << rtm_tulip_cycles << " tulip cycles\n";
-  rtm_tulip_calls = 0;
-  rtm_tulip_cycles = 0;
-
-  extern atomic_t netdev_rx_dropped;
-  sa << atomic_read(&netdev_rx_dropped) << " netdev_rx_dropped\n";
-  atomic_set(&netdev_rx_dropped, 0);
-#endif
-
   return sa.take_string();
 }
 
@@ -265,6 +172,13 @@ read_meminfo(Element *, void *)
   sa << "net_skbcount " << read_net_skbcount() << "\n";
 #endif
   return sa.take_string();
+}
+
+static String
+read_threads(Element *, void *)
+{
+  int x = atomic_read(&num_click_threads);
+  return String(x) + "\n";
 }
 
 static String
@@ -404,6 +318,7 @@ init_module()
   next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
+  next_root_handler("threads", read_threads, 0, 0, 0);
 
   return 0;
 }

@@ -55,7 +55,7 @@ void kill_current_router();
 void install_current_router(Router *);
 void reset_proc_click_errors();
 
-extern int click_where;
+extern atomic_t num_click_threads;
 void start_click_sched(Router *, ErrorHandler *);
 void kill_click_sched(Router *);
 void init_click_sched();

@@ -743,7 +743,7 @@ Router::initialize(ErrorHandler *errh)
 #if CLICK_DMALLOC
   char dmalloc_buf[12];
 #endif
-    
+  
   if (check_hookup_elements(errh) < 0)
     return -1;
   

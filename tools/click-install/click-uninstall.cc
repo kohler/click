@@ -106,6 +106,28 @@ packages_to_remove(const StringMap &active_modules, const StringMap &packages)
   return to_remove;
 }
 
+static void
+kill_current_configuration(ErrorHandler *errh)
+{
+  FILE *f = fopen("/proc/click/config", "w");
+  if (!f)
+    errh->fatal("cannot uninstall configuration: %s", strerror(errno));
+  fputs("// nothing\n", f);
+  fclose(f);
+
+  // wait for thread to die
+  for (int wait = 0; wait < 3; wait++) {
+    String s = file_string("/proc/click/threads");
+    if (!s || s == "0\n")
+      return;
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 200000;
+    select(0, 0, 0, 0, &tv);
+  }
+  errh->error("failed to kill current Click configuration");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -156,11 +178,7 @@ particular purpose.\n");
     exit(0);
   
   // first, write nothing to /proc/click/config -- frees up modules
-  FILE *f = fopen("/proc/click/config", "w");
-  if (!f)
-    errh->fatal("can't install blank configuration: %s", strerror(errno));
-  fputs("// nothing\n", f);
-  fclose(f);
+  kill_current_configuration(errh);
 
   // find current packages
   HashMap<String, int> active_modules(-1);
@@ -178,8 +196,7 @@ particular purpose.\n");
 
   // see if we successfully removed it
   // wait some time before complaining in case rmmod is slow
-  int tries = 0;
-  while (tries < 3 && access("/proc/click", F_OK) >= 0) {
+  for (int wait = 0; wait < 3 && access("/proc/click", F_OK) >= 0; wait++) {
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
