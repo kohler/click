@@ -13,6 +13,10 @@
 #define FIX_IP_SRC_ANNO(p)		((p)->user_anno_c(3))
 #define SET_FIX_IP_SRC_ANNO(p, v)	((p)->set_user_anno_c(3, (v)))
 
+// bytes 0-3
+#define AGGREGATE_ANNO(p)		((p)->user_anno_u(0))
+#define SET_AGGREGATE_ANNO(p, v)	((p)->set_user_anno_u(0, (v)))
+
 // bytes 4-7
 #define FWD_RATE_ANNO(p)		((p)->user_anno_i(1))
 #define SET_FWD_RATE_ANNO(p, v)		((p)->set_user_anno_i(1, (v)))
