@@ -85,8 +85,9 @@ click_check_header_sizes()
 
 CLICK_USING_DECLS
 
+extern "C" {
 void
-CLICK_NAME(click_chatter)(const char *fmt, ...)
+click_chatter(const char *fmt, ...)
 {
   va_list val;
   va_start(val, fmt);
@@ -114,6 +115,7 @@ CLICK_NAME(click_chatter)(const char *fmt, ...)
   }
   
   va_end(val);
+}
 }
 
 

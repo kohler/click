@@ -67,9 +67,9 @@ CLICK_CXX_UNPROTECT
 
 
 // DEBUGGING OUTPUT
-CLICK_DECLS
+extern "C" {
 void click_chatter(const char *fmt, ...);
-CLICK_ENDDECLS
+}
 
 
 // DEBUG MALLOC
