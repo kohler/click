@@ -845,8 +845,7 @@ cp_keyword(const String &str, String *return_value, String *rest)
       break;
 
      default:
-      if (quote_state == 0 && !isalnum(s[i]) && s[i] != '_' && s[i] != '-'
-	  && s[i] != '.')
+      if (quote_state == 0 && !isalnum(s[i]) && s[i] != '_' && s[i] != '.')
 	return false;
       break;
       
@@ -856,7 +855,12 @@ cp_keyword(const String &str, String *return_value, String *rest)
   if (i == 0 || quote_state != 0)
     return false;
 
-  *return_value = cp_unquote(str.substring(0, i));
+  String keyword = cp_unquote(str.substring(0, i));
+  // disallow zero-length keywords, or keywords that start with digits or '.'
+  if (keyword.length() == 0 || isdigit(keyword[0]) || keyword[0] == '.')
+    return false;
+  
+  *return_value = keyword;
 
   if (i < len && s[i] == '=')
     i++;
@@ -1341,6 +1345,8 @@ cp_des_cblock(const String &str, unsigned char *return_value,
 
 CpVaParseCmd
   cpOptional		= "OPTIONAL",
+  cpUnmixedKeywords	= "UNMIXED_KEYWORDS",
+  cpMixedKeywords	= "MIXED_KEYWORDS",
   cpKeywords		= "KEYWORDS",
   cpIgnore		= "IGNORE",
   cpIgnoreRest		= "IGNORE_REST",
@@ -1371,7 +1377,8 @@ CpVaParseCmd
 enum {
   cpiEnd = 0,
   cpiOptional,
-  cpiKeywords,
+  cpiUnmixedKeywords,
+  cpiMixedKeywords,
   cpiIgnore,
   cpiIgnoreRest,
   cpiArgument,
@@ -1697,7 +1704,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      *sstore = v->v_string;
      break;
    }
-   
+
    case cpiIPAddress:
     address_bytes = 4;
     goto address;
@@ -1764,36 +1771,50 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 #define CP_VALUES_SIZE 80
 static cp_value *cp_values;
 
-static void
-assign_keyword_argument(const Vector<String> &args, int argno,
-			const char *argname, StringAccum &nonassigned_sa,
-			int npositional, int nvalues)
+enum {
+  kwSuccess = 0,
+  kwDupKeyword = -1,
+  kwNoKeyword = -2,
+  kwUnkKeyword = -3
+};
+
+static int
+assign_keyword_argument(const String &arg, int npositional, int nvalues)
 {
   String keyword, rest;
-  // find keyword
-  if (!cp_keyword(args[argno], &keyword, &rest)) {
-    if (nonassigned_sa.length())
-      nonassigned_sa << ", ";
-    nonassigned_sa << "<" << argname << " " << (argno + 1) << ">";
-    return;
-  }
-  // look for keyword
+  // extract keyword
+  if (!cp_keyword(arg, &keyword, &rest))
+    return kwNoKeyword;
+  // look for keyword value
   for (int i = npositional; i < nvalues; i++)
     if (keyword == cp_values[i].keyword) {
-      if (cp_values[i].v.i) {
-	if (nonassigned_sa.length())
-	  nonassigned_sa << ", ";
-	nonassigned_sa << keyword << " (duplicate keyword)";
-      } else {
-	cp_values[i].v.i = 1;
-	cp_values[i].v_string = rest;
-      }
-      return;
+      if (cp_values[i].v.i)
+	return kwDupKeyword;
+      cp_values[i].v.i = 1;
+      cp_values[i].v_string = rest;
+      return kwSuccess;
     }
-  // no keyboard found
-  if (nonassigned_sa.length())
-    nonassigned_sa << ", ";
-  nonassigned_sa << keyword;
+  // no keyword found
+  return kwUnkKeyword;
+}
+
+static void
+add_keyword_error(StringAccum &sa, int err, const String &arg,
+		  const char *argname, int argno)
+{
+  if (err >= 0)
+    return;
+  if (sa.length())
+    sa << ", ";
+  if (err == kwNoKeyword)
+    sa << '<' << argname << ' ' << (argno + 1) << '>';
+  else {
+    String keyword, rest;
+    (void) cp_keyword(arg, &keyword, &rest);
+    sa << keyword;
+    if (err == kwDupKeyword)
+      sa << " (duplicate keyword)";
+  }
 }
 
 static int
@@ -1811,6 +1832,8 @@ cp_va_parsev(const Vector<String> &args,
   int nvalues = 0;
   int nrequired = -1;
   int npositional = -1;
+  bool mixed_keywords = false;
+  bool ignore_rest = false;
   int nerrors_in = errh->nerrors();
   if (keywords_only)
     nrequired = npositional = 0;
@@ -1848,11 +1871,13 @@ cp_va_parsev(const Vector<String> &args,
       if (nrequired < 0)
 	nrequired = nvalues;
       continue;
-    } else if (argtype->internal == cpiKeywords) {
+    } else if (argtype->internal == cpiUnmixedKeywords
+	       || argtype->internal == cpiMixedKeywords) {
       if (nrequired < 0)
 	nrequired = nvalues;
       if (npositional < 0)
 	npositional = nvalues;
+      mixed_keywords = (argtype->internal == cpiMixedKeywords);
       continue;
     } else if (argtype->internal == cpiIgnore) {
       v->argtype = argtype;
@@ -1861,8 +1886,7 @@ cp_va_parsev(const Vector<String> &args,
     } else if (argtype->internal == cpiIgnoreRest) {
       if (nrequired < 0)
 	nrequired = nvalues;
-      v->argtype = argtype;
-      nvalues++;
+      ignore_rest = true;
       goto done;
     }
 
@@ -1885,41 +1909,67 @@ cp_va_parsev(const Vector<String> &args,
   if (npositional < 0)
     npositional = nvalues;
 
-  // assign keyword arguments
-  if (npositional < nvalues && npositional < args.size()) {
-    StringAccum nonassigned_sa;
-    for (int i = npositional; i < args.size(); i++)
-      assign_keyword_argument(args, i, argname, nonassigned_sa, npositional, nvalues);
-    if (nonassigned_sa.length() && !keywords_only) {
-      StringAccum keywords_sa;
-      for (int i = npositional; i < nvalues; i++) {
-	if (i > npositional)
-	  keywords_sa << ", ";
-	keywords_sa << cp_values[i].keyword;
-      }
-      errh->error("bad keyword(s) %s\n(valid keywords are %s)", nonassigned_sa.cc(), keywords_sa.cc());
-      return -1;
+  // assign arguments to positions
+  int npositional_supplied = 0;
+  StringAccum keyword_error_sa;
+  for (int i = 0; i < args.size(); i++) {
+    // past positional arguments? keyword or skip
+    if (npositional_supplied >= npositional) {
+      int result = assign_keyword_argument(args[i], npositional, nvalues);
+      if (result == kwDupKeyword)
+	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
+      else if (result == kwSuccess || ignore_rest)
+	/* no error */;
+      else if (result == kwNoKeyword)
+	npositional_supplied++;	// signature error later
+      else
+	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
+      continue;
     }
+
+    // check for mixed-in keyword
+    if (mixed_keywords) {
+      int result = assign_keyword_argument(args[i], npositional, nvalues);
+      if (result >= 0)
+	continue;
+      else if (result == kwDupKeyword) {
+	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
+	continue;
+      }
+    }
+
+    // otherwise, assign positional argument
+    cp_values[npositional_supplied].v_string = args[i];
+    npositional_supplied++;
+  }
+  
+  // report keyword argument errors
+  if (keyword_error_sa.length() && !keywords_only) {
+    StringAccum keywords_sa;
+    for (int i = npositional; i < nvalues; i++) {
+      if (i > npositional)
+	keywords_sa << ", ";
+      keywords_sa << cp_values[i].keyword;
+    }
+    errh->error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), keywords_sa.cc());
+    return -1;
   }
   
   // if wrong number of arguments, print signature
-  if (args.size() > nvalues && nvalues && cp_values[nvalues-1].argtype->internal == cpiIgnoreRest)
-    /* not an error */;
-  else if (args.size() > nvalues || args.size() < nrequired) {
+  if (npositional_supplied < nrequired || npositional_supplied > npositional) {
     StringAccum signature;
     for (int i = 0; i < npositional; i++) {
       if (i == nrequired)
 	signature << (nrequired > 0 ? " [" : "[");
       if (i)
 	signature << separator;
-      if (const cp_argtype *t = cp_values[i].argtype) {
-	if (t->internal == cpiIgnoreRest)
-	  signature << "...";
-	else
-	  signature << t->description;
-      } else
+      if (const cp_argtype *t = cp_values[i].argtype)
+	signature << t->description;
+      else
 	signature << "??";
     }
+    if (ignore_rest)
+      signature << "...";
     if (nrequired < npositional)
       signature << "]";
     if (npositional < nvalues) {
@@ -1928,7 +1978,7 @@ cp_va_parsev(const Vector<String> &args,
       signature << "[keywords]";
     }
 
-    const char *whoops = (args.size() > nvalues ? "too many" : "too few");
+    const char *whoops = (npositional_supplied > npositional ? "too many" : "too few");
     if (signature.length())
       errh->error("%s %ss; expected `%s'", whoops, argname, signature.cc());
     else
@@ -1936,29 +1986,32 @@ cp_va_parsev(const Vector<String> &args,
     return -1;
   }
 
+  // clear 'argtype' on unused arguments
+  for (int i = npositional_supplied; i < npositional; i++)
+    cp_values[i].argtype = 0;
+  for (int i = npositional; i < nvalues; i++)
+    if (!cp_values[i].v.i)
+      cp_values[i].argtype = 0;
+  
   // parse arguments
   char argname_buf[128];
   int argname_offset;
   sprintf(argname_buf, "%s %n", argname, &argname_offset);
 
-  for (int i = 0; i < nrequired; i++)
-    if (const cp_argtype *t = cp_values[i].argtype) {
+  for (int i = 0; i < npositional; i++) {
+    cp_value *v = &cp_values[i];
+    if (v->argtype) {
       sprintf(argname_buf + argname_offset, "%d", i + 1);
-      t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
+      v->argtype->parse(v, v->v_string, errh, argname_buf  CP_PASS_CONTEXT);
     }
-  for (int i = nrequired; i < npositional && i < args.size(); i++)
-    if (const cp_argtype *t = cp_values[i].argtype) {
-      sprintf(argname_buf + argname_offset, "%d", i + 1);
-      t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
-    }
+  }
   for (int i = npositional; i < nvalues; i++) {
     cp_value *v = &cp_values[i];
-    if (v->argtype && v->v.i) {
+    if (v->argtype) {
       StringAccum sa;
       sa << "keyword " << v->keyword;
       v->argtype->parse(v, v->v_string, errh, sa.cc()  CP_PASS_CONTEXT);
-    } else
-      v->argtype = 0;
+    }
   }
 
   // check for failure
@@ -1966,16 +2019,12 @@ cp_va_parsev(const Vector<String> &args,
     return -1;
   
   // if success, actually set the values
-  // mark unset optional arguments as dead
   int nset = 0;
-  for (int i = args.size(); i < npositional; i++)
-    cp_values[i].argtype = 0;
   for (int i = 0; i < nvalues; i++)
     if (const cp_argtype *t = cp_values[i].argtype) {
       t->store(&cp_values[i]  CP_PASS_CONTEXT);
       nset++;
     }
-
   return nset;
 }
 
@@ -2179,7 +2228,9 @@ cp_va_static_initialize()
   assert(!cp_values);
   
   cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
-  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
+  cp_register_argtype(cpUnmixedKeywords, "<unmixed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiUnmixedKeywords);
+  cp_register_argtype(cpMixedKeywords, "<intermixed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMixedKeywords);
+  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMixedKeywords);
   cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
   cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
   

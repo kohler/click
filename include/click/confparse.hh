@@ -93,6 +93,8 @@ typedef const char * const CpVaParseCmd;
 static CpVaParseCmd cpEnd = 0;
 extern CpVaParseCmd
   cpOptional,
+  cpUnmixedKeywords,
+  cpMixedKeywords,
   cpKeywords,
   cpIgnore,
   cpIgnoreRest,
