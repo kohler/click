@@ -342,11 +342,11 @@ ToDevice::tx_intr()
   else adj = 0;
 
   adj_tickets(adj);
+  reschedule();
+  
   _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
-
-  reschedule();
 #endif
 
 #if DEV_KEEP_STATS

@@ -41,17 +41,10 @@ PollDevice::PollDevice()
   _activations = 0;
   _time_recv = 0;
   _time_pushing = 0;
-  _time_running = 0;
-  _time_first_recv = 0;
-  _time_clean = 0;
-  _l2misses_clean = 0;
-  _dcu_cycles_clean = 0;
-  _l2misses_touch = 0;
-  _dcu_cycles_touch = 0;
+  _l2misses_pushing = 0;
+  _dcu_cycles_pushing = 0;
   _l2misses_rx = 0;
   _dcu_cycles_rx = 0;
-  _l2misses_first = 0;
-  _dcu_cycles_first = 0;
 #endif
 }
 
@@ -68,17 +61,10 @@ PollDevice::PollDevice(const String &devname)
   _activations = 0;
   _time_recv = 0;
   _time_pushing = 0;
-  _time_running = 0;
-  _time_first_recv = 0;
-  _time_clean = 0;
-  _l2misses_clean = 0;
-  _dcu_cycles_clean = 0;
-  _l2misses_touch = 0;
-  _dcu_cycles_touch = 0;
+  _l2misses_pushing = 0;
+  _dcu_cycles_pushing = 0;
   _l2misses_rx = 0;
   _dcu_cycles_rx = 0;
-  _l2misses_first = 0;
-  _dcu_cycles_first = 0;
 #endif
 }
 
@@ -129,7 +115,7 @@ PollDevice::initialize(ErrorHandler *errh)
   _dev->intr_off(_dev);
 
 #ifndef RR_SCHED
-  // start out with default number of tickets, inflate up to max
+  /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
@@ -138,7 +124,8 @@ PollDevice::initialize(ErrorHandler *errh)
   
   return 0;
 #else
-  return errh->warning("can't get packets: not compiled with polling extensions");
+  return 
+    errh->warning("can't get packets: not compiled with polling extensions");
 #endif
 }
 
@@ -162,48 +149,43 @@ PollDevice::run_scheduled()
   int got=0;
   
   /* need to have this somewhere */
-  // _dev->tx_clean(_dev);
+  /* _dev->tx_clean(_dev); */
 
 #if DEV_KEEP_STATS
-  unsigned long time_now = get_cycles();
-  unsigned low, high;
+  unsigned high;
   unsigned low00, low01, low10, low11;
 
   rdpmc(0, low00, high);
   rdpmc(1, low10, high);
-
-  unsigned long tt;
-  tt = get_cycles();
+  
+  unsigned long time_now = get_cycles();
 #endif   
   
   got = POLLDEV_MAX_PKTS_PER_RUN;
   skb_list = _dev->rx_poll(_dev, &got);
-  
-  /* POLLDEV_MAX_PKTS_PER_RUN must not be greater than RX ring size */
   _dev->rx_refill(_dev);
 
 #if DEV_KEEP_STATS
   if (_activations > 0 || got > 0) {
     _activations++;
-    _time_first_recv += get_cycles()-tt;
-      
+    _time_recv += get_cycles()-time_now;
+    
     rdpmc(0, low01, high);
     rdpmc(1, low11, high);
     
-    _l2misses_first += 
+    _l2misses_rx += 
       (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _dcu_cycles_first += 
+    _dcu_cycles_rx += 
       (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-  
-    rdpmc(0, low00, high); 
-    rdpmc(1, low10, high);
-
+    
     _pkts_received += got;
     if (got == 0) _idle_calls++;
   
-    tt = get_cycles();
+    rdpmc(0, low00, high); 
+    rdpmc(1, low10, high);
+    
+    time_now = get_cycles();
   }
-
 #endif
 
   for(int i=0; i<got; i++) {
@@ -224,27 +206,21 @@ PollDevice::run_scheduled()
     if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
       p->set_mac_broadcast_anno(1);
   
-#if 0
-    if (skb_next) {
-      volatile char pp0 = *(skb_next->data);
-      volatile char pp1 = *(skb_next->data+33);
-    }
-#endif
-
     output(0).push(p);
   }
   assert(skb_list == NULL);
 
 #if DEV_KEEP_STATS
-  rdpmc(0, low01, high);
-  rdpmc(1, low11, high);
+  if (_activations > 0) {
+    _time_pushing += get_cycles()-time_now;
+
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
   
-  if (_activations > 0 || got > 0) {
-    _dcu_cycles_touch += 
+    _dcu_cycles_pushing += 
       (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-    _l2misses_touch += 
+    _l2misses_pushing += 
       (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _time_pushing += get_cycles()-tt;
   }
 #endif
 
@@ -252,25 +228,20 @@ PollDevice::run_scheduled()
   /* adjusting tickets */
   int adj = tickets()/4;
   if (adj<2) adj=2;
+  
   /* handles burstiness: fast start */
   if (got == POLLDEV_MAX_PKTS_PER_RUN && 
-      _last_rx <= POLLDEV_MAX_PKTS_PER_RUN/4) adj*=2;
+      _last_rx <= POLLDEV_MAX_PKTS_PER_RUN/8) adj*=2;
   /* rx dma ring is fairly full, schedule ourselves more */
   else if (got == POLLDEV_MAX_PKTS_PER_RUN);
   /* rx dma ring was fairly empty, schedule ourselves less */
-  else if (got < POLLDEV_MAX_PKTS_PER_RUN/4 && 
-           _last_rx < POLLDEV_MAX_PKTS_PER_RUN/4) adj=0-adj;
+  else if (got < POLLDEV_MAX_PKTS_PER_RUN/4) adj=0-adj;
   else adj=0;
 
   adj_tickets(adj);
+  reschedule();
 
   _last_rx = got;
-  reschedule();
-#endif
-
-#if DEV_KEEP_STATS
-  if (_activations>0)
-    _time_running += get_cycles()-time_now;
 #endif
 
 #endif /* HAVE_POLLING */
@@ -286,17 +257,10 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_pkts_received) + " packets received\n" +
     String(kw->_time_recv) + " cycles rx\n" +
     String(kw->_time_pushing) + " cycles pushing\n" +
-    String(kw->_time_running) + " cycles running\n" +
-    String(kw->_time_first_recv) + " cycles first rx\n" +
-    String(kw->_time_clean) + " cycles cleaning\n" +
-    String(kw->_l2misses_first) + " l2 misses first\n" +
-    String(kw->_dcu_cycles_first) + " dcu cycles first\n" +
     String(kw->_l2misses_rx) + " l2 misses rx\n" +
     String(kw->_dcu_cycles_rx) + " dcu cycles rx\n" +
-    String(kw->_l2misses_clean) + " l2 misses cleaning\n" +
-    String(kw->_dcu_cycles_clean) + " dcu cycles cleaning\n" +
-    String(kw->_l2misses_touch) + " l2 misses touching\n" +
-    String(kw->_dcu_cycles_touch) + " dcu cycles touching\n" +
+    String(kw->_l2misses_pushing) + " l2 misses pushing\n" +
+    String(kw->_dcu_cycles_pushing) + " dcu cycles pushing\n" +
     String(kw->_activations) + " activations\n";
 #else
     String();
