@@ -15,6 +15,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
 PERL = @PERL@
 INSTALL = @INSTALL@
+INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
 INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -22,6 +23,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
+toolincludedir = @includedir@/clicktool
 bindir = @bindir@
 datadir = @datadir@/click
 
@@ -41,9 +43,9 @@ install: stamp-h
 	@$(MAKE) install-local install-doc install-include
 install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/click-mkelemmap
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL) $(srcdir)/click-buildtool $(bindir)/click-buildtool
-	$(INSTALL) click-compile $(bindir)/click-compile
-	$(INSTALL) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
+	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
+	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
+	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 	$(mkinstalldirs) $(datadir)
 	$(INSTALL_DATA) elementmap $(datadir)/elementmap
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
@@ -61,6 +63,8 @@ install-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.* $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
+	$(mkinstalldirs) $(toolincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/tools/lib/*.hh $(toolincludedir)
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \
@@ -68,7 +72,7 @@ elemlist elemlists:
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@"; echo @TARGETS@ $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
+	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
 always:
 	@:
 
