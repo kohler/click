@@ -1,3 +1,4 @@
+## Click linuxmodule driver Makefile ##
 SHELL = @SHELL@
 
 srcdir := @srcdir@
@@ -39,6 +40,10 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
+ifndef INSTALLOBJS
+INSTALLOBJS = click.o
+endif
+
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
@@ -73,7 +78,7 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: click.o
+all: $(INSTALLOBJS)
 
 click.o: Makefile $(OBJS)
 	ld -r -o click.o $(OBJS)
@@ -99,9 +104,9 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click.o
+install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL_DATA) click.o $(libdir)/click.o
+	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
 install-man:
 
 clean:
