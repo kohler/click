@@ -34,21 +34,21 @@ ChuckCheck::~ChuckCheck()
 int
 ChuckCheck::initialize(ErrorHandler *)
 {
-  _head = _tail = _first = 0;
+  _head = _tail = _head_id = 0;
   return 0;
 }
 
 void
 ChuckCheck::count(Packet *p)
 {
-  Stat &s = _info[_tail];
-  click_gettimeofday(&s.time);
-  s.saddr = p->ip_header()->ip_src.s_addr;
-  _tail = (_tail + 1) % BUCKETS;
-  if (_tail == _head) {
-    _head = (_head + 1) % BUCKETS;
-    _first++;
-  }
+    Stat &s = _info[_tail];
+    click_gettimeofday(&s.time);
+    s.saddr = p->ip_header()->ip_src.s_addr;
+    _tail = (_tail + 1) % BUCKETS;
+    if (_tail == _head) {
+	_head = (_head + 1) % BUCKETS;
+	_head_id++;
+    }
 }
 
 void
@@ -69,31 +69,33 @@ ChuckCheck::pull(int)
 String
 ChuckCheck::read_handler(Element *e, void *)
 {
-  ChuckCheck *cc = (ChuckCheck *)e;
-  unsigned *buf = new unsigned[1 + BUCKETS * 4];
-  if (!buf)
-    return String("out of memory");
+    // XXX multiprocessors
+    
+    ChuckCheck *cc = (ChuckCheck *)e;
+    unsigned *buf = new unsigned[1 + BUCKETS * 4];
+    if (!buf)
+	return String("out of memory");
   
-  unsigned j = 1;
-  unsigned num = cc->_first;
-  unsigned i = cc->_head;
+    unsigned j = 1;
+    unsigned num = cc->_head_id;
+    unsigned head = cc->_head;
+    unsigned tail = cc->_tail;
 
-  while (i != cc->_tail) {
-    buf[j++] = num++;
-    buf[j++] = cc->_info[i].time.tv_sec;
-    buf[j++] = cc->_info[i].time.tv_usec;
-    buf[j++] = cc->_info[i].saddr;
-    i = (i + 1) % BUCKETS;
-  }
+    for (unsigned i = head; i != tail; i = (i + 1) % BUCKETS) {
+	buf[j++] = num++;
+	buf[j++] = cc->_info[i].time.tv_sec;
+	buf[j++] = cc->_info[i].time.tv_usec;
+	buf[j++] = cc->_info[i].saddr;
+    }
 
-  buf[0] = num - cc->_first;
-  return String::claim_string((char *)buf, sizeof(unsigned) * j);
+    buf[0] = num - head;
+    return String::claim_string((char *)buf, sizeof(unsigned) * j);
 }
 
 void
 ChuckCheck::add_handlers()
 {
-  add_read_handler("info", read_handler, 0);
+    add_read_handler("info", read_handler, 0);
 }
 
 EXPORT_ELEMENT(ChuckCheck)
