@@ -262,7 +262,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 #endif
 EOF
 	fi
-	exec_command $c_command $vfile.c
+	c_command_nowarn=`echo $c_command | sed 's/-W[-a-z]*//g'`
+	exec_command $c_command_nowarn $vfile.c
 	exec_command "ld -r -o $package $cflags $files"
 	exit 0
     elif test $target = userlevel -o $target = tool -o $target = ns; then
