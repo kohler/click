@@ -184,7 +184,7 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
     {
 	int mode = IFF_BROADCAST;
-	if (ioctl(fd, TUNSIFMODE, &mode) != 0)
+	if (ioctl(_fd, TUNSIFMODE, &mode) != 0)
 	    return errh->error("TUNSIFMODE failed: %s", strerror(errno));
     }
 #endif
@@ -192,10 +192,10 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     {
 	struct tuninfo ti;
 	memset(&ti, 0, sizeof(struct tuninfo));
-	if (ioctl(fd, TUNGIFINFO, &ti) != 0)
+	if (ioctl(_fd, TUNGIFINFO, &ti) != 0)
 	    return errh->error("TUNGIFINFO failed: %s", strerror(errno));
 	ti.flags &= IFF_BROADCAST;
-	if (ioctl(fd, TUNSIFINFO, &ti) != 0)
+	if (ioctl(_fd, TUNSIFINFO, &ti) != 0)
 	    return errh->error("TUNSIFINFO failed: %s", strerror(errno));
     }
 #endif
@@ -204,7 +204,7 @@ KernelTap::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     // Each read/write prefixed with a 32-bit address family,
     // just as in OpenBSD.
     int yes = 1;
-    if (ioctl(fd, TUNSIFHEAD, &yes) != 0)
+    if (ioctl(_fd, TUNSIFHEAD, &yes) != 0)
 	return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
 #endif        
 
