@@ -1,3 +1,17 @@
+2005-03-15 Tuesday 12:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ethernet/arpquerier.cc (1.51): nit
+
+2005-03-15 Tuesday 12:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.60), elements/ethernet/arpquerier.cc (1.50),
+	elements/ethernet/arpquerier.hh (1.36): ARPQuerier update,
+	requested by Bart Braem: store up to CAPACITY packets total --
+	possibly multiple packets per ARPQuerier bucket.  Also rearrange
+	data structures: now a bit faster to call expire_hook().  This
+	comes at a space cost -- 12/16 extra bytes per ARPEntry.  Not
+	tested particularly well.
+
 2005-03-14 Monday 14:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: ip/iproutetable.cc (1.15), userlevel/controlsocket.cc
