@@ -4,7 +4,7 @@ Grid
 
 John Bicket
 jbicket@mit.edu
-Grid, Wifi, build improvements, core fixes
+Grid, Wifi, build improvements, user-level FromHost and ToHost, core fixes
 
 Benjie Chen
 benjie@lcs.mit.edu
@@ -52,6 +52,10 @@ Luigi Rizzo
 rizzo@icir.org
 FreeBSD kernel module
 
+Marko Zec
+zec@icir.org
+FreeBSD kernel module, DirectIPLookup element
+
 Nickolai B. Zeldovich
 kolya@lcs.mit.edu
 Linux 2.4, BSD kernel module
@@ -62,6 +66,10 @@ adaptive task scheduler
 
 
 Thanks to:
+
+Francis Bogsanyi
+fbogsany@metabunny.com
+Linux 2.6 support
 
 Peilei Fan
 peilei@mit.edu
@@ -75,6 +83,10 @@ Kyle Jamieson
 jamieson@mit.edu
 ARM fixes, 802.11 elements
 
+M. Frans Kaashoek
+kaashoek@lcs.mit.edu
+initial design
+
 Max Krohn
 krohn@mit.edu
 click-mkclgw.pl
@@ -83,9 +95,9 @@ Nikitas Liogkas
 nikitas@cs.ucla.edu
 SMP and other patches
 
-M. Frans Kaashoek
-kaashoek@lcs.mit.edu
-initial design
+Ross Mcilroy
+mcilrorc@docs.gla.ac.uk
+Linux 2.6 support
 
 Alex Snoeren
 snoeren@lcs.mit.edu
