@@ -1,8 +1,6 @@
 // grid.click
 // to be used with tools/run-grid
 
-#include <grid-config.h>
-
 elementclass TTLChecker {
   // expects grid packets with MAC headers --- place on output path to
   // dec TTL for next hop and provide traceroute support.  push -> push
