@@ -57,7 +57,7 @@ class Packet { public:
   uint32_t tailroom() const		{ return skb()->end - skb()->tail; }
   const unsigned char *buffer_data() const { return skb()->head; }
   uint32_t buffer_length() const	{ return skb()->end - skb()->head; }
-#else			/* Userspace module and BSD kernel module */
+#else				/* User-level driver and BSD kernel module */
   const unsigned char *data() const	{ return _data; }
   uint32_t length() const		{ return _tail - _data; }
   uint32_t headroom() const		{ return _data - _head; }
@@ -83,39 +83,26 @@ class Packet { public:
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *mac_header() const	{ return skb()->mac.raw; }
   const click_ether *ether_header() const	{ return (click_ether *)skb()->mac.ethernet; }
-#else			/* User space and BSD kernel module */
-  const unsigned char *mac_header() const	{ return _mac.raw; }
-  const click_ether *ether_header() const	{ return _mac.ethernet; }
-#endif
-  int mac_header_offset() const;
-  uint32_t mac_header_length() const;
-
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  
   const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
-#else			/* User space and BSD kernel module */
-  const unsigned char *network_header() const	{ return _nh.raw; }
-  const click_ip *ip_header() const		{ return _nh.iph; }
-  const click_ip6 *ip6_header() const           { return _nh.ip6h; }
-#endif
-  int network_header_offset() const;
-  uint32_t network_header_length() const;
-  int ip_header_offset() const;
-  uint32_t ip_header_length() const;
-  int ip6_header_offset() const;
-  uint32_t ip6_header_length() const;
 
-#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
   const click_tcp *tcp_header() const	{ return (click_tcp *)skb()->h.th; }
   const click_udp *udp_header() const	{ return (click_udp *)skb()->h.uh; }
-#else			/* User-space and BSD kernel module */
+#else			/* User space and BSD kernel module */
+  const unsigned char *mac_header() const	{ return _mac.raw; }
+  const click_ether *ether_header() const	{ return _mac.ethernet; }
+
+  const unsigned char *network_header() const	{ return _nh.raw; }
+  const click_ip *ip_header() const		{ return _nh.iph; }
+  const click_ip6 *ip6_header() const           { return _nh.ip6h; }
+
   const unsigned char *transport_header() const	{ return _h.raw; }
   const click_tcp *tcp_header() const	{ return _h.th; }
   const click_udp *udp_header() const	{ return _h.uh; }
 #endif
-  int transport_header_offset() const;
 
   void set_mac_header(const unsigned char *);
   void set_mac_header(const unsigned char *, uint32_t);
@@ -125,7 +112,29 @@ class Packet { public:
   void set_ip_header(const click_ip *, uint32_t);
   void set_ip6_header(const click_ip6 *);
   void set_ip6_header(const click_ip6 *, uint32_t);
-  
+
+  int mac_header_offset() const;
+  uint32_t mac_header_length() const;
+
+  int network_header_offset() const;
+  uint32_t network_header_length() const;
+  int ip_header_offset() const;
+  uint32_t ip_header_length() const;
+  int ip6_header_offset() const;
+  uint32_t ip6_header_length() const;
+
+  int transport_header_offset() const;
+
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  int mac_length() const		{ return skb()->tail - skb()->mac.raw;}
+  int network_length() const		{ return skb()->tail - skb()->nh.raw; }
+  int transport_length() const		{ return skb()->tail - skb()->h.raw; }
+#else				/* User space and BSD kernel module */
+  int mac_length() const		{ return _tail - _mac.raw; }
+  int network_length() const		{ return _tail - _nh.raw; }
+  int transport_length() const		{ return _tail - _h.raw; }
+#endif
+
   // ANNOTATIONS
 
  private:
