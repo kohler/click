@@ -10,6 +10,7 @@ class NotifierSignal { public:
     inline NotifierSignal();		// always active
     inline NotifierSignal(bool);
     inline NotifierSignal(atomic_uint32_t *value, uint32_t mask);
+    static void static_initialize();
 
     static inline NotifierSignal always_active_signal();
     static inline NotifierSignal always_inactive_signal();
@@ -25,8 +26,8 @@ class NotifierSignal { public:
 
     NotifierSignal &operator+=(const NotifierSignal &);
 
-    static void static_initialize();
-
+    String unparse() const;
+    
   private:
 
     atomic_uint32_t *_value;

@@ -55,6 +55,14 @@ NotifierSignal::operator+=(const NotifierSignal &o)
     return *this;
 }
 
+String
+NotifierSignal::unparse() const
+{
+    char buf[40];
+    sprintf(buf, "%p/%x:%x", _value, _mask, (*_value)&_mask);
+    return String(buf);
+}
+
 
 NotifierSignal
 Notifier::notifier_signal()
