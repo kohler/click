@@ -91,7 +91,7 @@ private:
 
  public:
 #ifdef __KERNEL__
-  void kill() 				{ __kfree_skb(skb()); }
+  void kill() 				{ kfree_skb(skb()); }
 #else
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
