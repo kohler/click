@@ -1,3 +1,8 @@
+2003-03-03 Monday 15:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/grid.hh (1.47): grid_hdr::type_string() -- print
+	type code for unknown packet types
+
 2003-03-03 Monday 02:23  Eddie Kohler <kohler@icir.org>
 
 	* elements/: icmp/icmperror.cc (1.15), ip/ipgwoptions.cc (1.33):
