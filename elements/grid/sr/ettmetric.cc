@@ -104,7 +104,7 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
     fwd = (100*100*100)/fwd;
   }
 
-  int rev = max(max(max(fwd_1,fwd_2*2), fwd_5*3), fwd_11*5) * rev_small;
+  int rev = max(max(max(rev_1, rev_2*2), rev_5*3), rev_11*5) * fwd_small;
   if (rev == 0) {
     rev = 7777;
   } else {
