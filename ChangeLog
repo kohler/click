@@ -1,3 +1,40 @@
+2001-06-04 Monday 14:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: grid/locfromfile.cc (1.12), ip/ipprint.cc (1.26),
+	userlevel/fromdump.cc (1.30), userlevel/fromdump.hh (1.19),
+	userlevel/todump.cc (1.27): use cpFilename type where appropriate
+
+2001-06-04 Monday 14:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh (1.17), lib/confparse.cc (1.75): add
+	cpFilename type, which includes tilde expansion and "//" removal
+
+2001-06-03 Sunday 02:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh (1.9), lib/timer.cc (1.22): update from
+	ACIRI timer thoughts
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/samplepackage/Makefile.in (1.15): clean up and improve
+	samplepackage Makefile.in
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/samplepackage/config.h (1.1): previous change means
+	samplepackage must now have a config.h
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool (1.17): elem2package always generates #ifdef
+	HAVE_CONFIG_H / #include <config.h> / #endif; required for packages
+
+2001-06-03 Sunday 02:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool (1.16): add "quietlink" subtool: filter out
+	undefined symbol errors, useful for linking packages with
+	-Bsymbolic
+
 2001-06-01 Friday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi (1.27), include/click/ip6address.hh (1.4),
