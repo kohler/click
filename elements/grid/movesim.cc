@@ -48,20 +48,25 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     unsigned long t;
     if (!cp_ulong(conf[i], &t, &rest))
       return errh->error("%s: error parsing time offset for entry %d", id().cc(), i);
-    String name;
-    if (!cp_string(rest, &name, &rest))
-      return errh->error("%s: error parsing element name for entry %d", id().cc(), i);
+    cp_eat_space(rest);
+    int j;
+    for (j = 0; j < rest.length() && !isspace(rest[j]); j++)
+      ; // do it
+    String name = rest.substring(0, j);
+    rest = rest.substring(j);
     Element *el = cp_element(name, this, errh);
     if (!el) 
       return -1;
     LocationInfo *li = (LocationInfo *) el->cast("LocationInfo");
     if (!li) 
-      return errh->error("%s: element is not a LocationInfo element in entry %d", id().cc(), i);
+      return errh->error("element is not a LocationInfo element in entry %d", i);
+    cp_eat_space(rest);
     int int_vlat, int_vlon;
-    bool res = cp_real(rest, 7, &int_vlat, &rest);
-    res = res && cp_real(rest, 7, &int_vlon, &rest);
-    if (!res) 
-      return errh->error("%s: error parsing new target velocities for entry %d", id().cc(), i);
+    if (!cp_real(rest, 7, &int_vlat, &rest))
+      return errh->error("error parsing new latitude velocity for entry %d", i);
+    cp_eat_space(rest);
+    if (!cp_real(rest, 7, &int_vlon, &rest))
+      return errh->error("error parsing new longitude velocity for entry %d", i);
     
     event_entry *new_entry;
     event_entry *prev;
@@ -81,7 +86,7 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     ne.v_lat = ((double) int_vlat /  1.0e7);
     ne.v_lon = ((double) int_vlon /  1.0e7);
     new_entry->nodes.push_back(ne);
-    }
+  }
 
   return 0;
 }
