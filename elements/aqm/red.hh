@@ -82,7 +82,7 @@ class RED : public Element { public:
 
   void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
-  int check_thresh_and_p(int, int, int, ErrorHandler *) const;
+  int check_thresh_and_p(unsigned, unsigned, unsigned, ErrorHandler *) const;
   int initialize(ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
   void configuration(Vector<String> &) const;
@@ -103,12 +103,12 @@ class RED : public Element { public:
 
   unsigned _min_thresh;		// scaled by QUEUE_SCALE
   unsigned _max_thresh;		// scaled by QUEUE_SCALE
-  int _max_p;			// out of 0xFFFF
+  unsigned _max_p;		// out of 0xFFFF
   
   DirectEWMA _size;
   
-  int _C1;
-  int _C2;
+  unsigned _C1;
+  unsigned _C2;
   int _count;
   int _random_value;
   

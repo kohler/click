@@ -69,10 +69,10 @@ RED::set_C1_and_C2()
 }
 
 int
-RED::check_thresh_and_p(int min_thresh, int max_thresh, int max_p,
-			ErrorHandler *errh) const
+RED::check_thresh_and_p(unsigned min_thresh, unsigned max_thresh,
+			unsigned max_p, ErrorHandler *errh) const
 {
-  int max_allow_thresh = (0xFFFFFFFF<<QUEUE_SCALE) & ~0x80000000;
+  unsigned max_allow_thresh = (0xFFFFFFFF<<QUEUE_SCALE);
   
   if (min_thresh > max_allow_thresh)
     return errh->error("`min_thresh' too large (max %d)", max_allow_thresh);
@@ -80,7 +80,7 @@ RED::check_thresh_and_p(int min_thresh, int max_thresh, int max_p,
     return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
   if (min_thresh > max_thresh)
     return errh->error("`min_thresh' greater than `max_thresh'");
-  if (max_p > 0x10000 || max_p < 0)
+  if (max_p > 0x10000)
     return errh->error("`max_p' parameter must be between 0 and 1");
 
   return 0;
@@ -89,18 +89,18 @@ RED::check_thresh_and_p(int min_thresh, int max_thresh, int max_p,
 int
 RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int min_thresh, max_thresh, max_p;
+  unsigned min_thresh, max_thresh, max_p;
   String queues_string = String();
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
-		  cpNonnegReal2, "max_p drop probability", 16, &max_p,
+		  cpUnsignedReal2, "max_p drop probability", 16, &max_p,
 		  cpOptional,
 		  cpArgument, "relevant queues", &queues_string,
 		  cpKeywords,
 		  "MIN_THRESH", cpUnsigned, "min_thresh queue length", &min_thresh,
 		  "MAX_THRESH", cpUnsigned, "max_thresh queue length", &max_thresh,
-		  "MAX_P", cpNonnegReal2, "max_p drop probability", 16, &max_p,
+		  "MAX_P", cpUnsignedReal2, "max_p drop probability", 16, &max_p,
 		  "QUEUES", cpArgument, "relevant queues", &queues_string,
 		  0) < 0)
     return -1;
@@ -131,9 +131,6 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 RED::initialize(ErrorHandler *errh)
 {
-  if (_max_p < 0)
-    return errh->error("not configured");
-  
   // Find the next queues
   _queues.clear();
   _queue1 = 0;
@@ -229,10 +226,10 @@ RED::should_drop()
   if (avg <= _min_thresh)
     _count = -1;
   else if (avg > _max_thresh) {
+    _count = -1;
 #if RED_DEBUG
     click_chatter("%s: drop, over max_thresh", declaration().cc());
 #endif
-    _count = -1;
     return true;
   } else {
     _count++;
@@ -240,7 +237,7 @@ RED::should_drop()
     int p_b = (_C1*avg - _C2) >> QUEUE_SCALE;
     
     // note: division had Approx[]
-    if (_count > 0 && p_b > 0 && _count >= _random_value / p_b) {
+    if (_count > 0 && p_b > 0 && _count > _random_value / p_b) {
 #if RED_DEBUG
       click_chatter("%s: drop, random drop (%d, %d, %d, %d)", declaration().cc(), _count, p_b, _random_value, _random_value/p_b);
 #endif
