@@ -1,3 +1,15 @@
+2002-04-11 Thursday 09:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridlogger.hh (1.2), gridroutetable.cc (1.43),
+	linkstat.cc (1.8), linktracker.cc (1.6): added useful chatter when
+	log starts/stops
+
+2002-04-11 Thursday 09:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/queue.cc (1.40): bug in Queue:cleanup() -- if
+	router was empty (i.e. no config), Queue would try to delete _q on
+	cleanup even if it had never been initialized
+
 2002-04-10 Wednesday 20:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/build-grid-config.sh (1.6): don't block for DNS while
