@@ -1,3 +1,9 @@
+2002-02-14 Thursday 16:30  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in, config-linuxmodule.h.in: restore
+	HAVE_BSDMODULE_TARGET and HAVE_LINUXMODULE_TARGET symbols; packages
+	use them
+
 2002-02-13 Wednesday 17:52  Eddie Kohler <kohler@aciri.org>
 
 	* INSTALL: patched Linux patches from Pramod John, thanks!
