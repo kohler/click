@@ -1,3 +1,7 @@
+2003-03-06 Thursday 09:36  Eddie Kohler <kohler@icir.org>
+
+	* lib/driver.cc (1.10): CLICK_DECLS missing; Kendy Kutzner reports
+
 2003-03-06 Thursday 01:18  Eddie Kohler <kohler@icir.org>
 
 	* NEWS (1.145): NEWSnits
