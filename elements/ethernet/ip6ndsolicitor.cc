@@ -1,8 +1,8 @@
 /*
  * ip6ndsolicitor.{cc,hh} -- Neighborhood Solicitation element
- * Peilei Fan, Robert Morris
+ * Peilei Fan
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -139,7 +139,6 @@ IP6NDSolicitor::expire_hook(unsigned long thunk)
       if (e->ok) {
 	int gap = jiff - e->last_response_jiffies;
 	if (gap > 120*CLICK_HZ) {
-	  // click_chatter("IP6NDSolicitor timing out %x", e->ip.addr());
 	  // delete entry from map
 	  if (prev) prev->next = e->next;
 	  else arpq->_map[i] = e->next;
@@ -165,7 +164,7 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ip6) + sizeof(*ea));
   if (q == 0) {
     click_chatter("in ndsol: cannot make packet!");
-      assert(0);
+    assert(0);
   } 
 
   memset(q->data(), '\0', q->length());

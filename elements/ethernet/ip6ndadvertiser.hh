@@ -7,9 +7,11 @@
  * =s IPv6
  * 
  * =d
- * Input should be Neighborhood Solitation Message (sort of ARP request 
- * packets, including the ethernet header, ip6 header and message itself.
- * Forwards an Neighborhood Advertisement Message (sort of ARP reply )
+ * Input should be Neighbor Solitation Message, which includes
+ * the ethernet header, ip6 header and message itself. The Neighbor  
+ * Solitation Message query about the link layer address of an IPv6 
+ * target address. If the IP6NDAdvertiser knows the answer, it 
+ * forwards an Neighbor Advertisement Message.
  * if we know the answer.
  * Could be used for proxy ARP as well as producing
  * replies for a host's own address.
@@ -20,13 +22,13 @@
  * directing their packets to the local machine:
  *
  *   c :: Classifier(12/86dd 54/87, ...);
- *   ar :: IP6NDAdvertiser(3ffe:1ce1:2::5/128 00:00:C0:AE:67:EF,
+ *   ndadv :: IP6NDAdvertiser(3ffe:1ce1:2::5/128 00:00:C0:AE:67:EF,
  *               3ffe:1ce1:2::/80 00:00:C0:AE:67:EF)
- *   c[0] -> ar;
- *   ar -> ToDevice(eth0);
+ *   c[0] -> ndadv;
+ *   ndadv -> ToDevice(eth0);
  *
  * =a
- * NDSol
+ * IP6NDSolicitor
  */
 
 #include <click/element.hh>
@@ -45,17 +47,15 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
-  //void set_map(IP6Address dst, IP6Address mask, EtherAddress);
 
-  //response to multicast neighborhood solitation message 
+  //response to multicast and unicast Neighbor Solitation message 
   // which is querying the ethernet address of the targest IP6 address
   Packet *make_response(unsigned char dha[6], unsigned char sha[6],
                         unsigned char dpa[16], unsigned char spa[16],
 			unsigned char tpa[16], unsigned char tha[6]);
 
 
-  //response to unicast neighborhood solitation message 
+  //response to unicast Neighbor Solitation message only
   //which is veryfying the ethernet address of the targest IP6 address
   Packet *make_response2(unsigned char dha[6], unsigned char sha[6],
                         unsigned char dpa[16], unsigned char spa[16],

@@ -7,7 +7,7 @@
  * =s IPv6, encapsulation
  * 
  * =d
- * Handles most of the Neighborhood Discovery(ND) protocol. 
+ * Handles most of the Neighbor Discovery(ND) protocol. 
  * Argument I should be this host's IP6 address, and E should 
  * be this host's ethernet address.
  *
@@ -15,8 +15,8 @@
  * address annotation. If an ethernet address is already known
  * for the destination, the IP6 packet is wrapped in an ethernet
  * header and sent to output 0. Otherwise the IP6 packet is saved and
- * an Neighborhood Solicitation Message is sent to output 0. 
- * If an Neighborhood Advertisement Message arrives
+ * an Neighbor Solicitation Message is sent to output 0. 
+ * If an Neighbor Advertisement Message arrives
  * on input 1 for an IP6 address that we need, the mapping is
  * recorded and the saved IP6 packet is sent.
  *
@@ -32,14 +32,14 @@
  *    c :: Classifier(12/86dd 20/3aff 53/87,
  *		      12/86dd 20/3aff 53/88,
  *		      12/86dd);
- *    a :: IP6NDSolicitor(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
+ *    nds :: IP6NDSolicitor(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
  *    c[0] -> ...
- *    c[1] -> a[1];
- *    c[2] -> ... -> a[0];
- *    a[0] -> ... -> ToDevice(eth0);
+ *    c[1] -> nds[1];
+ *    c[2] -> ... -> nds[0];
+ *    nds[0] -> ... -> ToDevice(eth0);
  *
  * =a
- * NDAdv
+ * IP6NDAdvertiser
  */
 
 #include <click/element.hh>

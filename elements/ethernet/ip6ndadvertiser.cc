@@ -1,9 +1,9 @@
 /*
  * ip6ndadvertiser.{cc,hh} -- element that responds to 
- * Neighborhood Solitation Msg
+ * Neighbor Solitation Msg
  * Peilei Fan
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -144,8 +144,8 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   ea->type = 0x88; 
   ea->code =0;
  
-  ea->flags = 0x40; //  this is the same as setting the following
-                    //  ea->sender_is_router = 0;
+  ea->flags = 0x60; //  this is the same as setting the following
+                    //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
   
@@ -157,7 +157,7 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   ea->option_type = 0x2;
   ea->option_length = 0x1;
   memcpy(ea->nd_tha, tha, 6);
-  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_adv))));
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)ea, ip6->ip6_plen));
   
   return q;
 }
@@ -180,7 +180,7 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   } 
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
-  ip6=(click_ip6 *) (e+1);
+  ip6=(click_ip6 *) (e+1);                                                                                               
   ea = (click_nd_adv2 *) (ip6 + 1);
   
   //set ethernet header
@@ -201,12 +201,12 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   ip6->ip6_dst = IP6Address(dpa);
 
  
-  //set Neighborhood Solicitation Validation Message
+  //set Neighbor Solicitation Validation Message
   ea->type = 0x88; 
   ea->code =0;
  
-  ea->flags = 0x40; //  this is the same as setting the following
-                    //  ea->sender_is_router = 0;
+  ea->flags = 0x60; //  this is the same as setting the following
+                    //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
   
@@ -257,7 +257,7 @@ IP6NDAdvertiser::simple_action(Packet *p)
    memcpy(&dpa, IP6Address(ip6->ip6_src).data(), 16);
    IP6Address ipa = IP6Address(tpa);
 
-   //check see if the packet is corrupted by recalculate its checksum
+   //check see if the packet is corrupted by recalculating its checksum
    unsigned short int csum2 = in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, ea->checksum, (unsigned char *)(ip6+1), htons(sizeof(click_nd_sol)));
 
    Packet *q = 0;
@@ -275,14 +275,11 @@ IP6NDAdvertiser::simple_action(Packet *p)
 	{
 	  memcpy(&spa, ipa.data(), 16); 
 	  memcpy(&host_ether, ena.data(),6);
-	  if ((e->ether_dhost[0]==0x33) && (e->ether_dhost[1]==0x33)) {
-	  //use the finded ip6address as its source ip6 address in the header in neighborhood advertisement message packet
-	  
-	    q = make_response(e->ether_shost, host_ether, dpa, spa, tpa, host_ether);
-	  }
-	  else {
-	    q = make_response2(e->ether_shost, host_ether, dpa, spa, tpa); 
-	  }
+
+	  //use the finded ip6address as its source ip6 address in the 
+	  //header in neighborhood advertisement message packet
+	  q = make_response(e->ether_shost, host_ether, dpa, spa, tpa, host_ether);
+	    
 	}
     } 
   
