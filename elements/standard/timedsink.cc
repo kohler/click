@@ -76,3 +76,4 @@ TimedSink::run_scheduled()
 }
 
 EXPORT_ELEMENT(TimedSink)
+ELEMENT_MT_SAFE(TimedSink)

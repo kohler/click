@@ -64,3 +64,4 @@ DiscardNoFree::run_scheduled()
 }
 
 EXPORT_ELEMENT(DiscardNoFree)
+ELEMENT_MT_SAFE(DiscardNoFree)

@@ -1,6 +1,7 @@
 #ifndef RRSWITCH_HH
 #define RRSWITCH_HH
 #include <click/element.hh>
+#include <click/atomic.hh>
 
 /*
  * =c
@@ -18,7 +19,7 @@
 
 class RoundRobinSwitch : public Element {
 
-  int _next;
+  u_atomic32_t _next;
   
  public:
   

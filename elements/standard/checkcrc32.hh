@@ -14,6 +14,7 @@
  */
 
 #include <click/element.hh>
+#include <click/atomic.hh>
 
 class EtherAddress;
 
@@ -23,15 +24,15 @@ public:
   ~CheckCRC32();
 
   const char *class_name() const		{ return "CheckCRC32"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
-  CheckCRC32 *clone() const { return(new CheckCRC32()); }
+  CheckCRC32 *clone() const			{ return new CheckCRC32; }
   
   Packet *simple_action(Packet *);
 
 private:
 
-  int _drops;
+  u_atomic32_t _drops;
 
 };
 

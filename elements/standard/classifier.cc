@@ -1309,6 +1309,7 @@ Classifier::unaligned_optimize()
 #undef UBYTES
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
+ELEMENT_MT_SAFE(Classifier)
 
 // generate Vector template instance
 #include <click/vector.cc>

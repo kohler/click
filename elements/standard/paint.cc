@@ -62,3 +62,4 @@ Paint::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(Paint)
+ELEMENT_MT_SAFE(Paint)

@@ -72,3 +72,4 @@ StaticPullSwitch::pull(int)
 }
 
 EXPORT_ELEMENT(StaticPullSwitch)
+ELEMENT_MT_SAFE(StaticPullSwitch)

@@ -48,3 +48,4 @@ NullElement::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(NullElement)
+ELEMENT_MT_SAFE(NullElement)

@@ -47,7 +47,7 @@ RoundRobinSwitch::push(int, Packet *p)
 {
   int i = _next;
   _next++;
-  if (_next >= noutputs())
+  if (_next >= (u_int32_t)noutputs())
     _next = 0;
   output(i).push(p);
 }

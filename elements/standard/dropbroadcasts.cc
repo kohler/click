@@ -66,3 +66,4 @@ DropBroadcasts::add_handlers()
 }
 
 EXPORT_ELEMENT(DropBroadcasts)
+ELEMENT_MT_SAFE(DropBroadcasts)

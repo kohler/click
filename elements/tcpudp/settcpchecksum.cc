@@ -109,3 +109,4 @@ SetTCPChecksum::simple_action(Packet *p_in)
 }
 
 EXPORT_ELEMENT(SetTCPChecksum)
+ELEMENT_MT_SAFE(SetTCPChecksum)

@@ -1,6 +1,7 @@
 #ifndef RANDOMLOSSAGE_HH
 #define RANDOMLOSSAGE_HH
 #include <click/element.hh>
+#include <click/atomic.hh>
 
 /*
  * =c
@@ -29,7 +30,7 @@ class RandomLossage : public Element {
   
   int _p_drop;			// out of 0xFFFF
   bool _on;
-  int _drops;
+  u_atomic32_t _drops;
   
  public:
   
@@ -42,7 +43,7 @@ class RandomLossage : public Element {
   
   int p_drop() const				{ return _p_drop; }
   bool on() const				{ return _on; }
-  int drops() const				{ return _drops; }
+  u_int32_t drops() const			{ return _drops; }
   
   RandomLossage *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

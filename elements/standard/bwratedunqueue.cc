@@ -50,3 +50,4 @@ BandwidthRatedUnqueue::run_scheduled()
 }
 
 EXPORT_ELEMENT(BandwidthRatedUnqueue)
+ELEMENT_MT_SAFE(BandwidthRatedUnqueue)

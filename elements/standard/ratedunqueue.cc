@@ -113,3 +113,4 @@ RatedUnqueue::add_handlers()
 }
 
 EXPORT_ELEMENT(RatedUnqueue)
+ELEMENT_MT_SAFE(RatedUnqueue)

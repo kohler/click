@@ -134,3 +134,4 @@ RandomLossage::add_handlers()
 }
 
 EXPORT_ELEMENT(RandomLossage)
+ELEMENT_MT_SAFE(RandomLossage)

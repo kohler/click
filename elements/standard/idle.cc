@@ -73,3 +73,4 @@ Idle::pull(int)
 }
 
 EXPORT_ELEMENT(Idle)
+ELEMENT_MT_SAFE(Idle)

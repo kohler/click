@@ -74,3 +74,4 @@ CheckLength::pull(int)
 }
 
 EXPORT_ELEMENT(CheckLength)
+ELEMENT_MT_SAFE(CheckLength)

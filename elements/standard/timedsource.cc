@@ -78,3 +78,4 @@ TimedSource::run_scheduled()
 }
 
 EXPORT_ELEMENT(TimedSource)
+ELEMENT_MT_SAFE(TimedSource)

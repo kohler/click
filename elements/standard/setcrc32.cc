@@ -52,3 +52,4 @@ SetCRC32::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(SetCRC32)
+ELEMENT_MT_SAFE(SetCRC32)

@@ -100,3 +100,4 @@ PullSwitch::add_handlers()
 }
 
 EXPORT_ELEMENT(PullSwitch)
+ELEMENT_MT_SAFE(PullSwitch)

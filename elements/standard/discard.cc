@@ -62,3 +62,4 @@ Discard::run_scheduled()
 }
 
 EXPORT_ELEMENT(Discard)
+ELEMENT_MT_SAFE(Discard)

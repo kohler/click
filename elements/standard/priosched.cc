@@ -53,3 +53,4 @@ PrioSched::pull(int)
 }
 
 EXPORT_ELEMENT(PrioSched)
+ELEMENT_MT_SAFE(PrioSched)

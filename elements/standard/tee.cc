@@ -128,4 +128,6 @@ PullTee::pull(int)
 }
 
 EXPORT_ELEMENT(Tee)
+ELEMENT_MT_SAFE(Tee)
 EXPORT_ELEMENT(PullTee)
+ELEMENT_MT_SAFE(PullTee)

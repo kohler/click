@@ -84,3 +84,4 @@ HashSwitch::push(int, Packet *p)
 }
 
 EXPORT_ELEMENT(HashSwitch)
+ELEMENT_MT_SAFE(HashSwitch)

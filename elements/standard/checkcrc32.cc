@@ -69,3 +69,4 @@ CheckCRC32::simple_action(Packet *p)
 
 
 EXPORT_ELEMENT(CheckCRC32)
+ELEMENT_MT_SAFE(CheckCRC32)

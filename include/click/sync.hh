@@ -170,17 +170,19 @@ Spinlock::attempt()
 // that because we'd like to avoid a cache miss for read acquires. this makes
 // reads very fast, and writes more expensive
 
+#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
+
 class ReadWriteLock {
 
   // allocate 32 bytes (size of a cache line) for every member
   struct {
     Spinlock _lock;
     unsigned char reserved[20];
-  } _l[__CLICK_NCPUS__];
+  } _l[NUM_CLICK_CPUS];
 
 public:
   
-  ReadWriteLock();
+  ReadWriteLock()				{ }
   
   void acquire_read();
   bool attempt_read();
@@ -189,12 +191,6 @@ public:
   bool attempt_write();
   void release_write();
 };
-
-inline
-ReadWriteLock::ReadWriteLock()
-{}
-
-#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
 
 inline void
 ReadWriteLock::acquire_read()
@@ -224,7 +220,7 @@ inline void
 ReadWriteLock::acquire_write()
 {
   if (click_nthreads <= 1) return;
-  for(unsigned i=0; i<__CLICK_NCPUS__; i++)
+  for(unsigned i=0; i<NUM_CLICK_CPUS; i++)
     _l[i]._lock.acquire();
 }
 
@@ -234,7 +230,7 @@ ReadWriteLock::attempt_write()
   bool all = true;
   if (click_nthreads <= 1) return all;
   unsigned i;
-  for(i=0; i<__CLICK_NCPUS__; i++) {
+  for(i=0; i<NUM_CLICK_CPUS; i++) {
     if (!(_l[i]._lock.attempt())) {
       all = false;
       break;
@@ -251,18 +247,25 @@ inline void
 ReadWriteLock::release_write()
 {
   if (click_nthreads <= 1) return;
-  for(unsigned i=0; i<__CLICK_NCPUS__; i++)
+  for(unsigned i=0; i<NUM_CLICK_CPUS; i++)
     _l[i]._lock.release();
 }
 
 #else
 
-inline void ReadWriteLock::acquire_read() {}
-inline bool ReadWriteLock::attempt_read() { return true; }
-inline void ReadWriteLock::release_read() {}
-inline void ReadWriteLock::acquire_write() {}
-inline bool ReadWriteLock::attempt_write() { return true; }
-inline void ReadWriteLock::release_write() {}
+
+class ReadWriteLock { public:
+  
+  ReadWriteLock()				{ }
+  
+  void acquire_read()				{ }
+  bool attempt_read()				{ return true; }
+  void release_read()				{ }
+  void acquire_write()				{ }
+  bool attempt_write()				{ return true; }
+  void release_write()				{ }
+
+};
 
 #endif
 

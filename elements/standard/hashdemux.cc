@@ -85,3 +85,4 @@ HashDemux::push(int, Packet *p)
 }
 
 EXPORT_ELEMENT(HashDemux)
+ELEMENT_MT_SAFE(HashDemux)

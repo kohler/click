@@ -72,3 +72,4 @@ StaticSwitch::push(int, Packet *p)
 }
 
 EXPORT_ELEMENT(StaticSwitch)
+ELEMENT_MT_SAFE(StaticSwitch)

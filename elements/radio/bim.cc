@@ -190,8 +190,7 @@ BIM::got_char(int c)
 void
 BIM::run_scheduled()
 {
-  if (Packet *p = input(0).pull())
-  {
+  if (Packet *p = input(0).pull()) {
     push(0, p); 
     reschedule();
   } 

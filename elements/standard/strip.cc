@@ -60,3 +60,4 @@ Strip::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(Strip)
+ELEMENT_MT_SAFE(Strip)

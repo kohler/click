@@ -97,3 +97,4 @@ Block::add_handlers()
 }
 
 EXPORT_ELEMENT(Block)
+ELEMENT_MT_SAFE(Block)

@@ -93,3 +93,4 @@ RandomSource::run_scheduled()
 }
 
 EXPORT_ELEMENT(RandomSource)
+ELEMENT_MT_SAFE(RandomSource)

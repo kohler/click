@@ -216,3 +216,4 @@ RandomBitErrors::add_handlers()
 }
 
 EXPORT_ELEMENT(RandomBitErrors)
+ELEMENT_MT_SAFE(RandomBitErrors)

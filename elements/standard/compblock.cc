@@ -162,5 +162,4 @@ CompareBlock::add_handlers()
 }
 
 EXPORT_ELEMENT(CompareBlock)
-
-
+ELEMENT_MT_SAFE(CompareBlock)

@@ -63,3 +63,4 @@ PaintTee::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(PaintTee)
+ELEMENT_MT_SAFE(PaintTee)

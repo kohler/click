@@ -100,3 +100,4 @@ Switch::add_handlers()
 }
 
 EXPORT_ELEMENT(Switch)
+ELEMENT_MT_SAFE(Switch)

@@ -92,3 +92,4 @@ Align::pull(int)
 }
 
 EXPORT_ELEMENT(Align)
+ELEMENT_MT_SAFE(Align)

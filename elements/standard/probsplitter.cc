@@ -97,5 +97,4 @@ ProbSplitter::add_handlers()
 }
 
 EXPORT_ELEMENT(ProbSplitter)
-
-
+ELEMENT_MT_SAFE(ProbSplitter)

@@ -1,6 +1,7 @@
 #ifndef DROPBROADCASTS_HH
 #define DROPBROADCASTS_HH
 #include <click/element.hh>
+#include <click/atomic.hh>
 
 /*
  * =c
@@ -27,13 +28,13 @@ class DropBroadcasts : public Element {
   DropBroadcasts *clone() const;
   void add_handlers();
 
-  int drops() const			{ return _drops; }
+  u_int32_t drops() const		{ return _drops; }
 
   void drop_it(Packet *);
   Packet *simple_action(Packet *);
 
 private:
-  int _drops;
+  u_atomic32_t _drops;
 };
 
 #endif
