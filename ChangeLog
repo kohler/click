@@ -1,3 +1,7 @@
+2002-01-15 Tuesday 18:54  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/fwrules (1.1): added
+
 2002-01-15 Tuesday 18:35  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: make-server-ron.pl (1.6), make-client-ron.pl (1.7):
