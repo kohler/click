@@ -1,3 +1,17 @@
+2002-02-04 Monday 02:11  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.17), divertsocket.hh (1.10),
+	lookupiprouteron.cc (1.25): added send support for divert socket
+
+2002-02-04 Monday 01:38  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.24), lookupiprouteron.hh (1.19),
+	queuenotify.cc (1.2): lookupiprouteron.cc
+
+2002-02-04 Monday 01:37  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/divertsocket.cc (1.16): removed setuid
+
 2002-02-02 Saturday 14:33  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: nodelist (1.8), start-all.pl (1.2), start-server.sh
