@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include "pep.hh"
+#include "amoeba.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "grid.hh"
@@ -25,7 +26,7 @@ PEP::PEP()
   add_output();
   _fixed = 0;
   _seq = 1;
-  _debug = true;
+  _debug = false;
 }
 
 PEP::~PEP()
@@ -290,18 +291,12 @@ PEP::simple_action(Packet *p)
 
 // Actually guess where we are.
 grid_location
-PEP::get_current_location()
+PEP::algorithm1()
 {
   double lat = 0, lon = 0;
   double weight = 0;
   int i;
   struct timeval now;
-
-  if(_fixed)
-    return(grid_location(_lat, _lon));
-
-  if(_entries.size() < 1)
-    return(grid_location(0.0, 0.0));
 
   click_gettimeofday(&now);
 
@@ -315,6 +310,72 @@ PEP::get_current_location()
   }
   
   return(grid_location(lat / weight, lon / weight));
+}
+
+class PEPAmoeba : public Amoeba {
+public:
+  PEPAmoeba () : Amoeba(2) { }
+  double fn(double a[]);
+  int _n;
+  double _x[20];
+  double _y[20];
+  double _d[20];
+};
+
+double
+PEPAmoeba::fn(double a[])
+{
+  double x = a[0];
+  double y = a[1];
+  double d = 0;
+  int i;
+
+  for(i = 0; i < _n; i++){
+    double dx = x - _x[i];
+    double dy = y - _y[i];
+    double dd = _d[i] - sqrt(dx*dx + dy*dy);
+    dd = dd * dd;
+    d += dd;
+  }
+
+  return(d);
+}
+
+grid_location
+PEP::algorithm2()
+{
+  PEPAmoeba a;
+  int i;
+  struct timeval now;
+  
+  click_gettimeofday(&now);
+  a._n = 0;
+
+  for(i = 0; i < _entries.size() && a._n < 5; i++){
+    if(now.tv_sec - _entries[i]._when.tv_sec < pep_stale){
+      a._x[a._n] = _entries[i]._fix.fix_loc.lat();
+      a._y[a._n] = _entries[i]._fix.fix_loc.lat();
+      a._d[a._n] = _entries[i]._fix.fix_hops * 0.002; // XXX 250 meters?
+      a._n += 1;
+    }
+  }
+
+  double pts[2];
+  a.minimize(pts);
+  
+  return(grid_location(pts[0], pts[1]));
+}
+
+grid_location
+PEP::get_current_location()
+{
+  if(_fixed)
+    return(grid_location(_lat, _lon));
+
+  if(_entries.size() < 1)
+    return(grid_location(0.0, 0.0));
+
+  return(algorithm1());
 }
 
 static String

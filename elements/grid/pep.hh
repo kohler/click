@@ -106,6 +106,8 @@ private:
   void externalize(pep_fix *);
   void internalize(pep_fix *);
   Packet *make_PEP();
+  grid_location algorithm1();
+  grid_location algorithm2();
 };
 
 #endif
