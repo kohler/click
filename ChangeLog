@@ -1,3 +1,14 @@
+2001-08-22 Wednesday 12:29  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: click-client-2part.conf (1.2),
+	switch-server-2part.conf (1.2): fixed initial bugs, working version
+
+2001-08-22 Wednesday 11:04  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: click-client-2part.conf (1.1),
+	switch-server-2part.conf (1.1), test-divert.conf (1.1): Initial
+	checkin
+
 2001-08-22 Wednesday 10:18  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/divertsocket.cc (1.10): fixed parsing bugs
