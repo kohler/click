@@ -1,3 +1,14 @@
+2002-04-22 Monday 20:51  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh (1.29), lib/router.cc (1.121): Router
+	handler methods update: allow more ways to find handlers when you
+	might or might not have a Router object
+
+2002-04-22 Monday 20:50  Eddie Kohler <kohler@aciri.org>
+
+	* lib/userutils.cc (1.23): improve click_strcmp in case of overflow
+	on numeric portions
+
 2002-04-20 Saturday 11:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridroutetable.cc (1.45): Properly cleanup and
