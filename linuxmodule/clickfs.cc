@@ -105,17 +105,16 @@ click_inode(struct super_block *sb, ino_t ino)
 {
     // Must be called with click_config_lock held.
 
+    if (click_ino.prepare(click_router, click_config_generation) < 0) {
+	return 0;
+    
     //MDEBUG("i_get");
     struct inode *inode = iget(sb, ino);
     if (!inode)
 	return 0;
 
-    //MDEBUG("entering click_inode");
-    int elementno = INO_ELEMENTNO(ino);
-    if (click_ino.prepare(click_router, click_config_generation) < 0)
-	return 0;
     INODE_INFO(inode).config_generation = click_config_generation;
-    
+
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
 	if (Router::handler_ok(click_router, hi)) {
@@ -126,7 +125,7 @@ click_inode(struct super_block *sb, ino_t ino)
 #ifdef LINUX_2_4
 	    inode->i_fop = &click_handler_file_ops;
 #endif
-	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
+	    inode->i_nlink = click_ino.nlink(ino);
 	} else {
 	    // can't happen
 	    iput(inode);
@@ -161,7 +160,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     struct inode *inode = 0;
     int error;
     if (inode_out_of_date(dir))
-	error = -ENOENT;
+	error = -EIO;
     else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
 	/* save error */;
     else {
