@@ -1,5 +1,5 @@
 /*
- * ratedsampler.{cc,hh} -- samples packets with certain probability.
+ * ratedsplitter.{cc,hh} -- split packets at a given rate.
  *
  * Benjie Chen
  * 
@@ -14,24 +14,24 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ratedsampler.hh"
+#include "ratedsplitter.hh"
 #include "glue.hh"
 #include "error.hh"
 #include "confparse.hh"
 
 int
-RatedSampler::configure(const Vector<String> &conf, ErrorHandler *errh)
+RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned r;
   if (cp_va_parse(conf, this, errh, 
-	          cpUnsigned, "sample rate", &r, 0) < 0) 
+	          cpUnsigned, "split rate", &r, 0) < 0) 
     return -1;
   set_rate(r);
   return 0;
 }
 
 void
-RatedSampler::set_rate(int r)
+RatedSplitter::set_rate(int r)
 {
   _meter = r;
   _ugap = 1000000 / r;
@@ -41,7 +41,7 @@ RatedSampler::set_rate(int r)
 }
 
 void
-RatedSampler::push(int, Packet *p)
+RatedSplitter::push(int, Packet *p)
 {
   struct timeval now;
   click_gettimeofday(&now);
@@ -55,28 +55,27 @@ RatedSampler::push(int, Packet *p)
     need += diff.tv_usec / _ugap;
 
     if (need > _total) {
-      output(1).push(p->clone());
       _total++;
-    }
+      output(1).push(p);
+    } else
+      output(0).push(p);
 
     if (_total > _meter * 360) {
       _total = 0;
       _start = now;
     }
   }
-  output(0).push(p);
 }
 
 
 // HANDLERS
 
 static int
-rate_write_handler(const String &conf, Element *e, 
-                                 void *, ErrorHandler *errh)
+rate_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  RatedSampler* me = (RatedSampler *) e;
+  RatedSplitter* me = (RatedSplitter *) e;
 
   if(args.size() != 1)
     return errh->error("expecting one number");
@@ -92,17 +91,17 @@ rate_write_handler(const String &conf, Element *e,
 static String
 rate_read_handler(Element *e, void *)
 {
-  RatedSampler *me = (RatedSampler *) e;
+  RatedSplitter *me = (RatedSplitter *) e;
   return String(me->get_rate()) + "\n";
 }
 
 void
-RatedSampler::add_handlers()
+RatedSplitter::add_handlers()
 {
   add_read_handler("rate", rate_read_handler, 0);
   add_write_handler("rate", rate_write_handler, 0);
 }
 
-EXPORT_ELEMENT(RatedSampler)
+EXPORT_ELEMENT(RatedSplitter)
 
 

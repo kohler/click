@@ -1,5 +1,5 @@
 /*
- * probsampler.{cc,hh} -- samples packets with certain probability.
+ * probsplitter.{cc,hh} -- split packets onto different ports.
  *
  * Benjie Chen
  * 
@@ -14,28 +14,29 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "probsampler.hh"
+#include "probsplitter.hh"
 #include "error.hh"
 #include "confparse.hh"
 
 int
-ProbSampler::configure(const Vector<String> &conf, ErrorHandler *errh)
+ProbSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh, 
-	          cpNonnegFixed, "sample probability", 16, &_p, 0) < 0) 
+	          cpNonnegFixed, "split probability", 16, &_p, 0) < 0) 
     return -1;
   if (_p > 0x10000)
-    return errh->error("sample probability must be between 0 and 1");
+    return errh->error("split probability must be between 0 and 1");
   return 0;
 }
 
 void
-ProbSampler::push(int, Packet *p)
+ProbSplitter::push(int, Packet *p)
 {
   unsigned r = (random() >> 2) % 0xFFFF;
   if (r < _p)
-    output(1).push(p->clone());
-  output(0).push(p);
+    output(1).push(p);
+  else 
+    output(0).push(p);
 }
 
 
@@ -47,7 +48,7 @@ p_write_handler(const String &conf, Element *e,
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  ProbSampler* me = (ProbSampler *) e;
+  ProbSplitter* me = (ProbSplitter *) e;
 
   if(args.size() != 1) {
     return errh->error("expecting one number");
@@ -56,7 +57,7 @@ p_write_handler(const String &conf, Element *e,
   if (!cp_real2(args[0], 16, &p))
     return errh->error("not a fraction");
   if (p > 0x10000 || p < 0)
-    return errh->error("sample probability must be between 0 and 1");
+    return errh->error("split probability must be between 0 and 1");
   me->set_p(p);
   return 0;
 }
@@ -64,17 +65,17 @@ p_write_handler(const String &conf, Element *e,
 static String
 p_read_handler(Element *e, void *)
 {
-  ProbSampler *me = (ProbSampler *) e;
+  ProbSplitter *me = (ProbSplitter *) e;
   return String(me->get_p()) + "\n";
 }
 
 void
-ProbSampler::add_handlers()
+ProbSplitter::add_handlers()
 {
   add_read_handler("prob", p_read_handler, 0);
   add_write_handler("prob", p_write_handler, 0);
 }
 
-EXPORT_ELEMENT(ProbSampler)
+EXPORT_ELEMENT(ProbSplitter)
 
 
