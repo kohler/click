@@ -1,5 +1,5 @@
-#ifndef IPFRAGMENTER_HH
-#define IPFRAGMENTER_HH
+#ifndef CLICK_IPFRAGMENTER_HH
+#define CLICK_IPFRAGMENTER_HH
 
 /*
  * =c
