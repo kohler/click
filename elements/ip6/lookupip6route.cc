@@ -44,22 +44,30 @@ LookupIP6Route::configure(const Vector<String> &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
     IP6Address dst, mask, gw;
-    int index;
+    int output_num;
+    bool ok = false;
 
     Vector<String> words;
     cp_spacevec(conf[i], words);
-
-    if (words.size() == 4
-	&& cp_ip6_address(words[0], (unsigned char *)&dst)
-        && cp_ip6_address(words[1], (unsigned char *)&mask)
-        && cp_ip6_address(words[2], (unsigned char *)&gw)
-	&& cp_integer(words[3], &index)) {
-      _t.add(dst, mask, gw, index);
    
-      if(index > maxout)
-        maxout = index;
+    if ((words.size()==2 || words.size()==3 )
+      && cp_ip6_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) 
+	&& cp_integer(words.back(), &output_num))
+    { 
+      if (words.size()==3)
+	ok = cp_ip6_address(words[1], (unsigned char *)&gw, this);
+      else {
+	gw = IP6Address("::0");
+	ok = true;
+      }
+    }
+
+  if (ok && output_num>=0) {
+    _t.add(dst, mask, gw, output_num); 
+    if( output_num > maxout) 
+        maxout = output_num;
     } else {
-      errh->error("\n expects DST MASK GW INDEX");
+      errh->error("argument %d should be DADDR/MASK [GW] OUTPUT", i+1);
     }
   }
 
