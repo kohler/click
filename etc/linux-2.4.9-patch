@@ -1,7 +1,7 @@
 
 Index: include/asm-i386/highmem.h
---- include/asm-i386/highmem.h.orig	Wed Aug 15 21:21:21 2001
-+++ include/asm-i386/highmem.h	Mon Aug 20 21:49:57 2001
+--- include/asm-i386/highmem.h.orig	Wed Aug 15 17:21:21 2001
++++ include/asm-i386/highmem.h	Wed Aug 22 18:49:46 2001
 @@ -88,7 +88,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -23,8 +23,8 @@ Index: include/asm-i386/highmem.h
  		return;
 
 Index: include/asm-i386/rwlock.h
---- include/asm-i386/rwlock.h.orig	Fri Sep 22 21:07:43 2000
-+++ include/asm-i386/rwlock.h	Mon Aug 20 21:47:41 2001
+--- include/asm-i386/rwlock.h.orig	Fri Sep 22 17:07:43 2000
++++ include/asm-i386/rwlock.h	Wed Aug 22 18:49:46 2001
 @@ -28,7 +28,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -45,8 +45,8 @@ Index: include/asm-i386/rwlock.h
  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
 
 Index: include/asm-i386/string.h
---- include/asm-i386/string.h.orig	Wed Aug 15 21:21:11 2001
-+++ include/asm-i386/string.h	Mon Aug 20 21:49:50 2001
+--- include/asm-i386/string.h.orig	Wed Aug 15 17:21:11 2001
++++ include/asm-i386/string.h	Wed Aug 22 18:49:46 2001
 @@ -29,6 +29,7 @@
   *		consider these trivial functions to be PD.
   */
@@ -97,8 +97,8 @@ Index: include/asm-i386/string.h
  {
 
 Index: include/linux/highmem.h
---- include/linux/highmem.h.orig	Wed Aug 15 21:21:21 2001
-+++ include/linux/highmem.h	Mon Aug 20 21:49:57 2001
+--- include/linux/highmem.h.orig	Wed Aug 15 17:21:21 2001
++++ include/linux/highmem.h	Wed Aug 22 18:49:46 2001
 @@ -18,7 +18,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -150,8 +150,8 @@ Index: include/linux/highmem.h
  	kunmap(to);
 
 Index: include/linux/inetdevice.h
---- include/linux/inetdevice.h.orig	Thu Jul 26 20:52:39 2001
-+++ include/linux/inetdevice.h	Mon Aug 20 21:47:41 2001
+--- include/linux/inetdevice.h.orig	Thu Jul 26 16:52:39 2001
++++ include/linux/inetdevice.h	Wed Aug 22 18:49:46 2001
 @@ -122,7 +122,7 @@
  	struct in_device *in_dev;
  
@@ -163,8 +163,8 @@ Index: include/linux/inetdevice.h
  	read_unlock(&inetdev_lock);
 
 Index: include/linux/mm.h
---- include/linux/mm.h.orig	Wed Aug 15 21:21:11 2001
-+++ include/linux/mm.h	Mon Aug 20 21:49:50 2001
+--- include/linux/mm.h.orig	Wed Aug 15 17:21:11 2001
++++ include/linux/mm.h	Wed Aug 22 18:49:46 2001
 @@ -516,7 +516,6 @@
  
  extern unsigned long do_brk(unsigned long, unsigned long);
@@ -175,8 +175,8 @@ Index: include/linux/mm.h
  extern unsigned long page_unuse(struct page *);
 
 Index: include/linux/netdevice.h
---- include/linux/netdevice.h.orig	Wed Aug 15 21:21:32 2001
-+++ include/linux/netdevice.h	Mon Aug 20 21:50:05 2001
+--- include/linux/netdevice.h.orig	Wed Aug 15 17:21:32 2001
++++ include/linux/netdevice.h	Wed Aug 22 18:49:46 2001
 @@ -407,6 +407,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -236,8 +236,8 @@ Index: include/linux/netdevice.h
  extern struct net_device	*__dev_get_by_index(int ifindex);
 
 Index: include/linux/skbuff.h
---- include/linux/skbuff.h.orig	Wed Aug 15 21:21:30 2001
-+++ include/linux/skbuff.h	Mon Aug 20 21:50:04 2001
+--- include/linux/skbuff.h.orig	Wed Aug 15 17:21:30 2001
++++ include/linux/skbuff.h	Wed Aug 22 18:49:46 2001
 @@ -124,15 +124,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -341,8 +341,8 @@ Index: include/linux/skbuff.h
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
 
 Index: include/linux/swap.h
---- include/linux/swap.h.orig	Wed Aug 15 21:21:11 2001
-+++ include/linux/swap.h	Mon Aug 20 21:49:50 2001
+--- include/linux/swap.h.orig	Wed Aug 15 17:21:11 2001
++++ include/linux/swap.h	Wed Aug 22 18:49:46 2001
 @@ -96,7 +96,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -363,8 +363,8 @@ Index: include/linux/swap.h
  extern int page_launder(int, int);
 
 Index: include/net/route.h
---- include/net/route.h.orig	Wed Aug 15 21:21:32 2001
-+++ include/net/route.h	Mon Aug 20 21:50:05 2001
+--- include/net/route.h.orig	Wed Aug 15 17:21:32 2001
++++ include/net/route.h	Wed Aug 22 18:49:46 2001
 @@ -131,7 +131,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)
@@ -381,8 +381,8 @@ Index: include/net/route.h
  }
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Tue Aug  7 15:30:50 2001
-+++ net/core/skbuff.c	Mon Aug 20 21:47:41 2001
+--- net/core/skbuff.c.orig	Tue Aug  7 11:30:50 2001
++++ net/core/skbuff.c	Wed Aug 22 18:49:46 2001
 @@ -444,6 +444,65 @@
  #endif
  }
@@ -451,8 +451,8 @@ Index: net/core/skbuff.c
   *	@skb: buffer to copy
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Tue Jul 31 17:34:02 2001
-+++ net/core/dev.c	Mon Aug 20 21:47:41 2001
+--- net/core/dev.c.orig	Tue Jul 31 13:34:02 2001
++++ net/core/dev.c	Wed Aug 22 18:49:46 2001
 @@ -172,6 +172,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -661,8 +661,8 @@ Index: net/core/dev.c
  		dev_put(rx_dev);
 
 Index: net/ipv4/arp.c
---- net/ipv4/arp.c.orig	Wed May 16 17:21:45 2001
-+++ net/ipv4/arp.c	Mon Aug 20 21:47:41 2001
+--- net/ipv4/arp.c.orig	Wed May 16 13:21:45 2001
++++ net/ipv4/arp.c	Wed Aug 22 18:49:46 2001
 @@ -318,6 +318,7 @@
  {
  	u32 saddr;
@@ -693,8 +693,8 @@ Index: net/ipv4/arp.c
  static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
 
 Index: net/netsyms.c
---- net/netsyms.c.orig	Tue Aug  7 15:30:50 2001
-+++ net/netsyms.c	Mon Aug 20 21:47:41 2001
+--- net/netsyms.c.orig	Tue Aug  7 11:30:50 2001
++++ net/netsyms.c	Wed Aug 22 18:49:46 2001
 @@ -269,6 +269,11 @@
  EXPORT_SYMBOL(register_inetaddr_notifier);
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
@@ -717,8 +717,8 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(dev_remove_pack);
 
 Index: fs/proc/inode.c
---- fs/proc/inode.c.orig	Wed Apr 18 06:16:39 2001
-+++ fs/proc/inode.c	Mon Aug 20 21:47:41 2001
+--- fs/proc/inode.c.orig	Wed Apr 18 02:16:39 2001
++++ fs/proc/inode.c	Wed Aug 22 18:49:46 2001
 @@ -147,6 +147,11 @@
  	if (!inode)
  		goto out_fail;
@@ -733,8 +733,8 @@ Index: fs/proc/inode.c
  		if (de->mode) {
 
 Index: drivers/net/tulip/interrupt.c
---- drivers/net/tulip/interrupt.c.orig	Wed Jun 20 18:15:44 2001
-+++ drivers/net/tulip/interrupt.c	Mon Aug 20 21:58:12 2001
+--- drivers/net/tulip/interrupt.c.orig	Wed Jun 20 14:15:44 2001
++++ drivers/net/tulip/interrupt.c	Wed Aug 22 18:49:46 2001
 @@ -292,6 +292,10 @@
  }
  
@@ -1093,8 +1093,8 @@ Index: drivers/net/tulip/interrupt.c
  }
 
 Index: drivers/net/tulip/tulip_core.c
---- drivers/net/tulip/tulip_core.c.orig	Tue Aug  7 15:30:50 2001
-+++ drivers/net/tulip/tulip_core.c	Mon Aug 20 21:47:41 2001
+--- drivers/net/tulip/tulip_core.c.orig	Tue Aug  7 11:30:50 2001
++++ drivers/net/tulip/tulip_core.c	Thu Aug 23 11:18:18 2001
 @@ -245,6 +245,16 @@
  static void set_rx_mode(struct net_device *dev);
  
@@ -1215,7 +1215,7 @@ Index: drivers/net/tulip/tulip_core.c
  	if (register_netdev(dev))
  		goto err_out_free_ring;
  
-@@ -1872,3 +1925,109 @@
+@@ -1872,3 +1925,113 @@
  
  module_init(tulip_init);
  module_exit(tulip_cleanup);
@@ -1224,8 +1224,14 @@ Index: drivers/net/tulip/tulip_core.c
 + * Click polling extensions
 + */
 +
-+/* Demand polling */
-+#define	DEMAND_POLLTX	1
++/* Demand polling - the TX DMA engine on some tulip cards can automatically
++ * poll the TX DMA ring for packets; with this feature the driver does not
++ * need to poke the TX DMA engine after packet transmission stopped. however
++ * it seems that on some cards this feature does not work, therefore by
++ * default it is disabled. the eob() function minimizes the number of such
++ * pokes already. */
++
++#define	DEMAND_POLLTX	0
 +
 +static int
 +tulip_poll_on(struct net_device *dev)
@@ -1308,11 +1314,6 @@ Index: drivers/net/tulip/tulip_core.c
 +
 +	tp->cur_tx++;
 +
-+#if !(DEMAND_POLLTX)
-+	outl(0, dev->base_addr + CSR1);
-+	dev->trans_start = jiffies;
-+#endif
-+
 +	/* If we've almost filled up the transmit ring, signal busy */
 +	if (tp->cur_tx - tp->dirty_tx >= TX_RING_SIZE - 2)
 +		netif_stop_queue(dev);
@@ -1323,12 +1324,15 @@ Index: drivers/net/tulip/tulip_core.c
 +}
 +
 +static int tulip_tx_eob(struct net_device *dev) {
++	outl(0, dev->base_addr + CSR1);
++	dev->trans_start = jiffies;
 +	return 0;
 +}
++
 
 Index: drivers/net/eepro100.c
---- drivers/net/eepro100.c.orig	Mon Jul  2 21:03:04 2001
-+++ drivers/net/eepro100.c	Mon Aug 20 21:47:41 2001
+--- drivers/net/eepro100.c.orig	Mon Jul  2 17:03:04 2001
++++ drivers/net/eepro100.c	Wed Aug 22 18:49:46 2001
 @@ -545,6 +545,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -1817,8 +1821,8 @@ Index: drivers/net/eepro100.c
 +
 
 Index: Makefile
---- Makefile.orig	Thu Aug 16 18:12:49 2001
-+++ Makefile	Mon Aug 20 21:47:41 2001
+--- Makefile.orig	Thu Aug 16 14:12:49 2001
++++ Makefile	Wed Aug 22 18:49:46 2001
 @@ -1,7 +1,7 @@
  VERSION = 2
  PATCHLEVEL = 4
