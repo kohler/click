@@ -1,3 +1,8 @@
+2002-04-26 Friday 14:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: hashmap.cc (1.9), hashmap.hh (1.8): fixes from
+	Scott Page's stdc++ patch #6
+
 2002-04-26 Friday 14:34  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/ipratemon.cc (1.96), elements/ip/ipratemon.hh (1.60),
