@@ -1327,16 +1327,31 @@ FromIPSummaryDump::handle_multipacket(Packet *p)
 {
     if (p) {
 	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
-	if (!_work_packet && count > 1)
+
+	// set up _multipacket variables on new packets (_work_packet == 0)
+	if (!_work_packet && count > 1) {
 	    _multipacket_extra_length = EXTRA_LENGTH_ANNO(p) / count;
+	    _multipacket_end_timestamp = p->timestamp_anno();
+	    if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
+		_multipacket_timestamp_delta = (p->timestamp_anno() - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
+		p->timestamp_anno() = FIRST_TIMESTAMP_ANNO(p);
+	    } else
+		_multipacket_timestamp_delta = make_timeval(0, 0);
+	}
+
 	_work_packet = (count > 1 ? p : 0);
+	
 	if (_work_packet) {
-	    SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
-	    SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_extra_length);
 	    if ((p = p->clone())) {
 		SET_EXTRA_PACKETS_ANNO(p, 0);
 		SET_EXTRA_LENGTH_ANNO(p, _multipacket_extra_length);
 	    }
+	    SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
+	    SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_extra_length);
+	    if (count == 2)
+		_work_packet->timestamp_anno() = _multipacket_end_timestamp;
+	    else
+		_work_packet->timestamp_anno() += _multipacket_timestamp_delta;
 	}
     }
     return p;

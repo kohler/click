@@ -1032,13 +1032,28 @@ ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 	uint32_t len = p->length();
 	if (total_len < count * len)
 	    total_len = count * len;
+
+	// do timestamp stepping
+	struct timeval end_timestamp = p->timestamp_anno();
+	struct timeval timestamp_delta;
+	if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
+	    timestamp_delta = (end_timestamp - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
+	    p->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(p));
+	} else
+	    timestamp_delta = make_timeval(0, 0);
+	
 	SET_EXTRA_PACKETS_ANNO(p, 0);
 	for (uint32_t i = count; i > 0; i--) {
 	    uint32_t l = total_len / i;
 	    SET_EXTRA_LENGTH_ANNO(p, l - len);
 	    total_len -= l;
 	    write_packet(p, false);
+	    if (i == 1)
+		p->timestamp_anno() = end_timestamp;
+	    else
+		p->timestamp_anno() += timestamp_delta;
 	}
+	
     } else {
 	_sa.clear();
 	if (summary(p, _sa))

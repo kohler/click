@@ -188,6 +188,8 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _binary : 1;
     Packet *_work_packet;
     uint32_t _multipacket_extra_length;
+    struct timeval _multipacket_timestamp_delta;
+    struct timeval _multipacket_end_timestamp;
 
     Task _task;
     ActiveNotifier _notifier;

@@ -274,7 +274,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	// 14 - TOS bits
 
 	int ok = 0;
-	uint32_t byte_count, end_timestamp;
+	uint32_t byte_count;
 	ok += cp_ip_address(words[0], (unsigned char *)&iph->ip_src);
 	ok += cp_ip_address(words[1], (unsigned char *)&iph->ip_dst);
 	if (cp_unsigned(words[5], &j))
@@ -282,9 +282,16 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	if (cp_unsigned(words[6], (unsigned *)&byte_count))
 	    ok++;
 	if (cp_unsigned(words[7], &j))
-	    q->set_timestamp_anno(j, 0), ok++;
-	if (cp_unsigned(words[7], (unsigned *)&end_timestamp))
+	    SET_FIRST_TIMESTAMP_ANNO(q, make_timeval(j, 0)), ok++;
+	if (cp_unsigned(words[8], &j)) {
+	    if (j)
+		q->set_timestamp_anno(j, 0);
+	    else
+		q->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(q));
 	    ok++;
+	}
+	if (cp_unsigned(words[12], &j) && j <= 0xFF)
+	    q->tcp_header()->th_flags = j, ok++;
 	if (cp_unsigned(words[13], &j) && j <= 0xFF)
 	    iph->ip_p = j, ok++;
 	if (cp_unsigned(words[14], &j) && j <= 0xFF)
@@ -298,12 +305,17 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	    break;
 	
 	// set TCP offset to a reasonable value; possibly reduce packet length
-	if (iph->ip_p == IP_PROTO_TCP)
+	if (iph->ip_p == IP_PROTO_TCP) {
 	    q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
-	else if (iph->ip_p == IP_PROTO_UDP)
+	    q->tcp_header()->th_flags2 = 0;
+	    iph->ip_len = htons(sizeof(click_ip) + sizeof(click_tcp));
+	} else if (iph->ip_p == IP_PROTO_UDP) {
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
-	else
+	    iph->ip_len = htons(sizeof(click_ip) + sizeof(click_udp));
+	} else {
 	    q->take(sizeof(click_tcp));
+	    iph->ip_len = htons(sizeof(click_ip));
+	}
 	SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
 	return q;
     }
@@ -323,16 +335,31 @@ FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 {
     if (p) {
 	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
-	if (!_work_packet && count > 1)
+
+	// set up _multipacket variables on new packets (_work_packet == 0)
+	if (!_work_packet && count > 1) {
 	    _multipacket_extra_length = EXTRA_LENGTH_ANNO(p) / count;
+	    _multipacket_end_timestamp = p->timestamp_anno();
+	    if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
+		_multipacket_timestamp_delta = (p->timestamp_anno() - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
+		p->timestamp_anno() = FIRST_TIMESTAMP_ANNO(p);
+	    } else
+		_multipacket_timestamp_delta = make_timeval(0, 0);
+	}
+	
 	_work_packet = (count > 1 ? p : 0);
+	
 	if (_work_packet) {
-	    SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
-	    SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_extra_length);
 	    if ((p = p->clone())) {
 		SET_EXTRA_PACKETS_ANNO(p, 0);
 		SET_EXTRA_LENGTH_ANNO(p, _multipacket_extra_length);
 	    }
+	    SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
+	    SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_extra_length);
+	    if (count == 2)
+		_work_packet->timestamp_anno() = _multipacket_end_timestamp;
+	    else
+		_work_packet->timestamp_anno() += _multipacket_timestamp_delta;
 	}
     }
     return p;
