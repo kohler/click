@@ -1,3 +1,15 @@
+2003-10-09 Thursday 21:11  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/routert.hh (1.60): yet more... Will this ever converge?
+
+2003-10-09 Thursday 21:04  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click-xform/click-xform.cc (1.55), click2xml/click2xml.cc
+	(1.11), click2xml/xml2click.cc (1.10), lib/eclasst.cc (1.26),
+	lib/eclasst.hh (1.18), lib/lexert.cc (1.52), lib/routert.cc (1.72),
+	lib/routert.hh (1.59), lib/runparse.cc (1.4): more type related
+	method renamings
+
 2003-10-09 Thursday 15:44  Eddie Kohler <kohler@icir.org>
 
 	* tools/: click-align/click-align.cc (1.49),
