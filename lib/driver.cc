@@ -401,7 +401,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     Vector<ArchiveElement> archive;
     if (config_str.length() != 0 && config_str[0] == '!') {
 	separate_ar_string(config_str, archive, errh);
-	int i = archive_index(&archive, "config");
+	int i = CLICK_NAME(archive_index)(&archive, "config");
 	if (i >= 0)
 	    config_str = archive[i].data;
 	else {
