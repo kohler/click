@@ -1,3 +1,11 @@
+2005-01-02 Sunday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.22), config.h.in (1.29), configure
+	(1.39), configure.in (1.251), include/click/timestamp.hh (1.3),
+	lib/routerthread.cc (1.51): HAVE_NANOTIMESTAMP !=
+	HAVE_NANOTIMESTAMP_ENABLED: effectively disable nanosecond-scale
+	timestamps in the kernel
+
 2004-12-31 Friday 00:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/radixiplookup.cc (1.10), elements/ip/radixiplookup.hh
