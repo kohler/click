@@ -34,70 +34,141 @@
 
 static HashMap<String, int> *wordmap;
 static int ip_filter_count;
+#define WT(t, d)		((t << WT_TYPE_SHIFT) | d)
+#define WT_TYPE(wt)		((wt & IPFilter::WT_TYPE_MASK) >> IPFilter::WT_TYPE_SHIFT)
 
-void
-IPFilter::initialize_wordmap()
+HashMap<String, int> *
+IPFilter::create_wordmap()
 {
-  wordmap = new HashMap<String, int>(0);
+  HashMap<String, int> *wordmap = new HashMap<String, int>(0);
 
-  wordmap->insert("host",	WT_TYPE | TYPE_HOST);
-  wordmap->insert("net",	WT_TYPE | TYPE_NET);
-  wordmap->insert("port",	WT_TYPE | TYPE_PORT);
-  wordmap->insert("proto",	WT_TYPE | TYPE_PROTO);
-  wordmap->insert("opt",	WT_TYPE | TYPE_TCPOPT);
-  wordmap->insert("tos",	WT_TYPE | TYPE_TOS);
-  wordmap->insert("dscp",	WT_TYPE | TYPE_DSCP);
-  wordmap->insert("type",	WT_TYPE | TYPE_ICMP_TYPE);
-  wordmap->insert("frag",	WT_TYPE | TYPE_IPFRAG);
-  wordmap->insert("unfrag",	WT_TYPE | TYPE_IPUNFRAG);
+  wordmap->insert("host",	WT(TYPE_TYPE, TYPE_HOST));
+  wordmap->insert("net",	WT(TYPE_TYPE, TYPE_NET));
+  wordmap->insert("port",	WT(TYPE_TYPE, TYPE_PORT));
+  wordmap->insert("proto",	WT(TYPE_TYPE, TYPE_PROTO));
+  wordmap->insert("opt",	WT(TYPE_TYPE, TYPE_TCPOPT));
+  wordmap->insert("tos",	WT(TYPE_TYPE, TYPE_TOS));
+  wordmap->insert("dscp",	WT(TYPE_TYPE, TYPE_DSCP));
+  wordmap->insert("type",	WT(TYPE_TYPE, TYPE_ICMP_TYPE));
+  wordmap->insert("frag",	WT(TYPE_TYPE, TYPE_IPFRAG));
+  wordmap->insert("unfrag",	WT(TYPE_TYPE, TYPE_IPUNFRAG));
   
-  wordmap->insert("icmp",	WT_PROTO | IP_PROTO_ICMP);
-  wordmap->insert("igmp",	WT_PROTO | IP_PROTO_IGMP);
-  wordmap->insert("ipip",	WT_PROTO | IP_PROTO_IPIP);
-  wordmap->insert("tcp",	WT_PROTO | IP_PROTO_TCP);
-  wordmap->insert("udp",	WT_PROTO | IP_PROTO_UDP);
+  wordmap->insert("icmp",	WT(TYPE_PROTO, IP_PROTO_ICMP));
+  wordmap->insert("igmp",	WT(TYPE_PROTO, IP_PROTO_IGMP));
+  wordmap->insert("ipip",	WT(TYPE_PROTO, IP_PROTO_IPIP));
+  wordmap->insert("tcp",	WT(TYPE_PROTO, IP_PROTO_TCP));
+  wordmap->insert("udp",	WT(TYPE_PROTO, IP_PROTO_UDP));
   
-  wordmap->insert("echo",	WT_PORT | 7);
-  wordmap->insert("discard",	WT_PORT | 9);
-  wordmap->insert("daytime",	WT_PORT | 13);
-  wordmap->insert("chargen",	WT_PORT | 19);
-  wordmap->insert("ftp-data",	WT_PORT | 20);
-  wordmap->insert("ftp",	WT_PORT | 21);
-  wordmap->insert("ssh",	WT_PORT | 22);
-  wordmap->insert("telnet",	WT_PORT | 23);
-  wordmap->insert("smtp",	WT_PORT | 25);
-  wordmap->insert("domain",	WT_PORT | 53);
-  wordmap->insert("dns",	WT_PORT | 53);
-  wordmap->insert("finger",	WT_PORT | 79);
-  wordmap->insert("www",	WT_PORT | 80);
-  wordmap->insert("auth",	WT_PORT | 113);
-  wordmap->insert("https",	WT_PORT | 443);
+  wordmap->insert("echo",	WT(TYPE_PORT, 7) | WT_MORE);
+  wordmap->insert("discard",	WT(TYPE_PORT, 9));
+  wordmap->insert("daytime",	WT(TYPE_PORT, 13));
+  wordmap->insert("chargen",	WT(TYPE_PORT, 19));
+  wordmap->insert("ftp-data",	WT(TYPE_PORT, 20));
+  wordmap->insert("ftp",	WT(TYPE_PORT, 21));
+  wordmap->insert("ssh",	WT(TYPE_PORT, 22));
+  wordmap->insert("telnet",	WT(TYPE_PORT, 23));
+  wordmap->insert("smtp",	WT(TYPE_PORT, 25));
+  wordmap->insert("domain",	WT(TYPE_PORT, 53));
+  wordmap->insert("dns",	WT(TYPE_PORT, 53));
+  wordmap->insert("finger",	WT(TYPE_PORT, 79));
+  wordmap->insert("www",	WT(TYPE_PORT, 80));
+  wordmap->insert("pop3",	WT(TYPE_PORT, 110));
+  wordmap->insert("auth",	WT(TYPE_PORT, 113));
+  wordmap->insert("imap3",	WT(TYPE_PORT, 220));
+  wordmap->insert("https",	WT(TYPE_PORT, 443));
+  wordmap->insert("imaps",	WT(TYPE_PORT, 993));
+  wordmap->insert("pop3s",	WT(TYPE_PORT, 995));
 
-  wordmap->insert("syn",	WT_TCPOPT | TH_SYN);
-  wordmap->insert("fin",	WT_TCPOPT | TH_FIN);
-  wordmap->insert("ack",	WT_TCPOPT | TH_ACK);
-  wordmap->insert("rst",	WT_TCPOPT | TH_RST);
-  wordmap->insert("psh",	WT_TCPOPT | TH_PUSH);
-  wordmap->insert("urg",	WT_TCPOPT | TH_URG);
+  wordmap->insert("syn",	WT(TYPE_TCPOPT, TH_SYN));
+  wordmap->insert("fin",	WT(TYPE_TCPOPT, TH_FIN));
+  wordmap->insert("ack",	WT(TYPE_TCPOPT, TH_ACK));
+  wordmap->insert("rst",	WT(TYPE_TCPOPT, TH_RST));
+  wordmap->insert("psh",	WT(TYPE_TCPOPT, TH_PUSH));
+  wordmap->insert("urg",	WT(TYPE_TCPOPT, TH_URG));
 
-  wordmap->insert("echo_reply",	WT_ICMP_TYPE | ICMP_ECHO_REPLY);
-  wordmap->insert("dst_unreachable", WT_ICMP_TYPE | ICMP_DST_UNREACHABLE);
-  wordmap->insert("source_quench", WT_ICMP_TYPE | ICMP_SOURCE_QUENCH);
-  wordmap->insert("redirect",	WT_ICMP_TYPE | ICMP_REDIRECT);
-  wordmap->insert("echo",	WT_ICMP_TYPE | ICMP_ECHO);
-  wordmap->insert("time_exceeded", WT_ICMP_TYPE | ICMP_TYPE_TIME_EXCEEDED);
-  wordmap->insert("parameter_problem", WT_ICMP_TYPE | ICMP_PARAMETER_PROBLEM);
-  wordmap->insert("time_stamp", WT_ICMP_TYPE | ICMP_TIME_STAMP);
-  wordmap->insert("time_stamp_reply", WT_ICMP_TYPE | ICMP_TIME_STAMP_REPLY);
-  wordmap->insert("info_request", WT_ICMP_TYPE | ICMP_INFO_REQUEST);
-  wordmap->insert("info_request_reply", WT_ICMP_TYPE | ICMP_INFO_REQUEST_REPLY);
+  wordmap->insert("echo_reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHO_REPLY));
+  wordmap->insert("dst_unreachable", WT(TYPE_ICMP_TYPE, ICMP_DST_UNREACHABLE));
+  wordmap->insert("source_quench", WT(TYPE_ICMP_TYPE, ICMP_SOURCE_QUENCH));
+  wordmap->insert("redirect",	WT(TYPE_ICMP_TYPE, ICMP_REDIRECT));
+  wordmap->insert("echo+",	WT(TYPE_ICMP_TYPE, ICMP_ECHO));
+  wordmap->insert("time_exceeded", WT(TYPE_ICMP_TYPE, ICMP_TYPE_TIME_EXCEEDED));
+  wordmap->insert("parameter_problem", WT(TYPE_ICMP_TYPE, ICMP_PARAMETER_PROBLEM));
+  wordmap->insert("time_stamp", WT(TYPE_ICMP_TYPE, ICMP_TIME_STAMP));
+  wordmap->insert("time_stamp_reply", WT(TYPE_ICMP_TYPE, ICMP_TIME_STAMP_REPLY));
+  wordmap->insert("info_request", WT(TYPE_ICMP_TYPE, ICMP_INFO_REQUEST));
+  wordmap->insert("info_request_reply", WT(TYPE_ICMP_TYPE, ICMP_INFO_REQUEST_REPLY));
+
+  return wordmap;
+}
+
+static void
+accum_wt_names(HashMap<String, int> *wordmap, String word, StringAccum &sa)
+{
+  int t = (*wordmap)[word];
+  Vector<int> types;
+  while (t != 0) {
+    types.push_back(WT_TYPE(t));
+    word += "+";
+    t = (*wordmap)[word];
+  }
+
+  if (types.size() == 0)
+    /* nada */;
+  else if (types.size() == 1)
+    sa << '`' << IPFilter::Primitive::unparse_type(0, types[0]) << '\'';
+  else if (types.size() == 2)
+    sa << '`' << IPFilter::Primitive::unparse_type(0, types[0]) << "\' or `" << IPFilter::Primitive::unparse_type(0, types[1]) << '\'';
+  else {
+    for (int i = 0; i < types.size() - 1; i++)
+      sa << '`' << IPFilter::Primitive::unparse_type(0, types[i]) << "\', ";
+    sa << "or `" << IPFilter::Primitive::unparse_type(0, types.back()) << '\'';
+  }
+}
+
+int
+IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, String word, ErrorHandler *errh)
+{
+  String orig_word = word;
+  int t = (*wordmap)[word];
+  if (t == 0)
+    return -1;
+
+  // no type known? return it right away, or complain about ambiguity
+  if (type == 0) {
+    if (!(t & WT_MORE))
+      return t;
+    
+    if (errh) {
+      StringAccum sa;
+      accum_wt_names(wordmap, word, sa);
+      errh->error("`%s' is ambiguous; specify %s", word.cc(), sa.cc());
+    }
+    return -2;
+  }
+
+  // look for matching type
+  while (t != 0) {
+    if (WT_TYPE(t) == type)
+      return (t & ~WT_MORE);
+    word += "+";
+    t = (*wordmap)[word];
+  }
+
+  // no matching type
+  if (errh) {
+    String tn = Primitive::unparse_type(0, type);
+    StringAccum sa;
+    accum_wt_names(wordmap, orig_word, sa);
+    errh->error("`%s %s' is meaningless; specify %s with %s", tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+  }
+  return -2;
 }
 
 IPFilter::IPFilter()
 {
   // no MOD_INC_USE_COUNT; rely on Classifier
   if (ip_filter_count == 0)
-    initialize_wordmap();
+    wordmap = create_wordmap();
   ip_filter_count++;
 }
 
@@ -123,7 +194,7 @@ void
 IPFilter::Primitive::clear()
 {
   _type = _srcdst = 0;
-  _net_proto = _transp_proto = UNKNOWN;
+  _transp_proto = UNKNOWN;
   _data = 0;
   _op = 0;
 }
@@ -142,14 +213,6 @@ IPFilter::Primitive::set_srcdst(int x, ErrorHandler *errh)
   if (_srcdst)
     errh->error("`src' or `dst' specified twice");
   _srcdst = x;
-}
-
-void
-IPFilter::Primitive::set_net_proto(int x, ErrorHandler *errh)
-{
-  if (_net_proto != UNKNOWN && _net_proto != x)
-    errh->error("network protocol specified twice");
-  _net_proto = x;
 }
 
 void
@@ -194,68 +257,94 @@ IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
 }
 
 String
-IPFilter::Primitive::unparse_type() const
+IPFilter::Primitive::unparse_type(int srcdst, int type)
 {
   StringAccum sa;
   
-  if (_data == DATA_IP || _data == DATA_IPNET || _net_proto == PROTO_IP)
-    sa << "ip ";
-
-  switch (_srcdst) {
+  switch (srcdst) {
    case SD_SRC: sa << "src "; break;
    case SD_DST: sa << "dst "; break;
    case SD_OR: sa << "src or dst "; break;
    case SD_AND: sa << "src and dst "; break;
   }
 
-  switch (_type) {
-   case TYPE_HOST: sa << "host "; break;
-   case TYPE_NET: sa << "net "; break;
+  switch (type) {
+   case TYPE_NONE: sa << "<none> "; break;
+   case TYPE_HOST: sa << "ip host "; break;
+   case TYPE_NET: sa << "ip net "; break;
    case TYPE_PROTO: sa << "proto "; break;
    case TYPE_PORT: sa << "port "; break;
    case TYPE_TCPOPT: sa << "tcp opt "; break;
-   case TYPE_TOS: sa << "tos "; break;
-   case TYPE_DSCP: sa << "dscp "; break;
+   case TYPE_TOS: sa << "ip tos "; break;
+   case TYPE_DSCP: sa << "ip dscp "; break;
    case TYPE_ICMP_TYPE: sa << "icmp type "; break;
-   case TYPE_IPFRAG: sa << "frag "; break;
-   case TYPE_IPUNFRAG: sa << "unfrag "; break;
+   case TYPE_IPFRAG: sa << "ip frag "; break;
+   case TYPE_IPUNFRAG: sa << "ip unfrag "; break;
+   default: sa << "<unknown type " << type << "> "; break;
   }
 
   sa.pop();
   return sa.take_string();
 }
 
+String
+IPFilter::Primitive::unparse_type() const
+{
+  return unparse_type(_srcdst, _type);
+}
+
 int
 IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 {
   int old_srcdst = _srcdst;
+
+  // if _type is erroneous, return -1 right away
+  if (_type < 0)
+    return -1;
   
   // set _type if it was not specified
   if (!_type) {
-    if (_data == DATA_IP) {
-      _type = TYPE_HOST;
+
+   retry:
+    switch (_data) {
+
+     case TYPE_HOST:
+     case TYPE_NET:
+     case TYPE_TCPOPT:
+     case TYPE_ICMP_TYPE:
+      _type = _data;
       if (!_srcdst) _srcdst = p._srcdst;
-    } else if (_data == DATA_IPNET) {
-      _type = TYPE_NET;
-      if (!_srcdst) _srcdst = p._srcdst;
-    } else if (_data == DATA_PROTO || (_data == DATA_INT && p._type == TYPE_PROTO)) {
+      break;
+
+     case TYPE_PROTO:
       _type = TYPE_PROTO;
-      if (_net_proto == UNKNOWN) _net_proto = p._net_proto;
-    } else if (_data == DATA_PORT || (_data == DATA_INT && p._type == TYPE_PORT)) {
+      break;
+      
+     case TYPE_PORT:
       _type = TYPE_PORT;
       if (!_srcdst) _srcdst = p._srcdst;
-      if (_net_proto == UNKNOWN) _net_proto = p._net_proto;
       if (_transp_proto == UNKNOWN) _transp_proto = p._transp_proto;
-    } else if (_data == DATA_TCPOPT) {
-      _type = TYPE_TCPOPT;
-      if (!_srcdst) _srcdst = p._srcdst;
-    } else if (_data == DATA_ICMP_TYPE || (_data == DATA_INT && p._type == TYPE_ICMP_TYPE)) {
-      _type = TYPE_ICMP_TYPE;
-      if (!_srcdst) _srcdst = p._srcdst;
-    } else if (!_data && _transp_proto != UNKNOWN)
-      _type = TYPE_PROTO;
-    else
-      return errh->error("syntax error: no data in `%s' directive", unparse_type().cc());
+      break;
+      
+     case TYPE_INT:
+      if (p._type == TYPE_PROTO || p._type == TYPE_PORT || p._type == TYPE_ICMP_TYPE) {
+	_data = p._type;
+	goto retry;
+      } else
+	return errh->error("bare integer `%d'; specify `proto', `port', or `icmp type'", _u.i);
+      break;
+
+     case TYPE_NONE:
+      if (_transp_proto != UNKNOWN)
+	_type = TYPE_PROTO;
+      else
+	return errh->error("syntax error: empty directive");
+      break;
+      
+     default:
+      return errh->error("unknown type `%s'", unparse_type(0, _data).cc());
+
+    }
   }
 
   // clear _mask
@@ -263,26 +352,26 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
   
   // check that _data and _type agree
   if (_type == TYPE_HOST) {
-    if (_data != DATA_IP)
+    if (_data != TYPE_HOST)
       return errh->error("`host' directive requires IP address");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `host'");
     
   } else if (_type == TYPE_NET) {
-    if (_data != DATA_IPNET)
+    if (_data != TYPE_NET)
       return errh->error("`net' directive requires IP address and mask");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `net'");
     
   } else if (_type == TYPE_PROTO) {
-    if (_data == DATA_INT || _data == DATA_PROTO) {
+    if (_data == TYPE_INT || _data == TYPE_PROTO) {
       if (_transp_proto != UNKNOWN)
 	return errh->error("transport protocol specified twice");
-      _data = DATA_NONE;
+      _data = TYPE_NONE;
     } else
       _u.i = _transp_proto;
     _transp_proto = (_op_negated || _op != OP_EQ ? (int)UNKNOWN : _u.i);
-    if (_data != DATA_NONE)
+    if (_data != TYPE_NONE)
       return errh->error("`proto' directive requires IP protocol");
     if (_u.i == IP_PROTO_TCP_OR_UDP && _op != OP_EQ)
       return errh->error("can't use relational operators with `tcp or udp'");
@@ -290,9 +379,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return -1;
     
   } else if (_type == TYPE_PORT) {
-    if (_data == DATA_INT)
-      _data = DATA_PORT;
-    if (_data != DATA_PORT)
+    if (_data == TYPE_INT)
+      _data = TYPE_PORT;
+    if (_data != TYPE_PORT)
       return errh->error("`port' directive requires port number (have %d)", _data);
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
@@ -302,9 +391,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return -1;
 
   } else if (_type == TYPE_TCPOPT) {
-    if (_data == DATA_INT)
-      _data = DATA_TCPOPT;
-    if (_data != DATA_TCPOPT)
+    if (_data == TYPE_INT)
+      _data = TYPE_TCPOPT;
+    if (_data != TYPE_TCPOPT)
       return errh->error("`tcp opt' directive requires TCP options");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP;
@@ -316,22 +405,22 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("value %d out of range", _u.i);
 
   } else if (_type == TYPE_TOS) {
-    if (_data != DATA_INT)
+    if (_data != TYPE_INT)
       return errh->error("`ip tos' directive requires TOS value");
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
 
   } else if (_type == TYPE_DSCP) {
-    if (_data != DATA_INT)
+    if (_data != TYPE_INT)
       return errh->error("`ip dscp' directive requires TOS value");
     if (set_mask(0x3F, 2, errh) < 0)
       return -1;
     _type = TYPE_TOS;
 
   } else if (_type == TYPE_ICMP_TYPE) {
-    if (_data == DATA_INT)
-      _data = DATA_ICMP_TYPE;
-    if (_data != DATA_ICMP_TYPE)
+    if (_data == TYPE_INT)
+      _data = TYPE_ICMP_TYPE;
+    if (_data != TYPE_ICMP_TYPE)
       return errh->error("`icmp type' directive requires ICMP type");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_ICMP;
@@ -341,7 +430,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return -1;
     
   } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
-    if (_data != DATA_NONE)
+    if (_data != TYPE_NONE)
       return errh->error("`ip frag' directive takes no data");
   }
 
@@ -382,8 +471,13 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 
   // handle other types
   if (_type == TYPE_HOST || _type == TYPE_NET) {
-    e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
-    e.value.u = _u.ip.s_addr;
+    if (_type == TYPE_HOST) {
+      e.mask.u = 0xFFFFFFFFU;
+      e.value.u = _u.ip.s_addr;
+    } else {
+      e.mask.u = _u.ipnet.mask.s_addr;
+      e.value.u = _u.ipnet.ip.s_addr & _u.ipnet.mask.s_addr;
+    }
     c->start_expr_subtree(tree);
     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
       c->add_expr(tree, 12, e.value.u, e.mask.u);
@@ -605,16 +699,15 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // collect qualifiers
   for (; pos < words.size(); pos++) {
     String wd = words[pos];
-    int wt = (*wordmap)[wd];
+    int wt = lookup_word(wordmap, 0, wd, 0);
 
-    if ((wt & WT_TYPE_MASK) == WT_TYPE)
+    if (wt >= 0 && WT_TYPE(wt) == TYPE_TYPE)
       prim.set_type(wt & WT_DATA, errh);
 
-    else if ((wt & WT_TYPE_MASK) == WT_PROTO) {
-      prim.set_net_proto(PROTO_IP, errh);
+    else if (wt >= 0 && WT_TYPE(wt) == TYPE_PROTO)
       prim.set_transp_proto(wt & WT_DATA, errh);
 
-    } else if (wt & WT_TYPE_MASK)
+    else if (wt != -1)
       break;
 
     else if (wd == "src") {
@@ -633,7 +726,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
       prim.set_srcdst(SD_DST, errh);
     
     else if (wd == "ip")
-      prim.set_net_proto(PROTO_IP, errh);
+      /* nada */;
     
     else if (wd == "not" || wd == "!")
       negated = !negated;
@@ -671,40 +764,44 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // now collect the actual data
   if (pos < words.size()) {
     wd = words[pos];
-    int wt = (*wordmap)[wd];
+    int wt = lookup_word(wordmap, prim._type, wd, errh);
     pos++;
+    
+    if (wt == -2)		// ambiguous or incorrect word type
+      /* absorb word, but do nothing */
+      prim._type = -2;
 
-    if ((wt & WT_TYPE_MASK) == WT_PROTO) {
-      prim._data = DATA_PROTO;
+    else if (WT_TYPE(wt) == TYPE_PROTO) {
+      prim._data = TYPE_PROTO;
       prim._u.i = (wt & WT_DATA);
 
-    } else if ((wt & WT_TYPE_MASK) == WT_PORT) {
-      prim._data = DATA_PORT;
+    } else if (WT_TYPE(wt) == TYPE_PORT) {
+      prim._data = TYPE_PORT;
       prim._u.i = (wt & WT_DATA);
 
-    } else if ((wt & WT_TYPE_MASK) == WT_TCPOPT) {
-      prim._data = DATA_TCPOPT;
+    } else if (WT_TYPE(wt) == TYPE_TCPOPT) {
+      prim._data = TYPE_TCPOPT;
       prim._u.i = (wt & WT_DATA);
 
-    } else if ((wt & WT_TYPE_MASK) == WT_ICMP_TYPE) {
-      prim._data = DATA_ICMP_TYPE;
+    } else if (WT_TYPE(wt) == TYPE_ICMP_TYPE) {
+      prim._data = TYPE_ICMP_TYPE;
       prim._u.i = (wt & WT_DATA);
 
     } else if (cp_integer(wd, &prim._u.i))
-      prim._data = DATA_INT;
+      prim._data = TYPE_INT;
   
     else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
       if (pos < words.size() - 1 && words[pos] == "mask"
 	  && cp_ip_address(words[pos+1], (unsigned char *)&prim._u.ipnet.mask, this)) {
 	pos += 2;
-	prim._data = DATA_IPNET;
+	prim._data = TYPE_NET;
       } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
-	prim._data = DATA_IPNET;
+	prim._data = TYPE_NET;
       else
-	prim._data = DATA_IP;
+	prim._data = TYPE_HOST;
     
     } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
-      prim._data = DATA_IPNET;
+      prim._data = TYPE_NET;
 
     else
       pos--;

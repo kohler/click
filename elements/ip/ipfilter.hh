@@ -1,6 +1,7 @@
 #ifndef IPFILTER_HH
 #define IPFILTER_HH
 #include "elements/standard/classifier.hh"
+#include <click/hashmap.hh>
 
 /*
  * =c
@@ -114,27 +115,35 @@ class IPFilter : public Classifier { public:
   
   void push(int port, Packet *);
   
+  static HashMap<String, int> *create_wordmap();
+  static int lookup_word(HashMap<String, int> *wordmap, int type, String word, ErrorHandler *errh);
+  
   enum {
-    WT_TYPE_MASK = 0xFFFF0000, WT_DATA = 0x0000FFFF,
-    WT_TYPE = 0x00010000, WT_PORT = 0x00020000,
-    WT_PROTO = 0x00030000, WT_TCPOPT = 0x00040000,
-    WT_ICMP_TYPE = 0x00050000,
+    WT_TYPE_MASK = 0x3FFF0000,
+    WT_DATA	= 0x0000FFFF,
+    WT_TYPE_SHIFT = 16,
+    WT_MORE	= 0x80000000,
+
+    TYPE_NONE	= 0,
+    TYPE_TYPE	= 1,
+    TYPE_INT	= 2,
+    TYPE_HOST	= 3,
+    TYPE_NET	= 4,
+    TYPE_PORT	= 5,
+    TYPE_PROTO	= 6,
+    TYPE_TCPOPT = 7,
+    TYPE_TOS	= 8,
+    TYPE_DSCP	= 9,
+    TYPE_ICMP_TYPE = 10,
+    TYPE_IPFRAG	= 11,
+    TYPE_IPUNFRAG = 12,
     
     UNKNOWN = -1000,
     NONE = 0,
     
-    TYPE_HOST = 1, TYPE_NET = 2, TYPE_PORT = 3, TYPE_PROTO = 4,
-    TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7, TYPE_ICMP_TYPE = 8,
-    TYPE_IPFRAG = 9, TYPE_IPUNFRAG = 10,
-    
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
 
     OP_EQ = 0, OP_GT = 1, OP_LT = 2,
-    
-    PROTO_IP = 1,
-    
-    DATA_NONE = 0, DATA_IP = 1, DATA_IPNET = 2, DATA_PROTO = 3,
-    DATA_PORT = 4, DATA_INT = 5, DATA_TCPOPT = 6, DATA_ICMP_TYPE = 7,
     
     IP_PROTO_TCP_OR_UDP = 0x10000,
 
@@ -147,7 +156,6 @@ class IPFilter : public Classifier { public:
     int _type;
     int _srcdst;
     int _op;
-    int _net_proto;
     int _transp_proto;
     
     int _data;
@@ -168,7 +176,6 @@ class IPFilter : public Classifier { public:
     void clear();
     void set_type(int, ErrorHandler *);
     void set_srcdst(int, ErrorHandler *);
-    void set_net_proto(int, ErrorHandler *);
     void set_transp_proto(int, ErrorHandler *);
     
     int set_mask(int full_mask, int shift, ErrorHandler *);
@@ -176,12 +183,11 @@ class IPFilter : public Classifier { public:
     void add_exprs(Classifier *, Vector<int> &) const;
 
     String unparse_type() const;
+    static String unparse_type(int srcdst, int type);
     
   };
 
  private:
-  
-  static void initialize_wordmap();
   
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);
