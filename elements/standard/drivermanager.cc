@@ -38,6 +38,10 @@ DriverManager::~DriverManager()
 void
 DriverManager::add_insn(int insn, int arg, const String &arg3)
 {
+    // first instruction must be WAIT or WAIT_STOP, so add a fake WAIT if
+    // necessary
+    if (_insns.size() == 0 && insn != INSN_WAIT && insn != INSN_WAIT_STOP)
+	add_insn(INSN_WAIT, 0);
     _insns.push_back(insn);
     _args.push_back(arg);
     _args2.push_back(0);
@@ -145,11 +149,10 @@ DriverManager::initialize(ErrorHandler *errh)
     _timer.initialize(this);
 
     int insn = _insns[_insn_pos];
-    if (insn == INSN_STOP || insn == INSN_WRITE || insn == INSN_READ || insn == INSN_WRITE_SKIP)
-	_timer.schedule_now();
-    else if (insn == INSN_WAIT)
+    assert(insn == INSN_WAIT || insn == INSN_WAIT_STOP);
+    if (insn == INSN_WAIT)
 	_timer.schedule_after_ms(_args[_insn_pos]);
-
+    
     return 0;
 }
 
@@ -198,10 +201,12 @@ DriverManager::handle_stopped_driver()
     if (insn == INSN_WAIT_STOP) {
 	_insn_arg++;
 	if (_insn_arg >= _args[_insn_pos])
-	    while (step_insn()) ;
+	    while (step_insn())
+		/* nada */;
     } else if (insn == INSN_WAIT) {
 	_timer.unschedule();
-	while (step_insn()) ;
+	while (step_insn())
+	    /* nada */;
     }
 }
 
@@ -209,11 +214,9 @@ void
 DriverManager::run_scheduled()
 {
     // called when a timer expires
-    int insn = _insns[_insn_pos];
-    if (insn == INSN_WAIT || insn == INSN_WRITE || insn == INSN_READ || insn == INSN_WRITE_SKIP)
-	while (step_insn()) ;
-    else if (insn == INSN_STOP)
-	router()->please_stop_driver();
+    assert(_insns[_insn_pos] == INSN_WAIT);
+    while (step_insn())
+	/* nada */;
 }
 
 EXPORT_ELEMENT(DriverManager)
