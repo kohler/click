@@ -24,6 +24,15 @@
 #include <click/confparse.hh>
 #include <stdarg.h>
 
+void
+StringAccum::make_out_of_memory()
+{
+  delete[] _s;
+  _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_string().data()));
+  _cap = -1;
+  _len = 0;
+}
+
 bool
 StringAccum::grow(int want)
 {
@@ -37,11 +46,7 @@ StringAccum::grow(int want)
   
   unsigned char *n = new unsigned char[ncap];
   if (!n) {
-    // mark StringAccum as out-of-memory
-    delete[] _s;
-    _s = 0;
-    _cap = -1;
-    _len = 0;
+    make_out_of_memory();
     return false;
   }
   
@@ -68,15 +73,10 @@ StringAccum::take_string()
   if (len) {
     int capacity = _cap;
     return String::claim_string(take(), len, capacity);
-  } else
+  } else if (out_of_memory())
+    return String::out_of_memory_string();
+  else
     return String();
-}
-
-StringAccum &
-operator<<(StringAccum &sa, const char *s)
-{
-  sa.append(s, strlen(s));
-  return sa;
 }
 
 StringAccum &
@@ -115,7 +115,7 @@ operator<<(StringAccum &sa, uint64_t q)
 }
 #endif
 
-#ifndef __KERNEL__
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &
 operator<<(StringAccum &sa, double d)
 {

@@ -16,7 +16,7 @@ class StringAccum { public:
   
   StringAccum()				: _s(0), _len(0), _cap(0) { }
   explicit StringAccum(int);
-  ~StringAccum()			{ delete[] _s; }
+  ~StringAccum()			{ if (_cap >= 0) delete[] _s; }
 
   char *data() const			{ return (char *)_s; }
   int length() const			{ return _len; }
@@ -34,7 +34,7 @@ class StringAccum { public:
   char back() const		{ assert(_len>0); return (char)_s[_len-1]; }
   char &back()			{ assert(_len>0); return (char &)_s[_len-1]; }
 
-  void clear()				{ _len = 0; }
+  void clear();
   
   char *extend(int, int = 0);
   
@@ -63,11 +63,15 @@ class StringAccum { public:
   int _len;
   int _cap;
   
+  void make_out_of_memory();
+  void safe_append(const char *, int);
   bool grow(int);
   void erase()				{ _s = 0; _len = 0; _cap = 0; }
 
   StringAccum(const StringAccum &);
   StringAccum &operator=(const StringAccum &);
+
+  friend StringAccum &operator<<(StringAccum &, const char *);
   
 };
 
@@ -91,7 +95,7 @@ StringAccum &operator<<(StringAccum &, unsigned long);
 StringAccum &operator<<(StringAccum &, int64_t);
 StringAccum &operator<<(StringAccum &, uint64_t);
 #endif
-#ifndef __KERNEL__
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &operator<<(StringAccum &, double);
 #endif
 
@@ -142,12 +146,20 @@ StringAccum::extend(int amt, int extra)
 }
 
 inline void
+StringAccum::safe_append(const char *s, int len)
+{
+  if (char *x = extend(len))
+    memcpy(x, s, len);
+}
+
+inline void
 StringAccum::append(const char *s, int len)
 {
   if (len < 0)
     len = strlen(s);
-  if (char *x = extend(len))
-    memcpy(x, s, len);
+  else if (len == 0 && s == String::out_of_memory_string().data())
+    make_out_of_memory();
+  safe_append(s, len);
 }
 
 inline unsigned char *
@@ -164,6 +176,14 @@ StringAccum::take()
   return reinterpret_cast<char *>(take_bytes());
 }
 
+inline void
+StringAccum::clear()
+{
+  if (_cap < 0)
+    _cap = 0, _s = 0;
+  _len = 0;
+}
+
 inline StringAccum &
 operator<<(StringAccum &sa, char c)
 {
@@ -175,6 +195,13 @@ inline StringAccum &
 operator<<(StringAccum &sa, unsigned char c)
 {
   sa.append(c);
+  return sa;
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, const char *s)
+{
+  sa.safe_append(s, strlen(s));
   return sa;
 }
 
@@ -212,7 +239,7 @@ operator<<(StringAccum &sa, unsigned u)
 inline StringAccum &
 operator<<(StringAccum &sa, PermString s)
 {
-  sa.append(s.cc(), s.length());
+  sa.safe_append(s.cc(), s.length());
   return sa;
 }
 #endif

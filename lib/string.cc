@@ -27,6 +27,7 @@ String::Memo *String::null_memo = 0;
 String::Memo *String::permanent_memo = 0;
 String::Memo *String::oom_memo = 0;
 String *String::null_string_p = 0;
+String *String::oom_string_p = 0;
 static int out_of_memory_flag = 0;
 
 inline
@@ -583,6 +584,7 @@ String::static_initialize()
     oom_memo = new Memo(0, 1);
     oom_memo->_real_data[0] = '\0';
     null_string_p = new String;
+    oom_string_p = new String(oom_memo->_real_data, 0, oom_memo);
   }
 }
 
@@ -592,6 +594,8 @@ String::static_cleanup()
   if (null_string_p) {
     delete null_string_p;
     null_string_p = 0;
+    delete oom_string_p;
+    oom_string_p = 0;
     if (--null_memo->_refcount == 0)
       delete null_memo;
     if (--permanent_memo->_refcount == 0)

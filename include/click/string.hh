@@ -38,6 +38,7 @@ class String { public:
   ~String();
   
   static const String &null_string()	{ return *null_string_p; }
+  static const String &out_of_memory_string() { return *oom_string_p; }
   static String garbage_string(int n);	// n garbage characters
   static String stable_string(const char *, int = -1); // stable read-only mem.
   
@@ -147,6 +148,7 @@ class String { public:
   static Memo *permanent_memo;
   static Memo *oom_memo;
   static String *null_string_p;
+  static String *oom_string_p;
   
   static String claim_string(char *, int, int); // claim memory
 
