@@ -35,6 +35,7 @@
 #define UNINSTALL_OPT		303
 #define HOTSWAP_OPT		304
 #define MAP_OPT			305
+#define VERBOSE_OPT		306
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
@@ -42,10 +43,12 @@ static Clp_Option options[] = {
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "map", 'm', MAP_OPT, 0, 0 },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
+  { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, Clp_Negate },
 };
 
 static const char *program_name;
+static bool verbose;
 
 void
 short_usage()
@@ -68,6 +71,7 @@ Options:\n\
   -h, --hot-swap                Hot-swap install new configuration.\n\
   -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
   -m, --map                     Print load map to the standard output.\n\
+  -V, --verbose                 Print information about files installed.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -141,6 +145,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
 	if (!prepare_compile_tmpdir(r, tmpdir, click_compile_prog, errh))
 	  exit(1);
 
+      errh->message("Compiling package %s.cc from config archive", package.cc());
       ContextErrorHandler cerrh
 	(errh, "While compiling package `" + package + ".ko':");
 
@@ -166,7 +171,6 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       }
       
       // run click-compile
-      errh->message("Compiling `%s.ko'...", package.cc());
       String compile_command = click_compile_prog + " --target=kernel --package=" + package + ".ko " + compiler_options + filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
@@ -289,6 +293,10 @@ particular purpose.\n");
      case MAP_OPT:
       output_map = !clp->negated;
       break;
+
+     case VERBOSE_OPT:
+      verbose = !clp->negated;
+      break;
       
      bad_option:
      case Clp_BadOption:
@@ -315,6 +323,8 @@ particular purpose.\n");
   // uninstall Click if requested
   if (uninstall && access("/proc/click", F_OK) >= 0) {
     // install blank configuration
+    if (verbose)
+      errh->message("Installing blank configuration to /proc/click/config");
     FILE *f = fopen("/proc/click/config", "w");
     if (!f)
       errh->fatal("cannot uninstall configuration: %s", strerror(errno));
@@ -328,9 +338,13 @@ particular purpose.\n");
     // remove packages
     String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
+      if (verbose)
+	errh->message("Removing packages:%s", to_remove.cc());
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
       (void) system(cmdline);
     }
+    if (verbose)
+      errh->message("Removing Click module");
     (void) system("/sbin/rmmod click");
     if (access("/proc/click", F_OK) >= 0)
       errh->warning("could not uninstall Click module");
@@ -340,6 +354,8 @@ particular purpose.\n");
   if (access("/proc/click", F_OK) < 0) {
     String click_o =
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
+    if (verbose)
+      errh->message("Installing Click module %s", click_o.cc());
     String cmdline = "/sbin/insmod ";
     if (output_map)
       cmdline += "-m ";
@@ -372,6 +388,9 @@ particular purpose.\n");
 	while (active_modules[insmod_name] >= 0)
 	  insmod_name = "_" + insmod_name;
 
+	if (verbose)
+	  errh->message("Installing package %s (%s.ko from config archive)", insmod_name.cc(), module_name.cc());
+	
 	// install module
 	String tmpnam = unique_tmpnam("x*.o", errh);
 	if (!tmpnam) exit(1);
@@ -404,6 +423,8 @@ particular purpose.\n");
 	  errh->message("cannot find required package `%s.o'", key.cc());
 	  errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
 	}
+	if (verbose)
+	  errh->message("Installing package %s (%s)", key.cc(), package.cc());
 	String cmdline = "/sbin/insmod " + package;
 	int retval = system(cmdline);
 	if (retval != 0)
@@ -414,6 +435,8 @@ particular purpose.\n");
   
   // write flattened configuration to /proc/click/config
   const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
+  if (verbose)
+    errh->message("Installing configuration to %s", config_place);
   FILE *f = fopen(config_place, "w");
   if (!f)
     errh->fatal("cannot install configuration: %s", strerror(errno));
@@ -458,6 +481,8 @@ particular purpose.\n");
   {
     String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
+      if (verbose)
+	errh->message("Removing old packages:%s", to_remove.cc());
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
       (void) system(cmdline);
     }
