@@ -356,8 +356,11 @@ particular purpose.\n");
   Vector<String> requirements;
   HashMap<String, int> header_files(-1);
 
+  // add initial provisions
   default_emap.limit_driver(driver);
   provisions.insert(ElementMap::driver_requirement(driver), 1);
+  // all default provisions are stored in elementmap index 0
+  add_stuff(0, default_emap, provisions, requirements, header_files);
   
   // process initial requirements and provisions
   for (HashMap<String, int>::Iterator iter = initial_requirements.first();

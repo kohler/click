@@ -418,6 +418,10 @@ ElementMap::parse(const String &str, const String &package_name)
 	_def_package.push_back(package_name);
       }
 
+    } else if (words[0] == "$provides") {
+      for (int i = 1; i < words.size(); i++)
+	_e[0].provisions += " " + cp_unquote(words[i]);
+
     } else if (words[0][0] != '$' && words.size() >= 4) {
       // an actual line
       Elt elt;

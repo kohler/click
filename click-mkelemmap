@@ -190,21 +190,33 @@ sub read_files_from ($) {
   }
 }
 
+sub long_option_match ($$$) {
+  my($have, $want, $len) = @_;
+  $have = $1 if $have =~ /^(--[^=]*)=/;
+  my($hl) = length($have);
+  ($hl <= length($want) && $hl >= $len && $have eq substr($want, 0, $hl));
+}
+
 undef $/;
-my(@files, $fn, $prefix);
+my(@files, @provides, $fn, $prefix);
 $prefix = "";
 while (@ARGV) {
   $_ = shift @ARGV;
-  if (/^-f$/ || /^--files$/) {
+  if (/^-f$/ || long_option_match($_, '--files', 3)) {
     die "not enough arguments" if !@ARGV;
     push @files, read_files_from(shift @ARGV);
-  } elsif (/^--files=(.*)$/) {
+  } elsif (long_option_match($_, '--files', 3) && /^[^=]*=(.*)$/) {
     push @files, read_files_from($1);
-  } elsif (/^-p$/ || /^--prefix$/) {
+  } elsif (/^-p$/ || long_option_match($_, '--prefix', 5)) {
     die "not enough arguments" if !@ARGV;
     $prefix = shift @ARGV;
-  } elsif (/^--prefix=(.*)$/) {
+  } elsif (long_option_match($_, '--prefix', 5) && /^[^=]*=(.*)$/) {
     $prefix = $1;
+  } elsif (/^-r$/ || long_option_match($_, '--provide', 5)) {
+    die "not enough arguments" if !@ARGV;
+    push @provides, split(/\s+/, shift @ARGV);
+  } elsif (long_option_match($_, '--provide', 5) && /^[^=]*=(.*)$/) {
+    push @provides, split(/\s+/, $1);
   } elsif (/^-./) {
     die "unknown option `$_'\n";
   } elsif (/^-$/) {
@@ -225,6 +237,7 @@ open(OUT, ">&STDOUT");
 my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
 print OUT "\$sourcedir\t\"$sourcedir\"\n";
+print OUT "\$provides\t\"", join(' ', @provides), "\"\n";
 
 print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflow code\tflag word\trequirements\tprovisions\n";
 
