@@ -97,9 +97,9 @@ of the original packet stream. False by default.
 Legacy encapsulation type ("IP", "ATM", "SUNATM", "ETHER", "PPP", or
 "PPP_HDLC").  New-style ERF dumps contain an explicit encapsulation type on
 each packet; you should not provide an ENCAP option for new-style ERF dumps.
-Legacy-format ERF dumps don't contain any encapsulation information, however,
-so you should supply an encapsulation type explicitly (or FromDAGDump will
-assume ENCAP type "ATM").
+Legacy-format dumps don't contain any encapsulation information, however, so
+you should supply an encapsulation type explicitly (or FromDAGDump will assume
+ENCAP type "ATM").
 
 =item MMAP
 
