@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ICMPError(IPADDR, TYPE [, CODE, I<keywords> BADADDRS])
+ * ICMPError(IPADDR, TYPE [, CODE, I<keywords> BADADDRS, MTU])
  * =s ICMP, encapsulation
  * generates ICMP error packets
  * =d
@@ -13,7 +13,7 @@ CLICK_DECLS
  * in response to an incoming IP packet. The output is an IP/ICMP packet.
  * The ICMP packet's IP source address is set to IPADDR.
  * The error packet will include (as payload)
- * the original packet's IP header and the first 8 byte of the packet's
+ * the original packet's IP header and an initial segment of its
  * IP payload. ICMPError sets the packet destination IP and
  * fix_ip_src annotations.
  *
@@ -27,7 +27,7 @@ CLICK_DECLS
  *
  * The intent is that elements that give rise to errors, like DecIPTTL,
  * should have two outputs, one of which is connected to an ICMPError.
- * Perhaps the ICMPError()s should be followed by a rate limiting
+ * Perhaps the ICMPError should be followed by a rate limiting
  * element.
  *
  * ICMPError never generates a packet in response to an ICMP error packet, a
@@ -47,6 +47,12 @@ CLICK_DECLS
  * address is taken from the destination annotation. Usually a Paint-PaintTee
  * element pair hands the packet to a redirect ICMPError. RFC1812 says only
  * code 1 (`host') should be used.
+ *
+ * If the input packet has a source route option, the output packet will also
+ * have a source route option, containing the routers from the input source
+ * route, reversed.
+ *
+ * Will not generate a packet larger than MTU, which defaults to 576.
  *
  * =e
  * This configuration fragment produces ICMP Time Exceeded error
@@ -85,11 +91,12 @@ private:
   int _code;
   unsigned *_bad_addrs;
   int _n_bad_addrs;
+  unsigned _mtu;
 
-  bool is_error_type(int);
-  bool unicast(struct in_addr);
-  bool valid_source(struct in_addr);
-  bool has_route_opt(const click_ip *ip);
+  static bool is_error_type(int);
+  bool unicast(struct in_addr) const;
+  bool valid_source(struct in_addr) const;
+  static const uint8_t *valid_source_route(const click_ip *ip);
   
 };
 

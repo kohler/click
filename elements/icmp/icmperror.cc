@@ -84,6 +84,7 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
   String bad_addr_str;
   IPAddressSet bad_addrs;
   _code = 0;
+  _mtu = 576;
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "source IP address", &_src_ip,
                   "ICMP.type", "ICMP error type", &_type,
@@ -92,6 +93,7 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpIPAddressSet, "bad IP addresses", &bad_addrs,
 		  cpKeywords,
 		  "BADADDRS", cpIPAddressSet, "bad IP addresses", &bad_addrs,
+		  "MTU", cpUnsigned, "MTU", &_mtu,
 		  0) < 0)
     return -1;
   if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
@@ -117,7 +119,7 @@ ICMPError::initialize(ErrorHandler *errh)
 {
   if (_type < 0 || _code < 0 || _src_ip.addr() == 0)
     return errh->error("not configured");
-  if (is_error_type(_type) == false)
+  if (!is_error_type(_type))
     return errh->error("ICMP type %d is not an error type", _type);
   return 0;
 }
@@ -126,7 +128,7 @@ ICMPError::initialize(ErrorHandler *errh)
  * Is an IP address unicast?
  */
 bool
-ICMPError::unicast(struct in_addr aa)
+ICMPError::unicast(struct in_addr aa) const
 {
   unsigned int a = aa.s_addr;
   unsigned int ha = ntohl(a);
@@ -152,7 +154,7 @@ ICMPError::unicast(struct in_addr aa)
  * or 4.2.2.11 or 4.2.3.1?
  */
 bool
-ICMPError::valid_source(struct in_addr aa)
+ICMPError::valid_source(struct in_addr aa) const
 {
   unsigned int a = aa.s_addr;
   unsigned int ha = ntohl(a);
@@ -180,27 +182,34 @@ ICMPError::valid_source(struct in_addr aa)
 /*
  * Does a packet contain a source route option?
  */
-bool
-ICMPError::has_route_opt(const click_ip *ip)
+const uint8_t *
+ICMPError::valid_source_route(const click_ip *iph)
 {
-  int opts = (ip->ip_hl << 2) - sizeof(click_ip);
-  u_char *base = (u_char *) (ip + 1);
-  int i, optlen;
+  const uint8_t *oa = (const uint8_t *)iph;
+  int hlen = iph->ip_hl << 2;
 
-  for(i = 0; i < opts; i += optlen){
-    int opt = base[i];
-    if(opt == IPOPT_LSRR || opt == IPOPT_SSRR)
-      return(1);
-    if(opt == IPOPT_EOL)
-      break;
-    if(opt == IPOPT_NOP){
-      optlen = 1;
-    } else {
-      optlen = base[i+1];
-    }
+  for (int oi = sizeof(click_ip); oi < hlen; ) {
+    // handle one-byte options
+    unsigned type = oa[oi];
+    if (type == IPOPT_NOP) {
+      oi++;
+      continue;
+    } else if (type == IPOPT_EOL)
+      return 0;
+
+    // otherwise, get option length
+    int xlen = oa[oi + 1];
+    if (xlen < 2 || oi + xlen > hlen)
+      return 0;
+    else if ((type == IPOPT_LSRR || type == IPOPT_SSRR)
+	     && oa[oi + 2] >= 4 && oa[oi + 2] % 4 == 0
+	     && oa[oi + 2] <= xlen + 1)
+      return oa + oi;
+    else
+      oi += xlen;
   }
 
-  return(0);
+  return 0;
 }
 
 Packet *
@@ -208,6 +217,7 @@ ICMPError::simple_action(Packet *p)
 {
   WritablePacket *q = 0;
   const click_ip *ipp = p->ip_header();
+  const uint8_t *source_route;
   click_ip *nip;
   click_icmp *icp;
   unsigned hlen, xlen;
@@ -216,19 +226,19 @@ ICMPError::simple_action(Packet *p)
   if (!ipp)
     goto out;
 
-  hlen = ipp->ip_hl * 4;
+  hlen = ipp->ip_hl << 2;
 
   /* These "don'ts" are from RFC1812 4.3.2.7: */
 
   /* Don't reply to ICMP error messages. */
   if(ipp->ip_p == IP_PROTO_ICMP) {
-    icp = (click_icmp *) (((char *)ipp) + hlen);
-    if(hlen + 4 > p->length() || is_error_type(icp->icmp_type))
+    const click_icmp *icmph = p->icmp_header();
+    if(hlen + 4 > p->length() || is_error_type(icmph->icmp_type))
       goto out;
   }
 
   /* Don't respond to packets with IP broadcast destinations. */
-  if(unicast(ipp->ip_dst) == 0)
+  if(!unicast(ipp->ip_dst))
     goto out;
 
   /* Don't respond to e.g. Ethernet broadcasts or multicasts. */
@@ -236,56 +246,91 @@ ICMPError::simple_action(Packet *p)
     goto out;
 
   /* Don't respond is src is net 0 or invalid. */
-  if(valid_source(ipp->ip_src) == 0)
+  if(!valid_source(ipp->ip_src))
     goto out;
 
   /* Don't respond to fragments other than the first. */
-  if(ntohs(ipp->ip_off) & IP_OFFMASK){
+  if(!IP_FIRSTFRAG(ipp))
     goto out;
+
+  source_route = valid_source_route(ipp);
+  if (source_route) {
+    /* Don't send a redirect for a source-routed packet. 5.2.7.2 */
+    if (_type == ICMP_REDIRECT)
+      goto out;
+
+    /* Ignore source route if ICMP Parameter Problem concerns the source
+       route. 4.3.2.6 */
+    if (_type == ICMP_PARAMPROB && _code == ICMP_PARAMPROB_ERRATPTR
+	&& source_route <= ((const uint8_t *)ipp + ICMP_PARAMPROB_ANNO(p))
+	&& ((const uint8_t *)ipp + ICMP_PARAMPROB_ANNO(p)) < (source_route + source_route[1]))
+      source_route = 0;
   }
 
-  /* Don't send a redirect for a source-routed packet. 5.2.7.2 */
-  if(_type == 5 && has_route_opt(ipp))
+  // maximum size of ICMP packet is 576 bytes. 4.3.2.3
+  q = Packet::make(_mtu);	// we made it configurable
+  if (!q)
     goto out;
 
-  /* send back IP header and 8 bytes of payload */
-  xlen = p->length() - p->network_header_offset();
-  if (xlen > hlen + 8)
-    xlen = hlen + 8;
-
-  q = Packet::make(sizeof(click_ip) + sizeof(click_icmp) + xlen);
-  // guaranteed that packet data is aligned
-  memset(q->data(), '\0', q->length());
+  // prepare IP header; guaranteed that packet data is aligned
   nip = reinterpret_cast<click_ip *>(q->data());
   nip->ip_v = 4;
-  nip->ip_hl = sizeof(click_ip) >> 2;
-  nip->ip_len = htons(q->length());
+  nip->ip_tos = 0;		// XXX should be same as incoming datagram?
   nip->ip_id = htons(id++);
-  nip->ip_p = IP_PROTO_ICMP; /* icmp */
+  nip->ip_off = 0;
   nip->ip_ttl = 200;
+  nip->ip_p = IP_PROTO_ICMP;
+  nip->ip_sum = 0;
   nip->ip_src = _src_ip.in_addr();
   nip->ip_dst = ipp->ip_src;
-  nip->ip_sum = click_in_cksum((unsigned char *)nip, sizeof(click_ip));
+  
+  // include reversed source route if appropriate 4.3.2.6
+  if (source_route) {
+    uint8_t *o = q->data() + sizeof(click_ip);
+    int olen = source_route[2] - 1;
+    o[0] = source_route[0];	// copy option type
+    o[1] = olen;
+    o[2] = 4;
+    o[olen] = IPOPT_EOL;
+    o += 3;
+    for (const uint8_t *oo = source_route + source_route[2] - 5; oo >= source_route + 3; oo -= 4, o += 4)
+      memcpy(o, oo, 4);
+    nip->ip_hl = (sizeof(click_ip) + olen + 3) >> 2;
+  } else
+    nip->ip_hl = sizeof(click_ip) >> 2;
+  q->set_ip_header(nip, nip->ip_hl << 2);
 
-  icp = (click_icmp *) (nip + 1);
+  // now, prepare ICMP header
+  icp = q->icmp_header();
   icp->icmp_type = _type;
   icp->icmp_code = _code;
+  icp->icmp_cksum = 0;
+  icp->padding = 0;
 
-  if (_type == ICMP_PARAMPROB && _code == ICMP_PARAMPROB_ERRATPTR) {
+  // set ICMP particulars
+  if (_type == ICMP_PARAMPROB && _code == ICMP_PARAMPROB_ERRATPTR)
     /* Set the Parameter Problem pointer. */
     ((click_icmp_paramprob *) icp)->icmp_pointer = ICMP_PARAMPROB_ANNO(p);
-  }
-  if (_type == ICMP_REDIRECT) {
-    /* Redirect */
+  if (_type == ICMP_REDIRECT)
     ((click_icmp_redirect *) icp)->icmp_gateway = p->dst_ip_anno();
-  }
 
-  memcpy((void *)(icp + 1), p->network_header(), xlen);
+  // copy packet contents
+  xlen = q->end_data() - (uint8_t *)(icp + 1);
+  if ((int)xlen > p->network_length()) {
+    q->take(xlen - p->network_length());
+    xlen = p->network_length();
+  }
+  memcpy((uint8_t *)(icp + 1), p->network_header(), xlen);
   icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(click_icmp) + xlen);
 
+  // finish off IP header
+  nip->ip_len = htons(q->length());
+  nip->ip_sum = click_in_cksum((unsigned char *)nip, nip->ip_hl << 2);
+
+  // set annotations
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   SET_FIX_IP_SRC_ANNO(q, 1);
-  q->set_ip_header(nip, sizeof(click_ip));
+  click_gettimeofday(&q->timestamp_anno());
 
  out:
   p->kill();
