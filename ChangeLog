@@ -1,3 +1,11 @@
+2002-05-04 Saturday 22:42  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: Makefile.in (1.69), clickfs_core.cc (1.4),
+	kernelerror.cc (1.21), kernelerror.hh (1.5), module.cc (1.66),
+	modulepriv.hh (1.28), proc_config.cc (1.33), proc_element.cc
+	(1.42), proc_mgr.cc (1.16), sched.cc (1.33): refactoring: reduce
+	interdependencies among source files, clarification, combine files
+
 2002-05-04 Saturday 21:20  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-install/click-install.cc (1.47): better plan for
