@@ -1,0 +1,20 @@
+
+c :: Classifier(12/86DD, 12/0800, -);
+
+FromDevice(eth0,1) -> c;
+
+c [0] 
+  -> Strip(14)
+  -> MarkIPHeader
+  -> IP6Print(v6, NBYTES 512, CONTENTS true) 
+  -> Discard;
+
+c [1] 
+  -> Strip(14)
+  -> MarkIPHeader
+  // -> IPPrint(v4) 
+  -> Discard;
+
+c [2]
+  -> Discard;
+
