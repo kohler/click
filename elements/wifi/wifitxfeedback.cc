@@ -19,6 +19,11 @@ WifiTXFeedback::~WifiTXFeedback()
   MOD_DEC_USE_COUNT;
 }
 
+void
+WifiTXFeedback::notify_noutputs(int n) 
+{
+  set_noutputs(n < 2 ? 1 : 2);
+}
 
 int
 WifiTXFeedback::configure(Vector<String> &conf, ErrorHandler *errh)
