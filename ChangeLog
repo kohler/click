@@ -1,3 +1,16 @@
+2002-05-16 Thursday 14:50  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: ipfragmenter.cc (1.27), ipfragmenter.hh (1.21):
+	IPFragmenter updates: error checking on IP options, emit fragments
+	in order (although it is slightly more expensive), rewrite for
+	readability (hopefully introducing no errors)
+
+2002-05-16 Thursday 14:41  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: ipreassembler.cc (1.9), ipreassembler.hh (1.5):
+	rewrite IPReassembler to fix bug reported by Scott Page; avoid
+	other memory operations, just link Packets together
+
 2002-05-16 Thursday 14:12  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: oldipreassembler.cc (1.1), oldipreassembler.hh
