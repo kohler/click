@@ -3,6 +3,7 @@
 #include "string.hh"
 #include "vector.hh"
 #include "hashmap.hh"
+class StringAccum;
 
 String compile_pattern(const String &);
 
@@ -10,6 +11,7 @@ class CxxFunction {
 
   String _name;
   bool _in_header;
+  bool _from_header_file;
   String _ret_type;
   String _args;
   String _body;
@@ -19,12 +21,21 @@ class CxxFunction {
 
  public:
 
+  static bool parsing_header_file;
+  
   CxxFunction()				{ }
   CxxFunction(const String &, bool, const String &, const String &,
 	      const String &, const String &);
 
   String name() const			{ return _name; }
+  bool in_header() const		{ return _in_header; }
+  bool from_header_file() const		{ return _from_header_file; }
+  const String &ret_type() const	{ return _ret_type; }
+  const String &args() const		{ return _args; }
+  const String &body() const		{ return _body; }
   const String &clean_body() const	{ return _clean_body; }
+
+  void set_body(const String &b)	{ _body = b; _clean_body = String(); }
   
   bool find_expr(const String &) const;
   bool replace_expr(const String &, const String &);
@@ -34,6 +45,7 @@ class CxxFunction {
 class CxxClass {
 
   String _name;
+  Vector<CxxClass *> _parents;
 
   HashMap<String, int> _fn_map;
   Vector<CxxFunction> _functions;
@@ -46,14 +58,23 @@ class CxxClass {
 
   CxxClass(const String &);
 
+  const String &name() const		{ return _name; }
+  int nparents() const			{ return _parents.size(); }
+  CxxClass *parent(int i) const		{ return _parents[i]; }
+  
   int nfunctions() const		{ return _functions.size(); }
   CxxFunction *find(const String &);
-  CxxFunction *function(int i)		{ return &_functions[i]; }
-  
-  void defun(const CxxFunction &);
+  CxxFunction &function(int i)		{ return _functions[i]; }
+
+  CxxFunction &defun(const CxxFunction &);
+  void add_parent(CxxClass *);
 
   void mark_reachable_rewritable();
+  bool reachable_rewritable(int i) const { return _reachable_rewritable[i]; }
 
+  void header_text(StringAccum &) const;
+  void source_text(StringAccum &) const;
+  
 };
 
 class CxxInfo {
@@ -64,8 +85,6 @@ class CxxInfo {
   CxxInfo(const CxxInfo &);
   CxxInfo &operator=(const CxxInfo &);
 
-  CxxClass *make_class(const String &);
-  
   int parse_function_definition(const String &text, int fn_start_p,
 				int paren_p, const String &original,
 				CxxClass *cxx_class);
@@ -78,10 +97,11 @@ class CxxInfo {
   CxxInfo();
   ~CxxInfo();
   
-  void parse_file(const String &);
+  void parse_file(const String &, bool header, String * = 0);
 
   CxxClass *find_class(const String &) const;
-  
+  CxxClass *make_class(const String &);
+    
 };
 
 

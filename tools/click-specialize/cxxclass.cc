@@ -16,11 +16,13 @@
 #include "cxxclass.hh"
 #include "straccum.hh"
 
+bool CxxFunction::parsing_header_file;
+
 CxxFunction::CxxFunction(const String &name, bool in_header,
 			 const String &ret_type, const String &args,
 			 const String &body, const String &clean_body)
-  : _name(name), _in_header(in_header), _ret_type(ret_type), _args(args),
-    _body(body), _clean_body(clean_body)
+  : _name(name), _in_header(in_header), _from_header_file(parsing_header_file),
+    _ret_type(ret_type), _args(args), _body(body), _clean_body(clean_body)
 {
   //fprintf(stderr, "%s::%s\n", _name.cc(), _body.cc());
 }
@@ -178,7 +180,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
   if (!find_expr(pattern, &pos1, &pos2, match_pos, match_len))
     return false;
 
-  fprintf(stderr, ":::::: %s\n", _body.cc());
+  //fprintf(stderr, ":::::: %s\n", _body.cc());
   
   StringAccum sa, clean_sa;
   const char *s = replacement.data();
@@ -205,7 +207,7 @@ CxxFunction::replace_expr(const String &pattern, const String &replacement)
   _body = new_body;
   _clean_body = new_clean_body;
 
-  fprintf(stderr, ">>>>>> %s\n", _body.cc());
+  //fprintf(stderr, ">>>>>> %s\n", _body.cc());
   return true;
 }
 
@@ -221,11 +223,18 @@ CxxClass::CxxClass(const String &name)
 }
 
 void
+CxxClass::add_parent(CxxClass *cxx)
+{
+  _parents.push_back(cxx);
+}
+
+CxxFunction &
 CxxClass::defun(const CxxFunction &fn)
 {
   int which = _functions.size();
   _functions.push_back(fn);
   _fn_map.insert(fn.name(), which);
+  return _functions.back();
 }
 
 bool
@@ -281,6 +290,22 @@ CxxClass::reach(int findex, Vector<int> &reached)
     p = paren_p + 1;
   }
 
+  if (!reachable_rewritable && !_functions[findex].from_header_file()) {
+    // might still be reachable & rewritable if it's inlined, but from the
+    // .cc file, which we can't #include
+    const String &ret_type = _functions[findex].ret_type();
+    const char *s = ret_type.data();
+    int len = ret_type.length();
+    for (int p = 0; p < len - 6; p++)
+      if (s[p+0] == 'i' && s[p+1] == 'n' && s[p+2] == 'l'
+	  && s[p+3] == 'i' && s[p+4] == 'n' && s[p+5] == 'e'
+	  && (p == 0 || isspace(s[p-1]))
+	  && (p == len-6 || isspace(s[p+6]))) {
+	reachable_rewritable = true;
+	break;
+      }
+  }
+  
   _reachable_rewritable[findex] = reachable_rewritable;
   return reachable_rewritable;
 }
@@ -304,11 +329,42 @@ CxxClass::mark_reachable_rewritable()
   reach(_fn_map["push"], reached);
   reach(_fn_map["pull"], reached);
   reach(_fn_map["simple_action"], reached);
+  reach(_fn_map["run_scheduled"], reached);
+}
 
-  for (int i = 0; i < nfunctions(); i++)
-    fprintf(stderr, "%s %s %s\n", _functions[i].name().cc(),
-	    _rewritable[i] ? "rewritable" : "-",
-	    _reachable_rewritable[i] ? "reachable" : "-");
+void
+CxxClass::header_text(StringAccum &sa) const
+{
+  sa << "class " << _name;
+  if (_parents.size()) {
+    sa << " : ";
+    for (int i = 0; i < _parents.size(); i++) {
+      if (i) sa << ", ";
+      sa << "public " << _parents[i]->name();
+    }
+  }
+  sa << " {\n public:\n";
+  for (int i = 0; i < _functions.size(); i++) {
+    const CxxFunction &fn = _functions[i];
+    sa << "  " << fn.ret_type() << " " << fn.name() << fn.args();
+    if (fn.in_header())
+      sa << " {" << fn.body() << "}\n";
+    else
+      sa << ";\n";
+  }
+  sa << "};\n";
+}
+
+void
+CxxClass::source_text(StringAccum &sa) const
+{
+  for (int i = 0; i < _functions.size(); i++) {
+    const CxxFunction &fn = _functions[i];
+    if (!fn.in_header()) {
+      sa << fn.ret_type() << "\n" << _name << "::" << fn.name() << fn.args();
+      sa << "\n{" << fn.body() << "}\n";
+    }
+  }
 }
 
 
@@ -561,7 +617,7 @@ int
 CxxInfo::parse_class_definition(const String &text, int p,
 				const String &original)
 {
-  // find start of class name
+  // find class name
   const char *s = text.data();
   int len = text.length();
   while (p < len && isspace(s[p]))
@@ -570,12 +626,23 @@ CxxInfo::parse_class_definition(const String &text, int p,
   while (p < len && (isalnum(s[p]) || s[p] == '_'))
     p++;
   String class_name = original.substring(name_start_p, p - name_start_p);
-
-  // XXX superclasses!!
-  
   CxxClass *cxxc = make_class(class_name);
-  while (p < len && s[p] != '{')
-    p++;
+
+  // parse superclasses
+  while (p < len && s[p] != '{') {
+    while (p < len && s[p] != '{' && !isalnum(s[p]) && s[p] != '_')
+      p++;
+    int p1 = p;
+    while (p < len && (isalnum(s[p]) || s[p] == '_'))
+      p++;
+    if (p > p1 && (p != p1 + 6 || strncmp(s+p, "public", 6) != 0)) {
+      // XXX private or protected inheritance?
+      CxxClass *parent = make_class(original.substring(p1, p - p1));
+      cxxc->add_parent(parent);
+    }
+  }
+
+  // parse class body
   return parse_class(text, p + 1, original, cxxc);
 }
 
@@ -623,10 +690,22 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
 }
 
 void
-CxxInfo::parse_file(const String &original_text)
+CxxInfo::parse_file(const String &original_text, bool header,
+		    String *store_includes = 0)
 {
   String clean_text = remove_crap(original_text);
+  CxxFunction::parsing_header_file = header;
   parse_class(clean_text, 0, original_text, 0);
+
+  // save initial comments and #defines and #includes for replication
+  if (store_includes) {
+    const char *s = clean_text.data();
+    int p = 0;
+    int len = clean_text.length();
+    while (p < len && isspace(s[p]))
+      p++;
+    *store_includes = original_text.substring(0, p);
+  }
 }
 
 // Vector template instantiation
