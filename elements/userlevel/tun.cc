@@ -190,10 +190,15 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
 {
   int fd, yes = 1;
   char tmp[512], tmp0[64], tmp1[64];;
+  int saved_errno = 0;
 
   for (int i = 0; i < 32; i++) {
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, 2);
+    if(fd < 0){
+      if(saved_errno == 0 || errno != ENOENT)
+        saved_errno = errno;
+    }
     if(fd >= 0){
       if(ioctl(fd, FIONBIO, &yes) < 0){
 	close(fd);
@@ -240,7 +245,9 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
     }
   }
 
-  return errh->error("could not allocate a /dev/%s* device", dev_prefix);
+  return errh->error("could not allocate a /dev/%s* device: %s",
+                     dev_prefix,
+                     strerror(saved_errno));
 }
 
 
