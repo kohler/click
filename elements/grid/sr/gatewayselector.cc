@@ -16,14 +16,16 @@
  */
 
 #include <click/config.h>
-#include "gatewayselector.hh"
-#include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/sr/srcrstat.hh>
 #include <click/straccum.hh>
+#include <click/ipaddress.hh>
 #include <clicknet/ether.h>
+#include "srpacket.hh"
+#include "srcrstat.hh"
+#include "gatewayselector.hh"
+
 CLICK_DECLS
 
 #ifndef gatewayselector_assert
@@ -145,14 +147,14 @@ GatewaySelector::run_timer ()
 void
 GatewaySelector::start_ad()
 {
-  int len = sr_pkt::len_wo_data(1);
+  int len = srpacket::len_wo_data(1);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   memset(pk, '\0', len);
-  pk->_version = _srcr_version;
+  pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
   pk->_flags = 0;
   pk->_qdst = _ip;
@@ -216,14 +218,14 @@ GatewaySelector::forward_ad(Seen *s)
 
   gatewayselector_assert(s->_hops.size() == s->_metrics.size()+1);
 
-  int len = sr_pkt::len_wo_data(nhops);
+  int len = srpacket::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   memset(pk, '\0', len);
-  pk->_version = _srcr_version;
+  pk->_version = _sr_version;
   pk->_type = PT_GATEWAY;
   pk->_flags = 0;
   pk->_qdst = s->_gw;
@@ -296,7 +298,7 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
   click_ether *eh = (click_ether *) p_in->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   if(eh->ether_type != htons(_et)) {
     click_chatter("GatewaySelector %s: bad ether_type %04x",
 		  _ip.s().cc(),

@@ -11,8 +11,6 @@
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
-#include "srcr.hh"
-#include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
 /*
@@ -63,6 +61,8 @@ class GatewaySelector : public Element {
 				     void *, ErrorHandler *errh);
   void write_is_gateway(bool b);
 
+  static int static_pick_new_gateway(const String &arg, Element *el,
+				     void *, ErrorHandler *errh);
   void push(int, Packet *);
   void run_timer();
 

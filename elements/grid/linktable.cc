@@ -177,6 +177,8 @@ LinkTable::clear()
 void 
 LinkTable::update_link(IPAddress from, IPAddress to, int metric)
 {
+  lt_assert(from);
+  lt_assert(to);
   /* make sure both the hosts exist */
   HostInfo *nfrom = _hosts.findp(from);
   if (!nfrom) {
@@ -203,6 +205,23 @@ LinkTable::update_link(IPAddress from, IPAddress to, int metric)
   
 }
 
+
+LinkTable::Link 
+LinkTable::random_link()
+{
+  int ndx = random() % _links.size();
+  int current_ndx = 0;
+  for (LTIter iter = _links.begin(); iter; iter++, current_ndx++) {
+    if (current_ndx == ndx) {
+      LinkInfo n = iter.value();
+      return Link(n._from, n._to, n._metric);
+    }
+  }
+  click_chatter("LinkTable %s: random_link overestimated number of elements\n",
+		id().cc());
+  return Link();
+
+}
 Vector<IPAddress> 
 LinkTable::get_hosts()
 {
@@ -216,6 +235,7 @@ LinkTable::get_hosts()
 int 
 LinkTable::get_host_metric(IPAddress s)
 {
+  lt_assert(s);
   HostInfo *nfo = _hosts.findp(s);
   if (!nfo) {
     return 0;
@@ -226,6 +246,8 @@ LinkTable::get_host_metric(IPAddress s)
 int 
 LinkTable::get_hop_metric(IPAddress from, IPAddress to) 
 {
+  lt_assert(from);
+  lt_assert(to);
   IPPair p = IPPair(from, to);
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
@@ -297,6 +319,7 @@ LinkTable::valid_route(Vector<IPAddress> route)
 Vector<IPAddress> 
 LinkTable::best_route(IPAddress dst)
 {
+  lt_assert(dst);
   Vector<IPAddress> reverse_route;
   Vector<IPAddress> route;
   HostInfo *nfo = _hosts.findp(dst);
@@ -355,6 +378,7 @@ LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPA
 Vector <Vector <IPAddress> >
 LinkTable::top_n_routes(IPAddress dst, int n)
 {
+  lt_assert(dst);
   click_chatter("LinkTable %s: top_n_routes(%s, %d)\n",
 		id().cc(),
 		dst.s().cc(),

@@ -16,14 +16,18 @@
  */
 
 #include <click/config.h>
-#include "top5.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include "srpacket.hh"
+#include "srforwarder.hh"
+#include "srcrstat.hh"
+#include "top5.hh"
+
+
 CLICK_DECLS
 
 #ifndef top5_assert
@@ -33,8 +37,12 @@ CLICK_DECLS
 
 Top5::Top5()
   :  Element(3,2),
+     _et(0),
+     _ip(),
+     _en(),
      _timer(this), 
-     _warmup(0),
+     _sr_forwarder(0),
+     _link_table(0),
      _srcr_stat(0),
      _arp_table(0),
      _num_queries(0),
@@ -69,27 +77,40 @@ int
 Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
-  _warmup_period = 25;
   ret = cp_va_parse(conf, this, errh,
-		    cpUnsigned, "Ethernet encapsulation type", &_et,
-                    cpIPAddress, "IP address", &_ip,
-		    cpEtherAddress, "EtherAddress", &_en,
-		    cpElement, "SRCR element", &_srcr,
-		    cpElement, "LinkTable element", &_link_table,
-		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
+                    "IP", cpIPAddress, "IP address", &_ip,
+		    "ETH", cpEtherAddress, "EtherAddress", &_en,
+		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
+		    "LT", cpElement, "LinkTable element", &_link_table,
+		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
-		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
 
-  if (_srcr && _srcr->cast("SRCR") == 0) 
-    return errh->error("SRCR element is not a SRCR");
-  if (_link_table && _link_table->cast("LinkTable") == 0) 
+  if (!_et) 
+    return errh->error("ETHTYPE not specified");
+  if (!_ip) 
+    return errh->error("IP not specified");
+  if (!_en) 
+    return errh->error("ETH not specified");
+  if (!_sr_forwarder) 
+    return errh->error("SR not specified");
+  if (!_link_table) 
+    return errh->error("LinkTable LT not specified");
+  if (!_arp_table) 
+    return errh->error("ARPTable not specified");
+
+
+  if (_sr_forwarder->cast("SRForwarder") == 0) 
+    return errh->error("SR element is not a SRForwarder");
+  if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
+  if (_arp_table->cast("ARPTable") == 0) 
+    return errh->error("ARPTable element is not an ARPtable");
+
   if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SrcrStat");
-  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
-    return errh->error("ARPTable element is not an ARPtable");
 
   return ret;
 }
@@ -112,13 +133,6 @@ Top5::initialize (ErrorHandler *)
 void
 Top5::run_timer ()
 {
-  if (_warmup <= _warmup_period) {
-    _warmup++;
-    if (_warmup > _warmup_period) {
-      click_chatter("Top5 %s: warmup finished\n",
-		    id().cc());
-    }
-  }
   _timer.schedule_after_ms(1000);
 }
 
@@ -138,14 +152,14 @@ Top5::start_query(IPAddress dstip)
     d->_ip = dstip;
     d->_started = false;
   }
-  int len = sr_pkt::len_wo_data(1);
+  int len = srpacket::len_wo_data(1);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   memset(pk, '\0', len);
-  pk->_version = _srcr_version;
+  pk->_version = _sr_version;
   pk->_type = PT_QUERY;
   pk->_flags = 0;
   pk->_qdst = dstip;
@@ -164,7 +178,7 @@ void
 Top5::send(WritablePacket *p)
 {
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
 
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
@@ -211,7 +225,7 @@ Top5::update_link(IPAddress from, IPAddress to, int metric) {
 // Continue flooding a query by broadcast.
 // Maintain a list of querys we've already seen.
 void
-Top5::process_query(struct sr_pkt *pk1)
+Top5::process_query(struct srpacket *pk1)
 {
   IPAddress src(pk1->get_hop(0));
   IPAddress dst(pk1->_qdst);
@@ -287,48 +301,52 @@ Top5::process_query(struct sr_pkt *pk1)
     }
     _seen.push_back(Seen(src, dst, seq, 0));
   }
+  
   _seen[si]._count++;
-  int better_than = TOP_N;
-  if (_seen[si]._queries.size() < TOP_N) {
-    better_than = _seen[si]._queries.size();
-    _seen[si]._queries.push_back(Query());
-  } else {
-    for (int x = 0; x < _seen[si]._queries.size(); x++) {
-      if (!_seen[si]._queries[x]._metric && _seen[si]._metric > metric) {
-	better_than = x;
-	_seen[si]._queries[x] = Query();
-	break;
-      }
-    }
-
-  }
-
-  if (better_than == TOP_N) {
+  if (_seen[si]._metric && _seen[si]._metric <= metric) {
+    /* the metric is worse that what we've seen*/
     return;
   }
 
-  _seen[si]._queries[better_than]._p = hops;
-  _seen[si]._queries[better_than]._metrics = metrics;
-  _seen[si]._queries[better_than]._src = src;
-  _seen[si]._queries[better_than]._dst = dst;
-  _seen[si]._queries[better_than]._seq = seq;
+  _seen[si]._metric = metric;
+  click_gettimeofday(&_seen[si]._when);
 
+  _seen[si]._hops = hops;
+  _seen[si]._metrics = metrics;
+  struct extra_link_info *extra = (struct extra_link_info *) pk1->data();
 
-  /* schedule timer */
-  int delay_time = random() % 750 + 1;
-  top5_assert(delay_time > 0);
-  
-  struct timeval delay;
-  struct timeval now;
-  delay.tv_sec = 0;
-  delay.tv_usec = delay_time*1000;
-  click_gettimeofday(&now);
-  timeradd(&now, &delay, &_seen[si]._queries[better_than]._to_send);
-  _seen[si]._queries[better_than]._forwarded = false;
-  Timer *t = new Timer(static_forward_query_hook, (void *) this);
-  t->initialize(this);
-  
-  t->schedule_at(_seen[si]._queries[better_than]._to_send);
+  for (int x = 0; x < extra->num_hops(); x++) {
+    _seen[si]._extra_hosts.push_back(extra->get_hop(x));
+    if (x != extra->num_hops()-1) {
+      _seen[si]._extra_metrics.push_back(extra->get_metric(x));
+    }
+  }
+
+  if (dst == _ip) {
+    /* query for me */
+    //start_reply(pk1);
+  } else {
+    _seen[si]._hops = hops;
+    _seen[si]._metrics = metrics;
+    if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
+      /* a timer has already been scheduled */
+      return;
+    } else {
+      /* schedule timer */
+      int delay_time = random() % 750 + 1;
+      top5_assert(delay_time > 0);
+
+      struct timeval delay;
+      delay.tv_sec = 0;
+      delay.tv_usec = delay_time*1000;
+      timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+      _seen[si]._forwarded = false;
+      Timer *t = new Timer(static_forward_query_hook, (void *) this);
+      t->initialize(this);
+      
+      t->schedule_at(_seen[si]._to_send);
+    }
+  }
 }
 
 void
@@ -337,55 +355,75 @@ Top5::forward_query_hook()
   struct timeval now;
   click_gettimeofday(&now);
   for (int x = 0; x < _seen.size(); x++) {
-    for (int y = 0; y < _seen[x]._queries.size(); y++) {
-      if (timercmp(&_seen[x]._queries[y]._to_send, &now, <) 
-	  && !_seen[x]._queries[y]._forwarded) {
-	forward_query(&_seen[x]._queries[y]);
-      }
+    if (timercmp(&_seen[x]._to_send, &now, <) && !_seen[x]._forwarded) {
+      forward_query(&_seen[x]);
     }
   }
 }
 void
-Top5::forward_query(Query *q)
+Top5::forward_query(Seen *s)
 {
   click_chatter("Top5 %s: forward_query %s -> %s\n", 
 		id().cc(),
-		q->_src.s().cc(),
-		q->_dst.s().cc());
-  int nhops = q->_p.size();
-
-  top5_assert(q->_p.size() == q->_metrics.size()+1);
-
+		s->_src.s().cc(),
+		s->_dst.s().cc());
+  int nhops = s->_hops.size();
+  int extra_num_hops = s->_extra_hosts.size()+5;
+  top5_assert(s->_hops.size() == s->_metrics.size()+1);
+  
   //click_chatter("forward query called");
-  int len = sr_pkt::len_wo_data(nhops);
+  int len = srpacket::len_wo_data(nhops) + 
+    extra_link_info::len(extra_num_hops);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   memset(pk, '\0', len);
-  pk->_version = _srcr_version;
+  pk->_version = _sr_version;
   pk->_type = PT_QUERY;
   pk->_flags = 0;
-  pk->_qdst = q->_dst;
-  pk->_seq = htonl(q->_seq);
+  pk->_qdst = s->_dst;
+  pk->_seq = htonl(s->_seq);
   pk->set_num_hops(nhops);
 
   for(int i=0; i < nhops; i++) {
-    pk->set_hop(i, q->_p[i]);
+    pk->set_hop(i, s->_hops[i]);
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, q->_metrics[i]);
+    pk->set_metric(i, s->_metrics[i]);
   }
 
-  q->_forwarded = true;
+  struct extra_link_info *extra = (struct extra_link_info *) pk->data();
+  extra->set_num_hops(extra_num_hops);
+  for (int i = 0; i < extra_num_hops; i++) {
+    extra->set_hop(i, s->_extra_metrics[i]);
+    if (i != extra_num_hops - 1) {
+      extra->set_metric(i, s->_extra_metrics[i]);
+    } 
+  }
+  
+  for (int i = 0; i < 5; i += 2) {
+    /* get random link, add to extra */
+    LinkTable::Link l = _link_table->random_link();
+    extra->set_hop(i, l._from);
+    extra->set_metric(i, l._metric);
+    extra->set_hop(i+1, l._to);
+    if (i > 0) {
+      /* set the intermediate ho if we have that information */
+      IPAddress f = extra->get_hop(i-1);
+      int extra_metric = _link_table->get_hop_metric(l._from, f);
+      extra->set_metric(i-1, extra_metric);
+    }
+  }
+  s->_forwarded = true;
   send(p);
 }
 
 // Continue unicasting a reply packet.
 void
-Top5::forward_reply(struct sr_pkt *pk1)
+Top5::forward_reply(struct srpacket *pk1)
 {
   u_char type = pk1->_type;
   top5_assert(type == PT_REPLY);
@@ -417,7 +455,7 @@ Top5::forward_reply(struct sr_pkt *pk1)
   if(p == 0)
     return;
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   memcpy(pk, pk1, len);
 
   pk->set_next(pk1->next() - 1);
@@ -444,11 +482,24 @@ void Top5::start_reply(class Reply *r)
   _link_table->dijkstra();
   Vector<Path> paths = _link_table->top_n_routes(r->_dst, TOP_N);
   
-  int num_hosts = 0;
-  for (int x = 0; x < paths.size(); x++) {
-    num_hosts += paths[x].size();
+  int num_hosts = paths[0].size();
+  if (num_hosts < 2) {
+      click_chatter("Top5 %s: not path for reply %s <- %s\n",
+		id().cc(),
+		r->_src.s().cc(),
+		r->_dst.s().cc());
+      return;
   }
-  int len = sr_pkt::len_wo_data(num_hosts);
+
+  int extra_num_hosts = 0;
+
+  for (int x = 1; x < paths.size(); x++ ) {
+    extra_num_hosts += paths[x].size();
+  }
+
+  int len = srpacket::len_wo_data(num_hosts) +
+    extra_link_info::len(extra_num_hosts);
+
   click_chatter("Top5 %s: start_reply %s <- %s\n",
 		id().cc(),
 		r->_src.s().cc(),
@@ -458,11 +509,11 @@ void Top5::start_reply(class Reply *r)
     return;
 
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk_out = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk_out = (struct srpacket *) (eh+1);
   memset(pk_out, '\0', len);
 
 
-  pk_out->_version = _srcr_version;
+  pk_out->_version = _sr_version;
   pk_out->_type = PT_REPLY;
   pk_out->_flags = 0;
   pk_out->_seq = r->_seq;
@@ -470,18 +521,32 @@ void Top5::start_reply(class Reply *r)
   pk_out->set_next(paths[0].size() - 1);
   pk_out->_qdst = _ip;
 
-  int hop = 0;
-  for (int x = 0; x < paths.size(); x++) {
-    for (int y = 0; y < paths[x].size(); y++) {
-      IPAddress ip = paths[x][y];
-      pk_out->set_hop(hop++, ip);
-    }
+  for (int x = 0; x < paths[0].size(); x++) {
+      IPAddress ip = paths[0][x];
+      pk_out->set_hop(x, ip);
   }
 
-  for (int x = 0; x < paths.size()-1; x++) {
+  for (int x = 0; x < paths[0].size()-1; x++) {
     int metric = _link_table->get_hop_metric(pk_out->get_hop(x), 
-					    pk_out->get_hop(x+1));
+					     pk_out->get_hop(x+1));
     pk_out->set_metric(x, metric);
+  }
+
+
+  struct extra_link_info *extra = (struct extra_link_info *) pk_out->data();
+  extra->set_num_hops(extra_num_hosts);
+  int current_hop = 0;
+
+  for (int x = 0; x < paths.size(); x++) {
+    for (int y = 0; y < paths[x].size(); y += 2) {
+      IPAddress from = paths[x][y];
+      IPAddress to = paths[x][y+1];
+      int metric = _link_table->get_hop_metric(from, to);
+      extra->set_hop(current_hop, from);
+      extra->set_hop(current_hop+1, to);
+      extra->set_metric(current_hop, metric);
+      current_hop += 2;
+    }
   }
   send(p);
 }
@@ -489,7 +554,7 @@ void Top5::start_reply(class Reply *r)
 // Got a reply packet whose ultimate consumer is us.
 // Make a routing table entry if appropriate.
 void
-Top5::got_reply(struct sr_pkt *pk)
+Top5::got_reply(struct srpacket *pk)
 {
 
   IPAddress dst = IPAddress(pk->_qdst);
@@ -525,10 +590,6 @@ Top5::process_data(Packet *)
 void
 Top5::push(int port, Packet *p_in)
 {
-  if (_warmup < _warmup_period) {
-    p_in->kill();
-    return;
-  }
 
   if (port == 1) {
     process_data(p_in);
@@ -559,13 +620,13 @@ Top5::push(int port, Packet *p_in)
     }
     
     Path p = d->_paths[d->_current_path];
-    Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
+    Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
     output(1).push(p_out);
     p_in->kill();
    
   } else if (port ==  0) {
     click_ether *eh = (click_ether *) p_in->data();
-    struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+    struct srpacket *pk = (struct srpacket *) (eh+1);
     if(eh->ether_type != htons(_et)) {
       click_chatter("Top5 %s: bad ether_type %04x",
 		    _ip.s().cc(),
@@ -633,7 +694,7 @@ Top5::push(int port, Packet *p_in)
 	forward_reply(pk);
       }
     } else {
-      click_chatter("Top5 %s: bad sr_pkt type=%x",
+      click_chatter("Top5 %s: bad srpacket type=%x",
 		    _ip.s().cc(),
 		    type);
     }

@@ -103,6 +103,22 @@ public:
   Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
   int get_host_metric(IPAddress s);
   Vector<IPAddress> get_hosts();
+
+  class Link {
+  public:
+    IPAddress _from;
+    IPAddress _to;
+    int _metric;
+    Link() : _from(), _to(), _metric(0) { }
+    Link(IPAddress from, IPAddress to, int metric) {
+      _from = from;
+      _to = to;
+      _metric = metric;
+    }
+  };
+
+  Link random_link();
+
 private: 
   class LinkInfo {
   public:

@@ -1,36 +1,36 @@
-#ifndef CHECKSRCRHEADER_HH
-#define CHECKSRCRHEADER_HH
+#ifndef CHECKSRHEADER_HH
+#define CHECKSRHEADER_HH
 #include <click/element.hh>
 #include <click/glue.hh>
 CLICK_DECLS
 
 /*
  * =c
- * CheckSRCRHeader()
- * =s SRCR
+ * CheckSRHeader()
+ * =s SR
  * =d
- * Expects SRCR packets as input.
+ * Expects SR packets as input.
  * Checks that the packet's length is reasonable,
- * and that the SRCR header length, length, and
+ * and that the SR header length, length, and
  * checksum fields are valid.
  *
  * =a
- * SetSRCRChecksum
+ * SetSRChecksum
  */
 
-class CheckSRCRHeader : public Element {
+class CheckSRHeader : public Element {
 
   int _drops;
   
  public:
   
-  CheckSRCRHeader();
-  ~CheckSRCRHeader();
+  CheckSRHeader();
+  ~CheckSRHeader();
   
-  const char *class_name() const		{ return "CheckSRCRHeader"; }
+  const char *class_name() const		{ return "CheckSRHeader"; }
   const char *processing() const		{ return "a/ah"; }
   
-  CheckSRCRHeader *clone() const;
+  CheckSRHeader *clone() const;
   void notify_noutputs(int);
 
   int drops() const				{ return _drops; }

@@ -1,5 +1,5 @@
 /*
- * checksrcrheader.{cc,hh} -- element checks SRCR header for correctness
+ * checksrheader.{cc,hh} -- element checks SR header for correctness
  * (checksums, lengths)
  * John Bicket
  * apapted from checkgridheader.{cc,hh} by Douglas S. J. De Couto
@@ -20,14 +20,17 @@
 
 #include <click/config.h>
 #include <click/confparse.hh>
-#include "checksrcrheader.hh"
+#include <click/etheraddress.hh>
 #include <click/glue.hh>
-#include "srcr.hh"
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
+#include "srpacket.hh"
+#include "checksrheader.hh"
+
+
 CLICK_DECLS
 
-CheckSRCRHeader::CheckSRCRHeader()
+CheckSRHeader::CheckSRHeader()
   : _drops(0)
 {
   MOD_INC_USE_COUNT;
@@ -35,28 +38,28 @@ CheckSRCRHeader::CheckSRCRHeader()
   add_output();
 }
 
-CheckSRCRHeader::~CheckSRCRHeader()
+CheckSRHeader::~CheckSRHeader()
 {
   MOD_DEC_USE_COUNT;
 }
 
-CheckSRCRHeader *
-CheckSRCRHeader::clone() const
+CheckSRHeader *
+CheckSRHeader::clone() const
 {
-  return new CheckSRCRHeader();
+  return new CheckSRHeader();
 }
 
 void
-CheckSRCRHeader::notify_noutputs(int n)
+CheckSRHeader::notify_noutputs(int n)
 {
   set_noutputs(n < 2 ? 1 : 2);
 }
 
 void
-CheckSRCRHeader::drop_it(Packet *p)
+CheckSRHeader::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("CheckSRCRHeader %s: first drop", id().cc());
+    click_chatter("CheckSRHeader %s: first drop", id().cc());
   _drops++;
   
   if (noutputs() == 2)
@@ -66,16 +69,16 @@ CheckSRCRHeader::drop_it(Packet *p)
 }
 
 Packet *
-CheckSRCRHeader::simple_action(Packet *p)
+CheckSRHeader::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   unsigned int tlen = 0;
 
   if (!pk)
     goto bad;
 
-  if(p->length() < sizeof(struct sr_pkt)) { 
+  if(p->length() < sizeof(struct srpacket)) { 
     click_chatter("%s: packet truncated", id().cc());
     goto bad;
   }
@@ -86,8 +89,8 @@ CheckSRCRHeader::simple_action(Packet *p)
     tlen = pk->hlen_wo_data();
   }
 
-  if (pk->_version != _srcr_version) {
-     click_chatter ("%s: unknown srcr version %x from %s", 
+  if (pk->_version != _sr_version) {
+     click_chatter ("%s: unknown sr version %x from %s", 
 		    id().cc(), 
 		    pk->_version,
 		    EtherAddress(eh->ether_shost).s().cc());
@@ -103,7 +106,7 @@ CheckSRCRHeader::simple_action(Packet *p)
   }
 
   if (click_in_cksum((unsigned char *) pk, tlen) != 0) {
-    click_chatter("%s: bad SRCR checksum", id().cc());
+    click_chatter("%s: bad SR checksum", id().cc());
     click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), (unsigned long) ntohs(pk->_cksum));
     goto bad;
   }
@@ -127,17 +130,17 @@ CheckSRCRHeader::simple_action(Packet *p)
 }
 
 static String
-CheckSRCRHeader_read_drops(Element *xf, void *)
+CheckSRHeader_read_drops(Element *xf, void *)
 {
-  CheckSRCRHeader *f = (CheckSRCRHeader *)xf;
+  CheckSRHeader *f = (CheckSRHeader *)xf;
   return String(f->drops()) + "\n";
 }
 
 void
-CheckSRCRHeader::add_handlers()
+CheckSRHeader::add_handlers()
 {
-  add_read_handler("drops", CheckSRCRHeader_read_drops, 0);
+  add_read_handler("drops", CheckSRHeader_read_drops, 0);
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(CheckSRCRHeader)
+EXPORT_ELEMENT(CheckSRHeader)

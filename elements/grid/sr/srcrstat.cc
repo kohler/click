@@ -98,7 +98,7 @@ SrcrStat::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LinkTable element is not a LinkTable");
   }
   if (_arp_table && _arp_table->cast("ARPTable") == 0) {
-    return errh->error("ARPTable element is not a LinkTable");
+    return errh->error("ARPTable element is not a ARPyTable");
   }
   return res;
 }

@@ -5,184 +5,30 @@
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
-#include <elements/grid/linktable.hh>
-#include <elements/grid/gridgenericmetric.hh>
 #include <click/vector.hh>
-#include "ett.hh"
+#include <click/hashmap.hh>
+#include <click/dequeue.hh>
+#include <elements/grid/linktable.hh>
+#include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
+#include "srcr.hh"
 #include <elements/wifi/rxstats.hh>
-#include <elements/grid/sr/srcrstat.hh>
 CLICK_DECLS
 
 /*
  * =c
- * SRCR(ETHERTYPE, IP, ETH, ARPTable element, LT LinkTable element
- *     [ETT element], [METRIC GridGenericMetric] )
+ * SRCR(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, 
+ *    [METRIC GridGenericMetric], [WARMUP period in seconds])
  * =d
- * DSR-inspired ad-hoc routing protocol.
- * Input 0: Incoming ethernet packets for me
- * Output 0: Outgoing ethernet packets
- * Output 1: IP packets for higher layer
- *
- * Normally usged in conjuction with ETT element
+ * DSR-inspired end-to-end ad-hoc routing protocol.
+ * Input 0: ethernet packets 
+ * Input 1: ethernet data packets from device 
+ * Input 2: IP packets from higher layer, w/ ip addr anno.
+ * Input 3: IP packets from higher layer for gw, w/ ip addr anno.
+ * Output 0: ethernet packets to device (protocol)
+ * Output 1: ethernet packets to device (data)
  *
  */
-
-
-enum SRCRPacketType { PT_QUERY = (1<<0),
-		      PT_REPLY = (1<<1),
-		      PT_DATA  = (1<<2),
-                      PT_GATEWAY = (1<<3)};
-
-
-
-enum SRCRPacketFlags {
-  FLAG_ERROR = (1<<0),
-  FLAG_UPDATE = (1<<0),
-};
-
-static const uint8_t _srcr_version = 0x06;
-
-// Packet format.
-struct sr_pkt {
-  uint8_t _version; /* see _srcr_version */
-  uint8_t _type;  /* see enum SRCRPacketType */
-  uint8_t _nhops;
-  uint8_t _next;   // Index of next node who should process this packet.
-
-
-  uint16_t _ttl;
-  uint16_t _cksum;
-  uint16_t _flags; 
-  uint16_t _dlen;
-
-  uint16_t _random_metric;
-
-  // PT_QUERY
-  uint32_t _qdst; // Who are we looking for?
-  uint32_t _random_from;
-  uint32_t _random_to;
-  uint32_t _seq;   // Originator's sequence number.
-
-  
-  
-
-
-  void set_random_from(IPAddress ip) {
-    _random_from = ip;
-  }
-  void set_random_to(IPAddress ip) {
-    _random_to = ip;
-  }
-  void set_random_metric(uint16_t m) {
-    _random_metric = m;
-  }
-  IPAddress get_random_from() {
-    return _random_from;
-  }
-  IPAddress get_random_to() {
-    return _random_to;
-  }
-  int get_random_metric() {
-    return _random_metric;
-  }
-
-
-  // How long should the packet be?
-  size_t hlen_wo_data() const { return len_wo_data(_nhops); }
-  size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
-  
-  static size_t len_wo_data(int nhops) {
-    return sizeof(struct sr_pkt) + nhops * sizeof(uint32_t) + (nhops) * sizeof(uint16_t);
-  }
-  static size_t len_with_data(int nhops, int dlen) {
-    return len_wo_data(nhops) + dlen;
-  }
-  
-  int num_hops() {
-    return _nhops;
-  }
-
-  int next() {
-    return _next;
-  }
-
-  void set_next(uint8_t n) {
-    _next = n;
-  }
-
-  void set_num_hops(uint8_t n) {
-    _nhops = n;
-  }
-  void set_data_len(uint16_t len) {
-    _dlen = htons(len);
-  }
-  uint16_t data_len() {
-    return ntohs(_dlen);
-  }
-  uint16_t get_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    return ndx[h + num_hops()*2];
-  }
-
-  void set_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    ndx[hop + num_hops()*2] = s;
-  }
-
-
-
-  IPAddress get_hop(int h) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    return IPAddress(ndx[h]);
-  }
-  
-  void  set_hop(int hop, IPAddress p) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    ndx[hop] = p.in_addr();
-  }
-  
-  /* remember that if you call this you must have set the number of hops in this packet! */
-  u_char *data() { return (((u_char *)this) + len_wo_data(num_hops())); }
-  String s();
-};
-
-
-
-
-struct extra_link_info {
-  uint8_t _nhops;
-  uint8_t _foo1;
-  uint16_t _foo2;
-
-  int num_hops() {
-    return _nhops;
-  }
-  void set_num_hops(uint8_t n) {
-    _nhops = n;
-  }
-  
-  uint16_t get_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    return ndx[h + num_hops()*2];
-  }
-  
-  void set_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    ndx[hop + num_hops()*2] = s;
-  }
-  
-  IPAddress get_hop(int h) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    return IPAddress(ndx[h]);
-  }
-  
-  void  set_hop(int hop, IPAddress p) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    ndx[hop] = p.in_addr();
-  }
-
-};
 
 
 class SRCR : public Element {
@@ -197,37 +43,170 @@ class SRCR : public Element {
   SRCR *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
+
   /* handler stuff */
   void add_handlers();
+  static int static_clear(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+  void clear();
+
+  static int static_start(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+  void start(IPAddress dst);
+
+
+
+  static int static_link_failure(const String &arg, Element *e,
+				 void *, ErrorHandler *errh); 
+  void link_failure(EtherAddress dst);
+
+
 
   static String static_print_stats(Element *e, void *);
   String print_stats();
-  static String static_print_routes(Element *e, void *);
-  String print_routes();
 
   void push(int, Packet *);
-  
-  Packet *encap(const u_char *payload, u_long len, Vector<IPAddress>);
+  void run_timer();
+
+  static unsigned int jiff_to_ms(unsigned int j)
+  { return (j * 1000) / CLICK_HZ; }
+
+  static unsigned int ms_to_jiff(unsigned int m)
+  { return (CLICK_HZ * m) / 1000; }
+
+  int get_metric(IPAddress other);
+  void update_link(IPAddress from, IPAddress to, int metric);
+  void forward_query_hook();
+  IPAddress get_random_neighbor();
 private:
 
+  class Query {
+  public:
+    Query() {memset(this, 0, sizeof(*this)); }
+    Query(IPAddress ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
+    IPAddress _ip;
+    u_long _seq;
+    int _metric;
+    int _count;
+    struct timeval _last_query;
+
+  };
+
+  
+  // List of query sequence #s that we've already seen.
+  class Seen {
+  public:
+    IPAddress _src;
+    IPAddress _dst;
+    u_long _seq;
+    int _metric;
+    int _count;
+    struct timeval _when; /* when we saw the first query */
+    struct timeval _to_send;
+    bool _forwarded;
+    Vector<IPAddress> _hops;
+    Vector<int> _metrics;
+    Seen(IPAddress src, IPAddress dst, u_long seq, int metric) {
+      _src = src; _dst = dst; _seq = seq; _count = 0; _metric = metric;
+    }
+    Seen();
+  };
+
+  class BadNeighbor {
+  public:
+    IPAddress _ip;
+    struct timeval _when; 
+    struct timeval _timeout;
+    typedef HashMap<IPAddress, int> IPCount;
+    IPCount _errors_sent;
+
+    BadNeighbor() {memset(this, 0, sizeof(*this)); }
+    BadNeighbor(IPAddress ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
+    bool still_bad() {
+      struct timeval expire;
+      struct timeval now;
+      click_gettimeofday(&now);
+      timeradd(&_when, &_timeout, &expire);
+      return timercmp(&now , &expire, <);
+    }
+
+
+  };
+
+  class PathInfo {
+  public:
+    Path _p;
+    struct timeval _last_packet;
+    int count;
+    PathInfo() {memset(this,0,sizeof(*this)); }
+    PathInfo(Path p) { _p = p; }
+  };
+
+  typedef BigHashMap<Path, PathInfo> PathTable;
+  PathTable _paths;
+
+
+  typedef HashMap<IPAddress, BadNeighbor> BlackList;
+  BlackList _black_list;
+
+  typedef HashMap<IPAddress, Query> QueryTable;
+  QueryTable _queries;
+
+  typedef BigHashMap<IPAddress, bool> IPMap;
+  IPMap _neighbors;
+  Vector<IPAddress> _neighbors_v;
+
+  DEQueue<Seen> _seen;
+
+  int MaxSeen;   // Max size of table of already-seen queries.
+  int MaxHops;   // Max hop count for queries.
+  struct timeval _query_wait;
+  struct timeval _black_list_timeout;
+  struct timeval _rev_path_update;
+  u_long _seq;      // Next query sequence number to use.
+  Timer _timer;
   IPAddress _ip;    // My IP address.
-  EtherAddress _eth; // My ethernet address.
-  uint16_t _et;     // This protocol's ethertype
-  // Statistics for handlers.
-  int _datas;
-  int _databytes;
+  EtherAddress _en; // My ethernet address.
+  uint32_t _et;     // This protocol's ethertype
+
+  IPAddress _bcast_ip;
 
   EtherAddress _bcast;
 
+  class SRForwarder *_sr_forwarder;
   class LinkTable *_link_table;
-  class ARPTable *_arp_table;
-  class ETT *_ett;
   class SrcrStat *_srcr_stat;
-  
-  int get_metric(IPAddress other);
+  class ARPTable *_arp_table;
 
-  void update_link(IPAddress from, IPAddress to, int metric);
+  // Statistics for handlers.
+  int _num_queries;
+  int _bytes_queries;
+  int _num_replies;
+  int _bytes_replies;
+
+
+
+
+
+
+
+  int find_dst(IPAddress ip, bool create);
+  EtherAddress find_arp(IPAddress ip);
+  void got_arp(IPAddress ip, EtherAddress en);
+  void got_srpacket(Packet *p_in);
+  void start_query(IPAddress);
+  void process_query(struct srpacket *pk);
+  void forward_query(Seen *s);
+  void start_reply(struct srpacket *pk);
+  void forward_reply(struct srpacket *pk);
+  void got_reply(struct srpacket *pk);
+  void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
+  void send(WritablePacket *);
+  void process_data(Packet *p_in);
   void srcr_assert_(const char *, int, const char *) const;
+  static void static_forward_query_hook(Timer *, void *e) { 
+    ((SRCR *) e)->forward_query_hook(); 
+  }
 };
 
 

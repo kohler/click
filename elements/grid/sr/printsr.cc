@@ -1,5 +1,5 @@
 /*
- * printsrcr.{cc,hh} -- print srcr packets, for debugging.
+ * printsr.{cc,hh} -- print sr packets, for debugging.
  * John Bicket
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -16,36 +16,37 @@
  */
 
 #include <click/config.h>
-#include "printsrcr.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include "srpacket.hh"
+#include "printsr.hh"
+
 CLICK_DECLS
 
-PrintSRCR::PrintSRCR()
+PrintSR::PrintSR()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
   _label = "";
 }
 
-PrintSRCR::~PrintSRCR()
+PrintSR::~PrintSR()
 {
   MOD_DEC_USE_COUNT;
 }
 
-PrintSRCR *
-PrintSRCR::clone() const
+PrintSR *
+PrintSR::clone() const
 {
-  return new PrintSRCR;
+  return new PrintSR;
 }
 
 int
-PrintSRCR::configure(Vector<String> &conf, ErrorHandler* errh)
+PrintSR::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
@@ -57,13 +58,13 @@ PrintSRCR::configure(Vector<String> &conf, ErrorHandler* errh)
 }
 
 Packet *
-PrintSRCR::simple_action(Packet *p)
+PrintSR::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
 
   StringAccum sa;
-  sa << "PrintSRCR ";
+  sa << "PrintSR ";
   if (_label[0] != 0) {
     sa << _label.cc() << " ";
   }
@@ -125,4 +126,4 @@ PrintSRCR::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(PrintSRCR)
+EXPORT_ELEMENT(PrintSR)

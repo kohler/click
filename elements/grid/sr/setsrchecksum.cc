@@ -1,5 +1,5 @@
 /*
- * setsrcrchecksum.{cc,hh} -- element sets SRCR header checksum
+ * setsrchecksum.{cc,hh} -- element sets SR header checksum
  * John Bicket
  * apapted from setgridchecksum.{cc,hh} by Douglas S. J. De Couto
  * adapted from setipchecksum.{cc,hh} by Robert Morris
@@ -19,37 +19,37 @@
 
 #include <click/config.h>
 #include <click/confparse.hh>
-#include "setsrcrchecksum.hh"
+#include "setsrchecksum.hh"
 #include <click/glue.hh>
-#include "srcr.hh"
+#include "srpacket.hh"
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
 CLICK_DECLS
 
-SetSRCRChecksum::SetSRCRChecksum()
+SetSRChecksum::SetSRChecksum()
 {
   MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
-SetSRCRChecksum::~SetSRCRChecksum()
+SetSRChecksum::~SetSRChecksum()
 {
   MOD_DEC_USE_COUNT;
 }
 
-SetSRCRChecksum *
-SetSRCRChecksum::clone() const
+SetSRChecksum *
+SetSRChecksum::clone() const
 {
-  return new SetSRCRChecksum();
+  return new SetSRChecksum();
 }
 
 Packet *
-SetSRCRChecksum::simple_action(Packet *xp)
+SetSRChecksum::simple_action(Packet *xp)
 {
   WritablePacket *p = xp->uniqueify();
   click_ether *eh = (click_ether *) p->data();
-  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  struct srpacket *pk = (struct srpacket *) (eh+1);
   unsigned plen = p->length();
   unsigned int tlen = 0;
 
@@ -62,13 +62,13 @@ SetSRCRChecksum::simple_action(Packet *xp)
     tlen = pk->hlen_wo_data();
   }
   
-  if (plen < sizeof(struct sr_pkt))
+  if (plen < sizeof(struct srpacket))
     goto bad;
 
   if (tlen > plen - sizeof(click_ether))
     goto bad;
 
-  pk->_version = _srcr_version;
+  pk->_version = _sr_version;
 
   pk->_cksum = 0;
   pk->_cksum = click_in_cksum((unsigned char *) pk, tlen);
@@ -85,4 +85,4 @@ SetSRCRChecksum::simple_action(Packet *xp)
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(SetSRCRChecksum)
+EXPORT_ELEMENT(SetSRChecksum)

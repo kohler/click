@@ -8,11 +8,6 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/dequeue.hh>
-#include <elements/grid/linktable.hh>
-#include <elements/grid/arptable.hh>
-#include <elements/grid/sr/path.hh>
-#include "srcr.hh"
-#include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
 /*
@@ -67,7 +62,7 @@ private:
 
   IPAddress _ip;    // My IP address.
 
-  class SRCR *_srcr;
+  class SRForwarder *_sr_forwarder;
 
   void setsourceroute_assert_(const char *, int, const char *) const;
 

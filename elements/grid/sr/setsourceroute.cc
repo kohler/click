@@ -16,14 +16,19 @@
  */
 
 #include <click/config.h>
-#include "setsourceroute.hh"
-#include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/sr/srcrstat.hh>
+#include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <elements/grid/linktable.hh>
+#include <elements/grid/arptable.hh>
+#include <elements/grid/sr/path.hh>
+#include <elements/grid/sr/srcrstat.hh>
+#include "setsourceroute.hh"
+#include "srforwarder.hh"
+
 CLICK_DECLS
 
 #ifndef setsourceroute_assert
@@ -33,7 +38,7 @@ CLICK_DECLS
 
 SetSourceRoute::SetSourceRoute()
   :  Element(1,1),
-     _srcr(0)
+     _sr_forwarder(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -50,11 +55,11 @@ SetSourceRoute::configure (Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
                     "IP", cpIPAddress, "IP address", &_ip,
-		    "SRCR", cpElement, "SRCR element", &_srcr,
+		    "SRForwarder", cpElement, "SRForwarder element", &_sr_forwarder,
                     0);
 
-  if (!_srcr || _srcr->cast("SRCR") == 0) 
-    return errh->error("SRCR element is not a SRCR or not specified");
+  if (!_sr_forwarder || _sr_forwarder->cast("SRForwarder") == 0) 
+    return errh->error("SRForwarder element is not a SRForwarder or not specified");
   if (!_ip) 
     return errh->error("IP Address must be specified");
 
@@ -97,7 +102,7 @@ SetSourceRoute::simple_action(Packet *p_in)
     return 0;
   }
 
-  Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), *p);
+  Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), *p);
   p_in->kill();
   return p_out;
 }

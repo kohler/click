@@ -121,7 +121,11 @@ private:
     struct timeval _when; /* when we saw the first query */
     struct timeval _to_send;
     bool _forwarded;
-    Vector<Query> _queries;
+    Vector<IPAddress> _hops;
+    Vector<int> _metrics;
+    Vector<IPAddress> _extra_hosts;
+    Vector<int> _extra_metrics;
+
     Seen(IPAddress src, IPAddress dst, u_long seq, int metric) {
       _src = src; _dst = dst; _seq = seq; _count = 0; _metric = metric;
     }
@@ -141,18 +145,16 @@ private:
   struct timeval _query_wait;
   struct timeval _rev_path_update;
   u_long _seq;      // Next query sequence number to use.
-  Timer _timer;
-  int _warmup;
+  uint32_t _et;     // This protocol's ethertype
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
-  uint32_t _et;     // This protocol's ethertype
-  int _warmup_period;
+  Timer _timer;
 
   IPAddress _bcast_ip;
 
   EtherAddress _bcast;
 
-  class SRCR *_srcr;
+  class SRForwarder *_sr_forwarder;
   class LinkTable *_link_table;
   class SrcrStat *_srcr_stat;
   class ARPTable *_arp_table;
@@ -172,13 +174,13 @@ private:
   int find_dst(IPAddress ip, bool create);
   EtherAddress find_arp(IPAddress ip);
   void got_arp(IPAddress ip, EtherAddress en);
-  void got_sr_pkt(Packet *p_in);
+  void got_srpacket(Packet *p_in);
   void start_query(IPAddress);
-  void process_query(struct sr_pkt *pk);
-  void forward_query(Query *s);
+  void process_query(struct srpacket *pk);
+  void forward_query(Seen *s);
   void start_reply(Reply *r);
-  void forward_reply(struct sr_pkt *pk);
-  void got_reply(struct sr_pkt *pk);
+  void forward_reply(struct srpacket *pk);
+  void got_reply(struct srpacket *pk);
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void send(WritablePacket *);
   void process_data(Packet *p_in);
