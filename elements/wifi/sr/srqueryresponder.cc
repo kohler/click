@@ -272,13 +272,6 @@ SRQueryResponder::push(int, Packet *p_in)
 
   click_ether *eh = (click_ether *) p_in->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
-  if(eh->ether_type != htons(_et)) {
-    click_chatter("%{element}: bad ether_type %04x",
-		  this,
-		  ntohs(eh->ether_type));
-    p_in->kill();
-    return;
-  }
   if (EtherAddress(eh->ether_shost) == _en) {
     click_chatter("%{element}: packet from me",
 		  this);
@@ -289,7 +282,7 @@ SRQueryResponder::push(int, Packet *p_in)
   u_char type = pk->_type;
   IPAddress dst = IPAddress(pk->_qdst);
   
-  if (type == PT_QUERY) {
+  if (type != PT_REPLY) {
     if (dst == _ip) {
       start_reply(pk->get_link_node(0), pk->_qdst, pk->seq());
     }
@@ -297,7 +290,10 @@ SRQueryResponder::push(int, Packet *p_in)
     return;
   }
 
-  if (type != PT_REPLY) {
+  if (eh->ether_type != htons(_et)) {
+    click_chatter("%{element}: bad ether_type %04x",
+		  this,
+		  ntohs(eh->ether_type));
     p_in->kill();
     return;
   }

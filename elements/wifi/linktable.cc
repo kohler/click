@@ -467,14 +467,16 @@ LinkTable::clear_stale() {
     if ((unsigned) _stale_timeout.tv_sec >= nfo.age()) {
       links.insert(IPPair(nfo._from, nfo._to), nfo);
     } else {
-      click_chatter("%{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
-		    this,
-		    __func__,
-		    nfo._from.s().cc(),
-		    nfo._to.s().cc(),
-		    nfo._metric,
-		    nfo._seq, 
-		    nfo.age());
+      if (0) {
+	click_chatter("%{element} :: %s removing link %s -> %s metric %d seq %d age %d\n",
+		      this,
+		      __func__,
+		      nfo._from.s().cc(),
+		      nfo._to.s().cc(),
+		      nfo._metric,
+		      nfo._seq, 
+		      nfo.age());
+      }
     }
   }
   _links.clear();

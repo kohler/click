@@ -9,10 +9,8 @@
 #include <click/hashmap.hh>
 #include <click/dequeue.hh>
 #include <elements/wifi/linktable.hh>
-#include <elements/wifi/arptable.hh>
 #include <elements/wifi/sr/path.hh>
 #include "srquerier.hh"
-#include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
 /*
@@ -86,7 +84,6 @@ class SRQuerier : public Element {
 
   int _time_before_switch_sec;
 
-  void start_query(IPAddress);
 };
 
 

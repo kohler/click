@@ -32,9 +32,7 @@ CLICK_DECLS
 
 SRQuerier::SRQuerier()
   :  Element(1,2),
-     _ip(),
      _en(),
-     _et(0),
      _sr_forwarder(0),
      _link_table(0)
 {
@@ -66,8 +64,6 @@ SRQuerier::configure (Vector<String> &conf, ErrorHandler *errh)
   _time_before_switch_sec = 10;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
-		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
-                    "IP", cpIPAddress, "IP address", &_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "LT", cpElement, "LinkTable element", &_link_table,
@@ -77,10 +73,6 @@ SRQuerier::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "TIME_BEFORE_SWITCH", cpUnsigned, "", &_time_before_switch_sec,
                     cpEnd);
 
-  if (!_et) 
-    return errh->error("ETHTYPE not specified");
-  if (!_ip) 
-    return errh->error("IP not specified");
   if (!_en) 
     return errh->error("ETH not specified");
   if (!_link_table) 
@@ -103,52 +95,6 @@ SRQuerier::initialize (ErrorHandler *)
   return 0;
 }
 
-
-void
-SRQuerier::start_query(IPAddress dstip)
-{
-  sr_assert(dstip);
-  DstInfo *q = _queries.findp(dstip);
-  if (!q) {
-    DstInfo foo = DstInfo(dstip);
-    _queries.insert(dstip, foo);
-    q = _queries.findp(dstip);
-  }
-
-  q->_seq = _seq;
-  click_gettimeofday(&q->_last_query);
-  q->_count++;
-  if (_debug) {
-    StringAccum sa;
-    sa << q->_last_query;
-    click_chatter("%{element}: start_query %s ->  %s seq %d at %s", 
-		  this,
-		  _ip.s().cc(),
-		  dstip.s().cc(),
-		  _seq,
-		  sa.take_string().cc());
-  }
-
-  int len = srpacket::len_wo_data(1);
-  WritablePacket *p = Packet::make(len + sizeof(click_ether));
-  if(p == 0)
-    return;
-  click_ether *eh = (click_ether *) p->data();
-  eh->ether_type = htons(_et);
-  memcpy(eh->ether_shost, _en.data(), 6);
-  memset(eh->ether_dhost, 0xff, 6);
-
-  struct srpacket *pk = (struct srpacket *) (eh+1);
-  memset(pk, '\0', len);
-  pk->_version = _sr_version;
-  pk->_type = PT_QUERY;
-  pk->_flags = 0;
-  pk->_qdst = dstip;
-  pk->set_seq(++_seq);
-  pk->set_num_links(0);
-  pk->set_link_node(0,_ip);
-  output(1).push(p);
-}
 
 void
 SRQuerier::push(int, Packet *p_in)
@@ -252,7 +198,9 @@ SRQuerier::push(int, Packet *p_in)
     struct timeval expire;
     timeradd(&q->_last_query, &_query_wait, &expire);
     if (timercmp(&expire, &n, <)) {
-      start_query(dst);
+      WritablePacket *p = Packet::make((unsigned)0);
+      p->set_dst_ip_anno(dst);
+      output(1).push(p);
     }
   }
   return;
@@ -260,7 +208,7 @@ SRQuerier::push(int, Packet *p_in)
   
 }
 
-enum {H_DEBUG, H_IP, H_PATH_CACHE, H_CLEAR, H_START, H_QUERIES};
+enum {H_DEBUG, H_PATH_CACHE, H_CLEAR, H_QUERIES};
 
 static String 
 SRQuerier_read_param(Element *e, void *thunk)
@@ -269,8 +217,6 @@ SRQuerier_read_param(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
 	return String(td->_debug) + "\n";
-      case H_IP:
-	return td->_ip.s() + "\n";
     case H_QUERIES: {
         StringAccum sa;
 	struct timeval now;
@@ -320,12 +266,6 @@ SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
   case H_CLEAR:
     f->_queries.clear();
     break;
-  case H_START:
-    IPAddress dst;
-    if (!cp_ip_address(s, &dst))
-      return errh->error("dst must be an IPAddress");
-    f->start_query(dst);
-    break;
   }
   return 0;
 }
@@ -335,11 +275,9 @@ SRQuerier::add_handlers()
 {
   add_read_handler("queries", SRQuerier_read_param, (void *) H_QUERIES);
   add_read_handler("debug", SRQuerier_read_param, (void *) H_DEBUG);
-  add_read_handler("ip", SRQuerier_read_param, (void *) H_IP);
 
   add_write_handler("debug", SRQuerier_write_param, (void *) H_DEBUG);
   add_write_handler("clear", SRQuerier_write_param, (void *) H_CLEAR);
-  add_write_handler("start", SRQuerier_write_param, (void *) H_START);
 }
 
 // generate Vector template instance

@@ -78,7 +78,7 @@ TXCountMetric::update_link(IPAddress from, IPAddress to,
   int metric = 9999;
   if (fwd.size() && rev.size() &&
       fwd[0] && rev[0]) {
-    metric = 100 * 100 * 100 / fwd[0] * rev[0];
+    metric = 100 * 100 * 100 / (fwd[0] * rev[0]);
   }
 
   /* update linktable */
