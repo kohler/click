@@ -47,8 +47,8 @@
 #define WIFI_FROM_CLICK(p)           ((p)->user_anno_c(9) == 0xaa)
 #define SET_WIFI_FROM_CLICK(p)    ((p)->set_user_anno_c(9, (0xaa)))
 
-#define WIFI_TX_STATUS_USED_ALT_RATE  0x2;
-#define WIFI_FAILURE = 0x1;
+#define WIFI_TX_STATUS_USED_ALT_RATE  0x2
+#define WIFI_FAILURE 0x1
 
 #define WIFI_SUCCESS(p) ((p & 0x1 == 0x0))
 
@@ -73,8 +73,11 @@
 #define WIFI_ALT_RATE_ANNO(p)       ((p)->user_anno_c(16))
 #define SET_WIFI_ALT_RATE_ANNO(p, v)    ((p)->set_user_anno_c(16, (v)))
 
-#define WIFI_ALT_RETRIES_ANNO(p)    ((p)->user_anno_c(17))
-#define SET_WIFI_ALT_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(17, (v)))
+#define WIFI_ALT_MAX_RETRIES_ANNO(p)    ((p)->user_anno_c(17))
+#define SET_WIFI_ALT_MAX_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(17, (v)))
+
+#define WIFI_MAX_RETRIES_ANNO(p)    ((p)->user_anno_c(18))
+#define SET_WIFI_MAX_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(18, (v)))
 
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
