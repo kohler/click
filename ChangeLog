@@ -1,3 +1,13 @@
+2001-06-29 Friday 12:10  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/linux-2.2.18-patch (1.6): Fix small bug with rx data pointer.
+
+2001-06-29 Friday 12:10  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* elements/linuxmodule/polldevice.cc (1.113): For now, eepro100
+	driver only runs in simplified rx mode, so the skbuff needs another
+	16 contiguous bytes for the rx header.
+
 2001-06-28 Thursday 19:57  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* README (1.25): added sample diagrams and diagram-making macros to
