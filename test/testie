@@ -606,9 +606,6 @@ sub execute_test ($$$) {
 	print STDERR $fn, " Results:\n";
 	$tt->{'errprefix'} = "  ";
     }
-    
-    # save the files it names
-    $tt->save_files(\&out_script_fn_to_fn);
 
     # check requirements
     if (exists $tt->{'require'}) {
@@ -626,7 +623,10 @@ sub execute_test ($$$) {
 	    print STDERR $tt->{'errprefix'}, "Requirements OK\n";
 	}
     }
-    
+
+    # save the files it names
+    $tt->save_files(\&out_script_fn_to_fn);
+
     # save the script
     open(SCR, ">$dir/+script+") || die "$dir/+script+: $!\n";
     print SCR $tt->script_text(\&script_fn_to_fn, 'script');
