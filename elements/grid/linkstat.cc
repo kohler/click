@@ -29,7 +29,8 @@ CLICK_DECLS
 
 LinkStat::LinkStat()
   : _window(100), _tau(10000), _period(1000), 
-    _probe_size(1000), _seq(0), _send_timer(0)
+  _probe_size(1000), _seq(0), _send_timer(0), 
+  _use_proto2(false)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -63,6 +64,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
+			"USE_SECOND_PROTO", cpBool, "Use alternat protocol number?", &_use_proto2,
 			0);
   if (res < 0)
     return res;
@@ -94,7 +96,7 @@ LinkStat::send_hook()
   // fill in ethernet header 
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
-  eh->ether_type = htons(ETHERTYPE_LINKSTAT);
+  eh->ether_type = htons(_use_proto2 ? ETHERTYPE_LINKSTAT2: ETHERTYPE_LINKSTAT);
   memcpy(eh->ether_shost, _eth.data(), 6);
 
   // calculate number of entries
@@ -202,7 +204,7 @@ LinkStat::simple_action(Packet *p)
 
   click_ether *eh = (click_ether *) p->data();
 
-  if (ntohs(eh->ether_type) != ETHERTYPE_LINKSTAT) {
+  if (ntohs(eh->ether_type) != (_use_proto2 ? ETHERTYPE_LINKSTAT2 : ETHERTYPE_LINKSTAT)) {
     click_chatter("LinkStat %s: got non-LinkStat packet type", id().cc());
     p->kill();
     return 0;

@@ -1,37 +1,37 @@
-#ifndef ETXMETRIC_HH
-#define ETXMETRIC_HH
+#ifndef ETX2METRIC_HH
+#define ETX2METRIC_HH
 #include <click/element.hh>
 #include "gridgenericmetric.hh"
 CLICK_DECLS
 
 /*
  * =c
- * ETXMetric(LinkStat)
+ * ETX2Metric(LinkStat l1, LinkStat l2)
  * =s Grid
  * =io
  * None
  * =d
  *
  * Child class of GridGenericMetric that implements the estimated
- * transmission count (`ETX') metric.
+ * transmission count (`ETX') metric using measurements at two packet sizes.
  *
- * LinkStat is this node's LinkStat element, which is needed to obtain
- * the link delivery ratios used to calculate the metric.
+ * LinkStat l1 is the LinkStat element measuring at the data packet
+ * size; l2 is measuring at the ACK packet size.
  *
- * =a HopcountMetric, LinkStat */
+ * =a HopcountMetric, LinkStat, ETXMetric */
 
 class LinkStat;
 
-class ETXMetric : public GridGenericMetric {
+class ETX2Metric : public GridGenericMetric {
   
 public:
 
-  ETXMetric();
-  ~ETXMetric();
+  ETX2Metric();
+  ~ETX2Metric();
 
-  const char *class_name() const { return "ETXMetric"; }
+  const char *class_name() const { return "ETX2Metric"; }
   const char *processing() const { return AGNOSTIC; }
-  ETXMetric *clone()  const { return new ETXMetric; } 
+  ETX2Metric *clone()  const { return new ETX2Metric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }
@@ -51,7 +51,8 @@ public:
   metric_t unscale_from_char(unsigned char) const;
 
 private:
-  LinkStat *_ls;
+  LinkStat *_ls_data;
+  LinkStat *_ls_ack;
 };
 
 CLICK_ENDDECLS

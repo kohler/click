@@ -1,9 +1,10 @@
 #ifndef GRIDGENERICMETRIC_HH
 #define GRIDGENERICMETRIC_HH
 #include <click/element.hh>
-#include <click/ipaddress.hh>
-#include <click/etheraddress.hh>
+
 CLICK_DECLS
+
+class EtherAddress;
 
 // Public interface to Grid route metric elements.
 

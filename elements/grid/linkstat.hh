@@ -45,9 +45,13 @@
  * Unsigned integer.  Total number of bytes in probe packet, including
  * ethernet header and above.  Defaults to 1000.
  *
+ * =item USE_SECOND_PROTO
  *
- * =back
- */
+ * Boolean.  If true, use the alternate LinkStat ethernet protocol
+ * number.  The normal protocol number is 0x7ffe; the alternate number
+ * is 0x7ffd.  Defaults to false.
+ *
+ * =back */
 
 #include <click/bighashmap.hh>
 #include <click/dequeue.hh>
@@ -86,6 +90,7 @@ public:
   // the ethernet header.  num_links link_entries follow the
   // link_probe header.
   static const unsigned short ETHERTYPE_LINKSTAT = 0x7ffe;
+  static const unsigned short ETHERTYPE_LINKSTAT2 = 0x7ffd;
   
   struct link_probe {
     static const int size = 20;
@@ -194,6 +199,8 @@ private:
 
   Timer *_send_timer;
   struct timeval _next_bcast;
+
+  bool _use_proto2;
 
   static unsigned int calc_pct(unsigned tau, unsigned period, unsigned num_rx);
 
