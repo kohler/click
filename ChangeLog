@@ -1,3 +1,21 @@
+2003-08-08 Friday 02:49  Eddie Kohler <kohler@icir.org>
+
+	* config-userlevel.h.in (1.15), configure.in (1.212),
+	etc/libclick/lc-configure.in (1.24), include/click/router.hh
+	(1.49), lib/router.cc (1.146): support poll() instead of select()
+	(requested by N.Dud.)
+
+2003-08-08 Friday 02:48  Eddie Kohler <kohler@icir.org>
+
+	* include/click/vector.hh (1.9): nits for parity with lcdflib
+
+2003-08-08 Friday 02:46  Eddie Kohler <kohler@icir.org>
+
+	* lib/lexer.cc (1.65): fix bug reported by jbicket: delete all
+	element types when lexer is done, even those that were installed
+	unscoped; still there are 2 outstanding news, but no crashes; will
+	look at news tomorrow
+
 2003-08-07 Thursday 16:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.67), dsdvroutetable.hh
