@@ -130,6 +130,7 @@ class DSDVRouteTable : public GridGenericRouteTable {
 public:
   // generic rt methods
   bool current_gateway(RouteEntry &entry);
+  bool best_gateway(IPAddress &gw_ip);
   bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
  

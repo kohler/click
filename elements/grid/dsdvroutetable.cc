@@ -195,7 +195,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LOG element is not a GridGenericLogger");
 
   if (_gw_info == 0)
-    //errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
+    errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
   if (_link_stat == 0)
     errh->warning("LinkStat elements not specified, some metrics may not work");
 
@@ -230,6 +230,26 @@ DSDVRouteTable::current_gateway(RouteEntry &entry)
     }
   }
   return false;
+}
+
+bool
+DSDVRouteTable::best_gateway(IPAddress &gw_ip)
+{
+  RTEntry best;
+  bool found_gateway = false;
+  for (RTIter i = _rtes.begin(); i; i++) {
+    if (i.value().is_gateway && (!found_gateway || metric_preferable(i.value(), best))) {
+      best = i.value();
+      found_gateway = true;
+    }
+  }
+  if (found_gateway) {
+    gw_ip = best.dest_ip;
+  } else {
+
+  }
+
+  return found_gateway;
 }
 
 bool

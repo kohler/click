@@ -2,11 +2,12 @@
 #define GRIDGATEWAYINFO_HH
 #include <click/element.hh>
 #include "grid.hh"
+#include "dsdvroutetable.hh"
 CLICK_DECLS
 
 /*
  * =c
- * GridGatewayInfo(IS_GATEWAY)
+ * GridGatewayInfo(DSDVRouteTable IS_GATEWAY)
  * =s Grid
  * =io
  * None
@@ -30,20 +31,19 @@ public:
   ~GridGatewayInfo();
 
   const char *class_name() const { return "GridGatewayInfo"; }
-
+  const char *processing() const		{ return AGNOSTIC; }
   GridGatewayInfo *clone() const { return new GridGatewayInfo; } // ?
+
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
   void add_handlers();
-  int read_args(const Vector<String> &conf, ErrorHandler *errh);
-
-  void set_new_dest(double v_lat, double v_lon);
 
   bool is_gateway ();
+  static String print_best_gateway(Element *f, void *);
 
-  unsigned int _seq_no;
-
+  Packet *simple_action(Packet *);
+  class DSDVRouteTable *_dsdv;
 protected:
 
   bool _is_gateway;

@@ -18,11 +18,13 @@
 #include "elements/grid/gridgatewayinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
+#include <click/ipaddress.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 CLICK_DECLS
 
 GridGatewayInfo::GridGatewayInfo()
+  : Element(1,1)
 {
   MOD_INC_USE_COUNT;
   _is_gateway = false;
@@ -33,18 +35,19 @@ GridGatewayInfo::~GridGatewayInfo()
   MOD_DEC_USE_COUNT;
 }
 
-int
-GridGatewayInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
-{
-  int res = cp_va_parse(conf, this, errh,
-			cpBool, "is this node a gateway?", &_is_gateway,
-			0);
-  return res;
-}
+
 int
 GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return read_args(conf, errh);
+  int res = cp_va_parse(conf, this, errh,
+			cpElement, "DSDVRouteTable element", &_dsdv,
+			cpBool, "is this node a gateway?", &_is_gateway,
+			0);
+  if (0 == _dsdv) {
+    return errh->error("No dsdv elemetn specified, !");
+  }
+  return res;
+
 }
 
 bool
@@ -64,24 +67,44 @@ gw_read_handler(Element *f, void *)
   return String(buf);  
 }
 
-
-static int
-gw_write_handler(const String &arg, Element *element,
-		 void *, ErrorHandler *errh)
+String
+GridGatewayInfo::print_best_gateway(Element *f, void *)
 {
-  GridGatewayInfo *l = (GridGatewayInfo *) element;
-  Vector<String> arg_list;
-  cp_argvec(arg, arg_list);
+  GridGatewayInfo *l = (GridGatewayInfo *) f;
+  String s;
+  
+  IPAddress gw;
+  if (l->_dsdv->best_gateway(gw)) {
+    s += gw.s();
+  } else {
+    s += "none\n";
+  }
 
-  return l->read_args(arg_list, errh);
+  return s;
 }
 
 void
 GridGatewayInfo::add_handlers()
 {
   add_default_handlers(true);
+  add_read_handler("best_gateway", print_best_gateway, (void *) 0);
   add_read_handler("is_gateway", gw_read_handler, (void *) 0);
-  add_write_handler("is_gateway", gw_write_handler, (void *) 0);
+
+}
+
+Packet *
+GridGatewayInfo::simple_action(Packet *p) 
+{
+  IPAddress gw;
+  if (_dsdv->best_gateway(gw)) {
+    p->set_dst_ip_anno(gw);
+    return p;
+  } else {
+    /* we couldn't find a gateway, so drop the packet */
+    p->kill();
+    return(0);
+  }
+  
 }
 
 CLICK_ENDDECLS
