@@ -66,6 +66,8 @@ public:
 
 private:
 
+  unsigned int _etht;
+
   IPAddress _me;
   EtherAddress _me_ether;
 
@@ -80,40 +82,4 @@ private:
 
 };
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -58,11 +58,16 @@ DSRArpTable::clone() const
 int
 DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  unsigned int etht = 0x0800;
   if (cp_va_parse(conf, this, errh, 
 		  cpIPAddress, "ip address", &_me,
 		  cpEthernetAddress,"ethernet address", &_me_ether,
+                  cpKeywords,
+                  "ETHERTYPE", cpUnsigned, "Ethernet encapsulation type", &etht,
 		  0) < 0)
     return -1;
+
+  _etht = etht;
 
   return 0;
 }
@@ -104,7 +109,7 @@ DSRArpTable::pull(int port)
     
   memcpy(&ether->ether_shost, &_me_ether, 6);
   memcpy(&ether->ether_dhost, dst_ether.data(), 6);
-  ether->ether_type = htons(0x0800);
+  ether->ether_type = htons(_etht);
     
   return q;
 }
