@@ -260,7 +260,7 @@ sub _read_file_section ($$$$$) {
     if ($regex_opts && $secname eq 'expect') {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
     } elsif ($regex_opts) {
-	$file_data =~ s{^}{$regex_opts}mg;
+	$file_data =~ s{^(?=.)}{$regex_opts}mg;
     }
     
     # stick contents where appropriate
