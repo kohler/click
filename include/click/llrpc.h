@@ -14,7 +14,19 @@
 #define CLICK_LLRPC_IPREWRITER_MAP_UDP			0xC400C708
 #define CLICK_LLRPC_MARK_TIMESTAMP			0xC400C709
 #define CLICK_LLRPC_GET_RATE				0xC400C70A
-#define CLICK_LLRPC_GET_2_RATES				0xC400C70B
+#define CLICK_LLRPC_GET_RATES				0xC400C70B
+#define CLICK_LLRPC_GET_COUNT				0xC400C70C
+#define CLICK_LLRPC_GET_COUNTS				0xC400C70D
+#define CLICK_LLRPC_GET_COUNTS_RESET			0xC400C70E
+
+#define CLICK_LLRPC_COUNTS_SIZE			8
+struct click_llrpc_counts_st {
+  unsigned n;
+  struct {
+    unsigned key;
+    unsigned value;
+  } v[CLICK_LLRPC_COUNTS_SIZE];
+};
 
 
 // data manipulation
