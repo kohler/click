@@ -23,7 +23,8 @@ class Element : public ElementLink { public:
   enum ConfigurePhase {
     CONFIGURE_PHASE_ZERO = 0,
     CONFIGURE_PHASE_INFO = 1,
-    CONFIGURE_PHASE_DEFAULT = 100
+    CONFIGURE_PHASE_DEFAULT = 100,
+    CONFIGURE_PHASE_LATE = 2000
   };
   
   class Connection;
@@ -107,6 +108,7 @@ class Element : public ElementLink { public:
 				       ErrorHandler *);
 
   virtual int llrpc(unsigned command, void *arg);
+  virtual int local_llrpc(unsigned command, void *arg);
   
   // RUNTIME
   virtual void run_scheduled();

@@ -30,6 +30,14 @@
 #include <click/straccum.hh>
 #include <click/subvector.hh>
 #include <errno.h>
+#if CLICK_LINUXMODULE
+extern "C" {
+# define new xxx_new
+# include <asm/types.h>
+# include <asm/uaccess.h>
+# undef new
+}
+#endif
 
 const char *Element::AGNOSTIC = "a";
 const char *Element::PUSH = "h";
@@ -601,6 +609,23 @@ int
 Element::llrpc(unsigned, void *)
 {
   return -EINVAL;
+}
+
+int
+Element::local_llrpc(unsigned command, void *data)
+{
+#if CLICK_LINUXMODULE
+  mm_segment_t old_fs = get_fs();
+  set_fs(get_ds());
+
+  int result = llrpc(command, data);
+
+  set_fs(old_fs);
+  return result;
+#else
+  (void) command, (void) data;
+  return -EINVAL;
+#endif
 }
 
 // RUNNING
