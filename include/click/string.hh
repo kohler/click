@@ -80,6 +80,7 @@ class String { public:
 
   String lower() const;
   String upper() const;
+  String printable() const;
   
   String &operator=(const String &);
   String &operator=(const char *);

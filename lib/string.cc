@@ -474,6 +474,34 @@ String::upper() const
   return *this;
 }
 
+static String
+hard_printable(const String &s, int pos)
+{
+  StringAccum sa(s.length() * 2);
+  sa.append(s.data(), pos);
+  const unsigned char *x = reinterpret_cast<const unsigned char *>(s.data());
+  int len = s.length();
+  for (; pos < len; pos++) {
+    if (x[pos] >= 32 && x[pos] < 127)
+      sa << x[pos];
+    else if (x[pos] < 32)
+      sa << '^' << (unsigned char)(x[pos] + 64);
+    else if (char *buf = sa.extend(4, 1))
+      sprintf(buf, "\\%03o", x[pos]);
+  }
+  return sa.take_string();
+}
+
+String
+String::printable() const
+{
+  // avoid copies
+  for (int i = 0; i < _length; i++)
+    if (_data[i] < 32 || _data[i] > 126)
+      return hard_printable(*this, i);
+  return *this;
+}
+
 int
 String::hashcode() const
 {
