@@ -1,3 +1,9 @@
+2003-08-14 Thursday 11:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/: make-dsdv-config.pl (1.1), make-dsr-config.pl (1.1): add
+	up-to-date scripts to generate Grid DSR, DSDV configs.	DSR config
+	is still in flux
+
 2003-08-12 Tuesday 16:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* configure.in (1.213), etc/README (1.4),
