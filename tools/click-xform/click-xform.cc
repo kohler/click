@@ -542,13 +542,15 @@ particular purpose.\n");
     errh->warning("no patterns read");
 
   // unify pattern types
-  for (int i = 1; i < patterns.size(); i++)
-    patterns[0]->get_types_from(patterns[i]);
-  patterns[0]->get_types_from(r);
-  for (int i = 1; i < patterns.size(); i++)
-    patterns[i]->unify_type_indexes(patterns[0]);
-  r->unify_type_indexes(patterns[0]);
-  
+  if (patterns.size()) {
+    for (int i = 1; i < patterns.size(); i++)
+      patterns[0]->get_types_from(patterns[i]);
+    patterns[0]->get_types_from(r);
+    for (int i = 1; i < patterns.size(); i++)
+      patterns[i]->unify_type_indexes(patterns[0]);
+    r->unify_type_indexes(patterns[0]);
+  }
+    
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
