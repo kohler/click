@@ -1,3 +1,7 @@
+2004-12-01 Wednesday 15:46  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/todevice.cc (1.42): fix _q bug.
+
 2004-12-01 Wednesday 15:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/samplepackage/: aclocal.m4 (1.14), m4/click.m4 (1.4):
