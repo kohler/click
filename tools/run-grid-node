@@ -20,7 +20,11 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
-$HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
+$CHATTER_PORT = "7776";
+$ROUTELOG_PORT = "7766";
+$ROUTELOG_CHANNEL = "routelog";
+
+$HEADROOM = "68"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "100";
 $POS_LAT = "0";
 $POS_LON = "0";
