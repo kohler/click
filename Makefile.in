@@ -99,7 +99,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/etheraddress.cc lib/etheraddress.hh \
 	lib/ewma.cc lib/ewma.hh \
 	lib/glue.cc lib/glue.hh \
-	lib/hashmap.cc lib/hashmap.hh lib/hashmapi.cc \
+	lib/hashmap.cc lib/hashmap.hh \
 	lib/in_cksum.c \
 	lib/integers.cc lib/integers.hh \
 	lib/ipaddress.cc lib/ipaddress.hh \
@@ -114,9 +114,10 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/strerror.c \
 	lib/string.cc lib/string.hh \
 	lib/subvector.hh \
+	lib/templatei.cc \
 	lib/timer.cc lib/timer.hh \
 	lib/userutils.cc lib/userutils.hh \
-	lib/vector.cc lib/vector.hh lib/vectori.cc lib/vectorv.cc \
+	lib/vector.cc lib/vector.hh lib/vectorv.cc \
 	userlevel/Makefile.in \
 	userlevel/click.cc \
 	linuxmodule/Makefile.in \

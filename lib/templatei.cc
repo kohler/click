@@ -1,5 +1,5 @@
 /*
- * vectori.cc -- Vector instantiations
+ * templatei.cc -- Template instantiations
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,10 +13,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "vector.cc"
 #include "string.hh"
 #include "router.hh"
+#include "ipaddress.hh"
+#include "etheraddress.hh"
+
+#include "vector.cc"
 template class Vector<Router::Hookup>;
 template class Vector<int>;
 template class Vector<unsigned int>;
 template class Vector<String>;
+
+#include "hashmap.cc"
+template class HashMap<String, int>;
+template class HashMap<IPAddress, EtherAddress>;
+template class HashMap<IPAddress, IPAddress>;
+
+#include "ewma.cc"
+template class DirectEWMAX<4, 10>;
