@@ -1,3 +1,12 @@
+2002-04-03 Wednesday 17:29  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.38): clarification
+
+2002-04-03 Wednesday 17:23  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/counter.hh (1.25): fix Counter documentation;
+	reported by Arvind Venkatesan <venkaa@cs.rpi.edu>
+
 2002-04-03 Wednesday 13:44  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: checkipheader.cc (1.43), checkipheader.hh (1.32),
