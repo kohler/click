@@ -57,32 +57,32 @@
  * The server's response codes follow this pattern.
  *
  * (2xy) The command succeeded.
- 
+ *
  * (5xy) The command failed.
  *
  * Here are some of the particular error messages:
  *
  * (200) OK.
- 
+ *
  * (220) OK, but the handler reported some warnings.
- 
+ *
  * (500) Syntax error.
- 
+ *
  * (501) Unimplemented command.
- 
+ *
  * (510) No such element.
- 
+ *
  * (511) No such handler.
- 
+ *
  * (520) Handler error.
- 
+ *
  * (530) Permission denied.
  *
  * Only available in user-level processes.
  *
  * =e
  * = ControlSocket(unix, /tmp/clicksocket);
- * */
+ */
 
 class ControlSocket : public Element {
 

@@ -56,6 +56,9 @@ Version 1.1
 ** Fixed FromBPF and ToBPF, finally. The fixed versions are called
    FromDevice and ToDevice.
 
+** Added ControlSocket element so you can call handlers from other
+   programs.
+
 * Kernel driver
 
 ** Added patch for Linux kernel 2.2.16. Linux kernel 2.2.16 patch contains the
@@ -69,7 +72,8 @@ Version 1.1
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
 
-** Added QuitWatcher, FrontDropQueue, StripIPHeader, and IPClassifier.
+** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, and
+   IPPrint.
 
 ** Fixed FromBPF and ToBPF bugs. Now FromDevice will not starve other
    router processing, and ToDevice works on Linux.

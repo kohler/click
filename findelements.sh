@@ -44,11 +44,14 @@ else
 fi
 
 files=""
+directory_exports=""
 for i in $first_files; do
   if test -d "${prefix}elements/$i"; then
     if echo "$i" | grep '/'; then
       :
     else
+      directory_exports="$i
+$directory_exports"
       i="${prefix}elements/$i"
     fi
   fi
@@ -77,10 +80,9 @@ bad_files=''
 while true; do
   exports1=`grep '^EXPORT_ELEMENT' $files | sed 's/.*(\(.*\)).*/\1/'`
   exports2=`grep '^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
-  exports3=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
   awk_exports=`echo "$exports1"'
 '"$exports2"'
-'"$exports3" | sed 's/\(..*\)/dep["\1"]=1;/'`
+'"$directory_exports" | sed 's/\(..*\)/dep["\1"]=1;/'`
   new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;
 }
 {
