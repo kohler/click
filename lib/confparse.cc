@@ -1078,7 +1078,7 @@ cp_ip6_prefix(const String &str,
       return false;
     
   } else if (cp_integer(mask_part, &relevant_bits)
-	     && relevant_bits >= 0 && relevant_bits <= 64)
+	     && relevant_bits >= 0 && relevant_bits <= 128)
     /* OK */;
     
   else
