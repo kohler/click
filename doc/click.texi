@@ -191,13 +191,14 @@ Handlers
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
-* Fetching Handlers::           
+* Accessing Handlers::          
 * LLRPC Overview::              
 
-Fetching Handlers
+Accessing Handlers
 
 * The Router::Handler Type::    
 * Handler Indexes::             
+* Locating Handlers::           
 
 Live Reconfiguration
 
@@ -3634,7 +3635,7 @@ while @dfn{LLRPCs} provide a remote procedure call interface.
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
-* Fetching Handlers::           
+* Accessing Handlers::          
 * LLRPC Overview::              
 @end menu
 
@@ -3670,7 +3671,7 @@ detailed information about any errors should be reported to the
 @end deftypefn
 
 Each handler has an ASCII @dfn{name}. Handler names must be unique
-within each element; for example, there can be at most one @code{x} read
+within each element; for example, there can be at most one @samp{x} read
 handler in a given element. A given name can be shared by a read handler
 and a write handler, however. Such a handler pair is colloquially called
 a ``read/write handler'', although its two components need not have
@@ -3687,8 +3688,8 @@ private static member functions in the relevant element class.
 Read and write handlers need not use ASCII-formatted data. Most existing
 handlers do format their data in ASCII, however, and use
 @code{cp_uncomment} to ignore leading and trailing whitespace and
-comments @code{cp_uncomment} (@pxref{Quoting and Unquoting}). You may
-want to do the same for consistency's sake.
+comments (@pxref{Quoting and Unquoting}). You may want to do the same
+for consistency's sake.
 
 Be careful when writing handlers that modify element state, or read
 state that packet processing can modify. On an SMP machine, a handler
@@ -3738,6 +3739,7 @@ element handler case.
 The @code{change_handler_flags} method lets you change a handler's flags
 word (@pxref{The Router::Handler Type}).
 
+@anchor{Changing Handler Flags}
 @deftypeop {Static Method} Router void change_handler_flags (@w{Element *@var{element}}, @w{const String &@var{name}}, @w{uint32_t @var{clear_flags}}, @w{uint32_t @var{set_flags}})
 Changes the flags for @var{element}'s @var{name} handler, or the global
 @var{name} handler if @var{element} is null. The flags are changed by
@@ -3747,7 +3749,7 @@ specified handler does not exist; otherwise, it returns 0.
 @end deftypeop
 
 
-@node Default Handlers, Fetching Handlers, Adding Handlers, Handlers
+@node Default Handlers, Accessing Handlers, Adding Handlers, Handlers
 @subsection Default Read and Write Handlers
 
 Every element automatically provides five handlers, @handler{class},
@@ -3845,9 +3847,10 @@ names.
 @menu
 * The Router::Handler Type::    
 * Handler Indexes::             
+* Locating Handlers::           
 @end menu
 
-@node The Router::Handler Type, Handler Indexes, Fetching Handlers, Fetching Handlers
+@node The Router::Handler Type, Handler Indexes, Accessing Handlers, Accessing Handlers
 @subsubsection The Router::Handler Type
 
 The @code{Router::Handler} type allows you to check a handler's
@@ -3914,7 +3917,7 @@ know the handler is @code{writable()}.
 @end deftypemethod
 
 
-@node Handler Indexes,  , The Router::Handler Type, Fetching Handlers
+@node Handler Indexes, Locating Handlers, The Router::Handler Type, Accessing Handlers
 @subsubsection Handler Indexes
 
 @deftypeop {Static Method} Router bool handler_ok (@w{const Router *@var{router}}, @w{int @var{handler_index}})
@@ -3938,7 +3941,7 @@ Same as @code{handler(this, @var{handler_index})}.
 @end deftypemethod
 
 
-@node Locating Handlers
+@node Locating Handlers,  , Handler Indexes, Accessing Handlers
 @subsubsection Locating Handlers
 
 @deftypeop {Static Method} Router int find_handler (@w{Element *@var{element}}, @w{const String &@var{name}})
@@ -3953,7 +3956,7 @@ supported by @var{router}'s element number @var{eindex}, or all global
 handlers if @math{@var{eindex} < 0}.
 @end deftypeop
 
-@node LLRPC Overview,  , Fetching Handlers, Handlers
+@node LLRPC Overview,  , Accessing Handlers, Handlers
 @subsection LLRPC Overview
 
 @node Live Reconfiguration,  , Handlers, Element Runtime
