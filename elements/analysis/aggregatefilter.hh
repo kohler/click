@@ -22,10 +22,9 @@ matches a filter if its aggregate annotation is listed in that filter's
 AGGREGATES.
 
 Each ACTION is either a port number, which specifies that the packet should be
-sent out on that port; 'allow', which is equivalent to '0'; 'drop', which
-means drop the packet; or 'deny', which is equivalent to '1' if the element
-has at least two outputs and 'drop' if it does not. Packets that match none of
-the filters are dropped. AggregateFilter has an arbitrary number of outputs.
+sent out on that port; 'allow', which is equivalent to '0'; or 'drop' or
+'deny', which means drop the packet. Packets that match none of the filters
+are dropped. AggregateFilter has an arbitrary number of outputs.
 
 The AGGREGATES arguments are space-separated lists of aggregate values, which
 are unsigned integers. You can also specify ranges like '0-98'. The special

@@ -84,11 +84,9 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	int port = noutputs();
 	if (words[0] == "allow")
 	    port = 0;
-	else if (words[0] == "deny")
-	    port = 1;
 	else if (cp_unsigned(words[0], (unsigned *)&port))
 	    /* OK */;
-	else if (words[0] != "drop") {
+	else if (words[0] != "drop" && words[0] != "deny") {
 	    errh->error("pattern %d: expected a port number", argno);
 	    continue;
 	}
