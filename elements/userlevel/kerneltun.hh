@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_KERNELTAP_HH
 #define CLICK_KERNELTAP_HH
 #include <click/element.hh>
@@ -7,9 +8,13 @@ CLICK_DECLS
 
 /*
  * =c
+ *
  * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM] [, KEYWORDS])
+ *
  * =s devices
+ *
  * user-level interface to /dev/tun or ethertap
+ *
  * =d
  *
  * Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
@@ -46,48 +51,63 @@ CLICK_DECLS
  *
  * =back
  *
+ * =n
+ *
+ * An error like "could not allocate a /dev/tap* device : No such file or
+ * directory" usually means that you have not enabled /dev/tap* in your
+ * kernel. 
+ *
  * =a
  * ToLinux, ifconfig(8) */
 
-class KernelTap : public Element {
- public:
+class KernelTap : public Element { public:
   
-  KernelTap();
-  ~KernelTap();
+    KernelTap();
+    ~KernelTap();
   
-  const char *class_name() const	{ return "KernelTap"; }
-  const char *processing() const	{ return "a/h"; }
-  const char *flow_code() const		{ return "x/y"; }
-  KernelTap *clone() const;
-  const char *flags() const		{ return "S3"; }
+    const char *class_name() const	{ return "KernelTap"; }
+    const char *processing() const	{ return "a/h"; }
+    const char *flow_code() const	{ return "x/y"; }
+    KernelTap *clone() const;
+    const char *flags() const		{ return "S3"; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
 
-  void selected(int fd);
+    void selected(int fd);
 
-  void push(int port, Packet *);
-  void run_scheduled();
+    void push(int port, Packet *);
+    void run_scheduled();
 
- private:
-  String _dev_name;
-  IPAddress _near;
-  IPAddress _mask;
-  IPAddress _gw;
-  int _fd;
-  int _headroom;
-  Task _task;
+  private:
 
-  static String print_dev_name(Element *e, void *);
+    enum Type { LINUX_UNIVERSAL, LINUXBSD_TUN };
 
-  int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
-  void dealloc_tun();
+    int _fd;
+    Type _type;
+    String _dev_name;
+    IPAddress _near;
+    IPAddress _mask;
+    IPAddress _gw;
+    int _headroom;
+    Task _task;
+    
+    bool _ignore_q_errs;
+    bool _printed_write_err;
+    bool _printed_read_err;
 
-  bool _ignore_q_errs;
-  bool _printed_write_err;
-  bool _printed_read_err;
+    static String print_dev_name(Element *e, void *);
+
+#ifdef HAVE_LINUX_IF_TUN_H
+    int try_linux_universal(ErrorHandler *);
+#endif
+    int try_tun(const String &, ErrorHandler *);
+    int alloc_tun(ErrorHandler *);
+    int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
+    void dealloc_tun();
+    
 };
 
 CLICK_ENDDECLS
