@@ -442,7 +442,7 @@ dnl
 
 if test ${PERL-NO} = NO; then
   AC_CHECK_PROGS(perl5, perl5 perl, missing)
-  if test $perl5 = missing || $perl5 -e 'exit $^V < 5;'; then
+  if test $perl5 = missing || $perl5 -e 'exit($^V < 5);'; then
     AC_CHECK_PROGS(perl5_local, perl5 perl, missing, /usr/local/bin)
     if test "$perl5_local" != "missing"; then
       perl5="/usr/local/bin/$perl5_local"

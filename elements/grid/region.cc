@@ -10,6 +10,9 @@
  * distribution.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdio.h>
 #include "region.hh"
 
@@ -24,11 +27,11 @@ min(double a, double b)
 String
 RectRegion::s() 
 {
-  char buf[50];
+  char buf[200];
   if (empty())
-    snprintf(buf, 50, "<empty rgn>");
+    snprintf(buf, 200, "<empty rgn>");
   else
-    snprintf(buf, 50, "(%f, %f) +%f +%f", _x, _y, _w, _h);
+    snprintf(buf, 200, "(%f, %f) +%f +%f", _x, _y, _w, _h);
   return String(buf);
 }
 
@@ -61,3 +64,6 @@ RectRegion::expand(double l)
   r._h += 2 * l;
   return r;
 }
+
+ELEMENT_REQUIRES(userlevel)
+

@@ -10,7 +10,8 @@ The user-level version of Click should compile and run on any Intel x86
 Unix system that has the pcap library. (The pcap library is necessary to
 communicate with the network. See the end of this document for portability
 notes for other architectures.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on the recent 2.2.16 Linux kernel.
+Linux 2.2 system; we've tested on the recent 2.2.16 and 2.2.17 Linux
+kernels.
 
 First, run
 
@@ -69,7 +70,7 @@ and running Linux kernels.
     kernel.
 
  2. Get a copy of the Linux 2.2.16 kernel source distribution, for example
-    from www.kernel.org. A later 2.2 kernel may also work. Unpack this
+    from www.kernel.org. The 2.2.17 kernel also works. Unpack this
     distribution into /usr/src/linux. (Save the old kernel source tree, if
     you had one.)
 
@@ -99,7 +100,7 @@ and running Linux kernels.
 
 	make dep
 	make bzImage			(or zImage)
-	(copy the bzImage file to the boot directory)
+	make install
 	make modules
 	make modules_install
 
@@ -111,7 +112,7 @@ and running Linux kernels.
 Now you are ready to compile and install the Click module. Rerun
 `./configure' to tell the system about your new kernel:
 
-	rm -f config.cache ; ./configure
+	rm -f config.cache ; ./configure [OPTIONS]
 
 Then build the module:
 
