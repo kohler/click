@@ -1,3 +1,29 @@
+2001-10-27 Saturday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridprobehandler.cc (1.1), gridprobehandler.hh
+	(1.1), gridprobereplyreceiver.cc (1.2), gridprobesender.cc (1.2):
+	added GridProbeHandler element for grid route tracing.	absolutely
+	NOT tested at all
+
+2001-10-27 Saturday 12:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc (1.25), grid.hh (1.30),
+	gridprobereplyreceiver.cc (1.1), gridprobereplyreceiver.hh (1.1),
+	gridprobesender.cc (1.1), gridprobesender.hh (1.1),
+	gridroutetable.cc (1.16), gridroutetable.hh (1.7),
+	lookuplocalgridroute.cc (1.27), printgrid.cc (1.16): - added new
+	grid packet types for grid route trace protocol.  This may have
+	appeared in an earlier checkin.
+	
+	- added elements: GridProbeSender, GridProbeReplyReceiver for
+	implementing route trace protocol.  These els are completely
+	untestested.
+	
+	- added log channel name arg to GridRouteTable. The default is the
+	same as the previous hardcoded value (routelog).
+	
+	- death to sprintf.  changed all occurences of sprintf to snprintf.
+
 2001-10-27 Saturday 11:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc (1.24), grid.hh (1.29),
