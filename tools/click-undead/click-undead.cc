@@ -662,7 +662,7 @@ particular purpose.\n");
 
   // find and parse `elementmap'
   ElementMap elementmap;
-  elementmap.parse_all_required(r, CLICK_SHAREDIR, p_errh);
+  elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
 
   // check configuration for driver indifference
   Vector<int> elementmap_indexes;

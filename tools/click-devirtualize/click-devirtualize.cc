@@ -344,7 +344,7 @@ particular purpose.\n");
 
   // find and parse `elementmap'
   ElementMap full_elementmap;
-  full_elementmap.parse_all_required(router, CLICK_SHAREDIR, errh);
+  full_elementmap.parse_all_files(router, CLICK_SHAREDIR, errh);
 
   // initialize signatures
   Signatures sigs(router);
