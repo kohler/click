@@ -59,7 +59,7 @@ Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-Switch::configuration(Vector<String> &conf, bool *) const
+Switch::configuration(Vector<String> &conf) const
 {
   conf.push_back(String(_output));
 }

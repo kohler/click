@@ -59,7 +59,7 @@ PullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-PullSwitch::configuration(Vector<String> &conf, bool *) const
+PullSwitch::configuration(Vector<String> &conf) const
 {
   conf.push_back(String(_input));
 }

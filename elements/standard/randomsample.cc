@@ -67,7 +67,7 @@ RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-RandomSample::configuration(Vector<String> &conf, bool *) const
+RandomSample::configuration(Vector<String> &conf) const
 {
     conf.push_back("SAMPLE " + cp_unparse_real2(_sampling_prob, SAMPLING_SHIFT));
     conf.push_back("ACTIVE " + cp_unparse_bool(_active));

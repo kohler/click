@@ -196,7 +196,7 @@ RED::take_state(Element *e, ErrorHandler *)
 }
 
 void
-RED::configuration(Vector<String> &conf, bool *) const
+RED::configuration(Vector<String> &conf) const
 {
     conf.push_back(String(_min_thresh));
     conf.push_back(String(_max_thresh));

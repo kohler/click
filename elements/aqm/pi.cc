@@ -214,7 +214,7 @@ PI::take_state(Element *e, ErrorHandler *)
 }
 
 void
-PI::configuration(Vector<String> &conf, bool *) const
+PI::configuration(Vector<String> &conf) const
 {
     conf.push_back(String(_a));
     conf.push_back(String(_b));

@@ -99,4 +99,5 @@ ChuckCheck::add_handlers()
     add_read_handler("info", read_handler, 0);
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(ChuckCheck)

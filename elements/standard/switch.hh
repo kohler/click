@@ -45,7 +45,7 @@ class Switch : public Element { public:
   Switch *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
-  void configuration(Vector<String> &, bool *) const;
+  void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }
   
   void push(int, Packet *);

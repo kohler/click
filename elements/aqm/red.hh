@@ -119,7 +119,7 @@ class RED : public Element { public:
     int check_params(unsigned, unsigned, unsigned, unsigned, ErrorHandler *) const;
     int initialize(ErrorHandler *);
     void take_state(Element *, ErrorHandler *);
-    void configuration(Vector<String> &, bool *) const;
+    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();

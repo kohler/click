@@ -76,7 +76,7 @@ class RandomSample : public Element { public:
     bool can_live_reconfigure() const		{ return true; }
     void add_handlers();
 
-    void configuration(Vector<String> &, bool *) const;
+    void configuration(Vector<String> &) const;
     
     void push(int port, Packet *);
     Packet *pull(int port);

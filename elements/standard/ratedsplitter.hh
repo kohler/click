@@ -52,7 +52,7 @@ class RatedSplitter : public Element { protected:
  
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  void configuration(Vector<String> &, bool *) const;
+  void configuration(Vector<String> &) const;
   
   void push(int port, Packet *);
   

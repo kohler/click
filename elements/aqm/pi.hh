@@ -25,7 +25,7 @@ class PI : public Element { public:
     int initialize(ErrorHandler *);
 	void uninitialize();
     void take_state(Element *, ErrorHandler *);
-    void configuration(Vector<String> &, bool *) const;
+    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const		{ return true; }
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
