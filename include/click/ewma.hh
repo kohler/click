@@ -59,6 +59,7 @@ struct JiffiesTimer {
 };
 
 typedef DirectEWMAX<4, 10> DirectEWMA;
+typedef DirectEWMAX<3, 10> FastDirectEWMA;
 typedef RateEWMAX<4, 10, 1, JiffiesTimer> RateEWMA;
 
 template <unsigned stability_shift, unsigned scale>
