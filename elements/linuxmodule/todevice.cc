@@ -46,10 +46,11 @@ static int registered_writers;
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0), _activations(0)
+    _rejected(0), _hard_start(0)
 {
   add_input();
 #if _CLICK_STATS_
+  _activations = 0;
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
@@ -220,9 +221,11 @@ ToDevice::tx_intr()
  
     queued_pkts = _dev->tx_clean(_dev);
 
+#if _CLICK_STATS_
     if (_activations > 0)
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+#endif
   }
 #endif
 
@@ -245,7 +248,9 @@ ToDevice::tx_intr()
     else break;
   }
 
+#if _CLICK_STATS_
   if (sent > 0 || _activations > 0) _activations++;
+#endif
 
 #if _CLICK_STATS_
   if (_activations > 0) {
@@ -392,8 +397,10 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
     String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
     String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
-#endif
     String(td->_activations) + " transmit activations\n";
+#else
+    String();
+#endif
 }
 
 void

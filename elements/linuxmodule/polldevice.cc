@@ -37,10 +37,11 @@ static AnyDeviceMap poll_device_map;
 
 
 PollDevice::PollDevice()
-  : _activations(0), _registered(0), _last_rx(0), _manage_tx(1)
+  : _registered(0), _last_rx(0), _manage_tx(1)
 {
   add_output();
 #if _CLICK_STATS_
+  _activations = 0;
   _idle_calls = 0;
   _pkts_received = 0;
   _time_poll = 0;
@@ -179,21 +180,23 @@ PollDevice::run_scheduled()
   got = INPUT_MAX_PKTS_PER_RUN;
   skb_list = _dev->rx_poll(_dev, &got);
 
+#if _CLICK_STATS_
   if (got > 0 || _activations > 0) {
     _activations++;
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-#if _CLICK_STATS_
     _pkts_received += got;
     if (got == 0) _idle_calls++;
-#endif
   }
+#endif
   
   _dev->rx_refill(_dev);
   
+#if _CLICK_STATS_
   if (_activations > 0)
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_refill, _perfcnt2_refill, _time_refill);
+#endif
 
   for(int i=0; i<got; i++) {
     struct sk_buff *skb_next;
@@ -217,6 +220,7 @@ PollDevice::run_scheduled()
   }
   assert(skb_list == NULL);
 
+#if _CLICK_STATS_
   if (_activations > 0 && got > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
@@ -224,6 +228,7 @@ PollDevice::run_scheduled()
     if ((_activations % 1024) == 0) _dev->get_stats(_dev);
 #endif
   }
+#endif
 
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
@@ -267,8 +272,10 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_perfcnt2_poll) + " perfctr2 poll\n" +
     String(kw->_perfcnt2_refill) + " perfctr2 refill\n" +
     String(kw->_perfcnt2_pushing) + " perfctr2 pushing\n" +
-#endif
     String(kw->_activations) + " activations\n";
+#else
+    String();
+#endif
 }
 
 void

@@ -48,7 +48,6 @@ class PollDevice : public AnyDevice {
   void run_scheduled();
 
 #if _CLICK_STATS_
-  // statistics
   unsigned long long _pkts_received;
   unsigned long long _idle_calls;
   unsigned long long _time_poll;
@@ -60,11 +59,11 @@ class PollDevice : public AnyDevice {
   unsigned long long _perfcnt2_poll;
   unsigned long long _perfcnt2_refill;
   unsigned long long _perfcnt2_pushing;
-#endif
   unsigned long _activations;
+#endif
   
  private:
-  
+ 
   bool _registered;
   unsigned int _last_rx;
   unsigned _manage_tx;

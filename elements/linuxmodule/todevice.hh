@@ -68,10 +68,10 @@ class ToDevice : public AnyDevice {
   unsigned long long _perfcnt2_pull;
   unsigned long long _perfcnt2_clean;
   unsigned long long _perfcnt2_queue;
+  unsigned long _activations; 
 #endif
   unsigned long _rejected;
   unsigned long _hard_start;
-  unsigned long _activations; 
 
   bool polling() const			{ return _polling; }
   
