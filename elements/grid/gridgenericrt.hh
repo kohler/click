@@ -18,19 +18,29 @@ public:
   GridGenericRouteTable(int ninputs, int noutputs) : Element(ninputs, noutputs) { }
 
   struct RouteEntry {
-    IPAddress dest_ip;
-    grid_location dest_loc;
+
+    class IPAddress dest_ip;
+
+    class grid_location dest_loc;
     bool loc_good;
     unsigned short loc_err;
-    EtherAddress next_hop_eth;
-    IPAddress next_hop_ip;
+    
+    class EtherAddress next_hop_eth;
+    class IPAddress next_hop_ip;
+    
+    unsigned int seq_no;
+    unsigned char num_hops;
 
-    RouteEntry(const IPAddress &dst, bool lg, unsigned short le, 
-	       const grid_location &l, const EtherAddress &nhe, const IPAddress &nhi) :
-      dest_ip(dst), dest_loc(l), loc_good(lg), loc_err(le), next_hop_eth(nhe), 
-      next_hop_ip(nhi) { }
+    RouteEntry(const IPAddress &dst, 
+	       bool lg, unsigned short le, const grid_location &l, 
+	       const EtherAddress &nhe, const IPAddress &nhi,
+	       unsigned int sn, unsigned char nh) :
+      dest_ip(dst), dest_loc(l), loc_good(lg), loc_err(le), 
+      next_hop_eth(nhe), next_hop_ip(nhi),
+      seq_no(sn), num_hops(nh) 
+    { }
 
-    RouteEntry() : loc_good(false), loc_err(0) { }
+    RouteEntry() : loc_good(false), loc_err(0), seq_no(0), num_hops(0) { }
   };
 
 

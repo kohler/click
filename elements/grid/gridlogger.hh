@@ -199,7 +199,7 @@ public:
     add_timeval(when);
   }
   
-  void log_added_route(reason_t why, const GridRouteTable::RTEntry &r) {
+  void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r) {
     if (_state != RECV_AD) 
       return;
     add_one_byte(RECV_ADD_ROUTE_CODE);
@@ -257,15 +257,15 @@ public:
       write_buf();
   }
 
-  void log_route_dump(const GridRouteTable::RTable &rt, struct timeval when) {
+  void log_route_dump(const Vector<GridGenericRouteTable::RouteEntry> &rt, struct timeval when) {
     if (_state != WAITING)
       return;
     add_one_byte(ROUTE_DUMP_CODE);
     add_timeval(when);
     int n = rt.size();
     add_long(n);
-    for (GridRouteTable::RTIter i = rt.first(); i; i++) {
-      const GridRouteTable::RTEntry &r = i.value();
+    for (int i = 0; i < rt.size(); i++) {
+      const GridGenericRouteTable::RouteEntry &r = rt[i];
       add_ip(r.dest_ip);
       add_ip(r.next_hop_ip);
       add_one_byte(r.num_hops);

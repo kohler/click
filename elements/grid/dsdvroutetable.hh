@@ -1,78 +1,27 @@
-#ifndef GRIDROUTETABLE_HH
-#define GRIDROUTETABLE_HH
+#ifndef DSDVROUTETABLE_HH
+#define DSDVROUTETABLE_HH
 
 /*
  * =c
- * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, LinkTracker, LinkStat [, I<KEYWORDS>])
+ * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, LinkTracker, LinkStat [, I<KEYWORDS>])
  *
  * =s Grid
- * Run DSDV-like local routing protocol
+ * Run DSDV local routing protocol
  *
  * =d 
- * Implements a DSDV-like loop-free routing protocol by originating
- * routing messages based on its routing tables, and processing
- * routing update messages from other nodes.  Maintains an immediate
- * neighbor table, and a multi-hop route table.  Route entries are
- * removed TIMEOUT milliseconds after being installed.  PERIOD is the
- * milliseconds between route broadcasts, randomly offset by up to
- * JITTER milliseconds.  ETH and IP describe this node's Grid
- * addresses, and GW is the GridGatewayInfo element.  LinkTracker 
- * and LinkStat are LinkTracker and LinkStat elements for the interface 
- * to which this GridRouteTable element is connected.
  *
- * Routing message entries are marked with both a sequence number
- * (originated by the destination of the entry) and a real-time ttl.
- * Entries with higher sequence numbers always supersede entries with
- * lower sequence numbers.  For entries with the same sequence number,
- * the lower hop-count entry prevails.  Entry ttls decrease while the
- * entry resides in a node's routing table, as well as being decreased
- * by a minimum amount when the route is propagated to another node.
- * Thus an individual route entry will only propagate through the
- * network for a finite amount of time.  A route entry is not
- * propagated if its ttl is less than the minimum decrement amount.  A
- * route is not accepted if its ttl is <= 0.
+ * This is meant to be an ``official'' implementation of DSDV.  It is
+ * intended to exactly replicate the behavior of DSDV as describe din
+ * the original Perkins paper, the CMU ad-hoc bakeoff paper, and the
+ * CMU ns implementation.  I make no guarantees that any of the above
+ * are actually achieved.
  *
- * New routes are advertised with even sequence numbers originated by
- * the route destination (obtained from LR_HELLO messages); broken
- * routes are advertised with odd sequence numbers formed by adding 1
- * to the sequence number of the last known good route.  Broken route
- * advertisements are originally initiated when an immediate neighbor
- * entry times out, and will always supersede the route they are
- * concerned with; any new route will always supersede the previous
- * broken route.  When a node receives a broken route advertisement
- * for a destination to which it knows a newer route, it kills the
- * broken route advertisement and sends an advertisement for the the
- * new route.
- *
- * Keyword arguments are:
- *
- * =over 8
- *
- * =item MAX_HOPS
- * 
- * Integer.  The maximum number of hops for which a route should
- * propagate.  The default number of hops is 3.
- *
- * =item LOGCHANNEL
- *
- * String.  The name of the chatter channel to which route action log
- * messages should be logged.  Default channel is ``routelog''.
- *
- * =item METRIC
- *
- * String.  The type of metric that should be used to compare two
- * routes.  Allowable values are: ``hopcount'',
- * ``cumulative_delivery_rate'', ``min_delivery_rate'',
- * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
- * use hopcount.
- *
- * =item LOGFILE
- *
- * String.  Filename of file to log activity to in binary format.
+ * There must only be one of DSDVRouteTable or GridRouteTable in a
+ * grid configuration.
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
- * LinkStat, LinkTracker */
+ * LinkStat, LinkTracker, GridRouteTable */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
@@ -89,7 +38,7 @@
 
 class GridLogger;
 
-class GridRouteTable : public GridGenericRouteTable {
+class DSDVRouteTable : public GridGenericRouteTable {
 public:
   // generic rt methods
   bool current_gateway(RouteEntry &entry);
@@ -99,14 +48,14 @@ public:
 
 public:
 
-  GridRouteTable();
-  ~GridRouteTable();
+  DSDVRouteTable();
+  ~DSDVRouteTable();
 
-  const char *class_name() const		{ return "GridRouteTable"; }
+  const char *class_name() const		{ return "DSDVRouteTable"; }
   void *cast(const char *);
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
-  GridRouteTable *clone() const;
+  DSDVRouteTable *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -194,8 +143,8 @@ private:
     /* copy data from this into nb, converting to net byte order */
     void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
     
-  }; 
- 
+  };
+  
   typedef BigHashMap<IPAddress, RTEntry> RTable;
   typedef RTable::Iterator RTIter;
 
@@ -222,7 +171,7 @@ private:
 
   /* extended logging */
   ErrorHandler *_extended_logging_errh;
-  void GridRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
+  void DSDVRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
 
   /* binary logging */
   GridLogger *_log;

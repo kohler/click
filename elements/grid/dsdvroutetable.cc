@@ -1,8 +1,8 @@
 /*
- * gridroutetable.{cc,hh} -- Grid local neighbor and route tables element
+ * dsdvroutetable.{cc,hh} -- DSDV routing element
  * Douglas S. J. De Couto
  *
- * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2002 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,19 +25,13 @@
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "gridroutetable.hh"
+#include "dsdvroutetable.hh"
 #include "timeutils.hh"
 #include "gridlogger.hh"
 
-#define NEXT_HOP_ETH_FIXUP 0
-
-/* these are here because I am too lazy to make a gridlogger.cc file */
-int GridLogger::_fd = -1;
-bool GridLogger::_log_full_ip = false;
-String GridLogger::_fn;
 
 bool
-GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
+DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
 {
   RTEntry *r = _rtes.findp(dest_ip);
   if (r == 0)
@@ -50,7 +44,7 @@ GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
 }
 
 void
-GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
+DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
   for (RTIter iter = _rtes.first(); iter; iter++) {
     const RTEntry &rte = iter.value();
@@ -61,7 +55,7 @@ GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 }
 
 
-GridRouteTable::GridRouteTable() : 
+DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
@@ -76,7 +70,7 @@ GridRouteTable::GridRouteTable() :
   MOD_INC_USE_COUNT;
 }
 
-GridRouteTable::~GridRouteTable()
+DSDVRouteTable::~DSDVRouteTable()
 {
   MOD_DEC_USE_COUNT;
   if (_log)
@@ -89,11 +83,11 @@ GridRouteTable::~GridRouteTable()
 
 
 void *
-GridRouteTable::cast(const char *n)
+DSDVRouteTable::cast(const char *n)
 {
-  if (strcmp(n, "GridRouteTable") == 0)
-    return (GridRouteTable *) this;
-  else if (strcmp(n, "GenericGridRouteTable") == 0)
+  if (strcmp(n, "DSDVRouteTable") == 0)
+    return (DSDVRouteTable *) this;
+  else if (strcmp(n, "GenericDSDVRouteTable") == 0)
     return (GridGenericRouteTable *) this;
   else
     return 0;
@@ -102,7 +96,7 @@ GridRouteTable::cast(const char *n)
 
 
 void
-GridRouteTable::log_route_table ()
+DSDVRouteTable::log_route_table ()
 {
   char str[80];
   for (RTIter i = _rtes.first(); i; i++) {
@@ -123,7 +117,7 @@ GridRouteTable::log_route_table ()
 
 
 int
-GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
+DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("est_tx_count");
@@ -184,7 +178,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 int
-GridRouteTable::initialize(ErrorHandler *)
+DSDVRouteTable::initialize(ErrorHandler *)
 {
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period); // Send periodically
@@ -198,7 +192,7 @@ GridRouteTable::initialize(ErrorHandler *)
 
 
 bool
-GridRouteTable::current_gateway(RouteEntry &entry)
+DSDVRouteTable::current_gateway(RouteEntry &entry)
 {
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
@@ -215,7 +209,7 @@ GridRouteTable::current_gateway(RouteEntry &entry)
 
 
 unsigned int
-GridRouteTable::qual_to_pct(int q)
+DSDVRouteTable::qual_to_pct(int q)
 {
   /* smaller quality is better, so should be a higher pct when closer to min quality */
   if (q > _max_metric)
@@ -228,7 +222,7 @@ GridRouteTable::qual_to_pct(int q)
 }
 
 unsigned int
-GridRouteTable::sig_to_pct(int s)
+DSDVRouteTable::sig_to_pct(int s)
 {
   /* large signal is better, so should be a higher pct when closer to max sig */
   if (s > _max_metric)
@@ -244,7 +238,7 @@ GridRouteTable::sig_to_pct(int s)
 #define h(x)
 
 bool
-GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
+DSDVRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
   case EstBySig:
@@ -333,7 +327,7 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 }
 
 bool
-GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
+DSDVRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
   case EstBySig:
@@ -434,7 +428,7 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
 
 
 void
-GridRouteTable::init_metric(RTEntry &r)
+DSDVRouteTable::init_metric(RTEntry &r)
 {
   assert(r.num_hops == 1);
 
@@ -458,7 +452,7 @@ GridRouteTable::init_metric(RTEntry &r)
     struct timeval last;
     bool res = _link_tracker->get_stat(r.dest_ip, sig, qual, last);
     if (!res) {
-      click_chatter("GridRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
+      click_chatter("DSDVRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
 		    r.dest_ip.s().cc());
       r.metric = _bad_metric;
       r.metric_valid = false;
@@ -469,7 +463,7 @@ GridRouteTable::init_metric(RTEntry &r)
     now = now - last;
     int delta_ms = 1000 * now.tv_sec + (now.tv_usec / 1000);
     if (delta_ms > _timeout) {
-      click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
+      click_chatter("DSDVRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
 		    r.dest_ip.s().cc());
       r.metric = _bad_metric;
       r.metric_valid = false;
@@ -533,13 +527,13 @@ GridRouteTable::init_metric(RTEntry &r)
 } 
 
 void 
-GridRouteTable::update_metric(RTEntry &r)
+DSDVRouteTable::update_metric(RTEntry &r)
 {
   assert(r.num_hops > 1);
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
-    click_chatter("GridRouteTable: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
+    click_chatter("DSDVRouteTable: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
 		  r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
     r.metric_valid = false;
     return;
@@ -556,7 +550,7 @@ GridRouteTable::update_metric(RTEntry &r)
   switch (_metric_type) {
   case MetricHopCount:
     if (next_hop->metric > 1)
-      click_chatter("GridRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
+      click_chatter("DSDVRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
 		    next_hop->dest_ip.s().cc(), next_hop->metric);
   case MetricEstTxCount: 
     if (_metric_type == MetricEstTxCount) {
@@ -591,7 +585,7 @@ GridRouteTable::update_metric(RTEntry &r)
 
 
 bool
-GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
+DSDVRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
 {
   assert(r1.metric_valid && r2.metric_valid);
 
@@ -617,7 +611,7 @@ GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
 
 
 bool
-GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
+DSDVRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
 {
   /* prefer a strictly newer route */
   if (old_route.seq_no > new_route.seq_no) 
@@ -661,7 +655,7 @@ GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry
  * expects grid LR packets, with ethernet and grid hdrs
  */
 Packet *
-GridRouteTable::simple_action(Packet *packet)
+DSDVRouteTable::simple_action(Packet *packet)
 {
   assert(packet);
   int jiff = click_jiffies();
@@ -671,14 +665,14 @@ GridRouteTable::simple_action(Packet *packet)
    */  
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("GridRouteTable %s: got non-Grid packet type", id().cc());
+    click_chatter("DSDVRouteTable %s: got non-Grid packet type", id().cc());
     packet->kill();
     return 0;
   }
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
   if (gh->type != grid_hdr::GRID_LR_HELLO) {
-    click_chatter("GridRouteTable %s: received unknown Grid packet; ignoring it", id().cc());
+    click_chatter("DSDVRouteTable %s: received unknown Grid packet; ignoring it", id().cc());
     packet->kill();
     return 0;
   }
@@ -688,7 +682,7 @@ GridRouteTable::simple_action(Packet *packet)
 
   // this should be redundant (see HostEtherFilter in grid.click)
   if (ethaddr == _eth) {
-    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
+    click_chatter("DSDVRouteTable %s: received own Grid packet; ignoring it", id().cc());
     packet->kill();
     return 0;
   }
@@ -718,10 +712,10 @@ GridRouteTable::simple_action(Packet *packet)
   RTEntry *r = _rtes.findp(ipaddr);
 
   if (!r)
-    click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
+    click_chatter("DSDVRouteTable %s: adding new 1-hop route %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
   else if (r->num_hops == 1 && r->next_hop_eth != ethaddr)
-    click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
+    click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
   /*
@@ -922,17 +916,17 @@ GridRouteTable::simple_action(Packet *packet)
 }
 
 
-GridRouteTable *
-GridRouteTable::clone() const
+DSDVRouteTable *
+DSDVRouteTable::clone() const
 {
-  return new GridRouteTable;
+  return new DSDVRouteTable;
 }
 
 
 String 
-GridRouteTable::print_rtes_v(Element *e, void *)
+DSDVRouteTable::print_rtes_v(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
 
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
@@ -953,9 +947,9 @@ GridRouteTable::print_rtes_v(Element *e, void *)
 }
 
 String 
-GridRouteTable::print_rtes(Element *e, void *)
+DSDVRouteTable::print_rtes(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
 
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
@@ -974,9 +968,9 @@ GridRouteTable::print_rtes(Element *e, void *)
 }
 
 String
-GridRouteTable::print_nbrs_v(Element *e, void *)
+DSDVRouteTable::print_nbrs_v(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
@@ -996,9 +990,9 @@ GridRouteTable::print_nbrs_v(Element *e, void *)
 }
 
 String
-GridRouteTable::print_nbrs(Element *e, void *)
+DSDVRouteTable::print_nbrs(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
   
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
@@ -1015,22 +1009,22 @@ GridRouteTable::print_nbrs(Element *e, void *)
 
 
 String
-GridRouteTable::print_ip(Element *e, void *)
+DSDVRouteTable::print_ip(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
   return n->_ip.s();
 }
 
 
 String
-GridRouteTable::print_eth(Element *e, void *)
+DSDVRouteTable::print_eth(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
   return n->_eth.s();
 }
 
 String
-GridRouteTable::metric_type_to_string(MetricType t)
+DSDVRouteTable::metric_type_to_string(MetricType t)
 {
   switch (t) {
   case MetricHopCount: return "hopcount"; break;
@@ -1048,14 +1042,14 @@ GridRouteTable::metric_type_to_string(MetricType t)
 
 
 String
-GridRouteTable::print_metric_type(Element *e, void *)
+DSDVRouteTable::print_metric_type(Element *e, void *)
 {
-  GridRouteTable *n = (GridRouteTable *) e;
+  DSDVRouteTable *n = (DSDVRouteTable *) e;
   return metric_type_to_string(n->_metric_type) + "\n";
 }
 
-GridRouteTable::MetricType 
-GridRouteTable::check_metric_type(const String &s)
+DSDVRouteTable::MetricType 
+DSDVRouteTable::check_metric_type(const String &s)
 {
   String s2 = s.lower();
   if (s2 == "hopcount")
@@ -1079,10 +1073,10 @@ GridRouteTable::check_metric_type(const String &s)
 }
 
 int
-GridRouteTable::write_metric_type(const String &arg, Element *el, 
+DSDVRouteTable::write_metric_type(const String &arg, Element *el, 
 				  void *, ErrorHandler *errh)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
   MetricType type = check_metric_type(arg);
   if (type < 0)
     return errh->error("unknown metric type ``%s''", ((String) arg).cc());
@@ -1119,18 +1113,18 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
 }
 
 String
-GridRouteTable::print_metric_range(Element *e, void *)
+DSDVRouteTable::print_metric_range(Element *e, void *)
 {
-  GridRouteTable *rt = (GridRouteTable *) e;
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
   
   return "max=" + String(rt->_max_metric) + " min=" + String(rt->_min_metric) + "\n";
 }
 
 int
-GridRouteTable::write_metric_range(const String &arg, Element *el, 
+DSDVRouteTable::write_metric_range(const String &arg, Element *el, 
 				   void *, ErrorHandler *errh)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
   int max, min;
   int res = cp_va_space_parse(arg, rt, errh,
 			      cpInteger, "metric range max", &max,
@@ -1152,18 +1146,18 @@ GridRouteTable::write_metric_range(const String &arg, Element *el,
 }
 
 String
-GridRouteTable::print_est_type(Element *e, void *)
+DSDVRouteTable::print_est_type(Element *e, void *)
 {
-  GridRouteTable *rt = (GridRouteTable *) e;
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
   
   return String(rt->_est_type) + "\n";
 }
 
 int
-GridRouteTable::write_est_type(const String &arg, Element *el, 
+DSDVRouteTable::write_est_type(const String &arg, Element *el, 
 			       void *, ErrorHandler *)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
   rt->_est_type = atoi(((String) arg).cc());
 
   return 0;
@@ -1171,18 +1165,18 @@ GridRouteTable::write_est_type(const String &arg, Element *el,
 
 
 String
-GridRouteTable::print_seq_delay(Element *e, void *)
+DSDVRouteTable::print_seq_delay(Element *e, void *)
 {
-  GridRouteTable *rt = (GridRouteTable *) e;
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
   
   return String(rt->_seq_delay) + "\n";
 }
 
 int
-GridRouteTable::write_seq_delay(const String &arg, Element *el, 
+DSDVRouteTable::write_seq_delay(const String &arg, Element *el, 
 				void *, ErrorHandler *)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
   rt->_seq_delay = atoi(((String) arg).cc());
 
   return 0;
@@ -1190,31 +1184,31 @@ GridRouteTable::write_seq_delay(const String &arg, Element *el,
 
 
 String
-GridRouteTable::print_frozen(Element *e, void *)
+DSDVRouteTable::print_frozen(Element *e, void *)
 {
-  GridRouteTable *rt = (GridRouteTable *) e;
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
   
   return (rt->_frozen ? "true\n" : "false\n");
 }
 
 int
-GridRouteTable::write_frozen(const String &arg, Element *el, 
+DSDVRouteTable::write_frozen(const String &arg, Element *el, 
 				void *, ErrorHandler *)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
   rt->_frozen = atoi(((String) arg).cc());
 
-  click_chatter("GridRouteTable: setting _frozen to %s", rt->_frozen ? "true" : "false");
+  click_chatter("DSDVRouteTable: setting _frozen to %s", rt->_frozen ? "true" : "false");
 
   return 0;
 }
 
 
 int
-GridRouteTable::write_start_log(const String &arg, Element *, 
+DSDVRouteTable::write_start_log(const String &arg, Element *, 
 				void *, ErrorHandler *errh)
 {
-  // GridRouteTable *rt = (GridRouteTable *) el;
+  // DSDVRouteTable *rt = (DSDVRouteTable *) el;
   
   if (GridLogger::log_is_open())
     GridLogger::close_log();
@@ -1228,10 +1222,10 @@ GridRouteTable::write_start_log(const String &arg, Element *,
 
 
 int
-GridRouteTable::write_stop_log(const String &, Element *, 
+DSDVRouteTable::write_stop_log(const String &, Element *, 
 			       void *, ErrorHandler *)
 {
-  // GridRouteTable *rt = (GridRouteTable *) el;
+  // DSDVRouteTable *rt = (DSDVRouteTable *) el;
 
   if (GridLogger::log_is_open())
     GridLogger::close_log();
@@ -1241,9 +1235,9 @@ GridRouteTable::write_stop_log(const String &, Element *,
 
 
 String
-GridRouteTable::print_links(Element *e, void *)
+DSDVRouteTable::print_links(Element *e, void *)
 {
-  GridRouteTable *rt = (GridRouteTable *) e;
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
   
   String s = "Metric type: " + metric_type_to_string(rt->_metric_type) + "\n";
 
@@ -1281,7 +1275,7 @@ GridRouteTable::print_links(Element *e, void *)
 }
 
 void
-GridRouteTable::add_handlers()
+DSDVRouteTable::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("nbrs_v", print_nbrs_v, 0);
@@ -1307,16 +1301,16 @@ GridRouteTable::add_handlers()
 
 
 void
-GridRouteTable::expire_hook(Timer *, void *thunk) 
+DSDVRouteTable::expire_hook(Timer *, void *thunk) 
 {
-  GridRouteTable *n = (GridRouteTable *) thunk;
+  DSDVRouteTable *n = (DSDVRouteTable *) thunk;
   n->expire_routes();
   n->_expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
 }
 
 
-Vector<GridRouteTable::RTEntry>
-GridRouteTable::expire_routes()
+Vector<DSDVRouteTable::RTEntry>
+DSDVRouteTable::expire_routes()
 {
   /*
    * remove expired routes from the routing table.  return a vector of
@@ -1331,9 +1325,9 @@ GridRouteTable::expire_routes()
     if (_log) {
       struct timeval tv;
       gettimeofday(&tv, 0);
-      Vector<RouteEntry> vec;
-      get_all_entries(vec);
-      _log->log_route_dump(vec, tv);
+      Vector<RouteEntry> rv;
+      get_all_entries(rv);
+      _log->log_route_dump(rv, tv);
     }
   }
       
@@ -1426,9 +1420,9 @@ GridRouteTable::expire_routes()
 
 
 void
-GridRouteTable::hello_hook(Timer *, void *thunk)
+DSDVRouteTable::hello_hook(Timer *, void *thunk)
 {
-  GridRouteTable *n = (GridRouteTable *) thunk;
+  DSDVRouteTable *n = (DSDVRouteTable *) thunk;
 
   /* XXX is this a bug?  we expire some routes, but don't advertise
      them as broken anymore... */
@@ -1459,7 +1453,7 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
 
 
 void
-GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
+DSDVRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 				    bool update_seq, bool check_ttls)
 {
   /*
@@ -1503,7 +1497,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   assert(psz <= 1500);
   if (num_rtes < rte_info.size())
-    click_chatter("GridRouteTable %s: too many routes, truncating route advertisement",
+    click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
 		  id().cc());
 
   /* allocate and align the packet */
@@ -1594,7 +1588,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
 
 void
-GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
+DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 {
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
@@ -1621,7 +1615,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
       nb->measurement_time.tv_usec = htonl(s->when.tv_usec);
     }
     else
-      click_chatter("GridRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
+      click_chatter("DSDVRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
 		    IPAddress(dest_ip).s().cc());
 
     nb->num_rx = 0;
@@ -1633,7 +1627,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
     bool res = ls->get_bcast_stats(next_hop_eth, nb->last_bcast, window, num_rx, num_expected);
     if (res) {
       if (num_rx > 255 || num_expected > 255) {
-	click_chatter("GridRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",
+	click_chatter("DSDVRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",
 		      IPAddress(dest_ip).s().cc());
 	num_rx = num_expected = 255;
       }
@@ -1645,12 +1639,10 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(GridRouteTable)
+EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, GridRouteTable::RTEntry>;
-template class BigHashMap<IPAddress, bool>;
+template class BigHashMap<IPAddress, DSDVRouteTable::RTEntry>;
 #include <click/vector.cc>
-template class Vector<IPAddress>;
-template class Vector<GridRouteTable::RTEntry>;
-template class Vector<GridGenericRouteTable::RouteEntry>;
+template class Vector<DSDVRouteTable::RTEntry>;
+
