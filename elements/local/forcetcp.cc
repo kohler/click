@@ -35,6 +35,7 @@ ForceTCP::ForceTCP()
   MOD_INC_USE_COUNT;
   _count = 0;
   _dport = -1;
+  _flags = -1;
 }
 
 ForceTCP::~ForceTCP()
@@ -50,6 +51,7 @@ ForceTCP::configure(const Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
                     cpOptional,
                     cpInteger, "destination port", &_dport,
+                    cpInteger, "TCP flags", &_flags,
                     0);
 
   return(ret);
@@ -93,6 +95,10 @@ ForceTCP::simple_action(Packet *p_in)
       noff = ilen - hlen;
     }
     th->th_off = noff >> 2;
+  }
+
+  if(_flags != -1){
+    th->th_flags = _flags;
   }
 
   if(_dport >= 0){

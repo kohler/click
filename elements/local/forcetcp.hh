@@ -3,13 +3,14 @@
 
 /*
  * =c
- * ForceTCP([DPORT])
+ * ForceTCP([DPORT, [FLAGS]])
  * =s TCP
  * sets TCP packet fields
  * =d
  * Set the checksum and some other fields to try to make a
  * packet look like TCP. If DPORT is specified and not -1, forces
- * the destination port to be DPORT.
+ * the destination port to be DPORT. If FLAGS is specified and
+ * not -1, set the TCP flags field to FLAGS.
  */
 
 #include <click/element.hh>
@@ -30,6 +31,7 @@ public:
 private:
   int _count;
   int _dport;
+  int _flags;
 };
 
 #endif
