@@ -38,16 +38,6 @@ SnoopTCP::~SnoopTCP()
 {
 }
 
-void
-SnoopTCP::processing_vector(Vector<int> &in_v, int in_offset,
-			      Vector<int> &out_v, int out_offset) const
-{
-  in_v[in_offset+0] = out_v[out_offset+0] = AGNOSTIC; // XXX agnostic?
-  in_v[in_offset+1] = out_v[out_offset+1] = AGNOSTIC;
-  out_v[out_offset+2] = PUSH;
-  out_v[out_offset+3] = PUSH;
-}
-
 Bitvector
 SnoopTCP::forward_flow(int iport) const
 {

@@ -59,7 +59,7 @@ class Queue : public Element, public Storage {
   
   const char *class_name() const		{ return "Queue"; }
   void *cast(const char *);
-  Processing default_processing() const		{ return PUSH_TO_PULL; }
+  const char *processing() const		{ return PUSH_TO_PULL; }
   
   int drops() const				{ return _drops; }
   int max_length() const			{ return _max_length; }

@@ -22,7 +22,7 @@ class SetIPAddress : public Element {
   SetIPAddress(unsigned offset = 0);
   
   const char *class_name() const		{ return "SetIPAddress"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
 
   SetIPAddress *clone() const;
   int configure(const String &, ErrorHandler *);

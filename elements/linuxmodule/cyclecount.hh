@@ -19,7 +19,7 @@ class CycleCount : public Element {
   ~CycleCount();
   
   const char *class_name() const		{ return "CycleCount"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   CycleCount *clone() const;
   int configure(const String &, ErrorHandler *);
   

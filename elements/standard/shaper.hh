@@ -29,7 +29,7 @@ class Shaper : public Element { protected:
   ~Shaper();
   
   const char *class_name() const                { return "Shaper"; }
-  Processing default_processing() const		{ return PULL; }
+  const char *processing() const		{ return PULL; }
 
   int rate() const				{ return _rate.average(); }
   int rate_scale() const			{ return _rate.scale(); }

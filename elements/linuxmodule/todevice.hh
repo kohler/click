@@ -39,7 +39,7 @@ class ToDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "ToDevice"; }
-  Processing default_processing() const	{ return PULL; }
+  const char *processing() const	{ return PULL; }
   
   ToDevice *clone() const;
   int configure(const String &, ErrorHandler *);

@@ -33,7 +33,7 @@ class EtherEncap : public Element {
   ~EtherEncap();
 
   const char *class_name() const		{ return "EtherEncap"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   EtherEncap *clone() const;
   int configure(const String &, ErrorHandler *);

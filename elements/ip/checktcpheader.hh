@@ -3,7 +3,7 @@
 
 /*
  * =c
- * CheckTCPHeader
+ * CheckTCPHeader()
  * =d
  * Expects TCP/IP packets as input.
  * Checks that the TCP header length and checksum fields are valid.
@@ -27,8 +27,8 @@ class CheckTCPHeader : public Element {
   CheckTCPHeader();
   
   const char *class_name() const		{ return "CheckTCPHeader"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   int drops() const				{ return _drops; }
   

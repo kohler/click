@@ -20,7 +20,7 @@ class PullToPush : public Element {
   PullToPush() : Element(1, 1)			{ }
   
   const char *class_name() const		{ return "PullToPush"; }
-  Processing default_processing() const		{ return PULL_TO_PUSH; }
+  const char *processing() const		{ return PULL_TO_PUSH; }
   
   PullToPush *clone() const			{ return new PullToPush; }
   int configure(const String &, ErrorHandler *);

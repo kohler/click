@@ -17,10 +17,15 @@
  * reading handlers as they appear.
  * A `DELAY' directive causes it to wait for DELAY seconds before
  * continuing.
+ *
+ * At user level, the results of any read handlers are printed to standard
+ * error. In the Linux kernel module, they are printed to /var/log/messages
+ * (accessible through dmesg(1)) and to /proc/click/errors.
  * =e
  * = PeekHandlers(q.length,
  * =              1.5, // delay for 1.5 seconds
  * =              q.length);
+ * =a PokeHandlers
  */
 
 class PeekHandlers : public Element {

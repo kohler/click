@@ -17,7 +17,7 @@ class ScheduleLinux : public Element {
   ~ScheduleLinux() {}
   
   const char *class_name() const		{ return "ScheduleLinux"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   ScheduleLinux *clone() const;
   int configure(const String &, ErrorHandler *);

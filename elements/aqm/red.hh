@@ -73,7 +73,7 @@ class RED : public Element {
   RED();
   
   const char *class_name() const		{ return "RED"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   void add_handlers();
   
   int queue_size() const;

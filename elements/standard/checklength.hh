@@ -20,8 +20,8 @@ class CheckLength : public Element { protected:
   CheckLength()					: Element(1, 1) { }
   
   const char *class_name() const		{ return "CheckLength"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   CheckLength *clone() const			{ return new CheckLength; }
   int configure(const String &, ErrorHandler *);

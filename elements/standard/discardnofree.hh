@@ -14,7 +14,7 @@ class DiscardNoFree : public Element {
   DiscardNoFree();
   
   const char *class_name() const		{ return "DiscardNoFree"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   DiscardNoFree *clone() const			{ return new DiscardNoFree; }
   int initialize(ErrorHandler *);

@@ -22,7 +22,7 @@ class Align : public Element {
   Align();
   
   const char *class_name() const		{ return "Align"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   Align *clone() const				{ return new Align; }
   int configure(const String &, ErrorHandler *);

@@ -22,7 +22,7 @@ class SendPattern : public Element {
   ~SendPattern()					{ }
   
   const char *class_name() const		{ return "SendPattern"; }
-  Processing default_processing() const	{ return PULL; }
+  const char *processing() const	{ return PULL; }
   
   SendPattern *clone() const;
   int configure(const String &, ErrorHandler *);

@@ -22,7 +22,7 @@ class TimedSink : public Element {
   TimedSink();
   
   const char *class_name() const		{ return "TimedSink"; }
-  Processing default_processing() const	{ return PULL; }
+  const char *processing() const	{ return PULL; }
   
   TimedSink *clone() const;
   int configure(const String &, ErrorHandler *);

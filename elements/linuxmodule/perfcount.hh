@@ -29,7 +29,7 @@ class PerfCount : public Element {
   ~PerfCount();
   
   const char *class_name() const		{ return "PerfCount"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   PerfCount *clone() const;
   void add_handlers();
 

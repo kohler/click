@@ -25,8 +25,8 @@
  * =n
  * Encapsultated routing table is pokeable via /proc. Its handlers are called
  * 'add', 'del' and 'look'.
- * 
  *
+ * =a LookupIPRoute
  * =a LookupIPRoute2
  */
 
@@ -40,7 +40,7 @@ public:
   ~LookupIPRoute2();
   
   const char *class_name() const		{ return "LookupIPRoute2"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   LookupIPRoute2 *clone() const;
   
   void push(int port, Packet *p);

@@ -52,15 +52,6 @@ Tee::push(int, Packet *p)
 // PULLTEE
 //
 
-void
-PullTee::processing_vector(Vector<int> &in_v, int in_offset,
-			     Vector<int> &out_v, int out_offset) const
-{
-  in_v[in_offset] = out_v[out_offset] = PULL;
-  for (int o = 1; o < noutputs(); o++)
-    out_v[out_offset+o] = PUSH;
-}
-
 PullTee *
 PullTee::clone() const
 {

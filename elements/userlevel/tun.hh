@@ -31,7 +31,7 @@ class Tun : public Element {
   ~Tun();
   
   const char *class_name() const		{ return "Tun"; }
-  Processing default_processing() const	{ return PULL_TO_PUSH; }
+  const char *processing() const	{ return PULL_TO_PUSH; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

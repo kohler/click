@@ -23,7 +23,7 @@ public:
   ~SetIPChecksum();
   
   const char *class_name() const		{ return "SetIPChecksum"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   SetIPChecksum *clone() const;
 
   Packet *simple_action(Packet *);

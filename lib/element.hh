@@ -15,7 +15,8 @@ typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 
 class Element : public ElementLink { public:
   
-  enum Processing { AGNOSTIC, PUSH, PULL, PUSH_TO_PULL, PULL_TO_PUSH };
+  enum Processing { VAGNOSTIC, VPUSH, VPULL };
+  static const char *AGNOSTIC, *PUSH, *PULL, *PUSH_TO_PULL, *PULL_TO_PUSH;
   class Connection;
   
   Element();
@@ -68,13 +69,11 @@ class Element : public ElementLink { public:
   virtual Bitvector backward_flow(int) const;
   
   // PUSH OR PULL PROCESSING
-  virtual void processing_vector(Vector<int>&, int, Vector<int>&, int) const;
-  virtual Processing default_processing() const;
+  virtual const char *processing() const;
   
+  virtual void processing_vector(Vector<int> &, int, Vector<int> &, int,
+				 ErrorHandler *) const;
   void set_processing_vector(const Vector<int>&, int, const Vector<int>&, int);
-  
-  static const char *processing_name(Processing);
-  static const char *processing_name(int);
   
   bool output_is_push(int) const;
   bool input_is_pull(int) const;

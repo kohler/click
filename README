@@ -34,9 +34,9 @@ CLICKDIR/tools			source code for Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
 CLICKDIR/tools/click-compile	... compiles element source code portably
+CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-install	... installs configuration into Linux module
-CLICKDIR/tools/click-specialize ... removes virtual functions from source
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/tools/udpgen		... Linux kernel modules for quickly 
 				    generating and counting UDP packets

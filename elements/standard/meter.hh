@@ -48,7 +48,7 @@ class Meter : public Element { protected:
   ~Meter();
   
   const char *class_name() const		{ return "Meter"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   int rate() const				{ return _rate.average(); }
   int rate_scale() const			{ return _rate.scale(); }

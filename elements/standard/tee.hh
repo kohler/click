@@ -26,7 +26,7 @@ class Tee : public Element {
   Tee()						: Element(1, 2) { }
   
   const char *class_name() const		{ return "Tee"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   Tee *clone() const;
   int configure(const String &, ErrorHandler *);
@@ -43,7 +43,7 @@ class PullTee : public Element {
   explicit PullTee(int n)			: Element(1, n) { }
   
   const char *class_name() const		{ return "PullTee"; }
-  void processing_vector(Vector<int>&, int, Vector<int>&, int) const;
+  const char *processing() const		{ return "l/lh"; }
   
   PullTee *clone() const;
   int configure(const String &, ErrorHandler *);

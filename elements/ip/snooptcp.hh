@@ -29,7 +29,7 @@ class SnoopTCP : public Element { public:
   ~SnoopTCP();
   
   const char *class_name() const		{ return "SnoopTCP"; }
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
+  const char *processing() const		{ return "aa/aahh"; }
   
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;

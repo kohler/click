@@ -49,7 +49,7 @@ class FromBPF : public Element {
   ~FromBPF();
   
   const char *class_name() const		{ return "FromBPF"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   FromBPF *clone() const;
   int configure(const String &, ErrorHandler *);

@@ -36,7 +36,7 @@ class PollDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "PollDevice"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   PollDevice *clone() const;
   int configure(const String &, ErrorHandler *);

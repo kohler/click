@@ -20,7 +20,7 @@ public:
   ~SetCRC32();
 
   const char *class_name() const		{ return "SetCRC32"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   SetCRC32 *clone() const { return(new SetCRC32()); }
   

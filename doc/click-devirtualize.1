@@ -1,0 +1,200 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0.3
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-DEVIRTUALIZE 1 "31/Mar/2000" "Version \*V"
+.SH NAME
+click-devirtualize \- removes virtual function calls from a Click router configuration
+'
+.SH SYNOPSIS
+.B click-devirtualize
+.I \%[options]
+.I \%[router\-file]
+'
+.SH DESCRIPTION
+The
+.B click-devirtualize
+tool speeds up a Click configuration by removing virtual function calls
+from its elements. It reads a router configuration file in the
+.M click 5
+language and creates specialized C++ source code for each element. The
+virtual function calls in this specialized C++ code are replaced with
+direct function calls to other elements in the configuration.
+.PP
+After creating the source code,
+.B click-devirtualize
+will optionally compile it into dynamically loadable packages. The elements
+in the input configuration are changed to use new, specially generated
+element classes, and the resulting configuration, plus source code and any
+compiled packages, are combined into an archive and written to the standard
+output. You can install such an archive into the
+.M click.o 8
+Linux kernel module with
+.M click-install 1 :
+.Sp
+.nf
+  % click-devirtualize -k CONFIGURATION | click-install
+.fi
+.Sp
+The
+.M click 1
+user level driver can read the archives directly.
+.PP
+The
+.B click-devirtualize
+transformation can be reversed with the
+.B \-\-reverse
+option.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-devirtualize
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP
+.BR \-k ", " \-\-kernel
+Generate a dynamically loadable package for the
+.M click.o 8
+Linux kernel module.
+'
+.Sp
+.TP
+.BR \-u ", " \-\-user
+Generate a dynamically loadable package for the
+.M click 1
+user-level driver.
+'
+.Sp
+.TP 5
+.BR \-s ", " \-\-source
+Output only the specialized element class source code.
+'
+.Sp
+.TP 5
+.BR \-c ", " \-\-config
+Output only the new configuration (the one that includes specialized
+elements).
+'
+.Sp
+.TP 5
+.BR \-r ", " \-\-reverse
+Reverse the tranformation. That is, change any existing devirtualized 
+element classes into the equivalent normal elements.
+'
+.Sp
+.TP
+.BI \-n " class"
+.TP
+.BI \-\-no\-devirtualize " class"
+Do not devirtualize elements whose element class is
+.IR class .
+Such elements will continue using normal source code.
+'
+.Sp
+.TP
+.BI \-l " elem1 elem2"
+.TP
+.BI \-\-like " elem1 elem2"
+The elements
+.IR elem1 " and " elem2
+will share devirtualized source code. This is only valid if
+.IR elem1 " and " elem2
+are
+.IR compatible .
+Two elements are compatible iff they have the same number of inputs, the
+same number of outputs, the same port processing (push or pull), the
+elements connected to corresponding push outputs are compatible
+recursively, and the elements connected to corresponding pull inputs are
+compatible recursively.
+'
+.Sp
+.TP
+.BI \-i " file"
+.TP
+.BI \-\-instructions " file"
+Read devirtualization instructions from
+.IR file .
+This file can contain any number of lines. Comments start with `#';
+non-blank, non-comment lines should have devirtualization directives. There
+are two kinds of directives: "noclass
+.IR "class1 class2..." ""","
+which is equivalent to several `\-\-no\-devirtualize
+.IR class "i'"
+options, and "like
+.IR "class1 class2..." ""","
+which is equivalent to several `\-\-like
+.IR "class1 class2" '
+options.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 1 ,
+.M click-install 1 ,
+.M click 5 ,
+.M click.o 8
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

@@ -58,7 +58,7 @@ public:
   ~ICMPError();
   
   const char *class_name() const		{ return "ICMPError"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   ICMPError *clone() const			{ return new ICMPError; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *errh);

@@ -28,7 +28,7 @@ class TimedSource : public Element {
   TimedSource();
   
   const char *class_name() const		{ return "TimedSource"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   TimedSource *clone() const;
   int configure(const String &, ErrorHandler *);

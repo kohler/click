@@ -3,7 +3,7 @@
 
 /*
  * =c
- * CheckUDPHeader
+ * CheckUDPHeader()
  * =d
  * Expects UDP/IP packets as input.
  * Checks that the UDP header length and checksum fields are valid.
@@ -27,8 +27,8 @@ class CheckUDPHeader : public Element {
   CheckUDPHeader();
   
   const char *class_name() const		{ return "CheckUDPHeader"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   int drops() const				{ return _drops; }
   

@@ -21,7 +21,7 @@ public:
   ~Scramble();
 
   const char *class_name() const		{ return "Scramble"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   Scramble *clone() const { return(new Scramble()); }
   

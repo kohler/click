@@ -19,7 +19,7 @@ public:
   ~RFC2507d();
 
   const char *class_name() const		{ return "RFC2507Decomp"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   RFC2507d *clone() const;
 
   Packet *simple_action(Packet *);

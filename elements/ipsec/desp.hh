@@ -19,7 +19,7 @@ public:
   ~DeEsp();
   
   const char *class_name() const		{ return "IPsecESPUnencap"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   DeEsp *clone() const;
   int configure(const String &, ErrorHandler *);

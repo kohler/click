@@ -4,18 +4,24 @@
 
 /*
  * =c
- * RandomLossage(p)
+ * RandomLossage(P [, ACTIVE])
  * =d
- * Drops each packet with probability p.
- *
+ * Drops each packet with probability P.
  * If the element has two outputs, packets are sent to output
  * 1 rather than being dropped.
  *
- * /proc/click/xxx/active controls whether the element actually
- * drops packets.
+ * RandomLossage can be active or inactive. It only drops packets when active.
+ * It starts out active by default, but if you pass `false' for the ACTIVE
+ * parameter, it will start out inactive.
  *
- * =a RandomBitErrors
- */
+ * =h p_drop read/write
+ * Returns or sets the P probability parameter.
+ * =h active read/write
+ * Makes the element active or inactive.
+ * =h drops read-only
+ * Returns the number of packets dropped.
+ *
+ * =a RandomBitErrors */
 
 class RandomLossage : public Element {
   
@@ -28,8 +34,8 @@ class RandomLossage : public Element {
   RandomLossage();
   
   const char *class_name() const		{ return "RandomLossage"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   int p_drop() const				{ return _p_drop; }
   bool on() const				{ return _on; }

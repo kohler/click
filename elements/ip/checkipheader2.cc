@@ -47,15 +47,6 @@ CheckIPHeader2::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-void
-CheckIPHeader2::processing_vector(Vector<int> &in_v, int in_offset,
-				   Vector<int> &out_v, int out_offset) const
-{
-  in_v[in_offset+0] = out_v[out_offset+0] = AGNOSTIC;
-  if (noutputs() == 2)
-    out_v[out_offset+1] = PUSH;
-}
-
 int
 CheckIPHeader2::configure(const String &conf, ErrorHandler *errh)
 {

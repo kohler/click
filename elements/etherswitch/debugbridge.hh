@@ -14,7 +14,7 @@ class DebugBridge : public Element {
   ~DebugBridge();
   
   const char *class_name() const		{ return "DebugBridge"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   DebugBridge *clone() const;
   int configure(const String &, ErrorHandler *);

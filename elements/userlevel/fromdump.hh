@@ -54,7 +54,7 @@ class FromDump : public Element {
   ~FromDump();
 
   const char *class_name() const		{ return "FromDump"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   FromDump *clone() const;
   
   int configure(const String &, ErrorHandler *);

@@ -13,7 +13,7 @@ public:
   ~EtherSpanTree();
   
   const char *class_name() const		{ return "EtherSpanTree"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   EtherSpanTree* clone() const;
   
   void notify_ninputs(int);

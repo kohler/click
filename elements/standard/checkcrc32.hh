@@ -21,7 +21,7 @@ public:
   ~CheckCRC32();
 
   const char *class_name() const		{ return "CheckCRC32"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   CheckCRC32 *clone() const { return(new CheckCRC32()); }
   

@@ -20,7 +20,7 @@ class Paint : public Element {
   ~Paint();
   
   const char *class_name() const		{ return "Paint"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   Paint *clone() const;
   int configure(const String &, ErrorHandler *);
 

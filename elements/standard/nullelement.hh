@@ -16,7 +16,7 @@ class NullElement : public Element {
   NullElement();
   
   const char *class_name() const		{ return "Null"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   NullElement *clone() const;
   

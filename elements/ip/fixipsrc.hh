@@ -28,7 +28,7 @@ public:
   ~FixIPSrc();
   
   const char *class_name() const		{ return "FixIPSrc"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   FixIPSrc *clone() const;
   int configure(const String &, ErrorHandler *);
 

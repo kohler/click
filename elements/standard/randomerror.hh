@@ -4,17 +4,25 @@
 
 /*
  * =c
- * RandomBitErrors(p, how)
+ * RandomBitErrors(P [, KIND [, ACTIVE]])
  * =d
- * Flip each bit in each packet with probability p.
  *
- * If how is set or clear, do that to each bit instead of flipping it.
+ * Change each bit in each packet with probability P. The KIND parameter
+ * determines the kind of change. `flip' (the default) flips bits, `set' sets
+ * bits to one, and `clear' sets bits to zero.
  *
- * /proc/click/xxx/active controls whether the element actually
- * creates errors.
+ * RandomBitErrors can be active or inactive. It only changes bits when
+ * active. It starts out active by default, but if you pass `false' for the
+ * ACTIVE parameter, it will start out inactive.
  *
- * =a RandomLossage
- */
+ * =h p_bit_error read/write
+ * Returns or sets the P probability parameter.
+ * =h error_kind read/write
+ * Returns or sets the KIND parameter.
+ * =h active read/write
+ * Makes the element active or inactive.
+ *
+ * =a RandomLossage */
 
 class RandomBitErrors : public Element {
   
@@ -28,7 +36,7 @@ class RandomBitErrors : public Element {
   RandomBitErrors();
   
   const char *class_name() const		{ return "RandomBitErrors"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
 
   unsigned p_bit_error() const			{ return _p_bit_error; }
   int kind() const				{ return _kind; }

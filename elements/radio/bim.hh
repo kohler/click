@@ -17,7 +17,7 @@ class BIM : public Element {
   ~BIM();
   
   const char *class_name() const		{ return "BIM"; }
-  Processing default_processing() const	{ return PULL_TO_PUSH; }
+  const char *processing() const	{ return PULL_TO_PUSH; }
   
   BIM *clone() const;
   int configure(const String &, ErrorHandler *);

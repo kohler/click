@@ -34,6 +34,7 @@
  * protocol such as RIP, run it at user-level and use
  * LookupIPRouteLinux.
  *
+ * =a LookupIPRoute2
  * =a LookupIPRouteLinux
  */
 
@@ -48,7 +49,7 @@ public:
   ~LookupIPRoute();
   
   const char *class_name() const		{ return "LookupIPRoute"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   LookupIPRoute *clone() const;
   
   int configure(const String &, ErrorHandler *);

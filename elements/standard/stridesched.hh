@@ -57,7 +57,7 @@ public:
   void uninitialize();
   
   const char *class_name() const		{ return "StrideSched"; }
-  Processing default_processing() const		{ return PULL; }
+  const char *processing() const		{ return PULL; }
   
   StrideSched *clone() const			{ return new StrideSched; }
   Packet *pull(int port);

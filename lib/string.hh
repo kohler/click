@@ -104,7 +104,7 @@ class String {
 #ifdef HAVE_PERMSTRING
   String &operator+=(PermString p);
 #endif
-  
+
   // String operator+(String, const String &);
   // String operator+(String, const char *);
   // String operator+(const char *, String);

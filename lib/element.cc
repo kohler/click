@@ -23,7 +23,14 @@
 #include "straccum.hh"
 #include <errno.h>
 
+const char *Element::AGNOSTIC = "a";
+const char *Element::PUSH = "h";
+const char *Element::PULL = "l";
+const char *Element::PUSH_TO_PULL = "h/l";
+const char *Element::PULL_TO_PUSH = "l/h";
+
 int Element::nelements_allocated;
+
 #if CLICK_STATS >= 2
 # define ELEMENT_CTOR_STATS _calls(0), _self_cycles(0), _child_cycles(0),
 #else
@@ -101,14 +108,14 @@ Element::set_nports(int new_ninputs, int new_noutputs)
 
   // decide if inputs & outputs should be inlined
   bool new_in_inline =
-    (new_ninputs + new_noutputs <= INLINE_PORTS
+    (new_ninputs == 0
+     || new_ninputs + new_noutputs <= INLINE_PORTS
      || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
-	 && default_processing() != PUSH)
-     || new_ninputs == 0);
+	 && processing() == PULL));
   bool new_out_inline =
-    (new_ninputs + new_noutputs <= INLINE_PORTS
-     || (new_noutputs <= INLINE_PORTS && !new_in_inline)
-     || new_noutputs == 0);
+    (new_noutputs == 0
+     || new_ninputs + new_noutputs <= INLINE_PORTS
+     || (new_noutputs <= INLINE_PORTS && !new_in_inline));
 
   // save inlined ports
   Connection ports_storage[INLINE_PORTS];
@@ -212,25 +219,68 @@ Element::backward_flow(int o) const
 
 // PUSH OR PULL PROCESSING
 
-void
-Element::processing_vector(Vector<int> &in_v, int in_offset,
-			   Vector<int> &out_v, int out_offset) const
+static int
+next_processing_code(const char *&p, ErrorHandler *errh)
 {
-  Processing p = default_processing();
-  if (p == PUSH_TO_PULL) p = PUSH;
-  else if (p == PULL_TO_PUSH) p = PULL;
-  for (int i = 0; i < ninputs(); i++)
-    in_v[in_offset+i] = p;
-  
-  p = default_processing();
-  if (p == PUSH_TO_PULL) p = PULL;
-  else if (p == PULL_TO_PUSH) p = PUSH;
-  for (int o = 0; o < noutputs(); o++)
-    out_v[out_offset+o] = p;
+  while (isspace(*p)) p++;
+  switch (*p) {
+    
+   case 'h': case 'H':
+    p++;
+    return Element::VPUSH;
+    
+   case 'l': case 'L':
+    p++;
+    return Element::VPULL;
+    
+   case 'a': case 'A':
+    p++;
+    return Element::VAGNOSTIC;
+
+   case '/': case 0:
+    return -2;
+
+   default:
+    if (errh) errh->error("invalid character `%c' in processing code", *p);
+    p++;
+    return -1;
+    
+  }
 }
 
-Element::Processing
-Element::default_processing() const
+void
+Element::processing_vector(Vector<int> &in_v, int in_offset,
+			   Vector<int> &out_v, int out_offset,
+			   ErrorHandler *errh) const
+{
+  const char *p_in = processing();
+  int val = 0;
+
+  const char *p = p_in;
+  int last_val = 0;
+  for (int i = 0; i < ninputs(); i++) {
+    if (last_val >= 0) last_val = next_processing_code(p, errh);
+    if (last_val >= 0) val = last_val;
+    in_v[in_offset + i] = val;
+  }
+
+  while (*p && *p != '/')
+    p++;
+  if (!*p)
+    p = p_in;
+  else
+    p++;
+
+  last_val = 0;
+  for (int i = 0; i < noutputs(); i++) {
+    if (last_val >= 0) last_val = next_processing_code(p, errh);
+    if (last_val >= 0) val = last_val;
+    out_v[out_offset + i] = val;
+  }
+}
+
+const char *
+Element::processing() const
 {
   return AGNOSTIC;
 }
@@ -240,34 +290,15 @@ Element::set_processing_vector(const Vector<int> &in_v, int in_offset,
 			       const Vector<int> &out_v, int out_offset)
 {
   for (int i = 0; i < ninputs(); i++)
-    if (in_v[in_offset+i] == PULL)
+    if (in_v[in_offset+i] == VPULL)
       _inputs[i].clear();
     else
       _inputs[i].disallow();
   for (int o = 0; o < noutputs(); o++)
-    if (out_v[out_offset+o] == PUSH)
+    if (out_v[out_offset+o] == VPUSH)
       _outputs[o].clear();
     else
       _outputs[o].disallow();
-}
-
-const char *
-Element::processing_name(Processing p)
-{
-  switch (p) {
-   case AGNOSTIC: return "agnostic";
-   case PUSH: return "push";
-   case PULL: return "pull";
-   case PULL_TO_PUSH: return "pull-to-push";
-   case PUSH_TO_PULL: return "push-to-pull";
-   default: return "UNKNOWN-PROCESSING-TYPE";
-  }
-}
-
-const char *
-Element::processing_name(int p)
-{
-  return processing_name((Processing)p);
 }
 
 // CLONING AND CONFIGURING

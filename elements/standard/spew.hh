@@ -21,7 +21,7 @@ class Spew : public Element {
   Spew();
   
   const char *class_name() const		{ return "Spew"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   Spew *clone() const;
   int configure(const String &, ErrorHandler *);

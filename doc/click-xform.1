@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0
+.ds V 1.0.3
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -30,7 +30,7 @@
 .de RM
 .RB "\\$1" "\\$2" "(\\$3)\\$4"
 ..
-.TH CLICK-XFORM 1 "16/Oct/1999" "Version \*V"
+.TH CLICK-XFORM 1 "31/Mar/2000" "Version \*V"
 .SH NAME
 click-xform \- pattern-based Click router configuration optimizer
 '
@@ -45,17 +45,17 @@ The
 .B click-xform
 tool is a Click router configuration optimizer. It reads files giving Click
 configuration patterns and their replacements, and a router configuration
-file. Then it replaces patterns in the configuration until none remain and
-writes the new configuration to the standard output.
+file. Then it replaces pattern matches in the configuration until none
+remain and writes the new configuration to the standard output.
 .PP
-Each pattern file uses the Click language (see
+Pattern files use the Click language (see
 .M click 5 ).
-It should contain pairs of `elementclass' definitions, where one of each
-pair is a pattern and the other is a replacement. The replacement for a
-pattern named
-.RI ` pattern '
+They contain pairs of `elementclass' definitions, where each pair consists
+of one pattern text and one replacement text. The replacement for a pattern
+named
+.RI ` X '
 must be named
-.RI ` pattern _Replacement'.
+.RI ` X _Replacement'.
 This example pattern file replaces all Queues with Queue-Shaper
 combinations:
 .Rs
@@ -69,13 +69,13 @@ elementclass QueuePattern_Replacement {
 .fi
 .Re
 .PP
-A pattern can contain an arbitrary number of elements, and an arbitrary
-number of input and output ports. Basically, a pattern matches a
-configuration subset when all its component elements match; all its
-connections are duplicated in the configuration subset; and any connections
-into or out of the configuration subset correspond to connections to or
-from the pattern's input and output ports. The formal definition of
-matching is given below.
+A pattern text can contain an arbitrary number of elements, and an
+arbitrary number of input and output ports. Basically, a pattern matches a
+fragment of a router configuration when they have the same number of
+elements; their element classes match; all of the pattern's connections are
+duplicated in the fragment; and any connections into or out of the fragment
+correspond to connections to or from the pattern's input and output ports.
+The formal definition of matching is given below.
 .PP
 Any configuration strings in the pattern must match the configuration
 strings in the configuration subset. The pattern can use variables, which
@@ -90,12 +90,12 @@ applying this pattern
 .Rs
 .nf
 elementclass Meters {
-  input -> Meter($r1)
-        -> Shaper($r2) -> output;
+  input -> Meter($a)
+        -> Shaper($b) -> output;
 }
 elementclass Meters_Replacement {
-  input -> PacketMeter($r2)
-        -> PacketShaper($r1) -> output;
+  input -> PacketMeter($b)
+        -> PacketShaper($a) -> output;
 }
 .fi
 .Re
@@ -114,8 +114,8 @@ will create this result:
 .PP
 The optimizer will not apply the same pattern to a configuration subset
 twice in succession. Specifically, every replacement element is marked with
-the pattern that it came from; a pattern will not match a configuration
-subset if every element in that subset came from that pattern. Thus, a
+the pattern that generated it; a pattern will not match a configuration
+fragment if every element in that fragment came from that pattern. Thus, a
 pattern like the QueuePattern above won't cause an infinite loop. You can
 still cause an infinite loop, if you'd like, by having two patterns that
 match the same text:
@@ -137,6 +137,12 @@ elementclass Evil2_Replacement {
 .Re
 This collection of patterns will make the optimizer run forever on any
 configuration that has a Queue.
+.PP
+The
+.B click-xform
+transformation can be reversed with the
+.B \-\-reverse
+option.
 '
 .SH "OPTIONS"
 '
@@ -170,6 +176,12 @@ The default is the standard input.
 Write the output router configuration to
 .IR file .
 The default is the standard output.
+'
+.Sp
+.TP
+.BR \-r ", " \-\-reverse
+Apply the patterns in reverse. That is, replace occurrences of the
+replacement texts with the corresponding pattern texts.
 '
 .Sp
 .TP 5

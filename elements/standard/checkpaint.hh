@@ -30,7 +30,7 @@ class CheckPaint : public Element {
   CheckPaint()						: Element(1, 2) { }
   
   const char *class_name() const		{ return "CheckPaint"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   CheckPaint *clone() const;
   int configure(const String &, ErrorHandler *);

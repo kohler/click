@@ -44,7 +44,7 @@ class FromLinux : public Element {
   FromLinux *clone() const;
   
   const char *class_name() const	{ return "FromLinux"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);

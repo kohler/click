@@ -8,10 +8,10 @@
  * A single element encapsulating common tasks on an IP router's input path.
  * Effectively equivalent to
  *
- * = elementclass IPInputCombo(COLOR, BADADDRS) {
- * =   input[0] -> Paint(COLOR)
+ * = elementclass IPInputCombo { $COLOR, $BADADDRS |
+ * =   input[0] -> Paint($COLOR)
  * =         -> Strip(14)
- * =         -> CheckIPHeader(BADADDRS)
+ * =         -> CheckIPHeader($BADADDRS)
  * =         -> GetIPAddress(16)
  * =         -> [0]output;
  * = }
@@ -39,7 +39,7 @@ class IPInputCombo : public Element {
   ~IPInputCombo();
   
   const char *class_name() const		{ return "IPInputCombo"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   int drops() const				{ return(_drops); }
   IPInputCombo *clone() const;

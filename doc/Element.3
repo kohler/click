@@ -160,12 +160,46 @@ Returns a pointer to the Router object that this element is a part of.
 .SH "PROCESSING AND FLOW"
 '
 .PD 0
+'
+.Sp
+.TP 5
+.BR "virtual const char *processing() const"
+Should return the element's processing code. This is a string that
+specifies whether the element's ports should be push, pull, or agnostic.
+Most elements use one of the constants
+.BR PUSH ", " PULL ", " PUSH_TO_PULL ,
+.BR PULL_TO_PUSH ", or " AGNOSTIC ;
+the default implementation returns
+.BR AGNOSTIC .
+.Sp
+Elements with complex port arrangements will return a custom string. The
+string looks like
+.RI ` INPUTS / OUTPUTS ',
+where
+.IR INPUTS " and " OUTPUTS
+are sequences of `h', `l', and `a' characters. `h' means push, `l' means
+pull, and `a' means agnostic. The processing values for the input ports are
+set by the corresponding characters of 
+.IR INPUTS ,
+and similarly for output ports and 
+.IR OUTPUTS .
+If there are more ports than characters, then the last character in the
+relevant portion of the string is repeated as often as necessary. If there
+are more characters than ports, then extra characters are ignored. Thus,
+the string "a/ah" means that all of the element's inputs are agnostic, the
+first output is also agnostic, and the second and subsequent outputs are
+push.
+.Sp
+This function is used by the default implementation of
+.BR processing_vector() .
+.Sp
+'
 .TP 5
 .BR "virtual void processing_vector(" "Vector<int> &\fIinput_vector\fP,"
 .TP 5
 .RB "\%            int \fIinput_offset\fP, Vector<int> &\fIoutput_vector\fP,"
 .TP 5
-.RB "\%            int \fIoutput_offset\fP" ") const"
+.RB "\%            int \fIoutput_offset\fP, ErrorHandler *\fIerrh\fP" ") const"
 Should set elements of \fIinput_vector\fP and \fIoutput_vector\fP to
 indicate whether the element's input and output ports are push, pull, or
 agnostic. Specifically, this routine should set the
@@ -177,27 +211,16 @@ and the
 consecutive integers starting at
 .BR output_vector[output_offset] .
 Possible values are
-.BR PUSH ", " PULL ", and " AGNOSTIC .
+.BR VPUSH ", " VPULL ", and " VAGNOSTIC .
 If \fIn\fP is a valid input port (0 <= \fIn\fP < \fBninputs()\fP), then
 the value at
 .BR input_vector[input_offset+\fIn\fP]
 should be that port's initial processing type, and similarly for output
-ports. The default implementation sets these values based on
-.BR default_processing() .
-There's no reason to override this function unless you have more than one
-input port (output port) and those input ports (output ports) have
-different processing types.
-'
+ports.
 .Sp
-.TP
-.BR "virtual Processing default_processing() const"
-Should return the element's default processing value. Possibilities are
-.BR PUSH ", " PULL ", " PUSH_TO_PULL ,
-.BR PULL_TO_PUSH ", and " AGNOSTIC .
-The default implementation returns
-.BR AGNOSTIC .
-This function is used by the default implementation of
-.BR processing_vector() .
+There is generally no reason to override this function; override
+.BR processing()
+instead.
 '
 .Sp
 .TP

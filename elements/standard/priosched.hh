@@ -26,7 +26,7 @@ class PrioSched : public UnlimitedElement {
   ~PrioSched();
   
   const char *class_name() const		{ return "PrioSched"; }
-  Processing default_processing() const	{ return PULL; }
+  const char *processing() const	{ return PULL; }
   
   bool unlimited_inputs() const			{ return true; }
   

@@ -23,7 +23,7 @@ class Print : public Element {
   ~Print();
   
   const char *class_name() const		{ return "Print"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   Print *clone() const;
   int configure(const String &, ErrorHandler *);

@@ -21,7 +21,7 @@ class SaveIPFields : public Element {
   SaveIPFields();
   
   const char *class_name() const		{ return "SaveIPFields"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   SaveIPFields *clone() const;
   

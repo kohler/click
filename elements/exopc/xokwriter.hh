@@ -24,7 +24,7 @@ class xokWriter : public Element {
   ~xokWriter() {}
   
   const char *class_name() const		{ return "xokWriter"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   xokWriter *clone() const;
   int configure(const String &, ErrorHandler *);

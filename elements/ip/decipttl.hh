@@ -37,8 +37,8 @@ class DecIPTTL : public Element {
   ~DecIPTTL();
   
   const char *class_name() const		{ return "DecIPTTL"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   int drops()					{ return _drops; }
   

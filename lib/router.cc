@@ -292,19 +292,6 @@ Router::check_hookup_completeness(ErrorHandler *errh)
       element_lerror(errh, f, "`%e' %s output %d not connected", f,
 		     (f->output_is_push(p) ? "push" : "pull"), p);
     }
-
-#if 0
-  int before = errh->nerrors();
-  for (int fi = 0; fi < nelements(); fi++) {
-    Element *f = _elements[fi];
-    for (int i = 0; i < f->ninputs(); i++)
-      if (!f->input(i) && f->input(i).allowed())
-	element_lerror(errh, f, "`%e' pull input %d not connected", f, i);
-    for (int o = 0; o < f->noutputs(); o++)
-      if (!f->output(o) && f->output(o).allowed())
-	element_lerror(errh, f, "`%e' push output %d not connected", f, o);
-  }
-#endif
 }
 
 
@@ -382,8 +369,8 @@ int
 Router::processing_error(const Hookup &hfrom, const Hookup &hto, int idx,
 			 int processing_from, ErrorHandler *errh)
 {
-  const char *type1 = (processing_from == Element::PUSH ? "push" : "pull");
-  const char *type2 = (processing_from == Element::PUSH ? "pull" : "push");
+  const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
+  const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
   if (idx < _hookup_from.size())
     errh->error("`%e' %s output %d connected to `%e' %s input %d",
 		_elements[hfrom.idx], type1, hfrom.port,
@@ -404,19 +391,19 @@ Router::check_push_and_pull(ErrorHandler *errh)
   Vector<int> output_pers(noutput_pidx(), 0);
   for (int f = 0; f < nelements(); f++)
     _elements[f]->processing_vector(input_pers, _input_pidx[f],
-				    output_pers, _output_pidx[f]);
+				    output_pers, _output_pidx[f], errh);
   
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _hookup_from;
   Vector<Hookup> hookup_to = _hookup_to;
   for (int i = 0; i < ninput_pidx(); i++)
-    if (input_pers[i] == Element::AGNOSTIC) {
+    if (input_pers[i] == Element::VAGNOSTIC) {
       int fid = _input_fidx[i];
       int port = i - _input_pidx[fid];
       Bitvector bv = _elements[fid]->forward_flow(port);
       int opidx = _output_pidx[fid];
       for (int j = 0; j < bv.size(); j++)
-	if (bv[j] && output_pers[opidx+j] == Element::AGNOSTIC) {
+	if (bv[j] && output_pers[opidx+j] == Element::VAGNOSTIC) {
 	  hookup_from.push_back(Hookup(fid, j));
 	  hookup_to.push_back(Hookup(fid, port));
 	}
@@ -436,16 +423,16 @@ Router::check_push_and_pull(ErrorHandler *errh)
       
       switch (pt) {
 	
-       case Element::AGNOSTIC:
-	if (pf != Element::AGNOSTIC) {
+       case Element::VAGNOSTIC:
+	if (pf != Element::VAGNOSTIC) {
 	  input_pers[offt] = pf;
 	  changed = true;
 	}
 	break;
 	
-       case Element::PUSH:
-       case Element::PULL:
-	if (pf == Element::AGNOSTIC) {
+       case Element::VPUSH:
+       case Element::VPULL:
+	if (pf == Element::VAGNOSTIC) {
 	  output_pers[offf] = pt;
 	  changed = true;
 	} else if (pf != pt) {
@@ -1077,12 +1064,12 @@ Router::element_inputs_string(int fi) const
   Element *f = _elements[fi];
   Vector<int> in_pers(f->ninputs(), 0);
   Vector<int> out_pers(f->noutputs(), 0);
-  f->processing_vector(in_pers, 0, out_pers, 0);
+  f->processing_vector(in_pers, 0, out_pers, 0, 0);
   sa << f->ninputs() << "\n";
   for (int i = 0; i < f->ninputs(); i++) {
     // processing
     const char *persid = (f->input_is_pull(i) ? "pull" : "push");
-    if (in_pers[i] == Element::AGNOSTIC) sa << "(" << persid << ")\t";
+    if (in_pers[i] == Element::VAGNOSTIC) sa << "(" << persid << ")\t";
     else sa << persid << "\t";
     
     // counts
@@ -1115,12 +1102,12 @@ Router::element_outputs_string(int fi) const
   Element *f = _elements[fi];
   Vector<int> in_pers(f->ninputs(), 0);
   Vector<int> out_pers(f->noutputs(), 0);
-  f->processing_vector(in_pers, 0, out_pers, 0);
+  f->processing_vector(in_pers, 0, out_pers, 0, 0);
   sa << f->noutputs() << "\n";
   for (int i = 0; i < f->noutputs(); i++) {
     // processing
     const char *persid = (f->output_is_push(i) ? "push" : "pull");
-    if (out_pers[i] == Element::AGNOSTIC) sa << "(" << persid << ")\t";
+    if (out_pers[i] == Element::VAGNOSTIC) sa << "(" << persid << ")\t";
     else sa << persid << "\t";
     
     // counts

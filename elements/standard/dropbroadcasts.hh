@@ -20,7 +20,7 @@ class DropBroadcasts : public Element {
   ~DropBroadcasts();
   
   const char *class_name() const		{ return "DropBroadcasts"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   DropBroadcasts *clone() const;
   void add_handlers();
 

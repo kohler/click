@@ -149,7 +149,7 @@ class Rewriter : public Element {
   const char *class_name() const		{ return "Rewriter"; }
   Rewriter *clone() const			{ return new Rewriter(); }
   void notify_noutputs(int);
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -48,7 +48,7 @@ class MappingCreator : public UnlimitedElement {
   ~MappingCreator()				{ }
   
   const char *class_name() const		{ return "MappingCreator"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   MappingCreator *clone() const			{ return new MappingCreator; }
 

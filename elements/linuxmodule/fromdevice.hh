@@ -36,7 +36,7 @@ class FromDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "FromDevice"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   FromDevice *clone() const;
   int configure(const String &, ErrorHandler *);

@@ -34,7 +34,7 @@ class RIPSend : public TimedElement {
   RIPSend();
   
   const char *class_name() const		{ return "RIPSend"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
 
   RIPSend *clone() const { return new RIPSend(); }
   int configure(const String &, ErrorHandler *);

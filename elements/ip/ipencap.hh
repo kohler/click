@@ -40,7 +40,7 @@ public:
   ~IPEncap();
   
   const char *class_name() const		{ return "IPEncap"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   IPEncap *clone() const;
   int configure(const String &, ErrorHandler *);

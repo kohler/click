@@ -32,7 +32,7 @@ class Burster : public Element {
   ~Burster();
   
   const char *class_name() const                { return "Burster"; }
-  Processing default_processing() const       { return PULL_TO_PUSH; }
+  const char *processing() const       { return PULL_TO_PUSH; }
   
   Burster *clone() const;
   int configure(const String &, ErrorHandler *);

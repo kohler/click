@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 
 # element2man.pl -- creates man pages from structured comments in element
 # source code
@@ -12,18 +12,23 @@
 # version. For more information, see the `COPYRIGHT' file in the source
 # distribution.
 
-my(%text_processing) = ( 'AGNOSTIC' => 'agnostic', 'PUSH' => 'push',
-			 'PULL' => 'pull',
-			 'PUSH_TO_PULL' => 'push inputs, pull outputs',
-			 'PULL_TO_PUSH' => 'pull inputs, push outputs' );
 my(%section_is_array) = ( 'h' => 1, 'a' => 1 );
 my $directory;
 my $section = 'n';
-my @all_created;
+my(@all_created, %class_name, %processing);
+
+my(%processing_constants) =
+    ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
+      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h' );
+my(%processing_text) =
+    ( 'a/a' => 'agnostic', 'h/h' => 'push', 'l/l' => 'pull',
+      'h/l' => 'push inputs, pull outputs',
+      'l/h' => 'pull inputs, push outputs',
+      'a/ah' => 'agnostic, but output 1 is push' );
 
 # find date
 my($today) = '';
-if (localtime =~ /\w* (\w*) (\d*) \S* (\d*)/) {
+if (localtime =~ /\w*\s+(\w*)\s+(\d*)\s+\S*\s+(\d*)/) {
   $today = "$2/$1/$3";
 }
 
@@ -42,11 +47,15 @@ sub nroffize ($;$$) {
   my($i);
 
   # embolden & manpageize
-  foreach $i (sort { length($b) <=> length($a) } @$embolden) {
-    $t =~ s{(^|[^\w@/])$i($|[^\w@/])}{$1<B>$i</B>$2}gs;
+  if (defined $embolden) {
+    foreach $i (sort { length($b) <=> length($a) } @$embolden) {
+      $t =~ s{(^|[^\w@/])$i($|[^\w@/])}{$1<B>$i</B>$2}gs;
+    }
   }
-  foreach $i (sort { length($b) <=> length($a) } @$otherelts) {
-    $t =~ s{(^|[^\w@/])$i($|[^\w@/(])}{$1<\#>$i</\#>$2}gs;
+  if (defined $otherelts) {
+    foreach $i (sort { length($b) <=> length($a) } @$otherelts) {
+      $t =~ s{(^|[^\w@/])$i($|[^\w@/(])}{$1<\#>$i</\#>$2}gs;
+    }
   }
 
   # remove emboldening & manpaging on examples
@@ -66,6 +75,19 @@ sub nroffize ($;$$) {
   $t;
 }
 
+sub process_processing ($) {
+  my($t) = @_;
+  if (exists($processing_constants{$t})) {
+    $t = $processing_constants{$t};
+  }
+  $t =~ tr/\"\s//d;
+  $t =~ s{\A([^/]*)\Z}{$1/$2};
+  if (exists($processing_text{$t})) {
+    return $processing_text{$t};
+  }
+  return undef;
+}
+
 sub process_comment ($$) {
   my($t, $filename) = @_;
   my(%x, $i);
@@ -82,6 +104,10 @@ sub process_comment ($$) {
   while ($x{'c'} =~ /^\s*(\w+)\(/mg) { # configuration arguments section
     push @classes, $1 if !exists $classes{$1};
     $classes{$1} = 1;
+  }
+  if (!@classes) {
+    print STDERR "$filename: no class definitions\n    (did you forget `()' in the =c section?\n";
+    return;
   }
   my($classes_plural) = (@classes == 1 ? '' : 's');
   my($classes) = join(', ', @classes);
@@ -112,8 +138,11 @@ EOD;
   }
 
   if (@classes == 1 && $processing{$classes}) {
-    print OUT ".SH \"PROCESSING TYPE\"\n";
-    print OUT nroffize($text_processing{$processing{$classes}}), "\n";
+    my $p = process_processing($processing{$classes});
+    if ($p) {
+      print OUT ".SH \"PROCESSING TYPE\"\n";
+      print OUT nroffize($p), "\n";
+    }
   }
 
   if ($x{'io'}) {
@@ -141,19 +170,19 @@ EOD;
     print OUT nroffize($x{'e'}, \@classes, \@related);
   }
 
-  if (@{$x{'h'}}) {
+  if ($x{'h'} && @{$x{'h'}}) {
     print OUT ".SH \"HANDLERS\"\n";
     print OUT "The ", $classes[0], " element installs the following additional handlers.\n";
     foreach $i (@{$x{'h'}}) {
       if ($i =~ /^(\S+)\s*(\S*)\n(.*)$/s) {
 	print OUT ".TP 5\n.BR ", $1;
 	print OUT " \" (", $2, ")\"" if $2;
-	print OUT "\n.RS\n", nroffize($3), ".RE\n";
+	print OUT "\n.RS\n", nroffize($3), ".RE\n.Sp\n";
       }
     }
   }
 
-  if (@{$x{'a'}}) {
+  if ($x{'a'} && @{$x{'a'}}) {
     print OUT ".SH \"SEE ALSO\"\n";
     my($last) = pop @related;
     print OUT map(".M $_ n ,\n", @related);
@@ -190,7 +219,7 @@ sub process_file ($) {
       $class_name{$cxx_class} = $1;
       $cxx_class = $1;
     }
-    if (/default_processing.*return\s+(\w*)/) {
+    if (/processing.*return\s+(.*?);/) {
       $processing{$cxx_class} = $1;
     }
   }
@@ -200,7 +229,7 @@ sub process_file ($) {
       s/^\/\*\s*//g;
       s/\s*\*\/$//g;
       s/^[ \t]*\*[ \t]*//gm;
-      process_comment($_, $ff);
+      process_comment($_, $filename);
     }
   }
 }
@@ -209,9 +238,19 @@ sub process_file ($) {
 sub read_files_from ($) {
   my($fn) = @_;
   if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
-    my($t) = <IN>;
+    my(@a, @b, $t);
+    $t = <IN>;
     close IN;
-    map { glob($_) } split(/\s+/, $t);
+    @a = split(/\s+/, $t);
+    foreach $t (@a) {
+      next if $t eq '';
+      if ($t =~ /[*?\[]/) {
+	push @b, glob($t);
+      } else {
+	push @b, $t;
+      }
+    }
+    @b;
   } else {
     print STDERR "$fn: $!\n";
     ();
@@ -254,7 +293,7 @@ close OUT if !$directory;
 sub make_elementlist () {
   if ($directory) {
     if (!open(OUT, ">$directory/elements.$section")) {
-      print STDERR "$directory/$classes[0].$section: $!\n";
+      print STDERR "$directory/elements.$section: $!\n";
       return;
     }
   }

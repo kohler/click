@@ -30,7 +30,7 @@ class GetIPAddress : public Element {
   GetIPAddress(int = 0);
   
   const char *class_name() const		{ return "GetIPAddress"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   GetIPAddress *clone() const;
   int configure(const String &, ErrorHandler *);

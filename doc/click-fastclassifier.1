@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0
+.ds V 1.0.3
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -48,7 +48,8 @@ elements. It reads a router configuration file in the
 .M click 5
 language and creates specialized C++ source code for each Classifier
 element. A Classifier is expanded into a series of if statements; for
-example, the expansion of `Classifier(0/80, -)' contains this function:
+example, the expansion of `Classifier(0/80, -)' contains something like
+this function:
 .PP
 .nf
 inline void
@@ -83,11 +84,17 @@ Linux kernel module with
 The
 .M click 1
 user level driver can read the archives directly.
+.PP
+The
+.B click-fastclassifier
+transformation can be reversed with the
+.B \-\-reverse
+option.
 '
 .SH "OPTIONS"
 '
 If any filename argument is a single dash "-",
-.B click-align
+.B click-fastclassifier
 will use the standard input or output instead, as appropriate.
 '
 .TP 5
@@ -134,6 +141,12 @@ Output only the new configuration (the one that includes FastClassifiers).
 '
 .Sp
 .TP 5
+.BR \-r ", " \-\-reverse
+Reverse the tranformation. That is, remove any existing FastClassifier
+elements and replace them with equivalent Classifiers.
+'
+.Sp
+.TP 5
 .BI \-\-help
 Print usage information and exit.
 '
@@ -146,6 +159,7 @@ Print the version number and some quickie warranty information and exit.
 '
 .SH "SEE ALSO"
 .M click 1 ,
+.M click-devirtualize 1 ,
 .M click-install 1 ,
 .M click 5 ,
 .M click.o 8 ,

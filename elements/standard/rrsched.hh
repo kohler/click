@@ -24,7 +24,7 @@ class RRSched : public UnlimitedElement {
   ~RRSched();
   
   const char *class_name() const		{ return "RoundRobinSched"; }
-  Processing default_processing() const		{ return PULL; }
+  const char *processing() const		{ return PULL; }
   
   bool unlimited_inputs() const			{ return true; }
   

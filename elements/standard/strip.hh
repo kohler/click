@@ -25,7 +25,7 @@ class Strip : public Element {
   ~Strip();
   
   const char *class_name() const		{ return "Strip"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   Strip *clone() const;
   int configure(const String &, ErrorHandler *);

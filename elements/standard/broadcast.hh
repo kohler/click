@@ -20,7 +20,7 @@ class Broadcast : public UnlimitedElement {
   ~Broadcast()					{ }
   
   const char *class_name() const		{ return "Broadcast"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   bool unlimited_inputs() const			{ return true; }
   bool unlimited_outputs() const		{ return true; }

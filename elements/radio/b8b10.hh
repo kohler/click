@@ -20,7 +20,7 @@ public:
   ~B8B10();
 
   const char *class_name() const		{ return "B8B10"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

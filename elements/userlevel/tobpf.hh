@@ -52,7 +52,7 @@ class ToBPF : public Element {
   ~ToBPF();
   
   const char *class_name() const		{ return "ToBPF"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   ToBPF *clone() const;
   int configure(const String &, ErrorHandler *);

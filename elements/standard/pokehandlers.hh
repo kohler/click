@@ -16,10 +16,15 @@
  * writing to handlers as they appear.
  * A `DELAY' directive causes it to wait for DELAY seconds before
  * continuing.
+ *
+ * At user level, errors reported by write handlers are printed to standard
+ * error. In the Linux kernel module, they are printed to /var/log/messages
+ * (accessible through dmesg(1)) and to /proc/click/errors.
  * =e
  * = PokeHandlers(red.max_p 0.8,
  * =              1.5, // delay for 1.5 seconds
  * =              red.max_p 0.5);
+ * =a PeekHandlers
  */
 
 class PokeHandlers : public Element {

@@ -38,8 +38,8 @@ class CheckIPHeader : public Element {
   ~CheckIPHeader();
   
   const char *class_name() const		{ return "CheckIPHeader"; }
+  const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   int configure(const String &, ErrorHandler *);
   
   int drops() const				{ return _drops; }

@@ -18,7 +18,7 @@ class CheckPattern : public Element {
   ~CheckPattern();
   
   const char *class_name() const		{ return "CheckPattern"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   CheckPattern *clone() const { return new CheckPattern; }
   int configure(const String &, ErrorHandler *);

@@ -8,13 +8,13 @@
  * A single element encapsulating common tasks on an IP router's output path.
  * Effectively equivalent to
  *
- * = elementclass IPOutputCombo(COLOR, IP, MTU) {
+ * = elementclass IPOutputCombo { $COLOR, $IP, $MTU |
  * =   input[0] -> DropBroadcasts
- * =         -> c::CheckPaint(COLOR)
- * =         -> g::IPGWOptions(IP)
- * =         -> FixIPSrc(IP)
+ * =         -> c::CheckPaint($COLOR)
+ * =         -> g::IPGWOptions($IP)
+ * =         -> FixIPSrc($IP)
  * =         -> d::DecIPTTL
- * =         -> l::CheckLength(MTU)
+ * =         -> l::CheckLength($MTU)
  * =         -> [0]output;
  * =   c[1] -> [1]output;
  * =   g[1] -> [2]output;
@@ -48,7 +48,7 @@ class IPOutputCombo : public Element {
   ~IPOutputCombo();
   
   const char *class_name() const		{ return "IPOutputCombo"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   
   IPOutputCombo *clone() const;
   int configure(const String &, ErrorHandler *);

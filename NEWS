@@ -1,5 +1,22 @@
 Click NEWS
 
+Version 1.0.3
+
+* Added `--reverse' option to click-xform. Suggested by Mike Burrows
+  (Compaq SRC).
+
+* Added `--reverse' options to click-fastclassifier and click-devirtualize.
+
+* Renamed click-specialize tool to click-devirtualize. It's clearer. Also
+  fixed several bugs.
+
+* Removed `default_processing()' method of Element and replaced it with
+  `processing()'. Where you once wrote `Processing default_processing()
+  const { return PUSH; }', now write `const char *processing() const {
+  return PUSH; }'. The new way is more flexible and lets us abstract the
+  element's processing code. See Element(3) for details.
+
+
 Version 1.0.2   20.Mar.2000
 
 * Fixed reentrancy bug: in this release, when running in polling mode in

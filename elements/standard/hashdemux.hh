@@ -27,7 +27,7 @@ class HashDemux : public UnlimitedElement {
   HashDemux();
   
   const char *class_name() const		{ return "HashDemux"; }
-  Processing default_processing() const	{ return PUSH; }
+  const char *processing() const	{ return PUSH; }
   bool unlimited_outputs() const		{ return true; }
   
   HashDemux *clone() const;

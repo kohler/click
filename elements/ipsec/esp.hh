@@ -28,7 +28,7 @@ public:
   ~Esp();
   
   const char *class_name() const		{ return "IPsecESPEncap"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   Esp *clone() const;
   int configure(const String &, ErrorHandler *);

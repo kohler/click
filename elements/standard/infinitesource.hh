@@ -33,7 +33,7 @@ class InfiniteSource : public Element { protected:
   InfiniteSource();
   
   const char *class_name() const		{ return "InfiniteSource"; }
-  Processing default_processing() const		{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   void add_handlers();
   
   InfiniteSource *clone() const;

@@ -34,7 +34,7 @@ public:
   ~Des();
   
   const char *class_name() const		{ return "IPsecDES"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *processing() const	{ return AGNOSTIC; }
   
   Des *clone() const;
   int configure(const String &, ErrorHandler *);

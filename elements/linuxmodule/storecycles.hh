@@ -21,7 +21,7 @@ class StoreCycles : public Element {
   ~StoreCycles();
   
   const char *class_name() const		{ return "StoreCycles"; }
-  Processing default_processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   StoreCycles *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
