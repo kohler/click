@@ -1,3 +1,9 @@
+2004-09-02 Thursday 00:03  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: analysis/countfragbytes.cc (1.2),
+	analysis/countfragbytes.hh (1.2), frag/fragmentack.cc (1.2),
+	frag/fragmentack.hh (1.2): more byte-error analysis stuff.
+
 2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/analysis/: errorthreshold.cc (1.1),
