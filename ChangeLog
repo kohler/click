@@ -1,3 +1,10 @@
+2002-05-03 Friday 00:13  Eddie Kohler <kohler@aciri.org>
+
+	* lib/userutils.cc (1.25), tools/click-pretty/click-pretty.cc
+	(1.16), elements/ip/ipfilter.cc (1.31), elements/ip/ipratemon.cc
+	(1.97): more changes from Scott Page: unused variables, unreachable
+	code, and so forth
+
 2002-05-02 Thursday 18:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* include/click/packet_anno.hh (1.9): added send error ano
