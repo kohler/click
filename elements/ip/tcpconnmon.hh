@@ -1,9 +1,9 @@
-#ifndef TCPSYNACKCTRL_HH
-#define TCPSYNACKCTRL_HH
+#ifndef TCPCONNECTIONMONITOR_HH
+#define TCPCONNECTIONMONITOR_HH
 
 /*
  * =c
- * TCPSynAckControl(THRESH)
+ * TCPConnectionMonitor(THRESH)
  * =d
  *
  * Keeps track of half-open connections.
@@ -13,7 +13,7 @@
  *
  * =e
  * = c :: Classifier(33/12, 33/?2, 33/1?, -);
- * = t :: TCPSynAckControl(15);
+ * = t :: TCPConnectionMonitor(15);
  * = t[0] -> ...
  * = c[0] -> ...        // SYN/ACK
  * = c[1] -> [0]t;      // SYN
@@ -29,18 +29,18 @@
 #include "glue.hh"
 #include "click_udp.h"
 
-class TCPSynAckControl : public Element {
+class TCPConnectionMonitor : public Element {
 public:
-  TCPSynAckControl();
-  ~TCPSynAckControl();
+  TCPConnectionMonitor();
+  ~TCPConnectionMonitor();
   
-  const char *class_name() const	{ return "TCPSynAckControl"; }
+  const char *class_name() const	{ return "TCPConnectionMonitor"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  TCPSynAckControl *clone() const;
+  TCPConnectionMonitor *clone() const;
   int configure(const String &, ErrorHandler *);
 
-  void TCPSynAckControl::push(int port_number, Packet *p);
+  void TCPConnectionMonitor::push(int port_number, Packet *p);
 
 
 private:
@@ -85,4 +85,4 @@ private:
 
 
 
-#endif
+#endif // TCPCONNECTIONMONITOR_HH

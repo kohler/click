@@ -1,5 +1,5 @@
 /*
- * tcpsynackctrl.{cc,hh} -- element keeps track of half-open connections
+ * tcpconnmon.{cc,hh} -- element keeps track of half-open connections
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -15,30 +15,30 @@
 #endif
 #include "click_ip.h"
 #include "click_tcp.h"
-#include "tcpsynackctrl.hh"
+#include "tcpconnmon.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
 
-TCPSynAckControl::TCPSynAckControl() : _hoc(0), _thresh(0)
+TCPConnectionMonitor::TCPConnectionMonitor() : _hoc(0), _thresh(0)
 {
   add_input();
   add_input();
   add_output();
 }
 
-TCPSynAckControl::~TCPSynAckControl()
+TCPConnectionMonitor::~TCPConnectionMonitor()
 {
 }
 
-TCPSynAckControl *
-TCPSynAckControl::clone() const
+TCPConnectionMonitor *
+TCPConnectionMonitor::clone() const
 {
-  return new TCPSynAckControl;
+  return new TCPConnectionMonitor;
 }
 
 int
-TCPSynAckControl::configure(const String &conf, ErrorHandler *errh)
+TCPConnectionMonitor::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -61,7 +61,7 @@ TCPSynAckControl::configure(const String &conf, ErrorHandler *errh)
 
 
 void
-TCPSynAckControl::push(int port_number, Packet *p)
+TCPConnectionMonitor::push(int port_number, Packet *p)
 {
   click_ip *ip = (click_ip *) p->data();
   if(ip->ip_p == IP_PROTO_TCP) {
@@ -102,9 +102,9 @@ TCPSynAckControl::push(int port_number, Packet *p)
 }
 
 String
-TCPSynAckControl::look_read_handler(Element *e, void *)
+TCPConnectionMonitor::look_read_handler(Element *e, void *)
 {
-  TCPSynAckControl *me = (TCPSynAckControl *) e;
+  TCPConnectionMonitor *me = (TCPConnectionMonitor *) e;
   String ret;
   
   // Go through all src/addr combi's and see if one has more than _thresh half
@@ -133,19 +133,19 @@ TCPSynAckControl::look_read_handler(Element *e, void *)
 
 
 String
-TCPSynAckControl::thresh_read_handler(Element *e, void *)
+TCPConnectionMonitor::thresh_read_handler(Element *e, void *)
 {
-  TCPSynAckControl *me = (TCPSynAckControl *) e;
+  TCPConnectionMonitor *me = (TCPConnectionMonitor *) e;
   return String(me->_thresh) + "\n";
 }
 
 
 int
-TCPSynAckControl::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+TCPConnectionMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  TCPSynAckControl* me = (TCPSynAckControl *) e;
+  TCPConnectionMonitor* me = (TCPConnectionMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
@@ -163,7 +163,7 @@ TCPSynAckControl::thresh_write_handler(const String &conf, Element *e, void *, E
 
 
 void
-TCPSynAckControl::add_handlers()
+TCPConnectionMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
@@ -173,7 +173,7 @@ TCPSynAckControl::add_handlers()
 
 
 
-TCPSynAckControl::HalfOpenConnections::HalfOpenConnections(IPAddress saddr,
+TCPConnectionMonitor::HalfOpenConnections::HalfOpenConnections(IPAddress saddr,
                                                            IPAddress daddr)
 {
   _saddr = saddr.saddr();
@@ -185,7 +185,7 @@ TCPSynAckControl::HalfOpenConnections::HalfOpenConnections(IPAddress saddr,
   }
 }
 
-TCPSynAckControl::HalfOpenConnections::~HalfOpenConnections()
+TCPConnectionMonitor::HalfOpenConnections::~HalfOpenConnections()
 {
   _saddr = 0;
   _daddr = 0;
@@ -200,7 +200,7 @@ TCPSynAckControl::HalfOpenConnections::~HalfOpenConnections()
 
 
 void
-TCPSynAckControl::HalfOpenConnections::add(unsigned short sport,
+TCPConnectionMonitor::HalfOpenConnections::add(unsigned short sport,
                                            unsigned short dport)
 {
   short index = _free_slots[MAX_HALF_OPEN - _amount - 1];
@@ -215,7 +215,7 @@ TCPSynAckControl::HalfOpenConnections::add(unsigned short sport,
 // XXX: Very stupid. Hash?
 //
 void
-TCPSynAckControl::HalfOpenConnections::del(unsigned short sport,
+TCPConnectionMonitor::HalfOpenConnections::del(unsigned short sport,
                                            unsigned short dport)
 {
   assert(_amount > 0);
@@ -237,7 +237,7 @@ TCPSynAckControl::HalfOpenConnections::del(unsigned short sport,
 
 
 bool
-TCPSynAckControl::HalfOpenConnections::half_open_ports(int i, HalfOpenPorts &hops)
+TCPConnectionMonitor::HalfOpenConnections::half_open_ports(int i, HalfOpenPorts &hops)
 {
   if(_hops[i] == 0)
     return false;
@@ -246,6 +246,6 @@ TCPSynAckControl::HalfOpenConnections::half_open_ports(int i, HalfOpenPorts &hop
   return true;
 }
 
-EXPORT_ELEMENT(TCPSynAckControl)
+EXPORT_ELEMENT(TCPConnectionMonitor)
 
 #include "hashmap.cc"
