@@ -49,23 +49,12 @@ Index: include/linux/netdevice.h
  extern int		dev_restart(struct device *dev);
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Thu Mar  2 18:27:45 2000
-+++ net/core/skbuff.c	Tue Feb 29 20:40:49 2000
-@@ -4,7 +4,7 @@
-  *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
-  *			Florian La Roche <rzsfl@rz.uni-sb.de>
-  *
-- *	Version:	$Id: click-patch-1.0.5,v 1.12 2000/04/23 05:30:25 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.5,v 1.12 2000/04/23 05:30:25 benjie Exp $
-  *
-  *	Fixes:	
-  *		Alan Cox	:	Fixed the worst of the load balancer bugs.
-@@ -256,6 +256,47 @@
- 	n->destructor = NULL;
- 	return n;
+--- net/core/skbuff.c.orig	Mon Apr 24 11:32:30 2000
++++ net/core/skbuff.c	Mon Apr 24 11:32:30 2000
+@@ -258,6 +258,47 @@
  }
-+
-+/*
+ 
+ /*
 + * Click: recycle a sk_buff by resetting it. if it can be recycled, return it.
 + */
 +struct sk_buff *skb_recycle(struct sk_buff *skb)
@@ -105,13 +94,15 @@ Index: net/core/skbuff.c
 +  return 0;
 +}
 +
- 
- /*
++
++/*
   *	This is slower, and copies the whole data area 
+  */
+  
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Thu Mar  2 18:27:44 2000
-+++ net/core/dev.c	Tue Feb 29 20:40:49 2000
+--- net/core/dev.c.orig	Mon Apr 24 11:32:30 2000
++++ net/core/dev.c	Mon Apr 24 11:32:30 2000
 @@ -148,6 +148,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -448,7 +439,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Sun Apr 23 01:23:40 2000
++++ drivers/net/tulip.c	Sun Apr 23 18:23:22 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
