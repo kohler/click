@@ -50,7 +50,9 @@ static AnyDeviceMap tulip_stats_map;
 static int tulip_stats_count;
 static int tulip_stats_active;
 
+#if HAVE_TULIP_INTERRUPT_HOOK
 extern "C" void (*tulip_interrupt_hook)(struct device *, unsigned);
+#endif
 
 /* from tulip.c */
 enum tulip_offsets {
@@ -163,8 +165,10 @@ TulipStats::initialize(ErrorHandler *errh)
   ScheduleInfo::join_scheduler(this, errh);
 
   tulip_stats_active++;
+#if HAVE_TULIP_INTERRUPT_HOOK
   if (tulip_stats_active == 1)
-    tulip_interrupt_hook = interrupt_notifier;    
+    tulip_interrupt_hook = interrupt_notifier;
+#endif
 
   _dev_stats = _dev->get_stats(_dev);
   
@@ -180,8 +184,10 @@ TulipStats::uninitialize()
   tulip_stats_map.remove(this);
 
   tulip_stats_active--;
+#if HAVE_TULIP_INTERRUPT_HOOK
   if (tulip_stats_active == 0)
     tulip_interrupt_hook = 0;
+#endif
 }
 
 void
@@ -322,5 +328,7 @@ TulipStats::add_handlers()
   add_write_handler("reset_counts", TulipStats_reset, 0);
 }
 
+/* If you want to include TulipStats in your Click kernel driver, remove
+ * `false' from the line below. */
 ELEMENT_REQUIRES(AnyDevice linuxmodule false)
 EXPORT_ELEMENT(TulipStats)

@@ -33,7 +33,7 @@
  *
  * =a FromDevice, ToDevice, FromLinux, ToLinux */
 
-#include "anydevice.hh"
+#include "elements/linuxmodule/anydevice.hh"
 
 class PollDevice : public AnyDevice {
  public:

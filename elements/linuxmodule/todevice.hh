@@ -36,8 +36,8 @@
  *
  * =a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
 
-#include "anydevice.hh"
-#include "fromlinux.hh"
+#include "elements/linuxmodule/anydevice.hh"
+#include "elements/linuxmodule/fromlinux.hh"
 
 class ToDevice : public AnyDevice {
   

@@ -47,7 +47,7 @@ extern "C" {
 #include <linux/route.h>
 }
 
-#include "anydevice.hh"
+#include "elements/linuxmodule/anydevice.hh"
 
 class FromLinux : public AnyDevice {
 
