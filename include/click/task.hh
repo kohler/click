@@ -123,6 +123,7 @@ class Task { public:
   void add_pending(int);
   void process_pending(RouterThread *);
   void fast_schedule();
+  void true_reschedule();
   inline void lock_tasks();
   inline bool attempt_lock_tasks();
 
@@ -301,6 +302,14 @@ Task::fast_schedule()
 }
 
 #endif /* HAVE_STRIDE_SCHED */
+
+inline void
+Task::reschedule()
+{
+  assert(_thread);
+  if (!scheduled())
+    true_reschedule();
+}
 
 #ifdef CLICK_BSDMODULE
 // XXX FreeBSD specific

@@ -143,12 +143,10 @@ Task::unschedule()
 }
 
 void
-Task::reschedule()
+Task::true_reschedule()
 {
   assert(_thread);
-  if (scheduled())
-    /* nada */;
-  else if (attempt_lock_tasks()) {
+  if (attempt_lock_tasks()) {
     if (!scheduled())
       fast_schedule();
     _thread->unlock_tasks();
