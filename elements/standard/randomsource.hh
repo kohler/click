@@ -10,7 +10,10 @@ CLICK_DECLS
  * =s sources
  * generates random packets whenever scheduled
  * =d
+ *
  * Creates packets, of the indicated length, filled with random bytes.
+ * Packets' timestamp annotations are set to the current time.
+ *
  * =a InfiniteSource
  */
 

@@ -53,24 +53,25 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 RandomSource::initialize(ErrorHandler *errh)
 {
-  if (output_is_push(0)) 
-    ScheduleInfo::initialize_task(this, &_task, errh);
-  return 0;
+    if (output_is_push(0)) 
+	ScheduleInfo::initialize_task(this, &_task, errh);
+    return 0;
 }
 
 Packet *
 RandomSource::make_packet()
 {
-  int i;
-  WritablePacket *p = Packet::make(34, (const unsigned char *)0, _length, 0);
-  char *d = (char *) p->data();
-  
-  for(i = 0; i < _length; i += sizeof(int))
-    *(int*)(d + i) = random();
-  for( ; i < _length; i++)
-    *(d + i) = random();
+    WritablePacket *p = Packet::make(36, (const unsigned char*)0, _length, 0);
 
-  return(p);
+    int i;
+    char *d = (char *) p->data();
+    for (i = 0; i < _length; i += sizeof(int))
+	*(int*)(d + i) = random();
+    for( ; i < _length; i++)
+	*(d + i) = random();
+
+    click_gettimeofday(&p->timestamp_anno());
+    return p;
 }
 
 bool
