@@ -24,7 +24,7 @@ elementclass GridNode {
   fr[1] -> Discard;
   nn[1] -> fl;
 
-#  ICMPSendPings($ipa, 1.0.0.3) -> [1]lr;
+  ICMPSendPings($ipa, 1.0.0.3) -> [1]lr;
 };
 
 elementclass LAN3 {
