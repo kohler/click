@@ -163,7 +163,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	(void) _ff.read_line(line, errh); // throw away line
     } else {
 	// parse line again, warn if this doesn't look like a dump
-	if (line.substring(0, 8) != "!creator" && line.substring(0, 5) != "!data") {
+	if (line.substring(0, 8) != "!creator" && line.substring(0, 5) != "!data" && line.substring(0, 9) != "!contents") {
 	    if (!_contents.size() /* don't warn on DEFAULT_CONTENTS */)
 		_ff.warning(errh, "missing banner line; is this an IP summary dump?");
 	}
@@ -198,7 +198,7 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	if (what >= W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
 	    all_contents |= (1 << (what - W_NONE));
-	} else if (i > 0 || word != "!data") {
+	} else if (i > 0 || (word != "!data" && word != "!contents")) {
 	    _ff.warning(errh, "warning: unknown content type '%s'", word.c_str());
 	    _contents.push_back(W_NONE);
 	}
@@ -756,6 +756,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		bang_aggregate(line, errh);
 	    else if (data + 8 <= end && memcmp(data, "!binary", 7) == 0 && isspace(data[7]))
 		bang_binary(line, errh);
+	    else if (data + 10 <= end && memcmp(data, "!contents", 9) == 0 && isspace(data[9]))
+		bang_data(line, errh);
 	    continue;
 	} else if (!binary && data[0] == '#')
 	    continue;
@@ -1024,7 +1026,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    }
 		}
 		break;
-		
+
 	    }
 
 	    // check whether we correctly parsed something
@@ -1232,7 +1234,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     if (!_format_complaint) {
 	// don't complain if the line was all blank
 	if ((int) strspn(line.data(), " \t\n\r") != line.length()) {
-	    _ff.error(errh, "packet parse error");
+	    if (_contents.size() == 0)
+		_ff.error(errh, "no '!data' provided");
+	    else
+		_ff.error(errh, "packet parse error");
 	    _format_complaint = true;
 	}
     }
