@@ -82,6 +82,7 @@ class Task { public:
     inline void update_cycles(unsigned c);
 #endif
 
+    inline bool pending_reschedule() { return (_pending & RESCHEDULE);}
   private:
 
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
