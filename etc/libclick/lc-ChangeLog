@@ -1,3 +1,8 @@
+2002-03-14 Thursday 15:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/notifier.hh, include/click/notifier.hh,
+	libsrc/notifier.cc: allow null NotifierSignals
+
 2002-03-13 Wednesday 18:43  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/router.cc: Router::run_selects() update: redo blocking

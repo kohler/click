@@ -1,3 +1,13 @@
+2002-03-14 Thursday 15:46  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: setipaddress.hh (1.14), setipchecksum.hh (1.10),
+	setipdscp.hh (1.14): nits
+
+2002-03-14 Thursday 15:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/notifier.hh (1.3), lib/notifier.cc (1.4): allow
+	null NotifierSignals
+
 2002-03-13 Wednesday 18:43  Eddie Kohler <kohler@aciri.org>
 
 	* lib/router.cc (1.118): Router::run_selects() update: redo
