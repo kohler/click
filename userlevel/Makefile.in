@@ -43,6 +43,9 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 ifndef INSTALLPROGS
 INSTALLPROGS = click
 endif
+ifndef INSTALLLIBS
+INSTALLLIBS = libclick.a
+endif
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
@@ -83,7 +86,7 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: $(INSTALLPROGS)
+all: $(INSTALLPROGS) $(INSTALLLIBS)
 
 click: Makefile libclick.a $(OBJS)
 	$(CXXLINK) -rdynamic $(OBJS) libclick.a $(LIBS)
@@ -115,9 +118,9 @@ endif
 install: $(INSTALLPROGS) install-lib
 	$(mkinstalldirs) $(bindir)
 	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(bindir)/$$i; done
-install-lib: libclick.a
+install-lib: $(INSTALLLIBS)
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL) libclick.a $(libdir)/libclick.a
+	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(libdir)/$$i; done
 install-man:
 
 clean:

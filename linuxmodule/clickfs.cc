@@ -47,7 +47,7 @@ static atomic_t config_read_count;
 extern uint32_t click_config_generation;
 
 //#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
-#define SPIN_LOCK_MSG(l, file, line, what)	(void)(file), (void)(line)
+#define SPIN_LOCK_MSG(l, file, line, what)	((void)(file), (void)(line))
 #define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
 #define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
 

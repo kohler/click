@@ -8,7 +8,8 @@
 #include <click/task.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
-#elif CLICK_NS
+#endif
+#if CLICK_NS
 # include <click/simclick.h>
 #endif
 
@@ -299,7 +300,7 @@ class Router::Handler { public:
   void *_read_thunk;
   WriteHandler _write;
   void *_write_thunk;
-  int _flags;
+  uint32_t _flags;
   int _use_count;
   int _next_by_name;
 

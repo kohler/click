@@ -53,6 +53,9 @@ CLICK_CXX_UNPROTECT
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
+#define SOFT_SPIN_LOCK(l)	soft_spin_lock((l))
+#define SPIN_UNLOCK(l)		spin_unlock((l))
+
 static spinlock_t click_thread_lock;
 static int click_thread_priority = DEF_PRIO;
 static Vector<int> *click_thread_pids;
@@ -90,10 +93,10 @@ click_sched(void *thunk)
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
   // add pid to thread list
-  soft_spin_lock(&click_thread_lock);
+  SOFT_SPIN_LOCK(&click_thread_lock);
   if (click_thread_pids)
     click_thread_pids->push_back(current->pid);
-  spin_unlock(&click_thread_lock);
+  SPIN_UNLOCK(&click_thread_lock);
 
   // driver loop; does not return for a while
   rt->driver();
@@ -102,7 +105,7 @@ click_sched(void *thunk)
   rt->router()->unuse();
 
   // remove pid from thread list
-  soft_spin_lock(&click_thread_lock);
+  SOFT_SPIN_LOCK(&click_thread_lock);
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++) {
       if ((*click_thread_pids)[i] == current->pid) {
@@ -112,7 +115,7 @@ click_sched(void *thunk)
       }
     }
   printk("<1>click: stopping router thread pid %d\n", current->pid);
-  spin_unlock(&click_thread_lock);
+  SPIN_UNLOCK(&click_thread_lock);
   
   return 0;
 }
@@ -168,9 +171,9 @@ click_kill_router_threads()
   unsigned long out_jiffies = jiffies + 5 * HZ;
   int num_threads;
   do {
-    soft_spin_lock(&click_thread_lock);
+    SOFT_SPIN_LOCK(&click_thread_lock);
     num_threads = click_thread_pids->size();
-    spin_unlock(&click_thread_lock);
+    SPIN_UNLOCK(&click_thread_lock);
     if (num_threads > 0)
       schedule();
   } while (num_threads > 0 && jiffies < out_jiffies);
@@ -189,11 +192,11 @@ static String
 read_threads(Element *, void *)
 {
   StringAccum sa;
-  soft_spin_lock(&click_thread_lock);
+  SOFT_SPIN_LOCK(&click_thread_lock);
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++)
       sa << (*click_thread_pids)[i] << '\n';
-  spin_unlock(&click_thread_lock);
+  SPIN_UNLOCK(&click_thread_lock);
   return sa.take_string();
 }
 
@@ -220,7 +223,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
   }
 
   // change current thread priorities
-  soft_spin_lock(&click_thread_lock);
+  SOFT_SPIN_LOCK(&click_thread_lock);
   click_thread_priority = priority;
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++) {
@@ -228,7 +231,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
       if (task)
 	TASK_PRIO(task) = priority;
     }
-  spin_unlock(&click_thread_lock);
+  SPIN_UNLOCK(&click_thread_lock);
   
   return 0;
 }
@@ -302,10 +305,10 @@ click_cleanup_sched()
 {
   if (click_kill_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n");
-    soft_spin_lock(&click_thread_lock);
+    SOFT_SPIN_LOCK(&click_thread_lock);
     for (int i = 0; i < click_thread_pids->size(); i++)
       printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
-    spin_unlock(&click_thread_lock);
+    SPIN_UNLOCK(&click_thread_lock);
     return -1;
   } else {
     delete click_thread_pids;
