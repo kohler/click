@@ -278,6 +278,7 @@ private:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
+  void reset();
   Packet *simple_action(Packet *);
 };
 

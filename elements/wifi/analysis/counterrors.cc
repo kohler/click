@@ -113,14 +113,14 @@ CountErrors::push (int port, Packet *p_in)
   }
 
   if (_runs) {
-    sa << " ]";
+    sa << " ]\n";
   }
 
   _error_bytes += errors;
   _ok_bytes += ok_bytes;
   sa << "ok_bytes " << ok_bytes << "\n";
-  sa << "errors " << errors;
-  sa << "\nbad_runs " << bad_runs << "\n";
+  sa << "errors " << errors << "\n";
+  sa << "bad_runs " << bad_runs << "\n";
   click_chatter("%s", sa.take_string().cc());
 
   output(port).push(p_in);

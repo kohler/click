@@ -60,10 +60,6 @@ LocationHistogram::push (int port, Packet *p_in)
   unsigned const char *ptr = p_in->data();
 
   for (unsigned int x = 0; x < _length; x++) {
-    if (x == 23 || x == 24) {
-      /* 802.11 sequence bytes */
-      continue;
-    }
     bool error = false;
     if (x < p_in->length()) {
       error = (ptr[x] != 0xff);

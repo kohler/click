@@ -423,7 +423,8 @@ ETTStat::initialize(ErrorHandler *errh)
 
     _timer->schedule_at(_next);
   }
-  click_gettimeofday(&_start);
+
+  reset();
   return 0;
 }
 
@@ -663,11 +664,38 @@ ETTStat::read_bcast_stats(Element *xf, void *)
   return sa.take_string();
 }
 
+void
+ETTStat::reset()
+{
+  _neighbors.clear();
+  _bcast_stats.clear();
+  _rev_arp.clear();
+  _seq = 0;
+  _sent = 0;
+  click_gettimeofday(&_start);
+}
+enum {H_RESET};
+
+static int 
+ETTStat_write_param(const String &in_s, Element *e, void *vparam,
+		      ErrorHandler *errh)
+{
+  ETTStat *f = (ETTStat *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_RESET: {    //reset
+    f->reset();
+    break;
+  }
+  }
+  return 0;
+}
 
 void
 ETTStat::add_handlers()
 {
   add_read_handler("bcast_stats", read_bcast_stats, 0);
+  add_write_handler("reset", ETTStat_write_param, (void *) H_RESET);
 
 }
 IPAddress 

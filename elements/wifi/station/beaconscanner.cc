@@ -254,16 +254,17 @@ BeaconScanner::scan_string()
     wap ap = iter.value();
     sa << ap._eth << " ";
     sa << "channel " << ap._channel << " ";
+    sa << "rssi " << ap._rssi << " ";
     sa << "ssid ";
+
     if(ap._ssid == "") {
       sa << "(none) ";
     } else {
       sa << ap._ssid << " ";
     }
-
-    sa << "last_rx " << now - ap._last_rx << " ";
-    sa << "rssi " << ap._rssi << " ";
     sa << "beacon_interval " << ap._beacon_int << " ";
+    sa << "last_rx " << now - ap._last_rx << " ";
+
     sa << "[ ";
     if (ap._capability & WIFI_CAPINFO_ESS) {
       sa << "ESS ";

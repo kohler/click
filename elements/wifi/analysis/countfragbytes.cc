@@ -43,7 +43,7 @@ CountFragBytes::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _et = 0x7FFA;
   _length = 0;
-  _overhead = 0;
+  _overhead = 4;
   _frag_size = 1600;
   _adaptive = false;
   _adaptive_window = 1;
