@@ -5,6 +5,7 @@
 #include <click/ipflowid.hh>
 #include <click/bighashmap.hh>
 #include "aggregatenotifier.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -129,4 +130,5 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

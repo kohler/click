@@ -1,8 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #include <config.h>
 #include <click/config.h>
-
 #include "aggregatenotifier.hh"
+CLICK_DECLS
 
 void
 AggregateListener::aggregate_notify(uint32_t, AggregateEvent, const Packet *)
@@ -31,3 +31,4 @@ AggregateNotifier::remove_listener(AggregateListener *l)
 
 ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(AggregateNotifier)
+CLICK_ENDDECLS

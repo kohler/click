@@ -12,6 +12,7 @@
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 AggregateIPFlows::AggregateIPFlows()
     : Element(1, 1)
@@ -231,5 +232,5 @@ AggregateIPFlows::simple_action(Packet *p)
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)
 EXPORT_ELEMENT(AggregateIPFlows)
-
 #include <click/bighashmap.cc>
+CLICK_ENDDECLS

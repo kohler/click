@@ -12,6 +12,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 static HashMap<String, int> *chunkmap;
 static Vector<AggregateIP::Field> chunks;
@@ -496,5 +497,5 @@ AggregateIP::pull(int)
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AggregateIP)
-
 #include <click/vector.cc>
+CLICK_ENDDECLS

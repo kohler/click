@@ -1,6 +1,7 @@
 #ifndef CLICK_AGGCOUNTER_HH
 #define CLICK_AGGCOUNTER_HH
 #include <click/element.hh>
+CLICK_DECLS
 class HandlerCall;
 
 /*
@@ -276,4 +277,5 @@ AggregateCounter::free_node(Node *n)
     _free = n;
 }
 
+CLICK_ENDDECLS
 #endif

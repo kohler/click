@@ -2,6 +2,7 @@
 #ifndef CLICK_AGGREGATENOTIFIER_HH
 #define CLICK_AGGREGATENOTIFIER_HH
 #include <click/vector.hh>
+CLICK_DECLS
 class Packet;
 
 class AggregateListener { public:
@@ -37,4 +38,5 @@ AggregateNotifier::notify(uint32_t agg, AggregateListener::AggregateEvent e, con
 	_listeners[i]->aggregate_notify(agg, e, p);
 }
 
+CLICK_ENDDECLS
 #endif

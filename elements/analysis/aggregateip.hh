@@ -2,6 +2,7 @@
 #ifndef CLICK_AGGREGATEIP_HH
 #define CLICK_AGGREGATEIP_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -185,4 +186,5 @@ AggregateIP::Field::Field(uint32_t type, uint32_t proto, uint32_t offset, uint32
     assert(_type == AG_TRANSP);
 }
 
+CLICK_ENDDECLS
 #endif

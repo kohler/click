@@ -23,6 +23,7 @@
 #include <click/packet_anno.hh>
 #include <click/integers.hh>	// for first_bit_set
 #include <click/router.hh>
+CLICK_DECLS
 
 AggregateCounter::AggregateCounter()
     : Element(1, 1), _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
@@ -562,3 +563,4 @@ AggregateCounter::add_handlers()
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AggregateCounter)
+CLICK_ENDDECLS
