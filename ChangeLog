@@ -1,3 +1,23 @@
+2003-01-30 Thursday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: kerneltap.cc (1.36), kerneltun.cc (1.39):
+	whoops, nit
+
+2003-01-30 Thursday 17:31  Eddie Kohler <kohler@icir.org>
+
+	* config-userlevel.h.in (1.13), configure.in (1.195),
+	conf/test-tap.click (1.4), conf/test-tun.click (1.10),
+	elements/userlevel/kerneltap.hh (1.15),
+	elements/userlevel/kerneltun.cc (1.38),
+	elements/userlevel/kerneltun.hh (1.16),
+	elements/userlevel/todevice.hh (1.22): KernelTun works with Linux
+	Universal TUN/TAP; deprecate KernelTap
+
+2003-01-30 Thursday 17:31  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmpsendpings.cc (1.18): don't use network order on
+	Linux
+
 2003-01-30 Thursday 15:18  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: kerneltun.hh (1.14), kerneltun.cc (1.37),
