@@ -1285,6 +1285,17 @@ Router::attachment(const String &name) const
   return 0;
 }
 
+void *&
+Router::force_attachment(const String &name)
+{
+  for (int i = 0; i < _attachments.size(); i++)
+    if (_attachment_names[i] == name)
+      return _attachments[i];
+  _attachment_names.push_back(name);
+  _attachments.push_back(0);
+  return _attachments.back();
+}
+
 void *
 Router::set_attachment(const String &name, void *value)
 {
@@ -1297,6 +1308,17 @@ Router::set_attachment(const String &name, void *value)
   _attachment_names.push_back(name);
   _attachments.push_back(value);
   return 0;
+}
+
+ErrorHandler *
+Router::chatter_channel(const String &name) const
+{
+  if (!name || name == "default")
+    return ErrorHandler::default_handler();
+  else if (void *v = attachment("ChatterChannel." + name))
+    return (ErrorHandler *)v;
+  else
+    return ErrorHandler::silent_handler();
 }
 
 

@@ -95,7 +95,10 @@ class Router { public:
 #endif
 
   void *attachment(const String &) const;
+  void *&force_attachment(const String &);
   void *set_attachment(const String &, void *);
+
+  ErrorHandler *chatter_channel(const String &) const;
 
   void unparse(StringAccum &, const String & = String()) const;
   void unparse_requirements(StringAccum &, const String & = String()) const;
