@@ -539,6 +539,8 @@ particular purpose.\n");
     if (fd < 0)
       errh->warning("/proc/click/errors: %s", strerror(errno));
     else {
+      if (verbose)
+	errh->message("Waiting for errors");
       off_t pos = 0;
       struct stat s;
       while (1) {
@@ -575,5 +577,7 @@ particular purpose.\n");
     }
   }
   
-  return 0;
+  if (verbose)
+    errh->message("Done");
+  exit(0);
 }
