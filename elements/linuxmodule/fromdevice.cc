@@ -226,9 +226,9 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
       // put ToDevice on the work list.  What about the last packet? If
       // net_bh's backlog queue is empty, we want to run_scheduled().
       called_times++;
-      if (called_times == 8 || backlog_len == 0) {
+      if (called_times == 4 || backlog_len == 0) {
 	extern Router *current_router; // module.cc
-	current_router->driver();
+	current_router->driver(4);
 	called_times = 0;
       }
     }
