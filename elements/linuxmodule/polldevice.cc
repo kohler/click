@@ -136,12 +136,6 @@ PollDevice::initialize(ErrorHandler *errh)
 #endif
   join_scheduler();
   
-  // Count metric0 on counter 0, metric1 on counter 1
-#define _metric0 0x48
-#define _metric1 (0x29|(0xf<<8))
-  wrmsr(MSR_EVNTSEL0, _metric0|MSR_FLAGS0, 0);
-  wrmsr(MSR_EVNTSEL1, _metric1|MSR_FLAGS1, 0);
-  
   return 0;
 #else
   return errh->warning("can't get packets: not compiled with polling extensions");
@@ -164,48 +158,61 @@ void
 PollDevice::run_scheduled()
 {
 #if HAVE_POLLING
-  struct sk_buff *skb;
+  struct sk_buff *skb_list, *skb;
   int got=0;
-  Packet *new_pkts[POLLDEV_MAX_PKTS_PER_RUN];
+  
+  /* need to have this somewhere */
+  // _dev->tx_clean(_dev);
 
 #if DEV_KEEP_STATS
   unsigned long time_now = get_cycles();
   unsigned low, high;
   unsigned low00, low01, low10, low11;
-#endif   
-  
-  /* need to have this somewhere */
-  // _dev->tx_clean(_dev);
 
   rdpmc(0, low00, high);
   rdpmc(1, low10, high);
-  
-  while(got<POLLDEV_MAX_PKTS_PER_RUN) {
-    unsigned long tt;
 
-    if (got == 0 && _activations>0) {
-      tt = get_cycles();
-    }
-   
-    skb = _dev->rx_poll(_dev);
-    
-    if (got == 0 && _activations>0) {
-      _time_first_recv += get_cycles()-tt;
+  unsigned long tt;
+  tt = get_cycles();
+#endif   
+  
+  got = POLLDEV_MAX_PKTS_PER_RUN;
+  skb_list = _dev->rx_poll(_dev, &got);
+  
+  /* POLLDEV_MAX_PKTS_PER_RUN must not be greater than RX ring size */
+  _dev->rx_refill(_dev);
+
+#if DEV_KEEP_STATS
+  if (_activations > 0 || got > 0) {
+    _activations++;
+    _time_first_recv += get_cycles()-tt;
       
-      rdpmc(0, low01, high);
-      rdpmc(1, low11, high);
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
     
-      _dcu_cycles_first += 
-        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-      _l2misses_first += 
-        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+    _l2misses_first += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _dcu_cycles_first += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
   
-      rdpmc(0, low00, high); 
-      rdpmc(1, low10, high);
-    }
+    rdpmc(0, low00, high); 
+    rdpmc(1, low10, high);
 
-    if (!skb) break;
+    _pkts_received += got;
+    if (got == 0) _idle_calls++;
+  
+    tt = get_cycles();
+  }
 
+#endif
+
+  for(int i=0; i<got; i++) {
+    struct sk_buff *skb_next;
+    skb = skb_list;
+    skb_next = skb_list = skb_list->next;
+    skb->next = skb->prev = NULL;
+    
+    assert(skb);
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
     assert(skb_shared(skb) == 0);
@@ -216,75 +223,29 @@ PollDevice::run_scheduled()
     Packet *p = Packet::make(skb);
     if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
       p->set_mac_broadcast_anno(1);
-
-    new_pkts[got] = p;
-    got++;
-  }
- 
-  rdpmc(0, low01, high);
-  rdpmc(1, low11, high);
-
-  if (got > 0) {
-    _dcu_cycles_rx += 
-      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _l2misses_rx += 
-      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-  }
   
-  rdpmc(0, low00, high);
-  rdpmc(1, low10, high);
-
-  unsigned long tt = get_cycles();
-  /* if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we need to fill
-   * more often... */
-  _dev->rx_refill(_dev);
-  if (got> 0)_time_clean += get_cycles()-tt;
-  
-  rdpmc(0, low01, high);
-  rdpmc(1, low11, high);
-  
-  if (got > 0) {
-    _dcu_cycles_clean += 
-      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _l2misses_clean += 
-      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-  }
-
-#if DEV_KEEP_STATS
-  if (_activations > 0 || got > 0) {
-    _activations++;
-    if (got == 0) _idle_calls++;
-    _pkts_received += got;
-    _time_recv += get_cycles()-time_now;
-  }
-#endif
-
-#if DEV_KEEP_STATS
-  unsigned long tmptime = get_cycles();
-#endif
-
-  for(int i=0; i<got; i++) {
-    Packet *p = new_pkts[i];
-  
-    rdpmc(0, low00, high);
-    rdpmc(1, low10, high);
-
-    for(int j=0; j<34; j++) {
-      volatile char pp = *(p->skb()->data+j);
+#if 0
+    if (skb_next) {
+      volatile char pp0 = *(skb_next->data);
+      volatile char pp1 = *(skb_next->data+33);
     }
-  
-    rdpmc(0, low01, high);
-    rdpmc(1, low11, high);
-  
-    if (got > 0) _dcu_cycles_touch += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    if (got > 0) _l2misses_touch += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+#endif
 
-    output(0).push(new_pkts[i]);
+    output(0).push(p);
   }
+  assert(skb_list == NULL);
 
 #if DEV_KEEP_STATS
-  if (_activations > 0 || got > 0)
-    _time_pushing += get_cycles()-tmptime;
+  rdpmc(0, low01, high);
+  rdpmc(1, low11, high);
+  
+  if (_activations > 0 || got > 0) {
+    _dcu_cycles_touch += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+    _l2misses_touch += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _time_pushing += get_cycles()-tt;
+  }
 #endif
 
 #ifndef RR_SCHED
