@@ -1,3 +1,10 @@
+2004-10-28 Thursday 14:17  John Bicket <jbicket@mit.edu>
+
+	* conf/: etx.click (1.2), gen_config_roofnet.pl (1.11), srcr.click
+	(1.2), roofnet/etx.click (1.1), roofnet/gen_config_roofnet.pl
+	(1.1), roofnet/read_handler.pl (1.1), roofnet/srcr.click (1.1):
+	move roofnet scripts.
+
 2004-10-27 Wednesday 11:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: todump.cc (1.59), todump.hh (1.36): fix
