@@ -1,3 +1,8 @@
+2004-01-07 Wednesday 02:03  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: flood.cc (1.1), flood.hh (1.1): flood sends
+	out broadcast messages. currently only has a 1-hop broadcast rule.
+
 2004-01-07 Wednesday 01:13  Eddie Kohler <kohler@icir.org>
 
 	* bsdmodule/Makefile.in (1.27), include/click/element.hh (1.31),
