@@ -30,6 +30,7 @@
 #include <click/etheraddress.hh>
 #ifdef HAVE_IP6
 # include <click/ip6address.hh>
+# include <click/ip6flowid.hh>
 #endif
 #ifndef CLICK_TOOL
 # include <click/router.hh>
@@ -3593,6 +3594,12 @@ cp_va_static_initialize()
 
 #ifdef TEST_REAL2
   test_unparse_real2();
+#endif
+
+#if CLICK_USERLEVEL && HAVE_IP6
+  // force all IP6 library objects to be included
+  extern int IP6FlowID_linker_trick;
+  IP6FlowID_linker_trick++;
 #endif
 }
 

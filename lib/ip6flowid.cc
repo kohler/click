@@ -23,6 +23,7 @@
 #include <clicknet/udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 IP6FlowID::IP6FlowID(Packet *p)
@@ -37,19 +38,16 @@ IP6FlowID::IP6FlowID(Packet *p)
 }
 
 String
-IP6FlowID::s() const
+IP6FlowID::unparse() const
 {
-  //  const unsigned char *p = (const unsigned char *)&_saddr;
-  //  const unsigned char *q = (const unsigned char *)&_daddr; 
-  //  String s;
-  //  char tmp[128];
-  //  sprintf(tmp, "(%d.%d.%d.%d, %hu, %d.%d.%d.%d, %hu)",
-  //      p[0], p[1], p[2], p[3], ntohs(_sport),
-  //  	  q[0], q[1], q[2], q[3], ntohs(_dport));
-  //  return String(tmp);
-  
-  return _saddr.s() + ", " + String(ntohs(_sport)) + ", " +  _daddr.s()+ ", " + String(ntohs(_dport));
-  
+  StringAccum sa;
+  sa << '(' << _saddr.unparse() << ", " << ntohs(_sport) << ", "
+     << _daddr.unparse() << ", " << ntohs(_dport) << ')';
+  return sa.take_string();
 }
+
+#if CLICK_USERLEVEL
+int IP6FlowID_linker_trick;
+#endif
 
 CLICK_ENDDECLS

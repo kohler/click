@@ -7,11 +7,11 @@ class Packet;
 
 class IP6FlowID { public:
 
-  IP6FlowID();
-  IP6FlowID(const IP6Address &, uint16_t, const IP6Address &, uint16_t);
+  inline IP6FlowID();
+  inline IP6FlowID(const IP6Address &, uint16_t, const IP6Address &, uint16_t);
   explicit IP6FlowID(Packet *);
 
-  operator bool() const;
+  inline operator bool() const;
 
   const IP6Address &saddr() const	{ return _saddr; }
   const IP6Address &daddr() const	{ return _daddr; }
@@ -23,10 +23,11 @@ class IP6FlowID { public:
   void set_sport(uint16_t p)		{ _sport = p; }
   void set_dport(uint16_t p)		{ _dport = p; }
   
-  IP6FlowID rev() const;
+  inline IP6FlowID rev() const;
 
-  operator String() const		{ return s(); }
-  String s() const;
+  String unparse() const;
+  operator String() const		{ return unparse(); }
+  String s() const			{ return unparse(); }
   
  protected:
   
