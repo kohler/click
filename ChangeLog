@@ -1,3 +1,8 @@
+2001-03-13 Tuesday 15:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* configure.in, tools/Makefile.in: added a tool that reads a router
+	file and produce a build environment for that router
+
 2001-03-13 Tuesday 09:42  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: webgen.cc, webgen.hh: WebGen -- web/tcp test
