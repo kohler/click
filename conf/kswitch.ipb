@@ -1,22 +1,50 @@
-FromDevice(eth0) -> f0 :: Classifier(14/4242, -);
-FromDevice(eth1) -> f1 :: Classifier(14/4242, -);
-FromDevice(eth2) -> f2 :: Classifier(14/4242, -);
 
-w0 :: Queue -> ToDevice(eth0);
-w1 :: Queue -> ToDevice(eth1);
-w2 :: Queue -> ToDevice(eth2);
+PollDevice(eth1) -> f0 :: Classifier(14/4242, 0/00C095E2169C, -);
+PollDevice(eth2) -> f1 :: Classifier(14/4242, 0/00C095E2169D, -);
+PollDevice(eth3) -> f2 :: Classifier(14/4242, 0/00C095E21614, -);
+PollDevice(eth4) -> f3 :: Classifier(14/4242, 0/00C095E21615, -);
+PollDevice(eth5) -> f4 :: Classifier(14/4242, 0/00C095E216D4, -);
+PollDevice(eth6) -> f5 :: Classifier(14/4242, 0/00C095E216D5, -);
+PollDevice(eth7) -> f6 :: Classifier(14/4242, 0/00C095E216D6, -);
+PollDevice(eth8) -> f7 :: Classifier(14/4242, 0/00C095E216D7, -);
+
+w0 :: Queue -> ToDevice(eth1);
+w1 :: Queue -> ToDevice(eth2);
+w2 :: Queue -> ToDevice(eth3);
+w3 :: Queue -> ToDevice(eth4);
+w4 :: Queue -> ToDevice(eth5);
+w5 :: Queue -> ToDevice(eth6);
+w6 :: Queue -> ToDevice(eth7);
+w7 :: Queue -> ToDevice(eth8);
 
 s :: EtherSwitch;
 in :: Suppressor;
 out :: Suppressor;
-f0[1] -> t0::Tee[0] -> [0]in[0] -> [0]s[0] -> [0]out[0] -> w0;
-              t0[1] -> ToLinux;
-f1[1] -> t1::Tee[0] -> [1]in[1] -> [1]s[1] -> [1]out[1] -> w1;
-              t1[1] -> ToLinux;
-f2[1] -> t2::Tee[0] -> [2]in[2] -> [2]s[2] -> [2]out[2] -> w2;
-              t2[1] -> ToLinux;
+
+f0[2] -> [0]in[0] -> [0]s[0] -> [0]out[0] -> w0;
+f1[2] -> [1]in[1] -> [1]s[1] -> [1]out[1] -> w1;
+f2[2] -> [2]in[2] -> [2]s[2] -> [2]out[2] -> w2;
+f3[2] -> [3]in[3] -> [3]s[3] -> [3]out[3] -> w3;
+f4[2] -> [4]in[4] -> [4]s[4] -> [4]out[4] -> w4;
+f5[2] -> [5]in[5] -> [5]s[5] -> [5]out[5] -> w5;
+f6[2] -> [6]in[6] -> [6]s[6] -> [6]out[6] -> w6;
+f7[2] -> [7]in[7] -> [7]s[7] -> [7]out[7] -> w7;
 
 st :: EtherSpanTree(00:02:03:04:05:06, in, out, s);
 f0[0] -> [0]st[0] -> w0;
 f1[0] -> [1]st[1] -> w1;
 f2[0] -> [2]st[2] -> w2;
+f3[0] -> [3]st[3] -> w3;
+f4[0] -> [4]st[4] -> w4;
+f5[0] -> [5]st[5] -> w5;
+f6[0] -> [6]st[6] -> w6;
+f7[0] -> [7]st[7] -> w7;
+
+f0[1] -> ToLinux;
+f1[1] -> ToLinux;
+f2[1] -> ToLinux;
+f3[1] -> ToLinux;
+f4[1] -> ToLinux;
+f5[1] -> ToLinux;
+f6[1] -> ToLinux;
+f7[1] -> ToLinux;
