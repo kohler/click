@@ -469,7 +469,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Wed May  3 20:16:43 2000
-+++ drivers/net/tulip.c	Sat Oct 28 17:42:04 2000
++++ drivers/net/tulip.c	Sun Oct 29 16:18:51 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -491,21 +491,23 @@ Index: drivers/net/tulip.c
  #if LINUX_VERSION_CODE < 0x20123
  #define hard_smp_processor_id() smp_processor_id()
  #define test_and_set_bit(val, addr) set_bit(val, addr)
-@@ -194,6 +187,21 @@
+@@ -194,6 +187,23 @@
  static int tulip_debug = 1;
  #endif
  
 +/* Polling extensions and extensions for recycling sk_buffs. */
-+#define SKB_BUCKETS	4
++#define SKB_BUCKETS		4
 +/* set to 0 if don't want to do recycle */
 +#define SKB_RECYCLED	64
 +/* demand polling */
 +#define DEMAND_POLLTX	1
 +/* prefetching of descriptor data */
-+// #define PREFETCH   	1
++#define PREFETCH   		1
 +
 +static unsigned tulip_recycled_skb_size;
-+static int tulip_recycled_skb_cnt[SKB_BUCKETS];
++static int tulip_recycled_skb_inuse[SKB_BUCKETS];
++static int tulip_recycled_skb_head[SKB_BUCKETS];
++static int tulip_recycled_skb_tail[SKB_BUCKETS];
 +static unsigned long tulip_recycle_skb_lock[SKB_BUCKETS];
 +static struct sk_buff *tulip_recycled_skbs[SKB_BUCKETS][SKB_RECYCLED];
 +static void tulip_recycle_skb_init(void);
@@ -513,7 +515,7 @@ Index: drivers/net/tulip.c
  /*
  				Theory of Operation
  
-@@ -494,15 +502,21 @@
+@@ -494,15 +504,21 @@
  };
  
  struct tulip_private {
@@ -540,7 +542,7 @@ Index: drivers/net/tulip.c
  	char *rx_buffs;				/* Address of temporary Rx buffers. */
  	u16 setup_frame[96];		/* Pseudo-Tx frame to init address table. */
  	int chip_id;
-@@ -511,8 +525,6 @@
+@@ -511,8 +527,6 @@
  	struct net_device_stats stats;
  	struct timer_list timer;	/* Media selection timer. */
  	int interrupt;				/* In-interrupt flag. */
@@ -549,7 +551,7 @@ Index: drivers/net/tulip.c
  	unsigned int tx_full:1;				/* The Tx queue is full. */
  	unsigned int full_duplex:1;			/* Full-duplex operation requested. */
  	unsigned int full_duplex_lock:1;
-@@ -565,6 +577,16 @@
+@@ -565,6 +579,16 @@
  #endif
  static void set_rx_mode(struct device *dev);
  
@@ -566,7 +568,7 @@ Index: drivers/net/tulip.c
  
  
  /* A list of all installed Tulip devices. */
-@@ -812,6 +834,17 @@
+@@ -812,6 +836,17 @@
  
  	dev->base_addr = ioaddr;
  	dev->irq = irq;
@@ -584,7 +586,7 @@ Index: drivers/net/tulip.c
  
  	tp->pci_bus = pci_bus;
  	tp->pci_devfn = pci_devfn;
-@@ -2521,6 +2554,11 @@
+@@ -2521,6 +2556,11 @@
  		tp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
@@ -596,7 +598,7 @@ Index: drivers/net/tulip.c
  		skb->dev = dev;			/* Mark as being used by this device. */
  		tp->rx_ring[i].status = cpu_to_le32(DescOwned);	/* Owned by Tulip chip */
  		tp->rx_ring[i].buffer1 = virt_to_le32desc(skb->tail);
-@@ -2537,22 +2575,36 @@
+@@ -2537,22 +2577,36 @@
  	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
  }
  
@@ -639,7 +641,7 @@ Index: drivers/net/tulip.c
  	/* Caution: the write order is important here, set the field
  	   with the ownership bits last. */
  
-@@ -2576,16 +2628,32 @@
+@@ -2576,16 +2630,32 @@
  		flag = 0xe0000000 | DESC_RING_WRAP;
  
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
@@ -678,7 +680,7 @@ Index: drivers/net/tulip.c
  }
  
  /* The interrupt handler does all of the Rx thread work and cleans up
-@@ -2597,13 +2665,13 @@
+@@ -2597,13 +2667,13 @@
  	long ioaddr = dev->base_addr;
  	int csr5;
  	int entry;
@@ -693,7 +695,7 @@ Index: drivers/net/tulip.c
  
  #if defined(__i386__) && defined(SMP_CHECK)
  	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
-@@ -2625,22 +2693,39 @@
+@@ -2625,22 +2695,39 @@
  
  	do {
  		csr5 = inl(ioaddr + CSR5);
@@ -740,7 +742,7 @@ Index: drivers/net/tulip.c
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2705,14 +2790,15 @@
+@@ -2705,14 +2792,15 @@
  			}
  
  			tp->dirty_tx = dirty_tx;
@@ -764,7 +766,7 @@ Index: drivers/net/tulip.c
  		}
  
  		/* Log errors. */
-@@ -2731,8 +2817,11 @@
+@@ -2731,8 +2819,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -777,7 +779,7 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2772,7 +2861,9 @@
+@@ -2772,7 +2863,9 @@
  		}
  	} while (1);
  
@@ -788,7 +790,7 @@ Index: drivers/net/tulip.c
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2790,14 +2881,17 @@
+@@ -2790,14 +2883,17 @@
  		}
  	}
  
@@ -806,7 +808,7 @@ Index: drivers/net/tulip.c
  #if defined(__i386__)
  	clear_bit(0, (void*)&dev->interrupt);
  #else
-@@ -2943,8 +3037,12 @@
+@@ -2943,8 +3039,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -821,7 +823,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2987,9 +3085,14 @@
+@@ -2987,9 +3087,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -839,7 +841,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3186,7 +3289,7 @@
+@@ -3186,7 +3291,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -848,7 +850,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3197,7 +3300,12 @@
+@@ -3197,7 +3302,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -861,7 +863,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3212,6 +3320,10 @@
+@@ -3212,6 +3322,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -872,7 +874,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3356,3 +3468,355 @@
+@@ -3356,3 +3470,377 @@
   *  tab-width: 4
   * End:
   */
@@ -899,7 +901,9 @@ Index: drivers/net/tulip.c
 +{
 +  int i;
 +  for(i = 0; i < SKB_BUCKETS; i++) {
-+    tulip_recycled_skb_cnt[i] = 0;
++    tulip_recycled_skb_inuse[i] = 0;
++    tulip_recycled_skb_head[i] = 0;
++    tulip_recycled_skb_tail[i] = 0;
 +    tulip_recycle_skb_lock[i] = 0;
 +  }
 +}
@@ -907,63 +911,83 @@ Index: drivers/net/tulip.c
 +/* WARNING: these functions are not reentrant! */
 +static inline struct sk_buff*
 +tulip_get_recycled_skb(void)
-+{
-+  	int bucket = current->processor % SKB_BUCKETS;
-+  	struct sk_buff* skb = 0;
-+  	if (tulip_recycled_skb_cnt[bucket] > 0) {
-+#ifdef __SMP__
-+	    if (smp_num_cpus > SKB_BUCKETS) {
-+	  		while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
-+				while(tulip_recycle_skb_lock[bucket]) 
-+			  		asm volatile("" ::: "memory");
-+			}
-+		}
++{ 
++  int bucket = current->processor % SKB_BUCKETS; 
++  struct sk_buff* skb = 0; 
++  tulip_recycled_skb_inuse[bucket] = 1;
++
++  if (tulip_recycled_skb_head[bucket] != tulip_recycled_skb_tail[bucket]) {
++	if (smp_num_cpus > SKB_BUCKETS) {
++	  while (test_and_set_bit (0, (void*)&tulip_recycle_skb_lock[bucket])) { 
++		while(tulip_recycle_skb_lock[bucket]) 
++		  asm volatile("" ::: "memory"); 
++	  }
++	} 
++	if (tulip_recycled_skb_head[bucket] != tulip_recycled_skb_tail[bucket]) {
++	  skb = tulip_recycled_skbs[bucket][tulip_recycled_skb_head[bucket]]; 
++	  tulip_recycled_skb_head[bucket]++;
++	  if (tulip_recycled_skb_head[bucket] == SKB_RECYCLED) 
++		tulip_recycled_skb_head[bucket] = 0;
++	} 
++	if (smp_num_cpus > SKB_BUCKETS)
++	  clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]); 
++  } 
++#if 0
++  if (skb == 0) 
++	printk("%d: need to create packet %d %d.\n", 
++		    current->processor,
++			tulip_recycled_skb_head[bucket],
++			tulip_recycled_skb_tail[bucket]);
 +#endif
-+      	if (tulip_recycled_skb_cnt[bucket] > 0) {
-+       		tulip_recycled_skb_cnt[bucket]--;
-+       		skb = tulip_recycled_skbs[bucket][tulip_recycled_skb_cnt[bucket]];
-+      	}
-+#ifdef __SMP__
-+	    if (smp_num_cpus > SKB_BUCKETS) {
-+			clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
-+		}
-+#endif
-+	}
-+	return skb;
++  return skb;
 +}
++
 +/* tries to recycle an skb. if not successful, the skb passed in is freed */
 +static inline int
 +tulip_recycle_or_free_skb(struct sk_buff *skb)
-+{
-+  	int bucket = current->processor % SKB_BUCKETS;
-+	int recycled = 0; 
-+   	if (skb->truesize == tulip_recycled_skb_size) {
-+   		if (tulip_recycled_skb_cnt[bucket] < SKB_RECYCLED) {
-+#ifdef __SMP__
-+	    	if (smp_num_cpus > SKB_BUCKETS) {
-+	  			while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
-+		  			while(tulip_recycle_skb_lock[bucket]) 
-+			  			asm volatile("" ::: "memory");
-+				}
-+			}
-+#endif
-+   			if (tulip_recycled_skb_cnt[bucket] < SKB_RECYCLED) {
-+      			if (skb_recycle(skb)) {
-+					tulip_recycled_skbs[bucket][tulip_recycled_skb_cnt[bucket]] = skb;
-+					tulip_recycled_skb_cnt[bucket]++;
-+					recycled = 1;
-+      			}
-+				skb = 0;
-+			}
-+#ifdef __SMP__
-+	    	if (smp_num_cpus > SKB_BUCKETS) {
-+				clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
-+		}
-+#endif
-+    	}
++{ 
++  int recycled = 0;
++  if (skb->truesize == tulip_recycled_skb_size) {
++	int i, min_size, bucket, tail, next;
++	min_size = bucket = -1;
++	for (i=0; i < SKB_BUCKETS; i++) {
++	  int size = 0;
++	  if (tulip_recycled_skb_head[i] <= tulip_recycled_skb_tail[i]) {
++	    size = tulip_recycled_skb_tail[i] - tulip_recycled_skb_head[i];
++	  } else {
++	    size = tulip_recycled_skb_tail[i] + SKB_RECYCLED 
++		       - tulip_recycled_skb_head[i];
++	  }
++	  if (tulip_recycled_skb_inuse[i]) {
++	    if (size < min_size || min_size == -1) {
++	  	  min_size = size;
++	  	  bucket = i;
++	    }
++	  }
 +	}
-+	if (skb != 0) dev_kfree_skb(skb);
-+	return recycled;
++	while (test_and_set_bit (0, (void*)&tulip_recycle_skb_lock[bucket])) { 
++	  while(tulip_recycle_skb_lock[bucket]) asm volatile("" ::: "memory"); 
++	}
++	tail = tulip_recycled_skb_tail[bucket];
++	next = tail+1;
++	if (next == SKB_RECYCLED) next = 0;
++	if (next != tulip_recycled_skb_head[bucket]) {
++	  if (skb_recycle(skb)) {
++		tulip_recycled_skbs[bucket][tail] = skb;
++		tulip_recycled_skb_tail[bucket] = next;
++		recycled = 1;
++	  }
++	  skb = 0;
++	}
++	clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
++  }
++  if (skb != 0) {
++#if 0
++	printk("%d: need to clear packet.\n", current->processor);
++#endif
++	dev_kfree_skb(skb);
++  }
++  return recycled;
 +}
 +
 +int 
