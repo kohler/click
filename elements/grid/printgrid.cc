@@ -30,7 +30,7 @@ CLICK_DECLS
 
 PrintGrid::PrintGrid()
   : Element(1, 1), _print_routes(false), _print_probe_entries(false),
-  _verbose(true), _timestamp(false)
+    _verbose(true), _timestamp(false), _print_eth(false)
 {
   MOD_INC_USE_COUNT;
   _label = "";
@@ -58,6 +58,7 @@ PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 		  "SHOW_PROBE_CONTENTS", cpBool, "print link probe entries?", &_print_probe_entries,
 		  "VERBOSE", cpBool, "show more detail?", &_verbose,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &_timestamp,
+		  "PRINT_ETH", cpBool, "print ethernet headers?", &_print_eth,
 		  cpEnd) < 0)
     return -1;
   return(0);
@@ -112,6 +113,14 @@ PrintGrid::simple_action(Packet *p)
     snprintf(buf, sizeof(buf), "%ld.%06ld ",
 	     p->timestamp_anno().tv_sec,
 	     p->timestamp_anno().tv_usec);
+    line += buf;
+  }
+
+  if (_print_eth) {
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%s %s %04hx ", 
+	     EtherAddress(eh->ether_shost).s().cc(), EtherAddress(eh->ether_dhost).s().cc(),
+	     ntohs(eh->ether_type));
     line += buf;
   }
 

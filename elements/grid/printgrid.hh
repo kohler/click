@@ -33,6 +33,10 @@ CLICK_DECLS
  * =item TIMESTAMP
  *
  * Boolean.  Default false.  If true, print the packet timestamp.
+ *
+ * =item PRINT_ETH
+ *
+ * Boolean.  Default false.  If true, print the ethernet header.
  * 
  * =a
  * Print
@@ -66,6 +70,7 @@ private:
 
   bool _verbose;  
   bool _timestamp;
+  bool _print_eth;
 };
 
 CLICK_ENDDECLS
