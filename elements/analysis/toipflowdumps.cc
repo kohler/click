@@ -207,7 +207,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		sa << " tcp_flags";
 	    sa << " direction";
 	    if (_ip_p == IP_PROTO_TCP && _tcp_opt)
-		sa << " tcp_opt";
+		sa << " tcp_ntopt";
 	} else {
 	    sa << " direction";
 	    if (_ip_ids)
@@ -215,7 +215,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	    if (_ip_p == IP_PROTO_TCP) {
 		sa << " tcp_flags tcp_seq payload_len tcp_ack";
 		if (_tcp_opt)
-		    sa << " tcp_opt";
+		    sa << " tcp_ntopt";
 	    } else
 		sa << " payload_len";
 	}

@@ -8,7 +8,7 @@
 
 AggregateLength(I<KEYWORDS>)
 
-=s
+=s analysis
 
 sets aggregate annotation based on packet length
 

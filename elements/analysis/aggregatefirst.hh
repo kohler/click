@@ -9,7 +9,7 @@ CLICK_DECLS
 
 AggregateFirst([I<KEYWORDS>])
 
-=s measurement
+=s analysis
 
 lets through first packet per aggregate annotation
 

@@ -9,7 +9,7 @@ CLICK_DECLS
 
 AggregateIP(FIELD, I<KEYWORDS>)
 
-=s
+=s analysis, IP
 
 sets aggregate annotation based on IP packet field
 

@@ -13,7 +13,7 @@ class HandlerCall;
 
 AggregateIPFlows([I<KEYWORDS>])
 
-=s
+=s analysis, IP
 
 sets aggregate annotation based on flow
 

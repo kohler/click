@@ -9,7 +9,7 @@ class HandlerCall;
 
 AggregateCounter([I<KEYWORDS>])
 
-=s measurement
+=s analysis
 
 maintains information about aggregate annotations
 
