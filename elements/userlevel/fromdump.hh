@@ -113,6 +113,9 @@ such.
 FromDump sets packets' extra length annotations to any additional length
 recorded in the dump.
 
+FromDump is a notifier signal, active when the element is active and the dump
+contains more packets.
+
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).

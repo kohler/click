@@ -88,7 +88,8 @@ class ActiveNotifier : public PassiveNotifier { public:
     // Note: An ActiveNotifier MUST NOT call wake_listeners() while in a
     // function that a listener has called from its Task, or the router will
     // crash. One common interpretation: An ActiveNotifier element MUST NOT
-    // call wake_listeners() from its pull() function.
+    // call wake_listeners() from its pull() function; similarly, it mus tnot
+    // call set_listeners(true) unless the signal is already active.
     
   private:
     

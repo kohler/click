@@ -1,3 +1,11 @@
+Dan Aguayo
+aguayo@pdos.lcs.mit.edu
+Grid
+
+John Bicket
+jbicket@mit.edu
+Grid, Wifi, build improvements, core fixes
+
 Benjie Chen
 benjie@lcs.mit.edu
 polling extensions, Linux kernel patches, stride scheduling, Linux kernel
@@ -5,7 +13,8 @@ thread, device driver updates, other elements, multithreading Click
 
 Douglas S. J. De Couto
 decouto@lcs.mit.edu
-user-level elements, Grid elements, ClickController, cross-compilation
+user-level elements, Grid elements, ClickController, cross-compilation, core 
+fixes 
 
 Thomer Gil
 thomer@lcs.mit.edu

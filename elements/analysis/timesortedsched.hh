@@ -38,6 +38,11 @@ Default is false.
 
 =back
 
+=n
+
+TimeSortedSched is a notifier signal, active iff any of the upstream notifiers
+are active.
+
 =e
 
 This example merges multiple tcpdump(1) files into a single, time-sorted

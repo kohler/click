@@ -98,6 +98,9 @@ length 5. The rest of the packet data is zero or garbage, unless set by the
 dump. Generated packets will usually have incorrect lengths, but the extra
 header length annotations are set correctly.
 
+FromIPSummaryDump is a notifier signal, active when the element is active and
+the dump contains more packets.
+
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).

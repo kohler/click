@@ -86,6 +86,9 @@ set. The timestamp annotation is set to the flow end timestamp unless that was
 zero, in which case it is set to the flow timestamp. The "first timestamp"
 annotation is always set to the flow timestamp.
 
+FromNetFlowSummaryDump is a notifier signal, active when the element is active
+and the dump contains more packets.
+
 =h active read/write
 
 Value is a Boolean.
