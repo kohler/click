@@ -210,11 +210,11 @@ extern CpVaParseCmd
     cpNonnegReal10,	// int frac_digits	unsigned *
     cpEtherAddress;	//			EtherAddress *
 
-int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
-int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
-int cp_va_parse_remove_keywords(Vector<String> &, int, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(const Vector<String> &argv, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_space_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse_keyword(const String &arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse_remove_keywords(Vector<String> &argv, int, CP_VA_PARSE_ARGS_REST);
 // Takes: cpEnd					end of argument list
 //        cpOptional, cpKeywords, cpIgnore...	manipulators
 //        CpVaParseCmd type_id,			actual argument
@@ -224,6 +224,8 @@ int cp_va_parse_remove_keywords(Vector<String> &, int, CP_VA_PARSE_ARGS_REST);
 //		[[RESULT arguments from table; usually T *]]
 // Returns the number of result arguments set, or negative on error.
 // Stores no values in the result arguments on error.
+
+int cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> &values);
 
 void cp_va_static_initialize();
 void cp_va_static_cleanup();

@@ -36,7 +36,7 @@
 .Sp
 .RE
 ..
-.TH CLICK 5 "16/Oct/1999" "Version \*V"
+.TH CLICK 5 "16/Mar/2004" "Version \*V"
 .SH NAME
 click \- Click router configuration language
 '
@@ -277,6 +277,9 @@ Some elements, like
 .IR Classifier ,
 take arguments that don't fit any of these types. See the element
 documentation for details.
+.PP
+All empty configuration arguments are ignored. Thus, `Element(1, 2)' and
+`Element(1, , , , 2, /* whatever */)' behave exactly alike.
 '
 .SH "COMPOUND ELEMENTS"
 '
@@ -320,21 +323,8 @@ a -> X -> b;
 c -> Y -> d;
 .Re
 .PP
-The `input' and `output' pseudoelements have no existence in a running
-router; they serve as placeholders for connections from outside. (In fact,
-they are connection tunnel endpoints. See below for more on connection
-tunnels.)
-.\" If no one from outside connects to one of a compound element's
-.\" input or output ports, then all connections involving that port are removed
-.\" from the expansion. For example:
-.\" .Rs
-.\" { input -> X -> output } -> b;
-.\" .Re
-.\" expands to
-.\" .Rs
-.\" X -> b;
-.\" .Re
-.\" with no connection to X's input.
+The `input' and `output' pseudoelements incur no run-time overhead. (In
+fact, they are connection tunnel endpoints; see below for more.)
 .PP
 The actual expansions will differ from these examples because the elements
 will have different names. A prefix is prepended to the components' names,
@@ -432,18 +422,39 @@ Compound elements may take configuration parameters, which are expanded
 into the configuration strings of its components. The parameters must be
 named at the beginning of the compound element. Each parameter looks like
 a Perl variable\*Ea dollar sign followed by one or more letters, numbers,
-and underscores. For example,
+and underscores. For example, this compound element
 .Rs
 { $a, $b | ... }
 .Re
-is a compound element taking two configuration parameters, named `$a' and
-`$b'.
+takes two configuration parameters, named `$a' and `$b'. Keyword arguments
+are also supported. For example, this compound element
+.Rs
+{ COUNT $count | ... }
+.Re
+takes a COUNT keyword parameter. Mismatched configuration parameters cause
+errors; for example:
+.Rs
+\%{ $a, $b | ... } (1)         // Error: too few arguments
+.br
+\%{ $a, $b | ... } (1, 2, 3)   // Error: too many arguments
+.br
+\%{ COUNT $count | ... } (1)   // Error: missing 'COUNT' parameter
+.Re
+The exception is the special keyword `__REST__', which matches any
+additional arguments supplied to the compound element. For example:
+.Rs
+\%{ $a, COUNT $count, __REST__ $rest | ... } 
+.br
+\%           (1, 2, COUNT 3, FOO 4)
+.Re
+This compound element will be expanded with `$a' set to `1', `$count' set
+to `3', and `$rest' set to `2, FOO 4'. All positional parameters must
+precede any keyword parameters, and `__REST__', if present, must appear
+last of all.
 .PP
-When a compound element is used, its configuration string must have the
-same number of arguments as there are parameters. As the compound is
-expanded, its components' configuration strings are searched for references
-to the parameters. Any such references are replaced with the actual
-arguments. For example, this code:
+As the compound is expanded, its components' configuration strings are
+searched for references to the parameters. Any such references are replaced
+with the supplied arguments. For example, this code:
 .Rs
 \&... -> { $a | input -> 
 .br
@@ -453,8 +464,7 @@ expands to this:
 .Rs
 \&... -> A(1, 100, 3) -> ...
 .Re
-You can avoid this substitution by putting the dollar sign inside single
-quotes.
+You can avoid substitution by putting the dollar sign inside single quotes.
 .PP
 Use braces, like `${a}', to avoid including following letters in a variable
 name. Click also supports the shell-like `${VAR-DEFAULT}' syntax, which
@@ -464,9 +474,10 @@ substitutes the value of `$VAR', or `DEFAULT' if that variable was not set.
 '
 A single compound element may contain multiple overloaded definitions
 separated from one another by two vertical bars "\f(CW||\fR". Different
-definitions may have different numbers of input ports, output ports, or
-configuration arguments. For example, this extended MyQueue compound
-element takes an optional capacity argument, just like Queue itself:
+definitions may have different numbers of input ports, different numbers of
+output ports, or different sets of configuration arguments. For example,
+this extended MyQueue compound element takes an optional capacity argument,
+just like Queue itself:
 .Rs
 elementclass MyQueue {
 .br
@@ -481,9 +492,9 @@ elementclass MyQueue {
 }
 .Re
 For each use of an overloaded compound element, Click will choose one
-definition that matches the numbers of input ports, output ports, and
-configuration arguments provided. It is an error if no definition matches
-these properties exactly.
+definition that matches the provided number of input ports, number of
+output ports, and configuration arguments. It is an error if no definition
+matches these properties exactly.
 .PP
 It is also possible to extend an existing element class with new overloaded
 definitions with "\f(CW...\fR". For example, this definition introduces a
@@ -718,7 +729,9 @@ kernel module will not accept archives; use
 .br
 .IR opt-formals " ::= " formals " | " empty
 .br
-.IR formals " ::= parameter | " formals " "","" parameter"
+.IR formals " ::= " formal " | " formals " "","" " formal
+.br
+.IR formal " ::= parameter | identifier parameter" 
 .br
 .IR connection " ::= " element " " opt-port " ""->"" " opt-port " " conntail
 .br

@@ -1214,7 +1214,7 @@ RouterT::finish_type(ErrorHandler *errh)
 }
 
 ElementClassT *
-RouterT::resolve(int ninputs, int noutputs, const Vector<String> &args)
+RouterT::resolve(int ninputs, int noutputs, Vector<String> &args)
 {
     // Try to return an element class, even if it is wrong -- the error
     // messages are friendlier
@@ -1223,7 +1223,8 @@ RouterT::resolve(int ninputs, int noutputs, const Vector<String> &args)
     int nclosest = 0;
 
     while (1) {
-	if (r->_ninputs == ninputs && r->_noutputs == noutputs && r->_formals.size() == args.size())
+	if (r->_ninputs == ninputs && r->_noutputs == noutputs
+	    && cp_assign_arguments(args, r->_formal_types, args) >= 0)
 	    return r;
 
 	// replace `closest'

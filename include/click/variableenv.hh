@@ -16,7 +16,7 @@ class VariableEnvironment { public:
   int depth() const			{ return _depths.size() ? _depths.back() : -1; }
 
   void enter(const VariableEnvironment &);
-  void enter(const Vector<String> &, const Vector<String> &, int);
+  void enter(const Vector<String> &formals, const Vector<String> &values, int depth);
   void limit_depth(int);
   
   String interpolate(const String &) const;

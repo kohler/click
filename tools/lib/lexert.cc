@@ -852,23 +852,66 @@ LexerT::ytunnel()
 void
 LexerT::ycompound_arguments(RouterT *comptype)
 {
+  Lexeme t1, t2;
+  
   while (1) {
-    const Lexeme &tvar = lex();
-    if (!tvar.is(lexVariable)) {
-      if (!tvar.is('|') || comptype->nformals() > 0)
-	unlex(tvar);
-      return;
+    String vartype, varname;
+
+    // read "IDENTIFIER $VARIABLE" or "$VARIABLE"
+    t1 = lex();
+    if (t1.is(lexIdent)) {
+      t2 = lex();
+      if (t2.is(lexVariable)) {
+	vartype = t1.string();
+	varname = t2.string();
+      } else {
+	if (comptype->nformals() > 0)
+	  lerror(t2, "expected variable");
+	unlex(t1);
+	unlex(t2);
+	break;
+      }
+    } else if (t1.is(lexVariable))
+      varname = t1.string();
+    else if (t1.is('|'))
+      break;
+    else {
+      if (comptype->nformals() > 0)
+	lerror(t1, "expected variable");
+      unlex(t1);
+      break;
     }
-    comptype->add_formal(tvar.string());
+
+    comptype->add_formal(varname, vartype);
+
     const Lexeme &tsep = lex();
     if (tsep.is('|'))
-      return;
+      break;
     else if (!tsep.is(',')) {
-      lerror(tsep, "expected `,' or `|'");
+      lerror(tsep, "expected ',' or '|'");
       unlex(tsep);
-      return;
+      break;
     }
   }
+
+  // check argument types
+  bool positional = true, error = false;
+  for (int i = 0; i < comptype->nformals(); i++)
+    if (const String &ftype = comptype->formal_types()[i]) {
+      positional = false;
+      if (ftype == "__REST__") {
+	if (i < comptype->nformals() - 1)
+	  error = true;
+      } else
+	for (int j = i + 1; j < comptype->nformals(); j++)
+	  if (comptype->formal_types()[j] == ftype) {
+	    lerror(t1, "repeated keyword parameter '%s' in compound element", ftype.c_str());
+	    break;
+	  }
+    } else if (!positional)
+      error = true;
+  if (error)
+    lerror(t1, "bad compound element parameter order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
 }
 
 ElementClassT *
@@ -912,9 +955,11 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 
 	// check for redeclaration with same signature
 	if (created) {
+#if 0
 	    ElementClassT *t = created->resolve(compound_class->ninputs(), compound_class->noutputs(), compound_class->formals());
 	    if (t && t->overload_depth() > (first ? first->overload_depth() : -1))
 		ElementT::redeclaration_error(_errh, "", compound_class->unparse_signature(), compound_class->landmark(), t->landmark());
+#endif
 	}
 	
 	created = compound_class;

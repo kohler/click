@@ -55,7 +55,7 @@ class ElementClassT { public:
 
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
-    virtual ElementClassT *resolve(int ninputs, int noutputs, const Vector<String> &args);
+    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
@@ -90,7 +90,7 @@ class SynonymElementClassT : public ElementClassT { public:
 
     ElementClassT *synonym_of() const	{ return _eclass; }
 
-    ElementClassT *resolve(int, int, const Vector<String> &);
+    ElementClassT *resolve(int, int, Vector<String> &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashMap<ElementClassT *, int> &) const;

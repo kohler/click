@@ -142,7 +142,7 @@ ElementClassT::documentation_url() const
 
 
 ElementClassT *
-ElementClassT::resolve(int, int, const Vector<String> &)
+ElementClassT::resolve(int, int, Vector<String> &)
 {
     return this;
 }
@@ -257,7 +257,7 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
 }
 
 ElementClassT *
-SynonymElementClassT::resolve(int ninputs, int noutputs, const Vector<String> &args)
+SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args)
 {
     return _eclass->resolve(ninputs, noutputs, args);
 }

@@ -135,7 +135,8 @@ class RouterT : public ElementClassT { public:
     
     int nformals() const		{ return _formals.size(); }
     const Vector<String> &formals() const { return _formals; }
-    void add_formal(const String &n)	{ _formals.push_back(n); }
+    const Vector<String> &formal_types() const { return _formal_types; }
+    inline void add_formal(const String &fname, const String &ftype);
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
@@ -146,7 +147,7 @@ class RouterT : public ElementClassT { public:
 
     int finish_type(ErrorHandler *);
     
-    ElementClassT *resolve(int, int, const Vector<String> &);
+    ElementClassT *resolve(int, int, Vector<String> &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
@@ -199,6 +200,7 @@ class RouterT : public ElementClassT { public:
     int _scope_cookie;
 
     Vector<String> _formals;
+    Vector<String> _formal_types;
     int _ninputs;
     int _noutputs;
     ElementClassT *_overload_type;
@@ -402,6 +404,13 @@ inline const ArchiveElement &
 RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
+}
+
+inline void
+RouterT::add_formal(const String &fname, const String &ftype)
+{
+    _formals.push_back(fname);
+    _formal_types.push_back(ftype);
 }
 
 inline bool

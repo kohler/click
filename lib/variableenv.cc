@@ -54,9 +54,9 @@ void
 VariableEnvironment::enter(const Vector<String> &formals, const Vector<String> &values, int depth)
 {
   assert(_depths.size() == 0 || depth > _depths.back());
-  for (int i = 0; i < formals.size(); i++) {
-    _formals.push_back(formals[i]);
-    _values.push_back(values[i]);
+  for (int arg = 0; arg < formals.size(); arg++) {
+    _formals.push_back(formals[arg]);
+    _values.push_back(values[arg]);
     _depths.push_back(depth);
   }
 }
@@ -131,7 +131,8 @@ VariableEnvironment::interpolate(const String &config) const
 	  extension_pos = pos;
 	name = "$" + config.substring(word_pos + 2, extension_pos - word_pos - 2);
 	extension = config.substring(extension_pos, pos - extension_pos);
-	if (pos < len) pos++;
+	if (pos < len)
+	  pos++;
       } else {
 	for (pos++; pos < len && (isalnum(data[pos]) || data[pos] == '_'); pos++)
 	  /* nada */;

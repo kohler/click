@@ -439,16 +439,17 @@ cp_argvec(const String &conf, Vector<String> &args)
   if (len == 0)
     return;
 
-  // <= to handle case where `conf' ends in `,' (= an extra empty string
+  // <= to handle case where 'conf' ends in ',' (= an extra empty string
   // argument)
   while (i <= len) {
     String arg = partial_uncomment(conf, i, &i);
 
-    // add the argument if it is nonempty, or this isn't the first argument
-    if (arg || i < len || !first_arg)
+    // add the argument if it is nonempty
+    // /*, or this isn't the first argument */ NO LONGER!
+    if (arg) // || i < len || !first_arg)
       args.push_back(arg);
     
-    // bump `i' past the comma
+    // bump 'i' past the comma
     i++;
     first_arg = false;
   }
@@ -1861,20 +1862,20 @@ cp_handler(const String &str, Element *context, bool need_read,
   int hid = Router::hindex(e, hname);
   if (hid < 0) {
     if (e != r->root_element()) {
-      errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
+      errh->error("element '%s' has no '%s' handler", e->id().cc(), hname.cc());
       if (r->nhandlers() <= 0)
 	errh->error("because handlers have not been added yet");
     } else
-      errh->error("no global `%s' handler", hname.cc());
+      errh->error("no global '%s' handler", hname.cc());
     return false;
   }
 
   const Router::Handler *h = r->handler(hid);
   if (need_read && !h->readable()) {
-    errh->error("`%s' is not a read handler", h->unparse_name(e).cc());
+    errh->error("'%s' is not a read handler", h->unparse_name(e).cc());
     return false;
   } else if (need_write && !h->writable()) {
-    errh->error("`%s' is not a write handler", h->unparse_name(e).cc());
+    errh->error("'%s' is not a write handler", h->unparse_name(e).cc());
     return false;
   } else {
     *result_element = e;
@@ -2094,8 +2095,8 @@ argtype_bucket(const char *command)
   return (s[0] ? (s[0]%32 + strlen(command)*32) % NARGTYPE_HASH : 0);
 }
 
-static cp_argtype *
-find_argtype(const char *command)
+static const cp_argtype *
+cp_find_argtype(const char *command)
 {
   cp_argtype *t = argtype_hash[argtype_bucket(command)];
   while (t && strcmp(t->name, command) != 0)
@@ -2108,7 +2109,7 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 		    cp_parsefunc parse, cp_storefunc store, int internal,
 		    void *user_data = 0)
 {
-  if (cp_argtype *t = find_argtype(name)) {
+  if (cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name))) {
     t->use_count++;
     if (strcmp(desc, t->description) != 0
 	|| flags != t->flags
@@ -2688,7 +2689,7 @@ cp_register_stringlist_argtype(const char *name, const char *desc, int flags)
 int
 cp_extend_stringlist_argtype(const char *name, ...)
 {
-  cp_argtype *t = find_argtype(name);
+  cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name));
   if (!t || t->parse != stringlist_parsefunc)
     return -2;
   HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(t->user_data);
@@ -2747,7 +2748,7 @@ enum {
 static inline bool
 special_argtype_for_keyword(const cp_argtype *t)
 {
-  return t->internal == cpiArguments;
+  return t && t->internal == cpiArguments;
 }
 
 static int
@@ -2770,105 +2771,57 @@ handle_special_argtype_for_keyword(cp_value *val, const String &rest)
   }
 }
 
-static int
-assign_keyword_argument(const String &arg, int npositional, int nvalues)
+
+namespace {
+
+struct CpVaHelper {
+
+  CpVaHelper(struct cp_value *, int, bool keywords_only);
+
+  int develop_values(va_list val, ErrorHandler *errh);
+
+  int assign_keyword_argument(const String &);
+  void add_keyword_error(StringAccum &, int err, const String &arg, const char *argname, int argno);
+  int finish_keyword_error(const char *format, const char *bad_keywords, ErrorHandler *errh);
+
+  int assign_arguments(const Vector<String> &args, const char *argname, ErrorHandler *errh);
+  
+  int parse_arguments(const char *argname  CP_CONTEXT_ARG, ErrorHandler *errh);
+
+  bool keywords_only;
+  int nvalues;
+  int nrequired;
+  int npositional;
+  bool ignore_rest;
+
+  struct cp_value *cp_values;
+  int cp_values_size;
+  
+};
+
+CpVaHelper::CpVaHelper(struct cp_value *cp_values_, int cp_values_size_,
+		       bool keywords_only_)
+  : keywords_only(keywords_only_), nvalues(0),
+    nrequired(keywords_only ? 0 : -1), npositional(keywords_only ? 0 : -1),
+    ignore_rest(keywords_only),
+    cp_values(cp_values_), cp_values_size(cp_values_size_)
 {
-  String keyword, rest;
-  // extract keyword
-  if (!cp_keyword(arg, &keyword, &rest))
-    return kwNoKeyword;
-  // doesn't count as a keyword if there was no accompanying data
-  // (XXX is this a great idea?)
-  if (!rest)
-    return kwNoKeyword;
-  // look for keyword value
-  for (int i = npositional; i < nvalues; i++)
-    if (keyword == cp_values[i].keyword) {
-      cp_value *val = &cp_values[i];
-      // handle special types differently
-      if (special_argtype_for_keyword(val->argtype))
-	return handle_special_argtype_for_keyword(val, rest);
-      else {
-	// do not report error if keyword used already
-	// if (cp_values[i].v.i > 0)
-	//   return kwDupKeyword;
-	val->v.i = 1;
-	val->v_string = rest;
-	return kwSuccess;
-      }
-    }
-  // no keyword found
-  return kwUnkKeyword;
 }
 
-static void
-add_keyword_error(StringAccum &sa, int err, const String &arg,
-		  const char *argname, int argno)
-{
-  if (err >= 0)
-    return;
-  if (sa.length())
-    sa << ", ";
-  if (err == kwNoKeyword)
-    sa << '<' << argname << ' ' << (argno + 1) << '>';
-  else {
-    String keyword, rest;
-    (void) cp_keyword(arg, &keyword, &rest);
-    sa << keyword;
-    if (err == kwDupKeyword)
-      sa << " (duplicate keyword)";
-  }
-}
-
-static int
-finish_keyword_error(const char *format, const char *bad_keywords,
-		     int npositional, int nvalues, ErrorHandler *errh)
-{
-  StringAccum keywords_sa;
-  for (int i = npositional; i < nvalues; i++) {
-    if (i > npositional)
-      keywords_sa << ", ";
-    keywords_sa << cp_values[i].keyword;
-  }
-  errh->error(format, bad_keywords, keywords_sa.cc());
-  return -1;
-}
-
-
-static int
-cp_va_parsev(const Vector<String> &args,
-#ifndef CLICK_TOOL
-	     Element *context,
-#endif
-	     const char *argname, const char *separator,
-	     bool keywords_only,
-	     ErrorHandler *errh, va_list val)
+int
+CpVaHelper::develop_values(va_list val, ErrorHandler *errh)
 {
   if (!cp_values || !cp_parameter_used)
     return errh->error("out of memory in cp_va_parse");
 
-  int nvalues = 0;
-  int nrequired = -1;
-  int npositional = -1;
   bool confirm_keywords = false;
   bool mandatory_keywords = false;
-  bool ignore_rest = false;
-  int nerrors_in = errh->nerrors();
-
-  //
-  // First, parse information about possible arguments from 'val'.
-  //
-  
-  if (keywords_only) {
-    nrequired = npositional = 0;
-    ignore_rest = true;
-  }
 
   while (1) {
     
-    if (nvalues == CP_VALUES_SIZE - 1)
+    if (nvalues == cp_values_size - 1)
       // no more space to store information about the arguments; break
-      return errh->error("too many arguments to cp_va_parsev!");
+      return errh->error("too many arguments to cp_va_parse!");
 
     cp_value *v = &cp_values[nvalues];
     v->argtype = 0;
@@ -2892,11 +2845,9 @@ cp_va_parsev(const Vector<String> &args,
       goto done;
 
     // find cp_argtype
-    const cp_argtype *argtype = find_argtype(command_name);
-    if (!argtype) {
-      errh->error("unknown argument type `%s'!", command_name);
-      goto done;
-    }
+    const cp_argtype *argtype = cp_find_argtype(command_name);
+    if (!argtype)
+      return errh->error("unknown argument type '%s'!", command_name);
     
     // check for special commands
     if (argtype->internal == cpiOptional) {
@@ -2943,9 +2894,82 @@ cp_va_parsev(const Vector<String> &args,
     nrequired = nvalues;
   if (npositional < 0)
     npositional = nvalues;
+  
+  return 0;
+}
+
+  
+int
+CpVaHelper::assign_keyword_argument(const String &arg)
+{
+  String keyword, rest;
+  // extract keyword
+  if (!cp_keyword(arg, &keyword, &rest))
+    return kwNoKeyword;
+  // doesn't count as a keyword if there was no accompanying data
+  // (XXX is this a great idea?)
+  if (!rest)
+    return kwNoKeyword;
+  // look for keyword value
+  for (int i = npositional; i < nvalues; i++)
+    if (keyword == cp_values[i].keyword) {
+      cp_value *val = &cp_values[i];
+      // handle special types differently
+      if (special_argtype_for_keyword(val->argtype))
+	return handle_special_argtype_for_keyword(val, rest);
+      else {
+	// do not report error if keyword used already
+	// if (cp_values[i].v.i > 0)
+	//   return kwDupKeyword;
+	val->v.i = 1;
+	val->v_string = rest;
+	return kwSuccess;
+      }
+    }
+  // no keyword found
+  return kwUnkKeyword;
+}
+
+void
+CpVaHelper::add_keyword_error(StringAccum &sa, int err, const String &arg,
+			      const char *argname, int argno)
+{
+  if (err >= 0)
+    return;
+  if (sa.length())
+    sa << ", ";
+  if (err == kwNoKeyword)
+    sa << '<' << argname << ' ' << (argno + 1) << '>';
+  else {
+    String keyword, rest;
+    (void) cp_keyword(arg, &keyword, &rest);
+    sa << keyword;
+    if (err == kwDupKeyword)
+      sa << " (duplicate keyword)";
+  }
+}
+
+int
+CpVaHelper::finish_keyword_error(const char *format, const char *bad_keywords, ErrorHandler *errh)
+{
+  StringAccum keywords_sa;
+  for (int i = npositional; i < nvalues; i++) {
+    if (i > npositional)
+      keywords_sa << ", ";
+    keywords_sa << cp_values[i].keyword;
+  }
+  errh->error(format, bad_keywords, keywords_sa.cc());
+  return -1;
+}
+
+int
+CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, ErrorHandler *errh)
+{
+  if (!cp_values || !cp_parameter_used)
+    return errh->error("out of memory in cp_va_parse");
 
   //
-  // Next, assign parameters from 'conf' to argument slots.
+  // Assign parameters from 'conf' to argument slots.
   //
   
   int npositional_supplied = 0;
@@ -2956,7 +2980,7 @@ cp_va_parsev(const Vector<String> &args,
   for (int i = 0; i < args.size(); i++) {
     // check for keyword if past mandatory positional arguments
     if (npositional_supplied >= nrequired) {
-      int result = assign_keyword_argument(args[i], npositional, nvalues);
+      int result = assign_keyword_argument(args[i]);
       if (result == kwSuccess) {
 	(*cp_parameter_used)[i] = 1;
 	any_keywords = true;
@@ -2980,7 +3004,7 @@ cp_va_parsev(const Vector<String> &args,
   
   // report keyword argument errors
   if (keyword_error_sa.length() && !keywords_only)
-    return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), npositional, nvalues, errh);
+    return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), errh);
   
   // report missing mandatory keywords
   for (int i = npositional; i < nvalues; i++)
@@ -3000,7 +3024,7 @@ cp_va_parsev(const Vector<String> &args,
       if (i == nrequired)
 	signature << (nrequired > 0 ? " [" : "[");
       if (i)
-	signature << separator;
+	signature << ", ";
       if (const cp_argtype *t = cp_values[i].argtype)
 	signature << t->description;
       else
@@ -3012,13 +3036,13 @@ cp_va_parsev(const Vector<String> &args,
       signature << "]";
     if (npositional < nvalues) {
       if (npositional)
-	signature << separator;
+	signature << ", ";
       signature << "[keywords]";
     }
 
     const char *whoops = (npositional_supplied > npositional ? "too many" : "too few");
     if (signature.length())
-      errh->error("%s %ss; expected `%s'", whoops, argname, signature.cc());
+      errh->error("%s %ss; expected '%s'", whoops, argname, signature.cc());
     else
       errh->error("expected empty %s list", argname);
     return -1;
@@ -3030,6 +3054,18 @@ cp_va_parsev(const Vector<String> &args,
   for (int i = npositional; i < nvalues; i++)
     if (cp_values[i].v.i <= 0)
       cp_values[i].argtype = 0;
+
+  return 0;
+}
+
+int
+CpVaHelper::parse_arguments(const char *argname,
+#ifndef CLICK_TOOL
+			    Element *context,
+#endif
+			    ErrorHandler *errh)
+{
+  int nerrors_in = errh->nerrors();
   
   // parse arguments
   char argname_buf[128];
@@ -3066,8 +3102,11 @@ cp_va_parsev(const Vector<String> &args,
   return nset;
 }
 
+}
+
+
 int
-cp_va_parse(const Vector<String> &conf,
+cp_va_parse(const Vector<String> &argv,
 #ifndef CLICK_TOOL
 	    Element *context,
 #endif
@@ -3075,11 +3114,12 @@ cp_va_parse(const Vector<String> &conf,
 {
   va_list val;
   va_start(val, errh);
-#ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, context, "argument", ", ", false, errh, val);
-#else
-  int retval = cp_va_parsev(conf, "argument", ", ", false, errh, val);
-#endif
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_values(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
   return retval;
 }
@@ -3093,19 +3133,20 @@ cp_va_parse(const String &confstr,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> conf;
-  cp_argvec(confstr, conf);
-#ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, context, "argument", ", ", false, errh, val);
-#else
-  int retval = cp_va_parsev(conf, "argument", ", ", false, errh, val);
-#endif
+  Vector<String> argv;
+  cp_argvec(confstr, argv);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_values(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
   return retval;
 }
 
 int
-cp_va_space_parse(const String &argument,
+cp_va_space_parse(const String &arg,
 #ifndef CLICK_TOOL
 		  Element *context,
 #endif
@@ -3113,13 +3154,14 @@ cp_va_space_parse(const String &argument,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> args;
-  cp_spacevec(argument, args);
-#ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, context, "word", ", ", false, errh, val);
-#else
-  int retval = cp_va_parsev(args, "word", ", ", false, errh, val);
-#endif
+  Vector<String> argv;
+  cp_spacevec(arg, argv);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  int retval = cpva.develop_values(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "word", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("word"  CP_PASS_CONTEXT, errh);
   va_end(val);
   return retval;
 }
@@ -3133,51 +3175,100 @@ cp_va_parse_keyword(const String &arg,
 {
   va_list val;
   va_start(val, errh);
-  Vector<String> conf;
-  conf.push_back(arg);
-#ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, context, "argument", ", ", true, errh, val);
-#else
-  int retval = cp_va_parsev(conf, "argument", ", ", true, errh, val);
-#endif
+  Vector<String> argv;
+  argv.push_back(arg);
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
+  int retval = cpva.develop_values(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(argv, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
   return retval;
 }
 
 int
-cp_va_parse_remove_keywords(Vector<String> &conf, int first,
+cp_va_parse_remove_keywords(Vector<String> &argv, int first,
 #ifndef CLICK_TOOL
 			    Element *context,
 #endif
 			    ErrorHandler *errh, ...)
 {
-  Vector<String> conf2, *confp = &conf;
+  Vector<String> conf2, *confp = &argv;
   if (first > 0) {
-    for (int i = first; i < conf.size(); i++)
-      conf2.push_back(conf[i]);
+    for (int i = first; i < argv.size(); i++)
+      conf2.push_back(argv[i]);
     confp = &conf2;
   }
   
   va_list val;
   va_start(val, errh);
-#ifndef CLICK_TOOL
-  int retval = cp_va_parsev(*confp, context, "argument", ", ", true, errh, val);
-#else
-  int retval = cp_va_parsev(*confp, "argument", ", ", true, errh, val);
-#endif
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, true);
+  int retval = cpva.develop_values(val, errh);
+  if (retval >= 0)
+    retval = cpva.assign_arguments(*confp, "argument", errh);
+  if (retval >= 0)
+    retval = cpva.parse_arguments("argument"  CP_PASS_CONTEXT, errh);
   va_end(val);
 
   // remove keywords that were used
   if (retval >= 0) {
     int delta = 0;
-    for (int i = first; i < conf.size(); i++)
+    for (int i = first; i < argv.size(); i++)
       if ((*cp_parameter_used)[i - first])
 	delta++;
       else if (delta)
-	conf[i - delta] = conf[i];
-    conf.resize(conf.size() - delta);
+	argv[i - delta] = argv[i];
+    argv.resize(argv.size() - delta);
   }
   
+  return retval;
+}
+
+int
+cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> &values)
+{
+  if (!cp_values || !cp_parameter_used || keys.size() > CP_VALUES_SIZE)
+    return -1; /*errh->error("out of memory in cp_va_parse");*/
+
+  CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
+  if (keys.size() && keys.back() == "__REST__") {
+    cpva.ignore_rest = true;
+    cpva.nvalues = keys.size() - 1;
+  } else {
+    cpva.ignore_rest = false;
+    cpva.nvalues = keys.size();
+  }
+  
+  int arg;
+  for (arg = 0; arg < cpva.nvalues && keys[arg] == ""; arg++) {
+    cp_values[arg].argtype = 0;
+    cp_values[arg].keyword = 0;
+  }
+  cpva.nrequired = cpva.npositional = arg;
+  for (; arg < cpva.nvalues; arg++) {
+    cp_values[arg].argtype = 0;
+    cp_values[arg].keyword = keys[arg].c_str();
+    cp_values[arg].v.i = -1;	// mandatory keyword
+  }
+
+  int retval = cpva.assign_arguments(argv, "argument", ErrorHandler::silent_handler());
+  if (retval >= 0) {
+    if (cpva.ignore_rest) {
+      // collect '__REST__' argument
+      StringAccum sa;
+      bool any = false;
+      for (int i = 0; i < argv.size(); i++)
+	if (!(*cp_parameter_used)[i]) {
+	  sa << (any ? ", " : "") << argv[i];
+	  any = true;
+	}
+      cp_values[cpva.nvalues].v_string = sa.take_string();
+    }
+    values.resize(keys.size());
+    for (arg = 0; arg < keys.size(); arg++)
+      values[arg] = cp_values[arg].v_string;
+  }
   return retval;
 }
 
