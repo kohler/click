@@ -562,27 +562,6 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   check_invariants();
 }
 
-#if SEQ_METRIC
-int
-DSDVRouteTable::count_seqs(const IPAddress &ip) 
-{
-  QVec<unsigned> *q = _seq_history.findp(ip);
-  if (!q)
-    return 0;
-  
-  RTEntry *r = _rtes.findp(ip);
-  if (!r)
-    return 0;
-
-  int num_seqs = 0;
-  unsigned first_seq = r->seq_no() - 2*MAX_SEQ_HISTORY;
-  // this is incorrect when the protocol starts up (seq_no < 2*MAX_SEQ_HISTORY)
-  for (int i = 0; i < q->size(); i++)
-    if (q->at(i) > first_seq)
-      num_seqs++;
-  return num_seqs;
-}
-#endif
 
 void
 DSDVRouteTable::init_metric(RTEntry &r)
@@ -631,7 +610,14 @@ DSDVRouteTable::init_metric(RTEntry &r)
 #if SEQ_METRIC
   case MetricDSDVSeqs: {
     r.metric = metric_t(r.num_hops());
-    if (count_seqs(r.dest_ip) < OLD_SEQS_NEEDED)
+    QVec<unsigned> *q = _seq_history.findp(r.dest_ip);
+    if (!q || q->size() < MAX_BCAST_HISTORY) {
+      r.metric.val += 2;
+      break;
+    }
+    dsdv_assert(q->size() == MAX_BCAST_HISTORY);
+    unsigned num_missing = q->back() - (q->front() + MAX_BCAST_HISTORY - 1);
+    if (num_missing > MAX_BCAST_HISTORY - OLD_BCASTS_NEEDED)
       r.metric.val += 2;
     break;
   }
@@ -924,23 +910,6 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   if (new_r.good() && new_r.num_hops() >_max_hops)
     return; // ignore ``non-local'' routes
 
-#if SEQ_METRIC
-  // track last few sequence numbers we heard directly from this node
-  if (was_sender) {
-    dsdv_assert(new_r.good());
-    QVec<unsigned> *q = _seq_history.findp(new_r.dest_ip);
-    if (!q) {
-      _seq_history.insert(new_r.dest_ip, QVec<unsigned>());
-      q = _seq_history.findp(new_r.dest_ip);
-    }
-    // pretend sequence numbers will never wrap around
-    if (q->size() == 0 || new_r.seq_no() > q->back())
-      q->push_back(new_r.seq_no());
-    while (q->size() > MAX_SEQ_HISTORY)
-      q->pop_front();
-  }
-#endif
-
   if (was_sender)
     init_metric(new_r);
   else if (new_r.good())
@@ -1100,6 +1069,18 @@ DSDVRouteTable::simple_action(Packet *packet)
 		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
 
   RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
+#if SEQ_METRIC
+  // track last few broadcast numbers we heard directly from this node
+  QVec<unsigned> *q = _seq_history.findp(new_r.dest_ip);
+  if (!q) {
+    _seq_history.insert(new_r.dest_ip, QVec<unsigned>());
+    q = _seq_history.findp(new_r.dest_ip);
+  }
+  unsigned bcast_num = ntohl(grid_hdr::get_pad_bytes(*gh));
+  q->push_back(bcast_num);
+  while (q->size() > MAX_BCAST_HISTORY)
+    q->pop_front();
+#endif
   handle_update(new_r, true, jiff);
   
   // update this dest's eth

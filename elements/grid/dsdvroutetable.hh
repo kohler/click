@@ -117,8 +117,8 @@ CLICK_DECLS
 #define USE_GOOD_NEW_ROUTES 1
 
 #define SEQ_METRIC 1
-#define MAX_SEQ_HISTORY 3
-#define OLD_SEQS_NEEDED 2
+#define MAX_BCAST_HISTORY 3
+#define OLD_BCASTS_NEEDED 2
 
 #define ONE_WAY_TXC_METRIC 1
 
@@ -151,12 +151,10 @@ public:
 
   void add_handlers();
   
-
 private:
 
 #if SEQ_METRIC
   BigHashMap<IPAddress, QVec<unsigned> > _seq_history;
-  int count_seqs(const IPAddress &);
 #endif
 
   struct metric_t {
@@ -351,7 +349,7 @@ private:
 
   /* latest sequence number for this node's route entry */
   unsigned int _seq_no;
-  unsigned int _bcast_count;
+  unsigned int _bcast_count;  // incremented on every broadcast
 
   /* local DSDV radius */
   unsigned int _max_hops;
