@@ -46,6 +46,8 @@ class TulipStats : public AnyDevice {
   unsigned long _oco;
   unsigned long _base_rx_missed_errors;
   unsigned long _base_rx_fifo_errors;
+  
+  unsigned long _tbusy;
 
   void stats_poll();
   static void interrupt_notifier(struct device *, unsigned);

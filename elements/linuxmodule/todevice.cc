@@ -242,7 +242,7 @@ ToDevice::tx_intr()
 #endif
  
 #if CLICK_DEVICE_ADJUST_TICKETS
-  int base = max_tickets()/16;
+  int base = tickets()/4;
   if (base < 2) base = 2;
   int adj = 0;
 

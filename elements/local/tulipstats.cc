@@ -196,6 +196,9 @@ TulipStats::stats_poll()
     _oco++;
   if (csr8 & (1 << 16))
     _mfo++;
+
+  if (_dev->tbusy)
+    _tbusy++;
 }
 
 void
@@ -216,6 +219,7 @@ TulipStats::reset_counts()
   _mfo = _oco = 0;
   _base_rx_missed_errors = _dev_stats->rx_missed_errors;
   _base_rx_fifo_errors = _dev_stats->rx_fifo_errors;
+  _tbusy = 0;
 }
 
 void
@@ -273,6 +277,8 @@ TulipStats::read_counts(Element *e, void *)
   append_line(sa, "FOC (fifo overflow ctr)", dev_stats->rx_fifo_errors - ts->_base_rx_fifo_errors);
   append_line(sa, "MFO (missed frame overflow)", ts->_mfo);
   append_line(sa, "MFC (missed frame ctr)", dev_stats->rx_missed_errors - ts->_base_rx_missed_errors);
+  sa << "\n";
+  append_line(sa, "TBZ (device xmit busy)", ts->_tbusy);
   return sa.take_string();
 }
 
