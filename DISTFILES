@@ -147,7 +147,6 @@ include/click/bighashmap.cc
 include/click/bighashmap.hh
 include/click/bighashmap_arena.hh
 include/click/click_ether.h
-include/click/click_fddi.h
 include/click/click_icmp.h
 include/click/click_icmp6.h
 include/click/click_ip.h
@@ -167,6 +166,7 @@ include/click/etheraddress.hh
 include/click/ewma.cc
 include/click/ewma.hh
 include/click/ewma64.hh
+include/click/fddi.h
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
@@ -186,6 +186,7 @@ include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
 include/click/perfctr-i586.hh
+include/click/rfc1483.h
 include/click/router.hh
 include/click/routerthread.hh
 include/click/skbmgr.hh

@@ -21,8 +21,8 @@
 #include <click/click_ip.h>
 #include <click/click_ip6.h>
 #include <click/click_ether.h>
-#include <click/click_fddi.h>
-#include <click/click_rfc1483.h>
+#include <click/fddi.h>
+#include <click/rfc1483.h>
 
 int
 fake_pcap_parse_dlt(const String &str)

@@ -3,7 +3,7 @@
 #define CLICK_FDDI_H
 
 /*
- * click_fddi.h -- our own definitions of FDDI headers
+ * <click/fddi.h> -- our own definitions of FDDI headers
  * based on a file from Linux
  */
 

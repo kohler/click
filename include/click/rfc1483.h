@@ -3,7 +3,7 @@
 #define CLICK_RFC1483_H
 
 /*
- * click_rfc1483.h
+ * <click/rfc1483.h>
  */
 
 struct click_rfc1483 {
