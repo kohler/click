@@ -224,6 +224,7 @@ PrintGrid::get_entries(grid_hello *gh)
 
     if (_verbose) {
       ret += String(" gw=") + (na->is_gateway ? "yes" : "no");
+      ret += String(" ttl=") + String(ntohl(na->ttl));
       if (na->loc_good) {
 	snprintf(buf, sizeof(buf), " loc=%s loc_err=%us",
 		 na->loc.s().cc(), ntohs(na->loc_err));
