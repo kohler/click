@@ -1,3 +1,13 @@
+2001-05-09 Wednesday 14:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* configure.in, elements/userlevel/fromdevice.cc,
+	elements/userlevel/kerneltap.cc, elements/userlevel/printold.cc,
+	include/click/clp.h, include/click/string.hh, lib/string.cc,
+	lib/task.cc, tools/run-grid-gateway,
+	tools/run-grid-gateway.openbsd, tools/run-grid-node,
+	tools/run-grid-node.openbsd: changes to get int64 types working on
+	OpenBSD
+
 2001-05-09 Wednesday 13:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click, conf/grid.click,
