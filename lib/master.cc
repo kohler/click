@@ -24,8 +24,11 @@
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
 #endif
-
 CLICK_DECLS
+
+#if CLICK_USERLEVEL && !HAVE_POLL_H
+enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
+#endif
 
 Master::Master(int nthreads)
     : _master_paused(0), _routers(0), _task_list(0, 0), _timer_list(0, 0)

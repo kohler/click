@@ -78,7 +78,6 @@ class Master { public:
 	int fd;
 	int events;
     };
-    enum { POLLIN = SELECT_READ, POLLOUT = SELECT_WRITE };
     fd_set _read_select_fd_set;
     fd_set _write_select_fd_set;
     int _max_select_fd;
