@@ -1762,9 +1762,11 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
     address_bytes = 6;
     goto address;
 
+#ifdef HAVE_IPSEC
    case cpiDesCblock:
     address_bytes = 8;
     goto address;
+#endif
    
    address: {
      unsigned char *addrstore = (unsigned char *)v->store;
@@ -2310,6 +2312,9 @@ cp_va_static_initialize()
   cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
   cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
   cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
+#ifdef HAVE_IPSEC
+  cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
+#endif
 
   cp_values = new cp_value[CP_VALUES_SIZE];
 }
