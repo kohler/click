@@ -191,6 +191,10 @@ WARNING: \`$1' is missing on your system; trying to use plain \`tex'
       export TEXINPUTS
     fi
     tex $file
+    base=`echo "$file" | sed 's/.*\/\([^/]*\)$/\1/' | sed 's/\.texi*//'`
+    indexfiles=
+    for i in cp vr fn tp pg ky; [ -f $base.$i ] && indexfiles="$base.$i $indexfiles"; done
+    [ "x$indexfiles" != x ] && texindex $indexfiles
     tex $file
     tex $file
     ;;

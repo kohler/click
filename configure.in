@@ -569,10 +569,15 @@ else
 fi
 
 AC_MSG_CHECKING(for working texi2dvi)
-dnl Assume any version of texi2dvi is OK, since we provide our own texinfo.tex
 TEXI2DVI=${TEXI2DVI-texi2dvi}
 if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
-  AC_MSG_RESULT(found)
+  dnl Search for a good version of texi2dvi
+  if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+    AC_MSG_RESULT(found)
+  else
+    MAKEINFO='$(conf_auxdir)/missing texi2dvi'
+    AC_MSG_RESULT(old)
+  fi
 else
   TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
   AC_MSG_RESULT(missing)
