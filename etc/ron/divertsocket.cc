@@ -107,18 +107,27 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int confindex = 5;
   _have_sport = _have_dport = false;
-  
+  _setup_fw = true;
 #ifdef 0
   for(int i=0; i < conf.size(); i++){
     click_chatter("  %s\n", ((String)conf[i]).cc());
   }
 #endif	
+
+  if (conf.size() == 1) {
+    if (cp_va_parse(conf[0], this, errh, cpUnsigned, "divertport", 
+		    &_divertport, cpEnd) < 0)
+      return -1;
+    _setup_fw = false;
+    return 0;
+  }
+
    
-  if (conf.size() < 6) {
+  if (conf.size() < confindex+1) {
     errh->error("not enough parameters for DivertSocket");
     return -1;
   }
-  if (conf.size() > 9) {
+  if (conf.size() > confindex+4) {
     errh->error("too many parameters for DivertSocket");
     return -1;
   }
@@ -204,16 +213,12 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
   }
 
+
   return 0;
 }
-		  
 
 int
-DivertSocket::initialize(ErrorHandler *errh) 
-{
-  int ret, n;
-  struct sockaddr_in bindPort; //, sin;
-
+DivertSocket::setup_firewall(ErrorHandler *errh) {
 
 #if defined(__FreeBSD__)
   char tmp[512];
@@ -223,49 +228,8 @@ DivertSocket::initialize(ErrorHandler *errh)
   char fw_chain[32];
 #endif
 
-#ifdef 0
-  printf("Device  : \t%s\n", _device.cc());
-  printf("DIV port: \t%u\n", _divertport);
-  printf("Rule Num: \t%u\n", _rulenumber);
-  printf("Protocol: \t%d\n", _protocol);
-  printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
-  printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
-  printf("sport   : \t%u - %u\n", _sportl, _sporth);
-  printf("dport   : \t%u - %u\n", _dportl, _dporth);
-  printf("in/out  : \t%s\n", _inout.cc());
-#endif
 
-  // Setup socket
-  _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
-  if (_fd == -1) {
-    errh->error("DivertSocket(socket): %s", strerror(errno));
-    return -1;
-  }
-  bindPort.sin_family=AF_INET;
-  bindPort.sin_port=htons(_divertport);
-  bindPort.sin_addr.s_addr=0;
-
-  // set REUSE option
-  n = 1;
-  if (setsockopt (_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&n, sizeof (n)) < 0) {
-    errh->error("could not set REUSEADDR");
-    close (_fd);
-    return -1;
-  }
-  
-  // bind to port
-  ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
-
-  if (ret != 0) {
-    close(_fd);
-    errh->error("DivertSocket(bind): %s", strerror(errno));
-    return -1;
-  }
-
-  fcntl(_fd, F_SETFL, O_NONBLOCK);
-  
-  
-  // Setup firewall
+  // Setup firewall to divert sockets
 #if defined(__FreeBSD__)
   if (_protocol == 0) 
     sprintf(prot, "ip");
@@ -384,6 +348,61 @@ DivertSocket::initialize(ErrorHandler *errh)
   
 
 #endif
+  return 0;
+}		  
+
+int
+DivertSocket::initialize(ErrorHandler *errh) 
+{
+  int ret, n;
+  struct sockaddr_in bindPort; //, sin;
+
+
+
+#ifdef 0
+  printf("Device  : \t%s\n", _device.cc());
+  printf("DIV port: \t%u\n", _divertport);
+  printf("Rule Num: \t%u\n", _rulenumber);
+  printf("Protocol: \t%d\n", _protocol);
+  printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
+  printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
+  printf("sport   : \t%u - %u\n", _sportl, _sporth);
+  printf("dport   : \t%u - %u\n", _dportl, _dporth);
+  printf("in/out  : \t%s\n", _inout.cc());
+#endif
+
+  // Setup divert socket
+  _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
+  if (_fd == -1) {
+    errh->error("DivertSocket(socket): %s", strerror(errno));
+    return -1;
+  }
+  bindPort.sin_family=AF_INET;
+  bindPort.sin_port=htons(_divertport);
+  bindPort.sin_addr.s_addr=0;
+
+  // set REUSE option
+  n = 1;
+  if (setsockopt (_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&n, sizeof (n)) < 0) {
+    errh->error("could not set REUSEADDR");
+    close (_fd);
+    return -1;
+  }
+  
+  // bind to port
+  ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
+
+  if (ret != 0) {
+    close(_fd);
+    errh->error("DivertSocket(bind): %s", strerror(errno));
+    return -1;
+  }
+
+  fcntl(_fd, F_SETFL, O_NONBLOCK);
+
+  // setup firewall
+  if (_setup_fw && (ret = setup_firewall(errh) < 0))
+    return ret;
 
   add_select(_fd, SELECT_READ);
   return 0;

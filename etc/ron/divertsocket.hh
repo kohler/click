@@ -9,6 +9,8 @@
 DivertSocket(DEVICE, DIVERTPORT, FWRULENUM, PROTOCOL, 
              SADDR/MASK, SPORT, DADDR/MASK, DPORT, [DIRECTION])
 
+DivertSocket(DIVERTPORT)
+
 =s sources
 
 =d 
@@ -18,6 +20,11 @@ parameters, and diverts matching IP packets to it's output port.
 
 DIRECTION can be either "in" or "out" for packets coming into this machine
 or going out of this machine.
+
+If the only argument is DIVERTPORT, then the firewall is not changed. Instead
+the DivertSocket simply channels packets from packets diverted to DIVERTPORT.
+In this case, the administrator must manually insert firewall rules to use the
+DivertSocket.
 
 */
 
@@ -65,7 +72,7 @@ public:
 
 
 private:
-
+  bool _setup_fw;
   bool _have_sport;
   bool _have_dport;
   
@@ -80,10 +87,11 @@ private:
   struct ip_fwuser ipfu, ipfu2;
   struct ip_fwnew ipfc, ipfc2;
 
-
   int fw_sock;
+
 #endif 
 
+  int setup_firewall(ErrorHandler *errh);
   int parse_ports(const String &param, ErrorHandler *errh, 
 		  int32_t *sportl, int32_t  *sporth);
   
