@@ -20,7 +20,7 @@
  * it is forwarded unchanged on output 0.  Output 0 should be connected to a
  * MappingCreator or similar element, which uses Rewriter's "establish_mapping"
  * method to create a mapping in the Rewriter between the new connection and
- * a given Rewriter pattern i ( 1 <= i <= n).  When a packet for the connection
+ * a given Rewriter pattern i (1 <= i <= n).  When a packet for the connection
  * is next seen, it is rewritten according to pattern i and pushed on output i.
  *
  * Input 1 is the "reverse" input.  Packets coming in on input 1 are
@@ -46,6 +46,8 @@ class Rewriter : public Element {
     IPAddress _daddr;
     short _dport;		// network byte order
 
+    Pattern *_pat;
+
     bool _used;
     bool _removed;
 
@@ -55,25 +57,29 @@ class Rewriter : public Element {
 
   public:
     Connection();
+    Connection(Packet *p);
     Connection(unsigned long sa, unsigned short sp, 
 	       unsigned long da, unsigned short dp);
-    Connection(Packet *p);
+    ~Connection() 				{ }
 
     void set(Packet *p);
 
-    operator bool() const		{ return _saddr && _daddr; }
+    operator bool() const			{ return _saddr && _daddr; }
     bool operator==(Connection &c);
 
     unsigned hashcode() const;
   
     String s() const;
-    operator String() const		{ return (s()); }
+    operator String() const			{ return (s()); }
 
-    bool used()				{ return _used; }
-    void mark_used()			{ _used = true; }
-    void reset_used()			{ _used = false; }
-    bool removed() 			{ return _removed; }
-    void remove() 			{ _removed = true; }
+    void set_pattern(Pattern *p) 		{ _pat = p; }
+    Pattern *pattern() 				{ return _pat; }
+
+    bool used()					{ return _used; }
+    void mark_used()				{ _used = true; }
+    void reset_used()				{ _used = false; }
+    bool removed() 				{ return _removed; }
+    void remove() 				{ _removed = true; }
   };
 
   class Pattern {
@@ -97,39 +103,28 @@ class Rewriter : public Element {
   public:
     Pattern();
     Pattern(int o);
+    ~Pattern() 					{ }
 
     bool initialize(String &s);
     int output() 				{ return _output; }
 
-    bool apply(Connection *in, Connection *out);
-    bool free(Connection *c);
+    bool apply(Connection &in, Connection &out);
+    bool free(Connection &c);
 
     String s() const;
-    operator String() const		{ return (s()); }
-  };
-
-  class Rewrite {
-    Connection *_c;
-    Pattern *_p;
-  public:
-    Rewrite() : _c(NULL), _p(NULL)		{ }
-    Rewrite(Connection *c, Pattern *p) 		{ _c = c; _p = p; }
-
-    Connection *connection()			{ return _c; }
-    Pattern *pattern() 				{ return _p; }
-
-    operator bool() const			{ return _c && _p; }
+    operator String() const			{ return (s()); }
   };
 
   class Mapping {
-    HashMap <Connection, Rewrite> _fwd;
+    HashMap <Connection, Connection> _fwd;
     HashMap <Connection, Connection> _rev;
 
   public:
     Mapping() : _fwd(), _rev()			{ }
+    ~Mapping()					{ }
 
     bool add(Packet *p, Pattern *pat);
-    bool apply(Packet *p, int *port);
+    bool apply(Packet *p, int &port);
     bool rapply(Packet *p);
 
     void mark_live_tcp();

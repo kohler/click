@@ -10,8 +10,6 @@
  * distribution.
  */
 
-// todo: should pattern::apply ever fail with sport=*?
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -41,19 +39,20 @@ extern struct proto tcp_prot;
 //
 
 Rewriter::Connection::Connection()
-  : _saddr(), _sport(0), _daddr(), _dport(0), _used(false), _removed(false)
+  : _saddr(), _sport(0), _daddr(), _dport(0), _pat(NULL),
+    _used(false), _removed(false)
 {
 }
 
 Rewriter::Connection::Connection(unsigned long sa, unsigned short sp, 
 				 unsigned long da, unsigned short dp)
-  : _saddr(sa), _sport(sp), _daddr(da), _dport(dp), 
+  : _saddr(sa), _sport(sp), _daddr(da), _dport(dp), _pat(NULL),
     _used(false), _removed(false)
 {
 }
 
 Rewriter::Connection::Connection(Packet *p)
-  : _used(false), _removed(false)
+  : _pat(NULL), _used(false), _removed(false)
 {
   click_ip *ip = (click_ip *)p->data();
   _saddr = IPAddress(ip->ip_src.s_addr);
@@ -67,15 +66,16 @@ Rewriter::Connection::Connection(Packet *p)
 void
 Rewriter::Connection::fix_csums(Packet *p)
 {
+  unsigned char buf[2048];
+
   click_ip *ip = (click_ip *)p->data();
 
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *)ip, ip->ip_hl << 2);
 
   int len = ntohs(ip->ip_len);
-  unsigned char *buf = new unsigned char[p->length()];
   memcpy(buf, p->data(), p->length());
-  memset(buf, '\0', 9);	// set up pseudoheader
+  memset(buf, '\0', 9);		// set up pseudoheader
 
   click_ip *iph = (click_ip *)buf;
   iph->ip_sum = htons(len - sizeof(click_ip));
@@ -207,20 +207,23 @@ Rewriter::Pattern::initialize(String &s)
 }
 
 inline bool
-Rewriter::Pattern::apply(Connection *in, Connection *out)
+Rewriter::Pattern::apply(Connection &in, Connection &out)
 {
-  out->_saddr = _saddr ? _saddr : in->_saddr;
-  out->_daddr = _daddr ? _daddr : in->_daddr;
-  out->_dport = _dport ? htons((short)_dport) : in->_dport;
+  out._saddr = _saddr ? _saddr : in._saddr;
+  out._daddr = _daddr ? _daddr : in._daddr;
+  out._dport = _dport ? htons((short)_dport) : in._dport;
+
+  in.set_pattern(this);
+  out.set_pattern(this);
 
   if (!_sporth) {
-    out->_sport = in->_sport;
+    out._sport = in._sport;
     return true;
   } else if (_sporth == _sportl) {
-    out->_sport = htons((short)_sporth);
+    out._sport = htons((short)_sporth);
     return true;
   } else if (_free.size() > 0) {
-    out->_sport = htons((short)_free.back());
+    out._sport = htons((short)_free.back());
     _free.pop_back();
     return true;
   }
@@ -228,15 +231,17 @@ Rewriter::Pattern::apply(Connection *in, Connection *out)
 }
 
 inline bool
-Rewriter::Pattern::free(Connection *c)
+Rewriter::Pattern::free(Connection &c)
 {
+  if (!_sporth)
+    return false;
   if (_sporth == _sportl)
     return false;
-  if ((!_saddr || _saddr == c->_saddr)
-      && (!_daddr || _daddr == c->_daddr)
-      && (!_dport || _dport == c->_dport)
-      && (_sportl <= c->_sport && c->_sport <= _sporth)) {
-    _free.push_back(c->_sport);
+  if ((!_saddr || _saddr == c._saddr)
+      && (!_daddr || _daddr == c._daddr)
+      && (!_dport || _dport == c._dport)
+      && (_sportl <= c._sport && c._sport <= _sporth)) {
+    _free.push_back(c._sport);
     return true;
   }
   return false;
@@ -266,34 +271,32 @@ Rewriter::Pattern::s(void) const
 bool
 Rewriter::Mapping::add(Packet *p, Pattern *pat)
 {
-  Connection *in = new Connection(p);
-  Connection *out = new Connection();
+  Connection in(p), out;
   if (!pat->apply(in, out))
     return false;
 #ifdef debugging
-  click_chatter("mapping::add inserting %s", out->s().cc());
+  click_chatter("mapping::add inserting %s", out.s().cc());
 #endif
-  _fwd.insert(*in, Rewrite(out,pat));
-  _rev.insert(*out, *in);
+  _fwd.insert(in, out);
+  _rev.insert(out, in);
   
   return true;
 }
 
 bool
-Rewriter::Mapping::apply(Packet *p, int *port)
+Rewriter::Mapping::apply(Packet *p, int &port)
 {
-  Rewrite out;
-  Connection c(p);
-  if ((out = _fwd[c])) {
-    *port = out.pattern()->output();
-    out.connection()->set(p);
+  Connection in(p), out;
+  if ((out = _fwd[in])) {
+    port = out.pattern()->output();
+    out.set(p);
 #ifdef debugging
-    click_chatter("mapping::apply applied %s", out.connection()->s().cc());
+    click_chatter("mapping::apply applied %s", out.s().cc());
 #endif
     return true;
   } else {
 #ifdef debugging
-    click_chatter("mapping::apply could not find %s", c.s().cc());
+    click_chatter("mapping::apply could not find %s", in.s().cc());
 #endif
     return false;
   }
@@ -322,9 +325,9 @@ Rewriter::Mapping::mark_live_tcp()
        sp = sp->sklist_next) {
     Connection c(sp->rcv_saddr, ntohs(sp->sport), 
 		 sp->daddr, ntohs(sp->dport));
-    Rewrite r = _fwd[c];
-    if (r)
-      r.connection()->mark_used();
+    Connection out = _fwd[c];
+    if (out)
+      out.mark_used();
   }
 
   end_bh_atomic();
@@ -336,18 +339,16 @@ void
 Rewriter::Mapping::clean()
 {
   int i = 0;
-  Connection c1;
-  Rewrite r;
-  while (_fwd.each(i, c1, r)) {
-    Pattern *p = r.pattern();
-    Connection *c2 = r.connection();
-    if (!c1.used() && !c2->used()) {
-      p->free(&c1);
-      c1.remove();
-      c2->remove();
+  Connection in, out;
+  while (_fwd.each(i, in, out)) {
+    Pattern *p = in.pattern();
+    if (!in.used() && !out.used()) {
+      p->free(in);
+      in.remove();
+      out.remove();
     } else {
-      c1.reset_used();
-      c2->reset_used();
+      in.reset_used();
+      out.reset_used();
     }
   }
 }
@@ -357,11 +358,11 @@ Rewriter::Mapping::s()
 {
   String s;
   int i = 0;
-  Connection c1;
-  Rewrite r;
+  Connection in, out;
 
-  while (_fwd.each(i, c1, r)) {
-    s += c1.s() + " ==> " + r.connection()->s() + "\n";
+  while (_fwd.each(i, in, out)) {
+    if (i > 1) s += "\n";
+    s += in.s() + " ==> " + out.s();
   }
   return s;
 }
@@ -459,8 +460,8 @@ Rewriter::uninitialize()
 void
 Rewriter::run_scheduled()
 {
-#ifdef CLICK_LINUXMODULE
-#ifdef HAVE_TCP_PROT
+#if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
+#if 0
   _mapping.mark_live_tcp();
   _mapping.clean();
   _timer.schedule_after_ms(_gc_interval_sec * 1000);
@@ -486,19 +487,19 @@ Rewriter::push(int port, Packet *p)
   if (port == 0) {
     int oport;
     if (_npat == 1) {
-      if (!_mapping.apply(p, &oport)) {
+      if (!_mapping.apply(p, oport)) {
 	if (!establish_mapping(p, 0)) {
 	  click_chatter("rewriter: out of mappings (dropping packet)"); 
 	  return;
 	}
-	_mapping.apply(p, &oport);
+	_mapping.apply(p, oport);
       }
 #ifdef debugging
       click_chatter("Table:\n%s", dump_table().cc());
 #endif
       output(oport).push(p);
     } else {
-      if (_mapping.apply(p, &oport))
+      if (_mapping.apply(p, oport))
 	output(oport).push(p);
       else
 	output(0).push(p);
@@ -529,5 +530,4 @@ Rewriter::dump_patterns()
 EXPORT_ELEMENT(Rewriter)
 
 #include "hashmap.cc"
-template class HashMap<Rewriter::Connection, Rewriter::Rewrite>;
 template class HashMap<Rewriter::Connection, Rewriter::Connection>;
