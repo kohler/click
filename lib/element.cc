@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../include/click/element.hh" -*-
+// -*- c-basic-offset: 2; related-file-name: "../include/click/element.hh" -*-
 /*
  * element.{cc,hh} -- the Element base class
  * Eddie Kohler
@@ -458,6 +458,13 @@ Element::configure_phase() const
 }
 
 int
+Element::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+  const Vector<String> &conf2(conf);
+  return configure(conf2, errh);
+}
+
+int
 Element::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh, cpEnd);
@@ -484,7 +491,7 @@ Element::can_live_reconfigure() const
 }
 
 int
-Element::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (can_live_reconfigure())
     return configure(conf, errh);
@@ -492,33 +499,49 @@ Element::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("cannot reconfigure %e live", this);
 }
 
+int
+Element::live_reconfigure(const Vector<String> &, ErrorHandler *)
+{
+  assert(0);
+  return -1;
+}
+
 void
 Element::take_state(Element *, ErrorHandler *)
 {
 }
 
+
+// used by configuration() and reconfigure_handler()
+static int store_default_configuration;
+static int was_default_configuration;
+
 void
-Element::configuration(Vector<String> &conf, bool *store_got_default) const
+Element::configuration(Vector<String> &conf) const
 {
-    // User configuration() methods should generally ignore the "bool *"
-    // argument.
-    if (store_got_default) {
-	conf.push_back(router()->default_configuration_string(eindex()));
-	*store_got_default = true;
-    } else
-	cp_argvec(router()->default_configuration_string(eindex()), conf);
+  // Handle configuration(void) requests specially by preserving whitespace.
+  String s = router()->default_configuration_string(eindex());
+  if (store_default_configuration)
+    conf.push_back(s);
+  else
+    cp_argvec(s, conf);
+  was_default_configuration = 1;
+}
+
+void
+Element::configuration(Vector<String> &conf, bool *) const
+{
+  configuration(conf);
 }
 
 String
 Element::configuration() const
 {
-    Vector<String> conf;
-    bool got_default = false;
-    configuration(conf, &got_default);
-    if (got_default)
-	return conf[0];
-    else
-	return cp_unargvec(conf);
+  store_default_configuration = 1;
+  Vector<String> conf;
+  configuration(conf);
+  store_default_configuration = 0;
+  return cp_unargvec(conf);
 }
 
 
@@ -762,56 +785,50 @@ Element::read_keyword_handler(Element *element, void *thunk)
 
 static int
 reconfigure_handler(const String &arg, Element *e,
-		    int argno, const char *keyword, bool set_default,
-		    ErrorHandler *errh)
+		    int argno, const char *keyword, ErrorHandler *errh)
 {
   Vector<String> conf;
-  e->configuration(conf, 0);
+  was_default_configuration = 0;
+  e->configuration(conf);
 
-  if (keyword)
+  if (keyword) {
+    if (was_default_configuration)
+      return errh->error("can't use reconfigure_keyword_handler with default configuration() method");
     conf.push_back(String(keyword) + " " + arg);
-  else {
+  } else {
     while (conf.size() <= argno)
       conf.push_back(String());
     conf[argno] = cp_uncomment(arg);
   }
-    
+
+  // create new configuration before calling live_reconfigure(), in case it
+  // mucks with the 'conf' array
+  String new_config;
+  if (keyword)
+    new_config = String::stable_string("/* dynamically reconfigured */");
+  else
+    new_config = cp_unargvec(conf);
+  
   if (e->live_reconfigure(conf, errh) < 0)
     return -EINVAL;
-  else if (set_default) {
-    String confstr = cp_unargvec(conf);
-    e->router()->set_default_configuration_string(e->eindex(), confstr);
+  else {
+    e->router()->set_default_configuration_string(e->eindex(), new_config);
     return 0;
-  } else
-    return 0;
+  }
 }
 
 int
 Element::reconfigure_positional_handler(const String &arg, Element *e,
 					void *thunk, ErrorHandler *errh)
 {
-  return reconfigure_handler(arg, e, (int)thunk, 0, true, errh);
+  return reconfigure_handler(arg, e, (int)thunk, 0, errh);
 }
 
 int
 Element::reconfigure_keyword_handler(const String &arg, Element *e,
 				     void *thunk, ErrorHandler *errh)
 {
-  return reconfigure_handler(arg, e, -1, (const char *)thunk, true, errh);
-}
-
-int
-Element::reconfigure_positional_handler_2(const String &arg, Element *e,
-					  void *thunk, ErrorHandler *errh)
-{
-  return reconfigure_handler(arg, e, (int)thunk, 0, false, errh);
-}
-
-int
-Element::reconfigure_keyword_handler_2(const String &arg, Element *e,
-				       void *thunk, ErrorHandler *errh)
-{
-  return reconfigure_handler(arg, e, -1, (const char *)thunk, false, errh);
+  return reconfigure_handler(arg, e, -1, (const char *)thunk, errh);
 }
 
 int

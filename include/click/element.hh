@@ -62,8 +62,11 @@ class Element { public:
   
   const Port &input(int) const;
   const Port &output(int) const;
+
+  bool input_is_push(int) const;
   bool input_is_pull(int) const;
   bool output_is_push(int) const;
+  bool output_is_pull(int) const;
   
   void checked_output_push(int, Packet *) const;
 
@@ -76,17 +79,16 @@ class Element { public:
   virtual void notify_ninputs(int);
   virtual void notify_noutputs(int);
   virtual int configure_phase() const;
-  virtual int configure(const Vector<String> &, ErrorHandler *);
+  virtual int configure(Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();
 
   // LIVE RECONFIGURATION
-  virtual void configuration(Vector<String> &, bool *) const;
-  void configuration(Vector<String> &v) const	{ configuration(v, 0); }
+  virtual void configuration(Vector<String> &) const;
   String configuration() const;
   
   virtual bool can_live_reconfigure() const;
-  virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
+  virtual int live_reconfigure(Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);
 
   // HANDLERS
@@ -100,8 +102,6 @@ class Element { public:
   static String read_keyword_handler(Element *, void *);
   static int reconfigure_positional_handler(const String &, Element *, void *, ErrorHandler *);
   static int reconfigure_keyword_handler(const String &, Element *, void *, ErrorHandler *);
-  static int reconfigure_positional_handler_2(const String &, Element *, void *, ErrorHandler *);
-  static int reconfigure_keyword_handler_2(const String &, Element *, void *, ErrorHandler *);
   
   virtual int llrpc(unsigned command, void *arg);
   virtual int local_llrpc(unsigned command, void *arg);
@@ -175,6 +175,11 @@ class Element { public:
   };
 
  private:
+
+  // deprecated methods
+  virtual int configure(const Vector<String> &, ErrorHandler *);
+  virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
+  virtual void configuration(Vector<String> &, bool *) const;
   
   static const int INLINE_PORTS = 4;
 
@@ -223,9 +228,21 @@ Element::output_is_push(int o) const
 }
 
 inline bool
+Element::output_is_pull(int o) const
+{
+  return o >= 0 && o < noutputs() && !_outputs[o].allowed();
+}
+
+inline bool
 Element::input_is_pull(int i) const
 {
   return i >= 0 && i < ninputs() && _inputs[i].allowed();
+}
+
+inline bool
+Element::input_is_push(int i) const
+{
+  return i >= 0 && i < ninputs() && !_inputs[i].allowed();
 }
 
 #if CLICK_STATS >= 2
