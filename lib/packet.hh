@@ -49,8 +49,6 @@ class Packet {
   static Packet *make(int, int, int);
   void alloc_data(unsigned, unsigned, unsigned);
 #endif
-  static unsigned default_headroom() { return 24; }
-  static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
 
   Packet *uniqueify_copy();
 
@@ -64,6 +62,8 @@ class Packet {
   friend class ShutUpCompiler;
   
  public:
+  static unsigned default_headroom() { return 24; }
+  static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
   
   static Packet *make(unsigned);
   static Packet *make(const char *, unsigned);

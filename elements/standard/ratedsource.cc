@@ -59,10 +59,13 @@ RatedSource::configure(const String &conf, ErrorHandler *errh)
 int
 RatedSource::initialize(ErrorHandler *errh)
 {
+  unsigned int headroom = 14+20+8;
   _total_sent = 0;
   _total = _time * _persec;
   _ngap = 1000000000 / _persec;
-  _packet = Packet::make(_data.data(), _data.length());
+  _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
+      			 _data.length(), 
+			 Packet::default_tailroom(_data.length()));
   ScheduleInfo::join_scheduler(this, errh);
 
   click_gettimeofday(&_tv1); 
@@ -104,7 +107,7 @@ RatedSource::run_scheduled()
     reschedule();
     return;
   }
-  router()->please_stop_driver();
+  // router()->please_stop_driver();
 }
 
 static String
