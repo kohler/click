@@ -41,7 +41,7 @@ print "// This IP:\t", $meIP, "\n";
 print "// This HW:\t", $meHW, "\n";
 print "// GW IP:  \t", $gwIP, "\n";
 for($i=0; $i<$n; $i++) {
-    print "// Server", $i, ":\t", $servers[$i], "\n";
+    print "// Server", $i+2, ":\t", $servers[$i], "\n";
 }
 
 print "\n";
@@ -49,6 +49,7 @@ print "\n";
 #-------------------------------------------------------------------------------
 
 print "require(ron);\n";
+print "ChangeUID(32767, 100);\n";
 print "\n";
 
 print "iprw :: IPRewriter(pattern - - - - 0 1,\n";

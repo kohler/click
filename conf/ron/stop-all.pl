@@ -52,22 +52,22 @@ sub main {
 	}
 
 	printf stderr  "Working on $name[$i]\n";
-	printf stderr  " stoping traceroute ";
+	printf stderr  " stoping traceroute\n";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-traceroute.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	printf stderr  " stoping server ";
+	printf stderr  " stoping server\n";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-server.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	printf stderr  " stoping client ";
+	printf stderr  " stoping client\n";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-client.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	printf stderr  " stoping datacollection ";
+	printf stderr  " stoping datacollection\n";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-datacollect.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);

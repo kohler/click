@@ -38,7 +38,7 @@ sub main {
 		    pop @name;
 		}
 	    } else {
-		print "Sytax error at line $line_num\n";
+		#print "Sytax error at line $line_num\n";
 	    }
 	}
 
@@ -51,30 +51,36 @@ sub main {
 	    $n = $1;
 	}
 
-	print "Working on $name[$i]\n";
-	print " starting traceroute\n";
+	printf stderr "Working on $name[$i]\n";
+	printf stderr " starting traceroute ";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-traceroute.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	print " starting server\n";
+	printf stderr " starting server ";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-server.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	print " starting client\n";
+	printf stderr " starting client ";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-client.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	print " starting datacollection\n";
+	sleep 1;
+    }
+
+    for($i=0; $i<scalar(@name); $i++) {
+	$n = $name[$i];
+	if ($name[$i] =~ /(\S+).ron.lcs.mit.edu/) {
+	    $n = $1;
+	}
+	printf stderr "Working on $name[$i]\n";
+	printf stderr " starting datacollection ";
 	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-datacollect.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
-
-
-	sleep 1;
-	
+    sleep 1;
     }
 }
 

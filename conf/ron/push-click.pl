@@ -44,31 +44,17 @@ sub main {
 
     }
 
-    
-    # Push click & datacollection scripts to each node
-    #  tar up click & datacollection
     print "tarring up click\n";
     $command = "tar czf /tmp/click.tgz -C /home/am0/yipal/ron click-export";
     @args = ("tcsh", "-c", $command);
     system(@args);
 
-    print "Tarring up datacollection\n";
-    $command = "tar czf /tmp/datacollection.tgz -C /home/am0/yipal/ron datacollection-export";
-    @args = ("tcsh", "-c", $command);
-    system(@args);
-
-
     for($i=0; $i<scalar(@name); $i++) {
 	print "Working on $name[$i]\n";
 	# commands of this form: 
 	#   cat /tmp/click.tgz | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
-	#   cat /tmp/datacollection.tgz | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
 
 	$command = "cat /tmp/click.tgz | ssh $name[$i] -l ron tar xzf - -C yipal/";
-	@args = ("tcsh", "-c", $command);
-	system(@args);
-
-	$command = "cat /tmp/datacollection.tgz | ssh $name[$i] -l ron tar xzf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
@@ -79,10 +65,6 @@ sub main {
     # remove temporary tar files
     print "Removing click.tgz\n";
     @args = ("rm", "/tmp/click.tgz");
-    system(@args);
-
-    print "Removing datacollection.tgz\n";
-    @args = ("rm", "/tmp/datacollection.tgz");
     system(@args);
 }
 

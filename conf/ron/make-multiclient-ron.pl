@@ -41,7 +41,7 @@ print "// This IP:\t", $meIP, "\n";
 print "// This HW:\t", $meHW, "\n";
 print "// GW IP:  \t", $gwIP, "\n";
 for($i=0; $i<$n; $i++) {
-    print "// Server", $i, ":\t", $servers[$i], "\n";
+    print "// Server", $i + 2, ":\t", $servers[$i], "\n";
 }
 
 print "\n";
@@ -56,6 +56,14 @@ print "elementclass SYNACKPrinter\n";
 print "\t{ipc :: IPClassifier (tcp opt syn and tcp opt ack, -);\n";
 print "\t\tinput -> ipc;\n";
 print "\t\tipc[0] -> PrintTime(SYNACK) -> output;\n";
+print "\t\tipc[1] -> output;\n";
+print "\t};\n";
+print "\n";
+
+print "elementclass SYNPrinter\n";
+print "\t{ipc :: IPClassifier (tcp opt syn, -);\n";
+print "\t\tinput -> ipc;\n";
+print "\t\tipc[0] -> PrintTime(SYN) -> output;\n";
 print "\t\tipc[1] -> output;\n";
 print "\t};\n";
 print "\n";
@@ -81,6 +89,12 @@ print "\t-> KernelTap(1.0.0.1/255.255.255.0)\n";
 print "\t-> Discard;\n";
 print "synacks :: SYNACKPrinter[0]\n";
 print "\t-> toktap;\n";
+print "\n";
+
+for($i=1; $i<$n+2; $i++) {
+    print "switch$i :: Switch(0) -> Discard\n";
+    print "switch$i [1] -> synacks\n";
+}
 print "\n";
 
 print "setgw :: SetIPAddress(", $gwIP, ");\n";
@@ -111,6 +125,7 @@ print "\t-> SetIPChecksum\n";
 print "\t-> sOut[1]\n";
 print "\t-> CheckIPHeader\n";
 print "\t-> GetIPAddress(16)\n";
+print "\t-> SYNPrinter\n";
 print "\t-> [0]iprw;\n";
 print "\n";
 
@@ -133,6 +148,7 @@ print "// ------------- Divert Sockets ---------------\n";
 print "\n";
 
 for($i=0; $i<$n; $i++) {
+    my $funk = $i + 2;
     print "neighborclass[", $i, "]\n";
     print "\t-> StripIPHeader\n";
     print "\t-> Strip(8)\n";
@@ -141,7 +157,7 @@ for($i=0; $i<$n; $i++) {
     print "\t-> IPReassembler\n";
     print "\t-> CheckIPHeader\n";
     print "\t-> GetIPAddress(16)\n";
-    print "\t-> synacks;\n";
+    print "\t-> switch$funk;\n";
     print "\n";
 }
 
@@ -150,7 +166,7 @@ print "\t-> toktap;\n";
 print "\n";
 
 print "iprw[0] -> [0]bigswitch;\n";
-print "iprw[1] -> synacks;\n";
+print "iprw[1] -> switch1;\n";
 print "iprw[2] //-> Print(OUTSIDE-IN,40)\n";
 print "\t-> toktap;\n";
 print "iprw[3] //-> Print(OUTSIDE-OUT,40)\n";

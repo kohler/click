@@ -18,9 +18,11 @@ sub main {
 
     # Read in node list
     while($line = scalar(@ARGV) < 1? <STDIN> : <NODELIST>) {
+
 	$line_num++;
-	if ($line =~ /(.*)\#?/) {
-	    if ($1 =~ /(\S+)\s+([\d\.]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(I2?)/) {
+	#if (1 || $line !=~ /\#/) {
+	if ($line =~ /(\S+)\s+([\d\.]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(I2?)/) {
+		print "adding $5\n";
 		push @device, $1;
 		push @ip, $2;
 		push @hw, $3;
@@ -38,7 +40,7 @@ sub main {
 		$5 =~ /(\S+).ron.lcs.mit.edu/;
 		push @name, $1;
 	    } 
-	}
+	#}
 
     }
 
@@ -51,7 +53,8 @@ sub main {
 		$s = "$s$ip[$j] ";
 	    }
 	}
-	$s = "$s> ";
+	#$s = "$s> ";
+	$s = "$s 18.26.4.89 > ";
 	$s = "$s$name[$i]-server.conf";
 	@args = ("tcsh", "-c", $s);
 	system(@args);
