@@ -157,6 +157,8 @@ class AggregateIP : public Element { public:
 	int apply_mask(uint32_t, const char *, ErrorHandler *);
 	
     };
+
+    struct ChunkMap;
     
   private:
 

@@ -13,9 +13,14 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-static HashMap<String, int> *chunkmap;
-static Vector<AggregateIP::Field> chunks;
-static Vector<int> chunk_next;
+struct AggregateIP::ChunkMap {
+    HashMap<String, int> map;
+    Vector<Field> chunks;
+    Vector<int> chunk_next;
+    ChunkMap()			: map(-1) { }
+};
+
+static AggregateIP::ChunkMap *chunkmap;
 
 #define AG_NONE			0
 #define AG_IP			1
@@ -28,18 +33,19 @@ static Vector<int> chunk_next;
 static void
 add_chunk(const String &name, const AggregateIP::Field &f)
 {
-    int n = (*chunkmap)[name];
-    int i = chunks.size();
-    chunks.push_back(f);
-    chunk_next.push_back(n);
-    chunkmap->insert(name, i);
+    int n = chunkmap->map[name];
+    int i = chunkmap->chunks.size();
+    chunkmap->chunks.push_back(f);
+    chunkmap->chunk_next.push_back(n);
+    chunkmap->map.insert(name, i);
 }
 
 void
 AggregateIP::Field::initialize_wordmap()
 {
-    if (chunkmap) delete chunkmap;
-    chunkmap = new HashMap<String, int>(-1);
+    if (chunkmap)
+	delete chunkmap;
+    chunkmap = new ChunkMap;
 
     add_chunk("vers",	Field(AG_IP, 0*8, 4));
     add_chunk("hl",	Field(AG_IP, 0*8+4, 4));
@@ -129,12 +135,12 @@ AggregateIP::Field::unparse_type() const
 int
 AggregateIP::Field::add_word(String name, ErrorHandler *errh)
 {
-    int i = (*chunkmap)[name];
+    int i = chunkmap->map[name];
     int found = -1;
     int found_any = 0;
 
-    for (; i >= 0; i = chunk_next[i], found_any++) {
-	const Field &f = chunks[i];
+    for (; i >= 0; i = chunkmap->chunk_next[i], found_any++) {
+	const Field &f = chunkmap->chunks[i];
 	if (_type != AG_NONE && _type != f._type)
 	    continue;
 	if (_type == AG_TRANSP && !protos_compatible(f._proto, _proto))
@@ -147,10 +153,10 @@ AggregateIP::Field::add_word(String name, ErrorHandler *errh)
 
     // found unique?
     if (found >= 0) {
-	_type = chunks[found]._type;
-	_proto = chunks[found]._proto;
-	_offset = chunks[found]._offset;
-	_length = chunks[found]._length;
+	_type = chunkmap->chunks[found]._type;
+	_proto = chunkmap->chunks[found]._proto;
+	_offset = chunkmap->chunks[found]._offset;
+	_length = chunkmap->chunks[found]._length;
 	return 0;
     }
 
@@ -162,8 +168,8 @@ AggregateIP::Field::add_word(String name, ErrorHandler *errh)
 
     // hard errors: develop list of valid words
     StringAccum sa;
-    for (i = (*chunkmap)[name]; i >= 0; i = chunk_next[i]) {
-	const Field &f = chunks[i];
+    for (i = chunkmap->map[name]; i >= 0; i = chunkmap->chunk_next[i]) {
+	const Field &f = chunkmap->chunks[i];
 	if (_type != AG_NONE && _type != f._type && found != -1)
 	    continue;
 	if (_type == AG_TRANSP && found == -2 && !protos_compatible(f._proto, _proto))
@@ -328,8 +334,8 @@ AggregateIP::Field::unparse(StringAccum &sa) const
 
     // look for corresponding chunk
     int found = -1;
-    for (int i = 0; i < chunks.size() && found < 0; i++) {
-	const Field &f = chunks[i];
+    for (int i = 0; i < chunkmap->chunks.size() && found < 0; i++) {
+	const Field &f = chunkmap->chunks[i];
 	if (_type == f._type && _offset >= f._offset
 	    && _offset + _length <= f._offset + f._length
 	    && (_type != AG_TRANSP || protos_compatible(_proto, f._proto)))
@@ -337,10 +343,10 @@ AggregateIP::Field::unparse(StringAccum &sa) const
     }
 
     if (found >= 0) {
-	HashMap<String, int>::iterator iter = chunkmap->begin();
+	HashMap<String, int>::iterator iter = chunkmap->map.begin();
 	for (; iter; iter++)
 	    if (iter.value() == found) {
-		const Field &f = chunks[found];
+		const Field &f = chunkmap->chunks[found];
 		sa << ' ' << iter.key();
 		if (_offset == f._offset && _length == f._length)
 		    /* nada */;

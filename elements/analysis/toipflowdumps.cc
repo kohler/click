@@ -31,6 +31,17 @@
 #include "elements/analysis/toipsumdump.hh"
 CLICK_DECLS
 
+#ifdef i386
+# define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
+# define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
+# define PUT2NET(p, d)	*reinterpret_cast<uint16_t *>((p)) = (d)
+#else
+# define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
+# define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
+# define PUT2NET(p, d)	do { uint16_t d__ = ntohs((d)); (p)[0] = d__>>8; (p)[1] = d__; } while (0)
+#endif
+#define PUT1(p, d)	((p)[0] = (d))
+
 ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 			  bool absolute_time, bool absolute_seq,
 			  bool binary, bool opt)
@@ -87,48 +98,49 @@ static const char * const tcp_flags_word = "FSRPAUEW";
 void
 ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 {
-    char buf[30];
+    union {
+	uint32_t u[7];
+	char c[30];
+    } buf;
     int pi = 0, ni = 0;
     const uint16_t *opt = reinterpret_cast<const uint16_t *>(_opt_info.data());
     const uint16_t *end_opt = opt + (_opt_info.length() / 2);
     
     while (pi < _npkt || ni < _nnote)
 	if (ni >= _nnote || _note[ni].before_pkt > pi) {
-	    *(reinterpret_cast<uint32_t *>(buf + 4)) = ntohl(_pkt[pi].timestamp.tv_sec);
-	    *(reinterpret_cast<uint32_t *>(buf + 8)) = ntohl(_pkt[pi].timestamp.tv_usec);
-	    *(buf + 12) = _pkt[pi].direction;
+	    buf.u[1] = ntohl(_pkt[pi].timestamp.tv_sec);
+	    buf.u[2] = ntohl(_pkt[pi].timestamp.tv_usec);
+	    buf.c[12] = _pkt[pi].direction;
 	    if (_ip_p == IP_PROTO_TCP) {
-		*(buf + 13) = _pkt[pi].th_flags;
-		*(reinterpret_cast<uint32_t *>(buf + 16)) = ntohl(_pkt[pi].th_seq);
-		*(reinterpret_cast<uint32_t *>(buf + 20)) = ntohl(_pkt[pi].payload_len);
-		*(reinterpret_cast<uint32_t *>(buf + 24)) = ntohl(_pkt[pi].th_ack);
-		*(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(28 >> 2);
-		sa.append(buf, 28);
+		buf.c[13] = _pkt[pi].th_flags;
+		PUT4NET(buf.c + 14, _pkt[pi].th_seq);
+		PUT4NET(buf.c + 18, _pkt[pi].payload_len);
+		PUT4NET(buf.c + 22, _pkt[pi].th_ack);
+		buf.u[0] = ntohl(26);
+		sa.append(&buf.c[0], 26);
 
 		if (opt < end_opt && opt[0] == pi) {
-		    int original_pos = sa.length() - 28;
+		    int original_pos = sa.length() - 26;
 		    ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], ToIPSummaryDump::DO_TCPOPT_MSS | ToIPSummaryDump::DO_TCPOPT_WSCALE | ToIPSummaryDump::DO_TCPOPT_SACK, sa);
-		    int want_len = (sa.length() - original_pos + 3) & ~3;
-		    sa.append("\0\0\0", (original_pos + want_len) - sa.length());
-		    *(reinterpret_cast<uint32_t *>(sa.data() + original_pos)) = ntohl(want_len >> 2);
+		    PUT4NET(sa.data() + original_pos, sa.length() - original_pos);
 		    opt += 2 + (opt[1] / 2);
 		}
 		
 	    } else {
-		*(reinterpret_cast<uint32_t *>(buf + 16)) = ntohl(_pkt[pi].payload_len);
-		*(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(20);
-		sa.append(buf, 20);
+		PUT4NET(buf.c + 13, _pkt[pi].th_seq);
+		buf.u[0] = ntohl(17);
+		sa.append(&buf.c[0], 17);
 	    }
 
 	    pi++;
 	} else {
 	    int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
-	    int record_len = (4 + (len + 2) + 3) & ~3;
-	    *(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(record_len | 0x80000000U);
-	    *(buf + 4) = '#';
-	    sa.append(buf, 5);
+	    int record_len = (4 + len + 2);
+	    buf.u[0] = ntohl(record_len | 0x80000000U);
+	    buf.c[4] = '#';
+	    sa.append(&buf.c[0], 5);
 	    sa.append(_note_text.data() + _note[ni].pos, len);
-	    sa.append("\n\0\0\0", record_len - (len + 5));
+	    sa.append("\n", 1);
 	    ni++;
 	}
 }
@@ -170,12 +182,8 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	    sa << "!firstseq < " << _first_seq[1] << '\n';
 	if (timerisset(&_first_timestamp))
 	    sa << "!firsttime " << _first_timestamp << '\n';
-	if (_binary) {
-	    sa << "!binary";
-	    if ((sa.length() & 3) != 3)
-		sa.append("   ", 3 - (sa.length() & 3));
-	    sa << '\n';
-	}
+	if (_binary)
+	    sa << "!binary\n";
     }
 
     if (_binary)
@@ -686,5 +694,5 @@ ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel ToIPSummaryDump)
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ToIPFlowDumps)
