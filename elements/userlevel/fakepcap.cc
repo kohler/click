@@ -38,6 +38,8 @@ fake_pcap_parse_dlt(const String &str)
 	return FAKE_DLT_ATM_RFC1483;
     else if (str == "802.11")
 	return FAKE_DLT_IEEE802_11;
+    else if (str == "SLL")
+	return FAKE_DLT_LINUX_SLL;
     else if (str == "AIRONET")
 	return FAKE_DLT_AIRONET_HEADER;
     else
@@ -58,6 +60,8 @@ fake_pcap_unparse_dlt(int dlt)
 	return "ATM";
       case FAKE_DLT_IEEE802_11:
 	return "802.11";
+      case FAKE_DLT_LINUX_SLL:
+	return "SLL";
       case FAKE_DLT_AIRONET_HEADER:
 	return "AIRONET";
       default:
@@ -71,7 +75,8 @@ bool
 fake_pcap_dlt_force_ipable(int dlt)
 {
     return (dlt == FAKE_DLT_RAW || dlt == FAKE_DLT_EN10MB
-	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483);
+	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483
+	    || dlt == FAKE_DLT_LINUX_SLL);
 }
 
 #if HAVE_INDIFFERENT_ALIGNMENT
@@ -126,6 +131,22 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	      && memcmp(rh->snap, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) == 0
 	      && IP_ETHERTYPE(rh->ether_type))
 	      iph = (const click_ip *) (rh + 1);
+	  break;
+      }
+
+      case FAKE_DLT_LINUX_SLL: {
+	  CLICK_SIZE_PACKED_STRUCTURE(
+	  struct linux_sll {,
+	      uint16_t sll_pkttype;
+	      uint16_t sll_hatype;
+	      uint16_t sll_halen;
+	      uint8_t sll_addr[8];
+	      uint16_t sll_protocol;
+	  });
+	  const linux_sll *sllh = (const linux_sll *) p->data();
+	  if (p->length() >= sizeof(linux_sll) &&
+	      IP_ETHERTYPE(sllh->sll_protocol))
+	      iph = (const click_ip *)(sllh + 1);
 	  break;
       }
       
