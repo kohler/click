@@ -165,7 +165,7 @@ RouterThread::driver()
       // run task requests
       if (_taskreq_ops.size())
 	process_task_requests();
-    
+
       // run occasional tasks: timers, select, etc.
       iter++;
       if (iter % DRIVER_ITER_ANY == 0)
