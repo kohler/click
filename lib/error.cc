@@ -210,12 +210,21 @@ do_number_flags(char *pos, char *after_last, int base, int flags,
 }
 
 String
-ErrorHandler::make_text(Seriousness, const char *s, va_list val)
+ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 {
   StringAccum msg;
+
   char numbuf[NUMBUF_SIZE];	// for numerics
-  String placeholder;		// to ensure temporaries aren't destroyed
   numbuf[NUMBUF_SIZE-1] = 0;
+
+  String placeholder;		// to ensure temporaries aren't destroyed
+
+  // prepend 'warning: ' to every line if appropriate
+  String begin_lines;
+  if (seriousness >= ERR_MIN_WARNING && seriousness < ERR_MIN_ERROR) {
+    begin_lines = String::stable_string("warning: ", 9);
+    msg << begin_lines;
+  }
   
   // declare and initialize these here to make gcc shut up about possible 
   // use before initialization
@@ -227,12 +236,23 @@ ErrorHandler::make_text(Seriousness, const char *s, va_list val)
   while (1) {
     
     const char *pct = strchr(s, '%');
+
+    // handle begin_lines
+    const char *nl;
+    while (begin_lines && (nl = strchr(s, '\n')) && (!pct || nl < pct)) {
+      msg.append(s, nl + 1 - s);
+      if (nl[1])
+	msg.append(begin_lines.data(), begin_lines.length());
+      s = nl + 1;
+    }
+    
     if (!pct) {
-      if (*s) msg << s;
+      if (*s)
+	msg << s;
       break;
     }
     if (pct != s) {
-      memcpy(msg.extend(pct - s), s, pct - s);
+      msg.append(s, pct - s);
       s = pct;
     }
     
@@ -467,16 +487,10 @@ ErrorHandler::make_text(Seriousness, const char *s, va_list val)
 }
 
 String
-ErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+ErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
 {
-  String new_text;
+  String new_text = text;
   
-  // prepend 'warning: ' to every line if appropriate
-  if (seriousness >= ERR_MIN_WARNING && seriousness < ERR_MIN_ERROR)
-    new_text = prepend_lines("warning: ", text, true);
-  else
-    new_text = text;
-
   // handle landmark
   if (landmark
       && !(landmark.length() > 2 && landmark[0] == '\\'
@@ -524,7 +538,7 @@ ErrorHandler::set_error_code(int)
 }
 
 String
-ErrorHandler::prepend_lines(const String &prepend, const String &text, bool inside_space)
+ErrorHandler::prepend_lines(const String &prepend, const String &text)
 {
   if (!prepend)
     return text;
@@ -532,14 +546,11 @@ ErrorHandler::prepend_lines(const String &prepend, const String &text, bool insi
   StringAccum sa;
   const char *begin = text.begin();
   const char *end = text.end();
-  const char *space, *nl;
   while (begin < end) {
-    nl = find(begin, end, '\n');
-    for (space = begin; inside_space && space < nl && isspace((unsigned char) *space); space++)
-      /* do nothing */;
+    const char *nl = find(begin, end, '\n');
     if (nl < end)
       nl++;
-    sa << text.substring(begin, space) << prepend << text.substring(space, nl);
+    sa << prepend << text.substring(begin, nl);
     begin = nl;
   }
   
