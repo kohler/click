@@ -47,10 +47,21 @@ IPAddress
 IPAddress::make_prefix(int prefix)
 {
   assert(prefix >= 0 && prefix <= 32);
-  unsigned umask = 0;
+  u_int32_t umask = 0;
   if (prefix > 0)
     umask = 0xFFFFFFFFU << (32 - prefix);
   return IPAddress(htonl(umask));
+}
+
+int
+IPAddress::mask_to_prefix_bits() const
+{
+  u_int32_t host_addr = ntohl(_addr);
+  u_int32_t umask = 0xFFFFFFFFU;
+  for (int i = 32; i >= 0; i--, umask <<= 1)
+    if (host_addr == umask)
+      return i;
+  return -1;
 }
 
 String

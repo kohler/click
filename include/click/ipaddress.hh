@@ -5,7 +5,7 @@
 
 class IPAddress {
   
-  unsigned _addr;
+  u_int32_t _addr;
   
  public:
   
@@ -27,6 +27,7 @@ class IPAddress {
   const unsigned char *data() const;
   
   unsigned hashcode() const	{ return _addr; }
+  int mask_to_prefix_bits() const;
 
   IPAddress &operator&=(IPAddress);
   IPAddress &operator|=(IPAddress);
