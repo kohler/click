@@ -163,7 +163,7 @@ ECNQueue::bubble_up(Packet *p_in)
 	struct timeval now;
 	click_gettimeofday(&now);
 	StringAccum sa;
-	sa << "TokenQueue " << now;
+	sa << "ECNQueue " << now;
 	sa << " drop";
 	sa << " pk->seq " << pk->data_seq();
 	sa << path_to_string(nfo->_p);

@@ -83,7 +83,7 @@ public:
 		   int fwd_11, int rev_11
 		   ); 
 
-  int ETTMetric::get_delivery_rate(int rate, IPAddress from, IPAddress to);
+  int get_delivery_rate(int rate, IPAddress from, IPAddress to);
 
   int get_tx_rate(EtherAddress);
   void get_rate_and_tput(int *tput, int *rate, 

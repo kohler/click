@@ -12,6 +12,7 @@
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
 #include "flashflood.hh"
+//#include "ettmetric.hh"
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
@@ -50,6 +51,8 @@ CLICK_DECLS
  */
 
 
+class ETTMetric;
+
 class FlashFlood : public Element {
  public:
   
@@ -86,12 +89,13 @@ private:
     bool _originated; /* this node started the bcast */
     Packet *_p;
     int _num_rx;
+    int _num_tx;
     struct timeval _first_rx;
-    bool _forwarded;
+    bool _sent;
     Timer *t;
     struct timeval _to_send;
 
-    IPProbMap _neighbors;
+    IPProbMap _node_to_prob;
 
     void del_timer() {
       if (t) {
@@ -112,6 +116,9 @@ private:
 
   EtherAddress _bcast;
 
+
+  ETTMetric *_ett_metric;
+
   bool _debug;
 
 
@@ -119,14 +126,13 @@ private:
   int _packets_tx;
   int _packets_rx;
 
-  int _count;
-  int _max_delay_ms;
-
   int _history;
-
+  int _min_p;
   void forward(Broadcast *bcast);
   void forward_hook();
   void trim_packets();
+  void update_probs(IPAddress ip, Broadcast *bcast);
+  void reschedule_bcast(Broadcast *bcast);
   static void static_forward_hook(Timer *, void *e) { 
     ((FlashFlood *) e)->forward_hook(); 
   }

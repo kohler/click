@@ -73,11 +73,13 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
   if (_ett_stat == 0) 
-    errh->error("no ETTStat element specified");
+    return errh->error("no ETTStat element specified");
   if (!_ip) 
-    errh->error("no IP specififed\n");
-  if (_link_table == 0) 
-    errh->error("no LTelement specified\n");
+    return errh->error("no IP specififed\n");
+  if (_link_table == 0) {
+    click_chatter("%{element}: no LTelement specified",
+		  this);
+  }
   if (_ett_stat->cast("ETTStat") == 0)
     return errh->error("ETTStat argument is wrong element type (should be ETTStat)");
   if (_link_table && _link_table->cast("LinkTable") == 0) {
@@ -262,14 +264,14 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
     /* update linktable */
     int fwd = nfo->_fwd;
     int rev = nfo->_rev;
-    if (!_link_table->update_link(from, to, fwd)) {
+    if (_link_table && !_link_table->update_link(from, to, fwd)) {
       click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		    this,
 		    from.s().cc(),
 		    fwd,
 		    to.s().cc());
     }
-    if (!_link_table->update_link(to, from, rev)){
+    if (_link_table && !_link_table->update_link(to, from, rev)){
       click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		    this,
 		    from.s().cc(),

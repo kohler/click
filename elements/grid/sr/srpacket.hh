@@ -3,6 +3,11 @@
 #include <click/ipaddress.hh>
 #include <elements/grid/sr/path.hh>
 
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+
 enum SRCRPacketType { PT_QUERY = 0x01,
 		      PT_REPLY = 0x02,
                       PT_TOP5_RESULT = 0x03,

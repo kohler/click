@@ -23,6 +23,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include "ettmetric.hh"
 #include "srpacket.hh"
 CLICK_DECLS
 
@@ -30,6 +31,7 @@ FlashFlood::FlashFlood()
   :  Element(2,2),
      _en(),
      _et(0),
+     _ett_metric(0),
      _packets_originated(0),
      _packets_tx(0),
      _packets_rx(0)
@@ -50,17 +52,16 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _debug = false;
-  _count = 1;
-  _max_delay_ms = 750;
   _history = 100;
+  _min_p = 50;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
-		    "COUNT", cpInteger, "Count", &_count,
-		    "MAX_DELAY", cpUnsigned, "Max Delay (ms)", &_max_delay_ms,
+		    "ETT", cpElement, "ETTMetric", &_ett_metric,
+		    "MIN_P", cpUnsigned, "Min P", &_min_p,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "HISTORY", cpUnsigned, "history", &_history,
@@ -74,6 +75,10 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("BCAST_IP not specified");
   if (!_en) 
     return errh->error("ETH not specified");
+  if (_ett_metric == 0) 
+    return errh->error("no ETTMetric element specified");
+  if (_ett_metric->cast("ETTMetric") == 0)
+    return errh->error("ETTMetric element is not a ETTMetric");
 
   return ret;
 }
@@ -134,13 +139,18 @@ FlashFlood::forward(Broadcast *bcast) {
     memcpy(pk->data(), pk_in->data(), pk_in->data_len());
     pk->set_data_len(pk_in->data_len());
   }
-  bcast->_forwarded = true;
-  _packets_tx++;
   
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memset(eh->ether_dhost, 0xff, 6);
   output(0).push(p);
+
+  bcast->_sent = true;
+  bcast->_num_tx++;
+  _packets_tx++;
+  bcast->del_timer();
+  update_probs(_ip, bcast);
+  reschedule_bcast(bcast);
 
 }
 
@@ -152,9 +162,8 @@ FlashFlood::forward_hook()
   for (int x = 0; x < _packets.size(); x++) {
     if (timercmp(&_packets[x]._to_send, &now, <=)) {
       /* this timer has expired */
-      if (!_packets[x]._forwarded && 
-	  (!_count || _packets[x]._num_rx < _count)) {
-	/* we haven't forwarded this packet yet */
+      if (!_packets[x]._sent) {
+	/* we haven't sent this packet yet */
 	forward(&_packets[x]);
       }
     }
@@ -194,8 +203,9 @@ FlashFlood::push(int port, Packet *p_in)
     _packets[index]._originated = true;
     _packets[index]._p = p_in;
     _packets[index]._num_rx = 0;
+    _packets[index]._num_tx = 0;
     _packets[index]._first_rx = now;
-    _packets[index]._forwarded = false;
+    _packets[index]._sent = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
     forward(&_packets[index]);
@@ -222,34 +232,115 @@ FlashFlood::push(int port, Packet *p_in)
       _packets[index]._seq = seq;
       _packets[index]._originated = false;
       _packets[index]._p = p_in;
-      _packets[index]._num_rx = 1;
+      _packets[index]._num_rx = 0;
+      _packets[index]._num_tx = 0;
       _packets[index]._first_rx = now;
-      _packets[index]._forwarded = false;
+      _packets[index]._sent = false;
       _packets[index].t = NULL;
 
-      /* schedule timer */
-      int delay_time = (random() % _max_delay_ms) + 1;
-      sr_assert(delay_time > 0);
+      /* clone the packet and push it out */
+      Packet *p_out = p_in->clone();
+      output(1).push(p_out);
+    }
+    _packets[index]._num_rx++;
+    IPAddress src = pk->get_hop(pk->num_hops() - 1);
+    if (_debug) {
+      click_chatter("%{element} got packet from %s",
+		    this,
+		    src.s().cc());
+    }
+    update_probs(src, &_packets[index]);
+    reschedule_bcast(&_packets[index]);
+  }
+  trim_packets();
+}
+
+void 
+FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
+
+    Vector<IPAddress> neighbors = _ett_metric->get_neighbors();
+    for (int x = 0; x < neighbors.size(); x++) {
+      /*
+       * p(got packet ever) = (1 - p(never))
+       *                    = (1 - (p(not before))*(p(not now)))
+       *                    = (1 - (1 - p(before))*(1 - p(now)))
+       *
+       */
+      if (src == neighbors[x]) {
+	/* they sent it */
+	bcast->_node_to_prob.insert(neighbors[x], 100);
+      } else {
+	int p_now = _ett_metric->get_delivery_rate(1, src, neighbors[x]);
+	int *p_before_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+	int p_before = (p_before_ptr) ? *p_before_ptr : 0;
+	int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
+	bcast->_node_to_prob.insert(neighbors[x], p_ever);
+      }
+    }
+}
+
+void
+FlashFlood::reschedule_bcast(Broadcast *bcast) {    
+    Vector<IPAddress> neighbors = _ett_metric->get_neighbors();
+    int min_p_ever = 100;
+    int expected_rx = 0;
+    for (int x = 0; x < neighbors.size(); x++) {
+      int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+      sr_assert(p_ever_ptr);
+      if (!p_ever_ptr) {
+	continue;
+      }
+      int p_ever = *p_ever_ptr;
+      min_p_ever = min(min_p_ever, p_ever);
+      expected_rx += ((100 - p_ever) * 
+		      _ett_metric->get_delivery_rate(1, _ip, neighbors[x]))/100;
+
+      if (_debug) {
+	click_chatter("%{element} reschedule_bcast neighbor %s, p_ever %d min %d\n",
+		      this,
+		      neighbors[x].s().cc(),
+		      p_ever,
+		      min_p_ever);
+      }
+    }
+    
+    if (_debug) {
+      click_chatter("%{element} reschedule for seq %d: min_p_ever %d expected_rx %d\n",
+		    this,
+		    bcast->_seq,
+		    min_p_ever,
+		    expected_rx);
+    }
+    if (min_p_ever < _min_p) {
+      int max_delay_ms = 1000;
+      sr_assert(expected_rx);
+      if (expected_rx) {
+	max_delay_ms = 100 * 1000 / expected_rx;
+      }
       
+      int delay_time = (random() % max_delay_ms) + 1;
+
+      if (_debug) {
+	click_chatter("%{element} delay time is %d / max %d ms\n",
+		      this,
+		      delay_time,
+		      max_delay_ms);
+      }
+      sr_assert(delay_time > 0);
+      struct timeval now;
+      click_gettimeofday(&now);
       struct timeval delay;
       delay.tv_sec = 0;
       delay.tv_usec = delay_time*1000;
-      timeradd(&now, &delay, &_packets[index]._to_send);
-      _packets[index].t = new Timer(static_forward_hook, (void *) this);
-      _packets[index].t->initialize(this);
-      _packets[index].t->schedule_at(_packets[index]._to_send);
-
-      /* finally, clone the packet and push it out */
-      Packet *p_out = p_in->clone();
-      output(1).push(p_out);
-    } else {
-      /* we've seen this packet before */
-      p_in->kill();
-      _packets[index]._num_rx++;
+      timeradd(&now, &delay, &bcast->_to_send);
+      bcast->del_timer();
+      /* schedule timer */
+      bcast->_sent = false;
+      bcast->t = new Timer(static_forward_hook, (void *) this);
+      bcast->t->initialize(this);
+      bcast->t->schedule_at(bcast->_to_send);
     }
-  }
 
-  trim_packets();
 }
 
 
@@ -302,7 +393,8 @@ FlashFlood::print_packets()
     sa << " originated " << _packets[x]._originated;
     sa << " num_rx " << _packets[x]._num_rx;
     sa << " first_rx " << _packets[x]._first_rx;
-    sa << " forwarded " << _packets[x]._forwarded;
+    sa << " num_tx " << _packets[x]._num_tx;
+    sa << " sent " << _packets[x]._sent;
     sa << " to_send " << _packets[x]._to_send;
     sa << "\n";
   }
@@ -328,8 +420,10 @@ FlashFlood::add_handlers()
 // generate Vector template instance
 #include <click/vector.cc>
 #include <click/dequeue.cc>
+#include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<FlashFlood::Broadcast>;
+template class HashMap<IPAddress, int>;
 #endif
 
 CLICK_ENDDECLS
