@@ -123,6 +123,9 @@ recorded in the dump.
 FromDump is a notifier signal, active when the element is active and the dump
 contains more packets.
 
+If FromDump uses mmap, then a corrupt file might cause Click to crash with a
+segmentation violation.
+
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).
@@ -160,11 +163,6 @@ exactly where the relevant portion begins.
 Text is a time interval. If END_TIME or one of its cousins was specified, then
 writing to this handler extends END_TIME by that many seconds. Also, ACTIVE is
 set to true.
-
-=n
-
-If FromDump uses mmap, then a corrupt file might cause Click to crash with a
-segmentation violation.
 
 =a
 
