@@ -188,13 +188,16 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     
     if (ae->ok) {
       WritablePacket *q = p->uniqueify();
-      grid_nbr_encap *nb2 = (grid_nbr_encap *) (q->data() + sizeof(click_ether) + sizeof(grid_hdr));
+      grid_hdr *gh2 = (grid_hdr *) (q->data() + sizeof(click_ether));
+      gh2->tx_ip = _my_ip;
+      grid_nbr_encap *nb2 = (grid_nbr_encap *) (gh2 + 1);
       nb2->dst_loc = ae->loc;
       nb2->dst_loc_err = htons(ae->loc_err);
       nb2->dst_loc_good = ae->loc_good;
       if (!ae->loc_good)
 	click_chatter("FloodingLocQuerier %s: invalid location information in table!  sending packet anyway...", id().cc());
       output(0).push(q);
+      p->kill();
     } else {
       if (ae->p) {
         ae->p->kill();
@@ -253,6 +256,7 @@ FloodingLocQuerier::handle_reply(Packet *p)
   if (cached_packet)
     handle_nbr_encap(cached_packet);
 
+  p->kill();
 }
 
 void 
@@ -280,7 +284,11 @@ FloodingLocQuerier::handle_query(Packet *p)
       return;
     }
     _query_seqs.insert(gh->ip, q_seq_no);
-    output(1).push(p);
+    WritablePacket *wp = p->uniqueify();
+    gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+    gh->tx_ip = _my_ip; 
+    // FixSrcLoc will handle the rest of the tx_* fields
+    output(1).push(wp);
   }    
 }
 

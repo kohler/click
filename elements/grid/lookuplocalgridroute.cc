@@ -156,11 +156,12 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 
       /* FixSrcLoc will see that the gh->ip and gh->tx_ip fields are
          the same, and will fill in gh->loc, etc. */
-      gh->ip = gh->tx_ip = _ipaddr; 
+      // gh->tx_ip is set in forward_grid_packet()
+      gh->ip = _ipaddr; 
       
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
-      encap->dst_ip = dst.addr();
+      encap->dst_ip = dst;
 
       forward_grid_packet(new_packet, dst);
     }
@@ -239,6 +240,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // no UpdateGridRoutes next-hop table in configuration
     click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
+    xp->kill();
     return;
   }
 

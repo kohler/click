@@ -68,14 +68,18 @@ struct grid_hdr {
    * the network.  i.e. the following five fields (ip, ...,
    * loc_seq_no) must be filled in by any element that creates new
    * Grid packets.  Actually, as long as ip and tx_ip are both set to
-   * the same address, FixSrcLoc can do all the neccessary filling in.
+   * the same address, FixSrcLoc will do all the neccessary filling
+   * in.
    *
-   * Transmitter is who last transmitted this packet to us.  i.e. when
-   * the packet is first transmitted, the sender and transmitter are
-   * the same.  Also, the transmitter information can be mapped to the
+   * Transmitter is who last transmitted this packet to us.  When the
+   * packet is first transmitted, the sender and transmitter are the
+   * same.  Also, the transmitter information can be mapped to the
    * packet's MAC src address.  All the tx_* fields are filled in by
-   * every node that handles a Grid packet.  This is typically handled
-   * by the FixSrcLoc element.  
+   * every node that handles a Grid packet.  Any Grid element that
+   * handles a packet that will be sent back our
+   * (e.g. FloodingLocQuerier, routing elements) should set the tx_ip
+   * field.  The other location info is typically handled by the
+   * FixSrcLoc element.  
    */
   unsigned int ip;          // Sender's IP address. 
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
