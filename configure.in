@@ -432,11 +432,11 @@ dnl
 dnl possible targets
 dnl
 
-POSSIBLE_TARGETS="linuxmodule userlevel bsdmodule"
+POSSIBLE_TARGETS=
+for i in bsdmodule exopc linuxmodule userlevel; do
+    test -f $srcdir/$i/Makefile.in && POSSIBLE_TARGETS="$POSSIBLE_TARGETS $i"
+done
 AC_SUBST(POSSIBLE_TARGETS)
-if test -f $srcdir/exopc/Makefile.in; then
-  POSSIBLE_TARGETS="$POSSIBLE_TARGETS exopc"
-fi
 
 
 dnl
@@ -445,16 +445,13 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
+
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform; do
-    if test -d $srcdir/tools/$i; then
-	TOOLDIRS="$TOOLDIRS $i"
-	TOOL_TARGETS="$TOOL_TARGETS $i"
-    fi
+    test -d $srcdir/tools/$i &&	\
+      TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
 done
 for i in click-install; do
-    if test -d $srcdir/tools/$i; then
-	TOOLDIRS="$TOOLDIRS $i"
-    fi
+    test -d $srcdir/tools/$i && TOOLDIRS="$TOOLDIRS $i"
 done
 AC_SUBST(TOOLDIRS)
 AC_SUBST(TOOL_TARGETS)
