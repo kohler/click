@@ -30,7 +30,7 @@
 #include <clicknet/udp.h>
 
 #if CLICK_USERLEVEL
-# include <stdio.h>
+# include <cstdio>
 #endif
 
 IPPrintTime::IPPrintTime()

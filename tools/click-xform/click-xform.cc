@@ -26,9 +26,9 @@
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "adjacency.hh"
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cctype>
+#include <cstdlib>
 
 bool match_config(const String &, const String &, HashMap<String, String> &);
 // TODO: allow some special pports to be unconnected

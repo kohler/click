@@ -27,11 +27,11 @@
 #include <click/driver.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
+#include <cerrno>
 #include <unistd.h>
 #include <sys/time.h>
 

@@ -27,7 +27,7 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/variableenv.hh>
-#include <stdlib.h>
+#include <cstdlib>
 
 static String::Initializer string_initializer;
 static HashMap<String, int> default_class_map(-1);

@@ -26,7 +26,7 @@
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
 CLICK_DECLS
 

@@ -31,9 +31,9 @@
 #ifndef TIMEUTIL_H
 #define TIMEUTIL_H
 
-#include <math.h>
+#include <cmath>
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include <click/string.hh>
 CLICK_DECLS

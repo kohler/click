@@ -20,7 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
-#include <math.h>
+#include <cmath>
 #include "elements/grid/filterbyrange.hh"
 CLICK_DECLS
 

@@ -22,8 +22,8 @@
 #include <click/error.hh>
 
 #ifdef CLICK_USERLEVEL
-# include <limits.h>
-# include <stdarg.h>
+# include <climits>
+# include <cstdarg>
 # include <unistd.h>
 # include <sys/types.h>
 # include <sys/stat.h>

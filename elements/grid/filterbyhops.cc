@@ -15,8 +15,8 @@
  * legally binding.
  */
 
-#include <stddef.h>
 #include <click/config.h>
+#include <cstddef>
 #include "filterbyhops.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -24,7 +24,7 @@
 #include <clicknet/ether.h>
 #include <click/glue.hh>
 #include "grid.hh"
-#include <math.h>
+#include <cmath>
 CLICK_DECLS
 
 FilterByGridHops::FilterByGridHops() : Element(1, 2)

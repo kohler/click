@@ -15,8 +15,8 @@
  * legally binding.
  */
 
-#include <stddef.h>
 #include <click/config.h>
+#include <cstddef>
 #include "airoinfo.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include "grid.hh"
-#include <math.h>
+#include <cmath>
 #include <sys/ioctl.h>
 
 #define ANLLFAIL

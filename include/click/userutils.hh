@@ -2,7 +2,7 @@
 #ifndef CLICK_USERUTILS_HH
 #define CLICK_USERUTILS_HH
 #include <click/archive.hh>
-#include <stdio.h>
+#include <cstdio>
 CLICK_DECLS
 class ErrorHandler;
 

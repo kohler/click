@@ -8,7 +8,7 @@
 #include <click/ip6flowid.hh>
 CLICK_DECLS
 
-//#include <time.h>
+//#include <ctime>
 
 
 /*

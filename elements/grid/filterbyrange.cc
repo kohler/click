@@ -15,8 +15,8 @@
  * legally binding.
  */
 
-#include <stddef.h>
 #include <click/config.h>
+#include <cstddef>
 #include "filterbyrange.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

@@ -2,7 +2,7 @@
 #ifndef CLICK_ECLASST_HH
 #define CLICK_ECLASST_HH
 #include <click/string.hh>
-#include <stddef.h>
+#include <cstddef>
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include "etraits.hh"

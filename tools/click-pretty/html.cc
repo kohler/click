@@ -20,9 +20,9 @@
 #include <click/pathvars.h>
 
 #include "html.hh"
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
 
 static String::Initializer string_initializer;
 static HashMap<String, String> html_entities;

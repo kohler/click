@@ -4,7 +4,11 @@
 # include <linux/errno.h>
 # include <linux/ioctl.h>
 #else
-# include <errno.h>
+# ifdef __cplusplus
+#  include <cerrno>
+# else
+#  include <errno.h>
+# endif
 # include <sys/ioctl.h>
 #endif
 

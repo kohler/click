@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <stdio.h>
+#include <cstdio>
 #include "region.hh"
 CLICK_DECLS
 

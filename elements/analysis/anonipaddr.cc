@@ -27,7 +27,7 @@
 #include <click/integers.hh>	// for first_bit_set
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
-# include <time.h>
+# include <ctime>
 # include <sys/time.h>
 #endif
 CLICK_DECLS

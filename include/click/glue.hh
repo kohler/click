@@ -52,11 +52,11 @@ CLICK_CXX_UNPROTECT
 
 #else /* CLICK_USERLEVEL */
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
-# include <ctype.h>
-# include <errno.h>
+# include <cstdio>
+# include <cstdlib>
+# include <cstring>
+# include <cctype>
+# include <cerrno>
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <sys/time.h>

@@ -22,10 +22,10 @@
 #include <hash_map.h>
 #include <click/pathvars.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstring>
+#include <csignal>
+#include <cerrno>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/param.h>

@@ -26,7 +26,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
-#include <stdio.h>
+#include <cstdio>
 
 RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
     : _use_count(0), _enclosing_type(type),

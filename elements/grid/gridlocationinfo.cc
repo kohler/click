@@ -22,7 +22,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#include <math.h>
+#include <cmath>
 CLICK_DECLS
 
 GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, this)

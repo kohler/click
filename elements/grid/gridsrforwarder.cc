@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/glue.hh>

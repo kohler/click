@@ -8,10 +8,10 @@
 #include "routert.hh"
 #include "toolutils.hh"
 #include <click/clp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301

@@ -3,9 +3,9 @@
 #define CLICK_ERROR_HH
 #include <click/string.hh>
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
-# include <stdio.h>
+# include <cstdio>
 #endif
-#include <stdarg.h>
+#include <cstdarg>
 CLICK_DECLS
 
 class ErrorHandler { public:

@@ -30,9 +30,9 @@
 #if !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
 # include <click/userutils.hh>
 # include <unistd.h>
-# include <errno.h>
-# include <string.h>
-# include <stdlib.h>
+# include <cerrno>
+# include <cstring>
+# include <cstdlib>
 #endif
 
 #ifdef CLICK_TOOL

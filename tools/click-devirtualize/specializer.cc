@@ -25,7 +25,7 @@
 #include "elementmap.hh"
 #include <click/straccum.hh>
 #include "signature.hh"
-#include <ctype.h>
+#include <cctype>
 
 Specializer::Specializer(RouterT *router, const ElementMap &em)
   : _router(router), _nelements(router->nelements()),

@@ -5,7 +5,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
-#include <stdio.h>
+#include <cstdio>
 CLICK_DECLS
 
 /*

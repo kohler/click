@@ -83,7 +83,11 @@ typedef unsigned long uintptr_t;
 #endif
 
 /* Include assert macro. */
-#include <assert.h>
+#ifdef __cplusplus
+# include <cassert>
+#else
+# include <assert.h>
+#endif
 
 /* Floating point arithmetic is allowed. */
 #define HAVE_FLOAT_TYPES 1

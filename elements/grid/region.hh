@@ -1,7 +1,6 @@
 #ifndef REGION_HH
 #define REGION_HH
 
-#include <assert.h>
 #include <click/string.hh>
 CLICK_DECLS
 

@@ -32,9 +32,9 @@
 #include "signature.hh"
 #include <click/clp.h>
 #include <click/driver.hh>
-#include <stdio.h>
-#include <ctype.h>
-#include <errno.h>
+#include <cstdio>
+#include <cctype>
+#include <cerrno>
 #include <unistd.h>
 
 #define HELP_OPT		300

@@ -15,7 +15,6 @@
  * legally binding.
  */
 
-#include <assert.h>
 #include <click/config.h>
 #include "divertsocket.hh"
 #include <click/error.hh>

@@ -13,7 +13,7 @@
 #include <click/packet_anno.hh>
 #include <click/ip6address.hh>
 #if CLICK_USERLEVEL
-# include <stdio.h>
+# include <cstdio>
 #endif
 CLICK_DECLS
 

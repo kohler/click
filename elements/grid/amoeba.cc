@@ -10,10 +10,10 @@
 #include <click/config.h>
 #include "amoeba.hh"
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
 CLICK_DECLS
 
 Amoeba::Amoeba(int dimensions)

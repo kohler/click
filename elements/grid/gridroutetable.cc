@@ -16,11 +16,11 @@
  */
 
 #include <click/config.h>
+#include <cstddef>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
-#include <stddef.h>
 #include <click/standard/scheduleinfo.hh>
 #include <click/router.hh>
 #include <click/element.hh>

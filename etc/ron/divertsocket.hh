@@ -37,7 +37,7 @@ DivertSocket.
 # include <netinet/in.h>
 # include <sys/types.h>
 # include <linux/types.h>
-# include <signal.h>
+# include <csignal>
 
 # include <netinet/ip.h>
 # include <netinet/tcp.h>

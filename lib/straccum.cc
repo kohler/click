@@ -21,7 +21,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
-#include <stdarg.h>
+#include <cstdarg>
 CLICK_DECLS
 
 void

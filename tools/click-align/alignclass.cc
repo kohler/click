@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "routert.hh"
-#include <string.h>
+#include <cstring>
 
 Alignment
 common_alignment(const Vector<Alignment> &a, int off, int n)

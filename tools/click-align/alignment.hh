@@ -1,6 +1,5 @@
 #ifndef ALIGNMENT_HH
 #define ALIGNMENT_HH
-#include <assert.h>
 #include <click/string.hh>
 
 class Alignment {
