@@ -1,4 +1,4 @@
-THE CLICK MODULAR ROUTER RELEASE 0.6
+THE CLICK MODULAR ROUTER RELEASE 1.0
 ====================================
 
     This is the README file for the source release for the Click modular
@@ -35,6 +35,7 @@ CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
 CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-install	... installs configuration into Linux module
+CLICKDIR/tools/click-specialize ... specializes element source code
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/tools/udpgen		... Linux kernel modules for quickly 
 				    generating and counting UDP packets
@@ -79,10 +80,12 @@ Linux Kernel Module
 -------------------
 
     See the `doc/click.o.8' manual page for a detailed description. To
-summarize, install the module with `insmod PATH/click.o'; then install a
-configuration with `click-install CONFIGFILE'. You can also install a
-configuration by hand with `cat CONFIGFILE > /proc/click/config'; if any
-errors occured, they will appear in `/proc/click/errors'.
+summarize, install a configuration by running `click-install CONFIGFILE'.
+This will install the kernel module itself, if necessary. (But you must
+have run `make install' first.) You can also install the kernel module with
+`/sbin/insmod click.o', and then install a configuration by hand with `cat
+CONFIGFILE > /proc/click/config'. If any errors occurred, they will appear
+in `/proc/click/errors'.
 
 Configurations
 --------------
@@ -109,6 +112,7 @@ to give us. Write us at
 	click@pdos.lcs.mit.edu
 
 	- The Click software team:
+	  Thomer M. Gil
 	  Eddie Kohler
 	  Robert Morris
 	  Benjie Chen

@@ -82,6 +82,7 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-specialize/cxxclass.cc click-specialize/cxxclass.hh \
 	click-specialize/specializer.cc click-specialize/specializer.hh \
 	click-xform/Makefile.in \
+	click-xform/adjacency.cc click-xform/adjacency.hh \
 	click-xform/click-xform.cc \
 	udpgen/Makefile.in udpgen/udpgen.c udpgen/udpcount.c
 
