@@ -1,3 +1,15 @@
+2003-02-13 Thursday 00:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: clean up RouterThread::driver()
+	significantly, and prepare for the adaptive scheduler
+
+2003-02-13 Thursday 00:38  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: remove Packet::steal_skb()
+	method; it gave the wrong idea, and has been equivalent to skb()
+	for quite a while
+
 2003-02-09 Sunday 18:06  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/error.cc: nit

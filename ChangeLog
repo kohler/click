@@ -1,3 +1,21 @@
+2003-02-13 Thursday 00:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh (1.15), lib/routerthread.cc (1.28):
+	clean up RouterThread::driver() significantly, and prepare for the
+	adaptive scheduler
+
+2003-02-13 Thursday 00:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/fasttcpflows.cc (1.11),
+	elements/linuxmodule/fastudpflows.cc (1.12),
+	elements/linuxmodule/fastudpsrc.cc (1.17),
+	elements/linuxmodule/fastudpsrcip6.cc (1.17),
+	elements/linuxmodule/todevice.cc (1.131),
+	elements/linuxmodule/tohost.cc (1.38), include/click/packet.hh
+	(1.45), elements/linuxmodule/tohostsniffers.cc (1.33): remove
+	Packet::steal_skb() method; it gave the wrong idea, and has been
+	equivalent to skb() for quite a while
+
 2003-02-10 Monday 15:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.35): change default metric to
