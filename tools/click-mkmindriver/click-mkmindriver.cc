@@ -21,15 +21,22 @@
 #define DIRECTORY_OPT		305
 #define KERNEL_OPT		306
 #define USERLEVEL_OPT		307
+#define ELEMENT_OPT		308
+#define ALIGN_OPT		309
+#define ALL_OPT			310
 
 static Clp_Option options[] = {
+  { "align", 'A', ALIGN_OPT, 0, 0 },
+  { "all", 'a', ALL_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
+  { "elements", 'e', ELEMENT_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
+  { "linuxmodule", 0, KERNEL_OPT, 0, 0 },
   { "package", 'p', PACKAGE_OPT, Clp_ArgString, 0 },
-  { "user", 'u', USERLEVEL_OPT, 0, 0 },
+  { "userlevel", 'u', USERLEVEL_OPT, 0, 0 },
 };
 
 static const char *program_name;
@@ -63,10 +70,14 @@ Options:\n\
   -p, --package PKG         Name of package is PKG.\n\
   -f, --file FILE           Read router configuration from FILE. Can supply\n\
                             multiple configurations.\n\
-  -k, --kernel              Build Makefile for kernel driver.\n\
-  -u, --user                Build Makefile for user-level driver (default).\n\
+  -a, --all                 Include all element classes from later FILEs, even\n\
+                            those in unused compound elements.\n\
+  -k, --linuxmodule         Build Makefile for Linux kernel module driver.\n\
+  -u, --userlevel           Build Makefile for user-level driver (default).\n\
   -d, --directory DIR       Put files in DIR. DIR must contain a `Makefile'\n\
                             for the relevant driver. Default is `.'.\n\
+  -e, --elements ELTS       Include element classes ELTS.\n\
+  -A, --align               Include element classes required by click-align.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
@@ -75,11 +86,16 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
 static void
-handle_router(const char *filename, const ElementMap &default_map, ErrorHandler *errh)
+handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *errh)
 {
+  // decide if `filename' should be flattened
+  bool flattenable = (filename_in[0] == 'f');
+  const char *filename = filename_in.cc() + 1;
+
+  // read file
   int before = errh->nerrors();
   RouterT *router = read_router_file(filename, new RouterT, errh);
-  if (router)
+  if (router && flattenable)
     router->flatten(errh);
   if (!router || errh->nerrors() != before)
     return;
@@ -92,25 +108,25 @@ handle_router(const char *filename, const ElementMap &default_map, ErrorHandler 
 
   // check whether suitable for driver
   if (!emap.driver_compatible(router, driver)) {
-    const char *other_option = (driver == ElementMap::DRIVER_USERLEVEL ? "--kernel" : "--user");
-    errh->error("%s: not compatible with %s driver; ignored\n%s: (Supply the `%s' option to include this router.)", filename, ElementMap::driver_name(driver), filename, other_option);
+    errh->error("%s: not compatible with %s driver; ignored", filename, ElementMap::driver_name(driver));
     return;
   }
   emap.limit_driver(driver);
 
   StringAccum missing_sa;
   int nmissing = 0;
-  
-  for (int i = RouterT::FIRST_REAL_TYPE; i < router->ntypes(); i++) {
-    String tname = router->type_name(i);
-    int emap_index = emap.find(tname);
+
+  HashMap<String, int> primitives(-1);
+  router->collect_primitive_classes(primitives);
+  for (HashMap<String, int>::Iterator i = primitives.first(); i; i++) {
+    int emap_index = emap.find(i.key());
     if (emap_index > 0) {
       if (emap.package(emap_index))
 	/* do nothing; element was defined in a package */;
       else
-	initial_requirements.insert(tname, 1);
+	initial_requirements.insert(i.key(), 1);
     } else
-      missing_sa << (nmissing++ ? ", " : "") << tname;
+      missing_sa << (nmissing++ ? ", " : "") << i.key();
   }
 
   if (nmissing == 1)
@@ -296,6 +312,8 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   Vector<String> router_filenames;
+  Vector<String> elements;
+  String prefix = "f";
   const char *package_name = 0;
   String directory;
   
@@ -311,7 +329,7 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click-mkmindriver (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2001 Massachusetts Institute of Technology\n\
-Copyright (c) 2001 ACIRI\n\
+Copyright (c) 2001 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -339,10 +357,22 @@ particular purpose.\n");
       if (directory.length() && directory.back() != '/')
 	directory += "/";
       break;
+
+     case ALL_OPT:
+      prefix = (clp->negated ? "f" : "a");
+      break;
+
+     case ELEMENT_OPT:
+      cp_spacevec(clp->arg, elements);
+      break;
+
+     case ALIGN_OPT:
+      elements.push_back("Align");
+      break;
       
      case Clp_NotOption:
      case ROUTER_OPT:
-      router_filenames.push_back(clp->arg);
+      router_filenames.push_back(prefix + clp->arg);
       break;
 
      case Clp_BadOption:
@@ -360,7 +390,7 @@ particular purpose.\n");
   if (driver < 0)
     driver = ElementMap::DRIVER_USERLEVEL;
   if (!router_filenames.size())
-    router_filenames.push_back("-");
+    router_filenames.push_back(prefix + "-");
   if (!package_name)
     errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
 
@@ -381,6 +411,10 @@ particular purpose.\n");
     initial_requirements.insert("QuitWatcher", 1);
     initial_requirements.insert("ControlSocket", 1);
   }
+
+  // add manually specified element classes
+  for (int i = 0; i < elements.size(); i++)
+    initial_requirements.insert(elements[i], 1);
   
   HashMap<String, int> provisions(-1);
   Vector<String> requirements;

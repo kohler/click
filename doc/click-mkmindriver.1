@@ -89,16 +89,27 @@ The default is the standard input.
 '
 .Sp
 .TP
+.BI \-a
+.TP
+.BI \-\-all
+Include every primitive element class mentioned in later FILEs, even those in
+compound elements that are not, themselves, used. This is useful to add
+support for
+.M click-xform 1
+support, for example.
+'
+.Sp
+.TP
 .BI \-k
 .TP
-.BI \-\-kernel
+.BI \-\-linuxmodule
 Output a Makefile for a Linux kernel module driver.
 '
 .Sp
 .TP
 .BI \-u
 .TP
-.BI \-\-user
+.BI \-\-userlevel
 Output a Makefile for a user-level driver. This is the default.
 '
 .Sp
@@ -116,6 +127,27 @@ the
 and
 .B \-u
 options.) The default directory is `.'.
+'
+'
+.Sp
+.TP
+.BI \-e " elts"
+.TP
+.BI \-\-elements " elts"
+Include the element classes
+.IR elts ,
+a space-separated list of element class names.
+'
+.Sp
+.TP
+.BI \-A
+.TP
+.BI \-\-align
+Include element classes required by
+.M click-align 1 .
+Currently, this is the single
+.M Align n
+class.
 '
 .Sp
 .TP 5
