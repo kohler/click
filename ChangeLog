@@ -1,14 +1,27 @@
+2001-10-20 Saturday 02:40  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: progressbar.cc (1.4), progressbar.hh (1.3):
+	finish off ProgressBar for now
+
+2001-10-20 Saturday 02:29  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdump.cc (1.53), progressbar.cc (1.3),
+	progressbar.hh (1.2), thermometer.cc (1.3), thermometer.hh (1.2):
+	updates, and name change to ProgressBar
+
 2001-10-19 Friday 23:23  Eddie Kohler <kohler@aciri.org>
 
 	* config-userlevel.h.in (1.3), configure.in (1.153),
+	elements/userlevel/progressbar.cc (1.2),
 	elements/userlevel/thermometer.cc (1.2),
 	etc/libclick/lc-configure.in (1.13): other changes to support
 	Thermometer
 
 2001-10-19 Friday 23:22  Eddie Kohler <kohler@aciri.org>
 
-	* elements/userlevel/: thermometer.cc (1.1), thermometer.hh (1.1):
-	add new Thermometer element
+	* elements/userlevel/: progressbar.cc (1.1), progressbar.hh (1.1),
+	thermometer.cc (1.1), thermometer.hh (1.1): add new Thermometer
+	element
 
 2001-10-19 Friday 23:22  Eddie Kohler <kohler@aciri.org>
 
