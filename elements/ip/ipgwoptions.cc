@@ -78,43 +78,55 @@ IPGWOptions::clone() const
 }
 
 Packet *
-IPGWOptions::handle_options(Packet *p_in)
+IPGWOptions::handle_options(Packet *p)
 {
   /* This is lame: should be lazier. */
-  WritablePacket *p = p_in->uniqueify();
-  click_ip *ip = p->ip_header();
-  unsigned hlen = ip->ip_hl << 2;
+  WritablePacket *wp = 0;
+  const uint8_t *oa = p->transport_header();
+  int hlen = p->network_header_length();
 
-  u_char *oa = (u_char *) (ip + 1);
-  int olen = hlen - sizeof(click_ip);
   int oi;
-  int do_cksum = 0;
-  int problem_offset = -1;
-
-  for(oi = 0; oi < olen; ){
+  for (oi = sizeof(click_ip); oi < hlen; ) {
+    // handle one-byte options
     unsigned type = oa[oi];
-    int xlen;
-    if(type <= 1)
-      xlen = 1;
-    else
-      xlen = oa[oi+1];
-    if(oi + xlen > olen)
-      break;
-    if(type == IPOPT_EOL){
+    if (type == IPOPT_NOP) {
+      oi++;
+      continue;
+    } else if (type == IPOPT_EOL)
       /* end of option list */
       break;
-    } else if(type == IPOPT_RR){
+
+    // otherwise, get length of option
+    int xlen = oa[oi + 1];
+    if (xlen < 2 || oi + xlen > hlen) {
+      // bad length
+      oi++;			// to point at length
+      goto send_error;
+    } else if (type != IPOPT_RR && type != IPOPT_TS) {
+      // not for us to process
+      oi += xlen;
+      continue;
+    }
+
+    // need a writable packet
+    if (!wp) {
+      if (!(wp = p->uniqueify()))
+	return 0;
+      oa = wp->network_header(); // may have changed due to packet copy
+    }
+    uint8_t *woa = wp->network_header();
+    
+    if(type == IPOPT_RR){
       /*
        * Record Route.
        * Apparently the pointer (oa[oi+2]) is 1-origin.
        */
       int p = oa[oi+2] - 1;
-      if(p >= 3 && p+4 <= xlen){
-        memcpy(oa + oi + p, &_my_ip, 4);
-        oa[oi+2] += 4;
-        do_cksum = 1;
-      } else if(p != xlen){
-        problem_offset = 20 + oi + 2;
+      if (p >= 3 && p + 4 <= xlen) {
+        memcpy(woa + oi + p, &_my_ip, 4);
+        woa[oi+2] += 4;
+      } else if (p != xlen) {
+	oi += 2;
         goto send_error;
       }
     } else if(type == IPOPT_TS){
@@ -126,34 +138,30 @@ IPGWOptions::handle_options(Packet *p_in)
       int p = oa[oi+2] - 1;
       int oflw = oa[oi+3] >> 4;
       int flg = oa[oi+3] & 0xf;
-      int overflowed = 0;
+      bool overflowed = 0;
 
       struct timeval tv;
       click_gettimeofday(&tv);
       int ms = htonl((tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000);
 
       if(p < 4){
-        problem_offset = 20 + oi + 2;
+	oi += 2;
         goto send_error;
       } else if(flg == 0){
         /* 32-bit timestamps only */
         if(p+4 <= xlen){
-          memcpy(oa + oi + p, &ms, 4);
-          oa[oi+2] += 4;
-          do_cksum = 1;
-        } else {
+          memcpy(woa + oi + p, &ms, 4);
+          woa[oi+2] += 4;
+        } else
           overflowed = 1;
-        }
       } else if(flg == 1){
         /* ip address followed by timestamp */
         if(p+8 <= xlen){
-          memcpy(oa + oi + p, &_my_ip, 4);
-          memcpy(oa + oi + p + 4, &ms, 4);
-          oa[oi+2] += 8;
-          do_cksum = 1;
-        } else {
+          memcpy(woa + oi + p, &_my_ip, 4);
+          memcpy(woa + oi + p + 4, &ms, 4);
+          woa[oi+2] += 8;
+        } else
           overflowed = 1;
-        }
       } else if (flg == 3 && p + 8 <= xlen) {
 	unsigned addr, doit = 0;
 	memcpy(&addr, oa + oi + p, 4);
@@ -161,39 +169,38 @@ IPGWOptions::handle_options(Packet *p_in)
 	  doit = (addr == _other_ips[i]);
         /* only if it's my address */
 	if (doit) {
-          memcpy(oa + oi + p + 4, &ms, 4);
-          oa[oi+2] += 8;
-          do_cksum = 1;
+          memcpy(woa + oi + p + 4, &ms, 4);
+          woa[oi+2] += 8;
         }
+      } else {
+	oi += 3;
+	goto send_error;
       }
-      if(overflowed){
-        if(oflw < 15){
-          oa[oi+3] = ((oflw + 1) << 4) | flg;
-          do_cksum = 1;
-        } else {
-          problem_offset = 20 + oi + 3;
+      if (overflowed) {
+        if (oflw < 15)
+          woa[oi+3] = ((oflw + 1) << 4) | flg;
+	else {
+	  oi += 3;
           goto send_error;
         }
       }
     }
+    
     oi += xlen;
   }
 
-  if(do_cksum){
-    ip->ip_sum = 0;
-    ip->ip_sum = click_in_cksum(p->data(), hlen);
+  if (wp) {
+    click_ip *iph = wp->ip_header();
+    iph->ip_sum = 0;
+    iph->ip_sum = click_in_cksum(p->network_header(), hlen);
   }
 
-  return(p);
+  return (wp ? wp : p);
 
  send_error:
   _drops++;
-  if (noutputs() == 2){
-    SET_ICMP_PARAM_PROB_ANNO(p, problem_offset);
-    output(1).push(p);
-  } else {
-    p->kill();
-  }
+  SET_ICMP_PARAM_PROB_ANNO(p, oi);
+  checked_output_push(1, p);
   return 0;
 }
 
