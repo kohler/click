@@ -42,11 +42,68 @@ close MK;
 
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
-    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_MAN_ELEMENTS='linuxmodule i586 i686 linux_2_2 linux_2_4'");
+    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_MAN_ELEMENTS='linuxmodule i586 i686 linux_2_2 linux_2_4' && gmake install-local");
 }
 
+# 1.5. read elementmap
+open(EMAP, "/tmp/%click-webdoc/share/click/elementmap") || die "/tmp/%click-webdoc/share/click/elementmap: $!\n";
+my(%ereq, $reqindex, $classindex, $provindex);
+
+sub em_unquote ($) {
+    my($x) = @_;
+    return '' if !defined($x);
+    if ($x =~ /^\370/s) {
+	$x = substr($x, 1, length($x) - 2);
+	$x =~ tr/\372/ /;
+	$x =~ s/\\\\/\373\373/g;
+	$x =~ s/\\n/\n/g;
+	$x =~ s/\\(.)/$1/g;
+	$x =~ tr/\373/\\/;
+    }
+    $x;
+}
+
+while (<EMAP>) {
+    s/\"(([^\"]|\\.)*)\"/\370$1\371/g;
+    1 while s/(\370[^\371]*)\s/$1\372/;
+    my(@x) = split(/\s+/, $_);
+    if ($x[0] eq '$data') {
+	for ($i = 1; $i < @x; $i++) {
+	    $reqindex = $i - 1 if $x[$i] eq 'requirements';
+	    $classindex = $i - 1 if $x[$i] eq 'class';
+	    $provindex = $i - 1 if $x[$i] eq 'provisions';
+	}
+    } elsif ($x[0] !~ /^\$/ && defined($reqindex) && $reqindex < @x) {
+	my($e, $r, $p) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]));
+	$ereq{$e} = ($ereq{$e} ? 'xxx' : $r) if $e;
+	foreach $i (split(/\s+/, $p)) {
+	    $ereq{$i} = $r;
+	}
+    }
+}
+
+# 1.6. spread requirements
+my(%ereq_expanded);
+
+sub expand_ereq ($) {
+    my($e) = @_;
+    return $ereq{$e} if $ereq_expanded{$e};
+    $ereq_expanded{$e} = 1;
+    my(@req) = split(/\s+/, $ereq{$e});
+    my($i, $t, $r);
+    for ($i = 0; $i < @req; $i++) {
+	push @req, split(/\s+/, &expand_ereq($req[$i]))
+	    if $ereq{$req[$i]};
+    }
+    $ereq{$e} = join(' ', @req);
+    $ereq{$e};
+}
+
+map { expand_ereq($_) } keys %ereq;
+
+
 # 2. changetemplate.pl
-my(@esubj, @ealpha, @esections, $cocked);
+my(@esubj, @ealpha, @esections, $cocked, %edeprecated);
 open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
 while (<IN>) {
     push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
@@ -58,10 +115,26 @@ while (<IN>) {
 push @{$esections[-1]}, scalar(@esubj);
 while (<IN>) {
     push @ealpha, $1 if /^\.M (.*) n/ && $cocked;
+    $edeprecated{$1} = 1 if /^\.M (.*) n .*deprecated/ && $cocked;
     $cocked = ($_ =~ /^\.TP/);
 }
 @ealpha = sort { lc($a) cmp lc($b) } @ealpha;
 close IN;
+
+sub element_li ($) {
+    my($e) = @_;
+    my($t) = "<li><a href='$e.n.html'>$e</a>";
+    my($x) = '';
+    $x .= "<a href='#D'>D</a>" if $edeprecated{$e};
+    if ($ereq{$e}) {
+	my($r) = $ereq{$e};
+	$x .= "<a href='#B'>B</a>" if $r =~ /\bbsdmodule\b/;
+	$x .= "<a href='#L'>L</a>" if $r =~ /\blinuxmodule\b/;
+	$x .= "<a href='#U'>U</a>" if $r =~ /\buserlevel\b/;
+    }
+    $t .= " <small>[$x]</small>" if $x ne '';
+    "$t</li>\n";
+}
 
 open(IN, "$WEBDIR/index.html") || die "$WEBDIR/index.html: $!\n";
 open(OUT, ">$WEBDIR/index.html.new") || die "$WEBDIR/index.html.new: $!\n";
@@ -72,7 +145,7 @@ while (<IN>) {
 	my($amt) = int((@ealpha - 1) / $2) + 1;
 	my($index) = ($num - 1) * $amt;
 	for ($i = $index; $i < $index + $amt && $i < @ealpha; $i++) {
-	    print OUT "<li><a href='$ealpha[$i].n.html'>$ealpha[$i]</a></li>\n";
+	    print OUT element_li($ealpha[$i]);
 	}
 	1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
 	print OUT;
@@ -100,9 +173,9 @@ while (<IN>) {
 
 	# iterate over sections
 	for ($i = $secno; $i < $secno2; $i++) {
-	    print OUT "<p>", $esections[$i]->[0], "</p>\n";
+	    print OUT "<p class='esubject'>", $esections[$i]->[0], "</p>\n";
 	    for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
-		print OUT "<li><a href='$esubj[$j].n.html'>$esubj[$j]</a></li>\n";
+		print OUT element_li($esubj[$j]);
 	    }
 	}
 	

@@ -19,13 +19,16 @@
 
 my(%section_break) =
     ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
-      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1 );
+      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1,
+      'deprecated' => 1 );
 my(%section_takes_args) =
     ( 'head1' => 1, 'c' => 0, 's' => 2, 'io' => 0, 'processing' => 0,
-      'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1 );
+      'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1,
+      'deprecated' => 1 );
 my(%section_takes_text) =
     ( 'head1' => 2, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
-      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0 );
+      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0,
+      'deprecated' => 0 );
 my(%xsection_takes_args) =
     ( 'head1' => 1, 'head2' => 1, 'item' => 1, 'over' => 1, 'back' => 0,
       'for' => 1, 'begin' => 1, 'end' => 1 );
@@ -37,7 +40,7 @@ my(%podentities) =
 my $directory;
 my $section = 'n';
 my(@all_outnames, %all_outsections, %summaries_by_section,
-   %all_roff_summaries, %class_name, %processing);
+   %all_roff_summaries, %class_name, %processing, %deprecated);
 
 my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
@@ -65,7 +68,7 @@ my(%section_headers) =
       'debugging' => 'Debugging',
       'profiling' => 'Measurement and Profiling',
       'analysis' => 'Trace Analysis and Manipulation',
-      'information' => 'Informational Elements',
+      'information' => 'Information Elements',
       'Ethernet' => 'Ethernet',
       'IP' => 'IP, ICMP, and IGMP',
       'ICMP' => 'IP, ICMP, and IGMP',
@@ -218,7 +221,7 @@ sub nroffize ($) {
   }
 }
 
-sub do_section_x($$$) {
+sub do_section_x ($$$) {
   my($name, $args, $text) = @_;
   if (!exists($xsection_takes_args{$name})) {
     print STDERR "$Filename: unknown section \`=$name' ignored\n";
@@ -285,7 +288,7 @@ sub do_section_x($$$) {
   print OUT nroffize($text), "\n";
 }
 
-sub do_section($$$) {
+sub do_section ($$$) {
   my($name, $args, $text) = @_;
   my(@text) = split(/^(=\w.*)$/m, $text);
   push @text, '' if !@text;
@@ -488,7 +491,11 @@ EOD;
 	  if $section_text[$insert_processing] =~ /None/;
     }
   }
-  
+
+  if (defined($first_in_section{'deprecated'})) {
+      $deprecated{$outfiles[0]} = $section_text[$first_in_section{'deprecated'}];
+  }
+
   for ($i = 0; $i < @section_text; $i++) {
     my($s) = $section_name[$i];
     my($x) = $section_text[$i];
@@ -521,7 +528,7 @@ EOD;
       do_section('head1', 'ELEMENT HANDLERS', $t);
     } elsif ($s eq 'a') {
       do_section('head1', 'SEE ALSO', $x);
-    } elsif ($s eq 'title' || $s eq 's') {
+    } elsif ($s eq 'title' || $s eq 's' || $s eq 'deprecated') {
       # nada
     } else {
       do_section($s, $section_args[$i], $x);
@@ -757,7 +764,9 @@ sub one_elementlist (@) {
   my($t);
   $t .= ".PP\n.PD 0\n";
   foreach $_ (sort { lc($a) cmp lc($b) } @_) {
-    $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_} . "\n";
+    $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_};
+    $t .= " \" (deprecated)\"" if $deprecated{$_};
+    $t .= "\n";
     $t .= $all_roff_summaries{$_} if $all_roff_summaries{$_};
     $el_generated{$_} = 1;
   }

@@ -7,6 +7,7 @@
  * ProbSplitter(P)
  * =s classification
  * classifies packets probabilistically
+ * =deprecated RandomSample
  * =d
  *
  * This element has been deprecated. Use RandomSample(DROP P) instead.

@@ -99,6 +99,8 @@ selective formatting
 selective formatting
 .IP "\f(CW=end\fR \fIformat\fR" 15
 selective formatting
+.IP "\f(CW=deprecated\fR \fInew-element\fR" 15
+element is deprecated
 .PD
 .RE
 .PP
@@ -155,11 +157,13 @@ Modification
 .IP "\f(CWannotations\fR" 22
 Annotations
 .IP "\f(CWmeasurement\fR" 22
-Measurement
+Measurement and Profiling
+.IP "\f(CWanalysis\fR" 22
+Trace Analysis and Manipulation
 .IP "\f(CWdebugging\fR" 22
-Debugging and Profiling
+Debugging
 .IP "\f(CWinformation\fR" 22
-Informational Elements
+Information Elements
 .IP "\f(CWEthernet\fR" 22
 Ethernet
 .IP "\f(CWIP\fR, \f(CWICMP\fR, \f(CWIGMP\fR" 22
@@ -373,6 +377,10 @@ includes a picture in HTML mode:
 This is like \f(CW=for\fR, but can encompass multiple paragraphs. It
 outputs text in between the \f(CW=begin\fR command and the \f(CW=end\fR
 command only when generating documentation in \fIformat\fR.
+.TP 5
+\f(CW=deprecated\fR \fInew-element\fR
+This command notes that the element has been deprecated in favor of
+\fInew-element\fR. It does not result in any output.
 '
 .SH TEXT
 Each line that doesn't begin with `\f(CW=\fR' and a lower-case letter is

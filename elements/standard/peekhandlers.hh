@@ -11,6 +11,8 @@ PeekHandlers(...)
 
 calls read handlers at specified times
 
+=deprecated PokeHandlers
+
 =io
 
 None

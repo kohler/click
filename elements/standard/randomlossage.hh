@@ -12,6 +12,8 @@
  *
  * drops packets with some probability
  *
+ * =deprecated RandomSample
+ *
  * =d
  *
  * This element is deprecated. Use RandomSample(DROP P) instead.

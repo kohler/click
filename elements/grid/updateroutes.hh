@@ -8,6 +8,8 @@
  * =s Grid
  * Run DSDV-like local routing protocol.
  *
+ * =deprecated GridRouteTable
+ *
  * =d
  *
  * Implements a DSDV-like loop-free routing protocol by originating
