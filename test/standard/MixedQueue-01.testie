@@ -8,7 +8,7 @@ FromIPSummaryDump(-, STOP true)
 	-> u::Unqueue(ACTIVE false)
 	-> ToIPSummaryDump(-, CONTENTS ip_dst);
 c[1] -> [1]m;
-DriverManager(wait, write u.active true, wait 0.1s, stop)
+DriverManager(wait, write u.active true, wait_time 0.1s, stop)
 
 %file DUMP
 !data ip_src ip_dst ip_proto

@@ -17,7 +17,7 @@ elementclass Far {
 $a, $b |
    Foo($b);
 }
-Far(wait_pause stop, stop);
+Far(wait_stop stop, stop);
 
 %expect AO_TOOL AO_USERLEVEL
 Far@1/Foo@1/DriverManager@1 :: DriverManager(stop);

@@ -6,7 +6,7 @@ FromIPSummaryDump(-, STOP true)
 	-> Queue -> LinkUnqueue(0.005s, 100)
 	-> SetTimestampDelta
 	-> ToIPSummaryDump(-, CONTENTS timestamp ip_src);
-DriverManager(wait, wait 0.38s, stop)
+DriverManager(wait, wait_time 0.38s, stop)
 
 %file DUMP
 !data ip_src ip_len
