@@ -7,11 +7,9 @@ CLICK_CXX_PROTECT
 #if CLICK_LINUXMODULE
 # include <net/checksum.h>
 # include <linux/in.h>
-# define click_in_cksum(addr, len) ip_compute_csum((unsigned char *)(addr), (len))
 #else
 # include <sys/types.h>
 # include <netinet/in.h>
-uint16_t click_in_cksum(const unsigned char *addr, int len);
 #endif
 
 /*
@@ -110,6 +108,19 @@ struct click_ip {
 
 #define IP_ISFRAG(iph)	  (((iph)->ip_off & htons(IP_MF | IP_OFFMASK)) != 0)
 #define IP_FIRSTFRAG(iph) (((iph)->ip_off & htons(IP_OFFMASK)) == 0)
+
+
+/* checksum functions */
+
+#if !CLICK_LINUXMODULE
+uint16_t click_in_cksum(const unsigned char *addr, int len);
+uint16_t click_in_cksum_pseudohdr(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len);
+#else
+# define click_in_cksum(addr, len) \
+		ip_compute_csum((unsigned char *)(addr), (len))
+# define click_in_cksum_pseudohdr(csum, src, dst, proto, packet_len) \
+		csum_tcpudp_magic((src), (dst), (packet_len), (proto), ~(csum) & 0xFFFF)
+#endif
 
 static inline void
 click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)
