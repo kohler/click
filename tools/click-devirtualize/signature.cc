@@ -187,10 +187,10 @@ Signatures::specialize_class(const String &eclass_name, bool doit)
 }
 
 void
-Signatures::analyze(const ElementMap &em)
+Signatures::analyze(ElementMap &em)
 {
   int ne = _router->nelements();
-  ProcessingT pt(_router, em, 0);
+  ProcessingT pt(_router, &em, 0);
   
   create_phase_0(pt);
 

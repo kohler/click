@@ -26,7 +26,7 @@ class Signatures { public:
 
   void specialize_class(const String &, bool);
   
-  void analyze(const ElementMap &);
+  void analyze(ElementMap &);
 
   const Vector<int> &signature_ids() const	{ return _sigid; }
   int nsignatures() const			{ return _sigs.size(); }

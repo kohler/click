@@ -5,12 +5,13 @@
 #include <stddef.h>
 #include <click/vector.hh>
 #include <click/hashmap.hh>
+#include "etraits.hh"
 class RouterT;
 class VariableEnvironment;
 class ErrorHandler;
 class StringAccum;
 class CompoundElementClassT;
-class TaggedElementClassT;
+class ElementMap;
 
 class ElementClassT { public:
 
@@ -20,7 +21,7 @@ class ElementClassT { public:
     static void set_default_class(ElementClassT *);
     static ElementClassT *default_class(const String &);
     static ElementClassT *tunnel_type() { assert(the_tunnel_type); return the_tunnel_type; }
-    
+
     void use()				{ _use_count++; }
     void unuse()			{ if (--_use_count <= 0) delete this; }
 
@@ -29,9 +30,15 @@ class ElementClassT { public:
     int unique_id() const		{ return _unique_id; }
     int uid() const			{ return _unique_id; }
     static const int TUNNEL_UID = 0;
-  
+
+    const ElementTraits &traits() const;
+    const String &processing_code() const;
+    const String &flow_code() const;
+    bool requires(const String &) const;
+    bool provides(const String &) const;
+
     static int expand_element(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
-  
+
     virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
     virtual void report_signatures(const String &, String, ErrorHandler *);
     virtual int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
@@ -53,9 +60,18 @@ class ElementClassT { public:
     int _use_count;
     int _unique_id;
 
+    mutable int _traits_version;
+    mutable const ElementTraits *_traits;
+    
     static ElementClassT *the_tunnel_type;
-
+    static ElementMap *the_emap;
+    static const int *the_emap_version_ptr;
+    
     ElementClassT(const String &, int);
+    ElementClassT(const ElementClassT &);
+    ElementClassT &operator=(const ElementClassT &);
+
+    const ElementTraits &find_traits() const;
     int direct_expand_element(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
 };
@@ -120,5 +136,41 @@ class CompoundElementClassT : public ElementClassT { public:
     int actual_expand(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
 };
+
+
+extern int32_t default_element_map_version;
+
+inline const ElementTraits &
+ElementClassT::traits() const
+{
+    if (_traits_version == default_element_map_version)
+	return *_traits;
+    else
+	return find_traits();
+}
+
+inline const String &
+ElementClassT::processing_code() const
+{
+    return traits().processing_code();
+}
+
+inline const String &
+ElementClassT::flow_code() const
+{
+    return traits().flow_code();
+}
+
+inline bool
+ElementClassT::requires(const String &req) const
+{
+    return traits().requires(req);
+}
+
+inline bool
+ElementClassT::provides(const String &req) const
+{
+    return traits().provides(req);
+}
 
 #endif

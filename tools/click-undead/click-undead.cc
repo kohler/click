@@ -401,24 +401,19 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 
 static void
 find_live_elements(const RouterT *r, const char *filename,
-		   const ElementMap &full_elementmap, int driver,
-		   bool indifferent, ProcessingT &processing,
+		   ElementMap &full_elementmap, int driver,
+		   bool indifferent,
 		   Bitvector &live_elements, ErrorHandler *errh)
 {
   if (!indifferent && !full_elementmap.driver_compatible(r, driver)) {
-    errh->error("%s: configuration incompatible with %s driver", filename, ElementMap::driver_name(driver));
+    errh->error("%s: configuration incompatible with %s driver", filename, Driver::name(driver));
     return;
   }
 
-  const ElementMap *em = &full_elementmap;
-  if (!indifferent) {
-    ElementMap *new_em = new ElementMap(full_elementmap);
-    new_em->limit_driver(driver);
-    em = new_em;
-  }
+  full_elementmap.set_driver(driver);
 
   // get processing
-  processing.reset(r, *em, errh);
+  ProcessingT processing(r, &full_elementmap, errh);
   // ... it will report errors as required
 
   Bitvector sources(r->nelements(), false);
@@ -431,7 +426,7 @@ find_live_elements(const RouterT *r, const char *filename,
     if (e.live()) {
       int nin = processing.ninputs(ei);
       int nout = processing.noutputs(ei);
-      int source_flag = em->elt(e).flag_value('S');
+      int source_flag = e.type()->traits().flag_value('S');
 
       if (source_flag == 0) {	// neither source nor sink
 	dead[ei] = true;
@@ -509,7 +504,7 @@ find_live_elements(const RouterT *r, const char *filename,
   for (int ei = 0; ei < r->nelements(); ei++) {
     const ElementT &e = r->element(ei);
     if (e.live() && !live_elements[ei]) {
-      int live_flag = em->elt(e).flag_value('L');
+      int live_flag = e.type()->traits().flag_value('L');
       if (live_flag == 0)	// not live
 	continue;
       else if (live_flag == 1) { // live
@@ -526,9 +521,6 @@ find_live_elements(const RouterT *r, const char *filename,
       }
     }
   }
-
-  if (!indifferent)
-    delete em;
 }
 
 static void
@@ -668,19 +660,19 @@ particular purpose.\n");
   }
 
   // find and parse `elementmap'
-  ElementMap elementmap;
-  elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
+  ElementMap *emap = ElementMap::default_map();
+  emap->parse_all_files(r, CLICK_SHAREDIR, p_errh);
 
   // check configuration for driver indifference
-  bool indifferent = elementmap.driver_indifferent(r, ElementMap::ALL_DRIVERS, default_errh);
+  bool indifferent = emap->driver_indifferent(r, Driver::ALLMASK, default_errh);
   if (indifferent) {
     if (check_kernel < 0 && check_userlevel < 0)
       // only bother to check one of them
       check_kernel = 0;
   } else {
     if (check_kernel < 0 && check_userlevel < 0) {
-      check_kernel = elementmap.driver_compatible(r, ElementMap::DRIVER_LINUXMODULE);
-      check_userlevel = elementmap.driver_compatible(r, ElementMap::DRIVER_USERLEVEL);
+      check_kernel = emap->driver_compatible(r, Driver::LINUXMODULE);
+      check_userlevel = emap->driver_compatible(r, Driver::USERLEVEL);
     }
   }
 
@@ -697,15 +689,14 @@ particular purpose.\n");
   
   // find live elements in the drivers
   Bitvector kernel_vec, user_vec;
-  ProcessingT processing;
   if (check_kernel > 0)
-    find_live_elements(r, router_file, elementmap,
-		       ElementMap::DRIVER_LINUXMODULE, indifferent,
-		       processing, kernel_vec, default_errh);
+    find_live_elements(r, router_file, *emap,
+		       Driver::LINUXMODULE, indifferent,
+		       kernel_vec, default_errh);
   if (check_userlevel > 0)
-    find_live_elements(r, router_file, elementmap,
-		       ElementMap::DRIVER_USERLEVEL, indifferent,
-		       processing, user_vec, default_errh);
+    find_live_elements(r, router_file, *emap,
+		       Driver::USERLEVEL, indifferent,
+		       user_vec, default_errh);
 
   // an element is live if it's live in either driver
   Bitvector live_vec = kernel_vec | user_vec;
@@ -747,6 +738,6 @@ particular purpose.\n");
     fwrite(config.data(), 1, config.length(), outf);
   } else
     write_router_file(r, outf, default_errh);
-  
+
   exit(0);
 }

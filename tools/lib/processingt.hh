@@ -1,5 +1,5 @@
-#ifndef PROCESSINGT_HH
-#define PROCESSINGT_HH
+#ifndef CLICK_PROCESSINGT_HH
+#define CLICK_PROCESSINGT_HH
 #include "routert.hh"
 class ElementMap;
 class Bitvector;
@@ -9,7 +9,8 @@ class ProcessingT { public:
   enum ProcessingCode { VAGNOSTIC = 0, VPUSH = 1, VPULL = 2 };
 
   ProcessingT();
-  ProcessingT(const RouterT *, const ElementMap &, ErrorHandler *);
+  ProcessingT(const RouterT *, ErrorHandler *);
+  ProcessingT(const RouterT *, ElementMap *, ErrorHandler *);
 
   int nelements() const		{ return _input_pidx.size() - 1; }
   int ninput_pidx() const	{ return _input_pidx.back(); }
@@ -32,7 +33,7 @@ class ProcessingT { public:
 
   bool is_internal_flow(int i, int ip, int op) const;
   
-  int reset(const RouterT *, const ElementMap &, ErrorHandler *);
+  int reset(const RouterT *, ErrorHandler *);
 
   bool same_processing(int, int) const;
 
@@ -54,11 +55,11 @@ class ProcessingT { public:
 
   void create_pidx(ErrorHandler *);
   
-  void initial_processing_for(int, const ElementMap &, ErrorHandler *);
-  void initial_processing(const ElementMap &, ErrorHandler *);
+  void initial_processing_for(int, ErrorHandler *);
+  void initial_processing(ErrorHandler *);
   void processing_error(const Hookup &, const Hookup &, int, int,
-			const ElementMap &, ErrorHandler *);
-  void check_processing(const ElementMap &, ErrorHandler *);
+			ErrorHandler *);
+  void check_processing(ErrorHandler *);
   void check_connections(ErrorHandler *);
   
 };

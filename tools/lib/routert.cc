@@ -1121,6 +1121,8 @@ RouterT::flatten(ErrorHandler *errh)
     //s = configuration_string(); fprintf(stderr, "4.\n%s\n\n", s.cc());
     compact_connections();
     //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.cc());
+    _etype_map.clear();
+    _etypes.clear();
     check();
 }
 

@@ -111,12 +111,12 @@ read_router_file(const char *filename, ErrorHandler *errh)
 }
 
 RouterT *
-read_router(const char *filename, bool is_expr, ErrorHandler *errh)
+read_router(const String &whatever, bool is_expr, ErrorHandler *errh)
 {
   if (is_expr)
-    return read_router_string(filename, "<expr>", errh);
+    return read_router_string(whatever, "<expr>", errh);
   else
-    return read_router_file(filename, false, errh);
+    return read_router_file(String(whatever).cc(), false, errh);
 }
 
 

@@ -22,6 +22,7 @@
 
 #include "eclasst.hh"
 #include "routert.hh"
+#include "elementmap.hh"
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/variableenv.hh>
@@ -33,13 +34,19 @@ static Vector<ElementClassT *> default_classes;
 static int unique_id_storage = 0;
 ElementClassT *ElementClassT::the_tunnel_type = new ElementClassT("<tunnel>", TUNNEL_UID);
 
+static int fake_emap_version;
+ElementMap *ElementClassT::the_emap = 0;
+static Vector<ElementMap *> emap_stack;
+const int *ElementClassT::the_emap_version_ptr = &fake_emap_version;
+
 ElementClassT::ElementClassT(const String &name)
-    : _name(name), _use_count(1), _unique_id(unique_id_storage++)
+    : _name(name), _use_count(1), _unique_id(unique_id_storage++),
+      _traits_version(-1)
 {
 }
 
 ElementClassT::ElementClassT(const String &name, int uid)
-    : _name(name), _use_count(1), _unique_id(uid)
+    : _name(name), _use_count(1), _unique_id(uid), _traits_version(-1)
 {
     assert(uid >= unique_id_storage);
     unique_id_storage = uid + 1;
@@ -69,6 +76,20 @@ ElementClassT::default_class(const String &name)
     set_default_class(ec);
     return ec;
 }
+
+
+const ElementTraits &
+ElementClassT::find_traits() const
+{
+    _traits_version = default_element_map_version;
+    ElementMap *em = ElementMap::default_map();
+    assert(em);
+    if (!simple())
+	return *(_traits = &ElementTraits::null_traits());
+    else
+	return *(_traits = &em->traits(_name));
+}
+
 
 ElementClassT *
 ElementClassT::find_relevant_class(int, int, const Vector<String> &)

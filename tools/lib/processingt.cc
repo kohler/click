@@ -31,10 +31,18 @@ ProcessingT::ProcessingT()
 {
 }
 
-ProcessingT::ProcessingT(const RouterT *r, const ElementMap &em, ErrorHandler *errh)
+ProcessingT::ProcessingT(const RouterT *r, ErrorHandler *errh)
     : _router(0)
 {
-    reset(r, em, errh);
+    reset(r, errh);
+}
+
+ProcessingT::ProcessingT(const RouterT *r, ElementMap *em, ErrorHandler *errh)
+    : _router(0)
+{
+    ElementMap::push_default(em);
+    reset(r, errh);
+    ElementMap::pop_default();
 }
 
 void
@@ -123,7 +131,7 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
 }
 
 void
-ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *errh)
+ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
 {
     // don't handle uprefs or tunnels
     ElementClassT *etype = _router->etype(ei);
@@ -131,7 +139,7 @@ ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *
 	return;
 
     String landmark = _router->elandmark(ei);
-    String pc = em.processing_code(etype);
+    String pc = etype->traits().processing_code();
     if (!pc) {
 	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->name_cc());
 	return;
@@ -171,18 +179,18 @@ ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *
 }
 
 void
-ProcessingT::initial_processing(const ElementMap &em, ErrorHandler *errh)
+ProcessingT::initial_processing(ErrorHandler *errh)
 {
     _input_processing.assign(ninput_pidx(), VAGNOSTIC);
     _output_processing.assign(noutput_pidx(), VAGNOSTIC);
     for (int i = 0; i < nelements(); i++)
-	initial_processing_for(i, em, errh);
+	initial_processing_for(i, errh);
 }
 
 void
 ProcessingT::processing_error(const Hookup &hfrom, const Hookup &hto,
 			      int which, int processing_from,
-			      const ElementMap &, ErrorHandler *errh)
+			      ErrorHandler *errh)
 {
   const char *type1 = (processing_from == VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == VPUSH ? "pull" : "push");
@@ -199,7 +207,7 @@ ProcessingT::processing_error(const Hookup &hfrom, const Hookup &hto,
 }
 
 void
-ProcessingT::check_processing(const ElementMap &em, ErrorHandler *errh)
+ProcessingT::check_processing(ErrorHandler *errh)
 {
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _router->hookup_from();
@@ -211,7 +219,7 @@ ProcessingT::check_processing(const ElementMap &em, ErrorHandler *errh)
       int port = i - _input_pidx[ei];
       int opidx = _output_pidx[ei];
       int noutputs = _output_pidx[ei+1] - opidx;
-      forward_flow(em.flow_code(_router->etype(ei)),
+      forward_flow(_router->etype(ei)->traits().flow_code(),
 		   port, noutputs, &bv);
       for (int j = 0; j < noutputs; j++)
 	if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC) {
@@ -248,7 +256,7 @@ ProcessingT::check_processing(const ElementMap &em, ErrorHandler *errh)
 	  _output_processing[offf] = pt;
 	  changed = true;
 	} else if (pf != pt) {
-	  processing_error(hookup_from[c], hookup_to[c], c, pf, em, errh);
+	  processing_error(hookup_from[c], hookup_to[c], c, pf, errh);
 	  hookup_from[c].idx = -1;
 	}
 	break;
@@ -343,7 +351,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 }
 
 int
-ProcessingT::reset(const RouterT *r, const ElementMap &em, ErrorHandler *errh)
+ProcessingT::reset(const RouterT *r, ErrorHandler *errh)
 {
   _router = r;
   if (!errh) errh = ErrorHandler::silent_handler();
@@ -352,8 +360,8 @@ ProcessingT::reset(const RouterT *r, const ElementMap &em, ErrorHandler *errh)
   // create pidx and eidx arrays, warn about dead elements
   create_pidx(errh);
   
-  initial_processing(em, errh);
-  check_processing(em, errh);
+  initial_processing(errh);
+  check_processing(errh);
   check_connections(errh);
   if (errh->nerrors() != before)
     return -1;

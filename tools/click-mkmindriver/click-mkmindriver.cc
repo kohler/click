@@ -109,10 +109,10 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
 
   // check whether suitable for driver
   if (!emap.driver_compatible(router, driver)) {
-    errh->error("%s: not compatible with %s driver; ignored", filename, ElementMap::driver_name(driver));
+    errh->error("%s: not compatible with %s driver; ignored", filename, Driver::name(driver));
     return;
   }
-  emap.limit_driver(driver);
+  emap.set_driver(driver);
 
   StringAccum missing_sa;
   int nmissing = 0;
@@ -120,7 +120,7 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
   HashMap<String, int> primitives(-1);
   router->collect_primitive_classes(primitives);
   for (HashMap<String, int>::Iterator i = primitives.first(); i; i++) {
-    if (!emap.has_elt(i.key()))
+    if (!emap.has_traits(i.key()))
       missing_sa << (nmissing++ ? ", " : "") << i.key();
     else if (emap.package(i.key()))
       /* do nothing; element was defined in a package */;
@@ -135,44 +135,44 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
 }
 
 static void
-add_stuff(int ei, const ElementMap &emap,
+add_stuff(int ti, const ElementMap &emap,
 	  HashMap<String, int> &provisions, Vector<String> &requirements,
 	  HashMap<String, int> &source_files)
 {
-  const ElementMap::Elt &e = emap.elt(ei);
+  const Traits &t = emap.traits_at(ti);
   
-  if (e.provisions) {
+  if (t.provisions) {
     Vector<String> args;
-    cp_spacevec(e.provisions, args);
+    cp_spacevec(t.provisions, args);
     for (int j = 0; j < args.size(); j++)
       provisions.insert(args[j], 1);
   }
-  if (e.name)
-    provisions.insert(e.name, 1);
+  if (t.name)
+    provisions.insert(t.name, 1);
 
-  if (e.requirements) {
+  if (t.requirements) {
     Vector<String> args;
-    cp_spacevec(e.requirements, args);
+    cp_spacevec(t.requirements, args);
     for (int j = 0; j < args.size(); j++)
       requirements.push_back(args[j]);
   }
 
-  if (e.source_file)
-    source_files.insert(e.source_file, 1);
+  if (t.source_file)
+    source_files.insert(t.source_file, 1);
 }
 
 static void
 find_requirement(const String &requirement, const ElementMap &emap,
 		 Vector<int> &new_emapi, ErrorHandler *errh)
 {
-  int try_name_emapi = emap.elt_index(requirement);
+  int try_name_emapi = emap.traits_index(requirement);
   if (try_name_emapi > 0) {
     new_emapi.push_back(try_name_emapi);
     return;
   }
   
   for (int i = 1; i < emap.size(); i++)
-    if (emap.elt(i).provides(requirement)) {
+    if (emap.traits_at(i).provides(requirement)) {
       new_emapi.push_back(i);
       return;
     }
@@ -197,7 +197,7 @@ print_elements_conf(FILE *f, String package, const ElementMap &emap,
 
   // collect header file and C++ element class definitions from emap
   for (int i = 1; i < emap.size(); i++) {
-    const ElementMap::Elt &elt = emap.elt(i);
+    const Traits &elt = emap.traits_at(i);
     int sourcei = source_files[elt.source_file];
     if (sourcei >= 0) {
       headervec[sourcei] = elt.header_file;
@@ -243,9 +243,9 @@ print_u_makefile(const String &directory, const String &pkg, ErrorHandler *errh)
   if (before != errh->nerrors())
     return -1;
 
-  String expectation = String("\n## Click ") + ElementMap::driver_requirement(driver) + " driver Makefile ##\n";
+  String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
   if (text.find_left(expectation) < 0)
-    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.cc(), ElementMap::driver_name(driver));
+    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.cc(), Driver::name(driver));
   
   StringAccum sa;
   sa << "INSTALLPROGS = " << pkg << "click\n\
@@ -272,9 +272,9 @@ print_k_makefile(const String &directory, const String &pkg, ErrorHandler *errh)
   if (before != errh->nerrors())
     return -1;
 
-  String expectation = String("\n## Click ") + ElementMap::driver_requirement(driver) + " driver Makefile ##\n";
+  String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
   if (text.find_left(expectation) < 0)
-    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.cc(), ElementMap::driver_name(driver));
+    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.cc(), Driver::name(driver));
   
   StringAccum sa;
   sa << "INSTALLOBJS = " << pkg << "click.o\n\
@@ -310,7 +310,7 @@ main(int argc, char **argv)
 
   Vector<String> router_filenames;
   Vector<String> elements;
-  String prefix = "f";
+  String specifier = "f";
   const char *package_name = 0;
   String directory;
   
@@ -338,11 +338,11 @@ particular purpose.\n");
       break;
 
      case KERNEL_OPT:
-      driver = ElementMap::DRIVER_LINUXMODULE;
+      driver = Driver::LINUXMODULE;
       break;
       
      case USERLEVEL_OPT:
-      driver = ElementMap::DRIVER_USERLEVEL;
+      driver = Driver::USERLEVEL;
       break;
 
      case PACKAGE_OPT:
@@ -356,7 +356,7 @@ particular purpose.\n");
       break;
 
      case ALL_OPT:
-      prefix = (clp->negated ? "f" : "a");
+      specifier = (clp->negated ? "f" : "a");
       break;
 
      case ELEMENT_OPT:
@@ -369,7 +369,7 @@ particular purpose.\n");
       
      case Clp_NotOption:
      case ROUTER_OPT:
-      router_filenames.push_back(prefix + clp->arg);
+      router_filenames.push_back(specifier + clp->arg);
       break;
 
      case Clp_BadOption:
@@ -385,9 +385,9 @@ particular purpose.\n");
   
  done:
   if (driver < 0)
-    driver = ElementMap::DRIVER_USERLEVEL;
-  if (!router_filenames.size())
-    router_filenames.push_back(prefix + "-");
+    driver = Driver::USERLEVEL;
+  if (!router_filenames.size() && !elements.size())
+    router_filenames.push_back(specifier + "-");
   if (!package_name)
     errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
 
@@ -404,7 +404,7 @@ particular purpose.\n");
   initial_requirements.insert("Error", 1);
   initial_requirements.insert("ScheduleInfo", 1);
   initial_requirements.insert("DriverManager", 1);
-  if (driver == ElementMap::DRIVER_USERLEVEL) {
+  if (driver == Driver::USERLEVEL) {
     initial_requirements.insert("QuitWatcher", 1);
     initial_requirements.insert("ControlSocket", 1);
   }
@@ -418,8 +418,8 @@ particular purpose.\n");
   HashMap<String, int> source_files(-1);
 
   // add initial provisions
-  default_emap.limit_driver(driver);
-  provisions.insert(ElementMap::driver_requirement(driver), 1);
+  default_emap.set_driver(driver);
+  provisions.insert(Driver::requirement(driver), 1);
   // all default provisions are stored in elementmap index 0
   add_stuff(0, default_emap, provisions, requirements, source_files);
   
@@ -427,7 +427,7 @@ particular purpose.\n");
   for (HashMap<String, int>::Iterator iter = initial_requirements.first();
        iter;
        iter++) {
-    int emapi = default_emap.elt_index(iter.key());
+    int emapi = default_emap.traits_index(iter.key());
     if (emapi > 0)
       add_stuff(emapi, default_emap, provisions, requirements, source_files);
   }
@@ -454,12 +454,12 @@ particular purpose.\n");
     exit(1);
 
   // first, print Makefile.PKG
-  if (driver == ElementMap::DRIVER_USERLEVEL)
+  if (driver == Driver::USERLEVEL)
     print_u_makefile(directory, package_name, errh);
-  else if (driver == ElementMap::DRIVER_LINUXMODULE)
+  else if (driver == Driver::LINUXMODULE)
     print_k_makefile(directory, package_name, errh);
   else
-    errh->fatal("%s driver support unimplemented", ElementMap::driver_name(driver));
+    errh->fatal("%s driver support unimplemented", Driver::name(driver));
 
   // Then, print elements_PKG.conf
   if (errh->nerrors() == 0) {
@@ -474,7 +474,7 @@ particular purpose.\n");
 
   // Final message
   if (errh->nerrors() == 0) {
-    if (driver == ElementMap::DRIVER_USERLEVEL)
+    if (driver == Driver::USERLEVEL)
       errh->message("Build `%sclick' with `make -f Makefile.%s'.", package_name, package_name);
     else
       errh->message("Build `%sclick.o' with `make -f Makefile.%s'.", package_name, package_name);

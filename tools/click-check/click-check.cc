@@ -46,9 +46,9 @@
 #define QUIET_OPT		306
 
 #define FIRST_DRIVER_OPT	1000
-#define LINUXMODULE_OPT		(1000 + ElementMap::DRIVER_LINUXMODULE)
-#define USERLEVEL_OPT		(1000 + ElementMap::DRIVER_USERLEVEL)
-#define BSDMODULE_OPT		(1000 + ElementMap::DRIVER_BSDMODULE)
+#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
+#define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
+#define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
 
 static Clp_Option options[] = {
   { "bsdmodule", 'b', BSDMODULE_OPT, 0, Clp_Negate },
@@ -101,26 +101,21 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static void
 check_once(const RouterT *r, const char *filename,
-	   const ElementMap &full_elementmap, int driver,
+	   ElementMap &full_elementmap, int driver,
 	   bool indifferent, bool print_context, bool print_ok_message,
 	   ErrorHandler *full_errh)
 {
-  const char *driver_name = ElementMap::driver_name(driver);
+  const char *driver_name = Driver::name(driver);
   
   if (!indifferent && !full_elementmap.driver_compatible(r, driver)) {
-    if (!full_elementmap.provides(0, driver_name))
+    if (!full_elementmap.provides_global(driver_name))
       full_errh->error("%s: Click compiled without support for %s driver", filename, driver_name);
     else
       full_errh->error("%s: configuration incompatible with %s driver", filename, driver_name);
     return;
   }
-  
-  const ElementMap *em = &full_elementmap;
-  if (!indifferent) {
-    ElementMap *new_em = new ElementMap(full_elementmap);
-    new_em->limit_driver(driver);
-    em = new_em;
-  }
+
+  full_elementmap.set_driver(driver);
   ErrorHandler *errh = full_errh;
   if (print_context)
     errh = new ContextErrorHandler(errh, "While checking configuration for " + String(driver_name) + " driver:");
@@ -128,13 +123,11 @@ check_once(const RouterT *r, const char *filename,
   int before_warnings = errh->nwarnings();
 
   // get processing
-  ProcessingT p(r, *em, errh);
+  ProcessingT p(r, &full_elementmap, errh);
   // ... it will report errors as required
 
   if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
     full_errh->message("%s: configuration OK in %s driver", filename, driver_name);
-  if (!indifferent)
-    delete em;
   if (print_context)
     delete errh;
 }
@@ -158,7 +151,7 @@ main(int argc, char **argv)
   const char *output_file = 0;
   bool output = false;
   bool quiet = false;
-  int driver_indifferent_mask = ElementMap::ALL_DRIVERS;
+  int driver_indifferent_mask = Driver::ALLMASK;
   int driver_mask = 0;
   
   while (1) {
@@ -259,14 +252,14 @@ particular purpose.\n");
 
   // check configuration for driver indifference
   bool indifferent = elementmap.driver_indifferent(r, driver_indifferent_mask, errh);
-  if (driver_indifferent_mask == ElementMap::ALL_DRIVERS) {
-    for (int d = 0; d < ElementMap::NDRIVERS; d++)
+  if (driver_indifferent_mask == Driver::ALLMASK) {
+    for (int d = 0; d < Driver::COUNT; d++)
       if (elementmap.driver_compatible(r, d))
 	driver_mask |= 1 << d;
   }
 
   // actually check the drivers
-  for (int d = 0; d < ElementMap::NDRIVERS; d++)
+  for (int d = 0; d < Driver::COUNT; d++)
     if (driver_mask & (1 << d))
       check_once(r, router_file, elementmap,
 		 d, indifferent, driver_mask & ~(1 << d), !output && !quiet,

@@ -380,9 +380,9 @@ particular purpose.\n");
   String driver_requirement = "";
   if (!full_elementmap.driver_indifferent(router)) {
     bool linuxmodule_ok = full_elementmap.driver_compatible
-      (router, ElementMap::DRIVER_LINUXMODULE);
+      (router, Driver::LINUXMODULE);
     bool userlevel_ok = full_elementmap.driver_compatible
-      (router, ElementMap::DRIVER_USERLEVEL);
+      (router, Driver::USERLEVEL);
     if (linuxmodule_ok && userlevel_ok
 	&& (compile_kernel > 0) == (compile_user > 0))
       p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify `-k' or `-u'");
@@ -393,11 +393,11 @@ particular purpose.\n");
     else if (linuxmodule_ok) {
       cc_suffix = ".k.cc";
       driver_requirement = "linuxmodule ";
-      full_elementmap.limit_driver(ElementMap::DRIVER_LINUXMODULE);
+      full_elementmap.set_driver(Driver::LINUXMODULE);
     } else {
       cc_suffix = ".u.cc";
       driver_requirement = "userlevel ";
-      full_elementmap.limit_driver(ElementMap::DRIVER_USERLEVEL);
+      full_elementmap.set_driver(Driver::USERLEVEL);
     }
   }
   

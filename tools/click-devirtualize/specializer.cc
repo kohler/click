@@ -45,7 +45,7 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
 
   // prepare from element map
   for (ElementMap::IndexIterator x = em.first(); x; x++) {
-    const ElementMap::Elt &e = em.elt(x.value());
+    const Traits &e = em.traits_at(x.value());
     add_type_info(e.name, e.cxx, e.header_file, em.source_directory(e));
   }
 }
@@ -586,9 +586,9 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 {
   for (int i = 0; i < _specials.size(); i++)
     if (_specials[i].special()) {
-      const ElementMap::Elt &e = full_em.elt(_specials[i].old_click_name);
+      const Traits &e = full_em.traits(_specials[i].old_click_name);
       em.add(_specials[i].click_name, _specials[i].cxx_name,
-	     filename, e.processing_code, e.flow_code,
+	     filename, e.processing_code(), e.flow_code(),
 	     e.flags, requirements + _specials[i].old_click_name, String());
     }
 }
