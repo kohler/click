@@ -1,3 +1,9 @@
+2001-10-31 Wednesday 17:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: move from
+	PACKET_COUNT_ANNO to EXTRA_PACKETS_ANNO, for consistency with
+	EXTRA_LENGTH_ANNO
+
 2001-10-30 Tuesday 12:29  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4, acclick.m4, acclick.m4, acclick.m4: another try
