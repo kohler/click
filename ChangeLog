@@ -1,3 +1,8 @@
+2002-10-31 Thursday 16:50  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-fastclassifier/click-fastclassifier.cc (1.55): handle
+	empty handlers correctly
+
 2002-10-31 Thursday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.25), floodinglocquerier.cc
