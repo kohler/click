@@ -169,7 +169,6 @@ etc/samplepackage/config.h.in
 etc/samplepackage/configure
 etc/samplepackage/configure.in
 etc/samplepackage/install-sh
-etc/samplepackage/kernelversion.c
 etc/samplepackage/missing
 etc/samplepackage/mkinstalldirs
 etc/samplepackage/sampleelt.hh

@@ -550,8 +550,10 @@ Compile with '--disable-int64'.
 	AC_CACHE_CHECK(whether long and int64_t are the same type,
 	    ac_cv_long_64, [AC_LANG_CPLUSPLUS
 	    AC_TRY_COMPILE([#include <$inttypes_hdr>
-void f1(long);
-void f1(int64_t); // will fail if long and int64_t are the same type
+void f1(long) {
+}
+void f1(int64_t) { // will fail if long and int64_t are the same type
+}
 ], [], ac_cv_long_64=no, ac_cv_long_64=yes)])
 	if test $ac_cv_long_64 = yes; then
 	    AC_DEFINE(HAVE_64_BIT_LONG)
