@@ -1,3 +1,34 @@
+2003-06-10 Tuesday 01:16  Eddie Kohler <kohler@icir.org>
+
+	* test/: testie (1.13), FTPPortMapper/local01.testie (1.3): %expect
+	stderr works now (because it ignores testie output)
+
+2003-06-10 Tuesday 01:04  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/tohost.hh (1.25): document drops handler
+
+2003-06-10 Tuesday 01:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: tohost.cc (1.40), tohost.hh (1.24): more
+	nits: don't double-allocate _dev (duh), and allow null _devname
+
+2003-06-10 Tuesday 01:00  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/anydevice.cc (1.26): oopslet
+
+2003-06-10 Tuesday 00:53  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: anydevice.cc (1.25), anydevice.hh (1.39),
+	fromdevice.cc (1.75), fromdevice.hh (1.35), fromhost.cc (1.44),
+	polldevice.cc (1.131), polldevice.hh (1.63), todevice.cc (1.133),
+	todevice.hh (1.63), tohost.cc (1.39), tohost.hh (1.23),
+	tohostsniffers.cc (1.34), tohostsniffers.hh (1.18), tulipstats.cc
+	(1.18), tulipstats.hh (1.9): ToHost watches for device up/down
+	events; add ToHost SNIFFERS and ALLOW_NONEXISTENT keywords;
+	ToHostSniffers is a subclass of ToHost (saves space, reduces
+	duplication); separate AnyDevice into AnyDevice (device handling) +
+	AnyTaskDevice (device handling + tickets)
+
 2003-06-09 Monday 20:13  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: linktable.cc (1.4), linktable.hh (1.4), srcr.cc
