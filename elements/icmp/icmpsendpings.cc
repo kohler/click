@@ -70,14 +70,20 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-ICMPPingSource::initialize(ErrorHandler *)
+ICMPPingSource::initialize(ErrorHandler *errh)
 {
     _count = 0;
     _timer.initialize(this);
     if (_limit != 0 && _active)
 	_timer.schedule_after_ms(_interval);
     if (ninputs() == 1) {
+#if CLICK_LINUXMODULE
+	_timestamp_record = (struct timeval *)vmalloc(sizeof(struct timeval) * 65536);
+#else
 	_timestamp_record = new struct timeval[65536];
+#endif
+	if (!_timestamp_record)
+	    return errh->error("out of memory!");
 	memset(_timestamp_record, 0, sizeof(struct timeval) * 65536);
     }
     return 0;
@@ -86,7 +92,12 @@ ICMPPingSource::initialize(ErrorHandler *)
 void
 ICMPPingSource::cleanup(CleanupStage)
 {
+#if CLICK_LINUXMODULE
+    if (_timestamp_record)
+	vfree(_timestamp_record);
+#else
     delete[] _timestamp_record;
+#endif
 }
 
 void
