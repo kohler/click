@@ -38,7 +38,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 4 || args.size() > 4+MAX_NRATES)
+  if(args.size() != 5)
     return errh->error("too few or too many arguments.");
 
   // SRC/DST
@@ -59,32 +59,21 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 
   // OFFSET
   int offset;
-  if(!cp_integer(args[2], offset) || offset < 0)
+  if(!cp_integer(args[2], offset))
     return errh->error
       ("third argument (OFFSET) should be a non-negative integer.");
   _offset = (unsigned int) offset;
 
   // THRESH
-  // First in row is hidden for the outside world. We use to determine when to
-  // split entries in the table.
-  if(!set_thresh(args[3]))
-    return errh->error("fourth argument (THRESH) should be int/int.");
+  if(!cp_integer(args[3], _thresh))
+    return errh->error
+      ("fourth argument (THRESH) should be non-negative integer.");
+ 
+  // PERIOD
+  if(!cp_integer(args[4], _period))
+    return errh->error
+      ("fifth argument (PERIOD) should be non-negative integer.");
 
-
-  // RATES
-  int rate;
-  int i;
-  for (i = 4; i < args.size(); i++) {
-    String arg = args[i];
-    if(cp_integer(arg, rate) && rate > 0)
-      // _rates[0] used for thresh
-      _rates[i-4+1] = rate;
-    else
-      return errh->error("rates should be a positive integer.");
-  }
-
-  // _rates[0] used for thresh
-  _no_of_rates = i-4+1;
   set_resettime();
 
   // Make _base
@@ -147,47 +136,11 @@ void
 IPRateMonitor::clean(_stats *s)
 {
   for(int i = 0; i < MAX_COUNTERS; i++) {
-    s->counter[i].total = 0;
     s->counter[i].flags = CLEAN;
     s->counter[i].next_level = NULL;
   }
 }
 
-
-bool
-IPRateMonitor::set_thresh(String str)
-{
-  int len = str.length();
-  const char *s = str.data();
-  int i = 0;
-
-  // read threshold
-  int tmp_thresh = 0;
-  while (i < len && isdigit(s[i])) {
-    tmp_thresh *= 10;
-    tmp_thresh += s[i] - '0';
-    i++;
-  }
-  if (i >= len || s[i] != '/')
-    return false;
-  i++;
-
-  // read seconds
-  int threshrate = 0;
-  while (i < len && isdigit(s[i])) {
-    threshrate *= 10;
-    threshrate += s[i] - '0';
-    i++;
-  }
-
-  if(threshrate <= 0)
-    return false;
-
-  _thresh = tmp_thresh;
-  _rates[0] = threshrate;
-
-  return true;
-}
 
 //
 // Prints out nice data.
@@ -199,7 +152,6 @@ IPRateMonitor::print(_stats *s, String ip = "")
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
     if (s->counter[i].flags != CLEAN) {
-      bool nonzero = false;
       String this_ip;
       if(ip)
         this_ip = ip + "." + String(i);
@@ -207,31 +159,15 @@ IPRateMonitor::print(_stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      for(int j = 1; j < _no_of_rates; j++) {
-	if (s->counter[i].values[j].average() > 0)
-	  nonzero = true;
-      }
-
-      if (nonzero) {
-	bool updated = false;
-	int duration = (jiffs-_resettime)/CLICK_HZ;
-	if (duration == 0) duration++;
+      if (s->counter[i].rate.average() > 0) {
+	if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
+	  s->counter[i].rate.update(0);
+	  s->counter[i].last_update = s->counter[i].rate.now();
+	}
 	ret += "\t"; 
-	ret += String((unsigned long)s->counter[i].total/duration);
-	for(int j = 1; j < _no_of_rates; j++) { 
-	  if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
-	    s->counter[i].values[j].update(0);
-	    updated = true;
-	  }
-	  ret += "\t"; 
-	  ret += cp_unparse_real 
-	    (s->counter[i].values[j].average() * CLICK_HZ, 
-	     s->counter[i].values[j].scale());
-        }
-	if (updated) 
-	  s->counter[i].last_update = s->counter[i].values[1].now();
-      } else
-	for(int j = 1; j < _no_of_rates; j++) ret += "\t0";
+	ret += cp_unparse_real 
+	  (s->counter[i].rate.average()*CLICK_HZ, s->counter[i].rate.scale());
+      } ret += "\t0";
     
       ret += "\n";
       if(s->counter[i].flags & SPLIT) 
@@ -270,7 +206,7 @@ String
 IPRateMonitor::thresh_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_thresh) + "/" + String(me->_rates[0]) + "\n";
+  return String(me->_thresh);
 }
 
 
@@ -291,41 +227,11 @@ IPRateMonitor::what_read_handler(Element *e, void *)
 
 
 String
-IPRateMonitor::rates_read_handler(Element *e, void *)
+IPRateMonitor::period_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  String ret = "";
-
-  ret += String(me->_no_of_rates-1);
-  for(int i = 1; i < me->_no_of_rates; i++) {
-    ret += "\t";
-    ret += String(me->_rates[i]);
-  }
-
-  return ret + "\n";
+  return String(me->_period);
 }
-
-
-int
-IPRateMonitor::thresh_write_handler
-(const String &conf, Element *e, void *, ErrorHandler *errh)
-{
-  Vector<String> args;
-  cp_argvec(conf, args);
-  IPRateMonitor* me = (IPRateMonitor *) e;
-
-  if(args.size() != 1) {
-    errh->error("expecting 1 string");
-    return -1;
-  }
-  if(!me->set_thresh(args[0])) {
-    errh->error("error parsing threshold. should be int/int.");
-    return -1;
-  }
-  return 0;
-}
-
-
 
 int
 IPRateMonitor::reset_write_handler
@@ -342,12 +248,10 @@ void
 IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
-  add_write_handler("thresh", thresh_write_handler, 0);
-
   add_read_handler("srcdst", srcdst_read_handler, 0);
   add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
-  add_read_handler("rates", rates_read_handler, 0);
+  add_read_handler("period", period_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
 }
