@@ -1,3 +1,14 @@
+2003-01-28 Tuesday 18:10  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromdagdump.cc (1.13), userlevel/fromdump.cc
+	(1.74): keep better track of _file_offset
+
+2003-01-28 Tuesday 16:52  Eddie Kohler <kohler@icir.org>
+
+	* elements/: userlevel/fromdump.cc (1.73), userlevel/fromdump.hh
+	(1.41), analysis/fromdagdump.cc (1.12), analysis/fromipsumdump.cc
+	(1.41): add "filename" handler
+
 2003-01-28 Tuesday 03:45  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/: proclikefs.c (1.9), sched.cc (1.36): move printk()
