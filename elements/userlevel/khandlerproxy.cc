@@ -96,8 +96,8 @@ KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
   String k_elt = hname.substring(0, dot);
   
   if (errno_val == ENOENT) {
-    String try_fn = "/proc/click/" + k_elt;
-    if (access("/proc/click", F_OK) < 0)
+    String try_fn = "/click/" + k_elt;
+    if (access("/click", F_OK) < 0)
       complain(errh, hname, CSERR_NO_ROUTER, "No router installed");
     else if (k_elt != "0" && access(try_fn.cc(), F_OK) < 0)
       complain(errh, hname, CSERR_NO_SUCH_ELEMENT, "No element named `" + k_elt.printable() + "'");
@@ -134,10 +134,10 @@ static String
 handler_name_to_file_name(const String &str)
 {
   if (str[0] == '0' && str[1] == '.')
-    return "/proc/click/" + str.substring(2);
+    return "/click/" + str.substring(2);
   else {
     int dot = str.find_left('.');
-    return "/proc/click/" + str.substring(0, dot) + "/" + str.substring(dot + 1);
+    return "/click/" + str.substring(0, dot) + "/" + str.substring(dot + 1);
   }
 }
 
@@ -232,7 +232,7 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
     int err = errno;
     khp->complain(errh, h->name(), CSERR_HANDLER_ERROR, "Error executing kernel write handler `" + h->name() + "'");
     if (!khp->_detailed_error_message) {
-      khp->complain(errh, h->name(), CSERR_HANDLER_ERROR, "(Check /proc/click/errors for details.)");
+      khp->complain(errh, h->name(), CSERR_HANDLER_ERROR, "(Check /click/errors for details.)");
       khp->_detailed_error_message = true;
     }
     return -err;
