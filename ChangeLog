@@ -1,3 +1,17 @@
+2004-05-20 Thursday 14:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: delayshaper.cc (1.12), delayshaper.hh (1.11):
+	Nickolai Zeldovich: add write handler for "delay"
+
+2004-05-20 Thursday 13:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.31), etc/README (1.5): add documentation for 2.4.26
+	patch
+
+2004-05-20 Thursday 13:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/linux-2.4.26-patch (1.1): add patch for linux 2.4.26
+
 2004-05-20 Thursday 13:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/atomic.hh (1.12): provide non-x86 versions of
