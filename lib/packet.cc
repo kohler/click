@@ -15,7 +15,6 @@
 # include <config.h>
 #endif
 #include "packet.hh"
-#include "router.hh"
 #include "glue.hh"
 #include <stdarg.h>
 #include <unistd.h>
