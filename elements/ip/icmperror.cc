@@ -57,7 +57,7 @@ ICMPError::is_error_type(int type)
 int
 ICMPError::initialize(ErrorHandler *errh)
 {
-  if (_type < 0 || _code < 0 || _src_ip.saddr() == 0)
+  if (_type < 0 || _code < 0 || _src_ip.addr() == 0)
     return errh->error("not configured");
   if(is_error_type(_type) == false)
     return errh->error("ICMP type %d is not an error type", _type);
@@ -217,7 +217,7 @@ ICMPError::simple_action(Packet *p)
   }
   if(_type == 5){
     /* Redirect */
-    ((struct icmp_redirect *) icp)->gateway = p->dst_ip_anno().saddr();
+    ((struct icmp_redirect *) icp)->gateway = p->dst_ip_anno().addr();
   }
 
   memcpy((void *)(icp + 1), p->data(), xlen);

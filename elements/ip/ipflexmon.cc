@@ -154,7 +154,7 @@ int
 IPFlexMonitor::update(IPAddress a, int val)
 {
   int ret;
-  unsigned int saddr = a.saddr();
+  unsigned int saddr = a.addr();
 
   struct _stats *s = _base;
   struct _counter *c = NULL;

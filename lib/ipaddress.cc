@@ -19,7 +19,7 @@
 
 IPAddress::IPAddress(unsigned char *data)
 {
-  _saddr = *((unsigned *)data);
+  _addr = *((unsigned *)data);
 }
 
 IPAddress::IPAddress(const String &str)
@@ -27,15 +27,15 @@ IPAddress::IPAddress(const String &str)
 #ifdef __KERNEL__
   printk("<1>IPAddress::IPAddress?\n");
 #else
-  if (!cp_ip_address(str, (unsigned char *)&_saddr))
-    _saddr = 0;
+  if (!cp_ip_address(str, (unsigned char *)&_addr))
+    _addr = 0;
 #endif
 }
 
 String
 IPAddress::s() const
 {
-  const unsigned char *p = (const unsigned char *)&_saddr;
+  const unsigned char *p = (const unsigned char *)&_addr;
   String s;
   char tmp[64];
   sprintf(tmp, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
@@ -45,7 +45,7 @@ IPAddress::s() const
 void
 IPAddress::print(void)
 {
-  unsigned char *p = (unsigned char *)&_saddr;
+  unsigned char *p = (unsigned char *)&_addr;
 #ifdef __KERNEL__
   printk("<1>IPAddress::print?\n");
 #else

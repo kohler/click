@@ -121,8 +121,8 @@ TCPConnectionMonitor::look_read_handler(Element *e, void *)
       for(int j = 0; j < MAX_HALF_OPEN; j++) {
         HalfOpenPorts hops;
         if(hocs->half_open_ports(j, hops))
-          ret += String(flid.saddr().saddr()) + "\t" +
-                 String(flid.daddr().saddr()) + "\t" +
+          ret += String(flid.saddr().addr()) + "\t" +
+                 String(flid.daddr().addr()) + "\t" +
                  String((int) hops.sport) + "\t" +
                  String((int) hops.dport) + "\n";
       }
@@ -176,8 +176,8 @@ TCPConnectionMonitor::add_handlers()
 TCPConnectionMonitor::HalfOpenConnections::HalfOpenConnections(IPAddress saddr,
                                                            IPAddress daddr)
 {
-  _saddr = saddr.saddr();
-  _daddr = daddr.saddr();
+  _saddr = saddr.addr();
+  _daddr = daddr.addr();
   _amount = 0;
   for(short i = 0; i < MAX_HALF_OPEN; i++) {
     _hops[i] = 0;

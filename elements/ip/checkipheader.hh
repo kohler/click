@@ -42,12 +42,13 @@ class CheckIPHeader : public Element {
   
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *processing() const		{ return "a/ah"; }
+  
+  CheckIPHeader *clone() const;
   void notify_noutputs(int);
   int configure(const String &, ErrorHandler *);
   
   int drops() const				{ return _drops; }
   
-  CheckIPHeader *clone() const;
   void add_handlers();
 
   Packet *simple_action(Packet *);

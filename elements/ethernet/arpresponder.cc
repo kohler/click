@@ -111,8 +111,8 @@ ARPResponder::lookup(IPAddress a, EtherAddress &ena)
   int i, besti = -1;
 
   for(i = 0; i < _v.size(); i++){
-    if((a.saddr() & _v[i]._mask.saddr()) == _v[i]._dst.saddr()){
-      if(besti == -1 || ~_v[i]._mask.saddr() < ~_v[besti]._mask.saddr()){
+    if((a.addr() & _v[i]._mask.addr()) == _v[i]._dst.addr()){
+      if(besti == -1 || ~_v[i]._mask.addr() < ~_v[besti]._mask.addr()){
         besti = i;
       }
     }

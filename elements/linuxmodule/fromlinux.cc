@@ -109,9 +109,9 @@ FromLinux::init_rt(void)
   memset(_rt, 0, sizeof(struct rtentry));
 
   s.m.sin_family = AF_INET;
-  s.m.sin_addr.s_addr = _destaddr.saddr();
+  s.m.sin_addr.s_addr = _destaddr.addr();
   _rt->rt_dst = s.d;
-  s.m.sin_addr.s_addr = _destmask.saddr();
+  s.m.sin_addr.s_addr = _destmask.addr();
   _rt->rt_genmask = s.d;
   _rt->rt_flags = RTF_UP;
   _rt->rt_dev = _dev->name;

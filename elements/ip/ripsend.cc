@@ -69,9 +69,9 @@ RIPSend::run_scheduled()
   unsigned int *r = (unsigned int *) (udpp + 1);
   r[0] = htonl((2 << 24) | (2 << 16) | 0);
   r[1] = htonl((2 << 16) | 0);
-  r[2] = _what.saddr();
-  r[3] = _mask.saddr();
-  r[4] = _src.saddr();
+  r[2] = _what.addr();
+  r[3] = _mask.addr();
+  r[4] = _src.addr();
   r[5] = htonl(_metric);
 
   /* UDP header */
