@@ -1,3 +1,10 @@
+2002-09-19 Thursday 15:14  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	libsrc/router.cc: improve select add and remove performance, since
+	it happens more dynamically now. In particular, make removing a
+	nonexistent select faster
+
 2002-09-17 Tuesday 00:16  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/templatei.cc: accomodate crappy gccs

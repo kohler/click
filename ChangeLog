@@ -1,3 +1,15 @@
+2002-09-19 Thursday 15:14  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.39), lib/router.cc (1.133): improve
+	select add and remove performance, since it happens more
+	dynamically now. In particular, make removing a nonexistent select
+	faster
+
+2002-09-19 Thursday 15:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: controlsocket.cc (1.35), controlsocket.hh
+	(1.26): don't select writes unless we have data to write
+
 2002-09-17 Tuesday 00:16  Eddie Kohler <kohler@icir.org>
 
 	* lib/templatei.cc (1.13), tools/lib/hashmapi.cc (1.10): accomodate
