@@ -81,11 +81,13 @@ if ($ARGV[0] eq "-config") {
 	if (/IP=(\d+\.\d+\.\d+\.\d+)/) {
 	    $grid_addr = $1;
 	}
-	if (/LAT=(\d+\.?\d*|\.d+)/) {
+	# XXX doesn't handle numbers without a digit before the point, e.g. `.005'
+	if (/LAT=(-?\d+\.?\d*|\.d+)/) {
 	    $POS_LAT = $1;
 	}
-	if (/LON=(\d+\.?\d*|\.d+)/) {
+	if (/LON=(-?\d+\.?\d*|\.d+)/) {
 	    $POS_LON = $1;
+	    print ("XXX $POS_LON\n");
 	}
 	if (/IF=(\w+)/) {
 	    $grid_if = $1;
