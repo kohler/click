@@ -71,7 +71,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: click
 
 click: Makefile $(OBJS)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS)
+	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) $(SOCKET_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
