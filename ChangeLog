@@ -1,3 +1,19 @@
+2001-05-02 Wednesday 12:37  Benjie Chen <benjie@lcs.mit.edu>
+
+	* NODIST, elements/linuxmodule/polldevice.cc,
+	elements/linuxmodule/sortedsched.cc,
+	elements/linuxmodule/sortedsched.hh,
+	elements/linuxmodule/staticthreadsched.cc,
+	elements/linuxmodule/staticthreadsched.hh,
+	elements/linuxmodule/threadmonitor.cc,
+	elements/linuxmodule/threadmonitor.hh,
+	elements/local/sortedsched.cc, elements/local/sortedsched.hh,
+	elements/local/staticthreadsched.cc,
+	elements/local/staticthreadsched.hh,
+	elements/local/threadmonitor.cc, elements/local/threadmonitor.hh,
+	etc/linux-2.2.18-patch: moving scheduling elements from local to
+	linuxmodule, NODIST and NEWS updates
+
 2001-04-30 Monday 19:17  Peilei Fan <peilei@lcs.mit.edu>
 
 	* NODIST: [no log message]
