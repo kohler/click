@@ -25,10 +25,11 @@ CLICK_DECLS
  *
  * =over 8
  *
- * =item SET_ERROR_ANNO
+ * =item USE_Q
  * 
- * Boolean.  If true, then set the SEND_ERR annotation on error output
- * packets.  Default is false.
+ * Boolean.  If true, then writes that fail with errno ENOBUFS or EAGAIN
+ * will be put on a single packet queue that is held until the next time
+ * run_task is called.
  *
  * =item IGNORE_QUEUE_OVERFLOWS
  *
@@ -51,11 +52,9 @@ CLICK_DECLS
  * ToDevice element for the same device. Under other operating systems, your
  * mileage may vary.
  *
- * If there is an error write()ing or send()ing a packet to the
- * device, the packet will be pushed out the (optional) output.  If
- * the SET_ERROR_ANNO keyword is true, the SEND_ERR annotation of the
- * pushed packet is set to the system error code.
- *
+ * Packets that are written successfully are sent on output 0, if it exists.
+ * Packets that fail to be written are pushed out output 1, if it exists.
+
  * KernelTun lets you send IP packets to the host kernel's IP processing code,
  * sort of like the kernel module's ToHost element.
  *
@@ -118,9 +117,12 @@ private:
   bool _my_fd;
   NotifierSignal _signal;
   
-  bool _set_error_anno;
   bool _ignore_q_errs;
   bool _printed_err;
+
+
+  bool _use_q;
+  Packet *_q;
 };
 
 CLICK_ENDDECLS
