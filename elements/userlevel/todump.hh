@@ -18,7 +18,7 @@ writes packets to a tcpdump(1) file
 =d
 
 Writes incoming packets to FILENAME in `tcpdump -w' format. This file can be
-read `tcpdump -r', or by FromDump on a later run. FILENAME can be `-', in
+read by `tcpdump -r', or by FromDump on a later run. FILENAME can be `-', in
 which case ToDump writes to the standard output.
 
 Writes at most SNAPLEN bytes of each packet to the file. The default SNAPLEN

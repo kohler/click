@@ -21,7 +21,7 @@ None
 
 Reads progress information from handlers, and displays an ASCII-art progress
 bar on standard error, indicating how much progress has been made and how much
-reamins to go.
+remains to go.
 
 POSHANDLER and SIZEHANDLER are read handlers. Each of them should return an
 unsigned number. POSHANDLER is checked each time the progress bar displays;
