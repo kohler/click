@@ -69,33 +69,37 @@ dnl
 dnl How to build linuxmodule driver?
 dnl
 
-AC_ARG_WITH(linux, [[  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]]],
-  [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
-  linuxdir=NONE)
+AC_ARG_WITH(linux, [[  --with-linux[=DIR]      Linux source code is in DIR]],
+    [linuxdir=$withval], [linuxdir=NONE])
+test -z "$linuxdir" -o "$linuxdir" = yes && linuxdir=yes
 
 AC_ARG_WITH(linux-map, [[  --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]]],
   [linux_system_map=$withval; if test -z "$withval" -o "$withval" = yes; then linux_system_map=NONE; fi],
   linux_system_map=NONE)
 
-if test "x$linuxdir" = xNONE; then
-  if test -d /usr/src/linux; then
-    linuxdir=/usr/src/linux
-  elif test "x$enable_linuxmodule" = xyes; then
-    AC_MSG_WARN([
+if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
+    if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
+	linuxdir=/lib/modules/"`uname -r`"/build
+    else
+	linuxdir=/usr/src/linux
+    fi
+    if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
+	AC_MSG_WARN([
 =========================================
 
-Can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
 (You may need the --with-linux=DIR option.)
 
 =========================================])
-  fi
+	linuxdir=NONE
+    fi
 fi
 
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
-  ac_have_linux_kernel=n
-  linuxdir=NONE
+    ac_have_linux_kernel=n
+    linuxdir=NONE
 elif expr "_$linuxdir" : '_[[^/\\]]' >/dev/null; then 
-  AC_MSG_ERROR([
+    AC_MSG_ERROR([
 =========================================
 
 The --with-linux directory $linuxdir is relative.
@@ -103,9 +107,9 @@ You must supply an absolute path starting with /.
 
 =========================================])
 elif test -r $linuxdir/include/linux/skbuff.h; then
-  ac_have_linux_kernel=y
+    ac_have_linux_kernel=y
 else
-  AC_MSG_ERROR([
+    AC_MSG_ERROR([
 =========================================
 
 Can't find $linuxdir/include/linux/skbuff.h.
@@ -154,7 +158,7 @@ ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi support], NO)
 
-elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
+elements_vpath="`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`"
 AC_SUBST(elements_vpath)
 
 
@@ -403,6 +407,8 @@ dnl
 
 if test $ac_have_linux_kernel = y; then
 
+dnl Look for System.map
+
 if test "$linux_system_map" = NONE; then
     linux_system_map=$linuxdir/System.map
 fi
@@ -416,9 +422,16 @@ Can't find Linux System.map file '$linux_system_map'.
 =========================================])
 fi
 
+dnl Check for Linux 2.6
+
+AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
+    [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
+LINUXMODULE_2_6=$ac_cv_linux26
+AC_SUBST(LINUXMODULE_2_6)
+
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
 [if grep register_net_in $linux_system_map >/dev/null 2>&1; then
-  ac_cv_click_kernel=yes
+    ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
     AC_DEFINE(HAVE_CLICK_KERNEL)
@@ -664,11 +677,37 @@ dnl check linuxmodule for Linux
 
 if test $ac_have_linux_kernel = y; then
 
+    dnl check for Linux 2.6 #includes
+    if test $LINUXMODULE_2_6 = 1; then
+	AC_MSG_CHECKING([for Linux 2.6 compilation flags])
+	echo "include $linuxdir/Makefile
+fwablongie:
+	@echo \$(CFLAGS)" >conftest.mk
+	make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
+	if test $? != 0; then
+	    AC_MSG_RESULT([not found])
+	    AC_MSG_ERROR([
+==============================================
+
+Can't find Linux 2.6 compilation flags.
+
+==============================================])
+	fi
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linuxdir/include,g \
+	    -e 's,-W[^ ]*,,g' \
+	    -e s,-fno-unit-at-a-time,,g \
+	    -e s,-fno-common,,g <conftest.dat`"
+	AC_MSG_RESULT($LINUX_CFLAGS)
+    else
+    	LINUX_CFLAGS=""
+    fi
+    AC_SUBST(LINUX_CFLAGS)
+
     dnl include the correct version of Linux
     SAVE_CXX="$CXX"
     CXX="$KERNEL_CXX"
     saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include"
+    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include $LINUX_CFLAGS"
 
     AC_CACHE_CHECK([for C++-includable kernel header files], [ac_cv_cxx_aware_system],
 	[AC_LANG_CPLUSPLUS

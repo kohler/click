@@ -26,7 +26,9 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/spinlock.h>
-#include <linux/locks.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# include <linux/locks.h>
+#endif
 #include <linux/proc_fs.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
@@ -96,7 +98,11 @@ unlock_config_write(const char *file, int line)
 
 /*************************** Inode constants ********************************/
 
-#define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# define INODE_INFO(inode)		(*((ClickInodeInfo *)((inode)->u.generic_ip)))
+#else
+# define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
+#endif
 
 struct ClickInodeInfo {
     struct proclikefs_inode_info padding;
@@ -141,6 +147,11 @@ click_inode(struct super_block *sb, ino_t ino)
     if (!inode)
 	return 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    ClickInodeInfo *inode_info = new ClickInodeInfo;
+    inode->u.generic_ip = inode_info;
+#endif
+    
     inode->i_ino = ino;
     INODE_INFO(inode).config_generation = click_config_generation;
 
@@ -156,6 +167,9 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode->i_nlink = click_ino.nlink(ino);
 	} else {
 	    // can't happen
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	    delete inode_info;
+#endif
 	    iput(inode);
 	    inode = 0;
 	    panic("click_inode");
@@ -184,7 +198,11 @@ click_inode(struct super_block *sb, ino_t ino)
 extern "C" {
 
 static struct dentry *
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+click_dir_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *)
+#else
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
+#endif
 {
     LOCK_CONFIG_READ();
     MDEBUG("click_dir_lookup %lx", dir->i_ino);
@@ -216,6 +234,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     }
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 static int
 click_dir_revalidate(struct dentry *dentry)
 {
@@ -239,6 +258,7 @@ click_dir_revalidate(struct dentry *dentry)
     UNLOCK_CONFIG_READ();
     return error;
 }
+#endif
 
 
 struct my_filldir_container {
@@ -326,6 +346,17 @@ click_put_inode(struct inode *inode)
 }
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static void
+click_put_inode(struct inode *inode)
+{
+    if (atomic_read(&inode->i_count) == 1) {
+	delete (ClickInodeInfo *) inode->u.generic_ip;
+	inode->i_nlink = 0;
+    }
+}
+#endif
+
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
@@ -361,6 +392,20 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_dev = 0;
     return 0;
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static int
+click_fill_super(struct super_block *sb, void *data, int flags)
+{
+    return click_read_super(sb, data, flags) ? 0 : -ENOMEM;
+}
+
+static struct super_block *
+click_get_sb(struct file_system_type *fs_type, int flags, const char *, void *data)
+{
+    return get_sb_single(fs_type, flags, data, click_fill_super);
+}
+#endif
 
 static void
 click_reread_super(struct super_block *sb)
@@ -740,13 +785,17 @@ read_ino_info(Element *, void *)
 int
 init_clickfs()
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
+#endif
 
 #if INO_DEBUG
     Router::add_read_handler(0, "ino_info", read_ino_info, 0);
 #endif
-    
-#ifdef LINUX_2_4
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    click_superblock_ops.put_inode = click_put_inode;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     click_superblock_ops.put_inode = force_delete;
 #else
     click_superblock_ops.write_inode = click_write_inode;
@@ -764,7 +813,9 @@ init_clickfs()
 #endif
     click_dir_file_ops.readdir = click_dir_readdir;
     click_dir_inode_ops.lookup = click_dir_lookup;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     click_dir_inode_ops.revalidate = click_dir_revalidate;
+#endif
 #ifdef LINUX_2_2
     click_dir_inode_ops.default_file_ops = &click_dir_file_ops;
 #endif
@@ -788,9 +839,13 @@ init_clickfs()
     atomic_set(&config_read_count, 0);
     click_ino.initialize();
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    clickfs = proclikefs_register_filesystem("click", 0, click_get_sb, click_reread_super);
+#else
     // NB: remove FS_SINGLE if it will ever make sense to have different
     // Click superblocks -- if we introduce mount options, for example
     clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super, click_reread_super);
+#endif
     if (!clickfs) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;

@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_DRIVERS DRIVERS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS LINUXMODULE_2_6 POSSIBLE_DRIVERS DRIVERS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS LINUX_CFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -896,7 +896,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]
+  --with-linux[=DIR]      Linux source code is in DIR
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
@@ -4079,10 +4079,11 @@ fi;
 # Check whether --with-linux or --without-linux was given.
 if test "${with_linux+set}" = set; then
   withval="$with_linux"
-  linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi
+  linuxdir=$withval
 else
   linuxdir=NONE
 fi;
+test -z "$linuxdir" -o "$linuxdir" = yes && linuxdir=yes
 
 
 # Check whether --with-linux-map or --without-linux-map was given.
@@ -4093,32 +4094,36 @@ else
   linux_system_map=NONE
 fi;
 
-if test "x$linuxdir" = xNONE; then
-  if test -d /usr/src/linux; then
-    linuxdir=/usr/src/linux
-  elif test "x$enable_linuxmodule" = xyes; then
-    { echo "$as_me:$LINENO: WARNING:
+if test "x$linuxdir" = xNONE -o "x$linuxdir" = xyes; then
+    if uname -r 2>/dev/null | grep '^2\.6' >/dev/null 2>&1; then
+	linuxdir=/lib/modules/"`uname -r`"/build
+    else
+	linuxdir=/usr/src/linux
+    fi
+    if test ! -d "$linuxdir" -a "x$enable_linuxmodule" = xyes; then
+	{ echo "$as_me:$LINENO: WARNING:
 =========================================
 
-Can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&5
 echo "$as_me: WARNING:
 =========================================
 
-Can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
+Can't find $linuxdir, so I'm not compiling the linuxmodule driver.
 (You may need the --with-linux=DIR option.)
 
 =========================================" >&2;}
-  fi
+	linuxdir=NONE
+    fi
 fi
 
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
-  ac_have_linux_kernel=n
-  linuxdir=NONE
+    ac_have_linux_kernel=n
+    linuxdir=NONE
 elif expr "_$linuxdir" : '_[^/\\]' >/dev/null; then
-  { { echo "$as_me:$LINENO: error:
+    { { echo "$as_me:$LINENO: error:
 =========================================
 
 The --with-linux directory $linuxdir is relative.
@@ -4134,9 +4139,9 @@ You must supply an absolute path starting with /.
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
 elif test -r $linuxdir/include/linux/skbuff.h; then
-  ac_have_linux_kernel=y
+    ac_have_linux_kernel=y
 else
-  { { echo "$as_me:$LINENO: error:
+    { { echo "$as_me:$LINENO: error:
 =========================================
 
 Can't find $linuxdir/include/linux/skbuff.h.
@@ -4354,7 +4359,7 @@ if test "x$enable_wifi" = xyes; then
 
 fi
 
-elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
+elements_vpath="`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`"
 
 
 
@@ -7988,7 +7993,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7991 "configure"
+#line 7996 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -11719,6 +11724,7 @@ fi
 
 if test $ac_have_linux_kernel = y; then
 
+
 if test "$linux_system_map" = NONE; then
     linux_system_map=$linuxdir/System.map
 fi
@@ -11739,13 +11745,26 @@ Can't find Linux System.map file '$linux_system_map'.
    { (exit 1); exit 1; }; }
 fi
 
+
+echo "$as_me:$LINENO: checking for Linux 2.6" >&5
+echo $ECHO_N "checking for Linux 2.6... $ECHO_C" >&6
+if test "${ac_cv_linux26+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if grep '^PATCHLEVEL 	*= 	*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_linux26" >&5
+echo "${ECHO_T}$ac_cv_linux26" >&6
+LINUXMODULE_2_6=$ac_cv_linux26
+
+
 echo "$as_me:$LINENO: checking for Click Linux kernel extensions" >&5
 echo $ECHO_N "checking for Click Linux kernel extensions... $ECHO_C" >&6
 if test "${ac_cv_click_kernel+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if grep register_net_in $linux_system_map >/dev/null 2>&1; then
-  ac_cv_click_kernel=yes
+    ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi
 fi
 echo "$as_me:$LINENO: result: $ac_cv_click_kernel" >&5
@@ -12959,10 +12978,45 @@ fi
 
 if test $ac_have_linux_kernel = y; then
 
+        if test $LINUXMODULE_2_6 = 1; then
+	echo "$as_me:$LINENO: checking for Linux 2.6 compilation flags" >&5
+echo $ECHO_N "checking for Linux 2.6 compilation flags... $ECHO_C" >&6
+	echo "include $linuxdir/Makefile
+fwablongie:
+	@echo \$(CFLAGS)" >conftest.mk
+	make -C "${linuxdir}" M="`pwd`" -f "`pwd`/conftest.mk" --no-print-directory fwablongie >conftest.dat
+	if test $? != 0; then
+	    echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+	    { { echo "$as_me:$LINENO: error:
+==============================================
+
+Can't find Linux 2.6 compilation flags.
+
+==============================================" >&5
+echo "$as_me: error:
+==============================================
+
+Can't find Linux 2.6 compilation flags.
+
+==============================================" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	LINUX_CFLAGS="`sed -e s,-Iinclude,-I$linuxdir/include,g \
+	    -e 's,-W^ *,,g' \
+	    -e s,-fno-unit-at-a-time,,g \
+	    -e s,-fno-common,,g <conftest.dat`"
+	echo "$as_me:$LINENO: result: $LINUX_CFLAGS" >&5
+echo "${ECHO_T}$LINUX_CFLAGS" >&6
+    else
+    	LINUX_CFLAGS=""
+    fi
+
+
         SAVE_CXX="$CXX"
     CXX="$KERNEL_CXX"
     saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include"
+    CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include $LINUX_CFLAGS"
 
     echo "$as_me:$LINENO: checking for C++-includable kernel header files" >&5
 echo $ECHO_N "checking for C++-includable kernel header files... $ECHO_C" >&6
@@ -14402,6 +14456,7 @@ s,@BUILD_DL_LIBS@,$BUILD_DL_LIBS,;t t
 s,@SOCKET_LIBS@,$SOCKET_LIBS,;t t
 s,@EXTRA_DRIVER_OBJS@,$EXTRA_DRIVER_OBJS,;t t
 s,@EXTRA_TOOL_OBJS@,$EXTRA_TOOL_OBJS,;t t
+s,@LINUXMODULE_2_6@,$LINUXMODULE_2_6,;t t
 s,@POSSIBLE_DRIVERS@,$POSSIBLE_DRIVERS,;t t
 s,@DRIVERS@,$DRIVERS,;t t
 s,@OTHER_TARGETS@,$OTHER_TARGETS,;t t
@@ -14412,6 +14467,7 @@ s,@PCAP_LIBS@,$PCAP_LIBS,;t t
 s,@XML2CLICK@,$XML2CLICK,;t t
 s,@EXPAT_INCLUDES@,$EXPAT_INCLUDES,;t t
 s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t
+s,@LINUX_CFLAGS@,$LINUX_CFLAGS,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t

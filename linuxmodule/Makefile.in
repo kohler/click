@@ -2,6 +2,147 @@
 ## Click linuxmodule driver Makefile ##
 SHELL = @SHELL@
 
+
+LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
+	packet.o \
+	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
+	element.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o master.o handlercall.o notifier.o \
+	integers.o iptable.o ewma64.o \
+	driver.o ino.o \
+	$(EXTRA_DRIVER_OBJS)
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
+
+LIB_C_OBJS = crc32.o in_cksum.o
+
+LINUXMODULE_CXX_OBJS = config.o sched.o module.o clickfs.o skbmgr.o
+
+LINUXMODULE_C_OBJS = kernelversion.o read-pmc.o
+
+STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
+	errorelement.o portinfo.o scheduleinfo.o
+
+ifndef INSTALLOBJS
+INSTALLOBJS = click.o proclikefs.o
+endif
+
+
+ifeq (@LINUXMODULE_2_6@,1)
+
+##########################################################################
+## LINUX 2.6								##
+
+KERNELPATH = @linuxdir@
+
+ifeq ($(KBUILD_EXTMOD),)
+top_srcdir := @top_srcdir@
+srcdir := @srcdir@
+top_builddir := ..
+else
+ifeq (@srcdir@,.)
+top_srcdir := $(src)/..
+srcdir := $(src)
+else
+ifeq ($(patsubst /%,/,@srcdir@),/)
+top_srcdir := @top_srcdir@
+srcdir := @srcdir@
+else
+top_srcdir := $(obj)/@top_srcdir@
+srcdir := $(obj)/@srcdir@
+endif
+endif
+top_builddir := $(obj)/..
+endif
+subdir := linuxmodule
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+linuxdir = @linuxdir@
+
+CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
+
+-include $(obj)/elements.mk
+
+CLICKCC = @KERNEL_CC@
+CLICKCXX = @KERNEL_CXX@
+
+LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
+	-e s,-Wstrict-prototypes,, -e s,-Wdeclaration-after-statement,, \
+	-e s,-fno-common,,)
+CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
+CLICKCFLAGS = @CFLAGS_NDEBUG@
+CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
+
+CLICKDEFS = @DEFS@ 
+CLICKINCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
+
+CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
+	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
+COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
+	$(CLICKDEFS) $(CLICKINCLUDES) 
+
+quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
+
+quiet_cmd_ccompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_ccompile = $(COMPILE) -c -o $@ $<
+
+quiet_cmd_xcompile = CC $(quiet_modtag) $(subst $(obj)/,,$@)
+cmd_xcompile = $(COMPILE) -D__KERNEL__ -DMODULE -c -o $@ $<
+
+EXTRA_CFLAGS = $(CLICKCPPFLAGS) $(CLICKCFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
+
+obj-m += $(INSTALLOBJS)
+
+click-objs := $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
+	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
+	elements.o
+proclikefs-objs := proclikefs_.o
+
+$(addprefix $(obj)/,$(LIB_CXX_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.cc
+	$(call cmd,cxxcompile)
+
+$(addprefix $(obj)/,$(LIB_C_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.c
+	$(call cmd,ccompile)
+
+$(addprefix $(obj)/,$(LINUXMODULE_CXX_OBJS)): $(obj)/%.o : $(srcdir)/%.cc
+	$(call cmd,cxxcompile)
+
+$(addprefix $(obj)/,$(LINUXMODULE_C_OBJS)): $(obj)/%.o : $(srcdir)/%.c
+	$(call cmd,ccompile)
+
+$(addprefix $(obj)/,$(STD_ELEMENT_OBJS)): $(obj)/%.o : $(top_srcdir)/elements/standard/%.cc
+	$(call cmd,cxxcompile)
+
+$(obj)/elements.o : $(obj)/elements.cc
+	$(call cmd,cxxcompile)
+
+$(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
+	$(call cmd,xcompile)
+
+all: Makefile elements.mk elements.cc always
+	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
+install: all
+	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
+
+clean:
+	-rm -f *~ *.o *.ko *.mod.c
+	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
+
+
+else
+
+##########################################################################
+## LINUX 2.4								##
+
 top_srcdir := @top_srcdir@
 srcdir := @srcdir@
 top_builddir := ..
@@ -26,6 +167,7 @@ STRIP = @STRIP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
+CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make
 
 .SUFFIXES:
 .SUFFIXES: .c .cc .o .S .s .i .ii
@@ -46,33 +188,10 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
-ifndef INSTALLOBJS
-INSTALLOBJS = click.o proclikefs.o
-endif
-
-GENERIC_OBJS = string.o straccum.o nameinfo.o \
-	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
-	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
-	packet.o \
-	error.o timestamp.o glue.o task.o timer.o atomic.o gaprate.o \
-	element.o \
-	confparse.o variableenv.o lexer.o elemfilter.o \
-	routerthread.o router.o master.o handlercall.o notifier.o \
-	integers.o crc32.o in_cksum.o iptable.o ewma64.o \
-	driver.o skbmgr.o \
-	$(EXTRA_DRIVER_OBJS) \
-	$(STD_ELEMENT_OBJS)
-STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
-	errorelement.o portinfo.o scheduleinfo.o
-
-LINUXMODULE_OBJS = kernelversion.o config.o sched.o module.o \
-	ino.o clickfs.o read-pmc.o
-
-EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
-
 -include elements.mk
 
-OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
+OBJS = $(LIB_CXX_OBJS) $(LIB_C_OBJS) $(STD_ELEMENT_OBJS) $(ELEMENT_OBJS) \
+	$(LINUXMODULE_CXX_OBJS) $(LINUXMODULE_C_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CFLAGS = @CFLAGS_NDEBUG@
@@ -98,23 +217,8 @@ click.o: Makefile $(OBJS)
 	$(LD) -r -o click.o $(OBJS)
 	$(STRIP) -g click.o
 
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
 proclikefs.o: proclikefs.c Makefile
 	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
-
-elemlist:
-	@/bin/rm -f elements.conf
-	@$(MAKE) elements.conf
-elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) > elements.conf
-elements.mk: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
-elements.cc: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
-	@rm -f elements.d
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -132,4 +236,29 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install uninstall
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+endif
+
+
+##########################################################################
+## ANY LINUX								##
+
+elemlist:
+	@/bin/rm -f elements.conf
+	@$(MAKE) elements.conf
+elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
+	echo "linuxmodule @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) > elements.conf
+elements.mk: elements.conf $(top_builddir)/click-buildtool
+	$(CLICK_ELEM2MAKE) -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
+elements.cc: elements.conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
+	@rm -f elements.d
+
+always:
+	@:
+
+.PHONY: all clean distclean elemlist install uninstall always

@@ -46,6 +46,9 @@
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+# include <linux/netdevice.h>
+# include <linux/rtnetlink.h>
+# include <linux/if_arp.h>
 # include <linux/inetdevice.h>
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>

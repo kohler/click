@@ -414,15 +414,15 @@ elem2make () {
     -x|--e|--ex|--exc|--excl|--exclu|--exclud|--exclude)
         if test $# -lt 2; then elem2xxx_usage; fi
 	shift 1
-	for i in $1; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	for i in $1; do excludes=";/^$i"' \\$'"/d$excludes"; done
 	shift 1;;
     -x*)
 	this_exclude=`echo "$1" | sed 's/^-p//'`
-	for i in $this_exclude; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	for i in $this_exclude; do excludes=";/^$i"' \\$'"/d$excludes"; done
 	shift 1;;
     --e=*|--ex=*|--exc=*|--excl=*|--exclu=*|--exclud=*|--exclude=*)
 	this_exclude=`echo "$1" | sed 's/^[^=]*=//'`
-	for i in $this_exclude; do excludes=";s/^$i"' \\$'"//$excludes"; done
+	for i in $this_exclude; do excludes=";/^$i"' \\$'"/d$excludes"; done
 	shift 1;;
     --l|--li|--lin|--linu|--linux|--linux2|--linux26)
 	linux26=1; shift 1;;
@@ -509,12 +509,10 @@ END {
     }
     print "'"$makevar"' = \\\n", allsubdirs;
     for (i = 0; i < nsubdirs; i++) {
-	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : $(srcdir)/", subdirs[i], "%.cc";
+	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : $(obj)/", subdirs[i], "%.cc";
 	print "	$(call cmd,cxxcompile)";
-	print "$(addprefix $(obj)/,$(ELEMENT_OBJS__", i, ")): $(obj)/%.o : $(srcdir)/", subdirs[i], "%.c";
-	print "	$(call cmd,ccompile)";
     }
-}'
+}' | sed "$excludes"
     else
 	echo "$makevar = \\"
 	echo "$files" | sed -e 's/\.cc*$/'"$osuffix"' \\/;s/^.*\///'"$excludes" | grep .
