@@ -38,44 +38,37 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 4 || args.size() > 4+MAX_NRATES) {
-    errh->error("too few or too many arguments");
-    return -1;
-  }
+  if(args.size() < 4 || args.size() > 4+MAX_NRATES)
+    return errh->error("too few or too many arguments.");
 
   // SRC/DST
   if(args[0] == "SRC")
     _sd = SRC;
   else if(args[0] == "DST")
     _sd = DST;
-  else {
-    errh->error("first argument should be \"SRC\" or \"DST\"");
-    return -1;
-  }
+  else
+    return errh->error("first argument should be \"SRC\" or \"DST\".");
 
   // PACKETS/BYTES
   if(args[1] == "PACKETS")
     _pb = COUNT_PACKETS;
   else if(args[1] == "BYTES")
     _pb = COUNT_BYTES;
-  else {
-    errh->error("second argument should be \"PACKETS\" or \"BYTES\"");
-    return -1;
-  }
+  else
+    return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
 
   // OFFSET
   int offset;
-  if(!cp_integer(args[2], offset) || offset < 0) {
-    errh->error("third argument (OFFSET) should be a non-negative integer");
-    return -1;
-  }
+  if(!cp_integer(args[2], offset) || offset < 0)
+    return errh->error
+      ("third argument (OFFSET) should be a non-negative integer.");
   _offset = (unsigned int) offset;
 
   // THRESH
   // First in row is hidden for the outside world. We use to determine when to
   // split entries in the table.
   if(!set_thresh(args[3]))
-    return errh->error("error parsing threshold. should be int/int.");
+    return errh->error("fourth argument (THRESH) should be int/int.");
 
 
   // RATES
@@ -86,10 +79,8 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
     if(cp_integer(arg, rate) && rate > 0)
       // _rates[0] used for thresh
       _rates[i-4+1] = rate;
-    else {
-      errh->error("IPRates should be a positive integer");
-      return -1;
-    }
+    else
+      return errh->error("rates should be a positive integer.");
   }
 
   // _rates[0] used for thresh
@@ -98,10 +89,8 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 
   // Make _base
   _base = new struct _stats;
-  if(!_base) {
-    errh->error("oops");
-    return -1;
-  }
+  if(!_base)
+    return errh->error("cannot allocate data structure.");
   clean(_base);
 
   return 0;

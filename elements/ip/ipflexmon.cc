@@ -150,8 +150,6 @@ IPFlexMonitor::push(int port, Packet *p)
 //
 // Dives in tables based on a and raises the appropriate entry by val.
 //
-// XXX: Make this interrupt driven.
-//
 int
 IPFlexMonitor::update(IPAddress a, int val)
 {
