@@ -1,3 +1,29 @@
+2002-07-11 Thursday 16:06  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/spinlockacquire.cc (1.5),
+	elements/standard/spinlockacquire.hh (1.6),
+	elements/standard/spinlockinfo.cc (1.6),
+	elements/standard/spinlockrelease.cc (1.5),
+	elements/standard/spinlockrelease.hh (1.6), include/click/sync.hh
+	(1.10): get rid of useless Spinlock::ref and unref operations
+
+2002-07-11 Thursday 15:34  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ino.hh (1.3), lib/ino.cc (1.3): more ino fixes; now
+	it seems to work
+
+2002-07-11 Thursday 15:08  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.62), include/click/ino.hh (1.2), lib/ino.cc (1.2),
+	linuxmodule/clickfs.cc (1.15): ino fixes
+
+2002-07-11 Thursday 14:59  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/Makefile.in (1.74), linuxmodule/clickfs.cc (1.14),
+	include/click/ino.hh (1.1), lib/ino.cc (1.1), linuxmodule/config.cc
+	(1.2): factoring out inode number stuff in preparation for BSD
+	(probably doesn't work yet)
+
 2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
 
 	* lib/router.cc (1.126), linuxmodule/clickfs.cc (1.13),

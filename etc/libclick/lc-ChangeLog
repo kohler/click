@@ -1,3 +1,24 @@
+2002-07-11 Thursday 16:06  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: sync.hh, sync.hh: get rid of useless
+	Spinlock::ref and unref operations
+
+2002-07-11 Thursday 15:34  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ino.hh, include/click/ino.hh, libsrc/ino.cc: more
+	ino fixes; now it seems to work
+
+2002-07-11 Thursday 15:08  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ino.hh, include/click/ino.hh, libsrc/ino.cc: ino
+	fixes
+
+2002-07-11 Thursday 14:59  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ino.hh, include/click/ino.hh, libsrc/ino.cc:
+	factoring out inode number stuff in preparation for BSD (probably
+	doesn't work yet)
+
 2002-07-11 Thursday 00:45  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/router.cc: use new click_qsort, and other nits
