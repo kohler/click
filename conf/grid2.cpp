@@ -13,6 +13,7 @@ rh :: ReadHandlerCaller(1)
 // protocol els
 nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
 h :: Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP)
+lr :: LocalRoute(MAC_ADDR, GRID_IP)
 
 // device layer els
 from_wvlan :: FromDevice(NET_DEVICE, 0)
@@ -25,18 +26,20 @@ to_linux :: Queue -> linux
 
 // hook it all up
 from_wvlan -> Classifier(GRID_ETH_PROTO) 
-  //-> check_grid :: CheckGridHeader
+  -> check_grid :: CheckGridHeader
   -> fr :: FilterByRange(1000) [0] 
-  -> [0] nb [0] -> to_wvlan
+  -> nb 
+  -> Classifier(GRID_NBR_ENCAP_PROTO)
+  -> [0] lr [0] -> to_wvlan
 fr [1] -> Print(out_of_range) -> Discard
-//check_grid [1] -> Print(bad_grid_hdr) -> Discard
+check_grid [1] -> Print(bad_grid_hdr) -> Discard
 
 linux -> cl :: Classifier(GRID_IP_HEX, // ip for us
 			  GRID_NET_HEX, // ip for Grid network
 			  -) // the rest of the world
 cl [0] -> to_linux
-cl [1] -> GetIPAddress(16) -> [1] nb [1] -> check :: CheckIPHeader [0] -> to_linux
+cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux
 check [1] -> Discard
-cl [2] -> SetIPAddress(GRID_GW) -> [1] nb // for grid gateway
+cl [2] -> SetIPAddress(GRID_GW) -> [1] lr // for grid gateway
 h -> to_wvlan
 
