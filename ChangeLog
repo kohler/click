@@ -1,3 +1,17 @@
+2003-08-06 Wednesday 15:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridgenericmetric.hh (1.1), hopcountmetric.cc
+	(1.1), hopcountmetric.hh (1.1): generic metric interface for
+	routing protocols, plus hopcount instantiation
+
+2003-08-06 Wednesday 15:19  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.44), include/click/lexer.hh (1.13),
+	lib/driver.cc (1.15), lib/lexer.cc (1.64), userlevel/click.cc
+	(1.82): Lexer::add_element_type can be scoped or unscoped (supports
+	user-level hotswap with packages); add userlevel "hotconfig"
+	handler before parsing configuration; nits
+
 2003-08-06 Wednesday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/linkstat.cc (1.25): error msgs should not be
