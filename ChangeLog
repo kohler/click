@@ -1,3 +1,11 @@
+2003-03-26 Wednesday 19:36  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.1 (1.12), elements/userlevel/controlsocket.cc (1.41),
+	elements/userlevel/controlsocket.hh (1.29), userlevel/click.cc
+	(1.79): support user-level hotswapping: the click driver now has a
+	-R/--allow-reconfigure option, and ControlSocket has a take_state()
+	method
+
 2003-03-26 Wednesday 11:02  Eddie Kohler <kohler@icir.org>
 
 	* include/clicknet/ether.h (1.2): add click_ether_vlan, for
