@@ -1,3 +1,9 @@
+2003-08-07 Thursday 16:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.67), dsdvroutetable.hh
+	(1.46): Document and clarify MTU parameter for maximum route ad
+	size
+
 2003-08-07 Thursday 13:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.66), linkstat.cc (1.26),
