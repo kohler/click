@@ -55,5 +55,6 @@ GridTxError::push(int, Packet *p)
   p->kill();
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridTxError);
 
