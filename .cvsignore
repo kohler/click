@@ -1,5 +1,5 @@
 configure config.log config.cache config.status
-config.h.in config.h clickconfig.h
+config.h
 click-compile elementmap
 Makefile
 stamp-h stamp-egroup
