@@ -380,6 +380,10 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 {
     XML_Parser parser = (XML_Parser)v;
     CxState next_state = CX_ERROR;
+
+    // handle XML namespaces
+    if (strncmp(name, "http://www.lcdf.org/click/xml/|", 31) == 0)
+	name += 31;
     
     if (strcmp(name, "configuration") == 0) {
 	String landmark = xml_landmark(parser);

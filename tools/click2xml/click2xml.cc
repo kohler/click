@@ -127,9 +127,9 @@ print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 static void
 print_landmark_attributes(FILE *f, const String &landmark)
 {
-    const char *colon = find(landmark, ':');
+    const char *colon = rfind(landmark.begin(), landmark.end(), ':');
     if (colon < landmark.end() && (colon < landmark.end() - 1 || colon[1] != '0'))
-	fprintf(f, " file=\"%s\" line=\"%s\"", landmark.substring(landmark.begin(), colon).cc(), landmark.substring(colon + 1, landmark.end()).cc());
+	fprintf(f, " file=\"%s\" line=\"%s\"", xml_quote(landmark.substring(landmark.begin(), colon)).c_str(), landmark.substring(colon + 1, landmark.end()).c_str());
 }
 
 static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
@@ -264,7 +264,7 @@ process(const char *infile, bool file_is_expr, bool flatten,
 
     fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n\
 <!DOCTYPE configuration SYSTEM \"http://www.pdos.lcs.mit.edu/click/clickconfig.dtd\">\n\
-<configuration>\n");
+<configuration xmlns=\"http://www.lcdf.org/click/xml/\">\n");
     generate_router(r, outf, "", true, errh);
     fprintf(outf, "</configuration>\n");
     
