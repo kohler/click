@@ -417,6 +417,9 @@ inline void
 Packet::clear_annotations()
 {
   memset(anno(), '\0', sizeof(Anno));
+  set_packet_type_anno(HOST);
+  set_device_anno(0);
+  set_network_header(0, 0);
 }
 
 #endif

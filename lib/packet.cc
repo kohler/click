@@ -60,8 +60,6 @@ Packet::Packet()
   _use_count = 1;
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
-  _nh.raw = 0;
-  _h_raw = 0;
   clear_annotations();
 }
 
