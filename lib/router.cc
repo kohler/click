@@ -1205,6 +1205,7 @@ Router::change_handler_flags(Router *r, int eindex, const String &name,
       store_global_handler(to_add);
     else
       r->store_handler(eindex, to_add);
+    return 0;
   } else
     return -1;
 }
