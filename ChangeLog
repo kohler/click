@@ -1,3 +1,8 @@
+2002-06-11 Tuesday 10:05  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromflandump.cc (1.2), fromflandump.hh (1.2):
+	updates
+
 2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromflandump.cc (1.1), fromflandump.hh (1.1):
