@@ -2,7 +2,7 @@
 #define IPRATEMON_HH
 
 /*
- * =c IPRateMonitor(PB, OFF, RATIO, THRESH, MEMORY)
+ * =c IPRateMonitor(PB, OFF, RATIO, THRESH [, MEMORY, ANNO])
  *
  * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
@@ -27,6 +27,8 @@
  *
  * MEMORY: How much memory can IPRateMonitor use in kilobytes? Minimum of 100 is
  * enforced. 0 is unlimited memory.
+ *
+ * ANNO: if on (by default, it is), annotate packets with rates.
  *
  * =h look (read)
  * Returns the rate of counted to and from a cluster of IP addresses. The first
@@ -159,6 +161,7 @@ private:
 #define MEMMAX_MIN      100         // kbytes
   unsigned int _memmax;             // max. memory usage
   unsigned int _ratio;              // inspect 1 in how many packets?
+  bool _anno_packets;		    // annotate packets?
 
   struct Stats *_base;              // first level stats
   long unsigned int _resettime;     // time of last reset
@@ -255,7 +258,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
         c->rev_rate.update(now, val);
     }
     
-    if (!annotated && (c->anno_this > now || !c->next_level)) {
+    if (_anno_packets && !annotated && (c->anno_this > now || !c->next_level)) {
       annotated = true;
 
       // annotate packet with fwd and rev rates for inspection by CompareBlock
