@@ -44,6 +44,7 @@ class RatedSource : public Element { protected:
   void uninitialize();
 
   int total_sent() const			{ return _total_sent; }
+  unsigned long total_us() const { return _diff.tv_usec+_diff.tv_sec*1000000; }
   void run_scheduled();
 };
 
