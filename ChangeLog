@@ -1,3 +1,45 @@
+2003-03-04 Tuesday 16:19  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.47), toipsumdump.cc
+	(1.41): update ipopt01 test for empty options and the like; improve
+	output for SSRR and LSRR (show pointer as *); add ICMPError source
+	routing test
+
+2003-03-04 Tuesday 15:53  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11):
+	update regression test for binary options; fix testie against perl
+	bugs; and regression test found bug with binary option handling
+	(fixed)
+
+2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.46), fromipsumdump.hh
+	(1.26): no warning if file starts with "\!data"; report line number
+	on error; parse IP options
+
+2003-03-04 Tuesday 15:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: ipsumdumpinfo.cc (1.8), ipsumdumpinfo.hh
+	(1.6), toipsumdump.cc (1.39), toipsumdump.hh (1.34): support IP
+	options with ip_opt type; also a little more care on invalid option
+	lengths
+
+2003-03-04 Tuesday 15:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/settcpchecksum.cc (1.10): correct checksum
+	algorithm
+
+2003-03-04 Tuesday 15:23  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.10): support comments in %script, and add --help
+	for --show
+
+2003-03-04 Tuesday 15:22  Eddie Kohler <kohler@icir.org>
+
+	* include/click/straccum.hh (1.23), lib/straccum.cc (1.29): add
+	StringAccum::append_fill()
+
 2003-03-03 Monday 15:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh (1.47): grid_hdr::type_string() -- print
