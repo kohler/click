@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 
-CLICK_VERSION=1.2.2a
+CLICK_VERSION=1.2.3
 
 AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
@@ -227,7 +227,8 @@ ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], no, AC_DEFINE(H
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
 
-AC_ARG_ENABLE(greedy, [  --enable-greedy         not give up control of CPU to OS for more predictable performance], , enable_greedy=no)
+AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
+                          provides more predictable performance)], , enable_greedy=no)
 if test "x$enable_greedy" = xyes; then
     AC_DEFINE(CLICK_GREEDY)
 fi
