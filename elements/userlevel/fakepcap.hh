@@ -12,7 +12,9 @@ CLICK_DECLS
 /* Canonical (pcap file) data link types (may differ from host versions) */
 #define FAKE_DLT_NONE			0	/* Unknown */ 
 #define FAKE_DLT_EN10MB			1	/* Ethernet (10Mb) */
+#define FAKE_DLT_PPP			9	/* PPP */
 #define FAKE_DLT_FDDI			10	/* FDDI */
+#define FAKE_DLT_PPP_HDLC		50	/* PPP or Cisco HDLC */
 #define FAKE_DLT_ATM_RFC1483		100	/* RFC 1483-encapsulated ATM */
 #define FAKE_DLT_RAW			101	/* raw IP */
 #define FAKE_DLT_C_HDLC			104	/* Cisco HDLC */
@@ -70,7 +72,7 @@ struct fake_modified_pcap_pkthdr {
 
 // Parsing and unparsing.
 int fake_pcap_parse_dlt(const String &);
-const char *fake_pcap_unparse_dlt(int);
+String fake_pcap_unparse_dlt(int);
 int fake_pcap_canonical_dlt(int, bool from_file);
 
 // Handling FORCE_IP.

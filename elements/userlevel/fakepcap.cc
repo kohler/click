@@ -25,63 +25,51 @@
 #include <clicknet/rfc1483.h>
 #include <clicknet/wifi.h>
 #include <clicknet/llc.h>
+#include <clicknet/ppp.h>
+#include <click/confparse.hh>
 CLICK_DECLS
+
+static const struct dlt_name {
+    const char* name;
+    int dlt;
+} dlt_names[] = {
+    { "IP", FAKE_DLT_RAW },
+    { "ETHER", FAKE_DLT_EN10MB },
+    { "FDDI", FAKE_DLT_FDDI },
+    { "ATM", FAKE_DLT_ATM_RFC1483 },
+    { "RFC1483", FAKE_DLT_ATM_RFC1483 },
+    { "ATM_RFC1483", FAKE_DLT_ATM_RFC1483 },
+    { "802_11", FAKE_DLT_IEEE802_11 },
+    { "802.11", FAKE_DLT_IEEE802_11 },
+    { "SLL", FAKE_DLT_LINUX_SLL },
+    { "AIRONET", FAKE_DLT_AIRONET_HEADER },
+    { "HDLC", FAKE_DLT_C_HDLC },
+    { "PPP_HDLC", FAKE_DLT_PPP_HDLC },
+    { "PPP", FAKE_DLT_PPP },
+    { "SUNATM", FAKE_DLT_SUNATM },
+    { "PRISM", FAKE_DLT_PRISM_HEADER }
+};
 
 int
 fake_pcap_parse_dlt(const String &str)
 {
-    if (str == "IP")
-	return FAKE_DLT_RAW;
-    else if (str == "ETHER")
-	return FAKE_DLT_EN10MB;
-    else if (str == "FDDI")
-	return FAKE_DLT_FDDI;
-    else if (str == "ATM" || str == "RFC1483" || str == "ATM-RFC1483")
-	return FAKE_DLT_ATM_RFC1483;
-    else if (str == "802.11")
-	return FAKE_DLT_IEEE802_11;
-    else if (str == "SLL")
-	return FAKE_DLT_LINUX_SLL;
-    else if (str == "AIRONET")
-	return FAKE_DLT_AIRONET_HEADER;
-    else if (str == "HDLC")
-	return FAKE_DLT_C_HDLC;
-    else if (str == "SUNATM")
-	return FAKE_DLT_SUNATM;
-    else if (str == "PRISM")
-	return FAKE_DLT_PRISM_HEADER;
+    for (const dlt_name* d = dlt_names; d < dlt_names + (sizeof(dlt_names) / sizeof(dlt_names[0])); d++)
+	if (str == d->name)
+	    return d->dlt;
+    uint32_t dlt;
+    if (str.length() >= 2 && str[0] == '#' && cp_unsigned(str.substring(1), &dlt) && dlt < 0x7FFFFFFF)
+	return dlt;
     else
 	return -1;
 }
 
-const char *
+String
 fake_pcap_unparse_dlt(int dlt)
 {
-    switch (dlt) {
-      case FAKE_DLT_RAW:
-      case FAKE_DLT_HOST_RAW:
-	return "IP";
-      case FAKE_DLT_EN10MB:
-	return "ETHER";
-      case FAKE_DLT_FDDI:
-	return "FDDI";
-      case FAKE_DLT_ATM_RFC1483:
-	return "ATM";
-      case FAKE_DLT_IEEE802_11:
-	return "802.11";
-      case FAKE_DLT_LINUX_SLL:
-	return "SLL";
-      case FAKE_DLT_PRISM_HEADER:
-	return "PRISM";
-      case FAKE_DLT_AIRONET_HEADER:
-	return "AIRONET";
-      case FAKE_DLT_C_HDLC:
-	return "HDLC";
-      case FAKE_DLT_SUNATM:
-	return "SUNATM";
-      default:
-	return "??";
-    }
+    for (const dlt_name* d = dlt_names; d < dlt_names + (sizeof(dlt_names) / sizeof(dlt_names[0])); d++)
+	if (dlt == d->dlt)
+	    return String::stable_string(d->name);
+    return "#" + String(dlt);
 }
 
 // Handling FORCE_IP.
@@ -93,7 +81,8 @@ fake_pcap_dlt_force_ipable(int dlt)
 	    || dlt == FAKE_DLT_EN10MB || dlt == FAKE_DLT_SUNATM
 	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483
 	    || dlt == FAKE_DLT_LINUX_SLL || dlt == FAKE_DLT_C_HDLC
-	    || dlt == FAKE_DLT_IEEE802_11 || dlt == FAKE_DLT_PRISM_HEADER);
+	    || dlt == FAKE_DLT_IEEE802_11 || dlt == FAKE_DLT_PRISM_HEADER
+	    || dlt == FAKE_DLT_PPP_HDLC || dlt == FAKE_DLT_PPP);
 }
 
 int
@@ -106,7 +95,7 @@ fake_pcap_canonical_dlt(int dlt, bool)
 }
 
 #if HAVE_INDIFFERENT_ALIGNMENT
-#define unaligned_net_short(v) (*reinterpret_cast<const uint8_t*>(v))
+#define unaligned_net_short(v) (ntohs(*reinterpret_cast<const uint16_t*>(v)))
 #define UNALIGNED_NET_SHORT_EQ(x, y) ((x) == htons((y)))
 #else
 static inline uint16_t
@@ -221,6 +210,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  break;
       }
 
+      c_hdlc:
       case FAKE_DLT_C_HDLC: {
 	  struct click_pcap_hdlc {
 	      uint16_t hdlc_address;
@@ -230,6 +220,30 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  if (data + sizeof(click_pcap_hdlc) <= end_data
 	      && IP_ETHERTYPE(hdlch->hdlc_protocol))
 	      iph = reinterpret_cast<const click_ip*>(hdlch + 1);
+	  break;
+      }
+
+      case FAKE_DLT_PPP_HDLC: {
+	  if (data + 4 > end_data)
+	      /* nada */;
+	  else if (data[0] == PPP_ADDRESS) {
+	      if (data[2] == 0 && (data[3] == PPP_IP || data[3] == PPP_IPV6))
+		  iph = reinterpret_cast<const click_ip*>(data + 4);
+	  } else if (data[0] == 0x0F /* CHDLC_UNICAST */
+		     || data[0] == 0x8F /* CHDLC_BCAST */)
+	      goto c_hdlc;
+	  break;
+      }
+
+      case FAKE_DLT_PPP: {
+	  if (data + 2 <= end_data && data[0] == PPP_ADDRESS && data[1] == PPP_CONTROL)
+	      data += 2;
+	  if (data + 2 > end_data)
+	      /* nada */;
+	  else if (data[0] == PPP_IP || data[0] == PPP_IPV6)
+	      iph = reinterpret_cast<const click_ip*>(data + 1);
+	  else if (data[0] == 0 && (data[1] == PPP_IP || data[1] == PPP_IPV6))
+	      iph = reinterpret_cast<const click_ip*>(data + 2);
 	  break;
       }
 
