@@ -408,16 +408,17 @@ read_element_outputs(Element *e, void *)
   return e->router()->element_outputs_string(e->number());
 }
 
-#if !RR_SCHED
 static String
 read_element_tickets(Element *e, void *)
 {
-  if (!e->scheduled())
-    return "0 0\n";
-  else
-    return String(e->tickets()) + " " + String(e->max_tickets()) + "\n";
-}
+#if RR_SCHED
+  return (e->scheduled() ? "scheduled\n" : "unscheduled\n");
+#else
+  String s = String(e->tickets()) + " " + String(e->max_tickets());
+  s += (e->scheduled() ? " scheduled\n" : " unscheduled\n");
+  return s;
 #endif
+}
 
 #if CLICK_STATS >= 1
 
@@ -485,15 +486,13 @@ Element::add_default_handlers(bool allow_write_config)
     add_write_handler("config", write_element_config, 0);
   add_read_handler("inputs", read_element_inputs, 0);
   add_read_handler("outputs", read_element_outputs, 0);
+  add_read_handler("tickets", read_element_tickets, 0);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", element_read_icounts, 0);
   add_read_handler("ocounts", element_read_ocounts, 0);
 # if CLICK_STATS >= 2
   add_read_handler("cycles", element_read_cycles, 0);
 # endif
-#endif
-#if !RR_SCHED
-  add_read_handler("tickets", read_element_tickets, 0);
 #endif
 }
 

@@ -151,6 +151,13 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
    found: ;
   }
 
+  // check for too many tickets
+  if (max_tickets > ElementLink::MAX_TICKETS) {
+    max_tickets = ElementLink::MAX_TICKETS;
+    String m = cp_unparse_real(max_tickets, FRAC_BITS);
+    errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
+  }
+  
   // return the result you've got
   return max_tickets;
 }
@@ -158,7 +165,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 void
 ScheduleInfo::join_scheduler(Element *e, ErrorHandler *errh)
 {
-#ifndef RR_SCHED
+#if !RR_SCHED
   int max_tickets = query(e, errh);
   e->set_max_tickets(max_tickets);
   e->set_tickets(max_tickets);

@@ -44,6 +44,8 @@ Version 1.0.7
 ** Added new `elements/local' directory for your own elements. They are not
    compiled by default.
 
+** Added new `tickets' handler, available by default.
+
 * Tools
 
 ** Fixed click-uncombine bugs and changed its order of arguments.
