@@ -185,8 +185,8 @@ bpackage.cc: belements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2package $(package) < belements.conf > bpackage.cc
 	@rm -f bpackage.bd
 
-elementmap.$(package): $(clickbindir)/click-mkelemmap always
-	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap.$(package)
+elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap-$(package).xml
 always:
 	@:
 
@@ -202,9 +202,9 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: install-obj install-man elementmap.$(package) always
+install: install-obj install-man elementmap-$(package).xml always
 	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) elementmap.$(package) $(datadir)/elementmap.$(package)
+	$(INSTALL_DATA) elementmap-$(package).xml $(datadir)/elementmap-$(package).xml
 install-obj: $(TARGETS) always
 	$(mkinstalldirs) $(libdir)
 	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
@@ -214,7 +214,7 @@ install-man: always
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f -
 
 clean:
-	-rm -f *.d *.ud *.kd *.bd *.o *.uo *.ko *.bo elements.mk upackage.cc kpackage.cc bpackage.cc uelements.conf kelements.conf belements.conf elementmap.$(package) conftest.*
+	-rm -f *.d *.ud *.kd *.bd *.o *.uo *.ko *.bo elements.mk upackage.cc kpackage.cc bpackage.cc uelements.conf kelements.conf belements.conf elementmap-$(package).xml conftest.*
 distclean: clean
 	-rm -f Makefile config.h config.status config.cache config.log
 
