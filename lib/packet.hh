@@ -17,8 +17,8 @@ public:
     char fix_ip_src;    // flag: asks FixIPSrc to set ip_src.
     char param_off;     // for ICMP Parameter Problem, byte offset of error.
     char color;         // one of 255 colors set by Paint element.
-    int src_rate;       // written by IPRateMonitor, read by Block
-    int dst_rate;       // written by IPRateMonitor, read by Block
+    unsigned long src_rate;  // written by IPRateMonitor, read by Block
+    unsigned long dst_rate;  // written by IPRateMonitor, read by Block
 #ifdef __KERNEL__
     union {
       cycles_t cycles[4];
