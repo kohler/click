@@ -414,10 +414,11 @@ Packet::shift_data(int offset, bool free_on_failure)
     shift_header_annotations(offset);
     return this;
   } else {
+    int tailroom_offset = (offset < 0 ? -offset : 0);
     if (offset < 0 && headroom() < (uint32_t)(-offset))
       offset = -headroom() + ((uintptr_t)(data() + offset) & 7);
     else
       offset += ((uintptr_t)buffer_data() & 7);
-    return expensive_uniqueify(offset, 0, free_on_failure);
+    return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
   }
 }
