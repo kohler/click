@@ -87,6 +87,8 @@ class RED : public Element { public:
   int initialize(ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
   void configuration(Vector<String> &, bool *) const;
+  bool can_live_reconfigure() const		{ return true; }
+  int live_reconfigure(const Vector<String> &, ErrorHandler *);
   void add_handlers();
   
   bool should_drop();
