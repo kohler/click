@@ -26,11 +26,10 @@ Align::Align()
 int
 Align::configure(const String &conf, ErrorHandler *errh)
 {
-  int count = 4;
+  int count;
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "alignment offset", &_offset,
-		  cpOptional,
 		  cpUnsigned, "alignment modulus", &count,
+		  cpUnsigned, "alignment offset", &_offset,
 		  0) < 0)
     return -1;
   if (count != 2 && count != 4 && count != 8)

@@ -4,13 +4,12 @@
 
 /*
  * =c
- * Align(OFFSET [, MODULUS])
+ * Align(MODULUS, OFFSET)
  * =d
  * Aligns packet data to start OFFSET bytes off from
- * a MODULUS-byte boundary. May involve a packet copy. The default
- * MODULUS is 4.
+ * a MODULUS-byte boundary. May involve a packet copy.
  * =e
- * = ... -> Align(0) -> ...
+ * = ... -> Align(4, 0) -> ...
  */
 
 class Align : public Element {

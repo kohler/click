@@ -19,7 +19,6 @@ class RouterT : public ElementClassT {
   Vector<Hookup> _hookup_to;
   Vector<String> _hookup_landmark;
 
-  void remove_bad_connections();
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
 		     Vector<Hookup> &results) const;
@@ -35,35 +34,36 @@ class RouterT : public ElementClassT {
 
   int ntypes() const			{ return _element_classes.size(); }
   const String &type_name(int i) const	{ return _element_type_names[i]; }
-  ElementClassT *element_class(int i) const { return _element_classes[i]; }
+  ElementClassT *type_class(int i) const { return _element_classes[i]; }
   int type_index(const String &s) const { return _element_type_map[s]; }
-  ElementClassT *find_element_class(const String &) const;
+  ElementClassT *find_type_class(const String &) const;
   int get_type_index(const String &);
   int get_type_index(const String &, ElementClassT *);
   int set_type_index(const String &, ElementClassT *);
   int get_anon_type_index(const String &, ElementClassT *);
 
   int nelements() const			{ return _elements.size(); }
-  int findex(const String &s) const	{ return _element_name_map[s]; }
+  int eindex(const String &s) const	{ return _element_name_map[s]; }
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
-  String fname(int findex) const;
-  String fname_upref(int findex) const;
-  int ftype(int findex) const;
-  String ftype_name(int fi) const;
-  const String &fconfiguration(int i) const;
-  String &fconfiguration(int i)		{ return _elements[i].configuration; }
-  int fflags(int i) const		{ return _elements[i].flags; }
+  String ename(int findex) const;
+  String ename_upref(int findex) const;
+  int etype(int) const;
+  String etype_name(int) const;
+  ElementClassT *etype_class(int) const;
+  const String &econfiguration(int) const;
+  String &econfiguration(int i)		{ return _elements[i].configuration; }
+  int eflags(int i) const		{ return _elements[i].flags; }
   
-  int get_findex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
-  int get_anon_findex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
+  int get_eindex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
+  int get_anon_eindex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
   
-  int nhookup() const			{ return _hookup_from.size(); }
-  const Vector<Hookup> &hookup_from() const { return _hookup_from; }
-  Vector<Hookup> &hookup_from()		{ return _hookup_from; }
-  const Vector<Hookup> &hookup_to() const { return _hookup_to; }
-  Vector<Hookup> &hookup_to()		{ return _hookup_to; }
-  const String &hookup_landmark(int i) const { return _hookup_landmark[i]; }
+  int nhookup() const				{ return _hookup_from.size(); }
+  const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
+  Vector<Hookup> &hookup_from()			{ return _hookup_from; }
+  const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
+  Vector<Hookup> &hookup_to()			{ return _hookup_to; }
+  const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
  
   void add_tunnel(String, String, const String &, ErrorHandler *);
   
@@ -74,6 +74,10 @@ class RouterT : public ElementClassT {
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
   void find_connections_to(const Hookup &, Vector<Hookup> &) const;
+  void count_ports(Vector<int> &, Vector<int> &) const;
+
+  bool insert_before(int fidx, const Hookup &);
+  bool insert_after(int fidx, const Hookup &);
   
   bool next_element_match(RouterT *, Vector<int> &) const;
   bool next_connection_match(RouterT *, Vector<int> &) const;
@@ -86,6 +90,7 @@ class RouterT : public ElementClassT {
   void remove_unused_element_types();
   void remove_blank_elements(ErrorHandler * = 0);
   void remove_unconnected_elements();
+  void remove_bad_connections();
   void remove_duplicate_connections();
   void remove_tunnels(ErrorHandler *);
   void remove_compound_elements(ErrorHandler *);
@@ -103,34 +108,37 @@ class RouterT : public ElementClassT {
 
 
 inline String
-RouterT::fname(int fidx) const
+RouterT::ename(int idx) const
 {
-  if (fidx >= 0 && fidx < _elements.size())
-    return _elements[fidx].name;
+  if (idx >= 0 && idx < _elements.size())
+    return _elements[idx].name;
   else
-    return String("/*BAD_") + String(fidx) + String("*/");
+    return String("/*BAD_") + String(idx) + String("*/");
 }
 
 inline int
-RouterT::ftype(int fidx) const
+RouterT::etype(int idx) const
 {
-  if (fidx >= 0 && fidx < _elements.size())
-    return _elements[fidx].type;
+  if (idx >= 0 && idx < _elements.size())
+    return _elements[idx].type;
   else
     return -1;
 }
 
 inline String
-RouterT::ftype_name(int fidx) const
+RouterT::etype_name(int idx) const
 {
-  if (fidx >= 0 && fidx < _elements.size())
-    return type_name(_elements[fidx].type);
-  else
-    return String();
+  return type_name(_elements[idx].type);
+}
+
+inline ElementClassT *
+RouterT::etype_class(int idx) const
+{
+  return type_class(_elements[idx].type);
 }
 
 inline const String &
-RouterT::fconfiguration(int i) const
+RouterT::econfiguration(int i) const
 {
   return _elements[i].configuration;
 }

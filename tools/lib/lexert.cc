@@ -325,7 +325,7 @@ LexerT::element_type(const String &s) const
 int
 LexerT::force_element_type(String s)
 {
-  if (_router->findex(s) >= 0 && _router->type_index(s) < 0)
+  if (_router->eindex(s) >= 0 && _router->type_index(s) < 0)
     lerror("`%s' was previously used as an element name", s.cc());
   return _router->get_type_index(s);
 }
@@ -344,7 +344,7 @@ LexerT::anon_element_name(const String &class_name) const
 int
 LexerT::make_element(String name, int ftype, const String &conf)
 {
-  return _router->get_findex(name, ftype, conf, landmark());
+  return _router->get_eindex(name, ftype, conf, landmark());
 }
 
 int
@@ -408,7 +408,7 @@ LexerT::yelement_upref(int &element)
     return false;
   }
 
-  element = _router->get_anon_findex
+  element = _router->get_anon_eindex
     (_element_prefix + t.string(), RouterT::UPREF_TYPE, String(), landmark());
   return true;
 }
@@ -446,13 +446,13 @@ LexerT::yelement(int &element, bool comma_ok)
     element = make_anon_element(name, ftype, configuration);
   else {
     String lookup_name = _element_prefix + name;
-    element = _router->findex(lookup_name);
+    element = _router->eindex(lookup_name);
     if (element < 0) {
       const Lexeme &t2colon = lex();
       unlex(t2colon);
       if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
 	ydeclaration(name);
-	element = _router->findex(lookup_name);
+	element = _router->eindex(lookup_name);
       } else {
 	// assume it's an element type
 	ftype = force_element_type(name);
@@ -517,7 +517,7 @@ LexerT::ydeclaration(const String &first_element)
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
     String lookup_name = _element_prefix + name;
-    if (_router->findex(lookup_name) >= 0)
+    if (_router->eindex(lookup_name) >= 0)
       lerror("element `%s' already declared", name.cc());
     else if (_router->type_index(name) >= 0)
       lerror("`%s' is an element class", name.cc());
@@ -603,7 +603,7 @@ LexerT::yelementclass()
     lerror("expected element type name");
   } else {
     String n = tname.string();
-    if (_router->findex(n) >= 0)
+    if (_router->eindex(n) >= 0)
       lerror("`%s' already used as an element name", n.cc());
     else
       facclass_name = n;
@@ -613,8 +613,8 @@ LexerT::yelementclass()
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
   _router = new RouterT(old_router);
-  _router->get_findex("input", RouterT::TUNNEL_TYPE);
-  _router->get_findex("output", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("input", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;
 
   while (ystatement(true))
@@ -669,8 +669,8 @@ LexerT::ylocal()
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
   _router = new RouterT(old_router);
-  _router->get_findex("input", RouterT::TUNNEL_TYPE);
-  _router->get_findex("output", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("input", RouterT::TUNNEL_TYPE);
+  _router->get_eindex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;
 
   while (ystatement(true))

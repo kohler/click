@@ -14,10 +14,12 @@ bool cp_eat_space(String &);
 bool cp_is_space(const String &);
 
 // argument lists <-> lists of arguments
-String cp_arg(const String &);
+String cp_subst(const String &);
+String cp_unsubst(const String &);
 void cp_argvec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
 String cp_argprefix(const String &, int);
+void cp_spacevec(const String &, Vector<String> &);
 
 // numbers
 bool cp_bool(String, bool &, String *rest = 0);
@@ -61,6 +63,7 @@ enum CpVaParseCmd {
 
 int cp_va_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(Vector<String> &args, CP_VA_PARSE_ARGS_REST);
+int cp_va_space_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
 // ... is: cpEnd				stop
 //     or: cpOptional				remaining args are optional
 //     or: CpVaParseCmd type_id,		actual argument

@@ -272,14 +272,6 @@ cp_unargvec(const Vector<String> &args)
 }
 
 String
-cp_arg(const String &str)
-{
-  Vector<String> v;
-  cp_argvec_2(str, v, false);
-  return (v.size() ? v[0] : String());
-}
-
-String
 cp_argprefix(const String &conf, int count)
 {
   const char *s = conf.data();
@@ -320,6 +312,43 @@ cp_argprefix(const String &conf, int count)
 
  done:
   return conf.substring(0, pos);
+}
+
+String
+cp_subst(const String &str)
+{
+  Vector<String> v;
+  cp_argvec_2(str, v, false);
+  return (v.size() ? v[0] : String());
+}
+
+String
+cp_unsubst(const String &str)
+{
+  Vector<String> v;
+  v.push_back(str);
+  return cp_unargvec(v);
+}
+
+void
+cp_spacevec(const String &conf, Vector<String> &vec)
+{
+  const char *s = conf.data();
+  int len = conf.length();
+  int i = 0;
+  
+  while (1) {
+    while (i < len && isspace(s[i]))
+      i++;
+    if (i >= len)
+      return;
+
+    // accumulate an argument
+    int start = i;
+    while (i < len && !isspace(s[i]))
+      i++;
+    vec.push_back(conf.substring(start, i - start));
+  }
 }
 
 bool
@@ -788,9 +817,8 @@ cp_va_parsev(Vector<String> &args,
     }
     Values &v = values[argno];
     
-    // in optional arguments, skip over null strings (they mean keep
-    // the default)
-    bool skip = (argno >= args.size() || (optional >= 0 && !args[argno]));
+    // skip over unspecified optional arguments
+    bool skip = (argno >= args.size());
     
     switch (cp_command) {
       
@@ -1011,6 +1039,26 @@ cp_va_parse(Vector<String> &args,
 {
   va_list val;
   va_start(val, errh);
+#ifndef CLICK_TOOL
+  int retval = cp_va_parsev(args, element, errh, val);
+#else
+  int retval = cp_va_parsev(args, errh, val);
+#endif
+  va_end(val);
+  return retval;
+}
+
+int
+cp_va_space_parse(const String &argument,
+#ifndef CLICK_TOOL
+		  Element *element,
+#endif
+		  ErrorHandler *errh, ...)
+{
+  va_list val;
+  va_start(val, errh);
+  Vector<String> args;
+  cp_spacevec(argument, args);
 #ifndef CLICK_TOOL
   int retval = cp_va_parsev(args, element, errh, val);
 #else

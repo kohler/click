@@ -350,7 +350,7 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());
-  String real_arg = cp_arg(arg);
+  String real_arg = cp_subst(arg);
   args[no] = real_arg;
   if (router->live_reconfigure(element->number(), cp_unargvec(args), errh) < 0)
     return -EINVAL;

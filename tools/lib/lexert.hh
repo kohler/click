@@ -99,7 +99,8 @@ class LexerT { protected:
   void ytunnel();
   int ylocal();
   bool ystatement(bool nested = false);
-    
+
+  RouterT *router() const		{ return _router; }
   RouterT *take_router();
   
 };

@@ -261,7 +261,7 @@ static int
 write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
 {
   int num;
-  String conf = cp_arg(conf_in);
+  String conf = cp_subst(conf_in);
   if (!conf)
     num = 1;
   else if (!cp_integer(conf, num)) {

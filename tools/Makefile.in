@@ -9,12 +9,14 @@ srcdir = @srcdir@
 top_builddir = ..
 subdir = tools
 
-TOOLS = click-xform
+TOOLS = click-xform click-align
 
 all: $(TOOLS)
 
 click-xform: Makefile
 	@cd click-xform; $(MAKE) all
+click-align: Makefile
+	@cd click-align; $(MAKE) all
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
@@ -38,13 +40,17 @@ DISTFILES = Makefile.in \
 	click-xform/Makefile.in \
 	click-xform/click-xform.cc \
 	click-xform/hashmapi.cc \
-	click-xform/vectori.cc
+	click-xform/vectori.cc \
+	click-align/Makefile.in \
+	click-align/click-align.cc \
+	click-align/hashmapi.cc \
+	click-align/vectori.cc
 
 distdir:
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	mkdir $(distdir)/lib $(distdir)/click-xform
-	@-chmod 777 $(distdir)/lib $(distdir)/click-xform
+	mkdir $(distdir)/lib $(distdir)/click-xform $(distdir)/click-align
+	@-chmod 777 $(distdir)/lib $(distdir)/click-xform $(distdir)/click-align
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
@@ -57,4 +63,4 @@ distdir:
 	done
 
 
-.PHONY: all click-xform clean distclean distdir install install-man
+.PHONY: all $(TOOLS) clean distclean distdir install install-man

@@ -62,7 +62,7 @@ RouterT::~RouterT()
 
 
 ElementClassT *
-RouterT::find_element_class(const String &s) const
+RouterT::find_type_class(const String &s) const
 {
   const RouterT *r = this;
   while (r) {
@@ -80,7 +80,7 @@ RouterT::get_type_index(const String &s)
   if (i >= 0)
     return i;
   else
-    return get_type_index(s, find_element_class(s));
+    return get_type_index(s, find_type_class(s));
 }
 
 int
@@ -122,7 +122,7 @@ RouterT::set_type_index(const String &s, ElementClassT *eclass)
 }
 
 int
-RouterT::get_findex(const String &s, int type_index, const String &config,
+RouterT::get_eindex(const String &s, int type_index, const String &config,
 		    const String &landmark)
 {
   int i = _element_name_map[s];
@@ -135,7 +135,7 @@ RouterT::get_findex(const String &s, int type_index, const String &config,
 }
 
 int
-RouterT::get_anon_findex(const String &s, int type_index, const String &config,
+RouterT::get_anon_eindex(const String &s, int type_index, const String &config,
 			 const String &landmark)
 {
   int i = _elements.size();
@@ -198,13 +198,54 @@ RouterT::find_connections_to(const Hookup &h, Vector<Hookup> &v) const
       v.push_back(_hookup_from[i]);
 }
 
+void
+RouterT::count_ports(Vector<int> &inputs, Vector<int> &outputs) const
+{
+  inputs.assign(_elements.size(), 0);
+  outputs.assign(_elements.size(), 0);
+  int nhook = _hookup_from.size();
+  for (int i = 0; i < nhook; i++) {
+    const Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
+    if (hf.port >= outputs[hf.idx])
+      outputs[hf.idx] = hf.port + 1;
+    if (ht.port >= inputs[ht.idx])
+      inputs[ht.idx] = ht.port + 1;
+  }
+}
+
+bool
+RouterT::insert_before(int fidx, const Hookup &h)
+{
+  Hookup inserter(fidx, 0);
+  if (!add_connection(inserter, h))
+    return false;
+  int nhook = _hookup_from.size() - 1;
+  for (int i = 0; i < nhook; i++)
+    if (_hookup_to[i] == h)
+      _hookup_to[i] = inserter;
+  return true;
+}
+
+bool
+RouterT::insert_after(int fidx, const Hookup &h)
+{
+  Hookup inserter(fidx, 0);
+  if (!add_connection(h, inserter))
+    return false;
+  int nhook = _hookup_from.size() - 1;
+  for (int i = 0; i < nhook; i++)
+    if (_hookup_from[i] == h)
+      _hookup_from[i] = inserter;
+  return true;
+}
+
 
 void
 RouterT::add_tunnel(String in, String out, const String &landmark,
 		    ErrorHandler *errh)
 {
-  int in_idx = get_findex(in, TUNNEL_TYPE, String(), landmark);
-  int out_idx = get_findex(out, TUNNEL_TYPE, String(), landmark);
+  int in_idx = get_eindex(in, TUNNEL_TYPE, String(), landmark);
+  int out_idx = get_eindex(out, TUNNEL_TYPE, String(), landmark);
   if (!errh) errh = ErrorHandler::silent_handler();
   ElementT &fin = _elements[in_idx], &fout = _elements[out_idx];
 
@@ -273,12 +314,12 @@ RouterT::finish_remove_elements(Vector<int> &new_findex, ErrorHandler *errh)
     if (hf.idx < 0 || hf.idx >= nelements)
       bad = true;
     else if (new_findex[hf.idx] < 0) {
-      errh->lerror(_hookup_landmark[i], "connection from removed element `%s'", fname(hf.idx).cc());
+      errh->lerror(_hookup_landmark[i], "connection from removed element `%s'", ename(hf.idx).cc());
       bad = true;
     } else if (ht.idx < 0 || ht.idx >= nelements)
       bad = true;
     else if (new_findex[ht.idx] < 0) {
-      errh->lerror(_hookup_landmark[i], "connection to removed element `%s'", fname(ht.idx).cc());
+      errh->lerror(_hookup_landmark[i], "connection to removed element `%s'", ename(ht.idx).cc());
       bad = true;
     }
     
@@ -524,7 +565,7 @@ resolve_upref(const String &upref, String prefix, RouterT *r)
     prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
     
     String try_name = prefix + upref;
-    int en = r->findex(try_name);
+    int en = r->eindex(try_name);
     if (en >= 0) return en;
   }
   return -1;
@@ -581,10 +622,10 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
     // add element
     if (e.type == UPREF_TYPE)
       // add unresolved uprefs, but w/o prefix
-      new_fidx[i] = r->get_anon_findex
+      new_fidx[i] = r->get_anon_eindex
 	(e.name, UPREF_TYPE, e.configuration, e.landmark);
     else
-      new_fidx[i] = r->get_findex
+      new_fidx[i] = r->get_eindex
 	(prefix + e.name, ftypi, e.configuration, e.landmark);
   }
   
@@ -795,15 +836,15 @@ RouterT::compound_declaration_string(StringAccum &sa, const String &name,
 }
 
 String
-RouterT::fname_upref(int fidx) const
+RouterT::ename_upref(int idx) const
 {
-  if (fidx >= 0 && fidx < _elements.size()) {
-    if (_elements[fidx].type == UPREF_TYPE)
-      return "^" + _elements[fidx].name;
+  if (idx >= 0 && idx < _elements.size()) {
+    if (_elements[idx].type == UPREF_TYPE)
+      return "^" + _elements[idx].name;
     else
-      return _elements[fidx].name;
+      return _elements[idx].name;
   } else
-    return String("/*BAD_") + String(fidx) + String("*/");
+    return String("/*BAD_") + String(idx) + String("*/");
 }
 
 void
@@ -880,7 +921,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
       if (used[c] || !startchain[c]) continue;
       
       const Hookup &hf = _hookup_from[c];
-      sa << indent << fname_upref(hf.idx);
+      sa << indent << ename_upref(hf.idx);
       if (hf.port)
 	sa << " [" << hf.port << "]";
       
@@ -891,7 +932,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
 	const Hookup &ht = _hookup_to[d];
 	if (ht.port)
 	  sa << "[" << ht.port << "] ";
-	sa << fname_upref(ht.idx);
+	sa << ename_upref(ht.idx);
 	used[d] = true;
 	d = next[d];
       }

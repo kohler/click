@@ -166,7 +166,7 @@ Matcher::check_match()
   // check configurations
   for (int i = 0; i < _match.size(); i++)
     if (_match[i] >= 0) {
-      if (!match_config(_pat->fconfiguration(i), _body->fconfiguration(_match[i]), _defs))
+      if (!match_config(_pat->econfiguration(i), _body->econfiguration(_match[i]), _defs))
 	return false;
     }
   
@@ -177,7 +177,7 @@ Matcher::check_match()
     int j = _match[i];
     if (j >= 0) {
       _back_match[j] = i;
-      if (_body->fflags(j) != _patid)	// comes from replacement of same pat
+      if (_body->eflags(j) != _patid)	// comes from replacement of same pat
 	all_previous_match = false;
     }
   }
@@ -241,7 +241,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
     // look for things starting with that name
     int plen = prefix.length();
     for (int i = 0; i < r->nelements(); i++) {
-      const String &n = r->fname(i);
+      const String &n = r->ename(i);
       if (n.length() > plen + 1 && n.substring(0, plen) == prefix
 	  && n[plen] == '/')
 	goto failed;
@@ -288,11 +288,11 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // mark replacement
   for (int i = old_nelements; i < _body->nelements(); i++) {
     _body->element(i).flags = _patid;
-    replace_config(_body->fconfiguration(i));
+    replace_config(_body->econfiguration(i));
   }
 
   // find input and output, add connections to tunnels
-  int new_pp = _body->findex(prefix);
+  int new_pp = _body->eindex(prefix);
   for (int i = 0; i < _to_pp_from.size(); i++)
     _body->add_connection(_to_pp_from[i], Hookup(new_pp, _to_pp_to[i].port),
 			  landmark);
@@ -398,14 +398,14 @@ main(int argc, char **argv)
   Vector<RouterT *> replacements;
   Vector<String> pat_names;
   for (int i = 0; i < pat_file->ntypes(); i++) {
-    ElementClassT *fclass = pat_file->element_class(i);
+    ElementClassT *fclass = pat_file->type_class(i);
     String name = pat_file->type_name(i);
     if (fclass && name.length() > 12
 	&& name.substring(-12) == "_Replacement") {
       int ti = pat_file->type_index(name.substring(0, -12));
-      if (ti >= 0 && pat_file->element_class(ti)) {
+      if (ti >= 0 && pat_file->type_class(ti)) {
 	RouterT *rep = fclass->cast_router();
-	RouterT *pat = pat_file->element_class(ti)->cast_router();
+	RouterT *pat = pat_file->type_class(ti)->cast_router();
 	if (rep && pat) {
 	  pat->flatten(errh);
 	  patterns.push_back(pat);
@@ -436,4 +436,5 @@ main(int argc, char **argv)
 
   String s = r->configuration_string();
   fputs(s.cc(), stdout);
+  return 0;
 }
