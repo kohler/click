@@ -49,6 +49,7 @@
 # include <click/master.hh>
 # include <click/notifier.hh>
 # include <click/straccum.hh>
+# include <click/nameinfo.hh>
 #endif
 
 
@@ -362,6 +363,7 @@ void
 click_static_initialize()
 {
     String::static_initialize();
+    NameInfo::static_initialize();
     cp_va_static_initialize();
 
     ErrorHandler::static_initialize(new FileErrorHandler(stderr, ""));
@@ -387,6 +389,7 @@ click_static_cleanup()
     Router::static_cleanup();
     ErrorHandler::static_cleanup();
     cp_va_static_cleanup();
+    NameInfo::static_cleanup();
     String::static_cleanup();
 }
 

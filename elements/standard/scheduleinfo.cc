@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/scheduleinfo.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../include/click/standard/scheduleinfo.hh" -*-
 /*
  * scheduleinfo.{cc,hh} -- element stores schedule parameters
  * Benjie Chen, Eddie Kohler
@@ -18,16 +18,18 @@
 
 #include <click/config.h>
 #include <click/standard/scheduleinfo.hh>
+#include <click/nameinfo.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/nameinfo.hh>
 CLICK_DECLS
 
 ScheduleInfo::ScheduleInfo()
 {
 #ifdef HAVE_STRIDE_SCHED
-  static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
+    static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
 #endif
 }
 
@@ -38,122 +40,76 @@ ScheduleInfo::~ScheduleInfo()
 int
 ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  // find _prefix, which includes slash
-  int last_slash = id().find_right('/');
-  if (last_slash >= 0)
-    _prefix = id().substring(0, last_slash + 1);
-  else
-    _prefix = String();
-
-  // check for an earlier ScheduleInfo with the same prefix
-  if (void *a = router()->attachment("ScheduleInfo." + _prefix))
-    return ((ScheduleInfo *)a)->configure(conf, errh);
-  router()->set_attachment("ScheduleInfo." + _prefix, this);
+    NameDB* db = NameInfo::getdb(NameInfo::T_SCHEDULEINFO, this, 4, true);
+    
+    // compile scheduling info
+    for (int i = 0; i < conf.size(); i++) {
+	Vector<String> parts;
+	int32_t mt;
+	cp_spacevec(conf[i], parts);
+	if (parts.size() == 0)
+	    /* empty argument OK */;
+	else if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
+	    errh->error("expected 'ELEMENTNAME PARAM', got `%s'", conf[i].c_str());
+	else
+	    db->define(parts[0], &mt, 4);
+    }
   
-  // compile scheduling info
-  for (int i = 0; i < conf.size(); i++) {
-    Vector<String> parts;
-    int mt;
-    cp_spacevec(conf[i], parts);
-    if (parts.size() == 0)
-      /* empty argument OK */;
-    else if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
-      errh->error("expected `ELEMENTNAME PARAM', got `%s'", conf[i].c_str());
-    else {
-      for (int j = 0; j < _element_names.size(); j++)
-	if (_element_names[j] == parts[0]) {
-	  if (_tickets[j] != mt)
-	    errh->error("conflicting ScheduleInfo for `%s'", parts[0].cc());
-	  goto appended;
-	}
-      _element_names.push_back(parts[0]);
-      _tickets.push_back(mt);
-     appended: ;
-    }
-  }
-  
-  return 0;
-}
-
-bool
-ScheduleInfo::query(const String &text, int &tickets) const
-{
-  for (int i = 0; i < _element_names.size(); i++)
-    if (_element_names[i] == text) {
-      tickets = _tickets[i];
-      return true;
-    }
-  return false;
-}
-
-bool
-ScheduleInfo::query_prefixes(const String &id, int &scaled_tickets,
-			     String &output_id) const
-{
-  // Check `id', then `id's prefix, then its prefix, and so forth.
-  int tickets;
-  String text = id;
-  while (text) {
-    if (query(text, tickets)) {
-      scaled_tickets =
-	((int64_t)scaled_tickets * tickets) >> FRAC_BITS;
-      output_id = id.substring(text.length() + 1);
-      return true;
-    }
-    int slash = text.find_right('/');
-    text = text.substring(0, (slash < 0 ? 0 : slash));
-  }
-  return false;
+    return 0;
 }
 
 int
 ScheduleInfo::query(Element *e, ErrorHandler *errh)
 {
 #ifdef HAVE_STRIDE_SCHED
-  // check prefixes in order of increasing length
-  Router *r = e->router();
-  String id = e->id();
-  String text = id;
-  int tickets = Task::DEFAULT_TICKETS;
-  const char *slash;
-  while (text) {
-
-    // find current prefix, which includes slash
-    String prefix = id.substring(0, id.length() - text.length());
-    bool warning = false;	// only warn if there was partial ScheduleInfo
-
-    if (void *a = r->attachment("ScheduleInfo." + prefix)) {
-      if (((ScheduleInfo *)a)->query_prefixes(text, tickets, text))
-	goto found;
-      warning = true;
-    }
-
-    slash = find(text, '/');
-    if (slash < text.end()) {
-      if (warning)
-	errh->warning("no ScheduleInfo for compound element `%s'",
-		      text.substring(text.begin(), slash).cc());
-      text = text.substring(slash + 1, text.end());
-    } else {
-      if (warning)
-	errh->warning("no ScheduleInfo for element `%s'", text.cc());
-      text = String();
-    }
+    // check prefixes in order of increasing length
+    String id = e->id();
     
-   found: ;
-  }
+    Vector<String> prefixes;
+    prefixes.push_back(String());
+    const char *slash = id.begin();
+    while ((slash = find(slash, id.end(), '/')) < id.end()) {
+	prefixes.push_back(id.substring(id.begin(), slash + 1));
+	slash++;
+    }
+    prefixes.push_back(id);
 
-  // check for too many tickets
-  if (tickets > Task::MAX_TICKETS) {
-    tickets = Task::MAX_TICKETS;
-    String m = cp_unparse_real2(tickets, FRAC_BITS);
-    errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
-  }
-  
-  // return the result you've got
-  return tickets;
+    Vector<uint32_t> tickets(prefixes.size(), Task::DEFAULT_TICKETS);
+
+    NameDB *db = NameInfo::getdb(NameInfo::T_SCHEDULEINFO, e, 4, false);
+    while (db) {
+	bool frobbed = false;
+	for (int i = prefixes.size() - 1;
+	     i >= 0 && prefixes[i].length() >= db->prefix().length();
+	     i--)
+	    if (db->query(prefixes[i].substring(db->prefix().length()), &tickets[i], 4))
+		frobbed = true;
+	    else if (frobbed)	// erase intermediate ticket settings
+		tickets[i] = Task::DEFAULT_TICKETS;
+	db = db->prefix_parent();
+    }
+
+    // multiply tickets
+    int tickets_out = tickets[0];
+    for (int i = 1; i < tickets.size(); i++)
+	if (tickets[i] != Task::DEFAULT_TICKETS)
+#ifdef HAVE_INT64_TYPES
+	    tickets_out = ((int64_t) tickets_out * tickets[i]) >> FRAC_BITS;
 #else
-  return 1;
+	    tickets_out = (tickets_out * tickets[i]) >> FRAC_BITS;
+#endif
+
+    // check for too many tickets
+    if (tickets_out > Task::MAX_TICKETS) {
+	tickets_out = Task::MAX_TICKETS;
+	String m = cp_unparse_real2(tickets_out, FRAC_BITS);
+	errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
+    }
+  
+    // return the result you've got
+    return tickets_out;
+#else
+    return 1;
 #endif
 }
 
@@ -162,13 +118,13 @@ ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
 			      ErrorHandler *errh)
 {
 #ifdef HAVE_STRIDE_SCHED
-  int tickets = query(e, errh);
-  if (tickets > 0) {
-    task->initialize(e, schedule);
-    task->set_tickets(tickets);
-  }
+    int tickets = query(e, errh);
+    if (tickets > 0) {
+	task->initialize(e, schedule);
+	task->set_tickets(tickets);
+    }
 #else
-  task->initialize(e, schedule);
+    task->initialize(e, schedule);
 #endif
 }
 

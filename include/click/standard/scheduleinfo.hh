@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/scheduleinfo.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../../elements/standard/scheduleinfo.cc" -*-
 #ifndef CLICK_SCHEDULEINFO_HH
 #define CLICK_SCHEDULEINFO_HH
 #include <click/element.hh>
@@ -69,28 +69,22 @@ then the InfiniteSource's final scaling parameter would be 10.5.
 
 class ScheduleInfo : public Element { public:
 
-  enum { FRAC_BITS = 10 };
+    enum { FRAC_BITS = 10 };
   
-  ScheduleInfo();
-  ~ScheduleInfo();
+    ScheduleInfo();
+    ~ScheduleInfo();
   
-  const char* class_name() const	{ return "ScheduleInfo"; }
+    const char* class_name() const	{ return "ScheduleInfo"; }
   
-  int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(Vector<String>&, ErrorHandler*);
+    int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
+    int configure(Vector<String>&, ErrorHandler*);
 
-  bool query(const String&, int&) const;
-  bool query_prefixes(const String&, int&, String&) const;
-  static int query(Element*, ErrorHandler*);
-  static void initialize_task(Element*, Task*, bool sched, ErrorHandler*);
-  static void initialize_task(Element*, Task*, ErrorHandler*);
-  static void join_scheduler(Element*, Task*, ErrorHandler*);
-  
- private:
-
-  String _prefix;
-  Vector<String> _element_names;
-  Vector<int> _tickets;
+    bool query(const String&, int&) const;
+    bool query_prefixes(const String&, int&, String&) const;
+    static int query(Element*, ErrorHandler*);
+    static void initialize_task(Element*, Task*, bool sched, ErrorHandler*);
+    static void initialize_task(Element*, Task*, ErrorHandler*);
+    static void join_scheduler(Element*, Task*, ErrorHandler*);
 
 };
 
@@ -98,13 +92,13 @@ class ScheduleInfo : public Element { public:
 inline void
 ScheduleInfo::initialize_task(Element* e, Task* t, ErrorHandler* errh)
 {
-  initialize_task(e, t, true, errh);
+    initialize_task(e, t, true, errh);
 }
 
 inline void
 ScheduleInfo::join_scheduler(Element* e, Task* t, ErrorHandler* errh)
 {
-  initialize_task(e, t, true, errh);
+    initialize_task(e, t, true, errh);
 }
 
 CLICK_ENDDECLS

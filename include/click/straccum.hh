@@ -57,6 +57,8 @@ class StringAccum { public:
     inline unsigned char *take_bytes();	// returns array allocated by new[]
     String take_string();		// returns String
 
+    void swap(StringAccum &);
+
     // see also operator<< declarations below
   
   private:

@@ -17,6 +17,7 @@ class HashMap_ArenaFactory;
 class NotifierSignal;
 class ThreadSched;
 class Handler;
+class NameInfo;
 
 class Router { public:
 
@@ -99,6 +100,9 @@ class Router { public:
     int initial_thread_preference(Task*, bool scheduled) const;
 
     int new_notifier_signal(NotifierSignal&);
+
+    NameInfo* name_info() const			{ return _name_info; }
+    NameInfo* force_name_info();
 
     // MASTER
     Master* master() const			{ return _master; }
@@ -202,6 +206,7 @@ class Router { public:
     HashMap_ArenaFactory* _arena_factory;
     Router* _hotswap_router;
     ThreadSched* _thread_sched;
+    mutable NameInfo* _name_info;
 
     Router* _next_router;
 

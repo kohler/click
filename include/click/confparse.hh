@@ -193,6 +193,7 @@ extern const CpVaParseCmd
     cpUnsignedShort,	//			unsigned short*
     cpInteger,		//			int*
     cpUnsigned,		//			unsigned*
+    cpNamedInteger,	// uint32_t type	int32_t*
 #ifdef HAVE_INT64_TYPES
     cpInteger64,	//			int64_t*
     cpUnsigned64,	//			uint64_t*

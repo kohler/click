@@ -211,6 +211,7 @@ init_module()
 {
     // C++ static initializers
     String::static_initialize();
+    NameInfo::static_initialize();
     cp_va_static_initialize();
 
     // error initialization
@@ -296,7 +297,8 @@ cleanup_module()
     // HashMap
     HashMap_ArenaFactory::static_cleanup();
   
-    // String (after any operations that might create Strings)
+    // String (after any operations that might destroy Strings)
+    NameInfo::static_cleanup();
     String::static_cleanup();
 
     // report memory leaks

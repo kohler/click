@@ -103,32 +103,6 @@ class AddressInfo : public Element { public:
 #endif
   static bool query_ethernet(String, unsigned char *, Element *);
 
- private:
-
-  enum { INFO_IP = 1, INFO_IP_PREFIX = 2, INFO_IP6 = 4, INFO_IP6_PREFIX = 8,
-	 INFO_ETHER = 16 };
-  
-  struct Info {
-    unsigned have;
-    union {
-      unsigned u;
-      unsigned char c[4];
-    } ip, ip_mask;
-#ifdef HAVE_IP6
-    IP6Address ip6;
-    int ip6_prefix;
-#endif
-    unsigned char ether[6];
-    Info() : have(0) { }
-  };
-  
-  HashMap<String, int> _map;
-  Vector<Info> _as;
-
-  int add_info(const Vector<String> &, const String &, ErrorHandler *);
-  const Info *query(const String &, unsigned, const String &) const;
-  static AddressInfo *find_element(Element *);
-  
 };
 
 CLICK_ENDDECLS

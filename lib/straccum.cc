@@ -88,6 +88,17 @@ StringAccum::append_fill(int c, int len)
 	memset(s, c, len);
 }
 
+void
+StringAccum::swap(StringAccum &o)
+{
+    unsigned char *os = o._s;
+    int olen = o._len, ocap = o._cap;
+    o._s = _s;
+    o._len = _len, o._cap = _cap;
+    _s = os;
+    _len = olen, _cap = ocap;
+}
+
 StringAccum &
 operator<<(StringAccum &sa, long i)
 {

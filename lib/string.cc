@@ -477,17 +477,17 @@ String::quoted_hex() const
 int
 hashcode(const String &s)
 {
-  int length = s.length();
-  const char *data = s.data();
-  if (!length)
-    return 0;
-  else if (length == 1)
-    return data[0] | (data[0] << 8);
-  else if (length < 4)
-    return data[0] + (data[1] << 3) + (length << 12);
-  else
-    return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
-      + (length << 12) + (data[length-1] << 10);
+    int length = s.length();
+    const char *data = s.data();
+    if (!length)
+	return 0;
+    else if (length == 1)
+	return data[0] | (data[0] << 8);
+    else if (length < 4)
+	return data[0] + (data[1] << 3) + (length << 12);
+    else
+	return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
+	    + (length << 12) + (data[length-1] << 10);
 }
 
 bool

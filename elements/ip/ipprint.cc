@@ -24,6 +24,7 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <click/router.hh>
+#include <click/nameinfo.hh>
 
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
@@ -227,36 +228,13 @@ IPPrint::udp_line(StringAccum &sa, const Packet *p, int transport_length) const
 static String
 unparse_proto(int ip_p, bool prepend)
 {
-    if (ip_p == IP_PROTO_TCP)
-	return String::stable_string("tcp", 3);
-    else if (ip_p == IP_PROTO_UDP)
-	return String::stable_string("udp", 3);
-    else if (ip_p == IP_PROTO_ICMP)
-	return String::stable_string("icmp", 4);
+    if (String s = NameInfo::revquery_int(NameInfo::T_IP_PROTO, 0, ip_p))
+	return s;
     else if (prepend)
 	return String::stable_string("protocol ", 9) + String(ip_p);
     else
 	return String(ip_p);
 }
-
-static const char * const icmp_unreachable_messages[] = {
-    "net",
-    "host",
-    "protocol",
-    "port",
-    "needfrag",
-    "srcroutefail",
-    "netunknown",
-    "hostunknown",
-    "isolated",
-    "netprohibited",
-    "hostprohibited",
-    "nettos",
-    "hosttos",
-    "filterprohibited",
-    "hostprecedence",
-    "precedencecutoff"
-};
 
 void
 IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
@@ -271,10 +249,10 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
     switch (icmph->icmp_type) {
 	
       case ICMP_ECHOREPLY:
-	sa << "icmp echo reply ";
+	sa << "icmp echo-reply ";
 	goto icmp_echo;
       case ICMP_ECHO:
-	sa << "icmp echo request ";
+	sa << "icmp echo ";
 	/* fallthru */
       icmp_echo: {
 	    if (transport_length < 8)
@@ -295,38 +273,41 @@ IPPrint::icmp_line(StringAccum &sa, const Packet *p, int transport_length) const
 	  const click_udp *eudph = reinterpret_cast<const click_udp *>(reinterpret_cast<const uint8_t *>(eiph) + (eiph->ip_hl << 2));
 	  int eudph_len = eiph_len - (eiph->ip_hl << 2);
 
-	  sa << "icmp " << IPAddress(eiph->ip_dst);
+	  sa << "icmp " << IPAddress(eiph->ip_dst) << " unreachable ";
+	  if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + icmph->icmp_type, this, icmph->icmp_code))
+	      sa << s;
+	  else if (icmph->icmp_code)
+	      sa << "code " << (int)icmph->icmp_code;
 	  switch (icmph->icmp_code) {
 	    case ICMP_UNREACH_PROTOCOL:
-	      sa << " protocol " << unparse_proto(eiph->ip_p, false) << " unreachable";
+	      sa << ' ' << unparse_proto(eiph->ip_p, false);
 	      break;
 	    case ICMP_UNREACH_PORT:
-	      sa << ' ' << unparse_proto(eiph->ip_p, true) << " port ";
-	      if (eudph_len < 4) {
-		  sa << "unreachable ";
+	      sa << ' ' << unparse_proto(eiph->ip_p, true);
+	      if (eudph_len < 4)
 		  goto truncated_icmp;
-	      } else
-		  sa << ntohs(eudph->uh_dport) << " unreachable";
+	      sa << '/' << ntohs(eudph->uh_dport);
 	      break;
 	    case ICMP_UNREACH_NEEDFRAG: {
 		const click_icmp_needfrag *nfh = reinterpret_cast<const click_icmp_needfrag *>(icmph);
-		sa << " unreachable - need to frag";
 		if (nfh->icmp_nextmtu)
 		    sa << " (mtu " << ntohs(nfh->icmp_nextmtu) << ')';
 		break;
 	    }
-	    default:
-	      if (icmph->icmp_code < 16)
-		  sa << icmp_unreachable_messages[icmph->icmp_code];
-	      else
-		  sa << "unreachable #" << (int)icmph->icmp_code;
-	      break;
 	  }
 	  break;
       }
 
       default:
-	sa << "icmp type " << (int)icmph->icmp_type << " code " << (int)icmph->icmp_code;
+	sa << "icmp ";
+	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_TYPE, this, icmph->icmp_type))
+	    sa << s;
+	else
+	    sa << "type " << (int)icmph->icmp_type;
+	if (String s = NameInfo::revquery_int(NameInfo::T_ICMP_CODE + icmph->icmp_type, this, icmph->icmp_code))
+	    sa << ' ' << s;
+	else if (icmph->icmp_code)
+	    sa << " code " << (int)icmph->icmp_code;
 	break;
     }
     return;

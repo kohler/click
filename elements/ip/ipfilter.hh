@@ -128,9 +128,6 @@ class IPFilter : public Classifier { public:
   
   void push(int port, Packet *);
 
-  class Wordmap;
-  static Wordmap* create_wordmap();
-  
   enum {
     TYPE_NONE	= 0,		// data types
     TYPE_TYPE	= 1,
@@ -225,6 +222,8 @@ class IPFilter : public Classifier { public:
 
  private:
   
+  int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
+    
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);
   int parse_orexpr(const Vector<String> &, int, Vector<int> &, Primitive &,
@@ -255,17 +254,6 @@ IPFilter::Primitive::negation_is_simple() const
   else
     return _type == TYPE_HOST || (_type & TYPE_FIELD) || _type == TYPE_IPFRAG;
 }
-
-class IPFilter::Wordmap { public:
-  Wordmap();
-  void insert(const String &name, uint32_t type, uint32_t data);
-  int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
- private:
-  HashMap<String, int> _map;
-  Vector<uint32_t> _type;
-  Vector<uint32_t> _data;
-  void accum_names(String word, StringAccum &sa) const;
-};
 
 CLICK_ENDDECLS
 #endif

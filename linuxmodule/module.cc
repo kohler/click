@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/notifier.hh>
+#include <click/nameinfo.hh>
 
 int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
@@ -209,6 +210,7 @@ init_module()
 {
   // C++ static initializers
   String::static_initialize();
+  NameInfo::static_initialize();
   cp_va_static_initialize();
 
   // error initialization
@@ -289,7 +291,8 @@ cleanup_module()
   // HashMap
   HashMap_ArenaFactory::static_cleanup();
   
-  // String (after any operations that might create Strings)
+  // String (after any operations that might destroy Strings)
+  NameInfo::static_cleanup();
   String::static_cleanup();
 
   // report memory leaks

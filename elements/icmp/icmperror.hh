@@ -78,34 +78,30 @@ CLICK_DECLS
  *
  * =a DecIPTTL, FixIPSrc, IPGWOptions */
 
-class ICMPError : public Element {
-public:
-  ICMPError();
-  ~ICMPError();
+class ICMPError : public Element { public:
+    
+    ICMPError();
+    ~ICMPError();
 
-  static void static_initialize();
-  static void static_cleanup();
+    const char *class_name() const		{ return "ICMPError"; }
+    const char *processing() const		{ return AGNOSTIC; }
+    int configure(Vector<String> &, ErrorHandler *);
+
+    Packet *simple_action(Packet *);
   
-  const char *class_name() const		{ return "ICMPError"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *errh);
+  private:
 
-  Packet *simple_action(Packet *);
-  
-private:
+    IPAddress _src_ip;
+    int _type;
+    int _code;
+    IPAddressList _bad_addrs;
+    unsigned _mtu;
+    unsigned _pmtu;
 
-  IPAddress _src_ip;
-  int _type;
-  int _code;
-  IPAddressList _bad_addrs;
-  unsigned _mtu;
-  unsigned _pmtu;
-
-  static bool is_error_type(int);
-  bool unicast(struct in_addr) const;
-  bool valid_source(struct in_addr) const;
-  static const uint8_t *valid_source_route(const click_ip *ip);
+    static bool is_error_type(int);
+    bool unicast(struct in_addr) const;
+    bool valid_source(struct in_addr) const;
+    static const uint8_t *valid_source_route(const click_ip *ip);
   
 };
 

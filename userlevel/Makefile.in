@@ -49,7 +49,7 @@ ifndef INSTALLLIBS
 INSTALLLIBS = libclick.a
 endif
 
-GENERIC_OBJS = string.o straccum.o \
+GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
 	packet.o \

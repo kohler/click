@@ -30,6 +30,7 @@
 #include <click/timer.hh>
 #include <click/master.hh>
 #include <click/notifier.hh>
+#include <click/nameinfo.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
 #include <click/standard/threadsched.hh>
@@ -56,7 +57,7 @@ Router::Router(const String &configuration, Master *m)
       _configuration(configuration),
       _notifier_signals(0), _n_notifier_signals(0),
       _arena_factory(new HashMap_ArenaFactory),
-      _hotswap_router(0), _thread_sched(0), _next_router(0)
+      _hotswap_router(0), _thread_sched(0), _name_info(0), _next_router(0)
 {
     _refcount = 0;
     _runcount = 0;
@@ -116,6 +117,7 @@ Router::~Router()
 	delete[] _handler_bufs[i / HANDLER_BUFSIZ];
     delete[] _handler_bufs;
     delete[] _notifier_signals;
+    delete _name_info;
     _master->unuse();
 }
 
@@ -733,15 +735,12 @@ Router::context_message(int element_no, const char* message) const
     return sa.take_string();
 }
 
-static const Vector<int> *configure_order_phase;
-
-extern "C" {
 static int
-configure_order_compar(const void *athunk, const void *bthunk)
+configure_order_compar(const void *athunk, const void *bthunk, void *copthunk)
 {
-    const int* a = (const int*)athunk, *b = (const int*)bthunk;
-    return (*configure_order_phase)[*a] - (*configure_order_phase)[*b];
-}
+    const int* a = (const int*) athunk, *b = (const int*) bthunk;
+    const int* configure_order_phase = (const int*) copthunk;
+    return configure_order_phase[*a] - configure_order_phase[*b];
 }
 
 inline Handler*
@@ -798,12 +797,11 @@ Router::initialize(ErrorHandler *errh)
     _element_configure_order.assign(nelements(), 0);
     if (_element_configure_order.size()) {
 	Vector<int> configure_phase(nelements(), 0);
-	configure_order_phase = &configure_phase;
 	for (int i = 0; i < _elements.size(); i++) {
 	    configure_phase[i] = _elements[i]->configure_phase();
 	    _element_configure_order[i] = i;
 	}
-	click_qsort(&_element_configure_order[0], _element_configure_order.size(), sizeof(int), configure_order_compar);
+	click_qsort(&_element_configure_order[0], _element_configure_order.size(), sizeof(int), configure_order_compar, configure_phase.begin());
     }
 
     // notify elements of hookup range
@@ -883,6 +881,9 @@ Router::initialize(ErrorHandler *errh)
     // successfully and return -1 (error). Otherwise, we're all set!
     if (all_ok) {
 	_state = ROUTER_LIVE;
+#ifdef CLICK_NAMEDB_CHECK
+	NameInfo::check(_root_element, errh);
+#endif
 	return 0;
     } else {
 	_state = ROUTER_DEAD;
@@ -1374,6 +1375,14 @@ int
 ThreadSched::initial_thread_preference(Task *, bool)
 {
     return 0;
+}
+
+NameInfo*
+Router::force_name_info()
+{
+    if (!_name_info)
+	_name_info = new NameInfo;
+    return _name_info;
 }
 
 

@@ -25,54 +25,8 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+#include <click/nameinfo.hh>
 CLICK_DECLS
-
-void
-ICMPError::static_initialize()
-{
-  if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) >= 0)
-    cp_extend_stringlist_argtype("ICMP.type",
-				 "echo-reply", ICMP_ECHOREPLY,
-				 "unreachable", ICMP_UNREACH,
-				 "sourcequench", ICMP_SOURCEQUENCH,
-				 "redirect", ICMP_REDIRECT,
-				 "echo", ICMP_ECHO,
-				 "routeradvert", ICMP_ROUTERADVERT,
-				 "routersolicit", ICMP_ROUTERSOLICIT,
-				 "timeexceeded", ICMP_TIMXCEED,
-				 "parameterproblem", ICMP_PARAMPROB,
-				 "timestamp", ICMP_TSTAMP,
-				 "timestamp-reply", ICMP_TSTAMPREPLY,
-				 "inforeq", ICMP_IREQ,
-				 "inforeq-reply", ICMP_IREQREPLY,
-				 "maskreq", ICMP_MASKREQ,
-				 "maskreq-reply", ICMP_MASKREQREPLY,
-				 (const char*) 0);
-  if (cp_register_stringlist_argtype("ICMP.code", "ICMP message code", cpArgAllowNumbers) >= 0) {
-    cp_extend_stringlist_argtype("ICMP.code",
-				 "net", ICMP_UNREACH_NET,
-				 "host", ICMP_UNREACH_HOST,
-				 "protocol", ICMP_UNREACH_PROTOCOL,
-				 "port", ICMP_UNREACH_PORT,
-				 "needfrag", ICMP_UNREACH_NEEDFRAG,
-				 /* other UNREACH constants missing */
-				 "transit", ICMP_TIMXCEED_TRANSIT,
-				 "reassembly", ICMP_TIMXCEED_REASSEMBLY,
-				 "erroratptr", ICMP_PARAMPROB_ERRATPTR,
-				 "missingopt", ICMP_PARAMPROB_OPTABSENT,
-				 "length", ICMP_PARAMPROB_LENGTH,
-				 (const char*) 0);
-    static_assert(ICMP_UNREACH_NET == ICMP_REDIRECT_NET && ICMP_UNREACH_HOST == ICMP_REDIRECT_HOST);
-  }
-}
-
-void
-ICMPError::static_cleanup()
-{
-  cp_unregister_argtype("ICMP.type");
-  cp_unregister_argtype("ICMP.code");
-}
-
 
 ICMPError::ICMPError()
   : Element(1, 1), _type(-1), _code(-1)
@@ -83,46 +37,40 @@ ICMPError::~ICMPError()
 {
 }
 
-int
-ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
-{
-  String bad_addr_str;
-  _code = 0;
-  _mtu = 576;
-  _pmtu = 0;
-  if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "source IP address", &_src_ip,
-                  "ICMP.type", "ICMP error type", &_type,
-		  cpOptional,
-                  "ICMP.code", "ICMP error code", &_code,
-		  cpIPAddressList, "bad IP addresses", &_bad_addrs,
-		  cpKeywords,
-		  "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
-		  "MTU", cpUnsigned, "MTU", &_mtu,
-                  "PMTU", cpUnsigned, "Next-Hop MTU", &_pmtu,
-		  cpEnd) < 0)
-    return -1;
-  if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
-    return errh->error("ICMP type and code must be between 0 and 255");
-  return 0;
-}
-
 bool
 ICMPError::is_error_type(int type)
 {
-  return type == ICMP_UNREACH || type == ICMP_SOURCEQUENCH
-    || type == ICMP_REDIRECT ||	type == ICMP_TIMXCEED
-    || type == ICMP_PARAMPROB;
+    return type == ICMP_UNREACH || type == ICMP_SOURCEQUENCH
+	|| type == ICMP_REDIRECT ||	type == ICMP_TIMXCEED
+	|| type == ICMP_PARAMPROB;
 }
 
 int
-ICMPError::initialize(ErrorHandler *errh)
+ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (_type < 0 || _code < 0 || _src_ip.addr() == 0)
-    return errh->error("not configured");
-  if (!is_error_type(_type))
-    return errh->error("ICMP type %d is not an error type", _type);
-  return 0;
+    String code_str = "0";
+    _mtu = 576;
+    _pmtu = 0;
+    if (cp_va_parse(conf, this, errh,
+		    cpIPAddress, "source IP address", &_src_ip,
+		    cpNamedInteger, "ICMP error type", NameInfo::T_ICMP_TYPE, &_type,
+		    cpOptional,
+		    cpWord, "ICMP error code", &code_str,
+		    cpIPAddressList, "bad IP addresses", &_bad_addrs,
+		    cpKeywords,
+		    "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
+		    "MTU", cpUnsigned, "MTU", &_mtu,
+		    "PMTU", cpUnsigned, "Next-Hop MTU", &_pmtu,
+		    cpEnd) < 0)
+	return -1;
+    if (_type < 0 || _type > 255)
+	return errh->error("ICMP type must be between 0 and 255");
+    else if (!is_error_type(_type))
+	return errh->error("ICMP type %d is not an error type", _type);
+    if (!NameInfo::query_int(NameInfo::T_ICMP_CODE + _type, this, code_str, &_code)
+	|| _code < 0 || _code > 255)
+	return errh->error("argument 2 takes ICMP code (integer between 0 and 255)");
+    return 0;
 }
 
 /*

@@ -35,6 +35,7 @@
 #ifndef CLICK_TOOL
 # include <click/router.hh>
 # include <click/handlercall.hh>
+# include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
 # include <click/standard/portinfo.hh>
 # define CP_CONTEXT_ARG , Element *context
@@ -1952,6 +1953,7 @@ const CpVaParseCmd
   cpUnsignedShort	= "u_short",
   cpInteger		= "int",
   cpUnsigned		= "u_int",
+  cpNamedInteger	= "named_int",
   cpInteger64		= "long_long",
   cpUnsigned64		= "u_long_long",
   cpFileOffset		= "off_t",
@@ -2007,6 +2009,7 @@ enum {
   cpiUnsignedShort,
   cpiInteger,
   cpiUnsigned,
+  cpiNamedInteger,
   cpiInteger64,
   cpiUnsigned64,
   cpiFileOffset,
@@ -2150,6 +2153,7 @@ default_parsefunc(cp_value *v, const String &arg,
     goto handle_unsigned;
     
    case cpiInteger:
+   handle_int32_t:
     underflower = -0x80000000;
     overflower = 0x7FFFFFFF;
     goto handle_signed;
@@ -2157,6 +2161,13 @@ default_parsefunc(cp_value *v, const String &arg,
    case cpiUnsigned:
     overflower = 0xFFFFFFFFU;
     goto handle_unsigned;
+
+    case cpiNamedInteger:
+#ifndef CLICK_TOOL
+      if (NameInfo::query(v->extra, context, arg, &v->v.i, 4))
+	  break;
+#endif
+      goto handle_int32_t;
 
    handle_signed:
     if (!cp_integer(arg, &v->v.i))
@@ -2439,6 +2450,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
    
    case cpiInteger:
+   case cpiNamedInteger:
    case cpiReal2:
    case cpiReal10:
    case cpiSeconds:
@@ -3518,6 +3530,7 @@ cp_va_static_initialize()
     cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
     cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
     cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
+    cp_register_argtype(cpNamedInteger, "named int", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNamedInteger);
 #ifdef HAVE_INT64_TYPES
     cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
     cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
