@@ -16,6 +16,7 @@
  */
 
 #include <click/hashmap.hh>
+#include <assert.h>
 
 template <class K, class V>
 HashMap<K, V>::HashMap()
@@ -118,6 +119,7 @@ template <class K, class V>
 bool
 HashMap<K, V>::insert(const K &key, const V &val)
 {
+  assert(key);
   check_capacity();
   int i = bucket(key);
   bool is_new = !(bool)_e[i].k;
