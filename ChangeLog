@@ -1,3 +1,13 @@
+2002-11-17 Sunday 21:10  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/xml2click.cc (1.5): old nits
+
+2002-11-17 Sunday 21:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/delayunqueue.cc (1.14): fix DelayUnqueue
+	problem reported by Adam Smith and Ryan Menezes: combination of
+	long delays and fast rates was not supported, now it is
+
 2002-11-17 Sunday 15:36  Eddie Kohler <kohler@icir.org>
 
 	* lib/confparse.cc (1.106): allow underscores in numbers
