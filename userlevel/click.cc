@@ -33,6 +33,7 @@
 #include <fcntl.h>
 
 #include <click/lexer.hh>
+#include <click/routerthread.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/timer.hh>
@@ -693,7 +694,7 @@ particular purpose.\n");
   // run driver
   if (!quit_immediately) {
     started = true;
-    router->driver();
+    router->thread(0)->driver();
   }
 
   gettimeofday(&after_time, 0);
