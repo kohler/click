@@ -1,3 +1,132 @@
+2000-11-01 Wednesday 00:21  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc: [no log message]
+
+2000-10-31 Tuesday 18:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.cc, anydevice.hh, polldevice.cc,
+	polldevice.hh, todevice.cc, todevice.hh: more device driver cleanup
+
+2000-10-31 Tuesday 17:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: oops: do I feel like an idiot (previous
+	patch had $Id:$ strings all wrong)
+
+2000-10-31 Tuesday 17:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip6/addresstranslator.cc, include/click/straccum.hh,
+	include/click/string.hh, lib/error.cc, lib/string.cc,
+	tools/lib/routert.cc: other changes from Mazu (note: previous group
+	of changes is all from Mazu)
+
+2000-10-31 Tuesday 17:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/icmperror.cc: ICMPError should use ip_header
+	annotation, not p->data()
+
+2000-10-31 Tuesday 17:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc, ipfilter.hh: added
+	"true" and "false" to IPFilter, and improved parsing functions
+	readability
+
+2000-10-31 Tuesday 17:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, FAQ, INSTALL, etc/linux-2.2.17-patch,
+	linuxmodule/kernelerror.cc, linuxmodule/module.cc,
+	linuxmodule/modulepriv.hh, linuxmodule/proc_config.cc,
+	linuxmodule/proc_element.cc, linuxmodule/proc_mgr.cc,
+	tools/click-install/click-install.cc,
+	tools/click-install/click-uninstall.cc: change /proc handling to
+	use newer, undeprecated create_proc_entry() API. Also support
+	removing a kernel module even while someone has a handler file open
+	underneath. Added new kernel patch
+
+2000-10-31 Tuesday 17:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: include /proc reference count fix from
+	Mazu
+
+2000-10-31 Tuesday 17:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: perfcountuser.cc, perfcountuser.cc:
+	PerfCountUser bug fix: found the base PerfCountUser, but didnt
+	actually use it
+
+2000-10-31 Tuesday 17:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/perfinfo.cc, include/click/perfctr.hh:
+	performance counter cleanups: do not include PerfInfo, remove old
+	PerfCtr class from perfctr.hh
+
+2000-10-31 Tuesday 15:05  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/: grid.click, grid.click, grid.click: [no log message]
+
+2000-10-31 Tuesday 14:49  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: locqueryresponder.cc, locqueryresponder.hh:
+	hahaha bugfixes for my new bugs
+
+2000-10-31 Tuesday 14:03  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/floodinglocquerier.cc: memory leak
+
+2000-10-31 Tuesday 14:03  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: locqueryresponder.cc, locqueryresponder.hh: now
+	times out last remembered query sequence for each host, for when
+	nodes reboot
+
+2000-10-31 Tuesday 13:31  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: added IP TTL decrement support for Grid
+	packets routed through this machine; allows traceroute to work.
+
+2000-10-31 Tuesday 13:12  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/polldevice.cc: [no log message]
+
+2000-10-31 Tuesday 12:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: todevice.cc, todevice.cc: [no log message]
+
+2000-10-31 Tuesday 11:32  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/rrswitch.cc: bug fix
+
+2000-10-31 Tuesday 11:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: polldevice.cc, polldevice.hh, todevice.cc,
+	todevice.hh: simpler ticket adjustment algorithm
+
+2000-10-30 Monday 19:01  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: [no log message]
+
+2000-10-30 Monday 18:29  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/: linux-2.2.16-patch, linux-2.2.16-patch: [no log message]
+
+2000-10-30 Monday 16:51  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: more improvements to recycling code
+
+2000-10-30 Monday 16:07  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc, floodinglocquerier.hh,
+	locqueryresponder.cc: bug fixes and verbosity added
+
+2000-10-30 Monday 15:07  Peilei Fan <peilei@lcs.mit.edu>
+
+	* conf/: gnat01.click, gnat02.click: test files for general purpose
+	network address translator.
+
+2000-10-30 Monday 10:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: separate skb recycle and reinit routine
+	for better cache locality
+
 2000-10-29 Sunday 16:59  Benjie Chen <benjie@lcs.mit.edu>
 
 	* etc/linux-2.2.16-patch: better recycle skb queue
