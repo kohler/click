@@ -5,6 +5,10 @@
  * =c
  * ToDevice(DEVNAME)
  * =d
+ *
+ * This manual page describes the Linux kernel module version of the ToDevice
+ * element. For the user-level element, read the ToDevice.u(n) manual page.
+ *
  * Sends packets out the Linux network interface named DEVNAME.
  *
  * Packets must have a link header. For ethernet, ToDevice
@@ -21,13 +25,11 @@
  * we depend on the net driver's send operation for synchronization (e.g.
  * tulip send operation uses a bit lock).
  *
- * This element is only available inside the kernel module.
- *
  * =a FromDevice
  * =a PollDevice
  * =a FromLinux
  * =a ToLinux
- */
+ * =a ToDevice.u */
 
 #include "anydevice.hh"
 

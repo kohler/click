@@ -5,6 +5,11 @@
  * =c
  * FromDevice(DEVNAME)
  * =d
+ *
+ * This manual page describes the Linux kernel module version of the
+ * FromDevice element. For the user-level element, read the FromDevice.u
+ * manual page.
+ *
  * Intercepts all packets received by the Linux network interface
  * named DEVNAME and pushes them out output 0.
  * The packets include the link-level header.
@@ -17,12 +22,11 @@
  * This is bad for performance. If you care about performance and have a
  * polling-capable device, use PollDevice instead.
  *
- * This element is only available inside the kernel module.
- *
  * =a PollDevice
  * =a ToDevice
  * =a FromLinux
- * =a ToLinux */
+ * =a ToLinux
+ * =a FromDevice.u */
 
 #include "anydevice.hh"
 

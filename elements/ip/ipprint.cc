@@ -48,7 +48,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   if (cp_va_parse(conf, this, errh,
 		  cpString, "label", &_label,
 		  cpOptional,
-		  cpBool, "print packet contents in hex", &_hex,
+		  cpBool, "print packet contents in hex?", &_hex,
 		  cpInteger, "number of bytes to dump", &_bytes,
 		  cpEnd) < 0)
     return -1;

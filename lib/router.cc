@@ -813,7 +813,7 @@ Router::initialize(ErrorHandler *errh)
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
   if (!all_ok) {
-    errh->error("router could not be initialized");
+    errh->error("Router could not be initialized!");
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])
 	_elements[i]->uninitialize();
