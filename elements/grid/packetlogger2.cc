@@ -9,7 +9,7 @@
 CLICK_DECLS
 
 PacketLogger2::PacketLogger2()
-  : Element(1, 1), _nb(34)
+  : Element(1, 1), _nb(34), _p(1000)
 {
   MOD_INC_USE_COUNT;
 }
@@ -49,8 +49,13 @@ PacketLogger2::simple_action(Packet *p_in)
   memcpy(d.anno, p_in->all_user_anno(), Packet::USER_ANNO_SIZE);
   memcpy(d.bytes, p_in->data(), _nb < d.length ? _nb : d.length);
   
+  int s_pre = _p.size();
   _p.push_back(d);
-
+  int s_post = _p.size();
+  
+  if (s_post != s_pre + 1) 
+    click_chatter("PacketLogger2 %s: ERROR: couldn't add packet to log, log size = %d", id().cc(), s_pre);
+      
   return p_in;
 }
 
@@ -88,7 +93,7 @@ PacketLogger2::print_log(Element *e, void *)
 
     sa << d.timestamp;
     char *buf = sa.data() + sa.length();
-    int pos = sprintf(buf, " %04u | ", d.length);
+    int pos = sprintf(buf, " %4u | ", d.length);
     for (int i = 0; i < Packet::USER_ANNO_SIZE; i++) {
       sprintf(buf + pos, "%02x", d.anno[i]);
       pos += 2;

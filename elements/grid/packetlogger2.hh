@@ -52,7 +52,7 @@ class PacketLogger2 : public Element { public:
   void add_handlers();
   static String print_log(Element *, void *);
 
-#define NBYTES 8
+#define NBYTES 18
   struct log_entry {
     struct timeval timestamp;
     unsigned length;
