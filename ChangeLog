@@ -1,3 +1,138 @@
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_vendor_info.h: file e1000_vendor_info.h was
+	initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_proc.h: file e1000_proc.h was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_phy.h: file e1000_phy.h was initially added on
+	branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_proc.c: file e1000_proc.c was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_phy.c: file e1000_phy.c was initially added on
+	branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_main.c.orig: file e1000_main.c.orig was
+	initially added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_main.c: file e1000_main.c was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_fxhw.h: file e1000_fxhw.h was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_kcompat.h: file e1000_kcompat.h was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000_fxhw.c: file e1000_fxhw.c was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000.h: file e1000.h was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000.h.orig: file e1000.h.orig was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/base_comm.h: file base_comm.h was initially added on
+	branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_os.c: file ans_os.c was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_os.h: file ans_os.h was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_hw.h: file ans_hw.h was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_hw.c: file ans_hw.c was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_driver.c: file ans_driver.c was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans_driver.h: file ans_driver.h was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans.h: file ans.h was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/README-rtm: file README-rtm was initially added on
+	branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/ans.c: file ans.c was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/Makefile.orig: file Makefile.orig was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/README: file README was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/Makefile: file Makefile was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/LICENSE: file LICENSE was initially added on branch
+	smp_click.
+
+2000-11-16 Thursday 09:59  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/polldevice.cc: make sure polldevice detects
+	the correct version of polling driver
+
 2000-11-15 Wednesday 23:21  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/ethernet/ip6ndadvertiser.cc,
