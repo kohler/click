@@ -44,11 +44,11 @@ int
 MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   for (int i = 0; i < conf.size(); i++) {
-    unsigned long t;
+    unsigned int t;
     int int_vlat, int_vlon;
     Element *el = 0;
     if (cp_va_space_parse(conf[i], this, errh,
-			  cpUnsignedLong, "movement interval (ms)", &t,
+			  cpUnsigned, "movement interval (ms)", &t,
 			  cpElement, "LocationInfo", &el,
 			  cpReal, "latitude", 7, &int_vlat,
 			  cpReal, "longitude", 7, &int_vlon,
