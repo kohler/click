@@ -62,14 +62,14 @@ Element::static_initialize()
 
 // CHARACTERISTICS
 
-bool
-Element::is_a(const char *name) const
+void *
+Element::cast(const char *name)
 {
   const char *my_name = class_name();
-  if (my_name && name)
-    return strcmp(my_name, name) == 0;
+  if (my_name && name && strcmp(my_name, name) == 0)
+    return this;
   else
-    return false;
+    return 0;
 }
 
 void

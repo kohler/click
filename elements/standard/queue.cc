@@ -20,8 +20,10 @@
 #include "elemfilter.hh"
 
 Queue::Queue()
-  : Storage(1, 1), _q(0)
+  : _q(0)
 {
+  add_input();
+  add_output();
 }
 
 Queue::~Queue()
@@ -29,28 +31,27 @@ Queue::~Queue()
   if (_q) uninitialize();
 }
 
-bool
-Storage::is_a(const char *n) const
+void *
+Queue::cast(const char *n)
 {
-  return strcmp(n, "Storage") == 0;
-}
-
-bool
-Queue::is_a(const char *n) const
-{
-  return strcmp(n, "Queue") == 0 || Storage::is_a(n);
+  if (strcmp(n, "Storage") == 0)
+    return (Storage *)this;
+  else if (strcmp(n, "Queue") == 0)
+    return (Element *)this;
+  else
+    return 0;
 }
 
 int
 Queue::configure(const String &conf, ErrorHandler *errh)
 {
-  int new_max = 1000;
+  int new_capacity = 1000;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpUnsigned, "maximum queue length", &new_max,
+		  cpUnsigned, "maximum queue length", &new_capacity,
 		  0) < 0)
     return -1;
-  _max = new_max;
+  _capacity = new_capacity;
   return 0;
 }
 
@@ -58,7 +59,7 @@ int
 Queue::initialize(ErrorHandler *errh)
 {
   assert(!_q);
-  _q = new Packet *[_max + 1];
+  _q = new Packet *[_capacity + 1];
   if (_q == 0)
     return errh->error("out of memory");
 
@@ -73,22 +74,22 @@ int
 Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
 {
   // change the maximum queue length at runtime
-  int old_max = _max;
+  int old_capacity = _capacity;
   if (configure(conf, errh) < 0)
     return -1;
-  if (_max == old_max)
+  if (_capacity == old_capacity)
     return 0;
-  int new_max = _max;
-  _max = old_max;
+  int new_capacity = _capacity;
+  _capacity = old_capacity;
   
-  Packet **new_q = new Packet *[new_max + 1];
+  Packet **new_q = new Packet *[new_capacity + 1];
   if (new_q == 0)
     return errh->error("out of memory");
   
   int i, j;
   for (i = _head, j = 0; i != _tail; i = next_i(i)) {
     new_q[j++] = _q[i];
-    if (j == new_max) break;
+    if (j == new_capacity) break;
   }
   for (; i != _tail; i = next_i(i))
     _q[i]->kill();
@@ -97,7 +98,7 @@ Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
   _q = new_q;
   _head = 0;
   _tail = j;
-  _max = new_max;
+  _capacity = new_capacity;
   return 0;
 }
 
@@ -171,11 +172,14 @@ static String
 queue_read_length(Element *f, void *thunk)
 {
   Queue *q = (Queue *)f;
-  if (thunk)
+  switch ((int)thunk) {
+   case 0:
+    return String(q->size()) + "\n";
+   case 1:
+    return String(q->max_length()) + "\n";
+   default:
     return String(q->capacity()) + "\n";
-  else
-    return String(q->size()) + " current\n" +
-      String(q->max_length()) + " highest seen\n";
+  }
 }
 
 static String
@@ -189,8 +193,9 @@ void
 Queue::add_handlers()
 {
   add_read_handler("length", queue_read_length, (void *)0);
-  add_read_handler("max_length", queue_read_length, (void *)1);
-  add_write_handler("max_length", reconfigure_write_handler, (void *)0);
+  add_read_handler("highwater_length", queue_read_length, (void *)1);
+  add_read_handler("capacity", queue_read_length, (void *)2);
+  add_write_handler("capacity", reconfigure_write_handler, (void *)0);
   add_read_handler("drops", queue_read_drops, 0);
 }
 

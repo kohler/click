@@ -6,15 +6,15 @@ class Storage;
 
 /*
  * =c
- * RED(min_thresh, max_thresh, max_p)
+ * RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
  * =d
  * Implements the Random Early Detection packet dropping
  * algorithm.
  *
- * A RED element is associated with one or more
- * Queues. It maintains an average of the sum of the
+ * A RED element is associated with one or more Storage elements (usually
+ * Queues). It maintains an average of the sum of the
  * queue lengths, and drops packets with a probability
- * proportional to that sum. The Queues are found with
+ * proportional to that sum. Usually, the Queues are found with
  * flow-based router context: if the RED is a push element, the nearest
  * downstream Queues are used; if it is a pull element, the nearest
  * upstream Queues are used.
@@ -23,11 +23,11 @@ class Storage;
  * = ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
  *
  * =h min_thresh read/write
- * Returns or sets the min_thresh configuration parameter.
+ * Returns or sets the MIN_THRESH configuration parameter.
  * =h max_thresh read/write
- * Returns or sets the max_thresh configuration parameter.
+ * Returns or sets the MAX_THRESH configuration parameter.
  * =h max_p read/write
- * Returns or sets the max_p configuration parameter.
+ * Returns or sets the MAX_P configuration parameter.
  * =h drops read-only
  * Returns the number of packets dropped so far.
  * =h queues read-only
@@ -41,7 +41,7 @@ class Storage;
 class RED : public Element {
   
   Storage *_queue1;
-  Vector<Element *> _queues;
+  Vector<Storage *> _queues;
   
   // Queue sizes are shifted by this much.
   static const int QUEUE_SCALE = 10;
@@ -58,6 +58,7 @@ class RED : public Element {
   int _random_value;
   
   int _drops;
+  Vector<Element *> _queue_elements;
   
   void set_C1_and_C2();
 

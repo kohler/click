@@ -13,13 +13,13 @@ class ElementFilter { public:
   
 };
 
-class IsaElementFilter : public ElementFilter {
+class CastElementFilter : public ElementFilter {
   
   String _what;
   
  public:
   
-  IsaElementFilter(const String &);
+  CastElementFilter(const String &);
   bool match(Element *);
   
 };

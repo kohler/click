@@ -43,7 +43,7 @@ ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
   int my_number = router()->eindex(this);
   const Vector<Element *> &ev = router()->elements();
   for (int i = 0; i < my_number; i++)
-    if (ScheduleInfo *si = (ScheduleInfo *)ev[i]->is_a_cast("ScheduleInfo"))
+    if (ScheduleInfo *si = (ScheduleInfo *)ev[i]->cast("ScheduleInfo"))
       if (_prefix == si->_prefix) {
 	_active = false;
 	return si->configure(conf, errh);
@@ -112,7 +112,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   const Vector<Element *> &ev = e->router()->elements();
   Vector<Element *> schinfos;
   for (int i = 0; i < ev.size(); i++)
-    if (ScheduleInfo *e = (ScheduleInfo *)ev[i]->is_a_cast("ScheduleInfo"))
+    if (ScheduleInfo *e = (ScheduleInfo *)ev[i]->cast("ScheduleInfo"))
       if (e->_active)
 	schinfos.push_back(e);
 

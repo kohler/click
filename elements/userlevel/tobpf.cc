@@ -107,7 +107,7 @@ ToBPF::initialize(ErrorHandler *errh)
    */
   for(int fi = 0; fi < router()->nelements(); fi++){
     Element *f = router()->element(fi);
-    FromBPF *lr = (FromBPF *)f->is_a_cast("FromBPF");
+    FromBPF *lr = (FromBPF *)f->cast("FromBPF");
     if (lr && lr->get_ifname() == _ifname && lr->get_pcap())
       _fd = pcap_fileno(lr->get_pcap());
   }

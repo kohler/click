@@ -29,8 +29,7 @@ class Element : public ElementLink { public:
   
   // CHARACTERISTICS
   virtual const char *class_name() const = 0;
-  virtual bool is_a(const char *) const;
-  Element *is_a_cast(const char *name)	{ return (is_a(name) ? this : 0); }
+  virtual void *cast(const char *);
   
   String id() const				{ return _id; }
   void set_id(const String &);

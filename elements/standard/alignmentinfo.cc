@@ -36,7 +36,7 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
   int my_number = router()->eindex(this);
   const Vector<Element *> &ev = router()->elements();
   for (int i = 0; i < my_number; i++)
-    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->is_a_cast("AlignmentInfo"))
+    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->cast("AlignmentInfo"))
       return ai->configure(conf, errh);
 
   // this is the first AlignmentInfo; store all information here
@@ -105,7 +105,7 @@ AlignmentInfo::query(Element *e, int port, int &chunk, int &offset)
 {
   const Vector<Element *> &ev = e->router()->elements();
   for (int i = 0; i < ev.size(); i++)
-    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->is_a_cast("AlignmentInfo"))
+    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->cast("AlignmentInfo"))
       return ai->query1(e, port, chunk, offset);
   return false;
 }

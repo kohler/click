@@ -726,7 +726,7 @@ Router::initialize(ErrorHandler *errh)
 	element_ok[i] = all_ok = false;
 	// don't report `unspecified error' for ErrorElements: keep error
 	// messages clean
-	if (cerrh.nerrors() == before && !_elements[i]->is_a("Error"))
+	if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
 	  cerrh.error("unspecified error");
       }
     }

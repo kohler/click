@@ -50,23 +50,6 @@ Idle::backward_flow(int) const
   return Bitvector(ninputs(), false);
 }
 
-int
-Idle::initialize(ErrorHandler *errh)
-{
-  for (int i = 0; i < ninputs(); i++)
-    if (input_is_pull(i)) {
-      ScheduleInfo::join_scheduler(this, errh);
-      break;
-    }
-  return 0;
-}
-
-void
-Idle::uninitialize()
-{
-  unschedule();
-}
-
 void
 Idle::push(int, Packet *p)
 {
@@ -77,18 +60,6 @@ Packet *
 Idle::pull(int)
 {
   return 0;
-}
-
-void
-Idle::run_scheduled()
-{
-  // XXX reduce tickets if idle
-  for (int i = 0; i < ninputs(); i++)
-    if (input_is_pull(i))
-      if (Packet *p = input(i).pull()) {
-	p->kill();
-      }
-  reschedule();
 }
 
 EXPORT_ELEMENT(Idle)

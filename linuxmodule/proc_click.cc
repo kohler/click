@@ -484,7 +484,7 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++)
     if (proc_dir_entry *fpde = element_pdes[i]) {
       Element *element = current_router->element(i);
-      if (element->is_a("Error")) continue;
+      if (element->cast("Error")) continue;
       element->add_default_handlers(add_per_element);
       if (add_per_element) element->add_handlers();
     }

@@ -55,7 +55,8 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libclicktool.a click-align
+all: libclicktool.a all-local
+all-local: click-align
 
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
@@ -82,4 +83,4 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-bin install-man libclicktool.a
+.PHONY: all all-local clean distclean install install-bin install-man libclicktool.a

@@ -7,17 +7,25 @@
 /*
  * =c
  * Queue
- * Queue(MAX)
+ * Queue(CAPACITY)
  * =d
  * Stores incoming packets in a first-in-first-out queue.
- * Drops incoming packets if the queue already holds MAX packets.
- * The default for MAX is 1000.
+ * Drops incoming packets if the queue already holds CAPACITY packets.
+ * The default for CAPACITY is 1000.
+ * =h length read-only
+ * Returns the current number of packets in the queue.
+ * =h highwater_length read-only
+ * Returns the maximum number of packets that have ever been in the queue at once.
+ * =h capacity read/write
+ * Returns or sets the queue's capacity.
+ * =h drops read-only
+ * Returns the number of packets dropped by the Queue so far.
  * =a RED
  */
 
-class Storage : public Element { protected:
+class Storage { protected:
 
-  int _max;
+  int _capacity;
   int _head;
   int _tail;
 
@@ -26,26 +34,23 @@ class Storage : public Element { protected:
  public:
 
   Storage()					{ }
-  Storage(int i, int o)				: Element(i, o) { }
 
-  bool is_a(const char *) const;
-  
   operator bool() const				{ return _head != _tail; }
   bool empty() const				{ return _head == _tail; }
   int size() const;
-  int capacity() const				{ return _max; }
+  int capacity() const				{ return _capacity; }
 
   int empty_jiffies() const			{ return _empty_jiffies; }
   
 };
 
-class Queue : public Storage {
+class Queue : public Element, public Storage {
   
   Packet **_q;
   int _drops;
   int _max_length;
 
-  int next_i(int i) const			{ return (i!=_max ? i+1 : 0); }
+  int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
   
  public:
   
@@ -53,7 +58,7 @@ class Queue : public Storage {
   ~Queue();
   
   const char *class_name() const		{ return "Queue"; }
-  bool is_a(const char *) const;
+  void *cast(const char *);
   Processing default_processing() const		{ return PUSH_TO_PULL; }
   
   int drops() const				{ return _drops; }
@@ -73,13 +78,15 @@ class Queue : public Storage {
   
   void push(int port, Packet *);
   Packet *pull(int port);
+  
 };
 
 
 inline int
 Storage::size() const
 {
-  return (_tail >= _head ? _tail - _head : _max - (_head - _tail) + 1);
+  register int x = _tail - _head;
+  return (x >= 0 ? x : _capacity + x + 1);
 }
 
 inline void

@@ -23,15 +23,15 @@ all: $(TARGETS)
 lib: always Makefile
 	@cd lib; $(MAKE) all
 click-align: lib Makefile
-	@cd click-align; $(MAKE) click-align
+	@cd click-align; $(MAKE) all-local
 click-fastclassifier: lib Makefile
-	@cd click-fastclassifier; $(MAKE) click-fastclassifier
+	@cd click-fastclassifier; $(MAKE) all-local
 click-install: lib Makefile
-	@cd click-install; $(MAKE) click-install
+	@cd click-install; $(MAKE) all-local
 click-specialize: lib Makefile
-	@cd click-specialize; $(MAKE) click-specialize
+	@cd click-specialize; $(MAKE) all-local
 click-xform: lib Makefile
-	@cd click-xform; $(MAKE) click-xform
+	@cd click-xform; $(MAKE) all-local
 udpgen: Makefile
 	@cd udpgen; $(MAKE) all
 always:

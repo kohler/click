@@ -6,8 +6,10 @@
  * Idle()
  * =d
  *
- * Has zero or one outputs and zero or one inputs. It never sends anything to
- * any of them. Used to avoid "input not connected" error messages.
+ * Has zero or more agnostic outputs and zero or more agnostic inputs. It
+ * never pushes a packet to any output or pulls a packet from any input. Any
+ * packet it does receive is discarded. Used to avoid "input not connected"
+ * error messages.
  */
 
 #include "element.hh"
@@ -27,13 +29,9 @@ class Idle : public Element {
   Bitvector backward_flow(int) const;
   
   Idle *clone() const				{ return new Idle; }
-  int initialize(ErrorHandler *);
-  void uninitialize();
   
   void push(int, Packet *);
   Packet *pull(int);
-
-  void run_scheduled();
   
 };
 

@@ -1,5 +1,13 @@
 Click NEWS
 
+Version
+
+* Added optional queue names to RED.
+
+* Removed `is_a()' and `is_a_cast()' methods of Element. The new way,
+  `cast()', allows arbitrary interfaces.
+
+
 Version 1.0.1   28.Feb.2000
 
 * Fixed Makefile bugs; Linux module installs properly now. Problem reported

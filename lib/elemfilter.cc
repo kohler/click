@@ -26,13 +26,13 @@ ElementFilter::filter(Vector<Element *> &v)
 }
 
 
-IsaElementFilter::IsaElementFilter(const String &what)
+CastElementFilter::CastElementFilter(const String &what)
   : _what(what)
 {
 }
 
 bool
-IsaElementFilter::match(Element *f)
+CastElementFilter::match(Element *f)
 {
-  return f->is_a(_what);
+  return f->cast(_what) != 0;
 }

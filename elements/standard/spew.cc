@@ -77,7 +77,7 @@ Spew::spew_some()
   
 #if !defined(__KERNEL__)
   Element *o = output(0).element();
-  ARPQuerier *aq = (ARPQuerier *)o->is_a_cast("ARPQuerier");
+  ARPQuerier *aq = (ARPQuerier *)o->cast("ARPQuerier");
   if(aq){
     click_chatter("Spew is hacking ARPQuerier");
     assert(0);

@@ -64,7 +64,7 @@ class Lexer::Compound : public Element {
   Compound(const String &, const String &, unsigned, const Vector<String> &);
   
   const char *class_name() const	{ return _name.cc(); }
-  bool is_a(const char *) const;
+  void *cast(const char *);
   Compound *clone() const		{ return 0; }
   
   const String &body() const		{ return _body; }
@@ -80,10 +80,13 @@ Lexer::Compound::Compound(const String &name, const String &body,
 {
 }
 
-bool
-Lexer::Compound::is_a(const char *s) const
+void *
+Lexer::Compound::cast(const char *s)
 {
-  return String("Lexer::Compound") == s || _name == s;
+  if (String("Lexer::Compound") == s || _name == s)
+    return this;
+  else
+    return 0;
 }
 
 //
@@ -613,7 +616,7 @@ Lexer::get_element(String name, int etype, const String &conf)
   else if ((e = et->clone())) {
     e->set_id(name);
     e->set_landmark(landmark());
-  } else if (et->is_a("Lexer::Compound"))
+  } else if (et->cast("Lexer::Compound"))
     return make_compound_element(name, etype, conf);
   else {
     lerror("can't clone `%s'", et->declaration().cc());

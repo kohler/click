@@ -73,30 +73,14 @@ implementation.
 '
 .Sp
 .TP
-.BR "virtual bool is_a(" "const char *\fIname" ") const"
-Should return
-.K true
-iff this element fits the \fIname\fP interface. \fIName\fP is most
-frequently an element class name, but could be anything. The default
-implementation returns
+.BR "virtual void *cast(" "const char *\fIname" ")"
+If the element implements the \fIname\fP interface, this function will
+return the address of that interface. Otherwise, it returns a null pointer.
+\fIName\fP is most frequently an element class name, but could be anything.
+The default implementation returns
 .K true
 iff \fIname\fP equals
 .BR class_name() .
-'
-.Sp
-.TP
-.BR "Element *is_a_cast(" "const char *\fIname" )
-Returns
-.K this
-if
-.B "is_a(\fIname\fB)"
-is
-.K true ,
-0 otherwise. Intended to be used like this:
-.nf
-    Queue *q = (Queue *)element->is_a_cast("Queue");
-    // q will be 0 if element was not a Queue
-.fi
 '
 .Sp
 .TP

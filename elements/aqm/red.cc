@@ -51,10 +51,13 @@ int
 RED::configure(const String &conf, ErrorHandler *errh)
 {
   int min_thresh, max_thresh, max_p;
+  String queues_string = String();
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
 		  cpNonnegReal2, "max_p drop probability", 16, &max_p,
+		  cpOptional,
+		  cpString, "relevant queues", &queues_string,
 		  0) < 0)
     return -1;
   
@@ -69,6 +72,17 @@ RED::configure(const String &conf, ErrorHandler *errh)
   if (max_p > 0x10000)
     return errh->error("`max_p' parameter must be between 0 and 1");
 
+  // check queues_string
+  if (queues_string) {
+    Vector<String> eids;
+    cp_spacevec(queues_string, eids);
+    for (int i = 0; i < eids.size(); i++)
+      if (Element *e = router()->find(this, eids[i], errh))
+	_queue_elements.push_back(e);
+    if (eids.size() != _queue_elements.size())
+      return -1;
+  }
+  
   // OK: set variables
   _min_thresh = min_thresh << QUEUE_SCALE;
   _max_thresh = max_thresh << QUEUE_SCALE;
@@ -86,21 +100,30 @@ RED::initialize(ErrorHandler *errh)
   // Find the next queues
   _queues.clear();
   _queue1 = 0;
+
+  if (!_queue_elements.size()) {
+    CastElementFilter filter("Storage");
+    int ok;
+    if (output_is_push(0))
+      ok = router()->downstream_elements(this, 0, &filter, _queue_elements);
+    else
+      ok = router()->upstream_elements(this, 0, &filter, _queue_elements);
+    if (ok < 0)
+      return errh->error("flow-based router context failure");
+    filter.filter(_queue_elements);
+  }
   
-  IsaElementFilter filter("Storage");
-  int ok;
-  if (output_is_push(0))
-    ok = router()->downstream_elements(this, 0, &filter, _queues);
-  else
-    ok = router()->upstream_elements(this, 0, &filter, _queues);
-  if (ok < 0)
-    return errh->error("downstream_elements failure");
-  filter.filter(_queues);
-  
-  if (_queues.size() == 0)
+  if (_queue_elements.size() == 0)
     return errh->error("no Queues downstream");
+  for (int i = 0; i < _queue_elements.size(); i++)
+    if (Storage *s = (Storage *)_queue_elements[i]->cast("Storage"))
+      _queues.push_back(s);
+    else
+      errh->error("`%s' is not a Storage element", _queue_elements[i]->id().cc());
+  if (_queues.size() != _queue_elements.size())
+    return -1;
   else if (_queues.size() == 1)
-    _queue1 = (Storage *)_queues[0];
+    _queue1 = _queues[0];
 
   // Prepare EWMA stuff
   _size.initialize();
@@ -120,7 +143,7 @@ RED::queue_size() const
   else {
     int s = 0;
     for (int i = 0; i < _queues.size(); i++)
-      s += ((Storage *)_queues[i])->size();
+      s += _queues[i]->size();
     return s;
   }
 }
@@ -137,7 +160,7 @@ RED::drop()
     int now_j = click_jiffies();
     int j = now_j;
     for (int i = 0; i < _queues.size(); i++) {
-      int ej = ((Storage *)_queues[i])->empty_jiffies();
+      int ej = _queues[i]->empty_jiffies();
       if (ej - now_j > j - now_j)
 	j = ej;
     }
@@ -236,14 +259,10 @@ String
 RED::read_queues(Element *f, void *)
 {
   RED *r = (RED *)f;
-  if (r->_queue1)
-    return r->_queue1->id() + "\n";
-  else {
-    String s;
-    for (int i = 0; i < r->_queues.size(); i++)
-      s += r->_queues[i]->id() + "\n";
-    return s;
-  }
+  String s;
+  for (int i = 0; i < r->_queue_elements.size(); i++)
+    s += r->_queue_elements[i]->id() + "\n";
+  return s;
 }
 
 void

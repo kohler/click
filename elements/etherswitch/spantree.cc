@@ -66,11 +66,11 @@ EtherSpanTree::configure(const String &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
   
-  if (!in || !in->is_a("Suppressor"))
+  if (!in || !in->cast("Suppressor"))
     return errh->error("EtherSpanTree needs an input Suppressor");
-  if (!out || !out->is_a("Suppressor"))
+  if (!out || !out->cast("Suppressor"))
     return errh->error("EtherSpanTree needs an output Suppressor");
-  if (!sw || !sw->is_a("EtherSwitch"))
+  if (!sw || !sw->cast("EtherSwitch"))
     return errh->error("EtherSpanTree needs an EtherSwitch");
   
   _input_sup = (Suppressor*)in;
