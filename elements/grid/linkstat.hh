@@ -199,15 +199,15 @@ private:
 
  public:
 
-  // Get forward delivery rate R to host ETH over period TAU
-  // milliseconds, as recorded at time T.  R is a percentage (0-100).
-  // Return true iff we have data.
+  // Get forward delivery rate R from this node to node ETH over
+  // period TAU milliseconds, as recorded at time T.  R is a
+  // percentage (0-100).  Return true iff we have data.
   bool get_forward_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau, 
 			struct timeval *t);
 
-  // Get reverse delivery rate R from host ETH over period TAU
-  // milliseconds, as of now.  R is a percentage 0-100.  Return true
-  // iff we have good data.
+  // Get reverse delivery rate R from node ETH to this node over
+  // period TAU milliseconds, as of now.  R is a percentage 0-100.
+  // Return true iff we have good data.
   bool get_reverse_rate(const EtherAddress &eth, unsigned int *r, unsigned int *tau);
 
   unsigned get_probe_size() const { return _probe_size; }
