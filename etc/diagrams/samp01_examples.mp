@@ -1,3 +1,18 @@
+% samp01_examples.mp -- MetaPost graph examples: configuration fragments
+% Eddie Kohler
+%
+% Copyright (c) 2002-2003 International Computer Science Institute
+%
+% Permission is hereby granted, free of charge, to any person obtaining a
+% copy of this software and associated documentation files (the "Software"),
+% to deal in the Software without restriction, subject to the conditions
+% listed in the Click LICENSE file. These conditions include: you must
+% preserve this copyright notice, and you cannot mention the copyright
+% holders in advertising related to the Software without their permission.
+% The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+% notice is a summary of the Click LICENSE file; the license in that file is
+% legally binding.
+
 input elements;
 verbatimtex %&latex
 \documentclass[12pt]{article}
@@ -270,7 +285,7 @@ vardef drawemptyqueued(suffix $) =
   draw ($.nw -- $.ne -- $.se -- $.sw);
 enddef;
 vardef emptyqueueit@#(expr s) =
-  _elementit.@#(s, 1, 1, push_to_pull, false);
+  _elementit.@#(s, 1, 1, push_to_pull, false, false);
   elemdraw_@# := "drawemptyqueued";
 enddef;
 beginfig(8);
