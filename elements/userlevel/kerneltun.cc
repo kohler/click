@@ -206,6 +206,7 @@ KernelTap::cleanup(CleanupStage)
 void
 KernelTap::selected(int fd)
 {
+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__)
   int cc;
   unsigned char b[2048];
 
@@ -214,7 +215,7 @@ KernelTap::selected(int fd)
   
   cc = read(_fd, b, sizeof(b));
   if (cc > 0) {
-#if defined (__OpenBSD__) || defined(__FreeBSD__)
+# if defined (__OpenBSD__) || defined(__FreeBSD__)
     // BSDs prefix packet with 32-bit address family.
     int af = ntohl(*(unsigned *)b);
     struct click_ether *e;
@@ -232,29 +233,23 @@ KernelTap::selected(int fd)
       return;
     }
     memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
-#elif defined (__linux__)
-#if 0
-    // Linux prefixes packet with 2 extra bytes for alignment, then ether_header.
-    Packet *p = Packet::make(_headroom, b + 2, cc - 2, 0);
-    output(0).push(p);
-#else // do this way for alignment
-    /* Linux prefixes packet with 2 bytes of 0, then ether_header.  We
-       will leave the 2 padding bytes in the buffer for alignment, but
-       tell click to ignore them. */
+# elif defined (__linux__)
+    /* Linux prefixes packet with 2 bytes of 0, then ether_header. We leave
+       the 2 padding bytes in the buffer for alignment, but tell click to
+       ignore them. */
     Packet *p = Packet::make(_headroom, b, cc, 0);
     p->pull(2);
-#endif
-#endif
+# endif
 
-  struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
-
+    struct timeval tv;
+    int res = gettimeofday(&tv, 0);
+    if (res == 0) 
+      p->set_timestamp_anno(tv);
     output(0).push(p);
   } else {
     perror("KernelTap read");
   }
+#endif
 }
 
 void

@@ -230,10 +230,16 @@ dnl
 dnl sockets
 dnl
 
+AC_LANG_C
 SOCKET_LIBS=
-dnl AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
-AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket $SOCKET_LIBS")
+if test "$enable_userlevel" = yes; then
+    savelibs="$LIBS"; LIBS=
+    AC_SEARCH_LIBS(connect, socket, , , $savelibs)
+    AC_SEARCH_LIBS(gethostbyname, nsl, , , $savelibs)
+    SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
+fi
 AC_SUBST(SOCKET_LIBS)
+AC_LANG_CPLUSPLUS
 
 
 dnl

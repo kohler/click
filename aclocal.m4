@@ -229,21 +229,38 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
 
     dnl libraries
-    
-    if test "$HAVE_PCAP" = yes -a ${PCAP_LIBS-NO} = NO; then
-	AC_CACHE_CHECK(for -lpcap, ac_cv_pcap_library_path,
-	    saveflags="$LDFLAGS"
-	    savelibs="$LIBS"
-	    LIBS="$savelibs -lpcap"
-	    AC_LANG_C
-	    AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="found",
-		LDFLAGS="$saveflags -L/usr/local/lib"
-		AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="-L/usr/local/lib",
-		    ac_cv_pcap_library_path="not found"))
-	    LDFLAGS="$saveflags"
-	    LIBS="$savelibs")
 
-	if test "$ac_cv_pcap_library_path" = "found"; then
+    if test "$HAVE_PCAP" = yes; then
+	if test ${PCAP_LIBS-NO} = NO; then
+	    AC_CACHE_CHECK(for -lpcap, 
+                ac_cv_pcap_library_path,
+		saveflags="$LDFLAGS"
+		savelibs="$LIBS"
+		LIBS="$savelibs -lpcap $SOCKET_LIBS"
+		AC_LANG_C
+		AC_TRY_LINK_FUNC(pcap_open_live, 
+                                ac_cv_pcap_library_path="found",
+				LDFLAGS="$saveflags -L/usr/local/lib"
+		                AC_TRY_LINK_FUNC(pcap_open_live, 
+				    ac_cv_pcap_library_path="-L/usr/local/lib",
+				    ac_cv_pcap_library_path="not found"))
+		LDFLAGS="$saveflags"
+		LIBS="$savelibs")
+	else
+	    AC_CACHE_CHECK(for -lpcap in "$PCAP_LIBS", 
+                ac_cv_pcap_library_path,
+		saveflags="$LDFLAGS"
+		LDFLAGS="$saveflags $PCAP_LIBS"
+		savelibs="$LIBS"
+		LIBS="$savelibs -lpcap $SOCKET_LIBS"
+		AC_LANG_C
+		AC_TRY_LINK_FUNC(pcap_open_live, 
+				ac_cv_pcap_library_path="$PCAP_LIBS",
+			        ac_cv_pcap_library_path="not found")
+		LDFLAGS="$saveflags"
+		LIBS="$savelibs")
+	fi
+        if test "$ac_cv_pcap_library_path" = "found"; then
 	    PCAP_LIBS='-lpcap'
 	elif test "$ac_cv_pcap_library_path" != "not found"; then
 	    PCAP_LIBS="$ac_cv_pcap_library_path -lpcap"
@@ -254,7 +271,6 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
     test "$HAVE_PCAP" != yes && PCAP_LIBS=
     AC_SUBST(PCAP_LIBS)
-
 
     if test "$HAVE_PCAP" = yes; then
 	AC_DEFINE(HAVE_PCAP)
@@ -467,9 +483,9 @@ AC_DEFUN([CLICK_CHECK_ENDIAN], [
     AC_CHECK_HEADERS(endian.h machine/endian.h, endian_hdr=$ac_hdr; break, endian_hdr=no)
     if test "x$endian_hdr" != xno; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
-	dnl can't use AC_TRY_CPP because it throws out the results
-	ac_cv_endian=0
-	[cat > conftest.$ac_ext <<EOF
+	    dnl can't use AC_TRY_CPP because it throws out the results
+	    ac_cv_endian=0
+	    [cat > conftest.$ac_ext <<EOF
 [#]line __oline__ "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
@@ -481,19 +497,20 @@ BYTE_ORDER
 0
 #endif
 EOF
-	ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
-	AC_TRY_EVAL(ac_try)
-	ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
-	if test -z "$ac_err"; then
-	    ac_cv_endian=`grep '^[1234]' conftest.result`
-	    test -z "$ac_cv_endian" && ac_cv_endian=0
-	else
-	    echo "$ac_err" >&5
-	    echo "configure: failed program was:" >&5
-	    cat conftest.$ac_ext >&5
-	fi
-	rm -f conftest*])
-    else
+	    ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
+	    AC_TRY_EVAL(ac_try)
+	    ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+	    if test -z "$ac_err"; then
+		ac_cv_endian=`grep '^[1234]' conftest.result`
+		test -z "$ac_cv_endian" && ac_cv_endian=0
+	    else
+		echo "$ac_err" >&5
+		echo "configure: failed program was:" >&5
+		cat conftest.$ac_ext >&5
+	    fi
+	    rm -f conftest*]
+	)
+    elif test "x$cross_compiling" != xyes ; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
 	    [AC_TRY_RUN([#ifdef __cplusplus
 extern "C" void exit(int);
@@ -509,8 +526,11 @@ int main(int argc, char *argv[]) {
     u.i = ('1') | ('2' << 8) | ('3' << 16) | ('4' << 24);
     fprintf(f, "%4.4s\n", u.c);
     exit(0);
-}], ac_cv_endian=`cat conftestdata`, ac_cv_endian=0, ac_cv_endian=0)])
+}	    ], ac_cv_endian=`cat conftestdata`, ac_cv_endian=0, ac_cv_endian=0)]
+	)
+    else
+	ac_cv_endian=0
     fi
     AC_DEFINE_UNQUOTED(CLICK_BYTE_ORDER, $ac_cv_endian)
     AC_CHECK_HEADERS(byteswap.h)
-    ])
+])
