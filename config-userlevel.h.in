@@ -35,6 +35,9 @@
 /* Define if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
 
+/* Define if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
 /* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H
 

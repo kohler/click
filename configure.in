@@ -276,7 +276,7 @@ dnl
 dnl headers, dynamic linking
 dnl
 
-AC_CHECK_HEADERS(unistd.h termio.h poll.h)
+AC_CHECK_HEADERS(unistd.h termio.h poll.h netdb.h)
 CLICK_CHECK_DYNAMIC_LINKING
 if test "$HOST_TOOLS" != host; then
     CLICK_CHECK_BUILD_DYNAMIC_LINKING
