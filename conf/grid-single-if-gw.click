@@ -1,3 +1,4 @@
+// -*- c++ -*-
 // grid-single-if-gw.click
 
 // configuration for running a click userlevel grid gateway on a

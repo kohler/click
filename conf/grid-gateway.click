@@ -1,44 +1,51 @@
-// need to get our interface addresses right...
+// -*- c++ -*-
+// grid-gateway.click
+
+// single interface on gateway, tunneling to grid machines on the same
+// segment.  this is broken.
 
 rh :: ReadHandlerCaller(1) 
 
 // protocol els
-nb :: Neighbor(00:E0:98:09:27:C5, 10.0.0.2)
-h :: Hello(1, 00:E0:98:09:27:C5, 10.0.0.2)
+nb :: Neighbor(2000, 00:90:27:E0:23:03, 18.26.7.1)
+h :: Hello(500, 100, 00:90:27:E0:23:03, 18.26.7.1)
 
 // device layer els
-grid_src :: FromBPF(eth0, 1)
-grid_dst :: ToBPF(eth0) 
-
-wired_src :: FromBPF(eth0, 1)
-wired_dst :: ToBPF(eth0)
+ps :: PacketSocket(eth0)
+q :: Queue -> ps
 
 // linux ip layer els
-linux_tun :: Tun(tap, 10.0.0.2, 0.0.0.0) 
+linux_tun :: Tun(tap, 18.26.7.1, 255.255.255.0) // our grid IP interface
 to_linux_q :: Queue -> linux_tun
+
+linux_tun2 :: Tun(tap, 18.26.4.25, 255.255.255.0) // our wire IP interface
+to_linux_q2 :: Queue -> linux_tun2
 
 // demultiplex
 wire_in_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 			    12/0806 20/0002, // arp replies 
-			    12/0800 30/12220473, // ip for us
- 			    12/0800 30/122207) // bridge ip for 18.26.7.*
+			    12/0800 30/121a0419, // ip for us from wire: 18.26.4.25
+			    12/0800 30/121a0701, // also for us
+ 			    12/0800 30/121a07) // bridge ip for 18.26.7.*
 
-nbr_out_demux :: Classifier(12/0800 30/0a000002, // for gateway
-		           -) // everything else
+nbr_out_demux :: Classifier(12/0800 30/121a0419, // data for us, the gateway, from grid
+		           -) // for everyone else
 
 // hook it all up
-grid_src -> Classifier(12/Babe) -> [0] nb [0] -> grid_dst
+ps -> cl :: Classifier(12/Babe, -) 
+cl [0] -> [0] nb [0] -> q // click traffic
+cl [1] -> wire_in_demux // other net traffic
 
 linux_tun -> [1] nb [1] -> nbr_out_demux
 nbr_out_demux [0] -> to_linux_q
-nbr_out_demux [1] -> [0] arp :: ARPQuerier(10.0.0.2, 00:E0:98:09:27:C5) -> wired_dst
+nbr_out_demux [1] -> [0] arp :: ARPQuerier(18.26.4.25, 00:E0:98:09:27:C5) -> q
 
-h -> grid_dst
+h -> q
 
-wired_src -> wire_in_demux
 // respond to ARPs for us, as well as proxy ARP for 18.26.7.*
-wire_in_demux [0] -> ARPResponder(18.26.7.0/24 00:E0:98:09:27:C5, 18.26.4.115 00:E0:98:09:27:C5) -> wired_dst
+wire_in_demux [0] -> ARPResponder(18.26.7.0/24 00:E0:98:09:27:C5, 18.26.4.25 00:E0:98:09:27:C5) -> q
 wire_in_demux [1] -> [1] arp
-wire_in_demux [2] -> to_linux_q;
+wire_in_demux [2] -> Print(ip_for_us) -> to_linux_q2
+wire_in_demux [3] -> Print(ip_for_us_grid) -> to_linux_q
 // bridge ip from wired just like packets originated on the gateway
-wire_in_demux [3] -> Strip(14) -> [1] nb 
+wire_in_demux [4] -> Strip(14) -> [1] nb 
