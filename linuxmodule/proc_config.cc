@@ -148,12 +148,9 @@ hotswap_config()
   Router *r = parse_router(s);
   if (!r)
     return -EINVAL;
-  
-  /* prevent interrupts */
-  unsigned cli_flags;
-  save_flags(cli_flags);
-  cli();
 
+  // XXX should we lock the kernel?
+  
   if (kernel_errh->nerrors() == before_errors
       && r->initialize(kernel_errh) >= 0) {
     // perform hotswap
@@ -166,8 +163,6 @@ hotswap_config()
   } else
     delete r;
   
-  /* allow interrupts */
-  restore_flags(cli_flags);
   return 0;
 }
 
