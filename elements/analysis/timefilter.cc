@@ -44,9 +44,11 @@ TimeFilter::notify_noutputs(int n)
 int
 TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-    struct timeval first, last, first_delta, last_delta, interval;
+    struct timeval first, last, first_init, last_init, first_delta, last_delta, interval;
     timerclear(&first);
     timerclear(&last);
+    timerclear(&first_init);
+    timerclear(&last_init);
     timerclear(&first_delta);
     timerclear(&last_delta);
     timerclear(&interval);
@@ -56,33 +58,39 @@ TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "START", cpTimeval, "start time", &first,
 		    "END", cpTimeval, "end time", &last,
-		    "START_AFTER", cpTimeval, "start after", &first_delta,
-		    "END_AFTER", cpTimeval, "end after", &last_delta,
+		    "START_DELAY", cpTimeval, "start T after initialization", &first_init,
+		    "END_DELAY", cpTimeval, "end T after initialization", &last_init,
+		    "START_AFTER", cpTimeval, "start T after first packet", &first_delta,
+		    "END_AFTER", cpTimeval, "end T after first packet", &last_delta,
 		    "INTERVAL", cpTimeval, "interval", &interval,
 		    "STOP", cpBool, "stop when after end?", &stop,
 		    "END_CALL", cpWriteHandlerCall, "handler to call at end", &_last_h,
 		    0) < 0)
 	return -1;
 
-    if (timerisset(&first) && timerisset(&first_delta))
-	return errh->error("`START' and `START_AFTER' are mutually exclusive");
+    _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;
+    
+    if ((timerisset(&first) != 0) + (timerisset(&first_delta) != 0) + (timerisset(&first_init) != 0) > 1)
+	return errh->error("`START', `START_AFTER', and `START_AFTER_INIT' are mutually exclusive");
     else if (timerisset(&first))
-	_first = first, _first_relative = false;
+	_first = first;
+    else if (timerisset(&first_init))
+	_first = first_init, _first_init_relative = true;
     else
 	_first = first_delta, _first_relative = true;
     
-    if ((timerisset(&last) != 0) + (timerisset(&last_delta) != 0) + (timerisset(&interval) != 0) > 1)
-	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
+    if ((timerisset(&last) != 0) + (timerisset(&last_delta) != 0) + (timerisset(&last_init) != 0) + (timerisset(&interval) != 0) > 1)
+	return errh->error("`END', `END_AFTER', `END_AFTER_INIT', and `INTERVAL'\nare mutually exclusive");
     else if (timerisset(&last))
-	_last = last, _last_relative = false, _last_interval = false;
+	_last = last;
     else if (timerisset(&last_delta))
-	_last = last_delta, _last_relative = true, _last_interval = false;
+	_last = last_delta, _last_relative = true;
+    else if (timerisset(&last_init))
+	_last = last_init, _last_init_relative = true;
     else if (timerisset(&interval))
-	_last = interval, _last_relative = false, _last_interval = true;
-    else {
+	_last = interval, _last_interval = true;
+    else
 	_last.tv_sec = 0x7FFFFFFF;
-	_last_relative = false, _last_interval = false;
-    }
 
     if (_last_h && stop)
 	return errh->error("`END_CALL' and `STOP' are mutually exclusive");
@@ -98,6 +106,14 @@ TimeFilter::initialize(ErrorHandler *errh)
 {
     if (_last_h && _last_h->initialize_write(this, errh) < 0)
 	return -1;
+    if (_first_init_relative || _last_init_relative) {
+	struct timeval now;
+	click_gettimeofday(&now);
+	if (_first_init_relative)
+	    timeradd(&_first, &_first, &now);
+	if (_last_init_relative)
+	    timeradd(&_last, &_last, &now);
+    }
     _last_h_ready = (_last_h != 0);
     return 0;
 }

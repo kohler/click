@@ -33,6 +33,11 @@ timestamps at least I<T>.
 I<T> is relative time in seconds (or use suffixes like `ms', `hr'). Output
 packets with timestamps at least I<T> seconds after the first packet seen.
 
+=item START_DELAY
+
+I<T> is relative time. Output packets with timestamps at least I<T> seconds
+after initialize time.
+
 =item END
 
 I<T> is absolute time. Output packets with timestamps up to I<T>.
@@ -41,6 +46,11 @@ I<T> is absolute time. Output packets with timestamps up to I<T>.
 
 I<T> is relative time. Output packets with timestamps up to I<T> seconds after
 the first packet seen.
+
+=item END_DELAY
+
+I<T> is relative time. Output packets with timestamps up to I<T> seconds after
+initialize time.
 
 =item INTERVAL
 
@@ -59,8 +69,8 @@ STOP and END_CALL are mutually exclusive.
 
 =back
 
-Supply at most one of START and START_AFTER, and at most one of END,
-END_AFTER, and INTERVAL.
+Supply at most one of START, START_AFTER, and START_DELAY, and at most one of
+END, END_AFTER, END_DELAY, and INTERVAL.
 
 =a
 
@@ -89,7 +99,9 @@ class TimeFilter : public Element { public:
     
     bool _ready : 1;
     bool _first_relative : 1;
+    bool _first_init_relative : 1;
     bool _last_relative : 1;
+    bool _last_init_relative : 1;
     bool _last_interval : 1;
     bool _last_h_ready : 1;
     HandlerCall *_last_h;
