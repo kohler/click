@@ -1,3 +1,94 @@
+2001-03-28 Wednesday 19:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/etherencap.cc, ip/ipencap.cc,
+	ip/setipdscp.cc, standard/paint.cc, standard/pullswitch.cc,
+	standard/pullswitch.hh, standard/queue.cc, standard/randomerror.cc,
+	standard/randomlossage.cc, standard/ratedsource.cc,
+	standard/ratedsplitter.cc, standard/ratedsplitter.hh,
+	standard/ratedunqueue.cc, standard/ratedunqueue.hh,
+	standard/red.cc, standard/red.hh, standard/switch.cc,
+	standard/switch.hh: adapt to Element changes
+
+2001-03-28 Wednesday 19:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-align/click-align.cc,
+	tools/click-check/click-check.cc,
+	tools/click-devirtualize/click-devirtualize.cc,
+	tools/click-fastclassifier/click-fastclassifier.cc,
+	tools/click-install/click-install.cc,
+	tools/click-undead/click-undead.cc, userlevel/click.cc: add -C
+	CLICKPATH argument
+
+2001-03-28 Wednesday 19:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/lib/: toolutils.cc, toolutils.hh: add separate
+	ElementMap::report_file_not_found method so others can call it.
+
+2001-03-28 Wednesday 19:18  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc: don't report errors on duplicate keywords.
+	Ignore comments inside "\< ... >". Be more careful about comment
+	parsing.
+
+2001-03-28 Wednesday 19:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh: added operator bool()
+
+2001-03-28 Wednesday 19:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/userutils.hh, lib/userutils.cc: add clickpath() and
+	set_clickpath() functions; also, use them.
+
+2001-03-28 Wednesday 19:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: removed econfiguration()
+	in favor of default_configuration_string(), and calling
+	Element::configuration() directly. Removed live_reconfigure()
+	methods; this is handled by Element now.
+
+2001-03-28 Wednesday 19:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/packet.hh, lib/packet.cc: renamed MIN_TOTAL_LENGTH
+	to MIN_BUFFER_LENGTH, total_data to buffer_data, and total_length
+	to buffer_length. Fix Packet::make(sk_buff *) in case of users > 1
+	(users was not decremented -- memory leaks). The header_offset()
+	functions return int, not unsigned. Header file rearrangement.
+
+2001-03-28 Wednesday 19:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ipaddress.hh: nitlets
+
+2001-03-28 Wednesday 19:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: removed
+	set_configuration() methods in favor of "virtual void
+	configuration(Vector<String> &)": better to pay when the
+	configuration string is needed. Added read_keyword_handler and
+	reconfigure_keyword_handler handler functions; renamed old
+	configuration_read_handler and reconfigure_write_handler to
+	read_positional_handler and reconfigure_positional_handler.
+
+2001-03-28 Wednesday 19:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: fromdevice.cc, fromdevice.hh: Linux
+	FromDevice sets packets' packet type annotations from information
+	provided by the packet socket
+
+2001-03-28 Wednesday 19:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: nullelement.cc, nullelement.hh: added
+	PushNull and PullNull elements to encourage a particular assignment
+	of agnostic ports (Mazu)
+
+2001-03-28 Wednesday 19:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc: new
+	IPFilter/IPClassifier port names (Mazu)
+
+2001-03-28 Wednesday 19:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-03-28 Wednesday 18:28  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/webgen.hh: Fix WebGen documentation.
