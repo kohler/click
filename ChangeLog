@@ -1,3 +1,7 @@
+2003-12-08 Monday 18:49  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.217): add AC_PREREQ for newer autoconf
+
 2003-12-08 Monday 02:19  Eddie Kohler <kohler@icir.org>
 
 	* conf/mazu-nat.click (1.10): gael schinkel noticed no ICMP;
