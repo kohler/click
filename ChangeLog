@@ -1,3 +1,28 @@
+2000-11-20 Monday 21:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/lexer.hh, lib/lexer.cc, tools/lib/lexert.cc,
+	tools/lib/lexert.hh: make anonymous element class names truly
+	unique
+
+2000-11-20 Monday 21:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipfilter.cc, ipfilter.hh: "icmp echo" is
+	unambiguously "icmp type echo": look at the transport protocol
+	while doing word resolution
+
+2000-11-20 Monday 21:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: classifier.cc, classifier.hh: Holy Crap:
+	Classifier optimization was formerly recursive. This caused
+	problems in the kernel because optimizing a large Classifier could
+	overrun the kernel stack. Switched to an iterative version of the
+	optimizer, hopefully without introducing any bugs. (Mazu)
+
+2000-11-20 Monday 14:25  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/icmp/icmprewriter.cc: duh! notify_noutputs->set_ninputs;
+	bug found by Max
+
 2000-11-19 Sunday 17:53  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/variableenv.hh, lib/variableenv.cc: forgot to add
