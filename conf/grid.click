@@ -43,7 +43,7 @@ nb :: GridRouteTable(NBR_TIMEOUT,
 		     GRID_MAC_ADDR, GRID_IP, 
 		     ggi, 
 		     NUM_HOPS);
-lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
@@ -128,7 +128,7 @@ cl [1]
   -> GetIPAddress(16) 
   -> [1] lr [1] // IP packets getting passed up to kernel
   -> check :: CheckIPHeader [0]
-  -> nat_ipcl :: IPClassifier (src net 10.2/24,
+  -> nat_ipcl :: IPClassifier (src net 10.2.0.0/24,
 			       -);
 
 nat_ipcl [0] -> [0] iprw; // packets we want rewritten

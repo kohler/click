@@ -73,7 +73,7 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
                   id().cc());
   }
 
-  if (_gw_info && _gw_info->cast("GridRouteTable") == 0) {
+  if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0) {
     errh->warning("%s: GridGatewayInfo argument %s has the wrong type",
                   id().cc(),
                   _gw_info->id().cc());

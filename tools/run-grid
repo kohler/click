@@ -96,9 +96,9 @@ $IS_GATEWAY = 0;
 
 while (<grid_config>) {
     # print;
-    if (/^\#/) {
-	continue;
-    }
+#    if (/^\#/) {
+#	continue;
+#    }
 
     if (/IDENTIFIER=(.+)/) {
 	$IDENTIFIER = $1;
@@ -230,8 +230,6 @@ if ($IS_GATEWAY && (!defined $GW_IF || !defined $GW_IP)) {
     print "run_grid:  no IP for gateway interface\n";
     exit -1;
 }
-
-if ($
 
 if (!$LOC_AWARE && (defined $POS_LAT || defined $POS_LON)) {
     print "run_grid:  can't set location for location-unaware node\n";
