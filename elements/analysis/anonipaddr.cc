@@ -280,6 +280,7 @@ int
 AnonymizeIPAddr::llrpc(unsigned command, void *data)
 {
     if (command == CLICK_LLRPC_MAP_IPADDRESS) {
+	// XXX should lock handler
 	uint32_t *val = reinterpret_cast<uint32_t *>(data);
 	*val = anonymize_addr(*val);
 	return 0;

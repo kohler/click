@@ -741,7 +741,7 @@ Element::read_positional_handler(Element *element, void *thunk)
   // add trailing "\n" if appropriate
   if (s) {
     int c = s.back();
-    if (c != '\n' && c != '\\')
+    if (c != '\n')
       s += "\n";
   }
   return s;
@@ -761,7 +761,7 @@ Element::read_keyword_handler(Element *element, void *thunk)
   // add trailing "\n" if appropriate
   if (s) {
     int c = s.back();
-    if (c != '\n' && c != '\\')
+    if (c != '\n')
       s += "\n";
   }
   return s;
