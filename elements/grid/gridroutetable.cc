@@ -631,6 +631,8 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);
+
+  nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
 }
 
