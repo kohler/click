@@ -100,7 +100,7 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
 
 static int
 probe_write_handler(const String &arg, Element *element,
-		  void *, ErrorHandler *errh)
+		    void *, ErrorHandler *errh)
 {
   GridProbeSender *l = (GridProbeSender *) element;
 
@@ -109,10 +109,12 @@ probe_write_handler(const String &arg, Element *element,
 
   IPAddress ip;
   unsigned int nonce;
-  cp_va_parse(arg_list, element, errh,
-	      cpIPAddress, "IP address", &ip,
-	      cpUnsigned, "Nonce (unsigned int)", &nonce,
-	      0);
+  int res = cp_va_parse(arg_list, element, errh,
+			cpIPAddress, "IP address", &ip,
+			cpUnsigned, "Nonce (unsigned int)", &nonce,
+			0);
+  if (res != 0)
+    return res;
 
   l->send_probe(ip, nonce);
   return 0;

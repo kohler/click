@@ -66,6 +66,8 @@ UpdateGridRoutes::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpOptional,
 			cpInteger, "max hops", &_max_hops,
 			0);
+  if (res != 0)
+    return res;
 
   // convert msecs to jiffies
   if (_timeout == 0)

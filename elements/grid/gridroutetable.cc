@@ -94,6 +94,9 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpString, "log channel name", &chan,
 			0);
 
+  if (res != 0)
+    return res;
+
   // convert msecs to jiffies
   if (_timeout == 0)
     _timeout = -1;

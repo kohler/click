@@ -43,6 +43,8 @@ FilterByGridHops::configure(const Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "max hops", &mh,
 			0);
+  if (res != 0)
+    return res;
 
   
   if (mh < 0)
