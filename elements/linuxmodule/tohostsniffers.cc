@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include "elements/linuxmodule/anydevice.hh"
 extern "C" {
+#include <linux/smp_lock.h>
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>

@@ -25,6 +25,7 @@
 extern "C" {
 #define new xxx_new
 #include <net/dst.h>
+#include <linux/smp_lock.h>
 #include <linux/if_ether.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
