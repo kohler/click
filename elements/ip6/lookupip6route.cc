@@ -129,7 +129,7 @@ LookupIP6Route::push(int, Packet *p)
     _last_addr = a;
     _last_gw = gw;
     _last_output = ifi;
-    if (gw != 0)
+    if (gw != IP6Address("::0"))
       {
 	p->set_dst_ip6_anno(IP6Address(gw));
       }

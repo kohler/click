@@ -32,7 +32,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	3ffe:1ce1:2:0:200:: ffff:ffff:ffff:ffff:ffff:: ::0 2,
 	0::ffff:0:0 ffff:ffff:ffff:ffff:ffff:ffff:: ::0 3,
   	::0 ::0 ::c0a8:1 4);
-	arpq :: ARPQuerier6(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
+	arpq :: ARPQuerier6(fe80::2a0:c9ff:fe9c:fd9e, 00:a0:c9:9c:fd:9e);
 	
 	rt[1] 	-> Print(route1-ok, 200) 
 		-> [0]arpq;
@@ -41,7 +41,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	arpq[0]-> Print(afterARPQuerier6-output0, 200)
 	
 	
-		-> ToDevice(eth0) ->Discard;
+		-> ToDevice(eth0);
 	rt[0] 	-> Print(route1-ok, 200) -> Discard;
 	rt[2] 	-> Print(route2-ok, 200) -> Discard;
 	rt[3] 	-> Print(route3-ok, 200) -> Discard;
