@@ -305,7 +305,7 @@ String
 IPRateMonitor::print(Stats *s, String ip)
 {
   String ret = "";
-  for (int i = 0; i < MAX_COUNTERS; i++) {
+  for (int i = 0; i < Stats::MAX_COUNTERS; i++) {
     Counter *c;
     if (!(c = s->counter[i]))
       continue;
@@ -382,7 +382,7 @@ IPRateMonitor::reset_write_handler
   IPRateMonitor* me = (IPRateMonitor *) e;
 
   me->_lock->acquire();
-  for (int i = 0; i < MAX_COUNTERS; i++) {
+  for (int i = 0; i < Stats::MAX_COUNTERS; i++) {
     if (me->_base->counter[i]) {
       if (me->_base->counter[i]->next_level)
         delete me->_base->counter[i]->next_level;

@@ -26,10 +26,27 @@
  * =a PrioSched, RoundRobinSched, DRRSched, StrideSwitch
  */
 
-class StrideSched : public Element { protected:
+class StrideSched : public Element { public:
   
-  enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
+  StrideSched();
+  ~StrideSched();
 
+  const char *class_name() const		{ return "StrideSched"; }
+  const char *processing() const		{ return PULL; }
+  StrideSched *clone() const			{ return new StrideSched; }
+  
+  int configure(Vector<String> &conf, ErrorHandler *errh);
+  void cleanup(CleanupStage);
+  void add_handlers();
+
+  enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
+  int tickets(int) const;
+  int set_tickets(int, int, ErrorHandler *);
+  
+  Packet *pull(int port);
+
+ protected:
+  
   struct Client {
 
     Client *_p;
@@ -55,24 +72,6 @@ class StrideSched : public Element { protected:
   };
   
   Client *_list;
-
- public:
-  
-  StrideSched();
-  ~StrideSched();
-
-  const char *class_name() const		{ return "StrideSched"; }
-  const char *processing() const		{ return PULL; }
-  
-  StrideSched *clone() const			{ return new StrideSched; }
-  int configure(Vector<String> &conf, ErrorHandler *errh);
-  void cleanup(CleanupStage);
-  void add_handlers();
-
-  int tickets(int) const;
-  int set_tickets(int, int, ErrorHandler *);
-  
-  Packet *pull(int port);
 
 };
 

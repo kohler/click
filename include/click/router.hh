@@ -203,12 +203,12 @@ class Router { public:
   int check_push_and_pull(ErrorHandler *);
   
   void make_pidxes();
-  int input_pidx(const Hookup &) const;
-  int input_pidx_element(int) const;
-  int input_pidx_port(int) const;
-  int output_pidx(const Hookup &) const;
-  int output_pidx_element(int) const;
-  int output_pidx_port(int) const;
+  inline int input_pidx(const Hookup &) const;
+  inline int input_pidx_element(int) const;
+  inline int input_pidx_port(int) const;
+  inline int output_pidx(const Hookup &) const;
+  inline int output_pidx_element(int) const;
+  inline int output_pidx_port(int) const;
   void make_hookpidxes();
   
   void set_connections();

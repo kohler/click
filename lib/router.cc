@@ -400,37 +400,37 @@ Router::make_pidxes()
   }
 }
 
-extern inline int
+inline int
 Router::input_pidx(const Hookup &h) const
 {
   return _input_pidx[h.idx] + h.port;
 }
 
-extern inline int
+inline int
 Router::input_pidx_element(int pidx) const
 {
   return _input_eidx[pidx];
 }
 
-extern inline int
+inline int
 Router::input_pidx_port(int pidx) const
 {
   return pidx - _input_pidx[_input_eidx[pidx]];
 }
 
-extern inline int
+inline int
 Router::output_pidx(const Hookup &h) const
 {
   return _output_pidx[h.idx] + h.port;
 }
 
-extern inline int
+inline int
 Router::output_pidx_element(int pidx) const
 {
   return _output_eidx[pidx];
 }
 
-extern inline int
+inline int
 Router::output_pidx_port(int pidx) const
 {
   return pidx - _output_pidx[_output_eidx[pidx]];

@@ -94,10 +94,10 @@ public:
 
   int llrpc(unsigned, void *);
 
-private:
-
   typedef RateEWMAX<5, 10, 2, IPRateMonitor_HalfSecondsTimer> MyEWMA;
   
+ private:
+
   struct Stats;
   struct Counter {
     // fwd_and_rev_rate.average[0] is forward rate
@@ -107,9 +107,10 @@ private:
     unsigned anno_this;
   };
 
-  // one Stats for each subnet
-  enum { MAX_COUNTERS = 256 };
   struct Stats {
+    // one Stats for each subnet
+    enum { MAX_COUNTERS = 256 };
+    
     Counter *_parent;               // equals NULL for _base->_parent
     Stats *_prev, *_next;           // to maintain age-list
 
