@@ -14,10 +14,12 @@ class Storage;
  * A RED element is associated with one or more Storage elements (usually
  * Queues). It maintains an average of the sum of the
  * queue lengths, and drops packets with a probability
- * proportional to that sum. Usually, the Queues are found with
- * flow-based router context: if the RED is a push element, the nearest
- * downstream Queues are used; if it is a pull element, the nearest
- * upstream Queues are used.
+ * proportional to that sum. By default, the Queues are found with
+ * flow-based router context. If the RED is a push element, it uses the nearest
+ * downstream Queues; if it is a pull element, it uses the nearest
+ * upstream Queues. If the QUEUES argument is given, it must be
+ * a space-separated list of Storage element names; the RED will use those
+ * elements.
  *
  * =e
  * = ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
