@@ -1,3 +1,8 @@
+2003-04-22 Tuesday 09:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.47): Fix packet size check,
+	thanks to John Bicket for finding the bug.
+
 2003-04-19 Saturday 16:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/click-align/click-align.cc (1.44): Teach click-align about
