@@ -11,15 +11,17 @@ Version 1.0.5
    (under /proc/click/hotconfig) and the click-install(1) man page for more
    information.
 
-** Bug fix: User-level click now correctly handles timed elements like
-   TimedSource and TimedSink and scheduled elements like RatedSource.
+** Bug fixes: User-level Click correctly handles timed elements like
+   TimedSource and TimedSink and scheduled elements like RatedSource; and
+   the kernel module correctly handles timed elements. Reported by Saurabh
+   Sandhir <sandhir@purdue.edu>.
 
 ** More changes to ToDevice to enable Linux and Click to send packets
    independently and not cause race conditions. This includes a new linux
    kernel patch (etc/linux-2.2.14-patch) and changes to ToDevice. Click
    runs in a separate kernel thread, so we synchronize ToDevice send
    operations in kernel with a bit lock (dev->tbusy).
-  
+
    XXXXXXXXXXXXXXXXXXXXXXXX When Click is not running on top of a polling
    capable kernel, it does not use a scheduler thread. In this case,
    ToDevice only sends packets when Linux asks it to do so via a notifier.

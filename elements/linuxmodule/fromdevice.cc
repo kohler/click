@@ -36,7 +36,6 @@ FromDevice::FromDevice()
   : _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
   add_output();
-  for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
 }
 
 FromDevice::~FromDevice()
@@ -129,8 +128,28 @@ FromDevice::uninitialize()
     from_device_map.remove(this);
   _registered = 0;
   unschedule();
+  for (unsigned i = _puller_ptr; i != _pusher_ptr; i = next_i(i))
+    _queue[i]->kill();
+  _puller_ptr = _pusher_ptr = 0;
 }
 
+void
+FromDevice::take_state(Element *e, ErrorHandler *)
+{
+  FromDevice *fd = (FromDevice *)e->cast("FromDevice");
+  if (!fd) return;
+  
+  if (_puller_ptr != _pusher_ptr) {
+    errh->error("already have packets enqueued, can't take state");
+    return;
+  }
+
+  memcpy(_queue, fd->_queue, sizeof(Packet *) * FROMDEV_QSIZE);
+  _puller_ptr = fd->_puller_ptr;
+  _pusher_ptr = fd->_pusher_ptr;
+  
+  fd->_puller_ptr = fd->_pusher_ptr = 0;
+}
 
 /*
  * Called by net_bh() with each packet.
@@ -178,7 +197,9 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 int
 FromDevice::got_skb(struct sk_buff *skb)
 {
-  if (_queue[_pusher_ptr] == 0) { /* ours */
+  unsigned next = next_i(_pusher_ptr);
+  
+  if (next != _puller_ptr) { /* ours */
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
     assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
@@ -191,7 +212,7 @@ FromDevice::got_skb(struct sk_buff *skb)
       p->set_mac_broadcast_anno(1);
 
     _queue[_pusher_ptr] = p; /* hand it to run_scheduled */
-    _pusher_ptr = next_i(_pusher_ptr);
+    _pusher_ptr = next;
 
   } else {
     /* queue full, drop */
@@ -206,9 +227,8 @@ void
 FromDevice::run_scheduled()
 {
   int i=0;
-  while(i<INPUT_MAX_PKTS_PER_RUN && _queue[_puller_ptr] != 0) {
+  while (i < INPUT_MAX_PKTS_PER_RUN && _puller_ptr != _pusher_ptr) {
     Packet *p = _queue[_puller_ptr];
-    _queue[_puller_ptr] = 0; /* give it back to got_skb() */
     _puller_ptr = next_i(_puller_ptr);
     output(0).push(p);
   }

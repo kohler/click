@@ -44,6 +44,7 @@ class FromDevice : public AnyDevice {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void take_state(Element *, ErrorHandler *);
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
@@ -58,7 +59,7 @@ class FromDevice : public AnyDevice {
   unsigned _pusher_ptr;
 
   Packet* _queue[FROMDEV_QSIZE];
-  unsigned next_i(int i) const	{ return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); }
+  unsigned next_i(unsigned i) const { return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); }
   
 };
 
