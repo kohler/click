@@ -13,10 +13,9 @@
 
 class PullToPush : public Element {
  private:
-  int first_time_schedule;
  public:
   
-  PullToPush() : Element(1,1) { first_time_schedule = 1; }
+  PullToPush() : Element(1,1) {}
   
   const char *class_name() const		{ return "PullToPush"; }
   Processing default_processing() const		{ return PULL_TO_PUSH; }
@@ -27,17 +26,13 @@ class PullToPush : public Element {
   void run_scheduled();
 
 #ifdef __KERNEL__
-  /* hack - I can't find another place to do this scheduling */
-  virtual struct wait_queue** get_wait_queue() 
-  { 
-      if (first_time_schedule) 
-      {
-	  schedule_tail(); 
-	  first_time_schedule = 0;
-      }
-      return 0L; 
+  int initialize(ErrorHandler *)
+  {
+      schedule_tail(); 
+      return 0;
   }
 #endif
+
 };
 
 #endif

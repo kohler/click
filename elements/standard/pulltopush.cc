@@ -27,8 +27,6 @@ void
 PullToPush::run_scheduled()
 {
 #ifdef __KERNEL__
-  /* puts itself on run queue if not scheduled already: can do this because
-   * run_scheduled unschedules first before calling run_scheduled */
   if (!scheduled()) schedule_tail();
 #endif
   while (Packet *p = input(0).pull())

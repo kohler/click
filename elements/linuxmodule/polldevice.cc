@@ -101,7 +101,8 @@ PollDevice::uninitialize()
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     click_chatter
-	("PollDevice: waited with intr on %d times\n", total_intr_wait);
+	("PollDevice(%s): waited with intr on %d times\n", 
+	 _dev->name, total_intr_wait);
   }
 }
 
@@ -142,7 +143,14 @@ PollDevice::pull(int)
     return 0L;
   }
 }
-  
+ 
+
+bool
+PollDevice::still_busy()
+{
+  if (idle <= 100) return true;
+  return false;
+}
 
 struct wait_queue** 
 PollDevice::get_wait_queue()

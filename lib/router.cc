@@ -838,20 +838,28 @@ Router::wait()
 #else
 
 #ifdef CLICK_POLLDEV
-  int go_waiting = 0;
   Vector<ElementWaitQueue *> wqs;
+
+  /* if any element is still busy, don't wait */
+
+  for (int i = 0; i < _elements.size(); i++) 
+  {
+    Element *f = _elements[i];
+    if (f->still_busy()) 
+      return;
+  }
 
   /* set state to be interruptible, so if in between now and actually waiting
    * someone triggers an event we want to wait on, it will be captured */
 
   current->state = TASK_INTERRUPTIBLE;
 
-  for (int i = 0; i < _elements.size(); i++) {
+  for (int i = 0; i < _elements.size(); i++) 
+  {
     Element *f = _elements[i];
     struct wait_queue **wq = f->get_wait_queue();
     if (wq)
     {
-      go_waiting = 1;
       ElementWaitQueue *ewq = new ElementWaitQueue;
       ewq->element = f;
       ewq->element_wq = wq;
@@ -862,6 +870,7 @@ Router::wait()
 
       /* add current thread to this element's wait queue */
       add_wait_queue(wq, &ewq->thread_wq);
+
       /* now that we registered ourselves, we can let the element setup the
        * event... doing an add_wait_queue prevents race between check and
        * waiting. */
@@ -869,13 +878,23 @@ Router::wait()
     }
   }
 
-  if (!go_waiting) 
-    current->state = TASK_RUNNING;
- 
-  /* right now, we always go to kernel scheduler just in case there are
-   * nothing on the run queue so we don't hog CPU... eventually, each element
-   * on run queue should specify when to run, etc. */
-  schedule();
+  /* if element is no longer busy while we were dealing with the wait queue,
+   * don't wait */
+  
+  for (int i = 0; i < _elements.size(); i++) 
+  {
+    Element *f = _elements[i];
+    if (f->still_busy()) 
+    {
+      current->state = TASK_RUNNING;
+      break;
+    }
+  }
+  
+  if (current->state != TASK_RUNNING) 
+  {
+      schedule();
+  }
 
   /* remove current thread from wait queues */
   for (int i = 0; i < wqs.size(); i++) 
@@ -889,6 +908,7 @@ Router::wait()
 
 #endif
 }
+
 
 // WORK LIST
 

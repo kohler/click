@@ -46,6 +46,7 @@ class PollDevice : public Element {
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
 
+  bool still_busy();
   struct wait_queue** get_wait_queue(); 
   void do_waiting();
   void finish_waiting();

@@ -101,8 +101,9 @@ class Element : public ElementLink { public:
   virtual void selected(int)		{ }
 
   // for Router::wait() to use to set up event waiting
+  virtual bool still_busy() { return false; }
   virtual struct wait_queue** get_wait_queue() { return 0L; }
-  virtual void do_waiting() { }
+  virtual void do_waiting() {}
   virtual void finish_waiting() {}
   
   // Hooks for a non-empty Queue to tell an output driver to pull().

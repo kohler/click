@@ -131,6 +131,11 @@ update_ifindex_map(int ifindex, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
+#ifdef CLICK_POLLDEV
+  return errh->error
+      ("FromDevice cannot be used with click scheduling thread\n");
+#else
+
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
@@ -158,6 +163,8 @@ FromDevice::initialize(ErrorHandler *errh)
   }
   
   return 0;
+
+#endif /* !CLICK_POLLDEV */
 }
 
 void
@@ -212,7 +219,6 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
       kr->_self_cycles += c1 - c0;
 #endif
 
-#ifndef CLICK_POLLDEV
       // Call scheduled things - in a nonpolling environment, this is
       // important because we really don't want packets to sit in a queue
       // under high load w/o having ToDevice pull them out of there. This
@@ -226,7 +232,6 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 	  current_router->run_scheduled();
 	called_times = 0;
       }
-#endif
     }
   
 #if CLICK_STATS > 0 || XCYC > 0
