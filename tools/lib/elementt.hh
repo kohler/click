@@ -3,6 +3,7 @@
 #include <click/string.hh>
 #include <stddef.h>
 #include <click/vector.hh>
+#include <click/hashmap.hh>
 class RouterT;
 class VariableEnvironment;
 class ErrorHandler;
@@ -61,6 +62,7 @@ class ElementClassT { public:
   virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
   virtual void report_signatures(const String &, String, ErrorHandler *);
   virtual int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  virtual void collect_primitive_classes(const String &, HashMap<String, int> &);
   
   virtual void unparse_declaration(StringAccum &, const String &, const String &);
 
@@ -89,6 +91,7 @@ class SynonymElementClassT : public ElementClassT {
 
   ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
   int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  void collect_primitive_classes(const String &, HashMap<String, int> &);
   
   void unparse_declaration(StringAccum &, const String &, const String &);
 
@@ -128,6 +131,7 @@ class CompoundElementClassT : public ElementClassT {
   ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
   void report_signatures(const String &, String, ErrorHandler *);
   int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  void collect_primitive_classes(const String &, HashMap<String, int> &);
   
   void unparse_declaration(StringAccum &, const String &, const String &);
 

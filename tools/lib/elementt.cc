@@ -187,6 +187,12 @@ ElementClassT::complex_expand_element(RouterT *fromr, int which, const String &,
 }
 
 void
+ElementClassT::collect_primitive_classes(const String &name, HashMap<String, int> &m)
+{
+  m.insert(name, 1);
+}
+
+void
 ElementClassT::unparse_declaration(StringAccum &, const String &, const String &)
 {
 }
@@ -243,6 +249,15 @@ SynonymElementClassT::complex_expand_element(
     } else
       return tor->get_eindex(new_name, new_type, new_config, e.landmark);
   }
+}
+
+void
+SynonymElementClassT::collect_primitive_classes(const String &, HashMap<String, int> &m)
+{
+  if (_eclass)
+    _eclass->collect_primitive_classes(_name, m);
+  else
+    m.insert(_name, 1);
 }
 
 void
@@ -444,6 +459,12 @@ CompoundElementClassT::complex_expand_element(
   // yes, we expanded it
   _circularity_flag = false;
   return new_eindex;
+}
+
+void
+CompoundElementClassT::collect_primitive_classes(const String &, HashMap<String, int> &m)
+{
+  _router->collect_primitive_classes(m);
 }
 
 void
