@@ -25,13 +25,13 @@ CLICK_DECLS
  */
 
 
-enum SRCRPacketType { PT_QUERY = 0x11,
-		     PT_REPLY = 0x22,
-		     PT_DATA  = 0x33 };
+enum SRCRPacketType { PT_QUERY = (1<<0),
+		      PT_REPLY = (1<<1),
+		      PT_DATA  = (1<<2) };
 
 
 
-static const uint8_t _srcr_version = 0x01;
+static const uint8_t _srcr_version = 0x02;
 
 // Packet format.
 struct sr_pkt {
@@ -40,7 +40,7 @@ struct sr_pkt {
   uint16_t      ether_type;
 
   uint8_t _version; /* see _srcr_version */
-
+  uint32_t _link_seq;
   uint8_t _type;  /* see enum SRCRPacketType */
   uint16_t _flags; 
 
@@ -56,6 +56,7 @@ struct sr_pkt {
   uint8_t extra_rev;
   
   uint32_t _seq;   // Originator's sequence number.
+
   uint8_t _nhops;
   uint8_t _next;   // Index of next node who should process this packet.
 
@@ -69,7 +70,12 @@ struct sr_pkt {
   void set_dhost(EtherAddress _eth) {
     memcpy(ether_dhost, _eth.data(), 6);
   }
-
+  void set_link_seq(int x) {
+    _link_seq = htonl(x);
+  }
+  int get_link_seq() {
+    return htonl(_link_seq);
+  }
   void set_shost(EtherAddress _eth) {
     memcpy(ether_shost, _eth.data(), 6);
   }
@@ -232,7 +238,8 @@ private:
   class ARPTable *_arp_table;
   class ETT *_ett;
   
-  int get_metric(IPAddress other);
+  int get_metric_to(IPAddress other);
+  int get_metric_from(IPAddress other);
 
   void update_link(IPAddress from, IPAddress to, int metric);
   void srcr_assert_(const char *, int, const char *) const;

@@ -96,10 +96,19 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 int
-SRCR::get_metric(IPAddress n)
+SRCR::get_metric_to(IPAddress n)
 {
   if (_ett) {
-    return _ett->get_metric(n);
+    return _ett->get_metric_to(n);
+  }
+  return 1;
+}
+
+int
+SRCR::get_metric_from(IPAddress n)
+{
+  if (_ett) {
+    return _ett->get_metric_from(n);
   }
   return 1;
 }
@@ -151,6 +160,7 @@ SRCR::push(int port, Packet *p_in)
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
   if (pk->_version != _srcr_version) {
     click_chatter("SRCR %s: bad sr_pkt version. wanted %d, got %d\n",
+		  _ip.s().cc(),
 		  _srcr_version,
 		  pk->_version);
     p_in->kill();
@@ -222,15 +232,8 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  IPAddress neighbor = IPAddress();
-  neighbor = IPAddress(pk->get_hop(pk->next()-1));
-  u_short m = get_metric(neighbor);
-  if (_link_table) {
-    click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
-    update_link(neighbor, _ip, m);
-  }
-
-  _arp_table->insert(neighbor, pk->get_shost());
+  IPAddress prev = pk->get_hop(pk->next()-1);
+  _arp_table->insert(prev, pk->get_shost());
   if(pk->next() == pk->num_hops() - 1){
     //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
     // I'm the ultimate consumer of this data.
@@ -246,8 +249,6 @@ SRCR::push(int port, Packet *p_in)
 
   click_chatter("forwarding packet from %d to %d\n", 
 		pk->get_hop(0).s().cc(), pk->get_hop(pk->num_hops() - 1).s().cc());
-  /* add the last hop's data onto the metric */
-  u_short last_hop_metric = get_metric(IPAddress(pk->get_hop(pk->next() - 1)));
 
   int len = pk->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -259,14 +260,32 @@ SRCR::push(int port, Packet *p_in)
   memcpy(pk_out, pk, len);
 
   
-  pk_out->set_fwd_metric(pk->next() - 1, last_hop_metric);
   pk_out->set_next(pk->next() + 1);
-
   pk_out->ether_type = htons(_et);
   memcpy(pk_out->ether_shost, _eth.data(), 6);
 
   srcr_assert(pk->next() < 8);
   IPAddress nxt = pk->get_hop(pk->next());
+  int to_prev_metric = get_metric_to(prev);
+  int to_nxt_metric = get_metric_to(nxt);
+    
+  pk_out->set_fwd_metric(pk_out->next(), to_nxt_metric);
+  pk_out->set_rev_metric(pk_out->next() - 2, to_prev_metric);
+
+  if (_link_table) {
+    click_chatter("updating %s -> %d -> %s", 
+		  prev.s().cc(), 
+		  to_prev_metric,  
+		  _ip.s().cc());
+    update_link(_ip, prev, to_prev_metric);
+    click_chatter("updating %s -> %d -> %s", 
+		  _ip.s().cc(),
+		  to_nxt_metric,  
+		  nxt.s().cc());
+    update_link(_ip, nxt, to_nxt_metric);
+  }
+
+
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
 

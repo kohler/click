@@ -85,7 +85,8 @@ class ETT : public Element {
     }
 
   }
-  int get_metric(IPAddress other);
+  int get_metric_from(IPAddress other);
+  int get_metric_to(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
   static String route_to_string(Vector<IPAddress> s);
 private:
@@ -162,7 +163,7 @@ private:
   void got_sr_pkt(Packet *p_in);
   void start_query(IPAddress);
   void process_query(struct sr_pkt *pk);
-  void forward_query(Seen s, Vector<IPAddress> hops, Vector<u_short> metrics);
+  void forward_query(Seen s, Vector<IPAddress> hops, Vector<int> fwd_metrics, Vector<int> rev_metrics);
   void start_reply(IPAddress src, IPAddress dst, u_long seq);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);
