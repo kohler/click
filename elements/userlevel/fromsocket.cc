@@ -46,7 +46,7 @@ FromSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
   if (cp_va_parse(conf, this, errh,
-		  cpString, "type of socket (`TCP' or `UDP' or `UNIX')", &socktype,
+		  cpString, "type of socket ('TCP' or 'UDP' or 'UNIX')", &socktype,
 		  cpIgnoreRest, cpEnd) < 0)
     return -1;
   socktype = socktype.upper();
@@ -84,7 +84,7 @@ FromSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+    return errh->error("unknown socket type '%s'", socktype.cc());
 
   return 0;
 }

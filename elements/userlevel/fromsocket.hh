@@ -59,6 +59,8 @@ class FromSocket : public Element { public:
 
   const char *class_name() const	{ return "FromSocket"; }
 
+  enum { CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT - 1 };
+  int configure_phase() const		{ return CONFIGURE_PHASE; }
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
