@@ -81,7 +81,7 @@ CxConfig::CxConfig(CxConfig *enclosing, const String &xml_landmark)
       _filled(false),
       _xml_landmark(xml_landmark),
       _decl_ninputs(-1), _decl_noutputs(-1), _decl_nformals(-1),
-      _type(0), _completing(false), _router(0)
+      _type(0), _router(0), _completing(false)
 {
 }
 
@@ -446,8 +446,8 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	return 0;
     if (_completing)
 	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().cc());
-
     _completing = true;
+    
     ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
     int before_nerrors = cerrh.nerrors();
 
@@ -461,7 +461,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	prev_class = 0;
 
     // get enclosing scope
-    CompoundElementClassT *enclosing_type = _enclosing->compound(errh);
+    RouterT *enclosing_type = _enclosing->router(errh);
     
     // check for synonym or empty
     if (!_filled)		// error already reported
@@ -469,16 +469,16 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     if (_is_synonym && prev_class) {
 	_type = new SynonymElementClassT(_name, prev_class, enclosing_type);
 	_type->use();
+	enclosing_type->add_declared_type(_type, true);
 	return 0;
     }
 
     // otherwise, compound
     assert(_enclosing);
-    CompoundElementClassT *c = new CompoundElementClassT(_name, prev_class, enclosing_type, (_landmark ? _landmark : _xml_landmark));
-    _type = c;
+    _type = _router = new RouterT(_name, (_landmark ? _landmark : _xml_landmark), enclosing_type, prev_class);
     _type->use();
-    _router = c->cast_router();
     _router->use();
+    enclosing_type->add_declared_type(_type, true);
 
     // handle formals
     HashMap<String, int> formal_map(-1);
@@ -488,23 +488,20 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	else if (formal_map[_formals[i]] >= 0)
 	    cerrh.lerror(_xml_landmark, "redeclaration of formal '$%s'", _formals[i].cc());
 	else
-	    c->add_formal(_formals[i]);
+	    _router->add_formal(_formals[i]);
     if (_decl_nformals >= 0 && _formals.size() != _decl_nformals)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
-    // add to enclosing scope
-    enclosing_type->cast_router()->add_declared_type(c, true);
-    
     // handle elements
     if (complete(&cerrh) < 0)
 	return -1;
 
     // finally, finish elementclass
-    if (c->finish_type(&cerrh) < 0)
+    if (_router->finish_type(&cerrh) < 0)
 	return -1;
-    if (_decl_ninputs >= 0 && c->ninputs() != _decl_ninputs)
+    if (_decl_ninputs >= 0 && _router->ninputs() != _decl_ninputs)
 	cerrh.lerror(_xml_landmark, "input port count and 'ninputs' attribute disagree");
-    if (_decl_noutputs >= 0 && c->noutputs() != _decl_noutputs)
+    if (_decl_noutputs >= 0 && _router->noutputs() != _decl_noutputs)
 	cerrh.lerror(_xml_landmark, "output port count and 'noutputs' attribute disagree");
     return (cerrh.nerrors() == before_nerrors ? 0 : -1);
 }
@@ -522,14 +519,6 @@ CxConfig::router(ErrorHandler *errh)
 	    _router = new RouterT;
     }
     return _router;
-}
-
-CompoundElementClassT *
-CxConfig::compound(ErrorHandler *errh)
-{
-    assert(!_is_synonym);
-    complete_elementclass(errh);
-    return (CompoundElementClassT *)_type;
 }
 
 int

@@ -44,15 +44,14 @@ struct CxConfig {
     int _decl_nformals;
 
     ElementClassT *_type;
-    bool _completing;
     RouterT *_router;
+    bool _completing;
     
     CxConfig(CxConfig *enclosing, const String &xml_landmark);
     ~CxConfig();
 
     String readable_name() const;
     RouterT *router(ErrorHandler *);
-    CompoundElementClassT *compound(ErrorHandler *);
     int complete_elementclass(ErrorHandler *);
     int complete(ErrorHandler *);
 };
