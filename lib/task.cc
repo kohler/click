@@ -57,7 +57,7 @@ Task::initialize(Router *router, bool join)
     assert(!initialized() && !scheduled());
 
     Master *m = router->master();
-    m->_task_lock.acquire();
+    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
 
     _router = router;
     _all_prev = &m->_task_list;
@@ -70,7 +70,7 @@ Task::initialize(Router *router, bool join)
     set_tickets(DEFAULT_TICKETS);
 #endif
   
-    m->_task_lock.release();
+    m->_task_lock.release(flags);
 
     if (join)
 	add_pending(RESCHEDULE);
@@ -89,7 +89,7 @@ Task::cleanup()
 	unschedule();
 
 	Master *m = _router->master();
-	m->_task_lock.acquire();
+	SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
 
 	if (_pending) {
 	    Task *prev = &m->_task_list;
@@ -108,7 +108,7 @@ Task::cleanup()
 	_router = 0;
 	_thread = 0;
     
-	m->_task_lock.release();
+	m->_task_lock.release(flags);
     }
 }
 
@@ -140,7 +140,7 @@ void
 Task::add_pending(int p)
 {
     Master *m = _router->master();
-    m->_task_lock.acquire();
+    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
     if (_router->_running >= Router::RUNNING_ACTIVE) {
 	_pending |= p;
 	if (!_pending_next && _pending) {
@@ -150,7 +150,7 @@ Task::add_pending(int p)
 	if (_pending)
 	    _thread->add_pending();
     }
-    m->_task_lock.release();
+    m->_task_lock.release(flags);
 }
 
 void
@@ -160,6 +160,9 @@ Task::unschedule()
     // seems more reliable, since some people depend on unschedule() ensuring
     // that the task is not scheduled any more, no way, no how. Possible
     // problem: calling unschedule() from run_task() will hang!
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
     if (_thread) {
 	lock_tasks();
 	fast_unschedule();
@@ -173,6 +176,11 @@ Task::true_reschedule()
 {
     assert(_thread);
     bool done = false;
+#if CLICK_LINUXMODULE
+    if (in_interrupt())
+	/* nada */;
+    else
+#endif
     if (attempt_lock_tasks()) {
 	if (_router->_running == Router::RUNNING_ACTIVE) {
 	    if (!scheduled()) {
@@ -190,6 +198,9 @@ Task::true_reschedule()
 void
 Task::strong_unschedule()
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
     // unschedule() and move to the quiescent thread, so that subsequent
     // reschedule()s won't have any effect
     if (_thread) {
@@ -205,6 +216,9 @@ Task::strong_unschedule()
 void
 Task::strong_reschedule()
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
     assert(_thread);
     lock_tasks();
     fast_unschedule();
@@ -217,6 +231,9 @@ Task::strong_reschedule()
 void
 Task::change_thread(int new_preference)
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
     _thread_preference = new_preference;
     if (_thread_preference < 0 || _thread_preference >= _router->master()->nthreads())
 	_thread_preference = -1; // quiescent thread

@@ -189,6 +189,9 @@ Task::element()	const
 inline int
 Task::fast_unschedule()
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
     if (_prev) {
 	_next->_prev = _prev;
 	_prev->_next = _next;
@@ -226,6 +229,10 @@ Task::fast_reschedule()
 {
     // should not be scheduled at this point
     assert(_thread && !_prev);
+#if CLICK_LINUXMODULE
+    // tasks never run at interrupt time
+    assert(!in_interrupt());
+#endif
 
     // increase pass
     _pass += _stride;
@@ -269,6 +276,10 @@ inline void
 Task::fast_reschedule()
 {
     assert(_thread && !_prev);
+#if CLICK_LINUXMODULE
+    // tasks never run at interrupt time
+    assert(!in_interrupt());
+#endif
     _prev = _thread->_prev;
     _next = _thread;
     _thread->_prev = this;

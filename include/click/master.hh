@@ -67,7 +67,7 @@ class Master { public:
     volatile int _runcount;
     
     Task _task_list;
-    Spinlock _task_lock;
+    SpinlockIRQ _task_lock;
     
     Timer _timer_list;
     Spinlock _timer_lock;

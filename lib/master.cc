@@ -3,7 +3,7 @@
  * master.{cc,hh} -- Click event master
  * Eddie Kohler
  *
- * Copyright (c) 2003 The Regents of the University of California
+ * Copyright (c) 2003-4 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -115,6 +115,10 @@ Master::run_router(Router *router)
 void
 Master::remove_router(Router *router)
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
+    
     _master_lock.acquire();
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
@@ -174,7 +178,7 @@ Master::remove_router(Router *router)
     }
     
     {
-	_task_lock.acquire();
+	SpinlockIRQ::flags_t flags = _task_lock.acquire();
 
 	// Remove pending tasks
 	Task *prev = &_task_list;
@@ -201,8 +205,8 @@ Master::remove_router(Router *router)
 	    }
 	prev->_all_next = t;
 	t->_all_prev = prev;
-    
-	_task_lock.release();
+
+	_task_lock.release(flags);
     }
     
     // Remove timers
@@ -268,6 +272,10 @@ Master::remove_router(Router *router)
 bool
 Master::check_driver()
 {
+#if CLICK_LINUXMODULE
+    assert(!in_interrupt());
+#endif
+    
     _master_lock.acquire();
     _runcount_lock.acquire();
 
@@ -308,11 +316,11 @@ Master::process_pending(RouterThread *thread)
     if (_master_lock.attempt()) {
 	if (_master_paused == 0) {
 	    // get a copy of the list
-	    _task_lock.acquire();
+	    SpinlockIRQ::flags_t flags = _task_lock.acquire();
 	    Task *t = _task_list._pending_next;
 	    _task_list._pending_next = &_task_list;
 	    thread->_pending = 0;
-	    _task_lock.release();
+	    _task_lock.release(flags);
 
 	    // reverse list so pending tasks are processed in the order we
 	    // added them
