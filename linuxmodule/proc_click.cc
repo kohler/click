@@ -59,6 +59,7 @@ static int proc_element_handler_open(struct inode *, struct file *);
 static ssize_t proc_element_handler_read(struct file *, char *, size_t, loff_t *);
 static ssize_t proc_element_handler_write(struct file *, const char *, size_t, loff_t *);
 static int proc_element_handler_flush(struct file *);
+static int proc_element_handler_release(struct inode *, struct file *);
 static int proc_element_handler_ioctl(struct inode *, struct file *, unsigned, unsigned long);
 
 static struct file_operations proc_element_handler_operations = {
@@ -71,7 +72,7 @@ static struct file_operations proc_element_handler_operations = {
     NULL,			// mmap
     proc_element_handler_open,	// open
     proc_element_handler_flush,	// flush
-    NULL,			// release
+    proc_element_handler_release, // release
     NULL			// fsync
 };
 
@@ -332,7 +333,7 @@ proc_element_handler_flush(struct file *filp)
   int stringno = reinterpret_cast<int>(filp->private_data);
   int retval = 0;
   
-  if (writing) {
+  if (writing && filp->f_count == 1) {
     proc_dir_entry *pde = (proc_dir_entry *)filp->f_dentry->d_inode->u.generic_ip;
     int eindex = parent_proc_dir_eindex(pde);
     if (eindex < -1)
@@ -341,13 +342,21 @@ proc_element_handler_flush(struct file *filp)
       retval = finish_handler_write(eindex, (int)pde->data, stringno);
   }
 
+  return retval;
+}
+
+static int
+proc_element_handler_release(struct inode *, struct file *filp)
+{
+  int stringno = reinterpret_cast<int>(filp->private_data);
+
   // free handler string
   if (stringno >= 0 && stringno < handler_strings_cap) {
     handler_strings_next[stringno] = handler_strings_free;
     handler_strings_free = stringno;
   }
   
-  return retval;
+  return 0;
 }
 
 static int

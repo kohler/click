@@ -25,7 +25,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-static int config_write_lock = 0;
+static atomic_t config_write_lock;
 static String *current_config = 0;
 static StringAccum *build_config = 0;
 
@@ -80,7 +80,7 @@ click_config_open(struct inode *, struct file *filp)
     return -EACCES;
   
   if (writing) {
-    if (config_write_lock)
+    if (atomic_read(&config_write_lock) > 0)
       return -EBUSY;
     if (!build_config)
       build_config = new StringAccum;
@@ -89,7 +89,7 @@ click_config_open(struct inode *, struct file *filp)
     build_config->clear();
     if (!build_config->reserve(1024))
       return -ENOMEM;
-    config_write_lock = 1;
+    atomic_set(&config_write_lock, 1);
   }
   
   return 0;
@@ -155,12 +155,6 @@ set_current_config(const String &s)
 {
   *current_config = s;
 
-  // change inode status
-  /* if (inode *ino = proc_click_config_entry.inode) {
-    ino->i_mtime = ino->i_ctime = CURRENT_TIME;
-    ino->i_size = s.length();
-    } */
-  
   // wake up anyone waiting for errors
   wake_up_interruptible(&proc_click_config_wait_queue);
 }
@@ -217,12 +211,13 @@ static int
 click_config_flush(struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
-  if (!writing)
+  if (!writing || filp->f_count > 1)
     return 0;
   
-  if (!config_write_lock)
+  if (atomic_read(&config_write_lock) == 0)
     return -EIO;
   int success = -EINVAL;
+  
   if (build_config && current_config) {
     reset_proc_click_errors();
     unsigned my_ino = filp->f_dentry->d_inode->i_ino;
@@ -234,7 +229,8 @@ click_config_flush(struct file *filp)
     
     proc_click_config_entry->size = current_config->length();
   }
-  config_write_lock = 0;
+  
+  atomic_set(&config_write_lock, 0);
   return success;
 }
 
@@ -244,6 +240,8 @@ click_config_flush(struct file *filp)
 void
 init_proc_click_config()
 {
+  atomic_set(&config_write_lock, 0);
+  
   // work around proc_lookup not being exported
   proc_click_config_inode_operations = proc_dir_inode_operations;
   proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
