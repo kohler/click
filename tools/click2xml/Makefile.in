@@ -85,12 +85,12 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click2xml $(bindir)/click2xml
-	test -z "@XML2CLICK@" || $(INSTALL) xml2click $(bindir)/xml2click
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click2xml $(DESTDIR)$(bindir)/click2xml
+	test -z "@XML2CLICK@" || $(INSTALL) xml2click $(DESTDIR)$(bindir)/xml2click
 uninstall:
-	/bin/rm -f $(bindir)/click2xml
-	test -z "@XML2CLICK@" || /bin/rm -f $(bindir)/xml2click
+	/bin/rm -f $(DESTDIR)$(bindir)/click2xml
+	test -z "@XML2CLICK@" || /bin/rm -f $(DESTDIR)$(bindir)/xml2click
 
 clean:
 	rm -f *.d *.o click2xml xml2click

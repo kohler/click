@@ -118,14 +118,14 @@ include $(DEPFILES)
 endif
 
 install: $(INSTALLPROGS) install-lib
-	$(mkinstalldirs) $(bindir)
-	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(bindir)/$$i; done
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(DESTDIR)$(bindir)/$$i; done
 install-lib: $(INSTALLLIBS)
-	$(mkinstalldirs) $(libdir)
-	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(libdir)/$$i; done
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(DESTDIR)$(libdir)/$$i; done
 uninstall:
-	for i in $(INSTALLLIBS); do rm -f $(libdir)/$$i; done
-	for i in $(INSTALLPROGS); do rm -f $(bindir)/$$i; done
+	for i in $(INSTALLLIBS); do rm -f $(DESTDIR)$(libdir)/$$i; done
+	for i in $(INSTALLPROGS); do rm -f $(DESTDIR)$(bindir)/$$i; done
 
 clean:
 	rm -f *.d *.o $(INSTALLPROGS) elements.mk elements.cc elements.conf libclick.a

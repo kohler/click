@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-check $(bindir)/click-check
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-check $(DESTDIR)$(bindir)/click-check
 uninstall:
-	/bin/rm -f $(bindir)/click-check
+	/bin/rm -f $(DESTDIR)$(bindir)/click-check
 
 clean:
 	rm -f *.d *.o click-check

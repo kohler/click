@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-fastclassifier $(bindir)/click-fastclassifier
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-fastclassifier $(DESTDIR)$(bindir)/click-fastclassifier
 uninstall:
-	/bin/rm -f $(bindir)/click-fastclassifier
+	/bin/rm -f $(DESTDIR)$(bindir)/click-fastclassifier
 
 clean:
 	rm -f *.d *.o click-fastclassifier

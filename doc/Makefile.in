@@ -30,50 +30,50 @@ Makefile: $(srcdir)/Makefile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: Makefile install-man install-info
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) $(srcdir)/click-elem2man $(bindir)/click-elem2man
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) $(srcdir)/click-elem2man $(DESTDIR)$(bindir)/click-elem2man
 install-man: $(srcdir)/testie.1 Makefile
-	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man7 $(mandir)/man8 $(mandir)/mann
-	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1
-	$(INSTALL_DATA) $(srcdir)/click.5 $(mandir)/man5/click.5
-	$(INSTALL_DATA) $(srcdir)/click.o.8 $(mandir)/man8/click.o.8
-	$(INSTALL_DATA) $(srcdir)/click-align.1 $(mandir)/man1/click-align.1
-	$(INSTALL_DATA) $(srcdir)/click-combine.1 $(mandir)/man1/click-combine.1
-	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(mandir)/man1/click-devirtualize.1
-	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(mandir)/man1/click-fastclassifier.1
-	$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(mandir)/man1/click-flatten.1
-	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
-	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(mandir)/man1/click-mkmindriver.1
-	$(INSTALL_DATA) $(srcdir)/click-pretty.1 $(mandir)/man1/click-pretty.1
-	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1
-	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(mandir)/man1/click-undead.1
-	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
-	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
-	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	$(INSTALL_DATA) $(srcdir)/testie.1 $(mandir)/man1/testie.1
-	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f -
+	$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8 $(DESTDIR)$(mandir)/mann
+	$(INSTALL_DATA) $(srcdir)/click.1 $(DESTDIR)$(mandir)/man1/click.1
+	$(INSTALL_DATA) $(srcdir)/click.5 $(DESTDIR)$(mandir)/man5/click.5
+	$(INSTALL_DATA) $(srcdir)/click.o.8 $(DESTDIR)$(mandir)/man8/click.o.8
+	$(INSTALL_DATA) $(srcdir)/click-align.1 $(DESTDIR)$(mandir)/man1/click-align.1
+	$(INSTALL_DATA) $(srcdir)/click-combine.1 $(DESTDIR)$(mandir)/man1/click-combine.1
+	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(DESTDIR)$(mandir)/man1/click-devirtualize.1
+	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(DESTDIR)$(mandir)/man1/click-fastclassifier.1
+	$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(DESTDIR)$(mandir)/man1/click-flatten.1
+	$(INSTALL_DATA) $(srcdir)/click-install.1 $(DESTDIR)$(mandir)/man1/click-install.1
+	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(DESTDIR)$(mandir)/man1/click-mkmindriver.1
+	$(INSTALL_DATA) $(srcdir)/click-pretty.1 $(DESTDIR)$(mandir)/man1/click-pretty.1
+	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(DESTDIR)$(mandir)/man1/click-uncombine.1
+	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(DESTDIR)$(mandir)/man1/click-undead.1
+	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(DESTDIR)$(mandir)/man1/click-uninstall.1
+	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1
+	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7
+	$(INSTALL_DATA) $(srcdir)/testie.1 $(DESTDIR)$(mandir)/man1/testie.1
+	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -p DEFAULT -f -
 install-info: Makefile $(srcdir)/click.info
-	$(mkinstalldirs) $(infodir)
+	$(mkinstalldirs) $(DESTDIR)$(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \
-	    echo "$(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f"; \
-	    $(INSTALL_DATA) $(srcdir)/$$f $(infodir)/$$f || exit 1; fi; \
+	    echo "$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(infodir)/$$f"; \
+	    $(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(infodir)/$$f || exit 1; fi; \
 	done
-	-$(INSTALL_INFO) --info-dir=$(infodir) $(infodir)/click.info 2>&1 >/dev/null
+	-$(INSTALL_INFO) --info-dir=$(infodir) $(DESTDIR)$(infodir)/click.info 2>&1 >/dev/null
 
 uninstall: uninstall-man uninstall-info
-	/bin/rm -f $(bindir)/click-elem2man
+	/bin/rm -f $(DESTDIR)$(bindir)/click-elem2man
 uninstall-man:
-	cd $(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1
-	cd $(mandir)/man5; /bin/rm -f click.5
-	cd $(mandir)/man8; /bin/rm -f click.o.8
-	cd $(mandir)/man7; /bin/rm -f elementdoc.7
-	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f - -u
+	cd $(DESTDIR)$(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1
+	cd $(DESTDIR)$(mandir)/man5; /bin/rm -f click.5
+	cd $(DESTDIR)$(mandir)/man8; /bin/rm -f click.o.8
+	cd $(DESTDIR)$(mandir)/man7; /bin/rm -f elementdoc.7
+	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(DESTDIR)$(mandir)/mann -p DEFAULT -f - -u
 uninstall-info: $(srcdir)/click.info
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \
-	    echo "/bin/rm -f $(infodir)/$$f"; \
-	    /bin/rm -f $(infodir)/$$f; fi; \
+	    echo "/bin/rm -f $(DESTDIR)$(infodir)/$$f"; \
+	    /bin/rm -f $(DESTDIR)$(infodir)/$$f; fi; \
 	done
 
 info: $(srcdir)/click.info

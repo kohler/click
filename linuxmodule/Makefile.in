@@ -123,10 +123,10 @@ include $(DEPFILES)
 endif
 
 install: $(INSTALLOBJS)
-	$(mkinstalldirs) $(libdir)
-	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
 uninstall:
-	for i in $(INSTALLOBJS); do /bin/rm -f $(libdir)/$$i; done
+	for i in $(INSTALLOBJS); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
 	-rm -f *.d *.o elements.mk elements.cc elements.conf

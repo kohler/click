@@ -38,20 +38,20 @@ install: install-lib install-local install-include
 install-lib: stamp-h
 	@(cd libsrc && $(MAKE) install) || exit 1
 install-local: click-buildtool click-compile
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL_IF_CHANGED) click-buildtool $(bindir)/click-buildtool
-	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
-	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL_IF_CHANGED) click-buildtool $(DESTDIR)$(bindir)/click-buildtool
+	$(INSTALL_IF_CHANGED) click-compile $(DESTDIR)$(bindir)/click-compile
+	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(DESTDIR)$(bindir)/click-mkelemmap
 install-include: stamp-h
-	$(mkinstalldirs) $(clickincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(clickincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(clickincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(clickincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(clickincludedir)
-	$(mkinstalldirs) $(clickincludedir)/standard
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(clickincludedir)/standard
-	$(mkinstalldirs) $(netincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(DESTDIR)$(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(DESTDIR)$(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(DESTDIR)$(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(DESTDIR)$(clickincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(clickincludedir)/standard
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(DESTDIR)$(clickincludedir)/standard
+	$(mkinstalldirs) $(DESTDIR)$(netincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(DESTDIR)$(netincludedir)
 
 click-buildtool: $(srcdir)/click-buildtool.in config.status
 	cd $(top_builddir) && \

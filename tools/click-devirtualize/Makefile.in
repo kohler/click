@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-devirtualize $(bindir)/click-devirtualize
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-devirtualize $(DESTDIR)$(bindir)/click-devirtualize
 uninstall:
-	/bin/rm -f $(bindir)/click-devirtualize
+	/bin/rm -f $(DESTDIR)$(bindir)/click-devirtualize
 
 clean:
 	rm -f *.d *.o click-devirtualize

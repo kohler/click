@@ -85,11 +85,11 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(sbindir)
-	$(INSTALL) click-install $(sbindir)/click-install
-	$(INSTALL) click-uninstall $(sbindir)/click-uninstall
+	$(mkinstalldirs) $(DESTDIR)$(sbindir)
+	$(INSTALL) click-install $(DESTDIR)$(sbindir)/click-install
+	$(INSTALL) click-uninstall $(DESTDIR)$(sbindir)/click-uninstall
 install-man:
-	/bin/rm -f $(sbindir)/click-install $(sbindir)/click-uninstall
+	/bin/rm -f $(DESTDIR)$(sbindir)/click-install $(DESTDIR)$(sbindir)/click-uninstall
 
 clean:
 	rm -f *.d *.o click-install click-uninstall

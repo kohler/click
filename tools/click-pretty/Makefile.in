@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-pretty $(bindir)/click-pretty
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-pretty $(DESTDIR)$(bindir)/click-pretty
 uninstall:
-	/bin/rm -f $(bindir)/click-pretty
+	/bin/rm -f $(DESTDIR)$(bindir)/click-pretty
 
 clean:
 	rm -f *.d *.o click-pretty

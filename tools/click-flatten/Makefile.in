@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-flatten $(bindir)/click-flatten
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-flatten $(DESTDIR)$(bindir)/click-flatten
 uninstall:
-	/bin/rm -f $(bindir)/click-flatten
+	/bin/rm -f $(DESTDIR)$(bindir)/click-flatten
 
 clean:
 	rm -f *.d *.o click-flatten

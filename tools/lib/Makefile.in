@@ -107,14 +107,14 @@ endif
 
 install: install-local
 install-local: libclicktool.a install-include
-	$(mkinstalldirs) $(libdir)
-	$(INSTALL) libclicktool.a $(libdir)/libclicktool.a
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	$(INSTALL) libclicktool.a $(DESTDIR)$(libdir)/libclicktool.a
 install-include:
-	$(mkinstalldirs) $(toolincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/*.hh $(toolincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(toolincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/*.hh $(DESTDIR)$(toolincludedir)
 uninstall:
-	/bin/rm -f $(libdir)/libclicktool.a
-	cd $(srcdir); for i in *.hh; do /bin/rm -f $(toolincludedir)/$$i; done
+	/bin/rm -f $(DESTDIR)$(libdir)/libclicktool.a
+	cd $(srcdir); for i in *.hh; do /bin/rm -f $(DESTDIR)$(toolincludedir)/$$i; done
 
 clean:
 	rm -f *.d *.hd *.bd *.o *.bo libclicktool.a libclicktool_build.a

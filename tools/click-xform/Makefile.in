@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-xform $(bindir)/click-xform
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-xform $(DESTDIR)$(bindir)/click-xform
 uninstall:
-	/bin/rm -f $(bindir)/click-xform
+	/bin/rm -f $(DESTDIR)$(bindir)/click-xform
 
 clean:
 	rm -f *.d *.o click-xform

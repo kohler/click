@@ -81,10 +81,10 @@ endif
 
 install: $(LIBCLICKTOOL) install-local
 install-local: all-local
-	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-mkmindriver $(bindir)/click-mkmindriver
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL) click-mkmindriver $(DESTDIR)$(bindir)/click-mkmindriver
 uninstall:
-	/bin/rm -f $(bindir)/click-mkmindriver
+	/bin/rm -f $(DESTDIR)$(bindir)/click-mkmindriver
 
 clean:
 	rm -f *.d *.o click-mkmindriver

@@ -106,10 +106,10 @@ include $(DEPFILES)
 endif
 
 install: libnsclick.a
-	$(mkinstalldirs) $(libdir)
-	$(INSTALL) libnsclick.a $(libdir)/libnsclick.a
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	$(INSTALL) libnsclick.a $(DESTDIR)$(libdir)/libnsclick.a
 uninstall:
-	/bin/rm -f $(libdir)/libnsclick.a
+	/bin/rm -f $(DESTDIR)$(libdir)/libnsclick.a
 
 clean:
 	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a
