@@ -1,3 +1,53 @@
+2001-03-18 Sunday 17:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/local/binpackingsched.cc,
+	elements/local/staticthreadsched.cc,
+	elements/local/threadmonitor.cc,
+	elements/userlevel/controlsocket.cc,
+	elements/userlevel/controlsocket.hh, include/click/router.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	lib/router.cc, lib/routerthread.cc, lib/task.cc: changed
+	thread_preference stuff a lot; now there is one function people
+	should call to change threads, change_thread(). This function does
+	not change a Task's scheduled state. If it was scheduled, it
+	remains scheduled ; if it was not scheduled, it remains
+	unscheduled.
+
+2001-03-18 Sunday 17:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
+2001-03-18 Sunday 17:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/module.cc: check /proc for an existing Click module
+	to prevent double installations
+
+2001-03-18 Sunday 17:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/Makefile.in: update to help compatibility with
+	click-mkmindriver
+
+2001-03-18 Sunday 17:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* userlevel/: Makefile.in, click.cc: added global read handlers and
+	--no-warnings option
+
+2001-03-18 Sunday 17:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: Makefile.in, lib/toolutils.cc, lib/toolutils.hh: added
+	ElementMap::requires and provides functions; improved
+	driver_compatible function
+
+2001-03-18 Sunday 17:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: changed click-shrink tool to click-mkmindriver;
+	updates to click-mkmindriver
+
+2001-03-18 Sunday 17:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool: added --version option and, in elem2make,
+	--make-variable option
+
 2001-03-16 Friday 21:38  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* tools/: click-check/click-check.cc,
