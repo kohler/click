@@ -4,6 +4,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 1999 Massachusetts Institute of Technology
+# Copyright (c) 2001 International Computer Science Institute
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,9 +32,15 @@ quiet=
 while true; do
   bad=x
   case $1 in
-    -d|--d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
+    --de|--def|--defs)
+      echo @PCAP_HEADER_PATH@
+      exit 0;;
+    --l|--li|--lib|--libs)
+      echo @PCAP_LIBRARY_PATH@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
+      exit 0;;
+    -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
       directory=$2; shift 2;;
-    --d=*|--di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
+    --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
       directory=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
     -t|--t|--ta|--tar|--targ|--targe|--target)
       target=$2; shift 2;;
@@ -47,11 +54,14 @@ while true; do
       quiet=y; shift 1;;
     -h|--h|--he|--hel|--help)
       cat <<'EOF' 1>&2
-`Click-compile' compiles a Click source file.
+`Click-compile' compiles a Click source file, or outputs any compiler options
+relevant for userlevel Click drivers.
 
 Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 
 Options:
+      --libs              Outputs link options for userlevel drivers.
+      --defs              Outputs preprocessor options for userlevel drivers.
   -t, --target TARGET     Sets target to `kernel', `user', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
