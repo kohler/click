@@ -863,7 +863,8 @@ variables are left unchanged.
 
 =item -V, --verbose
 
-Print information about successful tests as well as unsuccessful tests.
+Print information to standard error about successful tests as well as
+unsuccessful tests.
 
 =item -VV, --superverbose
 
