@@ -215,7 +215,8 @@ SetGateway::push(int port, Packet *p_in)
     return;
   } else if (!_gw_sel) {
     /* this should never happen */
-    click_chatter("%{element}: _gw and _gw_sel not specified! killing packet\n");
+    click_chatter("%{element}: _gw and _gw_sel not specified! killing packet\n",
+		  this);
     p_in->kill();
     return;
   }

@@ -46,8 +46,10 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _auto = NULL;
   _rate = 0;
+  _et = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpKeywords, 
+		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
 		  "AUTO", cpElement, "AutoTXRate element", &_auto,
 		  0) < 0) {
@@ -79,8 +81,13 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetTXRate::simple_action(Packet *p_in)
 {
-  SET_WIFI_FROM_CLICK(p_in);
   click_ether *eh = (click_ether *) p_in->data();
+
+  if (_et && eh->ether_type != htons(_et)) {
+    return p_in;
+  }
+
+  SET_WIFI_FROM_CLICK(p_in);
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   if (_auto) {
     int rate = _auto->get_tx_rate(dst);

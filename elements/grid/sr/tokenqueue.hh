@@ -12,8 +12,13 @@ CLICK_DECLS
 TokenQueue
 TokenQueue(CAPACITY)
 
+
 =s storage
 
+inputs:
+0 - normal
+1 - forwarding packets - spit out on output 1
+2 - retransmits
 stores packets in a queue
 
 =a Queue, SimpleQueue, FrontDropQueue */
@@ -42,8 +47,7 @@ private:
     public:
 	TokenQueue *_q;
 	Path _p;
-	unsigned int _last_tx_seq;
-	unsigned int _last_rx_seq;
+	unsigned int _seq;
 	struct timeval _last_tx;
 	struct timeval _first_tx;
 	struct timeval _first_rx;
@@ -61,13 +65,19 @@ private:
 	void reset() {
 	    _token = false;
 	    _rx_token = false;
-	    _last_rx_seq = 0; 
-	    _last_tx_seq = 0; 
+	    _seq = 0; 
 	    _congestion = false; 
 	    _packets_tx = 0;
 	    _packets_rx = 0;
 	    _tokens_passed = 0;
-	}	
+	}
+	void reset_rx(unsigned int seq, IPAddress towards) {
+	    _token = false;
+	    _rx_token = false;
+	    _seq = seq;
+	    _packets_rx = 0;
+	    _towards = towards;
+	}
 	PathInfo() :  _p() { reset(); }
 	PathInfo(Path p, TokenQueue *q) :  _q(q), _p(p) { reset(); }
 

@@ -47,9 +47,9 @@ CopyRXStats::simple_action(Packet *p_in)
   if (!p) { return 0; }
   
   uint8_t *c = p->data();
-  c[offset+0] = rate;
-  c[offset+1] = signal;
-  c[offset+2] = noise;
+  c[_offset+0] = rate;
+  c[_offset+1] = signal;
+  c[_offset+2] = noise;
   
   return p;
 }

@@ -106,7 +106,7 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_sr_forwarder->cast("SRForwarder") == 0) 
     return errh->error("SR element is not a SRForwarder");
 
-  unsigned int active_duration_ms = 5 * 1000;
+  unsigned int active_duration_ms = 15 * 1000;
   timerclear(&_active_duration);
   /* convehop path_duration from ms to a struct timeval */
   _active_duration.tv_sec = active_duration_ms/1000;
@@ -134,9 +134,7 @@ TokenQueue::run_timer()
       const PathInfo &nfo = iter.value();
       struct timeval expire;
       timeradd(&nfo._last_real, &_active_duration, &expire);
-      if (!nfo._active && nfo.clear_timedout()) {
-	  to_clear.push_back(nfo._p);
-      } else if (nfo._active && nfo.active_timedout()) {
+      if (nfo._active && nfo.active_timedout()) {
 	  not_active.push_back(nfo._p);
       }
   }
@@ -153,19 +151,6 @@ TokenQueue::run_timer()
 	  click_chatter("%s", sa.take_string().cc());
       }
   }
-  for (int x = 0; x < to_clear.size(); x++) {
-      if (_debug) {
-	  struct timeval now;
-	  click_gettimeofday(&now);
-	  StringAccum sa;
-	  sa << id() << " " << now;
-	  sa << " removing " << path_to_string(to_clear[x]);
-	  click_chatter("%s", sa.take_string().cc());
-      }
-      _paths.remove(to_clear[x]);
-  }
-  
-
   _timer.schedule_after_ms(_active_duration.tv_sec/2);
 }
 TokenQueue::PathInfo *
@@ -329,22 +314,28 @@ TokenQueue::pull(int)
 	pk->set_seq(nfo->_packets_tx++);
 	if (nfo->_packets_tx == 1) {
 	    nfo->_first_tx = now;
+	    if (nfo->is_endpoint(_sr_forwarder->ip())) {
+		++nfo->_seq;
+	    }
 	    if (_debug) {
 		StringAccum sa;
 		sa << id() << " " << now;
 		sa << " first_tx";
-		sa << " towards " << p[p.size()-1];
+		sa << " seq " << nfo->_seq;
+		sa << " towards " << nfo->_towards;
 		sa << " rx " << nfo->_packets_rx;
 		click_chatter("%s", sa.take_string().cc());
 	    }
 	}
+	pk->set_seq2(nfo->_seq);
 	if (pk->flag(FLAG_SCHEDULE_FAKE) || nfo->_packets_tx == _threshold || !follow_up) {
 	    pk->set_flag(FLAG_SCHEDULE_TOKEN);
 	    if (_debug) {
 		StringAccum sa;
 		sa << id() << " " << now;
 		sa << " token_tx";
-		sa << " towards " << p[p.size()-1].s();
+		sa << " seq " << nfo->_seq;
+		sa << " towards " << nfo->_towards;
 		sa << " tx " << nfo->_packets_tx;
 		sa << " tx_time " << now - nfo->_first_tx;
 		sa << " total_time " << now - nfo->_first_rx;
@@ -359,14 +350,14 @@ TokenQueue::pull(int)
 	    nfo->_tokens_passed++;
 	    nfo->_towards = nfo->other_endpoint(nfo->_towards);
 	}
+
 	nfo->_last_tx = now;
-	if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
+	if (pk->flag(FLAG_SCHEDULE_FAKE)) {
+	    nfo->_active = false;
+	} else {
 	    nfo->_last_real = now;
 	    nfo->_active = true;
-	} else {
-	    nfo->_active = false;
 	}
-
 
 	/* finally, we altered the packet, so we need to redo 
 	 * the checksum
@@ -403,32 +394,35 @@ TokenQueue::bubble_up(Packet *p_in)
     bool reordered = false;
     for (int x = _head; x != _tail; x = next_i(x)) {
 	click_ether *eh2 =  (click_ether *) _q[x]->data();
-	struct srpacket *pk2 = (struct srpacket *) (eh2+1);
-	Path p2 = pk2->get_path();
-	if (p == p2) {
-	    if (pk->data_seq() == pk2->data_seq()) {
-		/* packet dup */
-		return 0;
-	    } else if (pk->data_seq() < pk2->data_seq()) {
-		if (!reordered) {
-		    reordered = true;
-		    struct timeval now;
-		    click_gettimeofday(&now);
-		    StringAccum sa;
-		    sa << "TokenQueue " << now;
-		    sa << " reordering ";
-		    sa << " pk->seq " << pk->data_seq();
-		    sa << " pk2->seq " << pk2->data_seq();
-		    sa << " on ";
-		    sa << path_to_string(p);
-		    click_chatter("%s", sa.take_string().cc());
+	if (eh2->ether_type == htons(_et)){
+	    struct srpacket *pk2 = (struct srpacket *) (eh2+1);
+	    Path p2 = pk2->get_path();
+	    if (p == p2) {
+		if (pk->data_seq() == pk2->data_seq()) {
+		    /* packet dup */
+		    return 0;
+		} else if (pk->data_seq() < pk2->data_seq()) {
+		    if (!reordered) {
+			reordered = true;
+			struct timeval now;
+			click_gettimeofday(&now);
+			StringAccum sa;
+			sa << "TokenQueue " << now;
+			sa << " reordering ";
+			sa << " pk->seq " << pk->data_seq();
+			sa << " pk2->seq " << pk2->data_seq();
+			sa << " on ";
+			sa << path_to_string(p);
+			click_chatter("%s", sa.take_string().cc());
+		    }
+		    Packet *tmp = _q[x];
+		    _q[x] = p_in;
+		    p_in = tmp;
+		    p = p2;
 		}
-		Packet *tmp = _q[x];
-		_q[x] = p_in;
-		p_in = tmp;
-		p = p2;
-	    }
 	    
+	    
+	    }
 	}
 
     }
@@ -479,15 +473,24 @@ TokenQueue::process_source(struct srpacket *pk)
 	}
 	_paths.insert(p, PathInfo(p, this));
 	nfo = _paths.findp(p);
-	
-	nfo->_token = true;
-	_tokens++;
-	nfo->_towards = p[p.size()-1];
+
 	click_gettimeofday(&nfo->_last_tx);
 	click_gettimeofday(&nfo->_last_rx);
 	click_gettimeofday(&nfo->_first_tx);
 	click_gettimeofday(&nfo->_first_rx);
 	click_gettimeofday(&nfo->_last_real);
+	nfo->_active = false;
+    }
+
+    /* we want the token if we're not active
+     * or if we're new *
+     */
+    if (!nfo->_active) {
+	click_gettimeofday(&nfo->_last_real);
+	nfo->_active = true;
+	nfo->_token = true;
+	_tokens++;
+	nfo->_towards = nfo->other_endpoint(_sr_forwarder->ip());
     }
 }
 void
@@ -497,15 +500,50 @@ TokenQueue::process_forward(struct srpacket *pk)
     PathInfo *nfo = find_path_info(p);
     struct timeval now;
     click_gettimeofday(&now);
-    if (nfo->_towards != p[p.size()-1]) {
+
+    IPAddress towards = p[p.size()-1];
+
+    if (pk->seq2() > nfo->_seq) {
+	if (_debug) {
+	    click_chatter("seq no reset");
+	}
+	if (nfo->_token) {
+	    _tokens--;
+	}
+	 nfo->reset_rx(pk->seq2(), towards);
+    } else if (nfo->_seq != pk->seq2()) {
 	if (_debug) {
 	    StringAccum sa;
 	    sa << id() << " " << now;
-	    sa << " wrong_way";
-	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
+	    sa << " old_seq";
+	    sa << " towards " << p[p.size()-1];
+	    sa << " expected " << nfo->_seq;
 	    click_chatter("%s", sa.take_string().cc());
 	}
 	return;
+    }
+
+    if (nfo->_towards != towards) {
+	if (nfo->_towards.addr() < towards.addr()) {
+	if (_debug) {
+	    click_chatter("towards reset");
+	}
+	if (nfo->_token) {
+	    _tokens--;
+	}
+	 nfo->reset_rx(pk->seq2(), towards);
+	} else {
+	    if (_debug) {
+		StringAccum sa;
+		sa << id() << " " << now;
+		sa << " dup_token";
+		sa << " seq " << pk->seq2();
+		sa << " towards " << p[p.size()-1];
+		sa << " expected " << nfo->_seq;
+		click_chatter("%s", sa.take_string().cc());
+	    }
+	    return;
+	}
     }
     /* a packet that I'm forwarding */
     if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
@@ -518,6 +556,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    StringAccum sa;
 	    sa << id() << " " << now;
 	    sa << " first_rx";
+	    sa << " seq " << pk->seq2();
 	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    sa << " since_tx " << now - nfo->_last_tx;
 	    click_chatter("%s", sa.take_string().cc());
@@ -529,6 +568,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    StringAccum sa;
 	    sa << id() << " " << now;
 	    sa << " dup_token";
+	    sa << " seq " << pk->seq2();
 	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    click_chatter("%s", sa.take_string().cc());
 	} else {
@@ -538,6 +578,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 		StringAccum sa;
 		sa << id() << " " << now;
 		sa << " token_rx";
+		sa << " seq " << pk->seq2();
 		sa << " towards " << pk->get_path()[pk->num_hops()-1];
 		sa << " expected " << nfo->_expected_rx;
 		sa << " packets_rx " << nfo->_packets_rx;
@@ -553,6 +594,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    StringAccum sa;
 	    sa << id() << " " << now;
 	    sa << " final_rx";
+	    sa << " seq " << pk->seq2();
 	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    sa << " rx_time " << now - nfo->_first_rx;
 	    click_chatter("%s", sa.take_string().cc());
@@ -594,7 +636,7 @@ TokenQueue::push(int port, Packet *p_in)
     } else {
 	click_ether *eh = (click_ether *) p_out->data();
 	struct srpacket *pk = (struct srpacket *) (eh+1);
-	if (port == 3) {
+	if (port == 1) {
 	    process_forward(pk);
 	    if (pk->flag(FLAG_SCHEDULE_FAKE)) {
 		p_out->kill();
@@ -636,13 +678,23 @@ TokenQueue::print_stats()
 
   struct timeval now;
   click_gettimeofday(&now);
+
+  sa << " tokens " << _tokens;
+  sa << " retransmits " << _retransmits;
+  sa << " normal " << _normal;
+  sa << " signal " << signal_active();
+  sa << "\n";
+
   for (PathIter iter = _paths.begin(); iter; iter++) {
       const PathInfo &nfo = iter.value();
       sa << "[ " << path_to_string(nfo._p) << "] :";
-      sa << " " << now - nfo._last_rx;
-      sa << " last_tx_seq " << nfo._last_tx_seq;
-      sa << " " << now - nfo._last_tx;
-      sa << " congestion " << nfo._congestion;
+      sa << " seq " << nfo._seq;
+      sa << " token " << nfo._token;
+      sa << " last_rx " << now - nfo._last_rx;
+      sa << " packets_rx " << nfo._packets_rx;
+      sa << " expected_rx " << nfo._expected_rx;
+      sa << " last_tx " << now - nfo._last_tx;
+      sa << " packets_tx " << nfo._packets_tx;
       sa << "\n";
   }
 

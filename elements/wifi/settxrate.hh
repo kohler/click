@@ -60,6 +60,7 @@ class SetTXRate : public Element { public:
   
   int _rate;
   class AutoTXRate *_auto;
+  uint16_t _et;     // This protocol's ethertype
 };
 
 CLICK_ENDDECLS

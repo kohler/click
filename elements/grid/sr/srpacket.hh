@@ -23,7 +23,7 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x06;
+static const uint8_t _sr_version = 0x07;
 
 // Packet format.
 struct srpacket {
@@ -45,9 +45,14 @@ struct srpacket {
    * and a extra 32 bit seq number in data packets
    */
   uint32_t _qdst;
+
+
   uint32_t _random_from;
   uint32_t _random_to;
-  uint32_t _seq;   // Originator's sequence number.
+
+
+  uint32_t _seq;   // seq number
+  uint32_t _seq2;  // another seq number
 
   
   
@@ -109,6 +114,13 @@ struct srpacket {
   }
   uint32_t seq() {
     return ntohl(_seq);
+  }
+
+  void set_seq2(uint32_t n) {
+    _seq2 = htonl(n);
+  }
+  uint32_t seq2() {
+    return ntohl(_seq2);
   }
   void set_next(uint8_t n) {
     _next = n;
