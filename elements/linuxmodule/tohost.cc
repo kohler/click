@@ -115,7 +115,8 @@ ToHost::push(int port, Packet *p)
     }
 
 #ifdef HAVE_NETIF_RECEIVE_SKB	// from Linux headers
-    dev = skb->dev;
+    struct net_device *dev = skb->dev;
+    dev_hold(dev);
     netif_receive_skb(skb, skb->protocol, -1);
     dev_put(dev);
 #else

@@ -107,7 +107,8 @@ ToHostSniffers::push(int port, Packet *p)
     }
 
 #ifdef HAVE_NETIF_RECEIVE_SKB	// from Linux headers
-    dev = skb->dev;
+    struct net_device *dev = skb->dev;
+    dev_hold(dev);
     netif_receive_skb(skb, 0xFFFF, -1); // unlikely protocol
     dev_put(dev);
 #else
