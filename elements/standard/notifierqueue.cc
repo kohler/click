@@ -66,7 +66,6 @@ NotifierQueue::push(int, Packet *p)
 	    wake_listeners();
 
     } else {
-	// if (!(_drops % 100))
 	if (_drops == 0)
 	    click_chatter("%{element}: overflow", this);
 	_drops++;
