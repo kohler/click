@@ -2,7 +2,7 @@
  * markipce.{cc,hh} -- element marks IP header ECN CE bit
  * Eddie Kohler
  *
- * Copyright (c) 2001 ACIRI
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

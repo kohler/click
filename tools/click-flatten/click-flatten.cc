@@ -122,7 +122,7 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click-flatten (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2001 Mazu Networks, Inc.\n\
-Copyright (c) 2001 ACIRI\n\
+Copyright (c) 2001 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
