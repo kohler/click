@@ -12,11 +12,13 @@ class Packet {
 public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
-    IPAddress dst_ip;
-    unsigned char dst_ip6[16];
+    union {
+      unsigned dst_ip4;
+      unsigned char dst_ip6[16];
+    } dst_ip;
+    unsigned char sniff_flags; // flags used for sniffers
     bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
     bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
-    unsigned char sniff_flags : 6;   // flags used for sniffers
     char param_off;     // for ICMP Parameter Problem, byte offset of error
     char color;         // one of 255 colors set by Paint element
     int fwd_rate;
@@ -148,8 +150,8 @@ private:
   void copy_annotations(Packet *);
   void zero_annotations();
   
-  IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
-  void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
+  IPAddress dst_ip_anno() const;
+  void set_dst_ip_anno(IPAddress a);
   const IP6Address &dst_ip6_anno() const;
   void set_dst_ip6_anno(const IP6Address &a);
 
@@ -296,13 +298,25 @@ Packet::pull(unsigned int nbytes)
 inline const IP6Address &
 Packet::dst_ip6_anno() const
 {
-  return reinterpret_cast<const IP6Address &>(anno()->dst_ip6);
+  return reinterpret_cast<const IP6Address &>(anno()->dst_ip.dst_ip6);
 }
 
 inline void
 Packet::set_dst_ip6_anno(const IP6Address &a)
 {
-  memcpy(anno()->dst_ip6, &a, 16);
+  memcpy(anno()->dst_ip.dst_ip6, &a, 16);
+}
+  
+inline IPAddress 
+Packet::dst_ip_anno() const
+{
+  return IPAddress(anno()->dst_ip.dst_ip4);
+}
+
+inline void 
+Packet::set_dst_ip_anno(IPAddress a)
+{ 
+  anno()->dst_ip.dst_ip4 = a.addr(); 
 }
 
 inline void
