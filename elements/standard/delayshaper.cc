@@ -128,10 +128,20 @@ DelayShaper::read_param(Element *e, void *)
     return cp_unparse_interval(u->_delay) + "\n";
 }
 
+int
+DelayShaper::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+    DelayShaper *u = (DelayShaper *)e;
+    if (!cp_timeval(cp_uncomment(s), &u->_delay))
+	return errh->error("delay must be a timeval");
+    return 0;
+}
+
 void
 DelayShaper::add_handlers()
 {
     add_read_handler("delay", read_param, (void *)0);
+    add_write_handler("delay", write_param, (void *)0);
 }
 
 CLICK_ENDDECLS

@@ -29,6 +29,10 @@ until the enqueued packet is ready.
 
 SetTimestamp element can be used to stamp the packet.
 
+=h delay read/write
+
+Returns or sets the DELAY parameter.
+
 =a BandwidthShaper, DelayUnqueue, SetTimestamp */
 
 class DelayShaper : public Element, public ActiveNotifier { public:
@@ -44,7 +48,6 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
-    static String read_param(Element *e, void *);
 
     Packet *pull(int);
     void run_timer();
@@ -59,6 +62,9 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     Timer _timer;
     NotifierSignal _upstream_signal;
 
+    static String read_param(Element *, void *);
+    static int write_param(const String &, Element *, void *, ErrorHandler *);
+    
 };
 
 CLICK_ENDDECLS
