@@ -207,6 +207,13 @@ IPRateMonitor::thresh_read_handler(Element *e, void *)
   return String(me->_thresh);
 }
 
+String
+IPRateMonitor::mem_read_handler(Element *e, void *)
+{
+  IPRateMonitor *me = (IPRateMonitor *) e;
+  return String(me->_alloced_mem) + "\n";
+}
+
 int
 IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
@@ -222,6 +229,7 @@ IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
+  add_read_handler("mem", mem_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
 }

@@ -122,6 +122,7 @@ class IPRateMonitor : public Element { public:
   static String thresh_read_handler(Element *e, void *);
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
+  static String mem_read_handler(Element *e, void *);
 
   static int reset_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);
