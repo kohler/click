@@ -45,7 +45,7 @@ static int registered_writers;
 
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
+    _dev_idle(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0)
 {
   add_input();
@@ -233,7 +233,7 @@ ToDevice::tx_intr()
 #endif
 
   /* try to send from click */
-  while (sent<OUTPUT_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
+  while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
     int r;
     Packet *p;
     if (p = input(0).pull()) {
@@ -253,11 +253,12 @@ ToDevice::tx_intr()
   }
 
 #if HAVE_POLLING
-  if (_polling && !_dev->tbusy && sent < OUTPUT_MAX_PKTS_PER_RUN) {
+  if (_polling && !_dev->tbusy && sent < OUTPUT_BATCH) {
     /* try to send from linux if click queue is empty */
     start_bh_atomic();
-    while (sent < OUTPUT_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
+    while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
       int r;
+      
       if ((r = qdisc_restart(_dev)) < 0) {
 	/* if qdisc_restart returns -1, that means a packet is sent as long as
 	 * dev->tbusy is not set... see net/sched/sch_generic.c in linux src
@@ -288,7 +289,7 @@ ToDevice::tx_intr()
 
 #if HAVE_POLLING
   if (_polling) {
-    if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
+    if (busy && sent == 0) {
       _dev_idle++;
       if (_dev_idle==1024) {
         /* device didn't send anything, ping it */
@@ -302,39 +303,30 @@ ToDevice::tx_intr()
 #endif
  
 #if CLICK_DEVICE_ADJUST_TICKETS
-  /* WARNING: fined tuned black magic below, don't change! */
-# if HAVE_POLLING
-  int dma_thresh_high = _dev->tx_dma_length-_dev->tx_dma_length/8;
-  int dma_thresh_low  = _dev->tx_dma_length/4;
-# else
-  int dma_thresh_high = 16-16/8;
-  int dma_thresh_low  = 16/4;
-# endif
-  int adj = tickets()/4;
-  if (adj < 2) adj = 2;
+  int base = tickets()/4;
+  if (base < 2) base = 2;
+  int adj = 0;
 
-#if 0
-  /* tx dma ring was fairly full, slow down */
-  if (busy && queued_pkts > dma_thresh_high 
-      && _last_dma_length > dma_thresh_high) adj=0-adj;
-  else
-#endif
-  /* not much there upstream, so slow down */
-  if (!busy && sent < dma_thresh_low) adj=0-adj;
-  /* handle burstiness: start a bit faster */
-  else if (sent > dma_thresh_high && !busy && 
-           _last_tx < dma_thresh_low && !_last_busy) adj*=2;
-  /* prevent backlog and keep device running */ 
-  else if (sent > dma_thresh_low/2) { 
-    /* semi-bursty: start a bit faster if we sent a lot */ 
-    if (sent > dma_thresh_high) if (adj<8) adj=8; 
-  }
-  else adj = 0;
+  /* 
+   * didn't get much traffic and did not fill up the device, slow down.
+   */
+  if (!busy && sent < (OUTPUT_BATCH/4)) 
+    adj= 0 - base;
+  /* 
+   * sent many packets, increase ticket.
+   */
+  else if (sent > (OUTPUT_BATCH/2)) 
+    adj = base * 2;
+  /*
+   * was able to send more packets than last time, and last time device wasn't
+   * busy, this means we are getting more packets from queue.
+   */
+  else if (sent > (OUTPUT_BATCH/4) && sent > _last_tx && !_last_busy)
+    adj = base;
 
   adj_tickets(adj);
 #endif
   
-  _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
   reschedule();

@@ -1,41 +1,49 @@
 
 Index: include/linux/netdevice.h
---- include/linux/netdevice.h.orig	Mon Jun 26 12:39:43 2000
-+++ include/linux/netdevice.h	Mon Jun 26 19:36:16 2000
-@@ -317,6 +317,32 @@
+--- include/linux/netdevice.h.orig	Mon Jun 26 12:44:10 2000
++++ include/linux/netdevice.h	Tue Jul 18 17:25:50 2000
+@@ -317,6 +317,40 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
  #endif
 +	
 +	/* Click: give kernel module controls of device operations */
-+	int			pollable; 	/* is this card pollable? */
-+	int 			intr_is_on;
-+	int			rx_dma_length;	/* rx dma ring length */
-+	int			tx_dma_length;	/* tx dma ring length */
-+	unsigned long		rx_lock;	/* giant lock for rx ops */
-+	unsigned long		tx_lock;	/* giant lock for tx ops */
-+	
-+	void			(*intr_on)(struct device *);
-+	void			(*intr_off)(struct device *);
-+	
-+	/* now rx_poll allows a number of packets to be polled at a time,
-+	 * return a skbuff list, and set the number actually returned */
++#define POLLING_ON          2
++#define POLLING_OFF         1
++#define POLLING_UNSUPPORTED 0
++	int 			polling;
++	int			(*poll_on)(struct device *);
++	int			(*poll_off)(struct device *);
++	/* 
++	 * rx_poll returns to caller a linked list of sk_buff objects received
++	 * by the device. on call, the want argument specifies the number of
++	 * packets wanted. on return, the want argument specifies the number
++	 * of packets actually returned.
++	 */
 +	struct sk_buff *	(*rx_poll)(struct device *, int *want);
-+	/* refill rx dma ring. returns number of refilled skbuffs */
++	/* 
++	 * refill rx dma ring. returns number of refilled skbuffs 
++	 */
 +	int			(*rx_refill)(struct device *);
-+	/* place a skbuff on the transmit ring, returns 0 if successful, 1
-+	 * otherwise */
++	/* 
++	 * place a skbuff on the transmit ring, returns 0 if successful, 1
++	 * otherwise 
++	 */
 +	int			(*tx_queue)(struct sk_buff *skb, 
-+	    				    struct device *dev);
-+	/* clean tx dma ring. returns the number of unsent packets pending on
-+	 * the tx ring */
++					    struct device *dev);
++	/* 
++	 * clean tx dma ring. returns the number of unsent packets pending on
++	 * the tx ring 
++	 */
 +	int			(*tx_clean)(struct device *);
-+	/* start transmission */
++	/* 
++	 * start transmission 
++	 */
 +	int			(*tx_start)(struct device *dev);
  };
  
  
-@@ -354,6 +380,11 @@
+@@ -354,6 +388,11 @@
  extern int		unregister_netdevice(struct device *dev);
  extern int 		register_netdevice_notifier(struct notifier_block *nb);
  extern int		unregister_netdevice_notifier(struct notifier_block *nb);
@@ -50,7 +58,7 @@ Index: include/linux/netdevice.h
 
 Index: net/core/skbuff.c
 --- net/core/skbuff.c.orig	Mon Jun 26 12:44:17 2000
-+++ net/core/skbuff.c	Thu Jul  6 17:40:11 2000
++++ net/core/skbuff.c	Thu Jul  6 17:38:44 2000
 @@ -256,6 +256,49 @@
  	n->destructor = NULL;
  	return n;
@@ -103,8 +111,8 @@ Index: net/core/skbuff.c
   *	This is slower, and copies the whole data area 
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Mon Jun 26 12:40:19 2000
-+++ net/core/dev.c	Mon Jun 26 12:42:34 2000
+--- net/core/dev.c.orig	Mon Jun 26 12:44:17 2000
++++ net/core/dev.c	Tue Jul 18 17:25:17 2000
 @@ -148,6 +148,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -115,16 +123,15 @@ Index: net/core/dev.c
  /*
   *	Device drivers call our routines to queue packets here. We empty the
   *	queue in the bottom half handler.
-@@ -329,6 +332,8 @@
+@@ -329,6 +332,7 @@
  		kfree(dev);
  		return NULL;
  	}
-+	dev->pollable = 0;		/* by default, not pollable */
-+	dev->intr_is_on = 1;		/* by default, interrupts are on */
++	dev->polling = POLLING_UNSUPPORTED;
  	return dev;
  }
  
-@@ -506,6 +511,22 @@
+@@ -506,6 +510,22 @@
  }
  
  /*
@@ -147,7 +154,7 @@ Index: net/core/dev.c
   *	Support routine. Sends outgoing frames to any network
   *	taps currently in use.
   */
-@@ -749,6 +770,8 @@
+@@ -749,6 +769,8 @@
  	}
  }
  
@@ -156,7 +163,7 @@ Index: net/core/dev.c
  /*
   *	Receive a packet from a device driver and queue it for the upper
   *	(protocol) levels.  It always succeeds. 
-@@ -756,6 +779,9 @@
+@@ -756,6 +778,9 @@
  
  void netif_rx(struct sk_buff *skb)
  {
@@ -166,7 +173,7 @@ Index: net/core/dev.c
  #ifndef CONFIG_CPU_IS_SLOW
  	if(skb->stamp.tv_sec==0)
  		get_fast_time(&skb->stamp);
-@@ -824,6 +850,86 @@
+@@ -824,6 +849,86 @@
  }
  #endif
  
@@ -253,7 +260,7 @@ Index: net/core/dev.c
  /*
   *	When we are called the queue is ready to grab, the interrupts are
   *	on and hardware can interrupt and queue to the receive queue as we
-@@ -836,8 +942,8 @@
+@@ -836,8 +941,8 @@
  {
  	struct packet_type *ptype;
  	struct packet_type *pt_prev;
@@ -263,7 +270,7 @@ Index: net/core/dev.c
  #ifdef CONFIG_CPU_IS_SLOW
  	static unsigned long start_busy = 0;
  	static unsigned long ave_busy = 0;
-@@ -894,7 +1000,6 @@
+@@ -894,7 +999,6 @@
  		}
  #endif
  
@@ -271,7 +278,7 @@ Index: net/core/dev.c
  #if 0
  		NET_PROFILE_SKB_PASSED(skb, net_bh_skb);
  #endif
-@@ -936,66 +1041,19 @@
+@@ -936,66 +1040,19 @@
  		handle_bridge(skb, type); 
  #endif
  
@@ -348,8 +355,8 @@ Index: net/core/dev.c
    	/*
 
 Index: net/sched/sch_generic.c
---- net/sched/sch_generic.c.orig	Mon Jun 26 12:40:35 2000
-+++ net/sched/sch_generic.c	Mon Jun 26 12:42:34 2000
+--- net/sched/sch_generic.c.orig	Mon Jun 26 12:44:18 2000
++++ net/sched/sch_generic.c	Mon Jun 26 12:44:18 2000
 @@ -76,6 +76,24 @@
  	return q->q.qlen;
  }
@@ -401,8 +408,8 @@ Index: net/sched/sch_generic.c
  			continue;
 
 Index: net/netsyms.c
---- net/netsyms.c.orig	Mon Jun 26 12:40:09 2000
-+++ net/netsyms.c	Mon Jun 26 12:42:34 2000
+--- net/netsyms.c.orig	Mon Jun 26 12:44:11 2000
++++ net/netsyms.c	Mon Jun 26 12:44:11 2000
 @@ -330,7 +330,6 @@
  EXPORT_SYMBOL(net_reset_timer);
  EXPORT_SYMBOL(net_delete_timer);
@@ -440,30 +447,9 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(netif_rx);
 
 Index: drivers/net/tulip.c
---- drivers/net/tulip.c.orig	Mon Jun 26 12:39:32 2000
-+++ drivers/net/tulip.c	Mon Jun 26 12:42:34 2000
-@@ -22,9 +22,6 @@
- 
- /* A few user-configurable values. */
- 
--/* Maximum events (Rx packets, etc.) to handle at each interrupt. */
--static int max_interrupt_work = 25;
--
- #define MAX_UNITS 8
- /* Used to pass the full-duplex flag, etc. */
- static int full_duplex[MAX_UNITS] = {0, };
-@@ -144,10 +141,6 @@
- 
- #define RUN_AT(x) (jiffies + (x))
- 
--#if (LINUX_VERSION_CODE >= 0x20100)
--static char kernel_version[] = UTS_RELEASE;
--#endif
--
- #if LINUX_VERSION_CODE < 0x20123
- #define hard_smp_processor_id() smp_processor_id()
- #define test_and_set_bit(val, addr) set_bit(val, addr)
-@@ -561,6 +554,15 @@
+--- drivers/net/tulip.c.orig	Mon Jun 26 12:44:08 2000
++++ drivers/net/tulip.c	Tue Jul 18 17:24:34 2000
+@@ -561,6 +558,15 @@
  #endif
  static void set_rx_mode(struct device *dev);
  
@@ -473,33 +459,30 @@ Index: drivers/net/tulip.c
 +static int tulip_rx_refill(struct device *dev);
 +static int tulip_tx_clean(struct device *dev);
 +static struct sk_buff *tulip_rx_poll(struct device *dev, int *want);
-+static void tulip_intr_on(struct device *dev);
-+static void tulip_intr_off(struct device *dev);
++static int tulip_poll_on(struct device *dev);
++static int tulip_poll_off(struct device *dev);
 +
  
  
  /* A list of all installed Tulip devices. */
-@@ -801,6 +803,19 @@
+@@ -801,6 +814,16 @@
  
  	dev->base_addr = ioaddr;
  	dev->irq = irq;
 +	
 +	/* Click - export routines that control device operations */
-+	dev->pollable = 1;
-+	dev->intr_is_on = 1;
-+	dev->rx_dma_length = RX_RING_SIZE;
-+	dev->tx_dma_length = TX_RING_SIZE;
++	dev->polling = POLLING_OFF;
 +	dev->rx_poll = tulip_rx_poll;
 +	dev->rx_refill = tulip_rx_refill;
 +	dev->tx_clean = tulip_tx_clean;
 +	dev->tx_queue = tulip_tx_queue;
 +	dev->tx_start = tulip_tx_start;
-+	dev->intr_off = tulip_intr_off;
-+	dev->intr_on = tulip_intr_on;
++	dev->poll_off = tulip_poll_off;
++	dev->poll_on = tulip_poll_on;
  
  	tp->pci_bus = pci_bus;
  	tp->pci_devfn = pci_devfn;
-@@ -2503,10 +2518,14 @@
+@@ -2503,10 +2526,14 @@
  	tp->rx_ring[i-1].buffer2 = virt_to_le32desc(&tp->rx_ring[0]);
  
  	for (i = 0; i < RX_RING_SIZE; i++) {
@@ -514,7 +497,7 @@ Index: drivers/net/tulip.c
  		tp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -2526,19 +2545,32 @@
+@@ -2526,19 +2553,32 @@
  	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
  }
  
@@ -539,7 +522,7 @@ Index: drivers/net/tulip.c
 -	   done with atomic_swap(1, dev->tbusy), but set_bit() works as well. */
 +	
 +#if 0
-+	if (!dev->intr_is_on) {
++	if (dev->polling == POLLING_ON) {
 +	    printk("tulip_start_xmit when interrupt is off\n");
 +	}
 +#endif
@@ -553,7 +536,7 @@ Index: drivers/net/tulip.c
  		return 1;
  	}
  
-@@ -2567,16 +2599,39 @@
+@@ -2567,16 +2607,39 @@
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
  	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
  	tp->cur_tx++;
@@ -600,7 +583,14 @@ Index: drivers/net/tulip.c
  /* The interrupt handler does all of the Rx thread work and cleans up
     after the Tx thread. */
  static void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-@@ -2593,6 +2648,11 @@
+@@ -2586,13 +2649,17 @@
+ 	long ioaddr = dev->base_addr;
+ 	int csr5;
+ 	int entry;
+-	int missed;
+ 	int rx = 0;
+ 	int tx = 0;
+ 	int oi = 0;
  	int maxrx = RX_RING_SIZE;
  	int maxtx = TX_RING_SIZE;
  	int maxoi = TX_RING_SIZE;
@@ -612,7 +602,7 @@ Index: drivers/net/tulip.c
  
  #if defined(__i386__) && defined(SMP_CHECK)
  	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
-@@ -2611,25 +2671,51 @@
+@@ -2611,25 +2678,51 @@
  #endif
  
  	tp->nir++;
@@ -625,7 +615,7 @@ Index: drivers/net/tulip.c
  		csr5 = inl(ioaddr + CSR5);
 +		
 +		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
-+		    if (!dev->intr_is_on) {
++		    if (dev->polling == POLLING_ON) {
 +			    wastedintr++; 
 +				goto out;
 +			}
@@ -637,7 +627,7 @@ Index: drivers/net/tulip.c
  		/* Acknowledge all of the current interrupt sources ASAP. */
  		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
 +		
-+		if (!dev->intr_is_on) {
++		if (dev->polling == POLLING_ON) {
 +			pollintr++;
 +			if (csr5 & RxDied) rxdied++;
 +			if (csr5 & TxDied) txdied++;
@@ -657,21 +647,21 @@ Index: drivers/net/tulip.c
 -		if (csr5 & (RxIntr | RxNoBuf)) {
 -			rx += tulip_rx(dev);
 -			tulip_refill_rx(dev);
-+		if ((csr5 & (RxIntr | RxNoBuf)) && dev->intr_is_on) {
++		if ((csr5 & (RxIntr | RxNoBuf)) && dev->polling == POLLING_OFF) {
 +		    rx += tulip_rx(dev);
 +		    tulip_refill_rx(dev);
  		}
  
 -		if (csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) {
 +		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) 
-+			&& dev->intr_is_on) {
++			&& dev->polling == POLLING_OFF) {
 +		  	/* part of following code duplicated at the end
 +			 * in tulip_tx_clean for the polling driver, changes
 +			 * here should propagate to there as well */
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2694,14 +2780,15 @@
+@@ -2694,14 +2787,15 @@
  			}
  
  			tp->dirty_tx = dirty_tx;
@@ -695,7 +685,7 @@ Index: drivers/net/tulip.c
  		}
  
  		/* Log errors. */
-@@ -2720,8 +2807,11 @@
+@@ -2720,8 +2814,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -708,18 +698,18 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2761,7 +2851,9 @@
+@@ -2761,7 +2858,9 @@
  		}
  	} while (1);
  
 -	tulip_refill_rx(dev);
-+	if (dev->intr_is_on) {
++	if (dev->polling == POLLING_OFF) {
 +		tulip_refill_rx(dev);
 +	}
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2779,14 +2871,23 @@
+@@ -2779,14 +2878,23 @@
  		}
  	}
  
@@ -743,7 +733,7 @@ Index: drivers/net/tulip.c
  #if defined(__i386__)
  	clear_bit(0, (void*)&dev->interrupt);
  #else
-@@ -2905,6 +3006,9 @@
+@@ -2905,6 +3013,9 @@
  #endif
  		}
  		received++;
@@ -753,7 +743,7 @@ Index: drivers/net/tulip.c
  		entry = (++tp->cur_rx) % RX_RING_SIZE;
  	}
  
-@@ -2932,8 +3036,12 @@
+@@ -2932,8 +3043,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -768,7 +758,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2976,9 +3084,14 @@
+@@ -2976,9 +3091,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -786,7 +776,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3175,7 +3288,7 @@
+@@ -3175,7 +3295,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -795,7 +785,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3186,7 +3299,12 @@
+@@ -3186,7 +3306,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -808,7 +798,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3201,6 +3319,10 @@
+@@ -3201,6 +3326,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -819,7 +809,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3467,341 @@
+@@ -3345,3 +3474,335 @@
   *  tab-width: 4
   * End:
   */
@@ -1014,50 +1004,44 @@ Index: drivers/net/tulip.c
 +}
 +
 +
-+static void
-+tulip_intr_off(struct device *dev)
++static int
++tulip_poll_on(struct device *dev)
 +{
 +    long ioaddr = dev->base_addr;
 +    int csr7;
 +#ifdef DEMAND_POLLTX
 +    int csr0; 
 +#endif
-+    csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
-+    outl(csr7, ioaddr+CSR7);
++	if (dev->polling == POLLING_OFF) {
++      csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
++      outl(csr7, ioaddr+CSR7);
 +#ifdef DEMAND_POLLTX
-+    csr0 = inl(ioaddr + CSR0) & ~(7<<17);
-+    csr0 = csr0 | (4<<17);
-+    outl(csr0, ioaddr+CSR0);
++      csr0 = (inl(ioaddr + CSR0) & ~(7<<17)) | (4<<17);
++      outl(csr0, ioaddr+CSR0);
 +#endif
-+    dev->intr_is_on = 0;
++      dev->polling = POLLING_ON;
++	}
++	return 0;
 +}
 +
-+static void
-+tulip_intr_on(struct device *dev)
++static int
++tulip_poll_off(struct device *dev)
 +{
-+    struct tulip_private *tp = (struct tulip_private *)dev->priv;
 +    long ioaddr = dev->base_addr;
 +    int csr7;
 +#ifdef DEMAND_POLLTX
 +    int csr0;
 +#endif
-+    dev->intr_is_on = 1;
-+    printk("tulip %s rx: %ld missed %ld fifooverrun\n", 
-+           dev->name,
-+           tp->stats.rx_missed_errors,
-+           tp->stats.rx_fifo_errors);
-+    printk("tulip %s tx: %ld errors %ld winerr %ld abrt %ld fifoudfl\n", 
-+           dev->name,
-+           tp->stats.tx_errors,
-+           tp->stats.tx_window_errors,
-+           tp->stats.tx_aborted_errors,
-+           tp->stats.tx_fifo_errors);
++	if (dev->polling == POLLING_ON) {
 +#ifdef DEMAND_POLLTX
-+    csr0 = inl(ioaddr + CSR0) & ~(7<<17);
-+    outl(csr0, ioaddr+CSR0);
++      csr0 = inl(ioaddr + CSR0) & ~(7<<17);
++      outl(csr0, ioaddr+CSR0);
 +#endif
-+    csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
-+    outl(csr7, ioaddr+CSR7);
++      csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
++      outl(csr7, ioaddr+CSR7);
++      dev->polling = POLLING_OFF;
++	}
++	return 0;
 +}
 +
 +static int
@@ -1162,545 +1146,9 @@ Index: drivers/net/tulip.c
 +}
 +
 
-Index: drivers/net/acenic.c
---- drivers/net/acenic.c.orig	Mon Jun 26 12:39:18 2000
-+++ drivers/net/acenic.c	Mon Jun 26 12:42:34 2000
-@@ -276,6 +276,21 @@
- 			printk(version);
- 		}
- 
-+		/*
-+		 * polling support 
-+		 */
-+		dev->pollable = 1;
-+		dev->intr_is_on = 1;
-+		dev->rx_dma_length = RX_RETURN_RING_ENTRIES;
-+		dev->tx_dma_length = TX_RING_ENTRIES;
-+		dev->rx_poll   = ace_rx_poll;
-+        	dev->rx_refill = ace_rx_refill;
-+        	dev->tx_clean  = ace_tx_clean;
-+        	dev->tx_queue  = ace_tx_queue;
-+        	dev->tx_start  = ace_tx_start;
-+        	dev->intr_off  = ace_interrupt_off;
-+        	dev->intr_on   = ace_interrupt_on;
-+
- 		pci_read_config_word(pdev, PCI_COMMAND, &ap->pci_command);
- 
- 		pci_read_config_byte(pdev, PCI_LATENCY_TIMER, &pci_latency);
-@@ -1088,6 +1103,220 @@
- 	return evtcsm;
- }
- 
-+/* this code is a modified version of ace_rx_int, changes to ace_rx_int should
-+ * be reflected in here */
-+struct sk_buff* ace_rx_poll(struct device *dev, int *want) 
-+{
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	struct ace_regs *regs = ap->regs;
-+	struct sk_buff *skb_head, *skb_last;
-+	u32 idx, oldidx;
-+	u32 rxretcsm, rxretprd;
-+	int got = 0;
-+  	
-+	if (dev->intr_is_on) {
-+	  printk(KERN_ERR "%s: polling procedure ace_rx_poll called while interrupt is still on\n", dev->name);
-+	  return 0L;
-+	}
-+
-+	spin_lock(&ap->lock);
-+
-+	skb_head = skb_last = NULL;
-+	rxretprd = ap->rx_ret_prd;
-+	rxretcsm = ap->cur_rx;
-+	idx = rxretcsm;
-+
-+	while (idx != rxretprd && got < *want){
-+		struct sk_buff *skb, *oldskb;
-+		struct rx_desc *oldrxdesc;
-+		u32 size;
-+		u16 csum;
-+		int jumbo;
-+
-+		oldidx = ap->rx_return_ring[idx].idx;
-+		jumbo = ap->rx_return_ring[idx].flags & DFLG_RX_JUMBO;
-+
-+		if (jumbo){
-+			oldskb = ap->rx_jumbo_skbuff[oldidx];
-+			oldrxdesc = &ap->rx_jumbo_ring[oldidx];
-+		}else{
-+			oldskb = ap->rx_std_skbuff[oldidx];
-+			oldrxdesc = &ap->rx_std_ring[oldidx];
-+		}
-+
-+		size = oldrxdesc->size;
-+
-+		skb = oldskb;
-+
-+		skb_put(skb, size);
-+		
-+		if (jumbo){
-+			ap->rx_jumbo_skbuff[oldidx] = NULL;
-+		}else{
-+			ap->rx_std_skbuff[oldidx] = NULL;
-+		}
-+
-+		/*
-+		 * Fly baby, fly!
-+		 */
-+		csum = ap->rx_return_ring[idx].tcp_udp_csum;
-+
-+		skb->dev = dev;
-+		skb->protocol = eth_type_trans(skb, dev);
-+
-+#if 0
-+		/*
-+		 * This was never actually enabled in the RX descriptors
-+		 * anyway - it requires a bit more testing before enabling
-+		 * it again.
-+		 */
-+		/*
-+		 * If the checksum is correct and this is not a
-+		 * fragment, tell the stack that the data is correct.
-+		 */
-+		if(!(csum ^ 0xffff) &&
-+		   (!(((struct iphdr *)skb->data)->frag_off &
-+		      __constant_htons(IP_MF|IP_OFFSET))))
-+			skb->ip_summed = CHECKSUM_UNNECESSARY;
-+		else
-+			skb->ip_summed = CHECKSUM_NONE;
-+#endif
-+		if (got == 0) {
-+		  	skb_head = skb;
-+			skb_last = skb;
-+			skb_last->next = NULL;
-+			skb_last->prev = NULL;
-+		} else {
-+		  	skb_last->next = skb;
-+			skb->prev = skb_last;
-+			skb->next = NULL;
-+			skb_last = skb;
-+		}
-+		got++;
-+
-+		ap->stats.rx_packets++;
-+		ap->stats.rx_bytes += skb->len;
-+
-+		idx = (idx + 1) % RX_RETURN_RING_ENTRIES;
-+	}
-+	
-+	if (ap->version == 1) {
-+		/*
-+	 	 * According to the documentation RxRetCsm is obsolete with
-+	 	 * the 12.3.x Firmware - my Tigon I NIC's seem to disagree!
-+	 	 */
-+		writel(idx, &regs->RxRetCsm);
-+	}
-+	ap->cur_rx = idx;
-+	*want = got;
-+	
-+	spin_unlock(&ap->lock);
-+
-+	return skb_head;
-+}
-+
-+/* this code is a modified version of ace_rx_int, changes to ace_rx_int should
-+ * be reflected in here */
-+static int ace_rx_refill_nolock(struct device *dev)
-+{
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	struct ace_regs *regs = ap->regs;
-+	u32 idx;
-+
-+	if (ap->dirty_rx != ap->cur_rx) {
-+		struct sk_buff *newskb;
-+		struct rx_desc *newrxdesc, *oldrxdesc;
-+		u32 prdidx, size, oldidx;
-+		void *addr;
-+		int jumbo;
-+
-+		idx = ap->dirty_rx;
-+		oldidx = ap->rx_return_ring[idx].idx;
-+		jumbo = ap->rx_return_ring[idx].flags & DFLG_RX_JUMBO;
-+
-+		if (jumbo){
-+			prdidx = ap->rx_jumbo_skbprd;
-+			newrxdesc = &ap->rx_jumbo_ring[prdidx];
-+			oldrxdesc = &ap->rx_jumbo_ring[oldidx];
-+		}else{
-+			prdidx = ap->rx_std_skbprd;
-+			newrxdesc = &ap->rx_std_ring[prdidx];
-+			oldrxdesc = &ap->rx_std_ring[oldidx];
-+		}
-+
-+		size = oldrxdesc->size;
-+
-+		newskb = alloc_skb(size + 2, GFP_ATOMIC);
-+		if (newskb == NULL){
-+			printk(KERN_ERR "%s: Out of memory\n",
-+			       dev->name);
-+			return -1;
-+		}
-+
-+		/*
-+		 * Make sure we DMA directly into nicely
-+		 * aligned receive buffers
-+		 */
-+		skb_reserve(newskb, 2);
-+		addr = (void *)virt_to_bus(newskb->data);
-+
-+		set_aceaddr_bus(&newrxdesc->addr, addr);
-+		newrxdesc->size = size;
-+
-+		newrxdesc->flags = oldrxdesc->flags;
-+		newrxdesc->idx = prdidx;
-+		newrxdesc->type = DESC_RX;
-+#if (BITS_PER_LONG == 32)
-+		newrxdesc->addr.addrhi = 0;
-+#endif
-+
-+		oldrxdesc->size = 0;
-+		set_aceaddr_bus(&oldrxdesc->addr, 0);
-+
-+		if (jumbo){
-+			ap->rx_jumbo_skbuff[prdidx] = newskb;
-+
-+			prdidx = (prdidx + 1) % RX_JUMBO_RING_ENTRIES;
-+			ap->rx_jumbo_skbprd = prdidx;
-+		}else{
-+			ap->rx_std_skbuff[prdidx] = newskb;
-+
-+			prdidx = (prdidx + 1) % RX_STD_RING_ENTRIES;
-+			ap->rx_std_skbprd = prdidx;
-+		}
-+
-+		if ((prdidx & 0x7) == 0){
-+			struct cmd cmd;
-+			if (jumbo)
-+				cmd.evt = C_SET_RX_JUMBO_PRD_IDX;
-+			else
-+				cmd.evt = C_SET_RX_PRD_IDX;
-+			cmd.code = 0;
-+			cmd.idx = prdidx;
-+			ace_issue_cmd(regs, &cmd);
-+		}
-+
-+		idx = (idx + 1) % RX_RETURN_RING_ENTRIES;
-+		ap->dirty_rx = idx;
-+	}
-+
-+	return 0;
-+}
-+static int ace_rx_refill(struct device *dev)
-+{
-+  	int r;
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+
-+	if (dev->intr_is_on) {
-+	  printk(KERN_ERR "%s: polling procedure ace_rx_refill called while interrupt is still on\n", dev->name);
-+	  return -1;
-+	}
-+	
-+	spin_lock(&ap->lock);
-+  	r = ace_rx_refill_nolock(dev);
-+	spin_unlock(&ap->lock);
-+  	return r;
-+}
- 
- static int ace_rx_int(struct device *dev, u32 rxretprd, u32 rxretcsm)
- {
-@@ -1097,6 +1326,8 @@
- 
- 	idx = rxretcsm;
- 
-+	ace_rx_refill_nolock(dev);
-+
- 	while (idx != rxretprd){
- 		struct sk_buff *skb, *newskb, *oldskb;
- 		struct rx_desc *newrxdesc, *oldrxdesc;
-@@ -1233,6 +1464,7 @@
- 	 * the 12.3.x Firmware - my Tigon I NIC's seem to disagree!
- 	 */
- 	writel(idx, &regs->RxRetCsm);
-+	ap->dirty_rx = idx;
- 	ap->cur_rx = idx;
- 
- 	return idx;
-@@ -1241,44 +1473,10 @@
- 	goto out;
- }
- 
--
--static void ace_interrupt(int irq, void *dev_id, struct pt_regs *ptregs)
-+static int ace_service_tx(struct device *dev, int polling)
- {
--	struct ace_private *ap;
--	struct ace_regs *regs;
--	struct device *dev = (struct device *)dev_id;
--	u32 txcsm, rxretcsm, rxretprd;
--	u32 evtcsm, evtprd;
--
--	ap = (struct ace_private *)dev->priv;
--	regs = ap->regs;
--
--	spin_lock(&ap->lock);
--
--	/*
--	 * In case of PCI shared interrupts or spurious interrupts,
--	 * we want to make sure it is actually our interrupt before
--	 * spending any time in here.
--	 */
--	if (!(readl(&regs->HostCtrl) & IN_INT)){
--		spin_unlock(&ap->lock);
--		return;
--	}
--
--	/*
--	 * Tell the card not to generate interrupts while we are in here.
--	 */
--	writel(1, &regs->Mb0Lo);
--
--	/*
--	 * Service RX ints before TX
--	 */
--	rxretprd = ap->rx_ret_prd;
--	rxretcsm = ap->cur_rx;
--
--	if (rxretprd != rxretcsm)
--		rxretprd = ace_rx_int(dev, rxretprd, rxretcsm);
--
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	u32 txcsm;
- 	txcsm = ap->tx_csm;
- 	if (txcsm != ap->tx_ret_csm) {
- 		u32 idx = ap->tx_ret_csm;
-@@ -1303,7 +1501,8 @@
- 		    (((ap->tx_prd + 1) % TX_RING_ENTRIES) != txcsm)){
- 			ap->tx_full = 0;
- 			dev->tbusy = 0;
--			mark_bh(NET_BH);
-+			if (!polling) 
-+			  	mark_bh(NET_BH);
- 
- 			/*
- 			 * TX ring is no longer full, aka the
-@@ -1314,7 +1513,32 @@
- 
- 		ap->tx_ret_csm = txcsm;
- 	}
-+	txcsm = ap->tx_csm;
-+	return (ap->tx_prd >= txcsm) ? ap->tx_prd - txcsm 
-+	  			     : ap->tx_prd + TX_RING_ENTRIES - txcsm;
-+}
- 
-+static int ace_tx_clean(struct device *dev)
-+{
-+  	int r;
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+
-+  	if (dev->intr_is_on) {
-+	  printk(KERN_ERR "%s: polling procedure ace_tx_clean called while interrupt is still on\n", dev->name);
-+	  return -1;
-+	}
-+	
-+	spin_lock(&ap->lock);
-+  	r = ace_service_tx(dev, 1);
-+	spin_unlock(&ap->lock);
-+  	return r;
-+}
-+
-+static void ace_interrupt_evt(struct device *dev)
-+{
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	u32 evtcsm, evtprd;
-+	struct ace_regs *regs = ap->regs;
- 	evtcsm = readl(&regs->EvtCsm);
- 	evtprd = ap->evt_prd;
- 
-@@ -1323,11 +1547,105 @@
- 	}
- 
- 	writel(evtcsm, &regs->EvtCsm);
-+}
-+
-+static void ace_interrupt(int irq, void *dev_id, struct pt_regs *ptregs)
-+{
-+	struct ace_private *ap;
-+	struct ace_regs *regs;
-+	struct device *dev = (struct device *)dev_id;
-+	u32 rxretcsm, rxretprd;
-+
-+	ap = (struct ace_private *)dev->priv;
-+	regs = ap->regs;
-+
-+	spin_lock(&ap->lock);
-+
-+	/*
-+	 * In case of PCI shared interrupts or spurious interrupts,
-+	 * we want to make sure it is actually our interrupt before
-+	 * spending any time in here.
-+	 */
-+	if (!(readl(&regs->HostCtrl) & IN_INT)){
-+		spin_unlock(&ap->lock);
-+		return;
-+	}
-+
-+	/*
-+	 * Tell the card not to generate interrupts while we are in here.
-+	 */
-+	writel(1, &regs->Mb0Lo);
-+
-+	/*
-+	 * Service RX ints before TX
-+	 */
-+	rxretprd = ap->rx_ret_prd;
-+	rxretcsm = ap->cur_rx;
-+
-+	if (rxretprd != rxretcsm)
-+		rxretprd = ace_rx_int(dev, rxretprd, rxretcsm);
-+	
-+	ace_service_tx(dev, 0);
-+	ace_interrupt_evt(dev);
-+
-+	writel(0, &regs->Mb0Lo);
-+
-+	spin_unlock(&ap->lock);
-+}
-+
-+/* polling support */
-+
-+static void ace_interrupt_on(struct device *dev)
-+{
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	struct ace_regs *regs = ap->regs;
-+	spin_lock(&ap->lock);
-+	dev->intr_is_on = 1;
- 	writel(0, &regs->Mb0Lo);
-+	spin_unlock(&ap->lock);
-+}
- 
-+static void ace_interrupt_off(struct device *dev)
-+{
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+	struct ace_regs *regs = ap->regs;
-+	spin_lock(&ap->lock);
-+	writel(1, &regs->Mb0Lo);
-+	dev->intr_is_on = 0;
- 	spin_unlock(&ap->lock);
- }
- 
-+static int ace_tx_start(struct device *dev)
-+{
-+  	int r;
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+  	
-+	if (dev->intr_is_on) {
-+	  printk(KERN_ERR "%s: polling procedure ace_tx_start called while interrupt is still on\n", dev->name);
-+	  return -1;
-+	}
-+	
-+	spin_lock(&ap->lock);
-+	r = ace_xmit(0L, dev, 1);
-+	spin_unlock(&ap->lock);
-+	return r;
-+}
-+
-+static int ace_tx_queue(struct sk_buff *skb, struct device *dev)
-+{
-+  	int r;
-+	struct ace_private *ap = (struct ace_private *)dev->priv;
-+
-+  	if (dev->intr_is_on) {
-+	  printk(KERN_ERR "%s: polling procedure ace_tx_queue called while interrupt is still on\n", dev->name);
-+	  return -1;
-+	}
-+	
-+	spin_lock(&ap->lock);
-+  	r = ace_xmit(skb, dev, 0);
-+	spin_unlock(&ap->lock);
-+	return r;
-+}
- 
- static int ace_open(struct device *dev)
- {
-@@ -1441,7 +1759,7 @@
- }
- 
- 
--static int ace_start_xmit(struct sk_buff *skb, struct device *dev)
-+static int ace_xmit(struct sk_buff *skb, struct device *dev, int send)
- {
- 	struct ace_private *ap = (struct ace_private *)dev->priv;
- 	struct ace_regs *regs = ap->regs;
-@@ -1453,19 +1771,23 @@
- 
- 	idx = ap->tx_prd;
- 
--	ap->tx_skbuff[idx] = skb;
--	addr = virt_to_bus(skb->data);
-+	if (skb != 0) { 	/* polling support */
-+		ap->tx_skbuff[idx] = skb;
-+		addr = virt_to_bus(skb->data);
- #if (BITS_PER_LONG == 64)
--	writel(addr >> 32, &ap->tx_ring[idx].addr.addrhi);
-+		writel(addr >> 32, &ap->tx_ring[idx].addr.addrhi);
- #endif
--	writel(addr & 0xffffffff, &ap->tx_ring[idx].addr.addrlo);
--	flagsize = (skb->len << 16) | (DESC_END) ;
--	writel(flagsize, &ap->tx_ring[idx].flagsize);
--	mb();
--	idx = (idx + 1) % TX_RING_ENTRIES;
-+		writel(addr & 0xffffffff, &ap->tx_ring[idx].addr.addrlo);
-+		flagsize = (skb->len << 16) | (DESC_END) ;
-+		writel(flagsize, &ap->tx_ring[idx].flagsize);
-+		mb();
-+		idx = (idx + 1) % TX_RING_ENTRIES;
-+
-+		ap->tx_prd = idx;
-+	} 			/* polling support */
- 
--	ap->tx_prd = idx;
--	writel(idx, &regs->TxPrd);
-+	if (send) 
-+	  	writel(idx, &regs->TxPrd);
- 
- 	if ((idx + 1) % TX_RING_ENTRIES == ap->tx_ret_csm){
- 		ap->tx_full = 1;
-@@ -1483,6 +1805,11 @@
- 
- 	dev->trans_start = jiffies;
- 	return 0;
-+}
-+
-+static int ace_start_xmit(struct sk_buff *skb, struct device *dev)
-+{
-+  	return ace_xmit(skb, dev, 1);
- }
- 
- 
-
-Index: drivers/net/acenic.h
---- drivers/net/acenic.h.orig	Mon Jun 26 12:39:26 2000
-+++ drivers/net/acenic.h	Mon Jun 26 12:42:34 2000
-@@ -670,5 +670,15 @@
- static int ace_set_mac_addr(struct device *dev, void *p);
- static struct net_device_stats *ace_get_stats(struct device *dev);
- static u8 read_eeprom_byte(struct ace_regs *regs, unsigned long offset);
-+/* polling device driver */
-+static int  ace_xmit(struct sk_buff *skb, struct device *dev, int send);
-+static struct sk_buff* ace_rx_poll(struct device *dev, int *want);
-+static int  ace_rx_refill(struct device *dev);
-+static int  ace_tx_clean(struct device *dev);
-+static int  ace_tx_start(struct device *dev);
-+static int  ace_tx_queue(struct sk_buff *skbuff, struct device *dev);
-+static void ace_interrupt_evt(struct device *dev);
-+static void ace_interrupt_on(struct device *dev);
-+static void ace_interrupt_off(struct device *dev);
- 
- #endif /* _ACENIC_H_ */
-
 Index: include/linux/signal.h
---- include/linux/signal.h.orig	Mon Jun 26 12:39:53 2000
-+++ include/linux/signal.h	Mon Jun 26 19:35:54 2000
+--- include/linux/signal.h.orig	Mon Jun 26 12:44:10 2000
++++ include/linux/signal.h	Mon Jul  3 18:50:32 2000
 @@ -189,7 +189,7 @@
  		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
  		break;
@@ -1721,8 +1169,8 @@ Index: include/linux/signal.h
  
 
 Index: include/linux/skbuff.h
---- include/linux/skbuff.h.orig	Mon Jun 26 12:40:02 2000
-+++ include/linux/skbuff.h	Mon Jun 26 19:35:55 2000
+--- include/linux/skbuff.h.orig	Mon Jun 26 12:44:10 2000
++++ include/linux/skbuff.h	Mon Jul  3 18:50:33 2000
 @@ -145,6 +145,7 @@
  extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
  extern struct sk_buff *		alloc_skb(unsigned int size, int priority);

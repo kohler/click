@@ -230,7 +230,7 @@ void
 FromDevice::run_scheduled()
 {
   int i=0;
-  while (i < INPUT_MAX_PKTS_PER_RUN && _puller_ptr != _pusher_ptr) {
+  while (i < INPUT_BATCH && _puller_ptr != _pusher_ptr) {
     Packet *p = _queue[_puller_ptr];
     _puller_ptr = next_i(_puller_ptr);
     output(0).push(p);
@@ -240,8 +240,8 @@ FromDevice::run_scheduled()
   int adj = tickets() / 8;
   if (adj < 4) adj = 4;
   
-  if (i == INPUT_MAX_PKTS_PER_RUN) adj *= 2;
-  if (i < INPUT_MAX_PKTS_PER_RUN/4) adj = 0 - adj;
+  if (i == INPUT_BATCH) adj *= 2;
+  if (i < INPUT_BATCH/4) adj = 0 - adj;
 	
   adj_tickets(adj);
 #endif

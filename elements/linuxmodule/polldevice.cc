@@ -86,7 +86,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
     _dev = find_device_by_ether_address(_devname);
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
-  if (!_dev->pollable) 
+  if (_dev->polling == POLLING_UNSUPPORTED) 
     return errh->error("device `%s' not pollable", _devname.cc());
 #endif  
   return 0;
@@ -128,7 +128,7 @@ PollDevice::initialize(ErrorHandler *errh)
   AnyDevice *l = poll_device_map.lookup(ifindex());
   if (l->next() == 0) {
     /* turn off interrupt if interrupts weren't already off */
-    _dev->intr_off(_dev);
+    _dev->poll_on(_dev);
   }
 
 #ifndef RR_SCHED
@@ -161,8 +161,8 @@ PollDevice::uninitialize()
     _registered = 0;
   }
   if (poll_device_map.lookup(ifindex()) == 0) {
-    if (_dev && _dev->pollable)
-      _dev->intr_on(_dev);
+    if (_dev && _dev->polling == POLLING_ON)
+      _dev->poll_off(_dev);
   } 
   unschedule();
 #endif
@@ -184,7 +184,7 @@ PollDevice::run_scheduled()
 
   SET_STATS(low00, low10, time_now);
 
-  got = INPUT_MAX_PKTS_PER_RUN;
+  got = INPUT_BATCH;
   skb_list = _dev->rx_poll(_dev, &got);
 
 #if _CLICK_STATS_
@@ -238,18 +238,26 @@ PollDevice::run_scheduled()
 #endif
 
 #if CLICK_DEVICE_ADJUST_TICKETS
-  /* adjusting tickets */
-  int adj = tickets()/4;
-  if (adj<2) adj=2;
+  int base = tickets() / 4;
+  if (base < 2) base = 2;
+  int adj = 0;
   
-  /* handles burstiness: fast start */
-  if (got == INPUT_MAX_PKTS_PER_RUN && 
-      _last_rx <= INPUT_MAX_PKTS_PER_RUN/8) adj*=2;
-  /* rx dma ring is fairly full, schedule ourselves more */
-  else if (got == INPUT_MAX_PKTS_PER_RUN);
-  /* rx dma ring was fairly empty, schedule ourselves less */
-  else if (got < INPUT_MAX_PKTS_PER_RUN/4) adj=0-adj;
-  else adj=0;
+  /*
+   * bursty traffic: sent substantially more packets this time than last time,
+   * so increase our tickets a lot to adapt.
+   */
+  if (got == INPUT_BATCH && _last_rx <= INPUT_BATCH/8) 
+    adj = base * 2;
+  /* 
+   * was able to get many packets, so increase our ticket some to adapt.
+   */
+  else if (got == INPUT_BATCH)
+    adj = base;
+  /*
+   * no packets, decrease tickets by some
+   */
+  else if (got < INPUT_BATCH/4) 
+    adj= 0 - base;
 
   adj_tickets(adj);
   _last_rx = got;

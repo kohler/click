@@ -12,8 +12,8 @@ extern "C" {
  * and tx dma ring size (64 and 16, respectively), so that cleaning the device
  * dma queues only need to happen once per run */
 
-#define INPUT_MAX_PKTS_PER_RUN 		8
-#define OUTPUT_MAX_PKTS_PER_RUN   	16
+#define INPUT_BATCH     8
+#define OUTPUT_BATCH    16
 
 // #define _CLICK_STATS_ 1
 // #define _DEV_OVRN_STATS_ 1

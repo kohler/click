@@ -83,7 +83,6 @@ class ToDevice : public AnyDevice {
   bool _registered;
   bool _polling;
   int _dev_idle;
-  int _last_dma_length;
   int _last_tx;
   int _last_busy;
   

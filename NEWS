@@ -45,7 +45,11 @@ Version 1.0.7
 
 * Kernel driver
 
-** Added patch for Linux kernel 2.2.16 and PCMCIA Card Services 3.1.16.
+** Added patch for Linux kernel 2.2.16. Linux kernel 2.2.16 patch contains the
+   latest changes to Linux. While Click will continue to work under 2.2.14 for
+   the time being, it may not be in the future.
+
+** Cleaned up polling interface in Linux.
 
 * Elements
 
