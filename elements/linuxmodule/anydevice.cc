@@ -23,7 +23,7 @@
 #include "anydevice.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-
+#include <clicknet/wifi.h>
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/smp_lock.h>
@@ -205,7 +205,7 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last)
     for (AnyDevice *d = (last ? last->_next : _unknown_map); d; d = d->_next)
 	if (d->devname() == dev_name)
 	    return d;
-	else if (dev->type == ARPHRD_ETHER
+	else if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211)
 		 && cp_ethernet_address(d->devname(), en, d)
 		 && memcmp(en, dev->dev_addr, 6) == 0)
 	    return d;
@@ -232,7 +232,7 @@ dev_get_by_ether_address(const String &name, Element *context)
     if (!cp_ethernet_address(name, en, context))
 	return 0;
     for (net_device *dev = dev_base; dev; dev = dev->next)
-	if (dev->type == ARPHRD_ETHER && memcmp(en, dev->dev_addr, 6) == 0) {
+	if ((dev->type == ARPHRD_ETHER || dev->type == ARPHRD_80211) && memcmp(en, dev->dev_addr, 6) == 0) {
 	    dev_hold(dev);	// dev_get_by_name does dev_hold; so
 				// should we
 	    return dev;

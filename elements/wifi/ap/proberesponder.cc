@@ -155,6 +155,12 @@ ProbeResponder::push(int, Packet *p)
 
   /* respond to blank ssid probes also */
   if (ssid != "" && ssid != _ssid) {
+    if (_debug) {
+      click_chatter("%{element}: other ssid %s wanted %s\n",
+		    this,
+		    ssid.cc(),
+		    _ssid.cc());
+    }
     p->kill();
     return;
   }

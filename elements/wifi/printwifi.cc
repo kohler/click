@@ -65,6 +65,8 @@ PrintWifi::simple_action(Packet *p)
       sa << "PrintWifi ";
   }
 
+  sa << p->length() << " | ";
+
   switch (wh->i_fc[1] & WIFI_FC1_DIR_MASK) {
   case WIFI_FC1_DIR_NODS:
     sa << "NODS ";
@@ -123,18 +125,40 @@ PrintWifi::simple_action(Packet *p)
       sa << "deauth ";
       break;
     default:
-      sa << "??unknown subtype";
+      sa << "unknown-subtype-" << (int) (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) << " ";
       break;
     }
     break;
   case WIFI_FC0_TYPE_CTL:
     sa << "ctl ";
+    switch (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) {
+    case WIFI_FC0_SUBTYPE_PS_POLL:
+      sa << "ps-poll ";
+      break;
+    case WIFI_FC0_SUBTYPE_RTS:
+      sa << "rts ";
+      break;
+    case WIFI_FC0_SUBTYPE_CTS:	
+      sa << "cts ";
+      break;
+    case WIFI_FC0_SUBTYPE_ACK:	
+      sa << "ack ";
+      break;
+    case WIFI_FC0_SUBTYPE_CF_END:
+      sa << "cf-end ";
+      break;
+    case WIFI_FC0_SUBTYPE_CF_END_ACK:
+      sa << "cf-end-ack ";
+      break;
+    default:
+    sa << "unknown-subtype-" << (int) (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) << " ";
+    }
     break;
   case WIFI_FC0_TYPE_DATA:
     sa << "data ";
     break;
   default:
-    sa << "??? ";
+    sa << "unknown-type-" << (int) (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) << " ";
   }
 
 

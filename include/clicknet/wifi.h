@@ -10,6 +10,10 @@
 #ifndef _CLICKNET_WIFI_H_
 #define _CLICKNET_WIFI_H_
 
+
+#define ARPHRD_80211    801       /* wifi      */
+
+
 /*
  * generic definitions for IEEE 802.11 frames
  */
@@ -256,7 +260,7 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #endif
 
 
-static inline int calc_usecs_wifi_packet(int length, int rate, int retries) {
+static inline unsigned calc_usecs_wifi_packet(int length, int rate, int retries) {
   assert(rate);
   assert(length);
   assert(retries >= 0);
@@ -265,14 +269,14 @@ static inline int calc_usecs_wifi_packet(int length, int rate, int retries) {
     return 1;
   }
 
-  int pbcc = 0;
-  int t_plcp_header = 96;
-  int t_slot = 20;
-  int t_ack = 304;
-  int t_difs = 50;
-  int t_sifs = 10;
-  int cw_min = 31;
-  int cw_max = 1023;
+  unsigned pbcc = 0;
+  unsigned t_plcp_header = 96;
+  unsigned t_slot = 20;
+  unsigned t_ack = 304;
+  unsigned t_difs = 50;
+  unsigned t_sifs = 10;
+  unsigned cw_min = 31;
+  unsigned cw_max = 1023;
 
 
   switch (rate) {
@@ -292,10 +296,10 @@ static inline int calc_usecs_wifi_packet(int length, int rate, int retries) {
     t_ack = 20;
     t_difs = 28;
   }
-  int packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
+  unsigned packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
   
-  int cw = cw_min;
-  int expected_backoff = 0;
+  unsigned cw = cw_min;
+  unsigned expected_backoff = 0;
 
   
   /* there is backoff, even for the first packet */
