@@ -1,0 +1,44 @@
+%info
+Tests downstream nonfull Notifier functionality.
+
+%script
+click CONFIG -h c.count > OUT
+click CONFIG2 -h c.count > OUT2
+click CONFIG3 -h c.count > OUT3
+
+%file CONFIG
+i :: InfiniteSource(LIMIT 15)
+  -> c :: Counter
+  -> q :: Queue(5)
+  -> Idle;
+DriverManager(wait 0.1s, stop)
+
+%file CONFIG2
+i :: InfiniteSource(LIMIT 15)
+  -> c :: Counter
+  -> q :: FullNoteQueue(5)
+  -> Idle;
+DriverManager(wait 0.1s, save i.scheduled -, stop)
+
+%file CONFIG3
+i :: InfiniteSource(LIMIT 15)
+  -> c :: Counter
+  -> q :: FullNoteQueue(5)
+  -> s :: PullSwitch(1)
+  -> Counter(COUNT_CALL 2 s.switch 1)
+  -> Discard;
+Idle -> [1]s;
+DriverManager(wait 0.1s, save i.scheduled -, save c.count -, write s.switch 0, wait 0.1s, save i.scheduled -, stop)
+
+%expect OUT
+15
+
+%expect OUT2
+false
+5
+
+%expect OUT3
+false
+5
+false
+7
