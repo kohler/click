@@ -60,7 +60,7 @@ void
 CheckGridHeader::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("Grid checksum failed");
+    click_chatter("CheckGridHeader %s: Grid checksum failed", id().cc());
   _drops++;
   
   if (noutputs() == 2)
