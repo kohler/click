@@ -24,6 +24,7 @@
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
 
@@ -250,6 +251,12 @@ SRCR::push(int port, Packet *p_in)
       return;
     }
     memcpy(p_out->data(), pk->data(), pk->data_len());
+
+    /* set the dst to the gateway it came from 
+     * this is kinda weird.
+     */
+    SET_MISC_IP_ANNO(p_out, pk->get_hop(0));
+
     output(1).push(p_out);
     p_in->kill();
     return;

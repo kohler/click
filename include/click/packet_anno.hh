@@ -22,6 +22,9 @@
 #define FWD_RATE_ANNO(p)		((p)->user_anno_i(1))
 #define SET_FWD_RATE_ANNO(p, v)		((p)->set_user_anno_i(1, (v)))
 
+#define MISC_IP_ANNO(p)                 ((p)->user_anno_u(1))
+#define SET_MISC_IP_ANNO(p, v)             ((p)->set_user_anno_i(1, (v).addr()))
+
 // bytes 8-11
 #define EXTRA_PACKETS_ANNO(p)		((p)->user_anno_u(2))
 #define SET_EXTRA_PACKETS_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))

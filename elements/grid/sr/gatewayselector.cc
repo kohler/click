@@ -32,7 +32,7 @@ CLICK_DECLS
 
 
 GatewaySelector::GatewaySelector()
-  :  Element(2,2),
+  :  Element(1,1),
      _warmup(0),
      _metric(0),
      _arp_table(0),
@@ -244,17 +244,17 @@ GatewaySelector::forward_ad(Seen *s)
 }
 
 
-bool
-GatewaySelector::pick_new_gateway() 
+IPAddress
+GatewaySelector::best_gateway() 
 {
   IPAddress best_gw = IPAddress();
   int best_metric = 0;
   struct timeval expire;
   struct timeval now;
-
+  
   _link_table->dijkstra();
   click_gettimeofday(&now);
-
+  
   for(GWIter iter = _gateways.begin(); iter; iter++) {
     GWInfo nfo = iter.value();
     timeradd(&nfo._last_update, &_gw_expire, &expire);
@@ -266,11 +266,10 @@ GatewaySelector::pick_new_gateway()
       best_metric = metric;
     }
   }
+  
+  return best_gw;
 
-  _current_gateway = best_gw;
-  return (_current_gateway);
 }
-
 bool
 GatewaySelector::valid_gateway(IPAddress gw) 
 {
@@ -286,44 +285,17 @@ GatewaySelector::valid_gateway(IPAddress gw)
   return timercmp(&now, &expire, <);
 
 }
+
 void
 GatewaySelector::push(int port, Packet *p_in)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  
-  
-  if (port == 1) {
-
-    if (timercmp(&now, &_warmup_expire, <)) {
-      p_in->kill();
-      return;
-    }
-    
-    static bool warmup_finished = false;
-    if (!warmup_finished) {
-      click_chatter("GatewaySelector %s: warmup finished\n",
-		    id().cc());
-      warmup_finished = true;
-    }
-    
-    if (!valid_gateway(_current_gateway)) {
-      if (!pick_new_gateway()) {
-	click_chatter("%s: couldn't find a valid gateway!\n", id().cc());
-	p_in->kill();
-	return;
-      }
-    }
-    p_in->set_dst_ip_anno(_current_gateway);
-    output(1).push(p_in);
-    return;
-  }
-
-  if (timercmp(&now, &_warmup_forward_expire, <)) {
+  if (port != 0) {
+    click_chatter("GatewaySelector %s: bad port %d",
+		  id().cc(),
+		  port);
     p_in->kill();
     return;
   }
-
   click_ether *eh = (click_ether *) p_in->data();
   struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   if(eh->ether_type != htons(_et)) {
@@ -528,45 +500,12 @@ GatewaySelector::write_is_gateway(bool b)
 
 
 
-int
-GatewaySelector::static_pick_new_gateway(const String &arg, Element *el,
-			     void *, ErrorHandler *errh)
-{
-  GatewaySelector *d = (GatewaySelector *) el;
-  bool b;
-  if (!cp_bool(arg, &b)) {
-    return errh->error("arg must be bool");
-  }
-
-  if (b) {
-    d->pick_new_gateway();
-  }
-  return 0;
-}
-
-String
-GatewaySelector::static_print_current_gateway(Element *f, void *)
-{
-  GatewaySelector *d = (GatewaySelector *) f;
-  return d->print_current_gateway();
-}
-
-String
-GatewaySelector::print_current_gateway()
-{
-  
-  return _current_gateway.s() + "\n";
-}
-
-
 void
 GatewaySelector::add_handlers()
 {
   add_read_handler("gateway_stats", static_print_gateway_stats, 0);
-  add_read_handler("current_gateway", static_print_current_gateway, 0);
   add_read_handler("print_is_gateway", static_print_is_gateway, 0);
   add_write_handler("write_is_gateway", static_write_is_gateway, 0);
-  add_write_handler("pick_new_gateway", static_pick_new_gateway, 0);
 }
 
 void

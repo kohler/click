@@ -56,9 +56,6 @@ class GatewaySelector : public Element {
   static String static_print_gateway_stats(Element *e, void *);
   String print_gateway_stats();
 
-  static String static_print_current_gateway(Element *e, void *);
-  String print_current_gateway();
-
   static String static_print_is_gateway(Element *e, void *);
   String print_is_gateway();
 
@@ -66,14 +63,13 @@ class GatewaySelector : public Element {
 				     void *, ErrorHandler *errh);
   void write_is_gateway(bool b);
 
-  static int static_pick_new_gateway(const String &arg, Element *el,
-				     void *, ErrorHandler *errh);
   void push(int, Packet *);
   void run_timer();
 
   int get_metric(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
   void forward_ad_hook();
+  IPAddress best_gateway();
 private:
     // List of query sequence #s that we've already seen.
   class Seen {
@@ -105,9 +101,6 @@ private:
   typedef BigHashMap<IPAddress, GWInfo> GWTable;
   typedef GWTable::const_iterator GWIter;
   GWTable _gateways;
-
-  IPAddress _current_gateway;
-
 
 
   int MaxSeen;   // Max size of table of already-seen queries.
