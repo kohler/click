@@ -1,8 +1,8 @@
 /*
- * delayunqueue.{cc,hh} -- element pulls packets from input, delays pushing
+ * delayshaper.{cc,hh} -- element pulls packets from input, delays returnign
  * the packet to output port.
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,44 +20,42 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
-#include "delayunqueue.hh"
+#include "delayshaper.hh"
 #include "elements/standard/scheduleinfo.hh"
 
-DelayUnqueue::DelayUnqueue()
-  : Element(1,1), _task(this)
+DelayShaper::DelayShaper()
+  : Element(1,1)
 {
   MOD_INC_USE_COUNT;
 }
 
-DelayUnqueue::~DelayUnqueue()
+DelayShaper::~DelayShaper()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-DelayUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+DelayShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "delay (ms)", &_delay, 0);
 }
 
 int
-DelayUnqueue::initialize(ErrorHandler *errh)
+DelayShaper::initialize(ErrorHandler *)
 {
   _p = 0;
   _delay *= 1000;
-  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
-DelayUnqueue::uninitialize()
+DelayShaper::uninitialize()
 {
   if (_p) {
     _p->kill();
     _p = 0;
   }
-  _task.unschedule();
 }
 
 static inline unsigned
@@ -75,38 +73,35 @@ elapsed_us(struct timeval tv)
   return e;
 }
 
-void
-DelayUnqueue::run_scheduled()
+Packet *
+DelayShaper::pull(int)
 {
-  do {
-    if (!_p) 
-      _p = input(0).pull();
-    if (!_p)
-      break;
+  if (!_p) 
+    _p = input(0).pull(); 
+  if (_p) {
     unsigned t = elapsed_us(_p->timestamp_anno());
-    if (t >= _delay) {
-      output(0).push(_p);
+    if (t >= _delay) { 
+      Packet *p = _p;
       _p = 0;
-    } 
-  } while(!_p);
-
-  _task.fast_reschedule();
+      return p;
+    }
+  }
+  return 0;
 }
 
 String
-DelayUnqueue::read_param(Element *e, void *)
+DelayShaper::read_param(Element *e, void *)
 {
-  DelayUnqueue *u = (DelayUnqueue *)e;
+  DelayShaper *u = (DelayShaper *)e;
   return String(u->_delay) + " ms\n";
 }
 
 void
-DelayUnqueue::add_handlers()
+DelayShaper::add_handlers()
 {
   add_read_handler("delay", read_param, (void *)0);
-  add_task_handlers(&_task);
 }
 
-EXPORT_ELEMENT(DelayUnqueue)
-ELEMENT_MT_SAFE(DelayUnqueue)
+EXPORT_ELEMENT(DelayShaper)
+ELEMENT_MT_SAFE(DelayShaper)
 
