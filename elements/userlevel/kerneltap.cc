@@ -135,7 +135,7 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
-    sprintf(tmp, "ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
+    sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
     if (system(tmp) != 0) {
       close(fd);
 # if defined(__linux__)
@@ -168,7 +168,7 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 void
 KernelTap::dealloc_tun()
 {
-  String cmd = "ifconfig " + _dev_name + " down";
+  String cmd = "/sbin/ifconfig " + _dev_name + " down";
   if (system(cmd.cc()) != 0) 
     click_chatter("%s: failed: %s", id().cc(), cmd.cc());
 }
