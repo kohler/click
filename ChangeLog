@@ -1,3 +1,15 @@
+2005-01-03 Monday 23:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/routerthread.hh (1.30), lib/routerthread.cc (1.53):
+	empty() fix: reset _pending before checking empty() when destroying
+	a RouterThread; and add !_pending to the check if HAVE_TASK_HEAP
+
+2005-01-03 Monday 23:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.42), configure.in (1.253),
+	etc/libclick/lc-configure.in (1.38): --enable-nanotimestamp is
+	false by default, and fix libclick lc-configure.in
+
 2005-01-03 Monday 22:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/libclick/lc-configure.in (1.37): update version
