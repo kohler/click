@@ -204,8 +204,14 @@ RouterThread::wait(int iter)
     if (iter % DRIVER_ITER_LINUXSCHED == 0) 
       schedule();
 #elif defined(CLICK_BSDMODULE)		/* BSD kernel module */
-    if (iter % DRIVER_ITER_BSDSCHED == 0)
-      yield(curproc, NULL);
+    if (iter % DRIVER_ITER_BSDSCHED == 0) {
+      extern int click_thread_priority;
+      int s = splhigh();
+      curproc->p_priority = curproc->p_usrpri = click_thread_priority;
+      setrunqueue(curproc);
+      mi_switch();
+      splx(s);
+    }
 #else
 #error Compiling for unknown target.
 #endif  /* CLICK_LINUXMODULE */

@@ -84,15 +84,7 @@ Packet::~Packet()
 #endif
 
 #ifdef CLICK_BSDMODULE
-    struct mbuf *n;
-
-    /*
-     * We really shouldn't have any mbuf chains here, but just in case..
-     */
-    while (_m) {
-      MFREE(_m, n);
-      _m = n;
-    }
+    m_freem(_m);
 #endif
   }
   _head = _data = 0;
