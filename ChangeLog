@@ -1,3 +1,8 @@
+2003-12-04 Thursday 18:22  Eddie Kohler <kohler@icir.org>
+
+	* lib/userutils.cc (1.34): fix bug with glob_match(): "*.end" would
+	match anything, duh!
+
 2003-12-04 Thursday 16:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.72), e2elossmetric.cc (1.3),
