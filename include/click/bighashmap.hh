@@ -1,5 +1,6 @@
 #ifndef BIGHASHMAP_HH
 #define BIGHASHMAP_HH
+#include <click/bighashmap_arena.hh>
 
 // K AND V REQUIREMENTS:
 //
@@ -24,7 +25,7 @@ class BigHashMap { public:
   ~BigHashMap();
   
   int nbuckets() const			{ return _nbuckets; }
-  int count() const			{ return _n; }
+  int size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
   
   const V &find(const K &) const;
@@ -53,19 +54,6 @@ class BigHashMap { public:
     Elt *next;
   };
 
-  struct Arena {
-    static const int SIZE = 128;
-    static const int ELT_SIZE = sizeof(Elt) / sizeof(int);
-    int _first;
-    int _padding;		// pad to 8-byte boundary
-    int _x[ELT_SIZE * SIZE];
-
-    Arena();
-    void clear();
-    Elt *alloc();
-    Elt *elt(int i)	{ return reinterpret_cast<Elt *>(_x + ELT_SIZE*i); }
-  };
-
   Elt **_buckets;
   int _nbuckets;
   V _default_v;
@@ -75,7 +63,7 @@ class BigHashMap { public:
 
   Elt *_free;
   int _free_arena;
-  Arena **_arenas;
+  BigHashMap_Arena **_arenas;
   int _narenas;
   int _arenas_cap;
 
@@ -111,7 +99,6 @@ class BigHashMapIterator {
   
 };
 
-
 template <class K, class V>
 inline const V &
 BigHashMap<K, V>::find(const K &key) const
@@ -135,5 +122,172 @@ BigHashMap<K, V>::findp(const K &key) const
   Elt *e = find_elt(key);
   return e ? &e->v : 0;
 }
+
+
+template <class K>
+class BigHashMap<K, void *> { public:
+
+  typedef BigHashMapIterator<K, void *> Iterator;
+  
+  BigHashMap();
+  explicit BigHashMap(void *);
+  ~BigHashMap();
+  
+  int nbuckets() const			{ return _nbuckets; }
+  int size() const			{ return _n; }
+  bool empty() const			{ return _n == 0; }
+  
+  void *find(const K &) const;
+  void **findp(const K &) const;
+  void *operator[](const K &k) const;
+  void *&find_force(const K &);
+  
+  bool insert(const K &, void *);
+  bool remove(const K &);
+  void clear();
+
+  void swap(BigHashMap<K, void *> &);
+  
+  Iterator first() const;
+
+  // dynamic resizing
+  void resize(int);
+  bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
+  void set_dynamic_resizing(bool);
+  
+ private:
+  
+  struct Elt {
+    K k;
+    void *v;
+    Elt *next;
+  };
+
+  Elt **_buckets;
+  int _nbuckets;
+  void *_default_v;
+
+  int _n;
+  int _capacity;
+
+  Elt *_free;
+  int _free_arena;
+  BigHashMap_Arena **_arenas;
+  int _narenas;
+  int _arenas_cap;
+
+  void initialize();
+  void resize0(int = -1);
+  int bucket(const K &) const;
+  Elt *find_elt(const K &) const;
+
+  Elt *alloc();
+  Elt *slow_alloc();
+  void free(Elt *);
+
+  friend class BigHashMapIterator<K, void *>;
+  
+};
+
+template <class K>
+class BigHashMapIterator<K, void *> {
+
+  const BigHashMap<K, void *> *_hm;
+  BigHashMap<K, void *>::Elt *_elt;
+  int _bucket;
+
+ public:
+
+  BigHashMapIterator(const BigHashMap<K, void *> *);
+
+  operator bool() const			{ return _elt; }
+  void operator++(int = 0);
+  
+  const K &key() const			{ return _elt->k; }
+  void *value() const			{ return _elt->v; }
+  
+};
+
+template <class K>
+inline void *
+BigHashMap<K, void *>::find(const K &key) const
+{
+  Elt *e = find_elt(key);
+  return (e ? e->v : _default_v);
+}
+
+template <class K>
+inline void *
+BigHashMap<K, void *>::operator[](const K &key) const
+{
+  return find(key);
+}
+
+template <class K>
+inline void **
+BigHashMap<K, void *>::findp(const K &key) const
+{
+  Elt *e = find_elt(key);
+  return e ? &e->v : 0;
+}
+
+template <class K>
+inline BigHashMapIterator<K, void *>
+BigHashMap<K, void *>::first() const
+{
+  return Iterator(this);
+}
+
+
+template <class K, class T>
+class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
+
+  typedef BigHashMapIterator<K, T *> Iterator;
+  typedef BigHashMap<K, void *> Base;
+  
+  BigHashMap()				: Base() { }
+  explicit BigHashMap(T *def)		: Base(def) { }
+  ~BigHashMap()				{ }
+  
+  int nbuckets() const			{ return Base::nbuckets(); }
+  int size() const			{ return Base::size(); }
+  bool empty() const			{ return Base::empty(); }
+  
+  T *find(const K &k) const { return reinterpret_cast<T *>(Base::find(k)); }
+  T **findp(const K &k) const { return reinterpret_cast<T **>(Base::findp(k)); }
+  T *operator[](const K &k) const { return reinterpret_cast<T *>(Base::operator[](k)); }
+  T *&find_force(const K &k) { return reinterpret_cast<T *>(Base::find_force(k)); }
+  
+  bool insert(const K &k, T *v)		{ return Base::insert(k, v); }
+  bool remove(const K &k)		{ return Base::remove(k); }
+  void clear()				{ Base::clear(); }
+
+  void swap(BigHashMap<K, T *> &o)	{ Base::swap(o); }
+  
+  Iterator first() const		{ return Iterator(this); }
+
+  // dynamic resizing
+  void resize(int s)			{ Base::resize(s); }
+  bool dynamic_resizing() const		{ return Base::dynamic_resizing(); }
+  void set_dynamic_resizing(bool dr)	{ Base::set_dynamic_resizing(dr); }
+
+};
+
+template <class K, class T>
+class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> {
+
+  typedef BigHashMapIterator<K, void *> Base;
+  
+ public:
+
+  BigHashMapIterator(const BigHashMap<K, T *> *t) : Base(t) { }
+
+  operator bool() const			{ return Base::operator bool(); }
+  void operator++(int)			{ Base::operator++(0); }
+  
+  const K &key() const	{ return Base::key(); }
+  T *value() const	{ return reinterpret_cast<T *>(Base::value()); }
+  
+};
 
 #endif

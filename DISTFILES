@@ -70,6 +70,7 @@ include/click/archive.hh
 include/click/bitvector.hh
 include/click/bighashmap.cc
 include/click/bighashmap.hh
+include/click/bighashmap_arena.hh
 include/click/click_ether.h
 include/click/click_icmp.h
 include/click/click_icmp6.h
@@ -117,6 +118,7 @@ include/click/vector.hh
 
 lib
 lib/archive.cc
+lib/bighashmap_arena.cc
 lib/bitvector.cc
 lib/clp.c
 lib/confparse.cc
