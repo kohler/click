@@ -97,6 +97,9 @@ private:
 #endif
 
   bool shared() const;
+  int uses() const;
+  void ref();
+  void unref();
   Packet *clone();
   Packet *uniqueify();
   
@@ -131,6 +134,7 @@ private:
   unsigned transport_header_offset() const;
 
   void copy_annotations(Packet *);
+  void zero_annotations();
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
@@ -194,6 +198,16 @@ Packet::make(struct sk_buff *skb)
     return (Packet *)skb_clone(skb, GFP_ATOMIC);
 }
 #endif
+
+inline int
+Packet::uses() const
+{
+#ifdef __KERNEL__
+  return atomic_read(&(skb()->users));
+#else
+  return _use_count;
+#endif
+}
 
 inline bool
 Packet::shared() const
@@ -296,4 +310,11 @@ Packet::copy_annotations(Packet *p)
   *anno() = *p->anno();
 }
 
+inline void
+Packet::zero_annotations()
+{
+  memset(anno(), '\0', sizeof(Anno));
+}
+
 #endif
+

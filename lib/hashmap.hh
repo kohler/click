@@ -33,6 +33,8 @@ class HashMap {
   
   bool insert(K, const V &);
   void clear();
+  int size() 				{ return _size; }
+  void set_size(int i);
   
   bool each(int &, K &, V &) const;
   bool eachp(int &, K *&, V *&) const;

@@ -67,6 +67,11 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
   return *this;
 }
 
+template <class K, class V> inline void
+HashMap<K, V>::set_size(int i)
+{
+  while (i > _size) increase();
+}
 
 template <class K, class V> inline int
 HashMap<K, V>::bucket(K key) const
