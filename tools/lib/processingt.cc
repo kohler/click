@@ -602,8 +602,8 @@ ProcessingT::set_flowed_inputs(const Bitvector &outputs, Bitvector &inputs, Erro
     assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
     Bitvector bv;
     // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *output_udata = outputs.u_data();
-    for (int i = 0; i <= outputs.u_max(); i++)
+    const uint32_t *output_udata = outputs.data_words();
+    for (int i = 0; i <= outputs.max_word(); i++)
 	if (output_udata[i]) {
 	    int m = (i*8 + 8 > outputs.size() ? outputs.size() : i*8 + 8);
 	    for (int j = i*8; j < m; j++)
@@ -621,8 +621,8 @@ ProcessingT::set_flowed_outputs(const Bitvector &inputs, Bitvector &outputs, Err
     assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
     Bitvector bv;
     // for speed with sparse Bitvectors, look into the Bitvector implementation
-    const uint32_t *input_udata = inputs.u_data();
-    for (int i = 0; i <= inputs.u_max(); i++)
+    const uint32_t *input_udata = inputs.data_words();
+    for (int i = 0; i <= inputs.max_word(); i++)
 	if (input_udata[i]) {
 	    int m = (i*8 + 8 > inputs.size() ? inputs.size() : i*8 + 8);
 	    for (int j = i*8; j < m; j++)
