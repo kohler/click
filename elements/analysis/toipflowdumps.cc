@@ -157,7 +157,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
     if (PAINT_ANNO(p) >= 2) {
 	assert(p->ip_header()->ip_p == IP_PROTO_ICMP);
 	StringAccum sa;
-	sa << p->timestamp_anno() << ": ICMP error";
+	sa << p->timestamp_anno() << ' ' << (PAINT_ANNO(p) & 1 ? '>' : '<') << " ICMP_error";
 	return add_note(sa.take_string(), errh);
     }
     
