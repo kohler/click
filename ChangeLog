@@ -1,3 +1,19 @@
+2002-04-09 Tuesday 02:07  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: app/ftpportmapper.cc (1.21), tcpudp/tcprewriter.cc
+	(1.22), tcpudp/tcprewriter.hh (1.11), tcpudp/tcprewriter.cc (1.23):
+	TCPRewriter: be more careful about deltas. In particular, support
+	two deltas, one for packets before sequence number K, and one for
+	packets after that sequence number. Changes several APIs, and
+	sequence number deltas, which are now more calculated than stored.
+
+2002-04-09 Tuesday 02:03  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/setipdscp.cc (1.24), include/click/click_ip.h (1.11),
+	include/click/click_tcp.h (1.4): use uintXX_t types where
+	appropriate; be more careful about CLICK_BYTE_ORDER possibilities
+	in header files
+
 2002-04-05 Friday 16:01  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: analysis/anonipaddr.cc (1.4), analysis/anonipaddr.hh

@@ -1,3 +1,9 @@
+2002-04-09 Tuesday 02:03  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h, click_tcp.h, click_tcp.h:
+	use uintXX_t types where appropriate; be more careful about
+	CLICK_BYTE_ORDER possibilities in header files
+
 2002-04-05 Friday 15:59  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/task.hh, include/click/timer.hh,
