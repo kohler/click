@@ -20,6 +20,13 @@
 #include <click/glue.hh>
 #include "anydevice.hh"
 #include <click/confparse.hh>
+#include <click/error.hh>
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <linux/smp_lock.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
   : _dev(0), _task(this), _idles(0), _next(0)
@@ -32,37 +39,60 @@ AnyDevice::~AnyDevice()
   MOD_DEC_USE_COUNT;
 }
 
+int
+AnyDevice::find_device(bool allow_nonexistent, ErrorHandler *errh)
+{
+    _dev = dev_get_by_name(_devname.cc());
+    if (!_dev)
+	_dev = find_device_by_ether_address(_devname, this);
+    if (!_dev) {
+	if (!allow_nonexistent)
+	    return errh->error("unknown device `%s'", _devname.cc());
+	else
+	    errh->warning("unknown device `%s'", _devname.cc());
+    }
+    if (_dev && !(_dev->flags & IFF_UP)) {
+	errh->warning("device `%s' is down", _devname.cc());
+	_dev = 0;
+    }
+    return 0;
+}
+
 void
 AnyDeviceMap::initialize()
 {
     _unknown_map = 0;
-    for (int i = 0; i < MAX_DEVICES; i++)
+    for (int i = 0; i < MAP_SIZE; i++)
 	_map[i] = 0;
 }
 
-int
+void
 AnyDeviceMap::insert(AnyDevice *d)
 {
+    // lock whole kernel when manipulating device map
+    lock_kernel();
+    
     int ifi = d->ifindex();
     AnyDevice **head;
     if (ifi < 0)
 	head = &_unknown_map;
-    else if (ifi < MAX_DEVICES)
-	head = &_map[ifi];
     else
-	return -1;
+	head = &_map[ifi % MAP_SIZE];
+
     // put new devices first on the list
     d->set_next(*head);
     *head = d;
-    return 0;
+
+    unlock_kernel();
 }
 
 void
 AnyDeviceMap::remove(AnyDevice *d)
 {
+    lock_kernel();
+    
     int ifi = d->ifindex();
-    AnyDevice **head = (ifi >= 0 && ifi < MAX_DEVICES ? &_map[ifi] : &_unknown_map);
-
+    AnyDevice **head = (ifi >= 0 ? &_map[ifi % MAP_SIZE] : &_unknown_map);
     AnyDevice *prev = 0;
     AnyDevice *trav = *head;
     while (trav && trav != d) {
@@ -75,6 +105,8 @@ AnyDeviceMap::remove(AnyDevice *d)
 	else
 	    *head = trav->next();
     }
+
+    unlock_kernel();
 }
 
 AnyDevice *

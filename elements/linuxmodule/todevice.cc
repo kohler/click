@@ -6,6 +6,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,23 +32,49 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <net/pkt_sched.h>
+#include <asm/msr.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#include <asm/msr.h>
+/* for watching when devices go offline */
+static AnyDeviceMap to_device_map;
+static int to_device_count;
+static struct notifier_block device_notifier;
+extern "C" {
+static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+}
+
+static void
+todev_static_initialize()
+{
+    if (++to_device_count == 1) {
+	to_device_map.initialize();
+	device_notifier.notifier_call = device_notifier_hook;
+	device_notifier.priority = 1;
+	device_notifier.next = 0;
+	register_netdevice_notifier(&device_notifier);
+    }
+}
+
+static void
+todev_static_cleanup()
+{
+    if (--to_device_count <= 0)
+	unregister_netdevice_notifier(&device_notifier);
+}
 
 ToDevice::ToDevice()
-  : _polling(0), _registered(0),
-    _dev_idle(0), _rejected(0), _hard_start(0)
+  : _dev_idle(0), _rejected(0), _hard_start(0)
 {
-  // no MOD_INC_USE_COUNT; rely on AnyDevice
-  add_input();
+    // no MOD_INC_USE_COUNT; rely on AnyDevice
+    add_input();
+    todev_static_initialize();
 }
 
 ToDevice::~ToDevice()
 {
-  // no MOD_DEC_USE_COUNT; rely on AnyDevice
-  if (_registered) uninitialize();
+    // no MOD_DEC_USE_COUNT; rely on AnyDevice
+    todev_static_cleanup();
 }
 
 
@@ -55,17 +82,19 @@ int
 ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 16;
+  bool allow_nonexistent = false;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,
 		  cpOptional,
-		  cpUnsigned, "burst", &_burst,
+		  cpUnsigned, "burst size", &_burst,
+		  cpKeywords,
+		  "BURST", cpUnsigned, "burst size", &_burst,
+		  "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
 		  cpEnd) < 0)
     return -1;
-  _dev = dev_get_by_name(_devname.cc());
-  if (!_dev)
-    _dev = find_device_by_ether_address(_devname, this);
-  if (!_dev)
-    return errh->error("unknown device `%s'", _devname.cc());
+
+  if (find_device(allow_nonexistent, errh) < 0)
+      return -1;
   return 0;
 }
 
@@ -79,28 +108,25 @@ ToDevice::initialize(ErrorHandler *errh)
   // see if a PollDevice with the same device exists: if so, use polling
   // extensions. Also look for duplicate ToDevices; but beware: ToDevice may
   // not have been initialized
-  for (int ei = 0; ei < router()->nelements(); ei++) {
-    Element *e = router()->element(ei);
-    if (e == this) continue;
-    if (ToDevice *td = (ToDevice *)(e->cast("ToDevice"))) {
-      if (td->ifindex() == ifindex())
-	return errh->error("duplicate ToDevice for `%s'", _devname.cc());
-    } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {
-      if (pd->ifindex() == ifindex())
-	_polling = 1;
-    }
-  }
+  if (_dev)
+      for (int ei = 0; ei < router()->nelements(); ei++) {
+	  Element *e = router()->element(ei);
+	  if (e == this) continue;
+	  if (ToDevice *td = (ToDevice *)(e->cast("ToDevice"))) {
+	      if (td->ifindex() == ifindex())
+		  return errh->error("duplicate ToDevice for `%s'", _devname.cc());
+	  }
+      }
 
-  _registered = 1;
-
+  to_device_map.insert(this);
+  
 #ifdef HAVE_STRIDE_SCHED
   /* start out with max number of tickets */
   _max_tickets = ScheduleInfo::query(this, errh);
 #endif
-  _task.initialize(this, true);
+  _task.initialize(this, _dev != 0);
 
   reset_counts();
-
   return 0;
 }
 
@@ -129,11 +155,10 @@ ToDevice::reset_counts()
 #endif
 }
 
-
 void
 ToDevice::uninitialize()
 {
-  _registered = 0;
+  to_device_map.remove(this);
   _task.unschedule();
 }
 
@@ -170,7 +195,8 @@ ToDevice::run_scheduled()
   SET_STATS(low00, low10, time_now);
  
 #if HAVE_POLLING
-  if (_polling) {
+  bool is_polling = (_dev->polling > 0);
+  if (is_polling) {
     struct sk_buff *skbs = _dev->tx_clean(_dev);
 
 #if CLICK_DEVICE_STATS
@@ -223,7 +249,7 @@ ToDevice::run_scheduled()
   }
 
 #if HAVE_POLLING
-  if (_polling && sent > 0)
+  if (is_polling && sent > 0)
     _dev->tx_eob(_dev);
 
   // If Linux tried to send a packet, but saw tbusy, it will
@@ -231,7 +257,7 @@ ToDevice::run_scheduled()
   // (or until Linux sends another packet) unless we poke
   // net_bh(), which calls qdisc_restart(). We are not allowed
   // to call qdisc_restart() ourselves, outside of net_bh().
-  if (_polling && !busy && _dev->qdisc->q.qlen) {
+  if (is_polling && !busy && _dev->qdisc->q.qlen) {
     _dev->tx_eob(_dev);
     mark_bh(NET_BH);
   }
@@ -244,7 +270,7 @@ ToDevice::run_scheduled()
   if (busy) _busy_returns++;
 
 #if HAVE_POLLING
-  if (_polling) {
+  if (is_polling) {
     if (busy && sent == 0) {
       _dev_idle++;
       if (_dev_idle==1024) {
@@ -290,7 +316,7 @@ ToDevice::queue_packet(Packet *p)
 
   int ret;
 #if HAVE_POLLING
-  if (_polling)
+  if (_dev->polling > 0)
     ret = _dev->tx_queue(_dev, skb1);
   else 
 #endif
@@ -305,6 +331,40 @@ ToDevice::queue_packet(Packet *p)
     _rejected++;
   }
   return ret;
+}
+
+void
+ToDevice::change_device(net_device *dev)
+{
+    _task.unschedule();
+    
+    if (!_dev && dev)
+	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
+    else if (_dev && !dev)
+	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
+    
+    to_device_map.remove(this);
+    _dev = dev;
+    to_device_map.insert(this);
+
+    if (_dev)
+	_task.reschedule();
+}
+
+extern "C" {
+static int
+device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
+{
+    net_device *dev = (net_device *)v;
+    if (flags == NETDEV_UP) {
+	if (ToDevice *td = (ToDevice *)to_device_map.lookup_unknown(dev))
+	    td->change_device(dev);
+    } else if (flags == NETDEV_DOWN) {
+	if (ToDevice *td = (ToDevice *)to_device_map.lookup(dev))
+	    td->change_device(0);
+    }
+    return 0;
+}
 }
 
 static String

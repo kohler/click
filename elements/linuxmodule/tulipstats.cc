@@ -241,7 +241,7 @@ TulipStats::reset_counts()
 void
 TulipStats::interrupt_notifier(net_device *dev, unsigned csr5)
 {
-  AnyDevice *anydev = tulip_stats_map.lookup(dev->ifindex);
+  AnyDevice *anydev = tulip_stats_map.lookup(dev);
   if (!anydev)
     return;
   TulipStats *tulips = static_cast<TulipStats *>(anydev);

@@ -118,9 +118,8 @@ FromLinux::initialize_device(ErrorHandler *errh)
   
   _dev = dev_get_by_name(_devname.cc());
   if (_dev) {
-    if (fromlinux_map.insert(this) < 0) 
-      return errh->error("cannot use FromLinux for device `%s'",_devname.cc());
-    return 0;
+      fromlinux_map.insert(this);
+      return 0;
   }
 
   // Install fake interface
@@ -151,8 +150,8 @@ FromLinux::initialize_device(ErrorHandler *errh)
   else
     _device_up = true;
 
-  if (res >= 0 && (res = fromlinux_map.insert(this)) < 0)
-    errh->error("cannot use FromLinux for device `%s'", _devname.cc());
+  if (res >= 0)
+      fromlinux_map.insert(this);
 
   set_fs(oldfs);
   
@@ -165,7 +164,7 @@ void
 FromLinux::uninitialize()
 {
   fromlinux_map.remove(this);
-  if (fromlinux_map.lookup(ifindex()) != 0) {
+  if (fromlinux_map.lookup(_dev) != 0) {
     _dev = 0; 
     return;
   }
@@ -235,25 +234,20 @@ fl_close(net_device *dev)
 static int
 fl_tx(struct sk_buff *skb, net_device *dev)
 {
-  FromLinux *fl;
-  if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
-    if (fl = (FromLinux*)fromlinux_map.lookup(dev->ifindex)) {
-      Packet *p = Packet::make(skb);
-      fl->push(0, p);
-      return 0;
+    if (FromLinux *fl = (FromLinux *)fromlinux_map.lookup(dev)) {
+	Packet *p = Packet::make(skb);
+	fl->push(0, p);
+	return 0;
     }
-  return -1;
+    return -1;
 }
 
 static enet_statistics *
 fl_stats(net_device *dev)
 {
-  FromLinux *fl;
-
-  if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
-    if (fl = (FromLinux*)fromlinux_map.lookup(dev->ifindex))
-      return fl->stats();
-  return 0L;
+    if (FromLinux *fl = (FromLinux *)fromlinux_map.lookup(dev))
+	return fl->stats();
+    return 0L;
 }
 
 static int

@@ -104,30 +104,18 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh, 
 		    cpString, "interface name", &_devname, 
 		    cpOptional,
-		    cpBool, "set to promiscuous?", &_promisc,
+		    cpBool, "enter promiscuous mode?", &_promisc,
 		    cpUnsigned, "burst size", &_burst,
 		    cpKeywords,
-		    "PROMISC", cpBool, "set to promiscuous?", &_promisc,
-		    "PROMISCUOUS", cpBool, "set to promiscuous?", &_promisc,
+		    "PROMISC", cpBool, "enter promiscuous mode?", &_promisc,
+		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &_promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
-    
-    _dev = dev_get_by_name(_devname.cc());
-    if (!_dev)
-	_dev = find_device_by_ether_address(_devname, this);
-    if (!_dev) {
-	if (!allow_nonexistent)
-	    return errh->error("unknown device `%s'", _devname.cc());
-	else
-	    errh->warning("unknown device `%s'", _devname.cc());
-    }
-    if (_dev && !(_dev->flags & IFF_UP)) {
-	errh->warning("device `%s' is down", _devname.cc());
-	_dev = 0;
-    }
-    
+
+    if (find_device(allow_nonexistent, errh) < 0)
+	return -1;
     return 0;
 }
 
@@ -150,8 +138,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	    }
 	}
 
-    if (from_device_map.insert(this) < 0)
-	return errh->error("cannot use FromDevice for device `%s'", _devname.cc());
+    from_device_map.insert(this);
     if (_promisc && _dev)
 	dev_set_promiscuity(_dev, 1);
     
@@ -244,8 +231,7 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
   struct sk_buff *skb = (struct sk_buff *)v;
 
   int stolen = 0;
-  int ifindex = skb->dev->ifindex;
-  if (FromDevice *fd = (FromDevice *)from_device_map.lookup(ifindex))
+  if (FromDevice *fd = (FromDevice *)from_device_map.lookup(skb->dev))
       stolen = fd->got_skb(skb);
   
   return (stolen ? NOTIFY_STOP_MASK : 0);
@@ -261,7 +247,7 @@ device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 	if (FromDevice *fd = (FromDevice *)from_device_map.lookup_unknown(dev))
 	    fd->change_device(dev);
     } else if (flags == NETDEV_DOWN) {
-	if (FromDevice *fd = (FromDevice *)from_device_map.lookup(dev->ifindex))
+	if (FromDevice *fd = (FromDevice *)from_device_map.lookup(dev))
 	    fd->change_device(0);
     }
 

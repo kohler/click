@@ -9,8 +9,6 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#define MAX_DEVICES	1024
-
 // #define CLICK_DEVICE_CYCLES 1
 // #define CLICK_DEVICE_PRFCTR 1
 // #define CLICK_DEVICE_THESIS_STATS 1
@@ -72,12 +70,14 @@ class AnyDevice : public Element { public:
     ~AnyDevice();
 
     const String &devname() const	{ return _devname; }
+    net_device *device() const		{ return _dev; }
     int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
     AnyDevice *next() const		{ return _next; }
     void set_next(AnyDevice *d)		{ _next = d; }
 
+    int find_device(bool, ErrorHandler *);
     void adjust_tickets(int work);
-  
+
   protected:
 
     String _devname;
@@ -91,7 +91,7 @@ class AnyDevice : public Element { public:
 
 };
 
-  
+
 inline void
 AnyDevice::adjust_tickets(int work)
 {
@@ -124,25 +124,26 @@ AnyDevice::adjust_tickets(int work)
 class AnyDeviceMap { public:
 
     void initialize();
-    AnyDevice *lookup(unsigned);
+    AnyDevice *lookup(net_device *);
     AnyDevice *lookup_unknown(net_device *);
-    int insert(AnyDevice *);
+    void insert(AnyDevice *);
     void remove(AnyDevice *);
 
   private:
 
+    static const int MAP_SIZE = 64;
     AnyDevice *_unknown_map;
-    AnyDevice *_map[MAX_DEVICES];
+    AnyDevice *_map[MAP_SIZE];
 
 };
 
 inline AnyDevice *
-AnyDeviceMap::lookup(unsigned ifi)
+AnyDeviceMap::lookup(net_device *dev)
 {
-  if (ifi >= MAX_DEVICES)
-    return 0;
-  else
-    return _map[ifi];
+    AnyDevice *d = _map[dev->ifindex % MAP_SIZE];
+    while (d && d->device() != dev)
+	d = d->next();
+    return d;
 }
 
 net_device *find_device_by_ether_address(const String &, Element *);

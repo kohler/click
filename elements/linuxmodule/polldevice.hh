@@ -2,41 +2,71 @@
 #define POLLDEVICE_HH
 
 /*
- * =c
- * PollDevice(DEVNAME [, PROMISC, BURST])
- * =s devices
- * polls packets from network device (kernel)
- * =d
- * Poll packets received by the Linux network interface named DEVNAME.
- * Packets will be pushed to output 0. The packets include the link-level
- * header. Each time PollDevice is called, it push at most BURST number of
- * packets. By default, BURST is 8. 
- *
- * If PROMISC is set (by default, it is not), then the device is put into
- * promiscuous mode.
- *
- * Linux won't see any packets from the device. If you want Linux to process
- * packets, you should hand them to ToLinux. Also, if you would like to send
- * packets while using PollDevice, you should also define a ToDevice on the
- * same device.
- *
- * This element can only be used with devices that support the Click polling
- * extension. We have written polling patches for the Tulip Ethernet driver.
- *
- * This element is only available in the Linux kernel module.
- *
- * =h packets read-only
- * Returns the number of packets ToDevice has pulled.
- *
- * =h reset_counts write-only
- * Resets C<packets> counter to zero when written.
- *
- * =a FromDevice, ToDevice, FromLinux, ToLinux */
+=c
+
+PollDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
+
+=s devices
+
+polls packets from network device (kernel)
+
+=d
+
+Poll packets received by the Linux network interface named DEVNAME. Packets
+will be pushed to output 0. The packets include the link-level header. Each
+time PollDevice is scheduled, it emits at most BURST packets. By default,
+BURST is 8.
+
+If PROMISC is set (by default, it is not), then the device is put into
+promiscuous mode.
+
+This element is only available in the Linux kernel module.
+
+Keyword arguments are:
+
+=over 8
+
+=item PROMISC
+
+Boolean. Same as the PROMISC argument.
+
+=item BURST
+
+Unsigned integer. Same as the BURST argument.
+
+=item ALLOW_NONEXISTENT
+
+Allow nonexistent devices. If true, and no device named DEVNAME exists when
+the router is initialized, then PollDevice will report a warning (rather than
+an error). Later, while the router is running, if a device named DEVNAME
+appears, PollDevice will seamlessly begin emitting its packets. Default is
+false.
+
+=back
+
+=n
+
+Linux won't see any packets from the device. If you want Linux to process
+packets, you should hand them to ToLinux. Also, if you would like to send
+packets while using PollDevice, you should also define a ToDevice on the same
+device.
+
+This element can only be used with devices that support the Click polling
+extension. We have written polling patches for the Tulip Ethernet driver.
+
+=h packets read-only
+
+Returns the number of packets ToDevice has pulled.
+
+=h reset_counts write-only
+
+Resets C<packets> counter to zero when written.
+
+=a FromDevice, ToDevice, FromLinux, ToLinux */
 
 #include "elements/linuxmodule/anydevice.hh"
 
-class PollDevice : public AnyDevice {
- public:
+class PollDevice : public AnyDevice { public:
   
   PollDevice();
   ~PollDevice();
@@ -49,7 +79,8 @@ class PollDevice : public AnyDevice {
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();
-  
+
+  void change_device(net_device *);
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
 
@@ -81,9 +112,9 @@ class PollDevice : public AnyDevice {
     
  private:
 
-  bool _registered;
   bool _promisc;
   unsigned _burst;
+    
 };
 
 #endif 
