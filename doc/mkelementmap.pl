@@ -27,9 +27,6 @@ sub process_file ($) {
       $class_name{$cxx_class} = $1;
       $cxx_class = $1;
     }
-    if (/default_processing.*return\s+(\w*)/) {
-      $processing{$cxx_class} = $1;
-    }
   }
 }
 
