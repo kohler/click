@@ -1,3 +1,15 @@
+2002-08-07 Wednesday 14:56  Eddie Kohler <kohler@icir.org>
+
+	* Makefile.in (1.109), click-buildtool (1.38), click-compile.in
+	(1.19), click-mkelemmap (1.20), doc/mkwebdoc.pl (1.34),
+	elements/userlevel/fakepcap.cc (1.9), elements/userlevel/todump.cc
+	(1.41), ns/CUT_BinHeap.h (1.1), ns/Makefile.in (1.2),
+	ns/nsclick-test.cc (1.1), ns/nsclick.cc (1.1), tools/lib/etraits.cc
+	(1.6), elements/ns/fromsimdevice.cc (1.1),
+	elements/ns/fromsimdevice.hh (1.1), elements/ns/tosimdevice.cc
+	(1.1), elements/ns/tosimdevice.hh (1.1), elements/ns/tosimdump.cc
+	(1.1), elements/ns/tosimdump.hh (1.1): more preparation for nsclick
+
 2002-08-07 Wednesday 11:19  Eddie Kohler <kohler@icir.org>
 
 	* include/click/package.hh (1.8): nitlet
