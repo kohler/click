@@ -47,7 +47,7 @@ ICMPError::static_initialize()
 				 "inforeq-reply", ICMP_IREQREPLY,
 				 "maskreq", ICMP_MASKREQ,
 				 "maskreq-reply", ICMP_MASKREQREPLY,
-				 (const char *)0);
+				 (const char*) 0);
   if (cp_register_stringlist_argtype("ICMP.code", "ICMP message code", cpArgAllowNumbers) == 0) {
     cp_extend_stringlist_argtype("ICMP.code",
 				 "net", ICMP_UNREACH_NET,
@@ -61,7 +61,7 @@ ICMPError::static_initialize()
 				 "erroratptr", ICMP_PARAMPROB_ERRATPTR,
 				 "missingopt", ICMP_PARAMPROB_OPTABSENT,
 				 "length", ICMP_PARAMPROB_LENGTH,
-				 (const char *)0);
+				 (const char*) 0);
     static_assert(ICMP_UNREACH_NET == ICMP_REDIRECT_NET && ICMP_UNREACH_HOST == ICMP_REDIRECT_HOST);
   }
 }
