@@ -30,7 +30,7 @@ class RouterThread : public Task { public:
     void unschedule_all_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-    // min_cpu_share() and max_cpu_share() are expressed on ab scale with
+    // min_cpu_share() and max_cpu_share() are expressed on a scale with
     // Task::MAX_UTILIZATION == 100%.
     unsigned min_cpu_share() const	{ return _min_click_share; }
     unsigned max_cpu_share() const	{ return _max_click_share; }
