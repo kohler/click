@@ -3,12 +3,12 @@
 
 /*
  * =c
- * FixSrcLoc
+ * FixSrcLoc(LocationInfo)
  * =d
  *
  * Expects a Grid MAC layer packet as input.  Sets the packet's source
- * location to the Grid node's location.  This element requires a
- * LocationInfo element in the configuration.
+ * location to the Grid node's location.  This element uses the
+ * LocationInfo element named by the argument.
  *
  * =a LocationInfo 
  */

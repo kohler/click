@@ -45,6 +45,7 @@ Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpInteger, "jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_from_eth,
 			cpIPAddress, "source IP address", &_from_ip,
+                        cpElement, "Neighbor element", &_nbr,
 			cpOptional,
 			cpInteger, "max nbr hops", &_hops,
 			0);
@@ -66,17 +67,18 @@ Hello::initialize(ErrorHandler *errh)
   _timer.attach(this);
   _timer.schedule_after_ms(_period); // Send Grid HELLO periodically
 
-  // try to find a Neighbour table
-  for (int fi = 0; fi < router()->nelements() && !_nbr; fi++) {
-    Element *f = router()->element(fi);
-    Neighbor *lr = (Neighbor *) f->cast("Neighbor");
-    if (lr != 0)
-      _nbr = lr;
+  if(_nbr && _nbr->cast("Neighbor") == 0){
+    errh->warning("%s: Neighbor argument %s has the wrong type",
+                  id().cc(),
+                  _nbr->id().cc());
+    _nbr = 0;
+  } else if (_nbr == 0) {
+    errh->warning("%s: no Neighbor element given",
+                  id().cc());
   }
 
-  if (_nbr == 0) {
-    errh->warning("%s: could not find a Neighbor element, Hello messages will not contain any neighbor information", id().cc());
-  }
+  if(_nbr)
+    click_chatter("%s: using Neighbor %s", id().cc(), _nbr->id().cc());
 
   return 0;
 }

@@ -89,7 +89,7 @@ ToDevice::initialize(ErrorHandler *errh)
     _fd = open(tmp, 1);
   }
   if (_fd < 0)
-    return(errh->error("can't open a bpf"));
+    return(errh->error("open /dev/bpf* for write: %s", strerror(errno)));
 
   struct ifreq ifr;
   strncpy(ifr.ifr_name, _ifname, sizeof(ifr.ifr_name));

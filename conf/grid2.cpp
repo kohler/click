@@ -6,18 +6,18 @@
 
 #include "grid-node-info.h"
 
-LocationInfo(0, 0)
+li :: LocationInfo(0, 0)
 
 rh :: ReadHandlerCaller(1) 
 
 // protocol els
 nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
-h :: Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP)
-lr :: LocalRoute(MAC_ADDR, GRID_IP)
+h :: Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP, nb)
+lr :: LocalRoute(MAC_ADDR, GRID_IP, nb)
 
 // device layer els
 from_wvlan :: FromDevice(NET_DEVICE, 0)
-to_wvlan :: FixSrcLoc -> SetGridChecksum -> ToDevice(NET_DEVICE)
+to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE)
 
 
 // linux ip layer els
@@ -27,7 +27,7 @@ to_linux :: Queue -> linux
 // hook it all up
 from_wvlan -> Classifier(GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
-  -> fr :: FilterByRange(1000) [0] 
+  -> fr :: FilterByRange(1000, li) [0] 
   -> nb 
   -> Classifier(GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan

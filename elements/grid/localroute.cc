@@ -47,6 +47,7 @@ LocalRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
+                        cpElement, "Neighbor element", &_nbr,
 			cpOptional,
 			cpInteger, "max hops to forward packets for", &_max_forwarding_hops,
 			0);
@@ -56,18 +57,19 @@ LocalRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 LocalRoute::initialize(ErrorHandler *errh)
 {
-  /*
-   * Try to find a LocationInfo element
-   */
-  for (int fi = 0; fi < router()->nelements() && !_nbr; fi++) {
-    Element *f = router()->element(fi);
-    Neighbor *lr = (Neighbor *) f->cast("Neighbor");
-    if (lr != 0)
-      _nbr = lr;
+
+  if(_nbr && _nbr->cast("Neighbor") == 0){
+    errh->warning("%s: Neighbor argument %s has the wrong type",
+                  id().cc(),
+                  _nbr->id().cc());
+    _nbr = 0;
+  } else if (_nbr == 0) {
+    errh->warning("%s: no Neighbor element given",
+                  id().cc());
   }
 
-  if (_nbr == 0) 
-    errh->warning("%s: could not find a Neighbor element, will be unable to forward or originate Grid packets", id().cc());
+  if(_nbr)
+    click_chatter("%s: using Neighbor %s", id().cc(), _nbr->id().cc());
 
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);

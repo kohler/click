@@ -35,6 +35,7 @@ FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "range (metres)", &_range,
+                        cpElement, "LocationInfo element", &_locinfo,
 			0);
 
   if (_range < 0)
@@ -45,18 +46,19 @@ FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 FilterByRange::initialize(ErrorHandler *errh)
 {
-  /*
-   * Try to find a LocationInfo element
-   */
-  for (int fi = 0; fi < router()->nelements() && !_locinfo; fi++) {
-    Element *f = router()->element(fi);
-    LocationInfo *lr = (LocationInfo *)f->cast("LocationInfo");
-    if (lr != 0)
-      _locinfo = lr;
+  if(_locinfo && _locinfo->cast("LocationInfo") == 0){
+    errh->warning("%s: LocationInfo argument %s has the wrong type",
+                  id().cc(),
+                  _locinfo->id().cc());
+    _locinfo = 0;
+  } else if(_locinfo == 0){
+    return errh->error("no LocationInfo argument");
   }
 
-  if (_locinfo == 0)
-    return errh->error("could not find a LocationInfo element");
+  if(_locinfo)
+    click_chatter("%s: using LocationInfo %s",
+                  id().cc(),
+                  _locinfo->id().cc());
 
   return 0;
 }

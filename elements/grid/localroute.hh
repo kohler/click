@@ -2,7 +2,20 @@
 #define LOCALROUTE_HH
 
 /*
- * Run the Grid multihop local routing protocol.
+ * LocalRoute(mac-address, ip-address, neighbor-element)
+ *
+ * Forward packets according to the tables accumulated
+ * by Neighbor.
+ *
+ * Input 0 is from the device, output 0 is to the device.
+ * Both should be ethernet format.
+ *
+ * Input 1 is down from higher level protocols, output 1 is
+ * is up to higher level protocols. The format of both
+ * is IP packets.
+ *
+ * Expects to find a Neighbor element, whose tables LocalRoute
+ * uses to choose next hops.
  */
 
 #include "element.hh"
