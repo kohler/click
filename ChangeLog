@@ -1,3 +1,9 @@
+2004-06-10 Thursday 11:55  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifidecap.cc (1.1), elements/wifi/wifidecap.hh
+	(1.1), include/clicknet/wifi.h (1.1): add 802.11 frame
+	decapsulation element and frame format definitions.
+
 2004-06-09 Wednesday 22:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.79), conf/print-pings.click (1.1), doc/mkwebdoc.pl
