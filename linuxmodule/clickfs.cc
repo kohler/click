@@ -733,16 +733,16 @@ click_reread_super(struct super_block *sb)
 }
 
 #ifdef CLICK_2_4
-static void
-click_delete_dentry(struct dentry *dentry)
-{
-    d_drop(dentry);
-}
-#else
 static int
 click_delete_dentry(struct dentry *)
 {
     return 1;
+}
+#else
+static void
+click_delete_dentry(struct dentry *dentry)
+{
+    d_drop(dentry);
 }
 #endif
 
