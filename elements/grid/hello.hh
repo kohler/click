@@ -1,5 +1,19 @@
-#ifndef Hello_HH
-#define Hello_HH
+#ifndef HELLO_HH
+#define HELLO_HH
+
+/*
+ * =c
+ * Hello(PERIOD, ETH, IP)
+ * =d
+ *
+ * Every PERIOD millseconds, emit a Grid protocol ``Hello'' packet for
+ * the Grid node at address IP with MAC address ETH.  Produces Ethernet packets.
+ *
+ * =e
+ * Hello(500, 00:E0:98:09:27:C5, 18.26.4.115) -> ... -> ToDevice(eth0)
+ *
+ * =a Neighbor
+ */
 
 #include "element.hh"
 #include "timer.hh"
