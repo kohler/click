@@ -150,6 +150,7 @@ Packet::clone()
   p->_end = _end;
   p->copy_annotations(this);
   p->_nh_iph = _nh_iph;
+  p->_h_raw = _h_raw;
   // increment our reference count because of _data_packet reference
   _use_count++;
   return p;
@@ -165,10 +166,13 @@ Packet::uniqueify_copy()
   p->alloc_data(headroom(), length(), tailroom());
   memcpy(p->_data, _data, _tail - _data);
   p->copy_annotations(this);
-  if (_nh_iph)
+  if (_nh_iph) {
     p->_nh_iph = (click_ip *)(p->_data + ip_header_offset());
-  else
+    p->_h_raw = (unsigned char *)(p->_data + transport_header_offset());
+  } else {
     p->_nh_iph = 0;
+    p->_h_raw = 0;
+  }
   memcpy(p->_cb, _cb, sizeof(_cb));
   kill();
   return p;

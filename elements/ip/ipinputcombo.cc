@@ -131,7 +131,7 @@ IPInputCombo::smaction(Packet *p)
    * We now do this in the IP routing table.
    */
 
-  p->set_ip_header(ip);
+  p->set_ip_header(ip, hlen);
   return(p);
   
  bad:

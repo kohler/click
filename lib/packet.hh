@@ -38,6 +38,7 @@ class Packet {
   unsigned char *_end;  /* one beyond end of allocated buffer */
   unsigned char _cb[48];
   click_ip *_nh_iph;
+  unsigned char *_h_raw;
 #endif
   
   Packet();
@@ -83,9 +84,9 @@ class Packet {
  private:
   const Anno *anno() const		{ return (const Anno *)skb()->cb; }
   Anno *anno()				{ return (Anno *)skb()->cb; }
- public:
 #endif
 
+ public:
 #ifdef __KERNEL__
   void kill() 				{ __kfree_skb(skb()); }
 #else
@@ -108,19 +109,23 @@ class Packet {
   unsigned tailroom() const	{ return _end - _tail; }
 #endif
   
-  Packet *push(unsigned int nbytes);	// Add more space before packet.
-  void pull(unsigned int nbytes);	// Get rid of initial bytes.
-  Packet *put(unsigned int nbytes);	// Add bytes to end of pkt.
-  Packet *take(unsigned int nbytes);	// Delete bytes from end of pkt.
+  Packet *push(unsigned nbytes);	// Add more space before packet.
+  Packet *nonunique_push(unsigned);
+  void pull(unsigned nbytes);		// Get rid of initial bytes.
+  Packet *put(unsigned nbytes);		// Add bytes to end of pkt.
+  Packet *take(unsigned nbytes);	// Delete bytes from end of pkt.
 
 #ifdef __KERNEL__
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
-  void set_ip_header(click_ip *h)	{ skb()->nh.iph = (struct iphdr *)h; }
+  unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   click_ip *ip_header() const		{ return _nh_iph; }
-  void set_ip_header(click_ip *h)	{ _nh_iph = h; }
+  unsigned char *transport_header() const	{ return _h_raw; }
 #endif
+  void set_ip_header(click_ip *, unsigned);
   unsigned ip_header_offset() const;
+  unsigned ip_header_length() const;
+  unsigned transport_header_offset() const;
 
   void copy_annotations(Packet *);
   
@@ -148,8 +153,8 @@ class Packet {
   void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }
   void set_metric1_anno(int i, unsigned v) { anno()->p.perf.m1[i] = v; }
   cycles_t cycle_anno(int i) const	{ return anno()->p.cycles[i]; }
-  unsigned metric0_anno(int i) const     { return anno()->p.perf.m0[i]; }
-  unsigned metric1_anno(int i) const     { return anno()->p.perf.m1[i]; }
+  unsigned metric0_anno(int i) const	{ return anno()->p.perf.m0[i]; }
+  unsigned metric1_anno(int i) const	{ return anno()->p.perf.m1[i]; }
 #endif
 };
 
@@ -220,6 +225,20 @@ Packet::push(unsigned int nbytes)
     return expensive_push(nbytes);
 }
 
+inline Packet *
+Packet::nonunique_push(unsigned int nbytes)
+{
+  if (headroom() >= nbytes) {
+#ifdef __KERNEL__
+    skb_push(skb(), nbytes);
+#else
+    _data -= nbytes;
+#endif
+    return this;
+  } else
+    return expensive_push(nbytes);
+}
+
 /*
  * Get rid of some bytes at the start of a packet.
  */
@@ -237,10 +256,34 @@ Packet::pull(unsigned int nbytes)
 #endif
 }
 
+inline void
+Packet::set_ip_header(click_ip *iph, unsigned len)
+{
+#ifdef __KERNEL__
+  skb()->nh.iph = (struct iphdr *)iph;
+  skb()->h.raw = (unsigned char *)iph + len;
+#else
+  _nh_iph = iph;
+  _h_raw = (unsigned char *)iph + len;
+#endif
+}
+
 inline unsigned
 Packet::ip_header_offset() const
 {
   return (unsigned char *)ip_header() - data();
+}
+
+inline unsigned
+Packet::ip_header_length() const
+{
+  return (unsigned char *)transport_header() - (unsigned char *)ip_header();
+}
+
+inline unsigned
+Packet::transport_header_offset() const
+{
+  return (unsigned char *)transport_header() - data();
 }
 
 inline void

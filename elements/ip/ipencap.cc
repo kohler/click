@@ -93,7 +93,7 @@ IPEncap::simple_action(Packet *p)
 
   ip->ip_sum = in_cksum(p->data(), sizeof(click_ip));
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
-  p->set_ip_header(ip);
+  p->set_ip_header(ip, sizeof(click_ip));
   
   return p;
 }

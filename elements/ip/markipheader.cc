@@ -42,7 +42,7 @@ Packet *
 MarkIPHeader::simple_action(Packet *p)
 {
   click_ip *ip = (click_ip *)(p->data() + _offset);
-  p->set_ip_header(ip);
+  p->set_ip_header(ip, ip->ip_hl << 2);
   return p;
 }
 

@@ -81,12 +81,12 @@ RIPSend::run_scheduled()
 
   /* the remaining IP header fields */
   ipp->ip_len = htons(p->length());
-  ipp->ip_hl = sizeof(*ipp) / 4;
+  ipp->ip_hl = sizeof(click_ip) >> 2;
   ipp->ip_v = IPVERSION;
   ipp->ip_ttl = 200;
   ipp->ip_sum = in_cksum((unsigned char *) ipp, sizeof(*ipp));
   
-  p->set_ip_header(ipp);
+  p->set_ip_header(ipp, sizeof(click_ip));
   
   output(0).push(p);
 

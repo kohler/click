@@ -225,7 +225,7 @@ ICMPError::simple_action(Packet *p)
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   q->set_fix_ip_src_anno(1);
-  q->set_ip_header(nip);
+  q->set_ip_header(nip, sizeof(click_ip));
 
  out:
   p->kill();
