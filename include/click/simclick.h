@@ -53,6 +53,12 @@ typedef struct {
    * Simulator flow ID number for the packet
    */
   int fid;
+
+  /*
+   * Original simulator packet type - useful
+   * for morphing between raw and simulator packet types
+   */
+  int simtype;
 } simclick_simpacketinfo;
 
 /*
