@@ -4113,7 +4113,7 @@ fi
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
   ac_have_linux_kernel=n
   linuxdir=NONE
-elif expr "$linuxdir" : '[^/\\]' >/dev/null; then
+elif expr "_$linuxdir" : '_[^/\\]' >/dev/null; then
   { { echo "$as_me:$LINENO: error:
 =========================================
 
@@ -4371,7 +4371,7 @@ _ACEOF
 
 
 if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
-    if expr "$wifidir" : '[^/\\]' >/dev/null; then
+    if expr "_$wifidir" : '_[^/\\]' >/dev/null; then
 	{ { echo "$as_me:$LINENO: error:
 =========================================
 
@@ -4464,7 +4464,7 @@ freebsd_includedir=`echo "$freebsddir,/usr/include," | sed -e 's/^[^,]*,\([^,]*\
 if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
   ac_have_bsd_kernel=n
   freebsddir=NONE
-elif expr '(' "$freebsd_includedir" : '[^/\\]' ')' '|' '(' "$freebsd_srcdir" : '[^/\\]' ')'; then
+elif expr '(' "_$freebsd_includedir" : '_[^/\\]' ')' '|' '(' "_$freebsd_srcdir" : '_[^/\\]' ')'; then
   { { echo "$as_me:$LINENO: error:
 =========================================
 
