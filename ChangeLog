@@ -1,3 +1,19 @@
+2000-11-14 Tuesday 17:43  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/: udpipencap.cc, udpipencap.hh: allow port numbers to
+	be optionally changed once every few packets
+
+2000-11-14 Tuesday 12:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: icmp/checkicmpheader.cc, icmp/checkicmpheader.hh,
+	icmp/icmppingrewriter.hh, icmp/icmprewriter.cc,
+	icmp/icmprewriter.hh, ip/checkipheader.cc, ip/checkipheader.hh,
+	ip/checkipheader2.cc, ip/checkipheader2.hh, ip/checktcpheader.cc,
+	ip/checktcpheader.hh, ip/checkudpheader.cc, ip/checkudpheader.hh:
+	the IP-related CheckHeader elements now explain more clearly
+	exactly why they are dropping packets, and optionally keep counts
+	separated by reason
+
 2000-11-13 Monday 13:29  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click-elem2man, doc/elementdoc.7,
