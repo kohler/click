@@ -2698,7 +2698,7 @@ cp_unparse_real2(unsigned real, int frac_bits)
   unsigned allowable_inaccuracy = 10;
 
   unsigned inaccuracy_rounder = 5;
-  while (inaccuracy_rounder * 10 < one)
+  while (inaccuracy_rounder < (one >> 1))
     inaccuracy_rounder *= 10;
   
   do {
@@ -2711,6 +2711,27 @@ cp_unparse_real2(unsigned real, int frac_bits)
 
   return sa.take_string();
 }
+
+#if 0
+void
+test_unparse_real2()
+{
+#define TEST(s, frac_bits, result) { String q = (#s); unsigned r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.cc()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.cc(), r, (frac_bits), qq.cc()); }}
+  TEST(0.418, 8, "0.418");
+  TEST(0.417, 8, "0.418");
+  TEST(0.416, 8, "0.414");
+  TEST(0.42, 8, "0.42");
+  TEST(0.3, 16, "0.3");
+  TEST(0.49, 16, "0.49");
+  TEST(0.499, 16, "0.499");
+  TEST(0.4999, 16, "0.4999");
+  TEST(0.49999, 16, "0.49998");
+  TEST(0.499999, 16, "0.5");
+  TEST(0.49998, 16, "0.49998");
+  TEST(0.999999, 16, "1");
+#undef TEST
+}
+#endif
 
 String
 cp_unparse_real2(int real, int frac_bits)
