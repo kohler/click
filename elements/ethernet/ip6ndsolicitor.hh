@@ -34,8 +34,8 @@ CLICK_DECLS
  * are sent to the second output.
  *
  * =e
- *    c :: Classifier(12/86dd 20/3aff 53/87,
- *		      12/86dd 20/3aff 53/88,
+ *    c :: Classifier(12/86dd 20/3aff 54/87,
+ *		      12/86dd 20/3aff 54/88,
  *		      12/86dd);
  *    nds :: IP6NDSolicitor(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
  *    c[0] -> ...
