@@ -57,13 +57,13 @@ device.
 This element can only be used with devices that support the Click polling
 extension. We have written polling patches for the Tulip Ethernet driver.
 
-=h packets read-only
+=h count read-only
 
-Returns the number of packets ToDevice has pulled.
+Returns the number of packets PollDevice has received from the input card.
 
 =h reset_counts write-only
 
-Resets C<packets> counter to zero when written.
+Resets C<count> counter to zero when written.
 
 =a FromDevice, ToDevice, FromHost, ToHost */
 

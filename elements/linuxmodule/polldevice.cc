@@ -427,6 +427,8 @@ void
 PollDevice::add_handlers()
 {
   add_read_handler("calls", PollDevice_read_calls, 0);
+  add_read_handler("count", PollDevice_read_stats, 0);
+  // XXX deprecated
   add_read_handler("packets", PollDevice_read_stats, 0);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
