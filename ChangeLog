@@ -1,3 +1,8 @@
+2001-03-19 Monday 17:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: configure.in updates: call AC_TRY_RUN less
+	frequently, for example
+
 2001-03-18 Sunday 17:40  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/local/binpackingsched.cc,
