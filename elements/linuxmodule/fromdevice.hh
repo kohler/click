@@ -23,6 +23,7 @@
 #include "string.hh"
 #include "glue.hh"
 
+#define FROMDEV_QSIZE 64
 class FromDevice : public Element {
   
  public:
@@ -45,6 +46,8 @@ class FromDevice : public Element {
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
   
+  void run_scheduled();
+  
  private:
   
   String _devname;
@@ -57,6 +60,10 @@ class FromDevice : public Element {
   void bm();
 #endif
   
+  Packet* _queue[FROMDEV_QSIZE];
+  unsigned _puller_ptr;
+  unsigned _pusher_ptr;
+  unsigned next_i(int i) const	{ return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); } 
 };
 
 #endif

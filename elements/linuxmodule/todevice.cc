@@ -268,68 +268,37 @@ ToDevice::tx_intr()
   int busy;
   int sent = 0;
   int queued_pkts;
-
-#if HAVE_POLLING
-
-#if DEV_KEEP_STATS
-  unsigned high;
-  unsigned low00, low01, low10, low11;
-  rdpmc(0, low00, high);
-  rdpmc(1, low10, high);
-  unsigned long time_now = get_cycles();
-#endif   
   
-  queued_pkts = _dev->tx_clean(_dev);
-
 #if DEV_KEEP_STATS
-  if (_activations > 0) {
-    _time_clean += get_cycles()-time_now;
-    rdpmc(0, low01, high);
-    rdpmc(1, low11, high);
-    _perfcnt1_clean += 
-      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _perfcnt2_clean += 
-      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-    rdpmc(0, low00, high); 
-    rdpmc(1, low10, high);
-    time_now = get_cycles();
-  }
+  unsigned low00, low10;
+  unsigned long time_now;
 #endif
 
+#if HAVE_POLLING
+  if (_dev->pollable && !_dev->intr_is_on) {
+    SET_STATS(low00, low10, time_now);
+ 
+    queued_pkts = _dev->tx_clean(_dev);
+
+    if (_activations > 0)
+      GET_STATS_RESET(low00, low10, time_now, 
+	              _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+  }
 #endif
 
   while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     int r;
     Packet *p;
     if (p = input(0).pull()) {
-
-#if DEV_KEEP_STATS
-      _time_pull += get_cycles()-time_now;
-      rdpmc(0, low01, high);
-      rdpmc(1, low11, high);
-      _perfcnt1_pull += 
-        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-      _perfcnt2_pull += 
-        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-      rdpmc(0, low00, high); 
-      rdpmc(1, low10, high);
-      time_now = get_cycles();
-#endif
+      
+      GET_STATS_RESET(low00, low10, time_now, 
+	              _perfcnt1_pull, _perfcnt2_pull, _time_pull);
 
       r = queue_packet(p);
+      
+      GET_STATS_RESET(low00, low10, time_now, 
+	              _perfcnt1_queue, _perfcnt2_queue, _time_queue);
 
-#if DEV_KEEP_STATS
-      _time_queue += get_cycles()-time_now;
-      rdpmc(0, low01, high);
-      rdpmc(1, low11, high);
-      _perfcnt1_queue += 
-        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-      _perfcnt2_queue += 
-        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-      rdpmc(0, low00, high); 
-      rdpmc(1, low10, high);
-      time_now = get_cycles();
-#endif
       if (r < 0) break;
       sent++;
     }
@@ -348,16 +317,18 @@ ToDevice::tx_intr()
 #endif
 
 #if HAVE_POLLING
-  if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
-    _dev_idle++;
-    if (_dev_idle==1024) {
-      /* device didn't send anything, ping it */
-      _dev->tx_start(_dev);
-      _dev_idle=0;
-      _hard_start++;
-    }
-  } else
-    _dev_idle = 0;
+  if (_dev->pollable && !_dev->intr_is_on) {
+    if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
+      _dev_idle++;
+      if (_dev_idle==1024) {
+        /* device didn't send anything, ping it */
+        _dev->tx_start(_dev);
+        _dev_idle=0;
+        _hard_start++;
+      }
+    } else
+      _dev_idle = 0;
+  }
 #endif
  
   /*
@@ -380,11 +351,13 @@ ToDevice::tx_intr()
 #ifdef ADJ_TICKETS
   /* adjusting tickets */
 
+  int dmal;
 #if HAVE_POLLING
-  int dmal = _dev->tx_dma_length;
-#else
-  int dmal = 16;
+  if (_dev->pollable)
+    dmal = _dev->tx_dma_length;
+  else
 #endif
+    dmal = 16;
 
   int dma_thresh_high = dmal-dmal/8;
   int dma_thresh_low  = dmal/4;
@@ -439,11 +412,15 @@ ToDevice::queue_packet(Packet *p)
   }
 
 #if HAVE_POLLING
-  int ret = _dev->tx_queue(skb1, _dev);
-#else
-  int ret = _dev->hard_start_xmit(skb1, _dev);
-  _hard_start++;
+  int ret;
+  if (_dev->pollable && !_dev->intr_is_on)
+    ret = _dev->tx_queue(skb1, _dev); 
+  else 
 #endif
+  {
+    ret = _dev->hard_start_xmit(skb1, _dev);
+    _hard_start++;
+  }
   if(ret != 0){
     printk("<1>ToDevice %s tx oops\n", _dev->name);
     kfree_skb(skb1);

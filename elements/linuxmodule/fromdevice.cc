@@ -21,9 +21,11 @@
 #include "packet.hh"
 #include "confparse.hh"
 #include "router.hh"
+#include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #include <linux/netdevice.h>
 }
+#include "netdev.h"
 
 static int min_ifindex;
 static Vector<FromDevice *> *ifindex_map;
@@ -34,21 +36,23 @@ extern "C" int click_FromDevice_in(struct notifier_block *nb, unsigned long val,
 
 
 FromDevice::FromDevice()
-  : _dev(0), _registered(0)
+  : _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
 #endif
   add_output();
+  for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
 }
 
 FromDevice::FromDevice(const String &devname)
-  : _devname(devname), _dev(0), _registered(0)
+  : _devname(devname), _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
 #endif
   add_output();
+  for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
 }
 
 FromDevice::~FromDevice()
@@ -131,11 +135,6 @@ update_ifindex_map(int ifindex, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-#ifdef HAVE_POLLING
-  return errh->error
-      ("FromDevice cannot be used with click scheduling thread\n");
-#else
-
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
@@ -162,9 +161,14 @@ FromDevice::initialize(ErrorHandler *errh)
     registered_readers++;
   }
   
+#ifndef RR_SCHED
+    // start out with default number of tickets, inflate up to max
+  int max_tickets = ScheduleInfo::query(this, errh);
+  set_max_tickets(max_tickets);
+  set_tickets(ScheduleInfo::DEFAULT);
+#endif
+  join_scheduler();
   return 0;
-
-#endif /* !HAVE_POLLING */
 }
 
 void
@@ -219,6 +223,7 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
       kr->_self_cycles += c1 - c0;
 #endif
 
+#ifndef HAVE_POLLING
       // Call scheduled things - in a nonpolling environment, this is
       // important because we really don't want packets to sit in a queue
       // under high load w/o having ToDevice pull them out of there. This
@@ -231,6 +236,7 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 	current_router->driver(4);
 	called_times = 0;
       }
+#endif
     }
   
 #if CLICK_STATS > 0 || XCYC > 0
@@ -246,25 +252,61 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 int
 FromDevice::got_skb(struct sk_buff *skb)
 {
-  assert(skb->data - skb->head >= 14);
-  assert(skb->mac.raw == skb->data - 14);
-  assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
+  if (_queue[_pusher_ptr] == 0) { /* ours */
+    assert(skb->data - skb->head >= 14);
+    assert(skb->mac.raw == skb->data - 14);
+    assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
 
 #if CLICK_STATS > 0
-  extern int rtm_ipackets;
-  extern unsigned long long rtm_ibytes;
-  rtm_ipackets++;
-  rtm_ibytes += skb->len;
+    extern int rtm_ipackets;
+    extern unsigned long long rtm_ibytes;
+    rtm_ipackets++;
+    rtm_ibytes += skb->len;
 #endif
 
-  /* Retrieve the ether header. */
-  skb_push(skb, 14);
+    /* Retrieve the ether header. */
+    skb_push(skb, 14);
 
-  Packet *p = Packet::make(skb);
-  if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
-    p->set_mac_broadcast_anno(1);
-  output(0).push(p);
-  return(1);
+    Packet *p = Packet::make(skb);
+    if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
+      p->set_mac_broadcast_anno(1);
+
+    _queue[_pusher_ptr] = p; /* hand it to run_scheduled */
+    _pusher_ptr = next_i(_pusher_ptr);
+
+  } else {
+    /* queue full, drop */
+    kfree_skb(skb);
+  }
+
+  return 1;
+}
+
+void
+FromDevice::run_scheduled()
+{
+  int i=0;
+  while(i<POLLDEV_MAX_PKTS_PER_RUN && _queue[_puller_ptr] != 0) {
+    Packet *p = _queue[_puller_ptr];
+    _queue[_puller_ptr] = 0; /* give it back to got_skb() */
+    _puller_ptr = next_i(_puller_ptr);
+    output(0).push(p);
+  }
+
+#ifndef RR_SCHED
+#ifdef ADJ_TICKETS
+  /* adjusting tickets */
+  int adj = tickets()/4;
+  if (adj<2) adj=2;
+  
+  if (i == POLLDEV_MAX_PKTS_PER_RUN);
+  else if (i < POLLDEV_MAX_PKTS_PER_RUN/4) adj=0-adj;
+  else adj=0;
+
+  adj_tickets(adj);
+#endif
+  reschedule();
+#endif /* RR_SCHED */
 }
 
 #ifdef CLICK_BENCHMARK
