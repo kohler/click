@@ -1,3 +1,22 @@
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh (1.15), lib/glue.cc (1.24): add srandom()
+	to glue.hh
+
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh (1.18): add operator==(IPAddress,
+	uint32_t) and operator!=(IPAddress, uuint32_t)
+
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/llrpc.h (1.10): add LLRPC
+
+2001-07-30 Monday 21:30  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-install/click-install.cc (1.42): add more verbosity
+	to click-install --verbose
+
 2001-07-30 Monday 19:31  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: gridgatewayinfo.cc (1.1), gridgatewayinfo.hh
