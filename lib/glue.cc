@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/glue.hh" -*-
 /*
  * glue.{cc,hh} -- minimize portability headaches, and miscellany
  * Robert Morris, Eddie Kohler

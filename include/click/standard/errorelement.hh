@@ -1,5 +1,6 @@
-#ifndef ERRORELEMENT_HH
-#define ERRORELEMENT_HH
+// -*- c-basic-offset: 4; related-file-name: "../../../elements/standard/errorelement.cc" -*-
+#ifndef CLICK_ERRORELEMENT_HH
+#define CLICK_ERRORELEMENT_HH
 #include <click/element.hh>
 
 /*

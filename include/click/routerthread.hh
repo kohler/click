@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../lib/routerthread.cc" -*-
 #ifndef CLICK_ROUTERTHREAD_HH
 #define CLICK_ROUTERTHREAD_HH
 #include <click/sync.hh>

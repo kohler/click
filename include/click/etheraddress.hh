@@ -1,12 +1,9 @@
-#ifndef ETHERADDRESS_HH
-#define ETHERADDRESS_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/etheraddress.cc" -*-
+#ifndef CLICK_ETHERADDRESS_HH
+#define CLICK_ETHERADDRESS_HH
 #include <click/string.hh>
 
-class EtherAddress {
-  
-  unsigned short _data[3];
-  
- public:
+class EtherAddress { public:
   
   EtherAddress()			{ _data[0] = _data[1] = _data[2] = 0; }
   explicit EtherAddress(const unsigned char *);
@@ -22,6 +19,10 @@ class EtherAddress {
 
   operator String() const		{ return unparse(); }
   String s() const			{ return unparse(); }
+  
+ private:
+  
+  unsigned short _data[3];
   
 };
 

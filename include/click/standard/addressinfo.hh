@@ -1,5 +1,6 @@
-#ifndef ADDRESSINFO_HH
-#define ADDRESSINFO_HH
+// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/addressinfo.cc" -*-
+#ifndef CLICK_ADDRESSINFO_HH
+#define CLICK_ADDRESSINFO_HH
 #include <click/element.hh>
 #include <click/hashmap.hh>
 #ifdef HAVE_IP6

@@ -1,5 +1,5 @@
-#ifndef BIGHASHMAP_HH
-#define BIGHASHMAP_HH
+#ifndef CLICK_BIGHASHMAP_HH
+#define CLICK_BIGHASHMAP_HH
 #include <click/bighashmap_arena.hh>
 
 // K AND V REQUIREMENTS:
@@ -84,13 +84,7 @@ class BigHashMap { public:
 };
 
 template <class K, class V>
-class BigHashMapIterator {
-
-  const BigHashMap<K, V> *_hm;
-  BigHashMap<K, V>::Elt *_elt;
-  int _bucket;
-
- public:
+class BigHashMapIterator { public:
 
   BigHashMapIterator(const BigHashMap<K, V> *);
 
@@ -100,6 +94,12 @@ class BigHashMapIterator {
   const K &key() const			{ return _elt->k; }
   const V &value() const		{ return _elt->v; }
   
+ private:
+
+  const BigHashMap<K, V> *_hm;
+  BigHashMap<K, V>::Elt *_elt;
+  int _bucket;
+
 };
 
 template <class K, class V>
@@ -195,13 +195,7 @@ class BigHashMap<K, void *> { public:
 };
 
 template <class K>
-class BigHashMapIterator<K, void *> {
-
-  const BigHashMap<K, void *> *_hm;
-  BigHashMap<K, void *>::Elt *_elt;
-  int _bucket;
-
- public:
+class BigHashMapIterator<K, void *> { public:
 
   BigHashMapIterator(const BigHashMap<K, void *> *);
 
@@ -211,6 +205,12 @@ class BigHashMapIterator<K, void *> {
   const K &key() const			{ return _elt->k; }
   void *value() const			{ return _elt->v; }
   
+ private:
+
+  const BigHashMap<K, void *> *_hm;
+  BigHashMap<K, void *>::Elt *_elt;
+  int _bucket;
+
 };
 
 template <class K>
@@ -279,11 +279,9 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
 };
 
 template <class K, class T>
-class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> {
+class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> { public:
 
   typedef BigHashMapIterator<K, void *> Base;
-  
- public:
 
   BigHashMapIterator(const BigHashMap<K, T *> *t) : Base(t) { }
 

@@ -1,5 +1,6 @@
-#ifndef SCHEDULEINFO_HH
-#define SCHEDULEINFO_HH
+// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/scheduleinfo.cc" -*-
+#ifndef CLICK_SCHEDULEINFO_HH
+#define CLICK_SCHEDULEINFO_HH
 
 /*
 =c

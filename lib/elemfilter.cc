@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/elemfilter.hh" -*-
 /*
  * elemfilter.{cc,hh} -- element filters
  * Eddie Kohler

@@ -1,6 +1,6 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef DRIVERMANAGER_HH
-#define DRIVERMANAGER_HH
+// -*- c-basic-offset: 4; related-file-name: "../../../elements/standard/drivermanager.cc" -*-
+#ifndef CLICK_DRIVERMANAGER_HH
+#define CLICK_DRIVERMANAGER_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/userutils.hh" -*-
 /*
  * userutils.{cc,hh} -- utility routines for user-level + tools
  * Eddie Kohler

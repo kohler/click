@@ -1,5 +1,6 @@
-#ifndef ELEMENT_HH
-#define ELEMENT_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/element.cc" -*-
+#ifndef CLICK_ELEMENT_HH
+#define CLICK_ELEMENT_HH
 #include <click/glue.hh>
 #include <click/vector.hh>
 #include <click/string.hh>

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/integers.hh" -*-
 /*
  * integers.{cc,hh} -- unaligned/network-order "integers"
  * Eddie Kohler

@@ -1,13 +1,10 @@
-#ifndef IPADDRESSSET_HH
-#define IPADDRESSSET_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/ipaddressset.cc" -*-
+#ifndef CLICK_IPADDRESSSET_HH
+#define CLICK_IPADDRESSSET_HH
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
 
-class IPAddressSet {
-
-  Vector<unsigned> _s;
-
- public:
+class IPAddressSet { public:
 
   IPAddressSet()			{ }
 
@@ -22,6 +19,10 @@ class IPAddressSet {
 
   unsigned *list_copy();
   
+ private:
+
+  Vector<uint32_t> _s;
+
 };
 
 #endif

@@ -1,16 +1,10 @@
-#ifndef VARIABLEENVIRONMENT_HH
-#define VARIABLEENVIRONMENT_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/variableenv.cc" -*-
+#ifndef CLICK_VARIABLEENVIRONMENT_HH
+#define CLICK_VARIABLEENVIRONMENT_HH
 #include <click/string.hh>
 #include <click/vector.hh>
 
-class VariableEnvironment {
-
-  String _prefix;
-  Vector<String> _formals;
-  Vector<String> _values;
-  Vector<int> _depths;
-
- public:
+class VariableEnvironment { public:
   
   VariableEnvironment()				{ }
   VariableEnvironment(const String &suffix);
@@ -25,6 +19,13 @@ class VariableEnvironment {
   void limit_depth(int);
   
   String interpolate(const String &) const;
+
+ private:
+
+  String _prefix;
+  Vector<String> _formals;
+  Vector<String> _values;
+  Vector<int> _depths;
 
 };
 

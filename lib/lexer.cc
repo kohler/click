@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/lexer.hh" -*-
 /*
  * lexer.{cc,hh} -- parses Click language files, produces Router objects
  * Eddie Kohler

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/straccum.hh" -*-
 /*
  * straccum.{cc,hh} -- build up strings with operator<<
  * Eddie Kohler

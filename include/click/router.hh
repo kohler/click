@@ -1,5 +1,6 @@
-#ifndef ROUTER_HH
-#define ROUTER_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/router.cc" -*-
+#ifndef CLICK_ROUTER_HH
+#define CLICK_ROUTER_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/sync.hh>

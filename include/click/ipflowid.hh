@@ -1,29 +1,21 @@
-#ifndef IPFLOWID_HH
-#define IPFLOWID_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/ipflowid.cc" -*-
+#ifndef CLICK_IPFLOWID_HH
+#define CLICK_IPFLOWID_HH
 #include <click/ipaddress.hh>
 class Packet;
 
-class IPFlowID {
- protected:
-  
-  // note: several functions depend on this field order!
-  IPAddress _saddr;
-  IPAddress _daddr;
-  unsigned short _sport;		// network byte order
-  unsigned short _dport;		// network byte order
-
- public:
+class IPFlowID { public:
 
   IPFlowID();
-  IPFlowID(IPAddress, unsigned short, IPAddress, unsigned short);
+  IPFlowID(IPAddress, uint16_t, IPAddress, uint16_t);
   explicit IPFlowID(Packet *);
 
   operator bool() const;
 
   IPAddress saddr() const		{ return _saddr; }
   IPAddress daddr() const		{ return _daddr; }
-  unsigned short sport() const		{ return _sport; }
-  unsigned short dport() const		{ return _dport; }
+  uint16_t sport() const		{ return _sport; }
+  uint16_t dport() const		{ return _dport; }
 
   void set_saddr(IPAddress a)		{ _saddr = a; }
   void set_daddr(IPAddress a)		{ _daddr = a; }
@@ -35,7 +27,15 @@ class IPFlowID {
   String unparse() const;
   operator String() const		{ return unparse(); }
   String s() const			{ return unparse(); }
+
+ protected:
   
+  // note: several functions depend on this field order!
+  IPAddress _saddr;
+  IPAddress _daddr;
+  uint16_t _sport;			// network byte order
+  uint16_t _dport;			// network byte order
+
 };
 
 inline
@@ -45,8 +45,8 @@ IPFlowID::IPFlowID()
 }
 
 inline
-IPFlowID::IPFlowID(IPAddress saddr, unsigned short sport,
-		   IPAddress daddr, unsigned short dport)
+IPFlowID::IPFlowID(IPAddress saddr, uint16_t sport,
+		   IPAddress daddr, uint16_t dport)
   : _saddr(saddr), _daddr(daddr), _sport(sport), _dport(dport)
 {
 }
@@ -70,8 +70,8 @@ inline unsigned
 hashcode(const IPFlowID &f)
 { 
   // more complicated hashcode, but causes less collision
-  unsigned short s = ntohs(f.sport());
-  unsigned short d = ntohs(f.dport());
+  uint16_t s = ntohs(f.sport());
+  uint16_t d = ntohs(f.dport());
   return (ROT(hashcode(f.saddr()), s%16)
           ^ ROT(hashcode(f.daddr()), 31-d%16))
 	  ^ ((d << 16) | s);

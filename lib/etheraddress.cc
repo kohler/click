@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/etheraddress.hh" -*-
 /*
  * etheraddress.{cc,hh} -- an Ethernet address class. Useful for its
  * hashcode() method

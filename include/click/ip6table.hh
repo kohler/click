@@ -1,5 +1,6 @@
-#ifndef IP6TABLE_HH
-#define IP6TABLE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/ip6table.cc" -*-
+#ifndef CLICK_IP6TABLE_HH
+#define CLICK_IP6TABLE_HH
 
 // IP6 routing table.
 // Lookup by longest prefix.

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/iptable.hh" -*-
 /*
  * iptable.{cc,hh} -- a stupid IP routing table, best for small routing tables
  * Robert Morris

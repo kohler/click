@@ -1,5 +1,6 @@
-#ifndef SKBMGR_HH
-#define SKBMGR_HH
+// -*- c-basic-offset: 2; related-file-name: "../../linuxmodule/skbmgr.cc" -*-
+#ifndef CLICK_SKBMGR_HH
+#define CLICK_SKBMGR_HH
 
 void skbmgr_init();
 void skbmgr_cleanup();

@@ -1,5 +1,6 @@
-#ifndef ERROR_HH
-#define ERROR_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/error.cc" -*-
+#ifndef CLICK_ERROR_HH
+#define CLICK_ERROR_HH
 #include <click/string.hh>
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 # include <stdio.h>

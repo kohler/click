@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/ewma64.hh" -*-
 /*
  * ewma64.{cc,hh} -- 64-bit Exponential Weighted Moving Averages
  * Eddie Kohler

@@ -1,5 +1,6 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/timer.hh" -*-
 /*
- * timer.{cc,hh} -- portable timers. Linux kernel module uses Linux timers
+ * timer.{cc,hh} -- portable timers
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/task.hh" -*-
 /*
  * task.{cc,hh} -- a linked list of schedulable entities
  * Eddie Kohler, Benjie Chen

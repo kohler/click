@@ -1,5 +1,5 @@
-#ifndef VECTOR_HH
-#define VECTOR_HH
+#ifndef CLICK_VECTOR_HH
+#define CLICK_VECTOR_HH
 #include <assert.h>
 template <class T> class Subvector;
 

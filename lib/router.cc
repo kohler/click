@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/router.hh" -*-
 /*
  * router.{cc,hh} -- a Click router configuration
  * Eddie Kohler

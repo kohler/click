@@ -1,14 +1,11 @@
-#ifndef EWMA_HH
-#define EWMA_HH
+// -*- c-basic-offset: 2; related-file-name: "ewma.cc" -*-
+#ifndef CLICK_EWMA_HH
+#define CLICK_EWMA_HH
 #include <click/glue.hh>
 #include <click/confparse.hh>
 
 template <unsigned Stability_shift, unsigned Scale>
-class DirectEWMAX {
-  
-  unsigned _avg;
-  
- public:
+class DirectEWMAX { public:
 
   DirectEWMAX()				{ _avg = 0; }
 
@@ -24,16 +21,14 @@ class DirectEWMAX {
   
   String unparse() const;
 
+ private:
+  
+  unsigned _avg;
+  
 };
 
 template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
-class RateEWMAX {
-  
-  unsigned _now_time;
-  unsigned _total[N];
-  DirectEWMAX<Stability_shift, Scale> _avg[N];
-  
- public:
+class RateEWMAX { public:
 
   RateEWMAX()				{ }
 
@@ -53,6 +48,12 @@ class RateEWMAX {
   inline void update_time();
   inline void update_now(int delta, unsigned which = 0);
   inline void update(int delta, unsigned which = 0);
+  
+ private:
+  
+  unsigned _now_time;
+  unsigned _total[N];
+  DirectEWMAX<Stability_shift, Scale> _avg[N];
   
 };
 

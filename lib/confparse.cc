@@ -1,4 +1,4 @@
-/* -*- c-basic-offset: 2 -*- */
+// -*- c-basic-offset: 2; related-file-name: "../include/click/confparse.hh" -*-
 /*
  * confparse.{cc,hh} -- configuration string parsing
  * Eddie Kohler

@@ -1,5 +1,5 @@
-#ifndef PACKET_ANNO_HH
-#define PACKET_ANNO_HH
+#ifndef CLICK_PACKET_ANNO_HH
+#define CLICK_PACKET_ANNO_HH
 
 // byte 0
 #define PAINT_ANNO(p)			((p)->user_anno_c(0))

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../lib/task.cc" -*-
 #ifndef CLICK_TASK_HH
 #define CLICK_TASK_HH
 #include <click/element.hh>

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/bitvector.hh" -*-
 /*
  * bitvector.{cc,hh} -- generic bit vector class
  * Eddie Kohler

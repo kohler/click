@@ -1,5 +1,6 @@
-#ifndef LEXER_HH
-#define LEXER_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/lexer.cc" -*-
+#ifndef CLICK_LEXER_HH
+#define CLICK_LEXER_HH
 #include <click/hashmap.hh>
 #include <click/router.hh>
 #include <click/glue.hh>

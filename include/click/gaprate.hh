@@ -1,23 +1,10 @@
-#ifndef GAPRATE_HH
-#define GAPRATE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/gaprate.cc" -*-
+#ifndef CLICK_GAPRATE_HH
+#define CLICK_GAPRATE_HH
 #include <click/glue.hh>
 class ErrorHandler;
 
-class GapRate {
-
-  static const unsigned UGAP_SHIFT = 12;
-
-  unsigned _ugap;
-  int _sec_count;
-  int _tv_sec;
-  unsigned _rate;
-#if DEBUG_GAPRATE
-  struct timeval _last;
-#endif
-
- public:
-
-  static const unsigned MAX_RATE = 1000000 << UGAP_SHIFT;
+class GapRate { public:
 
   GapRate();
   GapRate(unsigned);
@@ -31,6 +18,19 @@ class GapRate {
   bool need_update(const struct timeval &);
   void update()					{ _sec_count++; }
   void update_with(int incr)			{ _sec_count += incr; }
+
+  static const unsigned UGAP_SHIFT = 12;
+  static const unsigned MAX_RATE = 1000000 << UGAP_SHIFT;
+
+ private:
+  
+  unsigned _ugap;
+  int _sec_count;
+  int _tv_sec;
+  unsigned _rate;
+#if DEBUG_GAPRATE
+  struct timeval _last;
+#endif
 
 };
 

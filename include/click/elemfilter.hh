@@ -1,5 +1,6 @@
-#ifndef ELEMFILTER_HH
-#define ELEMFILTER_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/elemfilter.cc" -*-
+#ifndef CLICK_ELEMFILTER_HH
+#define CLICK_ELEMFILTER_HH
 #include <click/element.hh>
 
 class ElementFilter { public:
@@ -13,14 +14,14 @@ class ElementFilter { public:
   
 };
 
-class CastElementFilter : public ElementFilter {
-  
-  String _what;
-  
- public:
+class CastElementFilter : public ElementFilter { public:
   
   CastElementFilter(const String &);
   bool match(Element *);
+  
+ private:
+  
+  String _what;
   
 };
 

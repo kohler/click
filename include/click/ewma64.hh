@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/ewma64.cc" -*-
 #ifndef CLICK_EWMA64_HH
 #define CLICK_EWMA64_HH
 #include <click/confparse.hh>

@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../../include/click/standard/drivermanager.hh" -*-
 /*
  * drivermanager.{cc,hh} -- element manages router driver stopping
  * Eddie Kohler

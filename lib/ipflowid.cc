@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/ipflowid.hh" -*-
 /*
  * ipflowid.{cc,hh} -- a TCP-UDP/IP connection class.
  * Eddie Kohler

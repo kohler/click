@@ -1,5 +1,5 @@
-#ifndef PERFCTR_HH
-#define PERFCTR_HH
+#ifndef CLICK_PERFCTR_HH
+#define CLICK_PERFCTR_HH
 #ifdef __KERNEL__
 #include <click/glue.hh>
 #include <asm/msr.h>

@@ -1,5 +1,6 @@
-#ifndef STRING_HH
-#define STRING_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/string.cc" -*-
+#ifndef CLICK_STRING_HH
+#define CLICK_STRING_HH
 #ifdef HAVE_PERMSTRING
 # include "permstr.hh"
 #endif

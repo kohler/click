@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/handlercall.cc" -*-
 #ifndef CLICK_HANDLERCALL_HH
 #define CLICK_HANDLERCALL_HH
 #include <click/element.hh>

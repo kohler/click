@@ -1,5 +1,6 @@
-#ifndef USERUTILS_HH
-#define USERUTILS_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/userutils.cc" -*-
+#ifndef CLICK_USERUTILS_HH
+#define CLICK_USERUTILS_HH
 #include <click/archive.hh>
 #include <stdio.h>
 class ErrorHandler;

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/ipaddressset.hh" -*-
 /*
  * ipaddressset.{cc,hh} -- a set of IP addresses
  * Eddie Kohler

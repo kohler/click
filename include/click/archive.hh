@@ -1,5 +1,6 @@
-#ifndef ARCHIVE_HH
-#define ARCHIVE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/archive.cc" -*-
+#ifndef CLICK_ARCHIVE_HH
+#define CLICK_ARCHIVE_HH
 #include <click/string.hh>
 #include <click/vector.hh>
 class ErrorHandler;

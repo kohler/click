@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/ip6address.hh" -*-
 /*
  * ip6address.{cc,hh} -- an IP6 address class. Useful for its hashcode()
  * method

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/addressinfo.hh" -*-
 /*
  * addressinfo.{cc,hh} -- element stores address information
  * Eddie Kohler

@@ -1,9 +1,10 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/packet.hh" -*-
 /*
  * packet.{cc,hh} -- a packet structure. In the Linux kernel, a synonym for
  * `struct sk_buff'
  * Eddie Kohler, Robert Morris, Nickolai Zeldovich
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

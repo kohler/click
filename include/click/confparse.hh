@@ -1,5 +1,6 @@
-#ifndef CONFPARSE_HH
-#define CONFPARSE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/confparse.cc" -*-
+#ifndef CLICK_CONFPARSE_HH
+#define CLICK_CONFPARSE_HH
 #include <click/string.hh>
 #include <click/vector.hh>
 class ErrorHandler;

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/ip6table.hh" -*-
 /*
  * ip6table.{cc,hh} -- a stupid IP6 routing table, best for small routing tables
  * Peilei Fan, Robert Morris

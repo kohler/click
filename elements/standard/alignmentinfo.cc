@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/alignmentinfo.hh" -*-
 /*
  * alignmentinfo.{cc,hh} -- element stores alignment information
  * Eddie Kohler

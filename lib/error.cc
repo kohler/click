@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/error.hh" -*-
 /*
  * error.{cc,hh} -- flexible classes for error reporting
  * Eddie Kohler

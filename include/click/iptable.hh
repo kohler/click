@@ -1,5 +1,6 @@
-#ifndef IPTABLE_HH
-#define IPTABLE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/iptable.cc" -*-
+#ifndef CLICK_IPTABLE_HH
+#define CLICK_IPTABLE_HH
 #include <click/glue.hh>
 #include <click/vector.hh>
 #include <click/ipaddress.hh>

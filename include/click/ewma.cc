@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "ewma.hh" -*-
 /*
  * ewma.{cc,hh} -- Exponential Weighted Moving Averages
  * Eddie Kohler

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../include/click/element.hh" -*-
 /*
  * element.{cc,hh} -- the Element base class
  * Eddie Kohler

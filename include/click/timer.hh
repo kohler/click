@@ -1,5 +1,6 @@
-#ifndef TIMER_HH
-#define TIMER_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/timer.cc" -*-
+#ifndef CLICK_TIMER_HH
+#define CLICK_TIMER_HH
 #include <click/sync.hh>
 #include <click/glue.hh>
 #include <assert.h>

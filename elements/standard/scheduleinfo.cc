@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/scheduleinfo.hh" -*-
 /*
  * scheduleinfo.{cc,hh} -- element stores schedule parameters
  * Benjie Chen, Eddie Kohler

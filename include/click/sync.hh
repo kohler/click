@@ -1,5 +1,5 @@
-#ifndef SYNC_HH
-#define SYNC_HH
+#ifndef CLICK_SYNC_HH
+#define CLICK_SYNC_HH
 #include <click/glue.hh>
 #include <click/atomic.hh>
 #include <assert.h>

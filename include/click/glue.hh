@@ -1,10 +1,10 @@
-#ifndef GLUE_HH
-#define GLUE_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/glue.cc" -*-
+#ifndef CLICK_GLUE_HH
+#define CLICK_GLUE_HH
 
 /*
- * Junk required to compile as a Linux kernel module as well as in user-space.
  * Removes many common #include <header>s and abstracts differences between
- * kernel and user space.
+ * kernel and user space, and between operating systems.
  */
 
 // produce debugging output on the console or stderr

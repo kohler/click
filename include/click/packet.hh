@@ -1,5 +1,6 @@
-#ifndef PACKET_HH
-#define PACKET_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/packet.cc" -*-
+#ifndef CLICK_PACKET_HH
+#define CLICK_PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
 #ifdef CLICK_LINUXMODULE

@@ -1,5 +1,5 @@
-#ifndef HASHMAP_HH
-#define HASHMAP_HH
+#ifndef CLICK_HASHMAP_HH
+#define CLICK_HASHMAP_HH
 
 // K AND V REQUIREMENTS:
 //

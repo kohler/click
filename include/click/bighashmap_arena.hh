@@ -1,5 +1,5 @@
-#ifndef BIGHASHMAP_ARENA_HH
-#define BIGHASHMAP_ARENA_HH
+#ifndef CLICK_BIGHASHMAP_ARENA_HH
+#define CLICK_BIGHASHMAP_ARENA_HH
 
 struct BigHashMap_Arena {
   

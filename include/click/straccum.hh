@@ -1,5 +1,6 @@
-#ifndef STRACCUM_HH
-#define STRACCUM_HH
+// -*- c-basic-offset: 2; related-file-name: "../../lib/straccum.cc" -*-
+#ifndef CLICK_STRACCUM_HH
+#define CLICK_STRACCUM_HH
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <assert.h>

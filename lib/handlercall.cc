@@ -1,4 +1,4 @@
-// -*- mode: c++; c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/handlercall.hh" -*-
 /*
  * handlercall.{cc,hh} -- abstracts a call to a handler
  * Eddie Kohler

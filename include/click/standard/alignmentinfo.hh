@@ -1,5 +1,6 @@
-#ifndef ALIGNMENTINFO_HH
-#define ALIGNMENTINFO_HH
+// -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/alignmentinfo.cc" -*-
+#ifndef CLICK_ALIGNMENTINFO_HH
+#define CLICK_ALIGNMENTINFO_HH
 
 /*
  * =c

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/errorelement.hh" -*-
 /*
  * errorelement.{cc,hh} -- an element that does absolutely nothing
  * Used as a placeholder for undefined element classes.

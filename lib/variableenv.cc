@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/variableenv.hh" -*-
 /*
  * variableenv.{cc,hh} -- scoped configuration variables
  * Eddie Kohler

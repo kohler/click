@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/ip6flowid.hh" -*-
 /*
  * ip6flowid.{cc,hh} -- a TCP-UDP/IP connection class.
  * Eddie Kohler, Peilei Fan

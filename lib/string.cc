@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/string.hh" -*-
 /*
  * string.{cc,hh} -- a String class with shared substrings
  * Eddie Kohler

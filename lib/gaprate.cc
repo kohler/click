@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/gaprate.hh" -*-
 /*
  * gaprate.{cc,hh} -- measure rates through moving gaps
  * Eddie Kohler, Benjie Chen

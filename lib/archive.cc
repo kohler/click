@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/archive.hh" -*-
 /*
  * archive.{cc,hh} -- deal with `ar' files
  * Eddie Kohler
