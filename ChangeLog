@@ -1,3 +1,12 @@
+2004-12-31 Friday 00:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/radixiplookup.cc (1.10), elements/ip/radixiplookup.hh
+	(1.10), elements/ip/trieiplookup.cc (1.7),
+	elements/ip/trieiplookup.hh (1.5), elements/wifi/sr/srquerier.cc
+	(1.10), include/click/confparse.hh (1.54), lib/routerthread.cc
+	(1.50), linuxmodule/Makefile.in (1.94): changes to support
+	linuxmodule Timestamp
+
 2004-12-30 Thursday 18:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/aggregateipflows.cc (1.28),
