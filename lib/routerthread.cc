@@ -349,8 +349,17 @@ RouterThread::driver()
 
 #ifndef CLICK_NS
     // run loop again, unless driver is stopped
-    if (*runcount > 0 || _master->check_driver())
+    if (*runcount > 0)
 	goto driver_loop;
+    else {
+	//click_chatter("THREAD %d: checking driver runcount %p:%d", _id, runcount, *runcount);
+	unlock_tasks();
+	bool b = _master->check_driver();
+	nice_lock_tasks();
+	//click_chatter("THREAD %d: /checking driver [%d]", _id, b);
+	if (b)
+	    goto driver_loop;
+    }
 #endif
     
     unlock_tasks();
@@ -364,7 +373,8 @@ void
 RouterThread::wait(int iter)
 {
 #ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
-    if (thread_id() == 0 && (iter % DRIVER_ITER_OS) == 0)
+    // WHat the fuck?!?
+    if (/* thread_id() == 0 && */ (iter % DRIVER_ITER_OS) == 0)
 	run_os();
 #endif
 
