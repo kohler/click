@@ -16,11 +16,8 @@
  */
 
 #include <click/config.h>
-#include "checkcrc32.hh"
-
-extern "C" {
 #include <click/crc32.h>
-}
+#include "checkcrc32.hh"
 
 CheckCRC32::CheckCRC32()
   : Element(1, 1)

@@ -16,10 +16,8 @@
  */
 
 #include <click/config.h>
-#include "setcrc32.hh"
-extern "C" {
 #include <click/crc32.h>
-}
+#include "setcrc32.hh"
 
 SetCRC32::SetCRC32()
   : Element(1, 1)

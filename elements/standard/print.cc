@@ -22,9 +22,11 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #ifdef CLICK_LINUXMODULE
-extern "C" {
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/sched.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 #endif
 
 Print::Print()

@@ -29,10 +29,12 @@
 #include <click/integers.hh>	// for first_bit_set
 
 #ifdef CLICK_LINUXMODULE
-extern "C" {
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <asm/softirq.h>
 #include <net/sock.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 #endif
 
 
