@@ -1,3 +1,12 @@
+2002-05-03 Friday 02:47  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.183), pathvars.h.in (1.5),
+	linuxmodule/Makefile.in (1.67), linuxmodule/clickfs_core.cc (1.1),
+	linuxmodule/module.cc (1.64), linuxmodule/modulepriv.hh (1.26),
+	linuxmodule/proc_config.cc (1.31), linuxmodule/proclikefs.c (1.1),
+	linuxmodule/proclikefs.h (1.1): add optional, partially-working
+	clickfs support
+
 2002-05-03 Friday 00:13  Eddie Kohler <kohler@aciri.org>
 
 	* lib/userutils.cc (1.25), tools/click-pretty/click-pretty.cc

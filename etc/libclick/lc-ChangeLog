@@ -1,3 +1,7 @@
+2002-05-03 Friday 02:47  Eddie Kohler <kohler@aciri.org>
+
+	* pathvars.h.in: add optional, partially-working clickfs support
+
 2002-05-03 Friday 00:13  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/userutils.cc: more changes from Scott Page: unused
