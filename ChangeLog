@@ -1,3 +1,26 @@
+2001-11-01 Thursday 11:52  Eddie Kohler <kohler@aciri.org>
+
+	* elements/tcpudp/iprewriter.cc (1.27): IPRw: reduce wait if lock
+	held
+
+2001-11-01 Thursday 11:42  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: ip/iprw.hh (1.19), tcpudp/iprewriter.cc (1.26),
+	tcpudp/tcprewriter.cc (1.15), tcpudp/tcprewriter.hh (1.6):
+	IPRewriter and friends: fix Alex Yip's reported assertion failure
+	(hopefully) by fixing clear_free_tracked(), use cpSeconds instead
+	of cpSecondsAsMilli
+
+2001-11-01 Thursday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh (1.11), lib/timer.cc (1.24): Timer:
+	refactor, add schedule_after_s() and reschedule_after_s()
+
+2001-11-01 Thursday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.24), lib/confparse.cc (1.90):
+	export cp_seconds_as(), add cpSeconds type
+
 2001-10-31 Wednesday 18:51  Eddie Kohler <kohler@aciri.org>
 
 	* doc/: Makefile.in (1.40), mkwebdoc.pl (1.19): doc updates

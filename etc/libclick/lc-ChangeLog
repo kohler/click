@@ -1,3 +1,13 @@
+2001-11-01 Thursday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	Timer: refactor, add schedule_after_s() and reschedule_after_s()
+
+2001-11-01 Thursday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: export cp_seconds_as(), add cpSeconds type
+
 2001-10-31 Wednesday 17:46  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: packet_anno.hh, packet_anno.hh: move from
