@@ -32,6 +32,7 @@
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
+#include <click/skbmgr.hh>
 #include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #define new xxx_new
@@ -41,7 +42,6 @@ extern "C" {
 #undef new
 #undef class
 #undef delete
-#include <click/skbmgr.h>
 }
 
 #include <asm/msr.h>

@@ -23,6 +23,7 @@
 #endif
 #include "modulepriv.hh"
 #include "kernelerror.hh"
+#include <click/skbmgr.hh>
 #include <click/lexer.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
@@ -302,6 +303,7 @@ init_module()
   ErrorHandler::static_initialize(new LandmarkErrorHandler(syslog_errh, "chatter"));
   
   init_click_sched();
+  skbmgr_init();
 
   packages = new Vector<String>;
   lexer = new Lexer(kernel_errh);
@@ -378,6 +380,7 @@ cleanup_module()
   cp_va_static_cleanup();
   
   ErrorHandler::static_cleanup();
+  skbmgr_cleanup();
   delete kernel_errh;
   delete syslog_errh;
   kernel_errh = syslog_errh = 0;

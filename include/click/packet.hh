@@ -3,7 +3,7 @@
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
 extern "C" { 
-#include <click/skbmgr.h> 
+#include <click/skbmgr.hh> 
 }
 
 class IP6Address;

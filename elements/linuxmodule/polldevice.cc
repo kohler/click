@@ -30,13 +30,13 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
+#include <click/skbmgr.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 extern "C" {
 #include <linux/netdevice.h>
 #include <linux/sched.h>
 #include <unistd.h>
-#include <click/skbmgr.h>
 }
 
 #include <asm/msr.h>

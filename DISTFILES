@@ -68,6 +68,7 @@ etc/samplepackage/test.click
 include
 include/click
 include/click/archive.hh
+include/click/atomic.hh
 include/click/bitvector.hh
 include/click/bighashmap.cc
 include/click/bighashmap.hh
@@ -109,9 +110,11 @@ include/click/packet_anno.hh
 include/click/perfctr.hh
 include/click/radix.hh
 include/click/router.hh
+include/click/skbmgr.hh
 include/click/straccum.hh
 include/click/string.hh
 include/click/subvector.hh
+include/click/sync.hh
 include/click/timer.hh
 include/click/userutils.hh
 include/click/variableenv.hh
@@ -170,6 +173,7 @@ linuxmodule/proc_element.cc
 linuxmodule/proc_mgr.cc
 linuxmodule/read-pmc.c
 linuxmodule/sched.cc
+linuxmodule/skbmgr.cc
 
 apps
 apps/ClickController
