@@ -1,3 +1,9 @@
+2004-06-11 Friday 18:36  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/beaconscanner.cc (1.1),
+	elements/wifi/beaconscanner.hh (1.1), include/clicknet/wifi.h
+	(1.2): added beaconscanner, as well as more stuff for wifi.h
+
 2004-06-10 Thursday 16:16  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: printwifi.cc (1.1), printwifi.hh (1.1): print
