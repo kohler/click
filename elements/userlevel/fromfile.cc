@@ -509,7 +509,7 @@ FromFile::get_packet(size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandle
 }
 
 Packet *
-FromFile::get_packet_from_data(const void *data_void, size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *errh)
+FromFile::get_packet_from_data(const void *data_void, size_t data_size, size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *errh)
 {
     const uint8_t *data = reinterpret_cast<const uint8_t *>(data_void);
     if (data >= _buffer && data + size <= _buffer + _len) {
@@ -520,7 +520,12 @@ FromFile::get_packet_from_data(const void *data_void, size_t size, uint32_t tv_s
 	}
     } else {
 	if (WritablePacket *p = Packet::make(0, 0, size, 0)) {
-	    memcpy(p->data(), data, size);
+	    memcpy(p->data(), data, data_size);
+	    if (data_size < size
+		&& read(p->data() + data_size, size - data_size, errh) != (int)(size - data_size)) {
+		p->kill();
+		return 0;
+	    }
 	    p->set_timestamp_anno(tv_sec, tv_usec);
 	    return p;
 	}

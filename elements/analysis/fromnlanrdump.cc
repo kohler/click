@@ -293,7 +293,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
     
     // create packet
     if (_format != C_FR)
-	p = _ff.get_packet_from_data(&cell->iph, _cell_size - 8, tv.tv_sec, tv.tv_usec, errh);
+	p = _ff.get_packet_from_data(&cell->iph, _cell_size - 8, _cell_size - 8, tv.tv_sec, tv.tv_usec, errh);
     else
 	p = 0;
     if (!p)

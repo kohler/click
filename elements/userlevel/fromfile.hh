@@ -40,7 +40,7 @@ class FromFile { public:
     const uint8_t *get_aligned(size_t, void *, ErrorHandler * = 0);
     String get_string(size_t, ErrorHandler * = 0);
     Packet *get_packet(size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
-    Packet *get_packet_from_data(const void *, size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
+    Packet *get_packet_from_data(const void *buf, size_t buf_size, size_t full_size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
     void shift_pos(int delta)		{ _pos += delta; }
 
     int read_line(String &, ErrorHandler *);
