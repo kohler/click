@@ -112,7 +112,7 @@ sub xml_unquote_entity ($) {
 }
 sub xml_unquote ($) {
     my($x) = @_;
-    $x =~ s/&([^;]*);/xml_quote_entity($1)/eg;
+    $x =~ s/&([^;]*);/xml_unquote_entity($1)/eg;
     $x;
 }
 
