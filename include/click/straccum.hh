@@ -42,7 +42,11 @@ class StringAccum { public:
 
   char *reserve(int);
   void forward(int n)		{ assert(n>=0 && _len+n<=_cap);	_len += n; }
-  void pop_back(int n = 1)	{ assert(n>=0 && _len>=n);	_len -= n; }  
+  void pop_back(int n = 1)	{ assert(n>=0 && _len>=n);	_len -= n; }
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+  StringAccum &snprintf(int, const char *, ...);
+#endif
   
   void take(unsigned char *&s, int &l)	{ s = _s; l = _len; erase(); }
   char *take();

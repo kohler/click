@@ -21,6 +21,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
+#include <stdarg.h>
 
 bool
 StringAccum::grow(int want)
@@ -120,3 +121,23 @@ operator<<(StringAccum &sa, const struct timeval &tv)
   }
   return sa;
 }
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+StringAccum &
+StringAccum::snprintf(int n, const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  if (char *x = reserve(n + 1)) {
+#ifdef HAVE_VSNPRINTF
+    int len = vsnprintf(x, n + 1, format, val);
+#else
+    int len = vsprintf(x, format, val);
+    assert(len <= n);
+#endif
+    forward(len);
+  }
+  va_end(val);
+  return *this;
+}
+#endif
