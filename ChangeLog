@@ -1,3 +1,15 @@
+2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
+
+	* doc/mkwebdoc.pl (1.40): fix <ul> nesting
+
+2002-10-14 Monday 18:55  Eddie Kohler <kohler@icir.org>
+
+	* doc/mkwebdoc.pl (1.39): nitlet
+
+2002-10-14 Monday 18:41  Eddie Kohler <kohler@icir.org>
+
+	* doc/: mkwebdoc.pl (1.37), mkwebdoc.pl (1.38): nitlet
+
 2002-10-14 Monday 18:35  Eddie Kohler <kohler@icir.org>
 
 	* Makefile.in (1.111), click-mkelemmap (1.22), doc/mkwebdoc.pl
