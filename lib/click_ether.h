@@ -25,20 +25,20 @@ struct click_arp {
   unsigned short int ar_op;   /* ARP opcode (command).  */
 };
 
-//define structure of Neighborhood Solitation Message
-struct click_arp6req {
+//define structure of Neighborhood Solicitation Message
+struct click_nd_sol {
   unsigned char type;
   unsigned char code;
   unsigned short int checksum;
   unsigned int reserved;
-  unsigned char arp_tpa[16];
+  unsigned char nd_tpa[16];
   unsigned char option_type;   //option type: 1 (source link-layer add)
   unsigned char option_length; //option length: 1 (in units of 8 octets)
-  unsigned char arp_sha[6];    //source link-layer address
+  unsigned char nd_sha[6];    //source link-layer address
 };
 
-//define structure of Neighborhood Solitation Validation Message -reply to multicast neighborhood solitation message
-struct click_arp6resp {
+//define structure of Neighborhood Advertisement Message -reply to multicast neighborhood solitation message
+struct click_nd_adv {
   unsigned char type;
   unsigned char code;
   unsigned short int checksum;
@@ -47,15 +47,15 @@ struct click_arp6resp {
                        // bit 3: override
                        // all other bits should be zero
   unsigned char reserved[3];
-  unsigned char arp_tpa[16];
+  unsigned char nd_tpa[16];
   unsigned char option_type;    //option type: 2 (target link-layer add)
   unsigned char option_length;  //option length: 1 (in units of 8 octets)    
-  unsigned char arp_tha[6];     //source link-layer address
+  unsigned char nd_tha[6];     //source link-layer address
 };
 
 
-//define structure of Neighborhood Solitation Validation Message - reply to unicast neighborhood solitation message
-struct click_arp6resp2 {
+//define structure of Neighborhood Advertisement Message - reply to unicast neighborhood solitation message
+struct click_nd_adv2 {
   unsigned char type;
   unsigned char code;
   unsigned short int checksum;
@@ -64,7 +64,7 @@ struct click_arp6resp2 {
                        // bit 3: override
                        // all other bits should be zero
   unsigned char reserved[3];
-  unsigned char arp_tpa[16];
+  unsigned char nd_tpa[16];
 };
 
 
@@ -75,8 +75,8 @@ struct click_arp6resp2 {
 /* ARP protocol opcodes. */
 #define ARPOP_REQUEST   1       /* ARP request          */
 #define ARPOP_REPLY 2           /* ARP reply            */
-#define NEIGH_SOLI 0x0087       /* Neighborhood Solicitation Message Type */
-#define NEIGH_ADV 0x0088        /* Neighborhood Advertisement Message Type */
+#define ND_SOL 0x0087       /* Neighborhood Solicitation Message Type */
+#define ND_ADV 0x0088       /* Neighborhood Advertisement Message Type */
 
 struct click_ether_arp {
   struct click_arp ea_hdr;    /* fixed-size header */
