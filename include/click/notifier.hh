@@ -22,7 +22,7 @@ class NotifierSignal { public:
     volatile uint32_t *_value;
     uint32_t _mask;
 
-    static uint32_t true_value;
+    static const uint32_t true_value;
     friend bool operator==(const NotifierSignal &, const NotifierSignal &);
     friend bool operator!=(const NotifierSignal &, const NotifierSignal &);
 
@@ -54,6 +54,7 @@ class Notifier { public:
     bool listeners_asleep() const	{ return !_signal.active(); }
     void wake_listeners();
     void sleep_listeners();
+    void set_listeners(bool awake);
 
     const NotifierSignal &notifier_signal() const { return _signal; }
     
@@ -68,13 +69,13 @@ class Notifier { public:
 
 inline
 NotifierSignal::NotifierSignal()
-    : _value(&true_value), _mask(1)
+    : _value(const_cast<uint32_t *>(&true_value)), _mask(1)
 {
 }
 
 inline
 NotifierSignal::NotifierSignal(bool always_on)
-    : _value(&true_value), _mask(always_on)
+    : _value(const_cast<uint32_t *>(&true_value)), _mask(always_on)
 {
 }
 
@@ -101,7 +102,7 @@ NotifierSignal::operator+=(const NotifierSignal &o)
     if (_value == o._value || !o._mask)
 	_mask |= o._mask;
     else
-	_value = &true_value;
+	_value = const_cast<uint32_t *>(&true_value);
     return *this;
 }
 
@@ -138,6 +139,19 @@ Notifier::wake_listeners()
 	for (Task **t = _listeners; *t; t++)
 	    (*t)->reschedule();
     _signal.set_active(true);
+}
+
+inline void
+Notifier::set_listeners(bool awake)
+{
+    if (awake && !_signal) {
+	if (_listener1)
+	    _listener1->reschedule();
+	else if (_listeners)
+	    for (Task **t = _listeners; *t; t++)
+		(*t)->reschedule();
+    }
+    _signal.set_active(awake);
 }
 
 CLICK_ENDDECLS

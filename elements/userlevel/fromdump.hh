@@ -3,6 +3,7 @@
 #define CLICK_FROMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 class HandlerCall;
 
@@ -162,6 +163,7 @@ class FromDump : public Element { public:
     const char *class_name() const		{ return "FromDump"; }
     const char *processing() const		{ return "a/ah"; }
     FromDump *clone() const			{ return new FromDump; }
+    void *cast(const char *);
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
@@ -216,6 +218,7 @@ class FromDump : public Element { public:
     HandlerCall *_last_time_h;
     
     Task _task;
+    Notifier _notifier;
 
     struct timeval _time_offset;
     String _filename;

@@ -24,7 +24,7 @@ TimeSortedSched responds to pull requests by returning the chronologically
 next packet pulled from its inputs, determined by packet timestamps.
 
 TimeSortedSched listens for notification from its inputs to avoid useless
-pulls, and provides notification for its outputs.
+pulls, and provides notification for its output.
 
 Keyword arguments are:
 

@@ -26,7 +26,7 @@ CLICK_DECLS
 #define NUM_SIGNALS 4096
 static uint32_t signals[NUM_SIGNALS / 32];
 
-uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
+const uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
 
 
 NotifierSignal
@@ -50,14 +50,16 @@ Notifier::Notifier()
 int
 Notifier::initialize(Router *r)
 {
-    void *&val = r->force_attachment("NotifierSignal count");
-    uintptr_t nsignals = (uintptr_t) val;
-    if (nsignals < NUM_SIGNALS) {
+    if (_signal == NotifierSignal()) {
+	void *&val = r->force_attachment("NotifierSignal count");
+	uintptr_t nsignals = (uintptr_t) val;
+	if (nsignals >= NUM_SIGNALS)
+	    return -1;
 	_signal = NotifierSignal(&signals[nsignals / 32], 1 << (nsignals % 32));
+	_signal.set_active(true);
 	val = (void *)(nsignals + 1);
-	return 0;
-    } else
-	return -1;
+    }
+    return 0;
 }
 
 int

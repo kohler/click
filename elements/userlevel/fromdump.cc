@@ -55,6 +55,16 @@ FromDump::~FromDump()
     delete _last_time_h;
 }
 
+void *
+FromDump::cast(const char *n)
+{
+    if (strcmp(n, "Notifier") == 0 && !output_is_push(0)) {
+	_notifier.initialize(router());
+	return &_notifier;
+    } else
+	return Element::cast(n);
+}
+
 void
 FromDump::notify_noutputs(int n)
 {
@@ -318,6 +328,10 @@ FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
 int
 FromDump::initialize(ErrorHandler *errh)
 {
+    // make sure notifier is initialized
+    if (!output_is_push(0))
+	_notifier.initialize(router());
+    
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
 	_filename = "<stdin>";
@@ -416,8 +430,12 @@ FromDump::set_active(bool active)
 {
     if (_active != active) {
 	_active = active;
-	if (active && output_is_push(0) && !_task.scheduled())
-	    _task.reschedule();
+	if (active) {
+	    if (output_is_push(0) && !_task.scheduled())
+		_task.reschedule();
+	    else if (!output_is_push(0))
+		_notifier.wake_listeners();
+	}
     }
 }
 
@@ -617,8 +635,10 @@ FromDump::run_task()
 Packet *
 FromDump::pull(int)
 {
-    if (!_active)
+    if (!_active) {
+	_notifier.sleep_listeners();
 	return 0;
+    }
 
     bool more = true;
     if (!_packet)
@@ -631,6 +651,8 @@ FromDump::pull(int)
 	    return 0;
     }
 
+    // notify presence/absence of more packets
+    _notifier.set_listeners(more);
     if (!more && _stop)
 	router()->please_stop_driver();
     
