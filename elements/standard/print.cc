@@ -23,12 +23,12 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/straccum.hh>
 #ifdef __KERNEL__
 extern "C" {
 #include <linux/sched.h>
 }
 #endif
-
 
 Print::Print()
   : Element(1, 1)
@@ -50,41 +50,70 @@ Print::clone() const
 int
 Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 {
+  bool timestamp = false;
+#ifdef __KERNEL__
+  bool print_cpu = false;
+#endif
+  _label = String();
   _bytes = 24;
+  
   if (cp_va_parse(conf, this, errh,
-		  cpString, "label", &_label,
 		  cpOptional,
+		  cpString, "label", &_label,
 		  cpInteger, "max bytes to print", &_bytes,
+		  cpKeywords,
+		  "NBYTES", cpInteger, "max bytes to print", &_bytes,
+		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
+#ifdef __KERNEL__
+		  "CPU", cpBool, "print CPU IDs?", &print_cpu,
+#endif
 		  cpEnd) < 0)
     return -1;
+  
+  _timestamp = timestamp;
+#ifdef __KERNEL__
+  _cpu = print_cpu;
+#endif
+  if (_label)
+    _label += ": ";
   return 0;
 }
 
 Packet *
 Print::simple_action(Packet *p)
 {
-  char *buf = new char[3*_bytes+1];
-  if (!buf) {
+  StringAccum sa(3*_bytes + _label.length() + 40);
+  if (!sa.capacity()) {
     click_chatter("no memory for Print");
     return p;
   }
-  int pos = 0;  
+
+  sa << _label;
+#ifdef __KERNEL__
+  if (_cpu)
+    sa << '(' << current->processor << ')';
+#endif
+  if (_timestamp)
+    sa << p->timestamp_anno() << ':';
+
+  // sa.reserve() must return non-null; we checked capacity above
+  int len;
+  sprintf(sa.reserve(8), " %4d | %n", p->length(), &len);
+  sa.forward(len);
+
+  char *buf = sa.data() + sa.length();
+  int pos = 0;
   for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
     sprintf(buf + pos, "%02x", p->data()[i] & 0xff);
     pos += 2;
     if ((i % 4) == 3) buf[pos++] = ' ';
   }
-  buf[pos++] = '\0';
-#ifdef __KERNEL__
-  click_chatter("Print %s (%d) |%4d : %s", 
-                _label.cc(), current->processor, p->length(), buf);
-#else
-  click_chatter("Print %s |%4d : %s", _label.cc(), p->length(), buf);
-#endif
-  delete[] buf;
+  sa.forward(pos);
+
+  click_chatter("%s", sa.cc());
+
   return p;
 }
 
 EXPORT_ELEMENT(Print)
 ELEMENT_MT_SAFE(Print)
-
