@@ -28,27 +28,37 @@ Click provides several elements that implement all or part of the IPRouteTable
 interface.  Marko Zec has compared their performance, in terms of lookup speed
 and memory size, for full BGP feeds; here are the results.
 
-          ICSI BGP dump, 150700 routes, 2 next-hops
+Methodology: 2.8GHz Pentium P4 CPU, 521K L2 cache, FreeBSD 4.10, userspace
+Click.  RangeIPLookup has two lookup tables, the larger of which is used only
+at update time.  The "warm cache" numbers perform the same lookup several
+times in a loop to populate the cache; only the last lookup's performance is
+reported.
 
-         Element    | cycles  | lookups | setup | lookup 
-                    | /lookup | /sec    | time  | tbl. size
-     ---------------+---------+---------+-------+----------
-     RadixIPLookup  |   1025  |  2.73M  | 0.59s |  5.8 MB   
-     DirectIPLookup |    432  |  6.48M  | 0.74s | 33   MB   
+              ICSI BGP dump, 150700 routes, 2 next-hops
 
-       routeviews.org dump, 167000 routes, 52 nexthops
+         Element      | cycles  | lookups | setup | lookup 
+                      | /lookup | /sec    | time  | tbl. size
+     -----------------+---------+---------+-------+----------------
+     RadixIPLookup    |   1025  |  2.73M  | 0.59s |  5.8 MB   
+     DirectIPLookup   |    432  |  6.48M  | 0.74s | 33   MB   
+     RangeIPLookup    |    279  | 10.0 M  | 0.83s |  0.21MB (+33MB)
+       " (warm cache) |     44  | 63.6 M  |   "   |    "       "
 
-         Method     | cycles  | lookups | setup | lookup 
-                    | /lookup | /sec    | time  | tbl. size
-     ---------------+---------+---------+-------+----------
-     RadixIPLookup  |   1095  |  2.55M  | 0.67s |  6.6 MB   
-     DirectIPLookup |    434  |  6.45M  | 0.77s | 33   MB   
+           routeviews.org dump, 167000 routes, 52 nexthops
 
-The RadixIPLookup and DirectIPLookup elements are well suited for implementing
-large tables.  We also provide the LinearIPLookup, StaticIPLookup, and
-SortedIPLookup elements; they are simple, but their O(N) lookup speed is
-orders of magnitude slower.  RadixIPLookup or DirectIPLookup should be
-preferred for almost all purposes.
+         Element      | cycles  | lookups | setup | lookup 
+                      | /lookup | /sec    | time  | tbl. size
+     -----------------+---------+---------+-------+----------------
+     RadixIPLookup    |   1095  |  2.55M  | 0.67s |  6.6 MB   
+     DirectIPLookup   |    434  |  6.45M  | 0.77s | 33   MB
+     RangeIPLookup    |    508  |  5.51M  | 0.88s |  0.51MB (+33MB)
+       " (warm cache) |     61  | 45.9 M  |   "   |    "       "
+
+The RadixIPLookup, DirectIPLookup, and RangeIPLookup elements are well suited
+for implementing large tables.  We also provide the LinearIPLookup,
+StaticIPLookup, and SortedIPLookup elements; they are simple, but their O(N)
+lookup speed is orders of magnitude slower.  RadixIPLookup or DirectIPLookup
+should be preferred for almost all purposes.
  
            1500-entry fraction of the ICSI BGP dump
    
@@ -144,8 +154,8 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =back
 
-=a RadixIPLookup, DirectIPLookup, StaticIPLookup, LinearIPLookup,
-SortedIPLookup, LinuxIPLookup */
+=a RadixIPLookup, DirectIPLookup, RangeIPLookup, StaticIPLookup,
+LinearIPLookup, SortedIPLookup, LinuxIPLookup */
 
 struct IPRoute {
     IPAddress addr;

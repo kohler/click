@@ -33,8 +33,8 @@ CLICK_DECLS
  *   r[1] -> ... -> ToDevice(eth1)
  *   r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
  *
- * =a RadixIPLookup, StaticIPLookup, LinearIPLookup, SortedIPLookup,
- * DirectIPLookup
+ * =a RadixIPLookup, DirectIPLookup, RangeIPLookup, StaticIPLookup,
+ * LinearIPLookup, SortedIPLookup
  */
 
 class LinuxIPLookup : public Element {

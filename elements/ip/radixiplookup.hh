@@ -64,8 +64,8 @@ operation.
 See IPRouteTable for a performance comparison of the various IP routing
 elements.
 
-=a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
-DirectIPLookup, LinuxIPLookup
+=a IPRouteTable, DirectIPLookup, RangeIPLookup, StaticIPLookup,
+LinearIPLookup, SortedIPLookup, LinuxIPLookup
 */
 
 class RadixIPLookup : public IPRouteTable { public:

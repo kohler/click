@@ -70,14 +70,15 @@ Clears the entire routing table in a single atomic operation.
 See IPRouteTable for a performance comparison of the various IP routing
 elements.
 
-=a RadixIPLookup, StaticIPLookup, LinearIPLookup, SortedIPLookup,
-LinuxIPLookup
+=a IPRouteTable, RangeIPLookup, RadixIPLookup, StaticIPLookup, LinearIPLookup,
+SortedIPLookup, LinuxIPLookup
 
 Pankaj Gupta, Steven Lin, and Nick McKeown.  "Routing Lookups in Hardware at
 Memory Access Speeds".  In Proc. IEEE Infocom 1998, Vol. 3, pp. 1240-1247.
 
 */
 
+class RangeIPLookup;
 
 class DirectIPLookup : public IPRouteTable { public:
 
@@ -150,6 +151,7 @@ class DirectIPLookup : public IPRouteTable { public:
     int _vport_head;
     int _vport_empty_head;
 
+    friend class RangeIPLookup;
 };
 
 CLICK_ENDDECLS
