@@ -1,0 +1,47 @@
+%info
+
+%require
+[ `whoami` = root ]
+which nc >/dev/null 2>&1
+ifconfig eth1 >/dev/null 2>&1
+
+%script
+nc -u -l -p 8899 >NCOUT 2>&1 &
+ncproc=$!
+click-install KERNELCONFIG
+usleep 500000
+kill $ncproc
+cat /click/c/count >COUNT
+click-uninstall
+
+%file KERNELCONFIG
+RatedSource(DATA "I love myself\n", RATE 10000, LIMIT 15, STOP true)
+   -> UDPIPEncap(1.0.0.1, 4652, eth1, 8899)
+   -> EtherEncap(0x0800, 0:1:2:3:4:5, 1:2:3:4:5:6)
+   -> c::Counter
+   -> ToHost(eth1);
+
+%expect COUNT
+15
+
+%ignore NCOUT
+ punt!
+
+%expect NCOUT
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+I love myself
+
+%expect stderr
