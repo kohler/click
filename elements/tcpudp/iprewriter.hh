@@ -142,6 +142,10 @@ mappings for completed TCP sessions.
 =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
 ICMPRewriter, ICMPPingRewriter */
 
+#if defined(__KERNEL__) && __MTCLICK__
+# define IPRW_SPINLOCKS 1
+#endif
+
 class IPRewriter : public IPRw { public:
 
   IPRewriter();
@@ -168,8 +172,7 @@ class IPRewriter : public IPRw { public:
   int llrpc(unsigned, void *);
 
  private:
-  Spinlock _spinlock;
-
+  
   Map _tcp_map;
   Map _udp_map;
   Mapping *_tcp_done;
@@ -182,7 +185,11 @@ class IPRewriter : public IPRw { public:
   Timer _tcp_gc_timer;
   int _udp_gc_interval;
   Timer _udp_gc_timer;
-  
+
+#if IPRW_SPINLOCKS
+  Spinlock _spinlock;
+#endif
+
   static void tcp_gc_hook(Timer *, void *);
   static void udp_gc_hook(Timer *, void *);
   static void tcp_done_gc_hook(Timer *, void *);
@@ -191,6 +198,7 @@ class IPRewriter : public IPRw { public:
   static String dump_tcp_done_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
+  
 };
 
 
