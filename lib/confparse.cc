@@ -1208,23 +1208,21 @@ cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
 }
 
 bool
-cp_timeval(const String &str, struct timeval *return_value)
+cp_timeval(const String &str_in, struct timeval *return_value)
 {
-  int dot = str.find_left('.');
-  if (dot < 0)
-    dot = str.length();
-  unsigned sec = 0;
-  if (dot > 0) {
-    if (!cp_unsigned(str.substring(0, dot), &sec))
-      return false;
+  int power, factor;
+  String str = cp_seconds_suffix(str_in, &power, &factor);
+  uint32_t tv_sec, tv_usec;
+  if (!cp_unsigned_real10(str, 6, power, &tv_sec, &tv_usec))
+    return false;
+  if (factor != 1) {
+    tv_usec *= factor;
+    int delta = tv_usec / 1000000;
+    tv_usec -= delta * 1000000;
+    tv_sec = (tv_sec * factor) + delta;
   }
-  int usec = 0;
-  if (dot < str.length() - 1) {
-    if (!cp_real10(str.substring(dot), 6, &usec))
-      return false;
-  }
-  return_value->tv_sec = sec;
-  return_value->tv_usec = usec;
+  return_value->tv_sec = tv_sec;
+  return_value->tv_usec = tv_usec;
   return true;
 }
 
