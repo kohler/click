@@ -204,7 +204,7 @@ print "// REVERSE pkts received through tunnel\n";
 for ($i=2; $i<$neigh+2; $i++) {
     print "dc", $i, "[1]\n";
     print "\t->IPReassembler\n";
-    print "\t->CheckIPAddress\n";
+    print "\t->CheckIPHeader\n";
     print "\t->GetIPAddress(16)\n";
     print "\t->IPPrint(RCVTunnelREVERSE)\n";
     print "\t-> [", $i, "]routingtable\n";
