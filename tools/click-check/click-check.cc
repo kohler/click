@@ -39,13 +39,15 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
-#define OUTPUT_OPT		303
-#define FILTER_OPT		304
-#define KERNEL_OPT		305
-#define USERLEVEL_OPT		306
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
+#define OUTPUT_OPT		304
+#define FILTER_OPT		305
+#define KERNEL_OPT		306
+#define USERLEVEL_OPT		307
 
 static Clp_Option options[] = {
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "filter", 'p', FILTER_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -82,6 +84,7 @@ Options:\n\
   -p, --filter              If valid, write configuration to standard output.\n\
   -k, --kernel              Check kernel driver version of configuration.\n\
   -u, --user                Check user-level driver version of configuration.\n\
+  -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
 \n\
@@ -147,7 +150,7 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);
@@ -161,6 +164,10 @@ This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
+      break;
+      
+     case CLICKPATH_OPT:
+      set_clickpath(clp->arg);
       break;
       
      case ROUTER_OPT:

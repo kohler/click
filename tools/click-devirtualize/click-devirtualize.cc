@@ -39,7 +39,8 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
 #define OUTPUT_OPT		304
 #define KERNEL_OPT		305
 #define USERLEVEL_OPT		306
@@ -51,6 +52,7 @@
 #define REVERSE_OPT		313
 
 static Clp_Option options[] = {
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
   { "devirtualize", 0, DEVIRTUALIZE_OPT, Clp_ArgString, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
@@ -206,6 +208,7 @@ Options:\n\
   -r, --reverse                Reverse devirtualization.\n\
   -n, --no-devirtualize CLASS  Don't devirtualize element class CLASS.\n\
   -i, --instructions FILE      Read devirtualization instructions from FILE.\n\
+  -C, --clickpath PATH         Use PATH for CLICKPATH.\n\
       --help                   Print this message and exit.\n\
   -v, --version                Print version number and exit.\n\
 \n\
@@ -253,6 +256,10 @@ This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
+      break;
+
+     case CLICKPATH_OPT:
+      set_clickpath(clp->arg);
       break;
       
      case Clp_NotOption:

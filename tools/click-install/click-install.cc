@@ -40,17 +40,19 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
-#define UNINSTALL_OPT		303
-#define HOTSWAP_OPT		304
-#define MAP_OPT			305
-#define VERBOSE_OPT		306
-#define THREADS_OPT		307
-#define PRIVATE_OPT		308
-#define PRIORITY_OPT		309
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
+#define UNINSTALL_OPT		304
+#define HOTSWAP_OPT		305
+#define MAP_OPT			306
+#define VERBOSE_OPT		307
+#define THREADS_OPT		308
+#define PRIVATE_OPT		309
+#define PRIORITY_OPT		310
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
@@ -92,6 +94,7 @@ Options:\n\
   -p, --private            Make /proc/click readable only by root.\n\
   -t, --threads N          Use N threads (multithreaded Click only).\n\
   -V, --verbose            Print information about files installed.\n\
+  -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
       --help               Print this message and exit.\n\
   -v, --version            Print version number and exit.\n\
 \n\
@@ -393,6 +396,10 @@ This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
+      break;
+
+     case CLICKPATH_OPT:
+      set_clickpath(clp->arg);
       break;
       
      case ROUTER_OPT:

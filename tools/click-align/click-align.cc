@@ -294,7 +294,7 @@ prepared_router()
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
+#define ROUTER_OPT		303
 #define OUTPUT_OPT		304
 
 static Clp_Option options[] = {
@@ -360,7 +360,7 @@ main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case HELP_OPT:
       usage();
       exit(0);

@@ -54,18 +54,20 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
-#define QUIT_OPT		303
-#define OUTPUT_OPT		304
-#define HANDLER_OPT		305
-#define TIME_OPT		306
-#define STOP_OPT		307
-#define PORT_OPT		308
-#define UNIX_SOCKET_OPT		309
-#define NO_WARNINGS_OPT		310
-#define WARNINGS_OPT		311
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
+#define QUIT_OPT		304
+#define OUTPUT_OPT		305
+#define HANDLER_OPT		306
+#define TIME_OPT		307
+#define STOP_OPT		308
+#define PORT_OPT		309
+#define UNIX_SOCKET_OPT		310
+#define NO_WARNINGS_OPT		311
+#define WARNINGS_OPT		312
 
 static Clp_Option options[] = {
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -113,6 +115,7 @@ Options:\n\
                                 the configuration's packet sources.\n\
   -t, --time                    Print information on how long driver took.\n\
   -w, --no-warnings             Do not print warnings.\n\
+  -C, --clickpath PATH          Use PATH for CLICKPATH.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -586,6 +589,10 @@ main(int argc, char **argv)
 
      case NO_WARNINGS_OPT:
       warnings = clp->negated;
+      break;
+
+     case CLICKPATH_OPT:
+      set_clickpath(clp->arg);
       break;
       
      case HELP_OPT:
