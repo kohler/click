@@ -1,3 +1,7 @@
+2003-05-18 Sunday 20:48  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/rtmdsr.hh (1.14): this and that
+
 2003-05-18 Sunday 18:02  jbicket
 
 	* elements/: grid/dsdvroutetable.cc (1.50), grid/dsdvroutetable.hh
