@@ -54,21 +54,21 @@ ToHost::clone() const
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String devname;
-  if (cp_va_parse(conf, this, errh,
-		  cpOptional,
-		  cpString, "device name", &devname,
-		  cpEnd) < 0)
-    return -1;
-  if (devname) {
-    _dev = dev_get_by_name(devname.cc());
-    if (!_dev)
-      _dev = dev_get_by_ether_address(devname, this);
-    if (!_dev)
-      return errh->error("unknown device `%s'", devname.cc());
-  } else
-    _dev = 0;
-  return 0;
+    String devname;
+    if (cp_va_parse(conf, this, errh,
+		    cpOptional,
+		    cpString, "device name", &devname,
+		    cpEnd) < 0)
+	return -1;
+    if (devname) {
+	_dev = dev_get_by_name(devname.cc());
+	if (!_dev)
+	    _dev = dev_get_by_ether_address(devname, this);
+	if (!_dev)
+	    return errh->error("unknown device `%s'", devname.cc());
+    } else
+	_dev = 0;
+    return 0;
 }
 
 void
@@ -82,63 +82,68 @@ ToHost::cleanup(CleanupStage)
 void
 ToHost::push(int port, Packet *p)
 {
-  struct sk_buff *skb = p->steal_skb();
-  if (!skb) return;
+    struct sk_buff *skb = p->steal_skb();
+    if (!skb)
+	return;
   
-  // set device if specified
-  if (_dev) 
-    skb->dev = _dev;
+    // set device if specified
+    if (_dev) 
+	skb->dev = _dev;
 
-  // remove PACKET_CLEAN bit -- packet is becoming dirty
-  skb->pkt_type &= PACKET_TYPE_MASK;
+    // remove PACKET_CLEAN bit -- packet is becoming dirty
+    skb->pkt_type &= PACKET_TYPE_MASK;
 
-  // do not call eth_type_trans; it changes pkt_type! Instead, do its work
-  // directly.
-  skb->mac.raw = skb->data;
-  skb_pull(skb, 14);
+    // do not call eth_type_trans; it changes pkt_type! Instead, do its work
+    // directly.
+    skb->mac.raw = skb->data;
+    skb_pull(skb, 14);
 
-  const ethhdr *eth = skb->mac.ethernet;
-  if (ntohs(eth->h_proto) >= 1536)
-    skb->protocol = eth->h_proto;
-  else {
-    const unsigned short *crap = (const unsigned short *)skb->data;
-    // "magic hack to spot IPX packets"
-    skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
-  }
+    const ethhdr *eth = skb->mac.ethernet;
+    if (ntohs(eth->h_proto) >= 1536)
+	skb->protocol = eth->h_proto;
+    else {
+	const unsigned short *crap = (const unsigned short *)skb->data;
+	// "magic hack to spot IPX packets"
+	skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
+    }
 
-  // skb->dst may be set if the packet came from Linux originally. In this
-  // case, we must clear skb->dst so Linux finds the correct dst.
-  if (skb->dst) {
-    dst_release(skb->dst);
-    skb->dst = 0;
-  }
+    // skb->dst may be set if the packet came from Linux originally. In this
+    // case, we must clear skb->dst so Linux finds the correct dst.
+    if (skb->dst) {
+	dst_release(skb->dst);
+	skb->dst = 0;
+    }
 
-  // be nice to libpcap
-  if (skb->stamp.tv_sec == 0) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 18)
-      do_gettimeofday(&skb->stamp);
+#ifdef HAVE_NETIF_RECEIVE_SKB	// from Linux headers
+    dev = skb->dev;
+    netif_receive_skb(skb, skb->protocol, -1);
+    dev_put(dev);
 #else
-# ifndef CONFIG_CPU_IS_SLOW
-      get_fast_time(&skb->stamp);
+    // be nice to libpcap
+    if (skb->stamp.tv_sec == 0) {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 18)
+	do_gettimeofday(&skb->stamp);
+# elif !defined(CONFIG_CPU_IS_SLOW)
+	get_fast_time(&skb->stamp);
 # else
-      skb->stamp = xtime;
+	skb->stamp = xtime;
 # endif
-#endif
-  }
-  
-#ifdef HAVE_CLICK_KERNEL
-  skb->h.raw = skb->nh.raw = skb->data;
-#if LINUX_VERSION_CODE >= 0x020400
-  local_bh_disable();
-  br_read_lock(BR_NETPROTO_LOCK);
-  ptype_dispatch(skb, skb->protocol);
-  br_read_unlock(BR_NETPROTO_LOCK);
-  local_bh_enable();
-#else
-  lock_kernel();
-  ptype_dispatch(skb, skb->protocol);
-  unlock_kernel();
-#endif
+    }
+
+# ifdef HAVE_CLICK_KERNEL
+    skb->h.raw = skb->nh.raw = skb->data;
+#  if LINUX_VERSION_CODE >= 0x020400
+    local_bh_disable();
+    br_read_lock(BR_NETPROTO_LOCK);
+    ptype_dispatch(skb, skb->protocol);
+    br_read_unlock(BR_NETPROTO_LOCK);
+    local_bh_enable();
+#  else
+    lock_kernel();
+    ptype_dispatch(skb, skb->protocol);
+    unlock_kernel();
+#  endif
+# endif
 #endif
 }
 
