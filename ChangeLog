@@ -1,3 +1,14 @@
+2003-06-17 Tuesday 17:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/pokehandlers.cc (1.30): Pausing idea and first
+	impl. from Daniel Aguayo.
+
+2003-06-17 Tuesday 17:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: pokehandlers.cc (1.29), pokehandlers.hh
+	(1.18): add pause directive; useful for starting an experiment
+	sequence on command
+
 2003-06-14 Saturday 21:12  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/: polldevice.cc (1.132), polldevice.hh
