@@ -1,3 +1,13 @@
+2003-11-24 Monday 13:16  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/ettmetric.cc (1.6): typo fixes.
+
+2003-11-24 Monday 13:05  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ettmetric.cc (1.5), ettmetric.hh (1.5),
+	ettstat.cc (1.1), ettstat.hh (1.1): more metric (ett) changes to
+	srcr
+
 2003-11-24 Monday 10:53  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: ettmetric.cc (1.4), ettmetric.hh (1.4),
