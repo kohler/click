@@ -62,7 +62,7 @@ DirectEWMAX<stability_shift, scale>::update_with(unsigned val)
 {
   int val_scaled = val << scale;
   int compensation = 1 << (stability_shift - 1); // round off
-  _avg += (val_scaled - _avg + compensation) >> stability_shift;
+  _avg += static_cast<int>(val_scaled - _avg + compensation) >> stability_shift;
   // XXX implementation-defined right shift behavior
 }
 
