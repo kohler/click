@@ -177,6 +177,18 @@ pull inputs) what they are connected to.
 .BI /proc/click/xxx/outputs
 Read-only. Describes the element's outputs: how many there are, and (for
 push outputs) what they are connected to.
+.TP
+.BI /proc/click/xxx/tickets
+Read-only. Describes the element's scheduler-related state. Contains a
+single line of the form "\fItickets\fP \fImaxtickets\fP \fIscheduled?\fP",
+where
+.I tickets
+and
+.I maxtickets
+are integer numbers of tickets and
+.I scheduled?
+is either "scheduled", if the element is currently scheduled for later
+processing, or "unscheduled", if it is not.
 '
 .PP
 Particular elements may add additional handlers to their directories. For
