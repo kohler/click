@@ -1,3 +1,26 @@
+2005-02-11 Friday 13:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/stripipheader.hh (1.10), standard/strip.hh (1.18):
+	documentation nits
+
+2005-02-11 Friday 13:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.58): syntax error fix
+
+2005-02-11 Friday 13:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.8): mininit
+
+2005-02-11 Friday 13:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.90), DISTFILES (1.91): John removed conf/roofnet
+
+2005-02-11 Friday 13:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tun.click (1.15), elements/userlevel/kerneltun.hh
+	(1.22): update KernelTun documentation to make the difference
+	between ADDR and ADDR/MASK explicit
+
 2005-02-11 Friday 13:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/todevice.cc (1.140): bug fix (Ross Mcilroy):
