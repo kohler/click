@@ -5,6 +5,8 @@
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
+
 CLICK_DECLS
 
 /*
@@ -71,7 +73,10 @@ CLICK_DECLS
  * An error like "could not allocate a /dev/tap* device : No such file or
  * directory" usually means that you have not enabled /dev/tap* in your
  * kernel. 
- * 
+ *
+ * =h dev_name read-only
+ * Returns the name of the device that this element is using.
+ *
  * =a ToLinux, ifconfig(8) */
 
 class FromHost : public Element { public:
@@ -97,6 +102,7 @@ class FromHost : public Element { public:
 
     void selected(int fd);
 
+    bool run_task();
     int fd() { return _fd; }
     String dev_name() { return _dev_name; }
 
@@ -123,7 +129,12 @@ class FromHost : public Element { public:
     int alloc_tun(ErrorHandler *);
     int setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *);
     void dealloc_tun();
-    
+
+protected:
+    Task _task;
+public:
+    NotifierSignal _nonfull_signal;
+
 };
 
 CLICK_ENDDECLS

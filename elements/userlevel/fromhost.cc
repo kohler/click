@@ -40,7 +40,8 @@ FromHost::FromHost()
   : Element(0, 1), 
     _fd(-1),
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-    _ignore_q_errs(false), _printed_read_err(false)
+    _ignore_q_errs(false), _printed_read_err(false),
+    _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -123,7 +124,7 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	if (system(tmp) != 0) 
 	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
-
+    
     strcpy(tmp0, inet_ntoa(near));
     strcpy(tmp1, inet_ntoa(mask));
     sprintf(tmp, "/sbin/ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
@@ -152,8 +153,12 @@ FromHost::initialize(ErrorHandler *errh)
 	return -1;
     if (setup_tun(_near, _mask, errh) < 0)
 	return -1;
-  add_select(_fd, SELECT_READ);
-  return 0;
+
+    ScheduleInfo::join_scheduler(this, &_task, errh);
+    _nonfull_signal = Notifier::downstream_nonfull_signal(this, 0, &_task);
+    
+    add_select(_fd, SELECT_READ);
+    return 0;
 }
 
 void
@@ -170,6 +175,7 @@ FromHost::selected(int fd)
 {
     if (fd != _fd)
 	return;
+
     WritablePacket *p = Packet::make(_headroom, 0, _mtu_in, 0);
     if (!p) {
 	click_chatter("out of memory!");
@@ -181,25 +187,46 @@ FromHost::selected(int fd)
 	p->take(_mtu_in - cc);
 	// 2-byte padding followed by an Ethernet type
 	p->pull(4);
+	const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + sizeof(click_ether));
+	p->set_ip_header(ip, ip->ip_hl << 2);
 	(void) click_gettimeofday(&p->timestamp_anno());
 	output(0).push(p);
     } else {
+	p->kill();
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
 	    _printed_read_err = true;
 	    perror("KernelTun read");
 	}
     }
+
+    if (!_nonfull_signal) {
+	remove_select(_fd, SELECT_READ);
+	return;
+    }
+
+
 }
 
-enum {H_DEV_NAME};
+bool
+FromHost::run_task()
+{
+    if (!_nonfull_signal)
+	return false;
+    
+    add_select(_fd, SELECT_READ);
+    return true;
+
+}
+
+enum {H_DEV_NAME, H_SIGNAL};
 
 static String 
-FromHost_read_param(Element *e, void *thunk)
+read_param(Element *e, void *thunk)
 {
   FromHost *td = (FromHost *)e;
     switch ((uintptr_t) thunk) {
-    case H_DEV_NAME:
-    return td->dev_name() + "\n";
+    case H_DEV_NAME: return td->dev_name() + "\n";
+    case H_SIGNAL: return String(td->_nonfull_signal.active()) + "\n";
     default:
 	return "\n";
     }
@@ -210,7 +237,8 @@ FromHost_read_param(Element *e, void *thunk)
 void
 FromHost::add_handlers()
 {
-  add_read_handler("dev_name", FromHost_read_param, (void *) H_DEV_NAME);
+  add_read_handler("dev_name", read_param, (void *) H_DEV_NAME);
+  add_read_handler("signal", read_param, (void *) H_SIGNAL);
 }
 
 CLICK_ENDDECLS
