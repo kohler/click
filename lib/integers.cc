@@ -24,7 +24,7 @@ CLICK_DECLS
 
 // first_bit_set(uint32_t) borrowed from tcpdpriv
 
-#if !(HAVE___BUILTIN_FFS && SIZEOF_INT == 4)
+#if !(HAVE___BUILTIN_CLZ && SIZEOF_INT == 4)
 int
 ffs_msb(uint32_t value)
 {
@@ -53,7 +53,7 @@ ffs_msb(uint32_t value)
 #endif
 
 
-#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8)
+#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_CLZLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_CLZL && SIZEOF_LONG == 8)
 int
 ffs_msb(uint64_t value)
 {
