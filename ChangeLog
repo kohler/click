@@ -1,3 +1,13 @@
+2001-06-19 Tuesday 19:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* apps/ClickController/: ClickController.java (1.10),
+	ControlSocket.java (1.6): ClickController: add Refresh menu item;
+	allow configurations with zero elements
+
+2001-06-19 Tuesday 19:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* apps/ClickController/README (1.2): add compile instructions
+
 2001-06-19 Tuesday 17:02  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/icmp/: icmppingrewriter.cc (1.7), icmppingrewriter.hh
