@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * proc_dir.cc -- the Click filesystem
+ * clickfs_core.cc -- the Click filesystem
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -30,8 +30,10 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-static struct file_operations click_dir_ops;
+static struct file_operations click_dir_file_ops;
 static struct inode_operations click_dir_inode_ops;
+static struct file_operations click_handler_file_ops;
+static struct inode_operations click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
@@ -104,7 +106,7 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 }
 
 
-/*************************** Click superblock ********************************/
+/*************************** Inode constants ********************************/
 
 #define CSE_NULL			0xFFFFU
 #define CSE_FAKE			1
@@ -112,9 +114,9 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 #define CSE_SUBDIR_CONFLICTS_CALCULATED	4
 
 // NB: inode number 0 is reserved for the system.
-#define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
 #define INO_DIRTYPE(ino)		((ino) >> 28)
-#define INO_HANDLERNO(ino)		(((ino) >> 16) & 0x7FFFU)
+#define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
+#define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
 #define INO_DT_H			0x1U /* handlers only */
 #define INO_DT_N			0x2U /* names; >= 2 -> has names */
 #define INO_DT_HN			0x3U /* handlers + names */
@@ -134,9 +136,6 @@ click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const
 
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 
-#define LOCK_CONFIG			spin_lock(&click_config_lock)
-#define UNLOCK_CONFIG			spin_unlock(&click_config_lock)
-
 struct ClickInodeInfo {
     struct proclikefs_inode_info padding;
     uint32_t config_generation;
@@ -148,6 +147,9 @@ inode_out_of_date(struct inode *inode)
     return INO_ELEMENTNO(inode->i_ino) >= 0
 	&& INODE_INFO(inode).config_generation != atomic_read(&click_config_generation);
 }
+
+
+/*************************** sorted_elements ********************************/
 
 // NB: Assume that no global handlers have names that conflict with element
 // *numbers*.
@@ -336,7 +338,32 @@ calculate_handler_conflicts(int parent_eindex)
 
 
 
-// INODE OPERATIONS
+/*************************** Inode operations ********************************/
+
+static void
+calculate_inode_nlink(struct inode *inode)
+{
+    // must be called with config_lock held
+    unsigned long ino = inode->i_ino;
+    int elementno = INO_ELEMENTNO(ino);
+    inode->i_nlink = 2;
+    if (INO_DIRTYPE(ino) != INO_DT_H) {
+	if (INO_DT_HAS_U(ino) && current_router)
+	    inode->i_nlink += current_router->nelements();
+	if (INO_DT_HAS_N(ino)) {
+	    int first_sindex = (elementno < 0 ? 0 : sorted_elements[elementno].sorted_index + 1);
+	    if (elementno >= 0
+		&& !(sorted_elements[first_sindex - 1].flags & CSE_SUBDIR_CONFLICTS_CALCULATED))
+		calculate_handler_conflicts(elementno);
+	    int last_sindex = (elementno < 0 ? nsorted_elements : first_sindex + sorted_elements[first_sindex - 1].skip);
+	    while (first_sindex < last_sindex) {
+		if (!(sorted_elements[first_sindex].flags & CSE_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
+		    inode->i_nlink++;
+		first_sindex += sorted_elements[first_sindex].skip + 1;
+	    }
+	}
+    }
+}
 
 static struct inode *
 click_inode(struct super_block *sb, unsigned long ino)
@@ -345,7 +372,8 @@ click_inode(struct super_block *sb, unsigned long ino)
     if (!inode)
 	return 0;
 
-    LOCK_CONFIG;
+    spin_lock(&click_config_lock);
+    
     int elementno = INO_ELEMENTNO(ino);
     if (atomic_read(&click_config_generation) != sorted_elements_generation)
 	prepare_sorted_elements();
@@ -353,13 +381,11 @@ click_inode(struct super_block *sb, unsigned long ino)
     
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
-	if (elementno < 0)
-	    hi += Router::FIRST_GLOBAL_HANDLER;
 	if (Router::handler_ok(current_router, hi)) {
 	    const Router::Handler &h = Router::handler(current_router, hi);
 	    inode->i_mode = (h.read_visible() ? proc_click_mode_r : 0) | (h.write_visible() ? proc_click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
-	    inode->i_op = 0;
+	    inode->i_op = &click_handler_inode_ops;
 	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
 	} else {
 	    iput(inode);
@@ -373,32 +399,16 @@ click_inode(struct super_block *sb, unsigned long ino)
 	inode->i_mode = proc_click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
-	// set nlink
-	inode->i_nlink = 2;
-	if (INO_DIRTYPE(ino) != INO_DT_H) {
-	    if (INO_DT_HAS_U(ino) && current_router)
-		inode->i_nlink += current_router->nelements();
-	    if (INO_DT_HAS_N(ino)) {
-		int first_sindex = (elementno < 0 ? 0 : sorted_elements[elementno].sorted_index + 1);
-		if (elementno >= 0
-		    && !(sorted_elements[first_sindex - 1].flags & CSE_SUBDIR_CONFLICTS_CALCULATED))
-		    calculate_handler_conflicts(elementno);
-		int last_sindex = (elementno < 0 ? nsorted_elements : first_sindex + sorted_elements[first_sindex - 1].skip);
-		while (first_sindex < last_sindex) {
-		    if (!(sorted_elements[first_sindex].flags & CSE_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
-			inode->i_nlink++;
-		    first_sindex += sorted_elements[first_sindex].skip + 1;
-		}
-	    }
-	}
+	calculate_inode_nlink(inode);
     }
 
-    UNLOCK_CONFIG;
+    spin_unlock(&click_config_lock);
     return inode;
 }
 
 
-// DIRECTORY OPERATIONS
+
+/*************************** Directory operations ****************************/
 
 static struct dentry *
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
@@ -415,7 +425,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     int first_sindex, last_sindex, offset;
 
     // lock the configuration
-    LOCK_CONFIG;
+    spin_lock(&click_config_lock);
     
     // delimit boundaries of search region
     if (elementno < 0)
@@ -485,17 +495,36 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
     }
 
     // first_sindex, last_sindex destroyed here
-    UNLOCK_CONFIG;
+    spin_unlock(&click_config_lock);
     return reinterpret_cast<struct dentry *>(ERR_PTR(-ENOENT));
 
   found:
-    UNLOCK_CONFIG;
+    spin_unlock(&click_config_lock);
     if (inode) {
 	dentry->d_op = &click_dentry_ops;
 	d_add(dentry, inode);
 	return 0;
     } else
 	return reinterpret_cast<struct dentry *>(ERR_PTR(-EINVAL));
+}
+
+static int
+click_dir_revalidate(struct dentry *dentry)
+{
+    struct inode *inode = dentry->d_inode;
+    if (!inode)
+	return -EINVAL;
+    else if (INODE_INFO(inode).config_generation != atomic_read(&click_config_generation)) {
+	if (INO_ELEMENTNO(inode) >= 0) // not a global directory
+	    return -EIO;
+	spin_lock(&click_config_lock);
+	if (atomic_read(&click_config_generation) != sorted_elements_generation)
+	    prepare_sorted_elements();
+	INODE_INFO(inode).config_generation = sorted_elements_generation;
+	calculate_inode_nlink(inode);
+	spin_unlock(&click_config_lock);
+    }
+    return 0;
 }
 
 #ifdef LINUX_2_2
@@ -603,7 +632,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 }
 
 
-// SUPERBLOCK OPERATIONS
+/*************************** Superblock operations ***************************/
 
 static struct super_operations click_superblock_ops;
 
@@ -671,55 +700,305 @@ click_read_super(struct super_block *s, void * /* data */, int)
     return 0;
 }
 
-
 static void
 click_delete_dentry(struct dentry *dentry)
 {
     d_drop(dentry);
 }
 
-/*
-int proc_statfs(struct super_block *sb, struct statfs *buf, int bufsiz)
+
+/*************************** Handler operations ******************************/
+
+static String *handler_strings = 0;
+static int *handler_strings_next = 0;
+static int handler_strings_cap = 0;
+static int handler_strings_free = -1;
+static spinlock_t handler_strings_lock;
+
+static int
+increase_handler_strings()
 {
-	struct statfs tmp;
+    // must be called with handler_strings_lock held
 
-	tmp.f_type = PROC_SUPER_MAGIC;
-	tmp.f_bsize = PAGE_SIZE/sizeof(long);
-	tmp.f_blocks = 0;
-	tmp.f_bfree = 0;
-	tmp.f_bavail = 0;
-	tmp.f_files = 0;
-	tmp.f_ffree = 0;
-	tmp.f_namelen = NAME_MAX;
-	return copy_to_user(buf, &tmp, bufsiz) ? -EFAULT : 0;
+    if (handler_strings_cap < 0)	// in process of cleaning up module
+	return -1;
+    
+    int new_cap = (handler_strings_cap ? 2*handler_strings_cap : 16);
+    String *new_strs = new String[new_cap];
+    if (!new_strs)
+	return -1;
+    int *new_nexts = new int[new_cap];
+    if (!new_nexts) {
+	delete[] new_strs;
+	return -1;
+    }
+    
+    for (int i = 0; i < handler_strings_cap; i++)
+	new_strs[i] = handler_strings[i];
+    for (int i = handler_strings_cap; i < new_cap; i++)
+	new_nexts[i] = i + 1;
+    new_nexts[new_cap - 1] = handler_strings_free;
+    memcpy(new_nexts, handler_strings_next, sizeof(int) * handler_strings_cap);
+
+    delete[] handler_strings;
+    delete[] handler_strings_next;
+    handler_strings_free = handler_strings_cap;
+    handler_strings_cap = new_cap;
+    handler_strings = new_strs;
+    handler_strings_next = new_nexts;
+
+    return 0;
 }
-*/
+
+static int
+next_handler_string()
+{
+    spin_lock(&handler_strings_lock);
+    if (handler_strings_free < 0)
+	increase_handler_strings();
+    int hs = handler_strings_free;
+    if (hs >= 0)
+	handler_strings_free = handler_strings_next[hs];
+    spin_unlock(&handler_strings_lock);
+    return hs;
+}
+
+static const Router::Handler *
+find_handler(int eindex, int handlerno)
+{
+    if (Router::handler_ok(current_router, handlerno))
+	return &Router::handler(current_router, handlerno);
+    else
+	return 0;
+}
+
+static int
+handler_open(struct inode *inode, struct file *filp)
+{
+    spin_lock(&click_config_lock);
+
+    bool reading = (filp->f_flags & O_ACCMODE) != O_WRONLY;
+    bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
+    
+    int retval = 0;
+    int stringno = -1;
+    const Router::Handler *h;
+    
+    if ((reading && writing)
+	|| (filp->f_flags & O_APPEND)
+	|| (writing && !(filp->f_flags & O_TRUNC)))
+	retval = -EACCES;
+    else if (inode_out_of_date(inode))
+	retval = -EIO;
+    else if ((stringno = next_handler_string()) < 0)
+	retval = -ENOMEM;
+    else if (!(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino))))
+	retval = -EIO;
+    else if ((reading && !h->read_visible())
+	     || (writing && !h->write_visible()))
+	retval = -EPERM;
+    else if (reading) {
+	int eindex = INO_ELEMENTNO(inode->i_ino);
+	Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+	handler_strings[stringno] = h->call_read(e);
+	retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
+    } else if (writing) {
+	handler_strings[stringno] = String();
+	retval = 0;
+    } else
+	retval = -EINVAL;
+
+    spin_unlock(&click_config_lock);
+    
+    if (retval < 0 && stringno >= 0) {
+	// free handler string
+	spin_lock(&handler_strings_lock);
+	handler_strings_next[stringno] = handler_strings_free;
+	handler_strings_free = stringno;
+	spin_unlock(&handler_strings_lock);
+	stringno = -1;
+    }
+    filp->private_data = reinterpret_cast<void *>(stringno);
+    return retval;
+}
+
+static ssize_t
+handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
+{
+    loff_t f_pos = *store_f_pos;
+    int stringno = reinterpret_cast<int>(filp->private_data);
+    if (stringno < 0 || stringno >= handler_strings_cap)
+	return -EIO;
+    const String &s = handler_strings[stringno];
+    if (f_pos + count > s.length())
+	count = s.length() - f_pos;
+    if (copy_to_user(buffer, s.data() + f_pos, count) > 0)
+	return -EFAULT;
+    *store_f_pos += count;
+    return count;
+}
+
+static ssize_t
+handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
+{
+    loff_t f_pos = *store_f_pos;
+    int stringno = reinterpret_cast<int>(filp->private_data);
+    if (stringno < 0 || stringno >= handler_strings_cap)
+	return -EIO;
+    String &s = handler_strings[stringno];
+    int old_length = s.length();
+
+#ifdef LARGEST_HANDLER_WRITE
+    if (f_pos + count > LARGEST_HANDLER_WRITE)
+	return -EFBIG;
+#endif
+
+    if (f_pos + count > old_length) {
+	s.append_fill(0, f_pos + count - old_length);
+	if (s.out_of_memory())
+	    return -ENOMEM;
+    }
+
+    int length = s.length();
+    if (f_pos > length)
+	return -EFBIG;
+    else if (f_pos + count > length)
+	count = length - f_pos;
+
+    char *data = s.mutable_data();
+    if (f_pos > old_length)
+	memset(data + old_length, 0, f_pos - old_length);
+
+    if (copy_from_user(data + f_pos, buffer, count) > 0)
+	return -EFAULT;
+
+    *store_f_pos += count;
+    return count;
+}
+
+static int
+handler_flush(struct file *filp)
+{
+    bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
+    int stringno = reinterpret_cast<int>(filp->private_data);
+    int retval = 0;
+
+#ifdef LINUX_2_2
+    int f_count = filp->f_count;
+#else
+    int f_count = atomic_read(&filp->f_count);
+#endif
+    
+    if (writing && f_count == 1
+	&& stringno >= 0 && stringno < handler_strings_cap) {
+	spin_lock(&click_config_lock);
+	
+	struct inode *inode = filp->f_dentry->d_inode;
+	const Router::Handler *h;
+	
+	if (inode_out_of_date(inode)
+	    || !(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino)))
+	    || !h->write_visible())
+	    retval = -EIO;
+	else if (handler_strings[stringno].out_of_memory())
+	    retval = -ENOMEM;
+	else {
+	    int eindex = INO_ELEMENTNO(inode->i_ino);
+	    Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+	    String context_string = "In write handler `" + h->name() + "'";
+	    if (e)
+		context_string += String(" for `") + e->declaration() + "'";
+	    ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
+	}
+
+	spin_unlock(&click_config_lock);
+    }
+
+    return retval;
+}
+
+static int
+handler_release(struct inode *, struct file *filp)
+{
+    // free handler string
+    int stringno = reinterpret_cast<int>(filp->private_data);
+    if (stringno >= 0 && stringno < handler_strings_cap) {
+	spin_lock(&handler_strings_lock);
+	handler_strings_next[stringno] = handler_strings_free;
+	handler_strings_free = stringno;
+	spin_unlock(&handler_strings_lock);
+    }
+    return 0;
+}
+
+static int
+handler_ioctl(struct inode *inode, struct file *filp,
+	      unsigned command, unsigned long address)
+{
+    spin_lock(&click_config_lock);
+
+    int retval;
+    Element *e;
+    
+    if (inode_out_of_date(inode))
+	retval = -EIO;
+    else if (!current_router)
+	retval = -EINVAL;
+    else if (!(e = current_router->element(INO_ELEMENTNO(inode->i_ino))))
+	retval = -EIO;
+    else if (current_router->initialized())
+	retval = e->llrpc(command, reinterpret_cast<void *>(address));
+    else
+	retval = e->Element::llrpc(command, reinterpret_cast<void *>(address));
+
+    spin_unlock(&click_config_lock);
+    return retval;
+}
 
 
+/*********************** Initialization and termination **********************/
 
 void
 init_clickfs()
 {
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
     
-#ifdef LINUX_2_4
-    click_dir_ops.owner = THIS_MODULE;
-    click_dir_ops.read = generic_read_dir;
-#endif
-    click_dir_ops.readdir = click_dir_readdir;
-    click_dir_inode_ops.lookup = click_dir_lookup;
-    click_dir_inode_ops.default_file_ops = &click_dir_ops;
-
     click_superblock_ops.read_inode = click_read_inode;
     click_superblock_ops.write_inode = click_write_inode;
     click_superblock_ops.put_inode = click_put_inode;
     click_superblock_ops.delete_inode = proclikefs_delete_inode;
     click_superblock_ops.put_super = proclikefs_put_super;
+    // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
 
-    sorted_elements_generation = 0;
-    
+#ifdef LINUX_2_4
+    click_dir_file_ops.owner = THIS_MODULE;
+    click_dir_file_ops.read = generic_read_dir;
+#endif
+    click_dir_file_ops.readdir = click_dir_readdir;
+    click_dir_inode_ops.lookup = click_dir_lookup;
+    click_dir_inode_ops.revalidate = click_dir_revalidate;
+    click_dir_inode_ops.default_file_ops = &click_dir_file_ops;
+
+#ifdef LINUX_2_4
+    click_handler_file_ops.owner = THIS_MODULE;
+#endif
+    click_handler_file_ops.read = handler_read;
+    click_handler_file_ops.write = handler_write;
+    click_handler_file_ops.ioctl = handler_ioctl;
+    click_handler_file_ops.open = handler_open;
+    click_handler_file_ops.flush = handler_flush;
+    click_handler_file_ops.release = handler_release;
+
+#ifdef LINUX_2_2
+    click_handler_inode_ops.default_file_ops = &click_handler_file_ops;
+#endif
+
+    spin_lock_init(&handler_strings_lock);
+    sorted_elements_generation = 0; // click_config_generation starts at 1
+
     clickfs = proclikefs_register_filesystem("click", click_read_super, 0);
 }
 
@@ -728,119 +1007,15 @@ cleanup_clickfs()
 {
     proclikefs_unregister_filesystem(clickfs);
 
+    // clean up handler_strings
+    spin_lock(&handler_strings_lock);
+    delete[] handler_strings;
+    delete[] handler_strings_next;
+    handler_strings = 0;
+    handler_strings_next = 0;
+    handler_strings_cap = -1;
+    handler_strings_free = -1;
+    spin_unlock(&handler_strings_lock);
+    
     free_sorted_elements();
 }
-
-
-
-#if 0
-
-
-/*
- * The standard rules, copied from fs/namei.c:permission().
- */
-static int standard_permission(struct inode *inode, int mask)
-{
-	int mode = inode->i_mode;
-
-	if ((mask & S_IWOTH) && IS_RDONLY(inode) &&
-	    (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode)))
-		return -EROFS; /* Nobody gets write access to a read-only fs */
-	else if ((mask & S_IWOTH) && IS_IMMUTABLE(inode))
-		return -EACCES; /* Nobody gets write access to an immutable file */
-	else if (current->fsuid == inode->i_uid)
-		mode >>= 6;
-	else if (in_group_p(inode->i_gid))
-		mode >>= 3;
-	if (((mode & mask & S_IRWXO) == mask) || capable(CAP_DAC_OVERRIDE))
-		return 0;
-	/* read and search access */
-	if ((mask == S_IROTH) ||
-	    (S_ISDIR(inode->i_mode)  && !(mask & ~(S_IROTH | S_IXOTH))))
-		if (capable(CAP_DAC_READ_SEARCH))
-			return 0;
-	return -EACCES;
-}
-
-/* 
- * Set up permission rules for processes looking at other processes.
- * You're not allowed to see a process unless it has the same or more
- * restricted root than your own.  This prevents a chrooted processes
- * from escaping through the /proc entries of less restricted
- * processes, and thus allows /proc to be safely mounted in a chrooted
- * area.
- *
- * Note that root (uid 0) doesn't get permission for this either,
- * since chroot is stronger than root.
- *
- * XXX TODO: use the dentry mechanism to make off-limits procs simply
- * invisible rather than denied?  Does each namespace root get its own
- * dentry tree?
- *
- * This also applies the default permissions checks, as it only adds
- * restrictions.
- *
- * Jeremy Fitzhardinge <jeremy@zip.com.au>
- */
-int proc_permission(struct inode *inode, int mask)
-{
-	struct task_struct *p;
-	unsigned long ino = inode->i_ino;
-	unsigned long pid;
-	struct dentry *de, *base;
-
-	if (standard_permission(inode, mask) != 0)
-		return -EACCES;
-
-	/* 
-	 * Find the root of the processes being examined (if any).
-	 * XXX Surely there's a better way of doing this?
-	 */
-	if (ino >= PROC_OPENPROM_FIRST && 
-	    ino <  PROC_OPENPROM_FIRST + PROC_NOPENPROM)
-		return 0;		/* already allowed */
-
-	pid = ino >> 16;
-	if (pid == 0)
-		return 0;		/* already allowed */
-	
-	de = NULL;
-	base = current->fs->root;
-
-	read_lock(&tasklist_lock);
-	p = find_task_by_pid(pid);
-
-	if (p && p->fs)
-		de = p->fs->root;
-	read_unlock(&tasklist_lock);	/* FIXME! */
-
-	if (p == NULL)
-		return -EACCES;		/* ENOENT? */
-
-	if (de == NULL)
-	{
-		/* kswapd and bdflush don't have proper root or cwd... */
-		return -EACCES;
-	}
-	
-	/* XXX locking? */
-	for(;;)
-	{
-		struct dentry *parent;
-
-		if (de == base)
-			return 0;	/* already allowed */
-
-		de = de->d_covers;
-		parent = de->d_parent;
-
-		if (de == parent)
-			break;
-
-		de = parent;
-	}
-
-	return -EACCES;			/* incompatible roots */
-}
-
-#endif

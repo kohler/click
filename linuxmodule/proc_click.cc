@@ -34,7 +34,7 @@ static String *handler_strings = 0;
 static int *handler_strings_next = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-static spinlock_t handler_strings_spinlock;
+static spinlock_t handler_strings_lock;
 
 
 //
@@ -78,7 +78,7 @@ static struct inode_operations proc_element_handler_inode_operations;
 static int
 increase_handler_strings()
 {
-  // must be called with handler_strings_spinlock held
+  // must be called with handler_strings_lock held
 
   if (handler_strings_cap < 0)	// in process of cleaning up module
     return -1;
@@ -113,23 +113,21 @@ increase_handler_strings()
 static int
 next_handler_string()
 {
-  spin_lock(&handler_strings_spinlock);
+  spin_lock(&handler_strings_lock);
   if (handler_strings_free < 0)
     increase_handler_strings();
   int hs = handler_strings_free;
   if (hs >= 0)
     handler_strings_free = handler_strings_next[hs];
-  spin_unlock(&handler_strings_spinlock);
+  spin_unlock(&handler_strings_lock);
   return hs;
 }
 
 static const Router::Handler *
 find_handler(int eindex, int handlerno)
 {
-  if (current_router && current_router->handler_ok(handlerno))
-    return &current_router->handler(handlerno);
-  else if (Router::global_handler_ok(handlerno))
-    return &Router::global_handler(handlerno);
+  if (Router::handler_ok(current_router, handlerno))
+    return &Router::handler(current_router, handlerno);
   else
     return 0;
 }
@@ -255,10 +253,10 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
     return 0;
   } else {
     // free handler string
-    spin_lock(&handler_strings_spinlock);
+    spin_lock(&handler_strings_lock);
     handler_strings_next[stringno] = handler_strings_free;
     handler_strings_free = stringno;
-    spin_unlock(&handler_strings_spinlock);
+    spin_unlock(&handler_strings_lock);
     filp->private_data = (void *)-1;
     return retval;
   }
@@ -349,10 +347,10 @@ proc_element_handler_release(struct inode *, struct file *filp)
 
   // free handler string
   if (stringno >= 0 && stringno < handler_strings_cap) {
-    spin_lock(&handler_strings_spinlock);
+    spin_lock(&handler_strings_lock);
     handler_strings_next[stringno] = handler_strings_free;
     handler_strings_free = stringno;
-    spin_unlock(&handler_strings_spinlock);
+    spin_unlock(&handler_strings_lock);
   }
   
   return 0;
@@ -569,7 +567,7 @@ init_proc_click_elements()
   proc_element_handler_inode_operations.default_file_ops = &proc_element_handler_operations;
 #endif
 
-  spin_lock_init(&handler_strings_spinlock);
+  spin_lock_init(&handler_strings_lock);
 }
 
 void
@@ -578,12 +576,12 @@ cleanup_proc_click_elements()
   cleanup_router_element_procs();
 
   // clean up handler_strings
-  spin_lock(&handler_strings_spinlock);
+  spin_lock(&handler_strings_lock);
   delete[] handler_strings;
   delete[] handler_strings_next;
   handler_strings = 0;
   handler_strings_next = 0;
   handler_strings_cap = -1;
   handler_strings_free = -1;
-  spin_unlock(&handler_strings_spinlock);
+  spin_unlock(&handler_strings_lock);
 }
