@@ -1,6 +1,71 @@
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/drivers/i2c/i2c-proc.c ./drivers/i2c/i2c-proc.c
+--- /usr/src/kernel-source-2.4.26/drivers/i2c/i2c-proc.c	2004-02-20 22:47:06.000000000 -0500
++++ ./drivers/i2c/i2c-proc.c	2004-08-05 10:12:19.000000000 -0400
+@@ -180,18 +180,19 @@
+ 
+ 	i2c_clients[id - 256] = client;
+ #ifdef DEBUG
+-	if (!new_header || !new_header->ctl_table ||
+-	    !new_header->ctl_table->child ||
+-	    !new_header->ctl_table->child->child ||
+-	    !new_header->ctl_table->child->child->de) {
++	if (!new_header || !new_header->ctl_table_member ||
++	    !new_header->ctl_table_member->child ||
++	    !new_header->ctl_table_member->child->child ||
++	    !new_header->ctl_table_member->child->child->de) {
+ 		printk
+ 		    ("i2c-proc.o: NULL pointer when trying to install fill_inode fix!\n");
+ 		return id;
+ 	}
+ #endif				/* DEBUG */
+ 	i2c_inodes[id - 256] =
+-	    new_header->ctl_table->child->child->de->low_ino;
+-	new_header->ctl_table->child->child->de->owner = controlling_mod;
++	    new_header->ctl_table_member->child->child->de->low_ino;
++	new_header->ctl_table_member->child->child->de->owner =
++	  controlling_mod;
+ 
+ 	return id;
+ }
+@@ -202,7 +203,7 @@
+ 	char *temp;
+ 	id -= 256;
+ 	if (i2c_entries[id]) {
+-		table = i2c_entries[id]->ctl_table;
++		table = i2c_entries[id]->ctl_table_member;
+ 		unregister_sysctl_table(i2c_entries[id]);
+ 		/* 2-step kfree needed to keep gcc happy about const points */
+ 		(const char *) temp = table[4].procname;
+@@ -278,7 +279,7 @@
+ 	for (i = 0; i < SENSORS_ENTRY_MAX; i++)
+ 		if (i2c_entries[i]) {
+ 			client_tbl =
+-			    i2c_entries[i]->ctl_table->child->child;
++			    i2c_entries[i]->ctl_table_member->child->child;
+ 			buflen =
+ 			    sprintf(BUF, "%d\t%s\n", client_tbl->ctl_name,
+ 				    client_tbl->procname);
+@@ -310,7 +311,7 @@
+ 		     i++)
+ 			if (i2c_entries[i]) {
+ 				client_tbl =
+-				    i2c_entries[i]->ctl_table->child->
++				    i2c_entries[i]->ctl_table_member->child->
+ 				    child;
+ 				data.sysctl_id = client_tbl->ctl_name;
+ 				strcpy(data.name, client_tbl->procname);
+@@ -853,7 +854,7 @@
+ 	if (!
+ 	    (i2c_proc_header =
+ 	     register_sysctl_table(i2c_proc, 0))) return -ENOMEM;
+-	i2c_proc_header->ctl_table->child->de->owner = THIS_MODULE;
++	i2c_proc_header->ctl_table_member->child->de->owner = THIS_MODULE;
+ 	i2c_initialized++;
+ 	return 0;
+ }
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/drivers/net/eepro100.c ./drivers/net/eepro100.c
 --- /usr/src/kernel-source-2.4.26/drivers/net/eepro100.c	2003-08-30 02:01:38.000000000 -0400
-+++ ./drivers/net/eepro100.c	2004-07-28 18:27:28.000000000 -0400
++++ ./drivers/net/eepro100.c	2004-07-28 21:37:01.000000000 -0400
 @@ -549,6 +549,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -529,7 +594,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/drivers/net/tg3.c ./drivers/net/tg3.c
 --- /usr/src/kernel-source-2.4.26/drivers/net/tg3.c	2004-04-17 00:23:50.000000000 -0400
-+++ ./drivers/net/tg3.c	2004-07-28 18:27:28.000000000 -0400
++++ ./drivers/net/tg3.c	2004-07-28 21:37:01.000000000 -0400
 @@ -2302,7 +2302,7 @@
  				    desc->err_vlan & RXD_VLAN_MASK);
  		} else
@@ -541,7 +606,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		received++;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
 --- /usr/src/kernel-source-2.4.26/drivers/net/tulip/interrupt.c	2003-05-31 23:06:27.000000000 -0400
-+++ ./drivers/net/tulip/interrupt.c	2004-07-28 18:27:28.000000000 -0400
++++ ./drivers/net/tulip/interrupt.c	2004-07-28 21:37:01.000000000 -0400
 @@ -311,6 +311,10 @@
  #endif
  }
@@ -900,7 +965,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/drivers/net/tulip/tulip_core.c ./drivers/net/tulip/tulip_core.c
 --- /usr/src/kernel-source-2.4.26/drivers/net/tulip/tulip_core.c	2004-04-14 09:05:30.000000000 -0400
-+++ ./drivers/net/tulip/tulip_core.c	2004-07-28 18:27:28.000000000 -0400
++++ ./drivers/net/tulip/tulip_core.c	2004-07-28 21:37:01.000000000 -0400
 @@ -268,6 +268,16 @@
  static void set_rx_mode(struct net_device *dev);
  
@@ -1137,7 +1202,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/fs/proc/inode.c ./fs/proc/inode.c
 --- /usr/src/kernel-source-2.4.26/fs/proc/inode.c	2003-11-28 13:26:21.000000000 -0500
-+++ ./fs/proc/inode.c	2004-07-28 18:27:28.000000000 -0400
++++ ./fs/proc/inode.c	2004-07-28 21:37:01.000000000 -0400
 @@ -147,6 +147,11 @@
  	if (!inode)
  		goto out_fail;
@@ -1152,7 +1217,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		if (de->mode) {
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-alpha/core_tsunami.h ./include/asm-alpha/core_tsunami.h
 --- /usr/src/kernel-source-2.4.26/include/asm-alpha/core_tsunami.h	2002-08-02 20:39:45.000000000 -0400
-+++ ./include/asm-alpha/core_tsunami.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-alpha/core_tsunami.h	2004-07-28 21:37:01.000000000 -0400
 @@ -281,8 +281,7 @@
  /*
   * Data structure for handling TSUNAMI machine checks:
@@ -1165,7 +1230,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #ifdef __KERNEL__
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-arm/mmu.h ./include/asm-arm/mmu.h
 --- /usr/src/kernel-source-2.4.26/include/asm-arm/mmu.h	2003-08-30 02:01:45.000000000 -0400
-+++ ./include/asm-arm/mmu.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-arm/mmu.h	2004-07-28 21:37:01.000000000 -0400
 @@ -4,6 +4,6 @@
  /*
   * The ARM doesn't have a mmu context
@@ -1176,7 +1241,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-arm/proc-armo/pgalloc.h ./include/asm-arm/proc-armo/pgalloc.h
 --- /usr/src/kernel-source-2.4.26/include/asm-arm/proc-armo/pgalloc.h	2001-04-12 15:20:31.000000000 -0400
-+++ ./include/asm-arm/proc-armo/pgalloc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-arm/proc-armo/pgalloc.h	2004-07-28 21:37:01.000000000 -0400
 @@ -20,7 +20,7 @@
   */
  static inline pte_t *pte_alloc_one(struct mm_struct *mm, unsigned long address)
@@ -1188,7 +1253,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /*
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-arm/proc-armv/pgalloc.h ./include/asm-arm/proc-armv/pgalloc.h
 --- /usr/src/kernel-source-2.4.26/include/asm-arm/proc-armv/pgalloc.h	2001-04-12 15:20:31.000000000 -0400
-+++ ./include/asm-arm/proc-armv/pgalloc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-arm/proc-armv/pgalloc.h	2004-07-28 21:37:01.000000000 -0400
 @@ -22,7 +22,7 @@
  {
  	pte_t *pte;
@@ -1200,7 +1265,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	return pte;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-arm/system.h ./include/asm-arm/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-arm/system.h	2003-08-30 02:01:46.000000000 -0400
-+++ ./include/asm-arm/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-arm/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -36,7 +36,7 @@
  
  #define tas(ptr) (xchg((ptr),1))
@@ -1212,7 +1277,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   * Include processor dependent parts
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-cris/io.h ./include/asm-cris/io.h
 --- /usr/src/kernel-source-2.4.26/include/asm-cris/io.h	2003-08-30 02:01:46.000000000 -0400
-+++ ./include/asm-cris/io.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-cris/io.h	2004-07-28 21:37:01.000000000 -0400
 @@ -26,8 +26,8 @@
   ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
  			       (255)); _Foofoo; })
@@ -1226,7 +1291,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #else  /* ! defined CONFIG_SVINTO_SIM */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/desc.h ./include/asm-i386/desc.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/desc.h	2004-02-20 22:47:16.000000000 -0500
-+++ ./include/asm-i386/desc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-i386/desc.h	2004-07-28 21:37:01.000000000 -0400
 @@ -56,9 +56,9 @@
  #define idt_descr (*(struct Xgt_desc_struct *)((char *)&idt - 2))
  #define gdt_descr (*(struct Xgt_desc_struct *)((char *)&gdt - 2))
@@ -1241,7 +1306,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   * This is the ldt that every process will get unless we need
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/highmem.h	2004-04-14 09:05:40.000000000 -0400
-+++ ./include/asm-i386/highmem.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/asm-i386/highmem.h	2004-07-28 21:40:22.000000000 -0400
 @@ -94,7 +94,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -1263,7 +1328,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		return;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/pgtable.h ./include/asm-i386/pgtable.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/pgtable.h	2002-11-28 18:53:15.000000000 -0500
-+++ ./include/asm-i386/pgtable.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/asm-i386/pgtable.h	2004-07-28 21:40:21.000000000 -0400
 @@ -43,7 +43,7 @@
  			"movl %%cr3, %0;  # flush TLB \n"		\
  			"movl %0, %%cr3;              \n"		\
@@ -1275,7 +1340,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /*
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/processor.h ./include/asm-i386/processor.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/processor.h	2004-02-22 04:28:33.000000000 -0500
-+++ ./include/asm-i386/processor.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/asm-i386/processor.h	2004-07-28 21:40:21.000000000 -0400
 @@ -493,7 +493,7 @@
  /* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
  static inline void rep_nop(void)
@@ -1287,7 +1352,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define cpu_relax()	rep_nop()
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/rwlock.h	2002-08-02 20:39:45.000000000 -0400
-+++ ./include/asm-i386/rwlock.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-i386/rwlock.h	2004-07-28 21:37:01.000000000 -0400
 @@ -28,7 +28,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -1308,7 +1373,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/save_state.h ./include/asm-i386/save_state.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/save_state.h	2003-08-30 02:01:46.000000000 -0400
-+++ ./include/asm-i386/save_state.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-i386/save_state.h	2004-07-28 21:47:39.000000000 -0400
 @@ -160,24 +160,24 @@
  	 * first restore %ds, so we can access our data properly
  	 */
@@ -1378,7 +1443,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	do_fpu_end();
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-i386/string.h ./include/asm-i386/string.h
 --- /usr/src/kernel-source-2.4.26/include/asm-i386/string.h	2001-08-10 21:13:47.000000000 -0400
-+++ ./include/asm-i386/string.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/asm-i386/string.h	2004-07-28 21:40:21.000000000 -0400
 @@ -29,6 +29,7 @@
   *		consider these trivial functions to be PD.
   */
@@ -1429,7 +1494,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  {
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/delay.h ./include/asm-ia64/delay.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/delay.h	2003-05-31 23:06:33.000000000 -0400
-+++ ./include/asm-ia64/delay.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/delay.h	2004-07-28 21:37:01.000000000 -0400
 @@ -21,7 +21,7 @@
  static __inline__ void
  ia64_set_itm (unsigned long val)
@@ -1490,7 +1555,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  static __inline__ void
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/intrinsics.h ./include/asm-ia64/intrinsics.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/intrinsics.h	2003-08-30 02:01:46.000000000 -0400
-+++ ./include/asm-ia64/intrinsics.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/intrinsics.h	2004-07-28 21:37:01.000000000 -0400
 @@ -131,7 +131,7 @@
  	      case 8: _o_ = (__u64) (long) (old); break;				\
  	      default: break;								\
@@ -1502,7 +1567,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		__asm__ __volatile__ ("cmpxchg1."sem" %0=[%1],%2,ar.ccv"		\
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/io.h ./include/asm-ia64/io.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/io.h	2003-05-31 23:06:33.000000000 -0400
-+++ ./include/asm-ia64/io.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/io.h	2004-07-28 21:37:01.000000000 -0400
 @@ -85,7 +85,7 @@
   * Memory fence w/accept.  This should never be used in code that is
   * not IA-64 specific.
@@ -1514,7 +1579,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  __ia64_get_io_port_base (void)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/pgalloc.h ./include/asm-ia64/pgalloc.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/pgalloc.h	2003-05-31 23:06:33.000000000 -0400
-+++ ./include/asm-ia64/pgalloc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/pgalloc.h	2004-07-28 21:37:01.000000000 -0400
 @@ -209,7 +209,7 @@
  	flush_tlb_range(vma->vm_mm, (addr & PAGE_MASK), (addr & PAGE_MASK) + PAGE_SIZE);
  #else
@@ -1526,7 +1591,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/processor.h ./include/asm-ia64/processor.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/processor.h	2004-04-17 00:24:04.000000000 -0400
-+++ ./include/asm-ia64/processor.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/processor.h	2004-07-28 21:37:01.000000000 -0400
 @@ -424,14 +424,14 @@
  ia64_set_kr (unsigned long regnum, unsigned long r)
  {
@@ -1841,7 +1906,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/sn/rw_mmr.h ./include/asm-ia64/sn/rw_mmr.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/sn/rw_mmr.h	2003-08-30 02:01:47.000000000 -0400
-+++ ./include/asm-ia64/sn/rw_mmr.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/sn/rw_mmr.h	2004-07-28 21:37:01.000000000 -0400
 @@ -51,7 +51,7 @@
               "st8.rel [%0]=%1;;"
               "mov psr.l=r2;;"
@@ -1862,7 +1927,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/sn/sn2/io.h ./include/asm-ia64/sn/sn2/io.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/sn/sn2/io.h	2003-11-28 13:26:21.000000000 -0500
-+++ ./include/asm-ia64/sn/sn2/io.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/sn/sn2/io.h	2004-07-28 21:37:01.000000000 -0400
 @@ -12,7 +12,7 @@
  extern void * sn_io_addr(unsigned long port) __attribute__ ((__const__)); /* Forward definition */
  extern void sn_mmiob(void); /* Forward definition */
@@ -1874,7 +1939,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/spinlock.h ./include/asm-ia64/spinlock.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/spinlock.h	2003-11-28 13:26:21.000000000 -0500
-+++ ./include/asm-ia64/spinlock.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/spinlock.h	2004-07-28 21:37:01.000000000 -0400
 @@ -45,7 +45,7 @@
  		"(p15) br.call.spnt.few b7=ia64_spinlock_contention\n"			\
  		";;\n"									\
@@ -1904,7 +1969,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define write_unlock(x)									\
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ia64/system.h ./include/asm-ia64/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ia64/system.h	2003-11-28 13:26:21.000000000 -0500
-+++ ./include/asm-ia64/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ia64/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -57,7 +57,7 @@
  static inline void
  ia64_insn_group_barrier (void)
@@ -1984,7 +2049,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define save_and_cli(flags)	__save_and_cli(flags)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/fpu.h ./include/asm-mips/fpu.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/fpu.h	2003-08-30 02:01:47.000000000 -0400
-+++ ./include/asm-mips/fpu.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/fpu.h	2004-07-28 21:37:01.000000000 -0400
 @@ -22,8 +22,8 @@
  
  struct sigcontext;
@@ -1998,7 +2063,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void _init_fpu(void);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/irq.h ./include/asm-mips/irq.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/irq.h	2003-08-30 02:01:48.000000000 -0400
-+++ ./include/asm-mips/irq.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/irq.h	2004-07-28 21:37:01.000000000 -0400
 @@ -30,7 +30,7 @@
  extern void enable_irq(unsigned int);
  
@@ -2010,7 +2075,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void (*irq_setup)(void);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/processor.h ./include/asm-mips/processor.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/processor.h	2004-02-22 04:28:33.000000000 -0500
-+++ ./include/asm-mips/processor.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/processor.h	2004-07-28 21:37:01.000000000 -0400
 @@ -314,6 +314,6 @@
   * overhead of a function call by forcing the compiler to save the return
   * address register on the stack.
@@ -2021,7 +2086,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif /* _ASM_PROCESSOR_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/system.h ./include/asm-mips/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/system.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-mips/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -260,7 +260,7 @@
   * switch_to(n) should switch tasks to task nr n, first
   * checking that n isn't the current task, in which case it does nothing.
@@ -2033,7 +2098,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/time.h ./include/asm-mips/time.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/time.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-mips/time.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/time.h	2004-07-28 21:37:01.000000000 -0400
 @@ -72,13 +72,13 @@
  /*
   * the corresponding low-level timer interrupt routine.
@@ -2052,7 +2117,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   * board specific routines required by time_init().
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips/watch.h ./include/asm-mips/watch.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips/watch.h	2003-08-30 02:01:48.000000000 -0400
-+++ ./include/asm-mips/watch.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips/watch.h	2004-07-28 21:37:01.000000000 -0400
 @@ -18,9 +18,9 @@
  	wr_load = 2
  };
@@ -2068,7 +2133,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	if (cpu_has_watch)					\
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/fpu.h ./include/asm-mips64/fpu.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/fpu.h	2003-08-30 02:01:48.000000000 -0400
-+++ ./include/asm-mips64/fpu.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/fpu.h	2004-07-28 21:37:01.000000000 -0400
 @@ -23,11 +23,11 @@
  struct sigcontext;
  struct sigcontext32;
@@ -2087,7 +2152,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void _init_fpu(void);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/irq.h ./include/asm-mips64/irq.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/irq.h	2003-08-30 02:01:48.000000000 -0400
-+++ ./include/asm-mips64/irq.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/irq.h	2004-07-28 21:37:01.000000000 -0400
 @@ -48,7 +48,7 @@
  extern void enable_irq(unsigned int);
  
@@ -2099,7 +2164,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void (*irq_setup)(void);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/processor.h ./include/asm-mips64/processor.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/processor.h	2004-02-22 04:28:34.000000000 -0500
-+++ ./include/asm-mips64/processor.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/processor.h	2004-07-28 21:37:01.000000000 -0400
 @@ -357,6 +357,6 @@
   * overhead of a function call by forcing the compiler to save the return
   * address register on the stack.
@@ -2110,7 +2175,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif /* _ASM_PROCESSOR_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/system.h ./include/asm-mips64/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/system.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-mips64/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -238,7 +238,7 @@
   * switch_to(n) should switch tasks to task nr n, first
   * checking that n isn't the current task, in which case it does nothing.
@@ -2122,7 +2187,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/time.h ./include/asm-mips64/time.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/time.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-mips64/time.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/time.h	2004-07-28 21:37:01.000000000 -0400
 @@ -72,13 +72,13 @@
  /*
   * the corresponding low-level timer interrupt routine.
@@ -2141,7 +2206,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   * board specific routines required by time_init().
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-mips64/watch.h ./include/asm-mips64/watch.h
 --- /usr/src/kernel-source-2.4.26/include/asm-mips64/watch.h	2003-08-30 02:01:48.000000000 -0400
-+++ ./include/asm-mips64/watch.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-mips64/watch.h	2004-07-28 21:37:01.000000000 -0400
 @@ -18,9 +18,9 @@
  	wr_load = 2
  };
@@ -2157,7 +2222,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	if (cpu_has_watch)					\
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-parisc/system.h ./include/asm-parisc/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-parisc/system.h	2003-05-31 23:06:35.000000000 -0400
-+++ ./include/asm-parisc/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-parisc/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -138,7 +138,7 @@
  ** The __asm__ op below simple prevents gcc/ld from reordering
  ** instructions across the mb() "call".
@@ -2169,7 +2234,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define smp_mb()	mb()
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ppc64/delay.h ./include/asm-ppc64/delay.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ppc64/delay.h	2003-05-31 23:06:36.000000000 -0400
-+++ ./include/asm-ppc64/delay.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ppc64/delay.h	2004-07-28 21:37:01.000000000 -0400
 @@ -19,7 +19,7 @@
  /* define these here to prevent circular dependencies */ 
  #define __HMT_low()	asm volatile("or 1,1,1")
@@ -2181,7 +2246,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  {
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-ppc64/mmu_context.h ./include/asm-ppc64/mmu_context.h
 --- /usr/src/kernel-source-2.4.26/include/asm-ppc64/mmu_context.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-ppc64/mmu_context.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-ppc64/mmu_context.h	2004-07-28 21:37:01.000000000 -0400
 @@ -138,7 +138,7 @@
  		 "\tdssall\n"
  		  "\tsync\n"
@@ -2193,7 +2258,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-s390/uaccess.h ./include/asm-s390/uaccess.h
 --- /usr/src/kernel-source-2.4.26/include/asm-s390/uaccess.h	2002-08-02 20:39:45.000000000 -0400
-+++ ./include/asm-s390/uaccess.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-s390/uaccess.h	2004-07-28 21:37:01.000000000 -0400
 @@ -36,7 +36,7 @@
  
  #define get_ds()        (KERNEL_DS)
@@ -2205,7 +2270,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define segment_eq(a,b) ((a).ar4 == (b).ar4)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-s390x/uaccess.h ./include/asm-s390x/uaccess.h
 --- /usr/src/kernel-source-2.4.26/include/asm-s390x/uaccess.h	2002-08-02 20:39:45.000000000 -0400
-+++ ./include/asm-s390x/uaccess.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-s390x/uaccess.h	2004-07-28 21:37:01.000000000 -0400
 @@ -36,7 +36,7 @@
  
  #define get_ds()	(KERNEL_DS)
@@ -2217,7 +2282,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define segment_eq(a,b)	((a).ar4 == (b).ar4)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-sparc/system.h ./include/asm-sparc/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-sparc/system.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-sparc/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-sparc/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -295,9 +295,9 @@
  #define wmb()	mb()
  #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
@@ -2233,7 +2298,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-sparc64/system.h ./include/asm-sparc64/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-sparc64/system.h	2003-05-31 23:06:37.000000000 -0400
-+++ ./include/asm-sparc64/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-sparc64/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -121,9 +121,9 @@
  #define smp_rmb()	rmb()
  #define smp_wmb()	wmb()
@@ -2249,7 +2314,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define flushi(addr)	__asm__ __volatile__ ("flush %0" : : "r" (addr) : "memory")
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/desc.h	2004-02-20 22:47:17.000000000 -0500
-+++ ./include/asm-x86_64/desc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/desc.h	2004-07-28 21:37:01.000000000 -0400
 @@ -73,9 +73,9 @@
  #define __CPU_DESC_INDEX(x,field) \
  	((x) * sizeof(struct per_cpu_gdt) + offsetof(struct per_cpu_gdt, field) + __GDT_HEAD_SIZE)
@@ -2265,7 +2330,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/page.h ./include/asm-x86_64/page.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/page.h	2003-08-30 02:01:49.000000000 -0400
-+++ ./include/asm-x86_64/page.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/page.h	2004-07-28 21:37:01.000000000 -0400
 @@ -91,9 +91,9 @@
         char *filename;    /* should use 32bit offset instead, but the assembler doesn't like it */ 
         unsigned short line; 
@@ -2280,7 +2345,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/pda.h ./include/asm-x86_64/pda.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/pda.h	2003-08-30 02:01:49.000000000 -0400
-+++ ./include/asm-x86_64/pda.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/pda.h	2004-07-28 21:37:01.000000000 -0400
 @@ -41,9 +41,9 @@
  
  #define pda_to_op(op,field,val) do { \
@@ -2296,7 +2361,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
         } while (0)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/pgtable.h ./include/asm-x86_64/pgtable.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/pgtable.h	2004-04-14 09:05:40.000000000 -0400
-+++ ./include/asm-x86_64/pgtable.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/pgtable.h	2004-07-28 21:37:01.000000000 -0400
 @@ -49,7 +49,7 @@
  			"movq %%cr3, %0;  # flush TLB \n"		\
  			"movq %0, %%cr3;              \n"		\
@@ -2308,7 +2373,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /*
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/processor.h ./include/asm-x86_64/processor.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/processor.h	2004-04-14 09:05:40.000000000 -0400
-+++ ./include/asm-x86_64/processor.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/processor.h	2004-07-28 21:37:01.000000000 -0400
 @@ -389,7 +389,7 @@
  /* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
  extern inline void rep_nop(void)
@@ -2320,7 +2385,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /* Avoid speculative execution by the CPU */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/rwlock.h ./include/asm-x86_64/rwlock.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/rwlock.h	2002-11-28 18:53:15.000000000 -0500
-+++ ./include/asm-x86_64/rwlock.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/rwlock.h	2004-07-28 21:37:01.000000000 -0400
 @@ -31,7 +31,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -2359,7 +2424,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  						if (__builtin_constant_p(rw)) \
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/system.h ./include/asm-x86_64/system.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/system.h	2003-11-28 13:26:21.000000000 -0500
-+++ ./include/asm-x86_64/system.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/system.h	2004-07-28 21:37:01.000000000 -0400
 @@ -248,9 +248,9 @@
   * but I'd also expect them to finally get their act together
   * and add some real memory barriers if so.
@@ -2384,7 +2449,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   * disable hlt during certain critical i/o operations
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/asm-x86_64/uaccess.h ./include/asm-x86_64/uaccess.h
 --- /usr/src/kernel-source-2.4.26/include/asm-x86_64/uaccess.h	2004-04-14 09:05:40.000000000 -0400
-+++ ./include/asm-x86_64/uaccess.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/asm-x86_64/uaccess.h	2004-07-28 21:37:01.000000000 -0400
 @@ -284,13 +284,13 @@
  	case 10:
  		__put_user_asm(*(u64*)src,(u64*)dst,ret,"q","","ir",10);
@@ -2403,7 +2468,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	default:
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/atalk.h ./include/linux/atalk.h
 --- /usr/src/kernel-source-2.4.26/include/linux/atalk.h	2000-11-18 23:57:00.000000000 -0500
-+++ ./include/linux/atalk.h	2004-07-28 18:42:04.000000000 -0400
++++ ./include/linux/atalk.h	2004-07-28 21:42:20.000000000 -0400
 @@ -163,7 +163,7 @@
  
  static inline struct atalk_iface *atalk_find_dev(struct net_device *dev)
@@ -2415,7 +2480,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern struct at_addr *atalk_find_dev_addr(struct net_device *dev);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/dqblk_v1.h ./include/linux/dqblk_v1.h
 --- /usr/src/kernel-source-2.4.26/include/linux/dqblk_v1.h	2003-08-30 02:01:49.000000000 -0400
-+++ ./include/linux/dqblk_v1.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/linux/dqblk_v1.h	2004-07-28 21:37:01.000000000 -0400
 @@ -12,7 +12,6 @@
  #define V1_DQF_RSQUASH 1
  
@@ -2427,7 +2492,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif	/* _LINUX_DQBLK_V1_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/highmem.h ./include/linux/highmem.h
 --- /usr/src/kernel-source-2.4.26/include/linux/highmem.h	2003-08-30 02:01:49.000000000 -0400
-+++ ./include/linux/highmem.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/highmem.h	2004-07-28 21:40:22.000000000 -0400
 @@ -17,7 +17,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -2459,7 +2524,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	kunmap_atomic(vto, KM_USER1);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/if_vlan.h ./include/linux/if_vlan.h
 --- /usr/src/kernel-source-2.4.26/include/linux/if_vlan.h	2004-04-14 09:05:40.000000000 -0400
-+++ ./include/linux/if_vlan.h	2004-07-28 18:43:41.000000000 -0400
++++ ./include/linux/if_vlan.h	2004-07-28 21:47:10.000000000 -0400
 @@ -184,7 +184,7 @@
  		break;
  	};
@@ -2471,7 +2536,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  static inline int vlan_hwaccel_rx(struct sk_buff *skb,
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/inetdevice.h ./include/linux/inetdevice.h
 --- /usr/src/kernel-source-2.4.26/include/linux/inetdevice.h	2004-04-16 20:10:28.000000000 -0400
-+++ ./include/linux/inetdevice.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/linux/inetdevice.h	2004-07-28 21:37:01.000000000 -0400
 @@ -142,7 +142,7 @@
  	struct in_device *in_dev;
  
@@ -2483,7 +2548,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	read_unlock(&inetdev_lock);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/intermezzo_kml.h ./include/linux/intermezzo_kml.h
 --- /usr/src/kernel-source-2.4.26/include/linux/intermezzo_kml.h	2001-11-11 13:20:21.000000000 -0500
-+++ ./include/linux/intermezzo_kml.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/linux/intermezzo_kml.h	2004-07-28 21:37:01.000000000 -0400
 @@ -70,8 +70,7 @@
  	int 			gid;
  };
@@ -2496,7 +2561,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	char 			*path;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/list.h ./include/linux/list.h
 --- /usr/src/kernel-source-2.4.26/include/linux/list.h	2004-02-20 22:47:18.000000000 -0500
-+++ ./include/linux/list.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/list.h	2004-07-28 21:40:21.000000000 -0400
 @@ -91,8 +91,8 @@
  static inline void list_del(struct list_head *entry)
  {
@@ -2510,7 +2575,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /**
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/mm.h ./include/linux/mm.h
 --- /usr/src/kernel-source-2.4.26/include/linux/mm.h	2003-11-28 13:26:21.000000000 -0500
-+++ ./include/linux/mm.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/mm.h	2004-07-28 21:40:21.000000000 -0400
 @@ -589,7 +589,6 @@
  		return 0;
  }
@@ -2521,7 +2586,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern unsigned long page_unuse(struct page *);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/mtd/compatmac.h ./include/linux/mtd/compatmac.h
 --- /usr/src/kernel-source-2.4.26/include/linux/mtd/compatmac.h	2003-05-31 23:06:37.000000000 -0400
-+++ ./include/linux/mtd/compatmac.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/linux/mtd/compatmac.h	2004-07-28 21:37:01.000000000 -0400
 @@ -133,8 +133,8 @@
  #endif /* !(__BIT_TYPES_DEFINED__) */
  
@@ -2535,7 +2600,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
    #define SPIN_LOCK_UNLOCKED (spinlock_t) { 0 }
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/netdevice.h ./include/linux/netdevice.h
 --- /usr/src/kernel-source-2.4.26/include/linux/netdevice.h	2004-04-16 20:10:28.000000000 -0400
-+++ ./include/linux/netdevice.h	2004-07-28 18:42:04.000000000 -0400
++++ ./include/linux/netdevice.h	2004-07-28 21:42:10.000000000 -0400
 @@ -457,6 +457,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -2604,7 +2669,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern int		dev_change_flags(struct net_device *, unsigned);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/netfilter_ipv4/ip_conntrack_irc.h ./include/linux/netfilter_ipv4/ip_conntrack_irc.h
 --- /usr/src/kernel-source-2.4.26/include/linux/netfilter_ipv4/ip_conntrack_irc.h	2002-11-28 18:53:15.000000000 -0500
-+++ ./include/linux/netfilter_ipv4/ip_conntrack_irc.h	2004-07-28 18:27:28.000000000 -0400
++++ ./include/linux/netfilter_ipv4/ip_conntrack_irc.h	2004-07-28 21:56:58.000000000 -0400
 @@ -27,8 +27,7 @@
  };
  
@@ -2617,7 +2682,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #ifdef __KERNEL__
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/nfsd/syscall.h ./include/linux/nfsd/syscall.h
 --- /usr/src/kernel-source-2.4.26/include/linux/nfsd/syscall.h	2000-06-24 00:31:05.000000000 -0400
-+++ ./include/linux/nfsd/syscall.h	2004-07-28 18:42:46.000000000 -0400
++++ ./include/linux/nfsd/syscall.h	2004-07-28 21:44:24.000000000 -0400
 @@ -133,7 +133,7 @@
   * Kernel syscall implementation.
   */
@@ -2629,7 +2694,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
 --- /usr/src/kernel-source-2.4.26/include/linux/reiserfs_fs_sb.h	2003-08-30 02:01:49.000000000 -0400
-+++ ./include/linux/reiserfs_fs_sb.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/reiserfs_fs_sb.h	2004-07-28 21:40:21.000000000 -0400
 @@ -352,8 +352,7 @@
    } journal;
  } reiserfs_proc_info_data_t;
@@ -2642,7 +2707,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /* reiserfs union of in-core super block data */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/skbuff.h ./include/linux/skbuff.h
 --- /usr/src/kernel-source-2.4.26/include/linux/skbuff.h	2004-04-17 00:24:06.000000000 -0400
-+++ ./include/linux/skbuff.h	2004-07-28 18:41:56.000000000 -0400
++++ ./include/linux/skbuff.h	2004-07-28 21:40:40.000000000 -0400
 @@ -128,19 +128,31 @@
  
  struct net_device;
@@ -2759,7 +2824,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/spinlock.h ./include/linux/spinlock.h
 --- /usr/src/kernel-source-2.4.26/include/linux/spinlock.h	2004-02-22 04:28:34.000000000 -0500
-+++ ./include/linux/spinlock.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/spinlock.h	2004-07-28 21:40:21.000000000 -0400
 @@ -2,6 +2,7 @@
  #define __LINUX_SPINLOCK_H
  
@@ -2802,7 +2867,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define read_lock(lock)		(void)(lock) /* Not "unused variable". */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/swap.h ./include/linux/swap.h
 --- /usr/src/kernel-source-2.4.26/include/linux/swap.h	2004-02-20 22:47:18.000000000 -0500
-+++ ./include/linux/swap.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/swap.h	2004-07-28 21:40:21.000000000 -0400
 @@ -101,7 +101,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -2814,7 +2879,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void FASTCALL(lru_cache_add(struct page *));
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/sysctl.h ./include/linux/sysctl.h
 --- /usr/src/kernel-source-2.4.26/include/linux/sysctl.h	2004-04-17 00:24:06.000000000 -0400
-+++ ./include/linux/sysctl.h	2004-07-28 19:02:05.000000000 -0400
++++ ./include/linux/sysctl.h	2004-07-28 21:40:24.000000000 -0400
 @@ -720,7 +720,7 @@
  
  #ifdef __KERNEL__
@@ -2844,7 +2909,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/linux/types.h ./include/linux/types.h
 --- /usr/src/kernel-source-2.4.26/include/linux/types.h	2003-05-31 23:06:37.000000000 -0400
-+++ ./include/linux/types.h	2004-07-28 18:41:49.000000000 -0400
++++ ./include/linux/types.h	2004-07-28 21:40:21.000000000 -0400
 @@ -134,4 +134,23 @@
  	char			f_fpack[6];
  };
@@ -2871,7 +2936,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif /* _LINUX_TYPES_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/net/ax25.h ./include/net/ax25.h
 --- /usr/src/kernel-source-2.4.26/include/net/ax25.h	2001-01-04 17:51:20.000000000 -0500
-+++ ./include/net/ax25.h	2004-07-28 18:42:04.000000000 -0400
++++ ./include/net/ax25.h	2004-07-28 21:42:20.000000000 -0400
 @@ -176,7 +176,7 @@
  	struct ax25_cb		*next;
  	ax25_address		source_addr, dest_addr;
@@ -2883,7 +2948,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	unsigned short		vs, vr, va;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/net/checksum.h ./include/net/checksum.h
 --- /usr/src/kernel-source-2.4.26/include/net/checksum.h	2001-01-04 17:51:21.000000000 -0500
-+++ ./include/net/checksum.h	2004-07-28 19:02:36.000000000 -0400
++++ ./include/net/checksum.h	2004-07-28 21:44:46.000000000 -0400
 @@ -111,7 +111,7 @@
  static __inline__ unsigned int csum_and_copy_to_user
  (const char *src, char *dst, int len, unsigned int sum, int *err_ptr)
@@ -2895,7 +2960,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		if (copy_to_user(dst, src, len) == 0)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/include/net/route.h ./include/net/route.h
 --- /usr/src/kernel-source-2.4.26/include/net/route.h	2004-04-16 20:10:28.000000000 -0400
-+++ ./include/net/route.h	2004-07-28 18:56:39.000000000 -0400
++++ ./include/net/route.h	2004-07-28 21:44:46.000000000 -0400
 @@ -146,16 +146,18 @@
  				   u32 src, u32 tos, int oif, u8 protocol,
  				   u16 sport, u16 dport, struct sock *sk)
@@ -2925,7 +2990,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		if (err)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/kernel/ksyms.c ./kernel/ksyms.c
 --- /usr/src/kernel-source-2.4.26/kernel/ksyms.c	2004-02-22 04:28:35.000000000 -0500
-+++ ./kernel/ksyms.c	2004-07-28 18:27:28.000000000 -0400
++++ ./kernel/ksyms.c	2004-07-28 21:37:01.000000000 -0400
 @@ -571,6 +571,8 @@
  EXPORT_SYMBOL(event);
  EXPORT_SYMBOL(brw_page);
@@ -2937,7 +3002,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  EXPORT_SYMBOL(overflowuid);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/kernel/sysctl.c ./kernel/sysctl.c
 --- /usr/src/kernel-source-2.4.26/kernel/sysctl.c	2003-11-28 13:26:21.000000000 -0500
-+++ ./kernel/sysctl.c	2004-07-28 19:02:30.000000000 -0400
++++ ./kernel/sysctl.c	2004-07-28 21:37:01.000000000 -0400
 @@ -381,7 +381,7 @@
  			list_entry(tmp, struct ctl_table_header, ctl_entry);
  		void *context = NULL;
@@ -3021,7 +3086,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	return res;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/net/core/dev.c ./net/core/dev.c
 --- /usr/src/kernel-source-2.4.26/net/core/dev.c	2004-04-16 20:10:28.000000000 -0400
-+++ ./net/core/dev.c	2004-07-28 18:27:28.000000000 -0400
++++ ./net/core/dev.c	2004-07-28 21:37:01.000000000 -0400
 @@ -182,6 +182,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -3102,7 +3167,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/net/core/skbuff.c ./net/core/skbuff.c
 --- /usr/src/kernel-source-2.4.26/net/core/skbuff.c	2003-09-03 06:27:21.000000000 -0400
-+++ ./net/core/skbuff.c	2004-07-28 18:27:28.000000000 -0400
++++ ./net/core/skbuff.c	2004-07-28 21:37:01.000000000 -0400
 @@ -461,6 +461,65 @@
  #endif
  }
@@ -3171,7 +3236,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
   *	@skb: buffer to copy
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/net/ipv4/arp.c ./net/ipv4/arp.c
 --- /usr/src/kernel-source-2.4.26/net/ipv4/arp.c	2004-04-16 20:10:28.000000000 -0400
-+++ ./net/ipv4/arp.c	2004-07-28 18:27:28.000000000 -0400
++++ ./net/ipv4/arp.c	2004-07-28 21:37:01.000000000 -0400
 @@ -323,6 +323,7 @@
  {
  	u32 saddr = 0;
@@ -3202,7 +3267,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  static int arp_ignore(struct in_device *in_dev, struct net_device *dev,
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/net/ipv4/route.c ./net/ipv4/route.c
 --- /usr/src/kernel-source-2.4.26/net/ipv4/route.c	2003-11-29 04:53:54.000000000 -0500
-+++ ./net/ipv4/route.c	2004-07-28 19:03:22.000000000 -0400
++++ ./net/ipv4/route.c	2004-07-28 21:37:01.000000000 -0400
 @@ -2388,7 +2388,7 @@
  		data:		&flush_delay,
  		maxlen:		sizeof(int),
@@ -3367,7 +3432,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	 { 0 }
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' /usr/src/kernel-source-2.4.26/net/netsyms.c ./net/netsyms.c
 --- /usr/src/kernel-source-2.4.26/net/netsyms.c	2004-04-17 00:24:08.000000000 -0400
-+++ ./net/netsyms.c	2004-07-28 18:27:28.000000000 -0400
++++ ./net/netsyms.c	2004-07-28 21:37:01.000000000 -0400
 @@ -299,6 +299,11 @@
  EXPORT_SYMBOL(register_inetaddr_notifier);
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
