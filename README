@@ -20,7 +20,7 @@ CONTENTS
 CLICKDIR			this directory
 CLICKDIR/apps			Click-related applications
 CLICKDIR/apps/ClickController	... Java program for interacting with drivers
-CLICKDIR/bsdmodule		FreeBSD 4.5 kernel module driver
+CLICKDIR/bsdmodule		FreeBSD 4.5 kernel module driver [NOT WORKING]
 CLICKDIR/conf			configuration files
 CLICKDIR/doc			documentation
 CLICKDIR/drivers		polling device drivers
@@ -55,6 +55,7 @@ CLICKDIR/include/clicknet	header files defining network headers
 CLICKDIR/lib			common non-element source code
 CLICKDIR/linuxmodule		Linux kernel module driver
 CLICKDIR/ns			'ns' driver (integrates with the ns simulator)
+CLICKDIR/test			regression tests
 CLICKDIR/tools			Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
@@ -67,6 +68,7 @@ CLICKDIR/tools/click-install	... installs configuration into kernel module
 CLICKDIR/tools/click-pretty	... pretty-prints Click configuration as HTML
 CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
+CLICKDIR/tools/click2xml	... convert Click language <-> XML
 CLICKDIR/userlevel		user-level `click' driver
 
 DOCUMENTATION
@@ -155,11 +157,12 @@ source code. Write us at
 
 	- The Click software team:
 	  Eddie Kohler
+	  John Bicket
 	  Benjie Chen
 	  Douglas S. J. De Couto
-	  Thomer M. Gil
 	  Robert Morris
 	  Max Poletto
-	  Nickolai B. Zeldovich
 	  M. Frans Kaashoek
 	  John Jannotti
+	  Nickolai B. Zeldovich
+	  and others

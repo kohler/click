@@ -1,62 +1,117 @@
 Click NEWS
 
-Version 1.3
+Version 1.4pre1   18.Mar.2004
+
+* Major changes
+
+** Huge Grid changes, bug fixes, new functionality, and restructuring into
+   multiple directories.
+
+** Scheduling rewrite. Previously, each Router object had its own set of
+   "threads". In the kernel, this meant many Click kernel threads might be
+   active during a configuration change, limiting how fast you could change
+   configurations. Now all Routers share a single set of "threads", so
+   configuration changes are faster and hopefully more reliable.
+
+   Bugs remain. We would so appreciate testing help it's not funny.
+
+** Userlevel driver: Support hotswapping. Hotswappable elements include
+   ControlSocket, ChatterSocket, FromDump.
+
+* New elements
+
+** Add many Grid elements.
+
+** Add FromNLANRDump (read directly from NLANR traces), FromTcpdump (read
+   from ASCII tcpdump(1) output), LinkUnqueue (model a link including
+   delay), SetTimestampDelta.
+
+** Add SourceIPHashMapper element (Max Krohn).
+
+** Add PortInfo and cp_tcpudp_port(): now you can refer to TCP/UDP ports by
+   name in elements like UDPIPEncap.
+
+* Element changes
+
+** ControlSocket supports LLRPCs.
+
+** IPClassifier and IPFilter support "ip hl", "ip id", and "ip vers";
+   arbitrary >, >=, <, and <= comparisons; and ?: expressions.
+
+** CheckIPHeader and friends accept packets with bad source addresses, as
+   long as they are destined for the router. Added keyword arguments.
 
 ** SetTCPChecksum implements the correct checksum.
 
 ** ICMPError handles source-routed packets appropriately.
 
-** Adjust startup sequence. Add click_static_initialize() to take care of
-   common initialization steps.
+** FromIPSummaryDump supports ip_opt, ip_ttl, ip_tos, and tcp_ntopt types.
 
-** Handlers: Change the way global handlers are called.
-
-** FromIPSummaryDump: Add ip_opt, ip_ttl, ip_tos, and tcp_ntopt types.
-
-** IPFilter, IPClassifier: Support "E1 ? E2 : E3" ternary expressions.
-
-** Dump elements, such as FromDump and FromIPSummaryDump, provide
-   notification.
-
-** Diagram macro updates, more tests, bug fixes (including
-   Packet::shrink_data, IPMapper).
-
-** Add click_ether_vlan structure in <clicknet/ether.h>.
-
-** Linuxmodule driver: Fix race condition in FromHost.
-
-** Userlevel driver: Support hotswapping. Hotswappable elements include
-   ControlSocket, ChatterSocket, FromDump.
-
-** Userlevel driver: Remove --stop option.
-
-** Userlevel driver: Use poll() instead of select() when available;
-   supports more file descriptors.
-
-** ErrorHandler supports verbosity settings; other updates.
-
-** CheckIPHeader and friends accept packets with bad source addresses, as
-   long as they are destined for the router. Added keyword arguments.
+** Scheduler elements (such as StrideSched), packet dump elements (such as
+   FromDump), and KernelTun use notification, reducing CPU overhead.
 
 ** Updates to AggregateCounter, AggregateIP, AggregateIPFlows, DelayShaper,
    ICMPPingSource, InfiniteSource, KernelTun, StoreIPAddress, TCPRewriter.
 
 ** SimpleQueue supports the (C++-only) yank() operation.
 
-** Scheduler: Timers that stop the router prevent later timers from running.
+** Linuxmodule: Fix race condition in FromHost.
 
-** 'tickets' handlers are often writable.
+** Linuxmodule: ToHost watches for device up/down events.
+
+* Language, configuration, and driver changes
+
+** Compound elements support keyword arguments and __REST__ arguments.
+
+** Add 'conf/click-mkclgw.pl', a script that reads a simple configuration
+   file ('conf/example.clgw' for the format) and generates a NAT cluster
+   gateway, supporting firewalls, reverse NAT mappings through the
+   firewalls, and load-balanced clusters (Max Krohn).
+
+** Userlevel: Remove --stop option.
+
+** Userlevel: Use poll() instead of select() when available; supports more
+   file descriptors.
 
 ** Linuxmodule: Add --enable-kassert configure option to enable kernel
    assertion checking.
 
-** Linuxmodule: ToHost watches for device up/down events.
+** Support recursive element directories.
+
+** Tool cleanups.
+
+** Diagram macro updates.
+
+* Internal changes
+
+** Standardize on a single HashMap template class, called HashMap.
+
+** String::c_str() is const.
+
+** Add String functionality based on 'const char *' iterators (STL-like).
+
+** Configuration fixes for Mac OS X.
+
+** DeQueues can grow arbitrarily large in the kernel.
+
+** Adjust startup sequence. Add click_static_initialize() to take care of
+   common initialization steps.
+
+** Handlers: Change the way global handlers are called.
+
+** Add click_ether_vlan structure in <clicknet/ether.h>.
+
+** Add tests and bug fixes (including Packet::shrink_data, IPMapper).
+
+** ErrorHandler supports verbosity settings; other updates.
+
+** Timers that stop the router prevent later timers from running.
+
+** 'tickets' handlers are often writable.
 
 ** Remove compatibility functions.
 
 ** Add click_in_cksum_pseudohdr() function.
-
-** Support recursive element directories.
 
 
 Version 1.3pre1   5.Mar.2003
