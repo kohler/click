@@ -228,7 +228,7 @@ SRScheduler::pull(int)
 {
   Packet *head = _queue1->head();
 
-  if (head) {
+  if (head != NULL) {
 
     click_ether *eh = (click_ether *) head->data();
     struct srpacket *pk = (struct srpacket *) (eh+1);
@@ -257,6 +257,7 @@ SRScheduler::pull(int)
       struct timeval rt_expire;
       struct timeval now;
       click_gettimeofday(&now);
+
       timeradd(&nfo->_last_rx, &_hop_duration, &hop_expire);
       timeradd(&nfo->_last_tx, &_rt_duration, &rt_expire);
       if (timercmp(&nfo->_last_rx, &nfo->_last_tx, >) && 
@@ -294,12 +295,17 @@ SRScheduler::pull(int)
     return (0);
   } 
 
+  if (_schedules.size() == 0) {
+    return (0);
+  }
+
   Path p = Path();
+  /* find an expired token */
   struct timeval now;
   click_gettimeofday(&now);
-  /* find an expired token */
+
   for (STIter iter = _schedules.begin(); iter; iter++) {
-    ScheduleInfo nfo = iter.value();
+    const ScheduleInfo &nfo = iter.value();
     struct timeval expire;
     timeradd(&nfo._last_rx, &_endpoint_duration, &expire);
     if (nfo._token && timercmp(&expire, &now, <)) {
