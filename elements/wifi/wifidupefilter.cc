@@ -63,6 +63,7 @@ WifiDupeFilter::simple_action(Packet *p_in)
   }
 
   EtherAddress src = EtherAddress(w->i_addr2);
+  EtherAddress dst = EtherAddress(w->i_addr1);
   uint16_t seq = le16_to_cpu(*(uint16_t *) w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
   uint8_t frag = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;
   u_int8_t more_frag = w->i_fc[1] & WIFI_FC1_MORE_FRAG;
@@ -114,7 +115,10 @@ WifiDupeFilter::simple_action(Packet *p_in)
     }
   }
 
-  nfo->_packets++;
+  if (!dst.is_group()) {
+    /* don't count bcast */
+    nfo->_packets++;
+  }
   nfo->_last = now;
   nfo->seq = seq;
   nfo->frag = frag;

@@ -6,6 +6,7 @@
 #include <click/etheraddress.hh>
 #include <clicknet/wifi.h>
 #include "ettstat.hh"
+#include <elements/wifi/bitrate.hh>
 CLICK_DECLS
 
 /*

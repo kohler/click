@@ -2,7 +2,7 @@
 #define CLICK_SETWIFIEXTRAFLAG_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <elements/wifi/sr/ettmetric.hh>
+
 CLICK_DECLS
 
 /*

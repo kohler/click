@@ -377,77 +377,24 @@ typedef struct {
 #define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
 #define LWNG_CAPHDR_VERSION 0x80211001
 
+#define WIFI_SLOT_B 20
+#define WIFI_DIFS_B 50
+#define WIFI_SIFS_B 10
+#define WIFI_ACK_B 304
+#define WIFI_PLCP_HEADER_LONG_B 192
+#define WIFI_PLCP_HEADER_SHORT_B 192
+
+#define WIFI_SLOT_A 9
+#define WIFI_DIFS_A 28
+#define WIFI_SIFS_A 9
+#define WIFI_ACK_A 30
+#define WIFI_PLCP_HEADER_A 20
 
 
-static inline unsigned calc_usecs_wifi_packet_tries(int length, 
-					      int rate, 
-					      int try0, int tryN) {
-  assert(rate);
-  assert(length);
-  assert(try0 <= tryN);
+#define is_b_rate(b) ((b == 2) || (b == 4) || (b == 11) || (b == 22))
 
-  if (!rate || !length || try0 > tryN) {
-    return 1;
-  }
-  
-  /* pg 205 ieee.802.11.pdf */
-  unsigned pbcc = 0;
-  unsigned t_plcp_header = 96;
-  unsigned t_slot = 20;
-  unsigned t_ack = 304; // 192 + 14*8/1
-  unsigned t_difs = 50; 
-  unsigned t_sifs = 10; 
-  unsigned cw_min = 31; 
-  unsigned cw_max = 1023; 
-
-
-  switch (rate) {
-  case 2:
-    /* there is no short preamble at 1 mbit/s */
-    t_plcp_header = 192;
-    /* fallthrough */
-  case 4:
-  case 11:
-  case 22:
-    break;
-  default:
-    /* with 802.11g, things are at 6 mbit/s */
-    t_plcp_header = 20;
-    t_slot = 9;
-    t_sifs = 9;
-    t_difs = 28;
-    t_ack = 30; 
-  }
-  unsigned packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
-  
-  unsigned cw = cw_min;
-  unsigned expected_backoff = 0;
-
-  
-  /* there is backoff, even for the first packet */
-  for (int x = 0; x < try0; x++) {
-    expected_backoff += t_slot * cw / 2;
-    cw = MIN(cw_max, (cw + 1) * 2);
-  }
-
-  for (int x = try0; x <= tryN; x++) {
-    expected_backoff += t_slot * cw / 2;
-    cw = MIN(cw_max, (cw + 1) * 2);
-  }
-
-  return expected_backoff + t_difs + 
-    (tryN - try0 + 1) * (packet_tx_time + 
-			 t_sifs + t_ack);
-}
-
-
-
-static inline unsigned calc_usecs_wifi_packet(int length, 
-					      int rate, int retries) {
-  return calc_usecs_wifi_packet_tries(length, rate,
-				0, retries);
-}
-
+#define WIFI_CW_MIN 31
+#define WIFI_CW_MAX 1023
 
 
 #endif /* !_CLICKNET_WIFI_H_ */

@@ -23,6 +23,7 @@
 #include "setwifiextraflag.hh"
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 SetWifiExtraFlag::SetWifiExtraFlag()

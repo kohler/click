@@ -6,6 +6,8 @@
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
+#include <elements/wifi/bitrate.hh>
+
 CLICK_DECLS
 class AvailableRates;
 
