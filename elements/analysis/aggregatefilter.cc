@@ -149,7 +149,7 @@ AggregateFilter::push(int, Packet *p)
 	prev = g;
 	g = g->next;
     }
-    if (prev) {
+    if (prev && g) {
 	prev->next = g->next;
 	g->next = _groups[bucket];
 	_groups[bucket] = g;
