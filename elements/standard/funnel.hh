@@ -20,7 +20,7 @@
  * = ...
  *
  * Note that all occurrences of Funnel's output must, by definition, connect to
- * the same physical element.
+ * one and the same input of another element.
  *
  *
  * =a Tee
