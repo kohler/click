@@ -1,3 +1,9 @@
+2004-06-16 Wednesday 09:57  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.6): added SFS port to the port list.
+	Click doesn't know sfs=tcp-port-4, so for now the output click
+	configurations will say "4" instead of "sfs".
+
 2004-06-14 Monday 17:23  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: beaconscanner.cc (1.3), beaconscanner.hh (1.3),
