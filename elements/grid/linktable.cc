@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
+#include <elements/grid/sr/path.hh>
 #include <click/straccum.hh>
 CLICK_DECLS
 
@@ -95,6 +96,7 @@ LinkTable::add_handlers() {
   add_write_handler("clear", static_clear, 0);
   add_write_handler("update_link", static_update_link, 0);
   add_write_handler("dijkstra", static_dijkstra, 0);
+  add_write_handler("top_n_routes", static_top_n_routes, 0);
 }
 
 
@@ -246,7 +248,27 @@ LinkTable::get_route_metric(Vector<IPAddress> route)
   
 }
 
-
+String 
+LinkTable::routes_to_string(Vector< Vector<IPAddress> > routes) {
+  StringAccum sa;
+  for (int x = 0; x < routes.size(); x++) {
+    Vector <IPAddress> r = routes[x];
+    for (int i = 0; i < r.size(); i++) {
+      if (i != 0) {
+	sa << " ";
+      }      
+      sa << r[i] << " ";
+      if (i != r.size()-1) {
+	sa << get_hop_metric(r[i], r[i+1]);
+      }
+      
+    }
+    if (r.size() > 0) {
+      sa << "\n";
+    }
+  }
+  return sa.take_string();
+}
 bool
 LinkTable::valid_route(Vector<IPAddress> route) 
 {
@@ -262,10 +284,6 @@ LinkTable::valid_route(Vector<IPAddress> route)
   for (int x = 0; x < route.size(); x++) {
     for (int y = x + 1; y < route.size(); y++) {
       if (route[x] == route[y]) {
-	click_chatter("LinkTable %s :route[%d] = route[%d]",
-		      _ip.s().cc(),
-		      route[x].s().cc(),
-		      route[y].s().cc());
 	return false;
       }
     }
@@ -304,6 +322,11 @@ LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPA
     return routes;
   }
 
+  if (routes.size() < size) {
+    routes.push_back(route);
+    return routes;
+  }
+
   int route_m = get_route_metric(route);
   
   for (x = 0; x < size; x++) {
@@ -329,14 +352,20 @@ LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPA
 Vector <Vector <IPAddress> >
 LinkTable::top_n_routes(IPAddress dst, int n)
 {
+  click_chatter("LinkTable %s: top_n_routes(%s, %d)\n",
+		id().cc(),
+		dst.s().cc(),
+		n);
+
   Vector<Vector<IPAddress> > routes;
+
   {
     Vector<IPAddress> route;
     route.push_back(_ip);
     route.push_back(dst);
-    update_routes(routes, n, route);
+    routes = update_routes(routes, n, route);
   }
-
+  
   /* two hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     Vector<IPAddress> route;
@@ -345,12 +374,12 @@ LinkTable::top_n_routes(IPAddress dst, int n)
     route.push_back(_ip);
     route.push_back(h._ip);
     route.push_back(dst);
-    update_routes(routes, n, route);
+    routes = update_routes(routes, n, route);
   }
   
   /* three hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
-    for (HTIter iter2 = _hosts.begin(); iter; iter++) {
+    for (HTIter iter2 = _hosts.begin(); iter2; iter2++) {
       Vector<IPAddress> route;
       
       HostInfo h = iter.value();
@@ -359,14 +388,14 @@ LinkTable::top_n_routes(IPAddress dst, int n)
       route.push_back(h._ip);
       route.push_back(h2._ip);
       route.push_back(dst);
-      update_routes(routes, n, route);
+      routes = update_routes(routes, n, route);
     }
   }
 
   /* four hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
-    for (HTIter iter2 = _hosts.begin(); iter; iter++) {
-      for (HTIter iter3 = _hosts.begin(); iter; iter++) {
+    for (HTIter iter2 = _hosts.begin(); iter2; iter2++) {
+      for (HTIter iter3 = _hosts.begin(); iter3; iter3++) {
       Vector<IPAddress> route;
       
       HostInfo h = iter.value();
@@ -377,11 +406,10 @@ LinkTable::top_n_routes(IPAddress dst, int n)
       route.push_back(h2._ip);
       route.push_back(h3._ip);
       route.push_back(dst);
-      update_routes(routes, n, route);
+      routes = update_routes(routes, n, route);
       }
     }
   }
-
   return routes;
 }
 
@@ -392,6 +420,21 @@ LinkTable::static_print_links(Element *e, void *)
   return n->print_links();
 
 
+}
+
+int
+LinkTable::static_top_n_routes(const String &arg, Element *e,
+			       void *, ErrorHandler *errh) 
+{
+  LinkTable *n = (LinkTable *) e;
+  IPAddress dst;
+  
+  if (!cp_ip_address(arg, &dst))
+    return errh->error("dst must be an IPAddress");
+  
+  Vector <Vector <IPAddress> > routes = n->top_n_routes(dst, 5);
+  click_chatter("top_n_routes finished:\n%s\n", n->routes_to_string(routes).cc());
+  return 0;
 }
 
 String 

@@ -68,6 +68,8 @@ public:
   String print_hosts();
   static int static_clear(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
+  static int static_top_n_routes(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
   void clear();
 
   static int static_update_link(const String &arg, Element *e,
@@ -75,6 +77,7 @@ public:
   static int static_dijkstra(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
 
+  String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
   void update_link(IPAddress from, IPAddress to, int metric);
   int get_hop_metric(IPAddress from, IPAddress to);
