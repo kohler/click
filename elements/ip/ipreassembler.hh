@@ -39,10 +39,14 @@ class IPReassembler : public Element { public:
     
     Packet *simple_action(Packet *);
 
+    struct ChunkLink {
+	uint16_t off;
+	uint16_t lastoff;
+    };
     struct PacketLink {
 	uint32_t padding[2];	// preserve paint annotation
-	Packet *next;
-	Packet *bucket_next;
+	WritablePacket *bucket_next;
+	ChunkLink chunk;
     };
 
   private:
@@ -54,16 +58,17 @@ class IPReassembler : public Element { public:
 
     int _mem_used;
     enum { NMAP = 256 };
-    Packet *_map[NMAP];
+    WritablePacket *_map[NMAP];
 
     Timer _expire_timer;
 
     static inline int bucketno(const click_ip *);
     static inline bool same_segment(const click_ip *, const click_ip *);
     
-    Packet *find_queue(Packet *, Packet ***);
-    static void clean_queue(Packet *, Packet **);
-    Packet *emit_whole_packet(Packet *, Packet **, Packet *, Packet *);
+    WritablePacket *find_queue(Packet *, WritablePacket ***);
+    void make_queue(Packet *, WritablePacket **);
+    static ChunkLink *next_chunk(WritablePacket *, ChunkLink *);
+    Packet *emit_whole_packet(WritablePacket *, WritablePacket **, Packet *);
     static void check_error(ErrorHandler *, int, const Packet *, const char *, ...);
     static void expire_hook(Timer *, void *);
 
