@@ -10,6 +10,8 @@ class ClickController extends JPanel {
     
     private JFrame _frame;
     private JTextField _statusLine;
+
+    private static synchronized int numControllers = 0;
     
     public boolean isApplet() {
 	return false;
@@ -45,14 +47,25 @@ class ClickController extends JPanel {
 	JMenu connMenu = (JMenu) menuBar.add(new JMenu("Connections"));
         connMenu.setMnemonic('C');
         mi = createMenuItem(connMenu, "Open", 'O', new AbstractAction() {
-		public void actionPerformed(ActionEvent e) {
-		    new NewConnectionDialog(getFrame());
-		}
-	    });
-        mi = createMenuItem(connMenu, "Close", 'C', null);
+	    public void actionPerformed(ActionEvent e) {
+	      new NewConnectionDialog(getFrame());
+	    }
+	  });
+        mi = createMenuItem(connMenu, "Close", 'C', new AbstractAction() {
+	    public void actionPerformed(ActionEvent e) {
+	      getFrame().dispose();
+	      numControllers--;
+	      if (numControllers == 0)
+		System.exit(0);
+	    }
+	  });
 	if (!isApplet()) {
 	    connMenu.addSeparator();
-	    mi = createMenuItem(connMenu, "Exit", 'x', new ExitAction());
+	    mi = createMenuItem(connMenu, "Exit", 'x', new AbstractAction() {
+		public void actionPerformed(ActionEvent e) {
+		  System.exit(0);
+		}
+	      });
 	}
 
 	return menuBar;
