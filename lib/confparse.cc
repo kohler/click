@@ -1972,7 +1972,7 @@ cp_filename(const String &str, String *return_value)
 // parse commands; those which must be recognized inside a keyword section
 // must begin with "\377"
 
-CpVaParseCmd
+const CpVaParseCmd
   cpOptional		= "OPTIONAL",
   cpKeywords		= "\377KEYWORDS",
   cpConfirmKeywords	= "\377CONFIRM_KEYWORDS",

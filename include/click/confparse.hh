@@ -146,9 +146,9 @@ bool cp_des_cblock(const String &, unsigned char *);
 bool cp_filename(const String &, String *);
 #endif
 
-typedef const char * const CpVaParseCmd;
+typedef const char *CpVaParseCmd;
 static const CpVaParseCmd cpEnd = 0;
-extern CpVaParseCmd
+extern const CpVaParseCmd
     cpOptional,
     cpKeywords,
     cpConfirmKeywords,
