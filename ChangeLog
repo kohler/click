@@ -1,3 +1,8 @@
+2001-09-11 Tuesday 08:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: cxxprotect.h (1.2), cxxunprotect.h (1.2): protect
+	access keywords; reported by Powell Molleti
+
 2001-09-10 Monday 18:03  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/counter.hh (1.21): doc update
