@@ -90,6 +90,24 @@ ARPQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
+ARPQuerier::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  if (configure(conf, errh) < 0) {
+    // if the configuration failed do nothing and return with a
+    // failure indication
+    return -1;
+  }
+  
+  // if the new configuration succeeded then wipe out the old arp
+  // table and reset the queries and pkts_killed counters
+  clear_map();
+  _arp_queries = 0;
+  _pkts_killed = 0;
+
+  return 0;
+}
+
+int
 ARPQuerier::initialize(ErrorHandler *)
 {
   _expire_timer.attach(this);
@@ -103,6 +121,14 @@ void
 ARPQuerier::uninitialize()
 {
   _expire_timer.unschedule();
+  clear_map();
+}
+
+void
+ARPQuerier::clear_map()
+{
+  // Walk the arp cache table and free 
+  // any stored packets and arp entries.
   for (int i = 0; i < NMAP; i++) {
     for (ARPEntry *t = _map[i]; t; ) {
       ARPEntry *n = t->next;
@@ -127,6 +153,7 @@ ARPQuerier::take_state(Element *e, ErrorHandler *)
   memcpy(_map, arpq->_map, sizeof(ARPEntry *) * NMAP);
   memcpy(arpq->_map, save, sizeof(ARPEntry *) * NMAP);
 }
+
 
 void
 ARPQuerier::expire_hook(unsigned long thunk)
@@ -197,9 +224,17 @@ ARPQuerier::send_query_for(const IPAddress &want_ip)
 void
 ARPQuerier::handle_ip(Packet *p)
 {
+  // delete packet if we are not configured
+  if (!_my_ip) {
+    p->kill();
+    _pkts_killed++;
+    return;
+  }
+  
   IPAddress ipa = p->dst_ip_anno();
   int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
   ARPEntry *ae = _map[bucket];
+
   while (ae && ae->ip != ipa)
     ae = ae->next;
 

@@ -56,6 +56,9 @@ class ARPResponder : public Element { public:
   ARPResponder *clone() const;
 
   int configure(const Vector<String> &, ErrorHandler *);
+  int live_reconfigure(const Vector<String> &conf, ErrorHandler *errh);
+  bool can_live_reconfigure() const             { return true; }
+  
   void add_handlers();
 
   Packet *simple_action(Packet *);

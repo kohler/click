@@ -103,6 +103,20 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
   return (before == errh->nerrors() ? 0 : -1);
 }
 
+int
+ARPResponder::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  // Copy the old mappings to a temporary vector
+  Vector<Entry> old_v = _v;
+  // if the configuration fails copy the old mapping vector back
+  if (configure(conf, errh) < 0) {
+    _v = old_v;
+    return -1;
+  } else
+    return 0;
+}
+
+
 Packet *
 ARPResponder::make_response(u_char tha[6], /* him */
                             u_char tpa[4],

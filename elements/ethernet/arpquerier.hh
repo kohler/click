@@ -47,8 +47,7 @@
 #include <click/ipaddress.hh>
 #include <click/timer.hh>
 
-class ARPQuerier : public Element {
- public:
+class ARPQuerier : public Element { public:
   
   ARPQuerier();
   ~ARPQuerier();
@@ -62,8 +61,13 @@ class ARPQuerier : public Element {
   
   ARPQuerier *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
+  int live_reconfigure(const Vector<String> &conf, ErrorHandler *errh);
+  bool can_live_reconfigure() const		{ return true; }
+
   int initialize(ErrorHandler *);
   void uninitialize();
+  void clear_map();
+  
   void take_state(Element *, ErrorHandler *);
   
   void push(int port, Packet *);

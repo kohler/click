@@ -16,6 +16,11 @@ sets packet paint annotations
 Sets each packet's paint annotation to X, an integer 0..255. Note that a
 packet may only be painted with one color.
 
+
+=h color read/write
+
+get/set the color to paint
+
 =n
 
 The paint annotation is stored in user annotation 0.
@@ -24,7 +29,7 @@ The paint annotation is stored in user annotation 0.
 
 class Paint : public Element {
   
-  int _color;
+  unsigned char _color;
   
  public:
   
@@ -34,9 +39,17 @@ class Paint : public Element {
   const char *class_name() const		{ return "Paint"; }
   const char *processing() const		{ return AGNOSTIC; }
   Paint *clone() const;
+  
   int configure(const Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
 
+  int color() const				{ return _color; }
+  void set_color(unsigned char in_color)	{ _color = in_color; }
+  
   Packet *simple_action(Packet *);
+
+  void add_handlers();
+  static String color_read_handler(Element *, void *);
   
 };
 

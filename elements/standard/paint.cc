@@ -50,7 +50,7 @@ int
 Paint::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "color", &_color,
+		     cpByte, "color", &_color,
 		     0);
 }
 
@@ -59,6 +59,20 @@ Paint::simple_action(Packet *p)
 {
   SET_PAINT_ANNO(p, _color);
   return p;
+}
+
+String
+Paint::color_read_handler(Element *e, void *)
+{
+  Paint *the_paint = (Paint *)e;
+  return String(the_paint->color()) + "\n";
+}
+
+void
+Paint::add_handlers()
+{
+  add_read_handler("color", color_read_handler, 0);
+  add_write_handler("color", reconfigure_write_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(Paint)
