@@ -1,3 +1,12 @@
+2001-11-21 Wednesday 11:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid (1.9): nitlet
+
+2001-11-21 Wednesday 11:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.44), tools/build-grid-config.sh (1.4),
+	tools/grid-params.m4 (1.4): grid script fixups
+
 2001-11-21 Wednesday 00:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.43), elements/grid/gridlocationinfo.cc (1.12),
