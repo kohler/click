@@ -48,12 +48,12 @@ sub main {
     # Push click & datacollection scripts to each node
     #  tar up click & datacollection
     print "tarring up click\n";
-    $command = "tar czf /tmp/click.tgz -C /home/am2/yipal/ron click-export";
+    $command = "tar czf /tmp/click.tgz -C /home/am0/yipal/ron click-export";
     @args = ("tcsh", "-c", $command);
     system(@args);
 
     print "Tarring up datacollection\n";
-    $command = "tar czf /tmp/datacollection.tgz -C /home/am2/yipal/ron datacollection-export";
+    $command = "tar czf /tmp/datacollection.tgz -C /home/am0/yipal/ron datacollection-export";
     @args = ("tcsh", "-c", $command);
     system(@args);
 
