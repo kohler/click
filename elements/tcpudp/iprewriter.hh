@@ -110,17 +110,26 @@ Keyword arguments determine how often stale mappings should be removed.
 =item REAP_TCP I<time>
 
 Reap TCP connections every I<time> seconds. If no packets corresponding to a
-given mapping have been seen since the last reap, remove the mapping as stale.
-Default is 24 hours.
+given mapping have been seen for TCP_TIMEOUT, remove the mapping as stale.
+Default is 1 hour.
 
 =item REAP_TCP_DONE I<time>
 
 Reap completed TCP connections every I<time> seconds. FIN or RST flags mark a
-TCP connection as complete. Default is 4 minutes.
+TCP connection as complete. Default is 10 seconds.
 
 =item REAP_UDP I<time>
 
-Reap UDP connections every I<time> seconds. Default is 1 minute.
+Reap UDP connections every I<time> seconds. Default is 10 seconds.
+
+=item TCP_TIMEOUT I<time>
+
+Timeout a TCP connections every I<time> seconds. Default is 24 hours.
+
+=item UDP_TIMEOUT I<time>
+
+Timeout a UDP connections every I<time> seconds. Default is 1 minute.
+
 
 =back
 
@@ -185,6 +194,8 @@ class IPRewriter : public IPRw { public:
   Timer _tcp_gc_timer;
   int _udp_gc_interval;
   Timer _udp_gc_timer;
+  int _udp_timeout_interval;
+  int _tcp_timeout_interval;
 
 #if IPRW_SPINLOCKS
   Spinlock _spinlock;

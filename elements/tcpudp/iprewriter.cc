@@ -72,15 +72,19 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;
-  _tcp_gc_interval = 86400000;		// 24 hours
-  _tcp_done_gc_interval = 240000;	// 4 minutes
-  _udp_gc_interval = 60000;		// 1 minute
+  _tcp_timeout_interval = 86400000;	// 24 hours
+  _udp_timeout_interval = 60000;	// 1 minute
+  _tcp_gc_interval = 3600000;		// 1 hour
+  _udp_gc_interval = 10000;		// 10 seconds
+  _tcp_done_gc_interval = 10000;	// 10 seconds
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
 			    "REAP_TCP", cpMilliseconds, "TCP garbage collection interval", &_tcp_gc_interval,
 			    "REAP_TCP_DONE", cpMilliseconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
 			    "REAP_UDP", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
+			    "TCP_TIMEOUT", cpMilliseconds, "TCP timeout interval", &_tcp_timeout_interval,
+			    "UDP_TIMEOUT", cpMilliseconds, "UDP timeout interval", &_udp_timeout_interval,
 			    0) != 0)
       continue;
     InputSpec is;
@@ -174,7 +178,7 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
-  rw->clean_map(rw->_tcp_map, rw->_tcp_gc_interval);
+  rw->clean_map(rw->_tcp_map, rw->_tcp_timeout_interval);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
@@ -189,7 +193,7 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.acquire();
 #endif
   rw->clean_map_free_tracked
-    (rw->_tcp_map, rw->_tcp_done_gc_interval, &rw->_tcp_done);
+    (rw->_tcp_map, rw->_tcp_timeout_interval, &rw->_tcp_done);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
@@ -203,11 +207,11 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 #if IPRW_SPINLOCKS
   rw->_spinlock.acquire();
 #endif
-  rw->clean_map(rw->_udp_map, rw->_udp_gc_interval);
+  rw->clean_map(rw->_udp_map, rw->_udp_timeout_interval);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
-  timer->schedule_after_ms(5000);
+  timer->schedule_after_ms(rw->_udp_gc_interval);
 }
 
 IPRw::Mapping *
@@ -225,7 +229,8 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   if (forward && reverse) {
     if (!pattern)
       Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
+    else if 
+      (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
       goto failure;
 
     IPFlowID reverse_flow = forward->flow_id().rev();
@@ -267,7 +272,8 @@ IPRewriter::push(int port, Packet *p_in)
 #if IPRW_SPINLOCKS
   _spinlock.acquire();
 #endif
-  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
+  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : 
+                                       _udp_map.find(flow));
   
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];
@@ -313,24 +319,24 @@ IPRewriter::push(int port, Packet *p_in)
     }
   }
   
-  m->apply(p);
 #if IPRW_SPINLOCKS
   _spinlock.release();
 #endif
+  m->apply(p);
   output(m->output()).push(p);
 
-#if IPRW_SPINLOCKS
-  _spinlock.acquire();
-#endif
   // add to list for dropping TCP connections faster
   if (ip_p == IP_PROTO_TCP && !m->free_tracked()) {
+#if IPRW_SPINLOCKS
+    _spinlock.acquire();
+#endif
     click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
     if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over())
       _tcp_done = m->add_to_free_tracked(_tcp_done);
-  }
 #if IPRW_SPINLOCKS
-  _spinlock.release();
+    _spinlock.release();
 #endif
+  }
 }
 
 
