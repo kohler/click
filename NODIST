@@ -2,6 +2,8 @@ elements/ip/ipratemon.hh
 elements/ip/ipratemon.cc
 elements/ip/ipflexmon.hh
 elements/ip/ipflexmon.cc
+elements/ip/kinkyratemon.hh
+elements/ip/kinkyratemon.cc
 elements/ip/tcpipsend.hh
 elements/ip/tcpipsend.cc
 elements/ip/tcpconnmon.hh

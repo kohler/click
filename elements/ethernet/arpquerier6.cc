@@ -302,5 +302,5 @@ ARPQuerier6::add_handlers()
   add_read_handler("stats", ARPQuerier6_read_stats, (void *)0);
 }
 
+ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(ARPQuerier6)
-ELEMENT_REQUIRES(false)

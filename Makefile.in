@@ -89,6 +89,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/click_ether.h \
 	lib/click_icmp.h \
 	lib/click_ip.h \
+	lib/click_ip6.h \
 	lib/click_tcp.h \
 	lib/click_udp.h \
 	lib/clickpackage.hh \
@@ -107,9 +108,11 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/in_cksum.c \
 	lib/integers.cc lib/integers.hh \
 	lib/ipaddress.cc lib/ipaddress.hh \
+	lib/ip6address.cc lib/ip6address.hh \
 	lib/ipflowid.cc lib/ipflowid.hh \
 	lib/iptable.cc lib/iptable.hh \
 	lib/iptable2.cc lib/iptable2.hh \
+	lib/ip6table.cc lib/ip6table.hh \
 	lib/lexer.cc lib/lexer.hh \
 	lib/packet.cc lib/packet.hh \
 	lib/radix.cc lib/radix.hh \

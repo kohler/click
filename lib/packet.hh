@@ -1,8 +1,8 @@
 #ifndef PACKET_HH
 #define PACKET_HH
 #include "ipaddress.hh"
-#include "ip6address.hh"
 #include "glue.hh"
+class IP6Address;
 struct click_ip;
 struct click_ip6;
 class WritablePacket;
@@ -12,8 +12,8 @@ class Packet {
 public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
-    IPAddress dst_ip; 
-    IP6Address dst_ip6;
+    IPAddress dst_ip;
+    unsigned char dst_ip6[16];
     bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
     bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
     char param_off;     // for ICMP Parameter Problem, byte offset of error
@@ -145,9 +145,9 @@ private:
   void zero_annotations();
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
-  IP6Address dst_ip6_anno() const	{ return anno()->dst_ip6; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
-  void set_dst_ip6_anno(IP6Address a)	{ anno()->dst_ip6 = IP6Address(a.addr()); }
+  const IP6Address &dst_ip6_anno() const;
+  void set_dst_ip6_anno(const IP6Address &a);
 
   bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
   void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
@@ -285,6 +285,18 @@ Packet::pull(unsigned int nbytes)
 #else
   _data += nbytes;
 #endif
+}
+
+inline const IP6Address &
+Packet::dst_ip6_anno() const
+{
+  return *(reinterpret_cast<const IP6Address *>(anno()->dst_ip6));
+}
+
+inline void
+Packet::set_dst_ip6_anno(const IP6Address &a)
+{
+  memcpy(anno()->dst_ip6, &a, 16);
 }
 
 inline void

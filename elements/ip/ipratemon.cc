@@ -61,9 +61,9 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "annotate", &_anno_packets,
 		  0) < 0)
     return -1;
-  if (count_what == "PACKETS")
+  if (count_what.upper() == "PACKETS")
     _count_packets = true;
-  else if (count_what == "BYTES")
+  else if (count_what.upper() == "BYTES")
     _count_packets = false;
   else
     return errh->error("monitor type should be \"PACKETS\" or \"BYTES\"");
@@ -415,7 +415,7 @@ IPRateMonitor::memmax_write_handler
     return -1;
   }
 
-  if (memmax && memmax < MEMMAX_MIN)
+  if (memmax && memmax < (int)MEMMAX_MIN)
     memmax = MEMMAX_MIN;
   
 #ifdef __KERNEL__

@@ -21,13 +21,13 @@ class IPAddress {
   operator struct in_addr() const;
   struct in_addr in_addr() const;
 
-  unsigned char *data() const	{ return (unsigned char *)&_addr; }
+  unsigned char *data();
+  const unsigned char *data() const;
   
   unsigned hashcode() const	{ return _addr; }
   
   operator String() const	{ return s(); }
   String s() const;
-  void print();
   
 };
 
@@ -53,6 +53,18 @@ inline bool
 operator!=(IPAddress a, IPAddress b)
 {
   return a.addr() != b.addr();
+}
+
+inline const unsigned char *
+IPAddress::data() const
+{
+  return reinterpret_cast<const unsigned char *>(&_addr);
+}
+
+inline unsigned char *
+IPAddress::data()
+{
+  return reinterpret_cast<unsigned char *>(&_addr);
 }
 
 inline struct in_addr

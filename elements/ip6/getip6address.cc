@@ -40,10 +40,10 @@ GetIP6Address::simple_action(Packet *p)
   //click_chatter("calling getip6address-smaction \n");
   click_chatter("IN getip6address: the starting of the des address: \n");
   IP6Address dst=IP6Address((unsigned char *)(p->data()+ _offset));
-  dst.print();
+  click_chatter(dst.s());
   p->set_dst_ip6_anno(dst);
   click_chatter("after set-dst_ip6_anno in getip6address::smaction: \n");
-  p->dst_ip6_anno().print();
+  click_chatter(p->dst_ip6_anno().s());
   click_chatter("\n");
   return p;
 }

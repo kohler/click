@@ -24,31 +24,15 @@ IPAddress::IPAddress(const unsigned char *data)
 
 IPAddress::IPAddress(const String &str)
 {
-#ifdef __KERNEL__
-  printk("<1>IPAddress::IPAddress?\n");
-#else
-  if (!cp_ip_address(str, (unsigned char *)&_addr))
+  if (!cp_ip_address(str, *this))
     _addr = 0;
-#endif
 }
 
 String
 IPAddress::s() const
 {
-  const unsigned char *p = (const unsigned char *)&_addr;
-  String s;
-  char tmp[64];
-  sprintf(tmp, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-  return String(tmp);
-}
-
-void
-IPAddress::print(void)
-{
-  unsigned char *p = (unsigned char *)&_addr;
-#ifdef __KERNEL__
-  printk("<1>IPAddress::print?\n");
-#else
-  printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-#endif
+  const unsigned char *p = data();
+  char buf[20];
+  sprintf(buf, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+  return String(buf);
 }

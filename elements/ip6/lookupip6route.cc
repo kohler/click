@@ -59,8 +59,7 @@ LookupIP6Route::configure(const Vector<String> &conf, ErrorHandler *errh)
 	cp_integer(arg, &index)) {
         //cp_integer(arg, index, &arg)){
       _t.add(dst, mask, gw, index);
-      click_chatter(" \n lookupip6route::configure -dst= ");
-      ((IP6Address)dst).print();
+      click_chatter(" \n lookupip6route::configure -dst=%s", dst.s().cc());
    
       if(index > maxout)
         maxout = index;
@@ -104,7 +103,7 @@ LookupIP6Route::push(int, Packet *p)
   //a.print();
   //click_chatter("\n");
   
-  IP6Address gw = IP6Address(new ip6_addr());
+  IP6Address gw;
   int ifi = -1;
 
   if (a) {

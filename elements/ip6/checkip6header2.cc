@@ -16,6 +16,7 @@
 #endif
 #include "checkip6header2.hh"
 #include "click_ip6.h"
+#include "ip6address.hh"
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"

@@ -599,7 +599,7 @@ particular purpose.\n");
 	   (diff.tv_usec+5000)/10000);
     printf("\n");
   }
-  
+
   // call handlers
   int ev = 0;
   if ((ev = call_read_handlers()))

@@ -42,11 +42,10 @@ class CheckIP6Header : public Element {
   ~CheckIP6Header();
   
   const char *class_name() const		{ return "CheckIP6Header"; }
-   const char *processing() const		{ return "a/ah"; }
+  const char *processing() const		{ return "a/ah"; }
 
-   CheckIP6Header *clone() const;
+  CheckIP6Header *clone() const;
   void notify_noutputs(int);
-  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   int configure(const Vector<String> &, ErrorHandler *);
   
   int drops() const				{ return _drops; }

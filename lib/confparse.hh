@@ -32,18 +32,18 @@ bool cp_real(const String &, int frac_digits, int *, int *, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int *, String *rest = 0);
 bool cp_real2(const String &, int frac_bits, int *, String *rest = 0);
 bool cp_milliseconds(const String &, int *, String *rest = 0);
-bool cp_word(String, String *, String *rest = 0);
-bool cp_string(String, String *, String *rest = 0);
+bool cp_word(const String &, String *, String *rest = 0);
+bool cp_string(const String &, String *, String *rest = 0);
 
 // network addresses
-bool cp_ip_address(String, unsigned char *, String *rest = 0);
-bool cp_ip6_address(String, unsigned char *, String *rest = 0);
+bool cp_ip_address(const String &, unsigned char *, String *rest = 0);
+bool cp_ip6_address(const String &, unsigned char *, String *rest = 0);
 bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
 #ifndef CLICK_TOOL
 class IPAddress; class IP6Address; class EtherAddress;
-bool cp_ip_address(String, IPAddress &, String *rest = 0);
-bool cp_ip6_address(String, IP6Address &, String *rest = 0);
+bool cp_ip_address(const String &, IPAddress &, String *rest = 0);
+bool cp_ip6_address(const String &, IP6Address &, String *rest = 0);
 bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
 Element *cp_element(const String &, Element *, ErrorHandler *);

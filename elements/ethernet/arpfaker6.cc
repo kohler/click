@@ -92,5 +92,5 @@ ARPFaker6::make_response(u_char tha[6], /* him */
   return q;
 }
 
+ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(ARPFaker6)
-ELEMENT_REQUIRES(false)

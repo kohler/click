@@ -22,6 +22,9 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
+/* Define if IPv6 support is enabled. */
+#undef HAVE_IP6
+
 /* Define if <pcap.h> uses bpf_timeval. */
 #undef HAVE_BPF_TIMEVAL
 

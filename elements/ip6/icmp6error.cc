@@ -59,7 +59,7 @@ int
 ICMP6Error::initialize(ErrorHandler *errh)
 {
   
-  if (_type < 0 || _code < 0 || _src_ip.addr().isZero())
+  if (_type < 0 || _code < 0 || !_src_ip)
     return errh->error("not configured");
   if(is_error_type(_type) == false)
     return errh->error("ICMP6 type %d is not an error type", _type);

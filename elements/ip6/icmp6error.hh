@@ -54,6 +54,7 @@
  * =a IPGWOptions */
 
 #include "element.hh"
+#include "ip6address.hh"
 
 class ICMP6Error : public Element {
 public:

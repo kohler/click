@@ -16,6 +16,7 @@
 #endif
 #include "checkip6header.hh"
 #include "click_ip6.h"
+#include "ip6address.hh"
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -49,27 +50,6 @@ CheckIP6Header::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-
-void
-CheckIP6Header::processing_vector(Vector<int> &in_v, int in_offset,
-				   Vector<int> &out_v, int out_offset) const
-{
-  in_v[in_offset+0] = out_v[out_offset+0] = AGNOSTIC;
-  if (noutputs() == 2)
-    out_v[out_offset+1] = PUSH;
-}
-
-/*
-
-void
-CheckIP6Header::processing_vector(Vector<IP6Address> &in_v, int in_offset,
-			    Vector<IP6Address> &out_v, int out_offset)
-{
-  in_v[in_offset+0] = out_v[out_offset+0] = AGNOSTIC;
-  if (noutputs() == 2)
-    out_v[out_offset+1] = PUSH;
-}
-*/
 int
 CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
 {

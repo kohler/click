@@ -37,11 +37,13 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o \
-	integers.o ipaddress.o ipflowid.o etheraddress.o packet.o \
+	ipaddress.o ip6address.o ipflowid.o etheraddress.o \
+	packet.o \
 	error.o glue.o timer.o \
 	elemlink.o element.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
-	crc32.o in_cksum.o iptable.o iptable2.o radix.o userutils.o
+	crc32.o in_cksum.o iptable.o iptable2.o ip6table.o radix.o \
+	userutils.o
 
 USERLEVEL_OBJS = clp.o click.o
 

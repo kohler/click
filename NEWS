@@ -64,6 +64,11 @@ Version 1.1
    `Element::change_configuration()' to `Element::set_configuration()' and
    `Element::set_configuration_argument()'.
 
+** Renamed Ethernet and ARP structures; what was `struct ether_header' is
+   now `struct click_ether', and so forth, to avoid conflicts.
+
+** Removed `IPVERSION' constant from `click_ip.h' to support IPv6.
+
 * General
 
 ** Added new `tickets' handler, available by default on every element.

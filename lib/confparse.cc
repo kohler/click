@@ -741,7 +741,7 @@ cp_milliseconds(const String &str, int *return_value, String *rest = 0)
 }
 
 bool
-cp_string(String str, String *return_value, String *rest = 0)
+cp_string(const String &str, String *return_value, String *rest = 0)
 {
   const char *s = str.data();
   int len = str.length();
@@ -792,7 +792,7 @@ cp_string(String str, String *return_value, String *rest = 0)
 }
 
 bool
-cp_word(String str, String *return_value, String *rest = 0)
+cp_word(const String &str, String *return_value, String *rest = 0)
 {
   String word;
   if (!cp_string(str, &word, rest))
@@ -806,29 +806,30 @@ cp_word(String str, String *return_value, String *rest = 0)
 }
 
 bool
-cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
+cp_ip_address(const String &str, unsigned char *return_value, String *rest = 0)
 {
-  int i = 0;
-  const char *s = str.cc();
+  int pos = 0, part;
+  const char *s = str.data();
   int len = str.length();
 
   unsigned char value[4];
   for (int d = 0; d < 4; d++) {
-    char *end;
-    int part = strtol(s + i, &end, 10);
-    if (end - s == i || part < 0 || part > 255)
+    if (d && s[pos] == '.')
+      pos++;
+    if (pos >= len || !isdigit(s[pos]))
       return false;
-    if (d != 3 && (end[0] != '.' || !isdigit(end[1])))
+    for (part = 0; pos < len && isdigit(s[pos]) && part <= 255; pos++)
+      part = part*10 + s[pos] - '0';
+    if (part > 255)
       return false;
     value[d] = part;
-    i = (end - s) + 1;
   }
   
-  if (!rest && i < len)
+  if (!rest && pos < len)
     return false;
   else {
     if (rest)
-      *rest = str.substring(i - 1);
+      *rest = str.substring(pos);
     memcpy(return_value, value, 4);
     return true;
   }
@@ -889,7 +890,7 @@ cp_ip_address_mask(String str,
 
 #ifndef CLICK_TOOL
 bool
-cp_ip_address(String str, IPAddress &address, String *rest = 0)
+cp_ip_address(const String &str, IPAddress &address, String *rest = 0)
 {
   return cp_ip_address(str, address.data(), rest);
 }
@@ -902,6 +903,80 @@ cp_ip_address_mask(String str, IPAddress &address, IPAddress &mask,
 }
 #endif
 
+bool
+cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
+{
+  unsigned short parts[8];
+  int coloncolon = -1;
+  const char *s = str.data();
+  int len = str.length();
+  int pos = 0;
+
+  int d;
+  int last_part_pos = 0;
+  for (d = 0; d < 8; d++) {
+    if (coloncolon < 0 && pos < len - 1 && s[pos] == ':' && s[pos+1] == ':') {
+      coloncolon = d;
+      pos += 2;
+    } else if (d && pos < len - 1 && s[pos] == ':' && isxdigit(s[pos+1]))
+      pos++;
+    if (pos >= len || !isxdigit(s[pos]))
+      break;
+    unsigned part = 0;
+    last_part_pos = pos;
+    for (; pos < len && isxdigit(s[pos]) && part <= 0xFFFF; pos++)
+      part = (part<<4) + xvalue(s[pos]);
+    if (part > 0xFFFF)
+      return false;
+    parts[d] = part;
+  }
+
+  // check if address ends in IPv4 address
+  if (pos < len && d <= 7 && s[pos] == '.') {
+    unsigned char ip4a[4];
+    String rest;
+    if (cp_ip_address(str.substring(last_part_pos), ip4a, &rest)) {
+      parts[d-1] = (ip4a[0]<<8) + ip4a[1];
+      parts[d] = (ip4a[2]<<8) + ip4a[3];
+      d++;
+      pos = len - rest.length();
+    }
+  }
+
+  // handle zero blocks surrounding ::
+  if ((d < 8 && coloncolon < 0) || (d == 8 && coloncolon >= 0))
+    return false;
+  else if (d < 8) {
+    int num_zeros = 8 - d;
+    for (int x = d - 1; x >= coloncolon; x--)
+      parts[x + num_zeros] = parts[x];
+    for (int x = coloncolon; x < coloncolon + num_zeros; x++)
+      parts[x] = 0;
+  }
+
+  // return
+  if (!rest && pos < len)
+    return false;
+  else {
+    if (rest)
+      *rest = str.substring(pos - 1);
+    for (d = 0; d < 8; d++) {
+      return_value[d<<1] = (parts[d]>>8) & 0xFF;
+      return_value[(d<<1) + 1] = parts[d] & 0xFF;
+    }
+    return true;
+  }
+}
+
+#ifndef CLICK_TOOL
+bool
+cp_ip6_address(const String &str, IP6Address &address, String *rest = 0)
+{
+  return cp_ip6_address(str, address.data(), rest);
+}
+#endif
+
+#if 0
 bool
 cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
 {
@@ -993,15 +1068,6 @@ cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
    }
   return true;
   }
-}
-
-
-
-#ifndef CLICK_TOOL
-bool
-cp_ip6_address(String str, IP6Address &address, String *rest = 0)
-{
-  return cp_ip6_address(str, address.data(), rest);
 }
 #endif
 
@@ -1433,7 +1499,7 @@ cp_va_parsev(const Vector<String> &args,
        if (skip) break;
        //printf("here is args[argno] %x \n", *args[argno]);
        //if (!cp_ip6_address(args[argno], (unsigned  char *)v.v.address, &args[argno]))
-       if (!cp_ip6_address(args[argno], (unsigned  char *)v.v.address))
+       if (!cp_ip6_address(args[argno], (unsigned char *)v.v.address))
 	 errh->error("argument %d should be %s (IP6 address)", argno+1, desc);
        else
 	 //click_chatter("cp ip6 ok");
