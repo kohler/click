@@ -48,6 +48,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
   int burstsize = 1;
+  int datasize = -1;
   bool active = true, stop = false;
   
   if (cp_va_parse(conf, this, errh,
@@ -58,6 +59,7 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "active?", &active,
 		  cpKeywords,
 		  "DATA", cpString, "packet data", &data,
+		  "DATASIZE", cpString, "minimum packet size", &datasize,
 		  "LIMIT", cpInteger, "total packet count", &limit,
 		  "BURST", cpInteger, "burst size (packets per scheduling)", &burstsize,
 		  "ACTIVE", cpBool, "active?", &active,
@@ -68,13 +70,25 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("burst size must be >= 1");
 
   _data = data;
+  _datasize = _datasize;
   _limit = limit;
   _burstsize = burstsize;
   _count = 0;
   _active = active;
   _stop = stop;
   if (_packet) _packet->kill();
-  _packet = Packet::make(_data.data(), _data.length());
+
+  if (_datasize > _data.length()) {
+    // make up some data to fill extra space
+    String new_data;
+    do {
+      new_data += _data;
+    }
+    while (new_data.length() < datasize);    
+    _packet = Packet::make(_data.data(), _data.length());
+  }
+  else
+    _packet = Packet::make(_data.data(), _data.length());
   return 0;
 }
 
@@ -147,6 +161,8 @@ InfiniteSource::read_param(Element *e, void *vparam)
     return cp_unparse_bool(is->_active) + "\n";
    case 4:			// count
     return String(is->_count) + "\n";
+   case 6:			// datasize
+    return String(is->_datasize) + "\n";
    default:
     return "";
   }
@@ -203,6 +219,13 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      break;
    }
 
+   case 6: {			// datasize
+     int datasize;
+     if (!cp_integer(s, &datasize) || datasize < 1)
+       return errh->error("datasize parameter must be integer >= 1");
+     is->_datasize = datasize;
+     break;
+   }
   }
   return 0;
 }
@@ -220,6 +243,8 @@ InfiniteSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
+  add_read_handler("datasize", read_param, (void *)6);
+  add_write_handler("datasize", change_param, (void *)6);
   add_task_handlers(&_task);
 }
 

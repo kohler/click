@@ -30,6 +30,10 @@ Keyword arguments are:
 
 String. Same as the DATA argument.
 
+=item DATASIZE
+
+Integer. If set, ensures the outgoing packet contains at least this many bytes.
+
 =item LIMIT
 
 Integer. Same as the LIMIT argument.
@@ -67,6 +71,8 @@ Resets the number of generated packets to 0. The InfiniteSource will then
 generate another LIMIT packets (if it is active).
 =h data read/write
 Returns or sets the DATA parameter.
+=h datasize read/write
+Returns or sets the DATASIZE parameter.
 =h limit read/write
 Returns or sets the LIMIT parameter.
 =h burstsize read/write
@@ -103,6 +109,7 @@ class InfiniteSource : public Element { public:
   int _burstsize;
   int _limit;
   int _count;
+  int _datasize;
   bool _active : 1;
   bool _stop : 1;
   Task _task;
@@ -110,7 +117,7 @@ class InfiniteSource : public Element { public:
   
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);
-  
+
 };
 
 CLICK_ENDDECLS
