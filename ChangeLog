@@ -1,3 +1,20 @@
+2004-02-17 Tuesday 22:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: ackresponder2.cc (1.1), ackresponder2.hh (1.1),
+	ackretrysender2.cc (1.1), ackretrysender2.hh (1.1): New ACK
+	retry/respond elements that can be used with broadcast link-layer
+	packets
+
+2004-02-17 Tuesday 22:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/ackresponder.hh (1.4): new ethertype to not
+	conflict with LinkStat
+
+2004-02-17 Tuesday 22:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/infinitesource.cc (1.42): fix fencepost error
+	in LIMIT handling for pull mode
+
 2004-02-10 Tuesday 18:21  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/fromdevice.cc (1.76): FromDevice goes to
