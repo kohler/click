@@ -139,12 +139,12 @@ class ErrorVeneer : public ErrorHandler { public:
 };
 
 class ContextErrorHandler : public ErrorVeneer { public:
-  ContextErrorHandler(ErrorHandler *, const String &context,
-		      const String &indent = "  ");
+  ContextErrorHandler(ErrorHandler *, const String &context, const String &indent = "  ", const String &default_landmark = "");
   String decorate_text(Seriousness, const String &, const String &, const String &);
  private:
   String _context;
   String _indent;
+  String _default_landmark;
 };
 
 class PrefixErrorHandler : public ErrorVeneer { public:

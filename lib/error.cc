@@ -771,8 +771,10 @@ ErrorVeneer::count_error(Seriousness seriousness, const String &text)
 
 ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 					 const String &context,
-					 const String &indent)
-  : ErrorVeneer(errh), _context(context), _indent(indent)
+					 const String &indent,
+					 const String &default_landmark)
+  : ErrorVeneer(errh), _context(context), _indent(indent),
+    _default_landmark(default_landmark)
 {
 }
 
@@ -786,13 +788,13 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix
     if (_errh->min_verbosity() > ERRVERBOSITY_CONTEXT)
       _context = _indent = String();
     else {
-      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), landmark, _context);
+      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), (_default_landmark ? _default_landmark : landmark), _context);
       if (context_lines && context_lines.back() != '\n')
 	context_lines += '\n';
       _context = String();
     }
   }
-  return context_lines + _errh->decorate_text(seriousness, String(), landmark, prepend_lines(_indent + prefix, text));
+  return context_lines + _errh->decorate_text(seriousness, String(), (landmark ? landmark : _default_landmark), prepend_lines(_indent + prefix, text));
 }
 
 
