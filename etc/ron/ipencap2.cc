@@ -105,7 +105,7 @@ IPEncap2::simple_action(Packet *p_in)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
   } else {
 #endif
-  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #ifdef __KERNEL__
   }
 #endif

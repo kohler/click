@@ -88,7 +88,7 @@ SetTCPChecksum::simple_action(Packet *p_in)
   ip->ip_len = htons(ilen - hlen);
 
   th->th_sum = 0;
-  th->th_sum = in_cksum((unsigned char *)ip, ilen);
+  th->th_sum = click_in_cksum((unsigned char *)ip, ilen);
 
   memcpy(ip, itmp, 9);
   ip->ip_sum = oisum;

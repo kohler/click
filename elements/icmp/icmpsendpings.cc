@@ -88,7 +88,7 @@ ICMPSendPings::run_scheduled()
   nip->ip_ttl = 200;
   nip->ip_src = _src;
   nip->ip_dst = _dst;
-  nip->ip_sum = in_cksum((unsigned char *)nip, sizeof(click_ip));
+  nip->ip_sum = click_in_cksum((unsigned char *)nip, sizeof(click_ip));
 
   icmp_sequenced *icp = (struct icmp_sequenced *) (nip + 1);
   icp->icmp_type = ICMP_ECHO;
@@ -96,7 +96,7 @@ ICMPSendPings::run_scheduled()
   icp->identifier = htons(_icmp_id);
   icp->sequence = htons(_ip_id);
 
-  icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_sequenced));
+  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(icmp_sequenced));
 
   q->set_dst_ip_anno(IPAddress(_dst));
   q->set_ip_header(nip, sizeof(click_ip));

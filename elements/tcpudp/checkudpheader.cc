@@ -113,7 +113,7 @@ CheckUDPHeader::simple_action(Packet *p)
     return drop(BAD_LENGTH, p);
 
   if (udph->uh_sum != 0) {
-    unsigned csum = ~in_cksum((unsigned char *)udph, len) & 0xFFFF;
+    unsigned csum = ~click_in_cksum((unsigned char *)udph, len) & 0xFFFF;
 #ifdef __KERNEL__
     if (csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
 			  len, IP_PROTO_UDP, csum) != 0)

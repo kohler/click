@@ -94,7 +94,7 @@ ForceUDP::simple_action(Packet *p_in)
   ip->ip_len = htons(ilen - hlen);
 
   uh->uh_sum = 0;
-  uh->uh_sum = in_cksum((unsigned char *)ip, ilen);
+  uh->uh_sum = click_in_cksum((unsigned char *)ip, ilen);
 
   memcpy(ip, itmp, 9);
   ip->ip_sum = oisum;

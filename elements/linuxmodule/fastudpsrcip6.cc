@@ -97,7 +97,7 @@ FastUDPSourceIP6::incr_ports()
   unsigned short len = _len-14-sizeof(click_ip6);
   if (_cksum) {   
     //need to chagne
-    //unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+    //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
     //udp->uh_sum = csum_tcpudp_magic(_sip6addr.s_addr, _dip6addr.s_addr,
     //      		    len, IP_PROTO_UDP, csum); 
     udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)udp, ip6->ip6_plen));
@@ -136,7 +136,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
   udp->uh_ulen = htons(len);
   if (_cksum) {
     //need to change, use our own checksum method
-    //unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+    //unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
     //udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
     //			    len, IP_PROTO_UDP, csum);
     udp->uh_sum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, udp->uh_sum, (unsigned char *)udp, ip6->ip6_plen));

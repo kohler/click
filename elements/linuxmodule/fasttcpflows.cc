@@ -94,7 +94,7 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
-  unsigned csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+  unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
   
@@ -104,7 +104,7 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-  csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
   
@@ -114,7 +114,7 @@ FastTCPFlows::change_ports(int flow)
   tcp->th_dport = dport;
   tcp->th_sum = 0;
   len = _len-14-sizeof(click_ip);
-  csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+  csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
   tcp->th_sum = csum_tcpudp_magic
     (_sipaddr.s_addr, _dipaddr.s_addr, len, IP_PROTO_TCP, csum);
 }
@@ -185,7 +185,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     ip->ip_off = 0;
     ip->ip_ttl = 250;
     ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
     _flows[i].syn_packet->set_dst_ip_anno(IPAddress(_dipaddr));
     _flows[i].syn_packet->set_ip_header(ip, sizeof(click_ip));
     // set up TCP header
@@ -199,7 +199,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     unsigned short len = _len-14-sizeof(click_ip);
-    unsigned csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+    unsigned csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
     
@@ -220,7 +220,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     ip->ip_off = 0;
     ip->ip_ttl = 250;
     ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
     _flows[i].data_packet->set_dst_ip_anno(IPAddress(_dipaddr));
     _flows[i].data_packet->set_ip_header(ip, sizeof(click_ip));
     // set up TCP header
@@ -234,7 +234,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-    csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
   
@@ -255,7 +255,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     ip->ip_off = 0;
     ip->ip_ttl = 250;
     ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
     _flows[i].fin_packet->set_dst_ip_anno(IPAddress(_dipaddr));
     _flows[i].fin_packet->set_ip_header(ip, sizeof(click_ip));
     // set up TCP header
@@ -269,7 +269,7 @@ FastTCPFlows::initialize(ErrorHandler *)
     tcp->th_urp = 0;
     tcp->th_sum = 0;
     len = _len-14-sizeof(click_ip);
-    csum = ~in_cksum((unsigned char *)tcp, len) & 0xFFFF;
+    csum = ~click_in_cksum((unsigned char *)tcp, len) & 0xFFFF;
     tcp->th_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_TCP, csum);
     

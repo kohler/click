@@ -449,7 +449,7 @@ IPReassembler::queue_glue(IPQueue *qp)
   wp->ip_header()->ip_len = htons(count);
   wp->ip_header()->ip_off = 0;
   wp->ip_header()->ip_sum = 0;
-  wp->ip_header()->ip_sum = in_cksum((unsigned char*)(wp->data()), qp->ihlen);
+  wp->ip_header()->ip_sum = click_in_cksum((unsigned char*)(wp->data()), qp->ihlen);
   wp->set_ip_header(wp->ip_header(), count);
 
   return wp;

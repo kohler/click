@@ -141,11 +141,11 @@ IPEncap::simple_action(Packet *p_in)
   if (_aligned)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
   else
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #elif HAVE_FAST_CHECKSUM
   ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
 #else
-  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
   
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));

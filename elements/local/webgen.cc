@@ -323,13 +323,13 @@ WebGen::tcp_output(CB *cb, Packet *xp)
   ip->ip_len = htons(plen - 20);
 
   th->th_sum = 0;
-  th->th_sum = in_cksum((unsigned char *)ip, plen);
+  th->th_sum = click_in_cksum((unsigned char *)ip, plen);
 
   memcpy(ip, itmp, 9);
   ip->ip_len = htons(plen);
 
   ip->ip_sum = 0;
-  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
   output(0).push(p);
 }

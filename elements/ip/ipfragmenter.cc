@@ -147,7 +147,7 @@ IPFragmenter::fragment(Packet *p)
     ip1->ip_off = htons(ip1->ip_off);
     ip1->ip_len = htons(p1len);
     ip1->ip_sum = 0;
-    ip1->ip_sum = in_cksum(p1->data(), h1len);
+    ip1->ip_sum = click_in_cksum(p1->data(), h1len);
 
     p1->copy_annotations(p);
     p1->set_ip_header(ip1, h1len);
@@ -163,7 +163,7 @@ IPFragmenter::fragment(Packet *p)
   qip->ip_len = htons(hlen + len);
   qip->ip_off = htons(ipoff | IP_MF);
   qip->ip_sum = 0;
-  qip->ip_sum = in_cksum(reinterpret_cast<unsigned char *>(qip), hlen);
+  qip->ip_sum = click_in_cksum(reinterpret_cast<unsigned char *>(qip), hlen);
   q->set_ip_header(qip, sizeof(click_ip)); // XXX correct headerlength?
   output(0).push(q);
 }

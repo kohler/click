@@ -92,7 +92,7 @@ ForceICMP::simple_action(Packet *p_in)
   _count++;
 
   ih->icmp_cksum = 0;
-  ih->icmp_cksum = in_cksum((unsigned char *)ih, ilen - hlen);
+  ih->icmp_cksum = click_in_cksum((unsigned char *)ih, ilen - hlen);
 
   return p;
 

@@ -153,11 +153,11 @@ CheckIPHeader::simple_action(Packet *p)
   if (_aligned)
     val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
   else
-    val = in_cksum((unsigned char *)ip, hlen);
+    val = click_in_cksum((unsigned char *)ip, hlen);
 #elif HAVE_FAST_CHECKSUM
   val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
 #else
-  val = in_cksum((unsigned char *)ip, hlen);
+  val = click_in_cksum((unsigned char *)ip, hlen);
 #endif
   if (val != 0)
     return drop(BAD_CHECKSUM, p);

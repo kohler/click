@@ -139,7 +139,7 @@ CheckICMPHeader::simple_action(Packet *p)
 
   }
 
-  csum = in_cksum((unsigned char *)icmph, icmp_len) & 0xFFFF;
+  csum = click_in_cksum((unsigned char *)icmph, icmp_len) & 0xFFFF;
   if (csum != 0)
     return drop(BAD_CHECKSUM, p);
 

@@ -194,7 +194,7 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
   // Therefore, if the resulting icmp_cksum is +0, we do a full checksum to
   // verify.
   if (!icmph->icmp_cksum)
-    icmph->icmp_cksum = in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+    icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
   
   mark_used();
 }

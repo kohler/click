@@ -100,7 +100,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   ip->ip_sum = 0;
   memcpy((void *) &(ip->ip_src), (void *) &saddr, sizeof(saddr));
   memcpy((void *) &(ip->ip_dst), (void *) &daddr, sizeof(daddr));
-  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
   // TCP fields
   sport = htons(sport);
@@ -117,7 +117,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
 
   // now calculate tcp header cksum
   unsigned csum =
-    ~in_cksum((unsigned char *)tcp, sizeof(click_tcp)) & 0xFFFF;
+    ~click_in_cksum((unsigned char *)tcp, sizeof(click_tcp)) & 0xFFFF;
 #ifdef __KERNEL__
   tcp->th_sum = csum_tcpudp_magic
     (ip->ip_src.s_addr, ip->ip_dst.s_addr, sizeof(click_tcp),

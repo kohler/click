@@ -173,7 +173,7 @@ IPOutputCombo::push(int, Packet *p_in)
   // IPGWOptions / FixIPSrc
   if (do_cksum) {
     ip->ip_sum = 0;
-    ip->ip_sum = in_cksum(p->data(), hlen);
+    ip->ip_sum = click_in_cksum(p->data(), hlen);
   }
 
   // DecIPTTL

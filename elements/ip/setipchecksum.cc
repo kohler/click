@@ -54,7 +54,7 @@ SetIPChecksum::simple_action(Packet *p_in)
 
   p = p->uniqueify();
   ip->ip_sum = 0;
-  ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, hlen);
   return p;
 
  bad:

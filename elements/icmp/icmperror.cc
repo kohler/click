@@ -225,7 +225,7 @@ ICMPError::simple_action(Packet *p)
   nip->ip_ttl = 200;
   nip->ip_src = _src_ip.in_addr();
   nip->ip_dst = ipp->ip_src;
-  nip->ip_sum = in_cksum((unsigned char *)nip, sizeof(click_ip));
+  nip->ip_sum = click_in_cksum((unsigned char *)nip, sizeof(click_ip));
 
   icp = (struct icmp_generic *) (nip + 1);
   icp->icmp_type = _type;
@@ -241,7 +241,7 @@ ICMPError::simple_action(Packet *p)
   }
 
   memcpy((void *)(icp + 1), p->network_header(), xlen);
-  icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
+  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   SET_FIX_IP_SRC_ANNO(q, 1);

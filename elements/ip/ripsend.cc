@@ -84,14 +84,14 @@ RIPSend::run_scheduled()
   udpp->uh_sport = htons(520);
   udpp->uh_dport = htons(520);
   udpp->uh_ulen = htons(p->length() - sizeof(*ipp));
-  udpp->uh_sum = in_cksum(p->data(), p->length());
+  udpp->uh_sum = click_in_cksum(p->data(), p->length());
 
   /* the remaining IP header fields */
   ipp->ip_len = htons(p->length());
   ipp->ip_hl = sizeof(click_ip) >> 2;
   ipp->ip_v = 4;
   ipp->ip_ttl = 200;
-  ipp->ip_sum = in_cksum((unsigned char *) ipp, sizeof(*ipp));
+  ipp->ip_sum = click_in_cksum((unsigned char *) ipp, sizeof(*ipp));
   
   p->set_ip_header(ipp, sizeof(click_ip));
   

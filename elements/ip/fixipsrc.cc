@@ -68,7 +68,7 @@ FixIPSrc::fix_it(Packet *p_in)
   ip->ip_src = _my_ip;
   int hlen = ip->ip_hl << 2;
   ip->ip_sum = 0;
-  ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, hlen);
   return p;
 }
 

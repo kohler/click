@@ -59,7 +59,7 @@ ForceIP::simple_action(Packet *p_in)
   }
 
   ip->ip_sum = 0;
-  ip->ip_sum = in_cksum((unsigned char *)ip, ip->ip_hl << 2);
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, ip->ip_hl << 2);
 
   p->set_ip_header(ip, hlen);
   

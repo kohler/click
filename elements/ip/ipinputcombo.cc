@@ -116,14 +116,14 @@ IPInputCombo::smaction(Packet *p)
     if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
       goto bad;
   } else {
-    if (in_cksum((unsigned char *)ip, hlen) != 0)
+    if (click_in_cksum((unsigned char *)ip, hlen) != 0)
       goto bad;
   }
 #elif HAVE_FAST_CHECKSUM
   if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
     goto bad;
 #else
-  if (in_cksum((unsigned char *)ip, hlen) != 0)
+  if (click_in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
 #endif
 

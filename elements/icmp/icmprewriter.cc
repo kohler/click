@@ -85,7 +85,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
     unsigned hlen = iph->ip_hl << 2;
     iph->ip_dst = new_flow.saddr();
     iph->ip_sum = 0;
-    iph->ip_sum = in_cksum((unsigned char *)iph, hlen);
+    iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
   }
   
   // don't bother patching embedded IP or UDP checksums
@@ -96,7 +96,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 
   // but must patch ICMP checksum
   icmph->icmp_cksum = 0;
-  icmph->icmp_cksum = in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+  icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
 }
 
 void
@@ -116,7 +116,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
     unsigned hlen = iph->ip_hl << 2;
     iph->ip_dst = new_flow.saddr();
     iph->ip_sum = 0;
-    iph->ip_sum = in_cksum((unsigned char *)iph, hlen);
+    iph->ip_sum = click_in_cksum((unsigned char *)iph, hlen);
   }
   
   // don't bother patching embedded ICMP checksum
@@ -126,7 +126,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
 
   // but must patch ICMP checksum
   icmph->icmp_cksum = 0;
-  icmph->icmp_cksum = in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+  icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
 }
 
 void

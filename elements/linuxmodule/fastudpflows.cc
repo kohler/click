@@ -90,7 +90,7 @@ FastUDPFlows::change_ports(int flow)
   udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
   if (_cksum) {
-    unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+    unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
     udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				    len, IP_PROTO_UDP, csum);
   } else
@@ -142,7 +142,7 @@ FastUDPFlows::initialize(ErrorHandler *)
     ip->ip_off = 0;
     ip->ip_ttl = 250;
     ip->ip_sum = 0;
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
     _flows[i].packet->set_dst_ip_anno(IPAddress(_dipaddr));
     _flows[i].packet->set_ip_header(ip, sizeof(click_ip));
   
@@ -153,7 +153,7 @@ FastUDPFlows::initialize(ErrorHandler *)
     unsigned short len = _len-14-sizeof(click_ip);
     udp->uh_ulen = htons(len);
     if (_cksum) {
-      unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+      unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
       udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
 				      len, IP_PROTO_UDP, csum);
     } else

@@ -57,7 +57,7 @@ SetGridChecksum::simple_action(Packet *xp)
     goto bad;
 
   gh->cksum = 0;
-  gh->cksum = in_cksum((unsigned char *) gh, tlen);
+  gh->cksum = click_in_cksum((unsigned char *) gh, tlen);
 
   return p;
 

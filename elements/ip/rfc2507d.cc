@@ -139,7 +139,7 @@ RFC2507d::simple_action(Packet *p)
     ctx->_ip.ip_len = htons(len);
 
     ctx->_ip.ip_sum = 0;
-    ctx->_ip.ip_sum = in_cksum((unsigned char *) &(ctx->_ip), sizeof(click_ip));
+    ctx->_ip.ip_sum = click_in_cksum((unsigned char *) &(ctx->_ip), sizeof(click_ip));
 
     q = Packet::make(len);
     memcpy(q->data(), &(ctx->_ip), sizeof(click_ip));
@@ -170,7 +170,7 @@ RFC2507d::simple_action(Packet *p)
       // check IP checksum
       click_ip *ipp = reinterpret_cast<click_ip *>(p);
       int hlen = ipp->ip_hl << 2;
-      if(in_cksum((unsigned char *)ipp, hlen) != 0){
+      if(click_in_cksum((unsigned char *)ipp, hlen) != 0){
         click_chatter(" ip cksum failed");
       }
 
@@ -179,7 +179,7 @@ RFC2507d::simple_action(Packet *p)
       // zero ip_v, ip_hl, ip_tos, ip_len, ip_off, ip_ttl
       memset(ipp, '\0', 9);
       ipp->ip_sum = htons(len - sizeof(click_ip));
-      if(in_cksum((unsigned char *)p, len) != 0){
+      if(click_in_cksum((unsigned char *)p, len) != 0){
         click_chatter(" tcp cksum failed");
       }
       

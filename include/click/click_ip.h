@@ -6,11 +6,11 @@ CLICK_CXX_PROTECT
 #if CLICK_LINUXMODULE
 # include <net/checksum.h>
 # include <linux/in.h>
-# define in_cksum(addr, len) ip_compute_csum((addr), (len))
+# define click_in_cksum(addr, len) ip_compute_csum((addr), (len))
 #else
 # include <sys/types.h>
 # include <netinet/in.h>
-unsigned short in_cksum(const unsigned char *addr, int len);
+unsigned short click_in_cksum(const unsigned char *addr, int len);
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>

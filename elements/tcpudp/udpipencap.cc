@@ -105,11 +105,11 @@ UDPIPEncap::simple_action(Packet *p_in)
   if (_aligned)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
   else
-    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+    ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #elif HAVE_FAST_CHECKSUM
   ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
 #else
-  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+  ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 #endif
   
   p->set_dst_ip_anno(IPAddress(_daddr));
@@ -121,7 +121,7 @@ UDPIPEncap::simple_action(Packet *p_in)
   unsigned short len = p->length() - sizeof(click_ip);
   udp->uh_ulen = htons(len);
   if (_cksum) {
-    unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+    unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
 #ifdef __KERNEL__
     udp->uh_sum = csum_tcpudp_magic(_saddr.s_addr, _daddr.s_addr,
 				    len, IP_PROTO_UDP, csum);

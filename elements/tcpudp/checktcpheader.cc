@@ -113,7 +113,7 @@ CheckTCPHeader::simple_action(Packet *p)
       || p->length() < len + iph_len + p->ip_header_offset())
     return drop(BAD_LENGTH, p);
 
-  csum = ~in_cksum((unsigned char *)tcph, len) & 0xFFFF;
+  csum = ~click_in_cksum((unsigned char *)tcph, len) & 0xFFFF;
 #ifdef __KERNEL__
   csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
 			   len, IP_PROTO_TCP, csum);

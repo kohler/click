@@ -114,7 +114,7 @@ ProtocolTranslator64::make_translate64(IPAddress src,
       ip->ip_sum=0; 
       tcp->th_sum = 0;
       tcp->th_sum = htons(in_ip4_cksum(src.addr(), dst.addr(), ip6->ip6_plen, ip->ip_p, 0, (unsigned char *)tcp, ip6->ip6_plen));
-      ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+      ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
     }
   
@@ -126,7 +126,7 @@ ProtocolTranslator64::make_translate64(IPAddress src,
       ip->ip_sum=0; 
       udp->uh_sum = 0;
       udp->uh_sum = htons(in_ip4_cksum(src.addr(), dst.addr(), ip6->ip6_plen, ip->ip_p, 0, (unsigned char *)udp, ip6->ip6_plen));
-      ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+      ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
 
     }
   
@@ -180,7 +180,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
       icmp->identifier = (icmp6->identifier);
       icmp->sequence = (icmp6->sequence);
       memcpy(ip, ip6, (payload_length - sizeof(icmp6_echo)));
-      icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+      icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 
     }
   break;
@@ -205,7 +205,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
       default: ; break;
       }
       memcpy(ip, ip6, (payload_length - sizeof(icmp6_dst_unreach)));
-      icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+      icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     
     }
   break;
@@ -221,7 +221,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
       icmp->icmp_type = ICMP_DST_UNREACHABLE; //icmp_type = 3
       icmp->icmp_code = 4;
       memcpy(ip, ip6, (payload_length - sizeof(icmp6_pkt_toobig)));
-      icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+      icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     }
   break;
   
@@ -236,7 +236,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
       icmp->icmp_type =ICMP_TYPE_TIME_EXCEEDED;            //icmp_type = 11 
       icmp->icmp_code = icmp6_code;
       memcpy(ip, ip6, (payload_length - sizeof(icmp6_time_exceeded)));
-      icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+      icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     }
   break;
   
@@ -270,7 +270,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
 	      
 	    }
 	  memcpy(ip, ip6, (payload_length - sizeof(icmp6_param)));
-	  icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+	  icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 	}
 
       else if (icmp6_code ==1) 
@@ -284,7 +284,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
 	  icmp->icmp_type = ICMP_DST_UNREACHABLE;           // icmp_type = 3 
 	  icmp->icmp_code = 2;
 	  memcpy(ip, ip6, (payload_length - sizeof(icmp6_param)));
-	  icmp->icmp_cksum = in_cksum((unsigned char *)icmp, icmp_length);
+	  icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 	}
   }
   break;
@@ -337,7 +337,7 @@ ProtocolTranslator64::handle_ip6(Packet *p)
 	   memcpy(start_of_icmp, q2->data(), q2->length()); 
 	   ip->ip_len = htons(q3->length());
 	   ip->ip_sum=0;
-	   ip->ip_sum = in_cksum((unsigned char *)ip, q3->length());
+	   ip->ip_sum = click_in_cksum((unsigned char *)ip, q3->length());
 
 	   p->kill();
 	   q->kill();

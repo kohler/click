@@ -7,7 +7,7 @@
 #include <click/click_ip.h>
 
 unsigned short
-in_cksum(const unsigned char *addr, int len)
+click_in_cksum(const unsigned char *addr, int len)
 {
   int nleft = len;
   const unsigned short *w = (const unsigned short *)addr;
