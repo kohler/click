@@ -39,6 +39,7 @@ class ToLinux : public Element { public:
   ToLinux *clone() const;
   
   void push(int port, Packet *);
+  void uninitialize();
 
  private:
   

@@ -129,5 +129,11 @@ ToLinux::push(int port, Packet *p)
 #endif
 }
 
+void
+ToLinux::uninitialize()
+{
+  dev_put(_dev);
+}
+
 ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(ToLinux)
