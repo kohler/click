@@ -343,7 +343,11 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 		      int &split_left, int &split_right)
 {
     if (size >= 64) {
+#if CLICK_LINUXMODULE
 	printk("<1>click_qsort_partition: elements too large!\n");
+#elif CLICK_BSDMODULE
+	printf("click_qsort_partition: elements too large!\n");
+#endif
 	return -E2BIG;
     }
     
