@@ -82,6 +82,29 @@ void _leaving_ipb(void);
 #define click_gettimeofday(tvp) (do_gettimeofday(tvp))
 #define click_jiffies()		jiffies
 
+#else /* not __KERNEL__ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+
+__inline__ unsigned long long
+click_get_cycles(void)
+{
+  return(0);
+}
+
+#define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
+#define HZ 100			// click_jiffies rate
+extern int click_jiffies();
+
+#endif /* __KERNEL__ */
+
 #ifndef timercmp
 /* Convenience macros for operations on timevals.
    NOTE: `timercmp' does not work for >= or <=.  */
@@ -114,29 +137,6 @@ void _leaving_ipb(void);
       (result)->tv_usec += 1000000;					      \
     }									      \
   } while (0)
-#endif
-
-#else
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/time.h>
-
-__inline__ unsigned long long
-click_get_cycles(void)
-{
-  return(0);
-}
-
-#define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
-#define HZ 100			// click_jiffies rate
-extern int click_jiffies();
-
 #endif
 
 #endif
