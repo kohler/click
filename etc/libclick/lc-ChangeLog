@@ -1,3 +1,7 @@
+2001-12-01 Saturday 15:53  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in: fix from Luigi Rizzo
+
 2001-11-29 Thursday 04:12  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: timer.hh, timer.hh: Timer::reschedule_at() is
