@@ -48,12 +48,15 @@ SetGridChecksum::simple_action(Packet *xp)
     goto bad;
 
   if (/* hlen < sizeof(grid_hdr) || */ // grid_hdr size keeps changing...
-      tlen > plen)
+      tlen > plen - sizeof(click_ether))
     goto bad;
 
   gh->cksum = 0;
   gh->cksum = in_cksum((unsigned char *) gh, tlen);
-  
+#if 1
+  click_chatter("set cksum len %d", tlen);
+#endif
+
   return p;
 
  bad:

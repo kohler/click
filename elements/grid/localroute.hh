@@ -36,7 +36,7 @@ class LocalRoute : public Element {
 
   const char *class_name() const		{ return "LocalRoute"; }
   void *cast(const char *);
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return PUSH; }
   LocalRoute *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);

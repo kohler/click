@@ -70,7 +70,7 @@ CheckGridHeader::simple_action(Packet *p)
   hlen = gh->hdr_len;
   tlen = ntohs(gh->total_len);
 #if 1
-  click_chatter("check!!! total len is %d", (int) gh->total_len);
+  click_chatter("check!!! total len is %d", tlen);
 #endif
 
   /* grid header size keeps changing
