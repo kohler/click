@@ -93,7 +93,6 @@ FromDump::pcap_packet_hook(u_char* clientdata,
 			   const u_char* data)
 {
   FromDump *e = (FromDump *)clientdata;
-  static bool once = true;
 
   // If first time called, set up offset for syncing up real time with
   // the time of the dump.
@@ -109,6 +108,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
   memcpy(&e->_pending_pkthdr, pkthdr, sizeof(pcap_pkthdr));
 
 #if 0
+  static bool once = true;
   if (once && (e->_pending_pkthdr.ts.tv_sec-e->_init.tv_sec >= 30)) {
     timeval now;
     click_gettimeofday(&now);

@@ -108,6 +108,7 @@ private:
 #define INIT     0x0001
 #define SPLIT    0x0010
     EWMA2 values[MAX_NRATES];
+    unsigned long long total;
     int last_update;
     struct _stats *next_level;
   };
@@ -165,6 +166,7 @@ IPRateMonitor::update(IPAddress a, int val)
       for(int i = 0; i < _no_of_rates; i++)
         c->values[i].update(val);
       c->last_update = c->values[0].now();
+      c->total += val;
       s = c->next_level;
     }
     else
@@ -182,6 +184,7 @@ IPRateMonitor::update(IPAddress a, int val)
   for(int i = 0; i < _no_of_rates; i++)
     c->values[i].update(val);
   c->last_update = c->values[0].now();
+  c->total += val;
 
   // did value get larger than THRESH in the specified period?
   if(((c->values[0].average()*CLICK_HZ) >> c->values[0].scale()) >= _thresh) {
