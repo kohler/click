@@ -89,10 +89,21 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     bool run_task();
 
+    void reset_counts();
+
+    unsigned drops()                   { return _drops; }
+    unsigned runs()                    { return _runs; }
+    unsigned empty_runs()              { return _empty_runs; }
+    unsigned pushes()                  { return _pushes; }
+
   private:
 
     unsigned _burst;
     unsigned _drops;
+
+    unsigned _runs;
+    unsigned _empty_runs;
+    unsigned _pushes;
 
     enum { QSIZE = 511 };
     Packet *_queue[QSIZE+1];

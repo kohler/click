@@ -28,6 +28,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <click/straccum.hh>
 
 static AnyDeviceMap from_device_map;
 static int registered_readers;
@@ -156,6 +157,9 @@ FromDevice::initialize(ErrorHandler *errh)
     from_device_map.move_to_front(this);
     _capacity = QSIZE;
     _drops = 0;
+
+    reset_counts();
+
     return 0;
 }
 
@@ -271,13 +275,17 @@ FromDevice::got_skb(struct sk_buff *skb)
 bool
 FromDevice::run_task()
 {
+    _runs++;
     int npq = 0;
     while (npq < _burst && _head != _tail) {
 	Packet *p = _queue[_head];
 	_head = next_i(_head);
 	output(0).push(p);
 	npq++;
+	_pushes++;
     }
+    if (npq == 0)
+	_empty_runs++;
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
@@ -287,9 +295,49 @@ FromDevice::run_task()
 }
 
 void
+FromDevice::reset_counts()
+{
+    _runs = 0;
+    _empty_runs = 0;
+    _pushes = 0;
+}
+
+static int
+FromDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
+{
+    FromDevice *fd = (FromDevice *) e;
+    fd->reset_counts();
+    return 0;
+}
+
+static String
+FromDevice_read_stats(Element *e, void *thunk)
+{
+    FromDevice *fd = (FromDevice *) e;
+    int which = reinterpret_cast<int>(thunk);
+    switch (which) {
+    case 0: return String(fd->drops()) + "\n"; break;
+    case 1: {
+	StringAccum sa;
+	sa << "calls to run_task(): " << fd->runs() << "\n"
+	   << "calls to push():     " << fd->pushes() << "\n"
+	   << "empty runs:          " << fd->empty_runs() << "\n"
+	   << "drops:               " << fd->drops() << "\n";
+	return sa.take_string();
+	break;
+    }
+    default: 
+	return String();
+    }	
+}
+
+void
 FromDevice::add_handlers()
 {
     add_task_handlers(&_task);
+    add_read_handler("drops", FromDevice_read_stats, (void *) 0);
+    add_read_handler("calls", FromDevice_read_stats, (void *) 1);
+    add_write_handler("reset_counts", FromDevice_write_stats, 0);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
