@@ -282,7 +282,7 @@ SRQueryResponder::got_reply(struct srpacket *pk)
 
 
 void
-SRQueryResponder::push(int port, Packet *p_in)
+SRQueryResponder::push(int, Packet *p_in)
 {
 
   click_ether *eh = (click_ether *) p_in->data();

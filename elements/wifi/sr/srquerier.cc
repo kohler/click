@@ -149,7 +149,7 @@ SRQuerier::start_query(IPAddress dstip)
 }
 
 void
-SRQuerier::push(int port, Packet *p_in)
+SRQuerier::push(int, Packet *p_in)
 {
 
   bool sent_packet = false;

@@ -32,9 +32,9 @@ CLICK_DECLS
 
 MadwifiRate::MadwifiRate()
   : Element(2, 1),
-    _offset(0), 
     _stepup(0),
     _stepdown(0),
+    _offset(0), 
     _packet_size_threshold(0)
 {
   MOD_INC_USE_COUNT;

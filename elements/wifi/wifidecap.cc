@@ -126,7 +126,7 @@ WifiDecap::simple_action(Packet *p)
       llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
       llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0) {
     ether_type = llc->llc_un.type_snap.ether_type;
-    p_out->pull(sizeof(struct llc));
+    p_out->pull(sizeof(struct click_llc));
   }
 
 
