@@ -1,3 +1,8 @@
+2004-07-14 Wednesday 22:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/: linux-2.4.20-patch (1.9), linux-2.4.26-patch (1.2):
+	patchnits
+
 2004-07-13 Tuesday 12:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/clicknet/ip.h (1.5): add IP_PROTO_NONE (for IPFilter)
