@@ -78,7 +78,7 @@ RED::check_thresh_and_p(int min_thresh, int max_thresh, int max_p,
     return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
   if (min_thresh > max_thresh)
     return errh->error("`min_thresh' greater than `max_thresh'");
-  if (max_p > 0x10000)
+  if (max_p > 0x10000 || max_p < 0)
     return errh->error("`max_p' parameter must be between 0 and 1");
 
   return 0;
