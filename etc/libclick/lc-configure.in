@@ -39,12 +39,13 @@ dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
   linuxdir=NONE)
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
+if test "x$linuxdir" = xNONE; then
   if test -d /usr/src/linux; then
     linuxdir=/usr/src/linux
   elif test "x$enable_linuxmodule" = xyes; then
@@ -74,6 +75,17 @@ Are you sure $linuxdir holds the Linux source code?
 fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
+
+AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/src/sys]],
+  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys; fi],
+  freebsddir=NONE)
+
+if test "x$enable_bsdmodule" = xyes -a -d $freebsddir; then
+  ac_have_bsd_kernel=y
+else
+  ac_have_bsd_kernel=n
+fi
+AC_SUBST(freebsddir)
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_COMPILE([], [#ifndef __linux__
@@ -164,7 +176,7 @@ dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE)
 element_groups=""
 AC_SUBST(element_groups)
 AC_DEFUN(ELEMENTS_ARG_ENABLE,
-[AC_ARG_ENABLE($1, builtin(format, [  %-23s %s%s], builtin(format, [--%sable-%s], builtin(ifelse, [$3], yes, dis, en), [$1]), builtin(ifelse, [$3], yes, [do not ], []), [[$2]]), ,
+[AC_ARG_ENABLE($1, [  --]builtin(substr, builtin(ifelse, [$3], yes, dis, en)[able-$1              ], 0, 21)[ ]builtin(ifelse, [$3], yes, [do not ], [])[$2], ,
 [enable_]patsubst([$1], -, _)=$3)dnl
 if test ["x$enable_]patsubst([$1], -, _)["] = xyes; then
   element_groups="$element_groups $1"
@@ -173,10 +185,14 @@ fi])
 
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], no, AC_DEFINE(HAVE_IPSEC))
 ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], no, AC_DEFINE(HAVE_IP6))
-ELEMENTS_ARG_ENABLE(warp9, [reduce PollDevice functionality for speed], no, AC_DEFINE(CLICK_WARP9))
 
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
+
+AC_ARG_ENABLE(warp9, [  --enable-warp9          reduce PollDevice functionality for speed], , enable_warp9=no)
+if test "x$enable_warp9" = xyes; then
+    AC_DEFINE(CLICK_WARP9)
+fi
 
 
 dnl
@@ -186,8 +202,8 @@ dnl
 EXTRA_DRIVER_OBJS=
 EXTRA_TOOL_OBJS=
 if test "x$enable_ip6" = xyes; then
-  EXTRA_DRIVER_OBJS="ip6address.o ip6flowid.o ip6table.o $EXTRA_DRIVER_OBJS"
-  EXTRA_TOOL_OBJS="ip6address.o $EXTRA_TOOL_OBJS"
+    EXTRA_DRIVER_OBJS="ip6address.o ip6flowid.o ip6table.o $EXTRA_DRIVER_OBJS"
+    EXTRA_TOOL_OBJS="ip6address.o $EXTRA_TOOL_OBJS"
 fi
 AC_SUBST(EXTRA_DRIVER_OBJS)
 AC_SUBST(EXTRA_TOOL_OBJS)
@@ -199,7 +215,7 @@ dnl
 
 AC_ARG_ENABLE(intel-cpu, [  --enable-intel-cpu      enable Intel-specific machine instructions], :, enable_intel_cpu=no)
 if test $enable_intel_cpu = yes; then
-  AC_DEFINE_UNQUOTED(HAVE_INTEL_CPU, 1)
+    AC_DEFINE_UNQUOTED(HAVE_INTEL_CPU, 1)
 fi
 
 
@@ -209,7 +225,7 @@ dnl
 
 AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
 if test $enable_stride = yes; then
-  AC_DEFINE_UNQUOTED(HAVE_STRIDE_SCHED, 1)
+    AC_DEFINE_UNQUOTED(HAVE_STRIDE_SCHED, 1)
 fi
 
 
@@ -219,7 +235,7 @@ dnl
 
 AC_ARG_ENABLE(dmalloc, [  --enable-dmalloc        enable debugging malloc], :, enable_dmalloc=no)
 if test $enable_dmalloc = yes; then
-  AC_DEFINE_UNQUOTED(CLICK_DMALLOC, 1)
+    AC_DEFINE_UNQUOTED(CLICK_DMALLOC, 1)
 fi
 
 

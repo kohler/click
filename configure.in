@@ -38,13 +38,13 @@ dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
-AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule    enable BSD kernel driver [EXPERIMENTAL]], :, enable_bsdmodule=no)
+AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
   linuxdir=NONE)
 
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
+if test "x$linuxdir" = xNONE; then
   if test -d /usr/src/linux; then
     linuxdir=/usr/src/linux
   elif test "x$enable_linuxmodule" = xyes; then
@@ -75,17 +75,23 @@ fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
 
-if test "x$enable_bsdmodule" = xyes -a -d /usr/src/sys; then
+AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/src/sys]],
+  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys; fi],
+  freebsddir=NONE)
+
+if test "x$enable_bsdmodule" = xyes -a -d $freebsddir; then
   ac_have_bsd_kernel=y
 else
   ac_have_bsd_kernel=n
 fi
+AC_SUBST(freebsddir)
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_COMPILE([], [#ifndef __linux__
 #error "fuckers! fuckers!"
 #endif
 return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
+
 
 dnl
 dnl multithread support?
@@ -108,12 +114,14 @@ else
   AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
 fi
 
+
 dnl
 dnl functions
 dnl
 
 AC_REPLACE_FUNCS(strerror)
 AC_CHECK_FUNCS(strtoul)
+
 
 dnl
 dnl integer types
@@ -128,12 +136,14 @@ if test "x$enable_int64" = xyes; then
 fi
 CLICK_CHECK_ENDIAN
 
+
 dnl
 dnl headers, dynamic linking
 dnl
 
 AC_CHECK_HEADERS(unistd.h)
 CLICK_CHECK_DYNAMIC_LINKING
+
 
 dnl
 dnl sockets
@@ -144,6 +154,7 @@ dnl AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
 AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket $SOCKET_LIBS")
 AC_SUBST(SOCKET_LIBS)
 
+
 dnl
 dnl mmap
 dnl
@@ -153,6 +164,7 @@ AC_CHECK_HEADERS(sys/mman.h)
 AC_FUNC_MMAP
 AC_CHECK_FUNCS(madvise)
 AC_LANG_CPLUSPLUS
+
 
 dnl
 dnl element collections
@@ -183,6 +195,9 @@ ELEMENTS_ARG_ENABLE(radio, [include radio elements (EXPERIMENTAL)], no)
 ELEMENTS_ARG_ENABLE(local, [include local elements], no)
 ELEMENTS_ARG_ENABLE(grid, [include Grid elements (see FAQ)], no)
 
+elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
+AC_SUBST(elements_vpath)
+
 AC_ARG_ENABLE(greedy, [  --enable-greedy         not give up control of CPU to OS for more predictable performance], , enable_greedy=no)
 if test "x$enable_greedy" = xyes; then
     AC_DEFINE(CLICK_GREEDY)
@@ -193,8 +208,6 @@ if test "x$enable_warp9" = xyes; then
     AC_DEFINE(CLICK_WARP9)
 fi
 
-elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
-AC_SUBST(elements_vpath)
 
 dnl
 dnl objects required by element collections
@@ -208,6 +221,7 @@ if test "x$enable_ip6" = xyes; then
 fi
 AC_SUBST(EXTRA_DRIVER_OBJS)
 AC_SUBST(EXTRA_TOOL_OBJS)
+
 
 dnl
 dnl stuff in the linux kernel
