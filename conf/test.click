@@ -1,7 +1,7 @@
 // test.click
 
 // This configuration should print this line five times:
-// Print ok |  40 : 45000028 00000000 401177c3 01000001 02000002 13691369
+// ok:   40 | 45000028 00000000 401177c3 01000001 02000002 13691369
 
 // You can run it at user level as
 // `userlevel/click < conf/test.click'

@@ -70,7 +70,7 @@ osad[0] -> Print(tun)
         -> LookupIPRoute(18.26.4.10 18.26.4.10)
         -> [0]arpq;
 
-osad[1] -> Print(How'd we get here?)
+osad[1] -> Print("How'd we get here?")
         -> Discard;
 
 
