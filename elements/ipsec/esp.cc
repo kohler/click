@@ -22,12 +22,12 @@
 # error "Must #define HAVE_IPSEC in config.h"
 #endif
 #include "esp.hh"
-#include "sha1.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/click_ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include "sha1.hh"
 
 unsigned SHA1_IV[ 5 ] = { H0, H1, H2, H3, H4 };
 
