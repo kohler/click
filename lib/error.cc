@@ -359,6 +359,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        s2 = numbuf + NUMBUF_SIZE;
        
        unsigned long num;
+#ifdef HAVE_INT64_TYPES
        if (width_flag == 'q') {
 	 unsigned long long qnum = va_arg(val, unsigned long long);
 	 if ((flags & SIGNED) && (long long)qnum < 0)
@@ -367,7 +368,9 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	 s1 = s2 - q.length();
 	 memcpy((char *)s1, q.data(), q.length());
 	 goto got_number;
-       } else if (width_flag == 'h') {
+       }
+#endif
+       if (width_flag == 'h') {
 	 num = (unsigned short)va_arg(val, int);
 	 if ((flags & SIGNED) && (short)num < 0)
 	   num = -(short)num, flags |= NEGATIVE;
@@ -381,8 +384,10 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	   num = -(int)num, flags |= NEGATIVE;
        }
        s1 = do_number(num, (char *)s2, base, flags);
-       
+
+#ifdef HAVE_INT64_TYPES
       got_number:
+#endif
        s1 = do_number_flags((char *)s1, (char *)s2, base, flags,
 			    precision, field_width);
        break;

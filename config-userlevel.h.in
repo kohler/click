@@ -1,0 +1,72 @@
+/* Process this file with configure to produce config-userlevel.h. -*- mode: c -*- */
+#ifndef CLICK_CONFIG_USERLEVEL_H
+#define CLICK_CONFIG_USERLEVEL_H
+
+/* Define if <new.h> exists and works. */
+#undef HAVE_NEW_H
+
+/* Define if inttypes.h exists. */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* Define if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the strerror function. */
+#undef HAVE_STRERROR
+
+/* Define if you have the strtoul function. */
+#undef HAVE_STRTOUL
+
+/* Define if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define if dynamic linking is possible. */
+#undef HAVE_DYNAMIC_LINKING
+
+/* Define if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
+/* Define if you have the mmap function. */
+#undef HAVE_MMAP
+
+/* Define if you have the madvise function. */
+#undef HAVE_MADVISE
+
+/* Define if mmap is allowed. */
+#if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
+# define ALLOW_MMAP 1
+#endif
+
+/* Define if you have -lpcap and pcap.h. */
+#undef HAVE_PCAP
+
+/* Define if <pcap.h> uses bpf_timeval. */
+#undef HAVE_BPF_TIMEVAL
+
+/* Include integer type definitions. */
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
+#include <sys/types.h>
+
+/* Prototype strerror if we don't have it. */
+#ifndef HAVE_STRERROR
+char *strerror(int errno);
+#endif
+
+#ifdef __cplusplus
+
+/* Provide placement new. */
+#if HAVE_NEW_H
+# include <new.h>
+#else
+inline void *operator new(size_t, void *v) { return v; }
+#endif
+#define HAVE_PLACEMENT_NEW 1
+
+#endif /* __cplusplus */
+
+#endif /* CLICK_CONFIG_H */

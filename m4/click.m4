@@ -397,6 +397,7 @@ AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
     AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
 [AC_EGREP_HEADER(uint64_t, $inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
 
+    have_int64_types=
     if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
 	AC_MSG_ERROR([
 =========================================
@@ -407,6 +408,7 @@ Compile with "'`'"--disable-int64'.
 =========================================])
     else
 	AC_DEFINE(HAVE_INT64_TYPES)
+	have_int64_types=yes
     fi])
 
 

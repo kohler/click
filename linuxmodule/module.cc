@@ -113,7 +113,7 @@ read_version(Element *, void *)
   return String(CLICK_VERSION) + "\n";
 }
 
-#ifdef HAVE_READ_NET_SKBCOUNT
+#ifdef HAVE_LINUX_READ_NET_SKBCOUNT
 extern "C" int read_net_skbcount(void);
 #endif
 
@@ -125,7 +125,7 @@ read_meminfo(Element *, void *)
   StringAccum sa;
   sa << "outstanding news " << click_outstanding_news << "\n";
   sa << "news " << click_new_count << "\n";
-#ifdef HAVE_READ_NET_SKBCOUNT
+#ifdef HAVE_LINUX_READ_NET_SKBCOUNT
   sa << "net_skbcount " << read_net_skbcount() << "\n";
 #endif
   return sa.take_string();
@@ -389,7 +389,7 @@ cleanup_module()
     printk("<1>click error: %d outstanding news\n", click_outstanding_news);
     print_and_free_chunks();
   }
-#ifdef HAVE_READ_NET_SKBCOUNT
+#ifdef HAVE_LINUX_READ_NET_SKBCOUNT
   printk("<1>net_skbcount: %d\n", read_net_skbcount());
 #endif
 }

@@ -1,0 +1,50 @@
+/* Process this file with configure to produce config-linuxmodule.h. -*- mode: c -*- */
+#ifndef CLICK_CONFIG_LINUXMODULE_H
+#define CLICK_CONFIG_LINUXMODULE_H
+
+/* Define stuff under a Linux module. */
+#ifndef __linux__
+# error "I must be compiled on a Linux machine"
+#endif
+#define __KERNEL__
+#define MODULE
+#define NDEBUG 1
+
+/* Define if your Linux kernel has Click extensions. */
+#undef HAVE_CLICK_KERNEL
+
+/* Define if your Linux kernel has read_net_skbcount. */
+#undef HAVE_LINUX_READ_NET_SKBCOUNT
+
+/* Define if your Linux kernel exposes strlen. */
+#undef HAVE_LINUX_STRLEN_EXPOSED
+
+/* Define if your Linux kernel has polling extensions. */
+#undef HAVE_LINUX_POLLING
+
+/* Define if your Linux kernel has tulip_interrupt_hook. */
+#undef HAVE_LINUX_TULIP_INTERRUPT_HOOK
+
+/* Define if your Linux kernel is running in SMP mode. */
+#undef __SMP__
+
+/* Include integer type definitions. */
+#include <linux/types.h>
+
+/* Define if fast checksum functions available. */
+#define HAVE_FAST_CHECKSUM 1
+
+/* Define if fast checksum functions require correct alignment. */
+#ifndef __i386__
+# define FAST_CHECKSUM_ALIGNED 1
+#endif
+
+#ifdef __cplusplus
+
+/* Provide placement new. */
+inline void *operator new(size_t, void *v) { return v; }
+#define HAVE_PLACEMENT_NEW 1
+
+#endif /* __cplusplus */
+
+#endif /* CLICK_CONFIG_LINUXMODULE_H */

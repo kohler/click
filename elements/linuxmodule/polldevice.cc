@@ -102,7 +102,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (promisc)
 	set_flag(F_PROMISC);
     
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
     if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)
 	return -1;
     if (_dev && (!_dev->poll_on || _dev->polling < 0)) {
@@ -122,7 +122,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
     // check for duplicate readers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + ifindex());
@@ -195,7 +195,7 @@ PollDevice::uninitialize_device()
 void
 PollDevice::uninitialize()
 {
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
     net_device *had_dev = _dev;
 
     // call uninitialize_device first so we can check poll_device_map for
@@ -212,7 +212,7 @@ PollDevice::uninitialize()
 void
 PollDevice::run_scheduled()
 {
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
   struct sk_buff *skb_list, *skb;
   int got=0;
 #if CLICK_DEVICE_STATS
@@ -318,13 +318,13 @@ PollDevice::run_scheduled()
   adjust_tickets(got);
   _task.fast_reschedule();
 
-#endif /* HAVE_POLLING */
+#endif /* HAVE_LINUX_POLLING */
 }
 
 void
 PollDevice::change_device(net_device *dev)
 {
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
     _task.unschedule();
     
     if (dev && (!dev->poll_on || dev->polling < 0)) {
@@ -344,7 +344,7 @@ PollDevice::change_device(net_device *dev)
 	_task.reschedule();
 #else
     (void) dev;
-#endif /* HAVE_POLLING */
+#endif /* HAVE_LINUX_POLLING */
 }
 
 extern "C" {

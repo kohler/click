@@ -200,7 +200,7 @@ ToDevice::run_scheduled()
 
   SET_STATS(low00, low10, time_now);
  
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
   bool is_polling = (_dev->polling > 0);
   if (is_polling) {
     struct sk_buff *skbs = _dev->tx_clean(_dev);
@@ -254,7 +254,7 @@ ToDevice::run_scheduled()
     sent++;
   }
 
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
   if (is_polling && sent > 0)
     _dev->tx_eob(_dev);
 
@@ -275,7 +275,7 @@ ToDevice::run_scheduled()
 
   if (busy) _busy_returns++;
 
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
   if (is_polling) {
     if (busy && sent == 0) {
       _dev_idle++;
@@ -322,7 +322,7 @@ ToDevice::queue_packet(Packet *p)
   }
 
   int ret;
-#if HAVE_POLLING
+#if HAVE_LINUX_POLLING
   if (_dev->polling > 0)
     ret = _dev->tx_queue(_dev, skb1);
   else 

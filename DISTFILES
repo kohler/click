@@ -14,6 +14,9 @@ click-compile.in
 click-mkelemmap
 config.guess
 config.h.in
+config-bsdmodule.h.in
+config-linuxmodule.h.in
+config-userlevel.h.in
 config.sub
 configure.in
 configure

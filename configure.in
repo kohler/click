@@ -1,7 +1,7 @@
 dnl -*- mode: shell-script -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
-AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in)
+AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 
 CLICK_VERSION=1.2.2a
 
@@ -30,6 +30,9 @@ AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(LD, ld)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
 AC_CHECK_TOOL(STRIP, strip, :)
+
+conf_auxdir='$(top_srcdir)'
+AC_SUBST(conf_auxdir)
 
 
 dnl
@@ -285,44 +288,36 @@ if test $ac_cv_click_kernel = yes; then
     AC_DEFINE_UNQUOTED(HAVE_CLICK_KERNEL, 1)
 fi
 
-AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_read_net_skbcount,
+AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_linux_read_net_skbcount,
 [if grep read_net_skbcount $linuxdir/System.map >/dev/null 2>&1; then
-  ac_cv_read_net_skbcount=yes
-else ac_cv_read_net_skbcount=no; fi])
-if test $ac_cv_read_net_skbcount = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_READ_NET_SKBCOUNT, 1)
+  ac_cv_linux_read_net_skbcount=yes
+else ac_cv_linux_read_net_skbcount=no; fi])
+if test $ac_cv_linux_read_net_skbcount = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_LINUX_READ_NET_SKBCOUNT, 1)
 fi
 
-AC_CACHE_CHECK(for tcp_prot kernel symbol, ac_cv_tcp_prot,
-[if grep 'D tcp_prot$' $linuxdir/System.map >/dev/null 2>&1; then
-  ac_cv_tcp_prot=yes
-else ac_cv_tcp_prot=no; fi])
-if test $ac_cv_tcp_prot = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_TCP_PROT, 1)
+AC_CACHE_CHECK(for strlen kernel symbol, ac_cv_linux_strlen_exposed,
+[if grep ' strlen' $linuxdir/System.map >/dev/null 2>&1; then
+  ac_cv_linux_strlen_exposed=yes
+else ac_cv_linux_strlen_exposed=no; fi])
+if test $ac_cv_linux_strlen_exposed = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_LINUX_STRLEN_EXPOSED, 1)
 fi
 
-AC_CACHE_CHECK(for tulip_interrupt_hook kernel symbol, ac_cv_tulip_intr_hook,
+AC_CACHE_CHECK(for tulip_interrupt_hook kernel symbol, ac_cv_linux_tulip_intr_hook,
 [if grep ' tulip_interrupt_hook' $linuxdir/System.map >/dev/null 2>&1; then
-  ac_cv_tulip_intr_hook=yes
-else ac_cv_tulip_intr_hook=no; fi])
-if test $ac_cv_tulip_intr_hook = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_TULIP_INTERRUPT_HOOK, 1)
+  ac_cv_linux_tulip_intr_hook=yes
+else ac_cv_linux_tulip_intr_hook=no; fi])
+if test $ac_cv_linux_tulip_intr_hook = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_LINUX_TULIP_INTERRUPT_HOOK, 1)
 fi
 
-AC_CACHE_CHECK(for device polling kernel extension, ac_cv_poll_extension,
+AC_CACHE_CHECK(for device polling kernel extension, ac_cv_linux_poll_extension,
 [if grep polling $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
-  ac_cv_poll_extension=yes
-else ac_cv_poll_extension=no; fi])
-if test $ac_cv_poll_extension = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_POLLING, 1)
-fi
-
-AC_CACHE_CHECK(for SKB reuse kernel extension, ac_cv_skb_reuse,
-[if grep reuse_skb $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
-  ac_cv_skb_reuse=yes
-else ac_cv_skb_reuse=no; fi])
-if test $ac_cv_skb_reuse = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_REUSE_SKB, 1)
+  ac_cv_linux_poll_extension=yes
+else ac_cv_linux_poll_extension=no; fi])
+if test $ac_cv_linux_poll_extension = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_LINUX_POLLING, 1)
 fi
 
 AC_CACHE_CHECK(for SMP, ac_cv_smp,
@@ -650,6 +645,11 @@ if test $ac_have_linux_kernel = y; then
   elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
     provisions="linux_2_4 $provisions"
   fi
+fi
+
+dnl add `int64' if 64-bit integers are available
+if test "x$have_int64_types" = xyes; then
+  provisions="int64 $provisions"
 fi
 
 AC_SUBST(provisions)

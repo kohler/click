@@ -61,14 +61,12 @@ install-info:
 	@cd doc && $(MAKE) install-info
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
-# note: install-include installs include/click/config.h, not config.h
 install-include: stamp-h
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(includedir)
 	$(mkinstalldirs) $(includedir)/standard
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
 	$(mkinstalldirs) $(toolincludedir)
@@ -85,7 +83,8 @@ always:
 	@:
 
 click-compile: $(srcdir)/click-compile.in
-	CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acclick.m4
@@ -95,9 +94,10 @@ config.status: $(srcdir)/configure
 Makefile: config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
-stamp-h: $(srcdir)/config.h.in config.status
+config.h: stamp-h
+stamp-h: $(srcdir)/config.h.in $(srcdir)/config-bsdmodule.h.in $(srcdir)/config-linuxmodule.h.in $(srcdir)/config-userlevel.h.in config.status
 	cd $(top_builddir) \
-	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
+	  && CONFIG_FILES= $(SHELL) ./config.status
 	echo > stamp-h
 
 check-filenames:
@@ -110,7 +110,7 @@ clean:
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status
-	-rm -f include/click/config.h include/click/pathvars.h
+	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-compile stamp-h
 
 

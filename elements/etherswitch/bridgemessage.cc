@@ -206,4 +206,5 @@ uint8_t BridgeMessage::_all_bridges[6] = {
   0x01, 0x80, 0xc2, 0x00, 0x00, 0x00
 };
 
+ELEMENT_REQUIRES(int64)
 ELEMENT_PROVIDES(EtherSwitchBridgeMessage)

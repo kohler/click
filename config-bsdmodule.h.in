@@ -1,0 +1,30 @@
+/* Process this file with configure to produce config-bsdmodule.h. -*- mode: c -*- */
+#ifndef CLICK_CONFIG_BSDMODULE_H
+#define CLICK_CONFIG_BSDMODULE_H
+
+/* Define stuff under a FreeBSD module. */
+#ifndef __FreeBSD__
+# error "I must be compiled on a FreeBSD machine"
+#endif
+#define _KERNEL
+#define MODULE
+#define NDEBUG 1
+
+/* Define if your BSD kernel has Click extensions. */
+#undef HAVE_CLICK_BSD_KERNEL
+
+/* Define if your BSD kernel has polling extensions. */
+#undef HAVE_BSD_POLLING
+
+/* Include integer type definitions. */
+#include <sys/inttypes.h>
+
+#ifdef __cplusplus
+
+/* Provide placement new. */
+inline void *operator new(size_t, void *v) { return v; }
+#define HAVE_PLACEMENT_NEW 1
+
+#endif /* __cplusplus */
+
+#endif /* CLICK_CONFIG_BSDMODULE_H */

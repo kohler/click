@@ -41,7 +41,7 @@ static AnyDeviceMap tulip_stats_map;
 static int tulip_stats_count;
 static int tulip_stats_active;
 
-#if HAVE_TULIP_INTERRUPT_HOOK
+#if HAVE_LINUX_TULIP_INTERRUPT_HOOK
 extern "C" void (*tulip_interrupt_hook)(net_device *, unsigned);
 #endif
 
@@ -157,7 +157,7 @@ TulipStats::initialize(ErrorHandler *errh)
   ScheduleInfo::join_scheduler(this, &_task, errh);
 
   tulip_stats_active++;
-#if HAVE_TULIP_INTERRUPT_HOOK
+#if HAVE_LINUX_TULIP_INTERRUPT_HOOK
   if (tulip_stats_active == 1)
     tulip_interrupt_hook = interrupt_notifier;
 #endif
@@ -176,7 +176,7 @@ TulipStats::uninitialize()
   tulip_stats_map.remove(this);
 
   tulip_stats_active--;
-#if HAVE_TULIP_INTERRUPT_HOOK
+#if HAVE_LINUX_TULIP_INTERRUPT_HOOK
   if (tulip_stats_active == 0)
     tulip_interrupt_hook = 0;
 #endif

@@ -12,17 +12,11 @@
 #undef HAVE_IPSEC
 
 /* Define if Click should not give up processor to OS for more predictable
- * performance; use only if you have more than one processors!!! */
+ * performance; use only if you have more than one processor! */
 #undef CLICK_GREEDY
 
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
-
-/* Define if <new.h> exists and works. */
-#undef HAVE_NEW_H
-
-/* Define if inttypes.h exists. */
-#undef HAVE_INTTYPES_H
 
 /* Define if 64-bit integer types are enabled. */
 #undef HAVE_INT64_TYPES
@@ -35,93 +29,6 @@
 #define CLICK_BIG_ENDIAN	4321
 #define CLICK_LITTLE_ENDIAN	1234
 #define CLICK_NO_ENDIAN		0
-
-/* Define if you have the <byteswap.h> header file. */
-#undef HAVE_BYTESWAP_H
-
-/* Define if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define if you have the strerror function. */
-#undef HAVE_STRERROR
-
-/* Define if you have the strtoul function. */
-#undef HAVE_STRTOUL
-
-/* Define if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
-
-/* Define if dynamic linking is possible. */
-#undef HAVE_DYNAMIC_LINKING
-
-/* Define if you have the <sys/mman.h> header file. */
-#undef HAVE_SYS_MMAN_H
-
-/* Define if you have the mmap function. */
-#undef HAVE_MMAP
-
-/* Define if you have the madvise function. */
-#undef HAVE_MADVISE
-
-/* Define if mmap is allowed. */
-#if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
-# define ALLOW_MMAP 1
-#endif
-
-/* Define if you have -lpcap and pcap.h. */
-#undef HAVE_PCAP
-
-/* Define if <pcap.h> uses bpf_timeval. */
-#undef HAVE_BPF_TIMEVAL
-
-/* Define stuff under a Linux module. */
-#ifdef CLICK_LINUXMODULE
-# ifndef __linux__
-#  error "I must be compiled on a Linux machine"
-# endif
-# define __KERNEL__
-# define MODULE
-# define NDEBUG 1
-#endif
-
-/* Define stuff under a FreeBSD module. */
-#ifdef CLICK_BSDMODULE
-# ifndef __FreeBSD__
-#  error "I must be compiled on a FreeBSD machine"
-# endif
-# define _KERNEL
-# define MODULE
-# define NDEBUG 1
-#endif
-
-/* Define if your Linux kernel has Click extensions. */
-#undef HAVE_CLICK_KERNEL
-
-/* Define if your BSD kernel has Click extensions. */
-#undef HAVE_CLICK_BSD_KERNEL
-
-/* Define if your Linux kernel has read_net_skbcount. */
-#undef HAVE_READ_NET_SKBCOUNT
-
-/* Define if your Linux kernel exposes tcp_prot. */
-#undef HAVE_TCP_PROT
-
-/* Define if your Linux kernel has polling extensions. */
-#undef HAVE_POLLING
-
-/* Define if your BSD kernel has polling extensions. */
-#undef HAVE_BSD_POLLING
-
-/* Define if your Linux kernel has sk_buff reuse extensions. */
-#undef HAVE_REUSE_SKB
-
-/* Define if your Linux kernel has tulip_interrupt_hook. */
-#undef HAVE_TULIP_INTERRUPT_HOOK
-
-/* Define if your Linux kernel is running in SMP mode. */
-#ifdef __KERNEL__
-#undef __SMP__
-#endif
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
@@ -142,46 +49,9 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-/* Include integer type definitions. */
-#ifdef CLICK_LINUXMODULE
-# include <linux/types.h>
-#else
-# ifdef HAVE_INTTYPES_H
-#  include <inttypes.h>
-# endif
-# include <sys/types.h>
-#endif
-
-/* Prototype strerror if we don't have it. */
-#ifndef CLICK_LINUXMODULE
-# ifndef HAVE_STRERROR
-char *strerror(int errno);
-# endif
-#endif
-
-/* Define if fast checksum functions available. */
-#ifdef CLICK_LINUXMODULE
-# define HAVE_FAST_CHECKSUM 1
-#endif
-
-/* Define if fast checksum functions require correct alignment. */
-#ifndef __i386__
-# define FAST_CHECKSUM_ALIGNED 1
-#endif
-
 #ifdef __cplusplus
 /* Get rid of inline macro under C++. */
 #undef inline
-
-/* Provide placement new. */
-#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
-inline void *operator new(size_t, void *v) { return v; }
-#elif HAVE_NEW_H
-# include <new.h>
-#else
-inline void *operator new(size_t, void *v) { return v; }
-#endif
-#define HAVE_PLACEMENT_NEW 1
 
 /* Explicit template instances? */
 #if __GNUC__ == 2 && __GNUC_MINOR__ < 90
@@ -196,5 +66,20 @@ inline void *operator new(size_t, void *v) { return v; }
 #define ELEMENT_PROVIDES(x)
 #define ELEMENT_HEADER(x)
 #define ELEMENT_MT_SAFE(x)
+
+/* Define stuff under a Linux module. */
+#ifdef CLICK_LINUXMODULE
+# include <click/config-linuxmodule.h>
+#endif
+
+/* Define stuff under a FreeBSD module. */
+#ifdef CLICK_BSDMODULE
+# include <click/config-bsdmodule.h>
+#endif
+
+/* Define stuff under tools or a user-level driver. */
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+# include <click/config-userlevel.h>
+#endif
 
 #endif /* CLICK_CONFIG_H */
