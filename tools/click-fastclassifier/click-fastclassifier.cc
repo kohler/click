@@ -433,13 +433,13 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
       }
       
       // skip to paragraph break
-      int lb = pos1 - 2;
+      int last_line_start = pos1;
       for (pos = pos1; pos1 < len; pos1++)
 	if (s[pos1] == '\r' || s[pos1] == '\n') {
-	  bool done = (pos1 == lb);
+	  bool done = (pos1 == last_line_start);
 	  if (pos1 < len - 1 && s[pos1] == '\r' && s[pos1+1] == '\n')
 	    pos1++;
-	  lb = pos1 + 1;
+	  last_line_start = pos1 + 1; // loop will add 1 to pos1
 	  if (done)
 	    break;
 	}
