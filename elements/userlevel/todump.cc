@@ -195,33 +195,33 @@ ToDump::cleanup(CleanupStage)
 void
 ToDump::write_packet(Packet *p)
 {
-  struct fake_pcap_pkthdr ph;
+    struct fake_pcap_pkthdr ph;
   
-  const struct timeval &ts = p->timestamp_anno();
-  if (!ts.tv_sec && !ts.tv_usec) {
-    struct timeval now;
-    click_gettimeofday(&now);
-    ph.ts.tv_sec = now.tv_sec;
-    ph.ts.tv_usec = now.tv_usec;
-  } else {
-    ph.ts.tv_sec = ts.tv_sec;
-    ph.ts.tv_usec = ts.tv_usec;
-  }
+    const struct timeval &ts = p->timestamp_anno();
+    if (!ts.tv_sec && !ts.tv_usec) {
+	struct timeval now;
+	click_gettimeofday(&now);
+	ph.ts.tv_sec = now.tv_sec;
+	ph.ts.tv_usec = now.tv_usec;
+    } else {
+	ph.ts.tv_sec = ts.tv_sec;
+	ph.ts.tv_usec = ts.tv_usec;
+    }
 
-  unsigned to_write = p->length();
-  ph.len = to_write + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-  if (_snaplen && to_write > _snaplen)
-    to_write = _snaplen;
-  ph.caplen = to_write;
+    unsigned to_write = p->length();
+    ph.len = to_write + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+    if (_snaplen && to_write > _snaplen)
+	to_write = _snaplen;
+    ph.caplen = to_write;
 
-  // XXX writing to pipe?
-  if (fwrite(&ph, sizeof(ph), 1, _fp) == 0
-      || fwrite(p->data(), 1, to_write, _fp) == 0) {
-      if (errno != EAGAIN) {
-	  _active = false;
-	  click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
-      }
-  }
+    // XXX writing to pipe?
+    if (fwrite(&ph, sizeof(ph), 1, _fp) == 0
+	|| fwrite(p->data(), 1, to_write, _fp) == 0) {
+	if (errno != EAGAIN) {
+	    _active = false;
+	    click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
+	}
+    }
 }
 
 void
