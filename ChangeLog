@@ -1,3 +1,9 @@
+2002-05-14 Tuesday 14:35  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdevice.cc (1.42), fromdevice.hh (1.23),
+	todevice.cc (1.27), todevice.hh (1.17): incorporate Scott Page's
+	changes for Solaris
+
 2002-05-10 Friday 10:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridlogger.hh (1.8), lookuplocalgridroute.cc
