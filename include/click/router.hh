@@ -81,8 +81,8 @@ class Router { public:
   static void add_global_write_handler(const String &, WriteHandler, void *);
   static void cleanup_global_handlers();
 
+  static int find_handler(Element *, const String &);
   static int find_handler(Router *, int eindex, const String &);
-  int find_handler(Element *, const String &);
   static int find_global_handler(const String &);
 
   // thread(-1) is the quiescent thread
@@ -316,7 +316,7 @@ Router::handler(const Router *r, int i)
 inline int
 Router::find_handler(Element *e, const String &n)
 {
-  return find_handler(this, (e ? e->eindex() : -1), n);
+  return find_handler((e ? e->router() : 0), (e ? e->eindex() : -1), n);
 }
 
 inline void
