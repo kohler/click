@@ -34,7 +34,8 @@
 CLICK_DECLS
 
 KernelTap::KernelTap()
-  : Element(1, 1), _fd(-1), _task(this)
+  : Element(1, 1), _fd(-1), _task(this),
+    _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -60,6 +61,8 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpIPAddress, "default gateway", &_gw,
 		  cpUnsigned, "packet data headroom", &_headroom,
+		  cpKeywords,
+		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
 		  cpEnd) < 0)
     return -1;
 
@@ -248,7 +251,10 @@ KernelTap::selected(int fd)
       p->set_timestamp_anno(tv);
     output(0).push(p);
   } else {
-    perror("KernelTap read");
+    if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
+      _printed_read_err = true;
+      perror("KernelTap read");
+    }
   }
 #endif
 }
@@ -278,6 +284,8 @@ KernelTap::push(int, Packet *p)
   const unsigned char *data = p->data() + sizeof(*e);
   unsigned length = p->length() - sizeof(*e);
 
+  int num_written;
+  int num_expected_written;
 #if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
   char big[2048];
   int af;
@@ -301,9 +309,8 @@ KernelTap::push(int, Packet *p)
   memcpy(big, &af, 4);
   memcpy(big+4, data, length);
   
-  if(write(_fd, big, length+4) != (int)length+4){
-    perror("write tun");
-  }
+  num_written = write(_fd, big, length + 4);
+  num_expected_written = (int) length + 4;
 #elif defined(__linux__)
   /*
    * Ethertap is linux equivalent of/dev/tun; wants ethernet header plus 2
@@ -326,14 +333,20 @@ KernelTap::push(int, Packet *p)
   memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
   memcpy(big+14, &protocol, 2);
   memcpy(big+16, data, length);
-  if (write(_fd, big, length+16) != (int)length+16){
-    perror("write tun");
-  }
+  
+  num_written = write(_fd, big, length + 16);
+  num_expected_written = (int) length + 16;
 #else
-  if(write(_fd, data, length) != (int) length){
-    perror("write tun");
-  }
+  num_written = write(_fd, data, length);
+  num_expected_written = (int) length;
+
 #endif
+
+  if (num_written != num_expected_written &&
+      (!_ignore_q_errs || !_printed_write_err || (errno != ENOBUFS))) {
+	_printed_write_err = true;
+	perror("KernelTap write");
+  }
 
   p->kill();
 }

@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM])
+ * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM] [, KEYWORDS])
  * =s devices
  * user-level interface to /dev/tun or ethertap
  * =d
@@ -32,6 +32,19 @@ CLICK_DECLS
  *
  * HEADROOM is the number of bytes left empty before the packet data (to leave
  * room for additional encapsulation headers). Default HEADROOM is 0.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item IGNORE_QUEUE_OVERFLOWS
+ *
+ * Boolean.  If true, don't print more than one error message when
+ * there are queue overflows error when sending/receiving packets
+ * to/from the tun device (e.g. there was an ENOBUFS error).  Default
+ * is false.
+ *
+ * =back
  *
  * =a
  * ToLinux, ifconfig(8) */
@@ -71,6 +84,10 @@ class KernelTap : public Element {
 
   int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
   void dealloc_tun();
+
+  bool _ignore_q_errs;
+  bool _printed_write_err;
+  bool _printed_read_err;
 };
 
 CLICK_ENDDECLS
