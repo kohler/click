@@ -12,10 +12,10 @@
  * None
  * =d
  *
- * Lets you use shorthand names for IP addresses, IP network addresses, and
- * Ethernet addresses. Each argument has the form `NAME ADDRESS [ADDRESS...]',
- * which associates the given ADDRESSes with NAME. For example, if a
- * configuration contains this AddressInfo element,
+ * Lets you use shorthand names for IPv4 or IPv6 addresses and network
+ * addresses, and for Ethernet addresses. Each argument has the form `NAME
+ * ADDRESS [ADDRESS...]', which associates the given ADDRESSes with NAME. For
+ * example, if a configuration contains this AddressInfo element,
  *
  *    AddressInfo(mauer 10.0.0.1, mazu 10.0.0.10);
  *
@@ -30,29 +30,29 @@
  *    AddressInfo(mauer 10.0.0.1);
  *    compound :: {
  *      AddressInfo(mazu 10.0.0.10);
- *      ... -> IPEncap(mauer, mazu, 6) -> ...  // OK
+ *      ... -> IPEncap(6, mauer, mazu) -> ...  // OK
  *    };
- *    ... -> IPEncap(mauer, mazu, 6) -> ...  // error: `mazu' undefined
+ *    ... -> IPEncap(6, mauer, mazu) -> ...    // error: `mazu' undefined
  *
  * Any name can be simultaneously associated with an IP address, an IP network
  * address, and an Ethernet address. The kind of address that is returned is
  * generally determined from context. For example:
  *
  *    AddressInfo(mauer 10.0.0.1 00:50:BA:85:84:A9);
- *    ... -> IPEncap(mauer, ...)             // as IP address
- *        -> EtherEncap(mauer, ...) -> ...   // as Ethernet address
+ *    ... -> IPEncap(6, mauer, ...)                  // as IP address
+ *        -> EtherEncap(0x0800, mauer, ...) -> ...   // as Ethernet address
  *
  * An optional suffix makes the context unambiguous. C<NAME> is an ambiguous
- * reference to some address, but C<NAME:ip> is always an IP address,
- * C<NAME:ipnet> is always an IP network address, and C<NAME:eth> is always an
- * Ethernet address.
- */
+ * reference to some address, but C<NAME:ip> is always an IPv4 address,
+ * C<NAME:ipnet> is always an IP network address, C<NAME:ip6> is always an
+ * IPv6 address, and C<NAME:eth> is always an Ethernet address. */
 
 class AddressInfo : public Element {
 
-  static const unsigned HAVE_IP = 1;
-  static const unsigned HAVE_IP_MASK = 2;
-  static const unsigned HAVE_ETHER = 4;
+  static const unsigned INFO_IP = 1;
+  static const unsigned INFO_IP_MASK = 2;
+  static const unsigned INFO_IP6 = 4;
+  static const unsigned INFO_ETHER = 8;
   
   struct Info {
     unsigned have;
@@ -60,6 +60,7 @@ class AddressInfo : public Element {
       unsigned u;
       unsigned char c[4];
     } ip, ip_mask;
+    unsigned char ip6[16];
     unsigned char ether[6];
     Info() : have(0) { }
   };
@@ -83,6 +84,7 @@ class AddressInfo : public Element {
 
   static bool query_ip(String, unsigned char *, Element *);
   static bool query_ip_mask(String, unsigned char *, unsigned char *, Element *);
+  static bool query_ip6(String, unsigned char *, Element *);
   static bool query_ethernet(String, unsigned char *, Element *);
   
 };

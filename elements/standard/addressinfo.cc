@@ -49,28 +49,34 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 
       for (int j = 1; j < parts.size(); j++)
 	if (cp_ip_address(parts[j], &scrap.ip.c[0])) {
-	  if ((a.have & HAVE_IP) && scrap.ip.u != a.ip.u)
+	  if ((a.have & INFO_IP) && scrap.ip.u != a.ip.u)
 	    errh->warning("%s: IP addresses conflict", name.cc());
-	  else if ((a.have & HAVE_IP_MASK) && (scrap.ip.u & a.ip_mask.u) != (a.ip.u & a.ip_mask.u))
+	  else if ((a.have & INFO_IP_MASK) && (scrap.ip.u & a.ip_mask.u) != (a.ip.u & a.ip_mask.u))
 	    errh->warning("%s: IP address and IP address prefix conflict", name.cc());
-	  a.have |= HAVE_IP;
+	  a.have |= INFO_IP;
 	  a.ip.u = scrap.ip.u;
 	  
 	} else if (cp_ip_address_mask(parts[j], &scrap.ip.c[0], &scrap.ip_mask.c[0])) {
-	  if ((a.have & (HAVE_IP | HAVE_IP_MASK))
+	  if ((a.have & (INFO_IP | INFO_IP_MASK))
 	      && (scrap.ip.u & scrap.ip_mask.u) != (a.ip.u & scrap.ip_mask.u))
 	    errh->warning("%s: IP address and IP address prefix conflict", name.cc());
-	  else if ((a.have & HAVE_IP_MASK) && scrap.ip_mask.u != a.ip_mask.u)
+	  else if ((a.have & INFO_IP_MASK) && scrap.ip_mask.u != a.ip_mask.u)
 	    errh->warning("%s: IP address prefixes conflict", name.cc());
-	  a.have |= HAVE_IP_MASK;
-	  if (!(a.have & HAVE_IP))
+	  a.have |= INFO_IP_MASK;
+	  if (!(a.have & INFO_IP))
 	    a.ip.u = scrap.ip.u;
 	  a.ip_mask.u = scrap.ip_mask.u;
 	  
+	} else if (cp_ip6_address(parts[j], scrap.ip6)) {
+	  if ((a.have & INFO_IP6) && memcmp(scrap.ip6, a.ip6, 16) != 0)
+	    errh->warning("%s: IPv6 addresses conflict", name.cc());
+	  a.have |= INFO_IP6;
+	  memcpy(a.ip6, scrap.ip6, 16);
+	  
 	} else if (cp_ethernet_address(parts[j], scrap.ether)) {
-	  if ((a.have & HAVE_ETHER) && memcmp(scrap.ether, a.ether, 6) != 0)
+	  if ((a.have & INFO_ETHER) && memcmp(scrap.ether, a.ether, 6) != 0)
 	    errh->warning("%s: Ethernet addresses conflict", name.cc());
-	  a.have |= HAVE_ETHER;
+	  a.have |= INFO_ETHER;
 	  memcpy(a.ether, scrap.ether, 6);
 	  
 	} else
@@ -95,7 +101,7 @@ AddressInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   // put everything in the first AddressInfo
   const Vector<Element *> &ev = router()->elements();
-  for (int i = 0; i < eindex(); i++)
+  for (int i = 0; i <= eindex(); i++)
     if (AddressInfo *si = (AddressInfo *)ev[i]->cast("AddressInfo"))
       return si->add_info(conf, prefix, errh);
 
@@ -138,13 +144,14 @@ bool
 AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 {
   int colon = s.find_right(':');
-  if (colon >= 0 && s.substring(colon).lower() != ":ip")
+  if (colon >= 0 && s.substring(colon).lower() != ":ip"
+      && s.substring(colon).lower() != ":ip4")
     return false;
   else if (colon >= 0)
     s = s.substring(0, colon);
   
   if (AddressInfo *infoe = find_element(e))
-    if (const Info *info = infoe->query(s, HAVE_IP, e->id())) {
+    if (const Info *info = infoe->query(s, INFO_IP, e->id())) {
       memcpy(store, info->ip.c, 4);
       return true;
     }
@@ -163,10 +170,27 @@ AddressInfo::query_ip_mask(String s, unsigned char *store,
     s = s.substring(0, colon);
   
   if (AddressInfo *infoe = find_element(e))
-    if (const Info *info = infoe->query(s, HAVE_IP_MASK, e->id())) {
+    if (const Info *info = infoe->query(s, INFO_IP_MASK, e->id())) {
       unsigned m = info->ip.u & info->ip_mask.u;
       memcpy(store, &m, 4);
       memcpy(mask_store, info->ip_mask.c, 4);
+      return true;
+    }
+  return false;
+}
+
+bool
+AddressInfo::query_ip6(String s, unsigned char *store, Element *e)
+{
+  int colon = s.find_right(':');
+  if (colon >= 0 && s.substring(colon).lower() != ":ip6")
+    return false;
+  else if (colon >= 0)
+    s = s.substring(0, colon);
+  
+  if (AddressInfo *infoe = find_element(e))
+    if (const Info *info = infoe->query(s, INFO_IP6, e->id())) {
+      memcpy(store, info->ip6, 16);
       return true;
     }
   return false;
@@ -183,7 +207,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
     s = s.substring(0, colon);
   
   if (AddressInfo *infoe = find_element(e))
-    if (const Info *info = infoe->query(s, HAVE_ETHER, e->id())) {
+    if (const Info *info = infoe->query(s, INFO_ETHER, e->id())) {
       memcpy(store, info->ether, 6);
       return true;
     }

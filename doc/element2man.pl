@@ -629,7 +629,7 @@ my(%el_generated);
 sub one_elementlist (@) {
   my($t);
   $t .= ".PP\n.PD 0\n";
-  foreach $_ (sort @_) {
+  foreach $_ (sort { lc($a) cmp lc($b) } @_) {
     $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_} . "\n";
     $t .= $all_roff_summaries{$_} . "\n"
 	if $all_roff_summaries{$_};

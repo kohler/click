@@ -39,13 +39,13 @@ bool cp_string(const String &, String *, String *rest = 0);
 
 // network addresses
 bool cp_ip_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ip6_address(const String &, unsigned char *);
+bool cp_ip6_address(const String &, unsigned char *  CP_CONTEXT);
 bool cp_ip_address_mask(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
 bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
 #ifndef CLICK_TOOL
 class IPAddress; class IP6Address; class EtherAddress;
 bool cp_ip_address(const String &, IPAddress &  CP_CONTEXT);
-bool cp_ip6_address(const String &, IP6Address &);
+bool cp_ip6_address(const String &, IP6Address &  CP_CONTEXT);
 bool cp_ip_address_mask(const String &, IPAddress &, IPAddress &, bool allow_bare_address = false  CP_CONTEXT);
 bool cp_ethernet_address(const String &, EtherAddress &  CP_CONTEXT);
 Element *cp_element(const String &, Element *, ErrorHandler *);

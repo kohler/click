@@ -59,11 +59,9 @@ open(IN, "$WEBDIR/template") || die "$WEBDIR/template: $!\n";
 open(OUT, ">$WEBDIR/template.new") || die "$WEBDIR/template.new: $!\n";
 my($active) = 0;
 while (<IN>) {
-  if ($active == 0 && /elements\.n\.html/) {
-    $active = 1;
-  } elsif ($active == 1 && m{</p}) {
+  if ($active == 1 && m{</p}) {
     $active = -1;
-  } elsif ($active == 1 && m{<!-- elements go here -->}) {
+  } elsif ($active == 0 && m{<!-- elements go here -->}) {
     print OUT;
     foreach $_ (sort { lc($a) cmp lc($b) } @elements) {
       print OUT "<a href=\"$_.n.html\">$_</a><br>\n";

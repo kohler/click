@@ -866,7 +866,7 @@ cp_ip_address_mask(const String &str,
 {
   unsigned char value[4], mask[4];
 
-  int slash = str.find_left('/');
+  int slash = str.find_right('/');
   String ip_part, mask_part;
   if (slash >= 0) {
     ip_part = str.substring(0, slash);
@@ -876,7 +876,7 @@ cp_ip_address_mask(const String &str,
   else
     ip_part = str;
   
-  if (!cp_ip_address(ip_part, value))
+  if (!cp_ip_address(ip_part, value  CP_PASS_CONTEXT))
     return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 
   // move past /
@@ -888,7 +888,7 @@ cp_ip_address_mask(const String &str,
 
   // check for complete IP address
   int relevant_bits;
-  if (cp_ip_address(mask_part, mask))
+  if (cp_ip_address(mask_part, mask  CP_PASS_CONTEXT))
     /* OK */;
   
   else if (cp_integer(mask_part, &relevant_bits)
@@ -935,8 +935,21 @@ cp_ip_address_mask(const String &str, IPAddress &address, IPAddress &mask,
 }
 #endif
 
+static bool
+bad_ip6_address(const String &str, unsigned char *return_value
+		CP_CONTEXT_ARG)
+{
+#ifndef CLICK_TOOL
+  return AddressInfo::query_ip6(str, return_value, context);
+#else
+  (void)str, (void)return_value;
+  return false;
+#endif
+}
+
 bool
-cp_ip6_address(const String &str, unsigned char *return_value)
+cp_ip6_address(const String &str, unsigned char *return_value
+	       CP_CONTEXT_ARG)
 {
   unsigned short parts[8];
   int coloncolon = -1;
@@ -959,14 +972,14 @@ cp_ip6_address(const String &str, unsigned char *return_value)
     for (; pos < len && isxdigit(s[pos]) && part <= 0xFFFF; pos++)
       part = (part<<4) + xvalue(s[pos]);
     if (part > 0xFFFF)
-      return false;
+      return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
     parts[d] = part;
   }
 
   // check if address ends in IPv4 address
   if (pos < len && d <= 7 && s[pos] == '.') {
     unsigned char ip4a[4];
-    if (cp_ip_address(str.substring(last_part_pos), ip4a)) {
+    if (cp_ip_address(str.substring(last_part_pos), ip4a  CP_PASS_CONTEXT)) {
       parts[d-1] = (ip4a[0]<<8) + ip4a[1];
       parts[d] = (ip4a[2]<<8) + ip4a[3];
       d++;
@@ -976,7 +989,7 @@ cp_ip6_address(const String &str, unsigned char *return_value)
 
   // handle zero blocks surrounding ::
   if ((d < 8 && coloncolon < 0) || (d == 8 && coloncolon >= 0))
-    return false;
+    return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
   else if (d < 8) {
     int num_zeros = 8 - d;
     for (int x = d - 1; x >= coloncolon; x--)
@@ -987,7 +1000,7 @@ cp_ip6_address(const String &str, unsigned char *return_value)
 
   // return
   if (pos < len)
-    return false;
+    return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
   else {
     for (d = 0; d < 8; d++) {
       return_value[d<<1] = (parts[d]>>8) & 0xFF;
@@ -999,9 +1012,11 @@ cp_ip6_address(const String &str, unsigned char *return_value)
 
 #ifndef CLICK_TOOL
 bool
-cp_ip6_address(const String &str, IP6Address &address)
+cp_ip6_address(const String &str, IP6Address &address
+	       CP_CONTEXT_ARG)
 {
-  return cp_ip6_address(str, address.data());
+  return cp_ip6_address(str, address.data()
+			CP_PASS_CONTEXT);
 }
 #endif
 
