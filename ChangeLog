@@ -1,3 +1,7 @@
+2002-05-31 Friday 08:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.hh (1.5): doc nitlets
+
 2002-05-31 Friday 01:42  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: bighashmap.cc (1.10), bighashmap.hh (1.9): add
