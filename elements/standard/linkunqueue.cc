@@ -2,6 +2,9 @@
 /*
  * linkunqueue.{cc,hh} -- element pulls packets from input, delaying them as
  * if they had passed through a serial link.
+ * Eddie Kohler
+ * (inspired partially by SerialLink, by Tao Zhao and Eric Freudenthal
+ * from NYU)
  *
  * Copyright (c) 2003 International Computer Science Institute
  *

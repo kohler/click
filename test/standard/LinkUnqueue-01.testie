@@ -1,0 +1,26 @@
+%script
+click CONFIG < DUMP | grep -v '^!'
+
+%file CONFIG
+FromIPSummaryDump(-, STOP true)
+	-> Queue -> LinkUnqueue(0.005s, 100)
+	-> SetTimestampDelta
+	-> ToIPSummaryDump(-, CONTENTS timestamp ip_src);
+DriverManager(wait, wait 0.38s, stop)
+
+%file DUMP
+!data ip_src ip_len
+1.0.0.1 20
+1.0.0.2 20
+1.0.0.3 1600
+1.0.0.4 20
+1.0.0.5 1600
+1.0.0.6 20
+
+%expect stdout
+0.000000 1.0.0.1
+0.001600 1.0.0.2
+0.129600 1.0.0.3
+0.131200 1.0.0.4
+0.259200 1.0.0.5
+0.260800 1.0.0.6
