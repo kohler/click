@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include "elements/analysis/toipsumdump.hh"
+#include "elements/analysis/ipsumdumpinfo.hh"
 CLICK_DECLS
 
 #ifdef i386
@@ -106,9 +106,6 @@ ToIPFlowDumps::Flow::create_directories(const String &n, ErrorHandler *errh)
 	return 0;
 }
 
-// from FromIPSummaryDump
-static const char * const tcp_flags_word = "FSRPAUEW";
-
 void
 ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 {
@@ -151,7 +148,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	    // handle TCP options specially
 	    if (opt < end_opt && opt[0] == pi) {
 		int original_pos = sa.length() - pos;
-		ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], _tcp_opt, sa);
+		IPSummaryDump::unparse_tcp_opt_binary(sa, reinterpret_cast<const uint8_t *>(opt + 2), opt[1], _tcp_opt);
 		PUT4(sa.data() + original_pos, sa.length() - original_pos);
 		opt += 2 + (opt[1] / 2);
 	    }
@@ -191,7 +188,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     sa.reserve(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
     
     if (!_outputted) {
-	sa << "!IPSummaryDump 1.1\n!flowid "
+	sa << "!IPSummaryDump 1.2\n!flowid "
 	   << _flowid.saddr() << ' ' << ntohs(_flowid.sport()) << ' '
 	   << _flowid.daddr() << ' ' << ntohs(_flowid.dport()) << ' '
 	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')
@@ -211,7 +208,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		sa << " tcp_flags";
 	    sa << " direction";
 	    if (_ip_p == IP_PROTO_TCP) {
-		if (_tcp_opt & ToIPSummaryDump::DO_TCPOPT_TIMESTAMP)
+		if (_tcp_opt & IPSummaryDump::DO_TCPOPT_TIMESTAMP)
 		    sa << " tcp_opt";
 		else
 		    sa << " tcp_ntopt";
@@ -222,7 +219,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		sa << " ip_id";
 	    if (_ip_p == IP_PROTO_TCP) {
 		sa << " tcp_flags tcp_seq payload_len tcp_ack";
-		if (_tcp_opt & ToIPSummaryDump::DO_TCPOPT_TIMESTAMP)
+		if (_tcp_opt & IPSummaryDump::DO_TCPOPT_TIMESTAMP)
 		    sa << " tcp_opt";
 		else
 		    sa << " tcp_ntopt";
@@ -268,7 +265,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		    else
 			for (int flag = 0; flag < 7; flag++)
 			    if (flags & (1 << flag))
-				sa << tcp_flags_word[flag];
+				sa << IPSummaryDump::tcp_flags_word[flag];
 
 		    sa << ' ' << _pkt[pi].th_seq
 		       << ' ' << _pkt[pi].payload_len
@@ -279,7 +276,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		    
 		    if (opt < end_opt && opt[0] == pi) {
 			sa << ' ';
-			ToIPSummaryDump::store_tcp_opt_ascii(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], _tcp_opt, sa);
+			IPSummaryDump::unparse_tcp_opt(sa, reinterpret_cast<const uint8_t *>(opt + 2), opt[1], _tcp_opt);
 			opt += 2 + (opt[1] / 2);
 		    }
 		    
@@ -361,7 +358,7 @@ ToIPFlowDumps::Flow::store_opt(const click_tcp *tcph, int direction)
 	  case TCPOPT_TIMESTAMP:
 	    if (opt[1] != TCPOLEN_TIMESTAMP || opt + opt[1] > end_opt)
 		goto bad_opt;
-	    else if (_tcp_opt & ToIPSummaryDump::DO_TCPOPT_TIMESTAMP)
+	    else if (_tcp_opt & IPSummaryDump::DO_TCPOPT_TIMESTAMP)
 		goto good_opt;
 	    else
 		goto ignore_opt;
@@ -472,7 +469,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	    && tcph->th_off > (sizeof(click_tcp) >> 2)
 	    && (tcph->th_off != 8
 		|| *(reinterpret_cast<const uint32_t *>(tcph + 1)) != htonl(0x0101080A)
-		|| (_tcp_opt & ToIPSummaryDump::DO_TCPOPT_TIMESTAMP)))
+		|| (_tcp_opt & IPSummaryDump::DO_TCPOPT_TIMESTAMP)))
 	    store_opt(tcph, direction);
 
 	if (_tcp_windows)
@@ -568,9 +565,9 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     _absolute_seq = absolute_seq;
     _binary = binary;
     if (all_tcp_opt)
-	_tcp_opt = ToIPSummaryDump::DO_TCPOPT_ALL_NOPAD;
+	_tcp_opt = IPSummaryDump::DO_TCPOPT_ALL_NOPAD;
     else if (tcp_opt)
-	_tcp_opt = ToIPSummaryDump::DO_TCPOPT_MSS | ToIPSummaryDump::DO_TCPOPT_WSCALE | ToIPSummaryDump::DO_TCPOPT_SACK;
+	_tcp_opt = IPSummaryDump::DO_TCPOPT_MSS | IPSummaryDump::DO_TCPOPT_WSCALE | IPSummaryDump::DO_TCPOPT_SACK;
     else
 	_tcp_opt = 0;
     _tcp_window = tcp_window;
@@ -906,5 +903,5 @@ ToIPFlowDumps::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel AggregateNotifier)
+ELEMENT_REQUIRES(userlevel AggregateNotifier IPSummaryDump_TCP)
 EXPORT_ELEMENT(ToIPFlowDumps)

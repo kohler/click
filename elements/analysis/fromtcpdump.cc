@@ -156,8 +156,8 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const char *s, const char *end, i
 	tcph->th_flags = TH_ACK, s++;
     else {
 	tcph->th_flags = 0;
-	while (s < end && IPSummaryDumpInfo::tcp_flag_mapping[(uint8_t) *s]) {
-	    tcph->th_flags |= (1 << (IPSummaryDumpInfo::tcp_flag_mapping[ (uint8_t) *s ] - 1));
+	while (s < end && IPSummaryDump::tcp_flag_mapping[(uint8_t) *s]) {
+	    tcph->th_flags |= (1 << (IPSummaryDump::tcp_flag_mapping[ (uint8_t) *s ] - 1));
 	    s++;
 	}
     }
@@ -674,7 +674,7 @@ FromTcpdump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile)
+ELEMENT_REQUIRES(userlevel FromFile IPSummaryDump)
 EXPORT_ELEMENT(FromTcpdump)
 #include <click/bighashmap.cc>
 CLICK_ENDDECLS

@@ -300,6 +300,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "S2"; }
 
+    static void static_initialize();
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
@@ -313,32 +314,13 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void add_note(const String &);
     void write_line(const String &);
     void flush_buffer();
-
-    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
-	   DO_IPOPT_UNKNOWN = 32,
-	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
-    static void store_ip_opt_ascii(const uint8_t *, int olen, int, StringAccum &);
-    static inline void store_ip_opt_ascii(const click_ip *, int, StringAccum &);
-    static int store_ip_opt_binary(const uint8_t *, int olen, int, StringAccum &);
-    static inline int store_ip_opt_binary(const click_ip *, int, StringAccum &);
-
-    enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
-	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
-	   DO_TCPOPT_UNKNOWN = 32,
-	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU,
-	   DO_TCPOPT_NTALL = 0xFFFFFFEEU };
-    static void store_tcp_opt_ascii(const uint8_t *, int olen, int, StringAccum &);
-    static inline void store_tcp_opt_ascii(const click_tcp *, int, StringAccum &);
-    static int store_tcp_opt_binary(const uint8_t *, int olen, int, StringAccum &);
-    static inline int store_tcp_opt_binary(const click_tcp *, int, StringAccum &);
     
   private:
 
     String _filename;
     FILE *_f;
-    StringAccum _sa;
-    StringAccum _bad_sa;
-    Vector<unsigned> _contents;
+    Vector<const IPSummaryDump::Field*> _fields;
+    Vector<const IPSummaryDump::Field*> _prepare_fields;
     bool _verbose : 1;
     bool _bad_packets : 1;
     bool _careful_trunc : 1;
@@ -349,15 +331,13 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     uint32_t _output_count;
     Task _task;
     NotifierSignal _signal;
+
+    StringAccum _sa;
+    StringAccum _bad_sa;
     
     String _banner;
 
-    struct PacketDesc;
-    bool missing_field_message(const PacketDesc&, const char*, int, StringAccum*) const;
-    bool extract(PacketDesc&, unsigned, uint32_t& v, uint32_t& v2, StringAccum*) const;
-    bool summary(Packet*, StringAccum&, StringAccum*) const;
-    bool binary_summary(PacketDesc&, StringAccum&, StringAccum*) const;
-    bool bad_packet(StringAccum &, const String &, int) const;
+    bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const;
     void write_packet(Packet *, bool multipacket = false);
     
 };

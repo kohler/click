@@ -148,16 +148,16 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     if (_ff.initialize(errh) < 0)
 	return -1;
     
-    _minor_version = MINOR_VERSION; // expected minor version
+    _minor_version = IPSummaryDump::MINOR_VERSION; // expected minor version
     String line;
     if (_ff.peek_line(line, errh) < 0)
 	return -1;
     else if (line.substring(0, 14) == "!IPSummaryDump") {
 	int major_version;
 	if (sscanf(line.cc() + 14, " %d.%d", &major_version, &_minor_version) == 2) {
-	    if (major_version != MAJOR_VERSION || _minor_version > MINOR_VERSION) {
+	    if (major_version != IPSummaryDump::MAJOR_VERSION || _minor_version > IPSummaryDump::MINOR_VERSION) {
 		_ff.warning(errh, "unexpected IPSummaryDump version %d.%d", major_version, _minor_version);
-		_minor_version = MINOR_VERSION;
+		_minor_version = IPSummaryDump::MINOR_VERSION;
 	    }
 	}
 	(void) _ff.read_line(line, errh); // throw away line
@@ -971,8 +971,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		else if (*data == '.')
 		    data++;
 		else
-		    while (data < end && tcp_flag_mapping[(unsigned char)*data]) {
-			u1 |= 1 << (tcp_flag_mapping[(unsigned char)*data] - 1);
+		    while (data < end && IPSummaryDump::tcp_flag_mapping[(unsigned char)*data]) {
+			u1 |= 1 << (IPSummaryDump::tcp_flag_mapping[(unsigned char)*data] - 1);
 			data++;
 		    }
 		break;
