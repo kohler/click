@@ -50,6 +50,9 @@ dist: $(distdir).tar.gz
 $(distdir).tar.gz: distdir
 	tar czf $(distdir).tar.gz $(distdir)
 distdir:
+	@if test `grep 'CLICK_VERSION=' $(top_srcdir)/configure.in` != `grep 'CLICK_VERSION=' $(srcdir)/lc-configure.in`; then \
+	  echo 'ERROR: Bad libclick CLICK_VERSION!'; exit 1; \
+	fi
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
@@ -73,6 +76,5 @@ distdir:
 	cd $(distdir) && $(PERL) -pi -e 's/enable_linuxmodule=yes/enable_linuxmodule=no/;' configure.in
 	cd $(distdir) && $(ACLOCAL) && $(AUTOCONF)
 	echo configure >>$(distdir)/DISTFILES
-
 
 .PHONY: all dist distdir

@@ -157,6 +157,9 @@ distdir: $(srcdir)/configure
 	@if grep -q 'Id:.*benjie' `find $(srcdir)/etc -maxdepth 1 -type f`; then \
 	  echo 'ERROR: Benjie must be punished!'; exit 1; \
 	fi
+	@if test `grep 'CLICK_VERSION=' $(srcdir)/configure.in` != `grep 'CLICK_VERSION=' $(srcdir)/etc/libclick/lc-configure.in`; then \
+	  echo 'ERROR: Bad libclick CLICK_VERSION!'; exit 1; \
+	fi
 
 
 .PHONY: all always elemlist elemlists \
