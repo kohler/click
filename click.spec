@@ -1,5 +1,5 @@
 %define name click
-%define version 1.4.2
+%define version 1.5pre
 %define release 1
 
 Summary: The Click modular router
@@ -11,6 +11,8 @@ License: Click
 Group: System/Networking
 BuildRoot: %{_tmppath}/%{name}-buildroot
 Prefix: %{_prefix}
+Url: http://www.pdos.lcs.mit.edu/click
+Vendor: Click Software Team
 
 %description
 Click is a modular software router developed by MIT LCS's Parallel and
@@ -36,10 +38,12 @@ or 2.4 kernel with a kernel module. You can also manipulate
 configurations with a variety of tools.
 
 %prep
+rm -fr $RPM_BUILD_ROOT
+mkdir $RPM_BUILD_ROOT
 %setup -q
 
 %build
-%configure --disable-linuxmodule
+%configure --prefix=/usr --disable-linuxmodule --enable-analysis --enable-etherswitch --enable-grid --enable-ip6 --enable-ipsec --enable-local --enable-radio --enable-wifi --enable-multithread --enable-intel-cpu --enable-adaptive
 make
 
 %install
@@ -51,7 +55,7 @@ rm -f $RPM_BUILD_ROOT/%{_infodir}/dir
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root)
+%defattr(-,root,root,0755)
 %doc AUTHORS ChangeLog FAQ INSTALL LICENSE README
 %{_bindir}
 %{_datadir}/click
@@ -73,6 +77,9 @@ if [ -x /sbin/install-info ] ; then
 fi
 
 %changelog
+* Jan 10 2005 Jonathan Day <imipak@yahoo.com>
+- update for new syntax
+
 * Fri May 28 2004 Mark Huang <mlhuang@cs.princeton.edu>
 - add scriplets to install info files correctly
 
