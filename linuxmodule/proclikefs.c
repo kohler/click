@@ -22,6 +22,10 @@
 #ifndef EXPORT_SYMTAB
 # define EXPORT_SYMTAB
 #endif
+#ifdef CONFIG_MODVERSIONS
+# define MODVERSIONS
+# include <linux/modversions.h>
+#endif
 #include <linux/module.h>
 #include "proclikefs.h"
 #include <linux/string.h>
