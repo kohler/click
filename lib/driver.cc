@@ -138,11 +138,8 @@ click_cleanup_packages()
 #endif
 
 
-#if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+#if defined(CLICK_USERLEVEL) || (HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE))
 CLICK_DECLS
-
-static String::Initializer crap_initializer;
-static String click_compile_prog, tmpdir;
 
 static int
 archive_index(const Vector<ArchiveElement> *archive, const String &what)
@@ -153,6 +150,16 @@ archive_index(const Vector<ArchiveElement> *archive, const String &what)
 		return i;
     return -1;
 }
+
+CLICK_ENDDECLS
+#endif
+
+
+#if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+CLICK_DECLS
+
+static String::Initializer crap_initializer;
+static String click_compile_prog, tmpdir;
 
 static bool
 check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
@@ -401,7 +408,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     Vector<ArchiveElement> archive;
     if (config_str.length() != 0 && config_str[0] == '!') {
 	separate_ar_string(config_str, archive, errh);
-	int i = CLICK_NAME(archive_index)(&archive, "config");
+	int i = archive_index(&archive, "config");
 	if (i >= 0)
 	    config_str = archive[i].data;
 	else {
