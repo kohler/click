@@ -55,7 +55,7 @@ SetSourceRoute::configure (Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
                     "IP", cpIPAddress, "IP address", &_ip,
-		    "SRForwarder", cpElement, "SRForwarder element", &_sr_forwarder,
+		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
                     0);
 
   if (!_sr_forwarder || _sr_forwarder->cast("SRForwarder") == 0) 

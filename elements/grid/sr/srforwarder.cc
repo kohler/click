@@ -89,7 +89,7 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a ARPTable");
 
-  if (_srcr_stat && _srcr_stat->cast("SRCRStat") == 0) 
+  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SRCRStat");
   if (_srcr && _srcr->cast("SRCR") == 0) 
     return errh->error("SRCR element is not a SRCR");
