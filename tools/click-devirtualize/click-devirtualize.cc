@@ -337,7 +337,7 @@ particular purpose.\n");
   if (!router || errh->nerrors() > 0)
     exit(1);
   router->flatten(errh);
-  
+
   // open output file
   FILE *outf = stdout;
   if (output_file && strcmp(output_file, "-") != 0) {
@@ -352,17 +352,12 @@ particular purpose.\n");
     write_router_file(router, outf, errh);
     exit(0);
   }
-  
+
   // find and parse `elementmap'
   ElementMap full_elementmap;
-  {
-    String elementmap_fn =
-      clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
-    if (!elementmap_fn)
-      p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR);
-    else
-      full_elementmap.parse(file_string(elementmap_fn, errh));
-  }
+  full_elementmap.parse_all_on_path(CLICK_SHAREDIR, errh);
+  /*if (!elementmap_fn)
+    p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR);*/
 
   // parse `elementmap' from router archive
   if (router->archive_index("elementmap") >= 0)

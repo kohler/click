@@ -8,6 +8,7 @@ README
 
 Makefile.in
 acconfig.h
+click-buildtool
 click-compile.in
 config.h.in
 configure.in
@@ -15,9 +16,6 @@ configure
 install-sh
 missing
 mkinstalldirs
-findelements.sh
-mkelemlist.sh.in
-mkelemconf.sh
 mkelementmap.pl
 
 doc

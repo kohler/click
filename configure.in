@@ -472,7 +472,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/samplepackage/Makefile"
+config_files="Makefile click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/samplepackage/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done
@@ -483,11 +483,10 @@ if test ! -d etc; then
   /bin/mkdir etc
 fi
 
-AC_OUTPUT_COMMANDS([chmod +x mkelemlist.sh
-if test ${CONFIG_ELEMLISTS-yes} = yes; then
-  echo creating element lists
-  /bin/sh mkelemlist.sh
-  /bin/rm -f clickconfig.h
-  /bin/ln config.h clickconfig.h
-fi])
+AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
+  if test "x$ac_file" = xconfig.h; then
+    /bin/rm -f clickconfig.h
+    /bin/ln config.h clickconfig.h
+  fi
+done])
 AC_OUTPUT($config_files)

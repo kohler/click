@@ -29,6 +29,8 @@ class ElementMap {
   Vector<int> _cxx_next;
 
   void set_driver(int, const String &);
+  void try_one_directory(String, ErrorHandler *);
+  void parse_all_on_path(String, String, ErrorHandler *);
   
  public:
 
@@ -66,6 +68,7 @@ class ElementMap {
   void remove(const String &n)			{ remove(find(n)); }
 
   void parse(const String &);
+  void parse_all_on_path(String, ErrorHandler *);
   String unparse() const;
   
   void map_indexes(const RouterT *, Vector<int> &, ErrorHandler *) const;

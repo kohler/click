@@ -462,11 +462,9 @@ particular purpose.\n");
       String key = iter.key();
       int value = iter.value();
       if (value > 0 && packages[key] < 0) {
-	String package = clickpath_find_file
-	  (key + ".ko", "lib", CLICK_LIBDIR);
+	String package = clickpath_find_file(key + ".ko", "lib", CLICK_LIBDIR);
 	if (!package)
-	  package = clickpath_find_file
-	    (key + ".o", "lib", CLICK_LIBDIR);
+	  package = clickpath_find_file(key + ".o", "lib", CLICK_LIBDIR);
 	if (!package) {
 	  errh->message("cannot find required package `%s.ko'", key.cc());
 	  errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);

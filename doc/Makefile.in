@@ -19,7 +19,7 @@ all: install Makefile
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: install-man
 install-man:
@@ -39,7 +39,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3
 	$(INSTALL_DATA) $(srcdir)/Connection.3 $(mandir)/man3/Connection.3
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	/bin/sh $(top_srcdir)/findelements.sh -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
+	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
 
 clean:
 distclean: clean

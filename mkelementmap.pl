@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl -w
 
 # mkelementmap.pl -- make map of element name to C++ class and file
 # Eddie Kohler
@@ -147,6 +147,7 @@ sub read_files_from ($) {
     my(@a, @b, $t);
     $t = <IN>;
     close IN;
+    $t =~ s/^#.*//mg;
     @a = split(/\s+/, $t);
     foreach $t (@a) {
       next if $t eq '';
@@ -165,6 +166,7 @@ sub read_files_from ($) {
 
 undef $/;
 my(@files, $fn, $prefix);
+$prefix = "";
 while (@ARGV) {
   $_ = shift @ARGV;
   if (/^-f$/ || /^--files$/) {
@@ -202,10 +204,10 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   $f =~ s/^$prefix\/*//;
 
   my($p) = $processing[$id];
-  $p = parents_processing($class) if !$p;
+  $p = parents_processing($id) if !$p;
 
   my($flags) = $flags[$id];
-  $flags = parents_flags($class) if !defined($flags);
+  $flags = parents_flags($id) if !defined($flags);
   $flags = "" if !defined($flags);
   
   my($req) = $requirements[$id];

@@ -394,3 +394,60 @@ ElementMap::limit_driver(int driver)
       t = i.value() = _cxx_next[t];
   }
 }
+
+
+void
+ElementMap::try_one_directory(String dir, ErrorHandler *errh)
+{
+  // append `/'
+  if (DIR *df = opendir(dir.cc())) {
+    while (struct dirent *d = readdir(df))
+      if (strncmp(d->d_name, "elementmap", 10) == 0) {
+	parse(file_string(dir + d->d_name, errh));
+      }
+    closedir(df);
+  }
+}
+
+void
+ElementMap::parse_all_on_path(String path, String default_path,
+			      ErrorHandler *errh)
+{
+  struct stat s;
+  
+  while (1) {
+    int colon = path.find_left(':');
+    String dir = (colon < 0 ? path : path.substring(0, colon));
+    
+    if (!dir) {
+      if (default_path)		// look in default path
+	parse_all_on_path(default_path, "", errh);
+      default_path = "";
+      
+    } else {
+      if (dir.back() != '/')
+	dir += "/";
+      
+      if (stat(dir.cc(), &s) >= 0 && S_ISDIR(s.st_mode))
+	try_one_directory(dir, errh);
+      
+      dir += "share/click/";
+      if (stat(dir.cc(), &s) >= 0 && S_ISDIR(s.st_mode))
+	try_one_directory(dir, errh);
+    }
+      
+    if (colon < 0)
+      return;
+    
+    path = path.substring(colon + 1);
+  }
+}
+
+void
+ElementMap::parse_all_on_path(String default_path, ErrorHandler *errh)
+{
+  const char *path = getenv("CLICKPATH");
+  if (!path)
+    path = ":";
+  parse_all_on_path(path, default_path, errh);
+}

@@ -228,13 +228,8 @@ particular purpose.\n");
 
   // find and parse `elementmap'
   ElementMap elementmap;
-  {
-    String fn = clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
-    if (!fn)
-      errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR);
-    else
-      elementmap.parse(file_string(fn, errh));
-  }
+  elementmap.parse_all_on_path(CLICK_SHAREDIR, errh);
+  /* errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR); */
 
   // parse `elementmap' from router archive
   if (r->archive_index("elementmap") >= 0)

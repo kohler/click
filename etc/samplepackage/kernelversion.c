@@ -24,6 +24,8 @@
  *  "kernel_version=" "2.2.6" ;
  */
 
-#define __KERNEL__
+#ifndef __KERNEL__
+# define __KERNEL__
+#endif
 #define MODULE
 #include <linux/module.h>

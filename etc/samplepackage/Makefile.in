@@ -9,6 +9,11 @@ SHELL = @SHELL@
 #	clicksrcdir := @clickprefix@/share/click/src
 clicksrcdir := @top_srcdir@
 
+# SET `clickbindir' TO THE CLICK BINARY DIRECTORY.
+# If you are making a standalone package, set
+#	clickbindir := @clickprefix@/bin
+clickbindir := @top_srcdir@
+
 # SET `clickincludedir' TO THE CLICK INCLUDE DIRECTORY.
 # If you are making a standalone package, set
 #	clickincludedir := @clickprefix@/include/click
@@ -105,21 +110,21 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
-elemlist:
-	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
-	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
-kelements.conf:
-	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
-uelements.conf:
-	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
-elements.mk: kelements.conf uelements.conf $(clicksrcdir)/mkelemconf.sh
-	$(clicksrcdir)/mkelemconf.sh -m -t kernel < kelements.conf > elements.mk
-	$(clicksrcdir)/mkelemconf.sh -m -t user < uelements.conf >> elements.mk
-kpackage.cc: kelements.conf $(clicksrcdir)/mkelemconf.sh
-	$(clicksrcdir)/mkelemconf.sh -k $(package) < kelements.conf > kpackage.cc
+elemlist: $(clickbindir)/click-buildtool
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule > kelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel > uelements.conf
+kelements.conf: $(clickbindir)/click-buildtool
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule > kelements.conf
+uelements.conf: $(clickbindir)/click-buildtool
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel > uelements.conf
+elements.mk: kelements.conf uelements.conf $(clickbindir)/click-buildtool
+	$(clickbindir)/click-buildtool elem2make -t kernel < kelements.conf > elements.mk
+	$(clickbindir)/click-buildtool elem2make -t user < uelements.conf >> elements.mk
+kpackage.cc: kelements.conf $(clickbindir)/click-buildtool
+	$(clickbindir)/click-buildtool elem2package $(package) < kelements.conf > kpackage.cc
 	@rm -f kpackage.d
-upackage.cc: uelements.conf $(clicksrcdir)/mkelemconf.sh
-	$(clicksrcdir)/mkelemconf.sh -k $(package) < uelements.conf > upackage.cc
+upackage.cc: uelements.conf $(clickbindir)/click-buildtool
+	$(clickbindir)/click-buildtool elem2package $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.d
 
 DEPFILES := $(wildcard *.d *.kd *.ud)

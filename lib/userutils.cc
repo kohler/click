@@ -265,10 +265,11 @@ remove_file_on_exit(const String &file)
 }
 
 static String
-path_find_file_2(const String &filename, String path, String &default_path,
+path_find_file_2(const String &filename, String path, String default_path,
 		 String subdir)
 {
-  if (subdir && subdir.back() != '/') subdir += "/";
+  if (subdir && subdir.back() != '/')
+    subdir += "/";
   
   while (1) {
     int colon = path.find_left(':');
@@ -276,28 +277,23 @@ path_find_file_2(const String &filename, String path, String &default_path,
     
     if (!dir && default_path) {
       // look in default path
-      String was_default_path = default_path;
-      default_path = String();
-      String s = path_find_file_2(filename, was_default_path, default_path, 0);
-      if (s) return s;
+      String fn = path_find_file_2(filename, default_path, "", 0);
+      if (fn) return fn;
       
     } else if (dir) {
       if (dir.back() != '/') dir += "/"; 
       // look for `dir/filename'
-      String name = dir + filename;
-      //fprintf(stderr, "%s\n", name.cc());
-      if (access(name.cc(), F_OK) >= 0)
-	return name;
+      String fn = dir + filename;
+      if (access(fn.cc(), F_OK) >= 0)
+	return fn;
       // look for `dir/subdir/filename' and `dir/subdir/click/filename'
       if (subdir) {
-	name = dir + subdir + filename;
-	//fprintf(stderr, "%s\n", name.cc());
-	if (access(name.cc(), F_OK) >= 0)
-	  return name;
-	name = dir + subdir + "click/" + filename;
-	//fprintf(stderr, "%s\n", name.cc());
-	if (access(name.cc(), F_OK) >= 0)
-	  return name;
+	fn = dir + subdir + filename;
+	if (access(fn.cc(), F_OK) >= 0)
+	  return fn;
+	fn = dir + subdir + "click/" + filename;
+	if (access(fn.cc(), F_OK) >= 0)
+	  return fn;
       }
     }
     
@@ -312,19 +308,18 @@ clickpath_find_file(const String &filename, const char *subdir,
 {
   const char *path = getenv("CLICKPATH");
   String was_default_path = default_path;
-  String s;
-  if (path)
-    s = path_find_file_2(filename, path, default_path, subdir);
-  if (!s && !path && default_path) {
-    default_path = String();
-    s = path_find_file_2(filename, was_default_path, default_path, 0);
-  }
-  if (!s && subdir
+
+  if (!path && default_path)
+    path = ":";
+  String fn = path_find_file_2(filename, path, default_path, subdir);
+
+  // look in `PATH' for binaries
+  if (!fn && subdir
       && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
     if (const char *path_variable = getenv("PATH"))
-      s = path_find_file_2(filename, path_variable, default_path, 0);
-  if (!s && errh) {
-    // three error messages for three different situations:
+      fn = path_find_file_2(filename, path_variable, "", 0);
+  
+  if (!fn && errh) {
     if (default_path) {
       // CLICKPATH set, left no opportunity to use default path
       errh->fatal("cannot find file `%s'\nin CLICKPATH `%s'", String(filename).cc(), path);
@@ -336,7 +331,8 @@ clickpath_find_file(const String &filename, const char *subdir,
       errh->fatal("cannot find file `%s'\nin CLICKPATH or `%s'", String(filename).cc(), was_default_path.cc());
     }
   }
-  return s;
+  
+  return fn;
 }
 
 String
