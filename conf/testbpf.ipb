@@ -2,5 +2,6 @@
 //
 // Tests whether Click can read packets from the BPF.
 // You'll need to modify the device name in FromBPF.
+// You'll probably need to be root to run this.
 
-FromBPF(fxp0) -> Print(ok) -> Discard;
+FromBPF(eth0) -> Print(ok) -> Discard;
