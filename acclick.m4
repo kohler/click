@@ -47,6 +47,12 @@ dnl
 AC_DEFUN([CLICK_PROG_CXX], [
     AC_REQUIRE([AC_PROG_CXX])
 
+    dnl work around Autoconf 2.53, which #includes <stdlib.h> inappropriately
+    if grep __cplusplus confdefs.h >/dev/null 2>&1; then
+	sed 's/#ifdef __cplusplus/#if defined(__cplusplus) \&\& !defined(__KERNEL__)/' < confdefs.h > confdefs.h~
+	mv confdefs.h~ confdefs.h
+    fi
+
     if test -z "$GXX"; then
 	AC_MSG_WARN([
 =========================================

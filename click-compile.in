@@ -168,7 +168,7 @@ case $target in
     target=linuxmodule;;
   b|bs|bsd|bsdm|bsdmo|bsdmod|bsdmodu|bsdmodul|bsdmodule)
     idefs="@DEFS@ -DCLICK_BSDMODULE"
-    iincludes="${include_source} -I${includedir}"
+    iincludes="-nostdinc ${include_source} -I${includedir}"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=bsdmodule;;

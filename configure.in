@@ -556,13 +556,12 @@ if test $ac_have_linux_kernel = y; then
   SAVE_CXX="$CXX"
   CXX="$KERNEL_CXX"
   saveflags="$CPPFLAGS"
-  CPPFLAGS="$saveflags -I$linuxdir/include"
+  CPPFLAGS="$saveflags -D__KERNEL__ -I$linuxdir/include"
 
   AC_CACHE_CHECK(for C++-includable kernel header files,
     ac_cv_cxx_aware_system,
     AC_LANG_CPLUSPLUS
-    AC_TRY_COMPILE([#define __KERNEL__
-#include <linux/signal.h>], [return 0],
+    AC_TRY_COMPILE([#include <linux/signal.h>], [return 0],
 	ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no))
 
   dnl check whether -fpermissive is required
@@ -570,8 +569,7 @@ if test $ac_have_linux_kernel = y; then
 
     AC_CACHE_CHECK(whether -fpermissive is required, ac_cv_f_permissive,
       AC_LANG_CPLUSPLUS
-      AC_TRY_LINK([#define __KERNEL__
-#define MODULE
+      AC_TRY_LINK([#define MODULE
 #define _FEATURES_H
 #define new xxx_new
 #define this xxx_this
@@ -590,8 +588,7 @@ if test $ac_have_linux_kernel = y; then
       CXX="$KERNEL_CXX -fpermissive"
       AC_CACHE_CHECK(whether -fpermissive is allowed, ac_cv_f_permissive_ok,
 	AC_LANG_CPLUSPLUS
-	AC_TRY_LINK([#define __KERNEL__
-#define MODULE
+	AC_TRY_LINK([#define MODULE
 #define _FEATURES_H
 #define new xxx_new
 #define this xxx_this
