@@ -25,6 +25,9 @@
 #include "autotxrate.hh"
 CLICK_DECLS
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 static inline int next_lower_rate(int rate) {
     switch(rate) {
     case 1:
@@ -62,7 +65,6 @@ AutoTXRate::AutoTXRate()
 {
   MOD_INC_USE_COUNT;
 
-  _max_probation_count = 10;
   /* bleh */
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -83,6 +85,7 @@ int
 AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
+		  cpUnsigned, "Probation count (packets)", &_max_probation_count,
 		  cpKeywords, 
 		  0) < 0) {
     return -1;
@@ -135,12 +138,14 @@ AutoTXRate::simple_action(Packet *p_in)
 
   if (success) {
 
-    if (!nfo->_rate || nfo->_rate == rate) {
+    if (!nfo->_rate || rate >= nfo->_rate) {
       //click_chatter("AutoTXRate: packet to %s succeeded, %d retries, %d rate", 
       //dst.s().cc(), retries, rate);
       click_gettimeofday(&nfo->_last_success);
       nfo->_packets++;
-      nfo->_rate = rate;
+      if (!nfo->_rate) {
+	nfo->_rate = min(rate, nfo->_rate);
+      }
       if (nfo->_packets > _max_probation_count) {
 	int next_rate = next_higher_rate(nfo->_rate);
 	if (next_rate == nfo->_rate) {
@@ -163,9 +168,11 @@ AutoTXRate::simple_action(Packet *p_in)
     return 0;
   }
 
-  if (retries > 0 && rate > 1) {
+  if (rate > 1) {
     /* try twice at a speed before bumping down */
-    nfo->_rate = next_lower_rate(nfo->_rate);
+    if (rate == nfo->_rate) {
+      nfo->_rate = next_lower_rate(nfo->_rate);
+    }
     //click_chatter("AutoTXRate: packet to %s failed twice, bumping down to %d\n", 
     //dst.s().cc(), nfo->_rate);
     

@@ -57,6 +57,15 @@ RXStats::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+int 
+RXStats::get_rate(EtherAddress src) {
+  DstInfo *nfo = _neighbors.findp(src);
+  if (!nfo) {
+    return 0;
+  }
+  return nfo->_rate;
+}
+
 Packet *
 RXStats::simple_action(Packet *p_in)
 {

@@ -13,16 +13,13 @@ CLICK_DECLS
  * 
  * =s wifi
  * 
- * Sets the Wifi TXRate Annotation on a packet.
+ * Accumulate rxstats for each ethernet src you hear a packet from.
  * =over 8
  *
- * =item RATE
+ * =item TAU
  * 
- * Unsigned integer. Valid rates are 1, 2, 5, and 11.
- *
- * =item AUTO
- * 
- * Boolean. Use auto rate scaling. Default is false.
+ * Unsigned integer. Values 1 - 100 on  how much last packet
+ * influences counters.
  *
  */
 
@@ -45,6 +42,7 @@ class RXStats : public Element { public:
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
+  int get_rate(EtherAddress);
  private:
 
   

@@ -13,17 +13,16 @@ CLICK_DECLS
  * 
  * =s wifi
  * 
- * Sets the Wifi TXRate Annotation on a packet.
+ * Automatically determine the txrate for a give ethernet dst
  * =over 8
  *
- * =item RATE
+ * =item Probation Count
  * 
- * Unsigned integer. Valid rates are 1, 2, 5, and 11.
+ * Unsigned int.  Number of packets before trying the next
+ * highest rate.
  *
- * =item AUTO
- * 
- * Boolean. Use auto rate scaling. Default is false.
- *
+ * =a
+ * SetTXRate, RXStats
  */
 
 
