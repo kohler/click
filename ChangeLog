@@ -1,3 +1,8 @@
+2001-08-13 Monday 16:05  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.5), divertsocket.hh (1.5): adding
+	linux support
+
 2001-08-13 Monday 14:38  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: divertsocket.cc (1.4), divertsocket.hh (1.4): added
