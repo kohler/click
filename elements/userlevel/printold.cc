@@ -71,7 +71,7 @@ PrintOld::simple_action(Packet *p)
 
   struct timeval tv_now;
   int res = gettimeofday(&tv_now, 0);
-  if (!res) {
+  if (res != 0) {
     click_chatter("%s: unable to get time of day", id().cc());
     return p;
   }
