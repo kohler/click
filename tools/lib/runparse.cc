@@ -148,11 +148,8 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 		ElementClassT *stop_class;
 		if (_etypes[i].prev_name >= 0)
 		    stop_class = _etypes[ _etypes[i].prev_name ].eclass;
-		else {
+		else
 		    stop_class = declared_type(_etypes[i].eclass->name(), -1);
-		    if (!stop_class)
-			stop_class = ElementClassT::default_class(_etypes[i].eclass->name());
-		}
 		if (print_state == 2)
 		    sa << "\n";
 		_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, stop_class);

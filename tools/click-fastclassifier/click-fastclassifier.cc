@@ -123,7 +123,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static bool
 combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to)
 {
-  ElementClassT *classifier_t = ElementClassT::default_class("Classifier");
+  ElementClassT *classifier_t = ElementClassT::base_type("Classifier");
   assert(from->type() == classifier_t && to->type() == classifier_t);
   
   // find where `to' is heading for
@@ -176,7 +176,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
 static bool
 try_combine_classifiers(RouterT *router, ElementT *classifier)
 {
-  ElementClassT *classifier_t = ElementClassT::default_class("Classifier");
+  ElementClassT *classifier_t = ElementClassT::base_type("Classifier");
   if (classifier->type() != classifier_t)
     // cannot combine IPClassifiers yet
     return false;
@@ -365,14 +365,14 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
 {
   // set up new router
   RouterT nr;
-  ElementT *idle = nr.add_anon_element(ElementClassT::default_class("Idle"));
+  ElementT *idle = nr.add_anon_element(ElementClassT::base_type("Idle"));
   const Vector<String> &old_requirements = r->requirements();
   for (int i = 0; i < old_requirements.size(); i++)
     nr.add_requirement(old_requirements[i]);
   
   // copy AlignmentInfos and AddressInfos
-  copy_elements(r, &nr, ElementClassT::default_class("AlignmentInfo"));
-  copy_elements(r, &nr, ElementClassT::default_class("AddressInfo"));
+  copy_elements(r, &nr, ElementClassT::base_type("AlignmentInfo"));
+  copy_elements(r, &nr, ElementClassT::base_type("AddressInfo"));
 
   // copy all classifiers
   HashMap<String, int> classifier_map(-1);
@@ -538,7 +538,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
       // set new names
       String class_name = "Fast" + classifier_tname + "@@" + c->name();
       String cxx_name = translate_class_name(class_name);
-      prog.eclass = ElementClassT::default_class(class_name);
+      prog.eclass = ElementClassT::base_type(class_name);
       
       // add new program
       all_programs.push_back(prog);
@@ -779,7 +779,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   // prepare type_index_map : type_index -> configuration #
   HashMap<int, int> type_uid_map(-1);
   for (int i = 0; i < click_names.size(); i++) {
-    int x = ElementClassT::default_class(click_names[i])->uid();
+    int x = ElementClassT::base_type(click_names[i])->uid();
     type_uid_map.insert(x, i);
   }
 
@@ -789,7 +789,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
     int x = type_uid_map[e->type_uid()];
     if (x >= 0) {
       e->set_configuration(configurations[x]);
-      e->set_type(ElementClassT::default_class(old_type_names[x]));
+      e->set_type(ElementClassT::base_type(old_type_names[x]));
     }
   }
 

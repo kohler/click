@@ -149,8 +149,8 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   HashMap<int, int> new_uid_map(-1);
   Vector<ElementClassT *> old_class;
   for (int i = 0; i < new_click_names.size(); i++) {
-    new_uid_map.insert(ElementClassT::default_class(new_click_names[i])->uid(), old_class.size());
-    old_class.push_back(ElementClassT::default_class(old_click_names[i]));
+    new_uid_map.insert(ElementClassT::base_type(new_click_names[i])->uid(), old_class.size());
+    old_class.push_back(ElementClassT::base_type(old_click_names[i]));
   }
 
   // change configuration
@@ -361,7 +361,7 @@ particular purpose.\n");
   Signatures sigs(router);
 
   // follow instructions embedded in router definition
-  ElementClassT *devirtualize_info_class = ElementClassT::default_class("DevirtualizeInfo");
+  ElementClassT *devirtualize_info_class = ElementClassT::base_type("DevirtualizeInfo");
   for (RouterT::type_iterator x = router->begin_elements(devirtualize_info_class); x; x++) {
     Vector<String> args;
     cp_argvec(x->configuration(), args);

@@ -88,7 +88,7 @@ static void
 remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 {
   // prepare
-  ElementClassT *link_type = ElementClassT::default_class("RouterLink");
+  ElementClassT *link_type = ElementClassT::base_type("RouterLink");
   if (!link_type)
     return;
   component_endpoints.clear();
@@ -139,7 +139,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 	errh->lerror(links[i]->landmark(), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
 	errh->lerror(preexist->landmark(), "(previous definition was here)");
       } else if (clauses[0] == component) {
-	ElementT *newe = r->get_element(clauses[1], ElementClassT::default_class(clauses[2]), words[j+1], "<click-uncombine>");
+	ElementT *newe = r->get_element(clauses[1], ElementClassT::base_type(clauses[2]), words[j+1], "<click-uncombine>");
 	if (j/2 < ninputs)
 	  r->insert_before(newe, PortT(links[i], j/2));
 	else
@@ -196,7 +196,7 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 static void
 frob_nested_routerlinks(RouterT *r, const String &compname)
 {
-  ElementClassT *t = ElementClassT::default_class("RouterLink");
+  ElementClassT *t = ElementClassT::base_type("RouterLink");
   int cnamelen = compname.length();
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     Vector<String> words;

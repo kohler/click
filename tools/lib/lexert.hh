@@ -115,7 +115,7 @@ class LexerT { public:
     int _compound_depth;
   
     // what names represent types? (builds up linearly)
-    HashMap<String, ElementClassT *> _default_class_map;
+    HashMap<String, ElementClassT *> _base_type_map;
 
     // errors
     LexerTInfo *_lexinfo;

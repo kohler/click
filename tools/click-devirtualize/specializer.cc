@@ -445,7 +445,7 @@ Specializer::fix_elements()
   for (int i = 0; i < _nelements; i++) {
     SpecializedClass &spc = _specials[ _specialize[i] ];
     if (spc.special())
-      _router->element(i)->set_type(ElementClassT::default_class(spc.click_name));
+      _router->element(i)->set_type(ElementClassT::base_type(spc.click_name));
   }
 }
 

@@ -203,7 +203,7 @@ particular purpose.\n");
 
    case CLASSES_OPT: {
      HashMap<String, int> m(-1);
-     router->collect_primitive_classes(m);
+     router->collect_primitive_types(m);
      Vector<String> classes;
      for (HashMap<String, int>::iterator iter = m.begin(); iter; iter++)
        classes.push_back(iter.key());

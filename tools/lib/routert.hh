@@ -24,7 +24,7 @@ class RouterT { public:
     ElementClassT *locally_declared_type(const String &) const;
     inline ElementClassT *declared_type(const String &) const;
     ElementClassT *install_type(ElementClassT *, bool install_name = false);
-    void collect_primitive_classes(HashMap<String, int> &) const;
+    void collect_primitive_types(HashMap<String, int> &) const;
     void collect_active_types(Vector<ElementClassT *> &) const;
 
     int ntypes() const			{ return _etypes.size(); }

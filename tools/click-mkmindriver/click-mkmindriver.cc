@@ -124,7 +124,7 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
   int nmissing = 0;
 
   HashMap<String, int> primitives(-1);
-  router->collect_primitive_classes(primitives);
+  router->collect_primitive_types(primitives);
   for (HashMap<String, int>::iterator i = primitives.begin(); i; i++) {
     if (!emap.has_traits(i.key()))
       missing_sa << (nmissing++ ? ", " : "") << i.key();

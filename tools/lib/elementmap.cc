@@ -112,7 +112,7 @@ ElementMap::add(const Traits &e)
 	my_e.calculate_driver_mask();
 
     if (e.name) {
-	ElementClassT *c = ElementClassT::default_class(e.name);
+	ElementClassT *c = ElementClassT::base_type(e.name);
 	my_e.name_next = _name_map[c->name()];
 	_name_map.insert(c->name(), i);
     }
@@ -528,7 +528,7 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 {
     indexes.clear();
     HashMap<String, int> primitives(-1);
-    router->collect_primitive_classes(primitives);
+    router->collect_primitive_types(primitives);
     for (HashMap<String, int>::iterator i = primitives.begin(); i; i++)
 	if (i.value() > 0) {
 	    int t = _name_map[i.key()];

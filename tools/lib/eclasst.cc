@@ -30,8 +30,8 @@
 #include <stdlib.h>
 
 static String::Initializer string_initializer;
-static HashMap<String, int> default_class_map(-1);
-static Vector<ElementClassT *> default_classes;
+static HashMap<String, int> base_type_map(-1);
+static Vector<ElementClassT *> base_types;
 static int unique_id_storage = ElementClassT::UNUSED_UID;
 
 typedef ElementTraits Traits;
@@ -98,29 +98,29 @@ ElementClassT::printable_name_cc()
 }
 
 void
-ElementClassT::set_default_class(ElementClassT *ec)
+ElementClassT::set_base_type(ElementClassT *ec)
 {
-    int i = default_class_map[ec->name()];
+    int i = base_type_map[ec->name()];
     if (i < 0) {
-	default_class_map.insert(ec->name(), default_classes.size());
-	default_classes.push_back(ec);
+	base_type_map.insert(ec->name(), base_types.size());
+	base_types.push_back(ec);
     } else {
-	default_classes[i]->unuse();
-	default_classes[i] = ec;
+	base_types[i]->unuse();
+	base_types[i] = ec;
     }
     ec->use();
 }
 
 ElementClassT *
-ElementClassT::default_class(const String &name)
+ElementClassT::base_type(const String &name)
 {
     if (!name)
 	return 0;
-    int i = default_class_map[name];
+    int i = base_type_map[name];
     if (i >= 0)
-	return default_classes[i];
+	return base_types[i];
     ElementClassT *ec = new ElementClassT(name);
-    set_default_class(ec);
+    set_base_type(ec);
     return ec;
 }
 
@@ -147,7 +147,7 @@ ElementClassT::documentation_url() const
 
 
 ElementClassT *
-ElementClassT::find_relevant_class(int, int, const Vector<String> &)
+ElementClassT::find_relevant_type(int, int, const Vector<String> &)
 {
     return this;
 }
@@ -219,7 +219,7 @@ ElementClassT::expand_element(
     String new_configuration = env.interpolate(e->configuration());
     cp_argvec(new_configuration, args);
 
-    ElementClassT *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
+    ElementClassT *found_c = c->find_relevant_type(inputs_used, outputs_used, args);
     if (!found_c) {
 	String lm = e->landmark(), name = e->type_name();
 	errh->lerror(lm, "no match for `%s'", name.cc(), signature(name, inputs_used, outputs_used, args.size()).cc());
@@ -244,7 +244,7 @@ ElementClassT::complex_expand_element(
 }
 
 void
-ElementClassT::collect_primitive_classes(HashMap<String, int> &m)
+ElementClassT::collect_primitive_types(HashMap<String, int> &m)
 {
     if (_unique_id > TUNNEL_UID)
 	m.insert(_name, 1);
@@ -274,9 +274,9 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
 }
 
 ElementClassT *
-SynonymElementClassT::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
+SynonymElementClassT::find_relevant_type(int ninputs, int noutputs, const Vector<String> &args)
 {
-    return _eclass->find_relevant_class(ninputs, noutputs, args);
+    return _eclass->find_relevant_type(ninputs, noutputs, args);
 }
 
 ElementT *
@@ -289,9 +289,9 @@ SynonymElementClassT::complex_expand_element(
 }
 
 void
-SynonymElementClassT::collect_primitive_classes(HashMap<String, int> &m)
+SynonymElementClassT::collect_primitive_types(HashMap<String, int> &m)
 {
-    _eclass->collect_primitive_classes(m);
+    _eclass->collect_primitive_types(m);
 }
 
 void
@@ -422,7 +422,7 @@ CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler 
 }
 
 ElementClassT *
-CompoundElementClassT::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
+CompoundElementClassT::find_relevant_type(int ninputs, int noutputs, const Vector<String> &args)
 {
     // Try to return an element class, even if it is wrong -- the error
     // messages are friendlier
@@ -446,7 +446,7 @@ CompoundElementClassT::find_relevant_class(int ninputs, int noutputs, const Vect
 	else if (CompoundElementClassT *next = e->cast_compound())
 	    ct = next;
 	else
-	    return e->find_relevant_class(ninputs, noutputs, args);
+	    return e->find_relevant_type(ninputs, noutputs, args);
     }
 }
 
@@ -518,11 +518,11 @@ CompoundElementClassT::complex_expand_element(
 }
 
 void
-CompoundElementClassT::collect_primitive_classes(HashMap<String, int> &m)
+CompoundElementClassT::collect_primitive_types(HashMap<String, int> &m)
 {
-    _router->collect_primitive_classes(m);
+    _router->collect_primitive_types(m);
     if (_prev)
-	_prev->collect_primitive_classes(m);
+	_prev->collect_primitive_types(m);
 }
 
 void

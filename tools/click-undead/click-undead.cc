@@ -119,7 +119,7 @@ save_element_nports(RouterT *r)
 static void
 remove_static_switches(RouterT *r, ErrorHandler *errh)
 {
-  ElementClassT *t = ElementClassT::default_class("StaticSwitch");
+  ElementClassT *t = ElementClassT::base_type("StaticSwitch");
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
@@ -166,7 +166,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 static void
 remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 {
-  ElementClassT *t = ElementClassT::default_class("StaticPullSwitch");
+  ElementClassT *t = ElementClassT::base_type("StaticPullSwitch");
 
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
@@ -652,12 +652,12 @@ particular purpose.\n");
   save_element_nports(r);
 
   // set types
-  idlet = ElementClassT::default_class("Idle");
+  idlet = ElementClassT::base_type("Idle");
   
   // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
-  remove_nulls(r, ElementClassT::default_class("Null"), default_errh);
+  remove_nulls(r, ElementClassT::base_type("Null"), default_errh);
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
@@ -695,11 +695,11 @@ particular purpose.\n");
   // remove redundant schedulers
   while (1) {
     int nchanges = 0;
-    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("RoundRobinSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("PrioSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, ElementClassT::default_class("StrideSched"), true, default_errh);
-    nchanges += remove_redundant_tee_ports(r, ElementClassT::default_class("Tee"), false, default_errh);
-    nchanges += remove_redundant_tee_ports(r, ElementClassT::default_class("PullTee"), true, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::base_type("RoundRobinSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::base_type("PrioSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, ElementClassT::base_type("StrideSched"), true, default_errh);
+    nchanges += remove_redundant_tee_ports(r, ElementClassT::base_type("Tee"), false, default_errh);
+    nchanges += remove_redundant_tee_ports(r, ElementClassT::base_type("PullTee"), true, default_errh);
     if (!nchanges) break;
   }
 

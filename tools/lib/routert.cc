@@ -281,10 +281,10 @@ RouterT::deanonymize_elements()
 }
 
 void
-RouterT::collect_primitive_classes(HashMap<String, int> &m) const
+RouterT::collect_primitive_types(HashMap<String, int> &m) const
 {
     for (int i = 0; i < _elements.size(); i++)
-	_elements[i]->type()->collect_primitive_classes(m);
+	_elements[i]->type()->collect_primitive_types(m);
 }
 
 void

@@ -20,8 +20,8 @@ class ElementClassT { public:
     ElementClassT(const String &);
     virtual ~ElementClassT();
 
-    static void set_default_class(ElementClassT *);
-    static ElementClassT *default_class(const String &);
+    static void set_base_type(ElementClassT *);
+    static ElementClassT *base_type(const String &);
     static ElementClassT *unused_type();
     static ElementClassT *tunnel_type();
 
@@ -47,10 +47,10 @@ class ElementClassT { public:
 
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
-    virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
+    virtual ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
     virtual void report_signatures(String, ErrorHandler *);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    virtual void collect_primitive_classes(HashMap<String, int> &);
+    virtual void collect_primitive_types(HashMap<String, int> &);
     virtual void collect_prerequisites(Vector<ElementClassT *> &);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
@@ -95,9 +95,9 @@ class SynonymElementClassT : public ElementClassT { public:
 
     ElementClassT *synonym_of() const	{ return _eclass; }
 
-    ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
+    ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    void collect_primitive_classes(HashMap<String, int> &);
+    void collect_primitive_types(HashMap<String, int> &);
     void collect_prerequisites(Vector<ElementClassT *> &);
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
@@ -131,10 +131,10 @@ class CompoundElementClassT : public ElementClassT { public:
     int finish(ErrorHandler *);
     void check_duplicates_until(ElementClassT *, ErrorHandler *);
 
-    ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
+    ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
     void report_signatures(String, ErrorHandler *);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    void collect_primitive_classes(HashMap<String, int> &);
+    void collect_primitive_types(HashMap<String, int> &);
     void collect_prerequisites(Vector<ElementClassT *> &);
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);

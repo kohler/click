@@ -233,56 +233,56 @@ void
 prepare_classes()
 {
   // specialized classes
-  ElementClassT::set_default_class(new AlignAlignClass);
-  ElementClassT::set_default_class(new StripAlignClass);
-  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("CheckIPHeader", 1));
-  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("CheckIPHeader2", 1));
-  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("MarkIPHeader", 0));
-  ElementClassT::set_default_class(new AlignClass("Classifier", new ClassifierAligner));
-  ElementClassT::set_default_class(new AlignClass("EtherEncap", new ShifterAligner(-14)));
+  ElementClassT::set_base_type(new AlignAlignClass);
+  ElementClassT::set_base_type(new StripAlignClass);
+  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("CheckIPHeader", 1));
+  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("CheckIPHeader2", 1));
+  ElementClassT::set_base_type(new CheckIPHeaderAlignClass("MarkIPHeader", 0));
+  ElementClassT::set_base_type(new AlignClass("Classifier", new ClassifierAligner));
+  ElementClassT::set_base_type(new AlignClass("EtherEncap", new ShifterAligner(-14)));
 
-  ElementClassT::set_default_class(new AlignClass("IPInputCombo",
+  ElementClassT::set_base_type(new AlignClass("IPInputCombo",
 	new CombinedAligner(new ShifterAligner(14),
 			    new WantAligner(Alignment(4, 2)))));
 
-  ElementClassT::set_default_class(new AlignClass("GridEncap",
+  ElementClassT::set_base_type(new AlignClass("GridEncap",
 	new CombinedAligner(new ShifterAligner(98),
 			    new WantAligner(Alignment(4, 0)))));
 
   // no alignment requirements, and do not transmit packets between input and
   // output
   Aligner *a = new NullAligner;
-  ElementClassT::set_default_class(new AlignClass("Idle", a));
-  ElementClassT::set_default_class(new AlignClass("Discard", a));
+  ElementClassT::set_base_type(new AlignClass("Idle", a));
+  ElementClassT::set_base_type(new AlignClass("Discard", a));
   
   // generate alignment 4/2
   a = new GeneratorAligner(Alignment(4, 2));
-  ElementClassT::set_default_class(new AlignClass("FromDevice", a));
-  ElementClassT::set_default_class(new AlignClass("PollDevice", a));
-  ElementClassT::set_default_class(new AlignClass("FromLinux", a));
+  ElementClassT::set_base_type(new AlignClass("FromDevice", a));
+  ElementClassT::set_base_type(new AlignClass("PollDevice", a));
+  ElementClassT::set_base_type(new AlignClass("FromLinux", a));
 
   // generate alignment 4/0
   a = new GeneratorAligner(Alignment(4, 0));
-  ElementClassT::set_default_class(new AlignClass("RatedSource", a));
-  ElementClassT::set_default_class(new AlignClass("ICMPError", a));
+  ElementClassT::set_base_type(new AlignClass("RatedSource", a));
+  ElementClassT::set_base_type(new AlignClass("ICMPError", a));
 
   // want alignment 4/2
   a = new WantAligner(Alignment(4, 2));
-  ElementClassT::set_default_class(new AlignClass("ToLinux", a));
+  ElementClassT::set_base_type(new AlignClass("ToLinux", a));
 
   // want alignment 4/0
   a = new WantAligner(Alignment(4, 0));
-  ElementClassT::set_default_class(new AlignClass("IPEncap", a));
-  ElementClassT::set_default_class(new AlignClass("UDPIPEncap", a));
-  ElementClassT::set_default_class(new AlignClass("ICMPPingEncap", a));
-  ElementClassT::set_default_class(new AlignClass("RandomUDPIPEncap", a));
-  ElementClassT::set_default_class(new AlignClass("RoundRobinUDPIPEncap", a));
-  ElementClassT::set_default_class(new AlignClass("RoundRobinTCPIPEncap", a));
+  ElementClassT::set_base_type(new AlignClass("IPEncap", a));
+  ElementClassT::set_base_type(new AlignClass("UDPIPEncap", a));
+  ElementClassT::set_base_type(new AlignClass("ICMPPingEncap", a));
+  ElementClassT::set_base_type(new AlignClass("RandomUDPIPEncap", a));
+  ElementClassT::set_base_type(new AlignClass("RoundRobinUDPIPEncap", a));
+  ElementClassT::set_base_type(new AlignClass("RoundRobinTCPIPEncap", a));
 
   // want alignment 2/0
   a = new WantAligner(Alignment(2, 0));
-  ElementClassT::set_default_class(new AlignClass("ARPResponder", a));
-  ElementClassT::set_default_class(new AlignClass("ARPQuerier", a));
+  ElementClassT::set_base_type(new AlignClass("ARPResponder", a));
+  ElementClassT::set_base_type(new AlignClass("ARPQuerier", a));
 }
 
 
@@ -412,7 +412,7 @@ particular purpose.\n");
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  ElementClassT *align_class = ElementClassT::default_class("Align");
+  ElementClassT *align_class = ElementClassT::base_type("Align");
   assert(align_class);
 
   int original_nelements = router->nelements();
@@ -551,7 +551,7 @@ particular purpose.\n");
   }
 
   // remove unused Aligns (they have no input) and old AlignmentInfos
-  ElementClassT *aligninfo_class = ElementClassT::default_class("AlignmentInfo");
+  ElementClassT *aligninfo_class = ElementClassT::base_type("AlignmentInfo");
   {
     for (RouterT::iterator x = router->begin_elements(); x; x++)
       if (x->type() == align_class && (x->ninputs() == 0 || x->noutputs() == 0)) {

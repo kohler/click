@@ -146,8 +146,8 @@ try_find_device(String devname, String class1, String class2,
     devname = words[0];
   }
   
-  ElementClassT *t1 = ElementClassT::default_class(class1);
-  ElementClassT *t2 = ElementClassT::default_class(class2);
+  ElementClassT *t1 = ElementClassT::base_type(class1);
+  ElementClassT *t2 = ElementClassT::base_type(class2);
   ElementT *found = 0;
   bool duplicate = false;
   for (int i = 0; i < r->nelements(); i++) {
@@ -309,7 +309,7 @@ make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
   }
 
   // add new element
-  ElementClassT *link_type = ElementClassT::default_class("RouterLink");
+  ElementClassT *link_type = ElementClassT::base_type("RouterLink");
   ElementT *newe = combined->get_element
     ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
@@ -477,7 +477,7 @@ particular purpose.\n");
     exit(1);
 
   // nested combinations: change config strings of included RouterLinks
-  ElementClassT *link_type = ElementClassT::default_class("RouterLink");
+  ElementClassT *link_type = ElementClassT::base_type("RouterLink");
   for (RouterT::type_iterator x = combined->begin_elements(link_type); x; x++)
     frob_nested_routerlink(x);
 
