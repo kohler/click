@@ -4,6 +4,7 @@
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
 #include <elements/wifi/linktable.hh>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 /*
