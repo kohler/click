@@ -27,17 +27,32 @@
 #include <click/error.hh>
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
+#include <click/confparse.hh>
 
 ForceTCP::ForceTCP()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
   _count = 0;
+  _dport = -1;
 }
 
 ForceTCP::~ForceTCP()
 {
   MOD_DEC_USE_COUNT;
+}
+
+int
+ForceTCP::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  int ret;
+
+  ret = cp_va_parse(conf, this, errh,
+                    cpOptional,
+                    cpInteger, "destination port", &_dport,
+                    0);
+
+  return(ret);
 }
 
 ForceTCP *
@@ -80,7 +95,9 @@ ForceTCP::simple_action(Packet *p_in)
     th->th_off = noff >> 2;
   }
 
-  if((_count & 7) < 2){
+  if(_dport >= 0){
+    th->th_dport = htons(_dport);
+  } else if((_count & 7) < 2){
     th->th_dport = htons(80);
   } else if((_count & 7) == 3){
     th->th_dport = htons(random() % 1024);
