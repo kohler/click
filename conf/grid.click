@@ -36,14 +36,14 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
 query_demux :: Classifier(48/GRID_HEX_IP, // loc query for us
 			  -);
 
-reply_demux :: Classifier(48/GRID_HEX_IP, // loc reply for us
+repl_demux :: Classifier(48/GRID_HEX_IP, // loc reply for us
 			  -);
 
 grid_demux [1] -> query_demux;
 grid_demux [2] -> repl_demux;
 
-reply_demux [0] -> [1] fq; // handle reply to our loc query
-reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
+repl_demux [0] -> [1] fq; // handle reply to our loc query
+repl_demux [1] -> [0] lr; // forward query reply packets like encap packets
 
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
 
