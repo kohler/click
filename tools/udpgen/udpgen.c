@@ -364,6 +364,7 @@ cache_udp_packet(struct udpgen_opt *uopt)
   /* device */
   skb->dev = rt->u.dst.dev;
   skb->protocol = __constant_htons(ETH_P_IP);
+  /* put on space for header */
   skb->mac.raw = skb_push(skb, skb->dev->hard_header_len);
   /* printk("<1>udpgen: using device `%s'\n", skb->dev->name); */
   
@@ -410,14 +411,17 @@ slow_output_packet(struct udpgen_opt *uopt)
   struct sk_buff *new_skb = skb_clone(skb, GFP_KERNEL);
   int result;
 
-  atomic_inc(&new_skb->users);
-  __skb_pull(new_skb, dev->hard_header_len);
+  atomic_inc(&new_skb->users);	/* save a copy so we can get the header */
+  __skb_pull(new_skb, dev->hard_header_len); /* take off space for header */
   result = uopt->rtable_cache->u.dst.output(new_skb);
-  memcpy(skb->mac.raw, new_skb->mac.raw, dev->hard_header_len);
-  uopt->have_hh = 1;
-  uopt->slow_path_sent++;
-  kfree_skb(new_skb);
+  if (result == 0) {
+    memcpy(skb->mac.raw, new_skb->mac.raw, dev->hard_header_len);
+    uopt->have_hh = 1;
+  } else
+    kfree_skb(new_skb);
   
+  kfree_skb(new_skb);
+  uopt->slow_path_sent++;
   return result;
 }
 
