@@ -1,0 +1,138 @@
+/*
+ * lookupiproute2.{cc,hh} -- element looks up next-hop address in static
+ * routing table
+ * Thomer M. Gil
+ *
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include "lookupiproute2.hh"
+#include "ipaddress.hh"
+#include "confparse.hh"
+#include "error.hh"
+#include "glue.hh"
+
+LookupIPRoute2::LookupIPRoute2()
+{
+  add_input();
+  add_output();
+}
+
+LookupIPRoute2::~LookupIPRoute2()
+{
+}
+
+LookupIPRoute2 *
+LookupIPRoute2::clone() const
+{
+  return new LookupIPRoute2;
+}
+
+void
+LookupIPRoute2::push(int, Packet *p)
+{
+  output(0).push(p);
+}
+
+// Adds a route if not exists yet.
+int
+LookupIPRoute2::add_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+
+  LookupIPRoute2* me = (LookupIPRoute2 *) e;
+
+  for (int i = 0; i < args.size(); i++) {
+    String arg = args[i];
+    unsigned int dst, mask, gw;
+    if (cp_ip_address(arg, (unsigned char *)&dst, &arg) &&
+	cp_eat_space(arg) &&
+        cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
+	cp_eat_space(arg) &&
+        cp_ip_address(arg, (unsigned char *)&gw, &arg) &&
+	cp_eat_space(arg)) {
+      if(!me->_t.exists(dst, mask, gw)) {
+        me->_t.add(dst, mask, gw);
+      }
+    } else {
+      errh->error("expects DST MASK GW");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+// Deletes a route. Nothing happens when entry does not exist.
+int
+LookupIPRoute2::del_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+
+  LookupIPRoute2* me = (LookupIPRoute2 *) e;
+
+  for (int i = 0; i < args.size(); i++) {
+    String arg = args[i];
+    unsigned int dst, mask;
+    if (cp_ip_address(arg, (unsigned char *)&dst, &arg) &&
+        cp_eat_space(arg) &&
+        cp_ip_address(arg, (unsigned char *)&mask, &arg) &&
+        cp_eat_space(arg))
+      me->_t.del(dst, mask);
+    else {
+      errh->error("expects DST MASK");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+// Prints the routing table.
+String
+LookupIPRoute2::look_route_handler(Element *e, void *)
+{
+  String ret;
+  unsigned dst, mask, gw;
+  LookupIPRoute2 *me;
+
+  me = (LookupIPRoute2*) e;
+
+  int size = me->_t.size();
+  ret = "Entries: " + String(size) + "\nDST\tMASK\tGW\n";
+  if(size == 0)
+    return ret;
+
+  int seen = 0; // # of valid entries handled
+  for(int i = 0; seen < size; i++) {
+    if(me->_t.get(i, dst, mask, gw)) {  // false if not valid
+      ret += IPAddress(dst).s() + "\t" + \
+             IPAddress(mask).s()+ "\t" + \
+             IPAddress(gw).s()  + "\n";
+      seen++;
+    }
+  }
+
+  return ret;
+}
+
+
+void
+LookupIPRoute2::add_handlers(HandlerRegistry *fcr)
+{
+  fcr->add_write("add", add_route_handler, 0);
+  fcr->add_write("del", del_route_handler, 0);
+  fcr->add_read("look", look_route_handler, 0);
+}
+
+EXPORT_ELEMENT(LookupIPRoute2)

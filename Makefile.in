@@ -100,6 +100,7 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	lib/integers.cc lib/integers.hh \
 	lib/ipaddress.cc lib/ipaddress.hh \
 	lib/iptable.cc lib/iptable.hh \
+	lib/iptable2.cc lib/iptable2.hh \
 	lib/lexer.cc lib/lexer.hh \
 	lib/packet.cc lib/packet.hh \
 	lib/router.cc lib/router.hh \

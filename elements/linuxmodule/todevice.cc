@@ -416,8 +416,8 @@ ToDevice::queue_packet(Packet *p)
     skb_put(skb1, 60 - skb1->len);
   }
 
-#if HAVE_POLLING
   int ret;
+#if HAVE_POLLING
   if (_dev->pollable && !_dev->intr_is_on)
     ret = _dev->tx_queue(skb1, _dev); 
   else 

@@ -41,7 +41,7 @@ GENERIC_OBJS = string.o straccum.o \
 	error.o glue.o timer.o \
 	elemlink.o element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
-	crc32.o in_cksum.o iptable.o ewma.o
+	crc32.o in_cksum.o iptable.o iptable2.o ewma.o
 
 USERLEVEL_OBJS = clp.o click.o
 
@@ -49,14 +49,14 @@ USERLEVEL_OBJS = clp.o click.o
 
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL -g -pg
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
-LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@ -pg
+LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
 LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
