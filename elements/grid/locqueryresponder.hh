@@ -25,6 +25,7 @@
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
 #include <click/bighashmap.hh>
+#include <click/timer.hh>
 
 class LocQueryResponder : public Element {
 
@@ -43,8 +44,20 @@ class LocQueryResponder : public Element {
 private:
   IPAddress _ip;
   EtherAddress _eth;
+  Timer _expire_timer;
 
-  typedef BigHashMap<IPAddress, unsigned int> seq_map;
+  static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
+  int _timeout_jiffies;
+  static void expire_hook(unsigned long);
+
+  struct seq_t {
+    unsigned int seq_no;
+    int last_jiffies;
+    seq_t(unsigned int s, int j) : seq_no(s), last_jiffies(j) { }
+    seq_t() : seq_no(0), last_jiffies(0) { }
+  };
+
+  typedef BigHashMap<IPAddress, seq_t> seq_map;
   seq_map _query_seqs;
 
 };

@@ -35,6 +35,7 @@
 #define NOISY 1
 
 LocQueryResponder::LocQueryResponder()
+  : _expire_timer(expire_hook, (unsigned long) this)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -58,6 +59,25 @@ LocQueryResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
 		     cpEthernetAddress, "Ethernet address", &_eth,
 		     cpIPAddress, "IP address", &_ip,
 		     0);
+}
+
+void
+LocQueryResponder::expire_hook(unsigned long thunk)
+{ 
+  LocQueryResponder *resp = (LocQueryResponder *)thunk;
+  int jiff = click_jiffies();
+
+  // flush old ``last query heard''
+  typedef seq_map::Iterator smi_t;
+  Vector<IPAddress> old_seqs;
+  for (smi_t i = resp->_query_seqs.first(); i; i++) 
+    if (jiff - i.value().last_jiffies > resp->_timeout_jiffies)
+      old_seqs.push_back(i.key());
+
+  for (int i = 0; i < old_seqs.size(); i++) 
+    resp->_query_seqs.remove(old_seqs[i]);
+  
+  resp->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
 }
 
 
@@ -84,15 +104,15 @@ LocQueryResponder::simple_action(Packet *p)
 
   // ignore queries that are old
   unsigned int seq_no = ntohl(lq->seq_no);
-  unsigned int *old_seq = _query_seqs.findp(gh->ip);
-  if (old_seq && *old_seq >= seq_no) {
+  seq_t *old_seq = _query_seqs.findp(gh->ip);
+  if (old_seq && old_seq->seq_no >= seq_no) {
 #if NOISY
     click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", id().cc(), IPAddress(gh->ip).s().cc(), seq_no);
 #endif
     p->kill();
     return 0;
   }
-  _query_seqs.insert(gh->ip, seq_no);
+  _query_seqs.insert(gh->ip, seq_t(seq_no, click_jiffies()));
 
   // construct the response
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
@@ -122,3 +142,5 @@ LocQueryResponder::simple_action(Packet *p)
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocQueryResponder)
 
+#include <click/bighashmap.cc>
+template class BigHashMap<IPAddress, LocQueryResponder::seq_t>;
