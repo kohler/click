@@ -611,6 +611,12 @@ ErrorHandler::silent_handler()
   return the_silent_handler;
 }
 
+void
+ErrorHandler::set_default_handler(ErrorHandler *errh)
+{
+  the_default_handler = errh;
+}
+
 
 //
 // ERROR VENEER

@@ -14,11 +14,14 @@ class ErrorHandler { public:
   
   ErrorHandler()			{ }
   virtual ~ErrorHandler()		{ }
+  
   static void static_initialize(ErrorHandler *);
   static void static_cleanup();
   
   static ErrorHandler *default_handler();
   static ErrorHandler *silent_handler();
+  
+  static void set_default_handler(ErrorHandler *);
   
   virtual int nwarnings() const = 0;
   virtual int nerrors() const = 0;
