@@ -414,20 +414,20 @@ RouterThread::driver()
     }
 #endif
 
-#ifndef CLICK_NS
     // run loop again, unless driver is stopped
-    if (*runcount > 0)
+    if (*runcount > 0) {
+#ifndef CLICK_NS
+	// Everyone except the NS driver stays in driver() until the driver is
+	// stopped.
 	goto driver_loop;
-    else {
-	//click_chatter("THREAD %d: checking driver runcount %p:%d", _id, runcount, *runcount);
+#endif
+    } else {
 	unlock_tasks();
 	bool b = _master->check_driver();
 	nice_lock_tasks();
-	//click_chatter("THREAD %d: /checking driver [%d]", _id, b);
 	if (b)
 	    goto driver_loop;
     }
-#endif
 
     unlock_tasks();
 
