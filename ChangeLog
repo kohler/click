@@ -1,3 +1,12 @@
+2005-01-03 Monday 01:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromdevice.cc (1.50),
+	elements/userlevel/fromrawsocket.cc (1.2),
+	elements/userlevel/ipflowrawsockets.cc (1.8),
+	etc/ron/divertsocket.cc (1.23), include/click/timestamp.hh (1.5),
+	lib/timestamp.cc (1.2): add Timestamp::set_timeval_ioctl, and use
+	it
+
 2005-01-02 Sunday 23:09  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/dump.click (1.3), conf/wifi/station.click (1.3),
