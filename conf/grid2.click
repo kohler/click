@@ -11,7 +11,7 @@ ps :: FromDevice(eth0, 0)
 q :: Queue -> ToDevice(eth0)
 
 // linux ip layer els
-linux :: Tun(tap, 18.26.7.2, 255.255.255.0)
+linux :: Tun(18.26.7.2, 255.255.255.0)
 
 // hook it all up
 ps -> Classifier(12/Babe) -> [0] nb [0] -> q 

@@ -14,10 +14,10 @@ wvlan :: FromDevice(WI_NET_DEVICE, 0)
 to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE)
 
 // IP interfaces on gateway machine
-tun1 :: Tun(TUN_DEVICE_PREFIX, GW_IP, GW_NETMASK, GW_REAL_IP) // gateway's regular address
+tun1 :: Tun(GW_IP, GW_NETMASK, GW_REAL_IP) // gateway's regular address
 to_tun1 :: Queue -> tun1
 
-tun2 :: Tun(TUN_DEVICE_PREFIX, GRID_IP, GRID_NETMASK) // gateway's grid address
+tun2 :: Tun(GRID_IP, GRID_NETMASK) // gateway's grid address
 to_tun2 :: Queue -> tun2
 
 // get IP for this machine's wired address, its grid address, any grid node, *

@@ -6,9 +6,6 @@
 // MAC address of NET_DEVICE
 #define MAC_ADDR  00:90:27:E0:23:03
 
-// tunnel device for user-level grid configuration
-#define TUN_DEVICE tap
-
 // this node's Grid address information
 #define GRID_IP 18.26.7.1
 #define GRID_IP_HEX 16/121a0701 // 18.26.7.1

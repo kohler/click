@@ -365,7 +365,6 @@ while(<click_config_file>) {
     s/GRID_HEX_IP/$grid_addr_hex/;
     s/WI_NET_DEVICE/$grid_if/;
     s/GRID_MAC_ADDR/$grid_hw_addr/;
-    s/TUN_DEVICE_PREFIX/$tun_dev/;
 
     # gateway stuff
     s/GW_IP/$lan_addr/;

@@ -16,7 +16,7 @@ to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE)
 
 
 // linux ip layer els
-linux :: Tun(TUN_DEVICE_PREFIX, GRID_IP, GRID_NETMASK, GRID_GW)
+linux :: Tun(GRID_IP, GRID_NETMASK, GRID_GW)
 
 // hook it all up
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 

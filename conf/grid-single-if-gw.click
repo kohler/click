@@ -18,10 +18,10 @@ eth :: FromDevice(eth0, 0)
 to_eth :: Queue -> ToDevice(eth0) 
 
 // IP interfaces on gateway machine
-tun1 :: Tun(tap, 18.26.4.25, 255.255.255.0) // gateway's regular address
+tun1 :: Tun(18.26.4.25, 255.255.255.0) // gateway's regular address
 to_tun1 :: Queue -> tun1
 
-tun2 :: Tun(tap, 18.26.7.1, 255.255.255.0) // gateway's grid address
+tun2 :: Tun(18.26.7.1, 255.255.255.0) // gateway's grid address
 to_tun2 :: Queue -> tun2
 
 ip_cl :: Classifier(16/121a0419, 16/121a0701, 16/121a07, -) // get IP for 18.26.7.1, 18.26.7.*, *

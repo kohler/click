@@ -23,7 +23,7 @@ to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE)
 
 
 // linux ip layer els
-linux :: Tun(TUN_DEVICE, GRID_IP, GRID_NETMASK)
+linux :: Tun(GRID_IP, GRID_NETMASK)
 to_linux :: Queue -> linux
 
 // hook it all up

@@ -118,7 +118,6 @@ $old_ip = "";
 $old_netmask = "";
 $old_bcast = "";
 $old_gw = "";
-$tun_dev_type = "";
 
 if ($system_type =~ /Linux/) {
     if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
@@ -154,8 +153,6 @@ if ($system_type =~ /Linux/) {
     else {
 	$old_gw = $1;
     }
-
-    $tun_dev = "tap";
 }
 elsif ($system_type =~ /FreeBSD/) {
     if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
@@ -189,8 +186,6 @@ elsif ($system_type =~ /FreeBSD/) {
     else {
 	$old_gw = $1;
     }
-
-    $tun_dev = "tun";
 }
 else {
     print stderr "This system is not supported\n";
@@ -253,7 +248,6 @@ while(<click_config_file>) {
     s/GRID_HEX_IP/$grid_addr_hex/;
     s/NET_DEVICE/$grid_if/;
     s/MAC_ADDR/$hw_addr/;
-    s/TUN_DEVICE_PREFIX/$tun_dev/;
     
     print P $_;
 }

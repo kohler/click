@@ -15,10 +15,10 @@ ps :: PacketSocket(eth0)
 q :: Queue -> ps
 
 // linux ip layer els
-linux_tun :: Tun(tap, 18.26.7.1, 255.255.255.0) // our grid IP interface
+linux_tun :: Tun(18.26.7.1, 255.255.255.0) // our grid IP interface
 to_linux_q :: Queue -> linux_tun
 
-linux_tun2 :: Tun(tap, 18.26.4.25, 255.255.255.0) // our wire IP interface
+linux_tun2 :: Tun(18.26.4.25, 255.255.255.0) // our wire IP interface
 to_linux_q2 :: Queue -> linux_tun2
 
 // demultiplex

@@ -9,7 +9,7 @@ src :: FromBPF(eth0, 1)
 dst :: ToBPF(eth0) 
 
 // linux ip layer els
-linux :: Tun(tap, 10.0.0.2, 0.0.0.0)
+linux :: Tun(10.0.0.2, 0.0.0.0)
 
 // hook it all up
 src -> Classifier(12/Babe) -> [0] nb [0] -> dst
