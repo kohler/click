@@ -398,7 +398,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	      case W_FRAGOFF:
 		u1 = strtoul(data + pos, &next, 0);
-		if (next > data + pos) {
+		if (next > data + pos && (u1 & 7) == 0) {
+		    u1 >>= 3;
 		    pos = next - data;
 		    if (data[pos] == '+') {
 			u1 |= IP_MF;

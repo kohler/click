@@ -40,7 +40,7 @@ contain those fields. Valid field names, with examples, are:
    ip frag      IP fragment: `F' (1st frag), `f' (2nd or
                 later frag), or `.' (not frag)
    ip fragoff   IP fragmentation offset: `0', `0+' (suffix
-                `+' means MF is set)
+                `+' means MF is set; offset in bytes)
    len          Packet length: `132'
    proto        IP protocol: `10', or `I' for ICMP, `T' for
                 TCP, `U' for UDP

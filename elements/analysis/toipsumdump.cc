@@ -239,7 +239,7 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	    break;
 	  case W_FRAGOFF:
 	    if (!iph) goto no_data;
-	    sa << (htons(iph->ip_off) & IP_OFFMASK);
+	    sa << ((htons(iph->ip_off) & IP_OFFMASK) << 3);
 	    if (iph->ip_off & htons(IP_MF))
 		sa << '+';
 	    break;
