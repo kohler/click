@@ -15,7 +15,7 @@ all: $(FIGS)
 # uppercase
 %.1 %.2 %.3 %.4 %.5 %.6 %.7 %.8 %.9: %.mp elements.mp elemfig.sty fonts.mp
 	TEX=$(LATEX) $(METAPOST) $<
-	perl -pi -e 'next if $$x; $$x = 1 if /%%EndProlog/; s=/([a-z][a-z0-9]+) def=/\U$$1\E def= if !/^%%/; s=\b([a-z][a-z0-9]+)\b=\U$$1\E=g if /^%%DocumentFonts/ || /^%%\+/;' $(subst .mp,,$<).[0-9]*
+	perl -pi -e 'next if $$x eq $$ARGV; $$x = $$ARGV if /%%EndProlog/; s=/([a-z][a-z0-9]+) def=/\U$$1\E def= if !/^%%/; s=\b([a-z][a-z0-9]+)\b=\U$$1\E=g if /^%%DocumentFonts/ || /^%%\+/;' $(subst .mp,,$<).[0-9]*
 
 fonts.mp:
 	echo '% nothing' > fonts.mp
