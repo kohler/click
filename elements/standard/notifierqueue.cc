@@ -34,7 +34,7 @@ NotifierQueue::~NotifierQueue()
 void *
 NotifierQueue::cast(const char *n)
 {
-    if (strcmp(n, "Queue") == 0)
+    if (strcmp(n, "NotifierQueue") == 0)
 	return (NotifierQueue *)this;
     else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
 	return static_cast<Notifier *>(this);
@@ -136,4 +136,4 @@ NotifierQueue::add_handlers()
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(SimpleQueue)
-EXPORT_ELEMENT(NotifierQueue NotifierQueue-NotifierQueue)
+EXPORT_ELEMENT(NotifierQueue)

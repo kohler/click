@@ -12,8 +12,8 @@ CLICK_DECLS
 /*
 =c
 
-Queue
-Queue(CAPACITY)
+NotifierQueue
+NotifierQueue(CAPACITY)
 
 =s storage
 
@@ -25,13 +25,16 @@ Stores incoming packets in a first-in-first-out queue.
 Drops incoming packets if the queue already holds CAPACITY packets.
 The default for CAPACITY is 1000.
 
-Queue notifies interested parties when it becomes empty and when a
+NotifierQueue notifies interested parties when it becomes empty and when a
 formerly-empty queue receives a packet. The empty notification takes place
 some time after the queue goes empty, to prevent thrashing for queues that
-hover around 1 or 2 packets long. In all other respects, Queue behaves like
-SimpleQueue.
+hover around 1 or 2 packets long. In all other respects, NotifierQueue behaves
+like SimpleQueue.
 
-You may also use the old element name "NotifierQueue".
+=n
+
+The Queue element acts like NotifierQueue, but additionally notifies
+interested parties when it changes state from nonfull to full or vice versa.
 
 =h length read-only
 
@@ -57,14 +60,14 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a SimpleQueue, MixedQueue, FrontDropQueue */
+=a Queue, SimpleQueue, MixedQueue, FrontDropQueue */
 
 class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 
     NotifierQueue();
     ~NotifierQueue();
 
-    const char *class_name() const		{ return "Queue"; }
+    const char *class_name() const		{ return "NotifierQueue"; }
     void *cast(const char *);
 
     int configure(Vector<String> &conf, ErrorHandler *);

@@ -114,4 +114,4 @@ FullNoteQueue::pull(int)
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(NotifierQueue)
-EXPORT_ELEMENT(FullNoteQueue)
+EXPORT_ELEMENT(FullNoteQueue FullNoteQueue-FullNoteQueue)

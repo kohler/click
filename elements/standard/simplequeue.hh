@@ -23,9 +23,9 @@ The default for CAPACITY is 1000.
 
 =n
 
-The Queue element acts like SimpleQueue, but additionally notifies
-interested parties when it changes state (from nonempty to empty or vice
-versa).
+The Queue and NotifierQueue elements act like SimpleQueue, but additionally
+notify interested parties when they change state (from nonempty to empty or
+vice versa, and/or from nonfull to full or vice versa).
 
 =h length read-only
 
@@ -41,7 +41,7 @@ Returns or sets the queue's capacity.
 
 =h drops read-only
 
-Returns the number of packets dropped by the Queue so far.
+Returns the number of packets dropped by the queue so far.
 
 =h reset_counts write-only
 
@@ -49,9 +49,9 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 =h reset write-only
 
-When written, drops all packets in the Queue.
+When written, drops all packets in the queue.
 
-=a Queue, MixedQueue, RED, FrontDropQueue */
+=a Queue, NotifierQueue, MixedQueue, RED, FrontDropQueue */
 
 class SimpleQueue : public Element, public Storage { public:
 

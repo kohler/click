@@ -38,7 +38,8 @@ SimpleQueue::cast(const char *n)
 {
     if (strcmp(n, "Storage") == 0)
 	return (Storage *)this;
-    else if (strcmp(n, "SimpleQueue") == 0)
+    else if (strcmp(n, "SimpleQueue") == 0
+	     || strcmp(n, "Queue") == 0)
 	return (Element *)this;
     else
 	return 0;
