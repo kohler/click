@@ -25,7 +25,7 @@
 #include "tcpdemux.hh"
 
 TCPDemux::TCPDemux()
-  : Element(1, 3)
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
