@@ -78,6 +78,7 @@ class String { public:
 
   int compare(const char *, int) const;
   int compare(const String &x) const	{ return compare(x._data, x._length); }
+  static int compare(const String &a, const String &b);
   // bool operator<(const String &, const String &);
   // bool operator<=(const String &, const String &);
   // bool operator>(const String &, const String &);
@@ -211,6 +212,12 @@ String::~String()
   deref();
 }
 
+
+inline int
+String::compare(const String &a, const String &b)
+{
+  return a.compare(b);
+}
 
 inline bool
 operator==(const String &s1, const String &s2)
