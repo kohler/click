@@ -1,3 +1,16 @@
+2002-10-02 Wednesday 13:50  Eddie Kohler <kohler@icir.org>
+
+	* include/click/lexer.hh, include/click/lexer.hh, libsrc/lexer.cc:
+	lexer change: anonymous elements are truly anonymous; they cannot
+	conflict with elements provided by the user (except sometimes in
+	the case of compound elements)
+
+2002-10-02 Wednesday 13:49  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc, bighashmap.cc: fix bug found by
+	Mazu: cast hashcode()s to unsigned; previously a negative
+	hashcode() would result in a negative bucket() number, and a crash
+
 2002-09-21 Saturday 12:12  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4: nitlet
