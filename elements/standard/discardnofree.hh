@@ -3,8 +3,14 @@
 #include "element.hh"
 
 /*
- * Like Discard, but doesn't free the packet.
- * Only useful with Spew for benchmarking.
+ * =c
+ * DiscardNoFree
+ * =s
+ * drops all packets, but does not free any of them.
+ * V<dropping>
+ * =d
+ * Discards all packets received on its single input, but does not free any of
+ * them. Only useful for benchmarking.
  */
 
 class DiscardNoFree : public Element {

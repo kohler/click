@@ -5,6 +5,9 @@
 /*
  * =c
  * SaveIPFields()
+ * =s
+ * save IP header fields into annotations.
+ * V<IP>
  * =d
  * Expects IP packets. Copies the IP header's TOS, TTL,
  * and offset fields into the Click packet annotation.
