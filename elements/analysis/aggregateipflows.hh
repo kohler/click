@@ -33,6 +33,9 @@ different numbers. Paint annotations are set to 0 or 1, depending on whether
 packets are on the forward or reverse subflow. (The first packet seen on each
 flow gets paint color 0; reply packets get paint color 1.)
 
+AggregateFlows can optionally apply aggregate annotations to ICMP errors. See
+the ICMP keyword argument below.
+
 Keywords are:
 
 =over 8
@@ -53,6 +56,13 @@ The timeout for UDP connections, in seconds. Default is 1 minute.
 =item REAP
 
 The garbage collection interval. Default is 10 minutes of packet time.
+
+=item ICMP
+
+Boolean. If true, then mark ICMP errors relating to a connection with an
+aggregate annotation corresponding to that connection. ICMP error packets get
+paint annotations equal to 2 plus the paint color of the encapsulated packet.
+Default is false.
 
 =back
 
@@ -109,8 +119,11 @@ class AggregateFlows : public Element, public AggregateNotifier { public:
     unsigned _smallest_timeout;
     unsigned _gc_interval;
 
+    bool _handle_icmp_errors : 1;
+
     void clean_map(Map &, uint32_t, uint32_t);
     void reap();
+    const click_ip *icmp_encapsulated_header(const Packet *) const;
     
 };
 

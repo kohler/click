@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <clicknet/udp.h>
+#include <clicknet/icmp.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -34,10 +35,22 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename)
       _filename(filename), _outputted(false),
       _npkt(0), _nnote(0), _pkt_off(0)
 {
+    // use the encapsulated IP header for ICMP errors
+    if (_ip_p == IP_PROTO_ICMP) {
+	const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+	// should assert some things here
+	const click_ip *embedded_iph = reinterpret_cast<const click_ip *>(icmph + 1);
+	_flowid = IPFlowID(embedded_iph);
+	_ip_p = embedded_iph->ip_p;
+    }
+
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
 	_flowid = _flowid.rev();
-    assert(_aggregate);
+    
     _have_first_seq[0] = _have_first_seq[1] = false;
+
+    // sanity checks
+    assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
 }
 
 int
@@ -140,11 +153,20 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 int
 ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 {
+    // ICMP errors are not handled as packets
+    if (PAINT_ANNO(p) >= 2) {
+	assert(p->ip_header()->ip_p == IP_PROTO_ICMP);
+	StringAccum sa;
+	sa << p->timestamp_anno() << ": ICMP error";
+	return add_note(sa.take_string(), errh);
+    }
+    
     if (_npkt >= NPKT && output(false, errh) < 0)
 	return -1;
     
     int direction = (PAINT_ANNO(p) & 1);
     const click_ip *iph = p->ip_header();
+    assert(iph->ip_p == _ip_p);
     
     _pkt[_npkt].timestamp = p->timestamp_anno();
     _pkt[_npkt].direction = direction;
@@ -164,7 +186,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	    _first_seq[!direction] = a;
 	    _have_first_seq[!direction] = true;
 	}
-    
+	
 	_pkt[_npkt].th_seq = s - _first_seq[direction];
 	_pkt[_npkt].th_ack = a - _first_seq[!direction];
 	_pkt[_npkt].th_flags = tcph->th_flags;
