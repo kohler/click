@@ -18,7 +18,8 @@ class StringAccum { public:
   explicit StringAccum(int);
   ~StringAccum()			{ if (_cap >= 0) delete[] _s; }
 
-  char *data() const			{ return (char *)_s; }
+  const char *data() const		{ return (char *)_s; }
+  char *data()				{ return (char *)_s; }
   int length() const			{ return _len; }
 
   operator bool()			{ return _len != 0; }

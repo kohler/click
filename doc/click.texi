@@ -880,7 +880,8 @@ call to a method that grows the @code{StringAccum}, such as
 and will definitely become invalid when the @code{StringAccum} is destroyed.
 @end quotation
 
-@deftypemethod StringAccum {char *} data () const
+@deftypemethod StringAccum {const char *} data () const
+@deftypemethodx StringAccum {char *} data ()
 Returns a pointer to the character data contained in this
 @code{StringAccum}.
 @end deftypemethod
@@ -1145,7 +1146,8 @@ then an optional @dfn{precision};
 then an optional @dfn{length modifier};
 
 @item
-and finally, the mandatory @dfn{conversion specifier}.
+and finally, the mandatory @dfn{conversion specifier}, which is
+usually a single character, but may be a name enclosed in braces.
 @end itemize
 
 @noindent
@@ -1187,11 +1189,14 @@ supplied.
 
 The optional @dfn{precision} is a decimal digit string preceded by a
 period @samp{.}. For @samp{d}, @samp{i}, @samp{u}, @samp{o}, @samp{x},
-and @samp{X} conversions, the precision specifies the minimum number of
-digits that must appear; results with fewer digits are padded on the
-left with @samp{0} characters. For the @samp{s} conversion, the
+and @samp{X} conversions, the precision specifies the minimum number
+of digits that must appear; results with fewer digits are padded on
+the left with @samp{0} characters. For the @samp{s} conversion, the
 precision specifies the maximum number of characters that can be
-printed.
+printed. For @samp{e}, @samp{f}, @samp{E}, and @samp{F} conversions,
+it specifies the number of digits to appear after the radix character;
+for @samp{g} and @samp{G} conversions, the number of significant
+digits.
 
 If either the field width or precision is specified as a star @samp{*},
 @code{ErrorHandler} reads the next argument as an integer and uses that
@@ -1230,9 +1235,6 @@ Characters @samp{\n}, @samp{\t}, @samp{\r}, and @samp{\0} use those C
 escape representations. Other characters use the representation
 @samp{\%03o}.
 
-@item @samp{e}
-The argument is an @code{Element *}. Print that element's declaration.
-
 @item @samp{d}, @samp{i}
 The argument is an @code{int}; print its decimal representation.
 
@@ -1248,6 +1250,10 @@ The argument is an @code{unsigned int}; print its hexadecimal
 representation. The @samp{%x} conversion uses lowercase letters;
 @samp{%X} uses uppercase letters.
 
+@item @samp{e}, @samp{f}, @samp{g}, @samp{E}, @samp{F}, @samp{G}
+The argument is a @code{double}; print its representation as if by
+@code{printf} (user-level drivers only).
+
 @item @samp{p}
 The @code{void *} argument is cast to @code{unsigned long} and printed
 as by @samp{%#lx}.
@@ -1255,10 +1261,12 @@ as by @samp{%#lx}.
 @item @samp{%}
 Print a literal @samp{%} character.
 
+@item @samp{@{element@}}
+The argument is an @code{Element *}. Print that element's declaration.
+
 @end table
 
-Note that @code{ErrorHandler} does not support the @samp{e}, @samp{E},
-@samp{f}, @samp{F}, @samp{g}, @samp{G}, and @samp{n} conversions.
+Note that @code{ErrorHandler} does not support the @samp{n} conversion.
 
 
 @node Counting Errors, Basic ErrorHandlers, Error Format Strings, ErrorHandler
