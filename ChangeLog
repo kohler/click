@@ -1,3 +1,8 @@
+2004-11-14 Sunday 00:14  John Bicket <jbicket@mit.edu>
+
+	* elements/standard/infinitesource.cc (1.48): put all
+	scheduling/signal logic in same place.
+
 2004-11-13 Saturday 23:32  John Bicket <jbicket@mit.edu>
 
 	* include/clicknet/wifi.h (1.14): a few more comments
