@@ -1,3 +1,7 @@
+2002-11-17 Sunday 15:36  Eddie Kohler <kohler@icir.org>
+
+	* lib/confparse.cc (1.106): allow underscores in numbers
+
 2002-11-13 Wednesday 23:40  Eddie Kohler <kohler@icir.org>
 
 	* tools/: Makefile.in (1.48), click-align/Makefile.in (1.16),
