@@ -8022,7 +8022,7 @@ else
 fi;
 if test "x$enable_nanotimestamp" = xyes; then
     cat >>confdefs.h <<\_ACEOF
-#define HAVE_NANOTIMESTAMP 1
+#define HAVE_NANOTIMESTAMP_ENABLED 1
 _ACEOF
 
 fi

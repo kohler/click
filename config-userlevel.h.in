@@ -124,6 +124,11 @@ typedef unsigned long uintptr_t;
 char *strerror(int errno);
 #endif
 
+/* Use nanosecond-granularity timestamps if they are enabled. */
+#ifdef HAVE_NANOTIMESTAMP_ENABLED
+#define HAVE_NANOTIMESTAMP 1
+#endif
+
 #ifdef __cplusplus
 
 /* Provide placement new. */

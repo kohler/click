@@ -36,6 +36,7 @@ class Timestamp { public:
     
     Timestamp()				: _sec(0), _subsec(0) { }
     Timestamp(int32_t s, int32_t ss)	: _sec(s), _subsec(ss) { }
+    Timestamp(const struct timeval& tv)	: _sec(tv.tv_sec), _subsec(usec_to_subsec(tv.tv_usec)) { }
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
     inline Timestamp(double);
 #endif

@@ -47,8 +47,8 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
-/* Define if packet timestamps are measured in nanoseconds. */
-#undef HAVE_NANOTIMESTAMP
+/* Define if nanosecond-granularity timestamps are enabled. */
+#undef HAVE_NANOTIMESTAMP_ENABLED
 
 /* Define if you want to use the stride scheduler. */
 #undef HAVE_STRIDE_SCHED

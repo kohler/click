@@ -330,7 +330,7 @@ RouterThread::run_tasks(int ntasks)
 	    if (_task_heap.size() > 0)
 		task_reheapify_from(0, back);
 	    _task_heap_hole = 0;
-	    // No need to reset _schedpos: 'back == t' only if
+	    // No need to reset t->_schedpos: 'back == t' only if
 	    // '_task_heap.size() == 0' now, in which case we didn't call
 	    // task_reheapify_from().
 	}
