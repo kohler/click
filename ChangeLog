@@ -1,3 +1,7 @@
+2002-07-22 Monday 20:55  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.48): doc updates
+
 2002-07-22 Monday 20:13  Eddie Kohler <kohler@icir.org>
 
 	* elements/tcpudp/: settcpchecksum.hh (1.4), setudpchecksum.cc
