@@ -61,6 +61,7 @@ int
 FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true, zero = true, multipacket = false;
+    String link = "input";
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_ff.filename(),
@@ -69,6 +70,7 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "ZERO", cpBool, "zero packet data?", &zero,
 		    "MULTIPACKET", cpBool, "generate multiple packets per flow?", &multipacket,
+		    "LINK", cpWord, "link annotation", &link,
 		    cpEnd) < 0)
 	return -1;
 
@@ -76,6 +78,15 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = active;
     _zero = zero;
     _multipacket = multipacket;
+    link = link.lower();
+    if (link == "input")
+	_link = 0;
+    else if (link == "output")
+	_link = 1;
+    else if (link == "both")
+	_link = 2;
+    else
+	return errh->error("'LINK' should be 'input', 'output', or 'both'");
     return 0;
 }
 
@@ -154,6 +165,8 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	// relevant indices:
 	// 0 - source IP
 	// 1 - dest IP
+	// 3 - input interface
+	// 4 - output interface
 	// 5 - # packets
 	// 6 - # bytes
 	// 7 - start timestamp sec
@@ -164,13 +177,8 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	// 14 - TOS bits
 
 	int ok = 0;
-	uint32_t byte_count;
-	ok += cp_ip_address(words[0], (unsigned char *)&iph->ip_src);
-	ok += cp_ip_address(words[1], (unsigned char *)&iph->ip_dst);
-	if (cp_unsigned(words[5], &j))
-	    SET_EXTRA_PACKETS_ANNO(q, j - 1), ok++;
-	if (cp_unsigned(words[6], (unsigned *)&byte_count))
-	    ok++;
+
+	// annotations
 	if (cp_unsigned(words[7], &j))
 	    SET_FIRST_TIMESTAMP_ANNO(q, make_timeval(j, 0)), ok++;
 	if (cp_unsigned(words[8], &j)) {
@@ -180,16 +188,36 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 		q->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(q));
 	    ok++;
 	}
-	if (cp_unsigned(words[12], &j) && j <= 0xFF)
-	    q->tcp_header()->th_flags = j, ok++;
+	if (cp_unsigned(words[5], &j))
+	    SET_EXTRA_PACKETS_ANNO(q, j - 1), ok++;
+	uint32_t byte_count;
+	if (cp_unsigned(words[6], &byte_count))
+	    ok++;
+	uint32_t input = 0, output = 0;
+	if ((_link == 1 || cp_unsigned(words[3], &input))
+	    && (_link == 0 || cp_unsigned(words[4], &output))) {
+	    ok++;
+	    uint32_t m = (_link == 2 ? 15 : 255);
+	    input = (input < m ? input : m) << (_link == 2 ? 4 : 0);
+	    output = (output < m ? output : m);
+	    SET_PAINT_ANNO(q, input | output);
+	}
+
+	// IP header
+	ok += cp_ip_address(words[0], (unsigned char *)&iph->ip_src);
+	ok += cp_ip_address(words[1], (unsigned char *)&iph->ip_dst);
 	if (cp_unsigned(words[13], &j) && j <= 0xFF)
 	    iph->ip_p = j, ok++;
 	if (cp_unsigned(words[14], &j) && j <= 0xFF)
 	    iph->ip_tos = j, ok++;
+
+	// TCP header
 	if (cp_unsigned(words[9], &j) && j <= 0xFFFF)
 	    q->udp_header()->uh_sport = htons(j), ok++;
 	if (cp_unsigned(words[10], &j) && j <= 0xFFFF)
 	    q->udp_header()->uh_dport = htons(j), ok++;
+	if (cp_unsigned(words[12], &j) && j <= 0xFF)
+	    q->tcp_header()->th_flags = j, ok++;
 
 	if (ok < 10)
 	    break;

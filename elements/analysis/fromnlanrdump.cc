@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "fromnlanrdump.hh"
 #include <click/confparse.hh>
+#include <click/packet_anno.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
@@ -261,10 +262,11 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
+    uint32_t usec = ntohl(cell->timestamp_usec);
     if (_format == C_TSH)
-	tv = make_timeval(ntohl(cell->timestamp_sec), ntohl(cell->timestamp_usec) & 0xFFFFFF);
+	tv = make_timeval(ntohl(cell->timestamp_sec), usec & 0xFFFFFF);
     else if (_format == C_FRPLUS || _format == C_FR)
-	tv = make_timeval(ntohl(cell->timestamp_sec), ntohl(cell->timestamp_usec));
+	tv = make_timeval(ntohl(cell->timestamp_sec), usec);
     if (!_have_any_times)
 	prepare_times(tv);
     if (_have_first_time) {
@@ -305,6 +307,8 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
 	goto retry;
     }
 
+    if (_format == C_TSH)	// set link annotation
+	SET_PAINT_ANNO(p, usec >> 24);
     _packet = p;
     return more;
 }

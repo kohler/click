@@ -118,8 +118,8 @@ Only available in user-level processes.
 
 =n
 
-FromNLANRDump sets packets' extra length annotations to any additional length
-recorded in the dump.
+In TSH dumps, FromNLANRDump sets packets' link annotations to the link number
+stored in the dump.
 
 =h sampling_prob read-only
 
