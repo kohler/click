@@ -27,9 +27,7 @@
  * =a Queue, RED
  */
 
-class FrontDropQueue : public Queue {
-  
- public:
+class FrontDropQueue : public Queue { public:
   
   FrontDropQueue();
   ~FrontDropQueue();

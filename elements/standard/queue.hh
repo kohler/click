@@ -29,7 +29,26 @@
  * =a RED, FrontDropQueue
  */
 
-class Storage {
+class Storage { public:
+
+  Storage()				{ }
+
+  operator bool() const			{ return _head != _tail; }
+  bool empty() const			{ return _head == _tail; }
+  int size() const;
+  int capacity() const			{ return _capacity; }
+
+  int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
+  int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
+
+  int empty_jiffies() const		{ return _empty_jiffies; }
+
+  // to be used with care...
+  void set_capacity(int c)		{ _capacity = c; }
+  void set_head(int h)			{ _head = h; }
+  void set_tail(int t)			{ _tail = t; }
+  void set_empty_jiffies(int ej)	{ _empty_jiffies = ej; }
+  
  protected:
 
   int _capacity;
@@ -37,39 +56,11 @@ class Storage {
   int _tail;
 
   int _empty_jiffies;
-
-  friend class Queue;
-  friend class FrontDropQueue;
-  
- public:
-
-  Storage()					{ }
-
-  operator bool() const				{ return _head != _tail; }
-  bool empty() const				{ return _head == _tail; }
-  int size() const;
-  int capacity() const				{ return _capacity; }
-
-  int empty_jiffies() const			{ return _empty_jiffies; }
   
 };
 
-class Queue : public Element, public Storage {
-  
-  Packet **_q;
-  int _drops;
-  int _highwater_length;
+class Queue : public Element, public Storage { public:
 
-  int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
-  int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
-
-  friend class FrontDropQueue;
-
-  static String read_handler(Element *, void *);
-  static int write_handler(const String &, Element *, void *, ErrorHandler *);
-  
- public:
-  
   Queue();
   ~Queue();
   
@@ -95,6 +86,17 @@ class Queue : public Element, public Storage {
   
   void push(int port, Packet *);
   Packet *pull(int port);
+  
+ private:
+  
+  Packet **_q;
+  int _drops;
+  int _highwater_length;
+
+  friend class FrontDropQueue;
+
+  static String read_handler(Element *, void *);
+  static int write_handler(const String &, Element *, void *, ErrorHandler *);
   
 };
 

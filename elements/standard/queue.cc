@@ -137,7 +137,8 @@ Queue::take_state(Element *e, ErrorHandler *errh)
     q->_q[j]->kill();
     j = q->next_i(j);
   }
-  q->_head = q->_tail = 0;
+  q->set_head(0);
+  q->set_tail(0);
 }
 
 void
