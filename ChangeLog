@@ -1,3 +1,14 @@
+2004-10-26 Tuesday 01:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* AUTHORS (1.27), etc/README (1.8), etc/debian-2.4.26-patch (1.3):
+	update debian-2.4.26-patch from Bob Keyes
+
+2004-10-26 Tuesday 01:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/anonipaddr.cc (1.14), local/forceicmp.cc
+	(1.12), standard/randomerror.cc (1.25), standard/randomswitch.cc
+	(1.3): random()ness
+
 2004-10-25 Monday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/bsdmodule/anydevice.cc (1.4),
