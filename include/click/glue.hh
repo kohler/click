@@ -7,27 +7,26 @@
  * kernel and user space.
  */
 
-/* produce debugging output on the console or stderr */
+// produce debugging output on the console or stderr
 void click_chatter(const char *fmt, ...);
 
 #ifdef __KERNEL__
 
-/* for spantree.cc */
 typedef unsigned int u_int32_t;
 typedef unsigned long long u_int64_t;
 typedef unsigned short u_int16_t;
 typedef unsigned char u_int8_t;
 
-/* ask for ino_t, off_t, &c to be defined. */
-#define _LOOSE_KERNEL_NAMES 1
-#undef __KERNEL_STRICT_NAMES
-
 #if CLICK_DMALLOC
 extern int click_dmalloc_where;
-# define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (s[0]<<24) | (s[1]<<16) | (s[2]<<8) | s[3]; } while (0)
+# define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
 #else
 # define CLICK_DMALLOC_REG(s)
 #endif
+
+// ask for ino_t, off_t, &c to be defined
+#define _LOOSE_KERNEL_NAMES 1
+#undef __KERNEL_STRICT_NAMES
 
 extern "C" {
 
@@ -38,6 +37,7 @@ extern "C" {
 #include <linux/types.h>
 #include <linux/config.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #define new xxx_new
 #define this xxx_this
 #define delete xxx_delete
@@ -53,6 +53,11 @@ typedef unsigned long long u_quad_t;
 #undef this
 #undef delete
 #undef class
+
+// provide a definition for net_device for kernel compatibility
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+typedef struct device net_device;
+#endif
 
 __inline__ unsigned int
 random()
@@ -113,6 +118,9 @@ click_get_cycles()
 #define CLICK_HZ 100		// click_jiffies rate
 extern unsigned click_jiffies();
 
+// provide a definition for net_device
+typedef struct device net_device;
+
 #endif /* __KERNEL__ */
 
 #ifndef timercmp
@@ -150,6 +158,6 @@ extern unsigned click_jiffies();
 #endif
 
 /* static assert, for compile-time assertion checking */
-#define StaticAssert(c) switch (c) case 0: case (c):
+#define static_assert(c) switch (c) case 0: case (c):
 
 #endif
