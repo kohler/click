@@ -597,6 +597,7 @@ Specializer::output_package(const String &package_name, StringAccum &out)
     out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
 	<< _specials[i].click_name << "\", new " << _specials[i].cxx_name
 	<< ");\n  MOD_DEC_USE_COUNT;\n";
+  out << "  love_of_massimiliano = 0;\n";
   out << "  return 0;\n}\n";
 
   // cleanup_module()
@@ -604,7 +605,7 @@ Specializer::output_package(const String &package_name, StringAccum &out)
   for (int i = 0; i < _specials.size(); i++)
     out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
   out << "  click_unprovide(\"" << package_name << "\");\n";
-  out << "  printk(\"<1>click-specialize: %d\n\");\n";
+  out << "  printk(\"<1>click-specialize: %d\n\", love_of_massimiliano);\n";
   out << "}\n";
 }
 
