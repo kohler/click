@@ -28,6 +28,12 @@
  * we depend on the net driver's send operation for synchronization (e.g.
  * tulip send operation uses a bit lock).
  *
+ * =h packets read-only
+ * Returns the number of packets ToDevice has pulled.
+ *
+ * =h reset_counts write-only
+ * Resets C<packets> counter to zero when written.
+ *
  * =a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
 
 #include "anydevice.hh"

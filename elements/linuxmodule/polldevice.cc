@@ -292,8 +292,8 @@ PollDevice_read_calls(Element *f, void *)
   PollDevice *kw = (PollDevice *)f;
   return
 #if CLICK_DEVICE_STATS
-    String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_pkts_received) + " packets received\n" +
+    String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
     String(kw->_time_pushing) + " cycles pushing\n" +

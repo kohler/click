@@ -25,6 +25,12 @@
  *
  * This element is only available in the Linux kernel module.
  *
+ * =h packets read-only
+ * Returns the number of packets ToDevice has pulled.
+ *
+ * =h reset_counts write-only
+ * Resets C<packets> counter to zero when written.
+ *
  * =a FromDevice, ToDevice, FromLinux, ToLinux */
 
 #include "anydevice.hh"

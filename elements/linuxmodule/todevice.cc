@@ -240,9 +240,9 @@ ToDevice::tx_intr()
       _dev_idle = 0;
   }
 #endif
-
-#if CLICK_DEVICE_ADJUST_TICKETS && 0
-  int base = tickets()/4;
+ 
+#if CLICK_DEVICE_ADJUST_TICKETS
+  int base = max_tickets()/16;
   if (base < 2) base = 2;
   int adj = 0;
 
@@ -250,7 +250,7 @@ ToDevice::tx_intr()
    * didn't get much traffic and did not fill up the device, slow down.
    */
   if (!busy && sent < (OUTPUT_BATCH/4)) 
-    adj= 0 - base;
+    adj = -base;
   /* 
    * sent many packets, increase ticket.
    */
