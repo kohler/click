@@ -450,11 +450,11 @@ Specializer::output(StringAccum &out)
     if (!declared[_specfunction_names[i]]) {
       const String &name = _specfunction_names[i];
       const String &sym = _specfunction_symbols[i];
-      if (sym[3] == 's')		// push
-	out << "extern void " << name << "(int, Packet *) asm (\""
+      if (sym[2] == 's')		// push
+	out << "extern void " << name << "(Element *, int, Packet *) asm (\""
 	    << sym << "\");\n";
       else
-	out << "extern Packet *" << name << "(int) asm (\""
+	out << "extern Packet *" << name << "(Element *, int) asm (\""
 	    << sym << "\");\n";
       declared.insert(name, 1);
     }

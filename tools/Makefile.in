@@ -20,7 +20,7 @@ TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
 
-lib: Makefile
+lib: always Makefile
 	@cd lib; $(MAKE) all
 click-align: lib Makefile
 	@cd click-align; $(MAKE) click-align
@@ -34,6 +34,8 @@ click-xform: lib Makefile
 	@cd click-xform; $(MAKE) click-xform
 udpgen: Makefile
 	@cd udpgen; $(MAKE) all
+always:
+	@:
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
@@ -98,4 +100,4 @@ distdir:
 	done
 
 
-.PHONY: all lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
+.PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
