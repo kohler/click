@@ -1,3 +1,14 @@
+2003-08-22 Friday 17:27  Eddie Kohler <kohler@icir.org>
+
+	* tools/udpgen/Makefile.in (1.8), tools/udpgen/udpcount.c (1.3),
+	tools/udpgen/udpgen.c (1.16), DISTFILES (1.71): udpgen no longer
+	works
+
+2003-08-22 Friday 17:26  Eddie Kohler <kohler@icir.org>
+
+	* conf/: udpcount.click (1.1), udpgen.click (1.8): udpgen and
+	udpcount
+
 2003-08-21 Thursday 16:55  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/toolutils.cc (1.49): do not artificially limit how much
