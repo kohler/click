@@ -120,8 +120,8 @@ class Packet { public:
   void set_dst_ip6_anno(const IP6Address &a);
 
 #ifdef __KERNEL__
-  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type); }
-  void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
+  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
+  void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
   struct device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(struct device *dev) { skb()->dev = dev; }
   const struct timeval &timestamp_anno() const { return skb()->stamp; }
@@ -158,7 +158,6 @@ class Packet { public:
 
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
-    
     union {
       unsigned dst_ip4;
       unsigned char dst_ip6[16];
@@ -273,13 +272,13 @@ Packet::make(struct sk_buff *skb)
   else
     return reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
 }
-  
-inline void 
+
+inline void
 Packet::kill()
 {
   struct sk_buff *b = skb();
   b->next = b->prev = 0;
-  b->list = 0L;
+  b->list = 0;
   skbmgr_recycle_skbs(b, 1);
 }
 #endif
