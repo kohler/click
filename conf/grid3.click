@@ -1,5 +1,7 @@
 // grid3.click
 
+ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
+
 li :: LocationInfo(0, 0)
 
 rh :: ReadHandlerCaller(1) 
