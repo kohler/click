@@ -73,8 +73,8 @@ void
 Unqueue2::run_scheduled()
 {
   int burst = -1;
-  for (unsigned i=0; i<_queue_elements.size(); i++) {
-    Storage *s = _queue_elements[i]->cast("Storage");
+  for (int i=0; i<_queue_elements.size(); i++) {
+    Storage *s = (Storage*)_queue_elements[i]->cast("Storage");
     if (s) {
       int size = s->capacity()-s->size();
       if (burst < 0 || size < burst) 
