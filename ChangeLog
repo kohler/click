@@ -1,3 +1,26 @@
+2001-10-15 Monday 20:37  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: adaptivered.cc (1.1), adaptivered.hh (1.1),
+	red.hh (1.29): RED updates, and add AdaptiveRED
+
+2001-10-15 Monday 20:00  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: red.cc (1.34), red.hh (1.28): update RED to
+	Gentle algorithm, and 64-bit EWMAs, because real networks need
+	relatively large stability shifts (10, 13, 14) (untested!)
+
+2001-10-15 Monday 19:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ewma64.hh (1.1), bsdmodule/Makefile.in (1.8),
+	lib/ewma64.cc (1.1), linuxmodule/Makefile.in (1.61),
+	userlevel/Makefile.in (1.59): add DirectEWMA64, a 64-bit EWMA
+
+2001-10-15 Monday 19:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.20), lib/confparse.cc (1.84): add
+	parsing and unparsing functions for real numbers with a 64-bit base
+	type
+
 2001-10-15 Monday 17:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* configure.in (1.151), elements/bsdmodule/anydevice.hh (1.3),

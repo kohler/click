@@ -1,3 +1,14 @@
+2001-10-15 Monday 19:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ewma64.hh, include/click/ewma64.hh,
+	libsrc/ewma64.cc: add DirectEWMA64, a 64-bit EWMA
+
+2001-10-15 Monday 19:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add parsing and unparsing functions for real
+	numbers with a 64-bit base type
+
 2001-10-15 Monday 17:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* include/click/: packet.hh, packet.hh: Merging of some BSD cleanup
