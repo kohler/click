@@ -1,13 +1,14 @@
-#ifndef MONITOR_HH
-#define MONITOR_HH
+#ifndef FLEXMON_HH
+#define FLEXMON_HH
 
 /*
  * =c
- * Monitor(PB, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
+ * FlexMonitor(PB, OFFSET, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
  * =d
  * Input: IP packets (no ether header).
  *
  * PB is a string ("PACKETS" or "BYTES")
+ * OFFSET is the offset where the IP header starts
  * THRESH is "amount per second" (see explanation below). Integer.
  * SDx is a string ("SRC" or "DST").
  * VARx is an integer.
@@ -15,20 +16,21 @@
  * Monitors traffic by counting the number of packets going to/coming from
  * (a cluster of) IP addresses.
  *
- * In its simplest form (i.e. "Monitor(PACKETS, 100, DST 1)"), Monitor uses the
- * first byte of the destination IP address of each packet to index into a table
- * (with, of course, 256 records) and increases the value in that record by 1.
- * In other words, the Monitor clusters destination addresses by the their first
- * byte. As soon as the value associated with such a cluster increases with more
- * than THRESH (100 in this example) per second, then the entry is marked and
- * subsequent packets to that cluster are split on the 2nd byte of the
- * destination IP address in a similar table. This can go up to the 4th byte.
+ * In its simplest form (i.e. "FlexMonitor(PACKETS, 0, 100, DST 1)"),
+ * FlexMonitor gets IP packets and uses the first byte of the destination IP
+ * address of each packet to index into a table (with, of course, 256 records)
+ * and increases the value in that record by 1. In other words, the FlexMonitor
+ * clusters destination addresses by the their first byte. As soon as the value
+ * associated with such a cluster increases with more than THRESH (100 in this
+ * example) per second, then the entry is marked and subsequent packets to that
+ * cluster are split on the 2nd byte of the destination IP address in a similar
+ * table. This can go up to the 4th byte.
  *
  * When BYTES is used in stead of PACKETS, then VARx is multiplied with the
- * packet length in bytes. In other words: Monitor can be used to either count
+ * packet length in bytes. In other words: FlexMonitor can be used to either count
  * number of packets or load going to/coming from IP addresses.
  *
- * Everytime a packet passes the Monitor, the sibling annotation is set denoting
+ * Everytime a packet passes the FlexMonitor, the sibling annotation is set denoting
  * the number of packets from the same cluster that preceded this packet. The
  * Block element drops packets based on this sibling annotation.
  *
@@ -36,13 +38,13 @@
  * associated with a cluster of IP addresses increases with more than THRESH per
  * second, it is split.
  *
- * The number of inputs for Monitor equals n in VARn. Each SDx and VARx are
- * related to one input (i.e. x). The "SRC" or "DST" tells the Monitor to use
+ * The number of inputs for FlexMonitor equals n in VARn. Each SDx and VARx are
+ * related to one input (i.e. x). The "SRC" or "DST" tells the FlexMonitor to use
  * either the source or the destination IP address to index into the described
  * table(s). VARx is the amount by which the value associated with a cluster
  * should be increased or decreased.
  *
- * Monitor should be used together with Classifier to count packets with
+ * FlexMonitor should be used together with Classifier to count packets with
  * specific features.
  *
  * =h look (read)
@@ -64,7 +66,7 @@
  * =
  * = ... -> c;
  *
- * = m :: Monitor(PACKETS, 10, DST 1, DST -1);
+ * = m :: FlexMonitor(PACKETS, 10, DST 1, DST -1);
  * =
  * = c[0] -> [0]m -> ...
  * = c[1] -> [1]m -> ...
@@ -77,26 +79,26 @@
  *
  * =a Classifier
  * =a Block
+ * =a RateMonitor
  */
 #include "glue.hh"
 #include "click_ip.h"
 #include "element.hh"
-#include "monitor.hh"
 #include "vector.hh"
 
 
-class Monitor : public Element {
+class FlexMonitor : public Element {
 public:
-  Monitor();
-  ~Monitor();
+  FlexMonitor();
+  ~FlexMonitor();
   
-  const char *class_name() const		{ return "Monitor"; }
+  const char *class_name() const		{ return "FlexMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   int configure(const String &conf, ErrorHandler *errh);
 
   // XXX: Do we want this?
   // bool can_live_reconfigure() const		{ return true; }
-  Monitor *clone() const;
+  FlexMonitor *clone() const;
   
   void push(int port, Packet *p);
 
@@ -107,12 +109,16 @@ private:
 #define BYTES 4
 #endif
 
+#define MAX_SHIFT ((BYTES-1)*8)
+
 #define SRC 0
 #define DST 1
 
   unsigned char _pb;
 #define COUNT_PACKETS 0
 #define COUNT_BYTES 1
+
+  unsigned int _offset;
 
   // One of these associated with each input.
   struct _inp {
@@ -159,4 +165,4 @@ private:
   static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
-#endif /* MONITOR_HH */
+#endif /* FLEXMON_HH */

@@ -1,5 +1,5 @@
 /*
- * monitor.{cc,hh} -- counts packets clustered by src/dst addr.
+ * flexmon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,30 +13,30 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "monitor.hh"
+#include "flexmon.hh"
 #include "confparse.hh"
 #include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
 
-Monitor::Monitor()
-  : Element(1,1), _pb(COUNT_PACKETS), _base(NULL)
+FlexMonitor::FlexMonitor()
+  : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _base(NULL)
 {
 }
 
-Monitor::~Monitor()
+FlexMonitor::~FlexMonitor()
 {
 }
 
 int
-Monitor::configure(const String &conf, ErrorHandler *errh)
+FlexMonitor::configure(const String &conf, ErrorHandler *errh)
 {
 #if IPVERSION == 4
   Vector<String> args;
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 2) {
+  if(args.size() < 3) {
     errh->error("too few arguments");
     return -1;
   }
@@ -51,8 +51,16 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
     return -1;
   }
 
+  // OFFSET
+  int offset;
+  if(!cp_integer(args[1], offset) || offset < 0) {
+    errh->error("second argument OFFSET should be non-negative integer");
+    return -1;
+  }
+  _offset = (unsigned int) offset;
+
   // THRESH
-  if(!cp_integer(args[1], _thresh)) {
+  if(!cp_integer(args[2], _thresh)) {
     errh->error("second argument expected THRESH. Not found.");
     return -1;
   }
@@ -69,7 +77,7 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   int change;
   String srcdst;
   struct _inp *inp;
-  for (int i = 2; i < args.size(); i++) {
+  for (int i = 3; i < args.size(); i++) {
     String arg = args[i];
     if(cp_word(arg, srcdst, &arg) &&
        cp_eat_space(arg) &&
@@ -106,26 +114,24 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   set_resettime();
   return 0;
 #else
-  click_chatter("Monitor doesn't know how to handle non-IPv4!");
+  click_chatter("FlexMonitor doesn't know how to handle non-IPv4!");
   return -1;
 #endif
 }
 
 
-Monitor *
-Monitor::clone() const
+FlexMonitor *
+FlexMonitor::clone() const
 {
-  return new Monitor;
+  return new FlexMonitor;
 }
 
 void
-Monitor::push(int port, Packet *p)
+FlexMonitor::push(int port, Packet *p)
 {
   IPAddress a;
 
-  assert(_inputs[port]->srcdst == SRC || _inputs[port]->srcdst == DST);
-
-  click_ip *ip = (click_ip *) p->data();
+  click_ip *ip = (click_ip *) (p->data() + _offset);
   if(_inputs[port]->srcdst == SRC)
     a = IPAddress(ip->ip_src);
   else
@@ -147,14 +153,10 @@ Monitor::push(int port, Packet *p)
 // XXX: Make this interrupt driven.
 //
 int
-Monitor::update(IPAddress a, int val)
+FlexMonitor::update(IPAddress a, int val)
 {
-  assert(_base != NULL);
   int ret;
   unsigned int saddr = a.saddr();
-
-#define CONST_MAX_SHIFT ((BYTES-1)*8)
-  int MAX_SHIFT = CONST_MAX_SHIFT;      // avoid calculation
 
   struct _stats *s = _base;
   struct _counter *c = NULL;
@@ -194,7 +196,7 @@ Monitor::update(IPAddress a, int val)
 
 
 void
-Monitor::clean(_stats *s, int value = 0, bool recurse = false)
+FlexMonitor::clean(_stats *s, int value = 0, bool recurse = false)
 {
   int jiffs = click_jiffies();
 
@@ -211,7 +213,7 @@ Monitor::clean(_stats *s, int value = 0, bool recurse = false)
 
 
 String
-Monitor::print(_stats *s, String ip = "")
+FlexMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
   for(int i = 0; i < 256; i++) {
@@ -233,7 +235,7 @@ Monitor::print(_stats *s, String ip = "")
 
 
 inline void
-Monitor::set_resettime()
+FlexMonitor::set_resettime()
 {
   _resettime = click_jiffies();
 }
@@ -247,9 +249,9 @@ Monitor::set_resettime()
 // address = string of form v[.w[.x[.y]]] denoting a (partial) IP address
 // number = integer denoting the value associated with this IP address group
 String
-Monitor::look_read_handler(Element *e, void *)
+FlexMonitor::look_read_handler(Element *e, void *)
 {
-  Monitor *me = (Monitor*) e;
+  FlexMonitor *me = (FlexMonitor*) e;
 
   String ret = String(click_jiffies() - me->_resettime) + "\n";
   return ret + me->print(me->_base);
@@ -257,26 +259,26 @@ Monitor::look_read_handler(Element *e, void *)
 
 
 String
-Monitor::thresh_read_handler(Element *e, void *)
+FlexMonitor::thresh_read_handler(Element *e, void *)
 {
-  Monitor *me = (Monitor *) e;
+  FlexMonitor *me = (FlexMonitor *) e;
   return String(me->_thresh) + "\n";
 }
 
 String
-Monitor::what_read_handler(Element *e, void *)
+FlexMonitor::what_read_handler(Element *e, void *)
 {
-  Monitor *me = (Monitor *) e;
+  FlexMonitor *me = (FlexMonitor *) e;
   return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
 }
 
 
 int
-Monitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+FlexMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  Monitor* me = (Monitor *) e;
+  FlexMonitor* me = (FlexMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
@@ -294,11 +296,11 @@ Monitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandl
 
 
 int
-Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+FlexMonitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  Monitor* me = (Monitor *) e;
+  FlexMonitor* me = (FlexMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
@@ -316,7 +318,7 @@ Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandle
 
 
 void
-Monitor::add_handlers()
+FlexMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
@@ -327,4 +329,4 @@ Monitor::add_handlers()
   add_write_handler("reset", reset_write_handler, 0);
 }
 
-EXPORT_ELEMENT(Monitor)
+EXPORT_ELEMENT(FlexMonitor)
