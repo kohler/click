@@ -31,7 +31,7 @@ sub driver_mask ($) {
     $m |= 1 if $_[0] =~ /\blinuxmodule\b/;
     $m |= 2 if $_[0] =~ /\buserlevel\b/;
     $m |= 4 if $_[0] =~ /\bbsdmodule\b/;
-    $m;
+    ($m ? $m : 7);
 }
 
 sub process_file ($) {
