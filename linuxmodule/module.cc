@@ -111,7 +111,7 @@ unsigned long long rtm_dev_bytes;
 
 static unsigned long cli_flags;
 
-#if CLICK_STATS > 0 || XCYC > 0
+#if CLICK_STATS > 0
 void
 _entering_ipb()
 {

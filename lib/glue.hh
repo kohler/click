@@ -67,12 +67,17 @@ click_get_cycles(void)
 }
 
 long strtol(const char *, char **, int);
-unsigned long strtoul(const char *, char **, int);
+
+__inline__ unsigned long
+strtoul(const char *nptr, char **endptr, int base)
+{
+  return simple_strtoul(nptr, endptr, base);
+}
 
 }
 
 /* do cycle counters over all the ipb code. */
-#if CLICK_STATS > 0 || XCYC > 0
+#if CLICK_STATS > 0
 void _entering_ipb(void);
 void _leaving_ipb(void);
 #define entering_ipb() _entering_ipb()

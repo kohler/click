@@ -205,45 +205,14 @@ __rtti_user()
 long
 strtol(const char *nptr, char **endptr, int base)
 {
-  const char *orig_nptr = nptr;
-  while (isspace(*nptr))
-    nptr++;
-  bool negative = (*nptr == '-');
-  if (*nptr == '-' || *nptr == '+')
-    nptr++;
-  unsigned long ul = simple_strtoul(nptr, endptr, base);
-  if (endptr && nptr != orig_nptr && *endptr == nptr)
-    *endptr = orig_nptr;
-  if (ul > LONG_MAX) {
-    if (negative && ul == (unsigned long)(LONG_MAX) + 1)
-      return LONG_MIN;
-    // XXX overflow
-    if (negative)
-      return LONG_MIN;
-    else
-      return LONG_MAX;
-  } else if (negative)
-    return -((long)ul);
+  // XXX should check for overflow and underflow, but strtoul doesn't, so why
+  // bother?
+  if (*nptr == '-')
+    return -simple_strtoul(nptr + 1, endptr, base);
+  else if (*nptr == '+')
+    return simple_strtoul(nptr + 1, endptr, base);
   else
-    return (long)ul;
-}
-
-unsigned long
-strtoul(const char *nptr, char **endptr, int base)
-{
-  const char *orig_nptr = nptr;
-  while (isspace(*nptr))
-    nptr++;
-  bool negative = (*nptr == '-');
-  if (*nptr == '-' || *nptr == '+')
-    nptr++;
-  unsigned long ul = simple_strtoul(nptr, endptr, base);
-  if (endptr && nptr != orig_nptr && *endptr == nptr)
-    *endptr = orig_nptr;
-  if (negative)
-    return -ul;
-  else
-    return ul;
+    return simple_strtoul(nptr, endptr, base);
 }
 
 };

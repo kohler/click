@@ -20,7 +20,6 @@
 extern "C" long int random(void);
 #endif
 #include "rfc2507c.hh"
-#include <stdlib.h>
 
 RFC2507c::RFC2507c()
 {
