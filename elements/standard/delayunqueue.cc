@@ -25,7 +25,7 @@
 #include <click/standard/scheduleinfo.hh>
 
 DelayUnqueue::DelayUnqueue()
-  : Element(1,1), _task(this)
+  : Element(1, 1), _p(0), _task(this), _timer(&_task)
 {
   MOD_INC_USE_COUNT;
 }
@@ -39,14 +39,18 @@ int
 DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpTimeval, "delay (sec)", &_delay, 0);
+		     cpInterval, "delay", &_delay, 0);
 }
 
 int
 DelayUnqueue::initialize(ErrorHandler *errh)
 {
-  _p = 0;
   ScheduleInfo::join_scheduler(this, &_task, errh);
+  
+  // initialize Timer if we have a long delay (>= 0.1sec)
+  if (_delay.tv_sec > 0 || _delay.tv_usec >= 100000)
+    _timer.initialize(this);
+  
   _signal = ActivityNotifier::listen_upstream_pull(this, 0, &_task);
   return 0;
 }
@@ -63,8 +67,13 @@ DelayUnqueue::uninitialize()
 void
 DelayUnqueue::run_scheduled()
 {
-  if (!_p && (_p = input(0).pull()))
+  if (!_p && (_p = input(0).pull())) {
     timeradd(&_p->timestamp_anno(), &_delay, &_p->timestamp_anno());
+    if (_timer.initialized()) {	// long delay, use timer
+      _timer.schedule_at(_p->timestamp_anno());
+      return;			// without rescheduling
+    }
+  }
   
   if (_p) {
     struct timeval now;

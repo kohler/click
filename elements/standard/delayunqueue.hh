@@ -2,6 +2,7 @@
 #define CLICK_DELAYUNQUEUE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/timer.hh>
 #include "activity.hh"
 
 /*
@@ -44,6 +45,7 @@ class DelayUnqueue : public Element { public:
   struct timeval _delay;
   ActivitySignal _signal;
   Task _task;
+  Timer _timer;
   
 };
 
