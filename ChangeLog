@@ -1,3 +1,11 @@
+2004-02-23 Monday 01:08  max
+
+	* elements/ip/: siphmapper.cc (1.1), siphmapper.hh (1.1):
+	SourceIPHashMapper ---	load balancing mapper; performs mappings
+	based on the hash of the source IP, but uses consistent hashing so
+	that mappings are not upset (too terribly) when nodes are removed
+	from the cluster.
+
 2004-02-23 Monday 00:30  max
 
 	* conf/: click-mkclgw.pl (1.1), example.clgw (1.1): click-mkclgw --
