@@ -2,11 +2,11 @@
 # run-grid-node
 # Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.10 2000/08/06 18:13:01 decouto Exp $
-
-# usage: run-grid-node <ip-addr> [-no-gw -debug]
+# $Id: run-grid-node,v 1.11 2000/08/06 23:09:33 decouto Exp $
 
 # assume we run in <clickdir>/conf XXX
+
+$debug = 0;
 
 $click = "../userlevel/click";
 $click_debug = "cat";
@@ -23,21 +23,28 @@ $POS_LON = "0";
 $RANGE = "250";
 $GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
-$GRID_NET_HEX = "16/121a07"; # 18.26.7.*
+$GRID_NET_HEX = "121a07"; # 18.26.7.*
 $NBR_TIMEOUT = "2000"; # msecs
 $HELLO_PERIOD = "500"; # msecs
 $HELLO_JITTER = "100"; # msecs
 $LR_PERIOD = "1300"; # msecs
 $LR_JITTER = "300"; # msecs
-$GRID_ETH_PROTO = "12/7FFF";
-$GRID_NBR_ENCAP_PROTO = "15/03";
+$GRID_ETH_PROTO = "7FFF";
+$GRID_NBR_ENCAP_PROTO = "03";
 
 sub ip_to_hex {
     ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
     return sprintf("%02x%02x%02x%02x", $a, $b, $c, $d);
 }
 	
-
+sub my_system {
+    if ($debug) {
+	print @_, "\n";
+    }
+    else {
+	system @_;
+    }
+}
 
 if (@ARGV < 2) { 
     print stderr "usage: $0 <ip-addr> <interface> [-debug -no-cleanup -no-gw  -pos <lat> <lon> -range <rng>]\n";
@@ -56,9 +63,15 @@ $grid_addr = $ARGV[0];
 $grid_if = $ARGV[1];
 $grid_gw = $GRID_GW;
 
+if (!($grid_addr =~ /18.26.7.\d+/)) {
+    print "Bad Grid address `$grid_addr'; must be 18.26.7.<host>\n";
+    exit 1;
+}
+
 $i = 0;
 for ($i = 2; $i < @ARGV; $i++) {
     if ($ARGV[$i] eq "-debug") {
+	$debug = 1;
 	$click = $click_debug;
 	$CONTROL_RO = "false";
 	print "Using DEBUG command\n";
@@ -190,21 +203,21 @@ else {
 
 if ($system_type =~ /Linux/) {
     # remove all routes through the grid interface, and make sure it is up
-    system "ifconfig $grid_if down";
-    system "ifconfig $grid_if 0";
+    my_system "ifconfig $grid_if down";
+    my_system "ifconfig $grid_if 0";
 
     # set the adapter to ad-hoc mode
-    system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
+    my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
 }
 elsif ($system_type =~ /FreeBSD/) {
     # remove all routes through the grid interface, and make sure it is up
     # assume the default route was the one through the adapter! XXX
-    system "route -n delete default";
-    system "ifconfig $grid_if 0";
+    my_system "route -n delete default";
+    my_system "ifconfig $grid_if 0";
 
     # set the adapter to ad-hoc mode
-    system "wicontrol -i $grid_if -p 3";
-    system "wicontrol -i $grid_if -f $grid_channel";
+    my_system "wicontrol -i $grid_if -p 3";
+    my_system "wicontrol -i $grid_if -f $grid_channel";
 }
 else {
     print stderr "This system is not supported\n";
@@ -251,19 +264,19 @@ close click_config_file;
 
 if ($do_cleanup) {
     if ($system_type =~ /Linux/) {
-	system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
-	system "iwconfig $grid_if mode managed";	
+	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
+	my_system "iwconfig $grid_if mode managed";	
 
         if ($grid_gw != "0.0.0.0") {
-	    system "route add default gw $old_gw";
+	    my_system "route add default gw $old_gw";
 	}
     }
     elsif ($system_type =~ /FreeBSD/) {
-	system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
-	system "wicontrol -i $grid_if -p 1";
+	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
+	my_system "wicontrol -i $grid_if -p 1";
 	if ($grid_gw != "0.0.0.0") {
-	    system "route delete default";
-	    system "route add default $old_gw";
+	    my_system "route delete default";
+	    my_system "route add default $old_gw";
 	}
 
     }
