@@ -297,24 +297,13 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
   // the upper bits against 0, and those that boil down to checking the upper
   // bits against ~0.
   if (_op == OP_GT || _op == OP_LT) {
-    // Check for comparisons that are always true.
-    if ((_op == OP_LT && data == 0 && _op_negated)
-	|| (_op == OP_LT && data > full_mask && !_op_negated)
-	|| (_op == OP_GT && data >= full_mask && _op_negated)) {
-      if (data)
-	errh->warning("relation `%s %u' is always true (range 0-%u)", unparse_op().cc(), data, full_mask);
-      _u.u = _mask.u = 0;
-      _op_negated = false;
-      _op = OP_EQ;
-      return 0;
-    }
-
-    // Check for comparisons that are always false.
+    // Check for comparisons that are always true or false.
     if ((_op == OP_LT && (data == 0 || data > full_mask))
 	|| (_op == OP_GT && data >= full_mask)) {
-      errh->warning("relation `%s %u' is always false (range 0-%u)", unparse_op().cc(), data, full_mask);
+      bool will_be = (_op == OP_LT && data > full_mask ? !_op_negated : _op_negated);
+      errh->warning("relation `%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
       _u.u = _mask.u = 0;
-      _op_negated = true;
+      _op_negated = !will_be;
       _op = OP_EQ;
       return 0;
     }
