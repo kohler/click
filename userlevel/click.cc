@@ -194,7 +194,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
   for (int i = 0; i < handlers.size(); i++) {
     const char *dot = find(handlers[i], '.');
     if (dot == handlers[i].end()) {
-      call_read_handler(0, handlers[i], print_names, errh);
+      call_read_handler(router->root_element(), handlers[i], print_names, errh);
       continue;
     }
     
