@@ -1,3 +1,13 @@
+2001-10-01 Monday 15:26  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.24), lib/packet.cc (1.48): Packet
+	exclusively uses CLICK_ symbols instead of a melange of __KERNEL__
+	and _KERNEL and so forth. Also, make some BSD functions private.
+
+2001-10-01 Monday 14:51  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.23): precedence bugfix
+
 2001-09-28 Friday 14:11  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/clp.h (1.7): add more space in Clp_Parser for
