@@ -24,25 +24,6 @@
 #include <clicknet/ip.h>
 CLICK_DECLS
 
-static const char *content_names[] = {
-    "??", "timestamp", "ts_sec", "ts_usec", "ip_src",
-    "ip_dst", "ip_len", "ip_proto", "ip_id", "sport",
-    "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
-    "count", "ip_frag", "ip_fragoff", "payload", "direction",
-    "aggregate", "tcp_sack", "tcp_opt", "tcp_ntopt", "first_timestamp",
-    "tcp_window", "ip_opt", "ip_tos", "ip_ttl", "ts_usec1",
-    "ip_capture_len", "tcp_urp"
-};
-
-const char *
-IPSummaryDumpInfo::unparse_content(int content)
-{
-    if (content < 0 || content >= (int)(sizeof(content_names) / sizeof(content_names[0])))
-	return "??";
-    else
-	return content_names[content];
-}
-
 int
 IPSummaryDumpInfo::parse_content(const String &word)
 {

@@ -98,7 +98,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	// binary size
       found_prepare:
 	int s = f->binary_size();
-	if (s < 0 && binary)
+	if ((s < 0 || !f->outb) && binary)
 	    errh->error("cannot use CONTENTS %s with BINARY", word.c_str());
 	_binary_size += s;
 
@@ -327,6 +327,6 @@ ToIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel IPSummaryDumpInfo IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP)
+ELEMENT_REQUIRES(userlevel IPSummaryDump IPSummaryDump_Anno IPSummaryDump_IP IPSummaryDump_TCP)
 EXPORT_ELEMENT(ToIPSummaryDump)
 CLICK_ENDDECLS

@@ -9,24 +9,6 @@ struct click_udp;
 struct click_tcp;
 CLICK_DECLS
 
-class IPSummaryDumpInfo { public:
-    
-enum Content {
-    W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC, W_IP_SRC,
-    W_IP_DST, W_IP_LEN, W_IP_PROTO, W_IP_ID, W_SPORT,
-    W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PAYLOAD_LEN,
-    W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK,
-    W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
-    W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL, W_TIMESTAMP_USEC1,
-    W_IP_CAPTURE_LEN, W_TCP_URP, W_LAST
-};
-static int parse_content(const String &);
-static const char *unparse_content(int);
-static int content_binary_size(int);
-
-};
-
-
 namespace IPSummaryDump {
 
 enum { MAJOR_VERSION = 1, MINOR_VERSION = 2 };
@@ -129,6 +111,23 @@ inline PacketDesc::PacketDesc(Packet* p_, StringAccum* sa_, StringAccum* bad_sa_
 }
 
 }
+
+
+class IPSummaryDumpInfo { public:
+    
+enum Content {
+    W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC, W_IP_SRC,
+    W_IP_DST, W_IP_LEN, W_IP_PROTO, W_IP_ID, W_SPORT,
+    W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PAYLOAD_LEN,
+    W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK,
+    W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
+    W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL, W_TIMESTAMP_USEC1,
+    W_IP_CAPTURE_LEN, W_TCP_URP, W_LAST
+};
+static int parse_content(const String &);
+static int content_binary_size(int);
+
+};
 
 CLICK_ENDDECLS
 #endif
