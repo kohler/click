@@ -309,7 +309,7 @@ WebGen::tcp_output(CB *cb, Packet *xp)
   } else {
     th->th_flags = TH_ACK;
     if(paylen)
-      th->th_flags |= TH_PUSH;
+      th->th_flags |= TH_PUSH | TH_FIN;
     if(cb->_got_fin)
       th->th_flags |= TH_FIN;
     th->th_ack = htonl(cb->_rcv_nxt);
