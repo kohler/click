@@ -24,12 +24,16 @@ class ErrorHandler { public:
     ERRVERBOSITY_MAX	= 0xFFFF,
     ERRVERBOSITY_DEFAULT= ERRVERBOSITY_MAX,
     ERRVERBOSITY_MASK	= 0x0000FFFF,
+    ERRVERBOSITY_SHIFT	= 16,
 
     ERR_MIN_DEBUG	= 0x00000000,
     ERR_MIN_MESSAGE	= 0x00010000,
     ERR_MIN_WARNING	= 0x00020000,
     ERR_MIN_ERROR	= 0x00030000,
     ERR_MIN_FATAL	= 0x00040000,
+
+    // fatal() with no explicit exit status exits with this status
+    FATAL_EXITSTATUS	= 1,
     
     ERR_DEBUG		= ERR_MIN_DEBUG + ERRVERBOSITY_DEFAULT,
     ERR_CONTEXT_MESSAGE	= ERR_MIN_MESSAGE + ERRVERBOSITY_CONTEXT,
@@ -37,13 +41,13 @@ class ErrorHandler { public:
     ERR_WARNING		= ERR_MIN_WARNING + ERRVERBOSITY_DEFAULT,
     ERR_CONTEXT_ERROR	= ERR_MIN_ERROR + ERRVERBOSITY_CONTEXT,
     ERR_ERROR		= ERR_MIN_ERROR + ERRVERBOSITY_DEFAULT,
-    ERR_FATAL		= ERR_MIN_FATAL + ERRVERBOSITY_DEFAULT
+    ERR_FATAL		= ERR_MIN_FATAL + ERRVERBOSITY_DEFAULT + (FATAL_EXITSTATUS << ERRVERBOSITY_SHIFT)
   };
   
   ErrorHandler()			{ }
   virtual ~ErrorHandler()		{ }
   
-  static void static_initialize(ErrorHandler *);
+  static ErrorHandler *static_initialize(ErrorHandler *errh); // returns errh
   static void static_cleanup();
 
   static ErrorHandler *default_handler();
@@ -59,7 +63,7 @@ class ErrorHandler { public:
 
   // seriousness < ERR_MIN_WARNING returns OK_RESULT, which is 0
   // seriousness >= ERR_MIN_WARNING returns ERROR_RESULT, which is -EINVAL
-  static const int OK_RESULT = 0;
+  static const int OK_RESULT;
   static const int ERROR_RESULT;
 
   void debug(const char *format, ...);
@@ -152,13 +156,6 @@ class PrefixErrorHandler : public ErrorVeneer { public:
   String decorate_text(Seriousness, const String &, const String &, const String &);
  private:
   String _prefix;
-};
-
-class IndentErrorHandler : public ErrorVeneer { public:
-  IndentErrorHandler(ErrorHandler *, const String &indent);
-  String decorate_text(Seriousness, const String &, const String &, const String &);
- private:
-  String _indent;
 };
 
 class LandmarkErrorHandler : public ErrorVeneer { public:

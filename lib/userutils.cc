@@ -275,7 +275,7 @@ file_string(String filename, ErrorHandler *errh)
 
   String s;
   if (errh) {
-    IndentErrorHandler perrh(errh, filename + ": ");
+    PrefixErrorHandler perrh(errh, filename + ": ");
     s = file_string(f, &perrh);
   } else
     s = file_string(f);
