@@ -1,6 +1,6 @@
 /*
  * desp.{cc,hh} -- element implements IPsec unencapsulation (RFC 2406)
- * Alex Snoeren
+ * Alex Snoeren, Benjie Chen
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
@@ -23,10 +23,10 @@
 #endif
 #include "esp.hh"
 #include "desp.hh"
+#include "sha1.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/sha1.hh>
 #include <click/glue.hh>
 
 IPsecESPUnencap::IPsecESPUnencap()
