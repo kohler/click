@@ -167,7 +167,7 @@ find_requirement(const String &requirement, const ElementMap &emap,
 }
 
 static void
-print_filenames(FILE *f, const HashMap<String, int> &header_files)
+print_filenames(FILE *f, const ElementMap &emap, const HashMap<String, int> &provisions, const HashMap<String, int> &header_files)
 {
   for (HashMap<String, int>::Iterator iter = header_files.first();
        iter;
@@ -408,7 +408,7 @@ particular purpose.\n");
     FILE *f = fopen(fn.cc(), "w");
     if (!f)
       errh->fatal("%s: %s", fn.cc(), strerror(errno));
-    print_filenames(f, header_files);
+    print_filenames(f, default_emap, provisions, header_files);
     fclose(f);
   }
 

@@ -23,26 +23,36 @@ my(%flow_code_constants) =
 my(@class_file, @click_name, @cxx_name,
    @parents, @processing, @flow_code, @flags, @requirements, @provisions,
    %click_name_to_id, %cxx_name_to_id);
+my(@includes) = ( '.' );
 
 sub process_file ($) {
   my($filename) = @_;
-  my($headername);
+  my($headername, $headerfile, $i);
 
   if ($filename =~ /^(.*):"(.*)"$/) {
       ($filename, $headername) = ($1, $2);
+      $headerfile = $headername;
   } elsif ($filename =~ /^(.*):<(.*)>$/) {
-      ($filename, $headername) = ($1, "include/$2");
+      ($filename, $headername) = ($1, "<$2>");
+      $headerfile = $2;
   } else {
       $headername = $filename;
       $headername =~ s/\.cc$/.hh/;
+      $headerfile = $headername;
   }
-  
-  if (!open(IN, $headername)) {
-    print STDERR "$headername: $!\n" if $headername eq $filename;
-    return;
+
+  my $text;
+  foreach $i (@includes) {
+      if (open(IN, "$i/$headerfile")) {
+	  $text = <IN>;
+	  close IN;
+	  last;
+      }
   }
-  my $text = <IN>;
-  close IN;
+  if (!$text) {
+      print STDERR "$headerfile: $!\n" if $headerfile eq $filename;
+      return;
+  }
 
   my $first;
   $first = @cxx_name;
@@ -95,7 +105,7 @@ sub process_file ($) {
   $text = <IN>;
   close IN;
 
-  my($req, $prov, $i) = ('', '');
+  my($req, $prov) = ('', '');
   $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\((.*)\)/mg;
   $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\((.*)\)/mg;
   $req =~ s/^\s+//;
@@ -224,6 +234,13 @@ while (@ARGV) {
     push @provides, split(/\s+/, shift @ARGV);
   } elsif (long_option_match($_, '--provide', 5) && /^[^=]*=(.*)$/) {
     push @provides, split(/\s+/, $1);
+  } elsif (/^-I$/ || long_option_match($_, '--include', 3)) {
+    die "not enough arguments" if !@ARGV;
+    push @includes, shift @ARGV;
+  } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
+    push @includes, $1;
+  } elsif (/^-I(.+)$/) {
+    push @includes, $1;
   } elsif (/^-./) {
     die "unknown option `$_'\n";
   } elsif (/^-$/) {
@@ -245,8 +262,7 @@ my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
 print OUT "\$sourcedir\t\"$sourcedir\"\n";
 print OUT "\$provides\t\"", join(' ', @provides), "\"\n";
-
-print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflow code\tflag word\trequirements\tprovisions\n";
+print OUT "\$data\tclass\tcxx_class\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];

@@ -381,6 +381,46 @@ ElementMap::remove(int i)
   e.cxx = String();
 }
 
+String *
+ElementMap::Elt::component(int what)
+{
+  switch (what) {
+   case D_CLASS:	return &name;
+   case D_CXX_CLASS:	return &cxx;
+   case D_HEADER_FILE:	return &header_file;
+   case D_SOURCE_FILE:	return &source_file;
+   case D_PROCESSING:	return &processing_code;
+   case D_FLOW_CODE:	return &flow_code;
+   case D_FLAGS:	return &flags;
+   case D_REQUIREMENTS:	return &requirements;
+   case D_PROVISIONS:	return &provisions;
+   default:		return 0;
+  }
+}
+
+int
+ElementMap::parse_component(const String &s)
+{
+  if (s == "class")
+    return D_CLASS;
+  else if (s == "cxx_class")
+    return D_CXX_CLASS;
+  else if (s == "header_file")
+    return D_HEADER_FILE;
+  else if (s == "source_file")
+    return D_SOURCE_FILE;
+  else if (s == "processing")
+    return D_PROCESSING;
+  else if (s == "flow_code")
+    return D_FLOW_CODE;
+  else if (s == "requirements")
+    return D_REQUIREMENTS;
+  else if (s == "provisions")
+    return D_PROVISIONS;
+  else
+    return D_NONE;
+}
+
 void
 ElementMap::parse(const String &str, const String &package_name)
 {
@@ -394,7 +434,13 @@ ElementMap::parse(const String &str, const String &package_name)
     _def_compile_flags.push_back(String());
     _def_package.push_back(package_name);
   }
-  
+
+  // set up default data
+  Vector<int> data;
+  for (int i = D_FIRST_DEFAULT; i <= D_LAST_DEFAULT; i++)
+    data.push_back(i);
+
+  // loop over the lines
   for (p = 0; p < len; p = endp + 1) {
     // read a line
     endp = str.find_left('\n', p);
@@ -423,23 +469,21 @@ ElementMap::parse(const String &str, const String &package_name)
       for (int i = 1; i < words.size(); i++)
 	_e[0].provisions += " " + cp_unquote(words[i]);
 
-    } else if (words[0][0] != '$' && words.size() >= 4) {
+    } else if (words[0] == "$data") {
+      data.clear();
+      for (int i = 1; i < words.size(); i++)
+	data.push_back(parse_component(cp_unquote(words[i])));
+
+    } else if (words[0][0] != '$') {
       // an actual line
       Elt elt;
-      elt.name = cp_unquote(words[0]);
-      elt.cxx = cp_unquote(words[1]);
-      elt.header_file = cp_unquote(words[2]);
-      elt.processing_code = cp_unquote(words[3]);
-      if (words.size() >= 5)
-	elt.flow_code = cp_unquote(words[4]);
-      if (words.size() >= 6)
-	elt.flags = cp_unquote(words[5]);
-      if (words.size() >= 7)
-	elt.requirements = cp_unquote(words[6]);
-      if (words.size() >= 8)
-	elt.provisions = cp_unquote(words[7]);
-      elt.def_index = def_index;
-      (void) add(elt);
+      for (int i = 0; i < data.size() && i < words.size(); i++)
+	if (String *sp = elt.component(data[i]))
+	  *sp = cp_unquote(words[i]);
+      if (elt.provisions || elt.name) {
+	elt.def_index = def_index;
+	(void) add(elt);
+      }
     }
   }
 }
@@ -454,6 +498,7 @@ String
 ElementMap::unparse() const
 {
   StringAccum sa;
+  sa << "$data\tclass\tcxx_class\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
   for (int i = 1; i < _e.size(); i++) {
     const Elt &e = _e[i];
     if (!e.name && !e.cxx)

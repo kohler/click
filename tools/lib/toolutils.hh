@@ -18,6 +18,7 @@ class ElementMap { public:
     String name;
     String cxx;
     String header_file;
+    String source_file;
     String processing_code;
     String flow_code;
     String flags;
@@ -29,6 +30,7 @@ class ElementMap { public:
     int cxx_next;
 
     Elt();
+    String *component(int);
   };
 
   static const int DRIVER_LINUXMODULE = 0;
@@ -108,6 +110,15 @@ class ElementMap { public:
 
   int get_driver(const String &);
 
+  enum {
+    D_NONE,
+    D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PROCESSING,
+    D_FLOW_CODE, D_FLAGS, D_REQUIREMENTS, D_PROVISIONS,
+    D_SOURCE_FILE,
+    D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS
+  };
+  static int parse_component(const String &);
+  
 };
 
 inline
