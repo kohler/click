@@ -130,14 +130,17 @@ Tun::push(int, Packet *p)
    * alignment bytes 
    */
   char big[2048];
-
+  char from[] = { 0xab, 0xcd, 0xef };
+  short protocol = htons(0x0800);
   if(p->length()+16 >= sizeof(big)){
     fprintf(stderr, "bimtun writetun pkt too big\n");
     return;
   }
   bzero(big, 16);
+  memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
+  memcpy(big+14, &protocol, 2);
   memcpy(big+16, p->data(), p->length());
-  if(write(_fd, big, p->length()+16) != (int)p->length()+16){
+    if(write(_fd, big, p->length()+16) != (int)p->length()+16){
     perror("write tun");
   }
 #else
