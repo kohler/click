@@ -15,6 +15,7 @@
 # include <config.h>
 #endif
 #include "pulltopush.hh"
+#include "confparse.hh"
 #include "elements/standard/scheduleinfo.hh"
 
 int
