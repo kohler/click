@@ -399,7 +399,7 @@ ncl [0] -> srcr;
 
 
 
-ncl[2] 
+ncl[1] 
 EOF
 
 if ($kernel) {
