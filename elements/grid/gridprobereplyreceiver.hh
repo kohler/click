@@ -19,7 +19,7 @@
  * produced this reply from the probe, and C<hopcount> is the number
  * of hops away the reply sender is from the probe sender.
  *
- * =a GridProbeSender, GridProbeForwarder, ChatterSocket */
+ * =a GridProbeSender, GridProbeHandler, ChatterSocket */
 
 
 #include <click/element.hh>

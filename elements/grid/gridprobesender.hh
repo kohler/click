@@ -18,7 +18,7 @@
  * arguments are the destination IP followed by a nonce, e.g: ``18.26.7.111 3242435''
  * 
  *
- * =a GridProbeReplyReceiver, GridProbeForwarder, LookupLocalGridRoute */
+ * =a GridProbeReplyReceiver, GridProbeHandler, LookupLocalGridRoute */
 
 
 #include <click/element.hh>
