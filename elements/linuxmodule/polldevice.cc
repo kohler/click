@@ -99,9 +99,18 @@ PollDevice::clone() const
 int
 PollDevice::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpString, "interface name", &_devname,
-		     cpEnd);
+  if (cp_va_parse(conf, this, errh,
+		  cpString, "interface name", &_devname,
+		  cpEnd) < 0)
+    return -1;
+#if HAVE_POLLING
+  _dev = dev_get(_devname.cc());
+  if (!_dev)
+    return errh->error("no device `%s'", _devname.cc());
+  if (!_dev->pollable) 
+    return errh->error("device `%s' not pollable", _devname.cc());
+#endif  
+  return 0;
 }
 
 
@@ -113,12 +122,6 @@ int
 PollDevice::initialize(ErrorHandler *errh)
 {
 #if HAVE_POLLING
-  _dev = dev_get(_devname.cc());
-  if (!_dev)
-    return errh->error("no device `%s'", _devname.cc());
-  if (!_dev->pollable) 
-    return errh->error("device `%s' not pollable", _devname.cc());
-  
   /* try to find a ToDevice with the same device: if none exists, then we need
    * to manage tx queue as well as rx queue */
   for(int fi = 0; fi < router()->nelements(); fi++) {

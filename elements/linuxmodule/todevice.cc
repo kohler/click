@@ -116,9 +116,14 @@ ToDevice::clone() const
 int
 ToDevice::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpString, "interface name", &_devname,
-		     cpEnd);
+  if (cp_va_parse(conf, this, errh,
+		  cpString, "interface name", &_devname,
+		  cpEnd) < 0)
+    return -1;
+  _dev = dev_get(_devname.cc());
+  if (!_dev)
+    return errh->error("no device `%s'", _devname.cc());
+  return 0;
 }
 
 int
@@ -128,10 +133,6 @@ ToDevice::initialize(ErrorHandler *errh)
   errh->warning("not compiled for a Click kernel");
 #endif
 
-  _dev = dev_get(_devname.cc());
-  if (!_dev)
-    return errh->error("no device `%s'", _devname.cc());
-  
   /* see if a PollDevice with the same device exists: if so, use polling
    * extensions */
   for(int fi = 0; fi < router()->nelements(); fi++) {
