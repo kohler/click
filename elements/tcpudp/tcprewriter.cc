@@ -28,28 +28,22 @@
 // TCPMapping
 
 TCPRewriter::TCPMapping::TCPMapping(bool dst_anno)
-  : Mapping(dst_anno), _seqno_delta(0), _ackno_delta(0), _interesting_seqno(0)
+  : Mapping(dst_anno), _trigger(0), _delta(0), _old_delta(0)
 {
 }
 
-void
-TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_word)
+int
+TCPRewriter::TCPMapping::update_seqno_delta(tcp_seq_t trigger, int32_t d)
 {
-  const unsigned short *source_words = (const unsigned short *)&old_word;
-  const unsigned short *dest_words = (const unsigned short *)&new_word;
-  unsigned delta = _udp_csum_delta;
-  for (int i = 0; i < 2; i++) {
-    delta += ~source_words[i] & 0xFFFF;
-    delta += dest_words[i];
+  if (SEQ_LEQ(trigger, _trigger) && (_trigger || _delta || _old_delta))
+    return -1;
+  else {
+    if (trigger != _trigger)
+      _old_delta = _delta;
+    _trigger = trigger;
+    _delta += d;
+    return 0;
   }
-  // why is this required here, but not elsewhere when we do
-  // incremental updates?
-  if ((int)ntohl(old_word) >= 0 && (int)ntohl(new_word) < 0)
-    delta -= htons(1);
-  else if ((int)ntohl(old_word) < 0 && (int)ntohl(new_word) >= 0)
-    delta += htons(1);
-  delta = (delta & 0xFFFF) + (delta >> 16);
-  _udp_csum_delta = delta + (delta >> 16);
 }
 
 void
@@ -64,7 +58,7 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   if (_dst_anno)
     p->set_dst_ip_anno(_mapto.daddr());
 
-  unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
+  uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
   iph->ip_sum = ~(sum + (sum >> 16));
 
@@ -80,24 +74,26 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   tcph->th_dport = _mapto.dport();
 
   // update sequence numbers
-  unsigned short csum_delta = _udp_csum_delta;
-  if (_seqno_delta) {
-    unsigned oldval = ntohl(tcph->th_seq);
-    unsigned newval = oldval + _seqno_delta;
-    if ((int)oldval < 0 && (int)newval >= 0)
-      csum_delta -= htons(1);
-    tcph->th_seq = htonl(newval);
+  uint32_t csum_delta = _udp_csum_delta;
+  
+  uint32_t oldval = ntohl(tcph->th_seq);
+  uint32_t newval = htonl(oldval + delta_for(oldval));
+  if (tcph->th_seq != newval) {
+    csum_delta += (~tcph->th_seq >> 16) + (~tcph->th_seq & 0xFFFF)
+      + (newval >> 16) + (newval & 0xFFFF);
+    tcph->th_seq = newval;
   }
-  if (_ackno_delta) {
-    unsigned oldval = ntohl(tcph->th_ack);
-    unsigned newval = oldval + _ackno_delta;
-    if ((int)oldval < 0 && (int)newval >= 0)
-      csum_delta -= htons(1);
+
+  oldval = ntohl(tcph->th_ack);
+  newval = htonl(oldval - reverse()->delta_for(oldval));
+  if (tcph->th_ack != newval) {
+    csum_delta += (~tcph->th_ack >> 16) + (~tcph->th_ack & 0xFFFF)
+      + (newval >> 16) + (newval & 0xFFFF);
     tcph->th_ack = htonl(newval);
   }
 
   // update checksum
-  unsigned sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
+  uint32_t sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
   sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
   tcph->th_sum = ~(sum2 + (sum2 >> 16));
 
@@ -115,8 +111,7 @@ TCPRewriter::TCPMapping::s() const
 {
   StringAccum sa;
   sa << reverse()->flow_id().rev().s() << " => " << flow_id().s()
-     << " seq " << (_seqno_delta > 0 ? "+" : "") << _seqno_delta
-     << " ack " << (_ackno_delta > 0 ? "+" : "") << _ackno_delta
+     << " seq " << (_delta > 0 ? "+" : "") << _delta
      << " [" + String(output()) + "]";
   return sa.take_string();
 }
@@ -437,6 +432,30 @@ TCPRewriter::llrpc(unsigned command, void *data)
   } else
     return Element::llrpc(command, data);
 }
+
+
+#if 0
+void
+TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_word)
+{
+  const uint16_t *source_words = (const unsigned short *)&old_word;
+  const uint16_t *dest_words = (const unsigned short *)&new_word;
+  uint32_t delta = _udp_csum_delta;
+  for (int i = 0; i < 2; i++) {
+    delta += ~source_words[i] & 0xFFFF;
+    delta += dest_words[i];
+  }
+  // why is this required here, but not elsewhere when we do
+  // incremental updates?
+  if ((int)ntohl(old_word) >= 0 && (int)ntohl(new_word) < 0)
+    delta -= htons(1);
+  else if ((int)ntohl(old_word) < 0 && (int)ntohl(new_word) >= 0)
+    delta += htons(1);
+  delta = (delta & 0xFFFF) + (delta >> 16);
+  _udp_csum_delta = delta + (delta >> 16);
+}
+#endif
+
 
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(TCPRewriter)
