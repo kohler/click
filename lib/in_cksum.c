@@ -4,7 +4,7 @@
  */
 
 #include <click/config.h>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 uint16_t
 click_in_cksum(const unsigned char *addr, int len)
