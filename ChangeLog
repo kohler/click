@@ -1,3 +1,8 @@
+2003-08-20 Wednesday 20:39  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: dsrarptable.cc (1.2), dsrroutetable.cc (1.2):
+	license for DSR
+
 2003-08-20 Wednesday 16:48  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: dsr.hh (1.1), dsrarptable.cc (1.1),
