@@ -891,6 +891,11 @@ if test "x$enable_wifi" = xyes; then
     provisions="wifi $provisions"
 fi
 
+dnl add `pcap' if libpcap is available
+if test "x$HAVE_PCAP" = xyes; then
+    provisions="pcap $provisions"
+fi
+
 AC_SUBST(provisions)
 
 dnl

@@ -10569,6 +10569,10 @@ if test "x$enable_wifi" = xyes; then
     provisions="wifi $provisions"
 fi
 
+if test "x$HAVE_PCAP" = xyes; then
+    provisions="pcap $provisions"
+fi
+
 
 
 
