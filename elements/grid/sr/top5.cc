@@ -77,6 +77,9 @@ int
 Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
+  int path_duration = 10000;
+  _tag = 5;
+  _five = 5;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -86,6 +89,9 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LT", cpElement, "LinkTable element", &_link_table,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
+		    "PATH_DURATION", cpUnsigned, "Timer per path", &path_duration,
+		    "TAG", cpInteger, "Number of random links to add at each hop", &_tag,
+		    "FIVE", cpInteger, "Number of routes to try", &_five,
                     0);
 
   if (!_et) 
@@ -112,6 +118,11 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
     return errh->error("SS element is not a SrcrStat");
 
+  
+  timerclear(&_time_per_path);
+  /* convert path_duration from ms to a struct timeval */
+  _time_per_path.tv_sec = path_duration/1000;
+  _time_per_path.tv_usec = (path_duration % 1000) * 1000;
   return ret;
 }
 
@@ -404,7 +415,7 @@ Top5::forward_query(Seen *s)
     } 
   }
   
-  for (int i = 0; i < 5; i += 2) {
+  for (int i = 0; i < _tag; i += 2) {
     /* get random link, add to extra */
     LinkTable::Link l = _link_table->random_link();
     extra->set_hop(i, l._from);
@@ -442,18 +453,20 @@ Top5::forward_reply(struct srpacket *pk1)
   }
 
   Path fwd;
-  Path rev;
   for (int i = 0; i < pk1->num_hops(); i++) {
     fwd.push_back(pk1->get_hop(i));
   }
-  rev = reverse_path(fwd);
-  struct timeval now;
-  click_gettimeofday(&now);
+  
+  struct extra_link_info *extra_in = (struct extra_link_info *) pk1->data();
+  int extra_num_hops = extra_in->num_hops();
+  int len = pk1->hlen_wo_data() + 
+    extra_link_info::len(extra_num_hops);
 
-  int len = pk1->hlen_wo_data();
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
+
   if(p == 0)
     return;
+
   click_ether *eh = (click_ether *) p->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
   memcpy(pk, pk1, len);
@@ -480,7 +493,7 @@ void Top5::start_reply(class Reply *r)
 {
 
   _link_table->dijkstra();
-  Vector<Path> paths = _link_table->top_n_routes(r->_dst, TOP_N);
+  Vector<Path> paths = _link_table->top_n_routes(r->_dst, _five);
   
   int num_hosts = paths[0].size();
   if (num_hosts < 2) {
@@ -563,8 +576,22 @@ Top5::got_reply(struct srpacket *pk)
 		id().cc(),
 		_ip.s().cc(),
 		dst.s().cc());
+  
+  struct extra_link_info *extra = (struct extra_link_info *) pk->data();
+  int extra_num_hosts = extra->num_hops();
+
+  for (int x = 0; x < extra_num_hosts - 1; x++) {
+    IPAddress from = extra->get_hop(x);
+    IPAddress to = extra->get_hop(x+1);
+    int metric = extra->get_metric(x);
+    if (metric) {
+      _link_table->update_link(from, to, metric);
+    }
+  }
+
+
   Vector<Path> paths;
-  paths = _link_table->top_n_routes(dst, TOP_N);
+  paths = _link_table->top_n_routes(dst, _five);
 
   Dst *d = _dsts.findp(dst);
   if (!d) {
@@ -610,6 +637,14 @@ Top5::push(int port, Packet *p_in)
       return;
     }
 
+    if (d->_finished) {
+      Path p = d->_paths[d->_best_path];
+      Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
+      output(1).push(p_out);
+      p_in->kill();
+      return;
+    }
+
     if (!d->_started) {
       click_chatter("Top5 %s: dst %s hasn't started yet\n",
 		    id().cc(),
@@ -618,11 +653,27 @@ Top5::push(int port, Packet *p_in)
       p_in->kill();
       return;
     }
+    struct timeval now;
+    click_gettimeofday(&now);
+    struct timeval path_expire;
+    timeradd(&d->_current_path_start, &_time_per_path, &path_expire);
     
+    if (timercmp(&now, &path_expire, >)) {
+      d->_current_path++;
+    }
+    
+    if (d->_current_path > d->_paths.size()) {
+      click_chatter("Top5 %s: done with current paths, but no response\n",
+		    id().cc());
+      p_in->kill();
+      return;
+    }
+
     Path p = d->_paths[d->_current_path];
     Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
     output(1).push(p_out);
     p_in->kill();
+    return;
    
   } else if (port ==  0) {
     click_ether *eh = (click_ether *) p_in->data();

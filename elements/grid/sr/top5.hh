@@ -73,7 +73,6 @@ class Top5 : public Element {
   void start_reply_hook();
 private:
 
-#define TOP_N 5
   class Query {
   public:
     Query() {memset(this, 0, sizeof(*this)); }
@@ -103,6 +102,9 @@ private:
     Vector<int> _count;
     int _current_path;
     bool _started;
+    bool _finished;
+    struct timeval _current_path_start;
+    int _best_path;
   };
 
   typedef HashMap<IPAddress, Dst> DstTable;
@@ -144,11 +146,14 @@ private:
   int MaxHops;   // Max hop count for queries.
   struct timeval _query_wait;
   struct timeval _rev_path_update;
+  struct timeval _time_per_path;
   u_long _seq;      // Next query sequence number to use.
   uint32_t _et;     // This protocol's ethertype
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   Timer _timer;
+  int _tag;
+  int _five;
 
   IPAddress _bcast_ip;
 
