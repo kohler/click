@@ -1,3 +1,21 @@
+2003-02-24 Monday 15:57  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/config.cc (1.6), bsdmodule/module.cc (1.10),
+	bsdmodule/sched.cc (1.5), elements/standard/drivermanager.cc
+	(1.23), elements/userlevel/controlsocket.cc (1.40),
+	include/click/router.hh (1.43), lib/confparse.cc (1.110),
+	lib/router.cc (1.139), linuxmodule/clickfs.cc (1.32),
+	linuxmodule/module.cc (1.75), linuxmodule/proc_click.cc (1.49),
+	ns/nsclick.cc (1.8), userlevel/click.cc (1.75): Global handler
+	changes: Now, global handlers are passed "router()->root_element()"
+	when called. This gives the global handler access to the relevant
+	router. Cascading changes: "Router::element(-1)" returns
+	"Router::root_element()"; cp_handler() returns
+	Router::root_element() for global handlers; global "version" and
+	"stop" handlers are installed by Router::static_initialize() [new
+	function]. Should not cause too many cascading changes due to
+	consistent use of HandlerCall.
+
 2003-02-24 Monday 14:19  Eddie Kohler <kohler@icir.org>
 
 	* lib/handlercall.cc (1.9): nitlet
