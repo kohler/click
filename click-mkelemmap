@@ -36,156 +36,156 @@ sub driver_mask ($) {
 }
 
 sub process_file ($) {
-  my($filename) = @_;
-  my($headername, $headerfile, $i, $comment);
+    my($filename) = @_;
+    my($headername, $headerfile, $i, $comment);
 
-  if ($filename =~ /^(.*):"(.*)"$/) {
-      ($filename, $headername) = ($1, $2);
-      $headerfile = $headername;
-  } elsif ($filename =~ /^(.*):<(.*)>$/) {
-      ($filename, $headername) = ($1, "<$2>");
-      $headerfile = $2;
-  } else {
-      $headername = $filename;
-      $headername =~ s/\.cc$/.hh/;
-      $headerfile = $headername;
-  }
-
-  my $text;
-  foreach $i (@includes) {
-      if (open(IN, "$i/$headerfile")) {
-	  $text = <IN>;
-	  close IN;
-	  last;
-      }
-  }
-  if (!$text) {
-      print STDERR "$headerfile: $!\n" if $headerfile eq $filename;
-      return;
-  }
-
-  my $first;
-  $first = @cxx_name;
-  foreach $_ (split(m{^class(?=.*\{)}m, $text)) {
-    my($cxx_class) = (/^\s*(\w+)(\s|:\s).*\{/);
-    next if !$cxx_class;
-    push @cxx_name, $cxx_class;
-    push @source_file, $filename;
-    push @header_file, $headername;
-    $cxx_name_to_id{$cxx_class} = @cxx_name - 1;
-    if (/\A\s*\w*\s*:\s*([\w\s,]+)/) {
-      my $p = $1;
-      $p =~ s/\bpublic\b//g;
-      push @parents, [ split(/[\s,]+/, $p) ];
+    if ($filename =~ /^(.*):"(.*)"$/) {
+	($filename, $headername) = ($1, $2);
+	$headerfile = $headername;
+    } elsif ($filename =~ /^(.*):<(.*)>$/) {
+	($filename, $headername) = ($1, "<$2>");
+	$headerfile = $2;
     } else {
-      push @parents, [];
+	$headername = $filename;
+	$headername =~ s/\.cc$/.hh/;
+	$headerfile = $headername;
     }
-    if (/class_name.*return\s*\"([^\"]+)\"/) {
-      push @click_name, $1;
-    } else {
-      push @click_name, "";
+
+    my $text;
+    foreach $i (@includes) {
+	if (open(IN, "$i/$headerfile")) {
+	    $text = <IN>;
+	    close IN;
+	    last;
+	}
     }
-    if (/processing.*return\s*(.*?);/) {
-      my $p = $1;
-      $p = $processing_constants{$p} if exists($processing_constants{$p});
-      $p =~ tr/\" \t\r\n//d;
-      push @processing, $p;
-    } else {
-      push @processing, "";
+    if (!$text) {
+	print STDERR "$headerfile: $!\n" if $headerfile eq $filename;
+	return;
     }
-    if (/flow_code.*return\s*(.*?);/) {
-      my $p = $1;
-      $p = $flow_code_constants{$p} if exists($flow_code_constants{$p});
-      $p =~ tr/\" \t\r\n//d;
-      push @flow_code, $p;
-    } else {
-      push @flow_code, "";
+
+    my $first;
+    $first = @cxx_name;
+    foreach $_ (split(m{^class(?=.*\{)}m, $text)) {
+	my($cxx_class) = (/^\s*(\w+)(\s|:\s).*\{/);
+	next if !$cxx_class;
+	push @cxx_name, $cxx_class;
+	push @source_file, $filename;
+	push @header_file, $headername;
+	$cxx_name_to_id{$cxx_class} = @cxx_name - 1;
+	if (/\A\s*\w*\s*:\s*([\w\s,]+)/) {
+	    my $p = $1;
+	    $p =~ s/\bpublic\b//g;
+	    push @parents, [ split(/[\s,]+/, $p) ];
+	} else {
+	    push @parents, [];
+	}
+	if (/class_name.*return\s*\"([^\"]+)\"/) {
+	    push @click_name, $1;
+	} else {
+	    push @click_name, "";
+	}
+	if (/processing.*return\s*(.*?);/) {
+	    my $p = $1;
+	    $p = $processing_constants{$p} if exists($processing_constants{$p});
+	    $p =~ tr/\" \t\r\n//d;
+	    push @processing, $p;
+	} else {
+	    push @processing, "";
+	}
+	if (/flow_code.*return\s*(.*?);/) {
+	    my $p = $1;
+	    $p = $flow_code_constants{$p} if exists($flow_code_constants{$p});
+	    $p =~ tr/\" \t\r\n//d;
+	    push @flow_code, $p;
+	} else {
+	    push @flow_code, "";
+	}
+	if (/\bflags\(\).*return\s*"(.*?)";/) {
+	    push @flags, $1;
+	} else {
+	    push @flags, undef;
+	}
     }
-    if (/\bflags\(\).*return\s*"(.*?)";/) {
-      push @flags, $1;
-    } else {
-      push @flags, undef;
+
+    # process element documentation
+    my(%doc_titles);
+    foreach $comment (split(m{(/\*.*?\*/)}s, $text)) {
+	if ($comment =~ /^\/\*/ && $comment =~ /^[\/*\s]+=/) {
+	    $comment =~ s/^\/\*\s*//g;
+	    $comment =~ s/\s*\*\/$//g;
+	    $comment =~ s/^ ?\* ?//gm;
+	    my($title, $count);
+	    while ($comment =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
+		if ($1 eq 'title') {
+		    $title = $3;
+		} elsif ($1 eq 'c') {
+		    $_ = $4;
+		    while (/^\s*(\w+)\(/mg) {
+			$doc_titles{$1} = ($title ? $title : $1);
+		    }
+		    if (!%doc_titles && /^\s*([\w@]+)\s*$/) {
+			$doc_titles{$1} = ($title ? $title : $1);
+		    }
+		    last;
+		}
+	    }
+	}
     }
-  }
 
-  # process element documentation
-  my(%doc_titles);
-  foreach $comment (split(m{(/\*.*?\*/)}s, $text)) {
-      if ($comment =~ /^\/\*/ && $comment =~ /^[\/*\s]+=/) {
-	  $comment =~ s/^\/\*\s*//g;
-	  $comment =~ s/\s*\*\/$//g;
-	  $comment =~ s/^ ?\* ?//gm;
-	  my($title, $count);
-	  while ($comment =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
-	      if ($1 eq 'title') {
-		  $title = $3;
-	      } elsif ($1 eq 'c') {
-		  $_ = $4;
-		  while (/^\s*(\w+)\(/mg) {
-		      $doc_titles{$1} = ($title ? $title : $1);
-		  }
-		  if (!%doc_titles && /^\s*([\w@]+)\s*$/) {
-		      $doc_titles{$1} = ($title ? $title : $1);
-		  }
-		  last;
-	      }
-	  }
-      }
-  }
+    # apply element documentation to element names
+    for ($i = $first; $i < @processing; $i++) {
+	push @doc_name, $doc_titles{$click_name[$i]};
+    }
 
-  # apply element documentation to element names
-  for ($i = $first; $i < @processing; $i++) {
-      push @doc_name, $doc_titles{$click_name[$i]};
-  }
+    # process ELEMENT_REQUIRES, ELEMENT_PROVIDES, and EXPORT_ELEMENT
+    if (!open(IN, $filename)) {
+	print STDERR "$filename: $!\n";
+	return;
+    }
+    $text = <IN>;
+    close IN;
 
-  # process ELEMENT_REQUIRES, ELEMENT_PROVIDES, and EXPORT_ELEMENT
-  if (!open(IN, $filename)) {
-    print STDERR "$filename: $!\n";
-    return;
-  }
-  $text = <IN>;
-  close IN;
+    my($req, $prov, $exp) = ('', '', '');
+    $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\((.*)\)/mg;
+    $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\((.*)\)/mg;
+    $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\((.*)\)/mg;
+    $req =~ s/^\s+//;
+    $req =~ s/"/\\"/g;
+    $prov =~ s/^\s+//;
+    $prov =~ s/"/\\"/g;
 
-  my($req, $prov, $exp) = ('', '', '');
-  $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\((.*)\)/mg;
-  $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\((.*)\)/mg;
-  $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\((.*)\)/mg;
-  $req =~ s/^\s+//;
-  $req =~ s/"/\\"/g;
-  $prov =~ s/^\s+//;
-  $prov =~ s/"/\\"/g;
-
-  # make copies of classes as required
-  while ($exp =~ /(\S+)-(\S+)/g) {
-      my($cxx, $click) = ($1, $2);
-      for ($i = $first; $i < @processing; $i++) {
-	  if ($cxx_name[$i] eq $cxx) {
-	      push @click_name, $click;
-	      push @cxx_name, $cxx;
-	      push @doc_name, $doc_name[$i];
-	      push @source_file, $source_file[$i];
-	      push @header_file, $header_file[$i];
-	      push @parents, $parents[$i];
-	      push @processing, $processing[$i];
-	      push @flow_code, $flow_code[$i];
-	      push @flags, $flags[$i];
-	      last;
-	  }
-      }
-  }
-  
-  # add a fake class if there were no classes
-  if (@cxx_name == $first && $prov) {
-    push @click_name, "";
-    push @cxx_name, "";
-    push @doc_name, "";
-    push @source_file, $filename;
-    push @header_file, $headername;
-    push @parents, [];
-    push @processing, "";
-    push @flow_code, "";
-    push @flags, undef;
-  }
+    # make copies of classes as required
+    while ($exp =~ /(\S+)-(\S+)/g) {
+	my($cxx, $click) = ($1, $2);
+	for ($i = $first; $i < @processing; $i++) {
+	    if ($cxx_name[$i] eq $cxx) {
+		push @click_name, $click;
+		push @cxx_name, $cxx;
+		push @doc_name, $doc_name[$i];
+		push @source_file, $source_file[$i];
+		push @header_file, $header_file[$i];
+		push @parents, $parents[$i];
+		push @processing, $processing[$i];
+		push @flow_code, $flow_code[$i];
+		push @flags, $flags[$i];
+		last;
+	    }
+	}
+    }
+    
+    # add a fake class if there were no classes
+    if (@cxx_name == $first && $prov) {
+	push @click_name, "";
+	push @cxx_name, "";
+	push @doc_name, "";
+	push @source_file, $filename;
+	push @header_file, $headername;
+	push @parents, [];
+	push @processing, "";
+	push @flow_code, "";
+	push @flags, undef;
+    }
 
   # apply requirements and provisions
   for ($i = $first; $i < @processing; $i++) {
@@ -350,8 +350,10 @@ while (@ARGV) {
     } elsif (/^-p$/ || long_option_match($_, '--prefix', 5)) {
 	die "not enough arguments" if !@ARGV;
 	$prefix = shift @ARGV;
+	$prefix .= "/" if $prefix !~ m|/\Z|;
     } elsif (long_option_match($_, '--prefix', 5) && /^[^=]*=(.*)$/) {
 	$prefix = $1;
+	$prefix .= "/" if $prefix !~ m|/\Z|;
     } elsif (/^-r$/ || long_option_match($_, '--provide', 5)) {
 	die "not enough arguments" if !@ARGV;
 	push @provides, split(/\s+/, shift @ARGV);
@@ -359,11 +361,11 @@ while (@ARGV) {
 	push @provides, split(/\s+/, $1);
     } elsif (/^-I$/ || long_option_match($_, '--include', 3)) {
 	die "not enough arguments" if !@ARGV;
-	push @includes, shift @ARGV;
+	push @includes, $prefix . shift @ARGV;
     } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
-	push @includes, $1;
+	push @includes, $prefix . $1;
     } elsif (/^-I(.+)$/) {
-	push @includes, $1;
+	push @includes, $prefix . $1;
     } elsif (/^-s$/ || long_option_match($_, '--sourcedir', 3)) {
 	die "not enough arguments" if !@ARGV;
 	$sourcedir = shift @ARGV;
