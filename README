@@ -113,11 +113,6 @@ This will also install the kernel module if necessary and report any errors
 to standard error. (You must run 'make install' before 'click-install' will
 work.)
 
-    You can also install the kernel module with '/sbin/insmod click.o', and
-then install a configuration by hand with 'cat CONFIGFILE >
-/proc/click/config'. If any errors occurred, they will appear in
-'/proc/click/errors'. But 'click-install' is easier.
-
 NS Simulator
 ............
 
