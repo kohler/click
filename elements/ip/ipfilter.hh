@@ -129,19 +129,21 @@ class IPFilter : public Classifier { public:
     WT_DATA	= 0x0000FFFF,
     WT_TYPE_SHIFT = 16,
 
-    TYPE_NONE	= 0,
+    TYPE_NONE	= 0,		// data types
     TYPE_TYPE	= 1,
     TYPE_INT	= 2,
-    TYPE_HOST	= 3,
-    TYPE_NET	= 4,
-    TYPE_PORT	= 5,
-    TYPE_PROTO	= 6,
-    TYPE_TCPOPT = 7,
-    TYPE_TOS	= 8,
-    TYPE_DSCP	= 9,
-    TYPE_ICMP_TYPE = 10,
-    TYPE_IPFRAG	= 11,
-    TYPE_IPUNFRAG = 12,
+    
+    TYPE_HOST	= 10,		// expression types
+    TYPE_PROTO	= 11,
+    TYPE_TOS	= 12,
+    TYPE_IPFRAG	= 13,
+    TYPE_PORT	= 14,
+    TYPE_TCPOPT = 15,
+    TYPE_ICMP_TYPE = 16,
+    
+    TYPE_NET	= 20,		// shorthands
+    TYPE_DSCP	= 21,
+    TYPE_IPUNFRAG = 22,
     
     UNKNOWN = -1000,
     
@@ -156,34 +158,35 @@ class IPFilter : public Classifier { public:
   struct Primitive {
     
     int _type;
-    int _srcdst;
-    int _op;
-    int _transp_proto;
-    
     int _data;
 
-    union {
-      struct in_addr ip;
-      struct {
-	struct in_addr ip, mask;
-      } ipnet;
-      int i;
-    } _u;
-    int _mask;
-    bool _negated;
+    int _op;
     bool _op_negated;
+
+    int _srcdst;
+    int _transp_proto;
     
-    Primitive()	{ clear(); }
+    union {
+      u_int32_t u;
+      int32_t i;
+      unsigned char c[4];
+    } _u, _mask;
+    
+    Primitive()				{ clear(); }
     
     void clear();
     void set_type(int, ErrorHandler *);
     void set_srcdst(int, ErrorHandler *);
     void set_transp_proto(int, ErrorHandler *);
     
-    int set_mask(int full_mask, int shift, ErrorHandler *);
+    int set_mask(u_int32_t full_mask, int shift, ErrorHandler *);
     int check(const Primitive &, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
 
+    bool has_transp_proto() const;
+    bool negation_is_simple() const;
+    void simple_negate();
+    
     String unparse_type() const;
     static String unparse_type(int srcdst, int type);
     static String unparse_transp_proto(int transp_proto);
@@ -202,5 +205,23 @@ class IPFilter : public Classifier { public:
   void length_checked_push(Packet *);
   
 };
+
+
+inline bool
+IPFilter::Primitive::has_transp_proto() const
+{
+  return _transp_proto >= 0;
+}
+
+inline bool
+IPFilter::Primitive::negation_is_simple() const
+{
+  if (_type == TYPE_PROTO)
+    return true;
+  else if (_transp_proto >= 0)
+    return false;
+  else
+    return _type == TYPE_HOST || _type == TYPE_TOS || _type == TYPE_IPFRAG;
+}
 
 #endif

@@ -71,14 +71,19 @@ IPFilter::create_wordmap()
   wordmap->insert("smtp",	WT(TYPE_PORT, 25));
   wordmap->insert("domain",	WT(TYPE_PORT, 53));
   wordmap->insert("dns",	WT(TYPE_PORT, 53));
+  wordmap->insert("tftp",	WT(TYPE_PORT, 69));
   wordmap->insert("finger",	WT(TYPE_PORT, 79));
   wordmap->insert("www",	WT(TYPE_PORT, 80));
   wordmap->insert("pop3",	WT(TYPE_PORT, 110));
+  wordmap->insert("sunrpc",	WT(TYPE_PORT, 111));
   wordmap->insert("auth",	WT(TYPE_PORT, 113));
   wordmap->insert("nntp",	WT(TYPE_PORT, 119));
   wordmap->insert("ntp",	WT(TYPE_PORT, 123));
+  wordmap->insert("irc",	WT(TYPE_PORT, 194));
   wordmap->insert("imap3",	WT(TYPE_PORT, 220));
   wordmap->insert("https",	WT(TYPE_PORT, 443));
+  wordmap->insert("rip",	WT(TYPE_PORT, 520));
+  wordmap->insert("route",	WT(TYPE_PORT, 520));
   wordmap->insert("imaps",	WT(TYPE_PORT, 993));
   wordmap->insert("pop3s",	WT(TYPE_PORT, 995));
 
@@ -214,7 +219,6 @@ IPFilter::clone() const
 void
 IPFilter::Primitive::clear()
 {
-  _negated = false;
   _type = _srcdst = 0;
   _transp_proto = UNKNOWN;
   _data = 0;
@@ -247,9 +251,9 @@ IPFilter::Primitive::set_transp_proto(int x, ErrorHandler *errh)
 }
 
 int
-IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
+IPFilter::Primitive::set_mask(u_int32_t full_mask, int shift, ErrorHandler *errh)
 {
-  int data = _u.i;
+  u_int32_t data = _u.u;
   
   if (_op == OP_GT && data == 0) {
     _op = OP_EQ;
@@ -257,11 +261,11 @@ IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
   }
   
   if (_op == OP_GT || _op == OP_LT) {
-    int pow2 = (_op == OP_GT ? data + 1 : data);
+    u_int32_t pow2 = (_op == OP_GT ? data + 1 : data);
     if ((pow2 & (pow2 - 1)) == 0 && (pow2 - 1) <= full_mask) {
       // have a power of 2
-      _u.i = 0;
-      _mask = (full_mask & ~(pow2 - 1)) << shift;
+      _u.u = 0;
+      _mask.u = (full_mask & ~(pow2 - 1)) << shift;
       if (_op == OP_GT)
 	_op_negated = !_op_negated;
       return 0;
@@ -271,11 +275,11 @@ IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
       return errh->error("bad relation `%s%s %d'\n(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
 
-  if (data < 0 || data > full_mask)
+  if (data > full_mask)
     return errh->error("value %d out of range", data);
 
-  _u.i = data << shift;
-  _mask = full_mask << shift;
+  _u.u = data << shift;
+  _mask.u = full_mask << shift;
   return 0;
 }
 
@@ -331,6 +335,15 @@ IPFilter::Primitive::unparse_type() const
   return unparse_type(_srcdst, _type);
 }
 
+void
+IPFilter::Primitive::simple_negate()
+{
+  assert(negation_is_simple());
+  _op_negated = !_op_negated;
+  if (_type == TYPE_PROTO && _mask.u == 0xFF)
+    _transp_proto = (_op_negated ? UNKNOWN : _u.i);
+}
+
 int
 IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 {
@@ -369,7 +382,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 	_data = p._type;
 	goto retry;
       } else
-	return errh->error("specify `proto', `port', or `icmp type'", _u.i);
+	return errh->error("specify `proto', `port', or `icmp type'");
       break;
 
      case TYPE_NONE:
@@ -385,21 +398,21 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     }
   }
 
-  // clear _mask
-  _mask = 0;
-  
   // check that _data and _type agree
   if (_type == TYPE_HOST) {
     if (_data != TYPE_HOST)
       return errh->error("IP address missing in `host' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `host'");
+    _mask.u = 0xFFFFFFFFU;
     
   } else if (_type == TYPE_NET) {
     if (_data != TYPE_NET)
       return errh->error("IP prefix missing in `net' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `net'");
+    _type = TYPE_HOST;
+    // _mask already set
     
   } else if (_type == TYPE_PROTO) {
     if (_data == TYPE_INT || _data == TYPE_PROTO) {
@@ -408,15 +421,17 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _data = TYPE_NONE;
     } else
       _u.i = _transp_proto;
-    _transp_proto = ((_op_negated || _op != OP_EQ) ? (int)UNKNOWN : _u.i);
+    _transp_proto = UNKNOWN;
     if (_data != TYPE_NONE || _u.i == UNKNOWN)
       return errh->error("IP protocol missing in `proto' directive");
     if (_u.i == IP_PROTO_TCP_OR_UDP) {
       if (_op != OP_EQ)
 	return errh->error("can't use relational operators with `tcpudp'");
-      _mask = 0xFF;
+      _mask.u = 0xFF;
     } else if (set_mask(0xFF, 0, errh) < 0)
       return -1;
+    if (_mask.u == 0xFF && !_op_negated) // set _transp_proto if allowed
+      _transp_proto = _u.i;
     
   } else if (_type == TYPE_PORT) {
     if (_data == TYPE_INT)
@@ -443,6 +458,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("can't use relational operators with `tcp opt'");
     if (_u.i < 0 || _u.i > 255)
       return errh->error("value %d out of range", _u.i);
+    _mask.i = _u.i;
 
   } else if (_type == TYPE_TOS) {
     if (_data != TYPE_INT)
@@ -469,13 +485,19 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
     
-  } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
+  } else if (_type == TYPE_IPFRAG) {
     if (_data != TYPE_NONE)
       return errh->error("`ip frag' directive takes no data");
+    
+  } else if (_type == TYPE_IPUNFRAG) {
+    if (_data != TYPE_NONE)
+      return errh->error("`ip unfrag' directive takes no data");
+    _op_negated = true;
+    _type = TYPE_IPFRAG;
   }
 
   // fix _srcdst
-  if (_type == TYPE_HOST || _type == TYPE_NET || _type == TYPE_PORT) {
+  if (_type == TYPE_HOST || _type == TYPE_PORT) {
     if (_srcdst == 0)
       _srcdst = SD_OR;
   } else if (old_srcdst)
@@ -485,7 +507,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 }
 
 static void
-add_exprs_for_proto(int proto, int mask, Classifier *c, Vector<int> &tree)
+add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tree)
 {
   if (mask == 0xFF && proto == IP_PROTO_TCP_OR_UDP) {
     c->start_expr_subtree(tree);
@@ -500,86 +522,96 @@ void
 IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 {
   Expr e;
-  bool negated = _negated;
 
   // handle transport protocol uniformly
   c->start_expr_subtree(tree);
   if (_type == TYPE_PROTO)
-    add_exprs_for_proto(_u.i, _mask, c, tree);
+    add_exprs_for_proto(_u.i, _mask.i, c, tree);
   else if (_transp_proto != UNKNOWN)
     add_exprs_for_proto(_transp_proto, 0xFF, c, tree);
 
   // handle other types
-  if (_type == TYPE_HOST || _type == TYPE_NET) {
-    if (_type == TYPE_HOST) {
-      e.mask.u = 0xFFFFFFFFU;
-      e.value.u = _u.ip.s_addr;
-    } else {
-      e.mask.u = _u.ipnet.mask.s_addr;
-      e.value.u = _u.ipnet.ip.s_addr & _u.ipnet.mask.s_addr;
-    }
-    c->start_expr_subtree(tree);
-    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
-      c->add_expr(tree, 12, e.value.u, e.mask.u);
-      if (_op_negated) c->negate_expr_subtree(tree);
-    }
-    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
-      c->add_expr(tree, 16, e.value.u, e.mask.u);
-      if (_op_negated) c->negate_expr_subtree(tree);
-    }
-    c->finish_expr_subtree(tree, _srcdst != SD_OR);
+  switch (_type) {
+
+   case TYPE_HOST: {
+     e.mask.u = _mask.u;
+     e.value.u = _u.u & _mask.u;
+     c->start_expr_subtree(tree);
+     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
+       c->add_expr(tree, 12, e.value.u, e.mask.u);
+       if (_op_negated) c->negate_expr_subtree(tree);
+     }
+     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
+       c->add_expr(tree, 16, e.value.u, e.mask.u);
+       if (_op_negated) c->negate_expr_subtree(tree);
+     }
+     c->finish_expr_subtree(tree, _srcdst != SD_OR);
+     break;
+   }
+
+   case TYPE_PROTO:
+    // do nothing
+    break;
+
+   case TYPE_TOS: {
+     c->start_expr_subtree(tree);
+     c->add_expr(tree, 0, htonl(_u.u << 16), htonl(_mask.u << 16));
+     c->finish_expr_subtree(tree, true);
+     if (_op_negated) c->negate_expr_subtree(tree);
+     break;
+   }
+
+   case TYPE_IPFRAG: {
+     c->start_expr_subtree(tree);
+     c->add_expr(tree, 4, 0, htonl(0x00003FFF));
+     c->finish_expr_subtree(tree, true);
+     if (!_op_negated) c->negate_expr_subtree(tree);
+     break;
+   }
+
+   case TYPE_PORT: {
+     u_int32_t mask = (htons(_mask.u) << 16) | htons(_mask.u);
+     u_int32_t ports = (htons(_u.u) << 16) | htons(_u.u);
     
-  } else if (_type == TYPE_PORT) {
-    unsigned mask = (htons(_mask) << 16) | htons(_mask);
-    unsigned ports = (htons(_u.i) << 16) | htons(_u.i);
-    
-    // enforce first fragment: fragmentation offset == 0
-    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
+     // enforce first fragment: fragmentation offset == 0
+     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
 
-    c->start_expr_subtree(tree);
-    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
-      c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
-      if (_op_negated) c->negate_expr_subtree(tree);
-    }
-    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
-      c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
-      if (_op_negated) c->negate_expr_subtree(tree);
-    }
-    c->finish_expr_subtree(tree, _srcdst != SD_OR);
+     c->start_expr_subtree(tree);
+     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
+       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
+       if (_op_negated) c->negate_expr_subtree(tree);
+     }
+     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
+       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
+       if (_op_negated) c->negate_expr_subtree(tree);
+     }
+     c->finish_expr_subtree(tree, _srcdst != SD_OR);
+     break;
+   }
 
-  } else if (_type == TYPE_TCPOPT) {
-    // enforce first fragment: fragmentation offset == 0
-    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
-    unsigned val = (negated ? 0 : _u.i);
-    c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(val << 16), htonl(_u.i << 16));
-    negated = false;		// did our own negation
+   case TYPE_TCPOPT: {
+     // enforce first fragment: fragmentation offset == 0
+     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
+     c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(_u.u << 16), htonl(_mask.u << 16));
+     break;
+   }
 
-  } else if (_type == TYPE_TOS) {
-    c->start_expr_subtree(tree);
-    c->add_expr(tree, 0, htonl(_u.i << 16), htonl(_mask << 16));
-    c->finish_expr_subtree(tree, true);
-    if (_op_negated) c->negate_expr_subtree(tree);
+   case TYPE_ICMP_TYPE: {
+     // enforce first fragment: fragmentation offset == 0
+     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
+     c->start_expr_subtree(tree);
+     c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.u << 24), htonl(_mask.u << 24));
+     c->finish_expr_subtree(tree, true);
+     if (_op_negated) c->negate_expr_subtree(tree);
+     break;
+   }
 
-  } else if (_type == TYPE_ICMP_TYPE) {
-    // enforce first fragment: fragmentation offset == 0
-    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
-    c->start_expr_subtree(tree);
-    c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.i << 24), htonl(_mask << 24));
-    c->finish_expr_subtree(tree, true);
-    if (_op_negated) c->negate_expr_subtree(tree);
+   default:
+    assert(0);
 
-  } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
-    c->start_expr_subtree(tree);
-    c->add_expr(tree, 4, 0, htonl(0x00003FFF));
-    c->finish_expr_subtree(tree, true);
-    if (_type == TYPE_IPFRAG)
-      c->negate_expr_subtree(tree);
   }
 
   c->finish_expr_subtree(tree, true);
-
-  if (negated)
-    c->negate_expr_subtree(tree);
 }
 
 
@@ -811,34 +843,34 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
     else if (WT_TYPE(wt) == TYPE_PROTO) {
       prim._data = TYPE_PROTO;
-      prim._u.i = (wt & WT_DATA);
+      prim._u.u = (wt & WT_DATA);
 
     } else if (WT_TYPE(wt) == TYPE_PORT) {
       prim._data = TYPE_PORT;
-      prim._u.i = (wt & WT_DATA);
+      prim._u.u = (wt & WT_DATA);
 
     } else if (WT_TYPE(wt) == TYPE_TCPOPT) {
       prim._data = TYPE_TCPOPT;
-      prim._u.i = (wt & WT_DATA);
+      prim._u.u = (wt & WT_DATA);
 
     } else if (WT_TYPE(wt) == TYPE_ICMP_TYPE) {
       prim._data = TYPE_ICMP_TYPE;
-      prim._u.i = (wt & WT_DATA);
+      prim._u.u = (wt & WT_DATA);
 
     } else if (cp_integer(wd, &prim._u.i))
       prim._data = TYPE_INT;
   
-    else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
+    else if (cp_ip_address(wd, prim._u.c, this)) {
       if (pos < words.size() - 1 && words[pos] == "mask"
-	  && cp_ip_address(words[pos+1], (unsigned char *)&prim._u.ipnet.mask, this)) {
+	  && cp_ip_address(words[pos+1], prim._mask.c, this)) {
 	pos += 2;
 	prim._data = TYPE_NET;
-      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, prim._u.c, prim._mask.c, this))
 	prim._data = TYPE_NET;
       else
 	prim._data = TYPE_HOST;
     
-    } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+    } else if (cp_ip_prefix(wd, prim._u.c, prim._mask.c, this))
       prim._data = TYPE_NET;
 
     else
@@ -851,9 +883,10 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   }
   
   // add if it is valid
-  prim._negated = negated;
   if (prim.check(prev_prim, errh) >= 0) {
     prim.add_exprs(this, tree);
+    if (negated)
+      negate_expr_subtree(tree);
     prev_prim = prim;
   }
 
