@@ -388,6 +388,10 @@ Neighbor::make_hello()
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = psz - sizeof(click_ether);
+#if 1
+  click_chatter("total len is %d", (int) gh->total_len);
+#endif
+  gh->total_len = htons(gh->total_len);
   gh->type = grid_hdr::GRID_LR_HELLO;
   memcpy(&gh->ip, _ipaddr.data(), 4);
 
