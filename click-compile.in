@@ -172,7 +172,7 @@ case $target in
     target=userlevel;;
   k|ke|ker|kern|kerne|kernel|l|li|lin|linu|linux|linuxm|linuxmo|linuxmod|linuxmodu|linuxmodul|linuxmodule)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
-    iincludes="${include_source} -I${includedir} -I${linuxdir}/include @WIFI_INCLUDES@"
+    iincludes="${include_source} -I${includedir} -I${linuxdir}/include"
     icppflags="@CPPFLAGS@"
     icxxflags="@CXXFLAGS_NDEBUG@ @DEPCFLAGS@"
     icflags="@CFLAGS_NDEBUG@ @DEPCFLAGS@"

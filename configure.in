@@ -152,48 +152,11 @@ dnl ELEMENTS_ARG_ENABLE(snmp, [include SNMP elements], NO)
 ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
 ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
-ELEMENTS_ARG_ENABLE(wifi, [include wifi linuxmodule support (EXPERIMENTAL)], NO)
+ELEMENTS_ARG_ENABLE(wifi, [include wifi support], NO)
 
 elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
 AC_SUBST(elements_vpath)
 
-
-
-dnl 
-dnl wifi driver
-dnl
-
-AC_ARG_WITH(wifi, [[  --with-wifi[=DIR]       Wifi driver (madwifi.stripped) source code is in DIR]],
-  [wifidir=$withval],
-  wifidir=NONE)
-WIFI_INCLUDES=
-
-if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
-    if test "$wifidir" != NONE && expr "_$wifidir" : '_[[^/\\]]' >/dev/null; then 
-	AC_MSG_ERROR([
-=========================================
-
-The --with-wifi directory $wifidir is relative.
-You must supply an absolute path starting with /.
-
-=========================================])
-    elif test -f $wifidir/click_wifi/click_wifi.h; then
-	WIFI_INCLUDES=-I$wifidir/click_wifi
-	dnl TARGETS="$TARGETS wifi"
-    else
-	AC_MSG_ERROR([
-=========================================
-
-You used --enable-wifi and --enable-linuxmodule but
-'$wifidir/click_wifi/click_wifi.h' can't be found.  You must download
-the madwifi.stripped driver and supply the correct argument to
---with-wifi.
-
-=========================================])
-    fi
-fi
-
-AC_SUBST(WIFI_INCLUDES)
 
 
 dnl
