@@ -4,7 +4,7 @@ sub mysystem ($) {
   my($sys) = @_;
   print STDERR $sys, "\n";
   my($ret) = system($sys);
-  $ret && die "`$sys' failed ($ret)";
+  $ret && die "'$sys' failed ($ret)";
 }
 
 my($INSTALL) = 1;
@@ -28,8 +28,8 @@ while ($ARGV[0] =~ /^-/) {
 my($WEBDIR) = $ARGV[0];
 $WEBDIR =~ s/\/+$//;
 my($DOCDIR, $EXDIR) = ("$WEBDIR/doc", "$WEBDIR/ex");
--r "$DOCDIR/template" || die "`$DOCDIR/template' not found";
--r "$EXDIR/template" || die "`$EXDIR/template' not found";
+-r "$DOCDIR/template" || die "'$DOCDIR/template' not found";
+-r "$EXDIR/template" || die "'$EXDIR/template' not found";
 
 # -1. get into correct directory
 chdir('..') if !-d 'linuxmodule';
@@ -298,15 +298,15 @@ if ($ELEMENTS) {
     elist_file("$DOCDIR/elemname.html");
 }
 
-# 3. call `man2html'
+# 3. call 'man2html'
 mysystem("man2html -l -m '<b>@</b>' -t $DOCDIR/template -d $DOCDIR /tmp/%click-webdoc/man/man*/*.?");
 
-# 5. call `changelog2html'
+# 5. call 'changelog2html'
 if ($NEWS) {
     mysystem("changelog2html -d $DOCDIR click-$VERSION/NEWS $WEBDIR/news.html");
 }
 
-# 6. edit `news.html'
+# 6. edit 'news.html'
 if ($NEWS) {
     open(IN, "$WEBDIR/news.html") || die "$WEBDIR/news.html: $!\n";
     open(OUT, ">$WEBDIR/news.html.new") || die "$WEBDIR/news.html.new: $!\n";

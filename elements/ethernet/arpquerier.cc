@@ -3,6 +3,7 @@
  * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -52,9 +53,12 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 1)
     conf.push_back(conf[0]);
+  _capacity = 2048;
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_my_ip,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
+		     cpKeywords,
+		     "CAPACITY", cpUnsigned, "packet capacity", &_capacity,
 		     cpEnd);
 }
 
@@ -71,7 +75,7 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   // table and reset the queries and pkts_killed counters
   clear_map();
   _arp_queries = 0;
-  _pkts_killed = 0;
+  _drops = 0;
   _arp_responses = 0;
   return 0;
 }
@@ -82,8 +86,9 @@ ARPQuerier::initialize(ErrorHandler *)
   _expire_timer.initialize(this);
   _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
   _arp_queries = 0;
-  _pkts_killed = 0;
+  _drops = 0;
   _arp_responses = 0;
+  _cache_size = 0;
   return 0;
 }
 
@@ -99,81 +104,118 @@ ARPQuerier::clear_map()
   // Walk the arp cache table and free 
   // any stored packets and arp entries.
   for (int i = 0; i < NMAP; i++) {
-    for (ARPEntry *t = _map[i]; t; ) {
-      ARPEntry *n = t->next;
-      if (t->p) {
-	t->p->kill();
-        _pkts_killed++;
+    for (ARPEntry *ae = _map[i]; ae; ) {
+      ARPEntry *n = ae->next;
+      while (Packet *p = ae->head) {
+	  ae->head = p->next();
+	  p->kill();
+	  _drops++;
       }
-      delete t;
-      t = n;
+      delete ae;
+      ae = n;
     }
     _map[i] = 0;
   }
+  _cache_size = 0;
 }
 
 void
-ARPQuerier::take_state(Element *e, ErrorHandler *)
+ARPQuerier::take_state(Element *e, ErrorHandler *errh)
 {
-  ARPQuerier *arpq = (ARPQuerier *)e->cast("ARPQuerier");
-  if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
-    return;
-
-  ARPEntry *save[NMAP];
-  memcpy(save, _map, sizeof(ARPEntry *) * NMAP);
-  memcpy(_map, arpq->_map, sizeof(ARPEntry *) * NMAP);
-  memcpy(arpq->_map, save, sizeof(ARPEntry *) * NMAP);
-}
-
-
-void
-ARPQuerier::expire_hook(Timer *, void *thunk)
-{
-  ARPQuerier *arpq = (ARPQuerier *)thunk;
-  arpq->_lock.acquire_write();
-  int jiff = click_jiffies();
-  for (int i = 0; i < NMAP; i++) {
-    ARPEntry *prev = 0;
-    while (1) {
-      ARPEntry *e = (prev ? prev->next : arpq->_map[i]);
-      if (!e)
-	break;
-      if (e->ok) {
-	int gap = jiff - e->last_response_jiffies;
-	if (gap > 300*CLICK_HZ) {
-	    //click_chatter("DARPQuerier timing out %x", e->ip.addr());
-	  // delete entry from map
-	  if (prev) prev->next = e->next;
-	  else arpq->_map[i] = e->next;
-	  if (e->p) {
-	    e->p->kill();
-            arpq->_pkts_killed++;
-	  }
-	  delete e;
-	  continue;		// don't change prev
-	} else if (gap > 60*CLICK_HZ)
-	  e->polling = 1;
-      }
-      prev = e;
+    ARPQuerier *arpq = (ARPQuerier *)e->cast("ARPQuerier");
+    if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
+	return;
+    if (_arp_queries > 0) {
+	errh->error("late take_state");
+	return;
     }
-  }
-  arpq->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
-  arpq->_lock.release_write();
+
+    memcpy(_map, arpq->_map, sizeof(ARPEntry *) * NMAP);
+    memset(arpq->_map, 0, sizeof(ARPEntry *) * NMAP);
+
+    _age_head = arpq->_age_head;
+    _age_tail = arpq->_age_tail;
+    _cache_size = arpq->_cache_size;
+    _arp_queries = arpq->_arp_queries;
+    _drops = arpq->_drops;
+    _arp_responses = arpq->_arp_responses;
+
+    // Need to change some pprev entries.
+    for (int i = 0; i < NMAP; i++)
+	if (_map[i])
+	    _map[i]->pprev = &_map[i];
+    if (_age_head)
+	_age_head->age_pprev = &_age_head;
+    
+    arpq->_age_head = arpq->_age_tail = 0;
+    arpq->_cache_size = 0;
+}
+
+
+void
+ARPQuerier::expire_hook(Timer *timer, void *thunk)
+{
+    // Expire any old entries, and make sure there's room for at least one
+    // packet.
+    ARPQuerier *arpq = (ARPQuerier *)thunk;
+    arpq->_lock.acquire_write();
+    int jiff = click_jiffies();
+    ARPEntry *ae;
+
+    // Delete old entries.
+    while ((ae = arpq->_age_head) && (jiff - ae->last_response_jiffies) > 300*CLICK_HZ) {
+	if ((*ae->pprev = ae->next))
+	    ae->next->pprev = ae->pprev;
+
+	if ((arpq->_age_head = ae->age_next))
+	    arpq->_age_head->age_pprev = &arpq->_age_head;
+	else
+	    arpq->_age_tail = 0;
+	
+	while (Packet *p = ae->head) {
+	    ae->head = p->next();
+	    p->kill();
+	    arpq->_cache_size--;
+	    arpq->_drops++;
+	}
+
+	delete ae;
+    }
+
+    // Mark entries for polling, and delete packets to make space.
+    while (ae) {
+	if (jiff - ae->last_response_jiffies > 60*CLICK_HZ)
+	    ae->polling = 1;
+	else if (arpq->_cache_size < arpq->_capacity)
+	    break;
+	while (arpq->_cache_size >= arpq->_capacity && ae->head) {
+	    Packet *p = ae->head;
+	    ae->head = p->next();
+	    p->kill();
+	    arpq->_cache_size--;
+	    arpq->_drops++;
+	}
+	ae = ae->age_next;
+    }
+
+    if (timer)
+	timer->schedule_after_ms(EXPIRE_TIMEOUT_MS);
+    arpq->_lock.release_write();
 }
 
 void
-ARPQuerier::send_query_for(const IPAddress &want_ip)
+ARPQuerier::send_query_for(IPAddress want_ip)
 {
   static bool zero_warned = false;  
   if (!want_ip && !zero_warned) {
     click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?", declaration().cc());
     zero_warned = true;
   }
-      
+  
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
-  if (q == 0) {
+  if (!q) {
     click_chatter("in arp querier: cannot make packet!");
-    assert(0);
+    return;
   }
   memset(q->data(), '\0', q->length());
   
@@ -210,12 +252,12 @@ ARPQuerier::handle_ip(Packet *p)
   // delete packet if we are not configured
   if (!_my_ip) {
     p->kill();
-    _pkts_killed++;
+    _drops++;
     return;
   }
   
   IPAddress ipa = p->dst_ip_anno();
-  int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+  int bucket = ip_bucket(ipa);
 
   _lock.acquire_read();
 
@@ -225,47 +267,67 @@ ARPQuerier::handle_ip(Packet *p)
     ae = ae->next;
 
   if (ae) {
-    if (ae->ok) {
-      WritablePacket *q = p->push_mac_header(sizeof(click_ether));
-      click_ether *e = q->ether_header();
-      memcpy(e->ether_shost, _my_en.data(), 6);
-      memcpy(e->ether_dhost, ae->en.data(), 6);
-      e->ether_type = htons(ETHERTYPE_IP);
-      IPAddress addr = ae->ip;
-      _lock.release_read();
-      output(0).push(q);
-      if (ae->polling) {
-	ae->polling = 0;
-	send_query_for(addr);
-     }
-    } 
-    
-    else {
+      if (ae->ok) {
+	  if (WritablePacket *q = p->push_mac_header(sizeof(click_ether))) {
+	      click_ether *e = q->ether_header();
+	      memcpy(e->ether_shost, _my_en.data(), 6);
+	      memcpy(e->ether_dhost, ae->en.data(), 6);
+	      e->ether_type = htons(ETHERTYPE_IP);
+	      _lock.release_read();
+	      output(0).push(q);
+	  } else {
+	      _drops++;
+	      _lock.release_read();
+	  }
+	  if (!ae->polling)
+	      return;
+	  ae->polling = 0;
+      } else {
+	  _lock.release_read();
+	  _lock.acquire_write();
+	  if (_cache_size >= _capacity)	// get some space if necessary
+	      expire_hook(0, this);
+	  if (ae->tail)
+	      ae->tail->set_next(p);
+	  else
+	      ae->head = p;
+	  ae->tail = p;
+	  p->set_next(0);
+	  _cache_size++;
+	  _lock.release_write();
+      }
+  } else {
       _lock.release_read();
       _lock.acquire_write();
-      if (ae->p) {
-	  //click_chatter("ARPQuerier killing packet...\n");
-        ae->p->kill();
-	_pkts_killed++;
+      if (_cache_size >= _capacity)
+	  expire_hook(0, this);
+      if (ARPEntry *ae = new ARPEntry) {
+	  ae->ip = ipa;
+	  ae->ok = ae->polling = 0;
+	  
+	  ae->head = ae->tail = p;
+	  p->set_next(0);
+	  
+	  ae->pprev = &_map[bucket];
+	  if ((ae->next = _map[bucket]))
+	      ae->next->pprev = &ae->next;
+	  _map[bucket] = ae;
+	  
+	  if (_age_tail)
+	      ae->age_pprev = &_age_tail->age_next;
+	  else
+	      ae->age_pprev = &_age_head;
+	  _age_tail = *ae->age_pprev = ae;
+	  ae->age_next = 0;
+	  
+	  _cache_size++;
+      } else {
+	  p->kill();
+	  _drops++;
       }
-      ae->p = p;
       _lock.release_write();
-      send_query_for(p->dst_ip_anno());
-    }
-  } 
-  
-  else {
-    _lock.release_read();
-    _lock.acquire_write();
-    ARPEntry *ae = new ARPEntry;
-    ae->ip = ipa;
-    ae->ok = ae->polling = 0;
-    ae->p = p;
-    ae->next = _map[bucket];
-    _map[bucket] = ae;
-    _lock.release_write();
-    send_query_for(p->dst_ip_anno());
   }
+  send_query_for(ipa);
 }
 
 /*
@@ -290,28 +352,42 @@ ARPQuerier::handle_response(Packet *p)
       && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP
       && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
       && !ena.is_group()) {
-    int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+    int bucket = ip_bucket(ipa);
 
     _lock.acquire_write();
     ARPEntry *ae = _map[bucket];
     while (ae && ae->ip != ipa)
       ae = ae->next;
     if (!ae) {
-      _lock.release_write();
-      return;
+	// XXX would be nice to store an entry for this preemptive response
+	_lock.release_write();
+	return;
     }
+    
     if (ae->ok && ae->en != ena)
-      click_chatter("ARPQuerier overwriting an entry");
+	click_chatter("ARPQuerier overwriting an entry");
     ae->en = ena;
     ae->ok = 1;
     ae->polling = 0;
     ae->last_response_jiffies = click_jiffies();
-    Packet *cached_packet = ae->p;
-    ae->p = 0;
+    Packet *cached_packet = ae->head;
+    ae->head = ae->tail = 0;
+    if (_age_tail != ae) {
+	*ae->age_pprev = ae->age_next;
+	ae->age_next->age_pprev = ae->age_pprev;
+	ae->age_pprev = &_age_tail->age_next;
+	ae->age_next = 0;
+	_age_tail = *ae->age_pprev = ae;
+    }
     _lock.release_write();
 
-    if (cached_packet)
-      handle_ip(cached_packet);
+    // Send out packets in the order in which they arrived
+    while (cached_packet) {
+	Packet *next = cached_packet->next();
+	handle_ip(cached_packet);
+	cached_packet = next;
+	_cache_size--;
+    }
   }
 }
 
@@ -338,30 +414,32 @@ ARPQuerier::read_table(Element *e, void *)
   return s;
 }
 
-static String
-ARPQuerier_read_stats(Element *e, void *thunk)
+String
+ARPQuerier::read_stats(Element *e, void *thunk)
 {
   ARPQuerier *q = (ARPQuerier *)e;
 
   switch ((uintptr_t) thunk) {
-  case 0:
+    case 0:
       return
-        String(q->_pkts_killed.value()) + " packets killed\n" +
+        String(q->_drops.value()) + " packets killed\n" +
         String(q->_arp_queries.value()) + " ARP queries sent\n";
-  case 1:
+    case 1:
       return String(q->_arp_responses.value()) + "\n";
-      
-  default:
-      return String() + "\n";
+    case 2:
+      return String(q->_drops.value()) + "\n";
+    default:
+      return String();
   }
 }
 
 void
 ARPQuerier::add_handlers()
 {
-  add_read_handler("table", read_table, (void *)0);
-  add_read_handler("stats", ARPQuerier_read_stats, (void *)0);
-  add_read_handler("responses", ARPQuerier_read_stats, (void *)1);
+    add_read_handler("table", read_table, (void *)0);
+    add_read_handler("stats", read_stats, (void *)0);
+    add_read_handler("responses", read_stats, (void *)1);
+    add_read_handler("drops", read_stats, (void *)2);
 }
 
 CLICK_ENDDECLS
