@@ -34,7 +34,7 @@ LocFromFile::cast(const char *name)
 {
   if(strcmp(name, "LocationInfo") == 0)
     return(this);
-  return(Element::cast(name));
+  return(LocationInfo::cast(name));
 }
 
 int

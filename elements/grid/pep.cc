@@ -19,8 +19,10 @@
 #include "grid.hh"
 
 PEP::PEP()
-  : Element(1, 1), _timer(this)
+  : _timer(this)
 {
+  add_input();
+  add_output();
   _fixed = 0;
   _seq = 1;
   _debug = true;
@@ -34,6 +36,14 @@ PEP *
 PEP::clone() const
 {
   return new PEP;
+}
+
+void *
+PEP::cast(const char *name)
+{
+  if(strcmp(name, "LocationInfo") == 0)
+    return(this);
+  return(LocationInfo::cast(name));
 }
 
 int
@@ -211,6 +221,8 @@ PEP::findEntry(unsigned id, bool create)
     i = _entries.size();
     static Entry e;
     e._fix.fix_id = id;
+    e._fix.fix_hops = -1;
+    e._fix.fix_seq = -1;
     _entries.push_back(e);
     assert(_entries.size() == i+1 && _entries[i]._fix.fix_id == id);
     return(i);
@@ -254,16 +266,17 @@ PEP::simple_action(Packet *p)
     int oh = _entries[j]._fix.fix_hops;
     if(f.fix_seq > os ||
        (f.fix_seq == os && f.fix_hops < oh)){
-      if(_debug)
-        click_chatter("PEP %s: updating %s, seq %d -> %d, hops %d -> %d",
+      _entries[j]._fix = f;
+      _entries[j]._when = tv;
+      if(_debug && f.fix_hops != oh)
+        click_chatter("PEP %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
                       _my_ip.s().cc(),
                       IPAddress(f.fix_id).s().cc(),
                       os,
                       f.fix_seq,
                       oh,
-                      f.fix_hops);
-      _entries[j]._fix = f;
-      _entries[j]._when = tv;
+                      f.fix_hops,
+                      get_current_location().s().cc());
     }
   }
 
@@ -271,6 +284,36 @@ PEP::simple_action(Packet *p)
   p->kill();
   return(0);
 }
+
+// Actually guess where we are.
+grid_location
+PEP::get_current_location()
+{
+  double lat = 0, lon = 0;
+  double weight = 0;
+  int i;
+  struct timeval now;
+
+  if(_fixed)
+    return(grid_location(_lat, _lon));
+
+  if(_entries.size() < 1)
+    return(grid_location(0.0, 0.0));
+
+  click_gettimeofday(&now);
+
+  for(i = 0; i < _entries.size(); i++){
+    if(now.tv_sec - _entries[i]._when.tv_sec < pep_stale){
+      double w = 1.0 / (_entries[i]._fix.fix_hops + 1);
+      lat += w * _entries[i]._fix.fix_loc.lat();
+      lon += w * _entries[i]._fix.fix_loc.lon();
+      weight += w;
+    }
+  }
+  
+  return(grid_location(lat / weight, lon / weight));
+}
+
 
 EXPORT_ELEMENT(PEP)
 

@@ -3,9 +3,10 @@
 
 /*
  * =c
- * PEP(IP, [lat, lon])
+ * PEP(IP, [fixed?, fix-lat, fix-lon])
  * =d
- * Run the Grid Position Estimation Protocol.
+ * Run the Grid Position Estimation Protocol. Subtypes LocationInfo,
+ * and can be used in its place.
  *
  * Produces packets with just the PEP payload. The Grid configuration
  * must arrange to encapsulate them appropriately. I expect this
@@ -56,8 +57,9 @@
 #include "ipaddress.hh"
 #include "pep_proto.hh"
 #include "grid.hh"
+#include "locationinfo.hh"
 
-class PEP : public Element {
+class PEP : public LocationInfo {
   
 public:
   
@@ -70,10 +72,11 @@ public:
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
+  virtual void *cast(const char *);
+  void run_scheduled();
   Packet *simple_action(Packet *p);
   
-  void run_scheduled();
+  grid_location get_current_location(void);
 
   bool _debug;
   
