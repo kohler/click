@@ -58,7 +58,7 @@ sub process_file ($) {
     if (/processing.*return\s*(.*?);/) {
       my $p = $1;
       $p = $processing_constants{$p} if exists($processing_constants{$p});
-      $p =~ tr/\"\s//d;
+      $p =~ tr/\" \t\r\n//d;
       $p =~ s{\A([^/]+)\Z}{$1/$1};
       push @processing, $p;
     } else {
@@ -116,7 +116,7 @@ sub parents_processing ($) {
 	$processing[$classid] = 'a/a';
 	last;
       } elsif ($parent ne '') {
-	$processing[$classid] = parents_processing($cxx_name_to_id{$parent});
+	$processing[$classid] = &parents_processing($cxx_name_to_id{$parent});
 	last if $processing[$classid];
       }
     }
@@ -132,7 +132,7 @@ sub parents_flags ($) {
       if ($parent eq 'Element') {
 	last;
       } elsif ($parent ne '') {
-	$flags[$classid] = parents_flags($cxx_name_to_id{$parent});
+	$flags[$classid] = &parents_flags($cxx_name_to_id{$parent});
 	last if defined $flags[$classid];
       }
     }
