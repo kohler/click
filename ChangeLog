@@ -1,3 +1,17 @@
+2003-03-17 Monday 00:49  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/icmp6.h (1.3): undefine symbols defined by
+	kernel (Kendy Kutzner)
+
+2003-03-17 Monday 00:41  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.40), bsdmodule/config.cc (1.7),
+	bsdmodule/module.cc (1.12), exopc/click.cc (1.5), lib/driver.cc
+	(1.12), linuxmodule/config.cc (1.7), ns/nsclick.cc (1.10),
+	userlevel/click.cc (1.78): rename export_elements to
+	click_export_elements, and correct its namespaces (Kendy Kutzner
+	reported)
+
 2003-03-17 Monday 00:26  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.204), config-userlevel.h.in (1.14),
