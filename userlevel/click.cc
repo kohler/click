@@ -631,18 +631,19 @@ particular purpose.\n");
     errh->warning("%s: configuration has no elements", router_file);
 
   // handle stop option by adding a QuitWatcher element
-  if (stop && stop_guess) {
-    for (int i = 0; i < router->nelements(); i++) {
-      Element *e = router->element(i);
-      if (e->cast("InfiniteSource") || e->cast("RatedSource")
-	  || e->cast("FromDump"))
-	stops.push_back(e->id());
+  if (stop) {
+    if (stop_guess) {
+      for (int i = 0; i < router->nelements(); i++) {
+	Element *e = router->element(i);
+	if (e->cast("InfiniteSource") || e->cast("RatedSource")
+	    || e->cast("FromDump"))
+	  stops.push_back(e->id());
+      }
     }
-  }
-  if (stop && !stops.size())
-    errh->error("`--stop' option given, but configuration has no packet sources");
-  if (stop)
+    if (!stops.size())
+      errh->error("`--stop' option given, but configuration has no packet sources");
     router->add_element(new QuitWatcher, "click_driver@@QuitWatcher", cp_unargvec(stops), "click");
+  }
 
   // add new ControlSockets
   for (int i = 0; i < ports.size(); i++)
