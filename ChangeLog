@@ -1,3 +1,14 @@
+2004-06-09 Wednesday 13:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/vector.cc (1.8), include/click/vector.hh (1.12),
+	lib/vectorv.cc (1.12): add "iterator Vector::insert(iterator, const
+	T&)" method a la STL
+
+2004-06-09 Wednesday 13:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/: vectortest.cc (1.1), vectortest.hh (1.1): add
+	Vector regression tests
+
 2004-06-08 Tuesday 01:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: cyclecountaccum.cc (1.10),
