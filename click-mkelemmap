@@ -263,6 +263,13 @@ sub parents_flags ($) {
     return $flags[$classid];
 }
 
+sub xml_quote ($) {
+    my($x) = @_;
+    $x =~ s/&/&amp;/g;
+    $x =~ s/</&lt;/g;
+    $x;
+}
+
 # main program: parse options
 sub read_files_from ($) {
     my($fn) = @_;
@@ -417,11 +424,11 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   
     my($hf) = $header_file[$id];
     $hf =~ s/^$prefix\/*//;
-    print OUT " headerfile=\"", $hf, "\"" if $hf;
+    print OUT " headerfile=\"", xml_quote($hf), "\"" if $hf;
 
     my($sf) = $source_file[$id];
     $sf =~ s/^$prefix\/*//;
-    print OUT " sourcefile=\"", $sf, "\"" if $sf;
+    print OUT " sourcefile=\"", xml_quote($sf), "\"" if $sf;
 
     my($p) = $processing[$id];
     $p = parents_processing($id) if !$p;
