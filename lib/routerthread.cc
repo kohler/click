@@ -265,6 +265,8 @@ RouterThread::run_tasks(int ntasks)
 inline void
 RouterThread::run_os()
 {
+    unlock_tasks();
+
 #if CLICK_USERLEVEL
     router()->run_selects(!empty());
 #elif !defined(CLICK_GREEDY)
@@ -279,6 +281,8 @@ RouterThread::run_os()
     splx(s);
 # endif
 #endif
+    
+    nice_lock_tasks();
 }
 
 void
@@ -361,12 +365,8 @@ void
 RouterThread::wait(int iter)
 {
 #ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
-    if (thread_id() == 0) {
-	unlock_tasks();
-	if (iter % DRIVER_ITER_OS == 0)
-	    run_os();
-	nice_lock_tasks();
-    }
+    if (thread_id() == 0 && (iter % DRIVER_ITER_OS) == 0)
+	run_os();
 #endif
 
     if (iter % DRIVER_ITER_TIMERS == 0) {
