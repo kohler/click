@@ -80,10 +80,16 @@ ones. Defaults to false.
 Boolean. If true, then output binary records instead of ASCII lines. Defaults
 to false.
 
-=item SACK
+=item OPT
 
-Boolean. If true, then output any TCP SACK options present on TCP packets.
-Defaults to false.
+Boolean. If true, then output any interesting TCP options present on TCP
+packets. Interesting options are MSS, window scaling, and SACK options;
+timestamp options are not interesting. Defaults to false.
+
+=item OUTPUT_LARGER
+
+Unsigned. Generate output only for flows with more than OUTPUT_LARGER packets.
+Defaults to 0 (output all flows).
 
 =back
 
@@ -95,7 +101,7 @@ Only available in user-level processes.
 
 This element
 
-  ... -> ToIPFlowDumps(/tmp/flow%03d);
+  ... -> ToIPFlowDumps(/tmp/flow%03n);
 
 might create a file C</tmp/flow001> with the following contents.
 
@@ -108,7 +114,7 @@ might create a file C</tmp/flow001> with the following contents.
   0.000001 > S 0 0 0
   0.075539 < SA 0 0 1
 
-Note that sequence numbers have been renumbered, so that the first sequence
+Note that sequence numbers have been offset, so that the first sequence
 numbers seen by ToIPFlowDumps are output as 0. The `C<!first_seq>' comments
 let you reconstruct actual sequence numbers if necessary. Similarly, timestamp
 annotations are relative to `C<!first_time>'.
@@ -158,16 +164,19 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     class Flow { public:
 
-	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool sack);
+	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool opt);
 
 	uint32_t aggregate() const	{ return _aggregate; }
+	uint32_t npackets() const	{ return _packet_count; }
 	Flow *next() const		{ return _next; }
 	void set_next(Flow *f)		{ _next = f; }
 
-	int output(ErrorHandler *);
 	int add_pkt(const Packet *, ErrorHandler *);
 	int add_note(const String &, ErrorHandler *);
 
+	int output(ErrorHandler *);
+	inline void unlink(ErrorHandler *);
+	
       private:
 
 	enum { NPKT = 512, NNOTE = 128 };
@@ -176,10 +185,12 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	IPFlowID _flowid;
 	int _ip_p;
 	uint32_t _aggregate;
+	uint32_t _packet_count;
+	uint32_t _note_count;
 	String _filename;
 	bool _outputted : 1;
 	bool _binary : 1;
-	bool _sack : 1;
+	bool _opt : 1;
 	int _npkt;
 	int _nnote;
 	struct timeval _first_timestamp;
@@ -188,11 +199,11 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	Pkt _pkt[NPKT];
 	Note _note[NNOTE];
 	StringAccum _note_text;
-	StringAccum _sack_info;
+	StringAccum _opt_info;
 
 	int create_directories(const String &, ErrorHandler *);
 	void output_binary(StringAccum &);
-	void store_sack(const click_tcp *, int direction);
+	void store_opt(const click_tcp *, int direction);
 	
     };
 
@@ -209,7 +220,9 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _absolute_time : 1;
     bool _absolute_seq : 1;
     bool _binary : 1;
-    bool _sack : 1;
+    bool _opt : 1;
+
+    uint32_t _output_larger;
     
     Task _task;
     NotifierSignal _signal;
@@ -219,6 +232,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     
     String expand_filename(const Packet *, ErrorHandler *) const;
     Flow *find_aggregate(uint32_t, const Packet * = 0);
+    void end_flow(Flow *, ErrorHandler *);
     inline void smaction(Packet *);
     static void gc_hook(Timer *, void *);
     
