@@ -4,7 +4,7 @@
 /*
  * =c
  * TulipStats(DEVNAME)
- * =s
+ * =s profiling
  * reports statistics gathered from Tulip device
  * =io
  * None

@@ -4,6 +4,7 @@
 /*
  * =c
  * FixDstLoc(LocationTable)
+ * =s Grid
  * =d
  *
  * Expects a GRID_NBR_ENCAP packet with MAC header as input.  Sets the

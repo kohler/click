@@ -4,8 +4,8 @@
 /*
  * =c
  * DecIP6HLIM()
- * =s
- * V<IPv6>
+ * =s IPv6
+ * 
  * =d
  * Expects IP6 packet as input.
  * If the hlim is <= 1 (i.e. has expired),

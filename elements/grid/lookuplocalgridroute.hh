@@ -5,6 +5,7 @@
  * =c
  * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes)
  *
+ * =s Grid
  * =d 
  * Forward packets according to the tables accumulated by the
  * UpdateGridRoutes element.  MAC-ADDRESS and IP-ADDRESS are the local

@@ -5,9 +5,8 @@
 /*
  * =c
  * RoundRobinSwitch
- * =s
+ * =s classification
  * sends packets to round-robin outputs
- * V<classification>
  * =io
  * One input, one or more outputs
  * =d

@@ -4,7 +4,7 @@
 /*
  * =c
  * ICMPPing
- * =s
+ * =s ICMP
  * responds to ICMP echo requests
  * =d
  * Respond to ICMP pings. The input packet must be an ethernet packet with

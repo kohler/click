@@ -5,9 +5,8 @@
 /*
  * =c
  * CheckPaint(X)
- * =s
+ * =s duplication
  * old name for PaintTee
- * V<duplication>
  * =d
  * This is the old name for the PaintTee element. You should use PaintTee
  * instead.

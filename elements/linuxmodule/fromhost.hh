@@ -5,9 +5,8 @@
 /*
  * =c
  * FromLinux(DEVNAME, ADDR/MASK)
- * =s
+ * =s sources
  * reads packets from Linux
- * V<sources>
  * =d
  *
  * Captures packets orginating from the Linux kernel and pushes them on output

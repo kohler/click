@@ -4,8 +4,8 @@
 /*
  * =c
  * LookupIP6Route(DST1 MASK1 GW1 OUT1, DST2 MAS2 GW2 OUT2, ...)
- * =s
- * V<IPv6>
+ * =s IPv6
+ * 
  * =d
  * Input: IP6 packets (no ether header).
  * Expects a destination IP6 address annotation with each packet.

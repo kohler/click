@@ -5,9 +5,8 @@
 /*
  * =c
  * RoundRobinIPMapper(PATTERN1, ..., PATTERNn)
- * =s
+ * =s TCP
  * round-robin mapper for IPRewriter(n)
- * V<TCP>
  * =io
  * None
  * =d

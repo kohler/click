@@ -4,7 +4,7 @@
 /*
  * =c
  * ARPFaker(IP1, ETH1, IP2, ETH2)
- * =s
+ * =s Ethernet, sources
  * periodically generates an ARP reply
  * =d
  * Every 10 seconds,

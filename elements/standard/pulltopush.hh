@@ -5,9 +5,8 @@
 /*
  * =c
  * PullToPush([BURSTSIZE])
- * =s
+ * =s packet scheduling
  * old name for Unqueue
- * V<packet scheduling>
  * =d
  * This is the old name for the Unqueue element. You should use Unqueue
  * instead.

@@ -5,8 +5,8 @@
 /*
  * =c
  * BandwidthRatedUnqueue(RATE)
- * =s pull-to-push converter
- * V<packet scheduling>
+ * =s packet scheduling
+ * pull-to-push converter
  * =processing
  * Pull inputs, push outputs
  * =d

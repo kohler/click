@@ -128,6 +128,9 @@ ToDump::write_packet(Packet *p)
   assert(wrote_data == p->length());
   
   // fflush(_fp);
+#else
+  // get rid of warning
+  (void) p;
 #endif
 }
 

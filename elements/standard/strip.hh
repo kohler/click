@@ -5,9 +5,8 @@
 /*
  * =c
  * Strip(N)
- * =s
+ * =s encapsulation
  * strips bytes from front of packets
- * V<encapsulation>
  * =d
  * Deletes the first N bytes from each packet.
  * =e

@@ -6,9 +6,8 @@
 /*
  * =c
  * RatedSplitter(R)
- * =s
+ * =s classification
  * splits flow of packets at specified rate
- * V<classification>
  * =d
  * 
  * RatedSplitter has two output ports. All incoming packets up to a maximum of

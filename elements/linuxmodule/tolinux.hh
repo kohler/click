@@ -5,9 +5,8 @@
 /*
  * =c
  * ToLinux([DEVNAME])
- * =s
+ * =s sinks
  * sends packets to Linux
- * V<sinks>
  * =d
  *
  * Hands packets to the ordinary Linux protocol stack.

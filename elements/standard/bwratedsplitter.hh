@@ -5,9 +5,8 @@
 /*
  * =c
  * BandwidthRatedSplitter(R)
- * =s
+ * =s classification
  * splits flow of packets at specified bandwidth rate
- * V<classification>
  * =processing
  * Push
  * =d

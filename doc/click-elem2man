@@ -26,7 +26,7 @@ my(%section_takes_args) =
     ( 'head1' => 1, 'c' => 0, 's' => 2, 'io' => 0, 'processing' => 0,
       'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1 );
 my(%section_takes_text) =
-    ( 'head1' => 1, 'c' => 1, 's' => 2, 'io' => 1, 'processing' => 1,
+    ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0 );
 my(%xsection_takes_args) =
     ( 'head1' => 1, 'head2' => 1, 'item' => 1, 'over' => 1, 'back' => 0,
@@ -38,8 +38,8 @@ my(%podentities) =
 
 my $directory;
 my $section = 'n';
-my(@all_outnames, %all_outsections, %all_summaries, %all_roff_summaries,
-   %class_name, %processing);
+my(@all_outnames, %all_outsections, %summaries_by_section,
+   %all_roff_summaries, %class_name, %processing);
 
 my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
@@ -49,6 +49,30 @@ my(%processing_text) =
       'h/l' => 'Push inputs, pull outputs',
       'l/h' => 'Pull inputs, push outputs',
       'a/ah' => 'Agnostic, but output 1 is push' );
+
+my(%section_headers) =
+    ( 'devices' => 'Network Devices',
+      'sources' => 'Other Sources and Sinks',
+      'sinks' => 'Other Sources and Sinks',
+      'classification' => 'Classification',
+      'checking' => 'Checking Validity',
+      'duplication' => 'Duplication',
+      'storage' => 'Storage',
+      'dropping' => 'Dropping',
+      'packet scheduling' => 'Packet Scheduling',
+      'encapsulation' => 'Encapsulation',
+      'modification' => 'Modification',
+      'annotations' => 'Annotations',
+      'measurement' => 'Measurement',
+      'debugging' => 'Debugging and Profiling',
+      'profiling' => 'Debugging and Profiling',
+      'information' => 'Informational Elements',
+      'Ethernet' => 'Ethernet',
+      'IP' => 'IP, ICMP, and IGMP',
+      'ICMP' => 'IP, ICMP, and IGMP',
+      'IGMP' => 'IP, ICMP, and IGMP',
+      'UDP' => 'UDP and TCP',
+      'TCP' => 'UDP and TCP' );
 
 # find date
 my($today) = '';
@@ -289,6 +313,18 @@ sub process_processing ($) {
   return undef;
 }
 
+sub process_summary_section ($$) {
+  my($summary, $file) = @_;
+  my($i);
+  foreach $i (split(/,/, $summary)) {
+    $i =~ s/^\s*//;
+    $i =~ s/\s*$//;
+    $i = $section_headers{$i} if exists $section_headers{$i};
+    next if !$i;
+    push @{$summaries_by_section{$i}}, $file;
+  }
+}
+
 sub process_comment ($$) {
   my($t, $filename) = @_;
   my($i);
@@ -414,18 +450,18 @@ sub process_comment ($$) {
   # front matter
   my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");
   $i = $first_in_section{'s'};
+  my($summary_section) = '';
   if (defined($i)) {
-    $section_text[$i] = $section_args[$i] . "\n" . $section_text[$i]
-	if $section_args[$i];
-    $all_summaries{$outfiles[0]} = $section_text[$i];
+    $summary_section = $section_args[$i];
+    process_summary_section($summary_section, $outfiles[0]);
     $section_text[$i] =~ s/\n\s*\n/\n/g;
     my($t) = nroffize($section_text[$i]);
     $oneliner .= ";\n" . $t;
     $oneliner =~ s/\n(^\.)/ /g;
-    $all_roff_summaries{$outfiles[0]} = $t;
+    $all_roff_summaries{$outfiles[0]} = $t . "\n";
   } else {
     # avoid uninitialized value warns
-    $all_summaries{$outfiles[0]} = $all_roff_summaries{$outfiles[0]} = '';
+    $all_roff_summaries{$outfiles[0]} = '';
   }
   
   print OUT <<"EOD;";
@@ -511,7 +547,7 @@ EOD;
       if (link $main_outname, $outname) {
 	push @all_outfiles, $outfiles[$i];
 	$all_outsections{$outfiles[$i]} = $outsections[$i];
-	$all_summaries{$outfiles[$i]} = $all_summaries{$outfiles[0]};
+	process_summary_section($summary_section, $outfiles[$i]);
 	$all_roff_summaries{$outfiles[$i]} = $all_roff_summaries{$outfiles[0]};
       } else {
 	print STDERR "$outname: $!\n";
@@ -586,12 +622,13 @@ sub help () {
   print STDERR <<'EOD;';
 `Element2man.pl' translates Click element documentation into manual pages.
 
-Usage: element2man.pl [-l] [-d DIRECTORY] [-f FILE | FILE]...
+Usage: element2man.pl [-l | -L] [-d DIRECTORY] [-f FILE | FILE]...
 
 Each FILE is a Click header file. `-' means standard input.
 
 Options:
   -l, --list              Generate the elements(n) manual page as well.
+  -L, --extend-list       Extend an existing elements(n) manual page.
   -d, --directory DIR     Place generated manual pages in directory DIR.
   -f, --files FILE        Read header filenames from FILE.
   -h, --help              Print this message and exit.
@@ -617,6 +654,8 @@ while (@ARGV) {
     push @files, read_files_from($1);
   } elsif (/^-l$/ || /^--list$/) {
     $elementlist = 1;
+  } elsif (/^-L$/ || /^--extend-list$/) {
+    $elementlist = 2;
   } elsif (/^-h$/ || /^--help$/) {
     help();
   } elsif (/^-./) {
@@ -636,14 +675,58 @@ foreach $fn (@files) {
 }
 close OUT if !$directory;
 
+
+# printing element list
+#
+
+sub read_elementlist ($) {
+  my($fn) = @_;
+
+  local($/) = "\n";
+  if (!open(IN, $fn)) {
+    print STDERR "$fn: $!\n";
+    return;
+  }
+
+  my($section, $active, $cur_name, $cur_section, %new_summary);
+  $active = 0;
+  while (<IN>) {
+    if (/^\.SS \"(.*)\"/) {
+      $section = $1;
+    } elsif (/^\.TP 20/) {
+      $active = 1;
+    } elsif ($active == 1 && /^\.M (\S+) (\S+)/) {
+      if (!exists $all_outsections{$1}) {
+	$active = 2;
+	$cur_name = $1;
+	$new_summary{$1} = 1;
+	$all_outsections{$1} = $2;
+	$all_roff_summaries{$1} = '';
+	push @{$summaries_by_section{$section}}, $1;
+	push @all_outfiles, $1;
+      } elsif ($new_summary{$1}) {
+	push @{$summaries_by_section{$section}}, $1;
+	$active = 3;
+      } else {
+	$active = 3;
+      }
+    } elsif (/^\.PD/) {
+      $active = 0;
+    } elsif (/^\.SH \"ALPHABETICAL/) {
+      last;
+    } elsif ($active == 2) {
+      $all_roff_summaries{$cur_name} .= $_;
+    }
+  }
+}
+
 my(%el_generated);
 sub one_elementlist (@) {
   my($t);
   $t .= ".PP\n.PD 0\n";
   foreach $_ (sort { lc($a) cmp lc($b) } @_) {
     $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_} . "\n";
-    $t .= $all_roff_summaries{$_} . "\n"
-	if $all_roff_summaries{$_};
+    $t .= $all_roff_summaries{$_} if $all_roff_summaries{$_};
     $el_generated{$_} = 1;
   }
   $t . ".PD\n";
@@ -651,22 +734,27 @@ sub one_elementlist (@) {
 
 my(@Links, $Text);
 
-sub one_summary ($&) {
-  my($name, $func) = @_;
+sub one_summary ($@) {
+  my($name, @elts) = @_;
+  print STDERR "warning: category \`", $name, "' begins with a lowercase letter" if $name =~ /^[a-z]/;
   my($a) = $name;
   $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
   $a =~ tr/ /+/;
   my($x) = $name;
   $x =~ s{ }{&nbsp;}g;
-  push @Links, "<a href=\"#$a\">$x</a>";
-  $Text .= ".SS \"$name\"\n";
-  $Text .= one_elementlist(grep(&$func, @all_outfiles));
-};
+  if (@elts) {
+    push @Links, "<a href=\"#$a\">$x</a>";
+    $Text .= ".SS \"$name\"\n";
+    $Text .= one_elementlist(@elts);
+  }
+}
 
 sub make_elementlist () {
   if ($directory) {
-    if (!open(OUT, ">$directory/elements.$section")) {
-      print STDERR "$directory/elements.$section: $!\n";
+    my($fn) = "$directory/elements.$section";
+    read_elementlist($fn) if -r $fn && $elementlist > 1;
+    if (!open(OUT, ">$fn")) {
+      print STDERR "$fn: $!\n";
       return;
     }
   }
@@ -682,26 +770,22 @@ This page lists all Click element classes that have manual page documentation.
 EOD;
 
   $Text = "";
-  my($s) = \%all_summaries;
-  one_summary('Network Devices',	sub { $s->{$_} =~ /\bdevices\b/i });
-  one_summary('Other Sources and Sinks', sub { $s->{$_} =~ /\bsources\b|\bsinks\b/i });
-  one_summary('Classification',		sub { $s->{$_} =~ /\bclassification\b/i });
-  one_summary('Checking Validity',	sub { $s->{$_} =~ /\bchecking\b/i });
-  one_summary('Duplication',		sub { $s->{$_} =~ /\bduplication\b/i });
-  one_summary('Storage',		sub { $s->{$_} =~ /\bstorage\b/i });
-  one_summary('Dropping',		sub { $s->{$_} =~ /\bdropping\b/i });
-  one_summary('Packet Scheduling',	sub { $s->{$_} =~ /\bpacket\s+scheduling\b/i });
-  one_summary('Encapsulation',		sub { $s->{$_} =~ /\bencapsulation\b/i });
-  one_summary('Modification',		sub { $s->{$_} =~ /\bmodification\b/i });
-  one_summary('Annotations',		sub { $s->{$_} =~ /\bannotations?\b/i });
-  one_summary('Measurement',		sub { $s->{$_} =~ /\bmeasurement\b/i });
-  one_summary('Debugging and Profiling', sub { $s->{$_} =~ /\bdebugging\b/i });
-  one_summary('Informational Elements',	sub { $s->{$_} =~ /\binformation\b/i });
-  one_summary('Ethernet',		sub { $s->{$_} =~ /\bEthernet\b|\bARP\b/i });
-  one_summary('IP, ICMP, and IGMP',	sub { $s->{$_} =~ /\bIP\b|\bICMP\b|\bIGMP\b/i && $s->{$_} !~ /\bTCP\b|\bUDP\b|\bEthernet\b/i });
-  one_summary('UDP and TCP',		sub { $s->{$_} =~ /\bTCP\b|\bUDP\b/i });
-  one_summary('IPv6',			sub { $s->{$_} =~ /\bIPv6\b/i });
-  one_summary('Miscellaneous',		sub { !$el_generated{$_} });
+  my(%did_section, $sec);
+  # erase 'Miscellaneous' section, if any
+  delete $summaries_by_section{'Miscellaneous'};
+  foreach $sec ( 'Network Devices', 'Other Sources and Sinks',
+		 'Classification', 'Checking Validity',
+		 'Duplication', 'Storage', 'Dropping',
+		 'Packet Scheduling', 'Encapsulation',
+		 'Modification', 'Annotations', 'Measurement',
+		 'Debugging and Profiling', 'Informational Elements',
+		 'Ethernet', 'IP, ICMP, and IGMP', 'UDP and TCP',
+		 sort { lc($a) cmp lc($b) } keys(%summaries_by_section) ) {
+    next if $did_section{$sec};
+    one_summary($sec, @{$summaries_by_section{$sec}});
+    $did_section{$sec} = 1;
+  }
+  one_summary('Miscellaneous', grep { !$el_generated{$_} } @all_outfiles);
 
   my($links) = join("&nbsp;- ", @Links);
   print OUT <<"EOD;";

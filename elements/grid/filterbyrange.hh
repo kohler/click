@@ -4,6 +4,7 @@
 /*
  * =c
  * FilterByRange(RANGE, LOCINFO)
+ * =s Grid
  * =d
  *
  * Expects Grid MAC layer packets on input 0.  Any packet transmitted

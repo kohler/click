@@ -5,8 +5,8 @@
 /*
  * =c
  * IPMirror
- * =s swaps IP source and destination
- * V<modifies>
+ * =s IP, modification
+ * swaps IP source and destination
  * =d
  *
  * Has one input, one output.  Incoming packets a->b are pushed out as b->a.

@@ -4,8 +4,8 @@
 /*
  * =c
  * IP6Fragmenter(MTU)
- * =s
- * V<IPv6>
+ * =s IPv6
+ * 
  * =d
  * Expects IP6 packets as input.
  * If the IP6 packet size is <= mtu, just emits the packet on output 0.

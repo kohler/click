@@ -4,7 +4,8 @@
 /*
  * =c
  * AlignmentInfo(ELEMENT [MODULUS OFFSET ...], ...)
- * =s specifies alignment information
+ * =s information
+ * specifies alignment information
  * =io
  * None
  * =d

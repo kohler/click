@@ -5,9 +5,8 @@
 /*
  * =c
  * HashSwitch(OFFSET, LENGTH)
- * =s
+ * =s classification
  * classifies packets by hash of contents
- * V<classification>
  * =d
  * Can have any number of outputs.
  * Chooses the output on which to emit each packet based on

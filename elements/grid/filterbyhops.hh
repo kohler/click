@@ -4,6 +4,7 @@
 /*
  * =c
  * FilterByGridHops(NUM-HOPS)
+ * =s Grid
  * =d
  *
  * Expects GRID_NBR_ENCAP packets with MAC headers on input 0.  Any

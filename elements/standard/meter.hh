@@ -5,9 +5,8 @@
 /*
  * =c
  * Meter(RATE1, RATE2, ..., RATEI<n>)
- * =s
+ * =s classification
  * classifies packet stream by rate (pkt/s)
- * V<classification>
  * =d
  *
  * Classifies packets based on the rate of packet arrival. The rate is

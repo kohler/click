@@ -5,8 +5,8 @@
 /*
  * =c
  * PrioSched
- * =s pulls from priority-scheduled inputs
- * V<packet scheduling>
+ * =s packet scheduling
+ * pulls from priority-scheduled inputs
  * =d
  * Each time a pull comes in the output, PrioSched pulls from
  * each of the inputs starting from input 0.

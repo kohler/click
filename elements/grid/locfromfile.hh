@@ -4,6 +4,7 @@
 /*
  * =c
  * LocFromFile(filename)
+ * =s Grid
  * =d
  * Pretends to be a GridLocationInfo element, but actually reads the
  * locations from a file. Each line of the file looks like

@@ -7,8 +7,8 @@
 /*
  * =c
  * PerfCount(index)
- * =s manipulates Pentium Pro performance metric annotations
- * V<debugging>
+ * =s profiling
+ * manipulates Pentium Pro performance metric annotations
  * =d
  * Stores information about different Pentium Pro performance metrics in each
  * packet.

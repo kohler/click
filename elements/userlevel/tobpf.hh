@@ -7,9 +7,8 @@
 /*
  * =c
  * ToBPF(DEVNAME)
- * =s
+ * =s devices
  * (deprecated)
- * V<devices>
  * =d
  *
  * This element has been deprecated. Use ToDevice(DEVNAME) instead.

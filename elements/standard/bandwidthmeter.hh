@@ -6,9 +6,8 @@
 /*
  * =c
  * BandwidthMeter(RATE1, RATE2, ..., RATEI<n>)
- * =s
+ * =s classification
  * classifies packet stream by arrival rate
- * V<classification>
  * =d
  *
  * Classifies packet stream based on the rate of packet arrival. The rate is

@@ -7,9 +7,8 @@
 /*
  * =c
  * AverageCounter()
- * =s
+ * =s measurement
  * measures historical packet count and rate
- * V<measurement>
  * =d
  *
  * Passes packets unchanged from its input to its output, maintaining

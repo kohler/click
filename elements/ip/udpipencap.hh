@@ -4,9 +4,8 @@
 /*
  * =c
  * UDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM?])
- * =s
+ * =s encapsulation, UDP
  * encapsulates packets in static UDP/IP headers
- * V<encapsulation>
  * =d
  * Encapsulates each incoming packet in a UDP/IP packet with source address
  * SADDR, source port SPORT, destination address DADDR, and destination port

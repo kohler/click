@@ -6,8 +6,8 @@
 /*
  * =c
  * GetIP6Address(offset)
- * =s
- * V<IPv6>
+ * =s IPv6
+ * 
  * =d
  * Copies 16 bytes from the packet , starting at OFFSET, to the destination IP6 
  * address annotation.  The offset is usually 16, to fetch the dst address from

@@ -4,8 +4,8 @@
 /*
  * =c
  * SetCycleCount()
- * =s stores cycle count in annotation
- * V<debugging>
+ * =s profiling
+ * stores cycle count in annotation
  * =d
  *
  * Stores the current cycle count in an annotation in each packet. In

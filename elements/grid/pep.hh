@@ -4,6 +4,8 @@
 /*
  * =c
  * PEP(IP, [fixed?, fix-lat, fix-lon])
+ * =s Grid
+ * runs the Grid Position Estimation Protocol
  * =d
  * Run the Grid Position Estimation Protocol. Subtypes GridLocationInfo,
  * and can be used in its place.

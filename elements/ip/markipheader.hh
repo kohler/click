@@ -4,7 +4,8 @@
 /*
  * =c
  * MarkIPHeader([OFFSET])
- * =s sets IP header annotation
+ * =s IP, annotations
+ * sets IP header annotation
  * =d
  *
  * Marks packets as IP packets by setting the IP Header annotation. The IP

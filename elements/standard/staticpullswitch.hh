@@ -5,8 +5,8 @@
 /*
  * =c
  * StaticPullSwitch(K)
- * =s forwards pull requests to fixed input
- * V<packet scheduling>
+ * =s packet scheduling
+ * forwards pull requests to fixed input
  * =d
  *
  * On every pull, StaticPullSwitch returns the packet pulled from one of its

@@ -5,7 +5,8 @@
  * =c
  * UpdateGridRoutes(TIMEOUT, PERIOD, JITTER, ETH, IP [, MAX-HOPS])
  *
- * =s Run DSDV-like local routing protocol.
+ * =s Grid
+ * Run DSDV-like local routing protocol.
  *
  * =d
  *

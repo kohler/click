@@ -5,8 +5,8 @@
 /*
  * =c
  * StoreCycles(X1,X2)
- * =s manipulates cycle count annotations
- * V<debugging>
+ * =s profiling
+ * manipulates cycle count annotations
  * =d
  * Each packet stores 4 cycle counts. StoreCycles accumulates the difference
  * between cycle counts X1 and X2 for all packets, together with a packet

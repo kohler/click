@@ -5,9 +5,8 @@
 /*
  * =c
  * PaintTee(X)
- * =s
+ * =s duplication
  * duplicates packets with given paint annotation
- * V<duplication>
  * =d
  * PaintTee sends every packet through output 0. If the packet's
  * color annotation is equal to X (an integer), it also

@@ -4,8 +4,8 @@
 /*
  * =c
  * CycleCountAccum(TYPE)
- * =s collects differences in cycle counters
- * V<debugging>
+ * =s profiling
+ * collects differences in cycle counters
  * =d
  *
  * Expects incoming packets to have their cycle counter annotation set.

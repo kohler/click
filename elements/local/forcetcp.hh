@@ -4,7 +4,8 @@
 /*
  * =c
  * ForceTCP()
- * =s sets TCP packet fields
+ * =s TCP
+ * sets TCP packet fields
  * =d
  * Set the checksum and some other fields to try to make a
  * packet look like TCP.

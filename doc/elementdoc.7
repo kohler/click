@@ -60,7 +60,7 @@ listed in the conventional order.
 .PD 0
 .IP "\f(CW=c\fR" 15
 SYNOPSIS
-.IP "\f(CW=s\fR" 15
+.IP "\f(CW=s\fR \fIcategory\fR" 15
 NAME (one-line summary)
 .IP "\f(CW=io\fR" 15
 INPUTS AND OUTPUTS
@@ -152,7 +152,7 @@ Packet Scheduling
 Encapsulation
 .IP "\f(CWmodification\fR" 22
 Modification
-.IP "\f(CWannotation\fR, \f(CWannotations\fR" 22
+.IP "\f(CWannotations\fR" 22
 Annotations
 .IP "\f(CWmeasurement\fR" 22
 Measurement
@@ -160,14 +160,12 @@ Measurement
 Debugging and Profiling
 .IP "\f(CWinformation\fR" 22
 Informational Elements
-.IP "\f(CWEthernet\fR, \f(CWARP\fR" 22
+.IP "\f(CWEthernet\fR" 22
 Ethernet
 .IP "\f(CWIP\fR, \f(CWICMP\fR, \f(CWIGMP\fR" 22
 IP, ICMP, and IGMP
 .IP "\f(CWUDP\fR, \f(CWTCP\fR" 22
 UDP and TCP
-.IP "\f(CWIPv6\fR" 22
-IPv6
 .PD
 .RE
 '
@@ -203,32 +201,24 @@ commands\*Efor turning text bold, for example\*Ethat occurs inside normal
 text; they are described in the next section.
 '
 .SS "Section Commands"
-.IP "\f(CW=s\fR [\fItext\fR]" 5
-Begin the summary section. This section should contain a very short,
+.IP "\f(CW=s\fR [\fIcategory\fR]" 5
+Begin the summary section. This should contain a very short,
 one-line summary of the element's function. For example, for a
 .M Queue n
 element:
 .nf
-   =s
+   =s storage
    stores packets in a FIFO queue
 .fi
-The optional \fItext\fR is just part of the body of the section.
+The summary text should generally be a verb phrase. 
 .RS 5
 .PP
-The summary section should generally be a verb phrase. It should also
-contain one or more
-.I category keywords,
-which documentation tools use to divide elements into manageable
-categories. They can be hidden from the user by wrapping them in a
-\f(CWV<...>\fR formatting command (see Formatting Commands, below). For
-example,
-.M Queue n 's
-summary section concludes with the \f(CWstorage\fR keyword:
-.nf
-   V<storage>
-.fi
-The list of category keywords is given above in the Command Quick
-Reference.
+The optional \fIcategory\fR specifies one or more element categories into
+which this element fits, separated by commas. Specifying meaningful
+categories helps a lot; documentation tools use categories to divide
+elements into manageable groups. Use existing categories, defined by the
+list of category keywords above in the Command Quick Reference, or create
+your own.
 .RE
 .TP 5
 \f(CW=c\fR
@@ -444,9 +434,8 @@ example:
 .nf
 /* =c
  * Align(MODULUS, OFFSET)
- * =s
+ * =s modification
  * aligns packet data
- * V<modification>
  * =d
  * Aligns packet data. Each input packet is aligned so that
  * its first byte is OFFSET bytes off from a MODULUS-byte
@@ -464,9 +453,8 @@ example:
 .nf
 /* =c
  * Counter([TYPE])
- * =s
+ * =s measurement
  * measures packet count and rate
- * V<measurement>
  * =d
  * Passes packets unchanged from its input to its output,
  * maintaining statistics information about packet count and

@@ -6,7 +6,8 @@
 /*
  * =c
  * StrideSched(TICKETS0, ..., TICKETSI<N-1>)
- * =s pulls from stride-scheduled inputs V<packet scheduling>
+ * =s packet scheduling
+ * pulls from stride-scheduled inputs
  * =d
  * Has one output and N inputs.  Performs simple packet-based stride
  * scheduling, assigning TICKETSI<i> to input I<i> for each input.

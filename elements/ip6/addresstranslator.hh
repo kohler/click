@@ -21,7 +21,7 @@
  *                   Mapped_IP6Addressn Port_startn Port_endn)   
  *
  *
- * =s
+ * =s IPv6
  * translates UDP/TCP packets' addresses and ports
  *
  * =d

@@ -6,8 +6,8 @@
 /*
  * =c
  * RatedUnqueue(RATE)
- * =s pull-to-push converter
- * V<packet scheduling>
+ * =s packet scheduling
+ * pull-to-push converter
  * =d
  * 
  * Pulls packets at the given RATE in packets per second, and pushes them out

@@ -12,7 +12,8 @@
  * Null6()
  * Null7()
  * Null8()
- * =s copies of Null
+ * =s
+ * copies of Null
  * =d
  * Copies of Null that do not share code.
  * =a Null

@@ -4,9 +4,8 @@
 /*
  * =c
  * EtherEncap(ETHERTYPE, SADDR, DADDR)
- * =s
+ * =s encapsulation, Ethernet
  * encapsulates packets in Ethernet header
- * V<encapsulation>
  *
  * =d
  *

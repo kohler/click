@@ -4,7 +4,7 @@
 /*
  * =c
  * LocQueryResponder(E, I)
- * =s
+ * =s Grid
  * generates responses to Grid Location queries
  * =d
  * 

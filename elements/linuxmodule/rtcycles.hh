@@ -6,9 +6,8 @@
  * =c
  * RoundTripCycleCount()
  *
- * =s
+ * =s profiling
  * measures round trip cycles on a push or pull path
- * V<debugging>
  * 
  * =d
  *

@@ -6,6 +6,7 @@
 /*
  * =c
  * PrintGrid([TAG])
+ * =s Grid
  * =d
  * Assumes input packets have Ethernet headers enclosing Grid
  * packets, as described by grid_hdr in grid.hh. Prints out

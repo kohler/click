@@ -6,8 +6,8 @@
 /*
  * =c
  * Print(TAG [, MAX_BYTES])
- * =s prints packet contents
- * V<debugging>
+ * =s debugging
+ * prints packet contents
  * =d
  * Prints up to MAX_BYTES bytes of data from each packet's header, in hex,
  * preceded by the TAG text. Default MAX_BYTES is 24.

@@ -4,8 +4,8 @@
 /*
  * =c
  * IPFragmenter(MTU)
- * =s fragments large IP packets
- * V<modifies>
+ * =s IP
+ * fragments large IP packets
  * =d
  *
  * Expects IP packets as input. If the IP packet size is <= MTU, just emits

@@ -6,17 +6,22 @@
 
 /*
  * =c
+ *
  * ToDump(FILENAME)
- * =s
+ *
+ * =s sinks
+ *
  * writes packets to a tcpdump(1) file
- * V<sinks>
+ *
  * =d
+ *
  * Writes incoming packets to FILENAME in `tcpdump -w' format. This file
  * can be read by FromDump on a later run.
  *
  * This element is only available at user level.
  * 
  * =a
+ *
  * FromDump, FromDevice.u, ToDevice.u, tcpdump(1)
  */
 

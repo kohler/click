@@ -4,8 +4,8 @@
 /*
  * =c
  * PerfCountAccum(TYPE)
- * =s collects differences in Pentium Pro performance metrics
- * V<debugging>
+ * =s profiling
+ * collects differences in Pentium Pro performance metrics
  * =d
  *
  * Expects incoming packets to have their performance metric annotation set

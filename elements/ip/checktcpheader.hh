@@ -4,9 +4,8 @@
 /*
  * =c
  * CheckTCPHeader()
- * =s
+ * =s TCP, checking
  * checks TCP header on TCP/IP packets
- * V<checking>
  * =d
  * Expects TCP/IP packets as input.
  * Checks that the TCP header length and checksum fields are valid.

@@ -4,9 +4,8 @@
 /*
  * =c
  * LookupIPRouteLinux(if0, if1, ..., ifN)
- * =s
+ * =s IP, classification
  * interface to Linux's routing table
- * V<classification>
  * =d
  * Looks up each packet's destination annotation address in the
  * Linux routing table. Replaces the annotation with the

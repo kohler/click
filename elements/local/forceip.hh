@@ -4,9 +4,8 @@
 /*
  * =c
  * ForceIP()
- * =s
+ * =s IP
  * Fixes fields to make packets into legal IP packets.
- * V<encapsulation>
  * =d
  *
  * Fixes various fields in incoming packets to make sure they

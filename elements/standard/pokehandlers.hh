@@ -6,9 +6,8 @@
 /*
  * =c
  * PokeHandlers([DELAY or HANDLER] ...)
- * =s
+ * =s debugging
  * calls write handlers at specified times
- * V<debugging>
  * =io
  * None
  * =d

@@ -4,7 +4,7 @@
 /*
  * =c
  * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
- * =s
+ * =s Ethernet
  * generates responses to ARP queries
  * =d
  *

@@ -5,9 +5,8 @@
 /*
  * =c
  * Suppressor
- * =s
+ * =s dropping
  * passes packets unchanged, optionally dropping some input ports
- * V<dropping>
  * =d
  *
  * Suppressor has I<n> inputs and I<n> outputs. It generally passes packets

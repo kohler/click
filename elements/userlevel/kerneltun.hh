@@ -4,9 +4,8 @@
 /*
  * =c
  * KernelTap(ADDR/MASK [, GATEWAY, HEADROOM])
- * =s
+ * =s devices
  * user-level interface to /dev/tun or ethertap
- * V<devices>
  * =d
  *
  * Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.

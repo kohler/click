@@ -6,7 +6,8 @@
 /*
  * =c
  * SetIPAddress(IP)
- * =s sets destination IP address annotations
+ * =s IP, annotations
+ * sets destination IP address annotations
  * =d
  * Set the destination IP address annotation of incoming packets to the
  * static IP address IP.

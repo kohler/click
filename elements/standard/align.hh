@@ -4,9 +4,8 @@
 
 /* =c
  * Align(MODULUS, OFFSET)
- * =s
+ * =s modification
  * aligns packet data
- * V<modification>
  * =d
  *
  * Aligns packet data. Each input packet is aligned so that its first byte is

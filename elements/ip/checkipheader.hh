@@ -4,9 +4,8 @@
 /*
  * =c
  * CheckIPHeader([BADADDRS, OFFSET])
- * =s
+ * =s IP, checking
  * checks IP header
- * V<checking>
  * =d
  *
  * Input packets should have IP headers starting OFFSET bytes in. Default

@@ -5,6 +5,7 @@
  * =c
  * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes)
  *
+ * =s Grid
  * =d 
  *
  * Forward packets geographically according to the tables accumulated by the

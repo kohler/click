@@ -4,7 +4,8 @@
 /*
  * =c
  * SetTCPChecksum([FIX-OFF?])
- * =s sets TCP packets' checksums
+ * =s TCP
+ * sets TCP packets' checksums
  * =d
  * Input packets should be TCP in IP.
  *

@@ -4,9 +4,8 @@
 /*
  * =c
  * SetCRC32()
- * =s
+ * =s modification
  * calculates CRC32 and prepends to packet
- * V<modification>
  * =d
  * Computes a CRC32 over each packet and appends the 4 CRC
  * bytes to the packet.

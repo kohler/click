@@ -7,7 +7,7 @@
 /*
  * =c
  * AddressInfo(NAME ADDRESS [ADDRESS...], ...)
- * =s
+ * =s information
  * specifies address information
  * =io
  * None

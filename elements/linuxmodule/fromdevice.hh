@@ -4,9 +4,8 @@
 /*
  * =c
  * FromDevice(DEVNAME [, PROMISC])
- * =s
+ * =s devices
  * reads packets from network device (kernel)
- * V<devices>
  * =d
  *
  * This manual page describes the Linux kernel module version of the

@@ -4,7 +4,8 @@
 /*
  * =c
  * DecIPTTL
- * =s decrements IP time-to-live, drops dead packets
+ * =s IP
+ * decrements IP time-to-live, drops dead packets
  * =d
  * Expects IP packet as input.
  * If the ttl is <= 1 (i.e. has expired),

@@ -4,8 +4,8 @@
 /*
  * =c
  * IP6NDAdvertiser(IP61 MASK1 ETH1, IP62 MASK2 ETH2, ...)
- * =s
- * V<ARP>
+ * =s IPv6
+ * 
  * =d
  * Input should be Neighborhood Solitation Message (sort of ARP request 
  * packets, including the ethernet header, ip6 header and message itself.

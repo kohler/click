@@ -5,9 +5,8 @@
 /*
  * =c
  * ProbSplitter(P)
- * =s
+ * =s classification
  * classifies packets probabilistically
- * V<classification>
  * =d
  * 
  * ProbSplitter has two output ports. It will push a packet onto port 1 with P

@@ -147,7 +147,7 @@ install: $(TARGETS) elementmap.$(package) install-man
 install-man:
 	$(mkinstalldirs) $(mandir)
 	$(mkinstalldirs) $(mandir)/mann
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel -r $(package) | $(clickbindir)/click-elem2man -l -d $(mandir)/mann -f -
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
 
 clean:
 	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package)

@@ -6,8 +6,8 @@
 /*
  * =c
  * PerfInfo([metric1 [, metric2]])
- * =s manipulates Pentium Pro performance counters
- * V<debugging>
+ * =s profiling
+ * manipulates Pentium Pro performance counters
  * =d
  * Sets up Pentium Pro performance counters for use by PerfCount.
  * By default, "metric1" is "DCU_MISS_OUTSTANDING", and metric2 is 

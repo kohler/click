@@ -5,9 +5,8 @@
  * =c
  * ARPQuerier(I, E)
  * ARPQuerier(NAME)
- * =s
+ * =s Ethernet, encapsulation
  * encapsulates IP packets in Ethernet headers found via ARP
- * V<encapsulation>
  * =d
  * Handles most of the ARP protocol. Argument I should be
  * this host's IP address, and E should be this host's

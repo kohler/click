@@ -6,9 +6,8 @@
 /*
  * =c
  * RatedSource([DATA, RATE, LIMIT, ACTIVE])
- * =s
+ * =s sources
  * generates packets at specified rate
- * V<sources>
  * =d
  *
  * Creates packets consisting of DATA. Pushes at most LIMIT such packets out

@@ -6,8 +6,8 @@
 /*
  * =c
  * Shaper(RATE)
- * =s shapes traffic to maximum rate (pkt/s) 
- * V<packet scheduling>
+ * =s packet scheduling
+ * shapes traffic to maximum rate (pkt/s) 
  * =d
  *
  * Shaper is a pull element that allows a maximum of RATE packets per second

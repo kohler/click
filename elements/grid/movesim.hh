@@ -4,6 +4,7 @@
 /*
  * =c
  * MovementSimulator(T NODE-EL V-LAT V-LON, ...)
+ * =s Grid
  * =io
  * None
  * =d

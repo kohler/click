@@ -4,7 +4,7 @@
 /*
  * =c
  * FloodingLocQuerier(E, I)
- * =s
+ * =s Grid
  * Sets Grid Destination location by running a flooding query protocol
  *
  * =d

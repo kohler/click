@@ -5,7 +5,8 @@
 /*
  * =c
  * CompareBlock(FWD_WEIGHT, REV_WEIGHT, THRESH)
- * =s drops packets out of rate range
+ * =s
+ * drops packets out of rate range
  * =d
  * FWD_WEIGHT, REV_WEIGHT, and THRESH are integers
  *

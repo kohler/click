@@ -4,6 +4,7 @@
 /*
  * =c
  * SetGridChecksum()
+ * =s Grid
  * =d
  * Expects a Grid MAC packet as input.
  * Calculates the Grid header's checksum and sets the checksum header field.

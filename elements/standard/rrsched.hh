@@ -5,7 +5,8 @@
 /*
  * =c
  * RoundRobinSched
- * =s pulls from round-robin inputs V<packet scheduling>
+ * =s packet scheduling
+ * pulls from round-robin inputs
  * =io
  * One output, zero or more inputs
  * =d

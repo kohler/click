@@ -4,6 +4,7 @@
 /*
  * =c
  * SendGridLRHello(PERIOD, JITTER, ETH, IP, UpdateGridRoutes [, MAX-HOPS])
+ * =s Grid
  * =d
  *
  * Every PERIOD millseconds (+/- a jitter bounded by JITTER

@@ -4,6 +4,7 @@
 /*
  * =c
  * GridLocationInfo(LATITUDE, LONGITUDE, [ MOVE ])
+ * =s Grid
  * =io
  * None
  * =d

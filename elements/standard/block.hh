@@ -5,7 +5,8 @@
 /*
  * =c
  * Block(THRESH)
- * =s drops packets with high rate
+ * =s dropping
+ * drops packets with high rate
  * =d
  * THRESH is an integer.
  *

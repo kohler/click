@@ -4,8 +4,8 @@
 /*
  * =c
  * SetPerfCount(TYPE)
- * =s stores Pentium Pro performance metric in annotation
- * V<debugging>
+ * =s profiling
+ * stores Pentium Pro performance metric in annotation
  * =d
  *
  * Stores information about the Pentium Pro performance metric TYPE in each

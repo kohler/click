@@ -5,9 +5,8 @@
 /*
  * =c
  * ToLinuxSniffers([DEVNAME])
- * =s
+ * =s sinks
  * sends packets to Linux packet sniffers
- * V<sinks>
  * =d
  *
  * Hands packets to any packet sniffers registered with Linux, such as packet

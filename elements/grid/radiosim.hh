@@ -4,7 +4,7 @@
 /*
  * =c
  * RadioSim([lat1 lon1, lat2 lon2, ...])
- * =s
+ * =s Grid
  * simulates reachability and broadcast in an 802.11-like radio network
  * =d
  * RadioSim simulates reachability and broadcast in an 802.11-like

@@ -5,9 +5,8 @@
 /*
  * =c
  * RandomSource(LENGTH)
- * =s
+ * =s sources
  * generates random packets whenever scheduled
- * V<sources>
  * =d
  * Creates packets, of the indicated length, filled with random bytes.
  * =a InfiniteSource

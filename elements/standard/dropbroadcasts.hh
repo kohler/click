@@ -5,9 +5,8 @@
 /*
  * =c
  * DropBroadcasts
- * =s
+ * =s dropping
  * drops link-level broadcast and multicast packets
- * V<dropping>
  * =d
  * Drop packets that arrived as link-level broadcast or multicast.
  * Used to implement the requirement that IP routers not forward

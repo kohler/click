@@ -5,9 +5,8 @@
 /*
  * =c
  * StaticSwitch(K)
- * =s
+ * =s classification
  * sends packet stream to fixed output
- * V<classification>
  * =d
  *
  * StaticSwitch sends every incoming packet to one of its output ports --

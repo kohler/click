@@ -5,9 +5,8 @@
 /*
  * =c
  * HashDemux(OFFSET, LENGTH)
- * =s
+ * =s classification
  * old name for HashSwitch
- * V<classification>
  * =d
  * This is the old name for the HashSwitch element. You should use HashSwitch
  * instead.

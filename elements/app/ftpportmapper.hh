@@ -5,9 +5,8 @@
 /*
  * =c
  * FTPPortMapper(CONTROL_REWRITER, DATA_REWRITER, PATTERN FOUTPUT ROUTPUT)
- * =s
+ * =s TCP
  * manipulates IPRewriter for FTP
- * V<TCP>
  * =d
  *
  * Expects FTP control packets. Watches packets for PORT commands and installs

@@ -4,9 +4,8 @@
 /*
  * =c
  * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?])
- * =s
+ * =s sources
  * creates packets with static UDP/IP/Ethernet headers
- * V<sources>
  * =d
  * FastUDPSource is a benchmark tool. At initialization time, FastUDPSource
  * creates a UDP/IP packet of length LEN (min 60), with source ethernet

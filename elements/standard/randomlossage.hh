@@ -5,9 +5,8 @@
 /*
  * =c
  * RandomLossage(P [, ACTIVE])
- * =s
+ * =s dropping
  * drops packets with some probability
- * V<dropping>
  * =d
  * Drops each packet with probability P.
  * If the element has two outputs, packets are sent to output

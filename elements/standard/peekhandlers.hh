@@ -6,9 +6,8 @@
 /*
  * =c
  * PeekHandlers([DELAY or HANDLER] ...)
- * =s
+ * =s debugging
  * calls read handlers at specified times
- * V<debugging>
  * =io
  * None
  * =d

@@ -4,6 +4,7 @@
 /*
  * =c
  * SendGridHello(PERIOD, JITTER, ETH, IP);
+ * =s Grid
  * =d
  *
  * Every PERIOD millseconds (+/- a jitter bounded by JITTER

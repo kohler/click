@@ -4,6 +4,7 @@
 /*
  * =c
  * CheckGridHeader([BADADDRS])
+ * =s Grid
  * =d
  * Expects Grid packets as input.
  * Checks that the packet's length is reasonable,

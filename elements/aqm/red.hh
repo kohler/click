@@ -7,9 +7,8 @@ class Storage;
 /*
  * =c
  * RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
- * =s
+ * =s dropping
  * drops packets according to R<RED>
- * V<dropping>
  * =d
  * Implements the Random Early Detection packet dropping
  * algorithm.

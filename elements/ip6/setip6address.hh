@@ -6,8 +6,8 @@
 /*
  * =c
  * SetIP6Address(IP6)
- * =s
- * V<IPv6>
+ * =s IPv6
+ *
  * =d
  * Set the destination IP6 address annotation of incoming packets to the
  * static IP6 address IP6

@@ -5,8 +5,8 @@
 /*
  * =c
  * BandwidthShaper(RATE)
- * =s shapes traffic to maximum rate (bytes/s) 
- * V<packet scheduling>
+ * =s packet scheduling
+ * shapes traffic to maximum rate (bytes/s) 
  * =processing
  * Pull
  * =d

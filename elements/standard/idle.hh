@@ -4,8 +4,8 @@
 /*
  * =c
  * Idle
- * =s discards packets
- * V<drops>
+ * =s dropping
+ * discards packets
  * =d
  *
  * Has zero or more agnostic outputs and zero or more agnostic inputs. It

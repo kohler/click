@@ -5,9 +5,8 @@
 /*
  * =c
  * StrideSwitch(TICKETS0, ..., TICKETSI<N-1>)
- * =s
+ * =s classification
  * sends packets to stride-scheduled outputs
- * V<classification>
  * =d
  * Has one input and N outputs.  Performs simple packet-based stride
  * switching, assigning TICKETSI<i> to output I<i>.

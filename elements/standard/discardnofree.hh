@@ -5,9 +5,8 @@
 /*
  * =c
  * DiscardNoFree
- * =s
+ * =s dropping
  * drops all packets, but does not free any of them.
- * V<dropping>
  * =d
  * Discards all packets received on its single input, but does not free any of
  * them. Only useful for benchmarking.

@@ -4,7 +4,7 @@
 /*
  * =c
  * SimpleLocQuerier(DEST-IP LAT LON [, ...])
- * =s
+ * =s Grid
  * Sets Grid destination location by looking in a static table
  * =d
  *

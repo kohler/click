@@ -4,8 +4,8 @@
 /*
  * =c
  * IP6NDSolicitor(I, E)
- * =s
- * V<ARP, encapsulation>
+ * =s IPv6, encapsulation
+ * 
  * =d
  * Handles most of the Neighborhood Discovery(ND) protocol. 
  * Argument I should be this host's IP6 address, and E should 

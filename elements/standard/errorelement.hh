@@ -5,7 +5,8 @@
 /*
  * =c
  * Error(...)
- * =s always fails
+ * =s debugging
+ * always fails
  * =d
  * The Error element always fails to initialize. It has any number of inputs
  * and outputs, and accepts any configuration string without complaint. It is

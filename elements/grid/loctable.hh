@@ -4,6 +4,7 @@
 /*
  * =c
  * LocationTable(IP LAT LON ERR, ...)
+ * =s Grid
  * =io
  * None
  * =d

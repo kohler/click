@@ -4,7 +4,7 @@
 /*
  * =c
  * SamplePackageElement()
- * =s
+ * =s debugging
  * demonstrates how to write a package
  * =d
  *

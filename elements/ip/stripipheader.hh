@@ -4,9 +4,8 @@
 /*
  * =c
  * StripIPHeader()
- * =s
+ * =s encapsulation, IP
  * strips outermost IP header
- * V<encapsulation>
  * =d
  * Removes the outermost IP header from IP packets based on the IP Header annotation.
  *

@@ -4,6 +4,7 @@
 /*
  * =c
  * FixSrcLoc(LOCINFO)
+ * =s Grid
  * =d
  *
  * Expects a Grid MAC layer packet as input.  Sets the packet's source
