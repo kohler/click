@@ -21,6 +21,7 @@
 #include "packet.hh"
 #include "confparse.hh"
 #include "router.hh"
+#include "elemfilter.hh"
 
 extern "C" {
 #include <linux/netdevice.h>
@@ -80,11 +81,24 @@ PollDevice::configure(const String &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
+  _pullers.clear();
+  _puller1 = 0;
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
+
+  WantsPacketUpstreamElementFilter ppff;
+  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
+    return errh->error("nobody wants packets from device `%s'", _devname.cc());
+  ppff.filter(_pullers);
+
+  if (_pullers.size() == 1)
+    _puller1 = _pullers[0];
+
+  router()->can_wait(this);
+
   _dev->intr_off(_dev);
   _dev->intr_defer = 1;
   _idle = 0;
@@ -101,7 +115,7 @@ PollDevice::uninitialize()
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     click_chatter
-	("PollDevice(%s): waited with intr on %d times\n", 
+	("PollDevice(%s): waited with intr on %d times", 
 	 _dev->name, _total_intr_wait);
   }
 }
@@ -118,8 +132,7 @@ PollDevice::pull(int)
   _dev->fill_rx(_dev);
   _dev->clean_tx(_dev);
 
-  if (skb != 0L)
-  {
+  if (skb != 0L) {
     _idle = 0;
     rtm_ipackets++;
     rtm_ibytes += skb->len;
@@ -136,21 +149,12 @@ PollDevice::pull(int)
       p->set_mac_broadcast_anno(1);
 
     return p;
-  } 
-  else 
-  {
+  } else {
     _idle++;
     return 0L;
   }
 }
  
-
-bool
-PollDevice::still_busy() const
-{
-  return _idle <= 100;
-}
-
 void
 PollDevice::set_wakeup_when_busy()
 {
@@ -169,7 +173,15 @@ PollDevice::woke_up()
 {
   _dev->intr_off(_dev);
   remove_wait_queue(&(_dev->intr_wq), &_self_wq);
+
+  if (_puller1)
+    _puller1->join_scheduler();
+  else {
+    int n = _pullers.size();
+    for (int i=0; i<n; i++)
+      _pullers[i]->join_scheduler();
+  }
 }
 
-ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(PollDevice)
+

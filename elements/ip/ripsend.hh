@@ -40,7 +40,7 @@ class RIPSend : public TimedElement {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  void run_scheduled();
+  bool run_scheduled();
 };
 
 #endif

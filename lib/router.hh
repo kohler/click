@@ -1,11 +1,12 @@
 #ifndef ROUTER_HH
 #define ROUTER_HH
+
 #include "element.hh"
 #include "bitvector.hh"
 class ElementFilter;
 
 class Router : public ElementLink {
-  
+
   struct Hookup;
   typedef Element::Connection Connection;
   
@@ -23,18 +24,17 @@ class Router : public ElementLink {
   Vector<int> _hookpidx_to;
 
   Vector<String> _requirements;
-  
+
   bool _closed: 1;
   bool _initialized: 1;
   bool _have_connections: 1;
   bool _have_hookpidx: 1;
   
   bool _please_stop_driver;
-
-#ifdef __KERNEL__
-  struct tq_struct _schedule_task;
-#endif
   
+  // stride scheduling stuff
+  Vector<Element *> _waiting_elements;
+
   Router(const Router &);
   
   void remove_hookup(int);
@@ -66,7 +66,7 @@ class Router : public ElementLink {
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
-  
+
  public:
   
   Router();
@@ -91,6 +91,9 @@ class Router : public ElementLink {
 
   int ninput_pidx() const			{ return _input_fidx.size(); }
   int noutput_pidx() const			{ return _output_fidx.size(); }
+
+  // stride scheduling
+  void can_wait(Element *e)		{ _waiting_elements.push_back(e); }
   
   int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
   int downstream_elements(Element *, int o, Vector<Element *> &);
@@ -150,5 +153,6 @@ Router::any_scheduled() const
 {
   return scheduled_next() != (ElementLink *)this;
 }
+  
 
 #endif

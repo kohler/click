@@ -62,11 +62,12 @@ Spew::uninitialize()
   _timer.unschedule();
 }
 
-void
+bool
 Spew::run_scheduled()
 {
   spew_some();
   _timer.schedule_after_ms(0);
+  return false;
 }
 
 void

@@ -25,6 +25,8 @@
 #include "glue.hh"
 
 class PollDevice : public Element {
+  Element *_puller1;
+  Vector<Element *> _pullers;
   
  public:
   

@@ -41,7 +41,7 @@ class Tun : public Element {
 
   void push(int port, Packet *);
   bool wants_packet_upstream() const;
-  void run_scheduled();
+  bool run_scheduled();
 
  private:
   String _dev;

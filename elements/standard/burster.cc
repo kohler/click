@@ -68,25 +68,26 @@ Burster::wants_packet_upstream() const
   return true;
 }
 
-void
+bool
 Burster::run_scheduled()
 {
   // don't run if the timer is scheduled (an upstream queue went empty but we
   // don't care)
   if (_timer.scheduled())
-    return;
+    return false;
   
   for (int i = 0; i < _npackets; i++) {
     Packet *p = input(0).pull();
     if (!p)
       // no packets left; return w/o resetting timer. rely on PACKET_UPSTREAM
       // scheduling to wake us up later
-      return;
+      return false;
     output(0).push(p);
   }
 
   // reset timer
   _timer.schedule_after_ms(_interval);
+  return false;
 }
 
 EXPORT_ELEMENT(Burster)

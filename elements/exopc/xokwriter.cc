@@ -89,11 +89,12 @@ xokWriter::wants_packet_upstream() const
 }
 
 
-void
+bool
 xokWriter::run_scheduled()
 {
   while (Packet *p = input(0).pull())
     push(0, p);
+  return false;
 }
 
 

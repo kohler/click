@@ -170,11 +170,15 @@ ToBPF::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-void
+bool
 ToBPF::run_scheduled()
 {
-  while (Packet *p = input(0).pull())
-    push(0, p);
+  if (Packet *p = input(0).pull())
+  {
+    push(0, p); 
+    return true;
+  } else
+    return false;
 }
 
 EXPORT_ELEMENT(ToBPF)

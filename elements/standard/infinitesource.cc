@@ -47,7 +47,6 @@ InfiniteSource::configure(const String &conf, ErrorHandler *errh)
 int
 InfiniteSource::initialize(ErrorHandler *)
 {
-  schedule_tail();
   _packet = Packet::make(_data.data(), _data.length());
   return 0;
 }
@@ -60,7 +59,7 @@ InfiniteSource::uninitialize()
   _packet = 0;
 }
 
-void
+bool
 InfiniteSource::run_scheduled()
 {
   int count = _count;
@@ -72,8 +71,9 @@ InfiniteSource::run_scheduled()
     for (int i = 0; i < count; i++)
       output(0).push(_packet->clone());
     _total += count;
-    schedule_tail();
+    return true;
   }
+  return false;
 }
 
 EXPORT_ELEMENT(InfiniteSource)

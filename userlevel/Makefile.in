@@ -39,7 +39,7 @@ GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectori.o vectorv.o hashmapi.o \
 	integers.o ipaddress.o etheraddress.o packet.o \
 	error.o glue.o timer.o \
-	element.o unlimelement.o timedelement.o errorelement.o \
+	elemlink.o element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
 	crc32.o in_cksum.o iptable.o ewma.o
 

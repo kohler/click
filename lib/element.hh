@@ -1,5 +1,6 @@
 #ifndef ELEMENT_HH
 #define ELEMENT_HH
+
 #include "glue.hh"
 #include "vector.hh"
 #include "string.hh"
@@ -101,8 +102,6 @@ class Element : public ElementLink { public:
   virtual void selected(int)		{ }
 
 #ifdef CLICK_POLLDEV
-  /* for Router::wait() to use to wait for non-click events (e.g. interrupts) */
-  virtual bool still_busy() const	{ return false; }
   /* this function should tell elements to wait for an event using the current
    * thread, and it MUST wake up the current thread when the event occurs */
   virtual void set_wakeup_when_busy()   { }
@@ -113,7 +112,7 @@ class Element : public ElementLink { public:
   
   // Hooks for a non-empty Queue to tell an output driver to pull().
   virtual bool wants_packet_upstream() const;
-  virtual void run_scheduled();
+  virtual bool run_scheduled();
   
   virtual void push(int port, Packet *);
   virtual Packet *pull(int port);
@@ -127,6 +126,7 @@ class Element : public ElementLink { public:
 #endif
   
   class Connection {
+   public:
     
     Element *_f;
     int _port;
@@ -176,7 +176,7 @@ class Element : public ElementLink { public:
   int _noutputs;
   Connection *_outputs;
   Connection _output0[InlinePorts];
-  
+
   Element(const Element &);
   Element &operator=(const Element &);
   

@@ -42,13 +42,14 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), _busy_returns(0),
-    _rejected(0)
+    _rejected(0), _idle(0)
 {
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _pull_calls(0), _idle_calls(0), _drain_returns(0), _busy_returns(0)
+    _pull_calls(0), _idle_calls(0), _drain_returns(0), 
+    _busy_returns(0), _idle(0)
 {
 }
 
@@ -155,7 +156,6 @@ ToDevice::initialize(ErrorHandler *errh)
       registered_writers++;
     }
   }
-  
   return 0;
 }
 
@@ -220,21 +220,25 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
  * accept a packet even if they've marked themselves
  * as idle. What do we do with a rejected packet?
  */
-int
+bool
 ToDevice::tx_intr()
 {
 #if CLICK_STATS >= 2
   unsigned long long c0 = click_get_cycles();
 #endif
-
   int busy;
+  int tx_left = _dev->clean_tx(_dev);
+
   while ((busy = _dev->tbusy) == 0) {
-    Packet *p = input(0).pull();
-    if (p == 0)
-      break;
-    push(0, p);
+    Packet *p;
+    _idle++;
+    if (p = input(0).pull()) {
+      push(0, p);
+      _idle = 0;
+    } 
+    else break;
   }
-  
+
   /*
    * If we have packets left in the queue, arrange for
    * net_bh()/qdisc_run_queues() to call us when the
@@ -242,7 +246,7 @@ ToDevice::tx_intr()
    * This is a lot like qdisc_wakeup(), but we don't want to
    * bother trying to send a packet from Linux's queues.
    */
-  if(busy){
+  if (busy) {
     struct Qdisc *q = _dev->qdisc;
     if(q->h.forw == NULL) {
       q->h.forw = qdisc_head.forw;
@@ -252,7 +256,6 @@ ToDevice::tx_intr()
   
   if (busy) {
     _busy_returns++;
-    schedule_tail();
   } else {
     _drain_returns++;
   }
@@ -263,9 +266,9 @@ ToDevice::tx_intr()
   _self_cycles += c1 - c0;
 #endif
 
-  if(busy)
-    return(1);
-  return(0);
+  if (busy || _idle <= 1024 || tx_left != 0)
+    return true;
+  return false;
 }
 
 void
@@ -311,11 +314,11 @@ ToDevice::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-void
+bool
 ToDevice::run_scheduled()
 {
   _pull_calls++;
-  tx_intr();
+  return tx_intr();
 }
 
 static String

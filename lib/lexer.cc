@@ -843,9 +843,6 @@ Lexer::ydeclaration(const String &first_element)
   if (t.is('(')) {
     configuration = lex_config();
     expect(')');
-#ifdef EXOPC
-    configuration.cc();
-#endif
   } else
     unlex(t);
 

@@ -145,13 +145,14 @@ Queue::push(int, Packet *packet)
     // gone idle. Under high load this could leave outputs idle
     // even though packets are Queued. So cause output idleness
     // every 16 packets as well as when we go non-empty. */
+    
     if (was_empty) {
       if (_puller1)
-        _puller1->schedule_tail(); // put on the work list.
+        _puller1->join_scheduler();
       else {
 	int n = _pullers.size();
 	for (int i = 0; i < n; i++)
-	  _pullers[i]->schedule_tail();
+          _pullers[i]->join_scheduler();
       }
     }
     

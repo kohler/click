@@ -21,7 +21,8 @@ void
 Timer::element_timer(unsigned long thunk)
 {
   Element *f = (Element *)thunk;
-  f->schedule_tail(); // don't do anything - just put it on the work list
+  // don't do anything - just put it on the work list
+  f->join_scheduler();
 #ifdef __KERNEL__
 #ifndef CLICK_POLLDEV
   // run work list

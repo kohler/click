@@ -29,7 +29,9 @@
  * =a FromDump
  * =a ToDump
  */
-
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "element.hh"
 #include "string.hh"
 

@@ -16,8 +16,9 @@
 #include "idle.hh"
 #include "bitvector.hh"
 
-Idle::Idle()
+Idle::Idle() 
 {
+  _idle = 0;
   add_output();
 }
 
@@ -70,18 +71,18 @@ Idle::wants_packet_upstream() const
   return false;
 }
 
-void
+bool
 Idle::run_scheduled()
 {
-  bool got_any = false;
+  _idle++;
   for (int i = 0; i < ninputs(); i++)
     if (input_is_pull(i))
       if (Packet *p = input(i).pull()) {
 	p->kill();
-	got_any = true;
+	_idle = 0;
       }
-  if (got_any)
-    schedule_tail();
+  if (_idle > 128) return false;
+  return true;
 }
 
 EXPORT_ELEMENT(Idle)

@@ -41,6 +41,8 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     skb_put(skb, len);		// leave space for data
     if (data) memcpy(skb->data, data, len);
   }
+  else
+    click_chatter("oops, kernel could not allocate memory for skbuff");
   Packet *p = (Packet *) skb;
   p->set_mac_broadcast_anno(0);
   p->set_fix_ip_src_anno(0);

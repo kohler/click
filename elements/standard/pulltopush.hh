@@ -13,9 +13,10 @@
 
 class PullToPush : public Element {
  private:
+   int _idle;
  public:
   
-  PullToPush() : Element(1,1) {}
+  PullToPush() : Element(1,1) { _idle = 0; }
   
   const char *class_name() const		{ return "PullToPush"; }
   Processing default_processing() const		{ return PULL_TO_PUSH; }
@@ -23,14 +24,10 @@ class PullToPush : public Element {
   PullToPush *clone() const			{ return new PullToPush; }
   
   bool wants_packet_upstream() const;
-  void run_scheduled();
+  bool run_scheduled();
 
 #ifdef __KERNEL__
-  int initialize(ErrorHandler *)
-  {
-      schedule_tail(); 
-      return 0;
-  }
+  int initialize(ErrorHandler *) { return 0; }
 #endif
 
 };

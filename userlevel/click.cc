@@ -89,11 +89,14 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
+static Router *router;
+
 static void
 catch_sigint(int)
 {
   /* call exit so -pg file is written */
-  exit(0);
+  // exit(0);
+  router->please_stop_driver();
 }
 
 
@@ -418,7 +421,7 @@ particular purpose.\n");
   while (lexer->ystatement())
     /* do nothing */;
   
-  Router *router = lexer->create_router();
+  router = lexer->create_router();
   lexer->clear();
   
   signal(SIGINT, catch_sigint);

@@ -39,7 +39,7 @@ GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectori.o vectorv.o hashmapi.o \
 	integers.o ipaddress.o etheraddress.o packet.o \
 	error.o glue.o timer.o \
-	element.o unlimelement.o timedelement.o errorelement.o \
+	elemlink.o element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
 	crc32.o iptable.o ewma.o
 
@@ -52,7 +52,7 @@ OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
 ifdef CLICK_POLLDEV
-CPPFLAGS += -DCLICK_POLLDEV
+CPPFLAGS += -DCLICK_POLLDEV -g
 OBJS += sched.o
 endif
 CFLAGS = @CFLAGS_NDEBUG@

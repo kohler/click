@@ -35,7 +35,7 @@ class TimedSource : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
   
-  void run_scheduled();
+  bool run_scheduled();
   
 };
 

@@ -23,19 +23,22 @@ PullToPush::wants_packet_upstream() const
   return true;
 }
 
-void
+bool
 PullToPush::run_scheduled()
 {
-#ifdef __KERNEL__
-  if (!scheduled()) schedule_tail();
-#endif
-
-  /* poll 8 packets at a time, giving the receiver a 
-   * chance to do catch up work
-   */
   Packet *p;
-  for (int i=0; i<8 && (p = input(0).pull()); i++)
+  int i=0;
+
+  _idle++;
+  while ((p = input(0).pull()) && i<8) {
+    _idle = 0;
     output(0).push(p);
+    i++;
+  } 
+
+  if (_idle > 128)
+    return false;
+  else return true;
 }
 
 EXPORT_ELEMENT(PullToPush)

@@ -26,21 +26,8 @@
 #include <unistd.h>
 
 #ifdef __KERNEL__
-static struct wait_queue *router_run_scheduled_wait_queue = 0;
-
-static void
-router_run_scheduled_task(void *thunk)
-{
-  Router *r = (Router *)thunk;
-#if CLICK_STATS > 0 || XCYC > 0
-  entering_ipb();
-#endif
-  r->run_scheduled();
-#if CLICK_STATS > 0 || XCYC > 0
-  leaving_ipb();
-#endif
-  wake_up_interruptible(&router_run_scheduled_wait_queue);
-}
+unsigned long long router_cycles = 0;
+unsigned long long scheduler_cycles = 0;
 #endif
 
 Router::Router()
@@ -49,15 +36,18 @@ Router::Router()
 {
   initialize_head();
 #ifdef __KERNEL__
-  _schedule_task.next = 0;
-  _schedule_task.sync = 0;
-  _schedule_task.routine = router_run_scheduled_task;
-  _schedule_task.data = this;
+  router_cycles = 0;
+  scheduler_cycles = 0;
 #endif
 }
 
 Router::~Router()
 {
+#ifdef __KERNEL__
+  String s = String(router_cycles)+"\n"+String(scheduler_cycles);
+  click_chatter("%s",s.cc());
+#endif
+
   if (_initialized)
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
@@ -66,8 +56,6 @@ Router::~Router()
 #ifdef __KERNEL__
   initialize_head();		// get rid of scheduled wait queue
   _please_stop_driver = true;	// XXX races?
-  while (_schedule_task.sync)
-    interruptible_sleep_on(&router_run_scheduled_wait_queue);
 #endif
 }
 
@@ -764,6 +752,22 @@ Router::initialize(ErrorHandler *errh)
 	_elements[i]->uninitialize();
     return -1;
   } else {
+    for (int i = 0; i < _elements.size(); i++)
+    {
+      Element *e = _elements[i]; 
+      if (e->ntickets() > 0) { 
+	bool schedulable = false; 
+	for(int j = 0; j < e->ninputs(); j++) 
+	  if (e->input_is_pull(j)) { 
+	    schedulable = true; 
+	    break; 
+	  } 
+        if (!schedulable) 
+	  click_chatter("warning: scheduling %s: not a pull element", 
+	      e->declaration().cc()); 
+        e->join_scheduler();
+      }
+    }
     _initialized = true;
     return 0;
   }
@@ -820,48 +824,42 @@ Router::wait()
     return;
   
   n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
-  if(n < 0){
+  
+  if(n < 0) {
     perror("select");
     sleep(1);
   }
-
-  for (i = 0; i < _elements.size(); i++) {
-    Element *f = _elements[i];
-    int fd = f->select_fd();
-    if(fd >= 0 && FD_ISSET(fd, &mask))
-      f->selected(fd);
+  else {
+    for (i = 0; i < _elements.size(); i++) {
+      Element *f = _elements[i];
+      int fd = f->select_fd();
+      if(fd >= 0 && FD_ISSET(fd, &mask))
+        f->selected(fd);
+    }
   }
 #else
 
 #ifdef CLICK_POLLDEV
 
-  /* if any element is still busy, don't wait */
-  for (int i = 0; i < _elements.size(); i++) 
-  {
-    Element *f = _elements[i];
-    if (f->still_busy()) 
-      return;
-  }
+  if (_waiting_elements.size() == 0) return;
 
   /* set state to be interruptible, so if in between now and actually waiting
    * someone triggers an event we want to wait on, it will be captured */
 
   current->state = TASK_INTERRUPTIBLE;
 
-  for (int i = 0; i < _elements.size(); i++) 
+  for (int i = 0; i < _waiting_elements.size(); i++) 
   {
-    Element *f = _elements[i];
+    Element *f = _waiting_elements[i];
     f->set_wakeup_when_busy();
   }
 
   if (current->state != TASK_RUNNING) 
-  {
     schedule();
-  }
   
-  for (int i = 0; i < _elements.size(); i++) 
+  for (int i = 0; i < _waiting_elements.size(); i++) 
   {
-    Element *f = _elements[i];
+    Element *f = _waiting_elements[i];
     f->woke_up();
   }
 
@@ -876,29 +874,46 @@ Router::wait()
 void
 Router::run_scheduled()
 {
-  ElementLink final(this);
-  final.schedule_tail();
-  for (ElementLink *fl = scheduled_next();
-       fl != &final;
-       fl = scheduled_next()) 
-  {
-    /* order of these two calls is important for scheduling: this order allow
-     * run_scheduled code to reschedule itself if it is not on the work list
-     * already */
-    fl->unschedule();
-    ((Element *)fl)->run_scheduled();
+  ElementLink *fl;
+ 
+#ifdef __KERNEL__
+  unsigned long long c0 = click_get_cycles();
+  unsigned long long c00 = click_get_cycles();
+#endif
+  
+  while (fl=scheduled_next(), fl != this) {
+    
+#ifdef __KERNEL__
+    scheduler_cycles += click_get_cycles() - c00;
+#endif
+    bool cont = ((Element *)fl)->run_scheduled();
+#ifdef __KERNEL__
+    c00 = click_get_cycles();
+#endif
+
+    ElementLink::elapse();
+    fl->stride();
+
+    if (cont)
+      // if it didn't want to sleep, reschedule it
+      fl->reschedule();
+    else 
+      // otherwise, unschedule element completely
+      fl->leave_scheduler();
   }
-  final.unschedule();
 
-  /* benjie: we NO LONGER want the following: our scheduler thread will now
-   * take over running driver(), which runs work list. the following crash bug
-   * possibly due to that fact thata schedule_task.data used to be set 0L, now
-   * changed to "this" in Router::Router(). */
-
-#if 0 && defined(__KERNEL__)
-  // undefined because it seems to be causing a crash -- reentrancy?
-  if (fl != this && !_please_stop_driver)
-    queue_task(&_schedule_task, &tq_scheduler);
+#if TODO
+  // should really do this somewhere else
+  for (int i=0; i<_schedinfos.size(); i++) 
+    if (_schedinfos[i].pass > MAX_PASS) {
+      refresh_worklist_passes();
+      break;
+    }
+#endif
+  
+#ifdef __KERNEL__
+  scheduler_cycles += click_get_cycles() - c00;
+  router_cycles += click_get_cycles() - c0;
 #endif
 }
 
@@ -916,8 +931,6 @@ Router::driver()
   }
 #endif
 
-  // Alert outputs that they should pull because some upstream
-  // Queue became non-empty.
   run_scheduled();
   wait();
 

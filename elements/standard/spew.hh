@@ -28,7 +28,7 @@ class Spew : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
   
-  void run_scheduled();
+  bool run_scheduled();
   void spew_some();
   
 };

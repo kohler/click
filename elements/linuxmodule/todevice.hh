@@ -46,11 +46,11 @@ class ToDevice : public Element {
   void add_handlers(HandlerRegistry *);
   
   bool wants_packet_upstream() const;
-  void run_scheduled();
+  bool run_scheduled();
   
   void push(int port, Packet *);
   
-  int tx_intr();
+  bool tx_intr();
 
   // Statistics.
   int _pull_calls;   // # of times please_pull() called.
@@ -64,7 +64,7 @@ class ToDevice : public Element {
   String _devname;
   struct device *_dev;
   int _registered;
-  
+  int _idle; // # of times pull didn't get a packet
 };
 
 #endif

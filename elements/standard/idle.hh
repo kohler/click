@@ -13,6 +13,8 @@
 #include "element.hh"
 
 class Idle : public Element {
+  int _idle;
+
  public:
   
   Idle();
@@ -31,7 +33,7 @@ class Idle : public Element {
   Packet *pull(int);
 
   bool wants_packet_upstream() const;
-  void run_scheduled();
+  bool run_scheduled();
   
 };
 

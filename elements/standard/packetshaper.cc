@@ -14,6 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "router.hh"
 #include "packetshaper.hh"
 
 PacketShaper::PacketShaper()
@@ -34,11 +35,11 @@ PacketShaper::pull(int)
   int r = _rate.average();
   if (r >= _meter1) {
     if (_puller1)
-      _puller1->schedule_tail();
+      _puller1->join_scheduler();
     else {
       int n = _pullers.size();
       for (int i = 0; i < n; i++)
-	_pullers[i]->schedule_tail();
+        _pullers[i]->join_scheduler();
     }
     return 0;
   } else {
