@@ -1,3 +1,27 @@
+2002-10-15 Tuesday 21:31  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/xml2click.cc (1.2): xml2click updates
+
+2002-10-15 Tuesday 21:21  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click2xml/click2xml.cc (1.8), click2xml/clickconfig.dtd
+	(1.2), lib/eclasst.cc (1.18), lib/elementmap.cc (1.10),
+	lib/toolutils.cc (1.47), lib/toolutils.hh (1.33): various fixes
+
+2002-10-15 Tuesday 21:19  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/xml2click.cc (1.1): initial version
+
+2002-10-15 Tuesday 21:18  Eddie Kohler <kohler@icir.org>
+
+	* include/click/userutils.hh (1.12), lib/userutils.cc (1.29): add
+	filename_landmark()
+
+2002-10-15 Tuesday 21:18  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.34), lib/confparse.cc (1.105): add
+	cp_is_click_id()
+
 2002-10-15 Tuesday 15:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: fakepcap.cc (1.10), fakepcap.hh (1.14):
