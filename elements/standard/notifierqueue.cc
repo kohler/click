@@ -62,14 +62,13 @@ NotifierQueue::push(int, Packet *p)
 	int s = size();
 	if (s > _highwater_length)
 	    _highwater_length = s;
-	
-#if defined(__MTCLICK__)
-#if 1
-        // This can leave a single packet in the queue indefinitely!
+
+#if !NOTIFIERQUEUE_LOCK
+	// This can leave a single packet in the queue indefinitely in
+	// multithreaded Click, because of a race condition with pull().
         if (!signal_active()) 
 	    wake_listeners(); 
-
-#else   // with locking
+#else
         if (s == 1) {
             _lock.acquire();
 	    if (!signal_active())
@@ -78,10 +77,6 @@ NotifierQueue::push(int, Packet *p)
 	}
 #endif
 
-#else
-        if (s == 1 && !signal_active())
-	    wake_listeners(); 
-#endif
     } else {
 	if (_drops == 0)
 	    click_chatter("%{element}: overflow", this);
@@ -97,21 +92,14 @@ NotifierQueue::pull(int)
 
     if (p)
 	_sleepiness = 0;
-    else if (++_sleepiness == SLEEPINESS_TRIGGER)
-    {
-#if defined(__MTCLICK__)  
-#if 1
+    else if (++_sleepiness == SLEEPINESS_TRIGGER) {
+#if !NOTIFIERQUEUE_LOCK
         sleep_listeners();
-
-#else   // with locking
+#else
 	_lock.acquire();
-	if ( _head == _tail)  // if still empty...
+	if (_head == _tail)  // if still empty...
 	    sleep_listeners();
 	_lock.release();
-#endif
-
-#else
-        sleep_listeners();
 #endif
     }
 

@@ -4,7 +4,9 @@
 #include <click/element.hh>
 #include <click/notifier.hh>
 #include "simplequeue.hh"
-#include <click/sync.hh>
+#if NOTIFIERQUEUE_LOCK
+# include <click/sync.hh>
+#endif
 CLICK_DECLS
 
 /*
@@ -78,7 +80,9 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 
     enum { SLEEPINESS_TRIGGER = 9 };
     int _sleepiness;
+#if NOTIFIERQUEUE_LOCK
     Spinlock _lock;
+#endif
 
     friend class MixedQueue;
     friend class InOrderQueue;
