@@ -1,3 +1,4 @@
 Makefile *.d *.kd *.ud *.ko *.uo
 kelements.conf uelements.conf elements.mk
 kpackage.cc upackage.cc
+config.h configure
