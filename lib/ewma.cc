@@ -28,5 +28,3 @@ DirectEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
       _avg += (-_avg + compensation) >> stability_shift;
   }
 }
-
-template class DirectEWMAX<4, 10>;
