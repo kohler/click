@@ -332,7 +332,6 @@ data_q :: FullNoteQueue(10)
 				ACTIVE false)
 -> data_probe_rate :: ProbeTXRate(OFFSET 4,
 			     WINDOW 5000,
-			     ALT_RATE true,
 			     RT rates,
 			     ACTIVE false)
 
@@ -447,11 +446,7 @@ rate_madwifi_rate :: MadwifiRate(OFFSET 4,
 rate_probe_rate :: ProbeTXRate(OFFSET 4,
                           ACTIVE false,
                           WINDOW 10000,
-                          MIN_SAMPLE 35,
                           THRESHOLD 0,
-                          FILTER_LOW_RATES 1,
-                          FILTER_NEVER_SUCCESS 1,
-                          AGGRESSIVE_ALT_RATE 1,
                           RT rates);
 rate_static_rate :: SetTXRate(RATE 2);
 

@@ -17,24 +17,21 @@
 
 AddressInfo(ap_bssid 10.0.0.1/8 ath1);
 
-winfo :: WirelessInfo(SSID "click-ssid", BSSID ap_bssid, CHANNEL 11);
+winfo :: WirelessInfo(SSID "g9", BSSID ap_bssid, CHANNEL 11);
 
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
-
-q :: Queue(10)
-  -> SetTXRate(2)
-  -> [0] prio :: PrioSched()
-  -> ToDevice (ath1);
+control :: ControlSocket("TCP", 6777);
+chatter :: ChatterSocket("TCP", 6778);
 
 FromHost(ap, ap_bssid, ETHER ap_bssid)
   -> wifi_encap :: WifiEncap(0x02, WIRELESS_INFO winfo)
-  -> data_q :: Queue(10)
   -> set_rate :: SetTXRate(22)
-  -> [1] prio;
+  -> q :: Queue(10)
+  -> ExtraEncap()
+  -> to_dev :: ToDevice (ath1);
 
-
-FromDevice(ath1)
+from_dev :: FromDevice(ath1)
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
 -> phyerr_filter :: FilterPhyErr()
@@ -42,10 +39,6 @@ FromDevice(ath1)
 -> dupe :: WifiDupeFilter() 
 -> wifi_cl :: Classifier(0/08%0c 1/01%03, //data
 			 0/00%0c); //mgt
-
-FromHost(ap, ap_bssid, ETHER ap_bssid)
--> wifi_encap :: WifiEncap(0x02, WIRELESS_INFO winfo)
--> q;
 
 wifi_cl [0] 
 -> decap :: WifiDecap()
