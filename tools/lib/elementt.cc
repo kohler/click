@@ -29,23 +29,24 @@
 #include <stdlib.h>
 
 ElementT::ElementT()
-    : tunnel_input(-1), tunnel_output(-1), flags(0), _type(0)
+    : flags(0), _type(0), _tunnel_input(-1), _tunnel_output(-1)
 {
 }
 
 ElementT::ElementT(const String &n, ElementClassT *eclass,
 		   const String &config, const String &lm)
-    : name(n), configuration(config),
-      tunnel_input(-1), tunnel_output(-1), landmark(lm), flags(0), _type(eclass)
+    : name(n), flags(0),
+      _type(eclass), _configuration(config), _landmark(lm),
+      _ninputs(0), _noutputs(0), _tunnel_input(-1), _tunnel_output(-1)
 {
     assert(_type);
     _type->use();
 }
 
 ElementT::ElementT(const ElementT &e)
-    : name(e.name), configuration(e.configuration),
-      tunnel_input(e.tunnel_input), tunnel_output(e.tunnel_output),
-      landmark(e.landmark), flags(e.flags), _type(e._type)
+    : name(e.name), flags(e.flags),
+      _type(e._type), _configuration(e._configuration), _landmark(e._landmark),
+      _ninputs(0), _noutputs(0), _tunnel_input(-1), _tunnel_output(-1)
 {
     if (_type)
 	_type->use();
@@ -66,10 +67,12 @@ ElementT::operator=(const ElementT &o)
 	_type->unuse();
     _type = o._type;
     name = o.name;
-    configuration = o.configuration;
-    tunnel_input = o.tunnel_input;
-    tunnel_output = o.tunnel_output;
-    landmark = o.landmark;
+    _configuration = o._configuration;
+    _landmark = o._landmark;
+    _tunnel_input = -1;
+    _tunnel_output = -1;
+    _ninputs = 0;
+    _noutputs = 0;
     flags = o.flags;
     return *this;
 }

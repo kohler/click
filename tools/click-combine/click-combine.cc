@@ -148,7 +148,7 @@ try_find_device(String devname, String class1, String class2,
     const ElementT &e = r->element(i);
     if (e.live() && (e.type() == t1 || e.type() == t2)) {
       Vector<String> words;
-      cp_argvec(e.configuration, words);
+      cp_argvec(e.configuration(), words);
       if (words.size() >= 1 && words[0] == devname) {
 	// found it, but check for duplication
 	if (found >= 0) {
@@ -237,10 +237,10 @@ frob_nested_routerlink(ElementT &e)
   String prefix = e.name.substring(0, e.name.find_left('/') + 1);
   assert(prefix.length() > 1 && prefix.back() == '/');
   Vector<String> words;
-  cp_argvec(e.configuration, words);
+  cp_argvec(e.configuration(), words);
   for (int i = 0; i < words.size(); i += 2)
     words[i] = prefix + words[i];
-  e.configuration = cp_unargvec(words);
+  e.configuration() = cp_unargvec(words);
 }
 
 static int

@@ -11,7 +11,6 @@ typedef HashMap<String, int> StringMap;
 class RouterT { public:
 
     RouterT(RouterT * = 0);
-  private: RouterT(const RouterT &); public:
     virtual ~RouterT();
 
     void use()				{ _use_count++; }
@@ -39,9 +38,11 @@ class RouterT { public:
     String etype_name(int) const;
     String edeclaration(int) const;
     const String &econfiguration(int) const;
-    String &econfiguration(int i)	{ return _elements[i].configuration; }
+    String &econfiguration(int i)	{ return _elements[i].configuration();}
     int eflags(int i) const		{ return _elements[i].flags; }
-    const String &elandmark(int i) const{ return _elements[i].landmark; }
+    const String &elandmark(int i) const{ return _elements[i].landmark(); }
+    int eninputs(int i) const		{ return _elements[i].ninputs(); }
+    int enoutputs(int i) const		{ return _elements[i].noutputs(); }
 
     int get_eindex(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     int get_anon_eindex(const String &name, ElementClassT *, const String &configuration = String(), const String &landmark = String());
@@ -55,12 +56,12 @@ class RouterT { public:
   
     int nhookup() const				{ return _hookup_from.size(); }
     const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
-    const Hookup &hookup_from(int i) const	{ return _hookup_from[i]; }
+    const Hookup &hookup_from(int c) const	{ return _hookup_from[c]; }
     const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
-    const Hookup &hookup_to(int i) const	{ return _hookup_to[i]; }
+    const Hookup &hookup_to(int c) const	{ return _hookup_to[c]; }
     const Vector<String> &hookup_landmark() const { return _hookup_landmark; }
-    const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
-    bool hookup_live(int i) const	{ return _hookup_from[i].live(); }
+    const String &hookup_landmark(int c) const	{ return _hookup_landmark[c]; }
+    bool hookup_live(int c) const	{ return _hookup_from[c].live(); }
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
   
@@ -95,8 +96,6 @@ class RouterT { public:
     void find_connection_vector_from(int, Vector<int> &) const;
     void find_connection_vector_to(int, Vector<int> &) const;
     void count_ports(Vector<int> &, Vector<int> &) const;
-    int ninputs(int) const;
-    int noutputs(int) const;
 
     bool insert_before(const Hookup &, const Hookup &);
     bool insert_after(const Hookup &, const Hookup &);
@@ -168,10 +167,15 @@ class RouterT { public:
     StringMap _archive_map;
     Vector<ArchiveElement> _archive;
 
+    RouterT(const RouterT &);
+    
     ElementClassT *get_type(const String &, int scope_cookie) const;
+    void update_noutputs(int);
+    void update_ninputs(int);
     int add_element(const ElementT &);
-    int prev_connection_from(int, int) const;
-    int prev_connection_to(int, int) const;
+    void free_connection(int ci);
+    void unlink_connection_from(int ci);
+    void unlink_connection_to(int ci);
     void finish_remove_elements(Vector<int> &, ErrorHandler *);
     void finish_free_elements(Vector<int> &);
     void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
@@ -181,39 +185,39 @@ class RouterT { public:
 
 
 inline String
-RouterT::ename(int idx) const
+RouterT::ename(int e) const
 {
-    return _elements[idx].name;
+    return _elements[e].name;
 }
 
 inline ElementClassT *
-RouterT::etype(int idx) const
+RouterT::etype(int e) const
 {
-    return _elements[idx].type();
+    return _elements[e].type();
 }
 
 inline int
-RouterT::etype_uid(int idx) const
+RouterT::etype_uid(int e) const
 {
-    return _elements[idx].type_uid();
+    return _elements[e].type_uid();
 }
 
 inline String
-RouterT::etype_name(int idx) const
+RouterT::etype_name(int e) const
 {
-    return _elements[idx].type()->name();
+    return _elements[e].type()->name();
 }
 
 inline String
-RouterT::edeclaration(int idx) const
+RouterT::edeclaration(int e) const
 {
-    return _elements[idx].declaration();
+    return _elements[e].declaration();
 }
 
 inline const String &
-RouterT::econfiguration(int i) const
+RouterT::econfiguration(int e) const
 {
-    return _elements[i].configuration;
+    return _elements[e].configuration();
 }
 
 inline bool

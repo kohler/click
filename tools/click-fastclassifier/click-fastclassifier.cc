@@ -367,12 +367,12 @@ static Vector<Classifier_Program> all_programs;
 static void
 change_landmark(ElementT &classifier_e)
 {
-  int colon = classifier_e.landmark.find_right(':');
+  int colon = classifier_e.landmark().find_right(':');
   if (colon >= 0)
-    classifier_e.landmark = classifier_e.landmark.substring(0, colon)
-      + "<click-fastclassifier>" + classifier_e.landmark.substring(colon);
+    classifier_e.set_landmark(classifier_e.landmark().substring(0, colon)
+      + "<click-fastclassifier>" + classifier_e.landmark().substring(colon));
   else
-    classifier_e.landmark = classifier_e.landmark + "<click-fastclassifier>";
+    classifier_e.set_landmark(classifier_e.landmark() + "<click-fastclassifier>");
 }
 
 static void
@@ -415,7 +415,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
   
     nr.add_connection(idle_nei, i, 0, classifier_nei);
     // count number of output ports
-    int noutputs = r->noutputs(c);
+    int noutputs = r->enoutputs(c);
     for (int j = 0; j < noutputs; j++)
       nr.add_connection(classifier_nei, j, 0, idle_nei);
 
@@ -509,7 +509,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
     assert(c.type >= 0);
     
     c.safe_length = c.output_everything = c.align_offset = -1;
-    c.noutputs = r->noutputs(cei);
+    c.noutputs = r->enoutputs(cei);
     while (program) {
       // find step
       int newline = program.find_left('\n');
@@ -664,7 +664,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     ElementT &classifier_e = r->element(classifiers[i]);
     const Classifier_Program &c = all_programs[program_map[i]];
     classifier_e.set_type(c.eclass);
-    classifier_e.configuration = String();
+    classifier_e.set_configuration(String());
     change_landmark(classifier_e);
   }
   
@@ -812,7 +812,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
     ElementT &e = r->element(i);
     int x = type_uid_map[e.type_uid()];
     if (x >= 0) {
-      e.configuration = configurations[x];
+      e.set_configuration(configurations[x]);
       e.set_type(r->get_type(old_type_names[x]));
     }
   }

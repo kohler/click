@@ -110,7 +110,7 @@ ElementClassT::direct_expand_element(
 {
     ElementT &e = fromr->element(which);
     String new_name = env.prefix() + e.name;
-    String new_configuration = env.interpolate(e.configuration);
+    String new_configuration = env.interpolate(e.configuration());
 
     // check for tunnel
     if (e.tunnel()) {
@@ -119,21 +119,21 @@ ElementClassT::direct_expand_element(
 	if (fromr == tor && !env.prefix())
 	    return which;
 	// make the tunnel or tunnel pair
-	if (e.tunnel_output >= 0 && e.tunnel_output < fromr->nelements()) {
+	if (e.tunnel_connected()) {
 	    tor->add_tunnel(new_name,
-			    env.prefix() + fromr->ename(e.tunnel_output),
-			    e.landmark, errh);
+			    env.prefix() + fromr->ename(e.tunnel_output()),
+			    e.landmark(), errh);
 	    return tor->eindex(new_name);
 	} else
 	    return tor->get_eindex
-		(new_name, e.type(), new_configuration, e.landmark);
+		(new_name, e.type(), new_configuration, e.landmark());
     }
     
     // otherwise, not tunnel
 	  
     // check for common case -- expanding router into itself
     if (fromr == tor && !env.prefix()) {
-	e.configuration = new_configuration;
+	e.configuration() = new_configuration;
 	e.set_type(this);
 	return which;
     }
@@ -141,12 +141,12 @@ ElementClassT::direct_expand_element(
     // check for old element
     int new_eidx = tor->eindex(new_name);
     if (new_eidx >= 0) {
-	errh->lerror(e.landmark, "redeclaration of element `%s'", new_name.cc());
+	errh->lerror(e.landmark(), "redeclaration of element `%s'", new_name.cc());
 	errh->lerror(tor->elandmark(new_eidx), "`%s' previously declared here", tor->edeclaration(new_eidx).cc());
     }
     
     // add element
-    return tor->get_eindex(new_name, this, new_configuration, e.landmark);
+    return tor->get_eindex(new_name, this, new_configuration, e.landmark());
 }
 
 int
@@ -160,8 +160,8 @@ ElementClassT::expand_element(
 	return c->direct_expand_element(fromr, which, tor, env, errh);
 
     // if not direct expansion, do some more work
-    int inputs_used = fromr->ninputs(which);
-    int outputs_used = fromr->noutputs(which);
+    int inputs_used = fromr->element(which).ninputs();
+    int outputs_used = fromr->element(which).noutputs();
 
     Vector<String> args;
     String new_configuration = env.interpolate(fromr->econfiguration(which));
@@ -290,8 +290,8 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 
     int einput = _router->eindex("input");
     if (einput >= 0) {
-	_ninputs = _router->noutputs(einput);
-	if (_router->ninputs(einput))
+	_ninputs = _router->element(einput).noutputs();
+	if (_router->element(einput).noutputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", name_cc());
 
 	if (_ninputs) {
@@ -307,8 +307,8 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 
     int eoutput = _router->eindex("output");
     if (eoutput >= 0) {
-	_noutputs = _router->ninputs(eoutput);
-	if (_router->noutputs(eoutput))
+	_noutputs = _router->element(eoutput).ninputs();
+	if (_router->element(eoutput).noutputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", name_cc());
 
 	if (_noutputs) {
@@ -411,7 +411,7 @@ CompoundElementClassT::complex_expand_element(
 	    signature += _formals[i];
 	}
 	if (errh)
-	    errh->lerror(compound.landmark,
+	    errh->lerror(compound.landmark(),
 			 "too %s arguments to compound element `%s(%s)'",
 			 whoops, name_cc(), signature.cc());
 	for (int i = args.size(); i < nargs; i++)
@@ -429,8 +429,8 @@ CompoundElementClassT::complex_expand_element(
     // create input/output tunnels
     if (fromr == tor)
 	tor->element(which).set_type(tunnel_type());
-    tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark, errh);
-    tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark, errh);
+    tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark(), errh);
+    tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark(), errh);
     int new_eindex = tor->eindex(prefix + compound.name);
 
     // dump compound router into `tor'

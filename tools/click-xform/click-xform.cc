@@ -81,14 +81,14 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
     ElementT &fac = _pat->element(i);
     if (!fac.tunnel())
       continue;
-    else if (fac.tunnel_input >= 0 || fac.tunnel_output >= 0)
-      errh->lerror(fac.landmark, "pattern has active connection tunnels");
+    else if (fac.tunnel_connected())
+      errh->lerror(fac.landmark(), "pattern has active connection tunnels");
     else if (fac.name == "input" && _pat_input_idx < 0)
       _pat_input_idx = i;
     else if (fac.name == "output" && _pat_output_idx < 0)
       _pat_output_idx = i;
     else
-      errh->lerror(fac.landmark, "connection tunnel with funny name `%s'", fac.name.cc());
+      errh->lerror(fac.landmark(), "connection tunnel with funny name `%s'", fac.name.cc());
   }
 }
 

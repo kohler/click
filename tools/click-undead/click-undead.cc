@@ -105,26 +105,10 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static void
 save_element_nports(RouterT *r)
 {
-  Vector<int> ninputs(r->nelements(), 0);
-  Vector<int> noutputs(r->nelements(), 0);
-  
-  int nh = r->nhookup();
-  const Vector<Hookup> &hfrom = r->hookup_from();
-  const Vector<Hookup> &hto = r->hookup_to();
-  for (int i = 0; i < nh; i++) {
-    const Hookup &hf = hfrom[i], &ht = hto[i];
-    if (hf.idx >= 0) {
-      if (hf.port >= noutputs[hf.idx])
-	noutputs[hf.idx] = hf.port + 1;
-      if (ht.port >= ninputs[ht.idx])
-	ninputs[ht.idx] = ht.port + 1;
-    }
-  }
-
   int nelem = r->nelements();
   for (int i = 0; i < nelem; i++) {
-    element_ninputs.insert(r->ename(i), ninputs[i]);
-    element_noutputs.insert(r->ename(i), noutputs[i]);
+    element_ninputs.insert(r->ename(i), r->eninputs(i));
+    element_noutputs.insert(r->ename(i), r->enoutputs(i));
   }
 }
 
@@ -147,7 +131,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
       val = -1;
     }
 
-    int noutputs = r->noutputs(ei);
+    int noutputs = r->enoutputs(ei);
     Vector<int> connv_out;
     r->find_connection_vector_from(ei, connv_out);
     for (int i = 0; i < connv_out.size(); i++)
@@ -199,7 +183,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
       val = -1;
     }
 
-    int ninputs = r->ninputs(ei);
+    int ninputs = r->eninputs(ei);
     Vector<int> connv_in;
     r->find_connection_vector_to(ei, connv_in);
     for (int i = 0; i < connv_in.size(); i++)
@@ -259,7 +243,7 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
   for (int ei = 0; ei < r->nelements(); ei++) {
     if (r->etype(ei) != t)
       continue;
-    int nin = r->ninputs(ei), nout = r->noutputs(ei);
+    int nin = r->eninputs(ei), nout = r->enoutputs(ei);
     if (nin != 1 || nout != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
       continue;
@@ -291,7 +275,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
   for (int ei = 0; ei < r->nelements(); ei++) {
     if (r->etype(ei) != t)
       continue;
-    if (r->noutputs(ei) != 1) {
+    if (r->enoutputs(ei) != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
       continue;
     }
@@ -356,7 +340,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
   for (int ei = 0; ei < r->nelements(); ei++) {
     if (r->etype(ei) != t)
       continue;
-    if (r->ninputs(ei) != 1) {
+    if (r->eninputs(ei) != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
       continue;
     }

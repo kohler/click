@@ -6,10 +6,6 @@
 struct ElementT {
     
     String name;
-    String configuration;
-    int tunnel_input;
-    int tunnel_output;
-    String landmark;
     int flags;
 
     ElementT();
@@ -17,15 +13,34 @@ struct ElementT {
     ElementT(const ElementT &);
     ~ElementT();
 
+    bool live() const			{ return _type; }
+    bool dead() const			{ return !_type; }
+    void kill();
+    
     ElementClassT *type() const		{ return _type; }
     String type_name() const		{ return _type->name(); }
     int type_uid() const		{ return _type ? _type->uid() : -1; }
-    bool live() const			{ return _type; }
-    bool dead() const			{ return !_type; }
-    bool tunnel() const			{ return _type == ElementClassT::tunnel_type(); }
-    void kill();
     void set_type(ElementClassT *);
 
+    const String &config() const	{ return _configuration; }
+    const String &configuration() const	{ return _configuration; }
+    void set_config(const String &s)	{ _configuration = s; }
+    void set_configuration(const String &s) { _configuration = s; }
+    String &config()			{ return _configuration; }
+    String &configuration()		{ return _configuration; }
+    
+    const String &landmark() const	{ return _landmark; }
+    void set_landmark(const String &s)	{ _landmark = s; }
+    String &landmark()			{ return _landmark; }
+    
+    bool tunnel() const		{ return _type==ElementClassT::tunnel_type(); }
+    bool tunnel_connected() const;
+    int tunnel_input() const		{ return _tunnel_input; }
+    int tunnel_output() const		{ return _tunnel_output; }
+
+    int ninputs() const			{ return _ninputs; }
+    int noutputs() const		{ return _noutputs; }
+    
     String declaration() const;
     
     ElementT &operator=(const ElementT &);
@@ -33,6 +48,14 @@ struct ElementT {
   private:
 
     ElementClassT *_type;
+    String _configuration;
+    String _landmark;
+    int _ninputs;
+    int _noutputs;
+    int _tunnel_input;
+    int _tunnel_output;
+
+    friend class RouterT;
     
 };
 
@@ -79,6 +102,12 @@ ElementT::declaration() const
 {
     assert(_type);
     return name + " :: " + _type->name();
+}
+
+inline bool
+ElementT::tunnel_connected() const
+{
+    return _tunnel_input >= 0 || _tunnel_output >= 0;
 }
 
 inline bool
