@@ -1,3 +1,13 @@
+2002-06-14 Friday 17:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.18), dsdvroutetable.hh
+	(1.14): make asserts more informative: dump route table
+
+2002-06-14 Friday 17:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.17): fix corner case of
+	reboot/seqno wraparound handling
+
 2002-06-14 Friday 14:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.16), dsdvroutetable.hh
