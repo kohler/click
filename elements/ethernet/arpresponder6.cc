@@ -201,11 +201,13 @@ ARPResponder6::simple_action(Packet *p)
       csum2 == ntohs(ea->checksum))    
     {
       EtherAddress ena;
+      unsigned char host_ether[6];
       if(lookup(ipa, ena)) 
 	{
 	  memcpy(&spa, ipa.data(), 16); 
+	  memcpy(&host_ether, ena.data(),6);
 	  //use the finded ip6address as its source ip6 address in the header in neighborhood advertisement message packet
-	  q = make_response( e->ether_shost,  e->ether_dhost, dpa, spa, tpa);
+	  q = make_response(e->ether_shost, host_ether, dpa, spa, tpa);
 	}
     } 
   
