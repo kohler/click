@@ -1,3 +1,12 @@
+2001-05-17 Thursday 16:54  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: fromdevice.cc (1.55), polldevice.cc
+	(1.105), todevice.cc (1.104): prefer HAVE_STRIDE_SCHED to RR_SCHED
+
+2001-05-17 Thursday 16:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipprint.cc (1.23): bug fix (Mazu)
+
 2001-05-16 Wednesday 13:50  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* Makefile.in (1.82), configure.in (1.118), linuxmodule/Makefile.in
