@@ -93,7 +93,7 @@ ChuckCheck::read_handler(Element *e, void *)
   }
 
   buf[0] = num - cc->_first;
-  return String::claim_string((const char *)buf, sizeof(unsigned) * j);
+  return String::claim_string((char *)buf, sizeof(unsigned) * j);
 }
 
 void
