@@ -94,6 +94,7 @@ IPRewriter::uninitialize()
   for (int i = 0; i < _input_specs.size(); i++)
     if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
       _input_specs[i].u.pattern.p->unuse();
+  _input_specs.clear();
 }
 
 void

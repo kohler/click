@@ -15,6 +15,8 @@
 #endif
 #include "suppressor.hh"
 #include "bitvector.hh"
+#include "confparse.hh"
+#include "error.hh"
 
 Suppressor::Suppressor()
 {
@@ -53,6 +55,21 @@ Suppressor::clone() const
   return new Suppressor;
 }
 
+bool
+Suppressor::set(int output, bool sup)
+{
+  // Need to change anything?
+  if (sup == suppressed(output))
+    return false;
+  
+  if (sup)
+    suppress(output);
+  else
+    allow(output);
+  
+  return true;
+}
+
 int
 Suppressor::initialize(ErrorHandler *)
 {
@@ -80,34 +97,45 @@ Suppressor::pull(int source)
   }
 }
 
-String
-Suppressor::read_status(Element* f, void *) {
-  Suppressor* sup = (Suppressor*)f;
-  String s;
-  for (int i = 0; i < sup->noutputs(); i++) {
-    s += String(i) + (sup->suppressed(i) ? "x " : "o ");
+static String
+read_active(Element *e, void *thunk)
+{
+  Suppressor *sup = static_cast<Suppressor *>(e);
+  int port = reinterpret_cast<int>(thunk);
+  return (sup->suppressed(port) ? "false\n" : "true\n");
+}
+
+static int
+write_active(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
+{
+  Suppressor *sup = static_cast<Suppressor *>(e);
+  int port = reinterpret_cast<int>(thunk);
+  bool active;
+  if (!cp_bool(cp_subst(in_s), &active))
+    return errh->error("active value must be boolean");
+  else {
+    sup->set(port, active);
+    return 0;
   }
-  return s + "\n";
+}
+
+static int
+write_reset(const String &, Element *e, void *, ErrorHandler *)
+{
+  Suppressor *sup = static_cast<Suppressor *>(e);
+  sup->allow_all();
+  return 0;
 }
 
 void
 Suppressor::add_handlers()
 {
-  add_read_handler("status", read_status, 0);
-}
-
-bool
-Suppressor::set(int output, bool sup) {
-  // Need to change anything?
-  if (sup == suppressed(output))
-    return false;
-  
-  if (sup)
-    suppress(output);
-  else
-    allow(output);
-  
-  return true;
+  for (int i = 0; i < ninputs(); i++) {
+    String s = "active" + String(i);
+    add_read_handler(s, read_active, (void *)i);
+    add_write_handler(s, write_active, (void *)i);
+  }
+  add_write_handler("reset", write_reset, 0);
 }
 
 EXPORT_ELEMENT(Suppressor)

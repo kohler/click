@@ -16,7 +16,8 @@
  * Expects packets with Ethernet headers.
  *
  * If DEVNAME is present, each packet is marked to appear as if it originated
- * from that network device.
+ * from that network device. As with ToDevice, DEVNAME can be an Ethernet
+ * address.
  * 
  * This element is only available in the Linux kernel module.
  *

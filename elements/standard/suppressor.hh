@@ -2,6 +2,27 @@
 #define SUPPRESSER_HH
 #include "element.hh"
 
+/*
+ * =c
+ * Suppressor
+ * =s
+ * passes packets unchanged, optionally dropping some input ports
+ * V<dropping>
+ * =d
+ *
+ * Suppressor has I<n> inputs and I<n> outputs. It generally passes packets
+ * from input I<i> to output I<i> unchanged. However, any input port can be
+ * suppressed, through a handler or a method call by another element. Packets
+ * arriving on suppressed push input ports are dropped; pull requests arriving
+ * on suppressed pull output ports are ignored.
+ *
+ * =h active0...activeI<N-1> read/write
+ * Returns or sets whether each port is active (that is, not suppressed).
+ * Every port starts out active.
+ *
+ * =h reset write-only
+ * Resets every port to active. */
+
 class Suppressor : public Element {
   
   fd_set _suppressed;
@@ -17,14 +38,12 @@ class Suppressor : public Element {
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   
-  Suppressor* clone() const;
+  Suppressor *clone() const;
   int initialize(ErrorHandler *);
+  void add_handlers();
   
   void push(int port, Packet *p);
   Packet *pull(int port);
-
-  static String read_status(Element* f, void *);
-  void add_handlers();
   
   bool suppressed(int output) const { return FD_ISSET(output, &_suppressed); }
   void suppress(int output) { FD_SET(output, &_suppressed); }

@@ -74,7 +74,8 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	doc/element2man.pl doc/mkelementmap.pl \
 	doc/Element.3 doc/Connection.3 doc/elementdoc.7 \
 	conf/make-ip-conf.pl conf/ip.clickpat \
-	conf/fake-iprouter.click \
+	conf/ip6ndadvertiser.click conf/ip6ndsolicitor.click \
+	conf/fake-iprouter.click conf/kernel.clickpat \
 	conf/test.click conf/test2.click conf/test3.click \
 	conf/test-device.click \
 	conf/udpgen.click \

@@ -16,6 +16,7 @@
 #include "tolinuxsniffers.hh"
 #include "confparse.hh"
 #include "error.hh"
+#include "elements/linuxmodule/anydevice.hh"
 extern "C" {
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
@@ -45,6 +46,8 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   if (devname) {
     _dev = dev_get(devname.cc());
+    if (!_dev)
+      _dev = find_device_by_ether_address(devname);
     if (!_dev)
       return errh->error("no such device `%s'", devname.cc());
   } else
@@ -93,5 +96,5 @@ ToLinuxSniffers::push(int port, Packet *p)
   // i0 ++;
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule AnyDevice)
 EXPORT_ELEMENT(ToLinuxSniffers)

@@ -126,7 +126,7 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     if (_data == DATA_IP) {
       _type = TYPE_HOST;
       if (!_srcdst) _srcdst = p._srcdst;
-    } else if (_data == DATA_IPMASK) {
+    } else if (_data == DATA_IPNET) {
       _type = TYPE_NET;
       if (!_srcdst) _srcdst = p._srcdst;
     } else if (_data == DATA_PROTO || (_data == DATA_INT && p._type == TYPE_PROTO)) {
@@ -160,7 +160,7 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       return errh->error("pattern %d: can't use relational operators with `host'", slot);
     
   } else if (_type == TYPE_NET) {
-    if (_data != DATA_IPMASK)
+    if (_data != DATA_IPNET)
       return errh->error("pattern %d: `net' directive requires IP address and mask", slot);
     if (_op != OP_EQ)
       return errh->error("pattern %d: can't use relational operators with `net'", slot);
@@ -536,27 +536,37 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
       wd = (w >= words.size() ? String() : words[w]);
       if (w >= words.size())
 	/* no extra data */;
+      
       else if (wd == "and" || wd == "or" || wd == "&&" || wd == "||"
 	       || wd == "(" || wd == ")") {
 	/* no extra data */
 	w--;
-      } else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
+	
+      } else if (cp_integer(wd, &prim._u.i))
+	prim._data = DATA_INT;
+      
+      else if ((prim._u.i = ip_proto_map[wd]) >= 0)
+	prim._data = DATA_PROTO;
+      
+      else if ((prim._u.i = ip_port_map[wd]) >= 0)
+	prim._data = DATA_PORT;
+      
+      else if ((prim._u.i = tcp_opt_map[wd]) >= 0)
+	prim._data = DATA_TCPOPT;
+      
+      else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
 	if (w < words.size() - 2 && words[w+1] == "mask"
 	    && cp_ip_address(words[w+2], (unsigned char *)&prim._u.ipnet.mask, this)) {
 	  w += 2;
-	  prim._data = DATA_IPMASK;
-	} else
+	  prim._data = DATA_IPNET;
+	} else if (prim._type == TYPE_NET && cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+	  prim._data = DATA_IPNET;
+	else
 	  prim._data = DATA_IP;
+	
       } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
-	prim._data = DATA_IPMASK;
-      else if (cp_integer(wd, &prim._u.i))
-	prim._data = DATA_INT;
-      else if ((prim._u.i = ip_proto_map[wd]) >= 0)
-	prim._data = DATA_PROTO;
-      else if ((prim._u.i = ip_port_map[wd]) >= 0)
-	prim._data = DATA_PORT;
-      else if ((prim._u.i = tcp_opt_map[wd]) >= 0)
-	prim._data = DATA_TCPOPT;
+	prim._data = DATA_IPNET;
+      
       else
 	errh->error("pattern %d: syntax error near `%s'", slot, wd.cc());
 

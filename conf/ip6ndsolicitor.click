@@ -1,6 +1,6 @@
 // This configuration is faking the communication between three machines.
 // grunt (3ffe:1ce1:2:0:200:c0ff:fe43:71ef) wants to send ip packets to 
-// frenulum. (3ffe:1ce1:2::1
+// frenulum. (3ffe:1ce1:2::1)
 // It first sends out the packet to the default router 
 // (the router assume to have ip6 addresses: 3ffe:1ce1:2:0:200::1 & 
 // 3ffe:1ce1:2::2), and router routes 
@@ -29,8 +29,8 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 			 12/86dd);
 	
 	
-	c[0] -> Print(c[0], 200) ->Discard;
-	c[2] -> Print(c[2], 200) ->Strip(14)
+c[0] -> Print(c[0], 200) -> Discard;
+c[2] -> Print(c[2], 200) -> Strip(14)
 	-> CheckIP6Header(3ffe:1ce1:2:0:200::ffff 3ffe:1ce1:2::ffff)
 	-> GetIP6Address(24)
 	-> rt :: LookupIP6Route(
@@ -39,18 +39,17 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	3ffe:1ce1:2::/80 ::0 1,
 	3ffe:1ce1:2:0:200::/80 ::0 2,
 	0::ffff:0:0/96 ::0 3,
-  	::0/0 ::c0a8:1 4);
-	nds :: IP6NDSolicitor(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
-	
-	rt[1] 	-> Print(route1-ok, 200) 
-		-> [0]nds;
-		
-	c[1] 	-> Print(c[1], 200) ->[1]nds;
-	nds[0]-> Print(after-IP6NDSolicitor-output0, 200)
-		->Discard;
-	rt[0] 	-> Print(route0-ok, 200) -> Discard;
-	rt[2] 	-> Print(route2-ok, 200) -> Discard;
-	rt[3] 	-> Print(route3-ok, 200) -> Discard;
-	rt[4] 	-> Print(route4-ok, 200) -> Discard;
+  	::/0 ::c0a8:1 4);
 
-  	
+nds :: IP6NDSolicitor(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
+	
+rt[1] 	-> Print(route1-ok, 200) 
+	-> [0]nds;
+		
+c[1] 	-> Print(c[1], 200) ->[1]nds;
+nds[0] -> Print(after-IP6NDSolicitor-output0, 200)
+	-> Discard;
+rt[0] 	-> Print(route0-ok, 200) -> Discard;
+rt[2] 	-> Print(route2-ok, 200) -> Discard;
+rt[3] 	-> Print(route3-ok, 200) -> Discard;
+rt[4] 	-> Print(route4-ok, 200) -> Discard;

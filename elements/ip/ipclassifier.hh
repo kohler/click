@@ -173,7 +173,7 @@ class IPClassifier : public Classifier {
     
     PROTO_IP = 1,
     
-    DATA_NONE = 0, DATA_IP = 1, DATA_IPMASK = 2, DATA_PROTO = 3,
+    DATA_NONE = 0, DATA_IP = 1, DATA_IPNET = 2, DATA_PROTO = 3,
     DATA_PORT = 4, DATA_INT = 5, DATA_TCPOPT = 6, DATA_ICMP_TYPE = 7,
     
     IP_PROTO_TCP_OR_UDP = 0x10000,
