@@ -135,6 +135,17 @@ class Packet { public:
   int transport_length() const		{ return _tail - _h.raw; }
 #endif
 
+  // LINKS
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  Packet *next() const			{ return (Packet *)(skb()->next); }
+  Packet *&next()			{ return (Packet *&)(skb()->next); }
+  void set_next(Packet *p)		{ skb()->next = p->skb(); }
+#else				/* User space and BSD kernel module */ 
+  Packet *next() const			{ return _next; }
+  Packet *&next()			{ return _next; }
+  void set_next(Packet *p)		{ _next = p; }
+#endif
+  
   // ANNOTATIONS
 
  private:
@@ -276,6 +287,7 @@ class Packet { public:
 #ifdef CLICK_BSDMODULE
   struct mbuf *_m;
 #endif
+  Packet *_next;
 #endif
   
   Packet();
@@ -755,6 +767,7 @@ Packet::clear_annotations()
   set_timestamp_anno(0, 0);
   set_mac_header(0);
   set_network_header(0, 0);
+  set_next(0);
 }
 
 inline void
