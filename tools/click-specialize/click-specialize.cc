@@ -83,52 +83,48 @@ specialized_click_name(RouterT *router, int i)
   return router->etype_name(i) + "@@" + router->ename(i);
 }
 
-static int
-break_line(const String &text, int pos, Vector<String> &words)
+static void
+parse_instruction(const String &text, HashMap<String, int> &specializing,
+		  Vector<String> &like1, Vector<String> &like2,
+		  ErrorHandler *errh)
 {
-  const char *data = text.data();
-  const char *s = text.data() + pos;
-  const char *end_s = text.data() + text.length();
-  while (s < end_s && isspace(*s))
-    s++;
-  while (s < end_s && *s != '\n' && *s != '\r') {
-    const char *word = s;
-    while (s < end_s && !isspace(*s))
-      s++;
-    words.push_back(text.substring(word - data, s - word));
-    while (s < end_s && isspace(*s) && *s != '\n' && *s != '\r')
-      s++;
-  }
-  return s - data;
+  Vector<String> words;
+  cp_spacevec(text, words);
+
+  if (words.size() == 0 || words[0].data()[0] == '#')
+    /* nada */;
+  else if (words[0] == "like") {
+    if (words.size() < 3)
+      errh->error("too few arguments to `like'");
+    for (int i = 2; i < words.size(); i++) {
+      like1.push_back(words[i]);
+      like2.push_back(words[1]);
+    }
+  } else if (words[0] == "noclass") {
+    if (words.size() < 2)
+      errh->error("too few arguments to `noclass'");
+    for (int i = 1; i < words.size(); i++)
+      specializing.insert(words[i], 0);
+  } else
+    errh->error("unknown command `%s'", words[0].cc());
 }
 
 static void
-parse_instructions(const char *filename, HashMap<String, int> &specializing,
-		   Vector<String> &like1, Vector<String> &like2,
-		   ErrorHandler *errh)
+parse_instruction_file(const char *filename, HashMap<String, int> &specializing,
+		       Vector<String> &like1, Vector<String> &like2,
+		       ErrorHandler *errh)
 {
   String text = file_string(filename, errh);
+  const char *s = text.data();
   int pos = 0;
-  while (pos < text.length()) {
-    Vector<String> line;
-    pos = break_line(text, pos, line);
-
-    if (line.size() == 0 || line[0].data()[0] == '#')
-      /* nada */;
-    else if (line[0] == "like") {
-      if (line.size() < 3)
-	errh->error("too few arguments to `like'");
-      for (int i = 2; i < line.size(); i++) {
-	like1.push_back(line[i]);
-	like2.push_back(line[1]);
-      }
-    } else if (line[0] == "noclass") {
-      if (line.size() < 2)
-	errh->error("too few arguments to `noclass'");
-      for (int i = 1; i < line.size(); i++)
-	specializing.insert(line[i], 0);
-    } else
-      errh->error("unknown command `%s'", line[0].cc());
+  int len = text.length();
+  while (pos < len) {
+    int pos1 = pos;
+    while (pos < len && s[pos] != '\n' && s[pos] != '\r')
+      pos++;
+    parse_instruction(text.substring(pos1, pos - pos1), specializing, like1, like2, errh);
+    while (pos < len && (s[pos] == '\n' || s[pos] == '\r'))
+      pos++;
   }
 }
 
@@ -261,7 +257,7 @@ particular purpose.\n");
      }
 
      case INSTRS_OPT:
-      parse_instructions(clp->arg, specializing, like1, like2, errh);
+      parse_instruction_file(clp->arg, specializing, like1, like2, errh);
       break;
      
      bad_option:
@@ -306,6 +302,17 @@ particular purpose.\n");
     }
   }
 
+  // follow instructions embedded in router definition
+  int specializer_info_class = router->type_index("SpecializerInfo");
+  for (int i = 0; i < router->nelements(); i++)
+    if (router->etype(i) == specializer_info_class) {
+      const String &s = router->econfiguration(i);
+      Vector<String> args;
+      cp_argvec(s, args);
+      for (int j = 0; j < args.size(); j++)
+	parse_instruction(args[j], specializing, like1, like2, errh);
+    }
+  
   // mark nonspecialized classes, if any
   specializer.set_specializing_classes(specializing);
   for (int i = 0; i < like1.size(); i++)

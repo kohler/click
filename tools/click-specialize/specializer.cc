@@ -190,7 +190,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   ElementTypeInfo &old_eti = etype_info(eindex);
   if (!old_eti.click_name)
     return errh->warning("no information about element class `%s'",
-			 old_eti.click_name.cc());
+			 _router->etype_name(eindex).cc());
   
   // belongs to a non-specialized class?
   int try_it = 1;
