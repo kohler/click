@@ -8,6 +8,7 @@ CLICK_CXX_PROTECT
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <machine/limits.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -26,22 +27,20 @@ CLICK_CXX_UNPROTECT
 #define CLICK_DEVICE_STATS 1
 #define SET_STATS(p0mark, p1mark, time_mark) \
   { \
-    unsigned high; \
-    rdpmc(0, p0mark, high); \
-    rdpmc(1, p1mark, high); \
+    p0mark = rdpmc(0); \
+    p1mark = rdpmc(1); \
     time_mark = click_get_cycles(); \
   }
 #define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
   { \
-    unsigned high; \
     unsigned low01, low11; \
     tctr += click_get_cycles() - time_mark - CLICK_CYCLE_COMPENSATION; \
-    rdpmc(0, low01, high); \
-    rdpmc(1, low11, high); \
+    low01 = rdpmc(0); \
+    low11 = rdpmc(1); \
     pctr0 += (low01 >= p0mark) ? low01-p0mark : (UINT_MAX-p0mark+low01); \
     pctr1 += (low11 >= p1mark) ? low11-p1mark : (UINT_MAX-p1mark+low11); \
-    rdpmc(0, p0mark, high); \
-    rdpmc(1, p1mark, high); \
+    p0mark = rdpmc(0); \
+    p1mark = rdpmc(1); \
     time_mark = click_get_cycles(); \
   }
 
