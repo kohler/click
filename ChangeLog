@@ -1,3 +1,19 @@
+2004-07-29 Thursday 18:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/khandlerproxy.cc (1.20),
+	elements/userlevel/khandlerproxy.hh (1.10),
+	include/click/element.hh (1.36), include/click/handlercall.hh
+	(1.12), include/click/router.hh (1.65), lib/element.cc (1.91),
+	lib/handlercall.cc (1.14), lib/router.cc (1.168),
+	linuxmodule/clickfs.cc (1.39): handler rewrite: add HandlerHook, an
+	interface that will eventually handle in+out handlers (like read
+	handlers with parameters)
+
+2004-07-29 Thursday 18:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/ipgwoptions.hh (1.22), analysis/aggpktcounter.hh
+	(1.5): doc nit
+
 2004-07-29 Thursday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: analysis/fromdagdump.cc (1.19),
