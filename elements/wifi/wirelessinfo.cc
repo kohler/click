@@ -45,6 +45,7 @@ int
 WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res;
+  reset();
   res = cp_va_parse(conf, this, errh,
 		    cpKeywords, 
 		    "SSID", cpString, "ssid", &_ssid,
@@ -58,8 +59,18 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
-enum {H_SSID, H_BSSID, H_CHANNEL, H_INTERVAL, H_WEP};
+enum {H_SSID, H_BSSID, H_CHANNEL, H_INTERVAL, H_WEP, H_RESET};
 
+
+void
+WirelessInfo::reset()
+{
+  _ssid = "";
+  _channel = -1;
+  _bssid = EtherAddress();
+  _interval = 100;
+  _wep = false;
+}
 int 
 WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
 			  ErrorHandler *errh)
@@ -103,6 +114,7 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
     f->_wep = wep;
     break;
   }
+  case H_RESET: f->reset(); break;
   }
   return 0;
 }
@@ -138,6 +150,7 @@ WirelessInfo::add_handlers()
   add_write_handler("channel", write_param, (void *) H_CHANNEL);
   add_write_handler("interval", write_param, (void *) H_INTERVAL);
   add_write_handler("wep", write_param, (void *) H_WEP);
+  add_write_handler("reset", write_param, (void *) H_RESET);
   
 }
 

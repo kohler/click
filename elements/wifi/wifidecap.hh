@@ -11,21 +11,25 @@ WifiDecap
 
 =s Wifi
 
-Turns 802.11 packets into ethernet packets 
+Turns 802.11 packets into ethernet packets.
 
 =d
 
+Strips the 802.11 frame header and llc header off the packet and pushes
+an ethernet header onto the packet. Discards packets that are shorter
+than the length of the 802.11 frame header and llc header.
+
+
 =e
 
-
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
-
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: WifiDecap() -> ...
-
+FromDevice(ath0)
+-> ExtraDecap()
+-> FilterTX()
+-> FilterPhyErr()
+-> wifi_cl :: Classifier (0/08%0c); //data packets
+-> wifi_decap :: WifiDecap()
+-> HostEtherFilter(ath0, DROP_OTHER true, DROP_OWN true)
+...
 =a WifiEncap
  */
 

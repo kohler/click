@@ -12,9 +12,12 @@ WifiEncap(MODE, BSSID)
 
 =s Wifi, Encapsulation
 
-Converts ethernet packets to 802.11 packets, with a LLC header.
+Converts ethernet packets to 802.11 packets with a LLC header.
 
-=d
+=d 
+
+Strips the ethernet header off the front of the packet and pushes
+an 802.11 frame header and llc header onto the packet.
 
 Arguments are:
 
@@ -44,13 +47,16 @@ Same as MODE argument
 Same as BSSID argument
 
 =e
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
 
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_encap :: WifiEncap() -> ...
+// this configuration sends 1000 broadcast packets at 1 megabit
+// to device ath0 with ethertype 0x9000
+
+inf_src :: InfiniteSource(DATA \<ffff>, LIMIT 1000, ACTIVE false)
+-> EtherEncap(0x9000, ath0, ff:ff:ff:ff:ff:ff)
+-> wifi_encap :: WifiEncap(0x00, 0:0:0:0:0:0)
+-> set_rate :: SetTXRate(RATE 2)
+-> ExtraEncap()
+-> to_dev :: ToDevice (ath0);
 
 =a EtherEncap */
 

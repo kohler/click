@@ -62,6 +62,7 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
   bool default_rates = false;
   if (args[0] == "DEFAULT") {
     default_rates = true;
+    _default_rates.clear();
   } else {
     if (!cp_ethernet_address(args[0], &e)) 
       return errh->error("error param %s: must start with ethernet address", s.cc());

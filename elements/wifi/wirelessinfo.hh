@@ -73,6 +73,7 @@ class WirelessInfo : public Element { public:
   static String read_param(Element *, void *);
   static int write_param(const String &in_s, Element *, void *, ErrorHandler *);
 
+  void reset();
   String _ssid;
   EtherAddress _bssid;
   int _channel;

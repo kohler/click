@@ -416,7 +416,7 @@ PrintWifi::simple_action(Packet *p)
       ptr += 2;
       sa << "assoc_resp "; 
       sa << capability_string(capability);
-      sa << " status " << status_string(status);
+      sa << " status " << (int) status << " " << status_string(status);
       sa << " associd " << associd << " ";
       break;
     }

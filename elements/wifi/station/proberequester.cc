@@ -122,6 +122,10 @@ ProbeRequester::send_probe_request()
     if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
+
+    if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
+      ptr [2 + x] |= WIFI_RATE_BASIC;
+    }
     
   }
   ptr += 2 + min(WIFI_RATE_SIZE, rates.size());
@@ -137,6 +141,10 @@ ProbeRequester::send_probe_request()
       ptr[2 + x] = (uint8_t) rates[x + WIFI_RATE_SIZE];
       
       if (rates[x + WIFI_RATE_SIZE] == 2) {
+	ptr [2 + x] |= WIFI_RATE_BASIC;
+      }
+
+      if (_winfo && _winfo->_channel > 15 && rates[x] == 12) {
 	ptr [2 + x] |= WIFI_RATE_BASIC;
       }
       
