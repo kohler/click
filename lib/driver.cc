@@ -47,6 +47,7 @@
 
 #if CLICK_USERLEVEL
 # include <click/master.hh>
+# include <click/notifier.hh>
 # include <click/straccum.hh>
 #endif
 
@@ -374,6 +375,7 @@ click_static_initialize()
     ErrorHandler::static_initialize(new FileErrorHandler(stderr, ""));
 
     Router::static_initialize();
+    NotifierSignal::static_initialize();
     CLICK_DEFAULT_PROVIDES;
 
     Router::add_read_handler(0, "classes", read_handler, (void *)GH_CLASSES);

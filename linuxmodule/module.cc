@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/bighashmap_arena.hh>
+#include <click/notifier.hh>
 
 int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
@@ -198,8 +199,9 @@ init_module()
   error_log = new StringAccum;
 
   // default provisions
-  CLICK_DEFAULT_PROVIDES;
   Router::static_initialize();
+  NotifierSignal::static_initialize();
+  CLICK_DEFAULT_PROVIDES;
 
   // thread manager, sk_buff manager, config manager
   click_init_sched(ErrorHandler::default_handler());
