@@ -143,7 +143,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 		ac_cv_pcap_header_path='-I/usr/include/pcap'))
 	if test "$ac_cv_pcap_header_path" = 'not found'; then
 	    HAVE_PCAP=
-	else
+	elif test "$ac_cv_pcap_header_path" != 'found'; then
 	    PCAP_INCLUDES="$ac_cv_pcap_header_path"
         fi
     fi
