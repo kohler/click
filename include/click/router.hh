@@ -145,6 +145,7 @@ class Router { public:
   Vector<String> _element_names;
   Vector<String> _configurations;
   Vector<String> _element_landmarks;
+  Vector<int> _configure_order;
 
   Vector<RouterThread *> _threads;
   

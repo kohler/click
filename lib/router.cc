@@ -54,8 +54,8 @@ Router::~Router()
   if (_refcount > 0)
     click_chatter("deleting router while ref count > 0");
   if (_initialized) {
-    for (int i = 0; i < _elements.size(); i++)
-      _elements[i]->uninitialize();
+    for (int ord = _elements.size() - 1; ord >= 0; ord--)
+      _elements[ _configure_order[ord] ]->uninitialize();
   }
   for (int i = 0; i < _threads.size(); i++)
     delete _threads[i];
@@ -870,16 +870,16 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
 
   // set up configuration order
   Vector<int> configure_phase(nelements(), 0);
-  Vector<int> configure_order(nelements(), 0);
+  _configure_order.assign(nelements(), 0);
   for (int i = 0; i < _elements.size(); i++) {
     configure_phase[i] = _elements[i]->configure_phase();
-    configure_order[i] = i;
+    _configure_order[i] = i;
   }
-  qsort_configure_order(configure_order, configure_phase, 0, _elements.size() - 1);
+  qsort_configure_order(_configure_order, configure_phase, 0, _elements.size() - 1);
 
   // Configure all elements in configure order. Remember the ones that failed
   for (int ord = 0; ord < _elements.size(); ord++) {
-    int i = configure_order[ord];
+    int i = _configure_order[ord];
 #if CLICK_DMALLOC
     sprintf(dmalloc_buf, "c%d  ", i);
     CLICK_DMALLOC_REG(dmalloc_buf);
@@ -915,7 +915,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   if (all_ok) {
     initialize_handlers(true, true);
     for (int ord = 0; ord < _elements.size(); ord++) {
-      int i = configure_order[ord];
+      int i = _configure_order[ord];
       if (element_ok[i]) {
 #if CLICK_DMALLOC
 	sprintf(dmalloc_buf, "i%d  ", i);
@@ -946,9 +946,11 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   if (!all_ok) {
     if (verbose_errors)
       errh->error("Router could not be initialized!");
-    for (int i = 0; i < _elements.size(); i++)
+    for (int ord = _elements.size() - 1; ord >= 0; ord--) {
+      int i = _configure_order[ord];
       if (element_ok[i])
 	_elements[i]->uninitialize();
+    }
     initialize_handlers(true, false);
     _driver_runcount = 0;
     return -1;
