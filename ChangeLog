@@ -1,3 +1,12 @@
+2004-06-29 Tuesday 12:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.52): make distdir
+
+2004-06-29 Tuesday 12:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click.spec (1.3): update version number in click.spec (about to
+	release 1.4)
+
 2004-06-29 Tuesday 11:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/: testie (1.35), tools/testie-01.testie (1.1): testie bug
