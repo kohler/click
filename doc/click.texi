@@ -3,6 +3,10 @@
 @settitle Click
 @footnotestyle end
 
+@tex
+\frenchspacing
+@end tex
+
 @ifinfo
 @macro click {arg}
 @code{\arg\}
@@ -14,6 +18,10 @@
 @end macro
 @end ifnotinfo
 
+@macro strcode {arg}
+@t{\arg\}
+@end macro
+
 @syncodeindex vr cp
 @syncodeindex fn cp
 
@@ -21,6 +29,8 @@
 @title The Click Modular Router Programming Manual
 @author Eddie Kohler
 @end titlepage
+
+@contents
 
 @node Top, Coding Standards, (dir), (dir)
 @top
@@ -30,11 +40,12 @@ This document describes@dots{}
 @end ifinfo
 
 @menu
-* Coding Standards::
+* Coding Standards::            
+* Basics::                      
 * Element Initialization::      
 * Tasks::                       
-* Timers::
-* Index::
+* Timers::                      
+* Index::                       
 
 @detailmenu
  --- The Detailed Node Listing ---
@@ -44,20 +55,32 @@ Coding Standards
 * Upper and lower case names::
 * Common name patterns::
 
+Basics
+
+* String::
+
 Element Initialization
 
-* notify_ninputs notify_noutputs::
-* configure::
-* processing::
-* initialize::
-* configure_phase::
-* uninitialize::
-* Initialization Phases::
+* notify_ninputs notify_noutputs::  
+* configure::                   
+* processing::                  
+* flow_code::                   
+* initialize::                  
+* configure_phase::             
+* uninitialize::                
+* Initialization Phases::       
+
+Tasks
+
+* Task Initialization::         
+* Scheduling a Task::           
+* Tickets::                     
+* Task Status::                 
 
 @end detailmenu
 @end menu
 
-@node Coding Standards, Element Initialization, Top, Top
+@node Coding Standards, Basics, Top, Top
 @chapter Coding Standards
 
 
@@ -108,11 +131,11 @@ This includes typedefs and enumerated types. Name them like classes:
 
 There are exceptions to these guidelines. In particular:
 
-@itemize
+@itemize @bullet
 @item
-Instance variables in C structs---that is, classes with few methods and
+Instance variables in C structs---that is, classes with few methods
 whose instance variables are mostly public---may be named like regular
-variables: without a preceding underscore. The same goes for the
+variables, without a preceding underscore. The same goes for the
 components of unions.
 
 @item
@@ -124,7 +147,7 @@ names similar to the types they replace (in this case @code{u_int32_t}).
 @node Common name patterns,  , Upper and lower case names, Coding Standards
 @section Common Name Patterns
 
-@itemize
+@itemize @bullet
 @item
 Many instance variables have associated @dfn{getter methods} that return
 their values, and/or @dfn{setter methods} that change their values. For
@@ -138,7 +161,325 @@ A variable or method which counts something is often named
 @end itemize
 
 
-@node Element Initialization, Tasks, Coding Standards, Top
+@node Basics, Element Initialization, Coding Standards, Top
+@chapter Basics
+
+@menu
+* String::                      
+* StringAccum::                 
+* Vector::                      
+* Bitvector::                   
+* HashMap::                     
+* BigHashMap::                  
+* ErrorHandler::                
+@end menu
+
+@node String, StringAccum, Basics, Basics
+@section String
+
+The @code{String} class represents a dynamically-allocated string of
+characters. Strings may be constructed from C strings, characters,
+numbers, and so forth. They may also be added together. A @code{String}
+and its substrings will generally share memory. @code{String}s may be
+passed and stored at will; they allocate and free memory as appropriate.
+
+@menu
+* String Constructors::         
+* String Contents::             
+* String Characters::           
+* Derived Strings::             
+* Appending to Strings::        
+* String Comparison::           
+@end menu
+
+@node String Constructors, String Contents, String, String
+@subsection Constructors
+
+@deftypemethod String {} String ()
+Creates a string with no characters.
+@end deftypemethod
+
+@deftypemethod String {} String (const char *@var{s})
+Creates a string containing a copy of the C string @var{s}.
+@end deftypemethod
+
+@deftypemethod String {} String (const char *@var{s}, int @var{len})
+Creates a string containing the first @var{len} characters of @var{s}.
+If @var{len} is negative, then this function treats @var{s} as a C
+string, effectively setting @var{len} to @code{strlen(@var{s})}.
+@end deftypemethod
+
+@deftypemethod String {} String (char @var{c})
+@deftypemethodx String {} String (unsigned char @var{c})
+Creates a string containing the single character @var{c}.
+@end deftypemethod
+
+@deftypemethod String {} String (int @var{n})
+@deftypemethodx String {} String (unsigned @var{n})
+@deftypemethodx String {} String (long @var{n})
+@deftypemethodx String {} String (unsigned long @var{n})
+@deftypemethodx String {} String (unsigned long long @var{n})
+@deftypemethodx String {} String (double @var{n})
+Creates a string containing an ASCII representation of the number
+@var{n}. For example, if @var{n} is 20, then @code{String(@var{n})}
+equals @code{"20"}. The @code{double} constructor is not available in
+the kernel.
+@end deftypemethod
+
+@deftypeop {Static method} String {const String &} null_string ()
+Returns a const reference to a string with no characters. Useful in
+situations where you wish to avoid unnecessary memory operations by
+returning string references instead of @code{String}s.
+@end deftypeop
+
+@deftypeop {Static method} String String claim_string (char *@var{s}, int @var{len})
+Creates and returns a string containing the @var{len} bytes of data
+starting at @var{s}. If @var{len} is negative, then this function treats
+@var{s} as a C string, effectively setting @var{len} to
+@code{strlen(@var{s})}. The @var{s} memory is claimed by the
+@code{String} implementation. When the last @code{String} referencing
+this memory is destroyed, the memory itself will be freed by calling
+@code{delete[] @var{s}}. (Thus, @var{s} should have been allocated with
+@code{new[]}.)
+@end deftypeop
+
+@deftypeop {Static method} String String stable_string (const char *@var{s}, int @var{len})
+Creates and returns a string containing the @var{len} bytes of data
+starting at @var{s}. If @var{len} is negative, then this function treats
+@var{s} as a C string, effectively setting @var{len} to
+@code{strlen(@var{s})}. The caller guarantees that @var{s} is located in
+stable, read-only memory and will not be changed while any @code{String}
+references to it still exist. For example, @var{s} might be a C string
+constant. The @code{String} implementation will not alter or free
+@var{s}. Functions such as @code{mutable_data} (see below) will return
+copies of @var{s}, not @var{s} itself.
+@end deftypeop
+
+
+@node String Contents, String Characters, String Constructors, String
+@subsection Contents
+
+@quotation
+@strong{Caution}: Any pointer to a string's data should be treated as
+temporary, since once the string is destroyed, that memory will be
+freed. Remember, however, that a temporary @code{String} object will not
+be destroyed until the end of the statement in which it was created.
+Therefore, this use of @code{cc()} is safe:
+
+@example
+String a, b; // ...
+fprintf(stderr, "%s\n", (a + b).cc());
+@end example
+
+This use is not safe:
+
+@example
+String a, b; // ...
+const char *s = (a + b).cc();
+fprintf(stderr, "%s\n", s); // probably an error
+@end example
+@end quotation
+
+@deftypemethod String {const char *} data () const
+Returns a pointer to the string's data. This data is not guaranteed to
+be null-terminated. Only the first @code{length()} of its characters are
+valid.
+@end deftypemethod
+
+@deftypemethod String int length () const
+Returns the string's length in characters.
+@end deftypemethod
+
+@deftypemethod String {} {operator bool} () const
+Returns true iff the string has at least one character.
+@end deftypemethod
+
+@deftypemethod String {char *} mutable_data ()
+Returns a mutable pointer to the string's data. If the data is shared
+with any other @code{String} object, or was allocated by
+@code{stable_string} (see above), then this method will transparently
+modify the @code{String} to use a unique copy of the data, and return
+that.
+@end deftypemethod
+
+@deftypemethod String {const char *} cc ()
+@deftypemethodx String {const char *} c_str ()
+@deftypemethodx String {} {operator const char *} ()
+Returns a pointer to the string's data as a C string. This may
+transparently modify the @code{String} by adding a null character after
+the string's data, which may involve making a copy of the data. This
+null character will not be counted as part of the string's length.
+@end deftypemethod
+
+@deftypemethod String {char *} mutable_c_str ()
+Returns a mutable pointer to the string's data as a C string.
+@end deftypemethod
+
+
+@node String Characters, Derived Strings, String Contents, String
+@subsection Characters and Indices
+
+@deftypemethod String char {operator []} (int @var{i}) const
+Returns the @var{i}th character of the string. @var{i} should be between
+0 and @math{@code{length()} - 1}.
+@end deftypemethod
+
+@deftypemethod String char back () const
+Returns the last character of the string. The string must not be empty.
+@end deftypemethod
+
+@deftypemethod String int find_left (int @var{c}, int @var{start} = 0) const
+Returns the position of the first occurrence of the character @var{c} in
+the string on or after position @var{start}. If @var{c} does not occur
+on or after position @var{start}, returns @math{-1}.
+@end deftypemethod
+
+@deftypemethod String int find_right (int @var{c}) const
+@deftypemethodx String int find_right (int @var{c}, int @var{start}) const
+Returns the position of the last occurrence of the character @var{c} in
+the string before position @var{start}. If @var{start} is not supplied,
+returns the absolute last occurrence of @var{c} in the string. If
+@var{c} does not occur before position @var{start}, returns @math{-1}.
+@end deftypemethod
+
+@deftypemethod String int find_left (const String &@var{s}, int @var{start} = 0) const
+Returns the position of the first occurrence of the substring @var{s} in
+the string on or after position @var{start}. If @var{s} does not occur
+on or after position @var{start}, returns @math{-1}.
+@end deftypemethod
+
+
+@node Derived Strings, Appending to Strings, String Characters, String
+@subsection Derived Strings
+
+@deftypemethod String String substring (int @var{pos}, int @var{len}) const
+Returns a new string containing characters @var{pos} through
+@math{@var{pos} + @var{len} - 1} of this string.
+
+If @var{pos} is negative, then start @math{-@var{pos}} characters from
+the end of the string. If @var{len} is negative, then drop
+@math{-@var{len}} characters from the end of the string. @var{len} may
+be too large; only characters actually in the string will be returned.
+If @var{pos} is too large or too small, the result is a null string.
+
+These examples demonstrate the use of @var{substring}:
+
+@example
+String("abcde").substring(2, 2)   == "cd"
+String("abcde").substring(-3, 2)  == "cd"
+String("abcde").substring(-3, -1) == "cd"
+String("abcde").substring(2, 10)  == "cde"
+String("abcde").substring(10, 4)  == ""
+String("abcde").substring(-10, 4) == ""
+@end example
+@end deftypemethod
+
+@deftypemethod String String substring (int @var{pos}) const
+Same as @code{substring(@var{pos}, length() - @var{pos})}: return a new
+string containing all of this string's characters starting at @var{pos}.
+@end deftypemethod
+
+@deftypemethod String String lower () const
+Return a string equal to this string, but with all alphabetic characters
+translated to lower case.
+@end deftypemethod
+
+@deftypemethod String String upper () const
+Return a string equal to this string, but with all alphabetic characters
+translated to upper case.
+@end deftypemethod
+
+
+@node Appending to Strings, String Comparison, Derived Strings, String
+@subsection Appending to Strings
+
+If you are gradually building up a string by successive appends, you
+should probably use @code{StringAccum} instead of these @code{String}
+operations (@pxref{StringAccum}).
+
+@deftypemethod String void append (const char *@var{s}, int @var{len})
+Appends the first @var{len} characters of @var{s} to the end of this
+string. If @var{len} is negative, then this function treats @var{s} as a
+C string, effectively setting @var{len} to @code{strlen(@var{s})}.
+@end deftypemethod
+
+@deftypemethod String void append_fill (int @var{c}, int @var{len})
+Adds @var{len} copies of the character @var{c} to the end of this
+string.
+@end deftypemethod
+
+@deftypemethod String void append_space (int @var{len})
+Adds @var{len} arbitrary characters to the end of this string.
+@end deftypemethod
+
+@deftypemethod String {String &} {operator+=} (const String &@var{s})
+@deftypemethodx String {String &} {operator+=} (const char *@var{s})
+@deftypemethodx String {String &} {operator+=} (char @var{c})
+Appends the string @var{s} or character @var{c} to this string.
+@end deftypemethod
+
+@deftypefun String {operator+} (String @var{s1}, const String &@var{s2})
+@deftypefunx String {operator+} (String @var{s1}, const char *@var{s2})
+@deftypefunx String {operator+} (const char *@var{s1}, const String &@var{s2})
+@deftypefunx String {operator+} (String @var{s1}, char @var{c})
+Appends the string @var{s2} or character @var{c} to the string @var{s1},
+and returns the resulting string.
+@end deftypefun
+
+
+@node String Comparison,  , Appending to Strings, String
+@subsection Comparison
+
+@deftypemethod String bool equals (const char *@var{s}, int @var{len}) const
+Compares this string to the first @var{len} characters of @var{s}. If
+@var{len} is negative, then this function treats @var{s} as a C string,
+effectively setting @var{len} to @code{strlen(@var{s})}. Returns true
+iff the two strings have the same length and contain the same characters
+in the same order.
+@end deftypemethod
+
+@deftypefun bool {operator==} (const String &@var{s1}, const String &@var{s2})
+@deftypefunx bool {operator==} (const char *@var{s1}, const String &@var{s2})
+@deftypefunx bool {operator==} (const String &@var{s1}, const char *@var{s2})
+Returns true iff the two strings are equal---that is, returns
+@code{@var{s1}.equals(@var{s2}.data(), @var{s2}.length())}.
+@end deftypefun
+
+@deftypefun bool {operator!=} (const String &@var{s1}, const String &@var{s2})
+@deftypefunx bool {operator!=} (const char *@var{s1}, const String &@var{s2})
+@deftypefunx bool {operator!=} (const String &@var{s1}, const char *@var{s2})
+Returns true iff the two strings are not equal---that is, returns
+@code{!(@var{s1} == @var{s2})}.
+@end deftypefun
+
+@deftypemethod String int hashcode () const
+Returns a number with the property that, for any two equal strings
+@var{s1} and @var{s2}, @code{@var{s1}.hashcode() ==
+@var{s2}.hashcode()}. With this method, @code{String}s may be used as
+keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
+@end deftypemethod
+
+
+@node StringAccum, Vector, String, Basics
+@section StringAccum
+
+@node Vector, Bitvector, StringAccum, Basics
+@section Vector
+
+@node Bitvector, HashMap, Vector, Basics
+@section Bitvector
+
+@node HashMap, BigHashMap, Bitvector, Basics
+@section HashMap
+
+@node BigHashMap, ErrorHandler, HashMap, Basics
+@section BigHashMap
+
+@node ErrorHandler,  , BigHashMap, Basics
+@section ErrorHandler
+
+
+@node Element Initialization, Tasks, Basics, Top
 @chapter Element Initialization
 
 The process of making an element ready for inclusion in an active router
@@ -152,13 +493,14 @@ Router initialization happens in sequential phases: every element must
 successfully complete one phase before the next phase begins.
 
 @menu
-* notify_ninputs notify_noutputs::
-* configure::
-* processing::
-* initialize::
-* configure_phase::
-* uninitialize::
-* Initialization Phases::
+* notify_ninputs notify_noutputs::  
+* configure::                   
+* processing::                  
+* flow_code::                   
+* initialize::                  
+* configure_phase::             
+* uninitialize::                
+* Initialization Phases::       
 @end menu
 
 
@@ -207,7 +549,7 @@ CheckIPHeader::notify_noutputs(int n)
 
 
 @node configure, processing, notify_ninputs notify_noutputs, Element Initialization
-@section @code{configure}
+@section @code{configure}---Parsing Configure Strings
 
 The @code{configure} method is passed the element's configuration
 string. This method is expected to parse the configuration string,
@@ -247,23 +589,22 @@ router is incorrectly connected, since in these cases @code{initialize}
 will never be called.
 
 
-@node processing, initialize, configure, Element Initialization
+@node processing, flow_code, configure, Element Initialization
 @section @code{processing}---Push and Pull Processing
 
 Elements use the @code{processing} method to specify whether their ports
 are push, pull, or agnostic. This method returns a @dfn{processing
-specification}---an ASCII string that, properly interpreted, specifies
-the processing type for each port.
+code}---an ASCII string that, properly interpreted, specifies the
+processing type for each port.
 
 @deftypemethod Element {virtual const char *} processing () const
-Returns the element's processing specification as a null-terminated C
-string.
+Returns the element's processing code as a null-terminated C string.
 @end deftypemethod
 
-Processing specifications look like this:
+Processing codes look like this:
 
 @display
-@var{inputspec}@code{/}@var{outputspec}
+@samp{@var{inputspec}/@var{outputspec}}
 @end display
 
 @noindent
@@ -271,30 +612,30 @@ Each of @var{inputspec} and @var{outputspec} is a sequence of @samp{h},
 @samp{l}, and @samp{a} characters, containing at least one character.
 @samp{h} indicates a push port, @samp{l} a pull port, and @samp{a} an
 agnostic port. The first character in each sequence represents the first
-port (port 0), and so forth. For example, @code{"a/ah"} says that the
+port (port 0), and so forth. For example, @strcode{"a/ah"} says that the
 element's first input and first output ports are both agnostic, but the
 second output port is push.
 
 @var{Inputspec} and @var{outputspec} need not have the correct numbers
 of characters. The last character in each specification is duplicated as
-many times as necessary; any extra characters are ignored. Thus, the
-processing specifications @code{"aaaaaaaa/haaaaaaa"} and @code{"a/ha"}
-behave identically.
+many times as necessary, and any extra characters are ignored. Thus, the
+processing codes @strcode{"aaaaaaaa/haaaaaaa"} and @strcode{"a/ha"} behave
+identically.
 
 The @code{Element} class provides mnemonic names for five common
-processing specifications:
+processing codes:
 
 @table @code
 @item AGNOSTIC
-@code{"a/a"} (agnostic ports).
+@strcode{"a/a"} (agnostic ports).
 @item PUSH
-@code{"h/h"} (push ports).
+@strcode{"h/h"} (push ports).
 @item PULL
-@code{"l/l"} (pull ports).
+@strcode{"l/l"} (pull ports).
 @item PUSH_TO_PULL
-@code{"h/l"} (push input ports, pull output ports).
+@strcode{"h/l"} (push input ports, pull output ports).
 @item PULL_TO_PUSH
-@code{"l/h"} (pull input ports, push output ports).
+@strcode{"l/h"} (pull input ports, push output ports).
 @end table
 
 The default implementation for @code{Element::processing} returns
@@ -303,11 +644,105 @@ The default implementation for @code{Element::processing} returns
 The @code{processing} method should be declared as an inline function in
 the element's C class definition. It should return a C string constant
 or one of the five mnemonic names above. This makes the element's
-processing code easy to extract automatically.
+processing code easy to automatically extract from the source code.
 
 
-@node initialize, configure_phase, processing, Element Initialization
-@section @code{initialize}---Final Initialization
+@node flow_code, initialize, processing, Element Initialization
+@section @code{flow_code}---Packet Flow Within an Element
+
+In most cases, a packet arriving on an element's input port might then
+be emitted on any of that element's output ports. A packet arriving at a
+@click{Tee} element will be emitted on each of @click{Tee}'s output
+ports; a packet arriving at a @click{CheckIPHeader} element may be
+emitted on either of its two output ports, although it is impossible to
+say which port a priori. However, it is sometimes possible to rule out
+certain port combinations. The @click{Idle} element, for example, drops
+every packet it receives, so packets will never travel between its input
+ports and its output ports. Packets arriving on one of
+@click{Suppressor}'s input ports can exit only on the corresponding
+output port. Click needs to know this precise flow information, since it
+affects the agnostic port assignment algorithm and the algorithms for
+finding upstream and downstream elements.
+
+The @code{flow_code} method specifies how packets travel within an
+element. @code{flow_code} returns a @dfn{flow code}---an ASCII string
+that, properly interpreted, defines how packets may travel within the
+element.
+
+@deftypemethod Element {virtual const char *} flow_code () const
+Returns the element's flow code as a null-terminated C string.
+@end deftypemethod
+
+Flow codes look like @samp{@var{inputspec}/@var{outputspec}}, where each
+of @var{inputspec} and @var{outputspec} is a sequence of @dfn{port
+codes}. The simplest port code is a single letter. Packets can travel
+from an input port to an output port if and only if the port codes
+match. (Case is significant.) For example, the flow code @strcode{"a/a"}
+says that packets can travel from the element's input port to its output
+port, while @strcode{"x/y"} says that packets never travel between ports.
+
+A port code may also be a sequence of letters in brackets, such as
+@samp{[abz]}. Two port codes match iff they have at least one letter in
+common, so @samp{[abz]} matches @samp{a}, but @samp{[abz]} and
+@samp{[cde]} do not match. The opening bracket may be followed by a
+caret @samp{^}; this makes the port code match letters @emph{not}
+mentioned between the brackets. Thus, the port code @samp{[^abc]} is
+equivalent to @samp{[ABC...XYZdef...xyz]}.
+
+Finally, the @samp{#} character is also a valid port code, and may be
+used within brackets. One @samp{#} matches another @samp{#} only when
+they represent the same port number---for example, when one @samp{#}
+corresponds to input port 2 and the other to output port 2. @samp{#}
+never matches any letter. Thus, the flow code @strcode{"##/##"} behaves
+like @strcode{"ab/ab"}.
+
+@var{Inputspec} and @var{outputspec} need not have the correct numbers
+of port codes. The last code in each specification is duplicated as many
+times as necessary, and any extra codes are ignored. Thus, the flow
+codes @strcode{"[a#][a#][a#][a#]/a######"} and @strcode{"[a#]/a#"} behave
+identically.
+
+This table describes some simple flow codes.
+
+@table @code
+@item "a/a"
+Packets may travel from any input port to any output port.
+
+@item "ax/a"
+Packets arriving on input port 0 may travel to output port 0, but those
+arriving on input port 1 will not be emitted on any output.
+
+@item "x/y"
+Packets never travel between input and output ports.
+
+@item "#/#"
+Packets arriving on input port @var{K} may travel only to output port
+@var{K}.
+
+@item "#/[^#]"
+Packets arriving on input port @var{K} may travel to any output port
+except @var{K}.
+@end table
+
+The @code{Element} class provides a mnemonic name for a common flow
+code:
+
+@table @code
+@item COMPLETE_FLOW
+@strcode{"a/a"} (packets travel from any input to all outputs).
+@end table
+
+The default implementation for @code{Element::processing} returns
+@code{COMPLETE_FLOW}.
+
+The @code{flow_code} method should be declared as an inline function in
+the element's C class definition. It should return a C string constant
+or @code{COMPLETE_FLOW}. This makes the element's flow code easy to
+automatically extract from the source code.
+
+
+@node initialize, configure_phase, flow_code, Element Initialization
+@section @code{initialize}---Element Initialization
 
 The @code{initialize} method is called just before the router is placed
 on line. It performs any final initialization, and provides the last
@@ -325,9 +760,9 @@ initializing.
 The default @code{initialize} method simply returns zero.
 @end deftypemethod
 
-An @code{initialize} method may not create or destroy input or output
-ports. It may, however, check whether its ports are push or pull, or
-query the router for information about its neighbors.
+An element's @code{initialize} method may check whether its input or
+output ports are push or pull, or query the router for information about
+its neighbors. It may not create or destroy input or output ports.
 
 If every element's @code{initialize} method succeeds, then the router is
 installed, and will remain installed until another router replaces it.
@@ -335,9 +770,22 @@ Any errors that occur later than @code{initialize}---during a
 @code{push} or @code{pull} method, perhaps---will not take the router
 off line.
 
+Common tasks performed in @code{initialize} methods include:
+
+@itemize @bullet
+@item
+Initializing @code{Task}s (@pxref{Task Initialization}).
+
+@item
+Allocating memory.
+
+@item
+Opening files.
+@end itemize
+
 
 @node configure_phase, uninitialize, initialize, Element Initialization
-@section Initialization Order
+@section @code{configure_phase}---Initialization Order
 
 Some elements depend on being configured and initialized before or after
 other elements. For example, the @click{AddressInfo} element must be
@@ -351,7 +799,7 @@ when it should be configured and initialized relative to other elements.
 
 An element with a low configure phase will be configured before an
 element with a high configure phase. Elements with the same configure
-phase may be configured in any order relative to one another.
+phase might be configured in any order relative to one another.
 
 The following basic configure phase constants are defined in
 @code{<click/element.hh>}:
@@ -392,7 +840,7 @@ there were no errors, initializes them in the same order. The
 @code{configure} and @code{initialize}.
 
 An element's configure phase should depend only on its class. In
-particular, the body of any @code{configure_phase} method should consist
+particular, the body of a @code{configure_phase} method should consist
 of a single @code{return} statement returning some constant.
 
 
@@ -452,13 +900,13 @@ output port. This catches errors where a connection uses a port that
 does not exist.
 
 @item
-Calls each element's @code{processing_vector} method to determine
-whether its ports are push, pull, or agnostic.
+Calls each element's @code{processing} method to determine whether its
+ports are push, pull, or agnostic.
 
 @item
-For each agnostic input port, calls the corresponding
-@code{forward_flow} method to determine constraints linking agnostic
-input ports to agnostic output ports.
+For each element with agnostic ports, calls the corresponding
+@code{flow_code} method to determine constraints linking agnostic input
+ports to agnostic output ports.
 
 @item
 Runs the constraint-satisfaction algorithm that determines whether each
@@ -496,7 +944,212 @@ Router initialization has failed.
 @node Tasks, Timers, Element Initialization, Top
 @chapter Tasks
 
-A Click router contains 
+Click schedules a router's CPU or CPUs with one or more @dfn{task
+queues}. These queues are simply lists of @dfn{tasks}, which represent
+functions that would like access to the CPU. Tasks are generally
+associated with elements. When scheduled, most tasks call some element's
+@code{run_scheduled} method.
+
+Click tasks are represented by @code{Task} objects. An element that
+would like special access to a router's CPU should include and
+initialize a @code{Task} instance variable.
+
+The @code{Task} class is defined in the @code{<click/task.hh>} header
+file.
+
+@menu
+* Task Initialization::         
+* Scheduling a Task::           
+* Tickets::                     
+* Task Status::                 
+@end menu
+
+
+@node Task Initialization, Scheduling a Task, Tasks, Tasks
+@section Task Initialization
+
+Task initialization is a two-step process. First, when a @code{Task}
+object is constructed, you must supply information about the function
+that it should call when it is scheduled. Second, when the router is
+initialized, you must schedule the task on the router's task queue.
+
+@code{Task} has two constructors. One of them asks the task to call an
+element's @code{run_scheduled} method when scheduled; the other asks it
+to call an arbitrary function pointer.
+
+@deftypemethod Task {} Task (Element *@var{e})
+When this task is scheduled, call @code{@var{e}->run_scheduled()}.
+@end deftypemethod
+
+@deftypemethod Task {} Task (TaskHook @var{hook}, void *@var{thunk})
+When this task is scheduled, call @code{@var{hook}(this, @var{thunk})}.
+The @var{hook} argument is a function pointer with type @code{void
+(*)(Task *, void *)}.
+@end deftypemethod
+
+Later, when the router is initialized, each task must be attached to the
+router via the @code{Task::initialize} method. This places the task on a
+router-wide list of @code{Task}s, associates the task with a particular
+task queue, and, optionally, schedules it. Typically, an element's
+@code{initialize} method calls @code{Task::initialize}
+(@pxref{initialize}).
+
+@deftypemethod Task void initialize (Router *@var{r}, bool @var{scheduled})
+@deftypemethodx Task void initialize (Element *@var{e}, bool @var{scheduled})
+Attaches the task to the router object @var{r} (or
+@code{@var{e}->router()}). Additionally schedules the task if
+@var{scheduled} is true.
+@end deftypemethod
+
+Many elements call @code{ScheduleInfo::join_scheduler} instead of
+calling @code{Task::initialize} directly. The @code{join_scheduler}
+method queries any @click{ScheduleInfo} elements in the configuration to
+determine the task's scheduling parameters, then calls
+@code{Task::initialize} to schedule the task. The
+@code{ScheduleInfo::join_scheduler} method is defined in the
+@code{"elements/standard/scheduleinfo.hh"} header file.
+
+@deftypeop {Static method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
+Sets @var{task}'s scheduling parameters as specified by any
+@click{ScheduleInfo} elements in the router configuration. The element
+@var{e} is used to find the correct router, and to look up
+parameters---the user supplies parameters to @click{ScheduleInfo} based
+on element name. Also schedules @var{task} on @code{@var{e}->router()}'s
+task queue. Reports any errors to @var{errh}.
+@end deftypeop
+
+The @code{join_scheduler} method is generally called like this:
+
+@example
+int
+SomeElement::initialize(ErrorHandler *errh)
+@{
+  ScheduleInfo::join_scheduler(this, &_task, errh);
+@}
+@end example
+
+@noindent
+Here, @code{_task}, a @code{Task} object, is one of @code{SomeElement}'s
+instance variables.
+
+
+@node Scheduling a Task, Tickets, Task Initialization, Tasks
+@section Scheduling a Task
+
+The user may take a task off its task queue with the @code{unschedule}
+method, and place it back onto its task queue with the @code{reschedule}
+method. As tasks move to the head of the task queue, they are
+unscheduled and their callbacks are called. Within these callback
+functions, the user will typically call @code{fast_reschedule}, which is
+like @code{reschedule} without the locking overhead.
+
+@deftypemethod Task void unschedule ()
+Unschedules the task by removing it from its task queue. If the task is
+already unscheduled, then this method does nothing.
+@end deftypemethod
+
+@deftypemethod Task void reschedule ()
+Reschedules the task by placing it on its task queue. If the task is
+already scheduled, then this method does nothing.
+@end deftypemethod
+
+Both @code{unschedule} and @code{reschedule} lock the task queue before
+manipulating it. This avoids corruption when there are multiple
+processors executing simultaneously. If these functions cannot lock a
+task queue---perhaps because it is being used on another
+processor---then they register a task request, which will be executed in
+the near future. This implies that a task may remain scheduled for some
+time after @code{unschedule} has been called, for example.
+
+The @code{fast_reschedule} method avoids locking overhead in the common
+case that a task must be rescheduled from within its callback.
+
+@deftypemethod Task void fast_reschedule ()
+Reschedules the task by placing it on its preferred task queue. This
+method avoids locking overhead, so it is faster than @code{reschedule}.
+
+@quotation
+@strong{Caution}: You may call a @code{Task}'s @code{fast_reschedule}
+method only from within its callback function. For instance, if an
+element has a task, @code{_task}, that calls the element's
+@code{run_scheduled} method when scheduled, and if @code{run_scheduled}
+is called only by that task's callback, then that element's
+@code{run_scheduled} method should call @code{_task.fast_reschedule()}
+instead of @code{_task.reschedule()}.
+@end quotation
+@end deftypemethod
+
+
+@node Tickets, Multiple Task Queues, Scheduling a Task, Tasks
+@section Tickets
+
+Click tasks are scheduled using the flexible, lightweight stride
+scheduling algorithm.@footnote{For more information, see MIT Laboratory
+for Computer Science Technical Memo MIT/LCS/TM-528, @cite{Stride
+scheduling: deterministic proportional-share resource management}, by
+Carl A. Waldspurger and William E. Weihl, June 1995.} This algorithm
+assigns each task a parameter called its @dfn{tickets}. A task with
+twice as many tickets as usual is scheduled twice as frequently.
+
+@code{Task}s have methods for querying, setting, and adjusting their
+tickets.
+
+@deftypemethod Task int tickets () const
+Returns this task's tickets. This number will be at least 1 and no more
+than @code{Task::MAX_TICKETS}, which equals 32768.
+@end deftypemethod
+
+@deftypemethod Task void set_tickets (int @var{t})
+Sets this task's tickets to @var{t}. The @var{t} parameter should lie
+between 1 and @code{Task::MAX_TICKETS}; numbers outside this range are
+constrained to the nearest valid value.
+@end deftypemethod
+
+@deftypemethod Task void adj_tickets (int @var{delta})
+Equivalent to @code{set_tickets(tickets() + @var{delta})}.
+@end deftypemethod
+
+
+@node Multiple Task Queues, Task Status, Tickets, Tasks
+@section Multiple Task Queues
+
+
+@node Task Status,  , Multiple Task Queues, Tasks
+@section Task Status Methods
+
+These methods let a user check various properties of a task---for
+instance, whether it is initialized or scheduled.
+
+@deftypemethod Task bool initialized () const
+Returns true iff the task has been initialized---that is, if it is
+associated with some router.
+@end deftypemethod
+
+@deftypemethod Task bool scheduled () const
+Returns true iff the task is currently scheduled on some task queue.
+@end deftypemethod
+
+@deftypemethod Task {RouterThread *} scheduled_list () const
+Returns the task queue with which this task is associated. Even
+unscheduled tasks are associated with some task queue; this is the task
+queue on which the task will be placed if @code{reschedule} is called.
+@end deftypemethod
+
+@deftypemethod Task TaskHook hook () const
+Returns the callback function that is called when the task is scheduled.
+If the task is associated with some element, this method returns a null
+pointer.
+@end deftypemethod
+
+@deftypemethod Task {void *} thunk () const
+Returns the extra data passed to the callback function when the task is
+scheduled.
+@end deftypemethod
+
+@deftypemethod Task {Element *} element () const
+If the task is associated with some element, this method returns that
+element. Otherwise, returns a null pointer.
+@end deftypemethod
 
 
 @node Timers, Index, Tasks, Top

@@ -48,11 +48,14 @@ install-man:
 
 click.info: $(srcdir)/click.texi
 	$(MAKEINFO) $(srcdir)/click.texi
-click.dvi: $(srcdir)/click.texi
+click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
+
+always:
+	@:
 
 clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-man
+.PHONY: all clean distclean install install-man always
