@@ -5,8 +5,6 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
 li :: LocationInfo(POS_LAT, POS_LON);
 
-rh :: ReadHandlerCaller(1);
-
 // protocol els
 nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP);
 lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
@@ -35,11 +33,11 @@ fr [1] -> Discard; // out of range
 
 check_grid [1] -> Print(bad_grid_hdr) -> Discard;
 
-linux -> cl :: Classifier(16/GRID_HEX_IP, // ip for us
+from_linux -> cl :: Classifier(16/GRID_HEX_IP, // ip for us
 			  16/GRID_NET_HEX, // ip for Grid network
 			  -); // the rest of the world
 cl [0] -> linux;
-cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> linux;
+cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux;
 check [1] -> Discard;
 cl [2] -> SetIPAddress(GRID_GW) -> [1] lr; // for grid gateway
 nb [1] -> to_wvlan; // Routing hello packets
