@@ -1,3 +1,9 @@
+2001-10-11 Thursday 19:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipflowid.hh (1.7), lib/ipflowid.cc (1.13): add
+	operator<<(StringAccum&, const IPFlowID &), and
+	operator!=(IPFlowID, IPFlowID)
+
 2001-10-11 Thursday 18:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.36), tools/run-grid (1.5): fixed grid ip ttl
