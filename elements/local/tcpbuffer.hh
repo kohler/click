@@ -31,22 +31,21 @@
  * packet.
  *
  * TODO
- *   deal with sequence number wrap arounds
+ *   prevent packets with bad seq no range from correcting queue
  */
 
 class TCPBuffer : public Element {
- private:
-
+private:
   static const int _capacity = 128;
 
   class TCPBufferElt {
-   private:
+  private:
     Packet *_packet;
     TCPBufferElt **_chain_ptr;
     TCPBufferElt *_next;
     TCPBufferElt *_prev;
 
-   public:
+  public:
     TCPBufferElt(TCPBufferElt **chain, Packet *p);
 
     TCPBufferElt *next() const		{ return _next; }
@@ -59,10 +58,13 @@ class TCPBuffer : public Element {
   TCPBufferElt *_chain;
   unsigned _initial_seq;
   unsigned _first_seq;
+  bool _start_push;
+  bool _start_pull;
   
   bool _skip;
+  void dump();
 
- public:
+public:
   
   TCPBuffer();
   ~TCPBuffer();
@@ -77,14 +79,19 @@ class TCPBuffer : public Element {
   
   void push(int, Packet *);
   Packet *pull(int);
+
+  /* returns true if there is a missing sequence, set seqno to 
+   * that sequence number */
+  bool first_missing_seq_no(unsigned &seqno);
+
+  static unsigned seqlen(Packet *); 
+  static unsigned seqno(Packet *);
 };
 
 inline
 TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
 {
-  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
-  unsigned int seqn = ntohl(tcph->th_seq);
-    
+  unsigned int seqn = seqno(p);
   _chain_ptr = chain_ptr;
   _packet = p;
 
@@ -92,14 +99,14 @@ TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
     *chain_ptr = this;
     _next = 0;
     _prev = 0;
+    return;
   }
   else {
     TCPBufferElt *list = *chain_ptr;
     TCPBufferElt *lprev = 0L;
     do {
       Packet *pp = list->packet();
-      const click_tcp *tcph_pp = reinterpret_cast<const click_tcp *>(pp->transport_header());
-      if (seqn < ntohl(tcph_pp->th_seq)) {
+      if (SEQ_LT(seqn,seqno(pp))) {
 	/* insert here */
 	_next = list;
 	_prev = list->_prev;
@@ -110,7 +117,7 @@ TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
           *chain_ptr = this;
 	return;
       }
-      else if (seqn == ntohl(tcph_pp->th_seq)) {
+      else if (seqn == seqno(pp)) {
         p->kill();
 	delete this;
 	return;
@@ -123,6 +130,7 @@ TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
       _next = 0;
       _prev = lprev;
       lprev->_next = this;
+      return;
     }
   }
 }
@@ -148,6 +156,45 @@ TCPBuffer::TCPBufferElt::kill_elt()
   _packet = 0;
   delete this;
   return p;
+}
+
+inline bool 
+TCPBuffer::first_missing_seq_no(unsigned &sn)
+{
+  TCPBufferElt *elt = _chain;
+  if (elt) {
+    Packet *p = elt->packet();
+    unsigned expect = _start_pull ? _first_seq : seqno(p);
+    while(elt) {
+      Packet *p = elt->packet();
+      if (seqno(p) != expect) {
+        sn = expect;
+	return true;
+      }
+      expect += seqlen(p);
+      elt = elt->next();
+    }
+  }
+  return false;
+}
+
+inline unsigned
+TCPBuffer::seqlen(Packet *p)
+{ 
+  const click_ip *iph = p->ip_header(); 
+  const click_tcp *tcph = 
+    reinterpret_cast<const click_tcp *>(p->transport_header());
+  unsigned seqlen = (ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2)); 
+  if ((tcph->th_flags&TH_SYN) || (tcph->th_flags&TH_FIN)) seqlen++;
+  return seqlen;
+}
+
+inline unsigned
+TCPBuffer::seqno(Packet *p)
+{ 
+  const click_tcp *tcph = 
+    reinterpret_cast<const click_tcp *>(p->transport_header());
+  return ntohl(tcph->th_seq);
 }
 
 #endif

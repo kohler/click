@@ -45,8 +45,8 @@ int
 TCPBuffer::initialize(ErrorHandler *)
 {
   _chain = 0;
-  _initial_seq = 0;
-  _first_seq = 0;
+  _start_push = false;
+  _start_pull = false;
   return 0;
 }
 
@@ -66,26 +66,26 @@ TCPBuffer::uninitialize()
 void
 TCPBuffer::push(int, Packet *p)
 {
-  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
-  if (_initial_seq == 0)
-    _initial_seq = ntohl(tcph->th_seq);
-  else if (_first_seq > 0 && ntohl(tcph->th_seq) < _first_seq) {
-    // click_chatter("retrans packet, rejected");
+  unsigned sn = seqno(p);
+  if (!_start_push)
+    _initial_seq = sn;
+  else if (_start_pull && SEQ_LT(sn,_first_seq)) {
     p->kill();
     return;
   }
   new TCPBufferElt(&_chain, p);
+}
 
-#if 0
+void
+TCPBuffer::dump()
+{
   click_chatter("seq0 %u, seq %u", _initial_seq, _first_seq);
   TCPBufferElt *elt = _chain;
   while(elt) {
     Packet *pp = elt->packet();
-    const click_tcp *tcph = reinterpret_cast<const click_tcp *>(pp->transport_header());
-    click_chatter("elt %p (%p): %u", elt, pp, ntohl(tcph->th_seq));
+    click_chatter("elt %p (%p): %u", elt, pp, seqno(pp));
     elt = elt->next();
   }
-#endif
 }
 
 Packet *
@@ -93,17 +93,10 @@ TCPBuffer::pull(int)
 {
   if (_chain) {
     Packet *p = _chain->packet();
-    const click_ip *iph = p->ip_header();
-    const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
-    if (_first_seq == 0 || _skip || ntohl(tcph->th_seq)==_first_seq) {
+    if (!_start_pull || _skip || seqno(p)==_first_seq) {
       _chain->kill_elt();
-      unsigned seqlen = (ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2)); 
-      if ((tcph->th_flags&TH_SYN) || (tcph->th_flags&TH_FIN)) seqlen++;
-      _first_seq = ntohl(tcph->th_seq) + seqlen;
-#if 0
-      click_chatter("new seq0 %u, seq %u, %u+%d",
-	            _initial_seq, _first_seq, ntohl(tcph->th_seq), seqlen);
-#endif
+      _first_seq = seqno(p) + seqlen(p);
+      _start_pull = true;
       return p;
     }
   }
