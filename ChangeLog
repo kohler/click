@@ -1,3 +1,9 @@
+2003-04-14 Monday 15:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmpsendpings.cc (1.21): warn on zero INTERVAL; and
+	more precise inter-packet timing, through use of
+	reschedule_after_ms()
+
 2003-04-04 Friday 19:11  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/Makefile.in (1.79), ns/Makefile.in (1.5),
