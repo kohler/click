@@ -1,3 +1,8 @@
+2001-08-28 Tuesday 17:47  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.18-patch (1.12): improved acenic driver... but rx
+	speed is still subpar
+
 2001-08-28 Tuesday 11:38  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: controlsocket.cc (1.29), controlsocket.hh
