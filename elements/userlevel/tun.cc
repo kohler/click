@@ -97,7 +97,8 @@ Tun::selected(int fd)
 #endif
     output(0).push(p);
   } else {
-    perror("Tun read");
+    if (errno != EAGAIN)
+      perror("Tun read");
   }
 }
 
