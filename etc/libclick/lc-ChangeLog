@@ -1,3 +1,15 @@
+2001-10-19 Friday 17:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/handlercall.hh, include/click/handlercall.hh,
+	libsrc/straccum.cc: nitlet: default arguments to
+	HandlerCall::call_write
+
+2001-10-19 Friday 16:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/handlercall.hh, include/click/handlercall.hh,
+	libsrc/handlercall.cc, libsrc-Makefile.in: add HandlerCall to
+	repository
+
 2001-10-18 Thursday 21:07  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/confparse.hh, include/click/confparse.hh,

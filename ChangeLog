@@ -1,3 +1,16 @@
+2001-10-19 Friday 17:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/handlercall.hh (1.2), lib/straccum.cc (1.19):
+	nitlet: default arguments to HandlerCall::call_write
+
+2001-10-19 Friday 16:43  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.41), elements/userlevel/fromdump.cc (1.50),
+	elements/userlevel/fromdump.hh (1.28), include/click/handlercall.hh
+	(1.1), lib/handlercall.cc (1.1), userlevel/Makefile.in (1.60),
+	etc/libclick/DISTFILES (1.7), etc/libclick/lc-libsrc-Makefile.in
+	(1.6): add HandlerCall to repository
+
 2001-10-19 Friday 15:48  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/make-client-ron.pl (1.5): Added strip(8) for udp header
