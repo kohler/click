@@ -25,21 +25,26 @@
 #include <click/click_icmp.h>
 
 ICMPPingResponder::ICMPPingResponder()
-  : Element(1,1)
+    : Element(1,1)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 ICMPPingResponder::~ICMPPingResponder()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
-
 
 ICMPPingResponder *
 ICMPPingResponder::clone() const
 {
-  return new ICMPPingResponder;
+    return new ICMPPingResponder;
+}
+
+void
+ICMPPingResponder::notify_noutputs(int n)
+{
+    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 Packet *
@@ -48,16 +53,27 @@ ICMPPingResponder::simple_action(Packet *p_in)
   const click_ip *iph_in = p_in->ip_header();
   const icmp_generic *icmph_in = reinterpret_cast<const icmp_generic *>(p_in->transport_header());
 
-  if (iph_in->ip_p != IP_PROTO_ICMP || icmph_in->icmp_type != ICMP_ECHO)
-    return p_in;
+  if (iph_in->ip_p != IP_PROTO_ICMP || icmph_in->icmp_type != ICMP_ECHO) {
+      if (noutputs() == 2)
+	  output(1).push(p_in);
+      else
+	  p_in->kill();
+      return 0;
+  }
 
   WritablePacket *q = p_in->uniqueify();
+  if (!q)			// out of memory
+      return 0;
   
   // swap src and target ip addresses (checksum remains valid)
   click_ip *iph = q->ip_header();
   struct in_addr tmp_addr = iph->ip_dst;
   iph->ip_dst = iph->ip_src;
   iph->ip_src = tmp_addr;
+
+  // set annotations
+  // (dst_ip_anno bug reported by Sven Hirsch <hirschs@gmx.de>)
+  q->set_dst_ip_anno(iph->ip_dst);
   
   // set ICMP packet type to ICMP_ECHO_REPLY and recalculate checksum
   icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(q->transport_header());
