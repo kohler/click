@@ -82,25 +82,32 @@ if (system("cmp $WEBDIR/template $WEBDIR/template.new")) {
   unlink("$WEBDIR/template.new") || die "unlink $WEBDIR/template.new: $!\n";
 }
 
+# 3. call `man2html'
+mysystem("man2html -l -m '<b>@</b>' -t $WEBDIR/template -d $WEBDIR /tmp/%click-webdoc/man/man*/*.?");
+
+# 4. change `elements.n.html' into `index.html'
 # 3. change template to index.html
-open(IN, "$WEBDIR/template") || die "$WEBDIR/template: $!\n";
+open(IN, "$WEBDIR/elements.n.html") || die "$WEBDIR/elements.n.html: $!\n";
 open(OUT, ">$WEBDIR/index.html") || die "$WEBDIR/index.html: $!\n";
 while (<IN>) {
-  if (m|(.*)<title>.*</title>(.*)|) {
-    print OUT $1, "<title>Click documentation</title>", $2;
-  } elsif (m|(.*)<a href="index.html">(.*?)</a>(&nbsp;&gt;)?(.*)|) {
-    print OUT $1, "<b>", $2, "</b>", $4;
-  } elsif (m|(.*)<b>&mantitle;</b>(.*)|) {
-    print OUT $1, $2;
-  } else {
-    print OUT;
+  s|<h1><a.*?>elements</a></h1>|<h1>Click documentation</h1>|;
+  s|<p>documented Click element classes||;
+  s|<h2><a.*?>DESCRIPTION</a></h2>||;
+  if (/<p>This page lists all Click element classes that have manual page documentation./) {
+    print OUT <<'EOF';
+<p>This page presents programmer's documentation available for Click. All
+these files have been automatically translated from manual pages provided
+with the distribution, which you can get <a
+href="http://www.pdos.lcs.mit.edu/click/">here</a>. You may also be
+interested in <a
+href="http://www.pdos.lcs.mit.edu/papers/click:tocs00/">our TOCS
+paper</a>.</p>
+EOF
   }
+  print OUT;
 }
 close IN;
 close OUT;
-
-# 4. call `man2html'
-mysystem("man2html -l -m '<b>@</b>' -t $WEBDIR/template -d $WEBDIR /tmp/%click-webdoc/man/man*/*.?");
 
 # 5. call `changelog2html'
 if ($INSTALL) {
