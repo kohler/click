@@ -3,9 +3,9 @@
 @settitle Click
 @footnotestyle end
 
-@tex
-\frenchspacing
-@end tex
+@iftex
+@frenchspacing
+@end iftex
 
 @ifinfo
 @macro click {arg}
@@ -57,7 +57,31 @@ Coding Standards
 
 Basics
 
-* String::
+* String::                      
+* StringAccum::                 
+* Vector::                      
+* Bitvector::                   
+* HashMap::                     
+* BigHashMap::                  
+* ErrorHandler::                
+
+String
+
+* String Constructors::         
+* String Contents::             
+* String Characters::           
+* Derived Strings::             
+* Appending to Strings::        
+* String Comparison::           
+
+ErrorHandler
+
+* Reporting Errors::            
+* Error Format Strings::        
+* Counting Errors::             
+* Basic Error Handlers::        
+* Error Veneers::               
+* Writing Error Handlers::       
 
 Element Initialization
 
@@ -75,7 +99,9 @@ Tasks
 * Task Initialization::         
 * Scheduling a Task::           
 * Tickets::                     
+* Multiple Task Queues::        
 * Task Status::                 
+* Destroying a Task::           
 
 @end detailmenu
 @end menu
@@ -195,36 +221,36 @@ passed and stored at will; they allocate and free memory as appropriate.
 @node String Constructors, String Contents, String, String
 @subsection Constructors
 
-@deftypemethod String {} String ()
+@deftypeop Constructor String {} String ()
 Creates a string with no characters.
-@end deftypemethod
+@end deftypeop
 
-@deftypemethod String {} String (const char *@var{s})
+@deftypeop Constructor String {} String (const char *@var{s})
 Creates a string containing a copy of the C string @var{s}.
-@end deftypemethod
+@end deftypeop
 
-@deftypemethod String {} String (const char *@var{s}, int @var{len})
+@deftypeop Constructor String {} String (const char *@var{s}, int @var{len})
 Creates a string containing the first @var{len} characters of @var{s}.
 If @var{len} is negative, then this function treats @var{s} as a C
 string, effectively setting @var{len} to @code{strlen(@var{s})}.
-@end deftypemethod
+@end deftypeop
 
-@deftypemethod String {} String (char @var{c})
-@deftypemethodx String {} String (unsigned char @var{c})
+@deftypeop Constructor String {} String (char @var{c})
+@deftypeopx Constructor String {} String (unsigned char @var{c})
 Creates a string containing the single character @var{c}.
-@end deftypemethod
+@end deftypeop
 
-@deftypemethod String {} String (int @var{n})
-@deftypemethodx String {} String (unsigned @var{n})
-@deftypemethodx String {} String (long @var{n})
-@deftypemethodx String {} String (unsigned long @var{n})
-@deftypemethodx String {} String (unsigned long long @var{n})
-@deftypemethodx String {} String (double @var{n})
+@deftypeop Constructor String {} String (int @var{n})
+@deftypeopx Constructor String {} String (unsigned @var{n})
+@deftypeopx Constructor String {} String (long @var{n})
+@deftypeopx Constructor String {} String (unsigned long @var{n})
+@deftypeopx Constructor String {} String (unsigned long long @var{n})
+@deftypeopx Constructor String {} String (double @var{n})
 Creates a string containing an ASCII representation of the number
 @var{n}. For example, if @var{n} is 20, then @code{String(@var{n})}
 equals @code{"20"}. The @code{double} constructor is not available in
 the kernel.
-@end deftypemethod
+@end deftypeop
 
 @deftypeop {Static method} String {const String &} null_string ()
 Returns a const reference to a string with no characters. Useful in
@@ -463,6 +489,7 @@ keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
 @node StringAccum, Vector, String, Basics
 @section StringAccum
 
+
 @node Vector, Bitvector, StringAccum, Basics
 @section Vector
 
@@ -475,8 +502,499 @@ keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
 @node BigHashMap, ErrorHandler, HashMap, Basics
 @section BigHashMap
 
+
 @node ErrorHandler,  , BigHashMap, Basics
 @section ErrorHandler
+
+All Click error messages are passed to an instance of the
+@code{ErrorHandler} class. @code{ErrorHandler} separates the generation
+of error messages from the particular way those messages should be
+printed. It also makes it easy to automatically decorate errors with
+context information.
+
+Most Click users must know how to report errors to an
+@code{ErrorHandler}, and how @code{ErrorHandler}s count the messages
+they receive. This section also describes how to decorate error messages
+with error veneers, and how to write new @code{ErrorHandler}s.
+
+@code{ErrorHandler} and its important subclasses are defined in
+@code{<click/error.hh>}.
+
+@menu
+* Reporting Errors::            
+* Error Format Strings::        
+* Counting Errors::             
+* Basic Error Handlers::        
+* Error Veneers::               
+* Writing Error Handlers::       
+@end menu
+
+
+@node Reporting Errors, Error Format Strings, ErrorHandler, ErrorHandler
+@subsection Reporting Errors
+
+@code{ErrorHandler}'s basic error reporting methods take a format
+string, which may use @code{printf}-like @samp{%} escape sequences, and
+additional arguments as required by the format string. @xref{Error
+Format Strings}, for more details on the format string. The five methods
+differ in the seriousness of the error they report.
+
+@deftypemethod ErrorHandler void debug (const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler void message (const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int warning (const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int error (const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int fatal (const char *@var{format}, @dots)
+Report the error described by @var{format} and any additional arguments.
+The methods are listed by increasing seriousness. Use @code{debug} for
+debugging messages that should not be printed in a production
+environment; @code{message} for explanatory messages that do not
+indicate errors; @code{warning} for warnings (this function prepends the
+string @samp{warning:@ } to every line of the error message);
+@code{error} for errors; and @code{fatal} for errors so serious that
+they should halt the execution of the program. The three functions that
+indicate errors, @code{warning}, @code{error}, and @code{fatal}, always
+return @code{-EINVAL}. In some environments, @code{fatal} will actually
+exit the program with exit code 1.
+@end deftypemethod
+
+Each of these methods has an analogue that additionally takes a
+@dfn{landmark}: a string representing where the error took place. A
+typical landmark contains a file name and line number, separated by a
+colon---@samp{foo.click:31}, for example.
+
+@deftypemethod ErrorHandler void ldebug (const String &@var{landmark}, const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler void lmessage (const String &@var{landmark}, const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int lwarning (const String &@var{landmark}, const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int lerror (const String &@var{landmark}, const char *@var{format}, @dots)
+@deftypemethodx ErrorHandler int lfatal (const String &@var{landmark}, const char *@var{format}, @dots)
+Report the error described by @var{format} and any additional arguments.
+The error took place at @var{landmark}. Most @code{ErrorHandler}s will
+simply prepend @samp{@var{landmark}:@ } to each line of the error
+message.
+@end deftypemethod
+
+These methods are all implemented as wrappers around the @code{verror}
+function. This function takes a landmark, a format string, a
+@code{va_list} packaging up any additional arguments, and a
+@dfn{seriousness value}, which encodes how serious the error was. The
+@code{Seriousness} enumerated type, which is defined in the
+@code{ErrorHandler} class, represents seriousness values. There are five
+constants, corresponding to the five error-reporting methods:
+
+@table @code
+@item ERR_DEBUG
+Corresponds to @code{debug} and @code{ldebug}.
+
+@item ERR_MESSAGE
+Corresponds to @code{message} and @code{lmessage}.
+
+@item ERR_WARNING
+Corresponds to @code{warning} and @code{lwarning}.
+
+@item ERR_ERROR
+Corresponds to @code{error} and @code{lerror}.
+
+@item ERR_FATAL
+Corresponds to @code{fatal} and @code{lfatal}.
+@end table
+
+@deftypemethod ErrorHandler int verror (Seriousness @var{seriousness}, const String &@var{landmark}, const char *@var{format}, va_list @var{val})
+Report the error described by @var{format} and @var{val}. The error took
+place at @var{landmark}, if @var{landmark} is nonempty. The
+@var{seriousness} value is one of the five constants described above.
+Always returns @code{-EINVAL}.
+@end deftypemethod
+
+
+@node Error Format Strings, Counting Errors, Reporting Errors, ErrorHandler
+@subsection Format Strings
+
+@code{ErrorHandler}'s format strings closely follow C's standard
+@code{printf} format strings. Most characters in the format string are
+printed verbatim. The @samp{%} character introduces a @dfn{conversion},
+which prints data read from the remaining arguments. The format string
+may contain newlines @samp{\n}, but it need not end with a newline;
+@code{ErrorHandler} will add a final newline if one does not exist.
+
+Each conversion, or formatting escape, follows this pattern:
+
+@itemize @bullet
+@item
+First, the @samp{%} character introduces each conversion.
+
+@item
+Next comes zero or more @dfn{flag characters};
+
+@item
+then an optional @dfn{field width};
+
+@item
+then an optional @dfn{precision};
+
+@item
+then an optional @dfn{length modifier};
+
+@item
+and finally, the mandatory @dfn{conversion specifier}.
+@end itemize
+
+@noindent
+We discuss each of these is turn.
+
+Any conversion may be modified by zero or more of these flag characters.
+
+@table @asis
+@item @samp{#}
+The value should be converted to an ``alternate form''. For @samp{o}
+conversions, the first character of the output string is made @samp{0},
+by prepending a @samp{0} if there was not one already. For @samp{x} and
+@samp{X} conversions, nonzero values have @samp{0x} or @samp{0X}
+prepended, respectively.
+
+@item @samp{0}
+The value should be zero padded. For @samp{d}, @samp{i}, @samp{u},
+@samp{o}, @samp{x}, and @samp{X} conversions, the converted value is
+padded on the left with @samp{0} characters rather than spaces.
+
+@item @samp{-}
+The value should be left-justified within the field width.
+
+@item @samp{@ } (a space)
+Leave a blank before a nonnegative number produced by a signed
+conversion.
+
+@item @samp{+}
+Print a @samp{+} character before a nonnegative number produced by a
+signed conversion.
+
+@end table
+
+The optional @dfn{field width}, a decimal digit string, forces the
+conversion to use a minimum number of characters. The result of a
+conversion is padded on the left with space characters to reach the
+minimum field width, unless one of the @samp{0} or @samp{-} flags was
+supplied.
+
+The optional @dfn{precision} is a decimal digit string preceded by a
+period @samp{.}. For @samp{d}, @samp{i}, @samp{u}, @samp{o}, @samp{x},
+and @samp{X} conversions, the precision specifies the minimum number of
+digits that must appear; results with fewer digits are padded on the
+left with @samp{0} characters. For the @samp{s} conversion, the
+precision specifies the maximum number of characters that can be
+printed.
+
+If either the field width or precision is specified as a star @samp{*},
+@code{ErrorHandler} reads the next argument as an integer and uses that
+instead.
+
+Length modifiers affect the argument type read by the conversion. There
+are three modifiers:
+
+@table @asis
+@item @samp{h}
+The next argument is a @code{short} or @code{unsigned short}. Affects
+the @samp{d}, @samp{i}, @samp{u}, @samp{o}, @samp{x}, and @samp{X}
+conversions.
+
+@item @samp{l}
+The next argument is a @code{long} or @code{unsigned long}. Affects the
+@samp{d}, @samp{i}, @samp{u}, @samp{o}, @samp{x}, and @samp{X}
+conversions.
+
+@item @samp{ll}
+The next argument is a @code{long long} or @code{unsigned long long}.
+Affects the @samp{d}, @samp{i}, @samp{u}, @samp{o}, @samp{x}, and
+@samp{X} conversions.
+@end table
+
+Finally, these are the conversions themselves.
+
+@table @asis
+@item @samp{s}
+Print the @code{const char *} argument, treated as a C string.
+
+@item @samp{c}
+The @code{int} argument is treated as a character constant. Printable
+ASCII characters (values between 32 and 126) are printed verbatim.
+Characters @samp{\n}, @samp{\t}, @samp{\r}, and @samp{\0} use those C
+escape representations. Other characters use the representation
+@samp{\%03o}.
+
+@item @samp{e}
+The argument is an @code{Element *}. Print that element's declaration.
+
+@item @samp{d}, @samp{i}
+The argument is an @code{int}; print its decimal representation.
+
+@item @samp{u}
+The argument is an @code{unsigned int}; print its decimal
+representation.
+
+@item @samp{o}
+The argument is an @code{unsigned int}; print its octal representation.
+
+@item @samp{x}, @samp{X}
+The argument is an @code{unsigned int}; print its hexadecimal
+representation. The @samp{%x} conversion uses lowercase letters;
+@samp{%X} uses uppercase letters.
+
+@item @samp{p}
+The @code{void *} argument is cast to @code{unsigned long} and printed
+as by @samp{%#lx}.
+
+@item @samp{%}
+Print a literal @samp{%} character.
+
+@end table
+
+Note that @code{ErrorHandler} does not support the @samp{e}, @samp{E},
+@samp{f}, @samp{F}, @samp{g}, @samp{G}, and @samp{n} conversions.
+
+
+@node Counting Errors, Basic Error Handlers, Error Format Strings, ErrorHandler
+@subsection Counting Errors
+
+@code{ErrorHandler} objects count the number of errors and warnings they
+have received and make those values available to the user.
+
+@deftypemethod ErrorHandler {virtual int} nwarnings () const
+@deftypemethodx ErrorHandler {virtual int} nerrors () const
+Returns the number of warnings or errors received by this
+@code{ErrorHandler} so far.
+@end deftypemethod
+
+@deftypemethod ErrorHandler {virtual void} reset_counts ()
+Resets the @code{nwarnings} and @code{nerrors} counters to zero.
+@end deftypemethod
+
+These counters are typically used to determine whether an error has
+taken place in some complex piece of code. For example:
+
+@example
+int before_nerrors = errh->nerrors();
+// @r{@dots{} complex code that may report errors to @code{errh} @dots{}}
+if (errh->nerrors() != before_nerrors) @{
+  // @r{an error has taken place}
+@}
+@end example
+
+
+@node Basic Error Handlers, Error Veneers, Counting Errors, ErrorHandler
+@subsection Basic Error Handlers
+
+Basic @code{ErrorHandler}s print the error messages they receive. Every
+Click error message eventually reaches some basic @code{ErrorHandler}.
+The particular @code{ErrorHandler} depends on where Click is running; in
+the user-level driver, the basic @code{ErrorHandler} prints error
+messages to standard error, while in the Linux kernel module, it logs
+messages to the syslog and stores them for access via
+@file{/proc/click/errors}.
+
+@cindex default @code{ErrorHandler}
+@cindex @code{ErrorHandler}, default
+The @code{ErrorHandler} class maintains a @dfn{default
+@code{ErrorHandler}} accessible via the @code{default_handler} static
+method. The user defines this default handler by supplying it to the
+@code{static_initialize} method. Another static method,
+@code{silent_handler}, returns an @code{ErrorHandler} that ignores the
+error messages it receives.
+
+@deftypeop {Static method} ErrorHandler {ErrorHandler *} default_handler ()
+Returns the default @code{ErrorHandler}.
+@end deftypeop
+
+@deftypeop {Static method} ErrorHandler {ErrorHandler *} silent_handler ()
+Returns the silent @code{ErrorHandler}. This handler ignores any error
+messages it receives. It maintains correct @code{nwarnings} and
+@code{nerrors} counts, however.
+@end deftypeop
+
+@deftypeop {Static method} ErrorHandler void static_initialize (ErrorHandler *@var{default_errh})
+Sets the default @code{ErrorHandler} to @var{default_errh}. This
+function should be called exactly once, at the beginning of the program,
+before any error messages are reported to any @code{ErrorHandler}. It is
+OK to create arbitrary @code{ErrorHandler} objects before calling this
+method, however.
+@end deftypeop
+
+@deftypeop {Static method} ErrorHandler void static_cleanup ()
+Destroys the default and silent @code{ErrorHandler}s and cleans up other
+@code{ErrorHandler}-related memory. This function should be called
+exactly once, just before the program exits. It is an error to call
+generate an error message after calling @code{static_cleanup}.
+@end deftypeop
+
+Finally, the @code{FileErrorHandler} class is available in any
+user-level program. This @code{ErrorHandler} prints every message it
+receives to some file, usually standard error. It can also prepend an
+optional context string to every line of every error message.
+
+@deftypeop Constructor FileErrorHandler {} FileErrorHandler (FILE *@var{f}, const String &@var{prefix} = "")
+Constructs a @code{FileErrorHandler} that prints error messages to file
+@var{f}. If @var{prefix} is nonempty, then every line of every error
+message is prepended by @var{prefix}.
+@end deftypeop
+
+
+@node Error Veneers, Writing Error Handlers, Basic Error Handlers, ErrorHandler
+@subsection Error Veneers---Adding Context to Error Messages
+
+@dfn{Error veneers} wrap around basic @code{ErrorHandler} objects and
+change how error text is generated. An error veneer generally changes
+each error message's text in some way, perhaps by adding a context
+message or some indentation. It then passes the altered text to the
+basic @code{ErrorHandler} for printing. Error veneers can be easily
+nested.
+
+The first argument to each error veneer constructor is a pointer to
+another @code{ErrorHandler} object. The veneer will pass altered error
+text to this handler, the @dfn{base handler}, for further processing and
+printing. It also delegates @code{nwarnings()} and @code{nerrors()}
+calls to the base handler.
+
+Click comes with three error veneers: one for adding context, one for
+prepending text to every line, and one for supplying missing landmarks.
+It is easy to write others; see @ref{How Error Messages Are
+Constructed}, for details. The end of this section demonstrates how
+error veneers are used in practice.
+
+@deftypeop Constructor ContextErrorHandler {} ContextErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{context}, const String &@var{indent} = "@w{@ @ }")
+Constructs a @code{ContextErrorHandler} with @var{base_errh} as base.
+
+The first time this handler receives an error message, it will precede
+the message with the @var{context} string---generally more detailed
+information about where the error has occurred. Every line in every
+received error message is prepended with @var{indent}, two spaces by
+default, to set off the message from its context.
+@end deftypeop
+
+@deftypeop Constructor PrefixErrorHandler {} PrefixErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{prefix})
+Constructs a @code{PrefixErrorHandler} with @var{base_errh} as base.
+
+This handler precedes every line of every error message with
+@var{prefix}.
+@end deftypeop
+
+@deftypeop Constructor LandmarkErrorHandler {} LandmarkErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{landmark})
+Constructs a @code{LandmarkErrorHandler} with @var{base_errh} as base.
+
+This handler supplies @var{landmark} in place of any blank landmark
+passed to it. This will cause the base handler to include @var{landmark}
+in its error message.
+@end deftypeop
+
+To demonstrate these veneers in practice, we'll use the following
+function, which prints two error messages:
+
+@example
+void f(ErrorHandler *errh) @{
+  errh->error("First line\nSecond line");
+  errh->lwarning("here", "Third line");
+@}
+@end example
+
+A simple @code{FileErrorHandler} shows the base case.
+
+@example
+FileErrorHandler errh1(stderr);
+f(&errh1);
+    @print{} First line
+    @print{} Second line
+    @print{} here: warning: Third line
+@end example
+
+The simplest error veneer, @code{PrefixErrorHandler}, just prepends text
+to every line.
+
+@example
+PrefixErrorHandler errh2(&errh1, "prefix - ");
+f(&errh2);
+    @print{} prefix - First line
+    @print{} prefix - Second line
+    @print{} prefix - here: warning: Third line
+@end example
+
+@code{ContextErrorHandler} supplies a line of context before the first
+error message, and indents all messages except the context.
+
+@example
+ContextErrorHandler errh3(&errh1, "This was called from ...", "** ");
+f(&errh3);
+    @print{} This was called from ...
+    @print{} ** First line
+    @print{} ** Second line
+    @print{} here: ** warning: Third line
+@end example
+
+Of course, an error veneer can take another error veneer as its ``base
+handler'', leading to cumulative effects.
+
+@example
+ContextErrorHandler errh4(&errh2, "This was called from ...", "** ");
+f(&errh4);
+    @print{} prefix - This was called from ...
+    @print{} prefix - ** First line
+    @print{} prefix - ** Second line
+    @print{} prefix - here: ** warning: Third line
+@end example
+
+
+@node Writing Error Handlers,  , Error Veneers, ErrorHandler
+@subsection Writing Error Handlers
+
+@code{ErrorHandler} constructs an error message using three virtual
+functions. The first, @code{make_text}, parses a format string and
+argument list into a single @code{String}. This is passed to the second
+function, @code{decorate_text}, which may transform the string. The
+final function, @code{handle_text}, prints the resulting error message.
+This three-part structure makes @code{ErrorHandler} easy to extend.
+
+@deftypemethod ErrorHandler {virtual String} make_text (Seriousness @var{s}, const char *@var{format}, va_list @var{val})
+Parses the format string @var{format} with arguments from @var{val},
+returning the results as a @var{String} object.
+
+The default implementation processes the formatting escapes described
+above (@pxref{Error Formatting Escapes}). It also prepends every line of
+the error message with @samp{warning: } if @var{s} equals
+@code{ERR_WARNING}.
+@end deftypemethod
+
+@deftypemethod ErrorHandler {virtual String} decorate_text (Seriousness @var{s}, const String &@var{prefix}, const String &@var{landmark}, const String &@var{text})
+Decorates the error message @var{text} as appropriate and returns the
+result. At minimum, every line of the result should be prepended by
+@var{prefix} and, if it is nonempty, the landmark string @var{landmark}.
+
+The default implementation prepends every line of @var{text} with
+@samp{@var{landmark}:@w{@ }}, if @var{landmark} is nonempty. Any spaces
+and/or a final colon are stripped from the end of @var{landmark}.
+Special landmarks, which begin and end with a backslash @samp{\}, are
+ignored. @var{landmark} is added between @var{prefix} and @var{text}.
+@end deftypemethod
+
+@deftypemethod ErrorHandler {virtual void} handle_text (Seriousness @var{s}, const String &@var{text})
+This method is responsible for printing or otherwise informing the user
+about the error message @var{text}. If @var{s} equals @code{ERR_FATAL},
+the method should exit the program or perform some other drastic action.
+It should also maintain the @code{nwarnings()} and @code{nerrors()}
+counters. In most cases, it should ensure that the last character in
+@var{text} is a newline.
+
+This method has no default implementation.
+@end deftypemethod
+
+@tpindex @code{ErrorVeneer}
+The @code{ErrorVeneer} class, a subclass of @code{ErrorHandler},
+supplies default implementations for these functions that ease the
+construction of new error veneers. @code{ErrorVeneer}'s single instance
+variable, @code{ErrorHandler *_errh}, is the base handler.
+@code{ErrorVeneer} overrides all the relevant virtual
+functions---@code{nwarnings}, @code{nerrors}, @code{reset_counts},
+@code{make_text}, @code{decorate_text}, and @code{handle_text}. Its
+versions simply delegate to the corresponding functions on @code{_errh}.
+An error veneer designer will generally subclass @code{ErrorVeneer}
+rather than @code{ErrorHandler}; then she will override only the methods
+she cares about (usually @code{decorate_text}), relying on
+@code{ErrorVeneer}'s default implementations for the rest.
 
 
 @node Element Initialization, Tasks, Basics, Top
@@ -961,7 +1479,9 @@ file.
 * Task Initialization::         
 * Scheduling a Task::           
 * Tickets::                     
+* Multiple Task Queues::        
 * Task Status::                 
+* Destroying a Task::           
 @end menu
 
 
@@ -1114,7 +1634,7 @@ Equivalent to @code{set_tickets(tickets() + @var{delta})}.
 @section Multiple Task Queues
 
 
-@node Task Status,  , Multiple Task Queues, Tasks
+@node Task Status, Destroying a Task, Multiple Task Queues, Tasks
 @section Task Status Methods
 
 These methods let a user check various properties of a task---for
@@ -1150,6 +1670,10 @@ scheduled.
 If the task is associated with some element, this method returns that
 element. Otherwise, returns a null pointer.
 @end deftypemethod
+
+
+@node Destroying a Task,  , Task Status, Tasks
+@section Destroying a Task
 
 
 @node Timers, Index, Tasks, Top
