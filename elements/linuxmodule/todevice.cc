@@ -1,6 +1,5 @@
 /*
- * todevice.{cc,hh} -- element sends packets to Linux devices and waits
- * for transmit complete interrupts via register_net_out
+ * todevice.{cc,hh} -- element sends packets to Linux devices.
  * Robert Morris
  * Eddie Kohler : register once per configuration
  *
@@ -107,8 +106,10 @@ ToDevice::static_cleanup()
 {
   delete ifindex_map;
 #ifdef HAVE_CLICK_KERNEL
+#if 0
   if (registered_writers)
     unregister_net_out(&notifier);
+#endif
 #endif
 }
 
@@ -180,8 +181,10 @@ ToDevice::initialize(ErrorHandler *errh)
       if (!registered_writers) {
 #ifdef HAVE_CLICK_KERNEL
 #ifndef HAVE_POLLING
+#if 0
 	notifier.next = 0;
 	register_net_out(&notifier);
+#endif
 #endif
 #else
 	errh->warning("not compiled for a Click kernel");
@@ -210,8 +213,10 @@ ToDevice::uninitialize()
   if (_registered) {
     registered_writers--;
 #ifdef HAVE_CLICK_KERNEL
+#if 0
     if (registered_writers == 0)
       unregister_net_out(&notifier);
+#endif
 #endif
 
     // remove from ifindex_map
