@@ -1,3 +1,21 @@
+2004-12-05 Sunday 23:10  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/autoratefallback.cc (1.13),
+	elements/wifi/autoratefallback.hh (1.9),
+	elements/wifi/madwifirate.cc (1.13), elements/wifi/probetxrate.cc
+	(1.15), include/clicknet/wifi.h (1.16),
+	elements/userlevel/fromhost.cc (1.2),
+	elements/userlevel/fromhost.hh (1.2), elements/userlevel/tohost.cc
+	(1.2), elements/wifi/probetxrate.hh (1.13),
+	elements/wifi/sr/ettstat.cc (1.15): additions to wifi extra header
+	remove some extra debugging from from/tohost features involving
+	multi-bitrate retries.
+
+2004-12-05 Sunday 23:07  John Bicket <jbicket@mit.edu>
+
+	* click-compile.in (1.32), configure.in (1.249): remove
+	--with-wifi, just use plain --enable-wifi
+
 2004-12-04 Saturday 21:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/iprw.cc (1.57): nit
