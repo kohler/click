@@ -79,7 +79,7 @@
 #undef __MTCLICK__
 #undef NUM_CLICK_CPUS
 
-/* Define if you want to use intel specific instructions */
+/* Define if you want to use Intel-specific instructions. */
 #undef HAVE_INTEL_CPU
 
 /* Define if you want to use the stride scheduler. */
