@@ -543,7 +543,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
     // add to enclosing scope
-    enclosing_scope->install_type(c, false);
+    enclosing_scope->add_declared_type(c, true);
     
     // handle elements
     if (complete(&cerrh) < 0)

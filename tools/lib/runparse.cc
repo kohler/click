@@ -116,7 +116,7 @@ void
 RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 {
     int nelements = _elements.size();
-    int ntypes = _etypes.size();
+    int ntypes = _declared_types.size();
     check();
 
     // We may need to interleave element class declarations and element
@@ -126,11 +126,11 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     // good.
     HashMap<int, int> uid_to_scope(-2);
     for (int i = 0; i < ntypes; i++) {
-	const ElementType &t = _etypes[i];
-	uid_to_scope.insert(t.eclass->uid(), _scope_cookie);
+	const ElementType &t = _declared_types[i];
+	uid_to_scope.insert(t.type->uid(), _scope_cookie);
 	if (t.prev_name >= 0) {
-	    const ElementType &pt = _etypes[t.prev_name];
-	    uid_to_scope.insert(pt.eclass->uid(), pt.scope_cookie);
+	    const ElementType &pt = _declared_types[t.prev_name];
+	    uid_to_scope.insert(pt.type->uid(), pt.scope_cookie);
 	}
     }
     // XXX FIXME
@@ -142,17 +142,13 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     // then print the elements whose classes are good only at that scope.
     int print_state = 0;
     for (int scope = -2; scope <= _scope_cookie; scope++) {
-	for (int i = 0; i < ntypes; i++)
-	    if (_etypes[i].scope_cookie == scope && _etypes[i].name()
-		&& !_etypes[i].eclass->simple()) {
-		ElementClassT *stop_class;
-		if (_etypes[i].prev_name >= 0)
-		    stop_class = _etypes[ _etypes[i].prev_name ].eclass;
-		else
-		    stop_class = declared_type(_etypes[i].eclass->name(), -1);
+	for (Vector<ElementType>::const_iterator t = _declared_types.begin(); t != _declared_types.end(); t++)
+	    if (t->scope_cookie == scope && t->name()
+		&& !t->type->primitive()) {
+		ElementClassT *stop_class = declared_type(t->name(), t->scope_cookie - 1);
 		if (print_state == 2)
 		    sa << "\n";
-		_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, stop_class);
+		t->type->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, stop_class);
 		print_state = 1;
 	    }
 

@@ -475,7 +475,7 @@ read_pattern_file(const char *name, ErrorHandler *errh)
     return;
 
   Vector<ElementClassT *> compounds;
-  pat_file->collect_active_types(compounds);
+  pat_file->collect_locally_declared_types(compounds);
   
   for (int i = 0; i < compounds.size(); i++) {
     String name = compounds[i]->name();

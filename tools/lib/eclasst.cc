@@ -207,7 +207,7 @@ ElementClassT::expand_element(
 	const VariableEnvironment &env, ErrorHandler *errh)
 {
     ElementClassT *c = e->type();
-    if (c->simple())
+    if (c->primitive())
 	return c->direct_expand_element(e, tor, env, errh);
 
     // if not direct expansion, do some more work

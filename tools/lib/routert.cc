@@ -31,7 +31,7 @@
 RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
     : _use_count(0), _enclosing_type(type),
       _enclosing_scope(enclosing_scope), _scope_cookie(0),
-      _etype_map(-1), _element_name_map(-1),
+      _declared_type_map(-1), _element_name_map(-1),
       _free_element(0), _real_ecount(0), _new_eindex_collector(0),
       _free_conn(-1), _archive_map(-1)
 {
@@ -54,20 +54,20 @@ RouterT::check() const
 {
     int ne = nelements();
     int nc = nconnections();
-    int nt = _etypes.size();
+    int nt = _declared_types.size();
 
     // check basic sizes
     assert(_elements.size() == _first_conn.size());
 
     // check element type names
     int nt_found = 0;
-    for (StringMap::iterator iter = _etype_map.begin(); iter; iter++) {
+    for (StringMap::iterator iter = _declared_type_map.begin(); iter; iter++) {
 	int sc = _scope_cookie;
-	for (int i = iter.value(); i >= 0; i = _etypes[i].prev_name) {
-	    assert(_etypes[i].name() == iter.key());
-	    assert(_etypes[i].prev_name < i);
-	    assert(_etypes[i].scope_cookie <= sc);
-	    sc = _etypes[i].scope_cookie - 1;
+	for (int i = iter.value(); i >= 0; i = _declared_types[i].prev_name) {
+	    assert(_declared_types[i].name() == iter.key());
+	    assert(_declared_types[i].prev_name < i);
+	    assert(_declared_types[i].scope_cookie <= sc);
+	    sc = _declared_types[i].scope_cookie - 1;
 	    nt_found++;
 	}
     }
@@ -76,8 +76,8 @@ RouterT::check() const
     // check element types
     HashMap<int, int> type_uid_map(-1);
     for (int i = 0; i < nt; i++) {
-	assert(type_uid_map[_etypes[i].eclass->uid()] < 0);
-	type_uid_map.insert(_etypes[i].eclass->uid(), i);
+	assert(type_uid_map[_declared_types[i].type->uid()] < 0);
+	type_uid_map.insert(_declared_types[i].type->uid(), i);
     }
     
     // check element names
@@ -147,49 +147,37 @@ RouterT::check() const
 	assert(connection_live(i) == (bool)bv[i]);
 }
 
-bool
-RouterT::is_flat() const
-{
-    for (int i = 0; i < _etypes.size(); i++)
-	if (_etypes[i].eclass->cast_router())
-	    return false;
-    return true;
-}
-
 
 ElementClassT *
 RouterT::locally_declared_type(const String &name) const
 {
-    int i = _etype_map[name];
-    return (i >= 0 ? _etypes[i].eclass : 0);
+    int i = _declared_type_map[name];
+    return (i >= 0 ? _declared_types[i].type : 0);
 }
 
 ElementClassT *
 RouterT::declared_type(const String &name, int scope_cookie) const
 {
     for (const RouterT *r = this; r; scope_cookie = r->_enclosing_scope_cookie, r = r->_enclosing_scope)
-	for (int i = r->_etype_map[name]; i >= 0; i = r->_etypes[i].prev_name)
-	    if (r->_etypes[i].scope_cookie <= scope_cookie)
-		return r->_etypes[i].eclass;
+	for (int i = r->_declared_type_map[name]; i >= 0; i = r->_declared_types[i].prev_name)
+	    if (r->_declared_types[i].scope_cookie <= scope_cookie)
+		return r->_declared_types[i].type;
     return 0;
 }
 
-ElementClassT *
-RouterT::install_type(ElementClassT *ec, bool install_name)
+void
+RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
 {
     assert(ec);
-    if (install_name) {
-	if (!ec->name()) 
-	    _etypes.push_back(ElementType(ec, _scope_cookie, -1));
-	else if (locally_declared_type(ec->name()) != ec) {
-	    int prev = _etype_map[ec->name()];
-	    if (prev >= 0)	// increment scope_cookie if redefining class
-		_scope_cookie++;
-	    _etypes.push_back(ElementType(ec, _scope_cookie, prev));
-	    _etype_map.insert(ec->name(), _etypes.size() - 1);
-	}
+    if (anonymous || !ec->name()) 
+	_declared_types.push_back(ElementType(ec, _scope_cookie, -1));
+    else if (locally_declared_type(ec->name()) != ec) {
+	int prev = _declared_type_map[ec->name()];
+	if (prev >= 0)		// increment scope_cookie if redefining class
+	    _scope_cookie++;
+	_declared_types.push_back(ElementType(ec, _scope_cookie, prev));
+	_declared_type_map.insert(ec->name(), _declared_types.size() - 1);
     }
-    return ec;
 }
 
 ElementT *
@@ -288,10 +276,10 @@ RouterT::collect_primitive_types(HashMap<String, int> &m) const
 }
 
 void
-RouterT::collect_active_types(Vector<ElementClassT *> &v) const
+RouterT::collect_locally_declared_types(Vector<ElementClassT *> &v) const
 {
-    for (StringMap::iterator iter = _etype_map.begin(); iter; iter++)
-	v.push_back(_etypes[iter.value()].eclass);
+    for (Vector<ElementType>::const_iterator i = _declared_types.begin(); i != _declared_types.end(); i++)
+	v.push_back(i->type);
 }
 
 void
@@ -1073,8 +1061,8 @@ RouterT::flatten(ErrorHandler *errh)
     //s = configuration_string(); fprintf(stderr, "4.\n%s\n\n", s.cc());
     compact_connections();
     //s = configuration_string(); fprintf(stderr, "5.\n%s\n\n", s.cc());
-    _etype_map.clear();
-    _etypes.clear();
+    _declared_type_map.clear();
+    _declared_types.clear();
     check();
 }
 

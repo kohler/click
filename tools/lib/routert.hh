@@ -19,16 +19,12 @@ class RouterT { public:
     ElementClassT *enclosing_type() const { return _enclosing_type; }
 
     void check() const;
-    bool is_flat() const;
 
     ElementClassT *locally_declared_type(const String &) const;
     inline ElementClassT *declared_type(const String &) const;
-    ElementClassT *install_type(ElementClassT *, bool install_name = false);
+    void add_declared_type(ElementClassT *, bool anonymous);
     void collect_primitive_types(HashMap<String, int> &) const;
-    void collect_active_types(Vector<ElementClassT *> &) const;
-
-    int ntypes() const			{ return _etypes.size(); }
-    ElementClassT *eclass(int i)	{ return _etypes[i].eclass; }
+    void collect_locally_declared_types(Vector<ElementClassT *> &) const;
     
     class iterator;
     class const_iterator;
@@ -136,13 +132,13 @@ class RouterT { public:
     };
 
     struct ElementType {
-	ElementClassT * const eclass;
+	ElementClassT * const type;
 	int scope_cookie;
 	int prev_name;
-	ElementType(ElementClassT *c, int sc, int pn) : eclass(c), scope_cookie(sc), prev_name(pn) { assert(eclass); eclass->use(); }
-	ElementType(const ElementType &o) : eclass(o.eclass), scope_cookie(o.scope_cookie), prev_name(o.prev_name) { eclass->use(); }
-	~ElementType()			{ eclass->unuse(); }
-	const String &name() const	{ return eclass->name(); }
+	ElementType(ElementClassT *c, int sc, int pn) : type(c), scope_cookie(sc), prev_name(pn) { assert(type); type->use(); }
+	ElementType(const ElementType &o) : type(o.type), scope_cookie(o.scope_cookie), prev_name(o.prev_name) { type->use(); }
+	~ElementType()			{ type->unuse(); }
+	const String &name() const	{ return type->name(); }
       private:
 	ElementType &operator=(const ElementType &);
     };
@@ -154,8 +150,8 @@ class RouterT { public:
     int _enclosing_scope_cookie;
     int _scope_cookie;
     
-    StringMap _etype_map;
-    Vector<ElementType> _etypes; // Might not contain every element's type.
+    StringMap _declared_type_map;
+    Vector<ElementType> _declared_types;
 
     StringMap _element_name_map;
     Vector<ElementT *> _elements;

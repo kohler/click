@@ -56,7 +56,7 @@ class ElementClassT { public:
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
     virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
 
-    virtual bool simple() const			{ return true; }
+    virtual bool primitive() const		{ return true; }
     virtual String landmark() const		{ return String(); }
 
     virtual void *cast(const char *)		{ return 0; }
@@ -102,7 +102,7 @@ class SynonymElementClassT : public ElementClassT { public:
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
-    bool simple() const			{ return false; }
+    bool primitive() const		{ return false; }
     const ElementTraits *find_traits() const;
     
     SynonymElementClassT *cast_synonym() { return this; }
@@ -139,7 +139,7 @@ class CompoundElementClassT : public ElementClassT { public:
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
     
-    bool simple() const			{ return false; }
+    bool primitive() const		{ return false; }
     String landmark() const		{ return _landmark; }
     const ElementTraits *find_traits() const;
     

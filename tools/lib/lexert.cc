@@ -820,7 +820,7 @@ LexerT::yelementclass(int pos1)
 	ElementClassT *ec = force_element_type(tnext);
 	if (eclass_name) {
 	    ElementClassT *new_ec = new SynonymElementClassT(eclass_name, ec);
-	    _router->install_type(new_ec, true);
+	    _router->add_declared_type(new_ec, false);
 	    _lexinfo->notify_class_declaration(new_ec, false, pos1, tname.pos1(), tnext.pos2());
 	}
 	
@@ -927,7 +927,7 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     created->cast_compound()->check_duplicates_until(first, _errh);
     _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);
 
-    old_router->install_type(created, !anonymous);
+    old_router->add_declared_type(created, anonymous);
     return created;
 }
 

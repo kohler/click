@@ -118,7 +118,7 @@ add_indent(const String &indent, int spaces)
 static void
 print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 {
-    if (c->simple())
+    if (c->primitive())
 	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
     else
 	fprintf(f, "%sclassid=\"c%d\"", prefix, c->uid());
@@ -137,7 +137,7 @@ static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
 static void
 generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 {
-    if (!c || c->simple() || generated_types[c->uid()])
+    if (!c || c->primitive() || generated_types[c->uid()])
 	return;
     generated_types.insert(c->uid(), 1);
 
@@ -183,9 +183,11 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     ProcessingT processing(r, ElementMap::default_map(), errh);
     if (top)
 	processing.resolve_agnostics();
-    
-    for (int i = 0; i < r->ntypes(); i++)
-	generate_type(r->eclass(i), f, indent, errh);
+
+    Vector<ElementClassT *> declared_types;
+    r->collect_locally_declared_types(declared_types);
+    for (int i = 0; i < declared_types.size(); i++)
+	generate_type(declared_types[i], f, indent, errh);
     
     for (RouterT::iterator e = r->begin_elements(); e; e++)
 	if (!e->tunnel()) {
