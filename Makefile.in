@@ -64,7 +64,7 @@ install-include: stamp-h
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \
-	  echo $$dir @element_groups@ | ./click-buildtool findelem -r "@provisions@" -p $(top_srcdir) > $$dir/elements.conf; \
+	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@") > $$dir/elements.conf; \
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
