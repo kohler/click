@@ -1,3 +1,28 @@
+2002-10-31 Thursday 20:04  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh (1.14), include/click/task.hh
+	(1.21), lib/task.cc (1.21): slight jiggering of task locks
+
+2002-10-31 Thursday 20:01  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/timeutils.hh (1.6): #include <click/glue.hh> for
+	ntohl and htonl
+
+2002-10-31 Thursday 19:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/todevice.cc (1.129),
+	elements/local/printairo.cc (1.2), include/click/router.hh (1.40),
+	include/click/routerthread.hh (1.13), include/click/task.hh (1.20),
+	lib/routerthread.cc (1.27), lib/task.cc (1.20): more careful
+	locking around Task manipulation, and in particular the use of
+	Task::_thread; add strong_unschedule and strong_reschedule, remove
+	unschedule_soon; use strong_unschedule in ToDevice
+
+2002-10-31 Thursday 19:18  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: controlsocket.cc (1.38), controlsocket.hh
+	(1.27): remove READONLY? optional argument in favor of keyword
+
 2002-10-31 Thursday 16:50  Eddie Kohler <kohler@icir.org>
 
 	* tools/click-fastclassifier/click-fastclassifier.cc (1.55): handle

@@ -1,3 +1,19 @@
+2002-10-31 Thursday 20:04  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh, include/click/task.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	libsrc/task.cc: slight jiggering of task locks
+
+2002-10-31 Thursday 19:21  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh, include/click/routerthread.hh,
+	include/click/task.hh, include/click/router.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	libsrc/routerthread.cc, libsrc/task.cc: more careful locking around
+	Task manipulation, and in particular the use of Task::_thread; add
+	strong_unschedule and strong_reschedule, remove unschedule_soon;
+	use strong_unschedule in ToDevice
+
 2002-10-29 Tuesday 09:46  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/addressinfo.cc: adapt to loss of String::operator const
