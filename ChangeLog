@@ -1,3 +1,20 @@
+2002-02-08 Friday 18:09  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/lexert.hh (1.23): nitlet
+
+2002-02-08 Friday 17:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/sortediplookup.cc (1.2): enable SortedIPLookup
+
+2002-02-08 Friday 17:49  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.37), elements/ethernet/arpresponder.cc (1.37),
+	elements/ip/lineariplookup.cc (1.2), elements/ip/lineariplookup.hh
+	(1.2), elements/ip/sortediplookup.cc (1.1),
+	elements/ip/sortediplookup.hh (1.1), include/click/ipaddress.hh
+	(1.21), lib/iptable.cc (1.14): IP routing table updates: add
+	SortedIPLookup, LinearIPLookup, etc.
+
 2002-02-08 Friday 14:26  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: iproutetable.cc (1.6), iproutetable.hh (1.7),

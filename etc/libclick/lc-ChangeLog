@@ -1,3 +1,9 @@
+2002-02-08 Friday 17:49  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipaddress.hh,
+	libsrc/iptable.cc: IP routing table updates: add SortedIPLookup,
+	LinearIPLookup, etc.
+
 2002-02-07 Thursday 20:31  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/element.cc: allow use of old configuration() methods (too
