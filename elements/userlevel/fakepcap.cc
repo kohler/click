@@ -144,7 +144,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
     if (iph->ip_v == 4) {
 	int offset = (const uint8_t *) iph - p->data();
 	if (iph->ip_hl >= 5
-	    && (int) p->length() - offset >= (iph->ip_hl << 2)) {
+	    && p->length() - offset >= (iph->ip_hl << 2)) {
 	    p->set_ip_header(iph, iph->ip_hl << 2);
 	    return true;
 	}
