@@ -361,9 +361,9 @@ Router::make_pidxes()
     _input_pidx.push_back(_input_pidx.back() + f->ninputs());
     _output_pidx.push_back(_output_pidx.back() + f->noutputs());
     for (int j = 0; j < f->ninputs(); j++)
-      _input_fidx.push_back(i);
+      _input_eidx.push_back(i);
     for (int j = 0; j < f->noutputs(); j++)
-      _output_fidx.push_back(i);
+      _output_eidx.push_back(i);
   }
 }
 
@@ -376,13 +376,13 @@ Router::input_pidx(const Hookup &h) const
 extern inline int
 Router::input_pidx_element(int pidx) const
 {
-  return _input_fidx[pidx];
+  return _input_eidx[pidx];
 }
 
 extern inline int
 Router::input_pidx_port(int pidx) const
 {
-  return pidx - _input_pidx[_input_fidx[pidx]];
+  return pidx - _input_pidx[_input_eidx[pidx]];
 }
 
 extern inline int
@@ -394,13 +394,13 @@ Router::output_pidx(const Hookup &h) const
 extern inline int
 Router::output_pidx_element(int pidx) const
 {
-  return _output_fidx[pidx];
+  return _output_eidx[pidx];
 }
 
 extern inline int
 Router::output_pidx_port(int pidx) const
 {
-  return pidx - _output_pidx[_output_fidx[pidx]];
+  return pidx - _output_pidx[_output_eidx[pidx]];
 }
 
 void
@@ -450,17 +450,17 @@ Router::check_push_and_pull(ErrorHandler *errh)
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _hookup_from;
   Vector<Hookup> hookup_to = _hookup_to;
+  Bitvector bv;
   for (int i = 0; i < ninput_pidx(); i++)
     if (input_pers[i] == Element::VAGNOSTIC) {
-      int fid = _input_fidx[i];
-      int port = i - _input_pidx[fid];
-      Bitvector bv;
-      _elements[fid]->forward_flow(port, &bv);
-      int opidx = _output_pidx[fid];
+      int ei = _input_eidx[i];
+      int port = i - _input_pidx[ei];
+      _elements[ei]->forward_flow(port, &bv);
+      int opidx = _output_pidx[ei];
       for (int j = 0; j < bv.size(); j++)
 	if (bv[j] && output_pers[opidx+j] == Element::VAGNOSTIC) {
-	  hookup_from.push_back(Hookup(fid, j));
-	  hookup_to.push_back(Hookup(fid, port));
+	  hookup_from.push_back(Hookup(ei, j));
+	  hookup_to.push_back(Hookup(ei, port));
 	}
     }
   
@@ -591,7 +591,7 @@ Router::downstream_inputs(Element *first_element, int first_output,
     outputs.assign(nopidx, false);
     for (int i = 0; i < nipidx; i++)
       if (diff[i]) {
-	int facno = _input_fidx[i];
+	int facno = _input_eidx[i];
 	if (!stop_filter || !stop_filter->match(_elements[facno])) {
 	  _elements[facno]->forward_flow(input_pidx_port(i), &scratch);
 	  outputs.or_at(scratch, _output_pidx[facno]);
@@ -610,11 +610,11 @@ Router::downstream_elements(Element *first_element, int first_output,
   Bitvector bv;
   if (downstream_inputs(first_element, first_output, stop_filter, bv) < 0)
     return -1;
-  int last_input_fidx = -1;
+  int last_input_eidx = -1;
   for (int i = 0; i < ninput_pidx(); i++)
-    if (bv[i] && _input_fidx[i] != last_input_fidx) {
-      last_input_fidx = _input_fidx[i];
-      results.push_back(_elements[last_input_fidx]);
+    if (bv[i] && _input_eidx[i] != last_input_eidx) {
+      last_input_eidx = _input_eidx[i];
+      results.push_back(_elements[last_input_eidx]);
     }
   return 0;
 }
@@ -665,7 +665,7 @@ Router::upstream_outputs(Element *first_element, int first_input,
     inputs.assign(nipidx, false);
     for (int i = 0; i < nopidx; i++)
       if (diff[i]) {
-	int facno = _output_fidx[i];
+	int facno = _output_eidx[i];
 	if (!stop_filter || !stop_filter->match(_elements[facno])) {
 	  _elements[facno]->backward_flow(output_pidx_port(i), &scratch);
 	  inputs.or_at(scratch, _input_pidx[facno]);
@@ -684,11 +684,11 @@ Router::upstream_elements(Element *first_element, int first_input,
   Bitvector bv;
   if (upstream_outputs(first_element, first_input, stop_filter, bv) < 0)
     return -1;
-  int last_output_fidx = -1;
+  int last_output_eidx = -1;
   for (int i = 0; i < noutput_pidx(); i++)
-    if (bv[i] && _output_fidx[i] != last_output_fidx) {
-      last_output_fidx = _output_fidx[i];
-      results.push_back(_elements[last_output_fidx]);
+    if (bv[i] && _output_eidx[i] != last_output_eidx) {
+      last_output_eidx = _output_eidx[i];
+      results.push_back(_elements[last_output_eidx]);
     }
   return 0;
 }

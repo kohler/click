@@ -273,17 +273,22 @@ next_flow_code(const char *&p, int port, Bitvector &code,
       else if (*p == '#')
 	code[port + 128] = true;
       else if (errh)
-	errh->error("`%s' flow code: invalid character `%c'", e->declaration().cc(), *p);
+	errh->error("`%e' flow code: invalid character `%c'", e, *p);
     }
     if (negated)
       code.negate();
+    if (!*p) {
+      if (errh)
+	errh->error("`%e' flow code: missing `]'", e);
+      p--;			// don't skip over final '\0'
+    }
   } else if (isalpha(*p))
     code[*p] = true;
   else if (*p == '#')
     code[port + 128] = true;
   else {
     if (errh)
-      errh->error("`%s' flow code: invalid character `%c'", e->declaration().cc(), *p);
+      errh->error("`%e' flow code: invalid character `%c'", e, *p);
     p++;
     return -1;
   }
@@ -310,7 +315,7 @@ Element::forward_flow(int input_port, Bitvector *bv) const
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
   if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%s' flow code: missing or bad `/'", declaration().cc());
+    errh->error("`%e' flow code: missing or bad `/'", this);
     return;
   }
   f_out++;
@@ -346,7 +351,7 @@ Element::backward_flow(int output_port, Bitvector *bv) const
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
   if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%s' flow code: missing or bad `/'", declaration().cc());
+    errh->error("`%e' flow code: missing or bad `/'", this);
     return;
   }
   f_out++;

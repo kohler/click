@@ -32,7 +32,7 @@ class Suppressor : public Element {
   ~Suppressor();
   
   const char *class_name() const		{ return "Suppressor"; }
-  const char *processing() const		{ return "a/a"; }
+  const char *processing() const		{ return AGNOSTIC; }
   const char *flow_code() const			{ return "#/#"; }
   void notify_ninputs(int);
   

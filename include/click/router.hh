@@ -43,8 +43,8 @@ class Router { public:
 
   const Vector<String> &requirements() const	{ return _requirements; }
 
-  int ninput_pidx() const			{ return _input_fidx.size(); }
-  int noutput_pidx() const			{ return _output_fidx.size(); }
+  int ninput_pidx() const			{ return _input_eidx.size(); }
+  int noutput_pidx() const			{ return _output_eidx.size(); }
 
   int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
   int downstream_elements(Element *, int o, Vector<Element *> &);
@@ -120,8 +120,8 @@ class Router { public:
   
   Vector<int> _input_pidx;
   Vector<int> _output_pidx;
-  Vector<int> _input_fidx;
-  Vector<int> _output_fidx;
+  Vector<int> _input_eidx;
+  Vector<int> _output_eidx;
   
   Vector<int> _hookpidx_from;
   Vector<int> _hookpidx_to;

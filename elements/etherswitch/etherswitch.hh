@@ -12,7 +12,7 @@ class EtherSwitch : public Element {
   ~EtherSwitch();
   
   const char *class_name() const		{ return "EtherSwitch"; }
-  const char *processing() const		{ return "h/h"; }
+  const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/[^#]"; }
   
   EtherSwitch *clone() const;

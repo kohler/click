@@ -53,7 +53,7 @@ EtherSwitch::notify_ninputs(int n)
 }
 
 
-EtherSwitch*
+EtherSwitch *
 EtherSwitch::clone() const
 {
   return new EtherSwitch;
