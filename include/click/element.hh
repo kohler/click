@@ -79,12 +79,10 @@ class Element { public:
   virtual void uninitialize();
 
   // LIVE RECONFIGURATION
+  virtual void configuration(Vector<String> &) const;
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);
-  
-  void set_configuration(const String &);
-  void set_configuration_argument(int, const String &);
 
   // HANDLERS
   virtual void add_handlers();
@@ -92,10 +90,14 @@ class Element { public:
   void add_read_handler(const String &, ReadHandler, void *);
   void add_write_handler(const String &, WriteHandler, void *);
   void add_task_handlers(Task *, const String &prefix = String());
-  static String configuration_read_handler(Element *, void *);
-  static int reconfigure_write_handler(const String &, Element *, void *, ErrorHandler *);
-  void add_default_handlers(bool writable_config);
-
+  
+  static String read_positional_handler(Element *, void *);
+  static String read_keyword_handler(Element *, void *);
+  static int reconfigure_positional_handler(const String &, Element *, void *, ErrorHandler *);
+  static int reconfigure_keyword_handler(const String &, Element *, void *, ErrorHandler *);
+  static int reconfigure_positional_handler_2(const String &, Element *, void *, ErrorHandler *);
+  static int reconfigure_keyword_handler_2(const String &, Element *, void *, ErrorHandler *);
+  
   virtual int llrpc(unsigned command, void *arg);
   virtual int local_llrpc(unsigned command, void *arg);
   
@@ -124,6 +126,8 @@ class Element { public:
   
   int connect_input(int which, Element *, int);
   int connect_output(int which, Element *, int);
+
+  void add_default_handlers(bool writable_config);
 
 #if CLICK_STATS >= 2
   // Statistics

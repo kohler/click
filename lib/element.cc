@@ -485,12 +485,18 @@ Element::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
   if (can_live_reconfigure())
     return configure(conf, errh);
   else
-    return -1;
+    return errh->error("cannot reconfigure %e live", this);
 }
 
 void
 Element::take_state(Element *, ErrorHandler *)
 {
+}
+
+void
+Element::configuration(Vector<String> &conf) const
+{
+  cp_argvec(router()->default_configuration_string(eindex()), conf);
 }
 
 
@@ -533,47 +539,50 @@ Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 }
 
 static String
-read_element_class(Element *e, void *)
+read_class_handler(Element *e, void *)
 {
   return String(e->class_name()) + "\n";
 }
 
 static String
-read_element_name(Element *e, void *)
+read_name_handler(Element *e, void *)
 {
   return e->id() + "\n";
 }
 
 static String
-read_element_config(Element *e, void *)
+read_config_handler(Element *e, void *)
 {
-  String s = e->router()->econfiguration(e->eindex());
-  if (s) {
-    int c = s[s.length() - 1];
-    if (c != '\n' && c != '\\')
-      s += "\n";
-  }
-  return s;
+  Vector<String> args;
+  e->configuration(args);
+  String s = cp_unargvec(args);
+  if (!s.length() || (s.back() != '\n' && s.back() != '\\'))
+    return s + "\n";
+  else
+    return s;
 }
 
 static int
-write_element_config(const String &conf, Element *e, void *,
+write_config_handler(const String &str, Element *e, void *,
 		     ErrorHandler *errh)
 {
-  if (e->can_live_reconfigure())
-    return e->router()->live_reconfigure(e->eindex(), conf, errh);
-  else
-    return -EPERM;
+  Vector<String> conf;
+  cp_argvec(str, conf);
+  if (e->live_reconfigure(conf, errh) >= 0) {
+    e->router()->set_default_configuration_string(e->eindex(), str);
+    return 0;
+  } else
+    return -EINVAL;
 }
 
 static String
-read_element_ports(Element *e, void *)
+read_ports_handler(Element *e, void *)
 {
   return e->router()->element_ports_string(e->eindex());
 }
 
 static String
-read_element_handlers(Element *e, void *)
+read_handlers_handler(Element *e, void *)
 {
   Vector<int> handlers;
   Router *r = e->router();
@@ -591,7 +600,7 @@ read_element_handlers(Element *e, void *)
 #if CLICK_STATS >= 1
 
 static String
-read_element_icounts(Element *f, void *)
+read_icounts_handler(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->ninputs(); i++)
@@ -603,7 +612,7 @@ read_element_icounts(Element *f, void *)
 }
 
 static String
-read_element_ocounts(Element *f, void *)
+read_ocounts_handler(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->noutputs(); i++)
@@ -624,7 +633,7 @@ read_element_ocounts(Element *f, void *)
  * cycles spent in the elements this one pulls and pushes.
  */
 static String
-read_element_cycles(Element *f, void *)
+read_cycles_handler(Element *f, void *)
 {
   return(String(f->_calls) + "\n" +
          String(f->_self_cycles) + "\n" +
@@ -635,18 +644,18 @@ read_element_cycles(Element *f, void *)
 void
 Element::add_default_handlers(bool allow_write_config)
 {
-  add_read_handler("class", read_element_class, 0);
-  add_read_handler("name", read_element_name, 0);
-  add_read_handler("config", read_element_config, 0);
+  add_read_handler("class", read_class_handler, 0);
+  add_read_handler("name", read_name_handler, 0);
+  add_read_handler("config", read_config_handler, 0);
   if (allow_write_config && can_live_reconfigure())
-    add_write_handler("config", write_element_config, 0);
-  add_read_handler("ports", read_element_ports, 0);
-  add_read_handler("handlers", read_element_handlers, 0);
+    add_write_handler("config", write_config_handler, 0);
+  add_read_handler("ports", read_ports_handler, 0);
+  add_read_handler("handlers", read_handlers_handler, 0);
 #if CLICK_STATS >= 1
-  add_read_handler("icounts", read_element_icounts, 0);
-  add_read_handler("ocounts", read_element_ocounts, 0);
+  add_read_handler("icounts", read_icounts_handler, 0);
+  add_read_handler("ocounts", read_ocounts_handler, 0);
 # if CLICK_STATS >= 2
-  add_read_handler("cycles", read_element_cycles, 0);
+  add_read_handler("cycles", read_cycles_handler, 0);
 # endif
 #endif
 }
@@ -694,57 +703,95 @@ Element::add_handlers()
 }
 
 String
-Element::configuration_read_handler(Element *element, void *vno)
+Element::read_positional_handler(Element *element, void *thunk)
 {
-  Router *router = element->router();
-  Vector<String> args;
-  cp_argvec(router->econfiguration(element->eindex()), args);
-  int no = (int)vno;
-  if (no >= args.size())
+  Vector<String> conf;
+  element->configuration(conf);
+  int no = (int)thunk;
+  if (no >= conf.size())
     return String();
-  String s = args[no];
+  String s = conf[no];
   // add trailing "\n" if appropriate
   if (s) {
-    int c = s[s.length() - 1];
+    int c = s.back();
     if (c != '\n' && c != '\\')
       s += "\n";
   }
   return s;
 }
 
-int
-Element::reconfigure_write_handler(const String &arg, Element *element,
-				   void *vno, ErrorHandler *errh)
+String
+Element::read_keyword_handler(Element *element, void *thunk)
 {
-  Router *router = element->router();
-  Vector<String> args;
-  cp_argvec(router->econfiguration(element->eindex()), args);
-  int no = (int)vno;
-  while (args.size() <= no)
-    args.push_back(String());
-  args[no] = cp_uncomment(arg);
-  if (router->live_reconfigure(element->eindex(), args, errh) < 0)
+  Vector<String> conf;
+  element->configuration(conf);
+  const char *kw = (const char *)thunk;
+  String s;
+  for (int i = conf.size() - 1; i >= 0; i--)
+    if (cp_va_parse_keyword(conf[i], element, ErrorHandler::silent_handler(),
+			    kw, cpArgument, &s, 0) > 0)
+      break;
+  // add trailing "\n" if appropriate
+  if (s) {
+    int c = s.back();
+    if (c != '\n' && c != '\\')
+      s += "\n";
+  }
+  return s;
+}
+
+static int
+reconfigure_handler(const String &arg, Element *e,
+		    int argno, const char *keyword, bool set_default,
+		    ErrorHandler *errh)
+{
+  Vector<String> conf;
+  e->configuration(conf);
+
+  if (keyword)
+    conf.push_back(String(keyword) + " " + arg);
+  else {
+    while (conf.size() <= argno)
+      conf.push_back(String());
+    conf[argno] = cp_uncomment(arg);
+  }
+    
+  if (e->live_reconfigure(conf, errh) < 0)
     return -EINVAL;
-  else
+  else if (set_default) {
+    String confstr = cp_unargvec(conf);
+    e->router()->set_default_configuration_string(e->eindex(), confstr);
+    return 0;
+  } else
     return 0;
 }
 
-void
-Element::set_configuration(const String &conf)
+int
+Element::reconfigure_positional_handler(const String &arg, Element *e,
+					void *thunk, ErrorHandler *errh)
 {
-  router()->set_configuration(eindex(), conf);
+  return reconfigure_handler(arg, e, (int)thunk, 0, true, errh);
 }
 
-void
-Element::set_configuration_argument(int which, const String &arg)
+int
+Element::reconfigure_keyword_handler(const String &arg, Element *e,
+				     void *thunk, ErrorHandler *errh)
 {
-  assert(which >= 0);
-  Vector<String> args;
-  cp_argvec(router()->econfiguration(eindex()), args);
-  while (args.size() <= which)
-    args.push_back(String());
-  args[which] = arg;
-  router()->set_configuration(eindex(), cp_unargvec(args));
+  return reconfigure_handler(arg, e, -1, (const char *)thunk, true, errh);
+}
+
+int
+Element::reconfigure_positional_handler_2(const String &arg, Element *e,
+					  void *thunk, ErrorHandler *errh)
+{
+  return reconfigure_handler(arg, e, (int)thunk, 0, false, errh);
+}
+
+int
+Element::reconfigure_keyword_handler_2(const String &arg, Element *e,
+				       void *thunk, ErrorHandler *errh)
+{
+  return reconfigure_handler(arg, e, -1, (const char *)thunk, false, errh);
 }
 
 int
