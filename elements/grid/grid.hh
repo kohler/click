@@ -380,7 +380,12 @@ grid_hdr::type_string(unsigned char type)
   case GRID_ROUTE_REPLY: return String("GRID_ROUTE_REPLY"); break;
   case GRID_GEOCAST: return String("GRID_GEOCAST"); break;
   case GRID_LINK_PROBE: return String("GRID_LINK_PROBE"); break;
-  default: return String("Unknown-type");
+  default: 
+    {
+      char buf[100];
+      snprintf(buf, sizeof(buf), "Unknown-type 0x%02x", (unsigned) type);
+      return String(buf);
+    }
   }
 }
 
