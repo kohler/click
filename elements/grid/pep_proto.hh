@@ -20,14 +20,14 @@
 // probable distance to a different node with a known position.
 
 struct pep_fix {
-  int fix_id;             // IP address.
+  unsigned fix_id;        // IP address.
   int fix_seq;            // fix's sequence number.
   grid_location fix_loc;  // Location of node fix_id.
   int fix_hops;           // # of hops to fix_id.
 };
 
 struct pep_proto {
-  int id;            // The sender of this packet.
+  unsigned id;            // The sender of this packet.
   int n_fixes;
   struct pep_fix fixes[pep_proto_fixes];
 };

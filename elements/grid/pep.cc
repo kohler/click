@@ -23,6 +23,7 @@ PEP::PEP()
 {
   _fixed = 0;
   _seq = 1;
+  _debug = true;
 }
 
 PEP::~PEP()
@@ -93,10 +94,16 @@ PEP::purge_old()
   int i = 0;
   int j;
   for(j = 0; j < _entries.size(); j++){
-    if(tv.tv_sec - _entries[j]._when <= pep_purge){
+    if(tv.tv_sec - _entries[j]._when.tv_sec <= pep_purge){
       _entries[i++] = _entries[j];
     } else {
-      click_chatter("PEP: purging an old entry");
+      if(_debug)
+        click_chatter("PEP %s: purging old entry for %s (%d %d %d)",
+                      _my_ip.s().cc(),
+                      IPAddress(_entries[j]._fix.fix_id).s().cc(),
+                      (int) _entries[j]._when.tv_sec,
+                      (int) tv.tv_sec,
+                      pep_purge);
     }
   }
 
@@ -129,7 +136,7 @@ PEP::sendable(Entry e)
   struct timeval tv;
 
   click_gettimeofday(&tv);
-  if(e._when + pep_stale < tv.tv_sec &&
+  if(e._when.tv_sec + pep_stale > tv.tv_sec &&
      e._fix.fix_hops < pep_max_hops){
     return(true);
   }
@@ -178,6 +185,7 @@ PEP::make_PEP()
       pp->fixes[nf] = _entries[i]._fix;
       pp->fixes[nf].fix_hops += 1;
       externalize(&(pp->fixes[nf]));
+      nf++;
     }
   }
 
@@ -187,7 +195,7 @@ PEP::make_PEP()
 }
 
 int
-PEP::findEntry(int id, bool create)
+PEP::findEntry(unsigned id, bool create)
 {
   int i;
 
@@ -196,10 +204,15 @@ PEP::findEntry(int id, bool create)
       return(i);
 
   if(create){
+    if(_debug)
+      click_chatter("PEP %s: new entry for %s",
+                    _my_ip.s().cc(),
+                    IPAddress(id).s().cc());
     i = _entries.size();
-    Entry e;
+    static Entry e;
     e._fix.fix_id = id;
     _entries.push_back(e);
+    assert(_entries.size() == i+1 && _entries[i]._fix.fix_id == id);
     return(i);
   } else {
     return(-1);
@@ -231,7 +244,7 @@ PEP::simple_action(Packet *p)
   for(i = 0; i < nf && i < pep_proto_fixes; i++){
     pep_fix f = pp->fixes[i];
     internalize(&f);
-    if((unsigned) f.fix_id == _my_ip.addr())
+    if(f.fix_id == _my_ip.addr())
       continue;
     int j = findEntry(f.fix_id, true);
     if(j < 0)
@@ -241,8 +254,16 @@ PEP::simple_action(Packet *p)
     int oh = _entries[j]._fix.fix_hops;
     if(f.fix_seq > os ||
        (f.fix_seq == os && f.fix_hops < oh)){
+      if(_debug)
+        click_chatter("PEP %s: updating %s, seq %d -> %d, hops %d -> %d",
+                      _my_ip.s().cc(),
+                      IPAddress(f.fix_id).s().cc(),
+                      os,
+                      f.fix_seq,
+                      oh,
+                      f.fix_hops);
       _entries[j]._fix = f;
-      _entries[j]._when = tv.tv_sec;
+      _entries[j]._when = tv;
     }
   }
 

@@ -74,6 +74,8 @@ public:
   Packet *simple_action(Packet *p);
   
   void run_scheduled();
+
+  bool _debug;
   
 private:
   
@@ -86,11 +88,11 @@ private:
   int _seq;
 
   struct Entry {
-    time_t _when;
+    struct timeval _when; // When we last updated this entry.
     pep_fix _fix;
   };
   Vector<Entry> _entries;
-  int findEntry(int id, bool allocate);
+  int findEntry(unsigned id, bool allocate);
 
   void purge_old();
   void sort_entries();
