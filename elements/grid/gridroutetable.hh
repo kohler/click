@@ -8,7 +8,8 @@
  * =s Grid
  * Run DSDV-like local routing protocol
  *
- * =d Implements a DSDV-like loop-free routing protocol by originating
+ * =d 
+ * Implements a DSDV-like loop-free routing protocol by originating
  * routing messages based on its routing tables, and processing
  * routing update messages from other nodes.  Maintains an immediate
  * neighbor table, and a multi-hop route table.  Route entries are
