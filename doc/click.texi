@@ -524,6 +524,12 @@ Return a string equal to this string, but with all alphabetic characters
 translated to upper case.
 @end deftypemethod
 
+@deftypemethod String String printable () const
+Return a string equal to this string, but with all non-printable
+characters replaced by quote sequences. For example, null characters
+@samp{@key{NUL}} become @samp{^@@} sequences.
+@end deftypemethod
+
 
 @node Appending to Strings, String Comparison, Derived Strings, String
 @subsection Appending to Strings
@@ -756,6 +762,27 @@ Puts @var{len} arbitrary characters at the end of this
 value may be a null pointer if there is not enough memory to grow the
 character array. This method increases the @code{StringAccum}'s length
 by @var{len}, which must be greater than or equal to zero.
+@end deftypemethod
+
+@deftypemethod StringAccum {char *} extend (@w{int @var{len}}, @w{int @var{extra}})
+Puts @var{len} arbitrary characters at the end of this
+@code{StringAccum} and returns a pointer to those characters. Also
+ensures space for @var{extra} additional characters following the
+@var{len} new characters; however, these characters do not contribute to
+the @code{StringAccum}'s length. The return value may be a null pointer
+if there is not enough memory to grow the character array. Increases the
+@code{StringAccum}'s length by @var{len}, which must be greater than or
+equal to zero.
+
+This form of @code{extend} is generally used to compensate for the null
+character appended by C string functions like @code{sprintf}. For
+example:
+
+@example
+if (char *buf = string_accum.extend(4, 1))
+    // 4 real characters plus one terminating null
+    sprintf(buf, "\\%03o", i);
+@end example
 @end deftypemethod
 
 @quotation
