@@ -229,21 +229,19 @@ ARPQuerier::handle_ip(Packet *p)
     ae = ae->next;
 
   if (ae) {
-    if (ae->polling) {
-      IPAddress addr = ae->ip;
-      ae->polling = 0;
-      _lock.release_read();
-      send_query_for(addr);
-    }
-    
-    else if (ae->ok) {
+    if (ae->ok) {
       WritablePacket *q = p->push(sizeof(click_ether));
       click_ether *e = reinterpret_cast<click_ether *>(q->data());
       memcpy(e->ether_shost, _my_en.data(), 6);
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
+      IPAddress addr = ae->ip;
       _lock.release_read();
       output(0).push(q);
+      if (ae->polling) {
+	ae->polling = 0;
+	send_query_for(addr);
+      }
     } 
     
     else {
