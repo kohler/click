@@ -35,7 +35,8 @@ CLICKDIR/elements/radio		... for communicating with wireless radios
 CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/tcpudp	... for TCP and UDP elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
-CLICKDIR/etc			Linux patches
+CLICKDIR/etc			Linux patches and other files
+CLICKDIR/etc/samplepackage	sample source code for Click element package
 CLICKDIR/lib			common non-element source code
 CLICKDIR/linuxmodule		source code for Linux kernel module driver
 CLICKDIR/tools			Click tools
@@ -46,6 +47,7 @@ CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-install	... installs configuration into Linux module
+CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/userlevel		source code for user-level `click' driver
 
@@ -79,10 +81,10 @@ User-Level Program
 
     Run the user-level program by giving it the name of a configuration
 file: `click CONFIGFILE'. If you have compiled Click with pcap support,
-you'll want to use the FromDevice, ToDevice, FromDump, and ToDump elements.
-You can still play around with Click even without pcap support: check out
-the InfiniteSource and TimedSource elements, or write your own
-packet-generation element.
+you'll want to use the FromDevice and ToDevice elements too. You can still
+play around with Click even without pcap support: check out the
+InfiniteSource, TimedSource, FromDump, and ToDump elements, or write your
+own packet-generation element.
 
 Linux Kernel Module
 -------------------

@@ -25,7 +25,10 @@ package := sample
 # SET `TARGETS' TO ONE OR MORE OF `$(package).ko' AND `$(package).uo'.
 # The `.ko' version makes a package for the Linux kernel module. `.uo' is a
 # package for the user-level driver.
-TARGETS = $(package).ko $(package).uo
+TARGETS = $(package).uo
+ifeq (@HAVE_LINUXMODULE_TARGET@,1)
+TARGETS += $(package).ko
+endif
 
 
 # Set these variables appropriately.

@@ -25,8 +25,6 @@ elements/grid/regionpep.hh
 elements/grid/regionpep.cc
 elements/grid/simplelocquerier.hh
 elements/grid/simplelocquerier.cc
-elements/ip/tcpipsend.hh
-elements/ip/tcpipsend.cc
 elements/ipsec/des.hh
 elements/ipsec/des.cc
 elements/ipsec/desp.hh
@@ -56,3 +54,9 @@ elements/ip6/nat624.hh
 elements/ip6/nat624.cc
 elements/ip6/netaddresstranslator.hh
 elements/ip6/netaddresstranslator.cc
+elements/ip6/addresstranslator.hh
+elements/ip6/addresstranslator.cc
+elements/ip6/protocoltranslator.hh
+elements/ip6/protocoltranslator.cc
+elements/tcpudp/tcpipsend.hh
+elements/tcpudp/tcpipsend.cc

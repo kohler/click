@@ -89,6 +89,13 @@ char *strerror(int errno);
 # endif
 #endif
 
+/* Define u_intXX_t in terms of uintXX_t if necessary. */
+#undef SUBSTITUTE_U_INT_TYPES
+#ifdef SUBSTITUTE_U_INT_TYPES
+# define u_int32_t uint32_t
+# define u_int16_t uint16_t
+#endif
+
 #ifdef __cplusplus
 /* Get rid of inline macro under C++. */
 #undef inline

@@ -16,7 +16,7 @@ dnl check for install -C
 
 AC_MSG_CHECKING(whether install accepts -C)
 echo X > conftest.1
-if $INSTALL -C conftest.1 conftest.2; then
+if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
   INSTALL_IF_CHANGED="$INSTALL -C"
   AC_MSG_RESULT(yes)
 else
@@ -196,11 +196,23 @@ AC_SUBST(CFLAGS_NDEBUG)
 AC_SUBST(CXXFLAGS_NDEBUG)
 
 dnl
-dnl strerror
+dnl functions, types
 dnl
 
 AC_REPLACE_FUNCS(strerror)
 AC_CHECK_FUNCS(strtoul)
+
+AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_underscore_t,
+[AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_u_underscore_t=yes, ac_cv_u_underscore_t=no)])
+if test $ac_cv_u_underscore_t = no; then
+  AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_u_t,
+[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_u_t=yes, ac_cv_u_t=no)])
+  if test $ac_cv_u_t = no; then
+    AC_MSG_ERROR("neither u_int32_t or uint32_t is defined by <sys/types.h>!")
+  else
+    AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT_TYPES, 1)
+  fi
+fi
 
 dnl
 dnl dynamic linking
@@ -439,6 +451,7 @@ AC_SUBST(PCAP_LIBRARY)
 
 dnl check linuxmodule for Linux
 
+HAVE_LINUXMODULE_TARGET=
 if test $ac_have_linux_kernel = y; then
   AC_CACHE_CHECK(for C++-includable system header files,
     ac_cv_cxx_aware_system,
@@ -499,12 +512,14 @@ int main(int c, char **v) {
     TARGETS="$TARGETS linuxmodule"
     TOOL_TARGETS="$TOOL_TARGETS click-install"
     AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
+    HAVE_LINUXMODULE_TARGET=1
   else
     AC_MSG_WARN(Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution
 if you want to compile Click as a Linux module.)
   fi
 fi
+AC_SUBST(HAVE_LINUXMODULE_TARGET)
 
 dnl
 dnl Perl5

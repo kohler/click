@@ -79,6 +79,8 @@ Version 1.1   15.Dec.2000
 
 * Kernel driver
 
+** Added patch for 2.2.18 kernel.
+
 ** Changed /proc/click file handling: Now closing a write handler file may
    report an error back to the user through the return value of close().
    Also, can remove Click kernel module even while someone has a file in
