@@ -1,3 +1,8 @@
+2004-07-08 Thursday 11:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/: test-tap.click (1.6), test-tun.click (1.13): ICMPSendPings
+	-> ICMPPingSource
+
 2004-07-08 Thursday 11:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.21), configure.in (1.239): make sure that the root
