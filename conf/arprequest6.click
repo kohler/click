@@ -2,7 +2,7 @@
 
 InfiniteSource( \<0000c043 71ef0090 27e0231f  86dd
 60 00 00 00  00 50 11 40  00 00 00 00  00 00 00 00  
-00 00 00 00  c0 a8 00 01  00 00 00 00  00 00 00 00  
+00 00 00 00  c0 a8 00 01  3f fe 00 00  00 00 00 00  
 00 00 00 00  12 61 02 7d  00 14 d6 41  55 44 50 20  
 70 61 63 6b  65 74 21 0a  04 00 00 00  01 00 00 00  
 01 00 00 00  00 00 00 00  00 80 04 08  00 80 04 08  
@@ -26,7 +26,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	-> CheckIP6Header(::c0a8:ffff ::1261:ffff)
 	-> GetIP6Address(24)
 	-> rt :: LookupIP6Route(
-	::1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
+	3ffe::1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::2222 0,
 	::c0a8:0001 ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000 ::0 1,
 	0::ffff:0:0 ffff:ffff:ffff:ffff:ffff:ffff:0:0 ::0 2,
   	::0 ::0 ::c0a8:1 3);
