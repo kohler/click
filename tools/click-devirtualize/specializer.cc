@@ -48,7 +48,7 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
   // prepare from element map
   for (StringMap::Iterator x = em.first(); x; x++) {
     int i = x.value();
-    add_type_info(x.key(), em.cxx(i), em.header_file(i));
+    add_type_info(x.key(), em.cxx(i), em.header_file(i), em.source_directory(i));
   }
 }
 
@@ -66,12 +66,13 @@ Specializer::etype_info(int eindex) const
 
 void
 Specializer::add_type_info(const String &click_name, const String &cxx_name,
-			   const String &header_file)
+			   const String &header_file, const String &source_dir)
 {
   ElementTypeInfo eti;
   eti.click_name = click_name;
   eti.cxx_name = cxx_name;
   eti.header_file = header_file;
+  eti.source_directory = source_dir;
   _etinfo.push_back(eti);
 
   int i = _etinfo.size() - 1;
@@ -85,19 +86,26 @@ Specializer::add_type_info(const String &click_name, const String &cxx_name,
 }
 
 void
-Specializer::parse_source_file(const String &fn, bool is_header,
-			       String *includes)
+Specializer::parse_source_file(ElementTypeInfo &etinfo,
+			       //const String &fn, const String &source_dir,
+			       bool do_header, String *includes)
 {
+  String fn = etinfo.header_file;
+  if (do_header && fn.substring(-3) == ".hh")
+    fn = etinfo.header_file.substring(0, -3) + ".cc";
+  
   // don't parse a source file twice
   if (_parsed_sources[fn] < 0) {
     String text;
-    if (_router->archive_index(fn) >= 0)
+    if (!etinfo.source_directory && _router->archive_index(fn) >= 0)
       text = _router->archive(fn).data;
     else {
-      if (String found = clickpath_find_file(fn, 0, CLICK_SHAREDIR "/src"))
+      if (String found = clickpath_find_file(fn, 0, etinfo.source_directory)) {
+	etinfo.found_header_file = found;
 	text = file_string(found);
+      }
     }
-    _cxxinfo.parse_file(text, is_header, includes);
+    _cxxinfo.parse_file(text, do_header, includes);
     _parsed_sources.insert(fn, 1);
   }
 }
@@ -115,11 +123,9 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
 
   // parse source text
   String text, filename = etinfo.header_file;
-  if (filename.substring(-2) == "hh") {
-    parse_source_file(filename, true, 0);
-    filename = filename.substring(0, -2) + "cc";
-  }
-  parse_source_file(filename, false, &etinfo.includes);
+  if (filename.substring(-3) == ".hh")
+    parse_source_file(etinfo, true, 0);
+  parse_source_file(etinfo, false, &etinfo.includes);
 
   // now, read source for the element class's parents
   CxxClass *cxxc = _cxxinfo.find_class(etinfo.cxx_name);
@@ -167,7 +173,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   } else {
     spc.click_name = specialized_click_name(_router, eindex);
     spc.cxx_name = click_to_cxx_name(spc.click_name);
-    add_type_info(spc.click_name, spc.cxx_name);
+    add_type_info(spc.click_name, spc.cxx_name, String(), String());
   }
 }
 
@@ -446,7 +452,23 @@ Specializer::output_includes(const ElementTypeInfo &eti, StringAccum &out)
   const String &includes = eti.includes;
   const char *s = includes.data();
   int len = includes.length();
-  for (int p = 0; p < len; ) {
+
+  // skip past '#ifndef X\n#define X' (sort of)
+  int p = 0;
+  while (p < len && isspace(s[p]))
+    p++;
+  if (p + 7 < len && strncmp(s + p, "#ifndef", 7) == 0) {
+    int next = p + 7;
+    for (; next < len && s[next] != '\n'; next++)
+      /* nada */;
+    if (next + 8 < len && strncmp(s + next + 1, "#define", 7) == 0) {
+      for (p = next + 8; p < len && s[p] != '\n'; p++)
+	/* nada */;
+    }
+  }
+
+  // now collect includes
+  while (p < len) {
     int start = p;
     int p2 = p;
     while (p2 < len && s[p2] != '\n' && s[p2] != '\r')
@@ -463,7 +485,7 @@ Specializer::output_includes(const ElementTypeInfo &eti, StringAccum &out)
 	  String include = includes.substring(left, p - left);
 	  int include_index = _header_file_map[include];
 	  if (include_index >= 0) {
-	    out << "#include \"" << _etinfo[include_index].header_file << "\"\n";
+	    out << "#include \"" << _etinfo[include_index].found_header_file << "\"\n";
 	    p = p2 + 1;
 	    continue;
 	  }
@@ -483,8 +505,8 @@ Specializer::output(StringAccum &out)
     SpecializedClass &spc = _specials[i];
     if (spc.eindex >= 0) {
       ElementTypeInfo &eti = etype_info(spc.eindex);
-      if (eti.header_file)
-	out << "#include \"" << eti.header_file << "\"\n";
+      if (eti.found_header_file)
+	out << "#include \"" << eti.found_header_file << "\"\n";
       if (spc.special())
 	spc.cxxc->header_text(out);
     }

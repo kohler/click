@@ -32,13 +32,13 @@ fi
 
 
 
-function findelem_usage () {
+findelem_usage () {
     echo "Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
 Try \`click-buildtool findelem --help' for more information." 1>&2
     exit 1
 }
 
-function findelements () {
+findelements () {
     prefix=""
     all=0
     provisions=""
@@ -176,7 +176,7 @@ $bad_files"
 
 
 
-function elem2xxx_usage () {
+elem2xxx_usage () {
     echo -n "Usage: click-buildtool elem2$elem2 [-p PREFIX] [-V]" 1>&2
     if test "$elem2" = package; then echo -n " PKGNAME" 1>&2; fi
     echo " < elements.conf
@@ -185,7 +185,7 @@ Try \`click-buildtool elem2$elem2 --help' for more information." 1>&2
 }
 
 
-function elem2make () {
+elem2make () {
     prefix=""
     driver=""
     date=`date`
@@ -265,7 +265,7 @@ EOF
 }
 
 
-function elem2xxx () {
+elem2xxx () {
     package=""
     prefix=""
     date=`date`

@@ -35,7 +35,7 @@ exopc: stamp-h stamp-egroup
 tools: Makefile
 	@cd tools && $(MAKE) all
 
-install:
+install: stamp-h stamp-egroup
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-include
 install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/click-mkelemmap

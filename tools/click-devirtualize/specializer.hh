@@ -13,6 +13,8 @@ struct ElementTypeInfo {
   String click_name;
   String cxx_name;
   String header_file;
+  String source_directory;
+  String found_header_file;
   String includes;
   bool read_source;
 
@@ -30,7 +32,29 @@ struct SpecializedClass {
   bool special() const				{ return cxxc != 0; }
 };
 
-class Specializer {
+class Specializer { public:
+
+  Specializer(RouterT *, const ElementMap &);
+
+  ElementTypeInfo &type_info(const String &);
+  const ElementTypeInfo &type_info(const String &) const;
+  ElementTypeInfo &etype_info(int);
+  const ElementTypeInfo &etype_info(int) const;
+  void add_type_info(const String &click_name, const String &cxx_name,
+		     const String &header_file, const String &source_dir);
+
+  void specialize(const Signatures &, ErrorHandler *);
+  void fix_elements();
+
+  int nspecials() const				{ return _specials.size(); }
+  const SpecializedClass &special(int i) const	{ return _specials[i]; }
+  
+  void output(StringAccum &);
+  void output_package(const String &, StringAccum &);
+  void output_new_elementmap(const ElementMap &, ElementMap &, const String &,
+			     const String &requirements) const;
+  
+ private:
 
   static const int SPCE_NOT_DONE = -2;
   static const int SPCE_NOT_SPECIAL = -1;
@@ -52,7 +76,7 @@ class Specializer {
 
   const String &enew_cxx_type(int) const;
   
-  void parse_source_file(const String &, bool, String *);
+  void parse_source_file(ElementTypeInfo &, bool, String *);
   void read_source(ElementTypeInfo &, ErrorHandler *);
   void check_specialize(int, ErrorHandler *);
   bool create_class(SpecializedClass &);
@@ -61,27 +85,6 @@ class Specializer {
 
   void output_includes(const ElementTypeInfo &, StringAccum &);
 
- public:
-
-  Specializer(RouterT *, const ElementMap &);
-
-  ElementTypeInfo &type_info(const String &);
-  const ElementTypeInfo &type_info(const String &) const;
-  ElementTypeInfo &etype_info(int);
-  const ElementTypeInfo &etype_info(int) const;
-  void add_type_info(const String &, const String &, const String & =String());
-
-  void specialize(const Signatures &, ErrorHandler *);
-  void fix_elements();
-
-  int nspecials() const				{ return _specials.size(); }
-  const SpecializedClass &special(int i) const	{ return _specials[i]; }
-  
-  void output(StringAccum &);
-  void output_package(const String &, StringAccum &);
-  void output_new_elementmap(const ElementMap &, ElementMap &, const String &,
-			     const String &requirements) const;
-  
 };
 
 inline

@@ -480,10 +480,4 @@ if test ! -d etc; then
   /bin/mkdir etc
 fi
 
-AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
-  if test "x$ac_file" = xconfig.h; then
-    /bin/rm -f clickconfig.h
-    /bin/ln config.h clickconfig.h
-  fi
-done])
 AC_OUTPUT($config_files)

@@ -309,6 +309,8 @@ clickpath_find_file(const String &filename, const char *subdir,
   const char *path = getenv("CLICKPATH");
   String was_default_path = default_path;
 
+  if (filename && filename[0] == '/')
+    return filename;
   if (!path && default_path)
     path = ":";
   String fn = path_find_file_2(filename, path, default_path, subdir);

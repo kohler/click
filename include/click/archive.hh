@@ -24,4 +24,3 @@ int separate_ar_string(const String &, Vector<ArchiveElement> &,
 String create_ar_string(const Vector<ArchiveElement> &, ErrorHandler * = 0);
 
 #endif
-

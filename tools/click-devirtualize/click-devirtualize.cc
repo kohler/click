@@ -415,9 +415,8 @@ particular purpose.\n");
   // output
   StringAccum out;
   out << "// click-compile: -w -fno-access-control\n\
-#include <clickconfig.h>\n\
-#undef HAVE_CONFIG_H\n\
-#include <clickpackage.hh>\n";
+#include <click/config.h>\n\
+#include <click/package.hh>\n";
   specializer.output(out);
   
   // find name of package

@@ -165,7 +165,7 @@ sub read_files_from ($) {
 }
 
 undef $/;
-my(@files, $fn, $prefix, $sourcedir);
+my(@files, $fn, $prefix);
 $prefix = "";
 while (@ARGV) {
   $_ = shift @ARGV;
@@ -179,11 +179,6 @@ while (@ARGV) {
     $prefix = shift @ARGV;
   } elsif (/^--prefix=(.*)$/) {
     $prefix = $1;
-  } elsif (/^-s$/ || /^--sourcedir$/) {
-    die "not enough arguments" if !@ARGV;
-    $sourcedir = shift @ARGV;
-  } elsif (/^--sourcedir=(.*)$/) {
-    $sourcedir = $1;
   } elsif (/^-./) {
     die "unknown option `$_'\n";
   } elsif (/^-$/) {
@@ -200,10 +195,13 @@ foreach $fn (@files) {
 
 umask(022);
 open(OUT, ">&STDOUT");
+
+my($sourcedir) = `/bin/pwd`;
+$sourcedir =~ s{\s+$}{}s;
+print OUT "\$sourcedir\t\"$sourcedir\"\n";
+
 print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflag word\trequirements\tprovisions\n";
-if ($sourcedir) {
-  print OUT "\$sourcedir\t\"", $sourcedir, "\"\n";
-}
+
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];
   $n = '""' if !$n;

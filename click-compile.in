@@ -19,7 +19,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-includedir=@includedir@/click
+includedir=@includedir@
 srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
 
@@ -66,7 +66,7 @@ EOF
 done
 
 # test directory function
-function test_dir () {
+test_dir () {
   test -d "$1" -a -d "$1/elements" -a -d "$1/lib"
 }
 
@@ -114,19 +114,19 @@ fi
 case $target in
   k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
-    iincludes="-I${found_srcdir} -I${found_srcdir}/lib -I${includedir} -I${linuxdir}/include"
+    iincludes="-I${found_srcdir} -I${includedir} -I${linuxdir}/include"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=module;;
   u|us|use|user)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
-    iincludes="-I${found_srcdir} -I${found_srcdir}/lib -I${includedir}"
+    iincludes="-I${found_srcdir} -I${includedir}"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=user;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
-    iincludes="-I${found_srcdir} -I${found_srcdir}/lib -I${includedir}"
+    iincludes="-I${found_srcdir} -I${includedir}"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=tool;;

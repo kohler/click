@@ -680,10 +680,10 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // create C++ files
   StringAccum header, source;
-  header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
-	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
-	 << "#include <clickpackage.hh>\n#include <element.hh>\n";
-  source << "#include <clickconfig.h>\n";
+  header << "#ifndef CLICK_" << package_name << "_HH\n"
+	 << "#define CLICK_" << package_name << "_HH\n"
+	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
+  source << "#include <click/config.h>\n";
   source << "#include \"" << package_name << ".hh\"\n\
 #include \"glue.hh\"\n";
   

@@ -227,6 +227,12 @@ ElementMap::flag_value(const String &n, int flag) const
   return flag_value(_name_map[n], flag);
 }
 
+const String &
+ElementMap::source_directory(int i) const
+{
+  return _def_srcdir[ _e[i].def_index ];
+}
+
 int
 ElementMap::get_driver(const String &requirements)
 {
@@ -314,13 +320,51 @@ ElementMap::remove(int i)
 void
 ElementMap::parse(const String &str)
 {
-  Vector<String> name, cxx_name, header, processing, flags,
-    requirements, provisions;
-  parse_tabbed_lines(str, &name, &cxx_name, &header, &processing,
-		     &flags, &requirements, &provisions, (void *)0);
-  for (int i = 0; i < name.size(); i++)
-    (void) add(name[i], cxx_name[i], header[i], processing[i],
-	       flags[i], requirements[i], provisions[i]);
+  int p, len = str.length();
+  int endp = 0;
+
+  int def_index = 0;
+  
+  for (p = 0; p < len; p = endp + 1) {
+    // read a line
+    endp = str.find_left('\n', p);
+    if (endp < 0)
+      endp = str.length();
+    String line = str.substring(p, endp - p);
+
+    // break into words
+    Vector<String> words;
+    cp_spacevec(line, words);
+
+    // skip blank lines & comments
+    if (words.size() == 0 || words[0][0] == '#')
+      continue;
+
+    // check for $sourcedir
+    if (words[0] == "$sourcedir") {
+      if (words.size() == 2) {
+	def_index = _def_srcdir.size();
+	_def_srcdir.push_back(cp_unquote(words[1]));
+	_def_compile_flags.push_back(_def_compile_flags[def_index - 1]);
+      }
+
+    } else if (words[0][0] != '$' && words.size() >= 4) {
+      // an actual line
+      Elt elt;
+      elt.name = cp_unquote(words[0]);
+      elt.cxx = cp_unquote(words[1]);
+      elt.header_file = cp_unquote(words[2]);
+      elt.processing_code = cp_unquote(words[3]);
+      if (words.size() >= 5)
+	elt.flags = cp_unquote(words[4]);
+      if (words.size() >= 6)
+	elt.requirements = cp_unquote(words[5]);
+      if (words.size() >= 7)
+	elt.provisions = cp_unquote(words[6]);
+      elt.def_index = def_index;
+      (void) add(elt);
+    }
+  }
 }
 
 String
