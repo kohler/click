@@ -73,7 +73,7 @@ IPEncap::initialize(ErrorHandler *)
 Packet *
 IPEncap::simple_action(Packet *p)
 {
-  /* What the fuck was going on here???  -  ED*/
+  p = p->uniqueify();
   p = p->push(sizeof(click_ip));
   click_ip *ip = (click_ip *) p->data();
   
