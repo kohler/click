@@ -77,7 +77,7 @@
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
-#undef __CLICK_NCPUS__
+#undef NUM_CLICK_CPUS
 
 /* Define if you want to use the stride scheduler. */
 #undef HAVE_STRIDE_SCHED
