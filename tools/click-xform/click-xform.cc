@@ -297,16 +297,29 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
 {
   //fprintf(stderr, "replace...\n");
   String prefix = uniqueify_prefix(try_prefix, _body);
+
+  // free old elements
+  Vector<int> changed_elements;
+  int old_nelements = _body->nelements();
+  for (int i = 0; i < old_nelements; i++)
+    if (_back_match[i] >= 0) {
+      changed_elements.push_back(i);
+      _body->element(i).type = -1;
+    }
+  _body->free_blank_elements();
   
   // add replacement
-  int old_nelements = _body->nelements();
+  // collect new element indices in `changed_elements'
+  _body->set_new_eindex_collector(&changed_elements);
   int new_eindex = _body->get_eindex(prefix, RouterT::TUNNEL_TYPE, String(), landmark);
   replacement->expand_into(_body, new_eindex, _body, RouterScope(), errh);
 
   // mark replacement
-  for (int i = old_nelements; i < _body->nelements(); i++) {
-    _body->element(i).flags = _patid;
-    replace_config(_body->econfiguration(i));
+  for (int i = 0; i < changed_elements.size(); i++) {
+    int j = changed_elements[i];
+    if (_body->element(j).type < 0) continue;
+    _body->element(j).flags = _patid;
+    replace_config(_body->econfiguration(j));
   }
 
   // find input and output, add connections to tunnels
@@ -318,14 +331,15 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     _body->add_connection(Hookup(new_pp, _from_pp_from[i].port),
 			  _from_pp_to[i], landmark);
   
-  // remove match
-  for (int i = 0; i < old_nelements; i++)
-    if (_back_match[i] >= 0)
-      _body->element(i).type = -1;
-
   // cleanup
-  _body->flatten(0);
+  _body->remove_tunnels();
+  // remember to clear `new_eindex_collector'!
+  _body->set_new_eindex_collector(0);
   _match.clear();
+
+  // finally, update the adjacency matrix
+  _body_m->update(_body, changed_elements);
+  //_body_m->init(_body);
 }
 
 
@@ -590,9 +604,9 @@ particular purpose.\n");
     patterns_adj.push_back(new AdjacencyMatrix(patterns[i]));
   
   bool any = true;
+  AdjacencyMatrix matrix(r);
   while (any) {
     any = false;
-    AdjacencyMatrix matrix(r);
     for (int i = 0; i < patterns.size(); i++) {
       Matcher m(patterns[i], patterns_adj[i], r, &matrix, i + 1, errh);
       if (m.next_match()) {
@@ -605,6 +619,8 @@ particular purpose.\n");
   }
 
   // write result
+  if (nreplace)
+    r->remove_blank_elements(0);
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   return 0;

@@ -7,6 +7,7 @@ class AdjacencyMatrix {
 
   unsigned *_x;
   int _n;
+  int _cap;
   Vector<int> _default_match;
 
   AdjacencyMatrix(const AdjacencyMatrix &);
@@ -18,6 +19,7 @@ class AdjacencyMatrix {
   ~AdjacencyMatrix();
 
   void init(RouterT *, RouterT * = 0);
+  void update(RouterT *, const Vector<int> &changed_eindices);
   void print() const;
 
   bool next_subgraph_isomorphism(const AdjacencyMatrix *, Vector<int> &) const;

@@ -25,11 +25,11 @@ elementclass IPOutput {
 }
 
 elementclass IPOutput_Replacement {
-  input -> crud :: IPOutputCombo($paint, $my_ip, $mtu) -> output;
-  crud[1] -> [1]output;
-  crud[2] -> [2]output;
-  crud[3] -> [3]output;
-  crud[4] -> fr :: IPFragmenter($mtu) -> [0]output;
+  input -> combo :: IPOutputCombo($paint, $my_ip, $mtu) -> output;
+  combo[1] -> [1]output;
+  combo[2] -> [2]output;
+  combo[3] -> [3]output;
+  combo[4] -> fr :: IPFragmenter($mtu) -> [0]output;
   fr[1] -> [4]output;
 }
 

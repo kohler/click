@@ -16,6 +16,9 @@ class RouterT : public ElementClassT {
   
   HashMap<String, int> _element_name_map;
   Vector<ElementT> _elements;	// contains types
+  int _free_element;
+  int _real_ecount;
+  Vector<int> *_new_eindex_collector;
   
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
@@ -26,7 +29,9 @@ class RouterT : public ElementClassT {
   HashMap<String, int> _archive_map;
   Vector<ArchiveElement> _archive;
 
+  int add_element(const ElementT &);
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
+  void finish_free_elements(Vector<int> &);
   void finish_remove_element_types(Vector<int> &);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
 		     Vector<Hookup> &results) const;
@@ -56,6 +61,7 @@ class RouterT : public ElementClassT {
   int unify_type_indexes(const RouterT *);
 
   int nelements() const			{ return _elements.size(); }
+  int real_element_count() const	{ return _real_ecount; }
   int eindex(const String &s) const	{ return _element_name_map[s]; }
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
@@ -71,6 +77,8 @@ class RouterT : public ElementClassT {
   int get_eindex(const String &name, int etype_index, const String &configuration, const String &landmark);
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
   int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
+
+  void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector = v; }
   
   int nhookup() const				{ return _hookup_from.size(); }
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
@@ -110,12 +118,15 @@ class RouterT : public ElementClassT {
   int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
   
   void remove_unused_element_types();
-  void remove_blank_elements(ErrorHandler * = 0);
-  void remove_unconnected_elements();
+  
   void remove_bad_connections();
   void remove_duplicate_connections();
-  void remove_tunnels(ErrorHandler *);
+  
+  void free_blank_elements();
+  void remove_blank_elements(ErrorHandler * = 0);
+  
   void remove_compound_elements(ErrorHandler *);
+  void remove_tunnels();
   void remove_unresolved_uprefs(ErrorHandler *);
 
   void flatten(ErrorHandler *);

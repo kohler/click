@@ -22,6 +22,7 @@
 RouterT::RouterT(RouterT *enclosing)
   : _enclosing_scope(enclosing),
     _element_type_map(-1), _element_name_map(-1),
+    _free_element(-1), _real_ecount(0), _new_eindex_collector(0),
     _require_map(-1), _archive_map(-1)
 {
   if (_enclosing_scope)
@@ -43,6 +44,9 @@ RouterT::RouterT(const RouterT &o)
     _element_classes(o._element_classes),
     _element_name_map(o._element_name_map),
     _elements(o._elements),
+    _free_element(o._free_element),
+    _real_ecount(o._real_ecount),
+    _new_eindex_collector(0),
     _hookup_from(o._hookup_from),
     _hookup_to(o._hookup_to),
     _hookup_landmark(o._hookup_landmark),
@@ -128,14 +132,32 @@ RouterT::set_type_index(const String &s, ElementClassT *eclass)
 }
 
 int
+RouterT::add_element(const ElementT &elt)
+{
+  _real_ecount++;
+  if (_free_element >= 0) {
+    int i = _free_element;
+    _free_element = _elements[i].tunnel_input;
+    _elements[i] = elt;
+    if (_new_eindex_collector)
+      _new_eindex_collector->push_back(i);
+    return i;
+  } else {
+    _elements.push_back(elt);
+    if (_new_eindex_collector)
+      _new_eindex_collector->push_back(_elements.size() - 1);
+    return _elements.size() - 1;
+  }
+}
+
+int
 RouterT::get_eindex(const String &s, int type_index, const String &config,
 		    const String &landmark)
 {
   int i = _element_name_map[s];
   if (i < 0) {
     assert(type_index >= 0 && type_index < ntypes());
-    i = _elements.size();
-    _elements.push_back(ElementT(s, type_index, config, landmark));
+    i = add_element(ElementT(s, type_index, config, landmark));
     _element_name_map.insert(s, i);
   }
   return i;
@@ -146,16 +168,14 @@ RouterT::get_anon_eindex(const String &s, int type_index, const String &config,
 			 const String &landmark)
 {
   assert(type_index >= 0 && type_index < ntypes());
-  int i = _elements.size();
-  _elements.push_back(ElementT(s, type_index, config, landmark));
-  return i;
+  return add_element(ElementT(s, type_index, config, landmark));
 }
 
 int
 RouterT::get_anon_eindex(int type_index, const String &config,
 			 const String &landmark)
 {
-  String name = _element_type_names[type_index] + "@" + String(_elements.size() + 1);
+  String name = _element_type_names[type_index] + "@" + String(_real_ecount + 1);
   return get_anon_eindex(name, type_index, config, landmark);
 }
 
@@ -372,6 +392,8 @@ RouterT::remove_duplicate_connections()
   
   for (int i = 0; i < _hookup_from.size(); i++) {
     Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
+    if (hfrom.idx < 0 || hto.idx < 0)
+      continue;
     int prev = -1;
     int trav = index[hfrom.idx];
     while (trav >= 0) {
@@ -452,6 +474,8 @@ RouterT::finish_remove_elements(Vector<int> &new_findex, ErrorHandler *errh)
 
   // resize element arrays
   _elements.resize(new_nelements);
+  _real_ecount = new_nelements;
+  _free_element = -1;
 }
 
 void
@@ -470,19 +494,48 @@ RouterT::remove_blank_elements(ErrorHandler *errh = 0)
 }
 
 void
-RouterT::remove_unconnected_elements()
+RouterT::finish_free_elements(Vector<int> &new_findex)
 {
   int nelements = _elements.size();
-  Vector<int> new_findex(nelements, -1);
 
-  // mark connected elements
-  int nhook = _hookup_from.size();
-  for (int i = 0; i < nhook; i++) {
-    new_findex[_hookup_from[i].idx] = 0;
-    new_findex[_hookup_to[i].idx] = 0;
+  // change hookup
+  for (int i = 0; i < _hookup_from.size(); i++) {
+    Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
+    bool bad = false;
+    if (hf.idx < 0 || hf.idx >= nelements || ht.idx < 0 || ht.idx >= nelements)
+      bad = true;
+    else if (new_findex[hf.idx] < 0 || new_findex[ht.idx] < 0)
+      bad = true;
+    
+    if (bad) {
+      remove_connection(i);
+      i--;
+    }
   }
 
-  finish_remove_elements(new_findex, 0);
+  // free elements
+  for (int i = 0; i < nelements; i++)
+    if (new_findex[i] < 0) {
+      _elements[i].type = -1;
+      _elements[i].tunnel_input = _free_element;
+      _free_element = i;
+      _real_ecount--;
+    }
+}
+
+void
+RouterT::free_blank_elements()
+{
+  int nelements = _elements.size();
+
+  // mark saved findexes
+  Vector<int> new_findex(nelements, -1);
+  int nftype = _element_classes.size();
+  for (int i = 0; i < nelements; i++)
+    if (_elements[i].type >= 0 && _elements[i].type < nftype)
+      new_findex[i] = 0;
+
+  finish_free_elements(new_findex);
 }
 
 
@@ -576,7 +629,7 @@ RouterT::expand_tunnel(Vector<Hookup> *pp_expansions,
 }
 
 void
-RouterT::remove_tunnels(ErrorHandler *errh)
+RouterT::remove_tunnels()
 {
   // find tunnel connections, mark connections with fidx -1
   Vector<Hookup> tunnel_in, tunnel_out;
@@ -654,9 +707,8 @@ RouterT::remove_tunnels(ErrorHandler *errh)
       _elements[i].type = -1;
 
   // actually remove tunnel connections and elements
-  remove_bad_connections();
-  remove_blank_elements(errh);
   remove_duplicate_connections();
+  free_blank_elements();
 }
 
 
@@ -847,15 +899,17 @@ RouterT::remove_unresolved_uprefs(ErrorHandler *errh)
     }
   }
 
-  if (any) finish_remove_elements(new_findex, 0);
+  if (any)
+    finish_free_elements(new_findex);
 }
 
 void
 RouterT::flatten(ErrorHandler *errh)
 {
   remove_compound_elements(errh);
-  remove_tunnels(errh);
+  remove_tunnels();
   remove_unresolved_uprefs(errh);
+  remove_blank_elements();
 }
 
 
