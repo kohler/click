@@ -64,7 +64,9 @@ Version 1.3pre1   5.Mar.2003
    Click isn't busy, and lets you control the minimum and maximum shares
    that Click will take of the CPU. This is particularly useful for the
    Linux kernel module, on a uniprocessor, for running user-level programs
-   (tcpdump, for instance) as well as Click.
+   (tcpdump, for instance) as well as Click. The adaptive scheduler
+   provides access to its parameters via handlers; see click.o(8) for more
+   information.
 
 ** Integrated the 'nsclick' driver from the University of Colorado, and
    particularly by Michael Neufeld. This driver lets you integrate a Click
