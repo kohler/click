@@ -22,25 +22,10 @@ class NewConnectionDialog extends JDialog {
         }
         public void actionPerformed(ActionEvent e) {
 	    if (ok) {
-		String hostname = _hostname.getText().trim();
-		String portstr = _port.getText().trim();
-		ControlSocket cs = null;
-		String statusLine;
-		try {
-		    int port = Integer.parseInt(portstr);
-		    InetAddress host_inet = InetAddress.getByName(hostname);
-		    cs = new ControlSocket(host_inet, port);
-		    statusLine = "Connected to " + hostname + ":" + port;
-		} catch (Throwable t) {
-		    statusLine = "Connection error: " + t.getMessage();
-		}
-		if (_cntr.empty()) {
-		    _cntr.setControlSocket(cs);
-		    _cntr.setStatusLine(statusLine);
-		} else {
-		    ClickController.newWindow(cs, statusLine);
-		    _cntr.enableClose();
-		}
+		ClickController cntr = _cntr;
+		if (!_cntr.empty())
+		    cntr = ClickController.newWindow();
+		cntr.connectTo(_hostname.getText().trim(), _port.getText().trim());
 	    }
 	    dialog.dispose();
 	}
@@ -54,7 +39,7 @@ class NewConnectionDialog extends JDialog {
 	
 	
 	JPanel p = new JPanel() {
-	    Insets insets = new Insets(0,0,10,0);
+	    Insets insets = new Insets(10,0,10,0);
 	    public Insets getInsets() {
 		return insets;
 	    }
@@ -104,6 +89,7 @@ class NewConnectionDialog extends JDialog {
 	getContentPane().add(buttonpanel, BorderLayout.SOUTH);
 
 	pack();
+	setLocationRelativeTo(_cntr.getFrame().getContentPane());
 	show();
     }
 

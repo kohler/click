@@ -8,42 +8,30 @@ import java.util.Vector;
 
 public class HandlerSelector implements TreeSelectionListener {
 
-    ControlSocket _cs;
-    JLabel _label;
-    JTextArea _result;
+    ClickController _controller;
 
-    HandlerSelector(ControlSocket cs, JLabel label, JTextArea result) {
-      _cs = cs;
-      _label = label;
-      _result = result;
+    HandlerSelector(ClickController controller) {
+	_controller = controller;
     }
 
     public void valueChanged(TreeSelectionEvent e) {
-      TreePath path = e.getNewLeadSelectionPath();
-      if (path == null) {
-	return;
-      }
-      
-      DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
-      Object o = node.getUserObject();
-      
-      ControlSocket.HandlerInfo hi = null;
-      if (o instanceof ControlSocket.HandlerInfo)
-	hi = (ControlSocket.HandlerInfo) o;
-      else if (o instanceof RouterTreeModel.HandlerUserObject)
-	hi = ((RouterTreeModel.HandlerUserObject) o)._hinfo;
-      
-      if (hi != null && hi.can_read) {
-	try {
-	  String s = _cs.readString(hi);
-	  if (hi.element != null)
-	      _label.setText(hi.element + "." + hi.name);
-	  else
-	      _label.setText(hi.name);
-	  _result.setText(s);
-	} catch (Throwable t) {
-	  _result.setText(t.toString());
-	}
-      }
+	TreePath path = e.getNewLeadSelectionPath();
+	if (path == null)
+	    return;
+	
+	DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+	Object o = node.getUserObject();
+	if (o == null)
+	    return;
+	
+	ControlSocket.HandlerInfo hi = null;
+	if (o instanceof ControlSocket.HandlerInfo)
+	    hi = (ControlSocket.HandlerInfo) o;
+	else if (o instanceof RouterTreeModel.HandlerUserObject)
+	    hi = ((RouterTreeModel.HandlerUserObject) o)._hinfo;
+	if (hi == null)
+	    return;
+	_controller.selectHandler(hi);
     }
+
 }

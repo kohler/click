@@ -9,15 +9,19 @@ import java.util.Vector;
 class ClickController extends JPanel {
     
     private JFrame _frame;
-    private JPanel _infoPanel;
     private JMenuItem _closeItem;
-    private JLabel _statusLine;
-    private boolean _empty;
+    private JTextField _statusLine;
+
+    private JPanel _infoPanel;
+    private JLabel _handlerLabel;
+    private JTextArea _handlerText;
+    private JButton _changeButton;
+    private ControlSocket.HandlerInfo _selectedHandler;
+
+    private ControlSocket _cs;
 
     private static Vector controllers = new Vector();
 
-    private static final int BAD_PORT = -92138491;
-    
     
     public ClickController controller() {
 	return this;
@@ -25,7 +29,8 @@ class ClickController extends JPanel {
 
     public void enableClose() {
 	if (_closeItem != null)
-	    _closeItem.setEnabled(countControllers() > 1);
+	    _closeItem.setEnabled(countControllers() > 1
+				  || !firstController().empty());
     }
 
     private static int countControllers() {
@@ -55,12 +60,18 @@ class ClickController extends JPanel {
 	}
     }
 
+    private static ClickController firstController() {
+	synchronized (controllers) {
+	    return (ClickController) controllers.elementAt(0);
+	}
+    }
+
     public boolean isApplet() {
 	return false;
     }
 
     public boolean empty() {
-	return _empty;
+	return _cs == null;
     }
 
     /**
@@ -87,15 +98,25 @@ class ClickController extends JPanel {
 
 	JMenu connMenu = (JMenu) menuBar.add(new JMenu("Connections"));
         connMenu.setMnemonic('C');
+
         mi = createMenuItem(connMenu, "Open...", 'O', new OpenAction(this));
+	mi.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.CTRL_MASK));
+
         _closeItem = createMenuItem(connMenu, "Close", 'C', new AbstractAction() {
 		public void actionPerformed(ActionEvent e) {
-		    getFrame().dispose();
-		    removeController(controller());
+		    if (countControllers() > 1) {
+			getFrame().dispose();
+			removeController(controller());
+		    } else {
+			setControlSocket(null);
+			setStatusLine("Not connected");
+			enableClose();
+		    }
 		}
 
 	    });
-	enableClose();
+	_closeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, Event.CTRL_MASK));
+
 	if (!isApplet()) {
 	    connMenu.addSeparator();
 	    mi = createMenuItem(connMenu, "Exit", 'x', new AbstractAction() {
@@ -103,6 +124,7 @@ class ClickController extends JPanel {
 			System.exit(0);
 		    }
 		});
+	    mi.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, Event.CTRL_MASK));
 	}
 
 	return menuBar;
@@ -134,43 +156,22 @@ class ClickController extends JPanel {
     }
 
     public static void main(String argv[]) {
-	String host = null;
-	if (argv.length > 0)
-	    host = argv[0];
-	
-	int port = 7777;
-	if (argv.length > 1) {
-	    try {
-		port = Integer.parseInt(argv[1]);
-	    } catch (Throwable t) {
-		port = BAD_PORT;
-	    }
-	}
-	
-	ControlSocket cs = null;
-	String statusLine;
-	try {
-	    InetAddress host_inet = InetAddress.getByName(host);
-	    cs = new ControlSocket(host_inet, port);
-	    statusLine = "Connected to " + host + ":" + port;
-	} catch (Throwable ex) {
-	    if (port == BAD_PORT) {
-		statusLine = "Connection error: port number not an integer";
-	    } else {
-		statusLine = "Connection error: " + ex.getMessage();
-	    }
-	}
-	newWindow(cs, statusLine);
+	ClickController cntr = newWindow();
+	if (argv.length >= 2)
+	    cntr.connectTo(argv[0], argv[1]);
+	else
+	    cntr.setStatusLine("Not connected");
     }
     
 
     public ClickController(JFrame frame) {
 	_frame = frame;
-	_empty = true;
+	_cs = null;
 	addController(this);
 
 	setLayout(new BorderLayout());
-
+	_statusLine = new JTextField(" ");
+	
 	JMenuBar menuBar = createMenus();
 	add(menuBar, BorderLayout.NORTH);
 	
@@ -179,37 +180,106 @@ class ClickController extends JPanel {
 
 	_statusLine = new JLabel("");
 	add(_statusLine, BorderLayout.SOUTH);
-
-	setControlSocket(null);
     }
 
 
-    public void setControlSocket(ControlSocket cs) {
-	_empty = (cs == null);
-	_infoPanel.removeAll();
-	if (cs == null) {
-	    getFrame().pack();
-	    return;
+
+    private class ChangeButtonAction extends AbstractAction {
+	
+	ChangeButtonAction() {
 	}
 
-	JPanel result_panel = new JPanel(new BorderLayout());
-	JLabel label = new JLabel(" ");
-	result_panel.add(label, BorderLayout.NORTH);
+	public void actionPerformed(ActionEvent event) {
+	    if (_selectedHandler != null && _selectedHandler.canWrite) {
+		try {
+		    _cs.write(_selectedHandler, _handlerText.getText());
+		    if (_selectedHandler.canRead)
+			_handlerText.setText(_cs.readString(_selectedHandler));
+		    else
+			_handlerText.setText("");
+		} catch (ControlSocket.ControlSocketException e) {
+		    JOptionPane.showMessageDialog(getFrame(), e.getMessage(), "Write Handler Error", JOptionPane.ERROR_MESSAGE);
+		} catch (java.io.IOException e) {
+		    JOptionPane.showMessageDialog(getFrame(), e.getMessage(), "Write Handler Network Error", JOptionPane.ERROR_MESSAGE);
+		}
+	    }
+	}
 
-	JTextArea result_area = new JTextArea("");
-	JScrollPane result_scroll = new JScrollPane
-	    (result_area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
-	     JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-	result_panel.add(result_scroll, BorderLayout.CENTER);
+    }
 
-	JTree rtree = new JTree(new RouterTreeModel(cs));
-	rtree.addTreeSelectionListener(new HandlerSelector(cs, label, result_area));
-	JScrollPane router_scroll = new JScrollPane(rtree);
+    public void setControlSocket(ControlSocket cs) {
+	_cs = cs;
+	_selectedHandler = null;
+	_infoPanel.removeAll();
+
+	if (cs != null) {
+	    JPanel result_panel = new JPanel();
+	    result_panel.setLayout(new BorderLayout());
+
+	    JPanel buttonPanel = new JPanel();
+	    buttonPanel.setBorder(new javax.swing.border.EmptyBorder(3, 5, 2, 5));
+	    buttonPanel.setLayout(new BorderLayout());
+	    result_panel.add(buttonPanel, BorderLayout.NORTH);
+	    
+	    _handlerLabel = new JLabel(" ");
+	    buttonPanel.add(_handlerLabel, BorderLayout.CENTER);
+	    
+	    _changeButton = new JButton("Change");
+	    buttonPanel.add(_changeButton, BorderLayout.EAST);
+	    _changeButton.setEnabled(false);
+
+	    _handlerText = new JTextArea(" ");
+	    _handlerText.setMargin(new Insets(0, 3, 0, 3));
+	    JScrollPane result_scroll = new JScrollPane
+		(_handlerText, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+		 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+	    result_scroll.setPreferredSize(new Dimension(280, 250));
+	    result_panel.add(result_scroll, BorderLayout.CENTER);
+	    
+	    JTree rtree = new JTree(new RouterTreeModel(cs));
+	    _changeButton.addActionListener(new ChangeButtonAction());
+	    rtree.addTreeSelectionListener(new HandlerSelector(this));
+	    JScrollPane router_scroll = new JScrollPane(rtree);
+	    
+	    JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+					      router_scroll, result_panel);
+	    _infoPanel.add(split, BorderLayout.CENTER);
+	} else {
+	    _infoPanel.repaint();
+	    _handlerLabel = null;
+	    _handlerText = null;
+	    _changeButton = null;
+	}
+
+	getFrame().getRootPane().validate();
+    }
+
+    void selectHandler(ControlSocket.HandlerInfo hinfo) {
+	_selectedHandler = hinfo;
+	if (hinfo == null) {
+	    _handlerLabel.setText("");
+	    _handlerText.setText("");
+	    _handlerText.setEditable(false);
+	    _changeButton.setEnabled(false);
+	    return;
+	}
 	
-	JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-					  router_scroll, result_panel);
-	_infoPanel.add(split, BorderLayout.CENTER);
-	getFrame().pack();
+	boolean writeEnabled = hinfo.canWrite;
+	_handlerLabel.setText(hinfo.getDescription());
+	if (hinfo.canRead) {
+	    try {
+		String s = _cs.readString(hinfo);
+		_handlerText.setText(s);
+		_handlerText.setCaretPosition(0);
+	    } catch (Throwable t) {
+		_handlerText.setText(t.toString());
+		writeEnabled = false;
+	    }
+	} else {
+	    _handlerText.setText("");
+	}
+	_handlerText.setEditable(writeEnabled);
+	_changeButton.setEnabled(writeEnabled);
     }
 
     public Dimension getPreferredSize() {
@@ -224,15 +294,37 @@ class ClickController extends JPanel {
 	removeController(this);
     }
     
-    public static void newWindow(ControlSocket cs, String statusLine) {
+    public static ClickController newWindow() {
 	JFrame frame = new JFrame("Click Controller");
 	ClickController cntr = new ClickController(frame);
 	frame.getContentPane().add(cntr, BorderLayout.CENTER);
 	frame.addWindowListener(new CloseWindowAdapter(cntr));
-	cntr.setControlSocket(cs);
-	cntr.setStatusLine(statusLine);
+	cntr.enableClose();
 	frame.pack();
-	frame.setVisible(true);
+	frame.show();
+	return cntr;
+    }
+
+    public void connectTo(String hostname, String portname) {
+	ControlSocket cs = null;
+	String statusLine = "Not connected";
+	
+	try {
+	    InetAddress host_inet = InetAddress.getByName(hostname);
+	    int port = Integer.parseInt(portname);
+	    cs = new ControlSocket(host_inet, port);
+	    statusLine = "Connected to " + hostname + ":" + port;
+	} catch (java.net.UnknownHostException ex) {
+	    statusLine = "Connection error: no such host `" + hostname + "'";
+	} catch (NumberFormatException ex) {
+	    statusLine = "Connection error: port number not an integer";
+	} catch (Throwable ex) {
+	    statusLine = "Connection error: " + ex.getMessage();
+	}
+	
+	setControlSocket(cs);
+	enableClose();
+	setStatusLine(statusLine);
     }
 
 }

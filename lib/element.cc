@@ -571,7 +571,7 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());
-  args[no] = arg;
+  args[no] = cp_uncomment(arg);
   if (router->live_reconfigure(element->eindex(), args, errh) < 0)
     return -EINVAL;
   else

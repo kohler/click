@@ -21,7 +21,7 @@ public class RouterTreeModel extends DefaultTreeModel {
 	}
 	HandlerUserObject(String el, String name, String text) {
 	    _hinfo = new ControlSocket.HandlerInfo(el, name);
-	    _hinfo.can_read = true;
+	    _hinfo.canRead = true;
 	    _name = text;
 	}
 	public String toString() {
@@ -34,7 +34,7 @@ public class RouterTreeModel extends DefaultTreeModel {
 	public boolean lessThanOrEqual(Object o1, Object o2) {
 	    ControlSocket.HandlerInfo h1 = (ControlSocket.HandlerInfo) o1;
 	    ControlSocket.HandlerInfo h2 = (ControlSocket.HandlerInfo) o2;
-	    return h1.name.toLowerCase().compareTo(h2.name.toLowerCase()) <= 0;
+	    return h1.handlerName.toLowerCase().compareTo(h2.handlerName.toLowerCase()) <= 0;
 	}
     }
 
@@ -51,6 +51,10 @@ public class RouterTreeModel extends DefaultTreeModel {
 	  MutableTreeNode node = new DefaultMutableTreeNode
 	      (new HandlerUserObject(null, "config", "Configuration"));
 	  int nodePos = 0;
+	  insertNodeInto(node, root, nodePos++);
+	  
+	  node = new DefaultMutableTreeNode
+	      (new HandlerUserObject(null, "flatconfig", "Flat Configuration"));
 	  insertNodeInto(node, root, nodePos++);
 	  
 	  Util.SortProc sp = new Util.IgnoreCaseStringSortProc();

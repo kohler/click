@@ -578,7 +578,13 @@ cp_real(const String &str, int frac_digits,
 {
   const char *s = str.data();
   const char *last = s + str.length();
-  if (s == last) return false;
+  cp_errno = CPE_FORMAT;
+  if (s == last)
+    return false;
+  if (frac_digits > 9) {
+    cp_errno = CPE_INVALID;
+    return false;
+  }
   
   bool negative = (*s == '-');
   if (*s == '-' || *s == '+') s++;
@@ -598,15 +604,18 @@ cp_real(const String &str, int frac_digits,
     frac_s = frac_e = s;
   
   // no integer or fraction? illegal real
-  if (int_s == int_e && frac_s == frac_e) return false;
+  if (int_s == int_e && frac_s == frac_e)
+    return false;
   
   // find exponent, if any
   int exponent = 0;
   if (s < last && (*s == 'E' || *s == 'e')) {
-    if (++s == last) return false;
+    if (++s == last)
+      return false;
     bool negexp = (*s == '-');
     if (*s == '-' || *s == '+') s++;
-    if (s >= last || !isdigit(*s)) return false;
+    if (s >= last || !isdigit(*s))
+      return false;
     
     // XXX overflow?
     for (; s < last && isdigit(*s); s++)
@@ -645,6 +654,7 @@ cp_real(const String &str, int frac_digits,
   else {
     *return_int_part = int_part;
     *return_frac_part = frac_part;
+    cp_errno = CPE_OK;
     return true;
   }
 }
@@ -653,10 +663,8 @@ bool
 cp_real(const String &str, int frac_digits, int *return_value)
 {
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, &int_part, &frac_part)) {
-    cp_errno = CPE_FORMAT;
+  if (!cp_real(str, frac_digits, &int_part, &frac_part))
     return false;
-  }
   
   int one = 1;
   for (int i = 0; i < frac_digits; i++)
@@ -675,13 +683,13 @@ cp_real(const String &str, int frac_digits, int *return_value)
 bool
 cp_real2(const String &str, int frac_bits, int *return_value)
 {
-  int frac_digits = 1;
-  int base_ten_one = 10;
-  for (; base_ten_one < (1 << frac_bits); base_ten_one *= 10)
-    frac_digits++;
+  if (frac_bits > 29) {
+    cp_errno = CPE_INVALID;
+    return false;
+  }
   
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, &int_part, &frac_part)) {
+  if (!cp_real(str, 9, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   } else if (int_part < 0 || frac_part < 0) {
@@ -691,15 +699,18 @@ cp_real2(const String &str, int frac_bits, int *return_value)
     cp_errno = CPE_OVERFLOW;
     return false;
   } else {
-    int value = int_part << frac_bits;
-    base_ten_one /= 2;
-    for (int i = frac_bits - 1; i >= 0; i--, base_ten_one /= 2)
-      if (frac_part >= base_ten_one) {
-	frac_part -= base_ten_one;
-	value |= (1 << i);
-      }
+    // method from Knuth's TeX, round_decimals. Works well with
+    // cp_unparse_real below
+    int fraction = 0;
+    unsigned two = 2 << frac_bits;
+    for (int i = 0; i < 9; i++) {
+      unsigned digit = frac_part % 10;
+      fraction = (fraction + digit*two) / 10;
+      frac_part /= 10;
+    }
+    fraction = (fraction + 1) / 2;
     cp_errno = CPE_OK;
-    *return_value = value;
+    *return_value = (int_part << frac_bits) + fraction;
     return true;
   }
 }
@@ -1754,48 +1765,38 @@ cp_unparse_bool(bool b)
 String
 cp_unparse_real(unsigned real, int frac_bits)
 {
+  // adopted from Knuth's TeX function print_scaled, hope it is correct in
+  // this context but not sure.
+  // Works well with cp_real2 above; as an invariant,
+  // unsigned x, y;
+  // cp_real2(cp_unparse_real(x, FRAC_BITS), &y) == true && x == y
+  
   StringAccum sa;
-  sa << (real >> frac_bits);
-  int frac = real & ((1<<frac_bits) - 1);
-  if (!frac) return sa.take_string();
+  assert(frac_bits < 29);
+
+  unsigned int_part = real >> frac_bits;
+  sa << int_part;
+
+  unsigned one = 1 << frac_bits;
+  real &= one - 1;
+  if (!real) return sa.take_string();
   
   sa << ".";
+  real = (10 * real) + 5;
+  unsigned allowable_inaccuracy = 10;
+
+  unsigned inaccuracy_rounder = 5;
+  while (inaccuracy_rounder * 10 < one)
+    inaccuracy_rounder *= 10;
   
-  int base_ten_one = 1;
-  for (; base_ten_one*10 < (1 << frac_bits); base_ten_one *= 10)
-    /* do nothing */;
-  int place = base_ten_one;
-  base_ten_one *= 10;
-  
-  // slow
-  int num_zeros = 0;
-  while (frac && place) {
-    
-    for (int d = 9; d >= 1; d--) {
-      // convert d*10^(-place) to binary, and compare that against frac
-      int val = place * d;
-      int b101 = base_ten_one / 2;
-      int result = 0;
-      for (int i = frac_bits - 1; i >= 0; i--, b101 /= 2)
-	if (val >= b101) {
-	  val -= b101;
-	  result |= 1<<i;
-	}
-      
-      if (frac >= result) {
-	for (int i = 0; i < num_zeros; i++) sa << '0';
-	sa << (char)(d + '0');
-	frac -= result;
-	goto next_place;
-      }
-    }
-    
-    num_zeros++;
-    
-   next_place:
-    place /= 10;
-  }
-  
+  do {
+    if (allowable_inaccuracy > one)
+      real += (one >> 1) - inaccuracy_rounder;
+    sa << static_cast<char>('0' + (real >> frac_bits));
+    real = 10 * (real & (one - 1));
+    allowable_inaccuracy *= 10;
+  } while (real > allowable_inaccuracy);
+
   return sa.take_string();
 }
 
