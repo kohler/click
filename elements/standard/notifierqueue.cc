@@ -54,10 +54,8 @@ NotifierQueue::push(int, Packet *packet)
     // wish I could inline...
     Queue::push(0, packet);
 
-    if (size() == 1 && listeners_asleep()) {
-	_sleepiness = 0;
+    if (size() == 1 && listeners_asleep())
 	wake_listeners();
-    }
 }
 
 Packet *
@@ -65,7 +63,9 @@ NotifierQueue::pull(int)
 {
     Packet *p = deq();
 
-    if (!p && ++_sleepiness == SLEEPINESS_TRIGGER)
+    if (p)
+	_sleepiness = 0;
+    else if (++_sleepiness == SLEEPINESS_TRIGGER)
 	sleep_listeners();
     
     return p;
