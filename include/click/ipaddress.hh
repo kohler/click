@@ -11,14 +11,15 @@ class IPAddress {
   
   IPAddress()			: _addr(0) { }
   explicit IPAddress(const unsigned char *);
-  IPAddress(unsigned);	// network byte order IP address
+  IPAddress(u_int32_t);			// network byte order IP address
+  explicit IPAddress(int32_t);		// network byte order IP address
   explicit IPAddress(const String &);	// "18.26.4.99"
-  explicit IPAddress(struct in_addr);
+  IPAddress(struct in_addr);
   static IPAddress make_prefix(int);
   
   operator bool() const		{ return _addr != 0; }
-  operator unsigned() const	{ return _addr; }
-  unsigned addr() const		{ return _addr; }
+  operator u_int32_t() const	{ return _addr; }
+  u_int32_t addr() const	{ return _addr; }
   
   operator struct in_addr() const;
   struct in_addr in_addr() const;
@@ -42,8 +43,14 @@ class IPAddress {
 };
 
 inline
-IPAddress::IPAddress(unsigned int n)
-  : _addr(n)
+IPAddress::IPAddress(u_int32_t a)
+  : _addr(a)
+{
+}
+
+inline
+IPAddress::IPAddress(int32_t a)
+  : _addr(a)
 {
 }
 

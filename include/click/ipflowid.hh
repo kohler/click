@@ -15,7 +15,6 @@ class IPFlowID {
  public:
 
   IPFlowID();
-  IPFlowID(struct in_addr, unsigned short, struct in_addr, unsigned short);
   IPFlowID(IPAddress, unsigned short, IPAddress, unsigned short);
   explicit IPFlowID(Packet *);
 
@@ -42,13 +41,6 @@ class IPFlowID {
 inline
 IPFlowID::IPFlowID()
   : _saddr(), _daddr(), _sport(0), _dport(0)
-{
-}
-
-inline
-IPFlowID::IPFlowID(struct in_addr saddr, unsigned short sport,
-		   struct in_addr daddr, unsigned short dport)
-  : _saddr(saddr), _daddr(daddr), _sport(sport), _dport(dport)
 {
 }
 

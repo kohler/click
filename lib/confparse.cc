@@ -1019,7 +1019,7 @@ cp_ip_address_set(const String &str, IPAddressSet *set
     additions.push_back(ip);
   }
   for (int i = 0; i < additions.size(); i++)
-    set->insert(additions[i]);
+    set->insert(IPAddress(additions[i]));
   return true;
 }
 

@@ -72,8 +72,8 @@ int
 CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddressSet ips;
-  ips.insert(0);
-  ips.insert(0xFFFFFFFFU);
+  ips.insert(IPAddress(0));
+  ips.insert(IPAddress(0xFFFFFFFFU));
   _offset = 0;
   bool verbose = false;
   bool details = false;

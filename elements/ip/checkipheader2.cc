@@ -54,8 +54,8 @@ CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
   // same as CheckIPHeader's configure, only don't check alignment
   
   IPAddressSet ips;
-  ips.insert(0);
-  ips.insert(0xFFFFFFFFU);
+  ips.insert(IPAddress(0));
+  ips.insert(IPAddress(0xFFFFFFFFU));
   _offset = 0;
   bool verbose = false;
   bool details = false;
