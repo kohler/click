@@ -1,3 +1,8 @@
+2001-08-08 Wednesday 20:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.40): use caddr_t to improve
+	behavior on Solaris (reported by Lee Breslau)
+
 2001-08-08 Wednesday 20:39  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: standard/infinitesource.cc (1.30),
