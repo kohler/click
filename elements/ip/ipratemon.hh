@@ -142,10 +142,10 @@ private:
   unsigned int _ratio;		// inspect 1 in how many packets?
   Spinlock* _lock;		// synchronize handlers and update
 
-  struct Stats *_base;          // first level stats
+  Stats *_base;			// first level stats
   long unsigned int _resettime;     // time of last reset
   unsigned int _alloced_mem;        // total allocated memory
-  struct Stats *_first, *_last;     // first and last element in age list
+  Stats *_first, *_last;	// first and last element in age list
   // HACK! For interaction between fold() and ~Stats()
   Stats *_prev_deleted, *_next_deleted;
 
@@ -176,7 +176,7 @@ private:
 inline void
 IPRateMonitor::set_anno_level(unsigned addr, unsigned level, unsigned when)
 {
-  struct Stats *s = _base;
+  Stats *s = _base;
   Counter *c = 0;
   int bitshift;
 
@@ -211,7 +211,7 @@ inline void
 IPRateMonitor::update(unsigned addr, int val, Packet *p, 
                       bool forward, bool update_ewma)
 {
-  struct Stats *s = _base;
+  Stats *s = _base;
   Counter *c = 0;
   unsigned now = MyEWMA::now();
   static unsigned prev_fold_time = now;
