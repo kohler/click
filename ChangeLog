@@ -1,3 +1,11 @@
+2003-02-03 Monday 10:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: linkstat.cc (1.16), lookuplocalgridroute.cc
+	(1.47), lookuplocalgridroute.hh (1.18): Convert
+	LookupLocalGridRoute to userlevel; #ifdef calls to userlevel-only
+	element code from kernel-compatible code: link may succeed, but
+	insmod will fail
+
 2003-02-01 Saturday 18:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.30), dsdvroutetable.hh
