@@ -60,21 +60,25 @@ wvlan -> wvlan_demux :: Classifier(12/GRID_ETH_PROTO, -);
 eth_demux [0] -> ARPResponder(GW_IP GW_MAC_ADDR,
 		              GRID_NET/24 GW_MAC_ADDR) -> to_eth;
 eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, GW_MAC_ADDR) -> to_eth;
+
 eth_demux [2] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
 Idle -> to_tun1;
 eth_demux [3] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
-eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
+
+eth_demux [4] -> DropBroadcasts -> Strip(14) -> ckip1 :: CheckIPHeader -> dt1 :: DecIPTTL -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
+ckip1 [1] -> Discard;
+dt1 [1] -> ICMPError(GW_IP, 11, 0) -> ip_cl
 
 wvlan_demux [0] 
 -> check_grid :: CheckGridHeader [0]
-// -> fr :: FilterByRange(RANGE, li) [0]
+-> fr :: FilterByRange(RANGE, li) [0]
 -> [0] nb [0]
 -> grid_demux [0]
 -> [0] lr;
 
 
 check_grid [1]-> Print(bad_grid_hdr) -> Discard;
-// fr [1] -> Discard; // out of range
+ fr [1] -> Discard; // out of range
 wvlan_demux [1] -> Discard; // not a grid packet
 
 query_demux :: Classifier(62/GRID_HEX_IP, // loc query for us
