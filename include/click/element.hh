@@ -56,6 +56,7 @@ class Element { public:
     int eindex(Router*) const;
 
     // INPUTS AND OUTPUTS
+    inline int nports(bool isoutput) const;
     int ninputs() const				{ return _ninputs; }
     int noutputs() const			{ return _noutputs; }
     void set_ninputs(int);
@@ -68,10 +69,12 @@ class Element { public:
     const Port &input(int) const;
     const Port &output(int) const;
 
-    bool input_is_push(int) const;
-    bool input_is_pull(int) const;
-    bool output_is_push(int) const;
-    bool output_is_pull(int) const;
+    inline bool port_is_push(bool isoutput, int) const;
+    inline bool port_is_pull(bool isoutput, int) const;
+    inline bool input_is_push(int) const;
+    inline bool input_is_pull(int) const;
+    inline bool output_is_push(int) const;
+    inline bool output_is_pull(int) const;
   
     void checked_output_push(int, Packet*) const;
 
@@ -147,9 +150,8 @@ class Element { public:
     enum Processing { VAGNOSTIC, VPUSH, VPULL };
     void processing_vector(int* input_codes, int* output_codes, ErrorHandler*) const;
     void initialize_ports(const int* input_codes, const int* output_codes);
-  
-    void forward_flow(int, Bitvector*) const;
-    void backward_flow(int, Bitvector*) const;
+
+    void port_flow(bool isoutput, int, Bitvector*) const;
   
     int connect_input(int which, Element*, int);
     int connect_output(int which, Element*, int);
@@ -224,6 +226,12 @@ Element::eindex(Router* r) const
     return (router() == r ? eindex() : -1);
 }
 
+inline int
+Element::nports(bool isoutput) const
+{
+    return isoutput ? _noutputs : _ninputs;
+}
+
 inline const Element::Port&
 Element::input(int i) const
 {
@@ -260,6 +268,18 @@ inline bool
 Element::input_is_push(int i) const
 {
     return i >= 0 && i < ninputs() && !_inputs[i].allowed();
+}
+
+inline bool
+Element::port_is_push(bool isoutput, int p) const
+{
+    return isoutput ? output_is_push(p) : input_is_push(p);
+}
+
+inline bool
+Element::port_is_pull(bool isoutput, int p) const
+{
+    return isoutput ? output_is_pull(p) : input_is_pull(p);
 }
 
 #if CLICK_STATS >= 2
