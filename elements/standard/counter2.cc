@@ -17,7 +17,7 @@
 #include "confparse.hh"
 #include "error.hh"
 
-static String counter2_read_rate_handler(Element *, void *);
+static String counter2_read_duration_handler(Element *, void *);
 
 
 static inline unsigned long
@@ -72,7 +72,7 @@ counter2_read_count_handler(Element *e, void *)
 }
 
 static String
-counter2_read_rate_handler(Element *e, void *)
+counter2_read_duration_handler(Element *e, void *)
 {
   Counter2 *c = (Counter2 *)e;
   return String(c->duration()) + "\n";
@@ -90,7 +90,7 @@ void
 Counter2::add_handlers()
 {
   add_read_handler("count", counter2_read_count_handler, 0);
-  add_read_handler("rate", counter2_read_rate_handler, 0);
+  add_read_handler("duration", counter2_read_duration_handler, 0);
   add_write_handler("reset", counter2_reset_write_handler, 0);
 }
 

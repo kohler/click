@@ -13,8 +13,8 @@
  * reception.
  * =h count read-only
  * Returns the number of packets that have passed through.
- * =h rate read-only
- * Returns packet arrival duration.
+ * =h duration read-only
+ * Returns duration of packet arrival from first to last packet.
  * =h reset write-only
  * Resets the count and rate to zero.
  */
