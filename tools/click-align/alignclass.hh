@@ -76,27 +76,27 @@ class AlignClass : public ElementClassT {
  public:
   AlignClass(const String &);
   AlignClass(const String &, Aligner *);
-  virtual Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+  virtual Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
   void *cast(const char *);
 };
 
 class StripAlignClass : public AlignClass {
  public:
   StripAlignClass();
-  Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+  Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
 class CheckIPHeaderAlignClass : public AlignClass {
   int _argno;
  public:
   CheckIPHeaderAlignClass(const String &, int);
-  Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+  Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
 class AlignAlignClass : public AlignClass {
  public:
   AlignAlignClass();
-  Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+  Aligner *create_aligner(ElementT *, RouterT *, ErrorHandler *);
 };
 
 

@@ -10,6 +10,10 @@ typedef HashMap<String, int> StringMap;
 
 class RouterT { public:
 
+    class iterator;
+    class live_iterator;
+    class type_iterator;
+
     RouterT(RouterT * = 0);
     virtual ~RouterT();
 
@@ -25,47 +29,52 @@ class RouterT { public:
     void collect_primitive_classes(HashMap<String, int> &) const;
     void collect_active_types(Vector<ElementClassT *> &) const;
 
+    iterator first_element();
+    live_iterator first_live_element();
+    type_iterator first_element(ElementClassT *);
+    
     int nelements() const		{ return _elements.size(); }
     int real_element_count() const	{ return _real_ecount; }
     int eindex(const String &s) const	{ return _element_name_map[s]; }
-    const ElementT &element(int i) const{ return _elements[i]; }
-    ElementT &element(int i)		{ return _elements[i]; }
-    bool elive(int ei) const		{ return _elements[ei].live(); }
-    bool edead(int ei) const		{ return _elements[ei].dead(); }
+    const ElementT *element(int i) const{ return _elements[i]; }
+    const ElementT *elt(int i) const	{ return _elements[i]; }
+    const ElementT *e(int i) const	{ return _elements[i]; }
+    ElementT *element(int i)		{ return _elements[i]; }
+    ElementT *elt(int i)		{ return _elements[i]; }
+    ElementT *e(int i)			{ return _elements[i]; }
+    bool elive(int ei) const		{ return _elements[ei]->live(); }
+    bool edead(int ei) const		{ return _elements[ei]->dead(); }
     String ename(int) const;
     ElementClassT *etype(int) const;
     int etype_uid(int) const;
     String etype_name(int) const;
     String edeclaration(int) const;
     const String &econfiguration(int) const;
-    String &econfiguration(int i)	{ return _elements[i].configuration();}
-    int eflags(int i) const		{ return _elements[i].flags; }
-    const String &elandmark(int i) const{ return _elements[i].landmark(); }
-    int eninputs(int i) const		{ return _elements[i].ninputs(); }
-    int enoutputs(int i) const		{ return _elements[i].noutputs(); }
+    String &econfiguration(int i)	{return _elements[i]->configuration();}
+    int eflags(int i) const		{ return _elements[i]->flags; }
+    const String &elandmark(int i) const{ return _elements[i]->landmark(); }
 
     int get_eindex(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     int get_anon_eindex(const String &name, ElementClassT *, const String &configuration = String(), const String &landmark = String());
     int get_anon_eindex(ElementClassT *, const String &configuration = String(), const String &landmark = String());
     void change_ename(int, const String &);
     void free_element(int);
-    void kill_element(int i)		{ _elements[i].kill(); }
     void free_dead_elements();
 
     void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector=v; }
-  
+
     int nhookup() const				{ return _hookup_from.size(); }
-    const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
-    const Hookup &hookup_from(int c) const	{ return _hookup_from[c]; }
-    const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
-    const Hookup &hookup_to(int c) const	{ return _hookup_to[c]; }
+    const Vector<HookupI> &hookup_from() const	{ return _hookup_from; }
+    const HookupI &hookup_from(int c) const	{ return _hookup_from[c]; }
+    const Vector<HookupI> &hookup_to() const	{ return _hookup_to; }
+    const HookupI &hookup_to(int c) const	{ return _hookup_to[c]; }
     const Vector<String> &hookup_landmark() const { return _hookup_landmark; }
     const String &hookup_landmark(int c) const	{ return _hookup_landmark[c]; }
     bool hookup_live(int c) const	{ return _hookup_from[c].live(); }
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
-  
-    bool add_connection(Hookup, Hookup, const String &landmark = String());
+
+    bool add_connection(HookupI, HookupI, const String &landmark = String());
     bool add_connection(int fidx, int fport, int tport, int tidx);
     void kill_connection(int);
     void kill_bad_connections();
@@ -84,23 +93,23 @@ class RouterT { public:
     ArchiveElement &archive(const String &s);
     const ArchiveElement &archive(const String &s) const;
 
-    bool has_connection(const Hookup &, const Hookup &) const;
-    int find_connection(const Hookup &, const Hookup &) const;
-    void change_connection_to(int, Hookup);
-    void change_connection_from(int, Hookup);
-    bool find_connection_from(const Hookup &, Hookup &) const;
-    void find_connections_from(const Hookup &, Vector<Hookup> &) const;
-    void find_connections_from(const Hookup &, Vector<int> &) const;
-    void find_connections_to(const Hookup &, Vector<Hookup> &) const;
-    void find_connections_to(const Hookup &, Vector<int> &) const;
+    bool has_connection(const HookupI &, const HookupI &) const;
+    int find_connection(const HookupI &, const HookupI &) const;
+    void change_connection_to(int, HookupI);
+    void change_connection_from(int, HookupI);
+    bool find_connection_from(const HookupI &, HookupI &) const;
+    void find_connections_from(const HookupI &, Vector<HookupI> &) const;
+    void find_connections_from(const HookupI &, Vector<int> &) const;
+    void find_connections_to(const HookupI &, Vector<HookupI> &) const;
+    void find_connections_to(const HookupI &, Vector<int> &) const;
     void find_connection_vector_from(int, Vector<int> &) const;
     void find_connection_vector_to(int, Vector<int> &) const;
     void count_ports(Vector<int> &, Vector<int> &) const;
 
-    bool insert_before(const Hookup &, const Hookup &);
-    bool insert_after(const Hookup &, const Hookup &);
-    bool insert_before(int e, const Hookup &h)	{ return insert_before(Hookup(e, 0), h); }
-    bool insert_after(int e, const Hookup &h)	{ return insert_after(Hookup(e, 0), h); }
+    bool insert_before(const HookupI &, const HookupI &);
+    bool insert_after(const HookupI &, const HookupI &);
+    bool insert_before(int e, const HookupI &h)	{ return insert_before(HookupI(e, 0), h); }
+    bool insert_after(int e, const HookupI &h)	{ return insert_after(HookupI(e, 0), h); }
 
     void add_components_to(RouterT *, const String &prefix = String()) const;
 
@@ -150,13 +159,13 @@ class RouterT { public:
     Vector<ElementType> _etypes;
 
     StringMap _element_name_map;
-    Vector<ElementT> _elements;	// contains types
-    int _free_element;
+    Vector<ElementT *> _elements;
+    ElementT *_free_element;
     int _real_ecount;
     Vector<int> *_new_eindex_collector;
 
-    Vector<Hookup> _hookup_from;
-    Vector<Hookup> _hookup_to;
+    Vector<HookupI> _hookup_from;
+    Vector<HookupI> _hookup_to;
     Vector<String> _hookup_landmark;
     Vector<Pair> _hookup_next;
     Vector<Pair> _hookup_first;
@@ -168,6 +177,7 @@ class RouterT { public:
     Vector<ArchiveElement> _archive;
 
     RouterT(const RouterT &);
+    RouterT &operator=(const RouterT &);
     
     ElementClassT *get_type(const String &, int scope_cookie) const;
     void update_noutputs(int);
@@ -178,56 +188,115 @@ class RouterT { public:
     void unlink_connection_to(int ci);
     void finish_remove_elements(Vector<int> &, ErrorHandler *);
     void finish_free_elements(Vector<int> &);
-    void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
+    void expand_tunnel(Vector<HookupI> *port_expansions, const Vector<HookupI> &ports, bool is_output, int which, ErrorHandler *) const;
     String interpolate_arguments(const String &, const Vector<String> &) const;
 
 };
 
+class RouterT::iterator { public:
+    iterator(RouterT *r)		: _router(r), _idx(0) { }
+    operator bool() const		{ return _idx < _router->nelements(); }
+    int idx() const			{ return _idx; }
+    void operator++(int = 0)		{ _idx++; }
+    operator ElementT *() const		{ return _router->element(_idx); }
+    ElementT *operator->() const	{ return _router->element(_idx); }
+  private:
+    RouterT *_router;
+    int _idx;
+};
+
+class RouterT::live_iterator {
+    void step()	{ while (_idx < _router->nelements() && _router->element(_idx)->dead()) _idx++; }
+  public:
+    live_iterator(RouterT *r)		: _router(r), _idx(0) { step(); }
+    operator bool() const		{ return _idx < _router->nelements(); }
+    int idx() const			{ return _idx; }
+    void operator++(int = 0)		{ _idx++; step(); }
+    operator ElementT *() const		{ return _router->element(_idx); }
+    ElementT *operator->() const	{ return _router->element(_idx); }
+  public:
+    RouterT *_router;
+    int _idx;
+};
+
+class RouterT::type_iterator {
+    void step()	{ while (_idx < _router->nelements() && _router->element(_idx)->type() != _type) _idx++; }
+  public:
+    type_iterator(RouterT *r, ElementClassT *t)	: _router(r), _idx(0), _type(t) { step(); }
+    operator bool() const		{ return _idx < _router->nelements(); }
+    int idx() const			{ return _idx; }
+    void operator++(int = 0)		{ _idx++; step(); }
+    operator ElementT *() const		{ return _router->element(_idx); }
+    ElementT *operator->() const	{ return _router->element(_idx); }
+  public:
+    RouterT *_router;
+    int _idx;
+    ElementClassT *_type;
+};
+
+
+inline RouterT::iterator
+RouterT::first_element()
+{
+    return iterator(this);
+}
+
+inline RouterT::live_iterator
+RouterT::first_live_element()
+{
+    return live_iterator(this);
+}
+
+inline RouterT::type_iterator
+RouterT::first_element(ElementClassT *t)
+{
+    return type_iterator(this, t);
+}
 
 inline String
 RouterT::ename(int e) const
 {
-    return _elements[e].name;
+    return _elements[e]->name();
 }
 
 inline ElementClassT *
 RouterT::etype(int e) const
 {
-    return _elements[e].type();
+    return _elements[e]->type();
 }
 
 inline int
 RouterT::etype_uid(int e) const
 {
-    return _elements[e].type_uid();
+    return _elements[e]->type_uid();
 }
 
 inline String
 RouterT::etype_name(int e) const
 {
-    return _elements[e].type()->name();
+    return _elements[e]->type()->name();
 }
 
 inline String
 RouterT::edeclaration(int e) const
 {
-    return _elements[e].declaration();
+    return _elements[e]->declaration();
 }
 
 inline const String &
 RouterT::econfiguration(int e) const
 {
-    return _elements[e].configuration();
+    return _elements[e]->configuration();
 }
 
 inline bool
 RouterT::add_connection(int fidx, int fport, int tport, int tidx)
 {
-    return add_connection(Hookup(fidx, fport), Hookup(tidx, tport));
+    return add_connection(HookupI(fidx, fport), HookupI(tidx, tport));
 }
 
 inline bool
-RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
+RouterT::has_connection(const HookupI &hfrom, const HookupI &hto) const
 {
     return find_connection(hfrom, hto) >= 0;
 }

@@ -431,24 +431,8 @@ deactivate(OutputItem &item, int &first_active, int ipos)
 }
 
 static void
-pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
+output_config(String r_config, FILE *outf)
 {
-    String r_config;
-    RouterT *r = pretty_read_router(infile, errh, r_config);
-    if (!r)
-	return;
-
-    // open output file
-    FILE *outf = stdout;
-    if (outfile && strcmp(outfile, "-") != 0) {
-	outf = fopen(outfile, "w");
-	if (!outf) {
-	    errh->error("%s: %s", outfile, strerror(errno));
-	    delete r;
-	    return;
-	}
-    }
-
     // create two sorted lists of objects
     // add sentinel item, sort item lists
     prepare_items(r_config.length());
@@ -459,9 +443,6 @@ pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
     int ipos = 0, eipos = 0;
     int first_active = items.size();
 
-    if (html_boilerplate)
-	fputs(html_header, outf);
-    
     fputs("<pre>", outf);
     for (int pos = 0; pos < len; pos++) {
 	while (items[ipos].pos <= pos || end_items[eipos].pos <= pos)
@@ -513,7 +494,39 @@ pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
 	}
     }
     fputs("</pre>\n", outf);
+}
 
+static void
+output_element_connections(ElementT *e, RouterT *r, FILE *outf)
+{
+    
+}
+
+static void
+pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
+{
+    String r_config;
+    RouterT *r = pretty_read_router(infile, errh, r_config);
+    if (!r)
+	return;
+
+    // open output file
+    FILE *outf = stdout;
+    if (outfile && strcmp(outfile, "-") != 0) {
+	outf = fopen(outfile, "w");
+	if (!outf) {
+	    errh->error("%s: %s", outfile, strerror(errno));
+	    delete r;
+	    return;
+	}
+    }
+
+    if (html_boilerplate)
+	fputs(html_header, outf);
+
+    // output configuration
+    output_config(r_config, outf);
+    
     if (html_boilerplate)
 	fputs(html_footer, outf);
     
@@ -541,7 +554,7 @@ main(int argc, char **argv)
     const char *router_file = 0;
     const char *output_file = 0;
     bool output = false;
-  
+
     while (1) {
 	int opt = Clp_Next(clp);
 	switch (opt) {

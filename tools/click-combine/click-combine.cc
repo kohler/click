@@ -92,11 +92,11 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static Vector<String> router_names;
 static Vector<RouterT *> routers;
-static Vector<Hookup> links_from;
-static Vector<Hookup> links_to;
+static Vector<HookupI> links_from;
+static Vector<HookupI> links_to;
 static Vector<int> link_id;
-static Vector<Hookup> link_port_from;
-static Vector<Hookup> link_port_to;
+static Vector<HookupI> link_port_from;
+static Vector<HookupI> link_port_to;
 
 static void
 read_router(String name, String &next_name, int &next_number,
@@ -145,10 +145,10 @@ try_find_device(String devname, String class1, String class2,
   ElementClassT *t2 = r->try_type(class2);
   int found = -1;
   for (int i = 0; i < r->nelements(); i++) {
-    const ElementT &e = r->element(i);
-    if (e.live() && (e.type() == t1 || e.type() == t2)) {
+    const ElementT *e = r->element(i);
+    if (e->live() && (e->type() == t1 || e->type() == t2)) {
       Vector<String> words;
-      cp_argvec(e.configuration(), words);
+      cp_argvec(e->configuration(), words);
       if (words.size() >= 1 && words[0] == devname) {
 	// found it, but check for duplication
 	if (found >= 0) {
@@ -226,21 +226,21 @@ parse_link(String text, ErrorHandler *errh)
   }
   
   // append link definition
-  links_from.push_back(Hookup(router1, element1));
-  links_to.push_back(Hookup(router2, element2));
+  links_from.push_back(HookupI(router1, element1));
+  links_to.push_back(HookupI(router2, element2));
   return -1;
 }
 
 static void
-frob_nested_routerlink(ElementT &e)
+frob_nested_routerlink(ElementT *e)
 {
-  String prefix = e.name.substring(0, e.name.find_left('/') + 1);
+  String prefix = e->name().substring(0, e->name().find_left('/') + 1);
   assert(prefix.length() > 1 && prefix.back() == '/');
   Vector<String> words;
-  cp_argvec(e.configuration(), words);
+  cp_argvec(e->configuration(), words);
   for (int i = 0; i < words.size(); i += 2)
     words[i] = prefix + words[i];
-  e.configuration() = cp_unargvec(words);
+  e->configuration() = cp_unargvec(words);
 }
 
 static int
@@ -251,7 +251,7 @@ combine_links(ErrorHandler *errh)
   for (int i = 1; i < links_from.size(); i++)
     for (int j = 0; j < i; j++)
       if (links_from[i] == links_to[j] || links_from[j] == links_to[i]) {
-	const Hookup &h = links_from[i];
+	const HookupI &h = links_from[i];
 	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.idx].cc(), routers[h.idx]->ename(h.port).cc());
       }
   if (errh->nerrors() != before)
@@ -277,12 +277,12 @@ combine_links(ErrorHandler *errh)
 }
 
 static void
-make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
+make_link(const Vector<HookupI> &from, const Vector<HookupI> &to,
 	  RouterT *combined)
 {
   static int linkno = 0;
   
-  Vector<Hookup> all(from);
+  Vector<HookupI> all(from);
   for (int i = 0; i < to.size(); i++)
     all.push_back(to[i]);
 
@@ -304,11 +304,11 @@ make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
     ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
   for (int i = 0; i < from.size(); i++) {
-    combined->insert_before(Hookup(newe, i), Hookup(combes[i], 0));
+    combined->insert_before(HookupI(newe, i), HookupI(combes[i], 0));
     combined->free_element(combes[i]);
   }
   for (int j = from.size(); j < combes.size(); j++) {
-    combined->insert_after(Hookup(newe, j-from.size()), Hookup(combes[j], 0));
+    combined->insert_after(HookupI(newe, j-from.size()), HookupI(combes[j], 0));
     combined->free_element(combes[j]);
   }
 }
@@ -320,7 +320,7 @@ add_links(RouterT *r)
   for (int i = 0; i < links_from.size(); i++)
     if (!done[link_id[i]]) {
       // find all input & output ports
-      Vector<Hookup> from, to;
+      Vector<HookupI> from, to;
       for (int j = 0; j < links_from.size(); j++)
 	if (link_id[j] == link_id[i]) {
 	  if (links_from[j].index_in(from) < 0)

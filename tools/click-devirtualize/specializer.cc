@@ -34,8 +34,8 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
 {
   _etinfo.push_back(ElementTypeInfo());
   
-  const Vector<Hookup> &hf = router->hookup_from();
-  const Vector<Hookup> &ht = router->hookup_to();
+  const Vector<HookupI> &hf = router->hookup_from();
+  const Vector<HookupI> &ht = router->hookup_to();
   for (int i = 0; i < hf.size(); i++) {
     if (hf[i].port >= _noutputs[hf[i].idx])
       _noutputs[hf[i].idx] = hf[i].port + 1;
@@ -340,8 +340,8 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   CxxClass *cxxc = spc.cxxc;
   
   // create mangled names of attached push and pull functions
-  const Vector<Hookup> &hf = _router->hookup_from();
-  const Vector<Hookup> &ht = _router->hookup_to();
+  const Vector<HookupI> &hf = _router->hookup_from();
+  const Vector<HookupI> &ht = _router->hookup_to();
   int nhook = _router->nhookup();
   Vector<String> input_class(_ninputs[eindex], String());
   Vector<String> output_class(_noutputs[eindex], String());
@@ -450,7 +450,7 @@ Specializer::fix_elements()
   for (int i = 0; i < _nelements; i++) {
     SpecializedClass &spc = _specials[ _specialize[i] ];
     if (spc.special())
-      _router->element(i).set_type(_router->get_type(spc.click_name));
+      _router->element(i)->set_type(_router->get_type(spc.click_name));
   }
 }
 

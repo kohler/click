@@ -5,17 +5,20 @@
 
 struct ElementT {
     
-    String name;
     int flags;
 
     ElementT();
     ElementT(const String &, ElementClassT *, const String &, const String & = String());
-    ElementT(const ElementT &);
     ~ElementT();
 
+    int idx() const			{ return _idx; }
+    
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
     void kill();
+
+    const String &name() const		{ return _name; }
+    const char *name_cc() const		{ return _name.cc(); }
     
     ElementClassT *type() const		{ return _type; }
     String type_name() const		{ return _type->name(); }
@@ -35,46 +38,49 @@ struct ElementT {
     
     bool tunnel() const		{ return _type==ElementClassT::tunnel_type(); }
     bool tunnel_connected() const;
-    int tunnel_input() const		{ return _tunnel_input; }
-    int tunnel_output() const		{ return _tunnel_output; }
+    ElementT *tunnel_input() const	{ return _tunnel_input; }
+    ElementT *tunnel_output() const	{ return _tunnel_output; }
 
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
     String declaration() const;
     
-    ElementT &operator=(const ElementT &);
-
   private:
 
+    mutable String _name;		// mutable for cc()
+    int _idx;
     ElementClassT *_type;
     String _configuration;
     String _landmark;
     int _ninputs;
     int _noutputs;
-    int _tunnel_input;
-    int _tunnel_output;
+    ElementT *_tunnel_input;
+    ElementT *_tunnel_output;
+
+    ElementT(const ElementT &);
+    ElementT &operator=(const ElementT &);
 
     friend class RouterT;
     
 };
 
-struct Hookup {
+struct HookupI {
   
     int idx;
     int port;
 
-    Hookup()				: idx(-1) { }
-    Hookup(int i, int p)		: idx(i), port(p) { }
+    HookupI()				: idx(-1) { }
+    HookupI(int i, int p)		: idx(i), port(p) { }
 
     bool live() const			{ return idx >= 0; }
     bool dead() const			{ return idx < 0; }
 
-    int index_in(const Vector<Hookup> &, int start = 0) const;
-    int force_index_in(Vector<Hookup> &, int start = 0) const;
+    int index_in(const Vector<HookupI> &, int start = 0) const;
+    int force_index_in(Vector<HookupI> &, int start = 0) const;
 
     static int sorter(const void *, const void *);
-    static void sort(Vector<Hookup> &);
+    static void sort(Vector<HookupI> &);
 
 };
 
@@ -101,47 +107,47 @@ inline String
 ElementT::declaration() const
 {
     assert(_type);
-    return name + " :: " + _type->name();
+    return _name + " :: " + _type->name();
 }
 
 inline bool
 ElementT::tunnel_connected() const
 {
-    return _tunnel_input >= 0 || _tunnel_output >= 0;
+    return _tunnel_input || _tunnel_output;
 }
 
 inline bool
-operator==(const Hookup &h1, const Hookup &h2)
+operator==(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx == h2.idx && h1.port == h2.port;
 }
 
 inline bool
-operator!=(const Hookup &h1, const Hookup &h2)
+operator!=(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx != h2.idx || h1.port != h2.port;
 }
 
 inline bool
-operator<(const Hookup &h1, const Hookup &h2)
+operator<(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx < h2.idx || (h1.idx == h2.idx && h1.port < h2.port);
 }
 
 inline bool
-operator>(const Hookup &h1, const Hookup &h2)
+operator>(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx > h2.idx || (h1.idx == h2.idx && h1.port > h2.port);
 }
 
 inline bool
-operator<=(const Hookup &h1, const Hookup &h2)
+operator<=(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx < h2.idx || (h1.idx == h2.idx && h1.port <= h2.port);
 }
 
 inline bool
-operator>=(const Hookup &h1, const Hookup &h2)
+operator>=(const HookupI &h1, const HookupI &h2)
 {
     return h1.idx > h2.idx || (h1.idx == h2.idx && h1.port >= h2.port);
 }

@@ -48,18 +48,18 @@ class Matcher {
   Vector<int> _back_match;
   HashMap<String, String> _defs;
 
-  Vector<Hookup> _to_pp_from;
-  Vector<Hookup> _to_pp_to;
-  Vector<Hookup> _from_pp_from;
-  Vector<Hookup> _from_pp_to;
+  Vector<HookupI> _to_pp_from;
+  Vector<HookupI> _to_pp_to;
+  Vector<HookupI> _from_pp_from;
+  Vector<HookupI> _from_pp_to;
 
  public:
 
   Matcher(RouterT *, AdjacencyMatrix *, RouterT *, AdjacencyMatrix *, int, ErrorHandler *);
   ~Matcher();
 
-  bool check_into(const Hookup &, const Hookup &);
-  bool check_out_of(const Hookup &, const Hookup &);
+  bool check_into(const HookupI &, const HookupI &);
+  bool check_out_of(const HookupI &, const HookupI &);
 
   bool check_match();
   bool next_match();
@@ -78,17 +78,17 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
 {
   // check tunnel situation
   for (int i = 0; i < _pat->nelements(); i++) {
-    ElementT &fac = _pat->element(i);
+    ElementT &fac = *(_pat->element(i));
     if (!fac.tunnel())
       continue;
     else if (fac.tunnel_connected())
       errh->lerror(fac.landmark(), "pattern has active connection tunnels");
-    else if (fac.name == "input" && _pat_input_idx < 0)
+    else if (fac.name() == "input" && _pat_input_idx < 0)
       _pat_input_idx = i;
-    else if (fac.name == "output" && _pat_output_idx < 0)
+    else if (fac.name() == "output" && _pat_output_idx < 0)
       _pat_output_idx = i;
     else
-      errh->lerror(fac.landmark(), "connection tunnel with funny name `%s'", fac.name.cc());
+      errh->lerror(fac.landmark(), "connection tunnel with funny name `%s'", fac.name_cc());
   }
 }
 
@@ -97,23 +97,23 @@ Matcher::~Matcher()
 }
 
 bool
-Matcher::check_into(const Hookup &houtside, const Hookup &hinside)
+Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
 {
-  const Vector<Hookup> &phf = _pat->hookup_from();
-  const Vector<Hookup> &pht = _pat->hookup_to();
-  Hookup phinside(_back_match[hinside.idx], hinside.port);
-  Hookup success(_pat->nelements(), 0);
+  const Vector<HookupI> &phf = _pat->hookup_from();
+  const Vector<HookupI> &pht = _pat->hookup_to();
+  HookupI phinside(_back_match[hinside.idx], hinside.port);
+  HookupI success(_pat->nelements(), 0);
   // now look for matches
   for (int i = 0; i < phf.size(); i++)
     if (pht[i] == phinside && phf[i].idx == _pat_input_idx
 	&& phf[i] < success) {
-      Vector<Hookup> pfrom_phf, from_houtside;
+      Vector<HookupI> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
       // in body
       _pat->find_connections_from(phf[i], pfrom_phf);
       _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
-	Hookup want(_match[pfrom_phf[j].idx], pfrom_phf[j].port);
+	HookupI want(_match[pfrom_phf[j].idx], pfrom_phf[j].port);
 	if (want.index_in(from_houtside) < 0)
 	  goto no_match;
       }
@@ -131,23 +131,23 @@ Matcher::check_into(const Hookup &houtside, const Hookup &hinside)
 }
 
 bool
-Matcher::check_out_of(const Hookup &hinside, const Hookup &houtside)
+Matcher::check_out_of(const HookupI &hinside, const HookupI &houtside)
 {
-  const Vector<Hookup> &phf = _pat->hookup_from();
-  const Vector<Hookup> &pht = _pat->hookup_to();
-  Hookup phinside(_back_match[hinside.idx], hinside.port);
-  Hookup success(_pat->nelements(), 0);
+  const Vector<HookupI> &phf = _pat->hookup_from();
+  const Vector<HookupI> &pht = _pat->hookup_to();
+  HookupI phinside(_back_match[hinside.idx], hinside.port);
+  HookupI success(_pat->nelements(), 0);
   // now look for matches
   for (int i = 0; i < phf.size(); i++)
     if (phf[i] == phinside && pht[i].idx == _pat_output_idx
 	&& pht[i] < success) {
-      Vector<Hookup> pto_pht, to_houtside;
+      Vector<HookupI> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
       // in body
       _pat->find_connections_to(pht[i], pto_pht);
       _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
-	Hookup want(_match[pto_pht[j].idx], pto_pht[j].port);
+	HookupI want(_match[pto_pht[j].idx], pto_pht[j].port);
 	if (want.index_in(to_houtside) < 0)
 	  goto no_match;
       }
@@ -199,17 +199,17 @@ Matcher::check_match()
 
   // find the pattern ports any cross-pattern jumps correspond to
   //fprintf(stderr, "XPJ\n");
-  const Vector<Hookup> &hfrom = _body->hookup_from();
-  const Vector<Hookup> &hto = _body->hookup_to();
+  const Vector<HookupI> &hfrom = _body->hookup_from();
+  const Vector<HookupI> &hto = _body->hookup_to();
   int nhook = hfrom.size();
 
   for (int i = 0; i < nhook; i++) {
-    const Hookup &hf = hfrom[i], &ht = hto[i];
+    const HookupI &hf = hfrom[i], &ht = hto[i];
     if (hf.idx < 0)
       continue;
     int pf = _back_match[hf.idx], pt = _back_match[ht.idx];
     if (pf >= 0 && pt >= 0) {
-      if (!_pat->has_connection(Hookup(pf, hf.port), Hookup(pt, ht.port)))
+      if (!_pat->has_connection(HookupI(pf, hf.port), HookupI(pt, ht.port)))
 	return false;
     } else if (pf < 0 && pt >= 0) {
       if (!check_into(hf, ht))
@@ -222,8 +222,8 @@ Matcher::check_match()
 
   // check for unconnected tunnels in the pattern
   //fprintf(stderr, "UNC\n");
-  const Vector<Hookup> &phf = _pat->hookup_from();
-  const Vector<Hookup> &pht = _pat->hookup_to();
+  const Vector<HookupI> &phf = _pat->hookup_from();
+  const Vector<HookupI> &pht = _pat->hookup_to();
   for (int i = 0; i < phf.size(); i++) {
     if (phf[i].idx == _pat_input_idx && phf[i].index_in(_to_pp_to) < 0)
       return false;
@@ -330,9 +330,9 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // mark replacement
   for (int i = 0; i < changed_elements.size(); i++) {
     int j = changed_elements[i];
-    if (_body->element(j).dead())
+    if (_body->element(j)->dead())
       continue;
-    _body->element(j).flags = _patid;
+    _body->element(j)->flags = _patid;
     replace_config(_body->econfiguration(j));
   }
 
@@ -349,10 +349,10 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // find input and output, add connections to tunnels
   int new_pp = _body->eindex(prefix);
   for (int i = 0; i < _to_pp_from.size(); i++)
-    _body->add_connection(_to_pp_from[i], Hookup(new_pp, _to_pp_to[i].port),
+    _body->add_connection(_to_pp_from[i], HookupI(new_pp, _to_pp_to[i].port),
 			  landmark);
   for (int i = 0; i < _from_pp_from.size(); i++)
-    _body->add_connection(Hookup(new_pp, _from_pp_from[i].port),
+    _body->add_connection(HookupI(new_pp, _from_pp_from[i].port),
 			  _from_pp_to[i], landmark);
   
   // cleanup
@@ -609,7 +609,7 @@ particular purpose.\n");
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
-    r->element(i).flags = 0;
+    r->element(i)->flags = 0;
 
   // get adjacency matrices
   Vector<AdjacencyMatrix *> patterns_adj;

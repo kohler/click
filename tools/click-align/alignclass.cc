@@ -158,7 +158,7 @@ AlignClass::AlignClass(const String &name, Aligner *a)
 }
 
 Aligner *
-AlignClass::create_aligner(ElementT &, RouterT *, ErrorHandler *)
+AlignClass::create_aligner(ElementT *, RouterT *, ErrorHandler *)
 {
   return _aligner;
 }
@@ -179,11 +179,11 @@ StripAlignClass::StripAlignClass()
 }
 
 Aligner *
-StripAlignClass::create_aligner(ElementT &e, RouterT *, ErrorHandler *errh)
+StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int m;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e.declaration() + "':");
-  if (cp_va_parse(e.configuration(), &cerrh,
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
+  if (cp_va_parse(e->configuration(), &cerrh,
 		  cpInteger, "amount to strip", &m,
 		  0) < 0)
     return default_aligner();
@@ -197,14 +197,14 @@ CheckIPHeaderAlignClass::CheckIPHeaderAlignClass(const String &name, int argno)
 }
 
 Aligner *
-CheckIPHeaderAlignClass::create_aligner(ElementT &e, RouterT *, ErrorHandler *errh)
+CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   unsigned offset = 0;
   Vector<String> args;
-  cp_argvec(e.configuration(), args);
+  cp_argvec(e->configuration(), args);
   if (args.size() > _argno) {
     if (!cp_unsigned(args[_argno], &offset)) {
-      ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e.declaration() + "':");
+      ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
       cerrh.error("argument %d should be IP header offset (unsigned)", _argno + 1);
       return default_aligner();
     }
@@ -219,11 +219,11 @@ AlignAlignClass::AlignAlignClass()
 }
 
 Aligner *
-AlignAlignClass::create_aligner(ElementT &e, RouterT *, ErrorHandler *errh)
+AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int offset, chunk;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e.declaration() + "':");
-  if (cp_va_parse(e.configuration(), &cerrh,
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
+  if (cp_va_parse(e->configuration(), &cerrh,
 		  cpUnsigned, "alignment modulus", &chunk,
 		  cpUnsigned, "alignment offset", &offset,
 		  0) < 0)

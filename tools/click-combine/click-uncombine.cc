@@ -104,8 +104,8 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     String link_name = r->ename(links[i]);
     Vector<String> words;
     cp_argvec(r->econfiguration(links[i]), words);
-    int ninputs = r->eninputs(links[i]);
-    int noutputs = r->enoutputs(links[i]);
+    int ninputs = r->e(links[i])->ninputs();
+    int noutputs = r->e(links[i])->noutputs();
     if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
       errh->error("RouterLink `%s' has strange configuration", link_name.cc());
       continue;
@@ -141,9 +141,9 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       } else if (clauses[0] == component) {
 	int newe = r->get_eindex(clauses[1], r->get_type(clauses[2]), words[j+1], "<click-uncombine>");
 	if (j/2 < ninputs)
-	  r->insert_before(newe, Hookup(links[i], j/2));
+	  r->insert_before(newe, HookupI(links[i], j/2));
 	else
-	  r->insert_after(newe, Hookup(links[i], j/2 - ninputs));
+	  r->insert_after(newe, HookupI(links[i], j/2 - ninputs));
 	component_endpoints.push_back(newe);
       }
     }
@@ -160,8 +160,8 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   
   int ne = r->nelements();
   int nh = r->nhookup();
-  const Vector<Hookup> &hf = r->hookup_from();
-  const Vector<Hookup> &ht = r->hookup_to();
+  const Vector<HookupI> &hf = r->hookup_from();
+  const Vector<HookupI> &ht = r->hookup_to();
   
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
@@ -244,7 +244,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   // remove everything not part of the component
   for (int i = 0; i < r->nelements(); i++)
     if (!live[i] && r->elive(i))
-      r->kill_element(i);
+      r->element(i)->kill();
   r->free_dead_elements();
 
   // rename component

@@ -108,8 +108,8 @@ ElementClassT::direct_expand_element(
 	RouterT *fromr, int which, RouterT *tor,
 	const VariableEnvironment &env, ErrorHandler *errh)
 {
-    ElementT &e = fromr->element(which);
-    String new_name = env.prefix() + e.name;
+    ElementT &e = *(fromr->element(which));
+    String new_name = env.prefix() + e.name();
     String new_configuration = env.interpolate(e.configuration());
 
     // check for tunnel
@@ -119,9 +119,9 @@ ElementClassT::direct_expand_element(
 	if (fromr == tor && !env.prefix())
 	    return which;
 	// make the tunnel or tunnel pair
-	if (e.tunnel_connected()) {
+	if (e.tunnel_output()) {
 	    tor->add_tunnel(new_name,
-			    env.prefix() + fromr->ename(e.tunnel_output()),
+			    env.prefix() + e.tunnel_output()->name(),
 			    e.landmark(), errh);
 	    return tor->eindex(new_name);
 	} else
@@ -160,8 +160,8 @@ ElementClassT::expand_element(
 	return c->direct_expand_element(fromr, which, tor, env, errh);
 
     // if not direct expansion, do some more work
-    int inputs_used = fromr->element(which).ninputs();
-    int outputs_used = fromr->element(which).noutputs();
+    int inputs_used = fromr->element(which)->ninputs();
+    int outputs_used = fromr->element(which)->noutputs();
 
     Vector<String> args;
     String new_configuration = env.interpolate(fromr->econfiguration(which));
@@ -174,7 +174,7 @@ ElementClassT::expand_element(
 	ContextErrorHandler cerrh(errh, "possibilities are:", "  ");
 	c->report_signatures(lm, name, &cerrh);
 	if (fromr == tor)
-	    tor->kill_element(which);
+	    tor->element(which)->kill();
 	return -1;
     }
 
@@ -290,8 +290,8 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 
     int einput = _router->eindex("input");
     if (einput >= 0) {
-	_ninputs = _router->element(einput).noutputs();
-	if (_router->element(einput).ninputs())
+	_ninputs = _router->element(einput)->noutputs();
+	if (_router->element(einput)->ninputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", name_cc());
 
 	if (_ninputs) {
@@ -307,8 +307,8 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 
     int eoutput = _router->eindex("output");
     if (eoutput >= 0) {
-	_noutputs = _router->element(eoutput).ninputs();
-	if (_router->element(eoutput).noutputs())
+	_noutputs = _router->element(eoutput)->ninputs();
+	if (_router->element(eoutput)->noutputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", name_cc());
 
 	if (_noutputs) {
@@ -397,9 +397,7 @@ CompoundElementClassT::complex_expand_element(
     assert(!_circularity_flag);
     _circularity_flag = true;
 
-    // must make a copy of `compound' because we might be growing the
-    // _elements vector, in which case our reference would die
-    ElementT compound = fromr->element(which);
+    ElementT &compound = *(fromr->element(which));
 
     // parse configuration string
     int nargs = _formals.size();
@@ -419,8 +417,8 @@ CompoundElementClassT::complex_expand_element(
     }
 
     // create prefix
-    assert(compound.name);
-    VariableEnvironment new_env(env, compound.name);
+    assert(compound.name());
+    VariableEnvironment new_env(env, compound.name());
     String prefix = env.prefix();
     String new_prefix = new_env.prefix(); // includes previous prefix
     new_env.limit_depth(_depth);
@@ -428,10 +426,10 @@ CompoundElementClassT::complex_expand_element(
 
     // create input/output tunnels
     if (fromr == tor)
-	tor->element(which).set_type(tunnel_type());
-    tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark(), errh);
-    tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark(), errh);
-    int new_eindex = tor->eindex(prefix + compound.name);
+	tor->element(which)->set_type(tunnel_type());
+    tor->add_tunnel(prefix + compound.name(), new_prefix + "input", compound.landmark(), errh);
+    tor->add_tunnel(new_prefix + "output", prefix + compound.name(), compound.landmark(), errh);
+    int new_eindex = tor->eindex(prefix + compound.name());
 
     // dump compound router into `tor'
     _router->expand_into(tor, new_env, errh);

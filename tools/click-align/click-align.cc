@@ -141,8 +141,8 @@ RouterAlign::have_output()
 bool
 RouterAlign::have_input()
 {
-  const Vector<Hookup> &hf = _router->hookup_from();
-  const Vector<Hookup> &ht = _router->hookup_to();
+  const Vector<HookupI> &hf = _router->hookup_from();
+  const Vector<HookupI> &ht = _router->hookup_to();
   int nh = hf.size();
   int nialign = _ialign.size();
 
@@ -175,8 +175,8 @@ RouterAlign::want_input()
 bool
 RouterAlign::want_output()
 {
-  const Vector<Hookup> &hf = _router->hookup_from();
-  const Vector<Hookup> &ht = _router->hookup_to();
+  const Vector<HookupI> &hf = _router->hookup_from();
+  const Vector<HookupI> &ht = _router->hookup_to();
   int nh = hf.size();
   int noalign = _oalign.size();
 
@@ -442,7 +442,7 @@ particular purpose.\n");
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(ei, Hookup(i, j));
+	  router->insert_before(ei, HookupI(i, j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -451,15 +451,15 @@ particular purpose.\n");
 
   // remove useless Aligns
   {
-    const Vector<Hookup> &hf = router->hookup_from();
-    const Vector<Hookup> &ht = router->hookup_to();
+    const Vector<HookupI> &hf = router->hookup_from();
+    const Vector<HookupI> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
       if (hf[i].idx >= 0
 	  && router->etype(ht[i].idx) == align_class
 	  && router->etype(hf[i].idx) == align_class) {
 	// skip over hf[i]
-	Vector<Hookup> above, below;
+	Vector<HookupI> above, below;
 	router->find_connections_to(hf[i], above);
 	router->find_connections_from(hf[i], below);
 	if (below.size() == 1) {
@@ -500,7 +500,7 @@ particular purpose.\n");
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(ei, Hookup(i, j));
+	  router->insert_before(ei, HookupI(i, j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -517,8 +517,8 @@ particular purpose.\n");
     bool changed = false;
     
     // skip redundant Aligns
-    const Vector<Hookup> &hf = router->hookup_from();
-    const Vector<Hookup> &ht = router->hookup_to();
+    const Vector<HookupI> &hf = router->hookup_from();
+    const Vector<HookupI> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
       if (hf[i].idx >= 0 && router->etype(ht[i].idx) == align_class) {
@@ -526,7 +526,7 @@ particular purpose.\n");
 	Alignment want = ral._oalign[ ral._ooffset[ht[i].idx] ];
 	if (have <= want) {
 	  changed = true;
-	  Vector<Hookup> align_dest;
+	  Vector<HookupI> align_dest;
 	  router->find_connections_from(ht[i], align_dest);
 	  for (int j = 0; j < align_dest.size(); j++)
 	    router->add_connection(hf[i], align_dest[j]);
@@ -548,10 +548,10 @@ particular purpose.\n");
     for (int i = 0; i < nelem; i++)
       if (router->etype(i) == align_class
 	  && (ninputs[i] == 0 || noutputs[i] == 0)) {
-	router->kill_element(i);
+	router->element(i)->kill();
 	num_aligns_added--;
       } else if (router->etype(i) == aligninfo_class)
-	router->kill_element(i);
+	router->element(i)->kill();
     router->remove_dead_elements();
   }
   

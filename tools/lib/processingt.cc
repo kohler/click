@@ -54,15 +54,15 @@ ProcessingT::create_pidx(ErrorHandler *errh)
 
     // count used input and output ports for each element
     int nh = _router->nhookup();
-    const Vector<Hookup> &hf = _router->hookup_from();
-    const Vector<Hookup> &ht = _router->hookup_to();
+    const Vector<HookupI> &hf = _router->hookup_from();
+    const Vector<HookupI> &ht = _router->hookup_to();
     for (int i = 0; i < nh; i++) {
-	const Hookup &ho = hf[i];
+	const HookupI &ho = hf[i];
 	if (ho.idx < 0)
 	    continue;
 	if (ho.port >= _output_pidx[ho.idx])
 	    _output_pidx[ho.idx] = ho.port + 1;
-	const Hookup &hi = ht[i];
+	const HookupI &hi = ht[i];
 	if (hi.port >= _input_pidx[hi.idx])
 	    _input_pidx[hi.idx] = hi.port + 1;
     }
@@ -188,7 +188,7 @@ ProcessingT::initial_processing(ErrorHandler *errh)
 }
 
 void
-ProcessingT::processing_error(const Hookup &hfrom, const Hookup &hto,
+ProcessingT::processing_error(const HookupI &hfrom, const HookupI &hto,
 			      int which, int processing_from,
 			      ErrorHandler *errh)
 {
@@ -210,8 +210,8 @@ void
 ProcessingT::check_processing(ErrorHandler *errh)
 {
   // add fake connections for agnostics
-  Vector<Hookup> hookup_from = _router->hookup_from();
-  Vector<Hookup> hookup_to = _router->hookup_to();
+  Vector<HookupI> hookup_from = _router->hookup_from();
+  Vector<HookupI> hookup_to = _router->hookup_to();
   Bitvector bv;
   for (int i = 0; i < ninput_pidx(); i++)
     if (_input_processing[i] == VAGNOSTIC) {
@@ -223,8 +223,8 @@ ProcessingT::check_processing(ErrorHandler *errh)
 		   port, noutputs, &bv);
       for (int j = 0; j < noutputs; j++)
 	if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC) {
-	  hookup_from.push_back(Hookup(ei, j));
-	  hookup_to.push_back(Hookup(ei, port));
+	  hookup_from.push_back(HookupI(ei, j));
+	  hookup_to.push_back(HookupI(ei, port));
 	}
     }
   
@@ -288,8 +288,8 @@ ProcessingT::check_connections(ErrorHandler *errh)
   Vector<int> output_used(noutput_pidx(), -1);
   
   // Check each hookup to ensure it doesn't reuse a port
-  const Vector<Hookup> &hf = _router->hookup_from();
-  const Vector<Hookup> &ht = _router->hookup_to();
+  const Vector<HookupI> &hf = _router->hookup_from();
+  const Vector<HookupI> &ht = _router->hookup_to();
   for (int c = 0; c < hf.size(); c++) {
     if (hf[c].idx < 0)
       continue;
@@ -339,7 +339,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
     }
 
   // Set _connected_* properly.
-  Hookup crap(-1, -1);
+  HookupI crap(-1, -1);
   _connected_input.assign(ninput_pidx(), crap);
   _connected_output.assign(noutput_pidx(), crap);
   for (int i = 0; i < ninput_pidx(); i++)

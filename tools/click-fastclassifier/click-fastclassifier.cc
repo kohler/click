@@ -161,10 +161,10 @@ combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
   // change connections
   router->kill_connection(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
-    router->change_connection_from(first_hop[i], Hookup(from_i, i + to_words.size() - 1));
-  const Vector<Hookup> &ht = router->hookup_to();
+    router->change_connection_from(first_hop[i], HookupI(from_i, i + to_words.size() - 1));
+  const Vector<HookupI> &ht = router->hookup_to();
   for (int i = 0; i < second_hop.size(); i++)
-    router->add_connection(Hookup(from_i, from_port + i), ht[second_hop[i]]);
+    router->add_connection(HookupI(from_i, from_port + i), ht[second_hop[i]]);
 
   return true;
 }
@@ -177,8 +177,8 @@ try_combine_classifiers(RouterT *router, int class_i)
     // cannot combine IPClassifiers yet
     return false;
 
-  const Vector<Hookup> &hf = router->hookup_from();
-  const Vector<Hookup> &ht = router->hookup_to();
+  const Vector<HookupI> &hf = router->hookup_from();
+  const Vector<HookupI> &ht = router->hookup_to();
   for (int i = 0; i < hf.size(); i++)
     if (hf[i].idx == class_i && router->etype(ht[i].idx) == classifier_t
 	&& ht[i].port == 0) {
@@ -196,10 +196,10 @@ static void
 try_remove_classifiers(RouterT *router, Vector<int> &classifiers)
 {
   for (int i = 0; i < classifiers.size(); i++) {
-    Vector<Hookup> v;
-    router->find_connections_to(Hookup(classifiers[i], 0), v);
+    Vector<HookupI> v;
+    router->find_connections_to(HookupI(classifiers[i], 0), v);
     if (v.size() == 0) {
-      router->kill_element(classifiers[i]);
+      router->element(classifiers[i])->kill();
       classifiers[i] = classifiers.back();
       classifiers.pop_back();
       i--;
@@ -365,14 +365,13 @@ static Vector<int> program_map;
 static Vector<Classifier_Program> all_programs;
 
 static void
-change_landmark(ElementT &classifier_e)
+change_landmark(ElementT *e)
 {
-  int colon = classifier_e.landmark().find_right(':');
+  int colon = e->landmark().find_right(':');
   if (colon >= 0)
-    classifier_e.set_landmark(classifier_e.landmark().substring(0, colon)
-      + "<click-fastclassifier>" + classifier_e.landmark().substring(colon));
+    e->set_landmark(e->landmark().substring(0, colon) + "<click-fastclassifier>" + e->landmark().substring(colon));
   else
-    classifier_e.set_landmark(classifier_e.landmark() + "<click-fastclassifier>");
+    e->set_landmark(e->landmark() + "<click-fastclassifier>");
 }
 
 static void
@@ -415,7 +414,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
   
     nr.add_connection(idle_nei, i, 0, classifier_nei);
     // count number of output ports
-    int noutputs = r->enoutputs(c);
+    int noutputs = r->e(c)->noutputs();
     for (int j = 0; j < noutputs; j++)
       nr.add_connection(classifier_nei, j, 0, idle_nei);
 
@@ -509,7 +508,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
     assert(c.type >= 0);
     
     c.safe_length = c.output_everything = c.align_offset = -1;
-    c.noutputs = r->enoutputs(cei);
+    c.noutputs = r->e(cei)->noutputs();
     while (program) {
       // find step
       int newline = program.find_left('\n');
@@ -661,10 +660,10 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // change element landmarks and types
   for (int i = 0; i < classifiers.size(); i++) {
-    ElementT &classifier_e = r->element(classifiers[i]);
+    ElementT *classifier_e = r->element(classifiers[i]);
     const Classifier_Program &c = all_programs[program_map[i]];
-    classifier_e.set_type(c.eclass);
-    classifier_e.set_configuration(String());
+    classifier_e->set_type(c.eclass);
+    classifier_e->set_configuration(String());
     change_landmark(classifier_e);
   }
   
@@ -809,11 +808,11 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
-    ElementT &e = r->element(i);
-    int x = type_uid_map[e.type_uid()];
+    ElementT *e = r->element(i);
+    int x = type_uid_map[e->type_uid()];
     if (x >= 0) {
-      e.set_configuration(configurations[x]);
-      e.set_type(r->get_type(old_type_names[x]));
+      e->set_configuration(configurations[x]);
+      e->set_type(r->get_type(old_type_names[x]));
     }
   }
 

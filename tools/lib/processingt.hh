@@ -18,8 +18,8 @@ class ProcessingT { public:
   
   int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
   int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
-  int input_pidx(const Hookup &h) const;
-  int output_pidx(const Hookup &h) const;
+  int input_pidx(const HookupI &h) const;
+  int output_pidx(const HookupI &h) const;
     
   int ninputs(int i) const	{ return _input_pidx[i+1] - _input_pidx[i]; }
   int noutputs(int i) const	{ return _output_pidx[i+1] - _output_pidx[i]; }
@@ -28,8 +28,8 @@ class ProcessingT { public:
   int output_processing(int i, int p) const;
   bool input_is_pull(int i, int p) const;
   bool output_is_push(int i, int p) const;
-  const Hookup &input_connection(int i, int p) const;
-  const Hookup &output_connection(int i, int p) const;
+  const HookupI &input_connection(int i, int p) const;
+  const HookupI &output_connection(int i, int p) const;
 
   bool is_internal_flow(int i, int ip, int op) const;
   
@@ -50,14 +50,14 @@ class ProcessingT { public:
   Vector<int> _output_eidx;
   Vector<int> _input_processing;
   Vector<int> _output_processing;
-  Vector<Hookup> _connected_input;
-  Vector<Hookup> _connected_output;
+  Vector<HookupI> _connected_input;
+  Vector<HookupI> _connected_output;
 
   void create_pidx(ErrorHandler *);
   
   void initial_processing_for(int, ErrorHandler *);
   void initial_processing(ErrorHandler *);
-  void processing_error(const Hookup &, const Hookup &, int, int,
+  void processing_error(const HookupI &, const HookupI &, int, int,
 			ErrorHandler *);
   void check_processing(ErrorHandler *);
   void check_connections(ErrorHandler *);
@@ -66,13 +66,13 @@ class ProcessingT { public:
 
 
 inline int
-ProcessingT::input_pidx(const Hookup &h) const
+ProcessingT::input_pidx(const HookupI &h) const
 {
   return input_pidx(h.idx, h.port);
 }
 
 inline int
-ProcessingT::output_pidx(const Hookup &h) const
+ProcessingT::output_pidx(const HookupI &h) const
 {
   return output_pidx(h.idx, h.port);
 }
@@ -101,13 +101,13 @@ ProcessingT::output_is_push(int i, int p) const
   return output_processing(i, p) == VPUSH;
 }
 
-inline const Hookup &
+inline const HookupI &
 ProcessingT::input_connection(int i, int p) const
 {
   return _connected_input[input_pidx(i, p)];
 }
 
-inline const Hookup &
+inline const HookupI &
 ProcessingT::output_connection(int i, int p) const
 {
   return _connected_output[output_pidx(i, p)];

@@ -153,10 +153,10 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
-    ElementT &e = r->element(i);
-    int nnm = new_uid_map[e.type_uid()];
+    ElementT *e = r->element(i);
+    int nnm = new_uid_map[e->type_uid()];
     if (nnm >= 0)
-      e.set_type(old_class[nnm]);
+      e->set_type(old_class[nnm]);
   }
 
   // remove requirements

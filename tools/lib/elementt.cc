@@ -29,25 +29,24 @@
 #include <stdlib.h>
 
 ElementT::ElementT()
-    : flags(0), _type(0), _tunnel_input(-1), _tunnel_output(-1)
+    : flags(0), _idx(-1), _type(0), _tunnel_input(0), _tunnel_output(0)
 {
 }
 
 ElementT::ElementT(const String &n, ElementClassT *eclass,
 		   const String &config, const String &lm)
-    : name(n), flags(0),
+    : flags(0), _name(n), _idx(-1),
       _type(eclass), _configuration(config), _landmark(lm),
-      _ninputs(0), _noutputs(0), _tunnel_input(-1), _tunnel_output(-1)
+      _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0)
 {
     assert(_type);
     _type->use();
 }
 
 ElementT::ElementT(const ElementT &o)
-    : name(o.name), flags(o.flags),
+    : flags(o.flags), _name(o._name), _idx(-1),
       _type(o._type), _configuration(o._configuration), _landmark(o._landmark),
-      _ninputs(o._ninputs), _noutputs(o._noutputs),
-      _tunnel_input(o._tunnel_input), _tunnel_output(o._tunnel_output)
+      _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0)
 {
     if (_type)
 	_type->use();
@@ -59,28 +58,9 @@ ElementT::~ElementT()
 	_type->unuse();
 }
 
-ElementT &
-ElementT::operator=(const ElementT &o)
-{
-    if (o._type)
-	o._type->use();
-    if (_type)
-	_type->unuse();
-    _type = o._type;
-    name = o.name;
-    _configuration = o._configuration;
-    _landmark = o._landmark;
-    _tunnel_input = o._tunnel_input;
-    _tunnel_output = o._tunnel_output;
-    _ninputs = o._ninputs;
-    _noutputs = o._noutputs;
-    flags = o.flags;
-    return *this;
-}
-
 
 int
-Hookup::index_in(const Vector<Hookup> &v, int start) const
+HookupI::index_in(const Vector<HookupI> &v, int start) const
 {
     int size = v.size();
     for (int i = start; i < size; i++)
@@ -90,7 +70,7 @@ Hookup::index_in(const Vector<Hookup> &v, int start) const
 }
 
 int
-Hookup::force_index_in(Vector<Hookup> &v, int start) const
+HookupI::force_index_in(Vector<HookupI> &v, int start) const
 {
     int size = v.size();
     for (int i = start; i < size; i++)
@@ -101,9 +81,9 @@ Hookup::force_index_in(Vector<Hookup> &v, int start) const
 }
 
 int
-Hookup::sorter(const void *av, const void *bv)
+HookupI::sorter(const void *av, const void *bv)
 {
-    const Hookup *a = (const Hookup *)av, *b = (const Hookup *)bv;
+    const HookupI *a = (const HookupI *)av, *b = (const HookupI *)bv;
     if (a->idx == b->idx)
 	return a->port - b->port;
     else
@@ -111,7 +91,7 @@ Hookup::sorter(const void *av, const void *bv)
 }
 
 void
-Hookup::sort(Vector<Hookup> &v)
+HookupI::sort(Vector<HookupI> &v)
 {
-    qsort(&v[0], v.size(), sizeof(Hookup), &sorter);
+    qsort(&v[0], v.size(), sizeof(HookupI), &sorter);
 }

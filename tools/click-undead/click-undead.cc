@@ -105,10 +105,9 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static void
 save_element_nports(RouterT *r)
 {
-  int nelem = r->nelements();
-  for (int i = 0; i < nelem; i++) {
-    element_ninputs.insert(r->ename(i), r->eninputs(i));
-    element_noutputs.insert(r->ename(i), r->enoutputs(i));
+  for (RouterT::iterator x = r->first_element(); x; x++) {
+    element_ninputs.insert(x->name(), x->ninputs());
+    element_noutputs.insert(x->name(), x->noutputs());
   }
 }
 
@@ -120,47 +119,45 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     return;
   ElementClassT *idlet = r->get_type("Idle");
 
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != t)
-      continue;
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    assert(x->type() == t);
     
-    String config = cp_uncomment(r->econfiguration(ei));
+    String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(r->elandmark(ei), "%s: bad configuration `StaticSwitch(%s)'", r->ename(ei).cc(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_cc(), config.cc());
       val = -1;
     }
 
-    int noutputs = r->enoutputs(ei);
     Vector<int> connv_out;
-    r->find_connection_vector_from(ei, connv_out);
+    r->find_connection_vector_from(x->idx(), connv_out);
     for (int i = 0; i < connv_out.size(); i++)
       if (connv_out[i] < 0) {
-	errh->lerror(r->elandmark(ei), "odd connections from `%s'", r->edeclaration(ei).cc());
+	errh->lerror(x->landmark(), "odd connections from `%s'", x->declaration().cc());
 	break;
       }
     
     int idle = r->get_anon_eindex(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
-    Hookup jump_hook;
-    if (val < 0 || val >= noutputs || connv_out[val] < 0)
-      jump_hook = Hookup(idle, idle_in++);
+    HookupI jump_hook;
+    if (val < 0 || val >= x->noutputs() || connv_out[val] < 0)
+      jump_hook = HookupI(idle, idle_in++);
     else
       jump_hook = r->hookup_to()[connv_out[val]];
     
-    Vector<Hookup> conns_to;
-    r->find_connections_to(Hookup(ei, 0), conns_to);
+    Vector<HookupI> conns_to;
+    r->find_connections_to(HookupI(x->idx(), 0), conns_to);
     for (int j = 0; j < conns_to.size(); j++) {
-      int k = r->find_connection(conns_to[j], Hookup(ei, 0));
+      int k = r->find_connection(conns_to[j], HookupI(x->idx(), 0));
       r->change_connection_to(k, jump_hook);
     }
 
     for (int j = 0; j < connv_out.size(); j++)
       if (j != val)
-	r->change_connection_from(connv_out[j], Hookup(idle, idle_out++));
+	r->change_connection_from(connv_out[j], HookupI(idle, idle_out++));
 
-    r->kill_element(ei);
+    x->kill();
   }
 }
 
@@ -172,52 +169,50 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     return;
   ElementClassT *idlet = r->get_type("Idle");
 
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != t)
-      continue;
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    assert(x->type() == t);
     
-    String config = cp_uncomment(r->econfiguration(ei));
+    String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(r->elandmark(ei), "%s: bad configuration `StaticSwitch(%s)'", r->ename(ei).cc(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_cc(), config.cc());
       val = -1;
     }
 
-    int ninputs = r->eninputs(ei);
     Vector<int> connv_in;
-    r->find_connection_vector_to(ei, connv_in);
+    r->find_connection_vector_to(x->idx(), connv_in);
     for (int i = 0; i < connv_in.size(); i++)
       if (connv_in[i] < 0) {
-	errh->lerror(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+	errh->lerror(x->landmark(), "odd connections to `%s'", x->declaration().cc());
 	break;
       }
     
     int idle = r->get_anon_eindex(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
-    Hookup jump_hook;
-    if (val < 0 || val >= ninputs || connv_in[val] < 0)
-      jump_hook = Hookup(idle, idle_out++);
+    HookupI jump_hook;
+    if (val < 0 || val >= x->ninputs() || connv_in[val] < 0)
+      jump_hook = HookupI(idle, idle_out++);
     else
       jump_hook = r->hookup_from()[connv_in[val]];
     
-    Vector<Hookup> conns_from;
-    r->find_connections_from(Hookup(ei, 0), conns_from);
+    Vector<HookupI> conns_from;
+    r->find_connections_from(HookupI(x->idx(), 0), conns_from);
     for (int j = 0; j < conns_from.size(); j++) {
-      int k = r->find_connection(Hookup(ei, 0), conns_from[j]);
+      int k = r->find_connection(HookupI(x->idx(), 0), conns_from[j]);
       r->change_connection_from(k, jump_hook);
     }
 
     for (int j = 0; j < connv_in.size(); j++)
       if (j != val)
-	r->change_connection_to(connv_in[j], Hookup(idle, idle_in++));
+	r->change_connection_to(connv_in[j], HookupI(idle, idle_in++));
 
-    r->kill_element(ei);
+    x->kill();
   }
 }
 
 static void
-skip_over_push(RouterT *r, const Hookup &old_to, const Hookup &new_to)
+skip_over_push(RouterT *r, const HookupI &old_to, const HookupI &new_to)
 {
   Vector<int> connv;
   r->find_connections_to(old_to, connv);
@@ -226,7 +221,7 @@ skip_over_push(RouterT *r, const Hookup &old_to, const Hookup &new_to)
 }
 
 static void
-skip_over_pull(RouterT *r, const Hookup &old_from, const Hookup &new_from)
+skip_over_pull(RouterT *r, const HookupI &old_from, const HookupI &new_from)
 {
   Vector<int> connv;
   r->find_connections_from(old_from, connv);
@@ -240,26 +235,24 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
   if (!t)
     return;
 
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != t)
-      continue;
-    int nin = r->eninputs(ei), nout = r->enoutputs(ei);
-    if (nin != 1 || nout != 1) {
-      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    assert(x->type() == t);
+    if (x->ninputs() != 1 || x->noutputs() != 1) {
+      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
       continue;
     }
     
     Vector<int> hprev, hnext;
-    r->find_connections_to(Hookup(ei, 0), hprev);
-    r->find_connections_from(Hookup(ei, 0), hnext);
+    r->find_connections_to(HookupI(x->idx(), 0), hprev);
+    r->find_connections_from(HookupI(x->idx(), 0), hnext);
     if (hprev.size() > 1 && hnext.size() > 1)
-      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
     else if (hprev.size() == 1)
-      skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
+      skip_over_pull(r, HookupI(x->idx(), 0), r->hookup_from(hprev[0]));
     else if (hnext.size() == 1)
-      skip_over_push(r, Hookup(ei, 0), r->hookup_to(hnext[0]));
+      skip_over_push(r, HookupI(x->idx(), 0), r->hookup_to(hnext[0]));
 
-    r->kill_element(ei);
+    x->kill();
   }
 }
 
@@ -272,20 +265,19 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
   ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != t)
-      continue;
-    if (r->enoutputs(ei) != 1) {
-      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    assert(x->type() == t);
+    if (x->noutputs() != 1) {
+      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
       continue;
     }
     
     Vector<int> hprev;
     Vector<String> args;
-    r->find_connection_vector_to(ei, hprev);
+    r->find_connection_vector_to(x->idx(), hprev);
     // check configuration string if we need to
     if (config_eq_ninputs) {
-      cp_argvec(r->econfiguration(ei), args);
+      cp_argvec(x->configuration(), args);
       if (args.size() != hprev.size())
 	continue;
     }
@@ -298,13 +290,13 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 	  for (int pp = p + 1; pp < hprev.size(); pp++)
 	    args[pp-1] = args[pp];
 	  args.pop_back();
-	  r->econfiguration(ei) = cp_unargvec(args);
+	  x->configuration() = cp_unargvec(args);
 	}
 
 	// now do connections
 	int bad_connection = hprev[p];
 	for (int pp = p + 1; pp < hprev.size(); pp++) {
-	  r->change_connection_to(hprev[pp], Hookup(ei, pp - 1));
+	  r->change_connection_to(hprev[pp], HookupI(x->idx(), pp - 1));
 	  hprev[pp - 1] = hprev[pp];
 	}
 	if (bad_connection >= 0)
@@ -315,14 +307,14 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     
     if (hprev.size() == 1) {
       if (verbose)
-	errh->lerror(r->elandmark(ei), "removing redundant scheduler `%s'", r->edeclaration(ei).cc());
-      skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
-      r->kill_element(ei);
+	errh->lerror(x->landmark(), "removing redundant scheduler `%s'", x->declaration().cc());
+      skip_over_pull(r, HookupI(x->idx(), 0), r->hookup_from(hprev[0]));
+      x->kill();
       changed = true;
     }
 
     // save number of inputs so we don't attach new Idles
-    element_ninputs.insert(r->ename(ei), hprev.size());
+    element_ninputs.insert(x->name(), hprev.size());
   }
 
   return changed;
@@ -337,24 +329,23 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
   ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != t)
-      continue;
-    if (r->eninputs(ei) != 1) {
-      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    assert(x->type() == t);
+    if (x->ninputs() != 1) {
+      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
       continue;
     }
     
     Vector<int> hnext;
     Vector<String> args;
-    r->find_connection_vector_from(ei, hnext);
+    r->find_connection_vector_from(x->idx(), hnext);
     
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
       if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idlet)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
-	  r->change_connection_from(hnext[pp], Hookup(ei, pp - 1));
+	  r->change_connection_from(hnext[pp], HookupI(x->idx(), pp - 1));
 	  hnext[pp - 1] = hnext[pp];
 	}
 	if (bad_connection >= 0)
@@ -364,20 +355,20 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     
     if (hnext.size() == 1) {
       if (verbose)
-	errh->lerror(r->elandmark(ei), "removing redundant tee `%s'", r->edeclaration(ei).cc());
+	errh->lerror(x->landmark(), "removing redundant tee `%s'", x->declaration().cc());
       if (is_pull_tee) {
 	Vector<int> hprev;
-	r->find_connection_vector_to(ei, hprev);
-	skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
+	r->find_connection_vector_to(x->idx(), hprev);
+	skip_over_pull(r, HookupI(x->idx(), 0), r->hookup_from(hprev[0]));
       } else
-	skip_over_push(r, Hookup(ei, 0), r->hookup_to(hnext[0]));
-      r->kill_element(ei);
+	skip_over_push(r, HookupI(x->idx(), 0), r->hookup_to(hnext[0]));
+      x->kill();
       changed = true;
     }
 
     // save number of outputs so we don't attach new Idles
-    element_noutputs.insert(r->ename(ei), hnext.size());
-    r->econfiguration(ei) = String(hnext.size());
+    element_noutputs.insert(x->name(), hnext.size());
+    x->configuration() = String(hnext.size());
   }
 
   return changed;
@@ -406,7 +397,7 @@ find_live_elements(const RouterT *r, const char *filename,
 
   // find initial sources and sinks
   for (int ei = 0; ei < r->nelements(); ei++) {
-    const ElementT &e = r->element(ei);
+    const ElementT &e = *(r->element(ei));
     if (e.live()) {
       int nin = processing.ninputs(ei);
       int nout = processing.noutputs(ei);
@@ -456,8 +447,8 @@ find_live_elements(const RouterT *r, const char *filename,
   }
 
   int nh = r->nhookup();
-  const Vector<Hookup> &hf = r->hookup_from();
-  const Vector<Hookup> &ht = r->hookup_to();
+  const Vector<HookupI> &hf = r->hookup_from();
+  const Vector<HookupI> &ht = r->hookup_to();
   
   // spread sources
   bool changed = true;
@@ -486,7 +477,7 @@ find_live_elements(const RouterT *r, const char *filename,
 
   // find independently live elements
   for (int ei = 0; ei < r->nelements(); ei++) {
-    const ElementT &e = r->element(ei);
+    const ElementT &e = *(r->element(ei));
     if (e.live() && !live_elements[ei]) {
       int live_flag = e.type()->traits().flag_value('L');
       if (live_flag == 0)	// not live
@@ -692,7 +683,7 @@ particular purpose.\n");
     if (!live_vec[i]) {
       if (verbose)
 	default_errh->lmessage(r->elandmark(i), "removing `%s'", r->edeclaration(i).cc());
-      r->kill_element(i);
+      r->element(i)->kill();
     }
   
   // remove dead connections (not elements yet: keep indexes in 'processing'

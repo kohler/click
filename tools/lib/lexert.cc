@@ -578,7 +578,7 @@ LexerT::connect(int element1, int port1, int port2, int element2)
     if (port2 < 0)
 	port2 = 0;
     _router->add_connection
-	(Hookup(element1, port1), Hookup(element2, port2), landmark());
+	(HookupI(element1, port1), HookupI(element2, port2), landmark());
 }
 
 

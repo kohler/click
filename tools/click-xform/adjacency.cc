@@ -75,8 +75,8 @@ AdjacencyMatrix::init(RouterT *r)
   // add connections
   int nh = r->nhookup();
   if (nh) {
-    const Hookup *hf = &(r->hookup_from()[0]);	// avoid bounds checks
-    const Hookup *ht = &(r->hookup_to()[0]);
+    const HookupI *hf = &(r->hookup_from()[0]);	// avoid bounds checks
+    const HookupI *ht = &(r->hookup_to()[0]);
     for (int i = 0; i < nh; i++)
       if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx)
 	_x[ hf[i].idx + (ht[i].idx<<cap) ] |=
@@ -126,8 +126,8 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   // now set new connections
   int nh = r->nhookup();
   if (nh) {
-    const Hookup *hf = &(r->hookup_from()[0]);	// avoid bounds checks
-    const Hookup *ht = &(r->hookup_to()[0]);
+    const HookupI *hf = &(r->hookup_from()[0]);	// avoid bounds checks
+    const HookupI *ht = &(r->hookup_to()[0]);
     for (int i = 0; i < nh; i++)
       if (hf[i].idx >= 0 && hf[i].idx != ht[i].idx)
 	_x[ hf[i].idx + (ht[i].idx<<cap) ] |=
@@ -143,8 +143,8 @@ AdjacencyMatrix::init_pattern() const
   // checking for a single connection from output 0
   RouterT *r = _router;
   Vector<int> output_0(_n, -1);
-  const Vector<Hookup> &hf = r->hookup_from();
-  const Vector<Hookup> &ht = r->hookup_to();
+  const Vector<HookupI> &hf = r->hookup_from();
+  const Vector<HookupI> &ht = r->hookup_to();
   for (int i = 0; i < hf.size(); i++)
     if (hf[i].live() && hf[i].port == 0) {
       int fromi = hf[i].idx;
@@ -216,9 +216,9 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
       // `input' or `output'). In this case, the match to E2 will be the
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
-      Hookup out;
+      HookupI out;
       if (rover > 0
-	  || !input->_router->find_connection_from(Hookup(match[output_0_of[match_idx]], 0), out))
+	  || !input->_router->find_connection_from(HookupI(match[output_0_of[match_idx]], 0), out))
 	max_rover = -1;
       else {
 	rover = out.idx;
@@ -278,14 +278,14 @@ check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
 			   const Vector<int> &match)
 {
   // check connections
-  const Vector<Hookup> &hf = pat->hookup_from();
-  const Vector<Hookup> &ht = pat->hookup_to();
+  const Vector<HookupI> &hf = pat->hookup_from();
+  const Vector<HookupI> &ht = pat->hookup_to();
   int nh = hf.size();
   for (int i = 0; i < nh; i++) {
     if (match[hf[i].idx] < 0 || match[ht[i].idx] < 0)
       continue;
-    if (!input->has_connection(Hookup(match[hf[i].idx], hf[i].port),
-			       Hookup(match[ht[i].idx], ht[i].port)))
+    if (!input->has_connection(HookupI(match[hf[i].idx], hf[i].port),
+			       HookupI(match[ht[i].idx], ht[i].port)))
       return false;
   }
   return true;
