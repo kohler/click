@@ -1,3 +1,7 @@
 configure config.log config.cache config.status
 config.h.in config.h
 Makefile mkelemlist.sh
+notes
+notes/*
+bin
+man

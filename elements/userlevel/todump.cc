@@ -35,12 +35,12 @@ extern "C" {
 #endif
 
 ToDump::ToDump()
-  : _fp(0), _timer(this)
+  : Element(1, 0), _fp(0), _timer(this)
 {
 }
 
 ToDump::ToDump(String filename)
-  : _filename(filename), _fp(0), _timer(this)
+  : Element(1, 0), _filename(filename), _fp(0), _timer(this)
 {
 }
 
