@@ -32,7 +32,13 @@ generate filenames. Printf-like `C<%>' escapes in the pattern are expanded
 differently for each flow. Available escapes are:
 
     %n      Aggregate annotation in decimal.
+    %.0n    Upper 8 bits of aggregate annotation in decimal.
+    %.1n, %.2n, %.3n   Similar for bits 16-23, 8-15, 0-7.
+    %.4n    Upper 16 bits of aggregate annotation in decimal.
+    %.5n    Lower 16 bits of aggregate annotation in decimal.
     %x, %X  Aggregate annotation in hex.
+    %.0x, %.1x, ..., %.5x, %.0X, %.1X, ..., %.5X
+            Like %.0n, ..., %.5n in hex.
     %s      Source IP address.
     %.0s, %.1s, %.2s, %.3s
             First through fourth bytes of source IP address.

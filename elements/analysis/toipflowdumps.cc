@@ -332,13 +332,17 @@ ToIPFlowDumps::expand_filename(const Packet *pkt, ErrorHandler *errh) const
 	    StringAccum subsa;
 	    if (p >= len)
 		errh->error("bad filename pattern");
-	    else if (data[p] == 'n')
-		subsa << AGGREGATE_ANNO(pkt);
-	    else if (data[p] == 'x')
-		subsa.snprintf(20, "%x", AGGREGATE_ANNO(pkt));
-	    else if (data[p] == 'X')
-		subsa.snprintf(20, "%X", AGGREGATE_ANNO(pkt));
-	    else if (data[p] == 's' && (precision < 0 || precision > 3))
+	    else if (data[p] == 'n' || data[p] == 'x' || data[p] == 'X') {
+		char format[3] = "%d";
+		if (data[p] != 'n')
+		    format[1] = data[p];
+		uint32_t value = AGGREGATE_ANNO(pkt);
+		if (precision >= 0 && precision <= 3)
+		    value = (value >> ((3 - precision) * 8)) & 255;
+		else if (precision >= 4 && precision <= 5)
+		    value = (value >> ((5 - precision) * 16)) & 65535;
+		subsa.snprintf(20, format, value);
+	    } else if (data[p] == 's' && (precision < 0 || precision > 3))
 		subsa << IPAddress(pkt->ip_header()->ip_src);
 	    else if (data[p] == 's')
 		subsa << ((ntohl(pkt->ip_header()->ip_src.s_addr) >> ((3 - precision) * 8)) & 255);
