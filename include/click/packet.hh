@@ -122,8 +122,8 @@ class Packet { public:
 #ifdef __KERNEL__
   PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
-  struct device *device_anno() const	{ return skb()->dev; }
-  void set_device_anno(struct device *dev) { skb()->dev = dev; }
+  net_device *device_anno() const	{ return skb()->dev; }
+  void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
   const struct timeval &timestamp_anno() const { return skb()->stamp; }
   struct timeval &timestamp_anno()	{ return skb()->stamp; }
   void set_timestamp_anno(const struct timeval &tv) { skb()->stamp = tv; }
@@ -131,8 +131,8 @@ class Packet { public:
 #else
   PacketType packet_type_anno() const	{ return _pkt_type; }
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
-  struct device *device_anno() const	{ return 0; }
-  void set_device_anno(struct device *) { }
+  net_device *device_anno() const	{ return 0; }
+  void set_device_anno(net_device *)	{ }
   const struct timeval &timestamp_anno() const { return _timestamp; }
   struct timeval &timestamp_anno()	{ return _timestamp; }
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }

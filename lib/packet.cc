@@ -31,7 +31,7 @@
 
 Packet::Packet()
 {
-  StaticAssert(sizeof(Anno) <= 48);
+  static_assert(sizeof(Anno) <= 48);
   panic("Packet constructor");
 }
 
