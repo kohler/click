@@ -79,6 +79,26 @@ void simclick_click_run(simclick_click clickinst,simclick_simstate* state);
 void simclick_click_kill(simclick_click clickinst,simclick_simstate* state);
 
 /*
+ * simclick_click_read_handler will allocate a buffer of adequate length
+ * to receive the handler information. This buffer must be freed
+ * by the caller. If a non-null value for the "memalloc" parameter
+ * is passed in, simclick_click_read_handler will use that function
+ * to allocate the memory. If there's a null value there, "malloc" will
+ * be used by default. The "memparam" parameter is a caller-specified
+ * value which will be passed back to the memory allocation function.
+ */
+typedef void* (*SIMCLICK_MEM_ALLOC)(size_t,void*);
+char* simclick_click_read_handler(simclick_click clickinst,
+				  const char* elementname,
+				  const char* handlername,
+				  SIMCLICK_MEM_ALLOC memalloc,
+				  void* memparam);
+
+int simclick_click_write_handler(simclick_click clickinst,
+				 const char* elemname, const char* handlername,
+				 const char* writestring);
+
+/*
  * The simulated system also has to provide a few services to click,
  * notably some way of injecting packets back into the system,
  * mapping interface names to id numbers, and arranging for click
