@@ -69,9 +69,14 @@ ETTStat::notify_noutputs(int n)
 }
 
 
+//1. configure
+//2. initialize
+//3. take_state
 int
 ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+
+
   _2hop_linkstate = true;
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
@@ -118,6 +123,14 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 ETTStat::take_state(Element *e, ErrorHandler *)
 {
+  /* 
+   * take_state gets called after 
+   * --configure
+   * --initialize
+   * so we may need to unschedule probe timers
+   * and sync them up so the rates don't get 
+   * screwed up.
+  */
   ETTStat *q = (ETTStat *)e->cast("ETTStat");
   if (!q) return;
   
@@ -126,6 +139,38 @@ ETTStat::take_state(Element *e, ErrorHandler *)
   _rev_arp = q->_rev_arp;
   _seq = q->_seq;
   _sent = q->_sent;
+  _start = q->_start;
+
+  if (_timer_small->scheduled()) {
+    _timer_small->unschedule();
+    _timer_small->schedule_at(q->_next_small);
+    _next_small = q->_next_small;
+  }
+
+  if (_timer_1->scheduled()) {
+    _timer_1->unschedule();
+    _timer_1->schedule_at(q->_next_1);
+    _next_1 = q->_next_1;
+  }
+
+  if (_timer_2->scheduled()) {
+    _timer_2->unschedule();
+    _timer_2->schedule_at(q->_next_2);
+    _next_2 = q->_next_2;
+  }
+  if (_timer_5->scheduled()) {
+    _timer_5->unschedule();
+    _timer_5->schedule_at(q->_next_5);
+    _next_5 = q->_next_5;
+  }
+  if (_timer_11->scheduled()) {
+    _timer_11->unschedule();
+    _timer_11->schedule_at(q->_next_11);
+    _next_11 = q->_next_11;
+  }
+
+
+  
 }
 
 void add_jitter(unsigned int max_jitter, struct timeval *t) {
@@ -322,7 +367,6 @@ ETTStat::initialize(ErrorHandler *errh)
   if (noutputs() > 0) {
     if (!_eth) 
       return errh->error("Source Ethernet address must be specified to send probes");
-    
     
     _timer_small = new Timer(static_send_small_hook, this);
     _timer_small->initialize(this);
