@@ -8,45 +8,33 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingEncap(SADDR, DADDR, I<KEYWORDS>)
+ICMPPingEncap(SADDR, DADDR [, I<keyword> IDENTIFIER])
 
-=s ICMP, sources
+=s ICMP, encapsulation
 
-periodically sends ICMP echo requests
+encapsulates packets in ICMP ping headers
 
 =d
 
-Periodically emits ping packets with source IP address SRC and destination
-address DST. Advances the "sequence" field by one each time. (The sequence
-field is stored in network byte order in the packet.)
+Encapsulates input packets in an ICMP ping header with source IP address SADDR
+and destination IP address DADDR.  Advances the "sequence" field by one for
+each packet.  (The sequence field is stored in network byte order in the
+packet.)
 
 Keyword arguments are:
 
 =over 8
-
-=item INTERVAL
-
-Amount of time between pings, in seconds. Default is 1.
 
 =item IDENTIFIER
 
 Integer. Determines the ICMP identifier field in emitted pings. Default is
 0.
 
-=item LIMIT
-
-Integer. The number of pings to send; but if LIMIT is negative, sends pings
-forever. Default is -1.
-
-=item DATA
-
-String. Extra data in emitted pings. Default is the empty string (nothing).
-
 =back
 
 =a
 
-ICMPPingResponder, ICMPPingRewriter */
+ICMPPingSource, ICMPPingResponder, ICMPPingRewriter */
 
 class ICMPPingEncap : public Element { public:
 

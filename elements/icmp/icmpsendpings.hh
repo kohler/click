@@ -47,7 +47,7 @@ String. Extra data in emitted pings. Default is the empty string (nothing).
 
 =a
 
-ICMPPingResponder, ICMPPingRewriter */
+ICMPPingEncap, ICMPPingResponder, ICMPPingRewriter */
 
 class ICMPPingSource : public Element { public:
   
