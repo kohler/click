@@ -1,6 +1,6 @@
 /*
  * decip6hlim.{cc,hh} -- element decrements IP6 packet's time-to-live
- * Eddie Kohler, Robert Morris
+ * Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -22,8 +22,6 @@ DecIP6HLIM::DecIP6HLIM()
 {
   add_input();
   add_output();
-   click_chatter("\n ############ DecIP6HLIM construction finishes ! \n");
-
 }
 
 DecIP6HLIM::~DecIP6HLIM()

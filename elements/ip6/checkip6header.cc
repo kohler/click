@@ -117,23 +117,28 @@ CheckIP6Header::simple_action(Packet *p)
   //unsigned hlen;
   
 //check if the packet is bigger than ip6 header
-  click_chatter("\n length: %x \n", p->length());
   if(p->length() < sizeof(click_ip6))  {
-      click_chatter(" length is not right");
+    click_chatter("CheckIP6HEader: length %d smaller than header",
+                  p->length());
     goto bad;
   }
   
 //check version
-  click_chatter("\n version: %x \n", ip->ip6_v);
   if(ip->ip6_v != 6) {
-    click_chatter("NOT VERSION 6");
+    click_chatter("CheckIP6Header: version is %d, not 6",
+                  ip->ip6_v);
     goto bad;
   }
 
 //check if the PayloadLength field is valid
-   click_chatter("\n payload length: %x \n", ip->ip6_plen);
-   if(ntohs(ip->ip6_plen) < (p->length()-40))
-    goto bad;
+  // Hey, isn't it also an error for the plen to
+  // be too long?
+   if(ntohs(ip->ip6_plen) < (p->length()-40)){
+     click_chatter("CheckIP6Header: plen %d smaller than payload len %d",
+                   ntohs(ip->ip6_plen),
+                   p->length() - 40);
+     goto bad;
+   }
 
   /*
    * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
