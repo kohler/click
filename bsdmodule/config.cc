@@ -88,7 +88,7 @@ static void
 set_current_config(const String &s)
 {
   *current_config = s;
-  click_config_generation++;
+  atomic_add_int(&click_config_generation, 1);
 }
 
 static void
@@ -217,7 +217,7 @@ click_init_config()
   Router::add_global_read_handler("list", read_list, 0);
   Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
   
-  click_config_generation = 1;
+  atomic_set_int(&click_config_generation, 1);
   current_config = new String;
 }
 
