@@ -1,3 +1,36 @@
+2004-10-19 Tuesday 22:35  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.25), include/clicknet/wifi.h
+	(1.12), elements/wifi/autoratefallback.cc (1.10),
+	elements/wifi/copyrxstats.cc (1.5), elements/wifi/extradecap.cc
+	(1.1), elements/wifi/extradecap.hh (1.1),
+	elements/wifi/extraencap.cc (1.1), elements/wifi/extraencap.hh
+	(1.1), elements/wifi/filterfailures.cc (1.6),
+	elements/wifi/filtertx.cc (1.2),
+	elements/wifi/linkfailuredetection.cc (1.11),
+	elements/wifi/madwifirate.cc (1.8), elements/wifi/phyerrfilter.cc
+	(1.4), elements/wifi/printtxfeedback.cc (1.1),
+	elements/wifi/printtxfeedback.hh (1.1), elements/wifi/printwifi.cc
+	(1.6), elements/wifi/prism2decap.cc (1.2),
+	elements/wifi/prism2encap.cc (1.2), elements/wifi/probetxrate.cc
+	(1.13), elements/wifi/probetxrate.hh (1.11),
+	elements/wifi/rxstats.cc (1.11), elements/wifi/settxpower.cc (1.6),
+	elements/wifi/settxrate.cc (1.17), elements/wifi/txstat.cc (1.6),
+	elements/wifi/wifiencap.cc (1.10),
+	elements/wifi/ap/associationresponder.cc (1.7),
+	elements/wifi/ap/beaconsource.cc (1.7),
+	elements/wifi/ap/openauthresponder.cc (1.6),
+	elements/wifi/ap/proberesponder.cc (1.7),
+	elements/wifi/sr/ettstat.cc (1.11), elements/wifi/sr/printsr.cc
+	(1.6), elements/wifi/station/associationrequester.cc (1.8),
+	elements/wifi/station/beaconscanner.cc (1.8),
+	elements/wifi/station/openauthrequester.cc (1.4),
+	elements/wifi/station/proberequester.cc (1.6): 
+	add replacement for prism2 header - see extradecap, extraencap. 
+	This allows click to run at userlevel and still do rate control,
+	and get feedback that used to be only available in the kernel
+	module.
+
 2004-10-18 Monday 15:33  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: filtertx.cc (1.1), filtertx.hh (1.1): filters out
