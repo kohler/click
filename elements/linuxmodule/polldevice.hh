@@ -91,29 +91,29 @@ class PollDevice : public AnyDevice { public:
 
   void reset_counts();
   
-  unsigned long _npackets;
+  uint32_t _npackets;
 #if CLICK_DEVICE_STATS
-  unsigned long long _time_poll;
-  unsigned long long _time_allocskb;
-  unsigned long long _time_refill;
+  uint64_t _time_poll;
+  uint64_t _time_allocskb;
+  uint64_t _time_refill;
 
-  unsigned long long _perfcnt1_poll;
-  unsigned long long _perfcnt1_refill;
-  unsigned long long _perfcnt1_allocskb;
-  unsigned long long _perfcnt1_pushing;
-  unsigned long long _perfcnt2_poll;
-  unsigned long long _perfcnt2_refill;
-  unsigned long long _perfcnt2_allocskb;
-  unsigned long long _perfcnt2_pushing;
+  uint64_t _perfcnt1_poll;
+  uint64_t _perfcnt1_refill;
+  uint64_t _perfcnt1_allocskb;
+  uint64_t _perfcnt1_pushing;
+  uint64_t _perfcnt2_poll;
+  uint64_t _perfcnt2_refill;
+  uint64_t _perfcnt2_allocskb;
+  uint64_t _perfcnt2_pushing;
 
-  unsigned long _empty_polls;
-  unsigned long _activations;
+  uint32_t _empty_polls;
+  uint32_t _activations;
 #endif
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  unsigned long long _push_cycles;
+  uint64_t _push_cycles;
 #endif
     
-  unsigned long _buffers_reused;
+  uint32_t _buffers_reused;
 
  private:
 

@@ -97,7 +97,7 @@ ScheduleInfo::query_prefixes(const String &id, int &scaled_tickets,
   while (text) {
     if (query(text, tickets)) {
       scaled_tickets =
-	((long long)scaled_tickets * tickets) >> FRAC_BITS;
+	((int64_t)scaled_tickets * tickets) >> FRAC_BITS;
       output_id = id.substring(text.length() + 1);
       return true;
     }

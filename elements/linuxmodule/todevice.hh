@@ -93,26 +93,26 @@ class ToDevice : public AnyDevice {
 
 #if CLICK_DEVICE_STATS
   // Statistics.
-  unsigned long long _time_clean;
-  unsigned long long _time_freeskb;
-  unsigned long long _time_queue;
-  unsigned long long _perfcnt1_pull;
-  unsigned long long _perfcnt1_clean;
-  unsigned long long _perfcnt1_freeskb;
-  unsigned long long _perfcnt1_queue;
-  unsigned long long _perfcnt2_pull;
-  unsigned long long _perfcnt2_clean;
-  unsigned long long _perfcnt2_freeskb;
-  unsigned long long _perfcnt2_queue;
-  unsigned long _activations; 
+  uint64_t _time_clean;
+  uint64_t _time_freeskb;
+  uint64_t _time_queue;
+  uint64_t _perfcnt1_pull;
+  uint64_t _perfcnt1_clean;
+  uint64_t _perfcnt1_freeskb;
+  uint64_t _perfcnt1_queue;
+  uint64_t _perfcnt2_pull;
+  uint64_t _perfcnt2_clean;
+  uint64_t _perfcnt2_freeskb;
+  uint64_t _perfcnt2_queue;
+  uint32_t _activations; 
 #endif
-  unsigned _npackets;
+  uint32_t _npackets;
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  unsigned long long _pull_cycles;
+  uint64_t _pull_cycles;
 #endif
-  unsigned long _rejected;
-  unsigned long _hard_start;
-  unsigned long _busy_returns;
+  uint32_t _rejected;
+  uint32_t _hard_start;
+  uint32_t _busy_returns;
 
 #if HAVE_LINUX_POLLING
   bool polling() const			{ return _dev && _dev->polling > 0; }

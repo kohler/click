@@ -199,7 +199,7 @@ PollDevice::run_scheduled()
   struct sk_buff *skb_list, *skb;
   int got=0;
 #if CLICK_DEVICE_STATS
-  unsigned long long time_now;
+  uint64_t time_now;
   unsigned low00, low10;
 #endif
 
@@ -281,7 +281,7 @@ PollDevice::run_scheduled()
 
     _npackets++;
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-    unsigned long long before_push_cycles = click_get_cycles();
+    uint64_t before_push_cycles = click_get_cycles();
 #endif
     output(0).push(p);
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS

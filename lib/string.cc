@@ -86,7 +86,7 @@ String::String(unsigned long u)
 }
 
 #ifdef HAVE_INT64_TYPES
-// Implemented a lovely [unsigned] long long converter in StringAccum
+// Implemented a lovely [u]int64_t converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 
 String::String(int64_t q)

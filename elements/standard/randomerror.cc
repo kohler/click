@@ -91,9 +91,9 @@ RandomBitErrors::set_bit_error(unsigned bit_error)
   // _p_error[i] is the probability that i bits are flipped.
   // _p_error[i] = bit_error^i * (1-bit_error)^(8-i) * #combinations
   
-  unsigned long long accum = 0;
+  uint64_t accum = 0;
   for (int i = 0; i < 9; i++) {
-    unsigned long long p = 0x100000000LL;
+    uint64_t p = 0x100000000LL;
     for (int j = 0; j < i; j++)
       p = (p * bit_error) >> 16;
     for (int j = i; j < 8; j++)

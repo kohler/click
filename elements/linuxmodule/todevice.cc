@@ -185,7 +185,7 @@ ToDevice::run_scheduled()
 
 #if CLICK_DEVICE_STATS
   unsigned low00, low10;
-  unsigned long long time_now;
+  uint64_t time_now;
 #endif
 
   SET_STATS(low00, low10, time_now);
@@ -220,7 +220,7 @@ ToDevice::run_scheduled()
   while (sent < _burst && (busy = netif_queue_stopped(_dev)) == 0) {
 
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-    unsigned long long before_pull_cycles = click_get_cycles();
+    uint64_t before_pull_cycles = click_get_cycles();
 #endif
   
     Packet *p = input(0).pull();

@@ -6,19 +6,19 @@
 template <unsigned Stability_shift, unsigned Scale>
 class DirectBigEWMAX {
   
-  unsigned long long _avg;
+  uint64_t _avg;
   
  public:
 
-  DirectBigEWMAX()				{ _avg = 0; }
+  DirectBigEWMAX()			{ _avg = 0; }
 
-  unsigned long long average() const		{ return _avg; }
+  uint64_t average() const		{ return _avg; }
   static const unsigned stability_shift = Stability_shift;
   static const unsigned scale = Scale;
   
   void clear()				{ _avg = 0; }
   
-  inline void update_with(unsigned long long);
+  inline void update_with(uint64_t);
   void update_zero_period(unsigned);
 };
 
@@ -26,14 +26,14 @@ template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
 class RateBigEWMAX {
   
   unsigned _now_time;
-  unsigned long long _total[N];
+  uint64_t _total[N];
   DirectBigEWMAX<Stability_shift, Scale> _avg[N];
   
  public:
 
   RateBigEWMAX()				{ }
 
-  unsigned long long average(unsigned which = 0) const	
+  uint64_t average(unsigned which = 0) const	
   					{ return _avg[which].average(); }
   static const int stability_shift = Stability_shift;
   static const int scale = Scale;
@@ -44,8 +44,8 @@ class RateBigEWMAX {
  
   inline void update_time(unsigned now);
   inline void update_time();
-  inline void update_now(long long delta, unsigned which = 0);
-  inline void update(long long delta, unsigned which = 0);
+  inline void update_now(int64_t delta, unsigned which = 0);
+  inline void update(int64_t delta, unsigned which = 0);
 };
 
 typedef DirectBigEWMAX<4, 10> DirectBigEWMA;
@@ -53,11 +53,11 @@ typedef RateBigEWMAX<4, 10, 1, JiffiesTimer> RateBigEWMA;
 
 template <unsigned stability_shift, unsigned scale>
 inline void
-DirectBigEWMAX<stability_shift, scale>::update_with(unsigned long long val)
+DirectBigEWMAX<stability_shift, scale>::update_with(uint64_t val)
 {
   int val_scaled = val << scale;
   int compensation = 1 << (stability_shift - 1); // round off
-  _avg += static_cast<signed long long>
+  _avg += static_cast<int64_t>
     (val_scaled - _avg + compensation) >> stability_shift;
   // XXX implementation-defined right shift behavior
 }
@@ -94,7 +94,7 @@ RateBigEWMAX<stability_shift, scale, n, Timer>::update_time(unsigned now)
 
 template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void 
-RateBigEWMAX<stability_shift, scale, n, Timer>::update_now(long long delta, 
+RateBigEWMAX<stability_shift, scale, n, Timer>::update_now(int64_t delta, 
                                                            unsigned which)
 { 
   _total[which] += delta; 
@@ -109,7 +109,7 @@ RateBigEWMAX<stability_shift, scale, n, Timer>::update_time()
 
 template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void
-RateBigEWMAX<stability_shift, scale, n, Timer>::update(long long delta, 
+RateBigEWMAX<stability_shift, scale, n, Timer>::update(int64_t delta, 
                                                        unsigned which)
 {
   update_time();

@@ -29,7 +29,6 @@ DirectBigEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
   else {
     int compensation = 1 << (stability_shift - 1); // round off
     for (; period > 0; period--)
-      _avg += static_cast<signed long long>
-	(-_avg + compensation) >> stability_shift;
+      _avg += static_cast<int64_t>(-_avg + compensation) >> stability_shift;
   }
 }

@@ -364,9 +364,9 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        unsigned long num;
 #ifdef HAVE_INT64_TYPES
        if (width_flag == 'q') {
-	 unsigned long long qnum = va_arg(val, unsigned long long);
-	 if ((flags & SIGNED) && (long long)qnum < 0)
-	   qnum = -(long long)qnum, flags |= NEGATIVE;
+	 uint64_t qnum = va_arg(val, uint64_t);
+	 if ((flags & SIGNED) && (int64_t)qnum < 0)
+	   qnum = -(int64_t)qnum, flags |= NEGATIVE;
 	 String q = cp_unparse_unsigned64(qnum, base, flags & UPPERCASE);
 	 s1 = s2 - q.length();
 	 memcpy((char *)s1, q.data(), q.length());

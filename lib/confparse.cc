@@ -2967,8 +2967,8 @@ cp_unparse_bool(bool b)
 String
 cp_unparse_unsigned64(uint64_t q, int base, bool uppercase)
 {
-  // Unparse an unsigned long long. Linux kernel sprintf can't handle %lld,
-  // so we provide our own function.
+  // Unparse a uint64_t. Linux kernel sprintf can't handle %lld, so we provide
+  // our own function.
   
   char buf[256];
   char *lastbuf = buf + 255;
@@ -3211,8 +3211,8 @@ cp_va_static_initialize()
   cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
   cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
 #ifdef HAVE_INT64_TYPES
-  cp_register_argtype(cpInteger64, "long long", 0, default_parsefunc, default_storefunc, cpiInteger64);
-  cp_register_argtype(cpUnsigned64, "unsigned long long", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
+  cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
+  cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
 #endif
   cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
   cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);

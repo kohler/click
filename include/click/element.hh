@@ -143,8 +143,8 @@ class Element { public:
 #if CLICK_STATS >= 2
   // Statistics
   int _calls; // Push and pull calls into this element.
-  unsigned long long _self_cycles;  // Cycles spent in self and children.
-  unsigned long long _child_cycles; // Cycles spent in children.
+  uint64_t _self_cycles;  // Cycles spent in self and children.
+  uint64_t _child_cycles; // Cycles spent in children.
 #endif
   
   class Port { public:
@@ -283,10 +283,10 @@ Element::Port::push(Packet *p) const
 #endif
 #if CLICK_STATS >= 2
   _e->input(_port)._packets++;
-  unsigned long long c0 = click_get_cycles();
+  uint64_t c0 = click_get_cycles();
   _e->push(_port, p);
-  unsigned long long c1 = click_get_cycles();
-  unsigned long long x = c1 - c0;
+  uint64_t c1 = click_get_cycles();
+  uint64_t x = c1 - c0;
   _e->_calls += 1;
   _e->_self_cycles += x;
   _owner->_child_cycles += x;
@@ -301,10 +301,10 @@ Element::Port::pull() const
   assert(_e);
 #if CLICK_STATS >= 2
   _e->output(_port)._packets++;
-  unsigned long long c0 = click_get_cycles();
+  uint64_t c0 = click_get_cycles();
   Packet *p = _e->pull(_port);
-  unsigned long long c1 = click_get_cycles();
-  unsigned long long x = c1 - c0;
+  uint64_t c1 = click_get_cycles();
+  uint64_t x = c1 - c0;
   _e->_calls += 1;
   _e->_self_cycles += x;
   _owner->_child_cycles += x;

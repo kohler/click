@@ -51,8 +51,8 @@ class CycleCountAccum : public Element { public:
 
  private:
   
-  unsigned long long _accum;
-  unsigned long long _npackets;
+  uint64_t _accum;
+  uint64_t _npackets;
 
   static String read_handler(Element *, void *);
   static int reset_handler(const String &, Element *, void *, ErrorHandler *);

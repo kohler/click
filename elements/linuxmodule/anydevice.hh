@@ -53,7 +53,7 @@ CLICK_CXX_UNPROTECT
   }
 #define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
   { \
-    unsigned long long __now = click_get_cycles(); \
+    uint64_t __now = click_get_cycles(); \
     tctr += __now - time_mark - CLICK_CYCLE_COMPENSATION; \
     time_mark = __now; \
   }

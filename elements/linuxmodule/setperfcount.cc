@@ -71,7 +71,7 @@ SetPerfCount::smaction(Packet *p)
 #if __i386__
   unsigned l, h;
   rdpmc(_which, l, h);
-  unsigned long long hq = h;
+  uint64_t hq = h;
   p->set_perfctr_anno((hq << 32) | l);
 #else
   // code for other architectures

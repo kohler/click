@@ -176,7 +176,7 @@ typedef struct ifnet net_device;
 # include <netinet/in.h>
 # include <sys/time.h>
 
-inline unsigned long long
+inline uint64_t
 click_get_cycles()
 {
   return(0);

@@ -78,8 +78,8 @@ PerfCountAccum::smaction(Packet *p)
 #if __i386__
   unsigned l, h;
   rdpmc(_which, l, h);
-  unsigned long long delta =
-    p->perfctr_anno() - (((unsigned long long)h << 32) | l);
+  uint64_t delta =
+    p->perfctr_anno() - (((uint64_t)h << 32) | l);
   _accum += delta;
 #else
   // add other architectures here
