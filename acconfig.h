@@ -117,11 +117,15 @@ char *strerror(int errno);
 #undef inline
 
 /* Provide placement new. */
-#if HAVE_NEW_H
-#include <new.h>
+#ifdef __KERNEL__
+# include <linux/types.h>
+inline void *operator new(size_t, void *v) { return v; }
+#elif HAVE_NEW_H
+# include <new.h>
 #else
 inline void *operator new(size_t, void *v) { return v; }
 #endif
+#define HAVE_PLACEMENT_NEW 1
 
 /* Explicit template instances? */
 #if __GNUC__ && __GNUC_MINOR__ < 90

@@ -19,13 +19,6 @@
 
 #include <click/bighashmap.hh>
 
-#ifdef HAVE_NEW_H
-# include <new.h>
-#elif !HAVE_PLACEMENT_NEW
-inline void *operator new(size_t, void *v) { return v; }
-# define HAVE_PLACEMENT_NEW 1
-#endif
-
 template <class K, class V>
 void
 BigHashMap<K, V>::initialize()
