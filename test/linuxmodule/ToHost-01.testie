@@ -17,6 +17,7 @@ ping -n -w 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
 kill $dump1
 cat /click/th0/drops /click/th1/drops >DROPS
 cat /click/c/count >COUNT
+click-uninstall
 
 %file KERNELCONFIG
 fh1 :: FromHost(fake0, 1.0.0.1/24);
