@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include <assert.h>
+
 #include <unistd.h>
 
 /*
@@ -55,7 +57,7 @@ public:
    * Return a string describing the ControlSocket's host and port.
    * Requires: object is configured 
    */
-  const string name() { return _name; }
+  const string name() { assert(_init); return _name; }
 
 
   /*
@@ -80,7 +82,7 @@ public:
    * VERS is filled with the version; existing contents are replaced.
    * Returns: no_err, no_handler, handler_err, handler_no_perm, sys_err, init_err, click_err 
    */
-  err_t get_router_version(string &vers)         { return read("", "version", vers); }
+  err_t get_router_version(string &vers)  { err_t err = read("", "version", vers); vers = trim(vers); return err; }
 
   /*
    * Get the names of the elements in the the current router configuration.
@@ -115,6 +117,7 @@ public:
     string handler_name;
     bool can_read;
     bool can_write;
+    handler_info_t() : can_read(false), can_write(false) { }
   };
 
   /*
