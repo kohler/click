@@ -918,7 +918,10 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_LINK;
     else if (word == "aggregate" || word == "agg")
 	return W_AGGREGATE;
-    else
+    else if (word.find_left('_') >= 0) {
+	int underscore = word.find_left('_');
+	return parse_content(word.substring(0, underscore) + " " + word.substring(underscore + 1));
+    } else
 	return W_NONE;
 }
 
