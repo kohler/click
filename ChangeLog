@@ -1,3 +1,10 @@
+2003-06-11 Wednesday 02:20  jbicket
+
+	* elements/grid/: gridproxy.cc (1.2), gridproxy.hh (1.2): added
+	stats handler for the proxy.
+	
+	--john
+
 2003-06-10 Tuesday 13:35  Eddie Kohler <kohler@icir.org>
 
 	* elements/icmp/: icmppingencap.cc (1.1), icmppingencap.hh (1.1),
