@@ -43,10 +43,12 @@ CountFragBytes::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _et = 0x7FFA;
   _length = 0;
+  _overhead = 4;
   if (cp_va_parse(conf, this, errh,
 		  cpKeywords, 
 		  "LENGTH", cpUnsigned, "", &_length,
 		  "FRAG_SIZE", cpUnsigned, "", &_frag_size,
+		  "OVERHEAD", cpUnsigned, "", &_overhead,
 		  cpEnd) < 0) {
     return -1;
   }
@@ -60,6 +62,7 @@ CountFragBytes::push (int port, Packet *p_in)
   unsigned const char *ptr = p_in->data();
 
   int ok_frame = true;
+  int packet_ok_bytes = 0;
   StringAccum sa;
   sa << "[";
   for (unsigned int x = 0; x < _length; x++) {
@@ -80,15 +83,21 @@ CountFragBytes::push (int port, Packet *p_in)
 
     if (x % _frag_size == 0) {
       if (ok_frame) {
-	_bytes += _frag_size;
+	packet_ok_bytes += _frag_size - _overhead;
       }
       ok_frame = true;
     }
   }
 
   if (ok_frame && p_in->length() == _length) {
-    _bytes += p_in->length() % _frag_size;
+    packet_ok_bytes += p_in->length() % _frag_size;
   }
+  
+  click_chatter("packet_frag_bytes %d %d\n",
+		_frag_size,
+		packet_ok_bytes);
+
+  _bytes += packet_ok_bytes;
 
   output(port).push(p_in);
   return;

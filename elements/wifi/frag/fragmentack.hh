@@ -93,11 +93,6 @@ class FragmentAck : public Element { public:
   unsigned _window_size;
 
   unsigned _ack_timeout_ms;
-  void ack_timer();
-
-  static void static_ack_timer(Timer *, void *e) { 
-    ((FragmentAck *) e)->ack_timer(); 
-  }
 
   bool _debug;
  private:

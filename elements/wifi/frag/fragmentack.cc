@@ -119,7 +119,6 @@ FragmentAck::simple_action(Packet *p)
 
   struct frag_header *fh = (struct frag_header *) p->data();
   EtherAddress src = EtherAddress(fh->src);
-  EtherAddress dst = EtherAddress(fh->dst);
   WindowInfo *nfo = _frags.findp(src);
 
   if (!nfo) {

@@ -42,6 +42,7 @@ class CountFragBytes : public Element { public:
   int _packets;
 
   unsigned _length;
+  unsigned _overhead;
   unsigned _et;
   EtherAddress _src;
   int good_packet;
