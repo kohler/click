@@ -1,3 +1,15 @@
+2003-02-14 Friday 00:09  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/drivermanager.cc, include/click/handlercall.hh,
+	include/click/handlercall.hh, include/click/ino.hh,
+	include/click/router.hh, include/click/ino.hh,
+	include/click/router.hh, libsrc/confparse.cc, libsrc/element.cc,
+	libsrc/handlercall.cc, libsrc/ino.cc, libsrc/router.cc: regularize
+	handler functions -- now they return pointers rather than
+	references (the pointers are still short-lived); shrink code;
+	refactor HandlerCall, and comment it; fix some ClickIno bugs with
+	handler/name collisions
+
 2003-02-13 Thursday 13:25  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh, include/click/routerthread.hh,

@@ -1,3 +1,26 @@
+2003-02-14 Friday 00:09  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromdagdump.cc (1.15),
+	elements/analysis/timefilter.cc (1.9), elements/standard/counter.cc
+	(1.30), elements/standard/drivermanager.cc (1.22),
+	elements/standard/pokehandlers.cc (1.28),
+	elements/standard/quitwatcher.cc (1.20),
+	elements/userlevel/controlsocket.cc (1.39),
+	elements/userlevel/fromdump.cc (1.76),
+	elements/userlevel/khandlerproxy.cc (1.10),
+	elements/userlevel/progressbar.cc (1.23),
+	elements/userlevel/todump.cc (1.48), include/click/handlercall.hh
+	(1.8), include/click/ino.hh (1.5), include/click/router.hh (1.42),
+	lib/confparse.cc (1.109), lib/element.cc (1.78), lib/handlercall.cc
+	(1.8), lib/ino.cc (1.6), lib/router.cc (1.138),
+	linuxmodule/clickfs.cc (1.31), linuxmodule/config.cc (1.5),
+	linuxmodule/module.cc (1.74), linuxmodule/proc_click.cc (1.48),
+	linuxmodule/sched.cc (1.40), ns/nsclick.cc (1.7),
+	userlevel/click.cc (1.74): regularize handler functions -- now they
+	return pointers rather than references (the pointers are still
+	short-lived); shrink code; refactor HandlerCall, and comment it;
+	fix some ClickIno bugs with handler/name collisions
+
 2003-02-13 Thursday 17:11  Eddie Kohler <kohler@icir.org>
 
 	* elements/: local/rrunqueue.cc (1.10), standard/msqueue.hh (1.10),
