@@ -1,3 +1,9 @@
+2002-03-05 Tuesday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cpInterval type (like cpTimeval, but more
+	relevant description: "time in seconds"
+
 2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/elemfilter.hh, include/click/elemfilter.hh,

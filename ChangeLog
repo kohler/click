@@ -1,3 +1,27 @@
+2002-03-05 Tuesday 11:43  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: notifierqueue.hh (1.2), queue.hh (1.28): doc
+	updates
+
+2002-03-05 Tuesday 11:43  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: delayunqueue.cc (1.8), delayunqueue.hh (1.6):
+	DelayUnqueue uses a timer when appropriate to keep itself off the
+	task list longer
+
+2002-03-05 Tuesday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.28), lib/confparse.cc (1.95): add
+	cpInterval type (like cpTimeval, but more relevant description:
+	"time in seconds"
+
+2002-03-05 Tuesday 11:41  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: fromdevice.cc (1.69), fromdevice.hh
+	(1.29): fix FromDevice bug: second argument was ignored, instead of
+	treated as PROMISC. Thanks to Brecht Vermeulen for catching this
+	bug.
+
 2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/activity.cc (1.2):
