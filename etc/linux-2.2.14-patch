@@ -55,8 +55,8 @@ Index: net/core/skbuff.c
   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
   *			Florian La Roche <rzsfl@rz.uni-sb.de>
   *
-- *	Version:	$Id: click-patch-1.0.5,v 1.4 2000/04/21 03:35:46 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.5,v 1.4 2000/04/21 03:35:46 benjie Exp $
+- *	Version:	$Id: click-patch-1.0.5,v 1.5 2000/04/21 15:58:38 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.5,v 1.5 2000/04/21 15:58:38 benjie Exp $
   *
   *	Fixes:	
   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
@@ -448,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Thu Apr 20 23:35:24 2000
++++ drivers/net/tulip.c	Fri Apr 21 11:14:56 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -521,7 +521,7 @@ Index: drivers/net/tulip.c
  		tp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -2526,6 +2545,16 @@
+@@ -2526,19 +2545,32 @@
  	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
  }
  
@@ -538,107 +538,134 @@ Index: drivers/net/tulip.c
  static int
  tulip_start_xmit(struct sk_buff *skb, struct device *dev)
  {
-@@ -2536,12 +2565,13 @@
- 	/* Block a timer-based transmit from overlapping.  This could better be
- 	   done with atomic_swap(1, dev->tbusy), but set_bit() works as well. */
- 	if (test_and_set_bit(0, (void*)&dev->tbusy) != 0) {
+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
+ 	int entry;
+ 	u32 flag;
+-
+-	/* Block a timer-based transmit from overlapping.  This could better be
+-	   done with atomic_swap(1, dev->tbusy), but set_bit() works as well. */
+-	if (test_and_set_bit(0, (void*)&dev->tbusy) != 0) {
 -		if (jiffies - dev->trans_start < TX_TIMEOUT)
 -			return 1;
 -		tulip_tx_timeout(dev);
++		
++	if (!dev->intr_is_on) {
++	    printk("tulip_start_xmit when interrupt is off\n");
++	}
++	
++	if (test_and_set_bit(0, (void*)&dev->tx_lock) != 0) {
 +		if (jiffies - dev->trans_start >= TX_TIMEOUT) {
-+		    printk("tulip_start_xmit: tbusy too long\n");
++		    printk("tulip_start_xmit: tx_locked too long\n");
 +		    tulip_tx_timeout(dev);
 +		}
  		return 1;
  	}
--
-+	
- 	/* Caution: the write order is important here, set the field
- 	   with the ownership bits last. */
  
-@@ -2567,16 +2597,23 @@
+@@ -2567,16 +2599,31 @@
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
  	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
  	tp->cur_tx++;
-+	
-+	tulip_tx_start(dev);
-+	
- 	if ( ! tp->tx_full)
- 		clear_bit(0, (void*)&dev->tbusy);
+-	if ( ! tp->tx_full)
+-		clear_bit(0, (void*)&dev->tbusy);
 -
 -	dev->trans_start = jiffies;
 -	/* Trigger an immediate transmit demand. */
 -	outl(0, dev->base_addr + CSR1);
 -
++	
++	tulip_tx_start(dev);
++	
++	if (!tp->tx_full) 
++	    dev->tbusy = 0;
++	else 
++	    dev->tbusy = 1;
 +		
++	clear_bit(0, (void*)&dev->tx_lock);
  	return 0;
  }
  
 +/* polling extension - intr stats */
++unsigned int rxintr = 0;
++unsigned int txintr = 0;
++unsigned int otheri = 0;
 +unsigned int txjabb = 0;
 +unsigned int txdied = 0;
 +unsigned int txunderflow = 0;
 +unsigned int txnobuf = 0;
 +unsigned int rxdied = 0;
 +unsigned int rxnobuf = 0;
++unsigned int pollintr = 0;
++unsigned int wastedintr = 0;
 +
  /* The interrupt handler does all of the Rx thread work and cleans up
     after the Tx thread. */
  static void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-@@ -2614,6 +2651,10 @@
+@@ -2586,10 +2633,10 @@
+ 	long ioaddr = dev->base_addr;
+ 	int csr5;
+ 	int entry;
+-	int missed;
+ 	int rx = 0;
+ 	int tx = 0;
+ 	int oi = 0;
++	int iterations = 0;
+ 	int maxrx = RX_RING_SIZE;
+ 	int maxtx = TX_RING_SIZE;
+ 	int maxoi = TX_RING_SIZE;
+@@ -2613,23 +2660,45 @@
+ 	tp->nir++;
  
  	do {
++	    iterations++;
  		csr5 = inl(ioaddr + CSR5);
 +		
-+		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
-+			break;
-+
++		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
++		    if (!dev->intr_is_on) wastedintr++;
++			goto out;
++		}
++		
  		/* Acknowledge all of the current interrupt sources ASAP. */
  		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
- 
-@@ -2621,15 +2662,28 @@
- 			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
- 				   dev->name, csr5, inl(dev->base_addr + CSR5));
- 
--		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
--			break;
++		
 +		if (!dev->intr_is_on) {
++			pollintr++;
++			if (csr5 & RxIntr) rxintr++;
++			if (csr5 & TxIntr) txintr++;
 +			if (csr5 & RxNoBuf) rxnobuf++;
 +			if (csr5 & RxDied) rxdied++;
 +			if (csr5 & TxDied) txdied++;
 +			if (csr5 & TxJabber) txjabb++;
 +			if (csr5 & TxNoBuf) txnobuf++;
 +			if (csr5 & TxFIFOUnderflow) txunderflow++;
++			if (csr5 & (TimerInt | AbnormalIntr)) otheri++;
++			else goto out;
 +		}
  
- 		if (csr5 & (RxIntr | RxNoBuf)) {
+ 		if (tulip_debug > 4)
+ 			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
+ 				   dev->name, csr5, inl(dev->base_addr + CSR5));
+ 
+-		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
+-			break;
+-
+-		if (csr5 & (RxIntr | RxNoBuf)) {
 -			rx += tulip_rx(dev);
 -			tulip_refill_rx(dev);
-+	        if (!test_and_set_bit(0, (void*)&dev->rx_lock)) {
-+			    rx += tulip_rx(dev);
-+			    tulip_refill_rx(dev);
-+				clear_bit(0, (void*)&dev->rx_lock);
-+			}
++		if ((csr5 & (RxIntr | RxNoBuf)) && dev->intr_is_on) {
++		    rx += tulip_rx(dev);
++		    tulip_refill_rx(dev);
  		}
  
 -		if (csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) {
-+		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) &&
-+	        !test_and_set_bit(0, (void*)&dev->tx_lock)) {
++		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) 
++			&& dev->intr_is_on) {
 +		  	/* part of following code duplicated at the end
 +			 * in tulip_tx_clean for the polling driver, changes
 +			 * here should propagate to there as well */
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2702,6 +2756,7 @@
- 				outl(tp->csr6 | 0x0002, ioaddr + CSR6);
- 				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
- 			}
-+			clear_bit(0, (void*)&dev->tx_lock);
- 		}
- 
- 		/* Log errors. */
-@@ -2720,8 +2775,11 @@
+@@ -2720,8 +2789,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -651,19 +678,46 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2761,7 +2819,10 @@
+@@ -2759,9 +2831,15 @@
+ #endif
+ 			break;
  		}
++		if (iterations > 10 && !dev->intr_is_on) {
++		    printk("intr is not on, and looped 10 interations\n");
++			break;
++		}
  	} while (1);
  
 -	tulip_refill_rx(dev);
-+	if (!test_and_set_bit(0, (void*)&dev->rx_lock)) {
++	if (dev->intr_is_on) {
 +		tulip_refill_rx(dev);
-+		clear_bit(0, (void*)&dev->rx_lock);
 +	}
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2932,8 +2993,12 @@
+@@ -2779,14 +2857,20 @@
+ 		}
+ 	}
+ 
+-	if ((missed = inl(ioaddr + CSR8) & 0x1ffff)) {
++	{
++  		unsigned csr8status = inl(ioaddr+CSR8);
++        unsigned fifostatus = csr8status>>17;
++		unsigned missed = csr8status & 0x1ffff;
+ 		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
++	  	tp->stats.rx_missed_errors += csr8status&0xffff;
++        tp->stats.rx_fifo_errors += fifostatus&0x7ff;
+ 	}
+ 
+ 	if (tulip_debug > 4)
+ 		printk(KERN_DEBUG "%s: exiting interrupt, csr5=%#4.4x.\n",
+ 			   dev->name, inl(ioaddr + CSR5));
+ 
++out:
+ #if defined(__i386__)
+ 	clear_bit(0, (void*)&dev->interrupt);
+ #else
+@@ -2932,8 +3016,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -678,7 +732,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2976,9 +3041,14 @@
+@@ -2976,9 +3064,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -696,7 +750,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3175,7 +3245,7 @@
+@@ -3175,7 +3268,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -705,7 +759,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3186,7 +3256,12 @@
+@@ -3186,7 +3279,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -718,7 +772,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3201,6 +3276,10 @@
+@@ -3201,6 +3299,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -729,7 +783,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3424,386 @@
+@@ -3345,3 +3447,369 @@
   *  tab-width: 4
   * End:
   */
@@ -739,22 +793,17 @@ Index: drivers/net/tulip.c
 + * Polling Extension
 + *
 + * Most of the following functions are verbatim, or very similar to, code from
-+ * the interrupt routines. They are cleaned up and tuned for polling. The only
-+ * trick thing is synchronization, which is completely done with
-+ * test_and_set_bit and clear_bit. 
++ * the interrupt routines. They are cleaned up and tuned for polling. 
 + *
-+ * There are four locks: dev->in_interrupt, dev->rx_lock, dev->tx_lock, and
-+ * dev->tbusy. 
++ * Very minimal synchronization occurs: most polling functions are suppose to
++ * be used in polling mode, under which case the interrupt handler is
++ * disallowed from touching the rx and tx ring. Callers of polling functions
++ * are expected to synchronize calls to these functions themselves.
 + *
-+ * dev->in_interrupt is used by Linux to synchronization interrupt handlers on
-+ * different CPUs. 
-+ *
-+ * dev->rx_lock and dev->tx_lock are used in the interrupt handling routine
-+ * (tulip_interrupt) and polling functions below to synchronize access to data
-+ * structures for rx and tx.
-+ *
++ * dev->tx_lock is used by polling functions and tulip_start_xmit to
++ * synchronize send, since a polling app and linux can both send packets.
 + * dev->tbusy was used by Linux's original tulip driver to synchronize send
-+ * routines, it still is.
++ * routines, it is no longer. We use it explicitly to signal tx ring full.
 + */
 +
 +static __inline__ unsigned long long
@@ -788,6 +837,8 @@ Index: drivers/net/tulip.c
 +  	struct sk_buff* skb = 0;
 +  	if (tulip_recycled_skb_cnt > 0) {
 +	  	while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock)) {
++		    printk("warning, waiting in skb recycle routine\n");
++			if (1) break;
 +			while(tulip_recycle_skb_lock) 
 +			  	asm volatile("" ::: "memory");
 +		}
@@ -806,6 +857,8 @@ Index: drivers/net/tulip.c
 +   	if (skb->truesize == tulip_recycled_skb_size) {
 +   		if (tulip_recycled_skb_cnt < SKB_RECYCLED) {
 +	  		while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock)) {
++		    	printk("warning, waiting in skb recycle routine\n");
++				if (1) break;
 +		  		while(tulip_recycle_skb_lock) 
 +			  		asm volatile("" ::: "memory");
 +			}
@@ -827,11 +880,7 @@ Index: drivers/net/tulip.c
 +{
 +  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
 +  	int cleaned = 0;
-+	int ret;
 +	
-+	if (test_and_set_bit(0, (void*)&dev->rx_lock))
-+		return -1;
-+
 +  	/* Refill the Rx ring buffers. */
 +  	for (; tp->cur_rx - tp->dirty_rx > 0; tp->dirty_rx++) { 
 +		int entry = tp->dirty_rx % RX_RING_SIZE;
@@ -848,10 +897,8 @@ Index: drivers/net/tulip.c
 +        		tp->rx_skbuff[entry] = skb;
 +			else {
 +        		skb = tp->rx_skbuff[entry] = dev_alloc_skb(PKT_BUF_SZ);
-+        		if (skb == NULL) {
-+				  	ret = -1;
-+					goto out;
-+				}
++        		if (skb == NULL)
++					return -1;
 +      		}
 +      		skb->dev = dev; /* mark as being used by this device. */
 +      		tp->rx_ring[entry].buffer1 = virt_to_le32desc(skb->tail);
@@ -859,26 +906,18 @@ Index: drivers/net/tulip.c
 +    	}
 +    	tp->rx_ring[entry].status = cpu_to_le32(DescOwned);
 +  	}
-+	ret = 0;
-+out:
-+	clear_bit(0, (void*)&dev->rx_lock);
-+  	return ret;
++  	return 0;
 +}
 +
 +static struct sk_buff *
 +tulip_rx_poll(struct device *dev, int *want)
 +{
 +  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-+  	int rx_work_limit = tp->dirty_rx + RX_RING_SIZE - tp->cur_rx;
++	int rx_work_limit = tp->dirty_rx + RX_RING_SIZE - tp->cur_rx;
 +  	int entry = tp->cur_rx % RX_RING_SIZE;
 +  	struct sk_buff *skb_head, *skb_last;
 +  	int got = 0;
 + 
-+	if (test_and_set_bit(0, (void*)&dev->rx_lock)) {
-+		*want = 0;
-+		return 0L;
-+	}
-+
 +  	skb_head = skb_last = NULL;
 +
 +  	while (! (tp->rx_ring[entry].status & cpu_to_le32(DescOwned))) {
@@ -940,15 +979,13 @@ Index: drivers/net/tulip.c
 +  	}
 +  	dev->last_rx = jiffies; 
 +  	*want = got;
-+
-+	clear_bit(0, (void*)&dev->rx_lock);
 +  	return skb_head;
 +}
 +
 +void
 +tulip_print_stats(void)
 +{
-+  	printk("tulip: %d txdied %d rxdied %d rxnobuf %d txjabb %d txunderflow %d txnobuf\n", txdied, rxdied, rxnobuf, txjabb, txunderflow, txnobuf); 
++  	printk("tulip - %d poll intrs, %d wasted: %d txdied %d rxdied %d rxnobuf %d txjabb %d txunderflow %d txnobuf %d rxintr %d txintr %d otherintr\n", pollintr, wastedintr, txdied, rxdied, rxnobuf, txjabb, txunderflow, txnobuf, rxintr, txintr, otheri); 
 +}
 +
 +
@@ -966,7 +1003,7 @@ Index: drivers/net/tulip.c
 +   
 +#ifdef DEMAND_POLLTX
 +    csr0 = inl(ioaddr + CSR0) & ~(7<<17);
-+    csr0 = csr0 | (1<<17);
++    csr0 = csr0 | (4<<17);
 +    outl(csr0, ioaddr+CSR0);
 +#endif
 +
@@ -1002,7 +1039,6 @@ Index: drivers/net/tulip.c
 +           tp->stats.tx_window_errors,
 +           tp->stats.tx_aborted_errors,
 +           tp->stats.tx_fifo_errors);
-+	tulip_print_stats();
 +
 +#ifdef DEMAND_POLLTX
 +    csr0 = inl(ioaddr + CSR0) & ~(7<<17);
@@ -1020,7 +1056,8 @@ Index: drivers/net/tulip.c
 +  	int entry;
 +  	u32 flag;
 +
-+	if (test_and_set_bit(0, (void*)&dev->tbusy)) {
++	if (test_and_set_bit(0, (void*)&dev->tx_lock)) {
++	    printk("tulip_tx_queue: reject because tx_lock\n");
 +	    return 1;
 +	}
 +
@@ -1054,7 +1091,11 @@ Index: drivers/net/tulip.c
 +  	dev->trans_start = jiffies; 
 +#endif
 +	if (!tp->tx_full) 
-+	    clear_bit(0, (void*)&dev->tbusy);
++	    dev->tbusy = 0;
++	else
++	    dev->tbusy = 1;
++
++	clear_bit(0, (void*)&dev->tx_lock);
 +  	return 0;
 +}
 +
@@ -1067,10 +1108,7 @@ Index: drivers/net/tulip.c
 +	int ret;
 +  	tp = (struct tulip_private *)dev->priv; 
 +	
-+	if (test_and_set_bit(0, (void*)&dev->tx_lock))
-+		return -1;
-+
-+  	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0; dirty_tx++) { 
++  	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0; dirty_tx++) {
 +    	int entry = dirty_tx % TX_RING_SIZE; 
 +    	int status = le32_to_cpu(tp->tx_ring[entry].status);
 +#ifdef PREFETCH
@@ -1106,13 +1144,12 @@ Index: drivers/net/tulip.c
 +  	if (tp->tx_full && dev->tbusy && tp->cur_tx-dirty_tx < TX_RING_SIZE-2) { 
 +    	/* The ring is no longer full, clear tbusy. */ 
 +    	tp->tx_full = 0; 
-+	    clear_bit(0, (void*)&dev->tbusy);
++		dev->tbusy = 0;
 +  	}
 +
 +  	tp->dirty_tx = dirty_tx; 
 +	ret = tp->cur_tx - tp->dirty_tx;
 +	
-+	clear_bit(0, (void*)&dev->tx_lock);
 +  	return ret;
 +}
 +
