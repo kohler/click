@@ -77,6 +77,7 @@ IPFilter::create_wordmap()
   wordmap->insert("tcp",	TYPE_PROTO, IP_PROTO_TCP);
   wordmap->insert("udp",	TYPE_PROTO, IP_PROTO_UDP);
   wordmap->insert("tcpudp",	TYPE_PROTO, IP_PROTO_TCP_OR_UDP);
+  wordmap->insert("transp",	TYPE_PROTO, IP_PROTO_NONE);
   
   wordmap->insert("echo",	TYPE_PORT, 7);
   wordmap->insert("discard",	TYPE_PORT, 9);
@@ -387,7 +388,13 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
        case FIELD_TTL: sa << "ip ttl"; break;
        case FIELD_TCP_WIN: sa << "tcp win"; break;
        case FIELD_ICMP_TYPE: sa << "icmp type"; break;
-       default: sa << "<unknown type " << type << ">";
+       default:
+	if (type & FIELD_PROTO_MASK)
+	  sa << unparse_transp_proto((type & FIELD_PROTO_MASK) >> FIELD_PROTO_SHIFT);
+	else
+	  sa << "ip";
+	sa << "[...]";
+	break;
       }
     } else
       sa << "<unknown type " << type << ">";
@@ -408,6 +415,7 @@ IPFilter::Primitive::unparse_transp_proto(int transp_proto)
    case IP_PROTO_TCP: return "tcp";
    case IP_PROTO_UDP: return "udp";
    case IP_PROTO_TCP_OR_UDP: return "tcpudp";
+   case IP_PROTO_NONE: return "transp";
    default: return "ip proto " + String(transp_proto);
   }
 }
@@ -528,9 +536,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     _transp_proto = UNKNOWN;
     if (_data != TYPE_NONE || _u.i == UNKNOWN)
       return errh->error("IP protocol missing in 'proto' directive");
-    if (_u.i == IP_PROTO_TCP_OR_UDP) {
+    if (_u.i >= 256) {
       if (_op != OP_EQ)
-	return errh->error("can't use relational operators with 'tcpudp'");
+	return errh->error("can't use relational operators with '%s'", unparse_transp_proto(_u.i).c_str());
       _mask.u = 0xFF;
     } else if (set_mask(0xFF, 0, errh) < 0)
       return -1;
@@ -633,7 +641,9 @@ add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tre
     c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
     c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
     c->finish_expr_subtree(tree, Classifier::C_OR);
-  } else
+  } else if (mask == 0xFF && proto == IP_PROTO_NONE)
+    /* nada */;
+  else
     c->add_expr(tree, 8, htonl(proto << 16), htonl(mask << 16));
 }
 
@@ -731,7 +741,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     break;
 
    case TYPE_PROTO:
-    if (_transp_proto != IP_PROTO_TCP_OR_UDP)
+    if (_transp_proto < 256)
       add_comparison_exprs(c, tree, 8, 16);
     break;
 
@@ -772,34 +782,50 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 
 
 static void
-separate_words(Vector<String> &words)
+separate_text(const String &text, Vector<String> &words)
 {
-  Vector<String> out;
-  for (int i = 0; i < words.size(); i++) {
-    const char *data = words[i].data();
-    int len = words[i].length();
-    int first = 0;
-    for (int pos = 0; pos < len; pos++) {
-      int length = -1;
-      if (data[pos] == '(' || data[pos] == ')' || data[pos] == '!'
-	  || data[pos] == '?')
-	length = 1;
-      else if (data[pos] == '&' || data[pos] == '|')
-	length = (pos < len-1 && data[pos+1] == data[pos] ? 2 : 1);
-      else if (data[pos] == '<' || data[pos] == '>')
-	length = (pos < len-1 && data[pos+1] == '=' ? 2 : 1);
-      if (length > 0) {
-	if (pos != first)
-	  out.push_back(words[i].substring(first, pos - first));
-	out.push_back(words[i].substring(pos, length));
-	first = pos + length;
-	pos += length - 1;
+  const char* s = text.data();
+  int len = text.length();
+  int pos = 0;
+  while (pos < len) {
+    while (pos < len && isspace(s[pos]))
+      pos++;
+    switch (s[pos]) {
+
+     case '&': case '|':
+      if (pos < len - 1 && s[pos+1] == s[pos])
+	goto two_char;
+      goto one_char;
+
+     case '<': case '>': case '!': case '=':
+      if (pos < len - 1 && s[pos+1] == '=')
+	goto two_char;
+      goto one_char;
+      
+     case '(': case ')': case '[': case ']': case ',': case ';':
+     case '?':
+     one_char:
+      words.push_back(text.substring(pos, 1));
+      pos++;
+      break;
+
+     two_char:
+      words.push_back(text.substring(pos, 2));
+      pos += 2;
+      break;
+
+     default: {
+	int first = pos;
+	while (pos < len && (isalnum(s[pos]) || s[pos] == '-' || s[pos] == '.' || s[pos] == '/' || s[pos] == '@' || s[pos] == '_' || s[pos] == ':'))
+	  pos++;
+	if (pos == first)
+	  pos++;
+	words.push_back(text.substring(first, pos - first));
+	break;
       }
+      
     }
-    if (len != first)
-      out.push_back(words[i].substring(first, len - first));
   }
-  words = out;
 }
 
 void
@@ -903,6 +929,52 @@ IPFilter::parse_term(const Vector<String> &words, int pos,
   return pos;
 }
 
+static int
+parse_brackets(IPFilter::Primitive& prim, const Vector<String>& words, int pos,
+	       ErrorHandler* errh)
+{
+  int first_pos = pos + 1;
+  String combination;
+  for (pos++; pos < words.size() && words[pos] != "]"; pos++)
+    combination += words[pos];
+  if (pos >= words.size()) {
+    errh->error("missing ']'");
+    return first_pos;
+  }
+  pos++;
+
+  // parse 'combination'
+  int fieldpos, len = 1;
+  const char* colon = find(combination.begin(), combination.end(), ':');
+  const char* comma = find(combination.begin(), combination.end(), ',');
+  if (colon < combination.end() - 1) {
+    if (cp_integer(combination.begin(), colon, 0, &fieldpos) == colon
+	&& cp_integer(colon + 1, combination.end(), 0, &len) == combination.end())
+      goto non_syntax_error;
+  } else if (comma < combination.end() - 1) {
+    int pos2;
+    if (cp_integer(combination.begin(), comma, 0, &fieldpos) == comma
+	&& cp_integer(comma + 1, combination.end(), 0, &pos2) == combination.end()) {
+      len = pos2 - fieldpos + 1;
+      goto non_syntax_error;
+    }
+  } else if (cp_integer(combination, &fieldpos))
+    goto non_syntax_error;
+  errh->error("syntax error after '[', expected '[POS]' or '[POS:LEN]'");
+  return pos;
+
+ non_syntax_error:
+  if (len < 1 || len > 4)
+    errh->error("LEN in '[POS:LEN]' out of range, should be between 1 and 4");
+  else if ((fieldpos & ~3) != ((fieldpos + len - 1) & ~3))
+    errh->error("field [%d:%d] does not fit in a single word", fieldpos, len);
+  else if (prim._transp_proto == IPFilter::UNKNOWN)
+    prim.set_type(IPFilter::TYPE_FIELD | ((fieldpos*8) << IPFilter::FIELD_OFFSET_SHIFT) | ((len*8 - 1) << IPFilter::FIELD_LENGTH_SHIFT), errh);
+  else
+    prim.set_type(IPFilter::TYPE_FIELD | (prim._transp_proto << IPFilter::FIELD_PROTO_SHIFT) | ((fieldpos*8) << IPFilter::FIELD_OFFSET_SHIFT) | ((len*8 - 1) << IPFilter::FIELD_LENGTH_SHIFT), errh);
+  return pos;
+}
+
 int
 IPFilter::parse_factor(const Vector<String> &words, int pos,
 		       Vector<int> &tree, Primitive &prev_prim,
@@ -1001,9 +1073,15 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // prev_prim is not relevant if there were any qualifiers
   if (pos != first_pos)
     prev_prim.clear();
+
+  // optional [] syntax
+  String wd = (pos >= words.size() - 1 ? String() : words[pos]);
+  if (wd == "[" && pos > first_pos && prim._type == TYPE_NONE) {
+    pos = parse_brackets(prim, words, pos, errh);
+    wd = (pos >= words.size() - 1 ? String() : words[pos]);
+  }
   
   // optional relational operation
-  String wd = (pos >= words.size() - 1 ? String() : words[pos]);
   pos++;
   if (wd == "=" || wd == "==")
     /* nada */;
@@ -1093,8 +1171,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   //        |  ip | icmp | tcp | udp
   for (int argno = 0; argno < conf.size(); argno++) {
     Vector<String> words;
-    cp_spacevec(conf[argno], words);
-    separate_words(words);
+    separate_text(cp_unquote(conf[argno]), words);
 
     if (words.size() == 0) {
       errh->error("empty pattern %d", argno);
@@ -1106,7 +1183,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
     // get slot
     int slot = noutputs();
     {
-      String slotwd = cp_unquote(words[0]);
+      String slotwd = words[0];
       if (slotwd == "allow") {
 	slot = 0;
 	if (noutputs() == 0)

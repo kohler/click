@@ -169,7 +169,7 @@ class IPFilter : public Classifier { public:
     FIELD_TTL	= (TYPE_FIELD | ((8*8) << FIELD_OFFSET_SHIFT) | 7),
     FIELD_TCP_WIN = (TYPE_FIELD | (IP_PROTO_TCP << FIELD_PROTO_SHIFT) | ((14*8) << FIELD_OFFSET_SHIFT) | 15),
     FIELD_ICMP_TYPE = (TYPE_FIELD | (IP_PROTO_ICMP << FIELD_PROTO_SHIFT) | (0 << FIELD_OFFSET_SHIFT) | 7),
-    
+
     UNKNOWN = -1000,
     
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,

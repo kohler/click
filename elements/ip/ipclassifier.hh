@@ -104,6 +104,17 @@ window length. Note that window scaling is not applied.
 TYPE is a value between 0 and 255 or an ICMP type name (see below). Matches
 ICMP packets with the given ICMP type.
 
+=item B<ip[POS:LEN] VALUE>
+
+Matches packets whose IP header field starting at byte position POS, and going
+on for LEN bytes, equals VALUE.  You can say B<ip[POS]> instead of
+B<ip[POS:1]>.
+
+=item B<transp[POS:LEN] VALUE>
+
+Like B<ip[POS:LEN]>, but for transport header fields.  You can also give
+particular transport protocols, such as B<tcp[POS:LEN]>.
+
 =item B<true>
 
 Matches every packet.
@@ -120,10 +131,10 @@ must be surrounded by spaces!), and with parentheses. For example, '(dst port
 www or dst port ssh) and tcp opt syn'.
 
 All primitives except B<tcp opt> accept an optional OPERATION, '==' or '!=',
-which can occur before the actual option. If no OPERATION is specified, '=='
-is assumed. 'src host == 10.0.0.10' matches packets whose source host is
+which can occur before the actual option.  If no OPERATION is specified, '=='
+is assumed.  'src host == 10.0.0.10' matches packets whose source host is
 10.0.0.10; 'src host != 10.0.0.10' matches packets whose source host I<is not>
-10.0.0.10. Directives with integer values also support the '<', '>', '<=',
+10.0.0.10.  Directives with integer values also support the '<', '>', '<=',
 and '>=' operations.
 
 For B<port> and B<icmp type> directives, 'DIRECTIVE != VALUE' is not the
