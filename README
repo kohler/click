@@ -136,17 +136,17 @@ site for more up-to-date configurations.
 ADDING YOUR OWN ELEMENTS
 ------------------------
 
-    Please see the FAQ in this directory if you want to know how to add
-elements to Click.
+    Please see the FAQ in this directory to learn how to add elements to
+Click.
 
 COPYRIGHT AND LICENSE
-=====================
+---------------------
 
     We are distributing Click under a version of the "MIT License", which
 is a BSD-like license. See the files `LICENSE' and `AUTHORS' for details.
 
 BUGS, QUESTIONS, ETC.
-=====================
+---------------------
 
     We welcome bug reports, questions, comments, code, whatever you'd like
 to give us. We also have a mailing list for software announcements, and an
