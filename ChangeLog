@@ -1,3 +1,13 @@
+2001-02-25 Sunday 19:23  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/binpackingsched.hh: file binpackingsched.hh was
+	initially added on branch smp_click.
+
+2001-02-25 Sunday 19:23  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/binpackingsched.cc: file binpackingsched.cc was
+	initially added on branch smp_click.
+
 2001-02-25 Sunday 09:09  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: forceicmp.cc, forceicmp.hh: ForceICMP -- fix
