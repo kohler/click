@@ -348,5 +348,5 @@ FromDevice::add_handlers()
     add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(AnyDevice Storage bsdmodule)
+ELEMENT_REQUIRES(AnyDevice bsdmodule)
 EXPORT_ELEMENT(FromDevice)

@@ -199,6 +199,7 @@ include/click/standard/alignmentinfo.hh
 include/click/standard/drivermanager.hh
 include/click/standard/errorelement.hh
 include/click/standard/scheduleinfo.hh
+include/click/standard/storage.hh
 
 include/clicknet
 include/clicknet/ether.h
@@ -207,9 +208,9 @@ include/clicknet/icmp.h
 include/clicknet/icmp6.h
 include/clicknet/ip.h
 include/clicknet/ip6.h
+include/clicknet/rfc1483.h
 include/clicknet/tcp.h
 include/clicknet/udp.h
-include/clicknet/rfc1483.h
 
 lib
 lib/archive.cc

@@ -64,7 +64,7 @@ polling-capable device, use PollDevice instead.
 =a PollDevice, ToDevice, FromHost, ToHost, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
-#include "elements/standard/queue.hh"
+#include <click/standard/storage.hh>
 
 class FromDevice : public AnyDevice, public Storage { public:
     

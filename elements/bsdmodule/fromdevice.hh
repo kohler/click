@@ -67,7 +67,7 @@ which can be used for better performance and stability).
 
 #include <click/element.hh>
 #include "elements/bsdmodule/anydevice.hh"
-#include "elements/standard/queue.hh"
+#include <click/standard/storage.hh>
 
 class FromDevice : public AnyDevice, public Storage { public:
     

@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "pi.hh"
-#include "elements/standard/queue.hh"
+#include <click/standard/storage.hh>
 #include <click/elemfilter.hh>
 #include <click/error.hh>
 #include <click/router.hh>
@@ -360,5 +360,5 @@ PI::add_handlers()
 }
 
 
-ELEMENT_REQUIRES(Storage int64 false)
+ELEMENT_REQUIRES(int64 false)
 EXPORT_ELEMENT(PI)

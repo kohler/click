@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "red.hh"
-#include "elements/standard/queue.hh"
+#include <click/standard/storage.hh>
 #include <click/elemfilter.hh>
 #include <click/error.hh>
 #include <click/router.hh>
@@ -387,5 +387,5 @@ RED::add_handlers()
     add_read_handler("avg_queue_size", read_parameter, (void *)3);
 }
 
-ELEMENT_REQUIRES(Storage int64)
+ELEMENT_REQUIRES(int64)
 EXPORT_ELEMENT(RED)
