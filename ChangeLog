@@ -1,3 +1,7 @@
+2001-10-30 Tuesday 00:21  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL (1.18): update INSTALL variables (thanks, Doug)
+
 2001-10-29 Monday 21:44  Eddie Kohler <kohler@aciri.org>
 
 	* etc/samplepackage/acclick.m4 (1.4): update to acclick

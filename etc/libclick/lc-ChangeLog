@@ -1,3 +1,7 @@
+2001-10-30 Tuesday 00:21  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: update INSTALL variables (thanks, Doug)
+
 2001-10-29 Monday 13:48  Eddie Kohler <kohler@aciri.org>
 
 	* click-mkelemmap: click-mkelemmap: generate elementmap lines for
