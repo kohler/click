@@ -1,7 +1,8 @@
-  
 //
 // sample packets between eth2 and eth1 at 20000 packets per second. send
 // sampled packets up to linux device "sampler", created by FromHost.
+// This configuration will only run in the kernel (so you must use
+// 'click-install sampler.click').
 //
 
 elementclass RatedSampler {
