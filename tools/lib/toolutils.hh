@@ -84,14 +84,15 @@ class ElementMap { public:
   void parse(const String &data, const String &package_name);
   bool parse_default_file(const String &default_path, ErrorHandler *);
   bool parse_requirement_files(RouterT *, const String &default_path, ErrorHandler *, String *not_found = 0);
-  bool parse_all_files(RouterT *, String default_path, ErrorHandler *);
+  bool parse_all_files(RouterT *, const String &default_path, ErrorHandler *);
+  static void report_file_not_found(String default_path, bool found_default, ErrorHandler *);
   String unparse() const;
   
-  void map_indexes(const RouterT *, Vector<int> &, ErrorHandler *) const;
+  void map_indexes(const RouterT *, Vector<int> &, ErrorHandler * = 0) const;
   
   bool driver_indifferent(const Vector<int> &map_indexes) const;
   bool driver_compatible(const Vector<int> &map_indexes, int driver) const;
-  bool driver_compatible(const RouterT *, int driver, ErrorHandler *) const;
+  bool driver_compatible(const RouterT *, int driver, ErrorHandler * =0) const;
   void limit_driver(int driver);
   
  private:

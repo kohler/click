@@ -468,7 +468,7 @@ ElementMap::unparse() const
 
 void
 ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
-			ErrorHandler *errh) const
+			ErrorHandler *errh = 0) const
 {
   assert(r->is_flat());
   map_indexes.assign(r->ntypes(), -1);
@@ -518,7 +518,7 @@ ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
 }
 
 bool
-ElementMap::driver_compatible(const RouterT *router, int driver, ErrorHandler *errh) const
+ElementMap::driver_compatible(const RouterT *router, int driver, ErrorHandler *errh = 0) const
 {
   Vector<int> map;
   map_indexes(router, map, errh);
@@ -598,7 +598,7 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
 }
 
 bool
-ElementMap::parse_all_files(RouterT *r, String default_path, ErrorHandler *errh)
+ElementMap::parse_all_files(RouterT *r, const String &default_path, ErrorHandler *errh)
 {
   bool found_default = parse_default_file(default_path, errh);
   bool found_other = parse_requirement_files(r, default_path, errh);
@@ -606,22 +606,28 @@ ElementMap::parse_all_files(RouterT *r, String default_path, ErrorHandler *errh)
   if (found_default && found_other)
     return true;
   else {
-    const char *path = getenv("CLICKPATH");
-    bool allows_default = path_allows_default_path(path);
-    if (!allows_default)
-      errh->warning("in CLICKPATH `%s'", path);
-    else if (!path)
-      errh->warning("in install directory `%s'", default_path.cc());
-    else
-      errh->warning("in CLICKPATH or `%s'", default_path.cc());
-
-    if (!found_default)
-      errh->message("(You may get unknown element class errors.\nTry `make install' or set the CLICKPATH evironment variable.)");
-    else
-      errh->message("(You may get unknown element class errors.)");
-
+    report_file_not_found(default_path, found_default, errh);
     return false;
   }
+}
+
+void
+ElementMap::report_file_not_found(String default_path, bool found_default,
+				  ErrorHandler *errh)
+{
+  if (!found_default)
+    errh->message("(You may get unknown element class errors.\nTry `make install' or set the CLICKPATH evironment variable.");
+  else
+    errh->message("(You may get unknown element class errors.");
+
+  const char *path = clickpath();
+  bool allows_default = path_allows_default_path(path);
+  if (!allows_default)
+    errh->message("Searched in CLICKPATH `%s'.)", path);
+  else if (!path)
+    errh->message("Searched in install directory `%s'.)", default_path.cc());
+  else
+    errh->message("Searched in CLICKPATH and `%s'.)", default_path.cc());
 }
 
 
