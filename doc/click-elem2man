@@ -44,6 +44,7 @@ my(%podentities) =
 my $directory;
 my $section = 'n';
 my $package;
+my $uninstall = 0;
 my(@all_outnames, %all_outsections, %summaries_by_section, %all_roff_summaries);
 
 my(%processing_constants) =
@@ -465,7 +466,10 @@ sub process_comment ($$) {
     my($main_outname);
     if ($directory) {
 	$main_outname = "$directory/$outfiles[0].$outsections[0]";
-	if (!open(OUT, ">$main_outname")) {
+	if ($uninstall) {
+	    unlink($main_outname);
+	    open(OUT, ">/dev/null");
+	} elsif (!open(OUT, ">$main_outname")) {
 	    print STDERR "$main_outname: $!\n";
 	    return;
 	}
@@ -728,6 +732,7 @@ Options:
   -d, --directory DIR     Place generated manual pages in directory DIR.
   -f, --files FILE        Read header filenames from FILE.
   -e, --elementmap EMAP   Read information about other elements from EMAP.
+  -u, --uninstall         Remove existing manual pages.
   -h, --help              Print this message and exit.
   -p, --package PKG       Elements are in PKG package, or say 'DEFAULT'.
 
@@ -766,6 +771,8 @@ while (@ARGV) {
 	read_elementmap(shift @ARGV);
     } elsif (/^--elementmap=(.*)$/) {
 	read_elementmap($1);
+    } elsif (/^-u$/ || /^--uninstall$/) {
+	$uninstall = 1;
     } elsif (/^-h$/ || /^--help$/) {
 	help();
     } elsif (/^-./) {
@@ -781,11 +788,17 @@ while (@ARGV) {
 push @files, "-" if !$any_files;
 
 umask(022);
-open(OUT, ">&STDOUT") if !$directory;
+if ($uninstall) {
+    open(OUT, ">/dev/null");
+} elsif (!$directory) {
+    open(OUT, ">&STDOUT");
+}
 foreach $fn (@files) {
     process_file($fn);
 }
-close OUT if !$directory;
+if ($uninstall || !$directory) {
+    close OUT;
+}
 
 
 # printing element list
@@ -866,11 +879,23 @@ sub one_summary ($@) {
 sub make_elementlist () {
     if ($directory) {
 	my($fn) = "$directory/elements.$section";
+	if ($uninstall) {
+	    if ($elementlist > 1) {
+		# erase record of elements added
+		%summaries_by_section = ();
+		@all_outfiles = ();
+	    } else {
+		unlink($fn);
+		return;
+	    }
+	}
 	read_elementlist($fn) if -r $fn && $elementlist > 1;
 	if (!open(OUT, ">$fn")) {
 	    print STDERR "click-elem2man: $fn: $!\n";
 	    return;
 	}
+    } elsif ($uninstall) {
+	return;
     }
     print OUT <<"EOD;";
 .\\" -*- mode: nroff -*-

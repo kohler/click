@@ -108,11 +108,12 @@ endif
 install: libnsclick.a
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL) libnsclick.a $(libdir)/libnsclick.a
-install-man:
+uninstall:
+	/bin/rm -f $(libdir)/libnsclick.a
 
 clean:
 	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install install-man
+.PHONY: all clean distclean elemlist install uninstall

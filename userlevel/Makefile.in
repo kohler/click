@@ -121,7 +121,9 @@ install: $(INSTALLPROGS) install-lib
 install-lib: $(INSTALLLIBS)
 	$(mkinstalldirs) $(libdir)
 	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(libdir)/$$i; done
-install-man:
+uninstall:
+	for i in $(INSTALLLIBS); do /bin/rm -f $(libdir)/$$i; done
+	for i in $(INSTALLPROGS); do /bin/rm -f $(bindir)/$$i; done
 
 clean:
 	rm -f *.d *.o $(INSTALLPROGS) elements.mk elements.cc elements.conf libclick.a
@@ -130,4 +132,5 @@ clean-lib:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean clean-lib distclean elemlist install install-lib install-man
+.PHONY: all clean clean-lib distclean elemlist \
+	install install-lib uninstall

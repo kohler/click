@@ -83,7 +83,8 @@ install: $(LIBCLICKTOOL) install-local
 install-local: all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-align $(bindir)/click-align
-install-man:
+uninstall:
+	/bin/rm -f $(bindir)/click-align
 
 clean:
 	rm -f *.d *.o click-align
@@ -91,4 +92,4 @@ distclean: clean
 	-rm -f Makefile
 
 .PHONY: all all-local clean distclean \
-	install install-local install-bin install-man $(LIBCLICKTOOL)
+	install install-local uninstall $(LIBCLICKTOOL)

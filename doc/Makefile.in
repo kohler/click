@@ -60,6 +60,21 @@ install-info: Makefile $(srcdir)/click.info
 	done
 	-$(INSTALL_INFO) --info-dir=$(infodir) $(infodir)/click.info 2>&1 >/dev/null
 
+uninstall: uninstall-man uninstall-info
+	/bin/rm -f $(bindir)/click-elem2man
+uninstall-man:
+	cd $(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1
+	cd $(mandir)/man5; /bin/rm -f click.5
+	cd $(mandir)/man8; /bin/rm -f click.o.8
+	cd $(mandir)/man7; /bin/rm -f elementdoc.7
+	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ @TARGETS@ $(EXTRA_PROVIDES)" | $(PERL) $(subdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f - -u)
+uninstall-info: $(srcdir)/click.info
+	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
+	  if test -f $(srcdir)/$$f; then \
+	    echo "/bin/rm -f (infodir)/$$f"; \
+	    /bin/rm -f $(infodir)/$$f; fi; \
+	done
+
 info: $(srcdir)/click.info
 	@:
 $(srcdir)/click.info: $(srcdir)/click.texi
@@ -78,4 +93,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-man install-info info always
+.PHONY: all clean distclean info always \
+	install install-man install-info uninstall uninstall-man uninstall-info

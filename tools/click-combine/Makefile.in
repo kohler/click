@@ -88,7 +88,8 @@ install-local: all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-combine $(bindir)/click-combine
 	$(INSTALL) click-uncombine $(bindir)/click-uncombine
-install-man:
+uninstall:
+	/bin/rm -f $(bindir)/click-combine $(bindir)/click-uncombine
 
 clean:
 	rm -f *.d *.o click-combine click-uncombine
@@ -96,4 +97,4 @@ distclean: clean
 	-rm -f Makefile
 
 .PHONY: all all-local clean distclean \
-	install install-local install-bin install-man $(LIBCLICKTOOL)
+	install install-local uninstall $(LIBCLICKTOOL)

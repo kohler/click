@@ -120,7 +120,8 @@ endif
 install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(libdir)
 	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
-install-man:
+uninstall:
+	for i in $(INSTALLOBJS); do /bin/rm -f $(libdir)/$$i; done
 
 clean:
 	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf \
@@ -128,4 +129,4 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install install-man
+.PHONY: all clean distclean elemlist install uninstall

@@ -80,6 +80,17 @@ install-local-include: stamp-h
 install-include: install-local-include
 	@cd tools && $(MAKE) install-include
 
+uninstall:
+	@for d in @TARGETS@ doc tools; do (cd $$d && $(MAKE) uninstall) || exit 1; done
+	@$(MAKE) uninstall-local uninstall-local-include
+uninstall-local:
+	/bin/rm -f $(bindir)/click-buildtool $(bindir)/click-compile $(bindir)/click-mkelemmap $(datadir)/elementmap.xml $(datadir)/srcdir $(datadir)/src
+uninstall-local-include:
+	cd $(srcdir)/include/click; for i in *.h *.hh *.cc; do /bin/rm -f $(includedir)/$$i; done
+	cd $(top_builddir); for i in *.h; do /bin/rm -f $(includedir)/$$i; done
+	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(includedir)/standard/$$i; done
+	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(netincludedir)/$$i; done
+
 elemlist elemlists:
 	@for d in @TARGETS@; do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
@@ -173,4 +184,5 @@ distdir: $(srcdir)/configure
 .PHONY: all always elemlist elemlists \
 	bsdmodule exopc linuxmodule ns tools userlevel \
 	clean distclean dist distdir \
-	install install-doc install-man install-local install-include install-local-include
+	install install-doc install-man install-local install-include install-local-include \
+	uninstall uninstall-local uninstall-local-include
