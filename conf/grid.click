@@ -73,10 +73,3 @@ cl [2] -> SetIPAddress(GRID_GW) -> [1] lr; // for grid gateway
 nb [1] -> to_wvlan; // Routing hello packets
 
 // SendGridHello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP) -> to_wvlan;
-
-
-
-
-
-
-

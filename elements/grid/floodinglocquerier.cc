@@ -243,7 +243,15 @@ FloodingLocQuerier::handle_reply(Packet *p)
   click_ether *ethh = (click_ether *) p->data();
   grid_hdr *gh = (grid_hdr *) (ethh + 1);
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
-  IPAddress ipa(nb->dst_ip);
+  IPAddress ipa(gh->ip); // the sender of the reply
+  IPAddress ip_dst(nb->dst_ip);
+
+  if (ip_dst != _my_ip) {
+    click_chatter("FloodingLocQuerier %s: got location query reply for %s (not for us!); check the configuration", id().cc(), ipa.s().cc());
+    p->kill();
+    return;
+  }
+
   int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
   LocEntry *ae = _map[bucket];
   while (ae && ae->ip != ipa)
