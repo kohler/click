@@ -4455,8 +4455,8 @@ task queue, and, optionally, schedules it. Typically, an element's
 @deftypemethod Task void initialize (Router *@var{r}, bool @var{scheduled})
 @deftypemethodx Task void initialize (Element *@var{e}, bool @var{scheduled})
 Attaches the task to the router object @var{r} (or
-@code{@var{e}->router()}). Additionally schedules the task if
-@var{scheduled} is true.
+@code{@var{e}->router()}). Additionally sets the task's tickets to a
+default value, and schedules the task if @var{scheduled} is true.
 @end deftypemethod
 
 Many elements call @code{ScheduleInfo::join_scheduler} instead of
