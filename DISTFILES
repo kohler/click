@@ -8,7 +8,6 @@ NEWS
 README
 
 Makefile.in
-acconfig.h
 click-buildtool
 click-compile.in
 click-mkelemmap
@@ -20,12 +19,12 @@ configure
 install-sh
 missing
 mkinstalldirs
+pathvars.h.in
 
 doc
 doc/Makefile.in
 doc/click.1
 doc/click.5
-doc/click.texi
 doc/click.o.8
 doc/click-align.1
 doc/click-elem2man
@@ -33,12 +32,15 @@ doc/click-combine.1
 doc/click-devirtualize.1
 doc/click-fastclassifier.1
 doc/click-install.1
+doc/click-mkmindriver.1
 doc/click-uncombine.1
 doc/click-undead.1
 doc/click-uninstall.1
 doc/click-xform.1
 doc/elementdoc.7
+doc/click.texi
 doc/texinfo.tex
+doc/click.info*
 
 conf
 conf/make-ip-conf.pl
