@@ -166,7 +166,8 @@ set to true.
 
 =a
 
-ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2), AggregateIPFlows */
+ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2), AggregateIPFlows,
+FromTcpdump */
 
 class FromDump : public Element { public:
 
