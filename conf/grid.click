@@ -28,11 +28,17 @@ elementclass TTLChecker {
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 ChatterSocket(tcp, CHATTER_PORT);
 ChatterSocket(tcp, ROUTELOG_PORT, CHANNEL ROUTELOG_CHANNEL);
+ChatterSocket(tcp, 6699, CHANNEL probechannel, QUIET_CHANNEL false);
+ChatterSocket(tcp, 6700);
 
 li :: GridLocationInfo(POS_LAT, POS_LON);
 
 fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
 loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
+
+rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
+rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP);
+rpr :: GridProbeReplyReceiver(probechannel);
 
 nb :: GridRouteTable(NBR_TIMEOUT, 
 		     LR_PERIOD, LR_JITTER, 
@@ -42,7 +48,18 @@ nb :: GridRouteTable(NBR_TIMEOUT,
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 
+grid_demux :: Classifier(19/GRID_NBR_ENCAP_PROTO,  // encapsulated (data) packets
+			 19/GRID_LOC_QUERY_PROTO,  // loc query packets
+			 19/GRID_LOC_REPLY_PROTO,  // loc reply packets
+			 19/GRID_LR_HELLO_PROTO,   // route advertisement packets
+			 19/06,                    // probes
+			 19/07);                   // probe replies	
+
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
+
+rps [0] -> PrintGrid("rps0 ") -> grid_demux; // insert originated route probes into grid demux so we can reply to our own probe
+rph [0] -> PrintGrid("rph0 ") -> [0] lr;     // forward probes that need to continue
+rph [1] -> PrintGrid("rph1 ") -> grid_demux; // insert probe replies into grid demux so we can get our own reply
 
 // device layer els
 
@@ -65,27 +82,34 @@ from_grid_if
   -> HostEtherFilter(GRID_MAC_ADDR, 1)
   -> check_grid :: CheckGridHeader
   -> fr :: FilterByRange(RANGE, li) [0] 
-  -> grid_demux :: Classifier(19/GRID_NBR_ENCAP_PROTO,  // encapsulated (data) packets
-			      19/GRID_LOC_QUERY_PROTO,  // loc query packets
-			      19/GRID_LOC_REPLY_PROTO,  // loc reply packets
-			      19/GRID_LR_HELLO_PROTO);  // route advertisement packets
+  -> grid_demux;
 
 grid_demux [0]
 //	       -> Print("gd0 ")
 	       -> [0] lr;
 grid_demux [1]
 //	       -> Print("gd1 ")
-               -> query_demux :: Classifier(62/GRID_HEX_IP, 
-					    62/GRID_HEX_ANY_GATEWAY_IP,
+               -> query_demux :: Classifier(66/GRID_HEX_IP, 
+					    66/GRID_HEX_ANY_GATEWAY_IP,
 					    -); // loc query for us
 grid_demux [2]
 //	       -> Print("gd2 ")
-               -> repl_demux :: Classifier(62/GRID_HEX_IP, 
-					   62/GRID_HEX_ANY_GATEWAY_IP,
+               -> repl_demux :: Classifier(66/GRID_HEX_IP, 
+					   66/GRID_HEX_ANY_GATEWAY_IP,
 					   -); // loc reply for us
 grid_demux [3]
 //	       -> Print("gd3 ")
                -> nb;
+
+grid_demux [4]
+             -> Print("gd4 ") 
+               -> rph;
+
+grid_demux [5]
+             -> Print("gd5 ") 
+               -> probe_repl_demux :: Classifier(66/GRID_HEX_IP, 
+						 66/GRID_HEX_ANY_GATEWAY_IP,
+						 -); // probe reply for us
 
 query_demux [0] 
 //	       -> Print("qd0 ")
@@ -122,6 +146,25 @@ repl_demux [0]
 repl_demux [2] 
 //	       -> Print("qd2 ")
                -> [0] lr; // forward query reply packets like encap packets
+
+probe_repl_demux [0]
+               -> PrintGrid("prd0 ")
+               -> rpr; // handle probe replies for us
+
+#if CPP_IS_GATEWAY==1
+probe_repl_demux [1]
+               -> PrintGrid("prd1 ")
+               -> rpr; // handle probe replies for us
+#else
+probe_repl_demux [1]
+               -> PrintGrid("prd1 ")
+               -> [0] lr; // fwd replies for someone else
+#endif
+
+probe_repl_demux [2]
+               -> PrintGrid("prd2 ")
+               -> [0] lr; // fwd replies for someone else
+
 
 fq [0] 
 //	       -> Print("fq0 ")
