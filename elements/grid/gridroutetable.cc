@@ -203,6 +203,13 @@ GridRouteTable::simple_action(Packet *packet)
      * broken route advertisement 
      */
     if (curr->num_hops == 0) {
+      click_chatter ("num_hops 0 in offered route to %d %d %d %d via %s\n", 
+		     curr->ip & 0x000000ff,
+		     curr->ip & 0x0000ff00,
+		     curr->ip & 0x00ff0000,
+		     curr->ip & 0xff000000,
+		     ipaddr.s().cc());
+
       assert(ntohl(curr->seq_no) & 1); // broken routes have odd seq_no
     
       /* if we don't have a route to this destination, ignore it */
