@@ -6,26 +6,24 @@ CLICK_DECLS
 
 class ElementFilter { public:
 
-    ElementFilter()			: _match_count(0) { }
+    ElementFilter()			{ }
     virtual ~ElementFilter()		{ }
 
-    bool match(Element *e, int port);
-    virtual bool check_match(Element *e, int port);
+    inline bool match_input(Element *, int port);
+    inline bool match_output(Element *, int port);
+    inline bool match(Element *);
 
-    int match_count() const		{ return _match_count; }
+    enum PortType { NONE, INPUT, OUTPUT };
+    virtual bool check_match(Element *e, int port, PortType);
 
     void filter(Vector<Element *> &);
-
-  private:
-
-    int _match_count;
 
 };
 
 class CastElementFilter : public ElementFilter { public:
 
     CastElementFilter(const String &);
-    bool check_match(Element *, int);
+    bool check_match(Element *, int, PortType);
 
   private:
 
@@ -35,18 +33,15 @@ class CastElementFilter : public ElementFilter { public:
 
 
 inline bool
-ElementFilter::match(Element *e, int port)
+ElementFilter::match_input(Element *e, int port)
 {
-    bool m = check_match(e, port);
-    if (m)
-	_match_count++;
-    return m;
+    return check_match(e, port, INPUT);
 }
 
 inline bool
-ElementFilter::check_match(Element *, int)
+ElementFilter::match_output(Element *e, int port)
 {
-    return false;
+    return check_match(e, port, OUTPUT);
 }
 
 CLICK_ENDDECLS

@@ -20,12 +20,18 @@
 #include <click/elemfilter.hh>
 CLICK_DECLS
 
+bool
+ElementFilter::check_match(Element *, int, PortType)
+{
+    return false;
+}
+
 void
 ElementFilter::filter(Vector<Element *> &v)
 {
     Vector<Element *> nv;
     for (int i = 0; i < v.size(); i++)
-	if (match(v[i], -1))
+	if (check_match(v[i], -1, NONE))
 	    nv.push_back(v[i]);
     v = nv;
 }
@@ -37,7 +43,7 @@ CastElementFilter::CastElementFilter(const String &what)
 }
 
 bool
-CastElementFilter::check_match(Element *e, int)
+CastElementFilter::check_match(Element *e, int, PortType)
 {
     return e->cast(_what.c_str()) != 0;
 }
