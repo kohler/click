@@ -127,8 +127,41 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
 	[AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes; DL_LIBS="-ldl"], ac_have_dlopen=no)])
     if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
 	AC_DEFINE(HAVE_DYNAMIC_LINKING)
+	ac_have_dynamic_linking=yes
     fi
     AC_SUBST(DL_LIBS)
+])
+
+
+dnl
+dnl CLICK_CHECK_BUILD_DYNAMIC_LINKING
+dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist 
+dnl and work, on the build system. Must have done CLICK_CHECK_DYNAMIC_LINKING
+dnl already.
+dnl
+
+AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
+    SAVE_CXX="$CXX"; SAVE_CXXCPP="$CXXCPP"
+    CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
+    SAVE_CV="ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h'; ac_cv_func_dlopen='$ac_cv_func_dlopen'; ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
+    unset ac_cv_header_dlfcn_h ac_cv_func_dlopen ac_cv_lib_dl_dlopen
+    BUILD_DL_LIBS=
+    AC_CHECK_HEADERS(dlfcn.h, ac_build_have_dlfcn_h=yes, ac_build_have_dlfcn_h=no)
+    AC_CHECK_FUNC(dlopen, ac_build_have_dlopen=yes,
+	[AC_CHECK_LIB(dl, dlopen, [ac_build_have_dlopen=yes; BUILD_DL_LIBS="-ldl"], ac_have_dlopen=no)])
+    if test "x$ac_build_have_dlopen" = xyes -a "x$ac_build_have_dlfcn_h" = xyes; then
+	ac_build_have_dynamic_linking=yes
+    fi
+    if test "x$ac_build_have_dynamic_linking" != "x$ac_have_dynamic_linking"; then
+	AC_MSG_ERROR([
+=========================================
+
+Build system and host system don't have the same dynamic linking state!
+
+=========================================])
+    fi
+    AC_SUBST(BUILD_DL_LIBS)
+    eval "$SAVE_CV"
 ])
 
 
