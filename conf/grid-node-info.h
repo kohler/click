@@ -4,14 +4,14 @@
 #define NET_DEVICE wvlan0
 
 // MAC address of NET_DEVICE
-#define MAC_ADDR 00:60:1D:23:A7:A6
+#define MAC_ADDR  00:90:27:E0:23:03
 
 // tunnel device for user-level grid configuration
 #define TUN_DEVICE tap
 
 // this node's Grid address information
-#define GRID_IP 18.26.7.2
-#define GRID_IP_HEX 16/121a0702 // 18.26.7.2
+#define GRID_IP 18.26.7.1
+#define GRID_IP_HEX 16/121a0701 // 18.26.7.1
 #define GRID_NETMASK 255.255.255.0
 
 // Grid network number in Click hex notation, with IP source address
@@ -31,3 +31,6 @@
 // Grid ethernet protocol number in Click hex notation with ethernet
 // protocol offset (typically 12) e.g. 12/7FFF
 #define GRID_ETH_PROTO 12/7FFF
+
+// Grid nbr encap  protocol number in hex, with MAC packet offset
+#define GIR_NBR_ENCAP_PROTO 15/02

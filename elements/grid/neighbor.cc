@@ -183,9 +183,6 @@ Neighbor::simple_action(Packet *packet)
 	  }
 	}
       }
-      
-      // nothing further to do
-      packet->kill();
     }
     break;
     
