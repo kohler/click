@@ -6,7 +6,6 @@ elements/linuxmodule/perfinfo.hh
 elements/linuxmodule/perfinfo.cc
 elements/linuxmodule/perfcount.hh
 elements/linuxmodule/perfcount.cc
-elements/linuxmodule/fast*
 elements/local/*.hh
 elements/local/*.cc
 elements/standard/block.hh

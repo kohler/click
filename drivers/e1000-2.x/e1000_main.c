@@ -4033,12 +4033,7 @@ e1000_rx_poll(struct device *dev, int *want)
         }
 
         skb->ip_summed = CHECKSUM_NONE;
-	/* 
-	 * polling version of the driver does not check the eth type, wait for
-	 * Click to check it
-	 */
-        /* skb->protocol = eth_type_trans(skb, dev); */
-	skb_pull(skb, dev->hard_header_len);
+        skb->protocol = eth_type_trans(skb, dev);
 
         if (got == 0) {
           skb_head = skb;

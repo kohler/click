@@ -258,7 +258,7 @@ PollDevice::run_scheduled()
       // lines that contain ethernet and ip headers.
 #if __i386__ && HAVE_INTEL_CPU
       asm volatile("prefetcht0 %0" : : "m" (skb_list->cb[0]));
-      asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data)));
+      // asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data)));
       asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data+32)));
 #endif
     }

@@ -8,7 +8,25 @@ Version 1.2.0
    packets through the Click configuration simultaneously. This required
    extensive source code changes and adding optional locks to several
    elements. Turn multithreading on at configure time with
-   `--enable-multithread=[NTHREADS]'. Everyone loves Benjie!!
+   `--enable-multithread=[NTHREADS]'. Most elements in ip, standard, and
+   linuxmodule are synchronized. SMP safe elements are marked with 
+   ELEMENT_MT_SAFE(elementname) at the end of the .cc file. See
+   http://www.pdos.lcs.mit.edu/papers/click:usenix01/ for a paper on SMP
+   Click.
+   
+** Multithreading: User can use StaticThreadSched or SortedTaskSched elements
+   to assign schedulable elements such as PollDevice and ToDevice to different
+   threads. 
+   
+** Multithreading: Queue is not synchronized, but MSQueue and CPUQueue
+   elements are SMP safe queue implementations. LookupIPRoute is not
+   synchronized. Should use LookupIPRouteMP instead.
+
+** Multithreading: ARPQuerier and IPRewriter have been synchronzied using
+   spinlocks and readwrite locks.
+
+** Added FastTCPFlows, FastUDPSrc, and FastUDPFlows elements. These elements
+   can be used to generate test traffic.
 
 ** Added preliminary support for cross-compilation. Everyone loves Doug!!
 

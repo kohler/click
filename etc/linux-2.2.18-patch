@@ -1,7 +1,7 @@
 
 Index: include/linux/netdevice.h
---- include/linux/netdevice.h.orig	Fri Dec 15 17:15:14 2000
-+++ include/linux/netdevice.h	Fri Dec 15 17:27:55 2000
+--- include/linux/netdevice.h.orig	Sun Dec 10 19:49:44 2000
++++ include/linux/netdevice.h	Wed May  2 12:14:36 2001
 @@ -324,6 +324,47 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -64,8 +64,8 @@ Index: include/linux/netdevice.h
  extern int		dev_restart(struct device *dev);
 
 Index: include/linux/signal.h
---- include/linux/signal.h.orig	Fri Dec 15 17:15:14 2000
-+++ include/linux/signal.h	Fri Dec 15 17:27:29 2000
+--- include/linux/signal.h.orig	Tue May 11 13:35:43 1999
++++ include/linux/signal.h	Wed May  2 12:14:36 2001
 @@ -189,7 +189,7 @@
  		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
  		break;
@@ -86,8 +86,8 @@ Index: include/linux/signal.h
  
 
 Index: include/linux/skbuff.h
---- include/linux/skbuff.h.orig	Fri Dec 15 17:15:14 2000
-+++ include/linux/skbuff.h	Sun Dec 17 15:33:50 2000
+--- include/linux/skbuff.h.orig	Thu May 13 13:33:17 1999
++++ include/linux/skbuff.h	Wed May  2 12:14:36 2001
 @@ -36,14 +36,30 @@
  					   for using debugging */
  };
@@ -198,8 +198,8 @@ Index: include/linux/skbuff.h
  
 
 Index: include/net/neighbour.h
---- include/net/neighbour.h.orig	Fri Dec 15 17:15:16 2000
-+++ include/net/neighbour.h	Fri Dec 15 17:28:09 2000
+--- include/net/neighbour.h.orig	Tue May 11 13:36:38 1999
++++ include/net/neighbour.h	Wed May  2 12:14:36 2001
 @@ -50,6 +50,7 @@
  #define NUD_VALID	(NUD_PERMANENT|NUD_NOARP|NUD_REACHABLE|NUD_PROBE|NUD_STALE|NUD_DELAY)
  #define NUD_CONNECTED	(NUD_PERMANENT|NUD_NOARP|NUD_REACHABLE)
@@ -210,8 +210,8 @@ Index: include/net/neighbour.h
  	struct neigh_parms *next;
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Fri Dec 15 17:15:18 2000
-+++ net/core/skbuff.c	Fri Dec 15 17:27:04 2000
+--- net/core/skbuff.c.orig	Sun Mar  7 13:12:18 1999
++++ net/core/skbuff.c	Wed May  2 12:14:36 2001
 @@ -257,6 +257,44 @@
  	return n;
  }
@@ -259,8 +259,8 @@ Index: net/core/skbuff.c
   */
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Fri Dec 15 17:15:18 2000
-+++ net/core/dev.c	Fri Dec 15 17:27:04 2000
+--- net/core/dev.c.orig	Sun Dec 10 19:49:44 2000
++++ net/core/dev.c	Wed May  2 12:14:36 2001
 @@ -154,6 +154,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -476,8 +476,8 @@ Index: net/core/dev.c
    	/*
 
 Index: net/sched/sch_generic.c
---- net/sched/sch_generic.c.orig	Fri Dec 15 17:15:19 2000
-+++ net/sched/sch_generic.c	Fri Dec 15 17:27:04 2000
+--- net/sched/sch_generic.c.orig	Tue Oct 26 20:53:42 1999
++++ net/sched/sch_generic.c	Wed May  2 12:14:36 2001
 @@ -76,6 +76,24 @@
  	return q->q.qlen;
  }
@@ -529,8 +529,8 @@ Index: net/sched/sch_generic.c
  			continue;
 
 Index: net/netsyms.c
---- net/netsyms.c.orig	Fri Dec 15 17:15:18 2000
-+++ net/netsyms.c	Fri Dec 15 17:27:04 2000
+--- net/netsyms.c.orig	Sun Dec 10 19:49:44 2000
++++ net/netsyms.c	Wed May  2 12:14:36 2001
 @@ -464,6 +464,15 @@
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
  #endif
@@ -557,8 +557,8 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(netif_rx);
 
 Index: fs/proc/inode.c
---- fs/proc/inode.c.orig	Fri Dec 15 17:15:12 2000
-+++ fs/proc/inode.c	Fri Dec 15 17:27:04 2000
+--- fs/proc/inode.c.orig	Mon Sep  4 13:39:27 2000
++++ fs/proc/inode.c	Wed May  2 12:14:36 2001
 @@ -265,6 +265,11 @@
  	if (inode->i_sb != sb)
  		printk("proc_get_inode: inode fubar\n");
@@ -573,8 +573,8 @@ Index: fs/proc/inode.c
  		if (de->mode) {
 
 Index: drivers/net/tulip.c
---- drivers/net/tulip.c.orig	Fri Dec 15 17:15:20 2000
-+++ drivers/net/tulip.c	Fri Dec 15 17:27:04 2000
+--- drivers/net/tulip.c.orig	Sun Dec 10 19:49:42 2000
++++ drivers/net/tulip.c	Wed May  2 12:23:53 2001
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -943,7 +943,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3359,3 +3451,285 @@
+@@ -3359,3 +3451,281 @@
   *  tab-width: 4
   * End:
   */
@@ -1044,11 +1044,7 @@ Index: drivers/net/tulip.c
 +      		tp->rx_skbuff[entry] = NULL;
 +
 +      		skb_put(skb, pkt_len); 
-+
-+			/* let Click decide if it wants to call eth_type_trans or not */
-+			/* skb->protocol = eth_type_trans(skb, dev); */
-+			skb_pull(skb, dev->hard_header_len);
-+
++        	skb->protocol = eth_type_trans(skb, dev);
 +      		tp->stats.rx_packets++;
 +      		tp->stats.rx_bytes += pkt_len;
 +
@@ -1231,8 +1227,8 @@ Index: drivers/net/tulip.c
 +
 
 Index: drivers/net/acenic.c
---- drivers/net/acenic.c.orig	Fri Dec 15 17:15:22 2000
-+++ drivers/net/acenic.c	Fri Dec 15 17:27:04 2000
+--- drivers/net/acenic.c.orig	Sun Dec 10 19:49:42 2000
++++ drivers/net/acenic.c	Wed May  2 12:14:37 2001
 @@ -409,6 +409,69 @@
  
  static int probed __initdata = 0;
@@ -1878,8 +1874,8 @@ Index: drivers/net/acenic.c
 +
 
 Index: drivers/net/acenic.h
---- drivers/net/acenic.h.orig	Fri Dec 15 17:15:22 2000
-+++ drivers/net/acenic.h	Fri Dec 15 17:27:04 2000
+--- drivers/net/acenic.h.orig	Sun Dec 10 19:49:42 2000
++++ drivers/net/acenic.h	Wed May  2 12:14:37 2001
 @@ -251,6 +251,9 @@
  #define ACE_WARN		0x08
  #define ACE_BYTE_SWAP_DMA	0x10
