@@ -404,11 +404,12 @@ int
 AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String arg;
-    _incremental = false;
+    _incremental = _unshift_ip_addr = false;
     if (cp_va_parse(conf, this, errh,
 		    cpArgument, "field specification", &arg,
 		    cpKeywords,
 		    "INCREMENTAL", cpBool, "incremental?", &_incremental,
+		    "UNSHIFT_IP_ADDR", cpBool, "unshift IP address fields?", &_unshift_ip_addr,
 		    0) < 0)
 	return -1;
     if (_f.parse(arg, errh) < 0)
@@ -425,8 +426,12 @@ AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
     else
 	_mask = (1 << _f.length()) - 1;
     _offset = (_f.offset() / 32) * 4;
-    _shift = 31 - right % 32;
-    //errh->message("%d, %d -> %d %d %d", _f.offset(), _f.length(), _offset, _shift, _mask);
+    if (!_unshift_ip_addr || _f.type() != AG_IP || _f.offset() < 12*8 || _f.offset() >= 20*8)
+	_shift = 31 - right % 32;
+    else {
+	_mask <<= 31 - right % 32;
+	_shift = 0;
+    }
     return 0;
 }
 
@@ -498,6 +503,35 @@ AggregateIP::pull(int)
     if (p)
 	p = handle_packet(p);
     return p;
+}
+
+String
+AggregateIP::read_handler(Element *e, void *thunk)
+{
+    AggregateIP *aip = static_cast<AggregateIP *>(e);
+    switch ((intptr_t)thunk) {
+      case 0:
+	if (aip->_f.type() == AG_IP)
+	    return "ip\n";
+	else if (aip->_f.type() == AG_TRANSP)
+	    return "transp\n";
+	else
+	    return "payload\n";
+      case 1:
+	return String(aip->_f.offset()) + "\n";
+      case 2:
+	return String(aip->_f.length()) + "\n";
+      default:
+	return "<error>\n";
+    }
+}
+
+void
+AggregateIP::add_handlers()
+{
+    add_read_handler("header", read_handler, (void *)0);
+    add_read_handler("bit_offset", read_handler, (void *)1);
+    add_read_handler("bit_length", read_handler, (void *)2);
 }
 
 ELEMENT_REQUIRES(userlevel)

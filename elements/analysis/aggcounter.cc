@@ -399,17 +399,17 @@ AggregateCounter::write_file(String where, WriteFormat format,
     fwrite(_output_banner.data(), 1, _output_banner.length(), f);
     if (_output_banner.length() && _output_banner.back() != '\n')
 	fputc('\n', f);
-    fprintf(f, "$num_nonzero %u\n", _num_nonzero);
+    fprintf(f, "!num_nonzero %u\n", _num_nonzero);
     if (format == WR_BINARY) {
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-	fprintf(f, "$packed_be\n");
+	fprintf(f, "!packed_be\n");
 #elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-	fprintf(f, "$packed_le\n");
+	fprintf(f, "!packed_le\n");
 #else
 	format = WR_ASCII;
 #endif
     } else if (format == WR_ASCII_IP)
-	fprintf(f, "$ip\n");
+	fprintf(f, "!ip\n");
     
     uint32_t buf[1024];
     int pos = 0;

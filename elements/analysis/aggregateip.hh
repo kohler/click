@@ -78,6 +78,15 @@ Boolean. If true, then incrementally update the aggregate annotation: given a
 field N bits wide with value V, and an old aggregate annotation of O, the new
 aggregate annotation will equal (O * 2^N) + V. Default is false.
 
+=item UNSHIFT_IP_ADDR
+
+Boolean. If true, and the aggregated field lies within either the IP source or
+destination address, then set the aggregate annotation to the masked portion
+of that address without shifting. For example, consider a packet with source
+address 1.0.0.0, and aggregate field C<"ip src/8">. Without UNSHIFT_IP_ADDR,
+the packet will get aggregate annotation 1; with UNSHIFT_IP_ADDR, it will get
+aggregate annotation 16777216. Default is false.
+
 =back
 
 =n
@@ -103,6 +112,20 @@ address:
 	AggregateIP("ip{96, 8}")
 	AggregateIP(ip{96-103})
 
+=h header read-only
+
+Returns the header type AggregateIP is using: either "ip", "transp", or
+"payload".
+
+=h bit_offset read-only
+
+Returns the offset into the header of the start of the aggregated field, in
+bits.
+
+=h bit_length read-only
+
+Returns the length of the aggregated field, in bits.
+
 =a
 
 AggregateLength, AggregateFlows, AggregateCounter
@@ -120,6 +143,7 @@ class AggregateIP : public Element { public:
     void notify_noutputs(int);
     const char *processing() const	{ return "a/ah"; }
     int configure(Vector<String> &, ErrorHandler *);
+    void add_handlers();
 
     void push(int, Packet *);
     Packet *pull(int);
@@ -166,10 +190,13 @@ class AggregateIP : public Element { public:
     uint32_t _shift;
     uint32_t _mask;
     bool _incremental;
+    bool _unshift_ip_addr;
     Field _f;
 
     Packet *handle_packet(Packet *);
     Packet *bad_packet(Packet *);
+
+    static String read_handler(Element *, void *);
     
 };
 
