@@ -15,7 +15,7 @@ class IPSummaryDumpInfo { public:
 	W_COUNT, W_IP_FRAG, W_IP_FRAGOFF, W_PAYLOAD, W_LINK,
 	W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
 	W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL, W_TIMESTAMP_USEC1,
-	W_IP_CAPTURE_LEN, W_LAST
+	W_IP_CAPTURE_LEN, W_TCP_URP, W_LAST
     };
     static int parse_content(const String &);
     static const char *unparse_content(int);

@@ -64,6 +64,7 @@ contain those fields. Valid field names, with examples, are:
                 (see below)
    tcp_sack     TCP SACK options (see below)
    tcp_window   TCP receive window: '480'
+   tcp_urp      TCP urgent pointer: '0'
    payload_len  Payload length (not including IP/TCP/UDP
                 headers): '34'
    ip_capture_len  Portion of IP length that contains
@@ -109,16 +110,16 @@ that packet in the dump. False by default.
 =item BAD_PACKETS
 
 Boolean. If true, then print 'C<!bad MESSAGE>' lines for packets with bad IP,
-TCP, or UDP headers, instead of normal output. (Even if BAD_PACKETS is false,
-output will contain dashes 'C<->' in place of data from bad headers.) Default
-is false.
+TCP, or UDP headers, as well as normal output.  The 'C<!bad>' line immediately
+precedes the corresponding packet.  Output will contain dashes 'C<->' in place
+of data from bad headers.  Default is false.
 
 =item CAREFUL_TRUNC
 
-Boolean. If true, then print 'C<!bad truncated IP length>' lines for packets
+Boolean.  If true, then print 'C<!bad truncated IP length>' lines for packets
 whose data plus extra length annotation is less than their IP length.
 B<Tcpdump> prints 'C<truncated-ip - N bytes missing>' for such packets.
-Default is true.
+Actual packet output immediately follows the 'C<!bad>' line.  Default is true.
 
 =back
 
@@ -335,6 +336,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     String _filename;
     FILE *_f;
     StringAccum _sa;
+    StringAccum _bad_sa;
     Vector<unsigned> _contents;
     bool _verbose : 1;
     bool _bad_packets : 1;
@@ -349,8 +351,11 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     
     String _banner;
 
-    bool summary(Packet *, StringAccum &) const;
-    bool binary_summary(Packet *, const click_ip *, const click_tcp *, const click_udp *, StringAccum &) const;
+    struct PacketDesc;
+    bool missing_field_message(const PacketDesc&, const char*, int, StringAccum*) const;
+    bool extract(PacketDesc&, unsigned, uint32_t& v, uint32_t& v2, StringAccum*) const;
+    bool summary(Packet*, StringAccum&, StringAccum*) const;
+    bool binary_summary(PacketDesc&, StringAccum&, StringAccum*) const;
     bool bad_packet(StringAccum &, const String &, int) const;
     void write_packet(Packet *, bool multipacket = false);
     

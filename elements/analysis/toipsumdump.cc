@@ -32,11 +32,11 @@ CLICK_DECLS
 #ifdef i386
 # define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
-# define PUT2NET(p, d)	*reinterpret_cast<uint16_t *>((p)) = (d)
+# define PUT2(p, d)	*reinterpret_cast<uint16_t *>((p)) = htons((d))
 #else
 # define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
-# define PUT2NET(p, d)	do { uint16_t d__ = ntohs((d)); (p)[0] = d__>>8; (p)[1] = d__; } while (0)
+# define PUT2(p, d)	do { (p)[0] = (d)>>8; (p)[1] = (d); } while (0)
 #endif
 #define PUT1(p, d)	((p)[0] = (d))
 
@@ -66,6 +66,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpFilename, "dump filename", &_filename,
 		    cpKeywords,
 		    "CONTENTS", cpArgument, "log contents", &save,
+		    "DATA", cpArgument, "log contents", &save,
 		    "VERBOSE", cpBool, "be verbose?", &verbose,
 		    "BANNER", cpString, "banner", &_banner,
 		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &multipacket,
@@ -444,259 +445,392 @@ ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, String
     store_tcp_opt_ascii(reinterpret_cast<const uint8_t *>(tcph + 1), (tcph->th_off << 2) - sizeof(click_tcp), contents, sa);
 }
 
-#define BAD_IP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); iph = 0; } while (0)
-#define BAD_TCP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); tcph = 0; } while (0)
-#define BAD_UDP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); udph = 0; } while (0)
+struct ToIPSummaryDump::PacketDesc {
+    Packet *p;
+    const click_ip *iph;
+    const click_tcp *tcph;
+    const click_udp *udph;
+};
 
 bool
-ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
+ToIPSummaryDump::missing_field_message(const PacketDesc& d, const char* header_name, int l, StringAccum* bad_sa) const
+{
+    if (bad_sa && !*bad_sa) {
+	*bad_sa << "!bad ";
+	if (!d.iph)
+	    *bad_sa << "no IP header";
+	else if (!header_name)
+	    *bad_sa << "truncated IP header capture";
+	else if ((int) (d.p->transport_length() + EXTRA_LENGTH_ANNO(d.p)) >= l)
+	    *bad_sa << "truncated " << header_name << " header capture";
+	else if (IP_ISFRAG(d.iph))
+	    *bad_sa << "fragmented " << header_name << " header";
+	else
+	    *bad_sa << "truncated " << header_name << " header";
+	*bad_sa << '\n';
+    }
+    return false;
+}
+
+bool
+ToIPSummaryDump::extract(PacketDesc& d, unsigned content, uint32_t& v, uint32_t& v2, StringAccum* bad_sa) const
+{
+    Packet *p = d.p;
+    switch (content) {
+
+	// general properties of packets
+      case W_TIMESTAMP:
+	v = p->timestamp_anno().tv_sec;
+	v2 = p->timestamp_anno().tv_usec;
+	return true;
+      case W_TIMESTAMP_SEC:
+	v = p->timestamp_anno().tv_sec;
+	return true;
+      case W_TIMESTAMP_USEC:
+	v = p->timestamp_anno().tv_usec;
+	return true;
+      case W_TIMESTAMP_USEC1: {
+#if HAVE_INT64_TYPES
+	  uint64_t v3 = ((uint64_t)p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec;
+	  v = v3 >> 32;
+	  v2 = v3;
+	  return true;
+#else
+	  // XXX silently output garbage if 64-bit ints not supported
+	  v = 0;
+	  v2 = (p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec;
+	  return true;
+#endif
+      }
+      case W_FIRST_TIMESTAMP:
+	v = FIRST_TIMESTAMP_ANNO(p).tv_sec;
+	v2 = FIRST_TIMESTAMP_ANNO(p).tv_usec;
+	return true;
+      case W_COUNT:
+	v = 1 + EXTRA_PACKETS_ANNO(p);
+	return true;
+      case W_LINK:
+	v = PAINT_ANNO(p);
+	return true;
+      case W_AGGREGATE:
+	v = AGGREGATE_ANNO(p);
+	return true;
+
+	// IP header properties
+#define CHECK(l) do { if (!d.iph || p->network_length() < (l)) return missing_field_message(d, 0, (l), bad_sa); } while (0)
+	
+      case W_IP_SRC:
+	CHECK(16);
+	v = d.iph->ip_src.s_addr;
+	return true;
+      case W_IP_DST:
+	CHECK(20);
+	v = d.iph->ip_dst.s_addr;
+	return true;
+      case W_IP_TOS:
+	CHECK(2);
+	v = d.iph->ip_tos;
+	return true;
+      case W_IP_TTL:
+	CHECK(9);
+	v = d.iph->ip_ttl;
+	return true;
+      case W_IP_FRAG:
+	CHECK(8);
+	v = (IP_ISFRAG(d.iph) ? (IP_FIRSTFRAG(d.iph) ? 'F' : 'f') : '.');
+	return true;
+      case W_IP_FRAGOFF:
+	CHECK(8);
+	v = ntohs(d.iph->ip_off);
+	return true;
+      case W_IP_ID:
+	CHECK(6);
+	v = ntohs(d.iph->ip_id);
+	return true;
+      case W_IP_PROTO:
+	CHECK(10);
+	v = d.iph->ip_p;
+	return true;
+      case W_IP_OPT:
+	if (d.iph && (d.iph->ip_hl <= 5 || p->network_length() >= (int)(d.iph->ip_hl << 2)))
+	    return true;
+	else
+	    return missing_field_message(d, 0, d.iph->ip_hl << 2, bad_sa);
+
+	// TCP/UDP header properties
+#undef CHECK
+#define CHECK(l) do { if ((!d.tcph && !d.udph) || p->transport_length() < (l)) return missing_field_message(d, "transport", (l), bad_sa); } while (0)
+	
+      case W_SPORT:
+	CHECK(2);
+	v = ntohs(p->udp_header()->uh_sport);
+	return true;
+      case W_DPORT:
+	CHECK(4);
+	v = ntohs(p->udp_header()->uh_dport);
+	return true;
+
+	// TCP header properties
+#undef CHECK
+#define CHECK(l) do { if (!d.tcph || p->transport_length() < (l)) return missing_field_message(d, "TCP", (l), bad_sa); } while (0)
+	
+      case W_TCP_SEQ:
+	CHECK(8);
+	v = ntohl(d.tcph->th_seq);
+	return true;
+      case W_TCP_ACK:
+	CHECK(12);
+	v = ntohl(d.tcph->th_ack);
+	return true;
+      case W_TCP_FLAGS:
+	CHECK(14);
+	v = d.tcph->th_flags | (d.tcph->th_flags2 << 8);
+	return true;
+      case W_TCP_WINDOW:
+	CHECK(16);
+	v = ntohs(d.tcph->th_win);
+	return true;
+      case W_TCP_URP:
+	CHECK(20);
+	v = ntohs(d.tcph->th_urp);
+	return true;
+      case W_TCP_OPT:
+	// need to check that d.tcph->th_off exists
+	if (d.tcph && p->transport_length() >= 13
+	    && (d.tcph->th_off <= 5 || p->transport_length() >= (int)(d.tcph->th_off << 2)))
+	    return true;
+	else
+	    return missing_field_message(d, "TCP", p->transport_length() + 1, bad_sa);
+      case W_TCP_NTOPT:
+      case W_TCP_SACK:
+	// need to check that d.tcph->th_off exists
+	if (d.tcph && p->transport_length() >= 13
+	    && (d.tcph->th_off <= 5
+		|| p->transport_length() >= (int)(d.tcph->th_off << 2)
+		|| (d.tcph->th_off == 8 && p->transport_length() >= 24 && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A))))
+	    return true;
+	else
+	    return missing_field_message(d, "TCP", p->transport_length() + 1, bad_sa);
+	
+#undef CHECK_ERROR
+#undef CHECK
+
+	// lengths
+      case W_IP_LEN:
+	v = (d.iph ? ntohs(d.iph->ip_len) : p->length())
+	    + EXTRA_LENGTH_ANNO(p);
+	return true;
+      case W_PAYLOAD_LEN:
+	if (d.iph) {
+	    int32_t off = p->transport_header_offset();
+	    if (d.tcph && p->transport_length() >= 13)
+		off += (d.tcph->th_off << 2);
+	    else if (d.udph)
+		off += sizeof(click_udp);
+	    else if (IP_FIRSTFRAG(d.iph) && (d.iph->ip_p == IP_PROTO_TCP || d.iph->ip_p == IP_PROTO_UDP))
+		off = ntohs(d.iph->ip_len) + p->network_header_offset();
+	    v = ntohs(d.iph->ip_len) + p->network_header_offset() - off;
+	} else
+	    v = p->length();
+	v += EXTRA_LENGTH_ANNO(p);
+	return true;
+      case W_IP_CAPTURE_LEN: {
+	  uint32_t allow_len = (d.iph ? p->network_length() : p->length());
+	  uint32_t len = (d.iph ? ntohs(d.iph->ip_len) : allow_len);
+	  v = (len < allow_len ? len : allow_len);
+	  return true;
+      }
+      case W_PAYLOAD:
+	return true;
+	
+      default:
+	return false;
+    }
+}
+
+bool
+ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const
 {
     // Not all of these will be valid, but we calculate them just once.
-    const click_ip *iph = p->ip_header();
-    const click_tcp *tcph = p->tcp_header();
-    const click_udp *udph = p->udp_header();
+    PacketDesc d;
+    d.p = p;
+    d.iph = p->ip_header();
+    d.tcph = p->tcp_header();
+    d.udph = p->udp_header();
 
-    // Check that the IP header fields are valid.
-    if (!iph)
-	BAD_IP("no IP header", 0);
-    else if (p->network_length() < (int)(sizeof(click_ip)))
-	BAD_IP("truncated IP header", 0);
-    else if (iph->ip_v != 4)
-	BAD_IP("IP version %d", iph->ip_v);
-    else if (iph->ip_hl < (sizeof(click_ip) >> 2))
-	BAD_IP("IP header length %d", iph->ip_hl);
-    else if (p->network_length() < (int)(iph->ip_hl << 2))
-	BAD_IP("truncated IP header", 0);
-    else if (ntohs(iph->ip_len) < (iph->ip_hl << 2))
-	BAD_IP("IP length %d", ntohs(iph->ip_len));
-    else if (p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(ntohs(iph->ip_len))
-	     && _careful_trunc)
-	BAD_IP("truncated IP missing %d", ntohs(iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p));
+    uint32_t v, v2;
+    
+#define BAD(msg, hdr) do { if (bad_sa && !*bad_sa) *bad_sa << "!bad " << msg << '\n'; hdr = 0; } while (0)
+#define BAD2(msg, val, hdr) do { if (bad_sa && !*bad_sa) *bad_sa << "!bad " << msg << val << '\n'; hdr = 0; } while (0)
+    // check IP header
+    if (!d.iph)
+	/* nada */;
+    else if (p->network_length() < (int) offsetof(click_ip, ip_id))
+	BAD("truncated IP header", d.iph);
+    else if (d.iph->ip_v != 4)
+	BAD2("IP version ", d.iph->ip_v, d.iph);
+    else if (d.iph->ip_hl < (sizeof(click_ip) >> 2))
+	BAD2("IP header length ", d.iph->ip_hl, d.iph);
+    else if (ntohs(d.iph->ip_len) < (d.iph->ip_hl << 2))
+	BAD2("IP length ", ntohs(d.iph->ip_len), d.iph);
+    else {
+	// truncate packet length to IP length if necessary
+	int ip_len = ntohs(d.iph->ip_len);
+	if (p->network_length() > ip_len) {
+	    // XXX should we adjust EXTRA_LENGTH here?  SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
+	    p->take(p->network_length() - ip_len);
+	}
+	if (_careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(ntohs(d.iph->ip_len)))
+	    /* This doesn't actually kill the IP header. */ 
+	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), v);
+    }
 
-    if (!iph || !tcph || iph->ip_p != IP_PROTO_TCP || !IP_FIRSTFRAG(iph))
-	tcph = 0;
-    else if (p->transport_length() < (int)(sizeof(click_tcp)))
-	BAD_TCP((IP_ISFRAG(iph) ? "fragmented TCP header" : "truncated TCP header"), 0);
-    else if (tcph->th_off < (sizeof(click_tcp) >> 2))
-	BAD_TCP("TCP header length %d", tcph->th_off);
-    else if (p->transport_length() < (int)(tcph->th_off << 2)
-	     || ntohs(iph->ip_len) < (iph->ip_hl << 2) + (tcph->th_off << 2))
-	BAD_TCP((IP_ISFRAG(iph) ? "fragmented TCP header" : "truncated TCP header"), 0);
+    // check TCP header
+    if (!d.iph || !d.tcph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_TCP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.tcph = 0;
+    else if (p->transport_length() > 12
+	     && d.tcph->th_off < (sizeof(click_tcp) >> 2))
+	BAD2("TCP header length ", d.tcph->th_off, d.tcph);
 
-    if (!iph || !udph || iph->ip_p != IP_PROTO_UDP || !IP_FIRSTFRAG(iph))
-	udph = 0;
-    else if (p->transport_length() < (int)(sizeof(click_udp))
-	     || ntohs(iph->ip_len) < (iph->ip_hl << 2) + sizeof(click_udp))
-	BAD_UDP((IP_ISFRAG(iph) ? "fragmented UDP header" : "truncated UDP header"), 0);
+    // check UDP header
+    if (!d.iph || !d.udph
+	|| p->network_length() <= (int)(d.iph->ip_hl << 2)
+	|| d.iph->ip_p != IP_PROTO_UDP
+	|| !IP_FIRSTFRAG(d.iph))
+	d.udph = 0;
+#undef BAD
+#undef BAD2
 
     // Adjust extra length, since we calculate lengths here based on ip_len.
-    if (iph && EXTRA_LENGTH_ANNO(p) > 0) {
+    if (d.iph && EXTRA_LENGTH_ANNO(p) > 0) {
 	int32_t full_len = p->length() + EXTRA_LENGTH_ANNO(p);
-	if (ntohs(iph->ip_len) + 8 >= full_len - p->network_header_offset())
+	if (ntohs(d.iph->ip_len) + 8 >= full_len - p->network_header_offset())
 	    SET_EXTRA_LENGTH_ANNO(p, 0);
 	else {
-	    full_len = full_len - ntohs(iph->ip_len);
+	    full_len = full_len - ntohs(d.iph->ip_len);
 	    SET_EXTRA_LENGTH_ANNO(p, full_len);
 	}
     }
 
     // Binary output if you don't like.
     if (_binary)
-	return binary_summary(p, iph, tcph, udph, sa);
-    
+	return binary_summary(d, sa, bad_sa);
+
     // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
 	if (i)
 	    sa << ' ';
+
+	if (!extract(d, _contents[i], v, v2, bad_sa)) {
+	    sa << '-';
+	    continue;
+	}
 	
 	switch (_contents[i]) {
-
-	  case W_NONE:
-	    sa << '-';
-	    break;
 	  case W_TIMESTAMP:
-	    sa << p->timestamp_anno();
-	    break;
+	  case W_FIRST_TIMESTAMP: {
+	      timeval tv = make_timeval(v, v2);
+	      sa << tv;
+	      break;
+	  }
 	  case W_TIMESTAMP_SEC:
-	    sa << p->timestamp_anno().tv_sec;
-	    break;
 	  case W_TIMESTAMP_USEC:
-	    sa << p->timestamp_anno().tv_usec;
+	  case W_IP_TOS:
+	  case W_IP_TTL:
+	  case W_SPORT:
+	  case W_DPORT:
+	  case W_IP_ID:
+	  case W_TCP_SEQ:
+	  case W_TCP_ACK:
+	  case W_TCP_WINDOW:
+	  case W_TCP_URP:
+	  case W_IP_LEN:
+	  case W_PAYLOAD_LEN:
+	  case W_IP_CAPTURE_LEN:
+	  case W_COUNT:
+	  case W_AGGREGATE:
+	    sa << v;
+	    break;
+	  case W_IP_SRC:
+	  case W_IP_DST:
+	    sa << IPAddress(v);
 	    break;
 	  case W_TIMESTAMP_USEC1:
 #if HAVE_INT64_TYPES
-	    sa << (((uint64_t)p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec);
+	    sa << (((uint64_t)v) << 32) | v2;
 #else
-	    // XXX silently output garbage if 64-bit ints not supported
-	    sa << ((p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec);
+	    sa << v2;
 #endif
 	    break;
-	  case W_IP_SRC:
-	    if (!iph) goto no_data;
-	    sa << IPAddress(iph->ip_src);
-	    break;
-	  case W_IP_DST:
-	    if (!iph) goto no_data;
-	    sa << IPAddress(iph->ip_dst);
-	    break;
-	  case W_IP_TOS:
-	    if (!iph) goto no_data;
-	    sa << iph->ip_tos;
-	    break;
-	  case W_IP_TTL:
-	    if (!iph) goto no_data;
-	    sa << iph->ip_ttl;
-	    break;
 	  case W_IP_FRAG:
-	    if (!iph) goto no_data;
-	    sa << (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
+	    sa << (char) v;
 	    break;
 	  case W_IP_FRAGOFF:
-	    if (!iph) goto no_data;
-	    sa << ((htons(iph->ip_off) & IP_OFFMASK) << 3);
-	    if (iph->ip_off & htons(IP_MF))
+	    sa << ((v & IP_OFFMASK) << 3);
+	    if (v & IP_MF)
 		sa << '+';
 	    break;
-	  case W_SPORT:
-	    if (tcph)
-		sa << ntohs(tcph->th_sport);
-	    else if (udph)
-		sa << ntohs(udph->uh_sport);
-	    else
-		goto no_data;
-	    break;
-	  case W_DPORT:
-	    if (tcph)
-		sa << ntohs(tcph->th_dport);
-	    else if (udph)
-		sa << ntohs(udph->uh_dport);
-	    else
-		goto no_data;
-	    break;
-	  case W_IP_ID:
-	    if (!iph) goto no_data;
-	    sa << ntohs(iph->ip_id);
-	    break;
 	  case W_IP_PROTO:
-	    if (!iph) goto no_data;
-	    switch (iph->ip_p) {
+	    switch (v) {
 	      case IP_PROTO_TCP:	sa << 'T'; break;
 	      case IP_PROTO_UDP:	sa << 'U'; break;
 	      case IP_PROTO_ICMP:	sa << 'I'; break;
-	      default:			sa << (int)(iph->ip_p); break;
+	      default:			sa << v; break;
 	    }
 	    break;
 	  case W_IP_OPT:
-	    if (!iph) goto no_data;
-	    // skip function if no TCP options
-	    if (iph->ip_hl <= 5)
+	    if (d.iph->ip_hl <= 5)
 		sa << '.';
 	    else
-		store_ip_opt_ascii(iph, DO_IPOPT_ALL_NOPAD, sa);
+		store_ip_opt_ascii(d.iph, DO_IPOPT_ALL_NOPAD, sa);
 	    break;
-	  case W_TCP_SEQ:
-	    if (!tcph)
-		goto no_data;
-	    sa << ntohl(tcph->th_seq);
-	    break;
-	  case W_TCP_ACK:
-	    if (!tcph)
-		goto no_data;
-	    sa << ntohl(tcph->th_ack);
-	    break;
-	  case W_TCP_FLAGS: {
-	      if (!tcph)
-		  goto no_data;
-	      int flags = tcph->th_flags | (tcph->th_flags2 << 8);
-	      if (flags == (TH_ACK | TH_PUSH))
-		  sa << 'P' << 'A';
-	      else if (flags == TH_ACK)
-		  sa << 'A';
-	      else if (flags == 0)
-		  sa << '.';
-	      else
-		  for (int flag = 0; flag < 9; flag++)
-		      if (flags & (1 << flag))
-			  sa << tcp_flags_word[flag];
-	      break;
-	  }
-	  case W_TCP_WINDOW:
-	    if (!tcph)
-		goto no_data;
-	    sa << ntohs(tcph->th_win);
+	  case W_TCP_FLAGS:
+	    if (v == (TH_ACK | TH_PUSH))
+		sa << 'P' << 'A';
+	    else if (v == TH_ACK)
+		sa << 'A';
+	    else if (v == 0)
+		sa << '.';
+	    else
+		for (int flag = 0; flag < 9; flag++)
+		    if (v & (1 << flag))
+			sa << tcp_flags_word[flag];
 	    break;
 	  case W_TCP_OPT:
-	    if (!tcph)
-		goto no_data;
-	    // skip function if no TCP options
-	    if (tcph->th_off <= 5)
+	    if (d.tcph->th_off <= 5)
 		sa << '.';
 	    else
-		store_tcp_opt_ascii(tcph, DO_TCPOPT_ALL_NOPAD, sa);
+		store_tcp_opt_ascii(d.tcph, DO_TCPOPT_ALL_NOPAD, sa);
 	    break;
 	  case W_TCP_NTOPT:
-	    if (!tcph)
-		goto no_data;
-	    // skip function if no TCP options, or just timestamp option
-	    if (tcph->th_off <= 5
-		|| (tcph->th_off == 8
-		    && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+	    if (d.tcph->th_off <= 5
+		|| (d.tcph->th_off == 8
+		    && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
 		sa << '.';
 	    else
-		store_tcp_opt_ascii(tcph, DO_TCPOPT_NTALL, sa);
+		store_tcp_opt_ascii(d.tcph, DO_TCPOPT_NTALL, sa);
 	    break;
 	  case W_TCP_SACK:
-	    if (!tcph)
-		goto no_data;
-	    // skip function if no TCP options, or just timestamp option
-	    if (tcph->th_off <= 5
-		|| (tcph->th_off == 8
-		    && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+	    if (d.tcph->th_off <= 5
+		|| (d.tcph->th_off == 8
+		    && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
 		sa << '.';
 	    else
-		store_tcp_opt_ascii(tcph, DO_TCPOPT_SACK, sa);
+		store_tcp_opt_ascii(d.tcph, DO_TCPOPT_SACK, sa);
 	    break;
-	  case W_IP_LEN: {
-	      uint32_t len;
-	      if (iph)
-		  len = ntohs(iph->ip_len);
-	      else
-		  len = p->length();
-	      sa << (len + EXTRA_LENGTH_ANNO(p));
-	      break;
-	  }
-	  case W_PAYLOAD_LEN: {
-	      uint32_t len;
-	      if (iph) {
-		  int32_t off = p->transport_header_offset();
-		  if (tcph)
-		      off += (tcph->th_off << 2);
-		  else if (udph)
-		      off += sizeof(click_udp);
-		  else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
-		      off = ntohs(iph->ip_len) + p->network_header_offset();
-		  len = ntohs(iph->ip_len) + p->network_header_offset() - off;
-	      } else
-		  len = p->length();
-	      sa << (len + EXTRA_LENGTH_ANNO(p));
-	      break;
-	  }
-	  case W_IP_CAPTURE_LEN: {
-	      uint32_t allow_len = (p->network_header() ? p->network_length() : p->length());
-	      uint32_t len = (iph ? ntohs(iph->ip_len) : allow_len);
-	      sa << (len < allow_len ? len : allow_len);
-	      break;
-	  }
 	  case W_PAYLOAD: {
 	      int32_t off;
 	      uint32_t len;
-	      if (iph) {
+	      if (d.iph) {
 		  off = p->transport_header_offset();
-		  if (tcph)
-		      off += (tcph->th_off << 2);
-		  else if (udph)
+		  if (d.tcph && p->transport_length() >= 13)
+		      off += (d.tcph->th_off << 2);
+		  else if (d.udph)
 		      off += sizeof(click_udp);
-		  len = ntohs(iph->ip_len) - off + p->network_header_offset();
+		  len = ntohs(d.iph->ip_len) - off + p->network_header_offset();
 		  if (len + off > p->length()) // EXTRA_LENGTH?
 		      len = p->length() - off;
 	      } else {
@@ -707,33 +841,20 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	      sa << cp_quote(s);
 	      break;
 	  }
-	  case W_COUNT: {
-	      uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
-	      sa << count;
-	      break;
-	  }
-	  case W_LINK: {
-	      int link = PAINT_ANNO(p);
-	      if (link == 0)
-		  sa << '>';
-	      else if (link == 1)
-		  sa << '<';
-	      else
-		  sa << link;
-	      break;
-	  }
-	  case W_AGGREGATE:
-	    sa << AGGREGATE_ANNO(p);
+	  case W_LINK:
+	    if (v == 0)
+		sa << '>';
+	    else if (v == 1)
+		sa << '<';
+	    else
+		sa << v;
 	    break;
-	  case W_FIRST_TIMESTAMP:
-	    sa << FIRST_TIMESTAMP_ANNO(p);
-	    break;
-	  no_data:
 	  default:
 	    sa << '-';
 	    break;
 	}
     }
+    
     sa << '\n';
     return true;
 }
@@ -876,7 +997,7 @@ ToIPSummaryDump::store_tcp_opt_binary(const click_tcp *tcph, int contents, Strin
 }
 
 bool
-ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp *tcph, const click_udp *udph, StringAccum &sa) const
+ToIPSummaryDump::binary_summary(PacketDesc& d, StringAccum& sa, StringAccum* bad_sa) const
 {
     assert(sa.length() == 0);
     char *buf = sa.extend(_binary_size);
@@ -884,199 +1005,100 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
     
     // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
-	uint32_t v = 0;
+	uint32_t v = 0, v2 = 0;
+
+	bool ok = extract(d, _contents[i], v, v2, bad_sa);
+	
 	switch (_contents[i]) {
 	  case W_NONE:
 	    break;
 	  case W_TIMESTAMP:
-	    PUT4(buf + pos, p->timestamp_anno().tv_sec);
-	    PUT4(buf + pos + 4, p->timestamp_anno().tv_usec);
+	  case W_FIRST_TIMESTAMP:
+	  case W_TIMESTAMP_USEC1:
+	    PUT4(buf + pos, v);
+	    PUT4(buf + pos + 4, v2);
 	    pos += 8;
 	    break;
 	  case W_TIMESTAMP_SEC:
-	    v = p->timestamp_anno().tv_sec;
-	    goto output_4_host;
 	  case W_TIMESTAMP_USEC:
-	    v = p->timestamp_anno().tv_usec;
-	    goto output_4_host;
-	  case W_TIMESTAMP_USEC1: {
-#if HAVE_INT64_TYPES
-	      if (p->timestamp_anno().tv_sec < 4294) {
-#endif
-		  // XXX silently output garbage if 64-bit ints not supported
-		  PUT4(buf + pos, 0);
-		  PUT4(buf + pos + 4, p->timestamp_anno().tv_sec * 1000000 + p->timestamp_anno().tv_usec);
-#if HAVE_INT64_TYPES
-	      } else {
-		  uint64_t uu = p->timestamp_anno().tv_sec * (uint64_t)1000000 + p->timestamp_anno().tv_usec;
-		  PUT4(buf + pos, (uint32_t)(uu >> 32));
-		  PUT4(buf + pos + 4, (uint32_t) uu);
-	      }
-#endif
-	      pos += 8;
-	      break;
-	  }
+	  case W_TCP_SEQ:
+	  case W_TCP_ACK:
+	  case W_IP_LEN:
+	  case W_PAYLOAD_LEN:
+	  case W_IP_CAPTURE_LEN:
+	  case W_COUNT:
+	  case W_AGGREGATE:
+	    PUT4(buf + pos, v);
+	    pos += 4;
+	    break;
 	  case W_IP_SRC:
-	    if (iph)
-		v = iph->ip_src.s_addr;
-	    goto output_4_net;
 	  case W_IP_DST:
-	    if (iph)
-		v = iph->ip_dst.s_addr;
-	    goto output_4_net;
+	    PUT4NET(buf + pos, ok ? v : 0);
+	    pos += 4;
+	    break;
 	  case W_IP_TOS:
-	    if (iph)
-		v = iph->ip_tos;
-	    goto output_1;
 	  case W_IP_TTL:
-	    if (iph)
-		v = iph->ip_ttl;
-	    goto output_1;
 	  case W_IP_FRAG:
-	    if (iph)
-		v = (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
-	    goto output_1;
-	  case W_IP_FRAGOFF:
-	    if (iph)
-		v = iph->ip_off;
-	    goto output_2_net;
-	  case W_IP_ID:
-	    if (iph)
-		v = iph->ip_id;
-	    goto output_2_net;
 	  case W_IP_PROTO:
-	    if (iph)
-		v = iph->ip_p;
-	    goto output_1;
+	  case W_TCP_FLAGS:
+	  case W_LINK:
+	  output_1:
+	    buf[pos] = v;
+	    pos++;
+	    break;
+	  case W_IP_FRAGOFF:
+	  case W_IP_ID:
+	  case W_SPORT:
+	  case W_DPORT:
+	  case W_TCP_WINDOW:
+	  case W_TCP_URP:
+	    PUT2(buf + pos, v);
+	    pos += 2;
+	    break;
 	  case W_IP_OPT: {
-	      if (!iph || iph->ip_hl <= (sizeof(click_ip) >> 2))
+	      if (!ok || d.iph->ip_hl <= (sizeof(click_ip) >> 2))
 		  goto output_1;
 	      int left = sa.length() - pos;
 	      sa.set_length(pos);
-	      pos += store_ip_opt_binary(iph, DO_IPOPT_ALL, sa);
+	      pos += store_ip_opt_binary(d.iph, DO_IPOPT_ALL, sa);
 	      sa.extend(left);
 	      buf = sa.data();
 	      break;
 	  }
-	  case W_SPORT:
-	    if (tcph || udph)
-		v = (tcph ? tcph->th_sport : udph->uh_sport);
-	    goto output_2_net;
-	  case W_DPORT:
-	    if (tcph || udph)
-		v = (tcph ? tcph->th_dport : udph->uh_dport);
-	    goto output_2_net;
-	  case W_TCP_SEQ:
-	    if (tcph)
-		v = tcph->th_seq;
-	    goto output_4_net;
-	  case W_TCP_ACK:
-	    if (tcph)
-		v = tcph->th_ack;
-	    goto output_4_net;
-	  case W_TCP_FLAGS:
-	    if (tcph)
-		v = tcph->th_flags;
-	    goto output_1;
-	  case W_TCP_WINDOW:
-	    if (tcph)
-		v = tcph->th_win;
-	    goto output_2_net;
 	  case W_TCP_OPT: {
-	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2))
+	      if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2))
 		  goto output_1;
 	      int left = sa.length() - pos;
 	      sa.set_length(pos);
-	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_ALL, sa);
+	      pos += store_tcp_opt_binary(d.tcph, DO_TCPOPT_ALL, sa);
 	      sa.extend(left);
 	      buf = sa.data();
 	      break;
 	  }
 	  case W_TCP_NTOPT: {
-	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2)
-		  || (tcph->th_off == 8
-		      && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+	      if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2)
+		  || (d.tcph->th_off == 8
+		      && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
 		  goto output_1;
 	      int left = sa.length() - pos;
 	      sa.set_length(pos);
-	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_NTALL, sa);
+	      pos += store_tcp_opt_binary(d.tcph, DO_TCPOPT_NTALL, sa);
 	      sa.extend(left);
 	      buf = sa.data();
 	      break;
 	  }
 	  case W_TCP_SACK: {
-	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2)
-		  || (tcph->th_off == 8
-		      && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+	      if (!ok || d.tcph->th_off <= (sizeof(click_tcp) >> 2)
+		  || (d.tcph->th_off == 8
+		      && *(reinterpret_cast<const uint32_t *>(d.tcph + 1)) == htonl(0x0101080A)))
 		  goto output_1;
 	      int left = sa.length() - pos;
 	      sa.set_length(pos);
-	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_SACK, sa);
+	      pos += store_tcp_opt_binary(d.tcph, DO_TCPOPT_SACK, sa);
 	      sa.extend(left);
 	      buf = sa.data();
 	      break;
 	  }
-	  case W_IP_LEN:
-	    if (iph) {
-		v = ntohs(iph->ip_len);
-		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
-		    v = p->length() + EXTRA_LENGTH_ANNO(p);
-	    } else
-		v = p->length() + EXTRA_LENGTH_ANNO(p);
-	    goto output_4_host;
-	  case W_PAYLOAD_LEN:
-	    if (iph) {
-		v = ntohs(iph->ip_len);
-		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
-		    v = p->length() + EXTRA_LENGTH_ANNO(p);
-		int32_t off = p->transport_header_offset();
-		if (tcph)
-		    off += (tcph->th_off << 2);
-		else if (udph)
-		    off += sizeof(click_udp);
-		else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
-		    off = ntohs(iph->ip_len) + p->network_header_offset();
-		v = ntohs(iph->ip_len) + p->network_header_offset() - off;
-	    } else
-		v = p->length() + EXTRA_LENGTH_ANNO(p);
-	    goto output_4_host;
-	  case W_IP_CAPTURE_LEN: {
-	      uint32_t allow_len = (p->network_header() ? p->network_length() : p->length());
-	      uint32_t len = (iph ? ntohs(iph->ip_len) : allow_len);
-	      v = (len < allow_len ? len : allow_len);
-	      goto output_4_host;
-	  }
-	  case W_COUNT:
-	    v = 1 + EXTRA_PACKETS_ANNO(p);
-	    goto output_4_host;
-	  case W_LINK:
-	    v = PAINT_ANNO(p);
-	    goto output_1;
-	  case W_AGGREGATE:
-	    v = AGGREGATE_ANNO(p);
-	    goto output_4_host;
-	  case W_FIRST_TIMESTAMP:
-	    PUT4(buf + pos, FIRST_TIMESTAMP_ANNO(p).tv_sec);
-	    PUT4(buf + pos + 4, FIRST_TIMESTAMP_ANNO(p).tv_usec);
-	    pos += 8;
-	    break;
-	  output_1:
-	    PUT1(buf + pos, v);
-	    pos++;
-	    break;
-	  output_2_net:
-	    PUT2NET(buf + pos, v);
-	    pos += 2;
-	    break;
-	  output_4_host:
-	    PUT4(buf + pos, v);
-	    pos += 4;
-	    break;
-	  output_4_net:
-	  default:
-	    PUT4NET(buf + pos, v);
-	    pos += 4;
-	    break;
 	}
     }
 
@@ -1086,7 +1108,7 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 }
 
 void
-ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
+ToIPSummaryDump::write_packet(Packet* p, bool multipacket)
 {
     if (multipacket && EXTRA_PACKETS_ANNO(p) > 0) {
 	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
@@ -1118,10 +1140,14 @@ ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 	
     } else {
 	_sa.clear();
-	if (summary(p, _sa))
-	    fwrite(_sa.data(), 1, _sa.length(), _f);
-	else
-	    write_line(_sa.take_string());
+	_bad_sa.clear();
+
+	summary(p, _sa, (_bad_packets ? &_bad_sa : 0));
+
+	if (_bad_packets && _bad_sa)
+	    write_line(_bad_sa.take_string());
+	fwrite(_sa.data(), 1, _sa.length(), _f);
+
 	_output_count++;
     }
 }
@@ -1152,7 +1178,7 @@ ToIPSummaryDump::run_task()
 }
 
 void
-ToIPSummaryDump::write_line(const String &s)
+ToIPSummaryDump::write_line(const String& s)
 {
     if (s.length()) {
 	assert(s.back() == '\n');

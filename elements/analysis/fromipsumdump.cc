@@ -807,6 +807,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_DPORT:
 		  case W_IP_FRAGOFF:
 		  case W_TCP_WINDOW:
+		  case W_TCP_URP:
 		    u1 = GET2(data);
 		    data += 2;
 		    break;
@@ -889,6 +890,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_COUNT:
 	      case W_AGGREGATE:
 	      case W_TCP_WINDOW:
+	      case W_TCP_URP:
 	      case W_IP_TOS:
 	      case W_IP_TTL:
 		data = cp_unsigned(data, end, 0, &u1);
@@ -1168,6 +1170,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TCP_WINDOW:
 		if (u1 <= 0xFFFF)
 		    q->tcp_header()->th_win = htons(u1), ip_ok++;
+		break;
+		
+	      case W_TCP_URP:
+		if (u1 <= 0xFFFF)
+		    q->tcp_header()->th_urp = htons(u1), ip_ok++;
 		break;
 		
 	      case W_COUNT:

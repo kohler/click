@@ -28,7 +28,7 @@ static const char *content_names[] = {
     "count", "ip_frag", "ip_fragoff", "payload", "direction",
     "aggregate", "tcp_sack", "tcp_opt", "tcp_ntopt", "first_timestamp",
     "tcp_window", "ip_opt", "ip_tos", "ip_ttl", "ts_usec1",
-    "ip_capture_len"
+    "ip_capture_len", "tcp_urp"
 };
 
 const char *
@@ -105,6 +105,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_IP_CAPTURE_LEN;
     else if (word == "none")
 	return W_NONE;
+    else if (word == "tcp_urp")
+	return W_TCP_URP;
     else if (find(word, ' ') != word.end()) {
 	const char *space = find(word, ' ');
 	return parse_content(word.substring(word.begin(), space) + "_" + word.substring(space + 1, word.end()));
@@ -122,7 +124,7 @@ static int content_binary_sizes[] = {
 			// W_FIRST_TIMESTAMP
     2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
     			// W_TIMESTAMP_USEC1
-    4			// W_IP_CAPTURE_LEN
+    4, 2		// W_IP_CAPTURE_LEN, W_TCP_URP
 };
 
 int
