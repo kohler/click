@@ -264,6 +264,12 @@ read_cycles(Element *, void *)
   return sa.take_string();
 }
 
+static String
+read_version(Element *, void *)
+{
+  return String(VERSION) + "\n";
+}
+
 #ifdef HAVE_READ_NET_SKBCOUNT
 extern "C" int read_net_skbcount(void);
 #endif
@@ -438,6 +444,7 @@ init_module()
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
+  next_root_handler("version", read_version, 0, 0, 0);
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
   next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
