@@ -1,3 +1,12 @@
+2002-01-04 Friday 21:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: hashmap.cc, hashmap.cc: check explicitly that the
+	key in a HashMap is not K(false)
+
+2002-01-04 Friday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: elementmap includes entries for element synonyms
+
 2002-01-04 Friday 18:14  Eddie Kohler <kohler@aciri.org>
 
 	* click-mkelemmap: add doc_name component to elementmaps; use it in
