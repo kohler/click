@@ -76,6 +76,11 @@ FilterByRange::push(int, Packet *p)
   assert(_locinfo);
   grid_location our_loc = _locinfo->get_current_location();
   double dist = calc_range(our_loc, remote_loc);
+  if (dist < 0) {
+    click_chatter("bogus location info in grid header");
+    output(1).push(p);
+    return;
+  }
   if (dist < _range)
     output(0).push(p);
   else // ``out of range''
@@ -114,10 +119,28 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
   double sin_term = sin(l1_lat) * sin(l2_lat);
   double cos_term = cos(l1_lat) * cos(l2_lat);
   double cos_dl = cos(diff_lon);
-  volatile double cos_g_c = sin_term + cos_term*cos_dl; // volatile: linux precision issues?
+  double cos_g_c = sin_term + cos_term*cos_dl; 
 
-  // without making cos_g_c volatile, this assert fails when cos_g_c is 1.
-  assert(cos_g_c >= -1.0 && cos_g_c <= 1.0); 
+  // linux precision issues?
+#define EPSILON 1.0e-7
+  if ((cos_g_c + 1.0 <= EPSILON) ||
+      (cos_g_c - 1.0 >= EPSILON)) {
+#if 1
+    click_chatter("cos_g_c: %0.30f", cos_g_c);
+    click_chatter("sin_term: %0.30f", sin_term);
+    click_chatter("cos_term: %0.30f", cos_term);
+    click_chatter("cos_dl: %0.30f", cos_dl);
+    click_chatter("l1_lat: %0.30f", l1_lat);
+    click_chatter("l1_lon: %0.30f", l1_lon);
+    click_chatter("l2_lat: %0.30f", l2_lat);
+    click_chatter("l2_lon: %0.30f", l2_lon);
+    click_chatter("l1.lat: %0.30f", l1.lat);
+    click_chatter("l1.lon: %0.30f", l1.lon);
+    click_chatter("l2.lat: %0.30f", l2.lat);
+    click_chatter("l2.lon: %0.30f", l2.lon);
+#endif
+    return -1; // bogus angles
+  }
   double g_c_angle = acos(cos_g_c);
   return g_c_angle * GRID_EARTH_RADIUS;
 }

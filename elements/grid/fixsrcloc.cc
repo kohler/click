@@ -65,6 +65,7 @@ Packet *
 FixSrcLoc::simple_action(Packet *p)
 {
   assert(_locinfo);
+  assert(p);
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->loc = _locinfo->get_current_location();
   assert(sizeof(float) == sizeof(unsigned long));
