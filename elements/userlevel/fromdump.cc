@@ -638,7 +638,7 @@ FromDump::pull(int)
 
 enum {
     H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP,
-    H_FILESIZE, H_FILEPOS, H_PACKET_FILEPOS, H_EXTEND_INTERVAL
+    H_FILENAME, H_FILESIZE, H_FILEPOS, H_PACKET_FILEPOS, H_EXTEND_INTERVAL
 };
 
 String
@@ -652,6 +652,8 @@ FromDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
+      case H_FILENAME:
+	return fd->_filename + "\n";
 #ifdef HAVE_INT64_TYPES
       case H_FILESIZE: {
 	  struct stat s;
@@ -711,6 +713,7 @@ FromDump::add_handlers()
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP);
+    add_read_handler("filename", read_handler, (void *)H_FILENAME);
 #ifdef HAVE_INT64_TYPES
     add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
     add_read_handler("filepos", read_handler, (void *)H_FILEPOS);

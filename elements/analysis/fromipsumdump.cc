@@ -1074,7 +1074,7 @@ FromIPSummaryDump::pull(int)
 }
 
 
-enum { H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_FILESIZE, H_FILEPOS, H_STOP };
+enum { H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_FILENAME, H_FILESIZE, H_FILEPOS, H_STOP };
 
 String
 FromIPSummaryDump::read_handler(Element *e, void *thunk)
@@ -1087,6 +1087,8 @@ FromIPSummaryDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return "IP\n";
+      case H_FILENAME:
+	return fd->_filename + "\n";
       case H_FILESIZE: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
@@ -1133,6 +1135,7 @@ FromIPSummaryDump::add_handlers()
     add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_read_handler("filename", read_handler, (void *)H_FILENAME);
     add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
     add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
     add_write_handler("stop", write_handler, (void *)H_STOP);

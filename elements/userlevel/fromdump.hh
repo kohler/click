@@ -124,6 +124,10 @@ Value is a Boolean.
 
 Returns the file's encapsulation type.
 
+=h filename read-only
+
+Returns the filename supplied to FromDump.
+
 =h filesize read-only
 
 Returns the length of the FromDump file, in bytes, or "-" if that length

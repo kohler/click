@@ -545,7 +545,7 @@ FromDAGDump::pull(int)
 
 enum {
     SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    FILESIZE_THUNK, FILEPOS_THUNK, EXTEND_INTERVAL_THUNK
+    FILENAME_THUNK, FILESIZE_THUNK, FILEPOS_THUNK, EXTEND_INTERVAL_THUNK
 };
 
 String
@@ -559,6 +559,8 @@ FromDAGDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case ENCAP_THUNK:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
+      case FILENAME_THUNK:
+	return fd->_filename + "\n";
       case FILESIZE_THUNK: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
@@ -614,6 +616,7 @@ FromDAGDump::add_handlers()
     add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
     add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
     add_write_handler("stop", write_handler, (void *)STOP_THUNK);
+    add_read_handler("filename", read_handler, (void *)FILENAME_THUNK);
     add_read_handler("filesize", read_handler, (void *)FILESIZE_THUNK);
     add_read_handler("filepos", read_handler, (void *)FILEPOS_THUNK);
     add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
