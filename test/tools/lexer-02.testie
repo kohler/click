@@ -1,0 +1,45 @@
+%info
+Check lexical scoping of formals
+%script
+
+click-flatten A > AO_TOOL
+click -qo- A > AO_USERLEVEL
+
+click-flatten B > BO_TOOL
+click -qo- B > BO_USERLEVEL
+
+%file A
+elementclass Foo {
+$a |
+   DriverManager($a);
+}
+elementclass Far {
+$a, $b |
+   Foo($b);
+}
+Far(wait_pause stop, stop);
+
+%expect AO_TOOL AO_USERLEVEL
+Far@1/Foo@1/DriverManager@1 :: DriverManager(stop);
+
+%file B
+elementclass Foo {
+$a |
+   elementclass Bar {
+   $b |
+      DriverManager($a);
+   }
+   elementclass Baz {
+   $a |
+      Idle; Bar($a);
+   }
+   Baz(fuckola);
+}
+Foo(stop);
+
+%expect BO_TOOL BO_USERLEVEL
+Foo@1/Baz@1/Idle@1 :: Idle;
+Foo@1/Baz@1/Bar@2/DriverManager@1 :: DriverManager(stop);
+
+%ignore
+#.*
