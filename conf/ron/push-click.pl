@@ -5,6 +5,7 @@ sub usage {
 }
 
 sub main {
+    $verbose = 1;
     $count = 0;
     $line_num = 0;
 
@@ -19,8 +20,8 @@ sub main {
     # Read in node list
     while($line = scalar(@ARGV) < 1? <STDIN> : <NODELIST>) {
 	$line_num++;
-	if ($line =~ /(.*)\#?/) {
-	    if ($1 =~ /(\S+)\s+([\d\.]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(I2?)/) {
+	if ( (substr $line, 0, 1) ne '#'){
+	    if ($line =~ /(\S+)\s+([\d\.]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(I2?)/) {
 		push @device, $1;
 		push @ip, $2;
 		push @hw, $3;
@@ -36,29 +37,53 @@ sub main {
 		    pop @gw;
 		    pop @name;
 		}
-	    } 
+	    } else {
+		print "Sytax error at line $line_num\n";
+	    }
 	}
 
     }
 
     
     # Push click & datacollection scripts to each node
-    for($i=0; $i<scalar(@name); $i++) {print "Working on $name[$i]\n";
+    #  tar up click & datacollection
+    print "tarring up click\n";
+    $command = "tar czf /tmp/click.tgz -C /home/am2/yipal/ron click-export";
+    @args = ("tcsh", "-c", $command);
+    system(@args);
+
+    print "Tarring up datacollection\n";
+    $command = "tar czf /tmp/datacollection.tgz -C /home/am2/yipal/ron datacollection-export";
+    @args = ("tcsh", "-c", $command);
+    system(@args);
+
+
+    for($i=0; $i<scalar(@name); $i++) {
+	print "Working on $name[$i]\n";
 	# commands of this form: 
-	#   tar czf - -C /home/am2/yipal/ron/ click-export | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
-	#   tar czf - -C /home/am2/yipal/ron/ datacollection-export | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
+	#   cat /tmp/click.tgz | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
+	#   cat /tmp/datacollection.tgz | ssh ron@mit.ron.lcs.mit.edu tar xzf - -C yipal/
 
-	$command = "tar czf - -C /home/am2/yipal/ron/ click-export | ssh $name[$i] -l ron tar xzf - -C yipal/";
+	$command = "cat /tmp/click.tgz | ssh $name[$i] -l ron tar xzf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "tar czf - -C /home/am2/yipal/ron/ datacollection-export | ssh $name[$i] -l ron tar xzf - -C yipal/";
+	$command = "cat /tmp/datacollection.tgz | ssh $name[$i] -l ron tar xzf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-         sleep 1;
+	sleep 1;
 	
     }
+    
+    # remove temporary tar files
+    print "Removing click.tgz\n";
+    @args = ("rm", "/tmp/click.tgz");
+    system(@args);
+
+    print "Removing datacollection.tgz\n";
+    @args = ("rm", "/tmp/datacollection.tgz");
+    system(@args);
 }
 
 &main();
