@@ -147,7 +147,7 @@ sub _read_text ($) {
     my($r, $t) = ('');
     while (defined($t = <$fh>)) {
 	last if $t =~ /^%/;
-	$t =~ s/^\|//;
+	$t =~ s/^\\\%/\%/;
 	$r .= $t;
     }
     ($r, $t);
