@@ -32,6 +32,7 @@
 #endif
 #ifndef CLICK_TOOL
 # include <click/router.hh>
+# include <click/handlercall.hh>
 # include <click/standard/addressinfo.hh>
 # define CP_CONTEXT_ARG , Element *context = 0
 # define CP_PASS_CONTEXT , context
@@ -1759,6 +1760,22 @@ cp_handler(const String &str, Element *context, Element **result_element, int *r
 {
   return cp_handler(str, context, false, false, result_element, result_hid, errh);
 }
+
+bool
+cp_handler_call(const String &str, Element *context, bool is_write, HandlerCall **hcall, ErrorHandler *errh)
+{
+  if (!errh)
+    errh = ErrorHandler::silent_handler();
+  HandlerCall hc;
+  if (hc.initialize(str, is_write, context, errh) < 0)
+    return false;
+  if (hcall) {
+    if (!*hcall)
+      *hcall = new HandlerCall;
+    **hcall = hc;
+  }
+  return true;
+}
 #endif
 
 #ifdef HAVE_IPSEC
@@ -1880,6 +1897,8 @@ CpVaParseCmd
   cpHandler		= "handler",
   cpReadHandler		= "read_handler",
   cpWriteHandler	= "write_handler",
+  cpReadHandlerCall	= "read_handler_call",
+  cpWriteHandlerCall	= "write_handler_call",
   cpIP6Address		= "ip6_addr",
   cpIP6Prefix		= "ip6_prefix",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
@@ -1924,6 +1943,8 @@ enum {
   cpiHandler,
   cpiReadHandler,
   cpiWriteHandler,
+  cpiReadHandlerCall,
+  cpiWriteHandlerCall,
   cpiIP6Address,
   cpiIP6Prefix,
   cpiIP6AddressOrPrefix,
@@ -2251,6 +2272,14 @@ default_parsefunc(cp_value *v, const String &arg,
 		&v->v.element, &v->v2.i, &cerrh);
      break;
    }
+
+   case cpiReadHandlerCall:
+   case cpiWriteHandlerCall: {
+     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     cp_handler_call(arg, context, argtype->internal == cpiWriteHandlerCall,
+		     (HandlerCall **)0, &cerrh);
+     break;
+   }
 #endif
 
 #ifdef CLICK_USERLEVEL
@@ -2440,6 +2469,14 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      int *hidstore = (int *)v->store2;
      *elementstore = v->v.element;
      *hidstore = v->v2.i;
+     break;
+   }
+
+   case cpiReadHandlerCall:
+   case cpiWriteHandlerCall: {
+     cp_handler_call
+       (v->v_string, context, argtype->internal == cpiWriteHandlerCall,
+	(HandlerCall **)v->store, (ErrorHandler *)0);
      break;
    }
 #endif
@@ -3117,6 +3154,8 @@ cp_va_static_initialize()
   cp_register_argtype(cpHandler, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandler);
   cp_register_argtype(cpReadHandler, "read handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiReadHandler);
   cp_register_argtype(cpWriteHandler, "write handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiWriteHandler);
+  cp_register_argtype(cpReadHandlerCall, "read handler name", 0, default_parsefunc, default_storefunc, cpiReadHandlerCall);
+  cp_register_argtype(cpWriteHandlerCall, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiWriteHandlerCall);
 #endif
 #ifdef HAVE_IP6
   cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);

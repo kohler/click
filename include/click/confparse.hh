@@ -6,6 +6,7 @@ class ErrorHandler;
 #ifndef CLICK_TOOL
 class Element;
 class Router;
+class HandlerCall;
 # define CP_VA_PARSE_ARGS_REST Element *, ErrorHandler *, ...
 # define CP_OPT_CONTEXT , Element *context = 0
 # define CP_CONTEXT , Element *context
@@ -116,6 +117,7 @@ Element *cp_element(const String &, Router *, ErrorHandler *);
 bool cp_handler(const String &, Element *, Element **, String *, ErrorHandler *);
 bool cp_handler(const String &, Element *, Element **, int *, ErrorHandler *);
 bool cp_handler(const String &, Element *, bool need_r, bool need_w, Element **, int *, ErrorHandler *);
+bool cp_handler_call(const String &, Element *, bool is_write, HandlerCall **, ErrorHandler *);
 #endif
 
 #ifdef HAVE_IPSEC
@@ -168,6 +170,8 @@ extern CpVaParseCmd
   cpHandler,	  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
   cpReadHandler,  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
   cpWriteHandler, // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
+  cpReadHandlerCall,  // HandlerCall **result
+  cpWriteHandlerCall, // HandlerCall **result
   cpIP6Address,	// unsigned char result[16] (or IP6Address *)
   cpIP6Prefix,	// unsigned char result[16], unsigned char result_mask[16]
   cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
