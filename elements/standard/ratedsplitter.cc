@@ -47,6 +47,12 @@ RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
+RatedSplitter::configuration(Vector<String> &conf) const
+{
+  conf.push_back(String(rate()));
+}
+
+void
 RatedSplitter::set_rate(unsigned r, ErrorHandler *errh)
 {
   _rate.set_rate(r, errh);
@@ -75,7 +81,6 @@ rate_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
   if (!cp_unsigned(cp_uncomment(conf), &r))
     return errh->error("rate must be an integer");
   me->set_rate(r);
-  me->set_configuration_argument(0, conf);
   return 0;
 }
 

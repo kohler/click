@@ -69,7 +69,7 @@ void
 Paint::add_handlers()
 {
   add_read_handler("color", color_read_handler, 0);
-  add_write_handler("color", reconfigure_write_handler, (void *)0);
+  add_write_handler("color", reconfigure_positional_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(Paint)

@@ -60,6 +60,12 @@ PullSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+void
+PullSwitch::configuration(Vector<String> &conf) const
+{
+  conf.push_back(String(_input));
+}
+
 Packet *
 PullSwitch::pull(int)
 {
@@ -85,7 +91,6 @@ PullSwitch::write_param(const String &in_s, Element *e, void *, ErrorHandler *er
     return errh->error("PullSwitch input must be integer");
   if (sw->_input >= sw->ninputs())
     sw->_input = -1;
-  sw->set_configuration(String(sw->_input));
   return 0;
 }
 

@@ -26,6 +26,7 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 
 RED::RED()
   : Element(1, 1)
@@ -176,6 +177,20 @@ RED::take_state(Element *e, ErrorHandler *)
   _size = r->_size;
 }
 
+void
+RED::configuration(Vector<String> &conf) const
+{
+  conf.push_back(String(_min_thresh >> QUEUE_SCALE));
+  conf.push_back(String(_max_thresh >> QUEUE_SCALE));
+  conf.push_back(cp_unparse_real2(_max_p, 16));
+
+  StringAccum sa;
+  sa << "QUEUES";
+  for (int i = 0; i < _queue_elements.size(); i++)
+    sa << ' ' << _queue_elements[i]->id();
+  conf.push_back(sa.take_string());
+}
+
 int
 RED::queue_size() const
 {
@@ -321,11 +336,11 @@ RED::add_handlers()
   add_read_handler("stats", read_stats, 0);
   add_read_handler("queues", read_queues, 0);
   add_read_handler("min_thresh", read_parameter, (void *)0);
-  add_write_handler("min_thresh", reconfigure_write_handler, (void *)0);
+  add_write_handler("min_thresh", reconfigure_positional_handler_2, (void *)0);
   add_read_handler("max_thresh", read_parameter, (void *)1);
-  add_write_handler("max_thresh", reconfigure_write_handler, (void *)1);
+  add_write_handler("max_thresh", reconfigure_positional_handler_2, (void *)1);
   add_read_handler("max_p", read_parameter, (void *)2);
-  add_write_handler("max_p", reconfigure_write_handler, (void *)2);
+  add_write_handler("max_p", reconfigure_positional_handler_2, (void *)2);
 }
 
 ELEMENT_REQUIRES(Storage)

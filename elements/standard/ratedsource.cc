@@ -192,7 +192,6 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
        // report error rather than pin to max
        return errh->error("rate too large; max is %u", GapRate::MAX_RATE);
      rs->_rate.set_rate(rate);
-     rs->set_configuration_argument(1, in_s);
      break;
    }
 

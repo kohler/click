@@ -47,6 +47,12 @@ RatedUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+void
+RatedUnqueue::configuration(Vector<String> &conf) const
+{
+  conf.push_back(String(rate()));
+}
+
 int
 RatedUnqueue::initialize(ErrorHandler *errh)
 {
@@ -91,7 +97,6 @@ rate_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
   if (!cp_unsigned(cp_uncomment(conf), &r))
     return errh->error("rate must be an integer");
   me->set_rate(r);
-  me->set_configuration_argument(0, conf);
   return 0;
 }
 

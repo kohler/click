@@ -103,8 +103,8 @@ SetIPDSCP_read_dscp(Element *xf, void *)
 void
 SetIPDSCP::add_handlers()
 {
-  add_read_handler("value", SetIPDSCP_read_dscp, (void *)0);
-  add_write_handler("value", reconfigure_write_handler, (void *)0);
+  add_read_handler("dscp", SetIPDSCP_read_dscp, (void *)0);
+  add_write_handler("dscp", reconfigure_positional_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(SetIPDSCP)

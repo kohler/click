@@ -20,28 +20,29 @@
  * =a StaticPullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch
  */
 
-class PullSwitch : public Element {
+class PullSwitch : public Element { public:
 
-  int _input;
-
-  static String read_param(Element *, void *);
-  static int write_param(const String &, Element *, void *, ErrorHandler *);
-  
- public:
-  
   PullSwitch();
   ~PullSwitch();
   
   const char *class_name() const		{ return "PullSwitch"; }
   const char *processing() const		{ return PULL; }
-  void add_handlers();
-  
   PullSwitch *clone() const;
+
   void notify_ninputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
+  void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }
+  void add_handlers();  
   
   Packet *pull(int);
+  
+ private:
+
+  int _input;
+
+  static String read_param(Element *, void *);
+  static int write_param(const String &, Element *, void *, ErrorHandler *);
   
 };
 

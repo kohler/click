@@ -124,9 +124,9 @@ void
 RandomLossage::add_handlers()
 {
   add_read_handler("p_drop", random_lossage_read, (void *)0);
-  add_write_handler("p_drop", reconfigure_write_handler, (void *)0);
+  add_write_handler("p_drop", reconfigure_positional_handler, (void *)0);
   add_read_handler("active", random_lossage_read, (void *)1);
-  add_write_handler("active", reconfigure_write_handler, (void *)1);
+  add_write_handler("active", reconfigure_positional_handler, (void *)1);
   add_read_handler("drops", random_lossage_read, (void *)2);
 }
 

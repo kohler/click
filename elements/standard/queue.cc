@@ -229,7 +229,7 @@ Queue::add_handlers()
   add_read_handler("highwater_length", read_handler, (void *)1);
   add_read_handler("capacity", read_handler, (void *)2);
   add_read_handler("drops", read_handler, (void *)3);
-  add_write_handler("capacity", reconfigure_write_handler, (void *)0);
+  add_write_handler("capacity", reconfigure_positional_handler, (void *)0);
   add_write_handler("reset_counts", write_handler, (void *)0);
   add_write_handler("reset", write_handler, (void *)1);
 }

@@ -26,6 +26,7 @@ class RatedUnqueue : public Element { public:
   
   RatedUnqueue *clone() const			{ return new RatedUnqueue; }
   int configure(const Vector<String> &, ErrorHandler *);
+  void configuration(Vector<String> &) const;
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

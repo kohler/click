@@ -61,6 +61,12 @@ Switch::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
+Switch::configuration(Vector<String> &conf) const
+{
+  conf.push_back(String(_output));
+}
+
+void
 Switch::push(int, Packet *p)
 {
   if (_output < 0)
@@ -85,7 +91,6 @@ Switch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
     return errh->error("Switch output must be integer");
   if (sw->_output >= sw->noutputs())
     sw->_output = -1;
-  sw->set_configuration(String(sw->_output));
   return 0;
 }
 

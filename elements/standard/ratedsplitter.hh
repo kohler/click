@@ -52,6 +52,8 @@ class RatedSplitter : public Element { protected:
  
   int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
+  void configuration(Vector<String> &) const;
+  
   void push(int port, Packet *);
   
   unsigned rate() const				{ return _rate.rate(); }

@@ -19,15 +19,8 @@
  *
  * =a StaticSwitch, PullSwitch, RoundRobinSwitch, StrideSwitch, HashSwitch */
 
-class Switch : public Element {
+class Switch : public Element { public:
 
-  int _output;
-
-  static String read_param(Element *, void *);
-  static int write_param(const String &, Element *, void *, ErrorHandler *);
-  
- public:
-  
   Switch();
   ~Switch();
   
@@ -38,9 +31,17 @@ class Switch : public Element {
   Switch *clone() const;
   void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
+  void configuration(Vector<String> &) const;
   bool can_live_reconfigure() const		{ return true; }
   
   void push(int, Packet *);
+  
+ private:
+
+  int _output;
+
+  static String read_param(Element *, void *);
+  static int write_param(const String &, Element *, void *, ErrorHandler *);
   
 };
 

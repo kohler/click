@@ -205,11 +205,11 @@ void
 RandomBitErrors::add_handlers()
 {
   add_read_handler("p_bit_error", random_bit_errors_read, (void *)0);
-  add_write_handler("p_bit_error", reconfigure_write_handler, (void *)0);
+  add_write_handler("p_bit_error", reconfigure_positional_handler, (void *)0);
   add_read_handler("error_kind", random_bit_errors_read, (void *)1);
-  add_write_handler("error_kind", reconfigure_write_handler, (void *)1);
+  add_write_handler("error_kind", reconfigure_positional_handler, (void *)1);
   add_read_handler("active", random_bit_errors_read, (void *)2);
-  add_write_handler("active", reconfigure_write_handler, (void *)2);
+  add_write_handler("active", reconfigure_positional_handler, (void *)2);
 }
 
 EXPORT_ELEMENT(RandomBitErrors)
