@@ -22,10 +22,10 @@ creates separate trace files for each TCP/UDP flow
 
 =d
 
-Writes summary information, in the style of ToIPSummaryDump, about incoming
-packets to several files. ToIPFlowDumps writes one file per flow. It
-distinguishes flows by their aggregate annotations. You usually will run
-ToIPFlowDumps downstream of an AggregateIPFlows element.
+Writes summary information about incoming packets, in the style of
+ToIPSummaryDump, to several files, one file per flow. It distinguishes flows
+by their aggregate annotations. You usually will run ToIPFlowDumps downstream
+of an AggregateIPFlows element.
 
 The OUTPUT_PATTERN argument gives the pattern used by ToIPSummaryDump to
 generate filenames. Printf-like `C<%>' escapes in the pattern are expanded
@@ -105,9 +105,9 @@ false.
 
 Boolean. If true, then output packets' IP IDs. Defaults to false.
 
-=item OUTPUT_LARGER
+=item MINCOUNT
 
-Unsigned. Generate output only for flows with more than OUTPUT_LARGER packets.
+Unsigned. Generate output only for flows with at least MINCOUNT packets.
 Defaults to 0 (output all flows).
 
 =back
@@ -253,7 +253,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _tcp_window : 1;
     int _tcp_opt;
 
-    uint32_t _output_larger;
+    uint32_t _mincount;
     
     Task _task;
     NotifierSignal _signal;

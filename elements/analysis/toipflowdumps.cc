@@ -533,7 +533,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
     bool absolute_time = false, absolute_seq = false, binary = false, all_tcp_opt = false, tcp_opt = false, tcp_window = false, ip_id = false, gzip = false;
-    _output_larger = 0;
+    _mincount = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpOptional,
@@ -549,7 +549,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "TCP_WINDOW", cpBool, "output TCP windows?", &tcp_window,
 		    "GZIP", cpBool, "gzip output files?", &gzip,
 		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
-		    "OUTPUT_LARGER", cpUnsigned, "output flows with more than this many packets", &_output_larger,
+		    "MINCOUNT", cpUnsigned, "output flows with at least this many packets", &_mincount,
 		    0) < 0)
 	return -1;
 
@@ -660,7 +660,7 @@ ToIPFlowDumps::add_compressable(const String &filename, ErrorHandler *errh)
 void
 ToIPFlowDumps::end_flow(Flow *f, ErrorHandler *errh)
 {
-    if (f->npackets() > _output_larger) {
+    if (f->npackets() >= _mincount) {
 	f->output(errh);
 	if (_gzip && f->filename() != "-")
 	    if (add_compressable(f->filename(), errh) < 0)
