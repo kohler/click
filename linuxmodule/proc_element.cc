@@ -304,8 +304,7 @@ proc_element_handler_write(struct file *filp, const char *buffer, size_t count, 
   
   if (f_pos + count > old_length) {
     int out_of_memory = String::out_of_memory_count();
-    char blah[f_pos + count - old_length];
-    s.append(blah, f_pos + count - old_length);
+    s.append_fill(0, f_pos + count - old_length);
     if (String::out_of_memory_count() != out_of_memory)
       return -ENOMEM;
   }
