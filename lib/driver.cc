@@ -24,10 +24,11 @@
 
 #include <click/package.hh>
 #include <click/hashmap.hh>
-#include <click/userutils.hh>
 #include <click/error.hh>
 
-#ifndef CLICK_LINUXMODULE
+
+#if !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+# include <click/userutils.hh>
 # include <unistd.h>
 # include <errno.h>
 # include <string.h>
@@ -131,7 +132,7 @@ click_cleanup_packages()
 #endif
 
 
-#if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE)
+#if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
 
 static String::Initializer crap_initializer;
 static String click_compile_prog, tmpdir;
@@ -272,4 +273,4 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     clickdl_load_package(package, &cerrh);
 }
 
-#endif /* HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE)*/
+#endif /* HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE) */
