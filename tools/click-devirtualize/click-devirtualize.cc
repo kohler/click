@@ -439,6 +439,7 @@ particular purpose.\n");
   StringAccum out;
   out << "// click-compile: -w -fno-access-control\n\
 #include <clickconfig.h>\n\
+#undef HAVE_CONFIG_H\n\
 #include <clickpackage.hh>\n";
   specializer.output(out);
   

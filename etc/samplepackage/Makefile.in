@@ -100,12 +100,12 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist:
-	echo . | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
-	echo . | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
+	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
+	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
 kelements.conf:
-	echo . | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
+	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
 uelements.conf:
-	echo . | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
+	echo $(srcdir) | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
 elements.mk: kelements.conf uelements.conf $(clicksrcdir)/mkelemconf.sh
 	$(clicksrcdir)/mkelemconf.sh -m -t kernel < kelements.conf > elements.mk
 	$(clicksrcdir)/mkelemconf.sh -m -t user < uelements.conf >> elements.mk

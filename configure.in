@@ -479,11 +479,15 @@ done
 for dir in $TOOLDIRS; do
   config_files="$config_files tools/$dir/Makefile"
 done
+if test ! -d etc; then
+  /bin/mkdir etc
+fi
 
 AC_OUTPUT_COMMANDS([chmod +x mkelemlist.sh
 if test ${CONFIG_ELEMLISTS-yes} = yes; then
   echo creating element lists
   /bin/sh mkelemlist.sh
+  /bin/rm -f clickconfig.h
+  /bin/ln config.h clickconfig.h
 fi])
 AC_OUTPUT($config_files)
-/bin/ln config.h clickconfig.h
