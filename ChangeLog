@@ -1,3 +1,8 @@
+2003-10-06 Monday 12:00  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipfilter.cc (1.38): avoid potential crash on null
+	errh
+
 2003-10-06 Monday 00:50  Eddie Kohler <kohler@icir.org>
 
 	* AUTHORS (1.24), NEWS (1.147), elements/analysis/fromipsumdump.hh
