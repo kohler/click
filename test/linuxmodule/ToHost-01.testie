@@ -42,10 +42,13 @@ ICMPSendPings(2.0.0.2, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> 
 ICMPSendPings(2.0.0.3, 1.0.0.1, LIMIT 1) -> EtherEncap(0x0800, fake0, fake0) -> th1;
 
 %ignore FAKE0
-tcpdump: listening on.*
+.*listening on.*
 .*packet.*received by.*
 .*packet.*dropped by.*
+.*packet.*captured.*
 .*arp.*
+.*verbose output.*
+.*end of file.*
 
 %expectx -i FAKE0
 .* 1.0.0.1 > 1.0.0.2: icmp.* echo request.*

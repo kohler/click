@@ -126,3 +126,6 @@ assert_stop
 min_cpu_share
 max_cpu_share
 cpu_share
+iters_per_os
+iters_per_timers
+tasks_per_iter
