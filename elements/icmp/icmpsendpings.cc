@@ -51,14 +51,17 @@ ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
   _icmp_id = 0;
   _interval = 1000;
   _data = String();
-  return cp_va_parse(conf, this, errh,
-                     cpIPAddress, "source IP address", &_src,
-                     cpIPAddress, "destination IP address", &_dst,
-		     cpKeywords,
-		     "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
-		     "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
-		     "DATA", cpString, "payload", &_data,
-		     0);
+  if (cp_va_parse(conf, this, errh,
+		  cpIPAddress, "source IP address", &_src,
+		  cpIPAddress, "destination IP address", &_dst,
+		  cpKeywords,
+		  "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
+		  "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
+		  "DATA", cpString, "payload", &_data, 0) < 0)
+    return -1;
+  if (_interval == 0)
+    errh->warning("INTERVAL so small that it is zero");
+  return 0;
 }
 
 int
@@ -106,7 +109,7 @@ ICMPSendPings::run_timer()
 
   output(0).push(q);
 
-  _timer.schedule_after_ms(_interval);
+  _timer.reschedule_after_ms(_interval);
   _ip_id++;
 }
 
