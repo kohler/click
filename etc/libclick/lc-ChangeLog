@@ -1,3 +1,7 @@
+2002-09-10 Tuesday 17:49  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: llrpc.h, llrpc.h: fix ioctl numbering :(
+
 2002-09-05 Thursday 14:06  Eddie Kohler <kohler@icir.org>
 
 	* include/click/bighashmap.cc, include/click/bighashmap.cc,
