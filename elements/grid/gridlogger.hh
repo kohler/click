@@ -78,6 +78,11 @@ class GridLogger : public Element {
   unsigned char _buf[1024];
   size_t _bufptr; // index of next byte available in buf
 
+  bool check_state(state_t s) {
+    assert(_state == s);
+    return _state == s;
+  }
+
   bool check_space(size_t needed) {
     size_t avail = sizeof(_buf) - _bufptr;
     if (avail < needed) {
@@ -96,6 +101,9 @@ class GridLogger : public Element {
     if (res < 0)
       click_chatter("GridLogger %s: error writing log buffer: %s",
 		    id().cc(), strerror(errno));
+    else if (res != (int) _bufptr)
+      click_chatter("GridLogger %s: bad write to log buffer, had %u bytes in buffer but wrote %d bytes",
+		    id().cc(), (unsigned) _bufptr, res);
     _bufptr = 0;
   }
   void clear_buf() { _bufptr = 0; }
@@ -209,6 +217,7 @@ private:
   static const unsigned char NO_ROUTE_CODE              = 0x0C;
   static const unsigned char SPECIAL_PKT_CODE           = 0x0D;
   static const unsigned char BORING_PKT_CODE            = 0x0E;
+  static const unsigned char RECV_ADD_ROUTE_CODE_EXTRA  = 0x0F;
 
 public:
   // these need to be different than the above codes
@@ -229,7 +238,7 @@ public:
   };
 
   void log_sent_advertisement(unsigned seq_no, struct timeval when) { 
-    if (_state != WAITING) 
+    if (!check_state(WAITING)) 
       return;
     if (!check_space(1 + sizeof(seq_no) + sizeof(when)))
       return;
@@ -240,7 +249,7 @@ public:
   }
 
   void log_start_recv_advertisement(unsigned seq_no, unsigned ip, struct timeval when) {
-    if (_state != WAITING) 
+    if (!check_state(WAITING)) 
       return;
     _state = RECV_AD;
     add_one_byte(BEGIN_RECV_CODE);
@@ -250,7 +259,7 @@ public:
   }
   
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r) {
-    if (_state != RECV_AD) 
+    if (!check_state(RECV_AD)) 
       return;
     add_one_byte(RECV_ADD_ROUTE_CODE);
     add_one_byte(why);
@@ -260,9 +269,23 @@ public:
     add_long(r.seq_no);
   }
 
-  void log_expired_route(reason_t why, unsigned ip) {
-    if (_state != RECV_AD && _state != EXPIRE_HANDLER) 
+  void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r, const unsigned extra) {
+    if (!check_state(RECV_AD)) 
       return;
+    add_one_byte(RECV_ADD_ROUTE_CODE_EXTRA);
+    add_one_byte(why);
+    add_ip(r.dest_ip);
+    add_ip(r.next_hop_ip);
+    add_one_byte(r.num_hops);
+    add_long(r.seq_no);
+    add_long(extra);
+  }
+
+  void log_expired_route(reason_t why, unsigned ip) {
+    if (_state != RECV_AD && _state != EXPIRE_HANDLER) {
+      assert(0);
+      return;
+    }
     if (_state == RECV_AD) {
       add_one_byte(RECV_EXPIRE_ROUTE_CODE);
       add_ip(ip);
@@ -274,14 +297,14 @@ public:
   }
 
   void log_triggered_route(unsigned ip) {
-    if (_state != RECV_AD) 
+    if (!check_state(RECV_AD)) 
       return;
     add_one_byte(RECV_TRIGGER_ROUTE_CODE);
     add_ip(ip);
   }
 
   void log_end_recv_advertisement() {
-    if (_state != RECV_AD) 
+    if (!check_state(RECV_AD)) 
       return;
     _state = WAITING;
     add_one_byte(END_RECV_CODE);
@@ -289,7 +312,7 @@ public:
   }
 
   void log_start_expire_handler(struct timeval when) {
-    if (_state != WAITING) 
+    if (!check_state(WAITING)) 
       return;
     _state = EXPIRE_HANDLER;
     add_one_byte(BEGIN_EXPIRE_CODE);
@@ -297,7 +320,7 @@ public:
   }
 
   void log_end_expire_handler() {
-    if (_state != EXPIRE_HANDLER) 
+    if (!check_state(EXPIRE_HANDLER)) 
       return;
     _state = WAITING;
     add_one_byte(END_EXPIRE_CODE);
@@ -308,7 +331,7 @@ public:
   }
 
   void log_route_dump(const Vector<GridGenericRouteTable::RouteEntry> &rt, struct timeval when) {
-    if (_state != WAITING)
+    if (!check_state(WAITING))
       return;
     add_one_byte(ROUTE_DUMP_CODE);
     add_timeval(when);
@@ -326,7 +349,7 @@ public:
 
   // assumes Grid packet
   void log_tx_err(const Packet *p, int err, struct timeval when) {
-    if (_state != WAITING) 
+    if (!check_state(WAITING)) 
       return;
     struct click_ether *eh = (click_ether *) (p->data());
      if (eh->ether_type != htons(ETHERTYPE_GRID)) 
@@ -339,7 +362,7 @@ public:
   }
 
   void log_no_route(const Packet *p, struct timeval when) {
-    if (_state != WAITING)
+    if (!check_state(WAITING))
       return;
     struct click_ether *eh = (click_ether *) (p->data());
     if (eh->ether_type != htons(ETHERTYPE_GRID)) 
