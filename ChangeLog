@@ -1,3 +1,9 @@
+2003-02-03 Monday 10:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc (1.37),
+	locqueryresponder.cc (1.26): Convert Grid flooding loc query els to
+	be kernel compatible
+
 2003-02-03 Monday 10:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: linkstat.cc (1.16), lookuplocalgridroute.cc
