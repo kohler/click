@@ -70,12 +70,6 @@
 # define NDEBUG 1
 #endif
 
-/* Define if a Linux kernel module is a possible target. */
-#undef HAVE_LINUXMODULE_TARGET
-
-/* Define if a BSD kernel module is a possible target. */
-#undef HAVE_BSDMODULE_TARGET
-
 /* Define if your Linux kernel has Click extensions. */
 #undef HAVE_CLICK_KERNEL
 
