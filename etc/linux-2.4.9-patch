@@ -1,7 +1,7 @@
 
 Index: include/asm-i386/highmem.h
 --- include/asm-i386/highmem.h.orig	Wed Aug 15 17:21:21 2001
-+++ include/asm-i386/highmem.h	Wed Aug 22 18:49:46 2001
++++ include/asm-i386/highmem.h	Thu Aug 23 15:00:59 2001
 @@ -88,7 +88,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -46,7 +46,7 @@ Index: include/asm-i386/rwlock.h
 
 Index: include/asm-i386/string.h
 --- include/asm-i386/string.h.orig	Wed Aug 15 17:21:11 2001
-+++ include/asm-i386/string.h	Wed Aug 22 18:49:46 2001
++++ include/asm-i386/string.h	Thu Aug 23 15:00:52 2001
 @@ -29,6 +29,7 @@
   *		consider these trivial functions to be PD.
   */
@@ -98,7 +98,7 @@ Index: include/asm-i386/string.h
 
 Index: include/linux/highmem.h
 --- include/linux/highmem.h.orig	Wed Aug 15 17:21:21 2001
-+++ include/linux/highmem.h	Wed Aug 22 18:49:46 2001
++++ include/linux/highmem.h	Thu Aug 23 15:00:59 2001
 @@ -18,7 +18,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -164,7 +164,7 @@ Index: include/linux/inetdevice.h
 
 Index: include/linux/mm.h
 --- include/linux/mm.h.orig	Wed Aug 15 17:21:11 2001
-+++ include/linux/mm.h	Wed Aug 22 18:49:46 2001
++++ include/linux/mm.h	Thu Aug 23 15:00:53 2001
 @@ -516,7 +516,6 @@
  
  extern unsigned long do_brk(unsigned long, unsigned long);
@@ -176,7 +176,7 @@ Index: include/linux/mm.h
 
 Index: include/linux/netdevice.h
 --- include/linux/netdevice.h.orig	Wed Aug 15 17:21:32 2001
-+++ include/linux/netdevice.h	Wed Aug 22 18:49:46 2001
++++ include/linux/netdevice.h	Thu Aug 23 15:01:06 2001
 @@ -407,6 +407,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -237,7 +237,7 @@ Index: include/linux/netdevice.h
 
 Index: include/linux/skbuff.h
 --- include/linux/skbuff.h.orig	Wed Aug 15 17:21:30 2001
-+++ include/linux/skbuff.h	Wed Aug 22 18:49:46 2001
++++ include/linux/skbuff.h	Thu Aug 23 15:01:05 2001
 @@ -124,15 +124,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -342,7 +342,7 @@ Index: include/linux/skbuff.h
 
 Index: include/linux/swap.h
 --- include/linux/swap.h.orig	Wed Aug 15 17:21:11 2001
-+++ include/linux/swap.h	Wed Aug 22 18:49:46 2001
++++ include/linux/swap.h	Thu Aug 23 15:00:53 2001
 @@ -96,7 +96,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -364,7 +364,7 @@ Index: include/linux/swap.h
 
 Index: include/net/route.h
 --- include/net/route.h.orig	Wed Aug 15 17:21:32 2001
-+++ include/net/route.h	Wed Aug 22 18:49:46 2001
++++ include/net/route.h	Thu Aug 23 15:01:06 2001
 @@ -131,7 +131,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)
@@ -1332,7 +1332,7 @@ Index: drivers/net/tulip/tulip_core.c
 
 Index: drivers/net/eepro100.c
 --- drivers/net/eepro100.c.orig	Mon Jul  2 17:03:04 2001
-+++ drivers/net/eepro100.c	Thu Aug 23 14:48:51 2001
++++ drivers/net/eepro100.c	Thu Aug 23 15:15:33 2001
 @@ -545,6 +545,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -1388,7 +1388,7 @@ Index: drivers/net/eepro100.c
  		reset_mii(dev);
  	} else {
  #else
-@@ -1329,9 +1352,18 @@
+@@ -1329,9 +1352,15 @@
  	long ioaddr = dev->base_addr;
  	int entry;
  
@@ -1399,23 +1399,13 @@ Index: drivers/net/eepro100.c
 +		return 1;
 +	}
 +#endif
-+    if (test_and_set_bit(0, (void*)&dev->tbusy) != 0)
-+		return 1;
-+
  	{	/* Prevent interrupts from changing the Tx ring from underneath us. */
  		unsigned long flags;
 -
  		spin_lock_irqsave(&sp->lock, flags);
  
  		/* Check if there are enough space. */
-@@ -1376,12 +1408,13 @@
- 			netif_stop_queue(dev);
- 			sp->tx_full = 1;
- 		}
-+		else
-+			clear_bit(0, (void*)&dev->tbusy);
- 
- 		spin_unlock_irqrestore(&sp->lock, flags);
+@@ -1381,7 +1410,6 @@
  	}
  
  	dev->trans_start = jiffies;
@@ -1423,7 +1413,7 @@ Index: drivers/net/eepro100.c
  	return 0;
  }
  
-@@ -1390,6 +1423,12 @@
+@@ -1390,6 +1418,12 @@
  	unsigned int dirty_tx;
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
@@ -1436,7 +1426,7 @@ Index: drivers/net/eepro100.c
  	dirty_tx = sp->dirty_tx;
  	while ((int)(sp->cur_tx - dirty_tx) > 0) {
  		int entry = dirty_tx % TX_RING_SIZE;
-@@ -1460,6 +1499,11 @@
+@@ -1460,6 +1494,11 @@
  	}
  #endif
  
@@ -1448,7 +1438,7 @@ Index: drivers/net/eepro100.c
  	ioaddr = dev->base_addr;
  	sp = (struct speedo_private *)dev->priv;
  
-@@ -1488,10 +1532,12 @@
+@@ -1488,10 +1527,12 @@
  			break;
  
  		/* Always check if all rx buffers are allocated.  --SAW */
@@ -1464,7 +1454,7 @@ Index: drivers/net/eepro100.c
  									/* Need to gather the postponed packet. */
  			speedo_rx(dev);
  
-@@ -1561,7 +1607,7 @@
+@@ -1561,7 +1602,7 @@
  		}
  
  		/* User interrupt, Command/Tx unit interrupt or CU not active. */
@@ -1473,7 +1463,7 @@ Index: drivers/net/eepro100.c
  			spin_lock(&sp->lock);
  			speedo_tx_buffer_gc(dev);
  			if (sp->tx_full
-@@ -1677,6 +1723,12 @@
+@@ -1677,6 +1718,12 @@
  {
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
@@ -1486,7 +1476,7 @@ Index: drivers/net/eepro100.c
  	/* Refill the RX ring. */
  	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
  			speedo_refill_rx_buf(dev, force) != -1);
-@@ -1690,6 +1742,12 @@
+@@ -1690,6 +1737,12 @@
  	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
  	int alloc_ok = 1;
  
@@ -1499,7 +1489,7 @@ Index: drivers/net/eepro100.c
  	if (speedo_debug > 4)
  		printk(KERN_DEBUG " In speedo_rx().\n");
  	/* If we own the next entry, it's a new packet. Send it up. */
-@@ -2273,3 +2331,369 @@
+@@ -2273,3 +2326,368 @@
   *  tab-width: 4
   * End:
   */
@@ -1693,9 +1683,9 @@ Index: drivers/net/eepro100.c
 +static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb) {
 +	struct speedo_private *sp = (struct speedo_private *)dev->priv;
 +	int entry;
-+    
-+	if (test_and_set_bit(0, (void*)&dev->tbusy) != 0)
-+		return 1;
++   
++	unsigned flags;
++	spin_lock_irqsave(&sp->lock, flags);
 +
 +	/* Check if there are enough space. */
 +	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
@@ -1703,7 +1693,7 @@ Index: drivers/net/eepro100.c
 +		       dev->name);
 +		netif_stop_queue(dev);
 +		sp->tx_full = 1;
-+		spin_unlock(&sp->lock);
++		spin_unlock_irqrestore(&sp->lock, flags);
 +		return 1;
 +	}
 +
@@ -1736,9 +1726,8 @@ Index: drivers/net/eepro100.c
 +		netif_stop_queue(dev);
 +		sp->tx_full = 1;
 +	}
-+	else
-+	  	clear_bit(0, (void*)&dev->tbusy);
 +
++	spin_unlock_irqrestore(&sp->lock, flags);
 +	return 0;
 +}
 +
