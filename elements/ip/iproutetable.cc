@@ -1,8 +1,10 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * iproutetable.{cc,hh} -- looks up next-hop address in route table
- * Benjie Chen
+ * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,92 +25,115 @@
 #include <click/glue.hh>
 #include "iproutetable.hh"
 
-IPRouteTable::IPRouteTable()
+void *
+IPRouteTable::cast(const char *name)
 {
-  MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
-}
-
-
-IPRouteTable::~IPRouteTable()
-{
-  MOD_DEC_USE_COUNT;
+    if (strcmp(name, "IPRouteTable") == 0)
+	return (void *)this;
+    else
+	return Element::cast(name);
 }
 
 int
-IPRouteTable::ctrl_handler
-(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPRouteTable::add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh)
 {
-  unsigned int dst, mask, gw=0;
-  int output_num;
-  bool ok = false;
-  IPRouteTable *r = reinterpret_cast<IPRouteTable*>(e);
+    // by default, cannot add routes
+    return errh->error("cannot add routes to this routing table");
+}
 
-  Vector<String> words;
-  cp_spacevec(conf, words);
+int
+IPRouteTable::remove_route(IPAddress, IPAddress, ErrorHandler *errh)
+{
+    // by default, cannot remove routes
+    return errh->error("cannot delete routes from this routing table");
+}
 
-  if (words[0] == "add") {
-    if ((words.size() == 3 || words.size() == 4)
-	&& cp_ip_prefix(words[1], (unsigned char *)&dst, 
-	                          (unsigned char *)&mask, true, r)
-	&& cp_integer(words.back(), &output_num)) {
-      if (words.size() == 4)
-	ok = cp_ip_address(words[2], (unsigned char *)&gw, r);
-      else
-	ok = true;
+int
+IPRouteTable::lookup_route(IPAddress, IPAddress &) const
+{
+    return -1;			// by default, route lookups fail
+}
+
+String
+IPRouteTable::dump_routes()
+{
+    return "";
+}
+
+
+void
+IPRouteTable::push(int, Packet *p)
+{
+    IPAddress gw;
+    int port = lookup_route(p->dst_ip_anno(), gw);
+
+    if (port >= 0) {
+	assert(port < noutputs());
+	if (gw)
+	    p->set_dst_ip_anno(gw);
+	output(port).push(p);
+    } else {
+	click_chatter("IPRouteTable: no route for %s", p->dst_ip_anno().s().cc());
+	p->kill();
     }
+}
 
-    if (ok && output_num >= 0 && output_num < r->noutputs())
-      r->add_route(dst, mask, gw, output_num);
-    else if (output_num < 0 || output_num >= r->noutputs())
-      return 
-	errh->error("output number must be between 0 and %d", r->noutputs());
-    else
-      return 
-	errh->error("add arguments should be `daddr/mask [gateway] output'");
-  }
-  else if (words[0] == "remove") {
-    if (words.size() == 2 && 
-	cp_ip_prefix
-	(words[1], (unsigned char *)&dst, (unsigned char *)&mask, true, r))
-      r->remove_route(dst, mask);
-  }
-  else
-    return errh->error("command must be add or remove");
-  return 0;
+
+int
+IPRouteTable::ctrl_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+    IPRouteTable *r = static_cast<IPRouteTable *>(e);
+
+    Vector<String> words;
+    cp_spacevec(conf, words);
+    if (words.size() == 0)
+	words.push_back("");
+
+    if (words[0] == "add") {
+	IPAddress dst, mask, gw;
+	int port, ok;
+
+	if (words.size() == 3)
+	    ok = cp_va_parse(words, r, errh, cpIgnore,
+			     cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
+			     cpInteger, "output port", &port, 0);
+	else
+	    ok = cp_va_parse(words, r, errh, cpIgnore,
+			     cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
+			     cpIPAddress, "gateway address", &gw,
+			     cpInteger, "output port", &port, 0);
+
+	if (ok >= 0 && (port < 0 || port >= r->noutputs()))
+	    ok = errh->error("output port out of range");
+	if (ok >= 0)
+	    ok = r->add_route(dst, mask, gw, port, errh);
+	return ok;
+
+    } else if (words[0] == "remove") {
+	IPAddress dst, mask;
+	if (cp_va_parse(words, r, errh, cpIgnore,
+			cpIPAddressOrPrefix, "routing prefix", &dst, &mask, 0) < 0)
+	    return -1;
+	else
+	    return r->remove_route(dst, mask, errh);
+
+    } else
+	return errh->error("bad command, should be `add' or `remove'");
 }
 
 String
 IPRouteTable::look_handler(Element *e, void *)
 {
-  IPRouteTable *r = reinterpret_cast<IPRouteTable*>(e);
-  return r->dump_routes();
-}
-
-void
-IPRouteTable::push(int, Packet *p)
-{
-  IPAddress a = p->dst_ip_anno();
-  IPAddress gw;
-  int port = -1;
-
-  if ((port = lookup_route(a, gw)) >= 0) {
-    if (gw)
-      p->set_dst_ip_anno(gw);
-    output(port).push(p);
-  } else {
-    click_chatter("IPRouteTable: no route for %x", a.addr());
-    p->kill();
-  }
+    IPRouteTable *r = static_cast<IPRouteTable*>(e);
+    return r->dump_routes();
 }
 
 void
 IPRouteTable::add_handlers()
 {
-  add_write_handler("ctrl", ctrl_handler, 0);
-  add_read_handler("look", look_handler, 0);
+    add_write_handler("ctrl", ctrl_handler, 0);
+    add_read_handler("look", look_handler, 0);
 }
 
-EXPORT_ELEMENT(IPRouteTable)
 
+ELEMENT_PROVIDES(IPRouteTable)

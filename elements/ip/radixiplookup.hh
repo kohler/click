@@ -1,5 +1,10 @@
-#ifndef RADIXIPLOOKUP_HH
-#define RADIXIPLOOKUP_HH
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_RADIXIPLOOKUP_HH
+#define CLICK_RADIXIPLOOKUP_HH
+#include <click/glue.hh>
+#include <click/element.hh>
+#include "iproutetable.hh"
+class Radix;
 
 /*
  * =c
@@ -14,9 +19,40 @@
  * =a IPRouteTable
  */
 
-#include <click/glue.hh>
-#include <click/element.hh>
-#include "iproutetable.hh"
+class RadixIPLookup : public IPRouteTable { public:
+    
+    RadixIPLookup();
+    ~RadixIPLookup();
+
+    const char *class_name() const		{ return "RadixIPLookup"; }
+    const char *processing() const		{ return PUSH; }
+    RadixIPLookup *clone() const		{ return new RadixIPLookup; }
+
+    void notify_noutputs(int);
+    void uninitialize();
+
+    int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
+    int remove_route(IPAddress, IPAddress, ErrorHandler *);
+    int lookup_route(IPAddress, IPAddress &) const;
+    String dump_routes();
+
+  private:
+    
+    bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port);
+
+    // Simple routing table
+    struct Entry {
+	unsigned dst;
+	unsigned mask;
+	unsigned gw;
+	unsigned port;
+	bool valid;
+    };
+    Vector<Entry *> _v;
+    int _entries;
+    Radix *_radix;
+    
+};
 
 class Radix {
   // implementation take from Sedgewick
@@ -45,37 +81,6 @@ private:
   static unsigned bits(unsigned x, unsigned y, unsigned char idx);
   RadixNode *node_lookup(unsigned v);
   static const int KEYSIZE = 32;
-};
-
-class RadixIPLookup : public IPRouteTable {
-public:
-  RadixIPLookup();
-  ~RadixIPLookup();
-  
-  const char *class_name() const		{ return "RadixIPLookup"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  RadixIPLookup *clone() const			{ return new RadixIPLookup; }
-  void uninitialize();
-
-  String dump_routes();
-  void add_route(IPAddress, IPAddress, IPAddress, int);
-  void remove_route(IPAddress, IPAddress);
-  int lookup_route(IPAddress, IPAddress &);
-
-private:
-  bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port);
-  
-  // Simple routing table
-  struct Entry {
-    unsigned dst;
-    unsigned mask;
-    unsigned gw;
-    unsigned port;
-    bool valid;
-  };
-  Vector<Entry *> _v;
-  int _entries;
-  Radix *_radix;
 };
 
 inline
@@ -208,4 +213,3 @@ Radix::bits(unsigned x, unsigned k, unsigned char j)
 }
 
 #endif
-

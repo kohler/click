@@ -1,5 +1,6 @@
-#ifndef IPROUTETABLE_HH
-#define IPROUTETABLE_HH
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_IPROUTETABLE_HH
+#define CLICK_IPROUTETABLE_HH
 
 /*
  * =c
@@ -53,31 +54,24 @@
 #include <click/glue.hh>
 #include <click/element.hh>
 
-class IPRouteTable : public Element {
-public:
-  IPRouteTable();
-  ~IPRouteTable();
-  
-  const char *class_name() const	{ return "IPRouteTable"; }
-  const char *processing() const	{ return PUSH; }
-  virtual int initialize(ErrorHandler *){ return 0; }
+class IPRouteTable : public Element { public:
 
-  virtual IPRouteTable *clone() const	{ return new IPRouteTable; }
-  virtual int configure(const Vector<String> &, ErrorHandler *)
-    					{ return 0; }
-  virtual String dump_routes()		{ return ""; }
-  virtual void add_route(IPAddress, IPAddress, IPAddress, int) {}
-  virtual void remove_route(IPAddress, IPAddress) {}
-  virtual int lookup_route(IPAddress, IPAddress &) { return -1; }
-  virtual void uninitialize()		{}
+    void *cast(const char *);
+
+    virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
+    virtual int remove_route(IPAddress, IPAddress, ErrorHandler*);
+    virtual int lookup_route(IPAddress, IPAddress &) const = 0;
+    virtual String dump_routes();
   
-  void push(int port, Packet *p);
-  static int ctrl_handler
-    (const String &conf, Element *e, void *, ErrorHandler *errh);
-  static String look_handler(Element *, void *);
-  void add_handlers();
+    void push(int port, Packet *p);
+
+    void add_handlers();
+
+  private:
+
+    static int ctrl_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+    static String look_handler(Element *, void *);
+
 };
 
 #endif
-
-
