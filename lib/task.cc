@@ -63,7 +63,7 @@ Task::uninitialize()
   if (initialized()) {
     _all_prev->_all_next = _all_next;
     _all_next->_all_prev = _all_prev;
-    _all_prev = _all_next;
+    _all_prev = _all_next = 0;
   }
 }
 
@@ -108,6 +108,7 @@ Task::schedule_immediately()
 void
 Task::join_scheduler(Router *r)
 {
+  if (!initialized()) initialize(r);
   join_scheduler(r->task_list());
 }
 
