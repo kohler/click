@@ -22,7 +22,6 @@ public:
     click_tcp _tcp;
     operator bool() const { return(_ip.ip_src.s_addr != 0); }
     tcpip() { _ip.ip_src.s_addr = 0; }
-    int hashcode();
   };
 
   RFC2507d();
@@ -53,12 +52,4 @@ private:
   void decode(const u_char * &in, unsigned int &);
 };
 
-inline bool
-operator==(struct RFC2507d::tcpip &a, struct RFC2507d::tcpip &b)
-{
-  return(memcmp(&a._ip, &b._ip, sizeof(a._ip)) == 0 &&
-         memcmp(&a._tcp, &b._tcp, sizeof(a._tcp)) == 0);
-}
-
 #endif
-

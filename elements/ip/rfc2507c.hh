@@ -15,6 +15,7 @@
 
 #include <click/hashmap.hh>
 #include <click/glue.hh>
+#include <click/ipflowid.hh>
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
 
@@ -27,7 +28,7 @@ public:
     click_tcp _tcp;
     operator bool() const { return(_ip.ip_src.s_addr != 0); }
     tcpip() { _ip.ip_src.s_addr = 0; }
-    int hashcode() const;
+    operator IPFlowID() const;
   };
   
   RFC2507c();
@@ -55,7 +56,7 @@ private:
   struct ccb _ccbs[TCP_SPACE];
 
   /* map packet header ID fields to CID */
-  HashMap<struct tcpip, int> _map;
+  HashMap<IPFlowID, int> _map;
 
   void make_key(const struct tcpip &from, struct tcpip &to);
   WritablePacket *make_other(Packet *p);
@@ -66,12 +67,4 @@ private:
   Packet *make_compressed(int cid, Packet *p);
 };
 
-inline bool
-operator==(struct RFC2507c::tcpip &a, struct RFC2507c::tcpip &b)
-{
-  return(memcmp(&a._ip, &b._ip, sizeof(a._ip)) == 0 &&
-         memcmp(&a._tcp, &b._tcp, sizeof(a._tcp)) == 0);
-}
-
 #endif
-

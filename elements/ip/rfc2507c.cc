@@ -39,6 +39,12 @@ RFC2507c::clone() const
   return(new RFC2507c());
 }
 
+inline
+RFC2507c::tcpip::operator IPFlowID() const
+{
+  return IPFlowID(_ip.ip_src, _tcp.th_sport, _ip.ip_dst, _tcp.th_dport);
+}
+
 /*
  * Make a packet containing an uncompressed and uncompressible
  * packet, not to be associated with a CID.
@@ -229,18 +235,11 @@ RFC2507c::simple_action(Packet *p)
     click_chatter("cannot compress packet");
     q = make_other(p);
   } else {
-    struct tcpip ti, key;
+    IPFlowID key(p);
+    struct tcpip ti;
     ti._ip = *ipp;
     ti._tcp = *tcpp;
-    make_key(ti, key);
     if(_map.findp(key) && (cid = _map[key])){
-      /* sanity check */
-      struct tcpip xkey;
-      make_key(_ccbs[cid]._context, xkey);
-      if(xkey != key){
-        click_chatter("OOPS rfc2507c");
-      }
-
       q = make_compressed(cid, p);
       _ccbs[cid]._context = ti;
     } else {
@@ -248,16 +247,15 @@ RFC2507c::simple_action(Packet *p)
       cid = (random() % (TCP_SPACE-1)) + 1;
 
       /* delete the old key */
-      struct tcpip okey;
-      make_key(_ccbs[cid]._context, okey);
+      IPFlowID okey(_ccbs[cid]._context);
       if(_map.findp(okey) && _map[okey]){
         _map.insert(okey, 0);
       }
 
       _map.insert(key, cid);
       click_chatter("sport %d dport %d added cid %d",
-                  ntohs(key._tcp.th_sport),
-                  ntohs(key._tcp.th_dport),
+                  ntohs(key.sport()),
+                  ntohs(key.dport()),
                   cid);
 
       q = make_full(cid, p);
@@ -269,20 +267,9 @@ RFC2507c::simple_action(Packet *p)
   return(q);
 }
 
-int
-RFC2507c::tcpip::hashcode() const
-{
-  unsigned int xx;
-  xx = this->_ip.ip_src.s_addr +
-    (this->_ip.ip_dst.s_addr << 1) +
-    (this->_tcp.th_sport << 3) +
-    (this->_tcp.th_dport << 4);
-  return(xx & 0x7fffffff);
-}
-
 EXPORT_ELEMENT(RFC2507c)
-
+    
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<struct RFC2507c::tcpip, int>;
+template class HashMap<IPFlowID, int>;
 #endif
