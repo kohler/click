@@ -26,6 +26,7 @@
 #include "grid.hh"
 #include <click/router.hh>
 #include <click/glue.hh>
+#include "gridgatewayinfo.hh"
 
 int GridRouteActor::_next_free_cb = 0;
 

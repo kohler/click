@@ -8,8 +8,9 @@
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
+#include <click/string.hh>
 #include "grid.hh"
-#include "gridroutetable.hh"
+#include "gridgenericrt.hh"
 
 /* this code won't work if multithreaded and more than one thread is logging */
 

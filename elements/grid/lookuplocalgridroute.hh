@@ -39,6 +39,8 @@
 #include "gridlogger.hh"
 #include "linktracker.hh"
 
+class GridGatewayInfo;
+
 class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
 
