@@ -285,6 +285,7 @@ CLICK_ENDDECLS
 
 
 #ifdef CLICK_USERLEVEL
+CLICK_DECLS
 namespace {
 
 class RequireLexerExtra : public LexerExtra { public:
@@ -322,8 +323,6 @@ click_remove_element_type(int which)
     click_lexer->remove_element_type(which);
 }
 
-
-CLICK_DECLS
 
 enum { GH_CLASSES, GH_PACKAGES };
 
