@@ -93,7 +93,6 @@ make-udpcount.pl
 make-udpgen.pl
 mazu-nat.click
 print-pings.click
-roofnet
 sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
