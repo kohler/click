@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 1.3pre1
+Version 1.3pre1   5.Mar.2003
 
 * Incompatible changes
 
@@ -119,7 +119,7 @@ Version 1.3pre1
 ** Bug fixes to FromIPSummaryDump, ToIPSummaryDump, IPReassembler,
    FromDump, ICMPRewriter, ICMPPingRewriter, ProgressBar, TCPRewriter,
    AddressInfo, ARPResponder, ToHost, ToHostSniffers, Classifier,
-   InfiniteSource.
+   InfiniteSource, IPGWOptions, ICMPError, IPOutputCombo.
 
 * Tools
 
