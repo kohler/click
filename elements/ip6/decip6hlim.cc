@@ -58,34 +58,20 @@ inline Packet *
 DecIP6HLIM::simple_action(Packet *p_in)
 {
   //click_chatter("start DecIP6HLIM \n");
-  click_ip6 *ip_in = p_in->ip6_header();
+  const click_ip6 *ip_in = p_in->ip6_header();
   assert(ip_in);
   
-  click_chatter("Hop limit: %x \n", ip_in->ip6_hlim);
-  click_chatter("\n ############ DecIP6HLIM smaction start ! \n");
+  //click_chatter("Hop limit: %x \n", ip_in->ip6_hlim);
+  //click_chatter("\n ############ DecIP6HLIM smaction start ! \n");
   if (ip_in->ip6_hlim <= 1) {
     drop_it(p_in);
-     click_chatter("\n ############ DecIP6HLIM smaction successful ! \n");
+    click_chatter("\n ############ DecIP6HLIM smaction successful ! \n");
     return 0;
-    
   } else {
      WritablePacket *p = p_in->uniqueify();
      click_ip6 *ip = p->ip6_header();
      ip->ip6_hlim--;
-     //p = p->uniqueify();
      click_chatter("decreased Hop limit: %x \n", ip->ip6_hlim);
-
-    // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
-    // reviewers, according to RFC1141, as updated by RFC1624.
-    // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
-    //         = ~(~old_sum + ~old_halfword + (old_halfword - 0x0100))
-    //         = ~(~old_sum + ~old_halfword + old_halfword + ~0x0100)
-    //         = ~(~old_sum + ~0 + ~0x0100)
-    //         = ~(~old_sum + 0xFEFF)
-   
-    //unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
-    //ip->ip_sum = ~htons(sum + (sum >> 16));
-   
     return p;
   }
 }
