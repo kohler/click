@@ -211,54 +211,56 @@ sub process_file ($) {
 }
 
 sub parents_processing ($) {
-  my($classid) = @_;
-  if (!$processing[$classid]) {
-    my($parent);
-    foreach $parent (@{$parents[$classid]}) {
-      if ($parent eq 'Element') {
-	$processing[$classid] = 'a/a';
-	last;
-      } elsif ($parent ne '') {
-	$processing[$classid] = &parents_processing($cxx_name_to_id{$parent});
-	last if $processing[$classid];
-      }
+    my($classid) = @_;
+    return undef if !defined $classid;
+    if (!$processing[$classid]) {
+	my($parent);
+	foreach $parent (@{$parents[$classid]}) {
+	    if ($parent eq 'Element') {
+		$processing[$classid] = 'a/a';
+		last;
+	    } elsif ($parent ne '') {
+		$processing[$classid] = &parents_processing($cxx_name_to_id{$parent});
+		last if $processing[$classid];
+	    }
+	}
     }
-  }
-  return $processing[$classid];
+    return $processing[$classid];
 }
 
 sub parents_flow_code ($) {
-  my($classid) = @_;
-  if (!$flow_code[$classid]) {
-    my($parent);
-    foreach $parent (@{$parents[$classid]}) {
-      if ($parent eq 'Element') {
-	$flow_code[$classid] = 'x/x';
-	last;
-      } elsif ($parent ne '') {
-	$flow_code[$classid] = &parents_flow_code($cxx_name_to_id{$parent});
-	last if $flow_code[$classid];
-      }
+    my($classid) = @_;
+    return undef if !defined $classid;
+    if (!$flow_code[$classid]) {
+	my($parent);
+	foreach $parent (@{$parents[$classid]}) {
+	    if ($parent eq 'Element') {
+		$flow_code[$classid] = 'x/x';
+		last;
+	    } elsif ($parent ne '') {
+		$flow_code[$classid] = &parents_flow_code($cxx_name_to_id{$parent});
+		last if $flow_code[$classid];
+	    }
+	}
     }
-  }
-  return $flow_code[$classid];
+    return $flow_code[$classid];
 }
 
 sub parents_flags ($) {
-  my($classid) = @_;
-  return undef if !defined $classid;
-  if (!defined $flags[$classid]) {
-    my($parent);
-    foreach $parent (@{$parents[$classid]}) {
-      if ($parent eq 'Element') {
-	last;
-      } elsif ($parent ne '') {
-	$flags[$classid] = &parents_flags($cxx_name_to_id{$parent});
-	last if defined $flags[$classid];
-      }
+    my($classid) = @_;
+    return undef if !defined $classid;
+    if (!defined $flags[$classid]) {
+	my($parent);
+	foreach $parent (@{$parents[$classid]}) {
+	    if ($parent eq 'Element') {
+		last;
+	    } elsif ($parent ne '') {
+		$flags[$classid] = &parents_flags($cxx_name_to_id{$parent});
+		last if defined $flags[$classid];
+	    }
+	}
     }
-  }
-  return $flags[$classid];
+    return $flags[$classid];
 }
 
 # main program: parse options

@@ -18,6 +18,9 @@
 # notice is a summary of the Click LICENSE file; the license in that file is
 # legally binding.
 
+# information stored about each Click element, indexed by C++ class name
+my(%class_name, %processing, %deprecated);
+
 my(%section_break) =
     ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1,
@@ -41,8 +44,7 @@ my(%podentities) =
 my $directory;
 my $section = 'n';
 my $package;
-my(@all_outnames, %all_outsections, %summaries_by_section,
-   %all_roff_summaries, %class_name, %processing, %deprecated);
+my(@all_outnames, %all_outsections, %summaries_by_section, %all_roff_summaries);
 
 my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
@@ -123,28 +125,28 @@ my $nonest = '(?:[^A-Z>]*(?:[A-Z](?!<)[^A-Z>]*)*)';
 my($Filename, @Related, %RelatedSource, @Over, $Begun);
 
 sub quote ($) {
-  my($x) = @_;
-  $x =~ tr/\000-\177/\200-\377/;
-  $x;
+    my($x) = @_;
+    $x =~ tr/\000-\177/\200-\377/;
+    $x;
 }
 
 sub unentity ($) {
-  my($x) = @_;
-  $x =~ tr/\200-\377/\000-\177/;
-  if ($x =~ /^\d+$/) {
-    chr($x);
-  } elsif ($podentities{$x}) {
-    $podentities{$x};
-  } else {
-    print STDERR "$Filename: unknown entity E<$x>\n";
-    "";
-  }
+    my($x) = @_;
+    $x =~ tr/\200-\377/\000-\177/;
+    if ($x =~ /^\d+$/) {
+	chr($x);
+    } elsif ($podentities{$x}) {
+	$podentities{$x};
+    } else {
+	print STDERR "click-elem2man: $Filename: unknown entity E<$x>\n";
+	"";
+    }
 }
 
 sub fixfP ($$) {
-  my($x, $f) = @_;
-  $x =~ s/\\fP/\\f$f/g;
-  $x;
+    my($x, $f) = @_;
+    $x =~ s/\\fP/\\f$f/g;
+    $x;
 }
 
 sub nroffize_text ($) {
@@ -225,143 +227,143 @@ sub nroffize_text ($) {
 }
 
 sub nroffize ($) {
-  my($t) = @_;
-  # $t cannot contain \t, as all \ts have been expanded to spaces below
+    my($t) = @_;
+    # $t cannot contain \t, as all \ts have been expanded to spaces below
 
-  #$t =~ s{\n[ \r]+$}{\n}gm;
+    #$t =~ s{\n[ \r]+$}{\n}gm;
 
-  if ($t =~ /^ /m) {
-    # worry about verbatims
-    my(@x) = split(/(^ .*$)/m, $t);
-    my($o, $i) = '';
-    for ($i = 0; $i < @x; $i += 2) {
-      if ($x[$i]) {
-	$o .= nroffize_text($x[$i]) . "\n";
-      }
-      if ($x[$i+1]) {
-	$x[$i+1] =~ s/\\/\\e/g;
-	$o .= ".nf\n\\&" . $x[$i+1] . "\n.fi\n.PP\n";
-      }
+    if ($t =~ /^ /m) {
+	# worry about verbatims
+	my(@x) = split(/(^ .*$)/m, $t);
+	my($o, $i) = '';
+	for ($i = 0; $i < @x; $i += 2) {
+	    if ($x[$i]) {
+		$o .= nroffize_text($x[$i]) . "\n";
+	    }
+	    if ($x[$i+1]) {
+		$x[$i+1] =~ s/\\/\\e/g;
+		$o .= ".nf\n\\&" . $x[$i+1] . "\n.fi\n.PP\n";
+	    }
+	}
+	$o =~ s/\n\.fi\n\.PP\n\n\.nf\n/\n/g;
+	if (@Over > 0) {
+	    $o =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
+	}
+	$o;
+    } else {
+	nroffize_text($t);
     }
-    $o =~ s/\n\.fi\n\.PP\n\n\.nf\n/\n/g;
-    if (@Over > 0) {
-      $o =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
-    }
-    $o;
-  } else {
-    nroffize_text($t);
-  }
 }
 
 sub do_section_x ($$$) {
-  my($name, $args, $text) = @_;
-  if (!exists($xsection_takes_args{$name})) {
-    print STDERR "$Filename: unknown section \`=$name' ignored\n";
-    return;
-  }
-  print STDERR "$Filename: section \`=$name' requires arguments\n"
-      if ($xsection_takes_args{$name} && !$args);
-  print STDERR "$Filename: section \`=$name' arguments ignored\n"
-      if (!$xsection_takes_args{$name} && $args);
+    my($name, $args, $text) = @_;
+    if (!exists($xsection_takes_args{$name})) {
+	print STDERR "click-elem2man: $Filename: unknown section '=$name' ignored\n";
+	return;
+    }
+    print STDERR "click-elem2man: $Filename: section '=$name' requires arguments\n"
+	if ($xsection_takes_args{$name} && !$args);
+    print STDERR "click-elem2man: $Filename: section '=$name' arguments ignored\n"
+	if (!$xsection_takes_args{$name} && $args);
 
-  # handle `=begin' .. `=end'
-  if ($name eq 'end') {
-    undef $Begun;
-  } elsif ($Begun && ($Begun eq 'man' || $Begun eq 'roff')) {
-    print OUT '=', $name, ($args ? ' ' . $args : ''), "\n", $text;
-    return;
-  } elsif ($Begun) {
-    return;
-  }
+    # handle '=begin' .. '=end'
+    if ($name eq 'end') {
+	undef $Begun;
+    } elsif ($Begun && ($Begun eq 'man' || $Begun eq 'roff')) {
+	print OUT '=', $name, ($args ? ' ' . $args : ''), "\n", $text;
+	return;
+    } elsif ($Begun) {
+	return;
+    }
   
-  if ($name eq 'head1') {
-    print OUT ".SH \"", nroffize($args), "\"\n";
-  } elsif ($name eq 'head2') {
-    print OUT ".SS \"", nroffize($args), "\"\n";
-  } elsif ($name eq 'over') {
-    if ($args =~ /^\s*(\d+)\s*/s) {
-      print OUT ".RS $Over[-1]\n" if @Over;
-      push @Over, $1;
-    } else {
-      print STDERR "$Filename: bad arguments to \`=over'\n";
+    if ($name eq 'head1') {
+	print OUT ".SH \"", nroffize($args), "\"\n";
+    } elsif ($name eq 'head2') {
+	print OUT ".SS \"", nroffize($args), "\"\n";
+    } elsif ($name eq 'over') {
+	if ($args =~ /^\s*(\d+)\s*/s) {
+	    print OUT ".RS $Over[-1]\n" if @Over;
+	    push @Over, $1;
+	} else {
+	    print STDERR "click-elem2man: $Filename: bad arguments to '=over'\n";
+	}
+    } elsif ($name eq 'item') {
+	if (@Over == 0) {
+	    print STDERR "click-elem2man: $Filename: '=item' outside any '=over' section\n";
+	} else {
+	    print OUT ".IP \"", nroffize($args), "\" $Over[-1]\n";
+	}
+    } elsif ($name eq 'back') {
+	if (@Over == 0) {
+	    print STDERR "click-elem2man: $Filename: too many '=back's\n";
+	} else {
+	    pop @Over;
+	    print OUT ".RE\n" if @Over;
+	    print OUT (@Over ? ".IP \"\" $Over[-1]\n" : ".PP\n");
+	}
+    } elsif ($name eq 'for') {
+	my($fortext);
+	if ($text =~ /^(.*)\n\s*\n(.*)$/s) {
+	    ($fortext, $text) = ($1, $2);
+	} else {
+	    ($fortext, $text) = ($text, '');
+	}
+	if ($args =~ /^\s*(man|roff)\s*(.*)/) {
+	    print OUT $2, $fortext;
+	}
+    } elsif ($name eq 'begin') {
+	$Begun = $args;
+	$Begun =~ s/^\s*(\S+).*/$1/;
+	if ($Begun eq 'man' || $Begun eq 'roff') {
+	    print OUT $text;
+	}
+	return;
     }
-  } elsif ($name eq 'item') {
-    if (@Over == 0) {
-      print STDERR "$Filename: \`=item' outside any \`=over' section\n";
-    } else {
-      print OUT ".IP \"", nroffize($args), "\" $Over[-1]\n";
-    }
-  } elsif ($name eq 'back') {
-    if (@Over == 0) {
-      print STDERR "$Filename: too many \`=back's\n";
-    } else {
-      pop @Over;
-      print OUT ".RE\n" if @Over;
-      print OUT (@Over ? ".IP \"\" $Over[-1]\n" : ".PP\n");
-    }
-  } elsif ($name eq 'for') {
-    my($fortext);
-    if ($text =~ /^(.*)\n\s*\n(.*)$/s) {
-      ($fortext, $text) = ($1, $2);
-    } else {
-      ($fortext, $text) = ($text, '');
-    }
-    if ($args =~ /^\s*(man|roff)\s*(.*)/) {
-      print OUT $2, $fortext;
-    }
-  } elsif ($name eq 'begin') {
-    $Begun = $args;
-    $Begun =~ s/^\s*(\S+).*/$1/;
-    if ($Begun eq 'man' || $Begun eq 'roff') {
-      print OUT $text;
-    }
-    return;
-  }
 
-  print OUT nroffize($text), "\n";
+    print OUT nroffize($text), "\n";
 }
 
 sub do_section ($$$) {
-  my($name, $args, $text) = @_;
-  my(@text) = split(/^(=\w.*)$/m, $text);
-  push @text, '' if !@text;
-  my($i);
-  @Over = ();
-  undef $Begun;
-  for ($i = 0; $i < @text; ) {
-    do_section_x($name, $args, $text[$i]);
-    ($name, $args) = ($text[$i+1] =~ /=(\w+)\s*(.*)/)
-	if ($i < @text - 1);
-    $i += 2;
-  }
-  do_section_x('back', '', '') while @Over;
-  print STDERR "$Filename: \`=begin' not closed by end of section\n"
-      if $Begun;
+    my($name, $args, $text) = @_;
+    my(@text) = split(/^(=\w.*)$/m, $text);
+    push @text, '' if !@text;
+    my($i);
+    @Over = ();
+    undef $Begun;
+    for ($i = 0; $i < @text; ) {
+	do_section_x($name, $args, $text[$i]);
+	($name, $args) = ($text[$i+1] =~ /=(\w+)\s*(.*)/)
+	    if ($i < @text - 1);
+	$i += 2;
+    }
+    do_section_x('back', '', '') while @Over;
+    print STDERR "click-elem2man: $Filename: '=begin' not closed by end of section\n"
+	if $Begun;
 }
 
 sub process_processing ($) {
-  my($t) = @_;
-  if (exists($processing_constants{$t})) {
-    $t = $processing_constants{$t};
-  }
-  $t =~ tr/\" \t//d;
-  $t =~ s{\A([^/]*)\Z}{$1/$1};
-  if (exists($processing_text{$t})) {
-    return $processing_text{$t};
-  }
-  return undef;
+    my($t) = @_;
+    if (exists($processing_constants{$t})) {
+	$t = $processing_constants{$t};
+    }
+    $t =~ tr/\" \t//d;
+    $t =~ s{\A([^/]*)\Z}{$1/$1};
+    if (exists($processing_text{$t})) {
+	return $processing_text{$t};
+    }
+    return undef;
 }
 
 sub process_summary_section ($$) {
-  my($summary, $file) = @_;
-  my($i);
-  foreach $i (split(/,/, $summary)) {
-    $i =~ s/^\s*//;
-    $i =~ s/\s*$//;
-    $i = $section_headers{$i} if exists $section_headers{$i};
-    next if !$i;
-    push @{$summaries_by_section{$i}}, $file;
-  }
+    my($summary, $file) = @_;
+    my($i);
+    foreach $i (split(/,/, $summary)) {
+	$i =~ s/^\s*//;
+	$i =~ s/\s*$//;
+	$i = $section_headers{$i} if exists $section_headers{$i};
+	next if !$i;
+	push @{$summaries_by_section{$i}}, $file;
+    }
 }
 
 sub insert_section (\@\@\@$$$$) {
@@ -372,288 +374,287 @@ sub insert_section (\@\@\@$$$$) {
 }
 
 sub process_comment ($$) {
-  my($t, $filename) = @_;
-  my($i);
-  $Filename = $filename;
+    my($t, $filename) = @_;
+    my($i);
+    $Filename = $filename;
 
-  # split document into sections
-  my(@section_text, @section_args, @section_name, $bad_section, $ref);
-  $ref = \$bad_section;
-  while ($t =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
-    if ($section_break{$1}) {
-      push @section_name, $1;
-      push @section_args, $3;
-      push @section_text, $4;
-      $ref = \$section_text[-1];
+    # split document into sections
+    my(@section_text, @section_args, @section_name, $bad_section, $ref);
+    $ref = \$bad_section;
+    while ($t =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
+	if ($section_break{$1}) {
+	    push @section_name, $1;
+	    push @section_args, $3;
+	    push @section_text, $4;
+	    $ref = \$section_text[-1];
+	} else {
+	    $$ref .= '=' . $1 . $2 . $3 . $4;
+	}
+    }
+
+    # check document for sectioning errors
+    print STDERR "click-elem2man: $Filename: warning: comment does not start with section\n"
+	if $bad_section;
+    my(%num_sections, %first_in_section);
+    foreach $i (0..$#section_name) {
+	my($n) = $section_name[$i];
+	print STDERR "click-elem2man: $Filename: warning: section '=$n' requires arguments\n"
+	    if $section_takes_args{$n} == 1 && !$section_args[$i];
+	print STDERR "click-elem2man: $Filename: warning: section '=$n' arguments ignored\n"
+	    if $section_takes_args{$n} == 0 && $section_args[$i];
+	print STDERR "click-elem2man: $Filename: warning: empty section '=$n'\n"
+	    if $section_takes_text{$n} == 1 && !$section_text[$i];
+	print STDERR "click-elem2man: $Filename: warning: section '=$n' text ignored\n"
+	    if $section_takes_text{$n} == 0 && $section_text[$i] =~ /\S/;
+	$num_sections{$n}++;
+	$first_in_section{$n} = $i if $num_sections{$n} == 1;
+    }
+    foreach $i ('a', 'c', 'd', 'n', 'e', 'title', 'io', 'processing') {
+	print STDERR "click-elem2man: $Filename: warning: multiple '=$i' sections; some may be ignored\n"
+	    if $num_sections{$i} && $num_sections{$i} > 1;
+    }
+
+    # read class names from configuration arguments section
+    $i = $first_in_section{'c'};
+    if (!defined($i)) {
+	print STDERR "click-elem2man: $Filename: section '=c' missing; cannot continue\n";
+	return;
+    }
+    my(@classes, %classes);
+    while ($section_text[$i] =~ /^\s*(\w+)\(/mg) {
+	push @classes, $1 if !exists $classes{$1};
+	$classes{$1} = 1;
+    }
+    if (!@classes && $section_text[$i] =~ /^\s*([\w@]+)\s*$/) {
+	push @classes, $1;
+	$classes{$1} = 1;
+    }
+    if (!@classes) {
+	print STDERR "click-elem2man: $Filename: no class definitions\n    (did you forget '()' in the =c section?)\n";
+	return;
+    }
+
+    # output filenames might be specified in 'title' section
+    my(@outfiles, @outsections, $title);
+    if (defined($first_in_section{'title'})) {
+	$title = $section_args[ $first_in_section{'title'} ];
+	if (!$title) {
+	    print STDERR "click-elem2man: $Filename: '=title' section present, but empty\n";
+	    return;
+	}
+	if ($title =~ /[^-.\w@+,]/) {
+	    print STDERR "click-elem2man: $Filename: strange characters in '=title', aborting\n";
+	    return;
+	}
+	foreach $i (split(/\s+/, $title)) {
+	    if ($i =~ /^(.*)\((.*)\)$/) {
+		push @outfiles, $1;
+		push @outsections, $2;
+	    } else {
+		push @outfiles, $i;
+		push @outsections, $section;
+	    }
+	}
     } else {
-      $$ref .= '=' . $1 . $2 . $3 . $4;
+	$title = join(', ', @classes);
+	@outfiles = @classes;
+	@outsections = ($section) x @classes;
     }
-  }
 
-  # check document for sectioning errors
-  print STDERR "$Filename: warning: comment does not start with section\n"
-      if $bad_section;
-  my(%num_sections, %first_in_section);
-  foreach $i (0..$#section_name) {
-    my($n) = $section_name[$i];
-    print STDERR "$Filename: warning: section \`=$n' requires arguments\n"
-	if $section_takes_args{$n} == 1 && !$section_args[$i];
-    print STDERR "$Filename: warning: section \`=$n' arguments ignored\n"
-	if $section_takes_args{$n} == 0 && $section_args[$i];
-    print STDERR "$Filename: warning: empty section \`=$n'\n"
-	if $section_takes_text{$n} == 1 && !$section_text[$i];
-    print STDERR "$Filename: warning: section \`=$n' text ignored\n"
-	if $section_takes_text{$n} == 0 && $section_text[$i] =~ /\S/;
-    $num_sections{$n}++;
-    $first_in_section{$n} = $i if $num_sections{$n} == 1;
-  }
-  foreach $i ('a', 'c', 'd', 'n', 'e', 'title', 'io', 'processing') {
-    print STDERR "$Filename: warning: multiple \`=$i' sections; some may be ignored\n"
-	if $num_sections{$i} && $num_sections{$i} > 1;
-  }
-
-  # read class names from configuration arguments section
-  $i = $first_in_section{'c'};
-  if (!defined($i)) {
-    print STDERR "$Filename: section \`=c' missing; cannot continue\n";
-    return;
-  }
-  my(@classes, %classes);
-  while ($section_text[$i] =~ /^\s*(\w+)\(/mg) {
-    push @classes, $1 if !exists $classes{$1};
-    $classes{$1} = 1;
-  }
-  if (!@classes && $section_text[$i] =~ /^\s*([\w@]+)\s*$/) {
-    push @classes, $1;
-    $classes{$1} = 1;
-  }
-  if (!@classes) {
-    print STDERR "$Filename: no class definitions\n    (did you forget `()' in the =c section?)\n";
-    return;
-  }
-
-  # output filenames might be specified in 'title' section
-  my(@outfiles, @outsections, $title);
-  if (defined($first_in_section{'title'})) {
-    $title = $section_args[ $first_in_section{'title'} ];
-    if (!$title) {
-      print STDERR "$Filename: \`=title' section present, but empty\n";
-      return;
+    # open new output file if necessary
+    my($main_outname);
+    if ($directory) {
+	$main_outname = "$directory/$outfiles[0].$outsections[0]";
+	if (!open(OUT, ">$main_outname")) {
+	    print STDERR "$main_outname: $!\n";
+	    return;
+	}
     }
-    if ($title =~ /[^-.\w@+,]/) {
-      print STDERR "$Filename: strange characters in \`=title', aborting\n";
-      return;
-    }
-    foreach $i (split(/\s+/, $title)) {
-      if ($i =~ /^(.*)\((.*)\)$/) {
-	push @outfiles, $1;
-	push @outsections, $2;
-      } else {
-	push @outfiles, $i;
-	push @outsections, $section;
-      }
-    }
-  } else {
-    $title = join(', ', @classes);
-    @outfiles = @classes;
-    @outsections = ($section) x @classes;
-  }
+    push @all_outfiles, $outfiles[0];
+    $all_outsections{$outfiles[0]} = $outsections[0];
 
-  # open new output file if necessary
-  my($main_outname);
-  if ($directory) {
-    $main_outname = "$directory/$outfiles[0].$outsections[0]";
-    if (!open(OUT, ">$main_outname")) {
-      print STDERR "$main_outname: $!\n";
-      return;
+    # prepare related
+    %RelatedSource = ();
+    $i = $first_in_section{'a'};
+    if (defined($i)) {
+	$section_text[$i] = $section_args[$i] . $section_text[$i]
+	    if $section_args[$i];
+	if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
+	    my($bit, $last) = ($1, $2);
+	    while ($bit =~ m{(\b[A-Z][-\w@.+=]+)([,\s]|\Z)}g) {
+		$RelatedSource{$1} = 'n';
+	    }
+	    $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1(n)$2}g;
+	    while ($bit =~ m{([-\w@.+=]+\(([0-9ln])\))}g) {
+		$RelatedSource{$1} = $2;
+	    }
+	    $section_text[$i] = $bit . $last;
+	}
     }
-  }
-  push @all_outfiles, $outfiles[0];
-  $all_outsections{$outfiles[0]} = $outsections[0];
+    map(delete $RelatedSource{$_}, @outfiles);
+    @Related = sort { length($b) <=> length($a) } (keys %RelatedSource, @classes);
 
-  # prepare related
-  %RelatedSource = ();
-  $i = $first_in_section{'a'};
-  if (defined($i)) {
-    $section_text[$i] = $section_args[$i] . $section_text[$i]
-	if $section_args[$i];
-    if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
-      my($bit, $last) = ($1, $2);
-      while ($bit =~ m{(\b[A-Z][-\w@.+=]+)([,\s]|\Z)}g) {
-	$RelatedSource{$1} = 'n';
-      }
-      $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1(n)$2}g;
-      while ($bit =~ m{([-\w@.+=]+\(([0-9ln])\))}g) {
-	$RelatedSource{$1} = $2;
-      }
-      $section_text[$i] = $bit . $last;
+    # front matter
+    my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");
+    $i = $first_in_section{'s'};
+    my($summary_section) = '';
+    if (defined($i)) {
+	$summary_section = $section_args[$i];
+	process_summary_section($summary_section, $outfiles[0]);
+	$section_text[$i] =~ s/\n\s*\n/\n/g;
+	my($t) = nroffize($section_text[$i]);
+	$oneliner .= ";\n" . $t;
+	$oneliner =~ s/\n(^\.)/ /g;
+	$all_roff_summaries{$outfiles[0]} = $t . "\n";
+    } else {
+	# avoid uninitialized value warns
+	$all_roff_summaries{$outfiles[0]} = '';
     }
-  }
-  map(delete $RelatedSource{$_}, @outfiles);
-  @Related = sort { length($b) <=> length($a) } (keys %RelatedSource, @classes);
-
-  # front matter
-  my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");
-  $i = $first_in_section{'s'};
-  my($summary_section) = '';
-  if (defined($i)) {
-    $summary_section = $section_args[$i];
-    process_summary_section($summary_section, $outfiles[0]);
-    $section_text[$i] =~ s/\n\s*\n/\n/g;
-    my($t) = nroffize($section_text[$i]);
-    $oneliner .= ";\n" . $t;
-    $oneliner =~ s/\n(^\.)/ /g;
-    $all_roff_summaries{$outfiles[0]} = $t . "\n";
-  } else {
-    # avoid uninitialized value warns
-    $all_roff_summaries{$outfiles[0]} = '';
-  }
   
-  print OUT <<"EOD;";
+    print OUT <<"EOD;";
 .\\" -*- mode: nroff -*-
-.\\" Generated by \`click-elem2man\' from \`$Filename\'
+.\\" Generated by 'click-elem2man' from '$Filename'
 $prologue
 .TH "\U$title\E" $outsections[0] "$today" "Click"
 .SH "NAME"
-$title \- $oneliner
+$title \\- $oneliner
 EOD;
 
-  # processing
-  if (!defined($first_in_section{'processing'})) { PROCESSING: {
-      # can we figure out the processing type?
-      last PROCESSING if defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i;
-      my($ptype, $j);
-      foreach $j (@classes) {
-	  my($t) = $processing{$j};
-	  last PROCESSING if !$t || (defined($ptype) && $t ne $ptype);
-	  $ptype = $t;
-      }
-      $ptype = process_processing($ptype);
-      my($after) = $first_in_section{'io'};
-      $after = $first_in_section{'c'} if !defined($after);
-      insert_section(@section_name, @section_args, @section_text, $after + 1,
-		     'processing', '', $ptype) if $ptype;
-  }}
-
-  # package
-  if (!defined($first_in_section{'package'}) && defined($package)) { PACKAGE: {
-      my($pkg) = $package;
-      if ($pkg eq 'DEFAULT') {
-	  last PACKAGE if $Filename !~ m|elements/(\w+)/[^/]+\.[Hh]+$|;
-	  $pkg = exists($default_packages{$1}) ? $default_packages{$1} : $1;
-      }
-      my($after) = $first_in_section{'c'};
-      insert_section(@section_name, @section_args, @section_text, $after + 1,
-		     'package', '', $pkg);
-  }}
-
-  if (defined($first_in_section{'deprecated'})) {
-      $deprecated{$outfiles[0]} = $section_text[$first_in_section{'deprecated'}];
-  }
-
-  # output
-  for ($i = 0; $i < @section_text; $i++) {
-    my($s) = $section_name[$i];
-    my($x) = $section_text[$i];
-    if ($s eq 'c') {
-      $x =~ s{(\S\s*)\n}{$1N<>\n}g;
-      do_section('head1', 'SYNOPSIS', $x);
-    } elsif ($s eq 'package') {
-      do_section('head1', 'PACKAGE', $x);
-    } elsif ($s eq 'io') {
-      do_section('head1', 'INPUTS AND OUTPUTS', $x);
-    } elsif ($s eq 'processing') {
-      do_section('head1', 'PROCESSING TYPE', $x);
-    } elsif ($s eq 'd') {
-      do_section('head1', 'DESCRIPTION', $x);
-    } elsif ($s eq 'n') {
-      do_section('head1', 'NOTES', $x);
-    } elsif ($s eq 'e') {
-      do_section('head1', 'EXAMPLES', $x);
-    } elsif ($s eq 'h') {
-      my($t) = "=over 5\n";
-      while ($i < @section_text && $section_name[$i] eq 'h') {
-	if ($section_args[$i] =~ /\A\s*(\S+)\s*(\S+)\s*\Z/) {
-	  $t .= "=item B<$1> ($2)\n";
-	} else {
-	  print STDERR "$Filename: bad handler section arguments (\`=h $section_args[$i]')\n";
-	  $t .= "=item B<$section_args[$i]>\n";
+    # processing
+    if (!defined($first_in_section{'processing'})) { PROCESSING: {
+	# can we figure out the processing type?
+	last PROCESSING if defined($first_in_section{'io'}) && $section_text[$first_in_section{'io'}] =~ /None/i;
+	my($ptype, $j);
+	foreach $j (@classes) {
+	    my($t) = $processing{$j};
+	    last PROCESSING if !$t || (defined($ptype) && $t ne $ptype);
+	    $ptype = $t;
 	}
-	$t .= $section_text[$i] . "\n";
-	$i++;
-      }
-      $i--;
-      do_section('head1', 'ELEMENT HANDLERS', $t);
-    } elsif ($s eq 'a') {
-      do_section('head1', 'SEE ALSO', $x);
-    } elsif ($s eq 'title' || $s eq 's' || $s eq 'deprecated') {
-      # nada
-    } else {
-      do_section($s, $section_args[$i], $x);
-    }
-  }
+	$ptype = process_processing($ptype);
+	my($after) = $first_in_section{'io'};
+	$after = $first_in_section{'c'} if !defined($after);
+	insert_section(@section_name, @section_args, @section_text, $after + 1,
+		       'processing', '', $ptype) if $ptype;
+    }}
 
-  # close output file & make links if appropriate
-  if ($directory) {
-    close OUT;
-    for ($i = 1; $i < @outfiles; $i++) {
-      my($outname) = "$directory/$outfiles[$i].$outsections[$i]";
-      unlink($outname);
-      if (link $main_outname, $outname) {
-	push @all_outfiles, $outfiles[$i];
-	$all_outsections{$outfiles[$i]} = $outsections[$i];
-	process_summary_section($summary_section, $outfiles[$i]);
-	$all_roff_summaries{$outfiles[$i]} = $all_roff_summaries{$outfiles[0]};
-      } else {
-	print STDERR "$outname: $!\n";
-      }
+    # package
+    if (!defined($first_in_section{'package'}) && defined($package)) { PACKAGE: {
+	my($pkg) = $package;
+	if ($pkg eq 'DEFAULT') {
+	    last PACKAGE if $Filename !~ m|elements/(\w+)/[^/]+\.[Hh]+$|;
+	    $pkg = exists($default_packages{$1}) ? $default_packages{$1} : $1;
+	}
+	my($after) = $first_in_section{'c'};
+	insert_section(@section_name, @section_args, @section_text, $after + 1,
+		       'package', '', $pkg);
+    }}
+
+    if (defined($first_in_section{'deprecated'})) {
+	$deprecated{$outfiles[0]} = $section_text[$first_in_section{'deprecated'}];
     }
-  }
+
+    # output
+    for ($i = 0; $i < @section_text; $i++) {
+	my($s) = $section_name[$i];
+	my($x) = $section_text[$i];
+	if ($s eq 'c') {
+	    $x =~ s{(\S\s*)\n}{$1N<>\n}g;
+	    do_section('head1', 'SYNOPSIS', $x);
+	} elsif ($s eq 'package') {
+	    do_section('head1', 'PACKAGE', $x);
+	} elsif ($s eq 'io') {
+	    do_section('head1', 'INPUTS AND OUTPUTS', $x);
+	} elsif ($s eq 'processing') {
+	    do_section('head1', 'PROCESSING TYPE', $x);
+	} elsif ($s eq 'd') {
+	    do_section('head1', 'DESCRIPTION', $x);
+	} elsif ($s eq 'n') {
+	    do_section('head1', 'NOTES', $x);
+	} elsif ($s eq 'e') {
+	    do_section('head1', 'EXAMPLES', $x);
+	} elsif ($s eq 'h') {
+	    my($t) = "=over 5\n";
+	    while ($i < @section_text && $section_name[$i] eq 'h') {
+		if ($section_args[$i] =~ /\A\s*(\S+)\s*(\S+)\s*\Z/) {
+		    $t .= "=item B<$1> ($2)\n";
+		} else {
+		    print STDERR "click-elem2man: $Filename: bad handler section arguments ('=h $section_args[$i]')\n";
+		    $t .= "=item B<$section_args[$i]>\n";
+		}
+		$t .= $section_text[$i] . "\n";
+		$i++;
+	    }
+	    $i--;
+	    do_section('head1', 'ELEMENT HANDLERS', $t);
+	} elsif ($s eq 'a') {
+	    do_section('head1', 'SEE ALSO', $x);
+	} elsif ($s eq 'title' || $s eq 's' || $s eq 'deprecated') {
+	    # nada
+	} else {
+	    do_section($s, $section_args[$i], $x);
+	}
+    }
+
+    # close output file & make links if appropriate
+    if ($directory) {
+	close OUT;
+	for ($i = 1; $i < @outfiles; $i++) {
+	    my($outname) = "$directory/$outfiles[$i].$outsections[$i]";
+	    unlink($outname);
+	    if (link $main_outname, $outname) {
+		push @all_outfiles, $outfiles[$i];
+		$all_outsections{$outfiles[$i]} = $outsections[$i];
+		process_summary_section($summary_section, $outfiles[$i]);
+		$all_roff_summaries{$outfiles[$i]} = $all_roff_summaries{$outfiles[0]};
+	    } else {
+		print STDERR "click-elem2man: $outname: $!\n";
+	    }
+	}
+    }
 }
 
 sub process_file ($) {
-  my($filename) = @_;
+    my($filename) = @_;
 
-  # extract header filename
-  if ($filename =~ /^.*:"(.*)"$/) {
-    $filename = $1;
-  } elsif ($filename =~ /^.*:<(.*)>$/) {
-    $filename = "include/$1";
-  } else {
-    $filename =~ s/\.cc$/\.hh/;
-  }
+    # extract header filename
+    if ($filename =~ /^.*:"(.*)"$/) {
+	$filename = $1;
+    } elsif ($filename =~ /^.*:<(.*)>$/) {
+	$filename = "include/$1";
+    } else {
+	$filename =~ s/\.cc$/\.hh/;
+    }
   
-  return if !-e $filename;
-  if (!open(IN, $filename)) {
-    print STDERR "$filename: $!\n";
-    return;
-  }
-  my $text = <IN>;
-  close IN;
+    return if !-e $filename;
+    if (!open(IN, $filename)) {
+	print STDERR "click-elem2man: $filename: $!\n";
+	return;
+    }
+    my $text = <IN>;
+    close IN;
 
-  foreach $_ (split(m{^class}m, $text)) {
-    my($cxx_class) = (/^\s*(\w*)/);
-    if (/class_name.*return\s*\"([^\"]+)\"/) {
-      $class_name{$cxx_class} = $1;
-      $cxx_class = $1;
+    foreach $_ (split(m{^class}m, $text)) {
+	my($cxx_class) = (/^\s*(\w*)/);
+	if (/class_name.*return\s*\"([^\"]+)\"/) {
+	    $class_name{$cxx_class} = $1;
+	    $cxx_class = $1;
+	}
+	if (/processing.*return\s+(.*?);/) {
+	    $processing{$cxx_class} = $1;
+	}
     }
-    if (/processing.*return\s+(.*?);/) {
-      $processing{$cxx_class} = $1;
-    }
-  }
 
-  foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
-    if (/^\/\*/ && /^[\/*\s]+=/) {
-      s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm while /\t/;
-      s/^\/\*\s*//g;
-      s/\s*\*\/$//g;
-      s/^ ?\* ?//gm;
-      process_comment($_, $filename);
+    foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
+	if (/^\/\*/ && /^[\/*\s]+=/) {
+	    s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm while /\t/;
+	    s/^\/\*\s*//g;
+	    s/\s*\*\/$//g;
+	    s/^ ?\* ?//gm;
+	    process_comment($_, $filename);
+	}
     }
-  }
 }
 
-# main program: parse options
 sub read_files_from ($) {
     my($fn) = @_;
     if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
@@ -687,36 +688,52 @@ sub read_files_from ($) {
 	
 	@b;
     } else {
-	print STDERR "$fn: $!\n";
+	print STDERR "click-elem2man: $fn: $!\n";
 	();
     }
 }
 
+sub read_elementmap ($) {
+    my($fn) = @_;
+    open(E, $fn) || die "$fn: $!\n";
+    my($cxxc, $n, $p);
+    while (<E>) {
+	next if !/^<entry\b/;
+	($cxxc, $n, $p) = (/\bcxxclass="(.*?)"/, /\bname="(.*?)"/, /\bprocessing="(.*?)"/);
+	$class_name{$cxxc} = $n if defined($cxxc) && defined($n);
+	$processing{$cxxc} = $p if defined($cxxc) && defined($p);
+    }
+    close E;
+}
+
+# main program: parse options
+
 sub usage () {
-  print STDERR "Usage: click-elem2man [OPTIONS] FILES...
-Try \`click-elem2man --help' for more information.\n";
-  exit 1;
+    print STDERR "Usage: click-elem2man [OPTIONS] FILES...
+Try 'click-elem2man --help' for more information.\n";
+    exit 1;
 }
 
 sub help () {
-  print STDERR <<"EOD;";
-\`Click-elem2man' translates Click element documentation into manual pages.
+    print STDERR <<"EOD;";
+'Click-elem2man' translates Click element documentation into manual pages.
 
 Usage: click-elem2man [-l | -L] [-d DIRECTORY] [-f FILE | FILE]...
 
-Each FILE is a Click header file. \`-' means standard input.
+Each FILE is a Click header file. '-' means standard input.
 
 Options:
   -l, --list              Generate the elements(n) manual page as well.
   -L, --extend-list       Extend an existing elements(n) manual page.
   -d, --directory DIR     Place generated manual pages in directory DIR.
   -f, --files FILE        Read header filenames from FILE.
+  -e, --elementmap EMAP   Read information about other elements from EMAP.
   -h, --help              Print this message and exit.
-  -p, --package PKG       Elements are in PKG package, or say \`DEFAULT'.
+  -p, --package PKG       Elements are in PKG package, or say 'DEFAULT'.
 
 Report bugs to <click\@pdos.lcs.mit.edu>.
 EOD;
-  exit 0;
+    exit 0;
 }
 
 undef $/;
@@ -744,6 +761,11 @@ while (@ARGV) {
 	$elementlist = 1;
     } elsif (/^-L$/ || /^--extend-list$/) {
 	$elementlist = 2;
+    } elsif (/^-e$/ || /^--elementmap$/) {
+	usage() if !@ARGV;
+	read_elementmap(shift @ARGV);
+    } elsif (/^--elementmap=(.*)$/) {
+	read_elementmap($1);
     } elsif (/^-h$/ || /^--help$/) {
 	help();
     } elsif (/^-./) {
@@ -774,7 +796,7 @@ sub read_elementlist ($) {
   
     local($/) = "\n";
     if (!open(IN, $fn)) {
-	print STDERR "$fn: $!\n";
+	print STDERR "click-elem2man: $fn: $!\n";
 	return;
     }
 
@@ -828,7 +850,7 @@ my(@Links, $Text);
 
 sub one_summary ($@) {
     my($name, @elts) = @_;
-    print STDERR "warning: category \`", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
+    print STDERR "click-elem2man: warning: category '", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
     my($a) = $name;
     $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
     $a =~ tr/ /+/;
@@ -846,13 +868,13 @@ sub make_elementlist () {
 	my($fn) = "$directory/elements.$section";
 	read_elementlist($fn) if -r $fn && $elementlist > 1;
 	if (!open(OUT, ">$fn")) {
-	    print STDERR "$fn: $!\n";
+	    print STDERR "click-elem2man: $fn: $!\n";
 	    return;
 	}
     }
     print OUT <<"EOD;";
 .\\" -*- mode: nroff -*-
-.\\" Generated by \`click-elem2man'
+.\\" Generated by 'click-elem2man'
 $prologue
 .TH "ELEMENTS" $section "$today" "Click"
 .SH "NAME"

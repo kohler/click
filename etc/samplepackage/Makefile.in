@@ -215,7 +215,7 @@ install-obj: $(TARGETS) always
 install-man: always
 	$(mkinstalldirs) $(mandir)
 	$(mkinstalldirs) $(mandir)/mann
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) -e $(clicksharedir)/elementmap.xml | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f -
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) -e $(clicksharedir)/elementmap.xml | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f - -e $(clicksharedir)/elementmap.xml
 
 clean:
 	-rm -f *.d *.ud *.kd *.bd *.o *.uo *.ko *.bo elements.mk upackage.cc kpackage.cc bpackage.cc uelements.conf kelements.conf belements.conf elementmap-$(package).xml conftest.*
