@@ -123,10 +123,10 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
       errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
     else {
       const Router::Handler &rh = router->handler(i);
-      if (rh.write) {
+      if (rh.writable()) {
 	ContextErrorHandler cerrh
 	  (errh, "In write handler `" + rh.unparse_name(he) + "':");
-	rh.write(poke->_h_value[h], he, rh.write_thunk, &cerrh);
+	rh.call_write(poke->_h_value[h], he, &cerrh);
       } else
 	errh->error("%s: no write handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
     }

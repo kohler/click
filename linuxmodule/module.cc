@@ -351,7 +351,7 @@ cleanup_module()
   // remove root handlers
   for (int i = 0; i < Router::nglobal_handlers(); i++) {
     const Router::Handler &h = Router::global_handler(Router::FIRST_GLOBAL_HANDLER + i);
-    remove_proc_entry(String(h.name).cc(), proc_click_entry);
+    remove_proc_entry(String(h.name()).cc(), proc_click_entry);
   }
 
   // remove the `/proc/click' directory first

@@ -47,7 +47,7 @@ QuitWatcher::initialize(ErrorHandler *errh)
 {
   // parse configuration arguments now, because handlers are available
   Vector<String> conf;
-  configuration(conf, 0);
+  configuration(conf);
 
   for (int i = 0; i < conf.size(); i++) {
     Element *e;
@@ -78,7 +78,7 @@ QuitWatcher::run_scheduled()
   String unscheduled_string = "false\n";
   for (int i = 0; i < _e.size(); i++) {
     const Router::Handler &h = router()->handler(_handlers[i]);
-    String s = h.read(_e[i], h.read_thunk);
+    String s = h.call_read(_e[i]);
     if (s == unscheduled_string) {
       router()->please_stop_driver();
       return;

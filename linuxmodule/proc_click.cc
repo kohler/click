@@ -29,6 +29,7 @@ static int *handler_strings_next = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 
+
 //
 // ELEMENT NAME SYMLINK OPERATIONS
 //
@@ -137,7 +138,7 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
-  else if (!h->read)
+  else if (!h->read_visible())
     return -EPERM;
   
   // prevent interrupts
@@ -145,7 +146,7 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
   save_flags(cli_flags);
   cli();
 
-  s = h->read(e, h->read_thunk);
+  s = h->call_read(e);
   
   // restore interrupts
   restore_flags(cli_flags);
@@ -166,7 +167,7 @@ prepare_handler_write(int eindex, int handlerno)
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
-  else if (!h->write)
+  else if (!h->write_visible())
     return -EPERM;
   else
     return 0;
@@ -179,12 +180,12 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
-  else if (!h->write)
+  else if (!h->write_visible())
     return -EPERM;
   else if (stringno < 0 || stringno >= handler_strings_cap)
     return -EINVAL;
   
-  String context_string = "In write handler `" + h->name + "'";
+  String context_string = "In write handler `" + h->name() + "'";
   if (e) context_string += String(" for `") + e->declaration() + "'";
   ContextErrorHandler cerrh(kernel_errh, context_string + ":");
   
@@ -193,7 +194,7 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   save_flags(cli_flags);
   cli();
 
-  int result = h->write(handler_strings[stringno], e, h->write_thunk, &cerrh);
+  int result = h->call_write(handler_strings[stringno], e, &cerrh);
 
   // restore interrupts
   restore_flags(cli_flags);
@@ -363,15 +364,15 @@ void
 register_handler(proc_dir_entry *directory, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
-  const Router::Handler *h = &current_router->handler(handlerno);
+  const Router::Handler *h = &Router::handler(current_router, handlerno);
   
   mode_t mode = S_IFREG;
-  if (h->read)
+  if (h->read_visible())
     mode |= proc_click_mode_r;
-  if (h->write)
+  if (h->write_visible())
     mode |= proc_click_mode_w;
 
-  String name = h->name;
+  String name = h->name();
   proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
   // XXX check for NULL
 #ifdef LINUX_2_2
@@ -495,28 +496,41 @@ init_router_element_procs()
   for (int i = 0; i < 2*nelements; i++)
     element_pdes[i] = 0;
 
-  // make EINDEX directories
+  // add handler directories for elements with handlers
+  Vector<int> handlers;
   char namebuf[200];
   for (int i = 0; i < nelements; i++) {
-    sprintf(namebuf, "%d", i + 1);
-    element_pdes[i] = create_proc_entry(namebuf, proc_click_mode_dir, proc_click_entry);
-    element_pdes[i]->data = (void *)i;
-  }
-  
-  // add symlinks for ELEMENTNAME -> EINDEX
-  for (int i = 0; i < nelements; i++)
-    if (proc_dir_entry *pde = element_pdes[i])
-      make_compound_element_symlink(i);
-
-  // hook up per-element proc entries
-  Vector<int> handlers;
-  for (int i = 0; i < nelements; i++)
-    if (proc_dir_entry *fpde = element_pdes[i]) {
-      handlers.clear();
-      current_router->element_handlers(i, handlers);
-      for (int j = 0; j < handlers.size(); j++)
-	register_handler(fpde, handlers[j]);
+    // are there any visible handlers? if not, skip
+    handlers.clear();
+    current_router->element_handlers(i, handlers);
+    for (int j = 0; j < handlers.size(); j++) {
+      const Router::Handler &h = current_router->handler(handlers[j]);
+      if (!h.read_visible() && !h.write_visible()) {
+	handlers[j] = handlers.back();
+	handlers.pop_back();
+	j--;
+      }
     }
+    if (!handlers.size())
+      continue;
+
+    // otherwise, make EINDEX directory
+    sprintf(namebuf, "%d", i + 1);
+    proc_dir_entry *pde = create_proc_entry(namebuf, proc_click_mode_dir, proc_click_entry);
+    if (!pde)
+      continue;
+
+    // got directory
+    element_pdes[i] = pde;
+    pde->data = (void *)i;
+  
+    // add symlink for ELEMENTNAME -> EINDEX
+    make_compound_element_symlink(i);
+
+    // hook up per-element proc entries
+    for (int j = 0; j < handlers.size(); j++)
+      register_handler(pde, handlers[j]);
+  }
 }
 
 

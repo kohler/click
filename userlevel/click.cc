@@ -213,17 +213,17 @@ call_read_handler(Element *e, String handler_name, Router *r,
 		  bool print_name, ErrorHandler *errh)
 {
   int hi = r->find_handler(e, handler_name);
-  if (hi < 0 && e)
-    return errh->error("no `%s' handler for element `%s'", handler_name.cc(), e->id().cc());
-  else if (hi < 0)
-    return errh->error("no `%s' handler", handler_name.cc());
+  if (hi < 0)
+    return errh->error("no `%s' handler", Router::Handler::unparse_name(e, handler_name).cc());
 
-  String full_name = (e ? e->id() + "." + handler_name : handler_name);
-  
   const Router::Handler &rh = r->handler(hi);
-  if (!rh.read)
+  String full_name = rh.unparse_name(e);
+  
+  if (!rh.visible())
+    return errh->error("no `%s' handler", full_name.cc());
+  else if (!rh.read_visible())
     return errh->error("`%s' is a write handler", full_name.cc());
-  String result = rh.read(e, rh.read_thunk);
+  String result = rh.call_read(e);
 
   if (print_name)
     fprintf(stdout, "%s:\n", full_name.cc());
@@ -244,7 +244,7 @@ expand_handler_elements(const String &pattern, const String &handler_name,
     if (glob_match(id, pattern)) {
       Element *e = router->element(i);
       int hi = router->find_handler(e, handler_name);
-      if (hi >= 0 && router->handler(hi).read)
+      if (hi >= 0 && router->handler(hi).read_visible())
 	elements.push_back(e);
     }
   }

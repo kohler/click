@@ -603,8 +603,8 @@ read_handlers_handler(Element *e, void *)
   StringAccum sa;
   for (int i = 0; i < handlers.size(); i++) {
     const Router::Handler &h = r->handler(handlers[i]);
-    if (h.read || h.write)
-      sa << h.name << '\t' << (h.read ? "r" : "") << (h.write ? "w" : "") << '\n';
+    if (h.read_visible() || h.write_visible())
+      sa << h.name() << '\t' << (h.read_visible() ? "r" : "") << (h.write_visible() ? "w" : "") << '\n';
   }
   return sa.take_string();
 }

@@ -90,7 +90,7 @@ PeekHandlers::initialize(ErrorHandler *errh)
 {
   // configure now, since we have read handlers
   Vector<String> conf;
-  configuration(conf, 0);
+  configuration(conf);
   if (do_configure(conf, errh) < 0)
     return -1;
   
@@ -133,7 +133,7 @@ PeekHandlers::timer_hook(Timer *, void *thunk)
     }
     
     const Router::Handler &rh = router->handler(hid);
-    String value = rh.read(he, rh.read_thunk);
+    String value = rh.call_read(he);
     errh->message("%s:\n%s\n", rh.unparse_name(he).cc(), value.cc());
     pos++;
   }

@@ -188,15 +188,15 @@ KernelHandlerProxy::read_handler(Element *e, void *thunk)
   const Router::Handler &h = r->handler(handleri);
 
   errno = 0;
-  String fn = handler_name_to_file_name(h.name);
+  String fn = handler_name_to_file_name(h.name());
   String s = file_string(fn, 0);
   int err = errno;
 
   if (!s && err != 0) {
     if (khp->_verbose)
-      khp->complain_about_open(ErrorHandler::default_handler(), h.name, err);
+      khp->complain_about_open(ErrorHandler::default_handler(), h.name(), err);
     // complain to error receivers
-    khp->complain_about_open(0, h.name, err);
+    khp->complain_about_open(0, h.name(), err);
   }
   
   return s;
@@ -210,11 +210,11 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
   int handleri = (int)thunk;
   const Router::Handler &h = r->handler(handleri);
 
-  String fn = handler_name_to_file_name(h.name);
+  String fn = handler_name_to_file_name(h.name());
   int fd = open(fn, O_WRONLY | O_TRUNC);
   
   if (fd < 0)
-    return khp->complain_about_open(errh, h.name, errno);
+    return khp->complain_about_open(errh, h.name(), errno);
 
   int pos = 0;
   const char *data = str.data();
@@ -223,16 +223,16 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
     ssize_t written = write(fd, data + pos, left);
     if (written < 0 && errno != EINTR) {
       close(fd);
-      return khp->complain(errh, h.name, CSERR_UNSPECIFIED, fn + ": " + String(strerror(errno)));
+      return khp->complain(errh, h.name(), CSERR_UNSPECIFIED, fn + ": " + String(strerror(errno)));
     } else if (written >= 0)
       pos += written;
   }
 
   if (close(fd) < 0) {
     int err = errno;
-    khp->complain(errh, h.name, CSERR_HANDLER_ERROR, "Error executing kernel write handler `" + h.name + "'");
+    khp->complain(errh, h.name(), CSERR_HANDLER_ERROR, "Error executing kernel write handler `" + h.name() + "'");
     if (!khp->_detailed_error_message) {
-      khp->complain(errh, h.name, CSERR_HANDLER_ERROR, "(Check /proc/click/errors for details.)");
+      khp->complain(errh, h.name(), CSERR_HANDLER_ERROR, "(Check /proc/click/errors for details.)");
       khp->_detailed_error_message = true;
     }
     return -err;

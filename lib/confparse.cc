@@ -1647,10 +1647,10 @@ cp_handler(const String &str, Element *context, bool need_read,
   }
 
   const Router::Handler &h = context->router()->handler(hid);
-  if (need_read && !h.read) {
+  if (need_read && !h.readable()) {
     errh->error("`%s' is not a read handler", h.unparse_name(e).cc());
     return false;
-  } else if (need_write && !h.write) {
+  } else if (need_write && !h.writable()) {
     errh->error("`%s' is not a write handler", h.unparse_name(e).cc());
     return false;
   } else {

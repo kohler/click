@@ -165,12 +165,12 @@ DriverManager::step_insn()
     const Router::Handler &h = router()->handler(_args2[_insn_pos]);
     sa << "While calling `" << h.unparse_name(e) << "' from " << declaration() << ":";
     ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
-    h.write(_args3[_insn_pos], e, h.write_thunk, &cerrh);
+    h.call_write(_args3[_insn_pos], e, &cerrh);
     return true;
   } else if (insn == INSN_READ) {
     Element *e = router()->element(_args[_insn_pos]);
     const Router::Handler &h = router()->handler(_args2[_insn_pos]);
-    String result = h.read(e, h.read_thunk);
+    String result = h.call_read(e);
     ErrorHandler *errh = ErrorHandler::default_handler();
     errh->message("%s:\n%s\n", h.unparse_name(e).cc(), result.cc());
     return true;

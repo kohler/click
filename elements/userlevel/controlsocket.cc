@@ -306,7 +306,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 
   // Then find handler.
   int hid = router()->find_handler(e, hname);
-  if (hid < 0)
+  if (hid < 0 || !router()->handler(hid).visible())
     return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + full_name + "'");
 
   // Return.
@@ -322,15 +322,15 @@ ControlSocket::read_command(int fd, const String &handlername)
   if (hid < 0)
     return hid;
   const Router::Handler &h = router()->handler(hid);
-  if (!h.read)
+  if (!h.read_visible())
     return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' write-only");
 
   // collect errors from proxy
   ControlSocketErrorHandler errh;
-  _proxied_handler = h.name;
+  _proxied_handler = h.name();
   _proxied_errh = &errh;
   
-  String data = h.read(e, h.read_thunk);
+  String data = h.call_read(e);
 
   // did we get an error message?
   if (errh.nerrors() > 0)
@@ -350,7 +350,7 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
   if (hid < 0)
     return hid;
   const Router::Handler &h = router()->handler(hid);
-  if (!h.write)
+  if (!h.writable())
     return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' read-only");
 
   if (_read_only)
@@ -359,7 +359,7 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
   ControlSocketErrorHandler errh;
   
   // call handler
-  int result = h.write(data, e, h.write_thunk, &errh);
+  int result = h.call_write(data, e, &errh);
 
   // add a generic error message for certain handler codes
   int code = errh.error_code();
@@ -398,7 +398,9 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
     if (hid < 0)
       return 0;			// error messages already reported
     const Router::Handler &h = router()->handler(hid);
-    if (write ? h.write == 0 : h.read == 0)
+    if (!h.visible())
+      return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + hname + "'");
+    if (write ? !h.write_visible() : !h.read_visible())
       return message(fd, CSERR_PERMISSION, "Handler `" + hname + (write ? "' read-only" : "' write-only"));
   }
 
