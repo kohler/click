@@ -101,7 +101,7 @@ by setting the 'CXX' environment variable and rerunning me.
   return 0;
 ], ac_cv_good_new_hdr=yes, ac_cv_good_new_hdr=no))
     if test "$ac_cv_good_new_hdr" = yes; then
-	AC_DEFINE(HAVE_NEW_HDR)
+	AC_DEFINE([HAVE_NEW_HDR], [1], [Define if <new> exists and works.])
     else
 	AC_CACHE_CHECK(whether <new.h> works, ac_cv_good_new_h,
 	    AC_TRY_LINK([#include <new.h>], [
@@ -110,7 +110,7 @@ by setting the 'CXX' environment variable and rerunning me.
   return 0;
 ], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
 	if test "$ac_cv_good_new_h" = yes; then
-	    AC_DEFINE(HAVE_NEW_H)
+	    AC_DEFINE([HAVE_NEW_H], [1], [Define if <new.h> exists and works.])
 	fi
     fi
 
@@ -190,7 +190,7 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
     AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes,
 	[AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes; DL_LIBS="-ldl"], ac_have_dlopen=no)])
     if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
-	AC_DEFINE(HAVE_DYNAMIC_LINKING)
+	AC_DEFINE([HAVE_DYNAMIC_LINKING], [1], [Define if dynamic linking is possible.])
 	ac_have_dynamic_linking=yes
     fi
     AC_SUBST(DL_LIBS)
@@ -280,7 +280,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 	    AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no)
 	    CPPFLAGS="$saveflags")
 	if test "$ac_cv_bpf_timeval" = yes; then
-	    AC_DEFINE(HAVE_BPF_TIMEVAL)
+	    AC_DEFINE([HAVE_BPF_TIMEVAL], [1], [Define if <pcap.h> uses bpf_timeval.])
 	fi
     fi
 
@@ -333,7 +333,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     AC_SUBST(PCAP_LIBS)
 
     if test "$HAVE_PCAP" = yes; then
-	AC_DEFINE(HAVE_PCAP)
+	AC_DEFINE([HAVE_PCAP], [1], [Define if you have -lpcap and pcap.h.])
     fi
 ])
 
@@ -387,7 +387,7 @@ dnl CLICK_PROG_PERL5
 dnl Substitute PERL.
 dnl
 
-AC_DEFUN(CLICK_PROG_PERL5, [
+AC_DEFUN([CLICK_PROG_PERL5], [
     dnl A IS-NOT A
     ac_foo=`echo 'exit($A<5);' | tr A \135`
 
@@ -472,7 +472,7 @@ int main(int argc, char *argv[]) {
 }], ac_cv_alignment_indifferent=yes, ac_cv_alignment_indifferent=no,
 	ac_cv_alignment_indifferent=no)])
     if test "x$ac_cv_alignment_indifferent" = xyes; then
-	AC_DEFINE(HAVE_INDIFFERENT_ALIGNMENT)
+	AC_DEFINE([HAVE_INDIFFERENT_ALIGNMENT], [1], [Define if the machine is indifferent to alignment.])
     fi])
 
 
@@ -500,7 +500,7 @@ changequote(<<,>>)<<(^|[^a-zA-Z_0-9])u_int32_t[^a-zA-Z_0-9]>>changequote([,]),
     fi
     if test $have_inttypes_h = yes -o "$ac_cv_uint_t" = yes; then :
     elif test "$ac_cv_u_int_t" = yes; then
-	AC_DEFINE(HAVE_U_INT_TYPES)
+	AC_DEFINE([HAVE_U_INT_TYPES], [1], [Define if you have u_intXX_t types but not uintXX_t types.])
     else
 	AC_MSG_ERROR([
 =========================================
@@ -544,7 +544,7 @@ Compile with '--disable-int64'.
 
 =========================================])
     else
-	AC_DEFINE(HAVE_INT64_TYPES)
+	AC_DEFINE([HAVE_INT64_TYPES], [1], [Define if 64-bit integer types are enabled.])
 	have_int64_types=yes
 
 	AC_CACHE_CHECK(whether long and int64_t are the same type,
@@ -556,7 +556,7 @@ void f1(int64_t) { // will fail if long and int64_t are the same type
 }
 ], [], ac_cv_long_64=no, ac_cv_long_64=yes)])
 	if test $ac_cv_long_64 = yes; then
-	    AC_DEFINE(HAVE_64_BIT_LONG)
+	    AC_DEFINE([HAVE_64_BIT_LONG], [1], [Define if '[unsigned] long' has 64 bits.])
 	fi
     fi])
 
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
     else
 	ac_cv_endian=0
     fi
-    AC_DEFINE_UNQUOTED(CLICK_BYTE_ORDER, $ac_cv_endian)
+    AC_DEFINE_UNQUOTED([CLICK_BYTE_ORDER], $ac_cv_endian, [Define to byte order of target machine.])
     AC_CHECK_HEADERS(byteswap.h)
 ])
 
@@ -652,7 +652,7 @@ void h(int a, ...) {
     va_end(val);
 }], [h(2, 3, 4);], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
     if test "x$ac_cv_va_list_addr" = xyes; then
-	AC_DEFINE(HAVE_ADDRESSABLE_VA_LIST)
+	AC_DEFINE([HAVE_ADDRESSABLE_VA_LIST], [1], [Define if the va_list type is addressable.])
     fi
 ])
 
@@ -678,7 +678,7 @@ void h(off_t a) {
     lseek(fd, a, 0);
 }], [h(15);], ac_cv_large_file_support=yes, ac_cv_large_file_support=no)])
     if test "x$ac_cv_large_file_support" = xyes; then
-	AC_DEFINE(HAVE_LARGE_FILE_SUPPORT)
+	AC_DEFINE([HAVE_LARGE_FILE_SUPPORT], [1], [Define if your C library contains large file support.])
     fi
 
     AC_CHECK_SIZEOF(off_t, [], [#ifdef HAVE_LARGE_FILE_SUPPORT
@@ -707,7 +707,7 @@ AC_DEFUN([CLICK_CHECK_POLL_H], [
 #endif
 ], [], ac_cv_emulated_poll_h=no, ac_cv_emulated_poll_h=yes)])
 	if test "x$ac_cv_emulated_poll_h" = xno; then
-	    AC_DEFINE(HAVE_POLL_H)
+	    AC_DEFINE([HAVE_POLL_H], [1], [Define if you have a non-emulated <poll.h> header file.])
 	fi
     fi
 ])

@@ -86,6 +86,11 @@
 #define ELEMENT_HEADER(x)
 #define ELEMENT_MT_SAFE(x)
 
+/* Assume CLICK_USERLEVEL unless otherwise defined. */
+#if !defined(CLICK_USERLEVEL) && !defined(CLICK_TOOL) && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+# define CLICK_USERLEVEL 1
+#endif
+
 /* Define stuff under a Linux module. */
 #ifdef CLICK_LINUXMODULE
 # include <click/config-linuxmodule.h>

@@ -3374,7 +3374,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_good_new_hdr" >&5
 echo "${ECHO_T}$ac_cv_good_new_hdr" >&6
     if test "$ac_cv_good_new_hdr" = yes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_NEW_HDR 1
 _ACEOF
 
@@ -3438,7 +3439,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_good_new_h" >&5
 echo "${ECHO_T}$ac_cv_good_new_h" >&6
 	if test "$ac_cv_good_new_h" = yes; then
-	    cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_NEW_H 1
 _ACEOF
 
@@ -5086,7 +5088,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_alignment_indifferent" >&5
 echo "${ECHO_T}$ac_cv_alignment_indifferent" >&6
     if test "x$ac_cv_alignment_indifferent" = xyes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_INDIFFERENT_ALIGNMENT 1
 _ACEOF
 
@@ -6383,7 +6386,8 @@ echo "${ECHO_T}$ac_cv_u_int_t" >&6
     fi
     if test $have_inttypes_h = yes -o "$ac_cv_uint_t" = yes; then :
     elif test "$ac_cv_u_int_t" = yes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_U_INT_TYPES 1
 _ACEOF
 
@@ -6479,7 +6483,8 @@ Compile with '--disable-int64'.
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
     else
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_INT64_TYPES 1
 _ACEOF
 
@@ -6550,7 +6555,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_long_64" >&5
 echo "${ECHO_T}$ac_cv_long_64" >&6
 	if test $ac_cv_long_64 = yes; then
-	    cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_64_BIT_LONG 1
 _ACEOF
 
@@ -6724,7 +6730,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6727 "configure"
+#line 6733 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -6815,7 +6821,8 @@ echo "${ECHO_T}$ac_cv_endian" >&6
     else
 	ac_cv_endian=0
     fi
-    cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define CLICK_BYTE_ORDER $ac_cv_endian
 _ACEOF
 
@@ -7042,7 +7049,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_va_list_addr" >&5
 echo "${ECHO_T}$ac_cv_va_list_addr" >&6
     if test "x$ac_cv_va_list_addr" = xyes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_ADDRESSABLE_VA_LIST 1
 _ACEOF
 
@@ -7407,7 +7415,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_emulated_poll_h" >&5
 echo "${ECHO_T}$ac_cv_emulated_poll_h" >&6
 	if test "x$ac_cv_emulated_poll_h" = xno; then
-	    cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_POLL_H 1
 _ACEOF
 
@@ -7734,7 +7743,8 @@ fi
 fi
 
     if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_DYNAMIC_LINKING 1
 _ACEOF
 
@@ -8445,7 +8455,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_large_file_support" >&5
 echo "${ECHO_T}$ac_cv_large_file_support" >&6
     if test "x$ac_cv_large_file_support" = xyes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_LARGE_FILE_SUPPORT 1
 _ACEOF
 
@@ -10262,7 +10273,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_bpf_timeval" >&5
 echo "${ECHO_T}$ac_cv_bpf_timeval" >&6
 	if test "$ac_cv_bpf_timeval" = yes; then
-	    cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_BPF_TIMEVAL 1
 _ACEOF
 
@@ -10489,7 +10501,8 @@ echo "${ECHO_T}$ac_cv_pcap_library_path" >&6
 
 
     if test "$HAVE_PCAP" = yes; then
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_PCAP 1
 _ACEOF
 
