@@ -1,3 +1,12 @@
+2004-01-08 Thursday 02:28  Eddie Kohler <kohler@icir.org>
+
+	* test/: testie (1.25), analysis/FromIPSummaryDump-ipopt-01.testie
+	(1.7): dont print Success! when not successful
+
+2004-01-08 Thursday 01:42  Eddie Kohler <kohler@icir.org>
+
+	* elements/local/print80211.cc (1.2): fix warning
+
 2004-01-08 Thursday 01:33  Eddie Kohler <kohler@icir.org>
 
 	* include/click/confparse.hh (1.38), lib/confparse.cc (1.115):
