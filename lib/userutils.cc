@@ -317,28 +317,34 @@ unique_tmpnam(const String &pattern, ErrorHandler *errh)
   }
 }
 
-static Vector<String> *remove_files;
+// 19.Aug.2003 - atexit() is called after String::static_cleanup(), so use
+// char *s instead of Strings
+static Vector<char *> *remove_files;
 
 static void
-remover(String fn)
+remover(char *fn)
 {
-  struct stat s;
-  if (stat(fn.cc(), &s) < 0)
-    return;
-  if (S_ISDIR(s.st_mode)) {
-    DIR *dir = opendir(fn.cc());
-    if (!dir)
-      return;
-    while (struct dirent *d = readdir(dir)) {
-      if (d->d_name[0] == '.'
-	  && (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0))
-	continue;
-      remover(fn + String("/") + String(d->d_name));
-    }
-    closedir(dir);
-    rmdir(fn.cc());
-  } else
-    unlink(fn.cc());
+    struct stat s;
+    if (stat(fn, &s) < 0)
+	return;
+    if (S_ISDIR(s.st_mode)) {
+	DIR *dir = opendir(fn);
+	if (!dir)
+	    return;
+	while (struct dirent *d = readdir(dir)) {
+	    if (d->d_name[0] == '.'
+		&& (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0))
+		continue;
+	    if (char *nfn = new char[strlen(fn) + strlen(d->d_name) + 2]) {
+		sprintf(nfn, "%s/%s", fn, d->d_name);
+		remover(nfn);
+		delete[] nfn;
+	    }
+	}
+	closedir(dir);
+	rmdir(fn);
+    } else
+	unlink(fn);
 }
 
 extern "C" {
@@ -349,28 +355,33 @@ signal_handler(int)
 }
 
 static void
-atexit_remover(void)
+atexit_remover()
 {
-  if (remove_files) {
-    for (int i = 0; i < remove_files->size(); i++)
-      remover((*remove_files)[i]);
-  }
+    if (remove_files)
+	for (int i = 0; i < remove_files->size(); i++) {
+	    remover((*remove_files)[i]);
+	    delete[] (*remove_files)[i];
+	}
 }
 }
 
 void
 remove_file_on_exit(const String &file)
 {
-  if (file) {
-    if (!remove_files) {
-      remove_files = new Vector<String>;
-      signal(SIGINT, signal_handler);
-      signal(SIGTERM, signal_handler);
-      signal(SIGPIPE, signal_handler);
-      atexit(atexit_remover);
+    if (file) {
+	if (!remove_files) {
+	    remove_files = new Vector<char *>;
+	    signal(SIGINT, signal_handler);
+	    signal(SIGTERM, signal_handler);
+	    signal(SIGPIPE, signal_handler);
+	    atexit(atexit_remover);
+	}
+	if (char *x = new char[file.length() + 1]) {
+	    memcpy(x, file.data(), file.length());
+	    x[file.length()] = 0;
+	    remove_files->push_back(x);
+	}
     }
-    remove_files->push_back(file);
-  }
 }
 
 static String
@@ -603,10 +614,13 @@ typedef int (*init_module_func)(void);
 int
 clickdl_load_package(String package, ErrorHandler *errh)
 {
+#ifndef RTLD_GLOBAL
+# define RTLD_GLOBAL 0
+#endif
 #ifndef RTLD_NOW
-  void *handle = dlopen((char *)package.cc(), RTLD_LAZY);
+  void *handle = dlopen((char *)package.cc(), RTLD_LAZY | RTLD_GLOBAL);
 #else
-  void *handle = dlopen((char *)package.cc(), RTLD_NOW);
+  void *handle = dlopen((char *)package.cc(), RTLD_NOW | RTLD_GLOBAL);
 #endif
   if (!handle)
     return errh->error("package %s", dlerror());
