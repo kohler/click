@@ -9,7 +9,7 @@ class IPFlowID { public:
 
   IPFlowID();
   IPFlowID(IPAddress, uint16_t, IPAddress, uint16_t);
-  explicit IPFlowID(Packet *);
+  explicit IPFlowID(const Packet *);
 
   operator bool() const;
 
