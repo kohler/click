@@ -1,3 +1,7 @@
+2001-05-15 Tuesday 16:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipratemon.cc (1.89): remove redundant locking
+
 2001-05-14 Monday 19:47  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* INSTALL (1.16), README (1.23): fix INSTALL and README directions
