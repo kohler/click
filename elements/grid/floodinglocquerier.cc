@@ -128,9 +128,8 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   q->pull(2);
 
   struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    q->set_timestamp_anno(tv);
+  click_gettimeofday(&tv);
+  q->set_timestamp_anno(tv);
 
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
@@ -404,7 +403,7 @@ FloodingLocQuerier::read_table(Element *e, void *)
     unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     if (e.p == 0) {
       char locbuf[255];
-      snprintf(locbuf, sizeof(locbuf), " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
+      snprintf(locbuf, sizeof(locbuf), " lat_ms=%ld lon_ms=%ld h_mm=%ld", e.loc.lat_ms(), e.loc.lon_ms(), e.loc.h_mm());
       s += e.ip.s() + String(locbuf)
 	+ " seq=" + String(e.loc_seq_no) + " age=" + String(age) + "\n";
     }
@@ -431,7 +430,6 @@ FloodingLocQuerier::add_handlers()
   add_read_handler("stats", FloodingLocQuerier_read_stats, (void *)0);
 }
 
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FloodingLocQuerier)
 
 #include <click/bighashmap.cc>

@@ -128,9 +128,8 @@ LocQueryResponder::simple_action(Packet *p)
   q->pull(2);
 
   struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
+  click_gettimeofday(&tv);
+  p->set_timestamp_anno(tv);
 
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();
@@ -157,7 +156,6 @@ LocQueryResponder::simple_action(Packet *p)
   return(q);
 }
 
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocQueryResponder)
 
 #include <click/bighashmap.cc>
