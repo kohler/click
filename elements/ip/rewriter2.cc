@@ -22,12 +22,113 @@
 #include "confparse.hh"
 #include "error.hh"
 
+#include <limits.h>
+
+#ifdef CLICK_LINUXMODULE
 extern "C" {
 #include <asm/softirq.h>
 #include <net/sock.h>
 #ifdef HAVE_TCP_PROT
 extern struct proto tcp_prot;
 #endif
+}
+#endif
+
+#define debugging
+
+//
+// Rewriter::Connection
+//
+
+Rewriter::Connection::Connection()
+  : _saddr(), _sport(0), _daddr(), _dport(0), _used(false), _removed(false)
+{
+}
+
+Rewriter::Connection::Connection(unsigned long sa, unsigned short sp, 
+				 unsigned long da, unsigned short dp)
+  : _saddr(sa), _sport(sp), _daddr(da), _dport(dp), 
+    _used(false), _removed(false)
+{
+}
+
+Rewriter::Connection::Connection(Packet *p)
+  : _used(false), _removed(false)
+{
+  click_ip *ip = (click_ip *)p->data();
+  _saddr = IPAddress(ip->ip_src.s_addr);
+  _daddr = IPAddress(ip->ip_dst.s_addr);
+
+  udphdr *udph = (udphdr *)(p->data() + sizeof(click_ip));
+  _sport = udph->uh_sport;	// network byte order
+  _dport = udph->uh_dport;	// network byte order
+}
+
+void
+Rewriter::Connection::fix_csums(Packet *p)
+{
+  click_ip *ip = (click_ip *)p->data();
+
+  ip->ip_sum = 0;
+  ip->ip_sum = in_cksum((unsigned char *)ip, ip->ip_hl << 2);
+
+  int len = ntohs(ip->ip_len);
+  unsigned char *buf = new unsigned char[p->length()];
+  memcpy(buf, p->data(), p->length());
+  memset(buf, '\0', 9);	// set up pseudoheader
+
+  click_ip *iph = (click_ip *)buf;
+  iph->ip_sum = htons(len - sizeof(click_ip));
+  if (ip->ip_p == IP_PROTO_TCP) {
+    tcp_header *tcph = (tcp_header *)(buf + sizeof(click_ip));
+    tcph->th_sum = 0;
+    tcp_header *realth = (tcp_header *)(p->data() + sizeof(click_ip));
+    realth->th_sum = in_cksum(buf, len);
+  } else {
+    udphdr *udph = (udphdr *)(buf + sizeof(click_ip));
+    udph->uh_sum = 0;
+    udphdr *realuh = (udphdr *)(p->data() + sizeof(click_ip));
+    realuh->uh_sum = in_cksum(buf, len);
+  }
+}
+
+void
+Rewriter::Connection::set(Packet *p)
+{
+  click_ip *iph = (click_ip *)p->data();
+  iph->ip_src.s_addr = _saddr.saddr();
+  iph->ip_dst.s_addr = _daddr.saddr();
+
+  udphdr *udph = (udphdr *)(p->data() + sizeof(click_ip));
+  udph->uh_sport = _sport;
+  udph->uh_dport = _dport;
+
+  fix_csums(p);
+  mark_used();
+}
+
+inline bool
+Rewriter::Connection::operator==(Connection &c)
+{ 
+  return (_saddr == c._saddr && _daddr == c._daddr
+	  && _sport == c._sport && _dport == c._dport);
+}
+
+inline unsigned
+Rewriter::Connection::hashcode(void) const
+{ 
+#define CHUCK_MAGIC 0x4c6d92b3;
+#define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
+  return (ROT(_saddr.hashcode(), 13) 
+	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
+}
+
+inline String
+Rewriter::Connection::s(void) const
+{
+  String sport = (String)((int)ntohs(_sport));
+  String dport = (String)((int)ntohs(_dport));
+  return _saddr.s() + "/" + sport + " -> " + _daddr.s() + "/" + dport;
 }
 
 //
@@ -55,73 +156,52 @@ Rewriter::Pattern::init_ports()
     _free[i] = _sporth-i;
 }
 
-inline char *
-Rewriter::Pattern::eat_ws(char *s)
-{
-  while (*s && isspace(*s)) ++s;
-  return s;
-}
-
 bool
-Rewriter::Pattern::initialize(const char *s)
+Rewriter::Pattern::initialize(String &s)
 {
-  String *r;
+  // Pattern is "saddr sport[-sport2] daddr dport".
+  // Any element can be '*'.  If sport2 is present, neither sport nor
+  // sport2 is '*', and there is no space around '-'.
+  Vector<String> v;
+  String r, r2;
 
-  s = eat_ws(s);
-
-  if (*s == '*')		// source address
+  cp_spacevec(s, v);
+  if (v.size() != 4)
+    return false;
+  r = v[0];			// source address
+  if (r == "*")
     _saddr = 0;
-  else if (cp_ip_address(String(s), _saddr, r))
-    s = r->cc();
-  else return false;
-
-  if (*s != ' ') return false;
-  s = eat_ws(s);
-
-  if (*s == '*')		// source port
+  else if (!cp_ip_address(r, _saddr))
+    return false;
+  r = v[1];			// source port
+  if (r == "*")
     _sportl = _sporth = 0;
   else {
-    char *e;
-    long int v = strtol(s, &e, 10);
-    if (s == e || *e != ' ' && *e != '-')
+    if (!cp_integer(r, 10, _sportl, &r2))
       return false;
-    _sportl = (int)v;
-    s = eat_ws(e);
-    if (*s == '-') {
-      s = eat_ws(s+1);
-      v = strtol(s, &e, 10);
-      if (s == e || *e != ' ')
+    if (r2) {
+      if (!cp_integer(r2, 10, _sporth) || _sporth > 0)
 	return false;
-      _sporth = (int)v;
-      s = e;
+      _sporth = -_sporth;
     } else
       _sporth = _sportl;
   }
-
-  s = eat_ws(s);
-  if (*s == '*')		// destination address
+  if (_sportl > _sporth)
+    return false;
+  r = v[2];			// destination address
+  if (r == "*")
     _daddr = 0;
-  else if (cp_ip_address(String(s), _daddr, r))
-    s = r->cc();
-  else return false;
-
-  if (*s != ' ') return false;
-  s = eat_ws(s);
-
-  if (*s == '*') {		// source port
-    _dport = 0; s++;
-  } else {
-    char *e;
-    long int v = strtol(s, &e, 10);
-    if (s == e || *e != ' ' && *e != '\0')
+  else if (!cp_ip_address(r, _daddr))
+    return false;
+  r = v[3];			// destination port
+  if (r == "*")
+    _dport = 0;
+  else {
+    if (!cp_integer(r, 10, _dport, &r2))
       return false;
-    _dport = (int)v;
-    s = e;
+    if (_dport < 0 || _dport > SHRT_MAX)
+      return false;
   }
-
-  s = eat_ws(s);
-  if (*s) return false;
-
   init_ports();
   return true;
 }
@@ -129,13 +209,19 @@ Rewriter::Pattern::initialize(const char *s)
 inline bool
 Rewriter::Pattern::apply(Connection *in, Connection *out)
 {
-  if (_free.size() > 0) {
-    out->_saddr = _saddr ? _saddr : in->_saddr;
-    out->_daddr = _daddr ? _daddr : in->_daddr;
-    out->_dport = _dport ? _dport : in->_dport;
-    int sport = _free[_free.size()-1];
+  out->_saddr = _saddr ? _saddr : in->_saddr;
+  out->_daddr = _daddr ? _daddr : in->_daddr;
+  out->_dport = _dport ? htons((short)_dport) : in->_dport;
+
+  if (!_sporth) {
+    out->_sport = in->_sport;
+    return true;
+  } else if (_sporth == _sportl) {
+    out->_sport = htons((short)_sporth);
+    return true;
+  } else if (_free.size() > 0) {
+    out->_sport = htons((short)_free.back());
     _free.pop_back();
-    out->_sport = sport ? sport : in->_sport;
     return true;
   }
   return false;
@@ -144,6 +230,8 @@ Rewriter::Pattern::apply(Connection *in, Connection *out)
 inline bool
 Rewriter::Pattern::free(Connection *c)
 {
+  if (_sporth == _sportl)
+    return false;
   if ((!_saddr || _saddr == c->_saddr)
       && (!_daddr || _daddr == c->_daddr)
       && (!_dport || _dport == c->_dport)
@@ -154,108 +242,26 @@ Rewriter::Pattern::free(Connection *c)
   return false;
 }
 
-//
-// Rewriter::Connection
-//
-
-Rewriter::Connection::Connection()
-  : _saddr(), _sport(0), _daddr(), _dport(0), _used(false), _removed(false)
-{
-}
-
-Rewriter::Connection::Connection(unsigned long sa, unsigned short sp, 
-				 unsigned long da, unsigned short dp)
-  : _saddr(sa), _sport(sp), _daddr(da), _dport(dp), 
-    _used(false), _removed(false)
-{
-}
-
-Rewriter::Connection::Connection(Packet *p)
-  : _used(false), _removed(false)
-{
-  click_ip *ip = p->ip_header();
-  _saddr = IPAddress(ip->ip_src.s_addr);
-  _daddr = IPAddress(ip->ip_dst.s_addr);
-
-  udphdr *udph = (udphdr *)(p->data() + sizeof(click_ip));
-  _sport = udph->uh_sport;
-  _dport = udph->uh_dport;
-}
-
-void
-Rewriter::Connection::fix_csums(Packet *p)
-{
-  click_ip *ip = p->ip_header();
-
-  ip->ip_sum = 0;
-  ip->ip_sum = in_cksum((unsigned char *)ip, ip->ip_hl << 2);
-
-  int len = ntohs(ip->ip_len);
-  unsigned char *buf = new unsigned char[p->length()];
-  memcpy(buf, p->data(), p->length());
-  memset(buf, '\0', 9);	// set up pseudoheader
-
-  click_ip *iph = (click_ip *)buf;
-  iph->ip_sum = htons(len - sizeof(click_ip));
-  if (ip->ip_p == IP_PROTO_TCP) {
-    tcp_header *tcph = (tcp_header *)(buf + sizeof(click_ip));
-    tcph->th_sum = 0;
-    tcp_header *realth = (tcp_header *)(p->data() + sizeof(click_ip));
-    realth->th_sum = in_cksum(buf, len);
-  } else {
-    udphdr *udph = (udphdr *)(buf + sizeof(click_ip));
-    udph->uh_sum = 0;
-    udphdr *realuh = (udphdr *)(p->data() + sizeof(click_ip));
-    realuh->uh_sum = in_cksum(buf, len);
-  }
-}
-
-void
-Rewriter::Connection::apply(Packet *p)
-{
-  click_ip *iph = (click_ip *)p->data();
-  iph->ip_src.s_addr = htonl(_saddr.saddr());
-  iph->ip_dst.s_addr = htonl(_daddr.saddr());
-
-  udphdr *udph = (udphdr *)(p->data() + sizeof(click_ip));
-  udph->uh_sport = htons(_sport);
-  udph->uh_dport = htons(_dport);
-
-  fix_csums(p);
-
-  _used = true;
-}
-
-inline bool
-Rewriter::Connection::operator==(Connection &c)
-{ 
-  return (_saddr == c._saddr && _daddr == c._daddr
-	  && _sport == c._sport && _dport == c._dport);
-}
-
-inline unsigned
-Rewriter::Connection::hashcode(void) const
-{ 
-#define CHUCK_MAGIC 0x4c6d92b3;
-#define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
-  return (ROT(_saddr.hashcode(), 13) 
-	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
-}
-
 inline String
-Rewriter::Connection::s(void) const
+Rewriter::Pattern::s(void) const
 {
-  return _saddr.s() + "/" + _sport + " -> " + _daddr.s() + "/" + _dport;
+  String saddr, sport, daddr, dport;
+  saddr = _saddr ? _saddr.s() : String("*");
+  daddr = _daddr ? _daddr.s() : String("*");
+  dport = _dport ? (String)_dport : String("*");
+  if (!_sporth)
+    sport = "*";
+  else if (_sporth == _sportl)
+    sport = String(_sporth);
+  else
+    sport = String(_sportl) + "-" + String(_sporth);
+  return saddr + ":" + sport + " / " + daddr + ":" + dport;
 }
+
 
 //
 // Rewriter::Mapping
 //
-
-Rewriter::Mapping::Mapping()
-  : _fwd(), _rev()
-{
-}
 
 bool
 Rewriter::Mapping::add(Packet *p, Pattern *pat)
@@ -264,8 +270,10 @@ Rewriter::Mapping::add(Packet *p, Pattern *pat)
   Connection *out = new Connection();
   if (!pat->apply(in, out))
     return false;
+  click_chatter("mapping::add inserting %s", out->s().cc());
   _fwd.insert(*in, Rewrite(out,pat));
   _rev.insert(*out, *in);
+  
   return true;
 }
 
@@ -273,12 +281,16 @@ bool
 Rewriter::Mapping::apply(Packet *p, int *port)
 {
   Rewrite out;
-  if ((out = _fwd[Connection(p)])) {
+  Connection c(p);
+  if ((out = _fwd[c])) {
     *port = out.pattern()->output();
-    out.connection()->apply(p);
+    out.connection()->set(p);
+    click_chatter("mapping::apply applied %s", out.connection()->s().cc());
     return true;
-  } else
+  } else {
+    click_chatter("mapping::apply could not find %s", c.s().cc());
     return false;
+  }
 }
 
 bool
@@ -286,7 +298,7 @@ Rewriter::Mapping::rapply(Packet *p)
 {
   Connection c;
   if ((c = _rev[Connection(p)])) {
-    c.apply(p);
+    c.set(p);
     return true;
   } else
     return false;
@@ -295,6 +307,7 @@ Rewriter::Mapping::rapply(Packet *p)
 void
 Rewriter::Mapping::mark_live_tcp()
 {
+#ifdef CLICK_LINUXMODULE
 #ifdef HAVE_TCP_PROT
   start_bh_atomic();
 
@@ -309,6 +322,7 @@ Rewriter::Mapping::mark_live_tcp()
   }
 
   end_bh_atomic();
+#endif
 #endif
 }
 
@@ -335,7 +349,7 @@ Rewriter::Mapping::clean()
 String
 Rewriter::Mapping::s()
 {
-  String s = "";
+  String s;
   int i = 0;
   Connection c1;
   Rewrite r;
@@ -351,7 +365,7 @@ Rewriter::Mapping::s()
 //
 
 Rewriter::Rewriter()
-  : _timer(this), _patterns()
+  : _patterns(), _mapping(), _timer(this)
 {
 }
 
@@ -377,10 +391,10 @@ Rewriter::configure(const String &conf, ErrorHandler *errh)
   int base = _npat == 1 ? 0 : 1;
   set_noutputs(1+base+_npat);
   for (int i = 0; i < _npat; i++) {
-    const char *s = args[i].data();
     Pattern *p = new Pattern(base+i);
-    if (!p->initialize(s)) {
-      errh->error("Argument %d to rewriter (`%s') is an illegal pattern");
+    if (!p->initialize(args[i])) {
+      errh->error("Argument %d to rewriter (`%s') is an illegal pattern",
+		  i, args[i].data());
       return -1;
     }
     _patterns.push_back(p);
@@ -390,29 +404,42 @@ Rewriter::configure(const String &conf, ErrorHandler *errh)
 }
 
 static String
-rewriter_dump(Element *f, void *v)
+table_dump(Element *f, void *)
 {
   Rewriter *r = (Rewriter *)f;
   return r->dump_table();
 }
 
+static String
+patterns_dump(Element *f, void *)
+{
+  Rewriter *r = (Rewriter *)f;
+  return r->dump_patterns();
+}
+
 void
 Rewriter::add_handlers()
 {
-  add_read_handler("rewrite_table", rewriter_dump, (void *)0);
+  add_read_handler("rewrite_table", table_dump, (void *)0);
+  add_read_handler("patterns", patterns_dump, (void *)0);
 }
 
 int
-Rewriter::initialize(ErrorHandler *errh)
+Rewriter::initialize(ErrorHandler *)
 {
   _timer.schedule_after_ms(_gc_interval_sec * 1000);
-
-#ifndef HAVE_TCP_PROT
+#if defined(CLICK_LINUXMODULE) && !defined(HAVE_TCP_PROT)
   click_chatter(
-       "rewriter: warning: The kernel does not export the symbol `tcp_prot'.\n"
-       "                   Rewriter will not garbage collect stale mappings.\n"
-       "                   Apply the Click kernel patch to fix this problem."
+       "rewriter: The kernel does not export the symbol `tcp_prot'.\n"
+       "          Rewriter therefore cannot remove stale mappings.\n"
+       "          Apply the Click kernel patch to fix this problem."
        );
+#endif
+#ifndef CLICK_LINUXMODULE
+  click_chatter("rewriter: Running in userlevel mode.  "
+		"Cannot remove stale mappings.");
+  click_chatter("Patterns:\n%s", dump_patterns().cc());
+  click_chatter("Table:\n%s", dump_table().cc());
 #endif
 
   return 0;
@@ -425,17 +452,14 @@ Rewriter::uninitialize()
 }
 
 void
-Rewriter::check_tcp()
-{
-}
-
-void
 Rewriter::run_scheduled()
 {
+#ifdef CLICK_LINUXMODULE
 #ifdef HAVE_TCP_PROT
   _mapping.mark_live_tcp();
   _mapping.clean();
   _timer.schedule_after_ms(_gc_interval_sec * 1000);
+#endif
 #endif
 }
 
@@ -452,16 +476,19 @@ Rewriter::establish_mapping(Packet *p, int pat)
 void
 Rewriter::push(int port, Packet *p)
 {
+  p = p->uniqueify();		// WHEN USING INFINITESOURCE
+
   if (port == 0) {
     int oport;
     if (_npat == 1) {
       if (!_mapping.apply(p, &oport)) {
 	if (!establish_mapping(p, 0)) {
-	  click_chatter("rewriter: out of mappings! (dropping packet)"); 
+	  click_chatter("rewriter: out of mappings (dropping packet)"); 
 	  return;
 	}
 	_mapping.apply(p, &oport);
       }
+      click_chatter("Table:\n%s", dump_table().cc());
       output(oport).push(p);
     } else {
       if (_mapping.apply(p, &oport))
@@ -473,7 +500,7 @@ Rewriter::push(int port, Packet *p)
     if (_mapping.rapply(p))
       output(noutputs()-1).push(p);
     else
-      click_chatter("rewriter: dropping unknown pattern in reverse mapping");
+      click_chatter("rewriter: cannot do reverse mapping (dropping packet)");
   }
 }
 
@@ -483,8 +510,16 @@ Rewriter::dump_table()
   return _mapping.s();
 }
 
-//EXPORT_ELEMENT(Rewriter)
-ELEMENT_REQUIRES(linuxmodule)
+inline String
+Rewriter::dump_patterns()
+{
+  String s;
+  for (int i = 0; i < _patterns.size(); i++)
+    s += _patterns[i]->s() + "\n";
+  return s;
+}
+
+EXPORT_ELEMENT(Rewriter)
 
 #include "hashmap.cc"
 template class HashMap<Rewriter::Connection, Rewriter::Rewrite>;

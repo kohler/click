@@ -32,44 +32,19 @@
  * =a MappingCreator
  */
 
-const int ADDR_ANY = 0;
-
 class Rewriter : public Element {
 
   class Pattern;
   class Connection;
   class Mapping;
 
-  class Pattern {
-    IPAddress _saddr;
-    int _sportl;
-    int _sporth;
-    IPAddress _daddr;
-    int _dport;
-
-    int _output;
-
-    Vector<int> _free;
-    void init_ports();
-
-    char *eat_ws(char *s);
-
-  public:
-    Pattern();
-    Pattern(int o);
-
-    bool initialize(const char *s);
-    int output() 			{ return _output; }
-
-    bool apply(Connection *in, Connection *out);
-    bool free(Connection *c);
-  };
-
   class Connection {
+    // Connection represents a specific TCP or UDP connection, identified
+    // by <saddr/sport/daddr/dport>.
     IPAddress _saddr;
-    short _sport;
+    short _sport;		// network byte order
     IPAddress _daddr;
-    short _dport;
+    short _dport;		// network byte order
 
     bool _used;
     bool _removed;
@@ -84,7 +59,7 @@ class Rewriter : public Element {
 	       unsigned long da, unsigned short dp);
     Connection(Packet *p);
 
-    void apply(Packet *p);
+    void set(Packet *p);
 
     operator bool() const		{ return _saddr && _daddr; }
     bool operator==(Connection &c);
@@ -99,6 +74,38 @@ class Rewriter : public Element {
     void reset_used()			{ _used = false; }
     bool removed() 			{ return _removed; }
     void remove() 			{ _removed = true; }
+  };
+
+  class Pattern {
+    // Pattern is <saddr/sport[-sport2]/daddr/dport>.
+    // It is associated with a Rewriter output port.
+    // It can be applied to a specific Connection (<saddr/sport/daddr/dport>)
+    // to obtain a new Connection rewritten according to the Pattern.
+    // Any Pattern component can be '*', which means that the corresponding
+    // Connection component is left unchanged. 
+    IPAddress _saddr;
+    int _sportl;		// host byte order
+    int _sporth;		// host byte order
+    IPAddress _daddr;
+    int _dport;			// host byte order
+
+    Vector<int> _free;
+    void init_ports();
+
+    int _output;
+
+  public:
+    Pattern();
+    Pattern(int o);
+
+    bool initialize(String &s);
+    int output() 				{ return _output; }
+
+    bool apply(Connection *in, Connection *out);
+    bool free(Connection *c);
+
+    String s() const;
+    operator String() const		{ return (s()); }
   };
 
   class Rewrite {
@@ -119,7 +126,7 @@ class Rewriter : public Element {
     HashMap <Connection, Connection> _rev;
 
   public:
-    Mapping();
+    Mapping() : _fwd(), _rev()			{ }
 
     bool add(Packet *p, Pattern *pat);
     bool apply(Packet *p, int *port);
@@ -138,8 +145,6 @@ class Rewriter : public Element {
 
   static const int _gc_interval_sec = 10;
 
-  void check_tcp();
-
 public:
 
   Rewriter();
@@ -155,10 +160,12 @@ public:
   void uninitialize();
   void run_scheduled();
   
+  int npatterns() const				{ return _npat; }
   bool establish_mapping(Packet *p, int pat);
   void push(int, Packet *);
 
   String dump_table();
+  String dump_patterns();
 };
 
 #endif REWRITER_HH
