@@ -66,10 +66,10 @@ rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
 ai :: AiroInfo(GRID_NET_DEVICE);
-lt :: LinkTracker(2000);
+lt :: LinkTracker(LINK_TRACKER_TAU);
 
 nb :: DSDVRouteTable(ROUTE_TIMEOUT,
-		     BROADCAST_PERIOD, BROADCAST_JITTER,
+		     BROADCAST_PERIOD, BROADCAST_JITTER, BROADCAST_MIN_PERIOD,
 		     GRID_MAC_ADDR, GRID_IP, 
 		     ggi, 
                      lt,
@@ -121,7 +121,7 @@ from_grid_if
 //  -> PrintGrid("XXX")
   -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
 //  -> PrintGrid("post_fr")
-  -> ls :: LinkStat(ai, 20000)
+  -> ls :: LinkStat(ai, LINK_STAT_WINDOW)
 //  -> PrintGrid("post_ls")
   -> lt
 //  -> PrintGrid("post_lt")

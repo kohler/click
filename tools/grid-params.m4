@@ -44,9 +44,16 @@ define(ROUTE_TIMEOUT,        3200)
 
 define(BROADCAST_PERIOD,     1300)
 define(BROADCAST_JITTER,     300)
+define(BROADCAST_MIN_PERIOD, 500)
 
 dnl 100 ~= infinity 
 define(NUM_HOPS,             100) 
+
+dnl
+dnl Link tracking parameters.  Time parameters in milliseconds.
+dnl
+define(LINK_TRACKER_TAU,     2000)
+define(LINK_STAT_WINDOW,     20000)
 
 
 dnl
