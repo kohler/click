@@ -1,3 +1,8 @@
+2004-05-18 Tuesday 12:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.32): DriverManager
+	unquoting oops
+
 2004-05-18 Tuesday 01:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromipsumdump.cc (1.62): accept !contents as
