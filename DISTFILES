@@ -94,7 +94,6 @@ drivers/e1000/e1000_proc.h
 drivers/e1000/e1000_vendor_info.h
 
 etc
-etc/linux-2.2.17-patch
 etc/linux-2.2.18-patch
 etc/linux-2.2.19-patch
 etc/linux-2.4.9-patch

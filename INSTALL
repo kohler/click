@@ -92,7 +92,7 @@ and running Linux kernels.
     www.kernel.org. Unpack this distribution into /usr/src/linux. (Save the
     old kernel source tree, if you had one.)
 
-    We supply patches for Linux 2.2.17, 2.2.18, 2.2.19, 2.2.20, and a
+    We supply patches for Linux 2.2.18, 2.2.19, 2.2.20, and a
     preliminary patch for Linux 2.4.9.
 
  3. Install the Click Linux kernel patch:
