@@ -1,5 +1,9 @@
 %info
-This test installs two fake devices in the kernel, then initiates
+
+This test installs two fake devices in the kernel, then initiates a
+connection between two 'netcat' processes that bridges the two devices via
+FTPPortMapper and TCPRewriter.
+
 %script
 click-install KERNELCONFIG
 (usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l -p 3000 >NETCAT2 &
