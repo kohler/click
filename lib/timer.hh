@@ -23,10 +23,9 @@ class Timer {
   Timer(Element *);
   ~Timer()				{ unschedule(); }
   
-  bool scheduled() const		{ return timer_pending(&_t); }
-  
+  bool scheduled() const;
   void schedule_after_ms(int);
-  void unschedule()			{ if (scheduled()) del_timer(&_t); }
+  void unschedule();
   
 };
 
@@ -46,6 +45,12 @@ Timer::Timer(Element *f)
   _t.data = (unsigned long)f;
 }
 
+inline bool
+Timer::scheduled() const
+{
+  return timer_pending((struct timer_list *)&_t);
+}
+
 inline void
 Timer::schedule_after_ms(int ms)
 {
@@ -60,6 +65,12 @@ Timer::schedule_after_ms(int ms)
     _t.expires = time;
     add_timer(&_t);
   }
+}
+
+inline void
+Timer::unschedule()
+{
+  if (scheduled()) del_timer(&_t);
 }
 
 #else /* polling or userspace */
@@ -84,7 +95,6 @@ class Timer {
   ~Timer()				{ if (scheduled()) unschedule(); }
   
   bool scheduled() const		{ return _prev != 0; }
-  
   void schedule_after_ms(int);
   void unschedule();
 

@@ -46,7 +46,7 @@ class Router : public ElementLink {
   void check_hookup_range(ErrorHandler *);
   void check_hookup_completeness(ErrorHandler *);  
   
-  int processing_error(const Hookup&, const Hookup&, int, int, ErrorHandler*);
+  int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
   int check_push_and_pull(ErrorHandler *);
   
   void make_pidxes();

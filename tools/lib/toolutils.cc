@@ -101,8 +101,10 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   }
 
   // read router
+  if (!filename || strcmp(filename, "-") == 0)
+    filename = "<stdin>";
   LexerT lexer(errh);
-  lexer.reset(s);
+  lexer.reset(s, filename);
   if (router)
     lexer.set_router(router);
   while (lexer.ystatement()) ;
@@ -443,20 +445,20 @@ init_archive_element(const String &name, int mode)
 // ELEMENTMAP
 
 ElementMap::ElementMap()
-  : _click_name_map(-1), _cxx_name_map(-1)
+  : _name_map(-1), _cxx_name_map(-1)
 {
 }
 
 ElementMap::ElementMap(const String &str)
-  : _click_name_map(-1), _cxx_name_map(-1)
+  : _name_map(-1), _cxx_name_map(-1)
 {
   parse(str);
 }
 
 String
-ElementMap::processing_code_click(const String &n) const
+ElementMap::processing_code(const String &n) const
 {
-  int i = _click_name_map[n];
+  int i = _name_map[n];
   if (i >= 0)
     return _processing_code[i];
   else
@@ -475,17 +477,17 @@ ElementMap::add(const String &click_name, const String &cxx_name,
   if (processing_code == "?")
     processing_code = String();
   
-  int i = _click_name_map[click_name];
+  int i = _name_map[click_name];
   if (i < 0) {
-    i = _click_name.size();
-    _click_name.push_back(click_name);
+    i = _name.size();
+    _name.push_back(click_name);
     _cxx_name.push_back(cxx_name);
     _header_file.push_back(header_file);
     _processing_code.push_back(processing_code);
-    _click_name_map.insert(click_name, i);
+    _name_map.insert(click_name, i);
     _cxx_name_map.insert(cxx_name, i);
   } else {
-    _click_name[i] = click_name;
+    _name[i] = click_name;
     _cxx_name[i] = cxx_name;
     _header_file[i] = header_file;
     _processing_code[i] = processing_code;
@@ -495,21 +497,21 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 void
 ElementMap::remove(int i)
 {
-  if (i < 0 || i >= _click_name.size())
+  if (i < 0 || i >= _name.size())
     return;
 
-  _click_name_map.insert(_click_name[i], -1);
+  _name_map.insert(_name[i], -1);
   _cxx_name_map.insert(_cxx_name[i], -1);
 
-  if (i < _click_name.size() - 1) {
-    _click_name[i] = _click_name.back();
+  if (i < _name.size() - 1) {
+    _name[i] = _name.back();
     _cxx_name[i] = _cxx_name.back();
     _header_file[i] = _header_file.back();
     _processing_code[i] = _processing_code.back();
-    _click_name_map.insert(_click_name[i], i);
+    _name_map.insert(_name[i], i);
     _cxx_name_map.insert(_cxx_name[i], i);
   }
-  _click_name.pop_back();
+  _name.pop_back();
   _cxx_name.pop_back();
   _header_file.pop_back();
   _processing_code.pop_back();
@@ -529,7 +531,7 @@ ElementMap::unparse() const
 {
   StringAccum sa;
   for (int i = 0; i < size(); i++) {
-    sa << _click_name[i] << '\t' << _cxx_name[i] << '\t';
+    sa << _name[i] << '\t' << _cxx_name[i] << '\t';
     if (_header_file[i])
       sa << _header_file[i] << '\t';
     else

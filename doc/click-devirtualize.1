@@ -140,23 +140,6 @@ Such elements will continue using normal source code.
 '
 .Sp
 .TP
-.BI \-l " elem1 elem2"
-.TP
-.BI \-\-like " elem1 elem2"
-The elements
-.IR elem1 " and " elem2
-will share devirtualized source code. This is only valid if
-.IR elem1 " and " elem2
-are
-.IR compatible .
-Two elements are compatible iff they have the same number of inputs, the
-same number of outputs, the same port processing (push or pull), the
-elements connected to corresponding push outputs are compatible
-recursively, and the elements connected to corresponding pull inputs are
-compatible recursively.
-'
-.Sp
-.TP
 .BI \-i " file"
 .TP
 .BI \-\-instructions " file"
@@ -164,14 +147,10 @@ Read devirtualization instructions from
 .IR file .
 This file can contain any number of lines. Comments start with `#';
 non-blank, non-comment lines should have devirtualization directives. There
-are two kinds of directives: "noclass
+is currently one directive: "noclass
 .IR "class1 class2..." ""","
-which is equivalent to several `\-\-no\-devirtualize
+is equivalent to several `\-\-no\-devirtualize
 .IR class "i'"
-options, and "like
-.IR "class1 class2..." ""","
-which is equivalent to several `\-\-like
-.IR "class1 class2" '
 options.
 '
 .Sp

@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(acconfig.h)
 AC_SUBST(ac_configure_args)
 PACKAGE=click
-VERSION=1.0.2
+VERSION=1.0.3
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 AC_SUBST(PACKAGE)
@@ -106,6 +106,34 @@ AC_SUBST(AUTOHEADER)
 AC_SUBST(AUTOCONF)
 
 dnl
+dnl build Linux module?
+dnl
+
+AC_ARG_WITH(linux, [  --with-linux[=DIR]      compile Linux kernel module; Linux sources in DIR],
+  [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
+  linuxdir=NONE)
+
+if test $linuxdir = NONE; then
+  if test -d /usr/src/linux; then
+    linuxdir=/usr/src/linux
+  else
+    AC_MSG_WARN([can't find /usr/src/linux; not compiling for Linux
+  (or try the --with-linux=DIR option)])
+  fi
+fi
+
+ac_under_linux=n
+if test $linuxdir != NONE; then
+  if test -r $linuxdir/include/linux/skbuff.h; then
+    ac_under_linux=y
+  else
+    AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
+  are you sure $linuxdir holds the Linux source code?])
+  fi
+fi
+AC_SUBST(linuxdir)
+
+dnl
 dnl element collections
 dnl
 
@@ -156,28 +184,17 @@ DL_LIBRARY="-ldl"])])
 AC_SUBST(DL_LIBRARY)
 
 dnl
-dnl check for under Linux
-dnl
-
-if test -d /usr/src/linux -a -d /usr/include/linux; then
-  ac_under_linux=y
-else
-  ac_under_linux=n
-  AC_MSG_WARN(can't find /usr/src/linux or /usr/include/linux: not compiling for Linux)
-fi
-
-dnl
 dnl check for stuff in the linux kernel
 dnl
 
 if test $ac_under_linux = y; then
 
-if test ! -f /usr/src/linux/System.map; then
-  AC_MSG_ERROR(can't find /usr/src/linux/System.map)
+if test ! -f $linuxdir/System.map; then
+  AC_MSG_ERROR(can't find $linuxdir/System.map)
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-[if grep register_net_out /usr/src/linux/System.map >/dev/null 2>&1; then
+[if grep register_net_out $linuxdir/System.map >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
@@ -185,7 +202,7 @@ if test $ac_cv_click_kernel = yes; then
 fi
 
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_read_net_skbcount,
-[if grep read_net_skbcount /usr/src/linux/System.map >/dev/null 2>&1; then
+[if grep read_net_skbcount $linuxdir/System.map >/dev/null 2>&1; then
   ac_cv_read_net_skbcount=yes
 else ac_cv_read_net_skbcount=no; fi])
 if test $ac_cv_read_net_skbcount = yes; then
@@ -193,7 +210,7 @@ if test $ac_cv_read_net_skbcount = yes; then
 fi
 
 AC_CACHE_CHECK(for tcp_prot kernel symbol, ac_cv_tcp_prot,
-[if grep tcp_prot /usr/src/linux/net/netsyms.c >/dev/null 2>&1; then
+[if grep 'tcp_prot.*Click' $linuxdir/net/netsyms.c >/dev/null 2>&1; then
   ac_cv_tcp_prot=yes
 else ac_cv_tcp_prot=no; fi])
 if test $ac_cv_tcp_prot = yes; then
@@ -201,7 +218,7 @@ if test $ac_cv_tcp_prot = yes; then
 fi
 
 AC_CACHE_CHECK(for device polling kernel extension, ac_cv_poll_extension,
-[if grep pollable /usr/include/linux/netdevice.h >/dev/null 2>&1; then
+[if grep pollable $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
   ac_cv_poll_extension=yes
 else ac_cv_poll_extension=no; fi])
 if test $ac_cv_poll_extension = yes; then

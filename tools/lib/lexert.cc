@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 LexerT::LexerT(ErrorHandler *errh)
-  : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
+  : _data(0), _len(0), _pos(0), _lineno(1),
     _tpos(0), _tfull(0), _router(0),
     _errh(errh)
 {
@@ -35,8 +35,7 @@ LexerT::~LexerT()
 }
 
 void
-LexerT::reset(const String &data, const String &filename,
-	      LexerTExtra *lextra)
+LexerT::reset(const String &data, const String &filename)
 {
   clear();
   
@@ -51,8 +50,6 @@ LexerT::reset(const String &data, const String &filename,
   else
     _filename = filename;
   _lineno = 1;
-
-  _lextra = lextra;
 }
 
 void
@@ -69,7 +66,6 @@ LexerT::clear()
   _pos = 0;
   _filename = "";
   _lineno = 0;
-  _lextra = 0;
   _tpos = 0;
   _tfull = 0;
   
@@ -568,6 +564,7 @@ LexerT::yconnection()
       goto relex;
       
      case lexIdent:
+     case '^':
      case '{':
      case '}':
       unlex(t);
@@ -712,10 +709,8 @@ LexerT::yrequire()
     String requirement = lex_config();
     Vector<String> args;
     cp_argvec(requirement, args);
-    for (int i = 0; i < args.size(); i++) {
-      if (_lextra) _lextra->require(args[i], _errh);
+    for (int i = 0; i < args.size(); i++)
       _router->add_requirement(args[i]);
-    }
     expect(')');
   }
 }
@@ -727,6 +722,7 @@ LexerT::ystatement(bool nested)
   switch (t.kind()) {
     
    case lexIdent:
+   case '^':
    case '[':
    case '{':
     unlex(t);
@@ -775,14 +771,4 @@ LexerT::take_router()
   RouterT *r = _router;
   _router = 0;
   return r;
-}
-
-
-//
-// LEXERTEXTRA
-//
-
-void
-LexerTExtra::require(const String &, ErrorHandler *)
-{
 }

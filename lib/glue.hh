@@ -66,6 +66,8 @@ click_get_cycles(void)
     return(x);
 }
 
+long strtol(const char *, char **, int);
+
 }
 
 /* do cycle counters over all the ipb code. */

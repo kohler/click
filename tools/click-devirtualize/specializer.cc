@@ -18,14 +18,13 @@
 #include "error.hh"
 #include "toolutils.hh"
 #include "straccum.hh"
+#include "signature.hh"
 #include <ctype.h>
 
 Specializer::Specializer(RouterT *router, const ElementMap &em)
   : _router(router), _nelements(router->nelements()),
     _ninputs(router->nelements(), 0), _noutputs(router->nelements(), 0),
     _specialize(router->nelements(), 1), // specialize everything by default
-    _specializing_classes(1),
-    _specialize_like(_nelements, -1),
     _etinfo_map(0), _header_file_map(-1), _parsed_sources(-1)
 {
   _etinfo.push_back(ElementTypeInfo());
@@ -122,69 +121,43 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
 }
 
 void
-Specializer::set_specializing_classes(const HashMap<String, int> &sp)
-{
-  _specializing_classes = sp;
-}
-
-int
-Specializer::set_specialize_like(String e1, String e2, ErrorHandler *errh)
-{
-  int eindex1 = _router->eindex(e1);
-  if (eindex1 < 0)
-    return errh->error("no element named `%s'", e1.cc());
-  int eindex2 = _router->eindex(e2);
-  if (eindex2 < 0)
-    return errh->error("no element named `%s'", e2.cc());
-  _specialize_like[eindex1] = eindex2;
-  return 0;
-}
-
-int
 Specializer::check_specialize(int eindex, ErrorHandler *errh)
 {
-  if (_specialize[eindex] != -97)
-    return _specialize[eindex];
-  _specialize[eindex] = -1;
-  
-  // specialize like something else?
-  if (_specialize_like[eindex] >= 0) {
-    _specialize[eindex] = check_specialize(_specialize_like[eindex], errh);
-    return _specialize[eindex];
-  }
+  int sp = _specialize[eindex];
+  if (sp < 0 || _specials[sp].eindex > -2)
+    return;
+  _specials[sp].eindex = -1;
   
   // get type info
   ElementTypeInfo &old_eti = etype_info(eindex);
-  if (!old_eti.click_name)
-    return errh->warning("no information about element class `%s'",
-			 _router->etype_name(eindex).cc());
+  if (!old_eti.click_name) {
+    errh->warning("no information about element class `%s'",
+		  _router->etype_name(eindex).cc());
+    return;
+  }
   
-  // belongs to a non-specialized class?
-  if (_specializing_classes[old_eti.click_name] <= 0)
-    return -1;
-
   // read source code
   if (!old_eti.read_source)
     read_source(old_eti, errh);
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
-  if (!old_cxxc)
-    return errh->warning("C++ class `%s' not found for element class `%s'",
-			 old_eti.cxx_name.cc(), old_eti.click_name.cc());
+  if (!old_cxxc) {
+    errh->warning("C++ class `%s' not found for element class `%s'",
+		  old_eti.cxx_name.cc(), old_eti.click_name.cc());
+    return;
+  }
 
   // don't specialize if there are no reachable functions
   if (!old_cxxc->find_should_rewrite())
-    return -1;
+    return;
 
   // if we reach here, we should definitely specialize
-  SpecializedClass spc;
+  SpecializedClass &spc = _specials[sp];
   spc.old_click_name = old_eti.click_name;
   spc.click_name = specialized_click_name(_router, eindex);
   spc.cxx_name = click_to_cxx_name(spc.click_name);
   spc.cxxc = 0;
   spc.eindex = eindex;
   add_type_info(spc.click_name, spc.cxx_name);
-  _specials.push_back(spc);
-  return (_specialize[eindex] = _specials.size() - 1);
 }
 
 void
@@ -378,13 +351,13 @@ Specializer::create_connector_methods(SpecializedClass &spc)
   Vector<int> input_port(_ninputs[eindex], -1);
   Vector<int> output_port(_noutputs[eindex], -1);
   for (int i = 0; i < nhook; i++) {
-    if (hf[i].idx == eindex) {
+    if (hf[i].idx == eindex && _specialize[ht[i].idx] >= 0) {
       output_function[hf[i].port] =
 	"specialized_push_" + enew_cxx_type(ht[i].idx);
       output_symbol[hf[i].port] = emangle(ht[i].idx, true);
       output_port[hf[i].port] = ht[i].port;
     }
-    if (ht[i].idx == eindex) {
+    if (ht[i].idx == eindex && _specialize[hf[i].idx] >= 0) {
       input_function[ht[i].port] =
 	"specialized_pull_" + enew_cxx_type(hf[i].idx);
       input_symbol[ht[i].port] = emangle(hf[i].idx, false);
@@ -406,26 +379,25 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
+      if (!input_function[r1])
+	continue;
       sa << "\n  ";
-      if (i < range1.size() - 1) {
-	if (r1 == r2)
-	  sa << "if (i == " << r1 << ") ";
-	else
-	  sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
-      }
+      if (r1 == r2)
+	sa << "if (i == " << r1 << ") ";
+      else
+	sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
       sa << "return " << input_function[r1] << "(input(i).element(), "
 	 << input_port[r1] << ");";
     }
-    if (range1.size() == 0)
-      sa << "\n  return 0;";	// shut up warnings
-    sa << "\n";
+    sa << "\n  return input(i).pull();\n";
     cxxc->find("pull_input")->set_body(sa.take_string());
     
     // save function names
-    for (int i = 0; i < _ninputs[eindex]; i++) {
-      _specfunction_names.push_back(input_function[i]);
-      _specfunction_symbols.push_back(input_symbol[i]);
-    }
+    for (int i = 0; i < _ninputs[eindex]; i++)
+      if (input_function[i]) {
+	_specfunction_names.push_back(input_function[i]);
+	_specfunction_symbols.push_back(input_symbol[i]);
+      }
   }
 
   // create push_output
@@ -442,17 +414,17 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
+      if (!output_function[r1])
+	continue;
       sa << "\n  ";
-      if (i < range1.size() - 1) {
-	if (r1 == r2)
-	  sa << "if (i == " << r1 << ") ";
-	else
-	  sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
-      }
+      if (r1 == r2)
+	sa << "if (i == " << r1 << ") ";
+      else
+	sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
       sa << "{ " << output_function[r1] << "(output(i).element(), "
 	 << output_port[r1] << ", p); return; }";
     }
-    sa << "\n";
+    sa << "\n  output(i).push(p);\n";
     cxxc->find("push_output")->set_body(sa.take_string());
     
     sa.clear();
@@ -461,20 +433,41 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     cxxc->find("push_output_checked")->set_body(sa.take_string());
     
     // save function names
-    for (int i = 0; i < _noutputs[eindex]; i++) {
-      _specfunction_names.push_back(output_function[i]);
-      _specfunction_symbols.push_back(output_symbol[i]);
-    }
+    for (int i = 0; i < _noutputs[eindex]; i++)
+      if (output_function[i]) {
+	_specfunction_names.push_back(output_function[i]);
+	_specfunction_symbols.push_back(output_symbol[i]);
+      }
   }
 }
 
 void
-Specializer::specialize(ErrorHandler *errh)
+Specializer::specialize(const Signatures &sigs, ErrorHandler *errh)
 {
-  _specialize.assign(_nelements, -97);
+  // decide what is to be specialized
+  _specialize = sigs.signature_ids();
+  SpecializedClass spc;
+  spc.eindex = -2;
+  _specials.assign(sigs.nsignatures(), spc);
   for (int i = 0; i < _nelements; i++)
     check_specialize(i, errh);
 
+  // rearrange _specials
+  Vector<int> new_specialize(_specials.size(), 0);
+  int s2 = 0;
+  for (int s = 0; s < _specials.size(); s++)
+    if (_specials[s].eindex >= 0) {
+      if (s2 != s) _specials[s2] = _specials[s];
+      new_specialize[s] = s2;
+      s2++;
+    } else
+      new_specialize[s] = -1;
+  _specials.resize(s2);
+  for (int i = 0; i < _nelements; i++)
+    if (_specialize[i] >= 0)
+      _specialize[i] = new_specialize[_specialize[i]];
+  
+  // actually do the work
   for (int s = 0; s < _specials.size(); s++) {
     create_class(_specials[s]);
     if (_specials[s].cxxc->find("simple_action"))
@@ -601,7 +594,7 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 {
   for (int i = 0; i < _specials.size(); i++)
     em.add(_specials[i].click_name, _specials[i].cxx_name, filename,
-	   full_em.processing_code_click(_specials[i].old_click_name));
+	   full_em.processing_code(_specials[i].old_click_name));
 }
 
 // Vector template instantiation

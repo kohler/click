@@ -14,7 +14,10 @@
 # include <config.h>
 #endif
 #include "tolinux.hh"
+extern "C" {
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+}
 
 ToLinux::ToLinux()
 {

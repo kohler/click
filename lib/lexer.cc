@@ -1021,6 +1021,7 @@ Lexer::yconnection()
       goto relex;
       
      case lexIdent:
+     case '^':
      case '{':
      case '}':
       unlex(t);
@@ -1145,6 +1146,7 @@ Lexer::ystatement(bool nested)
   switch (t.kind()) {
     
    case lexIdent:
+   case '^':
    case '[':
    case '{':
     unlex(t);

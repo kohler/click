@@ -73,6 +73,7 @@ class RouterT : public ElementClassT {
   const String &econfiguration(int) const;
   String &econfiguration(int i)		{ return _elements[i].configuration; }
   int eflags(int i) const		{ return _elements[i].flags; }
+  const String &elandmark(int i) const	{ return _elements[i].landmark; }
   
   int get_eindex(const String &name, int etype_index, const String &configuration, const String &landmark);
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());

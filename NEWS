@@ -1,6 +1,12 @@
 Click NEWS
 
-Version 1.0.3
+Version 1.0.3   9.Apr.2000
+
+* Added `--with-linux[=DIR]' option to `./configure'. Suggested by Richard
+  Mortier <Richard.Mortier@cl.cam.ac.uk>.
+
+* Added `click-check' tool, a static checker for Click configurations.
+  Currently it only checks push and pull processing for correctness.
 
 * Added `--reverse' option to click-xform. Suggested by Mike Burrows
   (Compaq SRC).
@@ -10,13 +16,19 @@ Version 1.0.3
 * Renamed click-specialize tool to click-devirtualize. It's clearer. Also
   fixed several bugs.
 
+* Click-devirtualize now determines automatically whether two specialized
+  elements can share code. As a result, the `--like' option has been
+  removed.
+
 * Removed `default_processing()' method of Element and replaced it with
   `processing()'. Where you once wrote `Processing default_processing()
   const { return PUSH; }', now write `const char *processing() const {
   return PUSH; }'. The new way is more flexible and lets us abstract the
   element's processing code. See Element(3) for details.
 
-* Fixed bugs: RFC2507Decomp didn't compile.
+* Fixed bugs: RFC2507Decomp didn't compile. Rewriter updates. Several bugs
+  caught by recent GCCs; patches supplied by Richard Mortier
+  <Richard.Mortier@cl.cam.ac.uk>.
 
 
 Version 1.0.2   20.Mar.2000

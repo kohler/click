@@ -2,7 +2,6 @@
 #define LEXERT_HH
 #include "error.hh"
 #include <stdio.h>
-class LexerTExtra;
 class RouterT;
 
 enum {
@@ -45,7 +44,6 @@ class LexerT { protected:
   
   String _filename;
   unsigned _lineno;
-  LexerTExtra *_lextra;
   
   bool get_data();
   unsigned skip_line(unsigned);
@@ -76,8 +74,7 @@ class LexerT { protected:
   LexerT(ErrorHandler * = 0);
   virtual ~LexerT();
   
-  void reset(const String &data, const String &filename = String(),
-	     LexerTExtra * = 0);
+  void reset(const String &data, const String &filename = String());
   void clear();
   void set_router(RouterT *);
   
@@ -110,15 +107,6 @@ class LexerT { protected:
   RouterT *router() const		{ return _router; }
   RouterT *take_router();
   
-};
-
-class LexerTExtra { public:
-  
-  LexerTExtra()				{ }
-  virtual ~LexerTExtra()		{ }
-  
-  virtual void require(const String &, ErrorHandler *);
-
 };
 
 #endif

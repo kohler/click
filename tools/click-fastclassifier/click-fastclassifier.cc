@@ -470,7 +470,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
     ArchiveElement &ae = r->archive("elementmap");
     ElementMap em(ae.data);
     for (int i = 0; i < click_names.size(); i++)
-      em.remove_click(click_names[i]);
+      em.remove(click_names[i]);
     ae.data = em.unparse();
     if (!ae.data) ae.name = String();
   }

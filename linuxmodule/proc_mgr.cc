@@ -50,7 +50,8 @@ proc_dir_entry *
 click_new_dynamic_pde()
 {
   if (!free_pde) {
-    proc_dir_entry *new_pde = kmalloc(sizeof(proc_dir_entry) * 48, GFP_ATOMIC);
+    proc_dir_entry *new_pde = (proc_dir_entry *)
+      kmalloc(sizeof(proc_dir_entry) * 48, GFP_ATOMIC);
     if (!new_pde) return 0;
     new_pde[0].next = all_pde;
     all_pde = new_pde;

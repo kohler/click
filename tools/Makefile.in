@@ -66,6 +66,7 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	lib/elementt.cc lib/elementt.hh \
 	lib/lexert.cc lib/lexert.hh \
 	lib/routert.cc lib/routert.hh \
+	lib/processingt.cc lib/processingt.hh \
 	lib/toolutils.cc lib/toolutils.hh \
 	lib/hashmapi.cc \
 	lib/vectori.cc \
@@ -79,6 +80,7 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-devirtualize/Makefile.in \
 	click-devirtualize/click-devirtualize.cc \
 	click-devirtualize/cxxclass.cc click-devirtualize/cxxclass.hh \
+	click-devirtualize/signature.cc click-devirtualize/signature.hh \
 	click-devirtualize/specializer.cc click-devirtualize/specializer.hh \
 	click-fastclassifier/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \

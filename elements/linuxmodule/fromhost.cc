@@ -16,6 +16,14 @@
 #include "fromlinux.hh"
 #include "confparse.hh"
 #include "error.hh"
+extern "C" {
+#define new xxx_new
+#include <asm/types.h>
+#include <asm/uaccess.h>
+#include <linux/inetdevice.h>
+#include <net/route.h>
+#undef new
+}
 
 static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
@@ -64,18 +72,12 @@ FromLinux::init_dev(void)
     goto bad;
   strncpy(_dev->name, _devname.cc(), IFNAMSIZ);
   _dev->init = fl_init;
-  _dev->priv = new struct fl_priv;
-  if (!_dev->priv)
-    goto bad;
-  memset(_dev->priv, 0, sizeof(struct fl_priv));
-  ((struct fl_priv *)(_dev->priv))->fl = this;
+  _dev->priv = (void *)this;
   return 0;
 
  bad:
   if (_dev && _dev->name)
     delete[] _dev->name;
-  if (_dev && _dev->priv)
-    delete _dev->priv;
   delete _dev;
   return -ENOMEM;
 }
@@ -109,10 +111,10 @@ FromLinux::initialize(ErrorHandler *errh)
   int res;
 				// Install fake interface
   if ((res = init_dev()) < 0)
-    return errh->error("fromlinux: error %d initializing device %s\n", 
+    return errh->error("error %d initializing device %s",
 		       res, _devname.cc());
   if ((res = register_netdev(_dev)) < 0)
-    return errh->error("fromlinux: error %d registering device %s\n", 
+    return errh->error("error %d registering device %s",
 		       res, _devname.cc());
 				// Bring up the interface
   struct ifreq ifr;
@@ -126,22 +128,24 @@ FromLinux::initialize(ErrorHandler *errh)
 
   if ((res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0) {
     set_fs(oldfs);
-    return errh->error("fromlinux: error %d setting address for interface "
-		       "%s\n", res, _devname.cc());
+    return errh->error("error %d setting address for interface %s",
+		       res, _devname.cc());
   }
   if ((res = iff_set(&ifr, IFF_UP|IFF_RUNNING)) < 0) {
     set_fs(oldfs);
-    return errh->error("fromlinux: error %d bringing up interface %s\n", 
+    return errh->error("error %d bringing up interface %s", 
 		       res, _devname.cc());
   }
 				// Establish the route
   if ((res = init_rt()) < 0) {
     set_fs(oldfs);
-    return errh->error("fromlinux: error %d initializing route\n", res);
+    return errh->error("error %d initializing route", res);
   }
   if ((res = ip_rt_ioctl(SIOCADDRT, _rt)) < 0) {
+    delete _rt;
+    _rt = 0;
     set_fs(oldfs);
-    return errh->error("fromlinux: error %d establishing route\n", res);
+    return errh->error("error %d establishing route", res);
   }
 
   set_fs(oldfs);
@@ -149,7 +153,7 @@ FromLinux::initialize(ErrorHandler *errh)
 }
 
 void
-FromLinux::uninitialize(void)
+FromLinux::uninitialize()
 {
   int res;
 
@@ -162,7 +166,8 @@ FromLinux::uninitialize(void)
 				// Remove the route
   if (_rt) {
     if ((res = ip_rt_ioctl(SIOCDELRT, _rt)) < 0) {
-      click_chatter("fromlinux: error %d removing route\n", res);
+      click_chatter("FromLinux(%s): error %d removing route\n",
+		    _devname.cc(), res);
     }
     delete _rt;
     _rt = 0;
@@ -171,12 +176,10 @@ FromLinux::uninitialize(void)
   struct ifreq ifr;
   strncpy(ifr.ifr_name, _devname.cc(), IFNAMSIZ);
   if ((res = iff_clear(&ifr, IFF_UP)) < 0)
-    click_chatter("fromlinux: error %d bringing down interface %s\n", 
-		  res, _devname.cc());
+    click_chatter("FromLinux(%s): error %d bringing down interface\n", 
+		  _devname.cc(), res);
   set_fs(oldfs);
 				// Uninstall fake interface
-  if (_dev->priv)
-    delete _dev->priv;
   unregister_netdev(_dev);
   if (_dev->name)
     delete[] _dev->name;
@@ -209,18 +212,16 @@ fl_close(struct device *dev)
 static int
 fl_tx(struct sk_buff *skb, struct device *dev)
 {
-  struct fl_priv *priv = (struct fl_priv *) dev->priv;
-  FromLinux *t = priv->fl;
+  FromLinux *fl = (FromLinux *)dev->priv;
   Packet *p = Packet::make(skb);
-  t->push(0, p);
+  fl->push(0, p);
   return 0;
 }
 
 static struct enet_statistics *
 fl_stats(struct device *dev)
 {
-  struct fl_priv *priv = (struct fl_priv *) dev->priv;
-  return &priv->stats;
+  return ((FromLinux *)dev->priv)->stats();
 }
 
 static int
@@ -265,6 +266,5 @@ iff_clear(struct ifreq *ifr, short flag)
 /*
  * Routing table management
  */
-
 
 EXPORT_ELEMENT(FromLinux)

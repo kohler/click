@@ -22,6 +22,7 @@
 #include "cxxclass.hh"
 #include "archive.hh"
 #include "specializer.hh"
+#include "signature.hh"
 #include "clp.h"
 #include <stdio.h>
 #include <ctype.h>
@@ -38,7 +39,6 @@
 #define CONFIG_OPT		308
 #define NO_DEVIRTUALIZE_OPT	309
 #define DEVIRTUALIZE_OPT	310
-#define LIKE_OPT		311
 #define INSTRS_OPT		312
 #define REVERSE_OPT		313
 
@@ -50,7 +50,6 @@ static Clp_Option options[] = {
   { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ArgString, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "instructions", 'i', INSTRS_OPT, Clp_ArgString, 0 },
-  { "like", 'l', LIKE_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
@@ -86,8 +85,7 @@ specialized_click_name(RouterT *router, int i)
 }
 
 static void
-parse_instruction(const String &text, HashMap<String, int> &specializing,
-		  Vector<String> &like1, Vector<String> &like2,
+parse_instruction(const String &text, Signatures &sigs,
 		  ErrorHandler *errh)
 {
   Vector<String> words;
@@ -98,22 +96,17 @@ parse_instruction(const String &text, HashMap<String, int> &specializing,
   else if (words[0] == "like") {
     if (words.size() < 3)
       errh->error("too few arguments to `like'");
-    for (int i = 2; i < words.size(); i++) {
-      like1.push_back(words[i]);
-      like2.push_back(words[1]);
-    }
   } else if (words[0] == "noclass") {
     if (words.size() < 2)
       errh->error("too few arguments to `noclass'");
     for (int i = 1; i < words.size(); i++)
-      specializing.insert(words[i], 0);
+      sigs.specialize_class(words[i], 0);
   } else
     errh->error("unknown command `%s'", words[0].cc());
 }
 
 static void
-parse_instruction_file(const char *filename, HashMap<String, int> &specializing,
-		       Vector<String> &like1, Vector<String> &like2,
+parse_instruction_file(const char *filename, Signatures &sigs,
 		       ErrorHandler *errh)
 {
   String text = file_string(filename, errh);
@@ -124,7 +117,7 @@ parse_instruction_file(const char *filename, HashMap<String, int> &specializing,
     int pos1 = pos;
     while (pos < len && s[pos] != '\n' && s[pos] != '\r')
       pos++;
-    parse_instruction(text.substring(pos1, pos - pos1), specializing, like1, like2, errh);
+    parse_instruction(text.substring(pos1, pos - pos1), sigs, errh);
     while (pos < len && (s[pos] == '\n' || s[pos] == '\r'))
       pos++;
   }
@@ -183,7 +176,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
     ArchiveElement &ae = r->archive("elementmap");
     ElementMap em(ae.data);
     for (int i = 0; i < new_click_names.size(); i++)
-      em.remove_click(new_click_names[i]);
+      em.remove(new_click_names[i]);
     ae.data = em.unparse();
     if (!ae.data) ae.name = String();
   }
@@ -217,7 +210,6 @@ Options:\n\
   -c, --config                 Write new configuration only.\n\
   -r, --reverse                Reverse devirtualization.\n\
   -n, --no-devirtualize CLASS  Don't devirtualize element class CLASS.\n\
-  -l, --like ELEM1 ELEM2       Devirtualize ELEM1 as if it was ELEM2.\n\
   -i, --instructions FILE      Read devirtualization instructions from FILE.\n\
       --help                   Print this message and exit.\n\
   -v, --version                Print version number and exit.\n\
@@ -245,8 +237,8 @@ main(int argc, char **argv)
   int compile_kernel = 0;
   int compile_user = 0;
   int reverse = 0;
-  Vector<String> like1, like2;
-  HashMap<String, int> specializing(1);
+  Vector<const char *> instruction_files;
+  HashMap<String, int> specializing;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -307,20 +299,8 @@ particular purpose.\n");
       specializing.insert(clp->arg, 0);
       break;
 
-     case LIKE_OPT: {
-       const char *l1 = clp->arg;
-       const char *l2 = Clp_Shift(clp, 1);
-       if (!l2)
-	 Clp_OptionError(clp, "%O requires two arguments");
-       else {
-	 like1.push_back(l1);
-	 like2.push_back(l2);
-       }
-       break;
-     }
-
      case INSTRS_OPT:
-      parse_instruction_file(clp->arg, specializing, like1, like2, errh);
+      instruction_files.push_back(clp->arg);
       break;
 
      case REVERSE_OPT:
@@ -349,24 +329,6 @@ particular purpose.\n");
     exit(1);
   router->flatten(errh);
   
-  // find and parse `elementmap'
-  ElementMap full_elementmap;
-  {
-    String elementmap_fn =
-      clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
-    if (!elementmap_fn)
-      errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
-    else
-      full_elementmap.parse(file_string(elementmap_fn, errh));
-  }
-
-  // parse `elementmap' from router archive
-  if (router->archive_index("elementmap") >= 0)
-    full_elementmap.parse(router->archive("elementmap").data);
-
-  // initialize specializer
-  Specializer specializer(router, full_elementmap);
-
   // open output file
   FILE *outf = stdout;
   if (output_file && strcmp(output_file, "-") != 0) {
@@ -382,6 +344,33 @@ particular purpose.\n");
     exit(0);
   }
   
+  // find and parse `elementmap'
+  ElementMap full_elementmap;
+  {
+    String elementmap_fn =
+      clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
+    if (!elementmap_fn)
+      errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
+    else
+      full_elementmap.parse(file_string(elementmap_fn, errh));
+  }
+
+  // parse `elementmap' from router archive
+  if (router->archive_index("elementmap") >= 0)
+    full_elementmap.parse(router->archive("elementmap").data);
+
+  // initialize signatures
+  Signatures sigs(router);
+
+  // follow instructions from command line
+  {
+    for (int i = 0; i < instruction_files.size(); i++)
+      parse_instruction_file(instruction_files[i], sigs, errh);
+    int thunk = 0; String key; int value;
+    while (specializing.each(thunk, key, value))
+      sigs.specialize_class(key, value);
+  }
+
   // follow instructions embedded in router definition
   int devirtualize_info_class = router->type_index("DevirtualizeInfo");
   for (int i = 0; i < router->nelements(); i++)
@@ -390,19 +379,18 @@ particular purpose.\n");
       Vector<String> args;
       cp_argvec(s, args);
       for (int j = 0; j < args.size(); j++)
-	parse_instruction(args[j], specializing, like1, like2, errh);
+	parse_instruction(args[j], sigs, errh);
     }
+
+  // analyze signatures to determine specialization
+  sigs.analyze(full_elementmap);
   
-  // mark nonspecialized classes, if any
-  specializer.set_specializing_classes(specializing);
-  for (int i = 0; i < like1.size(); i++)
-    specializer.set_specialize_like(like1[i], like2[i], errh);
-  
+  // initialize specializer
+  Specializer specializer(router, full_elementmap);
+  specializer.specialize(sigs, errh);
+
   // find Click binaries
   String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
-
-  // actually specialize
-  specializer.specialize(errh);
 
   // quit early if nothing was done
   if (specializer.nspecials() == 0) {

@@ -4,6 +4,7 @@
 class RouterT;
 class ErrorHandler;
 class ElementMap;
+class Signatures;
 
 String click_to_cxx_name(const String &);
 String specialized_click_name(RouterT *, int);
@@ -34,9 +35,6 @@ class Specializer {
   Vector<int> _noutputs;
   Vector<int> _specialize;
 
-  HashMap<String, int> _specializing_classes;
-  Vector<int> _specialize_like;
-  
   HashMap<String, int> _etinfo_map;
   Vector<ElementTypeInfo> _etinfo;
   HashMap<String, int> _header_file_map;
@@ -54,7 +52,7 @@ class Specializer {
   
   void parse_source_file(const String &, bool, String *);
   void read_source(ElementTypeInfo &, ErrorHandler *);
-  int check_specialize(int, ErrorHandler *);
+  void check_specialize(int, ErrorHandler *);
   void create_class(SpecializedClass &);
   void do_simple_action(SpecializedClass &);
   void create_connector_methods(SpecializedClass &);
@@ -72,10 +70,7 @@ class Specializer {
   const ElementTypeInfo &etype_info(int) const;
   void add_type_info(const String &, const String &, const String & =String());
 
-  void set_specializing_classes(const HashMap<String, int> &);
-  int set_specialize_like(String, String, ErrorHandler *);
-
-  void specialize(ErrorHandler *);
+  void specialize(const Signatures &, ErrorHandler *);
   void fix_elements();
 
   int nspecials() const				{ return _specials.size(); }

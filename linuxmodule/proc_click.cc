@@ -331,7 +331,7 @@ register_handler(proc_dir_entry *directory, const Router::Handler *h)
   else
     which = (h - root_handlers);
   click_register_new_dynamic_pde
-    (directory, pattern, h->namelen, h->name, which);
+    (directory, pattern, h->namelen, h->name, (void *)which);
 }
 
 //
@@ -439,7 +439,7 @@ init_router_element_procs()
     ndigits++;
   if (ndigits != numbers_ndigits) {
     kfree(numbers);
-    numbers = kmalloc(ndigits * top, GFP_ATOMIC);
+    numbers = (char *)kmalloc(ndigits * top, GFP_ATOMIC);
     if (numbers) {
       for (int i = 1; i < top; i++)
 	sprintf(numbers + (i-1)*ndigits, "%d", i);
@@ -450,7 +450,8 @@ init_router_element_procs()
   
   if (!numbers) return;
   
-  element_pdes = kmalloc(sizeof(proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
+  element_pdes = (proc_dir_entry **)
+    kmalloc(sizeof(proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
   if (!element_pdes) return;
   for (int i = 0; i < 2*nelements; i++)
     element_pdes[i] = 0;

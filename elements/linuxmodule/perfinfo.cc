@@ -37,7 +37,7 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
   if (_init)
     return errh->error("only one PerfInfo element allowed per configuration"); 
 
-  HashMap<String, unsigned> metrics;
+  HashMap<String, int> metrics(0);
   metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
   metrics.insert("INST_RETIRED", 0xC0);
   metrics.insert("IFU_IFETCH", 0x80);

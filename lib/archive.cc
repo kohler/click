@@ -39,8 +39,8 @@
 */
 
 static int
-read_int(const char *data, int max_len,
-	 const char *type, ErrorHandler *errh, int base = 10)
+read_uint(const char *data, int max_len,
+	  const char *type, ErrorHandler *errh, int base = 10)
 {
   char buf[17];
   char *end;
@@ -87,7 +87,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
       if (longname_ae.data)
 	errh->error("two long name sections in archive");
       
-      size = read_int(data+p+48, 10, "size", errh);
+      size = read_uint(data+p+48, 10, "size", errh);
       if (size < 0 || p+60+size > len)
 	return errh->error("truncated archive");
 
@@ -101,7 +101,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
       int bsd_longname = 0;
       int j;
       if (data[p] == '/' && data[p+1] >= '0' && data[p+1] <= '9') {
-	int offset = read_int(data+p+1, 15, "long name", errh);
+	int offset = read_uint(data+p+1, 15, "long name", errh);
 	if (!longname_ae.data || offset < 0 || offset >= longname_ae.data.length())
 	  errh->error("bad long name in archive");
 	else {
@@ -114,7 +114,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
 	}
       } else if (data[p+0] == '#' && data[p+1] == '1' && data[p+2] == '/'
 		 && data[p+3] >= '0' && data[p+3] <= '9') {
-	bsd_longname = read_int(data+p+3, 13, "long name", errh);
+	bsd_longname = read_uint(data+p+3, 13, "long name", errh);
       } else {
 	for (j = 0; j < 16 && data[p+j] != '/' && !isspace(data[p+j]); j++)
 	  /* nada */;
@@ -122,11 +122,11 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
       }
 
       // read date, uid, gid, mode, size
-      ae.date = read_int(data+p+16, 12, "date", errh);
-      ae.uid = read_int(data+p+28, 6, "uid", errh);
-      ae.gid = read_int(data+p+34, 6, "gid", errh);
-      ae.mode = read_int(data+p+40, 8, "mode", errh, 8);
-      size = read_int(data+p+48, 10, "size", errh);
+      ae.date = read_uint(data+p+16, 12, "date", errh);
+      ae.uid = read_uint(data+p+28, 6, "uid", errh);
+      ae.gid = read_uint(data+p+34, 6, "gid", errh);
+      ae.mode = read_uint(data+p+40, 8, "mode", errh, 8);
+      size = read_uint(data+p+48, 10, "size", errh);
       if (size < 0 || p+60+size > len)
 	return errh->error("truncated archive");
 

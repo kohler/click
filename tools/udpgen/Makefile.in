@@ -10,6 +10,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
+linuxdir = @linuxdir@
 
 VPATH = .:$(top_srcdir)/$(subdir)
 
@@ -40,7 +41,7 @@ CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
 
 DEFS = @DEFS@ -D__KERNEL__ -DMODULE
-INCLUDES = -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I/usr/src/linux/include
+INCLUDES = -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

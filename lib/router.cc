@@ -367,12 +367,12 @@ Router::make_hookpidxes()
 // PROCESSING
 
 int
-Router::processing_error(const Hookup &hfrom, const Hookup &hto, int idx,
+Router::processing_error(const Hookup &hfrom, const Hookup &hto, bool aggie,
 			 int processing_from, ErrorHandler *errh)
 {
   const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
-  if (idx < _hookup_from.size())
+  if (!aggie)
     errh->error("`%e' %s output %d connected to `%e' %s input %d",
 		_elements[hfrom.idx], type1, hfrom.port,
 		_elements[hto.idx], type2, hto.port);
@@ -413,12 +413,16 @@ Router::check_push_and_pull(ErrorHandler *errh)
     }
   
   int before = errh->nerrors();
+  int first_agnostic = _hookup_from.size();
   
   // spread personalities
   while (true) {
     
     bool changed = false;
     for (int c = 0; c < hookup_from.size(); c++) {
+      if (hookup_from[c].idx < 0)
+	continue;
+      
       int offf = output_pidx(hookup_from[c]);
       int offt = input_pidx(hookup_to[c]);
       int pf = output_pers[offf];
@@ -439,12 +443,9 @@ Router::check_push_and_pull(ErrorHandler *errh)
 	  output_pers[offf] = pt;
 	  changed = true;
 	} else if (pf != pt) {
-	  processing_error(hookup_from[c], hookup_to[c], c, pf, errh);
-	  hookup_from[c] = hookup_from.back();
-	  hookup_to[c] = hookup_to.back();
-	  hookup_from.pop_back();
-	  hookup_to.pop_back();
-	  c--;
+	  processing_error(hookup_from[c], hookup_to[c], c >= first_agnostic,
+			   pf, errh);
+	  hookup_from[c].idx = -1;
 	}
 	break;
 	

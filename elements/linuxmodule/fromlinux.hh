@@ -25,32 +25,11 @@
  */
 
 extern "C" {
-#include <asm/types.h>
-#include <asm/uaccess.h>
-#include <linux/in.h>
-#include <linux/if.h>
-#include <linux/if_ether.h>
 #include <linux/netdevice.h>
 #include <linux/route.h>
-#include <string.h>
-#include <errno.h>
 }
 
 class FromLinux : public Element {
- public:
-  
-  FromLinux();
-  ~FromLinux();
-  FromLinux *clone() const;
-  
-  const char *class_name() const	{ return "FromLinux"; }
-  const char *processing() const	{ return PUSH; }
-  
-  int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void uninitialize();
-
-private:
 
   String _devname;
   IPAddress _destaddr;
@@ -59,13 +38,26 @@ private:
   struct device *_dev;
   struct rtentry *_rt;
 
-  int init_rt(void);
-  int init_dev(void);
-};
+  struct enet_statistics _stats;
+  
+  int init_rt();
+  int init_dev();
 
-struct fl_priv {
-  struct enet_statistics stats;
-  FromLinux *fl;
+ public:
+  
+  FromLinux();
+  ~FromLinux();
+  FromLinux *clone() const;
+  
+  const char *class_name() const	{ return "FromLinux"; }
+  const char *processing() const	{ return PUSH; }
+
+  struct enet_statistics *stats() const	{ return &_stats; }
+  
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
+
 };
 
 #endif FROMLINUX_HH

@@ -418,15 +418,15 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(unregister_netdevice_notifier);
  
 +/* Click */
-+EXPORT_SYMBOL(register_net_in);
-+EXPORT_SYMBOL(unregister_net_in);
-+EXPORT_SYMBOL(register_net_out);
-+EXPORT_SYMBOL(unregister_net_out);
-+EXPORT_SYMBOL(ptype_dispatch);
++EXPORT_SYMBOL(register_net_in);	/* Click */
++EXPORT_SYMBOL(unregister_net_in);	/* Click */
++EXPORT_SYMBOL(register_net_out);	/* Click */
++EXPORT_SYMBOL(unregister_net_out);	/* Click */
++EXPORT_SYMBOL(ptype_dispatch);		/* Click */
 +struct inet_protocol *inet_get_protocol(unsigned char prot);
-+EXPORT_SYMBOL(inet_get_protocol);
++EXPORT_SYMBOL(inet_get_protocol);	/* Click */
 +extern int (*udpcount_hook)(struct sk_buff *skb);
-+EXPORT_SYMBOL(udpcount_hook);
++EXPORT_SYMBOL(udpcount_hook);		/* Click */
 +
  /* support for loadable net drivers */
  #ifdef CONFIG_NET

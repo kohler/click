@@ -1,4 +1,5 @@
 SHELL = @SHELL@
+@SUBMAKE@
 
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
@@ -37,8 +38,8 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
-	elementt.o routert.o lexert.o confparse.o archive.o toolutils.o \
-	clp.o @LIBOBJS@
+	elementt.o routert.o lexert.o confparse.o archive.o processingt.o \
+	toolutils.o clp.o @LIBOBJS@
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@

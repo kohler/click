@@ -12,7 +12,6 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 datadir = @datadir@/click
-mandir = @mandir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
 
@@ -38,7 +37,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = cxxclass.o specializer.o click-devirtualize.o
+OBJS = cxxclass.o specializer.o signature.o click-devirtualize.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
