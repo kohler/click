@@ -16,10 +16,10 @@ CLICK_DECLS
  *     [ETT element], [METRIC GridGenericMetric] )
  * =d
  * DSR-inspired ad-hoc routing protocol.
- * Input 0: Incoming ethernet packets for me
+ * Input 0: packets that I receive off the wire
  * Output 0: Outgoing ethernet packets that I forward
  * Output 1: outgoing ethernet packets originating from me
- * Output 2: IP packets for higher layer
+ * Output 2: packets that were addressed to me.
  *
  * Normally usged in conjuction with ETT element
  *

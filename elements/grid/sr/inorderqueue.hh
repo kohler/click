@@ -35,13 +35,14 @@ class InOrderQueue : public NotifierQueue { public:
 private:
     int _drops;
 
-    class FlowTableEntry {
+    class PathInfo {
     public:
-	class IPFlowID _id;
+	Path _p;
+	int _seq;
 	struct timeval _last_tx;
-	tcp_seq_t _th_seq;
-	FlowTableEntry() { }
-	FlowTableEntry(IPFlowID id) : _id(id) { }
+
+	PathInfo() : _p(), _seq(0) { }
+	PathInfo(Path p) : _p(p), _seq(0) { }
 
 	struct timeval last_tx_age() {
 	    struct timeval age;
@@ -52,9 +53,9 @@ private:
 	}
     };
     
-    typedef HashMap<IPFlowID, FlowTableEntry> FlowTable;
-    typedef FlowTable::const_iterator FlowIter;
-    FlowTable _flows;
+    typedef HashMap<Path, PathInfo> PathTable;
+    typedef PathTable::const_iterator PathIter;
+    PathTable _paths;
     
 
     struct yank_filter {
@@ -82,6 +83,7 @@ private:
 					   void *, ErrorHandler *errh); 
     int set_packet_timeout(ErrorHandler *, unsigned int);
 
+    PathInfo *find_path_info(Path p);
     static String static_print_debug(Element *, void *);
     static String static_print_packet_timeout(Element *, void *);
     

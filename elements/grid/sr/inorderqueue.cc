@@ -71,6 +71,7 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   int new_capacity = 1000;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
+		    "LENGTH", cpUnsigned, "maximum queue length", &new_capacity,
 		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &packet_to,
 		    "DEBUG", cpBool, "Debug", &_debug,
                     0);
@@ -94,25 +95,89 @@ InOrderQueue::run_timer()
     _timer.schedule_after_ms(10000);
 }
 
+
+InOrderQueue::PathInfo *
+InOrderQueue::find_path_info(Path p) 
+{
+
+    PathInfo *nfo = _paths.findp(p);
+    
+    if (nfo) {
+	return nfo;
+    } 
+
+    _paths.insert(p, PathInfo(p));
+    return _paths.findp(p);
+}
 bool
 InOrderQueue::ready_for(const Packet *p_in) {
 
-    if (p_in->ip_header()->ip_p != IP_PROTO_TCP) {
-	/* non tcp packets always just go */
+    click_ether *eh = (click_ether *) p_in->data();
+    struct srpacket *pk = (struct srpacket *) (eh+1);
+    Path p = pk->get_path();
+
+    PathInfo *nfo = _paths.findp(p);
+
+    int seq = pk->data_seq();
+
+    if (seq == nfo->_seq + 1) {
+	/* this is the normal case */
+	nfo->_seq = max(nfo->_seq, seq);
+	click_gettimeofday(&nfo->_last_tx);
 	return true;
     }
 
-    IPFlowID flowid = IPFlowID(p_in);
-    tcp_seq_t th_seq = p_in->tcp_header()->th_seq;
-    FlowTableEntry *match = _flows.findp(flowid);
-    struct timeval age = match->last_tx_age();
-
-    if (th_seq == match->_th_seq) {
+    if (!seq || !nfo->_seq) {
+	/* reset on either end*/
+	if (_debug) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    StringAccum sa;
+	    sa << id() << " " << now;
+	    sa << " reset [" << path_to_string(nfo->_p) << "]";
+	    sa << " nfo_seq " << nfo->_seq;
+	    sa << " pk_seq " << seq;
+	    click_chatter("%s", sa.take_string().cc());
+	}
+	nfo->_seq = seq;
+	click_gettimeofday(&nfo->_last_tx);
 	return true;
     }
-
-    return timercmp(&age, &_packet_timeout, >);
     
+    if (seq <= nfo->_seq) {
+	if (_debug) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    StringAccum sa;
+	    sa << id() << " " << now;
+	    sa << " <= [" << path_to_string(nfo->_p) << "]";
+	    sa << " nfo_seq " << nfo->_seq;
+	    sa << " pk_seq " << seq;
+	    click_chatter("%s", sa.take_string().cc());
+	}
+	return true;
+    }
+
+
+    struct timeval age = nfo->last_tx_age();
+    if (timercmp(&age, &_packet_timeout, >)) {
+	if (_debug) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    StringAccum sa;
+	    sa << id() << " " << now;
+	    sa << " timeout [" << path_to_string(nfo->_p) << "]";
+	    sa << " nfo_seq " << nfo->_seq;
+	    sa << " pk_seq " << seq;
+	    sa << " " << age;
+	    click_chatter("%s", sa.take_string().cc());
+	}
+	nfo->_seq = seq;
+	click_gettimeofday(&nfo->_last_tx);
+	return true;
+    }
+
+    return false;
 }
 
 Packet *
@@ -121,8 +186,12 @@ InOrderQueue::pull(int)
     Packet *packet = NULL;
     packet = yank1(yank_filter(this));
 
-    if (!packet) {
-	sleep_listeners();
+    if (!size()) {
+	if (++_sleepiness == SLEEPINESS_TRIGGER) {
+	    sleep_listeners();	
+	}
+    } else {
+	_sleepiness = 0;
     }
     return packet;
 }
@@ -132,45 +201,55 @@ InOrderQueue::pull(int)
 int 
 InOrderQueue::bubble_up(Packet *p_in)
 {
+    click_ether *eh = (click_ether *) p_in->data();
+    struct srpacket *pk = (struct srpacket *) (eh+1);
+    Path p = pk->get_path();
     bool reordered = false;
-    if (p_in->ip_header()->ip_p == IP_PROTO_TCP) {
-	IPFlowID id = IPFlowID(p_in);
-	const click_tcp *tcph = p_in->tcp_header();
-	
-
-	for (int x = _head; x != _tail; x = next_i(x)) {
-	    IPFlowID id2 = IPFlowID(_q[x]);
-	    if (_q[x]->ip_header()->ip_p == IP_PROTO_TCP && id == id2) {
-		const click_tcp *tcph2 = _q[x]->tcp_header();
-		if (tcph->th_seq == tcph2->th_seq) {
-		    /* packet dup */
-		    return 0;
-		} else if (SEQ_LT(tcph->th_seq, tcph2->th_seq)) {
-		    if (!reordered) {
-			reordered = true;
-			struct timeval now;
-			click_gettimeofday(&now);
-			StringAccum sa;
-			sa << this;
-			sa << " " << id;
-			sa << " reordering ";
-			sa << " tcph->seq " << tcph->th_seq;
-			sa << " tcph2->seq " << tcph2->th_seq;
-			click_chatter("%s", sa.take_string().cc());
-		    }
-		    Packet *tmp = _q[x];
-		    _q[x] = p_in;
-		    p_in = tmp;
+    for (int x = _head; x != _tail; x = next_i(x)) {
+	click_ether *eh2 =  (click_ether *) _q[x]->data();
+	struct srpacket *pk2 = (struct srpacket *) (eh2+1);
+	Path p2 = pk2->get_path();
+	if (p == p2) {
+	    if (pk->data_seq() == pk2->data_seq()) {
+		/* packet dup */
+		return 0;
+	    } else if (pk->data_seq() < pk2->data_seq()) {
+		if (!reordered) {
+		    reordered = true;
+		    struct timeval now;
+		    click_gettimeofday(&now);
+		    StringAccum sa;
+		    sa << "InOrderQueue " << now;
+		    sa << " reordering ";
+		    sa << " pk->seq " << pk->data_seq();
+		    sa << " pk2->seq " << pk2->data_seq();
+		    sa << " on ";
+		    sa << path_to_string(p);
+		    click_chatter("%s", sa.take_string().cc());
 		}
-		
+		Packet *tmp = _q[x];
+		_q[x] = p_in;
+		p_in = tmp;
+		p = p2;
 	    }
-	    
 	}
+
     }
 
-    if (!enq(p_in) && _drops == 0) {
-	click_chatter("%{element}: overflow", this);
-	_drops++;
+    eh = (click_ether *) p_in->data();
+    pk = (struct srpacket *) (eh+1);
+
+    PathInfo *nfo = find_path_info(p);
+    if (!enq(p_in)) {
+	pk->set_flag(FLAG_ECN);
+	struct timeval now;
+	click_gettimeofday(&now);
+	StringAccum sa;
+	sa << "TokenQueue " << now;
+	sa << " drop";
+	sa << " pk->seq " << pk->data_seq();
+	sa << path_to_string(nfo->_p);
+	click_chatter("%s", sa.take_string().cc());
     }
     return 0;
 
@@ -198,10 +277,10 @@ InOrderQueue::print_stats()
 
   struct timeval now;
   click_gettimeofday(&now);
-  for(FlowIter iter = _flows.begin(); iter; iter++) {
-    FlowTableEntry f = iter.value();
-    struct timeval age = f.last_tx_age();
-    sa << f._id << " seq " << f._th_seq << " age " << age << "\n";
+  for(PathIter iter = _paths.begin(); iter; iter++) {
+      PathInfo f = iter.value();
+      struct timeval age = f.last_tx_age();
+      sa << path_to_string(f._p) << " seq " << f._seq << " age " << age << "\n";
   }
 
   return sa.take_string();

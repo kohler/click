@@ -303,14 +303,11 @@ SRForwarder::push(int port, Packet *p_in)
 
   if(pk->next() == pk->num_hops() - 1){
     // I'm the ultimate consumer of this data.
-    int extra = pk->hlen_wo_data() + sizeof(click_ether);
-    p->pull(extra);
     /*
      * set the dst to the gateway it came from 
      * this is kinda weird.
      */
     SET_MISC_IP_ANNO(p, pk->get_hop(0));
-
     output(2).push(p);
     return;
   } 
