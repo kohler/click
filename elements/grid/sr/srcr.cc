@@ -37,8 +37,6 @@ SRCR::SRCR()
      _datas(0), 
      _databytes(0),
      _link_table(0),
-     _link_stat(0), 
-     _rx_stats(0),
      _arp_table(0),
      _ett(0)
 
@@ -62,14 +60,11 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpEtherAddress, "Ethernet Address", &_eth,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "RX", cpElement, "RXStats element", &_rx_stats,
 		    "ETT", cpElement, "ETT element", &_ett,
                     0);
 
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LT LinkTable element is not a LinkTable");
-  if (_rx_stats && _rx_stats->cast("RXStats") == 0) 
-    return errh->error("RX element is not a RXStats");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a Arptable");
   if (_ett && _ett->cast("ETT") == 0) 
@@ -96,27 +91,17 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 int
-SRCR::get_metric_to(IPAddress n)
+SRCR::get_metric(IPAddress)
 {
-  if (_ett) {
-    return _ett->get_metric_to(n);
-  }
-  return 1;
+  return 0;
 }
 
-int
-SRCR::get_metric_from(IPAddress n)
-{
-  if (_ett) {
-    return _ett->get_metric_from(n);
-  }
-  return 1;
-}
 void
 SRCR::update_link(IPAddress from, IPAddress to, int metric) 
 {
   if (_ett) {
     _ett->update_link(from, to, metric);
+    _ett->update_link(to, from, metric);
   }
 
 }
@@ -214,16 +199,10 @@ SRCR::push(int port, Packet *p_in)
   for(int i = 0; i < pk->num_hops()-1; i++) {
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
-    int mf = pk->get_fwd_metric(i);
-    int mr = pk->get_rev_metric(i);
-    if (mf != 0 && _link_table) {
-      click_chatter("updating %s -> %d -> %s", a.s().cc(), mf, b.s().cc());
-      update_link(a,b,mf);
-    }
-
-    if (mr != 0 && _link_table) {
-      click_chatter("updating %s <- %d <- %s", a.s().cc(), mr, b.s().cc());
-      update_link(a,b,mr);
+    int m = pk->get_metric(i);
+    if (m != 0 && _link_table) {
+      click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
+      update_link(a,b,m);
     }
   }
   
@@ -266,23 +245,16 @@ SRCR::push(int port, Packet *p_in)
 
   srcr_assert(pk->next() < 8);
   IPAddress nxt = pk->get_hop(pk->next());
-  int to_prev_metric = get_metric_to(prev);
-  int to_nxt_metric = get_metric_to(nxt);
+  int prev_metric = get_metric(prev);
     
-  pk_out->set_fwd_metric(pk_out->next(), to_nxt_metric);
-  pk_out->set_rev_metric(pk_out->next() - 2, to_prev_metric);
+  pk_out->set_metric(pk_out->next() - 2, prev_metric);
 
   if (_link_table) {
     click_chatter("updating %s -> %d -> %s", 
 		  prev.s().cc(), 
-		  to_prev_metric,  
+		  prev_metric,  
 		  _ip.s().cc());
-    update_link(_ip, prev, to_prev_metric);
-    click_chatter("updating %s -> %d -> %s", 
-		  _ip.s().cc(),
-		  to_nxt_metric,  
-		  nxt.s().cc());
-    update_link(_ip, nxt, to_nxt_metric);
+    update_link(_ip, prev, prev_metric);
   }
 
 

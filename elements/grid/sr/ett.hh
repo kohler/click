@@ -62,31 +62,13 @@ class ETT : public Element {
   void push(int, Packet *);
   void run_timer();
 
-
-
   static unsigned int jiff_to_ms(unsigned int j)
   { return (j * 1000) / CLICK_HZ; }
 
   static unsigned int ms_to_jiff(unsigned int m)
   { return (CLICK_HZ * m) / 1000; }
 
-  static int rate_to_metric(int rate) {
-    switch(rate) {
-    case 11:
-      return 1<<2;
-    case 5:
-      return 1<<3;
-    case 2:
-      return 1<<4;
-    case 1:
-      return 1<<5;
-    default:
-      return 1<<6;
-    }
-
-  }
-  int get_metric_from(IPAddress other);
-  int get_metric_to(IPAddress other);
+  int get_metric(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
   static String route_to_string(Vector<IPAddress> s);
 private:
@@ -130,6 +112,7 @@ private:
 
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
+  int _warmup;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
@@ -142,7 +125,7 @@ private:
 
   class SRCR *_srcr;
   class LinkTable *_link_table;
-  class RXStats *_rx_stats;
+  class LinkStat *_link_stat;
   class ARPTable *_arp_table;
 
   // Statistics for handlers.
@@ -163,7 +146,7 @@ private:
   void got_sr_pkt(Packet *p_in);
   void start_query(IPAddress);
   void process_query(struct sr_pkt *pk);
-  void forward_query(Seen s, Vector<IPAddress> hops, Vector<int> fwd_metrics, Vector<int> rev_metrics);
+  void forward_query(Seen s, Vector<IPAddress> hops, Vector<int> rev_metrics);
   void start_reply(IPAddress src, IPAddress dst, u_long seq);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);

@@ -34,8 +34,9 @@ CLICK_DECLS
 ETT::ETT()
   :  Element(4,2),
      _timer(this), 
+     _warmup(0),
      _gw("255.255.255.255"),
-     _rx_stats(0),
+     _link_stat(0),
      _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
@@ -81,15 +82,15 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
 		    "GW", cpBool, "Gateway", &_is_gw,
-		    "RX", cpElement, "RXStats element", &_rx_stats,
+		    "LS", cpElement, "LinkStat element", &_link_stat,
                     0);
 
   if (_srcr && _srcr->cast("SRCR") == 0) 
     return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_rx_stats && _rx_stats->cast("RXStats") == 0) 
-    return errh->error("RX element is not a RXStats");
+  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
+    return errh->error("Link element is not a LinkStat");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a Arptable");
 
@@ -114,6 +115,9 @@ ETT::initialize (ErrorHandler *)
 void
 ETT::run_timer ()
 {
+  if (_warmup <= 10) {
+    _warmup++;
+  }
   _timer.schedule_after_ms(1000);
 }
 
@@ -185,35 +189,39 @@ ETT::send(WritablePacket *p)
 
 
 int
-ETT::get_metric_from(IPAddress neighbor)
+ETT::get_metric(IPAddress other)
 {
-  EtherAddress eth;
-  eth = _arp_table->lookup(neighbor);
-  if (_rx_stats && eth != _bcast) {
-    return rate_to_metric(_rx_stats->get_rate(eth));
+  u_short dft = 0; // default metric
+  if(_link_stat){
+    unsigned int tau;
+    struct timeval tv;
+    unsigned int frate, rrate;
+    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
+    if(res == false)
+      return dft;
+    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
+    if(res == false)
+      return dft;
+    if(frate == 0 || rrate == 0)
+      return dft;
+    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
+    return m;
+  } else {
+    return dft;
   }
-  return rate_to_metric(0);
-}
-
-int
-ETT::get_metric_to(IPAddress)
-{
-  return rate_to_metric(0);
 }
 
 void
 ETT::update_link(IPAddress from, IPAddress to, int metric) {
+  click_chatter("ETT %s: updating link %s %d %s\n",
+		id().cc(),
+		from.s().cc(),
+		metric,
+		to.s().cc());
   _link_table->update_link(from, to, metric);
+  _link_table->update_link(to, from, metric);
 }
-static inline bool power_of_two(int x)
-{
-  int p = 1;
 
-  while (x < p) {
-    p *= 2;
-  }
-  return (x == p);
-}
 // Continue flooding a query by broadcast.
 // Maintain a list of querys we've already seen.
 void
@@ -225,16 +233,14 @@ ETT::process_query(struct sr_pkt *pk1)
   int si;
 
   Vector<IPAddress> hops;
-  Vector<int> fwd_metrics;
-  Vector<int> rev_metrics;
+  Vector<int> metrics;
 
-  int fwd_metric = 0;
+  int metric = 0;
   for(int i = 0; i < pk1->num_hops(); i++) {
     IPAddress hop = IPAddress(pk1->get_hop(i));
     if (i != pk1->num_hops() - 1) {
-      fwd_metrics.push_back(pk1->get_fwd_metric(i));
-      rev_metrics.push_back(pk1->get_rev_metric(i));
-      fwd_metric += pk1->get_fwd_metric(i);
+      metrics.push_back(pk1->get_metric(i));
+      metric += pk1->get_metric(i);
     }
     hops.push_back(hop);
     if (hop == _ip) {
@@ -246,7 +252,7 @@ ETT::process_query(struct sr_pkt *pk1)
     }
   }
   /* also get the metric from the neighbor */
-  fwd_metric += get_metric_from(pk1->get_hop(pk1->num_hops()-1));
+  metric += get_metric(pk1->get_hop(pk1->num_hops()-1));
 
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
@@ -258,21 +264,19 @@ ETT::process_query(struct sr_pkt *pk1)
     _seen.push_back(Seen(src, dst, seq, 0));
   }
   _seen[si]._count++;
-  if (_seen[si]._metric && _seen[si]._metric <= fwd_metric) {
+  if (_seen[si]._metric && _seen[si]._metric <= metric) {
     /* the metric is worse that what we've seen*/
     return;
   }
 
-  _seen[si]._metric = fwd_metric;
+  _seen[si]._metric = metric;
 
   hops.push_back(_ip);
-  int fwd = get_metric_from(pk1->get_hop(pk1->num_hops()-1));
-  int rev = get_metric_to(pk1->get_hop(pk1->num_hops()-1));
-  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), rev);
-  update_link(pk1->get_hop(pk1->num_hops()-1), _ip, fwd);
+  int m = get_metric(pk1->get_hop(pk1->num_hops()-1));
+  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), m);
+  update_link(pk1->get_hop(pk1->num_hops()-1), _ip, m);
   
-  fwd_metrics.push_back(fwd);
-  rev_metrics.push_back(rev);
+  metrics.push_back(m);
 
   click_gettimeofday(&_seen[si]._when);
   
@@ -286,21 +290,16 @@ ETT::process_query(struct sr_pkt *pk1)
   } else {
     /* query for someone else */
     click_chatter("ETT %s: forwarding immediately", _ip.s().cc());
-    forward_query(_seen[si], hops, fwd_metrics, rev_metrics);
+    forward_query(_seen[si], hops, metrics);
   }
 
 }
 void
-ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<int> fwd_metrics, Vector<int> rev_metrics)
+ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<int> metrics)
 {
   int nhops = hops.size();
 
-  click_chatter("hops = %d, fwd =%d, rev = %d\n",
-		hops.size(),
-		fwd_metrics.size(),
-		rev_metrics.size());
-  ett_assert(hops.size() == fwd_metrics.size()+1);
-  ett_assert(hops.size() == rev_metrics.size()+1);
+  ett_assert(hops.size() == metrics.size()+1);
 
   //click_chatter("forward query called");
   int len = sr_pkt::len_wo_data(nhops);
@@ -321,8 +320,7 @@ ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<int> fwd_metrics, Vect
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_fwd_metric(i, fwd_metrics[i]);
-    pk->set_rev_metric(i, rev_metrics[i]);
+    pk->set_metric(i, metrics[i]);
   }
 
 
@@ -398,10 +396,8 @@ void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
   }
 
   for(i = 0; i < path.size() - 1; i++) {
-    int fwd = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
-    int rev = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
-    pk->set_fwd_metric(i, fwd);
-    pk->set_rev_metric(i, rev);
+    int m = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
+    pk->set_metric(i, m);
   }
 
   send(p);
@@ -453,6 +449,11 @@ ETT::route_to_string(Vector<IPAddress> s)
 void
 ETT::push(int port, Packet *p_in)
 {
+  if (_warmup < 10) {
+    click_chatter("ETT %s: still warming up, dropping packet\n", id().cc());
+    p_in->kill();
+    return;
+  }
   if (port == 2 || port == 3) {
     bool sent_packet = false;
     IPAddress dst = p_in->dst_ip_anno();
@@ -541,14 +542,10 @@ ETT::push(int port, Packet *p_in)
     for(int i = 0; i < pk->num_hops()-1; i++) {
       IPAddress a = pk->get_hop(i);
       IPAddress b = pk->get_hop(i+1);
-      int fwd = pk->get_fwd_metric(i);
-      int rev = pk->get_rev_metric(i);
-      if (fwd != 0) {
-	update_link(a,b,fwd);
-      }
-
-      if (rev != 0) {
-	update_link(b,a,rev);
+      int m = pk->get_metric(i);
+      if (m != 0) {
+	update_link(a,b,m);
+	update_link(b,a,m);
       }
     }
     

@@ -31,7 +31,7 @@ enum SRCRPacketType { PT_QUERY = (1<<0),
 
 
 
-static const uint8_t _srcr_version = 0x02;
+static const uint8_t _srcr_version = 0x03;
 
 // Packet format.
 struct sr_pkt {
@@ -52,8 +52,7 @@ struct sr_pkt {
   
   in_addr extra1;
   in_addr extra2;
-  uint8_t extra_fwd;
-  uint8_t extra_rev;
+  uint8_t extra;
   
   uint32_t _seq;   // Originator's sequence number.
 
@@ -84,7 +83,7 @@ struct sr_pkt {
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
   
   static size_t len_wo_data(int nhops) {
-    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + nhops * sizeof(uint8_t)*2;
+    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + nhops * sizeof(uint16_t);
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
@@ -111,15 +110,11 @@ struct sr_pkt {
   uint16_t data_len() {
     return ntohs(_dlen);
   }
-  uint8_t get_fwd_metric(int h) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
+  uint8_t get_metric(int h) { 
+    uint16_t *ndx = (uint16_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     return ndx[h];
   }
 
-  uint8_t get_rev_metric(int h) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr) + num_hops() * sizeof(uint8_t));
-    return ndx[h];
-  }
   IPAddress get_hop(int h) { 
     in_addr *ndx = (in_addr *) (this + 1);
     return IPAddress(ndx[h]);
@@ -129,15 +124,11 @@ struct sr_pkt {
     in_addr *ndx = (in_addr *) (this + 1);
     ndx[hop] = p.in_addr();
   }
-  void set_fwd_metric(int hop, uint8_t s) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
+  void set_metric(int hop, uint16_t s) { 
+    uint16_t *ndx = (uint16_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     ndx[hop] = s;
   }
 
-  void set_rev_metric(int hop, uint8_t s) { 
-    uint8_t *ndx = (uint8_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr) + num_hops() * sizeof(uint8_t));
-    ndx[hop] = s;
-  }
   
   /* remember that if you call this you must have set the number of hops in this packet! */
   u_char *data() { return (ether_dhost + len_wo_data(num_hops())); }
@@ -232,14 +223,11 @@ private:
   class PathTable _paths;
   EtherAddress _bcast;
   class LinkTable *_link_table;
-  class LinkStat *_link_stat;
   IPAddress _ls_net;
-  class RXStats *_rx_stats;
   class ARPTable *_arp_table;
   class ETT *_ett;
   
-  int get_metric_to(IPAddress other);
-  int get_metric_from(IPAddress other);
+  int get_metric(IPAddress other);
 
   void update_link(IPAddress from, IPAddress to, int metric);
   void srcr_assert_(const char *, int, const char *) const;
