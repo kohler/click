@@ -253,9 +253,24 @@ ToDump::run_task()
     return p != 0;
 }
 
+enum { H_FILENAME = 0 };
+
+String
+ToDump::read_handler(Element *e, void *thunk)
+{
+    ToDump *td = static_cast<ToDump *>(e);
+    switch ((uintptr_t) thunk) {
+      case H_FILENAME:
+	return td->_filename + "\n";
+      default:
+	return "<error>\n";
+    }
+}
+
 void
 ToDump::add_handlers()
 {
+    add_read_handler("filename", read_handler, (void *)H_FILENAME);
     if (input_is_pull(0) && noutputs() == 0)
 	add_task_handlers(&_task);
 }

@@ -66,6 +66,10 @@ This element is only available at user level.
 
 ToDump stores packets' true length annotations when available.
 
+=h filename read-only
+
+Returns the filename.
+
 =a
 
 FromDump, FromDevice.u, ToDevice.u, tcpdump(1) */
@@ -105,6 +109,7 @@ class ToDump : public Element { public:
     NotifierSignal _signal;
     Element **_use_encap_from;
 
+    static String read_handler(Element *, void *);
     void write_packet(Packet *);
 
 };
