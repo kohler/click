@@ -303,9 +303,11 @@ IPRateMonitor::print(Stats *s, String ip = "")
       c->fwd_rate.update(jiffs, 0);
       c->rev_rate.update(jiffs, 0);
       ret += "\t"; 
-      ret += String(c->fwd_rate.average());
+      ret += cp_unparse_real(c->fwd_rate.average()*c->fwd_rate.freq(),
+	                     c->fwd_rate.scale);
       ret += "\t"; 
-      ret += String(c->rev_rate.average());
+      ret += cp_unparse_real(c->rev_rate.average()*c->rev_rate.freq(),
+	                     c->rev_rate.scale);
       
       ret += "\n";
       if (c->next_level) 

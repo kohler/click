@@ -99,30 +99,9 @@ public:
 
 private:
 
-  
-  /*
-  class EmptyEWMA {
-  public:
-    short shitty_crap_without_any_fucking_content[3];
-    int average() const			  { return 500; }
-    static unsigned now()		  { return click_jiffies() >> 3; }
-    static unsigned freq()		  { return CLICK_HZ >> 3; }
-    
-    void initialize()                     {}
-    void initialize(unsigned now)         {}
-    
-    inline void update_time(unsigned now) {}
-    inline void update_now(int delta)	  {}
-    inline void update(unsigned now, int delta) {}
-    
-    inline void update_time()             {}
-    inline void update(int delta)         {}
-  };
-  */
-  
-
+  // if you change which timer to use and what the scale is, update look read
+  // handler and the annotation code accordingly
   typedef RateEWMAX<5, 10, HalfSecondsTimer> MyEWMA;
-  // typedef EmptyEWMA MyEWMA;
   
   //
   // Counter
@@ -132,6 +111,7 @@ private:
   //
   // one Counter for each address in a subnet
   struct Counter {
+    // two rates must use same EWMA class
     MyEWMA rev_rate;
     MyEWMA fwd_rate;
     Stats *next_level;
@@ -236,10 +216,13 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   }
 
   // annotate packet with fwd and rev rates for inspection by CompareBlock
+  int scale = c->fwd_rate.scale;
+  int freq = c->fwd_rate.freq();
+
   int fwd_rate = c->fwd_rate.average(); 
-  p->set_fwd_rate_anno(fwd_rate);
+  p->set_fwd_rate_anno((fwd_rate * freq) >> scale);
   int rev_rate = c->rev_rate.average(); 
-  p->set_rev_rate_anno(rev_rate);
+  p->set_rev_rate_anno((rev_rate * freq) >> scale);
 
   //
   // Zoom in if a rate exceeds _thresh, but only if
