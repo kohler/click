@@ -1,3 +1,55 @@
+2001-12-02 Sunday 14:37  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/addressinfo.cc (1.16),
+	elements/standard/alignmentinfo.cc (1.19),
+	elements/standard/drivermanager.cc (1.15),
+	elements/standard/errorelement.cc (1.8),
+	elements/standard/scheduleinfo.cc (1.34), include/click/archive.hh
+	(1.3), include/click/bighashmap.hh (1.7),
+	include/click/bighashmap_arena.hh (1.2), include/click/bitvector.hh
+	(1.3), include/click/confparse.hh (1.25), include/click/element.hh
+	(1.18), include/click/elemfilter.hh (1.2), include/click/error.hh
+	(1.14), include/click/etheraddress.hh (1.5), include/click/ewma.cc
+	(1.5), include/click/ewma.hh (1.6), include/click/ewma64.hh (1.2),
+	include/click/gaprate.hh (1.3), include/click/glue.hh (1.22),
+	include/click/handlercall.hh (1.4), include/click/hashmap.hh (1.6),
+	include/click/integers.hh (1.4), include/click/ip6address.hh (1.6),
+	include/click/ip6flowid.hh (1.3), include/click/ip6table.hh (1.3),
+	include/click/ipaddress.hh (1.20), include/click/ipaddressset.hh
+	(1.2), include/click/ipflowid.hh (1.8), include/click/iptable.hh
+	(1.4), include/click/lexer.hh (1.8), include/click/packet.hh
+	(1.28), include/click/packet_anno.hh (1.6),
+	include/click/perfctr-i586.hh (1.4), include/click/router.hh
+	(1.26), include/click/routerthread.hh (1.8),
+	include/click/skbmgr.hh (1.4), include/click/straccum.hh (1.15),
+	include/click/string.hh (1.16), include/click/subvector.hh (1.3),
+	include/click/sync.hh (1.8), include/click/task.hh (1.14),
+	include/click/timer.hh (1.14), include/click/userutils.hh (1.6),
+	include/click/variableenv.hh (1.2), include/click/vector.hh (1.3),
+	include/click/standard/addressinfo.hh (1.12),
+	include/click/standard/alignmentinfo.hh (1.13),
+	include/click/standard/drivermanager.hh (1.8),
+	include/click/standard/errorelement.hh (1.5),
+	include/click/standard/scheduleinfo.hh (1.15), lib/archive.cc
+	(1.13), lib/bitvector.cc (1.13), lib/confparse.cc (1.91),
+	lib/element.cc (1.62), lib/elemfilter.cc (1.11), lib/error.cc
+	(1.36), lib/etheraddress.cc (1.14), lib/ewma64.cc (1.2),
+	lib/gaprate.cc (1.6), lib/glue.cc (1.29), lib/handlercall.cc (1.3),
+	lib/integers.cc (1.8), lib/ip6address.cc (1.25), lib/ip6flowid.cc
+	(1.6), lib/ip6table.cc (1.9), lib/ipaddress.cc (1.25),
+	lib/ipaddressset.cc (1.7), lib/ipflowid.cc (1.14), lib/iptable.cc
+	(1.13), lib/lexer.cc (1.55), lib/packet.cc (1.51), lib/router.cc
+	(1.113), lib/routerthread.cc (1.20), lib/straccum.cc (1.21),
+	lib/string.cc (1.32), lib/task.cc (1.17), lib/timer.cc (1.26),
+	lib/userutils.cc (1.17), lib/variableenv.cc (1.6): source code
+	cleanup
+
+2001-12-02 Sunday 14:30  Eddie Kohler <kohler@aciri.org>
+
+	* elements/aqm/: pi.cc (1.1), pi.hh (1.1): add Jitendra Padhye's
+	implementation of PI, an AQM scheme, although it is commented out
+	for now
+
 2001-12-01 Saturday 22:01  Eddie Kohler <kohler@aciri.org>
 
 	* click-compile.in (1.15), tools/click-xform/click-xform.cc (1.36):
