@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * shaper.{cc,hh} -- element limits number of successful pulls per
  * second to a given rate (packets/s)
@@ -24,45 +25,52 @@
 #include <click/glue.hh>
 
 Shaper::Shaper()
-  : Element(1, 1)
+    : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 Shaper::~Shaper()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 Shaper *
 Shaper::clone() const
 {
-  return new Shaper;
+    return new Shaper;
 }
 
 int
 Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned rate;
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "max allowable rate", &rate,
-		  0) < 0)
-    return -1;
-  _rate.set_rate(rate, errh);
-  return 0;
+    unsigned rate;
+    if (cp_va_parse(conf, this, errh,
+		    cpUnsigned, "max allowable rate", &rate,
+		    0) < 0)
+	return -1;
+    _rate.set_rate(rate, errh);
+    return 0;
 }
 
 Packet *
 Shaper::pull(int)
 {
-  Packet *p = 0;
-  struct timeval now;
-  click_gettimeofday(&now);
-  if (_rate.need_update(now)) {
-    if ((p = input(0).pull()))
-      _rate.update();
-  }
-  return p;
+    Packet *p = 0;
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (_rate.need_update(now)) {
+	if ((p = input(0).pull()))
+	    _rate.update();
+    }
+    return p;
+}
+
+void
+Shaper::add_handlers()
+{
+    add_read_handler("rate", read_positional_handler, (void *)0);
+    add_write_handler("rate", reconfigure_positional_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(Shaper)

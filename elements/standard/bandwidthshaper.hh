@@ -1,5 +1,5 @@
-#ifndef BANDWIDTHSHAPER_HH
-#define BANDWIDTHSHAPER_HH
+#ifndef CLICK_BANDWIDTHSHAPER_HH
+#define CLICK_BANDWIDTHSHAPER_HH
 #include "shaper.hh"
 
 /*
@@ -16,6 +16,10 @@
  * second. If a BandwidthShaper receives a large number of evenly-spaced pull
  * requests, then it will emit packets at the specified RATE with low
  * burstiness.
+ *
+ * =h rate read/write
+ *
+ * Returns or sets the RATE parameter.
  *
  * =a Shaper, BandwidthRatedSplitter, BandwidthRatedUnqueue */
 

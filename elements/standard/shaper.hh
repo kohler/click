@@ -1,5 +1,6 @@
-#ifndef SHAPER_HH
-#define SHAPER_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_SHAPER_HH
+#define CLICK_SHAPER_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
 
@@ -27,25 +28,31 @@
  * high rates; for example, Shaper cannot smoothly implement any rate between
  * 2.048e10 and 4.096e10 packets per second.
  *
+ * =h rate read/write
+ *
+ * Returns or sets the RATE parameter.
+ *
  * =a BandwidthShaper, RatedSplitter, RatedUnqueue */
 
-class Shaper : public Element { protected:
+class Shaper : public Element { public:
 
-  GapRate _rate;
+    Shaper();
+    ~Shaper();
 
- public:
+    const char *class_name() const	{ return "Shaper"; }
+    Shaper *clone() const;
+    const char *processing() const	{ return PULL; }
+    
+    int configure(const Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const	{ return true; }
+    void add_handlers();
 
-  Shaper();
-  ~Shaper();
-  
-  const char *class_name() const                { return "Shaper"; }
-  const char *processing() const		{ return PULL; }
+    Packet *pull(int);
 
-  Shaper *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  protected:
 
-  Packet *pull(int);
-  
+    GapRate _rate;
+
 };
 
 #endif
