@@ -131,7 +131,21 @@ GridSRForwarder::handle_host(Packet *p)
     iph->ip_dst.s_addr = htonl((ntohl(_ip.addr()) & 0xffFFff00) | hops[1]);
 
     // rewrite udp checksum
-    uh->uh_sum = click_in_cksum((unsigned char *) uh, ntohs(uh->uh_ulen));
+    // what a mess...
+    uh->uh_sum = 0;
+    unsigned csum = ~click_in_cksum((unsigned char *) uh, ntohs(uh->uh_ulen)) & 0xFFFF;
+    unsigned short *words = (unsigned short *) &iph->ip_src;
+    csum += words[0];
+    csum += words[1];
+    csum += words[2];
+    csum += words[3];
+    csum += htons(IP_PROTO_UDP);
+    csum += htons(p->length() - sizeof(click_ip));
+    while (csum >> 16)
+      csum = (csum & 0xFFFF) + (csum >> 16);
+    uh->uh_sum = ~csum & 0xFFFF;
+
+    output(0).push(p);
   }
 }
 
