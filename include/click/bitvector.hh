@@ -15,7 +15,7 @@ class Bitvector { public:
     Bitvector(int, bool);
     Bitvector(unsigned, bool);
     Bitvector(const Bitvector &);
-    ~Bitvector()		{ if (_max >= INLINE_BITS) delete[] _data; }
+    ~Bitvector()		{ if (_data != &_f0) delete[] _data; }
 
     int size() const		{ return _max + 1; }
 
@@ -27,7 +27,7 @@ class Bitvector { public:
     Bit force_bit(int);
 
     void clear();
-    void resize(int n)	{ if (n > INLINE_BITS) resize_x(n, true); _max = n-1; }
+    void resize(int n);
 
     bool operator==(const Bitvector &) const;
     bool operator!=(const Bitvector &) const;
@@ -50,14 +50,14 @@ class Bitvector { public:
     void or_with_difference(const Bitvector &, Bitvector &diff);
     bool nonzero_intersection(const Bitvector &) const;
 
-    // exposing the implementation
-    int u_max() const			{ return (_max < 0 ? -1 : _max>>5); }
-    uint32_t *u_data()			{ return _data; }
-    const uint32_t *u_data() const	{ return _data; } 
+    // expose the implementation
+    int max_word() const		{ return (_max < 0 ? -1 : _max>>5); }
+    uint32_t *data_words()		{ return _data; }
+    const uint32_t *data_words() const	{ return _data; } 
 
   private:
     
-    enum { INLINE_BITS = 64, INLINE_UNSIGNEDS = 2 };
+    enum { MAX_INLINE_BIT = 63, MAX_INLINE_WORD = 1 };
 
     int _max;
     uint32_t *_data;
@@ -66,7 +66,7 @@ class Bitvector { public:
 
     void finish_copy_constructor(const Bitvector &);
     void clear_last();
-    void resize_x(int, bool);
+    void resize_to_max(int, bool);
 
 };
 
@@ -92,24 +92,24 @@ inline
 Bitvector::Bitvector(int n)
     : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-    if (n > INLINE_BITS)
-	resize_x(n, false);
+    if (_max > MAX_INLINE_BIT)
+	resize_to_max(_max, false);
 }
 
 inline
 Bitvector::Bitvector(unsigned n)
     : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-    if (n > static_cast<unsigned>(INLINE_BITS))
-	resize_x(n, false);
+    if (_max > MAX_INLINE_BIT)
+	resize_to_max(_max, false);
 }
 
 inline
 Bitvector::Bitvector(int n, bool b)
     : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-    if (n > INLINE_BITS)
-	resize_x(n, false);
+    if (_max > MAX_INLINE_BIT)
+	resize_to_max(_max, false);
     if (b)
 	assign(n, b);
 }
@@ -118,18 +118,26 @@ inline
 Bitvector::Bitvector(unsigned n, bool b)
     : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-    if (n > static_cast<unsigned>(INLINE_BITS))
-	resize_x(n, false);
+    if (_max > MAX_INLINE_BIT)
+	resize_to_max(_max, false);
     if (b)
 	assign(n, b);
 }
 
 inline
 Bitvector::Bitvector(const Bitvector &o)
-    : _max(o._max), _data(&_f0), _f0(o._f0), _f1(o._f1)
+    : _max(o._max), _data(&_f0), _f0(o._data[0]), _f1(o._data[1])
 {
-    if (_max >= INLINE_BITS)
+    if (_max > MAX_INLINE_BIT)
 	finish_copy_constructor(o);
+}
+
+inline void
+Bitvector::resize(int n)
+{
+    if (n - 1 > MAX_INLINE_BIT)
+	resize_to_max(n - 1, true);
+    _max = n - 1;
 }
 
 inline bool
@@ -176,10 +184,10 @@ Bitvector::operator==(const Bitvector &o) const
 {
     if (_max != o._max)
 	return false;
-    else if (_max < INLINE_BITS)
-	return _f0 == o._f0 && _f1 == o._f1;
+    else if (_max <= MAX_INLINE_BIT)
+	return memcmp(_data, o._data, 8) == 0;
     else
-	return memcmp(_data, o._data, (u_max()+1)*4) == 0;
+	return memcmp(_data, o._data, (max_word() + 1)*4) == 0;
 }
 
 inline bool

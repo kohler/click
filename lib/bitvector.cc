@@ -24,7 +24,7 @@ CLICK_DECLS
 void
 Bitvector::finish_copy_constructor(const Bitvector &o)
 {
-    int nn = u_max();
+    int nn = max_word();
     _data = new uint32_t[nn + 1];
     for (int i = 0; i <= nn; i++)
 	_data[i] = o._data[i];
@@ -33,7 +33,7 @@ Bitvector::finish_copy_constructor(const Bitvector &o)
 void
 Bitvector::clear()
 {
-    int nn = u_max();
+    int nn = max_word();
     for (int i = 0; i <= nn; i++)
 	_data[i] = 0;
 }
@@ -41,7 +41,7 @@ Bitvector::clear()
 bool
 Bitvector::zero() const
 {
-    int nn = u_max();
+    int nn = max_word();
     for (int i = 0; i <= nn; i++)
 	if (_data[i])
 	    return false;
@@ -49,21 +49,19 @@ Bitvector::zero() const
 }
 
 void
-Bitvector::resize_x(int n, bool valid_n)
+Bitvector::resize_to_max(int new_max, bool valid_n)
 {
-    int want_u = ((n-1)/32) + 1;
-    int have_u = (valid_n ? u_max() + 1 : INLINE_UNSIGNEDS);
-    if (have_u < INLINE_UNSIGNEDS)
-	have_u = INLINE_UNSIGNEDS;
+    int want_u = (new_max >> 5) + 1;
+    int have_u = (valid_n ? max_word() : MAX_INLINE_WORD) + 1;
+    if (have_u < MAX_INLINE_WORD + 1)
+	have_u = MAX_INLINE_WORD + 1;
     if (want_u <= have_u)
 	return;
 
     uint32_t *new_data = new uint32_t[want_u];
-    for (int i = 0; i < have_u; i++)
-	new_data[i] = _data[i];
-    for (int i = have_u; i < want_u; i++)
-	new_data[i] = 0;
-    if (valid_n && _max >= INLINE_BITS)
+    memcpy(new_data, _data, have_u * sizeof(uint32_t));
+    memset(new_data + have_u, 0, (want_u - have_u) * sizeof(uint32_t));
+    if (_data != &_f0)
 	delete[] _data;
     _data = new_data;
 }
@@ -81,14 +79,22 @@ Bitvector::clear_last()
 Bitvector &
 Bitvector::operator=(const Bitvector &o)
 {
-    if (&o != this) {
-	resize(o._max + 1);
-	int copy = u_max();
-	if (copy < INLINE_UNSIGNEDS - 1)
-	    copy = INLINE_UNSIGNEDS - 1;
-	for (int i = 0; i <= copy; i++)
-	    _data[i] = o._data[i];
+#if CLICK_LINUXMODULE || CLICK_BSDMODULE
+    // We might not have been initialized properly.
+    if (!_data)
+	_max = -1, _data = &_f0;
+#endif
+    if (&o == this)
+	/* nada */;
+    else if (o.max_word() <= MAX_INLINE_WORD)
+	memcpy(_data, o._data, 8);
+    else {
+	if (_data != &_f0)
+	    delete[] _data;
+	_data = new uint32_t[o.max_word() + 1];
+	memcpy(_data, o._data, (o.max_word() + 1) * sizeof(uint32_t));
     }
+    _max = o._max;
     return *this;
 }
 
@@ -97,9 +103,9 @@ Bitvector::assign(int n, bool value)
 {
     resize(n);
     uint32_t bits = (value ? 0xFFFFFFFFU : 0U);
-    int copy = u_max();
-    if (copy < INLINE_UNSIGNEDS - 1)
-	copy = INLINE_UNSIGNEDS - 1;
+    int copy = max_word();
+    if (copy < MAX_INLINE_WORD)
+	copy = MAX_INLINE_WORD;
     for (int i = 0; i <= copy; i++)
 	_data[i] = bits;
     if (value)
@@ -110,7 +116,7 @@ Bitvector::assign(int n, bool value)
 void
 Bitvector::negate()
 {
-    int nn = u_max();
+    int nn = max_word();
     uint32_t *data = _data;
     for (int i = 0; i <= nn; i++)
 	data[i] = ~data[i];
@@ -121,7 +127,7 @@ Bitvector &
 Bitvector::operator&=(const Bitvector &o)
 {
     assert(o._max == _max);
-    int nn = u_max();
+    int nn = max_word();
     uint32_t *data = _data, *o_data = o._data;
     for (int i = 0; i <= nn; i++)
 	data[i] &= o_data[i];
@@ -133,7 +139,7 @@ Bitvector::operator|=(const Bitvector &o)
 {
     if (o._max > _max)
 	resize(o._max + 1);
-    int nn = u_max();
+    int nn = max_word();
     uint32_t *data = _data, *o_data = o._data;
     for (int i = 0; i <= nn; i++)
 	data[i] |= o_data[i];
@@ -144,7 +150,7 @@ Bitvector &
 Bitvector::operator^=(const Bitvector &o)
 {
     assert(o._max == _max);
-    int nn = u_max();
+    int nn = max_word();
     uint32_t *data = _data, *o_data = o._data;
     for (int i = 0; i <= nn; i++)
 	data[i] ^= o_data[i];
@@ -158,8 +164,8 @@ Bitvector::or_at(const Bitvector &o, int offset)
     uint32_t bits_1st = offset&0x1F;
     int my_pos = offset>>5;
     int o_pos = 0;
-    int my_u_max = u_max();
-    int o_u_max = o.u_max();
+    int my_max_word = max_word();
+    int o_max_word = o.max_word();
     uint32_t *data = _data;
     uint32_t *o_data = o._data;
 
@@ -168,14 +174,14 @@ Bitvector::or_at(const Bitvector &o, int offset)
 	data[my_pos] |= (val << bits_1st);
 
 	my_pos++;
-	if (my_pos > my_u_max)
+	if (my_pos > my_max_word)
 	    break;
     
 	if (bits_1st)
 	    data[my_pos] |= (val >> (32 - bits_1st));
     
 	o_pos++;
-	if (o_pos > o_u_max)
+	if (o_pos > o_max_word)
 	    break;
     }
 }
@@ -187,7 +193,7 @@ Bitvector::or_with_difference(const Bitvector &o, Bitvector &diff)
 	resize(o._max + 1);
     if (diff._max > _max)
 	diff.resize(o._max + 1);
-    int nn = u_max();
+    int nn = max_word();
     uint32_t *data = _data, *diff_data = diff._data;
     const uint32_t *o_data = o._data;
     for (int i = 0; i <= nn; i++) {
@@ -199,9 +205,9 @@ Bitvector::or_with_difference(const Bitvector &o, Bitvector &diff)
 bool
 Bitvector::nonzero_intersection(const Bitvector &o) const
 {
-    int nn = o.u_max();
-    if (nn > u_max())
-	nn = u_max();
+    int nn = o.max_word();
+    if (nn > max_word())
+	nn = max_word();
     const uint32_t *data = _data, *o_data = o._data;
     for (int i = 0; i <= nn; i++)
 	if (data[i] & o_data[i])
