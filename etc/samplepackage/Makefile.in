@@ -83,26 +83,26 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .c.uo:
 	$(U_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 .cc.uo:
 	$(U_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 .cc.uii:
 	$(U_CXXCOMPILE) -E $< > $@
 .c.ko:
 	$(K_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.ko:
 	$(K_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.kii:
 	$(K_CXXCOMPILE) -E $< > $@
 .c.bo:
 	$(B_COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 .cc.bo:
 	$(B_CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 .cc.bii:
 	$(B_CXXCOMPILE) -E $< > $@
 
@@ -118,13 +118,14 @@ K_CPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE -DCLICK_PACKAGE
 B_CPPFLAGS = @CPPFLAGS@ -DCLICK_BSDMODULE -DCLICK_PACKAGE
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
+DEPCFLAGS = @DEPCFLAGS@
 
-U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
-K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
-B_CXXCOMPILE = $(B_CXX) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CXXFLAGS)
-U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
-K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS)
-B_COMPILE = $(B_CC) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CFLAGS)
+U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+B_CXXCOMPILE = $(B_CXX) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
+U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
+B_COMPILE = $(B_CC) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 
 # set TARGETS, etc. based on MAKE_UPACKAGE, MAKE_KPACKAGE, and MAKE_BPACKAGE
 ifeq ($(MAKE_UPACKAGE),1)

@@ -35,7 +35,12 @@ AC_DEFUN([CLICK_PROG_CC], [
 
     ac_base_cc="$CC"
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -W -Wall -MD"
+	CC="$CC -W -Wall"
+
+    DEPCFLAGS=""
+    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+	DEPCFLAGS="-MD"
+    AC_SUBST(DEPCFLAGS)
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
@@ -122,7 +127,7 @@ by setting the 'CXX' environment variable and rerunning me.
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -MD"
+	CXX="$CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -150,9 +155,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CC], [
     AC_REQUIRE([CLICK_PROG_CC])
     test -z "$ac_user_kernel_cc" && \
-	KERNEL_CC="$ac_base_cc -MD"
+	KERNEL_CC="$ac_base_cc"
     test -z "$ac_user_kernel_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CC="$ac_base_cc -w $CXX_WARNINGS -MD"
+	KERNEL_CC="$ac_base_cc -w $CXX_WARNINGS"
     AC_SUBST(KERNEL_CC)
 ])
 
@@ -165,9 +170,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx -MD"
+	KERNEL_CXX="$ac_base_cxx"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -MD"
+	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
     AC_SUBST(KERNEL_CXX)
 ])
 

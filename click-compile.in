@@ -155,34 +155,39 @@ case $target in
   u|us|use|user|userl|userle|userlev|userleve|userlevel)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="${include_source} -I${includedir}"
-    icxxflags="@CXXFLAGS@"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    icppflags="@CPPFLAGS@"
+    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=userlevel;;
   k|ke|ker|kern|kerne|kernel|l|li|lin|linu|linux|linuxm|linuxmo|linuxmod|linuxmodu|linuxmodul|linuxmodule)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="${include_source} -I${includedir} -I${linuxdir}/include"
+    icppflags="@CPPFLAGS@"
     icxxflags="@CXXFLAGS_NDEBUG@"
-    icflags="@CFLAGS_NDEBUG@"
-    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    icflags="@CFLAGS_NDEBUG@ @DEPCFLAGS@"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CFLAGS-$icflags} $cflags $compileflag"
     target=linuxmodule;;
   b|bs|bsd|bsdm|bsdmo|bsdmod|bsdmodu|bsdmodul|bsdmodule)
     idefs="@DEFS@ -DCLICK_BSDMODULE"
     iincludes="-nostdinc ${include_source} -I${includedir}"
-    icxxflags="@CXXFLAGS_NDEBUG@"
-    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    icppflags="@CPPFLAGS@"
+    icxxflags="@CXXFLAGS_NDEBUG@ @DEPCFLAGS@"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=bsdmodule;;
   ns|nsm|nsmo|nsmod|nsmodu|nsmodul|nsmodule)
     idefs="@DEFS@ -DCLICK_NS"
     iincludes="${include_source} -I${includedir}"
-    icxxflags="@CXXFLAGS@"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    icppflags="@CPPFLAGS@"
+    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=ns;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
     iincludes="${include_source} -I${includedir}"
-    icxxflags="@CXXFLAGS@"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    icppflags="@CPPFLAGS@"
+    icxxflags="@CXXFLAGS@ @DEPCFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=tool;;
   "")
     echo "click-compile: you must specify a target" 1>&2; exit 1;;

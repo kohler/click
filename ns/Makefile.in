@@ -64,6 +64,7 @@ OBJS = $(ELEMENT_OBJS) elements.o nsclick.o
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
+DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
@@ -71,10 +72,10 @@ INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ `$(top_builddir)/click-compile --libs`
 
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 

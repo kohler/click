@@ -39,16 +39,17 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 CPPFLAGS = @CPPFLAGS@
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
+DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@ -D__KERNEL__ -DMODULE
 INCLUDES = -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
