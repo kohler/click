@@ -234,7 +234,6 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 
-
 static String
 read_fraction(Element *, void *thunk)
 {
