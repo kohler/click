@@ -1,3 +1,8 @@
+2001-04-09 Monday 16:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/: unstrip.cc, unstrip.hh: new unstrip element
+	that put bytes back onto the packet
+
 2001-04-09 Monday 14:01  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/binpackingsched.cc: don't reschedule if load is
