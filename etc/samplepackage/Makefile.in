@@ -150,7 +150,7 @@ endif
 all: $(TARGETS)
 
 $(package).uo: Makefile $(U_OBJS)
-	$(LD) -shared -o $(package).uo $(U_OBJS)
+	$(U_CC) -shared -o $(package).uo $(U_OBJS)
 	$(STRIP_UPACKAGE) $(package).uo
 
 $(package).ko: Makefile $(K_OBJS)

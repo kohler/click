@@ -250,7 +250,7 @@ EOF
     exec_command "ld -r -o $package $files"
     exit 0 
   elif test $target = userlevel -o $target = tool -o $target = ns; then
-    exec_command "ld -shared -o $package $files"
+    exec_command "${CXX-@CXX@} -shared -o $package $files"
     exit 0
   elif test $target = bsdmodule; then
     exec_command "ld -Bshareable -o $package $files"
