@@ -337,6 +337,12 @@ if ($system_type =~ /Linux/) {
     my_system "ifconfig $lan_if down";
     my_system "ifconfig $lan_if 0";
 
+    # decrease mtu on the kerneltap so we don't get packets too big to encapsulate.  
+    # this is hacky, maybe it should be in the kerneltap code with the ifconfig/route calls.  
+    # but i forget why those are in there at all...
+    my_system "/sbin/ifconfig tap1 mtu 1400"
+
+
 }
 elsif ($system_type =~ /FreeBSD/) {
     # make sure grid interface is up
@@ -356,6 +362,8 @@ elsif ($system_type =~ /FreeBSD/) {
 	print stderr "Radio type $radio_type is not supported\n";
 	exit 1;
     }
+
+    print "WARNING: not decreasing grid tun MTU.  Transfers with big packets will fail.  Fix this script!\n";
 
     # remove default route
     my_system, "route -n delete default";
