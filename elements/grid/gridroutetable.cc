@@ -26,8 +26,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "gridroutetable.hh"
-
-// #define METRIC 1
+#include "timeutils.hh"
 
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
@@ -162,19 +161,6 @@ GridRouteTable::current_gateway()
   return NULL;
 }
 
-inline timeval
-operator- (const timeval &a, const timeval &b)
-{
-  timeval ts;
-  ts.tv_sec = a.tv_sec - b.tv_sec;
-  if (a.tv_usec > b.tv_usec)
-    ts.tv_usec = a.tv_usec - b.tv_usec;
-  else {
-    ts.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
-    --ts.tv_sec;
-  }
-  return ts;
-}
 
 unsigned int
 GridRouteTable::qual_to_pct(int q)
@@ -201,6 +187,28 @@ GridRouteTable::sig_to_pct(int s)
   int delta = _max_metric - _min_metric;
   return (100 * (s - _min_metric)) / delta;
 }
+
+bool
+GridRouteTable::est_delivery_rate(const IPAddress ip, double &rate)
+{
+  int sig = 0;
+  int qual = 0;
+  struct timeval last;
+  bool res = _link_tracker->get_stat(ip, sig, qual, last);
+  if (!res)
+    return false;
+  
+  static const double m = -1 / 14;
+  static const double b = 20 / 14;
+
+  rate = m*qual + b;
+  if (rate > 1) 
+    rate = 1;
+  if (rate < 0)
+    rate = 0.01;
+  return true;
+}
+
 
 void
 GridRouteTable::init_metric(RTEntry &r)
@@ -229,7 +237,7 @@ GridRouteTable::init_metric(RTEntry &r)
     if (!res) {
       click_chatter("GridRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
 		    r.dest_ip.s().cc());
-      r.metric = 666999; // for debugging
+      r.metric = _bad_metric;
       r.metric_valid = false;
       return;
     }
@@ -240,7 +248,7 @@ GridRouteTable::init_metric(RTEntry &r)
     if (delta_ms > _timeout) {
       click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
 		    r.dest_ip.s().cc());
-      r.metric = 666999; // for debugging
+      r.metric = _bad_metric;
       r.metric_valid = false;
       return;
     }
@@ -255,6 +263,19 @@ GridRouteTable::init_metric(RTEntry &r)
     r.metric_valid = true;
   }
   break;
+  case MetricEstTxCount: {
+    double rate = 0;
+    bool res = est_delivery_rate(r.next_hop_ip, rate);
+    if (res) {
+      r.metric = (int) (100 / rate);
+      r.metric_valid = true;
+    } 
+    else {
+      r.metric = _bad_metric;
+      r.metric_valid = false;
+    }
+    break;
+  }
   default:
     assert(0);
   }
@@ -283,18 +304,19 @@ GridRouteTable::update_metric(RTEntry &r)
 
   switch (_metric_type) {
   case MetricHopCount:
-    r.metric = r.num_hops;
-    r.metric_valid = true;
+    if (next_hop->metric > 1)
+      click_chatter("GridRouteTable: ERROR metric type is hop count but next-hop %s metric is > 1 (%u)",
+		    next_hop->dest_ip.s().cc(), next_hop->metric);
+  case MetricEstTxCount: 
+    r.metric += next_hop->metric;
     break;
   case MetricCumulativeDeliveryRate:
   case MetricCumulativeQualPct:
   case MetricCumulativeSigPct:
     r.metric = (r.metric * next_hop->metric) / 100;
-    r.metric_valid = true;
     break;
   case MetricMinDeliveryRate: 
     r.metric = (next_hop->metric < r.metric) ? next_hop->metric : r.metric;
-    r.metric_valid = true;
     break;
   case MetricMinSigStrength:
   case MetricMinSigQuality:
@@ -305,6 +327,7 @@ GridRouteTable::update_metric(RTEntry &r)
   default:
     assert(0);
   }
+  r.metric_valid = true;
 }
 
 
@@ -314,8 +337,9 @@ GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
   assert(r1.metric_valid && r2.metric_valid);
 
   switch (_metric_type) {
-  case MetricHopCount: 
-    return r1.num_hops < r2.num_hops;
+  case MetricHopCount:
+  case MetricEstTxCount: 
+    return r1.metric < r2.metric;
   case MetricCumulativeDeliveryRate:
   case MetricMinDeliveryRate:
     return r1.metric > r2.metric;
@@ -458,9 +482,10 @@ GridRouteTable::simple_action(Packet *packet)
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     if (_ip == curr->ip && curr->num_hops == 1) {
       struct timeval tv;
-      tv.tv_sec = ntohl(curr->measurement_time.tv_sec);
-      tv.tv_usec = ntohl(curr->measurement_time.tv_usec);
+      tv = ntoh(curr->measurement_time);
       _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), tv);
+      tv = ntoh(curr->last_bcast);
+      _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, tv);
       break;
     }
   }
@@ -691,6 +716,7 @@ GridRouteTable::print_metric_type(Element *e, void *)
   case MetricMinSigQuality: return "min_sig_quality\n"; break;
   case MetricCumulativeQualPct: return "cumulative_qual_pct\n"; break;
   case MetricCumulativeSigPct: return "cumulative_sig_pct\n"; break;
+  case MetricEstTxCount:   return "est_tx_count\n"; break;
   default: 
     assert(0);
     return "";
@@ -715,6 +741,8 @@ GridRouteTable::check_metric_type(const String &s)
     return MetricCumulativeQualPct;
   else if (s2 == "cumulative_sig_pct")
     return MetricCumulativeSigPct;
+  else if (s2 == "est_tx_count")
+    return MetricEstTxCount;
   else
     return -1;
 }
@@ -857,7 +885,7 @@ GridRouteTable::expire_routes()
 	/* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
 	/* clear link stats */
-	_link_tracker->remove_stat(i.value().dest_ip);
+	_link_tracker->remove_all_stats(i.value().dest_ip);
       }
     }
   }
@@ -1085,6 +1113,24 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
     else
       click_chatter("GridRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
 		    IPAddress(dest_ip).s().cc());
+
+    nb->num_rx = 0;
+    nb->num_expected = 0;
+    nb->last_bcast.tv_sec = nb->last_bcast.tv_usec = 0;
+    unsigned int window = 0;
+    unsigned int num_rx = 0;
+    unsigned int num_expected = 0;
+    bool res = ls->get_bcast_stats(next_hop_eth, nb->last_bcast, window, num_rx, num_expected);
+    if (res) {
+      if (num_rx > 255 || num_expected > 255) {
+	click_chatter("GridRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",
+		      IPAddress(dest_ip).s().cc());
+	num_rx = num_expected = 255;
+      }
+      nb->num_rx = num_rx;
+      nb->num_expected = num_expected;
+      nb->last_bcast = hton(nb->last_bcast);
+    }
   }
 }
 

@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include "grid.hh"
 #include <math.h>
+#include "timeutils.hh"
 
 LinkTracker::LinkTracker()
 {
@@ -68,26 +69,13 @@ LinkTracker::initialize(ErrorHandler *)
   return 0;
 }
 
-inline timeval
-operator- (const timeval &a, const timeval &b)
-{
-  timeval ts;
-  ts.tv_sec = a.tv_sec - b.tv_sec;
-  if (a.tv_usec > b.tv_usec)
-    ts.tv_usec = a.tv_usec - b.tv_usec;
-  else {
-    ts.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
-    --ts.tv_sec;
-  }
-  return ts;
-}
-
-
 void
-LinkTracker::remove_stat(IPAddress dst)
+LinkTracker::remove_all_stats(IPAddress dst)
 {
   _stats.remove(dst);
+  _bcast_stats.remove(dst);
 }
+  
 
 void
 LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
@@ -107,17 +95,17 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
     stat_t s2;
     s2.last_data = when;
     s2.last_update = now;
-
+    
     s2.qual_top = qual;
     s2.qual_bot = 1.0;
-
+    
     s2.sig_top = sig;
     s2.sig_bot = 1.0;
    
     _stats.insert(dst, s2);
   }
   else {
-    /* assumes ``when'' is late in time than last data point */
+    /* assumes ``when'' is later in time than last data point */
     timeval tv = when - s->last_data;
     if (tv.tv_sec == 0 && tv.tv_usec == 0) {
       /* this isn't new data, just a repeat of an old statistic.  it
@@ -174,6 +162,70 @@ LinkTracker::get_stat(IPAddress dst, int &sig, int &qual, struct timeval &last_u
   return true;
 }
 
+void 
+LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, struct timeval last_bcast)
+{
+  /* can only believe num_expected if the receiver heard at least 2 packets */
+  if (num_rx < 2)
+    return;
+
+  double r = num_rx;
+  r /= num_expected;
+    
+  struct timeval now;
+  gettimeofday(&now, 0);
+  
+  bcast_t *s = _bcast_stats.findp(dst);
+  if (s == 0) {
+    /* init entry */
+    bcast_t s2;
+    s2.last_bcast = last_bcast;
+    s2.last_update = now;
+
+    s2.r_top = r;
+    s2.r_bot = 1.0;
+
+    _bcast_stats.insert(dst, s2);
+  }
+  else {
+    timeval tv = last_bcast - s->last_bcast;
+    if (tv.tv_sec == 0 && tv.tv_usec == 0) 
+      return; // repeat of old data
+    
+    double delta = tv.tv_sec;
+    delta += tv.tv_usec / 1.0e6;
+    
+    double old_weight = exp(-delta / _tau);
+    
+    s->r_top *= old_weight;
+    s->r_top += r;
+
+    s->r_bot *= old_weight;
+    s->r_bot += 1.0;
+
+    if (s->r_top > 1e100) {
+      click_chatter("LinkTracker: warning, broadcast delivery rate accumulators are getting really big!!!  Renormalizing.\n");
+      s->r_top *= 1e-80;
+      s->r_bot *= 1e-80;
+    }
+  }
+}
+ 
+
+bool
+LinkTracker::get_bcast_stat(IPAddress dst, double &delivery_rate, struct timeval &last_update)
+{
+  bcast_t *s = _bcast_stats.findp(dst);
+  if (s == 0)
+    return false;
+
+  delivery_rate = s->r_top / s->r_bot;
+  last_update = s->last_update;
+
+  return true;
+}
+
+
 Packet *
 LinkTracker::simple_action(Packet *p)
 {
@@ -228,6 +280,23 @@ LinkTracker::read_stats(Element *xf, void *)
   return s;
 }
 
+String
+LinkTracker::read_bcast_stats(Element *xf, void *)
+{
+  LinkTracker *f = (LinkTracker *) xf;
+
+  char timebuf[80];
+  String s;
+  for (BigHashMap<IPAddress, LinkTracker::bcast_t>::Iterator i = f->_bcast_stats.first(); i; i++) {
+    snprintf(timebuf, 80, " %lu.%06lu", i.value().last_update.tv_sec, i.value().last_update.tv_usec);
+    s += i.key().s() 
+      + timebuf
+      + " " + String(i.value().r_top / i.value().r_bot) + "\n";
+  }
+  return s;
+}
+
+
 int
 LinkTracker::write_tau(const String &arg, Element *el, 
 		       void *, ErrorHandler *errh)
@@ -241,6 +310,7 @@ LinkTracker::write_tau(const String &arg, Element *el,
   /* clear all stats to avoid confusing data averaged underone time
      constant to data averaged under a different time constant. */
   e->_stats.clear();
+  e->_bcast_stats.clear();
 
   return 0;
 }
@@ -259,3 +329,4 @@ EXPORT_ELEMENT(LinkTracker)
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, LinkTracker::stat_t>;
+template class BigHashMap<IPAddress, LinkTracker::bcast_t>;

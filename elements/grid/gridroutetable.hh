@@ -274,6 +274,8 @@ private:
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);
 
+  bool est_delivery_rate(const IPAddress, double &);
+
   enum MetricType {
     MetricHopCount = 0,            // unsigned int hop count
     MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
@@ -281,7 +283,8 @@ private:
     MetricMinSigStrength,          // unsigned int negative dBm.  e.g. -40 dBm is 40
     MetricMinSigQuality,           // unsigned int ``quality''
     MetricCumulativeQualPct,       // unsigned int percentage (0-100) of range
-    MetricCumulativeSigPct         // unsigned int percentage (0-100) of range
+    MetricCumulativeSigPct,        // unsigned int percentage (0-100) of range
+    MetricEstTxCount               // unsigned int expected number of transmission * 100
   };
 
   int _metric_type;
@@ -290,6 +293,8 @@ private:
   int _max_metric;
   int _min_metric;
   
+  static const int _bad_metric = 666999;
+
   /* default ranges taken from experiments -- from approx 144 million received packets! */
   /*
    * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+

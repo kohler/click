@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/router.hh>
 #include "grid.hh"
-
+#include "timeutils.hh"
 
 GridProbeReplyReceiver::GridProbeReplyReceiver() 
 {
@@ -64,22 +64,6 @@ GridProbeReplyReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
   assert(_repl_errh);
   return res;
 }
-
-
-timeval
-operator-(const timeval &a, const timeval &b)
-{
-  timeval tv;
-  tv.tv_sec = a.tv_sec - b.tv_sec;
-  if (a.tv_usec > b.tv_usec)
-    tv.tv_usec = a.tv_usec - b.tv_usec;
-  else {
-    tv.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
-    --tv.tv_sec;
-  }
-  return tv;
-}
-
 
 
 Packet *

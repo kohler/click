@@ -26,6 +26,7 @@ class LinkTracker : public Element {
   double _tau;
 
   static String read_stats(Element *, void *);
+  static String read_bcast_stats(Element *, void *);
   static String read_tau(Element *, void *);
   static int write_tau(const String &, Element *, void *, ErrorHandler *);
 
@@ -38,12 +39,23 @@ class LinkTracker : public Element {
     struct timeval last_update; // when we last updated the data (our time)
   };
 
+  struct bcast_t {
+    // broadcast delivery rate
+    double r_top; 
+    double r_bot;
+    struct timeval last_bcast;
+    struct timeval last_update;
+  };
+
   BigHashMap<IPAddress, stat_t> _stats;
-  
+  BigHashMap<IPAddress, bcast_t> _bcast_stats;
+
 public:
   void add_stat(IPAddress dst, int sig, int qual, struct timeval when);
   bool get_stat(IPAddress dst, int &sig, int &qual, struct timeval &last_update);
-  void remove_stat(IPAddress dst);
+  void add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num_expected, struct timeval last_bcast);
+  bool get_bcast_stat(IPAddress dst, double &delivery_rate, struct timeval &last_update);
+  void remove_all_stats(IPAddress dst);
   
   LinkTracker();
   ~LinkTracker();

@@ -3,17 +3,19 @@
 
 /*
  * =c
- * LinkStat(AiroInfo)
+ * LinkStat(AiroInfo, WINDOW)
  * =s Grid
  * =d
  *
  * Expects Ethernet packets as input.  Queries the AiroInfo element
- * for information about the packet sender's transmission stats
- * (quality, signal strength).
+ * for information about the packet sender's latest transmission stats
+ * (quality, signal strength).  Also attempts to track broadcast loss
+ * rate for the last WINDOW milliseconds.  These stats are then made
+ * available to the PingPong element for sending back to the
+ * transmitter's LinkTracker.
  *
  * =a
- * AiroInfo, LinkTracker, PingPong
- */
+ * AiroInfo, LinkTracker, PingPong */
 
 #include <click/bighashmap.hh>
 #include <click/element.hh>
@@ -23,21 +25,42 @@
 #include "airoinfo.hh"
 
 class LinkStat : public Element {
-
+private:
   AiroInfo *_ai;
+  unsigned int _window; // msecs
   
+  struct bcast_t {
+    struct timeval when; // jiffies
+    unsigned seq; // seq_no of broadcast
+  };
+
+  BigHashMap<EtherAddress, Vector<bcast_t> > _bcast_stats;
+
   static String read_stats(Element *, void *);
+  static String read_bcast_stats(Element *, void *);
+
+  
+  void add_bcast_stat(const EtherAddress &e, unsigned int seqno);
 
  public:
-  
-  struct stat_t {
+    struct stat_t {
     int qual;
     int sig;
     struct timeval when;
   };
-
   BigHashMap<EtherAddress, stat_t> _stats;
-  
+
+  /*
+   * look up most recent stats for E.  LAST is the local rx time of
+   * the last packet used to collect stats for E, NUM_RX is the number
+   * actually received during the interval [LAST-WINDOW, LAST], WINDOW
+   * is the interval size in milliseconds, and NUM_EXPECTED is the
+   * number we think should have seen, based on observed sequence
+   * numbers.  Returns true if we have some data, else false.  
+   */
+  bool get_bcast_stats(const EtherAddress &e, struct timeval &last, unsigned int &window,
+		       unsigned int &num_rx, unsigned int &num_expected);
+
   LinkStat();
   ~LinkStat();
   

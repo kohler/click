@@ -107,7 +107,7 @@ private:
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfed1;
+  static const unsigned int GRID_VERSION = 0xfed2;
 
   unsigned int version;     // which version of the grid protocol we are using
 
@@ -208,6 +208,10 @@ struct grid_nbr_entry {
   int link_sig;
   struct timeval measurement_time;
 
+  unsigned char num_rx;
+  unsigned char num_expected;
+  struct timeval last_bcast;
+
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
@@ -256,7 +260,11 @@ struct grid_nbr_encap {
 
   int link_qual;
   int link_sig;           
-  struct timeval measurement_time;  // secs
+  struct timeval measurement_time;  
+
+  unsigned char num_rx;
+  unsigned char num_expected;
+  struct timeval last_bcast;
 };
 
 struct grid_loc_query {
