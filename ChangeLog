@@ -1,3 +1,8 @@
+2004-06-18 Friday 02:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.11), configure.in (1.230), etc/libclick/DISTFILES
+	(1.20): configure et al. nits
+
 2004-06-18 Friday 02:23  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.116), click-buildtool (1.51), click-buildtool.in
