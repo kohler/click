@@ -1,3 +1,19 @@
+2002-08-20 Tuesday 10:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* lib/clp.c (1.12): Fix constness of char pointer
+
+2002-08-20 Tuesday 10:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* lib/confparse.cc (1.103): Work around internal compiler error on
+	gcc 3.1 on macos X
+
+2002-08-20 Tuesday 10:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/floodinglocquerier.cc (1.34),
+	elements/grid/linkstat.cc (1.11), elements/grid/linktracker.cc
+	(1.10), lib/userutils.cc (1.27): Explicit conversions to String to
+	make gcc3.1 happy on macos X
+
 2002-08-19 Monday 21:06  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.28), toipsumdump.cc
