@@ -42,9 +42,10 @@ count). Returns the current packet or byte count.
 
 =h CLICK_LLRPC_GET_COUNTS llrpc
 
-Argument is a pointer to an array of 16 integers. First integer is number of
-counts to pull. Remaining integers must each be 0 (packet count) or 1 (byte
-count). Stores the corresponding count on top of each integer.
+Argument is a pointer to a click_llrpc_counts_st structure (see
+<click/llrpc.h>). The C<keys> components must be 0 (packet count) or 1 (byte
+count). Stores the corresponding counts in the corresponding C<values>
+components.
 
 */
 
