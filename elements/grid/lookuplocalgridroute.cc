@@ -271,6 +271,7 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
 
 #if NEXT_HOP_ETH_FIXUP
 #error This is likely to drop lots of packets...
+#error Not to mention it's broken anyway.
   /* sanity check routing table entries -- does entry's next_hop_eth
      actually match the next hop's eth? */
   GridRouteTable::RTEntry *nhr = _rtes->_rtes.findp(rte->next_hop_ip);
