@@ -79,7 +79,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (words.size() > 2 || (words.size() == 2 && !cp_unsigned(words[1], &n)))
 		errh->error("expected '%s [COUNT]'", insn_name.cc());
 	    else
-		add_insn(INSN_WAIT_STOP, n);
+		add_insn(INSN_WAIT_STOP, n, 0);
 
 	} else if (insn_name == "write" || insn_name == "write_skip" || insn_name == "call") {
 	    int insn = (insn_name == "write_skip" ? INSN_WRITE_SKIP : INSN_WRITE);
@@ -108,26 +108,33 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    
 	} else if (insn_name == "wait_time" || insn_name == "wait_for" || insn_name == "wait") {
 	    timeval tv;
-	    if (words.size() != 2 || !cp_timeval(words[1], &tv))
-		errh->error("expected '%s TIME'", insn_name.cc());
-	    else
+	    if (words.size() == 2 && cp_timeval(words[1], &tv))
 		add_insn(INSN_WAIT_TIME, tv.tv_sec, tv.tv_usec);
+	    else
+		errh->error("expected '%s TIME'", insn_name.cc());
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
-	    if (words.size() != 1)
-		errh->error("expected '%s'", insn_name.cc());
-	    else {
+	    if (words.size() == 1) {
 		if (i < conf.size() - 1)
 		    errh->warning("arguments after '%s' ignored", insn_name.cc());
 		add_insn(INSN_STOP, 0);
-	    }
+	    } else
+		errh->error("expected '%s'", insn_name.cc());
+
+#if CLICK_USERLEVEL || CLICK_TOOL
+	} else if (insn_name == "loop") {
+	    if (words.size() == 1)
+		add_insn(INSN_GOTO, 0);
+	    else
+		errh->error("expected '%s'", insn_name.cc());
+#endif
 
 	} else
 	    errh->error("unknown instruction '%s'", insn_name.cc());
     }
 
     if (_insns.size() == 0)
-	add_insn(INSN_WAIT_STOP, 1);
+	add_insn(INSN_WAIT_STOP, 1, 0);
     add_insn(INSN_STOP, 0);
 
     return (errh->nerrors() == before ? 0 : -1);
@@ -191,53 +198,68 @@ DriverManager::step_insn()
     // change insn if appropriate
     if (insn == INSN_WRITE_SKIP && router()->runcount() >= 0)
 	insn = INSN_WRITE;
-    
-    if (insn == INSN_STOP)
-	router()->adjust_runcount(-1);
-    else if (insn == INSN_WAIT_TIME)
-	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
-    else if (insn == INSN_WAIT_STOP)
-	/* nada */;
-    else if (insn == INSN_WRITE) {
-	StringAccum sa;
-	Element *e = router()->element(_args[_insn_pos]);
-	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
-	sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
-	ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
-	h->call_write(_args3[_insn_pos], e, &cerrh);
-	return true;
-    } else if (insn == INSN_READ) {
-	Element *e = router()->element(_args[_insn_pos]);
-	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
-	String result = h->call_read(e);
-	ErrorHandler *errh = ErrorHandler::default_handler();
-	errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
-	return true;
+
+    switch (insn) {
+      case INSN_WRITE: {
+	  StringAccum sa;
+	  Element *e = router()->element(_args[_insn_pos]);
+	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
+	  ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
+	  h->call_write(_args3[_insn_pos], e, &cerrh);
+	  return true;
+      }
+      case INSN_READ: {
+	  Element *e = router()->element(_args[_insn_pos]);
+	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  String result = h->call_read(e);
+	  ErrorHandler *errh = ErrorHandler::default_handler();
+	  errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
+	  return true;
+      }
 #if CLICK_USERLEVEL || CLICK_TOOL
-    } else if (insn == INSN_SAVE || insn == INSN_APPEND) {
-	Element *e = router()->element(_args[_insn_pos]);
-	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
-	String result = h->call_read(e);
-	FILE *f;
-	if (_args3[_insn_pos] == "-")
-	    f = stdout;
-	else if (!(f = fopen(_args3[_insn_pos].c_str(), (insn == INSN_SAVE ? "wb" : "ab")))) {
-	    int saved_errno = errno;
-	    StringAccum sa;
-	    sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
-	    ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
-	    cerrh.error("%s: %s", _args3[_insn_pos].c_str(), strerror(saved_errno));
-	    return true;
-	}
-	fwrite(result.data(), 1, result.length(), f);
-	if (f != stdout)
-	    fclose(f);
+      case INSN_SAVE:
+      case INSN_APPEND: {
+	  Element *e = router()->element(_args[_insn_pos]);
+	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  String result = h->call_read(e);
+	  FILE *f;
+	  if (_args3[_insn_pos] == "-")
+	      f = stdout;
+	  else if (!(f = fopen(_args3[_insn_pos].c_str(), (insn == INSN_SAVE ? "wb" : "ab")))) {
+	      int saved_errno = errno;
+	      StringAccum sa;
+	      sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
+	      ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
+	      cerrh.error("%s: %s", _args3[_insn_pos].c_str(), strerror(saved_errno));
+	      return true;
+	  }
+	  fwrite(result.data(), 1, result.length(), f);
+	  if (f != stdout)
+	      fclose(f);
+	  return true;
+      }
+      case INSN_GOTO:
+	// reset intervening instructions
+	for (int i = _args[_insn_pos]; i < _insn_pos; i++)
+	    if (_insns[i] == INSN_WAIT_STOP)
+		_args2[i] = 0;
+	_insn_pos = _args[_insn_pos] - 1;
 	return true;
 #endif
-    } else if (insn == INSN_WRITE_SKIP || insn == INSN_IGNORE)
+      case INSN_WRITE_SKIP:
+      case INSN_IGNORE:
 	return true;
-
-    return false;
+      case INSN_STOP:
+	router()->adjust_runcount(-1);
+	return false;
+      case INSN_WAIT_TIME:
+	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
+	return false;
+      case INSN_WAIT_STOP:
+      default:
+	return false;
+    }
 }
 
 bool
@@ -250,10 +272,10 @@ DriverManager::handle_stopped_driver()
     assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT_TIME || insn == INSN_INITIAL);
     if (insn == INSN_STOP)
 	return false;
-    else if (insn == INSN_WAIT_STOP && _args[_insn_pos] > 0) {
+    else if (insn == INSN_WAIT_STOP && _args2[_insn_pos] < _args[_insn_pos]) {
 	router()->adjust_runcount(1);
-	_args[_insn_pos]--;
-	if (_args[_insn_pos] > 0)
+	_args2[_insn_pos]++;
+	if (_args2[_insn_pos] < _args[_insn_pos])
 	    return true;
     } else if (insn == INSN_WAIT_TIME)
 	_timer.unschedule();

@@ -83,7 +83,7 @@ another driver stop event pending.
 
 =back
 
-The user level driver supports two additional instructions:
+The user level driver supports three additional instructions:
 
 =over 8
 
@@ -96,6 +96,10 @@ the handler value to the standard output.
 
 Call a read handler and append the result to FILE.  If
 FILE is 'C<->', writes the handler value to the standard output.
+
+=item 'C<loop>'
+
+Starts over from the first directive.
 
 =back
 
@@ -148,7 +152,7 @@ class DriverManager : public Element { public:
 
     enum Insn { INSN_INITIAL, INSN_WAIT_STOP, INSN_WAIT_TIME, // order required
 		INSN_READ, INSN_WRITE, INSN_WRITE_SKIP, INSN_SAVE, INSN_APPEND,
-		INSN_IGNORE, INSN_STOP };
+		INSN_IGNORE, INSN_STOP, INSN_GOTO };
 
     Vector<int> _insns;
     Vector<int> _args;
