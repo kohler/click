@@ -1,3 +1,60 @@
+2004-07-03 Saturday 00:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/userlevel/iprouter-01.testie (1.1): new test
+
+2004-07-03 Saturday 00:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: icmp/icmperror.cc (1.19), icmp/icmperror.hh (1.10),
+	ip/checkipheader.cc (1.52), ip/checkipheader.hh (1.39),
+	ip/checkipheader2.hh (1.24), ip/ipclassifier.hh (1.31),
+	ip/ipfilter.cc (1.46), ip/ipfilter.hh (1.26),
+	linuxmodule/fromdevice.cc (1.81), linuxmodule/fromdevice.hh (1.40),
+	linuxmodule/fromhost.cc (1.47), linuxmodule/fromhost.hh (1.37),
+	linuxmodule/perfcountuser.cc (1.14), linuxmodule/polldevice.cc
+	(1.136), linuxmodule/polldevice.hh (1.67), linuxmodule/todevice.cc
+	(1.137), linuxmodule/todevice.hh (1.69), linuxmodule/tohost.cc
+	(1.43), linuxmodule/tohost.hh (1.30), linuxmodule/tulipstats.cc
+	(1.19), linuxmodule/tulipstats.hh (1.11): use static_initialize and
+	static_cleanup in elements (problem reported by Jerry Parente)
+
+2004-07-03 Saturday 00:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/config.cc (1.15): same for linuxmodule
+
+2004-07-03 Saturday 00:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* ns/nsclick.cc (1.20), userlevel/click.cc (1.93): regular
+	userlevel and ns drivers dont call click_export_elemnets, because
+	click_static_initialize calls it
+
+2004-07-03 Saturday 00:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/driver.cc (1.22): click_static_initialize calls
+	click_export_elements, and click_static_cleanup calls
+	click_unexport_elements
+
+2004-07-03 Saturday 00:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/Makefile.in (1.82): add .cc.s suffix rule
+
+2004-07-03 Saturday 00:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.53), include/click/element.hh (1.34),
+	lib/element.cc (1.87): add Element::static_initialize and
+	static_cleanup methods, called automatically by the build process
+
+2004-07-03 Saturday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: bsdmodule/fromhost.cc (1.6), ethernet/ethermirror.cc
+	(1.14), ethernet/hostetherfilter.cc (1.16),
+	ethernet/ip6ndadvertiser.cc (1.20): nits: prefer Element()
+	constructor to add_input/add_output
+
+2004-07-03 Saturday 00:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/: Makefile.in (1.49), testie.1 (1.2): change pod2man
+	invocation to get rid of Perl stuff
+
 2004-06-30 Wednesday 18:27  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: madwifirate.cc (1.1), madwifirate.hh (1.1),
