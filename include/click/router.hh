@@ -28,7 +28,6 @@ class Router { public:
   
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
-  void add_requirement(const String &);
   
   bool initialized() const			{ return _initialized; }
   
@@ -43,7 +42,8 @@ class Router { public:
   Element *find(const String &, Element *context, ErrorHandler * = 0) const;
 
   const Vector<String> &requirements() const	{ return _requirements; }
-
+  void add_requirement(const String &);
+  
   int ninput_pidx() const			{ return _input_eidx.size(); }
   int noutput_pidx() const			{ return _output_eidx.size(); }
 
@@ -82,8 +82,14 @@ class Router { public:
 
   void *attachment(const String &) const;
   void *set_attachment(const String &, void *);
-  
+
+  void unparse(StringAccum &, const String & = String()) const;
+  void unparse_requirements(StringAccum &, const String & = String()) const;
+  void unparse_classes(StringAccum &, const String & = String()) const;
+  void unparse_declarations(StringAccum &, const String & = String()) const;
+  void unparse_connections(StringAccum &, const String & = String()) const;
   String flat_configuration_string() const;
+  
   String element_list_string() const;
   String element_ports_string(int) const;
 

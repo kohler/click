@@ -1289,19 +1289,27 @@ Router::run_selects(bool more_tasks)
 
 // PRINTING
 
-String
-Router::flat_configuration_string() const
+void
+Router::unparse_requirements(StringAccum &sa, const String &indent) const
 {
-  StringAccum sa;
-
   // requirements
   if (_requirements.size())
-    sa << "require(" << cp_unargvec(_requirements) << ");\n\n";
-  
+    sa << indent << "require(" << cp_unargvec(_requirements) << ");\n\n";
+}
+
+void
+Router::unparse_classes(StringAccum &, const String &) const
+{
+  // there are never any compound element classes here
+}
+
+void
+Router::unparse_declarations(StringAccum &sa, const String &indent) const
+{  
   // element classes
   Vector<String> conf;
   for (int i = 0; i < nelements(); i++) {
-    sa << _element_names[i] << " :: " << _elements[i]->class_name();
+    sa << indent << _element_names[i] << " :: " << _elements[i]->class_name();
     _elements[i]->configuration(conf);
     if (conf.size())
       sa << "(" << cp_unargvec(conf) << ")";
@@ -1311,7 +1319,11 @@ Router::flat_configuration_string() const
   
   if (nelements() > 0)
     sa << "\n";
-  
+}
+
+void
+Router::unparse_connections(StringAccum &sa, const String &indent) const
+{  
   int nhookup = _hookup_from.size();
   Vector<int> next(nhookup, -1);
   Bitvector startchain(nhookup, true);
@@ -1340,14 +1352,14 @@ Router::flat_configuration_string() const
       if (used[c] || !startchain[c]) continue;
       
       const Hookup &hf = _hookup_from[c];
-      sa << _element_names[hf.idx];
+      sa << indent << _element_names[hf.idx];
       if (hf.port)
 	sa << " [" << hf.port << "]";
       
       int d = c;
       while (d >= 0 && !used[d]) {
 	if (d == c) sa << " -> ";
-	else sa << "\n    -> ";
+	else sa << "\n" << indent << "    -> ";
 	const Hookup &ht = _hookup_to[d];
 	if (ht.port)
 	  sa << "[" << ht.port << "] ";
@@ -1365,7 +1377,22 @@ Router::flat_configuration_string() const
       if (!used[c])
 	startchain[c] = true, done = false;
   }
-  
+}
+
+void
+Router::unparse(StringAccum &sa, const String &indent) const
+{
+  unparse_requirements(sa, indent);
+  unparse_classes(sa, indent);
+  unparse_declarations(sa, indent);
+  unparse_connections(sa, indent);
+}
+
+String
+Router::flat_configuration_string() const
+{
+  StringAccum sa;
+  unparse(sa);
   return sa.take_string();
 }
 
