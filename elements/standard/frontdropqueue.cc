@@ -114,7 +114,7 @@ FrontDropQueue::push(int, Packet *packet)
   if (next == _head) {
     _q[_head]->kill();
     _drops++;
-    _head++;
+    _head = next_i(_head);
   }
   
   _q[_tail] = packet;
