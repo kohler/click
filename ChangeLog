@@ -1,3 +1,9 @@
+2003-06-17 Tuesday 17:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: pokehandlers.cc (1.31), pokehandlers.hh
+	(1.19): allow live reconfiguring -- live reconfiguring will halt
+	whatever sequence of directives is currently executing
+
 2003-06-17 Tuesday 17:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/pokehandlers.cc (1.30): Pausing idea and first
