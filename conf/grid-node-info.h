@@ -33,4 +33,4 @@
 #define GRID_ETH_PROTO 12/7FFF
 
 // Grid nbr encap  protocol number in hex, with MAC packet offset
-#define GIR_NBR_ENCAP_PROTO 15/02
+#define GRID_NBR_ENCAP_PROTO 15/02
