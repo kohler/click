@@ -1,3 +1,8 @@
+2003-03-04 Tuesday 19:08  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.1 (1.10), userlevel/click.cc (1.77): remove userlevel
+	click's --stop option
+
 2003-03-04 Tuesday 16:19  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.47), toipsumdump.cc
