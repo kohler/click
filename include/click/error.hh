@@ -40,7 +40,7 @@ class ErrorHandler {
 
   String make_text(Seriousness, const char *, ...);
   virtual String make_text(Seriousness, const char *, va_list);
-  virtual String apply_landmark(const String &, const String &);
+  virtual String decorate_text(Seriousness, const String &, const String &);
   virtual void handle_text(Seriousness, const String &) = 0;
 
   static String prepend_lines(const String &, const String &);
@@ -81,7 +81,7 @@ class ErrorVeneer : public ErrorHandler { protected:
   void reset_counts();
 
   String make_text(Seriousness, const char *, va_list);
-  String apply_landmark(const String &, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
   void handle_text(Seriousness, const String &);
 
 };
@@ -96,7 +96,7 @@ class ContextErrorHandler : public ErrorVeneer {
   ContextErrorHandler(ErrorHandler *, const String &context = "",
 		      const String &indent = "  ");
   
-  String make_text(Seriousness, const char *, va_list);
+  String decorate_text(Seriousness, const String &, const String &);
   
 };
 
@@ -108,7 +108,7 @@ class PrefixErrorHandler : public ErrorVeneer {
   
   PrefixErrorHandler(ErrorHandler *, const String &prefix);
   
-  void handle_text(Seriousness, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
   
 };
 

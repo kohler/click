@@ -193,9 +193,6 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
     s = s_placeholder.cc();
   }
   
-  /*if (where)
-    msg << fix_landmark(where);*/
-
   // declare and initialize these here to make gcc shut up about possible 
   // use before initialization
   int flags = 0;
@@ -399,13 +396,12 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
       memset(dest, (flags & ZERO_PAD ? '0' : ' '), field_width - slen);
     }
   }
-  
-  int len = msg.length();
-  return String::claim_string(msg.take(), len);
+
+  return msg.take_string();
 }
 
 String
-ErrorHandler::apply_landmark(const String &landmark, const String &text)
+ErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
 {
   if (!landmark)
     return text;
@@ -431,7 +427,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
 		     const char *s, va_list val)
 {
   String text = make_text(seriousness, s, val);
-  text = apply_landmark(where, text);
+  text = decorate_text(seriousness, where, text);
   handle_text(seriousness, text);
   return -1;
 }
@@ -603,9 +599,9 @@ ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
 }
 
 String
-ErrorVeneer::apply_landmark(const String &landmark, const String &text)
+ErrorVeneer::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
-  return _errh->apply_landmark(landmark, text);
+  return _errh->decorate_text(seriousness, landmark, text);
 }
 
 void
@@ -627,14 +623,16 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 }
 
 String
-ContextErrorHandler::make_text(Seriousness seriousness, const char *format, va_list val)
+ContextErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
+  String context_lines;
   if (_context) {
-    _errh->message("%s", _context.cc());
+    context_lines = _errh->decorate_text(Message, landmark, _context);
+    if (context_lines && context_lines.back() != '\n')
+      context_lines += '\n';
     _context = String();
   }
-  String text = _errh->make_text(seriousness, format, val);
-  return prepend_lines(_indent, text);
+  return context_lines + _errh->decorate_text(seriousness, landmark, prepend_lines(_indent, text));
 }
 
 
@@ -648,8 +646,13 @@ PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 {
 }
 
-void
-PrefixErrorHandler::handle_text(Seriousness seriousness, const String &message)
+String
+PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
-  _errh->handle_text(seriousness, prepend_lines(_prefix, message));
+  // prefix is supposed to precede landmarks, so resolve landmark now
+  String ntext = text;
+  if (landmark)
+    ntext = ErrorHandler::decorate_text(seriousness, landmark, text);
+  
+  return _errh->decorate_text(seriousness, String(), prepend_lines(_prefix, ntext));
 }
