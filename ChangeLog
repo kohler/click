@@ -1,3 +1,16 @@
+2002-06-09 Sunday 02:29  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.61), INSTALL (1.24), etc/README (1.2),
+	etc/linux-2.4.18-patch (1.1): include patch for Linux 2.4.18
+
+2002-06-09 Sunday 02:08  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.9), linuxmodule/kernelversion.c (1.9),
+	linuxmodule/module.cc (1.68), linuxmodule/modulepriv.hh (1.31),
+	linuxmodule/proclikefs.c (1.4),
+	tools/click-install/click-install.cc (1.49): update clickfs for
+	Linux 2.4
+
 2002-06-08 Saturday 14:32  Eddie Kohler <kohler@icir.org>
 
 	* elements/grid/gridlogger.cc (1.2): require userlevel

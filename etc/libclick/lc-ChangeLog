@@ -1,3 +1,7 @@
+2002-06-09 Sunday 02:29  Eddie Kohler <kohler@icir.org>
+
+	* INSTALL: include patch for Linux 2.4.18
+
 2002-06-08 Saturday 14:24  Eddie Kohler <kohler@icir.org>
 
 	* include/click/confparse.hh, include/click/confparse.hh,
