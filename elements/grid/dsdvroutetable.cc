@@ -779,11 +779,13 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
       unsigned age = jiff_to_msec(jiff - old_r->last_expired_jiffies);
       if (age > 2 * grid_hello::MAX_TTL_DEFAULT || was_sender) {
 	// Assume we got a new entry, not a stale entry that has been
-	// floating around the network.  Treat as new sequence number,
+	// floating around the network.  Treat as newer sequence number,
 	// but slightly differently: reboot implies everything could
 	// be different.
 	new_r.need_seq_ad = true;
 	new_r.need_metric_ad = true;
+	new_r.last_seq_jiffies = jiff; // not done by update_wst() becaue seq is less, so do it here
+	assert(new_r.last_updated_jiffies = new_r.last_seq_jiffies);
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 	insert_route(new_r, was_sender ? GridLogger::REBOOT_SEQ_SENDER : GridLogger::REBOOT_SEQ);
       }
