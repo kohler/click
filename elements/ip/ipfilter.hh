@@ -118,6 +118,7 @@ class IPFilter : public Classifier { public:
     WT_TYPE_MASK = 0xFFFF0000, WT_DATA = 0x0000FFFF,
     WT_TYPE = 0x00010000, WT_PORT = 0x00020000,
     WT_PROTO = 0x00030000, WT_TCPOPT = 0x00040000,
+    WT_ICMP_TYPE = 0x00050000,
     
     UNKNOWN = -1000,
     NONE = 0,

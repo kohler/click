@@ -29,6 +29,7 @@
 #include <click/straccum.hh>
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
+#include <click/click_icmp.h>
 #include <click/hashmap.hh>
 
 static HashMap<String, int> *wordmap;
@@ -78,6 +79,18 @@ IPFilter::initialize_wordmap()
   wordmap->insert("rst",	WT_TCPOPT | TH_RST);
   wordmap->insert("psh",	WT_TCPOPT | TH_PUSH);
   wordmap->insert("urg",	WT_TCPOPT | TH_URG);
+
+  wordmap->insert("echo_reply",	WT_ICMP_TYPE | ICMP_ECHO_REPLY);
+  wordmap->insert("dst_unreachable", WT_ICMP_TYPE | ICMP_DST_UNREACHABLE);
+  wordmap->insert("source_quench", WT_ICMP_TYPE | ICMP_SOURCE_QUENCH);
+  wordmap->insert("redirect",	WT_ICMP_TYPE | ICMP_REDIRECT);
+  wordmap->insert("echo",	WT_ICMP_TYPE | ICMP_ECHO);
+  wordmap->insert("time_exceeded", WT_ICMP_TYPE | ICMP_TYPE_TIME_EXCEEDED);
+  wordmap->insert("parameter_problem", WT_ICMP_TYPE | ICMP_PARAMETER_PROBLEM);
+  wordmap->insert("time_stamp", WT_ICMP_TYPE | ICMP_TIME_STAMP);
+  wordmap->insert("time_stamp_reply", WT_ICMP_TYPE | ICMP_TIME_STAMP_REPLY);
+  wordmap->insert("info_request", WT_ICMP_TYPE | ICMP_INFO_REQUEST);
+  wordmap->insert("info_request_reply", WT_ICMP_TYPE | ICMP_INFO_REQUEST_REPLY);
 }
 
 IPFilter::IPFilter()
@@ -366,7 +379,8 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     add_exprs_for_proto(_u.i, _mask, c, tree);
   else if (_transp_proto != UNKNOWN)
     add_exprs_for_proto(_transp_proto, 0xFF, c, tree);
-  
+
+  // handle other types
   if (_type == TYPE_HOST || _type == TYPE_NET) {
     e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
     e.value.u = _u.ip.s_addr;
@@ -670,6 +684,10 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
     } else if ((wt & WT_TYPE_MASK) == WT_TCPOPT) {
       prim._data = DATA_TCPOPT;
+      prim._u.i = (wt & WT_DATA);
+
+    } else if ((wt & WT_TYPE_MASK) == WT_ICMP_TYPE) {
+      prim._data = DATA_ICMP_TYPE;
       prim._u.i = (wt & WT_DATA);
 
     } else if (cp_integer(wd, &prim._u.i))

@@ -96,7 +96,8 @@
  * Returns a human-readable description of the IPRewriter's current set of
  * mappings.
  *
- * =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper */
+ * =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
+ * ICMPRewriter, ICMPPingRewriter */
 
 class IPRewriter : public IPRw {
 

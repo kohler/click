@@ -73,11 +73,9 @@ SetIPDSCP::smaction(Packet *p_in)
   
   // 19.Aug.1999 - incrementally update IP checksum according to RFC1624.
   // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
-  unsigned sum =
-    (~ip->ip_sum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
-  while (sum >> 16)		// XXX necessary?
-    sum = (sum & 0xFFFF) + (sum >> 16);
-  ip->ip_sum = ~sum;
+  unsigned sum = (~ip->ip_sum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
+  sum = (sum & 0xFFFF) + (sum >> 16);
+  ip->ip_sum = ~(sum + (sum >> 16));
   
   return p;
 }

@@ -115,7 +115,8 @@ CheckIPHeader::simple_action(Packet *p)
   unsigned plen = p->length() - _offset;
   unsigned int src;
   unsigned hlen, len;
-  
+
+  // cast to int so very large plen is interpreted as negative 
   if ((int)plen < (int)sizeof(click_ip))
     goto bad;
 
@@ -136,8 +137,8 @@ CheckIPHeader::simple_action(Packet *p)
       goto bad;
   } else {
 #endif
-  if (in_cksum((unsigned char *)ip, hlen) != 0)
-    goto bad;
+    if (in_cksum((unsigned char *)ip, hlen) != 0)
+      goto bad;
 #ifdef __KERNEL__
   }
 #endif

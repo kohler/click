@@ -91,9 +91,8 @@ CheckTCPHeader::simple_action(Packet *p)
     csum += words[3];
     csum += htons(IP_PROTO_TCP);
     csum += htons(len);
-    while (csum >> 16)
-      csum = (csum & 0xFFFF) + (csum >> 16);
-    if (csum != 0xFFFF)
+    csum = (csum & 0xFFFF) + (csum >> 16);
+    if (((csum + (csum >> 16)) & 0xFFFF) != 0xFFFF)
       goto bad;
   }
 #endif
