@@ -145,7 +145,7 @@ ToSocket::initialize(ErrorHandler *errh)
 #ifdef TCP_NODELAY
   // disable Nagle algorithm
   if (_protocol == IPPROTO_TCP && _nodelay)
-    if (setsockopt(_fd, SOL_TCP, TCP_NODELAY, &_nodelay, sizeof(_nodelay)) < 0)
+    if (setsockopt(_fd, IP_PROTO_TCP, TCP_NODELAY, &_nodelay, sizeof(_nodelay)) < 0)
       return initialize_socket_error(errh, "setsockopt");
 #endif
 
