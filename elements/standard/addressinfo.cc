@@ -1,9 +1,10 @@
-// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/addressinfo.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../include/click/standard/addressinfo.hh" -*-
 /*
  * addressinfo.{cc,hh} -- element stores address information
  * Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2004 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,10 +29,12 @@
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
-#if defined(__linux__) && CLICK_USERLEVEL
+#if CLICK_USERLEVEL && defined(__linux__)
 # include <net/if.h>
 # include <sys/ioctl.h>
 # include <net/if_arp.h>
+# include <click/userutils.hh>
+# include <time.h>
 #endif
 CLICK_DECLS
 
@@ -292,6 +295,68 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 #endif /* HAVE_IP6 */
 
 
+#if CLICK_USERLEVEL && defined(__linux__)
+
+static bool
+query_ethernet_device(const String &s, unsigned char *store)
+{
+    // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
+    // device name, because this causes the kernel to try to load weird kernel
+    // modules.
+    static time_t read_time = 0;
+    static Vector<String> device_names;
+    static Vector<String> device_eths;
+
+    // XXX magic time constant
+    if (!read_time || read_time + 30 < time(0)) {
+	device_names.clear();
+	device_eths.clear();
+	
+	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (query_fd < 0)
+	    return false;
+	struct ifreq ifr;
+	
+	String f = file_string("/proc/net/dev");
+	const char *begin = f.begin(), *end = f.end();
+	while (begin < end) {
+	    const char *colon = find(begin, end, ':');
+	    const char *nl = find(begin, end, '\n');
+	    if (colon > begin && colon < nl) {
+		const char *word = colon;
+		while (word > begin && !isspace(word[-1]))
+		    word--;
+		if ((size_t) (colon - word) < sizeof(ifr.ifr_name)) {
+		    // based on patch from Jose Vasconcellos
+		    // <jvasco@bellatlantic.net>
+		    String dev_name = f.substring(word, colon);
+		    strcpy(ifr.ifr_name, dev_name.c_str());
+		    if (ioctl(query_fd, SIOCGIFHWADDR, &ifr) >= 0
+			&& ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
+			device_names.push_back(dev_name);
+			device_eths.push_back(String(ifr.ifr_hwaddr.sa_data, 6));
+		    }
+		}
+	    }
+	    begin = nl + 1;
+	}
+
+	close(query_fd);
+	read_time = time(0);
+    }
+
+    for (int i = 0; i < device_names.size(); i++)
+	if (device_names[i] == s) {
+	    memcpy(store, device_eths[i].data(), 6);
+	    return true;
+	}
+
+    return false;
+}
+
+#endif /* CLICK_USERLEVEL && defined(__linux__) */
+
+
 bool
 AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 {
@@ -321,22 +386,9 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
     return true;
   } else if (dev)
     dev_put(dev);
-#elif defined(__linux__) && CLICK_USERLEVEL
-  // on Linux userlevel, call ioctl on a socket opened for the purpose
-  // -- based on patch from Jose Vasconcellos <jvasco@bellatlantic.net>
-  struct ifreq ifr;
-  if ((size_t) s.length() < sizeof(ifr.ifr_name)) {
-    strcpy(ifr.ifr_name, s.cc());
-    int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd >= 0) {
-      int ret = ioctl(fd, SIOCGIFHWADDR, &ifr);
-      close(fd);
-      if (ret >= 0 && ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
-	memcpy(store, ifr.ifr_hwaddr.sa_data, 6);
-	return true;
-      }
-    }
-  }
+#elif CLICK_USERLEVEL && defined(__linux__)
+  if (query_ethernet_device(s, store))
+      return true;
 #endif
   
   return false;
