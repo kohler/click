@@ -1,4 +1,3 @@
-// -*- c++ -*-
 // grid-single-if-gw.cpp
 
 // like grid-single-if-gw.click, but designed to be run through cpp
@@ -9,8 +8,8 @@
 #include "grid-gw-info.h"
 
 // device interface
-eth :: PacketSocket(NET_DEVICE, 0)
-to_eth :: Queue -> eth
+eth :: FromDevice(NET_DEVICE, 0)
+to_eth :: ToDevice(NET_DEVICE)
 
 // IP interfaces on gateway machine
 tun1 :: Tun(TUN_DEVICE, GW_IP, GW_NETMASK) // gateway's regular address
