@@ -23,9 +23,9 @@ Version 1.0.5
 
 * Added select_fd() and selected() to ToBPF.
 
-* conf/make-udpgen.pl: a perl script that generates udpgen configuration
+* conf/make-udpgen.pl: a perl script that generates udpgen configuration.
 
-* conf/make-udpcount.pl: a perl script that generates udpcount configuration
+* conf/make-udpcount.pl: a perl script that generates udpcount configuration.
 
 * Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
