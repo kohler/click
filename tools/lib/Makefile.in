@@ -74,6 +74,7 @@ endif
 install: libclicktool.a
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL_DATA) libclicktool.a $(libdir)/libclicktool.a
+	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/*.hh $(includedir)
 install-man:
 

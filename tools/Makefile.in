@@ -96,7 +96,7 @@ distdir:
 	rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	@-for d in lib $(TOOLDIRS); do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
+	@-for d in lib $(TOOLDIRS) udpgen; do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
