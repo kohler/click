@@ -39,8 +39,12 @@
 #define SOURCE_OPT		306
 #define CONFIG_OPT		307
 #define REVERSE_OPT		308
+#define COMBINE_OPT		309
+#define COMPILE_OPT		310
 
 static Clp_Option options[] = {
+  { "classes", 0, COMPILE_OPT, 0, Clp_Negate },
+  { "combine", 0, COMBINE_OPT, 0, Clp_Negate },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -55,6 +59,7 @@ static Clp_Option options[] = {
 static const char *program_name;
 static String::Initializer string_initializer;
 static String runclick_prog;
+static String click_compile_prog;
 
 void
 short_usage()
@@ -77,6 +82,8 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
   -o, --output FILE           Write output to FILE.\n\
+      --no-combine            Do not combine adjacent Classifiers.\n\
+      --no-classes            Do not generate FastClassifier elements.\n\
   -k, --kernel                Compile into Linux kernel binary package.\n\
   -u, --user                  Compile into user-level binary package.\n\
   -s, --source                Write source code only.\n\
@@ -90,6 +97,95 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 
 // Classifier related stuff
+
+static bool
+combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
+{
+  // find where `to_i' is heading for
+  Vector<int> first_hop, second_hop;
+  router->find_connection_vector_from(from_i, first_hop);
+  router->find_connection_vector_from(to_i, second_hop);
+
+  // check for weird configurations
+  for (int i = 0; i < first_hop.size(); i++)
+    if (first_hop[i] < 0)
+      return false;
+  for (int i = 0; i < second_hop.size(); i++)
+    if (second_hop[i] < 0)
+      return false;
+  if (second_hop.size() == 0)
+    return false;
+
+  // combine configurations
+  Vector<String> from_words, to_words;
+  cp_argvec(router->econfiguration(from_i), from_words);
+  cp_argvec(router->econfiguration(to_i), to_words);
+  if (from_words.size() != first_hop.size()
+      || to_words.size() != second_hop.size())
+    return false;
+  Vector<String> new_words;
+  for (int i = 0; i < from_port; i++)
+    new_words.push_back(from_words[i]);
+  for (int i = 0; i < to_words.size(); i++)
+    if (to_words[i] == "-")
+      new_words.push_back(from_words[from_port]);
+    else if (from_words[from_port] == "-")
+      new_words.push_back(to_words[i]);
+    else
+      new_words.push_back(from_words[from_port] + " " + to_words[i]);
+  for (int i = from_port + 1; i < from_words.size(); i++)
+    new_words.push_back(from_words[i]);
+  router->econfiguration(from_i) = cp_unargvec(new_words);
+
+  // change connections
+  router->kill_connection(first_hop[from_port]);
+  for (int i = from_port + 1; i < first_hop.size(); i++)
+    router->change_connection_from(first_hop[i], Hookup(from_i, i + to_words.size() - 1));
+  const Vector<Hookup> &ht = router->hookup_to();
+  for (int i = 0; i < second_hop.size(); i++)
+    router->add_connection(Hookup(from_i, from_port + i), ht[second_hop[i]]);
+
+  return true;
+}
+
+static bool
+try_combine_classifiers(RouterT *router, int class_i)
+{
+  int classifier_t = router->type_index("Classifier");
+
+  const Vector<Hookup> &hf = router->hookup_from();
+  const Vector<Hookup> &ht = router->hookup_to();
+  for (int i = 0; i < hf.size(); i++)
+    if (hf[i].idx == class_i && router->etype(ht[i].idx) == classifier_t
+	&& ht[i].port == 0) {
+      // perform a combination
+      if (combine_classifiers(router, class_i, hf[i].port, ht[i].idx)) {
+	try_combine_classifiers(router, class_i);
+	return true;
+      }
+    }
+
+  return false;
+}
+
+static void
+try_remove_classifiers(RouterT *router, Vector<int> &classifiers)
+{
+  for (int i = 0; i < classifiers.size(); i++) {
+    Vector<Hookup> v;
+    router->find_connections_to(Hookup(classifiers[i], 0), v);
+    if (v.size() == 0) {
+      router->element(classifiers[i]).type = -1;
+      classifiers[i] = classifiers.back();
+      classifiers.pop_back();
+      i--;
+    }
+  }
+
+  router->remove_blank_elements();
+  router->compact_connections();
+}
+
 
 static String
 get_string_from_process(String cmdline, const String &input,
@@ -476,6 +572,147 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   }
 }
 
+static void
+compile_classifiers(RouterT *r, const String &package_name,
+		    Vector<int> &classifiers,
+		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
+{
+  r->add_requirement(package_name);
+
+  // create C++ files
+  StringAccum header, source;
+  header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
+	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
+	 << "#include \"clickpackage.hh\"\n#include \"element.hh\"\n";
+  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n";
+  source << "#include \"" << package_name << ".hh\"\n";
+  
+  // write Classifier programs
+  for (int i = 0; i < classifiers.size(); i++)
+    analyze_classifier(r, classifiers[i], header, source, errh);
+    
+  // write final text
+  {
+    header << "#endif\n";
+    int nclasses = gen_cxxclass_names.size();
+    source << "static int hatred_of_rebecca[" << nclasses << "];\n"
+	   << "extern \"C\" int\ninit_module()\n{\n\
+  click_provide(\""
+	   << package_name << "\");\n";
+    for (int i = 0; i < nclasses; i++)
+      source << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
+	     << gen_eclass_names[i] << "\", new "
+	     << gen_cxxclass_names[i] << ");\n\
+  MOD_DEC_USE_COUNT;\n";
+    source << "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n";
+    for (int i = 0; i < nclasses; i++)
+      source << "  MOD_INC_USE_COUNT;\n\
+  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
+    source << "  click_unprovide(\"" << package_name << "\");\n}\n";
+  }
+
+  // compile files if required
+  if (compile_kernel || compile_user) {
+    // create temporary directory
+    String tmpdir = click_mktmpdir(errh);
+    if (!tmpdir) exit(1);
+    if (chdir(tmpdir.cc()) < 0)
+      errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+    
+    String filename = package_name + ".hh";
+    FILE *f = fopen(filename, "w");
+    if (!f)
+      errh->fatal("%s: %s", filename.cc(), strerror(errno));
+    fwrite(header.data(), 1, header.length(), f);
+    fclose(f);
+
+    String cxx_filename = package_name + ".cc";
+    f = fopen(cxx_filename, "w");
+    if (!f)
+      errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+    fwrite(source.data(), 1, source.length(), f);
+    fclose(f);
+    
+    // compile kernel module
+    if (compile_kernel) {
+      String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	errh->fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	errh->fatal("`%s' failed", compile_command.cc());
+    }
+
+    // compile userlevel
+    if (compile_user) {
+      String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	errh->fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	errh->fatal("`%s' failed", compile_command.cc());
+    }
+  }
+
+  // add .cc, .hh and .?o files to archive
+  {
+    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
+    ae.data = source.take_string();
+    r->add_archive(ae);
+
+    ae.name = package_name + ".hh";
+    ae.data = header.take_string();
+    r->add_archive(ae);
+
+    if (compile_kernel) {
+      ae.name = package_name + ".ko";
+      ae.data = file_string(ae.name, errh);
+      r->add_archive(ae);
+    }
+    
+    if (compile_user) {
+      ae.name = package_name + ".uo";
+      ae.data = file_string(ae.name, errh);
+      r->add_archive(ae);
+    }
+  }
+
+  // add elementmap to archive
+  {
+    if (r->archive_index("elementmap") < 0)
+      r->add_archive(init_archive_element("elementmap", 0600));
+    ArchiveElement &ae = r->archive("elementmap");
+    ElementMap em(ae.data);
+    String header_file = package_name + ".hh";
+    for (int i = 0; i < gen_eclass_names.size(); i++)
+      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h");
+    ae.data = em.unparse();
+  }
+
+  // add classifier configurations to archive
+  {
+    if (r->archive_index("fastclassifier_info") < 0)
+      r->add_archive(init_archive_element("fastclassifier_info", 0600));
+    ArchiveElement &ae = r->archive("fastclassifier_info");
+    StringAccum sa;
+    for (int i = 0; i < gen_eclass_names.size(); i++) {
+      String x = cp_subst(old_configurations[i]);
+      sa << gen_eclass_names[i] << '\t';
+      for (int j = 0; j < x.length(); j++)
+	if (x[j] == '\n' || x[j] == '\t')
+	  sa << ' ';
+	else
+	  sa << x[j];
+      sa << '\n';
+    }
+    ae.data += sa.take_string();
+  }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -492,8 +729,10 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
-  int compile_kernel = 0;
-  int compile_user = 0;
+  bool compile_kernel = false;
+  bool compile_user = false;
+  bool combine_classifiers = true;
+  bool do_compile = true;
   bool source_only = false;
   bool config_only = false;
   bool reverse = false;
@@ -533,6 +772,14 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
 
+     case COMBINE_OPT:
+      combine_classifiers = !clp->negated;
+      break;
+      
+     case COMPILE_OPT:
+      do_compile = !clp->negated;
+      break;
+      
      case REVERSE_OPT:
       reverse = !clp->negated;
       break;
@@ -570,6 +817,8 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
   r->flatten(errh);
+  if (source_only || config_only)
+    compile_user = compile_kernel = false;
 
   // open output file
   FILE *outf = stdout;
@@ -588,7 +837,7 @@ particular purpose.\n");
   
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
-  String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+  click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
 
   // find Classifiers
   Vector<int> classifiers;
@@ -599,10 +848,9 @@ particular purpose.\n");
 	if (r->etype(i) == t)
 	  classifiers.push_back(i);
   }
-  int nclassifiers = classifiers.size();
 
   // quit early if no Classifiers
-  if (nclassifiers == 0) {
+  if (classifiers.size() == 0) {
     if (source_only)
       errh->message("no Classifiers in router");
     else
@@ -619,161 +867,36 @@ particular purpose.\n");
     uniqueifier++;
     package_name = "fastclassifier" + String(uniqueifier);
   }
-  r->add_requirement(package_name);
-
-  // create C++ files
-  StringAccum header, source;
-  header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
-	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
-	 << "#include \"clickpackage.hh\"\n#include \"element.hh\"\n";
-  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n";
-  if (!source_only)
-    source << "#include \"" << package_name << ".hh\"\n";
-  else
-    source << "/* #include \"" << package_name << ".hh\" */\n";
   
-  // write Classifier programs
-  for (int i = 0; i < nclassifiers; i++)
-    analyze_classifier(r, classifiers[i], header, source, errh);
-
-  // write final text
-  {
-    header << "#endif\n";
-    int nclasses = gen_cxxclass_names.size();
-    source << "static int hatred_of_rebecca[" << nclasses << "];\n"
-	   << "extern \"C\" int\ninit_module()\n{\n\
-  click_provide(\""
-	   << package_name << "\");\n";
-    for (int i = 0; i < nclasses; i++)
-      source << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
-	     << gen_eclass_names[i] << "\", new "
-	     << gen_cxxclass_names[i] << ");\n\
-  MOD_DEC_USE_COUNT;\n";
-    source << "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n";
-    for (int i = 0; i < nclasses; i++)
-      source << "  MOD_INC_USE_COUNT;\n\
-  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
-    source << "  click_unprovide(\"" << package_name << "\");\n}\n";
+  // try combining classifiers
+  if (combine_classifiers) {
+    bool any_combined = false;
+    for (int i = 0; i < classifiers.size(); i++)
+      any_combined |= try_combine_classifiers(r, classifiers[i]);
+    if (any_combined)
+      try_remove_classifiers(r, classifiers);
   }
 
-  // open `f' for C++ output
+  if (do_compile)
+    compile_classifiers(r, package_name, classifiers,
+			compile_kernel, compile_user, errh);
+
+  // write output
   if (source_only) {
-    fwrite(header.data(), 1, header.length(), outf);
-    fwrite(source.data(), 1, source.length(), outf);
-    if (outf != stdout)
-      fclose(outf);
-    exit(0);
+    if (r->archive_index(package_name + ".hh") < 0) {
+      errh->error("no source code generated");
+      exit(1);
+    }
+    const ArchiveElement &aeh = r->archive(package_name + ".hh");
+    const ArchiveElement &aec = r->archive(package_name + ".cc");
+    fwrite(aeh.data.data(), 1, aeh.data.length(), outf);
+    fwrite(aec.data.data(), 1, aec.data.length(), outf);
   } else if (config_only) {
     String config = r->configuration_string();
     fwrite(config.data(), 1, config.length(), outf);
-    if (outf != stdout)
-      fclose(outf);
-    exit(0);
-  }
-
-  // otherwise, compile files
-  if (compile_kernel > 0 || compile_user > 0) {
-    // create temporary directory
-    String tmpdir = click_mktmpdir(errh);
-    if (!tmpdir) exit(1);
-    if (chdir(tmpdir.cc()) < 0)
-      errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
-    
-    String filename = package_name + ".hh";
-    FILE *f = fopen(filename, "w");
-    if (!f)
-      errh->fatal("%s: %s", filename.cc(), strerror(errno));
-    fwrite(header.data(), 1, header.length(), f);
-    fclose(f);
-
-    String cxx_filename = package_name + ".cc";
-    f = fopen(cxx_filename, "w");
-    if (!f)
-      errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
-    fwrite(source.data(), 1, source.length(), f);
-    fclose(f);
-    
-    // compile kernel module
-    if (compile_kernel > 0) {
-      String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
-      if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
-      else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
-    }
-
-    // compile userlevel
-    if (compile_user > 0) {
-      String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
-      if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
-      else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
-    }
-  }
-
-  // read .cc and .?o files, add them to archive
-  {
-    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
-    ae.data = source.take_string();
-    r->add_archive(ae);
-
-    ae.name = package_name + ".hh";
-    ae.data = header.take_string();
-    r->add_archive(ae);
-
-    if (compile_kernel > 0) {
-      ae.name = package_name + ".ko";
-      ae.data = file_string(ae.name, errh);
-      r->add_archive(ae);
-    }
-    
-    if (compile_user > 0) {
-      ae.name = package_name + ".uo";
-      ae.data = file_string(ae.name, errh);
-      r->add_archive(ae);
-    }
-  }
-
-  // add elementmap to archive
-  {
-    if (r->archive_index("elementmap") < 0)
-      r->add_archive(init_archive_element("elementmap", 0600));
-    ArchiveElement &ae = r->archive("elementmap");
-    ElementMap em(ae.data);
-    String header_file = package_name + ".hh";
-    for (int i = 0; i < gen_eclass_names.size(); i++)
-      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h");
-    ae.data = em.unparse();
-  }
-
-  // add classifier configurations to archive
-  {
-    if (r->archive_index("fastclassifier_info") < 0)
-      r->add_archive(init_archive_element("fastclassifier_info", 0600));
-    ArchiveElement &ae = r->archive("fastclassifier_info");
-    StringAccum sa;
-    for (int i = 0; i < gen_eclass_names.size(); i++) {
-      String x = cp_subst(old_configurations[i]);
-      sa << gen_eclass_names[i] << '\t';
-      for (int j = 0; j < x.length(); j++)
-	if (x[j] == '\n' || x[j] == '\t')
-	  sa << ' ';
-	else
-	  sa << x[j];
-      sa << '\n';
-    }
-    ae.data += sa.take_string();
-  }
+  } else
+    write_router_file(r, outf, errh);
   
-  // write configuration
-  write_router_file(r, outf, errh);
   exit(0);
 }
 
