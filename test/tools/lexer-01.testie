@@ -22,9 +22,9 @@ A :: Idle;
 "
 
 %expect stderr
-<expr>:5: class `A' used as element name
-<expr>:3: class `A' used as element name
-<expr>:5: class `A' used as element name
+<expr>:5: class 'A' used as element name
+<expr>:3: class 'A' used as element name
+<expr>:5: class 'A' used as element name
 
 %ignore
 #.*
