@@ -1,3 +1,13 @@
+2002-05-31 Friday 01:42  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bighashmap.cc (1.10), bighashmap.hh (1.9): add
+	findp_force() and key_of_value() methods
+
+2002-05-31 Friday 01:42  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap_arena.hh (1.5), lib/bighashmap_arena.cc
+	(1.7): nitlet
+
 2002-05-30 Thursday 21:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.4), dsdvroutetable.hh (1.4):
