@@ -31,6 +31,7 @@ class AdaptiveRED : public RED { public:
 
     const char *class_name() const		{ return "AdaptiveRED"; }
     AdaptiveRED *clone() const			{ return new AdaptiveRED; }
+    void *cast(const char *);
 
     int initialize(ErrorHandler *);
     void uninitialize();

@@ -31,6 +31,15 @@ AdaptiveRED::~AdaptiveRED()
     MOD_DEC_USE_COUNT;
 }
 
+void *
+AdaptiveRED::cast(const char *n)
+{
+    if (strcmp(n, "RED") == 0 || strcmp(n, "AdaptiveRED") == 0)
+	return (Element *)this;
+    else
+	return RED::cast(n);
+}
+
 int
 AdaptiveRED::initialize(ErrorHandler *errh)
 {
