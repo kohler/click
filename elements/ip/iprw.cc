@@ -606,20 +606,33 @@ IPRw::clean_map(Map &table)
 void
 IPRw::clear_map(Map &table)
 {
+  static const int max_count = 20000;
   Vector<Mapping *> to_free;
-  
-  for (Map::Iterator iter = table.first(); iter; iter++) {
-    Mapping *m = iter.value();
-    if (m->is_forward())
-      to_free.push_back(m);
-  }
 
-  for (int i = 0; i < to_free.size(); i++) {
-    Mapping *m = to_free[i];
-    if (Pattern *p = m->pattern())
-      p->mapping_freed(m);
-    delete m->reverse();
-    delete m;
+  while (1) {
+
+    for (Map::Iterator iter = table.first(); iter; iter++) {
+      Mapping *m = iter.value();
+      if (m->is_forward()) {
+	to_free.push_back(m);
+	if (to_free.size() > max_count)
+	  break;
+      }
+    }
+    
+    for (int i = 0; i < to_free.size(); i++) {
+      Mapping *m = to_free[i];
+      if (Pattern *p = m->pattern())
+	p->mapping_freed(m);
+      delete m->reverse();
+      delete m;
+    }
+
+    if (to_free.size() <= max_count)
+      break;
+
+    to_free.clear();
+    
   }
 
   table.clear();
