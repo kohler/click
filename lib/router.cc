@@ -573,10 +573,14 @@ Router::check_driver()
   _runcount_lock.acquire();
 
   if (_driver_runcount <= 0) {
-    _driver_runcount = 0;
     DriverManager *dm = (DriverManager *)(attachment("DriverManager"));
-    if (dm)
-      dm->handle_stopped_driver();
+    if (dm && initialized())
+      while (1) {
+	int was_runcount = _driver_runcount;
+	dm->handle_stopped_driver();
+	if (_driver_runcount <= was_runcount)
+	  break;
+      }
   }
   bool more = (_driver_runcount > 0);
   
