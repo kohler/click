@@ -1,3 +1,16 @@
+2005-02-17 Thursday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/radixiplookup.cc (1.16): oops
+
+2005-02-17 Thursday 03:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.8), directiplookup.hh (1.9),
+	iproutetable.cc (1.13), iproutetable.hh (1.16), lineariplookup.cc
+	(1.11), lineariplookup.hh (1.11), radixiplookup.cc (1.15),
+	radixiplookup.hh (1.16), trieiplookup.cc (1.13), trieiplookup.hh
+	(1.12): more Radix updates: faster add and remove (no need to scan
+	the whole table)
+
 2005-02-17 Thursday 01:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/directiplookup.cc (1.7): nit
