@@ -1,3 +1,18 @@
+2001-05-08 Tuesday 15:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid-node: [no log message]
+
+2001-05-08 Tuesday 14:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/printold.cc, tools/run-grid-gateway.openbsd:
+	[no log message]
+
+2001-05-08 Tuesday 14:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc, gridroutetable.hh,
+	updateroutes.cc: initial untested implementation of new grid
+	routing table
+
 2001-05-07 Monday 12:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc, gridroutetable.hh: new DSDV
