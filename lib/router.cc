@@ -454,7 +454,7 @@ Router::check_push_and_pull(ErrorHandler *errh)
     if (input_pers[i] == Element::VAGNOSTIC) {
       int fid = _input_fidx[i];
       int port = i - _input_pidx[fid];
-      Bitvector bv = _elements[fid]->forward_flow(port);
+      Bitvector bv = _elements[fid]->forward_flow(port, errh);
       int opidx = _output_pidx[fid];
       for (int j = 0; j < bv.size(); j++)
 	if (bv[j] && output_pers[opidx+j] == Element::VAGNOSTIC) {
@@ -592,7 +592,7 @@ Router::downstream_inputs(Element *first_element, int first_output,
       if (diff[i]) {
 	int facno = _input_fidx[i];
 	if (!stop_filter || !stop_filter->match(_elements[facno])) {
-	  Bitvector bv = _elements[facno]->forward_flow(input_pidx_port(i));
+	  Bitvector bv = _elements[facno]->forward_flow(input_pidx_port(i), ErrorHandler::default_handler());
 	  outputs.or_at(bv, _output_pidx[facno]);
 	}
       }
@@ -666,7 +666,7 @@ Router::upstream_outputs(Element *first_element, int first_input,
       if (diff[i]) {
 	int facno = _output_fidx[i];
 	if (!stop_filter || !stop_filter->match(_elements[facno])) {
-	  Bitvector bv = _elements[facno]->backward_flow(output_pidx_port(i));
+	  Bitvector bv = _elements[facno]->backward_flow(output_pidx_port(i), ErrorHandler::default_handler());
 	  inputs.or_at(bv, _input_pidx[facno]);
 	}
       }
