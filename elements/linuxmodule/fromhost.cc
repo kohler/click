@@ -170,7 +170,9 @@ FromLinux::uninitialize()
 {
   fromlinux_map.remove(this);
   if (fromlinux_map.lookup(_dev) != 0) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     dev_put(_dev);
+#endif
     _dev = 0; 
     return;
   }

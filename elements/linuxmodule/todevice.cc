@@ -159,7 +159,9 @@ void
 ToDevice::uninitialize()
 {
   to_device_map.remove(this);
+#if LINUX_VERSION_CODE >= 0x020400
   dev_put(_dev);
+#endif
   _task.unschedule();
 }
 
@@ -349,7 +351,15 @@ ToDevice::change_device(net_device *dev)
 	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
     
     to_device_map.remove(this);
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_put(_dev);
+#endif
     _dev = dev;
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_hold(_dev);
+#endif
     to_device_map.insert(this);
 
     if (_dev)

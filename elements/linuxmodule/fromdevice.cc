@@ -213,7 +213,15 @@ FromDevice::change_device(net_device *dev)
     from_device_map.remove(this);
     if (_promisc && _dev)
 	dev_set_promiscuity(_dev, -1);
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_put(_dev);
+#endif
     _dev = dev;
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_hold(_dev);
+#endif
     if (_promisc && _dev)
 	dev_set_promiscuity(_dev, 1);
     from_device_map.insert(this);

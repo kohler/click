@@ -194,7 +194,9 @@ PollDevice::uninitialize()
   }
   if (_dev && _promisc)
       dev_set_promiscuity(_dev, -1);
+#if LINUX_VERSION_CODE >= 0x020400
   dev_put(_dev);
+#endif
   _task.unschedule();
 #endif
 }
@@ -322,8 +324,16 @@ PollDevice::change_device(net_device *dev)
 	_dev->poll_off(_dev);
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_put(_dev);
+#endif
     
     _dev = dev;
+#if LINUX_VERSION_CODE >= 0x020400
+    if (_dev)
+	dev_hold(_dev);
+#endif
     if (_dev && !_dev->polling)
 	_dev->poll_on(_dev);
     if (_dev && _promisc)

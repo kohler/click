@@ -132,7 +132,9 @@ ToLinux::push(int port, Packet *p)
 void
 ToLinux::uninitialize()
 {
+#if LINUX_VERSION_CODE >= 0x020400
   dev_put(_dev);
+#endif
 }
 
 ELEMENT_REQUIRES(linuxmodule)
