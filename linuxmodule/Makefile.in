@@ -51,8 +51,8 @@ LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
-CFLAGS = @CFLAGS_NDEBUG@
-CXXFLAGS = @CXXFLAGS_NDEBUG@
+CFLAGS = @CFLAGS_NDEBUG@ -DRR_SCHED
+CXXFLAGS = @CXXFLAGS_NDEBUG@ -DRR_SCHED
 
 DEFS = @DEFS@ 
 INCLUDES = -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/lib -I/usr/src/linux/include
