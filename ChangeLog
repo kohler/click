@@ -1,3 +1,8 @@
+2003-03-26 Wednesday 11:02  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/ether.h (1.2): add click_ether_vlan, for
+	802.1q-type VLANed EThernet; provided by Brecht Vermeulen
+
 2003-03-25 Tuesday 22:20  Eddie Kohler <kohler@icir.org>
 
 	* include/clicknet/icmp6.h (1.4): more #undefs from Kendy
