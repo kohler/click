@@ -86,7 +86,7 @@ class RED : public Element { public:
   int check_thresh_and_p(unsigned, unsigned, unsigned, ErrorHandler *) const;
   int initialize(ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
-  void configuration(Vector<String> &) const;
+  void configuration(Vector<String> &, bool *) const;
   void add_handlers();
   
   bool should_drop();

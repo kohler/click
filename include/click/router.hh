@@ -216,23 +216,23 @@ class Router { public:
 
 
 struct Router::Handler {
-  String name;
-  ReadHandler read;
-  void *read_thunk;
-  WriteHandler write;
-  void *write_thunk;
-  
-  static String unparse_name(Element *, const String &);
-  String unparse_name(Element *e) const;
+    String name;
+    ReadHandler read;
+    void *read_thunk;
+    WriteHandler write;
+    void *write_thunk;
+    
+    static String unparse_name(Element *, const String &);
+    String unparse_name(Element *e) const;
 };
 
 #if CLICK_USERLEVEL
 struct Router::Selector {
-  int fd;
-  int element;
-  int mask;
-  Selector()				: fd(-1), element(-1), mask(0) { }
-  Selector(int f, int e, int m)		: fd(f), element(e), mask(m) { }
+    int fd;
+    int element;
+    int mask;
+    Selector()				: fd(-1), element(-1), mask(0) { }
+    Selector(int f, int e, int m)	: fd(f), element(e), mask(m) { }
 };
 #endif
 

@@ -45,7 +45,7 @@ RatedUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-RatedUnqueue::configuration(Vector<String> &conf) const
+RatedUnqueue::configuration(Vector<String> &conf, bool *) const
 {
   conf.push_back(String(rate()));
 }

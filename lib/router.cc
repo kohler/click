@@ -1420,10 +1420,9 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
   Vector<String> conf;
   for (int i = 0; i < nelements(); i++) {
     sa << indent << _element_names[i] << " :: " << _elements[i]->class_name();
-    _elements[i]->configuration(conf);
-    if (conf.size())
-      sa << "(" << cp_unargvec(conf) << ")";
-    conf.clear();
+    String conf = _elements[i]->configuration();
+    if (conf.length())
+      sa << "(" << conf << ")";
     sa << ";\n";
   }
   

@@ -491,9 +491,27 @@ Element::take_state(Element *, ErrorHandler *)
 }
 
 void
-Element::configuration(Vector<String> &conf) const
+Element::configuration(Vector<String> &conf, bool *store_got_default) const
 {
-  cp_argvec(router()->default_configuration_string(eindex()), conf);
+    // User configuration() methods should generally ignore the "bool *"
+    // argument.
+    if (store_got_default) {
+	conf.push_back(router()->default_configuration_string(eindex()));
+	*store_got_default = true;
+    } else
+	cp_argvec(router()->default_configuration_string(eindex()), conf);
+}
+
+String
+Element::configuration() const
+{
+    Vector<String> conf;
+    bool got_default = false;
+    configuration(conf, &got_default);
+    if (got_default)
+	return conf[0];
+    else
+	return cp_unargvec(conf);
 }
 
 
@@ -550,13 +568,11 @@ read_name_handler(Element *e, void *)
 static String
 read_config_handler(Element *e, void *)
 {
-  Vector<String> args;
-  e->configuration(args);
-  String s = cp_unargvec(args);
-  if (!s.length() || (s.back() != '\n' && s.back() != '\\'))
-    return s + "\n";
-  else
-    return s;
+    String s = e->configuration();
+    if (!s.length() || (s.back() != '\n' && s.back() != '\\'))
+	return s + "\n";
+    else
+	return s;
 }
 
 static int
@@ -703,7 +719,7 @@ String
 Element::read_positional_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
-  element->configuration(conf);
+  element->configuration(conf, 0);
   int no = (int)thunk;
   if (no >= conf.size())
     return String();
@@ -721,7 +737,7 @@ String
 Element::read_keyword_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
-  element->configuration(conf);
+  element->configuration(conf, 0);
   const char *kw = (const char *)thunk;
   String s;
   for (int i = conf.size() - 1; i >= 0; i--)
@@ -743,7 +759,7 @@ reconfigure_handler(const String &arg, Element *e,
 		    ErrorHandler *errh)
 {
   Vector<String> conf;
-  e->configuration(conf);
+  e->configuration(conf, 0);
 
   if (keyword)
     conf.push_back(String(keyword) + " " + arg);

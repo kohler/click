@@ -90,7 +90,7 @@ PeekHandlers::initialize(ErrorHandler *errh)
 {
   // configure now, since we have read handlers
   Vector<String> conf;
-  configuration(conf);
+  configuration(conf, 0);
   if (do_configure(conf, errh) < 0)
     return -1;
   

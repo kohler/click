@@ -44,7 +44,7 @@ RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-RatedSplitter::configuration(Vector<String> &conf) const
+RatedSplitter::configuration(Vector<String> &conf, bool *) const
 {
   conf.push_back(String(rate()));
 }

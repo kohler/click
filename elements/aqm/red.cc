@@ -174,7 +174,7 @@ RED::take_state(Element *e, ErrorHandler *)
 }
 
 void
-RED::configuration(Vector<String> &conf) const
+RED::configuration(Vector<String> &conf, bool *) const
 {
   conf.push_back(String(_min_thresh >> QUEUE_SCALE));
   conf.push_back(String(_max_thresh >> QUEUE_SCALE));

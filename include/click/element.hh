@@ -79,7 +79,9 @@ class Element { public:
   virtual void uninitialize();
 
   // LIVE RECONFIGURATION
-  virtual void configuration(Vector<String> &) const;
+  virtual void configuration(Vector<String> &, bool *) const;
+  String configuration() const;
+  
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);

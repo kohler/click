@@ -47,7 +47,7 @@ QuitWatcher::initialize(ErrorHandler *errh)
 {
   // parse configuration arguments now, because handlers are available
   Vector<String> conf;
-  configuration(conf);
+  configuration(conf, 0);
 
   for (int i = 0; i < conf.size(); i++) {
     Element *e;
