@@ -1,6 +1,20 @@
 #ifndef HASHMAP_HH
 #define HASHMAP_HH
 
+// K AND V REQUIREMENTS:
+//
+//		K::K()
+// 		K::operator bool() const
+//			Must have (bool)(K()) == false
+//			and no k with (bool)k == false is stored.
+// K &		K::operator=(const K &)
+// 		k1 == k2
+// int		hashcode(const K &)
+//			If hashcode(k1) != hashcode(k2), then k1 != k2.
+//
+//		V::V()
+// V &		V::operator=(const V &)
+
 template <class K, class V> class HashMapIterator;
 
 template <class K, class V>
@@ -12,9 +26,10 @@ class HashMap { public:
   explicit HashMap(const V &);
   HashMap(const HashMap<K, V> &);
   ~HashMap()				{ delete[] _e; }
-  
-  int count() const			{ return _n; }
+
+  int size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
+  int capacity() const			{ return _capacity; }
   
   const V &find(const K &) const;
   V *findp(const K &) const;
@@ -23,26 +38,26 @@ class HashMap { public:
   
   bool insert(const K &, const V &);
   void clear();
-  int size() const			{ return _size; }
-  void set_size(int i);
   
   Iterator first() const		{ return Iterator(this); }
   
   HashMap<K, V> &operator=(const HashMap<K, V> &);
   void swap(HashMap<K, V> &);
+
+  void resize(int);
   
  private:
   
   struct Elt { K k; V v; };
   
-  int _size;
   int _capacity;
+  int _grow_limit;
   int _n;
   Elt *_e;
   V _default_v;
   
   void increase();
-  void check_size();
+  void check_capacity();
   int bucket(const K &) const;
 
   friend class HashMapIterator<K, V>;
@@ -54,7 +69,7 @@ class HashMapIterator { public:
 
   HashMapIterator(const HashMap<K, V> *);
 
-  operator bool() const			{ return _pos < _hm->_size; }
+  operator bool() const			{ return _pos < _hm->_capacity; }
   void operator++(int = 0);
   
   const K &key() const			{ return _hm->_e[_pos].k; }

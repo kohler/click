@@ -17,27 +17,16 @@
 
 #include <click/hashmap.hh>
 
-//		K::K()
-// 		K::operator bool() const
-//			It must be true that (bool)(K()) == 0
-//			and that no k with (bool)k == 0 is stored.
-// K &		K::operator=(const K &)
-
-// 		k1 == k2
-// int		hashcode(const K &)
-
-// V &		V::operator=(const V &)
-
 template <class K, class V>
 HashMap<K, V>::HashMap()
-  : _size(0), _capacity(0), _n(0), _e(0)
+  : _capacity(0), _grow_limit(0), _n(0), _e(0)
 {
   increase();
 }
 
 template <class K, class V>
 HashMap<K, V>::HashMap(const V &def)
-  : _size(0), _capacity(0), _n(0), _e(0), _default_v(def)
+  : _capacity(0), _grow_limit(0), _n(0), _e(0), _default_v(def)
 {
   increase();
 }
@@ -45,10 +34,10 @@ HashMap<K, V>::HashMap(const V &def)
 
 template <class K, class V>
 HashMap<K, V>::HashMap(const HashMap<K, V> &m)
-  : _size(m._size), _capacity(m._capacity), _n(m._n),
-    _e(new Elt[m._size]), _default_v(m._default_v)
+  : _capacity(m._capacity), _grow_limit(m._grow_limit), _n(m._n),
+    _e(new Elt[m._capacity]), _default_v(m._default_v)
 {
-  for (int i = 0; i < _size; i++)
+  for (int i = 0; i < _capacity; i++)
     _e[i] = m._e[i];
 }
 
@@ -59,13 +48,13 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
 {
   // This works with self-assignment.
   
-  _size = o._size;
   _capacity = o._capacity;
+  _grow_limit = o._grow_limit;
   _n = o._n;
   _default_v = o._default_v;
   
-  Elt *new_e = new Elt[_size];
-  for (int i = 0; i < _size; i++)
+  Elt *new_e = new Elt[_capacity];
+  for (int i = 0; i < _capacity; i++)
     new_e[i] = o._e[i];
   
   delete[] _e;
@@ -76,9 +65,9 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
 
 template <class K, class V>
 inline void
-HashMap<K, V>::set_size(int i)
+HashMap<K, V>::resize(int i)
 {
-  while (i > _size) increase();
+  while (i > _capacity) increase();
 }
 
 template <class K, class V>
@@ -86,11 +75,11 @@ inline int
 HashMap<K, V>::bucket(const K &key) const
 {
   int hc = hashcode(key);
-  int i =   hc       & (_size - 1);
-  int j = ((hc >> 6) & (_size - 1)) | 1;
+  int i =   hc       & (_capacity - 1);
+  int j = ((hc >> 6) & (_capacity - 1)) | 1;
   
   while (_e[i].k && !(_e[i].k == key))
-    i = (i + j) & (_size - 1);
+    i = (i + j) & (_capacity - 1);
   
   return i;
 }
@@ -101,15 +90,15 @@ void
 HashMap<K, V>::increase()
 {
   Elt *oe = _e;
-  int osize = _size;
+  int ocap = _capacity;
   
-  _size *= 2;
-  if (_size < 8) _size = 8;
-  _capacity = (int)(0.8 * _size) - 1;
-  _e = new Elt[_size];
+  _capacity *= 2;
+  if (_capacity < 8) _capacity = 8;
+  _grow_limit = (int)(0.8 * _capacity) - 1;
+  _e = new Elt[_capacity];
   
   Elt *otrav = oe;
-  for (int i = 0; i < osize; i++, otrav++)
+  for (int i = 0; i < ocap; i++, otrav++)
     if (otrav->k) {
       int j = bucket(otrav->k);
       _e[j] = *otrav;
@@ -120,16 +109,16 @@ HashMap<K, V>::increase()
 
 template <class K, class V>
 inline void
-HashMap<K, V>::check_size()
+HashMap<K, V>::check_capacity()
 {
-  if (_n >= _capacity) increase();
+  if (_n >= _grow_limit) increase();
 }
 
 template <class K, class V>
 bool
 HashMap<K, V>::insert(const K &key, const V &val)
 {
-  check_size();
+  check_capacity();
   int i = bucket(key);
   bool is_new = !(bool)_e[i].k;
   _e[i].k = key;
@@ -142,7 +131,7 @@ template <class K, class V>
 V &
 HashMap<K, V>::find_force(const K &key)
 {
-  check_size();
+  check_capacity();
   int i = bucket(key);
   if (!(bool)_e[i].k) {
     _e[i].k = key;
@@ -158,7 +147,7 @@ HashMap<K, V>::clear()
 {
   delete[] _e;
   _e = 0;
-  _size = _capacity = _n = 0;
+  _capacity = _grow_limit = _n = 0;
   increase();
 }
 
@@ -166,18 +155,18 @@ template <class K, class V>
 void
 HashMap<K, V>::swap(HashMap<K, V> &o)
 {
-  int size = _size;
   int capacity = _capacity;
+  int grow_limit = _grow_limit;
   int n = _n;
   Elt *e = _e;
   V default_v = _default_v;
-  _size = o._size;
   _capacity = o._capacity;
+  _grow_limit = o._grow_limit;
   _n = o._n;
   _e = o._e;
   _default_v = o._default_v;
-  o._size = size;
   o._capacity = capacity;
+  o._grow_limit = grow_limit;
   o._n = n;
   o._e = e;
   o._default_v = default_v;
@@ -188,8 +177,8 @@ HashMapIterator<K, V>::HashMapIterator(const HashMap<K, V> *hm)
   : _hm(hm)
 {
   HashMap<K, V>::Elt *e = _hm->_e;
-  int size = _hm->_size;
-  for (_pos = 0; _pos < size && !(bool)e[_pos].k; _pos++)
+  int capacity = _hm->_capacity;
+  for (_pos = 0; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;
 }
 
@@ -198,7 +187,7 @@ void
 HashMapIterator<K, V>::operator++(int = 0)
 {
   HashMap<K, V>::Elt *e = _hm->_e;
-  int size = _hm->_size;
-  for (_pos++; _pos < size && !(bool)e[_pos].k; _pos++)
+  int capacity = _hm->_capacity;
+  for (_pos++; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;
 }

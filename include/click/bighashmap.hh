@@ -4,11 +4,12 @@
 
 // K AND V REQUIREMENTS:
 //
-// 		k1 == k2
 //		K::K(const K &)
+//		k1 == k2
 // int		hashcode(const K &)
+//			If hashcode(k1) != hashcode(k2), then k1 != k2.
 //
-//		V::V()		(can be expensive; only used for default value)
+//		V::V() -- only used for default value
 // 		V::V(const V &)
 // V &		V::operator=(const V &)
 
@@ -24,9 +25,9 @@ class BigHashMap { public:
   explicit BigHashMap(const V &);
   ~BigHashMap();
   
-  int nbuckets() const			{ return _nbuckets; }
   int size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
+  int nbuckets() const			{ return _nbuckets; }
   
   const V &find(const K &) const;
   V *findp(const K &) const;
