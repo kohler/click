@@ -45,15 +45,19 @@ ToDevice will seamlessly begin sending packets to it. Default is false.
 
 =n
 
-The Linux networking code may also send packets out the device. Click won't
-see those packets. Worse, Linux may cause the device to be busy when a
-ToDevice wants to send a packet. Click is not clever enough to re-queue
-such packets, and discards them. 
+The Linux networking code may also send packets out the device. If the device
+is in polling mode, Click will try to ensure that Linux eventually sends its
+packets. Linux may cause the device to be busy when a ToDevice wants to send a
+packet. Click is not clever enough to re-queue such packets, and discards
+them.
 
-ToDevice interacts with Linux in two ways: when Click is running in polling
-mode, or when Click is running in interrupt mode. In both of these cases,
-we depend on the net driver's send operation for synchronization (e.g.
-tulip send operation uses a bit lock).
+In Linux 2.2, whether or not the device is running in polling mode, ToDevice
+depends on the device driver's send operation for synchronization (e.g. tulip
+send operation uses a bit lock). In Linux 2.4, we use the device's "xmit_lock"
+to synchronize.
+
+Packets sent via ToDevice will not be received by any packet sniffers on the
+machine. Use Tee and ToHostSniffers to send packets to sniffers explicitly.
 
 =h packets read-only
 
@@ -63,7 +67,10 @@ Returns the number of packets ToDevice has pulled.
 
 Resets C<packets> counter to zero when written.
 
-=a FromDevice, PollDevice, FromHost, ToHost, ToDevice.u */
+=a FromDevice, PollDevice, FromHost, ToHost, ToDevice.u, Tee,
+ToHostSniffers
+
+*/
 
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/linuxmodule/fromhost.hh"
