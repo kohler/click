@@ -30,7 +30,7 @@ extern "C" {
 # include <pcap.h>
 }
 #else
-# include "fakebpf.h"
+# include "fakepcap.h"
 #endif
 
 /*

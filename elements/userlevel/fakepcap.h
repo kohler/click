@@ -5,6 +5,7 @@ struct pcap_t;
 #define pcap_fileno(p)			-1
 #define pcap_close(p)			0
 #define pcap_open_live(a,b,c,d,e)	0
-#define pcap_dispatch(a,b,c,d,e)	0
+#define pcap_dispatch(a,b,c,d)	0
+#define PCAP_ERRBUF_SIZE 16
 
 #endif
