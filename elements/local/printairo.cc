@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+#include <click/etheraddress.hh>
 #ifdef CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -111,23 +112,83 @@ bit_string(u_int8_t b)
   return bits;
 }
 
-static char *
+static void
+print_data(u_int8_t *buf, unsigned int buflen, bool print_payload = false)
+{
+  printf("Frame Control: %02x %02x\n", (int) buf[0], (int) buf[1]);
+  printf("Duration: %02x %02x\n", (int) buf[2], (int) buf[3]);
+  EtherAddress a1(buf + 4);
+  EtherAddress a2(buf + 10);
+  EtherAddress a3(buf + 16);
+  printf("A1: %s\n", a1.s().cc());
+  printf("A2: %s\n", a2.s().cc());
+  printf("A3: %s\n", a3.s().cc());
+  printf("Seq: %02x %02x\n", (int) buf[22], (int) buf[23]);
+  if (print_payload) {
+    for (unsigned int i = 24; i < buflen; i += 8) {
+      for (unsigned int j = i; j < buflen && j < i + 8; j++)
+	printf("%02x ", (int) buf[j]);
+      printf("\n");
+    }
+  }
+}
+
+static const char *
 frame_type(u_int16_t fctl)
 {
+  static String s;
+  s = "";
   u_int8_t *f = (u_int8_t *) &fctl;
-  switch (IEEE80211_FC0_TYPE_MASK & f[0]) {
+  u_int8_t fc0 = f[0];
+
+  switch (IEEE80211_FC0_TYPE_MASK & fc0) {
   case IEEE80211_FC0_TYPE_MGT:
-    return "Management";
+    s = "Management, ";
+    switch (IEEE80211_FC0_SUBTYPE_MASK & fc0) {
+    case IEEE80211_FC0_SUBTYPE_ASSOC_REQ: s += "Association request"; break;
+    case IEEE80211_FC0_SUBTYPE_ASSOC_RESP: s += "Association response"; break;  
+    case IEEE80211_FC0_SUBTYPE_REASSOC_REQ: s += "Reassociation request"; break;
+    case IEEE80211_FC0_SUBTYPE_REASSOC_RESP: s += "Reassociation response"; break;
+    case IEEE80211_FC0_SUBTYPE_PROBE_REQ: s += "Probe request"; break;
+    case IEEE80211_FC0_SUBTYPE_PROBE_RESP: s+= "Probe response"; break;
+    case IEEE80211_FC0_SUBTYPE_BEACON: s += "Beacon"; break;
+    case IEEE80211_FC0_SUBTYPE_ATIM: s += "ATIM"; break;
+    case IEEE80211_FC0_SUBTYPE_DISASSOC: s += "Disassociation"; break;
+    case IEEE80211_FC0_SUBTYPE_AUTH: s += "Authorization"; break;
+    case IEEE80211_FC0_SUBTYPE_DEAUTH: s += "Deauthorization"; break;
+    default: s += "Unknown";
+    }
     break;
   case IEEE80211_FC0_TYPE_CTL:
-    return "Control";
+    s = "Control, ";
+    switch (IEEE80211_FC0_SUBTYPE_MASK & fc0) {
+    case IEEE80211_FC0_SUBTYPE_PS_POLL: s += "PS Poll"; break;
+    case IEEE80211_FC0_SUBTYPE_RTS: s += "RTS"; break;
+    case IEEE80211_FC0_SUBTYPE_CTS: s += "CTS"; break;
+    case IEEE80211_FC0_SUBTYPE_ACK: s += "ACK"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_END: s += "CF End"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_END_ACK: s += "CF End ACK"; break;
+    default: s += "Unknown";
+    }
     break;
   case IEEE80211_FC0_TYPE_DATA:
-    return "Data";
+    s = "Data, ";
+    switch (IEEE80211_FC0_SUBTYPE_MASK & fc0) {
+    case IEEE80211_FC0_SUBTYPE_DATA: s += "Real data"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_ACK: s += "CF ACK"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_POLL: s += "CF poll"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_ACPL: s += "CF ACPL"; break;
+    case IEEE80211_FC0_SUBTYPE_NODATA: s += "No data"; break;
+    case IEEE80211_FC0_SUBTYPE_CFACK: s += "CFACK"; break;
+    case IEEE80211_FC0_SUBTYPE_CFPOLL: s += "CFPOLL"; break;
+    case IEEE80211_FC0_SUBTYPE_CF_ACK_CF_ACK: s += "CF ACK of ACK"; break;
+    default: s += "Unknown";
+    }
     break;
   default:
-    return "Unknown";
-  }  
+    s = "Unknown";
+  }
+  return s.cc();
 }
 
 Packet *
@@ -141,8 +202,33 @@ PrintAiro::simple_action(Packet *p)
     sa << p->timestamp_anno() << ": ";
   printf("%s %4d bytes\n", sa.cc(), p->length());
   
-  struct an_rxframe *frame = (an_rxframe *) p->data();
+  struct an_rxframe *frame = (struct an_rxframe *) p->data();
   
+  // copy the 802.11 MAC frame into a static buffer, to get rid of the
+  // gap, as done in the an driver
+  static u_int8_t buf[2048];
+  u_int16_t fc0 = frame->an_frame_ctl & 0xff;
+  u_int16_t fc1 = frame->an_frame_ctl >> 8;
+  int ieee80211_header_len = sizeof(struct ieee80211_frame);
+  assert(ieee80211_header_len == 24);
+  if ((fc1 & IEEE80211_FC1_DIR_TODS) && 
+      (fc1 & IEEE80211_FC1_DIR_FROMDS))
+    ieee80211_header_len += ETHER_ADDR_LEN;
+  unsigned int len = frame->an_rx_payload_len + ieee80211_header_len;
+  if (len > sizeof(buf)) {
+    printf("\tFrame too big (%d > %d)\n", len, sizeof(buf));
+    return p;
+  }
+
+  memcpy(buf, &frame->an_frame_ctl, ieee80211_header_len);
+
+  // mind the gap!
+  memcpy(buf + ieee80211_header_len, 
+	 ((u_int8_t *) frame) + sizeof(struct an_rxframe) + frame->an_gaplen,
+	 frame->an_rx_payload_len);
+
+  int buflen = ieee80211_header_len + frame->an_rx_payload_len; 
+
   printf("\tRSSI: %d\n", (int) frame->an_rx_signal_strength);
   int r = frame->an_rx_rate / 2;
   bool print5 = (r * 2 < frame->an_rx_rate);
@@ -193,18 +279,36 @@ PrintAiro::simple_action(Packet *p)
     len_octets = -1;
   }
 
-  // subtract Aironet-specific stuff from hdr, add in FCS bytes
-  // fuck, to do this right i need to demux on what sort of 802.11 frame it actually is...
-  int num_octets_got = p->length() - 0x14 - 1 + 4; 
-
-  printf("\tExpected %d PSDU octets, got %d\n", len_octets, num_octets_got);
+  printf("\tExpected %d PSDU octets, got %d\n", len_octets, buflen);
   printf("\tAiro payload length: %d\n", (int) frame->an_rx_payload_len);
+  printf("\tIEEE header length: %d\n", ieee80211_header_len);
   printf("\tGap length: %d\n", (int) frame->an_gaplen);
 
   // print type, try to put together 802.11 headers...
   printf("\tFrame type: %s\n", frame_type(frame->an_frame_ctl));
 
-  return p;
+  // spit out just the 802.11 frame
+  WritablePacket *q = Packet::make(buf, buflen);
+  p->kill();
+  return q;
+
+#if 0  
+  // try to set IP header anno and send out data packets
+  if (((fc0 & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA) &&
+      ((fc0 & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_DATA)) {
+    print_data(buf, buflen, false);
+    int eth_type_off = sizeof(struct an_rxframe) + frame->an_gaplen + 8;
+    u_int16_t *tc = (u_int16_t *) (p->data() + eth_type_off);
+    if (ntohs(*tc) == 0x0800) {
+      // maybe this really is an IP packet....
+      struct click_ip *ip = (struct click_ip *) (tc + 1);
+      p->set_ip_header(ip, ntohs(ip->ip_len));
+      return p;
+    }
+  }
+  p->kill();
+  return 0;
+#endif
 }
 
 CLICK_ENDDECLS
