@@ -96,6 +96,6 @@ struct icmp6_group
 /* different struct names for each type of packet */
 #define icmp6_dst_unreach icmp6_generic
 #define icmp6_time_exceeded icmp6_generic
-#define icmp_echo icmp6_sequenced
+#define icmp6_echo icmp6_sequenced
 
 #endif

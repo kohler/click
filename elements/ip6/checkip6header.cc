@@ -113,7 +113,7 @@ CheckIP6Header::simple_action(Packet *p)
   const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
   struct IP6Address src;
   
-  //check if the packet is larger than ip6 header
+  //check if the packet is smaller than ip6 header
   if(p->length() < sizeof(click_ip6))  {
     click_chatter("CheckIP6Header: packet length %d smaller than header 
 length %d", p->length(), sizeof(click_ip6));

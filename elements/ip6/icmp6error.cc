@@ -171,7 +171,7 @@ ICMP6Error::simple_action(Packet *p)
   nip->ip6_flow[0]=0;
   nip->ip6_flow[1]=0;
   nip->ip6_flow[2]=0;
-  nip->ip6_plen = htons(q->length());
+  nip->ip6_plen = htons(q->length()-40);
   nip->ip6_nxt = IP_PROTO_ICMP6;  /* next header */ 
   nip->ip6_hlim = 0xff; //what hop limit shoud I set?
   nip->ip6_src = IP6Address(_src_ip.addr());

@@ -19,7 +19,7 @@
 //grunt: route add -inet6 3ffe:1ce1:2::1 3ffe:1ce1:2:0:200::1
 //grunt: ping6 3ffe:1ce1:2::1
 
-//If you want to run this test, you can replace the router's addresses with your machine' IP6 Addresses and Ethernet Addresses in the following elements: NDAdv, NDSol, LookupIP6Route. 
+//If you want to run this test, you can replace the router's addresses with your machine' IP6 Addresses and Ethernet Addresses in the following elements: IP6NDAdvertiser, IP6NDSolicitor, LookupIP6Route. 
 
 
 
@@ -28,7 +28,7 @@ FromDevice(eth0, 1)
   	-> c::Classifier(12/86dd 20/3aff 54/87,
 		         12/86dd 20/3aff 54/88,
 			 12/86dd); 
-	nda::NDAdv(3ffe:1ce1:2:0:200::1/128 00:A0:C9:9C:FD:9E, 
+	nda::IP6NDAdvertiser(3ffe:1ce1:2:0:200::1/128 00:A0:C9:9C:FD:9E, 
 				fe80::2a0:c9ff:fe9c:fd9e/128 00:A0:C9:9C:FD:9E); 
 
    c[0] ->nda
@@ -45,7 +45,7 @@ FromDevice(eth0, 1)
 	3ffe:1ce1:2:0:200::/80 ::0 1,
 	0::ffff:0:0/96 ::0 2,
   	::0/0 ::c0a8:1 3);
-	nds :: NDSol(fe80::2a0:c9ff:fe9c:fd9e, 00:a0:c9:9c:fd:9e);
+	nds :: IP6NDSolicitor(fe80::2a0:c9ff:fe9c:fd9e, 00:a0:c9:9c:fd:9e);
 	
 	rt[1] 	-> dh:: DecIP6HLIM
 		-> [0]nds;
