@@ -428,7 +428,7 @@ FileErrorHandler::vmessage(Seriousness seriousness, const String &message)
   else _nerrors++;
 
   String s = _context + message + "\n";
-  fputs(s.cc(), _f);
+  fwrite(s.data(), 1, s.length(), _f);
   
   if (seriousness == Fatal)
     exit(1);

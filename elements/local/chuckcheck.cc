@@ -35,8 +35,6 @@ ChuckCheck::count(Packet *p)
     _head = (_head + 1) % BUCKETS;
     _first++;
   }
-  if (_tail >= BUCKETS || _head >= BUCKETS)
-    click_chatter("fucker!");
 }
 
 void
@@ -58,7 +56,10 @@ String
 ChuckCheck::read_handler(Element *e, void *)
 {
   ChuckCheck *cc = (ChuckCheck *)e;
-  unsigned buf[1 + BUCKETS * 4];
+  unsigned *buf = new unsigned[1 + BUCKETS * 4];
+  if (!buf)
+    return String("out of memory");
+  
   unsigned j = 1;
   unsigned num = cc->_first;
   unsigned i = cc->_head;
@@ -70,11 +71,9 @@ ChuckCheck::read_handler(Element *e, void *)
     buf[j++] = cc->_info[i].saddr;
     i = (i + 1) % BUCKETS;
   }
-  if (j > 1 + BUCKETS * 4)
-    click_chatter("fucker!");
 
   buf[0] = num - cc->_first;
-  return String((const char *)buf, sizeof(unsigned) * j);
+  return String::claim_string((const char *)buf, sizeof(unsigned) * j);
 }
 
 void

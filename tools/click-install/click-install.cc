@@ -34,14 +34,14 @@
 #define ROUTER_OPT		302
 #define UNINSTALL_OPT		303
 #define HOTSWAP_OPT		304
-#define VERBOSE_OPT		305
+#define MAP_OPT			305
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
+  { "map", 'm', MAP_OPT, 0, 0 },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
-  { "verbose", 0, VERBOSE_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, Clp_Negate },
 };
 
@@ -67,6 +67,7 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -h, --hot-swap                Hot-swap install new configuration.\n\
   -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
+  -m, --map                     Print load map to the standard output.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -248,7 +249,7 @@ main(int argc, char **argv)
   const char *router_file = 0;
   bool uninstall = false;
   bool hotswap = false;
-  bool verbose = false;
+  bool output_map = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -285,8 +286,8 @@ particular purpose.\n");
       hotswap = !clp->negated;
       break;
 
-     case VERBOSE_OPT:
-      verbose = !clp->negated;
+     case MAP_OPT:
+      output_map = !clp->negated;
       break;
       
      bad_option:
@@ -310,13 +311,9 @@ particular purpose.\n");
   if (!r || errh->nerrors() > 0)
     exit(1);
   r->flatten(errh);
-  if (verbose)
-    errh->message("- read router configuration");
 
   // uninstall Click if requested
   if (uninstall && access("/proc/click", F_OK) >= 0) {
-    if (verbose)
-      errh->message("- uninstalling Click");
     // install blank configuration
     FILE *f = fopen("/proc/click/config", "w");
     if (!f)
@@ -340,12 +337,13 @@ particular purpose.\n");
   }
   
   // check for Click module; install it if not available
-  if (verbose)
-    errh->message("- checking for Click module");
   if (access("/proc/click", F_OK) < 0) {
     String click_o =
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
-    String cmdline = "/sbin/insmod " + click_o;
+    String cmdline = "/sbin/insmod ";
+    if (output_map)
+      cmdline += "-m ";
+    cmdline += click_o;
     (void) system(cmdline);
     if (access("/proc/click", F_OK) < 0)
       errh->fatal("cannot install Click module");
@@ -354,8 +352,6 @@ particular purpose.\n");
   // find current packages
   HashMap<String, int> active_modules(-1);
   HashMap<String, int> packages(-1);
-  if (verbose)
-    errh->message("- reading active packages");
   read_package_file("/proc/modules", active_modules, errh);
   read_package_file("/proc/click/packages", packages, errh);
 
@@ -417,8 +413,6 @@ particular purpose.\n");
   }
   
   // write flattened configuration to /proc/click/config
-  if (verbose)
-    errh->message("- writing configuration");
   const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
   FILE *f = fopen(config_place, "w");
   if (!f)
@@ -429,8 +423,6 @@ particular purpose.\n");
   fclose(f);
 
   // report errors
-  if (verbose)
-    errh->message("- reporting errors");
   {
     char buf[1024];
     int fd = open("/proc/click/errors", O_RDONLY | O_NONBLOCK);
@@ -463,8 +455,6 @@ particular purpose.\n");
   }
 
   // remove unused packages
-  if (verbose)
-    errh->message("- removing packages");
   {
     String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
@@ -473,7 +463,5 @@ particular purpose.\n");
     }
   }
   
-  if (verbose)
-    errh->message("- exiting");
   return 0;
 }

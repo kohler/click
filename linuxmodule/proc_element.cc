@@ -156,7 +156,7 @@ prepare_handler_read(int elementno, int handlerno, String **store)
   unsigned cli_flags;
   save_flags(cli_flags);
   cli();
-  
+
   s = h->read(e, h->read_thunk);
   
   // restore interrupts

@@ -120,7 +120,7 @@ PeekHandlers::timer_hook(unsigned long thunk)
       if (rh.read) {
 	String value = rh.read(he, rh.read_thunk);
 	errh->message("%s.%s:", he->id().cc(), hname.cc());
-	errh->message("%s", value.cc());
+	errh->message(value);
       } else
 	errh->error("%s: no read handler `%s.%s'", peek->id().cc(), he->id().cc(), hname.cc());
     }
