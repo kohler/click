@@ -43,8 +43,8 @@ Reports the OUTput port and GW corresponding to an address.
 
 =h add write-only
 
-Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'. Should
-fail if a route for C<ADDR/MASK> already exists, but currently does not.
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+Fails if a route for C<ADDR/MASK> already exists.
 
 =h set write-only
 
@@ -83,15 +83,16 @@ class DirectIPLookup : public IPRouteTable { public:
 
     int initialize(ErrorHandler *);
     void add_handlers();
-    void notify_noutputs(int n)		{ set_noutputs(n); }
+    void notify_noutputs(int n);
 
     void push(int port, Packet* p);
 
-    int lookup_route(IPAddress, IPAddress&) const;
     int add_route(const IPRoute&, bool, IPRoute*, ErrorHandler *);
     int remove_route(const IPRoute&, IPRoute*, ErrorHandler *);
-    static int flush_handler(const String &, Element *, void *, ErrorHandler *);
+    int lookup_route(IPAddress, IPAddress&) const;
     String dump_routes();
+
+    static int flush_handler(const String &, Element *, void *, ErrorHandler *);
 
   protected:
 

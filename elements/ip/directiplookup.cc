@@ -19,11 +19,11 @@
  */
 
 #include <click/config.h>
-#include <click/ipaddress.hh>
-#include <click/confparse.hh>
-#include <click/straccum.hh>
-#include <click/error.hh>
 #include "directiplookup.hh"
+#include <click/ipaddress.hh>
+#include <click/straccum.hh>
+#include <click/router.hh>
+#include <click/error.hh>
 CLICK_DECLS
 
 DirectIPLookup::DirectIPLookup()
@@ -34,6 +34,12 @@ DirectIPLookup::DirectIPLookup()
 
 DirectIPLookup::~DirectIPLookup()
 {
+}
+
+void
+DirectIPLookup::notify_noutputs(int n)
+{
+    set_noutputs(n);
 }
 
 int
@@ -70,117 +76,55 @@ DirectIPLookup::lookup_route(IPAddress dest, IPAddress &gw) const
 }
 
 int
-DirectIPLookup::add_route(const IPRoute& r, bool, IPRoute*, ErrorHandler *errh)
+DirectIPLookup::add_route(const IPRoute& route, bool allow_replace, IPRoute* old_route, ErrorHandler *errh)
 {
-    uint32_t prefix = ntohl(r.addr.addr());
-    uint32_t plen = r.prefix_len();
+    uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
+    uint32_t prefix = ntohl(route.addr.addr());
+    uint32_t plen = route.prefix_len();
     int rt_i = find_entry(prefix, plen);
     uint16_t vport_i;
 
     if (rt_i >= 0) {
-	// Attempt to replace an existing route.  Allowed only when adding
-	// an explicit default route over an implicit discard default.
-	if (rt_i == 0 && _vport[0].port == DISCARD_PORT) {
-	    _vport[0].gw = r.gw;
-	    _vport[0].port = r.port;
+	// Attempt to replace an existing route.
+	// Save the old route if requested so that a rollback can be performed
+	if ((rt_i != 0 || (rt_i == 0 && _vport[0].port != DISCARD_PORT)) &&
+	    old_route)
+	    *old_route = IPRoute(IPAddress(htonl(_rtable[rt_i].prefix)),
+				 IPAddress::make_prefix(_rtable[rt_i].plen),
+				 _vport[_rtable[rt_i].vport].gw,
+				 _vport[_rtable[rt_i].vport].port);
+	if (rt_i == 0) {
+	    // We actually only update the vport entry for the default route
+	    if (_vport[0].port != DISCARD_PORT && !allow_replace)
+		return -EEXIST;
+	    _vport[0].gw = route.gw;
+	    _vport[0].port = route.port;
 	    return 0;
-	} else 
+	}
+	// Check if we allow for atomic route replacements at all
+	if (!allow_replace)
 	    return -EEXIST;
+	vport_unref(_rtable[rt_i].vport);
     } else {
-	uint32_t start, end, i, j, sec_i, sec_start, sec_end, hash;
-
 	// Allocate a new _rtable[] entry
 	if (_rt_empty_head >= 0) {
 	    rt_i = _rt_empty_head;
 	    _rt_empty_head = _rtable[_rt_empty_head].ll_next;
 	} else {
 	    if (_rt_size == RT_SIZE_MAX)
-		return errh->error("Routing table size limit exceeded");
+		return -ENOMEM;
 	    if (plen > 24 && (_sec_t_empty_head & 0x8000) &&
 	       _sec_t_size == SEC_SIZE_MAX << 8)
-		return
-		  errh->error("Secondary lookup table size limit exceeded");
+		return -ENOMEM;
 	    if (_vport_empty_head == -1 && _vport_t_size == VPORTS_MAX)
-		return errh->error("Virtual port table size limit exceeded");
+		return -ENOMEM;
 	    rt_i = _rt_size++;
 	}
 
-	vport_i = vport_ref(r.gw, r.port);
 	_rtable[rt_i].prefix = prefix;	// in host-order format
 	_rtable[rt_i].plen = plen;
-	_rtable[rt_i].vport = vport_i;
 
-	start = prefix >> 8;
-	if (plen >= 24)
-	    end = start + 1;
-	else
-	    end = start + (1 << (24 - plen));
-	for (i = start; i < end; i++) {
-	    if (_tbl_0_23[i] & 0x8000) {
-		// Entries with plen > 24 already there in _tbl_24_31[]!
-		sec_i = (_tbl_0_23[i] & 0x7fff) << 8;
-		if (plen > 24) {
-		    sec_start = prefix & 0xFF;
-		    sec_end = sec_start + (1 << (32 - plen));
-		} else {
-		    sec_start = 0;
-	    	    sec_end = 256;
-		}
-		for (j = sec_i + sec_start; j < sec_i + sec_end; j++) {
-		    if (plen > _tbl_24_31_plen[j]) {
-			_tbl_24_31[j] = vport_i;
-			_tbl_24_31_plen[j] = plen;
-		    } else if (plen < _tbl_24_31_plen[j]) {
-			// Skip a sequence of more-specific entries
-			if (_tbl_24_31_plen[j] > 24) {
-			    j |= 0x000000ff >> (_tbl_24_31_plen[j] - 24);
-			} else {
-			    i |= 0x00ffffff >> _tbl_24_31_plen[j];
-			    break;
-			}
-		    } else {
-			// plen == _tbl_24_31_plen[j] -> damn!
-			return errh->error("BUG: _tbl_24_31[%08X] collision", j);
-		    }
-		}
-	    } else {
-		if (plen > _tbl_0_23_plen[i]) {
-		    if (plen > 24) {
-			// Allocate a new _tbl_24_31[] entry and populate it
-			if ((_sec_t_empty_head & 0x8000) == 0) {
-			    sec_i = _sec_t_empty_head << 8;
-	    		    _sec_t_empty_head = _tbl_24_31[sec_i];
-			} else {
-			    sec_i = _sec_t_size;
-			    _sec_t_size += 256;
-			}
-			sec_start = prefix & 0xFF;
-	    		sec_end = sec_start + (1 << (32 - plen));
-			for (j = 0; j < 256; j++) {
-			    if (j >= sec_start && j < sec_end) {
-				_tbl_24_31[sec_i + j] = vport_i;
-				_tbl_24_31_plen[sec_i + j] = plen;
-			    } else {
-				_tbl_24_31[sec_i + j] = _tbl_0_23[i];
-				_tbl_24_31_plen[sec_i + j] = _tbl_0_23_plen[i];
-			    }
-			}
-			_tbl_0_23[i] = (sec_i >> 8) | 0x8000;
-		    } else {
-			_tbl_0_23[i] = vport_i;
-			_tbl_0_23_plen[i] = plen;
-		    }
-		} else if (plen < _tbl_0_23_plen[i]) {
-		    // Skip a sequence of more-specific entries
-		    i |= 0x00ffffff >> _tbl_0_23_plen[i];
-		} else {
-		    // plen == _tbl_0_23_plen[i] - must never happen!!!
-		    return errh->error("BUG: _tbl_0_23[%08X] collision", i);
-		}
-	    }
-	}
-
-	// Insert our entry in the hashtable
+	// Insert the new entry in our hashtable
 	hash = prefix_hash(prefix, plen);
 	_rtable[rt_i].ll_prev = -1;
 	_rtable[rt_i].ll_next = _rt_hashtbl[hash];
@@ -188,18 +132,107 @@ DirectIPLookup::add_route(const IPRoute& r, bool, IPRoute*, ErrorHandler *errh)
 	    _rtable[_rt_hashtbl[hash]].ll_prev = rt_i;
 	_rt_hashtbl[hash] = rt_i;
     }
+   
+    vport_i = vport_ref(route.gw, route.port);
+    _rtable[rt_i].vport = vport_i;
+
+    start = prefix >> 8;
+    if (plen >= 24)
+	end = start + 1;
+    else
+	end = start + (1 << (24 - plen));
+    for (i = start; i < end; i++) {
+	if (_tbl_0_23[i] & 0x8000) {
+	    // Entries with plen > 24 already there in _tbl_24_31[]!
+	    sec_i = (_tbl_0_23[i] & 0x7fff) << 8;
+	    if (plen > 24) {
+		sec_start = prefix & 0xFF;
+		sec_end = sec_start + (1 << (32 - plen));
+	    } else {
+		sec_start = 0;
+		sec_end = 256;
+	    }
+	    for (j = sec_i + sec_start; j < sec_i + sec_end; j++) {
+		if (plen > _tbl_24_31_plen[j]) {
+		    _tbl_24_31[j] = vport_i;
+		    _tbl_24_31_plen[j] = plen;
+		} else if (plen < _tbl_24_31_plen[j]) {
+		    // Skip a sequence of more-specific entries
+		    if (_tbl_24_31_plen[j] > 24) {
+			j |= 0x000000ff >> (_tbl_24_31_plen[j] - 24);
+		    } else {
+			i |= 0x00ffffff >> _tbl_24_31_plen[j];
+			break;
+		    }
+		} else if (allow_replace) {
+		    _tbl_24_31[j] = vport_i;
+		} else {
+		    // plen == _tbl_24_31_plen[j] -> damn!
+		    return errh->error("BUG: _tbl_24_31[%08X] collision", j);
+		}
+	    }
+	} else {
+	    if (plen > _tbl_0_23_plen[i]) {
+		if (plen > 24) {
+		    // Allocate a new _tbl_24_31[] entry and populate it
+		    if ((_sec_t_empty_head & 0x8000) == 0) {
+			sec_i = _sec_t_empty_head << 8;
+			_sec_t_empty_head = _tbl_24_31[sec_i];
+		    } else {
+			sec_i = _sec_t_size;
+			_sec_t_size += 256;
+		    }
+		    sec_start = prefix & 0xFF;
+		    sec_end = sec_start + (1 << (32 - plen));
+		    for (j = 0; j < 256; j++) {
+			if (j >= sec_start && j < sec_end) {
+			    _tbl_24_31[sec_i + j] = vport_i;
+			    _tbl_24_31_plen[sec_i + j] = plen;
+			} else {
+			    _tbl_24_31[sec_i + j] = _tbl_0_23[i];
+			    _tbl_24_31_plen[sec_i + j] = _tbl_0_23_plen[i];
+			}
+		    }
+		    _tbl_0_23[i] = (sec_i >> 8) | 0x8000;
+		} else {
+		    _tbl_0_23[i] = vport_i;
+		    _tbl_0_23_plen[i] = plen;
+		}
+	    } else if (plen < _tbl_0_23_plen[i]) {
+		// Skip a sequence of more-specific entries
+		i |= 0x00ffffff >> _tbl_0_23_plen[i];
+	    } else if (allow_replace) {
+		_tbl_0_23[i] = vport_i;
+	    } else {
+		// plen == _tbl_0_23_plen[i] - must never happen!!!
+		return errh->error("BUG: _tbl_0_23[%08X] collision", i);
+	    }
+	}
+    }
+
     return 0;
 }
 
 int
-DirectIPLookup::remove_route(const IPRoute& r, IPRoute*, ErrorHandler *errh)
+DirectIPLookup::remove_route(const IPRoute& route, IPRoute* old_route, ErrorHandler *errh)
 {
-    uint32_t prefix = ntohl(r.addr.addr());
-    uint32_t plen = r.prefix_len();
+    uint32_t prefix = ntohl(route.addr.addr());
+    uint32_t plen = route.prefix_len();
     int rt_i = find_entry(prefix, plen);
+    IPRoute found_route;
 
     if (rt_i < 0 || (rt_i == 0 && _vport[0].port == DISCARD_PORT))
-	return errh->error("Entry not found");
+	return -ENOENT;
+
+    found_route = IPRoute(IPAddress(htonl(_rtable[rt_i].prefix)),
+			  IPAddress::make_prefix(_rtable[rt_i].plen),
+			  _vport[_rtable[rt_i].vport].gw,
+			  _vport[_rtable[rt_i].vport].port);
+    if (!route.match(found_route))
+	return -ENOENT;
+
+    if (old_route)
+	*old_route = found_route;
 
     if (plen == 0) {
 	// Default route is a special case.  We never remove it from lookup
@@ -328,11 +361,15 @@ DirectIPLookup::dump_routes()
 void
 DirectIPLookup::add_handlers()
 {
+    // Must keep those in sync with iproutetable.cc!  We need to have our
+    // own add_handlers() in order to support the flush() operation.
     add_write_handler("add", add_route_handler, 0);
+    add_write_handler("set", add_route_handler, (void*) 1);
     add_write_handler("remove", remove_route_handler, 0);
     add_write_handler("ctrl", ctrl_handler, 0);
-    add_write_handler("flush", flush_handler, 0);
     add_read_handler("table", table_handler, 0);
+    set_handler("lookup", Handler::OP_READ | Handler::READ_PARAM | Handler::ONE_HOOK, lookup_handler);
+    add_write_handler("flush", flush_handler, 0);
 }
 
 int

@@ -51,8 +51,8 @@ Reports the OUTput port and GW corresponding to an address.
 
 =h add write-only
 
-Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'. Should
-fail if a route for C<ADDR/MASK> already exists, but currently does not.
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+Fails if a route for C<ADDR/MASK> already exists.
 
 =h set write-only
 

@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/notifier.hh>
+#include <click/nameinfo.hh>
 #include <sys/stat.h>
 
 
