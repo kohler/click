@@ -1,5 +1,5 @@
 // RouterTreeModel.java
-// Douglas S. J. De Couto
+// Douglas S. J. De Couto, Eddie Kohler
 // 22 August 2000
 
 import javax.swing.*;

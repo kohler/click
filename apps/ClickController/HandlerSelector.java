@@ -1,6 +1,5 @@
-// RouterTreeModel.java
-// Douglas S. J. De Couto
-// 22 August 2000
+// HandlerSelector.java
+// Eddie Kohler
 
 import javax.swing.*;
 import javax.swing.tree.*;
