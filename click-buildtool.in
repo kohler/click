@@ -39,19 +39,19 @@ Try \`click-buildtool findelem --help' for more information." 1>&2
 
 findelem_elementmap_provisions () {
     elementmap="$1"
-    $awk '/^<elementmap (.* |)provides="([^"]*)"/ {
+    $awk '/^<elementmap( .* | )provides="([^"]*)"/ {
   sub(/.* provides="/, "", $0);
   sub(/".*/, "", $0);
   split($0, d, / +/);
   for (j in d) deps[d[j]] = 1;
 }
-/^<entry (.* |)provides="([^"]*)"/ {
+/^<entry( .* | )provides="([^"]*)"/ {
   sub(/.* provides="/, "", $0);
   sub(/".*/, "", $0);
   split($0, d, / +/);
   for (j in d) deps[d[j]] = 1;
 }
-/^<entry (.* |)name="([^"]*)"/ {
+/^<entry( .* | )name="([^"]*)"/ {
   sub(/.* name="/, "", $0);
   sub(/".*/, "", $0);
   deps[$0] = 1;
