@@ -63,7 +63,8 @@ class IPRw : public Element { public:
   void clear_map(Map &);
   void clean_map(Map &, unsigned ms);
   void clean_map_free_tracked(Map &, unsigned ms, Mapping **free_tracked);
-
+  void clean_map_free_ordered_tracked
+    (Map &, unsigned ms, Mapping **free_tracked, Mapping **free_tail);
 };
 
 

@@ -1,6 +1,7 @@
 #ifndef IPREWRITER_HH
 #define IPREWRITER_HH
 #include "elements/ip/iprw.hh"
+#include <click/task.hh>
 #include <click/sync.hh>
 
 /*
@@ -190,18 +191,23 @@ class IPRewriter : public IPRw { public:
   Map _tcp_map;
   Map _udp_map;
   Mapping *_tcp_done;
+  Mapping *_tcp_done_tail;
 
   Vector<InputSpec> _input_specs;
 
   int _tcp_done_gc_interval;
   Timer _tcp_done_gc_timer;
+  Task _tcp_done_gc_task;
   int _tcp_gc_interval;
   Timer _tcp_gc_timer;
+  Task _tcp_gc_task;
   int _udp_gc_interval;
   Timer _udp_gc_timer;
+  Task _udp_gc_task;
   int _udp_timeout_interval;
   int _tcp_timeout_interval;
   int _tcp_done_timeout_interval;
+  int _instance_index;
 
 #if IPRW_SPINLOCKS
   Spinlock _spinlock;
@@ -209,15 +215,16 @@ class IPRewriter : public IPRw { public:
 
   int _nmapping_failures;
   
-  static void tcp_gc_hook(Timer *, void *);
-  static void udp_gc_hook(Timer *, void *);
-  static void tcp_done_gc_hook(Timer *, void *);
+  static void tcp_gc_hook(Task *, void *);
+  static void udp_gc_hook(Task *, void *);
+  static void tcp_done_gc_hook(Task *, void *);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_tcp_done_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
-  
+ 
+  static int _global_instance_counter;
 };
 
 

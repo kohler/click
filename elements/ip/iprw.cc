@@ -643,10 +643,48 @@ IPRw::clean_map_free_tracked
       *prev_ptr = next;
       m->set_free_next(to_free);
       to_free = m;
-    } else
+    } else 
       prev_ptr = &m->_free_next;
     m = next;
   }
+
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    if (Pattern *p = to_free->pattern())
+      p->mapping_freed(to_free);
+    table.remove(to_free->reverse()->flow_id().rev());
+    table.remove(to_free->flow_id().rev());
+    delete to_free->reverse();
+    delete to_free;
+    to_free = next;
+  }
+}
+
+void
+IPRw::clean_map_free_ordered_tracked
+(Map &table, unsigned interval_ms, Mapping **free_tracked, Mapping **free_tail)
+{
+  Mapping *to_free = 0;
+  Mapping **prev_ptr = free_tracked;
+
+  Mapping *m = *free_tracked;
+  while (m) {
+    Mapping *next = m->free_next();
+    assert(!m->is_reverse());
+    if (!m->session_over()) {
+      // reuse of a port; take it off the free-tracked list
+      *prev_ptr = next;
+      m->clear_free_tracked();
+    } else if (!m->used(interval_ms) && !m->reverse()->used(interval_ms)) {
+      *prev_ptr = next;
+      m->set_free_next(to_free);
+      to_free = m;
+    } else
+      break;
+    m = next;
+  }
+  // there is nothing left
+  if (!m) *free_tail = 0;
 
   while (to_free) {
     Mapping *next = to_free->free_next();
