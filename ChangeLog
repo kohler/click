@@ -1,3 +1,25 @@
+2001-04-09 Monday 22:05  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/ip6flowid.hh, lib/ip6flowid.cc: [no log message]
+
+2001-04-09 Monday 22:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/ip6address.hh: add hashcode() function
+
+2001-04-09 Monday 21:51  Peilei Fan <peilei@lcs.mit.edu>
+
+	* linuxmodule/Makefile.in, userlevel/Makefile.in: add ip6flowid.o
+
+2001-04-09 Monday 21:50  Peilei Fan <peilei@lcs.mit.edu>
+
+	* DISTFILES: add include/click/ip6flowid.hh
+
+2001-04-09 Monday 21:46  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: addresstranslator.cc, addresstranslator.hh,
+	protocoltranslator46.cc, protocoltranslator46.hh,
+	protocoltranslator64.cc, protocoltranslator64.hh: [no log message]
+
 2001-04-09 Monday 16:27  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/: unstrip.cc, unstrip.hh: new unstrip element
