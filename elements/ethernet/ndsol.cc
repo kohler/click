@@ -1,0 +1,349 @@
+/*
+ * ndsol.{cc,hh} -- Neighborhood Solicitation element
+ * Peilei Fan, Robert Morris
+ *
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ *
+ * This software is being provided by the copyright holders under the GNU
+ * General Public License, either version 2 or, at your discretion, any later
+ * version. For more information, see the `COPYRIGHT' file in the source
+ * distribution.
+ */
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include "ndsol.hh"
+#include "click_ether.h"
+#include "etheraddress.hh"
+#include "ip6address.hh"
+#include "confparse.hh"
+#include "bitvector.hh"
+#include "error.hh"
+#include "glue.hh"
+
+NDSol::NDSol()
+: _expire_timer(expire_hook, (unsigned long)this)
+{
+  add_input(); /* IP6 packets */
+  add_input(); /* ether/N.Advertisement responses */
+  add_output();/* ether/IP6 and ether/N.Solicitation queries */
+  for (int i = 0; i < NMAP; i++)
+    _map[i] = 0;
+}
+
+NDSol::~NDSol()
+{
+  uninitialize();
+}
+
+Bitvector
+NDSol::forward_flow(int i) const
+{
+  Bitvector bv(noutputs(), false);
+  // Packets can flow from input 0 to output 0
+  if (i == 0) bv[0] = true;
+  return bv;
+}
+
+Bitvector
+NDSol::backward_flow(int o) const
+{
+  Bitvector bv(2, false);
+  if (o == 0) bv[0] = true;
+  return bv;
+}
+
+NDSol *
+NDSol::clone() const
+{
+  return new NDSol;
+}
+
+void
+NDSol::notify_noutputs(int n)
+{
+  set_noutputs(n < 2 ? 1 : 2);
+}
+
+int
+NDSol::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  click_chatter("NDSol::configure !");
+  return cp_va_parse(conf, this, errh,
+		     cpIP6Address, "IP6 address", &_my_ip6,
+		     cpEthernetAddress, "Ethernet address", &_my_en,
+		     0);
+}
+
+int
+NDSol::initialize(ErrorHandler *)
+{
+  _expire_timer.attach(this);
+  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _arp_queries = 0;
+  _pkts_killed = 0;
+  return 0;
+}
+
+void
+NDSol::uninitialize()
+{
+  _expire_timer.unschedule();
+  for (int i = 0; i < NMAP; i++) {
+    for (NDEntry *t = _map[i]; t; ) {
+      NDEntry *n = t->next;
+      if (t->p)
+	t->p->kill();
+      delete t;
+      t = n;
+    }
+    _map[i] = 0;
+  }
+}
+
+void
+NDSol::take_state(Element *e, ErrorHandler *)
+{
+  NDSol *arpq = (NDSol *)e->cast("NDSol");
+  if (!arpq || _my_ip6 != arpq->_my_ip6 || _my_en != arpq->_my_en)
+    return;
+
+  NDEntry *save[NMAP];
+  memcpy(save, _map, sizeof(NDEntry *) * NMAP);
+  memcpy(_map, arpq->_map, sizeof(NDEntry *) * NMAP);
+  memcpy(arpq->_map, save, sizeof(NDEntry *) * NMAP);
+}
+
+void
+NDSol::expire_hook(unsigned long thunk)
+{
+  NDSol *arpq = (NDSol *)thunk;
+  int jiff = click_jiffies();
+  for (int i = 0; i < NMAP; i++) {
+    NDEntry *prev = 0;
+    while (1) {
+      NDEntry *e = (prev ? prev->next : arpq->_map[i]);
+      if (!e)
+	break;
+      if (e->ok) {
+	int gap = jiff - e->last_response_jiffies;
+	if (gap > 120*CLICK_HZ) {
+	  // click_chatter("NDSol timing out %x", e->ip.addr());
+	  // delete entry from map
+	  if (prev) prev->next = e->next;
+	  else arpq->_map[i] = e->next;
+	  if (e->p)
+	    e->p->kill();
+	  delete e;
+	  continue;		// don't change prev
+	} else if (gap > 60*CLICK_HZ)
+	  e->polling = 1;
+      }
+      prev = e;
+    }
+  }
+  arpq->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+}
+
+void
+NDSol::send_query_for(const u_char want_ip6[16])
+{
+  click_ether *e;
+  click_ip6 *ip6;
+  click_nd_sol *ea;
+  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ip6) + sizeof(*ea));
+  if (q == 0) {
+    click_chatter("in ndsol: cannot make packet!");
+      assert(0);
+  } 
+
+  memset(q->data(), '\0', q->length());
+  e = (click_ether *) q->data();
+  ip6=(click_ip6 *)(e+1);
+  ea = (click_nd_sol *) (ip6 + 1);
+
+  // set ethernet header
+  // dst add is a multicast add: first two octets : 0x3333, 
+  // last four octets is the lst four octets of DST IP6Address 
+  // which is the solicited-node multicast address: "ff02::1:ff00:0" +
+  // 24 bits from targest ip6 address 
+  e->ether_dhost[0] = 0x33;
+  e->ether_dhost[1] = 0x33;
+  e->ether_dhost[2] = 0xff;
+  e->ether_dhost[3] = want_ip6[13];
+  e->ether_dhost[4] = want_ip6[14];
+  e->ether_dhost[5] = want_ip6[15]; 
+  memcpy(e->ether_shost, _my_en.data(), 6);
+  e->ether_type = htons(ETHERTYPE_IP6);
+  
+  // set ip6 header
+  ip6->ip6_v=6;
+  ip6->ip6_pri=0;
+  ip6->ip6_flow[0]=0;
+  ip6->ip6_flow[1]=0;
+  ip6->ip6_flow[2]=0;
+  ip6->ip6_plen=htons(sizeof(click_nd_sol));
+  ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
+  ip6->ip6_hlim=0xff; //indicate no router has processed it
+  ip6->ip6_src = _my_ip6; 
+  unsigned char  dst2[16];
+  dst2[0]=0xff;
+  dst2[1]=0x02;
+  for (int i=2; i<11; i++) {
+    dst2[i]=0;
+  }
+  dst2[11]=1;
+  dst2[12]=0xff;
+  dst2[13]=want_ip6[13];
+  dst2[14]=want_ip6[14];
+  dst2[15]=want_ip6[15];
+  ip6->ip6_dst = IP6Address(dst2);
+
+  //set ICMP6 - Neighborhood Solicitation Message
+  ea->type = 0x87; 
+  ea->code =0;
+  ea->reserved = htonl(0);
+  memcpy(ea->nd_tpa, want_ip6, 16);
+  ea->option_type = 0x1;
+  ea->option_length = 0x1;
+  memcpy(ea->nd_sha, _my_en.data(), 6);
+ 
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_nd_sol)));
+  
+  _arp_queries++;
+  output(noutputs()-1).push(q);
+}
+
+/*
+ * If the packet's IP6 address is in the table, add an ethernet header
+ * and push it out.
+ * Otherwise push out a query packet.
+ * May save the packet in the NDEntry table for later sending.
+ * May call p->kill().
+ */
+void
+NDSol::handle_ip6(Packet *p)
+{  
+  IP6Address ipa = p->dst_ip6_anno();
+  int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
+  NDEntry *ae = _map[bucket];
+  while (ae && ae->ip6 != ipa)
+    ae = ae->next;
+
+  if (ae) {
+    if (ae->polling) {
+      send_query_for(ae->ip6.data());
+      ae->polling = 0;
+    }
+    //find the match IP address, send to output 0
+    if (ae->ok) {
+      Packet *q = p->push(sizeof(click_ether));
+      click_ether *e = (click_ether *)q->data();
+      memcpy(e->ether_shost, _my_en.data(), 6);
+      memcpy(e->ether_dhost, ae->en.data(), 6);
+      e->ether_type = htons(ETHERTYPE_IP6);
+      output(0).push(q);
+    } else {
+      if (ae->p) {
+        ae->p->kill();
+	_pkts_killed++;
+      }
+      ae->p = p;
+      send_query_for(p->dst_ip6_anno().data());
+    }
+    
+  } else {
+    NDEntry *ae = new NDEntry;
+    ae->ip6 = ipa;
+    ae->ok = ae->polling = 0;
+    ae->p = p;
+    ae->next = _map[bucket];
+    _map[bucket] = ae;
+
+    send_query_for(p->dst_ip6_anno().data());
+  }
+}
+
+/*
+ * Got an Neighborhood Advertisement (response to N. Solicitation Message) 
+ * Update our NDEntry table.
+ * If there was a packet waiting to be sent, return it.
+ */
+void
+NDSol::handle_response(Packet *p)
+{
+  if (p->length() < sizeof(click_ether) + sizeof(click_ip6) + sizeof(click_nd_sol))
+    return;
+  
+  click_ether *ethh = (click_ether *) p->data();
+  click_ip6 *ip6h = (click_ip6 *)(ethh+1);
+  click_nd_adv * eah = (click_nd_adv*)(ip6h+1);
+
+  IP6Address ipa = IP6Address(eah->nd_tpa);
+  EtherAddress ena = EtherAddress(eah->nd_tha);
+    if (ntohs(ethh->ether_type) == ETHERTYPE_IP6
+	&& eah->type == ND_ADV) {
+//        && !ena.is_group()) {
+     int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
+      NDEntry *ae = _map[bucket];
+      while (ae && ae->ip6 != ipa)
+        ae = ae->next;
+      if (!ae)
+        return;
+    
+      if (ae->ok && ae->en != ena)
+        click_chatter("NDSol overwriting an entry");
+      ae->en = ena;
+      ae->ok = 1;
+      ae->polling = 0;
+      ae->last_response_jiffies = click_jiffies();
+      Packet *cached_packet = ae->p;
+      ae->p = 0;
+      
+      if (cached_packet){
+        handle_ip6(cached_packet);}
+    } 
+}
+
+void
+NDSol::push(int port, Packet *p)
+{
+   if (port == 0){
+     handle_ip6(p); }
+  else {
+    handle_response(p);
+    p->kill();
+  }
+}
+
+String
+NDSol::read_table(Element *e, void *)
+{
+  NDSol *q = (NDSol *)e;
+  String s;
+  for (int i = 0; i < NMAP; i++)
+    for (NDEntry *e = q->_map[i]; e; e = e->next) {
+      s += e->ip6.s() + " " + (e->ok ? "1" : "0") + " " + e->en.s() + "\n";
+    }
+  return s;
+}
+
+static String
+NDSol_read_stats(Element *e, void *)
+{
+  NDSol *q = (NDSol *)e;
+  return
+    String(q->_pkts_killed) + " packets killed\n" +
+    String(q->_arp_queries) + " ND Solicitation Message sent\n";
+}
+
+void
+NDSol::add_handlers()
+{
+  add_read_handler("table", read_table, (void *)0);
+  add_read_handler("stats", NDSol_read_stats, (void *)0);
+}
+
+ELEMENT_REQUIRES(ip6)
+EXPORT_ELEMENT(NDSol)
