@@ -2,15 +2,16 @@ CLICK INSTALLATION INSTRUCTIONS
 ===============================
 
 To compile any version of Click, you will need the GNU C compiler; the GNU
-C++ compiler (version 2.8 or above, or a recent version of egcs); and GNU
-Make. The `./configure' script should complain if it cannot find software
-it needs.
+C++ compiler (version 2.95 or above); and GNU Make. The `./configure'
+script should complain if it cannot find software it needs.
 
 The user-level version of Click should compile and run on any Intel x86
 Unix system that has the pcap library. (The pcap library is necessary to
 communicate with the network. See the end of this document for portability
 notes for other architectures.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on the recent 2.2.18 Linux kernels.
+Linux 2.2 system; we've tested on the recent 2.2.19 Linux kernels. We also
+distribute a Linux 2.4 patch, which we are working on, but as of now, Linux
+2.4 support is not as stable as Linux 2.2 support.
 
 First, run
 
@@ -81,7 +82,7 @@ and running Linux kernels.
     (Save the old kernel source tree, if you had one.)
 
     We also supply patches for Linux 2.2.17, 2.2.19, and a preliminary
-    patch for Linux 2.4.4/2.4.5.
+    patch for Linux 2.4.9.
 
  3. Install the Click Linux kernel patch:
 

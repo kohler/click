@@ -344,7 +344,7 @@ Packet::assimilate_mbuf(Packet *p)
 
   if (!m) return;
   if (m->m_pkthdr.len != m->m_len)
-    click_chatter("assimilate_mbuf(): inconsistent lengths");
+    click_chatter("assimilate_mbuf(): inconsistent lengths, %d vs. %d", m->m_pkthdr.len, m->m_len);
 
   p->_head = (unsigned char *)
 	     (m->m_flags & M_EXT    ? m->m_ext.ext_buf :
@@ -374,8 +374,9 @@ Packet::make(struct mbuf *m)
 
   Packet *p = new Packet;
   if (m->m_pkthdr.len != m->m_len) {
-	/* click needs contiguous data */
-	m = m_pulldown(m, 0, m->m_pkthdr.len, NULL);
+    /* click needs contiguous data */
+    click_chatter("m_pulldown, Click needs contiguous data");
+    m = m_pulldown(m, 0, m->m_pkthdr.len, NULL);
   }
   p->_m = m;
   assimilate_mbuf(p);

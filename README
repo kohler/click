@@ -1,4 +1,4 @@
-THE CLICK MODULAR ROUTER RELEASE 1.2.2
+THE CLICK MODULAR ROUTER RELEASE 1.2.3
 ======================================
 
     This is the README file for the source release for the Click modular
@@ -20,16 +20,21 @@ CONTENTS
 CLICKDIR			this directory
 CLICKDIR/apps			Click-related applications
 CLICKDIR/apps/ClickController	... Java program for interacting with drivers
+CLICKDIR/bsdmodule		FreeBSD 4.5 kernel module driver
 CLICKDIR/conf			configuration files
 CLICKDIR/doc			documentation
 CLICKDIR/elements		element source code
+CLICKDIR/elements/analysis	... for trace analysis and manipulation
 CLICKDIR/elements/app		... for application-level protocol elements
+CLICKDIR/elements/aqm		... for active queue management (RED, etc.)
+CLICKDIR/elements/bsdmodule	... for FreeBSD kernel-specific elements
 CLICKDIR/elements/ethernet	... for Ethernet elements
 CLICKDIR/elements/etherswitch	... for Ethernet-switch elements
 CLICKDIR/elements/grid		... for Grid elements (experimental)
 CLICKDIR/elements/icmp		... for ICMP elements
 CLICKDIR/elements/ip		... for IP, ICMP, and TCP/UDP elements
 CLICKDIR/elements/ip6		... for IPv6 elements
+CLICKDIR/elements/ipsec		... for IPsec elements
 CLICKDIR/elements/linuxmodule	... for Linux kernel-specific elements
 CLICKDIR/elements/local		... for your own elements (empty)
 CLICKDIR/elements/radio		... for communicating with wireless radios
@@ -41,7 +46,7 @@ CLICKDIR/etc/samplepackage	sample source code for Click element package
 CLICKDIR/etc/samplellrpc	sample source code for reading Click LLRPCs
 CLICKDIR/etc/diagrams		files for drawing Click diagrams
 CLICKDIR/lib			common non-element source code
-CLICKDIR/linuxmodule		source code for Linux kernel module driver
+CLICKDIR/linuxmodule		Linux kernel module driver
 CLICKDIR/tools			Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
@@ -53,7 +58,7 @@ CLICKDIR/tools/click-mkmindriver    ... build environments for minimal drivers
 CLICKDIR/tools/click-install	... installs configuration into Linux module
 CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
-CLICKDIR/userlevel		source code for user-level `click' driver
+CLICKDIR/userlevel		user-level `click' driver
 
 DOCUMENTATION
 -------------

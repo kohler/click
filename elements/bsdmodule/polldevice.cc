@@ -77,6 +77,20 @@ PollDevice::~PollDevice()
 }
 
 
+// secret magic from Luigi
+extern "C" {
+typedef int (*ifpoll_function)(struct ifnet *, int);
+int
+if_poll_mode(struct ifnet *ifp, int mode)
+{
+  ifpoll_function foo = (ifpoll_function)(ifp->if_poll_intren);
+  return foo(ifp, mode);
+}
+
+#define IF_GET_MODE(dev)	if_poll_mode((dev), 2)
+#define IF_SET_MODE(dev, mode)	if_poll_mode((dev), (mode))
+}
+
 int
 PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -137,9 +151,9 @@ PollDevice::initialize(ErrorHandler *errh)
       ifpromisc(_dev, 1);
   if (!polling())
       return errh->error("PollDevice: device does not support polling");
-  if (_dev && _dev->if_poll_intren(_dev,2) == 1) {
+  if (_dev && IF_GET_MODE(_dev) == 1) {
       /* turn off interrupt if interrupts weren't already off */
-      _dev->if_poll_intren(_dev, 0);
+      IF_SET_MODE(_dev, 0);
   }
   
   ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
@@ -188,8 +202,8 @@ PollDevice::uninitialize()
 #if HAVE_BSD_POLLING
   poll_device_map.remove(this);
   if (poll_device_map.lookup(_dev) == 0) {
-    if (polling() && _dev->if_poll_intren(_dev,2) == 0)
-      _dev->if_poll_intren(_dev, 1); // re-enable interrupt
+    if (polling() && IF_GET_MODE(_dev) == 0)
+      IF_SET_MODE(_dev, 1);	// re-enable interrupt
   }
   if (_dev && _promisc)
       ifpromisc(_dev, 0);
@@ -210,7 +224,7 @@ PollDevice::run_scheduled()
   SET_STATS(low00, low10, time_now);
 
   got = _burst;
-  m_list = _dev->if_poll_recv(_dev, &got);
+  m_list = (struct mbuf *)_dev->if_poll_recv(_dev, &got);
 
 #if CLICK_DEVICE_STATS
   if (got > 0 || _activations > 0) {

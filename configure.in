@@ -372,27 +372,23 @@ dnl
 
 if test $ac_have_bsd_kernel = y; then
 
-AC_CACHE_CHECK(for Click BSD kernel extensions, ac_cv_click_bsd_kernel,
-[if grep Click "$freebsddir/net/if_var.h" >/dev/null 2>&1; then
-  ac_cv_click_bsd_kernel=yes
-else ac_cv_click_bsd_kernel=no; fi])
-if test $ac_cv_click_bsd_kernel = yes; then
+AC_CACHE_CHECK(FreeBSD version, ac_cv_freebsd_version,
+[save_flags="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS -nostdinc -I$freebsddir"
+AC_TRY_CPP([#include <sys/param.h>
+#if __FreeBSD_version < 450000
+#include <NONEXISTENT_FILE>
+#endif], ac_cv_freebsd_version=yes, ac_cv_freebsd_version=no)])
+if test $ac_cv_freebsd_version = yes; then
     AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
-fi
-
-AC_CACHE_CHECK(for device polling BSD kernel extension, ac_cv_bsd_poll_extension,
-[if grep polling "$freebsddir/net/if_var.h" >/dev/null 2>&1; then
-  ac_cv_bsd_poll_extension=yes
-else ac_cv_bsd_poll_extension=no; fi])
-if test $ac_cv_bsd_poll_extension = yes; then
     AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
 else
-    dnl
-    dnl XXX lr 010928 force extensions
-    dnl
+	AC_MSG_WARN([
+=========================================
 
-    AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
-    AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
+Your version of FreeBSD is old. Click works with FreeBSD 4.5 and later.
+
+=========================================])
 fi
 
 fi
