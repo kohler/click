@@ -90,7 +90,7 @@ class ToDevice : public Element { public:
   ~ToDevice();
   
   const char *class_name() const		{ return "ToDevice"; }
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return "a/h"; }
   const char *flags() const			{ return "S2"; }
   
   int configure_phase() const { return FromDevice::CONFIGURE_PHASE_TODEVICE; }

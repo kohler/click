@@ -160,7 +160,7 @@ ToDevice::send_packet(Packet *p)
   const char *syscall;
 
 #if TODEVICE_WRITE
-  retval = (write(_fd, p->data(), p->length()) > 0 ? 0 : -1);
+  retval = (write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
   syscall = "write";
 #elif TODEVICE_SEND
   retval = send(_fd, p->data(), p->length(), 0);
@@ -168,6 +168,7 @@ ToDevice::send_packet(Packet *p)
 #else
   retval = 0;
 #endif
+  
   if (retval < 0) {
     int saved_errno = errno;
     if (!_ignore_q_errs || !_printed_err || (errno != ENOBUFS && errno != EAGAIN)) {
@@ -181,8 +182,7 @@ ToDevice::send_packet(Packet *p)
       SET_SEND_ERR_ANNO(p, c);
     }
     checked_output_push(0, p);
-  }
-  else
+  } else
     p->kill();
 }
 
