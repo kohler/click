@@ -232,14 +232,14 @@ PollDevice::run_scheduled()
   assert(skb_list == NULL);
 
 #if DEV_KEEP_STATS
-  if (_activations > 0) {
+  if (_activations > 0 && got > 0) {
     _time_pushing += get_cycles()-time_now;
     rdpmc(0, low01, high);
     rdpmc(1, low11, high);
     _perfcnt1_pushing += 
-      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-    _perfcnt2_pushing += 
       (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _perfcnt2_pushing += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
   }
 #endif
 
