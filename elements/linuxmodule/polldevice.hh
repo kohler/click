@@ -51,9 +51,17 @@ class PollDevice : public Element {
 
 #if DEV_KEEP_STATS
   // statistics
+  unsigned long      _l2misses_touch;
+  unsigned long      _dcu_cycles_touch;
+  unsigned long      _l2misses_rx;
+  unsigned long      _dcu_cycles_rx;
+  unsigned long      _l2misses_clean;
+  unsigned long      _dcu_cycles_clean;
   unsigned long long _pkts_received;
   unsigned long long _activations;
   unsigned long long _idle_calls;
+  unsigned long long _time_clean;
+  unsigned long long _time_first_recv;
   unsigned long long _time_recv;
   unsigned long long _time_pushing;
   unsigned long long _time_running;

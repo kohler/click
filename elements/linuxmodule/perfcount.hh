@@ -38,8 +38,9 @@ class PerfCount : public Element {
   unsigned _idx;
   unsigned _metric0;
   unsigned _metric1;
-  
-  HashMap<String, unsigned> _metrics;
+ 
+  static unsigned _init;
+  static HashMap<String, unsigned> _metrics;
 
  public:
   

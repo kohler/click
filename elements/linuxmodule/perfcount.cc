@@ -19,16 +19,21 @@
 #include "glue.hh"
 #include "asm/msr.h"
 
+static unsigned PerfCount::_init = 0;
+static HashMap<String, unsigned> PerfCount::_metrics;
 
 PerfCount::PerfCount()
 {
   add_input();
   add_output();
-  _metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
-  _metrics.insert("IFU_IFETCH_MISS", 0x81);
-  _metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
-  _metrics.insert("L2_LD", 0x29 | (0xf<<8));
-  _metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
+  if (!_init) {
+    _metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
+    _metrics.insert("IFU_IFETCH_MISS", 0x81);
+    _metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
+    _metrics.insert("L2_LD", 0x29 | (0xf<<8));
+    _metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
+    _init = 1;
+  }
 }
 
 PerfCount::~PerfCount()
@@ -110,4 +115,8 @@ PerfCount::pull(int)
   return(p);
 }
 
+#include "hashmap.cc"
+template class HashMap<String, unsigned>;
+
 EXPORT_ELEMENT(PerfCount)
+
