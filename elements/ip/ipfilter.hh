@@ -138,15 +138,16 @@ class IPFilter : public Classifier { public:
     TYPE_TOS	= 12,
     TYPE_TTL	= 13,
     TYPE_IPFRAG	= 14,
-    TYPE_PORT	= 15,
-    TYPE_TCPOPT = 16,
-    TYPE_ICMP_TYPE = 17,
+    TYPE_IPLEN	= 15,
+    TYPE_PORT	= 16,
+    TYPE_TCPOPT = 17,
+    TYPE_ICMP_TYPE = 18,
     
-    TYPE_NET	= 20,		// shorthands
-    TYPE_DSCP	= 21,
-    TYPE_IPUNFRAG = 22,
-    TYPE_IPECT	= 23,
-    TYPE_IPCE	= 24,
+    TYPE_NET	= 30,		// shorthands
+    TYPE_DSCP	= 31,
+    TYPE_IPUNFRAG = 32,
+    TYPE_IPECT	= 33,
+    TYPE_IPCE	= 34,
     
     UNKNOWN = -1000,
     

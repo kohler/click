@@ -49,6 +49,7 @@ IPFilter::create_wordmap()
   wordmap->insert("unfrag",	WT(TYPE_TYPE, TYPE_IPUNFRAG));
   wordmap->insert("ect",	WT(TYPE_TYPE, TYPE_IPECT));
   wordmap->insert("ce",		WT(TYPE_TYPE, TYPE_IPCE));
+  wordmap->insert("len",	WT(TYPE_TYPE, TYPE_IPLEN));
   
   wordmap->insert("icmp",	WT(TYPE_PROTO, IP_PROTO_ICMP));
   wordmap->insert("igmp",	WT(TYPE_PROTO, IP_PROTO_IGMP));
@@ -276,7 +277,7 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
     } else if ((_op == OP_LT && data == 0) || data >= full_mask)
       return errh->error("comparison to value %d out of range (0-%u)", data, full_mask);
     else
-      return errh->error("bad relation `%s%s %d'\n(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
+      return errh->error("relation `%s%s %d' too hard, try a power of 2\n(I can only handle relations of the form `< X', `>= X', `<= X-1',\nand `> X-1' where X is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
 
   if (data > full_mask)
@@ -302,18 +303,19 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
   switch (type) {
    case TYPE_NONE: sa << "<none> "; break;
    case TYPE_HOST: sa << "ip host "; break;
-   case TYPE_NET: sa << "ip net "; break;
    case TYPE_PROTO: sa << "proto "; break;
-   case TYPE_PORT: sa << "port "; break;
-   case TYPE_TCPOPT: sa << "tcp opt "; break;
    case TYPE_TOS: sa << "ip tos "; break;
    case TYPE_TTL: sa << "ip ttl "; break;
+   case TYPE_IPFRAG: sa << "ip frag "; break;
+   case TYPE_IPLEN: sa << "ip len "; break;
+   case TYPE_PORT: sa << "port "; break;
+   case TYPE_TCPOPT: sa << "tcp opt "; break;
+   case TYPE_ICMP_TYPE: sa << "icmp type "; break;
+   case TYPE_NET: sa << "ip net "; break;
    case TYPE_DSCP: sa << "ip dscp "; break;
+   case TYPE_IPUNFRAG: sa << "ip unfrag "; break;
    case TYPE_IPECT: sa << "ip ect "; break;
    case TYPE_IPCE: sa << "ip ce "; break;
-   case TYPE_ICMP_TYPE: sa << "icmp type "; break;
-   case TYPE_IPFRAG: sa << "ip frag "; break;
-   case TYPE_IPUNFRAG: sa << "ip unfrag "; break;
    default: sa << "<unknown type " << type << "> "; break;
   }
 
@@ -385,11 +387,11 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      case TYPE_INT:
-      if (p._type == TYPE_PROTO || p._type == TYPE_PORT || p._type == TYPE_ICMP_TYPE) {
+      if (p._type == TYPE_PROTO || p._type == TYPE_PORT || p._type == TYPE_ICMP_TYPE || p._type == TYPE_IPLEN) {
 	_data = p._type;
 	goto retry;
       } else
-	return errh->error("specify `proto', `port', or `icmp type'");
+	return errh->error("specify `proto', `port', `icmp type', or `ip len'");
       break;
 
      case TYPE_NONE:
@@ -517,6 +519,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return -1;
     break;
 
+   case TYPE_IPLEN:
+    if (_data != TYPE_INT)
+      return errh->error("length value missing in `ip len' directive");
+    if (set_mask(0xFFFF, 0, errh) < 0)
+      return -1;
+    break;
+
    case TYPE_ICMP_TYPE:
     if (_data == TYPE_INT)
       _data = TYPE_ICMP_TYPE;
@@ -622,6 +631,14 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
      c->add_expr(tree, 4, 0, htonl(0x00003FFF));
      c->finish_expr_subtree(tree, true);
      if (!_op_negated) c->negate_expr_subtree(tree);
+     break;
+   }
+
+   case TYPE_IPLEN: {
+     c->start_expr_subtree(tree);
+     c->add_expr(tree, 0, htonl(_u.u), htonl(_mask.u));
+     c->finish_expr_subtree(tree, true);
+     if (_op_negated) c->negate_expr_subtree(tree);
      break;
    }
 
