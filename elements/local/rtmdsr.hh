@@ -54,16 +54,16 @@ class RTMDSR : public Element {
   
   void push(int, Packet *);
   void run_timer();
-  static time_t time(void);
+  time_t time(void);
 
 private:
-  static const int
-    MaxSeen = 200,  // Max size of table of already-seen queries.
-    MaxHops = 30,   // Max hop count for queries.
-    QueryInterval = 10, // Don't re-query a dead dst too often.
-    QueryLife = 3,  // Forget already-seen queries this often.
-    ARPLife = 30;   // ARP cache timeout.
+  int MaxSeen; // Max size of table of already-seen queries.
 
+  int MaxHops;   // Max hop count for queries.
+  int QueryInterval; // Don't re-query a dead dst too often.
+  int QueryLife;  // Forget already-seen queries this often.
+  int ARPLife;   // ARP cache timeout.
+  
   Timer _timer;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
@@ -145,8 +145,8 @@ private:
     IPAddress _src;
     u_long _seq;
     time_t _when;
-    Seen(IPAddress src, u_long seq) {
-      _src = src; _seq = seq; _when = time();
+    Seen(IPAddress src, u_long seq, time_t now) {
+      _src = src; _seq = seq; _when = now;
     }
   };
   Vector<Seen> _seen;
@@ -159,8 +159,8 @@ private:
     IPAddress _ip;
     EtherAddress _en;
     time_t _when; // When we last heard from this node.
-    ARP(IPAddress ip, EtherAddress en) {
-      _ip = ip; _en = en; _when = time();
+    ARP(IPAddress ip, EtherAddress en, time_t now) {
+      _ip = ip; _en = en; _when = now;
     }
   };
   Vector<ARP> _arp;

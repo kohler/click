@@ -32,6 +32,13 @@ RTMDSR::RTMDSR()
   add_input();
   add_output();
   add_output();
+
+  MaxSeen = 200;
+  MaxHops = 30;
+  QueryInterval = 10;
+  QueryLife = 3;
+  ARPLife = 30;
+
 }
 
 RTMDSR::~RTMDSR()
@@ -113,7 +120,7 @@ RTMDSR::find_dst(IPAddress ip, bool create)
 RTMDSR::Route &
 RTMDSR::best_route(IPAddress dstip)
 {
-  static Route junk;
+  Route junk;
   int i;
   int bm = -1;
   int bi = -1;
@@ -200,7 +207,7 @@ RTMDSR::start_query(IPAddress dstip)
   
   d._seq += 1;
   d._when = now;
-  _seen.push_back(Seen(_ip.in_addr(), pk->_seq));
+  _seen.push_back(Seen(_ip.in_addr(), pk->_seq, now));
 
   send(p);
 }
@@ -265,7 +272,7 @@ RTMDSR::got_arp(IPAddress ip, u_char xen[6])
                 ip.s().cc(),
                 en.s().cc());
       
-  _arp.push_back(ARP(ip, en));
+  _arp.push_back(ARP(ip, en, time()));
 }
 
 // Given an IP address, look in our local ARP table to see
@@ -334,7 +341,7 @@ RTMDSR::forward_query(struct pkt *pk1)
 
   if(_seen.size() > MaxSeen)
      return;
-  _seen.push_back(Seen(src, pk1->_seq));
+  _seen.push_back(Seen(src, pk1->_seq, time()));
 
   u_short nhops = ntohs(pk1->_nhops);
   if(nhops > MaxHops)
