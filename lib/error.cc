@@ -616,10 +616,7 @@ ErrorHandler::static_cleanup()
 ErrorHandler *
 ErrorHandler::default_handler()
 {
-  /*
-   * If we've done the static cleanup already, just return
-   * the null handler -- callers should check for null.
-   */
+  assert(the_default_handler);
   return the_default_handler;
 }
 
