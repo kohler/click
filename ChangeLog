@@ -1,3 +1,8 @@
+2001-04-23 Monday 10:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/kerneltap.cc: depending on kernel config, mor
+	than just ethertap module may need to be loaded
+
 2001-04-20 Friday 15:10  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/: unqueue2.cc, unqueue2.hh: a new unqueue
