@@ -1,3 +1,35 @@
+2001-07-06 Friday 03:41  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: icmp/icmpsendpings.cc (1.10), ip/iprw.cc (1.34),
+	ip/lookupiproute.cc (1.22), ip/lookupiproutemp.cc (1.9),
+	standard/alignmentinfo.cc (1.17), standard/burster.cc (1.20),
+	standard/delayshaper.cc (1.3), standard/delayshaper.hh (1.3),
+	standard/delayunqueue.cc (1.3), standard/delayunqueue.hh (1.3),
+	standard/drivermanager.cc (1.9), standard/peekhandlers.cc (1.19),
+	standard/pokehandlers.cc (1.18), standard/timedsink.cc (1.21),
+	standard/timedsource.cc (1.24), standard/timedsource.hh (1.14),
+	tcpudp/iprewriter.cc (1.22), tcpudp/tcprewriter.cc (1.11): use new
+	cpSecondsAsMilli and cpSecondsAsMicro
+
+2001-07-06 Friday 03:41  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/Makefile.in (1.19): nitlet
+
+2001-07-06 Friday 03:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh (1.10), lib/timer.cc (1.23): number of
+	milliseconds is a uint32_t, not an int
+
+2001-07-06 Friday 03:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.18), lib/confparse.cc (1.76): added
+	cpSecondsAsMilli and cpSecondsAsMicro, and cp_seconds_as_milli()
+	and cp_seconds_as_micro(). All can understand units suffixes, like
+	"1ms" or "0.5 usec". Required rearrangement. cp_integer() types
+	take int32_t's, now; this is more correct, but may cause type
+	conflicts on machines that define int32_t to "long". We might
+	revert later.
+
 2001-07-05 Thursday 23:15  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/: delayshaper.cc (1.2), delayshaper.hh (1.2),
