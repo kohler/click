@@ -510,7 +510,7 @@ String::Initializer::Initializer()
 void
 String::static_initialize()
 {
-  // do-nothing function called simply to initialize static globals
+  // function called to initialize static globals
   if (!null_memo) {
     null_memo = new Memo;
     null_memo->_refcount++;
@@ -523,7 +523,10 @@ String::static_initialize()
 void
 String::static_cleanup()
 {
-  delete String::null_string_p;
-  if (--null_memo->_refcount == 0) delete null_memo;
-  if (--permanent_memo->_refcount == 0) delete permanent_memo;
+  if (null_string_p) {
+    delete null_string_p;
+    null_string_p = 0;
+    if (--null_memo->_refcount == 0) delete null_memo;
+    if (--permanent_memo->_refcount == 0) delete permanent_memo;
+  }
 }
