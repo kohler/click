@@ -1,3 +1,4 @@
+// -*- related-file-name: "../include/click/bighashmap_arena.hh" -*-
 /*
  * bighashmap_arena.{cc,hh} -- a hash table template that supports removal
  * Eddie Kohler
@@ -23,9 +24,9 @@ BigHashMap_Arena *
 BigHashMap_Arena::new_arena(unsigned esize)
 {
   BigHashMap_Arena *arena =
-    reinterpret_cast<BigHashMap_Arena *>(new unsigned char[sizeof(BigHashMap_Arena) + esize*SIZE]);
+    reinterpret_cast<BigHashMap_Arena *>(new unsigned char[offsetof(BigHashMap_Arena, _x) + esize*SIZE]);
   if (arena)
-    arena->_first = 0;
+    arena->_u.first = 0;
   return arena;
 }
 
