@@ -338,7 +338,7 @@ elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; th
   ac_cv_gnu_make='gmake'
 else
   AC_MSG_RESULT(not found)
-  AC_MSG_WARN([can't find GNU make, not doing dependency tracking])
+  AC_MSG_WARN([can't find GNU make, not tracking dependencies])
   ac_cv_gnu_make=''
 fi])
   GMAKE="$ac_cv_gnu_make"
@@ -347,7 +347,6 @@ fi
 SUBMAKE=''
 AC_SUBST(SUBMAKE)
 if test "x$GMAKE" != xmake -a "x$GMAKE" != x; then
-  AC_MSG_WARN(You must compile with GNU make ("'`'"$GMAKE').)
   SUBMAKE="MAKE = $ac_cv_gnu_make"
 fi
 
