@@ -18,6 +18,8 @@ if (scalar(@ARGV) < 4){
     exit(-1);
 }
 
+$device = "eth0";
+
 $meIP      = shift(@ARGV);
 $meHW      = shift(@ARGV);
 $gwIP      = shift(@ARGV);
@@ -49,7 +51,7 @@ print "require(ron);\n\n";
 
 print "// ---- ARP machinery ----\n";
 print "arpq :: ARPQuerier(", $meIP, ", ", $meHW, ");\n";
-print "from0 :: FromDevice(eth0)\n";
+print "from0 :: FromDevice(", $device, ")\n";
 print "from0\t-> c :: Classifier(12/0806 20/0002, -)\n";
 print "\t-> [1]arpq;\n";
 print "c[1] -> Discard;\n\n";
@@ -57,7 +59,7 @@ print "c[1] -> Discard;\n\n";
 print "setgw :: SetIPAddress(", $gwIP, ")\n";
 print "\t-> arpq\n";
 print "\t-> Queue(100)\n";
-print "\t-> ToDevice(eth0);\n";
+print "\t-> ToDevice(", $device, ");\n";
 print "\n";
 
 print "iprw :: IPRewriter(\n";
@@ -76,7 +78,7 @@ print "-);\n\n";
 
 
 print "// Incoming Encapsulated Packets\n";
-print "DivertSocket(eth0, 3000, 2, 4, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "DivertSocket(", $device, ", 3000, 2, 4, 0.0.0.0/0, ", $meIP, ", in)\n";
 print "\t-> CheckIPHeader\n";
 #//	-> Print(IN-ENCAP-RAW)
 print "\t-> ipc\n\n";
@@ -94,7 +96,7 @@ for($i=0; $i<$n; $i++) {
 print "ipc[", $n, "] -> Discard\n";
 
 print "// Incoming NAT reply packets\n";
-print "DivertSocket(eth0, 3001, 2, 6, 0.0.0.0/0, ", $meIP, ", 50000-", 50099+($n-1)*100, ", in)\n";
+print "DivertSocket(", $device, ", 3001, 2, 6, 0.0.0.0/0, ", $meIP, ", 50000-", 50099+($n-1)*100, ", in)\n";
 print "\t-> CheckIPHeader\n";
 print "\t-> IPPrint(IN-NAT______)\n";
 print "\t-> fragA :: IPFragmenter(1400, false)\n";
