@@ -61,9 +61,9 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "annotate", &_anno_packets,
 		  0) < 0)
     return -1;
-  if (count_what.upper() == "PACKETS")
+  if (count_what == "PACKETS")
     _count_packets = true;
-  else if (count_what.upper() == "BYTES")
+  else if (count_what == "BYTES")
     _count_packets = false;
   else
     return errh->error("monitor type should be \"PACKETS\" or \"BYTES\"");

@@ -38,9 +38,9 @@ IPFlexMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   // PACKETS/BYTES
-  if(conf[0].upper() == "PACKETS")
+  if(conf[0] == "PACKETS")
     _count_packets = true;
-  else if(conf[0].upper() == "BYTES")
+  else if(conf[0] == "BYTES")
     _count_packets = false;
   else {
     errh->error("first argument should be \"PACKETS\" or \"BYTES\"");
