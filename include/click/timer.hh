@@ -29,7 +29,9 @@ class Timer { public:
 
   void schedule_now();
   void schedule_at(const struct timeval &);
+  void schedule_after_s(uint32_t);
   void schedule_after_ms(uint32_t);
+  void reschedule_after_s(uint32_t);
   void reschedule_after_ms(uint32_t);
   void unschedule();
 
@@ -45,8 +47,6 @@ class Timer { public:
   Timer(const Timer &);
   Timer &operator=(const Timer &);
 
-  void finish_schedule();
-  
   friend class TimerList;
   
 };

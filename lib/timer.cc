@@ -85,9 +85,19 @@ Timer::initialize(Element *e)
   initialize(e->router()->timer_list());
 }
 
-inline void
-Timer::finish_schedule()
+void
+Timer::schedule_at(const struct timeval &when)
 {
+  // acquire lock, unschedule
+  assert(!is_list() && initialized());
+  _head->acquire_lock();
+  if (scheduled())
+    unschedule();
+
+  // set expiration timer
+  _expires = when;
+
+  // manipulate list
   Timer *prev = _head;
   Timer *trav = prev->_next;
   while (trav != _head && timercmp(&_expires, &trav->_expires, >)) {
@@ -98,49 +108,48 @@ Timer::finish_schedule()
   _next = trav;
   _prev->_next = this;
   trav->_prev = this;
+
+  // done
+  _head->release_lock();
 }
 
 void
-Timer::schedule_at(const struct timeval &when)
+Timer::schedule_after_s(uint32_t s)
 {
-  assert(!is_list() && initialized());
-  _head->acquire_lock();
-  if (scheduled())
-    unschedule();
-  _expires = when;
-  finish_schedule();
-  _head->release_lock();
+  struct timeval t;
+  click_gettimeofday(&t);
+  t.tv_sec += s;
+  schedule_at(t);
 }
 
 void
 Timer::schedule_after_ms(uint32_t ms)
 {
-  assert(!is_list() && initialized());
-  _head->acquire_lock();
-  if (scheduled())
-    unschedule();
-  click_gettimeofday(&_expires);
-  struct timeval interval;
+  struct timeval t, interval;
+  click_gettimeofday(&t);
   interval.tv_sec = ms / 1000;
   interval.tv_usec = (ms % 1000) * 1000;
-  timeradd(&_expires, &interval, &_expires);
-  finish_schedule();
-  _head->release_lock();
+  timeradd(&t, &interval, &t);
+  schedule_at(t);
+}
+
+void
+Timer::reschedule_after_s(uint32_t s)
+{
+  struct timeval t = _expires;
+  t.tv_sec += s;
+  schedule_at(t);
 }
 
 void
 Timer::reschedule_after_ms(uint32_t ms)
 {
-  assert(!is_list() && initialized());
-  _head->acquire_lock();
-  if (scheduled())
-    unschedule();
+  struct timeval t = _expires;
   struct timeval interval;
   interval.tv_sec = ms / 1000;
   interval.tv_usec = (ms % 1000) * 1000;
-  timeradd(&_expires, &interval, &_expires);
-  finish_schedule();
-  _head->release_lock();
+  timeradd(&t, &interval, &t);
+  schedule_at(t);
 }
 
 void
