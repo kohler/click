@@ -41,6 +41,10 @@ class ClickIno { public:
     // It returns 0 for "filldir failed, have more", 1 for "out", <0 on error.
     typedef bool (*filldir_t)(const char *name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void *thunk);
     int readdir(ino_t dir, uint32_t &f_pos, filldir_t, void *thunk);
+
+#if 0
+    String info() const;
+#endif
     
     struct Entry {
 	String name;

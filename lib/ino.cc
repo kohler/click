@@ -118,10 +118,10 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 	// ASCII. If the prefix of "last_name" matches the part of "name"
 	// before a slash, then we know that "last_name" matches the whole
 	// component (rather than a fake match like "a/b/cc" <-> "a/b/c/e").
-	while (slash >= 0 && memcmp(name.data(), last_name.data(), slash - 1) != 0) {
+	while (slash >= 0 && (last_name.length() < slash || memcmp(name.data(), last_name.data(), slash) != 0)) {
 	    if (n >= _cap && grow(n + 1) < 0)
 		return -ENOMEM;
-	    _x[n].name = name.substring(0, slash - 1);
+	    _x[n].name = name.substring(0, slash);
 	    _x[n].elementno_plus1 = n;
 	    _x[n].skip = 0;
 	    _x[n].flags = X_FAKE;
@@ -395,3 +395,30 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     f_pos = RD_XOFF;
     return 1;
 }
+
+#if 0
+String
+ClickIno::info() const
+{
+    StringAccum sa;
+    for (int i = 0; i < _nentries; i++) {
+	sa << i << ". " << _x[i].name;
+	if (_x[i].name.length() >= 40)
+	    sa << ' ';
+	else
+	    sa.append("                                                                                                                                       ", 40 - _x[i].name.length());
+	sa << 'E' << (_x[i].elementno_plus1 - 1) << '/'
+	   << 'X' << _x[i].xindex << '\t'
+	   << "->" << (i + 1 + _x[i].skip);
+	if (_x[i].flags & (~X_SUBDIR_CONFLICTS_CALCULATED)) {
+	    sa << '\t';
+	    if (_x[i].flags & X_FAKE)
+		sa << 'X';
+	    if (_x[i].flags & X_HANDLER_CONFLICT)
+		sa << 'H';
+	}
+	sa << '\n';
+    }
+    return sa.take_string();
+}
+#endif
