@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/handlercall.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/rfc1483.h>
 #include <click/userutils.hh>
 #include "elements/userlevel/fakepcap.hh"
@@ -45,8 +46,7 @@ FromDAGDump::FromDAGDump()
     : Element(0, 1), _packet(0), _end_h(0), _task(this)
 {
     MOD_INC_USE_COUNT;
-    static_assert(sizeof(DAGCell) == 64);
-    static_assert(sizeof(((DAGCell *) 0)->payload) == sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
+    static_assert(sizeof(DAGCell) == 64 && DAGCell::CELL_SIZE == 64);
 }
 
 FromDAGDump::~FromDAGDump()
@@ -66,6 +66,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
     struct timeval first_time, first_time_off, last_time, last_time_off, interval;
+    String encap;
     timerclear(&first_time);
     timerclear(&first_time_off);
     timerclear(&last_time);
@@ -89,6 +90,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
+		    "ENCAP", cpWord, "encapsulation type (legacy dumps only)", &encap,
 		    cpEnd) < 0)
 	return -1;
 
@@ -131,12 +133,22 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_end_h = new HandlerCall(id() + ".stop");
     else if (_have_last_time && !_end_h)
 	_end_h = new HandlerCall(id() + ".active false");
-    
+
+    // default linktype
+    if (!encap)
+	_base_linktype = 0;
+    else if ((_base_linktype = fake_pcap_parse_dlt(encap)) < 0
+	     || (_base_linktype != FAKE_DLT_SUNATM
+		 && _base_linktype != FAKE_DLT_C_HDLC
+		 && _base_linktype != FAKE_DLT_EN10MB
+		 && _base_linktype != FAKE_DLT_ATM_RFC1483))
+	return errh->error("bad encapsulation type");
+
     // set other variables
     _have_any_times = false;
     _timing = timing;
     _force_ip = force_ip;
-    _linktype = FAKE_DLT_ATM_RFC1483;
+    _linktype = FAKE_DLT_NONE;
     _active = active;
     return 0;
 }
@@ -147,13 +159,9 @@ FromDAGDump::initialize(ErrorHandler *errh)
     if (_ff.initialize(errh) < 0)
 	return -1;
     
-    // if forcing IP packets, check datalink type to ensure we understand it
-    if (_force_ip) {
-	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return _ff.error(errh, "unknown linktype %d; can't force IP packets", _linktype);
-	if (_timing)
-	    return errh->error("FORCE_IP and TIMING options are incompatible");
-    }
+    // if forcing IP packets, check we're not running TIMING
+    if (_force_ip && _timing)
+	return errh->error("FORCE_IP and TIMING options are incompatible");
 
     // check handler call
     if (_end_h && _end_h->initialize_write(this, errh) < 0)
@@ -244,7 +252,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	return false;
     
     // we may need to read bits of the file
-    cell = reinterpret_cast<const DAGCell *>(_ff.get_aligned(sizeof(DAGCell), &static_cell, errh));
+    cell = reinterpret_cast<const DAGCell *>(_ff.get_aligned(DAGCell::HEADER_SIZE, &static_cell, errh));
     if (!cell)
 	return false;
 
@@ -276,11 +284,71 @@ FromDAGDump::read_packet(ErrorHandler *errh)
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob)
 	goto retry;
+
+    // determine read length and wire length
+    uint32_t wire_length = 0;
+    if (cell->type == 0 || _base_linktype > 0) {
+	_linktype = _base_linktype;
+	switch (_base_linktype) {
+	    
+	  case FAKE_DLT_ATM_RFC1483:
+	  atm:
+	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
+	    break;
+	    
+	  case FAKE_DLT_C_HDLC:
+	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 5));
+	    goto atm_rfc1483;
+
+	  case 0:
+	    _linktype = FAKE_DLT_ATM_RFC1483;
+	    goto atm_rfc1483;
+	    
+	  case FAKE_DLT_SUNATM:
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 12, 4, DAGCell::CELL_SIZE - 12, tv.tv_sec, tv.tv_usec, errh);
+	    break;
+	    
+	  case FAKE_DLT_EN10MB:
+	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 4));
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 10, 6, DAGCell::CELL_SIZE - 10, tv.tv_sec, tv.tv_usec, errh);
+	    break;
+	    
+	  default:
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 8, 8, DAGCell::CELL_SIZE - 8, tv.tv_sec, tv.tv_usec, errh);
+	    break;
+	}
+
+    } else {
+	int read_length = htons(cell->rlen);
+	wire_length = htons(cell->wlen);
+	switch (cell->type) {
+	  case DAGCell::TYPE_ATM:
+	  case DAGCell::TYPE_AAL5:
+	    _linktype = FAKE_DLT_SUNATM;
+	    break;
+	  case DAGCell::TYPE_ETH:
+	    _ff.shift_pos(2);
+	    read_length -= 2;
+	    wire_length -= 4;	// XXX DAG 'wlen' includes CRC
+	    _linktype = FAKE_DLT_EN10MB;
+	    break;
+	  case DAGCell::TYPE_HDLC_POS:
+	    _linktype = FAKE_DLT_C_HDLC;
+	    break;
+	  default:
+	    _linktype = FAKE_DLT_NONE;
+	    break;
+	}
+	if (read_length < DAGCell::HEADER_SIZE)
+	    return false;
+	p = _ff.get_packet(read_length - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
+    }
     
-    // create packet
-    p = _ff.get_packet_from_data(&cell->payload, sizeof(cell->payload), tv.tv_sec, tv.tv_usec, errh);
+    // check packet
     if (!p)
 	return false;
+    if (wire_length)
+	SET_EXTRA_LENGTH_ANNO(p, wire_length - p->length());
 
     if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
 	checked_output_push(1, p);
