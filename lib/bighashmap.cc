@@ -243,6 +243,7 @@ BigHashMap<K, V>::remove(const K &key)
     e->k.~K();
     e->v.~V();
     free(e);
+    _n--; // Doug did this
     return true;
   } else
     return false;
