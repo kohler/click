@@ -34,8 +34,11 @@ PollDevice::PollDevice()
     _tks_allocated(0)
 {
   add_output();
+  _dma_burst_resched = 0;
   _dma_full_resched = 0;
   _dma_empty_resched = 0;
+  _idle_calls = 0;
+  _dma_full = 0;
 }
 
 PollDevice::PollDevice(const String &devname)
@@ -47,8 +50,11 @@ PollDevice::PollDevice(const String &devname)
   _bm_done = 0;
 #endif
   add_output();
+  _dma_burst_resched = 0;
   _dma_full_resched = 0;
   _dma_empty_resched = 0;
+  _idle_calls = 0;
+  _dma_full = 0;
 }
 
 PollDevice::~PollDevice()
@@ -124,7 +130,7 @@ PollDevice::run_scheduled()
   struct sk_buff *skb;
   int got=0;
 
-  _dev->clean_tx(_dev);
+  // _dev->clean_tx(_dev);
 
   /* order of && clauses important */
   while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
@@ -145,37 +151,50 @@ PollDevice::run_scheduled()
     got++;
   }
   
+  /* !!! careful: if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we
+   * need to fill_rx more often... by default, RX ring size is 32, and we set
+   * POLLDEV_MAX_PKTS_PER_RUN to 8, so we can fill once per run */
+
+  int queued_pkts_now = _dev->clean_rx(_dev);
+  _pkts_on_dma += queued_pkts_now;
+  int queued_pkts_before = queued_pkts_now + got;
+  
   if (_activations > 0 || got > 0) {
     _activations++;
     _tks_allocated += ntickets();
+    if (got == 0) _idle_calls++;
+    if (queued_pkts_before >= _dev->rx_dma_length-4)
+      _dma_full++;
   }
 
-  /* !!! careful: if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we
-   * need to fill_rx more often... by default, RX ring size is 32, and we set
-   * POLLDEV_MAX_PKTS_PER_RUN to 16, so we can fill once per run */
-  int queued_pkts = _dev->clean_rx(_dev);
-  _pkts_on_dma += queued_pkts;
-
   /* adjusting tickets */
-  int adj = 0;
   int dmal = _dev->rx_dma_length;
+  int dma_thresh_high = dmal/4;
+  int dma_thresh_low  = dmal/8;
+  int adj = ntickets()/4;
+  if (adj<2) adj=2;
+
+  /* handles burstiness: fast start */
+  if (queued_pkts_before > dma_thresh_high && 
+      _last_dma_length < dma_thresh_low) {
+    adj *= 2;
+    if (_activations>0) _dma_burst_resched++;
+  }
 
   /* rx dma ring is fairly full, schedule ourselves more */
-  if (queued_pkts > (dmal-dmal/3)-got) {
-    adj = ntickets()/2;
-    if (adj==0) adj=1;
+  else if (queued_pkts_before > dma_thresh_high) {
     if (_activations>0) _dma_full_resched++;
   }
  
   /* rx dma ring was fairly empty, schedule ourselves less */
-  else if (queued_pkts+got < dmal/4) {
-    adj = 0-ntickets()/4;
-    if (adj==0) adj=-1;
+  else if (queued_pkts_before < dma_thresh_low && 
+           _last_dma_length < dma_thresh_low) {
+    adj=0-adj;
     if (_activations>0) _dma_empty_resched++;
   }
 
   adj_tickets(adj);
-  _last_dma_length = queued_pkts;
+  _last_dma_length = queued_pkts_before;
 
   reschedule();
 #endif
@@ -188,10 +207,13 @@ PollDevice_read_calls(Element *f, void *)
   return
     String(kw->max_ntickets()) + " maximum number of tickets\n" + 
     String(kw->_pkts_received) + " packets received\n" +
+    String(kw->_dma_full) + " times DMA ring seems full\n" +
     String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
+    String(kw->_dma_burst_resched) + " dma burst resched\n" +
     String(kw->_dma_full_resched) + " dma full resched\n" +
     String(kw->_dma_empty_resched) + " dma empty resched\n" +
     String(kw->_tks_allocated) + " total tickets seen\n" +
+    String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_activations) + " activations\n";
 }
 

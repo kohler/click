@@ -54,8 +54,11 @@ class PollDevice : public Element {
   unsigned long long _pkts_on_dma;
   unsigned long long _activations;
   unsigned long long _tks_allocated;
+  unsigned long long _dma_burst_resched;
   unsigned long long _dma_full_resched;
   unsigned long long _dma_empty_resched;
+  unsigned long long _idle_calls;
+  unsigned long long _dma_full;
   
  private:
   String _devname;

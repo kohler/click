@@ -33,8 +33,8 @@ class StoreCycles : public Element {
   Packet *pull(int);
   
   // statistics 
-  unsigned long _sum;
-  unsigned long _pkt_cnt;
+  unsigned long long _sum;
+  unsigned long long _pkt_cnt;
   
 };
 
