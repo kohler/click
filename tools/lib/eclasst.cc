@@ -483,6 +483,8 @@ CompoundElementClassT::complex_expand_element(
     RouterT *fromr = compound->router();
     assert(fromr != _router && tor != _router);
     assert(!_circularity_flag);
+    // ensure we don't delete ourselves before we're done!
+    use();
     _circularity_flag = true;
 
     // parse configuration string
@@ -522,6 +524,7 @@ CompoundElementClassT::complex_expand_element(
 
     // yes, we expanded it
     _circularity_flag = false;
+    unuse();
     return new_e;
 }
 
