@@ -60,8 +60,12 @@ static inline int next_higher_rate(int rate) {
   }
   
 
+
 AutoTXRate::AutoTXRate()
-  : Element(1, 1)
+  : Element(1, 1),
+    _stepup(0),
+    _stepdown(0),
+    _before_switch(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -78,21 +82,79 @@ AutoTXRate::~AutoTXRate()
 AutoTXRate *
 AutoTXRate::clone() const
 {
-  return new AutoTXRate;
+  return new AutoTXRate();
 }
 
 int
 AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Probation count (packets)", &_max_probation_count,
-		  cpKeywords, 
-		  0) < 0) {
-    return -1;
+  unsigned int rate_window;
+  int ret = cp_va_parse(conf, this, errh,
+			cpKeywords, 
+			"RATE_WINDOW", cpUnsigned, "ms", &rate_window,
+			"STEPUP", cpInteger, "0-100", &_stepup,
+			"STEPDOWN", cpInteger, "0-100", &_stepdown,
+			"BEFORE_SWITCH", cpInteger, "packets", &_before_switch,
+			0);
+  if (ret < 0) {
+    return ret;
   }
-
+  
+  ret = set_rate_window(errh, rate_window);
+  if (ret < 0) {
+    return ret;
+  }
   return 0;
 }
+
+void
+AutoTXRate::update_rate(EtherAddress dst)
+{
+  struct timeval now;
+  struct timeval earliest;
+  click_gettimeofday(&now);
+  timersub(&now, &_rate_window, &earliest);
+
+  DstInfo *nfo = _neighbors.findp(dst);
+  if (!nfo) {
+    return;
+  }
+
+  nfo->_successes = 0;
+  nfo->_failures = 0;
+
+  /* pop out all the old results */
+  while (nfo->_results.size() > 0 && 
+	 timercmp(&earliest, &nfo->_results[0]._when, >)) {
+    nfo->_results.pop_front();
+  }
+  
+  /* count the resluts in the last _rate_window for which
+   * were sent at nfo->_rate
+   */
+  for (int i = 0; i < nfo->_results.size(); i++) {
+    if (nfo->_results[i]._rate == nfo->_rate) {
+      if (nfo->_results[i]._success) {
+	nfo->_successes++;
+      } else {
+	nfo->_failures++;
+      }
+    }
+  }
+  
+  int total = nfo->_successes + nfo->_failures;
+  
+  if (!total || total < _before_switch) {
+    return;
+  }
+  if ((100*nfo->_successes)/total < _stepdown) {
+    nfo->_rate = next_lower_rate(nfo->_rate);
+  } else if ((100*nfo->_successes)/total > _stepup) {
+    nfo->_rate = next_higher_rate(nfo->_rate);
+  }
+  return;
+}
+
 
 /* returns 0 if we haven't gotten feedback for a dst */
 int 
@@ -106,7 +168,7 @@ AutoTXRate::get_tx_rate(EtherAddress dst)
     return 0;
   }
   return nfo->_rate;
-
+  
 }
 Packet *
 AutoTXRate::simple_action(Packet *p_in)
@@ -115,7 +177,9 @@ AutoTXRate::simple_action(Packet *p_in)
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   int success = WIFI_TX_SUCCESS_ANNO(p_in);
   int rate = WIFI_RATE_ANNO(p_in);
-  int retries = WIFI_RETRIES_ANNO(p_in);
+  struct timeval now;
+  click_gettimeofday(&now);
+
   if (dst == _bcast) {
     /* don't record info for bcast packets */
     p_in->kill();
@@ -131,58 +195,11 @@ AutoTXRate::simple_action(Packet *p_in)
 
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
-    DstInfo foo = DstInfo(dst);
-    _neighbors.insert(dst, foo);
+    _neighbors.insert(dst, DstInfo(dst, rate));
     nfo = _neighbors.findp(dst);
   }
-
-  if (success) {
-
-    if (!nfo->_rate || rate >= nfo->_rate) {
-      //click_chatter("AutoTXRate: packet to %s succeeded, %d retries, %d rate", 
-      //dst.s().cc(), retries, rate);
-      click_gettimeofday(&nfo->_last_success);
-      nfo->_packets++;
-      if (!nfo->_rate) {
-	nfo->_rate = min(rate, nfo->_rate);
-      }
-      if (nfo->_packets > _max_probation_count) {
-	int next_rate = next_higher_rate(nfo->_rate);
-	if (next_rate == nfo->_rate) {
-	  nfo->_packets++;
-	} else {
-	  nfo->_rate = next_rate;
-	  nfo->_packets = 0;
-	}
-
-      }
-    }
-    p_in->kill();
-    return 0;
-  }
-
-  /* the packet has failed */
-  if (WIFI_RETRIES_ANNO(p_in) > 4) {
-    //click_chatter("packet to %s failed!", dst.s().cc());
-    p_in->kill();
-    return 0;
-  }
-
-  if (rate > 1) {
-    /* try twice at a speed before bumping down */
-    if (rate == nfo->_rate) {
-      nfo->_rate = next_lower_rate(nfo->_rate);
-    }
-    //click_chatter("AutoTXRate: packet to %s failed twice, bumping down to %d\n", 
-    //dst.s().cc(), nfo->_rate);
-    
-    SET_WIFI_RATE_ANNO(p_in, nfo->_rate);
-    SET_WIFI_RETRIES_ANNO(p_in, 0);
-    nfo->_packets = 0;
-  }
-  SET_WIFI_RETRIES_ANNO(p_in, retries+1);
-
-
+  nfo->_results.push_back(tx_result(now, rate, success));
+  update_rate(dst);
   return p_in;
 }
 String
@@ -195,31 +212,176 @@ AutoTXRate::static_print_stats(Element *e, void *)
 String
 AutoTXRate::print_stats() 
 {
+  typedef BigHashMap<EtherAddress, bool> EthMap;
+  EthMap ethers;
+
+  for (NIter iter = _neighbors.begin(); iter; iter++) {
+    ethers.insert(iter.key(), true);
+  }
+
   struct timeval now;
   click_gettimeofday(&now);
+
   
   StringAccum sa;
-  for (NIter iter = _neighbors.begin(); iter; iter++) {
-    DstInfo n = iter.value();
-    struct timeval age = now - n._last_success;
-    sa << n._eth.s().cc() << " ";
-    sa << "rate: " << n._rate << " ";
-    sa << "packets: " << n._packets << " ";
-    sa << "last_success: " << age << "\n";
+  for (EthMap::const_iterator i = ethers.begin(); i; i++) {
+    update_rate(i.key());
+    DstInfo *n = _neighbors.findp(i.key());
+    sa << n->_eth.s().cc();
+    sa << " rate " << n->_rate;
+    sa << " successes " << n->_successes;
+    sa << " failures " << n->_failures;
+    sa << " percent ";
+    int total = n->_successes + n->_failures;
+    if (!total || total  <  _before_switch) {
+      sa << "xxx";
+    } else {
+      sa << (n->_successes*100) / total;
+    }
+    sa << "\n";
   }
   return sa.take_string();
 }
+
+
+int
+AutoTXRate::static_write_rate_window(const String &arg, Element *e,
+				     void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  unsigned int b;
+
+  if (!cp_unsigned(arg, &b))
+    return errh->error("`rate_window' must be a unsigned int");
+
+  return n->set_rate_window(errh, b);
+}
+
+int
+AutoTXRate::static_write_before_switch(const String &arg, Element *e,
+				     void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`before_switch' must be an integer");
+
+  n->_before_switch = b;
+  return 0;
+}
+
+
+int
+AutoTXRate::static_write_stepdown(const String &arg, Element *e,
+				     void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`stepdown' must be an integer");
+
+  n->_stepdown = b;
+  return 0;
+}
+
+
+
+int
+AutoTXRate::static_write_stepup(const String &arg, Element *e,
+				     void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`stepup' must be an integer");
+  
+  n->_stepup = b;
+  return 0;
+}
+
+
+
+
+int
+AutoTXRate::set_rate_window(ErrorHandler *errh, unsigned int x) 
+{
+
+  if (!x) {
+    return errh->error("RATE_WINDOW must not be 0");
+  }
+  timerclear(&_rate_window);
+  /* convehop path_duration from ms to a struct timeval */
+  _rate_window.tv_sec = x/1000;
+  _rate_window.tv_usec = (x % 1000) * 1000;
+  return 0;
+}
+
+String
+AutoTXRate::static_read_rate_window(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_rate_window << "\n";
+  return sa.take_string();
+}
+
+
+String
+AutoTXRate::static_read_stepup(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_stepup << "\n";
+  return sa.take_string();
+}
+
+String
+AutoTXRate::static_read_stepdown(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_stepdown << "\n";
+  return sa.take_string();
+}
+
+
+String
+AutoTXRate::static_read_before_switch(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_before_switch << "\n";
+  return sa.take_string();
+}
+
 void
 AutoTXRate::add_handlers()
 {
   add_default_handlers(true);
   add_read_handler("stats", static_print_stats, 0);
 
+  add_write_handler("rate_window", static_write_rate_window, 0);
+  add_read_handler("rate_window", static_read_rate_window, 0);
+
+  add_write_handler("stepup", static_write_stepup, 0);
+  add_read_handler("stepup", static_read_stepup, 0);
+
+  add_write_handler("stepdown", static_write_stepdown, 0);
+  add_read_handler("stepdown", static_read_stepdown, 0);
+
+  add_write_handler("before_switch", static_write_before_switch, 0);
+  add_read_handler("before_switch", static_read_before_switch, 0);
+
 }
 // generate Vector template instance
 #include <click/bighashmap.cc>
+#include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class BigHashMap<EtherAddress, AutoTXRate::DstInfo>;
+template class DEQueue<AutoTXRate::tx_result>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AutoTXRate)

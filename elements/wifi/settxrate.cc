@@ -45,9 +45,10 @@ int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _auto = NULL;
+  _rate = 0;
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "rate", &_rate, 
 		  cpKeywords, 
+		  "RATE", cpUnsigned, "rate", &_rate, 
 		  "AUTO", cpElement, "AutoTXRate element", &_auto,
 		  0) < 0) {
     return -1;
@@ -63,7 +64,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   case 11:
     break;
   default:
-    return errh->error("rate must be 1,2,5, or 11");
+    return errh->error("RATE must be 1,2,5, or 11");
   }
 
   if (_auto && _auto->cast("AutoTXRate") == 0) {
