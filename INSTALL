@@ -89,10 +89,10 @@ and running Linux kernels.
     This is in case something goes wrong and you need to revert to an old
     kernel.
 
- 2. Get a suitable Linux kernel source distribution, for example from
-    www.kernel.org. (Patched kernels may or may not work. Kernels from Red
-    Hat, for example, may not work.) Unpack this distribution into
-    /usr/src/linux. (Save the old kernel source tree, if you had one.)
+ 2. Get a vanilla Linux kernel source distribution from www.kernel.org or
+    one of its mirrors.  (Patched kernels, such as Red Hat kernels, usually
+    do not work.)  Unpack this distribution into /usr/src/linux.  (Save the
+    old kernel source tree, if you had one.)
 
     We supply patches for Linux 2.2.18-21, 2.4.18-21, and 2.4.26.
 
@@ -113,6 +113,7 @@ and running Linux kernels.
     2.4.20		linux-2.4.20-patch
     2.4.21		linux-2.4.21-patch
     2.4.26		linux-2.4.26-patch
+    2.4.26-Debian	debian-2.4.26-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
