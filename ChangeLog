@@ -1,3 +1,21 @@
+2002-04-30 Tuesday 02:11  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in (1.18), elements/etherswitch/bridgemessage.hh (1.9),
+	include/click/click_ether.h (1.6), include/click/click_icmp.h
+	(1.4), include/click/click_udp.h (1.2), include/click/fddi.h (1.4),
+	include/click/rfc1483.h (1.3): use new CLICK_SIZE_PACKED_STRUCTURE
+	and CLICK_PACKED_STRUCTURE macros
+
+2002-04-30 Tuesday 02:10  Eddie Kohler <kohler@aciri.org>
+
+	* elements/etherswitch/bridgemessage.cc (1.18), lib/glue.cc (1.32):
+	explicitly check the sizes of various wire-format structures
+
+2002-04-30 Tuesday 01:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipratemon.hh (1.61), etc/libclick/lc-configure.in
+	(1.19): more stdc++ changes
+
 2002-04-29 Monday 23:05  Eddie Kohler <kohler@aciri.org>
 
 	* config.h.in (1.17), configure.in (1.182),

@@ -1,3 +1,22 @@
+2002-04-30 Tuesday 02:11  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in, include/click/click_ether.h,
+	include/click/click_ether.h, include/click/click_icmp.h,
+	include/click/click_udp.h, include/click/fddi.h,
+	include/click/rfc1483.h, include/click/click_icmp.h,
+	include/click/click_udp.h, include/click/fddi.h,
+	include/click/rfc1483.h: use new CLICK_SIZE_PACKED_STRUCTURE and
+	CLICK_PACKED_STRUCTURE macros
+
+2002-04-30 Tuesday 02:10  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/glue.cc: explicitly check the sizes of various wire-format
+	structures
+
+2002-04-30 Tuesday 01:26  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: more stdc++ changes
+
 2002-04-29 Monday 23:05  Eddie Kohler <kohler@aciri.org>
 
 	* config.h.in, include/click/click_ip.h, include/click/click_ip6.h,
