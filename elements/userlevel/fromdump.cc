@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <config.h>
 
 #include "fromdump.hh"
 #include <click/confparse.hh>
