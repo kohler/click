@@ -1,3 +1,8 @@
+2004-01-13 Tuesday 10:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* userlevel/Makefile.in (1.76): oops, need clp.c to link in for
+	userlevel
+
 2004-01-12 Monday 17:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: airoinfo.cc (1.12), linktester.cc (1.2): add
