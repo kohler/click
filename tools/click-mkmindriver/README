@@ -7,6 +7,9 @@ happen, you first need to
   2. build userlevel click in ~/click
   3. run gmake install in ~/click
 
+you need to build userlevel click because the build environment you create
+will use libclick.a and click.o from the userlevel click directory.
+
 if you have a configuration file called ~/click/conf/test.conf, you can create
 a build environment for that configuration file by doing the following:
 
