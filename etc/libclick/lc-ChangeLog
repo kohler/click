@@ -1,3 +1,8 @@
+2001-10-16 Tuesday 02:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: add AQM elements, fix AQM elements and
+	nitlet buglets elsewhere
+
 2001-10-15 Monday 19:58  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/ewma64.hh, include/click/ewma64.hh,

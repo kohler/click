@@ -1,13 +1,35 @@
+2001-10-16 Tuesday 02:27  Eddie Kohler <kohler@aciri.org>
+
+	* elements/aqm/: adaptivered.cc (1.3), adaptivered.hh (1.3):
+	AdaptiveRED::cast() nitlet
+
+2001-10-16 Tuesday 02:18  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.152), doc/mkwebdoc.pl (1.14),
+	elements/aqm/adaptivered.cc (1.2), elements/aqm/adaptivered.hh
+	(1.2), elements/aqm/red.cc (1.35), elements/aqm/red.hh (1.30),
+	lib/confparse.cc (1.85): add AQM elements, fix AQM elements and
+	nitlet buglets elsewhere
+
+2001-10-16 Tuesday 01:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: adaptivered.cc (1.2), adaptivered.hh (1.2),
+	red.cc (1.35), red.hh (1.30): remove elements from standard
+	directory, moved to aqm
+
 2001-10-15 Monday 20:37  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: adaptivered.cc (1.1), adaptivered.hh (1.1),
-	red.hh (1.29): RED updates, and add AdaptiveRED
+	* elements/: aqm/adaptivered.cc (1.1), aqm/adaptivered.hh (1.1),
+	aqm/red.hh (1.29), standard/adaptivered.cc (1.1),
+	standard/adaptivered.hh (1.1), standard/red.hh (1.29): RED updates,
+	and add AdaptiveRED
 
 2001-10-15 Monday 20:00  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: red.cc (1.34), red.hh (1.28): update RED to
-	Gentle algorithm, and 64-bit EWMAs, because real networks need
-	relatively large stability shifts (10, 13, 14) (untested!)
+	* elements/: aqm/red.cc (1.34), aqm/red.hh (1.28), standard/red.cc
+	(1.34), standard/red.hh (1.28): update RED to Gentle algorithm, and
+	64-bit EWMAs, because real networks need relatively large stability
+	shifts (10, 13, 14) (untested!)
 
 2001-10-15 Monday 19:58  Eddie Kohler <kohler@aciri.org>
 
@@ -138,10 +160,11 @@
 2001-10-09 Tuesday 00:54  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/queue.cc (1.37), elements/standard/queue.hh
-	(1.24), elements/standard/red.cc (1.33), elements/standard/red.hh
-	(1.27), include/click/ewma.cc (1.4), include/click/ewma.hh (1.5):
-	improve RED handling of empty periods, and remove _empty_jiffies,
-	at the request of Geir <kp13@gmx.co.uk>
+	(1.24), elements/aqm/red.cc (1.33), elements/aqm/red.hh (1.27),
+	elements/standard/red.cc (1.33), elements/standard/red.hh (1.27),
+	include/click/ewma.cc (1.4), include/click/ewma.hh (1.5): improve
+	RED handling of empty periods, and remove _empty_jiffies, at the
+	request of Geir <kp13@gmx.co.uk>
 
 2001-10-09 Tuesday 00:51  Eddie Kohler <kohler@aciri.org>
 
@@ -1778,8 +1801,9 @@
 
 2001-07-19 Thursday 19:38  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: red.cc (1.32), red.hh (1.26): RED: add
-	live_reconfigure for Brecht
+	* elements/: aqm/red.cc (1.32), aqm/red.hh (1.26), standard/red.cc
+	(1.32), standard/red.hh (1.26): RED: add live_reconfigure for
+	Brecht
 
 2001-07-19 Thursday 19:37  Eddie Kohler <kohler@aciri.org>
 
@@ -2505,19 +2529,19 @@
 
 	* elements/standard/peekhandlers.cc (1.18),
 	elements/standard/pullswitch.cc (1.15),
-	elements/standard/pullswitch.hh (1.12),
+	elements/standard/pullswitch.hh (1.12), elements/aqm/red.cc (1.31),
 	elements/standard/quitwatcher.cc (1.13),
 	elements/standard/ratedsplitter.cc (1.14),
 	elements/standard/ratedsplitter.hh (1.14),
 	elements/standard/ratedunqueue.cc (1.13),
 	elements/standard/ratedunqueue.hh (1.7), elements/standard/red.cc
-	(1.31), elements/standard/red.hh (1.25),
-	elements/standard/switch.cc (1.15), elements/standard/switch.hh
-	(1.15), include/click/element.hh (1.16), include/click/router.hh
-	(1.16), lib/element.cc (1.60), lib/router.cc (1.96): added extra
-	"bool *" argument to Element::configuration() method, to support
-	Brecht's request that element configuration strings not lose
-	whitespace unless necessary
+	(1.31), elements/aqm/red.hh (1.25), elements/standard/red.hh
+	(1.25), elements/standard/switch.cc (1.15),
+	elements/standard/switch.hh (1.15), include/click/element.hh
+	(1.16), include/click/router.hh (1.16), lib/element.cc (1.60),
+	lib/router.cc (1.96): added extra "bool *" argument to
+	Element::configuration() method, to support Brecht's request that
+	element configuration strings not lose whitespace unless necessary
 
 2001-06-20 Wednesday 02:41  Eddie Kohler <kohler@aciri.org>
 
@@ -2986,10 +3010,10 @@
 	elements/standard/randomsource.cc (1.12),
 	elements/standard/ratedsource.cc (1.39),
 	elements/standard/ratedsplitter.cc (1.13),
-	elements/standard/ratedunqueue.cc (1.12), elements/standard/red.cc
-	(1.30), elements/standard/rrsched.cc (1.9),
-	elements/standard/rrswitch.cc (1.11),
-	elements/standard/scheduleinfo.cc (1.30),
+	elements/standard/ratedunqueue.cc (1.12), elements/aqm/red.cc
+	(1.30), elements/standard/red.cc (1.30),
+	elements/standard/rrsched.cc (1.9), elements/standard/rrswitch.cc
+	(1.11), elements/standard/scheduleinfo.cc (1.30),
 	elements/standard/setcrc32.cc (1.11),
 	elements/standard/settimestamp.cc (1.3),
 	elements/standard/shaper.cc (1.26),
@@ -3183,29 +3207,29 @@
 	standard/pulltopush.cc (1.23), standard/queue.cc (1.35),
 	standard/quitwatcher.cc (1.11), standard/randomerror.cc (1.19),
 	standard/randomlossage.cc (1.21), standard/randomsource.cc (1.11),
-	standard/ratedsource.cc (1.38), standard/ratedsplitter.cc (1.12),
-	standard/ratedunqueue.cc (1.11), standard/red.cc (1.29),
-	standard/rrsched.cc (1.8), standard/rrswitch.cc (1.10),
-	standard/scheduleinfo.cc (1.29), standard/setcrc32.cc (1.10),
-	standard/settimestamp.cc (1.2), standard/shaper.cc (1.25),
-	standard/staticpullswitch.cc (1.7), standard/staticswitch.cc (1.7),
-	standard/stridesched.cc (1.13), standard/strideswitch.cc (1.8),
-	standard/strip.cc (1.13), standard/suppressor.cc (1.16),
-	standard/switch.cc (1.13), standard/tee.cc (1.16),
-	standard/timedsink.cc (1.19), standard/timedsource.cc (1.22),
-	standard/unqueue.cc (1.11), standard/unqueue2.cc (1.3),
-	standard/unstrip.cc (1.2), tcpudp/checktcpheader.cc (1.4),
-	tcpudp/checkudpheader.cc (1.4), tcpudp/dynudpipencap.cc (1.4),
-	tcpudp/iprewriter.cc (1.20), tcpudp/settcpchecksum.cc (1.4),
-	tcpudp/snooptcp.cc (1.4), tcpudp/tcpipsend.cc (1.3),
-	tcpudp/tcprewriter.cc (1.9), tcpudp/udpipencap.cc (1.6),
-	userlevel/chattersocket.cc (1.2), userlevel/controlsocket.cc
-	(1.22), userlevel/frombpf.cc (1.22), userlevel/fromdevice.cc
-	(1.23), userlevel/fromdump.cc (1.28), userlevel/kerneltap.cc
-	(1.22), userlevel/printold.cc (1.5), userlevel/tobpf.cc (1.25),
-	userlevel/todevice.cc (1.12), userlevel/todump.cc (1.25): elements
-	no longer need to #include <click/package.hh>, so remove this
-	dependency
+	aqm/red.cc (1.29), standard/ratedsource.cc (1.38),
+	standard/ratedsplitter.cc (1.12), standard/ratedunqueue.cc (1.11),
+	standard/red.cc (1.29), standard/rrsched.cc (1.8),
+	standard/rrswitch.cc (1.10), standard/scheduleinfo.cc (1.29),
+	standard/setcrc32.cc (1.10), standard/settimestamp.cc (1.2),
+	standard/shaper.cc (1.25), standard/staticpullswitch.cc (1.7),
+	standard/staticswitch.cc (1.7), standard/stridesched.cc (1.13),
+	standard/strideswitch.cc (1.8), standard/strip.cc (1.13),
+	standard/suppressor.cc (1.16), standard/switch.cc (1.13),
+	standard/tee.cc (1.16), standard/timedsink.cc (1.19),
+	standard/timedsource.cc (1.22), standard/unqueue.cc (1.11),
+	standard/unqueue2.cc (1.3), standard/unstrip.cc (1.2),
+	tcpudp/checktcpheader.cc (1.4), tcpudp/checkudpheader.cc (1.4),
+	tcpudp/dynudpipencap.cc (1.4), tcpudp/iprewriter.cc (1.20),
+	tcpudp/settcpchecksum.cc (1.4), tcpudp/snooptcp.cc (1.4),
+	tcpudp/tcpipsend.cc (1.3), tcpudp/tcprewriter.cc (1.9),
+	tcpudp/udpipencap.cc (1.6), userlevel/chattersocket.cc (1.2),
+	userlevel/controlsocket.cc (1.22), userlevel/frombpf.cc (1.22),
+	userlevel/fromdevice.cc (1.23), userlevel/fromdump.cc (1.28),
+	userlevel/kerneltap.cc (1.22), userlevel/printold.cc (1.5),
+	userlevel/tobpf.cc (1.25), userlevel/todevice.cc (1.12),
+	userlevel/todump.cc (1.25): elements no longer need to #include
+	<click/package.hh>, so remove this dependency
 
 2001-05-22 Tuesday 17:41  Eddie Kohler <kohler@aciri.org>
 
@@ -3582,11 +3606,11 @@
 	config.h.in (1.1), configure.in (1.112), missing (1.4),
 	pathvars.h.in (1.1), doc/.cvsignore (1.3), doc/Makefile.in (1.28),
 	doc/click-combine.1 (1.3), doc/click-mkmindriver.1 (1.1),
-	elements/standard/drivermanager.hh (1.2),
-	elements/standard/priosched.hh (1.10), elements/standard/red.hh
-	(1.24), elements/standard/rrsched.hh (1.11),
-	elements/standard/stridesched.hh (1.13), include/click/clp.h (1.3),
-	include/click/ewma.cc (1.2),
+	elements/aqm/red.hh (1.24), elements/standard/drivermanager.hh
+	(1.2), elements/standard/priosched.hh (1.10),
+	elements/standard/red.hh (1.24), elements/standard/rrsched.hh
+	(1.11), elements/standard/stridesched.hh (1.13),
+	include/click/clp.h (1.3), include/click/ewma.cc (1.2),
 	include/click/standard/drivermanager.hh (1.2), lib/archive.cc
 	(1.10), lib/atomic.cc (1.3), lib/bigewma.cc (1.3),
 	lib/bighashmap_arena.cc (1.3), lib/bitvector.cc (1.11), lib/clp.c
@@ -3881,12 +3905,13 @@
 
 2001-04-18 Wednesday 15:50  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: red.cc (1.28), red.hh (1.23): RED updates
+	* elements/: aqm/red.cc (1.28), aqm/red.hh (1.23), standard/red.cc
+	(1.28), standard/red.hh (1.23): RED updates
 
 2001-04-18 Wednesday 15:32  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/red.cc (1.27): adjust to new Router::find
-	interface
+	* elements/: aqm/red.cc (1.27), standard/red.cc (1.27): adjust to
+	new Router::find interface
 
 2001-04-18 Wednesday 15:17  Eddie Kohler <kohler@aciri.org>
 
@@ -4322,8 +4347,8 @@
 
 2001-04-02 Monday 15:55  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/red.cc (1.26): bug fix: check for negative
-	max_p
+	* elements/: aqm/red.cc (1.26), standard/red.cc (1.26): bug fix:
+	check for negative max_p
 
 2001-04-02 Monday 15:54  Eddie Kohler <kohler@aciri.org>
 
@@ -4419,8 +4444,9 @@
 	standard/randomlossage.cc (1.19), standard/ratedsource.cc (1.37),
 	standard/ratedsplitter.cc (1.11), standard/ratedsplitter.hh (1.13),
 	standard/ratedunqueue.cc (1.10), standard/ratedunqueue.hh (1.6),
-	standard/red.cc (1.25), standard/red.hh (1.22), standard/switch.cc
-	(1.11), standard/switch.hh (1.13): adapt to Element changes
+	aqm/red.cc (1.25), aqm/red.hh (1.22), standard/red.cc (1.25),
+	standard/red.hh (1.22), standard/switch.cc (1.11),
+	standard/switch.hh (1.13): adapt to Element changes
 
 2001-03-28 Wednesday 19:19  Eddie Kohler <kohler@aciri.org>
 
@@ -4525,10 +4551,10 @@
 
 2001-03-23 Friday 13:41  Eddie Kohler <kohler@aciri.org>
 
-	* elements/grid/gridlocationinfo.cc (1.5),
-	elements/grid/locationinfo.cc (1.20), elements/grid/loctable.cc
-	(1.7), elements/grid/movesim.cc (1.13), elements/grid/pep.cc
-	(1.18), elements/grid/radiosim.cc (1.10),
+	* elements/aqm/red.cc (1.24), elements/grid/gridlocationinfo.cc
+	(1.5), elements/grid/locationinfo.cc (1.20),
+	elements/grid/loctable.cc (1.7), elements/grid/movesim.cc (1.13),
+	elements/grid/pep.cc (1.18), elements/grid/radiosim.cc (1.10),
 	elements/grid/regionpep.cc (1.10),
 	elements/grid/simplelocquerier.cc (1.7), elements/ip/ipratemon.cc
 	(1.87), elements/standard/bandwidthmeter.cc (1.7),
@@ -4654,8 +4680,9 @@
 	elements/linuxmodule/tulipstats.hh (1.4), elements/local/webgen.cc
 	(1.2), elements/standard/checklength.cc (1.10),
 	elements/standard/checkpaint.cc (1.15),
-	elements/standard/classifier.cc (1.31), elements/standard/red.cc
-	(1.23), tools/click-devirtualize/cxxclass.cc (1.5),
+	elements/standard/classifier.cc (1.31), elements/aqm/red.cc (1.23),
+	elements/standard/red.cc (1.23),
+	tools/click-devirtualize/cxxclass.cc (1.5),
 	tools/click-devirtualize/specializer.cc (1.19): in Element, renamed
 	checked_push_output to check_output_push, because the normal case
 	is output(...).push(...), not push(...).output(...). Adapt to this
@@ -5516,33 +5543,33 @@
 	standard/paint.cc (1.14), standard/painttee.cc (1.7),
 	standard/peekhandlers.cc (1.12), standard/pokehandlers.cc (1.12),
 	standard/print.cc (1.14), standard/priosched.cc (1.8),
-	standard/probsplitter.cc (1.6), standard/pullswitch.cc (1.10),
-	standard/pulltopush.cc (1.22), standard/queue.cc (1.32),
-	standard/quitwatcher.cc (1.9), standard/randomerror.cc (1.15),
-	standard/randomlossage.cc (1.17), standard/randomsource.cc (1.10),
-	standard/ratedsource.cc (1.32), standard/ratedsplitter.cc (1.10),
-	standard/ratedunqueue.cc (1.9), standard/red.cc (1.22),
-	standard/rrsched.cc (1.7), standard/rrswitch.cc (1.8),
-	standard/scheduleinfo.cc (1.21), standard/setcrc32.cc (1.9),
-	standard/shaper.cc (1.24), standard/spinlockacquire.cc (1.3),
-	standard/spinlockinfo.cc (1.3), standard/spinlockrelease.cc (1.3),
-	standard/staticpullswitch.cc (1.6), standard/staticswitch.cc (1.6),
-	standard/stridesched.cc (1.12), standard/strideswitch.cc (1.7),
-	standard/strip.cc (1.12), standard/suppressor.cc (1.14),
-	standard/switch.cc (1.10), standard/tee.cc (1.15),
-	standard/timedsink.cc (1.17), standard/timedsource.cc (1.19),
-	standard/unqueue.cc (1.10), tcpudp/checktcpheader.cc (1.3),
-	tcpudp/checkudpheader.cc (1.3), tcpudp/dynudpipencap.cc (1.3),
-	tcpudp/iprewriter.cc (1.6), tcpudp/settcpchecksum.cc (1.3),
-	tcpudp/snooptcp.cc (1.2), tcpudp/tcpipsend.cc (1.2),
-	tcpudp/tcprewriter.cc (1.6), tcpudp/udpipencap.cc (1.5),
-	userlevel/controlsocket.cc (1.18), userlevel/frombpf.cc (1.21),
-	userlevel/fromdevice.cc (1.18), userlevel/fromdump.cc (1.27),
-	userlevel/kerneltap.cc (1.14), userlevel/tobpf.cc (1.24),
-	userlevel/todevice.cc (1.11), userlevel/todump.cc (1.24): removed
-	#if HAVE_CONFIG_H/#include <config.h>/#endif from all elements.
-	Instead, the first #include of each element MUST be #include
-	<click/config.h>.
+	standard/probsplitter.cc (1.6), aqm/red.cc (1.22),
+	standard/pullswitch.cc (1.10), standard/pulltopush.cc (1.22),
+	standard/queue.cc (1.32), standard/quitwatcher.cc (1.9),
+	standard/randomerror.cc (1.15), standard/randomlossage.cc (1.17),
+	standard/randomsource.cc (1.10), standard/ratedsource.cc (1.32),
+	standard/ratedsplitter.cc (1.10), standard/ratedunqueue.cc (1.9),
+	standard/red.cc (1.22), standard/rrsched.cc (1.7),
+	standard/rrswitch.cc (1.8), standard/scheduleinfo.cc (1.21),
+	standard/setcrc32.cc (1.9), standard/shaper.cc (1.24),
+	standard/spinlockacquire.cc (1.3), standard/spinlockinfo.cc (1.3),
+	standard/spinlockrelease.cc (1.3), standard/staticpullswitch.cc
+	(1.6), standard/staticswitch.cc (1.6), standard/stridesched.cc
+	(1.12), standard/strideswitch.cc (1.7), standard/strip.cc (1.12),
+	standard/suppressor.cc (1.14), standard/switch.cc (1.10),
+	standard/tee.cc (1.15), standard/timedsink.cc (1.17),
+	standard/timedsource.cc (1.19), standard/unqueue.cc (1.10),
+	tcpudp/checktcpheader.cc (1.3), tcpudp/checkudpheader.cc (1.3),
+	tcpudp/dynudpipencap.cc (1.3), tcpudp/iprewriter.cc (1.6),
+	tcpudp/settcpchecksum.cc (1.3), tcpudp/snooptcp.cc (1.2),
+	tcpudp/tcpipsend.cc (1.2), tcpudp/tcprewriter.cc (1.6),
+	tcpudp/udpipencap.cc (1.5), userlevel/controlsocket.cc (1.18),
+	userlevel/frombpf.cc (1.21), userlevel/fromdevice.cc (1.18),
+	userlevel/fromdump.cc (1.27), userlevel/kerneltap.cc (1.14),
+	userlevel/tobpf.cc (1.24), userlevel/todevice.cc (1.11),
+	userlevel/todump.cc (1.24): removed #if HAVE_CONFIG_H/#include
+	<config.h>/#endif from all elements. Instead, the first #include of
+	each element MUST be #include <click/config.h>.
 
 2001-03-04 Sunday 16:15  Eddie Kohler <kohler@aciri.org>
 
@@ -5667,8 +5694,8 @@
 	elements/standard/pulltopush.cc (1.20),
 	elements/standard/pulltopush.hh (1.17),
 	elements/standard/quitwatcher.cc (1.7),
-	elements/standard/quitwatcher.hh (1.11),
-	elements/standard/randomsource.cc (1.8),
+	elements/standard/quitwatcher.hh (1.11), elements/aqm/red.cc
+	(1.21), elements/standard/randomsource.cc (1.8),
 	elements/standard/randomsource.hh (1.7),
 	elements/standard/ratedsource.cc (1.30),
 	elements/standard/ratedsource.hh (1.22),
@@ -5907,9 +5934,10 @@
 
 2001-02-16 Friday 19:30  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: red.cc (1.20), red.hh (1.21): support second
-	output; if present, RED pushes "marked" packets to second output
-	rather than dropping them
+	* elements/: aqm/red.cc (1.20), aqm/red.hh (1.21), standard/red.cc
+	(1.20), standard/red.hh (1.21): support second output; if present,
+	RED pushes "marked" packets to second output rather than dropping
+	them
 
 2001-02-16 Friday 19:30  Eddie Kohler <kohler@aciri.org>
 
@@ -7576,10 +7604,10 @@
 	elements/standard/randomsource.hh (1.5),
 	elements/standard/ratedsource.hh (1.20),
 	elements/standard/ratedsplitter.hh (1.12),
-	elements/standard/ratedunqueue.hh (1.4), elements/standard/red.hh
-	(1.20), elements/standard/rrsched.hh (1.10),
-	elements/standard/rrswitch.hh (1.7),
-	elements/standard/scheduleinfo.hh (1.10),
+	elements/standard/ratedunqueue.hh (1.4), elements/aqm/red.hh
+	(1.20), elements/standard/red.hh (1.20),
+	elements/standard/rrsched.hh (1.10), elements/standard/rrswitch.hh
+	(1.7), elements/standard/scheduleinfo.hh (1.10),
 	elements/standard/setcrc32.hh (1.6), elements/standard/shaper.hh
 	(1.18), elements/standard/staticpullswitch.hh (1.5),
 	elements/standard/staticswitch.hh (1.4),
@@ -8172,7 +8200,8 @@
 	elements/standard/peekhandlers.cc (1.9),
 	elements/standard/pokehandlers.cc (1.8), elements/standard/print.cc
 	(1.12), elements/standard/priosched.cc (1.6),
-	elements/standard/probsplitter.cc (1.4),
+	elements/standard/probsplitter.cc (1.4), elements/aqm/red.cc
+	(1.19), elements/aqm/red.hh (1.19),
 	elements/standard/probsplitter.hh (1.7),
 	elements/standard/pullswitch.cc (1.8),
 	elements/standard/pullswitch.hh (1.8),
@@ -8507,7 +8536,8 @@
 	elements/standard/quitwatcher.hh (1.7),
 	elements/standard/randomerror.cc (1.12),
 	elements/standard/randomerror.hh (1.10),
-	elements/standard/randomlossage.cc (1.14),
+	elements/standard/randomlossage.cc (1.14), elements/aqm/red.cc
+	(1.18), elements/aqm/red.hh (1.18),
 	elements/standard/randomlossage.hh (1.10),
 	elements/standard/randomsource.cc (1.4),
 	elements/standard/randomsource.hh (1.3),
@@ -8951,8 +8981,8 @@
 	elements/standard/randomerror.cc (1.11),
 	elements/standard/randomlossage.cc (1.13),
 	elements/standard/randomsource.cc (1.3),
-	elements/standard/ratedsource.cc (1.24),
-	elements/standard/ratedsplitter.cc (1.7),
+	elements/standard/ratedsource.cc (1.24), elements/aqm/red.cc
+	(1.17), elements/standard/ratedsplitter.cc (1.7),
 	elements/standard/ratedunqueue.cc (1.3), elements/standard/red.cc
 	(1.17), elements/standard/rrsched.cc (1.5),
 	elements/standard/rrswitch.cc (1.3),
@@ -10394,13 +10424,14 @@
 2000-08-22 Tuesday 13:11  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/tcpipsend.cc (1.7), elements/standard/counter2.hh
-	(1.7), elements/standard/meter.cc (1.13),
-	elements/standard/meter.hh (1.13), elements/standard/packetmeter.cc
-	(1.4), elements/standard/red.hh (1.17), elements/standard/shaper.cc
-	(1.13), elements/standard/shaper.hh (1.11), lib/confparse.cc
-	(1.31), lib/confparse.hh (1.22), lib/ewma.cc (1.6), lib/ewma.hh
-	(1.7), tools/udpgen/udpgen.c (1.15): xsacdnkjanfdkjnakjnfjdsa:
-	mostly unsigned and udpgen fix
+	(1.7), elements/aqm/red.hh (1.17), elements/standard/meter.cc
+	(1.13), elements/standard/meter.hh (1.13),
+	elements/standard/packetmeter.cc (1.4), elements/standard/red.hh
+	(1.17), elements/standard/shaper.cc (1.13),
+	elements/standard/shaper.hh (1.11), lib/confparse.cc (1.31),
+	lib/confparse.hh (1.22), lib/ewma.cc (1.6), lib/ewma.hh (1.7),
+	tools/udpgen/udpgen.c (1.15): xsacdnkjanfdkjnakjnfjdsa: mostly
+	unsigned and udpgen fix
 
 2000-08-22 Tuesday 11:15  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -11137,7 +11168,7 @@
 	elements/linuxmodule/tolinuxsniffers.hh (1.6),
 	elements/standard/align.hh (1.8), elements/standard/checkcrc32.hh
 	(1.4), elements/standard/checklength.hh (1.6),
-	elements/standard/checkpaint.hh (1.9),
+	elements/standard/checkpaint.hh (1.9), elements/aqm/red.hh (1.16),
 	elements/standard/classifier.hh (1.14),
 	elements/standard/counter.hh (1.14), elements/standard/counter2.hh
 	(1.6), elements/standard/discard.hh (1.10),
@@ -11275,8 +11306,8 @@
 	(1.7), elements/standard/probsplitter.hh (1.3),
 	elements/standard/pullswitch.hh (1.5),
 	elements/standard/pulltopush.hh (1.12), elements/standard/queue.hh
-	(1.17), elements/standard/quitwatcher.hh (1.5),
-	elements/standard/randomerror.hh (1.8),
+	(1.17), elements/standard/quitwatcher.hh (1.5), elements/aqm/red.hh
+	(1.15), elements/standard/randomerror.hh (1.8),
 	elements/standard/randomlossage.hh (1.8),
 	elements/standard/ratedsource.hh (1.12),
 	elements/standard/ratedsplitter.hh (1.4), elements/standard/red.hh
@@ -11465,8 +11496,8 @@
 	(1.6), elements/standard/alignmentinfo.hh (1.7),
 	elements/standard/block.hh (1.8), elements/standard/checkpaint.hh
 	(1.7), elements/standard/classifier.hh (1.12),
-	include/click/standard/alignmentinfo.hh (1.7),
-	elements/standard/compblock.hh (1.8),
+	include/click/standard/alignmentinfo.hh (1.7), elements/aqm/red.hh
+	(1.14), elements/standard/compblock.hh (1.8),
 	elements/standard/frontdropqueue.hh (1.3),
 	elements/standard/hashdemux.hh (1.8),
 	elements/standard/infinitesource.hh (1.13),
@@ -12828,13 +12859,13 @@
 
 2000-07-09 Sunday 01:39  Eddie Kohler <kohler@aciri.org>
 
-	* elements/ip/ipratemon.cc (1.63), elements/ip/kinkyratemon.cc
-	(1.3), elements/linuxmodule/perfinfo.cc (1.10),
-	elements/standard/print.cc (1.9), elements/standard/red.cc (1.16),
-	lib/confparse.cc (1.17), lib/confparse.hh (1.11), lib/element.cc
-	(1.28), lib/lexer.cc (1.26), lib/lexer.hh (1.13), lib/router.cc
-	(1.43), lib/router.hh (1.15), linuxmodule/module.cc (1.27),
-	tools/lib/lexert.cc (1.16), tools/lib/lexert.hh (1.10),
+	* elements/aqm/red.cc (1.16), elements/ip/ipratemon.cc (1.63),
+	elements/ip/kinkyratemon.cc (1.3), elements/linuxmodule/perfinfo.cc
+	(1.10), elements/standard/print.cc (1.9), elements/standard/red.cc
+	(1.16), lib/confparse.cc (1.17), lib/confparse.hh (1.11),
+	lib/element.cc (1.28), lib/lexer.cc (1.26), lib/lexer.hh (1.13),
+	lib/router.cc (1.43), lib/router.hh (1.15), linuxmodule/module.cc
+	(1.27), tools/lib/lexert.cc (1.16), tools/lib/lexert.hh (1.10),
 	tools/lib/routert.cc (1.25): more configuration changes : better
 	lexing, unsubst
 
@@ -12938,7 +12969,8 @@
 	elements/standard/infinitesource.hh (1.12),
 	elements/standard/meter.cc (1.11), elements/standard/meter.hh
 	(1.8), elements/standard/paint.cc (1.7), elements/standard/paint.hh
-	(1.6), elements/standard/peekhandlers.cc (1.6),
+	(1.6), elements/aqm/red.cc (1.15), elements/aqm/red.hh (1.13),
+	elements/standard/peekhandlers.cc (1.6),
 	elements/standard/peekhandlers.hh (1.5),
 	elements/standard/pokehandlers.cc (1.5),
 	elements/standard/pokehandlers.hh (1.5), elements/standard/print.cc
@@ -13278,7 +13310,8 @@
 
 2000-06-07 Wednesday 20:35  Eddie Kohler <kohler@aciri.org>
 
-	* elements/ip/ipratemon.cc (1.47), elements/ip/ipratemon.hh (1.23),
+	* elements/ip/ipratemon.cc (1.47), elements/aqm/red.cc (1.14),
+	elements/aqm/red.hh (1.12), elements/ip/ipratemon.hh (1.23),
 	elements/standard/counter.hh (1.9), elements/standard/meter.cc
 	(1.10), elements/standard/meter.hh (1.7), elements/standard/red.cc
 	(1.14), elements/standard/red.hh (1.12),
@@ -13423,7 +13456,7 @@
 	elements/standard/pokehandlers.cc (1.3),
 	elements/standard/quitwatcher.cc (1.1),
 	elements/standard/quitwatcher.hh (1.1),
-	elements/standard/randomerror.cc (1.8),
+	elements/standard/randomerror.cc (1.8), elements/aqm/red.cc (1.13),
 	elements/standard/randomerror.hh (1.6),
 	elements/standard/randomlossage.cc (1.11),
 	elements/standard/ratedsource.cc (1.7),
@@ -13460,7 +13493,8 @@
 2000-05-22 Monday 17:48  Eddie Kohler <kohler@aciri.org>
 
 	* conf/fake-iprouter.click (1.6), conf/make-ip-conf.pl (1.9),
-	doc/click.5 (1.11), doc/element2man.pl (1.14),
+	doc/click.5 (1.11), doc/element2man.pl (1.14), elements/aqm/red.cc
+	(1.12), elements/aqm/red.hh (1.11),
 	elements/ethernet/arpresponder.cc (1.10),
 	elements/ethernet/arpresponder.hh (1.5), elements/ip/ipencap.cc
 	(1.10), elements/ip/lookupiproute.cc (1.8),
@@ -13745,7 +13779,8 @@
 
 2000-05-01 Monday 21:29  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/red.cc (1.11): no click_chatter in RED
+	* elements/: aqm/red.cc (1.11), standard/red.cc (1.11): no
+	click_chatter in RED
 
 2000-05-01 Monday 21:26  Eddie Kohler <kohler@aciri.org>
 
@@ -14543,11 +14578,12 @@
 	(1.4), elements/standard/priosched.hh (1.4),
 	elements/standard/pulltopush.hh (1.10), elements/standard/queue.hh
 	(1.12), elements/standard/randomerror.hh (1.5),
-	elements/standard/randomlossage.cc (1.10),
-	elements/standard/randomlossage.hh (1.6), elements/standard/red.hh
-	(1.10), elements/standard/rrsched.hh (1.4),
-	elements/standard/setcrc32.hh (1.2), elements/standard/shaper.hh
-	(1.6), elements/standard/specializerinfo.cc (1.3),
+	elements/standard/randomlossage.cc (1.10), elements/aqm/red.hh
+	(1.10), elements/standard/randomlossage.hh (1.6),
+	elements/standard/red.hh (1.10), elements/standard/rrsched.hh
+	(1.4), elements/standard/setcrc32.hh (1.2),
+	elements/standard/shaper.hh (1.6),
+	elements/standard/specializerinfo.cc (1.3),
 	elements/standard/specializerinfo.hh (1.3),
 	elements/standard/spew.hh (1.5), elements/standard/stridesched.hh
 	(1.4), elements/standard/strip.hh (1.5),
@@ -14684,7 +14720,7 @@
 
 2000-03-16 Thursday 12:03  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/red.hh (1.9): manual update
+	* elements/: aqm/red.hh (1.9), standard/red.hh (1.9): manual update
 
 2000-03-15 Wednesday 22:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -14701,10 +14737,11 @@
 	* doc/Element.3 (1.11), elements/etherswitch/spantree.cc (1.12),
 	elements/standard/alignmentinfo.cc (1.5), elements/standard/idle.cc
 	(1.10), elements/standard/idle.hh (1.7), elements/standard/queue.cc
-	(1.23), elements/standard/queue.hh (1.11), elements/standard/red.cc
-	(1.10), elements/standard/red.hh (1.8),
-	elements/standard/scheduleinfo.cc (1.6), elements/standard/spew.cc
-	(1.11), elements/userlevel/tobpf.cc (1.11), lib/element.cc (1.18),
+	(1.23), elements/aqm/red.cc (1.10), elements/aqm/red.hh (1.8),
+	elements/standard/queue.hh (1.11), elements/standard/red.cc (1.10),
+	elements/standard/red.hh (1.8), elements/standard/scheduleinfo.cc
+	(1.6), elements/standard/spew.cc (1.11),
+	elements/userlevel/tobpf.cc (1.11), lib/element.cc (1.18),
 	lib/element.hh (1.25), lib/elemfilter.cc (1.6), lib/elemfilter.hh
 	(1.4), lib/lexer.cc (1.20), lib/router.cc (1.30),
 	linuxmodule/proc_element.cc (1.9), tools/Makefile.in (1.25),
@@ -14903,12 +14940,12 @@
 	elements/standard/pokehandlers.hh (1.1), elements/standard/queue.cc
 	(1.22), elements/standard/queue.hh (1.10),
 	elements/standard/randomerror.cc (1.7),
-	elements/standard/randomerror.hh (1.4),
-	elements/standard/randomlossage.cc (1.9),
-	elements/standard/randomlossage.hh (1.5), elements/standard/red.cc
-	(1.9), elements/standard/red.hh (1.7), elements/standard/shaper.cc
-	(1.8), elements/standard/shaper.hh (1.4),
-	elements/standard/suppressor.cc (1.6),
+	elements/standard/randomerror.hh (1.4), elements/aqm/red.cc (1.9),
+	elements/aqm/red.hh (1.7), elements/standard/randomlossage.cc
+	(1.9), elements/standard/randomlossage.hh (1.5),
+	elements/standard/red.cc (1.9), elements/standard/red.hh (1.7),
+	elements/standard/shaper.cc (1.8), elements/standard/shaper.hh
+	(1.4), elements/standard/suppressor.cc (1.6),
 	elements/standard/suppressor.hh (1.4), lib/confparse.cc (1.10),
 	lib/confparse.hh (1.6), lib/element.cc (1.17), lib/element.hh
 	(1.24), lib/elemlink.hh (1.11), lib/errorelement.cc (1.5),
@@ -15451,7 +15488,7 @@
 	(1.3), elements/standard/packetmeter.cc (1.3),
 	elements/standard/packetmeter.hh (1.2),
 	elements/standard/packetshaper.cc (1.5), elements/standard/paint.cc
-	(1.4), elements/standard/print.cc (1.5),
+	(1.4), elements/aqm/red.cc (1.8), elements/standard/print.cc (1.5),
 	elements/standard/priosched.cc (1.3),
 	elements/standard/pulltopush.cc (1.12), elements/standard/queue.cc
 	(1.20), elements/standard/randomerror.cc (1.6),
@@ -15974,7 +16011,8 @@
 	* conf/fake-iprouter.click (1.3), conf/ip.clickpat (1.3),
 	conf/make-ip-conf.pl (1.2), elements/ip/bigin.cc (1.6),
 	elements/ip/bigin.hh (1.5), elements/standard/queue.cc (1.6),
-	elements/standard/queue.hh (1.5), elements/standard/red.cc (1.7),
+	elements/standard/queue.hh (1.5), elements/aqm/red.cc (1.7),
+	elements/standard/red.cc (1.7), elements/aqm/red.hh (1.6),
 	elements/standard/red.hh (1.6),
 	tools/click-specialize/click-specialize1.pl (1.2),
 	tools/click-xform/click-xform.cc (1.9), tools/lib/routert.cc
@@ -16019,7 +16057,7 @@
 	(1.6), doc/click-align.1 (1.1), doc/click-install.1 (1.1),
 	doc/click.1 (1.1), doc/click.5 (1.5), doc/click.o.8 (1.3),
 	doc/element2man.pl (1.7), elements/standard/classifier.hh (1.7),
-	elements/standard/counter.hh (1.4),
+	elements/aqm/red.hh (1.5), elements/standard/counter.hh (1.4),
 	elements/standard/infinitesource.cc (1.4),
 	elements/standard/infinitesource.hh (1.5), elements/standard/red.hh
 	(1.5), lib/clickpackage.hh (1.1), linuxmodule/modulepriv.hh (1.4),
@@ -16114,12 +16152,12 @@
 
 1999-11-18 Thursday 14:51  Eddie Kohler <kohler@aciri.org>
 
-	* AUTHORS (1.5), configure.in (1.17),
+	* AUTHORS (1.5), configure.in (1.17), elements/aqm/red.cc (1.6),
 	elements/standard/classifier.cc (1.7), elements/standard/red.cc
-	(1.6), elements/standard/red.hh (1.4), lib/error.cc (1.5),
-	lib/error.hh (1.2), lib/lexer.cc (1.9), lib/lexer.hh (1.7),
-	linuxmodule/module.cc (1.8), tools/Makefile.in (1.8),
-	tools/click-install/.cvsignore (1.1),
+	(1.6), elements/aqm/red.hh (1.4), elements/standard/red.hh (1.4),
+	lib/error.cc (1.5), lib/error.hh (1.2), lib/lexer.cc (1.9),
+	lib/lexer.hh (1.7), linuxmodule/module.cc (1.8), tools/Makefile.in
+	(1.8), tools/click-install/.cvsignore (1.1),
 	tools/click-install/Makefile.in (1.1),
 	tools/click-install/click-install.cc (1.1), tools/lib/routert.cc
 	(1.8), tools/lib/routert.hh (1.9): click=install
@@ -16141,7 +16179,7 @@
 	elements/standard/dropbroadcasts.cc (1.2),
 	elements/standard/infinitesource.hh (1.4),
 	elements/standard/meter.cc (1.6), elements/standard/queue.cc (1.5),
-	elements/standard/randomerror.cc (1.5),
+	elements/standard/randomerror.cc (1.5), elements/aqm/red.cc (1.5),
 	elements/standard/randomlossage.cc (1.7), elements/standard/red.cc
 	(1.5), elements/standard/shaper.cc (1.5),
 	elements/standard/suppressor.cc (1.4), lib/clp.c (1.1), lib/clp.h
@@ -16272,7 +16310,7 @@
 	(1.1), doc/Makefile.in (1.5), elements/ip/setipdscp.cc (1.4),
 	elements/ip/setipdscp.hh (1.3), elements/standard/counter.cc (1.5),
 	elements/standard/queue.cc (1.4), elements/standard/queue.hh (1.3),
-	elements/standard/randomerror.cc (1.4),
+	elements/standard/randomerror.cc (1.4), elements/aqm/red.cc (1.4),
 	elements/standard/randomerror.hh (1.3),
 	elements/standard/randomlossage.cc (1.5),
 	elements/standard/randomlossage.hh (1.4), elements/standard/red.cc
@@ -16390,13 +16428,14 @@
 	elements/standard/priosched.cc (1.2),
 	elements/standard/pulltopush.cc (1.2), elements/standard/queue.cc
 	(1.3), elements/standard/randomerror.cc (1.3),
-	elements/standard/randomlossage.cc (1.3), elements/standard/red.cc
-	(1.3), elements/standard/rrsched.cc (1.2),
-	elements/standard/setcrc32.cc (1.2), elements/standard/shaper.cc
-	(1.4), elements/standard/spew.cc (1.3), elements/standard/strip.cc
-	(1.3), elements/standard/suppressor.cc (1.3),
-	elements/standard/tee.cc (1.3), elements/standard/timedsink.cc
-	(1.3), elements/standard/timedsource.cc (1.3),
+	elements/standard/randomlossage.cc (1.3), elements/aqm/red.cc
+	(1.3), elements/standard/red.cc (1.3), elements/standard/rrsched.cc
+	(1.2), elements/standard/setcrc32.cc (1.2),
+	elements/standard/shaper.cc (1.4), elements/standard/spew.cc (1.3),
+	elements/standard/strip.cc (1.3), elements/standard/suppressor.cc
+	(1.3), elements/standard/tee.cc (1.3),
+	elements/standard/timedsink.cc (1.3),
+	elements/standard/timedsource.cc (1.3),
 	elements/standard/timedsource.hh (1.3),
 	elements/userlevel/frombpf.cc (1.5), elements/userlevel/fromdump.cc
 	(1.5), elements/userlevel/tobpf.cc (1.5),
@@ -16598,7 +16637,7 @@
 	(1.3), elements/linuxmodule/fromdevice.cc (1.3),
 	elements/linuxmodule/todevice.cc (1.3),
 	elements/linuxmodule/tolinux.cc (1.2),
-	elements/standard/checkpaint.hh (1.3),
+	elements/standard/checkpaint.hh (1.3), elements/aqm/red.hh (1.3),
 	elements/standard/classifier.hh (1.3),
 	elements/standard/dropbroadcasts.hh (1.2),
 	elements/standard/hashdemux.hh (1.3),
@@ -16764,16 +16803,16 @@
 	elements/standard/meter.cc (1.2), elements/standard/meter.hh (1.2),
 	elements/standard/paint.cc (1.2), elements/standard/paint.hh (1.2),
 	elements/standard/print.cc (1.2), elements/standard/print.hh (1.2),
-	elements/standard/queue.cc (1.2), elements/standard/queue.hh (1.2),
-	elements/standard/randomerror.cc (1.2),
-	elements/standard/randomerror.hh (1.2),
+	elements/aqm/red.cc (1.2), elements/standard/queue.cc (1.2),
+	elements/standard/queue.hh (1.2), elements/standard/randomerror.cc
+	(1.2), elements/standard/randomerror.hh (1.2),
 	elements/standard/randomlossage.cc (1.2),
 	elements/standard/randomlossage.hh (1.2), elements/standard/red.cc
-	(1.2), elements/standard/red.hh (1.2), elements/standard/shaper.cc
-	(1.2), elements/standard/shaper.hh (1.2), elements/standard/spew.cc
-	(1.2), elements/standard/spew.hh (1.2), elements/standard/strip.cc
-	(1.2), elements/standard/strip.hh (1.2),
-	elements/standard/suppressor.cc (1.2),
+	(1.2), elements/aqm/red.hh (1.2), elements/standard/red.hh (1.2),
+	elements/standard/shaper.cc (1.2), elements/standard/shaper.hh
+	(1.2), elements/standard/spew.cc (1.2), elements/standard/spew.hh
+	(1.2), elements/standard/strip.cc (1.2), elements/standard/strip.hh
+	(1.2), elements/standard/suppressor.cc (1.2),
 	elements/standard/suppressor.hh (1.2), elements/standard/tee.cc
 	(1.2), elements/standard/tee.hh (1.2),
 	elements/standard/timedsink.cc (1.2),
@@ -16901,10 +16940,10 @@
 	elements/standard/infinitesource.hh (1.1),
 	elements/standard/meter.cc (1.1), elements/standard/meter.hh (1.1),
 	elements/standard/nullelement.cc (1.1),
-	elements/standard/nullelement.hh (1.1), elements/standard/nulls.cc
-	(1.1), elements/standard/nulls.hh (1.1),
-	elements/standard/packetmeter.cc (1.1),
-	elements/standard/packetmeter.hh (1.1),
+	elements/standard/nullelement.hh (1.1), elements/aqm/red.cc (1.1),
+	elements/aqm/red.hh (1.1), elements/standard/nulls.cc (1.1),
+	elements/standard/nulls.hh (1.1), elements/standard/packetmeter.cc
+	(1.1), elements/standard/packetmeter.hh (1.1),
 	elements/standard/packetshaper.cc (1.1),
 	elements/standard/packetshaper.hh (1.1), elements/standard/paint.cc
 	(1.1), elements/standard/paint.hh (1.1), elements/standard/print.cc
