@@ -56,6 +56,12 @@
 /* Define if you have -ldl. */
 #undef HAVE_LIBDL
 
+/* Define if you want to use the stride scheduler. */
+#undef HAVE_STRIDE_SCHED
+#ifndef HAVE_STRIDE_SCHED
+# define RR_SCHED
+#endif
+
 /* Prototype strerror if we don't have it. */
 #ifndef CLICK_LINUXMODULE
 # ifndef HAVE_STRERROR

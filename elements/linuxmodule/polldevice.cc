@@ -124,8 +124,8 @@ PollDevice::initialize(ErrorHandler *errh)
   
   return 0;
 #else
-  return 
-    errh->warning("can't get packets: not compiled with polling extensions");
+  errh->warning("can't get packets: not compiled with polling extensions");
+  return 0;
 #endif
 }
 
