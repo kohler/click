@@ -169,8 +169,8 @@ ETT::send(WritablePacket *p)
     _num_queries++;
     _bytes_queries += p->length();
   } else if(type == PT_REPLY){
-    u_short next = ntohs(pk->_next);
-    ett_assert(next < MaxHops + 2);
+    int next = pk->next();
+    ett_assert(next < MaxHops);
     EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
     memcpy(pk->ether_dhost, eth_dest.data(), 6);
     _num_replies++;
@@ -203,10 +203,6 @@ ETT::get_metric_to(IPAddress)
 
 void
 ETT::update_link(IPAddress from, IPAddress to, int metric) {
-  click_chatter("ETT %s: updating metric %s -> %d -> %s", 
-		_ip.s().cc(),
-		from.s().cc(), metric, to.s().cc());
-
   _link_table->update_link(from, to, metric);
 }
 static inline bool power_of_two(int x)
@@ -262,14 +258,12 @@ ETT::process_query(struct sr_pkt *pk1)
     _seen.push_back(Seen(src, dst, seq, 0));
   }
   _seen[si]._count++;
-  if (_seen[si]._metric >= fwd_metric) {
+  if (_seen[si]._metric && _seen[si]._metric <= fwd_metric) {
     /* the metric is worse that what we've seen*/
-    click_chatter("ETT %s: dropping poor metric %d from %s\n",
-		  _ip.s().cc(),
-		  fwd_metric,
-		  src.s().cc());
     return;
   }
+
+  _seen[si]._metric = fwd_metric;
 
   hops.push_back(_ip);
   int fwd = get_metric_from(pk1->get_hop(pk1->num_hops()-1));
@@ -280,9 +274,6 @@ ETT::process_query(struct sr_pkt *pk1)
   fwd_metrics.push_back(fwd);
   rev_metrics.push_back(rev);
 
-  click_chatter("ETT %s: better query for me from %s with seq %d\n", 
-		_ip.s().cc(),
-		src.s().cc(), seq);
   click_gettimeofday(&_seen[si]._when);
   
   if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
@@ -372,15 +363,12 @@ void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
   click_chatter("ETT %s: start_reply called for %s\n", _ip.s().cc(), 
 		src.s().cc());
   _link_table->dijkstra();
-  click_chatter("%s", _link_table->print_links().cc());
-  click_chatter("%s", _link_table->print_routes().cc());
-  click_chatter("ETT %s: finished running dijkstra\n", _ip.s().cc());
   Path path = _link_table->best_route(src);
   click_chatter("ETT %s: start_reply: found path to %s: [%s]\n", 
 		_ip.s().cc(),
 		src.s().cc(), path_to_string(path).cc());
   if (!_link_table->valid_route(path)) {
-    click_chatter("ETT %s: no valid route to reply for %s: starting query\n",
+    click_chatter("ETT %s: no valid route to reply for %s\n",
 		  _ip.s().cc(),
 		  src.s().cc());
     //start_query(src);
@@ -401,6 +389,7 @@ void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
   pk->_flags = 0;
   pk->_qdst = dst;
   pk->_seq = seq;
+  pk->set_next(path.size()-2);
   pk->set_num_hops(path.size());
   int i;
   for(i = 0; i < path.size(); i++) {
@@ -409,8 +398,10 @@ void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
   }
 
   for(i = 0; i < path.size() - 1; i++) {
-    u_short m = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
-    pk->set_fwd_metric(i, m);
+    int fwd = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
+    int rev = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
+    pk->set_fwd_metric(i, fwd);
+    pk->set_rev_metric(i, rev);
   }
 
   send(p);
@@ -552,9 +543,6 @@ ETT::push(int port, Packet *p_in)
       IPAddress b = pk->get_hop(i+1);
       int fwd = pk->get_fwd_metric(i);
       int rev = pk->get_rev_metric(i);
-      click_chatter("ETT %s: on address %s\n", 
-		    _ip.s().cc(), 
-		    a.s().cc());
       if (fwd != 0) {
 	update_link(a,b,fwd);
       }
@@ -573,15 +561,9 @@ ETT::push(int port, Packet *p_in)
     switch (type) {
     case PT_QUERY:
       neighbor = pk->get_hop(pk->num_hops()-1);
-      click_chatter("ETT %s: q neighbor = %s, index %d\n", 
-		    _ip.s().cc(),
-		    neighbor.s().cc(), pk->num_hops()-1);
       break;
     case PT_REPLY:
       neighbor = pk->get_hop(pk->next()+1);
-      click_chatter("ETT %s: r neighbor = %s, index %d\n", 
-		    _ip.s().cc(),
-		    neighbor.s().cc(), pk->num_hops()+1);
       break;
     default:
       ett_assert(0);
