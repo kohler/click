@@ -1,3 +1,16 @@
+2003-07-14 Monday 00:01  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: arptable.cc (1.2), esrcr.cc (1.2), srcr.cc (1.6):
+	make srcr roofnet click config function.  make rxstats ignore
+	broadcast messages.
+	
+	--jbicket
+
+2003-07-14 Monday 00:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.62), dsdvroutetable.hh
+	(1.43): fix bugs in 'seen' functionality, now it actually works
+
 2003-07-13 Sunday 22:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.61): add 'seen' option, which
