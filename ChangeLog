@@ -1,3 +1,9 @@
+2004-04-27 Tuesday 22:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* FAQ (1.16), INSTALL (1.30), README (1.43), configure (1.4),
+	configure.in (1.223): better error message when the compiler
+	complains about header files
+
 2004-04-27 Tuesday 22:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/: linux-2.4.21-patch (1.2), make-linux-patch (1.5),
