@@ -36,7 +36,7 @@ GridRouteTable::GridRouteTable() :
   _hello_timer(hello_hook, this),
   _metric_type(MetricEstTxCount),
   _max_metric(0), _min_metric(0),
-  _est_type(EstByMeas)
+  _est_type(EstBySigQual)
 {
   MOD_INC_USE_COUNT;
 }
@@ -203,23 +203,45 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
     if (!res)
       return false;
     if (_est_type == EstByQual) {
-      static const double m = -1 / 14;
-      static const double b = 20 / 14;
-      
-      rate = m*qual + b;
-      if (rate > 1) 
-	rate = 1;
-      if (rate < 0)
-	rate = 0.01;
+      return false;
     }
     else if (_est_type == EstBySig) {
       return false;
     }
-    else /* (_est_type == EstBySigQual) */ {
-      return false;
+    else if (_est_type == EstBySigQual) {
+      /* 
+       * use jinyang's parameters, based on 1sec broadcast loss rates
+       * with 50-byte UDP packets.  
+       *
+       * good = delivery rate > 80%.  
+       *
+       * these parameters are chosen to correctly classify 85% of good
+       * links as good, while only classifying 2% of bad links as
+       * good.  
+       */
+      double rate = 0;
+      res = _link_tracker->get_bcast_stat(ip, rate, last);
+      double z = 9.4519 + 0.0391 * sig + 0.5518 * qual;
+      double z2 = 1 / (1 + exp(z));
+      double thresh = 0.8;
+      bool link_good = z2 > thresh;
+
+      if (!link_good && !res)
+	return false;
+      else if (link_good && !res) {
+	rate = 0.8;
+	return true;
+      }
+      else if (!link_good && res)
+	return true; /* rate was set in call toget_bcast_stat */
+      else /* link_good && res */ {
+	if (rate < 0.8)
+	  rate = 0.8;
+	return true;
+      }
     }
-    return true;
-    break;
+    else 
+      return false;
   }
   case EstByMeas: {
     struct timeval last;
@@ -238,9 +260,45 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
   switch (_est_type) {
   case EstBySig:
   case EstByQual: 
-  case EstBySigQual: {
     return false;
     break;
+  case EstBySigQual: {
+    struct timeval last;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0 || r->num_hops > 1)
+      return false;
+    LinkStat::stat_t *s = _link_stat->_stats.findp(r->next_hop_eth);
+    if (s == 0)
+      return false;
+    double z = 9.4519 + 0.0391 * s->sig + 0.5518 * s->qual;
+    double z2 = 1 / (1 + exp(z));
+    double thresh = 0.8;
+    bool link_good = z2 > thresh;
+    
+    unsigned int window = 0;
+    unsigned int num_rx = 0;
+    unsigned int num_expected = 0;
+    bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
+    if (res && num_expected > 0) {
+      double num_rx_ = num_rx;
+      double num_expected_ = num_expected;
+      rate = (num_rx_ - 0.5) / num_expected_;
+    }
+    else 
+      rate = 0;
+    if (!link_good && !res)
+      return false;
+    else if (link_good && !res) {
+      rate = 0.8;
+      return true;
+    }
+    else if (!link_good && res)
+      return true; /* rate was set in call to get_bcast_stats */
+    else /* link_good && res */ {
+      if (rate < 0.8)
+	rate = 0.8;
+      return true;
+    }
   }
   case EstByMeas: {
     struct timeval last;
