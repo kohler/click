@@ -15,34 +15,33 @@ class StringAccum { public:
   explicit StringAccum(int);
   ~StringAccum()			{ delete[] _s; }
 
-  const char *cc();
   char *data() const			{ return (char *)_s; }
   int length() const			{ return _len; }
+  const char *cc()			{ return c_str(); }
+  const char *c_str();
   
+  char operator[](int i) const	{ assert(i>=0&&i<_len); return (char)_s[i]; }
+  char &operator[](int i)	{ assert(i>=0&&i<_len); return (char &)_s[i]; }
+
   void clear()				{ _len = 0; }
   
   char *reserve(int);
-  void forward(int f)			{ _len += f; assert(_len <= _cap); }
   char *extend(int);
   
   void append(char);
   void append(unsigned char);
   void append(const char *, int);
-  
-  void pop(int n = 1)			{ if (_len >= n) _len -= n; }
+
+  void forward(int n)		{ assert(n>=0 && _len+n<=_cap);	_len += n; }
+  void pop_back(int n = 1)	{ assert(n>=0 && _len>=n);	_len -= n; }  
   
   void take(unsigned char *&s, int &l)	{ s = _s; l = _len; erase(); }
-  unsigned char *take_bytes();
   char *take();
+  unsigned char *take_bytes();
   String take_string();
 
   // see also operator<< declarations below
   
-  // STRING OPERATIONS
-  
-  char operator[](int i) const	{ assert(i>=0 && i<_len); return (char)_s[i]; }
-  char &operator[](int i)	{ assert(i>=0 && i<_len); return (char &)_s[i]; }
-
  private:
   
   unsigned char *_s;
@@ -72,6 +71,7 @@ StringAccum &operator<<(StringAccum &, int);
 StringAccum &operator<<(StringAccum &, unsigned);
 StringAccum &operator<<(StringAccum &, long);
 StringAccum &operator<<(StringAccum &, unsigned long);
+StringAccum &operator<<(StringAccum &, long long);
 StringAccum &operator<<(StringAccum &, unsigned long long);
 #ifndef __KERNEL__
 StringAccum &operator<<(StringAccum &, double);
@@ -85,6 +85,7 @@ inline
 StringAccum::StringAccum(int cap)
   : _s(new unsigned char[cap]), _len(0), _cap(cap)
 {
+  assert(cap > 0);
 }
 
 inline void
@@ -100,16 +101,10 @@ StringAccum::append(char c)
   append(static_cast<unsigned char>(c));
 }
 
-inline void
-StringAccum::append(const char *s, int len)
-{
-  if (char *x = extend(len))
-    memcpy(x, s, len);
-}
-
 inline char *
 StringAccum::reserve(int hm)
 {
+  assert(hm >= 0);
   if (_len + hm <= _cap || grow(_len + hm))
     return (char *)(_s + _len);
   else
@@ -124,6 +119,13 @@ StringAccum::extend(int amt)
   return c;
 }
 
+inline void
+StringAccum::append(const char *s, int len)
+{
+  if (char *x = extend(len))
+    memcpy(x, s, len);
+}
+
 inline unsigned char *
 StringAccum::take_bytes()
 {
@@ -135,7 +137,7 @@ StringAccum::take_bytes()
 inline char *
 StringAccum::take()
 {
-  return (char *)take_bytes();
+  return reinterpret_cast<char *>(take_bytes());
 }
 
 inline StringAccum &

@@ -45,10 +45,10 @@ StringAccum::grow(int want)
 }
 
 const char *
-StringAccum::cc()
+StringAccum::c_str()
 {
   append('\0');
-  pop();
+  pop_back();
   return reinterpret_cast<char *>(_s);
 }
 
@@ -86,6 +86,15 @@ operator<<(StringAccum &sa, unsigned long u)
     sa.forward(len);
   }
   return sa;
+}
+
+StringAccum &
+operator<<(StringAccum &sa, long long q)
+{
+  if (q < 0)
+    sa << '-';
+  String qstr = cp_unparse_ulonglong(-q, 10, false);
+  return sa << qstr;
 }
 
 StringAccum &
