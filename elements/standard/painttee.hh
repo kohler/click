@@ -36,7 +36,7 @@ class PaintTee : public Element {
   const char *processing() const	{ return "a/ah"; }
   
   PaintTee *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

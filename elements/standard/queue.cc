@@ -44,7 +44,7 @@ Queue::cast(const char *n)
 }
 
 int
-Queue::configure(const Vector<String> &conf, ErrorHandler *errh)
+Queue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int new_capacity = 1000;
   if (cp_va_parse(conf, this, errh,
@@ -71,7 +71,7 @@ Queue::initialize(ErrorHandler *errh)
 }
 
 int
-Queue::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+Queue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   // change the maximum queue length at runtime
   int old_capacity = _capacity;

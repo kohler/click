@@ -34,7 +34,7 @@ class StaticSwitch : public Element {
   
   StaticSwitch *clone() const;
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   

@@ -40,7 +40,7 @@ BandwidthMeter::clone() const
 }
 
 int
-BandwidthMeter::configure(const Vector<String> &conf, ErrorHandler *errh)
+BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   delete[] _meters;
   _meters = 0;

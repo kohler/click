@@ -37,7 +37,7 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   
   RoundRobinIPMapper *clone() const	{ return new RoundRobinIPMapper; }
   int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void uninitialize();
   
   void notify_rewriter(IPRw *, ErrorHandler *);

@@ -47,7 +47,7 @@ PokeHandlers::add(Element *e, const String &hname, const String &value, int time
 }
 
 int
-PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
+PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _h_element.clear();
     _h_handler.clear();

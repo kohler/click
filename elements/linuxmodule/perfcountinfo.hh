@@ -42,7 +42,7 @@ class PerfCountInfo : public PerfCountUser { public:
   PerfCountInfo *clone() const		{ return new PerfCountInfo; }
   void *cast(const char *);
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
 };
 

@@ -41,7 +41,7 @@ ProtocolTranslator64::~ProtocolTranslator64()
 
 
 int
-ProtocolTranslator64::configure(const Vector<String> &conf, ErrorHandler *errh)
+ProtocolTranslator64::configure(Vector<String> &conf, ErrorHandler *errh)
 {
    int before = errh->nerrors();
    if (!(conf.size()==0))

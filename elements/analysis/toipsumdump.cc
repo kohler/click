@@ -42,7 +42,7 @@ ToIPSummaryDump::~ToIPSummaryDump()
 }
 
 int
-ToIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
     String save = "timestamp 'ip src'";

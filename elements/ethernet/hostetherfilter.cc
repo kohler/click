@@ -42,7 +42,7 @@ HostEtherFilter::notify_noutputs(int n)
 }
 
 int
-HostEtherFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
+HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool drop_own = false, drop_other = true;
   if (cp_va_parse(conf, this, errh,

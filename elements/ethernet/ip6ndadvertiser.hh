@@ -44,7 +44,7 @@ class IP6NDAdvertiser : public Element { public:
   const char *class_name() const		{ return "IP6NDAdvertiser"; }
   const char *processing() const		{ return AGNOSTIC; }
   IP6NDAdvertiser *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
 

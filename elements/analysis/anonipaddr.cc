@@ -69,7 +69,7 @@ AnonymizeIPAddr::notify_noutputs(int n)
 }
 
 int
-AnonymizeIPAddr::configure(const Vector<String> &conf, ErrorHandler *errh)
+AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _preserve_class = 0;
     String preserve_8;

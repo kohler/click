@@ -11,7 +11,7 @@ class ToHost : public AnyDevice {
     const char *processing() const      { return PUSH; }
     ToHost *clone() const		{ return new ToHost; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     void push(int, Packet *);
 };
 

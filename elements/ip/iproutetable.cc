@@ -35,7 +35,7 @@ IPRouteTable::cast(const char *name)
 }
 
 int
-IPRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {

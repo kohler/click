@@ -41,7 +41,7 @@ FixSrcLoc::clone() const
 }
 
 int
-FixSrcLoc::configure(const Vector<String> &conf, ErrorHandler *errh)
+FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
                         cpElement, "GridLocationInfo element", &_locinfo,

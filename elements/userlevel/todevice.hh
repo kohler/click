@@ -62,7 +62,7 @@ class ToDevice : public Element { public:
   
   ToDevice *clone() const;
   int configure_phase() const { return FromDevice::CONFIGURE_PHASE_TODEVICE; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

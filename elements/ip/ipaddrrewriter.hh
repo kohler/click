@@ -134,7 +134,7 @@ class IPAddrRewriter : public IPRw { public:
     IPAddrRewriter *clone() const		{ return new IPAddrRewriter; }
     void notify_noutputs(int);
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     //void take_state(Element *, ErrorHandler *);

@@ -50,7 +50,7 @@ class RatedSplitter : public Element { protected:
   RatedSplitter *clone() const			{ return new RatedSplitter; }
   void add_handlers();
  
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void configuration(Vector<String> &, bool *) const;
   

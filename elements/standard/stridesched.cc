@@ -34,7 +34,7 @@ StrideSched::~StrideSched()
 }
 
 int
-StrideSched::configure(const Vector<String> &conf, ErrorHandler *errh)
+StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() < 1) {
     errh->error("%s must be configured with at least one ticket", class_name());

@@ -130,7 +130,7 @@ TulipStats::~TulipStats()
 
 
 int
-TulipStats::configure(const Vector<String> &conf, ErrorHandler *errh)
+TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,

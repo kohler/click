@@ -36,7 +36,7 @@ public:
 
   AiroInfo *clone() const         { return new AiroInfo; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   /* If the card has signal strength and quality for sender E, return

@@ -728,7 +728,7 @@ update_value_mask(int c, int shift, int &value, int &mask)
 }
 
 int
-Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
+Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   set_noutputs(conf.size());
   

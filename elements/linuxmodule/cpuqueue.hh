@@ -52,7 +52,7 @@ class CPUQueue : public Element {
   unsigned capacity() const			{ return _capacity; }
   
   CPUQueue *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
   Packet *pull(int port);

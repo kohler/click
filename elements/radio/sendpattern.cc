@@ -40,7 +40,7 @@ SendPattern::clone() const
 }
 
 int
-SendPattern::configure(const Vector<String> &conf, ErrorHandler *errh)
+SendPattern::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "packet length", &_len,

@@ -55,7 +55,7 @@ UpdateGridRoutes::cast(const char *n)
 
 
 int
-UpdateGridRoutes::configure(const Vector<String> &conf, ErrorHandler *errh)
+UpdateGridRoutes::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,

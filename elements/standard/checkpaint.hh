@@ -29,7 +29,7 @@ class CheckPaint : public Element { public:
   CheckPaint *clone() const		{ return new CheckPaint; }
 
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   Packet *pull(int);

@@ -40,7 +40,7 @@ IPOutputCombo::clone() const
 }
 
 int
-IPOutputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPOutputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color (PaintTee)", &_color,

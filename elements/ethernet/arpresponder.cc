@@ -53,7 +53,7 @@ ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 }
 
 int
-ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
+ARPResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
 
@@ -98,7 +98,7 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-ARPResponder::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+ARPResponder::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   // Copy the old mappings to a temporary vector
   Vector<Entry> old_v = _v;

@@ -40,7 +40,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   
   IPsecESPEncap *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);

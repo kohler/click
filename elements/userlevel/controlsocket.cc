@@ -84,7 +84,7 @@ ControlSocket::~ControlSocket()
 }
 
 int
-ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
+ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _socket_fd = -1;
   bool read_only = false, verbose = false;

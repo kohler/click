@@ -1026,7 +1026,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 }
 
 int
-IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _output_everything = -1;
 

@@ -54,7 +54,7 @@ ToHostSniffers::clone() const
 }
 
 int
-ToHostSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToHostSniffers::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String devname;
   if (cp_va_parse(conf, this, errh,

@@ -54,7 +54,7 @@ LookupIPRouteRON::clone() const
 }
 
 int
-LookupIPRouteRON::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupIPRouteRON::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
   if (cp_va_parse(conf, this, errh,

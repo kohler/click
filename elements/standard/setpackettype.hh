@@ -32,7 +32,7 @@ class SetPacketType : public Element { public:
     static int parse_type(const String &);
     static const char *unparse_type(int);
     
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
     
     Packet *simple_action(Packet *);

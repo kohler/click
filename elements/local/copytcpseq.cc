@@ -32,7 +32,7 @@ CopyTCPSeq::~CopyTCPSeq()
 }
 
 int
-CopyTCPSeq::configure(const Vector<String> &, ErrorHandler *)
+CopyTCPSeq::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

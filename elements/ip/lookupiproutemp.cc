@@ -48,7 +48,7 @@ LookupIPRouteMP::clone() const
 }
 
 int
-LookupIPRouteMP::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();

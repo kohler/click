@@ -44,7 +44,7 @@ StaticSwitch::notify_noutputs(int n)
 }
 
 int
-StaticSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+StaticSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _output = 0;
   if (cp_va_parse(conf, this, errh,

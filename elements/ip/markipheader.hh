@@ -30,7 +30,7 @@ class MarkIPHeader : public Element {
   
   const char *class_name() const		{ return "MarkIPHeader"; }
   MarkIPHeader *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
   

@@ -85,7 +85,7 @@ class FromHost : public AnyDevice { public:
     net_device_stats *stats()		{ return &_stats; }
 
     int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 

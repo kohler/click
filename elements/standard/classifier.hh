@@ -81,7 +81,7 @@ class Classifier : public Element { public:
   const char *processing() const		{ return PUSH; }
   
   Classifier *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
   // creating Exprs

@@ -34,7 +34,7 @@ Unqueue::~Unqueue()
 }
 
 int
-Unqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
   _active = true;

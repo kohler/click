@@ -25,7 +25,7 @@ class RatedUnqueue : public Element { public:
   const char *processing() const		{ return PULL_TO_PUSH; }
   
   RatedUnqueue *clone() const			{ return new RatedUnqueue; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &, bool *) const;
   int initialize(ErrorHandler *);
   void add_handlers();

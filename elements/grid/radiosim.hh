@@ -42,7 +42,7 @@ class RadioSim : public Element {
   RadioSim *clone() const;
   void notify_noutputs(int);
   void notify_ninputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
   void add_handlers();
 

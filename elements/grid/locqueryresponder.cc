@@ -56,7 +56,7 @@ LocQueryResponder::clone() const
   return new LocQueryResponder;
 }
 int
-LocQueryResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
+LocQueryResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_eth,

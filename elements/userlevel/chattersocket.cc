@@ -98,7 +98,7 @@ ChatterSocket::~ChatterSocket()
 }
 
 int
-ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
+ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _socket_fd = -1;
   _channel = "default";

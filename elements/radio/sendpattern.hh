@@ -25,7 +25,7 @@ class SendPattern : public Element {
   const char *processing() const	{ return PULL; }
   
   SendPattern *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   Packet *pull(int);
   

@@ -44,7 +44,7 @@ ICMPSendPings::clone() const
 }
 
 int
-ICMPSendPings::configure(const Vector<String> &conf, ErrorHandler *errh)
+ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ip_id = 1;
   _icmp_id = 0;

@@ -115,13 +115,13 @@ class RED : public Element { public:
     int drops() const				{ return _drops; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int check_params(unsigned, unsigned, unsigned, unsigned, ErrorHandler *) const;
     int initialize(ErrorHandler *);
     void take_state(Element *, ErrorHandler *);
     void configuration(Vector<String> &, bool *) const;
     bool can_live_reconfigure() const		{ return true; }
-    int live_reconfigure(const Vector<String> &, ErrorHandler *);
+    int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     bool should_drop();

@@ -95,7 +95,7 @@ class FastUDPFlows : public Element {
   
   FastUDPFlows *clone() const		{ return new FastUDPFlows; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   Packet *pull(int);

@@ -40,7 +40,7 @@ CheckLength::notify_noutputs(int n)
 }
 
 int
-CheckLength::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "max length", &_max,

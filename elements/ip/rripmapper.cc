@@ -42,7 +42,7 @@ RoundRobinIPMapper::cast(const char *name)
 }
 
 int
-RoundRobinIPMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
+RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 0)
     return errh->error("no patterns given");

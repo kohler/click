@@ -104,7 +104,7 @@ class FTPPortMapper : public Element {
   const char *class_name() const	{ return "FTPPortMapper"; }
   
   FTPPortMapper *clone() const		{ return new FTPPortMapper; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   

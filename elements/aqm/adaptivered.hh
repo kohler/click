@@ -34,8 +34,8 @@ class AdaptiveRED : public RED { public:
     AdaptiveRED *clone() const			{ return new AdaptiveRED; }
     void *cast(const char *);
 
-    int configure(const Vector<String> &, ErrorHandler *);
-    int live_reconfigure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
+    int live_reconfigure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 

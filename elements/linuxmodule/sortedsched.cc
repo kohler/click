@@ -33,8 +33,7 @@ SortedTaskSched::initialize(ErrorHandler *)
 }
   
 int 
-SortedTaskSched::configure
-  (const Vector<String> &conf, ErrorHandler *errh)
+SortedTaskSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 #if __MTCLICK__
   _interval = 1000;

@@ -32,7 +32,7 @@ class ToHostSniffers : public Element { public:
   ToHostSniffers *clone() const;
 
   int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void uninitialize();
   
   void push(int port, Packet *);

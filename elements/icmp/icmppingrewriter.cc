@@ -51,7 +51,7 @@ ICMPPingRewriter::notify_noutputs(int n)
 }
 
 int
-ICMPPingRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ok = 0;
 

@@ -36,7 +36,7 @@ class PrintOld : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   
   PrintOld *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

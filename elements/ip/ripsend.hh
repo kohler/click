@@ -43,7 +43,7 @@ class RIPSend : public Element {
   const char *processing() const		{ return PUSH; }
   RIPSend *clone() const { return new RIPSend(); }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   void run_scheduled();

@@ -38,7 +38,7 @@ TCPConn::~TCPConn()
 }
 
 int
-TCPConn::configure(const Vector<String> &, ErrorHandler *)
+TCPConn::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

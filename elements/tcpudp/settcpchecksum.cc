@@ -35,7 +35,7 @@ SetTCPChecksum::~SetTCPChecksum()
 }
 
 int
-SetTCPChecksum::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetTCPChecksum::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpOptional,

@@ -53,7 +53,7 @@ class IPEncapPaint : public Element {
   const char *class_name() const		{ return "IPEncapPaint"; }
   const char *processing() const		{ return AGNOSTIC; }
   IPEncapPaint *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 

@@ -37,7 +37,7 @@ FilterByGridHops::~FilterByGridHops()
 }
 
 int
-FilterByGridHops::configure(const Vector<String> &conf, ErrorHandler *errh)
+FilterByGridHops::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int mh;
   int res = cp_va_parse(conf, this, errh,

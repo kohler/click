@@ -47,7 +47,7 @@ class AverageCounter : public Element { protected:
   
   const char *class_name() const		{ return "AverageCounter"; }
   const char *processing() const		{ return AGNOSTIC; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   uint32_t count() const			{ return _count; }
   uint32_t first() const			{ return _first; }

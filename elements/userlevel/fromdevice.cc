@@ -69,7 +69,7 @@ FromDevice::clone() const
 }
 
 int
-FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool promisc = false;
   _snaplen = 2046;

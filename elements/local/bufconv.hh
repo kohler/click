@@ -41,7 +41,7 @@ public:
 
   int initialize(ErrorHandler *);
   void uninitialize();
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *p);
   void run_scheduled();

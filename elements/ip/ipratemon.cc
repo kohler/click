@@ -54,7 +54,7 @@ IPRateMonitor::notify_ninputs(int n)
 }
 
 int
-IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String count_what;
   _memmax = 0;

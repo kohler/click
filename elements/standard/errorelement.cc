@@ -50,7 +50,7 @@ ErrorElement::notify_noutputs(int i)
 }
 
 int
-ErrorElement::configure(const Vector<String> &, ErrorHandler *)
+ErrorElement::configure(Vector<String> &, ErrorHandler *)
 {
   /* ignore any configuration arguments */
   return 0;

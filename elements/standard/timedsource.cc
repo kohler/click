@@ -41,7 +41,7 @@ TimedSource::clone() const
 }
 
 int
-TimedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
+TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;

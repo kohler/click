@@ -33,7 +33,7 @@ Align::~Align()
 }
 
 int
-Align::configure(const Vector<String> &conf, ErrorHandler *errh)
+Align::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned count;
   if (cp_va_parse(conf, this, errh,

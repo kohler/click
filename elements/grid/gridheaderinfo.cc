@@ -78,7 +78,7 @@ GridHeaderInfo::read_args(const Vector<String> &, ErrorHandler *)
   return 0;
 }
 int
-GridHeaderInfo::configure(const Vector<String> &, ErrorHandler *)
+GridHeaderInfo::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

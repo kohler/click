@@ -34,7 +34,7 @@ RatedUnqueue::~RatedUnqueue()
 }
 
 int
-RatedUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+RatedUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned r;
   if (cp_va_parse(conf, this, errh, 

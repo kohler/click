@@ -54,7 +54,7 @@ IPPrint::clone() const
 }
 
 int
-IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _bytes = 1500;
   String contents = "no";

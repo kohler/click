@@ -11,7 +11,7 @@ class FromHost : public AnyDevice {
     const char *processing() const      { return PUSH; }
     FromHost *clone() const		{ return new FromHost; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void run_scheduled();

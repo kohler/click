@@ -40,7 +40,7 @@ ICMP6Error::~ICMP6Error()
 }
 
 int
-ICMP6Error::configure(const Vector<String> &conf, ErrorHandler *errh)
+ICMP6Error::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpIP6Address, "Source IP6 address", &_src_ip,

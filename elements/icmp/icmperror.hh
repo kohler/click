@@ -65,7 +65,7 @@ public:
   const char *class_name() const		{ return "ICMPError"; }
   const char *processing() const		{ return AGNOSTIC; }
   ICMPError *clone() const			{ return new ICMPError; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
 
   Packet *simple_action(Packet *);

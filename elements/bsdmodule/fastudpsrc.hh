@@ -93,7 +93,7 @@ class FastUDPSource : public Element {
   
   FastUDPSource *clone() const		{ return new FastUDPSource; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   Packet *pull(int);

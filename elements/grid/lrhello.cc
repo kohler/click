@@ -42,7 +42,7 @@ SendGridLRHello::clone() const
 }
 
 int
-SendGridLRHello::configure(const Vector<String> &conf, ErrorHandler *errh)
+SendGridLRHello::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "period (msec)", &_period,

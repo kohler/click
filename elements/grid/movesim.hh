@@ -33,7 +33,7 @@ public:
   const char *class_name() const { return "MovementSimulator"; }
 
   MovementSimulator *clone() const { return new MovementSimulator; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();

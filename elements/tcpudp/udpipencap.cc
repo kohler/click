@@ -44,7 +44,7 @@ UDPIPEncap::clone() const
 }
 
 int
-UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
+UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
   unsigned sp, dp;

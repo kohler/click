@@ -36,7 +36,7 @@ MSQueue::cast(const char *n)
 }
 
 int
-MSQueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+MSQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int new_capacity = 128;
   if (cp_va_parse(conf, this, errh,

@@ -48,7 +48,7 @@ class KernelTap : public Element {
   KernelTap *clone() const;
   const char *flags() const		{ return "S3"; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

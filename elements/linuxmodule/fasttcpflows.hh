@@ -99,7 +99,7 @@ class FastTCPFlows : public Element {
   
   FastTCPFlows *clone() const		{ return new FastTCPFlows; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   Packet *pull(int);

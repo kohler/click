@@ -83,7 +83,7 @@ ToDevice::~ToDevice()
 
 
 int
-ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 16;
     bool allow_nonexistent = false;

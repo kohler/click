@@ -30,7 +30,7 @@ DevirtualizeInfo::~DevirtualizeInfo()
 }
 
 int
-DevirtualizeInfo::configure(const Vector<String> &, ErrorHandler *)
+DevirtualizeInfo::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

@@ -44,7 +44,7 @@ class IPRw : public Element { public:
 	CONFIGURE_PHASE_USER = CONFIGURE_PHASE_REWRITER + 1,
     };
 
-    int configure_phase() const		{ return CONFIGURE_PHASE_REWRITER; }
+    int configure_phase() const 	{ return CONFIGURE_PHASE_REWRITER; }
 
     int parse_input_spec(const String &, InputSpec &, String, ErrorHandler *);
 

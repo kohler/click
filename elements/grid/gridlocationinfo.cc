@@ -109,7 +109,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 int
-GridLocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridLocationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _seq_no++;
   return read_args(conf, errh);

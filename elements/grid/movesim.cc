@@ -86,7 +86,7 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-MovementSimulator::configure(const Vector<String> &conf, ErrorHandler *errh)
+MovementSimulator::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return read_args(conf, errh);
 }

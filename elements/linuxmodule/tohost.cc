@@ -53,7 +53,7 @@ ToHost::clone() const
 }
 
 int
-ToHost::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String devname;
   if (cp_va_parse(conf, this, errh,

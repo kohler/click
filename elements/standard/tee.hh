@@ -33,7 +33,7 @@ class Tee : public Element {
   
   Tee *clone() const;
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   
@@ -51,7 +51,7 @@ class PullTee : public Element {
   
   PullTee *clone() const;
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   Packet *pull(int);
   

@@ -28,7 +28,7 @@ class SetTimestamp : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   SetTimestamp *clone() const;
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

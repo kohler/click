@@ -33,7 +33,7 @@ public:
   const char *processing() const		{ return PUSH; }
   FilterByRange *clone() const                  { return new FilterByRange; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   void push(int port, Packet *);

@@ -138,7 +138,7 @@ class ToIPSummaryDump : public Element { public:
     const char *flags() const		{ return "S2"; }
     ToIPSummaryDump *clone() const	{ return new ToIPSummaryDump; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();

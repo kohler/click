@@ -34,7 +34,7 @@ TimeRange::~TimeRange()
 }
 
 int
-TimeRange::configure(const Vector<String> &conf, ErrorHandler *errh)
+TimeRange::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _simple = false;
     if (cp_va_parse(conf, this, errh,

@@ -27,7 +27,7 @@ class MarkIP6Header : public Element {
   ~MarkIP6Header();
   
   const char *class_name() const		{ return "MarkIP6Header"; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   MarkIP6Header *clone() const;
 

@@ -18,7 +18,7 @@
 #include "spinlockrelease.hh"
 
 int
-SpinlockRelease::configure(const Vector<String> &conf, ErrorHandler *errh)
+SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String name;
   if (cp_va_parse(conf, this, errh, cpString, "name of spinlock", &name, 0)<0)

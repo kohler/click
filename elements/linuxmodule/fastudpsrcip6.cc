@@ -42,7 +42,7 @@ FastUDPSourceIP6::~FastUDPSourceIP6()
 }
 
 int
-FastUDPSourceIP6::configure(const Vector<String> &conf, ErrorHandler *errh)
+FastUDPSourceIP6::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _cksum = true;
   _active = true;

@@ -34,7 +34,7 @@ EnsureEther::~EnsureEther()
 }
 
 int
-EnsureEther::configure(const Vector<String> &conf, ErrorHandler *errh)
+EnsureEther::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned etht = 0x0800;
   memset(&_ethh.ether_shost, 1, 6);

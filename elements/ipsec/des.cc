@@ -51,7 +51,7 @@ Des::clone() const
 }
 
 int
-Des::configure(const Vector<String> &conf, ErrorHandler *errh)
+Des::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int dec_int;
   _ignore = 12;

@@ -57,7 +57,7 @@
 class IPRouteTable : public Element { public:
 
     void *cast(const char *);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
 
     virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
     virtual int remove_route(IPAddress, IPAddress, ErrorHandler *);

@@ -42,7 +42,7 @@ TimeFilter::notify_noutputs(int n)
 }
 
 int
-TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
+TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     struct timeval first, last, first_init, last_init, first_delta, last_delta, interval;
     timerclear(&first);

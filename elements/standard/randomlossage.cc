@@ -32,7 +32,7 @@ RandomLossage::~RandomLossage()
 }
 
 int
-RandomLossage::configure(const Vector<String> &, ErrorHandler *errh)
+RandomLossage::configure(Vector<String> &, ErrorHandler *errh)
 {
   errh->error("RandomLossage has been deprecated; use `RandomSample(DROP P)' instead.");
   return -1;

@@ -50,7 +50,7 @@ WebGen::~WebGen()
 }
 
 int
-WebGen::configure(const Vector<String> &conf, ErrorHandler *errh)
+WebGen::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
 

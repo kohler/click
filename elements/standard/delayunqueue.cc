@@ -35,7 +35,7 @@ DelayUnqueue::~DelayUnqueue()
 }
 
 int
-DelayUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpSecondsAsMicro, "delay (ms)", &_delay, 0);

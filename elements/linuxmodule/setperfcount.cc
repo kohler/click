@@ -54,7 +54,7 @@ SetPerfCount::cast(const char *n)
 }
 
 int
-SetPerfCount::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetPerfCount::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String metric_name;
   if (cp_va_parse(conf, this, errh,

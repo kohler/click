@@ -200,7 +200,7 @@ AddressTranslator::add_map(IP6Address &iai, unsigned short ipi, IP6Address &mai,
 }
 
 int
-AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
+AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
   int before = errh->nerrors();

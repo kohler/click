@@ -37,7 +37,7 @@ ScheduleInfo::~ScheduleInfo()
 }
 
 int
-ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // find _prefix, which includes slash
   int last_slash = id().find_right('/');

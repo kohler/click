@@ -49,7 +49,7 @@ IPsecESPEncap::clone() const
 }
 
 int
-IPsecESPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPsecESPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int spi_uc;
 

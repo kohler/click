@@ -58,7 +58,7 @@ CheckUDPHeader::notify_noutputs(int n)
 }
 
 int
-CheckUDPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckUDPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool verbose = false;
   bool details = false;

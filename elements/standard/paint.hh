@@ -40,7 +40,7 @@ class Paint : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   Paint *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
   int color() const				{ return _color; }

@@ -32,7 +32,7 @@ CopyFlowID::~CopyFlowID()
 }
 
 int
-CopyFlowID::configure(const Vector<String> &, ErrorHandler *)
+CopyFlowID::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

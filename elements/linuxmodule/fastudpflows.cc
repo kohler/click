@@ -43,7 +43,7 @@ FastUDPFlows::~FastUDPFlows()
 }
 
 int
-FastUDPFlows::configure(const Vector<String> &conf, ErrorHandler *errh)
+FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _cksum = true;
   _active = true;

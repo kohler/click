@@ -69,11 +69,11 @@ class Queue : public Element, public Storage { public:
   Packet *head() const;
   
   Queue *clone() const				{ return new Queue; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   bool can_live_reconfigure() const		{ return true; }
-  int live_reconfigure(const Vector<String> &, ErrorHandler *);
+  int live_reconfigure(Vector<String> &, ErrorHandler *);
   void take_state(Element *, ErrorHandler *);
   void add_handlers();
   

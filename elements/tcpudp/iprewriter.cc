@@ -69,7 +69,7 @@ IPRewriter::notify_noutputs(int n)
 }
 
 int
-IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;

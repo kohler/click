@@ -38,7 +38,7 @@ ForceICMP::~ForceICMP()
 }
 
 int
-ForceICMP::configure(const Vector<String> &conf, ErrorHandler *errh)
+ForceICMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
 

@@ -905,6 +905,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   qsort_configure_order(_configure_order, configure_phase, 0, _elements.size() - 1);
 
   // Configure all elements in configure order. Remember the ones that failed
+  Vector<String> conf;
   for (int ord = 0; ord < _elements.size(); ord++) {
     int i = _configure_order[ord];
 #if CLICK_DMALLOC
@@ -915,7 +916,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
       (errh, context_message(i, "While configuring"));
     ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
     int before = errh1->nerrors();
-    Vector<String> conf;
+    conf.clear();
     cp_argvec(_configurations[i], conf);
     if (_elements[i]->configure(conf, errh1) < 0) {
       element_ok[i] = all_ok = false;

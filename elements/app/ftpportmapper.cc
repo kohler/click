@@ -36,7 +36,7 @@ FTPPortMapper::~FTPPortMapper()
 }
 
 int
-FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
+FTPPortMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() != 3)
     return errh->error("wrong number of arguments; expected `FTPPortMapper(element, pattern)'");

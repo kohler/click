@@ -114,7 +114,7 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
 }
 
 int
-DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
+DivertSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int confindex = 5;
   _have_sport = _have_dport = false;

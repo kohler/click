@@ -41,7 +41,7 @@ IPEncap::clone() const
 }
 
 int
-IPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   click_ip iph;
   memset(&iph, 0, sizeof(click_ip));

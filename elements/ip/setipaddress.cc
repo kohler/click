@@ -32,7 +32,7 @@ SetIPAddress::~SetIPAddress()
 }
 
 int
-SetIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_ip,

@@ -44,7 +44,7 @@ class Switch : public Element { public:
   
   Switch *clone() const;
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &, bool *) const;
   bool can_live_reconfigure() const		{ return true; }
   

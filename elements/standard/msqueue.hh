@@ -61,7 +61,7 @@ class MSQueue : public Element {
   Packet *head() const;
 
   MSQueue *clone() const			{ return new MSQueue; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

@@ -40,7 +40,7 @@ FrontDropQueue::cast(const char *n)
 }
 
 int
-FrontDropQueue::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   // change the maximum queue length at runtime
   int old_capacity = _capacity;

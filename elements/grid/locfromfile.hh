@@ -36,7 +36,7 @@ public:
   const char *class_name() const { return "LocFromFile"; }
 
   LocFromFile *clone() const { return new LocFromFile; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
   virtual void *cast(const char *);
 

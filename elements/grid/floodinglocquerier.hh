@@ -48,7 +48,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   void add_handlers();
   
   FloodingLocQuerier *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   void push(int port, Packet *);

@@ -61,7 +61,7 @@ class IP6NDSolicitor : public Element {
   void add_handlers();
   
   IP6NDSolicitor *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void take_state(Element *, ErrorHandler *);

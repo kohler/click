@@ -61,7 +61,7 @@ FromDump::notify_noutputs(int n)
 }
 
 int
-FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
 #ifdef __linux__
@@ -382,14 +382,8 @@ FromDump::initialize(ErrorHandler *errh)
     if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
 	return -1;
     
-    // try reading a packet
+    // done
     _pos = sizeof(fake_pcap_file_header);
-    if (read_packet(errh)) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
-    }
-
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
@@ -430,6 +424,11 @@ FromDump::prepare_times(const fake_bpf_timeval &btv)
 	timeradd(&btv, &_last_time, &_last_time);
     else if (_last_time_interval)
 	timeradd(&_first_time, &_last_time, &_last_time);
+    if (_timing) {
+	struct timeval now;
+	click_gettimeofday(&now);
+	timersub(&now, &btv, &_time_offset);
+    }
     _have_any_times = true;
 }
 
@@ -440,13 +439,14 @@ FromDump::read_packet(ErrorHandler *errh)
     const fake_pcap_pkthdr *ph;
     int len, caplen;
     Packet *p;
-    bool more = true;
-    _packet = 0;
+    int tries = 0;
+    assert(!_packet);
 
   retry:
-    // quit if we sampled or force_ip failed, but we are no longer active
-    if (!more)
-	return false;
+    // quit if we have tried too many times
+    tries++;
+    if ((tries % 16) == 0 && output_is_push(0))
+	return true;
     
     // we may need to read bits of the file
     if (_pos + sizeof(*ph) <= _len) {
@@ -495,12 +495,14 @@ FromDump::read_packet(ErrorHandler *errh)
     if (_have_last_time && !timercmp(&ph->ts, &_last_time, <)) {
 	_have_last_time = false;
 	(void) _last_time_h->call_write(this, errh);
-	if (!_active)
-	    more = false;
 	// The handler might have scheduled us, in which case we might crash
 	// at fast_reschedule()! Don't want that -- make sure we are
 	// unscheduled.
 	_task.fast_unschedule();
+	if (!_active) {
+	    _pos += caplen;
+	    return false;
+	}
 	// retry _last_time in case someone changed it
 	goto check_times;
     }
@@ -550,7 +552,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
 
     _packet = p;
-    return more;
+    return true;
 }
 
 void
@@ -559,26 +561,28 @@ FromDump::run_scheduled()
     if (!_active)
 	return;
 
-    bool more;
-    if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-		_task.fast_reschedule();
-		return;
-	    }
-	}
-	output(0).push(_packet);
+    bool more = true;
+    if (!_packet)
 	more = read_packet(0);
-    } else
-	more = false;
+    if (_packet && _timing) {
+	struct timeval now;
+	click_gettimeofday(&now);
+	timersub(&now, &_time_offset, &now);
+	if (timercmp(&_packet->timestamp_anno(), &now, >)) {
+	    _task.fast_reschedule();
+	    return;
+	}
+    }
 
     if (more)
 	_task.fast_reschedule();
     else if (_stop)
 	router()->please_stop_driver();
+
+    if (_packet) {
+	output(0).push(_packet);
+	_packet = 0;
+    }
 }
 
 Packet *
@@ -587,31 +591,28 @@ FromDump::pull(int)
     if (!_active)
 	return 0;
 
-    bool more;
-    Packet *p;
-    if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >))
-		return 0;
-	}
-	p = _packet;
+    bool more = true;
+    if (!_packet)
 	more = read_packet(0);
-    } else {
-	p = 0;
-	more = false;
+    if (_packet && _timing) {
+	struct timeval now;
+	click_gettimeofday(&now);
+	timersub(&now, &_time_offset, &now);
+	if (timercmp(&_packet->timestamp_anno(), &now, >))
+	    return 0;
     }
 
     if (!more && _stop)
 	router()->please_stop_driver();
+    
+    Packet *p = _packet;
+    _packet = 0;
     return p;
 }
 
 enum {
-    SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    FILESIZE_THUNK, FILEPOS_THUNK, EXTEND_INTERVAL_THUNK
+    H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP,
+    H_FILESIZE, H_FILEPOS, H_EXTEND_INTERVAL
 };
 
 String
@@ -619,20 +620,20 @@ FromDump::read_handler(Element *e, void *thunk)
 {
     FromDump *fd = static_cast<FromDump *>(e);
     switch ((int)thunk) {
-      case SAMPLING_PROB_THUNK:
+      case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case ACTIVE_THUNK:
+      case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case ENCAP_THUNK:
+      case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
-      case FILESIZE_THUNK: {
+      case H_FILESIZE: {
 	  struct stat s;
 	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
 	      return String(s.st_size) + "\n";
 	  else
 	      return "-\n";
       }
-      case FILEPOS_THUNK:
+      case H_FILEPOS:
 	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
@@ -645,7 +646,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
     FromDump *fd = static_cast<FromDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((int)thunk) {
-      case ACTIVE_THUNK: {
+      case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->set_active(active);
@@ -653,11 +654,11 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	  } else
 	      return errh->error("`active' should be Boolean");
       }
-      case STOP_THUNK:
+      case H_STOP:
 	fd->set_active(false);
 	fd->router()->please_stop_driver();
 	return 0;
-      case EXTEND_INTERVAL_THUNK: {
+      case H_EXTEND_INTERVAL: {
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {
 	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
@@ -675,14 +676,14 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 void
 FromDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)SAMPLING_PROB_THUNK);
-    add_read_handler("active", read_handler, (void *)ACTIVE_THUNK);
-    add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
-    add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
-    add_write_handler("stop", write_handler, (void *)STOP_THUNK);
-    add_read_handler("filesize", read_handler, (void *)FILESIZE_THUNK);
-    add_read_handler("filepos", read_handler, (void *)FILEPOS_THUNK);
-    add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
+    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_write_handler("stop", write_handler, (void *)H_STOP);
+    add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
+    add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
+    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

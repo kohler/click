@@ -20,7 +20,7 @@ StaticThreadSched::~StaticThreadSched()
 }
 
 int
-StaticThreadSched::configure(const Vector<String> &conf, ErrorHandler *errh)
+StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 #if __MTCLICK__
   for (int i = 0; i < conf.size(); i++) {

@@ -36,7 +36,7 @@ TCPDemux::~TCPDemux()
 }
 
 int
-TCPDemux::configure(const Vector<String> &, ErrorHandler *)
+TCPDemux::configure(Vector<String> &, ErrorHandler *)
 {
   return 0;
 }

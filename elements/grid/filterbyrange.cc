@@ -35,7 +35,7 @@ FilterByRange::~FilterByRange()
 }
 
 int
-FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
+FilterByRange::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "range (metres)", &_range,

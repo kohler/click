@@ -98,7 +98,7 @@ FromDevice::cast(const char *n)
 }
 
 int
-FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool promisc = false;
     bool allow_nonexistent = false;

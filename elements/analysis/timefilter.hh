@@ -86,7 +86,7 @@ class TimeFilter : public Element { public:
     TimeFilter *clone() const		{ return new TimeFilter; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
 

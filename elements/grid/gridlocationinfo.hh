@@ -83,7 +83,7 @@ public:
   const char *class_name() const { return "GridLocationInfo"; }
 
   GridLocationInfo *clone() const { return new GridLocationInfo; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
   // seq_no is incremented when location changes ``enough to make a

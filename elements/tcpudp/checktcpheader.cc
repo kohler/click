@@ -59,7 +59,7 @@ CheckTCPHeader::notify_noutputs(int n)
 }
 
 int
-CheckTCPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckTCPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool verbose = false;
   bool details = false;

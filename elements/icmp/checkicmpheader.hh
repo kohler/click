@@ -58,7 +58,7 @@ class CheckICMPHeader : public Element { public:
   CheckICMPHeader *clone() const		{ return new CheckICMPHeader; }
 
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();  
 
   Packet *simple_action(Packet *);

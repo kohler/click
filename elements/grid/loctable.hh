@@ -39,7 +39,7 @@ public:
   const char *class_name() const { return "LocationTable"; }
 
   LocationTable *clone() const { return new LocationTable; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
   bool get_location(IPAddress ip, grid_location &loc, int &err_radius);

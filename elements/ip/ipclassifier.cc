@@ -38,7 +38,7 @@ IPClassifier::clone() const
 }
 
 int
-IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   set_noutputs(conf.size());
 

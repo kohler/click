@@ -78,7 +78,7 @@ class ScheduleInfo : public Element { public:
   
   ScheduleInfo *clone() const		{ return new ScheduleInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   bool query(const String &, int &) const;
   bool query_prefixes(const String &, int &, String &) const;

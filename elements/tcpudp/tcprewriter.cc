@@ -161,7 +161,7 @@ TCPRewriter::notify_noutputs(int n)
 }
 
 int
-TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;

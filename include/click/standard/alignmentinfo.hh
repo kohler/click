@@ -32,7 +32,7 @@ class AlignmentInfo : public Element { public:
   const char *class_name() const	{ return "AlignmentInfo"; }
   AlignmentInfo *clone() const		{ return new AlignmentInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   bool query1(Element *, int port, int &chunk, int &offset) const;
   static bool query(Element *, int port, int &chunk, int &offset);

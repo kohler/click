@@ -29,7 +29,7 @@ public:
   const char *processing() const	{ return AGNOSTIC; }
   
   IPsecAuthSHA1 *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void notify_noutputs(int n);
 

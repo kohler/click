@@ -36,7 +36,7 @@ QuitWatcher::~QuitWatcher()
 }
 
 int
-QuitWatcher::configure(const Vector<String> &, ErrorHandler *)
+QuitWatcher::configure(Vector<String> &, ErrorHandler *)
 {
   // always succeed
   return 0;

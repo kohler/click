@@ -45,7 +45,7 @@ Switch::notify_noutputs(int n)
 }
 
 int
-Switch::configure(const Vector<String> &conf, ErrorHandler *errh)
+Switch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _output = 0;
   if (cp_va_parse(conf, this, errh,

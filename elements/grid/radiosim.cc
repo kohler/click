@@ -40,7 +40,7 @@ RadioSim::clone() const
 }
 
 int
-RadioSim::configure(const Vector<String> &conf, ErrorHandler *errh)
+RadioSim::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int i;
 

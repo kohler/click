@@ -52,7 +52,7 @@ LookupLocalGridRoute::cast(const char *n)
 }
 
 int
-LookupLocalGridRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,

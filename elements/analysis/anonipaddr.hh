@@ -106,7 +106,7 @@ class AnonymizeIPAddr : public Element { public:
     AnonymizeIPAddr *clone() const	{ return new AnonymizeIPAddr; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 

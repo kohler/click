@@ -34,7 +34,7 @@ class QuitWatcher : public Element { public:
   
   const char *class_name() const		{ return "QuitWatcher"; }
   QuitWatcher *clone() const			{ return new QuitWatcher; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void run_scheduled();

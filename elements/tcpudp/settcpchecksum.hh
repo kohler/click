@@ -26,7 +26,7 @@ public:
   const char *class_name() const		{ return "SetTCPChecksum"; }
   const char *processing() const		{ return AGNOSTIC; }
   SetTCPChecksum *clone() const;
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
 

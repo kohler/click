@@ -121,7 +121,7 @@ class FromIPSummaryDump : public Element { public:
     const char *processing() const	{ return AGNOSTIC; }
     FromIPSummaryDump *clone() const	{ return new FromIPSummaryDump; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();

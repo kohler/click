@@ -42,7 +42,7 @@ xokWriter::clone() const
 
 
 int
-xokWriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+xokWriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String _ifname;
   int r = cp_va_parse(conf, this, errh, cpString, 

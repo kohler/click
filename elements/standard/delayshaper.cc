@@ -35,7 +35,7 @@ DelayShaper::~DelayShaper()
 }
 
 int
-DelayShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
+DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpSecondsAsMicro, "delay", &_delay, 0);

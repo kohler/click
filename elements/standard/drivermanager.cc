@@ -49,7 +49,7 @@ DriverManager::add_insn(int insn, int arg, const String &arg3)
 }
 
 int
-DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
+DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (router()->attachment("DriverManager"))
 	return errh->error("router has more than one DriverManager element");

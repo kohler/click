@@ -41,7 +41,7 @@ RandomSource::clone() const
 }
 
 int
-RandomSource::configure(const Vector<String> &conf, ErrorHandler *errh)
+RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int length;
   

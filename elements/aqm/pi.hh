@@ -20,14 +20,14 @@ class PI : public Element { public:
     int drops() const				{ return _drops; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int check_params(double, double, double, unsigned, unsigned, ErrorHandler *) const ;
     int initialize(ErrorHandler *);
 	void uninitialize();
     void take_state(Element *, ErrorHandler *);
     void configuration(Vector<String> &, bool *) const;
     bool can_live_reconfigure() const		{ return true; }
-    int live_reconfigure(const Vector<String> &, ErrorHandler *);
+    int live_reconfigure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     bool should_drop();

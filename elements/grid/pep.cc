@@ -54,7 +54,7 @@ PEP::cast(const char *name)
 }
 
 int
-PEP::configure(const Vector<String> &conf, ErrorHandler *errh)
+PEP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int lat_int = 0, lon_int = 0;
   bool fixed = false;

@@ -121,7 +121,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 }
 
 int
-AddressInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // find prefix, which includes slash
   String prefix;

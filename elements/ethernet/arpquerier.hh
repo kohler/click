@@ -68,8 +68,8 @@ class ARPQuerier : public Element { public:
   void add_handlers();
   
   ARPQuerier *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
-  int live_reconfigure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &, ErrorHandler *);
+  int live_reconfigure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 
   int initialize(ErrorHandler *);

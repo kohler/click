@@ -34,7 +34,7 @@ SetRandIPAddress::~SetRandIPAddress()
 }
 
 int
-SetRandIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetRandIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
 

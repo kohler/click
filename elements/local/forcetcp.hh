@@ -26,7 +26,7 @@ public:
   const char *class_name() const		{ return "ForceTCP"; }
   const char *processing() const		{ return AGNOSTIC; }
   ForceTCP *clone() const;
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
 

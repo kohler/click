@@ -74,7 +74,7 @@ class CheckIPHeader2 : public CheckIPHeader { public:
   const char *processing() const		{ return "a/ah"; }
   CheckIPHeader2 *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);

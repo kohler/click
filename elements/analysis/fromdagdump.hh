@@ -155,7 +155,7 @@ class FromDAGDump : public Element { public:
     FromDAGDump *clone() const			{ return new FromDAGDump; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();

@@ -77,7 +77,7 @@ class AddressTranslator : public Element {
   const char *class_name() const		{ return "AddressTranslator"; }
   const char *processing() const	{ return AGNOSTIC; }
   AddressTranslator *clone() const { return new AddressTranslator; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
   void add_map(IP6Address &mai,  bool binding);
   void add_map(IP6Address &iai, unsigned short ipi, IP6Address &mai, unsigned short mpi, IP6Address &ea, unsigned short ep, bool binding);

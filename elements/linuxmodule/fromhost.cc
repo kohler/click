@@ -115,7 +115,7 @@ new_fromlinux_device(const char *name)
 }
 
 int
-FromHost::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_parse(conf, this, errh,
 		    cpString, "interface name", &_devname,

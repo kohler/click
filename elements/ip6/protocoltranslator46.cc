@@ -40,7 +40,7 @@ ProtocolTranslator46::~ProtocolTranslator46()
 
 
 int
-ProtocolTranslator46::configure(const Vector<String> &conf, ErrorHandler *errh)
+ProtocolTranslator46::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   if (!(conf.size()==0))

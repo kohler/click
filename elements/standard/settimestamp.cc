@@ -41,7 +41,7 @@ SetTimestamp::clone() const
 }
 
 int
-SetTimestamp::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _tv.tv_sec = -1;
   if (cp_va_parse(conf, this, errh,

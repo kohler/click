@@ -41,7 +41,7 @@ FixDstLoc::clone() const
 }
 
 int
-FixDstLoc::configure(const Vector<String> &conf, ErrorHandler *errh)
+FixDstLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
                         cpElement, "LocationTable element", &_loctab,

@@ -49,7 +49,7 @@ class xokReader : public Element {
   const char *processing() const		{ return PUSH; }
   
   xokReader *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void selected(int fd);
 };

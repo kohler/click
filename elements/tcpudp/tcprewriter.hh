@@ -97,7 +97,7 @@ class TCPRewriter : public IPRw { public:
   void notify_noutputs(int);
   const char *processing() const		{ return PUSH; }
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void take_state(Element *, ErrorHandler *);

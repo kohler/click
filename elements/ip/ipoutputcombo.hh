@@ -53,7 +53,7 @@ class IPOutputCombo : public Element {
   const char *processing() const		{ return PUSH; }
   
   IPOutputCombo *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   void push(int, Packet *);
   

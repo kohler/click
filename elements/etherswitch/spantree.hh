@@ -18,7 +18,7 @@ public:
   
   void notify_ninputs(int);
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   static String read_msgs(Element* f, void *);

@@ -114,7 +114,7 @@ RED::finish_configure(unsigned min_thresh, unsigned max_thresh,
 }
 
 int
-RED::configure(const Vector<String> &conf, ErrorHandler *errh)
+RED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
@@ -131,7 +131,7 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-RED::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+RED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
     String queues_string = String();
@@ -379,11 +379,11 @@ RED::add_handlers()
     add_read_handler("stats", read_stats, 0);
     add_read_handler("queues", read_queues, 0);
     add_read_handler("min_thresh", read_parameter, (void *)0);
-    add_write_handler("min_thresh", reconfigure_positional_handler_2, (void *)0);
+    add_write_handler("min_thresh", reconfigure_positional_handler, (void *)0);
     add_read_handler("max_thresh", read_parameter, (void *)1);
-    add_write_handler("max_thresh", reconfigure_positional_handler_2, (void *)1);
+    add_write_handler("max_thresh", reconfigure_positional_handler, (void *)1);
     add_read_handler("max_p", read_parameter, (void *)2);
-    add_write_handler("max_p", reconfigure_positional_handler_2, (void *)2);
+    add_write_handler("max_p", reconfigure_positional_handler, (void *)2);
     add_read_handler("avg_queue_size", read_parameter, (void *)3);
 }
 

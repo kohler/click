@@ -45,7 +45,7 @@ SimpleLocQuerier::clone() const
 
 
 int
-SimpleLocQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
+SimpleLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   for (int i = 0; i < conf.size(); i++) {
     IPAddress ip;

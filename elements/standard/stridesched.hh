@@ -66,7 +66,7 @@ class StrideSched : public Element { protected:
   const char *processing() const		{ return PULL; }
   
   StrideSched *clone() const			{ return new StrideSched; }
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh);
   void uninitialize();
   void add_handlers();
 

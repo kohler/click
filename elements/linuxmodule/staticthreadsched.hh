@@ -32,7 +32,7 @@ class StaticThreadSched : public Element {
   const char *class_name() const	{ return "StaticThreadSched"; }
   
   StaticThreadSched *clone() const	{ return new StaticThreadSched; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   int initialize(ErrorHandler *);
   void run_scheduled();

@@ -61,7 +61,7 @@ SpinlockInfo::add_spinlock(const Vector<String> &conf,
 }
 
 int
-SpinlockInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+SpinlockInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // find prefix, which includes slash
   String prefix;

@@ -43,7 +43,7 @@ AverageCounter::reset()
 }
 
 int
-AverageCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
+AverageCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _ignore = 0;
   if (cp_va_parse(conf, this, errh,

@@ -31,7 +31,7 @@ class DelayShaper : public Element { public:
   const char *processing() const	{ return PULL; }
   DelayShaper *clone() const		{ return new DelayShaper; }
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

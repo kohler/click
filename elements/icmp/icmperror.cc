@@ -42,7 +42,7 @@ ICMPError::~ICMPError()
 }
 
 int
-ICMPError::configure(const Vector<String> &conf, ErrorHandler *errh)
+ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String bad_addr_str;
   IPAddressSet bad_addrs;

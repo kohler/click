@@ -63,7 +63,7 @@ CheckIPHeader::notify_noutputs(int n)
 }
 
 int
-CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddressSet ips;
   ips.insert(IPAddress(0));

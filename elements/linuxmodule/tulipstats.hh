@@ -143,7 +143,7 @@ class TulipStats : public AnyDevice {
   TulipStats *clone() const		{ return new TulipStats; }
   
   int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

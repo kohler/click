@@ -32,7 +32,7 @@ ProbSplitter::~ProbSplitter()
 }
 
 int
-ProbSplitter::configure(const Vector<String> &, ErrorHandler *errh)
+ProbSplitter::configure(Vector<String> &, ErrorHandler *errh)
 {
   return errh->error("ProbSplitter has been deprecated; use `RandomSample(DROP P)' instead.");
 }

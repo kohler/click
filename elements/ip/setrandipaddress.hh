@@ -33,7 +33,7 @@ class SetRandIPAddress : public Element {
   const char *processing() const	{ return AGNOSTIC; }
   SetRandIPAddress *clone() const	{ return new SetRandIPAddress; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   IPAddress pick();

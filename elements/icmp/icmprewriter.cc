@@ -41,7 +41,7 @@ ICMPRewriter::notify_noutputs(int n)
 }
 
 int
-ICMPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String arg;
   if (cp_va_parse(conf, this, errh,

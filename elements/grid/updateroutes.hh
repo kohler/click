@@ -145,7 +145,7 @@ public:
   const char *processing() const		{ return AGNOSTIC; }
   UpdateGridRoutes *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();

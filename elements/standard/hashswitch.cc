@@ -46,7 +46,7 @@ HashSwitch::notify_noutputs(int i)
 }
 
 int
-HashSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+HashSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "byte offset", &_offset,

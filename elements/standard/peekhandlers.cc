@@ -30,7 +30,7 @@ PeekHandlers::~PeekHandlers()
 }
 
 int
-PeekHandlers::configure(const Vector<String> &, ErrorHandler *errh)
+PeekHandlers::configure(Vector<String> &, ErrorHandler *errh)
 {
   return errh->error("PeekHandlers has been deprecated; use PokeHandlers instead.");
 }

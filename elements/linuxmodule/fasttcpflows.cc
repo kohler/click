@@ -43,7 +43,7 @@ FastTCPFlows::~FastTCPFlows()
 }
 
 int
-FastTCPFlows::configure(const Vector<String> &conf, ErrorHandler *errh)
+FastTCPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _cksum = true;
   _active = true;

@@ -47,7 +47,7 @@ IPInputCombo::clone() const
 }
 
 int
-IPInputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddressSet ips;
   ips.insert(0);

@@ -53,7 +53,7 @@ CheckICMPHeader::notify_noutputs(int n)
 }
 
 int
-CheckICMPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckICMPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool verbose = false;
   bool details = false;

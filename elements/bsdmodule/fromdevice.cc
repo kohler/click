@@ -152,7 +152,7 @@ FromDevice::cast(const char *n)
 }
 
 int
-FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _promisc = false;
     _inq = NULL;
@@ -354,7 +354,7 @@ ToHost(DEVNAME)
     const char *processing() const      { return PUSH; }
     ToHost *clone() const               { return new ToHost; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 
@@ -372,7 +372,7 @@ ToHost::~ToHost()
 }
 
 int
-ToHost::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_parse(conf, this, errh,
 		    cpString, "interface name", &_devname,

@@ -79,7 +79,7 @@ xokReader::clone() const
 //
 
 int
-xokReader::configure(const Vector<String> &conf, ErrorHandler *errh)
+xokReader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);

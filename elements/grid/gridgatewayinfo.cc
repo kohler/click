@@ -41,7 +41,7 @@ GridGatewayInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 int
-GridGatewayInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return read_args(conf, errh);
 }

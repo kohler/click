@@ -56,7 +56,7 @@ ARPQuerier::notify_noutputs(int n)
 }
 
 int
-ARPQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
+ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   Vector<String> conf2(conf);
   if (conf.size() == 1)
@@ -68,7 +68,7 @@ ARPQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-ARPQuerier::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (configure(conf, errh) < 0) {
     // if the configuration failed do nothing and return with a

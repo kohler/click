@@ -41,7 +41,7 @@ Paint::clone() const
 }
 
 int
-Paint::configure(const Vector<String> &conf, ErrorHandler *errh)
+Paint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpByte, "color", &_color,

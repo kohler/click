@@ -42,7 +42,7 @@ FastUDPSource::~FastUDPSource()
 }
 
 int
-FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
+FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _cksum = true;
   _active = true;

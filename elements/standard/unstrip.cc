@@ -39,7 +39,7 @@ Unstrip::clone() const
 }
 
 int
-Unstrip::configure(const Vector<String> &conf, ErrorHandler *errh)
+Unstrip::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "number of bytes to unstrip", &_nbytes,

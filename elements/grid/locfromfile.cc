@@ -43,7 +43,7 @@ LocFromFile::cast(const char *name)
 }
 
 int
-LocFromFile::configure(const Vector<String> &conf, ErrorHandler *errh)
+LocFromFile::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String filename;
   int res = cp_va_parse(conf, this, errh,

@@ -52,7 +52,7 @@ GridProbeReplyReceiver::clone() const
 }
 
 int
-GridProbeReplyReceiver::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridProbeReplyReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan;
   int res = cp_va_parse(conf, this, errh,

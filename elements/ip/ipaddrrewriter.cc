@@ -100,7 +100,7 @@ IPAddrRewriter::notify_noutputs(int n)
 }
 
 int
-IPAddrRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPAddrRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");

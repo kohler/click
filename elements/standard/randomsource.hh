@@ -21,7 +21,7 @@ class RandomSource : public Element { public:
   const char *class_name() const		{ return "RandomSource"; }
   const char *processing() const		{ return AGNOSTIC; }
   RandomSource *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 

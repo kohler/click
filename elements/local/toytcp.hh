@@ -28,7 +28,7 @@ class ToyTCP : public Element {
   
   const char *class_name() const		{ return "ToyTCP"; }
   const char *processing() const		{ return PUSH; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   ToyTCP *clone() const;
 

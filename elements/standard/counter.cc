@@ -49,7 +49,7 @@ Counter::reset()
 }
 
 int
-Counter::configure(const Vector<String> &conf, ErrorHandler *errh)
+Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String call_after_count, call_after_bytes;
   if (cp_va_parse(conf, this, errh,

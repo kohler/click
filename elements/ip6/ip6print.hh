@@ -33,7 +33,7 @@ class IP6Print : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   
   IP6Print *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   

@@ -50,7 +50,7 @@ class IPEncap2 : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   
   IPEncap2 *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 

@@ -80,7 +80,7 @@ GridRouteTable::log_route_table ()
 
 
 int
-GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("hopcount");

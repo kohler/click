@@ -35,7 +35,7 @@ BufferConverter::~BufferConverter()
 }
 
 int
-BufferConverter::configure(const Vector<String> &conf, ErrorHandler *errh)
+BufferConverter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "MTU threshold", &_mtu, 0);

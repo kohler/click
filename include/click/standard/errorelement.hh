@@ -27,7 +27,7 @@ class ErrorElement : public Element { public:
   void notify_noutputs(int);
   
   ErrorElement *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
 };

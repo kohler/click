@@ -34,7 +34,7 @@ class StaticPullSwitch : public Element {
   
   StaticPullSwitch *clone() const;
   void notify_ninputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   Packet *pull(int);
   

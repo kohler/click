@@ -26,7 +26,7 @@ class CPUSwitch : public Element {
   void notify_noutputs(int);
   
   CPUSwitch *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
   

@@ -33,7 +33,7 @@ RatedSplitter::~RatedSplitter()
 }
 
 int
-RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
+RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned r;
   if (cp_va_parse(conf, this, errh, 

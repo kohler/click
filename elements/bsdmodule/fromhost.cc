@@ -39,7 +39,7 @@ FromHost::~FromHost()
 }
 
 int
-FromHost::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;	// same as in FromDevice
     clear_need_wakeup();

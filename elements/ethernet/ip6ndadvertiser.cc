@@ -55,7 +55,7 @@ IP6NDAdvertiser::add_map(const IP6Address &ipa, const IP6Address &mask, const Et
 }
 
 int
-IP6NDAdvertiser::configure(const Vector<String> &conf, ErrorHandler *errh)
+IP6NDAdvertiser::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _v.clear();
   

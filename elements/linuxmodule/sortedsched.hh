@@ -30,7 +30,7 @@ class SortedTaskSched : public Element {
   ~SortedTaskSched();
   
   const char *class_name() const	{ return "SortedTaskSched"; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   SortedTaskSched *clone() const	{ return new SortedTaskSched; }
 
   int initialize(ErrorHandler *);

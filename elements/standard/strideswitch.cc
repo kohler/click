@@ -32,7 +32,7 @@ StrideSwitch::~StrideSwitch()
 }
 
 int
-StrideSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+StrideSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int x = StrideSched::configure(conf, errh);
   set_ninputs(1);

@@ -57,7 +57,7 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 int
-LocationTable::configure(const Vector<String> &conf, ErrorHandler *errh)
+LocationTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return read_args(conf, errh);
 }

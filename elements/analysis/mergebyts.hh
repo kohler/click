@@ -64,7 +64,7 @@ class MergeByTimestamp : public Element { public:
     MergeByTimestamp *clone() const	{ return new MergeByTimestamp; }
 
     void notify_ninputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 

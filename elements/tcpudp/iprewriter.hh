@@ -171,7 +171,7 @@ class IPRewriter : public IPRw { public:
   IPRewriter *clone() const			{ return new IPRewriter; }
   void notify_noutputs(int);
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void take_state(Element *, ErrorHandler *);

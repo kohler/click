@@ -29,7 +29,7 @@ class StrideSwitch : public StrideSched { public:
   const char *processing() const		{ return PUSH; }
   
   StrideSwitch *clone() const			{ return new StrideSwitch; }
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &conf, ErrorHandler *errh);
   
   void push(int, Packet *);
 

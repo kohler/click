@@ -46,7 +46,7 @@ FromNetFlowSummaryDump::~FromNetFlowSummaryDump()
 }
 
 int
-FromNetFlowSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true, zero = false, multipacket = false;
     

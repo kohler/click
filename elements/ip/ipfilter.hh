@@ -117,7 +117,7 @@ class IPFilter : public Classifier { public:
 
   void notify_noutputs(int);
   IPFilter *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
   

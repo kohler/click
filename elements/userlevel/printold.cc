@@ -41,7 +41,7 @@ PrintOld::clone() const
 }
 
 int
-PrintOld::configure(const Vector<String> &conf, ErrorHandler* errh)
+PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   _label = String();
   _bytes = 24;

@@ -28,7 +28,7 @@ class RandomLossage : public Element { public:
   const char *class_name() const		{ return "RandomLossage"; }
   RandomLossage *clone() const			{ return new RandomLossage; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
 };
 

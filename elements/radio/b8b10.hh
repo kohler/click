@@ -21,7 +21,7 @@ public:
 
   const char *class_name() const		{ return "B8B10"; }
   const char *processing() const	{ return AGNOSTIC; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   B8B10 *clone() const { return(new B8B10()); }

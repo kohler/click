@@ -41,7 +41,7 @@ CompareBlock::clone() const
 }
 
 int
-CompareBlock::configure(const Vector<String> &conf, ErrorHandler *errh)
+CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _bad = 0;
   return cp_va_parse(conf, this, errh,

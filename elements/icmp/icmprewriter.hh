@@ -58,7 +58,7 @@ class ICMPRewriter : public Element { public:
   ICMPRewriter *clone() const		{ return new ICMPRewriter; }
 
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   void push(int, Packet *);
   

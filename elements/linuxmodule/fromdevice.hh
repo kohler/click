@@ -75,7 +75,7 @@ class FromDevice : public AnyDevice, public Storage { public:
     FromDevice *clone() const		{ return new FromDevice; }
     void *cast(const char *);
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();

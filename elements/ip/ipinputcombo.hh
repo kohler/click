@@ -47,7 +47,7 @@ class IPInputCombo : public Element {
   uint32_t drops() const			{ return _drops; }
   IPInputCombo *clone() const;
   void add_handlers();
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);

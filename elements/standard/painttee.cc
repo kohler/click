@@ -39,7 +39,7 @@ PaintTee::clone() const
 }
 
 int
-PaintTee::configure(const Vector<String> &conf, ErrorHandler *errh)
+PaintTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,

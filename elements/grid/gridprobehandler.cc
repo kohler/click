@@ -90,7 +90,7 @@ GridProbeHandler::clone() const
 }
 
 int
-GridProbeHandler::configure(const Vector<String> &conf, ErrorHandler *errh)
+GridProbeHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_eth,

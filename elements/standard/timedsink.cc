@@ -39,7 +39,7 @@ TimedSink::clone() const
 }
 
 int
-TimedSink::configure(const Vector<String> &conf, ErrorHandler *errh)
+TimedSink::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpSecondsAsMilli, "packet pull interval", &_interval,

@@ -40,7 +40,7 @@ RandomSample::notify_noutputs(int n)
 }
 
 int
-RandomSample::configure(const Vector<String> &conf, ErrorHandler *errh)
+RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     uint32_t sampling_prob = 0xFFFFFFFFU;
     uint32_t drop_prob = 0xFFFFFFFFU;
@@ -128,12 +128,12 @@ void
 RandomSample::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, (void *)0);
-    add_write_handler("sampling_prob", reconfigure_keyword_handler_2, (void *)"SAMPLE");
+    add_write_handler("sampling_prob", reconfigure_keyword_handler, (void *)"SAMPLE");
     add_read_handler("active", read_handler, (void *)1);
-    add_write_handler("active", reconfigure_keyword_handler_2, (void *)"ACTIVE");
+    add_write_handler("active", reconfigure_keyword_handler, (void *)"ACTIVE");
     add_read_handler("drops", read_handler, (void *)2);
     add_read_handler("drop_prob", read_handler, (void *)3);
-    add_write_handler("drop_prob", reconfigure_keyword_handler_2, (void *)"DROP");
+    add_write_handler("drop_prob", reconfigure_keyword_handler, (void *)"DROP");
 }
 
 EXPORT_ELEMENT(RandomSample)

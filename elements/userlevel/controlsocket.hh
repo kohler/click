@@ -160,7 +160,7 @@ class ControlSocket : public Element { public:
   const char *class_name() const	{ return "ControlSocket"; }
   ControlSocket *clone() const		{ return new ControlSocket; }
   
-  int configure(const Vector<String> &conf, ErrorHandler *);
+  int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 

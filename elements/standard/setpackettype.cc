@@ -66,7 +66,7 @@ SetPacketType::unparse_type(int p)
 }
 	
 int
-SetPacketType::configure(const Vector<String> &conf, ErrorHandler *errh)
+SetPacketType::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String ptype;
     if (cp_va_parse(conf, this, errh,

@@ -43,7 +43,7 @@ CheckIPHeader2::clone() const
 }
 
 int
-CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckIPHeader2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // same as CheckIPHeader's configure, only don't check alignment
   

@@ -33,7 +33,7 @@ public:
   const char *class_name() const { return "GridGatewayInfo"; }
 
   GridGatewayInfo *clone() const { return new GridGatewayInfo; } // ?
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
   void add_handlers();

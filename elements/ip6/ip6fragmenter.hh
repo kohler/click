@@ -49,7 +49,7 @@ class IP6Fragmenter : public Element {
   const char *class_name() const		{ return "IP6Fragmenter"; }
    const char *processing() const	{ return PUSH; }
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   int drops() const				{ return _drops; }
   int fragments() const				{ return _fragments; }

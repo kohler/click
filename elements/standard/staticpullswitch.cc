@@ -44,7 +44,7 @@ StaticPullSwitch::notify_ninputs(int n)
 }
 
 int
-StaticPullSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+StaticPullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _input = 0;
   if (cp_va_parse(conf, this, errh,

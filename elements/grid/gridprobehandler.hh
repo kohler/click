@@ -42,7 +42,7 @@ class GridProbeHandler : public Element, GridRouteActionCallback {
   const char *class_name() const		{ return "GridProbeHandler"; }
   const char *processing() const		{ return PUSH; }
   GridProbeHandler *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void push(int, Packet *);

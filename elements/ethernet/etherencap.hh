@@ -51,7 +51,7 @@ class EtherEncap : public Element { public:
   const char *processing() const	{ return AGNOSTIC; }
   
   EtherEncap *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();
 

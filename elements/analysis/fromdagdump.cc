@@ -63,7 +63,7 @@ FromDAGDump::notify_noutputs(int n)
 }
 
 int
-FromDAGDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
 #ifdef __linux__

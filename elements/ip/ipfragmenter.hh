@@ -54,7 +54,7 @@ class IPFragmenter : public Element {
   const char *class_name() const		{ return "IPFragmenter"; }
   const char *processing() const		{ return PUSH; }
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   uint32_t drops() const			{ return _drops; }
   uint32_t fragments() const			{ return _fragments; }

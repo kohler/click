@@ -54,7 +54,7 @@ FromIPSummaryDump::~FromIPSummaryDump()
 }
 
 int
-FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool stop = false, active = true, zero = false, multipacket = false;
     uint8_t default_proto = IP_PROTO_TCP;
@@ -430,10 +430,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		break;
 		
 	      case W_LINK:
-		if (data[pos] == 'L') {
+		if (data[pos] == 'L' || data[pos] == '>') {
 		    u1 = 0;
 		    pos++;
-		} else if (data[pos] == 'R' || data[pos] == 'X') {
+		} else if (data[pos] == 'R' || data[pos] == 'X' || data[pos] == '<') {
 		    u1 = 1;
 		    pos++;
 		} else {

@@ -43,7 +43,7 @@ ARPFaker::clone() const
 }
 
 int
-ARPFaker::configure(const Vector<String> &conf, ErrorHandler *errh)
+ARPFaker::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "target IP address", &_ip1,

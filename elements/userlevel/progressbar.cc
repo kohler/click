@@ -41,7 +41,7 @@ ProgressBar::~ProgressBar()
 }
 
 int
-ProgressBar::configure(const Vector<String> &, ErrorHandler *)
+ProgressBar::configure(Vector<String> &, ErrorHandler *)
 {
     return 0;
 }

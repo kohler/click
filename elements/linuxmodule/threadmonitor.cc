@@ -25,7 +25,7 @@ ThreadMonitor::initialize(ErrorHandler *)
 }
 
 int 
-ThreadMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
+ThreadMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 #if __MTCLICK__
   _interval = 1000;

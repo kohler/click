@@ -39,7 +39,7 @@ ForceTCP::~ForceTCP()
 }
 
 int
-ForceTCP::configure(const Vector<String> &conf, ErrorHandler *errh)
+ForceTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
 

@@ -38,7 +38,7 @@ MarkIPHeader::clone() const
 }
 
 int
-MarkIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+MarkIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _offset = 0;
   return cp_va_parse(conf, this, errh,

@@ -43,7 +43,7 @@ AdaptiveRED::cast(const char *n)
 }
 
 int
-AdaptiveRED::configure(const Vector<String> &conf, ErrorHandler *errh)
+AdaptiveRED::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned target_q, max_p, stability = 4;
     String queues_string = String();
@@ -63,7 +63,7 @@ AdaptiveRED::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AdaptiveRED::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+AdaptiveRED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned target_q, max_p, stability = 4;
     String queues_string = String();

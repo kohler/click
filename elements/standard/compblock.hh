@@ -42,7 +42,7 @@ class CompareBlock : public Element { public:
   CompareBlock *clone() const;
   void add_handlers();
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *);
 
  private:

@@ -94,7 +94,7 @@ class FastUDPSourceIP6 : public Element {
   
   FastUDPSourceIP6 *clone() const		{ return new FastUDPSourceIP6; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   Packet *pull(int);

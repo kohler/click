@@ -78,7 +78,7 @@ class ToDevice : public AnyDevice {
   ToDevice *clone() const		{ return new ToDevice; }
   
   int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
   void add_handlers();

@@ -41,7 +41,7 @@ StaticIPLookup::clone() const
 }
 
 int
-StaticIPLookup::configure(const Vector<String> &conf, ErrorHandler *errh)
+StaticIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();

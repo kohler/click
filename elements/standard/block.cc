@@ -39,7 +39,7 @@ Block::clone() const
 }
 
 int
-Block::configure(const Vector<String> &conf, ErrorHandler *errh)
+Block::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "threshold", &_thresh,

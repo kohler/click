@@ -48,7 +48,7 @@ ToDump::clone() const
 }
 
 int
-ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String encap_type;
     String use_encap_from;

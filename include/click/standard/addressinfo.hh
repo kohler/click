@@ -76,7 +76,7 @@ class AddressInfo : public Element { public:
   
   AddressInfo *clone() const		{ return new AddressInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   static bool query_ip(String, unsigned char *, Element *);
   static bool query_ip_prefix(String, unsigned char *, unsigned char *, Element *);

@@ -43,7 +43,7 @@ class Block : public Element {
   const char *processing() const	        { return AGNOSTIC; }
   void add_handlers();
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   // bool can_live_reconfigure() const		{ return true; }
   
   void push(int port, Packet *);

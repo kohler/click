@@ -33,7 +33,7 @@ TCPBuffer::~TCPBuffer()
 }
 
 int
-TCPBuffer::configure(const Vector<String> &conf, ErrorHandler *errh)
+TCPBuffer::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _skip = false;
   return cp_va_parse(conf, this, errh, 

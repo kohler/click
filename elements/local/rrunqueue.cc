@@ -33,7 +33,7 @@ RoundRobinUnqueue::~RoundRobinUnqueue()
 }
 
 int
-RoundRobinUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+RoundRobinUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
   return cp_va_parse(conf, this, errh,

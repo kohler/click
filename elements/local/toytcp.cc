@@ -69,7 +69,7 @@ ToyTCP::clone() const
 }
 
 int
-ToyTCP::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned dport;
   int ret;

@@ -62,7 +62,7 @@ class TimeRange : public Element { public:
     const char *processing() const	{ return AGNOSTIC; }
     TimeRange *clone() const		{ return new TimeRange; }
 
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();
 
     Packet *simple_action(Packet *);

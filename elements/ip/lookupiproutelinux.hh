@@ -46,7 +46,7 @@ public:
   const char *class_name() const	{ return "LookupIPRouteLinux"; }
   const char *processing() const	{ return AGNOSTIC; }
   LookupIPRouteLinux *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void push(int, Packet *);

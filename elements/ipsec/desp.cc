@@ -42,7 +42,7 @@ IPsecESPUnencap::clone() const
 }
 
 int
-IPsecESPUnencap::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPsecESPUnencap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh, 0) < 0)
     return -1;

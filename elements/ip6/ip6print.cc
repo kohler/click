@@ -35,7 +35,7 @@ IP6Print::clone() const
 }
 
 int
-IP6Print::configure(const Vector<String> &conf, ErrorHandler *errh)
+IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _bytes = 1500;
   _label = "";

@@ -33,7 +33,7 @@ IPRewriterPatterns::~IPRewriterPatterns()
 }
 
 int
-IPRewriterPatterns::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // check for an earlier IPRewriterPatterns
   const Vector<Element *> &ev = router()->elements();

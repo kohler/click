@@ -90,7 +90,7 @@ public:
   const char *flow_code() const                 { return "x/y"; }
   GridRouteTable *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   virtual bool can_live_reconfigure() const { return false; }

@@ -37,7 +37,7 @@ ForceUDP::~ForceUDP()
 }
 
 int
-ForceUDP::configure(const Vector<String> &conf, ErrorHandler *errh)
+ForceUDP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
 

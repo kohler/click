@@ -68,7 +68,7 @@ ToDevice::clone() const
 }
 
 int
-ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,

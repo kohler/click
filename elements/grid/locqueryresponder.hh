@@ -36,7 +36,7 @@ class LocQueryResponder : public Element {
   const char *class_name() const		{ return "LocQueryResponder"; }
   const char *processing() const		{ return AGNOSTIC; }
   LocQueryResponder *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);

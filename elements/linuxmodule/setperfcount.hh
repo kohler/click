@@ -35,7 +35,7 @@ class SetPerfCount : public PerfCountUser { public:
   const char *processing() const		{ return AGNOSTIC; }
   SetPerfCount *clone() const;
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

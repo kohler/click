@@ -50,7 +50,7 @@ KernelHandlerProxy::cast(const char *n)
 }
 
 int
-KernelHandlerProxy::configure(const Vector<String> &conf, ErrorHandler *errh)
+KernelHandlerProxy::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _verbose = false;
   return cp_va_parse(conf, this, errh,

@@ -59,7 +59,7 @@ class ToHost : public Element { public:
   const char *flags() const			{ return "S2"; }
   
   int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   ToHost *clone() const;
   
   void push(int port, Packet *);

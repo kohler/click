@@ -41,7 +41,7 @@ LookupIP6Route::clone() const
 }
 
 int
-LookupIP6Route::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();

@@ -26,7 +26,7 @@ public:
   void notify_ninputs(int n)		{ set_ninputs(n); }
   void notify_noutputs(int n)		{ set_noutputs(n); }
 
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize()			{ _lock->unref(); }
   

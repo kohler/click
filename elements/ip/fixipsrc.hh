@@ -36,7 +36,7 @@ public:
   const char *class_name() const		{ return "FixIPSrc"; }
   const char *processing() const		{ return AGNOSTIC; }
   FixIPSrc *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   WritablePacket *fix_it(Packet *);
   Packet *simple_action(Packet *);

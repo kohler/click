@@ -56,7 +56,7 @@ CheckIP6Header::notify_noutputs(int n)
 }
 
 int
-CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
+CheckIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   
   if (conf.size() > 1)

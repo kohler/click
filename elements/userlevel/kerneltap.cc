@@ -51,7 +51,7 @@ KernelTap::clone() const
 }
 
 int
-KernelTap::configure(const Vector<String> &conf, ErrorHandler *errh)
+KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _gw = IPAddress();
   _headroom = 0;

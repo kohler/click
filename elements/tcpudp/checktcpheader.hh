@@ -61,7 +61,7 @@ class CheckTCPHeader : public Element { public:
   CheckTCPHeader *clone() const;
   
   void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 
   Packet *simple_action(Packet *);

@@ -39,7 +39,7 @@ MarkIP6Header::clone() const
 }
 
 int
-MarkIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
+MarkIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _offset = 0;
   return cp_va_parse(conf, this, errh,

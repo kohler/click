@@ -205,7 +205,7 @@ class IPClassifier : public IPFilter {
   const char *processing() const		{ return PUSH; }
   
   IPClassifier *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   
 };
 

@@ -43,7 +43,7 @@ class PullSwitch : public Element { public:
   PullSwitch *clone() const;
 
   void notify_ninputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &, bool *) const;
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();  

@@ -48,7 +48,7 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
   const char *processing() const		{ return PUSH; }
   LookupLocalGridRoute *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   void add_handlers();

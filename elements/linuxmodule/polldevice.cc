@@ -82,7 +82,7 @@ PollDevice::~PollDevice()
 
 
 int
-PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;
     bool promisc = false;

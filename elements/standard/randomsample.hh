@@ -71,7 +71,7 @@ class RandomSample : public Element { public:
     RandomSample *clone() const			{ return new RandomSample; }
 
     void notify_noutputs(int);
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     bool can_live_reconfigure() const		{ return true; }
     void add_handlers();

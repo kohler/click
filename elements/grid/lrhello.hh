@@ -39,7 +39,7 @@ public:
   const char *processing() const		{ return PUSH; }
   SendGridLRHello *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   Packet *make_hello();

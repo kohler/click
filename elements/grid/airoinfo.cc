@@ -54,7 +54,7 @@ AiroInfo::~AiroInfo()
 }
 
 int
-AiroInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+AiroInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   int res = cp_va_parse(conf, this, errh,

@@ -51,7 +51,7 @@ class HostEtherFilter : public Element { public:
 
   void notify_noutputs(int);
   HostEtherFilter *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
   

@@ -42,7 +42,7 @@ MergeByTimestamp::notify_ninputs(int n)
 }
 
 int
-MergeByTimestamp::configure(const Vector<String> &conf, ErrorHandler *errh)
+MergeByTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _stop = false;
     _dead_null = false;

@@ -38,7 +38,7 @@ Unqueue2::~Unqueue2()
 }
 
 int
-Unqueue2::configure(const Vector<String> &conf, ErrorHandler *errh)
+Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
   return cp_va_parse(conf, this, errh,

@@ -70,7 +70,7 @@ PI::check_params(double w, double a, double b, unsigned target_q,
 }
 
 int
-PI::configure(const Vector<String> &conf, ErrorHandler *errh)
+PI::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 	double a, b, w;
 	unsigned target_q;
@@ -118,7 +118,7 @@ PI::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-PI::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+PI::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
 	double a, b, w;
 	unsigned target_q;

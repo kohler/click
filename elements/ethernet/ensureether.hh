@@ -47,7 +47,7 @@ class EnsureEther : public Element { public:
   EnsureEther *clone() const		{ return new EnsureEther; }
 
   const char *processing() const	{ return AGNOSTIC; }  
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
   Packet *smaction(Packet *);
   void push(int, Packet *);

@@ -45,7 +45,7 @@ Print::clone() const
 }
 
 int
-Print::configure(const Vector<String> &conf, ErrorHandler* errh)
+Print::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   bool timestamp = false;
 #ifdef __KERNEL__

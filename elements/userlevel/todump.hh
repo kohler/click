@@ -76,7 +76,7 @@ class ToDump : public Element { public:
 
     // configure after FromDevice and FromDump
     int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT+100; }
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();

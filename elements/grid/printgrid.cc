@@ -45,7 +45,7 @@ PrintGrid::clone() const
 }
 
 int
-PrintGrid::configure(const Vector<String> &conf, ErrorHandler* errh)
+PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpOptional,

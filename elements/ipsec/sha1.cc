@@ -53,7 +53,7 @@ IPsecAuthSHA1::clone() const
 }
 
 int
-IPsecAuthSHA1::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPsecAuthSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "Compute/Verify (0/1)", &_op, 0) < 0)

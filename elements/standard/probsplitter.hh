@@ -23,7 +23,7 @@ class ProbSplitter : public Element { public:
   const char *class_name() const		{ return "ProbSplitter"; }
   ProbSplitter *clone() const			{ return new ProbSplitter; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
 };
 

@@ -52,7 +52,7 @@ EstimateRouterRegion::cast(const char *name)
 }
 
 int
-EstimateRouterRegion::configure(const Vector<String> &conf, ErrorHandler *errh)
+EstimateRouterRegion::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int lat_int = 0, lon_int = 0;
   bool fixed = false;

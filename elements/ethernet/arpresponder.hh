@@ -63,8 +63,8 @@ class ARPResponder : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   ARPResponder *clone() const;
 
-  int configure(const Vector<String> &, ErrorHandler *);
-  int live_reconfigure(const Vector<String> &conf, ErrorHandler *errh);
+  int configure(Vector<String> &, ErrorHandler *);
+  int live_reconfigure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const             { return true; }
   
   void add_handlers();

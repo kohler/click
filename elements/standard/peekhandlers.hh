@@ -34,7 +34,7 @@ class PeekHandlers : public Element { public:
   const char *class_name() const		{ return "PeekHandlers"; }
   PeekHandlers *clone() const			{ return new PeekHandlers; }
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
 
 };
 

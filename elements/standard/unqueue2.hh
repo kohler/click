@@ -28,7 +28,7 @@ class Unqueue2 : public Element { public:
   const char *processing() const		{ return PULL_TO_PUSH; }
   
   Unqueue2 *clone() const			{ return new Unqueue2; }
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
   

@@ -1,5 +1,5 @@
-#ifndef PRINT_HH
-#define PRINT_HH
+#ifndef CLICK_PRINT_HH
+#define CLICK_PRINT_HH
 #include <click/element.hh>
 #include <click/string.hh>
 
@@ -50,7 +50,7 @@ class Print : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   
   Print *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   
   Packet *simple_action(Packet *);

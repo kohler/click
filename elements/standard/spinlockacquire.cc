@@ -18,7 +18,7 @@
 #include "spinlockacquire.hh"
 
 int
-SpinlockAcquire::configure(const Vector<String> &conf, ErrorHandler *errh)
+SpinlockAcquire::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String name;
   if (cp_va_parse(conf, this, errh, cpString, "name of spinlock", &name, 0)<0)

@@ -41,7 +41,7 @@ IPGWOptions::~IPGWOptions()
 }
 
 int
-IPGWOptions::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   IPAddress my_ip;
   IPAddressSet ips;

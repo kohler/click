@@ -27,7 +27,7 @@ CPUQueue::notify_noutputs(int i)
 }
 
 int
-CPUQueue::configure(const Vector<String> &conf, ErrorHandler *errh)
+CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned new_capacity = 128;
   if (cp_va_parse(conf, this, errh, 

@@ -43,7 +43,7 @@ RatedSource::clone() const
 }
 
 int
-RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
+RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String data = 
     "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";

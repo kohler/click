@@ -39,7 +39,7 @@ class GridProbeReplyReceiver : public Element {
   const char *class_name() const		{ return "GridProbeReplyReceiver"; }
   const char *processing() const		{ return AGNOSTIC; }
   GridProbeReplyReceiver *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);

@@ -73,7 +73,7 @@ public:
   const char *processing() const		{ return PUSH; }
   PEP *clone() const;
   
-  int configure(const Vector<String> &, ErrorHandler *);
+  int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   virtual void *cast(const char *);
   void run_scheduled();

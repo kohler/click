@@ -51,7 +51,7 @@ EtherSpanTree::notify_ninputs(int n) {
 }
 
 int
-EtherSpanTree::configure(const Vector<String> &conf, ErrorHandler *errh)
+EtherSpanTree::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   Element* in;
   Element* out;

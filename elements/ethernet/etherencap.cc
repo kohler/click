@@ -39,7 +39,7 @@ EtherEncap::clone() const
 }
 
 int
-EtherEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
+EtherEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned etht;
   if (cp_va_parse(conf, this, errh,
