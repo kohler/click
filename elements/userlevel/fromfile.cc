@@ -441,7 +441,7 @@ FromFile::get_aligned(size_t size, void *buffer, ErrorHandler *errh)
 	if (((uintptr_t)(chunk) & 3) == 0)
 	    return reinterpret_cast<const uint8_t *>(chunk);
 	else {
-	    memcpy(buffer, chunk, sizeof(*ph));
+	    memcpy(buffer, chunk, size);
 	    return reinterpret_cast<uint8_t *>(buffer);
 	}
 #endif
