@@ -1,3 +1,20 @@
+2004-07-06 Tuesday 20:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.texi (1.59): doc update: do not mention nonexistent
+	function
+
+2004-07-06 Tuesday 20:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/lc-configure.in (1.31): fix libclick version
+
+2004-07-06 Tuesday 19:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmppingrewriter.cc (1.22),
+	elements/ip/ipaddrrewriter.cc (1.19), elements/local/tcpdemux.cc
+	(1.12), elements/tcpudp/iprewriter.cc (1.41),
+	elements/tcpudp/tcprewriter.cc (1.33), include/click/bighashmap.hh
+	(1.25): update for gcc-3.4.1 compilability
+
 2004-07-03 Saturday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.18), configure.in (1.236), README (1.45), click.spec
