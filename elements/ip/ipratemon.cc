@@ -17,9 +17,9 @@
 #include "ipratemon.hh"
 #include "confparse.hh"
 #include "straccum.hh"
-#include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
+#include "mplock.hh"
 
 IPRateMonitor::IPRateMonitor()
   : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _memmax(0), _ratio(1),
@@ -81,6 +81,10 @@ IPRateMonitor::initialize(ErrorHandler *errh)
 {
   set_resettime();
 
+  _lock = new Spinlock();
+  if (!_lock)
+    return errh->error("cannot create spinlock.");
+
   // Make _base
   _base = new Stats(this);
   if (!_base)
@@ -93,6 +97,7 @@ void
 IPRateMonitor::uninitialize()
 { 
   delete _base;
+  delete _lock;
   _base = 0;
 }
 
@@ -101,7 +106,9 @@ IPRateMonitor::push(int port, Packet *p)
 {
   // Only inspect 1 in RATIO packets
   bool ewma = ((unsigned) ((random() >> 5) & 0xffff) <= _ratio);
+  _lock->acquire();
   update_rates(p, port == 0, ewma);
+  _lock->release();
   output(port).push(p);
 }
 
@@ -116,7 +123,8 @@ IPRateMonitor::pull(int port)
 
 
 IPRateMonitor::Counter*
-IPRateMonitor::make_counter(Stats *s, unsigned char index, MyEWMA *fwd, MyEWMA *rev)
+IPRateMonitor::make_counter(Stats *s, unsigned char index, 
+                            MyEWMA *fwd, MyEWMA *rev)
 {
   Counter *c = NULL;
 
@@ -138,6 +146,7 @@ IPRateMonitor::make_counter(Stats *s, unsigned char index, MyEWMA *fwd, MyEWMA *
   else
     c->rev_rate = *rev;
   c->next_level = 0;
+  c->anno_this = 0;
 
   return c;
 }
@@ -324,7 +333,14 @@ IPRateMonitor::look_read_handler(Element *e, void *)
   IPRateMonitor *me = (IPRateMonitor*) e;
 
   String ret = String(MyEWMA::now() - me->_resettime) + "\n";
-  return ret + me->print(me->_base);
+
+  if (me->_lock->attempt()) {
+    ret = ret + me->print(me->_base);
+    me->_lock->release();
+    return ret;
+  } else {
+    return ret + "unavailable\n";
+  }
 }
 
 String
@@ -354,6 +370,10 @@ IPRateMonitor::reset_write_handler
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
 
+#ifdef __KERNEL__
+  start_bh_atomic();
+#endif
+  me->_lock->acquire();
   for (int i = 0; i < MAX_COUNTERS; i++) {
     if (me->_base->counter[i]) {
       if (me->_base->counter[i]->next_level)
@@ -362,8 +382,12 @@ IPRateMonitor::reset_write_handler
       me->_base->counter[i] = 0;
     }
   }
-
   me->set_resettime();
+  me->_lock->release();
+#ifdef __KERNEL__
+  end_bh_atomic();
+#endif
+
   return 0;
 }
 
@@ -388,13 +412,69 @@ IPRateMonitor::memmax_write_handler
 
   if (memmax && memmax < MEMMAX_MIN)
     memmax = MEMMAX_MIN;
+  
+#ifdef __KERNEL__
+  start_bh_atomic();
+#endif
+  me->_lock->acquire();
   me->_memmax = memmax * 1024; // count bytes, not kbytes
 
   // Fold if necessary
   if (me->_memmax && me->_alloced_mem > me->_memmax)
     me->forced_fold();
+  me->_lock->release();
+#ifdef __KERNEL__
+  end_bh_atomic();
+#endif
+
   return 0;
 }
+
+
+int
+IPRateMonitor::anno_level_write_handler
+(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+  IPRateMonitor* me = (IPRateMonitor *) e;
+  IPAddress a;
+  int level, when;
+
+  if (args.size() != 3) {
+    errh->error("expecting 3 arguments");
+    return -1;
+  }
+  
+  if (!cp_ip_address(args[0], a)) {
+    errh->error("not an IP address");
+    return -1;
+  }
+  if (!cp_integer(args[1], &level) || !(level >= 0 && level < 4)) {
+    errh->error("2nd argument specifies a level, between 0 and 3, to annotate");
+    return -1;
+  }
+  if (!cp_integer(args[2], &when) || when < 1) {
+    errh->error("3rd argument specifies when this rule expires, must be > 0");
+    return -1;
+  }
+
+  when *= MyEWMA::freq();
+  when += MyEWMA::now();
+
+#ifdef __KERNEL__
+  start_bh_atomic();
+#endif
+  me->_lock->acquire();
+  me->set_anno_level(a, static_cast<unsigned>(level), 
+                        static_cast<unsigned>(when));
+  me->_lock->release();
+#ifdef __KERNEL__
+  end_bh_atomic();
+#endif
+  return 0;
+}
+
 
 void
 IPRateMonitor::add_handlers()
@@ -404,6 +484,7 @@ IPRateMonitor::add_handlers()
   add_read_handler("mem", mem_read_handler, 0);
   add_read_handler("memmax", memmax_read_handler, 0);
 
+  add_write_handler("anno_level", anno_level_write_handler, 0);
   add_write_handler("reset", reset_write_handler, 0);
   add_write_handler("memmax", memmax_write_handler, 0);
 }

@@ -95,7 +95,9 @@ struct click_ip {
 
 #ifdef CLICK_LINUXMODULE
 # define new xxx_new
+extern "C" {
 # include <net/checksum.h>
+}
 # undef new
 # define in_cksum(addr, len)	ip_compute_csum(addr, len)
 #else
