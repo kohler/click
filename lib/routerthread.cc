@@ -191,15 +191,17 @@ RouterThread::driver_once()
 void
 RouterThread::wait(int iter)
 {
-  unlock_tasks();
+  if (thread_id() == 0) {
+    unlock_tasks();
 #if CLICK_USERLEVEL
-  if (iter % DRIVER_ITER_SELECT == 0)
-    router()->run_selects(!empty());
+    if (iter % DRIVER_ITER_SELECT == 0)
+      router()->run_selects(!empty());
 #else /* __KERNEL__ */
-  if (iter % DRIVER_ITER_LINUXSCHED == 0)
-    schedule();
+    if (iter % DRIVER_ITER_LINUXSCHED == 0) 
+      schedule();
 #endif
-  lock_tasks();
+    lock_tasks();
+  }
 
   if (iter % DRIVER_ITER_TIMERS == 0)
     router()->run_timers();
