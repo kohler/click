@@ -30,7 +30,7 @@ StringAccum::make_out_of_memory()
 {
     assert(_cap >= 0);
     delete[] _s;
-    _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_string().data()));
+    _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_data()));
     _cap = -1;
     _len = 0;
 }
@@ -68,23 +68,13 @@ StringAccum::c_str()
     return reinterpret_cast<char *>(_s);
 }
 
-unsigned char *
-StringAccum::take_bytes()
-{
-    unsigned char *str = _s;
-    erase();
-    return str;
-}
-
 String
 StringAccum::take_string()
 {
     int len = length();
     if (len) {
 	int capacity = _cap;
-	unsigned char *str = _s;
-	erase();
-	return String::claim_string(reinterpret_cast<char *>(str), len, capacity);
+	return String::claim_string(reinterpret_cast<char *>(take_bytes()), len, capacity);
     } else if (out_of_memory())
 	return String::out_of_memory_string();
     else
