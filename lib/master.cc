@@ -417,7 +417,8 @@ Master::add_select(int fd, Element *element, int mask)
 	    free_pi = pi;
 
     // Add a new selector
-    pi = free_pi;
+    if (pi == _pollfds.size())
+	pi = free_pi;
     if (pi == _pollfds.size()) {
 	_pollfds.push_back(pollfd());
 	_pollfds[pi].events = 0;
