@@ -25,7 +25,6 @@
 #include "lexertinfo.hh"
 #include "routert.hh"
 #include <click/confparse.hh>
-#include <click/variableenv.hh>
 #include <ctype.h>
 #include <stdlib.h>
 
