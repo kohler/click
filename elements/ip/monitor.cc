@@ -153,11 +153,14 @@ Monitor::update(IPAddress a, int val)
   int ret;
   unsigned int saddr = a.saddr();
 
+#define CONST_MAX_SHIFT ((BYTES-1)*8)
+  int MAX_SHIFT = CONST_MAX_SHIFT;      // avoid calculation
+
   struct _stats *s = _base;
   struct _counter *c = NULL;
   int bitshift;
-  for(bitshift = ((BYTES-1)*8); bitshift >= 0; bitshift -= 8) {
-    unsigned char byte = ((saddr >> bitshift) & 0x000000ff);
+  for(bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
+    unsigned char byte = (saddr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
 
     if(c->flags & SPLIT)
@@ -166,18 +169,13 @@ Monitor::update(IPAddress a, int val)
       break;
   }
 
-  assert(bitshift >= 0);
-  assert(c != NULL);
-  assert(!(c->flags & SPLIT));
-
   c->value += val;
   ret = c->value;
 
   // Did value get larger than THRESH within one second?
   if(c->value >= _thresh) {
-    int jiffdiff = click_jiffies() - c->last_update;
-    if(jiffdiff < 100) {        // 100 jiffs per second
-      if(bitshift) {            // can't split last level
+    if((click_jiffies() - c->last_update) < CLICK_HZ) {
+      if(bitshift < MAX_SHIFT) {        // can't split last level
         c->flags |= SPLIT;
         struct _stats *tmp = new struct _stats;
         clean(tmp);
@@ -237,8 +235,6 @@ Monitor::print(_stats *s, String ip = "")
 inline void
 Monitor::set_resettime()
 {
-  /* struct timeval t;       */
-  /* click_gettimeofday(&t); */
   _resettime = click_jiffies();
 }
 
