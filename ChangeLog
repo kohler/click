@@ -1,3 +1,36 @@
+2004-04-20 Tuesday 17:03  Mark Huang <mlhuang@cs.princeton.edu>
+
+	* elements/userlevel/ipflowrawsockets.cc (1.1),
+	elements/userlevel/ipflowrawsockets.hh (1.1): IPFlowRawSockets
+	element creates a PF_PACKET socket() per TCP/UDP flow as
+	determined by an upstream AggregateIPFlows element.
+
+2004-04-20 Tuesday 17:02  Mark Huang <mlhuang@cs.princeton.edu>
+
+	* elements/userlevel/fromsocket.cc (1.1),
+	elements/userlevel/fromsocket.hh (1.1),
+	elements/userlevel/tosocket.cc (1.1),
+	elements/userlevel/tosocket.hh (1.1): Sink and source packets
+	through user-level PF_INET sockets.
+
+2004-04-20 Tuesday 16:54  Mark Huang <mlhuang@cs.princeton.edu>
+
+	* elements/userlevel/fakepcap.cc (1.12),
+	elements/userlevel/fakepcap.hh (1.15): Handle Linux "cooked" raw
+	sockets (sockaddr_ll).
+	
+2004-04-20 Tuesday 16:54  Mark Huang <mlhuang@cs.princeton.edu>
+
+	* elements/icmp/icmperror.cc (1.17),
+	elements/userlevel/icmperror.hh (1.8),
+	include/clicknet/icmp.h	(1.4): Allow specification of Next-Hop MTU
+	in ICMP Error packets (to support path MTU discovery through a
+	multi-homed router configuration with different interface MTUs).
+
+2004-04-20 Tuesday 16:53  Mark Huang <mlhuang@cs.princeton.edu>
+
+	* click.spec (1.1): RPM spec file for user-level driver
+
 2004-04-17 Saturday 20:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-compile.in (1.30): nitlet
