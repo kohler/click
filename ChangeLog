@@ -1,3 +1,14 @@
+2004-04-04 Sunday 23:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/linuxmodule/ToHost-udpsocket-01.testie (1.1): add test for
+	RatedSource -> UDPIPEncap -> ToHost
+
+2004-04-04 Sunday 23:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/addressinfo.cc (1.31),
+	include/click/standard/addressinfo.hh (1.16): AddressInfo defaults
+	device names to their primary IP address
+
 2004-04-04 Sunday 23:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/testie (1.27): testie: handle %ignore lines that start with
