@@ -33,39 +33,44 @@
 #include "element.hh"
 #include "string.hh"
 
+#ifdef HAVE_PCAP
 extern "C" {
-#include <pcap.h>
+# include <pcap.h>
 }
+#else
+# include "fakebpf.h"
+#endif
 
 class FromBPF : public Element {
  public:
   FromBPF();
-  FromBPF(const String &ifname, bool promisc);
   ~FromBPF();
   
   const char *class_name() const		{ return "FromBPF"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   
   FromBPF *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  int select_fd() { return(_pcap?pcap_fileno(_pcap):-1); }
+  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
   void selected(int);
   
   // For LiveWriter, so it can borrow our _pcap.
-  String get_ifname() { return(_ifname); }
-  pcap_t *get_pcap() { return(_pcap); }  
+  String get_ifname() const	{ return _ifname; }
+  pcap_t *get_pcap() const	{ return _pcap; }  
 
  private:
   String _ifname;
   bool _promisc;
   pcap_t* _pcap;
 
+#ifdef HAVE_PCAP
   static void get_packet(u_char* clientdata,
 			 const struct pcap_pkthdr* pkthdr,
 			 const u_char* data);
   int do_select(int waitms);
+#endif
 
 };
 

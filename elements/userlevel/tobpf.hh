@@ -25,9 +25,13 @@
  * =a ToDump
  */
 
+#ifdef HAVE_PCAP
 extern "C" {
-#include <pcap.h>
+# include <pcap.h>
 }
+#else
+# include "fakebpf.h"
+#endif
 
 /*
  * Write packets to the ethernet via the bpf.
@@ -48,7 +52,7 @@ class ToBPF : public Element {
   ~ToBPF();
   
   const char *class_name() const		{ return "ToBPF"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   ToBPF *clone() const;
   int configure(const String &, ErrorHandler *);

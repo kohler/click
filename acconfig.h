@@ -42,6 +42,9 @@
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_READ_NET_SKBCOUNT
 
+/* Define if you have -lpcap and pcap.h. */
+#undef HAVE_PCAP
+
 #ifdef __cplusplus
 /* Get rid of inline macro under C++ */
 # undef inline

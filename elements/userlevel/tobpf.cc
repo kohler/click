@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && defined(HAVE_PCAP)
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -55,7 +55,7 @@ ToBPF::configure(const String &conf, ErrorHandler *errh)
 int
 ToBPF::initialize(ErrorHandler *errh)
 {
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && defined(HAVE_PCAP)
   /* FreeBSD pcap_open_live() doesn't open for writing. */
   if(_fd >= 0)
     return(0);
@@ -93,38 +93,44 @@ ToBPF::initialize(ErrorHandler *errh)
   for(int fi = 0; fi < router()->nelements(); fi++){
     Element *f = router()->element(fi);
     FromBPF *lr = (FromBPF *)f->is_a_cast("FromBPF");
-    if(lr && lr->get_ifname() == _ifname && lr->get_pcap()){
+    if (lr && lr->get_ifname() == _ifname && lr->get_pcap())
       _fd = pcap_fileno(lr->get_pcap());
-      click_chatter("ToBPF(%s) borrowing FromBPF's pcap_fileno()", _ifname.cc());
-    }
   }
   
-  if(_fd < 0){
+  if (_fd < 0) {
     char ebuf[PCAP_ERRBUF_SIZE];
     _pcap = pcap_open_live(_ifname.mutable_c_str(),
                            12000, /* XXX snaplen */
                            0,     /* not promiscuous */
                            0,     /* don't batch packets */
                            ebuf);
+# ifdef HAVE_PCAP
     if (!_pcap)
       return errh->error("%s: %s", _ifname.cc(), ebuf);
+# else
+    errh->warning("can't handle packets: not compiled with pcap support");
+# endif
     _fd = pcap_fileno(_pcap);
   }
+  
   return 0;
 #endif
 }
 
+#ifdef HAVE_PCAP
 extern "C" {
 extern int pcap_inject(pcap_t *p, const void *buf, size_t len);
 extern int errno;
 }
+#endif
 
 void
 ToBPF::push(int, Packet *p)
 {
   assert(p->length() >= 14);
 
-#ifdef __linux__
+#ifdef HAVE_PCAP
+# ifdef __linux__
   sockaddr sa;
   sa.sa_family = AF_INET;
   strcpy(sa.sa_data, _ifname);
@@ -132,14 +138,15 @@ ToBPF::push(int, Packet *p)
 	     0, &sa, sizeof(sa)) < 0) {
     perror("ToBPF: sendto to pcap");
   }
-#endif
+# endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+# if defined(__FreeBSD__) || defined(__OpenBSD__)
   int ret = write(_fd, p->data(), p->length());
   if(ret <= 0){
     fprintf(stderr, "ToBPF: write %d to _fd %d ret %d errno %d : %s\n",
             p->length(), _fd, ret, errno, strerror(errno));
   }
+# endif
 #endif
 
   p->kill();

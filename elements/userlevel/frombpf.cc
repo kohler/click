@@ -14,12 +14,6 @@ FromBPF::FromBPF()
   add_output();
 }
 
-FromBPF::FromBPF(const String &ifname, bool promisc)
-  : _ifname(ifname), _promisc(promisc), _pcap(0)
-{
-  add_output();
-}
-
 FromBPF::~FromBPF()
 {
   if (_pcap) pcap_close(_pcap);
@@ -28,7 +22,7 @@ FromBPF::~FromBPF()
 FromBPF *
 FromBPF::clone() const
 {
-  return new FromBPF(_ifname, _promisc);
+  return new FromBPF;
 }
 
 int
@@ -62,12 +56,17 @@ FromBPF::initialize(ErrorHandler *errh)
                          _promisc,
                          1,     /* don't batch packets */
                          ebuf);
+#ifdef HAVE_PCAP
   if (!_pcap)
     return errh->error("%s: %s", ifname, ebuf);
-
+#else
+  errh->warning("can't get packets: not compiled with pcap support");
+#endif
+  
   return 0;
 }
 
+#ifdef HAVE_PCAP
 void
 FromBPF::get_packet(u_char* clientdata,
 		    const struct pcap_pkthdr* pkthdr,
@@ -77,6 +76,7 @@ FromBPF::get_packet(u_char* clientdata,
   Packet* p = Packet::make(data, length);
   lr->output(0).push(p);
 }
+#endif
 
 void
 FromBPF::selected(int)

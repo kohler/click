@@ -149,15 +149,8 @@ dnl
 dnl possible targets
 dnl
 
-POSSIBLE_TARGETS=
+POSSIBLE_TARGETS="linuxmodule userlevel"
 AC_SUBST(POSSIBLE_TARGETS)
-
-if test -d $srcdir/linuxmodule; then
-  POSSIBLE_TARGETS="$POSSIBLE_TARGETS linuxmodule"
-fi
-if test -d $srcdir/userlevel; then
-  POSSIBLE_TARGETS="$POSSIBLE_TARGETS userlevel"
-fi
 if test -d $srcdir/exopc; then
   POSSIBLE_TARGETS="$POSSIBLE_TARGETS exopc"
 fi
@@ -212,10 +205,11 @@ else
 fi
 
 if test "$ac_cv_pcap_library_path" = "not found" -o "$ac_cv_pcap_library_path" = "not found"; then
-  AC_MSG_WARN(pcap.h or -lpcap not found; can't compile userlevel)
+  AC_MSG_WARN(pcap.h or -lpcap not found; userlevel can't steal packets)
 else
-  TARGETS="$TARGETS userlevel"
+  AC_DEFINE_UNQUOTED(HAVE_PCAP, 1)
 fi
+TARGETS="$TARGETS userlevel"
 
 AC_SUBST(PCAP_HEADER_PATH)
 AC_SUBST(PCAP_LIBRARY_PATH)

@@ -135,7 +135,7 @@ FromDevice::initialize(ErrorHandler *errh)
       notifier.next = 0;
       register_net_in(&notifier);
 #else
-      errh->warning("not compiled for a Click kernel");
+      errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
     }
     
