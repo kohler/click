@@ -277,11 +277,11 @@ cache_udp_packet(struct udpgen_opt *uopt)
   pad_length = (length < 50 ? 50 : length); /* eth packets have min size */
   {
     int hard_header_len = (rt->u.dst.dev->hard_header_len + 15)&~15;
-    int alloc_len = pad_length + hard_header_len + 15;
+    int alloc_len = pad_length + hard_header_len + 19;
     skb = alloc_skb(alloc_len, GFP_KERNEL);
     if (!skb)
       return 0;
-    skb_reserve(skb, hard_header_len);
+    skb_reserve(skb, hard_header_len + 4);
   }
   
   /* set up IP header and UDP header */
