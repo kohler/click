@@ -1,3 +1,11 @@
+2003-11-02 Sunday 01:25  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/linktable.hh (1.17), standard/notifierqueue.hh
+	(1.11), standard/simplequeue.hh (1.9): Add ECNQueue, which
+	explicitly signals congestion along a path and reorders packets on
+	a per-path basis.  Also edit inorderqueue to account properly for
+	congestion.  Make link-failure notification be more sane.
+
 2003-10-31 Friday 18:07  Eddie Kohler <kohler@icir.org>
 
 	* lib/router.cc (1.150): fix issue brought up by Peter Swain:
