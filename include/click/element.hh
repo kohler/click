@@ -75,8 +75,8 @@ class Element { public:
   // FLOW
   virtual const char *flow_code() const;
   
-  Bitvector forward_flow(int, ErrorHandler *) const;
-  Bitvector backward_flow(int, ErrorHandler *) const;
+  void forward_flow(int, Bitvector *) const;
+  void backward_flow(int, Bitvector *) const;
   
   // PUSH OR PULL PROCESSING
   virtual const char *processing() const;

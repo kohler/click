@@ -250,7 +250,7 @@ skip_flow_code(const char *&p)
 
 static int
 next_flow_code(const char *&p, int port, Bitvector &code,
-	       ErrorHandler *errh)
+	       ErrorHandler *errh, const Element *e)
 {
   if (*p == '/' || *p == 0) {
     // back up to last code character
@@ -268,22 +268,22 @@ next_flow_code(const char *&p, int port, Bitvector &code,
     if (p[1] == '^')
       negated = true, p++;
     for (p++; *p != ']' && *p; p++) {
-      if (isalnum(*p))
+      if (isalpha(*p))
 	code[*p] = true;
       else if (*p == '#')
 	code[port + 128] = true;
       else if (errh)
-	errh->error("invalid character `%c' in flow code", *p);
+	errh->error("`%s' flow code: invalid character `%c'", e->declaration().cc(), *p);
     }
     if (negated)
       code.negate();
-  } else if (isalnum(*p))
+  } else if (isalpha(*p))
     code[*p] = true;
   else if (*p == '#')
     code[port + 128] = true;
   else {
     if (errh)
-      errh->error("invalid character `%c' in flow code", *p);
+      errh->error("`%s' flow code: invalid character `%c'", e->declaration().cc(), *p);
     p++;
     return -1;
   }
@@ -292,78 +292,76 @@ next_flow_code(const char *&p, int port, Bitvector &code,
   return 0;
 }
 
-Bitvector
-Element::forward_flow(int input_port, ErrorHandler *errh) const
+void
+Element::forward_flow(int input_port, Bitvector *bv) const
 {
   const char *f = flow_code();
-  if (input_port < 0 || input_port >= ninputs())
-    return Bitvector(noutputs(), false);
-  else if (!f || f == COMPLETE_FLOW)
-    return Bitvector(noutputs(), true);
+  if (input_port < 0 || input_port >= ninputs()) {
+    bv->assign(noutputs(), false);
+    return;
+  } else if (!f || f == COMPLETE_FLOW) {
+    bv->assign(noutputs(), true);
+    return;
+  }
 
-  Bitvector bv(noutputs(), false);
+  bv->assign(noutputs(), false);
+  ErrorHandler *errh = ErrorHandler::default_handler();
   
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
-  if (!f_out) {
-    errh->error("bad flow code `%s': missing `/'", f);
-    return bv;
-  } else if (f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("bad flow code `%s': missing characters around `/'", f);
-    return bv;
+  if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+    errh->error("`%s' flow code: missing or bad `/'", declaration().cc());
+    return;
   }
   f_out++;
   
   Bitvector in_code;
   for (int i = 0; i < input_port; i++)
     skip_flow_code(f_in);
-  next_flow_code(f_in, input_port, in_code, errh);
+  next_flow_code(f_in, input_port, in_code, errh, this);
 
   Bitvector out_code;
   for (int i = 0; i < noutputs(); i++) {
-    next_flow_code(f_out, i, out_code, errh);
+    next_flow_code(f_out, i, out_code, errh, this);
     if (in_code.nonzero_intersection(out_code))
-      bv[i] = true;
+      (*bv)[i] = true;
   }
-  
-  return bv;
 }
 
-Bitvector
-Element::backward_flow(int output_port, ErrorHandler *errh) const
+void
+Element::backward_flow(int output_port, Bitvector *bv) const
 {
   const char *f = flow_code();
-  if (output_port < 0 || output_port >= noutputs())
-    return Bitvector(ninputs(), false);
-  else if (!f || f == COMPLETE_FLOW)
-    return Bitvector(ninputs(), true);
+  if (output_port < 0 || output_port >= noutputs()) {
+    bv->assign(ninputs(), false);
+    return;
+  } else if (!f || f == COMPLETE_FLOW) {
+    bv->assign(ninputs(), true);
+    return;
+  }
 
-  Bitvector bv(ninputs(), false);
+  bv->assign(ninputs(), false);
+  ErrorHandler *errh = ErrorHandler::default_handler();
   
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
-  if (!f_out) {
-    errh->error("bad flow code: missing `/'");
-    return bv;
-  } else if (f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("bad flow code: missing characters around `/'");
-    return bv;
+  if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+    errh->error("`%s' flow code: missing or bad `/'", declaration().cc());
+    return;
   }
   f_out++;
   
   Bitvector out_code;
   for (int i = 0; i < output_port; i++)
     skip_flow_code(f_out);
-  next_flow_code(f_out, output_port, out_code, errh);
+  next_flow_code(f_out, output_port, out_code, errh, this);
 
   Bitvector in_code;
   for (int i = 0; i < ninputs(); i++) {
-    next_flow_code(f_in, i, in_code, errh);
+    next_flow_code(f_in, i, in_code, errh, this);
     if (in_code.nonzero_intersection(out_code))
-      bv[i] = true;
+      (*bv)[i] = true;
   }
-  
-  return bv;
 }
 
 // PUSH OR PULL PROCESSING
@@ -391,7 +389,7 @@ next_processing_code(const char *&p, ErrorHandler *errh)
     p++;
     return Element::VAGNOSTIC;
 
-   case '/': case '#': case 0:
+   case '/': case 0:
     return -2;
 
    default:
@@ -665,7 +663,7 @@ static String
 read_task_tickets(Element *, void *thunk)
 {
   Task *task = (Task *)thunk;
-  return String(task->tickets()) + " " + String(task->max_tickets()) + "\n";
+  return String(task->tickets()) + "\n";
 }
 #endif
 
