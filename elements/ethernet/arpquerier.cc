@@ -90,11 +90,15 @@ ARPQuerier::make_query(u_char tpa[4], /* him */
   struct ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
   _pkts_made++;
-  if (q == 0) {
+  if (q == 0)
+  {
     click_chatter("in arp querier: cannot make packet!");
+    extern Router* current_router;
+    delete current_router;
+    current->state = TASK_INTERRUPTIBLE;
+    schedule();
     assert(0);
-  } 
-  else
+  } else
     click_chatter("arp querier making arp query packet");
   memset(q->data(), '\0', q->length());
   e = (struct ether_header *) q->data();
