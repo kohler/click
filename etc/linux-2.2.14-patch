@@ -1,7 +1,7 @@
 
 Index: include/linux/netdevice.h
 --- include/linux/netdevice.h.orig	Thu Mar  2 18:27:42 2000
-+++ include/linux/netdevice.h	Sat Apr 22 15:31:35 2000
++++ include/linux/netdevice.h	Fri Apr 28 17:16:26 2000
 @@ -317,6 +317,32 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
@@ -49,12 +49,23 @@ Index: include/linux/netdevice.h
  extern int		dev_restart(struct device *dev);
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Mon Apr 24 11:32:30 2000
-+++ net/core/skbuff.c	Mon Apr 24 11:32:30 2000
-@@ -258,6 +258,47 @@
+--- net/core/skbuff.c.orig	Thu Mar  2 18:27:45 2000
++++ net/core/skbuff.c	Tue Feb 29 20:40:49 2000
+@@ -4,7 +4,7 @@
+  *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
+  *			Florian La Roche <rzsfl@rz.uni-sb.de>
+  *
+- *	Version:	$Id: click-patch-1.0.7,v 1.1 2000/05/30 15:04:53 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.7,v 1.1 2000/05/30 15:04:53 benjie Exp $
+  *
+  *	Fixes:	
+  *		Alan Cox	:	Fixed the worst of the load balancer bugs.
+@@ -256,6 +256,47 @@
+ 	n->destructor = NULL;
+ 	return n;
  }
- 
- /*
++
++/*
 + * Click: recycle a sk_buff by resetting it. if it can be recycled, return it.
 + */
 +struct sk_buff *skb_recycle(struct sk_buff *skb)
@@ -94,15 +105,13 @@ Index: net/core/skbuff.c
 +  return 0;
 +}
 +
-+
-+/*
+ 
+ /*
   *	This is slower, and copies the whole data area 
-  */
-  
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Mon Apr 24 11:32:30 2000
-+++ net/core/dev.c	Mon Apr 24 11:32:30 2000
+--- net/core/dev.c.orig	Thu Mar  2 18:27:44 2000
++++ net/core/dev.c	Tue Feb 29 20:40:49 2000
 @@ -148,6 +148,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -439,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Sun Apr 23 18:23:22 2000
++++ drivers/net/tulip.c	Tue May 30 10:48:42 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -512,7 +521,7 @@ Index: drivers/net/tulip.c
  		tp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -2526,19 +2545,30 @@
+@@ -2526,19 +2545,32 @@
  	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
  }
  
@@ -535,10 +544,12 @@ Index: drivers/net/tulip.c
 -
 -	/* Block a timer-based transmit from overlapping.  This could better be
 -	   done with atomic_swap(1, dev->tbusy), but set_bit() works as well. */
-+		
++	
++#if 0
 +	if (!dev->intr_is_on) {
 +	    printk("tulip_start_xmit when interrupt is off\n");
 +	}
++#endif
 +	
  	if (test_and_set_bit(0, (void*)&dev->tbusy) != 0) {
 -		if (jiffies - dev->trans_start < TX_TIMEOUT)
@@ -549,7 +560,7 @@ Index: drivers/net/tulip.c
  		return 1;
  	}
  
-@@ -2567,16 +2597,39 @@
+@@ -2567,16 +2599,39 @@
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
  	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
  	tp->cur_tx++;
@@ -596,7 +607,7 @@ Index: drivers/net/tulip.c
  /* The interrupt handler does all of the Rx thread work and cleans up
     after the Tx thread. */
  static void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-@@ -2593,6 +2646,11 @@
+@@ -2593,6 +2648,11 @@
  	int maxrx = RX_RING_SIZE;
  	int maxtx = TX_RING_SIZE;
  	int maxoi = TX_RING_SIZE;
@@ -608,7 +619,7 @@ Index: drivers/net/tulip.c
  
  #if defined(__i386__) && defined(SMP_CHECK)
  	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
-@@ -2611,25 +2669,51 @@
+@@ -2611,25 +2671,51 @@
  #endif
  
  	tp->nir++;
@@ -667,7 +678,7 @@ Index: drivers/net/tulip.c
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2694,14 +2778,15 @@
+@@ -2694,14 +2780,15 @@
  			}
  
  			tp->dirty_tx = dirty_tx;
@@ -691,7 +702,7 @@ Index: drivers/net/tulip.c
  		}
  
  		/* Log errors. */
-@@ -2720,8 +2805,11 @@
+@@ -2720,8 +2807,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -704,7 +715,7 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2761,7 +2849,9 @@
+@@ -2761,7 +2851,9 @@
  		}
  	} while (1);
  
@@ -715,7 +726,7 @@ Index: drivers/net/tulip.c
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2779,14 +2869,23 @@
+@@ -2779,14 +2871,23 @@
  		}
  	}
  
@@ -739,7 +750,7 @@ Index: drivers/net/tulip.c
  #if defined(__i386__)
  	clear_bit(0, (void*)&dev->interrupt);
  #else
-@@ -2905,6 +3004,9 @@
+@@ -2905,6 +3006,9 @@
  #endif
  		}
  		received++;
@@ -749,7 +760,7 @@ Index: drivers/net/tulip.c
  		entry = (++tp->cur_rx) % RX_RING_SIZE;
  	}
  
-@@ -2932,8 +3034,12 @@
+@@ -2932,8 +3036,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -764,7 +775,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2976,9 +3082,14 @@
+@@ -2976,9 +3084,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -782,7 +793,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3175,7 +3286,7 @@
+@@ -3175,7 +3288,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -791,7 +802,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3186,7 +3297,12 @@
+@@ -3186,7 +3299,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -804,7 +815,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3201,6 +3317,10 @@
+@@ -3201,6 +3319,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -815,7 +826,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3465,341 @@
+@@ -3345,3 +3467,341 @@
   *  tab-width: 4
   * End:
   */
@@ -1160,7 +1171,7 @@ Index: drivers/net/tulip.c
 
 Index: drivers/net/acenic.c
 --- drivers/net/acenic.c.orig	Wed Mar 29 11:03:02 2000
-+++ drivers/net/acenic.c	Sat Apr  1 15:17:18 2000
++++ drivers/net/acenic.c	Sat Apr  1 15:17:36 2000
 @@ -276,6 +276,21 @@
  			printk(version);
  		}
@@ -1676,7 +1687,7 @@ Index: drivers/net/acenic.c
 
 Index: drivers/net/acenic.h
 --- drivers/net/acenic.h.orig	Wed Mar 29 11:03:02 2000
-+++ drivers/net/acenic.h	Sat Apr  1 13:17:24 2000
++++ drivers/net/acenic.h	Sat Apr  1 14:45:19 2000
 @@ -670,5 +670,15 @@
  static int ace_set_mac_addr(struct device *dev, void *p);
  static struct net_device_stats *ace_get_stats(struct device *dev);
@@ -1696,7 +1707,7 @@ Index: drivers/net/acenic.h
 
 Index: include/linux/signal.h
 --- include/linux/signal.h.orig	Thu Mar  2 18:27:42 2000
-+++ include/linux/signal.h	Wed Apr  5 17:00:49 2000
++++ include/linux/signal.h	Fri Apr 28 17:15:45 2000
 @@ -189,7 +189,7 @@
  		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
  		break;
@@ -1718,7 +1729,7 @@ Index: include/linux/signal.h
 
 Index: include/linux/skbuff.h
 --- include/linux/skbuff.h.orig	Thu Mar  2 18:27:42 2000
-+++ include/linux/skbuff.h	Sat Apr 22 15:31:21 2000
++++ include/linux/skbuff.h	Fri Apr 28 17:15:46 2000
 @@ -145,6 +145,7 @@
  extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
  extern struct sk_buff *		alloc_skb(unsigned int size, int priority);
