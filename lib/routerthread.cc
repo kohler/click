@@ -148,7 +148,11 @@ RouterThread::driver()
       // run a bunch of tasks
       int c = DRIVER_TASKS_PER_ITER;
       while ((t = scheduled_next()),
-	     t != this && c >= 0) {
+	     t != this && c >= 0
+#if 0
+	     && *runcount > 0
+#endif
+	     ) {
 	t->fast_unschedule();
 	t->call_hook();
 	c--;

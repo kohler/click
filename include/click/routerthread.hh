@@ -1,5 +1,5 @@
-#ifndef ROUTERTHREAD_HH
-#define ROUTERTHREAD_HH
+#ifndef CLICK_ROUTERTHREAD_HH
+#define CLICK_ROUTERTHREAD_HH
 #include <click/sync.hh>
 #include <click/vector.hh>
 #include <click/ewma.hh>
