@@ -25,8 +25,6 @@
 #include <click/error.hh>
 #include <click/llrpc.h>
 
-#include <limits.h>
-
 // TCPMapping
 
 TCPRewriter::TCPMapping::TCPMapping(bool dst_anno)

@@ -69,14 +69,14 @@ class MSQueue : public Element {
   void push(int port, Packet *);
   Packet *pull(int port);
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
   static void prefetch_packet(Packet *p);
 #endif
 #endif
 };
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
 inline void
 MSQueue::prefetch_packet(Packet *p)

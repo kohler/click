@@ -26,7 +26,6 @@
 #include <click/timer.hh>
 #include <click/router.hh>
 #include <click/llrpc.h>
-#include <limits.h>
 
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0), 

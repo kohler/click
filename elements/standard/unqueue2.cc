@@ -89,7 +89,7 @@ Unqueue2::run_scheduled()
     }
     else 
       p_next = 0;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
     if (p_next) {
       struct sk_buff *skb = p_next->steal_skb();

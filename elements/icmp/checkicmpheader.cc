@@ -25,7 +25,7 @@
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 

@@ -105,7 +105,7 @@ LookupIPRouteMP::push(int, Packet *p)
   IPAddress a = p->dst_ip_anno();
   IPAddress gw;
   int ifi = -1;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   int bucket = current->processor;
   struct cache_entry *e = &_cache[bucket];
 #else

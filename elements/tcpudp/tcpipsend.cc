@@ -22,7 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -119,7 +119,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   // now calculate tcp header cksum
   unsigned csum =
     ~click_in_cksum((unsigned char *)tcp, sizeof(click_tcp)) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   tcp->th_sum = csum_tcpudp_magic
     (ip->ip_src.s_addr, ip->ip_dst.s_addr, sizeof(click_tcp),
      IP_PROTO_TCP, csum);

@@ -25,7 +25,7 @@
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -114,7 +114,7 @@ CheckTCPHeader::simple_action(Packet *p)
     return drop(BAD_LENGTH, p);
 
   csum = ~click_in_cksum((unsigned char *)tcph, len) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
 			   len, IP_PROTO_TCP, csum);
   if (csum != 0)

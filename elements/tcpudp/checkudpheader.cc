@@ -24,7 +24,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -113,7 +113,7 @@ CheckUDPHeader::simple_action(Packet *p)
 
   if (udph->uh_sum != 0) {
     unsigned csum = ~click_in_cksum((unsigned char *)udph, len) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
     if (csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
 			  len, IP_PROTO_UDP, csum) != 0)
       return drop(BAD_CHECKSUM, p);

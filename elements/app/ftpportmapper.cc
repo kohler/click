@@ -222,7 +222,7 @@ FTPPortMapper::simple_action(Packet *p)
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
   unsigned csum = ~click_in_cksum((unsigned char *)wp_tcph, wp_tcp_len) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   csum = csum_tcpudp_magic(wp_iph->ip_src.s_addr, wp_iph->ip_dst.s_addr,
 			   wp_tcp_len, IP_PROTO_TCP, csum);
 #else

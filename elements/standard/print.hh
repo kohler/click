@@ -60,7 +60,7 @@ class Print : public Element { public:
   String _label;
   unsigned _bytes;		// How many bytes of a packet to print
   bool _timestamp : 1;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   bool _cpu : 1;
 #endif
   

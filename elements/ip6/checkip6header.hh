@@ -29,7 +29,7 @@ class CheckIP6Header : public Element {
 
   int _n_bad_src;
   IP6Address *_bad_src; // array of illegal IP6 src addresses.
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   bool _aligned;
 #endif
   int _drops;

@@ -24,7 +24,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 

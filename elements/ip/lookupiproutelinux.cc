@@ -39,7 +39,7 @@ LookupIPRouteLinux::LookupIPRouteLinux()
   add_input();
 
   _nout = 0;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   _out2dev = 0;
 #endif
 }
@@ -47,7 +47,7 @@ LookupIPRouteLinux::LookupIPRouteLinux()
 LookupIPRouteLinux::~LookupIPRouteLinux()
 {
   MOD_DEC_USE_COUNT;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   if(_out2dev)
     delete[] _out2dev;
 #endif
@@ -77,7 +77,7 @@ LookupIPRouteLinux::clone() const
   return new LookupIPRouteLinux;
 }
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 
 int
 LookupIPRouteLinux::init_routes(ErrorHandler *errh)
@@ -121,7 +121,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
   return(false);
 }
 
-#else /* !__KERNEL__ */
+#else /* !CLICK_LINUXMODULE */
 
 int
 LookupIPRouteLinux::init_routes(ErrorHandler *errh)
@@ -164,7 +164,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
   return _t.lookup(a, gw, ifi);
 }
 
-#endif /* __KERNEL__ */
+#endif /* CLICK_LINUXMODULE */
 
 void
 LookupIPRouteLinux::push(int, Packet *p)

@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 extern "C" {
 #include <linux/sched.h>
 }
@@ -48,7 +48,7 @@ int
 Print::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   bool timestamp = false;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   bool print_cpu = false;
 #endif
   String label;
@@ -61,7 +61,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 		  cpKeywords,
 		  "NBYTES", cpInteger, "max bytes to print", &bytes,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 		  "CPU", cpBool, "print CPU IDs?", &print_cpu,
 #endif
 		  cpEnd) < 0)
@@ -70,7 +70,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   _label = label;
   _bytes = bytes;
   _timestamp = timestamp;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   _cpu = print_cpu;
 #endif
   return 0;
@@ -86,7 +86,7 @@ Print::simple_action(Packet *p)
   }
 
   sa << _label;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   if (_cpu)
     sa << '(' << current->processor << ')';
 #endif

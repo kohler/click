@@ -161,7 +161,7 @@ mappings for completed TCP sessions.
 =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
 ICMPRewriter, ICMPPingRewriter */
 
-#if defined(__KERNEL__) && __MTCLICK__
+#if defined(CLICK_LINUXMODULE) && __MTCLICK__
 # define IPRW_SPINLOCKS 1
 # define IPRW_RWLOCKS 0
 #endif

@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -123,7 +123,7 @@ UDPIPEncap::simple_action(Packet *p_in)
   udp->uh_sum = 0;
   if (_cksum) {
     unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
     udp->uh_sum = csum_tcpudp_magic(_saddr.s_addr, _daddr.s_addr,
 				    len, IP_PROTO_UDP, csum);
 #else

@@ -19,7 +19,7 @@
 #include <click/iptable.hh>
 
 class LookupIPRouteMP : public Element {
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   static const int _cache_buckets = NR_CPUS;
 #else
   static const int _cache_buckets = 1;

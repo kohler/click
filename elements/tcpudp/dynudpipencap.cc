@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -68,7 +68,7 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   _cksum = do_cksum;
   _count = 0;
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   // check alignment
   {
     int ans, c, o;
@@ -104,13 +104,13 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
   ip->ip_ttl = 250;
 
   ip->ip_sum = 0;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   if (_aligned) {
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
   } else {
 #endif
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   }
 #endif
   
@@ -125,7 +125,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
   udp->uh_sum = 0;
   if (_cksum) {
     unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
     udp->uh_sum = csum_tcpudp_magic(_saddr.s_addr, _daddr.s_addr,
 				    len, IP_PROTO_UDP, csum);
 #else

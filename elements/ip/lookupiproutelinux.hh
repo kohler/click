@@ -58,11 +58,9 @@ private:
   int init_routes(ErrorHandler *);
   bool lookup(IPAddress, IPAddress &, int &);
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
   net_device **_out2dev; // dev ptr of each output.
-#endif
-
-#ifndef __KERNEL__
+#else
   IPTable _t;
 #endif
 };

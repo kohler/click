@@ -108,12 +108,10 @@ MSQueue::pull(int)
       Packet *p = _q[h];
       _q[h] = 0;
       _head = next_i(h);
-#if PREFETCH
-#ifdef __KERNEL__
-#if __i386__ && HAVE_INTEL_CPU
+#ifdef CLICK_LINUXMODULE
+#if __i386__ && HAVE_INTEL_CPU && PREFETCH
       h = _head.value();
       if (_q[h] != 0) prefetch_packet(_q[h]);
-#endif
 #endif
 #endif
       return p;

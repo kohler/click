@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
 
@@ -178,7 +178,7 @@ FastUDPSourceIP6::pull(int)
   }
 
   if(p) {
-    assert(_skb->users > 1);
+    assert(atomic_read(&_skb->users) > 1);
     _count++;
     if(_count == 1)
       _first = click_jiffies();

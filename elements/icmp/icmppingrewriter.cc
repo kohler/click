@@ -24,8 +24,6 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 
-#include <limits.h>
-
 ICMPPingRewriter::ICMPPingRewriter()
   : Element(1, 1), _request_map(0), _reply_map(0), _timer(this)
 {
