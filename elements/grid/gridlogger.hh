@@ -95,7 +95,7 @@ class GridLogger {
       struct grid_nbr_encap *nbr = (struct grid_nbr_encap *) (gh + 1);
       add_ip(gh->ip);
       add_ip(nbr->dst_ip);
-      add_bytes(eh->ether_shost, 6);
+      add_bytes(eh->ether_dhost, 6);
       log_special_pkt((struct click_ip *) (nbr + 1));
       break;
     }
