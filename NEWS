@@ -10,7 +10,8 @@ Version 1.0.5
   use a scheduler thread. In this case, ToDevice only sends packets when Linux
   asks it to do so via a notifier. Since Linux only calls the notifier in
   net_bh, there are no races.  When Click is running with a scheduler thread,
-  we synchronize ToDevice's send operation in kernel with a bit lock.
+  we synchronize ToDevice's send operation in kernel with a bit lock
+  (dev->tbusy).
 
 * RatedSource::run_scheduled() now places a dummy timer for 0 ms if it 
   has other things to do. In userlevel, this is needed because RatedSource
