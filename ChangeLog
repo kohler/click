@@ -1,3 +1,7 @@
+2004-07-23 Friday 00:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.24), configure.in (1.242): fix @WIFI_INCLUDES@
+
 2004-07-22 Thursday 21:48  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.119): reduce crap involved in calling
