@@ -1,3 +1,8 @@
+2001-05-25 Friday 19:49  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/linux-2.2.18-patch (1.4): get rid of register_net_out; we
+	don't use it any more
+
 2001-05-24 Thursday 20:03  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* LICENSE (1.4), elements/app/ftpportmapper.cc (1.14),
