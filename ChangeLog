@@ -1,3 +1,27 @@
+2004-04-29 Thursday 01:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: storedata.cc (1.1), storedata.hh (1.1): add
+	StoreData element
+
+2004-04-29 Thursday 01:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/randomsample.hh (1.7): doclet
+
+2004-04-29 Thursday 01:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/: comparepackets.cc (1.2), comparepackets.hh (1.2):
+	add TIMESTAMP keyword argument
+
+2004-04-29 Thursday 01:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: eraseippayload.cc (1.1), eraseippayload.hh
+	(1.1): add EraseIPPayload element
+
+2004-04-29 Thursday 01:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: anonipaddr.cc (1.11), anonipaddr.hh (1.7):
+	handle embedded headers in ICMP packets
+
 2004-04-28 Wednesday 17:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/drivermanager.cc (1.28),
