@@ -1,3 +1,15 @@
+2002-05-09 Thursday 16:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.54), tools/build-grid-config.sh (1.7),
+	tools/grid-params.m4 (1.5), tools/run-grid (1.14): geographic
+	forwarding must now be explicitly specified in
+	/usr/grid/grid-config
+
+2002-05-09 Thursday 16:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.47), gridroutetable.hh
+	(1.26): added ability to freeze'' protocol activity
+
 2002-05-09 Thursday 11:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/todevice.cc (1.26): remember to save errno
