@@ -138,6 +138,7 @@ esac
 
 # do stuff
 if test "x$package" != "xNONE"; then
+  command="$command -DCLICK_PACKAGE"
   for file; do
     echo $command $file 1>&2
     eval $command $file || exit 1
