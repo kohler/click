@@ -1,3 +1,57 @@
+2004-06-16 Wednesday 21:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/userlevel/uhotswap-01.testie (1.1): add regression test for
+	user-level hotswapping
+
+2004-06-16 Wednesday 21:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.92): Fix user-level hotswaps: It doesn't
+	make sense for the "hotswap_thunk_router" to have runcount 0; that
+	caused it to be removed from the Master.  Instead, run it in the
+	"background".  Also, the "warning: configuration has no elements"
+	warning is printed only if Click will exit as a result; add an
+	explicit ", exiting" comment to that warning.
+
+2004-06-16 Wednesday 21:22  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/master.hh (1.6), include/click/router.hh (1.58),
+	lib/master.cc (1.14), lib/router.cc (1.162), lib/task.cc (1.32):
+	Fix user-level hotswaps: Now a router can run "in the background"
+	or "in the foreground".  The Master driver loop will exit once all
+	"foreground routers" are dead, regardless of the state of any
+	"background routers".
+
+2004-06-16 Wednesday 21:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/confparse.cc (1.129): nit
+
+2004-06-16 Wednesday 21:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: controlsocket.cc (1.50), controlsocket.hh
+	(1.36): process at most one command per ControlSocket::selected()
+	invocation.  This avoids oddities such as if the user writes  a
+	"write hotconfig" and a "read WHATEVER" in quick succession;
+	previously, these commands would both be executed *within the same
+	router* (the original ControlSocket); and it also seems more
+	sensible in terms fo fairness among different connections
+
+2004-06-16 Wednesday 21:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.33),
+	include/click/standard/drivermanager.hh (1.22): the "wait_time"
+	instruction now has microsecond, not millisecond, precision
+
+2004-06-16 Wednesday 21:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/timer.hh (1.22), lib/timer.cc (1.32): define
+	Timer::schedule_after(const timeval &)
+
+2004-06-16 Wednesday 21:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/testie (1.29): use "trap ERR" instead of explicit "||
+	testie_failed $?" syntax; the new style is more robust to shell
+	constructs like functions (but it may not be as portable)
+
 2004-06-16 Wednesday 09:57  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.6): added SFS port to the port list.
