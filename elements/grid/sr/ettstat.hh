@@ -122,7 +122,7 @@ private:
 public:
   IPAddress _ip;
   IPAddress reverse_arp(EtherAddress);
-
+  void take_state(Element *, ErrorHandler *);
 private:
   class ETTMetric *_ett_metric;
   class ARPTable *_arp_table;

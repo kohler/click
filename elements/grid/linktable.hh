@@ -64,6 +64,7 @@ public:
   int initialize(ErrorHandler *);
   void run_timer();
   int configure(Vector<String> &conf, ErrorHandler *errh);
+  void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);
   /* read/write handlers */
   static String static_print_routes(Element *e, void *);

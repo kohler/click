@@ -64,6 +64,14 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
+void 
+ARPTable::take_state(Element *e, ErrorHandler *)
+{
+  ARPTable *q = (ARPTable *)e->cast("ARPTable");
+  if (!q) return;
+  _table = q->_table;
+  _rev_table = q->_rev_table;
+}
 EtherAddress 
 ARPTable::lookup(IPAddress ip)
 {

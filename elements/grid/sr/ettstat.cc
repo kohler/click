@@ -113,6 +113,19 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
+void
+ETTStat::take_state(Element *e, ErrorHandler *)
+{
+  ETTStat *q = (ETTStat *)e->cast("ETTStat");
+  if (!q) return;
+  
+  _neighbors = q->_neighbors;
+  _bcast_stats = q->_bcast_stats;
+  _rev_arp = q->_rev_arp;
+  _seq = q->_seq;
+  _sent = q->_sent;
+}
+
 void add_jitter(unsigned int max_jitter, struct timeval *t) {
   struct timeval jitter;
   unsigned j = (unsigned) (random() % (max_jitter + 1));

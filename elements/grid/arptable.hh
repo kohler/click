@@ -29,7 +29,7 @@ class ARPTable : public Element { public:
   bool can_live_reconfigure() const		{ return true; }
 
   void add_handlers();
-
+  void take_state(Element *e, ErrorHandler *);
   static String static_print_mappings(Element *e, void *);
   String print_mappings();
   static int static_insert(const String &arg, Element *e,

@@ -75,7 +75,13 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-
+void
+ETTMetric::take_state(Element *e, ErrorHandler *)
+{
+  ETTMetric *q = (ETTMetric *)e->cast("ETTMetric");
+  if (!q) return;
+  _links = q->_links;
+}
 int 
 ETTMetric::get_tx_rate(EtherAddress eth) 
 {

@@ -65,7 +65,7 @@ public:
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }
-
+  void take_state(Element *, ErrorHandler *);
   void add_handlers();
 
   void *cast(const char *);
