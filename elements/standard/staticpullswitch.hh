@@ -5,17 +5,18 @@
 /*
  * =c
  * StaticPullSwitch(K)
- * =s pulls packets from fixed input
+ * =s forwards pull requests to fixed input
  * V<packet scheduling>
  * =d
  *
- * On every pull, PullSwitch returns the packet pulled from one of its input
- * ports -- specifically, input number K. Negative Ks mean always return a
- * null packet. PullSwitch has an unlimited number of inputs.
+ * On every pull, StaticPullSwitch returns the packet pulled from one of its
+ * input ports -- specifically, input number K. Negative Ks mean always return
+ * a null packet. StaticPullSwitch has an unlimited number of inputs.
  *
  * =n
- * StaticSwitch differs from Switch in that it has no C<switch> write handler,
- * and thus does not allow K to be changed at run time.
+ *
+ * StaticPullSwitch differs from PullSwitch in that it has no C<switch> write
+ * handler, and thus does not allow K to be changed at run time.
  *
  * =a PullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch */
 

@@ -86,8 +86,10 @@ Specializer::parse_source_file(const String &fn, bool is_header,
     String text;
     if (_router->archive_index(fn) >= 0)
       text = _router->archive(fn).data;
-    else
-      text = file_string(CLICK_SHAREDIR "/src/" + fn);
+    else {
+      if (String found = clickpath_find_file(fn, 0, CLICK_SHAREDIR "/src"))
+	text = file_string(found);
+    }
     _cxxinfo.parse_file(text, is_header, includes);
     _parsed_sources.insert(fn, 1);
   }

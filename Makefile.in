@@ -13,6 +13,7 @@ top_builddir = .
 subdir = .
 AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
+PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -20,6 +21,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
+bindir = @bindir@
 
 all: @TARGETS@ tools Makefile
 
@@ -29,13 +31,17 @@ userlevel: Makefile
 	@cd userlevel && $(MAKE) all
 exopc: Makefile
 	@cd exopc && $(MAKE) all
-tools: Makefile
+tools: Makefile elementmap
 	@cd tools && $(MAKE) all
 
-install:
-	@for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install) || exit 1; done
+install: elementmap click-compile
+	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
+	$(mkinstalldirs) $(bindir)
+	@chmod +x click-compile
+	$(INSTALL) click-compile $(bindir)/click-compile
+	@(cd doc && $(MAKE) install)
 	@$(MAKE) install-include
-install-doc:
+install-doc: elementmap
 	@cd doc && $(MAKE) install
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
@@ -45,6 +51,14 @@ install-include:
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
+
+elementmap: mkelementmap.pl
+	/bin/sh $(top_srcdir)/findelements.sh -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > elementmap
+
+click-compile: click-compile.in
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x click-compile; touch click-compile
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 	cd $(srcdir) && $(AUTOHEADER)
@@ -60,10 +74,11 @@ check-filenames:
 
 clean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) clean); done
+	-rm -f elementmap
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
-	-rm -f config.cache config.log mkelemlist.sh
+	-rm -f config.cache config.log mkelemlist.sh click-compile
 
 
 distdir = $(PACKAGE)-$(VERSION)

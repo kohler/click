@@ -6,7 +6,7 @@
  * =c
  * RandomSource(LENGTH)
  * =s
- * generates packets whenever scheduled
+ * generates random packets whenever scheduled
  * V<sources>
  * =d
  * Creates packets, of the indicated length, filled with random bytes.

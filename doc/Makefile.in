@@ -23,7 +23,7 @@ Makefile: $(srcdir)/Makefile.in
 
 install: install-man
 	$(mkinstalldirs) $(datadir)
-	/bin/sh $(top_srcdir)/findelements.sh -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
+	$(INSTALL_DATA) $(top_builddir)/elementmap $(datadir)/elementmap
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
 	/bin/rm -rf $(datadir)/src
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src

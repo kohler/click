@@ -352,7 +352,7 @@ particular purpose.\n");
     String elementmap_fn =
       clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
     if (!elementmap_fn)
-      p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
+      p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR);
     else
       full_elementmap.parse(file_string(elementmap_fn, errh));
   }

@@ -679,7 +679,7 @@ EOD;
   one_summary('Duplication',		sub { $s->{$_} =~ /\bduplication\b/i });
   one_summary('Storage',		sub { $s->{$_} =~ /\bstorage\b/i });
   one_summary('Dropping',		sub { $s->{$_} =~ /\bdropping\b/i });
-  one_summary('Packet Scheduling',	sub { $s->{$_} =~ /\bpacket\s+scheduling\b|\bpull-to-push\b/i });
+  one_summary('Packet Scheduling',	sub { $s->{$_} =~ /\bpacket\s+scheduling\b/i });
   one_summary('Encapsulation',		sub { $s->{$_} =~ /\bencapsulation\b/i });
   one_summary('Modification',		sub { $s->{$_} =~ /\bmodification\b/i });
   one_summary('Annotations',		sub { $s->{$_} =~ /\bannotations?\b/i });

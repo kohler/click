@@ -5,7 +5,7 @@
 /*
  * =c
  * PullSwitch([K])
- * =s pulls packets from settable input
+ * =s forwards pull requests to settable input
  * V<packet scheduling>
  * =d
  *
@@ -17,7 +17,7 @@
  * =h switch read/write
  * Return or set the K parameter.
  *
- * =a PrioSched, RoundRobinSched, StrideSched, Switch
+ * =a StaticPullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch
  */
 
 class PullSwitch : public Element {

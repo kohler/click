@@ -5,12 +5,13 @@
 /*
  * =c
  * PullToPush([BURSTSIZE])
- * =s pull-to-push converter
+ * =s
+ * old name for Unqueue
+ * V<packet scheduling>
  * =d
- * Pulls packets whenever they are available, then pushes them out
- * its single output. Pulls a maximum of BURSTSIZE packets every time
- * it is scheduled. Default BURSTSIZE is 1.
- */
+ * This is the old name for the Unqueue element. You should use Unqueue
+ * instead.
+ * =a Unqueue */
 
 class PullToPush : public Element {
 

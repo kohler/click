@@ -39,7 +39,7 @@ HashDemux::notify_noutputs(int i)
 int
 HashDemux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("HashDemux has been renamed; use HashSwitch instead");
+  errh->error("HashDemux has been renamed; use HashSwitch instead\n(HashDemux will be removed entirely in the next release.)");
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "byte offset", &_offset,
 		  cpUnsigned, "number of bytes", &_length,

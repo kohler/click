@@ -44,49 +44,20 @@ Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "max allowable rate", &rate,
 		  0) < 0)
     return -1;
-
-  unsigned one_sec = (1000000U << UGAP_SHIFT);
-  if (rate > one_sec) {
-    // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
-    errh->error("rate too large; lowered to %u", one_sec);
-    rate = one_sec;
-  }
-
-  _ugap = one_sec / rate;
-  _count = 0;
-  _rate = rate;
-  return 0;
-}
-
-int
-Shaper::initialize(ErrorHandler *)
-{
-  struct timeval now;
-  click_gettimeofday(&now);
-  _tv_sec = now.tv_sec;
-  _count = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  _rate.set_rate(rate, errh);
   return 0;
 }
 
 Packet *
 Shaper::pull(int)
 {
-  struct timeval now;
   Packet *p = 0;
-  
+  struct timeval now;
   click_gettimeofday(&now);
-  if (now.tv_sec > _tv_sec) {
-    _tv_sec = now.tv_sec;
-    if (_count > 0)
-      _count -= _rate;
-  }
-
-  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
-  if ((int)need >= _count) {
+  if (_rate.need_update(now)) {
     if ((p = input(0).pull()))
-      _count++;
+      _rate.update();
   }
-  
   return p;
 }
 

@@ -25,6 +25,22 @@ Version 1.1
 ** Changed the third argument to RatedSource. Used to be a duration to send
    packets; now it is the number of packets to send.
 
+** The following elements have been renamed. Hopefully this will never
+   happen again.
+
+	OLD			NEW
+	CheckPaint*		PaintTee
+	HashDemux*		HashSwitch
+	Meter			BandwidthMeter
+	PacketMeter		Meter
+	PacketShaper		Shaper
+	PullToPush*		Unqueue
+	SetIPAddress+		StoreIPAddress
+	Shaper			BandwidthShaper
+
+   *Old element name may still be used for this release, but is deprecated.
+   +A new element has taken the name SetIPAddress.
+
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
    SetIPAddress element.
 
@@ -35,6 +51,8 @@ Version 1.1
    per second are now named BandwidthMeter and BandwidthShaper. The
    elements that measure packets per second have taken the names Meter and
    Shaper.
+
+** Renamed the PullToPush and Burster elements to Unqueue and BurstUnqueue.
 
 ** Removed the SaveIPFields and IPsec elements (they were rotting).
 
@@ -155,9 +173,11 @@ Version 1.1
 
 ** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier,
    IPFilter, IPPrint, FTPPortMapper, IPRewriterPatterns, Switch,
-   PullSwitch, RoundRobinSwitch, and StrideSwitch, among others. Also
-   mentioned above: user-level FromDevice, ToDevice, and ControlSocket;
-   kernel module ToLinuxSniffers; generic SetIPAddress, StoreIPAddress.
+   PullSwitch, StaticSwitch, StaticPullSwitch, RoundRobinSwitch,
+   StrideSwitch, RatedSplitter, BandwidthRatedSplitter, RatedUnqueue, and
+   BandwidthRatedUnqueue, among others. Also mentioned above: user-level
+   FromDevice, ToDevice, and ControlSocket; kernel module ToLinuxSniffers;
+   generic SetIPAddress, StoreIPAddress.
 
 ** Added AddressInfo element, which supports network address mnemonics. For
    example, you can now say `AddressInfo(butt 18.26.4.44); IPEncap(6, butt,

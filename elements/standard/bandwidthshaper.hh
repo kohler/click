@@ -7,15 +7,17 @@
  * BandwidthShaper(RATE)
  * =s shapes traffic to maximum rate (bytes/s) 
  * V<packet scheduling>
+ * =processing
+ * Push inputs, pull outputs
  * =d
  *
- * BandwidthShaper is a pull element that allows a maxmimum of RATE bytes per
+ * BandwidthShaper is a pull element that allows a maximum of RATE bytes per
  * second to pass through. That is, output traffic is shaped to RATE bytes per
  * second. If a BandwidthShaper receives a large number of evenly-spaced pull
  * requests, then it will emit packets at the specified RATE with low
  * burstiness.
  *
- * =a Shaper, RatedSplitter */
+ * =a Shaper, BandwidthRatedSplitter, BandwidthRatedUnqueue */
 
 class BandwidthShaper : public Shaper {
 
@@ -24,8 +26,6 @@ class BandwidthShaper : public Shaper {
   BandwidthShaper()				{ }
   
   const char *class_name() const                { return "BandwidthShaper"; }
-  const char *processing() const		{ return PULL; }
-
   BandwidthShaper *clone() const;
 
   Packet *pull(int);

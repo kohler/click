@@ -323,7 +323,7 @@ dnl
 TARGETS=
 AC_SUBST(TARGETS)
 TOOLDIRS="click-align click-check click-combine click-devirtualize click-fastclassifier click-install click-undead click-xform udpgen"
-TOOL_TARGETS="click-align click-check click-combine click-compile click-devirtualize click-fastclassifier click-undead click-xform"
+TOOL_TARGETS="click-align click-check click-combine click-devirtualize click-fastclassifier click-undead click-xform"
 if test -d $srcdir/tools/click-ipopt; then
   TOOLDIRS="$TOOLDIRS click-ipopt"
   TOOL_TARGETS="$TOOLDIRS click-ipopt"
@@ -462,7 +462,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh tools/Makefile tools/lib/Makefile tools/click-compile doc/Makefile"
+config_files="Makefile mkelemlist.sh click-compile tools/Makefile tools/lib/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

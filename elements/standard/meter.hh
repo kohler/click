@@ -22,6 +22,13 @@
  * are sent to output 0; if it is >= RATE1 but < RATE2, packets are sent to
  * output 1; and so on. If it is >= RATEI<n>, packets are sent to output I<n>.
  *
+ * =n
+ *
+ * The entire packet stream is sent to the output corresponding to the current
+ * rate. If you would like the packet stream to be split, with at most RATE1
+ * packets per second being sent out the first output and the remainder being
+ * sent to the second output, check out RatedSplitter.
+ *
  * =e
  *
  * This configuration fragment drops the input stream when it is generating

@@ -26,7 +26,7 @@ CheckPaint::clone() const
 int
 CheckPaint::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("CheckPaint has been renamed; use PaintTee instead");
+  errh->error("CheckPaint has been renamed; use PaintTee instead\n(CheckPaint will be removed entirely in the next release.)");
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,
 		  0) < 0)

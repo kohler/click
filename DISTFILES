@@ -9,6 +9,7 @@ README
 
 Makefile.in
 acconfig.h
+click-compile.in
 config.h.in
 configure.in
 configure
@@ -18,6 +19,7 @@ mkinstalldirs
 findelements.sh
 mkelemlist.sh.in
 mkelemconf.sh
+mkelementmap.pl
 
 doc
 doc/Makefile.in
@@ -34,7 +36,6 @@ doc/click-undead.1
 doc/click-uninstall.1
 doc/click-xform.1
 doc/element2man.pl
-doc/mkelementmap.pl
 doc/Element.3
 doc/Connection.3
 doc/elementdoc.7
@@ -93,6 +94,8 @@ lib/etheraddress.cc
 lib/etheraddress.hh
 lib/ewma.cc
 lib/ewma.hh
+lib/gaprate.cc
+lib/gaprate.hh
 lib/glue.cc
 lib/glue.hh
 lib/hashmap.cc
@@ -160,7 +163,6 @@ apps/ClickController
 apps/ClickController/README
 apps/ClickController/ClickController.java
 apps/ClickController/ControlSocket.java
-apps/ClickController/HandlerSelector.java
 apps/ClickController/NewConnectionDialog.java
 apps/ClickController/RouterTreeModel.java
 apps/ClickController/Util.java

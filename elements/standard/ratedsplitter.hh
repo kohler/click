@@ -1,7 +1,7 @@
 #ifndef RATEDSPLITTER_HH
 #define RATEDSPLITTER_HH
 #include "element.hh"
-#include "ewma.hh"
+#include "gaprate.hh"
 
 /*
  * =c
@@ -35,21 +35,16 @@
  * =h rate read/write
  * rate of splitting
  *
- * =a Tee, ProbSplitter, Meter, Shaper, SlowShaper */
+ * =a BandwidthRatedSplitter, ProbSplitter, Meter, Shaper, RatedUnqueue, Tee */
 
-class RatedSplitter : public Element {
+class RatedSplitter : public Element { protected:
 
-  static const unsigned UGAP_SHIFT = 12;
-  
-  unsigned _rate;
-  unsigned _ugap;
-  int _sec_count;
-  int _tv_sec;
+  GapRate _rate;
 
  public:
   
-  RatedSplitter() : Element(1,2)		{}
-  ~RatedSplitter() 				{}
+  RatedSplitter() : Element(1, 2)		{ }
+  ~RatedSplitter() 				{ }
   RatedSplitter *clone() const			{ return new RatedSplitter; }
 
   const char *class_name() const		{ return "RatedSplitter"; }
@@ -59,7 +54,7 @@ class RatedSplitter : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   void push(int port, Packet *);
   
-  unsigned get_rate() const			{ return _rate; }
+  unsigned rate() const				{ return _rate.rate(); }
   void set_rate(unsigned r, ErrorHandler * = 0);
 
 };

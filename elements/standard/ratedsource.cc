@@ -50,16 +50,8 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  0) < 0)
     return -1;
   
-  unsigned one_sec = 1000000 << UGAP_SHIFT;
-  if (rate > one_sec) {
-    // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
-    errh->error("rate too large; lowered to %u", one_sec);
-    rate = one_sec;
-  }
-
   _data = data;
-  _rate = rate;
-  _ugap = one_sec / (rate > 1 ? rate : 1);
+  _rate.set_rate(rate, errh);
   _limit = (limit >= 0 ? limit : NO_LIMIT);
   _active = active;
   
@@ -75,8 +67,7 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 RatedSource::initialize(ErrorHandler *errh)
 {
-  _count = _sec_count = 0;
-  _tv_sec = -1;
+  _count = 0;
   ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
@@ -97,30 +88,10 @@ RatedSource::run_scheduled()
   
   struct timeval now;
   click_gettimeofday(&now);
-  
-  if (_tv_sec < 0) {
-    _tv_sec = now.tv_sec;
-    _sec_count = (now.tv_usec << UGAP_SHIFT) / _ugap;
-  } else if (now.tv_sec > _tv_sec) {
-    _tv_sec = now.tv_sec;
-    if (_sec_count > 0)
-      _sec_count -= _rate;
-  }
-
-  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
-  if ((int)need > _sec_count) {
-#if DEBUG_RATEDSOURCE
-    static struct timeval last;
-    if (last.tv_sec) {
-      struct timeval diff;
-      timersub(&now, &last, &diff);
-      click_chatter("%d.%06d  (%d)", diff.tv_sec, diff.tv_usec, now.tv_sec);
-    }
-    last = now;
-#endif
+  if (_rate.need_update(now)) {
+    _rate.update();
     output(0).push(_packet->clone());
     _count++;
-    _sec_count++;
   }
 
   reschedule();
@@ -135,7 +106,7 @@ RatedSource::read_param(Element *e, void *vparam)
    case 0:			// data
     return rs->_data;
    case 1:			// rate
-    return String(rs->_rate) + "\n";
+    return String(rs->_rate.rate()) + "\n";
    case 2:			// limit
     return (rs->_limit != NO_LIMIT ? String(rs->_limit) + "\n" : String("-1\n"));
    case 3:			// active
@@ -159,14 +130,11 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      unsigned rate;
      if (!cp_unsigned(s, &rate))
        return errh->error("rate parameter must be integer >= 0");
-     unsigned one_sec = 1000000 << UGAP_SHIFT;
-     if (rate > one_sec)
-       // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
-       return errh->error("rate too large (max is %u)", one_sec);
+     if (rate > GapRate::MAX_RATE)
+       // report error rather than pin to max
+       return errh->error("rate too large; max is %u", GapRate::MAX_RATE);
+     rs->_rate.set_rate(rate);
      rs->set_configuration_argument(1, in_s);
-     rs->_rate = rate;
-     rs->_ugap = one_sec / (rate > 1 ? rate : 1);
-     rs->_tv_sec = -1;
      break;
    }
 
@@ -184,7 +152,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
        return errh->error("active parameter must be boolean");
      rs->_active = active;
      if (!rs->scheduled() && active) {
-       rs->_tv_sec = -1;
+       rs->_rate.reset();
        rs->reschedule();
      }
      break;
@@ -192,7 +160,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 5: {			// reset
      rs->_count = 0;
-     rs->_tv_sec = -1;
+     rs->_rate.reset();
      if (!rs->scheduled() && rs->_active)
        rs->reschedule();
      break;

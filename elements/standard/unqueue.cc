@@ -1,5 +1,5 @@
 /*
- * pulltopush.{cc,hh} -- element pulls as many packets as possible from
+ * unqueue.{cc,hh} -- element pulls as many packets as possible from
  * its input, pushes them out its output
  * Eddie Kohler
  *
@@ -14,15 +14,13 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "pulltopush.hh"
+#include "unqueue.hh"
 #include "confparse.hh"
-#include "error.hh"
 #include "elements/standard/scheduleinfo.hh"
 
 int
-PullToPush::configure(const Vector<String> &conf, ErrorHandler *errh)
+Unqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("PullToPush has been renamed; use Unqueue instead\n(PullToPush will be removed entirely in the next release.)");
   _burst = 1;
   return cp_va_parse(conf, this, errh,
 		     cpOptional,
@@ -31,20 +29,20 @@ PullToPush::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-PullToPush::initialize(ErrorHandler *errh)
+Unqueue::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 
 void
-PullToPush::uninitialize()
+Unqueue::uninitialize()
 {
   unschedule();
 }
 
 void
-PullToPush::run_scheduled()
+Unqueue::run_scheduled()
 {
   // XXX reduce # of tickets if idle
   for (int i = 0; i < _burst; i++)
@@ -53,4 +51,4 @@ PullToPush::run_scheduled()
   reschedule();
 }
 
-EXPORT_ELEMENT(PullToPush)
+EXPORT_ELEMENT(Unqueue)

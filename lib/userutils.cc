@@ -275,20 +275,23 @@ path_find_file_2(const String &filename, String path, String &default_path,
       if (s) return s;
       
     } else if (dir) {
-      if (dir.back() != '/') dir += "/";
+      if (dir.back() != '/') dir += "/"; 
+      // look for `dir/filename'
+      String name = dir + filename;
+      //fprintf(stderr, "%s\n", name.cc());
+      if (access(name.cc(), F_OK) >= 0)
+	return name;
       // look for `dir/subdir/filename' and `dir/subdir/click/filename'
       if (subdir) {
-	String name = dir + subdir + filename;
+	name = dir + subdir + filename;
+	//fprintf(stderr, "%s\n", name.cc());
 	if (access(name.cc(), F_OK) >= 0)
 	  return name;
 	name = dir + subdir + "click/" + filename;
+	//fprintf(stderr, "%s\n", name.cc());
 	if (access(name.cc(), F_OK) >= 0)
 	  return name;
       }
-      // look for `dir/filename'
-      String name = dir + filename;
-      if (access(name.cc(), F_OK) >= 0)
-	return name;
     }
     
     if (colon < 0) return String();
@@ -317,17 +320,13 @@ clickpath_find_file(const String &filename, const char *subdir,
     // three error messages for three different situations:
     if (default_path) {
       // CLICKPATH set, left no opportunity to use default path
-      errh->message("cannot find file `%s'", String(filename).cc());
-      errh->fatal("in CLICKPATH `%s'", path);
+      errh->fatal("cannot find file `%s'\nin CLICKPATH `%s'", String(filename).cc(), path);
     } else if (!path) {
       // CLICKPATH not set
-      errh->message("cannot find file `%s'", String(filename).cc());
-      errh->fatal("in installed location `%s'", was_default_path.cc());
-      errh->fatal("(try setting the CLICKPATH environment variable)");
+      errh->fatal("cannot find file `%s'\nin installed location `%s'\n(Try setting the CLICKPATH environment variable.)", String(filename).cc(), was_default_path.cc());
     } else {
       // CLICKPATH set, left opportunity to use default pathb
-      errh->message("cannot find file `%s'", String(filename).cc());
-      errh->fatal("in CLICKPATH or `%s'", was_default_path.cc());
+      errh->fatal("cannot find file `%s'\nin CLICKPATH or `%s'", String(filename).cc(), was_default_path.cc());
     }
   }
   return s;

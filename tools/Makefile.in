@@ -49,22 +49,13 @@ Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
-click-compile: $(srcdir)/click-compile.in
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
-	@chmod +x click-compile; touch click-compile
-
 clean:
 	@-for d in lib $(TOOLDIRS); do (cd $$d && $(MAKE) clean); done
 distclean:
 	@-for d in lib $(TOOLDIRS); do (cd $$d && $(MAKE) distclean); done
-	-rm -f Makefile click-compile
+	-rm -f Makefile
 
-install: install-subdirs install-local
-install-local: click-compile
-	$(mkinstalldirs) $(bindir)
-	@chmod +x click-compile
-	$(INSTALL) click-compile $(bindir)/click-compile
+install: install-subdirs
 install-subdirs: lib
 	@for d in $(TARGETS); do (cd $$d 2>/dev/null && $(MAKE) install); done
 
@@ -84,7 +75,6 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-check/click-check.cc \
 	click-combine/Makefile.in \
 	click-combine/click-combine.cc click-combine/click-uncombine.cc \
-	click-compile.in \
 	click-devirtualize/Makefile.in \
 	click-devirtualize/click-devirtualize.cc \
 	click-devirtualize/cxxclass.cc click-devirtualize/cxxclass.hh \
