@@ -702,6 +702,24 @@ read_task_tickets(Element *e, void *thunk)
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   return String(task->tickets()) + "\n";
 }
+
+static int
+write_task_tickets(const String &s, Element *e, void *thunk, ErrorHandler *errh)
+{
+  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
+  int tix;
+  if (!cp_integer(cp_uncomment(s), &tix))
+    return errh->error("'tickets' takes an integer between 1 and %d", Task::MAX_TICKETS);
+  if (tix < 1) {
+    errh->warning("tickets pinned at 1");
+    tix = 1;
+  } else if (tix > Task::MAX_TICKETS) {
+    errh->warning("tickets pinned at %d", Task::MAX_TICKETS);
+    tix = Task::MAX_TICKETS;
+  }
+  task->set_tickets(tix);
+  return 0;
+}
 #endif
 
 static String
@@ -727,6 +745,7 @@ Element::add_task_handlers(Task *task, const String &prefix)
   void *thunk = (void *)task_offset;
 #ifdef HAVE_STRIDE_SCHED
   add_read_handler(prefix + "tickets", read_task_tickets, thunk);
+  add_write_handler(prefix + "tickets", write_task_tickets, thunk);
 #endif
   add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
 #if __MTCLICK__
