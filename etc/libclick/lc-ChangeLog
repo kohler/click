@@ -1,3 +1,9 @@
+2001-10-08 Monday 14:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc:
+	header cleanups, and add click_random_srandom() function to set the
+	random seed to a random value
+
 2001-10-07 Sunday 22:48  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/router.cc: nitlet

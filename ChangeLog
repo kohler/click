@@ -1,3 +1,19 @@
+2001-10-08 Monday 14:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh (1.21), lib/glue.cc (1.26): header
+	cleanups, and add click_random_srandom() function to set the random
+	seed to a random value
+
+2001-10-08 Monday 14:13  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/probsplitter.cc (1.12): nitlet (compiler
+	warning)
+
+2001-10-08 Monday 12:43  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.46): change cast to avoid
+	possibly casting a 64-bit integer to 32 bits
+
 2001-10-08 Monday 03:49  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/iprw.cc (1.38): buglet fix
