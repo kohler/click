@@ -166,6 +166,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
 int
 Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 {
+  assert(from_idx >= 0 && from_port >= 0 && to_idx >= 0 && to_port >= 0);
   if (_preinitialized) return -1;
   Hookup hfrom(from_idx, from_port);
   Hookup hto(to_idx, to_port);
@@ -1164,28 +1165,32 @@ Router::wait()
   fd_set write_mask = _write_select_fd_set;
   bool selects = (_selectors.size() > 0);
 
-  struct timeval wait, *wait_ptr = &wait;
+  struct timeval wait;
   bool timers = _timer_head.get_next_delay(&wait);
   if (!selects && !timers)
     return;
   
-  // never wait if anything is scheduled
-  // otherwise, if no timers, block indefinitely
-  if (scheduled_next() != this)
-    wait.tv_sec = wait.tv_usec = 0;
-  else if (!timers)
-    wait_ptr = 0;
+  // don't bother to call select() if no selects.
+  if (selects || scheduled_next() == this) {
+    // never wait if anything is scheduled;
+    // otherwise, if no timers, block indefinitely.
+    struct timeval *wait_ptr = &wait;
+    if (scheduled_next() != this)
+      wait.tv_sec = wait.tv_usec = 0;
+    else if (!timers)
+      wait_ptr = 0;
 
-  int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
-  
-  if (n < 0 && errno != EINTR)
-    perror("select");
-  else if (n > 0) {
-    for (int i = 0; i < _selectors.size(); i++) {
-      const Selector &s = _selectors[i];
-      if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
-	  || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
-	_elements[s.element]->selected(s.fd);
+    int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
+    
+    if (n < 0 && errno != EINTR)
+      perror("select");
+    else if (n > 0) {
+      for (int i = 0; i < _selectors.size(); i++) {
+	const Selector &s = _selectors[i];
+	if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
+	    || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
+	  _elements[s.element]->selected(s.fd);
+      }
     }
   }
   
@@ -1207,7 +1212,11 @@ Router::driver()
 {
   ElementLink *l;
   while (1) {
+#if CLICK_USERLEVEL
+    int c = 5000;
+#else
     int c = 10000;
+#endif
     while (l = scheduled_next(), l != this && !_please_stop_driver && c >= 0) {
       l->unschedule();
       ((Element *)l)->run_scheduled();
