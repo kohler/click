@@ -129,8 +129,8 @@ dnl
 dnl build userlevel? Linux module? are we compiling on Linux?
 dnl
 
-AC_ARG_ENABLE(userlevel, [  --enable-userlevel      enable user-level driver [yes]], :, enable_userlevel=yes)
-AC_ARG_ENABLE(linuxmodule, [  --enable-linuxmodule    enable Linux kernel driver [yes]], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
+AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
@@ -162,6 +162,58 @@ AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
 #endif
 return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
 
+dnl
+dnl make FLAGS variables without `-g'
+dnl
+
+CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
+CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
+AC_SUBST(CFLAGS_NDEBUG)
+AC_SUBST(CXXFLAGS_NDEBUG)
+
+dnl
+dnl functions, types
+dnl
+
+AC_REPLACE_FUNCS(strerror)
+AC_CHECK_FUNCS(strtoul)
+
+AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_underscore_t,
+[AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_u_underscore_t=yes, ac_cv_u_underscore_t=no)])
+if test $ac_cv_u_underscore_t = no; then
+  AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_u_t,
+[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_u_t=yes, ac_cv_u_t=no)])
+  if test $ac_cv_u_t = no; then
+    AC_MSG_ERROR("neither u_int32_t or uint32_t is defined by <sys/types.h>!")
+  else
+    AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT_TYPES, 1)
+  fi
+fi
+
+AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
+
+if test "x$enable_int64" = xyes; then
+  AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
+[AC_EGREP_HEADER(int64_t, sys/types.h, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
+  AC_CACHE_CHECK(for u_int64_t typedef, ac_cv_u_int64_t,
+[AC_EGREP_HEADER(u_int64_t, sys/types.h, ac_cv_u_int64_t=yes, ac_cv_u_int64_t=no)])
+  ac_cv_any_u_int64_t=$ac_cv_u_int64_t
+  if test $ac_cv_u_int64_t = no; then
+    AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
+[AC_EGREP_HEADER(uint64_t, sys/types.h, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
+    if test $ac_cv_uint64_t = yes; then
+      AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT64_TYPES, 1)
+      ac_cv_any_u_int64_t=yes
+    fi
+  fi
+  if test $ac_cv_int64_t = no -o $ac_cv_any_u_int64_t = no; then
+    AC_MSG_ERROR(int64_t types are not defined by <sys/types.h>!
+Compile with "'`'"--disable-int64'.)
+  else
+    AC_DEFINE(HAVE_INT64_TYPES)
+  fi
+fi
+
 dnl 
 dnl build with multithread support?
 dnl
@@ -191,20 +243,20 @@ dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE)
 element_groups=""
 AC_SUBST(element_groups)
 AC_DEFUN(ELEMENTS_ARG_ENABLE,
-[AC_ARG_ENABLE($1, builtin(format, [  --enable-%-14s %s], [$1], [[$2]]), ,
+[AC_ARG_ENABLE($1, builtin(format, [  %-23s %s%s], builtin(format, [--%sable-%s], builtin(ifelse, [$3], yes, dis, en), [$1]), builtin(ifelse, [$3], yes, [do not ], []), [[$2]]), ,
 [enable_]patsubst([$1], -, _)=$3)dnl
 if test ["x$enable_]patsubst([$1], -, _)["] = xyes; then
   element_groups="$element_groups $1"
   $4
 fi])
 
-ELEMENTS_ARG_ENABLE(standard, [include standard elements [yes]], yes)
-ELEMENTS_ARG_ENABLE(ethernet, [include Ethernet elements [yes]], yes)
-ELEMENTS_ARG_ENABLE(ip, [include IP elements [yes]], yes)
-ELEMENTS_ARG_ENABLE(icmp, [include ICMP elements [yes]], yes)
-ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements [yes]], yes)
+ELEMENTS_ARG_ENABLE(standard, [include standard elements], yes)
+ELEMENTS_ARG_ENABLE(ethernet, [include Ethernet elements], yes)
+ELEMENTS_ARG_ENABLE(ip, [include IP elements], yes)
+ELEMENTS_ARG_ENABLE(icmp, [include ICMP elements], yes)
+ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(snmp, [include SNMP elements], no)
-ELEMENTS_ARG_ENABLE(app, [include application-level elements [yes]], yes)
+ELEMENTS_ARG_ENABLE(app, [include application-level elements], yes)
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], no, AC_DEFINE(HAVE_IPSEC))
 ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], no, AC_DEFINE(HAVE_IP6))
 ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements (EXPERIMENTAL)], no)
@@ -214,34 +266,6 @@ ELEMENTS_ARG_ENABLE(grid, [include Grid elements (see FAQ)], no)
 
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
-
-dnl
-dnl make FLAGS variables without `-g'
-dnl
-
-CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
-CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
-AC_SUBST(CFLAGS_NDEBUG)
-AC_SUBST(CXXFLAGS_NDEBUG)
-
-dnl
-dnl functions, types
-dnl
-
-AC_REPLACE_FUNCS(strerror)
-AC_CHECK_FUNCS(strtoul)
-
-AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_underscore_t,
-[AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_u_underscore_t=yes, ac_cv_u_underscore_t=no)])
-if test $ac_cv_u_underscore_t = no; then
-  AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_u_t,
-[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_u_t=yes, ac_cv_u_t=no)])
-  if test $ac_cv_u_t = no; then
-    AC_MSG_ERROR("neither u_int32_t or uint32_t is defined by <sys/types.h>!")
-  else
-    AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT_TYPES, 1)
-  fi
-fi
 
 dnl
 dnl dynamic linking
@@ -347,7 +371,7 @@ dnl
 dnl type of scheduling
 dnl
 
-AC_ARG_ENABLE(stride, [  --enable-stride         enable stride scheduler [yes]], :, enable_stride=yes)
+AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
 if test $enable_stride = yes; then
   AC_DEFINE_UNQUOTED(HAVE_STRIDE_SCHED, 1)
 fi

@@ -98,11 +98,25 @@ char *strerror(int errno);
 # endif
 #endif
 
+/* Include type definitions. */
+#ifdef __KERNEL__
+# include <linux/types.h>
+#else
+# include <sys/types.h>
+#endif
+
+/* Define if 64-bit integer types are enabled. */
+#undef HAVE_INT64_TYPES
+
 /* Define u_intXX_t in terms of uintXX_t if necessary. */
 #undef SUBSTITUTE_U_INT_TYPES
+#undef SUBSTITUTE_U_INT64_TYPES
 #ifdef SUBSTITUTE_U_INT_TYPES
 # define u_int32_t uint32_t
 # define u_int16_t uint16_t
+#endif
+#ifdef SUBSTITUTE_U_INT64_TYPES
+# define u_int64_t uint64_t
 #endif
 
 /* Define if fast checksum functions available. */
@@ -121,7 +135,6 @@ char *strerror(int errno);
 
 /* Provide placement new. */
 #ifdef __KERNEL__
-# include <linux/types.h>
 inline void *operator new(size_t, void *v) { return v; }
 #elif HAVE_NEW_H
 # include <new.h>
