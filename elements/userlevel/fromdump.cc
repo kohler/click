@@ -68,7 +68,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 #else
     bool mmap = true;
 #endif
-    _sampling_prob = (1 << 28);
+    _sampling_prob = (1 << SAMPLING_SHIFT);
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -79,13 +79,13 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "MMAP", cpBool, "access file with mmap()?", &mmap,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", 28, &_sampling_prob,
+		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
 		    0) < 0)
 	return -1;
-    if (_sampling_prob > (1 << 28)) {
+    if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");
-	_sampling_prob = (1 << 28);
+	_sampling_prob = (1 << SAMPLING_SHIFT);
     } else if (_sampling_prob == 0)
 	errh->warning("SAMPLE probability is 0; emitting no packets");
     
@@ -404,7 +404,8 @@ FromDump::read_packet(ErrorHandler *errh)
     _pos += _extra_pkthdr_crap;
     
     // checking sampling probability
-    if (_sampling_prob < (1 << 28) && (uint32_t)(random() & 0xFFFFFFF) >= _sampling_prob) {
+    if (_sampling_prob < (1 << SAMPLING_SHIFT)
+	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
 	_pos += caplen;
 	goto retry;
     }
@@ -505,7 +506,7 @@ FromDump::read_handler(Element *e, void *thunk)
     FromDump *fd = static_cast<FromDump *>(e);
     switch ((int)thunk) {
       case 0:
-	return cp_unparse_real2(fd->_sampling_prob, 28) + "\n";
+	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case 1:
 	return cp_unparse_bool(fd->_active) + "\n";
       default:

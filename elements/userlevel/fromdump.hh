@@ -5,6 +5,7 @@
 
 /*
 =c
+
 FromDump(FILENAME [, TIMING, I<KEYWORDS>])
 
 =s sources
@@ -13,10 +14,10 @@ reads packets from a tcpdump(1) file
 
 =d
 
-Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump.
-Pushes them out the output, and stops the driver when there are no more
-packets. If TIMING is true, then FromDump tries to maintain the timing of
-the original packet stream. TIMING is false by default.
+Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump. Pushes
+them out the output, and optionally stops the driver when there are no more
+packets. If TIMING is true, then FromDump tries to maintain the timing of the
+original packet stream. TIMING is false by default.
 
 Keyword arguments are:
 
@@ -100,6 +101,7 @@ class FromDump : public Element { public:
   private:
 
     static const uint32_t BUFFER_SIZE = 32768;
+    static const int SAMPLING_SHIFT = 28;
     
     int _fd;
     const unsigned char *_buffer;
