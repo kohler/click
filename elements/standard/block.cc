@@ -15,7 +15,6 @@
 #endif
 #include "block.hh"
 #include "error.hh"
-#include "router.hh"
 #include "confparse.hh"
 
 Block::Block()

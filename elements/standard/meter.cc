@@ -16,7 +16,6 @@
 #endif
 #include "meter.hh"
 #include "error.hh"
-#include "router.hh"
 #include "confparse.hh"
 #include <errno.h>
 

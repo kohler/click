@@ -14,7 +14,6 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "router.hh"
 #include "packetshaper.hh"
 
 PacketShaper::PacketShaper()
