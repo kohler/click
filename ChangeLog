@@ -1,3 +1,11 @@
+2003-06-26 Thursday 14:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/: dequeue.cc (1.1), dequeue.hh (1.1): Added DEQueue
+	class, which is a double-ended queue data structure.  That is, it's
+	like Vector, except you can also push and pop to and from the front
+	of the queue.  I am not so convinced about the correcntess of the
+	iterators though, although they seem to work for me so far
+
 2003-06-26 Thursday 12:28  xwxin
 
 	* elements/ip/: trieiplookup.cc (1.1), trieiplookup.hh (1.1): New
