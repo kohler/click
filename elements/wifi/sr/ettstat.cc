@@ -696,7 +696,10 @@ ETTStat::simple_action(Packet *p)
 extern "C" {
 static int ipaddr_sorter(const void *va, const void *vb) {
     IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
-    return a == b ? 0 : a > b;
+    if (a->addr() == b->addr()) {
+      return 0;
+    } 
+    return (ntohl(a->addr()) < ntohl(b->addr())) ? -1 : 1;
 }
 
 static int ratesize_sorter(const void *va, const void *vb) {

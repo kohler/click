@@ -47,6 +47,7 @@ class MadwifiRate : public Element { public:
 
   Packet *pull(int);
 
+  void notify_noutputs(int);
   void add_handlers();
   static String static_print_stats(Element *e, void *);
   String print_rates();

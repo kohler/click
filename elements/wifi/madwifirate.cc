@@ -59,6 +59,11 @@ MadwifiRate::~MadwifiRate()
   MOD_DEC_USE_COUNT;
 }
 
+void
+MadwifiRate::notify_noutputs(int n)
+{
+  set_noutputs(n <= 2 ? n : 1);
+}
 int 
 MadwifiRate::initialize(ErrorHandler *) 
 {
@@ -181,7 +186,7 @@ MadwifiRate::process_feedback(Packet *p_in)
 		  dst.s().cc(),
 		  success,
 		  ceh->rate,
-		  ceh->alt_rate
+		  ceh->rate1
 		  );
   }
 
@@ -249,14 +254,14 @@ MadwifiRate::assign_rate(Packet *p_in)
   ceh->magic = WIFI_EXTRA_MAGIC;
   int ndx = nfo->_current_index;
   ceh->rate = nfo->_rates[ndx];
-  ceh->alt_rate = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
-  ceh->alt_rate_1 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
-  ceh->alt_rate_2 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+  ceh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
+  ceh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
+  ceh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
 
   ceh->max_retries = 4;
-  ceh->alt_max_retries = (ndx - 1 >= 0) ? 2 : 0;
-  ceh->alt_max_retries_1 = (ndx - 2 >= 0) ? 2 : 0;
-  ceh->alt_max_retries_2 = (ndx - 3 >= 0) ? 2 : 0;
+  ceh->max_retries1 = (ndx - 1 >= 0) ? 2 : 0;
+  ceh->max_retries2 = (ndx - 2 >= 0) ? 2 : 0;
+  ceh->max_retries3 = (ndx - 3 >= 0) ? 2 : 0;
 
   return;
   
@@ -279,17 +284,15 @@ MadwifiRate::push(int port, Packet *p_in)
   if (!p_in) {
     return;
   }
-  if (port != 0) {
-    if (_active) {
+
+  if (_active) {
+    if (port != 0) {
       process_feedback(p_in);
-    }
-    p_in->kill();
-  } else {
-    if (_active) {
+    } else {
       assign_rate(p_in);
     }
-    output(port).push(p_in);
   }
+  checked_output_push(port, p_in);
 }
 
 

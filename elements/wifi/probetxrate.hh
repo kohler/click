@@ -66,7 +66,7 @@ class ProbeTXRate : public Element { public:
   void push (int, Packet *);
 
   Packet *pull(int);
-
+  void notify_noutputs(int);
   void process_feedback(Packet *);
   void assign_rate(Packet *);
   void add_handlers();
@@ -235,39 +235,18 @@ class ProbeTXRate : public Element { public:
       return (found) ? best_ndx : -1;
     }
 
-    int pick_alt_rate(int rate) {
-      int ndx = rate_index(rate);
-      int best_time = 0;
-      bool found = false;
-      int best_ndx = 0;
-      /*
-       * pick the fastest rate that is less than ndx
-       */
-      for (int x = 0; x < ndx; x++) {
-	if (_total_success[x]) {
-	  int time = _total_time[x] / _total_success[x];
-	  if (!found || time < best_time) {
-	    best_ndx = x;
-	    best_time = time;
-	    found = true;
-	  }
-	}
-      }
-      return (found) ? _rates[best_ndx] : _rates[0];
-    }
-
-    int pick_rate(unsigned min_sample) {
+    Vector<int> pick_rate(unsigned min_sample) {
       int best_ndx = best_rate_ndx();
 
       if (_rates.size() == 0) {
 	click_chatter("no rates to pick from for %s\n", 
 		      _eth.s().cc());
-	return 2;
+	return _rates;
       }
       
       if (best_ndx < 0) {
 	/* no rate has had a successful packet yet */
-	return _rates[random() % _rates.size()];
+	return _rates;
       }
       
       int best_time = _total_time[best_ndx] / _total_success[best_ndx];
@@ -279,11 +258,7 @@ class ProbeTXRate : public Element { public:
 	  continue;
 	}
 	
-	if (_total_fail[x] > 5 && _total_success[x] < _total_fail[x]) {
-	  if (_rates[x] >= 22) {
-	    /* give up now */
-	    break;
-	  }
+	if (_total_fail[x] > 3 && !_total_success[x]) {
 	  continue;
 	}
 
@@ -292,12 +267,7 @@ class ProbeTXRate : public Element { public:
 	}
       }
       
-      
-      if (!possible_rates.size()) {
-	return _rates[best_ndx];
-      }
-      return possible_rates[random() % possible_rates.size()];
-      //return possible_rates[0];
+      return possible_rates;
 
     }
     

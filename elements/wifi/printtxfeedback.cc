@@ -77,8 +77,8 @@ PrintTXFeedback::simple_action(Packet *p)
   sa << " " << dst;
   sa << " rate " << (int) ceh->rate;
   sa << " max_retries " << (int) ceh->max_retries;
-  sa << " alt_rate " << (int) ceh->alt_rate;
-  sa << " alt_retries " << (int) ceh->alt_max_retries;
+  sa << " alt_rate " << (int) ceh->rate1;
+  sa << " alt_retries " << (int) ceh->max_retries1;
   sa << " retries " << (int) ceh->retries;
   sa << " virt_col " << (int) ceh->virt_col;
 

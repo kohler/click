@@ -51,6 +51,12 @@ AutoRateFallback::~AutoRateFallback()
   MOD_DEC_USE_COUNT;
 }
 
+void
+AutoRateFallback::notify_noutputs(int n)
+{
+  set_noutputs(n <= 2 ? n : 1);
+}
+
 int
 AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -114,6 +120,9 @@ AutoRateFallback::process_feedback(Packet *p_in)
   if (used_alt_rate || !success) {
     /* step down 1 or 2 rates */
     int down = eh->retries / 2;
+    if (down > 0) {
+      down--;
+    }
     int next_index = max(0, nfo->_current_index - down);
     if (_debug) {
       click_chatter("%{element} stepping down for %s from %d to %d\n",
@@ -191,14 +200,14 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   int ndx = nfo->_current_index;
   eh->rate = nfo->_rates[ndx];
-  eh->alt_rate = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
-  eh->alt_rate_1 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
-  eh->alt_rate_2 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+  eh->rate1 = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
+  eh->rate2 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
+  eh->rate3 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
 
-  eh->max_retries = (ndx > 0) ? 2 : 4;
-  eh->alt_max_retries = (ndx - 1 >= 0) ? 2 : 0;
-  eh->alt_max_retries_1 = (ndx - 2 >= 0) ? 2 : 0;
-  eh->alt_max_retries_2 = (ndx - 3 >= 0) ? 2 : 0;
+  eh->max_retries = 4;
+  eh->max_retries1 = (ndx - 1 >= 0) ? 2 : 0;
+  eh->max_retries2 = (ndx - 2 >= 0) ? 2 : 0;
+  eh->max_retries3 = (ndx - 3 >= 0) ? 2 : 0;
   return;
   
 }
@@ -220,17 +229,14 @@ AutoRateFallback::push(int port, Packet *p_in)
   if (!p_in) {
     return;
   }
-  if (port != 0) {
-    if (_active) {
+  if (_active) {
+    if (port != 0) {
       process_feedback(p_in);
-    }
-    p_in->kill();
-  } else {
-    if (_active) {
+    } else {
       assign_rate(p_in);
     }
-    output(port).push(p_in);
   }
+  checked_output_push(port, p_in);
 }
 
 

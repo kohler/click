@@ -46,6 +46,11 @@ ProbeTXRate::~ProbeTXRate()
   MOD_DEC_USE_COUNT;
 }
 
+void
+ProbeTXRate::notify_noutputs(int n)
+{
+  set_noutputs(n <= 2 ? n : 1);
+}
 int
 ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -125,10 +130,35 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
   //nfo->check();
-  ceh->rate = nfo->pick_rate(_min_sample);
-  ceh->max_retries = PROBE_MAX_RETRIES;
-  ceh->alt_rate = 0;
-  ceh->alt_max_retries = 0;
+
+  int best_ndx = nfo->best_rate_ndx();
+  Vector<int> possible = nfo->pick_rate(_min_sample);
+
+  if (possible.size()) {
+    ceh->rate = possible[random() % possible.size()];
+    ceh->max_retries = 4;
+  } else if (best_ndx >= 0) {
+    ceh->rate = nfo->_rates[best_ndx];
+    ceh->max_retries = 4;
+  } else {
+    ceh->rate = nfo->_rates[random() % nfo->_rates.size()];
+    ceh->max_retries = 4;
+  }
+
+
+  if (best_ndx >= 0) {
+    ceh->rate1 = nfo->_rates[best_ndx];
+    ceh->max_retries1 = 2;
+  } else if (possible.size()) {
+    ceh->rate1 = possible[random() % possible.size()];
+    ceh->max_retries1 = 2;
+  } else {
+    ceh->rate1 = nfo->_rates[random() % nfo->_rates.size()];
+    ceh->max_retries1 = 2;
+  }
+
+  ceh->rate2 = 0;
+    ceh->max_retries2 = 0;
 
   return;
 }
@@ -144,10 +174,9 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   EtherAddress dst = EtherAddress(dst_ptr);
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
-  bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
+  bool used_alt_rate = (ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
   int retries = _alt_rate ? MIN(_original_retries, ceh->retries) :
     ceh->retries;
-  int alt_retries = ceh->retries - retries;
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -196,35 +225,24 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
-  if (!success) {
+  if (!success && _debug) {
     click_chatter("%{element} packet failed %s retries %d rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
 		  retries,
 		  ceh->rate,
-		  ceh->alt_rate);
+		  ceh->rate1);
   }
 
-  unsigned time = 0;
-  unsigned alt_time = 0;
-  if (_alt_rate && used_alt_rate) {
-    alt_time = calc_usecs_wifi_packet_tries(1500, ceh->alt_rate, 
-					     _original_retries, _original_retries + alt_retries);
-  }
-  time = calc_usecs_wifi_packet(1500, ceh->rate, retries);
 
-  if (0) {
-    click_chatter(" rate %d retries %d time %d alt_time %d alt_rate %d alt_retries %d\n",
-		  ceh->rate, retries, time, alt_time,
-		  ceh->alt_rate, alt_retries);
-  }
-  nfo->add_result(now, ceh->rate, success, time + alt_time);
 
-  if (!success && used_alt_rate) {
-    /* packet actually failed */
-    nfo->add_result(now, ceh->alt_rate, false, alt_time);
+  if (!used_alt_rate) {
+    int time = calc_usecs_wifi_packet(1514, ceh->rate, retries);
+    nfo->add_result(now, ceh->rate, true, time);
+  } else {
+    int time = calc_usecs_wifi_packet(1514, ceh->rate, 4);
+    nfo->add_result(now, ceh->rate, false, time);
   }
- 
   //nfo->check();
   return ;
 }
@@ -245,17 +263,14 @@ ProbeTXRate::push(int port, Packet *p_in)
   if (!p_in) {
     return;
   }
-  if (port != 0) {
-    if (_active) {
+  if (_active) {
+    if (port != 0) {
       process_feedback(p_in);
-    }
-    p_in->kill();
-  } else {
-    if (_active) {
+    } else {
       assign_rate(p_in);
     }
-    output(port).push(p_in);
   }
+  checked_output_push(port, p_in);
 }
 
 

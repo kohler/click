@@ -42,9 +42,12 @@ FilterTX::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 FilterTX::simple_action(Packet *p)
 {
-  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
+  struct click_wifi_extra *ceha = (struct click_wifi_extra *) p->all_user_anno();  
+  struct click_wifi_extra *cehp = (struct click_wifi_extra *) p->data();
   
-  if (ceh->flags & WIFI_EXTRA_TX) {
+  
+  if ((ceha->magic == WIFI_EXTRA_MAGIC && ceha->flags & WIFI_EXTRA_TX) ||
+      (cehp->magic == WIFI_EXTRA_MAGIC && cehp->flags & WIFI_EXTRA_TX)) {
     if (noutputs() == 2) {
       output(1).push(p);
     } else {

@@ -13,7 +13,7 @@
 
 #define ARPHRD_80211    801       /* wifi      */
 
-#define WIFI_EXTRA_MAGIC  0x7492
+#define WIFI_EXTRA_MAGIC  0x7492001
 
 enum {
   WIFI_EXTRA_TX                    = (1<<0), /* packet transmission */
@@ -40,14 +40,14 @@ struct click_wifi_extra {,
   u_int8_t pad;
 
   u_int8_t rate;              /* bitrate in Mbps*2 */
-  u_int8_t max_retries;
-  u_int8_t alt_rate;          /* if specifying alternate rate is supported */
-  u_int8_t alt_max_retries;
+  u_int8_t rate1;              /* bitrate in Mbps*2 */
+  u_int8_t rate2;              /* bitrate in Mbps*2 */
+  u_int8_t rate3;              /* bitrate in Mbps*2 */
 
-  u_int8_t alt_rate_1;
-  u_int8_t alt_max_retries_1;
-  u_int8_t alt_rate_2;
-  u_int8_t alt_max_retries_2;
+  u_int8_t max_retries;
+  u_int8_t max_retries1;
+  u_int8_t max_retries2;
+  u_int8_t max_retries3;
 
   u_int8_t virt_col;
   u_int8_t retries;
@@ -401,10 +401,11 @@ static inline unsigned calc_usecs_wifi_packet_tries(int length,
     break;
   default:
     /* with 802.11g, things are at 6 mbit/s */
-    t_plcp_header = 46;
+    t_plcp_header = 20;
     t_slot = 9;
-    t_ack = 64; // 46 + 14*8/6
+    t_sifs = 9;
     t_difs = 28;
+    t_ack = 30; 
   }
   unsigned packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
   
