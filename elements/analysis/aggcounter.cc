@@ -49,6 +49,12 @@ AggregateCounter::new_node_block()
     return &block[0];
 }
 
+void
+AggregateCounter::notify_ninputs(int n)
+{
+    set_ninputs(n <= 1 ? 1 : 2);
+}
+
 int
 AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -76,6 +82,8 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 AggregateCounter::initialize(ErrorHandler *errh)
 {
+    if (ninputs() == 2 && !output_is_push(0))
+	return errh->error("have two inputs, but output is pull");
     if (!(_root = new_node())) {
 	uninitialize();
 	return errh->error("out of memory!");
@@ -126,7 +134,7 @@ bi_ffs(uint32_t value)
 }
 
 AggregateCounter::Node *
-AggregateCounter::make_peer(uint32_t a, Node *n)
+AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
 {
     /*
      * become a peer
@@ -134,7 +142,7 @@ AggregateCounter::make_peer(uint32_t a, Node *n)
      * the parent of the two new ones.
      */
 
-    if (_frozen)
+    if (frozen)
 	return 0;
     
     Node *down[2];
@@ -167,20 +175,20 @@ AggregateCounter::make_peer(uint32_t a, Node *n)
 }
 
 AggregateCounter::Node *
-AggregateCounter::find_node(uint32_t a)
+AggregateCounter::find_node(uint32_t a, bool frozen)
 {
     // straight outta tcpdpriv
     Node *n = _root;
     while (n) {
 	if (n->aggregate == a)
-	    return (n->count || !_frozen ? n : 0);
+	    return (n->count || !frozen ? n : 0);
 	if (!n->child[0])
-	    n = make_peer(a, n);
+	    n = make_peer(a, n, frozen);
 	else {
 	    // swivel is the first bit in which the two children differ
 	    int swivel = bi_ffs(n->child[0]->aggregate ^ n->child[1]->aggregate);
 	    if (bi_ffs(a ^ n->aggregate) < swivel) // input differs earlier
-		n = make_peer(a, n);
+		n = make_peer(a, n, frozen);
 	    else if (a & (1 << (32 - swivel)))
 		n = n->child[1];
 	    else
@@ -188,17 +196,17 @@ AggregateCounter::find_node(uint32_t a)
 	}
     }
 
-    if (!_frozen)
+    if (!frozen)
 	click_chatter("AggregateCounter: out of memory!");
     return 0;
 }
 
-Packet *
-AggregateCounter::simple_action(Packet *p)
+inline void
+AggregateCounter::update(Packet *p, bool frozen)
 {
     // AGGREGATE_ANNO is already in host byte order!
     uint32_t agg = AGGREGATE_ANNO(p);
-    if (Node *n = find_node(agg)) {
+    if (Node *n = find_node(agg, frozen)) {
 	uint32_t amount;
 	if (!_bytes)
 	    amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
@@ -211,6 +219,21 @@ AggregateCounter::simple_action(Packet *p)
 	if (_num_nonzero >= _freeze_nnz || _count >= _freeze_count)
 	    _frozen = true;
     }
+}
+
+void
+AggregateCounter::push(int port, Packet *p)
+{
+    update(p, _frozen || (port == 1));
+    output(0).push(p);
+}
+
+Packet *
+AggregateCounter::pull(int)
+{
+    Packet *p = input(0).pull();
+    if (p)
+	update(p, _frozen);
     return p;
 }
 

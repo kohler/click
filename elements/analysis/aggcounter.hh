@@ -23,6 +23,9 @@ keyword arguments, can put AggregateCounter in a frozen state. Frozen
 AggregateCounters only update existing counters; they do not create new
 counters for previously unseen aggregate values.
 
+AggregateCounter may have one or two inputs. The optional second input is
+always frozen. (It is only useful when the element is push.)
+
 Keyword arguments are:
 
 =over 8
@@ -110,12 +113,15 @@ class AggregateCounter : public Element { public:
     const char *processing() const	{ return AGNOSTIC; }
     AggregateCounter *clone() const	{ return new AggregateCounter; }
 
+    void notify_ninputs(int);
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
     void add_handlers();
 
-    Packet *simple_action(Packet *);
+    inline void update(Packet *, bool frozen = false);
+    void push(int, Packet *);
+    Packet *pull(int);
 
     int write_file(String, bool, ErrorHandler *) const;
     
@@ -145,8 +151,8 @@ class AggregateCounter : public Element { public:
     Node *new_node_block();
     void free_node(Node *);
 
-    Node *make_peer(uint32_t, Node *);
-    Node *find_node(uint32_t);
+    Node *make_peer(uint32_t, Node *, bool frozen);
+    Node *find_node(uint32_t, bool frozen = false);
 
     static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
