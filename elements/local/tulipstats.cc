@@ -225,6 +225,7 @@ TulipStats::reset_counts()
   _base_tx_window_errors = _dev_stats->tx_window_errors;
   _base_tx_fifo_errors = _dev_stats->tx_fifo_errors;
   _base_tx_heartbeat_errors = _dev_stats->tx_heartbeat_errors;
+  _base_tx_packets = _dev_stats->tx_packets;
   _tbusy = 0;
 }
 
@@ -291,6 +292,7 @@ TulipStats::read_counts(Element *e, void *)
   append_line(sa, "TXW (xmit window)", dev_stats->tx_window_errors - ts->_base_tx_window_errors);
   append_line(sa, "TXF (xmit fifo)", dev_stats->tx_fifo_errors - ts->_base_tx_fifo_errors);
   append_line(sa, "TXH (xmit heartbeat)", dev_stats->tx_heartbeat_errors - ts->_base_tx_heartbeat_errors);
+  append_line(sa, "TPO (tulip reported tx packets)", dev_stats->tx_packets - ts->_base_tx_packets);
   return sa.take_string();
 }
 
