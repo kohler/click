@@ -1,3 +1,18 @@
+2002-03-29 Friday 15:05  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: discard.cc (1.22), discard.hh (1.18): Discard
+	listens for notification
+
+2002-03-29 Friday 15:02  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/idle.cc (1.20), elements/standard/idle.hh
+	(1.16), elements/userlevel/fromdump.cc (1.63),
+	include/click/elemfilter.hh (1.5), include/click/notifier.hh (1.4),
+	lib/elemfilter.cc (1.14), lib/notifier.cc (1.5): add
+	AbstractNotifier, and better logic in
+	Notifier::upstream_pull_signal(); Idle is an AbstractNotifier whose
+	signal is always off
+
 2002-03-28 Thursday 23:57  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ethernet/: arpfaker.cc (1.19), arpquerier.cc (1.42),

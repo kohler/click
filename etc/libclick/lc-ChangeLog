@@ -1,3 +1,11 @@
+2002-03-29 Friday 15:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/elemfilter.hh, include/click/notifier.hh,
+	include/click/elemfilter.hh, include/click/notifier.hh,
+	libsrc/elemfilter.cc, libsrc/notifier.cc: add AbstractNotifier, and
+	better logic in Notifier::upstream_pull_signal(); Idle is an
+	AbstractNotifier whose signal is always off
+
 2002-03-28 Thursday 23:57  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/ipaddress.hh, include/click/ipaddress.hh,
