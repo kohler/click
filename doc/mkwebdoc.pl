@@ -46,19 +46,17 @@ if ($INSTALL) {
 }
 
 # 2. changetemplate.pl
-my(@elements, @ealpha, @esections);
+my(@elements, @ealpha, @esections, $cocked);
 open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
 while (<IN>) {
     push @{$esections[-1]}, scalar(@elements) if /^\.SS/ && @esections;
     push @esections, [$1, scalar(@elements)] if /^\.SS \"(.*)\"/;
-    push @elements, $1 if /^\.M (.*) n/;
+    push @elements, $1 if /^\.M (.*) n/ && $cocked;
+    $cocked = ($_ =~ /^\.TP/);
     last if (/^\.SH \"ALPHABETICAL/);
 }
 push @{$esections[-1]}, scalar(@elements);
-while (<IN>) {
-    push @ealpha, $1 if /^\.M (.*) n/;
-}
-@ealpha = sort { lc($a) cmp lc($b) } @ealpha;
+@ealpha = sort { lc($a) cmp lc($b) } @elements;
 close IN;
 
 open(IN, "$WEBDIR/index.html") || die "$WEBDIR/index.html: $!\n";
