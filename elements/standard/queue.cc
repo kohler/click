@@ -123,6 +123,9 @@ Queue::push(int, Packet *packet)
     _q[_tail] = packet;
     _tail = next;
 
+#if 0
+    /* Now taken care of by scheduler */
+    
     /* comment is now a lie --  the problem is the same, the
        solution is different; FromDevice reschedules itself
        on busy, which means it will be run "soon", possibly
@@ -133,8 +136,6 @@ Queue::push(int, Packet *packet)
     // gone idle. Under high load this could leave outputs idle
     // even though packets are Queued. So cause output idleness
     // every 16 packets as well as when we go non-empty. */
-#ifndef CLICK_POLLDEV
-#if 0
     if (was_empty) {
       if (_puller1)
         _puller1->join_scheduler();
@@ -144,7 +145,6 @@ Queue::push(int, Packet *packet)
           _pullers[i]->join_scheduler();
       }
     }
-#endif
 #endif
     
     int s = size();

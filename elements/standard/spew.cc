@@ -135,9 +135,7 @@ Spew::spew_some()
     p->pull(14); // Counteract ARPQuerier.
 #endif
 #if 0
-#ifndef CLICK_POLLDEV
     router()->run_scheduled(); // For Queue.
-#endif
 #endif
   }
   _done += max;

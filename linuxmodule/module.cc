@@ -79,7 +79,7 @@ initialize_router(String s)
     }
   }
 
-#ifdef CLICK_POLLDEV
+#ifdef HAVE_POLLING
   kill_click_sched(kernel_errh);
 #endif
   
@@ -99,7 +99,7 @@ initialize_router(String s)
     current_router->initialize(kernel_errh);
     // current_router->print_structure(kernel_errh);
     init_router_element_procs();
-#ifdef CLICK_POLLDEV
+#ifdef HAVE_POLLING
     if (current_router->initialized())
       start_click_sched(kernel_errh);
 #endif
@@ -418,7 +418,7 @@ init_module()
   kfr.add_read("classes", read_classes, 0);
   kfr.add_read("packages", read_packages, 0);
   kfr.add_read("requirements", read_requirements, 0);
-#ifndef CLICK_POLLDEV
+#ifndef HAVE_POLLING
   kfr.add_write("driver", write_driver, 0);
 #endif
 
@@ -431,7 +431,7 @@ cleanup_module()
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
 
-#ifdef CLICK_POLLDEV
+#ifdef HAVE_POLLING
   kill_click_sched(kernel_errh);
 #endif
   

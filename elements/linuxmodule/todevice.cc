@@ -240,7 +240,7 @@ ToDevice::tx_intr()
   int sent = 0;
   int queued_pkts;
  
-#if CLICK_POLLDEV
+#if HAVE_POLLING
   queued_pkts = _dev->clean_tx(_dev);
   _pkts_on_dma += queued_pkts;
 #endif
@@ -265,8 +265,10 @@ ToDevice::tx_intr()
   if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
     _dev_idle++;
     if (_dev_idle==1024) {
+#if HAVE_POLLING
       /* device didn't send anything, ping it */
       _dev->start_tx(_dev);
+#endif
       _hard_start++;
       _dev_idle=0;
     }
@@ -294,7 +296,11 @@ ToDevice::tx_intr()
   /* adjusting tickets */
 
   int adj = 0;
+#if HAVE_POLLING
   int dmal = _dev->tx_dma_length;
+#else
+  int dmal = 250;
+#endif
   int dma_thresh = dmal-dmal/4;
 
   /* tx dma ring was fairly full, and it was full last time as well, so we
@@ -355,7 +361,11 @@ ToDevice::queue_packet(Packet *p)
     skb_put(skb1, 60 - skb1->len);
   }
 
+#if HAVE_POLLING
   int ret = _dev->queue_tx(skb1, _dev);
+#else
+  int ret = _dev->hard_start_xmit(skb1, _dev);
+#endif
   if(ret != 0){
     printk("<1>ToDevice %s tx oops\n", _dev->name);
     kfree_skb(skb1);
@@ -371,20 +381,20 @@ ToDevice::run_scheduled()
 static String
 ToDevice_read_calls(Element *f, void *)
 {
-  ToDevice *kw = (ToDevice *)f;
+  ToDevice *td = (ToDevice *)f;
   return
-    String(kw->max_ntickets()) + " maximum number of tickets\n" +
-    String(kw->_hard_start) + " hard transmit start\n" +
-    String(kw->_idle_calls) + " idle tx calls\n" +
-    String(kw->_busy_returns) + " device busy returns\n" +
-    String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
-    String(kw->_tks_allocated) + " total tickets seen\n" +
-    String(kw->_dma_full_resched) + " dma full resched\n" +
-    String(kw->_q_burst_resched) + " q burst resched\n" +
-    String(kw->_q_full_resched) + " q full resched\n" +
-    String(kw->_q_empty_resched) + " q empty resched\n" +
-    String(kw->_pkts_sent) + " packets sent\n" +
-    String(kw->_activations) + " transmit activations\n";
+    String(td->max_ntickets()) + " maximum number of tickets\n" +
+    String(td->_hard_start) + " hard transmit start\n" +
+    String(td->_idle_calls) + " idle tx calls\n" +
+    String(td->_busy_returns) + " device busy returns\n" +
+    String(td->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
+    String(td->_tks_allocated) + " total tickets seen\n" +
+    String(td->_dma_full_resched) + " dma full resched\n" +
+    String(td->_q_burst_resched) + " q burst resched\n" +
+    String(td->_q_full_resched) + " q full resched\n" +
+    String(td->_q_empty_resched) + " q empty resched\n" +
+    String(td->_pkts_sent) + " packets sent\n" +
+    String(td->_activations) + " transmit activations\n";
 }
 
 void

@@ -41,7 +41,7 @@ GENERIC_OBJS = string.o straccum.o \
 	error.o glue.o timer.o \
 	elemlink.o element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
-	crc32.o iptable.o ewma.o
+	crc32.o iptable.o ewma.o @LINUXMODULE_SCHED_OBJ@
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
 	proc_config.o proc_element.o proc_mgr.o read-pmc.o
@@ -51,10 +51,6 @@ LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
-ifdef CLICK_POLLDEV
-CPPFLAGS += -DCLICK_POLLDEV -DNDEBUG -g
-OBJS += sched.o
-endif
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 

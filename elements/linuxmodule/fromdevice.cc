@@ -131,7 +131,7 @@ update_ifindex_map(int ifindex, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-#ifdef CLICK_POLLDEV
+#ifdef HAVE_POLLING
   return errh->error
       ("FromDevice cannot be used with click scheduling thread\n");
 #else
@@ -164,7 +164,7 @@ FromDevice::initialize(ErrorHandler *errh)
   
   return 0;
 
-#endif /* !CLICK_POLLDEV */
+#endif /* !HAVE_POLLING */
 }
 
 void

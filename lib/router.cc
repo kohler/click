@@ -827,7 +827,7 @@ Router::driver(unsigned count)
     fl->unschedule();
     ((Element *)fl)->run_scheduled();
     if (count-- == 0) {
-#if !defined(__KERNEL__) || defined(CLICK_POLLDEV)
+#if !defined(__KERNEL__) || defined(HAVE_POLLING)
       count = c;
       wait();
 #else

@@ -189,7 +189,11 @@ AC_CACHE_CHECK(for device polling kernel extension, ac_cv_poll_extension,
 else ac_cv_poll_extension=no; fi])
 if test $ac_cv_poll_extension = yes; then
   AC_DEFINE_UNQUOTED(HAVE_POLLING, 1)
+  LINUXMODULE_SCHED_OBJ=sched.o
+else
+  LINUXMODULE_SCHED_OBJ=
 fi
+AC_SUBST(LINUXMODULE_SCHED_OBJ)
 
 dnl
 dnl check for GNU make
