@@ -179,10 +179,11 @@ ToDevice::send_packet(Packet *p)
 #endif
 
   if (retval < 0) {
+    int saved_errno = errno;
     click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
     if (_set_error_anno) {
-      unsigned char c = errno & 0xFF;
-      if (c != errno)
+      unsigned char c = saved_errno & 0xFF;
+      if (c != saved_errno)
 	click_chatter("ToDevice(%s) truncating errno to %d", _ifname.cc(), (int) c);
       SET_SEND_ERR_ANNO(p, c);
     }
