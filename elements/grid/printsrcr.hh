@@ -2,39 +2,39 @@
 #define CLICK_PRINTDSR_HH
 #include <click/element.hh>
 #include <click/string.hh>
-#include "rtmdsr.hh"
+#include "srcr.hh"
 CLICK_DECLS
 
 /*
  * =c
- * PrintDSR([TAG] [, KEYWORDS])
+ * PrintSRCR([TAG] [, KEYWORDS])
  * =s debuggin
  * =d
  * Assumes input packets are DSR packets (ie a sr_pkt struct from 
- * RTMDSR.hh). Prints out a description of those packets.
+ * SRCR.hh). Prints out a description of those packets.
  *
  * Keyword arguments are:
  *
  * =over 8
  *
  * =a
- * Print, RTMDSR
+ * Print, SRCR
  */
 
-class PrintDSR : public Element {
+class PrintSRCR : public Element {
   
   String _label;
   uint16_t _et;     // This protocol's ethertype.
   
  public:
   
-  PrintDSR();
-  ~PrintDSR();
+  PrintSRCR();
+  ~PrintSRCR();
   
-  const char *class_name() const		{ return "PrintDSR"; }
+  const char *class_name() const		{ return "PrintSRCR"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  PrintDSR *clone() const;
+  PrintSRCR *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

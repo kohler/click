@@ -1,5 +1,5 @@
 /*
- * RTMDSR.{cc,hh} -- toy DSR implementation
+ * SRCR.{cc,hh} -- toy DSR implementation
  * Robert Morris
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "rtmdsr.hh"
+#include "srcr.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -30,7 +30,7 @@ CLICK_DECLS
 #endif /* dsr_assert */
 
 
-RTMDSR::RTMDSR()
+SRCR::SRCR()
   :  _queries(0), _querybytes(0),
      _replies(0), _replybytes(0), _datas(0), _databytes(0),
      _timer(this), _link_stat(0)
@@ -56,22 +56,22 @@ RTMDSR::RTMDSR()
   click_gettimeofday(&tv);
   _seq = tv.tv_usec;
   
-  _no_route = Route();
 }
 
-RTMDSR::~RTMDSR()
+SRCR::~SRCR()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-RTMDSR::configure (Vector<String> &conf, ErrorHandler *errh)
+SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
                     cpIPAddress, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
                     cpUnsigned, "Ethernet encapsulation type", &_et,
+		    cpElement, "LinkTable element", &_link_table,
                     cpKeywords,
                     "LS", cpElement, "LinkStat element", &_link_stat,
                     0);
@@ -79,14 +79,14 @@ RTMDSR::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-RTMDSR *
-RTMDSR::clone () const
+SRCR *
+SRCR::clone () const
 {
-  return new RTMDSR;
+  return new SRCR;
 }
 
 int
-RTMDSR::initialize (ErrorHandler *)
+SRCR::initialize (ErrorHandler *)
 {
   _timer.initialize (this);
   _timer.schedule_now ();
@@ -95,7 +95,7 @@ RTMDSR::initialize (ErrorHandler *)
 }
 
 void
-RTMDSR::run_timer ()
+SRCR::run_timer ()
 {
   // Delete stale entries from list of queries we've seen.
   timeval now = get_timeval();
@@ -118,7 +118,7 @@ RTMDSR::run_timer ()
 
 // Returns an index into the _dsts[] array, or -1.
 int
-RTMDSR::find_dst(IPAddress ip, bool create)
+SRCR::find_dst(IPAddress ip, bool create)
 {
   int i;
 
@@ -136,33 +136,8 @@ RTMDSR::find_dst(IPAddress ip, bool create)
   return -1;
 }
 
-// Returns the best route, or a dummy zero-hop route.
-RTMDSR::Route &
-RTMDSR::best_route(IPAddress dstip)
-{
-  int i;
-  int bm = -1;
-  int bi = -1;
-
-  int di = find_dst(dstip, false);
-  if(di < 0)
-    return _no_route; // Oops
-
-  Dst &d = _dsts[di];
-  for(i = 0; i < d._routes.size(); i++){
-    if(bi == -1 || d._routes[i]._metric < bm){
-      bi = i;
-      bm = d._routes[i]._metric;
-    }
-  }
-
-  if(bi != -1)
-    return d._routes[bi];
-  return _no_route; // Oops
-}
-
 timeval 
-RTMDSR::get_timeval()
+SRCR::get_timeval()
 {
   timeval tv;
   click_gettimeofday(&tv);
@@ -170,7 +145,7 @@ RTMDSR::get_timeval()
 
 }
 bool
-RTMDSR::timeval_past(timeval a, timeval b) 
+SRCR::timeval_past(timeval a, timeval b) 
 {
   if (a.tv_sec == b.tv_sec) 
     return a.tv_usec > b.tv_usec;
@@ -180,7 +155,7 @@ RTMDSR::timeval_past(timeval a, timeval b)
 }
 
 timeval
-RTMDSR::add_millisec(timeval t, int milli)
+SRCR::add_millisec(timeval t, int milli)
  {
   timeval new_time;
 
@@ -194,9 +169,9 @@ RTMDSR::add_millisec(timeval t, int milli)
   return new_time;
 }
 void
-RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
+SRCR::start_data(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
 {
-  int hops = r._hops.size() - 1; // Not this node.
+  int hops = r.size();
   int len = sr_pkt::len_with_data(hops, payload_len);
   WritablePacket *p = Packet::make(len);
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
@@ -206,8 +181,9 @@ RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
   pk->_nhops = htons(hops);
   pk->_next = htons(0);
   int i;
-  for(i = 1; i < hops + 1; i++)
-    pk->set_hop(i-1, r._hops[i].in_addr());
+  for(i = 0; i < hops; i++) {
+    pk->set_hop(i, r[i].in_addr());
+  }
   memcpy(pk->data(), payload, payload_len);
 
   send(p);
@@ -216,14 +192,14 @@ RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
 // Got a data packet whose ultimate destination is us.
 // Emit to upper layer.
 void
-RTMDSR::got_data(struct sr_pkt *pk)
+SRCR::got_data(struct sr_pkt *pk)
 {
   Packet *p = Packet::make(pk->data(), pk->_dlen);
   output(0).push(p);
 }
 
 void
-RTMDSR::start_query(IPAddress dstip)
+SRCR::start_query(IPAddress dstip)
 {
   int di = find_dst(dstip, true);
   Dst &d = _dsts[di];  
@@ -265,7 +241,7 @@ RTMDSR::start_query(IPAddress dstip)
 // A packet has arrived from ip/en.
 // Enter the pair in our ARP table.
 void
-RTMDSR::got_arp(IPAddress ip, u_char xen[6])
+SRCR::got_arp(IPAddress ip, u_char xen[6])
 {
   EtherAddress en(xen);
   int i;
@@ -291,7 +267,7 @@ RTMDSR::got_arp(IPAddress ip, u_char xen[6])
 // if we happen to know that node's ethernet address.
 // If we don't, just use ff:ff:ff:ff:ff:ff
 bool
-RTMDSR::find_arp(IPAddress ip, u_char en[6])
+SRCR::find_arp(IPAddress ip, u_char en[6])
 {
   int i;
   for(i = 0; i < _arp.size(); i++){
@@ -311,7 +287,7 @@ RTMDSR::find_arp(IPAddress ip, u_char en[6])
 // Decides whether to broadcast or unicast according to type.
 // Assumes the _next field already points to the next hop.
 void
-RTMDSR::send(WritablePacket *p)
+SRCR::send(WritablePacket *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
@@ -345,7 +321,7 @@ RTMDSR::send(WritablePacket *p)
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-RTMDSR::get_metric(IPAddress other)
+SRCR::get_metric(IPAddress other)
 {
   u_short dft = 150; // default metric
   if(_link_stat){
@@ -370,7 +346,7 @@ RTMDSR::get_metric(IPAddress other)
 // Continue flooding a query by broadcast.
 // Maintain a list of querys we've already seen.
 void
-RTMDSR::process_query(struct sr_pkt *pk1)
+SRCR::process_query(struct sr_pkt *pk1)
 {
   IPAddress src(pk1->get_hop(0));
   IPAddress dst(pk1->_qdst);
@@ -410,10 +386,10 @@ RTMDSR::process_query(struct sr_pkt *pk1)
       seen_before = true;
       if(metric < _seen[si]._metric){
         // OK, pass this new better route.
-        click_chatter("DSR %s: better old=%d new=[%s]",
+        click_chatter("DSR %s: better old=%d",
                       _ip.s().cc(),
-                      _seen[si]._metric,
-                      Route(pk1).s().cc());
+                      _seen[si]._metric);
+                      
         _seen[si]._metrics = metrics;
 	_seen[si]._nhops = nhops;
 	_seen[si]._hops = hops;
@@ -442,6 +418,21 @@ RTMDSR::process_query(struct sr_pkt *pk1)
 		metric,
 		nhops);
 
+  /* update the link stats */
+  timeval now = get_timeval();
+  for(int i = 0; i < nhops-1; i++) {
+    IPAddress a = hops[i];
+    IPAddress b = hops[i+1];
+    u_short m = metrics[i];
+    click_chatter("updating link %d: %s -> %s <%d>", i, a.s().cc(), b.s().cc(), m);
+    _link_table->update_link(IPPair(a,b), m, now);
+  }
+  click_chatter("running dijkstra...");
+  _link_table->dijkstra(_ip);
+  click_chatter("finished running dijkstra");
+
+  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
+
 
   if (!seen_before) {
     int delay_time = (last_hop_metric- 100)/10;
@@ -464,7 +455,7 @@ RTMDSR::process_query(struct sr_pkt *pk1)
   click_chatter("DSR %s: finished process_query\n", _ip.s().cc());
 }
 void
-RTMDSR::forward_query(Seen s)
+SRCR::forward_query(Seen s)
 {
   u_short nhops = s._nhops;
   IPAddress src = s._hops[0];
@@ -507,7 +498,7 @@ RTMDSR::forward_query(Seen s)
 
 // Continue unicasting a reply packet.
 void
-RTMDSR::forward_reply(struct sr_pkt *pk1)
+SRCR::forward_reply(struct sr_pkt *pk1)
 {
   u_char type = pk1->_type;
   u_short next = ntohs(pk1->_next);
@@ -524,6 +515,17 @@ RTMDSR::forward_reply(struct sr_pkt *pk1)
     return;
   }
 
+  /* update the link stats */
+  timeval now = get_timeval();
+  for(int i = next - 1; i > 0; i++) {
+    IPAddress a = pk1->get_hop(i);
+    IPAddress b = pk1->get_hop(i-1);
+    u_short m = pk1->get_metric(i);
+    _link_table->update_link(IPPair(a,b), m, now);
+  }
+  _link_table->dijkstra(_ip);
+
+  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
   int len = pk1->hlen_wo_data();
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -542,7 +544,7 @@ RTMDSR::forward_reply(struct sr_pkt *pk1)
 
 // Continue unicasting a data packet.
 void
-RTMDSR::forward_data(struct sr_pkt *pk1)
+SRCR::forward_data(struct sr_pkt *pk1)
 {
   u_char type = pk1->_type;
   u_short next = ntohs(pk1->_next);
@@ -563,6 +565,19 @@ RTMDSR::forward_data(struct sr_pkt *pk1)
     
     return;
   }
+
+  /* update the link stats */
+  timeval now = get_timeval();
+  for(int i = 0; i < next; i++) {
+    IPAddress a = pk1->get_hop(i);
+    IPAddress b = pk1->get_hop(i+1);
+    u_short m = pk1->get_metric(i);
+    _link_table->update_link(IPPair(a,b), m, now);
+  }
+  _link_table->dijkstra(_ip);
+
+  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
+
   int len = pk1->hlen_with_data();
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -570,29 +585,18 @@ RTMDSR::forward_data(struct sr_pkt *pk1)
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memcpy(pk, pk1, len);
 
-  pk->_next = htons(next);
+  for(int i = 0; i < nhops - 1; i++) {
+    pk->set_metric(i, pk1->get_metric(i));
+  }
   pk->set_metric(next - 1, last_hop_metric);
+
+  pk->_next = htons(next);
   send(p);
 
 }
 
 String
-RTMDSR::Route::s()
-{
-  char buf[50];
-  sprintf(buf, "m=%d ", _metric);
-  String s(buf);
-  int i;
-  for(i = 0; i < _hops.size(); i++){
-    s = s + _hops[i].s();
-    if(i + 1 < _hops.size())
-      s = s + " ";
-  }
-  return s;
-}
-
-String
-RTMDSR::Seen::s()
+SRCR::Seen::s()
 {
   StringAccum sa;
   sa << "[m="<< _metric << " ";
@@ -608,23 +612,8 @@ RTMDSR::Seen::s()
   return sa.take_string();
 }
 
-RTMDSR::Route::Route( struct sr_pkt *pk)
-{
-  _when = get_timeval();
-  
-  _metric = 0;
-  int i;
-  for(i = 0; i < ntohs(pk->_nhops); i++){
-    _hops.push_back(IPAddress(pk->get_hop(i)));
-  }
-
-  for(i = 0; i < ntohs(pk->_nhops) - 1; i++){
-    _metric += pk->get_metric(i);
-  }
-}
-
 void
-RTMDSR::start_reply(struct sr_pkt *pk1)
+SRCR::start_reply(struct sr_pkt *pk1)
 {
   u_short nhops = ntohs(pk1->_nhops);
   if(nhops > MaxHops)
@@ -643,14 +632,12 @@ RTMDSR::start_reply(struct sr_pkt *pk1)
   for(int i = 0; i < nhops - 1; i++) {
     pk->set_metric(i, pk1->get_metric(i));
   }
-
-  pk->set_metric(nhops - 1, get_metric(IPAddress(pk->get_hop(nhops-1))));
+  pk->set_metric(nhops - 1, get_metric(IPAddress(pk->get_hop(nhops-2))));
   pk->_next = htons(nhops - 1); // Indicates next hop.
 
-  click_chatter("DSR %s: start_reply%s [%s]",
+  click_chatter("DSR %s: start_reply%s",
                 _ip.s().cc(),
-                (pk->_flags & PF_BETTER) ? " B" : "",
-                Route(pk).s().cc());
+                (pk->_flags & PF_BETTER) ? " B" : "");
 
   send(p);
 }
@@ -658,7 +645,7 @@ RTMDSR::start_reply(struct sr_pkt *pk1)
 // Got a reply packet whose ultimate consumer is us.
 // Make a routing table entry if appropriate.
 void
-RTMDSR::got_reply(struct sr_pkt *pk)
+SRCR::got_reply(struct sr_pkt *pk)
 {
   int di = find_dst(pk->_qdst, false);
   if(di < 0){
@@ -676,18 +663,24 @@ RTMDSR::got_reply(struct sr_pkt *pk)
     return;
   }
 
-  Route r(pk);
-  dst._routes.push_back(r);
-  click_chatter("DSR %s: installed%s route to %s via [%s]",
-                _ip.s().cc(),
-                (pk->_flags & PF_BETTER) ? " B" : "",
-                dst._ip.s().cc(),
-                r.s().cc());
+  /* update the route metrics */
+  timeval now = get_timeval();
+  for(int i = 0; i < pk->num_hops()-1; i++) {
+    IPAddress a = pk->get_hop(i);
+    IPAddress b = pk->get_hop(i+1);
+    u_short m = pk->get_metric(i);
+    click_chatter("updating link %d: %s -> %s <%d>", i, a.s().cc(), b.s().cc(), m);
+    _link_table->update_link(IPPair(a,b), m, now);
+  }
+  click_chatter("running dijkstra...");
+  _link_table->dijkstra(_ip);
+  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
+
 }
 
-// Process a packet from the net, sent by a different RTMDSR.
+// Process a packet from the net, sent by a different SRCR.
 void
-RTMDSR::got_sr_pkt(Packet *p_in)
+SRCR::got_sr_pkt(Packet *p_in)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
   if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
@@ -764,17 +757,30 @@ RTMDSR::got_sr_pkt(Packet *p_in)
   return;
 }
 
+
+String 
+SRCR::route_to_string(Vector<IPAddress> s) 
+{
+  StringAccum sa;
+  sa << "[ ";
+  for (int i=0; i<s.size(); i++) {
+    sa << s[i] << " ";
+  }
+  sa << "]";
+  return sa.take_string();
+}
 void
-RTMDSR::push(int port, Packet *p_in)
+SRCR::push(int port, Packet *p_in)
 {
   if(port == 0){
     // Packet from upper layers in same host.
-    Route &r = best_route(p_in->dst_ip_anno());
-    click_chatter("DSR %s: data to %s via [%s]",
+    click_chatter("got data packet\n");
+    Vector<IPAddress> r = _link_table->best_route(p_in->dst_ip_anno());
+    click_chatter("DSR %s: data to %s: %s",
                   _ip.s().cc(),
                   p_in->dst_ip_anno().s().cc(),
-                  r.s().cc());
-    if(r._hops.size() > 0)
+		  route_to_string(r).cc());
+    if(r.size() > 1)
       start_data(p_in->data(), p_in->length(), r);
     else
       start_query(p_in->dst_ip_anno());
@@ -786,7 +792,7 @@ RTMDSR::push(int port, Packet *p_in)
 
 
 void
-RTMDSR::query_hook(Timer *t) 
+SRCR::query_hook(Timer *t) 
 {
   dsr_assert(t);
 
@@ -807,9 +813,9 @@ RTMDSR::query_hook(Timer *t)
 }
 
 static String
-RTMDSR_read_stats(Element *f, void *)
+SRCR_read_stats(Element *f, void *)
 {
-  RTMDSR *d = (RTMDSR *) f;
+  SRCR *d = (SRCR *) f;
   return
     String(d->_queries) + " queries sent\n" +
     String(d->_querybytes) + " bytes of query sent\n" +
@@ -820,15 +826,15 @@ RTMDSR_read_stats(Element *f, void *)
 }
 
 void
-RTMDSR::add_handlers()
+SRCR::add_handlers()
 {
-  add_read_handler("stats", RTMDSR_read_stats, 0);
+  add_read_handler("stats", SRCR_read_stats, 0);
 }
 
  void
-RTMDSR::dsr_assert_(const char *file, int line, const char *expr) const
+SRCR::dsr_assert_(const char *file, int line, const char *expr) const
 {
-  click_chatter("RTMDSR %s assertion \"%s\" failed: file %s, line %d",
+  click_chatter("SRCR %s assertion \"%s\" failed: file %s, line %d",
 		id().cc(), expr, file, line);
 #ifdef CLICK_USERLEVEL  
   abort();
@@ -841,9 +847,9 @@ RTMDSR::dsr_assert_(const char *file, int line, const char *expr) const
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<RTMDSR::Dst>;
-template class Vector<RTMDSR::IPAddresss>;
+template class Vector<SRCR::Dst>;
+template class Vector<SRCR::IPAddresss>;
 #endif
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(RTMDSR)
+EXPORT_ELEMENT(SRCR)

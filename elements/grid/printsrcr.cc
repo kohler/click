@@ -1,5 +1,5 @@
 /*
- * printdsr.{cc,hh} -- print dsr packets, for debugging.
+ * printsrcr.{cc,hh} -- print srcr packets, for debugging.
  * John Bicket
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "printdsr.hh"
+#include "printsrcr.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -25,26 +25,26 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-PrintDSR::PrintDSR()
+PrintSRCR::PrintSRCR()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
   _label = "";
 }
 
-PrintDSR::~PrintDSR()
+PrintSRCR::~PrintSRCR()
 {
   MOD_DEC_USE_COUNT;
 }
 
-PrintDSR *
-PrintDSR::clone() const
+PrintSRCR *
+PrintSRCR::clone() const
 {
-  return new PrintDSR;
+  return new PrintSRCR;
 }
 
 int
-PrintDSR::configure(Vector<String> &conf, ErrorHandler* errh)
+PrintSRCR::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
@@ -58,18 +58,18 @@ PrintDSR::configure(Vector<String> &conf, ErrorHandler* errh)
 }
 
 Packet *
-PrintDSR::simple_action(Packet *p)
+PrintSRCR::simple_action(Packet *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
   if(pk->ether_type != _et){
-    click_chatter("PrintDSR %s: bad ether_type %04x",
+    click_chatter("PrintSRCR %s: bad ether_type %04x",
                   ntohs(pk->ether_type));
     return (0);
   }
 
   StringAccum sa;
-  sa << "PrintDSR ";
+  sa << "PrintSRCR ";
   String type;
   switch (pk->_type) {
   case PT_QUERY:
@@ -111,7 +111,7 @@ PrintDSR::simple_action(Packet *p)
   for(int i = 0; i< ntohs(pk->_nhops); i++) {
     sa << " "<< IPAddress(pk->get_hop(i)).s().cc() << " ";
     if (i != ntohs(pk->_nhops) - 1) {
-      sa << "<" << pk->get_metric(i) << "> ";
+      sa << "<" << pk->get_metric(i) << ">";
     }
 
   }
@@ -125,4 +125,4 @@ PrintDSR::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(PrintDSR)
+EXPORT_ELEMENT(PrintSRCR)

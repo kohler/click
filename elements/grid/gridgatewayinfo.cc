@@ -101,6 +101,7 @@ GridGatewayInfo::simple_action(Packet *p)
     return p;
   } else {
     /* we couldn't find a gateway, so drop the packet */
+    click_chatter("GridGatwayInfo: couldn't find a gateway. dropping packet");
     p->kill();
     return(0);
   }

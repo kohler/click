@@ -1,23 +1,24 @@
-#ifndef CLICK_RTMDSR_HH
-#define CLICK_RTMDSR_HH
+#ifndef CLICK_SRCR_HH
+#define CLICK_SRCR_HH
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/vector.hh>
+#include "linktable.hh"
 CLICK_DECLS
 
 /*
  * =c
- * RTMDSR(IP, ETH, ETHERTYPE, [LS link-state-element])
+ * SRCR(IP, ETH, ETHERTYPE, [LS link-state-element])
  * =d
  * DSR-inspired ad-hoc routing protocol.
  * Input 0: IP packets from higher layer, w/ ip addr anno.
  * Input 1: ethernet packets.
  * Output 0: IP packets for higher layer.
  * Output 1: ethernet packets.
- * Test script in ~rtm/scripts/rtmdsr.pl
+ * Test script in ~rtm/scripts/srcr.pl
  *
  * To Do:
  * Delete or re-check old routes? (Maybe not, maybe wait for failure.)
@@ -55,7 +56,7 @@ CLICK_DECLS
 =e
 kt :: KernelTun(1.0.0.1/24);
 ls :: LinkStat(ETH 00:20:e0:8b:5d:d6, IP 1.0.0.1);
-dsr :: RTMDSR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807, LS ls);
+dsr :: SRCR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807, LS ls);
 fd :: FromDevice(wi0, 0);
 td :: ToDevice(wi0);
 kt -> icl :: Classifier(12/080045, -);
@@ -112,7 +113,9 @@ struct sr_pkt {
     return len_wo_data(nhops) + dlen;
   }
   
-  
+  u_short num_hops() {
+    return ntohs(_nhops);
+  }
   
   /* yes, I'm that nasty */
   in_addr get_hop(int h) { 
@@ -138,16 +141,16 @@ struct sr_pkt {
 };
 
 
-class RTMDSR : public Element {
+class SRCR : public Element {
  public:
   
-  RTMDSR();
-  ~RTMDSR();
+  SRCR();
+  ~SRCR();
   
-  const char *class_name() const		{ return "RTMDSR"; }
+  const char *class_name() const		{ return "SRCR"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  RTMDSR *clone() const;
+  SRCR *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
   void add_handlers();
   
@@ -156,7 +159,7 @@ class RTMDSR : public Element {
   static timeval get_timeval(void);
   static timeval add_millisec(timeval t, int milli);
   static bool timeval_past(timeval a, timeval b); // return if a is past b
-
+  static String SRCR::route_to_string(Vector<IPAddress> s);
   // Statistics for handlers.
   int _queries;
   int _querybytes;
@@ -177,23 +180,9 @@ private:
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint16_t _et;     // This protocol's ethertype.
+  class LinkTable *_link_table;
   class LinkStat *_link_stat;
-
-  // Description of a route to a destination.
-  class Route {
-  public:
-    timeval _when; // When we learned about this route.
-    u_short _metric;  // metric from the query/reply
-    u_short _data_metric; // metric from latest data packets
-    Vector<IPAddress> _hops;
-    String s();
-    Route() { _when.tv_sec = 0; _when.tv_usec = 0; _metric = 9999;  _data_metric = 9999; };
-    Route(struct sr_pkt *pk);
-
-
-  };
-
-
+  
   // State of a destination.
   // We might have a request outstanding for this destination.
   // We might know some routes to this destination.
@@ -203,7 +192,6 @@ private:
     IPAddress _ip;
     u_long _seq; // Of last query sent out.
     timeval _when; // When we sent last query.
-    Vector<Route> _routes;
   };
 
   Vector<Dst> _dsts;
@@ -244,16 +232,11 @@ private:
   };
   Vector<ARP> _arp;
 
-  Route _no_route;
-
-
-   
-   static void static_query_hook(Timer *t, void *v) 
-   { ((RTMDSR *) v)->query_hook(t); }
+  static void static_query_hook(Timer *t, void *v) 
+   { ((SRCR *) v)->query_hook(t); }
 
 
   int find_dst(IPAddress ip, bool create);
-  Route &best_route(IPAddress);
   bool find_arp(IPAddress ip, u_char en[6]);
   void got_arp(IPAddress ip, u_char xen[6]);
   u_short get_metric(IPAddress other);
@@ -264,7 +247,7 @@ private:
   void start_reply(struct sr_pkt *pk1);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);
-  void start_data(const u_char *data, u_long len, Route &r);
+  void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void got_data(struct sr_pkt *pk);
   void forward_data(struct sr_pkt *pk);
   void send(WritablePacket *);

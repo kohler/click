@@ -106,7 +106,7 @@ GridProxy::reverse_mapping(Packet *p_in) {
   gateway = IPAddress(_map[dst]);
 
   if (!gateway) {
-    click_chatter("couldn't find a gateway for %s!\n", dst.s().cc());
+    //click_chatter("couldn't find a gateway for %s!\n", dst.s().cc());
     p_in->kill();
     return;
   }
