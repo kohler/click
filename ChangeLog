@@ -1,3 +1,13 @@
+2000-12-08 Friday 21:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/iprw.cc: IPRewriter clean_map: be careful about
+	Vectors
+
+2000-12-08 Friday 21:45  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: iprw.cc, iprw.cc: IPRewriter clear_map: be careful
+	about Vectors
+
 2000-12-07 Thursday 19:02  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/app/ftpportmapper.cc, elements/icmp/icmprewriter.cc,
