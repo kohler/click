@@ -49,7 +49,7 @@
 	* elements/standard/: queue.cc (1.44), queue.hh (1.33): remove old
 	Queue definition
 
-2003-02-15 Saturday 03:15  kohler
+2003-02-15 Saturday 03:15  Eddie Kohler <kohler@icir.org>
 
 	* test/: testie (1.8), testie (1.9): add --show option
 
@@ -78,6 +78,12 @@
 2003-02-14 Friday 00:44  Eddie Kohler <kohler@icir.org>
 
 	* lib/ino.cc (1.7): nit
+
+2003-02-14 Friday 00:15  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.26), aggregateipflows.cc
+	(1.21), aggregateipflows.hh (1.16): adapt to Click changes
+	(particularly HandlerCalls)
 
 2003-02-14 Friday 00:09  Eddie Kohler <kohler@icir.org>
 
@@ -171,6 +177,16 @@
 	Packet::steal_skb() method; it gave the wrong idea, and has been
 	equivalent to skb() for quite a while
 
+2003-02-10 Monday 19:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregatefirst.hh (1.5): doc nit
+
+2003-02-10 Monday 18:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.20),
+	aggregateipflows.hh (1.15): keep track of CONNINFO stats (separate
+	element?)
+
 2003-02-10 Monday 15:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.35): change default metric to
@@ -226,10 +242,20 @@
 
 	* lib/error.cc (1.42): nit
 
-2003-02-09 Sunday 18:05  kohler
+2003-02-09 Sunday 18:05  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.7): use bytes, and support commands in the
 	background
+
+2003-02-09 Sunday 14:35  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.25): adapt to ICMP changes
+
+2003-02-09 Sunday 14:35  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.19),
+	aggregateipflows.hh (1.14): AggregateIPFlows handles fragments and
+	uses marginally less memory
 
 2003-02-09 Sunday 03:16  Eddie Kohler <kohler@icir.org>
 
@@ -382,6 +408,12 @@
 	lookuplocalgridroute.hh (1.19): Fixup location handling in kernel
 	mode
 
+2003-02-04 Tuesday 02:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.24), toipflowdumps.hh
+	(1.15): significant speed improvement when GZIP true: fork
+	background gzip process for batches of flows
+
 2003-02-03 Monday 20:38  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: ipprint.cc (1.37), ipprint.hh (1.20): TIMESTAMP
@@ -441,6 +473,12 @@
 	gridlogger.cc (1.6), gridlogger.hh (1.21), lookupgeogridroute.cc
 	(1.30), regionpep.cc (1.16): fix bugs in previous checkin to build
 	as userlevel as well
+
+2003-01-31 Friday 19:33  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatelast.cc (1.4), aggregatelast.hh
+	(1.3), toipflowdumps.cc (1.23), toipflowdumps.hh (1.14): no more
+	run_scheduled
 
 2003-01-31 Friday 17:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -815,11 +853,25 @@
 	(1.20): made optional GridGatewayInof and LinkTracker/LinkStat
 	element arguments into keyword args
 
+2003-01-21 Tuesday 22:01  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.22): #include <sys/wait.h>
+
+2003-01-21 Tuesday 02:09  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.21), toipflowdumps.hh
+	(1.13): support TCP_WINDOW
+
 2003-01-21 Tuesday 02:07  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.40), ipsumdumpinfo.cc
 	(1.6), ipsumdumpinfo.hh (1.4), toipsumdump.cc (1.35),
 	toipsumdump.hh (1.30): add tcp_window type
+
+2003-01-18 Saturday 02:44  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.20): s/PUT4NET/PUT4/ (fix
+	byte ordering)
 
 2003-01-18 Saturday 02:42  Eddie Kohler <kohler@icir.org>
 
@@ -861,9 +913,29 @@
 	correct payload lengths (rather than 4 bytes too big), and better
 	TCP option handling
 
+2003-01-09 Thursday 22:13  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.19), toipflowdumps.hh
+	(1.12): export output_pattern
+
+2003-01-08 Wednesday 04:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.18), toipflowdumps.hh
+	(1.11): add GZIP keyword argument
+
+2003-01-08 Wednesday 03:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.17), toipflowdumps.hh
+	(1.10): add explicit configure_phase and "clear" handler
+
 2003-01-03 Friday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/airoinfo.cc (1.9): nits
+
+2003-01-03 Friday 01:32  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.16), toipflowdumps.hh
+	(1.9): ToIPFlowDumps supports IP_ID
 
 2003-01-02 Thursday 17:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -905,15 +977,35 @@
 	* include/click/glue.hh (1.33): nitlet found by Xiao Phong
 	<xiaophong2002@yahoo.com>
 
+2002-12-17 Tuesday 19:50  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.18): add assertion
+
 2002-12-17 Tuesday 19:48  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromipsumdump.cc (1.37): don't set IP header
 	annotation if there is no valid IP data; also don't bother to align
 
+2002-12-17 Tuesday 19:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatefirst.cc (1.3), aggregatelast.cc
+	(1.3): remove warnings
+
+2002-12-17 Tuesday 18:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.17),
+	aggregateipflows.hh (1.13): use BigHashMap::Pair instead of the
+	more dangerous key_of_value
+
 2002-12-17 Tuesday 18:39  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc (1.20), bighashmap.hh (1.16): add
 	BigHashMap::Pair and BigHashMap::iterator::pair()
+
+2002-12-17 Tuesday 18:04  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatefirst.hh (1.4), aggregatelast.cc
+	(1.2), aggregatelast.hh (1.2): fix AggregateFirst docs, other nits
 
 2002-12-17 Tuesday 17:42  Eddie Kohler <kohler@icir.org>
 
@@ -974,6 +1066,21 @@
 	* elements/grid/: airoinfo.cc (1.8), airoinfo.hh (1.5): expanded
 	airoinfo API for link testing elements
 
+2002-12-06 Friday 17:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatefirst.cc (1.2), aggregatefirst.hh
+	(1.3), aggregatelast.cc (1.1), aggregatelast.hh (1.1): add
+	AggregateLast
+
+2002-12-05 Thursday 20:51  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregatefirst.hh (1.2): documentation
+
+2002-12-05 Thursday 20:31  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatefirst.cc (1.1), aggregatefirst.hh
+	(1.1): add AggregateUniq
+
 2002-11-22 Friday 19:26  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/skbmgr.cc (1.14): the correct size of the packet's
@@ -1009,18 +1116,6 @@
 	src/idiag_e1000.h (1.1), src/idiag_pro.h (1.1), src/idiag_test.c
 	(1.1), src/kcompat.c (1.1), src/kcompat.h (1.1): add new e1000
 	driver (4.3.15, works on Linux 2.4)
-
-2002-11-22 Friday 12:12  Eddie Kohler <kohler@icir.org>
-
-	* drivers/e1000/: LICENSE (1.3), Makefile (1.7), Makefile.orig
-	(1.3), README (1.3), README-rtm (1.3), ans.c (1.3), ans.h (1.3),
-	ans_driver.c (1.3), ans_driver.h (1.3), ans_hw.c (1.3), ans_hw.h
-	(1.3), ans_os.c (1.3), ans_os.h (1.3), base_comm.h (1.3), e1000.h
-	(1.3), e1000.h.orig (1.3), e1000_fxhw.c (1.3), e1000_fxhw.h (1.3),
-	e1000_kcompat.h (1.4), e1000_main.c (1.6), e1000_main.c.orig (1.3),
-	e1000_phy.c (1.3), e1000_phy.h (1.3), e1000_proc.c (1.3),
-	e1000_proc.h (1.3), e1000_vendor_info.h (1.3): remove old e1000
-	driver
 
 2002-11-21 Thursday 18:32  Eddie Kohler <kohler@icir.org>
 
@@ -1127,6 +1222,11 @@
 	compile-time support for a smaller grid header; fixe weird include
 	bug regarding NULL in gridroutetable.cc
 
+2002-10-31 Thursday 02:39  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateip.cc (1.14), aggregateip.hh (1.11),
+	toipflowdumps.cc (1.15): new Click
+
 2002-10-31 Thursday 02:04  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: toipsumdump.cc (1.33), toipsumdump.hh (1.28):
@@ -1199,7 +1299,7 @@
 	* etc/samplellrpc/click-readcounter.c (1.4): oops, not a C++
 	program
 
-2002-10-18 Friday 16:14  kohler
+2002-10-18 Friday 16:14  Eddie Kohler <kohler@icir.org>
 
 	* test/: testie (1.5), testie (1.6): variables on the command line
 
@@ -1294,13 +1394,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
-	typename where required by later GCCs
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/packet.hh (1.42): add end_data() function (= data()
-	+ length())
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
 
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
@@ -1371,15 +1471,21 @@
 	* elements/tcpudp/tcprewriter.cc (1.29): fix htonl bug reported by
 	Wang Po-Cheng <pcwang@cs.stanford.edu>
 
-2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
+2002-10-05 Saturday 14:08  Eddie Kohler <kohler@icir.org>
 
-	* include/click/task.hh (1.19): remove unused method
+	* elements/analysis/: aggregateip.cc (1.13), aggregateipflows.cc
+	(1.16), aggregatelen.cc (1.5), aggregatenotifier.cc (1.3): use C++
+	names for C #includes
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
 	RouterThread::driver() gives waiting threads a chance before
 	restarting (Mz)
+
+2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/task.hh (1.19): remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
@@ -1511,6 +1617,19 @@
 	* elements/userlevel/controlsocket.cc (1.36): add call to
 	shutdown()
 
+2002-10-01 Tuesday 13:51  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggcounter.hh (1.25): HashMap fixes
+
+2002-10-01 Tuesday 13:48  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateip.cc (1.12), aggregateipflows.cc
+	(1.15): HashMap iterator stuff
+
+2002-10-01 Tuesday 13:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateip.cc (1.11): Iterator/iterator
+
 2002-09-30 Monday 12:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridsrforwarder.cc (1.5): bug fix
@@ -1587,7 +1706,7 @@
 	(1.10), lib/router.cc (1.132): add reference counting to
 	BHM_Arenas, to support the swap operation
 
-2002-09-05 Thursday 02:10  kohler
+2002-09-05 Thursday 02:10  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.4): first working testicle
 
@@ -1641,6 +1760,27 @@
 	* elements/analysis/: fromipsumdump.cc (1.32), toipsumdump.cc
 	(1.27), toipsumdump.hh (1.25): buglet
 
+2002-08-26 Monday 11:37  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.13), toipflowdumps.cc
+	(1.14): nit
+
+2002-08-26 Monday 11:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.12), toipflowdumps.hh
+	(1.8): support other TCP options; add OUTPUT_LARGER
+
+2002-08-26 Monday 05:30  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.11): permissions nit (by
+	the way, this version also supports BINARY and it no longer uses
+	stdio)
+
+2002-08-26 Monday 05:27  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.10), toipflowdumps.hh
+	(1.7): support SACK
+
 2002-08-26 Monday 04:37  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.31), fromipsumdump.hh
@@ -1670,6 +1810,24 @@
 	toipsumdump.cc (1.24), toipsumdump.hh (1.22): support BINARY
 	ipsumdump files
 
+2002-08-23 Friday 10:19  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.hh (1.6): accessor methods
+
+2002-08-22 Thursday 16:58  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.9): generate payload_len
+	and ack in opposite order
+
+2002-08-20 Tuesday 19:28  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.14),
+	aggregateipflows.hh (1.12): add frozen input and frozen handler
+
+2002-08-20 Tuesday 19:28  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.8): nit
+
 2002-08-20 Tuesday 17:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.22): Added a cast from double
@@ -1691,6 +1849,16 @@
 	(1.10), lib/userutils.cc (1.27): Explicit conversions to String to
 	make gcc3.1 happy on macos X
 
+2002-08-19 Monday 21:45  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregatefilter.hh (1.2): AggregateFilter docs
+
+2002-08-19 Monday 21:16  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.12),
+	aggregateipflows.hh (1.11), aggregateipflows.cc (1.13):
+	AggregateIPFlows supports FLOWINFO keyword argument
+
 2002-08-19 Monday 21:06  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.28), toipsumdump.cc
@@ -1703,10 +1871,33 @@
 	(1.22), toipsumdump.hh (1.20): different characters for link
 	annotations by default
 
+2002-08-19 Monday 20:41  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregatefilter.cc (1.1), aggregatefilter.hh
+	(1.1), aggregatefilter.cc (1.2): first version of AggregateFilter
+
 2002-08-19 Monday 20:37  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromipsumdump.cc (1.26): allow underscores in
 	CONTENTS names
+
+2002-08-19 Monday 19:48  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.25), aggcounter.hh (1.24),
+	aggregateip.cc (1.10), aggregateip.hh (1.10), aggregateipflows.cc
+	(1.11), aggregateipflows.hh (1.10), aggregatenotifier.cc (1.2),
+	aggregatenotifier.hh (1.2): CLICK_DECLS
+
+2002-08-19 Monday 19:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.10),
+	aggregateipflows.hh (1.9), toipflowdumps.hh (1.5):
+	s/AggregateFlows/AggregateIPFlows/g
+
+2002-08-19 Monday 19:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.7): generate !aggregate
+	comments
 
 2002-08-19 Monday 19:10  Eddie Kohler <kohler@icir.org>
 
@@ -1772,10 +1963,24 @@
 	tosimdump.hh (1.2): Got rid of tosimdump, fixed a couple of minor
 	things in simdevice
 
+2002-08-16 Friday 15:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.hh (1.8): nits
+
 2002-08-14 Wednesday 15:00  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* include/click/simclick.h (1.1): Generic Click/simulator interface
 	header
+
+2002-08-13 Tuesday 19:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.6), toipflowdumps.hh
+	(1.4): support %.0[nxX] ... %.5[nxX]
+
+2002-08-13 Tuesday 19:04  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.5), toipflowdumps.hh
+	(1.3): support ABSOLUTE_TIME and ABSOLUTE_SEQ
 
 2002-08-13 Tuesday 18:59  Eddie Kohler <kohler@icir.org>
 
@@ -1786,6 +1991,17 @@
 
 	* include/click/glue.hh (1.30): add make_timeval() function
 
+2002-08-13 Tuesday 15:58  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.3), toipflowdumps.cc
+	(1.4): more ICMP error handling
+
+2002-08-13 Tuesday 15:45  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.9),
+	aggregateipflows.hh (1.7), toipflowdumps.cc (1.2): add ICMP error
+	support to AggregateFlows and ToIPFlowDumps
+
 2002-08-13 Tuesday 15:43  Eddie Kohler <kohler@icir.org>
 
 	* include/click/ipflowid.hh (1.12), lib/ipflowid.cc (1.18): add
@@ -1795,6 +2011,21 @@
 
 	* elements/icmp/: icmprewriter.cc (1.13), icmprewriter.hh (1.7):
 	buglet fixlets
+
+2002-08-13 Tuesday 01:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.hh (1.2): reduce memory
+	consumption
+
+2002-08-13 Tuesday 00:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.1), toipflowdumps.hh
+	(1.1): add ToIPFlowDumps
+
+2002-08-13 Tuesday 00:42  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.8): notify people about
+	the new aggregate after setting its annotations, not before
 
 2002-08-12 Monday 23:51  Eddie Kohler <kohler@icir.org>
 
@@ -2428,6 +2659,11 @@
 	* elements/standard/: counter.cc (1.27), counter.hh (1.26): change
 	CALL_AFTER_COUNT handler names to COUNT_CALL, for consistency
 
+2002-07-31 Wednesday 18:24  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.24), aggcounter.hh (1.23):
+	change names of *CALL handlers, from CALL_AFTER_* to *_CALL
+
 2002-07-31 Wednesday 15:03  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: todump.cc (1.38), todump.hh (1.26): ToDump
@@ -2754,6 +2990,17 @@
 	glue.cc rearrangement for sense, and add click_qsort (supported at
 	user level and in both kernel modules)
 
+2002-07-09 Tuesday 20:46  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.hh (1.6): doc nit
+
+2002-07-09 Tuesday 20:44  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.7),
+	aggregateipflows.hh (1.5), aggregatenotifier.cc (1.1),
+	aggregatenotifier.hh (1.1): add AggregateListener and
+	AggregateNotifier, and make AggregateFlows an AggregateNotifier
+
 2002-07-09 Tuesday 14:43  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.15), aclocal.m4 (1.15), config-userlevel.h.in
@@ -2833,6 +3080,13 @@
 	linuxmodule ioctl() wrapper then copies the relevant amount of data
 	to and fro, when required. Also, local_llrpc() is no longer a
 	virtual function.
+
+2002-07-03 Wednesday 14:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.6): don't bother
+	cleaning the maps on the first time you reap old flows. Before, we
+	reaped the flow right after the first packet! Obviously incorrect.
+	Reported by Angelos
 
 2002-07-03 Wednesday 14:38  Eddie Kohler <kohler@icir.org>
 
@@ -3022,6 +3276,11 @@
 	(1.12), gridgenericrt.hh (1.4), gridlogger.hh (1.17),
 	gridroutetable.cc (1.56), gridroutetable.hh (1.34): buglets &
 	beefed up error checking and asserts (again...)
+
+2002-06-11 Tuesday 18:10  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.23), aggcounter.hh (1.22):
+	AggregateCounter supports IP address-like ASCII output formats
 
 2002-06-11 Tuesday 11:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -3234,6 +3493,17 @@
 
 	* elements/grid/dsdvroutetable.hh (1.5): doc nitlets
 
+2002-05-31 Friday 01:44  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateip.hh (1.9), aggregateipflows.cc
+	(1.5), aggregateipflows.hh (1.4): fix up and document
+	AggregateFlows
+
+2002-05-31 Friday 01:44  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.22), aggcounter.hh (1.21):
+	add "nagg" handler
+
 2002-05-31 Friday 01:42  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc (1.10), bighashmap.hh (1.9): add
@@ -3444,6 +3714,11 @@
 2002-05-21 Tuesday 20:35  Eddie Kohler <kohler@icir.org>
 
 	* README (1.32): add include/ to README
+
+2002-05-21 Tuesday 20:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.4), aggregateip.cc
+	(1.9), aggregatelen.cc (1.4): adapt to #include <clicknet/>
 
 2002-05-21 Tuesday 20:14  Eddie Kohler <kohler@icir.org>
 
@@ -3721,6 +3996,15 @@
 
 	* elements/userlevel/fakepcap.cc (1.6): FakePcap's force_ip
 	processing sets destination address annotation to reduce surprises
+
+2002-05-10 Friday 01:10  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggcounter.cc (1.21): ensure BANNER ends in \n
+
+2002-05-10 Friday 01:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.20), aggcounter.hh (1.20):
+	add BANNER keyword
 
 2002-05-10 Friday 00:19  Eddie Kohler <kohler@icir.org>
 
@@ -4076,6 +4360,20 @@
 	tools/lib/lexert.hh (1.24), tools/lib/routert.cc (1.58),
 	tools/lib/routert.hh (1.49): closer standard compliance, much from
 	Scott Page@utexas
+
+2002-04-24 Wednesday 00:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.19), aggcounter.hh (1.19),
+	aggregateip.cc (1.8), aggregateip.hh (1.8), aggregateipflows.cc
+	(1.3), aggregateipflows.hh (1.3), aggregatelen.cc (1.3),
+	aggregatelen.hh (1.3): update to Click changes: use first_bit_set,
+	and take away const from Vector<String> & in configure() signature
+
+2002-04-23 Tuesday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggcounter.cc (1.18), aggcounter.hh (1.18),
+	aggregateip.cc (1.7), aggregateip.hh (1.7), aggregateipflows.hh
+	(1.2): adapt to Click changes
 
 2002-04-23 Tuesday 18:46  Eddie Kohler <kohler@icir.org>
 
@@ -5171,15 +5469,15 @@
 
 	* include/click/router.hh (1.27), lib/router.cc (1.115): nitlet
 
-2002-02-12 Tuesday 13:16  kohler
+2002-02-12 Tuesday 13:16  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.3): updates
 
-2002-02-11 Monday 13:39  kohler
+2002-02-11 Monday 13:39  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.2): testicle update
 
-2002-02-09 Saturday 16:09  kohler
+2002-02-09 Saturday 16:09  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.1): starting to try
 
@@ -5738,6 +6036,17 @@
 	* conf/ron/make-client-ron.pl (1.8): suport fixed diver socket
 	number
 
+2002-01-28 Monday 00:57  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.2): PORTS false -related
+	nitlet
+
+2002-01-28 Monday 00:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: aggregateipflows.cc (1.1), aggregateip.hh
+	(1.6), aggregateipflows.hh (1.1): use AggregateFlows instead of
+	FlowToAddress
+
 2002-01-27 Sunday 20:07  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromdagdump.cc (1.1),
@@ -5941,8 +6250,8 @@
 
 2002-01-11 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
-	* drivers/: e1000/e1000_kcompat.h (1.3), e1000-2.x/e1000_kcompat.h
-	(1.3): fixes for compilation under 2.2.19, from Brecht Vermeulen
+	* drivers/e1000-2.x/e1000_kcompat.h (1.3): fixes for compilation
+	under 2.2.19, from Brecht Vermeulen
 
 2002-01-11 Friday 02:42  Eddie Kohler <kohler@icir.org>
 
