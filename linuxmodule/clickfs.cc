@@ -748,7 +748,7 @@ init_clickfs()
     click_dentry_ops.d_delete = click_delete_dentry;
 
 #ifdef LINUX_2_4
-    click_dir_file_ops.owner = 0; // proclikefs takes care of pointers
+    click_dir_file_ops.owner = 0; // proclikefs takes care of ownership
     click_dir_file_ops.read = generic_read_dir;
 #endif
     click_dir_file_ops.readdir = click_dir_readdir;
@@ -759,7 +759,7 @@ init_clickfs()
 #endif
 
 #ifdef LINUX_2_4
-    click_handler_file_ops.owner = 0; // proclikefs takes care of pointers
+    click_handler_file_ops.owner = 0; // proclikefs takes care of ownership
 #endif
     click_handler_file_ops.read = handler_read;
     click_handler_file_ops.write = handler_write;
