@@ -39,6 +39,10 @@
 #define ICMP6_PARAMPROB_NEXTHEADER 1
 #define ICMP6_PARAMPROB_OPTION	2
 
+/* remove possible definitions for symbols */
+#undef icmp6_identifier
+#undef icmp6_sequence
+
 
 /* most ICMP6 request types */
 struct click_icmp6 { 
