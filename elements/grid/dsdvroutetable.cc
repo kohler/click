@@ -304,7 +304,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
   if (_log) {
     timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, 0);
     _log->log_start_expire_handler(tv);
     _log->log_expired_route(GridLogger::TIMEOUT, ip);
   }

@@ -230,7 +230,9 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst;
+#ifndef SMALL_GRID_HEADERS
       encap->dst_loc_good = false;
+#endif
 
       forward_grid_packet(new_packet, dst);
     }

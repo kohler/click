@@ -84,7 +84,9 @@ SimpleLocQuerier::push(int, Packet *p)
     wp->kill();
   }
   else {
+#ifndef SMALL_GRID_HEADERS
     nb->dst_loc = *l;
+#endif
     output(0).push(wp);
   }
 }

@@ -146,9 +146,11 @@ LocQueryResponder::simple_action(Packet *p)
   ngh->total_len = htons(q->length() - sizeof(click_ether));
 
   nb->dst_ip = gh->ip;
+#ifndef SMALL_GRID_HEADERS
   nb->dst_loc = gh->loc;
   nb->dst_loc_err = gh->loc_err; // don't need to convert, already in network byte order
   nb->dst_loc_good = gh->loc_good;
+#endif
   nb->hops_travelled = 0;
 
   p->kill();

@@ -34,7 +34,6 @@
 #include <cmath>
 #include <sys/time.h>
 #include <cstdio>
-
 #include <click/string.hh>
 CLICK_DECLS
 

@@ -71,18 +71,20 @@ PingPong::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
   grid_hdr *gh = (grid_hdr *) (eh + 1);
-  grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
-
-  EtherAddress eth(eh->ether_dhost);
 
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP: 
   case grid_hdr::GRID_LOC_REPLY:
   case grid_hdr::GRID_ROUTE_PROBE: 
   case grid_hdr::GRID_ROUTE_REPLY: {
+#ifndef SMALL_GRID_HEADERS
+    grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
+
     nb->link_qual = 0;
     nb->link_sig = 0;
     nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
+
+    EtherAddress eth(eh->ether_dhost);
     LinkStat::stat_t *s = _ls->_stats.findp(eth);
     if (s) {
       nb->link_qual = htonl(s->qual);
@@ -111,6 +113,7 @@ PingPong::simple_action(Packet *p)
       nb->num_expected = num_expected;
       nb->last_bcast = hton(nb->last_bcast);
     }
+#endif
   }
   break;
   default:

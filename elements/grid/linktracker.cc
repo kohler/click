@@ -248,21 +248,20 @@ LinkTracker::simple_action(Packet *p)
   click_ether *eh = (click_ether *) p->data();
   grid_hdr *gh = (grid_hdr *) (eh + 1);
 
-  IPAddress ip(gh->tx_ip);
-
-  grid_nbr_encap *nb = 0;
-
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP: 
   case grid_hdr::GRID_LOC_REPLY:
   case grid_hdr::GRID_ROUTE_PROBE: 
-  case grid_hdr::GRID_ROUTE_REPLY: 
-    nb = (grid_nbr_encap *) (gh + 1);
+  case grid_hdr::GRID_ROUTE_REPLY: {
+#ifndef SMALL_GRID_HEADERS
+    struct grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
     struct timeval tv;
     tv.tv_sec = ntohl(nb->measurement_time.tv_sec);
     tv.tv_usec = ntohl(nb->measurement_time.tv_usec);
-    add_stat(ip, ntohl(nb->link_sig), ntohl(nb->link_qual), tv);
+    add_stat(IPAddress(gh->tx_ip), ntohl(nb->link_sig), ntohl(nb->link_qual), tv);
+#endif
     break;
+  }
   default:
     ;
   }

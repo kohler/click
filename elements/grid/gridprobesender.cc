@@ -89,7 +89,9 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   gh->total_len = htons(q->length() - sizeof(click_ether));
 
   nb->dst_ip = ip;
+#ifndef SMALL_GRID_HEADERS
   nb->dst_loc_good = false;
+#endif
   nb->hops_travelled = 0;
 
   rp->nonce = htonl(nonce);

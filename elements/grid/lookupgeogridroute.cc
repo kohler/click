@@ -313,16 +313,20 @@ bool
 LookupGeographicGridRoute::dest_loc_good(const Packet *p) const
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  struct grid_nbr_encap *encap = 0;
     
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
   case grid_hdr::GRID_ROUTE_PROBE:
-  case grid_hdr::GRID_ROUTE_REPLY:
-    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+  case grid_hdr::GRID_ROUTE_REPLY: {
+#ifndef SMALL_GRID_HEADERS
+    struct grid_nbr_encap *encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
     return encap->dst_loc_good;
+#else 
+    return false;
+#endif
     break;
+  }
   case grid_hdr::GRID_GEOCAST:
     return true;
     break;
@@ -337,26 +341,30 @@ grid_location
 LookupGeographicGridRoute::get_dest_loc(const Packet *p) const
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  struct grid_nbr_encap *encap = 0;
-  struct grid_geocast *gc = 0;
 
   switch (gh->type) {
   case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
   case grid_hdr::GRID_ROUTE_PROBE:
-  case grid_hdr::GRID_ROUTE_REPLY:
-    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+  case grid_hdr::GRID_ROUTE_REPLY: {
+#ifndef SMALL_GRID_HEADERS
+    struct grid_nbr_encap *encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
     return encap->dst_loc;
+#else
+    return grid_location(0, 0, 0);
+#endif
     break;
-  case grid_hdr::GRID_GEOCAST:
-    gc = (grid_geocast *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+  }
+  case grid_hdr::GRID_GEOCAST: {
+    struct grid_geocast *gc = (grid_geocast *) (p->data() + sizeof(click_ether) + gh->hdr_len);
     return gc->dst_region.center();
     break;
+  }
   default:
     assert(0);
     break;
   }
-  return grid_location();
+  return grid_location(0, 0, 0);
 }
 
 

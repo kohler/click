@@ -67,6 +67,7 @@ PrintGrid::encap_to_string(grid_nbr_encap *nb)
   line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
   line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
   if (_verbose) {
+#ifndef SMALL_GRID_HEADERS
     if (nb->dst_loc_good) {
       char buf[50];
       snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().cc());
@@ -75,6 +76,9 @@ PrintGrid::encap_to_string(grid_nbr_encap *nb)
     }
     else 
       line += "bad-dst-loc";
+#else
+    line += "bad-dst-loc";
+#endif
   }
   return line;
 }
@@ -213,11 +217,11 @@ PrintGrid::get_entries(grid_hello *gh)
 	     IPAddress(na->ip).s().cc(),
 	     IPAddress(na->next_hop_ip).s().cc(),
 	     (int) na->num_hops,
-	     ntohl(na->seq_no));
+	     (unsigned long) ntohl(na->seq_no));
     ret += buf;
 
     if (na->metric_valid) {
-      snprintf(buf, sizeof(buf), "metric=%lu", ntohl(na->metric));
+      snprintf(buf, sizeof(buf), "metric=%lu", (unsigned long) ntohl(na->metric));
       ret += buf;
     }
     else

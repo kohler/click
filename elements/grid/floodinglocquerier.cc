@@ -177,6 +177,11 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
   click_chatter("FloodingLocQuerier %s: got packet for %s", id().cc(), IPAddress(nb->dst_ip).s().cc());
 #endif
 
+#ifdef SMALL_GRID_HEADERS
+  click_chatter("FloodingLocQuerier %s: not enough info in small grid headers, dropping packet", id().cc());
+  p->kill();  
+  return;
+#else
   // see if packet has location info in it already
   if (nb->dst_loc_good) {
 #if NOISY
@@ -239,6 +244,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     notify_route_cbs(p, nb->dst_ip, GRCB::QueuedForLocQuery, 0, 0);
     send_query_for(nb->dst_ip);
   }
+#endif // #ifndef SMALL_GRID_HEADERS
 }
 
 /*

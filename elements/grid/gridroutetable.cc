@@ -16,6 +16,8 @@
  */
 
 #include <click/config.h>
+#include "timeutils.hh" /* includes <cmath> which may #undef NULL, so
+			   must become before <cstddef> */
 #include <cstddef>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -26,7 +28,6 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "gridroutetable.hh"
-#include "timeutils.hh"
 #include "gridlogger.hh"
 CLICK_DECLS
 
@@ -686,7 +687,7 @@ GridRouteTable::simple_action(Packet *packet)
    
   // extended logging
   timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, 0);
   _extended_logging_errh->message("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
   if (_log)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
@@ -1307,7 +1308,7 @@ GridRouteTable::expire_routes()
   xip_t expired_next_hops;
 
   timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, 0);
 
   if (_log)
     _log->log_start_expire_handler(tv);
@@ -1498,7 +1499,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   hlo->is_gateway = _gw_info->is_gateway ();
 
   /* extended logging */
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, 0);
   _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
   if (_log)
     _log->log_sent_advertisement(_seq_no, tv);

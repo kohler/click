@@ -2,6 +2,9 @@
 #define GRID_HH
 CLICK_DECLS
 
+// defining this will break lots of shit
+#define SMALL_GRID_HEADERS
+
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
 // packet data should be 4 byte aligned
@@ -108,7 +111,7 @@ private:
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfed2;
+  static const unsigned int GRID_VERSION = 0xfed3;
 
   unsigned int version;     // which version of the grid protocol we are using
 
@@ -260,11 +263,16 @@ struct grid_nbr_encap {
 
   grid_nbr_encap() { assert(sizeof(grid_nbr_encap) % 4 == 0); }
   unsigned int dst_ip;
+#ifndef SMALL_GRID_HEADERS
   struct grid_location dst_loc;
   unsigned short dst_loc_err;
   bool dst_loc_good;
+#else
+  unsigned char pad1, pad2, pad3;
+#endif
   unsigned char hops_travelled;
 
+#ifndef SMALL_GRID_HEADERS
   int link_qual;
   int link_sig;           
   struct timeval measurement_time;  
@@ -272,6 +280,7 @@ struct grid_nbr_encap {
   unsigned char num_rx;
   unsigned char num_expected;
   struct timeval last_bcast;
+#endif
 };
 
 struct grid_loc_query {

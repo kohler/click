@@ -148,7 +148,9 @@ GridProbeHandler::push(int port, Packet *p)
   gh2->total_len = htons(q->length() - sizeof(click_ether));
 
   nb2->dst_ip = gh->ip;
+#ifndef SMALL_GRID_HEADERS
   nb2->dst_loc_good = false;
+#endif
   nb2->hops_travelled = 0;
 
   rr->nonce = rp->nonce; /* keep in net byte order */
