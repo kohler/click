@@ -11,8 +11,9 @@ Version 1.0.4
   polling extensions. Some of this code was in the 1.0.3 release, but there
   was a bug.
 
-* New linux kernel patch - locks are added to protect recycling of sk_buff
-  objects and device polling functions - not extensively tested.
+* New linux kernel patch (etc/linux-2.2.14-patch-click-1.0.4): locks are added
+  to protect recycling of sk_buff objects and device polling functions - not
+  extensively tested.
 
 * New elements: UDPEncap (put an UDP header on a packet), RatedSource (like
   infinite source, but send packets at a given rate).
