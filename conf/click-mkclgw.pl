@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.9 2004/08/03 19:33:59 max Exp $
+# $Id: click-mkclgw.pl,v 1.10 2004/08/04 17:39:28 max Exp $
 #
 # click-mkclgw
 #
@@ -503,8 +503,12 @@ sub parse_addr {
 sub parse_cluster_label {
     my ($self, $input) = @_;
 
+    #
+    # note, no "-" characters allowed in labels, since Click
+    # does not allow "-" in labels.
+    #
     return undef unless 
-	$input =~ m!^([a-zA-Z0-9_-]+)(\[(.*?)\](/\[(.*?)\])?)?$!;
+	$input =~ m!^([a-zA-Z0-9_]+)(\[(.*?)\](/\[(.*?)\])?)?$!;
     my $lab = $1;
     my $incl = $3;
     my $excl = $5;
