@@ -1,3 +1,7 @@
+2003-01-29 Wednesday 15:02  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/: tcp.h, tcp.h: add TH_ECE and TH_CWR flags
+
 2003-01-27 Monday 17:57  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/handlercall.cc: ReadHandlerCalls didn't work
