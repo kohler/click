@@ -292,7 +292,7 @@ cl [2]
 
 ifdef(`IS_GATEWAY',
      iprw :: IPRewriter (pattern GW_IP - - - 0 1,
-			 nochange 2);
+			 pass 2);
      nat_ipcl :: IPClassifier (src net GRID_NET2/GRID_NET2_NETMASK,
 			       -);
      check [0] -> nat_ipcl;

@@ -124,9 +124,9 @@ rw :: IPRewriter(// internal traffic to outside world
 		 // internal traffic redirected to 'intern_server'
 		 pattern to_server_pat 1 1,
 		 // virtual wire to output 0 if no mapping
-		 nochange 0,
+		 pass 0,
 		 // virtual wire to output 2 if no mapping
-		 nochange 2);
+		 pass 2);
 
 tcp_rw :: TCPRewriter(// internal traffic to outside world
 		pattern to_world_pat 0 1,
