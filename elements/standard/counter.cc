@@ -56,7 +56,7 @@ static String
 counter_read_rate_handler(Element *f, void *)
 {
   Counter *c = (Counter *)f;
-  return cp_unparse_real(c->rate()*HZ, c->rate_scale()) + "\n";
+  return cp_unparse_real(c->rate()*CLICK_HZ, c->rate_scale()) + "\n";
 }
 
 static int

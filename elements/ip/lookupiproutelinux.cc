@@ -81,7 +81,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
   struct rtable *rt = 0;
 
   if (ip_route_output(&rt,
-                      a.s_addr(), /* dst */
+                      a.saddr(), /* dst */
                       0,          /* src */
                       0,          /* tos */
                       0) == 0){
@@ -143,7 +143,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
 {
   unsigned xgw;
 
-  if(_t.lookup(a.s_addr(), xgw, ifi)){
+  if(_t.lookup(a.saddr(), xgw, ifi)){
     gw = IPAddress(xgw);
     return(true);
   }
@@ -161,14 +161,14 @@ LookupIPRouteLinux::push(int, Packet *p)
 
   if(lookup(a, gw, ifi) == true){
     click_chatter("routed %x to %x %d",
-                a.s_addr(),
-                gw.s_addr(),
+                a.saddr(),
+                gw.saddr(),
                 ifi);
-    if(gw.s_addr() != 0)
+    if(gw.saddr() != 0)
       p->set_dst_ip_anno(gw);
     output(ifi).push(p);
   } else {
-    click_chatter("LookupIPRouteLinux: no gw for %x", a.s_addr());
+    click_chatter("LookupIPRouteLinux: no gw for %x", a.saddr());
     output(_nout).push(p);
   }
 }

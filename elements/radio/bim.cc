@@ -76,28 +76,33 @@ BIM::initialize(ErrorHandler *errh)
 
   struct termios t;
 
-  if(tcgetattr(_fd, &t) < 0){
-    perror("tcgetattr");
-    exit(1);
-  }
+  if(tcgetattr(_fd, &t) < 0)
+    return errh->error("bad tcgetattr");
 
   t.c_iflag = IGNBRK;
   t.c_oflag = 0;
   t.c_cflag = CS8|CREAD|HUPCL|CLOCAL;
   t.c_lflag = 0;
-  t.c_ispeed = t.c_ospeed = _speed;
-  if(tcsetattr(_fd, TCSANOW, &t) < 0){
-    perror("tac: TIOCSETA");
-    exit(1);
-  }
+  cfsetispeed(&t, _speed);
+  cfsetospeed(&t, _speed);
+  if(tcsetattr(_fd, TCSANOW, &t) < 0)
+    return errh->error("can't set terminal characteristics");
 
+#ifdef FIONBIO
   int yes = 1;
-  if(ioctl(_fd, FIONBIO, &yes) < 0){
-    perror("FIONBIO");
-    exit(1);
-  }
+  if(ioctl(_fd, FIONBIO, &yes) < 0)
+    return errh->error("can't set non-blocking IO");
+#else
+  return errh->error("not configured for non-blocking IO");
+#endif
 
+#ifdef TCIOFLUSH
   tcflush(_fd, TCIOFLUSH);
+#elif defined(TIOCFLUSH)
+  tcflush(_fd, TIOCFLUSH);
+#else
+  return errh->error("this architecture has no TIOCFLUSH");
+#endif
 
   return 0;
 }

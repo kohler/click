@@ -77,7 +77,7 @@ LookupIPRoute::push(int, Packet *p)
     return;
   }
   
-  if (_t.lookup(a.s_addr(), gw, ifi) == true) {
+  if (_t.lookup(a.saddr(), gw, ifi) == true) {
     _last_addr = a;
     _last_gw = gw;
     _last_output = ifi;
@@ -85,7 +85,7 @@ LookupIPRoute::push(int, Packet *p)
       p->set_dst_ip_anno(IPAddress(gw));
     output(ifi).push(p);
   } else {
-    click_chatter("LookupIPRoute: no gw for %x", a.s_addr());
+    click_chatter("LookupIPRoute: no gw for %x", a.saddr());
     p->kill();
   }
 }

@@ -49,10 +49,10 @@ Timer::Timer(Element *f)
 inline void
 Timer::schedule_after_ms(int ms)
 {
-#if HZ == 100
+#if CLICK_HZ == 100
   unsigned long time = jiffies + (ms / 10);
 #else
-  unsigned long time = jiffies + (ms * HZ / 1000);
+  unsigned long time = jiffies + (ms * CLICK_HZ / 1000);
 #endif
   if (scheduled())
     mod_timer(&_t, time);

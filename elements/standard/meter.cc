@@ -49,7 +49,7 @@ Meter::configure(const String &conf, ErrorHandler *errh)
   for (int i = 0; i < args.size(); i++) {
     if (vals[i] > max_value)
       return errh->error("rate %d too large (max %d)", i+1, max_value);
-    vals[i] = (vals[i]<<_rate.scale()) / HZ;
+    vals[i] = (vals[i]<<_rate.scale()) / CLICK_HZ;
   }
   
   if (vals.size() == 1) {
@@ -98,11 +98,11 @@ Meter::meters_read_handler(Element *f, void *)
 {
   Meter *m = (Meter *)f;
   if (m->_nmeters == 1)
-    return cp_unparse_real(m->_meter1*HZ, m->rate_scale()) + "\n";
+    return cp_unparse_real(m->_meter1*CLICK_HZ, m->rate_scale()) + "\n";
   else {
     String s;
     for (int i = 0; i < m->_nmeters; i++)
-      s = s + cp_unparse_real(m->_meters[i]*HZ, m->rate_scale()) + "\n";
+      s = s + cp_unparse_real(m->_meters[i]*CLICK_HZ, m->rate_scale()) + "\n";
     return s;
   }
 }
@@ -111,7 +111,7 @@ static String
 read_rate_handler(Element *f, void *)
 {
   Meter *c = (Meter *)f;
-  return cp_unparse_real(c->rate()*HZ, c->rate_scale()) + "\n";
+  return cp_unparse_real(c->rate()*CLICK_HZ, c->rate_scale()) + "\n";
 }
 
 void

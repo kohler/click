@@ -71,10 +71,11 @@ ToDump::initialize(ErrorHandler *errh)
   size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
   if (wrote_header != 1)
     return errh->error("unable to write to dump file");
-  return 0;
 #else
   errh->warning("dropping all packets: not compiled with pcap support");
 #endif
+  
+  return 0;
 }
 
 void

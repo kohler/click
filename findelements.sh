@@ -53,6 +53,15 @@ if test $expand = 1; then
   echo "$files" | grep .; exit 0
 fi
 
+# find a good version of awk
+if test -x /usr/bin/gawk; then
+  awk=gawk
+elif test -x /usr/bin/nawk; then
+  awk=nawk
+else
+  awk=awk
+fi
+
 # check dependencies: generate a list of bad files, then remove those files
 # from the list of good files
 bad_files=''
@@ -60,7 +69,7 @@ while true; do
   exports1=`grep -h '^EXPORT_ELEMENT\|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
   exports2=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
   awk_exports=`echo "$exports1$exports2" | sed 's/\(.*\)/dep["\1"]=1;/'`
-  new_bad_files=`grep '^ELEMENT_REQUIRES' $files | awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
+  new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
 {
   sub(/ELEMENT_REQUIRES\(/, "", $2);
   sub(/\)/, "", $2);
@@ -98,7 +107,7 @@ if test $makefile = 1; then
   #   echo "*** warning: dependency check failed for $i" 1>&2
   # done
 else
-  grep '^EXPORT_ELEMENT' $files | awk -F: 'BEGIN {
+  grep '^EXPORT_ELEMENT' $files | $awk -F: 'BEGIN {
    OFS = "";
 }
 {

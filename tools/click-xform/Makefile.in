@@ -69,13 +69,10 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: install-bin install-man
-install-bin: click-xform
+install: click-xform
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-xform $(bindir)/click-xform
 install-man:
-	$(mkinstalldirs) $(mandir)/man1
-	$(INSTALL) click-xform.1 $(mandir)/man1/click-xform.1
 
 clean:
 	rm -f *.d *.o click-xform

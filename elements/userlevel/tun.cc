@@ -140,11 +140,15 @@ Tun::alloc_tun(struct in_addr near, struct in_addr far,
         close(fd);
         return errh->error("TUNSIFINFO failed");
       }
-#endif      
+#endif
+#ifdef FIONBIO
       if(ioctl(fd, FIONBIO, &yes) < 0){
         close(fd);
         return errh->error("FIONBIO failed");
       }
+#else
+      return errh->error("not configured for non-blocking IO");
+#endif
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(far));
       sprintf(tmp, "ifconfig tun%d %s %s up", i, tmp0, tmp1);

@@ -9,6 +9,8 @@ VERSION = @VERSION@
 
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
+top_builddir = .
+subdir = .
 AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
 INSTALL = @INSTALL@
@@ -25,9 +27,9 @@ tools: Makefile
 	@cd tools; $(MAKE) all
 
 install:
-	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d; $(MAKE) install); done
+	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install); done
 install-man:
-	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d; $(MAKE) install-man); done
+	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install-man); done
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
@@ -37,8 +39,8 @@ $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 	cd $(srcdir); $(AUTOCONF)
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
-	@if echo "$?" | grep -q configure 2>/dev/null; then :; else \
-	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status; fi
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 check-filenames:
 	@a=`find . \( -name \*.cc -or -name \*.c \) -print | sed 's/.*\/\(.*\)\.c*$$/\1.o/' | grep -v 'elements\.o' | sort | uniq -d`; \
@@ -53,7 +55,7 @@ distclean:
 
 
 DISTFILES = INSTALL \
-	doc/Makefile.in doc/click.5 doc/element2man.pl \
+	doc/Makefile.in doc/click.5 doc/click-xform.1 doc/element2man.pl \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
 	etc/linux-2.2-patch \

@@ -47,9 +47,9 @@ FromDump::initialize(ErrorHandler *errh)
   if (!_filename)
     return errh->error("filename not set");
 
+#ifdef HAVE_PCAP
   char ebuf[PCAP_ERRBUF_SIZE];
   _pcap = pcap_open_offline((char*)(const char*)_filename, ebuf);
-#ifdef HAVE_PCAP
   if (!_pcap)
     return errh->error("pcap says: %s\n", ebuf);
 #else

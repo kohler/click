@@ -49,6 +49,7 @@ FromBPF::initialize(ErrorHandler *errh)
   else if (!_ifname)
     return errh->error("interface not set");
   
+#ifdef HAVE_PCAP
   char *ifname = _ifname.mutable_c_str();
   char ebuf[PCAP_ERRBUF_SIZE];
   _pcap = pcap_open_live(ifname,
@@ -56,7 +57,6 @@ FromBPF::initialize(ErrorHandler *errh)
                          _promisc,
                          1,     /* don't batch packets */
                          ebuf);
-#ifdef HAVE_PCAP
   if (!_pcap)
     return errh->error("%s: %s", ifname, ebuf);
 #else

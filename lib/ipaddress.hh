@@ -5,25 +5,25 @@
 
 class IPAddress {
   
-  unsigned _s_addr;
+  unsigned _saddr;
   
  public:
   
-  IPAddress()			: _s_addr(0) { }
+  IPAddress()			: _saddr(0) { }
   explicit IPAddress(unsigned char *);
   IPAddress(unsigned);	// network byte order IP address
   explicit IPAddress(const String &);	// "18.26.4.99"
   explicit IPAddress(struct in_addr);
   
-  operator bool() const		{ return _s_addr != 0; }
-  unsigned s_addr() const	{ return _s_addr; }
+  operator bool() const		{ return _saddr != 0; }
+  unsigned saddr() const	{ return _saddr; }
   
   operator struct in_addr() const;
   struct in_addr in_addr() const;
 
-  unsigned char *data() const	{ return (unsigned char *)&_s_addr; }
+  unsigned char *data() const	{ return (unsigned char *)&_saddr; }
   
-  unsigned hashcode() const	{ return _s_addr; }
+  unsigned hashcode() const	{ return _saddr; }
   
   operator String() const	{ return(s()); }
   String s() const;
@@ -33,27 +33,27 @@ class IPAddress {
 
 inline
 IPAddress::IPAddress(unsigned int n)
-  : _s_addr(n)
+  : _saddr(n)
 {
 }
 
 inline
 IPAddress::IPAddress(struct in_addr ina)
-  : _s_addr(ina.s_addr)
+  : _saddr(ina.s_addr)
 {
 }
 
 inline bool
 operator==(IPAddress a, IPAddress b)
 {
-  return a.s_addr() == b.s_addr();
+  return a.saddr() == b.saddr();
 }
 
 inline struct in_addr
 IPAddress::in_addr() const
 {
   struct in_addr ia;
-  ia.s_addr = _s_addr;
+  ia.s_addr = _saddr;
   return ia;
 }
 

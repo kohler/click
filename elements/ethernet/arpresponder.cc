@@ -97,8 +97,8 @@ ARPResponder::lookup(IPAddress a, EtherAddress &ena)
   int i, besti = -1;
 
   for(i = 0; i < _v.size(); i++){
-    if((a.s_addr() & _v[i]._mask.s_addr()) == _v[i]._dst.s_addr()){
-      if(besti == -1 || ~_v[i]._mask.s_addr() < ~_v[besti]._mask.s_addr()){
+    if((a.saddr() & _v[i]._mask.saddr()) == _v[i]._dst.saddr()){
+      if(besti == -1 || ~_v[i]._mask.saddr() < ~_v[besti]._mask.saddr()){
         besti = i;
       }
     }

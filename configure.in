@@ -110,7 +110,7 @@ dnl check for stuff in the linux kernel
 dnl
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-if grep -q register_net_out /proc/ksyms 2>/dev/null; then
+if grep register_net_out /proc/ksyms >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi)
 if test $ac_cv_click_kernel = yes; then
@@ -118,7 +118,7 @@ if test $ac_cv_click_kernel = yes; then
 fi
 
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_read_net_skbcount,
-[if grep -q read_net_skbcount /proc/ksyms 2>/dev/null; then
+[if grep read_net_skbcount /proc/ksyms >/dev/null 2>&1; then
   ac_cv_read_net_skbcount=yes
 else ac_cv_read_net_skbcount=no; fi])
 if test $ac_cv_read_net_skbcount = yes; then
@@ -129,19 +129,25 @@ dnl
 dnl check for GNU make
 dnl
 
-SUBMAKE=''
-AC_SUBST(SUBMAKE)
-AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
-[if /bin/sh -c 'make --version | grep -q GNU' 2>/dev/null; then
+if test ${GMAKE-NO} = NO; then
+  AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
+[if /bin/sh -c 'make --version | grep GNU' >/dev/null 2>&1; then
   ac_cv_gnu_make='make'
-elif /bin/sh -c 'gmake --version | grep -q GNU' 2>/dev/null; then
+elif /bin/sh -c 'gmake --version | grep GNU' >/dev/null 2>&1; then
   ac_cv_gnu_make='gmake'
 else
   AC_MSG_RESULT(not found)
-  AC_MSG_ERROR(can't find GNU make!)
+  AC_MSG_ERROR(can't find GNU make. Either put "'`'"gmake' on your PATH and
+rerun "'`'"./configure', or set the GMAKE environment variable to
+GNU make's pathname.)
 fi])
-if test $ac_cv_gnu_make != make; then
-  AC_MSG_WARN(You must compile with GNU make ("'`'"$ac_cv_gnu_make').)
+  GMAKE="$ac_cv_gnu_make"
+fi
+
+SUBMAKE=''
+AC_SUBST(SUBMAKE)
+if test $GMAKE != make; then
+  AC_MSG_WARN(You must compile with GNU make ("'`'"$GMAKE').)
   SUBMAKE="MAKE = $ac_cv_gnu_make"
 fi
 

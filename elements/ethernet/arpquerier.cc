@@ -110,7 +110,7 @@ ARPQuerier::lookup(Packet *p)
     click_gettimeofday(&now);
 #endif
     if(ae->ok && now.tv_sec - ae->when.tv_sec > 120){
-      click_chatter("ARPQuerier timing out %x", ipa.s_addr());
+      click_chatter("ARPQuerier timing out %x", ipa.saddr());
       ae->ok = 0;
     }
     if(ae->ok && ae->polling == 0 && now.tv_sec - ae->when.tv_sec > 60){

@@ -36,7 +36,7 @@ Shaper::configure(const String &conf, ErrorHandler *errh)
   if (rate > max_value)
     return errh->error("rate too large (max %d)", max_value);
   
-  _meter1 = (rate<<_rate.scale()) / HZ;
+  _meter1 = (rate<<_rate.scale()) / CLICK_HZ;
   return 0;
 }
 
@@ -85,7 +85,7 @@ static String
 read_rate_handler(Element *f, void *)
 {
   Shaper *c = (Shaper *)f;
-  return cp_unparse_real(c->rate()*HZ, c->rate_scale()) + "\n";
+  return cp_unparse_real(c->rate()*CLICK_HZ, c->rate_scale()) + "\n";
 }
 
 void
