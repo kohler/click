@@ -211,35 +211,6 @@ try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
 }
 
 
-static String
-get_string_from_process(String cmdline, const String &input,
-			ErrorHandler *errh)
-{
-  FILE *f = tmpfile();
-  if (!f)
-    errh->fatal("cannot create temporary file: %s", strerror(errno));
-  fwrite(input.data(), 1, input.length(), f);
-  fflush(f);
-  rewind(f);
-  
-  String new_cmdline = cmdline + " 0<&" + String(fileno(f));
-  FILE *p = popen(new_cmdline.cc(), "r");
-  if (!p)
-    errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
-
-  StringAccum sa;
-  while (!feof(p) && sa.length() < 20000) {
-    int x = fread(sa.reserve(2048), 1, 2048, p);
-    if (x > 0) sa.forward(x);
-  }
-  if (!feof(p))
-    errh->warning("`%s' output too long, truncated", cmdline.cc());
-
-  fclose(f);
-  pclose(p);
-  return sa.take_string();
-}
-
 /*
  * FastClassifier structures
  */
@@ -426,7 +397,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
     for (int i = 0; i < interesting_handler_names.size(); i++)
       cmd_sa << " -h '*." << interesting_handler_names[i] << "'";
     cmd_sa << " -q";
-    handler_text = get_string_from_process(cmd_sa.take_string(), nr.configuration_string(), errh);
+    handler_text = shell_command_output_string(cmd_sa.take_string(), nr.configuration_string(), errh);
   }
 
   // assign handlers to programs; assume handler results contain no par breaks

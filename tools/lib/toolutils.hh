@@ -3,6 +3,8 @@
 #include <click/userutils.hh>
 class RouterT;
 
+String shell_command_output_string(String command_line, const String &command_stdin, ErrorHandler *);
+
 extern bool ignore_line_directives;
 RouterT *read_router_string(const String &text, const String &landmark, ErrorHandler *);
 RouterT *read_router_string(String text, const String &landmark, bool, RouterT *, ErrorHandler *);

@@ -37,6 +37,36 @@
 
 bool ignore_line_directives = false;
 
+
+String
+shell_command_output_string(String cmdline, const String &input, ErrorHandler *errh)
+{
+  FILE *f = tmpfile();
+  if (!f)
+    errh->fatal("cannot create temporary file: %s", strerror(errno));
+  fwrite(input.data(), 1, input.length(), f);
+  fflush(f);
+  rewind(f);
+  
+  String new_cmdline = cmdline + " 0<&" + String(fileno(f));
+  FILE *p = popen(new_cmdline.cc(), "r");
+  if (!p)
+    errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
+
+  StringAccum sa;
+  while (!feof(p) && sa.length() < 20000) {
+    int x = fread(sa.reserve(2048), 1, 2048, p);
+    if (x > 0) sa.forward(x);
+  }
+  if (!feof(p))
+    errh->warning("`%s' output too long, truncated", cmdline.cc());
+
+  fclose(f);
+  pclose(p);
+  return sa.take_string();
+}
+
+
 RouterT *
 read_router_string(String text, const String &landmark, bool empty_ok,
 		   ErrorHandler *errh)
