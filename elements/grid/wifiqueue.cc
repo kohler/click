@@ -39,7 +39,7 @@ WifiQueue::WifiQueue()
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
   _capacity = 100;
-  click_chatter("WifiQueue: finished initializing\n");
+  // click_chatter("WifiQueue: finished initializing\n");
 }
 
 WifiQueue::~WifiQueue()
