@@ -20,13 +20,13 @@
 
 #include <click/packet.hh>
 #include <click/glue.hh>
-#ifndef _KERNEL
+#ifdef CLICK_USERLEVEL
 #include <stdarg.h>
 #include <unistd.h>
 #endif
 #include <assert.h>
 
-#ifdef __KERNEL__	/* Linux kernel module */
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
 
 Packet::Packet()
 {
@@ -66,7 +66,7 @@ Packet::Packet()
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
   _destructor = 0;
-#ifdef _KERNEL	/* BSD kernel module */
+#ifdef CLICK_BSDMODULE	/* BSD kernel module */
   _m = 0;
 #endif
   clear_annotations();
@@ -129,7 +129,7 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
     n = MIN_BUFFER_LENGTH;
   }
   _destructor = 0;
-#ifdef _KERNEL		/* BSD kernel module */
+#ifdef CLICK_BSDMODULE		/* BSD kernel module */
   if (n > MCLBYTES) {
     click_chatter("trying to allocate %d bytes: too many\n", n);
     return false;
@@ -173,13 +173,13 @@ Packet::make(uint32_t headroom, const unsigned char *data, uint32_t len,
   return p;
 }
 
-#endif /* __KERNEL__ */
+#endif /* CLICK_LINUXMODULE */
 
 //
 // UNIQUEIFICATION
 //
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 
 Packet *
 Packet::clone()
@@ -216,7 +216,7 @@ Packet::clone()
     p->_use_count = 1;
     p->_data_packet = this;
     p->_destructor = 0;
-#ifdef _KERNEL		/* BSD kernel module */
+#ifdef CLICK_BSDMODULE		/* BSD kernel module */
     p->_m = 0;
 #endif
     // increment our reference count because of _data_packet reference
@@ -253,7 +253,7 @@ Packet::expensive_uniqueify()
 
 #endif
 
-#ifdef _KERNEL		/* BSD kernel module */
+#ifdef CLICK_BSDMODULE		/* BSD kernel module */
 
 struct mbuf *
 Packet::steal_m()
@@ -270,7 +270,7 @@ Packet::steal_m()
   return m2;
 }
 
-#endif	/* _KERNEL */
+#endif /* CLICK_BSDMODULE */
 
 //
 // EXPENSIVE_PUSH, EXPENSIVE_PUT
@@ -292,7 +292,7 @@ Packet::expensive_push(uint32_t nbytes)
   WritablePacket *q = Packet::make((nbytes + 128) & ~3, buffer_data(), buffer_length(), 0);
   if (q) {
     // [N+128, H+L+T, 0 / H+L+T]
-#ifdef __KERNEL__	/* Linux kernel module */
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
     sk_buff *skb = q->skb();
     skb->data -= nbytes - headroom();
     // [128+H, N+L+T, 0 / H+L+T]
@@ -300,12 +300,12 @@ Packet::expensive_push(uint32_t nbytes)
     // [128+H, N+L, T / H+L+T]
     skb->len += nbytes - tailroom() - headroom();
     // [128+H, N+L, T / N+L]
-#else			/* User-space and BSD kernel module */
+#else				/* User-space and BSD kernel module */
     q->_data -= nbytes - headroom();
     // [128+H, N+L+T, 0]
     q->_tail -= tailroom();
     // [128+H, N+L, T]
-#ifdef _KERNEL		/* BSD kernel module */
+#ifdef CLICK_BSDMODULE		/* BSD kernel module */
     q->m()->m_data -= nbytes - headroom();
     // [128+H, N+L+T, 0]
     q->m()->m_len -= tailroom();
@@ -332,15 +332,15 @@ Packet::expensive_put(uint32_t nbytes)
   }
   WritablePacket *q = Packet::make(0, buffer_data(), buffer_length(), nbytes + 128);
   if (q) {
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
     sk_buff *skb = q->skb();
     skb->tail += nbytes - tailroom();
     skb->data += headroom();
     skb->len += nbytes - tailroom() - headroom();
-#else			/* User-space and BSD module */
+#else				/* User-space and BSD module */
     q->_tail += nbytes - tailroom();
     q->_data += headroom();
-#ifdef _KERNEL		/* BSD */
+#ifdef CLICK_BSDMODULE		/* BSD */
     q->m()->m_len += nbytes - tailroom();
     q->m()->m_pkthdr.len += nbytes - tailroom();
     q->m()->m_data += headroom();
