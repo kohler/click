@@ -5582,12 +5582,12 @@ Returns true iff the timer is scheduled to expire some time in the
 future.
 @end deftypemethod
 
-@deftypemethod Timer {const struct timeval &} when () const
+@deftypemethod Timer {const struct timeval &} expiry () const
 Returns the time that the timer is set to expire. If the timer has never
 been scheduled, the value is garbage. If the timer was scheduled but is
 not scheduled currently, the value is most recently set expiry time.
 @end deftypemethod
- 
+
 
 @node Timer Cleanup,  , Timer Status Methods, Timers
 @section Timer Cleanup
