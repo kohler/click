@@ -297,7 +297,7 @@ $bad_files"
 	postprocess=sort
     fi
 
-    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name' $files $header_files /dev/null 2>/dev/null | tee /tmp/x | $awk -F: 'BEGIN {
+    egrep '^ELEMENT_PROVIDES|^EXPORT_ELEMENT|^ELEMENT_HEADER|^class|^[ 	]*const *char *\* *class_name' $files $header_files /dev/null 2>/dev/null | $awk -F: 'BEGIN {
   OFS = ""; cur_class = ""
 }
 /:class[ 	]/ {
