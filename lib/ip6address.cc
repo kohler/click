@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/ip6address.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/ip6address.hh" -*-
 /*
  * ip6address.{cc,hh} -- an IP6 address class. Useful for its hashcode()
  * method
@@ -74,128 +74,107 @@ IP6Address::make_prefix(int prefix)
 int
 IP6Address::mask_to_prefix_len() const
 {
-  int bits = 0;
-  
-  for (; bits < 24; bits += 8)
-    if (_addr.s6_addr32[bits >> 3] != 0xFFFFFFFFU)
-      break;
+    // check that prefix is 0xFFFFFFFF
+    int word = 0;
+    while (word < 4 && _addr.s6_addr32[word] == 0xFFFFFFFFU)
+	word++;
 
-  // check 'swing' word
-  int swing_bits = IPAddress(_addr.s6_addr32[bits >> 3]).mask_to_prefix_len();
+    // check that suffix is zeros
+    int zero_word = word + 1;
+    while (zero_word < 4 && _addr.s6_addr32[zero_word] == 0)
+	zero_word++;
+    if (zero_word < 4)
+	return -1;
 
-  for (int i = (bits >> 3) + 1; i < 4; i++)
-    if (_addr.s6_addr32[i] != 0)
-      return -1;
-
-  return (swing_bits >= 0 ? bits + swing_bits : -1);
+    // check swing word
+    int prefix = IPAddress(_addr.s6_addr32[word]).mask_to_prefix_len();
+    return prefix + (prefix >= 0 ? word * 32 : 0);
 }
 
 bool 
 IP6Address::ether_address(EtherAddress &mac) const
 {
-  /* 
-   * embedded mac address look like this:
-   * nnnn:nnnn:nnnn:nnnn:xxxx:xxFF:FExx:xxxx
-   * where xx's are the mac address.
-   */
-  if ((_addr.s6_addr[11] & 0xFF) == 0xFF &&
-      (_addr.s6_addr[12] & 0xFF) == 0xFE) {
-    unsigned char *d = mac.data();
-    d[0] = _addr.s6_addr[8];
-    d[1] = _addr.s6_addr[9];
-    d[2] = _addr.s6_addr[10];
-    d[3] = _addr.s6_addr[13];
-    d[4] = _addr.s6_addr[14];
-    d[5] = _addr.s6_addr[15];
-    return true;
-  } else {
-    return false;
-  }
-
+    /* 
+     * embedded mac address look like this:
+     * nnnn:nnnn:nnnn:nnnn:xxxx:xxFF:FExx:xxxx
+     * where xx's are the mac address.
+     */
+    if (_addr.s6_addr[11] == 0xFF && _addr.s6_addr[12] == 0xFE) {
+	unsigned char *d = mac.data();
+	d[0] = _addr.s6_addr[8];
+	d[1] = _addr.s6_addr[9];
+	d[2] = _addr.s6_addr[10];
+	d[3] = _addr.s6_addr[13];
+	d[4] = _addr.s6_addr[14];
+	d[5] = _addr.s6_addr[15];
+	return true;
+    } else
+	return false;
 }
+
 bool
 IP6Address::ip4_address(IPAddress &ip4) const
 {
-  if ((_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF ) 
-      || ( _addr.s6_addr16[0] == 0 && _addr.s6_addr16[1] == 0 
-	   && _addr.s6_addr16[2] == 0 && _addr.s6_addr16[3] == 0 
-	   && _addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0)) 
-    {
-      unsigned char *d = ip4.data();
-      d[0] = _addr.s6_addr[12];
-      d[1] = _addr.s6_addr[13];
-      d[2] = _addr.s6_addr[14];
-      d[3] = _addr.s6_addr[15];
-      return true;
-    }
-  else 
-    return false;  
+    if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0
+	&& (_addr.s6_addr32[2] == 0 || _addr.s6_addr32[2] == htonl(0x0000FFFFU))) {
+	ip4 = IPAddress(_addr.s6_addr32[3]);
+	return true;
+    } else 
+	return false;  
 }
 
 String
 IP6Address::unparse() const
 {
-  char buf[48];
-  
-  // do some work to print the address well
-  if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0) {
-    if (_addr.s6_addr32[2] == 0 && _addr.s6_addr32[3] == 0)
-      return "::";		// empty address
-    else if (_addr.s6_addr32[2] == 0) {
-      sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
-	      _addr.s6_addr[14], _addr.s6_addr[15]);
-      return String(buf);
-    } else if (_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF) {
-      sprintf(buf, "::FFFF:%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
-	      _addr.s6_addr[14], _addr.s6_addr[15]);
-      return String(buf);
-    }
-    else if ( _addr.s6_addr16[0] == 0 && _addr.s6_addr16[1] == 0 
-	   && _addr.s6_addr16[2] == 0 && _addr.s6_addr16[3] == 0 
-	   && _addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0)  {
-      sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
-	      _addr.s6_addr[14], _addr.s6_addr[15]);
-      return String(buf);
-    }
-  }
+    char buf[48];
 
-  char *s = buf;
-  int word, n;
-  for (word = 0; word < 8 && _addr.s6_addr16[word] != 0; word++) {
-    n = sprintf(s, (word ? ":%X" : "%X"), ntohs(_addr.s6_addr16[word]));
-    s += n;
-  }
-  if (word == 0 || (word < 7 && _addr.s6_addr16[word+1] == 0)) {
-    *s++ = ':';
-    while (word < 8 && _addr.s6_addr16[word] == 0)
-      word++;
-    if (word == 8)
-      *s++ = ':';
-  }
-  for (; word < 8; word++) {
-    n = sprintf(s, ":%X", ntohs(_addr.s6_addr16[word]));
-    s += n;
-  }
-  *s++ = 0;
-  return String(buf);
+    // do some work to print the address well
+    if (_addr.s6_addr32[0] == 0 && _addr.s6_addr32[1] == 0) {
+	if (_addr.s6_addr32[2] == 0 && _addr.s6_addr32[3] == 0)
+	    return String::stable_string("::", 2); // empty address
+	else if (_addr.s6_addr32[2] == 0) {
+	    sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
+		    _addr.s6_addr[14], _addr.s6_addr[15]);
+	    return String(buf);
+	} else if (_addr.s6_addr32[2] == htonl(0x0000FFFFU)) {
+	    sprintf(buf, "::FFFF:%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
+		    _addr.s6_addr[14], _addr.s6_addr[15]);
+	    return String(buf);
+	}
+    }
+
+    char *s = buf;
+    int word;
+    for (word = 0; word < 8 && _addr.s6_addr16[word] != 0; word++)
+	s += sprintf(s, (word ? ":%X" : "%X"), ntohs(_addr.s6_addr16[word]));
+    if (word == 0 || (word < 7 && _addr.s6_addr16[word + 1] == 0)) {
+	*s++ = ':';
+	while (word < 8 && _addr.s6_addr16[word] == 0)
+	    word++;
+	if (word == 8)
+	    *s++ = ':';
+    }
+    for (; word < 8; word++)
+	s += sprintf(s, ":%X", ntohs(_addr.s6_addr16[word]));
+    return String(buf, s - buf);
 }
 
 String
 IP6Address::unparse_expanded() const
 {
-  char buf[48];
-  sprintf(buf, "%X:%X:%X:%X:%X:%X:%X:%X",
-	  ntohs(_addr.s6_addr16[0]), ntohs(_addr.s6_addr16[1]),
-	  ntohs(_addr.s6_addr16[2]), ntohs(_addr.s6_addr16[3]),
-	  ntohs(_addr.s6_addr16[4]), ntohs(_addr.s6_addr16[5]),
-	  ntohs(_addr.s6_addr16[6]), ntohs(_addr.s6_addr16[7]));
-  return String(buf);
+    char buf[48];
+    sprintf(buf, "%X:%X:%X:%X:%X:%X:%X:%X",
+	    ntohs(_addr.s6_addr16[0]), ntohs(_addr.s6_addr16[1]),
+	    ntohs(_addr.s6_addr16[2]), ntohs(_addr.s6_addr16[3]),
+	    ntohs(_addr.s6_addr16[4]), ntohs(_addr.s6_addr16[5]),
+	    ntohs(_addr.s6_addr16[6]), ntohs(_addr.s6_addr16[7]));
+    return String(buf);
 }
 
 StringAccum &
 operator<<(StringAccum &sa, const IP6Address &a)
 {
-  return (sa << a.unparse());
+    return (sa << a.unparse());
 }
 
 
