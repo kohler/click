@@ -1,3 +1,7 @@
+2001-07-05 Thursday 11:33  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/configure (1.1): Initial checkin
+
 2001-07-04 Wednesday 12:27  Eddie Kohler <kohler@aciri.org>
 
 	* elements/local/: chuckcheck.cc (1.11), chuckcheck.hh (1.6):
