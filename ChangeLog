@@ -1,3 +1,18 @@
+2002-01-30 Wednesday 11:02  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: nodelist (1.4), make-all-config.pl (1.4),
+	push-click.pl (1.2), make-all-config.pl (1.5): fully qualified
+
+2002-01-30 Wednesday 10:56  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: 3yipal2.conf (1.2), click-client-2part.conf (1.3),
+	switch-server-2part.conf (1.4), test-divert.conf (1.2): moved to
+	old
+
+2002-01-30 Wednesday 10:53  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/push-click.pl (1.1): added
+
 2002-01-29 Tuesday 21:00  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: make-all-config.pl (1.3), make-client-ron.pl (1.9),
