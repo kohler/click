@@ -92,10 +92,11 @@ public class ControlSocket {
     private static final int CODE_OK_WARN = 220;
     private static final int CODE_SYNTAX_ERR = 500;
     private static final int CODE_UNIMPLEMENTED = 501;
-    private static final int CODE_NO_EL = 510;
+    private static final int CODE_NO_ELEMENT = 510;
     private static final int CODE_NO_HANDLER = 511;
     private static final int CODE_HANDLER_ERR = 520;
-    private static final int CODE_NO_PERM = 530;
+    private static final int CODE_PERMISSION = 530;
+    private static final int CODE_NO_ROUTER = 540;
     
     public static final int PROTOCOL_MAJOR_VERSION = 1;
     public static final int PROTOCOL_MINOR_VERSION = 0;
@@ -396,6 +397,94 @@ public class ControlSocket {
     }
     
     /**
+     * Checks whether a read/write handler exists.
+     *
+     * @param elementName The element name.
+     * @param handlerName The handler name.
+     * @param writeHandler True to check write handler, otherwise false.
+     * @return True if handler exists, otherwise false.
+     * @exception IOException If there was a stream or socket error.
+     * @exception ControlSocketException If there was some other error
+     * accessing the handler (e.g., the ControlSocket returned an unknown
+     * unknown error code, or the response could otherwise not be understood).
+     * @see #read
+     * @see #write
+     * @see #getConfigElementNames
+     * @see #getElementHandlers */
+
+    public boolean checkHandler(String elementName, String handlerName,
+				boolean writeHandler)
+	throws ControlSocketException, IOException {
+	String handler = handlerName;
+	if (elementName != null)
+	    handler = elementName + "." + handlerName;
+	_out.write((writeHandler ? "CHECKWRITE " : "CHECKREAD ")
+		   + handler + "\n");
+	_out.flush();
+	
+	// make sure we read all the response lines... 
+	String response = "";
+	String lastLine = null;
+	do {
+	    lastLine = _in.readLine();
+	    if (lastLine.length() < 4)
+		throw new ControlSocketException("Bad response line from ControlSocket");
+	    response = response + lastLine.substring(4);
+	} while (lastLine.charAt(3) == '-');
+	
+	int code = getResponseCode(lastLine);
+	switch (getResponseCode(lastLine)) {
+	  case CODE_OK:
+	  case CODE_OK_WARN:
+	    return true;
+	  case CODE_NO_ELEMENT:
+	  case CODE_NO_HANDLER:
+	  case CODE_HANDLER_ERR:
+	  case CODE_PERMISSION:
+	    return false;
+	  case CODE_UNIMPLEMENTED:
+	    if (elementName == null)
+		handleErrCode(code, elementName, handlerName, response);
+	    return checkHandlerWorkaround(elementName, handlerName, writeHandler);
+	  default:
+	    handleErrCode(code, elementName, handlerName, response);
+	    return false;
+	}
+    }
+    
+    private boolean checkHandlerWorkaround(String elementName, String handlerName, boolean writeHandler)
+	throws ControlSocketException, IOException {
+	// If talking to an old ControlSocket, try the "handlers" handler
+	// instead.
+	String s = readString(elementName, "handlers");
+	int pos = 0;
+
+	// Find handler with same name.
+	while (true) {
+	    pos = s.indexOf(handlerName, pos);
+	    if (pos < 0)	// no such handler
+		return false;
+	    if ((pos == 0 || s.charAt(pos - 1) == '\n')
+		&& Character.isWhitespace(s.charAt(pos + handlerName.length())))
+		break;
+	    pos++;
+	}
+
+	// we have a matching handler: will it be read/write suitable?
+	char wantType = (writeHandler ? 'w' : 'r');
+	for (pos += handlerName.length(); pos < s.length() && Character.isWhitespace(s.charAt(pos)); pos++)
+	    /* nada */;
+	for (; pos < s.length(); pos++) {
+	    char c = s.charAt(pos);
+	    if (Character.toLowerCase(c) == wantType)
+		return true;
+	    else if (Character.isWhitespace(c))
+		break;
+	}
+	return false;
+    }
+    
+    /**
      * Returns the result of reading an element's handler.
      *
      * @param elementName The element name.
@@ -405,10 +494,11 @@ public class ControlSocket {
      * @exception NoSuchElementException If there is no such element in the current configuration.
      * @exception HandlerErrorException If the handler returned an error.
      * @exception PermissionDeniedException If the router would not let us access the handler.
-     * @exception IOException If there was some other error accessing
-     * the handler (e.g., there was a stream or socket error, the
-     * ControlSocket returned an unknown unknown error code, or the
-     * response could otherwise not be understood). 
+     * @exception IOException If there was a stream or socket error.
+     * @exception ControlSocketException If there was some other error
+     * accessing the handler (e.g., the ControlSocket returned an unknown
+     * unknown error code, or the response could otherwise not be understood).
+     * @see #checkHandler
      * @see #write
      * @see #getConfigElementNames
      * @see #getElementHandlers
@@ -491,10 +581,11 @@ public class ControlSocket {
      * @exception NoSuchElementException If there is no such element in the current configuration.
      * @exception HandlerErrorException If the handler returned an error.
      * @exception PermissionDeniedException If the router would not let us access the handler.
-     * @exception IOException If there was some other error accessing
-     * the handler (e.g., there was a stream or socket error, the
-     * ControlSocket returned an unknwon unknown error code, or the
-     * response could otherwise not be understood). 
+     * @exception IOException If there was a stream or socket error.
+     * @exception ControlSocketException If there was some other error
+     * accessing the handler (e.g., the ControlSocket returned an unknown
+     * unknown error code, or the response could otherwise not be understood).
+     * @see #checkHandler
      * @see #write
      * @see #getConfigElementNames
      * @see #getElementHandlers
@@ -583,15 +674,15 @@ public class ControlSocket {
 	  throw new ControlSocketException("Syntax error calling handler `" + hid + "'");
 	 case CODE_UNIMPLEMENTED: 
 	  throw new ControlSocketException("Unimplemented ControlSocket command");
-	 case CODE_NO_EL: 
+	 case CODE_NO_ELEMENT:
 	  throw new NoSuchElementException(elementName);
 	 case CODE_NO_HANDLER: 
 	  throw new NoSuchHandlerException(hid); 
 	 case CODE_HANDLER_ERR: 
 	  throw new HandlerErrorException(hid, response);
-	 case CODE_NO_PERM: 
+	 case CODE_PERMISSION: 
 	  throw new PermissionDeniedException(hid); 
-	 default: 
+	 default:
 	  throw new ControlSocketException("Unknown ControlSocket error code " + code);
 	}
     }
