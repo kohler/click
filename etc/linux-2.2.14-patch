@@ -51,15 +51,6 @@ Index: include/linux/netdevice.h
 Index: net/core/skbuff.c
 --- net/core/skbuff.c.orig	Mon Jun 26 12:44:17 2000
 +++ net/core/skbuff.c	Thu Jul  6 17:40:11 2000
-@@ -4,7 +4,7 @@
-  *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
-  *			Florian La Roche <rzsfl@rz.uni-sb.de>
-  *
-- *	Version:	$Id: linux-2.2.14-patch,v 1.20 2000/07/06 22:17:36 benjie Exp $
-+ *	Version:	$Id: linux-2.2.14-patch,v 1.20 2000/07/06 22:17:36 benjie Exp $
-  *
-  *	Fixes:	
-  *		Alan Cox	:	Fixed the worst of the load balancer bugs.
 @@ -256,6 +256,49 @@
  	n->destructor = NULL;
  	return n;
