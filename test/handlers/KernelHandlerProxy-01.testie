@@ -1,0 +1,30 @@
+%info
+
+This test checks whether KernelHandlerProxy works.
+
+%require
+[ `whoami` = root ]
+
+%script
+click-install KERNELCONFIG
+click USERCONFIG -h khp.i.config -h khp.i/q1.config -h khp.i/q2.config -q > USEROUT
+click-uninstall
+
+%file KERNELCONFIG
+config :: Idle;
+i :: Idle;
+i/q1 :: Queue(1);
+i/q2 :: Queue(2);
+i -> i/q1 -> i; i[1] -> i/q2 -> [1]i;
+
+%file USERCONFIG
+khp :: KernelHandlerProxy;
+
+%expect USEROUT
+khp.i.config:
+
+khp.i/q1.config:
+1
+
+khp.i/q2.config:
+2
