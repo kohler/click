@@ -1,3 +1,11 @@
+2001-12-31 Monday 14:45  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-devirtualize/signature.cc (1.12),
+	click-xform/adjacency.cc (1.18), click-xform/click-xform.cc (1.44),
+	lib/processingt.cc (1.19), lib/processingt.hh (1.10),
+	lib/routert.hh (1.46): more similar updates; fix bug (typo) in
+	click-xform
+
 2001-12-31 Monday 14:14  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-align/click-align.cc (1.39),
