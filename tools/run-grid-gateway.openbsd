@@ -228,7 +228,12 @@ my_system "ancontrol $grid_if -o 0"; # set the adapter to ad-hoc mode
 my_system "ancontrol $grid_if -c $grid_channel"; # set the channel
 my_system "ancontrol $grid_if -n $grid_ssid"; # set the SSID
 
-print "WARNING: not decreasing grid tun MTU.  Transfers with big packets will fail.  Fix this script!\n";
+# setup appropriate MTU
+# XXX makes assumptions about which tun is assigned to what!
+my_system "ifconfig tun0 mtu 1500"; # interface to wired ethernet
+my_system "ifconfig tun1 mtu 1350"; # interface to grid net
+
+
 print "WARNING: assuming 24 bit netmask for wired lan.  Fix this script!\n";
 
 # remove default route
