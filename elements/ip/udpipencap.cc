@@ -98,7 +98,7 @@ UDPIPEncap::simple_action(Packet *p_in)
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(click_atomic_add_short(1, &_id));
+  ip->ip_id = htons(_id++);
   ip->ip_p = IP_PROTO_UDP;
   ip->ip_src = _saddr;
   ip->ip_dst = _daddr;
