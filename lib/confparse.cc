@@ -2113,13 +2113,12 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 
    case cpiArguments: {
      Vector<String> *vstore = (Vector<String> *)v->store;
-     int pos = 0, pos2;
-     for (int len_pos = 0; len_pos < v->v2_string.length(); ) {
-       int next = v->v2_string.find_left(' ', len_pos);
-       cp_integer(v->v2_string.substring(len_pos, next - len_pos), &pos2);
+     uint32_t pos = 0;
+     const char *len_str = v->v2_string.data();
+     for (int len_pos = 0; len_pos < v->v2_string.length(); len_pos += 4) {
+       uint32_t pos2 = *((const uint32_t *)(len_str + len_pos));
        vstore->push_back(v->v_string.substring(pos, pos2 - pos));
        pos = pos2;
-       len_pos = next + 1;
      }
      vstore->push_back(v->v_string.substring(pos));
      break;
@@ -2234,11 +2233,13 @@ handle_special_argtype_for_keyword(cp_value *val, const String &rest)
 {
   if (val->argtype->internal == cpiArguments) {
     if (val->v.i > 0) {
-      val->v2_string += String(val->v_string.length()) + " ";
+      uint32_t l = val->v_string.length();
+      val->v2_string += String((const char *)&l, 4);
       val->v_string += rest;
     } else {
       val->v.i = 1;
       val->v_string = rest;
+      val->v2_string = String();
     }
     return kwSuccess;
   } else {
