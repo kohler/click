@@ -2,8 +2,9 @@
 
 // !!!!!!!! NOTE !!!!!!!!
 // THE KERNELTAP ELEMENT IS DEPRECATED, AND SO IS THIS CONFIGURATION.
-// Please use `test-tun.click' and the KernelTun element instead.
+// Please use 'test-tun.click' and the KernelTun element instead.
 
+Message("'test-tap.click' is deprecated; run 'test-tun.click' instead", WARNING)
 
 
 // Historical interest:
