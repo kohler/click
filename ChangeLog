@@ -1,3 +1,52 @@
+2001-02-13 Tuesday 23:41  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.cc, anydevice.hh, fromdevice.cc,
+	fromdevice.hh, polldevice.cc, polldevice.hh, todevice.cc,
+	todevice.hh, tolinux.cc, tolinuxsniffers.cc: device elements now
+	use new polling interface; tolinux elements now set the packet type
+	correctly
+
+2001-02-13 Tuesday 23:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: cpuqueue.cc, cpuqueue.hh: new smp specific
+	elements
+
+2001-02-13 Tuesday 23:39  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/: ip/lookupiproutemp.cc, ip/lookupiproutemp.hh,
+	standard/averagecounter.cc, standard/averagecounter.hh,
+	standard/msqueue.cc, standard/msqueue.hh, standard/print.cc,
+	standard/print.hh, standard/rrswitch.cc,
+	standard/spinlockacquire.cc, standard/spinlockacquire.hh,
+	standard/spinlockinfo.cc, standard/spinlockinfo.hh,
+	standard/spinlockrelease.cc, standard/spinlockrelease.hh: small
+	changes merged from smp tree: added some smp specific elements;
+	simple smp synchronizations
+
+2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: packet.hh, skbmgr.h: click skb manager interface
+
+2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* lib/packet.cc: packet create and kill now uses click skb manager
+
+2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/proc_element.cc: bug fix: write handler works again,
+	string used to be cut short by append call on String
+
+2001-02-13 Tuesday 23:37  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/: Makefile.in, skbmgr.c: skb management in click
+
+2001-02-13 Tuesday 23:36  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/: linux-2.2.18-patch, make-linux-patch, restore-linux: new
+	kernel patch: the polling interface is different: skb management is
+	moved to click or other callers of the polling interface, instead
+	of in the device driver itself
+
 2001-02-12 Monday 14:42  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/clp.c, tools/click-align/alignclass.cc,
