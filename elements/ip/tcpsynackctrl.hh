@@ -3,7 +3,7 @@
 
 /*
  * =c
- * TCPSynAckControl()
+ * TCPSynAckControl(THRESH)
  * =d
  *
  * Keeps track of half-open connections.
@@ -12,11 +12,13 @@
  * Input 1 : ACKs.
  *
  * =e
- * = c :: Classifier(33/?2, 331?, -);
- * = t :: TCPSynAckControl();
+ * = c :: Classifier(33/12, 33/?2, 33/1?, -);
+ * = t :: TCPSynAckControl(15);
  * = t[0] -> ...
- * = c[0] -> [0]t;
- * = c[1] -> [1]t;
+ * = c[0] -> ...        // SYN/ACK
+ * = c[1] -> [0]t;      // SYN
+ * = c[2] -> [1]t;      // ACK
+ * = c[3] -> ...        // other
  *
  * =a
  */
@@ -60,18 +62,25 @@ private:
       void add(unsigned short, unsigned short);
       void del(unsigned short, unsigned short);
       int amount() { return _amount; }
+      bool half_open_ports(int i, HalfOpenPorts &hops);
 
     private:
       unsigned int _saddr;
       unsigned int _daddr;
-
       int _amount;                         // no. of half-open connections
 
+      // Ports associated with this src and dst
       HalfOpenPorts *_hops[MAX_HALF_OPEN];
-      short _free_slots[MAX_HALF_OPEN];  // free slots hop
+      short _free_slots[MAX_HALF_OPEN];
   };
   
   HashMap<IPFlowID, HalfOpenConnections *> _hoc;
+  int _thresh;
+
+  void add_handlers();
+  static String thresh_read_handler(Element *e, void *);
+  static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static String look_read_handler(Element *e, void *);
 };
 
 

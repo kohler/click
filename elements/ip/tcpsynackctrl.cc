@@ -1,5 +1,5 @@
 /*
- * tcpsynackctrl.{cc,hh} -- element checks balance between SYNs and ACKs
+ * tcpsynackctrl.{cc,hh} -- element keeps track of half-open connections
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -20,7 +20,7 @@
 #include "error.hh"
 #include "glue.hh"
 
-TCPSynAckControl::TCPSynAckControl() : _hoc(0)
+TCPSynAckControl::TCPSynAckControl() : _hoc(0), _thresh(0)
 {
   add_input();
   add_input();
@@ -38,10 +38,27 @@ TCPSynAckControl::clone() const
 }
 
 int
-TCPSynAckControl::configure(const String &, ErrorHandler *)
+TCPSynAckControl::configure(const String &conf, ErrorHandler *errh)
 {
+  Vector<String> args;
+  cp_argvec(conf, args);
+
+  // Enough args?
+  if(args.size() != 1) {
+    errh->error("expecting one argument");
+    return -1;
+  }
+
+  int thresh;
+  if(!cp_integer(args[0], thresh) || thresh < 0) {
+    errh->error("THRESH should be non-negative integer");
+    return -1;
+  }
+  _thresh = (unsigned int) thresh;
   return 0;
 }
+
+
 
 void
 TCPSynAckControl::push(int port_number, Packet *p)
@@ -51,10 +68,11 @@ TCPSynAckControl::push(int port_number, Packet *p)
     // Identify flow by addresses only. Not ports.
     IPAddress saddr(ip->ip_src);
     IPAddress daddr(ip->ip_dst);
+    IPFlowID flid(saddr, 0, daddr, 0);
+
     click_tcp *tcp = (click_tcp *)((unsigned *)ip + ip->ip_hl);
     unsigned short sport = tcp->th_sport;
     unsigned short dport = tcp->th_dport;
-    IPFlowID flid(saddr, 0, daddr, 0);
 
     // Find all half open connections for this flid. May be 0.
     HalfOpenConnections *hocs = _hoc.find(flid);
@@ -82,6 +100,77 @@ TCPSynAckControl::push(int port_number, Packet *p)
 
   output(0).push(p);
 }
+
+String
+TCPSynAckControl::look_read_handler(Element *e, void *)
+{
+  TCPSynAckControl *me = (TCPSynAckControl *) e;
+  String ret;
+  
+  // Go through all src/addr combi's and see if one has more than _thresh half
+  // open connections.
+  int i = 0;
+  IPFlowID flid;
+  HalfOpenConnections *hocs;
+
+  // For each src/dst combincation
+  // Too mony half-open connections?
+  // Print out portnumber for open connections.
+  while(me->_hoc.each(i, flid, hocs))
+    if(hocs != 0 && hocs->amount() >= me->_thresh)
+      for(int j = 0; j < MAX_HALF_OPEN; j++) {
+        HalfOpenPorts hops;
+        if(hocs->half_open_ports(j, hops))
+          ret += String(flid.saddr().saddr()) + "\t" +
+                 String(flid.daddr().saddr()) + "\t" + \
+                 String(hops.sport) + "\t" + \
+                 String(hops.dport) + "\n";
+      }
+
+  return ret;
+}
+
+
+
+String
+TCPSynAckControl::thresh_read_handler(Element *e, void *)
+{
+  TCPSynAckControl *me = (TCPSynAckControl *) e;
+  return String(me->_thresh) + "\n";
+}
+
+
+int
+TCPSynAckControl::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+  TCPSynAckControl* me = (TCPSynAckControl *) e;
+
+  if(args.size() != 1) {
+    errh->error("expecting 1 integer");
+    return -1;
+  }
+  int thresh;
+  if(!cp_integer(args[0], thresh)) {
+    errh->error("not an integer");
+    return -1;
+  }
+  me->_thresh = thresh;
+  return 0;
+}
+
+
+
+void
+TCPSynAckControl::add_handlers()
+{
+  add_read_handler("thresh", thresh_read_handler, 0);
+  add_write_handler("thresh", thresh_write_handler, 0);
+
+  add_read_handler("look", look_read_handler, 0);
+}
+
 
 
 TCPSynAckControl::HalfOpenConnections::HalfOpenConnections(IPAddress saddr,
@@ -111,7 +200,8 @@ TCPSynAckControl::HalfOpenConnections::~HalfOpenConnections()
 
 
 void
-TCPSynAckControl::HalfOpenConnections::add(unsigned short sport, unsigned short dport)
+TCPSynAckControl::HalfOpenConnections::add(unsigned short sport,
+                                           unsigned short dport)
 {
   short index = _free_slots[MAX_HALF_OPEN - _amount - 1];
   assert(_hops[index] == 0);
@@ -143,6 +233,17 @@ TCPSynAckControl::HalfOpenConnections::del(unsigned short sport,
       _amount--;
     }
   }
+}
+
+
+bool
+TCPSynAckControl::HalfOpenConnections::half_open_ports(int i, HalfOpenPorts &hops)
+{
+  if(_hops[i] == 0)
+    return false;
+
+  hops = *_hops[i];
+  return true;
 }
 
 EXPORT_ELEMENT(TCPSynAckControl)
