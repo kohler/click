@@ -192,19 +192,19 @@ sub nroffize_text ($) {
 
 sub nroffize ($) {
   my($t) = @_;
+  # $t cannot contain \t, as all \ts have been expanded to spaces below
 
-  #$t =~ s{\n[ \t\r]+$}{\n}gm;
-  
-  if ($t =~ /^[ \t]/m) {
+  #$t =~ s{\n[ \r]+$}{\n}gm;
+
+  if ($t =~ /^ /m) {
     # worry about verbatims
-    my(@x) = split(/(^[ \t].*$)/m, $t);
+    my(@x) = split(/(^ .*$)/m, $t);
     my($o, $i) = '';
     for ($i = 0; $i < @x; $i += 2) {
       if ($x[$i]) {
 	$o .= nroffize_text($x[$i]) . "\n";
       }
       if ($x[$i+1]) {
-	$x[$i+1] =~ s/\t/        /g;
 	$x[$i+1] =~ s/\\/\\e/g;
 	$o .= ".nf\n\\&" . $x[$i+1] . "\n.fi\n.PP\n";
       }
@@ -334,7 +334,7 @@ sub process_comment ($$) {
   # split document into sections
   my(@section_text, @section_args, @section_name, $bad_section, $ref);
   $ref = \$bad_section;
-  while ($t =~ m{^=(\w+)([ \t]*)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
+  while ($t =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
     if ($section_break{$1}) {
       push @section_name, $1;
       push @section_args, $3;
@@ -581,6 +581,7 @@ sub process_file ($) {
 
   foreach $_ (split(m{(/\*.*?\*/)}s, $text)) {
     if (/^\/\*/ && /^[\/*\s]+=/) {
+      s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm while /\t/;
       s/^\/\*\s*//g;
       s/\s*\*\/$//g;
       s/^ ?\* ?//gm;
@@ -737,7 +738,7 @@ my(@Links, $Text);
 
 sub one_summary ($@) {
   my($name, @elts) = @_;
-  print STDERR "warning: category \`", $name, "' begins with a lowercase letter" if $name =~ /^[a-z]/;
+  print STDERR "warning: category \`", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
   my($a) = $name;
   $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
   $a =~ tr/ /+/;
