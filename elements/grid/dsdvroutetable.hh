@@ -3,6 +3,7 @@
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
+#include <clicknet/ether.h>
 #include <elements/grid/grid.hh>
 #include <elements/grid/gridgenericrt.hh>
 #include <click/timer.hh>
