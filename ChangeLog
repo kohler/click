@@ -1,3 +1,8 @@
+2005-01-05 Wednesday 16:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.157): NEWS update for 1.4.3 (which incidentally is on its
+	own branch)
+
 2005-01-04 Tuesday 15:11  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/: README (1.1), associate.pl (1.3), dump.click (1.4),
