@@ -136,7 +136,7 @@ WebGen::initialize (ErrorHandler *)
 }
 
 void
-WebGen::cleanup (CleanupStage)
+WebGen::cleanup (CleanupStage stage)
 {
   int i = 0;
   CB *c = cbfree;
@@ -156,7 +156,8 @@ WebGen::cleanup (CleanupStage)
   delete rexmit_head;
   delete rexmit_tail;
 
-  do_perf_stats ();
+  if (stage >= CLEANUP_INITIALIZED)
+    do_perf_stats ();
 }
 
 void
