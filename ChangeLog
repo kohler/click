@@ -1,3 +1,18 @@
+2003-06-14 Saturday 21:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: polldevice.cc (1.132), polldevice.hh
+	(1.64): PollDevice comes after ToDevice in initialization order
+	(but rearange the constants so it is still initialized in the
+	default phase); it checks for a ToDevice for the same device in the
+	configuration, and warns if one is not there. Also, not "..." +
+	ifindex(), but "..." + String(ifindex()) (duh).
+
+2003-06-14 Saturday 21:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: anydevice.hh (1.40), fromhost.hh (1.35),
+	todevice.hh (1.64), tohost.hh (1.27): move CONFIGURE_PHASE
+	constants from FromHost to AnyDevice
+
 2003-06-13 Friday 19:37  Eddie Kohler <kohler@icir.org>
 
 	* etc/diagrams/README (1.2): additional text
