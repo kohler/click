@@ -1,3 +1,8 @@
+2002-07-31 Wednesday 18:24  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: counter.cc (1.27), counter.hh (1.26): change
+	CALL_AFTER_COUNT handler names to COUNT_CALL, for consistency
+
 2002-07-31 Wednesday 15:03  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: todump.cc (1.38), todump.hh (1.26): ToDump
