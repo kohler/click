@@ -23,7 +23,7 @@
 #define SET_FWD_RATE_ANNO(p, v)		((p)->set_user_anno_i(1, (v)))
 
 #define MISC_IP_ANNO(p)                 ((p)->user_anno_u(1))
-#define SET_MISC_IP_ANNO(p, v)             ((p)->set_user_anno_i(1, (v).addr()))
+#define SET_MISC_IP_ANNO(p, v)		((p)->set_user_anno_i(1, (v).addr()))
 
 // bytes 8-11
 #define EXTRA_PACKETS_ANNO(p)		((p)->user_anno_u(2))
@@ -68,6 +68,10 @@
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
 #define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))
+
+// bytes 16-19
+#define PACKET_NUMBER_ANNO(p)		((p)->user_anno_u(4))
+#define SET_PACKET_NUMBER_ANNO(p, v)	((p)->set_user_anno_u(4, (v)))
 
 // bytes 16-23
 #define FIRST_TIMESTAMP_ANNO(p)		(*((const struct timeval *)((p)->all_user_anno_u() + 4)))
