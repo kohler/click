@@ -73,6 +73,16 @@ String
 * Derived Strings::             
 * Appending to Strings::        
 * String Comparison::           
+* String Out-of-Memory::        
+
+StringAccum
+
+* StringAccum Constructors::    
+* StringAccum operator<<::      
+* StringAccum Manipulation::    
+* StringAccum Contents::        
+* StringAccum Results::         
+* StringAccum Out-of-Memory::   
 
 ErrorHandler
 
@@ -99,7 +109,7 @@ Tasks
 * Task Initialization::         
 * Scheduling a Task::           
 * Tickets::                     
-* Multiple Task Queues::        
+* Task Thread Choice::          
 * Task Status::                 
 * Task Handlers::               
 * Destroying a Task::           
@@ -201,14 +211,17 @@ A variable or method which counts something is often named
 * ErrorHandler::                
 @end menu
 
+
 @node String, StringAccum, Basics, Basics
 @section String
 
-The @code{String} class represents a dynamically-allocated string of
-characters. Strings may be constructed from C strings, characters,
-numbers, and so forth. They may also be added together. A @code{String}
-and its substrings will generally share memory. @code{String}s may be
-passed and stored at will; they allocate and free memory as appropriate.
+The @code{String} class represents a string of characters.
+@code{String}s may be constructed from C strings, characters, numbers,
+and so forth. They may also be added together. The underlying character
+arrays are dynamically allocated; operations on @code{String}s allocate
+and free memory as needed. A @code{String} and its substrings will
+generally share memory. @code{String}s may be assigned, stored, and
+passed to functions at will.
 
 @menu
 * String Constructors::         
@@ -217,6 +230,7 @@ passed and stored at will; they allocate and free memory as appropriate.
 * Derived Strings::             
 * Appending to Strings::        
 * String Comparison::           
+* String Out-of-Memory::        
 @end menu
 
 @node String Constructors, String Contents, String, String
@@ -245,9 +259,10 @@ Creates a string containing the single character @var{c}.
 @deftypeopx Constructor String {} String (unsigned @var{n})
 @deftypeopx Constructor String {} String (long @var{n})
 @deftypeopx Constructor String {} String (unsigned long @var{n})
+@deftypeopx Constructor String {} String (long long @var{n})
 @deftypeopx Constructor String {} String (unsigned long long @var{n})
 @deftypeopx Constructor String {} String (double @var{n})
-Creates a string containing an ASCII representation of the number
+Creates a string containing an ASCII decimal representation of the number
 @var{n}. For example, if @var{n} is 20, then @code{String(@var{n})}
 equals @code{"20"}. The @code{double} constructor is not available in
 the kernel.
@@ -454,7 +469,7 @@ and returns the resulting string.
 @end deftypefun
 
 
-@node String Comparison,  , Appending to Strings, String
+@node String Comparison, String Out-of-Memory, Appending to Strings, String
 @subsection Comparison
 
 @deftypemethod String bool equals (const char *@var{s}, int @var{len}) const
@@ -487,8 +502,282 @@ keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
 @end deftypemethod
 
 
+@node String Out-of-Memory,  , String Comparison, String
+@subsection Out-of-Memory Conditions
+
+All @code{String} operations are robust against out-of-memory
+conditions. If there is not enough memory to create a particular string,
+the @code{String} implementation will return an empty string instead. If
+there is not enough memory to append to a particular string, the
+@code{String} implementation will erase the existing string, setting it
+to an empty string.
+
+The @code{out_of_memory_count} static method can help detect whether a
+@code{String} operation has run out of memory.
+
+@deftypeop {Static method} String int out_of_memory_count ()
+Returns the number of times that the @code{String} implementation has
+encountered an out-of-memory condition. The result is normally zero.
+@end deftypeop
+
+
 @node StringAccum, Vector, String, Basics
 @section StringAccum
+
+The @code{StringAccum} class, like @code{String} (@pxref{String}),
+represents a string of characters. @code{StringAccum} is optimized for
+building a string through @dfn{accumulation}, or successively appending
+substrings until the whole string is ready. A @code{StringAccum} has
+both a @dfn{length}---the number of characters it currently
+contains---and a @dfn{capacity}---the maximum number of characters it
+could hold without reallocating memory.
+
+@menu
+* StringAccum Constructors::    
+* StringAccum operator<<::      
+* StringAccum Manipulation::    
+* StringAccum Contents::        
+* StringAccum Results::         
+* StringAccum Out-of-Memory::   
+@end menu
+
+
+@node StringAccum Constructors, StringAccum operator<<, StringAccum, StringAccum
+@subsection Constructors
+
+@deftypeop Constructor StringAccum {} StringAccum ()
+Creates a @code{StringAccum} with no characters.
+@end deftypeop
+
+@deftypeop Constructor StringAccum {} StringAccum (int @var{capacity})
+Creates a @code{StringAccum} with no characters, but a capacity of
+@var{capacity}. @var{capacity} must be greater than zero.
+@end deftypeop
+
+@code{StringAccum}'s copy constructor (@code{StringAccum(const
+StringAccum &)}) and assignment operator (@code{operator=(const
+StringAccum &)}) are private. Thus, @code{StringAccum}s cannot be
+assigned or passed as arguments. Of course, references to
+@code{StringAccum}s may be passed as arguments, and this usage is quite
+common.
+
+
+@node StringAccum operator<<, StringAccum Manipulation, StringAccum Constructors, StringAccum
+@subsection Appending with @code{operator<<}
+
+Generally, you append to a @code{StringAccum} using iostreams-like
+@code{<<} operators, which this section describes. The next section
+describes the low-level interface, the @code{append} and @code{pop_back}
+methods.
+
+Here is a conventional use of @code{StringAccum}'s @code{<<} operators:
+
+@example
+struct timeval tv; StringAccum sa; int n; // ...
+sa << tv << ": There are " << n << " things.\n";
+@end example
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, char @var{c})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned char @var{c})
+Appends the character @var{c} to the @code{StringAccum} @var{sa} and
+returns @var{sa}.
+@end deftypefun
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, const char *@var{s})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, const String &@var{s})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, const StringAccum &@var{sa2})
+Appends the string @var{s}, or the value of the @code{StringAccum}
+@var{sa2}, to @var{sa} and returns @var{sa}.
+@end deftypefun
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, short @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned short @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, int @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, long @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned long @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, long long @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned long long @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, double @var{n})
+Appends an ASCII decimal representation of the number @var{n} to
+@var{sa} and returns @var{sa}. For example, if @var{n} is 20, then
+@code{@var{sa} << @var{n}} has the same effect as @code{@var{sa} <<
+"20"}. The @code{double} operator is not available in the kernel.
+@end deftypefun
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, const struct timeval &@var{tv})
+Appends an ASCII decimal representation of the time value @var{tv} to
+@var{sa} and returns @var{sa}. The time value is printed as if by
+@code{printf("%ld.%06ld", @var{tv}.tv_sec, @var{tv}.tv_usec)}.
+@end deftypefun
+
+
+@node StringAccum Manipulation, StringAccum Contents, StringAccum operator<<, StringAccum
+@subsection Low-Level Manipulation
+
+@deftypemethod StringAccum void append (char @var{c})
+@deftypemethodx StringAccum void append (unsigned char @var{c})
+Appends the character @var{c} to the end of this @code{StringAccum}.
+Equivalent to @code{*this << @var{c}}.
+@end deftypemethod
+
+@deftypemethod StringAccum void append (const char *@var{s}, int @var{len})
+Appends the first @var{len} characters of @var{s} to the end of this
+@code{StringAccum}. If @var{len} is negative, then this function treats
+@var{s} as a C string, effectively setting @var{len} to
+@code{strlen(@var{s})}.
+@end deftypemethod
+
+@deftypemethod StringAccum {char *} extend (int @var{len})
+Puts @var{len} arbitrary characters at the end of this
+@code{StringAccum} and returns a pointer to those characters. The return
+value may be a null pointer if there is not enough memory to grow the
+character array. This method increases the @code{StringAccum}'s length
+by @var{len}, which must be greater than or equal to zero.
+@end deftypemethod
+
+@quotation
+@strong{Caution}: The pointer returned by @code{extend}, or the
+@code{reserve} method described below, should be treated as transient.
+It may become invalid after the next call to a method that grows the
+@code{StringAccum}, such as @code{append}, @code{extend}, or one of the
+@code{operator<<} functions, and will definitely become invalid when the
+@code{StringAccum} is destroyed.
+@end quotation
+
+
+Several methods remove characters from a @code{StringAccum} rather than
+add characters to it.
+
+@deftypemethod StringAccum void clear ()
+Erases the @code{StringAccum}, making its length zero (an empty string).
+@end deftypemethod
+
+@deftypemethod StringAccum void pop_back ()
+@deftypemethodx StringAccum void pop_back (int @var{amt})
+Remove the last character, or the last @var{amt} characters, of the
+string. @var{amt} must be greater than or equal to zero, and less than
+or equal to the @code{StringAccum}'s length.
+@end deftypemethod
+
+Finally, the @code{reserve} and @code{forward} methods together provide
+a convenient, fast interface for appending strings of unknown, but
+bounded, length.
+
+@deftypemethod StringAccum {char *} reserve (int @var{len})
+Reserves space for @var{len} characters at the end of this
+@code{StringAccum} and returns a pointer to those characters. The return
+value may be a null pointer if there is not enough memory to grow the
+character array. This method does not change the @code{StringAccum}'s
+length, although it may change its capacity. Use @code{forward} to
+change the @code{StringAccum}'s length.
+@end deftypemethod
+
+@deftypemethod StringAccum void forward (int @var{amt})
+Adds @var{amt} to the @code{StringAccum}'s length without changing its
+data. This method is only useful in conjunction with @code{reserve},
+above. Use @code{reserve} to get space suitable for appending a string
+of unknown, but bounded, length. After finding the actual length, use
+@code{forward} to inform the @code{StringAccum}. @var{amt} must be
+greater than or equal to zero, and less than or equal to the remaining
+capacity.
+@end deftypemethod
+
+
+@node StringAccum Contents, StringAccum Results, StringAccum Manipulation, StringAccum
+@subsection Contents
+
+@quotation
+@strong{Caution}: The pointer returned by @code{data} and @code{c_str}
+should be treated as transient. It may become invalid after the next
+call to a method that grows the @code{StringAccum}, such as
+@code{append}, @code{extend}, or one of the @code{operator<<} functions,
+and will definitely become invalid when the @code{StringAccum} is destroyed.
+@end quotation
+
+@deftypemethod StringAccum {char *} data () const
+Returns a pointer to the character data contained in this
+@code{StringAccum}.
+@end deftypemethod
+
+@deftypemethod StringAccum int length () const
+Returns the number of characters in this @code{StringAccum}.
+@end deftypemethod
+
+@deftypemethod StringAccum {const char *} c_str ()
+@deftypemethodx StringAccum {const char *} cc ()
+Returns a pointer to the character data contained in this
+@code{StringAccum}. Guarantees that the returned string is
+null-terminated: the @code{length()}th character will be @code{'\0'}.
+This does not affect the @code{StringAccum}'s contents or length.
+@end deftypemethod
+
+@deftypemethod StringAccum char {operator[]} (int @var{i}) const
+@deftypemethodx StringAccum {char &} {operator[]} (int @var{i})
+Returns the @var{i}th character of this @code{StringAccum}. @var{i} must
+be greater than or equal to zero, and less than the @code{StringAccum}'s
+length. Note that the non-@code{const} version of this method returns a
+mutable character reference, which facilitates code like
+
+@example
+StringAccum sa; // ...
+sa[5] = 'a';
+@end example
+@end deftypemethod
+
+
+@node StringAccum Results, StringAccum Out-of-Memory, StringAccum Contents, StringAccum
+@subsection Results
+
+@code{StringAccum}'s @code{take} methods return the string accumulated
+by a series of calls to @code{operator<<} or similar methods. Each
+@code{take} method makes @code{StringAccum} relinquish responsibility
+for its character array memory, passing that responsibility on to its
+caller. The caller should free the memory when it is done---either with
+@code{delete[]}, for the @code{take} and @code{take_bytes} methods, or
+by relying on @code{String} to handle it, for the @code{take_string}
+method.
+
+Each @code{take} method additionally restores the @code{StringAccum} to
+its original, empty state. Further @code{append}s or similar operations
+will begin building a new string from scratch.
+
+@deftypemethod StringAccum void take (unsigned char *&@var{s}, int &@var{len})
+Sets the @var{s} variable to this @code{StringAccum}'s character data
+and @var{len} to its length. Then clears the @code{StringAccum}'s
+internal state. 
+@end deftypemethod
+
+@deftypemethod StringAccum {char *} take ()
+@deftypemethodx StringAccum {unsigned char *} take_bytes ()
+Returns this @code{StringAccum}'s character data, then clears the
+@code{StringAccum}'s internal state. The methods differ only in their
+return types. Note that @code{StringAccum::length} will always return
+zero immediately after a @code{take} or @code{take_bytes}. If you need
+to know the string's length, call @code{length} first.
+@end deftypemethod
+
+@deftypemethod StringAccum String take_string ()
+Returns this @code{StringAccum}'s character data as a @code{String}
+object (@pxref{String}), then clears the @code{StringAccum}'s internal
+state. This method hands the character data over to the @code{String}
+implementation; no data copies are performed.
+@end deftypemethod
+
+
+@node StringAccum Out-of-Memory,  , StringAccum Results, StringAccum
+@subsection Out-of-Memory Conditions
+
+@code{StringAccum} operations are robust against out-of-memory
+conditions. The @code{operator<<} functions and the @code{append} method
+leave a @code{StringAccum} as is if they cannot create the memory needed
+to complete an append. The @code{extend} and @code{reserve} methods can
+return null pointers on out-of-memory; their callers should always check
+that their return values are non-null.
+
+@code{StringAccum} has no equivalent to @code{String}'s
+@code{out_of_memory_count} static method.
+
 
 
 @node Vector, Bitvector, StringAccum, Basics
@@ -540,11 +829,11 @@ additional arguments as required by the format string. @xref{Error
 Format Strings}, for more details on the format string. The five methods
 differ in the seriousness of the error they report.
 
-@deftypemethod ErrorHandler void debug (const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler void message (const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int warning (const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int error (const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int fatal (const char *@var{format}, @dots)
+@deftypemethod ErrorHandler void debug (const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler void message (const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int warning (const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int error (const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int fatal (const char *@var{format}, @dots{})
 Report the error described by @var{format} and any additional arguments.
 The methods are listed by increasing seriousness. Use @code{debug} for
 debugging messages that should not be printed in a production
@@ -563,11 +852,11 @@ Each of these methods has an analogue that additionally takes a
 typical landmark contains a file name and line number, separated by a
 colon---@samp{foo.click:31}, for example.
 
-@deftypemethod ErrorHandler void ldebug (const String &@var{landmark}, const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler void lmessage (const String &@var{landmark}, const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int lwarning (const String &@var{landmark}, const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int lerror (const String &@var{landmark}, const char *@var{format}, @dots)
-@deftypemethodx ErrorHandler int lfatal (const String &@var{landmark}, const char *@var{format}, @dots)
+@deftypemethod ErrorHandler void ldebug (const String &@var{landmark}, const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler void lmessage (const String &@var{landmark}, const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int lwarning (const String &@var{landmark}, const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int lerror (const String &@var{landmark}, const char *@var{format}, @dots{})
+@deftypemethodx ErrorHandler int lfatal (const String &@var{landmark}, const char *@var{format}, @dots{})
 Report the error described by @var{format} and any additional arguments.
 The error took place at @var{landmark}. Most @code{ErrorHandler}s will
 simply prepend @samp{@var{landmark}:@ } to each line of the error
@@ -821,8 +1110,8 @@ method, however.
 @deftypeop {Static method} ErrorHandler void static_cleanup ()
 Destroys the default and silent @code{ErrorHandler}s and cleans up other
 @code{ErrorHandler}-related memory. This function should be called
-exactly once, just before the program exits. It is an error to call
-generate an error message after calling @code{static_cleanup}.
+exactly once, just before the program exits. It is an error to call any
+@code{ErrorHandler} method after calling @code{static_cleanup}.
 @end deftypeop
 
 Finally, the @code{FileErrorHandler} class is available in any
@@ -1496,7 +1785,7 @@ file.
 * Task Initialization::         
 * Scheduling a Task::           
 * Tickets::                     
-* Choosing a Thread::           
+* Task Thread Choice::          
 * Task Status::                 
 * Task Handlers::               
 * Destroying a Task::           
@@ -1618,7 +1907,7 @@ instead of @code{_task.reschedule()}.
 @end deftypemethod
 
 
-@node Tickets, Choosing a Task Queue, Scheduling a Task, Tasks
+@node Tickets, Task Thread Choice, Scheduling a Task, Tasks
 @section Tickets
 
 Click tasks are scheduled using the flexible, lightweight stride
@@ -1675,7 +1964,7 @@ task may remain on the same thread, or become unscheduled, for some time
 after @code{change_thread} is called.
 
 
-@node Task Status, Task Handlers, Choosing a Task Queue, Tasks
+@node Task Status, Task Handlers, Task Thread Choice, Tasks
 @section Task Status Methods
 
 These methods let a user check various properties of a task---for
