@@ -1,3 +1,8 @@
+2004-12-11 Saturday 10:48  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* ns/nsclick.cc (1.23): Added an implementation of kill, also now
+	do some checking for null router references.
+
 2004-12-08 Wednesday 17:56  John Bicket <jbicket@mit.edu>
 
 	* test/standard/FullNoteQueue-upstream-notifier-01.testie (1.1):
