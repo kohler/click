@@ -1,6 +1,6 @@
 /*
- * pep.{cc,hh} -- Grid Position Estimation Protocol
- * Robert Morris
+ * regionpep.{cc,hh} -- Region-based Grid Position Estimation Protocol
+ * Douglas S. J. De Couto.  from pep.{cc,hh} by Robert Morris.
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -13,34 +13,34 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "pep.hh"
-#include "amoeba.hh"
+#include "regionpep.hh"
+#include "region.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "grid.hh"
 
-PEP::PEP()
+EstimateRouterRegion::EstimateRouterRegion()
   : _timer(this)
 {
   add_input();
   add_output();
-  _fixed = 0;
+  _fixed = false;
   _seq = 1;
   _debug = false;
 }
 
-PEP::~PEP()
+EstimateRouterRegion::~EstimateRouterRegion()
 {
 }
 
-PEP *
-PEP::clone() const
+EstimateRouterRegion *
+EstimateRouterRegion::clone() const
 {
-  return new PEP;
+  return new EstimateRouterRegion;
 }
 
 void *
-PEP::cast(const char *name)
+EstimateRouterRegion::cast(const char *name)
 {
   if(strcmp(name, "LocationInfo") == 0)
     return(this);
@@ -48,7 +48,7 @@ PEP::cast(const char *name)
 }
 
 int
-PEP::configure(const Vector<String> &conf, ErrorHandler *errh)
+EstimateRouterRegion::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int lat_int = 0, lon_int = 0;
   bool fixed = false;
@@ -80,7 +80,7 @@ PEP::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-PEP::initialize(ErrorHandler *)
+EstimateRouterRegion::initialize(ErrorHandler *)
 {
   _timer.attach(this);
   _timer.schedule_after_ms(pep_update * 1000);
@@ -88,7 +88,7 @@ PEP::initialize(ErrorHandler *)
 }
 
 void
-PEP::run_scheduled()
+EstimateRouterRegion::run_scheduled()
 {
   purge_old();
   output(0).push(make_PEP());
@@ -96,7 +96,7 @@ PEP::run_scheduled()
 }
 
 void
-PEP::purge_old()
+EstimateRouterRegion::purge_old()
 {
   struct timeval tv;
 
@@ -109,7 +109,7 @@ PEP::purge_old()
       _entries[i++] = _entries[j];
     } else {
       if(_debug)
-        click_chatter("PEP %s %s: purging old entry for %s (%d %d %d)",
+        click_chatter("EstimateRouterRegion %s %s: purging old entry for %s (%d %d %d)",
                       id().cc(),
                       _my_ip.s().cc(),
                       IPAddress(_entries[j]._fix.fix_id).s().cc(),
@@ -124,7 +124,7 @@ PEP::purge_old()
 }
 
 void
-PEP::sort_entries()
+EstimateRouterRegion::sort_entries()
 {
   int n = _entries.size();
   int i, j;
@@ -143,7 +143,7 @@ PEP::sort_entries()
 
 // Are we allowed to send a particular update?
 bool
-PEP::sendable(Entry e)
+EstimateRouterRegion::sendable(Entry e)
 {
   struct timeval tv;
 
@@ -157,35 +157,36 @@ PEP::sendable(Entry e)
 }
 
 void
-PEP::externalize(pep_fix *fp)
+EstimateRouterRegion::externalize(pep_rgn_fix *fp)
 {
   fp->fix_seq = htonl(fp->fix_seq);
   fp->fix_hops = htonl(fp->fix_hops);
 }
 
 void
-PEP::internalize(pep_fix *fp)
+EstimateRouterRegion::internalize(pep_rgn_fix *fp)
 {
   fp->fix_seq = ntohl(fp->fix_seq);
   fp->fix_hops = ntohl(fp->fix_hops);
 }
 
 Packet *
-PEP::make_PEP()
+EstimateRouterRegion::make_PEP()
 {
-  WritablePacket *p = Packet::make(sizeof(pep_proto));
+  WritablePacket *p = Packet::make(sizeof(pep_rgn_proto));
   memset(p->data(), 0, p->length());
 
-  pep_proto *pp = (pep_proto *) p->data();
+  pep_rgn_proto *pp = (pep_rgn_proto *) p->data();
   pp->id = _my_ip.addr();
   int nf = 0;
 
   if(_fixed){
-    pep_fix *f = pp->fixes + nf;
+    pep_rgn_fix *f = pp->fixes + nf;
     nf++;
     f->fix_id = _my_ip.addr();
     f->fix_seq = htonl(_seq++);
     f->fix_loc = grid_location(_lat, _lon);
+    f->fix_dim = grid_location(0, 0);
     f->fix_hops = htonl(0);
   }
 
@@ -195,7 +196,6 @@ PEP::make_PEP()
   for(i = 0; i < _entries.size() && nf < pep_proto_fixes; i++){
     if(sendable(_entries[i])){
       pp->fixes[nf] = _entries[i]._fix;
-      pp->fixes[nf].fix_hops += 1;
       externalize(&(pp->fixes[nf]));
       nf++;
     }
@@ -207,7 +207,7 @@ PEP::make_PEP()
 }
 
 int
-PEP::findEntry(unsigned id, bool create)
+EstimateRouterRegion::findEntry(unsigned id, bool create)
 {
   int i;
 
@@ -215,9 +215,9 @@ PEP::findEntry(unsigned id, bool create)
     if(_entries[i]._fix.fix_id == id)
       return(i);
 
-  if(create){
-    if(_debug)
-      click_chatter("PEP %s %s: new entry for %s",
+  if (create) {
+    if (_debug)
+      click_chatter("EstimateRouterRegion %s %s: new entry for %s",
                     this->id().cc(),
                     _my_ip.s().cc(),
                     IPAddress(id).s().cc());
@@ -235,29 +235,29 @@ PEP::findEntry(unsigned id, bool create)
 }
 
 Packet *
-PEP::simple_action(Packet *p)
+EstimateRouterRegion::simple_action(Packet *p)
 {
   int nf;
-  pep_proto *pp;
+  pep_rgn_proto *pp;
   struct timeval tv;
 
   click_gettimeofday(&tv);
 
-  if(p->length() != sizeof(pep_proto)){
-    click_chatter("PEP: bad size packet (%d bytes)", p->length());
+  if(p->length() != sizeof(pep_rgn_proto)) {
+    click_chatter("EstimateRouterRegion: bad size packet (%d bytes)", p->length());
     goto out;
   }
 
-  pp = (pep_proto *) p->data();
+  pp = (pep_rgn_proto *) p->data();
   nf = ntohl(pp->n_fixes);
   if(nf < 0 || (const u_char*)&pp->fixes[nf] > p->data()+p->length()){
-    click_chatter("PEP: bad n_fixes %d", nf);
+    click_chatter("EstimateRouterRegion: bad n_fixes %d", nf);
     goto out;
   }
 
   int i;
   for(i = 0; i < nf && i < pep_proto_fixes; i++){
-    pep_fix f = pp->fixes[i];
+    pep_rgn_fix f = pp->fixes[i];
     internalize(&f);
     if(f.fix_id == _my_ip.addr())
       continue;
@@ -268,11 +268,12 @@ PEP::simple_action(Packet *p)
     int os = _entries[j]._fix.fix_seq;
     int oh = _entries[j]._fix.fix_hops;
     if(f.fix_seq > os ||
-       (f.fix_seq == os && f.fix_hops < oh)){
+       (f.fix_seq == os && (f.fix_hops+1) < oh)){
       _entries[j]._fix = f;
+      _entries[j]._fix.fix_hops++;
       _entries[j]._when = tv;
       if(_debug && f.fix_hops != oh)
-        click_chatter("PEP %s %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
+        click_chatter("EstimateRouterRegion %s %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
                       id().cc(),
                       _my_ip.s().cc(),
                       IPAddress(f.fix_id).s().cc(),
@@ -289,85 +290,32 @@ PEP::simple_action(Packet *p)
   return(0);
 }
 
-// Actually guess where we are.
 grid_location
-PEP::algorithm1()
+EstimateRouterRegion::estimate_location()
 {
-  double lat = 0, lon = 0;
-  double weight = 0;
-  int i;
-  struct timeval now;
+  pep_rgn_fix f = _entries[0]._fix;
+  RectRegion rgn(f.fix_loc.lon(), f.fix_loc.lat(), f.fix_dim.lon(), f.fix_dim.lat());
+  rgn = rgn.expand(f.fix_hops * radio_range(f.fix_loc));
 
-  click_gettimeofday(&now);
+  int num_skips = 0;
+  for (int i = 1; i < _entries.size(); i++) {
+    f = _entries[i]._fix;
+    RectRegion rgn2(f.fix_loc.lon(), f.fix_loc.lat(), f.fix_dim.lon(), f.fix_dim.lat());
+    rgn2 = rgn2.expand(f.fix_hops * radio_range(f.fix_loc));
 
-  for(i = 0; i < _entries.size(); i++){
-    if(now.tv_sec - _entries[i]._when.tv_sec < pep_stale){
-      double w = 1.0 / (_entries[i]._fix.fix_hops + 1);
-      lat += w * _entries[i]._fix.fix_loc.lat();
-      lon += w * _entries[i]._fix.fix_loc.lon();
-      weight += w;
+    RectRegion new_rgn = rgn2.intersect(rgn);
+    if (new_rgn.empty()) {
+      click_chatter("EstimateRouterRegion %s: skipping region which would result in empty intersection (%d)", id().cc(), ++num_skips);
+      continue;
     }
-  }
-  
-  return(grid_location(lat / weight, lon / weight));
-}
-
-class PEPAmoeba : public Amoeba {
-public:
-  PEPAmoeba () : Amoeba(2) { }
-  double fn(double a[]);
-  int _n;
-  double _x[20];
-  double _y[20];
-  double _d[20];
-};
-
-double
-PEPAmoeba::fn(double a[])
-{
-  double x = a[0];
-  double y = a[1];
-  double d = 0;
-  int i;
-
-  for(i = 0; i < _n; i++){
-    double dx = x - _x[i];
-    double dy = y - _y[i];
-    double dd = _d[i] - sqrt(dx*dx + dy*dy);
-    dd = dd * dd;
-    d += dd;
+    rgn = new_rgn;
   }
 
-  return(d);
+  return grid_location(rgn.center_y(), rgn.center_x());
 }
 
 grid_location
-PEP::algorithm2()
-{
-  PEPAmoeba a;
-  int i;
-  struct timeval now;
-  
-  click_gettimeofday(&now);
-  a._n = 0;
-
-  for(i = 0; i < _entries.size() && a._n < 5; i++){
-    if(now.tv_sec - _entries[i]._when.tv_sec < pep_stale){
-      a._x[a._n] = _entries[i]._fix.fix_loc.lat();
-      a._y[a._n] = _entries[i]._fix.fix_loc.lat();
-      a._d[a._n] = _entries[i]._fix.fix_hops * 0.002; // XXX 250 meters?  should be fix_hops + 1??
-      a._n += 1;
-    }
-  }
-
-  double pts[2];
-  a.minimize(pts);
-  
-  return(grid_location(pts[0], pts[1]));
-}
-
-grid_location
-PEP::get_current_location()
+EstimateRouterRegion::get_current_location()
 {
   if(_fixed)
     return(grid_location(_lat, _lon));
@@ -375,18 +323,18 @@ PEP::get_current_location()
   if(_entries.size() < 1)
     return(grid_location(0.0, 0.0));
 
-  return(algorithm1());
+  return estimate_location();
 }
 
 static String
 pep_read_handler(Element *f, void *)
 {
-  PEP *l = (PEP *) f;
+  EstimateRouterRegion *l = (EstimateRouterRegion *) f;
   return(l->s());
 }
 
 String
-PEP::s()
+EstimateRouterRegion::s()
 {
   String s;
   int i, n;
@@ -405,7 +353,7 @@ PEP::s()
 
   n = _entries.size();
   for(i = 0; i < n; i++){
-    pep_fix f = _entries[i]._fix;
+    pep_rgn_fix f = _entries[i]._fix;
     char buf[512];
     snprintf(buf, sizeof(buf), "%s seq=%d %s hops=%d age=%d\n",
              IPAddress(f.fix_id).s().cc(),
@@ -419,14 +367,14 @@ PEP::s()
 }
 
 void
-PEP::add_handlers()
+EstimateRouterRegion::add_handlers()
 {
   add_default_handlers(true);
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
 ELEMENT_REQUIRES(LocationInfo)
-EXPORT_ELEMENT(PEP)
+EXPORT_ELEMENT(EstimateRouterRegion)
 
 #include "vector.cc"
-template class Vector<PEP::Entry>;
+template class Vector<EstimateRouterRegion::Entry>;
