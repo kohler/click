@@ -27,7 +27,7 @@ class IPAddress { public:
   const unsigned char *data() const;
   
   unsigned hashcode() const	{ return _addr; }
-  int mask_to_prefix_bits() const;
+  int mask_to_prefix_len() const;
   bool matches_prefix(IPAddress addr, IPAddress mask) const;
   bool mask_more_specific(IPAddress) const;
 

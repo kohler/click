@@ -1563,7 +1563,7 @@ Returns this IP address as an unsigned integer in network byte order.
 Returns a pointer to this IP address's data.
 @end deftypemethod
 
-@deftypemethod IPAddress int mask_to_prefix_bits () const
+@deftypemethod IPAddress int mask_to_prefix_len () const
 Returns the prefix length @var{k} so that this IP address equals
 @code{make_prefix(@var{k})}, or @math{-1} if there is no such prefix
 length.

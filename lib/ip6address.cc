@@ -69,7 +69,7 @@ IP6Address::make_prefix(int prefix)
 }
 
 int
-IP6Address::mask_to_prefix_bits() const
+IP6Address::mask_to_prefix_len() const
 {
   int bits = 0;
   
@@ -78,7 +78,7 @@ IP6Address::mask_to_prefix_bits() const
       break;
 
   // check 'swing' word
-  int swing_bits = IPAddress(_addr.s6_addr32[bits >> 3]).mask_to_prefix_bits();
+  int swing_bits = IPAddress(_addr.s6_addr32[bits >> 3]).mask_to_prefix_len();
 
   for (int i = (bits >> 3) + 1; i < 4; i++)
     if (_addr.s6_addr32[i] != 0)

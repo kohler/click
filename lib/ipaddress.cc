@@ -45,7 +45,7 @@ IPAddress::make_prefix(int prefix)
 }
 
 int
-IPAddress::mask_to_prefix_bits() const
+IPAddress::mask_to_prefix_len() const
 {
   uint32_t host_addr = ntohl(_addr);
   uint32_t umask = 0xFFFFFFFFU;
@@ -67,9 +67,9 @@ IPAddress::unparse() const
 String
 IPAddress::unparse_mask() const
 {
-  int prefix_bits = mask_to_prefix_bits();
-  if (prefix_bits >= 0)
-    return String(prefix_bits);
+  int prefix_len = mask_to_prefix_len();
+  if (prefix_len >= 0)
+    return String(prefix_len);
   else
     return unparse();
 }

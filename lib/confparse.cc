@@ -1410,7 +1410,7 @@ cp_ip6_prefix(const String &str,
   if (cp_ip6_address(mask_part, mask  CP_PASS_CONTEXT)) {
     // check that it really is a prefix. if not, return false right away
     // (don't check with AddressInfo)
-    relevant_bits = IP6Address(mask).mask_to_prefix_bits();
+    relevant_bits = IP6Address(mask).mask_to_prefix_len();
     if (relevant_bits < 0)
       return false;
     
