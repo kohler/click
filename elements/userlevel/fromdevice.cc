@@ -214,11 +214,8 @@ FromDevice::initialize(ErrorHandler *errh)
   }
   
   struct bpf_program fcode;
-  /* 
-   * assume we can use 0 pointer for program string and get ``empty''
-   * filter program.  
-   */
-  if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_data(), 0, netmask) < 0) {
+  // compile the BPF filter
+  if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0) {
     return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
   }
 
