@@ -78,8 +78,7 @@ class Element { public:
   virtual const char *processing() const;
   virtual const char *flags() const;
   
-  virtual void processing_vector(Subvector<int> &, Subvector<int> &,
-				 ErrorHandler *) const;
+  void processing_vector(Subvector<int> &, Subvector<int> &, ErrorHandler *) const;
   void set_processing_vector(const Subvector<int> &, const Subvector<int> &);
   
   bool output_is_push(int) const;
