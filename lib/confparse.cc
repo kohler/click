@@ -1220,56 +1220,58 @@ cp_double(const String &in_str, double *result)
 
 // PARSING TIME
 
-static String
-cp_seconds_suffix(const String &str, int *power, int *factor)
+static const char *
+read_unit(const char *s, const char *end, 
+	  const char *unit_begin_in, int unit_len, const char *prefix,
+	  int *power, int *factor)
 {
-  int len = str.length();
-  const char *s = str.data();
-  *power = 0;
-  *factor = 1;
-  
-  if (len > 1 && s[len-1] == 's')
-    len--;
-  else if (len > 3 && s[len-3] == 's' && s[len-2] == 'e' && s[len-1] == 'c')
-    len -= 3;
-  else if (len > 1 && s[len-1] == 'm') {
-    len--;
-    *power = 1, *factor = 6;
-    goto eat_space;
-  } else if (len > 3 && s[len-3] == 'm' && s[len-2] == 'i' && s[len-1] == 'n') {
-    len -= 3;
-    *power = 1, *factor = 6;
-    goto eat_space;
-  } else if (len > 1 && s[len-1] == 'h') {
-    len--;
-    *power = 2, *factor = 36;
-    goto eat_space;
-  } else if (len > 2 && s[len-3] == 'h' && s[len-2] == 'r') {
-    len -= 2;
-    *power = 2, *factor = 36;
-    goto eat_space;
-  } else
-    return str;
+  const char *work = end;
+  const unsigned char *unit_begin = reinterpret_cast<const unsigned char *>(unit_begin_in);
+  const unsigned char *unit = unit_begin + unit_len;
+  if (unit > unit_begin && unit[-1] == 0)
+    unit--;
+  while (unit > unit_begin) {
+    if (unit[-1] < 2) {
+      assert(unit - 3 >= unit_begin);
+      *power = (unit[-1] ? -(int) unit[-3] : unit[-3]);
+      *factor = unit[-2];
 
-  if (s[len - 1] == 'm')
-    *power = -3, len--;
-  else if (s[len - 1] == 'u')
-    *power = -6, len--;
-  else if (s[len - 1] == 'n')
-    *power = -9, len--;
-
- eat_space:
-  while (len > 0 && isspace(s[len - 1]))
-    len--;
-  return str.substring(0, len);
+      // check for SI prefix
+      if (prefix && work > s) {
+	for (; *prefix; prefix += 2)
+	  if (*prefix == work[-1]) {
+	    *power += (int) prefix[1] - 64;
+	    work--;
+	    break;
+	  }
+      }
+      
+      while (work > s && isspace(work[-1]))
+	work--;
+      return work;
+    } else if (unit[-1] != (unsigned char) work[-1]) {
+      while (unit > unit_begin && unit[-1] >= 2)
+	unit--;
+      unit -= 3;
+      work = end;
+    } else {
+      unit--;
+      work--;
+    }
+  }
+  return end;
 }
 
+static const char seconds_units[] = "\
+\0\1\0s\0\1\0sec\1\6\0m\1\6\0min\2\044\0h\2\044\0hr";
+static const char seconds_prefixes[] = "m\075u\072n\067";
+
 bool
-cp_seconds_as(int want_power, const String &str_in, uint32_t *return_value)
+cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
 {
-  int power, factor;
-  String str = cp_seconds_suffix(str_in, &power, &factor);
-  if (!cp_unsigned_real10(str, want_power, power, return_value))
+  int power = 0, factor = 1;
+  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
+  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), want_power, power, return_value))
     return false;
   if (*return_value > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
@@ -1292,12 +1294,12 @@ cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
 }
 
 bool
-cp_timeval(const String &str_in, struct timeval *return_value)
+cp_timeval(const String &str, struct timeval *return_value)
 {
-  int power, factor;
-  String str = cp_seconds_suffix(str_in, &power, &factor);
+  int power = 0, factor = 1;
+  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
   uint32_t tv_sec, tv_usec;
-  if (!cp_unsigned_real10(str, 6, power, &tv_sec, &tv_usec))
+  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 6, power, &tv_sec, &tv_usec))
     return false;
   if (factor != 1) {
     tv_usec *= factor;
@@ -1309,6 +1311,32 @@ cp_timeval(const String &str_in, struct timeval *return_value)
   return_value->tv_usec = tv_usec;
   return true;
 }
+
+
+static const char byte_bandwidth_units[] = "\
+\3\175\1baud\
+\3\175\1bps\
+\3\175\1b/s\
+\0\1\0Bps\
+\0\1\0B/s\
+";
+static const char byte_bandwidth_prefixes[] = "k\103K\103M\106G\111";
+
+bool
+cp_bandwidth(const String &str, uint32_t *return_value)
+{
+  int power = 0, factor = 1;
+  const char *after_unit = read_unit(str.begin(), str.end(), byte_bandwidth_units, sizeof(byte_bandwidth_units), byte_bandwidth_prefixes, &power, &factor);
+  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 0, power, return_value))
+    return false;
+  if (*return_value > 0xFFFFFFFFU / factor) {
+    cp_errno = CPE_OVERFLOW;
+    *return_value = 0xFFFFFFFFU;
+  } else
+    *return_value *= factor;
+  return true;
+}
+
 
 
 // PARSING IPv4 ADDRESSES
@@ -1971,6 +1999,7 @@ const CpVaParseCmd
   cpSecondsAsMicro	= "usec",
   cpTimeval		= "timeval",
   cpInterval		= "interval",
+  cpBandwidth		= "bandwidth_Bps",
   cpIPAddress		= "ip_addr",
   cpIPPrefix		= "ip_prefix",
   cpIPAddressOrPrefix	= "ip_addr_or_prefix",

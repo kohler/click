@@ -106,6 +106,8 @@ bool cp_seconds_as_milli(const String &, uint32_t *);
 bool cp_seconds_as_micro(const String &, uint32_t *);
 bool cp_timeval(const String &, struct timeval *);
 
+bool cp_bandwidth(const String &, uint32_t *);
+
 String cp_unparse_bool(bool);
 #ifdef HAVE_INT64_TYPES
 String cp_unparse_integer64(int64_t, int base, bool uppercase);
@@ -201,11 +203,12 @@ extern const CpVaParseCmd
 #ifdef HAVE_FLOAT_TYPES
     cpDouble,		//			double *
 #endif
-    cpSeconds,		//			int *
-    cpSecondsAsMilli,	//			int *milliseconds
-    cpSecondsAsMicro,	//			int *microseconds
+    cpSeconds,		//			uint32_t *
+    cpSecondsAsMilli,	//			uint32_t *milliseconds
+    cpSecondsAsMicro,	//			uint32_t *microseconds
     cpTimeval,		//			struct timeval *
     cpInterval,		//			struct timeval *
+    cpBandwidth,	//			uint32_t *bandwidth (in B/s)
     cpIPAddress,	//			IPAddress *
     cpIPPrefix,		//			IPAddress *a, IPAddress *mask
     cpIPAddressOrPrefix,//			IPAddress *a, IPAddress *mask
