@@ -141,8 +141,19 @@ Click.
 COPYRIGHT AND LICENSE
 ---------------------
 
-    We are distributing Click under a version of the "MIT License", which
-is a BSD-like license. See the files 'LICENSE' and 'AUTHORS' for details.
+    Click is distributed under a version of the "MIT License", which is a
+BSD-like license. See the 'LICENSE' file for details.
+
+    Portions of the Click software are derived from the Linux kernel, and
+are thus distributed under the GNU General Public License, version 2, or,
+at your discretion, any later version. The GNU General Public License is
+available via the Web at <http://www.gnu.org/copyleft/gpl.html>, or in the
+COPYING file in this directory. The Linux patches in etc/linux-*-patch are
+definitely GPLed; the Linux driver in linuxmodule/ is GPLed.  
+
+    Element code that you write using only Click's interfaces will
+generally *not* be derived from the Linux kernel, so the 'LICENSE' file
+will apply, not the GPL.
 
 BUGS, QUESTIONS, ETC.
 ---------------------
