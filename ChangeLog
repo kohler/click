@@ -1,3 +1,7 @@
+2003-07-14 Monday 20:43  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/srcr.cc (1.8): add explicit instances
+
 2003-07-14 Monday 20:30  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: etx.cc (1.1), etx.hh (1.1): dsr-like w/etx
