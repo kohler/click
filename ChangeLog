@@ -1,3 +1,8 @@
+2001-08-30 Thursday 15:16  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.98), click-mkelemmap (1.15), doc/click-elem2man
+	(1.13), etc/samplepackage/Makefile.in (1.24): doc updates, mostly
+
 2001-08-30 Thursday 14:19  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* bsdmodule/clickfs.cc (1.4), bsdmodule/clickfs_vnops.cc (1.7),
