@@ -18,6 +18,7 @@ CLICK_DECLS
 #define FAKE_DLT_C_HDLC			104	/* Cisco HDLC */
 #define FAKE_DLT_IEEE802_11             105     /* IEEE 802.11 wireless */
 #define FAKE_DLT_LINUX_SLL              113     /* Linux cooked socket */
+#define FAKE_DLT_PRISM_HEADER		119	/* 802.11+Prism II monitor code */
 #define FAKE_DLT_AIRONET_HEADER	        120     /* Aironet wireless header */
 #define FAKE_DLT_SUNATM			123	/* Full Frontal ATM: ATM header + ATM_RFC1483 */
 
