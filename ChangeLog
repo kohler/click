@@ -1,3 +1,27 @@
+2001-08-08 Wednesday 20:39  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: standard/infinitesource.cc (1.30),
+	userlevel/fromdevice.cc (1.28), userlevel/fromdevice.hh (1.14),
+	userlevel/fromdump.cc (1.39), userlevel/fromdump.hh (1.23),
+	userlevel/todump.cc (1.31), userlevel/todump.hh (1.18): FromDump,
+	ToDump, FromDevice: use EXTRA_LENGTH and PACKET_COUNT annotations
+
+2001-08-08 Wednesday 20:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet_anno.hh (1.3): add EXTRA_LENGTH and
+	PACKET_COUNT annotations
+
+2001-08-08 Wednesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.21), lib/packet.cc (1.47): change
+	"unsigned" to "uint32_t" for explicitness
+
+2001-08-08 Wednesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: atomic.hh (1.5), clp.h (1.6), integers.hh (1.3):
+	remove leftover occurrences of u_int32_t and friends (reported by
+	Lee Breslau)
+
 2001-08-06 Monday 13:04  Eddie Kohler <kohler@aciri.org>
 
 	* lib/ipaddress.cc (1.24): use new HAVE_INDIFFERENT_ALIGNMENT
