@@ -321,16 +321,21 @@ $bad_files"
   next;
 }
 END {
+  n = 0
   for (i in exports) {
     if (exports[i] == "") {
       print i
+      n++
     } else {
       if (header[i] == "") {
 	header[i] = "\"" i "\""; sub(/\.cc/, ".hh", header[i])
       }
       print i, "\t", header[i], "\t", exports[i]
+      n++
     }
-  } 
+  }
+  if (n == 0)
+    print "click-buildtool: warning: No elements found" | "cat 1>&2"
 }' | eval "$postprocess"
 
 }
