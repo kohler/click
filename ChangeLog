@@ -1,3 +1,11 @@
+2005-02-08 Tuesday 04:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.61): add elem2make --linux26 functionality
+
+2005-02-08 Tuesday 04:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* AUTHORS (1.28): add new AUTHORS
+
 2005-02-08 Tuesday 03:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipratemon.cc (1.103): IPRateMon is userlevel-only,
