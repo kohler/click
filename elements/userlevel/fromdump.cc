@@ -46,7 +46,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-    : Element(0, 1), _packet(0), _last_time_h(0), _task(this)
+    : Element(0, 1), _packet(0), _end_h(0), _task(this)
 {
     MOD_INC_USE_COUNT;
 }
@@ -54,7 +54,7 @@ FromDump::FromDump()
 FromDump::~FromDump()
 {
     MOD_DEC_USE_COUNT;
-    delete _last_time_h;
+    delete _end_h;
 }
 
 void *
@@ -106,7 +106,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
-		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
+		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 #if CLICK_NS
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
 #endif
@@ -147,13 +147,16 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     else
 	_have_last_time = false;
 
-    if (_have_last_time && !_last_time_h)
-	_last_time_h = new HandlerCall(id() + ".active false");
+    if (stop && _end_h)
+	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
+    else if (stop)
+	_end_h = new HandlerCall(id() + ".stop");
+    else if (_have_last_time && !_end_h)
+	_end_h = new HandlerCall(id() + ".active false");
     
     // set other variables
     _have_any_times = false;
     _timing = timing;
-    _stop = stop;
     _force_ip = force_ip;
 
 #ifdef CLICK_NS
@@ -208,7 +211,7 @@ FromDump::initialize(ErrorHandler *errh)
 	_notifier.initialize(router());
     
     // check handler call, initialize Task
-    if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
+    if (_end_h && _end_h->initialize_write(this, errh) < 0)
 	return -1;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -390,11 +393,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
     if (_have_last_time && !timercmp(&ph->ts, &_last_time, <)) {
 	_have_last_time = false;
-	(void) _last_time_h->call_write(errh);
-	// The handler might have scheduled us, in which case we might crash
-	// at fast_reschedule()! Don't want that -- make sure we are
-	// unscheduled.
-	_task.fast_unschedule();
+	(void) _end_h->call_write(errh);
 	if (!_active) {
 	    _ff.shift_pos(caplen + skiplen);
 	    return false;
@@ -449,8 +448,8 @@ FromDump::run_task()
 
     if (more)
 	_task.fast_reschedule();
-    else if (_stop)
-	router()->please_stop_driver();
+    else if (_end_h)
+	_end_h->call_write(ErrorHandler::default_handler());
 
     if (_packet) {
 	output(0).push(_packet);
@@ -481,8 +480,8 @@ FromDump::pull(int)
 
     // notify presence/absence of more packets
     _notifier.set_listeners(more);
-    if (!more && _stop)
-	router()->please_stop_driver();
+    if (!more && _end_h)
+	_end_h->call_write(ErrorHandler::default_handler());
     
     Packet *p = _packet;
     _packet = 0;
@@ -534,7 +533,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {
 	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
-	      if (fd->_last_time_h)
+	      if (fd->_end_h)
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
 	  } else

@@ -47,8 +47,8 @@ pushed out on output 1; otherwise, they are dropped.) Default is false.
 
 =item STOP
 
-Boolean. If true, then FromDump will ask the router to stop when it is done
-reading its tcpdump file. Default is false.
+Boolean.  If true, then FromDump will ask the router to stop when it is done
+reading its tcpdump file (or the END time is reached).  Default is false.
 
 =item START
 
@@ -79,8 +79,9 @@ seconds after the first packet output.
 
 =item END_CALL
 
-Specify the handler to call, instead of stopping FromDump, once the end time
-is reached.
+Specify a handler to call once the end time is reached, or the dump runs out
+of packets.  This defaults to 'I<FromDump>.active false'.  END_CALL and STOP
+are mutually exclusive.
 
 =item TIMING
 
@@ -202,7 +203,6 @@ class FromDump : public Element { public:
 
     bool _swapped : 1;
     bool _timing : 1;
-    bool _stop : 1;
     bool _force_ip : 1;
     bool _have_first_time : 1;
     bool _have_last_time : 1;
@@ -218,7 +218,7 @@ class FromDump : public Element { public:
 
     struct timeval _first_time;
     struct timeval _last_time;
-    HandlerCall *_last_time_h;
+    HandlerCall *_end_h;
     
     Task _task;
     ActiveNotifier _notifier;

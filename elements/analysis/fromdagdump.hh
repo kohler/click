@@ -31,8 +31,8 @@ Keyword arguments are:
 
 =item STOP
 
-Boolean. If true, then FromDAGDump will ask the router to stop when it is done
-reading its tcpdump file. Default is false.
+Boolean.  If true, then FromDAGDump will ask the router to stop when it is
+done reading its file (or the END time is reached).  Default is false.
 
 =item ACTIVE
 
@@ -75,8 +75,9 @@ seconds after the first packet output.
 
 =item END_CALL
 
-Specify the handler to call, instead of stopping FromDAGDump, once the end
-time is reached.
+Specify a handler to call once the end time is reached, or the dump runs out
+of packets.  This defaults to 'I<FromDAGDump>.active false'.  END_CALL and
+STOP are mutually exclusive.
 
 =item SAMPLE
 
@@ -184,7 +185,6 @@ class FromDAGDump : public Element { public:
 
     bool _swapped : 1;
     bool _timing : 1;
-    bool _stop : 1;
     bool _force_ip : 1;
     bool _have_first_time : 1;
     bool _have_last_time : 1;
@@ -198,7 +198,7 @@ class FromDAGDump : public Element { public:
 
     struct timeval _first_time;
     struct timeval _last_time;
-    HandlerCall *_last_time_h;
+    HandlerCall *_end_h;
     
     Task _task;
 

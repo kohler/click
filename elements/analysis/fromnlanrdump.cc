@@ -42,7 +42,7 @@ CLICK_DECLS
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromNLANRDump::FromNLANRDump()
-    : Element(0, 1), _packet(0), _last_time_h(0), _task(this)
+    : Element(0, 1), _packet(0), _end_h(0), _task(this)
 {
     MOD_INC_USE_COUNT;
 }
@@ -50,7 +50,7 @@ FromNLANRDump::FromNLANRDump()
 FromNLANRDump::~FromNLANRDump()
 {
     MOD_DEC_USE_COUNT;
-    delete _last_time_h;
+    delete _end_h;
 }
 
 void
@@ -88,7 +88,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
-		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
+		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
@@ -128,8 +128,12 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     else
 	_have_last_time = false;
 
-    if (_have_last_time && !_last_time_h)
-	_last_time_h = new HandlerCall(id() + ".active false");
+    if (stop && _end_h)
+	return errh->error("'END_CALL' and 'STOP' are mutually exclusive");
+    else if (stop)
+	_end_h = new HandlerCall(id() + ".stop");
+    else if (_have_last_time && !_end_h)
+	_end_h = new HandlerCall(id() + ".active false");
 
     // format
     format = format.lower();
@@ -168,7 +172,6 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     // set other variables
     _have_any_times = false;
     _timing = timing;
-    _stop = stop;
     _active = active;
     return 0;
 }
@@ -177,7 +180,7 @@ int
 FromNLANRDump::initialize(ErrorHandler *errh)
 {
     // check handler call, initialize Task
-    if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
+    if (_end_h && _end_h->initialize_write(this, errh) < 0)
 	return -1;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -272,7 +275,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
     }
     if (_have_last_time && !timercmp(&tv, &_last_time, <)) {
 	_have_last_time = false;
-	(void) _last_time_h->call_write(errh);
+	(void) _end_h->call_write(errh);
 	if (!_active)
 	    more = false;
 	// The handler might have scheduled us, in which case we might crash
@@ -330,8 +333,8 @@ FromNLANRDump::run_task()
 
     if (more)
 	_task.fast_reschedule();
-    else if (_stop)
-	router()->please_stop_driver();
+    else if (_end_h)
+	_end_h->call_write(ErrorHandler::default_handler());
     return true;
 }
 
@@ -358,8 +361,8 @@ FromNLANRDump::pull(int)
 	more = false;
     }
 
-    if (!more && _stop)
-	router()->please_stop_driver();
+    if (!more && _end_h)
+	_end_h->call_write(ErrorHandler::default_handler());
     return p;
 }
 
@@ -408,7 +411,7 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {
 	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
-	      if (fd->_last_time_h)
+	      if (fd->_end_h)
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
 	  } else
