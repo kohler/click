@@ -1,3 +1,15 @@
+2001-05-09 Wednesday 13:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click, conf/grid.click,
+	elements/grid/gridroutetable.cc, elements/grid/gridroutetable.hh,
+	elements/grid/lookupgeogridroute.cc,
+	elements/grid/lookupgeogridroute.hh,
+	elements/grid/lookuplocalgridroute.cc,
+	elements/grid/lookuplocalgridroute.hh, tools/run-grid-gateway,
+	tools/run-grid-gateway.openbsd, tools/run-grid-node,
+	tools/run-grid-node.openbsd: finished changes for initial version
+	of new grid DSDV implementation
+
 2001-05-08 Tuesday 20:08  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* Makefile.in, config.h.in, configure.in,
