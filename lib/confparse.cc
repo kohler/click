@@ -1339,57 +1339,139 @@ cp_des_cblock(const String &str, unsigned char *return_value,
 // CP_VA_PARSE AND FRIENDS
 //
 
-struct cp_argtype {
-  int command;
-  int extra;
-  const char *name;
-  cp_parsefunc parse;
-  cp_storefunc store;
-  cp_argtype *next;
+CpVaParseCmd
+  cpOptional		= "OPTIONAL",
+  cpKeywords		= "KEYWORDS",
+  cpIgnore		= "IGNORE",
+  cpIgnoreRest		= "IGNORE_REST",
+  cpArgument		= "arg",
+  cpString		= "string",
+  cpWord		= "word",
+  cpBool		= "bool",
+  cpByte		= "byte",
+  cpShort		= "short",
+  cpUnsignedShort	= "u_short",
+  cpInteger		= "int",
+  cpUnsigned		= "u_int",
+  cpReal		= "real",
+  cpNonnegReal		= "u_real",
+  cpNonnegFixed		= "u_real_fixed",
+  cpMilliseconds	= "msec",
+  cpIPAddress		= "ip_addr",
+  cpIPPrefix		= "ip_prefix",
+  cpIPAddressOrPrefix	= "ip_addr_or_prefix",
+  cpIPAddressSet	= "ip_addr_set",
+  cpEthernetAddress	= "ether_addr",
+  cpElement		= "element",
+  cpIP6Address		= "ip6_addr",
+  cpIP6Prefix		= "ip6_prefix",
+  cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
+  cpDesCblock		= "des_cblock";
+
+enum {
+  cpiEnd = 0,
+  cpiOptional,
+  cpiKeywords,
+  cpiIgnore,
+  cpiIgnoreRest,
+  cpiArgument,
+  cpiString,
+  cpiWord,
+  cpiBool,
+  cpiByte,
+  cpiShort,
+  cpiUnsignedShort,
+  cpiInteger,
+  cpiUnsigned,
+  cpiReal,
+  cpiNonnegReal,
+  cpiNonnegFixed,
+  cpiMilliseconds,
+  cpiIPAddress,
+  cpiIPPrefix,
+  cpiIPAddressOrPrefix,
+  cpiIPAddressSet,
+  cpiEthernetAddress,
+  cpiElement,
+  cpiIP6Address,
+  cpiIP6Prefix,
+  cpiIP6AddressOrPrefix,
+  cpiDesCblock
 };
 
 #define NARGTYPE_HASH 128
 static cp_argtype *argtype_hash[NARGTYPE_HASH];
 
-static cp_argtype *
-find_argtype(int command)
+static inline int
+argtype_bucket(const char *command)
 {
-  cp_argtype *t = argtype_hash[command % NARGTYPE_HASH];
-  while (t && t->command != command)
+  const unsigned char *s = (const unsigned char *)command;
+  return (s[0] ? (s[0]%32 + strlen(command)*32) % NARGTYPE_HASH : 0);
+}
+
+static cp_argtype *
+find_argtype(const char *command)
+{
+  cp_argtype *t = argtype_hash[argtype_bucket(command)];
+  while (t && strcmp(t->name, command) != 0)
     t = t->next;
   return t;
 }
 
-cp_argtype *
-cp_add_argtype(int cp_command, const char *name, int extra,
-	       cp_parsefunc parse, cp_storefunc store)
+static int
+cp_register_argtype(const char *name, const char *desc, int extra,
+		    cp_parsefunc parse, cp_storefunc store, int internal)
 {
-  cp_argtype *t = new cp_argtype;
-  if (t) {
-    t->command = cp_command;
-    t->extra = extra;
+  if (cp_argtype *t = find_argtype(name)) {
+    t->use_count++;
+    if (strcmp(desc, t->description) != 0
+	|| extra != t->extra
+	|| parse != t->parse
+	|| store != t->store
+	|| internal != t->internal)
+      return -1;
+    else
+      return 0;
+  }
+  
+  if (cp_argtype *t = new cp_argtype) {
     t->name = name;
     t->parse = parse;
     t->store = store;
-    int bucket = cp_command % NARGTYPE_HASH;
+    t->extra = extra;
+    t->description = desc;
+    t->internal = internal;
+    t->use_count = 1;
+    int bucket = argtype_bucket(name);
     t->next = argtype_hash[bucket];
     argtype_hash[bucket] = t;
-  }
-  return t;
+    return 0;
+  } else
+    return -2;
+}
+
+int
+cp_register_argtype(const char *name, const char *desc, int extra,
+	       cp_parsefunc parse, cp_storefunc store)
+{
+  return cp_register_argtype(name, desc, extra, parse, store, -1);
 }
 
 void
-cp_remove_argtype(cp_argtype *t)
+cp_unregister_argtype(const char *name)
 {
-  cp_argtype **prev = &argtype_hash[t->command % NARGTYPE_HASH];
+  cp_argtype **prev = &argtype_hash[argtype_bucket(name)];
   cp_argtype *trav = *prev;
-  while (trav && trav != t) {
+  while (trav && strcmp(trav->name, name) != 0) {
     prev = &trav->next;
     trav = trav->next;
   }
   if (trav) {
-    *prev = t->next;
-    delete t;
+    trav->use_count--;
+    if (trav->use_count <= 0) {
+      *prev = trav->next;
+      delete trav;
+    }
   }
 }
 
@@ -1398,62 +1480,85 @@ default_parsefunc(cp_value *v, const String &arg,
 		  ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
 {
   const char *desc = v->description;
-  switch (v->command) {
+  int underflower = -0x80000000;
+  unsigned overflower = 0xFFFFFFFFU;
+  const cp_argtype *argtype = v->argtype;
+  
+  switch (argtype->internal) {
     
-   case cpArgument:
+   case cpiArgument:
     v->v_string = arg;
     break;
-     
-   case cpString:
+    
+   case cpiString:
     if (!cp_string(arg, &v->v_string))
       errh->error("%s should be %s (string)", argname, desc);
     break;
-     
-   case cpWord:
+    
+   case cpiWord:
     if (!cp_word(arg, &v->v_string))
       errh->error("%s should be %s (word)", argname, desc);
     break;
-     
-   case cpBool:
+    
+   case cpiBool:
     if (!cp_bool(arg, &v->v.b))
       errh->error("%s should be %s (bool)", argname, desc);
     break;
 
-   case cpByte:
+   case cpiByte:
+    overflower = 255;
+    goto handle_unsigned;
+
+   case cpiShort:
+    underflower = -0x8000;
+    overflower = 0x7FFF;
+    goto handle_signed;
+
+   case cpiUnsignedShort:
+    overflower = 0xFFFF;
+    goto handle_unsigned;
+    
+   case cpiInteger:
+    underflower = -0x80000000;
+    overflower = 0x7FFFFFFF;
+    goto handle_signed;
+
+   case cpiUnsigned:
+    overflower = 0xFFFFFFFFU;
+    goto handle_unsigned;
+
+   handle_signed:
     if (!cp_integer(arg, &v->v.i))
-      errh->error("%s should be %s (byte)", argname, desc);
-    if (v->v.i < 0 || v->v.i > 255)
-      errh->error("%s (%s) must be >= 0 and < 256", argname, desc);
-    break;
-     
-   case cpInteger:
-    if (!cp_integer(arg, &v->v.i))
-      errh->error("%s should be %s (integer)", argname, desc);
+      errh->error("%s should be %s (%s)", argname, desc, argtype->description);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->warning("integer overflow on %s (%s)", argname, desc);
+      errh->error("integer overflow on %s (%s)", argname, desc);
+    else if (v->v.i < underflower)
+      errh->error("%s (%s) must be >= %d", argname, desc, underflower);
+    else if (v->v.i > (int)overflower)
+      errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
 
-   case cpUnsigned:
+   handle_unsigned:
     if (!cp_unsigned(arg, &v->v.u))
-      errh->error("%s should be %s (unsigned)", argname, desc);
-    else if (arg[0] == '-')
-      errh->error("%s (%s) must be >= 0", argname, desc);
+      errh->error("%s should be %s (%s)", argname, desc, argtype->description);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->warning("integer overflow on %s (%s)", argname, desc);
+      errh->error("integer overflow on %s (%s)", argname, desc);
+    else if (v->v.u > overflower)
+      errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
 
-   case cpReal:
-   case cpNonnegReal:
+   case cpiReal:
+   case cpiNonnegReal:
     if (!cp_real(arg, v->extra, &v->v.i)) {
       if (cp_errno == CPE_OVERFLOW)
 	errh->error("overflow on %s (%s)", argname, desc);
       else
 	errh->error("%s should be %s (real)", argname, desc);
-    } else if (v->command == cpNonnegReal && v->v.i < 0)
+    } else if (argtype->internal == cpiNonnegReal && v->v.i < 0)
       errh->error("%s (%s) must be >= 0", argname, desc);
     break;
-     
-   case cpMilliseconds:
+
+   case cpiMilliseconds:
     if (!cp_milliseconds(arg, &v->v.i)) {
       if (cp_errno == CPE_OVERFLOW)
 	errh->error("overflow on %s (%s)", argname, desc);
@@ -1463,8 +1568,8 @@ default_parsefunc(cp_value *v, const String &arg,
 	errh->error("%s should be %s (time in seconds)", argname, desc);
     }
     break;
-     
-   case cpNonnegFixed:
+
+   case cpiNonnegFixed:
     assert(v->extra > 0);
     if (!cp_real2(arg, v->extra, &v->v.i)) {
       if (cp_errno == CPE_NEGATIVE)
@@ -1477,21 +1582,21 @@ default_parsefunc(cp_value *v, const String &arg,
 	errh->error("%s should be %s (real)", argname, desc);
     }
     break;
-    
-   case cpIPAddress:
+
+   case cpiIPAddress:
     if (!cp_ip_address(arg, v->v.address CP_PASS_CONTEXT))
       errh->error("%s should be %s (IP address)", argname, desc);
     break;
-    
-   case cpIPPrefix:
-   case cpIPAddressOrPrefix: {
-     bool mask_optional = (v->command == cpIPAddressOrPrefix);
+
+   case cpiIPPrefix:
+   case cpiIPAddressOrPrefix: {
+     bool mask_optional = (argtype->internal == cpiIPAddressOrPrefix);
      if (!cp_ip_prefix(arg, v->v.address, v->v.address + 4, mask_optional CP_PASS_CONTEXT))
        errh->error("%s should be %s (IP address prefix)", argname, desc);
      break;
    }
-   
-   case cpIPAddressSet: {
+
+   case cpiIPAddressSet: {
      IPAddressSet crap;
      if (!cp_ip_address_set(arg, &crap CP_PASS_CONTEXT))
        errh->error("%s should be %s (set of IP addresses)", argname, desc);
@@ -1499,34 +1604,34 @@ default_parsefunc(cp_value *v, const String &arg,
        v->v_string = arg;
      break;
    }     
-   
-   case cpIP6Address:
+
+   case cpiIP6Address:
     if (!cp_ip6_address(arg, (unsigned char *)v->v.address))
       errh->error("%s should be %s (IPv6 address)", argname, desc);
     break;
 
-   case cpIP6Prefix:
-   case cpIP6AddressOrPrefix: {
-     bool mask_optional = (v->command == cpIP6AddressOrPrefix);
+   case cpiIP6Prefix:
+   case cpiIP6AddressOrPrefix: {
+     bool mask_optional = (argtype->internal == cpiIP6AddressOrPrefix);
      if (!cp_ip6_prefix(arg, v->v.address, v->v.address + 16, mask_optional CP_PASS_CONTEXT))
        errh->error("%s should be %s (IPv6 address prefix)", argname, desc);
      break;
    }
-   
-   case cpEthernetAddress:
+
+   case cpiEthernetAddress:
     if (!cp_ethernet_address(arg, v->v.address CP_PASS_CONTEXT))
       errh->error("%s should be %s (Ethernet address)", argname, desc);
     break;
-     
+
 #ifdef HAVE_IPSEC
-   case cpDesCblock:
+   case cpiDesCblock:
     if (!cp_des_cblock(arg, v->v.address))
       errh->error("%s should be %s (DES encryption block)", argname, desc);
     break;
 #endif
 
 #ifndef CLICK_TOOL
-   case cpElement:
+   case cpiElement:
     if (!arg)
       v->v.element = 0;
     else
@@ -1541,57 +1646,71 @@ static void
 default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 {
   int address_bytes;
-  switch (v->command) {
+  const cp_argtype *argtype = v->argtype;
+  
+  switch (argtype->internal) {
     
-   case cpBool: {
+   case cpiBool: {
      bool *bstore = (bool *)v->store;
      *bstore = v->v.b;
      break;
    }
    
-   case cpByte: {
+   case cpiByte: {
      unsigned char *ucstore = (unsigned char *)v->store;
      *ucstore = v->v.i;
      break;
    }
+
+   case cpiShort: {
+     short *sstore = (short *)v->store;
+     *sstore = v->v.i;
+     break;
+   }
+
+   case cpiUnsignedShort: {
+     unsigned short *usstore = (unsigned short *)v->store;
+     *usstore = v->v.u;
+     break;
+   }
    
-   case cpInteger:
-   case cpReal:
-   case cpNonnegReal:
-   case cpMilliseconds:
-   case cpNonnegFixed: {
+   case cpiInteger:
+   case cpiReal:
+   case cpiNonnegReal:
+   case cpiMilliseconds:
+   case cpiNonnegFixed: {
      int *istore = (int *)v->store;
      *istore = v->v.i;
      break;
    }
   
-   case cpUnsigned: { 
+   case cpiUnsigned: { 
      unsigned *ustore = (unsigned *)v->store; 
      *ustore = v->v.u; 
      break; 
    }
 
-   case cpString:
-   case cpWord:
-   case cpArgument: {
+   case cpiString:
+   case cpiWord:
+   case cpiArgument: {
      String *sstore = (String *)v->store;
      *sstore = v->v_string;
      break;
    }
    
-   case cpIPAddress:
+   case cpiIPAddress:
     address_bytes = 4;
     goto address;
     
-   case cpIP6Address:
+   case cpiIP6Address:
     address_bytes = 16;
     goto address;
 
-   case cpEthernetAddress:
+   case cpiEthernetAddress:
     address_bytes = 6;
     goto address;
 
-   case cpDesCblock:
+   case cpiDesCblock:
     address_bytes = 8;
     goto address;
    
@@ -1601,8 +1720,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
-   case cpIPPrefix:
-   case cpIPAddressOrPrefix: {
+   case cpiIPPrefix:
+   case cpiIPAddressOrPrefix: {
      unsigned char *addrstore = (unsigned char *)v->store;
      memcpy(addrstore, v->v.address, 4);
      unsigned char *maskstore = (unsigned char *)v->store2;
@@ -1610,8 +1729,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
-   case cpIP6Prefix:
-   case cpIP6AddressOrPrefix: {
+   case cpiIP6Prefix:
+   case cpiIP6AddressOrPrefix: {
      unsigned char *addrstore = (unsigned char *)v->store;
      memcpy(addrstore, v->v.address, 16);
      unsigned char *maskstore = (unsigned char *)v->store2;
@@ -1619,7 +1738,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
-   case cpIPAddressSet: {
+   case cpiIPAddressSet: {
      // oog... parse set into stored set only when we know there are no errors
      IPAddressSet *setstore = (IPAddressSet *)v->store;
      cp_ip_address_set(v->v_string, setstore  CP_PASS_CONTEXT);
@@ -1627,7 +1746,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
 
 #ifndef CLICK_TOOL
-   case cpElement: {
+   case cpiElement: {
      Element **elementstore = (Element **)v->store;
      *elementstore = v->v.element;
      break;
@@ -1713,48 +1832,47 @@ cp_va_parsev(const Vector<String> &args,
 	goto done;
     }
 
-    int cp_command = va_arg(val, int);
-    if (cp_command == 0)
+    const char *command_name = va_arg(val, const char *);
+    if (command_name == 0)
       goto done;
 
+    // find cp_argtype
+    const cp_argtype *argtype = find_argtype(command_name);
+    if (!argtype) {
+      errh->error("unknown argument type `%s'!", command_name);
+      goto done;
+    }
+    
     // check for special commands
-    if (cp_command == cpOptional) {
+    if (argtype->internal == cpiOptional) {
       if (nrequired < 0)
 	nrequired = nvalues;
       continue;
-    } else if (cp_command == cpKeywords) {
+    } else if (argtype->internal == cpiKeywords) {
       if (nrequired < 0)
 	nrequired = nvalues;
       if (npositional < 0)
 	npositional = nvalues;
       continue;
-    } else if (cp_command == cpIgnore) {
-      v->command = cpIgnore;
+    } else if (argtype->internal == cpiIgnore) {
+      v->argtype = argtype;
       nvalues++;
       continue;
-    } else if (cp_command == cpIgnoreRest) {
+    } else if (argtype->internal == cpiIgnoreRest) {
       if (nrequired < 0)
 	nrequired = nvalues;
-      v->command = cpIgnoreRest;
+      v->argtype = argtype;
       nvalues++;
-      goto done;
-    }
-
-    // find cp_argtype
-    cp_argtype *t = find_argtype(cp_command);
-    if (!t) {
-      errh->error("unknown argtype %d to cp_va_parsev!", cp_command);
       goto done;
     }
 
     // store stuff in v
-    v->command = cp_command;
-    v->argtype = t;
+    v->argtype = argtype;
     v->description = va_arg(val, const char *);
-    if (t->extra == cpArgExtraInt)
+    if (argtype->extra == cpArgExtraInt)
       v->extra = va_arg(val, int);
     v->store = va_arg(val, void *);
-    if (t->extra == cpArgStore2)
+    if (argtype->extra == cpArgStore2)
       v->store2 = va_arg(val, void *);
     v->v.i = 0;
     nvalues++;
@@ -1785,7 +1903,7 @@ cp_va_parsev(const Vector<String> &args,
   }
   
   // if wrong number of arguments, print signature
-  if (args.size() > nvalues && nvalues && cp_values[nvalues-1].command == cpIgnoreRest)
+  if (args.size() > nvalues && nvalues && cp_values[nvalues-1].argtype->internal == cpiIgnoreRest)
     /* not an error */;
   else if (args.size() > nvalues || args.size() < nrequired) {
     StringAccum signature;
@@ -1794,11 +1912,12 @@ cp_va_parsev(const Vector<String> &args,
 	signature << (nrequired > 0 ? " [" : "[");
       if (i)
 	signature << separator;
-      if (cp_argtype *t = cp_values[i].argtype)
-	signature << t->name;
-      else if (cp_values[i].command == cpIgnoreRest)
-	signature << "...";
-      else
+      if (const cp_argtype *t = cp_values[i].argtype) {
+	if (t->internal == cpiIgnoreRest)
+	  signature << "...";
+	else
+	  signature << t->description;
+      } else
 	signature << "??";
     }
     if (nrequired < npositional)
@@ -1823,12 +1942,12 @@ cp_va_parsev(const Vector<String> &args,
   sprintf(argname_buf, "%s %n", argname, &argname_offset);
 
   for (int i = 0; i < nrequired; i++)
-    if (cp_argtype *t = cp_values[i].argtype) {
+    if (const cp_argtype *t = cp_values[i].argtype) {
       sprintf(argname_buf + argname_offset, "%d", i + 1);
       t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
     }
   for (int i = nrequired; i < npositional && i < args.size(); i++)
-    if (cp_argtype *t = cp_values[i].argtype) {
+    if (const cp_argtype *t = cp_values[i].argtype) {
       sprintf(argname_buf + argname_offset, "%d", i + 1);
       t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
     }
@@ -1852,7 +1971,7 @@ cp_va_parsev(const Vector<String> &args,
   for (int i = args.size(); i < npositional; i++)
     cp_values[i].argtype = 0;
   for (int i = 0; i < nvalues; i++)
-    if (cp_argtype *t = cp_values[i].argtype) {
+    if (const cp_argtype *t = cp_values[i].argtype) {
       t->store(&cp_values[i]  CP_PASS_CONTEXT);
       nset++;
     }
@@ -2057,26 +2176,35 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
 void
 cp_va_static_initialize()
 {
-  cp_add_argtype(cpArgument, "arg", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpString, "string", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpByte, "byte", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpReal, "real", cpArgExtraInt, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpNonnegReal, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpNonnegFixed, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIPAddressSet, "set of IP addresses", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc);
-  cp_add_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc);
+  assert(!cp_values);
+  
+  cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
+  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
+  cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
+  cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
+  
+  cp_register_argtype(cpArgument, "??", 0, default_parsefunc, default_storefunc, cpiArgument);
+  cp_register_argtype(cpString, "string", 0, default_parsefunc, default_storefunc, cpiString);
+  cp_register_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc, cpiWord);
+  cp_register_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc, cpiBool);
+  cp_register_argtype(cpByte, "byte", 0, default_parsefunc, default_storefunc, cpiByte);
+  cp_register_argtype(cpShort, "short", 0, default_parsefunc, default_storefunc, cpiShort);
+  cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
+  cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
+  cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
+  cp_register_argtype(cpReal, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal);
+  cp_register_argtype(cpNonnegReal, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal);
+  cp_register_argtype(cpNonnegFixed, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegFixed);
+  cp_register_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc, cpiMilliseconds);
+  cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
+  cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
+  cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
+  cp_register_argtype(cpIPAddressSet, "set of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressSet);
+  cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
+  cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
+  cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
+  cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
+  cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
 
   cp_values = new cp_value[CP_VALUES_SIZE];
 }
@@ -2092,6 +2220,7 @@ cp_va_static_cleanup()
       t = n;
     }
   }
+  memset(argtype_hash, 0, sizeof(argtype_hash));
 
   delete[] cp_values;
 }

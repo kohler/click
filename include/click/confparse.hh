@@ -89,8 +89,9 @@ Element *cp_element(const String &, Element *, ErrorHandler *);
 bool cp_des_cblock(const String &, unsigned char *, String *rest = 0);
 #endif
 
-enum CpVaParseCmd {
-  cpEnd = 0,
+typedef const char * const CpVaParseCmd;
+static CpVaParseCmd cpEnd = 0;
+extern CpVaParseCmd
   cpOptional,
   cpKeywords,
   cpIgnore,
@@ -100,6 +101,8 @@ enum CpVaParseCmd {
   cpWord,	// String *value
   cpBool,	// bool *value
   cpByte,	// unsigned char *value
+  cpShort,	// short *value
+  cpUnsignedShort, // unsigned short *value
   cpInteger,	// int *value
   cpUnsigned,	// unsigned *value
   cpReal,	// int frac_digits, int *value
@@ -115,8 +118,7 @@ enum CpVaParseCmd {
   cpIP6Address,	// unsigned char value[16] (or IP6Address *)
   cpIP6Prefix,	// unsigned char value[16], unsigned char mask[16]
   cpIP6AddressOrPrefix,	// unsigned char value[16], unsigned char mask[16]
-  cpDesCblock,  // unsigned char value[8]
-};
+  cpDesCblock;	// unsigned char value[8]
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
@@ -142,14 +144,24 @@ typedef void (*cp_parsefunc)(cp_value *, const String &arg,
 typedef void (*cp_storefunc)(cp_value *  CP_CONTEXT);
 
 enum { cpArgNormal = 0, cpArgStore2, cpArgExtraInt };
-cp_argtype *cp_add_argtype(int cp_command, const char *name, int extra,
-			   cp_parsefunc, cp_storefunc);
-void cp_remove_argtype(cp_argtype *);
+int cp_register_argtype(const char *name, const char *description,
+			int extra, cp_parsefunc, cp_storefunc);
+void cp_unregister_argtype(const char *name);
+
+struct cp_argtype {
+  const char *name;
+  cp_argtype *next;
+  cp_parsefunc parse;
+  cp_storefunc store;
+  int extra;
+  const char *description;
+  int internal;
+  int use_count;
+};
 
 struct cp_value {
   // set by cp_va_parse:
-  int command;
-  cp_argtype *argtype;
+  const cp_argtype *argtype;
   const char *keyword;
   const char *description;
   int extra;
