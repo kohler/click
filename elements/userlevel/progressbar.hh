@@ -44,7 +44,7 @@ a section of some filename. Default is empty.
 =item UPDATE
 
 Time in seconds (millisecond precision). The progress bar updates itself with
-this frequency. Default is 1 second.
+this frequency. Default is 1/4 second.
 
 =item ACTIVE
 

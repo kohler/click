@@ -52,7 +52,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 {
     Vector<String> conf;
     configuration(conf);
-    _interval = 1000;
+    _interval = 250;
     _delay_ms = 0;
     _active = true;
     String position_str, size_str;
