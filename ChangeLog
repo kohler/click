@@ -1,3 +1,11 @@
+2003-03-17 Monday 00:26  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.204), config-userlevel.h.in (1.14),
+	elements/userlevel/kerneltap.cc (1.38),
+	elements/userlevel/kerneltap.hh (1.17),
+	elements/userlevel/kerneltun.cc (1.41): check for <net/if_tun.h>;
+	problem reported by David Scott Page
+
 2003-03-16 Sunday 17:12  Eddie Kohler <kohler@icir.org>
 
 	* elements/grid/qvec.hh (1.2): namespaceism
