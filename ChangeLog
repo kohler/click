@@ -1,3 +1,8 @@
+2001-09-18 Tuesday 21:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.45): FromDump: fix so that MMAP
+	true still works with compressed files
+
 2001-09-18 Tuesday 20:32  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: fromdump.cc (1.44), fromdump.hh (1.25):
