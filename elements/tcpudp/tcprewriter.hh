@@ -114,10 +114,13 @@ class TCPRewriter : public IPRw { public:
   int _tcp_done_gc_interval;
   Timer _tcp_done_gc_timer;
 
+  int _nmapping_failures;
+  
   static void tcp_gc_hook(Timer *, void *);
   static void tcp_done_gc_hook(Timer *, void *);
 
   static String dump_mappings_handler(Element *, void *);
+  static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
 
 };

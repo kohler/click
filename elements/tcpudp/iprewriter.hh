@@ -190,6 +190,8 @@ class IPRewriter : public IPRw { public:
   Spinlock _spinlock;
 #endif
 
+  int _nmapping_failures;
+  
   static void tcp_gc_hook(Timer *, void *);
   static void udp_gc_hook(Timer *, void *);
   static void tcp_done_gc_hook(Timer *, void *);

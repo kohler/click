@@ -202,6 +202,7 @@ TCPRewriter::initialize(ErrorHandler *)
   _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
   _tcp_done_gc_timer.initialize(this);
   _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
+  _nmapping_failures = 0;
   return 0;
 }
 
@@ -290,6 +291,7 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   }
 
  failure:
+  _nmapping_failures++;
   delete forward;
   delete reverse;
   return 0;
@@ -387,10 +389,22 @@ TCPRewriter::dump_patterns_handler(Element *e, void *)
   return s;
 }
 
+String
+TCPRewriter::dump_nmappings_handler(Element *e, void *thunk)
+{
+  TCPRewriter *rw = (TCPRewriter *)e;
+  if (!thunk)
+    return String(rw->_tcp_map.size()) + "\n";
+  else
+    return String(rw->_nmapping_failures) + "\n";
+}
+
 void
 TCPRewriter::add_handlers()
 {
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
+  add_read_handler("nmappings", dump_nmappings_handler, (void *)0);
+  add_read_handler("mapping_failures", dump_nmappings_handler, (void *)1);
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }
 

@@ -110,6 +110,7 @@ IPRewriter::initialize(ErrorHandler *)
   _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
   _udp_gc_timer.initialize(this);
   _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
+  _nmapping_failures = 0;
   return 0;
 }
 
@@ -238,6 +239,7 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   }
 
  failure:
+  _nmapping_failures++;
   delete forward;
   delete reverse;
   return 0;
@@ -372,10 +374,13 @@ IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
 }
 
 String
-IPRewriter::dump_nmappings_handler(Element *e, void *)
+IPRewriter::dump_nmappings_handler(Element *e, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)e;
-  return String(rw->_tcp_map.size()) + " " + String(rw->_udp_map.size()) + "\n";
+  if (!thunk)
+    return String(rw->_tcp_map.size()) + " " + String(rw->_udp_map.size()) + "\n";
+  else
+    return String(rw->_nmapping_failures) + "\n";
 }
 
 String
@@ -402,6 +407,7 @@ IPRewriter::add_handlers()
   add_read_handler("udp_mappings", dump_mappings_handler, (void *)1);
   add_read_handler("tcp_done_mappings", dump_tcp_done_mappings_handler, 0);
   add_read_handler("nmappings", dump_nmappings_handler, (void *)0);
+  add_read_handler("mapping_failures", dump_nmappings_handler, (void *)1);
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }
 
