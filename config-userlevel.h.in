@@ -2,6 +2,9 @@
 #ifndef CLICK_CONFIG_USERLEVEL_H
 #define CLICK_CONFIG_USERLEVEL_H
 
+/* Define if <new> exists and works. */
+#undef HAVE_NEW_HDR
+
 /* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H
 
@@ -93,7 +96,9 @@ char *strerror(int errno);
 #ifdef __cplusplus
 
 /* Provide placement new. */
-#if HAVE_NEW_H
+#if HAVE_NEW_HDR
+# include <new>
+#elif HAVE_NEW_H
 # include <new.h>
 #else
 inline void *operator new(size_t, void *v) { return v; }

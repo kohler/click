@@ -79,16 +79,26 @@ by setting the "'`'"CXX' environment variable and rerunning me.
 =========================================])
     fi
 
-    dnl check for <new.h>
+    dnl check for <new> and <new.h>
 
-    AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
-	AC_TRY_LINK([#include <new.h>], [
+    AC_CACHE_CHECK(whether <new> works, ac_cv_good_new_hdr,
+	AC_TRY_LINK([#include <new>], [
+  int a;
+  int *b = new(&a) int;
+  return 0;
+], ac_cv_good_new_hdr=yes, ac_cv_good_new_hdr=no))
+    if test "$ac_cv_good_new_hdr" = yes; then
+	AC_DEFINE(HAVE_NEW_HDR)
+    else
+	AC_CACHE_CHECK(whether <new.h> works, ac_cv_good_new_h,
+	    AC_TRY_LINK([#include <new.h>], [
   int a;
   int *b = new(&a) int;
   return 0;
 ], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
-    if test "$ac_cv_good_new_h" = yes; then
-	AC_DEFINE(HAVE_NEW_H)
+	if test "$ac_cv_good_new_h" = yes; then
+	    AC_DEFINE(HAVE_NEW_H)
+	fi
     fi
 
     ac_base_cxx="$CXX"
