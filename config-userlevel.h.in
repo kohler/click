@@ -17,6 +17,9 @@
 /* Define if you have the <termio.h> header file. */
 #undef HAVE_TERMIO_H
 
+/* Define if you have u_intXX_t types but not uintXX_t types. */
+#undef HAVE_U_INT_TYPES
+
 /* Define if you have the snprintf function. */
 #undef HAVE_SNPRINTF
 
@@ -63,6 +66,17 @@
 # include <inttypes.h>
 #endif
 #include <sys/types.h>
+
+/* Define uint types in terms of u_int types, if necessary. */
+#ifdef HAVE_U_INT_TYPES
+typedef u_int8_t uint8_t;
+typedef u_int16_t uint16_t;
+typedef u_int32_t uint32_t;
+# ifdef HAVE_INT64_TYPES
+typedef u_int64_t uint64_t;
+# endif
+typedef unsigned uintptr_t;	/* XXX? */
+#endif
 
 /* Include assert macro. */
 #include <assert.h>
