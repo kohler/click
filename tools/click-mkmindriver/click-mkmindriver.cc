@@ -234,8 +234,8 @@ elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_srcdir)/click-build
   sa << "-include elements_" << pkg << ".mk\n";
   sa << "OBJS_" << pkg << " = $(GENERIC_OBJS) $(ELEMENT_OBJS_" << pkg << ") $(LINUXMODULE_OBJS) elements_" << pkg << ".o\n";
   sa << pkg << "click.o: Makefile Makefile." << pkg << " $(OBJS_" << pkg << ")\n\
-	ld -r -o " << pkg << "click.o $(OBJS_" << pkg << ")\n\
-	strip -g " << pkg << "click.o\n";
+	$(LD) -r -o " << pkg << "click.o $(OBJS_" << pkg << ")\n\
+	$(STRIP) -g " << pkg << "click.o\n";
 
   return print_makefile(directory, pkg, sa, errh);
 }

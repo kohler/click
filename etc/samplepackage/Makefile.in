@@ -57,6 +57,8 @@ CPP = @CPP@
 K_CXX = @KERNEL_CXX@
 U_CXX = @CXX@
 CXXCPP = @CXXCPP@
+LD = @LD@
+STRIP = @STRIP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -104,12 +106,12 @@ U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
 all: $(TARGETS)
 
 $(package).ko: Makefile $(K_OBJS)
-	ld -r -o $(package).ko $(K_OBJS)
-	strip -g $(package).ko
+	$(LD) -r -o $(package).ko $(K_OBJS)
+	$(STRIP) -g $(package).ko
 
 $(package).uo: Makefile $(U_OBJS)
-	ld -shared -o $(package).uo $(U_OBJS)
-	strip -g $(package).uo
+	$(LD) -shared -o $(package).uo $(U_OBJS)
+	$(STRIP) -g $(package).uo
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

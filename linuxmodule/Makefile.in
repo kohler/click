@@ -19,6 +19,8 @@ CC = @CC@
 CPP = @CPP@
 CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
+LD = @LD@
+STRIP = @STRIP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -81,8 +83,8 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: $(INSTALLOBJS)
 
 click.o: Makefile $(OBJS)
-	ld -r -o click.o $(OBJS)
-	strip -g click.o
+	$(LD) -r -o click.o $(OBJS)
+	$(STRIP) -g click.o
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
