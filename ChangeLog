@@ -1,3 +1,14 @@
+2005-03-08 Tuesday 12:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.53): fix IPFilter bug, introduced by
+	use of NameInfo::query_int (which accepts ints), reported by Yun
+	Mao
+
+2005-03-08 Tuesday 12:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/error.hh (1.28), lib/error.cc (1.54): put prepended
+	"warning: " inside any indent
+
 2005-03-07 Monday 18:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.32), elements/ip/directiplookup.hh (1.12),
