@@ -4653,12 +4653,12 @@ are allowed if and only if @var{allow_bare_addr} is true. The netmask
 corresponding to a bare address is 255.255.255.255.
 @end deftypefn
 
-Finally, the @code{cp_ip_address_set} function parses a
-whitespace-separated list of IP addresses into to an @code{IPAddressSet}
+Finally, the @code{cp_ip_address_list} function parses a
+whitespace-separated list of IP addresses into to an @code{IPAddressList}
 object.
 
-@deftypefn {Parsing Function} bool cp_ip_address_set (@w{const String &@var{str}}, @w{IPAddressSet *@var{result}}, @w{Element *@var{context} = 0})
-Parses @var{str} into a set of IP addresses and stores the result in
+@deftypefn {Parsing Function} bool cp_ip_address_list (@w{const String &@var{str}}, @w{IPAddressList *@var{result}}, @w{Element *@var{context} = 0})
+Parses @var{str} into a list of IP addresses and stores the result in
 @code{*@var{result}}. @var{str} must be a whitespace-separated list of
 IP addresses, which can take any of the forms accepted by
 @code{cp_ip_address}.
@@ -4981,8 +4981,8 @@ error to call any @code{cp_va} function after calling
 @tab @code{@w{IPAddress *@var{result_address}}, @w{IPAddress *@var{result_mask}}}
 @item @code{cpIPAddressOrPrefix}
 @tab @code{@w{IPAddress *@var{result_address}}, @w{IPAddress *@var{result_mask}}}
-@item @code{cpIPAddressSet}
-@tab @code{@w{IPAddressSet *@var{result}}}
+@item @code{cpIPAddressList}
+@tab @code{@w{IPAddressList *@var{result}}}
 @item @code{cpEtherAddress}
 @tab @code{@w{EtherAddress *@var{result}}}
 @item @code{cpIP6Address}
@@ -5074,8 +5074,8 @@ error to call any @code{cp_va} function after calling
 @item @code{cpIPAddressOrPrefix}
 @tab @code{cp_ip_prefix(arg, @var{result_address},
 @var{result_mask}, true, context)}
-@item @code{cpIPAddressSet}
-@tab @code{cp_ip_address_set(arg, @var{result}, context)}
+@item @code{cpIPAddressList}
+@tab @code{cp_ip_address_list(arg, @var{result}, context)}
 @item @code{cpEtherAddress}
 @tab @code{cp_ether_address(arg, @var{result}, context)}
 @item @code{cpIP6Address}
@@ -5250,13 +5250,6 @@ if the task is currently unscheduled, or if it was never initialized.
 When this function returns, the task will not be scheduled.
 @end deftypemethod
 
-@deftypemethod Task void unschedule_soon ()
-Unschedules the task by removing it from its task queue. Does nothing if
-if the task is currently unscheduled, or if it was never initialized.
-This function may schedule a task request if it cannot immediately
-unschedule the task.
-@end deftypemethod
-
 @deftypemethod Task void reschedule ()
 Reschedules the task by placing it on its task queue. If the task is
 already scheduled, then this method does nothing.
@@ -5264,11 +5257,33 @@ already scheduled, then this method does nothing.
 
 All three functions lock the task queue before manipulating it. This
 avoids corruption when there are multiple processors executing
-simultaneously. If @code{unschedule_soon} or @code{reschedule} cannot
-immediately lock a task queue---perhaps because it is being used on
-another processor---then they register a task request, which will be
-executed in the near future. In contrast, the @code{unschedule} function
-will wait until it can lock the task queue.
+simultaneously. If @code{reschedule} cannot immediately lock a task
+queue---perhaps because it is being used on another processor---then
+they register a task request, which will be executed in the near
+future. In contrast, the @code{unschedule} function will wait until it
+can lock the task queue.
+
+Sometimes unscheduling a task is not enough: you don't want the task
+to run, even if someone else (an upstream queue, for example) were to
+reschedule it. The @code{strong_unschedule} method both unschedules
+the task and shifts the task to the quiescent thread, which never
+runs. Thus, a @code{strong_unschedule}d task will not run until
+someone calls @code{strong_reschedule}, which reschedules the task on
+its original preferred thread.
+
+@deftypemethod Task void strong_unschedule ()
+Unschedules the task by removing it from its task queue and shifting
+it to the quiescent thread. Does nothing if if the task is currently
+unscheduled, or if it was never initialized. When this function
+returns, the task will not be scheduled.
+@end deftypemethod
+
+@deftypemethod Task void strong_reschedule ()
+Reschedules the task by placing it on the task queue corresponding to
+its thread preference. The task will not be scheduled immediately upon
+return, but it will become scheduled soon---@code{strong_reschedule}
+uses a task request to avoid locking.
+@end deftypemethod
 
 The @code{fast_reschedule} method avoids locking overhead in the common
 case that a task must be rescheduled from within its callback.
@@ -5290,7 +5305,7 @@ instead of @code{_task.reschedule()}.
 
 The @code{fast_unschedule} method is to @code{unschedule} as
 @code{fast_reschedule} is to @code{reschedule}. It is rarely used,
-however, since tasks are automatically unscheduled before they are run.
+since tasks are automatically unscheduled before they are run.
 
 @deftypemethod Task void fast_unschedule ()
 Unschedules the task by removing it from its task queue. Does nothing if
@@ -5340,10 +5355,12 @@ Equivalent to @code{set_tickets(tickets() + @var{delta})}.
 
 Each task belongs to some task queue, which generally corresponds to a
 thread of control. Single-threaded Click has one active thread, and
-therefore one task queue, but multithreaded Click can have an arbitrary
-number of threads. Every task starts out belonging to the first thread,
-@w{thread 0}. The @code{change_thread} method moves a task to another
-thread.
+therefore one task queue, but multithreaded Click can have an
+arbitrary number of threads. Either Click has a special thread, the
+@dfn{quiescent thread}, numbered @math{-1}; tasks belonging to the
+quiescent thread never run, whether or not they are scheduled. Every
+task starts out belonging to the first thread, @w{thread 0}. The
+@code{change_thread} method moves a task to another thread.
 
 @deftypemethod Task void change_thread (int @var{thread_id})
 Move this task to thread @var{thread_id}, which should be a number
@@ -5353,13 +5370,13 @@ The task is scheduled on the new task queue if and only if it was
 scheduled on the old task queue.
 @end deftypemethod
 
-Like @code{unschedule_soon} and @code{reschedule}, @code{change_thread}
-must lock the task queue before manipulating it. (Unlike those methods,
-@code{change_thread} must lock two task queues, the old and the new.) If
-@code{change_thread} cannot lock a task queue, then it registers a task
-request that will be executed in the near future. This implies that a
-task may remain on the same thread, or become unscheduled, for some time
-after @code{change_thread} is called.
+Like @code{reschedule}, @code{change_thread} must lock the task queue
+before manipulating it. (Unlike those methods, @code{change_thread}
+must lock two task queues, the old and the new.) If
+@code{change_thread} cannot lock a task queue, then it registers a
+task request that will be executed in the near future. This implies
+that a task may remain on the same thread, or become unscheduled, for
+some time after @code{change_thread} is called.
 
 
 @node Task Status, Task Handlers, Task Thread Choice, Tasks
@@ -5420,9 +5437,9 @@ Returns a Boolean value saying whether the task is currently scheduled
 on some task queue. Example result: @strcode{"true\n"}.
 
 @item @handler{tickets}
-Returns the task's currently allocated tickets. This handler is only
-available if Click was compiled to support stride scheduling. Example
-result: @strcode{"1024\n"}.
+Returns or sets the task's currently allocated tickets. This handler
+is only available if Click was compiled to support stride scheduling.
+Example result: @strcode{"1024\n"}.
 
 @item @handler{thread_preference}
 Returns the task's thread preference. This handler is only available on
@@ -5537,6 +5554,10 @@ the timer earlier.
 Schedule the timer to go off as soon as possible.
 @end deftypemethod
 
+@deftypemethod Timer void schedule_after (@w{const struct timeval &@var{delay}})
+Schedule the timer to go off @var{delay} after the current time.
+@end deftypemethod
+
 @deftypemethod Timer void schedule_after_s (@w{uint32_t @var{delay}})
 Schedule the timer to go off @var{delay} seconds after the current time.
 @end deftypemethod
@@ -5546,10 +5567,15 @@ Schedule the timer to go off @var{delay} milliseconds after the current
 time.
 @end deftypemethod
 
+@deftypemethod Timer void reschedule_after (@w{const struct timeval &@var{delay}})
+Schedule the timer to go off @var{delay} after it was last scheduled
+to go off. If the timer was never previously scheduled, this method
+will schedule the timer for some arbitrary time.
+@end deftypemethod
+
 @deftypemethod Timer void reschedule_after_s (@w{uint32_t @var{delay}})
 Schedule the timer to go off @var{delay} seconds after it was last
-scheduled to go off. If the timer was never previously scheduled to go
-off, this method will schedule the timer for some arbitrary time.
+scheduled to go off.
 @end deftypemethod
 
 @deftypemethod Timer void reschedule_after_ms (@w{uint32_t @var{delay}})

@@ -23,16 +23,16 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 EXTRA_PROVIDES =
 
-all: install Makefile
+all: Makefile
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-install: install-man install-info
+install: Makefile install-man install-info
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) $(srcdir)/click-elem2man $(bindir)/click-elem2man
-install-man:
+install-man: Makefile
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man7 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1
 	$(INSTALL_DATA) $(srcdir)/click.5 $(mandir)/man5/click.5
@@ -51,7 +51,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
 	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ @TARGETS@ $(EXTRA_PROVIDES)" | $(PERL) $(subdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f -)
-install-info: $(srcdir)/click.info
+install-info: Makefile $(srcdir)/click.info
 	$(mkinstalldirs) $(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \
