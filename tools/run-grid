@@ -225,7 +225,7 @@ if ($DEBUG) {
 $BUILDSCRIPT = "$GRID_DIR/build-grid-config.sh";
 $GRID_PARAMS = "$GRID_DIR/grid-params.m4";
 
-$CLICK_CONFIG = "$GRID_DIR/grid2.click";
+$CLICK_CONFIG = "$GRID_DIR/grid.click";
 $CLICK_CONFIG_OUT = "$GRID_DIR/runtime_grid.click";
 
 $GW_OPTIONS = "";
