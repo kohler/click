@@ -66,6 +66,7 @@ clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
 
     cp = (struct clickfs_node *) malloc(sizeof(*cp), M_TEMP, M_WAITOK);
     cp->dirent = clickfs_tree_root;
+    clickfs_tree_ref_dirent(cp->dirent);
     cp->rwbuf = NULL;
     vp->v_data = cp;
     vp->v_type = clickfs_vtype[cp->dirent->type];
