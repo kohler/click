@@ -1426,37 +1426,35 @@ Router::remove_select(int fd, int element, int mask)
 void
 Router::run_selects(bool more_tasks)
 {
-  // Wait in select() for input or timer.
-  // And call relevant elements' selected() methods.
+  // Wait in select() for input or timer, and call relevant elements'
+  // selected() methods.
+
+  // Return early if there are no selectors and there are tasks to run.
+  if (_selectors.size() == 0 && more_tasks)
+    return;
+
   fd_set read_mask = _read_select_fd_set;
   fd_set write_mask = _write_select_fd_set;
-  bool selects = (_selectors.size() > 0);
-
-  struct timeval wait;
-  bool timers = _timer_list.get_next_delay(&wait);
-  if (!selects && !timers)
-    return;
   
-  if (selects || !more_tasks) {
-    // never wait if anything is scheduled;
-    // otherwise, if no timers, block indefinitely.
-    struct timeval *wait_ptr = &wait;
-    if (more_tasks)
-      wait.tv_sec = wait.tv_usec = 0;
-    else if (!timers)
-      wait_ptr = 0;
+  // never wait if anything is scheduled; otherwise, if no timers, block
+  // indefinitely.
+  struct timeval wait, *wait_ptr = &wait;
+  bool timers = _timer_list.get_next_delay(&wait);
+  if (more_tasks)
+    wait.tv_sec = wait.tv_usec = 0;
+  else if (!timers)
+    wait_ptr = 0;
 
-    int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
-    
-    if (n < 0 && errno != EINTR)
-      perror("select");
-    else if (n > 0) {
-      for (int i = 0; i < _selectors.size(); i++) {
-	const Selector &s = _selectors[i];
-	if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
-	    || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
-	  _elements[s.element]->selected(s.fd);
-      }
+  int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
+  
+  if (n < 0 && errno != EINTR)
+    perror("select");
+  else if (n > 0) {
+    for (int i = 0; i < _selectors.size(); i++) {
+      const Selector &s = _selectors[i];
+      if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
+	  || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
+	_elements[s.element]->selected(s.fd);
     }
   }
 }
