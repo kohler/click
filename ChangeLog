@@ -1,3 +1,17 @@
+2005-02-22 Tuesday 15:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/packet_anno.hh (1.27): nit
+
+2005-02-22 Tuesday 15:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: linkunqueue.cc (1.8), settimestamp.cc (1.10),
+	settimestamp.hh (1.8): SetTimestamp: add FIRST and DELTA keywords
+
+2005-02-22 Tuesday 15:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmpsendpings.cc (1.35), icmpsendpings.hh (1.18):
+	ICMPPingSource can be pull
+
 2005-02-20 Sunday 12:27  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: fromhost.hh (1.6), tohost.hh (1.2):
