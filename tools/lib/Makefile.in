@@ -54,7 +54,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
 	elementt.o eclasst.o routert.o variableenv.o \
-	lexert.o lexertinfo.o packageutils.o \
+	lexert.o lexertinfo.o driver.o \
 	confparse.o archive.o processingt.o etraits.o elementmap.o \
 	ipaddress.o ipaddressset.o etheraddress.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
