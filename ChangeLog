@@ -1,3 +1,58 @@
+2003-08-24 Sunday 21:23  Eddie Kohler <kohler@icir.org>
+
+	* apps/csclient/csclient.cc (1.7), apps/csclient/csclient.hh (1.6),
+	elements/analysis/anonipaddr.cc (1.10),
+	elements/analysis/toipsumdump.cc (1.45),
+	elements/exopc/xokwriter.cc (1.11), elements/grid/airoinfo.cc
+	(1.11), elements/grid/amoeba.cc (1.9),
+	elements/grid/dsdvroutetable.cc (1.69),
+	elements/grid/filterbyhops.cc (1.16),
+	elements/grid/filterbyrange.cc (1.28),
+	elements/grid/gridlocationinfo.cc (1.21),
+	elements/grid/gridroutetable.cc (1.68),
+	elements/grid/linktracker.cc (1.15),
+	elements/grid/lookupgeogridroute.cc (1.32), elements/grid/pep.cc
+	(1.25), elements/grid/radiosim.cc (1.22), elements/grid/region.cc
+	(1.11), elements/grid/timeutils.hh (1.9),
+	elements/grid/updateroutes.cc (1.31), elements/ip/ipprint.cc
+	(1.40), elements/ip6/addresstranslator.hh (1.10),
+	elements/ip6/ip6print.cc (1.9), elements/local/printairo.cc (1.5),
+	elements/ns/tosimdevice.cc (1.8),
+	elements/userlevel/khandlerproxy.cc (1.11),
+	elements/userlevel/todevice.cc (1.34), elements/userlevel/todump.cc
+	(1.50), elements/userlevel/todump.hh (1.31),
+	etc/ron/divertsocket.hh (1.14), etc/ron/printtime.cc (1.4),
+	etc/ron/todevicenotify.cc (1.4), exopc/click.cc (1.6),
+	include/click/error.hh (1.22), include/click/glue.hh (1.36),
+	include/click/straccum.hh (1.27), include/click/userutils.hh
+	(1.14), lib/confparse.cc (1.112), lib/driver.cc (1.16), lib/glue.cc
+	(1.42), lib/router.cc (1.147), lib/straccum.cc (1.33),
+	lib/userutils.cc (1.32), ns/nsclick-test.cc (1.3), ns/nsclick.cc
+	(1.14), tools/click-align/alignclass.cc (1.16),
+	tools/click-align/click-align.cc (1.46),
+	tools/click-check/click-check.cc (1.25),
+	tools/click-combine/click-combine.cc (1.31),
+	tools/click-combine/click-uncombine.cc (1.27),
+	tools/click-devirtualize/click-devirtualize.cc (1.38),
+	tools/click-devirtualize/signature.cc (1.15),
+	tools/click-devirtualize/specializer.cc (1.31),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.57),
+	tools/click-flatten/click-flatten.cc (1.15),
+	tools/click-install/click-install.cc (1.54),
+	tools/click-install/click-uninstall.cc (1.22),
+	tools/click-install/common.cc (1.15),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.25),
+	tools/click-pretty/html.cc (1.6), tools/click-pretty/html.hh (1.6),
+	tools/click-undead/click-undead.cc (1.31),
+	tools/click-xform/adjacency.cc (1.20),
+	tools/click-xform/click-xform.cc (1.51), tools/lib/eclasst.cc
+	(1.22), tools/lib/eclasst.hh (1.15), tools/lib/elementt.cc (1.30),
+	tools/lib/lexert.cc (1.48), tools/lib/lexert.hh (1.27),
+	tools/lib/processingt.cc (1.28), tools/lib/routert.cc (1.68),
+	tools/lib/toolutils.cc (1.50), userlevel/click.cc (1.83): revert to
+	#include <XXX.h> from #include <cXXX>; may go back to #include
+	<cXXX> when GCC can handle it correctly
+
 2003-08-24 Sunday 16:49  Eddie Kohler <kohler@icir.org>
 
 	* etc/diagrams/poweredbygrid.mp (1.4): oops
