@@ -1,3 +1,15 @@
+2003-02-14 Friday 12:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridencap.hh (1.2): doc formatting nitlet
+
+2003-02-14 Friday 11:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutecb.hh (1.11), lookuplocalgridroute2.cc
+	(1.1), lookuplocalgridroute2.hh (1.1): Added LookupLocalGridRoute2
+	element, an agnostic element that can be placed after a queue
+	output to ensure that packets are transmitted with the most
+	up-to-date routing information
+
 2003-02-14 Friday 10:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridencap.cc (1.1), gridencap.hh (1.1): add
