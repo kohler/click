@@ -1,3 +1,10 @@
+2001-10-19 Friday 12:47  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: peekhandlers.cc (1.21), peekhandlers.hh
+	(1.13), pokehandlers.cc (1.21), pokehandlers.hh (1.13):
+	PokeHandlers update: more consistent syntax/directives; add "read"
+	directive; deprecate PeekHandlers. This is incompatible.
+
 2001-10-18 Thursday 21:07  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/confparse.hh (1.22), lib/confparse.cc (1.88): add
