@@ -100,6 +100,7 @@ public:
   static void close_log() {
     if (_fd != -1) {
       close(_fd);
+      _fd = -1;
       click_chatter("GridLogger: stopped logging on %s", _fn.cc());
     }
   }
