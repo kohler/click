@@ -1460,7 +1460,7 @@ default_parsefunc(cp_value *v, const String &arg,
       else if (cp_errno == CPE_NEGATIVE)
 	errh->error("%s (%s) must be >= 0", argname, desc);
       else
-	errh->error("%s should be %s (real)", argname, desc);
+	errh->error("%s should be %s (time in seconds)", argname, desc);
     }
     break;
      
@@ -1792,15 +1792,18 @@ cp_va_parsev(const Vector<String> &args,
 	signature << separator;
       if (cp_argtype *t = cp_values[i].argtype)
 	signature << t->name;
-      else if (t->command == cpIgnoreRest)
+      else if (cp_values[i].command == cpIgnoreRest)
 	signature << "...";
       else
 	signature << "??";
     }
     if (nrequired < npositional)
       signature << "]";
-    if (npositional < nvalues)
-      signature << (npositional == 0 ? "[keywords]" : ", [keywords]");
+    if (npositional < nvalues) {
+      if (npositional)
+	signature << separator;
+      signature << "[keywords]";
+    }
 
     const char *whoops = (args.size() > nvalues ? "too many" : "too few");
     if (signature.length())
