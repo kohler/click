@@ -1,3 +1,10 @@
+2004-02-21 Saturday 23:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: ackretrysender.cc (1.4), ackretrysender.hh (1.4),
+	ackretrysender2.cc (1.2), ackretrysender2.hh (1.2): Numerous big
+	fixes so that these retry elements actually work.  Also, add
+	per-packet and summary statistics logging handlers
+
 2004-02-18 Wednesday 16:31  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: counterflood.cc (1.5), counterflood.hh (1.5),
