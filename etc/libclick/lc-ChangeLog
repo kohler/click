@@ -1,3 +1,7 @@
+2002-08-07 Wednesday 11:19  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: package.hh, package.hh: nitlet
+
 2002-08-06 Tuesday 16:59  Eddie Kohler <kohler@icir.org>
 
 	* config.h.in: add "ns" driver

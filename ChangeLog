@@ -1,3 +1,7 @@
+2002-08-07 Wednesday 11:19  Eddie Kohler <kohler@icir.org>
+
+	* include/click/package.hh (1.8): nitlet
+
 2002-08-06 Tuesday 16:59  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.64), Makefile.in (1.108), config-ns.h.in (1.1),
