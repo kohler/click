@@ -1380,7 +1380,7 @@ Router::element_ports_string(int fi) const
     const char *sep = "";
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_from[c] == h) {
-	sa << sep << "[" << _hookup_from[c].port << "] ";
+	sa << sep << "[" << _hookup_to[c].port << "] ";
 	sa << _element_names[_hookup_to[c].idx];
 	sep = " ";
       }
