@@ -23,6 +23,9 @@
 
 String
 BridgeMessage::s(String tag) const {
+  // static assertion on message size
+  static_assert(sizeof(BridgeMessage::wire) == 60);
+  
   char* buf = new char[256];
   String s;
 
