@@ -70,6 +70,9 @@ void
 MadwifiRate::process_feedback(Packet *p_in)
 {
   if (!p_in) {
+    click_chatter("%{element} bad packet %s\n",
+		  this,
+		  __func__);
     return;
   }
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
@@ -77,7 +80,7 @@ MadwifiRate::process_feedback(Packet *p_in)
 
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
-  bool used_alt_rate = !(ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
+  bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
 
   struct timeval now;
   click_gettimeofday(&now);
