@@ -1,3 +1,121 @@
+2002-04-05 Friday 16:01  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: analysis/anonipaddr.cc (1.4), analysis/anonipaddr.hh
+	(1.4), analysis/fromdagdump.cc (1.5), analysis/fromdagdump.hh
+	(1.3), analysis/fromipsumdump.cc (1.16), analysis/fromipsumdump.hh
+	(1.14), analysis/fromnetflowsumdump.cc (1.7),
+	analysis/fromnetflowsumdump.hh (1.6), analysis/mergebyts.cc (1.5),
+	analysis/mergebyts.hh (1.4), analysis/toipsumdump.cc (1.12),
+	analysis/toipsumdump.hh (1.9), app/ftpportmapper.cc (1.20),
+	app/ftpportmapper.hh (1.14), aqm/adaptivered.cc (1.7),
+	aqm/adaptivered.hh (1.6), aqm/pi.cc (1.5), aqm/pi.hh (1.4),
+	bsdmodule/fastudpsrc.cc (1.5), bsdmodule/fastudpsrc.hh (1.6),
+	bsdmodule/fromdevice.cc (1.11), bsdmodule/fromdevice.hh (1.9),
+	bsdmodule/fromhost.cc (1.3), bsdmodule/fromhost.hh (1.3),
+	bsdmodule/todevice.cc (1.6), bsdmodule/todevice.hh (1.7),
+	ethernet/arpquerier.cc (1.43), ethernet/arpquerier.hh (1.29),
+	ethernet/ip6ndsolicitor.cc (1.16), ethernet/ip6ndsolicitor.hh
+	(1.9), grid/floodinglocquerier.cc (1.30), grid/simplelocquerier.cc
+	(1.12), grid/simplelocquerier.hh (1.6), icmp/icmppingrewriter.cc
+	(1.12), icmp/icmppingrewriter.hh (1.5), ip/ipaddrrewriter.cc
+	(1.13), ip/ipaddrrewriter.hh (1.6), ip/ipprint.cc (1.31),
+	ip/ipprint.hh (1.17), ip/ipratemon.cc (1.93), ip/ipratemon.hh
+	(1.58), ip/ipreassembler.cc (1.7), ip/ipreassembler.hh (1.3),
+	ip/iprwpatterns.cc (1.13), ip/iprwpatterns.hh (1.11),
+	ip/radixiplookup.cc (1.6), ip/radixiplookup.hh (1.6),
+	ip/rripmapper.cc (1.11), ip/rripmapper.hh (1.7),
+	ip6/addresstranslator.cc (1.12), ip6/addresstranslator.hh (1.7),
+	ip6/icmp6error.cc (1.21), ip6/ip6mirror.cc (1.6), ip6/ip6print.cc
+	(1.5), ip6/ip6print.hh (1.3), linuxmodule/cpuqueue.cc (1.10),
+	linuxmodule/cpuqueue.hh (1.5), linuxmodule/fasttcpflows.cc (1.8),
+	linuxmodule/fasttcpflows.hh (1.3), linuxmodule/fastudpflows.cc
+	(1.9), linuxmodule/fastudpflows.hh (1.5), linuxmodule/fastudpsrc.cc
+	(1.14), linuxmodule/fastudpsrc.hh (1.8),
+	linuxmodule/fastudpsrcip6.cc (1.14), linuxmodule/fastudpsrcip6.hh
+	(1.4), linuxmodule/fromdevice.cc (1.70), linuxmodule/fromdevice.hh
+	(1.30), linuxmodule/fromhost.cc (1.38), linuxmodule/fromhost.hh
+	(1.32), linuxmodule/polldevice.cc (1.126),
+	linuxmodule/polldevice.hh (1.59), linuxmodule/todevice.cc (1.123),
+	linuxmodule/todevice.hh (1.57), linuxmodule/tohost.cc (1.32),
+	linuxmodule/tohost.hh (1.22), linuxmodule/tohostsniffers.cc (1.27),
+	linuxmodule/tohostsniffers.hh (1.16), linuxmodule/tulipstats.cc
+	(1.16), linuxmodule/tulipstats.hh (1.6), local/bufconv.cc (1.5),
+	local/bufconv.hh (1.3), local/copyflowid.cc (1.4),
+	local/copyflowid.hh (1.4), local/copytcpseq.cc (1.4),
+	local/copytcpseq.hh (1.4), local/duppath.cc (1.4), local/duppath.hh
+	(1.3), local/indextreesiplookup.cc (1.2),
+	local/indextreesiplookup.hh (1.2), local/tcpack.cc (1.11),
+	local/tcpack.hh (1.7), local/tcpbuffer.cc (1.7), local/tcpbuffer.hh
+	(1.7), local/tcpconn.cc (1.7), local/tcpconn.hh (1.6),
+	local/tcpdemux.cc (1.7), local/tcpdemux.hh (1.4), radio/bim.cc
+	(1.27), radio/bim.hh (1.14), standard/delayshaper.cc (1.6),
+	standard/delayshaper.hh (1.7), standard/delayunqueue.cc (1.10),
+	standard/delayunqueue.hh (1.8), standard/drr.cc (1.5),
+	standard/drr.hh (1.4), standard/infinitesource.cc (1.33),
+	standard/infinitesource.hh (1.29), standard/msqueue.cc (1.10),
+	standard/msqueue.hh (1.8), standard/pokehandlers.cc (1.24),
+	standard/queue.cc (1.39), standard/queue.hh (1.29),
+	standard/ratedsource.cc (1.43), standard/ratedsource.hh (1.25),
+	standard/spinlockacquire.hh (1.5), standard/spinlockinfo.cc (1.5),
+	standard/spinlockinfo.hh (1.6), standard/spinlockrelease.hh (1.5),
+	standard/stridesched.cc (1.16), standard/stridesched.hh (1.16),
+	standard/timedsource.cc (1.27), standard/timedsource.hh (1.17),
+	tcpudp/iprewriter.cc (1.33), tcpudp/iprewriter.hh (1.20),
+	tcpudp/tcprewriter.cc (1.21), tcpudp/tcprewriter.hh (1.10),
+	userlevel/chattersocket.cc (1.10), userlevel/chattersocket.hh
+	(1.8), userlevel/controlsocket.cc (1.32),
+	userlevel/controlsocket.hh (1.22), userlevel/fromdevice.cc (1.40),
+	userlevel/fromdevice.hh (1.21), userlevel/fromdump.cc (1.64),
+	userlevel/fromdump.hh (1.36), userlevel/kerneltap.cc (1.29),
+	userlevel/kerneltap.hh (1.11), userlevel/progressbar.cc (1.17),
+	userlevel/progressbar.hh (1.12), userlevel/todevice.cc (1.23),
+	userlevel/todevice.hh (1.14), userlevel/todump.cc (1.36),
+	userlevel/todump.hh (1.24): Adapt to cleanup() changes. All
+	elements that had implemented uninitialize() now implement
+	cleanup() instead. Nitlets too
+
+2002-04-05 Friday 15:59  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh (1.16), include/click/timer.hh (1.16),
+	lib/task.cc (1.18): Rename Task::uninitialize() and
+	Timer::uninitialize() to cleanup(), which is a better name. Old
+	names still available
+
+2002-04-05 Friday 15:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh (1.21), include/click/router.hh (1.28),
+	lib/element.cc (1.67), lib/router.cc (1.120), lib/lexer.cc (1.56):
+	Element::uninitialize() was a poor interface, as it was called too
+	infrequently: i.e., only if the element had initialized
+	successfully. The user had to explicitly free memory---usually via
+	an explicit call to uninitialize()---on unsuccessful
+	initialization, and if configure() succeeded but initialize() was
+	never called. This was a pain, so people didn't do it, or did it
+	incorrectly, leading to double-frees and/or memory leaks.
+	
+	Solution: deprecate uninitialize(), and add a new
+	Element::cleanup(CleanupStage) method. This method is _always_
+	called, exactly once, at some point before the element is deleted.
+	The CleanupStage argument, an enumerated value, says how far the
+	element was initialized: not at all (CLEANUP_NO_ROUTER),
+	configure() failed (CLEANUP_CONFIGURE_FAILED), configure()
+	succeeded but initialize() was not called (CLEANUP_CONFIGURED),
+	initialize() failed (CLEANUP_INITIALIZE_FAILED), initialize()
+	succeeded but the router as a whole failed (CLEANUP_INITIALIZED),
+	and the router initialized successfully, including this element
+	(CLEANUP_ROUTER_INITIALIZED). So uninitialize() corresponded to
+	"stage >= CLEANUP_INITIALIZED".
+	
+	The default implementation of cleanup() calls uninitialize() when
+	appropriate, so this change should be source-compatible. However,
+	at some point in the future, we will remove uninitialize()
+	altogether.
+
+2002-04-05 Friday 15:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/ClickController/ControlSocket.java (1.12): added toString()
+	to ControlSocket class
+
 2002-04-04 Thursday 19:17  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ethernet/ip6ndadvertiser.cc (1.14),

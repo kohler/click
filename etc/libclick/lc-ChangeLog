@@ -1,3 +1,38 @@
+2002-04-05 Friday 15:59  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/timer.hh,
+	include/click/task.hh, include/click/timer.hh, libsrc/task.cc:
+	Rename Task::uninitialize() and Timer::uninitialize() to cleanup(),
+	which is a better name. Old names still available
+
+2002-04-05 Friday 15:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	include/click/router.hh, include/click/router.hh,
+	libsrc/element.cc, libsrc/router.cc, libsrc/lexer.cc:
+	Element::uninitialize() was a poor interface, as it was called too
+	infrequently: i.e., only if the element had initialized
+	successfully. The user had to explicitly free memory---usually via
+	an explicit call to uninitialize()---on unsuccessful
+	initialization, and if configure() succeeded but initialize() was
+	never called. This was a pain, so people didn't do it, or did it
+	incorrectly, leading to double-frees and/or memory leaks. 
+	Solution: deprecate uninitialize(), and add a new
+	Element::cleanup(CleanupStage) method. This method is _always_
+	called, exactly once, at some point before the element is deleted.
+	The CleanupStage argument, an enumerated value, says how far the
+	element was initialized: not at all (CLEANUP_NO_ROUTER),
+	configure() failed (CLEANUP_CONFIGURE_FAILED), configure()
+	succeeded but initialize() was not called (CLEANUP_CONFIGURED),
+	initialize() failed (CLEANUP_INITIALIZE_FAILED), initialize()
+	succeeded but the router as a whole failed (CLEANUP_INITIALIZED),
+	and the router initialized successfully, including this element
+	(CLEANUP_ROUTER_INITIALIZED). So uninitialize() corresponded to
+	"stage >= CLEANUP_INITIALIZED".  The default implementation of
+	cleanup() calls uninitialize() when appropriate, so this change
+	should be source-compatible. However, at some point in the future,
+	we will remove uninitialize() altogether.
+
 2002-04-04 Thursday 19:17  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/click_icmp6.h, include/click/click_ip6.h,
