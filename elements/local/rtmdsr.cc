@@ -128,21 +128,21 @@ RTMDSR::time()
 void
 RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
 {
-  int len = pkt::len1(r._hops.size(), payload_len);
+  int hops = r._hops.size() - 1; // Not this node.
+  int len = pkt::len1(hops, payload_len);
   WritablePacket *p = Packet::make(len);
   struct pkt *pk = (struct pkt *) p->data();
   memset(pk, '\0', len);
   pk->_type = htonl(PT_DATA);
   pk->_dlen = htons(payload_len);
-  pk->_nhops = htons(r._hops.size());
+  pk->_nhops = htons(hops);
   pk->_next = htons(0);
   int i;
-  for(i = 0; i < r._hops.size(); i++)
-    pk->_hops[i] = r._hops[i]._ip.in_addr();
+  for(i = 1; i < hops + 1; i++)
+    pk->_hops[i-1] = r._hops[i]._ip.in_addr();
   memcpy(pk->data(), payload, payload_len);
-  p->set_dst_ip_anno(r._hops[0]._ip); // For ARP.
 
-  output(2).push(p);
+  send(p);
 }
 
 // Got a data packet whose ultimate destination is us.
@@ -184,33 +184,117 @@ RTMDSR::start_query(IPAddress dstip)
   
   d._seq += 1;
   d._when = now;
+  _seen.push_back(Seen(_ip.in_addr(), pk->_seq));
 
-  output(1).push(p);
+  send(p);
 }
 
-// Have we seen+forwarded a particular query already?
-bool
-RTMDSR::already_seen(in_addr src, u_long seq)
+// Forward a query, data, or reply packet.
+// Makes a copy.
+// _next should point to this node; forward() adjusts
+// it to point to the next node.
+void
+RTMDSR::forward(const struct pkt *pk1)
 {
-  return false;
+  u_long type = ntohl(pk1->_type);
+  u_short next = ntohs(pk1->_next);
+  u_short nhops = ntohs(pk1->_nhops);
+  if(type == PT_REPLY){
+    next = next - 1;
+  } else if(type == PT_DATA){
+    next = next + 1;
+  } else {
+    assert(0);
+  }
+
+  if(next < 0 || next >= nhops)
+    return;
+
+  int len = pk1->len();
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+  struct pkt *pk = (struct pkt *) p->data();
+  memcpy(pk, pk1, len);
+
+  pk->_next = htons(next);
+
+  send(p);
+}
+
+// Send a packet.
+// Decides whether to broadcast or unicast according to type.
+// Assumes the _next field already points to the next hop.
+void
+RTMDSR::send(Packet *p)
+{
+  const struct pkt *pk = (const struct pkt *) p->data();
+  struct in_addr nxt;
+  int outnum;
+
+  u_long type = ntohl(pk->_type);
+  if(type == PT_QUERY){
+    nxt.s_addr = 0xffffffff;
+    outnum = 1;
+  } else if(type == PT_REPLY || type == PT_DATA){
+    u_short next = ntohs(pk->_next);
+    nxt = pk->_hops[next];
+    outnum = 2;
+  } else {
+    assert(0);
+    return;
+  }
+
+  p->set_dst_ip_anno(nxt); // For ARP.
+  output(outnum).push(p);
 }
 
 // Continue flooding a query by broadcast.
+// Maintain a list of querys we've already seen.
 void
-RTMDSR::forward_query(struct pkt *pk)
+RTMDSR::forward_query(struct pkt *pk1)
 {
+  IPAddress src(pk1->_hops[0]);
+  int i;
+  for(i = 0; i < _seen.size(); i++){
+    if(src == _seen[i]._src &&
+       pk1->_seq == _seen[i]._seq){
+      _seen[i]._when = time();
+      return;
+    }
+  }
+
+  _seen.push_back(Seen(src, pk1->_seq));
+
+  u_short nhops = ntohs(pk1->_nhops);
+  if(nhops > 30)
+    return;
+
+  int len = pkt::hlen1(nhops + 1);
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+  struct pkt *pk = (struct pkt *) p->data();
+  memcpy(pk, pk1, len);
+
+  pk->_nhops = htons(nhops + 1);
+  pk->_hops[nhops] = _ip.in_addr();
+
+  send(p);
 }
 
 // Continue unicasting a reply packet.
 void
 RTMDSR::forward_reply(struct pkt *pk)
 {
+  forward(pk);
 }
 
 // Continue unicasting a data packet.
 void
 RTMDSR::forward_data(struct pkt *pk)
 {
+  forward(pk);
 }
 
 String
@@ -241,8 +325,8 @@ RTMDSR::start_reply(struct pkt *pk1)
   pk->_type = htonl(PT_REPLY);
   int nh = ntohs(pk->_nhops);
   pk->_next = htons(nh - 1); // Indicates next hop.
-  p->set_dst_ip_anno(pk->_hops[nh - 1]); // For ARP.
-  output(2).push(p);
+
+  send(p);
 }
 
 // Got a reply packet whose ultimate consumer is us.
@@ -270,7 +354,7 @@ RTMDSR::got_reply(struct pkt *pk)
   r._when = time();
   r._pathmetric = ntohs(pk->_nhops); // XXX
   int i;
-  for(i = 1; i < ntohs(pk->_nhops); i++){
+  for(i = 0; i < ntohs(pk->_nhops); i++){
     r._hops.push_back(Hop(pk->_hops[i]));
   }
   r._hops.push_back(Hop(dst._ip));
@@ -307,11 +391,8 @@ RTMDSR::got_pkt(Packet *p_in)
                   nhops);
     if(pk->_qdst == _ip.in_addr()){
       start_reply(pk);
-    } else if(!already_seen(pk->_hops[0], seq)){
-      forward_query(pk);
     } else {
-      click_chatter("DSR %s: already seen query",
-                    _ip.s().cc());
+      forward_query(pk);
     }
   } else if(type == PT_REPLY && next < nhops){
     if(pk->_hops[next] != _ip.in_addr()){
@@ -333,12 +414,14 @@ RTMDSR::got_pkt(Packet *p_in)
     if(pk->_hops[next] != _ip.in_addr()){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
-      click_chatter("DSR %s: data not for me %s",
+      click_chatter("DSR %s: data not for me %d/%d %s",
                     _ip.s().cc(),
+                    ntohs(pk->_next),
+                    ntohs(pk->_nhops),
                     IPAddress(pk->_hops[next]).s().cc());
       return;
     }
-    if(next == 0){
+    if(next == nhops - 1){
       // I'm the ultimate consumer of this data.
       got_data(pk);
     } else {

@@ -18,7 +18,10 @@ CLICK_DECLS
  * Output zero goes to upper layers on this host.
  * Broadcast packets out output one.
  * Unicast packets out output two.
+ *
+ * To Do:
  * Assumes just one network interface.
+ * Doesn't delete old items from already-seen cache.
  * =e
  */
 
@@ -36,6 +39,7 @@ class RTMDSR : public Element {
   
   void push(int, Packet *);
   void run_timer();
+  static time_t time(void);
 
 private:
   Timer _timer;
@@ -65,8 +69,8 @@ private:
     in_addr _hops[];
 
     // How long should the packet be?
-    size_t hlen() { return hlen1(_nhops); }
-    size_t len() { return len1(_nhops, _dlen); }
+    size_t hlen() const { return hlen1(_nhops); }
+    size_t len() const { return len1(_nhops, _dlen); }
     static size_t hlen1(int nhops) {
       return sizeof(struct pkt)
         + ntohs(nhops) * sizeof(in_addr);
@@ -108,10 +112,21 @@ private:
 
   Vector<Dst> _dsts;
 
+  // List of query sequence #s that we've already seen.
+  class Seen {
+  public:
+    IPAddress _src;
+    u_long _seq;
+    time_t _when;
+    Seen(IPAddress src, u_long seq) {
+      _src = src; _seq = seq; _when = time();
+    }
+  };
+  Vector<Seen> _seen;
+
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);
   void got_pkt(Packet *p_in);
-  time_t time(void);
   void start_query(IPAddress);
   void forward_query(struct pkt *pk);
   void start_reply(struct pkt *pk1);
@@ -120,7 +135,8 @@ private:
   void start_data(const u_char *data, u_long len, Route &r);
   void got_data(struct pkt *pk);
   void forward_data(struct pkt *pk);
-  bool already_seen(in_addr src, u_long seq);
+  void send(Packet *);
+  void forward(const struct pkt *pk1);
 };
 
 CLICK_ENDDECLS
