@@ -1,3 +1,15 @@
+2001-03-15 Thursday 22:09  Benjie Chen <benjie@lcs.mit.edu>
+
+	* conf/: ipsec-3des.click, ipsec-des.click: IPsec DES examples
+
+2001-03-15 Thursday 22:09  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/: README, des.cc, des.hh, desp.cc, desp.hh,
+	esp.cc, esp.hh: more ipsec element cleanup: better documentation;
+	rewrote des to allow 3DES to be implemented correctly (DES decrypt
+	used to reset the IV, which means reencrypt using that original IV
+	was not possible)
+
 2001-03-15 Thursday 17:52  Douglas De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/kerneltap.cc: Get correct KernelTap behavior
