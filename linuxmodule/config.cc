@@ -171,6 +171,7 @@ write_config(const String &s, Element *, void *thunk, ErrorHandler *)
 /********************** Initialization and cleanup ***************************/
 
 extern void click_export_elements();
+extern void click_unexport_elements();
 
 void
 click_init_config()
@@ -194,4 +195,5 @@ click_cleanup_config()
     kill_router();
     delete current_config;
     delete lexer;
+    click_unexport_elements();
 }
