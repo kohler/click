@@ -29,7 +29,10 @@ class ErrorHandler { public:
   virtual int nerrors() const = 0;
   virtual void reset_counts() = 0;
 
-  // all error functions always return -EINVAL
+  // seriousness < ERR_WARNING returns OK_RESULT, which is 0
+  // seriousness >= ERR_WARNING returns ERROR_RESULT, which is -EINVAL
+  static const int OK_RESULT = 0;
+  static const int ERROR_RESULT;
 
   void debug(const char *format, ...);
   void message(const char *format, ...);

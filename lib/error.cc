@@ -20,11 +20,13 @@
 
 #include <click/error.hh>
 #include <click/straccum.hh>
-#include <click/string.hh>
 #ifndef CLICK_TOOL
 # include <click/element.hh>
 #endif
 #include <click/confparse.hh>
+
+const int ErrorHandler::OK_RESULT;
+const int ErrorHandler::ERROR_RESULT = -EINVAL;
 
 void
 ErrorHandler::debug(const char *format, ...)
@@ -51,7 +53,7 @@ ErrorHandler::warning(const char *format, ...)
   va_start(val, format);
   verror(ERR_WARNING, String(), format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 int
@@ -61,7 +63,7 @@ ErrorHandler::error(const char *format, ...)
   va_start(val, format);
   verror(ERR_ERROR, String(), format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 int
@@ -71,7 +73,7 @@ ErrorHandler::fatal(const char *format, ...)
   va_start(val, format);
   verror(ERR_FATAL, String(), format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 void
@@ -99,7 +101,7 @@ ErrorHandler::lwarning(const String &where, const char *format, ...)
   va_start(val, format);
   verror(ERR_WARNING, where, format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 int
@@ -109,7 +111,7 @@ ErrorHandler::lerror(const String &where, const char *format, ...)
   va_start(val, format);
   verror(ERR_ERROR, where, format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 int
@@ -119,7 +121,7 @@ ErrorHandler::lfatal(const String &where, const char *format, ...)
   va_start(val, format);
   verror(ERR_FATAL, where, format, val);
   va_end(val);
-  return -EINVAL;
+  return ERROR_RESULT;
 }
 
 String
@@ -475,7 +477,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   String text = make_text(seriousness, s, val);
   text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, text);
-  return -EINVAL;
+  return (seriousness >= ERR_WARNING ? ERROR_RESULT : OK_RESULT);
 }
 
 int
@@ -485,7 +487,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   // text is already made
   String dec_text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, dec_text);
-  return -EINVAL;
+  return (seriousness >= ERR_WARNING ? ERROR_RESULT : OK_RESULT);
 }
 
 void
