@@ -2,34 +2,14 @@
 #define KERNELERROR_HH
 #include <click/error.hh>
 
-class KernelErrorHandler : public ErrorHandler {
-
-  int _nwarnings;
-  int _nerrors;
-
- public:
-  
-  KernelErrorHandler()			{ reset_counts(); }
-  
-  int nwarnings() const			{ return _nwarnings; }
-  int nerrors() const			{ return _nerrors; }
-  void reset_counts()			{ _nwarnings = _nerrors = 0; }
-  
+class KernelErrorHandler : public BaseErrorHandler { public:
+  KernelErrorHandler()			{ }
   void handle_text(Seriousness, const String &);
-  
 };
 
-class SyslogErrorHandler : public ErrorHandler {
- public:
-  
-  SyslogErrorHandler()			{ reset_counts(); }
-  
-  int nwarnings() const			{ return 0; }
-  int nerrors() const			{ return 0; }
-  void reset_counts()			{ }
-  
+class SyslogErrorHandler : public BaseErrorHandler { public:
+  SyslogErrorHandler()			{ }
   void handle_text(Seriousness, const String &);
-  
 };
 
 #endif

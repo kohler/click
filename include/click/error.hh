@@ -72,6 +72,7 @@ class ErrorHandler { public:
   virtual String make_text(Seriousness, const char *, va_list);
   virtual String decorate_text(Seriousness, const String &, const String &, const String &);
   virtual void handle_text(Seriousness, const String &) = 0;
+  virtual int count_error(Seriousness, const String &) = 0;
 
   virtual void set_error_code(int);
 
@@ -89,24 +90,23 @@ class ErrorHandler { public:
   
 };
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
-class FileErrorHandler : public ErrorHandler { public:
-  
-  FileErrorHandler(FILE *, const String & = String());
-
-  int nwarnings() const;
-  int nerrors() const;
-  void reset_counts();
-  
-  void handle_text(Seriousness, const String &);
-  
+class BaseErrorHandler : public ErrorHandler { public:
+  BaseErrorHandler()			: _nwarnings(0), _nerrors(0) { }
+  int nwarnings() const			{ return _nwarnings; }
+  int nerrors() const			{ return _nerrors; }
+  void reset_counts()			{ _nwarnings = _nerrors = 0; }
+  int count_error(Seriousness, const String &);
  private:
-  
+  int _nwarnings, _nerrors;
+};
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+class FileErrorHandler : public BaseErrorHandler { public:
+  FileErrorHandler(FILE *, const String & = String());
+  void handle_text(Seriousness, const String &);
+ private:
   FILE *_f;
   String _context;
-  int _nwarnings;
-  int _nerrors;
-  
 };
 #endif
 
@@ -121,6 +121,7 @@ class ErrorVeneer : public ErrorHandler { public:
   String make_text(Seriousness, const char *, va_list);
   String decorate_text(Seriousness, const String &, const String &, const String &);
   void handle_text(Seriousness, const String &);
+  int count_error(Seriousness, const String &);
 
  protected:
 

@@ -511,7 +511,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   String text = make_text(seriousness, s, val);
   text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, text);
-  return (seriousness >= ERR_MIN_WARNING ? ERROR_RESULT : OK_RESULT);
+  return count_error(seriousness, text);
 }
 
 int
@@ -521,7 +521,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   // text is already made
   String dec_text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, dec_text);
-  return (seriousness >= ERR_MIN_WARNING ? ERROR_RESULT : OK_RESULT);
+  return count_error(seriousness, dec_text);
 }
 
 void
@@ -547,36 +547,13 @@ ErrorHandler::prepend_lines(const String &prepend, const String &text)
   return sa.take_string();
 }
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
-//
-// FILE ERROR HANDLER
-//
 
-FileErrorHandler::FileErrorHandler(FILE *f, const String &context)
-  : _f(f), _context(context), _nwarnings(0), _nerrors(0)
-{
-}
+//
+// BASE ERROR HANDLER
+//
 
 int
-FileErrorHandler::nwarnings() const
-{
-  return _nwarnings;
-}
-
-int
-FileErrorHandler::nerrors() const
-{
-  return _nerrors;
-}
-
-void
-FileErrorHandler::reset_counts()
-{
-  _nwarnings = _nerrors = 0;
-}
-
-void
-FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
+BaseErrorHandler::count_error(Seriousness seriousness, const String &)
 {
   if (seriousness < ERR_MIN_WARNING)
     /* do nothing */;
@@ -584,7 +561,23 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
     _nwarnings++;
   else
     _nerrors++;
+  return (seriousness < ERR_MIN_WARNING ? OK_RESULT : ERROR_RESULT);
+}
 
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+//
+// FILE ERROR HANDLER
+//
+
+FileErrorHandler::FileErrorHandler(FILE *f, const String &context)
+  : _f(f), _context(context)
+{
+}
+
+void
+FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
+{
   int pos = 0, nl;
   while ((nl = message.find_left('\n', pos)) >= 0) {
     String s = _context + message.substring(pos, nl - pos) + "\n";
@@ -606,32 +599,14 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 // SILENT ERROR HANDLER
 //
 
-class SilentErrorHandler : public ErrorHandler { public:
-
-  SilentErrorHandler()			: _nwarnings(0), _nerrors(0) { }
-  
-  int nwarnings() const			{ return _nwarnings; }
-  int nerrors() const			{ return _nerrors; }
-  void reset_counts()			{ _nwarnings = _nerrors = 0; }
-
+class SilentErrorHandler : public BaseErrorHandler { public:
+  SilentErrorHandler()			{ }
   void handle_text(Seriousness, const String &);  
-
- private:
-  
-  int _nwarnings;
-  int _nerrors;
-  
 };
 
 void
-SilentErrorHandler::handle_text(Seriousness seriousness, const String &)
+SilentErrorHandler::handle_text(Seriousness, const String &)
 {
-  if (seriousness < ERR_MIN_WARNING)
-    /* do nothing */;
-  else if (seriousness < ERR_MIN_ERROR)
-    _nwarnings++;
-  else
-    _nerrors++;
 }
 
 
@@ -768,6 +743,12 @@ void
 ErrorVeneer::handle_text(Seriousness seriousness, const String &text)
 {
   _errh->handle_text(seriousness, text);
+}
+
+int
+ErrorVeneer::count_error(Seriousness seriousness, const String &text)
+{
+  return _errh->count_error(seriousness, text);
 }
 
 

@@ -78,22 +78,11 @@ read_packages(Element *, void *)
 
 /****************************** Error handlers *******************************/
 
-class KernelErrorHandler : public ErrorHandler { public:
-
-  KernelErrorHandler(bool log)		: _log(log) { reset_counts(); }
-  
-  int nwarnings() const			{ return _nwarnings; }
-  int nerrors() const			{ return _nerrors; }
-  void reset_counts()			{ _nwarnings = _nerrors = 0; }
-  
+class KernelErrorHandler : public BaseErrorHandler { public:
+  KernelErrorHandler(bool log)		: _log(log) { }
   void handle_text(Seriousness, const String &);
-
  private:
-
   bool _log;
-  int _nwarnings;
-  int _nerrors;
-  
 };
 
 static StringAccum *error_log;
@@ -101,13 +90,6 @@ static StringAccum *error_log;
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness < ERR_MIN_WARNING)
-    /* do nothing */;
-  else if (seriousness < ERR_MIN_ERROR)
-    _nwarnings++;
-  else
-    _nerrors++;
-
   // print message to syslog
   int pos = 0, nl;
   while ((nl = message.find_left('\n', pos)) >= 0) {

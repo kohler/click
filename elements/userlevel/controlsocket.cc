@@ -33,16 +33,12 @@ CLICK_DECLS
 
 const char * const ControlSocket::protocol_version = "1.1";
 
-struct ControlSocketErrorHandler : public ErrorHandler { public:
+struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 
-  ControlSocketErrorHandler()		{ reset_counts(); _error_code = ControlSocket::CSERR_OK; }
+  ControlSocketErrorHandler()		{ _error_code = ControlSocket::CSERR_OK; }
 
   const Vector<String> &messages() const { return _messages; }
   int error_code() const		{ return _error_code; }
-  
-  int nwarnings() const			{ return _nwarnings; }
-  int nerrors() const			{ return _nerrors; }
-  void reset_counts()			{ _nwarnings = _nerrors = 0; }
   
   void handle_text(Seriousness, const String &);
 
@@ -51,22 +47,13 @@ struct ControlSocketErrorHandler : public ErrorHandler { public:
  private:
 
   Vector<String> _messages;
-  int _nwarnings;
-  int _nerrors;
   int _error_code;
 
 };
 
 void
-ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
+ControlSocketErrorHandler::handle_text(Seriousness, const String &m)
 {
-  if (seriousness < ERR_MIN_WARNING)
-    /* do nothing */;
-  else if (seriousness < ERR_MIN_ERROR)
-    _nwarnings++;
-  else
-    _nerrors++;
-
   int pos = 0, nl;
   while ((nl = m.find_left('\n', pos)) >= 0) {
     _messages.push_back(m.substring(pos, nl - pos));
