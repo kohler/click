@@ -95,11 +95,8 @@ CheckIPHeader2::smaction(Packet *p)
   if(hlen < sizeof(click_ip))
     goto bad;
   
-  if(hlen > p->length())
-    goto bad;
-
   len = ntohs(ip->ip_len);
-  if (len < hlen)
+  if (len > p->length() || len < hlen)
     goto bad;
 
   /*

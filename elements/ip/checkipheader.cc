@@ -117,17 +117,18 @@ CheckIPHeader::simple_action(Packet *p)
   unsigned int src;
   unsigned hlen, len;
   
-  if(p->length() < sizeof(click_ip))
+  if (p->length() < sizeof(click_ip))
     goto bad;
   
-  if(ip->ip_v != 4)
+  if (ip->ip_v != 4)
     goto bad;
   
   hlen = ip->ip_hl << 2;
-  if(hlen < sizeof(click_ip))
+  if (hlen < sizeof(click_ip))
     goto bad;
   
-  if(hlen > p->length())
+  len = ntohs(ip->ip_len);
+  if (len > p->length() || len < hlen)
     goto bad;
 
 #ifdef __KERNEL__
@@ -141,10 +142,6 @@ CheckIPHeader::simple_action(Packet *p)
 #ifdef __KERNEL__
   }
 #endif
-
-  len = ntohs(ip->ip_len);
-  if (len < hlen)
-    goto bad;
 
   /*
    * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
