@@ -60,13 +60,23 @@ public:
     int got_skb(struct sk_buff *);
     static int static_got_skb(struct sk_buff *, void *arg);
     static String static_print_stats(Element *e, void *);
+    bool run_task();
+
 private:
-    
+
+
+    enum { QSIZE = 511 };
+    Packet *_queue[QSIZE+1];
+
+    Task _task;
+
     void tx_completed(Packet *p);
 
+    int _drops;
     int _successes;
     int _failures;
     int _map_index;
+    int _runs;
 };
 
 CLICK_ENDDECLS

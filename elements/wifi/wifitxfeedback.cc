@@ -96,9 +96,11 @@ static_cleanup(int ndx)
 WifiTXFeedback::WifiTXFeedback()
   : Element(0, 1),
     _successes(0),
-    _failures(0)
+    _failures(0),
+    _task(this)
 {
   MOD_INC_USE_COUNT;
+  _head = _tail = 0;
 }
 
 WifiTXFeedback::~WifiTXFeedback()
@@ -127,6 +129,9 @@ WifiTXFeedback::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 WifiTXFeedback::initialize(ErrorHandler *errh)
 {
+  
+  ScheduleInfo::initialize_task(this, &_task, 1, errh);
+
   _map_index = static_initialize(this);
   if (_map_index < 0) {
     click_chatter("%{element}: couldn't intialize, got %d !!!\n",
@@ -141,6 +146,10 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
 void
 WifiTXFeedback::cleanup(CleanupStage)
 {
+  for (unsigned i = _head; i != _tail; i = next_i(i))
+    _queue[i]->kill();
+  _head = _tail = 0;    
+
   if (!static_cleanup(_map_index)) {
     click_chatter("%{element}: couldn't cleanup - %d !!!\n",
 		  this,
@@ -148,27 +157,58 @@ WifiTXFeedback::cleanup(CleanupStage)
   }
 }
 
-int WifiTXFeedback::got_skb(struct sk_buff *skb) {
+int 
+WifiTXFeedback::got_skb(struct sk_buff *skb) {
   assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
 
   /* Retrieve the MAC header. */
   //skb_push(skb, skb->data - skb->mac.raw);
 
-  Packet *p = Packet::make(skb);
-  int success = WIFI_TX_SUCCESS_ANNO(p);
-  SET_WIFI_NUM_FAILURES(p, WIFI_NUM_FAILURES(p) + !success);
-  if (success) {
-    _successes++;
+  unsigned next = next_i(_tail);
+
+  if (next != _head) {
+    Packet *p = Packet::make(skb);
+    _queue[_tail] = p;
+    _tail = next;
+    
+    _task.reschedule();
   } else {
-    _failures++;
+    kfree_skb(skb);
+    _drops++;
   }
-  if (p) {
+    
+}
+
+
+bool
+WifiTXFeedback::run_task() 
+{
+  _runs++;
+  int npq = 0;
+
+  while (_head != _tail) {
+    Packet *p = _queue[_head];
+    _head = next_i(_head);
+
+    int success = WIFI_TX_SUCCESS_ANNO(p);
+    if (success) {
+      _successes++;
+    } else {
+      _failures++;
+    }
     if (noutputs() == 2 && !success) {
       output(1).push(p);
     } else {
       output(0).push(p);
     }
+    npq++;
   }
+
+  if (npq > 0) {
+    _task.fast_reschedule();
+  }
+
+  return npq > 0;
 }
 
 String
@@ -185,6 +225,7 @@ WifiTXFeedback::static_print_stats(Element *e, void *)
 void
 WifiTXFeedback::add_handlers()
 {
+  add_task_handlers(&_task);
   add_default_handlers(true);
   add_read_handler("stats", static_print_stats, 0);
 }
