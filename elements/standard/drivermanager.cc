@@ -175,17 +175,17 @@ DriverManager::step_insn()
     else if (insn == INSN_WRITE) {
 	StringAccum sa;
 	Element *e = router()->element(_args[_insn_pos]);
-	const Router::Handler &h = router()->handler(_args2[_insn_pos]);
-	sa << "While calling `" << h.unparse_name(e) << "' from " << declaration() << ":";
+	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	sa << "While calling `" << h->unparse_name(e) << "' from " << declaration() << ":";
 	ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
-	h.call_write(_args3[_insn_pos], e, &cerrh);
+	h->call_write(_args3[_insn_pos], e, &cerrh);
 	return true;
     } else if (insn == INSN_READ) {
 	Element *e = router()->element(_args[_insn_pos]);
-	const Router::Handler &h = router()->handler(_args2[_insn_pos]);
-	String result = h.call_read(e);
+	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	String result = h->call_read(e);
 	ErrorHandler *errh = ErrorHandler::default_handler();
-	errh->message("%s:\n%s\n", h.unparse_name(e).cc(), result.cc());
+	errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
 	return true;
     } else if (insn == INSN_WRITE_SKIP)
 	return true;

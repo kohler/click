@@ -1769,23 +1769,23 @@ cp_handler(const String &str, Element *context, bool need_read,
   if (!cp_handler(str, context, &e, &hname, errh))
     return false;
 
-  int hid = context->router()->find_handler(e, hname);
+  int hid = Router::hindex(e, hname);
   if (hid < 0) {
     if (e) {
       errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
-      if (context->router()->nhandlers() == 0)
-	errh->error("because handlers have not been added yet!");
+      if (context->router()->nhandlers() <= 0)
+	errh->error("because handlers have not been added yet");
     } else
       errh->error("no global `%s' handler", hname.cc());
     return false;
   }
 
-  const Router::Handler &h = context->router()->handler(hid);
-  if (need_read && !h.readable()) {
-    errh->error("`%s' is not a read handler", h.unparse_name(e).cc());
+  const Router::Handler *h = context->router()->handler(hid);
+  if (need_read && !h->readable()) {
+    errh->error("`%s' is not a read handler", h->unparse_name(e).cc());
     return false;
-  } else if (need_write && !h.writable()) {
-    errh->error("`%s' is not a write handler", h.unparse_name(e).cc());
+  } else if (need_write && !h->writable()) {
+    errh->error("`%s' is not a write handler", h->unparse_name(e).cc());
     return false;
   } else {
     *result_element = e;
@@ -1803,17 +1803,13 @@ cp_handler(const String &str, Element *context, Element **result_element, int *r
 bool
 cp_handler_call(const String &str, Element *context, bool is_write, HandlerCall **hcall, ErrorHandler *errh)
 {
-  if (!errh)
-    errh = ErrorHandler::silent_handler();
-  HandlerCall hc;
-  if (hc.initialize(str, is_write, context, errh) < 0)
-    return false;
-  if (hcall) {
-    if (!*hcall)
-      *hcall = new HandlerCall;
-    **hcall = hc;
-  }
-  return true;
+  HandlerCall *verkrappen = 0;
+  if (hcall == 0)
+    hcall = &verkrappen;
+  bool ok = (HandlerCall::reset(*hcall, str, is_write, context, errh) >= 0);
+  delete verkrappen;		// if no storage provided, delete the created
+				// call
+  return ok;
 }
 #endif
 

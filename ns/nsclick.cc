@@ -114,7 +114,7 @@ static String::Initializer crap_initializer;
 static String configuration_string;
 
 extern "C" int
-click_add_element_type(const char *ename, Element *e)
+click_add_element_type(const char *, Element *)
 {
   //return lexer->add_element_type(ename, e);
   fprintf(stderr,"Hey! Need to do click_add_element_type!\n");
@@ -122,7 +122,7 @@ click_add_element_type(const char *ename, Element *e)
 }
 
 extern "C" void
-click_remove_element_type(int which)
+click_remove_element_type(int)
 {
   //lexer->remove_element_type(which);
   fprintf(stderr,"Hey! Need to do click_remove_element_type!\n");
@@ -203,21 +203,16 @@ static int
 call_read_handler(Element *e, String handler_name, Router *r,
 		  bool print_name, ErrorHandler *errh)
 {
-  int hi = r->find_handler(e, handler_name);
-  if (hi < 0)
-    return errh->error("no `%s' handler", Router::Handler::unparse_name(e, handler_name).cc());
-
-  const Router::Handler &rh = r->handler(hi);
-  String full_name = rh.unparse_name(e);
-  
-  if (!rh.visible())
+  const Router::Handler *rh = Router::handler(e, handler_name);
+  String full_name = Router::Handler::unparse_name(e, handler_name);
+  if (!rh || !rh->visible())
     return errh->error("no `%s' handler", full_name.cc());
-  else if (!rh.read_visible())
+  else if (!rh->read_visible())
     return errh->error("`%s' is a write handler", full_name.cc());
-  String result = rh.call_read(e);
 
   if (print_name)
     fprintf(stdout, "%s:\n", full_name.cc());
+  String result = rh->call_read(e);
   fputs(result.cc(), stdout);
   if (print_name)
     fputs("\n", stdout);
@@ -235,10 +230,9 @@ expand_handler_elements(const String &pattern, const String &handler_name,
     const String &id = router->ename(i);
     if (glob_match(id, pattern)) {
       any_elements = true;
-      Element *e = router->element(i);
-      int hi = router->find_handler(e, handler_name);
-      if (hi >= 0 && router->handler(hi).read_visible())
-	elements.push_back(e);
+      if (const Router::Handler *h = Router::handler(router->element(i), handler_name))
+	if (h->read_visible())
+	  elements.push_back(router->element(i));
     }
   }
   return any_elements;

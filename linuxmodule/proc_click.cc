@@ -140,22 +140,13 @@ free_handler_string(int hs)
 
 /*********************** Operations on handler files *************************/
 
-static const Router::Handler *
-find_handler(int eindex, int handlerno)
-{
-  if (Router::handler_ok(click_router, handlerno))
-    return &Router::handler(click_router, handlerno);
-  else
-    return 0;
-}
-
 static int
 prepare_handler_read(int eindex, int handlerno, int stringno)
 {
   Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
   String s;
 
-  const Router::Handler *h = find_handler(eindex, handlerno);
+  const Router::Handler *h = Router::handler(click_router, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->read_visible())
@@ -177,7 +168,7 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
 static int
 prepare_handler_write(int eindex, int handlerno, int stringno)
 {
-  const Router::Handler *h = find_handler(eindex, handlerno);
+  const Router::Handler *h = Router::handler(click_router, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->write_visible())
@@ -193,7 +184,7 @@ static int
 finish_handler_write(int eindex, int handlerno, int stringno)
 {
   Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
-  const Router::Handler *h = find_handler(eindex, handlerno);
+  const Router::Handler *h = Router::handler(click_router, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->write_visible())
@@ -434,7 +425,7 @@ static void
 register_handler(proc_dir_entry *directory, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
-  const Router::Handler *h = &Router::handler(click_router, handlerno);
+  const Router::Handler *h = Router::handler(click_router, handlerno);
   
   mode_t mode = S_IFREG;
   if (h->read_visible())
@@ -569,10 +560,10 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++) {
     // are there any visible handlers? if not, skip
     handlers.clear();
-    click_router->element_handlers(i, handlers);
+    Router::element_hindexes(click_router->element(i), handlers);
     for (int j = 0; j < handlers.size(); j++) {
-      const Router::Handler &h = click_router->handler(handlers[j]);
-      if (!h.read_visible() && !h.write_visible()) {
+      const Router::Handler *h = click_router->handler(handlers[j]);
+      if (!h->read_visible() && !h->write_visible()) {
 	handlers[j] = handlers.back();
 	handlers.pop_back();
 	j--;
@@ -640,8 +631,8 @@ cleanup_proc_click()
   // remove /proc/click entries for global and local handlers
   cleanup_router_element_procs();
   for (int i = 0; i < Router::nglobal_handlers(); i++) {
-    const Router::Handler &h = Router::global_handler(Router::FIRST_GLOBAL_HANDLER + i);
-    remove_proc_entry(String(h.name()).cc(), proc_click_entry);
+    const Router::Handler *h = Router::handler((Router *)0, Router::FIRST_GLOBAL_HANDLER + i);
+    remove_proc_entry(String(h->name()).cc(), proc_click_entry);
   }
 
   // remove the `/proc/click' directory

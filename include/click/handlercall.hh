@@ -6,45 +6,72 @@ CLICK_DECLS
 
 class HandlerCall { public:
 
+    // Create a HandlerCall. You generally don't need to do this explicitly;
+    // see the 'reset_read' and 'reset_write' methods below.
     HandlerCall()		: _e(0), _hi(-1) { }
-    HandlerCall(const String &s): _e(0), _hi(-1), _value(s) { }
+    HandlerCall(const String &s): _e((Element *)(-1)), _hi(-1), _value(s) { }
 
+    // Return true iff the HandlerCall is valid.
     bool ok() const		{ return _hi >= 0; }
+
+    // Return true iff the HandlerCall has been initialized.
+    bool initialized() const	{ return _e != (Element *)(-1); }
+
+    // Return true iff the HandlerCall represents a read handler.
     bool is_read() const;
 
-    static int initialize(HandlerCall *&, const String &, bool write, Element *, ErrorHandler *);
-    
-    int initialize(bool write, Element *, ErrorHandler *);
-    int initialize(String, bool write, Element *, ErrorHandler *);
-    int initialize_read(Element *, ErrorHandler *);
-    int initialize_read(const String &, Element *, ErrorHandler *);
-    int initialize_write(Element *, ErrorHandler *);
-    int initialize_write(const String &, Element *, ErrorHandler *);
+    // Return a String that will parse into an equivalent HandlerCall.
+    String unparse() const;
 
-    String call_read(Router *) const;
-    int call_write(Router *, ErrorHandler * = 0) const;
-    
-    String call_read(const Element *context) const;
-    int call_write(const Element *context, ErrorHandler * = 0) const;
+    // Call this handler and return its result. Returns the empty string or
+    // negative if the HandlerCall isn't ok().
+    String call_read() const;
+    int call_write(ErrorHandler * = 0) const;
 
-    static String call_read(Router *, const String &, ErrorHandler * = 0);
-    static int call_write(Router *, const String &, ErrorHandler * = 0);
+    // Call the specified handler and return its result. Returns the empty
+    // string or negative if the handler isn't valid.
+    static String call_read(Element *, const String &hname, ErrorHandler * = 0);
+    static int call_write(Element *, const String &hname, const String &value = String(), ErrorHandler * = 0);
     
-    static String call_read(Router *, const String &, const String &, ErrorHandler * = 0);
-    static String call_read(Router *, Element *, const String &, ErrorHandler * = 0);
-    static int call_write(Router *, const String &, const String &, const String & = String(), ErrorHandler * = 0);
-    static int call_write(Router *, Element *, const String &, const String & = String(), ErrorHandler * = 0);
+    // Call the described handler and return its result. Returns the empty
+    // string or negative if the handler isn't valid.
+    static String call_read(const String &hdesc, Router *, ErrorHandler * = 0);
+    static int call_write(const String &hdesc, Router *, ErrorHandler * = 0);
+    
+    // Replace 'hcall' with a handler call parsed from 'hdesc'. A new
+    // HandlerCall may be allocated if 'hcall' is null. 'hcall' is not changed
+    // unless 'hdesc' is valid. Returns 0 if valid, negative if not.
+    static int reset_read(HandlerCall *&hcall, const String &hdesc, Element *context, ErrorHandler * = 0);
+    static int reset_write(HandlerCall *&hcall, const String &hdesc, Element *context, ErrorHandler * = 0);
 
-    String unparse(const Element *context) const;
-    
+    // Replace 'hcall' with a handler call obtained from 'e', 'hname', and
+    // possibly 'value'. A new HandlerCall may be allocated if 'hcall' is
+    // null. 'hcall' is not changed unless the specified handler is valid.
+    // Returns 0 if valid, negative if not.
+    static int reset_read(HandlerCall *&hcall, Element *e, const String &hname, ErrorHandler * = 0);
+    static int reset_write(HandlerCall *&hcall, Element *e, const String &hname, const String &value = String(), ErrorHandler * = 0);
+
+    // Initialize a handler call once handler information is available.
+    // Returns 0 if valid, negative if not.
+    int initialize_read(Element *, ErrorHandler * = 0);
+    int initialize_write(Element *, ErrorHandler * = 0);
+
+    // Less-used functions.
+    void clear()		{ _e = 0; _hi = -1; _value = String(); }
+    void reset(const String &s)	{ _e = (Element *)(-1); _hi = -1; _value = s; }
+    static int reset(HandlerCall *&, const String &hdesc, bool write, Element *, ErrorHandler * = 0);
+    static int reset(HandlerCall *&, Element *, const String &hname, const String &value, bool write, ErrorHandler * = 0);
+    int parse(const String &, bool write, Element *, ErrorHandler * = 0);
+
   private:
     
     static const char * const READ_MARKER;
-    enum { READ_HI = -9998, WRITE_HI = -9999 };
     
     Element *_e;
     int _hi;
     String _value;
+
+    inline void assign(Element *, int, const String &, bool write);
 
 };
 
@@ -55,45 +82,43 @@ HandlerCall::is_read() const
 }
 
 inline int
-HandlerCall::initialize(bool write, Element *context, ErrorHandler *errh)
+HandlerCall::reset_read(HandlerCall *&hcall, const String &hdesc, Element *context, ErrorHandler *errh)
 {
-    return initialize(_value, write, context, errh);
+    return reset(hcall, hdesc, false, context, errh);
 }
 
 inline int
-HandlerCall::initialize_read(const String &s, Element *context, ErrorHandler *errh)
+HandlerCall::reset_write(HandlerCall *&hcall, const String &hdesc, Element *context, ErrorHandler *errh)
 {
-    return initialize(s, false, context, errh);
+    return reset(hcall, hdesc, true, context, errh);
+}
+
+inline int
+HandlerCall::reset_read(HandlerCall *&hcall, Element *e, const String &hname, ErrorHandler *errh)
+{
+    return reset(hcall, e, hname, String(), false, errh);
+}
+
+inline int
+HandlerCall::reset_write(HandlerCall *&hcall, Element *e, const String &hname, const String &value, ErrorHandler *errh)
+{
+    return reset(hcall, e, hname, value, true, errh);
 }
 
 inline int
 HandlerCall::initialize_read(Element *context, ErrorHandler *errh)
 {
-    return initialize(_value, false, context, errh);
-}
-
-inline int
-HandlerCall::initialize_write(const String &s, Element *context, ErrorHandler *errh)
-{
-    return initialize(s, true, context, errh);
+    if (!initialized())
+	parse(_value, false, context, errh);
+    return (ok() ? 0 : -1);
 }
 
 inline int
 HandlerCall::initialize_write(Element *context, ErrorHandler *errh)
 {
-    return initialize(_value, true, context, errh);
-}
-
-inline String
-HandlerCall::call_read(const Element *context) const
-{
-    return call_read(context->router());
-}
-
-inline int
-HandlerCall::call_write(const Element *context, ErrorHandler *errh) const
-{
-    return call_write(context->router(), errh);
+    if (!initialized())
+	parse(_value, true, context, errh);
+    return (ok() ? 0 : -1);
 }
 
 CLICK_ENDDECLS

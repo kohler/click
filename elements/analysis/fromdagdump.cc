@@ -441,7 +441,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
     }
     if (_have_last_time && !timercmp(&tv, &_last_time, <)) {
 	_have_last_time = false;
-	(void) _last_time_h->call_write(this, errh);
+	(void) _last_time_h->call_write(errh);
 	if (!_active)
 	    more = false;
 	// The handler might have scheduled us, in which case we might crash

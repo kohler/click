@@ -282,16 +282,16 @@ click_init_sched()
 {
   spin_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
-  Router::add_global_read_handler("threads", read_threads, 0);
-  Router::add_global_read_handler("priority", read_priority, 0);
-  Router::add_global_write_handler("priority", write_priority, 0);
+  Router::add_read_handler(0, "threads", read_threads, 0);
+  Router::add_read_handler(0, "priority", read_priority, 0);
+  Router::add_write_handler(0, "priority", write_priority, 0);
 #ifdef HAVE_ADAPTIVE_SCHEDULER
   static_assert(Task::MAX_UTILIZATION == 1000);
-  Router::add_global_read_handler("min_cpu_share", read_cpu_share, 0);
-  Router::add_global_write_handler("min_cpu_share", write_cpu_share, 0);
-  Router::add_global_read_handler("max_cpu_share", read_cpu_share, (void *)1);
-  Router::add_global_write_handler("max_cpu_share", write_cpu_share, (void *)1);
-  Router::add_global_read_handler("cpu_share", read_cur_cpu_share, 0);
+  Router::add_read_handler(0, "min_cpu_share", read_cpu_share, 0);
+  Router::add_write_handler(0, "min_cpu_share", write_cpu_share, 0);
+  Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
+  Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1);
+  Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
 #endif
 }
 

@@ -189,7 +189,7 @@ ProgressBar::get_value(int first, int last, thermometer_t *value)
     *value = 0;
     bool all_known = true;
     for (int i = first; i < last; i++) {
-	String s = cp_uncomment(router()->handler(_his[i]).call_read(_es[i]));
+	String s = cp_uncomment(router()->handler(_his[i])->call_read(_es[i]));
 	thermometer_t this_value;
 #ifdef HAVE_INT64_TYPES
 	bool ok = cp_unsigned64(s, &this_value);
@@ -401,7 +401,7 @@ ProgressBar::read_handler(Element *e, void *thunk)
 	  StringAccum sa;
 	  for (int i = (is_pos ? pb->_first_pos_h : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos_h); i++) {
 	      if (sa.length()) sa << ' ';
-	      sa << pb->router()->handler(pb->_his[i]).unparse_name(pb->_es[i]);
+	      sa << pb->router()->handler(pb->_his[i])->unparse_name(pb->_es[i]);
 	  }
 	  sa << '\n';
 	  return sa.take_string();

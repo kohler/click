@@ -20,6 +20,9 @@
 #include <click/glue.hh>
 #include <click/ino.hh>
 #include <click/router.hh>
+#if INO_DEBUG
+# include <click/straccum.hh>
+#endif
 CLICK_DECLS
 
 void
@@ -86,13 +89,14 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
     _x[0].elementno_plus1 = 0;
     _x[0].xindex = 0;
     _x[0].skip = 0;
-    _x[0].flags = X_FAKE;
+    _x[0].flags = 0;
     _nentries = 1;
 
     // exit early if router is empty
     if (nelem == 1) {
 	_generation = generation;
 	_router = r;
+	_x[0].flags = X_SUBDIR_CONFLICTS_CALCULATED;
 	return 0;
     }
 
@@ -104,7 +108,7 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 	_x[i].flags = 0;
     }
 
-    // sort sorted_elements
+    // sort _x
     click_qsort(&_x[1], nelem - 1, sizeof(Entry), entry_compar);
 
     // add new _x entries for intermediate directories
@@ -130,7 +134,7 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 	}
     }
  
-    // resort sorted_elements if necessary
+    // resort _x if necessary
     if (n != nelem)
 	click_qsort(&_x[1], n - 1, sizeof(Entry), entry_compar);
 
@@ -186,12 +190,12 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
 
     // find the relevant handler indexes and names
     Vector<int> hindexes;
-    _router->element_handlers(parent_elementno, hindexes);
+    Router::element_hindexes(Router::element(_router, parent_elementno), hindexes);
     Vector<String> names;
     for (int i = 0; i < hindexes.size(); i++) {
-	const Router::Handler &h = _router->handler(hindexes[i]);
-	if (h.visible())
-	    names.push_back(h.name());
+	const Router::Handler *h = Router::handler(_router, hindexes[i]);
+	if (h->visible())
+	    names.push_back(h->name());
     }
 
     // sort names
@@ -202,8 +206,9 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
     int xi = parent_xindex + 1;
     int next_xi = next_xindex(parent_elementno);
     int hi = 0;
+    int name_start = (parent_xindex ? _x[parent_xindex].name.length() + 1 : 0);
     while (xi < next_xi && hi < names.size()) {
-	int compare = String::compare(_x[xi].name, names[hi]);
+	int compare = String::compare(_x[xi].name.substring(name_start), names[hi]);
 	if (compare == 0) {	// there is a conflict
 	    _x[xi].flags |= X_HANDLER_CONFLICT;
 	    xi += _x[xi].skip + 1;
@@ -224,8 +229,16 @@ ClickIno::nlink(ino_t ino)
 {
     // must be called with config_lock held
     int elementno = INO_ELEMENTNO(ino);
-    if (INO_ISHANDLER(ino))
-	return (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
+
+    // it might be a handler
+    if (INO_ISHANDLER(ino)) {
+	int xi = xindex(elementno);
+	// one for the number directory (or global directory), plus one if the
+	// name directory exists (for element handlers whose element name
+	// isn't a handler conflict)
+	return 1 + (xi > 0 && !(_x[xi].flags & X_HANDLER_CONFLICT));
+    }
+    
     // otherwise, it is a directory
     int nlink = 2;
     if (INO_DIRTYPE(ino) != INO_DT_H) {
@@ -267,6 +280,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 {
     // must be called with config_lock held
     int elementno = INO_ELEMENTNO(ino);
+    int nelements = (_router ? _router->nelements() : 0);
 
     // quit early on empty string
     if (!component.length())
@@ -292,13 +306,12 @@ ClickIno::lookup(ino_t ino, const String &component)
     
   number_failed:
     // look for handlers
-    if (INO_DT_HAS_H(ino)) {
-	int hi = Router::find_handler(_router, elementno, component);
-	if (hi >= 0) {
-	    const Router::Handler &h = Router::handler(_router, hi);
-	    if (h.visible())
+    if (INO_DT_HAS_H(ino) && elementno < nelements) {
+	Element *element = Router::element(_router, elementno);
+	int hi = Router::hindex(element, component);
+	if (hi >= 0)
+	    if (Router::handler(element, hi)->visible())
 		return INO_MKHANDLER(elementno, hi);
-	}
     }
 
     // look for names
@@ -308,7 +321,7 @@ ClickIno::lookup(ino_t ino, const String &component)
 	int last_xi = next_xindex(elementno) - 1;
 	int name_offset = _x[first_xi - 1].name.length() + 1;
 	int found = name_search(component, first_xi, last_xi, (name_offset > 1 ? name_offset : 0));
-	if (found >= 0)
+	if (found >= 0) 
 	    return INO_MKHNDIR(ClickIno::elementno(found));
     }
 
@@ -344,17 +357,19 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 #define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return 0; } while (0)
     
     int elementno = INO_ELEMENTNO(ino);
+    int nelements = (_router ? _router->nelements() : 0);
 
     // handler names
     if (f_pos < RD_HOFF)
 	f_pos = RD_HOFF;
-    if (f_pos < RD_UOFF && INO_DT_HAS_H(ino)) {
+    if (f_pos < RD_UOFF && INO_DT_HAS_H(ino) && elementno < nelements) {
 	Vector<int> hi;
-	Router::element_handlers(_router, elementno, hi);
+	Element *element = Router::element(_router, elementno);
+	Router::element_hindexes(element, hi);
 	while (f_pos >= RD_HOFF && f_pos < hi.size() + RD_HOFF) {
-	    const Router::Handler &h = Router::handler(_router, hi[f_pos - RD_HOFF]);
-	    if (h.visible())
-		FILLDIR(h.name().data(), h.name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
+	    const Router::Handler *h = Router::handler(element, hi[f_pos - RD_HOFF]);
+	    if (h->visible())
+		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
 	    f_pos++;
 	}
     }
@@ -399,7 +414,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
     return 1;
 }
 
-#if 0
+#if INO_DEBUG
 String
 ClickIno::info() const
 {
@@ -413,12 +428,14 @@ ClickIno::info() const
 	sa << 'E' << (_x[i].elementno_plus1 - 1) << '/'
 	   << 'X' << _x[i].xindex << '\t'
 	   << "->" << (i + 1 + _x[i].skip);
-	if (_x[i].flags & (~X_SUBDIR_CONFLICTS_CALCULATED)) {
+	if (_x[i].flags) {
 	    sa << '\t';
 	    if (_x[i].flags & X_FAKE)
-		sa << 'X';
+		sa << 'F';
 	    if (_x[i].flags & X_HANDLER_CONFLICT)
 		sa << 'H';
+	    if (_x[i].flags & X_SUBDIR_CONFLICTS_CALCULATED)
+		sa << 'S';
 	}
 	sa << '\n';
     }

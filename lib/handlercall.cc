@@ -25,160 +25,167 @@ CLICK_DECLS
 
 const char * const HandlerCall::READ_MARKER = "r";
 
-int
-HandlerCall::initialize(String what, bool write, Element *context, ErrorHandler *errh)
+inline void
+HandlerCall::assign(Element *e, int hi, const String &value, bool write)
 {
-    String original_what = what;
-    _e = 0;
-    _hi = -1;
-    
-    if (context->router()->nhandlers() < 0) {
-	Element *e;
-	String hname, value;
-	if (!cp_handler(cp_pop_spacevec(what), context, &e, &hname, errh))
-	    return -1;
+    _e = e;
+    _hi = hi;
+    _value = (write ? value : String::stable_string(READ_MARKER));
+}
+
+int
+HandlerCall::parse(const String &hdesc, bool write, Element *context, ErrorHandler *errh)
+{
+    String s = hdesc;
+    bool ready = context->router()->nhandlers() >= 0;
+    Element *e;
+    int hi;
+    String value;
+
+    // parse handler name
+    if (ready) {
+	if (!cp_handler(cp_pop_spacevec(s), context, !write, write, &e, &hi, errh))
+	    return -EINVAL;
     } else {
-	if (!cp_handler(cp_pop_spacevec(what), context, !write, write, &_e, &_hi, errh))
-	    return -1;
+	String hname;
+	if (!cp_handler(cp_pop_spacevec(s), context, &e, &hname, errh))
+	    return -EINVAL;
     }
 
-    if (what) {
-	if (write && !cp_string(what, &_value))
-	    return (errh ? errh->error("malformed value after handler name") : -1);
-	else if (!write)
-	    return (errh ? errh->error("garbage after handler name") : -1);
+    // parse value for a write handler
+    if (s) {
+	if (!write)
+	    return (errh ? errh->error("garbage after handler name") : -EINVAL);
+	else if (!cp_string(s, &value))
+	    return (errh ? errh->error("malformed value after handler name") : -EINVAL);
     }
 
-    if (context->router()->nhandlers() < 0)
-    	_value = original_what;
-    else if (!write)
-	_value = String::stable_string(READ_MARKER);
+    // if we get here, success
+    // if ready, store data; otherwise, store descriptor
+    if (ready)
+	assign(e, hi, value, write);
+    else
+	reset(hdesc);
     return 0;
 }
 
 int
-HandlerCall::initialize(HandlerCall *&call, const String &text, bool write, Element *context, ErrorHandler *errh)
+HandlerCall::reset(HandlerCall *&call, const String &text, bool write, Element *context, ErrorHandler *errh)
 {
     if (!call && !(call = new HandlerCall))
 	return -ENOMEM;
-    int retval = call->initialize(text, write, context, errh);
-    if (retval < 0) {
+    int retval = call->parse(text, write, context, errh);
+    if (retval < 0 && !call->ok()) {
 	delete call;
 	call = 0;
     }
     return retval;
 }
 
-String
-HandlerCall::call_read(Router *router) const
+static int
+handler_error(Element *e, const String &hname, bool write, ErrorHandler *errh)
 {
-    if (!ok() || !is_read())
+    if (errh)
+	errh->error((write ? "no `%s' write handler" : "no `%s' read handler"), Router::Handler::unparse_name(e, hname).cc());
+    return -ENOENT;
+}
+
+int
+HandlerCall::reset(HandlerCall *&call, Element *e, const String &hname, const String &value, bool write, ErrorHandler *errh)
+{
+    int hi = Router::hindex(e, hname);
+    const Router::Handler *h = Router::handler(e, hname);
+    if (h && (write ? h->writable() : h->readable())) {
+	if (!call && !(call = new HandlerCall))
+	    return -ENOMEM;
+	call->assign(e, hi, value, write);
+	return 0;
+    } else
+	return handler_error(e, hname, write, errh);
+}
+
+
+String
+HandlerCall::call_read() const
+{
+    if (ok() && is_read())
+	return Router::handler(_e, _hi)->call_read(_e);
+    else
 	return String();
-    const Router::Handler &h = router->handler(_hi);
-    return h.call_read(_e);
 }
 
 int
-HandlerCall::call_write(Router *router, ErrorHandler *errh) const
-{
-    if (!errh)
-	errh = ErrorHandler::default_handler();
-    if (!ok() || is_read())
-	return errh->error("not a write handler");
-    const Router::Handler &h = router->handler(_hi);
-    return h.call_write(_value, _e, errh);
-}
-
-String
-HandlerCall::call_read(Router *router, Element *e, const String &hname, ErrorHandler *errh)
-{
-    const Router::Handler *h = 0;
-    int hi = router->find_handler(e, hname);
-    if (hi >= 0)
-	h = &router->handler(hi);
-    if (!h || !h->readable()) {
-	if (errh && e)
-	    errh->error("`%s' has no `%s' read handler", e->declaration().cc(), String(hname).cc());
-	else if (errh)
-	    errh->error("no `%s' global read handler", String(hname).cc());
-	return "<no handler>";
-    }
-    return h->call_read(e);
-}
-
-String
-HandlerCall::call_read(Router *router, const String &ename, const String &hname, ErrorHandler *errh)
-{
-    Element *e = 0;
-    if (ename) {
-	if (!(e = router->find(ename, errh)))
-	    return "<no element>";
-    }
-    return call_read(router, e, hname, errh);
-}
-
-int
-HandlerCall::call_write(Router *router, Element *e, const String &hname, const String &value, ErrorHandler *errh)
+HandlerCall::call_write(ErrorHandler *errh) const
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
-    const Router::Handler *h = 0;
-    int hi = router->find_handler(e, hname);
-    if (hi >= 0)
-	h = &router->handler(hi);
-    if (!h || !h->writable()) {
-	if (e)
-	    errh->error("`%s' has no `%s' write handler", e->declaration().cc(), String(hname).cc());
-	else
-	    errh->error("no `%s' global write handler", String(hname).cc());
+    if (ok() && !is_read())
+	return Router::handler(_e, _hi)->call_write(_value, _e, errh);
+    else
+	return errh->error("not a write handler");
+}
+
+
+String
+HandlerCall::call_read(Element *e, const String &hname, ErrorHandler *errh)
+{
+    const Router::Handler *h = Router::handler(e, hname);
+    if (h && h->readable())
+	return h->call_read(e);
+    else {
+	if (errh)
+	    handler_error(e, hname, false, errh);
+	return "";
+    }
+}
+
+int
+HandlerCall::call_write(Element *e, const String &hname, const String &value, ErrorHandler *errh)
+{
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    const Router::Handler *h = Router::handler(e, hname);
+    if (h && h->writable())
+	return h->call_write(value, e, errh);
+    else {
+	handler_error(e, hname, true, errh);
 	return -EACCES;
     }
-    return h->call_write(value, e, errh);
 }
 
-int
-HandlerCall::call_write(Router *router, const String &ename, const String &hname, const String &value, ErrorHandler *errh)
-{
-    Element *e = 0;
-    if (ename) {
-	if (!(e = router->find(ename, errh)))
-	    return -ENOENT;
-    }
-    return call_write(router, e, hname, value, errh);
-}
 
 String
-HandlerCall::call_read(Router *router, const String &hcall, ErrorHandler *errh)
+HandlerCall::call_read(const String &hdesc, Router *router, ErrorHandler *errh)
 {
-    HandlerCall hc;
-    if (hc.initialize(hcall, false, router->root_element(), errh) >= 0)
-	return hc.call_read(router);
-    else
+    HandlerCall hcall(hdesc);
+    if (hcall.initialize_read(router->root_element(), errh) < 0)
 	return String();
+    else
+	return hcall.call_read();
 }
 
 int
-HandlerCall::call_write(Router *router, const String &hcall, ErrorHandler *errh)
+HandlerCall::call_write(const String &hdesc, Router *router, ErrorHandler *errh)
 {
-    HandlerCall hc;
-    if (hc.initialize(hcall, true, router->root_element(), errh) >= 0)
-	return hc.call_write(router, errh);
+    HandlerCall hcall(hdesc);
+    if (hcall.initialize_write(router->root_element(), errh) < 0)
+	return -EINVAL;
     else
-	return -1;
+	return hcall.call_write(errh);
 }
 
+
 String
-HandlerCall::unparse(const Element *context) const
+HandlerCall::unparse() const
 {
-    if (!ok())
-	return "<bad handler>";
-    else {
-	String name = context->router()->handler(_hi).unparse_name(_e);
+    if (ok()) {
+	String name = Router::handler(_e, _hi)->unparse_name(_e);
 	if (is_read() || !_value)
 	    return name;
 	else
 	    return name + " " + cp_quote(_value);
-    }
+    } else
+	return "<bad handler>";
 }
 
 CLICK_ENDDECLS

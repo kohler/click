@@ -98,12 +98,12 @@ Counter::simple_action(Packet *p)
   if (_count == _count_trigger && !_count_triggered) {
     _count_triggered = true;
     if (_count_trigger_h)
-      (void) _count_trigger_h->call_write(this);
+      (void) _count_trigger_h->call_write();
   }
   if (_byte_count >= _byte_trigger && !_byte_triggered) {
     _byte_triggered = true;
     if (_byte_trigger_h)
-      (void) _byte_trigger_h->call_write(this);
+      (void) _byte_trigger_h->call_write();
   }
   
   return p;
@@ -139,14 +139,14 @@ Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandl
    case H_COUNT_CALL:
     if (!PARSECMD(cp_pop_spacevec(str), &c->_count_trigger))
       return errh->error("`count_call' first word should be unsigned (count)");
-    if (HandlerCall::initialize(c->_count_trigger_h, str, true, c, errh) < 0)
+    if (HandlerCall::reset_write(c->_count_trigger_h, str, c, errh) < 0)
       return -1;
     c->_count_triggered = false;
     return 0;
    case H_BYTE_COUNT_CALL:
     if (!PARSECMD(cp_pop_spacevec(str), &c->_byte_trigger))
       return errh->error("`byte_count_call' first word should be unsigned (count)");
-    if (HandlerCall::initialize(c->_byte_trigger_h, str, true, c, errh) < 0)
+    if (HandlerCall::reset_write(c->_byte_trigger_h, str, c, errh) < 0)
       return -1;
     c->_byte_triggered = false;
     return 0;

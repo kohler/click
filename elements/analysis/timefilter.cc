@@ -151,7 +151,7 @@ TimeFilter::simple_action(Packet *p)
     else {
 	if (_last_h && _last_h_ready) {
 	    _last_h_ready = false;
-	    (void) _last_h->call_write(this);
+	    (void) _last_h->call_write();
 	}
 	return kill(p);
     }

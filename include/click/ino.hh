@@ -19,12 +19,12 @@ class Router;
 
 #define INO_MKHANDLER(e, hi)		((((hi) & 0x7FFFU) << 16) | (((e) + 1) & 0xFFFFU) | 0x80000000U)
 #define INO_MKHDIR(e)			((INO_DT_H << 28) | (((e) + 1) & 0xFFFFU))
+#define INO_MKNDIR(e)			((INO_DT_N << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_MKHNDIR(e)			((INO_DT_HN << 28) | (((e) + 1) & 0xFFFFU))
 #define INO_GLOBALDIR			(INO_DT_GLOBAL << 28)
 #define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
 
-#define INO_NLINK_GLOBAL_HANDLER	1
-#define INO_NLINK_LOCAL_HANDLER		2
+#define INO_DEBUG			0
 
 class ClickIno { public:
 
@@ -43,18 +43,35 @@ class ClickIno { public:
     typedef bool (*filldir_t)(const char *name, int name_len, ino_t ino, int dirtype, uint32_t f_pos, void *thunk);
     int readdir(ino_t dir, uint32_t &f_pos, filldir_t, void *thunk);
 
-#if 0
+#if INO_DEBUG
     String info() const;
 #endif
-    
+
     struct Entry {
+	// Name of this entry.
 	String name;
+
+	// Corresponding eindex plus 1. Might be larger than the number of
+	// elements in the router, because of fake directories added for
+	// compound "elements".
 	uint16_t elementno_plus1;
+
+	// '_x[i].xindex' equals the index in _x of the entry for element
+	// number 'i - 1'.
 	uint16_t xindex;
+
+	// Number of child entries. 'name' is guaranteed to be a prefix of
+	// every child entry.
 	uint16_t skip;
+
+	// See enum below. X_FAKE is true on fake directories added for
+	// compound elements; X_HANDLER_CONFLICT is true if this element name
+	// conflicts with a handler; X_SUBDIR_CONFLICTS_CALCULATED is true if
+	// we've already checked for name conflicts on this element's
+	// children.
 	uint16_t flags;
     };
-
+    
   private:
 
     enum { X_FAKE = 1, X_HANDLER_CONFLICT = 2, X_SUBDIR_CONFLICTS_CALCULATED = 4 };

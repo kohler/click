@@ -269,7 +269,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     _proxied_handler = proxied_handler_name(canonical_name);
     _proxied_errh = &errh;
     
-    int hid = router()->find_handler(_proxy, _proxied_handler);
+    int hid = Router::hindex(_proxy, _proxied_handler);
     
     if (errh.nerrors() > 0)
       return transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
@@ -300,8 +300,8 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     hname = canonical_name;
 
   // Then find handler.
-  int hid = router()->find_handler(e, hname);
-  if (hid < 0 || !router()->handler(hid).visible())
+  int hid = Router::hindex(e, hname);
+  if (hid < 0 || !router()->handler(hid)->visible())
     return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + full_name + "'");
 
   // Return.
@@ -316,16 +316,16 @@ ControlSocket::read_command(int fd, const String &handlername)
   int hid = parse_handler(fd, handlername, &e);
   if (hid < 0)
     return hid;
-  const Router::Handler &h = router()->handler(hid);
-  if (!h.read_visible())
+  const Router::Handler *h = router()->handler(hid);
+  if (!h->read_visible())
     return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' write-only");
 
   // collect errors from proxy
   ControlSocketErrorHandler errh;
-  _proxied_handler = h.name();
+  _proxied_handler = h->name();
   _proxied_errh = &errh;
   
-  String data = h.call_read(e);
+  String data = h->call_read(e);
 
   // did we get an error message?
   if (errh.nerrors() > 0)
@@ -344,8 +344,8 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
   int hid = parse_handler(fd, handlername, &e);
   if (hid < 0)
     return hid;
-  const Router::Handler &h = router()->handler(hid);
-  if (!h.writable())
+  const Router::Handler *h = router()->handler(hid);
+  if (!h->writable())
     return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' read-only");
 
   if (_read_only)
@@ -359,7 +359,7 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
   ControlSocketErrorHandler errh;
   
   // call handler
-  int result = h.call_write(data, e, &errh);
+  int result = h->call_write(data, e, &errh);
 
   // add a generic error message for certain handler codes
   int code = errh.error_code();
@@ -398,9 +398,9 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
     int hid = parse_handler(fd, hname, &e);
     if (hid < 0)
       return 0;			// error messages already reported
-    const Router::Handler &h = router()->handler(hid);
-    ok = (h.visible() && (write ? h.write_visible() : h.read_visible()));
-    any_visible = h.visible();
+    const Router::Handler *h = router()->handler(hid);
+    ok = (h->visible() && (write ? h->write_visible() : h->read_visible()));
+    any_visible = h->visible();
   }
 
   // remember _read_only!

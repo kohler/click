@@ -224,24 +224,19 @@ stop_global_handler(const String &s, Element *, void *, ErrorHandler *)
 // report handler results
 
 static int
-call_read_handler(Element *e, String handler_name, Router *r,
+call_read_handler(Element *e, String handler_name,
 		  bool print_name, ErrorHandler *errh)
 {
-  int hi = r->find_handler(e, handler_name);
-  if (hi < 0)
-    return errh->error("no `%s' handler", Router::Handler::unparse_name(e, handler_name).cc());
-
-  const Router::Handler &rh = r->handler(hi);
-  String full_name = rh.unparse_name(e);
-  
-  if (!rh.visible())
+  const Router::Handler *rh = Router::handler(e, handler_name);
+  String full_name = Router::Handler::unparse_name(e, handler_name);
+  if (!rh || !rh->visible())
     return errh->error("no `%s' handler", full_name.cc());
-  else if (!rh.read_visible())
+  else if (!rh->read_visible())
     return errh->error("`%s' is a write handler", full_name.cc());
-  String result = rh.call_read(e);
 
   if (print_name)
     fprintf(stdout, "%s:\n", full_name.cc());
+  String result = rh->call_read(e);
   fputs(result.cc(), stdout);
   if (print_name)
     fputs("\n", stdout);
@@ -259,10 +254,9 @@ expand_handler_elements(const String &pattern, const String &handler_name,
     const String &id = router->ename(i);
     if (glob_match(id, pattern)) {
       any_elements = true;
-      Element *e = router->element(i);
-      int hi = router->find_handler(e, handler_name);
-      if (hi >= 0 && router->handler(hi).read_visible())
-	elements.push_back(e);
+      if (const Router::Handler *h = Router::handler(router->element(i), handler_name))
+	if (h->read_visible())
+	  elements.push_back(router->element(i));
     }
   }
   return any_elements;
@@ -280,7 +274,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
   for (int i = 0; i < handlers.size(); i++) {
     int dot = handlers[i].find_left('.');
     if (dot < 0) {
-      call_read_handler(0, handlers[i], router, print_names, errh);
+      call_read_handler(0, handlers[i], print_names, errh);
       continue;
     }
     
@@ -296,7 +290,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
       errh->error("no element matching `%s'", element_name.cc());
 
     for (int j = 0; j < elements.size(); j++)
-      call_read_handler(elements[j], handler_name, router, print_names, errh);
+      call_read_handler(elements[j], handler_name, print_names, errh);
   }
 
   return (errh->nerrors() == before ? 0 : -1);
@@ -519,14 +513,14 @@ particular purpose.\n");
     router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + ports.size()), "unix, " + cp_quote(unix_sockets[i]), "click");
 
   // add global handlers
-  Router::add_global_read_handler("version", read_global_handler, (void *)GH_VERSION);
-  Router::add_global_read_handler("list", read_global_handler, (void *)GH_LIST);
-  Router::add_global_read_handler("classes", read_global_handler, (void *)GH_CLASSES);
-  Router::add_global_read_handler("config", read_global_handler, (void *)GH_CONFIG);
-  Router::add_global_read_handler("flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
-  Router::add_global_read_handler("packages", read_global_handler, (void *)GH_PACKAGES);
-  Router::add_global_read_handler("requirements", read_global_handler, (void *)GH_REQUIREMENTS);
-  Router::add_global_write_handler("stop", stop_global_handler, 0);
+  Router::add_read_handler(0, "version", read_global_handler, (void *)GH_VERSION);
+  Router::add_read_handler(0, "list", read_global_handler, (void *)GH_LIST);
+  Router::add_read_handler(0, "classes", read_global_handler, (void *)GH_CLASSES);
+  Router::add_read_handler(0, "config", read_global_handler, (void *)GH_CONFIG);
+  Router::add_read_handler(0, "flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
+  Router::add_read_handler(0, "packages", read_global_handler, (void *)GH_PACKAGES);
+  Router::add_read_handler(0, "requirements", read_global_handler, (void *)GH_REQUIREMENTS);
+  Router::add_write_handler(0, "stop", stop_global_handler, 0);
 
   // catch control-C and SIGTERM
   signal(SIGINT, catch_signal);

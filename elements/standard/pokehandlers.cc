@@ -119,46 +119,44 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
     ErrorHandler *errh = ErrorHandler::default_handler();
     Router *router = poke->router();
 
-    int h = poke->_pos;
+    int hpos = poke->_pos;
     do {
-	Element *he = poke->_h_element[h];
-	const String &hname = poke->_h_handler[h];
+	Element *he = poke->_h_element[hpos];
+	const String &hname = poke->_h_handler[hpos];
 
 	if (he == STOP_MARKER) {
 	    router->please_stop_driver();
-	    h++;
+	    hpos++;
 	    break;
 	} else if (he == LOOP_MARKER) {
-	    h = 0;
+	    hpos = 0;
 	    break;
 	}
 
-	int i = router->find_handler(he, hname);
-	if (i < 0)
+	const Router::Handler *h = Router::handler(he, hname);
+	if (!h)
 	    errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
-	else if (poke->_h_value[h].data() == READ_MARKER) {
-	    const Router::Handler &rh = router->handler(i);
-	    if (rh.readable()) {
+	else if (poke->_h_value[hpos].data() == READ_MARKER) {
+	    if (h->readable()) {
 		ErrorHandler *errh = ErrorHandler::default_handler();
-		String value = rh.call_read(he);
-		errh->message("%s:\n%s\n", rh.unparse_name(he).cc(), value.cc());
+		String value = h->call_read(he);
+		errh->message("%s:\n%s\n", h->unparse_name(he).cc(), value.cc());
 	    } else
-		errh->error("%s: no read handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
+		errh->error("%s: no read handler `%s'", poke->id().cc(), h->unparse_name(he).cc());
 	} else {
-	    const Router::Handler &rh = router->handler(i);
-	    if (rh.writable()) {
+	    if (h->writable()) {
 		ContextErrorHandler cerrh
-		    (errh, "In write handler `" + rh.unparse_name(he) + "':");
-		rh.call_write(poke->_h_value[h], he, &cerrh);
+		    (errh, "In write handler `" + h->unparse_name(he) + "':");
+		h->call_write(poke->_h_value[hpos], he, &cerrh);
 	    } else
-		errh->error("%s: no write handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
+		errh->error("%s: no write handler `%s'", poke->id().cc(), h->unparse_name(he).cc());
 	}
-	h++;
-    } while (h < poke->_h_timeout.size() && poke->_h_timeout[h] == 0);
+	hpos++;
+    } while (hpos < poke->_h_timeout.size() && poke->_h_timeout[hpos] == 0);
 
-    if (h < poke->_h_timeout.size())
-	poke->_timer.schedule_after_ms(poke->_h_timeout[h]);
-    poke->_pos = h;
+    if (hpos < poke->_h_timeout.size())
+	poke->_timer.schedule_after_ms(poke->_h_timeout[hpos]);
+    poke->_pos = hpos;
 }
 
 CLICK_ENDDECLS

@@ -217,14 +217,14 @@ click_init_config()
   lexer = new Lexer(click_logged_errh);
   export_elements(lexer);
   
-  Router::add_global_read_handler("classes", read_classes, 0);
-  Router::add_global_read_handler("config", read_config, 0);
-  Router::add_global_write_handler("config", write_config, 0);
-  Router::add_global_write_handler("hotconfig", write_config, (void *)1);
+  Router::add_read_handler(0, "classes", read_classes, 0);
+  Router::add_read_handler(0, "config", read_config, 0);
+  Router::add_write_handler(0, "config", write_config, 0);
+  Router::add_write_handler(0, "hotconfig", write_config, (void *)1);
   Router::change_handler_flags(0, "config", 0, HANDLER_REREAD | HANDLER_WRITE_UNLIMITED);
   Router::change_handler_flags(0, "hotconfig", 0, HANDLER_WRITE_UNLIMITED);
-  Router::add_global_read_handler("list", read_list, 0);
-  Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
+  Router::add_read_handler(0, "list", read_list, 0);
+  Router::add_read_handler(0, "flatconfig", read_flatconfig, 0);
   
   click_config_generation = 1;
   current_config = new String;

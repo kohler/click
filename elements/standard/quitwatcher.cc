@@ -72,8 +72,8 @@ QuitWatcher::run_timer()
 {
   String unscheduled_string = "false\n";
   for (int i = 0; i < _e.size(); i++) {
-    const Router::Handler &h = router()->handler(_handlers[i]);
-    String s = h.call_read(_e[i]);
+    const Router::Handler *h = router()->handler(_handlers[i]);
+    String s = h->call_read(_e[i]);
     if (s == unscheduled_string) {
       router()->please_stop_driver();
       return;

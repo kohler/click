@@ -38,7 +38,8 @@ class Router { public:
   bool initialized() const			{ return _initialized; }
   
   int nelements() const				{ return _elements.size(); }
-  Element *element(int) const;
+  static Element *element(const Router *, int);	// returns 0 on bad index
+  Element *element(int e) const			{ return element(this, e); }
   const String &ename(int) const;
   const String &elandmark(int) const;
   const Vector<Element *> &elements() const	{ return _elements; }
@@ -67,30 +68,23 @@ class Router { public:
   void take_state(Router *, ErrorHandler *);
 
   // handlers
-  static const Handler *handlerp(const Router *, int);
-  const Handler *handlerp(int hi) const		{ return handlerp(this,hi); }
-  static bool handler_ok(const Router *r, int hi) { return handlerp(r,hi)!=0; }
-  bool handler_ok(int hi) const			{ return handlerp(this,hi)!=0;}
-  static const Handler &handler(const Router *, int);
-  const Handler &handler(int) const;
-  static void element_handlers(const Router *, int, Vector<int> &);
-  void element_handlers(int, Vector<int> &) const;
-  int nhandlers() const				{ return _nhandlers; }
-
-  void add_read_handler(int, const String &, ReadHandler, void *);
-  void add_write_handler(int, const String &, WriteHandler, void *);
-  static int change_handler_flags(Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
-  
   enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
-  static const Handler &global_handler(int hi)	{ return *handlerp(0, hi); }
+  int nhandlers() const				{ return _nhandlers; }
   static int nglobal_handlers();
-  static void add_global_read_handler(const String &, ReadHandler, void *);
-  static void add_global_write_handler(const String &, WriteHandler, void *);
-  static void cleanup_global_handlers();
+  static int hindex(const Element *, const String &);
+  static void element_hindexes(const Element *, Vector<int> &);
 
-  static int find_handler(Element *, const String &);
-  static int find_handler(Router *, int eindex, const String &);
-  static int find_global_handler(const String &);
+  // NB: 'Handler *' pointers last only until a new handler is added!
+  static const Handler *handler(const Router *, int);
+  static const Handler *handler(const Element *, int);
+  const Handler *handler(int) const;
+  static const Handler *handler(const Element *, const String &);
+  
+  static void add_read_handler(const Element *, const String &, ReadHandler, void *);
+  static void add_write_handler(const Element *, const String &, WriteHandler, void *);
+  static int change_handler_flags(const Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
+  
+  static void cleanup_global_handlers();
 
   // thread(-1) is the quiescent thread
   int nthreads() const				{ return _threads.size() - 1; }
@@ -249,12 +243,14 @@ class Router { public:
   
   String context_message(int element_no, const char *) const;
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
-  
+
+  // private handler methods
   void initialize_handlers(bool, bool);
   int find_ehandler(int, const String &, bool star_ok = false) const;
-  static Handler fetch_handler(const Router *, int, const String &);
-  void store_handler(int, const Handler &);
+  static inline Handler fetch_handler(const Element *, const String &);
+  void store_local_handler(int, const Handler &);
   static void store_global_handler(const Handler &);
+  static inline void store_handler(const Element *, const Handler &);
 
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
@@ -336,32 +332,16 @@ Router::find(const String &name, ErrorHandler *errh) const
   return find(name, "", errh);
 }
 
-inline const Router::Handler &
-Router::handler(const Router *r, int hi)
+inline const Router::Handler *
+Router::handler(const Element *e, int hi)
 {
-  if (hi < FIRST_GLOBAL_HANDLER) {
-    assert(r && hi >= 0 && hi < r->_nhandlers);
-    return r->_handlers[hi];
-  } else
-    return global_handler(hi);
+  return handler(e ? e->router() : 0, hi);
 }
 
-inline const Router::Handler &
+inline const Router::Handler *
 Router::handler(int hi) const
 {
   return handler(this, hi);
-}
-
-inline int
-Router::find_handler(Element *e, const String &n)
-{
-  return find_handler((e ? e->router() : 0), (e ? e->eindex() : -1), n);
-}
-
-inline void
-Router::element_handlers(int ei, Vector<int> &hv) const
-{
-  return element_handlers(this, ei, hv);
 }
 
 inline

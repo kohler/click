@@ -557,13 +557,13 @@ Element::selected(int)
 void
 Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
 {
-  router()->add_read_handler(eindex(), name, h, thunk);
+  Router::add_read_handler(this, name, h, thunk);
 }
 
 void
 Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 {
-  router()->add_write_handler(eindex(), name, h, thunk);
+  Router::add_write_handler(this, name, h, thunk);
 }
 
 static String
@@ -612,12 +612,12 @@ read_handlers_handler(Element *e, void *)
 {
   Vector<int> handlers;
   Router *r = e->router();
-  r->element_handlers(e->eindex(), handlers);
+  Router::element_hindexes(e, handlers);
   StringAccum sa;
   for (int i = 0; i < handlers.size(); i++) {
-    const Router::Handler &h = r->handler(handlers[i]);
-    if (h.read_visible() || h.write_visible())
-      sa << h.name() << '\t' << (h.read_visible() ? "r" : "") << (h.write_visible() ? "w" : "") << '\n';
+    const Router::Handler *h = r->handler(handlers[i]);
+    if (h->read_visible() || h->write_visible())
+      sa << h->name() << '\t' << (h->read_visible() ? "r" : "") << (h->write_visible() ? "w" : "") << '\n';
   }
   return sa.take_string();
 }

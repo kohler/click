@@ -148,9 +148,8 @@ click_inode(struct super_block *sb, ino_t ino)
 
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
-	if (Router::handler_ok(click_router, hi)) {
-	    const Router::Handler &h = Router::handler(click_router, hi);
-	    inode->i_mode = S_IFREG | (h.read_visible() ? click_mode_r : 0) | (h.write_visible() ? click_mode_w : 0);
+	if (const Router::Handler *h = Router::handler(click_router, hi)) {
+	    inode->i_mode = S_IFREG | (h->read_visible() ? click_mode_r : 0) | (h->write_visible() ? click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
 	    inode->i_op = &click_handler_inode_ops;
 #ifdef LINUX_2_4
@@ -499,7 +498,7 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = -EACCES;
     else if (inode_out_of_date(inode))
 	retval = -EIO;
-    else if (!(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino))))
+    else if (!(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
 	retval = -EIO;
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
@@ -536,13 +535,13 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	const Router::Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
 	if (inode_out_of_date(inode)
-	    || !(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino))))
+	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
 	    retval = -EIO;
 	else if (!h->read_visible())
 	    retval = -EPERM;
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
-	    Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
+	    Element *e = Router::element(click_router, eindex);
 	    handler_strings[stringno] = h->call_read(e);
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
@@ -621,14 +620,14 @@ handler_flush(struct file *filp)
 	const Router::Handler *h;
 	
 	if (inode_out_of_date(inode)
-	    || !(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino)))
+	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))
 	    || !h->write_visible())
 	    retval = -EIO;
 	else if (handler_strings[stringno].out_of_memory())
 	    retval = -ENOMEM;
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
-	    Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
+	    Element *e = Router::element(click_router, eindex);
 	    String context_string = "In write handler `" + h->name() + "'";
 	    if (e)
 		context_string += String(" for `") + e->declaration() + "'";
@@ -725,6 +724,14 @@ proc_click_readlink_proc(proc_dir_entry *, char *page)
 }
 #endif
 
+#if INO_DEBUG
+static String
+read_ino_info(Element *, void *)
+{
+    return click_ino.info();
+}
+#endif
+
 } // extern "C"
 
 
@@ -734,6 +741,10 @@ int
 init_clickfs()
 {
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
+
+#if INO_DEBUG
+    Router::add_read_handler(0, "ino_info", read_ino_info, 0);
+#endif
     
 #ifdef LINUX_2_4
     click_superblock_ops.put_inode = force_delete;
@@ -790,7 +801,7 @@ init_clickfs()
     if (proc_dir_entry *link = create_proc_entry("click", S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, 0))
 	link->readlink_proc = proc_click_readlink_proc;
 #endif
-    
+
     return 0;
 }
 
