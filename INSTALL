@@ -11,7 +11,9 @@ communicate with the network. See the end of this document for portability
 notes for other architectures.) The Linux kernel module requires a patched
 Linux 2.2 system; we've tested on the recent 2.2.19 Linux kernels. We also
 distribute a Linux 2.4 patch, which we are working on, but as of now, Linux
-2.4 support is not as stable as Linux 2.2 support.
+2.4 support is not as stable as Linux 2.2 support. Finally, the preliminary
+FreeBSD Click kernel module compiles against unpatched FreeBSD-STABLE
+versions after 440002.
 
 First, run
 

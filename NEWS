@@ -1,15 +1,26 @@
 Click NEWS
 
-Version 1.2.3
+Version 1.2.3   4.Dec.2001
 
-* General
+* Drivers
 
-** General configuration cleanup: Split config.h into multiple files to
-   reduce needless recompilation; regularize symbols.
+** Linux kernel module: Rename Click kernel threads to "kclick".
 
-** Task improvements should make everything a bit more robust. For example,
-   Task::unschedule() always unschedules the task right away; it grabs a
-   lock.
+** User-level driver: Add `-e' option.
+
+** Various Linux 2.4 improvements.
+
+** FreeBSD driver is coming along nicely. You should compile this version
+   of the driver against an *unmodified* FreeBSD kernel (RELENG_4 branch,
+   version 440002 or later). Thanks to Luigi Rizzo, some of the
+   improvements in the Click kernel patch have been checked in to the
+   latest FreeBSD source! Bug fixes: can handle chained mbufs, etc.
+
+** Better support for cross-compiling tools, via the `--enable-tools'
+   configuration switch.
+
+** Linux kernel module: Bug fixes, from Mazu, for dynamic installation and
+   removal of devices, and for receiving large packets.
 
 * Elements
 
@@ -67,25 +78,14 @@ Version 1.2.3
    language supports `${VAR-DEFAULT}' variable reference syntax, which uses
    the text `DEFAULT' if `$VAR' is not set.
 
-* Drivers
+* General
 
-** Linux kernel module: Rename Click kernel threads to "kclick".
+** General configuration cleanup: Split config.h into multiple files to
+   reduce needless recompilation; regularize symbols.
 
-** User-level driver: Add `-e' option.
-
-** Various Linux 2.4 improvements.
-
-** FreeBSD driver is coming along nicely. You should compile this version
-   of the driver against an *unmodified* FreeBSD kernel (RELENG_4 branch,
-   version 440002 or later). Thanks to Luigi Rizzo, some of the
-   improvements in the Click kernel patch have been checked in to the
-   latest FreeBSD source! Bug fixes: can handle chained mbufs, etc.
-
-** Better support for cross-compiling tools, via the `--enable-tools'
-   configuration switch.
-
-** Linux kernel module: Bug fixes, from Mazu, for dynamic installation and
-   removal of devices.
+** Task improvements should make everything a bit more robust. For example,
+   Task::unschedule() always unschedules the task right away; it grabs a
+   lock.
 
 * Grid
 
