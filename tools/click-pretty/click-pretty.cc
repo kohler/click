@@ -108,7 +108,7 @@ P.ei, P.eit {\n\
 P.et {\n\
   font-family: sans-serif;\n\
 }\n\
-TABLE.conntable {\n\
+TABLE.conntable TR TD {\n\
   font-family: sans-serif;\n\
   font-size: small;\n\
 }\n\
@@ -176,6 +176,8 @@ TABLE.conntable {\n\
   nooutputconnection='not connected'\n\
   column='2/2'\n\
   /-->\n\
+</td></tr>\n\
+</table>\n\
 </body>\n\
 </html>\n";
 
@@ -1016,7 +1018,9 @@ pretty_process(const char *infile, const char *outfile,
 	    for (int d = Driver::COUNT - 1; d >= 0; d--)
 		if (driver_mask & (1 << d))
 		    driver = d;
-	    if (!emap.driver_indifferent(r, driver_mask, errh))
+	    // don't complain if only a single driver works
+	    if ((driver_mask & (driver_mask - 1)) != 0
+		&& !emap.driver_indifferent(r, driver_mask, errh))
 		errh->warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(driver));
 	}
     } else if (!emap.driver_compatible(r, driver))
