@@ -236,8 +236,9 @@ main(int argc, char **argv)
       ral.calc_output();
     } while (ral.calc_input());
 
-    // skip redundant Aligns
     bool changed = false;
+    
+    // skip redundant Aligns
     Vector<Hookup> &hf = router->hookup_from();
     Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
@@ -260,8 +261,18 @@ main(int argc, char **argv)
     router->remove_bad_connections();
     router->remove_duplicate_connections();
   }
+
+  // remove unused Aligns, which have no input
+  {
+    Vector<int> ninputs, noutputs;
+    router->count_ports(ninputs, noutputs);
+    int nelem = router->nelements();
+    for (int i = 0; i < nelem; i++)
+      if (router->etype(i) == align_tindex && ninputs[i] == 0)
+	router->element(i).type = -1;
+    router->remove_blank_elements();
+  }
   
-    
   RouterAlign ral(router, errh);
   do {
     ral.calc_output();
