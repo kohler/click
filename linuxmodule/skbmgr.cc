@@ -81,7 +81,7 @@ class RecycledSkbPool { public:
   void recycle(struct sk_buff *, bool);
 
 #ifdef __MTCLICK__ 
-  static int find_consumer(int, int);
+  static int find_producer(int, int);
 #endif
   
   friend  struct sk_buff * 
@@ -272,7 +272,7 @@ skb_recycle_fast(struct sk_buff *skb)
 #ifdef __MTCLICK__
 
 static inline int
-RecycledSkbPool::find_consumer(int cpu, int bucket)
+RecycledSkbPool::find_producer(int cpu, int bucket)
 {
   int max_skbs = 0;
   int max_pool = -1;
@@ -409,18 +409,18 @@ skbmgr_allocate_skbs(unsigned size, int *want)
 #ifdef __MTCLICK__
   int cpu = current->processor;
   int producer = cpu;
-
   size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
   int bucket = RecycledSkbPool::size_to_higher_bucket(size);
 
-  if (pool[producer].bucket(bucket).size() < *want && smp_num_cpus > 1) {
+  int w = *want;
+  if (pool[producer].bucket(bucket).size() < w) {
     if (pool[cpu]._last_producer < 0 ||
-	pool[pool[cpu]._last_producer].bucket(bucket).size() < *want)
-      RecycledSkbPool::find_consumer(cpu, bucket);
+	pool[pool[cpu]._last_producer].bucket(bucket).size() < w)
+      RecycledSkbPool::find_producer(cpu, bucket);
     if (pool[cpu]._last_producer >= 0)
       producer = pool[cpu]._last_producer;
   }
-  return pool[producer].allocate(size, *want, want);
+  return pool[producer].allocate(size, w, want);
 #else
   return pool.allocate(size, *want, want);
 #endif
