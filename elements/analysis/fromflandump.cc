@@ -42,13 +42,11 @@
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromFlanDump::FromFlanDump()
-    : Element(0, 1),
-      _flid(0), _time(0), _size(0), _flags(0),
-      _saddr(0), _sport(0), _daddr(0), _dport(0),
-      _ct_pkt(0), _ct_bytes(0),
-      _task(this), _pipe(0)
+    : Element(0, 1), _task(this)
 {
     MOD_INC_USE_COUNT;
+    for (int i = 0; i < FF_LAST; i++)
+	_ff[i] = 0;
 }
 
 FromFlanDump::~FromFlanDump()
@@ -63,7 +61,7 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool have_packets = false, packets, have_flows = false, flows;
     
     if (cp_va_parse(conf, this, errh,
-		    cpFilename, "dump directory name", &_filename,
+		    cpFilename, "dump directory name", &_dirname,
 		    cpKeywords,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
@@ -89,18 +87,56 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
+FromFlanDump::FlanFile::FlanFile()
+    : _fd(-1), _buffer(0), _offset(0), _len(0), _pipe(0), _my_buffer(true)
+{
+}
+
+void
 FromFlanDump::FlanFile::~FlanFile()
 {
-    if (fd >= 0)
-	close(fd);
-    delete[] buffer;
+    if (_pipe)
+	pclose(_pipe);
+    else if (_fd >= 0)
+	close(_fd);
+    if (_my_buffer)
+	delete[] _buffer;
 }
+
+int
+FromFlanDump::FlanFile::open(const String &basename, const String &filename, int record_size, ErrorHandler *errh)
+{
+    assert(!_pipe && _fd < 0);
+    _record_size = record_size;
+    
+    String path = basename;
+    if (basename.back() != '/')
+	path += "/";
+    path += filename;
+
+    // look for compressed versions
+    if (access(path.cc(), R_OK) >= 0) {
+	_fd = open(path.cc(), O_RDONLY);
+	if (_fd < 0)
+	    return errh->error("%s: %s", path.cc(), strerror(errno));
+    } else if (access((path + ".gz").cc(), R_OK) >= 0) {
+	char buf[3] = "\037\213";
+	_pipe = open_uncompress_pipe(path + ".gz", (unsigned char *)buf, 2, errh);
+	return (_fd = (_pipe ? fileno(_pipe) : -1));
+    } else if (access((path + ".bz2").cc(), R_OK) >= 0) {
+	char buf[3] = "BZh";
+	_pipe = open_uncompress_pipe(path + ".bz2", (unsigned char *)buf, 3, errh);
+	return (_fd = (_pipe ? fileno(_pipe) : -1));
+    } else
+	return errh->error("%s: no such file", path.cc());
+}
+
 
 int
 FromFlanDump::error_helper(ErrorHandler *errh, const char *x)
 {
     if (errh)
-	errh->error("%s: %s", _filename.cc(), x);
+	errh->error("%s: %s", _dirname.cc(), x);
     else
 	click_chatter("%s: %s", declaration().cc(), x);
     return -1;
@@ -163,6 +199,7 @@ FromFlanDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
 int
 FromFlanDump::initialize(ErrorHandler *errh)
 {
+    
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
 	_filename = "<stdin>";
@@ -224,17 +261,8 @@ FromFlanDump::initialize(ErrorHandler *errh)
 void
 FromFlanDump::cleanup(CleanupStage)
 {
-    if (_pipe)
-	pclose(_pipe);
-    else if (_fd >= 0 && _fd != STDIN_FILENO)
-	close(_fd);
-    _fd = -1;
-    _pipe = 0;
-    if (_packet)
-	_packet->kill();
-    if (_data_packet)
-	_data_packet->kill();
-    _packet = _data_packet = 0;
+    for (int i = 0; i < FF_LAST; i++)
+	delete _ff[i];
 }
 
 void
@@ -266,23 +294,43 @@ swapq(uint64_t q)
 #endif
 }
 
-void
-FromFlanDump::stamp_to_timeval(uint64_t stamp, struct timeval &tv) const
+Packet *
+FromFlanDump::read_flow_packet()
 {
-    tv.tv_sec = (uint32_t) (stamp >> 32);
-    tv.tv_usec = (uint32_t) ((stamp * 1000000) >> 32);
-}
+    if (_record >= _last_record) {
+	assert(_record == _last_record);
+	_last_record = 0;
+	for (int i = FF_FIRST_FLOW; i < FF_LAST_FLOW; i++)
+	    if (_ff[i]) {
+		_ff[i]->read_more(_record);
+		if (_last_record == 0 || _ff[i]->last_record() < _last_record)
+		    _last_record = _ff[i]->last_record();
+	    }
+	if (_record >= _last_record)
+	    return 0;
+    }
 
-void
-FromFlanDump::prepare_times(struct timeval &tv)
-{
-    if (_first_time_relative)
-	timeradd(&tv, &_first_time, &_first_time);
-    if (_last_time_relative)
-	timeradd(&tv, &_last_time, &_last_time);
-    else if (_last_time_interval)
-	timeradd(&_first_time, &_last_time, &_last_time);
-    _have_any_times = true;
+    WritablePacket *q = Packet::make(0, sizeof(click_ip) + sizeof(click_tcp));
+    if (!q) {
+	error_helper("out of memory!");
+	return 0;
+    }
+    
+    q->set_network_header(q->data(), sizeof(click_ip));
+    click_ip *iph = q->ip_header();
+    iph->ip_v = 4;
+    iph->ip_hl = (sizeof(click_ip) >> 2);
+    if (_ff[FF_SADDR])
+	iph->ip_src.s_addr = _ff[FF_SADDR]->read_uint32(_record);
+    if (_ff[FF_DADDR])
+	iph->ip_dst.s_addr = _ff[FF_DADDR]->read_uint32(_record);
+
+    click_tcp *tcph = q->tcp_header();
+    if (_ff[FF_SPORT])
+	tcph->th_sport = _ff[FF_SPORT]->read_uint16(_record);
+    if (_ff[FF_DPORT])
+	tcph->th_dport = _ff[FF_DPORT]->read_uint16(_record);
+	
 }
 
 bool

@@ -8,7 +8,7 @@ class HandlerCall;
 /*
 =c
 
-FromFlanDump(FILENAME [, TIMING, I<KEYWORDS>])
+FromFlanDump(FILENAME [, I<KEYWORDS>])
 
 =s analysis
 
@@ -163,25 +163,30 @@ class FromFlanDump : public Element { public:
     static const int SAMPLING_SHIFT = 28;
     
     struct FlanFile {
-	int fd;
-	const uint8_t *buffer;
-	uint32_t pos;
-	uint32_t len;
-	FlanFile()		: fd(-1), buffer(0) { }
+	int _fd;
+	const uint8_t *_buffer;
+	off_t _offset;
+	uint32_t _len;
+	FILE *_pipe;
+	bool _my_buffer;
+	int _record_size;
+	FlanFile();
 	~FlanFile();
+	int open(const String &basename, const String &filename, int record_size, ErrorHandler *);
+	off_t last_record() const;
+	uint16_t read_uint16(off_t) const;
+	uint32_t read_uint32(off_t) const;
     };
 
-    FlanFile *_flid;
-    FlanFile *_time;
-    FlanFile *_size;
-    FlanFile *_flags;
-    
-    FlanFile *_saddr;
-    FlanFile *_sport;
-    FlanFile *_daddr;
-    FlanFile *_dport;
-    FlanFile *_ct_pkt;
-    FlanFile *_ct_bytes;
+    enum { FF_FLID = 0, FF_TIME, FF_SIZE, FF_FLAGS,
+	   FF_SADDR, FF_DADDR, FF_DPORT, FF_CT_PKT, FF_CT_BYTES, FF_BEG,
+	   FF_FIRST_PKT = FF_FLID, FF_LAST_PKT = FF_FLAGS + 1,
+	   FF_FIRST_FLOW = FF_SADDR, FF_LAST_FLOW = FF_BEG + 1,
+	   FF_LAST = FF_LAST_FLOW };
+    FlanFile *_ff[FF_LAST];
+
+    off_t _record;
+    off_t _last_record;
 
     bool _flows : 1;
     bool _swapped : 1;
@@ -194,20 +199,34 @@ class FromFlanDump : public Element { public:
     Task _task;
 
     struct timeval _time_offset;
-    String _filename;
-    off_t _file_offset;
+    String _dirname;
 
     int error_helper(ErrorHandler *, const char *);
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
 
-    void stamp_to_timeval(uint64_t, struct timeval &) const;
-    void prepare_times(struct timeval &);
-
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
+
+inline off_t
+FromFlanDump::FlanFile::last_record() const
+{
+    return (_offset + _len) / _record_size;
+}
+
+inline uint16_t
+FromFlanDump::FlanFile::read_uint16(off_t o) const
+{
+    return *reinterpret_cast<const uint16_t *>(_buffer + o<<1 - _offset);
+}
+
+inline uint32_t
+FromFlanDump::FlanFile::read_uint32(off_t o) const
+{
+    return *reinterpret_cast<const uint16_t *>(_buffer + o<<2 - _offset);
+}
 
 #endif
