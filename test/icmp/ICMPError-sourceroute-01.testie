@@ -10,7 +10,7 @@ FromIPSummaryDump(IN1, STOP true, ZERO true)
 "
 
 %file IN1
-!data src sport dst dport proto ip_opt ttl
+!data src sport dst dport proto ip_opt ip_ttl
 18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60,128.4.49.61,^1.2.3.4,5.6.7.8} 0
 
 %expect OUT1

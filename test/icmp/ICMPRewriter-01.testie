@@ -1,0 +1,24 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> IPPrint(a)
+	-> ip :: IPRewriter(pattern 21.0.0.1 1024-65535 - - 0 0)
+	-> IPPrint(b)
+	-> ICMPError(19.19.19.19, timeexceeded)
+	-> IPPrint(c)
+	-> ICMPRewriter(ip)
+	-> IPPrint(d)
+	-> Discard
+"
+
+%file IN1
+!data src sport dst dport proto ip_ttl
+18.26.4.44 20 10.0.0.8 80 T 0
+
+%expect stderr
+a: 0.000000: 18.26.4.44.20 > 10.0.0.8.80: . {{.*}}
+b: 0.000000: 21.0.0.1.1024 > 10.0.0.8.80: . {{.*}}
+c: {{[\d.]*}}: 19.19.19.19 > 21.0.0.1: icmp{{.*}}
+d: {{[\d.]*}}: 19.19.19.19 > 18.26.4.44: icmp{{.*}}
