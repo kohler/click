@@ -1,3 +1,15 @@
+2003-07-22 Tuesday 19:02  Eddie Kohler <kohler@icir.org>
+
+	* elements/: standard/simplequeue.cc (1.6), standard/simplequeue.hh
+	(1.6), test/queueyanktest.cc (1.1), test/queueyanktest.hh (1.1):
+	reimplement yank() functionality in a more STL-ish style; only move
+	tail pointer; add yank1() [yank first match]; add validation test
+
+2003-07-22 Tuesday 18:55  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.16): treat undefined strings as empty strings to
+	avoid Perl warnings
+
 2003-07-22 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.211), bsdmodule/Makefile.in (1.26),
