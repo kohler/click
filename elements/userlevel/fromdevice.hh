@@ -17,7 +17,7 @@ CLICK_DECLS
 
 =c
 
-FromDevice(DEVNAME [, PROMISC, SNAPLEN, I<keywords> PROMISC, SNAPLEN, FORCE_IP, BPF_FILTER, OUTBOUND])
+FromDevice(DEVNAME [, I<keywords> SNIFFER, PROMISC, SNAPLEN, FORCE_IP, BPF_FILTER, OUTBOUND])
 
 =s devices
 
@@ -30,13 +30,13 @@ element. For the Linux kernel module element, read the FromDevice(n) manual
 page.
 
 Reads packets from the kernel that were received on the network controller
-named DEVNAME. Puts the device in promiscuous mode if PROMISC (a Boolean) is
-true. PROMISC defaults to false. On some systems, packets larger than SNAPLEN
-will be truncated; default SNAPLEN is 2046 bytes.
+named DEVNAME.
 
-The kernel networking code sees all of the packets that FromDevice
-produces; be careful that at most one of Click and the kernel forwards each
-packet.
+User-level FromDevice is like a packet sniffer.  Packets emitted by FromDevice
+are also received and processed by the kernel.  Thus, it doesn't usually make
+sense to run a router with user-level Click, since each packet will get
+processed twice (once by Click, once by the kernel).  Install firewalling
+rules in your kernel if you want to prevent this.
 
 Under Linux, a FromDevice element will not receive packets sent by a
 ToDevice element for the same device. Under other operating systems, your
@@ -49,13 +49,21 @@ Keyword arguments are:
 
 =over 8
 
+=item SNIFFER
+
+Boolean.  This placeholder argument will be used in future to specify whether
+FromDevice should run in sniffer mode.  Currently, it must be set to true.
+Default is true.
+
 =item PROMISC
 
-Boolean. Same as the PROMISC argument.
+Boolean.  FromDevice puts the device in promiscuous mode if PROMISC is true.
+The default is false.
 
 =item SNAPLEN
 
-Unsigned integer. Same as the SNAPLEN argument.
+Unsigned.  On some systems, packets larger than SNAPLEN will be truncated.
+Defaults to 2046.
 
 =item FORCE_IP
 

@@ -70,34 +70,37 @@ FromDevice::~FromDevice()
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool promisc = false, outbound = false;
-  _snaplen = 2046;
-  _force_ip = false;
-  String bpf_filter;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_ifname,
-		  cpOptional,
-		  cpBool, "be promiscuous?", &promisc,
-		  cpUnsigned, "maximum packet length", &_snaplen,
-		  cpKeywords,
-		  "PROMISC", cpBool, "be promiscuous?", &promisc,
-		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
-		  "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
-		  "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
-		  "OUTBOUND", cpBool, "emit outbound packets?", &outbound,
-		  cpEnd) < 0)
-    return -1;
-  if (_snaplen > 8190 || _snaplen < 14)
-    return errh->error("maximum packet length out of range");
+    bool promisc = false, outbound = false, sniffer = true;
+    _snaplen = 2046;
+    _force_ip = false;
+    String bpf_filter;
+    if (cp_va_parse(conf, this, errh,
+		    cpString, "interface name", &_ifname,
+		    cpOptional,
+		    cpBool, "be promiscuous?", &promisc,
+		    cpUnsigned, "maximum packet length", &_snaplen,
+		    cpKeywords,
+		    "SNIFFER", cpBool, "act as sniffer?", &sniffer,
+		    "PROMISC", cpBool, "be promiscuous?", &promisc,
+		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
+		    "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
+		    "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
+		    "OUTBOUND", cpBool, "emit outbound packets?", &outbound,
+		    cpEnd) < 0)
+	return -1;
+    if (_snaplen > 8190 || _snaplen < 14)
+	return errh->error("maximum packet length out of range");
 #if FROMDEVICE_PCAP
-  _bpf_filter = bpf_filter;
+    _bpf_filter = bpf_filter;
 #else
-  if (bpf_filter)
-    errh->warning("not using pcap library, BPF filter ignored");
+    if (bpf_filter)
+	errh->warning("not using pcap library, BPF filter ignored");
 #endif
-  _promisc = promisc;
-  _outbound = outbound;
-  return 0;
+    if (!sniffer)
+	return errh->error("SNIFFER must be set to true for now");
+    _promisc = promisc;
+    _outbound = outbound;
+    return 0;
 }
 
 #if FROMDEVICE_LINUX
