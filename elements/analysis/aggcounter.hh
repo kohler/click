@@ -24,7 +24,9 @@ AggregateCounters only update existing counters; they do not create new
 counters for previously unseen aggregate values.
 
 AggregateCounter may have one or two inputs. The optional second input is
-always frozen. (It is only useful when the element is push.)
+always frozen. (It is only useful when the element is push.) If it has two
+inputs, it may also have two outputs. If so, then packets from the second
+input are emitted on the second output.
 
 Keyword arguments are:
 
@@ -114,6 +116,7 @@ class AggregateCounter : public Element { public:
     AggregateCounter *clone() const	{ return new AggregateCounter; }
 
     void notify_ninputs(int);
+    void notify_noutputs(int);
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();

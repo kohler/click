@@ -55,6 +55,12 @@ AggregateCounter::notify_ninputs(int n)
     set_ninputs(n <= 1 ? 1 : 2);
 }
 
+void
+AggregateCounter::notify_noutputs(int n)
+{
+    set_noutputs(n <= 1 || ninputs() == 1 ? 1 : 2);
+}
+
 int
 AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -82,8 +88,6 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 AggregateCounter::initialize(ErrorHandler *errh)
 {
-    if (ninputs() == 2 && !output_is_push(0))
-	return errh->error("have two inputs, but output is pull");
     if (!(_root = new_node())) {
 	uninitialize();
 	return errh->error("out of memory!");
@@ -225,15 +229,18 @@ void
 AggregateCounter::push(int port, Packet *p)
 {
     update(p, _frozen || (port == 1));
-    output(0).push(p);
+    if (port == 0)
+	output(0).push(p);
+    else
+	output(noutputs() - 1).push(p);
 }
 
 Packet *
-AggregateCounter::pull(int)
+AggregateCounter::pull(int port)
 {
-    Packet *p = input(0).pull();
+    Packet *p = input(port).pull();
     if (p)
-	update(p, _frozen);
+	update(p, _frozen || (port == 1));
     return p;
 }
 
