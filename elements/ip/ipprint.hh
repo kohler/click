@@ -60,6 +60,10 @@ false.
 Boolean. Determines whether to print each packet's timestamp in seconds since
 1970. Default is false.
 
+=item PAINT
+
+Boolean. Determines whether to print each packet's paint annotation. Default is false.
+
 =item SWAP
 
 Boolean.  Determines whether to swap bytes before printing the values

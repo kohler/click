@@ -4,26 +4,29 @@
 # include <linux/errno.h>
 #else
 # include <errno.h>
-# include <sys/ioctl.h>
 #endif
 
 /* Click low-level RPC interface */
 
-#define _CLICK_IO(n)				_IO(0xC7, n)
-#define _CLICK_IOR(n, t)			_IOR(0xC7, n, t)
-#define _CLICK_IOW(n, t)			_IOW(0xC7, n, t)
-#define _CLICK_IOWR(n, t)			_IOWR(0xC7, n, t)
-#define _CLICK_IOWRSZ(n, sz)			_IOC(IOC_INOUT, 0xC7, n, sz)
+#define _CLICK_IOC_VOID		0x20000000
+#define _CLICK_IOC_OUT		0x40000000
+#define _CLICK_IOC_IN		0x80000000
 
-#define CLICK_LLRPC_GET_RATE			_CLICK_IOWR(0, int32_t)
+#define _CLICK_IOX(d, g, n, sz)	((d) | ((sz) << 16) | ((g) << 8) | (n))
+#define _CLICK_IO(n)		_CLICK_IOX(_CLICK_IOC_VOID, 0xC7, (n), 0)
+#define _CLICK_IOR(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT, 0xC7, (n), (sz))
+#define _CLICK_IOW(n, sz)	_CLICK_IOX(_CLICK_IOC_IN, 0xC7, (n), (sz))
+#define _CLICK_IOWR(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT, 0xC7, (n), (sz))
+
+#define CLICK_LLRPC_GET_RATE			_CLICK_IOWR(0, 4)
 #define CLICK_LLRPC_GET_RATES			_CLICK_IO(1)
-#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWR(2, int32_t)
+#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWR(2, 4)
 #define CLICK_LLRPC_GET_COUNTS			_CLICK_IO(3)
-#define CLICK_LLRPC_GET_SWITCH			_CLICK_IOR(4, int32_t)
-#define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(5, int32_t)
-#define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(6, int32_t)
-#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRSZ(7, 12)
-#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRSZ(8, 12)
+#define CLICK_LLRPC_GET_SWITCH			_CLICK_IOR(4, 4)
+#define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(5, 4)
+#define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(6, 4)
+#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWR(7, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWR(8, 12)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(9)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(10)
 #define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(11)
@@ -101,4 +104,11 @@ extern "C" {
 
 #endif
 
+/* sanity checks */
+#ifdef __FreeBSD__
+# include <sys/ioctl.h>
+# if _CLICK_IOC_VOID != IOC_VOID || _CLICK_IOC_OUT != IOC_OUT || _CLICK_IOC_IN != IOC_IN
+#  error "bad _CLICK_IOC constants"
+# endif
+#endif
 #endif

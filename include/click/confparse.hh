@@ -4,6 +4,7 @@
 #include <click/string.hh>
 #include <click/vector.hh>
 class ErrorHandler;
+class StringAccum;
 #ifndef CLICK_TOOL
 class Element;
 class Router;
