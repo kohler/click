@@ -57,7 +57,7 @@ class InfiniteSource : public Element { protected:
   
   const char *class_name() const		{ return "InfiniteSource"; }
   const char *processing() const		{ return AGNOSTIC; }
-  const char *flags() const			{ return "S2"; }
+  const char *flags() const			{ return "S1"; }
   void add_handlers();
   
   InfiniteSource *clone() const;

@@ -93,6 +93,32 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 
 static void
+save_element_nports(RouterT *r)
+{
+  Vector<int> ninputs(r->nelements(), 0);
+  Vector<int> noutputs(r->nelements(), 0);
+  
+  int nh = r->nhookup();
+  const Vector<Hookup> &hfrom = r->hookup_from();
+  const Vector<Hookup> &hto = r->hookup_to();
+  for (int i = 0; i < nh; i++) {
+    const Hookup &hf = hfrom[i], &ht = hto[i];
+    if (hf.idx >= 0) {
+      if (hf.port >= noutputs[hf.idx])
+	noutputs[hf.idx] = hf.port + 1;
+      if (ht.port >= ninputs[ht.idx])
+	ninputs[ht.idx] = ht.port + 1;
+    }
+  }
+
+  int nelem = r->nelements();
+  for (int i = 0; i < nelem; i++) {
+    element_ninputs.insert(r->ename(i), ninputs[i]);
+    element_noutputs.insert(r->ename(i), noutputs[i]);
+  }
+}
+
+static void
 remove_static_switches(RouterT *r, ErrorHandler *errh)
 {
   int tindex = r->type_index("StaticSwitch");
@@ -308,6 +334,62 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
   return changed;
 }
 
+static bool
+remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
+			   ErrorHandler *errh)
+{
+  if (tindex < 0)
+    return false;
+  int idle_tindex = r->get_type_index("Idle");
+
+  bool changed = false;
+  for (int ei = 0; ei < r->nelements(); ei++) {
+    if (r->etype(ei) != tindex)
+      continue;
+    if (r->ninputs(ei) != 1) {
+      errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
+      continue;
+    }
+    
+    Vector<int> hnext;
+    Vector<String> args;
+    r->find_connection_vector_from(ei, hnext);
+    r->econfiguration(ei) = "";
+    
+    for (int p = (is_pull_tee ? 1 : 0); p < hnext.size(); p++)
+      if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idle_tindex)) {
+	// remove that tee port
+	int bad_connection = hnext[p];
+	for (int pp = p + 1; pp < hnext.size(); pp++) {
+	  r->change_connection_from(hnext[pp], Hookup(ei, pp - 1));
+	  hnext[pp - 1] = hnext[pp];
+	}
+	if (bad_connection >= 0)
+	  r->kill_connection(bad_connection);
+	hnext.pop_back();
+	p--;
+      }
+    
+    if (hnext.size() == 1) {
+      if (verbose)
+	errh->lerror(r->elandmark(ei), "removing redundant tee `%s'", r->edeclaration(ei).cc());
+      if (is_pull_tee) {
+	Vector<int> hprev;
+	r->find_connection_vector_to(ei, hprev);
+	skip_over_pull(r, Hookup(ei, 0), r->hookup_from(hprev[0]));
+      } else
+	skip_over_push(r, Hookup(ei, 0), r->hookup_to(hnext[0]));
+      r->kill_element(ei);
+      changed = true;
+    }
+
+    // save number of inputs so we don't attach new Idles
+    element_noutputs.insert(r->ename(ei), hnext.size());
+  }
+
+  return changed;
+}
+
 static void
 find_live_elements(const RouterT *r, const char *filename,
 		   const Vector<int> &elementmap_indexes,
@@ -339,12 +421,8 @@ find_live_elements(const RouterT *r, const char *filename,
   for (int ei = 0; ei < r->nelements(); ei++) {
     const ElementT &e = r->element(ei);
     if (e.live()) {
-      // save # of outputs
       int nin = processing.ninputs(ei);
-      element_ninputs.insert(e.name, nin);
       int nout = processing.noutputs(ei);
-      element_noutputs.insert(e.name, nout);
-      
       int source_flag = em->flag_value(r->type_name(e.type), 'S');
 
       if (source_flag == 0) {	// neither source nor sink
@@ -604,15 +682,17 @@ particular purpose.\n");
     }
   }
 
-  // remove meaningless elements
+  // save numbers of inputs and outputs for later
+  save_element_nports(r);
+
+  // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
-  remove_nulls(r, r->type_index("Null"), default_errh);
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
   
-  // actually check the drivers
+  // find live elements in the drivers
   Bitvector kernel_vec, user_vec;
   ProcessingT processing;
   if (check_kernel > 0)
@@ -629,9 +709,9 @@ particular purpose.\n");
   if (!live_vec.size() && r->nelements())
     exit(1);
 
-  int idle_tindex = r->get_type_index("Idle");
+  // remove Idles
   for (int i = 0; i < r->nelements(); i++)
-    if (!live_vec[i] || r->etype(i) == idle_tindex) {
+    if (!live_vec[i]) {
       if (verbose)
 	default_errh->lmessage(r->elandmark(i), "removing `%s'", r->edeclaration(i).cc());
       r->kill_element(i);
@@ -648,6 +728,9 @@ particular purpose.\n");
     nchanges += remove_redundant_schedulers(r, r->type_index("RoundRobinSched"), false, default_errh);
     nchanges += remove_redundant_schedulers(r, r->type_index("PrioSched"), false, default_errh);
     nchanges += remove_redundant_schedulers(r, r->type_index("StrideSched"), true, default_errh);
+    nchanges += remove_redundant_tee_ports(r, r->type_index("Tee"), false, default_errh);
+    nchanges += remove_redundant_tee_ports(r, r->type_index("PullTee"), true, default_errh);
+    remove_nulls(r, r->type_index("Null"), default_errh);
     if (!nchanges) break;
   }
 

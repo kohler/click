@@ -75,6 +75,14 @@ and so on) are removed. These are ports that no packet could ever enter.
 .IP "\(bu" 3
 Scheduler elements that have only one attached input are redundant, so they
 are removed.
+.IP "\(bu" 3
+Dead ports on tee elements
+.RM ( Tee n ,
+.M PullTee n )
+are removed. These are ports with no packet sink downstream.
+.IP "\(bu" 3
+Tee elements that have only one attached output are redundant, so they are
+removed.
 .PP
 .B click-undead
 will not remove any information elements. Connections to removed elements
