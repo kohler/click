@@ -221,19 +221,21 @@ IPRateMonitor::print(_stats *s, String ip = "")
 
     if (s->counter[i].flags != CLEAN) {
       int j;
-      ret += this_ip;
+      bool nonzero = false;
   
       // First rate is hidden
       for(j = 1; j < _no_of_rates; j++) {
 	// Update the rate first, so we have correct info
         s->counter[i].values[j].update(0);
-        ret += "\t";
-	ret += cp_unparse_real
+        this_ip += "\t";
+	this_ip += cp_unparse_real
 	  (s->counter[i].values[j].average() * CLICK_HZ,
 	   s->counter[i].values[j].scale());
-	ret += ","+String(s->counter[i].values[j].average());
+	if (s->counter[i].values[j].average() > 0)
+	  nonzero = true;
       }
-      ret += "\n";
+      if (nonzero)
+        ret += this_ip + "\n";
     }
     
     if(s->counter[i].flags & SPLIT)
