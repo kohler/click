@@ -1096,7 +1096,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   unsigned num_entries = hlo->num_nbrs;
   if (num_entries > max_entries) {
     click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed; want %u, have no more than %u",
-		  id().cc(), ipaddr.s().cc(), (unsigned) num_entries, max_entries);
+		  id().cc(), ipaddr.s().cc(), num_entries, max_entries);
     num_entries = max_entries;
   }
 

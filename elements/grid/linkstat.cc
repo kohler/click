@@ -244,7 +244,8 @@ LinkStat::simple_action(Packet *p)
     num_entries = max_entries;
     if (!warn_num_entries) {
       warn_num_entries = true;
-      click_chatter("LinkStat %s: WARNING, probe packets contains fewer link entries than claimed", id().cc());
+      click_chatter("LinkStat %s: WARNING, xxx probe packet from %s contains fewer link entries (%u) than claimed (%u)", 
+		    id().cc(), IPAddress(gh->ip).s().cc(), max_entries, num_entries);
     }
   }
   for (unsigned i = 0; i < num_entries; i++, le++) {
