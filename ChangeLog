@@ -1,3 +1,9 @@
+2004-04-27 Tuesday 01:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* acclick.m4 (1.38), aclocal.m4 (1.38), configure (1.3): check for
+	off_t in C, not C++, to avoid problems with earlier #include
+	<stdlib.h>
+
 2004-04-26 Monday 03:55  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.2), configure.in (1.222): add "analysis" provision
