@@ -86,7 +86,7 @@ class String { public:
   String substring(int, int) const;
   String substring(int left) const	{ return substring(left, _length); }
 
-  String lower() const;			// lowercase 
+  String lower() const;			// lowercase
   String upper() const;			// uppercase
   String printable() const;		// quote non-ASCII characters
   String trim_space() const;		// trim space from right
@@ -111,7 +111,7 @@ class String { public:
   // String operator+(String, const char *);
   // String operator+(const char *, const String &);
   // String operator+(String, PermString);
-  // String operator+(PermString, String);
+  // String operator+(PermString, const String &);
   // String operator+(PermString, const char *);
   // String operator+(const char *, PermString);
   // String operator+(PermString, PermString);
@@ -331,7 +331,7 @@ operator+(String s1, const char *cc2)
 {
   s1.append(cc2, -1);
   return s1;
-} 
+}
 
 inline String
 operator+(const char *cc1, const String &s2)
@@ -339,14 +339,14 @@ operator+(const char *cc1, const String &s2)
   String s1(cc1);
   s1 += s2;
   return s1;
-} 
+}
 
 inline String
 operator+(String s1, char c2)
 {
   s1.append(&c2, 1);
   return s1;
-} 
+}
 
 #ifdef HAVE_PERMSTRING
 
@@ -410,34 +410,38 @@ operator+(String s1, PermString p2)
 {
   s1.append(p2.cc(), p2.length());
   return s1;
-} 
+}
 
 inline String
-operator+(PermString p1, String s2)
+operator+(PermString p1, const String &s2)
 {
   String s1(p1);
-  return s1 + s2;
-} 
+  s1 += s2;
+  return s1;
+}
 
 inline String
 operator+(PermString p1, const char *cc2)
 {
   String s1(p1);
-  return s1 + cc2;
-} 
+  s1.append(cc2, -1);
+  return s1;
+}
 
 inline String
 operator+(const char *cc1, PermString p2)
 {
   String s1(cc1);
-  return s1 + p2;
-} 
+  s1 += p2;
+  return s1;
+}
 
 inline String
 operator+(PermString p1, PermString p2)
 {
   String s1(p1);
-  return s1 + p2;
+  s1 += p2;
+  return s1;
 }
 
 #endif
