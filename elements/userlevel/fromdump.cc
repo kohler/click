@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * fromdump.{cc,hh} -- element reads packets from tcpdump file
  * Eddie Kohler
@@ -305,7 +306,8 @@ FromDump::initialize(ErrorHandler *errh)
     // if forcing IP packets, check datalink type: only Ethernet and IP are
     // allowed
     if (_force_ip) {
-	if (_linktype != FAKE_DLT_RAW && _linktype != FAKE_DLT_EN10MB)
+	if (_linktype != FAKE_DLT_RAW && _linktype != FAKE_DLT_EN10MB
+	    && _linktype != FAKE_DLT_FDDI)
 	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
@@ -340,24 +342,47 @@ FromDump::uninitialize()
 bool
 FromDump::check_force_ip(Packet *p)
 {
-    if (_linktype == FAKE_DLT_RAW) {
+    switch (_linktype) {
+
+      case FAKE_DLT_RAW:
 	if (!p->ip_header()) {
 	    // packet was too small for an IP header
 	    checked_output_push(1, p);
 	    return false;
 	}
-    } else {
-	/* assert(_linktype == FAKE_DLT_EN10MB); */
-	const click_ether *ethh = (const click_ether *)p->data();
-	const click_ip *iph = (const click_ip *)(ethh + 1);
-	if (p->length() < 14 + 20
-	    || (ethh->ether_type != htons(ETHERTYPE_IP)
-		&& ethh->ether_type != htons(ETHERTYPE_IP6))
-	    || (int)p->length() < 14 + (iph->ip_hl << 2)) {
-	    checked_output_push(1, p);
-	    return false;
-	}
-	p->set_ip_header(iph, iph->ip_hl << 2);
+	break;
+
+      case FAKE_DLT_EN10MB: {
+	  const click_ether *ethh = (const click_ether *)p->data();
+	  const click_ip *iph = (const click_ip *)(ethh + 1);
+	  if (p->length() < sizeof(click_ether) + sizeof(click_ip)
+	      || (ethh->ether_type != htons(ETHERTYPE_IP)
+		  && ethh->ether_type != htons(ETHERTYPE_IP6))
+	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2)) {
+	      checked_output_push(1, p);
+	      return false;
+	  }
+	  p->set_ip_header(iph, iph->ip_hl << 2);
+	  break;
+      }
+
+      case FAKE_DLT_FDDI: {
+	  const uint16_t *ether_type = (const uint16_t *)(p->data() + 19);
+	  const click_ip *iph = (const click_ip *)(p->data() + 21);
+	  if (p->length() < 21 + sizeof(click_ip)
+	      || (*ether_type != htons(ETHERTYPE_IP)
+		  && *ether_type != htons(ETHERTYPE_IP6))
+	      || p->length() < 21U + (iph->ip_hl << 2)) {
+	      checked_output_push(1, p);
+	      return false;
+	  }
+	  p->set_ip_header(iph, iph->ip_hl << 2);
+	  break;
+      }
+      
+      default:
+	assert(0);
+	
     }
     return true;
 }

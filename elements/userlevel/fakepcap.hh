@@ -16,6 +16,7 @@ struct pcap_t;
 #define FAKE_PCAP_VERSION_MINOR		4
 
 #define FAKE_DLT_EN10MB			1	/* Ethernet (10Mb) */
+#define FAKE_DLT_FDDI			10	/* FDDI */
 #define FAKE_DLT_RAW			12	/* raw IP */
 
 /*
