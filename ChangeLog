@@ -1,3 +1,9 @@
+2001-11-15 Thursday 04:43  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: gridlocationinfo.cc (1.9), gridlocationinfo.hh
+	(1.5): more extended logging stuff -- periodically log node's own
+	location
+
 2001-11-12 Monday 14:32  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click-combine.1 (1.4), tools/click-combine/click-combine.cc
