@@ -2,19 +2,30 @@
 #define CLICK_LLRPC_H
 #if CLICK_LINUXMODULE
 # include <linux/errno.h>
+# include <linux/ioctl.h>
 #else
 # include <errno.h>
+# include <sys/ioctl.h>
 #endif
 
 /* Click low-level RPC interface */
 
-/* We want consistent ioctl numbers across platforms, so we choose FreeBSD's
-   numbering system (Linux doesn't seem to use the semantics of its numbering
-   system, which switches IOC_OUT and IOC_IN). */
-#define _CLICK_IOC_VOID		0x20000000
-#define _CLICK_IOC_OUT		0x40000000
-#define _CLICK_IOC_IN		0x80000000
+/* Ioctl numbers are not consistent across platforms. */
+#ifdef __linux__
+# define _CLICK_IOC_VOID	(_IOC_NONE << _IOC_DIRSHIFT)
+# define _CLICK_IOC_OUT		(_IOC_READ << _IOC_DIRSHIFT)
+# define _CLICK_IOC_IN		(_IOC_WRITE << _IOC_DIRSHIFT)
+#else
+# define _CLICK_IOC_VOID	0x20000000
+# define _CLICK_IOC_OUT		0x40000000
+# define _CLICK_IOC_IN		0x80000000
+#endif
 #define _CLICK_IOC_SAFE		0x00008000
+
+/* _CLICK_IO[S]: data transfer direction unknown, pass pointer unchanged;
+   _CLICK_IOR[S]: data of specified size sent from kernel to user;
+   _CLICK_IOW[S]: data of specified size sent from user to kernel;
+   _CLICK_IOWR[S]: data of specified size transferred in both directions. */
 
 /* "Non-safe" LLRPCs will not be performed in parallel with other LLRPCs or
    handlers. */
@@ -120,7 +131,6 @@ extern "C" {
 
 /* sanity checks */
 #ifdef __FreeBSD__
-# include <sys/ioctl.h>
 # if _CLICK_IOC_VOID != IOC_VOID || _CLICK_IOC_OUT != IOC_OUT || _CLICK_IOC_IN != IOC_IN
 #  error "bad _CLICK_IOC constants"
 # endif
