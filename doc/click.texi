@@ -3331,8 +3331,8 @@ The default implementation does nothing.
 
 @anchor{add_default_handlers} The driver also calls every element's
 @code{add_default_handlers} method. This nonvirtual method adds the
-default handlers that every element shares. See @ref{Default Element
-Handlers}, for more information.
+default handlers that every element shares. See @ref{Default Handlers},
+for more information.
 
 @deftypemethod Element {void} add_default_handlers (bool @var{config_writable})
 Adds the default collection of handlers for the element. Most of these
