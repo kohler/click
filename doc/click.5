@@ -108,10 +108,8 @@ lines are equivalent:
 .br
 .IR "n1" " -> " "n2" ;
 .Re
-'
-.SS "Declarations inside connections"
-'
-You can declare elements inside connections:
+.PP
+You can also declare elements inside connections:
 .Rs
 .RI "... -> [" "p1" "] " "name" " ::"
 .IR "class" ( "config" ") [" "p2" "] -> ...;"
@@ -123,10 +121,20 @@ is equivalent to
 .RI "... -> [" "p1" "] " "name" " [" "p2" "] -> ...;"
 .Re
 Every such declaration can declare at most one element.
-.PP
-You can also declare nameless elements inside connections. An
-.I anonymous element
-is declared by writing the element class:
+'
+.SS "Anonymous elements"
+You may declare an element without specifying its name, in which case the
+system will choose an element name for you. For example:
+.Rs
+.IR class "(" config ");"
+.Re
+is equivalent to
+.Rs
+.IR generatedname " :: " class ( config );
+.Re
+As usual, the parentheses can be left off if
+.I config
+is empty. You may also declare an anonymous element inside a connection:
 .Rs
 .RI "... -> [" p1 "] " class ( config )
 .RI "[" p2 "] -> ...;"
@@ -137,9 +145,6 @@ is equivalent to
 .br
 .RI "... -> [" p1 "] " generatedname " [" p2 "] -> ...;"
 .Re
-Again, the parentheses can be left off if
-.I config
-is empty.
 .PP
 The
 .I generatedname
@@ -217,9 +222,7 @@ C-like substitutions. Specifically:
 2.
 Data substitutions. An escape sequence `\e< ... hex digits and spaces ...
 >' is replaced with the data represented by the hex digits. For example,
-the sequence `\e< 48 45 4c 4C 4f >' is replaced with `HELLO'. As a special
-case, any `\e< ... >'  encountered outside of any quoted string acts as if
-it were enclosed in double quotes.
+the sequence `\e< 48 45 4c 4C 4f >' is replaced with `HELLO'.
 .TP
 3.
 Backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]') are removed.
@@ -228,6 +231,10 @@ Backlash-newline sequences (`\e[LF]', `\e[CR]', or `\e[CR][LF]') are removed.
 Any other `\e[CHAR]' sequence is replaced with `[CHAR]'.
 .RE
 .RS
+.Sp
+As a special case, a data substitution sequence `\e< ... >' encountered
+outside of any quoted string acts as if it were enclosed in double quotes.
+(Inside single quotes, `\e< ... >' is not special.)
 .PP
 You can concatenate strings by juxtaposing them. For example, `a"b"c' is
 equivalent to `abc'.
