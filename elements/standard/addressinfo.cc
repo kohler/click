@@ -78,8 +78,11 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	  else if ((a.have & INFO_IP_PREFIX) && scrap.ip_mask.u != a.ip_mask.u)
 	    errh->warning("\"%s\" IP address prefixes conflict", name.cc());
 	  a.have |= INFO_IP_PREFIX;
-	  if (!(a.have & INFO_IP))
+	  if (!(a.have & INFO_IP)) {
 	    a.ip.u = scrap.ip.u;
+	    if ((a.ip.u & ~scrap.ip_mask.u) != 0)
+	      a.have |= INFO_IP;
+	  }
 	  a.ip_mask.u = scrap.ip_mask.u;
 	  
 	} else if (cp_ip6_address(parts[j], scrap.ip6.data())) {
