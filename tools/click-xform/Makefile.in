@@ -60,7 +60,7 @@ all: libclicktool.a click-xform
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
-click-xform: Makefile $(OBJS)
+click-xform: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

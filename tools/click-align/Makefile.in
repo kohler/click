@@ -60,7 +60,7 @@ all: libclicktool.a click-align
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
-click-align: Makefile $(OBJS)
+click-align: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

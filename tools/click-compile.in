@@ -2,7 +2,8 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-includedir=@includedir@
+includedir=@includedir@/click
+srcdir=@datadir@/click/src
 
 # determine mode
 target=
@@ -12,14 +13,29 @@ compileflag=-c
 while true; do
   bad=x
   case $1 in
-    --t|--ta|--tar|--targ|--targe|--target)
+    -t|--t|--ta|--tar|--targ|--targe|--target)
       target=$2; shift 2;;
     --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
       target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
-    --p|--pa|--pac|--pack|--packa|--packag|--package)
+    -p|--p|--pa|--pac|--pack|--packa|--packag|--package)
       package=$2; shift 2;;
     --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
       package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+    -h|--h|--he|--hel|--help)
+      cat <<'EOF' 1>&2
+`Click-compile' compiles a Click source file.
+
+Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
+
+Options:
+  -t, --target TARGET     Sets target to `kernel', `user', or `tool'.
+  -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
+  -h, --help              Print this message and exit.
+  Other options are passed to the compiler unchanged.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+      exit 0;;
     -*)
       if test $1 = -E -o $1 = -c; then
         compileflag=$1
@@ -34,22 +50,24 @@ done
 case $target in
   k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
-    iincludes="-I${includedir} -I/usr/src/linux/include"
+    iincludes="-I${srcdir} -I${srcdir}/lib -I/usr/src/linux/include"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=module;;
   u|us|use|user)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
-    iincludes="-I${includedir}"
+    iincludes="-I${srcdir} -I${srcdir}/lib"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=user;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
-    iincludes="-I${includedir}"
+    iincludes="-I${srcdir} -I${srcdir}/lib"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=tool;;
+  "")
+    echo "click-compile: you must specify a target" 1>&2; exit 1;;
   *)
     echo "click-compile: acceptable targets are \`kernel', \`user', and \`tool'" 1>&2; exit 1;;
 esac

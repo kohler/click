@@ -36,12 +36,14 @@
 #define OUTPUT_OPT		303
 #define KERNEL_OPT		304
 #define USERLEVEL_OPT		305
+#define SOURCE_OPT		306
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -73,40 +75,11 @@ Options:\n\
   -o, --output FILE           Write output to FILE.\n\
   -k, --kernel                Create Linux kernel module code (on by default).\n\
   -u, --user                  Create user-level code (on by default).\n\
+  -s, --source                Write source code only.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
-}
-
-static String
-click_mktmpdir(ErrorHandler *errh = 0)
-{
-  String tmpdir;
-  if (const char *path = getenv("TMPDIR"))
-    tmpdir = path;
-#ifdef P_tmpdir
-  else if (P_tmpdir)
-    tmpdir = P_tmpdir;
-#endif
-  else
-    tmpdir = "/tmp";
-  
-  int uniqueifier = getpid();
-  while (1) {
-    String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
-    int result = mkdir(tmpsubdir.cc(), 0700);
-    if (result >= 0) {
-      remove_file_on_exit(tmpsubdir);
-      return tmpsubdir;
-    }
-    if (result < 0 && errno != EEXIST) {
-      if (errh)
-	errh->fatal("cannot create temporary directory: %s", strerror(errno));
-      return String();
-    }
-    uniqueifier++;
-  }
 }
 
 
@@ -410,6 +383,7 @@ main(int argc, char **argv)
   const char *output_file = 0;
   int compile_kernel = -1;
   int compile_user = -1;
+  int source_only = 0;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -446,6 +420,10 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
 
+     case SOURCE_OPT:
+      source_only = !clp->negated;
+      break;
+      
      case KERNEL_OPT:
       compile_kernel = !clp->negated;
       break;
@@ -467,8 +445,13 @@ particular purpose.\n");
   }
   
  done:
-  if (compile_kernel < 0 && compile_user < 0)
+  if (compile_kernel < 0 && compile_user < 0) {
+#ifdef HAVE_LINUXMODULE_TARGET
     compile_kernel = compile_user = 1;
+#else
+    compile_user = 1;
+#endif
+  }
   
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
@@ -499,32 +482,42 @@ particular purpose.\n");
 
   // quit early if no Classifiers
   if (classifiers.size() == 0) {
-    write_router_file(r, outf, errh);
+    if (source_only)
+      errh->message("no Classifiers in router");
+    else
+      write_router_file(r, outf, errh);
     exit(0);
   }
 
-  // find name of module
-  String module_name = "fastclassifier";
+  // find name of package
+  String package_name = "fastclassifier";
   int uniqueifier = 1;
   while (1) {
-    if (r->archive(module_name) < 0)
+    if (r->archive(package_name) < 0)
       break;
     uniqueifier++;
-    module_name = "fastclassifier" + String(uniqueifier);
+    package_name = "fastclassifier" + String(uniqueifier);
   }
-  r->add_requirement(module_name);
+  r->add_requirement(package_name);
 
-  // create temporary directory
-  String tmpdir = click_mktmpdir(errh);
-  if (!tmpdir) exit(1);
-  if (chdir(tmpdir.cc()) < 0)
-    errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
-  
-  // write C++ file
-  String cxx_filename = module_name + "x.cc";
-  FILE *f = fopen(cxx_filename, "w");
-  if (!f)
-    errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+  // open `f' for C++ output
+  FILE *f;
+  String cxx_filename;
+  if (!source_only) {
+    // create temporary directory
+    String tmpdir = click_mktmpdir(errh);
+    if (!tmpdir) exit(1);
+    if (chdir(tmpdir.cc()) < 0)
+      errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+
+    cxx_filename = package_name + "x.cc";
+    f = fopen(cxx_filename, "w");
+    if (!f)
+      errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+  } else
+    f = outf;
+
+  // write C++ file to `f'
   fprintf(f, "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n\
 #include \"clickpackage.hh\"\n#include \"element.hh\"\n");
   
@@ -538,7 +531,7 @@ particular purpose.\n");
     fprintf(f, "static int hatred_of_rebecca[%d];\n\
 extern \"C\" int\ninit_module()\n{\n\
   click_provide(\"%s\");\n",
-	    nclasses, module_name.cc());
+	    nclasses, package_name.cc());
     for (int i = 0; i < nclasses; i++)
       fprintf(f, "  hatred_of_rebecca[%d] = click_add_element_type(\"%s\", new %s);\n\
   MOD_DEC_USE_COUNT;\n",
@@ -548,13 +541,15 @@ extern \"C\" int\ninit_module()\n{\n\
       fprintf(f, "  MOD_INC_USE_COUNT;\n\
   click_remove_element_type(hatred_of_rebecca[%d]);\n",
 	      i);
-    fprintf(f, "  click_unprovide(\"%s\");\n}\n", module_name.cc());
+    fprintf(f, "  click_unprovide(\"%s\");\n}\n", package_name.cc());
     fclose(f);
+    if (source_only)
+      exit(0);
   }
 
   // compile kernel module
   if (compile_kernel > 0) {
-    String compile_command = click_compile_prog + " --target=kernel --package=" + module_name + ".ko " + cxx_filename;
+    String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       errh->fatal("could not run `%s'", compile_command.cc());
@@ -566,7 +561,7 @@ extern \"C\" int\ninit_module()\n{\n\
 
   // compile userlevel
   if (compile_user > 0) {
-    String compile_command = click_compile_prog + " --target=user --package=" + module_name + ".uo -w " + cxx_filename;
+    String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       errh->fatal("could not run `%s'", compile_command.cc());
@@ -579,7 +574,7 @@ extern \"C\" int\ninit_module()\n{\n\
   // read .cc and .?o files, add them to archive
   {
     ArchiveElement ae;
-    ae.name = module_name + ".cc";
+    ae.name = package_name + ".cc";
     ae.date = time(0);
     ae.uid = geteuid();
     ae.gid = getegid();
@@ -588,14 +583,14 @@ extern \"C\" int\ninit_module()\n{\n\
     r->add_archive(ae);
 
     if (compile_kernel > 0) {
-      ae.name = module_name + ".ko";
-      ae.data = file_string(module_name + ".ko", errh);
+      ae.name = package_name + ".ko";
+      ae.data = file_string(package_name + ".ko", errh);
       r->add_archive(ae);
     }
     
     if (compile_user > 0) {
-      ae.name = module_name + ".uo";
-      ae.data = file_string(module_name + ".uo", errh);
+      ae.name = package_name + ".uo";
+      ae.data = file_string(package_name + ".uo", errh);
       r->add_archive(ae);
     }
   }

@@ -61,7 +61,7 @@ all: libclicktool.a click-install
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
-click-install: Makefile $(OBJS)
+click-install: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

@@ -19,7 +19,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-includedir = @includedir@
+includedir = @includedir@/click
 
 all: @TARGETS@ tools Makefile
 

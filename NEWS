@@ -1,9 +1,14 @@
 Click NEWS
 
 
+* Added `click-specialize' tool.
+
 * Added polling.
 
 * Fixed lexer bug: compound elements with `{' are accepted everywhere.
+
+* Rearranged directory structure. (Include files placed in
+  PREFIX/include/click, not directly in PREFIX/include.)
 
 
 Version 0.6   11.Dec.1999

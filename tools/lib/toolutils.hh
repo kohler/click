@@ -15,5 +15,6 @@ String unique_tmpnam(const String &, ErrorHandler * = 0);
 void remove_file_on_exit(const String &);
 String clickpath_find_file(const String &filename, const char *subdir,
 			   const String &default_path, ErrorHandler * = 0);
+String click_mktmpdir(ErrorHandler * = 0);
 
 #endif

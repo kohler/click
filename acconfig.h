@@ -35,6 +35,9 @@
 /* The largest size a write handler is allowed to have. */
 #define LARGEST_HANDLER_WRITE 16384
 
+/* Define if a Linux kernel module is a possible target. */
+#undef HAVE_LINUXMODULE_TARGET
+
 /* Define if your Linux kernel has Click extensions. */
 #undef HAVE_CLICK_KERNEL
 

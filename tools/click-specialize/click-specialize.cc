@@ -20,9 +20,12 @@
 #include "routert.hh"
 #include "toolutils.hh"
 #include "cxxclass.hh"
+#include "archive.hh"
 #include "clp.h"
 #include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
+#include <unistd.h>
 
 static String::Initializer string_initializer;
 static HashMap<String, int> elementinfo_map(-1);
@@ -169,16 +172,34 @@ specialize_element(RouterT *router, int eindex, ErrorHandler *errh)
   int einfo = elementinfo_map[old_click_name];
   if (einfo < 0) {
     errh->warning("cannot specialize class `%s'", old_click_name.cc());
+    element_specialize[eindex] = 0;
+    element_click_type[eindex] = old_click_name;
+    element_cxx_type[eindex] = String();
     return;
   }
   String old_cxx_name = elementinfo_cxx_name[einfo];
   CxxClass *cxxc = cxx_info.find_class(old_cxx_name);
   if (!cxxc) {
     errh->warning("class `%s' not found in source code", old_cxx_name.cc());
+    element_specialize[eindex] = 0;
+    element_click_type[eindex] = old_click_name;
+    element_cxx_type[eindex] = old_cxx_name;
     return;
   }
   
   cxxc->mark_reachable_rewritable();
+
+  // silently don't specialize if there are no reachable rewritables
+  int nreachable_rewritable = 0;
+  for (int i = 0; !nreachable_rewritable && i < cxxc->nfunctions(); i++)
+    if (cxxc->reachable_rewritable(i))
+      nreachable_rewritable++;
+  if (!nreachable_rewritable) {
+    element_specialize[eindex] = 0;
+    element_click_type[eindex] = old_click_name;
+    element_cxx_type[eindex] = old_cxx_name;
+    return;
+  }
 
   // find information about how the element is used in context
   int ninputs = 0;
@@ -384,11 +405,17 @@ finish_specialize_element(RouterT *router, int eindex,
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
 #define OUTPUT_OPT		304
+#define KERNEL_OPT		305
+#define USERLEVEL_OPT		306
+#define SOURCE_OPT		307
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "source", 's', SOURCE_OPT, 0, Clp_Negate },
+  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -406,15 +433,21 @@ void
 usage()
 {
   printf("\
-`Click-specialize' specializes.\n\
+`Click-specialize' transforms a router configuration by generating new code\n\
+for its elements. This new code removes virtual function calls from the packet\n\
+control path. The resulting configuration has both Click-language files and\n\
+object files.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE               Read router configuration from FILE.\n\
-  -o, --output FILE             Write output to FILE.\n\
-      --help                    Print this message and exit.\n\
-  -v, --version                 Print version number and exit.\n\
+  -f, --file FILE             Read router configuration from FILE.\n\
+  -o, --output FILE           Write output to FILE.\n\
+  -k, --kernel                Create Linux kernel module code (on by default).\n\
+  -u, --user                  Create user-level code (on by default).\n\
+  -s, --source                Write source code only.\n\
+      --help                  Print this message and exit.\n\
+  -v, --version               Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -434,6 +467,9 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
+  int source_only = 0;
+  int compile_kernel = -1;
+  int compile_user = -1;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -470,6 +506,18 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
       
+     case SOURCE_OPT:
+      source_only = !clp->negated;
+      break;
+      
+     case KERNEL_OPT:
+      compile_kernel = !clp->negated;
+      break;
+      
+     case USERLEVEL_OPT:
+      compile_user = !clp->negated;
+      break;
+      
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -483,6 +531,14 @@ particular purpose.\n");
   }
   
  done:
+  if (compile_kernel < 0 && compile_user < 0) {
+#ifdef HAVE_LINUXMODULE_TARGET
+    compile_kernel = compile_user = 1;
+#else
+    compile_user = 1;
+#endif
+  }
+  
   // find and parse `elementmap'
   {
     String elementmap_fn =
@@ -501,7 +557,18 @@ particular purpose.\n");
     exit(1);
   router->flatten(errh);
 
-  // specialize everything
+  // open output file
+  FILE *outf = stdout;
+  if (output_file && strcmp(output_file, "-") != 0) {
+    outf = fopen(output_file, "w");
+    if (!outf)
+      errh->fatal("%s: %s", output_file, strerror(errno));
+  }
+
+  // find Click binaries
+  String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+
+  // what to specialize? everything
   element_specialize.assign(router->nelements(), 1);
 
   // read source code for all relevant elements
@@ -536,14 +603,23 @@ particular purpose.\n");
   for (int i = 0; i < router->nelements(); i++)
     if (element_specialize[i])
       finish_specialize_element(router, i, out);
+  
+  // find name of package
+  String package_name = "specialize";
+  int uniqueifier = 1;
+  while (1) {
+    if (router->archive(package_name) < 0)
+      break;
+    uniqueifier++;
+    package_name = "specialize" + String(uniqueifier);
+  }
+  router->add_requirement(package_name);
 
   // output boilerplate package stuff
-  String package_name = "specialize";
   int nclasses = 0;
   for (int i = 0; i < router->nelements(); i++)
     if (element_specialize[i])
       nclasses++;
-
   out << "static int hatred_of_rebecca[" << nclasses << "];\n";
 
   // init_module()
@@ -560,6 +636,7 @@ particular purpose.\n");
     }
   out << "  return 0;\n}\n";
 
+  // cleanup_module()
   out << "extern \"C\" void\ncleanup_module()\n{\n";
   for (int i = 0, j = 0; i < router->nelements(); i++)
     if (element_specialize[i]) {
@@ -567,10 +644,83 @@ particular purpose.\n");
       j++;
     }
   out << "  click_unprovide(\"" << package_name << "\");\n}\n";
-  
-  out << '\n' << '\0';
+  out << '\0';
 
-  fputs(out.data(), stdout);
+  // output source code if required
+  if (source_only) {
+    fputs(out.data(), outf);
+    fclose(outf);
+    return 0;
+  }
+  
+  // create temporary directory
+  String tmpdir = click_mktmpdir(errh);
+  if (!tmpdir) exit(1);
+  if (chdir(tmpdir.cc()) < 0)
+    errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+  
+  // write C++ file
+  String cxx_filename = package_name + "x.cc";
+  FILE *f = fopen(cxx_filename, "w");
+  if (!f)
+    errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+  fputs(out.data(), f);
+  fclose(f);
+
+  // compile kernel module
+  if (compile_kernel > 0) {
+    String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko -fno-access-control " + cxx_filename;
+    int compile_retval = system(compile_command.cc());
+    if (compile_retval == 127)
+      errh->fatal("could not run `%s'", compile_command.cc());
+    else if (compile_retval < 0)
+      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+    else if (compile_retval != 0)
+      errh->fatal("`%s' failed", compile_command.cc());
+  }
+
+  // compile userlevel
+  if (compile_user > 0) {
+    String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w -fno-access-control " + cxx_filename;
+    int compile_retval = system(compile_command.cc());
+    if (compile_retval == 127)
+      errh->fatal("could not run `%s'", compile_command.cc());
+    else if (compile_retval < 0)
+      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+    else if (compile_retval != 0)
+      errh->fatal("`%s' failed", compile_command.cc());
+  }
+
+  // retype elements
+  for (int i = 0; i < router->nelements(); i++)
+    if (element_specialize[i])
+      router->element(i).type = router->get_type_index(element_click_type[i]);
+  
+  // read .cc and .?o files, add them to archive
+  {
+    ArchiveElement ae;
+    ae.name = package_name + ".cc";
+    ae.date = time(0);
+    ae.uid = geteuid();
+    ae.gid = getegid();
+    ae.mode = 0600;
+    ae.data = file_string(cxx_filename, errh);
+    router->add_archive(ae);
+
+    if (compile_kernel > 0) {
+      ae.name = package_name + ".ko";
+      ae.data = file_string(package_name + ".ko", errh);
+      router->add_archive(ae);
+    }
+    
+    if (compile_user > 0) {
+      ae.name = package_name + ".uo";
+      ae.data = file_string(package_name + ".uo", errh);
+      router->add_archive(ae);
+    }
+  }
+  
+  // write configuration
+  write_router_file(router, outf, errh);
   return 0;
 }
-

@@ -159,6 +159,9 @@ dnl
 dnl check for stuff in the linux kernel
 dnl
 
+LINUXMODULE_SCHED_OBJ=
+if test `uname` = Linux; then
+
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
 if grep register_net_out /proc/ksyms >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
@@ -190,10 +193,11 @@ else ac_cv_poll_extension=no; fi])
 if test $ac_cv_poll_extension = yes; then
   AC_DEFINE_UNQUOTED(HAVE_POLLING, 1)
   LINUXMODULE_SCHED_OBJ=sched.o
-else
-  LINUXMODULE_SCHED_OBJ=
+fi
+
 fi
 AC_SUBST(LINUXMODULE_SCHED_OBJ)
+
 
 dnl
 dnl check for GNU make
@@ -237,7 +241,7 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOL_TARGETS="click-align click-compile click-fastclassifier click-xform"
+TOOL_TARGETS="click-align click-compile click-fastclassifier click-specialize click-xform"
 AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library
@@ -310,6 +314,7 @@ int main(int c, char **v) {
   if test $ac_cv_cxx_aware_system = yes; then
     TARGETS="$TARGETS linuxmodule"
     TOOL_TARGETS="$TOOL_TARGETS click-install udpgen"
+    AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
   else
     AC_MSG_WARN(Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution

@@ -280,9 +280,12 @@ path_find_file_2(const String &filename, String path, String default_path,
       
     } else if (dir) {
       if (dir.back() != '/') dir += "/";
-      // look for `dir/subdir/filename'
+      // look for `dir/subdir/filename' and `dir/subdir/click/filename'
       if (subdir) {
 	String name = dir + subdir + filename;
+	if (access(name.cc(), F_OK) >= 0)
+	  return name;
+	name = dir + subdir + "click/" + filename;
 	if (access(name.cc(), F_OK) >= 0)
 	  return name;
       }
@@ -316,4 +319,34 @@ clickpath_find_file(const String &filename, const char *subdir,
     errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
   }
   return s;
+}
+
+String
+click_mktmpdir(ErrorHandler *errh = 0)
+{
+  String tmpdir;
+  if (const char *path = getenv("TMPDIR"))
+    tmpdir = path;
+#ifdef P_tmpdir
+  else if (P_tmpdir)
+    tmpdir = P_tmpdir;
+#endif
+  else
+    tmpdir = "/tmp";
+  
+  int uniqueifier = getpid();
+  while (1) {
+    String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
+    int result = mkdir(tmpsubdir.cc(), 0700);
+    if (result >= 0) {
+      remove_file_on_exit(tmpsubdir);
+      return tmpsubdir;
+    }
+    if (result < 0 && errno != EEXIST) {
+      if (errh)
+	errh->fatal("cannot create temporary directory: %s", strerror(errno));
+      return String();
+    }
+    uniqueifier++;
+  }
 }

@@ -140,7 +140,6 @@ particular purpose.\n");
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  
   r->flatten(errh);
 
   // check for Click module; install it if not available

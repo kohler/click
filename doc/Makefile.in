@@ -7,7 +7,7 @@ subdir := doc
 
 prefix = @prefix@
 mandir = @mandir@
-datadir = @datadir@
+datadir = @datadir@/click
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
@@ -24,6 +24,9 @@ Makefile: $(srcdir)/Makefile.in
 install: install-man
 	$(mkinstalldirs) $(datadir)
 	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
+	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
+	/bin/rm -f $(datadir)/src
+	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
 
 install-man:
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man8 $(mandir)/mann

@@ -698,12 +698,31 @@ CxxInfo::parse_file(const String &original_text, bool header,
   parse_class(clean_text, 0, original_text, 0);
 
   // save initial comments and #defines and #includes for replication
+  // also skip over `extern "C" { ... }'
   if (store_includes) {
     const char *s = clean_text.data();
     int p = 0;
     int len = clean_text.length();
-    while (p < len && isspace(s[p]))
-      p++;
+    int extern_depth = 0;
+    while (1) {
+      while (p < len && isspace(s[p]))
+	p++;
+      if (p < len && s[p] == '}' && extern_depth) {
+	extern_depth--;
+	p++;
+      } else if (p + 6 < len && s[p] == 'e' && s[p+1] == 'x' && s[p+2] == 't'
+		 && s[p+3] == 'e' && s[p+4] == 'r' && s[p+5] == 'n') {
+	int p1 = p + 6;
+	while (p1 < len && (isspace(s[p1]) || s[p1] == '$'))
+	  p1++;
+	if (p1 < len && s[p1] == '{') {
+	  extern_depth++;
+	  p = p1 + 1;
+	} else
+	  break;
+      } else
+	break;
+    }
     *store_includes = original_text.substring(0, p);
   }
 }

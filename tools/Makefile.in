@@ -28,6 +28,8 @@ click-fastclassifier: lib Makefile
 	@cd click-fastclassifier; $(MAKE) click-fastclassifier
 click-install: lib Makefile
 	@cd click-install; $(MAKE) click-install
+click-specialize: lib Makefile
+	@cd click-specialize; $(MAKE) click-specialize
 click-xform: lib Makefile
 	@cd click-xform; $(MAKE) click-xform
 udpgen: Makefile
@@ -72,6 +74,9 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
+	click-specialize/Makefile.in \
+	click-specialize/click-specialize.cc \
+	click-specialize/cxxclass.cc click-specialize/cxxclass.hh \
 	click-xform/Makefile.in \
 	click-xform/click-xform.cc \
 	udpgen/Makefile.in udpgen/udpgen.c udpgen/udpcount.c
