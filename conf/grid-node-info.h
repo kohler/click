@@ -16,7 +16,7 @@
 
 // Grid network number in Click hex notation, with IP source address
 // offset (typically 16) e.g. 16/121a07
-#define GRID_NET_HEX 16/121a07 
+#define GRID_NET_HEX 16/121a07 // 18.26.7.*
 
 // Grid network gateway
 #define GRID_GW 18.26.7.1
