@@ -1,3 +1,83 @@
+2001-03-09 Friday 22:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/kernelversion.c: oops: dont define click_threads()
+	when !__MTCLICK__
+
+2001-03-09 Friday 22:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* userlevel/: Makefile.in, click.cc: use RouterThreads
+
+2001-03-09 Friday 22:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/: Makefile.in, kernelversion.c, module.cc,
+	modulepriv.hh, sched.cc: use RouterThreads; provide "threads"
+	module parameter
+
+2001-03-09 Friday 22:20  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/element.cc: add thread_preference handler for tasks
+
+2001-03-09 Friday 22:18  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/fromdevice.cc, linuxmodule/polldevice.cc,
+	linuxmodule/todevice.cc, standard/scheduleinfo.cc: adapt to new
+	Task structure
+
+2001-03-09 Friday 22:18  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: split Router::wait() into
+	Router::run_selects(); removed other driver code, because its in
+	RouterThread now; code for adding and removing RouterThreads
+
+2001-03-09 Friday 22:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/task.hh, lib/task.cc: Great Task Rewrite: every
+	Task::_scheduled_list is a RouterThread; every global tsak list
+	corresponds to a Router. The global task list lock protects
+	Task::_scheduled_list changes. join_scheduler() is private, and
+	less overloaded; now it is only called to switch a task to a new
+	scheduler. The initialize() function takes an extra boolean
+	argument, true to schedule the task. Removed schedule_immediately()
+	and _urgent; they were unused.
+
+2001-03-09 Friday 22:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/sync.hh: provide nonempty sync types whenever on
+	SMP (not just __MTCLICK__); ReadWriteLock has a selectable number
+	of lock_ts
+
+2001-03-09 Friday 22:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ewma.hh: added FastDirectEWMA
+
+2001-03-09 Friday 22:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.cc: get rid of spurious static on a member
+	function
+
+2001-03-09 Friday 22:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh, lib/timer.cc: Timer heads are their own
+	type -- TimerList -- so only the list head needs a lock
+
+2001-03-09 Friday 22:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ipsec/desp.cc, elements/linuxmodule/cpuqueue.cc,
+	elements/standard/queue.cc, include/click/iptable.hh,
+	lib/iptable.cc, elements/linuxmodule/anydevice.hh: nitlets,
+	whitespace
+
+2001-03-09 Friday 22:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/atomic.hh: add inc_and_test_greater_zero()
+	(available on Linux); compile even if !__MTCLICK__
+
+2001-03-09 Friday 22:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, include/click/routerthread.hh, lib/routerthread.cc:
+	added RouterThread: a thread of control -- basically something that
+	runs a task list.
+
 2001-03-07 Wednesday 15:26  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/packet.hh: copy all relevant annotations, including
