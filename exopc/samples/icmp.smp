@@ -4,7 +4,11 @@ ed0_writer :: xokWriter(ed0);
 		        
 de0_reader :: xokReader(32, 12/0800 30/121a0450 23/01);  // naiad
 de0_writer :: xokWriter(de0);
+
+de1_reader :: xokReader(32, 12/0800 30/121a041d 23/01);  // sure
+de1_writer :: xokWriter(de1);
    
-de0_reader -> ICMPPing -> de0_writer
 ed0_reader -> ICMPPing -> ed0_writer
+de0_reader -> ICMPPing -> de0_writer
+de1_reader -> ICMPPing -> de1_writer
 
