@@ -210,7 +210,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	// read direction
 	if (data[0] != '<' && data[0] != '>')
 	    continue;
-	SET_PAINT_ANNO(q, data[0] == '<');
+	SET_PAINT_ANNO(q, (data[0] == '>') == _flowid_is_rcv);
 	data = cp_skip_space(data + 1, end);
 
 	// read timestamp
@@ -317,7 +317,8 @@ FromCapDump::read_packet(ErrorHandler *errh)
 		tcph->th_ack = htonl(0);
 	    (void) packno2seqno(seqno, payload_len + (tcph->th_flags & TH_SYN ? 1 : 0) + (tcph->th_flags & TH_FIN ? 1 : 0));
 	}
-	SET_PACKET_NUMBER_ANNO(q, uniqno);
+	SET_PACKET_NUMBER_ANNO(q, 0, uniqno);
+	SET_PACKET_NUMBER_ANNO(q, 1, seqno);
 	
 	tcph->th_off = (q->end_data() - q->transport_header()) >> 2;
 	

@@ -69,9 +69,9 @@
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
 #define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))
 
-// bytes 16-19
-#define PACKET_NUMBER_ANNO(p)		((p)->user_anno_u(4))
-#define SET_PACKET_NUMBER_ANNO(p, v)	((p)->set_user_anno_u(4, (v)))
+// bytes 16-23
+#define PACKET_NUMBER_ANNO(p, n)	((p)->user_anno_u(4 + (n)))
+#define SET_PACKET_NUMBER_ANNO(p, n, v)	((p)->set_user_anno_u(4 + (n), (v)))
 
 // bytes 16-23
 #define FIRST_TIMESTAMP_ANNO(p)		(*((const struct timeval *)((p)->all_user_anno_u() + 4)))
