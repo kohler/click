@@ -1,3 +1,16 @@
+2001-11-08 Thursday 13:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/: grid-el.click (1.2), grid-gateway.click (1.26),
+	grid-sim.click (1.11), grid-single-if-gw.click (1.7): removed
+	obsolete grid configs
+
+2001-11-08 Thursday 13:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/: run-grid-gateway (1.17), run-grid-gateway.openbsd (1.7),
+	run-grid-node (1.35), run-grid-node.freebsd (1.2),
+	run-grid-node.openbsd (1.10): cleaning out old grid scripts that
+	are obsolete
+
 2001-11-08 Thursday 12:36  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: fromdevice.cc (1.66), todevice.cc (1.119):
