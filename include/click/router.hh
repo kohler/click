@@ -40,6 +40,7 @@ class Router { public:
   void set_default_configuration_string(int, const String &);
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(const String &, Element *context, ErrorHandler * = 0) const;
+  Element *find(const String &, String prefix, ErrorHandler * = 0) const;
 
   const Vector<String> &requirements() const	{ return _requirements; }
   void add_requirement(const String &);
@@ -61,7 +62,8 @@ class Router { public:
   // handlers
   int nhandlers() const				{ return _nhandlers; }
   bool handler_ok(int) const;
-  const Handler &handler(int) const;
+  static const Handler &handler(const Router *, int);
+  const Handler &handler(int hi) const		{ return handler(this, hi); }
   void element_handlers(int, Vector<int> &) const;
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
@@ -166,8 +168,6 @@ class Router { public:
   Vector<int> _ehandler_next;
 
   Vector<int> _handler_first_by_name;
-  Vector<int> _handler_next_by_name;
-  Vector<int> _handler_use_count;
   
   Handler *_handlers;
   int _nhandlers;
@@ -203,11 +203,12 @@ class Router { public:
   String context_message(int element_no, const char *) const;
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
-  Element *find(const String &, String prefix, ErrorHandler * = 0) const;
   void initialize_handlers(bool, bool);
-  int find_ehandler(int, const String &, bool, bool);
-  int put_handler(const Handler &);
-  static int find_global_handler_index(const String &, bool);
+  int find_ehandler(int, const String &, bool star_ok = false) const;
+  Handler fetch_handler(int, const String &) const;
+  void store_handler(int, const Handler &);
+  static Handler fetch_global_handler(const String &);
+  static void store_global_handler(const Handler &);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
@@ -215,15 +216,39 @@ class Router { public:
 };
 
 
-struct Router::Handler {
-    String name;
-    ReadHandler read;
-    void *read_thunk;
-    WriteHandler write;
-    void *write_thunk;
-    
-    static String unparse_name(Element *, const String &);
-    String unparse_name(Element *e) const;
+class Router::Handler { public:
+
+  Handler();
+  Handler(const String &);
+
+  const String &name() const	{ return _name; }
+  
+  bool readable() const		{ return _read; }
+  bool read_visible() const	{ return _read; }
+  bool writable() const		{ return _write; }
+  bool write_visible() const	{ return _write; }
+  bool visible() const		{ return read_visible() || write_visible(); }
+
+  String call_read(Element *) const;
+  int call_write(const String &, Element *, ErrorHandler *) const;
+  
+  String unparse_name(Element *) const;
+  static String unparse_name(Element *, const String &);
+
+ private:
+  
+  String _name;
+  ReadHandler _read;
+  void *_read_thunk;
+  WriteHandler _write;
+  void *_write_thunk;
+  int _use_count;
+  int _next_by_name;
+
+  bool compatible(const Handler &) const;
+  
+  friend class Router;
+  
 };
 
 /* The largest size a write handler is allowed to have. */
@@ -232,11 +257,11 @@ struct Router::Handler {
 
 #if CLICK_USERLEVEL
 struct Router::Selector {
-    int fd;
-    int element;
-    int mask;
-    Selector()				: fd(-1), element(-1), mask(0) { }
-    Selector(int f, int e, int m)	: fd(f), element(e), mask(m) { }
+  int fd;
+  int element;
+  int mask;
+  Selector()				: fd(-1), element(-1), mask(0) { }
+  Selector(int f, int e, int m)		: fd(f), element(e), mask(m) { }
 };
 #endif
 
@@ -260,13 +285,46 @@ Router::find(const String &name, ErrorHandler *errh) const
 }
 
 inline const Router::Handler &
-Router::handler(int i) const
+Router::handler(const Router *r, int i)
 {
   if (i < FIRST_GLOBAL_HANDLER) {
-    assert(i >= 0 && i < _nhandlers);
-    return _handlers[i];
+    assert(r && i >= 0 && i < r->_nhandlers);
+    return r->_handlers[i];
   } else
     return global_handler(i);
+}
+
+inline
+Router::Handler::Handler()
+  : _read(0), _read_thunk(0), _write(0), _write_thunk(0),
+    _use_count(0), _next_by_name(-1)
+{
+}
+
+inline
+Router::Handler::Handler(const String &name)
+  : _name(name), _read(0), _read_thunk(0), _write(0), _write_thunk(0),
+    _use_count(0), _next_by_name(-1)
+{
+}
+
+inline String
+Router::Handler::call_read(Element *e) const
+{
+  return _read(e, _read_thunk);
+}
+
+inline int
+Router::Handler::call_write(const String &s, Element *e, ErrorHandler *errh) const
+{
+  return _write(s, e, _write_thunk, errh);
+}
+
+inline bool
+Router::Handler::compatible(const Handler &h) const
+{
+  return (_read == h._read && _read_thunk == h._read_thunk
+	  && _write == h._write && _write_thunk == h._write_thunk);
 }
 
 #endif

@@ -836,8 +836,6 @@ Router::initialize_handlers(bool defaults, bool specifics)
   _ehandler_next.clear();
 
   _handler_first_by_name.clear();
-  _handler_next_by_name.clear();
-  _handler_use_count.clear();
 
   _nhandlers = 0;
 
@@ -990,7 +988,7 @@ Router::Handler::unparse_name(Element *e, const String &hname)
 String
 Router::Handler::unparse_name(Element *e) const
 {
-  return unparse_name(e, name);
+  return unparse_name(e, _name);
 }
 
 // 11.Jul.2000 - We had problems with handlers for medium-sized configurations
@@ -1010,143 +1008,141 @@ Router::Handler::unparse_name(Element *e) const
 // implement.)
 
 int
-Router::put_handler(const Handler &to_add)
-{
-  // Find space in _handlers for `to_add'. This might be shared, if another
-  // element has already installed a handler corresponding to `to_add'.
-  
-  assert(_handler_use_count.size() == _nhandlers
-	 && _handler_next_by_name.size() == _nhandlers);
-  
-  // find the offset in _name_handlers
-  int name_offset;
-  for (name_offset = 0;
-       name_offset < _handler_first_by_name.size();
-       name_offset++) {
-    int hi = _handler_first_by_name[name_offset];
-    if (hi < 0 || _handlers[hi].name == to_add.name)
-      break;
-  }
-  if (name_offset == _handler_first_by_name.size())
-    _handler_first_by_name.push_back(-1);
-
-  // now find a similar handler, if any exists
-  int hi = _handler_first_by_name[name_offset];
-  while (hi >= 0) {
-    Handler &h = _handlers[hi];
-    if (_handler_use_count[hi] == 0)
-      h = to_add;
-    if (h.read == to_add.read && h.write == to_add.write
-	&& h.read_thunk == to_add.read_thunk
-	&& h.write_thunk == to_add.write_thunk) {
-      _handler_use_count[hi]++;
-      return hi;
-    }
-    hi = _handler_next_by_name[hi];
-  }
-  
-  // no handler found; add one
-  if (_nhandlers >= _handlers_cap) {
-    int new_cap = (_handlers_cap ? 2*_handlers_cap : 16);
-    Handler *new_handlers = new Handler[new_cap];
-    if (!new_handlers)	// out of memory
-      return -1;
-    for (int i = 0; i < _nhandlers; i++)
-      new_handlers[i] = _handlers[i];
-    delete[] _handlers;
-    _handlers = new_handlers;
-    _handlers_cap = new_cap;
-  }
-
-  hi = _nhandlers;
-  _nhandlers++;
-  _handlers[hi] = to_add;
-  _handler_use_count.push_back(1);
-  _handler_next_by_name.push_back(_handler_first_by_name[name_offset]);
-  _handler_first_by_name[name_offset] = hi;
-  return hi;
-}
-
-int
-Router::find_ehandler(int eindex, const String &name, bool force, bool star_ok)
+Router::find_ehandler(int eindex, const String &name, bool call_star) const
 {
   int eh = _ehandler_first_by_element[eindex];
   int star_h = -1;
-  String star_string = "*";
-  
   while (eh >= 0) {
     int h = _ehandler_to_handler[eh];
-    if (h >= 0) {
-      if (_handlers[h].name == name)
-	return eh;
-      else if (_handlers[h].name == star_string)
-	star_h = h;
-    }
+    const String &hname = _handlers[h].name();
+    if (hname == name)
+      return eh;
+    else if (hname.length() == 1 && hname[0] == '*')
+      star_h = h;
     eh = _ehandler_next[eh];
   }
+  if (call_star && star_h >= 0 && _handlers[star_h].writable()) {
+    if (_handlers[star_h].call_write(name, element(eindex), ErrorHandler::default_handler()) >= 0)
+      return find_ehandler(eindex, name, false);
+  }
+  return -1;
+}
 
-  int handler_to_add = -1;
-  bool add_handler = false;
+Router::Handler
+Router::fetch_handler(int eindex, const String &name) const
+{
+  // allow global handlers
+  if (eindex < 0)
+    return fetch_global_handler(name);
   
-  if (force) {
-    add_handler = true;
-  } else if (star_ok && star_h >= 0) {
-    const Handler &h = _handlers[star_h];
-    if (h.write) {
-      handler_to_add = h.write(name, _elements[eindex], 0, ErrorHandler::default_handler());
-      if (handler_to_add >= 0)
-	add_handler = true;
-    }
+  int eh = find_ehandler(eindex, name);
+  if (eh >= 0)
+    return _handlers[_ehandler_to_handler[eh]];
+  else
+    return Handler(name);
+}
+
+void
+Router::store_handler(int eindex, const Handler &to_store)
+{
+  // allow global handlers
+  if (eindex < 0) {
+    store_global_handler(to_store);
+    return;
+  }
+  
+  int old_eh = find_ehandler(eindex, to_store.name());
+  if (old_eh >= 0)
+    _handlers[_ehandler_to_handler[old_eh]]._use_count--;
+  
+  // find the offset in _name_handlers
+  int name_index;
+  for (name_index = 0;
+       name_index < _handler_first_by_name.size();
+       name_index++) {
+    int h = _handler_first_by_name[name_index];
+    if (_handlers[h]._name == to_store._name)
+      break;
+  }
+  if (name_index == _handler_first_by_name.size())
+    _handler_first_by_name.push_back(-1);
+
+  // find a similar handler, if any exists
+  int h = _handler_first_by_name[name_index];
+  int blank_h = -1;
+  int stored_h = -1;
+  while (h >= 0 && stored_h < 0) {
+    const Handler &han = _handlers[h];
+    if (han.compatible(to_store))
+      stored_h = h;
+    else if (han._use_count == 0)
+      blank_h = h;
+    h = han._next_by_name;
   }
 
-  if (add_handler) {
-    eh = _ehandler_to_handler.size();
-    _ehandler_to_handler.push_back(handler_to_add);
+  // if none exists, assign this one to a blank spot
+  if (stored_h < 0 && blank_h >= 0) {
+    stored_h = blank_h;
+    _handlers[stored_h] = to_store;
+    _handlers[stored_h]._use_count = 0;
+  }
+
+  // if no blank spot, add a handler
+  if (stored_h < 0) {
+    if (_nhandlers >= _handlers_cap) {
+      int new_cap = (_handlers_cap ? 2*_handlers_cap : 16);
+      Handler *new_handlers = new Handler[new_cap];
+      if (!new_handlers) {	// out of memory
+	if (old_eh >= 0)	// restore use count
+	  _handlers[_ehandler_to_handler[old_eh]]._use_count++;
+	return;
+      }
+      for (int i = 0; i < _nhandlers; i++)
+	new_handlers[i] = _handlers[i];
+      delete[] _handlers;
+      _handlers = new_handlers;
+      _handlers_cap = new_cap;
+    }
+    stored_h = _nhandlers;
+    _nhandlers++;
+    _handlers[stored_h] = to_store;
+    _handlers[stored_h]._use_count = 0;
+    _handlers[stored_h]._next_by_name = _handler_first_by_name[name_index];
+    _handler_first_by_name[name_index] = stored_h;
+  }
+
+  // point ehandler list at new handler
+  if (old_eh >= 0)
+    _ehandler_to_handler[old_eh] = stored_h;
+  else {
+    int new_eh = _ehandler_to_handler.size();
+    _ehandler_to_handler.push_back(stored_h);
     _ehandler_next.push_back(_ehandler_first_by_element[eindex]);
-    _ehandler_first_by_element[eindex] = eh;
-    return eh;
-  } else
-    return -1;
+    _ehandler_first_by_element[eindex] = new_eh;
+  }
+
+  // increment use count
+  _handlers[stored_h]._use_count++;
 }
 
 void
 Router::add_read_handler(int eindex, const String &name,
 			 ReadHandler read, void *thunk)
 {
-  int eh = find_ehandler(eindex, name, true, false);
-  Handler to_add;
-  int h = _ehandler_to_handler[eh];
-  if (h >= 0) {
-    to_add = _handlers[h];
-    _handler_use_count[h]--;
-  } else {
-    to_add.name = name;
-    to_add.write = 0;
-    to_add.write_thunk = 0;
-  }
-  to_add.read = read;
-  to_add.read_thunk = thunk;
-  _ehandler_to_handler[eh] = put_handler(to_add);
+  Handler to_add = fetch_handler(eindex, name);
+  to_add._read = read;
+  to_add._read_thunk = thunk;
+  store_handler(eindex, to_add);
 }
 
 void
 Router::add_write_handler(int eindex, const String &name,
 			  WriteHandler write, void *thunk)
 {
-  int eh = find_ehandler(eindex, name, true, false);
-  Handler to_add;
-  int h = _ehandler_to_handler[eh];
-  if (h >= 0) {
-    to_add = _handlers[h];
-    _handler_use_count[h]--;
-  } else {
-    to_add.name = name;
-    to_add.read = 0;
-    to_add.read_thunk = 0;
-  }
-  to_add.write = write;
-  to_add.write_thunk = thunk;
-  _ehandler_to_handler[eh] = put_handler(to_add);
+  Handler to_add = fetch_handler(eindex, name);
+  to_add._write = write;
+  to_add._write_thunk = thunk;
+  store_handler(eindex, to_add);
 }
 
 int
@@ -1155,41 +1151,54 @@ Router::find_handler(Element *element, const String &name)
   if (_ehandler_first_by_element.size() == 0 // handlers not configured
       || !element)
     return find_global_handler(name);
-  int eh = find_ehandler(element->eindex(), name, false, true);
+  int eh = find_ehandler(element->eindex(), name, true);
   return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
 }
 
 void
 Router::element_handlers(int eindex, Vector<int> &handlers) const
 {
-  assert(eindex >= 0 && eindex < _elements.size());
-  for (int eh = _ehandler_first_by_element[eindex];
-       eh >= 0;
-       eh = _ehandler_next[eh]) {
-    int h = _ehandler_to_handler[eh];
-    if (h >= 0)
-      handlers.push_back(h);
+  if (eindex < 0) {		// global handlers
+    for (int i = 0; i < nglobal_handlers(); i++)
+      handlers.push_back(FIRST_GLOBAL_HANDLER + i);
+  } else if (eindex < _elements.size()) { // element handlers
+    for (int eh = _ehandler_first_by_element[eindex];
+	 eh >= 0;
+	 eh = _ehandler_next[eh]) {
+      int h = _ehandler_to_handler[eh];
+      if (h >= 0)
+	handlers.push_back(h);
+    }
   }
 }
 
 
 // global handlers
 
-int
-Router::find_global_handler_index(const String &name, bool add)
+Router::Handler
+Router::fetch_global_handler(const String &name)
 {
   for (int i = 0; i < nglobalh; i++)
-    if (globalh[i].name == name)
-      return i;
-  
-  if (!add)
-    return -1;
+    if (globalh[i]._name == name)
+      return globalh[i];
+  return Handler(name);
+}
+
+void
+Router::store_global_handler(const Handler &h)
+{
+  for (int i = 0; i < nglobalh; i++)
+    if (globalh[i]._name == h._name) {
+      globalh[i] = h;
+      globalh[i]._use_count = 1;
+      return;
+    }
   
   if (nglobalh >= globalh_cap) {
     int n = (globalh_cap ? 2 * globalh_cap : 4);
     Router::Handler *hs = new Router::Handler[n];
-    if (!hs)
-      return -1;
+    if (!hs)			// out of memory
+      return;
     for (int i = 0; i < nglobalh; i++)
       hs[i] = globalh[i];
     delete[] globalh;
@@ -1197,18 +1206,38 @@ Router::find_global_handler_index(const String &name, bool add)
     globalh_cap = n;
   }
 
-  int i = nglobalh++;
-  globalh[i].name = name;
-  globalh[i].read = 0;
-  globalh[i].write = 0;
-  return i;
+  globalh[nglobalh] = h;
+  globalh[nglobalh]._use_count = 1;
+  nglobalh++;
+}
+
+void
+Router::add_global_read_handler(const String &name,
+				ReadHandler read, void *thunk)
+{
+  Handler to_add = fetch_global_handler(name);
+  to_add._read = read;
+  to_add._read_thunk = thunk;
+  store_global_handler(to_add);
+}
+
+void
+Router::add_global_write_handler(const String &name,
+				 WriteHandler write, void *thunk)
+{
+  Handler to_add = fetch_global_handler(name);
+  to_add._write = write;
+  to_add._write_thunk = thunk;
+  store_global_handler(to_add);
 }
 
 int
 Router::find_global_handler(const String &name)
 {
-  int hi = find_global_handler_index(name, false);
-  return (hi < 0 ? hi : hi + FIRST_GLOBAL_HANDLER);
+  for (int i = 0; i < nglobalh; i++)
+    if (globalh[i]._name == name)
+      return i + FIRST_GLOBAL_HANDLER;
+  return -1;
 }
 
 int
@@ -1222,26 +1251,6 @@ Router::global_handler(int hi)
 {
   assert(hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh);
   return globalh[hi - FIRST_GLOBAL_HANDLER];
-}
-
-void
-Router::add_global_read_handler(const String &name, ReadHandler rh, void *thunk)
-{
-  int hi = find_global_handler_index(name, true);
-  if (hi >= 0) {
-    globalh[hi].read = rh;
-    globalh[hi].read_thunk = thunk;
-  }
-}
-
-void
-Router::add_global_write_handler(const String &name, WriteHandler wh, void *thunk)
-{
-  int hi = find_global_handler_index(name, true);
-  if (hi >= 0) {
-    globalh[hi].write = wh;
-    globalh[hi].write_thunk = thunk;
-  }
 }
 
 void
