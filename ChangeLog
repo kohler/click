@@ -1,3 +1,33 @@
+2002-07-23 Tuesday 02:34  Eddie Kohler <kohler@icir.org>
+
+	* include/click/timer.hh (1.17): aesthetic rearrangement
+
+2002-07-23 Tuesday 02:34  Eddie Kohler <kohler@icir.org>
+
+	* aclocal.m4 (1.17): update
+
+2002-07-23 Tuesday 02:33  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.51): doc updates
+
+2002-07-23 Tuesday 01:43  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.50): doc updates
+
+2002-07-23 Tuesday 01:08  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.49): doc updates
+
+2002-07-23 Tuesday 01:05  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/msqueue.cc (1.11): change reinterpret_cast to
+	intptr_t, in case of 64-bit pointers
+
+2002-07-23 Tuesday 00:50  Eddie Kohler <kohler@icir.org>
+
+	* config-linuxmodule.h.in (1.7): add intptr_t typedef to
+	linuxmodule
+
 2002-07-23 Tuesday 00:38  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.17), config-userlevel.h.in (1.8), config.h.in
