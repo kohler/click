@@ -1,3 +1,4 @@
+## The following line supports click-mkmindriver and should not be changed.
 ## Click userlevel driver Makefile ##
 SHELL = @SHELL@
 

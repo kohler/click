@@ -1,4 +1,5 @@
-## Click NS driver Makefile ##
+## The following line supports click-mkmindriver and should not be changed.
+## Click ns driver Makefile ##
 SHELL = @SHELL@
 
 top_srcdir = @top_srcdir@
