@@ -1,3 +1,23 @@
+2002-12-19 Thursday 18:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/addressinfo.cc (1.24): fix device reference
+	count bug
+
+2002-12-19 Thursday 18:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: anydevice.cc (1.24), anydevice.hh (1.38),
+	fromdevice.cc (1.73), polldevice.cc (1.129): be more careful about
+	the _promisc and _in_map flags
+
+2002-12-19 Thursday 18:19  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/lookupiproutelinux.cc (1.29): disable LinuxIPLookup
+	in-kernel; it doesn't handle devices right
+
+2002-12-19 Thursday 18:19  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/configure.in (1.8): nitlet
+
 2002-12-19 Thursday 12:40  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/addressinfo.cc (1.23): fix refcnt bug on
