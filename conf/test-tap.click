@@ -1,5 +1,13 @@
 // test-tap.click
 
+// !!!!!!!! NOTE !!!!!!!!
+// THE KERNELTAP ELEMENT IS DEPRECATED, AND SO IS THIS CONFIGURATION.
+// Please use `test-tun.click' and the KernelTun element instead.
+
+
+
+// Historical interest:
+//
 // This user-level configuration tests the KernelTap element, which accesses
 // Linux's ethertap device (or, equivalently, *BSD's /dev/tun* devices). These
 // devices let user-level programs trade packets with kernel IP processing

@@ -39,6 +39,10 @@ CLICK_DECLS
  *
  * =back
  *
+ * This element is only available at user level.
+ *
+ * =n
+ *
  * Packets sent via ToDevice should already have a link-level
  * header prepended. This means that ARP processing,
  * for example, must already have been done.
@@ -52,10 +56,11 @@ CLICK_DECLS
  * the SET_ERROR_ANNO keyword is true, the SEND_ERR annotation of the
  * pushed packet is set to the system error code.
  *
- * This element is only available at user level.
- * 
+ * KernelTun lets you send IP packets to the host kernel's IP processing code,
+ * sort of like the kernel module's ToHost element.
+ *
  * =a
- * FromDevice.u, FromDump, ToDump, ToDevice(n) */
+ * FromDevice.u, FromDump, ToDump, KernelTun, ToDevice(n) */
 
 #if defined(__linux__)
 # define TODEVICE_LINUX 1

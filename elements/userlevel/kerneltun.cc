@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "kerneltun.hh"
+#include "fakepcap.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
@@ -40,49 +41,67 @@
 CLICK_DECLS
 
 KernelTun::KernelTun()
-  : Element(1, 1), _fd(-1), _task(this),
-    _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
+    : Element(1, 1), _fd(-1), _task(this),
+      _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 KernelTun::~KernelTun()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 KernelTun *
 KernelTun::clone() const
 {
-  return new KernelTun();
+    return new KernelTun();
+}
+
+void
+KernelTun::notify_ninputs(int n)
+{
+    set_ninputs(n < 1 ? 0 : 1);
+}
+
+void
+KernelTun::notify_noutputs(int n)
+{
+    set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
 KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _gw = IPAddress();
-  _headroom = 0;
-  if (cp_va_parse(conf, this, errh,
-		  cpIPPrefix, "network address", &_near, &_mask,
-		  cpOptional,
-		  cpIPAddress, "default gateway", &_gw,
-		  cpUnsigned, "packet data headroom", &_headroom,
-		  cpKeywords,
-		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
-		  cpEnd) < 0)
-    return -1;
+    _gw = IPAddress();
+    _headroom = Packet::DEFAULT_HEADROOM;
+    _mtu_out = DEFAULT_MTU;
+    if (cp_va_parse(conf, this, errh,
+		    cpIPPrefix, "network address", &_near, &_mask,
+		    cpOptional,
+		    cpIPAddress, "default gateway", &_gw,
+		    cpKeywords,
+		    "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
+		    "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
+		    "MTU", cpInteger, "MTU", &_mtu_out,
+		    cpEnd) < 0)
+	return -1;
 
-  if (_gw) { // then it was set to non-zero by arg
-    // check net part matches 
-    unsigned int g = _gw.in_addr().s_addr;
-    unsigned int m = _mask.in_addr().s_addr;
-    unsigned int n = _near.in_addr().s_addr;
-    if ((g & m) != (n & m)) {
-      _gw = 0;
-      errh->warning("not setting up default route\n(network address and gateway are on different networks)");
+    if (_gw) { // then it was set to non-zero by arg
+	// check net part matches 
+	unsigned int g = _gw.in_addr().s_addr;
+	unsigned int m = _mask.in_addr().s_addr;
+	unsigned int n = _near.in_addr().s_addr;
+	if ((g & m) != (n & m)) {
+	    _gw = 0;
+	    errh->warning("not setting up default route\n(network address and gateway are on different networks)");
+	}
     }
-  }
-  return 0;
+
+    if (_mtu_out < (int) sizeof(click_ip))
+	return errh->error("MTU must be greater than %d", sizeof(click_ip));
+    
+    return 0;
 }
 
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
@@ -104,7 +123,6 @@ KernelTun::try_linux_universal(ErrorHandler *errh)
     }
 
     _dev_name = ifr.ifr_name;
-    _type = LINUX_UNIVERSAL;
     _fd = fd;
     return 0;
 }
@@ -119,7 +137,6 @@ KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 	return -errno;
 
     _dev_name = dev_name;
-    _type = LINUXBSD_TUN;
     _fd = fd;
     return 0;
 }
@@ -141,6 +158,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     StringAccum tried;
     
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+    _type = LINUX_UNIVERSAL;
     if ((error = try_linux_universal(errh)) >= 0)
 	return error;
     else if (!saved_error || error != -ENOENT) {
@@ -152,8 +170,10 @@ KernelTun::alloc_tun(ErrorHandler *errh)
 #endif
 
 #ifdef __linux__
+    _type = LINUX_ETHERTAP;
     String dev_prefix = "tap";
 #else
+    _type = BSD_TUN;
     String dev_prefix = "tun";
 #endif
 
@@ -231,6 +251,14 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
 	if (system(tmp) != 0)
 	    return errh->error("%s: %s", tmp, strerror(errno));
     }
+
+    // XXXXXXX should set MTU
+    if (_type == LINUX_UNIVERSAL)
+	_mtu_in = _mtu_out + 4;
+    else if (_type == BSD_TUN)
+	_mtu_in = _mtu_out + 4;
+    else /* _type == LINUX_ETHERTAP */
+	_mtu_in = _mtu_out + 16;
     
     return 0;
 }
@@ -270,57 +298,54 @@ KernelTun::cleanup(CleanupStage)
 void
 KernelTun::selected(int fd)
 {
-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__) || defined(__APPLE__)
-    int cc;
-    unsigned char b[2048];
-
     if (fd != _fd)
 	return;
-  
-    cc = read(_fd, b, sizeof(b));
+    WritablePacket *p = Packet::make(_headroom, 0, _mtu_in, 0);
+    if (!p) {
+	click_chatter("out of memory!");
+	return;
+    }
+    
+    int cc = read(_fd, p->data(), _mtu_in);
     if (cc > 0) {
-# if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
-	// BSDs prefix packet with 32-bit address family.
-	int af = ntohl(*(unsigned *)b);
-	struct click_ether *e;
-	WritablePacket *p = Packet::make(_headroom + cc - 4 + sizeof(click_ether));
-	p->pull(_headroom);
-	e = (struct click_ether *) p->data();
-	memset(e, '\0', sizeof(*e));
-	if(af == AF_INET){
-	    e->ether_type = htons(ETHERTYPE_IP);
-	} else if(af == AF_INET6){
-	    e->ether_type = htons(ETHERTYPE_IP6);
-	} else {
-	    click_chatter("KernelTun: don't know af %d", af);
-	    p->kill();
-	    return;
-	}
-	memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
-# elif defined (__linux__)
-	Packet *p = Packet::make(_headroom, b, cc, 0);
-	if (_type == LINUX_UNIVERSAL)
-	    /* Two zero bytes of padding, then the Ethernet type, then the
-	       Ethernet header including the type */
-	    /* XXX alignment */
+	p->take(_mtu_in - cc);
+	bool ok = false;
+	
+	if (_type == LINUX_UNIVERSAL) {
+	    // 2-byte padding followed by an Ethernet type
+	    uint16_t etype = *(uint16_t *)(p->data() + 2);
 	    p->pull(4);
-	else
-	    /* Two zero bytes of padding, then the Ethernet header */
+	    if (etype != htons(ETHERTYPE_IP) && etype != htons(ETHERTYPE_IP6))
+		checked_output_push(1, p->clone());
+	    else
+		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
+	} else if (_type == BSD_TUN) {
+	    // 4-byte address family followed by IP header
+	    int af = ntohl(*(unsigned *)p->data());
+	    p->pull(4);
+	    if (af != AF_INET && af != AF_INET6) {
+		click_chatter("KernelTun(%s): don't know AF %d", _dev_name.cc(), af);
+		checked_output_push(1, p->clone());
+	    } else
+		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
+	} else { /* _type == LINUX_ETHERTAP */
+	    // 2-byte padding followed by a mostly-useless Ethernet header
 	    p->pull(2);
-# endif
+	    ok = fake_pcap_force_ip(p, FAKE_DLT_EN10MB);
+	}
 
-	struct timeval tv;
-	int res = gettimeofday(&tv, 0);
-	if (res == 0) 
-	    p->set_timestamp_anno(tv);
-	output(0).push(p);
+	if (ok) {
+	    (void) click_gettimeofday(&p->timestamp_anno());
+	    output(0).push(p);
+	} else
+	    checked_output_push(1, p);
+
     } else {
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
 	    _printed_read_err = true;
 	    perror("KernelTun read");
 	}
     }
-#endif
 }
 
 void
@@ -337,100 +362,68 @@ KernelTun::push(int, Packet *p)
 {
     // Every packet has a 14-byte Ethernet header.
     // Extract the packet type, then ignore the Ether header.
-
-    click_ether *e = (click_ether *) p->data();
-    if(p->length() < sizeof(*e)){
-	click_chatter("KernelTun: packet to small");
+    const click_ip *iph = p->ip_header();
+    if (!iph) {
+	click_chatter("KernelTun(%s): no network header", _dev_name.cc());
 	p->kill();
-	return;
-    }
-    int type = ntohs(e->ether_type);
-    const unsigned char *data = p->data() + sizeof(*e);
-    unsigned length = p->length() - sizeof(*e);
-
-    int num_written;
-    int num_expected_written;
-#if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
-    char big[2048];
-    int af;
-
-    if(type == ETHERTYPE_IP){
-	af = AF_INET;
-    } else if(type == ETHERTYPE_IP6){
-	af = AF_INET6;
+    } else if (p->network_length() > _mtu_out) {
+	click_chatter("KernelTun(%s): packet larger than MTU (%d)", _dev_name.cc(), _mtu_out);
+	p->kill();
+    } else if (iph->ip_v != 4 && iph->ip_v != 6) {
+	click_chatter("KernelTun(%s): unknown IP version %d", _dev_name.cc(), iph->ip_v);
+	p->kill();
     } else {
-	click_chatter("KernelTun: unknown ether type %04x", type);
-	p->kill();
-	return;
-    }
+	p->change_headroom_and_length(p->headroom() + p->network_header_offset(), p->network_length());
 
-    if(length+4 >= sizeof(big)){
-	click_chatter("KernelTun: packet too big (%d bytes)", length);
-	p->kill();
-	return;
-    }
-    af = htonl(af);
-    memcpy(big, &af, 4);
-    memcpy(big+4, data, length);
-  
-    num_written = write(_fd, big, length + 4);
-    num_expected_written = (int) length + 4;
-#elif defined(__linux__)
-    /*
-     * Ethertap is linux equivalent of/dev/tun; wants ethernet header plus 2
-     * alignment bytes */
-    char big[2048];
-    /*
-     * ethertap driver is very picky about what address we use here.
-     * e.g. if we have the wrong address, linux might ignore all the
-     * packets, or accept udp or icmp, but ignore tcp.  aaarrrgh, well
-     * this works.  -ddc */
-    char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; 
-    char *from = to;
-    short protocol = htons(type);
-    if(length+16 >= sizeof(big)){
-	fprintf(stderr, "bimtun writetun pkt too big\n");
-	return;
-    }
-    memset(big, 0, 16);
-    memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
-    memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
-    memcpy(big+14, &protocol, 2);
-    memcpy(big+16, data, length);
+	WritablePacket *q;
+	if (_type == LINUX_UNIVERSAL) {
+	    // 2-byte padding followed by an Ethernet type
+	    uint32_t ethertype = (iph->ip_v == 4 ? htonl(ETHERTYPE_IP) : htonl(ETHERTYPE_IP6));
+	    if ((q = p->push(4)))
+		*(uint32_t *)(q->data()) = ethertype;
+	} else if (_type == BSD_TUN) {
+	    uint32_t af = (iph->ip_v == 4 ? htonl(AF_INET) : htonl(AF_INET6));
+	    if ((q = p->push(4)))
+		*(uint32_t *)(q->data()) = af;
+	} else { /* _type == LINUX_ETHERTAP */
+	    uint16_t ethertype = (iph->ip_v == 4 ? htons(ETHERTYPE_IP) : htons(ETHERTYPE_IP6));
+	    if ((q = p->push(16))) {
+		/* ethertap driver is very picky about what address we use
+		 * here. e.g. if we have the wrong address, linux might ignore
+		 * all the packets, or accept udp or icmp, but ignore tcp.
+		 * aaarrrgh, well this works. -ddc */
+		memcpy(q->data(), "\x00\x00\xFE\xFD\x00\x00\x00\x00\xFE\xFD\x00\x00\x00\x00", 14);
+		*(uint16_t *)(q->data() + 14) = ethertype;
+	    }
+	}
 
-    num_written = write(_fd, big, length + 16);
-    num_expected_written = (int) length + 16;
-#else
-    num_written = write(_fd, data, length);
-    num_expected_written = (int) length;
-#endif
-
-    if (num_written != num_expected_written &&
-	(!_ignore_q_errs || !_printed_write_err || (errno != ENOBUFS))) {
-	_printed_write_err = true;
-	perror("KernelTun write");
+	if (q) {
+	    int w = write(_fd, q->data(), q->length());
+	    if (w != (int) q->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
+		_printed_write_err = true;
+		click_chatter("KernelTun(%s): write failed: %s", _dev_name.cc(), strerror(errno));
+	    }
+	    q->kill();
+	} else
+	    click_chatter("KernelTun(%s): out of memory", _dev_name.cc());
     }
-
-    p->kill();
 }
 
 String
 KernelTun::print_dev_name(Element *e, void *) 
 {
-  KernelTun *kt = (KernelTun *) e;
-  return kt->_dev_name;
+    KernelTun *kt = (KernelTun *) e;
+    return kt->_dev_name;
 }
-
 
 void
 KernelTun::add_handlers()
 {
-  if (input_is_pull(0))
-    add_task_handlers(&_task);
-
-  add_read_handler("dev_name", print_dev_name, 0);
+    if (input_is_pull(0))
+	add_task_handlers(&_task);
+    add_read_handler("dev_name", print_dev_name, 0);
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(KernelTun)

@@ -9,7 +9,7 @@ CLICK_DECLS
 /*
  * =c
  *
- * KernelTun(ADDR/MASK [, GATEWAY, HEADROOM] [, KEYWORDS])
+ * KernelTun(ADDR/MASK [, GATEWAY, I<keywords> HEADROOM, MTU, IGNORE_QUEUE_OVERFLOWS])
  *
  * =s devices
  *
@@ -17,30 +17,37 @@ CLICK_DECLS
  *
  * =d
  *
- * Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
- * This allows a user-level Click to hand packets to the ordinary kernel IP
- * processing code. KernelTun will also transfer packets from the kernel IP
- * code if the kernel routing table has entries pointing at the device.
+ * Reads IP packets from and writes IP packets to a /dev/net/tun, /dev/tun*,
+ * or /dev/tap* device. This allows a user-level Click to hand packets to the
+ * ordinary kernel IP processing code. KernelTun will also install a routing
+ * table entry so that the kernel can pass packets to the KernelTun device.
  *
- * Much like ToLinux, KernelTun produces and expects Ethernet packets, but the
- * Ethernet source and destination addresses are meaningless; only the
- * protocol usually matters.
+ * KernelTun produces and expects IP packets. If, for some reason, the kernel
+ * passes up a non-IP packet (or an invalid IP packet), KernelTun will emit
+ * that packet on its second output, or drop it if there is no second output.
  *
- * KernelTun allocates a /dev/tun* or tap* device (this might fail) and runs
- * ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
- * the netmask to MASK. If a nonzero GATEWAY IP address (which must be on the
- * same network as the tun) is specified, then KernelTun tries to set up a
- * default route through that host.
+ * KernelTun allocates a /dev/net/tun, /dev/tun*, or /dev/tap* device (this
+ * might fail) and runs ifconfig(8) to set the interface's local (i.e.,
+ * kernel) address to ADDR and the netmask to MASK. If a nonzero GATEWAY IP
+ * address (which must be on the same network as the tun) is specified, then
+ * KernelTun tries to set up a default route through that host.
  *
  * When cleaning up, KernelTun attempts to bring down the device via
  * ifconfig(8).
  *
- * HEADROOM is the number of bytes left empty before the packet data (to leave
- * room for additional encapsulation headers). Default HEADROOM is 0.
- *
  * Keyword arguments are:
  *
  * =over 8
+ *
+ * =item HEADROOM
+ *
+ * Integer. The number of bytes left empty before the packet data to leave
+ * room for additional encapsulation headers. Default is 28.
+ *
+ * =item MTU
+ *
+ * Integer. The interface's MTU. KernelTun will refuse to send packets larger
+ * than the MTU. Default is 2048.
  *
  * =item IGNORE_QUEUE_OVERFLOWS
  *
@@ -53,12 +60,21 @@ CLICK_DECLS
  *
  * =n
  *
- * An error like "could not allocate a /dev/tap* device : No such file or
- * directory" usually means that you have not enabled /dev/tap* in your
- * kernel. 
+ * This element replaces the KernelTap element, which generated and required
+ * Ethernet headers in addition to IP headers.
+ *
+ * Make sure that your kernel has tun support enabled before running
+ * KernelTun. Initialization errors like "no such device" or "no such file or
+ * directory" may indicate that your kernel isn't set up, or that some
+ * required kernel module hasn't been loaded (on Linux, the relevant module is
+ * "tun").
+ *
+ * This element differs from KernelTap in that it produces and expects IP
+ * packets, not IP-in-Ethernet packets.
  *
  * =a
- * ToLinux, ifconfig(8) */
+ *
+ * FromDevice.u, ToDevice.u, KernelTap, ifconfig(8) */
 
 class KernelTun : public Element { public:
   
@@ -70,7 +86,9 @@ class KernelTun : public Element { public:
     const char *flow_code() const	{ return "x/y"; }
     KernelTun *clone() const;
     const char *flags() const		{ return "S3"; }
-  
+
+    void notify_ninputs(int);
+    void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
@@ -83,9 +101,12 @@ class KernelTun : public Element { public:
 
   private:
 
-    enum Type { LINUX_UNIVERSAL, LINUXBSD_TUN };
+    enum { DEFAULT_MTU = 2048 };
+    enum Type { LINUX_UNIVERSAL, LINUX_ETHERTAP, BSD_TUN };
 
     int _fd;
+    int _mtu_in;
+    int _mtu_out;
     Type _type;
     String _dev_name;
     IPAddress _near;

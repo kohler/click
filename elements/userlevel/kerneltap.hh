@@ -15,7 +15,11 @@ CLICK_DECLS
  *
  * user-level interface to /dev/tun or ethertap
  *
+ * =deprecated KernelTun
+ *
  * =d
+ *
+ * This element is deprecated. Use KernelTun instead.
  *
  * Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
  * This allows a user-level Click to hand packets to the ordinary kernel IP
