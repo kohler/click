@@ -68,7 +68,7 @@ class ElementMap { public:
 	String srcdir;
 	String compile_flags;
 	String package;
-	String webdoc;
+	String dochref;
     };
     
     Vector<Traits> _e;

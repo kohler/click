@@ -46,8 +46,10 @@ line NMTOKEN #IMPLIED>
 <!ELEMENT elementmap (entry*)>
 <!ELEMENT entry EMPTY>
 
-<!ATTLIST elementmap sourcedir CDATA #IMPLIED
+<!ATTLIST elementmap src CDATA #IMPLIED
+sourcedir CDATA #IMPLIED
 provides CDATA #IMPLIED
+dochref CDATA #IMPLIED
 webdoc CDATA #IMPLIED>
 
 <!ATTLIST entry name CDATA #IMPLIED

@@ -60,6 +60,7 @@ sub process_file ($) {
 	    last;
 	}
     }
+    $headername = "" if $text eq "";
 
     my $first;
     $first = @cxx_name;
@@ -328,7 +329,7 @@ Options:
   -f, --files FILE        Read header filenames, or an 'elements.conf' file,
                           from FILE.
   -r, --provide PROV      Record provisions PROV in output.
-      --webdoc DOCSTR     Record Web documentation DOCSTR in output.
+      --dochref DOCSTR    Record documentation URL pattern DOCSTR in output.
   -p, --prefix PFX        Remove PFX from filenames in output.
   -I, --include DIR       Look for header files in DIR.
   -s, --sourcedir DIR     Record DIR as source directory in output.
@@ -340,51 +341,52 @@ EOD;
 }
 
 undef $/;
-my(@files, @provides, $fn, $prefix, $any_files, $webdoc, $sourcedir);
+my(@files, @provides, $fn, $prefix, $any_files, $dochref, $sourcedir);
 $prefix = "";
 
 while (@ARGV) {
     $_ = shift @ARGV;
-    if (/^-f$/ || long_option_match($_, '--files', 3)) {
+    if (long_option_match($_, '--files', 3) && /^[^=]*=(.*)$/) {
+	push @files, read_files_from($1);
+	$any_files = 1;
+    } elsif (/^-f$/ || long_option_match($_, '--files', 3)) {
 	die "not enough arguments" if !@ARGV;
 	push @files, read_files_from(shift @ARGV);
 	$any_files = 1;
-    } elsif (long_option_match($_, '--files', 3) && /^[^=]*=(.*)$/) {
-	push @files, read_files_from($1);
-	$any_files = 1;
+    } elsif (long_option_match($_, '--prefix', 5) && /^[^=]*=(.*)$/) {
+	$prefix = $1;
+	$prefix .= "/" if $prefix !~ m|/\Z|;
     } elsif (/^-p$/ || long_option_match($_, '--prefix', 5)) {
 	die "not enough arguments" if !@ARGV;
 	$prefix = shift @ARGV;
 	$prefix .= "/" if $prefix !~ m|/\Z|;
-    } elsif (long_option_match($_, '--prefix', 5) && /^[^=]*=(.*)$/) {
-	$prefix = $1;
-	$prefix .= "/" if $prefix !~ m|/\Z|;
+    } elsif (long_option_match($_, '--provide', 5) && /^[^=]*=(.*)$/) {
+	push @provides, split(/\s+/, $1);
     } elsif (/^-r$/ || long_option_match($_, '--provide', 5)) {
 	die "not enough arguments" if !@ARGV;
 	push @provides, split(/\s+/, shift @ARGV);
-    } elsif (long_option_match($_, '--provide', 5) && /^[^=]*=(.*)$/) {
-	push @provides, split(/\s+/, $1);
+    } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
+	push @includes, $prefix . $1;
     } elsif (/^-I$/ || long_option_match($_, '--include', 3)) {
 	die "not enough arguments" if !@ARGV;
 	push @includes, $prefix . shift @ARGV;
-    } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
-	push @includes, $prefix . $1;
     } elsif (/^-I(.+)$/) {
 	push @includes, $prefix . $1;
+    } elsif (long_option_match($_, '--sourcedir', 3) && /^[^=]*=(.*)$/) {
+	$sourcedir = $1;
     } elsif (/^-s$/ || long_option_match($_, '--sourcedir', 3)) {
 	die "not enough arguments" if !@ARGV;
 	$sourcedir = shift @ARGV;
-    } elsif (long_option_match($_, '--sourcedir', 3) && /^[^=]*=(.*)$/) {
-	$sourcedir = $1;
     } elsif (/^-s(.+)$/) {
 	$sourcedir = $1;
-    } elsif (long_option_match($_, '--webdoc', 3)) {
+    } elsif ((long_option_match($_, '--dochref', 3) || long_option_match($_, '--webdoc', 3))
+	     && /^[^=]*=(.*)$/) {
+	die "repeated --dochref" if defined($dochref);
+	$dochref = $1;
+    } elsif (long_option_match($_, '--dochref', 3) || long_option_match($_, '--webdoc', 3)) {
 	die "not enough arguments" if !@ARGV;
-	die "repeated --webdoc" if defined($webdoc);
-	$webdoc = shift @ARGV;
-    } elsif (long_option_match($_, '--webdoc', 3) && /^[^=]*=(.*)$/) {
-	die "repeated --webdoc" if defined($webdoc);
-	$webdoc = $1;
+	die "repeated --dochref" if defined($dochref);
+	$dochref = shift @ARGV;
     } elsif (/^-h$/ || long_option_match($_, '--help', 3)) {
 	help();
     } elsif (/^-./) {
@@ -407,14 +409,26 @@ umask(022);
 open(OUT, ">&STDOUT");
 
 print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
-<?xml-stylesheet type=\"application/xml\" href=\"file:///Users/kohler/click/etc/elementmap.xsl\"?>
+<?xml-stylesheet type=\"application/xml\" href=\"http://www.lcdf.org/click/xml/elementmap.xsl\"?>
 <elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
 print OUT " sourcedir=\"$sourcedir\"" if defined($sourcedir);
+print OUT " src=\"file://$sourcedir\"" if defined($sourcedir) && $sourcedir =~ m|^/|;
 print OUT " provides=\"", join(' ', @provides), "\"";
-print OUT " webdoc=\"$webdoc\"" if defined($webdoc);
+print OUT " dochref=\"$dochref\"" if defined($dochref);
 print OUT ">\n";
 
-foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
+sub sorter {
+    my($xa, $xb) = ($click_name[$a], $click_name[$b]);
+    if ($xa && $xb) {
+	$xa cmp $xb;
+    } elsif ($xa || $xb) {
+	($xa ? -1 : 1);
+    } else {
+	$provisions[$a] cmp $provisions[$b];
+    }
+}
+
+foreach $id (sort sorter 0..$#click_name) {
     print OUT "<entry";
 
     print OUT " name=\"", $click_name[$id], "\"" if $click_name[$id];

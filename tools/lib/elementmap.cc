@@ -94,7 +94,7 @@ ElementMap::documentation_url(const ElementTraits &t) const
 {
     String name = t.documentation_name;
     if (name)
-	return percent_substitute(_def[t.def_index].webdoc,
+	return percent_substitute(_def[t.def_index].dochref,
 				  's', name.cc(),
 				  0);
     else
@@ -321,7 +321,11 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 		Globals g;
 		g.package = (attrs["package"] ? attrs["package"] : package_name);
 		g.srcdir = attrs["sourcedir"];
-		g.webdoc = attrs["webdoc"];
+		if (attrs["src"].substring(0, 7) == "file://")
+		    g.srcdir = attrs["src"].substring(7);
+		g.dochref = attrs["dochref"];
+		if (!g.dochref)
+		    g.dochref = attrs["webdoc"];
 		if (attrs["provides"])
 		    _e[0].provisions += " " + attrs["provides"];
 		_def.push_back(g);
@@ -427,7 +431,7 @@ ElementMap::parse(const String &str, const String &package_name, ErrorHandler *e
 		def_index = _def.size();
 		_def.push_back(Globals());
 		_def.back() = _def[def_index - 1];
-		_def.back().webdoc = cp_unquote(words[1]);
+		_def.back().dochref = cp_unquote(words[1]);
 	    }
 
 	} else if (words[0] == "$provides") {
