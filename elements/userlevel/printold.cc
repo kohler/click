@@ -67,7 +67,7 @@ PrintOld::simple_action(Packet *p)
   }
 
   StringAccum sa(3*_bytes + _label.length() + 55);
-  if (!sa.capacity()) {
+  if (sa.out_of_memory()) {
     click_chatter("no memory for PrintOld");
     return p;
   }
