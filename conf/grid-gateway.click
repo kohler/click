@@ -96,6 +96,7 @@ eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
 
 
 wvlan_demux [0] 
+-> HostEtherFilter(GRID_MAC_ADDR, true)
 -> check_grid :: CheckGridHeader [0]
 -> fr :: FilterByRange(RANGE, li) [0]
 -> [0] nb [0]
