@@ -6,6 +6,8 @@
 
 #include "grid-node-info.h"
 
+StaticLocationInfo(0, 0)
+
 rh :: ReadHandlerCaller(1) 
 
 // protocol els
@@ -13,15 +15,21 @@ nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
 h :: Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP)
 
 // device layer els
-ps :: FromDevice(NET_DEVICE, 0)
-q :: ToDevice(NET_DEVICE)
+from_wvlan :: FromDevice(NET_DEVICE, 0)
+to_wvlan :: FixSrcLoc -> SetGridChecksum -> ToDevice(NET_DEVICE)
+
 
 // linux ip layer els
 linux :: Tun(TUN_DEVICE, GRID_IP, GRID_NETMASK)
-  to_linux :: Queue -> linux
+to_linux :: Queue -> linux
 
 // hook it all up
-ps -> Classifier(GRID_ETH_PROTO) -> [0] nb [0] -> q 
+from_wvlan -> Classifier(GRID_ETH_PROTO) 
+  //-> check_grid :: CheckGridHeader
+  -> fr :: FilterByRange(1000) [0] 
+  -> [0] nb [0] -> to_wvlan
+fr [1] -> Print(out_of_range) -> Discard
+//check_grid [1] -> Print(bad_grid_hdr) -> Discard
 
 linux -> cl :: Classifier(GRID_IP_HEX, // ip for us
 			  GRID_NET_HEX, // ip for Grid network
@@ -30,5 +38,5 @@ cl [0] -> to_linux
 cl [1] -> GetIPAddress(16) -> [1] nb [1] -> check :: CheckIPHeader [0] -> to_linux
 check [1] -> Discard
 cl [2] -> SetIPAddress(GRID_GW) -> [1] nb // for grid gateway
-h -> q 
+h -> to_wvlan
 
