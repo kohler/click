@@ -1,3 +1,7 @@
+2004-06-09 Wednesday 21:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/kerneltap.cc (1.41): visibly deprecate element
+
 2004-06-09 Wednesday 13:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/vector.cc (1.8), include/click/vector.hh (1.12),
