@@ -1,3 +1,8 @@
+2004-01-18 Sunday 23:50  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/inorderqueue.hh (1.8): make it compile with gcc
+	2.95
+
 2004-01-16 Friday 16:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/linuxmodule/: todevice.cc (1.134), todevice.hh (1.65):
