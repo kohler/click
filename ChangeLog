@@ -1,3 +1,25 @@
+2004-07-07 Wednesday 15:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/linktable.hh (1.3): remove redundant typedef
+
+2004-07-07 Wednesday 15:47  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/packetlogger2.hh (1.7),
+	elements/wifi/autoratefallback.hh (1.5),
+	elements/wifi/availablerates.cc (1.3), elements/wifi/linktable.cc
+	(1.4), elements/wifi/madwifirate.hh (1.2),
+	elements/wifi/probetxrate.cc (1.8), elements/wifi/probetxrate.hh
+	(1.7), elements/wifi/settxpower.cc (1.5),
+	elements/wifi/wifitxfeedback.cc (1.14),
+	elements/wifi/wifitxfeedback.hh (1.10),
+	elements/wifi/sr/ettmetric.cc (1.4), elements/wifi/sr/ettmetric.hh
+	(1.4), elements/wifi/sr/ettstat.cc (1.5),
+	elements/wifi/sr/ettstat.hh (1.3),
+	elements/wifi/sr/setsrchecksum.cc (1.2), elements/wifi/sr/srcr.cc
+	(1.3), elements/wifi/sr/srcr.hh (1.2), elements/wifi/sr/srpacket.hh
+	(1.2), include/clicknet/wifi.h (1.6): make elements work with
+	802.11g.
+
 2004-07-07 Wednesday 14:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/wifitxfeedback.cc (1.13): fix static_whatever error
