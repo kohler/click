@@ -26,6 +26,7 @@
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/sha1.h>
 #include <click/glue.hh>
 
 IPsecESPUnencap::IPsecESPUnencap()
@@ -46,7 +47,10 @@ IPsecESPUnencap::clone() const
 int
 IPsecESPUnencap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _sha1 = false;
   if (cp_va_parse(conf, this, errh,
+	          cpOptional, 
+		  cpBool, "verify SHA1", &_sha1,
 		  0) < 0)
     return -1;
   return 0;
@@ -60,12 +64,29 @@ IPsecESPUnencap::simple_action(Packet *p)
   int i, blks;
   const unsigned char * blk;
 
-  // Rip off ESP header
+  // chop off authentication header
+  if (_sha1) {
+    const u_char *ah = p->data() + p->length() - 12;
+    SHA1_ctx ctx;
+    SHA1_init (&ctx);
+    SHA1_update (&ctx, 
+	         ((u_char*) p->data())+sizeof(esp_new), 
+		 p->length()-12-sizeof(esp_new));
+    SHA1_final (&ctx);
+    const unsigned char *digest = SHA1_digest(&ctx);
+    if (memcmp(ah, digest, 12)) {
+      click_chatter("Invalid SHA1 authentication digest");
+      p->kill();
+      return(0);
+    }
+    p->take(12);
+  }
+
+  // rip off ESP header
   p->pull(sizeof(esp_new));
 
-  // Verify padding
+  // verify padding
   blks = p->length();
-  // click_chatter("got %d left", blks);
   blk = p->data();
   if((blk[blks - 2] != blk[blks - 3]) && (blk[blks -2] != 0)) {
     click_chatter("Invalid padding length");
@@ -80,11 +101,8 @@ IPsecESPUnencap::simple_action(Packet *p)
     p->kill();
     return(0);
   }
-
-  // Chop off padding
-  // Packet *q = Packet::make(p->data(), p->length() - (blks + 2));
-  // p->kill();
-  // return q;
+  
+  // chop off padding
   p->take(blks+2);
   return p;
 }

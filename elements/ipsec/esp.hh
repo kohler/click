@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPsecESPEncap(SPI, BLOCKS)
+ * IPsecESPEncap(SPI, BLOCKS [, SHA1])
  * =s encapsulation
  * apply IPSec encapsulation
  * =d
@@ -18,6 +18,10 @@
  * counter, and 64 bit Integrity Vector (IV). The IV is not set, and an
  * element that does encryption, such as IPsecDES, is expected to set the IV.
  * Thus, IPsecESPEncap is usually followed by such an element.
+ *
+ * If SHA1 is true (false by default), SHA1 hash of the payload, including the
+ * IV, will be computed. First 96 bits of the SHA1 hash will be appended to
+ * the payload, after padding.
  *
  * =a IPsecESPUnencap, IPsecDES 
  */
@@ -49,6 +53,7 @@ public:
   
 private:
 
+  bool _sha1;
   int _blks;
   int _spi;
   unsigned _rpl;

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPsecESPUnencap
+ * IPsecESPUnencap([SHA1])
  * =s encapsulation
  * removes IPSec encapsulation
  * =d
@@ -11,6 +11,8 @@
  * Removes and verifies ESP header added by IPsecESPEncap. see RFC 2406. does
  * not perform anti-replay attack checks. If DES-CBC encryption and decryption
  * are used, IPsecDES must be used before IPsecESPUnencap.
+ *
+ * If SHA1 is true (false by default), checks SHA1 authentication header.
  *
  * =a IPsecESPUnencap, IPsecDES 
  */
@@ -32,7 +34,7 @@ public:
   Packet *simple_action(Packet *);
   
 private:
-
+  bool _sha1;
 
 };
 

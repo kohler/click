@@ -27,6 +27,7 @@
 #include <click/click_ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/sha1.h>
 
 IPsecESPEncap::IPsecESPEncap()
   : Element(1, 1), _spi(-1)
@@ -55,12 +56,15 @@ IPsecESPEncap::clone() const
 int
 IPsecESPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _sha1 = false;
   unsigned int spi_uc;
   int blk_int;
 
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "Security Parameter Index", &spi_uc,
 		  cpInteger, "Block size", &blk_int,
+		  cpOptional,
+		  cpBool, "Compute SHA1 hash?", &_sha1,
 		  0) < 0)
     return -1;
   _spi = spi_uc;
@@ -93,7 +97,7 @@ IPsecESPEncap::simple_action(Packet *p)
   
   WritablePacket *q = p->push(sizeof(esp_new));
   q = q->put(padding);
-  
+
   struct esp_new *esp = (struct esp_new *) q->data();  
   u_char *pad = ((u_char *) q->data()) + sizeof(esp_new) + plen;
 
@@ -111,6 +115,20 @@ IPsecESPEncap::simple_action(Packet *p)
   
   // next header = ip protocol number
   pad[padding - 1] = ip_p;
+
+  // compute sha1
+  if (_sha1) {
+    u_char *ah = ((u_char*) q->data()) + q->length(); 
+    q = q->put(12);
+    SHA1_ctx ctx;
+    SHA1_init (&ctx);
+    SHA1_update (&ctx, 
+	         ((u_char*) q->data())+sizeof(esp_new), 
+		 q->length()-12-sizeof(esp_new));
+    SHA1_final (&ctx);
+    const unsigned char *digest = SHA1_digest(&ctx);
+    memmove(ah, digest, 12);
+  }
 
   return(q);
 }

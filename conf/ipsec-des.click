@@ -6,22 +6,18 @@ InfiniteSource(DATA \<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 	-> Strip(14)
 	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
         -> IPPrint(start)
-        
-	-> IPsecESPEncap(0x00000001, 8)
+	-> IPsecESPEncap(0x00000001, 8, true)
         -> IPsecDES(1, FFFFFFFFFFFFFFFF, 0123456789abcdef)
 	-> MarkIPHeader
         -> IPPrint(encrypt)
-
         -> IPEncap(50, 1.0.0.2, 2.0.0.2)
         -> SetIPChecksum
 	-> IPPrint(encap)
-  
         -> Strip(20)
 	-> MarkIPHeader
         -> IPPrint(unencap)
-
         -> IPsecDES(0, FFFFFFFFFFFFFFFF, 0123456789abcdef)
-        -> IPsecESPUnencap
+        -> IPsecESPUnencap(true)
 	-> MarkIPHeader
         -> IPPrint(decrypt)
 	-> Discard;
