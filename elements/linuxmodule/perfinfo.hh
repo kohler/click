@@ -14,6 +14,7 @@
  * Valid metrics are:
  * DCU_MISS_OUTSTANDING,
  * IFU_FETCH_MISS,
+ * IFU_MEM_STALL,
  * IFU_FETCH, 
  * INST_RETIRED,
  * L2_IFETCH,

@@ -176,7 +176,7 @@ IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
     } else
       sporth = sportl;
   }
-  if (sportl > sporth || sportl < 0 || sporth >= SHRT_MAX) {
+  if (sportl > sporth || sportl < 0 || sporth > USHRT_MAX) {
     errh->error("source port(s) %d-%d out of range in pattern spec", sportl, sporth);
     return 0;
   }
@@ -194,7 +194,7 @@ IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
     errh->error("bad destination port `%s' in pattern spec", words[3].cc());
     return 0;
   }
-  if (dport < 0 || dport >= SHRT_MAX) {
+  if (dport < 0 || dport > USHRT_MAX) {
     errh->error("destination port %d out of range in pattern spec", dport);
     return 0;
   }

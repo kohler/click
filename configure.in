@@ -216,7 +216,7 @@ if test $ac_cv_read_net_skbcount = yes; then
 fi
 
 AC_CACHE_CHECK(for tcp_prot kernel symbol, ac_cv_tcp_prot,
-[if grep 'tcp_prot.*Click' $linuxdir/net/netsyms.c >/dev/null 2>&1; then
+[if grep 'D tcp_prot$' $linuxdir/System.map >/dev/null 2>&1; then
   ac_cv_tcp_prot=yes
 else ac_cv_tcp_prot=no; fi])
 if test $ac_cv_tcp_prot = yes; then

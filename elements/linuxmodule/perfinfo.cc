@@ -13,6 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "perfctr.hh"
 #include "perfinfo.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -38,16 +39,19 @@ PerfInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("only one PerfInfo element allowed per configuration"); 
 
   HashMap<String, int> metrics(0);
-  metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
-  metrics.insert("INST_RETIRED", 0xC0);
-  metrics.insert("IFU_FETCH", 0x80);
-  metrics.insert("IFU_FETCH_MISS", 0x81);
-  metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
-  metrics.insert("L2_LD", 0x29 | (0xf<<8));
-  metrics.insert("L2_LINES_OUTM", 0x27);
-  metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
-  metrics.insert("BUS_TRAN_MEM", 0x6f);
-  metrics.insert("BUS_TRAN_INVAL", 0x69);
+  metrics.insert("DCU_MISS_OUTSTANDING", DCU_MISS_OUTSTANDING);
+  metrics.insert("INST_RETIRED", INST_RETIRED);
+  metrics.insert("IFU_FETCH", IFU_FETCH);
+  metrics.insert("IFU_FETCH_MISS", IFU_FETCH_MISS);
+  metrics.insert("IFU_MEM_STALL", IFU_MEM_STALL);
+  metrics.insert("L2_IFETCH", L2_IFETCH);
+  metrics.insert("L2_LD", L2_LD);
+  metrics.insert("L2_LINES_OUTM", L2_LINES_OUTM);
+  metrics.insert("L2_RQSTS", L2_RQSTS);
+  metrics.insert("BUS_TRAN_MEM", BUS_TRAN_MEM);
+  metrics.insert("BUS_TRAN_INVAL", BUS_TRAN_INVAL);
+  metrics.insert("L2_LINES_IN", L2_LINES_IN);
+  metrics.insert("L2_LINES_OUT", L2_LINES_OUT);
     
   _metric0 = metrics["DCU_MISS_OUTSTANDING"];
   _metric1 = metrics["IFU_IFETCH_MISS"];
