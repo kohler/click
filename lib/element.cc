@@ -493,6 +493,15 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("cannot reconfigure %{element} live", this);
 }
 
+Element *
+Element::hotswap_element() const
+{
+  if (Router *other = router()->hotswap_router())
+    return other->find(id());
+  else
+    return 0;
+}
+
 void
 Element::take_state(Element *, ErrorHandler *)
 {

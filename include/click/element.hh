@@ -39,6 +39,18 @@ class Element { public:
   virtual ~Element();
   static int nelements_allocated;
 
+  // RUNTIME
+  virtual void push(int port, Packet *);
+  virtual Packet *pull(int port);
+  virtual Packet *simple_action(Packet *);
+
+  virtual bool run_task();		// return true iff did useful work
+  virtual void run_timer();
+#if CLICK_USERLEVEL
+  virtual void selected(int fd);
+#endif
+  virtual void run_scheduled();		// deprecated, use run_{task,timer}()
+  
   // CHARACTERISTICS
   virtual const char *class_name() const = 0;
   virtual void *cast(const char *);
@@ -89,12 +101,14 @@ class Element { public:
 		      CLEANUP_INITIALIZED, CLEANUP_ROUTER_INITIALIZED };
   virtual void cleanup(CleanupStage);
 
-  // LIVE RECONFIGURATION
+  // LIVE RECONFIGURATION, HOTSWAP
   virtual void configuration(Vector<String> &) const;
   String configuration() const;
   
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(Vector<String> &, ErrorHandler *);
+
+  virtual Element *hotswap_element() const;
   virtual void take_state(Element *, ErrorHandler *);
 
   // HANDLERS
@@ -112,20 +126,11 @@ class Element { public:
   virtual int llrpc(unsigned command, void *arg);
   int local_llrpc(unsigned command, void *arg);
   
-  // RUNTIME
-  virtual void push(int port, Packet *);
-  virtual Packet *pull(int port);
-  virtual Packet *simple_action(Packet *);
-
-  virtual bool run_task();		// return true iff did useful work
-  virtual void run_timer();
-  virtual void run_scheduled();		// deprecated, use run_{task,timer}()
-  
 #if CLICK_USERLEVEL
+  // SELECT
   enum { SELECT_READ = 1, SELECT_WRITE = 2 };
   int add_select(int fd, int mask) const;
   int remove_select(int fd, int mask) const;
-  virtual void selected(int fd);
 #endif
 
   // METHODS USED BY `ROUTER'
