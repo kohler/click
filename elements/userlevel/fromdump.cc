@@ -42,7 +42,7 @@
 
 FromDump::FromDump()
     : Element(0, 1), _fd(-1), _buffer(0), _data_packet(0), _packet(0),
-      _task(this), _pipe(0)
+      _last_time_h(0), _task(this), _pipe(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -50,6 +50,7 @@ FromDump::FromDump()
 FromDump::~FromDump()
 {
     MOD_DEC_USE_COUNT;
+    delete _last_time_h;
     uninitialize();
 }
 
@@ -92,6 +93,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
+		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
 		    0) < 0)
 	return -1;
 
@@ -125,6 +127,9 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     else
 	_have_last_time = false;
 
+    if (_have_last_time && !_last_time_h)
+	_last_time_h = new HandlerCall(id() + ".active false");
+    
     // set other variables
     _have_any_times = false;
     _timing = timing;
@@ -371,8 +376,12 @@ FromDump::initialize(ErrorHandler *errh)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
+    // check handler call
+    if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
+	return -1;
+    
     // try reading a packet
-    if ((_packet = read_packet(errh))) {
+    if (read_packet(errh)) {
 	struct timeval now;
 	click_gettimeofday(&now);
 	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
@@ -401,6 +410,14 @@ FromDump::uninitialize()
 }
 
 void
+FromDump::set_active(bool active)
+{
+    _active = active;
+    if (active && output_is_push(0) && !_task.scheduled())
+	_task.reschedule();
+}
+
+void
 FromDump::prepare_relative_times(const fake_bpf_timeval &btv)
 {
     if (_first_time_relative)
@@ -412,15 +429,21 @@ FromDump::prepare_relative_times(const fake_bpf_timeval &btv)
     _have_any_times = true;
 }
 
-Packet *
+bool
 FromDump::read_packet(ErrorHandler *errh)
 {
     fake_pcap_pkthdr swapped_ph;
     const fake_pcap_pkthdr *ph;
     int len, caplen;
     Packet *p;
+    bool more = true;
+    _packet = 0;
 
   retry:
+    // quit if we sampled or force_ip failed, but we are no longer active
+    if (!more)
+	return false;
+    
     // we may need to read bits of the file
     if (_pos + sizeof(*ph) <= _len) {
 	ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
@@ -428,7 +451,7 @@ FromDump::read_packet(ErrorHandler *errh)
     } else {
 	ph = &swapped_ph;
 	if (read_into(&swapped_ph, sizeof(*ph), errh) < (int)sizeof(*ph))
-	    return 0;
+	    return false;
     }
 
     if (_swapped) {
@@ -448,13 +471,14 @@ FromDump::read_packet(ErrorHandler *errh)
     // check for errors
     if (caplen > len || caplen > 65535) {
 	error_helper(errh, "bad packet header; giving up");
-	return 0;
+	return false;
     }
 
     // compensate for modified pcap versions
     _pos += _extra_pkthdr_crap;
 
-    // check timing
+    // check times
+  check_times:
     if (!_have_any_times)
 	prepare_relative_times(ph->ts);
     if (_have_first_time) {
@@ -464,8 +488,18 @@ FromDump::read_packet(ErrorHandler *errh)
 	} else
 	    _have_first_time = false;
     }
-    if (_have_last_time && !timercmp(&ph->ts, &_last_time, <))
-	return 0;
+    if (_have_last_time && !timercmp(&ph->ts, &_last_time, <)) {
+	_have_last_time = false;
+	(void) _last_time_h->call_write(this, errh);
+	if (!_active)
+	    more = false;
+	// The handler might have scheduled us, in which case we might crash
+	// at fast_reschedule()! Don't want that -- make sure we are
+	// unscheduled.
+	_task.unschedule();
+	// retry _last_time in case someone changed it
+	goto check_times;
+    }
     
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
@@ -479,7 +513,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	p = _data_packet->clone();
 	if (!p) {
 	    error_helper(errh, "out of memory!");
-	    return 0;
+	    return false;
 	}
 	p->change_headroom_and_length(_pos, caplen);
 	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
@@ -490,16 +524,17 @@ FromDump::read_packet(ErrorHandler *errh)
 	WritablePacket *wp = Packet::make(0, 0, caplen, 0);
 	if (!wp) {
 	    error_helper(errh, "out of memory!");
-	    return 0;
+	    return false;
 	}
 	// set annotations now: may unmap earlier memory!
 	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
 	SET_EXTRA_LENGTH_ANNO(wp, len - caplen);
 	
 	if (read_into(wp->data(), caplen, errh) < caplen) {
-	    error_helper(errh, "short packet");
+	    // XXX error message too annoying
+	    // error_helper(errh, "short packet");
 	    wp->kill();
-	    return 0;
+	    return false;
 	}
 	
 	p = wp;
@@ -510,7 +545,8 @@ FromDump::read_packet(ErrorHandler *errh)
 	goto retry;
     }
 
-    return p;
+    _packet = p;
+    return more;
 }
 
 void
@@ -518,25 +554,27 @@ FromDump::run_scheduled()
 {
     if (!_active)
 	return;
-    if (!_packet) {
-	if (_stop)
-	    router()->please_stop_driver();
-	return;
-    }
-    
-    if (_timing) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_time_offset, &now);
-	if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-	    _task.fast_reschedule();
-	    return;
-	}
-    }
 
-    output(0).push(_packet);
-    _packet = read_packet(0);
-    _task.fast_reschedule();
+    bool more;
+    if (_packet || read_packet(0)) {
+	if (_timing) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    timersub(&now, &_time_offset, &now);
+	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
+		_task.fast_reschedule();
+		return;
+	    }
+	}
+	output(0).push(_packet);
+	more = read_packet(0);
+    } else
+	more = false;
+
+    if (more)
+	_task.fast_reschedule();
+    else if (_stop)
+	router()->please_stop_driver();
 }
 
 Packet *
@@ -544,28 +582,32 @@ FromDump::pull(int)
 {
     if (!_active)
 	return 0;
-    if (!_packet) {
-	if (_stop)
-	    router()->please_stop_driver();
-	return 0;
-    }
-    
-    if (_timing) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_time_offset, &now);
-	if (timercmp(&_packet->timestamp_anno(), &now, >))
-	    return 0;
+
+    bool more;
+    Packet *p;
+    if (_packet || read_packet(0)) {
+	if (_timing) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    timersub(&now, &_time_offset, &now);
+	    if (timercmp(&_packet->timestamp_anno(), &now, >))
+		return 0;
+	}
+	p = _packet;
+	more = read_packet(0);
+    } else {
+	p = 0;
+	more = false;
     }
 
-    Packet *old_packet = _packet;
-    _packet = read_packet(0);
-    return old_packet;
+    if (!more && _stop)
+	router()->please_stop_driver();
+    return p;
 }
 
 enum {
     SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    FILESIZE_THUNK, FILEPOS_THUNK
+    FILESIZE_THUNK, FILEPOS_THUNK, EXTEND_INTERVAL_THUNK
 };
 
 String
@@ -602,9 +644,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
       case ACTIVE_THUNK: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
-	      fd->_active = active;
-	      if (active && fd->output_is_push(0) && !fd->_task.scheduled())
-		  fd->_task.reschedule();
+	      fd->set_active(active);
 	      return 0;
 	  } else
 	      return errh->error("`active' should be Boolean");
@@ -613,6 +653,16 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	fd->_active = false;
 	fd->router()->please_stop_driver();
 	return 0;
+      case EXTEND_INTERVAL_THUNK: {
+	  struct timeval tv;
+	  if (cp_timeval(s, &tv)) {
+	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
+	      if (fd->_last_time_h)
+		  fd->_have_last_time = true, fd->set_active(true);
+	      return 0;
+	  } else
+	      return errh->error("`extend_interval' takes a time interval");
+      }
       default:
 	return -EINVAL;
     }
@@ -628,6 +678,7 @@ FromDump::add_handlers()
     add_write_handler("stop", write_handler, (void *)STOP_THUNK);
     add_read_handler("filesize", read_handler, (void *)FILESIZE_THUNK);
     add_read_handler("filepos", read_handler, (void *)FILEPOS_THUNK);
+    add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

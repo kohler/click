@@ -3,6 +3,7 @@
 #define CLICK_FROMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+class HandlerCall;
 
 /*
 =c
@@ -73,6 +74,11 @@ Argument is relative time in seconds (or supply a suffix like `min', `h').
 FromDump will stop at the first packet whose timestamp is at least I<T>
 seconds after the first packet output.
 
+=item END_CALL
+
+Specify the handler to call, instead of stopping FromDump, once the end time
+is reached.
+
 =item TIMING
 
 Boolean. Same as the TIMING argument.
@@ -126,6 +132,12 @@ length cannot be determined.
 
 Returns FromIPSummaryDump's position in the file, in bytes.
 
+=h extend_interval write-only
+
+Text is a time interval. If END_TIME or one of its cousins was specified, then
+writing to this handler extends END_TIME by that many seconds. Also, ACTIVE is
+set to true.
+
 =a
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */
@@ -147,7 +159,9 @@ class FromDump : public Element { public:
 
     void run_scheduled();
     Packet *pull(int);
-  
+
+    void set_active(bool);
+    
   private:
 
     static const uint32_t BUFFER_SIZE = 32768;
@@ -188,6 +202,7 @@ class FromDump : public Element { public:
 
     struct timeval _first_time;
     struct timeval _last_time;
+    HandlerCall *_last_time_h;
     
     Task _task;
 
@@ -202,7 +217,7 @@ class FromDump : public Element { public:
 #endif
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
-    Packet *read_packet(ErrorHandler *);
+    bool read_packet(ErrorHandler *);
 
     void prepare_relative_times(const struct fake_bpf_timeval &);
 
