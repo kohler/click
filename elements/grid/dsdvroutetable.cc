@@ -1059,6 +1059,8 @@ DSDVRouteTable::write_metric_type(const String &arg, Element *el,
     for (int i = 0; i < entries.size(); i++) 
       rt->_rtes.findp(entries[i])->metric = rt->_bad_metric;
   }
+
+  rt->_metric_type = type;
   return 0;
 }
 
