@@ -1,3 +1,9 @@
+2002-06-19 Wednesday 14:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.19), dsdvroutetable.hh
+	(1.15): more diagnostics: for example, does time go backwards? 
+	added dump read handler for detailed route entry info
+
 2002-06-18 Tuesday 18:56  Eddie Kohler <kohler@icir.org>
 
 	* tools/click-install/common.cc (1.8): click-install nitlets for
