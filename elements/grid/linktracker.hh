@@ -8,7 +8,7 @@
  * =d
  *
  * Expects Grid packets as input.  Extracts ping-ponged link stat info
- * from unicast packet headers and incorporates it into runnng
+ * from unicast packet headers and incorporates it into running
  * averages.  TAU is the time constant to use for the
  * exponential decay averaging, in milliseconds.
  *
