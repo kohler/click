@@ -1,3 +1,10 @@
+2003-06-19 Thursday 16:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.51), dsdvroutetable.hh
+	(1.36): Added new metric: 'symmetric_hopcount', which avoids links
+	that have < 50% forward delivery rate (assuming route ads travel in
+	the reverse direction)
+
 2003-06-18 Wednesday 15:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/: simplequeue.cc (1.4), simplequeue.hh (1.4):
