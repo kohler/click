@@ -96,7 +96,7 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (details)
     _reason_drops = new u_atomic32_t[NREASONS];
 
-#ifdef __KERNEL__
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
     int ans, c, o;
@@ -154,17 +154,19 @@ CheckIPHeader::simple_action(Packet *p)
   if (len > plen || len < hlen)
     return drop(BAD_IP_LEN, p);
 
-#ifdef __KERNEL__
-  if (_aligned) {
-    if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
-      return drop(BAD_CHECKSUM, p);
-  } else {
+  int val;
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  if (_aligned)
+    val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
+  else
+    val = in_cksum((unsigned char *)ip, hlen);
+#elif HAVE_FAST_CHECKSUM
+  val = ip_fast_csum((unsigned char *)ip, ip->ip_hl);
+#else
+  val = in_cksum((unsigned char *)ip, hlen);
 #endif
-    if (in_cksum((unsigned char *)ip, hlen) != 0)
-      return drop(BAD_CHECKSUM, p);
-#ifdef __KERNEL__
-  }
-#endif
+  if (val != 0)
+    return drop(BAD_CHECKSUM, p);
 
   /*
    * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.

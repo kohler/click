@@ -32,7 +32,7 @@ class IPInputCombo : public Element {
 
   int _n_bad_src;
   unsigned *_bad_src; // array of illegal IP src addresses.
-#ifdef __KERNEL__
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
 #endif
 

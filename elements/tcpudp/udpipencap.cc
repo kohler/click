@@ -71,7 +71,7 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
   _id = 0;
   _cksum = do_cksum;
 
-#ifdef __KERNEL__
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
     int ans, c, o;
@@ -107,14 +107,15 @@ UDPIPEncap::simple_action(Packet *p_in)
   ip->ip_ttl = 250;
 
   ip->ip_sum = 0;
-#ifdef __KERNEL__
-  if (_aligned) {
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  if (_aligned)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
-  } else {
-#endif
+  else
+    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+#elif HAVE_FAST_CHECKSUM
+  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+#else
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
-#ifdef __KERNEL__
-  }
 #endif
   
   p->set_dst_ip_anno(IPAddress(_daddr));

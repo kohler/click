@@ -26,18 +26,8 @@
 #include <click/atomic.hh>
 #include <click/click_udp.h>
 
-class UDPIPEncap : public Element {
+class UDPIPEncap : public Element { public:
 
-  struct in_addr _saddr;
-  struct in_addr _daddr;
-  unsigned short _sport;
-  unsigned short _dport;
-  bool _cksum : 1;
-  bool _aligned : 1;
-  u_atomic32_t _id;
-
- public:
-  
   UDPIPEncap();
   ~UDPIPEncap();
   
@@ -48,7 +38,19 @@ class UDPIPEncap : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
-  
+
+ private:
+
+  struct in_addr _saddr;
+  struct in_addr _daddr;
+  unsigned short _sport;
+  unsigned short _dport;
+  bool _cksum : 1;
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  bool _aligned : 1;
+#endif
+  u_atomic32_t _id;
+
 };
 
 #endif

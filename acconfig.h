@@ -8,12 +8,12 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_MT_SAFE, and ELEMENT_PROVIDES
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, and ELEMENT_MT_SAFE
    are noops. */
+#define EXPORT_ELEMENT(x)
 #define ELEMENT_REQUIRES(x)
 #define ELEMENT_PROVIDES(x)
 #define ELEMENT_MT_SAFE(x)
-#define EXPORT_ELEMENT(x)
 
 /* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H
@@ -100,6 +100,16 @@ char *strerror(int errno);
 #ifdef SUBSTITUTE_U_INT_TYPES
 # define u_int32_t uint32_t
 # define u_int16_t uint16_t
+#endif
+
+/* Define if fast checksum functions available. */
+#ifdef CLICK_LINUXMODULE
+# define HAVE_FAST_CHECKSUM 1
+#endif
+
+/* Define if fast checksum functions require correct alignment. */
+#ifndef __i386__
+# define FAST_CHECKSUM_ALIGNED 1
 #endif
 
 #ifdef __cplusplus

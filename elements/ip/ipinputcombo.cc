@@ -69,7 +69,7 @@ IPInputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
   _n_bad_src = ips.size();
   _bad_src = ips.list_copy();
 
-#ifdef __KERNEL__
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
     int ans, c, o;
@@ -116,17 +116,21 @@ IPInputCombo::smaction(Packet *p)
   len = ntohs(ip->ip_len);
   if (len > p->length() || len < hlen)
     goto bad;
-  
-#ifdef __KERNEL__
+
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   if (_aligned) {
     if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
       goto bad;
   } else {
-#endif
+    if (in_cksum((unsigned char *)ip, hlen) != 0)
+      goto bad;
+  }
+#elif HAVE_FAST_CHECKSUM
+  if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
+    goto bad;
+#else
   if (in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
-#ifdef __KERNEL__
-  }
 #endif
 
   /*
