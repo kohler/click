@@ -114,7 +114,7 @@ LocationInfo::get_current_location()
     _lat0 = xlat();
     _lon0 = xlon();
     _t0 = t;
-    _t1 = _t0 + 10 * uniform();
+    _t1 = _t0 + 20 * uniform();
     _vlat = 0.0001 - (uniform() * 0.0002);
     _vlon = 0.0001 - (uniform() * 0.0002);
   }
