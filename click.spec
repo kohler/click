@@ -1,6 +1,6 @@
 %define name click
 %define version 1.4pre1
-%define release 1
+%define release 2
 
 Summary: The Click modular router
 Name: %{name}
@@ -45,6 +45,7 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 %makeinstall
+rm -f $RPM_BUILD_ROOT/%{_infodir}/dir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -61,7 +62,20 @@ rm -rf $RPM_BUILD_ROOT
 %{_infodir}
 %{_libdir}
 
+%post
+if [ -x /sbin/install-info ] ; then
+   /sbin/install-info %{_infodir}/click.info %{_infodir}/dir
+fi
+
+%preun
+if [ -x /sbin/install-info ] ; then
+   /sbin/install-info --delete %{_infodir}/click.info %{_infodir}/dir
+fi
+
 %changelog
+* Fri May 28 2004 Mark Huang <mlhuang@cs.princeton.edu>
+- add scriplets to install info files correctly
+
 * Fri Apr 16 2004 Mark Huang <mlhuang@cs.princeton.edu>
 - initial version
 
