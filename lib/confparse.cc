@@ -172,6 +172,20 @@ skip_single_quote(const char *s, const char *end)
   return end;
 }
 
+const char *
+cp_skip_comment_space(const char *begin, const char *end)
+{
+  for (; begin < end; begin++) {
+    if (isspace(*begin))
+      /* nada */;
+    else if (*begin == '/' && begin + 1 < end && (begin[1] == '/' || begin[1] == '*'))
+      begin = skip_comment(begin, end) - 1;
+    else
+      break;
+  }
+  return begin;
+}
+
 static String
 partial_uncomment(const String &str, int i, int *comma_pos)
 {
@@ -179,12 +193,7 @@ partial_uncomment(const String &str, int i, int *comma_pos)
   const char *end = str.end();
 
   // skip initial spaces
-  for (; s < end; s++) {
-    if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*'))
-      s = skip_comment(s, end) - 1;
-    else if (!isspace(*s))
-      break;
-  }
+  s = cp_skip_comment_space(s, end);
 
   // accumulate text, skipping comments
   StringAccum sa;
@@ -423,58 +432,17 @@ cp_quote(const String &str, bool allow_newlines)
 void
 cp_argvec(const String &conf, Vector<String> &args)
 {
-  int len = conf.length();
-  int i = 0;
-  bool first_arg = true;
-  
   // common case: no configuration
+  int len = conf.length();
   if (len == 0)
     return;
-
-  // <= to handle case where 'conf' ends in ',' (= an extra empty string
-  // argument)
-  while (i <= len) {
-    String arg = partial_uncomment(conf, i, &i);
-
-    // add the argument if it is nonempty
-    // /*, or this isn't the first argument */ NO LONGER!
-    if (arg) // || i < len || !first_arg)
+  
+  for (int pos = 0; pos < len; pos++) {
+    String arg = partial_uncomment(conf, pos, &pos);
+    // add the argument if it is nonempty or not the last argument
+    if (arg || pos < len)
       args.push_back(arg);
-    
-    // bump 'i' past the comma
-    i++;
-    first_arg = false;
   }
-}
-
-static const char *
-skip_spacevec_space(const char *s, const char *end)
-{
-  while (s < end)
-    switch (*s) {
-      
-     case '/':
-      // skip comments
-      if (s + 1 == end || (s[1] != '/' && s[1] != '*'))
-	return s;
-      else
-	s = skip_comment(s, end);
-      break;
-      
-     case ' ':
-     case '\f':
-     case '\n':
-     case '\r':
-     case '\t':
-     case '\v':
-      s++;
-      break;
-
-     default:
-      return s;
-      
-    }
-  return s;
 }
 
 static const char *
@@ -531,7 +499,7 @@ cp_spacevec(const String &conf, Vector<String> &vec)
   // collect arguments with cp_pop_spacevec
   const char *s = conf.data();
   const char *end = conf.end();
-  while ((s = skip_spacevec_space(s, end)) < end) {
+  while ((s = cp_skip_comment_space(s, end)) < end) {
     const char *t = skip_spacevec_item(s, end);
     vec.push_back(conf.substring(s, t));
     s = t;
@@ -541,10 +509,10 @@ cp_spacevec(const String &conf, Vector<String> &vec)
 String
 cp_pop_spacevec(String &conf)
 {
-  const char *item = skip_spacevec_space(conf.begin(), conf.end());
+  const char *item = cp_skip_comment_space(conf.begin(), conf.end());
   const char *item_end = skip_spacevec_item(item, conf.end());
   String answer = conf.substring(item, item_end);
-  item_end = skip_spacevec_space(item_end, conf.end());
+  item_end = cp_skip_comment_space(item_end, conf.end());
   conf = conf.substring(item_end, conf.end());
   return answer;
 }
