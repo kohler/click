@@ -415,9 +415,10 @@ Packet::make(const unsigned char *s, uint32_t len)
 inline Packet *
 Packet::make(struct sk_buff *skb)
 {
-  if (atomic_read(&skb->users) == 1)
+  if (atomic_read(&skb->users) == 1) {
+    skb_orphan(skb);
     return reinterpret_cast<Packet *>(skb);
-  else {
+  } else {
     Packet *p = reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
     atomic_dec(&skb->users);
     return p;
