@@ -45,28 +45,7 @@ extern "C" {
 }
 #endif
 
-class FromDevice : public Element {
-
-  String _ifname;
-  bool _promisc : 1;
-  int _was_promisc : 2;
-  int _packetbuf_size;
-
-#if FROMDEVICE_LINUX
-  int _fd;
-  unsigned char *_packetbuf;
-#endif
-#if FROMDEVICE_PCAP
-  pcap_t* _pcap;
-  static void get_packet(u_char *, const struct pcap_pkthdr *,
-			 const u_char *);
-#endif
-
-  static void set_annotations(Packet *);
-  // set appropriate annotations, i.e. MAC packet type.
-  // modifies the packet.
-
- public:
+class FromDevice : public Element { public:
 
   enum ConfigurePhase {
     CONFIGURE_PHASE_FROMDEVICE = CONFIGURE_PHASE_DEFAULT,
@@ -100,6 +79,23 @@ class FromDevice : public Element {
   static int set_promiscuous(int, String, bool);
 #endif
   
+ private:
+  
+  String _ifname;
+  bool _promisc : 1;
+  int _was_promisc : 2;
+  int _packetbuf_size;
+
+#if FROMDEVICE_LINUX
+  int _fd;
+  unsigned char *_packetbuf;
+#endif
+#if FROMDEVICE_PCAP
+  pcap_t* _pcap;
+  static void get_packet(u_char *, const struct pcap_pkthdr *,
+			 const u_char *);
+#endif
+
 };
 
 #endif

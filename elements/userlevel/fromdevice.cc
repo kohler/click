@@ -277,10 +277,20 @@ FromDevice::get_packet(u_char* clientdata,
 		       const struct pcap_pkthdr* pkthdr,
 		       const u_char* data)
 {
+  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  
   FromDevice *fd = (FromDevice *) clientdata;
   int length = pkthdr->caplen;
-  Packet* p = Packet::make(data, length);
-  set_annotations(p);
+  Packet *p = Packet::make(data, length);
+
+  // set packet type annotation
+  if (p->data()[0] & 1) {
+    if (memcmp(bcast_addr, p->data(), 6) == 0)
+      p->set_packet_type_anno(Packet::BROADCAST);
+    else
+      p->set_packet_type_anno(Packet::MULTICAST);
+  }
+  
   fd->output(0).push(p);
 }
 #endif
@@ -308,31 +318,12 @@ FromDevice::selected(int)
     if (sa.sll_pkttype != PACKET_OUTGOING) {
       Packet *p = Packet::make(_packetbuf, len + 2);
       p->pull(2);
-      set_annotations(p);
+      p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
       output(0).push(p);
     }
   } else if (errno != EAGAIN)
     click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
 #endif
-}
-
-void
-FromDevice::set_annotations(Packet *p)
-{
-  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
-  // check if multicast
-  // ! mcast => ! bcast
-  if (!(p->data()[0] & 1))
-    return; 
-  
-  // check for bcast
-  if (memcmp(bcast_addr, p->data(), 6) == 0)
-    p->set_packet_type_anno(Packet::BROADCAST);
-  else
-    p->set_packet_type_anno(Packet::MULTICAST);
-
-  return;
 }
 
 ELEMENT_REQUIRES(userlevel)
