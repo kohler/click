@@ -112,9 +112,8 @@ class Lexer {
   
  public:
 
-  static const int DEFAULT_TYPE = 0;
-  static const int TUNNEL_TYPE = 1;
-  static const int FIRST_REAL_TYPE = 2;
+  static const int TUNNEL_TYPE = 0;
+  static const int ERROR_TYPE = 1;
   
   Lexer(ErrorHandler * = 0);
   virtual ~Lexer();

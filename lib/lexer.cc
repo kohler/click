@@ -109,6 +109,8 @@ Lexer::Lexer(ErrorHandler *errh)
   end_parse(-1);		// clear private state
   add_element_type("<tunnel>", _tunnel_element_type);
   add_element_type(new ErrorElement);
+  assert(element_type("<tunnel>") == TUNNEL_TYPE
+	 && element_type("Error") == ERROR_TYPE);
 }
 
 Lexer::~Lexer()
@@ -599,9 +601,9 @@ Lexer::add_tunnel(String namein, String nameout)
   
   bool ok = true;
   if (_elements[hin.idx] != _tunnel_element_type)
-    lerror("element `%s' already exists", namein.cc()), ok = 0;
+    lerror("element `%s' already declared %s", namein.cc(), _elements[hin.idx]->class_name()), ok = 0;
   if (_elements[hout.idx] != _tunnel_element_type)
-    lerror("element `%s' already exists", nameout.cc()), ok = 0;
+    lerror("element `%s' already declared", nameout.cc()), ok = 0;
   if (_definputs && _definputs->find(hin))
     lerror("connection tunnel input `%s' already defined", namein.cc()), ok = 0;
   if (_defoutputs && _defoutputs->find(hout))
@@ -919,7 +921,7 @@ Lexer::yelement(int &element, bool comma_ok)
 	ydeclaration(name);
       else {
 	lerror("undeclared element `%s' (first use this block)", name.cc());
-	get_element(lookup_name, DEFAULT_TYPE);
+	get_element(lookup_name, ERROR_TYPE);
       }
       element = _element_map[lookup_name];
     }
