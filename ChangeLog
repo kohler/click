@@ -1,3 +1,15 @@
+2004-05-17 Monday 01:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/fromdevice.cc (1.80),
+	elements/linuxmodule/fromdevice.hh (1.39),
+	include/click/routerthread.hh (1.25), lib/routerthread.cc (1.41):
+	add CLICK_DEBUG_SCHEDULING option to help jbicket debug
+
+2004-05-17 Monday 01:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmpsendpings.cc (1.32), icmpsendpings.hh (1.15):
+	add rtt_{min,avg,max} handlers
+
 2004-05-16 Sunday 16:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/: icmpsendpings.cc (1.31), icmpsendpings.hh (1.14):
