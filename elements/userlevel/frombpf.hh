@@ -55,9 +55,11 @@ class FromBPF : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
+  int select_fd()	       { return (_pcap?pcap_fileno(_pcap):-1); }
   void selected(int);
   
+  void run_scheduled();
+
   // For LiveWriter, so it can borrow our _pcap.
   String get_ifname() const	{ return _ifname; }
   pcap_t *get_pcap() const	{ return _pcap; }  

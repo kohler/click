@@ -17,6 +17,7 @@
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
+#include "../standard/scheduleinfo.hh"
 #include "glue.hh"
 #include <unistd.h>
 
@@ -74,6 +75,8 @@ FromBPF::initialize(ErrorHandler *errh)
 #else
   errh->warning("can't get packets: not compiled with pcap support");
 #endif
+
+  ScheduleInfo::join_scheduler(this, errh);
   
   return 0;
 }
@@ -98,5 +101,13 @@ FromBPF::selected(int)
    */
   pcap_dispatch(_pcap, -1, FromBPF::get_packet, (u_char *) this);
 }
+
+void
+FromBPF::run_scheduled()
+{
+  selected(0);
+  reschedule();
+}
+
 
 EXPORT_ELEMENT(FromBPF)
