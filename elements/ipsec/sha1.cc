@@ -30,7 +30,7 @@
 #include <click/glue.hh>
 #include "elements/ipsec/sha1_impl.hh"
 
-unsigned SHA1_IV[ 5 ] = { H0, H1, H2, H3, H4 };
+#define SHA_DIGEST_LEN 20
 
 IPsecAuthSHA1::IPsecAuthSHA1()
 {
@@ -76,11 +76,11 @@ IPsecAuthSHA1::simple_action(Packet *p)
 {
   // compute sha1
   if (_op == COMPUTE_AUTH) {
+    unsigned char digest [SHA_DIGEST_LEN];
     SHA1_ctx ctx;
     SHA1_init (&ctx);
     SHA1_update (&ctx, (u_char*) p->data(), p->length());
-    SHA1_final (&ctx);
-    const unsigned char *digest = SHA1_digest(&ctx);
+    SHA1_final (digest, &ctx);
     WritablePacket *q = p->put(12);
     u_char *ah = ((u_char*)q->data())+q->length()-12;
     memmove(ah, digest, 12);
@@ -89,11 +89,11 @@ IPsecAuthSHA1::simple_action(Packet *p)
   
   else {
     const u_char *ah = p->data()+p->length()-12;
+    unsigned char digest [SHA_DIGEST_LEN];
     SHA1_ctx ctx;
     SHA1_init (&ctx);
     SHA1_update (&ctx, (u_char*) p->data(), p->length()-12);
-    SHA1_final (&ctx);
-    const unsigned char *digest = SHA1_digest(&ctx);
+    SHA1_final (digest, &ctx);
     if (memcmp(ah, digest, 12)) {
       if (_drops == 0) 
 	click_chatter("Invalid SHA1 authentication digest");
@@ -109,8 +109,8 @@ IPsecAuthSHA1::simple_action(Packet *p)
   }
 }
 
-static String
-IPsecAuthSHA1::drop_handler(Element *e, void *thunk)
+String
+IPsecAuthSHA1::drop_handler(Element *e, void *)
 {
   IPsecAuthSHA1 *a = (IPsecAuthSHA1 *)e;
   return String(a->_drops) + "\n";

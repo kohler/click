@@ -1,294 +1,680 @@
+/* crypto/sha/sha1dgst.c */
+/* Copyright (C) 1995-1997 Eric Young (eay@cryptsoft.com)
+ * All rights reserved.
+ *
+ * This package is an SSL implementation written
+ * by Eric Young (eay@cryptsoft.com).
+ * The implementation was written so as to conform with Netscapes SSL.
+ * 
+ * This library is free for commercial and non-commercial use as long as
+ * the following conditions are aheared to.  The following conditions
+ * apply to all code found in this distribution, be it the RC4, RSA,
+ * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
+ * included with this distribution is covered by the same copyright terms
+ * except that the holder is Tim Hudson (tjh@cryptsoft.com).
+ * 
+ * Copyright remains Eric Young's, and as such any Copyright notices in
+ * the code are not to be removed.
+ * If this package is used in a product, Eric Young should be given attribution
+ * as the author of the parts of the library used.
+ * This can be in the form of a textual message at program startup or
+ * in documentation (online or textual) provided with the package.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *    "This product includes cryptographic software written by
+ *     Eric Young (eay@cryptsoft.com)"
+ *    The word 'cryptographic' can be left out if the rouines from the library
+ *    being used are not cryptographic related :-).
+ * 4. If you include any Windows specific code (or a derivative thereof) from 
+ *    the apps directory (application code) you must include an acknowledgement:
+ *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
+ * 
+ * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * 
+ * The licence and distribution terms for any publically available version or
+ * derivative of this code cannot be changed.  i.e. this code cannot simply be
+ * copied and put under another distribution licence
+ * [including the GNU Public Licence.]
+ */
 
 #ifndef SHA1_IMPL_HH
 #define SHA1_IMPL_HH
 
-/* code from Adam Back's hashcash implementation... modified for Click, no
- * copyright noticed found. */
+#undef  SHA_0
+#define SHA_1
 
-/*
- * Implementation of Federal Information Processing Standards Publication
- * FIPS 180-1 (17 Apr 1995) which supersedes FIPS 180 (11 May 1993)
- *
- * Speed hack version optimised for speed (see also reference version)
- * uses macros so you need to recompile, not just relink
- *
- * Adam Back <aba@dcs.ex.ac.uk>
- *
+#define SHA_CBLOCK	64
+#define SHA_LBLOCK	16
+#define SHA_BLOCK	16
+#define SHA_LAST_BLOCK  56
+#define SHA_LENGTH_BLOCK 8
+#define SHA_DIGEST_LENGTH 20
+
+typedef struct SHAstate_st
+{
+  unsigned long h0, h1, h2, h3, h4;
+  unsigned long Nl, Nh;
+  unsigned long data[SHA_LBLOCK];
+  int num;
+}
+SHA1_ctx;
+
+void SHA1_init (SHA1_ctx * c);
+void SHA1_update (SHA1_ctx * c, unsigned char *data, unsigned long len);
+void SHA1_final (unsigned char *md, SHA1_ctx * c);
+void SHA1_transform (SHA1_ctx * c, unsigned char *data);
+
+#define ULONG	unsigned long
+#define UCHAR	unsigned char
+#define UINT	unsigned int
+
+#undef c2nl
+#define c2nl(c,l)	(l =(((unsigned long)(*((c)++)))<<24), \
+			 l|=(((unsigned long)(*((c)++)))<<16), \
+			 l|=(((unsigned long)(*((c)++)))<< 8), \
+			 l|=(((unsigned long)(*((c)++)))    ))
+
+#undef p_c2nl
+#define p_c2nl(c,l,n)	{ \
+			switch (n) { \
+			case 0: l =((unsigned long)(*((c)++)))<<24; \
+			case 1: l|=((unsigned long)(*((c)++)))<<16; \
+			case 2: l|=((unsigned long)(*((c)++)))<< 8; \
+			case 3: l|=((unsigned long)(*((c)++))); \
+				} \
+			}
+
+#undef c2nl_p
+/* NOTE the pointer is not incremented at the end of this */
+#define c2nl_p(c,l,n)	{ \
+			l=0; \
+			(c)+=n; \
+			switch (n) { \
+			case 3: l =((unsigned long)(*(--(c))))<< 8; \
+			case 2: l|=((unsigned long)(*(--(c))))<<16; \
+			case 1: l|=((unsigned long)(*(--(c))))<<24; \
+				} \
+			}
+
+#undef p_c2nl_p
+#define p_c2nl_p(c,l,sc,len) { \
+			switch (sc) \
+				{ \
+			case 0: l =((unsigned long)(*((c)++)))<<24; \
+				if (--len == 0) break; \
+			case 1: l|=((unsigned long)(*((c)++)))<<16; \
+				if (--len == 0) break; \
+			case 2: l|=((unsigned long)(*((c)++)))<< 8; \
+				} \
+			}
+
+#undef nl2c
+#define nl2c(l,c)	(*((c)++)=(unsigned char)(((l)>>24)&0xff), \
+			 *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+			 *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+			 *((c)++)=(unsigned char)(((l)    )&0xff))
+
+#undef c2l
+#define c2l(c,l)	(l =(((unsigned long)(*((c)++)))    ), \
+			 l|=(((unsigned long)(*((c)++)))<< 8), \
+			 l|=(((unsigned long)(*((c)++)))<<16), \
+			 l|=(((unsigned long)(*((c)++)))<<24))
+
+#undef p_c2l
+#define p_c2l(c,l,n)	{ \
+			switch (n) { \
+			case 0: l =((unsigned long)(*((c)++))); \
+			case 1: l|=((unsigned long)(*((c)++)))<< 8; \
+			case 2: l|=((unsigned long)(*((c)++)))<<16; \
+			case 3: l|=((unsigned long)(*((c)++)))<<24; \
+				} \
+			}
+
+#undef c2l_p
+/* NOTE the pointer is not incremented at the end of this */
+#define c2l_p(c,l,n)	{ \
+			l=0; \
+			(c)+=n; \
+			switch (n) { \
+			case 3: l =((unsigned long)(*(--(c))))<<16; \
+			case 2: l|=((unsigned long)(*(--(c))))<< 8; \
+			case 1: l|=((unsigned long)(*(--(c)))); \
+				} \
+			}
+
+#undef p_c2l_p
+#define p_c2l_p(c,l,sc,len) { \
+			switch (sc) \
+				{ \
+			case 0: l =((unsigned long)(*((c)++))); \
+				if (--len == 0) break; \
+			case 1: l|=((unsigned long)(*((c)++)))<< 8; \
+				if (--len == 0) break; \
+			case 2: l|=((unsigned long)(*((c)++)))<<16; \
+				} \
+			}
+
+#undef l2c
+#define l2c(l,c)	(*((c)++)=(unsigned char)(((l)    )&0xff), \
+			 *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+			 *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+			 *((c)++)=(unsigned char)(((l)>>24)&0xff))
+
+#undef ROTATE
+#if defined(WIN32)
+#define ROTATE(a,n)     _lrotl(a,n)
+#else
+#define ROTATE(a,n)     (((a)<<(n))|(((a)&0xffffffff)>>(32-(n))))
+#endif
+
+/* A nice byte order reversal from Wei Dai <weidai@eskimo.com> */
+#if defined(WIN32)
+/* 5 instructions with rotate instruction, else 9 */
+#define Endian_Reverse32(a) \
+	{ \
+	unsigned long l=(a); \
+	(a)=((ROTATE(l,8)&0x00FF00FF)|(ROTATE(l,24)&0xFF00FF00)); \
+	}
+#else
+/* 6 instructions with rotate instruction, else 8 */
+#define Endian_Reverse32(a) \
+	{ \
+	unsigned long l=(a); \
+	l=(((l&0xFF00FF00)>>8L)|((l&0x00FF00FF)<<8L)); \
+	(a)=ROTATE(l,16L); \
+	}
+#endif
+
+/* As  pointed out by Wei Dai <weidai@eskimo.com>, F() below can be
+ * simplified to the code in F_00_19.  Wei attributes these optimisations
+ * to Peter Gutmann's SHS code, and he attributes it to Rich Schroeppel.
+ * #define F(x,y,z) (((x) & (y))  |  ((~(x)) & (z)))
+ * I've just become aware of another tweak to be made, again from Wei Dai,
+ * in F_40_59, (x&a)|(y&a) -> (x|y)&a
+ */
+#define	F_00_19(b,c,d)	((((c) ^ (d)) & (b)) ^ (d))
+#define	F_20_39(b,c,d)	((b) ^ (c) ^ (d))
+#define F_40_59(b,c,d)	(((b) & (c)) | (((b)|(c)) & (d)))
+#define	F_60_79(b,c,d)	F_20_39(b,c,d)
+
+#ifdef SHA_0
+#undef Xupdate
+#define Xupdate(a,i,ia,ib,ic,id) X[(i)&0x0f]=(a)=\
+	(ia[(i)&0x0f]^ib[((i)+2)&0x0f]^ic[((i)+8)&0x0f]^id[((i)+13)&0x0f]);
+#endif
+#ifdef SHA_1
+#undef Xupdate
+#define Xupdate(a,i,ia,ib,ic,id) (a)=\
+	(ia[(i)&0x0f]^ib[((i)+2)&0x0f]^ic[((i)+8)&0x0f]^id[((i)+13)&0x0f]);\
+	X[(i)&0x0f]=(a)=ROTATE((a),1);
+#endif
+
+#define BODY_00_15(i,a,b,c,d,e,f,xa) \
+	(f)=xa[i]+(e)+K_00_19+ROTATE((a),5)+F_00_19((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+#define BODY_16_19(i,a,b,c,d,e,f,xa,xb,xc,xd) \
+	Xupdate(f,i,xa,xb,xc,xd); \
+	(f)+=(e)+K_00_19+ROTATE((a),5)+F_00_19((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+#define BODY_20_31(i,a,b,c,d,e,f,xa,xb,xc,xd) \
+	Xupdate(f,i,xa,xb,xc,xd); \
+	(f)+=(e)+K_20_39+ROTATE((a),5)+F_20_39((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+#define BODY_32_39(i,a,b,c,d,e,f,xa) \
+	Xupdate(f,i,xa,xa,xa,xa); \
+	(f)+=(e)+K_20_39+ROTATE((a),5)+F_20_39((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+#define BODY_40_59(i,a,b,c,d,e,f,xa) \
+	Xupdate(f,i,xa,xa,xa,xa); \
+	(f)+=(e)+K_40_59+ROTATE((a),5)+F_40_59((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+#define BODY_60_79(i,a,b,c,d,e,f,xa) \
+	Xupdate(f,i,xa,xa,xa,xa); \
+	(f)=X[(i)&0x0f]+(e)+K_60_79+ROTATE((a),5)+F_60_79((b),(c),(d)); \
+	(b)=ROTATE((b),30);
+
+
+char *SHA1_version = "SHA1 part of SSLeay 0.8.2b 08-Jan-1998";
+
+/* Implemented from SHA-1 document - The Secure Hash Algorithm
  */
 
-#include <click/config.h>
-#ifndef HAVE_IPSEC
-# error "Must #define HAVE_IPSEC in config.h"
-#endif
-#include <click/glue.hh>
+#define INIT_DATA_h0 (unsigned long)0x67452301L
+#define INIT_DATA_h1 (unsigned long)0xefcdab89L
+#define INIT_DATA_h2 (unsigned long)0x98badcfeL
+#define INIT_DATA_h3 (unsigned long)0x10325476L
+#define INIT_DATA_h4 (unsigned long)0xc3d2e1f0L
 
-#define min( x, y ) ( ( x ) < ( y ) ? ( x ) : ( y ) )
-/********************* function used for rounds 0..19 ***********/
-/* #define F1( B, C, D ) ( ( (B) & (C) ) | ( ~(B) & (D) ) ) */
-/* equivalent, one less operation: */
-#define F1( B, C, D ) ( (D) ^ ( (B) & ( (C) ^ (D) ) ) )
-/********************* function used for rounds 20..39 ***********/
-#define F2( B, C, D ) ( (B) ^ (C) ^ (D) )
-/********************* function used for rounds 40..59 ***********/
-/* #define F3( B, C, D ) ( (B) & (C) ) | ( (C) & (D) ) | ( (C) & (D) ) */
-/* equivalent, one less operation */
-#define F3( B, C, D ) ( ( (B) & ( (C) | (D) )) | ( (C) & (D) ) )
-/********************* function used for rounds 60..79 ***********/
-#define F4( B, C, D ) ( (B) ^ (C) ^ (D) )
-#define K1 0x5A827999  /* constant used for rounds 0..19 */
-#define K2 0x6ED9EBA1  /* constant used for rounds 20..39 */
-#define K3 0x8F1BBCDC  /* constant used for rounds 40..59 */
-#define K4 0xCA62C1D6  /* constant used for rounds 60..79 */
-/* magic constants */
-#define H0 0x67452301
-#define H1 0xEFCDAB89
-#define H2 0x98BADCFE
-#define H3 0x10325476
-#define H4 0xC3D2E1F0
-/* rotate X n bits left   ( X <<< n ) */
-#define S(n, X) ( ( (X) << (n) ) | ( (X) >> ( 32 - (n) ) ) )
+#define K_00_19	0x5a827999L
+#define K_20_39 0x6ed9eba1L
+#define K_40_59 0x8f1bbcdcL
+#define K_60_79 0xca62c1d6L
 
-extern unsigned SHA1_IV[5];
-
-#define SHA1_INPUT_BYTES 64	/* 512 bits */
-#define SHA1_INPUT_WORDS ( SHA1_INPUT_BYTES >> 2 )
-#define SHA1_DIGEST_WORDS 5	/* 160 bits */
-#define SHA1_DIGEST_BYTES ( SHA1_DIGEST_WORDS * 4 )
-#define SHA1_PAD_BYTES 32
-
-/* result is in reused memory, copy it if you want to keep it */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define SHA1_digest( ctx ) SHA1_get_digest( ctx )
+#ifndef NOPROTO
+#  ifdef SHA1_ASM
+void sha1_block_x86 (SHA1_ctx * c, register unsigned long *p, int num);
+#    define sha1_block sha1_block_x86
+#  else
+void sha1_block (SHA1_ctx * c, register unsigned long *p, int num);
+#  endif
 #else
-#define SHA1_digest( ctx ) (const unsigned char*) (ctx)->H
+#  ifdef SHA1_ASM
+void sha1_block_x86 ();
+#    define sha1_block sha1_block_x86
+#  else
+void sha1_block ();
+#  endif
 #endif
 
-typedef struct {
-    unsigned H[ SHA1_DIGEST_WORDS ];
-    unsigned hbits, lbits;	/* if we don't have one we simulate it */
-    unsigned char M[ SHA1_INPUT_BYTES ];
-} SHA1_ctx;
-
-#define SHA1_set_IV( ctx, IV ) memcpy( (ctx)->H, IV, SHA1_DIGEST_BYTES )
-
-#define SHA1_zero_bitcount( ctx )\
-    (ctx)->lbits = 0;\
-    (ctx)->hbits = 0
-
-#define SHA1_init( ctx ) \
-    SHA1_zero_bitcount( ctx ); \
-    SHA1_set_IV( ctx, SHA1_IV )
-
-void SHA1_update(SHA1_ctx* ctx, const void* pdata, unsigned data_len);
-void SHA1_final(SHA1_ctx* ctx);
-const unsigned char* SHA1_get_digest(const SHA1_ctx* ctx);
-
-#ifndef __BYTE_ORDER
-#define __LITTLE_ENDIAN 1234
-#define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define make_big_endian32( data, len ) swap_endian32( data, len )
+#if defined(L_ENDIAN) && defined(SHA1_ASM)
+#  define	M_c2nl 		c2l
+#  define	M_p_c2nl 	p_c2l
+#  define	M_c2nl_p	c2l_p
+#  define	M_p_c2nl_p	p_c2l_p
+#  define	M_nl2c		l2c
 #else
-#define make_big_endian32( data, len ) 0
+#  define	M_c2nl 		c2nl
+#  define	M_p_c2nl	p_c2nl
+#  define	M_c2nl_p	c2nl_p
+#  define	M_p_c2nl_p	p_c2nl_p
+#  define	M_nl2c		nl2c
 #endif
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define make_big_endian16( data, len ) swap_endian16( data, len )
+void
+SHA1_init (SHA1_ctx * c)
+{
+  c->h0 = INIT_DATA_h0;
+  c->h1 = INIT_DATA_h1;
+  c->h2 = INIT_DATA_h2;
+  c->h3 = INIT_DATA_h3;
+  c->h4 = INIT_DATA_h4;
+  c->Nl = 0;
+  c->Nh = 0;
+  c->num = 0;
+}
+
+void
+SHA1_update (SHA1_ctx * c, register unsigned char *data, unsigned long len)
+{
+  register ULONG *p;
+  int ew, ec, sw, sc;
+  ULONG l;
+
+  if (len == 0)
+    return;
+
+  l = (c->Nl + (len << 3)) & 0xffffffffL;
+  if (l < c->Nl)		/* overflow */
+    c->Nh++;
+  c->Nh += (len >> 29);
+  c->Nl = l;
+
+  if (c->num != 0)
+    {
+      p = c->data;
+      sw = c->num >> 2;
+      sc = c->num & 0x03;
+
+      if ((c->num + len) >= SHA_CBLOCK)
+	{
+	  l = p[sw];
+	  M_p_c2nl (data, l, sc);
+	  p[sw++] = l;
+	  for (; sw < SHA_LBLOCK; sw++)
+	    {
+	      M_c2nl (data, l);
+	      p[sw] = l;
+	    }
+	  len -= (SHA_CBLOCK - c->num);
+
+	  sha1_block (c, p, 64);
+	  c->num = 0;
+	  /* drop through and do the rest */
+	}
+      else
+	{
+	  c->num += (int) len;
+	  if ((sc + len) < 4)	/* ugly, add char's to a word */
+	    {
+	      l = p[sw];
+	      M_p_c2nl_p (data, l, sc, len);
+	      p[sw] = l;
+	    }
+	  else
+	    {
+	      ew = (c->num >> 2);
+	      ec = (c->num & 0x03);
+	      l = p[sw];
+	      M_p_c2nl (data, l, sc);
+	      p[sw++] = l;
+	      for (; sw < ew; sw++)
+		{
+		  M_c2nl (data, l);
+		  p[sw] = l;
+		}
+	      if (ec)
+		{
+		  M_c2nl_p (data, l, ec);
+		  p[sw] = l;
+		}
+	    }
+	  return;
+	}
+    }
+  /* We can only do the following code for assember, the reason
+   * being that the sha1_block 'C' version changes the values
+   * in the 'data' array.  The assember code avoids this and
+   * copies it to a local array.  I should be able to do this for
+   * the C version as well....
+   */
+#if 1
+#if defined(B_ENDIAN) || defined(SHA1_ASM)
+  if ((((unsigned int) data) % sizeof (ULONG)) == 0)
+    {
+      sw = len / SHA_CBLOCK;
+      if (sw)
+	{
+	  sw *= SHA_CBLOCK;
+	  sha1_block (c, (ULONG *) data, sw);
+	  data += sw;
+	  len -= sw;
+	}
+    }
+#endif
+#endif
+  /* we now can process the input data in blocks of SHA_CBLOCK
+   * chars and save the leftovers to c->data. */
+  p = c->data;
+  while (len >= SHA_CBLOCK)
+    {
+#if defined(B_ENDIAN) || defined(L_ENDIAN)
+      if (p != (unsigned long *) data)
+	memcpy (p, data, SHA_CBLOCK);
+      data += SHA_CBLOCK;
+#  ifdef L_ENDIAN
+#    ifndef SHA1_ASM		/* Will not happen */
+      for (sw = (SHA_LBLOCK / 4); sw; sw--)
+	{
+	  Endian_Reverse32 (p[0]);
+	  Endian_Reverse32 (p[1]);
+	  Endian_Reverse32 (p[2]);
+	  Endian_Reverse32 (p[3]);
+	  p += 4;
+	}
+      p = c->data;
+#    endif
+#  endif
 #else
-#define make_big_endian16( data, len ) 0
+      for (sw = (SHA_BLOCK / 4); sw; sw--)
+	{
+	  M_c2nl (data, l);
+	  *(p++) = l;
+	  M_c2nl (data, l);
+	  *(p++) = l;
+	  M_c2nl (data, l);
+	  *(p++) = l;
+	  M_c2nl (data, l);
+	  *(p++) = l;
+	}
+      p = c->data;
 #endif
+      sha1_block (c, p, 64);
+      len -= SHA_CBLOCK;
+    }
+  ec = (int) len;
+  c->num = ec;
+  ew = (ec >> 2);
+  ec &= 0x03;
 
-#define BURN( x, n ) memset( x, '\0', n )
+  for (sw = 0; sw < ew; sw++)
+    {
+      M_c2nl (data, l);
+      p[sw] = l;
+    }
+  M_c2nl_p (data, l, ec);
+  p[sw] = l;
+}
 
-inline void swap_endian16( void* data, int len )
-{ 
-  unsigned short tmp16;
-  unsigned char* tmp16_as_bytes = (unsigned char*) &tmp16;
-  unsigned short* data_as_word16s = (unsigned short*) data;
-  unsigned char* data_as_bytes;
+void
+SHA1_transform (SHA1_ctx *c, unsigned char *b)
+{
+  ULONG p[16];
+#ifndef B_ENDIAN
+  ULONG *q;
   int i;
-    
-  for ( i = 0; i < len; i++ ) {
-    tmp16 = data_as_word16s[ i ];
-    data_as_bytes = (unsigned char*) &( data_as_word16s[ i ] );
-        
-    data_as_bytes[ 0 ] = tmp16_as_bytes[ 1 ];
-    data_as_bytes[ 1 ] = tmp16_as_bytes[ 0 ];
-  }
-}
+#endif
 
-inline void swap_endian32( void* data, int len )
-{
-  unsigned int tmp32;
-  unsigned char* tmp32_as_bytes = (unsigned char*) &tmp32;
-  unsigned int* data_as_word32s = (unsigned int*) data;
-  unsigned char* data_as_bytes;
-  int i;
-    
-  for ( i = 0; i < len; i++ ) {
-    tmp32 = data_as_word32s[ i ];
-    data_as_bytes = (unsigned char*) &( data_as_word32s[ i ] );
-        
-    data_as_bytes[ 0 ] = tmp32_as_bytes[ 3 ];
-    data_as_bytes[ 1 ] = tmp32_as_bytes[ 2 ];
-    data_as_bytes[ 2 ] = tmp32_as_bytes[ 1 ];
-    data_as_bytes[ 3 ] = tmp32_as_bytes[ 0 ];
-  }
-}
-
-inline void SHA1_transform(  unsigned H[ SHA1_DIGEST_WORDS ], 
-		      const unsigned char M[ SHA1_INPUT_BYTES ] )
-{
-  unsigned A = H[ 0 ];
-  unsigned B = H[ 1 ];
-  unsigned C = H[ 2 ];
-  unsigned D = H[ 3 ];
-  unsigned E = H[ 4 ];
-  unsigned W[ 16 ];
-
-  memmove( W, M, SHA1_INPUT_BYTES );
-
-/* Use method B from FIPS-180 (see fip-180.txt) where the use of
-   temporary array W of 80 unsigned is avoided by working in a circular
-   buffer of size 16 unsigned.  
-
-*/
-
-/********************* define some macros *********************/
-
-/* Wc = access W as 16 word circular buffer */
-
-#define Wc( t ) ( W[ (t) & 15 ] )
-
-/* Calculate access to W array on the fly for entries 16 .. 79 */
-
-#define Wf( t ) \
-    ( Wc( t ) = S( 1, Wc( t ) ^ Wc( t - 14 ) ^ Wc( t - 8 ) ^ Wc( t - 3 ) ) )
-
-/* Calculate access to W virtual array calculating access to W on the fly */
-
-#define Wfly( t ) ( (t) < 16 ? W[ (t) ] : Wf( (t) ) )
-
-#define REPORT( t )
-
-#define ROUND( t, A, B, C, D, E, Func, K ) \
-    E += S( 5, A ) + Func( B, C, D ) + Wfly( t ) + K;\
-    B = S( 30, B ); REPORT( t )
-
-/* Remove rotatation E' = D; D' = C; C' = B; B' = A; A' = E; by
-   completely unrolling and rotating the arguments to the macro ROUND
-   manually so the rotation is compiled in.
-*/
-
-#define ROUND5( t, Func, K ) \
-    ROUND( t + 0, A, B, C, D, E, Func, K );\
-    ROUND( t + 1, E, A, B, C, D, Func, K );\
-    ROUND( t + 2, D, E, A, B, C, Func, K );\
-    ROUND( t + 3, C, D, E, A, B, Func, K );\
-    ROUND( t + 4, B, C, D, E, A, Func, K )
-
-#define ROUND20( t, Func, K )\
-    ROUND5( t +  0, Func, K );\
-    ROUND5( t +  5, Func, K );\
-    ROUND5( t + 10, Func, K );\
-    ROUND5( t + 15, Func, K )
-
-/* rounds  0..19 */
-
-    ROUND20(  0, F1, K1 );
-
-/* rounds 21..39 */
-
-    ROUND20( 20, F2, K2 );
-
-/* rounds 40..59 */
-
-    ROUND20( 40, F3, K3 );
-
-/* rounds 60..79 */
-
-    ROUND20( 60, F4, K4 );
-    
-    H[ 0 ] += A;
-    H[ 1 ] += B;
-    H[ 2 ] += C;
-    H[ 3 ] += D;
-    H[ 4 ] += E;
-}
-
-inline void SHA1_update( SHA1_ctx* ctx, const void* pdata, unsigned data_len )
-{
-  const unsigned char* data = (const unsigned char*) pdata;
-  unsigned use;
-  unsigned low_bits;
-  unsigned mlen;
-
-  /* convert data_len to bits and add to the 64-bit bit count */
-  mlen = ( ctx->lbits >> 3 ) % SHA1_INPUT_BYTES;
-  ctx->hbits += data_len >> 29; /* simulate 64 bit addition */
-  low_bits = data_len << 3;
-  ctx->lbits += low_bits;
-  if ( ctx->lbits < low_bits ) { ctx->hbits++; }
-
-  /* deal with first block */
-  use = min( SHA1_INPUT_BYTES - mlen, data_len );
-  memmove( ctx->M + mlen, data, use );
-  mlen += use;
-  data_len -= use;
-  data += use;
-
-  while ( mlen == SHA1_INPUT_BYTES ) {
-    make_big_endian32( (unsigned*)ctx->M, SHA1_INPUT_WORDS );
-    SHA1_transform( ctx->H, ctx->M );
-    use = min( SHA1_INPUT_BYTES, data_len );
-    memmove( ctx->M, data, use );
-    mlen = use;
-    data_len -= use;
-    data += use;
-  }
-}
-
-inline void SHA1_final( SHA1_ctx* ctx )
-{
-  int mlen;
-  unsigned padding;
-
-  mlen = ( ctx->lbits >> 3 ) % SHA1_INPUT_BYTES;
-  ctx->M[ mlen ] = 0x80; mlen++; /* append a 1 bit */
-  padding = SHA1_INPUT_BYTES - mlen;
-
-#define BIT_COUNT_WORDS 2
-#define BIT_COUNT_BYTES ( BIT_COUNT_WORDS * sizeof( unsigned ) )
-
-  if ( padding >= BIT_COUNT_BYTES ) {
-    memset( ctx->M + mlen, 0x00, padding - BIT_COUNT_BYTES );
-    make_big_endian32( ctx->M, SHA1_INPUT_WORDS - BIT_COUNT_WORDS );
-  }
-  else {
-    memset( ctx->M + mlen, 0x00, SHA1_INPUT_BYTES - mlen );
-    make_big_endian32( ctx->M, SHA1_INPUT_WORDS );
-    SHA1_transform( ctx->H, ctx->M );
-    memset( ctx->M, 0x00, SHA1_INPUT_BYTES - BIT_COUNT_BYTES );
-  }
-    
-  memmove( ctx->M + SHA1_INPUT_BYTES - BIT_COUNT_BYTES, &(ctx->hbits), 
-	   BIT_COUNT_BYTES );
-  SHA1_transform( ctx->H, ctx->M );
-}
-
-inline const unsigned char* SHA1_get_digest( const SHA1_ctx* ctx )
-{
-  static unsigned char digest [NR_CPUS] [SHA1_DIGEST_BYTES + SHA1_PAD_BYTES];
-    
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-  memmove( digest[current->processor], ctx->H, SHA1_DIGEST_BYTES );
-  make_big_endian32( digest[current->processor], SHA1_DIGEST_WORDS );
-  return digest[current->processor];
+#if defined(B_ENDIAN) || defined(L_ENDIAN)
+  memcpy (p, b, 64);
+#ifdef L_ENDIAN
+  q = p;
+  for (i = (SHA_LBLOCK / 4); i; i--)
+    {
+      Endian_Reverse32 (q[0]);
+      Endian_Reverse32 (q[1]);
+      Endian_Reverse32 (q[2]);
+      Endian_Reverse32 (q[3]);
+      q += 4;
+    }
+#endif
 #else
-  return (const unsigned char*) ( ctx->H );
+  q = p;
+  for (i = (SHA_LBLOCK / 4); i; i--)
+    {
+      ULONG l;
+      c2nl (b, l);
+      *(q++) = l;
+      c2nl (b, l);
+      *(q++) = l;
+      c2nl (b, l);
+      *(q++) = l;
+      c2nl (b, l);
+      *(q++) = l;
+    }
 #endif
+  sha1_block (c, p, 64);
+}
+
+#ifndef SHA1_ASM
+
+void
+sha1_block (SHA1_ctx *c, register unsigned long *W, int num)
+{
+  register ULONG A, B, C, D, E, T;
+  ULONG X[16];
+
+  A = c->h0;
+  B = c->h1;
+  C = c->h2;
+  D = c->h3;
+  E = c->h4;
+
+  for (;;)
+    {
+      BODY_00_15 (0, A, B, C, D, E, T, W);
+      BODY_00_15 (1, T, A, B, C, D, E, W);
+      BODY_00_15 (2, E, T, A, B, C, D, W);
+      BODY_00_15 (3, D, E, T, A, B, C, W);
+      BODY_00_15 (4, C, D, E, T, A, B, W);
+      BODY_00_15 (5, B, C, D, E, T, A, W);
+      BODY_00_15 (6, A, B, C, D, E, T, W);
+      BODY_00_15 (7, T, A, B, C, D, E, W);
+      BODY_00_15 (8, E, T, A, B, C, D, W);
+      BODY_00_15 (9, D, E, T, A, B, C, W);
+      BODY_00_15 (10, C, D, E, T, A, B, W);
+      BODY_00_15 (11, B, C, D, E, T, A, W);
+      BODY_00_15 (12, A, B, C, D, E, T, W);
+      BODY_00_15 (13, T, A, B, C, D, E, W);
+      BODY_00_15 (14, E, T, A, B, C, D, W);
+      BODY_00_15 (15, D, E, T, A, B, C, W);
+      BODY_16_19 (16, C, D, E, T, A, B, W, W, W, W);
+      BODY_16_19 (17, B, C, D, E, T, A, W, W, W, W);
+      BODY_16_19 (18, A, B, C, D, E, T, W, W, W, W);
+      BODY_16_19 (19, T, A, B, C, D, E, W, W, W, X);
+
+      BODY_20_31 (20, E, T, A, B, C, D, W, W, W, X);
+      BODY_20_31 (21, D, E, T, A, B, C, W, W, W, X);
+      BODY_20_31 (22, C, D, E, T, A, B, W, W, W, X);
+      BODY_20_31 (23, B, C, D, E, T, A, W, W, W, X);
+      BODY_20_31 (24, A, B, C, D, E, T, W, W, X, X);
+      BODY_20_31 (25, T, A, B, C, D, E, W, W, X, X);
+      BODY_20_31 (26, E, T, A, B, C, D, W, W, X, X);
+      BODY_20_31 (27, D, E, T, A, B, C, W, W, X, X);
+      BODY_20_31 (28, C, D, E, T, A, B, W, W, X, X);
+      BODY_20_31 (29, B, C, D, E, T, A, W, W, X, X);
+      BODY_20_31 (30, A, B, C, D, E, T, W, X, X, X);
+      BODY_20_31 (31, T, A, B, C, D, E, W, X, X, X);
+      BODY_32_39 (32, E, T, A, B, C, D, X);
+      BODY_32_39 (33, D, E, T, A, B, C, X);
+      BODY_32_39 (34, C, D, E, T, A, B, X);
+      BODY_32_39 (35, B, C, D, E, T, A, X);
+      BODY_32_39 (36, A, B, C, D, E, T, X);
+      BODY_32_39 (37, T, A, B, C, D, E, X);
+      BODY_32_39 (38, E, T, A, B, C, D, X);
+      BODY_32_39 (39, D, E, T, A, B, C, X);
+
+      BODY_40_59 (40, C, D, E, T, A, B, X);
+      BODY_40_59 (41, B, C, D, E, T, A, X);
+      BODY_40_59 (42, A, B, C, D, E, T, X);
+      BODY_40_59 (43, T, A, B, C, D, E, X);
+      BODY_40_59 (44, E, T, A, B, C, D, X);
+      BODY_40_59 (45, D, E, T, A, B, C, X);
+      BODY_40_59 (46, C, D, E, T, A, B, X);
+      BODY_40_59 (47, B, C, D, E, T, A, X);
+      BODY_40_59 (48, A, B, C, D, E, T, X);
+      BODY_40_59 (49, T, A, B, C, D, E, X);
+      BODY_40_59 (50, E, T, A, B, C, D, X);
+      BODY_40_59 (51, D, E, T, A, B, C, X);
+      BODY_40_59 (52, C, D, E, T, A, B, X);
+      BODY_40_59 (53, B, C, D, E, T, A, X);
+      BODY_40_59 (54, A, B, C, D, E, T, X);
+      BODY_40_59 (55, T, A, B, C, D, E, X);
+      BODY_40_59 (56, E, T, A, B, C, D, X);
+      BODY_40_59 (57, D, E, T, A, B, C, X);
+      BODY_40_59 (58, C, D, E, T, A, B, X);
+      BODY_40_59 (59, B, C, D, E, T, A, X);
+
+      BODY_60_79 (60, A, B, C, D, E, T, X);
+      BODY_60_79 (61, T, A, B, C, D, E, X);
+      BODY_60_79 (62, E, T, A, B, C, D, X);
+      BODY_60_79 (63, D, E, T, A, B, C, X);
+      BODY_60_79 (64, C, D, E, T, A, B, X);
+      BODY_60_79 (65, B, C, D, E, T, A, X);
+      BODY_60_79 (66, A, B, C, D, E, T, X);
+      BODY_60_79 (67, T, A, B, C, D, E, X);
+      BODY_60_79 (68, E, T, A, B, C, D, X);
+      BODY_60_79 (69, D, E, T, A, B, C, X);
+      BODY_60_79 (70, C, D, E, T, A, B, X);
+      BODY_60_79 (71, B, C, D, E, T, A, X);
+      BODY_60_79 (72, A, B, C, D, E, T, X);
+      BODY_60_79 (73, T, A, B, C, D, E, X);
+      BODY_60_79 (74, E, T, A, B, C, D, X);
+      BODY_60_79 (75, D, E, T, A, B, C, X);
+      BODY_60_79 (76, C, D, E, T, A, B, X);
+      BODY_60_79 (77, B, C, D, E, T, A, X);
+      BODY_60_79 (78, A, B, C, D, E, T, X);
+      BODY_60_79 (79, T, A, B, C, D, E, X);
+
+      c->h0 = (c->h0 + E) & 0xffffffffL;
+      c->h1 = (c->h1 + T) & 0xffffffffL;
+      c->h2 = (c->h2 + A) & 0xffffffffL;
+      c->h3 = (c->h3 + B) & 0xffffffffL;
+      c->h4 = (c->h4 + C) & 0xffffffffL;
+
+      num -= 64;
+      if (num <= 0)
+	break;
+
+      A = c->h0;
+      B = c->h1;
+      C = c->h2;
+      D = c->h3;
+      E = c->h4;
+
+      W += 16;
+    }
+}
+#endif
+
+void
+SHA1_final (unsigned char *md, SHA1_ctx *c)
+{
+  register int i, j;
+  register ULONG l;
+  register ULONG *p;
+  static unsigned char end[4] = { 0x80, 0x00, 0x00, 0x00 };
+  unsigned char *cp = end;
+
+  /* c->num should definitly have room for at least one more byte. */
+  p = c->data;
+  j = c->num;
+  i = j >> 2;
+#ifdef PURIFY
+  if ((j & 0x03) == 0)
+    p[i] = 0;
+#endif
+  l = p[i];
+  M_p_c2nl (cp, l, j & 0x03);
+  p[i] = l;
+  i++;
+  /* i is the next 'undefined word' */
+  if (c->num >= SHA_LAST_BLOCK)
+    {
+      for (; i < SHA_LBLOCK; i++)
+	p[i] = 0;
+      sha1_block (c, p, 64);
+      i = 0;
+    }
+  for (; i < (SHA_LBLOCK - 2); i++)
+    p[i] = 0;
+  p[SHA_LBLOCK - 2] = c->Nh;
+  p[SHA_LBLOCK - 1] = c->Nl;
+#if defined(L_ENDIAN) && defined(SHA1_ASM)
+  Endian_Reverse32 (p[SHA_LBLOCK - 2]);
+  Endian_Reverse32 (p[SHA_LBLOCK - 1]);
+#endif
+  sha1_block (c, p, 64);
+  cp = md;
+  l = c->h0;
+  nl2c (l, cp);
+  l = c->h1;
+  nl2c (l, cp);
+  l = c->h2;
+  nl2c (l, cp);
+  l = c->h3;
+  nl2c (l, cp);
+  l = c->h4;
+  nl2c (l, cp);
+
+  /* clear stuff, sha1_block may be leaving some stuff on the stack
+   * but I'm not worried :-) */
+  c->num = 0;
+/*	memset((char *)&c,0,sizeof(c));*/
 }
 
 #endif
+

@@ -4,7 +4,7 @@
 /*
  * =c
  * IPsecDES(DECRYPT/ENCRYPT, KEY [, IGNORE])
- * =s encryption
+ * =s Encryption
  * encrypt packet using DES-CBC
  * =d
  * 

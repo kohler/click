@@ -4,7 +4,7 @@
 /*
  * =c
  * IPsecAuthSHA1(COMPUTE/VERIFY)
- * =s verification
+ * =s Authentication
  * verify SHA1 authentication digest.
  * =d
  * 
