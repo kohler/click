@@ -86,13 +86,14 @@ unaligned_net_short(const void *v)
 #define UNALIGNED_NET_SHORT_EQ(x, y) (unaligned_net_short(&(x)) == (y))
 #endif
 
+#define IP_ETHERTYPE(et)	(UNALIGNED_NET_SHORT_EQ((et), ETHERTYPE_IP) || UNALIGNED_NET_SHORT_EQ((et), ETHERTYPE_IP6))
+
 // NB: May change 'p', but will never free it.
 bool
 fake_pcap_force_ip(Packet *&p, int dlt)
 {
     const click_ip *iph = 0;
     switch (dlt) {
-	/* XXX IP6? */
 
       case FAKE_DLT_RAW: {
 	  iph = (const click_ip *) p->data();
@@ -102,7 +103,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
       case FAKE_DLT_EN10MB: {
 	  const click_ether *ethh = (const click_ether *) p->data();
 	  if (p->length() >= sizeof(click_ether)
-	      && UNALIGNED_NET_SHORT_EQ(ethh->ether_type, ETHERTYPE_IP))
+	      && IP_ETHERTYPE(ethh->ether_type))
 	      iph = (const click_ip *)(ethh + 1);
 	  break;
       }
@@ -114,7 +115,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	      break;
 	  const click_fddi_snap *fsh = (const click_fddi_snap *) fh;
 	  if (memcmp(&fsh->dsap, FDDI_SNAP_EXPECTED, FDDI_SNAP_EXPECTED_LEN) == 0
-	      && UNALIGNED_NET_SHORT_EQ(fsh->ether_type, ETHERTYPE_IP))
+	      && IP_ETHERTYPE(fsh->ether_type))
 	      iph = (const click_ip *) (fsh + 1);
 	  break;
       }
@@ -123,7 +124,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  const click_rfc1483 *rh = (const click_rfc1483 *) p->data();
 	  if (p->length() >= sizeof(click_rfc1483)
 	      && memcmp(rh->snap, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) == 0
-	      && UNALIGNED_NET_SHORT_EQ(rh->ether_type, ETHERTYPE_IP))
+	      && IP_ETHERTYPE(rh->ether_type))
 	      iph = (const click_ip *) (rh + 1);
 	  break;
       }
