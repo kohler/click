@@ -1,3 +1,11 @@
+2001-10-31 Wednesday 13:16  Eddie Kohler <kohler@aciri.org>
+
+	* doc/mkwebdoc.pl (1.15): doc updates
+
+2001-10-31 Wednesday 13:15  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/acclick.m4 (1.5): nitlet
+
 2001-10-31 Wednesday 12:27  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* tools/run-grid (1.6): changes to support freebsd (once again)
