@@ -81,8 +81,9 @@ GridProbeHandler::configure(const Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_eth,
 		     cpIPAddress, "IP address", &_ip,
-		     cpElement, "LookupLocalGridRoute element", _lr_el,
-		     cpElement, "LookupGeographicsGRidRoute element", _gf_el,
+		     cpOptional,
+		     cpElement, "LookupLocalGridRoute element", &_lr_el,
+		     cpElement, "LookupGeographicsGRidRoute element", &_gf_el,
 		     0);
 }
 
