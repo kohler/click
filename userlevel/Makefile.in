@@ -53,7 +53,8 @@ CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
 
-DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
+DEFS = @DEFS@
+INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
 LIBS = @LIBS@ @PCAP_LIBRARY@

@@ -9,7 +9,14 @@ srcdir = @srcdir@
 top_builddir = ..
 subdir = tools
 
-TOOLS = click-align click-fastclassifier click-install click-xform
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+TOOLS = click-align click-compile click-fastclassifier click-install \
+	click-xform
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
@@ -27,13 +34,23 @@ Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
+click-compile: $(srcdir)/click-compile.in
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x click-compile
+
 clean:
 	@-for d in $(TOOLS); do (cd $$d; $(MAKE) clean); done
 distclean:
 	@-for d in $(TOOLS); do (cd $$d; $(MAKE) distclean); done
 	-rm -f Makefile
 
-install:
+install: install-subdirs install-local
+install-local: click-compile
+	$(mkinstalldirs) $(bindir)
+	@chmod +x click-compile
+	$(INSTALL) click-compile $(bindir)/click-compile
+install-subdirs:
 	@for d in $(TARGETS); do (cd $$d; $(MAKE) install); done
 install-man:
 	@for d in $(TARGETS); do (cd $$d; $(MAKE) install-man); done
@@ -48,6 +65,7 @@ DISTFILES = Makefile.in \
 	click-align/click-align.cc \
 	click-align/alignment.cc click-align/alignment.hh \
 	click-align/alignclass.cc click-align/alignclass.hh \
+	click-compile.in \
 	click-fastclassifier/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \
 	click-install/Makefile.in \
@@ -71,4 +89,4 @@ distdir:
 	done
 
 
-.PHONY: all $(TOOLS) clean distclean distdir install install-man
+.PHONY: all $(TOOLS) clean distclean distdir install install-man install-subdirs

@@ -44,7 +44,7 @@ static Clp_Option options[] = {
 
 static const char *program_name;
 static String::Initializer string_initializer;
-static String click_binary;
+static String runclick_prog;
 
 void
 short_usage()
@@ -74,7 +74,7 @@ static String
 path_find_file_2(const String &filename, String path, String default_path,
 		 String subdir)
 {
-  if (subdir.back() != '/') subdir += "/";
+  if (subdir && subdir.back() != '/') subdir += "/";
   
   while (1) {
     int colon = path.find_left(':');
@@ -88,17 +88,16 @@ path_find_file_2(const String &filename, String path, String default_path,
       
     } else if (dir) {
       if (dir.back() != '/') dir += "/";
-      // look for `dir/filename'
-      String name = dir + filename;
-      struct stat s;
-      if (stat(name.cc(), &s) >= 0)
-	return name;
       // look for `dir/subdir/filename'
       if (subdir) {
-	name = dir + subdir + filename;
-	if (stat(name.cc(), &s) >= 0)
+	String name = dir + subdir + filename;
+	if (access(name.cc(), F_OK) >= 0)
 	  return name;
       }
+      // look for `dir/filename'
+      String name = dir + filename;
+      if (access(name.cc(), F_OK) >= 0)
+	return name;
     }
     
     if (colon < 0) return String();
@@ -127,11 +126,95 @@ clickpath_find_file(const String &filename, const char *subdir,
     s = path_find_file_2(filename, path, default_path, subdir);
   else
     s = path_find_file_2(filename, default_path, "", 0);
+  if (!s && subdir
+      && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0)
+      && (path = getenv("PATH")))
+    s = path_find_file_2(filename, path, "", 0);
   if (!s && errh) {
-    errh->message("cannot find file `click.o'");
+    errh->message("cannot find file `%s'", String(filename).cc());
     errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
   }
   return s;
+}
+
+static String
+path_writable_file_2(const String &filename, String path, String default_path,
+		     String subdir)
+{
+  if (subdir && subdir.back() != '/') subdir += "/";
+  
+  while (1) {
+    int colon = path.find_left(':');
+    String dir = (colon < 0 ? path : path.substring(0, colon));
+    
+    if (!dir && default_path) {
+      // look in default path
+      String s = path_writable_file_2(filename, default_path, String(), 0);
+      if (s) return s;
+      default_path = String();	// don't search default path twice
+      
+    } else if (dir) {
+      if (dir.back() != '/') dir += "/";
+      // check `dir/subdir'
+      if (subdir) {
+	String name = dir + subdir;
+	if (access(name.cc(), W_OK) >= 0)
+	  return name + filename;
+      }
+      // check `dir'
+      if (access(dir.cc(), W_OK) >= 0)
+	return dir + filename;
+    }
+    
+    if (colon < 0) return String();
+    path = path.substring(colon + 1);
+  }
+}
+
+static String
+clickpath_first_writable_file(const String &filename, const char *subdir,
+			      const String &default_path,
+			      ErrorHandler *errh = 0)
+{
+  const char *path = getenv("CLICKPATH");
+  String s;
+  if (path)
+    s = path_writable_file_2(filename, path, default_path, subdir);
+  else
+    s = path_writable_file_2(filename, default_path, "", 0);
+  if (!s && errh) {
+    errh->message("cannot write file `%s'", String(filename).cc());
+    errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
+  }
+  return s;
+}
+
+static String
+click_mktmpdir(ErrorHandler *errh = 0)
+{
+  String tmpdir;
+  if (const char *path = getenv("TMPDIR"))
+    tmpdir = path;
+#ifdef P_tmpdir
+  else if (P_tmpdir)
+    tmpdir = P_tmpdir;
+#endif
+  else
+    tmpdir = "/tmp";
+  
+  int uniqueifier = getpid();
+  while (1) {
+    String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
+    int result = mkdir(tmpsubdir.cc(), 0700);
+    if (result >= 0)
+      return tmpsubdir;
+    if (result < 0 && errno != EEXIST) {
+      if (errh)
+	errh->fatal("cannot create temporary directory: %s", strerror(errno));
+      return String();
+    }
+    uniqueifier++;
+  }
 }
 
 
@@ -319,7 +402,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   // get the resulting program from user-level `click'
   String router_str = nr.configuration_string();
   String handler = r->ename(classifier_ei) + ".program";
-  String program = get_string_from_process(click_binary + " -h " + handler + " -q", router_str, errh);
+  String program = get_string_from_process(runclick_prog + " -h " + handler + " -q", router_str, errh);
 
   // parse the program
   Vector<Classifion> cls;
@@ -517,10 +600,11 @@ particular purpose.\n");
     if (!outf)
       errh->fatal("%s: %s", output_file, strerror(errno));
   }
-  
-  // find Click binary
-  click_binary = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
-  
+
+  // find Click binaries
+  runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
+  String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+
   // find Classifiers
   Vector<int> classifiers;
   {
@@ -539,16 +623,29 @@ particular purpose.\n");
 
   // find name of module
   String module_name;
-  int uniqueifier = 1;
+  int uniqueifier = getpid();
   while (1) {
     module_name = "fastclassifier" + String(uniqueifier);
     if (!clickpath_find_file(module_name + ".o", "packages", CLICK_PACKAGESDIR))
       break;
+    uniqueifier++;
   }
   r->add_requirement(module_name);
+  String module_filename = clickpath_first_writable_file(module_name + ".o", "packages", CLICK_PACKAGESDIR);
+  if (!module_filename)
+    errh->fatal("cannot write in Click modules directories");
+
+  // create temporary directory
+  String tmpdir = click_mktmpdir(errh);
+  if (!tmpdir) exit(1);
+  if (chdir(tmpdir.cc()) < 0)
+    errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
   
-  // write C++ header
-  FILE *f = stdout;
+  // write C++ file
+  String cxx_filename = module_name + ".cc";
+  FILE *f = fopen(cxx_filename, "w");
+  if (!f)
+    errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
   fprintf(f, "#include \"clickmodule.hh\"\n#include \"element.hh\"\n");
   
   // write Classifier programs
@@ -574,6 +671,16 @@ extern \"C\" int\ninit_module()\n{\n\
 EXPORT_NO_SYMBOLS\n",
 	  module_name.cc());
 
+  // compile file
+  String compile_command = click_compile_prog + " --target=module --package=" + module_filename.cc() + " " + cxx_filename;
+  int compile_retval = system(compile_command.cc());
+  if (compile_retval == 127)
+    errh->fatal("could not run `%s'", compile_command.cc());
+  else if (compile_retval < 0)
+    errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+  else if (compile_retval != 0)
+    errh->fatal("`%s' failed", compile_command.cc());
+  
   // write configuration
   fputs(r->configuration_string().cc(), outf);
   return 0;

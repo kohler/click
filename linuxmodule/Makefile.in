@@ -54,7 +54,8 @@ CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
 
-DEFS = @DEFS@ -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/lib -I/usr/src/linux/include
+DEFS = @DEFS@ 
+INCLUDES = -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/lib -I/usr/src/linux/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

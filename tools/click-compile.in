@@ -1,0 +1,71 @@
+#!/bin/sh
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+
+# determine mode
+target=
+package=NONE
+while true; do
+  bad=x
+  case $1 in
+    --t|--ta|--tar|--targ|--targe|--target)
+      target=$2; shift 2;;
+    --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
+      target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+    --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
+      package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+    *)
+      bad=;;
+  esac
+  if test -z "$bad"; then break; fi
+done
+
+case $target in
+  m|mo|mod|modu|modul|module)
+    idefs="@DEFS@ -DCLICK_LINUXMODULE"
+    iincludes="-I${includedir} -I/usr/src/linux/include"
+    icxxflags="@CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c"
+    target=module;;
+  u|us|use|user)
+    idefs="@DEFS@ -DCLICK_USERLEVEL"
+    iincludes="-I${includedir}"
+    icxxflags="@CXXFLAGS@ -fno-exceptions -fno-rtti"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c"
+    target=user;;
+  t|to|too|tool)
+    target=tool;;
+  *)
+    echo "click-compile: acceptable targets are \`module', \`user', and \`tool'" 1>&2; exit 1;;
+esac
+
+# do stuff
+if test "x$package" != "xNONE"; then
+  for file; do
+    echo $command $file
+    eval $command $file || exit 1
+    files="$files "`echo $file | sed 's/\.c*$/\.o/;s/^.*\///'`
+  done
+  if test $target = module; then
+    vfile=kernelversion
+    trap 'rm -f $vfile.c $vfile.o; exit 1' 1 2 15
+    cat > $vfile.c << EOF
+#define __KERNEL__
+#define MODULE
+#include <linux/module.h>
+EOF
+    command="${CC-@CC@ -w} -I/usr/src/linux/include -c $vfile.c"
+    echo $command
+    eval $command || (rm -f $vfile.*; exit 1)
+    command="ld -r -o $package $files $vfile.o"
+    echo $command
+    eval $command || (rm -f $vfile.*; exit 1)
+    rm -f $vfile.*
+    exit 0 
+  fi
+else
+  echo $command "$@"
+  exec $command "$@"
+fi

@@ -1,5 +1,6 @@
 #ifndef CLICKMODULE_HH
 #define CLICKMODULE_HH
+class Element;
 
 extern "C" {
 #define __NO_VERSION__

@@ -14,6 +14,11 @@ subdir = .
 AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
 INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+includedir = @includedir@
 
 all: @TARGETS@ tools Makefile
 
@@ -28,8 +33,12 @@ tools: Makefile
 
 install:
 	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install); done
+	@$(MAKE) install-include
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install-man); done
+install-include:
+	$(mkinstalldirs) $(includedir)
+	$(INSTALL) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(srcdir)/linuxmodule/clickmodule.hh $(includedir)
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
