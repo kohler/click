@@ -46,21 +46,29 @@ sub main {
 
     
     for($i=0; $i<scalar(@name); $i++) {
+	$n = $name[$i];
+	if ($name[$i] =~ /(\S+).ron.lcs.mit.edu/) {
+	    $n = $1;
+	}
+
 	print "Working on $name[$i]\n";
-
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-traceroute.pl";
+	print " starting traceroute\n";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-traceroute.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-server.pl";
+	print " starting server\n";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-server.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-client.pl";
+	print " starting client\n";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-client.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-datacollect.pl";
+	print " starting datacollection\n";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/start-datacollect.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 

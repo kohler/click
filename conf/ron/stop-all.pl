@@ -48,19 +48,19 @@ sub main {
     for($i=0; $i<scalar(@name); $i++) {
 	print "Working on $name[$i]\n";
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-traceroute.pl";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-traceroute.sh";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-server.pl";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-server.sh";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-client.pl";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-client.sh";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-datacollect.pl";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-datacollect.sh";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
