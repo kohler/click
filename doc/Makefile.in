@@ -32,7 +32,7 @@ Makefile: $(srcdir)/Makefile.in
 install: Makefile install-man install-info
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) $(srcdir)/click-elem2man $(bindir)/click-elem2man
-install-man: Makefile
+install-man: $(srcdir)/testie.1 Makefile
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man7 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1
 	$(INSTALL_DATA) $(srcdir)/click.5 $(mandir)/man5/click.5
@@ -50,6 +50,7 @@ install-man: Makefile
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
+	$(INSTALL_DATA) $(srcdir)/testie.1 $(mandir)/man1/testie.1
 	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f -
 install-info: Makefile $(srcdir)/click.info
 	$(mkinstalldirs) $(infodir)
@@ -84,6 +85,9 @@ click.html: $(srcdir)/click.texi
 	$(MAKEINFO) --html --no-split --number-sections $(srcdir)/click.texi
 click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
+
+$(srcdir)/testie.1: $(top_srcdir)/test/testie
+	pod2man $(top_srcdir)/test/testie > $(srcdir)/testie.1
 
 always:
 	@:
