@@ -1,3 +1,12 @@
+2002-04-02 Tuesday 11:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.52): removed hardcoed reference to an0 i
+
+2002-04-02 Tuesday 11:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: airoinfo.cc (1.4), airoinfo.hh (1.3): added
+	support for linux wireless extensions to get sign strength/quality
+
 2002-03-31 Sunday 13:57  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: insert_fwrules.sh (1.8), insert_fwrules_real.sh (1.1):
