@@ -1,3 +1,7 @@
+2001-03-28 Wednesday 18:28  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/webgen.hh: Fix WebGen documentation.
+
 2001-03-27 Tuesday 21:58  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: webgen.cc, webgen.hh: WebGen allows control over
