@@ -203,7 +203,7 @@ String
 SimpleQueue::read_handler(Element *e, void *thunk)
 {
     SimpleQueue *q = static_cast<SimpleQueue *>(e);
-    int which = reinterpret_cast<int>(thunk);
+    int which = reinterpret_cast<intptr_t>(thunk);
     switch (which) {
       case 0:
 	return String(q->size()) + "\n";
@@ -222,7 +222,7 @@ int
 SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
 {
     SimpleQueue *q = static_cast<SimpleQueue *>(e);
-    int which = reinterpret_cast<int>(thunk);
+    int which = reinterpret_cast<intptr_t>(thunk);
     switch (which) {
       case 0:
 	q->_drops = 0;
