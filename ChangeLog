@@ -1,3 +1,7 @@
+2004-04-05 Monday 14:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/tohost.hh (1.28): add to documentation
+
 2004-04-04 Sunday 23:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/linuxmodule/ToHost-udpsocket-01.testie (1.1): add test for
