@@ -1,3 +1,8 @@
+2003-09-03 Wednesday 13:41  Eddie Kohler <kohler@icir.org>
+
+	* lib/lexer.cc (1.68): fix bug: re-allow anonymous compound
+	elements
+
 2003-08-29 Friday 12:30  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.16): added per-flow gateway
