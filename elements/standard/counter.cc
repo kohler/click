@@ -41,10 +41,12 @@ Counter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	          cpString, "count bytes?", &b,
 		  0) < 0)
     return -1;
-  if (b == "BYTES") _bytes = true;
-  else if (b == "PACKETS") _bytes = false;
+  if (b.upper() == "BYTES")
+    _bytes = true;
+  else if (b.upper() == "PACKETS")
+    _bytes = false;
   else 
-    return errh->error("argument should be BYTES or PACKETS");
+    return errh->error("argument should be \"bytes\" or \"packets\"");
   return 0;
 }
 

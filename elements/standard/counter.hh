@@ -3,23 +3,18 @@
 #include "element.hh"
 #include "ewma.hh"
 
-/*
- * =c
- * Counter(PACKETS/BYTES)
+/* =c
+ * Counter([TYPE])
  * =d
- *
- * Passes packets unchanged from its input to its output,  maintaining
- * statistics information about packet count and rate if configuration string
- * is PACKETS (this is the default), byte count and byte rate if configuration
- * string is BYTES.
- *
+ * Passes packets unchanged from its input to its output,
+ * maintaining statistics information about packet count and
+ * rate if TYPE is "packets", or byte count and byte rate if
+ * TYPE is "bytes". The default TYPE is "packets".
  * =h count read-only
  * Returns the number of packets/bytes that have passed through.
- *
  * =h rate read-only
  * Returns the recent packet/byte arrival rate (measured by exponential
  * weighted moving average) in packets per second.
- *
  * =h reset write-only
  * Resets the count and rate to zero.
  */
