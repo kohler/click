@@ -643,11 +643,23 @@ ErrorHandler::remove_conversion(ErrorHandler::Conversion *conv)
   return -1;
 }
 
+static String
+timeval_error_hook(int, VA_LIST_REF_T val)
+{
+  const struct timeval *tvp = va_arg(VA_LIST_DEREF(val), const struct timeval *);
+  if (tvp) {
+    StringAccum sa;
+    sa << *tvp;
+    return sa.take_string();
+  } else
+    return "(null)";
+}
+
 #ifndef CLICK_TOOL
 static String
 element_error_hook(int, VA_LIST_REF_T val)
 {
-  Element *e = va_arg(VA_LIST_DEREF(val), Element *);
+  const Element *e = va_arg(VA_LIST_DEREF(val), const Element *);
   if (e)
     return e->declaration();
   else
@@ -660,6 +672,7 @@ ErrorHandler::static_initialize(ErrorHandler *default_handler)
 {
   the_default_handler = default_handler;
   the_silent_handler = new SilentErrorHandler;
+  add_conversion("timeval", timeval_error_hook);
 #ifndef CLICK_TOOL
   add_conversion("element", element_error_hook);
 #endif
