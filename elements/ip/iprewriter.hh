@@ -80,6 +80,7 @@
  *
  * =a IPRewriterPatterns
  * =a IPRoundRobinMapper
+ * =a TCPRewriter
  * =a FTPPortMapper */
 
 class IPRewriter : public IPRw {

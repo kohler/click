@@ -2,6 +2,33 @@
 #define TCPREWRITER_HH
 #include "elements/ip/iprw.hh"
 
+/*
+ * =c
+ * TCPRewriter(INPUTSPEC1, ..., INPUTSPECn)
+ * =d
+ *
+ * Rewrites TCP flows by changing their source address, source port,
+ * destination address, and/or destination port, and optionally, their
+ * sequence numbers and acknowledgement numbers.
+ *
+ * This element is an IPRewriter-like element. Please read the IPRewriter
+ * documentation for more information and a detailed description of its
+ * INPUTSPEC arguments.
+ *
+ * In addition to IPRewriter's functionality, the TCPRewriter element can add
+ * or subtract amounts from incoming packets' sequence and acknowledgement
+ * numbers. Each newly created mapping starts with these deltas at zero; other
+ * elements can request changes to a given mapping. For example, FTPPortMapper
+ * uses this facility.
+ *
+ * =h mappings read-only
+ * Returns a human-readable description of the IPRewriter's current set of
+ * mappings.
+ *
+ * =a IPRewriter
+ * =a IPRewriterPatterns
+ * =a FTPPortMapper */
+
 class TCPRewriter : public IPRw {
 
   class TCPMapping : public Mapping {
@@ -21,6 +48,8 @@ class TCPRewriter : public IPRw {
     void update_ackno_delta(int);
     
     void apply(WritablePacket *p);
+
+    String s() const;
     
   };
   

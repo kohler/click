@@ -42,18 +42,7 @@ FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (!_control_rewriter)
     return errh->error("first argument must be a TCPRewriter-like element");
 
-  // make sure that _control_rewriter is downstream
-  CastElementFilter filter("TCPRewriter");
-  Vector<Element *> downstream;
-  router()->downstream_elements(this, 0, &filter, downstream);
-  filter.filter(downstream);
-  for (int i = 0; i < downstream.size(); i++)
-    if (downstream[i] == _control_rewriter)
-      goto found_control_rewriter;
-  errh->warning("control packet rewriter `%s' is not downstream", String(conf[0]).cc());
-  
   // get data packet rewriter
- found_control_rewriter:
   e = cp_element(conf[1], this, errh);
   if (!e)
     return -1;
@@ -73,6 +62,23 @@ FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("port out of range for `%s'", _data_rewriter->declaration().cc());
   else
     return 0;
+}
+
+int
+FTPPortMapper::initialize(ErrorHandler *errh)
+{
+  // make sure that _control_rewriter is downstream
+  CastElementFilter filter("TCPRewriter");
+  Vector<Element *> downstream;
+  router()->downstream_elements(this, 0, &filter, downstream);
+  filter.filter(downstream);
+  for (int i = 0; i < downstream.size(); i++)
+    if (downstream[i] == _control_rewriter)
+      goto found_control_rewriter;
+  errh->warning("control packet rewriter `%s' is not downstream", _control_rewriter->declaration().cc());
+
+ found_control_rewriter:
+  return 0;
 }
 
 void

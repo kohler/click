@@ -46,7 +46,6 @@ TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_w
   while (delta >> 16)
     delta = (delta & 0xFFFF) + (delta >> 16);
   _udp_csum_delta = delta;
-  click_chatter("%x %x", ntohl(old_word), ntohl(new_word));
 }
 
 void
@@ -83,6 +82,17 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   tcph->th_sum = ~htons(sum2);
   
   mark_used();
+}
+
+String
+TCPRewriter::TCPMapping::s() const
+{
+  StringAccum sa;
+  sa << reverse()->flow_id().rev().s() << " => " << flow_id().s()
+     << " seq " << (_seqno_delta > 0 ? "+" : "") << _seqno_delta
+     << " ack " << (_ackno_delta > 0 ? "+" : "") << _ackno_delta
+     << " [" + String(output()) + "]";
+  return sa.take_string();
 }
 
 
@@ -241,7 +251,6 @@ TCPRewriter::push(int port, Packet *p_in)
        int fport = is.u.pattern.fport;
        int rport = is.u.pattern.rport;
        m = TCPRewriter::apply_pattern(pat, fport, rport, true, flow);
-       m->update_seqno_delta(2);
        break;
      }
 
@@ -268,7 +277,7 @@ TCPRewriter::dump_mappings_handler(Element *e, void *)
   TCPRewriter *rw = (TCPRewriter *)e;
   StringAccum tcps;
   for (Map::Iterator iter = rw->_tcp_map.first(); iter; iter++) {
-    Mapping *m = iter.value();
+    TCPMapping *m = static_cast<TCPMapping *>(iter.value());
     if (!m->is_reverse())
       tcps << m->s() << "\n";
   }

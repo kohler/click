@@ -48,6 +48,11 @@
  *
  * (*) Updates the packet's IP and TCP checksums.
  *
+ * (*) Updates the downstream CONTROL_REWRITER to reflect the change in
+ * sequence numbers introduced by the new PORT command. (The modified packet
+ * containing the new PORT command will likely have a different length than
+ * the original packet, so some sequence number patching is required.)
+ *
  * (*) Does <i>not</i> rewrite the packet header's addresses or port numbers.
  *
  * For a PORT command to be recognized, it must be completely contained within
@@ -56,7 +61,7 @@
  * less than the destination FTP control port, which is read as the packet's
  * destination port number. This is also usually the case.
  *
- * =a IPRewriter IPRewriterPatterns */
+ * =a IPRewriter TCPRewriter IPRewriterPatterns */
 
 class FTPPortMapper : public Element {
 
@@ -74,6 +79,7 @@ class FTPPortMapper : public Element {
   
   FTPPortMapper *clone() const		{ return new FTPPortMapper; }
   int configure(const Vector<String> &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void uninitialize();
   
   Packet *simple_action(Packet *);
