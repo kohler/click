@@ -151,6 +151,7 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 void
 ElementMap::remove_at(int i)
 {
+    // XXX repeated removes can fill up ElementMap with crap
     if (i <= 0 || i >= _e.size())
 	return;
 
@@ -428,6 +429,30 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
     else
 	errh->message("Searched in CLICKPATH and `%s'.)", default_path.cc());
 }
+
+
+// TraitsIterator
+
+ElementMap::TraitsIterator::TraitsIterator(const ElementMap *emap, bool elements_only)
+    : _emap(emap), _index(0), _elements_only(elements_only)
+{
+    (*this)++;
+}
+
+void
+ElementMap::TraitsIterator::operator++(int)
+{
+    _index++;
+    while (_index < _emap->size()) {
+	const ElementTraits &t = _emap->traits_at(_index);
+	if ((t.driver_mask & _emap->driver_mask())
+	    && (t.name || t.cxx)
+	    && (t.name || !_elements_only))
+	    break;
+	_index++;
+    }
+}
+
 
 // template instance
 #include <click/vector.cc>

@@ -32,8 +32,8 @@ class ElementMap { public:
     const String &package(const String &) const;
     String documentation_url(const Traits &) const;
     
-    typedef HashMap<String, int>::Iterator IndexIterator;
-    IndexIterator first() const		{ return _name_map.first(); }
+    class TraitsIterator;
+    TraitsIterator first_element() const;
 
     int add(const Traits &);
     int add(const String &name, const String &cxx, const String &header_file,
@@ -56,6 +56,7 @@ class ElementMap { public:
     bool driver_indifferent(const RouterT *, int driver_mask = Driver::ALLMASK, ErrorHandler * = 0) const;
     bool driver_compatible(const RouterT *, int driver, ErrorHandler * = 0) const;
 
+    int driver_mask() const		{ return _driver_mask; }
     void set_driver(int d)		{ set_driver_mask(1 << d); }
     void set_driver_mask(int);
 
@@ -88,6 +89,25 @@ class ElementMap { public:
 };
 
 extern int32_t default_element_map_version;
+
+
+class ElementMap::TraitsIterator { public:
+
+    TraitsIterator(const ElementMap *, bool elements_only);
+
+    operator bool()			{ return _index < _emap->size(); }
+    void operator++(int);
+
+    const ElementTraits &value() const	{ return _emap->traits_at(_index); }
+    int traits_index() const		{ return _index; }
+
+  private:
+
+    const ElementMap *_emap;
+    int _index;
+    bool _elements_only;
+    
+};
 
 
 inline const Traits &
@@ -154,6 +174,12 @@ inline bool
 ElementMap::provides_global(const String &req) const
 {
     return _e[0].provides(req);
+}
+
+inline ElementMap::TraitsIterator
+ElementMap::first_element() const
+{
+    return TraitsIterator(this, true);
 }
 
 #endif
