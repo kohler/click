@@ -74,6 +74,11 @@ ICMPPingResponder::simple_action(Packet *p_in)
     iph->ip_dst = iph->ip_src;
     iph->ip_src = tmp_addr;
 
+    // clear MF, DF, etc.
+    // (bug reported by David Scott Page)
+    click_update_in_cksum(&iph->ip_sum, iph->ip_off, 0);
+    iph->ip_off = 0;
+    
     // set TTL to 255, update checksum
     // (bug reported by <kp13@gmx.co.uk>)
     uint16_t old_hw = ((uint16_t *)iph)[4];
