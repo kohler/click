@@ -198,8 +198,8 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(far));
 #if defined(__linux__)
-      // XXX don't know what to do with far address 
-      sprintf(tmp, "ifconfig %s%d %s up", dev_prefix, i, tmp0);
+      // treat far address as netmask 
+      sprintf(tmp, "ifconfig %s%d %s netmask %s up", dev_prefix, i, tmp0, tmp1);
 #else
       sprintf(tmp, "ifconfig %s%d %s %s up", dev_prefix, i, tmp0, tmp1);
 #endif
