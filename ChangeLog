@@ -1,3 +1,7 @@
+2000-11-08 Wednesday 14:33  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/addresstranslator.cc: fix bug in lookup function.
+
 2000-11-07 Tuesday 21:15  Douglas De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/floodinglocquerier.cc: added comments on when src
