@@ -90,7 +90,7 @@ FromSimDevice::initialize(ErrorHandler *errh)
 
   // Get the simulator ifid
   Router* myrouter = router();
-  _fd = myrouter->sim_get_ifid(_ifname);
+  _fd = myrouter->sim_get_ifid(_ifname.cc());
   if (_fd < 0) return -1;
   // create packet buffer
   _packetbuf = new unsigned char[_packetbuf_size];

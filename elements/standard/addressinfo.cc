@@ -77,9 +77,9 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	char tmp[255];
 	
 	simif = simif.substring(0,colon);
-	simclick_sim_ipaddr_from_name(mysiminst,simif,tmp,255);
+	simclick_sim_ipaddr_from_name(mysiminst, simif.cc(), tmp, 255);
 	simip = tmp;
-	simclick_sim_macaddr_from_name(mysiminst,simif,tmp,255);
+	simclick_sim_macaddr_from_name(mysiminst, simif.cc(), tmp, 255);
 	simeth = tmp;
 
 	parts.push_back(simip);

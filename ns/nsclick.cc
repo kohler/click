@@ -294,7 +294,7 @@ class RequireLexerExtra : public LexerExtra { public:
 void
 RequireLexerExtra::require(String name, ErrorHandler *errh)
 {
-  if (!click_has_provision(name))
+  if (!click_has_provision(name.cc()))
     errh->error("requirement `%s' not available", name.cc());
 }
 
