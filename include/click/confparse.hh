@@ -45,22 +45,23 @@ bool cp_keyword(const String &, String *, String *rest = 0);
 
 // numbers
 bool cp_bool(const String &, bool *);
-bool cp_integer(const String &, int *);
-bool cp_integer(const String &, int base, int *);
-bool cp_unsigned(const String &, unsigned *);
-bool cp_unsigned(const String &, int base, unsigned *);
+bool cp_integer(const String &, int32_t *);
+bool cp_integer(const String &, int base, int32_t *);
+bool cp_unsigned(const String &, uint32_t *);
+bool cp_unsigned(const String &, int base, uint32_t *);
 #ifdef HAVE_INT64_TYPES
 bool cp_integer64(const String &, int64_t *);
 bool cp_integer64(const String &, int base, int64_t *);
 bool cp_unsigned64(const String &, uint64_t *);
 bool cp_unsigned64(const String &, int base, uint64_t *);
 #endif
-bool cp_real2(const String &, int frac_bits, int *);
-bool cp_unsigned_real2(const String &, int frac_bits, unsigned *);
-bool cp_real10(const String &, int frac_digits, int *);
-bool cp_unsigned_real10(const String &, int frac_digits, unsigned *);
-bool cp_unsigned_real10(const String &, int frac_dig, unsigned *, unsigned *);
-bool cp_milliseconds(const String &, int *);
+bool cp_real2(const String &, int frac_bits, int32_t *);
+bool cp_unsigned_real2(const String &, int frac_bits, uint32_t *);
+bool cp_real10(const String &, int frac_digits, int32_t *);
+bool cp_unsigned_real10(const String &, int frac_digits, uint32_t *);
+bool cp_unsigned_real10(const String &, int frac_dig, uint32_t *, uint32_t *);
+bool cp_seconds_as_milli(const String &, uint32_t *);
+bool cp_seconds_as_micro(const String &, uint32_t *);
 bool cp_timeval(const String &, struct timeval *);
 
 String cp_unparse_bool(bool);
@@ -68,11 +69,12 @@ String cp_unparse_bool(bool);
 String cp_unparse_integer64(int64_t, int base, bool uppercase);
 String cp_unparse_unsigned64(uint64_t, int base, bool uppercase);
 #endif
-String cp_unparse_real2(int, int frac_bits);
-String cp_unparse_real2(unsigned, int frac_bits);
-String cp_unparse_real10(int, int frac_digits);
-String cp_unparse_real10(unsigned, int frac_digits);
-String cp_unparse_milliseconds(int);
+String cp_unparse_real2(int32_t, int frac_bits);
+String cp_unparse_real2(uint32_t, int frac_bits);
+String cp_unparse_real10(int32_t, int frac_digits);
+String cp_unparse_real10(uint32_t, int frac_digits);
+String cp_unparse_milliseconds(uint32_t);
+String cp_unparse_microseconds(uint32_t);
 
 // network addresses
 class IPAddress;
@@ -139,7 +141,8 @@ extern CpVaParseCmd
   cpUnsignedReal2,  // int frac_bits, unsigned *result
   cpReal10,	    // int frac_digits, int *result
   cpUnsignedReal10, // int frac_digits, unsigned *result
-  cpMilliseconds,   // int *result (user writes "1.02", result is 1020)
+  cpSecondsAsMilli, // int *result_milli
+  cpSecondsAsMicro, // int *result_micro
   cpTimeval,	// struct timeval *result
   cpIPAddress,	// unsigned char result[4] (or IPAddress *, or unsigned int *)
   cpIPPrefix,	// unsigned char result[4], unsigned char result_mask[4]
@@ -157,6 +160,7 @@ extern CpVaParseCmd
   cpDesCblock,		// unsigned char result[8]
   cpFilename,	// String *result
   // old names, here for compatibility:
+  cpMilliseconds, // int *result (user writes "1.02", result is 1020)
   cpUnsignedLongLong,	// uint64_t *result
   cpNonnegReal2,  // int frac_bits, unsigned *result
   cpNonnegReal10, // int frac_digits, unsigned *result
@@ -212,8 +216,8 @@ struct cp_value {
   // set by parsefunc, used by storefunc:
   union {
     bool b;
-    int i;
-    unsigned u;
+    int32_t i;
+    uint32_t u;
 #ifdef HAVE_INT64_TYPES
     int64_t i64;
     uint64_t u64;

@@ -662,7 +662,7 @@ cp_bool(const String &str, bool *return_value)
 }
 
 bool
-cp_unsigned(const String &str, int base, unsigned *return_value)
+cp_unsigned(const String &str, int base, uint32_t *return_value)
 {
   const char *s = str.data();
   int len = str.length();
@@ -687,10 +687,10 @@ cp_unsigned(const String &str, int base, unsigned *return_value)
   if (i == len)			// no digits
     return false;
 
-  unsigned overflow_val = 0xFFFFFFFFU / base;
-  int overflow_digit = 0xFFFFFFFFU - (overflow_val * base);
+  uint32_t overflow_val = 0xFFFFFFFFU / base;
+  int32_t overflow_digit = 0xFFFFFFFFU - (overflow_val * base);
   
-  unsigned val = 0;
+  uint32_t val = 0;
   cp_errno = CPE_OK;
   while (i < len) {
     // find digit
@@ -718,14 +718,14 @@ cp_unsigned(const String &str, int base, unsigned *return_value)
 }
 
 bool
-cp_unsigned(const String &str, unsigned *return_value)
+cp_unsigned(const String &str, uint32_t *return_value)
 {
   return cp_unsigned(str, 0, return_value);
 }
 
 
 bool
-cp_integer(const String &in_str, int base, int *return_value)
+cp_integer(const String &in_str, int base, int32_t *return_value)
 {
   String str = in_str;
   bool negative = false;
@@ -734,11 +734,11 @@ cp_integer(const String &in_str, int base, int *return_value)
     str = in_str.substring(1);
   }
 
-  unsigned value;
+  uint32_t value;
   if (!cp_unsigned(str, base, &value))
     return false;
 
-  unsigned max = (negative ? 0x80000000U : 0x7FFFFFFFU);
+  uint32_t max = (negative ? 0x80000000U : 0x7FFFFFFFU);
   if (value > max) {
     cp_errno = CPE_OVERFLOW;
     value = max;
@@ -749,7 +749,7 @@ cp_integer(const String &in_str, int base, int *return_value)
 }
 
 bool
-cp_integer(const String &str, int *return_value)
+cp_integer(const String &str, int32_t *return_value)
 {
   return cp_integer(str, 0, return_value);
 }
@@ -854,19 +854,14 @@ cp_integer64(const String &str, int64_t *return_value)
 #endif
 
 
-static unsigned
-exp10(int exponent)
-{
-  assert(exponent >= 0);
-  unsigned val = 1;
-  while (exponent-- > 0)
-    val *= 10;
-  return val;
-}
+// PARSING REAL NUMBERS
+
+static uint32_t exp10[] = { 1, 10, 100, 1000, 10000, 100000, 1000000,
+			    10000000, 100000000, 1000000000 };
 
 bool
-cp_unsigned_real10(const String &str, int frac_digits,
-		   unsigned *return_int_part, unsigned *return_frac_part)
+cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
+		   uint32_t *return_int_part, uint32_t *return_frac_part)
 {
   const char *s = str.data();
   const char *last = s + str.length();
@@ -928,8 +923,9 @@ cp_unsigned_real10(const String &str, int frac_digits,
 
   // OK! now create the result
   // determine integer part; careful about overflow
-  unsigned int_part = 0;
+  uint32_t int_part = 0;
   cp_errno = CPE_OK;
+  exponent += exponent_delta;
   
   for (int i = 0; i < int_chars + exponent; i++) {
     int digit;
@@ -945,7 +941,7 @@ cp_unsigned_real10(const String &str, int frac_digits,
   }
   
   // determine fraction part
-  unsigned frac_part = 0;
+  uint32_t frac_part = 0;
   int digit = 0;
   
   for (int i = 0; i <= frac_digits; i++) {
@@ -966,7 +962,7 @@ cp_unsigned_real10(const String &str, int frac_digits,
 
   // round fraction part if required
   if (digit >= 5) {
-    if (frac_part == exp10(frac_digits) - 1) {
+    if (frac_part == exp10[frac_digits] - 1) {
       frac_part = 0;
       if (int_part == 0xFFFFFFFFU)
 	cp_errno = CPE_OVERFLOW;
@@ -978,7 +974,7 @@ cp_unsigned_real10(const String &str, int frac_digits,
   // done!
   if (cp_errno) {		// overflow
     int_part = 0xFFFFFFFFU;
-    frac_part = exp10(frac_digits) - 1;
+    frac_part = exp10[frac_digits] - 1;
   }
 
   //click_chatter("%d: %u %u", frac_digits, int_part, frac_part);
@@ -987,46 +983,71 @@ cp_unsigned_real10(const String &str, int frac_digits,
   return true;
 }
 
-bool
-cp_unsigned_real10(const String &str, int frac_digits, unsigned *return_value)
+static bool
+unsigned_real10_2to1(uint32_t int_part, uint32_t frac_part, int frac_digits,
+		     uint32_t *return_value)
 {
-  unsigned int_part, frac_part;
-  if (!cp_unsigned_real10(str, frac_digits, &int_part, &frac_part))
-    return false;
-
-  // check for overflow
-  unsigned one = exp10(frac_digits);
-  unsigned int_max = 0xFFFFFFFFU / one;
-  unsigned frac_max = 0xFFFFFFFFU - int_max * one;
+  uint32_t one = exp10[frac_digits];
+  uint32_t int_max = 0xFFFFFFFFU / one;
+  uint32_t frac_max = 0xFFFFFFFFU - int_max * one;
   if (int_part > int_max || (int_part == int_max && frac_part > frac_max)) {
     cp_errno = CPE_OVERFLOW;
     *return_value = 0xFFFFFFFFU;
   } else
     *return_value = int_part * one + frac_part;
-  
   return true;
 }
 
 bool
-cp_unsigned_real2(const String &str, int frac_bits, unsigned *return_value)
+cp_unsigned_real10(const String &str, int frac_digits,
+		   uint32_t *return_int_part, uint32_t *return_frac_part)
+{
+  return cp_unsigned_real10(str, frac_digits, 0,
+			    return_int_part, return_frac_part);
+}
+
+bool
+cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
+		   uint32_t *return_value)
+{
+  uint32_t int_part, frac_part;
+  if (!cp_unsigned_real10(str, frac_digits, exponent_delta, &int_part, &frac_part))
+    return false;
+  else
+    return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
+}
+
+bool
+cp_unsigned_real10(const String &str, int frac_digits,
+		   uint32_t *return_value)
+{
+  uint32_t int_part, frac_part;
+  if (!cp_unsigned_real10(str, frac_digits, 0, &int_part, &frac_part))
+    return false;
+  else
+    return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
+}
+
+bool
+cp_unsigned_real2(const String &str, int frac_bits, uint32_t *return_value)
 {
   if (frac_bits < 0 || frac_bits >= 29) {
     cp_errno = CPE_INVALID;
     return false;
   }
   
-  unsigned int_part, frac_part;
-  if (!cp_unsigned_real10(str, 9, &int_part, &frac_part)) {
+  uint32_t int_part, frac_part;
+  if (!cp_unsigned_real10(str, 9, 0, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   }
 
   // method from Knuth's TeX, round_decimals. Works well with
   // cp_unparse_real2 below
-  unsigned fraction = 0;
-  unsigned two = 2U << frac_bits;
+  uint32_t fraction = 0;
+  uint32_t two = 2U << frac_bits;
   for (int i = 0; i < 9; i++) {
-    unsigned digit = frac_part % 10;
+    uint32_t digit = frac_part % 10;
     fraction = (fraction + digit*two) / 10;
     frac_part /= 10;
   }
@@ -1046,9 +1067,12 @@ cp_unsigned_real2(const String &str, int frac_bits, unsigned *return_value)
   return true;
 }
 
+
+// Parsing signed reals
+
 static bool
-cp_real_base(const String &in_str, int frac_digits, int *return_value,
-	     bool (*func)(const String &, int, unsigned *))
+cp_real_base(const String &in_str, int frac_digits, int32_t *return_value,
+	     bool (*func)(const String &, int, uint32_t *))
 {
   String str = in_str;
   bool negative = false;
@@ -1057,12 +1081,12 @@ cp_real_base(const String &in_str, int frac_digits, int *return_value,
     str = str.substring(1);
   }
 
-  unsigned value;
+  uint32_t value;
   if (!func(str, frac_digits, &value))
     return false;
 
   // check for overflow
-  unsigned umax = (negative ? 0x80000000 : 0x7FFFFFFF);
+  uint32_t umax = (negative ? 0x80000000 : 0x7FFFFFFF);
   if (value > umax) {
     cp_errno = CPE_OVERFLOW;
     value = umax;
@@ -1073,30 +1097,60 @@ cp_real_base(const String &in_str, int frac_digits, int *return_value,
 }
 
 bool
-cp_real10(const String &str, int frac_digits, int *return_value)
+cp_real10(const String &str, int frac_digits, int32_t *return_value)
 {
   return cp_real_base(str, frac_digits, return_value, cp_unsigned_real10);
 }
 
 bool
-cp_real2(const String &str, int frac_bits, int *return_value)
+cp_real2(const String &str, int frac_bits, int32_t *return_value)
 {
   return cp_real_base(str, frac_bits, return_value, cp_unsigned_real2);
 }
 
-bool
-cp_milliseconds(const String &str, int *return_value)
+
+// PARSING TIME
+
+static String
+cp_seconds_suffix(const String &str, int *power)
 {
-  int v;
-  if (!cp_real10(str, 3, &v))
-    return false;
-  else if (v < 0) {
-    cp_errno = CPE_NEGATIVE;
-    return false;
-  } else {
-    *return_value = v;
-    return true;
-  }
+  int len = str.length();
+  const char *s = str.data();
+  *power = 0;
+  
+  if (len > 1 && s[len-1] == 's')
+    len--;
+  else if (len > 3 && s[len-3] == 's' && s[len-2] == 'e' && s[len-1] == 'c')
+    len -= 3;
+  else
+    return str;
+
+  if (s[len - 1] == 'm')
+    *power = -3, len--;
+  else if (s[len - 1] == 'u')
+    *power = -6, len--;
+  else if (s[len - 1] == 'n')
+    *power = -9, len--;
+
+  while (len > 0 && isspace(s[len - 1]))
+    len--;
+  return str.substring(0, len);
+}
+
+bool
+cp_seconds_as_milli(const String &str_in, uint32_t *return_value)
+{
+  int power;
+  String str = cp_seconds_suffix(str_in, &power);
+  return cp_unsigned_real10(str, 3, power, return_value);
+}
+
+bool
+cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
+{
+  int power;
+  String str = cp_seconds_suffix(str_in, &power);
+  return cp_unsigned_real10(str, 6, power, return_value);
 }
 
 bool
@@ -1119,6 +1173,9 @@ cp_timeval(const String &str, struct timeval *return_value)
   return_value->tv_usec = usec;
   return true;
 }
+
+
+// PARSING IPv4 ADDRESSES
 
 bool
 cp_ip_address(const String &str, unsigned char *return_value
@@ -1275,6 +1332,8 @@ cp_ip_address_set(const String &str, IPAddressSet *set
   return true;
 }
 
+
+// PARSING IPv6 ADDRESSES
 
 #ifdef HAVE_IP6
 
@@ -1711,7 +1770,9 @@ CpVaParseCmd
   cpReal10		= "real10",
   cpUnsignedReal10	= "u_real10",
   cpNonnegReal10	= "u_real10", // synonym
-  cpMilliseconds	= "msec",
+  cpSecondsAsMilli	= "msec",
+  cpSecondsAsMicro	= "usec",
+  cpMilliseconds	= "msec", // synonym
   cpTimeval		= "timeval",
   cpIPAddress		= "ip_addr",
   cpIPPrefix		= "ip_prefix",
@@ -1754,7 +1815,8 @@ enum {
   cpiUnsignedReal2,
   cpiReal10,
   cpiUnsignedReal10,
-  cpiMilliseconds,
+  cpiSecondsAsMilli,
+  cpiSecondsAsMicro,
   cpiTimeval,
   cpiIPAddress,
   cpiIPPrefix,
@@ -1961,14 +2023,20 @@ default_parsefunc(cp_value *v, const String &arg,
     }
     break;
 
-   case cpiMilliseconds:
-    if (!cp_milliseconds(arg, &v->v.i)) {
-      if (cp_errno == CPE_NEGATIVE)
-	errh->error("%s (%s) must be >= 0", argname, desc);
-      else
-	errh->error("%s takes time in seconds (%s)", argname, desc);
-    } else if (cp_errno == CPE_OVERFLOW) {
-      String m = cp_unparse_milliseconds(v->v.i);
+   case cpiSecondsAsMilli:
+    if (!cp_seconds_as_milli(arg, &v->v.u))
+      errh->error("%s takes time in seconds (%s)", argname, desc);
+    else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_milliseconds(v->v.u);
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
+    }
+    break;
+
+   case cpiSecondsAsMicro:
+    if (!cp_seconds_as_micro(arg, &v->v.u))
+      errh->error("%s takes time in seconds (%s)", argname, desc);
+    else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_microseconds(v->v.u);
       errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
@@ -2125,7 +2193,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiInteger:
    case cpiReal2:
    case cpiReal10:
-   case cpiMilliseconds: {
+   case cpiSecondsAsMilli:
+   case cpiSecondsAsMicro: {
      int *istore = (int *)v->store;
      *istore = v->v.i;
      break;
@@ -2745,7 +2814,7 @@ cp_unparse_integer64(int64_t q, int base, bool uppercase)
 #endif
 
 String
-cp_unparse_real2(unsigned real, int frac_bits)
+cp_unparse_real2(uint32_t real, int frac_bits)
 {
   // adopted from Knuth's TeX function print_scaled, hope it is correct in
   // this context but not sure.
@@ -2756,10 +2825,10 @@ cp_unparse_real2(unsigned real, int frac_bits)
   StringAccum sa;
   assert(frac_bits < 29);
 
-  unsigned int_part = real >> frac_bits;
+  uint32_t int_part = real >> frac_bits;
   sa << int_part;
 
-  unsigned one = 1 << frac_bits;
+  uint32_t one = 1 << frac_bits;
   real &= one - 1;
   if (!real) return sa.take_string();
   
@@ -2786,7 +2855,7 @@ cp_unparse_real2(unsigned real, int frac_bits)
 void
 test_unparse_real2()
 {
-#define TEST(s, frac_bits, result) { String q = (#s); unsigned r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.cc()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.cc(), r, (frac_bits), qq.cc()); }}
+#define TEST(s, frac_bits, result) { String q = (#s); uint32_t r; if (!cp_unsigned_real2(q, (frac_bits), &r)) fprintf(stderr, "FAIL: %s unparsable\n", q.cc()); else { String qq = cp_unparse_real2(r, (frac_bits)); fprintf(stderr, "%s: %s %d/%d %s\n", (qq == (result) ? "PASS" : "FAIL"), q.cc(), r, (frac_bits), qq.cc()); }}
   TEST(0.418, 8, "0.418");
   TEST(0.417, 8, "0.418");
   TEST(0.416, 8, "0.414");
@@ -2804,20 +2873,21 @@ test_unparse_real2()
 #endif
 
 String
-cp_unparse_real2(int real, int frac_bits)
+cp_unparse_real2(int32_t real, int frac_bits)
 {
   if (real < 0)
-    return "-" + cp_unparse_real2(static_cast<unsigned>(-real), frac_bits);
+    return "-" + cp_unparse_real2(static_cast<uint32_t>(-real), frac_bits);
   else
-    return cp_unparse_real2(static_cast<unsigned>(real), frac_bits);
+    return cp_unparse_real2(static_cast<uint32_t>(real), frac_bits);
 }
 
 String
-cp_unparse_real10(unsigned real, int frac_digits)
+cp_unparse_real10(uint32_t real, int frac_digits)
 {
-  unsigned one = exp10(frac_digits);
-  unsigned int_part = real / one;
-  unsigned frac_part = real - (int_part * one);
+  assert(frac_digits >= 0 && frac_digits <= 9);
+  uint32_t one = exp10[frac_digits];
+  uint32_t int_part = real / one;
+  uint32_t frac_part = real - (int_part * one);
 
   if (frac_part == 0)
     return String(int_part);
@@ -2837,18 +2907,30 @@ cp_unparse_real10(unsigned real, int frac_digits)
 }
 
 String
-cp_unparse_real10(int real, int frac_digits)
+cp_unparse_real10(int32_t real, int frac_digits)
 {
   if (real < 0)
-    return "-" + cp_unparse_real10(static_cast<unsigned>(-real), frac_digits);
+    return "-" + cp_unparse_real10(static_cast<uint32_t>(-real), frac_digits);
   else
-    return cp_unparse_real10(static_cast<unsigned>(real), frac_digits);
+    return cp_unparse_real10(static_cast<uint32_t>(real), frac_digits);
 }
 
 String
-cp_unparse_milliseconds(int ms)
+cp_unparse_milliseconds(uint32_t ms)
 {
-  return cp_unparse_real10(ms, 3);
+  if (ms && ms < 1000)
+    return String(ms) + "ms";
+  else
+    return cp_unparse_real10(ms, 3) + "s";
+}
+
+String
+cp_unparse_microseconds(uint32_t us)
+{
+  if (us && us < 1000)
+    return String(us) + "us";
+  else
+    return cp_unparse_real10(us, 6) + "s";
 }
 
 
@@ -2884,7 +2966,8 @@ cp_va_static_initialize()
   cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
   cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
   cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
-  cp_register_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc, cpiMilliseconds);
+  cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
+  cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
   cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
   cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
   cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
