@@ -107,7 +107,7 @@ ToDevice::initialize(ErrorHandler *errh)
   _task.set_max_tickets(max_tickets);
   _task.set_tickets(ScheduleInfo::DEFAULT);
 #endif
-  _task.join_scheduler(this);
+  _task.initialize(this, true);
 
   reset_counts();
 
