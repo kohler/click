@@ -109,7 +109,7 @@ class IPRw::Mapping { protected:
   Mapping *pat_prev() const		{ return _pat_prev; }
   Mapping *pat_next() const		{ return _pat_next; }
   
-  void apply(WritablePacket *p);
+  void apply(WritablePacket *);
 
   String s() const;
     
@@ -158,7 +158,7 @@ class IPRw::Pattern {
   void mapping_freed(Mapping *);
     
   String s() const;
-  operator String() const			{ return s(); }
+  operator String() const	{ return s(); }
     
 };
 

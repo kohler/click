@@ -532,6 +532,8 @@ IPRw::clear_map(Map &table)
     delete m->reverse();
     delete m;
   }
+
+  table.clear();
 }
 
 ELEMENT_PROVIDES(IPRw)
