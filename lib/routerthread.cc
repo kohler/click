@@ -70,9 +70,9 @@ RouterThread::RouterThread(Router *r)
     _wakeup_list = 0;
 #endif
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-    _max_click_fraction = 80 * Task::MAX_UTILIZATION / 100;
-    _min_click_fraction = Task::MAX_UTILIZATION / 200;
-    _cur_click_fraction = 0;	// because we aren't yet running
+    _max_click_share = 80 * Task::MAX_UTILIZATION / 100;
+    _min_click_share = Task::MAX_UTILIZATION / 200;
+    _cur_click_share = 0;	// because we aren't yet running
 #endif
     _task_lock_waiting = 0;
     _pending = 0;
@@ -127,7 +127,7 @@ RouterThread::nice_lock_tasks()
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 
 void
-RouterThread::set_click_fraction(unsigned min_frac, unsigned max_frac)
+RouterThread::set_cpu_share(unsigned min_frac, unsigned max_frac)
 {
     if (min_frac == 0)
 	min_frac = 1;
@@ -137,8 +137,8 @@ RouterThread::set_click_fraction(unsigned min_frac, unsigned max_frac)
 	max_frac = MAX_UTILIZATION - 1;
     if (max_frac < min_frac)
 	max_frac = min_frac;
-    _min_click_fraction = min_frac;
-    _max_click_fraction = max_frac;
+    _min_click_share = min_frac;
+    _max_click_share = max_frac;
 }
 
 void
@@ -203,10 +203,10 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 	}
 
 	// constrain to bounds
-	if (click_utilization < _min_click_fraction)
-	    click_utilization = _min_click_fraction;
-	if (click_utilization > _max_click_fraction)
-	    click_utilization = _max_click_fraction;
+	if (click_utilization < _min_click_share)
+	    click_utilization = _min_click_share;
+	if (click_utilization > _max_click_share)
+	    click_utilization = _max_click_share;
 
 	// set tickets
 	int click_tix = (DRIVER_TOTAL_TICKETS * click_utilization) / Task::MAX_UTILIZATION;
@@ -214,7 +214,7 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 	    click_tix = 1;
 	client_set_tickets(C_CLICK, click_tix);
 	client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS - _clients[C_CLICK].tickets);
-	_cur_click_fraction = click_utilization;
+	_cur_click_share = click_utilization;
     }
 }
 
@@ -298,7 +298,7 @@ RouterThread::driver()
     struct timeval t_before, restride_t_before, t_now;
     client_set_tickets(C_CLICK, DRIVER_TOTAL_TICKETS / 2);
     client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS / 2);
-    _cur_click_fraction = Task::MAX_UTILIZATION / 2;
+    _cur_click_share = Task::MAX_UTILIZATION / 2;
     click_gettimeofday(&restride_t_before);
 #endif
 
@@ -357,7 +357,7 @@ RouterThread::driver()
     unlock_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-    _cur_click_fraction = 0;
+    _cur_click_share = 0;
 #endif
 }
 

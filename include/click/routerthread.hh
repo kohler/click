@@ -30,12 +30,12 @@ class RouterThread : public Task { public:
     void unschedule_all_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-    // min_click_fraction() and max_click_fraction() are expressed on a scale
-    // with Task::MAX_UTILIZATION == 100%.
-    unsigned min_click_fraction() const	{ return _min_click_fraction; }
-    unsigned max_click_fraction() const	{ return _max_click_fraction; }
-    unsigned cur_click_fraction() const	{ return _cur_click_fraction; }
-    void set_click_fraction(unsigned min_frac, unsigned max_frac);
+    // min_cpu_share() and max_cpu_share() are expressed on ab scale with
+    // Task::MAX_UTILIZATION == 100%.
+    unsigned min_cpu_share() const	{ return _min_click_share; }
+    unsigned max_cpu_share() const	{ return _max_click_share; }
+    unsigned cur_cpu_share() const	{ return _cur_click_share; }
+    void set_cpu_share(unsigned min_share, unsigned max_share);
 #endif
 
   private:
@@ -62,9 +62,9 @@ class RouterThread : public Task { public:
     };
     Client _clients[NCLIENTS];
     unsigned _global_pass;		// global pass
-    unsigned _max_click_fraction;	// maximum acceptable Click fraction
-    unsigned _min_click_fraction;	// minimum acceptable Click fraction
-    unsigned _cur_click_fraction;	// current Click fraction
+    unsigned _max_click_share;		// maximum allowed Click share of CPU
+    unsigned _min_click_share;		// minimum allowed Click share of CPU
+    unsigned _cur_click_share;		// current Click share
 #endif
 
     // called by Router
