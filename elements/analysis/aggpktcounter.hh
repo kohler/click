@@ -42,12 +42,12 @@ negative; negative means ignore any packet number annotations.
 
 Returns the total number of packets seen.
 
-=h receivedI<AGG> read-only
+=h received I<AGG> read-only
 
 Returns a newline-separated list of packet numbers in aggregate I<AGG> that
 were received on any input.
 
-=h undeliveredI<AGG> read-only
+=h undelivered I<AGG> read-only
 
 Returns a newline-separated list of packet numbers in aggregate I<AGG> that
 were received on input 0, but not received on input 1.  Only available if the

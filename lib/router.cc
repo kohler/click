@@ -992,15 +992,22 @@ Router::set_hotswap_router(Router *r)
 // HANDLERS
 
 String
-Handler::call_read(Element* e) const
+Handler::call_read(Element* e, const String& param, ErrorHandler* errh) const
 {
-    if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    if (param && !(_flags & READ_PARAM))
+	errh->error("read handler '%s' does not take parameters", unparse_name(e).c_str());
+    else if ((_flags & (ONE_HOOK | OP_READ)) == OP_READ)
 	return _hook.rw.r(e, _thunk);
     else if (_flags & OP_READ) {
-	String s;
-	return (_hook.h(OP_READ, s, e, this, ErrorHandler::silent_handler()) >= 0 ? s : String());
+	String s(param);
+	if (_hook.h(OP_READ, s, e, this, errh) >= 0)
+	    return s;
     } else
-	return String();
+	errh->error("'%s' not a read handler", unparse_name(e).c_str());
+    // error cases get here
+    return String();
 }
 
 int
@@ -1014,7 +1021,7 @@ Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
 	String s_copy(s);
 	return _hook.h(OP_WRITE, s_copy, e, this, errh);
     } else {
-	errh->error("not a write handler");
+	errh->error("'%s' not a write handler", unparse_name(e).c_str());
 	return -EACCES;
     }
 }
@@ -1031,7 +1038,10 @@ Handler::unparse_name(Element *e, const String &hname)
 String
 Handler::unparse_name(Element *e) const
 {
-    return unparse_name(e, _name);
+    if (this == the_blank_handler)
+	return _name;
+    else
+	return unparse_name(e, _name);
 }
 
 
@@ -1289,7 +1299,7 @@ Router::add_read_handler(const Element* e, const String& name, ReadHandler hook,
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.w = 0;
 	to_add._thunk2 = 0;
-	to_add._flags &= ~(Handler::ONE_HOOK | Handler::OP_WRITE | Handler::OP_SELECT);
+	to_add._flags &= ~Handler::PRIVATE_MASK;
     }
     to_add._hook.rw.r = hook;
     to_add._thunk = thunk;
@@ -1304,7 +1314,7 @@ Router::add_write_handler(const Element* e, const String& name, WriteHandler hoo
     if (to_add._flags & Handler::ONE_HOOK) {
 	to_add._hook.rw.r = 0;
 	to_add._thunk = 0;
-	to_add._flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_SELECT);
+	to_add._flags &= ~Handler::PRIVATE_MASK;
     }
     to_add._hook.rw.w = hook;
     to_add._thunk2 = thunk;
@@ -1329,8 +1339,8 @@ Router::change_handler_flags(const Element* e, const String& name,
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	clear_flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_WRITE | Handler::OP_SELECT);
-	set_flags &= ~(Handler::ONE_HOOK | Handler::OP_READ | Handler::OP_WRITE | Handler::OP_SELECT);
+	clear_flags &= ~Handler::PRIVATE_MASK;
+	set_flags &= ~Handler::PRIVATE_MASK;
 	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
 	store_handler(e, to_add);
 	return 0;
@@ -1651,7 +1661,7 @@ void
 Router::static_initialize()
 {
     if (!nglobalh) {
-	Handler::the_blank_handler = new Handler;
+	Handler::the_blank_handler = new Handler("<bad handler>");
 	add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
 	add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
 	add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);

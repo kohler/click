@@ -7,7 +7,9 @@ InfiniteSource(LIMIT 100, STOP true)
   -> c :: Counter
   -> d :: Discard
 s[1] -> d
+DriverManager(wait_stop, save c.count -)
 ' -h c.count
 
 %expect stdout
+4
 4

@@ -62,8 +62,7 @@ class HandlerCall { public:
     // Initialize a handler call once handler information is available.
     // Returns 0 if valid, negative if not.
     enum Flags {
-	CHECK_READ = 1, CHECK_WRITE = 2, ALLOW_VALUE = 4,
-	ALLOW_PREINITIALIZE = 8
+	CHECK_READ = 1, CHECK_WRITE = 2, ALLOW_PREINITIALIZE = 4
     };
     int initialize(int flags, Element*, ErrorHandler* = 0);
     inline int initialize_read(Element*, ErrorHandler* = 0);
@@ -94,7 +93,7 @@ HandlerCall::reset_read(HandlerCall*& hcall, const String& hdesc, Element* conte
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, const String& hdesc, Element* context, ErrorHandler* errh)
 {
-    return reset(hcall, hdesc, CHECK_WRITE | ALLOW_VALUE, context, errh);
+    return reset(hcall, hdesc, CHECK_WRITE, context, errh);
 }
 
 inline int
@@ -106,7 +105,7 @@ HandlerCall::reset_read(HandlerCall*& hcall, Element* e, const String& hname, Er
 inline int
 HandlerCall::reset_write(HandlerCall*& hcall, Element* e, const String& hname, const String& value, ErrorHandler* errh)
 {
-    return reset(hcall, e, hname, value, CHECK_WRITE | ALLOW_VALUE, errh);
+    return reset(hcall, e, hname, value, CHECK_WRITE, errh);
 }
 
 inline int
@@ -118,7 +117,7 @@ HandlerCall::initialize_read(Element* context, ErrorHandler* errh)
 inline int
 HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 {
-    return initialize(CHECK_WRITE | ALLOW_VALUE, context, errh);
+    return initialize(CHECK_WRITE, context, errh);
 }
 
 inline String

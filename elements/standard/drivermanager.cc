@@ -90,12 +90,13 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "save" || insn_name == "append") {
-	    String handler, filename;
-	    if ((handler = cp_pop_spacevec(conf[i]))
-		&& cp_filename(cp_pop_spacevec(conf[i]), &filename)
-		&& !conf[i])
-		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, 0, handler + " " + filename);
-	    else
+	    Vector<String> args;
+	    cp_spacevec(conf[i], args);
+	    String filename;
+	    if (args.size() >= 2 && cp_filename(args.back(), &filename)) {
+		args.pop_back();
+		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, 0, filename + " " + cp_unspacevec(args));
+	    } else
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
 	    
@@ -143,10 +144,11 @@ DriverManager::initialize(ErrorHandler *errh)
     // process 'read' and 'write' instructions
     for (int i = 0; i < _insns.size(); i++) {
 	int flags;
+	String extra;
 	switch (_insns[i]) {
 	  case INSN_WRITE:
 	  case INSN_WRITE_SKIP:
-	    flags = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE;
+	    flags = HandlerCall::CHECK_WRITE;
 	    goto parse;
 	  case INSN_READ:
 	    flags = HandlerCall::CHECK_READ;
@@ -154,7 +156,8 @@ DriverManager::initialize(ErrorHandler *errh)
 #if CLICK_USERLEVEL || CLICK_TOOL
 	  case INSN_SAVE:
 	  case INSN_APPEND:
-	    flags = HandlerCall::CHECK_READ | HandlerCall::ALLOW_VALUE;
+	    extra = cp_pop_spacevec(_args3[i]) + " ";
+	    flags = HandlerCall::CHECK_READ;
 	    goto parse;
 #endif
 	  parse: {
@@ -162,7 +165,7 @@ DriverManager::initialize(ErrorHandler *errh)
 		if (hc.initialize(flags, this, errh) >= 0) {
 		    _args[i] = hc.element()->eindex();
 		    _args2[i] = (intptr_t) (hc.handler());
-		    _args3[i] = hc.value();
+		    _args3[i] = extra + hc.value();
 		} else
 		    _insns[i] = INSN_IGNORE;
 		break;
@@ -209,8 +212,8 @@ DriverManager::step_insn()
       case INSN_READ: {
 	  Element *e = router()->element(_args[_insn_pos]);
 	  const Handler *h = (const Handler*) _args2[_insn_pos];
-	  String result = h->call_read(e);
 	  ErrorHandler *errh = ErrorHandler::default_handler();
+	  String result = h->call_read(e, _args3[_insn_pos], errh);
 	  errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
 	  return true;
       }
@@ -219,16 +222,17 @@ DriverManager::step_insn()
       case INSN_APPEND: {
 	  Element *e = router()->element(_args[_insn_pos]);
 	  const Handler *h = (const Handler*) _args2[_insn_pos];
-	  String result = h->call_read(e);
+	  StringAccum sa;
+	  sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
+	  ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
+	  String arg = _args3[_insn_pos];
+	  String filename = cp_pop_spacevec(arg);
+	  String result = h->call_read(e, arg, &cerrh);
 	  FILE *f;
-	  if (_args3[_insn_pos] == "-")
+	  if (filename == "-")
 	      f = stdout;
-	  else if (!(f = fopen(_args3[_insn_pos].c_str(), (insn == INSN_SAVE ? "wb" : "ab")))) {
-	      int saved_errno = errno;
-	      StringAccum sa;
-	      sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
-	      ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
-	      cerrh.error("%s: %s", _args3[_insn_pos].c_str(), strerror(saved_errno));
+	  else if (!(f = fopen(filename.c_str(), (insn == INSN_SAVE ? "wb" : "ab")))) {
+	      cerrh.error("%s: %s", filename.c_str(), strerror(errno));
 	      return true;
 	  }
 	  fwrite(result.data(), 1, result.length(), f);

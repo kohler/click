@@ -41,10 +41,6 @@ HandlerCall::initialize(int flags, Element* context, ErrorHandler* errh)
 	// parse handler name
 	if (!cp_handler_name(cp_pop_spacevec(value), &e, &hname, context, errh))
 	    return -EINVAL;
-
-	// parse value for a write handler
-	if (!(flags & ALLOW_VALUE) && value)
-	    return errh->error("garbage after handler name");
     }
 
     // exit early if handlers not yet defined
@@ -72,6 +68,10 @@ HandlerCall::assign(Element* e, const String& hname, const String& value, int fl
 	|| ((flags & CHECK_READ) && !h->readable())
 	|| ((flags & CHECK_WRITE) && !h->writable()))
 	return handler_error(e, hname, flags & CHECK_WRITE /* XXX */, errh);
+    else if (value && (flags & CHECK_READ) && !h->read_param()) {
+	errh->error("read handler '%s' does not take parameters", Handler::unparse_name(e, hname).c_str());
+	return -EINVAL;
+    }
 
     // assign
     _e = e;
@@ -120,7 +120,7 @@ int
 HandlerCall::call_write(Element* e, const String& hname, const String& value, ErrorHandler* errh)
 {
     HandlerCall hc;
-    int rv = hc.assign(e, hname, value, CHECK_WRITE | ALLOW_VALUE, errh);
+    int rv = hc.assign(e, hname, value, CHECK_WRITE, errh);
     return (rv >= 0 ? hc.call_write(errh) : rv);
 }
 
@@ -139,7 +139,7 @@ int
 HandlerCall::call_write(const String &hdesc, Router *router, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize(CHECK_WRITE | ALLOW_VALUE, router->root_element(), errh) >= 0)
+    if (hcall.initialize(CHECK_WRITE, router->root_element(), errh) >= 0)
 	return hcall.call_write(errh);
     else
 	return -EINVAL;

@@ -83,8 +83,8 @@ The user level driver supports three additional instructions:
 
 =item 'C<save> HANDLER FILE'
 
-Call a read handler and save the result to FILE.  If FILE is 'C<->', writes
-the handler value to the standard output.
+Call a read handler and save the result to FILE.  If FILE is 'C<->' or
+omitted, writes the handler value to the standard output.
 
 =item 'C<append> HANDLER FILE'
 

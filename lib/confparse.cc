@@ -2369,7 +2369,7 @@ default_parsefunc(cp_value *v, const String &arg,
     goto handler_call;
 
    case cpiWriteHandlerCall:
-    underflower = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE | HandlerCall::ALLOW_PREINITIALIZE;
+    underflower = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_PREINITIALIZE;
     goto handler_call;
 
    handler_call: {
@@ -2586,7 +2586,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
     goto handler_call;
 
    case cpiWriteHandlerCall:
-    helper = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE | HandlerCall::ALLOW_PREINITIALIZE;
+    helper = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_PREINITIALIZE;
     goto handler_call;
 
    handler_call:
