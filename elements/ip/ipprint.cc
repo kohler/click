@@ -161,7 +161,7 @@ IPPrint::simple_action(Packet *p)
     sa << _label << ": ";
 
   if (_print_timestamp)
-    sa << p->timestamp_anno().tv_sec << ": ";
+    sa << p->timestamp_anno() << ": ";
   
   if (_print_id)
     sa << "id " << ntohs(iph->ip_id) << ": ";
