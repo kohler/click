@@ -77,6 +77,143 @@ open_output_file(const char *outfile, ErrorHandler *errh)
     return outf;
 }
 
+static HashMap<int, int> generated_types(0);
+
+static void
+space_until(String &s, int last_col, int want_col)
+{
+    while (last_col < want_col)
+	if (((last_col + 8) & ~7) <= want_col) {
+	    s += '\t';
+	    last_col = (last_col + 8) & ~7;
+	} else {
+	    s += ' ';
+	    last_col++;
+	}
+}
+
+static String
+add_indent(const String &indent, int spaces)
+{
+    String new_indent;
+    const char *s = indent.data();
+    int last_col = 0, col = 0, len = indent.length();
+    for (int pos = 0; pos < len; pos++)
+	if (s[pos] == '\t')
+	    col = (col + 8) & ~7;
+	else if (s[pos] == ' ')
+	    col++;
+	else {
+	    space_until(new_indent, last_col, col);
+	    new_indent += s[pos];
+	    col++;
+	    last_col = col;
+	}
+    space_until(new_indent, last_col, col + spaces);
+    return new_indent;
+}
+
+static void
+print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
+{
+    if (c->simple())
+	fprintf(f, "%sclassname='%s'", prefix, String(c->name()).cc());
+    else if (c->name())
+	fprintf(f, "%sclassname='%s' %sclassid='c%d'", prefix, String(c->name()).cc(), prefix, c->uid());
+    else
+	fprintf(f, "%sclassid='c%d'", prefix, c->uid());
+}
+
+static void
+print_landmark_attributes(FILE *f, const String &landmark)
+{
+    int colon = landmark.find_left(':');
+    if (colon >= 0 && landmark.substring(colon + 1) != "0")
+	fprintf(f, " file='%s' line='%s'", landmark.substring(0, colon).cc(), landmark.substring(colon + 1).cc());
+}
+
+static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
+
+static void
+generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
+{
+    if (!c || c->simple() || generated_types[c->uid()])
+	return;
+    generated_types.insert(c->uid(), 1);
+
+    Vector<ElementClassT *> prerequisites;
+    c->collect_prerequisites(prerequisites);
+    for (int i = 0; i < prerequisites.size(); i++)
+	generate_type(prerequisites[i], f, indent, errh);
+
+    fprintf(f, "%s<elementclass ", indent.cc());
+    print_class_reference(f, c, "");
+    fprintf(f, ">\n");
+    
+    if (SynonymElementClassT *synonym = c->cast_synonym()) {
+	fprintf(f, "%s  <synonym ", indent.cc());
+	print_class_reference(f, synonym->synonym_of(), "");
+	fprintf(f, " />\n");
+    } else if (CompoundElementClassT *compound = c->cast_compound()) {
+	fprintf(f, "%s  <compound", indent.cc());
+	if (ElementClassT *prev = compound->previous()) {
+	    fprintf(f, " ");
+	    print_class_reference(f, prev, "prev");
+	}
+	if (compound->ninputs())
+	    fprintf(f, " ninputs='%d'", compound->ninputs());
+	if (compound->noutputs())
+	    fprintf(f, " noutputs='%d'", compound->ninputs());
+	if (compound->nformals())
+	    fprintf(f, " nformals='%d'", compound->nformals());
+	fprintf(f, ">\n");
+
+	String new_indent = add_indent(indent, 4);
+	for (int i = 0; i < compound->nformals(); i++)
+	    fprintf(f, "%s<formal number='%d' name='%s' />\n",
+		    new_indent.cc(), i, String(compound->formals()[i]).cc());
+	generate_router(compound->cast_router(), f, new_indent, false, errh);
+	
+	fprintf(f, "%s  </compound>\n", indent.cc());
+    }
+    
+    fprintf(f, "%s</elementclass>\n", indent.cc());
+}
+
+static void
+generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh)
+{
+    ProcessingT processing(r, ElementMap::default_map(), errh);
+    if (top)
+	processing.resolve_agnostics();
+    
+    for (int i = 0; i < r->ntypes(); i++)
+	generate_type(r->eclass(i), f, indent, errh);
+    
+    for (RouterT::iterator e = r->begin_elements(); e; e++)
+	if (!e->tunnel()) {
+	    fprintf(f, "%s<element name='%s' ", indent.cc(), e->name_cc());
+	    print_class_reference(f, e->type(), "");
+	    print_landmark_attributes(f, e->landmark());
+	    fprintf(f, " ninputs='%d' noutputs='%d'",
+		    e->ninputs(), e->noutputs());
+	    if (e->ninputs() || e->noutputs())
+		fprintf(f, " processing='%s'", processing.processing_code(e).cc());
+	    fprintf(f, " />\n");
+	}
+
+    // print connections
+    const Vector<ConnectionT> &conn = r->connections();
+    for (int i = 0; i < conn.size(); i++) {
+	int p = processing.output_processing(conn[i].from());
+	fprintf(f, "%s<connection from='%s' fromport='%d' to='%s' toport='%d' processing='%c' />\n",
+		indent.cc(),
+		conn[i].from_elt()->name_cc(), conn[i].from_port(),
+		conn[i].to_elt()->name_cc(), conn[i].to_port(),
+		ProcessingT::processing_letters[p]);
+    }
+}
+
 static void
 process(const char *infile, bool file_is_expr, const char *outfile,
 	ErrorHandler *errh)
@@ -84,7 +221,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     RouterT *r = read_router(infile, file_is_expr, errh);
     if (!r)
 	return;
-    r->flatten(errh);
+    //r->flatten(errh);
 
     // open output file
     FILE *outf = open_output_file(outfile, errh);
@@ -118,34 +255,11 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
 
     emap.set_driver(driver);
-    ProcessingT processing(r, &emap, errh);
-    processing.resolve_agnostics();
-
     ElementMap::push_default(&emap);
 
-    // print elements
-    for (RouterT::iterator e = r->begin_elements(); e; e++) {
-	// XXX anonymous element class names?
-	fprintf(outf, "<element name='%s' class='%s'",
-		e->name_cc(), e->type_name_cc());
-	String s = e->landmark();
-	int colon = s.find_left(':');
-	if (colon >= 0 && s.substring(colon + 1) != "0")
-	    fprintf(outf, "\n\tfile='%s' line='%s'", s.substring(0, colon).cc(), s.substring(colon + 1).cc());
-	fprintf(outf, "\n\tninputs='%d' noutputs='%d' processing='%s'",
-		e->ninputs(), e->noutputs(), processing.processing_code(e).cc());
-	fprintf(outf, " />\n");
-    }
-
-    // print connections
-    const Vector<ConnectionT> &conn = r->connections();
-    for (int i = 0; i < conn.size(); i++) {
-	int p = processing.output_processing(conn[i].from());
-	fprintf(outf, "<connection fromelement='%s' fromport='%d' toelement='%s' toport='%d' processing='%c' />\n",
-		conn[i].from_elt()->name_cc(), conn[i].from_port(),
-		conn[i].to_elt()->name_cc(), conn[i].to_port(),
-		ProcessingT::processing_letters[p]);
-    }
+    fprintf(outf, "<configuration>\n");
+    generate_router(r, outf, "", true, errh);
+    fprintf(outf, "</configuration>\n");
     
     ElementMap::pop_default();
     

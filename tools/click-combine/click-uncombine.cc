@@ -158,7 +158,6 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 {
   assert(compname.back() == '/');
   
-  int ne = r->nelements();
   int nh = r->nconnections();
   const Vector<ConnectionT> &conn = r->connections();
   
@@ -168,9 +167,9 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 
   // mark everything named with a `compname' prefix
   int compname_len = compname.length();
-  for (int i = 0; i < ne; i++)
-    if (r->ename(i).substring(0, compname_len) == compname)
-      live[i] = 1;
+  for (RouterT::iterator e = r->begin_elements(); e; e++)
+    if (e->name().substring(0, compname_len) == compname)
+      live[e->idx()] = 1;
 
   // now find things connected to live elements
   bool changed;
@@ -239,16 +238,16 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   mark_component(r, component, live);
   
   // remove everything not part of the component
-  for (int i = 0; i < r->nelements(); i++)
-    if (!live[i] && r->elive(i))
-      r->element(i)->kill();
+  for (RouterT::iterator e = r->begin_elements(); e; e++)
+    if (e->live() && !live[e->idx()])
+      e->kill();
   r->free_dead_elements();
 
   // rename component
   int cnamelen = component.length();
   for (int i = 0; i < r->nelements(); i++)
     if (live[i]) {
-      String name = r->ename(i);
+      String name = r->element(i)->name();
       if (name.substring(0, cnamelen) == component
 	  && r->eindex(name.substring(cnamelen)) < 0)
 	r->change_ename(i, name.substring(cnamelen));
