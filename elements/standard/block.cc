@@ -25,6 +25,7 @@
 #include "block.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/packet_anno.hh>
 
 Block::Block()
   : Element(1, 2)
@@ -54,7 +55,7 @@ Block::configure(const Vector<String> &conf, ErrorHandler *errh)
 void
 Block::push(int, Packet *packet)
 {
-  if(_thresh == 0 || packet->fwd_rate_anno() <= _thresh)
+  if(_thresh == 0 || FWD_RATE_ANNO(packet) <= _thresh)
     output(0).push(packet);
   else
     output(1).push(packet);

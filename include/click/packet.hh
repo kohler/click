@@ -129,14 +129,12 @@ class Packet { public:
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
   void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
 #endif
-  unsigned user_anno_u() const		{ return anno()->user_flags.u; }
-  void set_user_anno_u(unsigned u)	{ anno()->user_flags.u = u; }
+  unsigned user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
+  void set_user_anno_u(int i, unsigned v) { anno()->user_flags.u[i] = v; }
+  int user_anno_i(int i) const		{ return anno()->user_flags.i[i]; }
+  void set_user_anno_i(int i, int v)	{ anno()->user_flags.i[i] = v; }
   unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
-  void set_user_anno_c(int i, unsigned char c) { anno()->user_flags.c[i] = c; }
-  int fwd_rate_anno() const		{ return anno()->fwd_rate; }
-  void set_fwd_rate_anno(int r)		{ anno()->fwd_rate = r; }
-  int rev_rate_anno() const		{ return anno()->rev_rate; }
-  void set_rev_rate_anno(int r)		{ anno()->rev_rate = r; }
+  void set_user_anno_c(int i, unsigned char v) { anno()->user_flags.c[i] = v; }
 #ifdef __KERNEL__
   unsigned long long perfctr_anno() const { return anno()->perfctr; }
   void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
@@ -152,13 +150,11 @@ class Packet { public:
     } dst_ip;
     
     union {
-      unsigned u;
-      unsigned char c[4];
+      unsigned u[3];
+      int i[3];
+      unsigned char c[12];
     } user_flags;
     // flag allocations: see packet_anno.hh
-    
-    int fwd_rate;
-    int rev_rate;
     
 #ifdef __KERNEL__
     unsigned long long perfctr;

@@ -27,6 +27,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/click_ip.h>
+#include <click/packet_anno.hh>
 
 CompareBlock::CompareBlock()
   : Element(1, 2), _fwd_weight(0), _rev_weight(1)
@@ -60,9 +61,9 @@ void
 CompareBlock::push(int, Packet *p)
 {
   // int network = *((unsigned char *)&p->ip_header()->ip_src);
-  int fwd = p->fwd_rate_anno();
+  int fwd = FWD_RATE_ANNO(p);
   if (fwd < 1) fwd = 1;
-  int rev = p->rev_rate_anno();
+  int rev = REV_RATE_ANNO(p);
   if (rev < 1) rev = 1;
   if ((fwd > _thresh || rev > _thresh) &&
       _fwd_weight * fwd > _rev_weight * rev) {

@@ -63,6 +63,7 @@
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/vector.hh>
+#include <click/packet_anno.hh>
 
 struct IPRateMonitor_HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
@@ -254,8 +255,8 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
 
   if (_anno_packets) {
     // annotate packet with fwd and rev rates for inspection by CompareBlock
-    p->set_fwd_rate_anno(fwd_rate);
-    p->set_rev_rate_anno(rev_rate);
+    SET_FWD_RATE_ANNO(p, fwd_rate);
+    SET_REV_RATE_ANNO(p, rev_rate);
   }
 
   //
