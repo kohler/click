@@ -1,3 +1,14 @@
+2002-10-21 Monday 12:51  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/: eclasst.cc (1.20), eclasst.hh (1.14), routert.cc
+	(1.67), routert.hh (1.55): better accounting of ElementClassTs;
+	comment out unparse() assertions for now
+
+2002-10-21 Monday 12:50  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: vector.cc (1.5), vector.hh (1.7):
+	Vector<T>::clear() does not require the existence of T::T()
+
 2002-10-21 Monday 11:56  Eddie Kohler <kohler@icir.org>
 
 	* tools/click-flatten/click-flatten.cc (1.14): oops, checked in

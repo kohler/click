@@ -1,3 +1,8 @@
+2002-10-21 Monday 12:50  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: vector.cc, vector.hh, vector.cc, vector.hh:
+	Vector<T>::clear() does not require the existence of T::T()
+
 2002-10-16 Wednesday 23:01  Eddie Kohler <kohler@icir.org>
 
 	* include/click/string.hh, include/click/string.hh,
