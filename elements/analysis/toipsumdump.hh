@@ -65,8 +65,8 @@ contain those fields. Valid field names, with examples, are:
    payload_len  Payload length (not including IP/TCP/UDP
                 headers): '34'
    count        Number of packets: '1'
-   direction    Link number (PAINT_ANNO): '2', or '>'/'L'
-                for paint 0, '<'/'R'/'X' for paint 1
+   direction    Link number (PAINT_ANNO): '2', or 'E<gt>'/'L'
+                for paint 0, 'E<lt>'/'R'/'X' for paint 1
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
    first_timestamp   Packet "first timestamp" (FIRST_
                 TIMESTAMP_ANNO): '996033261.451094'
