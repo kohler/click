@@ -399,7 +399,7 @@ FloodingLocQuerier::read_table(Element *e, void *)
     if (e.p == 0) {
       char locbuf[255];
       snprintf(locbuf, sizeof(locbuf), " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
-      s += e.ip.s() + locbuf
+      s += e.ip.s() + String(locbuf)
 	+ " seq=" + String(e.loc_seq_no) + " age=" + String(age) + "\n";
     }
     else

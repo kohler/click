@@ -322,7 +322,7 @@ remover(String fn)
       if (d->d_name[0] == '.'
 	  && (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0))
 	continue;
-      remover(fn + "/" + d->d_name);
+      remover(fn + String("/") + String(d->d_name));
     }
     closedir(dir);
     rmdir(fn.cc());

@@ -179,7 +179,7 @@ LinkStat::read_stats(Element *xf, void *)
   for (BigHashMap<EtherAddress, LinkStat::stat_t>::Iterator i = f->_stats.first(); i; i++) {
     char timebuf[80];
     snprintf(timebuf, 80, " %lu.%06lu", i.value().when.tv_sec, i.value().when.tv_usec);
-    s += i.key().s() + timebuf + " sig: " + String(i.value().sig) + ", qual: " + String(i.value().qual) + "\n";
+    s += i.key().s() + String(timebuf) + " sig: " + String(i.value().sig) + ", qual: " + String(i.value().qual) + "\n";
   }
   return s;
 }
@@ -212,7 +212,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 
     char timebuf[80];
     snprintf(timebuf, 80, "%lu.%06lu", when.tv_sec, when.tv_usec);
-    s += e_vec[i].s() + " last=" + timebuf + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
+    s += e_vec[i].s() + " last=" + String(timebuf) + " num_rx=" + String(num_rx) + " num_expected=" + String(num_expected) + "\n";
     //    click_chatter("LS read_stats XXXX 4");
   }
   return s;
