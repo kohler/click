@@ -3,13 +3,13 @@
 
 /*
  * =c
- * GridProbeHandler(E, I, LookupLocalGridRoute, LookupGeographicGridRoute)
+ * GridProbeHandler(E, I, LookupLocalGridRoute, LookupGeographicGridRoute, FloodingLocQuerier)
  * =s Grid
  * Handles Grid route probes, producing probe replies
  * =d
  * 
  * E and I are this nodes's ethernet and IP addresses, respectively.
- * The 3rd and 4th arguments are the configuration's local and
+ * The 3rd, 4th, and 5th arguments are the configuration's local and
  * geographic forwarding elements.  They are required so that the
  * probe replies can contain information about the routing actions
  * taken for this packet.
@@ -19,7 +19,7 @@
  * output (if the probe should be forwarded).
  *
  * =a GridProbeSender, GridProbeReplyReceiver, LookupLocalGridRoute,
- * LookupGeographicGridroute */
+ * LookupGeographicGridroute, FloodingLocQuerier */
 
 
 #include <click/element.hh>
@@ -31,6 +31,7 @@
 #include "gridroutecb.hh"
 #include "lookuplocalgridroute.hh"
 #include "lookupgeogridroute.hh"
+#include "floodinglocquerier.hh"
 
 class GridProbeHandler : public Element, GridRouteActionCallback {
 
@@ -53,10 +54,13 @@ private:
   IPAddress _ip;
 
   int _gf_cb_id;
+  int _fq_cb_id;
   int _lr_cb_id;
+
 
   LookupLocalGridRoute *_lr_el;
   LookupGeographicGridRoute *_gf_el;
+  FloodingLocQuerier *_fq_el;
 
   Packet *_cached_reply_pkt;
 };

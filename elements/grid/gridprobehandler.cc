@@ -28,7 +28,9 @@
 
 
 GridProbeHandler::GridProbeHandler() : 
-  _gf_cb_id(-1), _lr_cb_id(-1), _lr_el(0), _gf_el(0), _cached_reply_pkt(0)
+  _gf_cb_id(-1), _fq_cb_id(-1), _lr_cb_id(-1), 
+  _lr_el(0), _gf_el(0), _fq_el(0), 
+  _cached_reply_pkt(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -49,15 +51,27 @@ GridProbeHandler::initialize(ErrorHandler *errh)
 		  id().cc());
     _gf_el = 0;
   }
+  if (!_fq_el || !_gf_el->cast("FloodingLocQuerier")) {
+    errh->warning("%s: FloodingLocQuerier argument is missing or has the wrong type, probe replies will not contain all info",
+		  id().cc());
+    _fq_el = 0;
+  }
 
-  _lr_cb_id = _lr_el->add_callback(this);
-  _gf_cb_id = _gf_el->add_callback(this);
+  if (_lr_el) 
+    _lr_cb_id = _lr_el->add_callback(this);
+  if (_gf_el)
+    _gf_cb_id = _gf_el->add_callback(this);
+  if (_fq_el)
+    _gf_cb_id = _fq_el->add_callback(this);
 
   if (_lr_cb_id < 0) 
     errh->warning("%s: unable to install local routing action callback, probe replies will not contain all info",
 		  id().cc());
   if (_gf_cb_id < 0) 
     errh->warning("%s: unable to install geographic forwarding action callback, probe replies will not contain all info",
+		  id().cc());
+  if (_fq_cb_id < 0) 
+    errh->warning("%s: unable to loc query action callback, probe replies will not contain all info",
 		  id().cc());
   
   return 0;
@@ -83,7 +97,8 @@ GridProbeHandler::configure(const Vector<String> &conf, ErrorHandler *errh)
 		     cpIPAddress, "IP address", &_ip,
 		     cpOptional,
 		     cpElement, "LookupLocalGridRoute element", &_lr_el,
-		     cpElement, "LookupGeographicsGRidRoute element", &_gf_el,
+		     cpElement, "LookupGeographicsGridRoute element", &_gf_el,
+		     cpElement, "FloodingLocQuerier element", &_fq_el,
 		     0);
 }
 
@@ -151,7 +166,8 @@ GridProbeHandler::push(int port, Packet *p)
   
   /* before figuring out what to do with the cached reply, check to
      see if the callback stuff is set up okay */
-  if (_lr_el && _gf_el && _lr_cb_id > -1 && _gf_cb_id > -1) {
+  if (_lr_el && _gf_el && _fq_el 
+      && _lr_cb_id > -1 && _gf_cb_id > -1 && _fq_cb_id > -1) {
     /* yes, the callbacks are cool */
     if (_ip != nb->dst_ip) {
       /* probe should be forwarded, cache reply and wait for callbacks
@@ -187,7 +203,7 @@ GridProbeHandler::push(int port, Packet *p)
 void
 GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2)
 {
-  if (id != _lr_cb_id && id != _gf_cb_id) {
+  if (id != _lr_cb_id && id != _gf_cb_id && id != _fq_cb_id) {
     click_chatter("GridProbeHandler: error!!! route action callback invoked with the wrong callback id\n");
     if (_cached_reply_pkt) {
       _cached_reply_pkt->kill();
@@ -220,13 +236,19 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   case SendToIP:
   case ForwardDSDV:
   case ForwardGF:
+  case QueuedForLocQuery:
   case Drop:
     output(1).push(_cached_reply_pkt);
     _cached_reply_pkt = 0;
     break;
   case FallbackToGF:
+  case NoLocQueryNeeded:
+  case CachedLocFound:
     /* XXX could perhaps do some more sanity checking here */
+    /* these cases don't merit action, as we expect to receive another callback for a later action */
     break;
+  case ProbeFinished:
+    click_chatter("GridProbeHandler: error!!! route action callback invoked with ProbeFinished action, but GridProbeHandler should kill probe and send reply in this case\n", a);
   case UnknownAction:
   default:
     click_chatter("GridProbeHandler: error!!! route action callback invoked with an unknown action (%d), sending reply now\n", a);

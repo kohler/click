@@ -28,6 +28,8 @@
 
 #define NOISY 1
 
+typedef GridRouteActionCallback GRCB;
+
 FloodingLocQuerier::FloodingLocQuerier()
   : _expire_timer(expire_hook, this)
 {
@@ -181,6 +183,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     click_chatter("FloodingLocQuerier %s: packet has loc info, sending immediately", id().cc(), IPAddress(nb->dst_ip).s().cc());
 #endif
     // memcpy(&eh->ether_shost, _my_en.data(), 6); // LookupGeographicGridRoute does this for us
+    notify_route_cbs(p, nb->dst_ip, GRCB::NoLocQueryNeeded, 0, 0);
     output(0).push(p);
     return;
   }
@@ -205,7 +208,8 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       nb2->dst_loc_good = ae->loc_good;
       if (!ae->loc_good)
 	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", id().cc()); // XXX lame, should cache the packet and wait for some new info that is good.
-      // memcpy(&eh2->ether_shost, _my_en.data(), 6); 
+      // memcpy(&eh2->ether_shost, _my_en.data(), 6);
+      notify_route_cbs(p, nb->dst_ip, GRCB::CachedLocFound, 0, 0);
       output(0).push(q);
     } 
     else { 
@@ -218,6 +222,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       _pkts_killed++;
       ae->p = p;
       ae->last_response_jiffies = click_jiffies();
+      notify_route_cbs(p, nb->dst_ip, GRCB::QueuedForLocQuery, 0, 0);
       send_query_for(nb->dst_ip);
     }
   }
@@ -231,6 +236,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
     ae2.p = p;
     ae2.last_response_jiffies = click_jiffies();
     _queries.insert(nb->dst_ip, ae2);
+    notify_route_cbs(p, nb->dst_ip, GRCB::QueuedForLocQuery, 0, 0);
     send_query_for(nb->dst_ip);
   }
 }

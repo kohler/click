@@ -35,8 +35,9 @@
 #include <click/timer.hh>
 #include "elements/grid/gridlocationinfo.hh"
 #include <click/bighashmap.hh>
+#include "gridroutecb.hh"
 
-class FloodingLocQuerier : public Element {
+class FloodingLocQuerier : public Element, public GridRouteActor {
  public:
   
   FloodingLocQuerier();

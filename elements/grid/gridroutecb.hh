@@ -24,21 +24,24 @@ class GridRouteActionCallback {
 public:
   enum Action {
     UnknownAction = 0,
-    SendToIP,
-    ForwardDSDV,     // data = next hop ip
-    FallbackToGF,
-    ForwardGF,       // data = next hop ip, data2 = best nbr ip
-    Drop,            // data = drop reason
-    ProbeFinished
+    SendToIP = 1,
+    ForwardDSDV = 2,     // data = next hop ip
+    FallbackToGF = 3,
+    QueuedForLocQuery = 4,
+    ForwardGF = 5,       // data = next hop ip, data2 = best nbr ip
+    Drop = 6,            // data = drop reason
+    ProbeFinished = 7,
+    NoLocQueryNeeded = 8,
+    CachedLocFound = 9
   };
 
   enum DropReason {
     UnknownReason = 0,
-    UnknownType,     // dest_ip is unknown
-    NoLocalRoute,
-    NoDestLoc,
-    NoCloserNode,
-    ConfigError
+    UnknownType = 1,     // dest_ip is unknown
+    NoLocalRoute = 2,
+    NoDestLoc = 3,
+    NoCloserNode = 4,
+    ConfigError = 5
   };    
 
   virtual void route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2) = 0;
