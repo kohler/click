@@ -260,6 +260,11 @@ FloodingLocQuerier::handle_query(Packet *p)
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_loc_query *lq = (grid_loc_query *) (gh + 1);
+
+#if 1
+  click_chatter("%s: got query for %s from %s (%u)", id().cc(), IPAddress(lq->dst_ip).s().cc(), IPAddress(gh->ip).s().cc(), ntohl(lq->seq_no));
+#endif
+
   if (lq->dst_ip == (unsigned int) _my_ip) {
     click_chatter("FloodingLocQuerier %s: got location query for us, but it should go to the LocQueryResponder.  Check the configuration.", id().cc());
     p->kill();
