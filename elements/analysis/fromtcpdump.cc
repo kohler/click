@@ -465,6 +465,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
     iph->ip_v = 4;
     iph->ip_hl = sizeof(click_ip) >> 2;
     iph->ip_off = 0;
+    iph->ip_tos = 0;
     click_udp *udph = q->udp_header();
     
     String line;
@@ -552,11 +553,67 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 	if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
 	    s = read_tcp_line(q, line, colon, &data_len);
 	    iph = q->ip_header();
-	} else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
+	} else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph)) {
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
-	else
+	    s = colon + 1;
+	} else {
 	    q->take(sizeof(click_tcp));
+	    s = colon + 1;
+	}
 
+	// parse IP stuff at the end of the line
+	// TTL and ID
+	s2 = data + line.length() - 1;
+	while (s2 > s) {
+	    while (s2 > s && isspace(*s2))
+		s2--;
+	    if (s2 <= s || (*s2 != ')' && *s2 != ']'))
+		break;
+	    char opener = (*s2 == ')' ? '(' : '[');
+	    const char *open = s2 - 1;
+	    while (open >= s && *open != opener)
+		open--;
+	    const char *close = s2;
+	    s2 = open - 1;
+	    
+	    if (open >= s && open < close) {
+		const char *item = open + 1;
+		while (item < close) {
+		    if (close - item >= 7 && memcmp(item, "tos 0x", 6) == 0)
+			iph->ip_tos = strtol(item + 6, (char **) &item, 16);
+		    else if (close - item >= 6 && memcmp(item, "ECT(", 4) == 0 && (item[4] == '0' || item[4] == '1') && item[5] == ')') {
+			iph->ip_tos = (iph->ip_tos & ~IP_ECNMASK) | (item[4] == '0' ? IP_ECN_ECT1 : IP_ECN_ECT2);
+			item += 6;
+		    } else if (close - item >= 2 && item[0] == 'C' && item[1] == 'E') {
+			iph->ip_tos = (iph->ip_tos & ~IP_ECNMASK) | IP_ECN_CE;
+			item += 2;
+		    } else if (close - item >= 2 && item[0] == 'D' && item[1] == 'F') {
+			iph->ip_off |= htons(IP_DF);
+			item += 2;
+		    } else if (close - item >= 10 && memcmp(item, "frag ", 5) == 0 && isdigit(item[5])) {
+			iph->ip_id = htons(strtol(item + 5, (char **) &item, 0));
+			if (item > close - 2 || *item != ':' || !isdigit(item[1]))
+			    break;
+			data_len = strtol(item + 1, (char **) &item, 0);
+			if (item > close - 2 || *item != '@' || !isdigit(item[1]))
+			    break;
+			iph->ip_off = (iph->ip_off & htons(~IP_OFFMASK)) | htons(strtol(item + 1, (char **) &item, 0));
+			if (item < close && *item == '+')
+			    iph->ip_off |= htons(IP_MF), item++;
+		    } else if (close - item >= 5 && memcmp(item, "ttl ", 4) == 0 && isdigit(item[4]))
+			iph->ip_ttl = strtol(item + 4, (char **) &item, 0);
+		    else if (close - item >= 4 && memcmp(item, "id ", 3) == 0 && isdigit(item[3]))
+			iph->ip_id = htons(strtol(item + 3, (char **) &item, 0));
+		    else if (close - item >= 5 && memcmp(item, "len ", 4) == 0 && isdigit(item[4]))
+			data_len = strtol(item + 4, (char **) &item, 0) - q->length();
+		    else
+			break;
+		    while (item < close && (*item == ',' || isspace(*item)))
+			item++;
+		}
+	    }
+	}
+	
 	// set IP length
 	iph->ip_len = ntohs(q->length() + data_len);
 

@@ -33,8 +33,8 @@ single dash `C<->', in which case it reads from the standard input. It will
 not uncompress the standard input, however.
 
 FromTcpdump doesn't parse many of the relevant parts of the file. It handles
-fragments badly, for example, and doesn't parse IP options. Mostly it just
-does TCP and some rudimentary UDP.
+fragments badly, for example. Mostly it just does TCP and some rudimentary
+UDP.
 
 Keyword arguments are:
 
