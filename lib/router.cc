@@ -42,7 +42,8 @@
 
 CLICK_DECLS
 
-static Handler *globalh;
+const Handler* Handler::the_blank_handler;
+static Handler* globalh;
 static int nglobalh;
 static int globalh_cap;
 
@@ -991,6 +992,34 @@ Router::set_hotswap_router(Router *r)
 // HANDLERS
 
 String
+Handler::call_read(Element* e) const
+{
+    if ((_flags & (ONE_HOOK | READ)) == READ)
+	return _hook.rw.r(e, _thunk);
+    else if (_flags & READ) {
+	String s;
+	return (_hook.h(READ, s, e, this, ErrorHandler::silent_handler()) >= 0 ? s : String());
+    } else
+	return String();
+}
+
+int
+Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
+{
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    if ((_flags & (ONE_HOOK | WRITE)) == WRITE)
+	return _hook.rw.w(s, e, _thunk2, errh);
+    else if (_flags & WRITE) {
+	String s_copy(s);
+	return _hook.h(WRITE, s_copy, e, this, errh);
+    } else {
+	errh->error("not a write handler");
+	return -EACCES;
+    }
+}
+
+String
 Handler::unparse_name(Element *e, const String &hname)
 {
     if (e && e != e->router()->root_element())
@@ -1040,7 +1069,8 @@ Router::find_ehandler(int eindex, const String& name) const
     }
     if (_allow_star_handler && star_h >= 0 && xhandler(star_h)->writable()) {
 	_allow_star_handler = false;
-	if (xhandler(star_h)->call_write(name, element(eindex), ErrorHandler::default_handler()) >= 0)
+	String name_copy(name);
+	if (xhandler(star_h)->call_write(name_copy, element(eindex), ErrorHandler::default_handler()) >= 0)
 	    eh = find_ehandler(eindex, name);
 	_allow_star_handler = true;
     }
@@ -1252,40 +1282,44 @@ Router::element_hindexes(const Element* e, Vector<int>& hindexes)
 
 // Public functions for storing handlers
 
-Handler*
-Router::add_blank_handler(const Element* e, const String& name)
+void
+Router::add_read_handler(const Element* e, const String& name, ReadHandler hook, void* thunk)
+{
+    Handler to_add = fetch_handler(e, name);
+    if (to_add._flags & Handler::ONE_HOOK) {
+	to_add._hook.rw.w = 0;
+	to_add._thunk2 = 0;
+	to_add._flags &= ~(Handler::ONE_HOOK | Handler::WRITE | Handler::SELECT);
+    }
+    to_add._hook.rw.r = hook;
+    to_add._thunk = thunk;
+    to_add._flags |= Handler::READ;
+    store_handler(e, to_add);
+}
+
+void
+Router::add_write_handler(const Element* e, const String& name, WriteHandler hook, void* thunk)
+{
+    Handler to_add = fetch_handler(e, name);
+    if (to_add._flags & Handler::ONE_HOOK) {
+	to_add._hook.rw.r = 0;
+	to_add._thunk = 0;
+	to_add._flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::SELECT);
+    }
+    to_add._hook.rw.w = hook;
+    to_add._thunk2 = thunk;
+    to_add._flags |= Handler::WRITE;
+    store_handler(e, to_add);
+}
+
+void
+Router::set_handler(const Element* e, const String& name, int flags, HandlerHook hook, void* thunk, void* thunk2)
 {
     Handler to_add(name);
-    store_handler(e, to_add);
-    const Handler* h = handler(e, name);
-    assert(h->_use_count == 1);
-    return const_cast<Handler*>(h);
-}
-
-void
-Router::add_read_handler(const Element* e, const String& name,
-			 ReadHandler read, void* thunk)
-{
-    Handler to_add = fetch_handler(e, name);
-    to_add.set_read(read, thunk);
-    store_handler(e, to_add);
-}
-
-void
-Router::add_write_handler(const Element* e, const String& name,
-			  WriteHandler write, void* thunk)
-{
-    Handler to_add = fetch_handler(e, name);
-    to_add.set_write(write, thunk);
-    store_handler(e, to_add);
-}
-
-void
-Router::add_select_handler(const Element* e, const String& name,
-			   SelectHandler select, void* thunk)
-{
-    Handler to_add = fetch_handler(e, name);
-    to_add.set_select(select, thunk);
+    to_add._hook.h = hook;
+    to_add._thunk = thunk;
+    to_add._thunk2 = thunk2;
+    to_add._flags = flags | Handler::ONE_HOOK;
     store_handler(e, to_add);
 }
 
@@ -1295,7 +1329,9 @@ Router::change_handler_flags(const Element* e, const String& name,
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	to_add.set_flags((to_add.flags() & ~clear_flags) | set_flags);
+	clear_flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::WRITE | Handler::SELECT);
+	set_flags &= ~(Handler::ONE_HOOK | Handler::READ | Handler::WRITE | Handler::SELECT);
+	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
 	store_handler(e, to_add);
 	return 0;
     } else
@@ -1615,6 +1651,7 @@ void
 Router::static_initialize()
 {
     if (!nglobalh) {
+	Handler::the_blank_handler = new Handler;
 	add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
 	add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
 	add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
@@ -1630,6 +1667,7 @@ Router::static_cleanup()
     delete[] globalh;
     globalh = 0;
     nglobalh = globalh_cap = 0;
+    delete Handler::the_blank_handler;
 }
 
 

@@ -1,20 +1,19 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/handlercall.cc" -*-
 #ifndef CLICK_HANDLERCALL_HH
 #define CLICK_HANDLERCALL_HH
-#include <click/element.hh>
+#include <click/router.hh>
 CLICK_DECLS
-class Handler;
 
 class HandlerCall { public:
 
     // Create a HandlerCall. You generally don't need to do this explicitly;
     // see the 'reset_read' and 'reset_write' methods below.
-    HandlerCall()		: _e(0), _h(0) { }
-    HandlerCall(const String& s): _e((Element*)(-1)), _h(0), _value(s) { }
+    HandlerCall()		: _e(0), _h(Handler::blank_handler()) { }
+    HandlerCall(const String& s): _e((Element*)(-1)), _h(Handler::blank_handler()), _value(s) { }
 
     // Return true iff the HandlerCall is valid.
-    bool ok() const		{ return _h; }
-    operator bool() const	{ return _h != 0; }
+    bool ok() const		{ return _h != Handler::blank_handler(); }
+    operator bool() const	{ return _h != Handler::blank_handler(); }
 
     // Return true iff the HandlerCall has been initialized.
     bool initialized() const	{ return _e != (Element*)(-1); }
@@ -36,8 +35,8 @@ class HandlerCall { public:
 
     // Call this handler and return its result. Returns the empty string or
     // negative if the HandlerCall isn't ok().
-    String call_read() const;
-    int call_write(ErrorHandler* = 0) const;
+    inline String call_read() const;
+    inline int call_write(ErrorHandler* = 0) const;
 
     // Call the specified handler and return its result. Returns the empty
     // string or negative if the handler isn't valid.
@@ -71,7 +70,7 @@ class HandlerCall { public:
     inline int initialize_write(Element*, ErrorHandler* = 0);
 
     // Less-used functions.
-    void clear()		{ _e = 0; _h = 0; _value = String(); }
+    void clear()		{ _e = 0; _h = Handler::blank_handler(); _value = String(); }
     static int reset(HandlerCall*&, const String& hdesc, int flags, Element*, ErrorHandler* = 0);
     static int reset(HandlerCall*&, Element*, const String& hname, const String& value, int flags, ErrorHandler* = 0);
 
@@ -120,6 +119,18 @@ inline int
 HandlerCall::initialize_write(Element* context, ErrorHandler* errh)
 {
     return initialize(CHECK_WRITE | ALLOW_VALUE, context, errh);
+}
+
+inline String
+HandlerCall::call_read() const
+{
+    return _h->call_read(_e);
+}
+
+inline int
+HandlerCall::call_write(ErrorHandler *errh) const
+{
+    return _h->call_write(_value, _e, errh);
 }
 
 CLICK_ENDDECLS

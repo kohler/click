@@ -147,9 +147,7 @@ KernelHandlerProxy::star_write_handler(const String &str, Element *e, void *, Er
     KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
     if (khp->check_handler_name(str, errh) < 0)
 	return -1;
-    Handler* h = khp->router()->add_blank_handler(e, str);
-    h->set_read(read_handler, (void*) h);
-    h->set_write(write_handler, (void*) h);
+    khp->set_handler(str, Handler::READ | Handler::WRITE, handler_hook);
     return Router::hindex(e, str);
 }
 
@@ -178,63 +176,54 @@ KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler 
   }
 }
 
-String
-KernelHandlerProxy::read_handler(Element *e, void *thunk)
-{
-  KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const Handler* h = static_cast<const Handler*>(thunk);
-  const String& hname = h->name();
-
-  errno = 0;
-  String fn = handler_name_to_file_name(hname);
-  String s = file_string(fn, 0);
-  int err = errno;
-
-  if (!s && err != 0) {
-    if (khp->_verbose)
-      khp->complain_about_open(ErrorHandler::default_handler(), hname, err);
-    // complain to error receivers
-    khp->complain_about_open(0, hname, err);
-  }
-  
-  return s;
-}
-
 int
-KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
+KernelHandlerProxy::handler_hook(int op, String& str, Element* e, const Handler* handler, ErrorHandler* errh)
 {
-  KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const Handler* h = static_cast<const Handler*>(thunk);
-  const String& hname = h->name();
+    KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
+    const String& hname = handler->name();
+    String fn = handler_name_to_file_name(hname);
 
-  String fn = handler_name_to_file_name(hname);
-  int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
-  
-  if (fd < 0)
-    return khp->complain_about_open(errh, hname, errno);
+    if (op == Handler::READ) {
+	errno = 0;
+	str = file_string(fn, 0);
+	int err = errno;
+	if (!str && err != 0) {
+	    if (khp->_verbose)
+		khp->complain_about_open(ErrorHandler::default_handler(), hname, err);
+	    // complain to error receivers
+	    khp->complain_about_open(0, hname, err);
+	}
+	return -err;
+	
+    } else if (op == Handler::WRITE) {
+	int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
+	if (fd < 0)
+	    return khp->complain_about_open(errh, hname, errno);
 
-  int pos = 0;
-  const char *data = str.data();
-  while (pos < str.length()) {
-    int left = str.length() - pos;
-    ssize_t written = write(fd, data + pos, left);
-    if (written < 0 && errno != EINTR) {
-      close(fd);
-      return khp->complain(errh, hname, CSERR_UNSPECIFIED, fn + ": " + String(strerror(errno)));
-    } else if (written >= 0)
-      pos += written;
-  }
+	const char* s = str.begin();
+	const char* end = str.end();
+	while (s < end) {
+	    ssize_t written = write(fd, s, end - s);
+	    if (written < 0 && errno != EINTR) {
+		close(fd);
+		return khp->complain(errh, hname, CSERR_UNSPECIFIED, fn + ": " + String(strerror(errno)));
+	    } else if (written >= 0)
+		s += written;
+	}
 
-  if (close(fd) < 0) {
-    int err = errno;
-    khp->complain(errh, hname, CSERR_HANDLER_ERROR, "Error executing kernel write handler '" + String(hname) + "'");
-    if (!khp->_detailed_error_message) {
-      khp->complain(errh, hname, CSERR_HANDLER_ERROR, "(Check /click/errors for details.)");
-      khp->_detailed_error_message = true;
-    }
-    return -err;
-  } else
-    return 0;
+	if (close(fd) < 0) {
+	    int err = errno;
+	    khp->complain(errh, hname, CSERR_HANDLER_ERROR, "Error executing kernel write handler '" + String(hname) + "'");
+	    if (!khp->_detailed_error_message) {
+		khp->complain(errh, hname, CSERR_HANDLER_ERROR, "(Check /click/errors for details.)");
+		khp->_detailed_error_message = true;
+	    }
+	    return -err;
+	} else
+	    return 0;
+	
+    } else
+	return errh->error("odd operation");
 }
 
 int

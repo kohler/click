@@ -576,25 +576,25 @@ Element::selected(int)
 void
 Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
 {
-  Router::add_read_handler(this, name, h, thunk);
+    Router::add_read_handler(this, name, h, thunk);
 }
 
 void
 Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 {
-  Router::add_write_handler(this, name, h, thunk);
+    Router::add_write_handler(this, name, h, thunk);
 }
 
 void
-Element::add_select_handler(const String &name, SelectHandler h, void *thunk)
+Element::set_handler(const String& name, int mask, HandlerHook h, void* thunk, void* thunk2)
 {
-  Router::add_select_handler(this, name, h, thunk);
+    Router::set_handler(this, name, mask, h, thunk, thunk2);
 }
 
 static String
 read_class_handler(Element *e, void *)
 {
-  return String(e->class_name()) + "\n";
+    return String(e->class_name()) + "\n";
 }
 
 static String

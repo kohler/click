@@ -77,10 +77,9 @@ class Router { public:
     const Handler* handler(int) const;
     static const Handler* handler(const Element*, const String&);
 
-    Handler* add_blank_handler(const Element*, const String&);
     static void add_read_handler(const Element*, const String&, ReadHandler, void*);
     static void add_write_handler(const Element*, const String&, WriteHandler, void*);
-    static void add_select_handler(const Element*, const String&, SelectHandler, void*);
+    static void set_handler(const Element*, const String&, int mask, HandlerHook, void* = 0, void* = 0);
     static int change_handler_flags(const Element*, const String&, uint32_t clear_flags, uint32_t set_flags);
 
     // ATTACHMENTS AND REQUIREMENTS
@@ -255,19 +254,20 @@ class Router { public:
 class Handler { public:
 
     enum {
-	DRIVER_FLAG_0 = 1, DRIVER_FLAG_1 = 2, DRIVER_FLAG_2 = 4,
-	DRIVER_FLAG_3 = 8,
-	USER_FLAG_SHIFT = 4, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
+	ONE_HOOK = 1, READ = 2, WRITE = 4, SELECT = 8,
+	DRIVER_FLAG_0 = 16, DRIVER_FLAG_1 = 32, DRIVER_FLAG_2 = 64,
+	DRIVER_FLAG_3 = 128,
+	USER_FLAG_SHIFT = 8, USER_FLAG_0 = 1 << USER_FLAG_SHIFT
     };
-  
+
     const String& name() const	{ return _name; }
     uint32_t flags() const	{ return _flags; }
-  
-    bool readable() const	{ return _read; }
-    bool read_visible() const	{ return _read; }
-    bool writable() const	{ return _write; }
-    bool write_visible() const	{ return _write; }
-    bool visible() const	{ return read_visible() || write_visible(); }
+
+    bool readable() const	{ return _flags & READ; }
+    bool read_visible() const	{ return _flags & READ; }
+    bool writable() const	{ return _flags & WRITE; }
+    bool write_visible() const	{ return _flags & WRITE; }
+    bool visible() const	{ return _flags & (READ | WRITE); }
 
     String call_read(Element*) const;
     int call_write(const String&, Element*, ErrorHandler*) const;
@@ -275,26 +275,27 @@ class Handler { public:
     String unparse_name(Element*) const;
     static String unparse_name(Element*, const String&);
 
-    inline void set_read(ReadHandler, void*);
-    inline void set_write(WriteHandler, void*);
-    inline void set_select(SelectHandler, void*);
-    inline void set_flags(uint32_t);
-
+    static const Handler* blank_handler() { return the_blank_handler; }
+    
   private:
   
     String _name;
-    ReadHandler _read;
-    void* _read_thunk;
-    WriteHandler _write;
-    void* _write_thunk;
-    SelectHandler _select;
-    void* _select_thunk;
+    union {
+	HandlerHook h;
+	struct {
+	    ReadHandler r;
+	    WriteHandler w;
+	} rw;
+    } _hook;
+    void* _thunk;
+    void* _thunk2;
     uint32_t _flags;
     int _use_count;
     int _next_by_name;
 
-    Handler();
-    Handler(const String&);
+    static const Handler* the_blank_handler;
+    
+    Handler(const String& = String());
 
     bool compatible(const Handler&) const;
   
@@ -337,65 +338,20 @@ Router::handler(int hi) const
 }
 
 inline
-Handler::Handler()
-    : _read(0), _read_thunk(0), _write(0), _write_thunk(0),
-      _select(0), _select_thunk(0), _flags(0), _use_count(0), _next_by_name(-1)
-{
-}
-
-inline
 Handler::Handler(const String &name)
-    : _name(name), _read(0), _read_thunk(0), _write(0), _write_thunk(0),
-      _select(0), _select_thunk(0), _flags(0), _use_count(0), _next_by_name(-1)
+    : _name(name), _thunk(0), _thunk2(0), _flags(0), _use_count(0),
+      _next_by_name(-1)
 {
-}
-
-inline String
-Handler::call_read(Element* e) const
-{
-    return _read(e, _read_thunk);
-}
-
-inline int
-Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
-{
-    return _write(s, e, _write_thunk, errh);
+    _hook.rw.r = 0;
+    _hook.rw.w = 0;
 }
 
 inline bool
-Handler::compatible(const Handler& h) const
+Handler::compatible(const Handler& o) const
 {
-    return (_read == h._read && _read_thunk == h._read_thunk
-	    && _write == h._write && _write_thunk == h._write_thunk
-	    && _select == h._select && _select_thunk == h._select_thunk
-	    && _flags == h._flags);
-}
-
-inline void
-Handler::set_read(ReadHandler h, void* thunk)
-{
-    _read = h;
-    _read_thunk = thunk;
-}
-
-inline void
-Handler::set_write(WriteHandler h, void* thunk)
-{
-    _write = h;
-    _write_thunk = thunk;
-}
-
-inline void
-Handler::set_select(SelectHandler h, void* thunk)
-{
-    _select = h;
-    _select_thunk = thunk;
-}
-
-inline void
-Handler::set_flags(uint32_t flags)
-{
-    _flags = flags;
+    return (_hook.rw.r == o._hook.rw.r && _hook.rw.w == o._hook.rw.w
+	    && _thunk == o._thunk && _thunk2 == o._thunk2
+	    && _flags == o._flags);
 }
 
 inline HashMap_ArenaFactory*

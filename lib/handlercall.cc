@@ -106,30 +106,6 @@ HandlerCall::reset(HandlerCall*& call, Element* e, const String& hname, const St
     return retval;
 }
 
-
-String
-HandlerCall::call_read() const
-{
-    if (ok() && _h->readable())
-	return _h->call_read(_e);
-    else
-	return String();
-}
-
-int
-HandlerCall::call_write(ErrorHandler *errh) const
-{
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    if (ok() && _h->writable())
-	return _h->call_write(_value, _e, errh);
-    else {
-	errh->error("not a write handler");
-	return -EACCES;
-    }
-}
-
-
 String
 HandlerCall::call_read(Element* e, const String& hname, ErrorHandler* errh)
 {

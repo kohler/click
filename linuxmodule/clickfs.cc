@@ -627,9 +627,9 @@ handler_flush(struct file *filp)
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
 	    Element *e = Router::element(click_router, eindex);
-	    String context_string = "In write handler `" + h->name() + "'";
+	    String context_string = "In write handler '" + h->name() + "'";
 	    if (e)
-		context_string += String(" for `") + e->declaration() + "'";
+		context_string += String(" for '") + e->declaration() + "'";
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
 	}
@@ -813,7 +813,7 @@ cleanup_clickfs()
 {
     MDEBUG("cleanup_clickfs");
 #if defined(LINUX_2_4) || defined(LINUX_2_2)
-    // remove the `/proc/click' directory
+    // remove the '/proc/click' directory
     remove_proc_entry("click", 0);
 #endif
 

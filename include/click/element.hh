@@ -12,12 +12,13 @@ class Task;
 class Element;
 class ErrorHandler;
 class Bitvector;
+class Handler;
 
 // #define CLICK_STATS 5
 
+typedef int (*HandlerHook)(int operation, String&, Element*, const Handler*, ErrorHandler*);
 typedef String (*ReadHandler)(Element*, void*);
 typedef int (*WriteHandler)(const String&, Element*, void*, ErrorHandler*);
-typedef int (*SelectHandler)(Element*, void*, int select_mask);
 
 class Element { public:
     
@@ -122,7 +123,7 @@ class Element { public:
   
     void add_read_handler(const String&, ReadHandler, void*);
     void add_write_handler(const String&, WriteHandler, void*);
-    void add_select_handler(const String&, SelectHandler, void*);
+    void set_handler(const String&, int flags, HandlerHook, void* = 0, void* = 0);
     void add_task_handlers(Task*, const String& prefix = String());
   
     static String read_positional_handler(Element*, void*);

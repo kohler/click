@@ -70,8 +70,7 @@ class KernelHandlerProxy : public HandlerProxy { public:
     bool _detailed_error_message;
     bool _verbose;
   
-    static String read_handler(Element*, void*);
-    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    static int handler_hook(int, String&, Element*, const Handler*, ErrorHandler*);
     static int star_write_handler(const String&, Element*, void*, ErrorHandler*);
     int complain(ErrorHandler*, const String&, int errcode, const String&);
     int complain_about_open(ErrorHandler*, const String&, int);
