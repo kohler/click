@@ -37,7 +37,7 @@ const char *Element::PULL = "l";
 const char *Element::PUSH_TO_PULL = "h/l";
 const char *Element::PULL_TO_PUSH = "l/h";
 
-int Element::nelements_allocated;
+int Element::nelements_allocated = 0;
 
 #if CLICK_STATS >= 2
 # define ELEMENT_CTOR_STATS _calls(0), _self_cycles(0), _child_cycles(0),
@@ -67,12 +67,6 @@ Element::~Element()
     delete[] _inputs;
   if (_outputs != _ports0 && _outputs != _ports0 + _ninputs)
     delete[] _outputs;
-}
-
-void
-Element::static_initialize()
-{
-  nelements_allocated = 0;
 }
 
 // CHARACTERISTICS

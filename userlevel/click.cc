@@ -468,7 +468,7 @@ int
 main(int argc, char **argv)
 {
   String::static_initialize();
-  Element::static_initialize();
+  cp_va_static_initialize();
   
   errh = new FileErrorHandler(stderr, "");
   ErrorHandler::static_initialize(errh);

@@ -31,7 +31,6 @@ class Element : public ElementLink { public:
   Element();
   Element(int ninputs, int noutputs);
   virtual ~Element();
-  static void static_initialize();
   static int nelements_allocated;
   
   // CHARACTERISTICS

@@ -289,11 +289,13 @@ init_module()
 {
   // first call C++ static initializers
   String::static_initialize();
-  Element::static_initialize();
+  cp_va_static_initialize();
+  
   ErrorHandler::static_initialize(new KernelErrorHandler);
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = new SyslogErrorHandler;
+  
   packages = new Vector<String>;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
@@ -359,6 +361,7 @@ cleanup_module()
   click_chatter_errh = 0;
   
   delete[] root_handlers;
+  cp_va_static_cleanup();
   ErrorHandler::static_cleanup();
   
   printk("<1>click module exiting\n");

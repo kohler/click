@@ -169,9 +169,7 @@ IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
     } else if ((_op == OP_LT && data == 0) || data >= full_mask)
       return errh->error("value %d out of range", data);
     else
-      return errh->error("bad relation `%s%s %d'\n\
-(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n\
-`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
+      return errh->error("bad relation `%s%s %d'\n(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
 
   if (data < 0 || data > full_mask)
@@ -180,6 +178,38 @@ IPFilter::Primitive::set_mask(int full_mask, int shift, ErrorHandler *errh)
   _u.i = data << shift;
   _mask = full_mask << shift;
   return 0;
+}
+
+String
+IPFilter::Primitive::unparse_type() const
+{
+  StringAccum sa;
+  
+  if (_data == DATA_IP || _data == DATA_IPNET || _net_proto == PROTO_IP)
+    sa << "ip ";
+
+  switch (_srcdst) {
+   case SD_SRC: sa << "src "; break;
+   case SD_DST: sa << "dst "; break;
+   case SD_OR: sa << "src or dst "; break;
+   case SD_AND: sa << "src and dst "; break;
+  }
+
+  switch (_type) {
+   case TYPE_HOST: sa << "host "; break;
+   case TYPE_NET: sa << "net "; break;
+   case TYPE_PROTO: sa << "proto "; break;
+   case TYPE_PORT: sa << "port "; break;
+   case TYPE_TCPOPT: sa << "tcp opt "; break;
+   case TYPE_TOS: sa << "tos "; break;
+   case TYPE_DSCP: sa << "dscp "; break;
+   case TYPE_ICMP_TYPE: sa << "icmp type "; break;
+   case TYPE_IPFRAG: sa << "frag "; break;
+   case TYPE_IPUNFRAG: sa << "unfrag "; break;
+  }
+
+  sa.pop();
+  return sa.take_string();
 }
 
 int
@@ -212,7 +242,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     } else if (!_data && _transp_proto != UNKNOWN)
       _type = TYPE_PROTO;
     else
-      return errh->error("syntax error, no primitive type");
+      return errh->error("syntax error: no data in `%s' directive", unparse_type().cc());
   }
 
   // clear _mask

@@ -173,6 +173,8 @@ class IPFilter : public Classifier { public:
     int set_mask(int full_mask, int shift, ErrorHandler *);
     int check(const Primitive &, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
+
+    String unparse_type() const;
     
   };
 

@@ -261,6 +261,7 @@ int
 main(int argc, char **argv)
 {
   String::static_initialize();
+  cp_va_static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
 
