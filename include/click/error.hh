@@ -83,7 +83,7 @@ class ErrorHandler { public:
   
   String make_text(Seriousness, const char *, ...);
   virtual String make_text(Seriousness, const char *, va_list);
-  virtual String decorate_text(Seriousness, const String &, const String &, const String &);
+  virtual String decorate_text(Seriousness, const String &, const String &);
   virtual void handle_text(Seriousness, const String &) = 0;
   virtual int count_error(Seriousness, const String &) = 0;
 
@@ -132,7 +132,7 @@ class ErrorVeneer : public ErrorHandler { public:
   void reset_counts();
 
   String make_text(Seriousness, const char *, va_list);
-  String decorate_text(Seriousness, const String &, const String &, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
   void handle_text(Seriousness, const String &);
   int count_error(Seriousness, const String &);
 
@@ -144,7 +144,7 @@ class ErrorVeneer : public ErrorHandler { public:
 
 class ContextErrorHandler : public ErrorVeneer { public:
   ContextErrorHandler(ErrorHandler *, const String &context, const String &indent = "  ", const String &context_landmark = "");
-  String decorate_text(Seriousness, const String &, const String &, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
  private:
   String _context;
   String _indent;
@@ -153,7 +153,7 @@ class ContextErrorHandler : public ErrorVeneer { public:
 
 class PrefixErrorHandler : public ErrorVeneer { public:
   PrefixErrorHandler(ErrorHandler *, const String &prefix);
-  String decorate_text(Seriousness, const String &, const String &, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
  private:
   String _prefix;
 };
@@ -161,7 +161,7 @@ class PrefixErrorHandler : public ErrorVeneer { public:
 class LandmarkErrorHandler : public ErrorVeneer { public:
   LandmarkErrorHandler(ErrorHandler *, const String &);
   void set_landmark(const String &s)	{ _landmark = s; }
-  String decorate_text(Seriousness, const String &, const String &, const String &);
+  String decorate_text(Seriousness, const String &, const String &);
  private:
   String _landmark;
 };

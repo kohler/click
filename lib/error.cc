@@ -465,7 +465,7 @@ ErrorHandler::make_text(Seriousness, const char *s, va_list val)
 }
 
 String
-ErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
+ErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
   String new_text;
   
@@ -493,8 +493,7 @@ ErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const
       new_text = prepend_lines(landmark.substring(0, i+1) + ": ", new_text);
   }
 
-  // prepend prefix, if any
-  return prepend_lines(prefix, new_text);
+  return new_text;
 }
 
 int
@@ -502,7 +501,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
 		     const char *s, va_list val)
 {
   String text = make_text(seriousness, s, val);
-  text = decorate_text(seriousness, String(), where, text);
+  text = decorate_text(seriousness, where, text);
   handle_text(seriousness, text);
   return count_error(seriousness, text);
 }
@@ -512,7 +511,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
 			  const String &text)
 {
   // text is already made
-  String dec_text = decorate_text(seriousness, String(), where, text);
+  String dec_text = decorate_text(seriousness, where, text);
   handle_text(seriousness, dec_text);
   return count_error(seriousness, dec_text);
 }
@@ -739,9 +738,9 @@ ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
 }
 
 String
-ErrorVeneer::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
+ErrorVeneer::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, prefix, landmark, text);
+  return _errh->decorate_text(seriousness, landmark, text);
 }
 
 void
@@ -771,7 +770,7 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 }
 
 String
-ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
+ContextErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
   String context_lines;
   if (_context) {
@@ -780,13 +779,13 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix
     if (_errh->min_verbosity() > ERRVERBOSITY_CONTEXT)
       _context = _indent = String();
     else {
-      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), (_context_landmark ? _context_landmark : landmark), _context);
+      context_lines = _errh->decorate_text(ERR_MESSAGE, (_context_landmark ? _context_landmark : landmark), _context);
       if (context_lines && context_lines.back() != '\n')
 	context_lines += '\n';
       _context = String();
     }
   }
-  return context_lines + _errh->decorate_text(seriousness, prefix, (landmark ? landmark : _context_landmark), prepend_lines(_indent, text));
+  return context_lines + _errh->decorate_text(seriousness, (landmark ? landmark : _context_landmark), prepend_lines(_indent, text));
 }
 
 
@@ -801,9 +800,9 @@ PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 }
 
 String
-PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
+PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, prefix, landmark, prepend_lines(_prefix, text));
+  return _errh->decorate_text(seriousness, landmark, prepend_lines(_prefix, text));
 }
 
 
@@ -817,12 +816,12 @@ LandmarkErrorHandler::LandmarkErrorHandler(ErrorHandler *errh, const String &lan
 }
 
 String
-LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &lm, const String &text)
+LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &lm, const String &text)
 {
   if (lm)
-    return _errh->decorate_text(seriousness, prefix, lm, text);
+    return _errh->decorate_text(seriousness, lm, text);
   else
-    return _errh->decorate_text(seriousness, prefix, _landmark, text);
+    return _errh->decorate_text(seriousness, _landmark, text);
 }
 
 

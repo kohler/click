@@ -456,7 +456,7 @@ LexerT::vlerror(int pos1, int pos2, const String &lm, const char *format, va_lis
 {
     String text = _errh->make_text(ErrorHandler::ERR_ERROR, format, val);
     _lexinfo->notify_error(text, pos1, pos2);
-    text = _errh->decorate_text(ErrorHandler::ERR_ERROR, String(), lm, text);
+    text = _errh->decorate_text(ErrorHandler::ERR_ERROR, lm, text);
     _errh->handle_text(ErrorHandler::ERR_ERROR, text);
 }
 

@@ -1355,7 +1355,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
                                                             ac_config_headers="$ac_config_headers include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in"
 
 
-CLICK_VERSION=1.4.1
+CLICK_VERSION=1.4.2
 
 
 cat >>confdefs.h <<_ACEOF
