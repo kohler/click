@@ -14,11 +14,11 @@ FromDAGDump(FILENAME [, I<KEYWORDS>])
 
 =s analysis
 
-reads packets from a DAG file
+reads packets from a DAG/ERF file
 
 =d
 
-Reads packets from a file in DAG format, produced by the University of
+Reads packets from a file in ERF format, produced by the University of
 Waikato's DAG tools. Pushes them out the output, and optionally stops the
 driver when there are no more packets.
 
@@ -92,6 +92,14 @@ probability.
 Boolean. If true, then FromDAGDump tries to maintain the inter-packet timing
 of the original packet stream. False by default.
 
+=item ENCAP
+
+Legacy encapsulation type ("IP", "ATM", "SUNATM", or "ETHER").  New-style ERF
+dumps contain an explicit encapsulation type on each packet; you should not
+provide an ENCAP option for new-style ERF dumps.  Legacy-format ERF dumps
+don't contain any encapsulation information, however, so you should supply an
+encapsulation type explicitly (or FromDAGDump will assume ENCAP type "ATM").
+
 =item MMAP
 
 Boolean. If true, then FromDAGDump will use mmap(2) to access the tcpdump
@@ -122,7 +130,7 @@ Value is a Boolean.
 
 =h encap read-only
 
-Returns the file's encapsulation type.
+Returns the previous packet's encapsulation type.
 
 =h filename read-only
 
@@ -168,16 +176,47 @@ class FromDAGDump : public Element { public:
     
   private:
 
+    struct DAGPosCell {
+	uint32_t hdlc;
+	uint8_t payload[44];
+    };
+    struct DAGEthernetCell {
+	uint8_t offset;
+	uint8_t padding;
+	uint8_t ether_dhost[6];
+	uint8_t ether_shost[6];
+	uint16_t ether_type;
+	uint8_t payload[32];
+    };
+    struct DAGATMCell {
+	uint32_t header;
+	uint8_t payload[44];
+    };
+    struct DAGAAL5Cell {
+	uint32_t header;
+	uint8_t payload[44];
+    };
     struct DAGCell {
 	uint64_t timestamp;
-	uint32_t crc;
-	uint32_t atm;
-	uint8_t payload[48];
-	enum { PAYLOAD_OFFSET = 16 };
+	uint8_t type;
+	uint8_t flags;
+	uint16_t rlen;
+	uint16_t lctr;
+	uint16_t wlen;
+	union {
+	    DAGPosCell pos;
+	    DAGEthernetCell ether;
+	    DAGATMCell atm;
+	    DAGAAL5Cell aal5;
+	} u;
+	enum { HEADER_SIZE = 16, CELL_SIZE = 64 };
+	enum { TYPE_LEGACY = 0, TYPE_HDLC_POS = 1, TYPE_ETH = 2, TYPE_ATM = 3,
+	       TYPE_AAL5 = 4 };
     };
     
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
+    static const int dagtype2linktype[];
 
     FromFile _ff;
 
@@ -195,6 +234,7 @@ class FromDAGDump : public Element { public:
     bool _active;
     unsigned _sampling_prob;
     int _linktype;
+    int _base_linktype;
 
     struct timeval _first_time;
     struct timeval _last_time;

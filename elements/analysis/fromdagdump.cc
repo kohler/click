@@ -292,7 +292,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	switch (_base_linktype) {
 	    
 	  case FAKE_DLT_ATM_RFC1483:
-	  atm:
+	  atm_rfc1483:
 	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
 	    break;
 	    
