@@ -1,6 +1,7 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * polldevice.{cc,hh} -- element steals packets from Linux devices by polling.
- * Benjie Chen
+ * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
@@ -65,47 +66,50 @@ polldev_static_cleanup()
 
 PollDevice::PollDevice()
 {
-  // no MOD_INC_USE_COUNT; rely on AnyDevice
-  add_output();
-  polldev_static_initialize();
+    MOD_INC_USE_COUNT;
+    polldev_static_initialize();
+    add_output();
 }
 
 PollDevice::~PollDevice()
 {
-  // no MOD_DEC_USE_COUNT; rely on AnyDevice
-  polldev_static_cleanup();
+    uninitialize_device();	// might need to dev_put
+    polldev_static_cleanup();
+    MOD_DEC_USE_COUNT;
 }
 
 
 int
 PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _burst = 8;
-  _promisc = false;
-  bool allow_nonexistent = false;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_devname,
-		  cpOptional,
-		  cpBool, "enter promiscuous mode?", &_promisc,
-		  cpUnsigned, "burst size", &_burst,
-		  cpKeywords,
-		  "PROMISC", cpBool, "enter promiscuous mode?", &_promisc,
-		  "PROMISCUOUS", cpBool, "enter promiscuous mode?", &_promisc,
-		  "BURST", cpUnsigned, "burst size", &_burst,
-		  "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
-		  cpEnd) < 0)
-    return -1;
-  
+    _burst = 8;
+    bool promisc = false;
+    bool allow_nonexistent = false;
+    if (cp_va_parse(conf, this, errh,
+		    cpString, "interface name", &_devname,
+		    cpOptional,
+		    cpBool, "enter promiscuous mode?", &promisc,
+		    cpUnsigned, "burst size", &_burst,
+		    cpKeywords,
+		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
+		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
+		    "BURST", cpUnsigned, "burst size", &_burst,
+		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
+		    cpEnd) < 0)
+	return -1;
+    if (promisc)
+	set_flag(F_PROMISC);
+    
 #if HAVE_POLLING
-  if (find_device(allow_nonexistent, errh) < 0)
-      return -1;
-  // must check both _dev->polling and _dev->poll_on as some drivers
-  // memset() their device structures to all zero
-  if (_dev && (_dev->polling < 0 || !_dev->poll_on))
-      return errh->error("device `%s' not pollable, use FromDevice instead", _devname.cc());
+    if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)
+	return -1;
+    if (_dev && (!_dev->poll_on || _dev->polling < 0)) {
+	uninitialize_device();
+	return errh->error("device `%s' not pollable, use FromDevice instead", _devname.cc());
+    }
 #endif
-  
-  return 0;
+
+    return 0;
 }
 
 
@@ -117,46 +121,40 @@ int
 PollDevice::initialize(ErrorHandler *errh)
 {
 #if HAVE_POLLING
-  /* try to find a ToDevice with the same device: if none exists, then we need
-   * to manage tx queue as well as rx queue. need to do it this way because
-   * ToDevice may not have been initialized
-   */
-  if (_dev)
-      for (int fi = 0; fi < router()->nelements(); fi++) {
-	  Element *e = router()->element(fi);
-	  if (e == this) continue;
-	  if (PollDevice *pd=(PollDevice *)(e->cast("PollDevice"))) {
-	      if (pd->ifindex() == ifindex())
-		  return errh->error("duplicate PollDevice for `%s'", _devname.cc());
-	  } else if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
-	      if (fd->ifindex() == ifindex())
-		  return errh->error("both FromDevice and PollDevice for `%s'", _devname.cc());
-	  }
-      }
-  
-  poll_device_map.insert(this);
-  if (_dev && _promisc)
-      dev_set_promiscuity(_dev, 1);
-  if (_dev && !_dev->polling) {
-      /* turn off interrupt if interrupts weren't already off */
-      _dev->poll_on(_dev);
-      if (_dev->polling != 2)
-	  return errh->error("PollDevice detected wrong version of polling patch");
-  }
-  
-  ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
+    // check for duplicate readers
+    if (ifindex() >= 0) {
+	void *&used = router()->force_attachment("device_reader_" + ifindex());
+	if (used) {
+	    uninitialize_device();
+	    return errh->error("duplicate reader for device `%s'", _devname.cc());
+	}
+	used = this;
+    }
+
+    if (_dev && !_dev->polling) {
+	/* turn off interrupt if interrupts weren't already off */
+	_dev->poll_on(_dev);
+	if (_dev->polling != 2) {
+	    _dev->poll_off(_dev);
+	    uninitialize_device();
+	    return errh->error("PollDevice detected wrong version of polling patch");
+	}
+    }
+
+    ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
-  // user specifies max number of tickets; we start with default
-  _max_tickets = _task.tickets();
-  _task.set_tickets(Task::DEFAULT_TICKETS);
+    // user specifies max number of tickets; we start with default
+    _max_tickets = _task.tickets();
+    _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
-  reset_counts();
-  return 0;
+    reset_counts();
+    
 #else
-  errh->warning("can't get packets: not compiled with polling extensions");
-  return 0;
+    errh->warning("can't get packets: not compiled with polling extensions");
 #endif
+
+    return 0;
 }
 
 void
@@ -185,21 +183,27 @@ PollDevice::reset_counts()
 }
 
 void
+PollDevice::uninitialize_device()
+{
+    // This portion of uninitialize might be called even if initialize did not
+    // succeed.
+    clear_device(&poll_device_map);
+}
+
+void
 PollDevice::uninitialize()
 {
 #if HAVE_POLLING
-  poll_device_map.remove(this);
-  if (poll_device_map.lookup(_dev) == 0) {
-    if (_dev && _dev->polling > 0)
-      _dev->poll_off(_dev);
-  }
-  if (_dev && _promisc)
-      dev_set_promiscuity(_dev, -1);
-#if LINUX_VERSION_CODE >= 0x020400
-  if (_dev)
-    dev_put(_dev);
-#endif
-  _task.unschedule();
+    net_device *had_dev = _dev;
+
+    // call uninitialize_device first so we can check poll_device_map for
+    // other users
+    uninitialize_device();
+
+    if (had_dev && had_dev->polling > 0 && !poll_device_map.lookup(had_dev, 0))
+	had_dev->poll_off(had_dev);
+    
+    _task.unschedule();
 #endif
 }
 
@@ -321,36 +325,18 @@ PollDevice::change_device(net_device *dev)
 #if HAVE_POLLING
     _task.unschedule();
     
-    if (dev && (dev->polling < 0 || !dev->poll_on)) {
+    if (dev && (!dev->poll_on || dev->polling < 0)) {
 	click_chatter("%s: device `%s' does not support polling", declaration().cc(), _devname.cc());
 	dev = 0;
     }
     
-    if (!_dev && dev)
-	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
-    else if (_dev && !dev)
-	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
-    
-    poll_device_map.remove(this);
     if (_dev)
 	_dev->poll_off(_dev);
-    if (_dev && _promisc)
-	dev_set_promiscuity(_dev, -1);
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_put(_dev);
-#endif
+
+    set_device(dev, &poll_device_map);
     
-    _dev = dev;
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_hold(_dev);
-#endif
     if (_dev && !_dev->polling)
 	_dev->poll_on(_dev);
-    if (_dev && _promisc)
-	dev_set_promiscuity(_dev, 1);
-    poll_device_map.insert(this);
 
     if (_dev)
 	_task.reschedule();
@@ -364,13 +350,14 @@ static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
     net_device *dev = (net_device *)v;
+    AnyDevice *e = 0;
 
     if (flags == NETDEV_UP) {
-	if (PollDevice *pd = (PollDevice *)poll_device_map.lookup_unknown(dev))
-	    pd->change_device(dev);
+	while ((e = poll_device_map.lookup_unknown(dev, e)))
+	    ((PollDevice *)e)->change_device(dev);
     } else if (flags == NETDEV_DOWN) {
-	if (PollDevice *pd = (PollDevice *)poll_device_map.lookup(dev))
-	    pd->change_device(0);
+	while ((e = poll_device_map.lookup(dev, e)))
+	    ((PollDevice *)e)->change_device(0);
     }
 
     return 0;

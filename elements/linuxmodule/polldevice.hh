@@ -115,9 +115,10 @@ class PollDevice : public AnyDevice { public:
     
  private:
 
-  bool _promisc;
   unsigned _burst;
-    
+
+  void uninitialize_device();
+  
 };
 
 #endif 

@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * fromdevice.{cc,hh} -- element steals packets from Linux devices using
  * register_net_in
@@ -73,32 +74,33 @@ fromdev_static_cleanup()
 
 FromDevice::FromDevice()
 {
-  // no MOD_INC_USE_COUNT; rely on AnyDevice
-  add_output();
-  fromdev_static_initialize();
+    MOD_INC_USE_COUNT;
+    fromdev_static_initialize();
+    add_output();
 }
 
 FromDevice::~FromDevice()
 {
-    // no MOD_DEC_USE_COUNT; rely on AnyDevice
+    uninitialize_device();
     fromdev_static_cleanup();
+    MOD_DEC_USE_COUNT;
 }
 
 void *
 FromDevice::cast(const char *n)
 {
-  if (strcmp(n, "Storage") == 0)
-    return (Storage *)this;
-  else if (strcmp(n, "FromDevice") == 0)
-    return (Element *)this;
-  else
-    return 0;
+    if (strcmp(n, "Storage") == 0)
+	return (Storage *)this;
+    else if (strcmp(n, "FromDevice") == 0)
+	return (Element *)this;
+    else
+	return 0;
 }
 
 int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-    _promisc = false;
+    bool promisc = false;
     bool allow_nonexistent = false;
     _burst = 8;
     if (cp_va_parse(conf, this, errh, 
@@ -107,16 +109,16 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    cpBool, "enter promiscuous mode?", &_promisc,
 		    cpUnsigned, "burst size", &_burst,
 		    cpKeywords,
-		    "PROMISC", cpBool, "enter promiscuous mode?", &_promisc,
-		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &_promisc,
+		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
+		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
 		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
-
-    if (find_device(allow_nonexistent, errh) < 0)
-	return -1;
-    return 0;
+    if (promisc)
+	set_flag(F_PROMISC);
+    
+    return find_device(allow_nonexistent, &from_device_map, errh);
 }
 
 /*
@@ -126,22 +128,16 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-    // check for duplicates; FromDevice <-> PollDevice conflicts checked by
-    // PollDevice
-    if (ifindex() >= 0)
-	for (int fi = 0; fi < router()->nelements(); fi++) {
-	    Element *e = router()->element(fi);
-	    if (e == this) continue;
-	    if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
-		if (fd->ifindex() == ifindex())
-		    return errh->error("duplicate FromDevice for `%s'", _devname.cc());
-	    }
+    // check for duplicate readers
+    if (ifindex() >= 0) {
+	void *&used = router()->force_attachment("device_reader_" + ifindex());
+	if (used) {
+	    uninitialize_device();
+	    return errh->error("duplicate reader for device `%s'", _devname.cc());
 	}
+	used = this;
+    }
 
-    from_device_map.insert(this);
-    if (_promisc && _dev)
-	dev_set_promiscuity(_dev, 1);
-    
     if (!registered_readers) {
 #ifdef HAVE_CLICK_KERNEL
 	packet_notifier.next = 0;
@@ -159,10 +155,17 @@ FromDevice::initialize(ErrorHandler *errh)
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
+    from_device_map.move_to_front(this);
     _head = _tail = 0;
     _capacity = QSIZE;
     _drops = 0;
     return 0;
+}
+
+void
+FromDevice::uninitialize_device()
+{
+    clear_device(&from_device_map);
 }
 
 void
@@ -175,10 +178,7 @@ FromDevice::uninitialize()
 #endif
     
     _task.unschedule();
-    
-    from_device_map.remove(this);
-    if (_promisc && _dev)
-	dev_set_promiscuity(_dev, -1);
+    uninitialize_device();
     
     for (unsigned i = _head; i != _tail; i = next_i(i))
 	_queue[i]->kill();
@@ -206,26 +206,7 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 void
 FromDevice::change_device(net_device *dev)
 {
-    if (!_dev && dev)
-	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
-    else if (_dev && !dev)
-	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
-    
-    from_device_map.remove(this);
-    if (_promisc && _dev)
-	dev_set_promiscuity(_dev, -1);
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_put(_dev);
-#endif
-    _dev = dev;
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_hold(_dev);
-#endif
-    if (_promisc && _dev)
-	dev_set_promiscuity(_dev, 1);
-    from_device_map.insert(this);
+    set_device(dev, &from_device_map);
 }
 
 /*
@@ -240,7 +221,7 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
   struct sk_buff *skb = (struct sk_buff *)v;
 
   int stolen = 0;
-  if (FromDevice *fd = (FromDevice *)from_device_map.lookup(skb->dev))
+  if (FromDevice *fd = (FromDevice *)from_device_map.lookup(skb->dev, 0))
       stolen = fd->got_skb(skb);
   
   return (stolen ? NOTIFY_STOP_MASK : 0);
@@ -251,13 +232,14 @@ static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
     net_device *dev = (net_device *)v;
+    AnyDevice *e = 0;
 
     if (flags == NETDEV_UP) {
-	if (FromDevice *fd = (FromDevice *)from_device_map.lookup_unknown(dev))
-	    fd->change_device(dev);
+	while ((e = from_device_map.lookup_unknown(dev, e)))
+	    ((FromDevice *)e)->change_device(dev);
     } else if (flags == NETDEV_DOWN) {
-	if (FromDevice *fd = (FromDevice *)from_device_map.lookup(dev))
-	    fd->change_device(0);
+	while ((e = from_device_map.lookup(dev, e)))
+	    ((FromDevice *)e)->change_device(0);
     }
 
     return 0;

@@ -1,8 +1,10 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * tolinuxsniffers.{cc,hh} -- element sends packets to Linux sniffers
  * Eddie Kohler; based on tolinux.cc
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,14 +36,15 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 ToLinuxSniffers::ToLinuxSniffers()
-  : Element(1, 0)
+    : Element(1, 0)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 ToLinuxSniffers::~ToLinuxSniffers()
 {
-  MOD_DEC_USE_COUNT;
+    uninitialize();		// might need to dev_put
+    MOD_DEC_USE_COUNT;
 }
 
 ToLinuxSniffers *
@@ -62,12 +65,20 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (devname) {
     _dev = dev_get_by_name(devname.cc());
     if (!_dev)
-      _dev = find_device_by_ether_address(devname, this);
+      _dev = dev_get_by_ether_address(devname, this);
     if (!_dev)
       return errh->error("unknown device `%s'", devname.cc());
   } else
     _dev = 0;
   return 0;
+}
+
+void
+ToLinuxSniffers::uninitialize()
+{
+    if (_dev)
+	dev_put(_dev);
+    _dev = 0;
 }
 
 void

@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * todevice.{cc,hh} -- element sends packets to Linux devices.
  * Robert Morris
@@ -64,70 +65,64 @@ todev_static_cleanup()
 }
 
 ToDevice::ToDevice()
-  : _dev_idle(0), _rejected(0), _hard_start(0)
+    : _dev_idle(0), _rejected(0), _hard_start(0)
 {
-    // no MOD_INC_USE_COUNT; rely on AnyDevice
-    add_input();
+    MOD_INC_USE_COUNT;
     todev_static_initialize();
+    add_input();
 }
 
 ToDevice::~ToDevice()
 {
-    // no MOD_DEC_USE_COUNT; rely on AnyDevice
+    uninitialize_device();		// might need to dev_put
     todev_static_cleanup();
+    MOD_DEC_USE_COUNT;
 }
 
 
 int
 ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _burst = 16;
-  bool allow_nonexistent = false;
-  if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_devname,
-		  cpOptional,
-		  cpUnsigned, "burst size", &_burst,
-		  cpKeywords,
-		  "BURST", cpUnsigned, "burst size", &_burst,
-		  "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
-		  cpEnd) < 0)
-    return -1;
-  if (find_device(allow_nonexistent, errh) < 0)
-    return -1;
-  return 0;
+    _burst = 16;
+    bool allow_nonexistent = false;
+    if (cp_va_parse(conf, this, errh,
+		    cpString, "interface name", &_devname,
+		    cpOptional,
+		    cpUnsigned, "burst size", &_burst,
+		    cpKeywords,
+		    "BURST", cpUnsigned, "burst size", &_burst,
+		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
+		    cpEnd) < 0)
+	return -1;
+    return find_device(allow_nonexistent, &to_device_map, errh);
 }
 
 int
 ToDevice::initialize(ErrorHandler *errh)
 {
 #ifndef HAVE_CLICK_KERNEL
-  errh->warning("not compiled for a Click kernel");
+    errh->warning("not compiled for a Click kernel");
 #endif
 
-  // see if a PollDevice with the same device exists: if so, use polling
-  // extensions. Also look for duplicate ToDevices; but beware: ToDevice may
-  // not have been initialized
-  if (_dev)
-      for (int ei = 0; ei < router()->nelements(); ei++) {
-	  Element *e = router()->element(ei);
-	  if (e == this) continue;
-	  if (ToDevice *td = (ToDevice *)(e->cast("ToDevice"))) {
-	      if (td->ifindex() == ifindex())
-		  return errh->error("duplicate ToDevice for `%s'", _devname.cc());
-	  }
-      }
+    // check for duplicate writers
+    if (ifindex() >= 0) {
+	void *&used = router()->force_attachment("device_writer_" + ifindex());
+	if (used) {
+	    uninitialize_device();
+	    return errh->error("duplicate writer for device `%s'", _devname.cc());
+	}
+	used = this;
+    }
 
-  to_device_map.insert(this);
-  
-  ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
+    ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
-  // user specifies max number of tickets; we start with default
-  _max_tickets = _task.tickets();
-  _task.set_tickets(Task::DEFAULT_TICKETS);
+    // user specifies max number of tickets; we start with default
+    _max_tickets = _task.tickets();
+    _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
-  reset_counts();
-  return 0;
+    reset_counts();
+    return 0;
 }
 
 void
@@ -156,14 +151,16 @@ ToDevice::reset_counts()
 }
 
 void
+ToDevice::uninitialize_device()
+{
+    clear_device(&to_device_map);
+}
+
+void
 ToDevice::uninitialize()
 {
-  to_device_map.remove(this);
-#if LINUX_VERSION_CODE >= 0x020400
-  if (_dev)
-    dev_put(_dev);
-#endif
-  _task.unschedule();
+    _task.unschedule();
+    uninitialize_device();
 }
 
 /*
@@ -346,22 +343,7 @@ ToDevice::change_device(net_device *dev)
 {
     _task.unschedule();
     
-    if (!_dev && dev)
-	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
-    else if (_dev && !dev)
-	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
-    
-    to_device_map.remove(this);
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_put(_dev);
-#endif
-    _dev = dev;
-#if LINUX_VERSION_CODE >= 0x020400
-    if (_dev)
-	dev_hold(_dev);
-#endif
-    to_device_map.insert(this);
+    set_device(dev, &to_device_map);
 
     if (_dev)
 	_task.reschedule();
@@ -372,12 +354,13 @@ static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
     net_device *dev = (net_device *)v;
+    AnyDevice *e = 0;
     if (flags == NETDEV_UP) {
-	if (ToDevice *td = (ToDevice *)to_device_map.lookup_unknown(dev))
-	    td->change_device(dev);
+	while ((e = to_device_map.lookup_unknown(dev, e)))
+	    ((ToDevice *)e)->change_device(dev);
     } else if (flags == NETDEV_DOWN) {
-	if (ToDevice *td = (ToDevice *)to_device_map.lookup(dev))
-	    td->change_device(0);
+	while ((e = to_device_map.lookup(dev, e)))
+	    ((ToDevice *)e)->change_device(0);
     }
     return 0;
 }

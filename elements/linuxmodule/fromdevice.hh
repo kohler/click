@@ -96,6 +96,8 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     static const int QSIZE = 511;
     Packet *_queue[QSIZE+1];
+
+    void uninitialize_device();
     
 };
 

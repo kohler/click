@@ -126,6 +126,7 @@ class ToDevice : public AnyDevice {
   int _dev_idle;
   
   int queue_packet(Packet *p);
+  void uninitialize_device();
   
 };
 

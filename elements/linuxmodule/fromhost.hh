@@ -1,6 +1,9 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef FROMLINUX_HH
 #define FROMLINUX_HH
 #include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/timer.hh>
 
 /*
 =c
@@ -65,42 +68,37 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #include "elements/linuxmodule/anydevice.hh"
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-typedef struct enet_statistics net_device_stats;
-#endif
 class EtherAddress;
 
 class FromLinux : public AnyDevice { public:
 
-  enum { CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
-	 CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 };
-  
-  FromLinux();
-  ~FromLinux();
+    enum { CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
+	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 };
 
-  const char *class_name() const	{ return "FromLinux"; }
-  FromLinux *clone() const;
-  const char *processing() const	{ return PUSH; }
+    FromLinux();
+    ~FromLinux();
 
-  net_device_stats *stats()		{ return &_stats; }
+    const char *class_name() const	{ return "FromLinux"; }
+    FromLinux *clone() const;
+    const char *processing() const	{ return PUSH; }
 
-  int configure_phase() const		{ return CONFIGURE_PHASE_FROMLINUX; }
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  int initialize_device(ErrorHandler *, const EtherAddress &);
-  void uninitialize();
+    net_device_stats *stats()		{ return &_stats; }
 
- private:
+    int configure_phase() const		{ return CONFIGURE_PHASE_FROMLINUX; }
+    int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void uninitialize();
 
-  IPAddress _destaddr;
-  IPAddress _destmask;
+    int set_device_addresses(ErrorHandler *);
+    
+  private:
 
-  net_device_stats _stats;
+    EtherAddress _macaddr;
+    IPAddress _destaddr;
+    IPAddress _destmask;
+    net_device_stats _stats;
 
-  bool _device_up : 1;
-  
-  int init_rt();
-  int init_dev();
+    Timer _wakeup_timer;
 
 };
 

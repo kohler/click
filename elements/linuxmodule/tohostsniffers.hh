@@ -29,10 +29,11 @@ class ToLinuxSniffers : public Element { public:
   const char *class_name() const		{ return "ToLinuxSniffers"; }
   const char *processing() const		{ return PUSH; }
   const char *flags() const			{ return "S2"; }
+  ToLinuxSniffers *clone() const;
 
   int configure_phase() const	{ return FromLinux::CONFIGURE_PHASE_TODEVICE; }
   int configure(const Vector<String> &, ErrorHandler *);
-  ToLinuxSniffers *clone() const;
+  void uninitialize();
   
   void push(int port, Packet *);
 

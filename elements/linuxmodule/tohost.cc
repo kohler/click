@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * tolinux.{cc,hh} -- element sends packets to Linux for default processing
  * Robert Morris
@@ -34,14 +35,15 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 ToLinux::ToLinux()
-  : Element(1, 0)
+    : Element(1, 0)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 ToLinux::~ToLinux()
 {
-  MOD_DEC_USE_COUNT;
+    uninitialize();		// might need to dev_put
+    MOD_DEC_USE_COUNT;
 }
 
 ToLinux *
@@ -62,12 +64,20 @@ ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (devname) {
     _dev = dev_get_by_name(devname.cc());
     if (!_dev)
-      _dev = find_device_by_ether_address(devname, this);
+      _dev = dev_get_by_ether_address(devname, this);
     if (!_dev)
       return errh->error("unknown device `%s'", devname.cc());
   } else
     _dev = 0;
   return 0;
+}
+
+void
+ToLinux::uninitialize()
+{
+    if (_dev)
+	dev_put(_dev);
+    _dev = 0;
 }
 
 void
@@ -126,14 +136,6 @@ ToLinux::push(int port, Packet *p)
   ptype_dispatch(skb, skb->protocol);
   unlock_kernel();
 #endif
-#endif
-}
-
-void
-ToLinux::uninitialize()
-{
-#if LINUX_VERSION_CODE >= 0x020400
-  dev_put(_dev);
 #endif
 }
 

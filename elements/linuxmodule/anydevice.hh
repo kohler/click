@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef ANYDEVICE_HH
 #define ANYDEVICE_HH
 #include <click/element.hh>
@@ -64,18 +65,33 @@ CLICK_CXX_UNPROTECT
 
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+typedef struct enet_statistics net_device_stats;
+#define dev_hold(dev)		/* nada */
+#define dev_put(dev)		/* nada */
+#endif
+
+class AnyDeviceMap;
+
 class AnyDevice : public Element { public:
 
+    static const int F_IN_MAP = 1;
+    static const int F_PROMISC = 2;
+    
     AnyDevice();
     ~AnyDevice();
 
     const String &devname() const	{ return _devname; }
     net_device *device() const		{ return _dev; }
     int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
-    AnyDevice *next() const		{ return _next; }
-    void set_next(AnyDevice *d)		{ _next = d; }
 
-    int find_device(bool, ErrorHandler *);
+    bool flag(uint32_t f) const		{ return (_flags & f) != 0; }
+    void set_flag(uint32_t f)		{ _flags |= f; }
+    void clear_flag(uint32_t f)		{ _flags &= ~f; }
+
+    int find_device(bool, AnyDeviceMap *, ErrorHandler *);
+    void set_device(net_device *, AnyDeviceMap *);
+    void clear_device(AnyDeviceMap *);
     void adjust_tickets(int work);
 
   protected:
@@ -87,7 +103,10 @@ class AnyDevice : public Element { public:
     int _max_tickets;
     int _idles;
 
+    uint32_t _flags;
     AnyDevice *_next;
+
+    friend class AnyDeviceMap;
 
 };
 
@@ -124,10 +143,11 @@ AnyDevice::adjust_tickets(int work)
 class AnyDeviceMap { public:
 
     void initialize();
-    AnyDevice *lookup(net_device *);
-    AnyDevice *lookup_unknown(net_device *);
+    AnyDevice *lookup(net_device *, AnyDevice *);
+    AnyDevice *lookup_unknown(net_device *, AnyDevice *);
     void insert(AnyDevice *);
     void remove(AnyDevice *);
+    void move_to_front(AnyDevice *);
 
   private:
 
@@ -138,17 +158,16 @@ class AnyDeviceMap { public:
 };
 
 inline AnyDevice *
-AnyDeviceMap::lookup(net_device *dev)
+AnyDeviceMap::lookup(net_device *dev, AnyDevice *last)
 {
-    if (dev == NULL)
-	return NULL;
-
-    AnyDevice *d = _map[dev->ifindex % MAP_SIZE];
+    if (!dev)
+	return 0;
+    AnyDevice *d = (last ? last : _map[dev->ifindex % MAP_SIZE]);
     while (d && d->device() != dev)
-	d = d->next();
+	d = d->_next;
     return d;
 }
 
-net_device *find_device_by_ether_address(const String &, Element *);
+net_device *dev_get_by_ether_address(const String &, Element *);
 
 #endif
