@@ -766,7 +766,7 @@ dnl
 AC_MSG_CHECKING(for working makeinfo)
 MAKEINFO=${MAKEINFO-makeinfo}
 if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
-  if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+  if test `head -1 conftest.out | sed 's/^.* \([[0-9]][[0-9]]*\).*$/\1/'` -ge 4; then
     AC_MSG_RESULT(found)
   else
     MAKEINFO='$(conf_auxdir)/missing makeinfo'
