@@ -1,3 +1,39 @@
+2001-08-03 Friday 11:52  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* lib/: packet.cc (1.45), routerthread.cc (1.14): Add FreeBSD
+	support.
+
+2001-08-03 Friday 11:51  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: glue.hh (1.16), packet.hh (1.19): Changes to
+	support FreeBSD: various kernel glue and the BSD packet
+	implementation.
+
+2001-08-03 Friday 11:49  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* elements/bsdmodule/: anydevice.cc (1.1), anydevice.hh (1.1),
+	fromdevice.cc (1.1), fromdevice.hh (1.1), polldevice.cc (1.1),
+	polldevice.hh (1.1), todevice.cc (1.1), todevice.hh (1.1): Elements
+	to talk to physical interfaces in FreeBSD.
+
+2001-08-03 Friday 11:49  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/: Makefile.in (1.1), click-mount.c (1.1), clickfs.cc
+	(1.1), clickfs_vnops.cc (1.1), kernelerror.cc (1.1), kernelerror.hh
+	(1.1), module.cc (1.1), modulepriv.hh (1.1), sched.cc (1.1),
+	vnode_if.pl (1.1): FreeBSD kernel module.
+
+2001-08-03 Friday 11:48  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/: freebsd-4.3-patch (1.1), make-bsd-patch (1.1), restore-bsd
+	(1.1): Add some patches against the FreeBSD kernel to support
+	polling and grabbing packets directly from an interface.
+
+2001-08-03 Friday 11:47  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* Makefile.in (1.95), config.h.in (1.9), configure.in (1.134): Add
+	a bsd kernel module build target.
+
 2001-08-02 Thursday 20:43  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool (1.25), click-mkelemmap (1.11),
