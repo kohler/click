@@ -1,3 +1,18 @@
+2001-02-28 Wednesday 14:05  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/updateroutes.hh: added comment on ages vs.
+	timeouts.
+
+2001-02-28 Wednesday 14:04  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/updateroutes.cc: get_routes(): expire old routes
+	before returning current route list.  added comments
+
+2001-02-28 Wednesday 14:02  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc: fixed typo in error
+	message
+
 2001-02-26 Monday 10:29  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/grid/hello.cc, elements/grid/lookupgeogridroute.cc,
