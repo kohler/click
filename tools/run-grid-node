@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 
-# $Id: run-grid-node,v 1.3 2000/08/04 20:32:11 decouto Exp $
+# $Id: run-grid-node,v 1.4 2000/08/04 21:01:35 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -10,7 +10,7 @@ $click = "../userlevel/click";
 $click_debug = "cat";
 $click_config_name = "../conf/grid3.click";
 
-$GRID_GW = "18.26.8.1";
+$GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
 $GRID_NET_HEX = "16/121a07"; # 18.26.7.*
 $NBR_TIMEOUT = "2000"; # msecs
