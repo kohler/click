@@ -116,6 +116,7 @@ private:
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
+  int _warmup_period;
 
   IPAddress _gw;
   IPAddress _bcast_ip;

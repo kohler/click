@@ -73,6 +73,7 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _is_gw = false;
+  _warmup_period = 25;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
                     cpIPAddress, "IP address", &_ip,
@@ -83,6 +84,7 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpKeywords,
 		    "GW", cpBool, "Gateway", &_is_gw,
 		    "LS", cpElement, "LinkStat element", &_link_stat,
+		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
 
   if (_srcr && _srcr->cast("SRCR") == 0) 
@@ -115,7 +117,7 @@ ETT::initialize (ErrorHandler *)
 void
 ETT::run_timer ()
 {
-  if (_warmup <= 10) {
+  if (_warmup <= _warmup_period) {
     _warmup++;
   }
   _timer.schedule_after_ms(1000);
@@ -449,7 +451,7 @@ ETT::route_to_string(Vector<IPAddress> s)
 void
 ETT::push(int port, Packet *p_in)
 {
-  if (_warmup < 10) {
+  if (_warmup < _warmup_period) {
     click_chatter("ETT %s: still warming up, dropping packet\n", id().cc());
     p_in->kill();
     return;
