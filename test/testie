@@ -242,7 +242,6 @@ sub read (*;$) {
 sub save_files ($&) {
     my($tt, $filename_subr) = @_;
     foreach my $fn (@{$tt->{'file'}}) {
-	next if $_special_filenames{$fn};
 	my($actual) = $filename_subr->($fn);
 	next if !defined($actual);
 	open OUT, ">$actual" || die "$actual: $!\n";
@@ -265,15 +264,21 @@ sub script_text ($&) {
     }
     my($code) = eval("sub { my(\$t) = \@_; $subbody\$t; }");
 
-    # run subroutine
-    my($t) = '';
+    my($t) = <<EOD;
+testicle_failed () {
+  exit 1
+}
+EOD
+    
     foreach my $i (0..$#{$tt->{'script'}}) {
 	my($ln, $text) = ($tt->{'script_lineno'}[$i], $tt->{'script'}[$i]);
-	$t .= "echo " . ::shquote($tt->lineno($ln)) . " >&6\n";
+	$t .= "echo testicle_lineno:" . ::shquote($tt->lineno($ln)) . " >&2\n";
 	my(@c, @d);
 	_shell_split(@c, @d, $text, 0, $code);
 	die if @c != 1;
-	$t .= $c[0] . "\n";
+	chomp $c[0];
+	next if $c[0] =~ /^\s*$/s;
+	$t .= $c[0] . " || testicle_failed \$?\n";
     }
     
     $t;
@@ -286,6 +291,7 @@ my $dir = "testicle$$";
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
+    return "$dir/$fn" if $fn eq 'stdin' || $fn eq 'stdout' || $fn eq 'stderr';
     $fn = $1 if $fn =~ /^\@(.+)\@$/s;
     "$dir/f_$fn";
 }
@@ -303,8 +309,14 @@ sub run_test (;$) {
 	$tt = Testicle::read(IN, $fn);
 	close IN;
     }
+    
     $tt->save_files(\&script_fn_to_fn);
-    print STDERR $tt->script_text(\&script_fn_to_fn);
+
+    open(SCR, ">$dir/script") || die "$dir/script: $!\n";
+    print SCR $tt->script_text(\&script_fn_to_fn);
+    close SCR;
+
+    
     0;
 }
 
@@ -323,4 +335,4 @@ mkdir $dir || die "cannot create $dir directory: $!\n";
 
 run_test('/tmp/x');
 
-system("/bin/rm -rf $dir");
+system("/bin/rm -rf $dir") if 0;
