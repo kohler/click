@@ -5,13 +5,18 @@
 #
 # click-viz : a program to graphically visualize click scripts.
 #
+# The output of this program is meant to be piped to dot to
+# generate a graph. Example:
+#       click-flatten demo.click | click-viz | dot -Tpng >demo.png
+#
+# Note: dot may be obtained from http://www.graphviz.org
+#
 # Author: Jose Vasconcellos <jvasco@bellatlantic.net>
 # Copyright (C) 2002 Jose Vasconcellos
 #
 
 import sys
 import re
-from string import *
 
 verbose = 0
 name = "stdin"
@@ -19,8 +24,8 @@ edict = {}
 
 
 class token:
-    def __init__(self, file):
-        self.script = file.read(1000000)
+    def __init__(self, s):
+        self.script = s
         self.idx = 0
 
         self.pat = re.compile(r"""
@@ -51,13 +56,20 @@ class token:
         return m
 
 
-#read the script
-tstream = token(sys.stdin)
+# read the script
+if len(sys.argv) == 2:
+    s = file(sys.argv[1]).read()
+else:
+    s = sys.stdin.read()
+
+# tokenize it
+tstream = token(s)
   
 print "digraph %s {" % name
 print "node [shape=record,height=.1]"
 print "edge [arrowhead=normal,arrowtail=dot]"
-#print "edge [arrowhead=normal,arrowtail=dot,samehead=true]"
+#print "edge [sametail=true,samehead=true]"
+#print "edge [tailport=s,headport=n]"
 
 while 1:
     m = tstream.gettoken()
@@ -65,11 +77,19 @@ while 1:
         break
     if m.lastgroup != "id":
         print "Syntax error: id expected (%s)" %m.group(m.lastgroup)
-        break;
+        break
     id = m.group(m.lastgroup)
 
     m = tstream.gettoken()
-    if m.lastgroup == "dblcolon":
+    if m.lastgroup == "config":
+        if id != "require":
+            print "Syntax error: invalid statement (%s)" %id
+            break
+        m = tstream.gettoken()
+        if m.lastgroup != "end":
+            print "Syntax error: ';' expected (%s)" %m.group(m.lastgroup)
+            break
+    elif m.lastgroup == "dblcolon":
         m = tstream.gettoken()
         elt = m.group(m.lastgroup)
 
@@ -81,7 +101,7 @@ while 1:
             cfg = ""
         if m.lastgroup != "end":
             print "Syntax error: ';' expected (%s)" %m.group(m.lastgroup)
-            break;
+            break
         edict[id] = [elt, cfg, -1, -1]
     else:
         while m.lastgroup != "end":
@@ -97,7 +117,7 @@ while 1:
             str = '"' + id + '":o' + port
             if m.lastgroup != "conn":
                 print "Syntax error: '->' expected (%s)" %m.group(m.lastgroup)
-                break;
+                break
             str = str + " -> "
             m = tstream.gettoken()
 
@@ -109,7 +129,7 @@ while 1:
 
             if m.lastgroup != "id":
                 print "Syntax error: id expected (%s)" %m.group(m.lastgroup)
-                break;
+                break
             id =m.group(m.lastgroup)
             if edict[id][2] < int(port):
                 edict[id][2] = int(port)
