@@ -308,9 +308,9 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   for (int i = 0; i < old_nelements; i++)
     if (_back_match[i] >= 0) {
       changed_elements.push_back(i);
-      _body->element(i).type = -1;
+      _body->kill_element(i);
     }
-  _body->free_blank_elements();
+  _body->free_dead_elements();
   
   // add replacement
   // collect new element indices in `changed_elements'
@@ -621,7 +621,7 @@ particular purpose.\n");
 
   // write result
   if (nreplace)
-    r->remove_blank_elements(0);
+    r->remove_dead_elements(0);
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   return 0;

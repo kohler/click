@@ -454,7 +454,6 @@ particular purpose.\n");
 	if (!f)
 	  errh->warning("%s: %s", filename.cc(), strerror(errno));
 	else {
-	  errh->message("%s", filename.cc());
 	  fwrite(aelist[i].data.data(), 1, aelist[i].data.length(), f);
 	  fclose(f);
 	}

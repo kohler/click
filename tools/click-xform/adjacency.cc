@@ -31,10 +31,7 @@ AdjacencyMatrix::~AdjacencyMatrix()
 static inline unsigned
 type_indicator(int t)
 {
-  return (1U << (t % 8))
-    | (1U << (8 + ((t >> 3) % 8)))
-    | (1U << (16 + ((t >> 6) % 8)))
-    | (1U << (24 + ((t >> 9) % 8)));
+  return t;
 }
 
 static inline unsigned
@@ -84,8 +81,8 @@ AdjacencyMatrix::update(RouterT *r, const Vector<int> &changed_eindexes)
 {
   int cap = _cap;
   if (r->nelements() > (1<<cap)
-      || r->nelements() >= r->real_element_count() + 48) {
-    r->remove_blank_elements();
+      || r->nelements() >= r->real_element_count() + 500) {
+    r->remove_dead_elements();
     init(r);
     return;
   }
@@ -170,15 +167,17 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
 
     while (rover < input_n) {
-      match[match_idx] = rover;
-    
       // S_{k,k}(input) =? S_{k,n}(P) * M * (S_{k,n}(P))^T
+      // first check the diagonal (where element type)
+      if (pat_x[ (match_idx<<pat_cap) + match_idx ]
+	  != input_x[ (rover<<input_cap) + rover ])
+	goto failure;
       // test only the new border
-      for (int i = 0; i <= match_idx; i++) {
+      for (int i = 0; i < match_idx; i++) {
 	int m = match[i];
 	if (m >= 0) {
 	  unsigned px = pat_x[ (i<<pat_cap) + match_idx ];
-	  unsigned ix = input_x[ (m<<input_cap) + match[match_idx] ];
+	  unsigned ix = input_x[ (m<<input_cap) + rover ];
 	  if ((px & ix) != px)
 	    goto failure;
 	}
@@ -187,7 +186,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
 	int m = match[j];
 	if (m >= 0) {
 	  unsigned px = pat_x[ (match_idx<<pat_cap) + j ];
-	  unsigned ix = input_x[ (match[match_idx]<<input_cap) + m ];
+	  unsigned ix = input_x[ (rover<<input_cap) + m ];
 	  if ((px & ix) != px)
 	    goto failure;
 	}
@@ -198,6 +197,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
     
     if (rover < input_n) {
+      match[match_idx] = rover;
       match_idx++;
       direction = 1;
     } else {
@@ -216,6 +216,7 @@ bool
 check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
 			   const Vector<int> &match)
 {
+  // check connections
   const Vector<Hookup> &hf = pat->hookup_from();
   const Vector<Hookup> &ht = pat->hookup_to();
   int nh = hf.size();

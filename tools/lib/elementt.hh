@@ -20,6 +20,11 @@ struct ElementT {
 
   ElementT();
   ElementT(const String &, int, const String &, const String & = String());
+
+  bool live() const			{ return type >= 0; }
+  bool dead() const			{ return type < 0; }
+
+  void kill()				{ type = -1; }
   
 };
 

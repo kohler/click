@@ -77,7 +77,8 @@ void
 RouterT::check() const
 {
   int ne = nelements();
-  int nh = _hookup_from.size();
+  int nh = nhookup();
+  int nt = ntypes();
   
   // check basic sizes
   assert(_element_type_names.size() == _element_classes.size());
@@ -92,19 +93,28 @@ RouterT::check() const
     String key; int value;
     while (_element_name_map.each(i, key, value))
       if (value >= 0)
-	assert(value < ne && _elements[value].name == key && _elements[value].type >= 0);
+	assert(value < ne && _elements[value].name == key && _elements[value].live());
+  }
+
+  // check elements
+  for (int i = 0; i < ne; i++) {
+    const ElementT &e = _elements[i];
+    assert(e.dead() || (e.type >= 0 && e.type < nt));
+    if (e.tunnel_input >= 0)
+      assert(e.tunnel_input < ne && _elements[e.tunnel_input].tunnel_output == i);
+    if (e.tunnel_output >= 0)
+      assert(e.tunnel_output < ne && _elements[e.tunnel_output].tunnel_input == i);
   }
 
   // check hookup
   for (int i = 0; i < nh; i++)
-    if (_hookup_from[i].idx >= 0
-	&& !has_connection(_hookup_from[i], _hookup_to[i])) {
+    if (hookup_live(i) && !has_connection(_hookup_from[i], _hookup_to[i])) {
       assert(0);
     }
 
   // check hookup next pointers
   for (int i = 0; i < ne; i++)
-    if (_elements[i].type >= 0) {
+    if (elive(i)) {
       int j = _hookup_first[i].from;
       while (j >= 0) {
 	assert(j < _hookup_from.size());
@@ -114,7 +124,7 @@ RouterT::check() const
       j = _hookup_first[i].to;
       while (j >= 0) {
 	assert(j < _hookup_to.size());
-	assert(_hookup_to[j].idx == i && _hookup_from[j].idx >= 0);
+	assert(_hookup_to[j].idx == i && hookup_live(j));
 	j = _hookup_next[j].to;
       }
     }
@@ -234,7 +244,7 @@ void
 RouterT::change_ename(int ei, const String &new_name)
 {
   ElementT &e = _elements[ei];
-  if (e.type >= 0) {
+  if (e.live()) {
     if (_element_name_map[e.name] == ei)
       _element_name_map.insert(e.name, -1);
     e.name = new_name;
@@ -277,7 +287,7 @@ RouterT::unify_type_indexes(const RouterT *r)
 
   // fix tindexes
   for (int i = 0; i < nelements(); i++)
-    if (element(i).type >= 0)
+    if (element(i).live())
       element(i).type = new_tidx[ element(i).type ];
   
   return 0;
@@ -321,7 +331,7 @@ RouterT::compact_connections()
   Vector<int> new_numbers(nh, -1);
   int last = nh;
   for (int i = 0; i < last; i++)
-    if (_hookup_from[i].idx >= 0)
+    if (hookup_live(i))
       new_numbers[i] = i;
     else {
       for (last--; last > i && _hookup_from[last].idx < 0; last--)
@@ -389,7 +399,7 @@ RouterT::prev_connection_to(int e, int h) const
 void
 RouterT::kill_connection(int i)
 {
-  if (_hookup_from[i].idx >= 0) {
+  if (hookup_live(i)) {
     Hookup &from = _hookup_from[i], &to = _hookup_to[i];
     Pair &next = _hookup_next[i];
 
@@ -530,17 +540,42 @@ RouterT::count_ports(Vector<int> &inputs, Vector<int> &outputs) const
   }
 }
 
-bool
-RouterT::insert_before(int eidx, const Hookup &h)
+int
+RouterT::ninputs(int e) const
 {
-  Hookup inserter(eidx, 0);
+  int n = 0;
+  int i = _hookup_first[e].to;
+  while (i >= 0) {
+    if (_hookup_to[i].port >= n)
+      n = _hookup_to[i].port + 1;
+    i = _hookup_next[i].to;
+  }
+  return n;
+}
+
+int
+RouterT::noutputs(int e) const
+{
+  int n = 0;
+  int i = _hookup_first[e].from;
+  while (i >= 0) {
+    if (_hookup_from[i].port >= n)
+      n = _hookup_from[i].port + 1;
+    i = _hookup_next[i].from;
+  }
+  return n;
+}
+
+bool
+RouterT::insert_before(const Hookup &inserter, const Hookup &h)
+{
   if (!add_connection(inserter, h))
     return false;
   
   int i = _hookup_first[h.idx].to;
   while (i >= 0) {
     int next = _hookup_next[i].to;
-    if (_hookup_to[i] == h && _hookup_from[i] != inserter)
+    if (_hookup_to[i] == h && hookup_live(i) && _hookup_from[i] != inserter)
       change_connection_to(i, inserter);
     i = next;
   }
@@ -548,9 +583,8 @@ RouterT::insert_before(int eidx, const Hookup &h)
 }
 
 bool
-RouterT::insert_after(int eidx, const Hookup &h)
+RouterT::insert_after(const Hookup &inserter, const Hookup &h)
 {
-  Hookup inserter(eidx, 0);
   if (!add_connection(h, inserter))
     return false;
   
@@ -710,16 +744,15 @@ RouterT::finish_remove_elements(Vector<int> &new_eindex, ErrorHandler *errh)
 }
 
 void
-RouterT::remove_blank_elements(ErrorHandler *errh = 0)
+RouterT::remove_dead_elements(ErrorHandler *errh = 0)
 {
   int nelements = _elements.size();
 
   // mark saved findexes
-  Vector<int> new_eindex(nelements, -1);
-  int nftype = _element_classes.size();
+  Vector<int> new_eindex(nelements, 0);
   for (int i = 0; i < nelements; i++)
-    if (_elements[i].type >= 0 && _elements[i].type < nftype)
-      new_eindex[i] = 0;
+    if (_elements[i].dead())
+      new_eindex[i] = -1;
 
   finish_remove_elements(new_eindex, errh);
 }
@@ -761,16 +794,15 @@ RouterT::free_element(int e)
 }
 
 void
-RouterT::free_blank_elements()
+RouterT::free_dead_elements()
 {
   int nelements = _elements.size();
 
   // mark saved findexes
-  Vector<int> new_eindex(nelements, -1);
-  int nftype = _element_classes.size();
+  Vector<int> new_eindex(nelements, 0);
   for (int i = 0; i < nelements; i++)
-    if (_elements[i].type >= 0 && _elements[i].type < nftype)
-      new_eindex[i] = 0;
+    if (_elements[i].dead())
+      new_eindex[i] = -1;
 
   finish_free_elements(new_eindex);
 }
@@ -949,7 +981,7 @@ RouterT::remove_tunnels()
 
   // actually remove tunnel connections and elements
   remove_duplicate_connections();
-  free_blank_elements();
+  free_dead_elements();
 }
 
 
@@ -1104,7 +1136,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
   int nelements = _elements.size();
   RouterScope scope;
   for (int i = 0; i < nelements; i++)
-    if (_elements[i].type >= 0) { // allow for deleted elements
+    if (_elements[i].live()) {	// allow for deleted elements
       ElementClassT *ect = _element_classes[_elements[i].type];
       if (ect)
 	ect->expand_into(this, i, this, scope, errh);
@@ -1150,7 +1182,7 @@ RouterT::flatten(ErrorHandler *errh)
   remove_compound_elements(errh);
   remove_tunnels();
   remove_unresolved_uprefs(errh);
-  remove_blank_elements();
+  remove_dead_elements();
   compact_connections();
   check();
 }
@@ -1233,10 +1265,10 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   old_sa_len = sa.length();
   for (int i = 0; i < nelements; i++) {
     const ElementT &e = _elements[i];
-    if (e.type < 0 || e.type == TUNNEL_TYPE || e.type == UPREF_TYPE)
+    if (e.dead() || e.type == TUNNEL_TYPE || e.type == UPREF_TYPE)
       continue; // skip tunnels and uprefs
     sa << indent << e.name << " :: ";
-    if (e.type >= 0 && e.type < nelemtype)
+    if (e.type < nelemtype)
       sa << _element_type_names[e.type];
     else
       sa << "/*BAD_TYPE_" << e.type << "*/";

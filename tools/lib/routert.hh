@@ -77,7 +77,8 @@ class RouterT : public ElementClassT {
   int eindex(const String &s) const	{ return _element_name_map[s]; }
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
-  bool eblank(int ei) const		{ return _elements[ei].type < 0; }
+  bool elive(int ei) const		{ return _elements[ei].live(); }
+  bool edead(int ei) const		{ return _elements[ei].dead(); }
   String ename(int) const;
   String ename_upref(int) const;
   int etype(int) const;
@@ -92,7 +93,7 @@ class RouterT : public ElementClassT {
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
   int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
   void free_element(int);
-  void blank_element(int i)			{ _elements[i].type = -1; }
+  void kill_element(int i)			{ _elements[i].type = -1; }
   void change_ename(int, const String &);
 
   void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector = v; }
@@ -101,6 +102,7 @@ class RouterT : public ElementClassT {
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
   const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
   const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
+  bool hookup_live(int i) const		{ return _hookup_from[i].idx >= 0; }
  
   void add_tunnel(String, String, const String &, ErrorHandler *);
   
@@ -128,9 +130,13 @@ class RouterT : public ElementClassT {
   void find_connection_vector_from(int, Vector<int> &) const;
   void find_connection_vector_to(int, Vector<int> &) const;
   void count_ports(Vector<int> &, Vector<int> &) const;
+  int ninputs(int) const;
+  int noutputs(int) const;
 
-  bool insert_before(int, const Hookup &);
-  bool insert_after(int, const Hookup &);
+  bool insert_before(const Hookup &, const Hookup &);
+  bool insert_after(const Hookup &, const Hookup &);
+  bool insert_before(int e, const Hookup &h)	{ return insert_before(Hookup(e, 0), h); }
+  bool insert_after(int e, const Hookup &h)	{ return insert_after(Hookup(e, 0), h); }
   
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
@@ -141,8 +147,8 @@ class RouterT : public ElementClassT {
   
   void remove_duplicate_connections();
   
-  void free_blank_elements();
-  void remove_blank_elements(ErrorHandler * = 0);
+  void free_dead_elements();
+  void remove_dead_elements(ErrorHandler * = 0);
   
   void remove_compound_elements(ErrorHandler *);
   void remove_tunnels();

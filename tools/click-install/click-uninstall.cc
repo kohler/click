@@ -174,9 +174,12 @@ particular purpose.\n");
     String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
     (void) system(cmdline);
   }
+  //fprintf(stderr, "dead!\n");
   (void) system("/sbin/rmmod click");
+  //fprintf(stderr, "dead!2\n");
   if (access("/proc/click", F_OK) >= 0)
     errh->fatal("could not uninstall Click module");
+  //fprintf(stderr, "dead!3\n");
   
   return 0;
 }

@@ -87,6 +87,9 @@ static Vector<String> router_names;
 static Vector<RouterT *> routers;
 static Vector<Hookup> links_from;
 static Vector<Hookup> links_to;
+static Vector<int> link_id;
+static Vector<Hookup> link_port_from;
+static Vector<Hookup> link_port_to;
 
 static void
 read_router(String next_name, int next_number, const char *filename,
@@ -212,39 +215,79 @@ parse_link(String text, ErrorHandler *errh)
 }
 
 static void
-make_link(int linki, RouterT *combined, ErrorHandler *)
+combine_links()
 {
-  int router1 = links_from[linki].idx, router2 = links_to[linki].idx;
-  int element1 = links_from[linki].port, element2 = links_to[linki].port;
-  String name1 = router_names[router1]
-    + "/" + routers[router1]->ename(element1);
-  String name2 = router_names[router2]
-    + "/" + routers[router2]->ename(element2);
-  String type1 = routers[router1]->etype_name(element1);
-  String type2 = routers[router2]->etype_name(element2);
+  link_id.clear();
+  for (int i = 0; i < links_from.size(); i++)
+    link_id.push_back(i);
+  bool done = false;
+  while (!done) {
+    done = true;
+    for (int i = 1; i < links_from.size(); i++)
+      for (int j = 0; j < i; j++)
+	if ((links_from[i] == links_from[j] || links_to[i] == links_to[j])
+	    && link_id[i] != link_id[j]) {
+	  link_id[i] = link_id[j];
+	  done = false;
+	}
+  }
+}
 
-  // make new configuration string
-  String conf;
-  {
-    Vector<String> words;
-    words.push_back(name1);
-    words.push_back(type1);
-    words.push_back(routers[router1]->econfiguration(element1));
-    words.push_back(name2);
-    words.push_back(type2);
-    words.push_back(routers[router2]->econfiguration(element2));
-    conf = cp_unargvec(words);
+static void
+make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
+	  RouterT *combined)
+{
+  static int linkno = 0;
+  
+  Vector<Hookup> all(from);
+  for (int i = 0; i < to.size(); i++)
+    all.push_back(to[i]);
+
+  Vector<int> combes;
+  Vector<String> words;
+  for (int i = 0; i < all.size(); i++) {
+    int r = all[i].idx, e = all[i].port;
+    String name = router_names[r] + "/" + routers[r]->ename(e);
+    combes.push_back(combined->eindex(name));
+    words.push_back(name);
+    words.push_back(routers[r]->etype_name(e));
+    words.push_back(routers[r]->econfiguration(e));
   }
 
   // add new element
-  int new_type = combined->get_type_index("RouterLink");
+  int link_type = combined->get_type_index("RouterLink");
   int newe = combined->get_eindex
-    ("link" + String(linki + 1), new_type, conf, String());
-  int e1 = combined->eindex(name1), e2 = combined->eindex(name2);
-  combined->insert_before(newe, Hookup(e1, 0));
-  combined->insert_after(newe, Hookup(e2, 0));
-  combined->free_element(e1);
-  combined->free_element(e2);
+    ("link" + String(++linkno), link_type, cp_unargvec(words), String());
+
+  for (int i = 0; i < from.size(); i++) {
+    combined->insert_before(Hookup(newe, i), Hookup(combes[i], 0));
+    combined->free_element(combes[i]);
+  }
+  for (int j = from.size(); j < combes.size(); j++) {
+    combined->insert_after(Hookup(newe, j-from.size()), Hookup(combes[j], 0));
+    combined->free_element(combes[j]);
+  }
+}
+
+static void
+add_links(RouterT *r)
+{
+  Vector<int> done(link_id.size(), 0);
+  for (int i = 0; i < links_from.size(); i++)
+    if (!done[link_id[i]]) {
+      // find all input & output ports
+      Vector<Hookup> from, to;
+      for (int j = 0; j < links_from.size(); j++)
+	if (link_id[j] == link_id[i]) {
+	  if (links_from[j].index_in(from) < 0)
+	    from.push_back(links_from[j]);
+	  if (links_to[j].index_in(to) < 0)
+	    to.push_back(links_to[j]);
+	}
+      // add single link
+      make_link(from, to, r);
+      done[link_id[i]] = 1;
+    }
 }
 
 int
@@ -378,9 +421,8 @@ particular purpose.\n");
   // make links
   if (links_from.size() == 0)
     errh->warning("no links between routers");
-  StringAccum links_sa;
-  for (int i = 0; i < links_from.size(); i++)
-    make_link(i, combined, errh);
+  combine_links();
+  add_links(combined);
   combined->remove_tunnels();
   
   // add elementmap to archive

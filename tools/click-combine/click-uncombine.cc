@@ -93,18 +93,22 @@ remove_links(RouterT *r, ErrorHandler *errh)
   for (int i = 0; i < links.size(); i++) {
     Vector<String> words;
     cp_argvec(r->econfiguration(links[i]), words);
-    String link_name = r->ename(i);
-    if (words.size() != 6)
+    String link_name = r->ename(links[i]);
+    if (words.size() % 3 != 0)
       errh->error("RouterLink `%s' has strange configuration", link_name.cc());
-    else if (r->eindex(words[0]) >= 0)
-      errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), words[0].cc());
-    else if (r->eindex(words[3]) >= 0)
-      errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), words[3].cc());
     else {
-      int e1 = r->get_eindex(words[0], r->get_type_index(words[1]), words[2], String());
-      int e2 = r->get_eindex(words[3], r->get_type_index(words[4]), words[5], String());
-      r->insert_before(e1, Hookup(links[i], 0));
-      r->insert_after(e2, Hookup(links[i], 0));
+      int ninputs = r->ninputs(links[i]);
+      for (int j = 0; j < words.size(); j += 3) {
+	if (r->eindex(words[j]) >= 0)
+	  errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), words[j].cc());
+	else {
+	  int newe = r->get_eindex(words[j], r->get_type_index(words[j+1]), words[j+2], String());
+	  if (j < ninputs)
+	    r->insert_before(newe, Hookup(links[i], j));
+	  else
+	    r->insert_after(newe, Hookup(links[i], j - ninputs));
+	}
+      }
       r->free_element(links[i]);
     }
   }
@@ -208,7 +212,7 @@ particular purpose.\n");
   HashMap<String, int> component_map(-1);
   int link_type = r->type_index("RouterLink");
   for (int i = 0; i < r->nelements(); i++)
-    if (!r->eblank(i)) {
+    if (r->elive(i)) {
       String s = r->ename(i);
       int slash = s.find_left('/');
       if (slash >= 0)
@@ -231,10 +235,10 @@ particular purpose.\n");
   component += "/";
   int clen = component.length();
   for (int i = 0; i < r->nelements(); i++)
-    if (!r->eblank(i)) {
+    if (r->elive(i)) {
       String name = r->ename(i);
       if (name.substring(0, clen) != component)
-	r->blank_element(i);
+	r->kill_element(i);
       else
 	r->change_ename(i, name.substring(clen));
     }

@@ -406,8 +406,8 @@ particular purpose.\n");
     for (int i = 0; i < nelem; i++)
       if (router->etype(i) == align_tindex
 	  && (ninputs[i] == 0 || noutputs[i] == 0))
-	router->element(i).type = -1;
-    router->remove_blank_elements();
+	router->kill_element(i);
+    router->remove_dead_elements();
   }
 
   // make the AlignmentInfo element

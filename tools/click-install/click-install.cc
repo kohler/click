@@ -68,6 +68,41 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
+static bool
+prepare_compile_tmpdir(RouterT *r, String &tmpdir, String &compile_prog,
+		       ErrorHandler *errh)
+{
+  ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
+  
+  // change to temporary directory
+  tmpdir = click_mktmpdir(&cerrh);
+  if (!tmpdir)
+    return false;
+  if (chdir(tmpdir.cc()) < 0)
+    cerrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+
+  // find compile program
+  compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
+  if (!compile_prog)
+    return false;
+
+  // look for .hh files
+  const Vector<ArchiveElement> &archive = r->archive();  
+  for (int i = 0; i < archive.size(); i++)
+    if (archive[i].name.substring(-3) == ".hh") {
+      String filename = archive[i].name;
+      FILE *f = fopen(filename, "w");
+      if (!f)
+	cerrh.warning("%s: %s", filename.cc(), strerror(errno));
+      else {
+	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+	fclose(f);
+      }
+    }
+
+  return true;
+}
+
 static void
 compile_archive_packages(RouterT *r, ErrorHandler *errh)
 {
@@ -89,48 +124,31 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
   
   String tmpdir;
   String click_compile_prog;
-  ErrorHandler *cerrh = 0;
-    
+  
   // check requirements
   int thunk = 0, value; String package;
   while (requirements.each(thunk, package, value))
     if (value > 0 && have_requirements[package] == 1) {
       // have source, but not package; compile it
       
-      if (!cerrh) {
-	// initialize
-	cerrh = new ContextErrorHandler
-	  (errh, "While compiling package `" + package + ".ko':");
-      
-	tmpdir = click_mktmpdir(cerrh);
-	if (!tmpdir) exit(1);
-	if (chdir(tmpdir.cc()) < 0)
-	  cerrh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+      if (!click_compile_prog)
+	if (!prepare_compile_tmpdir(r, tmpdir, click_compile_prog, errh))
+	  exit(1);
 
-	click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, cerrh);
-      }
+      ContextErrorHandler cerrh
+	(errh, "While compiling package `" + package + ".ko':");
 
-      // look for .hh and .cc files
-      String compiler_options;
-      String filename = package + ".hh";
-      int aidx = r->archive_index(filename);
-      if (aidx >= 0) {
-	FILE *f = fopen(filename, "w");
-	if (!f)
-	  cerrh->fatal("%s: %s", filename.cc(), strerror(errno));
-	fwrite(archive[aidx].data.data(), 1, archive[aidx].data.length(), f);
-	fclose(f);
-      }
-
-      filename = package + ".cc";
+      // write .cc file
+      String filename = package + ".cc";
       assert(r->archive_index(filename) >= 0);
       String source_text = r->archive(filename).data;
       FILE *f = fopen(filename, "w");
       if (!f)
-	cerrh->fatal("%s: %s", filename.cc(), strerror(errno));
+	cerrh.fatal("%s: %s", filename.cc(), strerror(errno));
       fwrite(source_text.data(), 1, source_text.length(), f);
       fclose(f);
       // grab compiler options
+      String compiler_options;
       if (source_text.substring(0, 17) == "// click-compile:") {
 	const char *s = source_text.data();
 	int pos = 17;
@@ -146,20 +164,17 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       String compile_command = click_compile_prog + " --target=kernel --package=" + package + ".ko " + compiler_options + filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
-	cerrh->fatal("could not run `%s'", compile_command.cc());
+	cerrh.fatal("could not run `%s'", compile_command.cc());
       else if (compile_retval < 0)
-	cerrh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	cerrh.fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
       else if (compile_retval != 0)
-	cerrh->fatal("`%s' failed", compile_command.cc());
+	cerrh.fatal("`%s' failed", compile_command.cc());
 
       // grab object file and add to archive
       ArchiveElement ae = init_archive_element(package + ".ko", 0600);
-      ae.data = file_string(package + ".ko", cerrh);
+      ae.data = file_string(package + ".ko", &cerrh);
       r->add_archive(ae);
     }
-
-  if (cerrh)
-    delete cerrh;
 }
 
 static bool

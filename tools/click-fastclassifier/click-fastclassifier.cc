@@ -175,14 +175,14 @@ try_remove_classifiers(RouterT *router, Vector<int> &classifiers)
     Vector<Hookup> v;
     router->find_connections_to(Hookup(classifiers[i], 0), v);
     if (v.size() == 0) {
-      router->element(classifiers[i]).type = -1;
+      router->kill_element(classifiers[i]);
       classifiers[i] = classifiers.back();
       classifiers.pop_back();
       i--;
     }
   }
 
-  router->remove_blank_elements();
+  router->remove_dead_elements();
   router->compact_connections();
 }
 
