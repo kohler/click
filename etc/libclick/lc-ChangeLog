@@ -1,3 +1,18 @@
+2001-10-19 Friday 23:23  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in, configure.in: other changes to support
+	Thermometer
+
+2001-10-19 Friday 23:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	libsrc/straccum.cc: add StringAccum::snprintf() function, available
+	at userlevel
+
+2001-10-19 Friday 23:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.cc: nitlet
+
 2001-10-19 Friday 17:17  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/handlercall.hh, include/click/handlercall.hh,

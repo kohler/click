@@ -1,3 +1,31 @@
+2001-10-19 Friday 23:23  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in (1.3), configure.in (1.153),
+	elements/userlevel/thermometer.cc (1.2),
+	etc/libclick/lc-configure.in (1.13): other changes to support
+	Thermometer
+
+2001-10-19 Friday 23:22  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: thermometer.cc (1.1), thermometer.hh (1.1):
+	add new Thermometer element
+
+2001-10-19 Friday 23:22  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: userlevel/fromdump.cc (1.52), userlevel/fromdump.hh
+	(1.30), analysis/fromipsumdump.cc (1.5), analysis/fromipsumdump.hh
+	(1.5): FromDump, FromIPSummaryDump: add filepos and filesize
+	handlers to support Thermometer
+
+2001-10-19 Friday 23:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh (1.14), lib/straccum.cc (1.20): add
+	StringAccum::snprintf() function, available at userlevel
+
+2001-10-19 Friday 23:21  Eddie Kohler <kohler@aciri.org>
+
+	* lib/packet.cc (1.50): nitlet
+
 2001-10-19 Friday 21:22  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: analysis/fromipsumdump.cc (1.4),
