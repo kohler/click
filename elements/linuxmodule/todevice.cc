@@ -320,6 +320,8 @@ ToDevice::tx_intr()
   }
   
 #ifndef RR_SCHED
+
+#ifdef ADJ_TICKETS
   /* adjusting tickets */
 
 #if HAVE_POLLING
@@ -349,12 +351,14 @@ ToDevice::tx_intr()
   else adj = 0;
 
   adj_tickets(adj);
-  reschedule();
+#endif /* ADJ_TICKETS */
   
   _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
-#endif
+  reschedule();
+  
+#endif /* !RR_SCHED */
 }
 
 int

@@ -310,17 +310,30 @@ clickpath_find_file(const String &filename, const char *subdir,
   String s;
   if (path)
     s = path_find_file_2(filename, path, default_path, subdir);
-  if (!s && default_path) {
+  if (!s && !path && default_path) {
     default_path = String();
     s = path_find_file_2(filename, was_default_path, default_path, 0);
   }
   if (!s && subdir
-      && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0)
-      && (path = getenv("PATH")))
-    s = path_find_file_2(filename, path, default_path, 0);
+      && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
+    if (const char *path_variable = getenv("PATH"))
+      s = path_find_file_2(filename, path_variable, default_path, 0);
   if (!s && errh) {
-    errh->message("cannot find file `%s'", String(filename).cc());
-    errh->fatal("in CLICKPATH or `%s'", was_default_path.cc());
+    // three error messages for three different situations:
+    if (default_path) {
+      // CLICKPATH set, left no opportunity to use default path
+      errh->message("cannot find file `%s'", String(filename).cc());
+      errh->fatal("in CLICKPATH `%s'", path);
+    } else if (!path) {
+      // CLICKPATH not set
+      errh->message("cannot find file `%s'", String(filename).cc());
+      errh->fatal("in installed location `%s'", was_default_path.cc());
+      errh->fatal("(try setting the CLICKPATH environment variable)");
+    } else {
+      // CLICKPATH set, left opportunity to use default pathb
+      errh->message("cannot find file `%s'", String(filename).cc());
+      errh->fatal("in CLICKPATH or `%s'", was_default_path.cc());
+    }
   }
   return s;
 }

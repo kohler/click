@@ -151,6 +151,8 @@ PollDevice::run_scheduled()
   /* need to have this somewhere */
   /* _dev->tx_clean(_dev); */
 
+#ifdef BATCH_PKT_PROC
+
 #if DEV_KEEP_STATS
   unsigned high;
   unsigned low00, low01, low10, low11;
@@ -224,7 +226,39 @@ PollDevice::run_scheduled()
   }
 #endif
 
+#else  /* BATCH_PKT_PROC */
+ 
+  int i=1;
+  got = 0;
+  while(i > 0 && got < POLLDEV_MAX_PKTS_PER_RUN) {
+    i = 1;
+    skb_list = _dev->rx_poll(_dev, &i);
+    got += i;
+    if (i > 0) {
+      skb = skb_list;
+      
+      assert(skb);
+      assert(skb->data - skb->head >= 14);
+      assert(skb->mac.raw == skb->data - 14);
+      assert(skb_shared(skb) == 0);
+
+      /* Retrieve the ether header. */
+      skb_push(skb, 14);
+
+      Packet *p = Packet::make(skb);
+      if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
+        p->set_mac_broadcast_anno(1);
+  
+      output(0).push(p);
+    }
+  }
+  _dev->rx_refill(_dev);
+
+#endif /* !BATCH_PKT_PROC */
+
 #ifndef RR_SCHED
+
+#ifdef ADJ_TICKETS
   /* adjusting tickets */
   int adj = tickets()/4;
   if (adj<2) adj=2;
@@ -239,10 +273,12 @@ PollDevice::run_scheduled()
   else adj=0;
 
   adj_tickets(adj);
-  reschedule();
+#endif
 
   _last_rx = got;
-#endif
+  reschedule();
+
+#endif /* !RR_SCHED */
 
 #endif /* HAVE_POLLING */
 }
