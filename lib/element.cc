@@ -689,14 +689,14 @@ read_task_thread_preference(Element *, void *thunk)
 #endif
 
 void
-Element::add_task_handlers(Task *task, bool = false)
+Element::add_task_handlers(Task *task, const String &prefix)
 {
 #ifndef RR_SCHED
-  add_read_handler("tickets", read_task_tickets, task);
+  add_read_handler(prefix + "tickets", read_task_tickets, task);
 #endif
-  add_read_handler("scheduled", read_task_scheduled, task);
+  add_read_handler(prefix + "scheduled", read_task_scheduled, task);
 #if __MTCLICK__
-  add_read_handler("thread_preference", read_task_thread_preference, task);
+  add_read_handler(prefix + "thread_preference", read_task_thread_preference, task);
 #endif
 }
 

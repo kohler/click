@@ -104,14 +104,14 @@ class Element { public:
   void set_configuration_argument(int, const String &);
 
   // HANDLERS
+  virtual void add_handlers();
+  
   void add_read_handler(const String &, ReadHandler, void *);
   void add_write_handler(const String &, WriteHandler, void *);
-  void add_default_handlers(bool allow_write_config);
-  void add_task_handlers(Task *, bool allow_write = false);
-  virtual void add_handlers();
+  void add_task_handlers(Task *, const String &prefix = String());
   static String configuration_read_handler(Element *, void *);
-  static int reconfigure_write_handler(const String &, Element *, void *,
-				       ErrorHandler *);
+  static int reconfigure_write_handler(const String &, Element *, void *, ErrorHandler *);
+  void add_default_handlers(bool writable_config);
 
   virtual int llrpc(unsigned command, void *arg);
   virtual int local_llrpc(unsigned command, void *arg);
