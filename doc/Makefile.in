@@ -87,7 +87,7 @@ click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
 
 $(srcdir)/testie.1: $(top_srcdir)/test/testie
-	pod2man $(top_srcdir)/test/testie > $(srcdir)/testie.1
+	pod2man -d '' -c '' $(top_srcdir)/test/testie > $(srcdir)/testie.1
 
 always:
 	@:
