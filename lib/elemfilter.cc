@@ -36,7 +36,7 @@ CastElementFilter::CastElementFilter(const String &what)
 }
 
 bool
-CastElementFilter::match(Element *e, int)
+CastElementFilter::check_match(Element *e, int)
 {
     return e->cast(_what) != 0;
 }
@@ -48,7 +48,7 @@ InputProcessingElementFilter::InputProcessingElementFilter(bool p)
 }
 
 bool
-InputProcessingElementFilter::match(Element *e, int port)
+InputProcessingElementFilter::check_match(Element *e, int port)
 {
     return (port >= 0 && e->input_is_pull(port) != _push);
 }
@@ -60,14 +60,14 @@ OutputProcessingElementFilter::OutputProcessingElementFilter(bool p)
 }
 
 bool
-OutputProcessingElementFilter::match(Element *e, int port)
+OutputProcessingElementFilter::check_match(Element *e, int port)
 {
     return (port >= 0 && e->output_is_push(port) == _push);
 }
 
 
 bool
-DisjunctionElementFilter::match(Element *e, int port)
+DisjunctionElementFilter::check_match(Element *e, int port)
 {
     for (int i = 0; i < _filters.size(); i++)
 	if (_filters[i]->match(e, port))

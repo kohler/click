@@ -5,19 +5,26 @@
 
 class ElementFilter { public:
 
-    ElementFilter()				{ }
-    virtual ~ElementFilter()			{ }
+    ElementFilter()			: _match_count(0) { }
+    virtual ~ElementFilter()		{ }
 
-    virtual bool match(Element *e, int port);
+    bool match(Element *e, int port);
+    virtual bool check_match(Element *e, int port);
+
+    int match_count() const		{ return _match_count; }
 
     void filter(Vector<Element *> &);
+
+  private:
+
+    int _match_count;
 
 };
 
 class CastElementFilter : public ElementFilter { public:
 
     CastElementFilter(const String &);
-    bool match(Element *, int);
+    bool check_match(Element *, int);
 
   private:
 
@@ -28,7 +35,7 @@ class CastElementFilter : public ElementFilter { public:
 class InputProcessingElementFilter : public ElementFilter { public:
 
     InputProcessingElementFilter(bool push);
-    bool match(Element *, int);
+    bool check_match(Element *, int);
 
   private:
 
@@ -39,7 +46,7 @@ class InputProcessingElementFilter : public ElementFilter { public:
 class OutputProcessingElementFilter : public ElementFilter { public:
 
     OutputProcessingElementFilter(bool push);
-    bool match(Element *, int);
+    bool check_match(Element *, int);
 
   private:
 
@@ -51,7 +58,7 @@ class DisjunctionElementFilter : public ElementFilter { public:
 
     DisjunctionElementFilter()		{ }
     void add(ElementFilter *f)		{ _filters.push_back(f); }
-    bool match(Element *, int);
+    bool check_match(Element *, int);
 
   private:
 
@@ -61,7 +68,16 @@ class DisjunctionElementFilter : public ElementFilter { public:
 
 
 inline bool
-ElementFilter::match(Element *, int)
+ElementFilter::match(Element *e, int port)
+{
+    bool m = check_match(e, port);
+    if (m)
+	_match_count++;
+    return m;
+}
+
+inline bool
+ElementFilter::check_match(Element *, int)
 {
     return false;
 }
