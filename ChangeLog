@@ -1,3 +1,21 @@
+2002-05-31 Friday 16:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.6), dsdvroutetable.hh (1.7):
+	cannot have singleton element object of class; instead, have
+	singleton *initialized* element object.  this requirement should be
+	eliminated
+
+2002-05-31 Friday 16:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: lookupgeogridroute.cc (1.24),
+	lookupgeogridroute.hh (1.10): accept GridGenericRouteTable as arg
+	instead of specific GridRouteTable
+
+2002-05-31 Friday 16:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.57): use new DSDVRouteTable instead of
+	GridRouteTable
+
 2002-05-31 Friday 12:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.5), dsdvroutetable.hh (1.6),
