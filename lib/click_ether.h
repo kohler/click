@@ -32,11 +32,12 @@ struct click_arp6req {
   unsigned short int checksum;
   unsigned int reserved;
   unsigned char arp_tpa[16];
-  unsigned char note[2];
-  unsigned char arp_sha[6];
+  unsigned char option_type;   //option type: 1 (source link-layer add)
+  unsigned char option_length; //option length: 1 (in units of 8 octets)
+  unsigned char arp_sha[6];    //source link-layer address
 };
 
-//define structure of Neighborhood Solitation Validation Message
+//define structure of Neighborhood Solitation Validation Message -reply to multicast neighborhood solitation message
 struct click_arp6resp {
   unsigned char type;
   unsigned char code;
@@ -47,7 +48,26 @@ struct click_arp6resp {
                        // all other bits should be zero
   unsigned char reserved[3];
   unsigned char arp_tpa[16];
+  unsigned char option_type;    //option type: 2 (target link-layer add)
+  unsigned char option_length;  //option length: 1 (in units of 8 octets)    
+  unsigned char arp_tha[6];     //source link-layer address
 };
+
+
+//define structure of Neighborhood Solitation Validation Message - reply to unicast neighborhood solitation message
+struct click_arp6resp2 {
+  unsigned char type;
+  unsigned char code;
+  unsigned short int checksum;
+  unsigned char flags; // bit 1: sender_is_router
+                       // bit 2: solicited
+                       // bit 3: override
+                       // all other bits should be zero
+  unsigned char reserved[3];
+  unsigned char arp_tpa[16];
+};
+
+
 
 /* ARP protocol HARDWARE identifiers. */
 #define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
