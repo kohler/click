@@ -1,3 +1,13 @@
+2005-02-28 Monday 02:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/ratedsource.cc (1.53): spacing
+
+2005-02-28 Monday 02:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/gaprate.hh (1.8): GapRate: don't ALWAYS deny the
+	first update() request; if the request comes with >= 1/2 the period
+	remaining, then allow it (Bart Braem)
+
 2005-02-28 Monday 01:25  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/cpuqueue.cc (1.15),
