@@ -11,6 +11,9 @@
  * =d
  * Pulls packets from input port. queues packet if current timestamp minus
  * packet timestamp is less than DELAY ms. otherwise push packet on output.
+ *
+ * SetTimestamp element can be used to stamp the packet.
+ *
  * =a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue
  */
 
