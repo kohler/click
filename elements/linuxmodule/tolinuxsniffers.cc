@@ -21,6 +21,9 @@ extern "C" {
 #include <linux/netdevice.h>
 }
 
+// unsigned long c0 = 0;
+// unsigned long i0 = 0;
+
 ToLinuxSniffers::ToLinuxSniffers()
 {
   add_input();
@@ -28,6 +31,7 @@ ToLinuxSniffers::ToLinuxSniffers()
 
 ToLinuxSniffers::~ToLinuxSniffers()
 {
+  // click_chatter("%d %d", c0, i0);
 }
 
 int
@@ -59,7 +63,9 @@ ToLinuxSniffers::push(int port, Packet *p)
 {
   struct sk_buff *skb = p->steal_skb();
   if (!skb) return;
-  
+
+  // unsigned long c1 = click_get_cycles();
+
   skb->mac.raw = skb->data;
   skb->protocol = skb->mac.ethernet->h_proto;
   if (_dev) skb->dev = _dev;
@@ -82,6 +88,9 @@ ToLinuxSniffers::push(int port, Packet *p)
   ptype_dispatch(skb, 0xFFFF);	// an unlikely protocol number
   end_bh_atomic();
 #endif
+
+  // c0 += click_get_cycles() - c1;
+  // i0 ++;
 }
 
 ELEMENT_REQUIRES(linuxmodule)

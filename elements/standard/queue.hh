@@ -27,6 +27,7 @@
  */
 
 class Storage {
+ protected:
 
   int _capacity;
   int _head;
