@@ -1,3 +1,8 @@
+2002-05-28 Tuesday 19:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridgenericrt.hh (1.1): oops need this to compile,
+	thanks ed.
+
 2002-05-28 Tuesday 15:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.56), elements/grid/gridroutetable.cc (1.50),
