@@ -313,14 +313,14 @@ void unparse_tcp_opt_binary(StringAccum& sa, const click_tcp *tcph, int mask)
 
 void tcp_register_unparsers()
 {
-    register_parser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb);
-    register_parser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb);
-    register_parser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb);
-    register_parser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb);
-    register_parser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb);
-    register_parser("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
-    register_parser("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
-    register_parser("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
+    register_unparser("tcp_seq", T_TCP_SEQ | B_4, ip_prepare, tcp_extract, num_outa, outb);
+    register_unparser("tcp_ack", T_TCP_ACK | B_4, ip_prepare, tcp_extract, num_outa, outb);
+    register_unparser("tcp_flags", T_TCP_FLAGS | B_1, ip_prepare, tcp_extract, tcp_outa, outb);
+    register_unparser("tcp_window", T_TCP_WINDOW | B_2, ip_prepare, tcp_extract, num_outa, outb);
+    register_unparser("tcp_urp", T_TCP_URP | B_2, ip_prepare, tcp_extract, num_outa, outb);
+    register_unparser("tcp_opt", T_TCP_OPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
+    register_unparser("tcp_ntopt", T_TCP_NTOPT | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
+    register_unparser("tcp_sack", T_TCP_SACK | B_SPECIAL, ip_prepare, tcp_extract, tcp_outa, tcp_outb);
 
     register_synonym("tcp_seqno", "tcp_seq");
     register_synonym("tcp_ackno", "tcp_ack");

@@ -104,15 +104,15 @@ static void anno_outa(const PacketDesc& d, int thunk)
 
 void anno_register_unparsers()
 {
-    register_parser("timestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
-    register_parser("ts_sec", T_TIMESTAMP_SEC | B_4, 0, anno_extract, num_outa, outb);
-    register_parser("ts_usec", T_TIMESTAMP_USEC | B_4, 0, anno_extract, num_outa, outb);
-    register_parser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb);
-    register_parser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
-    register_parser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb);
-    register_parser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb);
-    register_parser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb);
-    register_parser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb);
+    register_unparser("timestamp", T_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
+    register_unparser("ts_sec", T_TIMESTAMP_SEC | B_4, 0, anno_extract, num_outa, outb);
+    register_unparser("ts_usec", T_TIMESTAMP_USEC | B_4, 0, anno_extract, num_outa, outb);
+    register_unparser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb);
+    register_unparser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
+    register_unparser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb);
+    register_unparser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb);
+    register_unparser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb);
+    register_unparser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb);
     
     register_synonym("ts", "timestamp");
     register_synonym("sec", "ts_sec");

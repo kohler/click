@@ -175,7 +175,7 @@ const Field* find_field(const String& name, bool likely_synonyms)
     return 0;
 }
 
-int register_parser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int))
+int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int))
 {
     Field* f = const_cast<Field*>(find_field(name, false));
     if (f) {

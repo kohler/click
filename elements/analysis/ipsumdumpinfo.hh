@@ -49,7 +49,7 @@ struct Field {
 extern const Field null_field;
 const Field* find_field(const String&, bool likely_synonyms = true);
 
-int register_parser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int));
+int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&), bool (*extract)(PacketDesc&, int), void (*outa)(const PacketDesc&, int), void (*outb)(const PacketDesc&, bool, int));
 int register_synonym(const char* name, const char* synonym);
 
 void num_outa(const PacketDesc&, int);
