@@ -141,9 +141,8 @@ if ($ELEMENTS) {
 	    }
 	}
 
-	$v = $x{'requires'};
-	next if !$v;
-
+	next if !($v = $x{'requires'});
+	
 	$ereq{ $x{'docname'} } = $v if $x{'docname'};
 	$ereq{ $x{'name'} } = $v if $x{'name'} && !$x{'docname'};
 	map { $ereq{$_} = $v } split(/\s+/, $x{'provides'}) if $x{'provides'};
