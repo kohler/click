@@ -7,8 +7,7 @@
 /*
 =c
 
-AdaptiveRED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
-AdaptiveRED(I<KEYWORDS>)
+AdaptiveRED(TARGET_Q, MAX_P [, I<KEYWORDS>])
 
 =s dropping
 
@@ -20,7 +19,9 @@ Implements the Adaptive Random Early Detection packet dropping algorithm. This
 algorithm implements Random Early Detection, as by the RED element, plus
 automatic parameter setting.
 
-See RED for a description of AdaptiveRED's keywords and handlers.
+The TARGET_Q argument is the target queue length. RED's MIN_THRESH parameter
+is set to TARGET_Q/2, and MAX_THRESH to 3*TARGET_Q/2. The MAX_P parameter, and
+QUEUES and STABILITY keywords, are as in the RED element.
 
 =a RED */
 
@@ -33,6 +34,8 @@ class AdaptiveRED : public RED { public:
     AdaptiveRED *clone() const			{ return new AdaptiveRED; }
     void *cast(const char *);
 
+    int configure(const Vector<String> &, ErrorHandler *);
+    int live_reconfigure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
 

@@ -19,6 +19,8 @@
 
 #include <click/config.h>
 #include "adaptivered.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 AdaptiveRED::AdaptiveRED()
     : _timer(this)
@@ -38,6 +40,48 @@ AdaptiveRED::cast(const char *n)
 	return (Element *)this;
     else
 	return RED::cast(n);
+}
+
+int
+AdaptiveRED::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+    unsigned target_q, max_p, stability = 4;
+    String queues_string = String();
+    if (cp_va_parse(conf, this, errh,
+		    cpUnsigned, "target queue length", &target_q,
+		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
+		    cpKeywords,
+		    "QUEUES", cpArgument, "relevant queues", &queues_string,
+		    "STABILITY", cpUnsigned, "stability shift", &stability,
+		    0) < 0)
+	return -1;
+    if (target_q < 10)
+	target_q = 10;
+    unsigned min_thresh = target_q / 2;
+    unsigned max_thresh = target_q + min_thresh;
+    return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
+}
+
+int
+AdaptiveRED::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
+{
+    unsigned target_q, max_p, stability = 4;
+    String queues_string = String();
+    if (cp_va_parse(conf, this, errh,
+		    cpUnsigned, "target queue length", &target_q,
+		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
+		    cpKeywords,
+		    "QUEUES", cpArgument, "relevant queues", &queues_string,
+		    "STABILITY", cpUnsigned, "stability shift", &stability,
+		    0) < 0)
+	return -1;
+    if (queues_string)
+	errh->warning("QUEUES argument ignored");
+    if (target_q < 10)
+	target_q = 10;
+    unsigned min_thresh = target_q / 2;
+    unsigned max_thresh = target_q + min_thresh;
+    return finish_configure(min_thresh, max_thresh, max_p, stability, String(), errh);
 }
 
 int

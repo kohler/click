@@ -85,25 +85,10 @@ RED::check_params(unsigned min_thresh, unsigned max_thresh,
 }
 
 int
-RED::configure(const Vector<String> &conf, ErrorHandler *errh)
+RED::finish_configure(unsigned min_thresh, unsigned max_thresh,
+		      unsigned max_p, unsigned stability,
+		      const String &queues_string, ErrorHandler *errh)
 {
-    unsigned min_thresh, max_thresh, max_p, stability = 4;
-    String queues_string = String();
-    if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "min_thresh queue length", &min_thresh,
-		    cpUnsigned, "max_thresh queue length", &max_thresh,
-		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpOptional,
-		    cpArgument, "relevant queues", &queues_string,
-		    cpKeywords,
-		    "MIN_THRESH", cpUnsigned, "min_thresh queue length", &min_thresh,
-		    "MAX_THRESH", cpUnsigned, "max_thresh queue length", &max_thresh,
-		    "MAX_P", cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    "QUEUES", cpArgument, "relevant queues", &queues_string,
-		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    0) < 0)
-	return -1;
-
     if (check_params(min_thresh, max_thresh, max_p, stability, errh) < 0)
 	return -1;
 
@@ -129,6 +114,23 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
+RED::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+    unsigned min_thresh, max_thresh, max_p, stability = 4;
+    String queues_string = String();
+    if (cp_va_parse(conf, this, errh,
+		    cpUnsigned, "min_thresh queue length", &min_thresh,
+		    cpUnsigned, "max_thresh queue length", &max_thresh,
+		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
+		    cpKeywords,
+		    "QUEUES", cpArgument, "relevant queues", &queues_string,
+		    "STABILITY", cpUnsigned, "stability shift", &stability,
+		    0) < 0)
+	return -1;
+    return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
+}
+
+int
 RED::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
 {
     unsigned min_thresh, max_thresh, max_p, stability = 4;
@@ -137,30 +139,14 @@ RED::live_reconfigure(const Vector<String> &conf, ErrorHandler *errh)
 		    cpUnsigned, "min_thresh queue length", &min_thresh,
 		    cpUnsigned, "max_thresh queue length", &max_thresh,
 		    cpUnsignedReal2, "max_p drop probability", 16, &max_p,
-		    cpOptional,
-		    cpArgument, "relevant queues", &queues_string,
 		    cpKeywords,
-		    "MIN_THRESH", cpUnsigned, "min_thresh queue length", &min_thresh,
-		    "MAX_THRESH", cpUnsigned, "max_thresh queue length", &max_thresh,
-		    "MAX_P", cpUnsignedReal2, "max_p drop probability", 16, &max_p,
 		    "QUEUES", cpArgument, "relevant queues", &queues_string,
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
 		    0) < 0)
 	return -1;
-
-    if (check_params(min_thresh, max_thresh, max_p, stability, errh) < 0)
-	return -1;
-
     if (queues_string)
 	errh->warning("QUEUES argument ignored");
-
-    // OK: set variables
-    _min_thresh = min_thresh;
-    _max_thresh = max_thresh;
-    _max_p = max_p;
-    _size.set_stability_shift(stability);
-    set_C1_and_C2();
-    return 0;
+    return finish_configure(min_thresh, max_thresh, max_p, stability, String(), errh);
 }
 
 int

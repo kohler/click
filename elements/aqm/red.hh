@@ -8,8 +8,7 @@ class Storage;
 /*
 =c
 
-RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
-RED(I<KEYWORDS>)
+RED(MIN_THRESH, MAX_THRESH, MAX_P [, I<KEYWORDS>])
 
 =s dropping
 
@@ -21,13 +20,11 @@ Implements the Random Early Detection packet dropping
 algorithm.
 
 A RED element is associated with one or more Storage elements (usually
-Queues). It maintains an average of the sum of the queue lengths, and marks
-packets with a probability proportional to that sum. By default, the Queues
-are found with flow-based router context. If the RED is a push element, it
-uses the nearest downstream Queues; if it is a pull element, it uses the
-nearest upstream Queues. If the QUEUES argument is given, it must be a
-space-separated list of Storage element names; the RED will use those
-elements.
+Queues). It maintains a running average of the sum of the queue lengths, and
+marks packets with a probability proportional to that sum. By default, the
+Queues are found with flow-based router context. If the RED is a push element,
+it uses the nearest downstream Queues; if it is a pull element, it uses the
+nearest upstream Queues.
 
 Marked packets are dropped, or emitted on output 1 if RED has two output
 ports.
@@ -36,9 +33,11 @@ Keyword arguments are:
 
 =over 8
 
-=item MIN_THRESH, MAX_THRESH, MAX_P, QUEUES
+=item QUEUES
 
-These keyword arguments will set the corresponding parameters.
+This argument is a space-separated list of Storage element names. RED will use
+those elements' queue lengths, rather than any elements found via flow-based
+router context.
 
 =item STABILITY
 
@@ -161,6 +160,8 @@ class RED : public Element { public:
     static String read_queues(Element *, void *);
     static String read_parameter(Element *, void *);
 
+    int finish_configure(unsigned min_thresh, unsigned max_thresh, unsigned max_p, unsigned stability, const String &queues, ErrorHandler *errh);
+    
 };
 
 #endif
