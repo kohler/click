@@ -381,6 +381,7 @@ Nat624::simple_action(Packet *p)
 	}
     }
   p->kill();
+  return(0);
 }
 
 

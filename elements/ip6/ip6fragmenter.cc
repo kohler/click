@@ -95,7 +95,7 @@ IP6Fragmenter::optcopy(click_ip6 *ip1, click_ip6 *ip2)
 
 */
 void
-IP6Fragmenter::fragment(Packet *p)
+IP6Fragmenter::fragment(Packet *)
 { }
 
 /*

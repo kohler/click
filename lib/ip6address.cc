@@ -156,13 +156,13 @@ IP6Address::full_s() const
 // a time or 16 bits a time.
 
 unsigned short 
-in6_fast_cksum(struct click_in6_addr *saddr,
-	  struct click_in6_addr *daddr,
-	  unsigned short len,
-	  unsigned short proto,
-	  unsigned short ori_csum,
-	  unsigned char *addr,
-	  unsigned short len2)
+in6_fast_cksum(const struct click_in6_addr *saddr,
+               const struct click_in6_addr *daddr,
+               unsigned short len,
+               unsigned short proto,
+               unsigned short ori_csum,
+               const unsigned char *addr,
+               unsigned short len2)
 { 
 	unsigned short int ulen;
 	unsigned short int uproto;

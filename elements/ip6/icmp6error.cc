@@ -116,7 +116,7 @@ ICMP6Error::valid_source(const IP6Address &aa)
  */
 
 bool
-ICMP6Error::has_route_opt(const click_ip6 *ip)
+ICMP6Error::has_route_opt(const click_ip6 *)
 {
   return(0);
 }

@@ -41,12 +41,12 @@ struct click_ip6 {
 };
 
 
-unsigned short in6_fast_cksum(struct click_in6_addr *saddr,
-			      struct click_in6_addr *daddr,
+unsigned short in6_fast_cksum(const struct click_in6_addr *saddr,
+			      const struct click_in6_addr *daddr,
 			      unsigned short len,
 			      unsigned short proto,
 			      unsigned short ori_csum,
-			      unsigned char *addr,
+			      const unsigned char *addr,
 			      unsigned short len2);
 
 unsigned short in6_cksum(struct click_in6_addr *saddr,
