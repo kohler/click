@@ -1,3 +1,7 @@
+2003-12-13 Saturday 19:31  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh (1.29): add String::data_shared() method
+
 2003-12-10 Wednesday 16:12  Eddie Kohler <kohler@icir.org>
 
 	* include/click/clp.h (1.10), lib/clp.c (1.14): update CLP version
