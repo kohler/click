@@ -106,7 +106,7 @@ Unqueue::read_param(Element *e, void *thunk)
     Unqueue *u = (Unqueue *)e;
     switch ((uintptr_t) thunk) {
       case H_COUNT:
-	return cp_unparse_bool(u->_count) + "\n";
+	return String(u->_count) + "\n";
       case H_ACTIVE:
 	return String(u->_active) + "\n";
       default:
