@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.10 2004/08/04 17:39:28 max Exp $
+# $Id: click-mkclgw.pl,v 1.11 2004/08/05 14:52:42 max Exp $
 #
 # click-mkclgw
 #
@@ -113,19 +113,29 @@ $CLGW::Const::NAPT_PORT_RANGE = "50000-65535";
 $CLGW::Const::TAB_IN = 45;  # formatting constant
 
 %CLGW::Const::PORTMAP = ( "*" => $CLGW::Const::PORT_ALL,
-			  "www" => $CLGW::Const::PORT_HTTP,
-			  "http" => $CLGW::Const::PORT_HTTP,
-			  "ssh" => $CLGW::Const::PORT_SSH,
+
+			  # not ports per-se, but can refer
+			  # to parts of the configuration file,
+			  # in much the same we're using ports
 			  "napt" => $CLGW::Const::PORT_NAPT,
 			  "info" => $CLGW::Const::INFO,
 			  "default" => $CLGW::Const::INFO,
 			  "param" => $CLGW::Const::PARAM,
+			  
+			  # TCP ports/services open 
+			  "www" => $CLGW::Const::PORT_HTTP,
+			  "http" => $CLGW::Const::PORT_HTTP,
+			  "ssh" => $CLGW::Const::PORT_SSH,
 			  "sfs" => $CLGW::Const::PORT_SFS,
-			  "https" => $CLGW::Const::PORT_HTTPS  );
+			  "https" => $CLGW::Const::PORT_HTTPS,
+			  "telnet" => $CLGW::Const::PORT_TELNET,
+			  "ilo_virtual_media" => $CLGW::Const::PORT_ILO_VM );
 
 %CLGW::Const::R_PORTMAP = ( $CLGW::Const::PORT_SSH => "ssh",
 			    $CLGW::Const::PORT_HTTP => "www",
 			    $CLGW::Const::PORT_HTTPS => "https",
+			    $CLGW::Const::PORT_TELNET => "telnet",
+			    $CLGW::Const::POERT_ILO_VM => 17988,
 			    $CLGW::Const::PORT_SFS => 4  );
 
 # 
