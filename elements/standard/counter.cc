@@ -165,6 +165,7 @@ Counter::add_handlers()
   add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
   add_read_handler("rate", read_handler, (void *)H_RATE);
   add_write_handler("reset", write_handler, (void *)H_RESET);
+  add_write_handler("reset_counts", write_handler, (void *)H_RESET);
   add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);
   add_write_handler("byte_count_call", write_handler, (void *)H_BYTE_COUNT_CALL);
 }

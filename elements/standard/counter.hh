@@ -50,9 +50,13 @@ Returns the number of bytes that have passed through since the last reset.
 Returns the recent arrival rate, measured by exponential
 weighted moving average, in packets per second.
 
-=h reset write-only
+=h reset_counts write-only
 
 Resets the counts and rates to zero.
+
+=h reset write-only
+
+Same as 'reset_counts'.
 
 =h count_call write-only
 
