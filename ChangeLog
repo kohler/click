@@ -1,3 +1,8 @@
+2004-07-22 Thursday 19:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/linkfailuredetection.cc (1.9): fix order of
+	arguments to cp_handler_name
+
 2004-07-22 Thursday 11:02  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.7): Comments output generator script
