@@ -1,8 +1,8 @@
 /*
- * switch.{cc,hh} -- element routes packets to one output of several
- * Eddie Kohler
+ * portclassifier.{cc,hh} -- splits packets around a tcp source port number
+ * Alexander Yip
  *
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2002 MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -16,79 +16,62 @@
  */
 
 #include <click/config.h>
-#include "portswitch.hh"
+#include "portclassifier.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/click_tcp.h>
 
-PortSwitch::PortSwitch()
-  : Element(1,2)
+PortClassifier::PortClassifier()
 {
   MOD_INC_USE_COUNT;
+  add_input();
 }
 
-PortSwitch::~PortSwitch()
+PortClassifier::~PortClassifier()
 {
   MOD_DEC_USE_COUNT;
 }
 
-PortSwitch *
-PortSwitch::clone() const
+PortClassifier *
+PortClassifier::clone() const
 {
-  return new PortSwitch;
+  return new PortClassifier;
 }
-/*
-void
-PortSwitch::notify_noutputs(int n)
-{
-  _noutputs = n;
-  set_noutputs(n);
 
+void
+PortClassifier::notify_noutputs(int n)
+{
+  set_noutputs(n);
 }
-*/
+
 int
-PortSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+PortClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-                  cpUnsigned, "breakpoint", &_breakpoint,
+                  cpUnsigned, "base", &_base,
+                  cpUnsigned, "stepping", &_stepping,
 		  0) < 0)
     return -1;
   return 0;
 }
 
 void
-PortSwitch::push(int, Packet *p)
+PortClassifier::push(int, Packet *p)
 {
-#if 0
-  int stepping = 100;
-  int base = 60000;
-
-  unsigned int port=0;
+  int port=0;
   unsigned int sport, dport;
   const click_tcp *tcph= p->tcp_header();
   sport = ntohs(tcph->th_sport);
   dport = ntohs(tcph->th_dport);
 
-  port = sport / stepping - base / stepping;
-  if (port < 0)
-    port = 0;
-  if (port >= _noutputs)
-    port = _noutputs-1;
+  port = sport / _stepping - _base / _stepping;
+  if (port >= noutputs())
+    port = noutputs()-1;
 
   click_chatter("  sport: %d, dport: %d chose: %d", sport, dport, port);
-#endif
-
-  unsigned int sport;
-  const click_tcp *tcph= p->tcp_header();
-  sport = ntohs(tcph->th_sport);
-  
-  if (sport < _breakpoint) 
-    output(0).push(p);
-  else 
-    output(1).push(p);
-
+  output(port).push(p);
   return;
 }
 
-EXPORT_ELEMENT(PortSwitch)
-ELEMENT_MT_SAFE(PortSwitch)
+EXPORT_ELEMENT(PortClassifier)
+ELEMENT_MT_SAFE(PortClassifier)

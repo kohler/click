@@ -28,9 +28,13 @@
 #include <click/element.hh>
 #include <click/vector.hh>
 #include <click/timer.hh>
+#include <click/string.hh>
 
 class RONRouteModular : public Element {
 public:
+  class Policy;
+  class FlowTable;
+  class FlowTableEntry;
 
   RONRouteModular();
   ~RONRouteModular();
@@ -39,27 +43,94 @@ public:
   const char *processing() const		{ return PUSH; }
   RONRouteModular *clone() const;
   
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
+  void notify_ninputs(int);
+  void notify_noutputs(int);
 
   void push(int inport, Packet *p);
-  static void print_time(char* s);
-
-  static int myrandom(int x);
-
 
 protected:
+  FlowTable *_flowtable;
+  Vector<Policy*> _policies;
+  
+  void push_forward_packet(Packet *p);
+  void push_reverse_packet(int inport, Packet *p);
 
   void duplicate_pkt(Packet *p);
-  void send_rst(Packet *p, FlowTableEntry *match, int outport);
+  void send_rst(Packet *p, unsigned long seq, int outport);
+  static int myrandom(int x);
+  static void print_time(char* s);
 
 private:
-
   static void expire_hook(Timer*, void *thunk);  
 };
 
+
+
+class RONRouteModular::Policy{
+    
+protected:
+  RONRouteModular *_parent;
+    
+public:
+  Policy(RONRouteModular *parent) {_parent = parent;}
+  virtual ~Policy() {}
+
+  virtual void initialize(RONRouteModular *){}
+
+  virtual void push_forward_syn(Packet *p){}
+  virtual void push_forward_fin(Packet *p){}
+  virtual void push_forward_rst(Packet *p){}
+  virtual void push_forward_normal(Packet *p){}
+    
+  virtual void push_reverse_synack(int inport, Packet *p){}
+  virtual void push_reverse_fin(Packet *p){}
+  virtual void push_reverse_rst(Packet *p){}
+  virtual void push_reverse_normal(Packet *p){}
+};
+
+class RONRouteModular::FlowTableEntry {
+public:
+  IPAddress src, dst;
+  unsigned short sport, dport; // network order
+  int policy;
+
+  FlowTableEntry(IPAddress s, unsigned short sp,
+		 IPAddress d, unsigned short dp, int p) {
+    src = s; sport = sp;
+    dst = d; dport = dp;
+    policy = p;
+  } 
+  bool match(IPAddress s, unsigned short sp,
+	     IPAddress d, unsigned short dp) {
+    return ((src == s) && (dst == d) && (sport == sp) && (dport == dp));
+  }
+};
+
+class RONRouteModular::FlowTable {
+protected:
+  Vector<FlowTableEntry> _v;
+
+public:
+  FlowTable(){}
+
+  RONRouteModular::FlowTableEntry * 
+  insert(IPAddress src, unsigned short sport,
+	 IPAddress dst, unsigned short dport, int policy);
+  
+  RONRouteModular::FlowTableEntry * 
+  lookup(IPAddress src, unsigned short sport,
+	 IPAddress dst, unsigned short dport);
+  
+  void
+  remove(IPAddress src, unsigned short sport,
+	 IPAddress dst, unsigned short dport);
+  
+};
 #endif
+
 
 
 

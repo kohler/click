@@ -77,6 +77,6 @@ ChangeUID::timer_hook(Timer *, void *thunk)
 {
   ChangeUID *me = (ChangeUID*) thunk;
   setuid(me->_uid);
-  click_chatter("Did it!");
+  click_chatter("Setting UID to %d", me->_uid);
 }
 EXPORT_ELEMENT(ChangeUID)

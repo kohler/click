@@ -1,11 +1,15 @@
-#ifndef PORTSWITCH_HH
-#define PORTSWITCH_HH
+#ifndef PORTCLASSIFIER_HH
+#define PORTCLASSIFIER_HH
 #include <click/element.hh>
 
 /*
 =c
 
-PortSwitch()
+PortClassifier(BASE, STEPPING)
+
+Classifies TCP packets by source port. Port regions are defined starting
+at BASE, each with size STEPPING. All pkts with source port in 
+[BASE, BASE+STEPPING) goes to port 0, etc. 
 
 =s classification
 
@@ -16,23 +20,23 @@ PortSwitch()
 
  */
 
-class PortSwitch : public Element { public:
+class PortClassifier : public Element { public:
 
-  PortSwitch();
-  ~PortSwitch();
+  PortClassifier();
+  ~PortClassifier();
   
-  const char *class_name() const		{ return "PortSwitch"; }
+  const char *class_name() const		{ return "PortClassifier"; }
   const char *processing() const		{ return PUSH; }
   
-  PortSwitch *clone() const;
-  //  void notify_noutputs(int);
+  PortClassifier *clone() const;
+  void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   
  private:
-  int _noutputs;
-  int _breakpoint;
+  unsigned int _noutputs;
+  unsigned int _base, _stepping;
 
 };
 

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "lookupiprouteron.hh"
+#include "policyprobe.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,68 +28,77 @@
 
 #define dprintf if(0)printf
 
-PolicyProbe::PolicyProbe() 
-{
+PolicyProbe::PolicyProbe(RONRouteModular *parent, 
+			 unsigned int delayms, unsigned int probenum ) 
+  : RONRouteModular::Policy(parent)
+{ 
+  
+  
+}
+PolicyProbe::~PolicyProbe(){
 }
 
-PolicyProbe::~PolicyProbe()
-{
+void PolicyProbe::push_forward_syn(Packet *p) {
+  click_chatter("SAW FORWARD PKT");
+  
+}
+void PolicyProbe::push_forward_fin(Packet *p) {
+}
+void PolicyProbe::push_forward_rst(Packet *p) {
+}
+void PolicyProbe::push_forward_normal(Packet *p) {
+}
+void PolicyProbe::push_reverse_synack(int inport, Packet *p) {
+}
+void PolicyProbe::push_reverse_fin(Packet *p) {
+}
+void PolicyProbe::push_reverse_rst(Packet *p) {
+}
+void PolicyProbe::push_reverse_normal(Packet *p) {
+}
+void PolicyProbe::expire_hook(Timer *, void *thunk) {
 }
 
-void 
-PolicyProbe::handle_syn()
-{
+
+
+
+PolicyProbe::FlowTableEntry * 
+PolicyProbe::FlowTable::insert(IPAddress src, unsigned short sport,
+			       IPAddress dst, unsigned short dport, 
+			       int policy) {
+  int i;
+  for(i=_v.size()-1; i>=0; i--)
+    if (_v[i].match(src,sport,dst,dport)) {
+      //_v[i].policy = policy;
+      return &_v[i];
+    }
+  
+  FlowTableEntry e(src, sport, dst, dport, policy);
+  _v.push_back(e);
+  return &_v[_v.size()-1];
+}
+
+PolicyProbe::FlowTableEntry * 
+PolicyProbe::FlowTable::lookup(IPAddress src, unsigned short sport,
+			       IPAddress dst, unsigned short dport) {
+  int i;
+  for(i=_v.size()-1; i>=0; i--)
+    if (_v[i].match(src,sport,dst,dport))
+      return &_v[i];
+
+  return NULL;
 }
 
 void
-PolicyProbe::policy_handle_synack()
-{
+PolicyProbe::FlowTable::remove(IPAddress src, unsigned short sport,
+			       IPAddress dst, unsigned short dport) {
+  int i,j;
+  for(i=_v.size()-1; i>=0; i--)
+    if (_v[i].match(src,sport,dst,dport)) {
+      for(j=i; j<_v.size()-1; j++)
+	_v[j] = _v[j+1];
+      _v.pop_back();
+    }  
 }
-
-void PolicyProbe::push_forward_syn(Packet *p) 
-{
-}
-
-
-void PolicyProbe::push_forward_fin(Packet *p) 
-{
-}
-
-void PolicyProbe::push_forward_rst(Packet *p) 
-{
-}
-
-void PolicyProbe::push_forward_normal(Packet *p) 
-{
-
-}
-
-void PolicyProbe::push_forward_packet(Packet *p) 
-{
-}
-
-void PolicyProbe::push_reverse_synack(unsigned inport, Packet *p) 
-{
-
-}
-void PolicyProbe::push_reverse_fin(Packet *p) 
-{
-}
-void PolicyProbe::push_reverse_rst(Packet *p) 
-{
-}
-void PolicyProbe::push_reverse_normal(Packet *p) 
-{
-}
-
-void PolicyProbe::push_reverse_packet(int inport, Packet *p) 
-{
-}
-
-void PolicyProbe::expire_hook(Timer *, void *thunk) 
-{
-}
-
-
-
+ELEMENT_PROVIDES(PolicyProbe)
 
