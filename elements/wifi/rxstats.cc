@@ -74,7 +74,7 @@ RXStats::simple_action(Packet *p_in)
       DstInfo foo = DstInfo(src);
       _neighbors.insert(src, foo);
       nfo = _neighbors.findp(src);
-      nfo->_rate = rate;
+      nfo->_rate = rate*10;
       nfo->_signal = signal;
       nfo->_noise = noise;
       nfo->_rate_guessed = false;
@@ -86,13 +86,13 @@ RXStats::simple_action(Packet *p_in)
        * is capable of 
        */
       if (signal > 40) {
-	nfo->_rate = 11;	      
+	nfo->_rate = 110;	      
       } else if (signal > 20) {
-	nfo->_rate = 5;
+	nfo->_rate = 50;
       } else if (signal > 10) {
-	nfo->_rate = 2;
+	nfo->_rate = 20;
       } else {
-	nfo->_rate = 1;
+	nfo->_rate = 10;
       }
       nfo->_rate_guessed = true;
     }
