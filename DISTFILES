@@ -9,6 +9,7 @@ README
 
 Makefile.in
 acclick.m4
+aclocal.m4
 click-buildtool
 click-compile.in
 click-mkelemmap
