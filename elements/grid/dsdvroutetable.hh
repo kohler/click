@@ -108,7 +108,12 @@ CLICK_DECLS
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
  * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
 
+// if 1, don't use routes until it's also okay to advertise them
 #define USE_OLD_SEQ 1
+
+// if 1, use new routes even if it's not okay to advertise them, as
+// long as they have a better metric
+#define USE_GOOD_NEW_ROUTES 1
 
 class GridGatewayInfo;
 class LinkStat;

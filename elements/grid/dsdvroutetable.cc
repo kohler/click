@@ -85,10 +85,18 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 
   RTEntry *real = _rtes.findp(dst);
   RTEntry *old = _old_rtes.findp(dst);
+#if USE_GOOD_NEW_ROUTES
+  return
+    (real && real->good() && 
+     old && old->good() &&
+     (real->advertise_ok_jiffies > jiff ||
+      metric_preferable(*real, *old)));
+#else
   return
     (real && real->good() &&             // if real route is bad, don't use good but old route
      old && old->good() &&               // if old route is bad, don't use it
      real->advertise_ok_jiffies > jiff); // if ok to advertise real route, don't use old route
+#endif
 }
 #endif
 
