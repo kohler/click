@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /bin/sh
 
 # make-linux-patch
 
@@ -7,27 +7,34 @@
 #  cd /usr/src/linux
 #  patch -p0 -b < patch-file
 
-# List of files that we modified and that should be patched.
-# Each must be accompanied by a file.orig.
-my @files = (
-             "include/linux/netdevice.h",
-             "include/linux/signal.h",
-             "include/linux/skbuff.h",
-             "include/net/neighbour.h",
-             "net/core/skbuff.c",
-             "net/core/dev.c",
-             "net/sched/sch_generic.c",
-             "net/netsyms.c",
-	     "fs/proc/inode.c",
-	     "drivers/net/eepro100.c",
-	     "drivers/net/tulip.c",
-	     "drivers/net/acenic.c",
-	     "drivers/net/acenic.h"
-             );
-
-$| = 1;
-my $f;
-foreach $f (@files) {
-    print "\nIndex: $f\n";
-    system("diff -u ${f}.orig $f");
+usage () {
+    echo "Usage: make-linux-patch PUREDIR CLICKDIR" 1>&2
+    exit 1
 }
+
+if [ $# -lt 2 ]; then usage; fi
+if [ ! \( -d "$1" -a -d "$2" \) ]; then usage; fi
+
+puredir=`cd "$1" && pwd`
+clickdir=`cd "$2" && pwd`
+
+if grep Click: $puredir/include/linux/skbuff.h >/dev/null 2>&1; then
+    echo "Error: pure directory has Click extensions" 1>&2; usage
+elif [ ! -f $puredir/include/linux/skbuff.h ]; then
+    echo "Error: pure directory doesn't contain Linux source" 1>&2; usage
+fi
+
+if [ ! -f $clickdir/include/linux/skbuff.h ]; then
+    echo "Error: Click directory doesn't contain Linux source" 1>&2; usage
+elif grep Click: $clickdir/include/linux/skbuff.h >/dev/null 2>&1; then
+    :
+else
+    echo "Error: Click directory doesn't contain Linux source" 1>&2; usage
+fi
+
+if [ `expr "$puredir" : "/"` != 1 ]; then
+    echo "Error: pure directory must be absolute" 1>&2; usage
+fi
+
+cd $clickdir
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' $puredir . | grep -v '^Only in \.[/:]'
