@@ -92,11 +92,12 @@ CLICK_ENDDECLS
 extern "C" {
 extern uint32_t click_random_seed;
 extern void srandom(uint32_t);
+#define	RAND_MAX	2147483647
 inline uint32_t
 random()
 {
   click_random_seed = click_random_seed*69069L + 1;
-  return click_random_seed ^ jiffies;
+  return (click_random_seed ^ jiffies) & RAND_MAX;
 }
 }
 #endif
