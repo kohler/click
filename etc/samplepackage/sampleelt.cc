@@ -21,8 +21,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+// ALWAYS INCLUDE clickconfig.h
 #include <clickconfig.h>
-// MUST INCLUDE CLICKPACKAGE.HH
+// ALWAYS INCLUDE clickpackage.hh
 #include <clickpackage.hh>
 #include "sampleelt.hh"
 #include "error.hh"
