@@ -36,42 +36,50 @@ PeekHandlers::~PeekHandlers()
   uninitialize();
 }
 
+void
+PeekHandlers::push_command(Element *e, int hid, int extra)
+{
+  _h_element.push_back(e);
+  _h_hid.push_back(hid);
+  _h_extra.push_back(extra);
+}
+
 int
-PeekHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
+PeekHandlers::configure(const Vector<String> &, ErrorHandler *)
+{
+  return 0;
+}
+
+int
+PeekHandlers::do_configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _h_element.clear();
-  _h_handler.clear();
-  _h_timeout.clear();
+  _h_hid.clear();
+  _h_extra.clear();
   
-  int next_timeout = 0;
   for (int i = 0; i < conf.size(); i++) {
+    Element *e;
+    int extra;
+
     if (!conf[i])
       continue;
-    
-    String first;
-    cp_word(conf[i], &first);
-    int gap;
-    if (cp_milliseconds(first, &gap)) {
-      next_timeout += gap;
+    else if (cp_milliseconds(conf[i], &extra)) {
+      push_command(0, HID_WAIT, extra);
       continue;
-    } else if (first == "quit") {
-      _h_element.push_back(0);
-      _h_handler.push_back("");
-      _h_timeout.push_back(next_timeout);
+    } else if (conf[i] == "quit") {
+      push_command(0, HID_QUIT, 0);
       if (i < conf.size() - 1)
 	errh->warning("arguments after `quit' directive ignored");
       break;
-    } else {
-      int dot = first.find_left('.');
-      if (dot >= 0) {
-	if (Element *e = router()->find(this, first.substring(0, dot), errh)) {
-	  _h_element.push_back(e);
-	  _h_handler.push_back(first.substring(dot + 1));
-	  _h_timeout.push_back(next_timeout);
-	  next_timeout = 0;
-	}
-	continue;
-      }
+    } else if (conf[i] == "loop") {
+      push_command(0, HID_LOOP, 0);
+      if (i < conf.size() - 1)
+	errh->warning("arguments after `loop' directive ignored");
+      break;
+    } else if (conf[i].find_left('.') > 0) {
+      if (cp_handler(conf[i], this, true, false, &e, &extra, errh))
+	push_command(e, extra, 0);
+      continue;
     }
     
     errh->error("argument %d: expected `TIMEOUT' or `ELEMENT.HANDLER'",
@@ -82,12 +90,17 @@ PeekHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-PeekHandlers::initialize(ErrorHandler *)
+PeekHandlers::initialize(ErrorHandler *errh)
 {
+  // configure now, since we have read handlers
+  Vector<String> conf;
+  configuration(conf);
+  if (do_configure(conf, errh) < 0)
+    return -1;
+  
   _pos = 0;
   _timer.initialize(this);
-  if (_h_timeout.size() != 0)
-    _timer.schedule_after_ms(_h_timeout[0] + 1);
+  _timer.schedule_now();
   return 0;
 }
 
@@ -105,35 +118,32 @@ PeekHandlers::timer_hook(Timer *, void *thunk)
   ErrorHandler *errh = ErrorHandler::default_handler();
   Router *router = peek->router();
 
-  int h = peek->_pos;
-  do {
-    Element *he = peek->_h_element[h];
-    String hname = peek->_h_handler[h];
+  int pos = peek->_pos;
+  while (pos < peek->_h_element.size()) {
+    Element *he = peek->_h_element[pos];
+    int hid = peek->_h_hid[pos];
 
-    if (he == 0) {		// `quit' directive
+    if (hid == HID_WAIT) {
+      peek->_timer.schedule_after_ms(peek->_h_extra[pos]);
+      break;
+    } else if (hid == HID_QUIT) {
       router->please_stop_driver();
-      h++;
+      break;
+    } else if (hid == HID_LOOP) {
+      pos = -1;
+      // allow progress even if there is no delay in loop
+      peek->_timer.schedule_now();
       break;
     }
       
-    int i = router->find_handler(he, hname);
-    if (i < 0)
-      errh->error("%s: no handler `%s.%s'", peek->id().cc(), he->id().cc(), hname.cc());
-    else {
-      const Router::Handler &rh = router->handler(i);
-      if (rh.read) {
-	String value = rh.read(he, rh.read_thunk);
-	errh->message("%s.%s:", he->id().cc(), hname.cc());
-	errh->message(value);
-      } else
-	errh->error("%s: no read handler `%s.%s'", peek->id().cc(), he->id().cc(), hname.cc());
-    }
-    h++;
-  } while (h < peek->_h_timeout.size() && peek->_h_timeout[h] == 0);
+    const Router::Handler &rh = router->handler(hid);
+    String value = rh.read(he, rh.read_thunk);
+    errh->message("%s.%s:", he->id().cc(), String(rh.name).cc());
+    errh->message(value);
+    pos++;
+  }
 
-  if (h < peek->_h_timeout.size())
-    peek->_timer.schedule_after_ms(peek->_h_timeout[h]);
-  peek->_pos = h;
+  peek->_pos = pos + 1;
 }
 
 EXPORT_ELEMENT(PeekHandlers)
