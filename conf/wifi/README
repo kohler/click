@@ -2,12 +2,25 @@ If you want to use the scripts and configurations in this directory,
 you probably want to add it to your ${PATH} variable so the 
 scripts work.
 
-I usually run the following to associate with an access point:
 
-sudo click station.click > /tmp/station.log
+DUMPING 802.11 FRAMES (dump.click)
+=====================
+You can run:
+click dump.click
+which will be like running tcpdump with prism headers.
+The cool thing is that you can run this while still running other
+click configurations (like access-point.click or station.click).
+You can also change that file to filter out things (like beacons)
+by editing dump.click
+
+
+ASSOCIATING TO AN ACCESS POINT (station.click)
+=============================
+I do the following to associate with an access point:
+
+click station.click > /tmp/station.log 2>&1 &
 scan.pl
 associate.pl
-
 
 scan.pl will scan all the channels for access points. You can see them
 by running
@@ -21,16 +34,39 @@ point.
 At this point, you can run dhclient or whatever on the "station"
 interface.
 
-----
+
+RUNNING AN ACCESS POINT (access-point.click)
+=======================
 
 
-You can also run
-sudo click dump.click
-which will be like running tcpdump with prism headers.
-The cool thing is that you can run this while still associated to the 
-access point.
-You can also change that file to filter out things (like beacons).
 
 
---john
+RUNNING ROOFNET (gen_config_roofnet.pl)
+===============
+Run the following sequence of commands:
+~/co/click/conf/wifi/gen_config_roofnet.pl > /tmp/roofnet.click
+/jbicket/click/userlevel/click /tmp/roofnet.click > /tmp/roofnet.log 2>&1 &
+sleep 1
+route add default srcr
+
+and this will create a srcr interface that will be the default route.
+
+You can use the read_handler.pl to see what's going on:
+"read_handler.pl srcr/es.bcast_stats" shows me the following:
+
+5.33.224.200 00:02:6f:21:e0:c8 [ 2 60 70 100 ] [ 2 1500 80 100 ] [ 4
+1500 80 100 ] [ 11 1500 70 100 ] [ 12 60 70 100 ] [ 12 1500 70 100 ] [
+18 1500 80 100 ] [ 22 1500 80 100 ] [ 24 1500 80 100 ] [ 36 1500 80 100
+] [ 48 1500 80 50 ] seq 328095612 period 30000 tau 300000 sent 31
+last_rx 1.498260
+
+which shows the neighbors that you see as well as the precent of
+broadcast probes you receive.  The format is:
+ip mac [ bitrate*2 packet_size fwd_delivery_rate rev_delivery_rate]...
+
+You can also run "read_handler.pl srcr/gw.gateway-stats" which shows
+5.33.224.200 3.297344 1262
+
+The format is: ip last_rx metric
+
 
