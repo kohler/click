@@ -62,6 +62,7 @@ install-local: elementmap.xml click-buildtool click-compile
 	$(INSTALL_IF_CHANGED) click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
+	$(INSTALL_IF_CHANGED) $(top_srcdir)/test/testie $(bindir)/testie
 	$(mkinstalldirs) $(clickdatadir)
 	$(INSTALL_DATA) elementmap.xml $(clickdatadir)/elementmap.xml
 	(cd $(top_srcdir); pwd) > $(clickdatadir)/srcdir
