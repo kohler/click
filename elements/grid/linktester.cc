@@ -24,6 +24,8 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include "timeutils.hh"
+#include <unistd.h>
+
 CLICK_DECLS
 
 LinkTester::LinkTester() :

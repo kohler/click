@@ -27,6 +27,7 @@
 #include "grid.hh"
 #include <math.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 #define ANLLFAIL
 #define ANCACHE
