@@ -6,20 +6,20 @@
  * IPOutputCrud(paint color, interface IP address, MTU)
  * =d
  * Effectively a compound element, equivalent to
+ *
  * = elementclass IPOutputCrud(color, ip, mtu) {
  * =   in[0] -> DropBroadcasts
  * =         -> c::CheckPaint(color)
  * =         -> g::IPGWOptions(ip)
  * =         -> FixIPSrc(ip)
  * =         -> d::DecIPTTL
- * =         -> f::SendToOutput1IfLongerThan(mtu)
+ * =         -> l::CheckLength(mtu)
  * =         -> [0]out;
  * =   c[1] -> [1]out;
  * =   g[1] -> [2]out;
  * =   d[1] -> [3]out;
- * =   f[1] -> [4]out;
+ * =   l[1] -> [4]out;
  * = }
- * </pre>
  * =a DropBroadcasts
  * =a CheckPaint
  * =a IPGWOptions

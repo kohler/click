@@ -299,7 +299,7 @@ Element::Connection::pull() const
 inline void
 Element::checked_push_output(int o, Packet *p) const
 {
-  if ((unsigned)o < (unsigned)noutputs() && _outputs[o])
+  if ((unsigned)o < (unsigned)noutputs())
     _outputs[o].push(p);
   else
     p->kill();

@@ -48,7 +48,7 @@ DecIPTTL::processing_vector(Vector<int> &in_v, int in_offset,
 DecIPTTL *
 DecIPTTL::clone() const
 {
-  return new DecIPTTL();
+  return new DecIPTTL;
 }
 
 inline Packet *
