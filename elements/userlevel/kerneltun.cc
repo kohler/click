@@ -38,7 +38,7 @@
 #elif defined(__APPLE__)
 # define KERNELTUN_OSX 1 
 // assume tun driver installed from http://chrisp.de/en/projects/tunnel.html
-// this driver doesn't produce or expect packets with an address fmaily prepended
+// this driver doesn't produce or expect packets with an address family prepended
 #endif
 
 #if HAVE_NET_IF_TUN_H
@@ -352,8 +352,12 @@ KernelTun::selected(int fd)
 	    ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
 	} else { /* _type == LINUX_ETHERTAP */
 	    // 2-byte padding followed by a mostly-useless Ethernet header
-	    p->pull(2);
-	    ok = fake_pcap_force_ip(p, FAKE_DLT_EN10MB);
+	    uint16_t etype = *(uint16_t *)(p->data() + 14);
+	    p->pull(16);
+	    if (etype != htons(ETHERTYPE_IP) && etype != htons(ETHERTYPE_IP6))
+		checked_output_push(1, p->clone());
+	    else
+		ok = fake_pcap_force_ip(p, FAKE_DLT_RAW);
 	}
 
 	if (ok) {
