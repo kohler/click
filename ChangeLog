@@ -1,3 +1,13 @@
+2002-07-22 Monday 20:13  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/: settcpchecksum.hh (1.4), setudpchecksum.cc
+	(1.1), setudpchecksum.hh (1.1), setudpchecksum.hh (1.2): add
+	SetUDPChecksum element, requested by Filip Henderieckx
+
+2002-07-22 Monday 18:56  Eddie Kohler <kohler@icir.org>
+
+	* doc/: click.texi (1.46), click.texi (1.47): doc updates
+
 2002-07-22 Monday 14:16  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.texi (1.45): doc updates
