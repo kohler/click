@@ -1,3 +1,15 @@
+2003-03-10 Monday 15:46  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.47): fix relational expressions (found
+	and fixed by the gorgeous and amazing Anne Dudfield,
+	anne@mazunetworks.com)
+
+2003-03-10 Monday 15:32  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.46): fix relational expressions (found
+	and fixed by the gorgeous and amazing Anne Dudfield,
+	anne@mazunetworks.com)
+
 2003-03-09 Sunday 20:03  Eddie Kohler <kohler@icir.org>
 
 	* NEWS (1.146): NEWS update
