@@ -38,12 +38,14 @@ class Packet { public:
   unsigned length() const		{ return skb()->len; }
   unsigned headroom() const		{ return skb()->data - skb()->head; }
   unsigned tailroom() const		{ return skb()->end - skb()->tail; }
+  const unsigned char *total_data() const { return skb()->head; }
   unsigned total_length() const		{ return skb()->end - skb()->head; }
 #else
   const unsigned char *data() const	{ return _data; }
   unsigned length() const		{ return _tail - _data; }
   unsigned headroom() const		{ return _data - _head; }
   unsigned tailroom() const		{ return _end - _tail; }
+  const unsigned char *total_data() const { return _head; }
   unsigned total_length() const		{ return _end - _head; }
 #endif
   
@@ -55,20 +57,26 @@ class Packet { public:
 
   // HEADER ANNOTATIONS
 #ifdef __KERNEL__
+  const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
+  const unsigned char *network_header() const	{ return _nh.raw; }
   const click_ip *ip_header() const		{ return _nh.iph; }
   const click_ip6 *ip6_header() const           { return _nh.ip6h; }
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
-  void set_ip_header(const click_ip *, unsigned);
+  unsigned network_header_offset() const;
+  unsigned network_header_length() const;
   unsigned ip_header_offset() const;
   unsigned ip_header_length() const;
+  unsigned ip6_header_length() const;
+
+  void set_network_header(const unsigned char *, unsigned);
+  void set_ip_header(const click_ip *, unsigned);
   void set_ip6_header(const click_ip6 *);
   void set_ip6_header(const click_ip6 *, unsigned);
-  unsigned ip6_header_length() const;
   
   unsigned transport_header_offset() const;
 
@@ -91,7 +99,7 @@ class Packet { public:
   };
 
   void copy_annotations(Packet *);
-  void zero_annotations();
+  void clear_annotations();
   
   IPAddress dst_ip_anno() const;
   void set_dst_ip_anno(IPAddress a);
@@ -186,6 +194,7 @@ class Packet { public:
 
   WritablePacket *uniqueify_copy();
   WritablePacket *expensive_push(unsigned int nbytes);
+  WritablePacket *expensive_put(unsigned int nbytes);
   
   friend class WritablePacket;
 
@@ -196,11 +205,13 @@ class WritablePacket : public Packet { public:
   
 #ifdef __KERNEL__
   unsigned char *data() const			{ return skb()->data; }
+  unsigned char *network_header() const		{ return skb()->nh.raw; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   unsigned char *data() const			{ return _data; }
+  unsigned char *network_header() const		{ return _nh.raw; }
   click_ip *ip_header() const			{ return _nh.iph; }
   click_ip6 *ip6_header() const                 { return _nh.ip6h; }
   unsigned char *transport_header() const	{ return _h_raw; }
@@ -235,9 +246,9 @@ inline Packet *
 Packet::make(struct sk_buff *skb)
 {
   if (atomic_read(&skb->users) == 1)
-    return (Packet *)skb;
+    return reinterpret_cast<Packet *>(skb);
   else
-    return (Packet *)skb_clone(skb, GFP_ATOMIC);
+    return reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
 }
 #endif
 
@@ -266,7 +277,7 @@ Packet::push(unsigned int nbytes)
   if (headroom() >= nbytes) {
     WritablePacket *p = uniqueify();
 #ifdef __KERNEL__
-    skb_push(p->skb(), nbytes);
+    __skb_push(p->skb(), nbytes);
 #else
     p->_data -= nbytes;
 #endif
@@ -280,7 +291,7 @@ Packet::nonunique_push(unsigned int nbytes)
 {
   if (headroom() >= nbytes) {
 #ifdef __KERNEL__
-    skb_push(skb(), nbytes);
+    __skb_push(skb(), nbytes);
 #else
     _data -= nbytes;
 #endif
@@ -300,7 +311,7 @@ Packet::pull(unsigned int nbytes)
     nbytes = length();
   }
 #ifdef __KERNEL__
-  skb_pull(skb(), nbytes);
+  __skb_pull(skb(), nbytes);
 #else
   _data += nbytes;
 #endif
@@ -317,7 +328,7 @@ Packet::set_dst_ip6_anno(const IP6Address &a)
 {
   memcpy(anno()->dst_ip.dst_ip6, &a, 16);
 }
-  
+
 inline IPAddress 
 Packet::dst_ip_anno() const
 {
@@ -331,15 +342,27 @@ Packet::set_dst_ip_anno(IPAddress a)
 }
 
 inline void
-Packet::set_ip_header(const click_ip *iph, unsigned len)
+Packet::set_network_header(const unsigned char *h, unsigned len)
 {
 #ifdef __KERNEL__
-  skb()->nh.iph = (struct iphdr *)iph;
-  skb()->h.raw = (unsigned char *)iph + len;
+  skb()->nh.raw = const_cast<unsigned char *>(h);
+  skb()->h.raw = const_cast<unsigned char *>(h) + len;
 #else
-  _nh.iph = (click_ip *)iph;
-  _h_raw = (unsigned char *)iph + len;
+  _nh.raw = const_cast<unsigned char *>(h);
+  _h_raw = const_cast<unsigned char *>(h) + len;
 #endif
+}
+
+inline void
+Packet::set_ip_header(const click_ip *iph, unsigned len)
+{
+  set_network_header(reinterpret_cast<const unsigned char *>(iph), len);
+}
+
+inline void
+Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
+{
+  set_network_header(reinterpret_cast<const unsigned char *>(ip6h), len);
 }
 
 inline void
@@ -348,40 +371,40 @@ Packet::set_ip6_header(const click_ip6 *ip6h)
   set_ip6_header(ip6h, 40);
 }
 
-inline void
-Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
+inline unsigned
+Packet::network_header_offset() const
 {
-#ifdef __KERNEL__
-  skb()->nh.ipv6h = (struct ipv6hdr *)ip6h;
-  skb()->h.raw = (unsigned char *)ip6h + len;
-#else
-  _nh.ip6h = (click_ip6 *)ip6h;
-  _h_raw = (unsigned char *)ip6h + len;
-#endif
+  return network_header() - data();
+}
+
+inline unsigned
+Packet::network_header_length() const
+{
+  return transport_header() - network_header();
 }
 
 inline unsigned
 Packet::ip_header_offset() const
 {
-  return (const unsigned char *)ip_header() - data();
+  return network_header_offset();
 }
 
 inline unsigned
 Packet::ip_header_length() const
 {
-  return (const unsigned char *)transport_header() - (const unsigned char *)ip_header();
+  return network_header_length();
 }
 
 inline unsigned
 Packet::ip6_header_length() const
 {
-  return (const unsigned char *)transport_header() - (const unsigned char *)ip6_header();
+  return network_header_length();
 }
 
 inline unsigned
 Packet::transport_header_offset() const
 {
-  return (const unsigned char *)transport_header() - data();
+  return transport_header() - data();
 }
 
 inline void
@@ -391,7 +414,7 @@ Packet::copy_annotations(Packet *p)
 }
 
 inline void
-Packet::zero_annotations()
+Packet::clear_annotations()
 {
   memset(anno(), '\0', sizeof(Anno));
 }
