@@ -36,6 +36,7 @@
 #include "userutils.hh"
 #include "confparse.hh"
 #include "elements/standard/quitwatcher.hh"
+#include "elements/userlevel/controlsocket.hh"
 
 #if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
 # define HAVE_DYNAMIC_LINKING 1
@@ -50,15 +51,19 @@
 #define HANDLER_OPT		305
 #define TIME_OPT		306
 #define STOP_OPT		307
+#define PORT_OPT		308
+#define UNIX_SOCKET_OPT		309
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "port", 'p', PORT_OPT, Clp_ArgInt, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
   { "stop", 's', STOP_OPT, Clp_ArgString, Clp_Optional },
   { "time", 't', TIME_OPT, 0, 0 },
+  { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -84,6 +89,8 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -p, --port PORT               Listen for control connections on TCP port.\n\
+  -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
                                 driver and print result to standard output.\n\
   -o, --output FILE             Write flat configuration to FILE.\n\
@@ -144,8 +151,10 @@ load_package(String package, ErrorHandler *errh)
 
 // functions for packages
 
+static String::Initializer crap_initializer;
 static Lexer *lexer;
 static Vector<String> packages;
+static String configuration_string;
 
 extern "C" void
 click_provide(const char *package)
@@ -175,6 +184,35 @@ extern "C" void
 click_remove_element_type(int which)
 {
   lexer->remove_element_type(which);
+}
+
+
+// global handlers for ControlSocket
+
+String
+click_userlevel_classes_string()
+{
+  Vector<String> v;
+  lexer->element_type_names(v);
+  StringAccum sa;
+  for (int i = 0; i < v.size(); i++)
+    sa << v[i] << "\n";
+  return sa.take_string();
+}
+
+String
+click_userlevel_config_string()
+{
+  return configuration_string;
+}
+
+String
+click_userlevel_packages_string()
+{
+  StringAccum sa;
+  for (int i = 0; i < packages.size(); i++)
+    sa << packages[i] << "\n";
+  return sa.take_string();
 }
 
 
@@ -401,6 +439,8 @@ main(int argc, char **argv)
   bool stop_guess = false;
   Vector<String> handlers;
   Vector<String> stops;
+  Vector<String> unix_sockets;
+  Vector<int> ports;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -437,6 +477,14 @@ main(int argc, char **argv)
       
      case HANDLER_OPT:
       handlers.push_back(clp->arg);
+      break;
+
+     case PORT_OPT:
+      ports.push_back(clp->val.i);
+      break;
+
+     case UNIX_SOCKET_OPT:
+      unix_sockets.push_back(clp->arg);
       break;
       
      case QUIT_OPT:
@@ -520,6 +568,9 @@ particular purpose.\n");
     }
   }
 
+  // save config_str
+  ::configuration_string = config_str;
+
   // lex
   int cookie = lexer->begin_parse(config_str, router_file, 0);
   while (lexer->ystatement())
@@ -540,6 +591,12 @@ particular purpose.\n");
     errh->error("`--stop' option given, but configuration has no packet sources");
   if (stop)
     router->add_element(new QuitWatcher, "click_driver@@QuitWatcher", cp_unargvec(stops), "click");
+
+  // add new ControlSockets
+  for (int i = 0; i < ports.size(); i++)
+    router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i), "tcp, " + String(ports[i]), "click");
+  for (int i = 0; i < unix_sockets.size(); i++)
+    router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + ports.size()), "unix, " + cp_quote(unix_sockets[i]), "click");
 
   // catch control-C
   signal(SIGINT, catch_sigint);

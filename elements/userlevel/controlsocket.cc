@@ -17,6 +17,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "router.hh"
+#include "straccum.hh"
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -196,7 +197,34 @@ ControlSocket::message(int fd, int code, const String &s, bool continuation)
 {
   assert(code >= 100 && code <= 999);
   _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s + "\r\n";
-  return -1;
+  return ANY_ERR;
+}
+
+int
+ControlSocket::global_read_handler(int fd, const String &name, String *data)
+{
+  StringAccum sa;
+  int ok = 0;
+  if (name == "version")
+    *data = String(VERSION) + "\n";
+  else if (name == "list")
+    *data = router()->element_list_string();
+  else if (name == "classes")
+    *data = click_userlevel_classes_string();
+  else if (name == "config")
+    *data = click_userlevel_config_string();
+  else if (name == "flatconfig")
+    *data = router()->flat_configuration_string();
+  else if (name == "packages")
+    *data = click_userlevel_packages_string();
+  else if (name == "requirements") {
+    const Vector<String> &v = router()->requirements();
+    for (int i = 0; i < v.size(); i++)
+      sa << v[i] << "\n";
+    *data = sa.take_string();
+  } else
+    ok = message(fd, CSERR_NO_SUCH_HANDLER, "No such handler `" + name + "'");
+  return ok;
 }
 
 int
@@ -204,7 +232,7 @@ ControlSocket::parse_handler(int fd, const String &handlername, Element **es)
 {
   int dot = handlername.find_left('.');
   if (dot < 0)
-    return message(fd, CSERR_SYNTAX, "Bad handler name");
+    return NAME_ERR;
   String element = handlername.substring(0, dot);
   String handler = handlername.substring(dot + 1);
   Element *e = router()->find(element);
@@ -222,14 +250,17 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
 {
   Element *e;
   int hid = parse_handler(fd, handlername, &e);
-  if (hid < 0)
+  if (hid < 0) {
+    if (hid == NAME_ERR)
+      message(fd, CSERR_NO_SUCH_HANDLER, "No such handler `" + handlername + "'");
     return hid;
+  }
   const Router::Handler &h = router()->handler(hid);
   if (!h.write)
-    return message(fd, CSERR_NO_SUCH_HANDLER, "Not a write handler");
+    return message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + handlername + "' read-only");
 
   if (_read_only)
-    return message(fd, CSERR_PERMISSION, "Permission denied");
+    return message(fd, CSERR_PERMISSION, "Permission denied `" + handlername + "'");
   
   // set up error handler
   ControlSocketErrorHandler errh;
@@ -245,7 +276,7 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
   const Vector<String> &messages = errh.messages();
   if (messages.size() > 0)
     happened += ":";
-  message(fd, code, "Write handler " + happened, messages.size() > 0);
+  message(fd, code, "Write handler `" + handlername + "' " + happened, messages.size() > 0);
   for (int i = 0; i < messages.size(); i++)
     message(fd, code, messages[i], i < messages.size() - 1);
   
@@ -265,13 +296,16 @@ ControlSocket::parse_command(int fd, const String &line)
   if (command == "READ" || command == "GET") {
     if (words.size() != 2)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+    String data;
     int hid = parse_handler(fd, words[1], &e);
-    if (hid < 0) return hid;
-    const Router::Handler &h = router()->handler(hid);
-    if (!h.read)
-      return message(fd, CSERR_NO_SUCH_HANDLER, "Not a read handler");
-    String data = h.read(e, h.read_thunk);
-    message(fd, CSERR_OK, "Read handler OK");
+    if (hid >= 0) {
+      const Router::Handler &h = router()->handler(hid);
+      if (!h.read)
+	return message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + words[1] + "' write-only");
+      data = h.read(e, h.read_thunk);
+    } else if (hid != NAME_ERR || global_read_handler(fd, words[1], &data) < 0)
+      return -1;
+    message(fd, CSERR_OK, "Read handler `" + words[1] + "' OK");
     _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
     _out_texts[fd] += data;
     

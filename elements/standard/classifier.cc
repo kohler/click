@@ -84,25 +84,6 @@ Classifier::Expr::compatible(const Expr &e) const
   return (value.u & both_mask) == (e.value.u & both_mask);
 }
 
-Classifier::Expr &
-Classifier::Expr::operator&=(const Expr &e)
-{
-  if ((e.offset >= 0 && !e.mask.u) || offset < 0)
-    /* nada */;
-  else if ((offset >= 0 && !mask.u) || e.offset < 0)
-    *this = e;
-  else {
-    unsigned both_mask = mask.u & e.mask.u;
-    if (offset != e.offset || (value.u & both_mask) != (e.value.u & both_mask))
-      offset = -1;
-    else {
-      mask.u = both_mask;
-      value.u &= both_mask;
-    }
-  }
-  return *this;
-}
-
 StringAccum &
 operator<<(StringAccum &sa, const Classifier::Expr &e)
 {

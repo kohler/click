@@ -437,7 +437,8 @@ read_element_handlers(Element *e, void *)
   StringAccum sa;
   for (int i = 0; i < handlers.size(); i++) {
     const Router::Handler &h = r->handler(handlers[i]);
-    sa << h.name << '\n';
+    if (h.read || h.write)
+      sa << h.name << '\t' << (h.read ? "r" : "") << (h.write ? "w" : "") << '\n';
   }
   return sa.take_string();
 }

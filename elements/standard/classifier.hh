@@ -90,7 +90,6 @@ class Classifier : public Element { protected:
     bool not_implies(const Expr &) const;
     bool not_implies_not(const Expr &) const;
     bool compatible(const Expr &) const;
-    Expr &operator&=(const Expr &);
     String s() const;
   };
   

@@ -397,13 +397,13 @@ init_module()
   // is no current_router while the handlers are being added.
   root_handlers = new Router::Handler[ROOT_HANDLERS_CAP];
   next_root_handler("version", read_version, 0, 0, 0);
-  next_root_handler("meminfo", read_meminfo, 0, 0, 0);
-  next_root_handler("cycles", read_cycles, 0, 0, 0);
-  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
   next_root_handler("list", read_list, 0, 0, 0);
   next_root_handler("classes", read_classes, 0, 0, 0);
   next_root_handler("packages", read_packages, 0, 0, 0);
   next_root_handler("requirements", read_requirements, 0, 0, 0);
+  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
+  next_root_handler("meminfo", read_meminfo, 0, 0, 0);
+  next_root_handler("cycles", read_cycles, 0, 0, 0);
 
   return 0;
 }

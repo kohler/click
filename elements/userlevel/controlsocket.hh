@@ -49,6 +49,14 @@
  * bytes immediately following (the CRLF that terminates) the DATA line are
  * the handler's results.
  *
+ * =item READ I<handlername>
+ *
+ * Call the global read handler named I<handlername> and return the results as
+ * in READ I<element>.I<handlername>. There are seven global read handlers,
+ * named `version', `list', `classes', `config', `flatconfig', `packages', and
+ * `requirements'. See the handlers of the same name in click.o(8) for more
+ * information.
+ *
  * =item WRITE I<element>.I<handlername> I<args...>
  *
  * Call the write handler named I<handlername> on the element named
@@ -111,9 +119,12 @@ class ControlSocket : public Element {
   Vector<int> _flags;
 
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2 };
+  static const int ANY_ERR = -1;
+  static const int NAME_ERR = -2;
 
   static const char *protocol_version;
 
+  int global_read_handler(int, const String &, String *);
   int parse_handler(int fd, const String &, Element **);
   int write_command(int fd, const String &, const String &);
   int parse_command(int fd, const String &);
@@ -134,5 +145,9 @@ class ControlSocket : public Element {
   int message(int fd, int code, const String &, bool continuation = false);
   
 };
+
+extern String click_userlevel_classes_string();
+extern String click_userlevel_config_string();
+extern String click_userlevel_packages_string();
 
 #endif
