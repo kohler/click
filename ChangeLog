@@ -1,3 +1,8 @@
+2001-06-01 Friday 03:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc (1.72): fix bug with cpArguments only visible in
+	kernel: clear out v2_string on first use
+
 2001-05-31 Thursday 18:32  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/standard/: drivermanager.cc (1.4), drivermanager.hh
