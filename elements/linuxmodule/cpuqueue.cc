@@ -34,8 +34,7 @@ CPUQueue::notify_noutputs(int i)
 int
 CPUQueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned new_capacity;
-  _capacity = 128;
+  unsigned new_capacity = 128;
   if (cp_va_parse(conf, this, errh, 
 	          cpOptional, 
 		  cpUnsigned, "maximum queue length", &new_capacity, 0) < 0) 
@@ -48,6 +47,7 @@ int
 CPUQueue::initialize(ErrorHandler *errh)
 {
   for (int i=0; i<NUM_CLICK_CPUS; i++) {
+    click_chatter("initializing %d", _capacity);
     _q[i]._q = new Packet*[_capacity+1];
     _q[i]._head = 0;
     _q[i]._tail = 0;
