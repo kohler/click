@@ -27,15 +27,18 @@
 #include <click/bitvector.hh>
 
 #define dprintf if(0)printf
+#define DELAY .400
 
 PolicyProbe::PolicyProbe(RONRouteModular *parent, 
 			 unsigned int delayms, unsigned int probenum ) 
-  : RONRouteModular::Policy(parent)
-{ 
+  : RONRouteModular::Policy(parent) { 
   
   _flowtable = new FlowTable();
+  _timerqueue = new TimerQueue();
 }
 PolicyProbe::~PolicyProbe(){
+  delete(_flowtable);
+  delete(_timerqueue);
 }
 
 void PolicyProbe::push_forward_syn(Packet *p) {
@@ -56,12 +59,19 @@ void PolicyProbe::push_forward_syn(Packet *p) {
 			       p->ip_header()->ip_dst, ntohs(tcph->th_dport));
   }
 
+  // if it's the first syn, remember <now> for sending on the direct path
   if (first_syn) {
     gettimeofday(&tv, NULL);
     entry->sent_syn(1, tolongdouble(&tv));
     entry->syn_pkt = p->clone(); // save the pkt for later
   }
 
+  // schedule a probe3 timeout for this packet
+  _timerqueue->insert(gettimeofday(&tv, NULL) + DELAY, 0, entry);
+
+  // push along direct path
+  _parent->output(1).push(p);
+  return;
 }
 void PolicyProbe::push_forward_fin(Packet *p) {
 }

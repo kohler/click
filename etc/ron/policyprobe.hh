@@ -39,8 +39,10 @@ public:
 protected:
   class FlowTable;
   class FlowTableEntry;  
-
+  class TimerQueue;
+  
   FlowTable *_flowtable;
+  TimerQueue *_timerqueue;
 
   static long double tolongdouble(struct timeval *tv) {
     return tv->tv_sec + (long double)((long double) tv->tv_usec 
@@ -49,6 +51,50 @@ protected:
 
 };
 
+class PolicyProbe::TimerQueue {
+protected:
+  Vector<long double> _times;
+  Vector<int> _purge;  // if purge[i] == 0, send probe, else remove.
+  Vector<FlowTableEntry*> _entries;
+public:
+  void insert(long double time, int purge, FlowTableEntry *entry) {
+    _times.push_back(time);
+    _purge.push_back(purge);
+    _entries.push_back(entry);
+  }
+  // returns -1 if there is nothing left in the TimerQueue
+  long double get_oldest(FlowTableEntry **entry, int *purge) {
+    long double r = -1;
+    if (_entries.size() > 0) {
+      *entry = _entries[0];
+      *purge = _purge[0];
+      r      = _times[0];
+    }
+    return r;
+  }
+  void shift() {
+    if (_entries.size() > 0) {
+      _times.pop_back();
+      _purge.pop_back();
+      _entries.pop_back();
+    }
+  }
+  void remove(FlowTableEntry *entry) {
+    int i,j;
+    for(i=0; i<_entries.size(); i++) {
+      if (entry == _entries[i]) {
+	for(j=i; j<_entries.size()-1; j++) {
+	  _entries[j] = _entries[j+1];
+	  _purge[j] = _purge[j+1];
+	  _times[j] = _times[j+1];
+	  _entries.pop_back();
+	  _purge.pop_back();
+	  _times.pop_back();
+	}
+      }
+    }
+  }
+};
 
 /*
   Need a table mapping 
@@ -114,4 +160,4 @@ public:
   
 };
 
-
+  
