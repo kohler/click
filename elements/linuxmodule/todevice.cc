@@ -114,6 +114,7 @@ ToDevice::initialize(ErrorHandler *errh)
     }
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
+    _signal = Notifier::upstream_pull_signal(this, 0, &_task);
 #ifdef HAVE_STRIDE_SCHED
     // user specifies max number of tickets; we start with default
     _max_tickets = _task.tickets();
@@ -286,7 +287,8 @@ ToDevice::run_scheduled()
 #endif
   
   adjust_tickets(sent);
-  _task.fast_reschedule();
+  if (_sent > 0 || _signal)
+      _task.fast_reschedule();
 }
 
 int

@@ -33,29 +33,44 @@ NotifierQueue::~NotifierQueue()
 void *
 NotifierQueue::cast(const char *n)
 {
-    if (strcmp(n, "NotifierQueue") == 0)
+    if (strcmp(n, "Queue") == 0)
 	return (NotifierQueue *)this;
     else if (strcmp(n, "Notifier") == 0)
 	return (Notifier *)this;
     else
-	return Queue::cast(n);
+	return SimpleQueue::cast(n);
 }
 
 int
 NotifierQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Notifier::initialize(router());
-    return Queue::configure(conf, errh);
+    return SimpleQueue::configure(conf, errh);
 }
 
 void
-NotifierQueue::push(int, Packet *packet)
+NotifierQueue::push(int, Packet *p)
 {
-    // wish I could inline...
-    Queue::push(0, packet);
+    // Code taken from SimpleQueue::push().
+    int next = next_i(_tail);
 
-    if (size() == 1 && listeners_asleep())
-	wake_listeners();
+    if (next != _head) {
+	_q[_tail] = p;
+	_tail = next;
+
+	int s = size();
+	if (s > _highwater_length)
+	    _highwater_length = s;
+	if (s == 1 && listeners_asleep())
+	    wake_listeners();
+
+    } else {
+	// if (!(_drops % 100))
+	if (_drops == 0)
+	    click_chatter("%s %s overflow", class_name(), id().cc());
+	_drops++;
+	p->kill();
+    }
 }
 
 Packet *
@@ -71,7 +86,5 @@ NotifierQueue::pull(int)
     return p;
 }
 
-// XXX reset?
-
-ELEMENT_REQUIRES(Queue)
-EXPORT_ELEMENT(NotifierQueue)
+ELEMENT_REQUIRES(SimpleQueue)
+EXPORT_ELEMENT(NotifierQueue NotifierQueue-NotifierQueue)

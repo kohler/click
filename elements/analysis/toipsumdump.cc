@@ -98,8 +98,10 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 	_filename = "<stdout>";
     }
 
-    if (input_is_pull(0))
+    if (input_is_pull(0)) {
 	ScheduleInfo::join_scheduler(this, &_task, errh);
+	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
+    }
     _active = true;
 
     // magic number
@@ -405,11 +407,11 @@ ToIPSummaryDump::run_scheduled()
 {
     if (!_active)
 	return;
-    Packet *p = input(0).pull();
-    if (p) {
+    if (Packet *p = input(0).pull()) {
 	write_packet(p, _multipacket);
 	p->kill();
-    }
+    } else if (!_signal)
+	return;
     _task.fast_reschedule();
 }
 

@@ -1,5 +1,5 @@
 /*
- * queue.{cc,hh} -- queue element
+ * simplequeue.{cc,hh} -- queue element
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -16,34 +16,34 @@
  */
 
 #include <click/config.h>
-#include "queue.hh"
+#include "simplequeue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
-Queue::Queue()
+SimpleQueue::SimpleQueue()
   : Element(1, 1), _q(0)
 {
   MOD_INC_USE_COUNT;
 }
 
-Queue::~Queue()
+SimpleQueue::~SimpleQueue()
 {
   MOD_DEC_USE_COUNT;
 }
 
 void *
-Queue::cast(const char *n)
+SimpleQueue::cast(const char *n)
 {
   if (strcmp(n, "Storage") == 0)
     return (Storage *)this;
-  else if (strcmp(n, "Queue") == 0)
+  else if (strcmp(n, "SimpleQueue") == 0)
     return (Element *)this;
   else
     return 0;
 }
 
 int
-Queue::configure(Vector<String> &conf, ErrorHandler *errh)
+SimpleQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int new_capacity = 1000;
   if (cp_va_parse(conf, this, errh,
@@ -56,7 +56,7 @@ Queue::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-Queue::initialize(ErrorHandler *errh)
+SimpleQueue::initialize(ErrorHandler *errh)
 {
   assert(!_q && _head == 0 && _tail == 0);
   _q = new Packet *[_capacity + 1];
@@ -68,7 +68,7 @@ Queue::initialize(ErrorHandler *errh)
 }
 
 int
-Queue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
+SimpleQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 {
   // change the maximum queue length at runtime
   int old_capacity = _capacity;
@@ -100,9 +100,9 @@ Queue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-Queue::take_state(Element *e, ErrorHandler *errh)
+SimpleQueue::take_state(Element *e, ErrorHandler *errh)
 {
-  Queue *q = (Queue *)e->cast("Queue");
+  SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
   if (!q) return;
   
   if (_tail != _head || _head != 0) {
@@ -132,7 +132,7 @@ Queue::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-Queue::cleanup(CleanupStage)
+SimpleQueue::cleanup(CleanupStage)
 {
   for (int i = _head; i != _tail; i = next_i(i))
     _q[i]->kill();
@@ -141,16 +141,14 @@ Queue::cleanup(CleanupStage)
 }
 
 void
-Queue::push(int, Packet *packet)
+SimpleQueue::push(int, Packet *p)
 {
-  assert(packet);
-
-  // inline Queue::enq() for speed
+  // If you change this code, also change NotifierQueue::push().
   int next = next_i(_tail);
   
-  // should this stuff be in Queue::enq?
+  // should this stuff be in SimpleQueue::enq?
   if (next != _head) {
-    _q[_tail] = packet;
+    _q[_tail] = p;
     _tail = next;
 
     int s = size();
@@ -160,24 +158,23 @@ Queue::push(int, Packet *packet)
   } else {
     // if (!(_drops % 100))
     if (_drops == 0)
-      click_chatter("Queue %s overflow", id().cc());
+      click_chatter("%s %s overflow", class_name(), id().cc());
     _drops++;
-    packet->kill();
+    p->kill();
   }
 }
 
-
 Packet *
-Queue::pull(int)
+SimpleQueue::pull(int)
 {
   return deq();
 }
 
 
 String
-Queue::read_handler(Element *e, void *thunk)
+SimpleQueue::read_handler(Element *e, void *thunk)
 {
-  Queue *q = static_cast<Queue *>(e);
+  SimpleQueue *q = static_cast<SimpleQueue *>(e);
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
@@ -194,9 +191,9 @@ Queue::read_handler(Element *e, void *thunk)
 }
 
 int
-Queue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
+SimpleQueue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
 {
-  Queue *q = static_cast<Queue *>(e);
+  SimpleQueue *q = static_cast<SimpleQueue *>(e);
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
@@ -216,7 +213,7 @@ Queue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh
 }
 
 void
-Queue::add_handlers()
+SimpleQueue::add_handlers()
 {
   add_read_handler("length", read_handler, (void *)0);
   add_read_handler("highwater_length", read_handler, (void *)1);
@@ -227,5 +224,5 @@ Queue::add_handlers()
   add_write_handler("reset", write_handler, (void *)1);
 }
 
-ELEMENT_REQUIRES(false)
-EXPORT_ELEMENT(Queue)
+ELEMENT_PROVIDES(Storage)
+EXPORT_ELEMENT(SimpleQueue)

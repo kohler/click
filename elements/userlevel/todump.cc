@@ -118,25 +118,27 @@ ToDump::initialize(ErrorHandler *errh)
 	_filename = "<stdout>";
     }
 
-  struct fake_pcap_file_header h;
+    struct fake_pcap_file_header h;
 
-  h.magic = FAKE_PCAP_MAGIC;
-  h.version_major = FAKE_PCAP_VERSION_MAJOR;
-  h.version_minor = FAKE_PCAP_VERSION_MINOR;
-  
-  h.thiszone = 0;		// timestamps are in GMT
-  h.sigfigs = 0;		// XXX accuracy of timestamps?
-  h.snaplen = _snaplen;
-  h.linktype = _encap_type;
-  
-  size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
-  if (wrote_header != 1)
-    return errh->error("%s: unable to write file header", _filename.cc());
+    h.magic = FAKE_PCAP_MAGIC;
+    h.version_major = FAKE_PCAP_VERSION_MAJOR;
+    h.version_minor = FAKE_PCAP_VERSION_MINOR;
 
-  if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, &_task, errh);
-  _active = true;
-  return 0;
+    h.thiszone = 0;		// timestamps are in GMT
+    h.sigfigs = 0;		// XXX accuracy of timestamps?
+    h.snaplen = _snaplen;
+    h.linktype = _encap_type;
+
+    size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
+    if (wrote_header != 1)
+	return errh->error("%s: unable to write file header", _filename.cc());
+
+    if (input_is_pull(0)) {
+	ScheduleInfo::join_scheduler(this, &_task, errh);
+	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
+    }
+    _active = true;
+    return 0;
 }
 
 void
@@ -192,11 +194,11 @@ ToDump::run_scheduled()
 {
     if (!_active)
 	return;
-    Packet *p = input(0).pull();
-    if (p) {
+    if (Packet *p = input(0).pull()) {
 	write_packet(p);
 	p->kill();
-    }
+    } else if (!_signal)
+	return;
     _task.fast_reschedule();
 }
 

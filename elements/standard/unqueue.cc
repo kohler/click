@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -40,7 +41,7 @@ Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   return cp_va_parse(conf, this, errh,
 		     cpOptional,
-		     cpUnsigned, "burst size", &_burst,
+		     cpInteger, "burst size", &_burst,
 		     cpKeywords,
 		     "ACTIVE", cpBool, "is active?", &_active,
 		     0);
@@ -52,6 +53,11 @@ Unqueue::initialize(ErrorHandler *errh)
   _count = 0;
   if (_active)
     ScheduleInfo::join_scheduler(this, &_task, errh);
+  _signal = Notifier::upstream_pull_signal(this, 0, &_task);
+  if (_burst < 0)
+    _burst = 0x7FFFFFFFU;
+  else if (_burst == 0)
+    errh->warning("BURST size 0, no packets will be pulled");
   return 0;
 }
 
@@ -61,33 +67,31 @@ Unqueue::run_scheduled()
   if (!_active)
     return;
 
-  int sent = 0;
-  Packet *p_next = input(0).pull();
-  
-  while (_active && p_next) {
-    Packet *p = p_next;
-    sent++;
-    if (sent < _burst || _burst == 0) {
-      p_next = input(0).pull();
+  uint32_t end_count = _count + _burst;
+  while (_count != end_count) {
+    if (Packet *p = input(0).pull()) {
+      _count++;
+      output(0).push(p);
+    } else {
+      if (!_signal)
+	return;
+      break;
     }
-    else 
-      p_next = 0;
-#ifdef CLICK_LINUXMODULE
-#if __i386__ && HAVE_INTEL_CPU
-    if (p_next) {
-      struct sk_buff *skb = p_next->steal_skb();
-      asm volatile("prefetcht0 %0" : : "m" (skb->len));
-      asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
-    }
-#endif
-#endif
-    output(0).push(p);
-    _count++;
   }
 
-  if (_active)
-    _task.fast_reschedule();
+  _task.fast_reschedule();
 }
+
+#if 0 && defined(CLICK_LINUXMODULE)
+#if __i386__ && HAVE_INTEL_CPU
+/* Old prefetching code from run_scheduled(). */
+  if (p_next) {
+    struct sk_buff *skb = p_next->steal_skb();
+    asm volatile("prefetcht0 %0" : : "m" (skb->len));
+    asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
+  }
+#endif
+#endif
 
 String
 Unqueue::read_param(Element *e, void *)

@@ -67,10 +67,9 @@ Resets C<packets> counter to zero when written.
 
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/linuxmodule/fromhost.hh"
+#include <click/notifier.hh>
 
-class ToDevice : public AnyDevice {
-  
- public:
+class ToDevice : public AnyDevice { public:
   
   ToDevice();
   ~ToDevice();
@@ -124,6 +123,7 @@ class ToDevice : public AnyDevice {
 
   unsigned _burst;
   int _dev_idle;
+  NotifierSignal _signal;
   
   int queue_packet(Packet *p);
   

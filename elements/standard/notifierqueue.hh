@@ -3,13 +3,13 @@
 #define CLICK_NOTIFIERQUEUE_HH
 #include <click/element.hh>
 #include <click/notifier.hh>
-#include "queue.hh"
+#include "simplequeue.hh"
 
 /*
 =c
 
-NotifierQueue
-NotifierQueue(CAPACITY)
+Queue
+Queue(CAPACITY)
 
 =s storage
 
@@ -21,11 +21,13 @@ Stores incoming packets in a first-in-first-out queue.
 Drops incoming packets if the queue already holds CAPACITY packets.
 The default for CAPACITY is 1000.
 
-NotifierQueue notifies interested parties when it becomes empty and when a
+Queue notifies interested parties when it becomes empty and when a
 formerly-empty queue receives a packet. The empty notification takes place
 some time after the queue goes empty for the first time, to prevent thrashing
 for queues that tend to hover around 1 or 2 packets. In all other respects, it
-behaves exactly like Queue.
+behaves like SimpleQueue.
+
+You may also use the old element name "NotifierQueue".
 
 =h length read-only
 
@@ -51,14 +53,14 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a Queue */
+=a SimpleQueue */
 
-class NotifierQueue : public Queue, public Notifier { public:
+class NotifierQueue : public SimpleQueue, public Notifier { public:
 
     NotifierQueue();
     ~NotifierQueue();
-  
-    const char *class_name() const		{ return "NotifierQueue"; }
+
+    const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);
     NotifierQueue *clone() const		{ return new NotifierQueue; }
 

@@ -4,6 +4,7 @@
 #include <click/timer.hh>
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 #include <stdio.h>
 
 /*
@@ -93,6 +94,7 @@ class ToDump : public Element { public:
     bool _active;
     bool _extra_length;
     Task _task;
+    NotifierSignal _signal;
     Element **_use_encap_from;
 
     void write_packet(Packet *);

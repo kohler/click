@@ -17,10 +17,10 @@ seconds, with microsecond precision. A packet with timestamp T will be emitted
 no earlier than time (T + DELAY). On output, the packet's timestamp is set to
 the current time.
 
-DelayUnqueue listens for activity notification; see NotifierQueue.
+DelayUnqueue listens for upstream notification, such as that available from
+Queue.
 
-=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, SetTimestamp,
-NotifierQueue */
+=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, SetTimestamp */
 
 class DelayUnqueue : public Element { public:
   
@@ -43,9 +43,9 @@ class DelayUnqueue : public Element { public:
 
   Packet *_p;
   struct timeval _delay;
-  NotifierSignal _signal;
   Task _task;
   Timer _timer;
+  NotifierSignal _signal;
   
 };
 

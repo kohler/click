@@ -5,16 +5,21 @@
 #include <click/notifier.hh>
 
 /*
- * =c
- * Discard
- * =s dropping
- * drops all packets
- * =d
- * Discards all packets received on its single input.
- * If used in a pull context, it initiates pulls whenever
- * packets are available, and listens for activity notification; see
- * NotifierQueue.
- */
+=c
+
+Discard
+
+=s dropping
+
+drops all packets
+
+=d
+
+Discards all packets received on its single input. If used in a pull context,
+it initiates pulls whenever packets are available, and listens for activity
+notification, such as that available from Queue.
+
+=a Queue */
 
 class Discard : public Element { public:
   

@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/straccum.hh>
+#include <click/notifier.hh>
 
 /*
 =c
@@ -169,6 +170,7 @@ class ToIPSummaryDump : public Element { public:
     bool _active;
     uint32_t _output_count;
     Task _task;
+    NotifierSignal _signal;
     bool _verbose : 1;
     bool _bad_packets : 1;
     
