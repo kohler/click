@@ -1,3 +1,20 @@
+2005-02-17 Thursday 15:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/routerthread.cc (1.54): John Bicket saw "schedule_timeout:
+	wrong timeout value fffffff5 from ...".  I think it was because we
+	didnt correctly check for wait._sec < 0.
+
+2005-02-17 Thursday 14:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.cc (1.49): patch patch (from Nick
+	Weaver)
+
+2005-02-17 Thursday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.cc (1.48): user-level ToDevice
+	preserves the Ethernet headers on packets it receives on FreeBSD
+	(hopefully).  Problem reported by Nick Weaver, fix from Marko Zec
+
 2005-02-17 Thursday 14:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/: nat1.click (1.5), nat2.click (1.2): remove obsolete
