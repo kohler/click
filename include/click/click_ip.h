@@ -112,4 +112,14 @@ struct click_ip {
 #define IP_ISFRAG(iph)	  (((iph)->ip_off & htons(IP_MF | IP_OFFMASK)) != 0)
 #define IP_FIRSTFRAG(iph) (((iph)->ip_off & htons(IP_OFFMASK)) == 0)
 
+static inline void
+click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)
+{
+    // incrementally update IP checksum according to RFC1624:
+    // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
+    uint32_t sum = (~*csum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
+    sum = (sum & 0xFFFF) + (sum >> 16);
+    *csum = ~(sum + (sum >> 16));
+}
+
 #endif
