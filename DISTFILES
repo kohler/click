@@ -421,11 +421,6 @@ tools/click-xform/adjacency.cc
 tools/click-xform/adjacency.hh
 tools/click-xform/click-xform.cc
 
-tools/udpgen
-tools/udpgen/Makefile.in
-tools/udpgen/udpgen.c
-tools/udpgen/udpcount.c
-
 apps
 apps/ClickController
 apps/ClickController/ClickController.java
