@@ -80,7 +80,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String socktype;
   if (cp_va_parse(conf, this, errh,
-		  cpString, "type of socket (`TCP' or `UNIX')", &socktype,
+		  cpString, "type of socket ('TCP' or 'UNIX')", &socktype,
 		  cpIgnoreRest, cpEnd) < 0)
     return -1;
 
@@ -117,7 +117,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("filename too long");
 
   } else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+    return errh->error("unknown socket type '%s'", socktype.cc());
   
   return 0;
 }
@@ -352,7 +352,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     if (errh.nerrors() > 0)
       return transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
     else if (hid < 0)
-      return message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named `" + full_name + "'");
+      return message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named '" + full_name + "'");
     
     *es = _proxy;
     return hid;
@@ -372,7 +372,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 	e = router()->element(num - 1);
     }
     if (!e)
-      return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + ename + "'");
+      return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named '" + ename + "'");
     hname = canonical_name.substring(dot + 1, canonical_name.end());
   } else {
     e = router()->root_element();
@@ -382,7 +382,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
   // Then find handler.
   int hid = Router::hindex(e, hname);
   if (hid < 0 || !router()->handler(hid)->visible())
-    return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + full_name + "'");
+    return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named '" + full_name + "'");
 
   // Return.
   *es = e;
@@ -398,7 +398,7 @@ ControlSocket::read_command(int fd, const String &handlername)
     return hid;
   const Router::Handler *h = router()->handler(hid);
   if (!h->read_visible())
-    return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' write-only");
+    return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' write-only");
 
   // collect errors from proxy
   ControlSocketErrorHandler errh;
@@ -411,7 +411,7 @@ ControlSocket::read_command(int fd, const String &handlername)
   if (errh.nerrors() > 0)
     return transfer_messages(fd, CSERR_UNSPECIFIED, String(), &errh);
   
-  message(fd, CSERR_OK, "Read handler `" + handlername + "' OK");
+  message(fd, CSERR_OK, "Read handler '" + handlername + "' OK");
   _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
   _out_texts[fd] += data;
   return 0;
@@ -426,14 +426,14 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
     return hid;
   const Router::Handler *h = router()->handler(hid);
   if (!h->writable())
-    return message(fd, CSERR_PERMISSION, "Handler `" + handlername + "' read-only");
+    return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' read-only");
 
   if (_read_only)
-    return message(fd, CSERR_PERMISSION, "Permission denied for `" + handlername + "'");
+    return message(fd, CSERR_PERMISSION, "Permission denied for '" + handlername + "'");
 
 #ifdef LARGEST_HANDLER_WRITE
   if (data.length() > LARGEST_HANDLER_WRITE)
-    return message(fd, CSERR_DATA_TOO_BIG, "Data too large for write handler `" + handlername + "'");
+    return message(fd, CSERR_DATA_TOO_BIG, "Data too large for write handler '" + handlername + "'");
 #endif
   
   ControlSocketErrorHandler errh;
@@ -452,11 +452,11 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
 
   String msg;
   if (code == CSERR_OK)
-    msg = "Write handler `" + handlername + "' OK";
+    msg = "Write handler '" + handlername + "' OK";
   else if (code == CSERR_OK_HANDLER_WARNING)
-    msg = "Write handler `" + handlername + "' OK with warnings";
+    msg = "Write handler '" + handlername + "' OK with warnings";
   else if (code == CSERR_HANDLER_ERROR)
-    msg = "Write handler `" + handlername + "' error";
+    msg = "Write handler '" + handlername + "' error";
   transfer_messages(fd, code, msg, &errh);
   return 0;
 }
@@ -485,15 +485,15 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
 
   // remember _read_only!
   if (write && _read_only && ok)
-    return message(fd, CSERR_PERMISSION, "Permission denied for `" + hname + "'");
+    return message(fd, CSERR_PERMISSION, "Permission denied for '" + hname + "'");
   else if (errh.messages().size() > 0)
     transfer_messages(fd, CSERR_OK, String(), &errh);
   else if (ok)
-    message(fd, CSERR_OK, String(write ? "Write" : "Read") + " handler `" + hname + "' OK");
+    message(fd, CSERR_OK, String(write ? "Write" : "Read") + " handler '" + hname + "' OK");
   else if (any_visible)
-    message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + hname + (write ? "' not writable" : "' not readable"));
+    message(fd, CSERR_NO_SUCH_HANDLER, "Handler '" + hname + (write ? "' not writable" : "' not readable"));
   else
-    message(fd, CSERR_NO_SUCH_HANDLER, "No " + String(write ? "write" : "read") + " handler named `" + hname + "'");
+    message(fd, CSERR_NO_SUCH_HANDLER, "No " + String(write ? "write" : "read") + " handler named '" + hname + "'");
   return 0;
 }
 
@@ -503,7 +503,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   const char *octothorp = find(llrpcname, '#');
   uint32_t command;
   if (!cp_unsigned(llrpcname.substring(octothorp + 1, llrpcname.end()), 16, &command))
-    return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name `" + llrpcname + "'");
+    return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name '" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);
   
@@ -514,14 +514,14 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 
   int size = _CLICK_IOC_SIZE(command);
   if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) || !(command & _CLICK_IOC_FLAT))
-    return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC `" + llrpcname + "' remotely");
+    return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC '" + llrpcname + "' remotely");
 
   if (_read_only)		// can't tell whether an LLRPC is read-only;
     				// so disallow them all
-    return message(fd, CSERR_PERMISSION, "Permission denied for `" + llrpcname + "'");
+    return message(fd, CSERR_PERMISSION, "Permission denied for '" + llrpcname + "'");
 
   if ((command & _CLICK_IOC_IN) && data.length() != size)
-    return message(fd, CSERR_LLRPC_ERROR, "LLRPC `" + llrpcname + "' requires " + String(size) + " bytes input data");
+    return message(fd, CSERR_LLRPC_ERROR, "LLRPC '" + llrpcname + "' requires " + String(size) + " bytes input data");
   else if (command & _CLICK_IOC_OUT)
     data = String::garbage_string(size);
 
@@ -543,11 +543,11 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   // did we get an error message?
   String msg;
   if (retval < 0)
-    msg = "LLRPC `" + llrpcname + "' error: " + String(strerror(-retval));
+    msg = "LLRPC '" + llrpcname + "' error: " + String(strerror(-retval));
   else if (errh.nerrors() > 0)
-    msg = "LLRPC `" + llrpcname + "' error";
+    msg = "LLRPC '" + llrpcname + "' error";
   else
-    msg = "LLRPC `" + llrpcname + "' OK";
+    msg = "LLRPC '" + llrpcname + "' OK";
   int code = (retval < 0 || errh.nerrors() > 0 ? CSERR_LLRPC_ERROR : CSERR_OK);
   transfer_messages(fd, code, msg, &errh);
 
@@ -563,7 +563,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 int
 ControlSocket::parse_command(int fd, const String &line)
 {
-  // split `line' into words; don't use cp_ functions since they strip comments
+  // split 'line' into words; don't use cp_ functions since they strip comments
   Vector<String> words;
   const char *data = line.data();
   int len = line.length();
@@ -599,7 +599,7 @@ ControlSocket::parse_command(int fd, const String &line)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     int datalen;
     if (!cp_integer(words[2], &datalen) || datalen < 0)
-      return message(fd, CSERR_SYNTAX, "Syntax error in `writedata'");
+      return message(fd, CSERR_SYNTAX, "Syntax error in 'writedata'");
     if (_in_texts[fd].length() < datalen) {
       if (_flags[fd] & READ_CLOSED)
 	return message(fd, CSERR_SYNTAX, "Not enough data");
@@ -625,7 +625,7 @@ ControlSocket::parse_command(int fd, const String &line)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     int datalen = 0;
     if (words.size() == 3 && (!cp_integer(words[2], &datalen) || datalen < 0))
-      return message(fd, CSERR_SYNTAX, "Syntax error in `llrpc'");
+      return message(fd, CSERR_SYNTAX, "Syntax error in 'llrpc'");
     if (_in_texts[fd].length() < datalen) {
       if (_flags[fd] & READ_CLOSED)
 	return message(fd, CSERR_SYNTAX, "Not enough data");
@@ -645,7 +645,7 @@ ControlSocket::parse_command(int fd, const String &line)
     return 0;
     
   } else
-    return message(fd, CSERR_UNIMPLEMENTED, "Command `" + command + "' unimplemented");
+    return message(fd, CSERR_UNIMPLEMENTED, "Command '" + command + "' unimplemented");
 }
 
 void
