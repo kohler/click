@@ -729,8 +729,8 @@ ELEMENT_PROVIDES(IPRw)
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IPFlowID, IPRw::Mapping *>;
-template class BigHashMapIterator<IPFlowID, IPRw::Mapping *>;
+template class HashMap<IPFlowID, IPRw::Mapping *>;
+template class HashMapIterator<IPFlowID, IPRw::Mapping *>;
 template class Vector<IPRw::InputSpec>;
 #endif
 CLICK_ENDDECLS

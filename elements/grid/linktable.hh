@@ -158,11 +158,11 @@ private:
 
   };
 
-  typedef BigHashMap<IPAddress, HostInfo> HTable;
+  typedef HashMap<IPAddress, HostInfo> HTable;
   typedef HTable::const_iterator HTIter;
   
 
-  typedef BigHashMap<IPPair, LinkInfo> LTable;
+  typedef HashMap<IPPair, LinkInfo> LTable;
   typedef LTable::const_iterator LTIter;
 
   class HTable _hosts;

@@ -202,7 +202,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	FlowInfo *find_force(uint32_t ports);
     };
 
-    typedef BigHashMap<HostPair, HostPairInfo> Map;
+    typedef HashMap<HostPair, HostPairInfo> Map;
     Map _tcp_map;
     Map _udp_map;
     

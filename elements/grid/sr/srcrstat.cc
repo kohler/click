@@ -376,7 +376,7 @@ SrcrStat::read_bcast_stats(Element *xf, void *)
 {
   SrcrStat *e = (SrcrStat *) xf;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
+  typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
   
   for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
@@ -471,5 +471,5 @@ EXPORT_ELEMENT(SrcrStat)
 #include <click/dequeue.cc>
 #include <click/vector.cc>
 template class DEQueue<SrcrStat::probe_t>;
-template class BigHashMap<IPAddress, SrcrStat::probe_list_t>;
+template class HashMap<IPAddress, SrcrStat::probe_list_t>;
 CLICK_ENDDECLS

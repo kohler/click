@@ -278,7 +278,7 @@ cleanup_module()
   printk("<1>click module exiting\n");
 
   // HashMap
-  BigHashMap_ArenaFactory::static_cleanup();
+  HashMap_ArenaFactory::static_cleanup();
   
   // String (after any operations that might create Strings)
   String::static_cleanup();

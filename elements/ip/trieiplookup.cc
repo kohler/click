@@ -559,10 +559,8 @@ TrieIPLookup::print_route_vector() const
 void
 TrieIPLookup::print_lengthhash(const LengthHash& lengthhash) const
 {
-    LengthHash::iterator it = lengthhash.begin();
-    for (int i = 0; i < lengthhash.size(); i++) {
+    for (LengthHash::const_iterator it = lengthhash.begin(); it; it++)
         click_chatter("%s : %s", it.key().unparse().cc(), it.value().unparse().cc());
-    }
 }
 
 void

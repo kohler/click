@@ -13,7 +13,7 @@ class IPRw : public Element { public:
 
     class Pattern;
     class Mapping;
-    typedef BigHashMap<IPFlowID, Mapping *> Map;
+    typedef HashMap<IPFlowID, Mapping *> Map;
     enum InputSpecName {
 	INPUT_SPEC_NOCHANGE, INPUT_SPEC_KEEP, INPUT_SPEC_DROP,
 	INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER

@@ -190,7 +190,7 @@ AutoTXPower::add_handlers()
 // genepower Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<EtherAddress, AutoTXPower::DstInfo>;
+template class HashMap<EtherAddress, AutoTXPower::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(AutoTXPower)

@@ -116,7 +116,7 @@ class WifiQueue : public Element, public Storage { public:
   int current_q;
 
 
-  typedef BigHashMap<EtherAddress, Neighbor *> NTable;
+  typedef HashMap<EtherAddress, Neighbor *> NTable;
   typedef NTable::const_iterator NTIter;
   class NTable _neighbors_m;
   Vector<EtherAddress> _neighbors_v;

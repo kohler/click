@@ -120,7 +120,7 @@ protected:
   
 
   //using new approach
-  typedef BigHashMap<IP6FlowID, Mapping *> Map6;
+  typedef HashMap<IP6FlowID, Mapping *> Map6;
   void clean_map(Map6 &, bool);
   unsigned short find_mport( );
   void mapping_freed(Mapping *, bool);

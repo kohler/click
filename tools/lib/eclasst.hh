@@ -22,7 +22,6 @@ class ElementClassT { public:
 
     static void set_base_type(ElementClassT *);
     static ElementClassT *base_type(const String &);
-    static ElementClassT *unused_type();
     static ElementClassT *tunnel_type();
 
     void use()				{ _use_count++; }
@@ -30,9 +29,9 @@ class ElementClassT { public:
 
     const String &name() const		{ return _name; }
     const char *printable_name_cc();
-    int unique_id() const		{ return _unique_id; }
     int uid() const			{ return _unique_id; }
-    enum { UNUSED_UID = -1, TUNNEL_UID = 0 };
+    static int max_uid();
+    enum { TUNNEL_UID = 1 };
 
     const ElementTraits &traits() const;
     virtual const ElementTraits *find_traits() const;
@@ -79,7 +78,6 @@ class ElementClassT { public:
     mutable int _traits_version;
     mutable const ElementTraits *_traits;
     
-    static ElementClassT *the_unused_type;
     static ElementClassT *the_tunnel_type;
     
     ElementClassT(const ElementClassT &);
@@ -177,13 +175,6 @@ ElementClassT::tunnel_type()
     return the_tunnel_type;
 }
 
-inline ElementClassT *
-ElementClassT::unused_type()
-{
-    assert(the_unused_type);
-    return the_unused_type;
-}
-
 inline const ElementTraits &
 ElementClassT::traits() const
 {
@@ -222,6 +213,12 @@ inline bool
 ElementClassT::provides(const String &req) const
 {
     return traits().provides(req);
+}
+
+inline int
+hashcode(ElementClassT *e)
+{
+    return e->uid();
 }
 
 #endif

@@ -1941,10 +1941,10 @@ EXPORT_ELEMENT(DSRRouteTable)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
-template class BigHashMap<DSRRouteTable::ForwardedReqKey, DSRRouteTable::ForwardedReqVal>;
-template class BigHashMap<IPAddress, DSRRouteTable::InitiatedReq>;
+template class HashMap<DSRRouteTable::ForwardedReqKey, DSRRouteTable::ForwardedReqVal>;
+template class HashMap<IPAddress, DSRRouteTable::InitiatedReq>;
 template class Vector<DSRRouteTable::BufferedPacket>;
-template class BigHashMap<IPAddress, DSRRouteTable::SendBuffer>;
-template class BigHashMap<IPAddress, DSRRouteTable::BlacklistEntry>;
+template class HashMap<IPAddress, DSRRouteTable::SendBuffer>;
+template class HashMap<IPAddress, DSRRouteTable::BlacklistEntry>;
 
 CLICK_ENDDECLS

@@ -215,7 +215,7 @@ private:
 
 #if SEQ_METRIC
   bool _use_seq_metric; // use the `dsdv_seqs' metric
-  BigHashMap<IPAddress, DEQueue<unsigned> > _seq_history;
+  HashMap<IPAddress, DEQueue<unsigned> > _seq_history;
 #endif
 
   typedef GridGenericMetric::metric_t metric_t;
@@ -318,7 +318,7 @@ private:
   
   friend class RTEntry;
   
-  typedef BigHashMap<IPAddress, RTEntry> RTable;
+  typedef HashMap<IPAddress, RTEntry> RTable;
   typedef RTable::const_iterator RTIter;
   
   /* the route table */
@@ -348,7 +348,7 @@ private:
   bool lookup_route(const IPAddress &dest_ip, RTEntry &entry);
  
   
-  typedef BigHashMap<IPAddress, Timer *> TMap;
+  typedef HashMap<IPAddress, Timer *> TMap;
   typedef TMap::iterator TMIter;
 
   struct HookPair {
@@ -359,7 +359,7 @@ private:
     HookPair() { }
   };
 
-  typedef BigHashMap<IPAddress, HookPair *> HMap;
+  typedef HashMap<IPAddress, HookPair *> HMap;
   typedef HMap::iterator HMIter;
 
   // Expire timer map invariants: every good route (r.good() is true)

@@ -494,7 +494,7 @@ LinkTable::print_routes()
 {
   StringAccum sa;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
+  typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
 
   for (HTIter iter = _hosts.begin(); iter; iter++) {
@@ -575,7 +575,7 @@ LinkTable::dijkstra()
   click_gettimeofday(&start);
   IPAddress src = _ip;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
+  typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
 
   for (HTIter iter = _hosts.begin(); iter; iter++) {
@@ -650,9 +650,9 @@ LinkTable::_lt_assert_(const char *file, int line, const char *expr)
 #include <click/hashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IPAddress, IPAddress>;
-template class BigHashMap<IPPair, LinkTable::LinkInfo>;
-template class BigHashMap<IPAddress, LinkTable::HostInfo>;
+template class HashMap<IPAddress, IPAddress>;
+template class HashMap<IPPair, LinkTable::LinkInfo>;
+template class HashMap<IPAddress, LinkTable::HostInfo>;
 #endif
 EXPORT_ELEMENT(LinkTable)
 CLICK_ENDDECLS

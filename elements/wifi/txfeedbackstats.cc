@@ -231,6 +231,6 @@ EXPORT_ELEMENT(TXFeedbackStats)
 template class DEQueue<TXFeedbackStats::stat_t>;
 
 #include <click/bighashmap.cc>
-template class BigHashMap<EtherAddress, TXFeedbackStats::StatQ>;
+template class HashMap<EtherAddress, TXFeedbackStats::StatQ>;
 
 CLICK_ENDDECLS

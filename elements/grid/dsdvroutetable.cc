@@ -1657,8 +1657,8 @@ EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
-template class BigHashMap<IPAddress, DSDVRouteTable::RTEntry>;
-template class BigHashMap<IPAddress, Timer *>;
+template class HashMap<IPAddress, DSDVRouteTable::RTEntry>;
+template class HashMap<IPAddress, Timer *>;
 template class Vector<DSDVRouteTable::RTEntry>;
 
 #include <click/dequeue.cc>

@@ -76,7 +76,7 @@ private:
     PathInfo() :  _p() { reset(); }
     PathInfo(Path p) :  _p(p)  { reset(); }
   };
-  typedef BigHashMap<Path, PathInfo> PathTable;
+  typedef HashMap<Path, PathInfo> PathTable;
   PathTable _paths;
   
   int get_metric(IPAddress other);

@@ -22,7 +22,7 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-BigHashMap_Arena::BigHashMap_Arena(uint32_t element_size)
+HashMap_Arena::HashMap_Arena(uint32_t element_size)
     : _free(0),
       _cur_buffer(0), _buffer_pos(0),
       _element_size(element_size < sizeof(Link) ? sizeof(Link) : element_size),
@@ -32,7 +32,7 @@ BigHashMap_Arena::BigHashMap_Arena(uint32_t element_size)
     _refcount = 0;
 }
 
-BigHashMap_Arena::~BigHashMap_Arena()
+HashMap_Arena::~HashMap_Arena()
 {
     for (int i = 0; i < _nbuffers; i++)
 	delete[] _buffers[i];
@@ -40,7 +40,7 @@ BigHashMap_Arena::~BigHashMap_Arena()
 }
 
 void *
-BigHashMap_Arena::hard_alloc()
+HashMap_Arena::hard_alloc()
 {
     assert(_buffer_pos == 0);
     
@@ -65,18 +65,18 @@ BigHashMap_Arena::hard_alloc()
 
 //
 
-BigHashMap_ArenaFactory *BigHashMap_ArenaFactory::the_factory = 0;
+HashMap_ArenaFactory *HashMap_ArenaFactory::the_factory = 0;
 static const uint32_t min_large = 256;
 static const int shifts[2] = { 2, 7 };
 static const int offsets[2] = { (1 << shifts[0]) - 1, (1 << shifts[1]) - 1 };
 
-BigHashMap_ArenaFactory::BigHashMap_ArenaFactory()
+HashMap_ArenaFactory::HashMap_ArenaFactory()
 {
     _arenas[0] = _arenas[1] = 0;
     _narenas[0] = _narenas[1] = 0;
 }
 
-BigHashMap_ArenaFactory::~BigHashMap_ArenaFactory()
+HashMap_ArenaFactory::~HashMap_ArenaFactory()
 {
     for (int which = 0; which < 2; which++) {
 	for (int i = 0; i < _narenas[which]; i++)
@@ -89,21 +89,21 @@ BigHashMap_ArenaFactory::~BigHashMap_ArenaFactory()
 }
 
 void
-BigHashMap_ArenaFactory::static_initialize()
+HashMap_ArenaFactory::static_initialize()
 {
     if (!the_factory)
-	the_factory = new BigHashMap_ArenaFactory;
+	the_factory = new HashMap_ArenaFactory;
 }
 
 void
-BigHashMap_ArenaFactory::static_cleanup()
+HashMap_ArenaFactory::static_cleanup()
 {
     delete the_factory;
     the_factory = 0;
 }
 
-BigHashMap_Arena *
-BigHashMap_ArenaFactory::get_arena(uint32_t element_size, BigHashMap_ArenaFactory *factory)
+HashMap_Arena *
+HashMap_ArenaFactory::get_arena(uint32_t element_size, HashMap_ArenaFactory *factory)
 {
     if (!the_factory)
 	static_initialize();
@@ -112,8 +112,8 @@ BigHashMap_ArenaFactory::get_arena(uint32_t element_size, BigHashMap_ArenaFactor
     return factory->get_arena_func(element_size);
 }
 
-BigHashMap_Arena *
-BigHashMap_ArenaFactory::get_arena_func(uint32_t element_size)
+HashMap_Arena *
+HashMap_ArenaFactory::get_arena_func(uint32_t element_size)
 {
     int which = (element_size < min_large ? 0 : 1);
     int arenanum = (element_size + offsets[which]) >> shifts[which];
@@ -122,9 +122,9 @@ BigHashMap_ArenaFactory::get_arena_func(uint32_t element_size)
     while (new_narenas <= arenanum)
 	new_narenas = (new_narenas ? new_narenas * 2 : 32);
     if (new_narenas != _narenas[which]) {
-	if (BigHashMap_Arena **new_a = new BigHashMap_Arena *[new_narenas]) {
+	if (HashMap_Arena **new_a = new HashMap_Arena *[new_narenas]) {
 	    for (int i = 0; i < new_narenas; i++)
-		new_a[i] = (i < _narenas[which] ? _arenas[which][i] : (BigHashMap_Arena *)0);
+		new_a[i] = (i < _narenas[which] ? _arenas[which][i] : (HashMap_Arena *)0);
 	    delete[] _arenas[which];
 	    _arenas[which] = new_a;
 	    _narenas[which] = new_narenas;
@@ -133,7 +133,7 @@ BigHashMap_ArenaFactory::get_arena_func(uint32_t element_size)
     }
 
     if (!_arenas[which][arenanum]) {
-	if (!(_arenas[which][arenanum] = new BigHashMap_Arena(arenanum << shifts[which])))
+	if (!(_arenas[which][arenanum] = new HashMap_Arena(arenanum << shifts[which])))
 	    return 0;
 	_arenas[which][arenanum]->use();
     }

@@ -285,7 +285,7 @@ LinkTracker::read_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (BigHashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i; i++) {
+  for (HashMap<IPAddress, LinkTracker::stat_t>::iterator i = f->_stats.begin(); i; i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);
@@ -304,7 +304,7 @@ LinkTracker::read_bcast_stats(Element *xf, void *)
 
   char timebuf[80];
   String s;
-  for (BigHashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i; i++) {
+  for (HashMap<IPAddress, LinkTracker::bcast_t>::iterator i = f->_bcast_stats.begin(); i; i++) {
     snprintf(timebuf, 80, " %ld.%06ld", 
 	     (long) i.value().last_update.tv_sec, 
 	     (long) i.value().last_update.tv_usec);
@@ -348,6 +348,6 @@ ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LinkTracker)
 
 #include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, LinkTracker::stat_t>;
-template class BigHashMap<IPAddress, LinkTracker::bcast_t>;
+template class HashMap<IPAddress, LinkTracker::stat_t>;
+template class HashMap<IPAddress, LinkTracker::bcast_t>;
 CLICK_ENDDECLS

@@ -32,11 +32,9 @@ template class Vector<String>;
 
 #include <click/hashmap.cc>
 template class HashMap<String, int>;
-template class _HashMapIterator<String, int>;
-
-#include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, unsigned>;
-template class BigHashMap<IPFlowID, bool>;
+template class _HashMap_iterator<String, int>;
+template class HashMap<IPAddress, unsigned>;
+template class HashMap<IPFlowID, bool>;
 
 #include <click/ewma.cc>
 template class DirectEWMAX<4, 10>;

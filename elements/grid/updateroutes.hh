@@ -100,7 +100,7 @@ public:
     { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
 
-  typedef BigHashMap<IPAddress, NbrEntry> Table;
+  typedef HashMap<IPAddress, NbrEntry> Table;
   Table _addresses; // immediate nbrs
   /* 
    * _addresses is a mapping from IP to ether for nodes within our
@@ -116,7 +116,7 @@ public:
     grid_nbr_entry nbr;
   };
 
-  typedef BigHashMap<IPAddress, far_entry> FarTable;
+  typedef HashMap<IPAddress, far_entry> FarTable;
   FarTable _rtes; // immediate and multihop nbrs
   /* 
    * _rtes is our routing table; its information is maintained by

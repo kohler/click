@@ -352,6 +352,8 @@ tools/lib/processingt.cc
 tools/lib/processingt.hh
 tools/lib/routert.cc
 tools/lib/routert.hh
+tools/lib/runparse.cc
+tools/lib/runparse.hh
 tools/lib/toolutils.cc
 tools/lib/toolutils.hh
 tools/lib/vectori.cc

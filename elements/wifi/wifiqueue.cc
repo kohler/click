@@ -242,7 +242,7 @@ WifiQueue::wifiqueue_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<EtherAddress, WifiNeighbor *>;
+template class HashMap<EtherAddress, WifiNeighbor *>;
 template class Vector<WifiNeighbor *>;
 #endif
 CLICK_ENDDECLS

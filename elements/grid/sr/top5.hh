@@ -140,7 +140,7 @@ private:
   typedef HashMap<IPAddress, Query> QueryTable;
   QueryTable _queries;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
+  typedef HashMap<IPAddress, bool> IPMap;
 
   DEQueue<Seen> _seen;
 

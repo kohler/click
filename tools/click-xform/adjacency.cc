@@ -92,7 +92,7 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   RouterT *r = _router;
   int cap = _cap;
   if (r->nelements() > (1<<cap)
-      || r->nelements() >= r->real_element_count() + 500) {
+      || r->nelements() >= r->n_live_elements() + 500) {
     r->remove_dead_elements();
     init(r);
     return;

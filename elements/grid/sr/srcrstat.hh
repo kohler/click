@@ -178,7 +178,7 @@ private:
   };
 
   // Per-sender map of received probes.
-  typedef BigHashMap<IPAddress, probe_list_t> ProbeMap;
+  typedef HashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
   static String read_stats(Element *, void *);

@@ -112,6 +112,23 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
     }
 }
 
+
+#if 0
+RouterUnparserT::RouterUnparserT()
+    : _tuid_map(-1)
+{
+}
+
+void
+RouterUnparserT::track_types(RouterT *r)
+{
+    for (const Router::ElementType *t = r->_declared_types.begin(); t < r->_declared_types.end(); t++)
+	if ();
+}
+#endif
+
+
+#if 1
 void
 RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 {
@@ -182,6 +199,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 	    print_state = 3;
 	}
 }
+#endif
 
 void
 RouterT::unparse_connections(StringAccum &sa, const String &indent) const

@@ -179,7 +179,7 @@ ARPTable::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IPAddress, ARPTable::DstInfo>;
+template class HashMap<IPAddress, ARPTable::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPTable)

@@ -60,8 +60,8 @@ private:
     }
   };
   
-  typedef BigHashMap<IPAddress, DstInfo> ATable;
-  typedef BigHashMap<EtherAddress, IPAddress> RTable;
+  typedef HashMap<IPAddress, DstInfo> ATable;
+  typedef HashMap<EtherAddress, IPAddress> RTable;
   typedef ATable::const_iterator ARPIter;
   
   ATable _table;

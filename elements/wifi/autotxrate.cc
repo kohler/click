@@ -228,7 +228,7 @@ AutoTXRate::static_print_stats(Element *e, void *)
 String
 AutoTXRate::print_stats() 
 {
-  typedef BigHashMap<EtherAddress, bool> EthMap;
+  typedef HashMap<EtherAddress, bool> EthMap;
   EthMap ethers;
 
   for (NIter iter = _neighbors.begin(); iter; iter++) {
@@ -436,7 +436,7 @@ AutoTXRate::add_handlers()
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<EtherAddress, AutoTXRate::DstInfo>;
+template class HashMap<EtherAddress, AutoTXRate::DstInfo>;
 template class DEQueue<AutoTXRate::tx_result>;
 #endif
 CLICK_ENDDECLS

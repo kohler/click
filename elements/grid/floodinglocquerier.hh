@@ -66,7 +66,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
     // this data is not valid, and packet p is waiting to be sent.
   };
 
-  typedef BigHashMap<IPAddress, LocEntry> qmap;
+  typedef HashMap<IPAddress, LocEntry> qmap;
   qmap _queries; // outstanding and cached query results.
 
   // statistics
@@ -82,7 +82,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
     seq_t(unsigned int s, int j) : seq_no(s), last_response_jiffies(j) { }
     seq_t() : seq_no(0), last_response_jiffies(0) { }
   };
-  typedef BigHashMap<IPAddress, seq_t> seq_map;
+  typedef HashMap<IPAddress, seq_t> seq_map;
   seq_map _query_seqs;
 
   EtherAddress _my_en;

@@ -192,7 +192,7 @@ static HashMap<String, String> package_hrefs;
 static void
 notify_class(ElementClassT *c)
 {
-    int uid = c->unique_id();
+    int uid = c->uid();
     if (uid >= classes.size())
 	classes.resize(uid + 1, 0);
     classes[uid] = c;
@@ -207,29 +207,29 @@ add_class_href(int class_uid, const String &href)
 static String
 class_href(ElementClassT *ec)
 {
-    String *sp = class_hrefs.findp(ec->unique_id());
+    String *sp = class_hrefs.findp(ec->uid());
     if (sp)
 	return *sp;
     else if (String href = ec->documentation_url()) {
-	add_class_href(ec->unique_id(), href);
+	add_class_href(ec->uid(), href);
 	return href;
     } else if (String doc_name = ec->documentation_name()) {
 	String package_href = package_hrefs["x" + ec->package()];
 	if (!package_href)
 	    package_href = package_hrefs["x"];
 	String href = percent_substitute(package_href, 's', doc_name.cc(), 0);
-	add_class_href(ec->unique_id(), href);
+	add_class_href(ec->uid(), href);
 	return href;
     } else {
-	add_class_href(ec->unique_id(), String());
+	add_class_href(ec->uid(), String());
 	return String();
     }
 }
 
 static String
-class_href(int unique_id)
+class_href(int uid)
 {
-    ElementClassT *ec = classes[unique_id];
+    ElementClassT *ec = classes[uid];
     assert(ec);
     return class_href(ec);
 }
@@ -385,14 +385,14 @@ prepare_items(int last_pos)
 static String
 link_class_decl(ElementClassT *ec)
 {
-    return "decl" + String(ec->unique_id());
+    return "decl" + String(ec->uid());
 }
 
 static String
 link_element_decl(ElementT *e)
 {
     if (ElementClassT *enclose = e->enclosing_type())
-	return "e" + String(enclose->unique_id()) + "-" + e->name();
+	return "e" + String(enclose->uid()) + "-" + e->name();
     else
 	return "e-" + e->name();
 }
@@ -418,15 +418,15 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
 	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
-	add_class_href(ec->unique_id(), "#" + link_class_decl(ec));
+	add_class_href(ec->uid(), "#" + link_class_decl(ec));
     }
     void notify_class_extension(ElementClassT *ec, int pos1, int pos2) {
 	notify_class(ec);
-	add_item(pos1, "{" + String(ec->unique_id()), pos2, "");
+	add_item(pos1, "{" + String(ec->uid()), pos2, "");
     }
     void notify_class_reference(ElementClassT *ec, int pos1, int pos2) {
 	notify_class(ec);
-	add_item(pos1, "{" + String(ec->unique_id()), pos2, "");
+	add_item(pos1, "{" + String(ec->uid()), pos2, "");
     }
     void notify_element_declaration(ElementT *e, int pos1, int pos2, int decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");

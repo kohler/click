@@ -212,7 +212,7 @@ private:
     void check() const { assert(_init); assert((_num_hops > 0) != (_seq_no & 1)); }
   }; 
  
-  typedef BigHashMap<IPAddress, RTEntry> RTable;
+  typedef HashMap<IPAddress, RTEntry> RTable;
   typedef RTable::iterator RTIter;
 
   /* the route table */

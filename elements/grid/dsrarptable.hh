@@ -69,7 +69,7 @@ private:
   IPAddress _me;
   EtherAddress _me_ether;
 
-  typedef BigHashMap<IPAddress, EtherAddress> IPMap;
+  typedef HashMap<IPAddress, EtherAddress> IPMap;
   IPMap _ip_map;
 
   IPAddress last_hop_ip(Packet *);

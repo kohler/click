@@ -799,7 +799,7 @@ TokenQueue::add_handlers()
 #include <click/bighashmap.cc>
 
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<Path, PathInfo>;
+template class HashMap<Path, PathInfo>;
 #endif
 
 CLICK_ENDDECLS

@@ -103,7 +103,7 @@ public:
 #define DSR_SENDBUFFER_TIMER_INTERVAL 1000  // how often to check for expired packets (ms)
   
   typedef Vector<BufferedPacket> SendBuffer;
-  typedef BigHashMap<IPAddress, SendBuffer> SBMap;
+  typedef HashMap<IPAddress, SendBuffer> SBMap;
   typedef SBMap::iterator SBMapIter;
   
   // info about route requests we're forwarding (if waiting for a
@@ -159,7 +159,7 @@ public:
 #define DSR_RREQ_TIMEOUT 600000 // how long before we timeout entries (ms)
 #define DSR_RREQ_EXPIRE_TIMER_INTERVAL 15000 // how often to check (ms)
   
-  typedef BigHashMap<ForwardedReqKey, ForwardedReqVal> ForwardedReqMap;
+  typedef HashMap<ForwardedReqKey, ForwardedReqVal> ForwardedReqMap;
   typedef ForwardedReqMap::iterator FWReqIter;
 
 
@@ -196,7 +196,7 @@ public:
       }
     }
   };
-  typedef BigHashMap<IPAddress, BlacklistEntry> Blacklist;
+  typedef HashMap<IPAddress, BlacklistEntry> Blacklist;
   typedef Blacklist::iterator BlacklistIter;
   
 
@@ -255,9 +255,9 @@ public:
     }
   };
 
-  typedef BigHashMap<IPAddress, InitiatedReq> InitiatedReqMap;
+  typedef HashMap<IPAddress, InitiatedReq> InitiatedReqMap;
   typedef InitiatedReqMap::iterator InitReqIter;
-  typedef BigHashMap<IPAddress, Packet *> RequestsToForward;
+  typedef HashMap<IPAddress, Packet *> RequestsToForward;
 
 public:
 

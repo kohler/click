@@ -433,6 +433,6 @@ FloodingLocQuerier::add_handlers()
 EXPORT_ELEMENT(FloodingLocQuerier)
 
 #include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, FloodingLocQuerier::LocEntry>;
-template class BigHashMap<IPAddress, FloodingLocQuerier::seq_t>;
+template class HashMap<IPAddress, FloodingLocQuerier::LocEntry>;
+template class HashMap<IPAddress, FloodingLocQuerier::seq_t>;
 CLICK_ENDDECLS

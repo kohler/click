@@ -164,7 +164,7 @@ LinkFailureDetection::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<EtherAddress, LinkFailureDetection::DstInfo>;
+template class HashMap<EtherAddress, LinkFailureDetection::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(LinkFailureDetection)

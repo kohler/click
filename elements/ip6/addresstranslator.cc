@@ -793,7 +793,7 @@ EXPORT_ELEMENT(AddressTranslator)
 #include <click/vector.cc>
 template class Vector<AddressTranslator::EntryMap>;
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<IP6FlowID, AddressTranslator::Mapping *>
-template class BigHashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
+template class HashMap<IP6FlowID, AddressTranslator::Mapping *>
+template class HashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
 #endif
 CLICK_ENDDECLS

@@ -56,7 +56,7 @@ public:
     entry(grid_location l, int e) : loc(l), err(e) { }
     entry() : err(-1) { }
   };
-  typedef BigHashMap<IPAddress, entry> Table;
+  typedef HashMap<IPAddress, entry> Table;
   Table _locs;
 
 private:

@@ -96,7 +96,7 @@ private:
 
   // most recent data goes on to head, oldest is at tail
   typedef DEQueue<stat_t> StatQ;
-  typedef BigHashMap<EtherAddress, StatQ> StatMap;
+  typedef HashMap<EtherAddress, StatQ> StatMap;
   StatMap _stat_map;
 
   void add_stat(const EtherAddress &, int, const timeval &, tx_result_t, unsigned, unsigned);

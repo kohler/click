@@ -19,7 +19,7 @@
 CLICK_DECLS
 class ElementFilter;
 class RouterThread;
-class BigHashMap_ArenaFactory;
+class HashMap_ArenaFactory;
 
 class Router { public:
 
@@ -90,7 +90,7 @@ class Router { public:
 
   Router *hotswap_router() const		{ return _hotswap_router; }
   ErrorHandler *chatter_channel(const String &) const;
-  BigHashMap_ArenaFactory *arena_factory() const;
+  HashMap_ArenaFactory *arena_factory() const;
 
   // THREADS
   int nthreads() const				{ return _threads.size() - 1; }
@@ -231,7 +231,7 @@ class Router { public:
   Element *_root_element;
   String _configuration;
 
-  BigHashMap_ArenaFactory *_arena_factory;
+  HashMap_ArenaFactory *_arena_factory;
   Router *_hotswap_router;
   
   Router(const Router &);
@@ -403,7 +403,7 @@ Router::run_timers()
   _timer_list.run(&_driver_runcount);
 }
 
-inline BigHashMap_ArenaFactory *
+inline HashMap_ArenaFactory *
 Router::arena_factory() const
 {
   return _arena_factory;

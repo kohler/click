@@ -151,7 +151,7 @@ RXStats::add_handlers()
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class BigHashMap<EtherAddress, RXStats::DstInfo>;
+template class HashMap<EtherAddress, RXStats::DstInfo>;
 #endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(RXStats)

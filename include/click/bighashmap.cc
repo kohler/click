@@ -28,7 +28,7 @@ CLICK_DECLS
 
 template <class K, class V>
 void
-BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuckets)
+HashMap<K, V>::initialize(HashMap_ArenaFactory *factory, int initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
   _buckets = new Elt *[_nbuckets];
@@ -42,26 +42,25 @@ BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuck
 }
 
 template <class K, class V>
-BigHashMap<K, V>::BigHashMap()
+HashMap<K, V>::HashMap()
   : _default_value(), _arena(0)
 {
   initialize(0, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K, class V>
-BigHashMap<K, V>::BigHashMap(const V &def, BigHashMap_ArenaFactory *factory)
+HashMap<K, V>::HashMap(const V &def, HashMap_ArenaFactory *factory)
   : _default_value(def), _arena(0)
 {
   initialize(factory, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K, class V>
-BigHashMap<K, V>::BigHashMap(const BigHashMap<K, V> &o)
-  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
-    _arena(o._arena)
+void
+HashMap<K, V>::copy_from(const HashMap<K, V> &o)
+  // requires that 'this' is empty and has the same number of buckets as 'o'
+  // and the same resize policy
 {
-  _arena->use();
   for (int i = 0; i < _nbuckets; i++) {
     Elt **pprev = &_buckets[i];
     *pprev = 0;
@@ -77,7 +76,32 @@ BigHashMap<K, V>::BigHashMap(const BigHashMap<K, V> &o)
 }
 
 template <class K, class V>
-BigHashMap<K, V>::~BigHashMap()
+HashMap<K, V>::HashMap(const HashMap<K, V> &o)
+  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
+    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
+    _arena(o._arena)
+{
+  _arena->use();
+  copy_from(o);
+}
+
+template <class K, class V>
+HashMap<K, V> &
+HashMap<K, V>::operator=(const HashMap<K, V> &o)
+{
+  if (&o != this) {
+    clear();
+    _default_value = o._default_value;
+    if (_nbuckets < o._nbuckets)
+      resize0(o._nbuckets);
+    _nbuckets = o._nbuckets;
+    copy_from(o);
+  }
+  return *this;
+}
+
+template <class K, class V>
+HashMap<K, V>::~HashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; ) {
@@ -93,7 +117,7 @@ BigHashMap<K, V>::~BigHashMap()
 
 template <class K, class V>
 void
-BigHashMap<K, V>::set_dynamic_resizing(bool on)
+HashMap<K, V>::set_dynamic_resizing(bool on)
 {
   if (!on)
     _capacity = 0x7FFFFFFF;
@@ -105,25 +129,25 @@ BigHashMap<K, V>::set_dynamic_resizing(bool on)
 
 template <class K, class V>
 void
-BigHashMap<K, V>::set_arena(BigHashMap_ArenaFactory *factory)
+HashMap<K, V>::set_arena(HashMap_ArenaFactory *factory)
 {
   assert(empty());
   if (_arena)
     _arena->unuse();
-  _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
+  _arena = HashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
   _arena->use();
 }
 
 template <class K, class V>
 inline int
-BigHashMap<K, V>::bucket(const K &key) const
+HashMap<K, V>::bucket(const K &key) const
 {
   return ((unsigned)hashcode(key)) % _nbuckets;
 }
 
 template <class K, class V>
-typename BigHashMap<K, V>::Elt *
-BigHashMap<K, V>::find_elt(const K &key) const
+typename HashMap<K, V>::Pair *
+HashMap<K, V>::find_pair(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
@@ -150,7 +174,7 @@ BigHashMap<K, V>::find_elt(const K &key) const
 
 template <class K, class V>
 void
-BigHashMap<K, V>::resize0(int new_nbuckets)
+HashMap<K, V>::resize0(int new_nbuckets)
 {
   Elt **new_buckets = new Elt *[new_nbuckets];
   for (int i = 0; i < new_nbuckets; i++)
@@ -177,7 +201,7 @@ BigHashMap<K, V>::resize0(int new_nbuckets)
 
 template <class K, class V>
 void
-BigHashMap<K, V>::resize(int want_nbuckets)
+HashMap<K, V>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
@@ -189,7 +213,7 @@ BigHashMap<K, V>::resize(int want_nbuckets)
 
 template <class K, class V>
 bool
-BigHashMap<K, V>::insert(const K &key, const V &value)
+HashMap<K, V>::insert(const K &key, const V &value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
@@ -215,7 +239,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
 
 template <class K, class V>
 bool
-BigHashMap<K, V>::remove(const K &key)
+HashMap<K, V>::remove(const K &key)
 {
   int b = bucket(key);
   Elt *prev = 0;
@@ -239,33 +263,31 @@ BigHashMap<K, V>::remove(const K &key)
 }
 
 template <class K, class V>
-V *
-BigHashMap<K, V>::findp_force(const K &key)
+typename HashMap<K, V>::Pair *
+HashMap<K, V>::find_pair_force(const K &key, const V &default_value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
-      return &e->value;
-
+      return e;
   if (_n >= _capacity) {
     resize(_nbuckets + 1);
     b = bucket(key);
   }
-  
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
-    new(reinterpret_cast<void *>(&e->value)) V(_default_value);
+    new(reinterpret_cast<void *>(&e->value)) V(default_value);
     e->next = _buckets[b];
     _buckets[b] = e;
     _n++;
-    return &e->value;
+    return e;
   } else
     return 0;
 }
 
 template <class K, class V>
 void
-BigHashMap<K, V>::clear()
+HashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; ) {
@@ -282,12 +304,12 @@ BigHashMap<K, V>::clear()
 
 template <class K, class V>
 void
-BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
+HashMap<K, V>::swap(HashMap<K, V> &o)
 {
   Elt **t_elts;
   V t_v;
   int t_int;
-  BigHashMap_Arena *t_arena;
+  HashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
@@ -300,11 +322,11 @@ BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
 }
 
 template <class K, class V>
-_BigHashMap_const_iterator<K, V>::_BigHashMap_const_iterator(const BigHashMap<K, V> *hm)
+_HashMap_const_iterator<K, V>::_HashMap_const_iterator(const HashMap<K, V> *hm)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
-  typename BigHashMap<K, V>::Elt **b = _hm->_buckets;
+  typename HashMap<K, V>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
@@ -315,13 +337,13 @@ _BigHashMap_const_iterator<K, V>::_BigHashMap_const_iterator(const BigHashMap<K,
 
 template <class K, class V>
 void
-_BigHashMap_const_iterator<K, V>::operator++(int)
+_HashMap_const_iterator<K, V>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;
   else {
     int nb = _hm->_nbuckets;
-    typename BigHashMap<K, V>::Elt **b = _hm->_buckets;
+    typename HashMap<K, V>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {
 	_elt = b[_bucket];
@@ -333,7 +355,7 @@ _BigHashMap_const_iterator<K, V>::operator++(int)
 
 #if 0
 static int
-BigHashMap_partition_elts(void **elts, int left, int right)
+HashMap_partition_elts(void **elts, int left, int right)
 {
   void *pivot = elts[(left + right) / 2];
 
@@ -356,12 +378,12 @@ BigHashMap_partition_elts(void **elts, int left, int right)
 }
 
 void
-BigHashMap_qsort_elts(void **elts, int left, int right)
+HashMap_qsort_elts(void **elts, int left, int right)
 {
   if (left < right) {
-    int split = BigHashMap_partition_elts(elts, left, right);
-    BigHashMap_qsort_elts(elts, left, split);
-    BigHashMap_qsort_elts(elts, split, right);
+    int split = HashMap_partition_elts(elts, left, right);
+    HashMap_qsort_elts(elts, left, split);
+    HashMap_qsort_elts(elts, split, right);
   }
 }
 #endif
@@ -371,7 +393,7 @@ BigHashMap_qsort_elts(void **elts, int left, int right)
 
 template <class K>
 void
-BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuckets)
+HashMap<K, void *>::initialize(HashMap_ArenaFactory *factory, int initial_nbuckets)
 {
   _nbuckets = initial_nbuckets;
   _buckets = new Elt *[_nbuckets];
@@ -385,26 +407,23 @@ BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory, int initial_
 }
 
 template <class K>
-BigHashMap<K, void *>::BigHashMap()
+HashMap<K, void *>::HashMap()
   : _default_value(0), _arena(0)
 {
   initialize(0, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K>
-BigHashMap<K, void *>::BigHashMap(void *def, BigHashMap_ArenaFactory *factory)
+HashMap<K, void *>::HashMap(void *def, HashMap_ArenaFactory *factory)
   : _default_value(def), _arena(0)
 {
   initialize(factory, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K>
-BigHashMap<K, void *>::BigHashMap(const BigHashMap<K, void *> &o)
-  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
-    _arena(o._arena)
+void
+HashMap<K, void *>::copy_from(const HashMap<K, void *> &o)
 {
-  _arena->use();
   for (int i = 0; i < _nbuckets; i++) {
     Elt **pprev = &_buckets[i];
     *pprev = 0;
@@ -420,7 +439,32 @@ BigHashMap<K, void *>::BigHashMap(const BigHashMap<K, void *> &o)
 }
 
 template <class K>
-BigHashMap<K, void *>::~BigHashMap()
+HashMap<K, void *>::HashMap(const HashMap<K, void *> &o)
+  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
+    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
+    _arena(o._arena)
+{
+  _arena->use();
+  copy_from(o);
+}
+
+template <class K>
+HashMap<K, void *> &
+HashMap<K, void *>::operator=(const HashMap<K, void *> &o)
+{
+  if (&o != this) {
+    clear();
+    _default_value = o._default_value;
+    if (_nbuckets < o._nbuckets)
+      resize0(o._nbuckets);
+    _nbuckets = o._nbuckets;
+    copy_from(o);
+  }
+  return *this;
+}
+
+template <class K>
+HashMap<K, void *>::~HashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; ) {
@@ -435,7 +479,7 @@ BigHashMap<K, void *>::~BigHashMap()
 
 template <class K>
 void
-BigHashMap<K, void *>::set_dynamic_resizing(bool on)
+HashMap<K, void *>::set_dynamic_resizing(bool on)
 {
   if (!on)
     _capacity = 0x7FFFFFFF;
@@ -447,25 +491,25 @@ BigHashMap<K, void *>::set_dynamic_resizing(bool on)
 
 template <class K>
 void
-BigHashMap<K, void *>::set_arena(BigHashMap_ArenaFactory *factory)
+HashMap<K, void *>::set_arena(HashMap_ArenaFactory *factory)
 {
   assert(empty());
   if (_arena)
     _arena->unuse();
-  _arena = BigHashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
+  _arena = HashMap_ArenaFactory::get_arena(sizeof(Elt), factory);
   _arena->use();
 }
 
 template <class K>
 inline int
-BigHashMap<K, void *>::bucket(const K &key) const
+HashMap<K, void *>::bucket(const K &key) const
 {
   return ((unsigned)hashcode(key)) % _nbuckets;
 }
 
 template <class K>
-typename BigHashMap<K, void *>::Elt *
-BigHashMap<K, void *>::find_elt(const K &key) const
+typename HashMap<K, void *>::Pair *
+HashMap<K, void *>::find_pair(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
@@ -492,7 +536,7 @@ BigHashMap<K, void *>::find_elt(const K &key) const
 
 template <class K>
 void
-BigHashMap<K, void *>::resize0(int new_nbuckets)
+HashMap<K, void *>::resize0(int new_nbuckets)
 {
   Elt **new_buckets = new Elt *[new_nbuckets];
   for (int i = 0; i < new_nbuckets; i++)
@@ -519,7 +563,7 @@ BigHashMap<K, void *>::resize0(int new_nbuckets)
 
 template <class K>
 void
-BigHashMap<K, void *>::resize(int want_nbuckets)
+HashMap<K, void *>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
@@ -531,7 +575,7 @@ BigHashMap<K, void *>::resize(int want_nbuckets)
 
 template <class K>
 bool
-BigHashMap<K, void *>::insert(const K &key, void *value)
+HashMap<K, void *>::insert(const K &key, void *value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
@@ -557,7 +601,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
 
 template <class K>
 bool
-BigHashMap<K, void *>::remove(const K &key)
+HashMap<K, void *>::remove(const K &key)
 {
   int b = bucket(key);
   Elt *prev = 0;
@@ -580,33 +624,31 @@ BigHashMap<K, void *>::remove(const K &key)
 }
 
 template <class K>
-void **
-BigHashMap<K, void *>::findp_force(const K &key)
+typename HashMap<K, void *>::Pair *
+HashMap<K, void *>::find_pair_force(const K &key, void *default_value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
-      return &e->value;
-
+      return e;
   if (_n >= _capacity) {
     resize(_nbuckets + 1);
     b = bucket(key);
   }
-  
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
-    e->value = _default_value;
+    e->value = default_value;
     e->next = _buckets[b];
     _buckets[b] = e;
     _n++;
-    return &e->value;
+    return e;
   } else
     return 0;
 }
 
 template <class K>
 void
-BigHashMap<K, void *>::clear()
+HashMap<K, void *>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; ) {
@@ -622,12 +664,12 @@ BigHashMap<K, void *>::clear()
 
 template <class K>
 void
-BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
+HashMap<K, void *>::swap(HashMap<K, void *> &o)
 {
   Elt **t_elts;
   void *t_v;
   int t_int;
-  BigHashMap_Arena *t_arena;
+  HashMap_Arena *t_arena;
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
@@ -641,11 +683,11 @@ BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
 
 
 template <class K>
-_BigHashMap_const_iterator<K, void *>::_BigHashMap_const_iterator(const BigHashMap<K, void *> *hm)
+_HashMap_const_iterator<K, void *>::_HashMap_const_iterator(const HashMap<K, void *> *hm)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
-  typename BigHashMap<K, void *>::Elt **b = _hm->_buckets;
+  typename HashMap<K, void *>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
@@ -656,13 +698,13 @@ _BigHashMap_const_iterator<K, void *>::_BigHashMap_const_iterator(const BigHashM
 
 template <class K>
 void
-_BigHashMap_const_iterator<K, void *>::operator++(int)
+_HashMap_const_iterator<K, void *>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;
   else {
     int nb = _hm->_nbuckets;
-    typename BigHashMap<K, void *>::Elt **b = _hm->_buckets;
+    typename HashMap<K, void *>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {
 	_elt = b[_bucket];

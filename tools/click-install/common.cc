@@ -132,7 +132,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
   
   // go over all modules; figure out which ones are Click packages
   // by checking `packages' array; mark old Click packages for removal
-  for (StringMap::iterator iter = active_modules.begin(); iter; iter++)
+  for (StringMap::const_iterator iter = active_modules.begin(); iter; iter++)
     // only remove packages that weren't used in this configuration.
     // packages used in this configuration have value > 0
     if (iter.value() == 0) {

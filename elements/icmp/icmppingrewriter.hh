@@ -107,7 +107,7 @@ class ICMPPingRewriter : public Element { public:
   
  protected:
 
-  typedef BigHashMap<IPFlowID, Mapping *> Map;
+  typedef HashMap<IPFlowID, Mapping *> Map;
 
   Map _request_map;
   Map _reply_map;

@@ -32,7 +32,7 @@ RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
     : _use_count(0), _enclosing_type(type),
       _enclosing_scope(enclosing_scope), _scope_cookie(0),
       _declared_type_map(-1), _element_name_map(-1),
-      _free_element(0), _real_ecount(0), _new_eindex_collector(0),
+      _free_element(0), _n_live_elements(0), _new_eindex_collector(0),
       _free_conn(-1), _archive_map(-1)
 {
     // borrow definitions from `enclosing'
@@ -61,7 +61,7 @@ RouterT::check() const
 
     // check element type names
     int nt_found = 0;
-    for (StringMap::iterator iter = _declared_type_map.begin(); iter; iter++) {
+    for (StringMap::const_iterator iter = _declared_type_map.begin(); iter; iter++) {
 	int sc = _scope_cookie;
 	for (int i = iter.value(); i >= 0; i = _declared_types[i].prev_name) {
 	    assert(_declared_types[i].name() == iter.key());
@@ -81,7 +81,7 @@ RouterT::check() const
     }
     
     // check element names
-    for (StringMap::iterator iter = _element_name_map.begin(); iter; iter++) {
+    for (StringMap::const_iterator iter = _element_name_map.begin(); iter; iter++) {
 	String key = iter.key();
 	int value = iter.value();
 	if (value >= 0)
@@ -184,7 +184,7 @@ ElementT *
 RouterT::add_element(const ElementT &elt_in)
 {
     int i;
-    _real_ecount++;
+    _n_live_elements++;
     ElementT *elt = new ElementT(elt_in);
     if (_free_element) {
 	i = _free_element->eindex();
@@ -222,7 +222,7 @@ ElementT *
 RouterT::add_anon_element(ElementClassT *type, const String &config,
 			  const String &landmark)
 {
-    String name = ";" + type->name() + "@" + String(_real_ecount + 1);
+    String name = ";" + type->name() + "@" + String(_n_live_elements + 1);
     ElementT *result = add_element(ElementT(name, type, config, landmark));
     assign_element_name(result->eindex());
     return result;
@@ -783,7 +783,7 @@ RouterT::remove_dead_elements(ErrorHandler *errh)
     // resize element arrays
     _elements.resize(new_nelements);
     _first_conn.resize(new_nelements);
-    _real_ecount = new_nelements;
+    _n_live_elements = new_nelements;
     _free_element = 0;
 }
 
@@ -820,7 +820,7 @@ RouterT::free_element(ElementT *e)
     e->kill();
     e->_tunnel_input = _free_element;
     _free_element = e;
-    _real_ecount--;
+    _n_live_elements--;
 
     check();
 }
@@ -852,7 +852,7 @@ RouterT::free_dead_elements()
 	    assert(e->dead());
 	    e->_tunnel_input = _free_element;
 	    _free_element = e;
-	    _real_ecount--;
+	    _n_live_elements--;
 	}
 }
 

@@ -49,7 +49,7 @@ Router::Router(const String &configuration)
     _cleaned(false), _have_connections(false), _have_hookpidx(false),
     _allow_star_handler(true),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
-    _configuration(configuration), _arena_factory(new BigHashMap_ArenaFactory),
+    _configuration(configuration), _arena_factory(new HashMap_ArenaFactory),
     _hotswap_router(0)
 {
   _refcount = 0;

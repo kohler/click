@@ -64,7 +64,7 @@ private:
 
     }
   };
-  typedef BigHashMap<EtherAddress, TXNeighborInfo> TXNeighborTable;
+  typedef HashMap<EtherAddress, TXNeighborInfo> TXNeighborTable;
   typedef TXNeighborTable::const_iterator TXNIter;
 
 

@@ -21,7 +21,7 @@ CLICK_DECLS
  * output 2 = others
  */
 
-typedef BigHashMap<IPFlowID, int> FlowTable;
+typedef HashMap<IPFlowID, int> FlowTable;
 
 class TCPDemux : public Element {
 private:

@@ -59,7 +59,7 @@ private:
     seq_t() : seq_no(0), last_jiffies(0) { }
   };
 
-  typedef BigHashMap<IPAddress, seq_t> seq_map;
+  typedef HashMap<IPAddress, seq_t> seq_map;
   seq_map _query_seqs;
 
 };

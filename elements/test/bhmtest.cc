@@ -19,7 +19,13 @@
 #include <click/config.h>
 #include "bhmtest.hh"
 #include <click/bighashmap.hh>
+#include <click/hashmap.hh>
 #include <click/error.hh>
+#if CLICK_USERLEVEL
+# include <sys/time.h>
+# include <sys/resource.h>
+# include <unistd.h>
+#endif
 CLICK_DECLS
 
 BigHashMapTest::BigHashMapTest()
@@ -36,14 +42,14 @@ BigHashMapTest::~BigHashMapTest()
 #define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
 
 static int
-check1(BigHashMap<String, int> &h, ErrorHandler *errh)
+check1(HashMap<String, int> &h, ErrorHandler *errh)
 {
     CHECK(h.size() == 4);
     CHECK(!h.empty());
 
     char x[4] = "\0\0\0";
     int n = 0;
-    for (BigHashMap<String, int>::const_iterator i = h.begin(); i; i++) {
+    for (HashMap<String, int>::const_iterator i = h.begin(); i; i++) {
 	CHECK(i.value() >= 1 && i.value() <= 4);
 	CHECK(x[i.value() - 1] == 0);
 	x[i.value() - 1] = 1;
@@ -54,10 +60,350 @@ check1(BigHashMap<String, int> &h, ErrorHandler *errh)
     return 0;
 }
 
+#if CLICK_USERLEVEL
+static const char * const classes[] = {
+"ARPFaker",
+"ARPQuerier",
+"ARPResponder",
+"AdaptiveRED",
+"AddressInfo",
+"AddressTranslator",
+"AggregateCounter",
+"AggregateFilter",
+"AggregateFirst",
+"AggregateIP",
+"AggregateIPFlows",
+"AggregateLast",
+"AggregateLength",
+"Align",
+"AlignmentInfo",
+"AnonymizeIPAddr",
+"AverageCounter",
+"B8B10",
+"BIM",
+"BandwidthMeter",
+"BandwidthRatedSplitter",
+"BandwidthRatedUnqueue",
+"BandwidthShaper",
+"BigHashMapTest",
+"Block",
+"BufferConverter",
+"Burster",
+"CPUQueue",
+"CPUSwitch",
+"ChatterSocket",
+"CheckCRC32",
+"CheckICMPHeader",
+"CheckIP6Header",
+"CheckIPHeader",
+"CheckIPHeader2",
+"CheckLength",
+"CheckPacket",
+"CheckPaint",
+"CheckPattern",
+"CheckTCPHeader",
+"CheckUDPHeader",
+"Classifier",
+"CompareBlock",
+"ControlSocket",
+"CopyFlowID",
+"CopyTCPSeq",
+"Counter",
+"CycleCountAccum",
+"DRRSched",
+"DebugBridge",
+"DecIP6HLIM",
+"DecIPTTL",
+"DelayShaper",
+"DelayUnqueue",
+"DevirtualizeInfo",
+"Discard",
+"DiscardNoFree",
+"DriverManager",
+"DropBroadcasts",
+"DupPath",
+"DynamicUDPIPEncap",
+"EnsureEther",
+"Error",
+"EtherEncap",
+"EtherMirror",
+"EtherSpanTree",
+"EtherSwitch",
+"FTPPortMapper",
+"FastTCPFlows",
+"FastUDPFlows",
+"FastUDPSource",
+"FastUDPSourceIP6",
+"FixIPSrc",
+"ForceICMP",
+"ForceIP",
+"ForceTCP",
+"ForceUDP",
+"FromDAGDump",
+"FromDevice",
+"FromDevice",
+"FromDump",
+"FromHost",
+"FromIPSummaryDump",
+"FromNetFlowSummaryDump",
+"FrontDropQueue",
+"GetIP6Address",
+"GetIPAddress",
+"HashSwitch",
+"HostEtherFilter",
+"ICMP6Error",
+"ICMPError",
+"ICMPPingEncap",
+"ICMPPingResponder",
+"ICMPPingRewriter",
+"ICMPPingSource",
+"ICMPRewriter",
+"ICMPSendPings",
+"IP6Fragmenter",
+"IP6Mirror",
+"IP6NDAdvertiser",
+"IP6NDSolicitor",
+"IP6Print",
+"IPAddrRewriter",
+"IPClassifier",
+"IPEncap",
+"IPFilter",
+"IPFragmenter",
+"IPGWOptions",
+"IPInputCombo",
+"IPMirror",
+"IPOutputCombo",
+"IPPrint",
+"IPRateMonitor",
+"IPReassembler",
+"IPRewriter",
+"IPRewriterPatterns",
+"IPsecAuthSHA1",
+"IPsecDES",
+"IPsecESPEncap",
+"IPsecESPUnencap",
+"Idle",
+"InfiniteSource",
+"KernelHandlerProxy",
+"KernelTap",
+"KernelTun",
+"LinearIPLookup",
+"LinuxIPLookup",
+"LookupIP6Route",
+"LookupIPRoute2",
+"LookupIPRouteMP",
+"MSQueue",
+"MarkIP6Header",
+"MarkIPCE",
+"MarkIPHeader",
+"Meter",
+"MixedQueue",
+"NotifierQueue",
+"Null",
+"Null1",
+"Null2",
+"Null3",
+"Null4",
+"Null5",
+"Null6",
+"Null7",
+"Null8",
+"PacketTest",
+"Paint",
+"PaintSwitch",
+"PaintTee",
+"Pct",
+"PerfCountAccum",
+"PerfCountInfo",
+"PokeHandlers",
+"PollDevice",
+"Print",
+"Print80211",
+"PrintAiro",
+"PrintOld",
+"PrioSched",
+"ProgressBar",
+"ProtocolTranslator46",
+"ProtocolTranslator64",
+"PullNull",
+"PullSwitch",
+"PullTee",
+"PushNull",
+"Queue",
+"QueueYankTest",
+"QuitWatcher",
+"RED",
+"RFC2507Comp",
+"RFC2507Decomp",
+"RIPSend",
+"RadixIPLookup",
+"RandomBitErrors",
+"RandomSample",
+"RandomSource",
+"RandomSwitch",
+"RatedSource",
+"RatedSplitter",
+"RatedUnqueue",
+"RoundRobinIPMapper",
+"RoundRobinSched",
+"RoundRobinSwitch",
+"RoundRobinUnqueue",
+"RoundTripCycleCount",
+"ScheduleInfo",
+"ScheduleLinux",
+"Scramble",
+"SendPattern",
+"SerialLink",
+"SetAnnoByte",
+"SetCRC32",
+"SetCycleCount",
+"SetIP6Address",
+"SetIP6DSCP",
+"SetIPAddress",
+"SetIPChecksum",
+"SetIPDSCP",
+"SetPacketType",
+"SetPerfCount",
+"SetRandIPAddress",
+"SetTCPChecksum",
+"SetTimestamp",
+"SetUDPChecksum",
+"Shaper",
+"SimpleQueue",
+"SortedIPLookup",
+"SortedTaskSched",
+"SpinlockAcquire",
+"SpinlockInfo",
+"SpinlockRelease",
+"StaticIPLookup",
+"StaticPullSwitch",
+"StaticSwitch",
+"StaticThreadSched",
+"StoreIPAddress",
+"StrideSched",
+"StrideSwitch",
+"Strip",
+"StripIPHeader",
+"StripToNetworkHeader",
+"Suppressor",
+"Switch",
+"TCPAck",
+"TCPBuffer",
+"TCPConn",
+"TCPDemux",
+"TCPIPSend",
+"TCPReflector",
+"TCPRewriter",
+"Tee",
+"ThreadMonitor",
+"TimeFilter",
+"TimeRange",
+"TimeSortedSched",
+"TimedSink",
+"TimedSource",
+"TimestampAccum",
+"ToDevice",
+"ToDevice",
+"ToDump",
+"ToHost",
+"ToHostSniffers",
+"ToIPFlowDumps",
+"ToIPSummaryDump",
+"ToyTCP",
+"TrieIPLookup",
+"UDPIPEncap",
+"Unqueue",
+"Unqueue2",
+"Unstrip",
+"UnstripIPHeader",
+"WebGen",
+0
+};
+
+static const char * const nonclasses[] = {
+"RA PFaker",
+"ARQPuerier",
+"ARPeRsponder",
+"AdaptvieRED",
+"AddresIsnfo",
+"AddressrTanslator",
+"AggregatCeounter",
+"AggregateiFlter",
+"gAgregateFirst",
+"AggergateIP",
+"AgrgegateIPFlows",
+"AggrgeateLast",
+"AggreagteLength",
+"Aigln",
+"AlingmentInfo",
+"AnonmyizeIPAddr",
+"AveraegCounter",
+"B81B0",
+"BMI",
+"BadnwidthMeter",
+"BanwdidthRatedSplitter",
+"BandiwdthRatedUnqueue",
+"BandwdtihShaper",
+"BiHgashapTesMt",
+"Blokc",
+"Buffrenverter",
+"Burste",
+"CPUueue",
+"CPSUwitch",
+"ChaterSocket",
+"ChecCRC32",
+"ChcICMPHeader",
+"Check6Header",
+"heckIPHeader",
+"heckIPHeader2",
+"ChckLength",
+"ChcPacket",
+"CheckPant",
+"CheckPasadttern",
+"CheckTCPHfddeader",
+"CheckUsDPsaHeader",
+"Classqfdifier",
+"ComperwareBlock",
+"ContfrolSocket",
+"CopyFasgdslowID",
+"CopyTCsPSeq",
+"Coun zter",
+"CyclsefCountAccum",
+"DRRSached",
+"DebugsaBridge",
+"DecIP6HdLfIM",
+"DecIPTTsL",
+"eDlayShaper",
+"DleayUnqueue",
+"DeivrtualizeInfo",
+"Disacrd",
+"cardNoFree",
+"DrverManager",
+"ropDBroadcasts",
+"DupPh",
+"DynmiacUDPIPEncap",
+"ENSUREETHER",
+"ERROR",
+"ETHERENCAP",
+"ETHERMIRROR",
+"ETHERSPANTREE",
+"ETHERSWITCH",
+"FTPPortapMper",
+"FastTCPFls",
+"FastUDPFl",
+"Fa",
+"Fadd",
+"FixI",
+"ForecICMP",
+"FocreIP",
+0
+};
+#endif
+
 int
 BigHashMapTest::initialize(ErrorHandler *errh)
 {
-    BigHashMap<String, int> h(-1);
+    HashMap<String, int> h(-1);
 
     h.insert("Foo", 1);
     h.insert("bar", 2);
@@ -68,13 +414,42 @@ BigHashMapTest::initialize(ErrorHandler *errh)
 
     // check copy constructor
     {
-	BigHashMap<String, int> hh(h);
+	HashMap<String, int> hh(h);
 	CHECK(check1(hh, errh) == 0);
 	hh.insert("crap", 5);
     }
 
     CHECK(check1(h, errh) == 0);
 
+#if CLICK_USERLEVEL
+    HashMap<String, int> map(-1);
+    
+    struct rusage ru0, ru1;
+    struct timeval tv0, tv1;
+    if (getrusage(RUSAGE_SELF, &ru0) < 0)
+	return errh->error("rusage: %s", strerror(errno));
+    click_gettimeofday(&tv0);
+
+    for (int i = 0; i < 100; i++) {
+	map.clear();
+	for (const char * const *s = classes; *s; s++)
+	    map.insert(*s, s - classes);
+	int value = 0;
+	for (const char * const *s = classes; *s; s++)
+	    value += map.find(*s);
+	for (const char * const *s = nonclasses; *s; s++)
+	    value += map.find(*s);
+    }
+
+    if (getrusage(RUSAGE_SELF, &ru1) < 0)
+	return errh->error("rusage: %s", strerror(errno));
+    click_gettimeofday(&tv1);
+
+    ru1.ru_utime = ru1.ru_utime - ru0.ru_utime;
+    tv1 = tv1 - tv0;
+    errh->message("%{timeval}u %{timeval} total", &ru1.ru_utime, &tv1);
+#endif
+    
     errh->message("All tests pass!");
     return 0;
 }

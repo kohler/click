@@ -38,7 +38,7 @@ class RouterT { public:
     inline const_iterator end_elements() const;
     
     int nelements() const		{ return _elements.size(); }
-    int real_element_count() const	{ return _real_ecount; }
+    int n_live_elements() const		{ return _n_live_elements; }
     
     inline const ElementT *element(const String &) const;
     inline ElementT *element(const String &);
@@ -156,7 +156,7 @@ class RouterT { public:
     StringMap _element_name_map;
     Vector<ElementT *> _elements;
     ElementT *_free_element;
-    int _real_ecount;
+    int _n_live_elements;
     Vector<int> *_new_eindex_collector;
 
     Vector<ConnectionT> _conn;
@@ -182,6 +182,8 @@ class RouterT { public:
     void expand_tunnel(Vector<PortT> *port_expansions, const Vector<PortT> &ports, bool is_output, int which, ErrorHandler *) const;
     String interpolate_arguments(const String &, const Vector<String> &) const;
 
+    friend class RouterUnparserT;
+    
 };
 
 class RouterT::const_iterator { public:

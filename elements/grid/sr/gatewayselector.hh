@@ -98,7 +98,7 @@ private:
     GWInfo() {memset(this,0,sizeof(*this)); }
   };
 
-  typedef BigHashMap<IPAddress, GWInfo> GWTable;
+  typedef HashMap<IPAddress, GWInfo> GWTable;
   typedef GWTable::const_iterator GWIter;
   GWTable _gateways;
 

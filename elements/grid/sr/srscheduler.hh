@@ -170,7 +170,7 @@ private:
     }
   };
   
-  typedef BigHashMap<Path, ScheduleInfo> ScheduleTable;
+  typedef HashMap<Path, ScheduleInfo> ScheduleTable;
   typedef ScheduleTable::const_iterator STIter;
   ScheduleTable _schedules;
 

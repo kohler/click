@@ -131,5 +131,5 @@ ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationTable)
 
 #include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, LocationTable::entry>;
+template class HashMap<IPAddress, LocationTable::entry>;
 CLICK_ENDDECLS

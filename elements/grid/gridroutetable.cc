@@ -1108,7 +1108,7 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
     Vector<RTEntry> entries;
     for (RTIter i = rt->_rtes.begin(); i; i++) {
       /* skanky, but there's no reason for this to be quick.  i guess
-         the BigHashMap doesn't let you change its values. */
+         the HashMap doesn't let you change its values. */
       RTEntry e = i.value();
       e.metric_valid = false;
       entries.push_back(e);
@@ -1326,7 +1326,7 @@ GridRouteTable::expire_routes()
     return retval;
 
 
-  typedef BigHashMap<IPAddress, bool> xip_t; // ``expired ip''
+  typedef HashMap<IPAddress, bool> xip_t; // ``expired ip''
   xip_t expired_rtes;
   xip_t expired_next_hops;
 
@@ -1640,8 +1640,8 @@ ELEMENT_PROVIDES(GridGenericRouteTable)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
-template class BigHashMap<IPAddress, GridRouteTable::RTEntry>;
-template class BigHashMap<IPAddress, bool>;
+template class HashMap<IPAddress, GridRouteTable::RTEntry>;
+template class HashMap<IPAddress, bool>;
 template class Vector<IPAddress>;
 template class Vector<GridRouteTable::RTEntry>;
 template class Vector<GridGenericRouteTable::RouteEntry>;

@@ -1,11 +1,11 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * eclass.{cc,hh} -- tool definition of element classes
+ * eclasst.{cc,hh} -- tool definition of element classes
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,7 @@
 static String::Initializer string_initializer;
 static HashMap<String, int> base_type_map(-1);
 static Vector<ElementClassT *> base_types;
-static int unique_id_storage = ElementClassT::UNUSED_UID;
+static int unique_id_storage = ElementClassT::TUNNEL_UID;
 
 typedef ElementTraits Traits;
 
@@ -64,7 +64,6 @@ TraitsElementClassT::find_traits() const
     return &_the_traits;
 }
 
-ElementClassT *ElementClassT::the_unused_type = new TraitsElementClassT("<unused>", UNUSED_UID, Traits::D_REQUIREMENTS, "false", 0);
 ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", TUNNEL_UID, Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/y", 0);
 
 
@@ -86,6 +85,12 @@ ElementClassT::ElementClassT(const String &name, int uid)
 ElementClassT::~ElementClassT()
 {
     //fprintf(stderr, "%p: ~%s\n", this, printable_name_cc());
+}
+
+int
+ElementClassT::max_uid()
+{
+    return unique_id_storage;
 }
 
 const char *

@@ -153,7 +153,7 @@ private:
   };
 
   // Per-sender map of received probes.
-  typedef BigHashMap<EtherAddress, probe_list_t> ProbeMap;
+  typedef HashMap<EtherAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
   // record delivery rate data about our outgoing links
@@ -168,7 +168,7 @@ private:
   };
 
   // Per-receiver map of delivery rate data
-  typedef BigHashMap<EtherAddress, outgoing_link_entry_t> ReverseProbeMap;
+  typedef HashMap<EtherAddress, outgoing_link_entry_t> ReverseProbeMap;
   ReverseProbeMap _rev_bcast_stats;
 
   static String read_stats(Element *, void *);

@@ -42,7 +42,7 @@ class SimpleLocQuerier : public Element {
   
 
  private:
-  typedef BigHashMap<IPAddress, grid_location> locmap;
+  typedef HashMap<IPAddress, grid_location> locmap;
   locmap _locs;
 
   void send_query_for(const IPAddress &);

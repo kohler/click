@@ -52,7 +52,7 @@ private:
 	}
     };
     
-    typedef BigHashMap<IPFlowID, FlowTableEntry> FlowTable;
+    typedef HashMap<IPFlowID, FlowTableEntry> FlowTable;
     typedef FlowTable::const_iterator FlowIter;
     FlowTable _flows;
     

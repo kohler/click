@@ -52,11 +52,13 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	@-sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 
-OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
+OBJS = string.o straccum.o \
+	bitvector.o vectorv.o vectori.o hashmapi.o bighashmap_arena.o \
+	ipaddress.o ipaddresslist.o etheraddress.o \
+	error.o \
 	elementt.o eclasst.o routert.o runparse.o variableenv.o \
 	lexert.o lexertinfo.o driver.o \
 	confparse.o archive.o processingt.o etraits.o elementmap.o \
-	ipaddress.o ipaddresslist.o etheraddress.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
 BUILDOBJS = $(patsubst %.o,%.bo,$(OBJS))
 

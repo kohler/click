@@ -3,9 +3,9 @@
 #define CLICK_BIGHASHMAP_ARENA_HH
 CLICK_DECLS
 
-class BigHashMap_Arena { public:
+class HashMap_Arena { public:
 
-    BigHashMap_Arena(uint32_t element_size);
+    HashMap_Arena(uint32_t element_size);
 
     void use()			{ _refcount++; }
     void unuse();
@@ -37,35 +37,35 @@ class BigHashMap_Arena { public:
     uint32_t _refcount;
     bool _detached;
     
-    ~BigHashMap_Arena();
+    ~HashMap_Arena();
     void *hard_alloc();
 
     friend class Link;		// shut up, compiler
     
 };
 
-class BigHashMap_ArenaFactory { public:
+class HashMap_ArenaFactory { public:
 
-    BigHashMap_ArenaFactory();
-    virtual ~BigHashMap_ArenaFactory();
+    HashMap_ArenaFactory();
+    virtual ~HashMap_ArenaFactory();
 
     static void static_initialize();
     static void static_cleanup();
     
-    static BigHashMap_Arena *get_arena(uint32_t, BigHashMap_ArenaFactory * =0);
-    virtual BigHashMap_Arena *get_arena_func(uint32_t);
+    static HashMap_Arena *get_arena(uint32_t, HashMap_ArenaFactory * =0);
+    virtual HashMap_Arena *get_arena_func(uint32_t);
     
   private:
 
-    BigHashMap_Arena **_arenas[2];
+    HashMap_Arena **_arenas[2];
     int _narenas[2];
 
-    static BigHashMap_ArenaFactory *the_factory;
+    static HashMap_ArenaFactory *the_factory;
     
 };
 
 inline void
-BigHashMap_Arena::unuse()
+HashMap_Arena::unuse()
 {
     _refcount--;
     if (_refcount <= 0)
@@ -73,7 +73,7 @@ BigHashMap_Arena::unuse()
 }
 
 inline void *
-BigHashMap_Arena::alloc()
+HashMap_Arena::alloc()
 {
     if (_free) {
 	void *ret = _free;
@@ -87,7 +87,7 @@ BigHashMap_Arena::alloc()
 }
 
 inline void
-BigHashMap_Arena::free(void *v)
+HashMap_Arena::free(void *v)
 {
     Link *link = reinterpret_cast<Link *>(v);
     link->next = _free;

@@ -358,7 +358,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 {
   LinkStat *e = (LinkStat *) xf;
 
-  typedef BigHashMap<EtherAddress, bool> EthMap;
+  typedef HashMap<EtherAddress, bool> EthMap;
   EthMap eth_addrs;
   
   for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
@@ -514,5 +514,5 @@ EXPORT_ELEMENT(LinkStat)
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
 template class DEQueue<LinkStat::probe_t>;
-template class BigHashMap<EtherAddress, LinkStat::probe_list_t>;
+template class HashMap<EtherAddress, LinkStat::probe_list_t>;
 CLICK_ENDDECLS

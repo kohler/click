@@ -159,5 +159,5 @@ LocQueryResponder::simple_action(Packet *p)
 EXPORT_ELEMENT(LocQueryResponder)
 
 #include <click/bighashmap.cc>
-template class BigHashMap<IPAddress, LocQueryResponder::seq_t>;
+template class HashMap<IPAddress, LocQueryResponder::seq_t>;
 CLICK_ENDDECLS

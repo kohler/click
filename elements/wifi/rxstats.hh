@@ -61,7 +61,7 @@ class RXStats : public Element { public:
     }
 
   };
-  typedef BigHashMap<EtherAddress, DstInfo> NeighborTable;
+  typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 
   class NeighborTable _neighbors;

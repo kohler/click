@@ -142,7 +142,7 @@ private:
     PathInfo(Path p) { _p = p; }
   };
 
-  typedef BigHashMap<Path, PathInfo> PathTable;
+  typedef HashMap<Path, PathInfo> PathTable;
   PathTable _paths;
 
 
@@ -152,7 +152,7 @@ private:
   typedef HashMap<IPAddress, Query> QueryTable;
   QueryTable _queries;
 
-  typedef BigHashMap<IPAddress, bool> IPMap;
+  typedef HashMap<IPAddress, bool> IPMap;
   IPMap _neighbors;
   Vector<IPAddress> _neighbors_v;
 

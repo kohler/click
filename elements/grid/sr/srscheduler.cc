@@ -700,7 +700,7 @@ SRScheduler::srscheduler_assert_(const char *file, int line, const char *expr) c
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<IPAddress, Path>;
-template class BigHashMap<Path, ScheduleInfo>;
+template class HashMap<Path, ScheduleInfo>;
 #endif
 
 CLICK_ENDDECLS

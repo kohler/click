@@ -83,7 +83,7 @@ class LinkFailureDetection : public Element { public:
   int _threshold;
   Element *_handler_e;
   String _handler_name;
-  typedef BigHashMap<EtherAddress, DstInfo> NeighborTable;
+  typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 
   class NeighborTable _neighbors;

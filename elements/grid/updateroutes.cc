@@ -446,7 +446,7 @@ UpdateGridRoutes::expire_routes()
 
   // XXX not sure if we are allowed to iterate while modifying map
   // (i.e. erasing entries), so figure out what to expire first.
-  typedef BigHashMap<IPAddress, bool> xa_t;
+  typedef HashMap<IPAddress, bool> xa_t;
   xa_t expired_addresses;
   Vector<grid_nbr_entry> expired_nbrs;
 
@@ -597,8 +597,8 @@ EXPORT_ELEMENT(UpdateGridRoutes)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
-template class BigHashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
-template class BigHashMap<IPAddress, UpdateGridRoutes::far_entry>;
+template class HashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
+template class HashMap<IPAddress, UpdateGridRoutes::far_entry>;
 #if 0 // now included in the new DSDV implementation, gridroutetable.cc
 template class Vector<IPAddress>;
 #endif

@@ -47,8 +47,8 @@ class LinkTracker : public Element {
     struct timeval last_update;
   };
 
-  BigHashMap<IPAddress, stat_t> _stats;
-  BigHashMap<IPAddress, bcast_t> _bcast_stats;
+  HashMap<IPAddress, stat_t> _stats;
+  HashMap<IPAddress, bcast_t> _bcast_stats;
 
 public:
   void add_stat(IPAddress dst, int sig, int qual, struct timeval when);

@@ -128,7 +128,7 @@ private:
 
     };
     
-    typedef BigHashMap<Path, PathInfo> PathTable;
+    typedef HashMap<Path, PathInfo> PathTable;
     typedef PathTable::const_iterator PathIter;
     PathTable _paths;
     
