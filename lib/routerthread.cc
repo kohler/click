@@ -425,8 +425,12 @@ RouterThread::driver()
 	unlock_tasks();
 	bool b = _master->check_driver();
 	nice_lock_tasks();
+#ifndef CLICK_NS
 	if (b)
 	    goto driver_loop;
+#else
+	(void) b;
+#endif
     }
 
     unlock_tasks();
