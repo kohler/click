@@ -1,3 +1,13 @@
+2002-07-21 Sunday 18:24  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/routert.cc (1.59): make sure that new_name has at least
+	one character
+
+2002-07-21 Sunday 18:23  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-xform/click-xform.cc (1.46): When one has a pointer
+	variable, it is not intelligent to say (pointer >= 0). Duuuuhhhhhh.
+
 2002-07-20 Saturday 04:20  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.texi (1.41): cp_seconds correctly documented
