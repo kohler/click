@@ -1,3 +1,8 @@
+2001-10-18 Thursday 20:06  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/module.cc (1.61): add "stop" global handler to
+	linuxmodule
+
 2001-10-18 Thursday 15:31  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/packet_anno.hh (1.4): add aggregate annotation
