@@ -607,6 +607,10 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   hlo->is_gateway = _gw_info->is_gateway ();
 
+  /* extended logging */
+  gettimeofday(&tv, NULL);
+  _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
+
   /* 
    * Update the sequence number for periodic updates, but not for
    * triggered updates.  originating sequence numbers are even,
@@ -617,10 +621,6 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   if (update_seq) 
     _seq_no += 2;
   
-  /* extended logging */
-  gettimeofday(&tv, NULL);
-  _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
-
   hlo->ttl = htonl(grid_hello::MAX_TTL_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
