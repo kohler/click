@@ -83,8 +83,8 @@ DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
 	errh->error("expected `%s ELEMENT.HANDLER'", insn_name.cc());
       
     } else if (insn_name == "wait_for" || insn_name == "wait") {
-      int ms;
-      if (words.size() != 2 || !cp_milliseconds(words[1], &ms))
+      uint32_t ms;
+      if (words.size() != 2 || !cp_seconds_as_milli(words[1], &ms))
 	errh->error("expected `%s TIME'", insn_name.cc());
       else
 	add_insn(INSN_WAIT, ms);

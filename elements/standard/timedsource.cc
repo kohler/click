@@ -49,11 +49,11 @@ TimedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpMilliseconds, "packet generation interval", &interval,
+		  cpSecondsAsMilli, "packet generation interval", &interval,
 		  cpString, "packet data", &data,
 		  cpKeywords,
 		  "DATA", cpString, "packet data", &data,
-		  "INTERVAL", cpMilliseconds, "packet generation interval", &interval,
+		  "INTERVAL", cpSecondsAsMilli, "packet generation interval", &interval,
 		  "LIMIT", cpInteger, "total packet count", &limit,
 		  "ACTIVE", cpBool, "active?", &active,
 		  "STOP", cpBool, "stop driver when done?", &stop,
@@ -150,8 +150,8 @@ TimedSource::change_param(const String &in_s, Element *e, void *vparam,
    }
    
    case 2: {			// interval
-     int interval;
-     if (!cp_milliseconds(s, &interval) || interval < 1)
+     uint32_t interval;
+     if (!cp_seconds_as_milli(s, &interval) || interval < 1)
        return errh->error("interval parameter must be integer >= 1");
      ts->_interval = interval;
      break;

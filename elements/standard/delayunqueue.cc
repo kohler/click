@@ -38,7 +38,7 @@ int
 DelayUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "delay (us)", &_delay, 0);
+		     cpSecondsAsMicro, "delay (ms)", &_delay, 0);
 }
 
 int
@@ -96,7 +96,7 @@ String
 DelayUnqueue::read_param(Element *e, void *)
 {
   DelayUnqueue *u = (DelayUnqueue *)e;
-  return String(u->_delay) + " us\n";
+  return cp_unparse_microseconds(u->_delay) + "\n";
 }
 
 void

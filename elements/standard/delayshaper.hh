@@ -4,18 +4,22 @@
 #include <click/task.hh>
 
 /*
- * =c
- * DelayShaper(DELAY)
- * =s packet scheduling
- * shapes traffic to meet delay requirements
- * =d
- * Pulls packets from input port. queues packet if current timestamp minus
- * packet timestamp is less than DELAY us. otherwise return packet on output.
- *
- * SetTimestamp element can be used to stamp the packet.
- *
- * =a BandwidthShaper, DelayUnqueue
- */
+
+DelayShaper(DELAY)
+
+=s packet scheduling
+
+shapes traffic to meet delay requirements
+
+=d
+
+Pulls packets from input port. queues packet if current timestamp minus packet
+timestamp is less than DELAY seconds (microsecond precision). otherwise return
+packet on output.
+
+SetTimestamp element can be used to stamp the packet.
+
+=a BandwidthShaper, DelayUnqueue, SetTimestamp */
 
 class DelayShaper : public Element { public:
   
@@ -36,7 +40,7 @@ class DelayShaper : public Element { public:
 
  private:
 
-  unsigned _delay;
+  uint32_t _delay;
   Packet *_p;
 };
 

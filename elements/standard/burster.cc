@@ -42,7 +42,7 @@ int
 Burster::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpMilliseconds, "packet pulling interval", &_interval,
+		  cpSecondsAsMilli, "packet pulling interval", &_interval,
 		  cpOptional,
 		  cpUnsigned, "max packets per interval", &_npackets,
 		  0) < 0)

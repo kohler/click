@@ -59,7 +59,7 @@ PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 	if (i < conf.size() - 1)
 	  errh->warning("arguments after `quit' directive ignored");
 	break;
-      } else if (cp_milliseconds(first, &gap)) {
+      } else if (cp_seconds_as_milli(first, reinterpret_cast<uint32_t *>(&gap))) {
 	next_timeout += gap;
 	continue;
       }

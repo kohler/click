@@ -42,7 +42,7 @@ int
 TimedSink::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpMilliseconds, "packet pull interval", &_interval,
+		     cpSecondsAsMilli, "packet pull interval", &_interval,
 		     0);
 }
 

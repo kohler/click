@@ -53,7 +53,7 @@ ICMPSendPings::configure(const Vector<String> &conf, ErrorHandler *errh)
                      cpIPAddress, "source IP address", &_src,
                      cpIPAddress, "destination IP address", &_dst,
 		     cpKeywords,
-		     "INTERVAL", cpMilliseconds, "time between pings (s)", &_interval,
+		     "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
 		     "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
 		     0);
 }

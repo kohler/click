@@ -55,8 +55,8 @@ LookupIPRouteMP::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
-    unsigned int dst, mask, gw = 0;
-    int output_num;
+    uint32_t dst, mask, gw = 0;
+    int32_t output_num;
     bool ok = false;
 
     Vector<String> words;

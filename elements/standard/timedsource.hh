@@ -75,7 +75,7 @@ class TimedSource : public Element { public:
  private:
   
   Packet *_packet;
-  int _interval;
+  uint32_t _interval;
   int _limit;
   int _count;
   bool _active : 1;

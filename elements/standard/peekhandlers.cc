@@ -60,7 +60,7 @@ PeekHandlers::do_configure(const Vector<String> &conf, ErrorHandler *errh)
 
     if (!conf[i])
       continue;
-    else if (cp_milliseconds(conf[i], &extra)) {
+    else if (cp_seconds_as_milli(conf[i], reinterpret_cast<uint32_t *>(&extra))) {
       push_command(0, HID_WAIT, extra);
       continue;
     } else if (conf[i] == "quit") {

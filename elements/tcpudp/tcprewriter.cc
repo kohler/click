@@ -170,8 +170,8 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpMilliseconds, "reap interval for active TCP connections", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpMilliseconds, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
+			    "REAP_TCP", cpSecondsAsMilli, "reap interval for active TCP connections", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpSecondsAsMilli, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
 			    0) != 0)
       continue;
     InputSpec is;

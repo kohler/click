@@ -4,18 +4,20 @@
 #include <click/task.hh>
 
 /*
- * =c
- * DelayUnqueue(DELAY)
- * =s packet scheduling
- * pull-to-push converter
- * =d
- * Pulls packets from input port. queues packet if current timestamp minus
- * packet timestamp is less than DELAY us. otherwise push packet on output.
- *
- * SetTimestamp element can be used to stamp the packet.
- *
- * =a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue
- */
+=c
+DelayUnqueue(DELAY)
+=s packet scheduling
+pull-to-push converter
+=d
+
+Pulls packets from input port. queues packet if current timestamp minus packet
+timestamp is less than DELAY seconds (microsecond precision). otherwise push
+packet on output.
+
+SetTimestamp element can be used to stamp the packet.
+
+=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue
+*/
 
 class DelayUnqueue : public Element { public:
   
@@ -36,7 +38,7 @@ class DelayUnqueue : public Element { public:
 
  private:
 
-  unsigned _delay;
+  uint32_t _delay;
   Packet *_p;
   Task _task;
 };

@@ -163,7 +163,7 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
     return errh->error("bad pattern spec: should be `NAME' or `SADDR SPORT DADDR DPORT'");
   
   IPAddress saddr, daddr;
-  int sportl, sporth, dport;
+  int32_t sportl, sporth, dport;
   
   if (words[0] == "-")
     saddr = 0;
@@ -289,7 +289,7 @@ IPRw::Pattern::parse_with_ports(const String &conf, Pattern **pstore,
 {
   Vector<String> words;
   cp_spacevec(conf, words);
-  int fport, rport;
+  int32_t fport, rport;
 
   if (words.size() <= 2
       || !cp_integer(words[words.size() - 2], &fport)
@@ -496,7 +496,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
   is.kind = INPUT_SPEC_DROP;
   
   if (word == "nochange") {
-    int outnum = 0;
+    int32_t outnum = 0;
     if (rest && !cp_integer(rest, &outnum))
       return errh->error("%s: syntax error; expected `nochange [OUTPUT]'", name.cc());
     else if (outnum < 0 || outnum >= noutputs())

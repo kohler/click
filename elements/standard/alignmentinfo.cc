@@ -62,7 +62,7 @@ AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
       _elem_offset[number] = _chunks.size();
       _elem_icount[number] = (parts.size() - 1) / 2;
       for (int j = 1; j < parts.size() - 1; j += 2) {
-	int c = -1, o = -1;
+	int32_t c = -1, o = -1;
 	if (!cp_integer(parts[j], &c))
 	  errh->error("expected CHUNK");
 	if (!cp_integer(parts[j+1], &o))

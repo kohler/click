@@ -83,12 +83,12 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpMilliseconds, "TCP garbage collection interval", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpMilliseconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
-			    "REAP_UDP", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
-			    "TCP_TIMEOUT", cpMilliseconds, "TCP timeout interval", &_tcp_timeout_interval,
-			    "TCP_DONE_TIMEOUT", cpMilliseconds, "Completed TCP timeout interval", &_tcp_done_timeout_interval,
-			    "UDP_TIMEOUT", cpMilliseconds, "UDP timeout interval", &_udp_timeout_interval,
+			    "REAP_TCP", cpSecondsAsMilli, "TCP garbage collection interval", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpSecondsAsMilli, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
+			    "REAP_UDP", cpSecondsAsMilli, "UDP garbage collection interval", &_udp_gc_interval,
+			    "TCP_TIMEOUT", cpSecondsAsMilli, "TCP timeout interval", &_tcp_timeout_interval,
+			    "TCP_DONE_TIMEOUT", cpSecondsAsMilli, "Completed TCP timeout interval", &_tcp_done_timeout_interval,
+			    "UDP_TIMEOUT", cpSecondsAsMilli, "UDP timeout interval", &_udp_timeout_interval,
 			    "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
 			    0) != 0)
       continue;
