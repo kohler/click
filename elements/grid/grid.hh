@@ -181,14 +181,14 @@ struct grid_hdr {
   unsigned int ip;          // Sender's IP address. 
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   unsigned short loc_err;   // Error radius of position, in metres.  
-  bool loc_good;            // If false, don't believe loc  
+  char /* bool */ loc_good;            // If false, don't believe loc  
   unsigned char pad3;       // assume bool is char aligned
   unsigned int loc_seq_no;  
 
   unsigned int tx_ip;       // Transmitter 
   struct grid_location tx_loc;
   unsigned short tx_loc_err;
-  bool tx_loc_good;
+  char /* bool */ tx_loc_good;
   unsigned char pad4;
   unsigned int tx_loc_seq_no;
 
@@ -226,8 +226,8 @@ struct grid_nbr_entry {
 
   struct grid_location loc;
   unsigned short loc_err;
-  bool loc_good;
-  bool is_gateway;
+  char /* bool */ loc_good;
+  char /* bool */ is_gateway;
   unsigned int seq_no;
   union {
     unsigned int age; /* keep ``age'' for legacy code */
@@ -235,7 +235,7 @@ struct grid_nbr_entry {
   };
 
   unsigned int metric;
-  bool metric_valid;
+  char /* bool */ metric_valid;
 
 #ifndef SMALL_GRID_HEADERS
   /* ping-pong stats, valid only for 1-hop nbrs */
@@ -270,7 +270,7 @@ struct grid_hello {
     unsigned int ttl; // decreasing, approximately in milliseconds
   };
 
-  bool is_gateway; // is the hello's transmitter also a gateway?
+  char /* bool */ is_gateway; // is the hello's transmitter also a gateway?
 
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
@@ -296,7 +296,7 @@ struct grid_nbr_encap {
 #ifndef SMALL_GRID_HEADERS
   struct grid_location dst_loc;
   unsigned short dst_loc_err;
-  bool dst_loc_good;
+  char /* bool */ dst_loc_good;
 #else
   unsigned char pad1, pad2, pad3;
 #endif
