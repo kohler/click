@@ -1,3 +1,7 @@
+2002-09-03 Tuesday 07:26  Eddie Kohler <kohler@icir.org>
+
+	* lib/bitvector.cc (1.17): nitlet
+
 2002-09-03 Tuesday 01:58  Eddie Kohler <kohler@icir.org>
 
 	* elements/icmp/icmppingrewriter.cc (1.17),
