@@ -43,6 +43,7 @@ LookupIPRoute2::push(int, Packet *p)
   int index = 0;
 
   IPAddress a = p->dst_ip_anno();
+
   /*
   add_route_handler("1.0.0.0 255.255.0.0 5.5.5.5", this, (void *)0, (ErrorHandler *)0);
   add_route_handler("2.1.0.0 255.255.0.0 1.1.1.1", this, (void *)0, (ErrorHandler *)0);
@@ -50,11 +51,13 @@ LookupIPRoute2::push(int, Packet *p)
   add_route_handler("2.244.0.0 255.255.0.0 3.3.3.3", this, (void *)0, (ErrorHandler *)0);
   add_route_handler("2.0.0.0 255.255.0.0 4.4.4.4", this, (void *)0, (ErrorHandler *)0);
   */
-
   // click_chatter("Lookup for %x", ntohl(a.saddr()));
-  _t.lookup(a.saddr(), gw, index);
-  p->set_dst_ip_anno(gw);
-  // click_chatter("Gateway for %x is %x", ntohl(a.saddr()), ntohl(gw));
+  //
+  if(_t.lookup(a.saddr(), gw, index))
+    p->set_dst_ip_anno(gw);
+    // click_chatter("Gateway for %x is %x", ntohl(a.saddr()), ntohl(gw));
+  else
+    click_chatter("No route found.");
   output(0).push(p);
 }
 

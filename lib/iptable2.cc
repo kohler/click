@@ -96,7 +96,9 @@ IPTable2::get(int i, unsigned &dst, unsigned &mask, unsigned &gw)
 bool
 IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
 {
-#if 0
+  if(!entries)
+    return false;
+
   // Just in time. XXX: Change this to timer.
   if(dirty) {
     build();
@@ -126,61 +128,6 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
     offset >>= 4;
   u_int16_t pix = baseindex1[bix] + six + offset;
   index = l1ptrs[pix];
-
-done:
-  gw = _v[index & 0x3fff]._gw;
-  return(true);
-
-#endif
-  // just in time. Change this to timer.
-  if(dirty) {
-    build();
-    dirty = false;
-  }
-    
-  dst = ntohl(dst);
-
-  click_chatter("dst = %x", dst);
-  u_int16_t ix = (dst & 0xfff00000) >> 20;      // upper 12 bits.
-  click_chatter("ix: %x", ix);
-  u_int16_t bix = (dst & 0xffc00000) >> 22;     // upper 10 bits.
-  click_chatter("bix: %x", bix);
-  u_int8_t bit = (dst & 0x000f0000) >> 16;      // lower  4 of upper 16 bits.
-  click_chatter("bit: %x", bit);
-  u_int16_t codeword = codewords1[ix];
-  click_chatter("codeword = %x", codeword);
-  u_int16_t ten = (codeword & 0xffc0) >> 6;     // upper 10 bits.
-  click_chatter("ten = %x", ten);
-  click_chatter("maptable for record %x\n-----------", ten);
-  for(int i=0; i<7; i++) {
-    click_chatter("%x", _maptable[ten][i]);
-  }
-  u_int8_t six = codeword & 0x003f;             // lower  6 bits.
-  click_chatter("six = %x", six);
-
-  // Hackflag? offset is not offset but pointer to routing table.
-  if(ten == DIRECT_POINTER) {
-    index = six;
-    goto done;
-  }
-
-  click_chatter("baseindex1[bix] = (d) %d", baseindex1[bix]);
-  click_chatter("_maptable[ten][bit >> 1] = (x) %x", _maptable[ten][bit >> 1]);
-  int maptable_offset = _maptable[ten][bit >> 1];
-  if(bit & 0x0001) // odd
-    maptable_offset &= 0x0f;
-  else
-    maptable_offset >>= 4;
-  click_chatter("maptable_offset = (x) %x", maptable_offset);
-
-  u_int16_t pix = baseindex1[bix] + six + maptable_offset;
-  click_chatter("pix = (d) %d", pix);
-  index = l1ptrs[pix];
-  click_chatter("index = (x) %x", index);
-
-  for(int i = 0; i < l1ptrs.size(); i++)
-    click_chatter("l1prts[(d) %d] = (x) %x", i, l1ptrs[i]);
-
 
 done:
   gw = _v[index & 0x3fff]._gw;
@@ -222,7 +169,7 @@ IPTable2::build()
       continue;
     high16 = ntohs(high16);
 
-    click_chatter("Inserting %x", high16);
+    // click_chatter("Inserting %x", high16);
 
     // set bits in bitvector for this routing table entry
     affected.clear();
@@ -248,7 +195,7 @@ IPTable2::build()
   for(register int i = 0; i < 65536; i++)
     if(bit_admin[i].value) {
       l1ptrs.push_back(bit_admin[i].value);
-      click_chatter("Pushed bit %d (== %x) on vector (index = %d) : %x", i, bit_admin[i].value, l1ptrs.size()-1, l1ptrs[l1ptrs.size()-1]);
+      // click_chatter("Pushed bit %d (== %x) on vector (index = %d) : %x", i, bit_admin[i].value, l1ptrs.size()-1, l1ptrs[l1ptrs.size()-1]);
     }
 
 
@@ -259,7 +206,7 @@ IPTable2::build()
   int mt_index = 0, bits_so_far = 0;
   for(int j = 0; j < 4096; j++) {
     u_int16_t bv = bitvector1[j];
-    click_chatter("bitvector1[%d] = %x", j, bitvector1[j]);
+    // click_chatter("bitvector1[%d] = %x", j, bitvector1[j]);
 
     // Write record-index of maptable in upper 10 bits. No such index exists
     // for records where bv == 0 or bv == 1 (see section 4.2.1).
@@ -288,7 +235,7 @@ IPTable2::build()
     // Every 4th codeword: 0 and set baseindex.
     } else if(j) {
       baseindex1[bi1_idx] = baseindex1[bi1_idx-1] + bits_so_far;
-      click_chatter("baseindex1[%d] = %d", bi1_idx, baseindex1[bi1_idx]);
+      // click_chatter("baseindex1[%d] = %d", bi1_idx, baseindex1[bi1_idx]);
       bi1_idx++;
       bits_so_far = 0;
     }
@@ -305,7 +252,7 @@ IPTable2::build()
     else
       bits_so_far += (bv & 0x0001);
 
-    click_chatter("codewords1[%d] is %x", j, codewords1[j]);
+    // click_chatter("codewords1[%d] is %x", j, codewords1[j]);
   }
 }
 
@@ -341,7 +288,7 @@ IPTable2::set_all_bits(u_int16_t bitvector[],
       set_single_bit(bitvector, bit_admin, i+1, 16, value | 0x0001, headinfo, affected);
   }
 
-  click_chatter("Setting bit on level 16");
+  // click_chatter("Setting bit on level 16");
   u_int16_t masked = _v[rtable_idx]._dst & _v[rtable_idx]._mask;
   headinfo = (((masked & 0xffff0000) ? CHUNK : NEXT_HOP) | rtable_idx);
   set_single_bit(bitvector, bit_admin, 16, 16, value, headinfo, affected);
@@ -397,7 +344,7 @@ IPTable2::set_single_bit(u_int16_t bitvector[],
   bit_admin[bit_in_vector].from_level = from_level;
   affected.push_back(vector_index);
 
-  click_chatter("bitvector[%d] is %x", vector_index, bitvector[vector_index]);
+  // click_chatter("bitvector[%d] is %x", vector_index, bitvector[vector_index]);
 }
 
 
@@ -477,7 +424,7 @@ IPTable2::all_masks(int length, bool toplevel = true)
       u_int16_t mask = shifted_v[i] | v[j];
       v_new.push_back(mask);
       if(toplevel) {
-         click_chatter("Record %d is for mask %x", mt_index, mask);
+         // click_chatter("Record %d is for mask %x", mt_index, mask);
         _mask2index[mask >> 8][mask & 0x00ff] = mt_index++;
       }
     }
