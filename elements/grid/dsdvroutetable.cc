@@ -121,10 +121,14 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"LOG", cpElement, "GridLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpDouble, "alpha parameter for settling time computation (0 <= ALPHA <= 1)", &_alpha,
+			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
 			0);
 
   if (res < 0)
     return res;
+
+  if (_seq_no & 1) 
+    return errh->error("initial sequence number must be even");
 
   if (_timeout == 0)
     return errh->error("timeout interval must be greater than 0");
@@ -1093,22 +1097,6 @@ DSDVRouteTable::write_est_type(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   rt->_est_type = atoi(((String) arg).cc());
-  return 0;
-}
-
-String
-DSDVRouteTable::print_seq_delay(Element *e, void *)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  return String(rt->_seq_delay) + "\n";
-}
-
-int
-DSDVRouteTable::write_seq_delay(const String &arg, Element *el, 
-				void *, ErrorHandler *)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  rt->_seq_delay = atoi(((String) arg).cc());
   return 0;
 }
 

@@ -74,13 +74,18 @@
  *
  * GridLogger element.  Object to log Grid events to.
  *
- * =item WST0 (zero, not``oh'')
+ * =item WST0 (zero, not ``oh'')
  * 
  * Unsigned integer.  Initial weighted settling time.  Milliseconds.
  *
  * =item ALPHA
  * 
  * Double.  DSDV settling time weighting parameter.  Between 0 and 1 inclusive.
+ *
+ * =item SEQ0 (zero, not ``oh'')
+ *
+ * Unsigned integer.  Initial sequence number used in advertisements.
+ * Defaults to 0.  Must be even.
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
@@ -307,9 +312,7 @@ private:
 
   /* latest sequence number for this node's route entry */
   unsigned int _seq_no;
-  unsigned int _fake_seq_no;
   unsigned int _bcast_count;
-  unsigned int _seq_delay;
 
   /* local DSDV radius */
   unsigned int _max_hops;
