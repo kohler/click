@@ -1,3 +1,8 @@
+2002-10-15 Tuesday 15:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: fakepcap.cc (1.10), fakepcap.hh (1.14):
+	support 802.11 link types
+
 2002-10-15 Tuesday 14:39  Eddie Kohler <kohler@icir.org>
 
 	* etc/diagrams/Makefile (1.3): Makenit
