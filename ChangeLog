@@ -1,3 +1,18 @@
+2002-06-06 Thursday 12:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.8), dsdvroutetable.hh (1.9),
+	floodinglocquerier.cc (1.32), floodinglocquerier.hh (1.16),
+	gridroutetable.cc (1.53), gridroutetable.hh (1.31),
+	locqueryresponder.cc (1.22), locqueryresponder.hh (1.8),
+	updateroutes.cc (1.27), updateroutes.hh (1.12): convert all
+	variables holding jiffies to be unsigned, since that's what jiffies
+	are...
+
+2002-06-06 Thursday 12:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: printgrid.cc (1.23), printgrid.hh (1.6): add
+	useful optons VERBOSE, TIMESTAMP, and SHOW_ROUTES
+
 2002-06-05 Wednesday 17:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.7), dsdvroutetable.hh (1.8):
