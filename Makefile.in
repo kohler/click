@@ -109,6 +109,7 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	lib/timer.cc lib/timer.hh \
 	lib/unlimelement.cc lib/unlimelement.hh \
 	lib/vector.cc lib/vector.hh lib/vectori.cc lib/vectorv.cc \
+	lib/wq.hh \
 	userlevel/Makefile.in \
 	userlevel/click.cc \
 	linuxmodule/Makefile.in \
@@ -119,7 +120,8 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	linuxmodule/proc_config.cc \
 	linuxmodule/proc_element.cc \
 	linuxmodule/proc_mgr.cc \
-	linuxmodule/read-pmc.c
+	linuxmodule/read-pmc.c \
+	linuxmodule/sched.cc
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)

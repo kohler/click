@@ -17,6 +17,8 @@ Version 0.6
 * More options for user-level Click, including support for hander
   invocations on the command line.
 
+* Added `udpgen' and `udpcount' in the `etc' directory.
+
 * Fixed dynamic reconfiguration bug: no more doubled characters.
 
 * Fixed compound element bug: input and output ports bigger than 0 were

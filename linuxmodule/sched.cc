@@ -10,8 +10,6 @@
  * distribution.
  */
 
-#ifdef CLICK_POLLDEV
-
 #define CLICK_SCHED_DEBUG
 
 #ifdef HAVE_CONFIG_H
@@ -107,7 +105,3 @@ kill_click_sched()
 	}
     }
 }
-
-
-#endif /* CLICK_POLLDEV */
-

@@ -11,13 +11,6 @@
  */
 #ifndef WQ_HH
 #define WQ_HH
-
-#ifdef __KERNEL__
-
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
 #include "element.hh"
 
 extern "C" {
@@ -30,8 +23,6 @@ struct ElementWaitQueue
   struct wait_queue **element_wq;
   struct wait_queue thread_wq;
 };
-
-#endif
 
 #endif
 

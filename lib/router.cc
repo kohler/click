@@ -15,13 +15,16 @@
 #endif
 #include "router.hh"
 #include "bitvector.hh"
-#include "wq.hh"
 #include "error.hh"
 #include "straccum.hh"
 #include "elemfilter.hh"
 #include "confparse.hh"
 #ifndef __KERNEL__
 # include "timer.hh"
+#else /* __KERNEL__ */
+# ifdef CLICK_POLLDEV
+#  include "wq.hh"
+# endif
 #endif
 #include <stdarg.h>
 #include <unistd.h>

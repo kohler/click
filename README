@@ -1,9 +1,9 @@
-THE CLICK MODULAR ROUTER RELEASE 0.5
+THE CLICK MODULAR ROUTER RELEASE 0.6
 ====================================
 
-    This is the README file for a preliminary, pre-beta Click source
-distribution of October 19, 1999. The first thing you should do is look for
-more recent information on the Web at
+    This is the README file for the source release for the Click modular
+software router. The first thing you should do is look for more recent
+information on the Web at
 
 	http://www.pdos.lcs.mit.edu/click/
 
@@ -11,6 +11,34 @@ more recent information on the Web at
 compile and install the software, how to write router configurations, and
 how to write new elements. Our SOSP 1999 paper (available from the Web
 site) is a good place to get a feeling for what Click can do.
+
+CONTENTS
+--------
+
+CLICKDIR			this directory
+CLICKDIR/conf			configuration files
+CLICKDIR/doc			documentation
+CLICKDIR/elements		element source code
+CLICKDIR/elements/ethernet	... for Ethernet elements
+CLICKDIR/elements/etherswitch	... for Ethernet-switch elements
+CLICKDIR/elements/ip		... for IP, ICMP, and TCP/UDP elements
+CLICKDIR/elements/ipsec		... for IPsec elements
+CLICKDIR/elements/linuxmodule	... for Linux kernel-specific elements
+CLICKDIR/elements/standard	... for generic elements
+CLICKDIR/elements/userlevel	... for user-level-specific elements
+CLICKDIR/etc			Linux patches
+CLICKDIR/lib			common non-element source code
+CLICKDIR/linuxmodule		source code for Linux kernel module
+CLICKDIR/tools			source code for Click tools
+CLICKDIR/tools/lib		... common code for tools
+CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
+CLICKDIR/tools/click-compile	... compiles element source code portably
+CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
+CLICKDIR/tools/click-install	... installs configuration into Linux module
+CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
+CLICKDIR/tools/udpgen		... Linux kernel modules for quickly 
+				    generating and counting UDP packets
+CLICKDIR/userlevel		source code for user-level `click' program
 
 DOCUMENTATION
 -------------
