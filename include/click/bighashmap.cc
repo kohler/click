@@ -73,13 +73,13 @@ HashMap<K, V>::copy_from(const HashMap<K, V> &o)
       pprev = &ee->next;
     }
   }
+  _n = o._n;
 }
 
 template <class K, class V>
 HashMap<K, V>::HashMap(const HashMap<K, V> &o)
   : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
-    _arena(o._arena)
+    _default_value(o._default_value), _capacity(o._capacity), _arena(o._arena)
 {
   _arena->use();
   copy_from(o);
@@ -95,6 +95,7 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
     if (_nbuckets < o._nbuckets)
       resize0(o._nbuckets);
     _nbuckets = o._nbuckets;
+    _capacity = o._capacity;
     copy_from(o);
   }
   return *this;
@@ -436,13 +437,13 @@ HashMap<K, void *>::copy_from(const HashMap<K, void *> &o)
       pprev = &ee->next;
     }
   }
+  _n = o._n;
 }
 
 template <class K>
 HashMap<K, void *>::HashMap(const HashMap<K, void *> &o)
   : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
-    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
-    _arena(o._arena)
+    _default_value(o._default_value), _capacity(o._capacity), _arena(o._arena)
 {
   _arena->use();
   copy_from(o);
@@ -458,6 +459,7 @@ HashMap<K, void *>::operator=(const HashMap<K, void *> &o)
     if (_nbuckets < o._nbuckets)
       resize0(o._nbuckets);
     _nbuckets = o._nbuckets;
+    _capacity = o._capacity;
     copy_from(o);
   }
   return *this;
