@@ -1,3 +1,21 @@
+2001-11-07 Wednesday 18:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-server-ron.pl (1.4): added TCP_TIMEOUT & REAP_TCP
+
+2001-11-07 Wednesday 17:48  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/lookupiprouteron.cc (1.10): adding rst
+
+2001-11-07 Wednesday 17:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.39): added grid route tracing to the config
+	file
+
+2001-11-07 Wednesday 17:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.9), lookupiprouteron.hh (1.7):
+	adding syn seq number for rst support
+
 2001-11-07 Wednesday 11:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/printgrid.cc (1.18): nitlet
