@@ -70,14 +70,13 @@ TCPBuffer::push(int, Packet *p)
   if (_initial_seq == 0)
     _initial_seq = ntohl(tcph->th_seq);
   else if (_first_seq > 0 && ntohl(tcph->th_seq) < _first_seq) {
-    click_chatter("retrans packet, rejected");
+    // click_chatter("retrans packet, rejected");
     p->kill();
     return;
   }
-
   new TCPBufferElt(&_chain, p);
 
-#if 1
+#if 0
   click_chatter("seq0 %u, seq %u", _initial_seq, _first_seq);
   TCPBufferElt *elt = _chain;
   while(elt) {
@@ -98,9 +97,13 @@ TCPBuffer::pull(int)
     click_tcp *tcph = reinterpret_cast<click_tcp*>(p->transport_header());
     if (_first_seq == 0 || _skip || ntohl(tcph->th_seq)==_first_seq) {
       _chain->kill_elt();
-      _first_seq = ntohl(tcph->th_seq) +
-	(ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2));
-      click_chatter("new seq0 %u, seq %u", _initial_seq, _first_seq);
+      unsigned seqlen = (ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2)); 
+      if ((tcph->th_flags&TH_SYN) || (tcph->th_flags&TH_FIN)) seqlen++;
+      _first_seq = ntohl(tcph->th_seq) + seqlen;
+#if 0
+      click_chatter("new seq0 %u, seq %u, %u+%d",
+	            _initial_seq, _first_seq, ntohl(tcph->th_seq), seqlen);
+#endif
       return p;
     }
   }
