@@ -1,3 +1,8 @@
+2001-11-01 Thursday 15:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.27): add Packet::addr_anno(), for le
+	Douglas
+
 2001-11-01 Thursday 11:52  Eddie Kohler <kohler@aciri.org>
 
 	* elements/tcpudp/iprewriter.cc (1.27): IPRw: reduce wait if lock

@@ -1,3 +1,8 @@
+2001-11-01 Thursday 15:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, packet.hh: add Packet::addr_anno(),
+	for le Douglas
+
 2001-11-01 Thursday 11:41  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
