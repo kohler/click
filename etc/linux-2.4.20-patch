@@ -1,6 +1,11 @@
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/drivers/net/eepro100.c ./drivers/net/eepro100.c
---- ../linux-2.4.20-pure/drivers/net/eepro100.c	2002-11-28 15:53:13.000000000 -0800
-+++ ./drivers/net/eepro100.c	2003-01-22 17:41:40.000000000 -0800
+Index: drivers/net/eepro100.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/drivers/net/eepro100.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- drivers/net/eepro100.c	4 May 2004 01:07:03 -0000	1.1.1.1
++++ drivers/net/eepro100.c	4 May 2004 02:18:40 -0000	1.2
 @@ -544,6 +544,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
@@ -527,9 +532,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +	return 0;
 +}
 +
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/drivers/net/tg3.c ./drivers/net/tg3.c
---- ../linux-2.4.20-pure/drivers/net/tg3.c	2002-11-28 15:53:14.000000000 -0800
-+++ ./drivers/net/tg3.c	2003-01-22 17:26:56.000000000 -0800
+Index: drivers/net/tg3.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/drivers/net/tg3.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- drivers/net/tg3.c	4 May 2004 01:07:03 -0000	1.1.1.1
++++ drivers/net/tg3.c	4 May 2004 02:18:40 -0000	1.2
 @@ -2016,7 +2016,7 @@
  				    desc->err_vlan & RXD_VLAN_MASK);
  		} else
@@ -539,9 +549,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  		tp->dev->last_rx = jiffies;
  		received++;
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
---- ../linux-2.4.20-pure/drivers/net/tulip/interrupt.c	2002-11-28 15:53:14.000000000 -0800
-+++ ./drivers/net/tulip/interrupt.c	2003-01-22 16:34:28.000000000 -0800
+Index: drivers/net/tulip/interrupt.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/drivers/net/tulip/interrupt.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- drivers/net/tulip/interrupt.c	4 May 2004 01:07:10 -0000	1.1.1.1
++++ drivers/net/tulip/interrupt.c	4 May 2004 02:18:40 -0000	1.2
 @@ -311,6 +311,10 @@
  #endif
  }
@@ -898,9 +913,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +	*want = got;
 +	return skb_head;
  }
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/drivers/net/tulip/tulip_core.c ./drivers/net/tulip/tulip_core.c
---- ../linux-2.4.20-pure/drivers/net/tulip/tulip_core.c	2002-11-28 15:53:14.000000000 -0800
-+++ ./drivers/net/tulip/tulip_core.c	2003-01-22 16:34:28.000000000 -0800
+Index: drivers/net/tulip/tulip_core.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/drivers/net/tulip/tulip_core.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- drivers/net/tulip/tulip_core.c	4 May 2004 01:07:10 -0000	1.1.1.1
++++ drivers/net/tulip/tulip_core.c	4 May 2004 02:18:40 -0000	1.2
 @@ -264,6 +264,16 @@
  static void set_rx_mode(struct net_device *dev);
  
@@ -1135,9 +1155,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +	return 0;
 +}
 +
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/fs/proc/inode.c ./fs/proc/inode.c
---- ../linux-2.4.20-pure/fs/proc/inode.c	2001-11-17 11:24:32.000000000 -0800
-+++ ./fs/proc/inode.c	2003-01-22 16:34:29.000000000 -0800
+Index: fs/proc/inode.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/fs/proc/inode.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- fs/proc/inode.c	4 May 2004 01:06:42 -0000	1.1.1.1
++++ fs/proc/inode.c	4 May 2004 02:18:40 -0000	1.2
 @@ -147,6 +147,11 @@
  	if (!inode)
  		goto out_fail;
@@ -1150,9 +1175,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	inode->u.generic_ip = (void *) de;
  	if (de) {
  		if (de->mode) {
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-alpha/core_tsunami.h ./include/asm-alpha/core_tsunami.h
---- ../linux-2.4.20-pure/include/asm-alpha/core_tsunami.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-alpha/core_tsunami.h	2003-01-22 16:34:29.000000000 -0800
+Index: include/asm-alpha/core_tsunami.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-alpha/core_tsunami.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-alpha/core_tsunami.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-alpha/core_tsunami.h	4 May 2004 02:18:40 -0000	1.2
 @@ -281,8 +281,7 @@
  /*
   * Data structure for handling TSUNAMI machine checks:
@@ -1163,9 +1193,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  
  #ifdef __KERNEL__
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-arm/mmu.h ./include/asm-arm/mmu.h
---- ../linux-2.4.20-pure/include/asm-arm/mmu.h	2000-12-29 14:07:23.000000000 -0800
-+++ ./include/asm-arm/mmu.h	2003-02-07 17:03:43.000000000 -0800
+Index: include/asm-arm/mmu.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-arm/mmu.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-arm/mmu.h	4 May 2004 01:06:54 -0000	1.1.1.1
++++ include/asm-arm/mmu.h	4 May 2004 02:18:40 -0000	1.2
 @@ -2,6 +2,6 @@
  #define __ARM_MMU_H
  
@@ -1174,9 +1209,65 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
  
  #endif
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-cris/io.h ./include/asm-cris/io.h
---- ../linux-2.4.20-pure/include/asm-cris/io.h	2001-10-08 11:43:54.000000000 -0700
-+++ ./include/asm-cris/io.h	2003-02-10 10:22:15.000000000 -0800
+Index: include/asm-arm/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-arm/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-arm/system.h	4 May 2004 01:06:53 -0000	1.1.1.1
++++ include/asm-arm/system.h	4 May 2004 02:18:40 -0000	1.2
+@@ -29,7 +29,7 @@
+ 
+ #define tas(ptr) (xchg((ptr),1))
+ 
+-extern asmlinkage void __backtrace(void);
++asmlinkage void __backtrace(void);
+ 
+ /*
+  * Include processor dependent parts
+Index: include/asm-arm/proc-armo/pgalloc.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-arm/proc-armo/pgalloc.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-arm/proc-armo/pgalloc.h	4 May 2004 01:06:54 -0000	1.1.1.1
++++ include/asm-arm/proc-armo/pgalloc.h	4 May 2004 02:18:40 -0000	1.2
+@@ -20,7 +20,7 @@
+  */
+ static inline pte_t *pte_alloc_one(struct mm_struct *mm, unsigned long address)
+ {
+-	return kmem_cache_alloc(pte_cache, GFP_KERNEL);
++	return (pte_t *) kmem_cache_alloc(pte_cache, GFP_KERNEL);
+ }
+ 
+ /*
+Index: include/asm-arm/proc-armv/pgalloc.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-arm/proc-armv/pgalloc.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-arm/proc-armv/pgalloc.h	4 May 2004 01:06:54 -0000	1.1.1.1
++++ include/asm-arm/proc-armv/pgalloc.h	4 May 2004 02:18:40 -0000	1.2
+@@ -22,7 +22,7 @@
+ {
+ 	pte_t *pte;
+ 
+-	pte = kmem_cache_alloc(pte_cache, GFP_KERNEL);
++	pte = (pte_t *) kmem_cache_alloc(pte_cache, GFP_KERNEL);
+ 	if (pte)
+ 		pte += PTRS_PER_PTE;
+ 	return pte;
+Index: include/asm-cris/io.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-cris/io.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-cris/io.h	4 May 2004 01:06:58 -0000	1.1.1.1
++++ include/asm-cris/io.h	4 May 2004 02:18:40 -0000	1.2
 @@ -24,8 +24,8 @@
   ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
  			       (255)); _Foofoo; })
@@ -1188,9 +1279,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define CRIS_CYCLES() __extension__ \
   ({ unsigned long c; asm ("bmod [%1],%0" : "=r" (c) : "r" (27)); c;})
  #else  /* ! defined CONFIG_SVINTO_SIM */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/desc.h ./include/asm-i386/desc.h
---- ../linux-2.4.20-pure/include/asm-i386/desc.h	2001-07-26 13:40:32.000000000 -0700
-+++ ./include/asm-i386/desc.h	2003-02-10 10:22:47.000000000 -0800
+Index: include/asm-i386/desc.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-i386/desc.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-i386/desc.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-i386/desc.h	4 May 2004 02:18:40 -0000	1.2
 @@ -56,9 +56,9 @@
  #define idt_descr (*(struct Xgt_desc_struct *)((char *)&idt - 2))
  #define gdt_descr (*(struct Xgt_desc_struct *)((char *)&gdt - 2))
@@ -1203,9 +1299,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  /*
   * This is the ldt that every process will get unless we need
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
---- ../linux-2.4.20-pure/include/asm-i386/highmem.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-i386/highmem.h	2003-01-26 18:57:06.000000000 -0800
+Index: include/asm-i386/highmem.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-i386/highmem.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-i386/highmem.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-i386/highmem.h	4 May 2004 02:18:40 -0000	1.2
 @@ -91,7 +91,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -1225,9 +1326,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  	if (vaddr < FIXADDR_START) // FIXME
  		return;
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/pgtable.h ./include/asm-i386/pgtable.h
---- ../linux-2.4.20-pure/include/asm-i386/pgtable.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-i386/pgtable.h	2003-02-10 10:21:40.000000000 -0800
+Index: include/asm-i386/pgtable.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-i386/pgtable.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-i386/pgtable.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-i386/pgtable.h	4 May 2004 02:18:40 -0000	1.2
 @@ -43,7 +43,7 @@
  			"movl %%cr3, %0;  # flush TLB \n"		\
  			"movl %0, %%cr3;              \n"		\
@@ -1237,9 +1343,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	} while (0)
  
  /*
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
---- ../linux-2.4.20-pure/include/asm-i386/rwlock.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-i386/rwlock.h	2003-01-22 16:41:58.000000000 -0800
+Index: include/asm-i386/rwlock.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-i386/rwlock.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-i386/rwlock.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-i386/rwlock.h	4 May 2004 02:18:40 -0000	1.2
 @@ -28,7 +28,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -1258,9 +1369,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  #define __build_write_lock_const(rw, helper) \
  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/string.h ./include/asm-i386/string.h
---- ../linux-2.4.20-pure/include/asm-i386/string.h	2001-11-22 11:46:18.000000000 -0800
-+++ ./include/asm-i386/string.h	2003-01-22 17:35:06.000000000 -0800
+Index: include/asm-i386/string.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-i386/string.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-i386/string.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-i386/string.h	4 May 2004 02:18:40 -0000	1.2
 @@ -29,6 +29,7 @@
   *		consider these trivial functions to be PD.
   */
@@ -1309,9 +1425,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  static inline void * __memcpy(void * to, const void * from, size_t n)
  {
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/delay.h ./include/asm-ia64/delay.h
---- ../linux-2.4.20-pure/include/asm-ia64/delay.h	2001-04-05 12:51:47.000000000 -0700
-+++ ./include/asm-ia64/delay.h	2003-02-10 10:23:26.000000000 -0800
+Index: include/asm-ia64/delay.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/delay.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/delay.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/delay.h	4 May 2004 02:18:41 -0000	1.2
 @@ -21,7 +21,7 @@
  static __inline__ void
  ia64_set_itm (unsigned long val)
@@ -1370,9 +1491,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
  
  static __inline__ void
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/io.h ./include/asm-ia64/io.h
---- ../linux-2.4.20-pure/include/asm-ia64/io.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-ia64/io.h	2003-02-10 10:23:37.000000000 -0800
+Index: include/asm-ia64/io.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/io.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/io.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/io.h	4 May 2004 02:18:41 -0000	1.2
 @@ -67,7 +67,7 @@
   * Memory fence w/accept.  This should never be used in code that is
   * not IA-64 specific.
@@ -1382,9 +1508,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  static inline const unsigned long
  __ia64_get_io_port_base (void)
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/pgalloc.h ./include/asm-ia64/pgalloc.h
---- ../linux-2.4.20-pure/include/asm-ia64/pgalloc.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-ia64/pgalloc.h	2003-02-10 10:23:43.000000000 -0800
+Index: include/asm-ia64/pgalloc.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/pgalloc.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/pgalloc.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/pgalloc.h	4 May 2004 02:18:41 -0000	1.2
 @@ -194,7 +194,7 @@
  	flush_tlb_range(vma->vm_mm, (addr & PAGE_MASK), (addr & PAGE_MASK) + PAGE_SIZE);
  #else
@@ -1394,9 +1525,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	else
  		vma->vm_mm->context = 0;
  #endif
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/processor.h ./include/asm-ia64/processor.h
---- ../linux-2.4.20-pure/include/asm-ia64/processor.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-ia64/processor.h	2003-02-10 10:31:59.000000000 -0800
+Index: include/asm-ia64/processor.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/processor.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/processor.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/processor.h	4 May 2004 02:18:41 -0000	1.2
 @@ -414,14 +414,14 @@
  ia64_set_kr (unsigned long regnum, unsigned long r)
  {
@@ -1701,9 +1837,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #ifdef CONFIG_ITANIUM
  	asm volatile (";; srlz.d");
  #endif
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/spinlock.h ./include/asm-ia64/spinlock.h
---- ../linux-2.4.20-pure/include/asm-ia64/spinlock.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-ia64/spinlock.h	2003-02-10 10:32:08.000000000 -0800
+Index: include/asm-ia64/spinlock.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/spinlock.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/spinlock.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/spinlock.h	4 May 2004 02:18:41 -0000	1.2
 @@ -45,7 +45,7 @@
  		"(p15) br.call.spnt.few b7=ia64_spinlock_contention\n"			\
  		";;\n"									\
@@ -1731,9 +1872,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  } while(0)
  
  #define write_unlock(x)									\
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/system.h ./include/asm-ia64/system.h
---- ../linux-2.4.20-pure/include/asm-ia64/system.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-ia64/system.h	2003-02-10 10:32:17.000000000 -0800
+Index: include/asm-ia64/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-ia64/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-ia64/system.h	4 May 2004 01:06:55 -0000	1.1.1.1
++++ include/asm-ia64/system.h	4 May 2004 02:18:41 -0000	1.2
 @@ -57,7 +57,7 @@
  static inline void
  ia64_insn_group_barrier (void)
@@ -1806,9 +1952,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	switch (size) {									\
  	      case 1:									\
  		__asm__ __volatile__ ("cmpxchg1."sem" %0=[%1],%2,ar.ccv"		\
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-mips/processor.h ./include/asm-mips/processor.h
---- ../linux-2.4.20-pure/include/asm-mips/processor.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-mips/processor.h	2003-02-10 10:32:16.000000000 -0800
+Index: include/asm-mips/processor.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips/processor.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips/processor.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-mips/processor.h	4 May 2004 02:18:41 -0000	1.2
 @@ -256,6 +256,6 @@
   * overhead of a function call by forcing the compiler to save the return
   * address register on the stack.
@@ -1817,9 +1968,66 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
  
  #endif /* _ASM_PROCESSOR_H */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-mips64/processor.h ./include/asm-mips64/processor.h
---- ../linux-2.4.20-pure/include/asm-mips64/processor.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-mips64/processor.h	2003-02-10 10:32:16.000000000 -0800
+Index: include/asm-mips/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips/system.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-mips/system.h	4 May 2004 02:18:41 -0000	1.2
+@@ -243,17 +243,17 @@
+  * switch_to(n) should switch tasks to task nr n, first
+  * checking that n isn't the current task, in which case it does nothing.
+  */
+-extern asmlinkage void *resume(void *last, void *next);
++asmlinkage void *resume(void *last, void *next);
+ #endif /* !__ASSEMBLY__ */
+ 
+ #define prepare_to_switch()	do { } while(0)
+ 
+ struct task_struct;
+ 
+-extern asmlinkage void lazy_fpu_switch(void *);
+-extern asmlinkage void init_fpu(void);
+-extern asmlinkage void save_fp(struct task_struct *);
+-extern asmlinkage void restore_fp(struct task_struct *);
++asmlinkage void lazy_fpu_switch(void *);
++asmlinkage void init_fpu(void);
++asmlinkage void save_fp(struct task_struct *);
++asmlinkage void restore_fp(struct task_struct *);
+ 
+ #define switch_to(prev,next,last) \
+ do { \
+Index: include/asm-mips/watch.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips/watch.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips/watch.h	4 May 2004 01:06:51 -0000	1.1.1.1
++++ include/asm-mips/watch.h	4 May 2004 02:18:41 -0000	1.2
+@@ -20,9 +20,9 @@
+ 
+ extern char watch_available;
+ 
+-extern asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
+-extern asmlinkage void __watch_clear(void);
+-extern asmlinkage void __watch_reenable(void);
++asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
++asmlinkage void __watch_clear(void);
++asmlinkage void __watch_reenable(void);
+ 
+ #define watch_set(addr, ref)					\
+ 	if (watch_available)					\
+Index: include/asm-mips64/processor.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips64/processor.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips64/processor.h	4 May 2004 01:06:57 -0000	1.1.1.1
++++ include/asm-mips64/processor.h	4 May 2004 02:18:41 -0000	1.2
 @@ -307,6 +307,6 @@
   * functions.  We avoid the overhead of a function call by forcing the
   * compiler to save the return address register on the stack.
@@ -1828,9 +2036,65 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
  
  #endif /* _ASM_PROCESSOR_H */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-parisc/system.h ./include/asm-parisc/system.h
---- ../linux-2.4.20-pure/include/asm-parisc/system.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-parisc/system.h	2003-02-10 10:32:16.000000000 -0800
+Index: include/asm-mips64/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips64/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips64/system.h	4 May 2004 01:06:57 -0000	1.1.1.1
++++ include/asm-mips64/system.h	4 May 2004 02:18:41 -0000	1.2
+@@ -216,16 +216,16 @@
+  * switch_to(n) should switch tasks to task nr n, first
+  * checking that n isn't the current task, in which case it does nothing.
+  */
+-extern asmlinkage void *resume(void *last, void *next);
++asmlinkage void *resume(void *last, void *next);
+ 
+ #define prepare_to_switch()	do { } while(0)
+ 
+ struct task_struct;
+ 
+-extern asmlinkage void lazy_fpu_switch(void *, void *);
+-extern asmlinkage void init_fpu(void);
+-extern asmlinkage void save_fp(struct task_struct *);
+-extern asmlinkage void restore_fp(struct task_struct *);
++asmlinkage void lazy_fpu_switch(void *, void *);
++asmlinkage void init_fpu(void);
++asmlinkage void save_fp(struct task_struct *);
++asmlinkage void restore_fp(struct task_struct *);
+ 
+ #ifdef CONFIG_SMP
+ #define SWITCH_DO_LAZY_FPU \
+Index: include/asm-mips64/watch.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-mips64/watch.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-mips64/watch.h	4 May 2004 01:06:57 -0000	1.1.1.1
++++ include/asm-mips64/watch.h	4 May 2004 02:18:41 -0000	1.2
+@@ -20,9 +20,9 @@
+ 
+ extern char watch_available;
+ 
+-extern asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
+-extern asmlinkage void __watch_clear(void);
+-extern asmlinkage void __watch_reenable(void);
++asmlinkage void __watch_set(unsigned long addr, enum wref_type ref);
++asmlinkage void __watch_clear(void);
++asmlinkage void __watch_reenable(void);
+ 
+ #define watch_set(addr, ref)					\
+ 	if (watch_available)					\
+Index: include/asm-parisc/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-parisc/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-parisc/system.h	4 May 2004 01:06:57 -0000	1.1.1.1
++++ include/asm-parisc/system.h	4 May 2004 02:18:41 -0000	1.2
 @@ -145,7 +145,7 @@
  ** The __asm__ op below simple prevents gcc/ld from reordering
  ** instructions across the mb() "call".
@@ -1840,9 +2104,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define rmb()		mb()
  #define wmb()		mb()
  #define smp_mb()	mb()
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-s390/uaccess.h ./include/asm-s390/uaccess.h
---- ../linux-2.4.20-pure/include/asm-s390/uaccess.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-s390/uaccess.h	2003-02-10 10:32:15.000000000 -0800
+Index: include/asm-s390/uaccess.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-s390/uaccess.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-s390/uaccess.h	4 May 2004 01:06:57 -0000	1.1.1.1
++++ include/asm-s390/uaccess.h	4 May 2004 02:18:41 -0000	1.2
 @@ -36,7 +36,7 @@
  
  #define get_ds()        (KERNEL_DS)
@@ -1852,9 +2121,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
                           current->addr_limit = (x);})
  
  #define segment_eq(a,b) ((a).ar4 == (b).ar4)
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-s390x/uaccess.h ./include/asm-s390x/uaccess.h
---- ../linux-2.4.20-pure/include/asm-s390x/uaccess.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-s390x/uaccess.h	2003-02-10 10:32:15.000000000 -0800
+Index: include/asm-s390x/uaccess.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-s390x/uaccess.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-s390x/uaccess.h	4 May 2004 01:06:58 -0000	1.1.1.1
++++ include/asm-s390x/uaccess.h	4 May 2004 02:18:43 -0000	1.2
 @@ -36,7 +36,7 @@
  
  #define get_ds()	(KERNEL_DS)
@@ -1864,9 +2138,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
                            current->addr_limit = (x);})
  
  #define segment_eq(a,b)	((a).ar4 == (b).ar4)
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-sparc/system.h ./include/asm-sparc/system.h
---- ../linux-2.4.20-pure/include/asm-sparc/system.h	2001-10-30 15:08:11.000000000 -0800
-+++ ./include/asm-sparc/system.h	2003-02-10 10:32:14.000000000 -0800
+Index: include/asm-sparc/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-sparc/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-sparc/system.h	4 May 2004 01:06:52 -0000	1.1.1.1
++++ include/asm-sparc/system.h	4 May 2004 02:18:43 -0000	1.2
 @@ -280,9 +280,9 @@
  #define wmb()	mb()
  #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
@@ -1880,9 +2159,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  #define nop() __asm__ __volatile__ ("nop");
  
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-sparc64/system.h ./include/asm-sparc64/system.h
---- ../linux-2.4.20-pure/include/asm-sparc64/system.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-sparc64/system.h	2003-02-10 10:32:14.000000000 -0800
+Index: include/asm-sparc64/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-sparc64/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-sparc64/system.h	4 May 2004 01:06:53 -0000	1.1.1.1
++++ include/asm-sparc64/system.h	4 May 2004 02:18:43 -0000	1.2
 @@ -110,9 +110,9 @@
  #define smp_rmb()	rmb()
  #define smp_wmb()	wmb()
@@ -1896,9 +2180,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
  
  #define flushi(addr)	__asm__ __volatile__ ("flush %0" : : "r" (addr) : "memory")
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
---- ../linux-2.4.20-pure/include/asm-x86_64/desc.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/desc.h	2003-02-10 10:32:13.000000000 -0800
+Index: include/asm-x86_64/desc.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/desc.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/desc.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/desc.h	4 May 2004 02:18:43 -0000	1.2
 @@ -73,9 +73,9 @@
  #define __CPU_DESC_INDEX(x,field) \
  	((x) * sizeof(struct per_cpu_gdt) + offsetof(struct per_cpu_gdt, field) + __GDT_HEAD_SIZE)
@@ -1912,9 +2201,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  extern struct gate_struct idt_table[]; 
  
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/page.h ./include/asm-x86_64/page.h
---- ../linux-2.4.20-pure/include/asm-x86_64/page.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/page.h	2003-02-10 10:32:13.000000000 -0800
+Index: include/asm-x86_64/page.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/page.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/page.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/page.h	4 May 2004 02:18:44 -0000	1.2
 @@ -85,9 +85,9 @@
         char *filename;    /* should use 32bit offset instead, but the assembler doesn't like it */ 
         unsigned short line; 
@@ -1927,9 +2221,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  		"i" (__stringify(__FILE__)))
  #define PAGE_BUG(page) BUG()
  
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/pda.h ./include/asm-x86_64/pda.h
---- ../linux-2.4.20-pure/include/asm-x86_64/pda.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/pda.h	2003-02-10 10:32:13.000000000 -0800
+Index: include/asm-x86_64/pda.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/pda.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/pda.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/pda.h	4 May 2004 02:18:44 -0000	1.2
 @@ -47,9 +47,9 @@
  
  #define pda_to_op(op,field,val) do { \
@@ -1956,9 +2255,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
         default: __bad_pda_field(); 					\
         } \
         ret__; })
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/pgtable.h ./include/asm-x86_64/pgtable.h
---- ../linux-2.4.20-pure/include/asm-x86_64/pgtable.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/pgtable.h	2003-02-10 10:32:12.000000000 -0800
+Index: include/asm-x86_64/pgtable.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/pgtable.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/pgtable.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/pgtable.h	4 May 2004 02:18:44 -0000	1.2
 @@ -49,7 +49,7 @@
  			"movq %%cr3, %0;  # flush TLB \n"		\
  			"movq %0, %%cr3;              \n"		\
@@ -1968,9 +2272,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	} while (0)
  
  /*
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/rwlock.h ./include/asm-x86_64/rwlock.h
---- ../linux-2.4.20-pure/include/asm-x86_64/rwlock.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/rwlock.h	2003-02-10 10:32:11.000000000 -0800
+Index: include/asm-x86_64/rwlock.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/rwlock.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/rwlock.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/rwlock.h	4 May 2004 02:18:44 -0000	1.2
 @@ -31,7 +31,7 @@
  		     "2:\tcall " helper "\n\t" \
  		     "jmp 1b\n" \
@@ -2007,9 +2316,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  #define __build_write_lock(rw, helper)	do { \
  						if (__builtin_constant_p(rw)) \
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/system.h ./include/asm-x86_64/system.h
---- ../linux-2.4.20-pure/include/asm-x86_64/system.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/asm-x86_64/system.h	2003-02-10 10:32:10.000000000 -0800
+Index: include/asm-x86_64/system.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/asm-x86_64/system.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/asm-x86_64/system.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/asm-x86_64/system.h	4 May 2004 02:18:44 -0000	1.2
 @@ -230,9 +230,9 @@
   * but I'd also expect them to finally get their act together
   * and add some real memory barriers if so.
@@ -2032,9 +2346,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  /*
   * disable hlt during certain critical i/o operations
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/atalk.h ./include/linux/atalk.h
---- ../linux-2.4.20-pure/include/linux/atalk.h	2001-11-22 11:47:11.000000000 -0800
-+++ ./include/linux/atalk.h	2003-01-27 15:57:46.000000000 -0800
+Index: include/linux/atalk.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/atalk.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/atalk.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/atalk.h	4 May 2004 02:18:44 -0000	1.2
 @@ -163,7 +163,7 @@
  
  static inline struct atalk_iface *atalk_find_dev(struct net_device *dev)
@@ -2044,9 +2363,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
  
  extern struct at_addr *atalk_find_dev_addr(struct net_device *dev);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/highmem.h ./include/linux/highmem.h
---- ../linux-2.4.20-pure/include/linux/highmem.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/highmem.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/highmem.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/highmem.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/highmem.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/highmem.h	4 May 2004 02:18:44 -0000	1.2
 @@ -17,7 +17,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -2076,9 +2400,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	copy_user_page(vto, vfrom, vaddr);
  	kunmap_atomic(vfrom, KM_USER0);
  	kunmap_atomic(vto, KM_USER1);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/if_vlan.h ./include/linux/if_vlan.h
---- ../linux-2.4.20-pure/include/linux/if_vlan.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/if_vlan.h	2003-01-26 19:01:47.000000000 -0800
+Index: include/linux/if_vlan.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/if_vlan.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/if_vlan.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/if_vlan.h	4 May 2004 02:18:44 -0000	1.2
 @@ -183,7 +183,7 @@
  		break;
  	};
@@ -2088,9 +2417,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
  
  static inline int vlan_hwaccel_rx(struct sk_buff *skb,
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/inetdevice.h ./include/linux/inetdevice.h
---- ../linux-2.4.20-pure/include/linux/inetdevice.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/linux/inetdevice.h	2003-01-22 16:34:29.000000000 -0800
+Index: include/linux/inetdevice.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/inetdevice.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/inetdevice.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/inetdevice.h	4 May 2004 02:18:45 -0000	1.2
 @@ -124,7 +124,7 @@
  	struct in_device *in_dev;
  
@@ -2100,9 +2434,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	if (in_dev)
  		atomic_inc(&in_dev->refcnt);
  	read_unlock(&inetdev_lock);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/intermezzo_kml.h ./include/linux/intermezzo_kml.h
---- ../linux-2.4.20-pure/include/linux/intermezzo_kml.h	2001-11-11 10:20:21.000000000 -0800
-+++ ./include/linux/intermezzo_kml.h	2003-02-07 17:16:44.000000000 -0800
+Index: include/linux/intermezzo_kml.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/intermezzo_kml.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/intermezzo_kml.h	4 May 2004 01:06:50 -0000	1.1.1.1
++++ include/linux/intermezzo_kml.h	4 May 2004 02:18:45 -0000	1.2
 @@ -70,8 +70,7 @@
  	int 			gid;
  };
@@ -2113,9 +2452,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  struct kml_mkdir {
  	char 			*path;
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/list.h ./include/linux/list.h
---- ../linux-2.4.20-pure/include/linux/list.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/list.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/list.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/list.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/list.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/list.h	4 May 2004 02:18:45 -0000	1.2
 @@ -91,8 +91,8 @@
  static inline void list_del(struct list_head *entry)
  {
@@ -2127,9 +2471,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
  
  /**
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/mm.h ./include/linux/mm.h
---- ../linux-2.4.20-pure/include/linux/mm.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/linux/mm.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/mm.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/mm.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/mm.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/mm.h	4 May 2004 02:18:45 -0000	1.2
 @@ -576,7 +576,6 @@
  		return 0;
  }
@@ -2138,9 +2487,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /* filemap.c */
  extern void remove_inode_page(struct page *);
  extern unsigned long page_unuse(struct page *);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/netdevice.h ./include/linux/netdevice.h
---- ../linux-2.4.20-pure/include/linux/netdevice.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/netdevice.h	2003-01-26 18:58:26.000000000 -0800
+Index: include/linux/netdevice.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/netdevice.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/netdevice.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/netdevice.h	4 May 2004 02:18:45 -0000	1.2
 @@ -438,6 +438,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -2207,9 +2561,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern int		dev_ioctl(unsigned int cmd, void *);
  extern int		dev_change_flags(struct net_device *, unsigned);
  extern void		dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
---- ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/reiserfs_fs_sb.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/reiserfs_fs_sb.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/reiserfs_fs_sb.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/reiserfs_fs_sb.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/linux/reiserfs_fs_sb.h	4 May 2004 02:18:45 -0000	1.2
 @@ -405,8 +405,7 @@
    } journal;
  } reiserfs_proc_info_data_t;
@@ -2220,9 +2579,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
  
  /* reiserfs union of in-core super block data */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/skbuff.h ./include/linux/skbuff.h
---- ../linux-2.4.20-pure/include/linux/skbuff.h	2002-08-02 17:39:46.000000000 -0700
-+++ ./include/linux/skbuff.h	2003-01-26 18:57:28.000000000 -0800
+Index: include/linux/skbuff.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/skbuff.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/skbuff.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/skbuff.h	4 May 2004 02:18:45 -0000	1.2
 @@ -126,15 +126,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -2324,9 +2688,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  {
  	if (len > skb_headlen(skb) &&
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/spinlock.h ./include/linux/spinlock.h
---- ../linux-2.4.20-pure/include/linux/spinlock.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/spinlock.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/spinlock.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/spinlock.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/spinlock.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/linux/spinlock.h	4 May 2004 02:18:45 -0000	1.2
 @@ -2,6 +2,7 @@
  #define __LINUX_SPINLOCK_H
  
@@ -2367,9 +2736,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  #define rwlock_init(lock)	do { } while(0)
  #define read_lock(lock)		(void)(lock) /* Not "unused variable". */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/swap.h ./include/linux/swap.h
---- ../linux-2.4.20-pure/include/linux/swap.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/swap.h	2003-02-10 10:45:29.000000000 -0800
+Index: include/linux/swap.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/swap.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/swap.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/linux/swap.h	4 May 2004 02:18:45 -0000	1.2
 @@ -100,7 +100,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -2379,9 +2753,31 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  /* linux/mm/swap.c */
  extern void FASTCALL(lru_cache_add(struct page *));
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/types.h ./include/linux/types.h
---- ../linux-2.4.20-pure/include/linux/types.h	2002-08-02 17:39:46.000000000 -0700
-+++ ./include/linux/types.h	2003-02-10 10:08:04.000000000 -0800
+Index: include/linux/sysctl.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/sysctl.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/sysctl.h	4 May 2004 01:06:48 -0000	1.1.1.1
++++ include/linux/sysctl.h	4 May 2004 02:18:45 -0000	1.2
+@@ -631,7 +631,7 @@
+ 
+ #ifdef __KERNEL__
+ 
+-extern asmlinkage long sys_sysctl(struct __sysctl_args *);
++asmlinkage long sys_sysctl(struct __sysctl_args *);
+ extern void sysctl_init(void);
+ 
+ typedef struct ctl_table ctl_table;
+Index: include/linux/types.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/linux/types.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/linux/types.h	4 May 2004 01:06:49 -0000	1.1.1.1
++++ include/linux/types.h	4 May 2004 02:18:45 -0000	1.2
 @@ -127,4 +127,23 @@
  	char			f_fpack[6];
  };
@@ -2406,9 +2802,31 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +#endif
 +
  #endif /* _LINUX_TYPES_H */
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/net/route.h ./include/net/route.h
---- ../linux-2.4.20-pure/include/net/route.h	2002-08-02 17:39:46.000000000 -0700
-+++ ./include/net/route.h	2003-01-26 18:59:42.000000000 -0800
+Index: include/net/checksum.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/net/checksum.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/net/checksum.h	4 May 2004 01:06:52 -0000	1.1.1.1
++++ include/net/checksum.h	4 May 2004 02:18:45 -0000	1.2
+@@ -111,7 +111,7 @@
+ static __inline__ unsigned int csum_and_copy_to_user
+ (const char *src, char *dst, int len, unsigned int sum, int *err_ptr)
+ {
+-	sum = csum_partial(src, len, sum);
++	sum = csum_partial((const unsigned char *) src, len, sum);
+ 
+ 	if (access_ok(VERIFY_WRITE, dst, len)) {
+ 		if (copy_to_user(dst, src, len) == 0)
+Index: include/net/route.h
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/include/net/route.h,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- include/net/route.h	4 May 2004 01:06:52 -0000	1.1.1.1
++++ include/net/route.h	4 May 2004 02:18:45 -0000	1.2
 @@ -140,7 +140,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)
@@ -2423,9 +2841,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  	return ip_route_output_key(rp, &key);
  }
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/kernel/ksyms.c ./kernel/ksyms.c
---- ../linux-2.4.20-pure/kernel/ksyms.c	2002-11-28 15:53:15.000000000 -0800
-+++ ./kernel/ksyms.c	2003-01-22 16:45:29.000000000 -0800
+Index: kernel/ksyms.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/kernel/ksyms.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- kernel/ksyms.c	4 May 2004 01:06:47 -0000	1.1.1.1
++++ kernel/ksyms.c	4 May 2004 02:18:46 -0000	1.2
 @@ -533,6 +533,8 @@
  EXPORT_SYMBOL(event);
  EXPORT_SYMBOL(brw_page);
@@ -2435,9 +2858,34 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  #ifdef CONFIG_UID16
  EXPORT_SYMBOL(overflowuid);
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/net/core/dev.c ./net/core/dev.c
---- ../linux-2.4.20-pure/net/core/dev.c	2002-11-28 15:53:15.000000000 -0800
-+++ ./net/core/dev.c	2003-01-22 17:51:37.000000000 -0800
+Index: net/netsyms.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/net/netsyms.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- net/netsyms.c	4 May 2004 01:06:58 -0000	1.1.1.1
++++ net/netsyms.c	4 May 2004 02:18:46 -0000	1.2
+@@ -277,6 +277,11 @@
+ EXPORT_SYMBOL(register_inetaddr_notifier);
+ EXPORT_SYMBOL(unregister_inetaddr_notifier);
+ 
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++EXPORT_SYMBOL(skb_recycle);
++
+ /* needed for ip_gre -cw */
+ EXPORT_SYMBOL(ip_statistics);
+ 
+Index: net/core/dev.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/net/core/dev.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- net/core/dev.c	4 May 2004 01:06:59 -0000	1.1.1.1
++++ net/core/dev.c	4 May 2004 02:18:47 -0000	1.2
 @@ -182,6 +182,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -2508,9 +2956,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  		dev_put(dev);
  
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/net/core/skbuff.c ./net/core/skbuff.c
---- ../linux-2.4.20-pure/net/core/skbuff.c	2002-08-02 17:39:46.000000000 -0700
-+++ ./net/core/skbuff.c	2003-01-22 16:34:29.000000000 -0800
+Index: net/core/skbuff.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/net/core/skbuff.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- net/core/skbuff.c	4 May 2004 01:06:59 -0000	1.1.1.1
++++ net/core/skbuff.c	4 May 2004 02:18:47 -0000	1.2
 @@ -443,6 +443,65 @@
  #endif
  }
@@ -2577,9 +3030,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /**
   *	skb_copy	-	create private copy of an sk_buff
   *	@skb: buffer to copy
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/net/ipv4/arp.c ./net/ipv4/arp.c
---- ../linux-2.4.20-pure/net/ipv4/arp.c	2002-11-28 15:53:15.000000000 -0800
-+++ ./net/ipv4/arp.c	2003-01-22 16:34:29.000000000 -0800
+Index: net/ipv4/arp.c
+===================================================================
+RCS file: /home/am0/click/cvsroot/linux/linux-2.4.20/net/ipv4/arp.c,v
+retrieving revision 1.1.1.1
+retrieving revision 1.2
+diff -u -u -r1.1.1.1 -r1.2
+--- net/ipv4/arp.c	4 May 2004 01:06:59 -0000	1.1.1.1
++++ net/ipv4/arp.c	4 May 2004 02:18:47 -0000	1.2
 @@ -318,6 +318,7 @@
  {
  	u32 saddr;
@@ -2608,18 +3066,3 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  }
  
  static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
-diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/net/netsyms.c ./net/netsyms.c
---- ../linux-2.4.20-pure/net/netsyms.c	2002-11-28 15:53:16.000000000 -0800
-+++ ./net/netsyms.c	2003-02-09 22:25:12.000000000 -0800
-@@ -277,6 +277,11 @@
- EXPORT_SYMBOL(register_inetaddr_notifier);
- EXPORT_SYMBOL(unregister_inetaddr_notifier);
- 
-+/* Click */
-+EXPORT_SYMBOL(register_net_in);
-+EXPORT_SYMBOL(unregister_net_in);
-+EXPORT_SYMBOL(skb_recycle);
-+
- /* needed for ip_gre -cw */
- EXPORT_SYMBOL(ip_statistics);
- 
