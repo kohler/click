@@ -80,7 +80,7 @@ class BigHashMap { public:
   BigHashMap_Arena *_arena;
 
   void initialize(BigHashMap_ArenaFactory *, int);
-  void resize0(int = -1);
+  void resize0(int);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
 
@@ -232,7 +232,7 @@ class BigHashMap<K, void *> { public:
   BigHashMap_Arena *_arena;
 
   void initialize(BigHashMap_ArenaFactory *, int);
-  void resize0(int = -1);
+  void resize0(int);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
 

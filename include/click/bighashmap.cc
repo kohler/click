@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@ BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuck
   _buckets = new Elt *[_nbuckets];
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
-  _capacity = _nbuckets * DEFAULT_RESIZE_THRESHOLD;
+  set_dynamic_resizing(true);
 
   _n = 0;
 
@@ -94,7 +95,12 @@ template <class K, class V>
 void
 BigHashMap<K, V>::set_dynamic_resizing(bool on)
 {
-  _capacity = (on ? DEFAULT_RESIZE_THRESHOLD * _nbuckets : 0x7FFFFFFF);
+  if (!on)
+    _capacity = 0x7FFFFFFF;
+  else if (_nbuckets >= MAX_NBUCKETS)
+    _capacity = 0x7FFFFFFE;
+  else
+    _capacity = DEFAULT_RESIZE_THRESHOLD * _nbuckets;
 }
 
 template <class K, class V>
@@ -155,7 +161,7 @@ BigHashMap<K, V>::resize0(int new_nbuckets)
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
-    _capacity = new_nbuckets * DEFAULT_RESIZE_THRESHOLD;
+    set_dynamic_resizing(true);	// reset threshold
   
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
@@ -175,9 +181,10 @@ BigHashMap<K, V>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
-    new_nbuckets <<= 1;
-  assert(new_nbuckets > 0 && new_nbuckets - 1 <= MAX_NBUCKETS);
-  resize0(new_nbuckets - 1);
+    new_nbuckets = ((new_nbuckets + 1) << 1) - 1;
+  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
+  if (_nbuckets != new_nbuckets)
+    resize0(new_nbuckets);
 }
 
 template <class K, class V>
@@ -191,16 +198,18 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
       return false;
     }
 
-  if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
-    resize0(((_nbuckets + 1) << 1) - 1);
+  if (_n >= _capacity) {
+    resize(_nbuckets + 1);
     b = bucket(key);
   }
-  Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
-  new(reinterpret_cast<void *>(&e->key)) K(key);
-  new(reinterpret_cast<void *>(&e->value)) V(value);
-  e->next = _buckets[b];
-  _buckets[b] = e;
-  _n++;
+  
+  if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
+    new(reinterpret_cast<void *>(&e->key)) K(key);
+    new(reinterpret_cast<void *>(&e->value)) V(value);
+    e->next = _buckets[b];
+    _buckets[b] = e;
+    _n++;
+  }
   return true;
 }
 
@@ -237,6 +246,12 @@ BigHashMap<K, V>::findp_force(const K &key)
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return &e->value;
+
+  if (_n >= _capacity) {
+    resize(_nbuckets + 1);
+    b = bucket(key);
+  }
+  
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     new(reinterpret_cast<void *>(&e->value)) V(_default_value);
@@ -362,7 +377,7 @@ BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory, int initial_
   _buckets = new Elt *[_nbuckets];
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
-  _capacity = _nbuckets * DEFAULT_RESIZE_THRESHOLD;
+  set_dynamic_resizing(true);
 
   _n = 0;
 
@@ -422,7 +437,12 @@ template <class K>
 void
 BigHashMap<K, void *>::set_dynamic_resizing(bool on)
 {
-  _capacity = (on ? DEFAULT_RESIZE_THRESHOLD * _nbuckets : 0x7FFFFFFF);
+  if (!on)
+    _capacity = 0x7FFFFFFF;
+  else if (_nbuckets >= MAX_NBUCKETS)
+    _capacity = 0x7FFFFFFE;
+  else
+    _capacity = DEFAULT_RESIZE_THRESHOLD * _nbuckets;
 }
 
 template <class K>
@@ -483,7 +503,7 @@ BigHashMap<K, void *>::resize0(int new_nbuckets)
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
-    _capacity = new_nbuckets * DEFAULT_RESIZE_THRESHOLD;
+    set_dynamic_resizing(true);	// reset threshold
   
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
@@ -503,9 +523,10 @@ BigHashMap<K, void *>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
-    new_nbuckets <<= 1;
-  assert(new_nbuckets > 0 && new_nbuckets - 1 <= MAX_NBUCKETS);
-  resize0(new_nbuckets - 1);
+    new_nbuckets = ((new_nbuckets + 1) << 1) - 1;
+  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
+  if (_nbuckets != new_nbuckets)
+    resize0(new_nbuckets);
 }
 
 template <class K>
@@ -519,16 +540,18 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
       return false;
     }
 
-  if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
-    resize0(((_nbuckets + 1) << 1) - 1);
+  if (_n >= _capacity) {
+    resize(_nbuckets + 1);
     b = bucket(key);
   }
-  Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
-  new(reinterpret_cast<void *>(&e->key)) K(key);
-  e->value = value;
-  e->next = _buckets[b];
-  _buckets[b] = e;
-  _n++;
+  
+  if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
+    new(reinterpret_cast<void *>(&e->key)) K(key);
+    e->value = value;
+    e->next = _buckets[b];
+    _buckets[b] = e;
+    _n++;
+  }
   return true;
 }
 
@@ -564,6 +587,12 @@ BigHashMap<K, void *>::findp_force(const K &key)
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
       return &e->value;
+
+  if (_n >= _capacity) {
+    resize(_nbuckets + 1);
+    b = bucket(key);
+  }
+  
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
     e->value = _default_value;
