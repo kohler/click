@@ -1,3 +1,7 @@
+2004-02-10 Tuesday 11:36  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/linktracker.cc (1.17): userlevel|ns
+
 2004-02-07 Saturday 15:17  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/fromdump.cc (1.86): FromFile nit
