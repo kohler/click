@@ -1,3 +1,8 @@
+2003-08-29 Friday 12:30  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.16): added per-flow gateway
+	selection. --jbicket
+
 2003-08-28 Thursday 16:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/kerneltun.cc (1.45): move net/if.h include out
