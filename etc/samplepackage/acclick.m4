@@ -32,7 +32,7 @@ dnl
 AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -Wall"
+	CC="$CC -Wall -MD"
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
@@ -79,21 +79,31 @@ by setting the "'`'"CXX' environment variable and rerunning me.
 =========================================])
     fi
 
-    dnl check for <new.h>
+    dnl check for <new> and <new.h>
 
-    AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
-	AC_TRY_LINK([#include <new.h>], [
+    AC_CACHE_CHECK(whether <new> works, ac_cv_good_new_hdr,
+	AC_TRY_LINK([#include <new>], [
+  int a;
+  int *b = new(&a) int;
+  return 0;
+], ac_cv_good_new_hdr=yes, ac_cv_good_new_hdr=no))
+    if test "$ac_cv_good_new_hdr" = yes; then
+	AC_DEFINE(HAVE_NEW_HDR)
+    else
+	AC_CACHE_CHECK(whether <new.h> works, ac_cv_good_new_h,
+	    AC_TRY_LINK([#include <new.h>], [
   int a;
   int *b = new(&a) int;
   return 0;
 ], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
-    if test "$ac_cv_good_new_h" = yes; then
-	AC_DEFINE(HAVE_NEW_H)
+	if test "$ac_cv_good_new_h" = yes; then
+	    AC_DEFINE(HAVE_NEW_H)
+	fi
     fi
 
     ac_base_cxx="$CXX"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+	CXX="$CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -121,9 +131,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx"
+	KERNEL_CXX="$ac_base_cxx -MD"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+	KERNEL_CXX="$ac_base_cxx -w -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
     AC_SUBST(KERNEL_CXX)
 ])
 
@@ -486,6 +496,16 @@ Compile with "'`'"--disable-int64'.
     else
 	AC_DEFINE(HAVE_INT64_TYPES)
 	have_int64_types=yes
+
+	AC_CACHE_CHECK(whether long and int64_t are the same type,
+	    ac_cv_long_64, [AC_LANG_CPLUSPLUS
+	    AC_TRY_COMPILE([#include <$inttypes_hdr>
+void f1(long);
+void f1(int64_t); // will fail if long and int64_t are the same type
+], [], ac_cv_long_64=no, ac_cv_long_64=yes)])
+	if test $ac_cv_long_64 = yes; then
+	    AC_DEFINE(HAVE_64_BIT_LONG)
+	fi
     fi])
 
 
