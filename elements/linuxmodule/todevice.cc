@@ -96,7 +96,7 @@ ToDevice::initialize(ErrorHandler *errh)
 
   _registered = 1;
 
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   /* start out with max number of tickets */
   _max_tickets = ScheduleInfo::query(this, errh);
 #endif

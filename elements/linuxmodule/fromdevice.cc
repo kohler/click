@@ -141,7 +141,7 @@ FromDevice::initialize(ErrorHandler *errh)
   
   if (_promisc) dev_set_promiscuity(_dev, 1);
   
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   // start out with default number of tickets, inflate up to max
   _max_tickets = ScheduleInfo::query(this, errh);
 #endif
