@@ -42,12 +42,12 @@ ElementMap::ElementMap()
     _def.push_back(Globals());
 }
 
-ElementMap::ElementMap(const String &str)
+ElementMap::ElementMap(const String& str, ErrorHandler* errh)
     : _name_map(0), _use_count(0), _driver_mask(Driver::ALLMASK)
 {
     _e.push_back(Traits());
     _def.push_back(Globals());
-    parse(str);
+    parse(str, errh);
 }
 
 ElementMap::~ElementMap()
@@ -593,9 +593,9 @@ ElementMap::set_driver_mask(int driver_mask)
 bool
 ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 {
-    String default_fn = clickpath_find_file("elementmap.xml", "share/click", default_path);
+    String default_fn = clickpath_find_file("elementmap.xml", "share", default_path);
     if (!default_fn)
-	default_fn = clickpath_find_file("elementmap", "share/click", default_path);
+	default_fn = clickpath_find_file("elementmap", "share", default_path);
     if (default_fn) {
 	String text = file_string(default_fn, errh);
 	parse(text);
@@ -634,9 +634,9 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
 	    continue;
 	}
 
-	String fn = clickpath_find_file(mapname, "share/click", default_path);
+	String fn = clickpath_find_file(mapname, "share", default_path);
 	if (!fn)
-	    fn = clickpath_find_file(mapname2, "share/click", default_path);
+	    fn = clickpath_find_file(mapname2, "share", default_path);
 	if (fn) {
 	    String text = file_string(fn, errh);
 	    parse(text, req);
