@@ -1,3 +1,8 @@
+2004-12-07 Tuesday 01:13  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/todevice.cc (1.44): backoff for usecs, not
+	secs.
+
 2004-12-05 Sunday 23:10  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/autoratefallback.cc (1.13),
