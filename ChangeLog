@@ -1,3 +1,27 @@
+2003-10-09 Thursday 13:58  Eddie Kohler <kohler@icir.org>
+
+	* doc/click-combine.1 (1.5), doc/click-flatten.1 (1.6),
+	tools/click-align/click-align.cc (1.47),
+	tools/click-combine/click-combine.cc (1.32),
+	tools/click-combine/click-uncombine.cc (1.28),
+	tools/click-devirtualize/click-devirtualize.cc (1.39),
+	tools/click-devirtualize/signature.cc (1.16),
+	tools/click-devirtualize/specializer.cc (1.32),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.58),
+	tools/click-flatten/click-flatten.cc (1.16),
+	tools/click-undead/click-undead.cc (1.32),
+	tools/click-xform/click-xform.cc (1.52),
+	tools/click2xml/xml2click.cc (1.7), tools/lib/Makefile.in (1.32),
+	tools/lib/eclasst.cc (1.24), tools/lib/elementt.hh (1.26),
+	tools/lib/lexert.cc (1.49), tools/lib/lexert.hh (1.28),
+	tools/lib/routert.cc (1.69), tools/lib/routert.hh (1.56),
+	tools/lib/runparse.cc (1.1), tools/lib/toolutils.cc (1.51): tools
+	changes: change "declared element class" functions; add tests
+
+2003-10-09 Thursday 13:57  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.hh (1.22): nit
+
 2003-10-07 Tuesday 18:06  Eddie Kohler <kohler@icir.org>
 
 	* tools/: click2xml/xml2click.cc (1.6), lib/eclasst.cc (1.23),
