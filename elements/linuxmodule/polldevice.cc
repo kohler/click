@@ -37,8 +37,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-#include "perfcount.hh"
-#include "asm/msr.h"
+#include <asm/msr.h>
 
 /* for hot-swapping */
 static AnyDeviceMap poll_device_map;
@@ -285,7 +284,7 @@ PollDevice::run_scheduled()
    * no packets, decrease tickets by some
    */
   else if (got < INPUT_BATCH/4) 
-    adj= 0 - base;
+    adj = -base;
 
   adj_tickets(adj);
   _last_rx = got;

@@ -41,8 +41,7 @@ extern "C" {
 #undef delete
 }
 
-#include "perfcount.hh"
-#include "asm/msr.h"
+#include <asm/msr.h>
 
 ToDevice::ToDevice()
   : _polling(0), _registered(0),

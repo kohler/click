@@ -434,8 +434,9 @@ register_handler(proc_dir_entry *directory, int eindex, int handlerno)
     pattern = &proc_element_read_handler_prototype;
   else
     return;
+  String name = h->name;
   click_register_new_dynamic_pde
-    (directory, pattern, h->name.length(), h->name.cc(), (void *)handlerno);
+    (directory, pattern, h->name.length(), name.cc(), (void *)handlerno);
 }
 
 //

@@ -125,7 +125,7 @@ click_config_read(struct file *filp, char *buffer, size_t count, loff_t *store_f
 }
 
 static unsigned
-click_config_poll(struct file *filp, struct poll_table *pollt)
+click_config_poll(struct file *filp, struct poll_table_struct *pollt)
 {
   loff_t f_pos = filp->f_pos;
   unsigned mask = 0;
