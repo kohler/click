@@ -1,3 +1,43 @@
+2001-03-13 Tuesday 21:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/task.hh, lib/task.cc: TaskHook takes a Task * in
+	addition to the void * thunk. Also removed have_scheduler()
+	function (it was equivalent to initialized()) and the _max_tickets
+	member and related functions (rely on callers to implement their
+	own _max_tickets when appropriate).
+
+2001-03-13 Tuesday 21:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh, lib/string.cc: stable_string() takes an
+	extra "int len" argument for parity with other functions. Also
+	updated some comments
+
+2001-03-13 Tuesday 21:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: adapt to Element::forward_flow and backward_flow
+	interface changes
+
+2001-03-13 Tuesday 21:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: change signatures of
+	forward_flow and backward_flow: they take a Bitvector *, rather
+	than returning a Bitvector. This may lead to fewer memory
+	allocations. Also flow_code() cannot contain digits: only letters,
+	[], and #. Also the tickets handler cannot access max_tickets(),
+	sicne max_tickets() has been removed.
+
+2001-03-13 Tuesday 21:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/anydevice.hh, linuxmodule/fromdevice.cc,
+	linuxmodule/polldevice.cc, linuxmodule/todevice.cc,
+	standard/scheduleinfo.cc: replace Task::_max_tickets with
+	AnyDevice::_max_tickets
+
+2001-03-13 Tuesday 21:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/: Makefile.in, click.texi: documentation updates; always
+	remake click.dvi (may back out of this change)
+
 2001-03-13 Tuesday 15:02  Benjie Chen <benjie@lcs.mit.edu>
 
 	* configure.in, tools/Makefile.in: added a tool that reads a router
