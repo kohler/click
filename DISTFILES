@@ -424,6 +424,7 @@ tools/click-xform/adjacency.cc
 tools/click-xform/adjacency.hh
 tools/click-xform/click-xform.cc
 
+tools/click2xml
 tools/click2xml/Makefile.in
 tools/click2xml/clickconfig.dtd
 tools/click2xml/click2xml.cc
