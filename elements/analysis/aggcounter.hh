@@ -24,6 +24,8 @@ class AggregateCounter : public Element { public:
     void add_handlers();
 
     Packet *simple_action(Packet *);
+
+    int write_file(String, bool, ErrorHandler *) const;
     
   private:
 
@@ -47,7 +49,6 @@ class AggregateCounter : public Element { public:
     Node *find_node(uint32_t);
 
     static uint32_t write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
-    int write_file(String, bool, ErrorHandler *) const;
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
