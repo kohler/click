@@ -110,9 +110,10 @@ if ($hostname =~ /rn-pdos(\S+)-wired/) {
 
 
 my $srcr_ip = "5." . $suffix;
+my $etx_ip = "4." . $suffix;
 my $safe_ip = "6." . $suffix;
 my $rate_ip = "7." . $suffix;
-my $ap_ip = "12." . $suffix;
+
 
 my $srcr_nm = "255.0.0.0";
 my $srcr_net = "5.0.0.0";
@@ -177,10 +178,10 @@ if ($mode =~ /g/) {
 }
 
 
-my $srcr_es_ethtype = "0941";
-my $srcr_forwarder_ethtype = "0943";
-my $srcr_ethtype = "0944";
-my $srcr_gw_ethtype = "092c";
+my $srcr_es_ethtype = "0941";  # broadcast probes
+my $srcr_forwarder_ethtype = "0943"; # data
+my $srcr_ethtype = "0944";  # queries and replies
+my $srcr_gw_ethtype = "092c"; # gateway ads
 
 if ($mode =~ /g/) {
     print "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
@@ -191,6 +192,9 @@ $wireless_mac 12 18 24 36 48 72 96 108);\n\n";
 } else {
     print "rates :: AvailableRates(DEFAULT 2 4 11 22);\n\n";
 }
+
+system "cat /home/roofnet/scripts/srcr.click";
+system "cat /home/roofnet/scripts/etx.click";
 
 print <<EOF;
 // has one input and one output
@@ -254,161 +258,86 @@ route_q :: NotifierQueue(50)
 -> [0] sched;
 
 data_q :: NotifierQueue(50)
--> auto_rate :: MadwifiRate(OFFSET 4,
-			    RT rates)
-//-> auto_rate :: AutoRateFallback(OFFSET 0,
-//				 STEPUP 25,
-//				 RT rates)
-//-> WifiEncap(0x00, 00:00:00:00:00:00)
-//-> Print ("after_rate", TIMESTAMP true)
--> [1] sched;
-
-Idle -> [1] auto_rate;
-
-rate_q :: NotifierQueue(50)
--> static_rate :: SetTXRate(RATE 2)
--> madwifi_rate :: MadwifiRate(OFFSET 4,
-			       ALT_RATE false,
+-> data_static_rate :: SetTXRate(RATE 2)
+-> data_madwifi_rate :: MadwifiRate(OFFSET 4,
+			       ALT_RATE true,
 			       RT rates,
-			       ACTIVE false)
--> arf_rate :: AutoRateFallback(OFFSET 4,
+			       ACTIVE true)
+-> data_arf_rate :: AutoRateFallback(OFFSET 4,
 				STEPUP 25,
 				ALT_RATE false,
 				RT rates,
 				ACTIVE false)
--> probe_rate :: ProbeTXRate(OFFSET 4,
+-> data_probe_rate :: ProbeTXRate(OFFSET 4,
 			     WINDOW 5000,
-			     ALT_RATE false,
+			     ALT_RATE true,
+			     RT rates,
+			     ACTIVE false)
+
+-> [1] sched;
+
+Idle -> [1] data_probe_rate;
+Idle -> [1] data_madwifi_rate;
+Idle -> [1] data_arf_rate;
+
+
+rate_q :: NotifierQueue(50)
+-> rate_static_rate :: SetTXRate(RATE 2)
+-> rate_madwifi_rate :: MadwifiRate(OFFSET 4,
+			       ALT_RATE true,
+			       RT rates,
+			       ACTIVE false)
+-> rate_arf_rate :: AutoRateFallback(OFFSET 4,
+				STEPUP 25,
+				ALT_RATE false,
+				RT rates,
+				ACTIVE false)
+-> rate_probe_rate :: ProbeTXRate(OFFSET 4,
+			     WINDOW 5000,
+			     ALT_RATE true,
 			     RT rates,
 			     ACTIVE false)
 
 -> [2] sched;
 
-Idle -> [1] probe_rate;
-Idle -> [1] madwifi_rate;
-Idle -> [1] arf_rate;
+Idle -> [1] rate_probe_rate;
+Idle -> [1] rate_madwifi_rate;
+Idle -> [1] rate_arf_rate;
+
+
+
+srcr :: srcr_ett($srcr_ip, $srcr_nm, $wireless_mac, $gateway, 
+		 "$probes");
+
+etx :: srcr_etx($etx_ip, $srcr_nm, $wireless_mac, $gateway, 
+		 "2 132");
+
+
 
 // make sure this is listed first so it gets tap0
-srcr_host :: LinuxIPHost(srcr, $srcr_ip, $srcr_nm);
+srcr_host :: LinuxIPHost(srcr, $srcr_ip, $srcr_nm)
+-> [1] srcr;
 
-srcr_arp :: ARPTable();
-srcr_lt :: LinkTable(IP $srcr_ip);
-
-
-srcr_gw :: GatewaySelector(ETHTYPE 0x$srcr_gw_ethtype,
-			   IP $srcr_ip,
-			   ETH $wireless_mac,
-			   LT srcr_lt,
-			   ARP srcr_arp,
-			   PERIOD 15,
-			   GW $gateway);
+// make sure this is listed first so it gets tap0
+etx_host :: LinuxIPHost(etx, $etx_ip, $srcr_nm)
+-> [1] etx;
 
 
-srcr_gw 
--> SetSRChecksum 
--> WifiEncap(0x00, 00:00:00:00:00:00)
--> route_q;
+route_encap :: WifiEncap(0x0, 00:00:00:00:00:00)
+->  route_q;
+data_encap :: WifiEncap(0x0, 00:00:00:00:00:00)
+-> data_q;
 
-srcr_set_gw :: SetGateway(SEL srcr_gw);
-
-
-srcr_es :: ETTStat(ETHTYPE 0x$srcr_es_ethtype, 
-		   ETH $wireless_mac, 
-		   IP $srcr_ip, 
-		   PERIOD 30000, 
-		   TAU 300000, 
-		   ARP srcr_arp,
-		   PROBES \"$probes\",
-		   ETT srcr_ett,
-		   RT rates);
+srcr [0] -> route_encap;   // queries, replies
+srcr [1] -> route_encap;   // bcast_stats
+srcr [2] -> data_encap;    // data
+srcr [3] -> srcr_host; // data to me
 
 
-srcr_ett :: ETTMetric(ETT srcr_es,
-		      LT srcr_lt);
-
-
-srcr_forwarder :: SRForwarder(ETHTYPE 0x$srcr_forwarder_ethtype, 
-			      IP $srcr_ip, 
-			      ETH $wireless_mac, 
-			      ARP srcr_arp, 
-			      LT srcr_lt);
-
-
-srcr_querier :: SRQuerier(ETHTYPE 0x$srcr_ethtype, 
-			  IP $srcr_ip, 
-			  ETH $wireless_mac, 
-			  LT srcr_lt, 
-			  SR srcr_forwarder,
-			  ROUTE_DAMPENING true,
-			  TIME_BEFORE_SWITCH 5,
-			  DEBUG true);
-
-srcr_query_forwarder :: SRQueryForwarder(ETHTYPE 0x$srcr_ethtype, 
-					 IP $srcr_ip, 
-					 ETH $wireless_mac, 
-					 LT srcr_lt, 
-					 ARP srcr_arp,
-					 DEBUG true);
-
-srcr_query_responder :: SRQueryResponder(ETHTYPE 0x$srcr_ethtype, 
-					 IP $srcr_ip, 
-					 ETH $wireless_mac, 
-					 LT srcr_lt, 
-					 ARP srcr_arp,
-					 DEBUG true);
-
-
-srcr_query_responder 
--> SetSRChecksum 
--> WifiEncap(0x00, 00:00:00:00:00:00)
--> route_q;
-srcr_query_forwarder 
--> SetSRChecksum 
--> WifiEncap(0x00, 00:00:00:00:00:00)
--> route_q;
-
-srcr_data_ck :: SetSRChecksum() 
-
-srcr_host 
--> SetTimestamp()
--> counter_incoming :: IPAddressCounter(USE_DST true)
--> srcr_host_cl :: IPClassifier(dst net $srcr_ip mask $srcr_nm,
-				-)
--> srcr_querier
--> srcr_data_ck;
-
-
-srcr_host_cl [1] -> [0] srcr_set_gw [0] -> srcr_querier;
-
-srcr_forwarder[0] 
-  -> srcr_dt ::DecIPTTL
-  -> srcr_data_ck
-  -> WifiEncap(0x00, 00:00:00:00:00:00)
-  -> data_q;
-srcr_dt[1] -> ICMPError($srcr_ip, timeexceeded, 0) -> srcr_querier;
-
-
-// queries
-srcr_querier [1] 
--> SetSRChecksum 
--> WifiEncap(0x00, 00:00:00:00:00:00)
--> route_q;
-
-srcr_es 
--> SetTimestamp()
--> WifiEncap(0x00, 00:00:00:00:00:00)
--> route_q;
-
-srcr_forwarder[1] //ip packets to me
-  -> StripSRHeader()
-  -> CheckIPHeader()
-  -> from_gw_cl :: IPClassifier(src net $srcr_net mask $srcr_nm,
-				-)
-  -> counter_outgoing :: IPAddressCounter(USE_SRC true)
-  -> srcr_host;
-
-from_gw_cl [1] -> [1] srcr_set_gw [1] -> srcr_host;
-
+etx [0] -> route_encap;   // queries, replies
+etx [1] -> route_encap;   // bcast_stats
+etx [2] -> data_encap;    // data
+etx [3] -> etx_host; // data to me
 
 EOF
 
@@ -426,12 +355,24 @@ rate_cl
 -> PushAnno() 
 -> ToHost(rate-txf);
 
-rate_cl [1] -> [1] auto_rate;
+rate_cl [1] 
+-> txf_t2 :: Tee(3);
 
-txf_t [1] -> [1] arf_rate;
-txf_t [2] -> [1] madwifi_rate;
-txf_t [3] -> [1] probe_rate;
+txf_t2 [0] -> [1] data_arf_rate;
+txf_t2 [1] -> [1] data_madwifi_rate;
+txf_t2 [2] -> [1] data_probe_rate;
 
+txf_t [1] -> [1] rate_arf_rate;
+txf_t [2] -> [1] rate_madwifi_rate;
+txf_t [3] -> [1] rate_probe_rate;
+
+EOF
+}
+
+
+
+
+print <<EOF;
 
 sniff_dev 
 -> SetTimestamp() 
@@ -443,144 +384,34 @@ sniff_dev
 			 -);
 
 
-
-EOF
-}
-
-    if ($ap) {
-	print <<EOF;
-
-beacon_source :: BeaconSource(INTERVAL $interval,
-                              CHANNEL $channel,
-                              SSID "$ssid",
-                              BSSID $wireless_mac,
-                              RT rates,
-                              );
-
-
-ar :: AssociationResponder(DEBUG true,
-                           INTERVAL $interval,
-                           SSID "$ssid",
-                           BSSID $wireless_mac,
-                           RT rates,);
-
-
-
-auth_resp :: OpenAuthResponder(DEBUG true,
-                          BSSID $wireless_mac);
-
-auth_req :: OpenAuthRequester(ETH $wireless_mac);
-assoc_req ::  AssociationRequester(ETH $wireless_mac,
-			       RT rates);
-
-auth_req -> route_q;
-assoc_req -> route_q;
-
-beacon_source -> route_q;
-auth_resp -> route_q;
-ar -> route_q;
-
-
 wifi_cl [0] 
--> management_cl :: Classifier(0/00%f0, //assoc req
-			       0/10%f0, //assoc resp
-			       0/40%f0, //probe req
-			       0/50%f0, //probe resp
-			       0/80%f0, //beacon
-			       0/a0%f0, //disassoc
-			       0/b0%f0, //auth
+-> management_cl :: Classifier(0/80%f0, //beacon
 			       );
 
+management_cl [0] 
+-> bs :: BeaconScanner(RT rates) 
+-> Discard;
 
-
-management_cl [0] -> Print ("assoc_req") -> ar;
-management_cl [1] -> Print ("assoc_resp") -> assoc_req;
-management_cl [2] -> beacon_source;
-management_cl [3] -> Print ("probe_resp", 200) -> bs :: BeaconScanner(RT rates) -> Discard;
-management_cl [4] -> bs;
-management_cl [5] -> Print ("disassoc") -> Discard;
-management_cl [6] -> Print ("auth") -> auth_t :: Tee(2) -> auth_resp;
-
-auth_t [1] -> auth_req;
-
-probe :: ProbeRequester(ETH $wireless_mac,
-			SSID "",
-			RT rates)
--> PrintWifi(probe-req) 
--> Print(probe-req) 
--> route_q;
-
-
-EOF
-} else {
-print <<EOF;
-    wifi_cl[0] -> Discard;
-EOF
-}
-
-print <<EOF;
 wifi_cl [1] -> Discard;
 wifi_cl [3] -> Discard;
-
-
 wifi_cl [2]
--> ap_cl :: Classifier(1/01%03, // TODS packets
-		       -);
-
-ap_cl [0]
-EOF
-
-    if ($ap) {
-	print <<EOF;
--> WifiDecap() 
--> SetPacketType(HOST)
--> CheckIPHeader(OFFSET 16)
--> ToHost(ap);
-
-ap_host :: FromHost(ap, $ap_ip/$srcr_nm, ETHER $wireless_mac) 
--> ap_encap :: WifiEncap(0x02, $wireless_mac)
--> data_q;
-EOF
-} else {
-    print <<EOF;
-->Discard;
-EOF
-}
-
-print <<EOF;
-FromHost(station, 1.1.1.2/32, ETHER $wireless_mac)
--> station_encap :: WifiEncap(0x01, $wireless_mac)
--> data_q;
-
-
-
-ap_cl [1] 
 -> WifiDecap()
 -> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
-//-> rxstats :: RXStats()
+-> rxstats :: RXStats()
 -> ncl :: Classifier(
-		     12/$srcr_forwarder_ethtype, //srcr_forwarder
-		     12/$srcr_ethtype, //srcr
-		     12/$srcr_es_ethtype, //srcr_es
-		     12/$srcr_gw_ethtype, //srcr_gw
+		     12/09??,
+		     12/0a??,
 		     12/0106,
 		     12/0100,
 		     -);
 
 
-// ethernet packets
-ncl[0] -> CheckSRHeader() -> [0] srcr_forwarder;
-ncl[1] -> CheckSRHeader() -> PrintSR(srcr) -> srcr_query_t :: Tee(2);
+ncl [0] -> srcr;
+ncl [1] -> etx;
 
-srcr_query_t [0] -> srcr_query_forwarder;
-srcr_query_t [1] -> srcr_query_responder;
-
-ncl[2] -> srcr_es;
-ncl[3] -> CheckSRHeader() -> srcr_gw;
-
-ncl[4] -> StoreData(12,\\<0806>) -> ToHost(rate);
-ncl[5] -> StoreData(12,\\<0800>) -> ToHost(rate);
-ncl[6] -> ToHost(safe);
+ncl[2] -> StoreData(12,\\<0806>) -> ToHost(rate);
+ncl[3] -> StoreData(12,\\<0800>) -> ToHost(rate);
+ncl[4] -> ToHost(safe);
 
 FromHost(safe, $safe_ip/8, ETHER $wireless_mac) 
 -> WifiEncap(0x0, 00:00:00:00:00:00)
