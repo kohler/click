@@ -1,3 +1,33 @@
+2001-10-27 Saturday 17:38  Eddie Kohler <kohler@aciri.org>
+
+	* missing (1.9): syntax error fix
+
+2001-10-27 Saturday 17:29  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.156): stupid error
+
+2001-10-27 Saturday 17:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.8), fromipsumdump.hh
+	(1.6): handler cleanup
+
+2001-10-27 Saturday 17:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: counter.cc (1.22), counter.hh (1.23): Counter
+	is 64-bit when the architecture supports it, and has new
+	CALL_AFTER_COUNT and CALL_AFTER_BYTES keyword arguments (handler
+	calls)
+
+2001-10-27 Saturday 17:25  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-flatten.1 (1.2), doc/click.o.8 (1.10), lib/router.cc
+	(1.111), doc/Makefile.in (1.39): nitlets
+
+2001-10-27 Saturday 17:25  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.155), missing (1.8): deal with old texinfo
+	installations (reported by Doug DeCouto)
+
 2001-10-27 Saturday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridprobehandler.cc (1.1), gridprobehandler.hh

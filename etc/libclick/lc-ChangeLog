@@ -1,3 +1,16 @@
+2001-10-27 Saturday 17:38  Eddie Kohler <kohler@aciri.org>
+
+	* missing: syntax error fix
+
+2001-10-27 Saturday 17:26  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: nitlets
+
+2001-10-27 Saturday 17:25  Eddie Kohler <kohler@aciri.org>
+
+	* missing: deal with old texinfo installations (reported by Doug
+	DeCouto)
+
 2001-10-24 Wednesday 10:56  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/lexer.hh, include/click/lexer.hh, libsrc/lexer.cc,
