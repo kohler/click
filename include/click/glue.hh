@@ -25,7 +25,10 @@ CLICK_CXX_PROTECT
 # include <linux/version.h>
 # include <linux/string.h>
 # include <linux/skbuff.h>
-# include <linux/malloc.h>
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#  include <linux/malloc.h>
+#  include <linux/interrupt.h>
+# endif
 # include <linux/ctype.h>
 # include <linux/time.h>
 # include <linux/errno.h>
@@ -106,13 +109,8 @@ random()
 
 // SORTING
 
-#if CLICK_LINUXMODULE || CLICK_BSDMODULE
-extern "C" {
+void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk);
 void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *));
-}
-#else
-# define click_qsort qsort
-#endif
 
 
 // OTHER

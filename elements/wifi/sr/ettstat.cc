@@ -669,7 +669,6 @@ ETTStat::simple_action(Packet *p)
 }
 
 
-extern "C" {
 static int ipaddr_sorter(const void *va, const void *vb) {
     IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
     if (a->addr() == b->addr()) {
@@ -685,9 +684,6 @@ static int ratesize_sorter(const void *va, const void *vb) {
   }
   return a->_rate - b->_rate;
 }
-
-}
-  
 
 String
 ETTStat::read_bcast_stats()

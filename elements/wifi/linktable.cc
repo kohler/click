@@ -410,14 +410,12 @@ LinkTable::print_links()
   return sa.take_string();
 }
 
-extern "C" {
-  static int ipaddr_sorter(const void *va, const void *vb) {
+static int ipaddr_sorter(const void *va, const void *vb) {
     IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
     if (a->addr() == b->addr()) {
-      return 0;
+	return 0;
     } 
     return (ntohl(a->addr()) < ntohl(b->addr())) ? -1 : 1;
-  }
 }
 
 

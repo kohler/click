@@ -63,7 +63,6 @@ BalancedThreadSched::initialize(ErrorHandler *)
     return 0;
 }
 
-extern "C" {
 static int task_increasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
     return (*a)->cycles() - (*b)->cycles();
@@ -72,7 +71,6 @@ static int task_increasing_sorter(const void *va, const void *vb) {
 static int task_decreasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
     return (*b)->cycles() - (*a)->cycles();
-}
 }
 
 void

@@ -41,12 +41,10 @@ IPAddressList::insert(IPAddress a)
 	push_back(a);
 }
 
-extern "C" {
 static int
 ipaddress_compar(const void *va, const void *vb)
 {
     return *reinterpret_cast<const uint32_t *>(va) - *reinterpret_cast<const uint32_t *>(vb);
-}
 }
 
 void

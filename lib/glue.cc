@@ -337,13 +337,10 @@ srandom(uint32_t seed)
 
 // SORTING
 
-#if CLICK_LINUXMODULE || CLICK_BSDMODULE
-extern "C" {
-
 static int
 click_qsort_partition(void *base_v, size_t size, int left, int right,
-		      int (*compar)(const void *, const void *),
-		      int &split_left, int &split_right)
+		      int (*compar)(const void *, const void *, void *),
+		      int &split_left, int &split_right, void *thunk)
 {
     if (size >= 64) {
 #if CLICK_LINUXMODULE
@@ -366,7 +363,7 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
     // base[i] > pivot for all right < i <= right_init
     // base[i] == pivot for all left <= i < middle
     while (middle <= right) {
-	int cmp = compar(&base[size * middle], &pivot[0]);
+	int cmp = compar(&base[size * middle], &pivot[0], thunk);
 	if (cmp < 0) {
 	    memcpy(&tmp[0], &base[size * left], size);
 	    memcpy(&base[size * left], &base[size * middle], size);
@@ -389,25 +386,31 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
 }
 
 static void
-click_qsort_subroutine(void *base, size_t size, int left, int right, int (*compar)(const void *, const void *))
+click_qsort_subroutine(void *base, size_t size, int left, int right, int (*compar)(const void *, const void *, void *), void *thunk)
 {
     // XXX recursion
     if (left < right) {
 	int split_left, split_right;
-	click_qsort_partition(base, size, left, right, compar, split_left, split_right);
-	click_qsort_subroutine(base, size, left, split_left, compar);
-	click_qsort_subroutine(base, size, split_right, right, compar);
+	click_qsort_partition(base, size, left, right, compar, split_left, split_right, thunk);
+	click_qsort_subroutine(base, size, left, split_left, compar, thunk);
+	click_qsort_subroutine(base, size, split_right, right, compar, thunk);
     }
+}
+
+void
+click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *, void *), void *thunk)
+{
+    click_qsort_subroutine(base, size, 0, n - 1, compar, thunk);
 }
 
 void
 click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *))
 {
-    click_qsort_subroutine(base, size, 0, n - 1, compar);
+    // XXX fix cast
+    int (*compar2)(const void *, const void *, void *);
+    compar2 = reinterpret_cast<int (*)(const void *, const void *, void *)>(compar);
+    click_qsort_subroutine(base, size, 0, n - 1, compar2, 0);
 }
-
-}
-#endif
 
 
 // TIMEVALS AND JIFFIES

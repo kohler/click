@@ -65,14 +65,12 @@ ClickIno::grow(int min_size)
 }
 
 
-extern "C" {
 static int
 entry_compar(const void *v1, const void *v2)
 {
     const ClickIno::Entry *a = reinterpret_cast<const ClickIno::Entry *>(v1);
     const ClickIno::Entry *b = reinterpret_cast<const ClickIno::Entry *>(v2);
     return String::compare(a->name, b->name);
-}
 }
 
 int
@@ -164,14 +162,12 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
 }
 
 
-extern "C" {
 static int
 string_compar(const void *v1, const void *v2)
 {
     const String *a = reinterpret_cast<const String *>(v1);
     const String *b = reinterpret_cast<const String *>(v2);
     return String::compare(*a, *b);
-}
 }
 
 void
