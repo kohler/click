@@ -353,10 +353,13 @@ cleanup_module()
 #ifdef LINUX_2_2
   struct dentry *click_de = lookup_dentry("/proc/click", 0, LOOKUP_DIRECTORY);
 #else
-  struct dentry *click_de = lookup_one("/proc/click", 0); // XXX?
+  struct nameidata lookup_data;
+  struct dentry *click_de = 0;
+  if (user_path_walk("/proc/click", &lookup_data) >= 0)
+    click_de = lookup_data.dentry;
 #endif
-  if (!IS_ERR(click_de)) {
-    d_drop(click_de);
+  if (click_de && !IS_ERR(click_de)) {
+    d_drop(click_de);		// XXX ok for 2.4?
     dput(click_de);
   }
   
