@@ -1,10 +1,32 @@
+2002-05-05 Sunday 01:33  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/Makefile.in (1.70), linuxmodule/clickfs.cc (1.6),
+	linuxmodule/clickfs_core.cc (1.6), linuxmodule/config.cc (1.1),
+	linuxmodule/proc_click.cc (1.44), linuxmodule/proc_config.cc
+	(1.34), linuxmodule/proc_element.cc (1.44), DISTFILES (1.54): file
+	renaming
+
+2002-05-05 Sunday 01:26  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: clickfs.cc (1.5), clickfs_core.cc (1.5),
+	modulepriv.hh (1.29), proc_click.cc (1.43), proc_element.cc (1.43):
+	bug fixes
+
+2002-05-05 Sunday 01:23  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/proclikefs.c (1.2): proclikefs: on client unload,
+	erase dentry operations as well, and de-hash all relevant dentries;
+	that way, on reload, new ones will be created, even if someone is
+	still attached to the old
+
 2002-05-04 Saturday 22:42  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: Makefile.in (1.69), clickfs_core.cc (1.4),
-	kernelerror.cc (1.21), kernelerror.hh (1.5), module.cc (1.66),
-	modulepriv.hh (1.28), proc_config.cc (1.33), proc_element.cc
-	(1.42), proc_mgr.cc (1.16), sched.cc (1.33): refactoring: reduce
-	interdependencies among source files, clarification, combine files
+	* linuxmodule/: Makefile.in (1.69), clickfs.cc (1.4),
+	clickfs_core.cc (1.4), kernelerror.cc (1.21), kernelerror.hh (1.5),
+	module.cc (1.66), modulepriv.hh (1.28), proc_click.cc (1.42),
+	proc_config.cc (1.33), proc_element.cc (1.42), proc_mgr.cc (1.16),
+	sched.cc (1.33): refactoring: reduce interdependencies among source
+	files, clarification, combine files
 
 2002-05-04 Saturday 21:20  Eddie Kohler <kohler@aciri.org>
 
@@ -27,15 +49,17 @@
 
 2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: clickfs_core.cc (1.3), module.cc (1.65),
-	modulepriv.hh (1.27), proc_config.cc (1.32), proc_element.cc
-	(1.41): clickfs has support for config and hotconfig via handlers;
-	and change /proc/click support to use the same mechanism
+	* linuxmodule/: clickfs.cc (1.3), clickfs_core.cc (1.3), module.cc
+	(1.65), modulepriv.hh (1.27), proc_click.cc (1.41), proc_config.cc
+	(1.32), proc_element.cc (1.41): clickfs has support for config and
+	hotconfig via handlers; and change /proc/click support to use the
+	same mechanism
 
 2002-05-03 Friday 19:39  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: clickfs_core.cc (1.2), proc_element.cc (1.40):
-	clickfs now supports handlers
+	* linuxmodule/: clickfs.cc (1.2), clickfs_core.cc (1.2),
+	proc_click.cc (1.40), proc_element.cc (1.40): clickfs now supports
+	handlers
 
 2002-05-03 Friday 18:01  Eddie Kohler <kohler@aciri.org>
 
@@ -78,11 +102,11 @@
 2002-05-03 Friday 02:47  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.183), pathvars.h.in (1.5),
-	linuxmodule/Makefile.in (1.67), linuxmodule/clickfs_core.cc (1.1),
-	linuxmodule/module.cc (1.64), linuxmodule/modulepriv.hh (1.26),
-	linuxmodule/proc_config.cc (1.31), linuxmodule/proclikefs.c (1.1),
-	linuxmodule/proclikefs.h (1.1): add optional, partially-working
-	clickfs support
+	linuxmodule/Makefile.in (1.67), linuxmodule/clickfs.cc (1.1),
+	linuxmodule/clickfs_core.cc (1.1), linuxmodule/module.cc (1.64),
+	linuxmodule/modulepriv.hh (1.26), linuxmodule/proc_config.cc
+	(1.31), linuxmodule/proclikefs.c (1.1), linuxmodule/proclikefs.h
+	(1.1): add optional, partially-working clickfs support
 
 2002-05-03 Friday 00:13  Eddie Kohler <kohler@aciri.org>
 
@@ -1998,11 +2022,13 @@
 
 2002-01-20 Sunday 15:15  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/proc_element.cc (1.39): nitlet
+	* linuxmodule/: proc_click.cc (1.39), proc_element.cc (1.39):
+	nitlet
 
 2002-01-20 Sunday 15:12  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/proc_element.cc (1.38): #include <linux/spinlock.h>
+	* linuxmodule/: proc_click.cc (1.38), proc_element.cc (1.38):
+	#include <linux/spinlock.h>
 
 2002-01-20 Sunday 15:12  Eddie Kohler <kohler@aciri.org>
 
@@ -2011,10 +2037,10 @@
 
 2002-01-20 Sunday 15:02  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: modulepriv.hh (1.24), proc_config.cc (1.27),
-	proc_element.cc (1.37), sched.cc (1.31), sched.cc (1.32): fixes
-	from Mazu: protect handler_strings with a spinlock; kill current
-	router threads before performing a hotswap
+	* linuxmodule/: modulepriv.hh (1.24), proc_click.cc (1.37),
+	proc_config.cc (1.27), proc_element.cc (1.37), sched.cc (1.31),
+	sched.cc (1.32): fixes from Mazu: protect handler_strings with a
+	spinlock; kill current router threads before performing a hotswap
 
 2002-01-20 Sunday 15:01  Eddie Kohler <kohler@aciri.org>
 
@@ -2432,8 +2458,9 @@
 
 2001-12-26 Wednesday 16:06  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: proc_config.cc (1.26), proc_element.cc (1.36): use
-	new String and StringAccum out-of-memory handlers
+	* linuxmodule/: proc_click.cc (1.36), proc_config.cc (1.26),
+	proc_element.cc (1.36): use new String and StringAccum
+	out-of-memory handlers
 
 2001-12-26 Wednesday 16:05  Eddie Kohler <kohler@aciri.org>
 
@@ -2643,18 +2670,6 @@
 2001-12-09 Sunday 18:29  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.45): put e1000 driver in DISTFILES
-
-2001-12-09 Sunday 18:27  Eddie Kohler <kohler@aciri.org>
-
-	* tools/e1000/: LICENSE (1.3), Makefile (1.7), Makefile.orig (1.3),
-	README (1.3), README-rtm (1.3), ans.c (1.3), ans.h (1.3),
-	ans_driver.c (1.3), ans_driver.h (1.3), ans_hw.c (1.3), ans_hw.h
-	(1.3), ans_os.c (1.3), ans_os.h (1.3), base_comm.h (1.3), e1000.h
-	(1.3), e1000.h.orig (1.3), e1000_fxhw.c (1.3), e1000_fxhw.h (1.3),
-	e1000_kcompat.h (1.3), e1000_main.c (1.6), e1000_main.c.orig (1.3),
-	e1000_phy.c (1.3), e1000_phy.h (1.3), e1000_proc.c (1.3),
-	e1000_proc.h (1.3), e1000_vendor_info.h (1.3): move e1000 driver
-	into CLICKDIR/drivers
 
 2001-12-07 Friday 17:24  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
@@ -3047,9 +3062,10 @@
 	include/click/routerthread.hh (1.7), include/click/task.hh (1.13),
 	include/click/timer.hh (1.12), lib/router.cc (1.112),
 	lib/routerthread.cc (1.19), lib/task.cc (1.16), lib/timer.cc
-	(1.25), linuxmodule/proc_element.cc (1.35): more changes from Mazu:
-	fixes for dynamic installation and removal of devices (which was
-	way lame before!)
+	(1.25), linuxmodule/proc_click.cc (1.35),
+	linuxmodule/proc_element.cc (1.35): more changes from Mazu: fixes
+	for dynamic installation and removal of devices (which was way lame
+	before!)
 
 2001-11-21 Wednesday 19:33  Eddie Kohler <kohler@aciri.org>
 
@@ -4519,8 +4535,8 @@
 
 2001-08-28 Tuesday 11:38  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/proc_element.cc (1.34): LARGEST_HANDLER_WRITE need
-	not be defined
+	* linuxmodule/: proc_click.cc (1.34), proc_element.cc (1.34):
+	LARGEST_HANDLER_WRITE need not be defined
 
 2001-08-28 Tuesday 11:16  Eddie Kohler <kohler@aciri.org>
 
@@ -5587,8 +5603,9 @@
 	elements/userlevel/controlsocket.cc (1.28),
 	elements/userlevel/khandlerproxy.cc (1.3), lib/confparse.cc (1.78),
 	lib/element.cc (1.61), linuxmodule/module.cc (1.57),
-	linuxmodule/proc_element.cc (1.33), userlevel/click.cc (1.60):
-	adapt to Router::Handler changes (Mz)
+	linuxmodule/proc_click.cc (1.33), linuxmodule/proc_element.cc
+	(1.33), userlevel/click.cc (1.60): adapt to Router::Handler changes
+	(Mz)
 
 2001-07-20 Friday 22:46  Eddie Kohler <kohler@aciri.org>
 
@@ -6662,10 +6679,10 @@
 
 	* include/click/router.hh (1.14), lib/router.cc (1.94),
 	linuxmodule/module.cc (1.56), linuxmodule/modulepriv.hh (1.21),
-	linuxmodule/proc_element.cc (1.32), userlevel/click.cc (1.58): add
-	global handlers to Router; in both linuxmodule and userlevel
-	drivers, use Router's global handlers rather than per-driver global
-	handlers.
+	linuxmodule/proc_click.cc (1.32), linuxmodule/proc_element.cc
+	(1.32), userlevel/click.cc (1.58): add global handlers to Router;
+	in both linuxmodule and userlevel drivers, use Router's global
+	handlers rather than per-driver global handlers.
 
 2001-05-30 Wednesday 01:29  Eddie Kohler <kohler@aciri.org>
 
@@ -6705,8 +6722,8 @@
 
 2001-05-29 Tuesday 15:05  Eddie Kohler <kohler@aciri.org>
 
-	* drivers/e1000/Makefile (1.6), tools/e1000/Makefile (1.6): add #
-	comment sign; problem reported by Brecht Vermeulen
+	* drivers/e1000/Makefile (1.6): add # comment sign; problem
+	reported by Brecht Vermeulen
 
 2001-05-25 Friday 21:15  Eddie Kohler <kohler@aciri.org>
 
@@ -6925,11 +6942,11 @@
 	(1.8), lib/timer.cc (1.21), lib/userutils.cc (1.14),
 	lib/variableenv.cc (1.4), lib/vectorv.cc (1.9),
 	linuxmodule/kernelerror.cc (1.19), linuxmodule/kernelversion.c
-	(1.7), linuxmodule/module.cc (1.55), linuxmodule/proc_config.cc
-	(1.24), linuxmodule/proc_element.cc (1.31), linuxmodule/proc_mgr.cc
-	(1.15), linuxmodule/sched.cc (1.27),
-	tools/click-align/alignclass.cc (1.11),
-	tools/click-align/alignment.cc (1.8),
+	(1.7), linuxmodule/module.cc (1.55), linuxmodule/proc_click.cc
+	(1.31), linuxmodule/proc_config.cc (1.24),
+	linuxmodule/proc_element.cc (1.31), linuxmodule/proc_mgr.cc (1.15),
+	linuxmodule/sched.cc (1.27), tools/click-align/alignclass.cc
+	(1.11), tools/click-align/alignment.cc (1.8),
 	tools/click-align/click-align.cc (1.33),
 	tools/click-check/click-check.cc (1.18),
 	tools/click-combine/click-combine.cc (1.18),
@@ -7118,10 +7135,10 @@
 2001-05-22 Tuesday 15:43  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/: kernelerror.cc (1.18), module.cc (1.54),
-	modulepriv.hh (1.20), proc_config.cc (1.23), proc_element.cc
-	(1.30), proc_mgr.cc (1.14), sched.cc (1.26): Mostly changes for
-	Linux 2.4 compatibility (ACIRI). Also, use generic packageutils
-	instead of hand-implemented package routines.
+	modulepriv.hh (1.20), proc_click.cc (1.30), proc_config.cc (1.23),
+	proc_element.cc (1.30), proc_mgr.cc (1.14), sched.cc (1.26): Mostly
+	changes for Linux 2.4 compatibility (ACIRI). Also, use generic
+	packageutils instead of hand-implemented package routines.
 
 2001-05-22 Tuesday 15:42  Eddie Kohler <kohler@aciri.org>
 
@@ -7426,8 +7443,7 @@
 
 2001-05-02 Wednesday 14:21  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/Makefile (1.5), tools/e1000/Makefile (1.5): check
-	for SMP
+	* drivers/e1000/Makefile (1.5): check for SMP
 
 2001-05-02 Wednesday 14:04  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7435,8 +7451,7 @@
 
 2001-05-02 Wednesday 14:04  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/Makefile (1.4), tools/e1000/Makefile (1.4): fix
-	NEWS
+	* drivers/e1000/Makefile (1.4): fix NEWS
 
 2001-05-02 Wednesday 12:38  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7457,8 +7472,8 @@
 	elements/local/staticthreadsched.hh (1.4),
 	elements/local/threadmonitor.cc (1.6),
 	elements/local/threadmonitor.hh (1.4), etc/linux-2.2.18-patch
-	(1.3), tools/e1000/e1000_main.c (1.5): moving scheduling elements
-	from local to linuxmodule, NODIST and NEWS updates
+	(1.3): moving scheduling elements from local to linuxmodule, NODIST
+	and NEWS updates
 
 2001-04-30 Monday 19:17  Peilei Fan <peilei@lcs.mit.edu>
 
@@ -7500,8 +7515,9 @@
 	lib/userutils.cc (1.12), lib/variableenv.cc (1.3), lib/vectorv.cc
 	(1.8), linuxmodule/Makefile.in (1.53), linuxmodule/kernelerror.cc
 	(1.17), linuxmodule/module.cc (1.53), linuxmodule/proc_config.cc
-	(1.22), linuxmodule/proc_element.cc (1.29), linuxmodule/proc_mgr.cc
-	(1.13), linuxmodule/sched.cc (1.25), linuxmodule/skbmgr.cc (1.9),
+	(1.22), linuxmodule/proc_click.cc (1.29),
+	linuxmodule/proc_element.cc (1.29), linuxmodule/proc_mgr.cc (1.13),
+	linuxmodule/sched.cc (1.25), linuxmodule/skbmgr.cc (1.9),
 	tools/click-align/Makefile.in (1.8),
 	tools/click-align/alignclass.cc (1.10),
 	tools/click-align/alignment.cc (1.7),
@@ -7886,9 +7902,9 @@
 
 2001-04-17 Tuesday 00:31  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/proc_element.cc (1.28), userlevel/click.cc (1.53):
-	drivers: don't register handlers explicitly any more; it is done as
-	part of Router::initialize()
+	* linuxmodule/proc_click.cc (1.28), linuxmodule/proc_element.cc
+	(1.28), userlevel/click.cc (1.53): drivers: don't register handlers
+	explicitly any more; it is done as part of Router::initialize()
 
 2001-04-17 Tuesday 00:30  Eddie Kohler <kohler@aciri.org>
 
@@ -8030,8 +8046,7 @@
 
 2001-04-11 Wednesday 16:32  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_main.c (1.4), tools/e1000/e1000_main.c (1.4):
-	increase rx descriptors
+	* drivers/e1000/e1000_main.c (1.4): increase rx descriptors
 
 2001-04-11 Wednesday 16:29  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -9508,19 +9523,19 @@
 
 2001-03-01 Thursday 14:45  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/Makefile (1.3), tools/e1000/Makefile (1.3): add
-	HAVE_INTEL_CPU in makefile... need to change e1000 to either use
-	click's config.h or have a way to configure this option in Makefile
+	* drivers/e1000/Makefile (1.3): add HAVE_INTEL_CPU in makefile...
+	need to change e1000 to either use click's config.h or have a way
+	to configure this option in Makefile
 
 2001-03-01 Thursday 14:42  Benjie Chen <benjie@lcs.mit.edu>
 
 	* acconfig.h (1.30), configure.in (1.98),
 	elements/linuxmodule/polldevice.cc (1.93),
 	elements/standard/msqueue.cc (1.3), elements/standard/unqueue.cc
-	(1.8), drivers/e1000/e1000_main.c (1.3), tools/e1000/e1000_main.c
-	(1.3): add --enable-intel configuration option: if this is set,
-	HAVE_INTEL_CPU is defined, and intel specific instructions, such as
-	prefetching, are used.	by defaultit is not set
+	(1.8), drivers/e1000/e1000_main.c (1.3): add --enable-intel
+	configuration option: if this is set, HAVE_INTEL_CPU is defined,
+	and intel specific instructions, such as prefetching, are used.  by
+	defaultit is not set
 
 2001-02-28 Wednesday 20:18  Eddie Kohler <kohler@aciri.org>
 
@@ -9680,11 +9695,6 @@
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/staticthreadsched.cc (1.1): file
-	staticthreadsched.cc was initially added on branch smp_click.
-
-2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
-
 	* elements/local/threadmonitor.cc (1.1): file threadmonitor.cc was
 	initially added on branch smp_click.
 
@@ -9692,6 +9702,11 @@
 
 	* elements/local/staticthreadsched.hh (1.1): file
 	staticthreadsched.hh was initially added on branch smp_click.
+
+2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/staticthreadsched.cc (1.1): file
+	staticthreadsched.cc was initially added on branch smp_click.
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -9742,12 +9757,12 @@
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.hh (1.1): file fastudpflows.hh
+	* elements/linuxmodule/fastudpflows.cc (1.1): file fastudpflows.cc
 	was initially added on branch smp_click.
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.cc (1.1): file fastudpflows.cc
+	* elements/linuxmodule/fastudpflows.hh (1.1): file fastudpflows.hh
 	was initially added on branch smp_click.
 
 2001-02-22 Thursday 18:50  Eddie Kohler <kohler@aciri.org>
@@ -9758,12 +9773,12 @@
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.cc (1.1): file threadsched.cc was
+	* elements/standard/threadsched.hh (1.1): file threadsched.hh was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.hh (1.1): file threadsched.hh was
+	* elements/standard/threadsched.cc (1.1): file threadsched.cc was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 14:16  Eddie Kohler <kohler@aciri.org>
@@ -9902,8 +9917,9 @@
 
 2001-02-14 Wednesday 17:11  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/proc_element.cc (1.27): use new append_fill() method
-	on String; thanks to Benjie for catching this bug earlier
+	* linuxmodule/: proc_click.cc (1.27), proc_element.cc (1.27): use
+	new append_fill() method on String; thanks to Benjie for catching
+	this bug earlier
 
 2001-02-14 Wednesday 17:11  Eddie Kohler <kohler@aciri.org>
 
@@ -9965,8 +9981,9 @@
 
 2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
 
-	* linuxmodule/proc_element.cc (1.26): bug fix: write handler works
-	again, string used to be cut short by append call on String
+	* linuxmodule/: proc_click.cc (1.26), proc_element.cc (1.26): bug
+	fix: write handler works again, string used to be cut short by
+	append call on String
 
 2001-02-13 Tuesday 23:37  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -9982,34 +9999,15 @@
 
 2001-02-13 Tuesday 23:34  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/LICENSE (1.2), drivers/e1000/Makefile (1.2),
-	drivers/e1000/Makefile.orig (1.2), tools/e1000/LICENSE (1.2),
-	tools/e1000/Makefile (1.2), tools/e1000/Makefile.orig (1.2),
-	drivers/e1000/README (1.2), drivers/e1000/README-rtm (1.2),
-	drivers/e1000/ans.c (1.2), tools/e1000/README (1.2),
-	tools/e1000/README-rtm (1.2), tools/e1000/ans.c (1.2),
-	drivers/e1000/ans.h (1.2), tools/e1000/ans.h (1.2),
-	drivers/e1000/ans_driver.c (1.2), drivers/e1000/ans_driver.h (1.2),
-	drivers/e1000/ans_hw.c (1.2), drivers/e1000/ans_hw.h (1.2),
-	tools/e1000/ans_driver.c (1.2), tools/e1000/ans_driver.h (1.2),
-	tools/e1000/ans_hw.c (1.2), tools/e1000/ans_hw.h (1.2),
-	drivers/e1000/ans_os.c (1.2), drivers/e1000/ans_os.h (1.2),
-	drivers/e1000/base_comm.h (1.2), tools/e1000/ans_os.c (1.2),
-	tools/e1000/ans_os.h (1.2), tools/e1000/base_comm.h (1.2),
-	drivers/e1000/e1000.h (1.2), tools/e1000/e1000.h (1.2),
-	drivers/e1000/e1000.h.orig (1.2), drivers/e1000/e1000_fxhw.c (1.2),
-	tools/e1000/e1000.h.orig (1.2), tools/e1000/e1000_fxhw.c (1.2),
-	drivers/e1000/e1000_fxhw.h (1.2), tools/e1000/e1000_fxhw.h (1.2),
-	drivers/e1000/e1000_kcompat.h (1.2), drivers/e1000/e1000_main.c
-	(1.2), tools/e1000/e1000_kcompat.h (1.2), tools/e1000/e1000_main.c
-	(1.2), drivers/e1000/e1000_main.c.orig (1.2),
-	tools/e1000/e1000_main.c.orig (1.2), drivers/e1000/e1000_phy.c
-	(1.2), drivers/e1000/e1000_phy.h (1.2), drivers/e1000/e1000_proc.c
-	(1.2), tools/e1000/e1000_phy.c (1.2), tools/e1000/e1000_phy.h
-	(1.2), tools/e1000/e1000_proc.c (1.2), drivers/e1000/e1000_proc.h
-	(1.2), drivers/e1000/e1000_vendor_info.h (1.2),
-	tools/e1000/e1000_proc.h (1.2), tools/e1000/e1000_vendor_info.h
-	(1.2): e1000 driver for the new kernel polling interface
+	* drivers/e1000/: LICENSE (1.2), Makefile (1.2), Makefile.orig
+	(1.2), README (1.2), README-rtm (1.2), ans.c (1.2), ans.h (1.2),
+	ans_driver.c (1.2), ans_driver.h (1.2), ans_hw.c (1.2), ans_hw.h
+	(1.2), ans_os.c (1.2), ans_os.h (1.2), base_comm.h (1.2), e1000.h
+	(1.2), e1000.h.orig (1.2), e1000_fxhw.c (1.2), e1000_fxhw.h (1.2),
+	e1000_kcompat.h (1.2), e1000_main.c (1.2), e1000_main.c.orig (1.2),
+	e1000_phy.c (1.2), e1000_phy.h (1.2), e1000_proc.c (1.2),
+	e1000_proc.h (1.2), e1000_vendor_info.h (1.2): e1000 driver for the
+	new kernel polling interface
 
 2001-02-12 Monday 14:42  Eddie Kohler <kohler@aciri.org>
 
@@ -10047,12 +10045,12 @@
 
 	* linuxmodule/kernelerror.cc (1.15), linuxmodule/kernelversion.c
 	(1.4), linuxmodule/module.cc (1.45), linuxmodule/modulepriv.hh
-	(1.17), linuxmodule/proc_config.cc (1.20),
-	linuxmodule/proc_element.cc (1.25),
-	tools/click-install/click-install.cc (1.34): added "accessible"
-	module parameter, and --private option to click-install that uses
-	that parameter; also set ErrorHandler::default_handler() correctly;
-	and nitlets (Mazu)
+	(1.17), linuxmodule/proc_click.cc (1.25),
+	linuxmodule/proc_config.cc (1.20), linuxmodule/proc_element.cc
+	(1.25), tools/click-install/click-install.cc (1.34): added
+	"accessible" module parameter, and --private option to
+	click-install that uses that parameter; also set
+	ErrorHandler::default_handler() correctly; and nitlets (Mazu)
 
 2001-02-10 Saturday 21:06  Eddie Kohler <kohler@aciri.org>
 
@@ -10463,12 +10461,12 @@
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.cc (1.1): file duppath.cc was initially
+	* elements/local/duppath.hh (1.1): file duppath.hh was initially
 	added on branch smp_click.
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.hh (1.1): file duppath.hh was initially
+	* elements/local/duppath.cc (1.1): file duppath.cc was initially
 	added on branch smp_click.
 
 2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
@@ -10749,12 +10747,12 @@
 
 2000-12-06 Wednesday 10:34  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: proc_config.cc (1.19), proc_element.cc (1.24):
-	fixed write handlers in Linux kernel module. Incorrectly acted on
-	first flush() operation, but struct files can be shared; so when a
-	file is flushed, don't act unless filp->f_count == 1 (this is the
-	last file). Fixed problems with installing configurations via cat.
-	(Mazu)
+	* linuxmodule/: proc_click.cc (1.24), proc_config.cc (1.19),
+	proc_element.cc (1.24): fixed write handlers in Linux kernel
+	module. Incorrectly acted on first flush() operation, but struct
+	files can be shared; so when a file is flushed, don't act unless
+	filp->f_count == 1 (this is the last file). Fixed problems with
+	installing configurations via cat. (Mazu)
 
 2000-12-06 Wednesday 10:33  Eddie Kohler <kohler@aciri.org>
 
@@ -10869,10 +10867,10 @@
 
 2000-11-27 Monday 00:08  Eddie Kohler <kohler@aciri.org>
 
-	* linuxmodule/: proc_config.cc (1.18), proc_element.cc (1.23): use
-	the "flush" file operation when write handlers are closed, not
-	"release"; that way, user close() operation may get error message
-	(Mazu)
+	* linuxmodule/: proc_config.cc (1.18), proc_click.cc (1.23),
+	proc_element.cc (1.23): use the "flush" file operation when write
+	handlers are closed, not "release"; that way, user close()
+	operation may get error message (Mazu)
 
 2000-11-21 Tuesday 23:59  Eddie Kohler <kohler@aciri.org>
 
@@ -11000,136 +10998,133 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_proc.h (1.1), tools/e1000/e1000_proc.h (1.1):
-	file e1000_proc.h was initially added on branch smp_click.
+	* drivers/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h
+	was initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_vendor_info.h (1.1),
-	tools/e1000/e1000_vendor_info.h (1.1): file e1000_vendor_info.h was
+	* drivers/e1000/e1000_proc.h (1.1): file e1000_proc.h was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_phy.h (1.1): file e1000_phy.h was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_proc.c (1.1): file e1000_proc.c was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_phy.c (1.1): file e1000_phy.c was initially
+	added on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* drivers/e1000/e1000_main.c.orig (1.1): file e1000_main.c.orig was
 	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_phy.h (1.1), tools/e1000/e1000_phy.h (1.1):
-	file e1000_phy.h was initially added on branch smp_click.
+	* drivers/e1000/e1000_main.c (1.1): file e1000_main.c was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_proc.c (1.1), tools/e1000/e1000_proc.c (1.1):
-	file e1000_proc.c was initially added on branch smp_click.
+	* drivers/e1000/e1000_fxhw.h (1.1): file e1000_fxhw.h was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_phy.c (1.1), tools/e1000/e1000_phy.c (1.1):
-	file e1000_phy.c was initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* drivers/e1000/e1000_main.c.orig (1.1),
-	tools/e1000/e1000_main.c.orig (1.1): file e1000_main.c.orig was
+	* drivers/e1000/e1000_kcompat.h (1.1): file e1000_kcompat.h was
 	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_main.c (1.1), tools/e1000/e1000_main.c (1.1):
-	file e1000_main.c was initially added on branch smp_click.
+	* drivers/e1000/e1000_fxhw.c (1.1): file e1000_fxhw.c was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_kcompat.h (1.1), tools/e1000/e1000_kcompat.h
-	(1.1): file e1000_kcompat.h was initially added on branch
-	smp_click.
+	* drivers/e1000/e1000.h (1.1): file e1000.h was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_fxhw.h (1.1), tools/e1000/e1000_fxhw.h (1.1):
-	file e1000_fxhw.h was initially added on branch smp_click.
+	* drivers/e1000/e1000.h.orig (1.1): file e1000.h.orig was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000_fxhw.c (1.1), tools/e1000/e1000_fxhw.c (1.1):
-	file e1000_fxhw.c was initially added on branch smp_click.
+	* drivers/e1000/base_comm.h (1.1): file base_comm.h was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000.h.orig (1.1), tools/e1000/e1000.h.orig (1.1):
-	file e1000.h.orig was initially added on branch smp_click.
+	* drivers/e1000/ans_os.c (1.1): file ans_os.c was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/e1000.h (1.1), tools/e1000/e1000.h (1.1): file
-	e1000.h was initially added on branch smp_click.
+	* drivers/e1000/ans_os.h (1.1): file ans_os.h was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/base_comm.h (1.1), tools/e1000/base_comm.h (1.1):
-	file base_comm.h was initially added on branch smp_click.
+	* drivers/e1000/ans_hw.h (1.1): file ans_hw.h was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_os.h (1.1), tools/e1000/ans_os.h (1.1): file
-	ans_os.h was initially added on branch smp_click.
+	* drivers/e1000/ans_hw.c (1.1): file ans_hw.c was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_os.c (1.1), tools/e1000/ans_os.c (1.1): file
-	ans_os.c was initially added on branch smp_click.
+	* drivers/e1000/ans_driver.c (1.1): file ans_driver.c was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_hw.h (1.1), tools/e1000/ans_hw.h (1.1): file
-	ans_hw.h was initially added on branch smp_click.
+	* drivers/e1000/ans_driver.h (1.1): file ans_driver.h was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_hw.c (1.1), tools/e1000/ans_hw.c (1.1): file
-	ans_hw.c was initially added on branch smp_click.
+	* drivers/e1000/ans.h (1.1): file ans.h was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_driver.h (1.1), tools/e1000/ans_driver.h (1.1):
-	file ans_driver.h was initially added on branch smp_click.
+	* drivers/e1000/README-rtm (1.1): file README-rtm was initially
+	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans_driver.c (1.1), tools/e1000/ans_driver.c (1.1):
-	file ans_driver.c was initially added on branch smp_click.
+	* drivers/e1000/ans.c (1.1): file ans.c was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans.h (1.1), tools/e1000/ans.h (1.1): file ans.h
-	was initially added on branch smp_click.
+	* drivers/e1000/Makefile.orig (1.1): file Makefile.orig was
+	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/README-rtm (1.1), tools/e1000/README-rtm (1.1):
-	file README-rtm was initially added on branch smp_click.
+	* drivers/e1000/README (1.1): file README was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/ans.c (1.1), tools/e1000/ans.c (1.1): file ans.c
-	was initially added on branch smp_click.
+	* drivers/e1000/Makefile (1.1): file Makefile was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* drivers/e1000/README (1.1), tools/e1000/README (1.1): file README
-	was initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* drivers/e1000/Makefile.orig (1.1), tools/e1000/Makefile.orig
-	(1.1): file Makefile.orig was initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* drivers/e1000/Makefile (1.1), tools/e1000/Makefile (1.1): file
-	Makefile was initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* drivers/e1000/LICENSE (1.1), tools/e1000/LICENSE (1.1): file
-	LICENSE was initially added on branch smp_click.
+	* drivers/e1000/LICENSE (1.1): file LICENSE was initially added on
+	branch smp_click.
 
 2000-11-16 Thursday 09:59  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -11617,9 +11612,9 @@
 	* DISTFILES (1.11), FAQ (1.8), INSTALL (1.13),
 	etc/linux-2.2.17-patch (1.1), linuxmodule/kernelerror.cc (1.13),
 	linuxmodule/module.cc (1.43), linuxmodule/modulepriv.hh (1.16),
-	linuxmodule/proc_config.cc (1.16), linuxmodule/proc_element.cc
-	(1.22), linuxmodule/proc_mgr.cc (1.12),
-	tools/click-install/click-install.cc (1.31),
+	linuxmodule/proc_click.cc (1.22), linuxmodule/proc_config.cc
+	(1.16), linuxmodule/proc_element.cc (1.22), linuxmodule/proc_mgr.cc
+	(1.12), tools/click-install/click-install.cc (1.31),
 	tools/click-install/click-uninstall.cc (1.14): change /proc
 	handling to use newer, undeprecated create_proc_entry() API. Also
 	support removing a kernel module even while someone has a handler
@@ -12562,9 +12557,10 @@
 	lib/vectorv.cc (1.7), linuxmodule/Makefile.in (1.36),
 	linuxmodule/kernelerror.cc (1.12), linuxmodule/kernelerror.hh
 	(1.3), linuxmodule/module.cc (1.42), linuxmodule/modulepriv.hh
-	(1.15), linuxmodule/proc_config.cc (1.15),
-	linuxmodule/proc_element.cc (1.21), linuxmodule/proc_mgr.cc (1.11),
-	linuxmodule/sched.cc (1.21), tools/click-align/Makefile.in (1.7),
+	(1.15), linuxmodule/proc_click.cc (1.21),
+	linuxmodule/proc_config.cc (1.15), linuxmodule/proc_element.cc
+	(1.21), linuxmodule/proc_mgr.cc (1.11), linuxmodule/sched.cc
+	(1.21), tools/click-align/Makefile.in (1.7),
 	tools/click-align/alignclass.cc (1.8),
 	tools/click-align/click-align.cc (1.26),
 	tools/click-check/Makefile.in (1.3),
@@ -12671,12 +12667,12 @@
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.hh (1.1): file msqueue.hh was initially
+	* elements/standard/msqueue.cc (1.1): file msqueue.cc was initially
 	added on branch smp-benjie.
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.cc (1.1): file msqueue.cc was initially
+	* elements/standard/msqueue.hh (1.1): file msqueue.hh was initially
 	added on branch smp-benjie.
 
 2000-10-05 Thursday 13:01  Eddie Kohler <kohler@aciri.org>
@@ -12764,8 +12760,9 @@
 	* README (1.16), configure.in (1.74),
 	elements/linuxmodule/polldevice.cc (1.78),
 	elements/linuxmodule/todevice.cc (1.76), linuxmodule/kernelerror.cc
-	(1.11), linuxmodule/proc_config.cc (1.14),
-	linuxmodule/proc_element.cc (1.20): linuxmodule 1.1
+	(1.11), linuxmodule/proc_click.cc (1.20),
+	linuxmodule/proc_config.cc (1.14), linuxmodule/proc_element.cc
+	(1.20): linuxmodule 1.1
 
 2000-10-04 Wednesday 19:03  Eddie Kohler <kohler@aciri.org>
 
@@ -12937,10 +12934,10 @@
 	lib/templatei.cc (1.5), lib/timer.cc (1.12), lib/userutils.cc
 	(1.6), lib/vector.cc (1.6), lib/vectorv.cc (1.6),
 	linuxmodule/kernelerror.cc (1.10), linuxmodule/kernelversion.c
-	(1.3), linuxmodule/module.cc (1.40), linuxmodule/proc_config.cc
-	(1.13), linuxmodule/proc_element.cc (1.19), linuxmodule/proc_mgr.cc
-	(1.10), linuxmodule/sched.cc (1.20),
-	tools/click-align/alignclass.cc (1.7),
+	(1.3), linuxmodule/module.cc (1.40), linuxmodule/proc_click.cc
+	(1.19), linuxmodule/proc_config.cc (1.13),
+	linuxmodule/proc_element.cc (1.19), linuxmodule/proc_mgr.cc (1.10),
+	linuxmodule/sched.cc (1.20), tools/click-align/alignclass.cc (1.7),
 	tools/click-align/alignment.cc (1.5),
 	tools/click-align/click-align.cc (1.25),
 	tools/click-check/click-check.cc (1.8),
@@ -13094,12 +13091,12 @@
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.hh (1.1): file spinlockinfo.hh was
+	* elements/standard/spinlockinfo.cc (1.1): file spinlockinfo.cc was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.cc (1.1): file spinlockinfo.cc was
+	* elements/standard/spinlockinfo.hh (1.1): file spinlockinfo.hh was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
@@ -13925,8 +13922,9 @@
 	elements/standard/strideswitch.cc (1.2),
 	elements/standard/switch.cc (1.4), lib/confparse.cc (1.34),
 	lib/lexer.cc (1.35), lib/router.cc (1.60), linuxmodule/module.cc
-	(1.37), linuxmodule/proc_element.cc (1.18), linuxmodule/proc_mgr.cc
-	(1.9), tools/click-check/click-check.cc (1.5),
+	(1.37), linuxmodule/proc_click.cc (1.18),
+	linuxmodule/proc_element.cc (1.18), linuxmodule/proc_mgr.cc (1.9),
+	tools/click-check/click-check.cc (1.5),
 	tools/click-combine/click-combine.cc (1.7),
 	tools/click-combine/click-uncombine.cc (1.7),
 	tools/click-devirtualize/click-devirtualize.cc (1.10),
@@ -14736,9 +14734,10 @@
 2000-08-17 Thursday 21:00  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/kernelerror.cc (1.9), linuxmodule/module.cc (1.33),
-	linuxmodule/modulepriv.hh (1.11), linuxmodule/proc_config.cc
-	(1.12), linuxmodule/proc_element.cc (1.17), linuxmodule/proc_mgr.cc
-	(1.8), tools/click-install/click-install.cc (1.20),
+	linuxmodule/modulepriv.hh (1.11), linuxmodule/proc_click.cc (1.17),
+	linuxmodule/proc_config.cc (1.12), linuxmodule/proc_element.cc
+	(1.17), linuxmodule/proc_mgr.cc (1.8),
+	tools/click-install/click-install.cc (1.20),
 	tools/click-install/click-uninstall.cc (1.6): linuxmodule fixes
 
 2000-08-17 Thursday 20:11  Robert Morris <rtm@lcs.mit.edu>
@@ -14791,8 +14790,9 @@
 	lib/click_ip6.h (1.5), lib/in_cksum.c (1.7), lib/ip6address.cc
 	(1.4), lib/llrpc.hh (1.5), lib/packet.hh (1.32),
 	linuxmodule/kernelerror.cc (1.8), linuxmodule/modulepriv.hh (1.10),
-	linuxmodule/proc_config.cc (1.11), linuxmodule/proc_element.cc
-	(1.16): support /proc/click/config and errors tail -f for example
+	linuxmodule/proc_click.cc (1.16), linuxmodule/proc_config.cc
+	(1.11), linuxmodule/proc_element.cc (1.16): support
+	/proc/click/config and errors tail -f for example
 
 2000-08-16 Wednesday 14:24  Peilei Fan <peilei@lcs.mit.edu>
 
@@ -15019,8 +15019,9 @@
 	elements/ip/ipratemon.hh (1.48), lib/element.cc (1.34),
 	lib/element.hh (1.38), lib/llrpc.hh (1.1), lib/router.cc (1.51),
 	lib/router.hh (1.21), linuxmodule/kernelerror.cc (1.7),
-	linuxmodule/modulepriv.hh (1.9), linuxmodule/proc_config.cc (1.10),
-	linuxmodule/proc_element.cc (1.15): llrpc
+	linuxmodule/modulepriv.hh (1.9), linuxmodule/proc_click.cc (1.15),
+	linuxmodule/proc_config.cc (1.10), linuxmodule/proc_element.cc
+	(1.15): llrpc
 
 2000-08-06 Sunday 22:49  Robert Morris <rtm@lcs.mit.edu>
 
@@ -16296,8 +16297,8 @@
 	lib/userutils.hh (1.2), linuxmodule/Makefile.in (1.24),
 	linuxmodule/kernelerror.cc (1.5), linuxmodule/kernelerror.hh (1.2),
 	linuxmodule/module.cc (1.29), linuxmodule/modulepriv.hh (1.8),
-	linuxmodule/proc_element.cc (1.14),
-	tools/click-combine/click-combine.cc (1.6),
+	linuxmodule/proc_click.cc (1.14), linuxmodule/proc_element.cc
+	(1.14), tools/click-combine/click-combine.cc (1.6),
 	tools/click-combine/click-uncombine.cc (1.6),
 	tools/click-devirtualize/click-devirtualize.cc (1.6),
 	tools/click-fastclassifier/click-fastclassifier.cc (1.18),
@@ -16735,7 +16736,8 @@
 	* doc/element2man.pl (1.15), lib/element.cc (1.30), lib/element.hh
 	(1.34), lib/router.cc (1.44), lib/router.hh (1.16),
 	linuxmodule/module.cc (1.28), linuxmodule/modulepriv.hh (1.7),
-	linuxmodule/proc_element.cc (1.13): handler fixes
+	linuxmodule/proc_click.cc (1.13), linuxmodule/proc_element.cc
+	(1.13): handler fixes
 
 2000-07-11 Tuesday 13:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -17197,14 +17199,15 @@
 
 	* elements/local/chuckcheck.cc (1.3),
 	elements/standard/peekhandlers.cc (1.5), lib/error.cc (1.9),
-	linuxmodule/proc_element.cc (1.12),
-	tools/click-install/click-install.cc (1.17): no more verbose; added
-	-m to click-install; fixed chuck-check
+	linuxmodule/proc_click.cc (1.12), linuxmodule/proc_element.cc
+	(1.12), tools/click-install/click-install.cc (1.17): no more
+	verbose; added -m to click-install; fixed chuck-check
 
 2000-06-09 Friday 20:28  Eddie Kohler <kohler@aciri.org>
 
 	* elements/local/chuckcheck.cc (1.2), elements/local/chuckcheck.hh
-	(1.2), linuxmodule/proc_element.cc (1.11): proc fixes, chuckcheck
+	(1.2), linuxmodule/proc_click.cc (1.11),
+	linuxmodule/proc_element.cc (1.11): proc fixes, chuckcheck
 
 2000-06-09 Friday 19:19  Eddie Kohler <kohler@aciri.org>
 
@@ -18409,9 +18412,10 @@
 	elements/linuxmodule/tolinux.cc (1.5), etc/linux-2.2.14-patch
 	(1.2), lib/archive.cc (1.3), lib/glue.hh (1.6), lib/lexer.cc
 	(1.21), lib/router.cc (1.34), lib/router.hh (1.9), lib/timer.hh
-	(1.4), linuxmodule/Makefile.in (1.19), linuxmodule/proc_element.cc
-	(1.10), linuxmodule/proc_mgr.cc (1.7), tools/Makefile.in (1.28),
-	tools/click-compile.in (1.7), tools/click-check/Makefile.in (1.2),
+	(1.4), linuxmodule/Makefile.in (1.19), linuxmodule/proc_click.cc
+	(1.10), linuxmodule/proc_element.cc (1.10), linuxmodule/proc_mgr.cc
+	(1.7), tools/Makefile.in (1.28), tools/click-compile.in (1.7),
+	tools/click-check/Makefile.in (1.2),
 	tools/click-check/click-check.cc (1.2),
 	tools/click-devirtualize/Makefile.in (1.2),
 	tools/click-devirtualize/click-devirtualize.cc (1.2),
@@ -18582,12 +18586,7 @@
 	click-devirtualize/specializer.cc (1.1),
 	click-devirtualize/specializer.hh (1.1),
 	click-fastclassifier/click-fastclassifier.cc (1.14),
-	click-install/click-install.cc (1.13), click-specialize/.cvsignore
-	(1.2), click-specialize/Makefile.in (1.6),
-	click-specialize/click-specialize.cc (1.10),
-	click-specialize/cxxclass.cc (1.8), click-specialize/cxxclass.hh
-	(1.5), click-specialize/specializer.cc (1.16),
-	click-specialize/specializer.hh (1.4), click-xform/click-xform.cc
+	click-install/click-install.cc (1.13), click-xform/click-xform.cc
 	(1.17), lib/routert.cc (1.16), lib/routert.hh (1.18),
 	lib/toolutils.cc (1.9), lib/toolutils.hh (1.7): thing
 
@@ -18719,12 +18718,10 @@
 	elements/userlevel/tobpf.cc (1.11), lib/element.cc (1.18),
 	lib/element.hh (1.25), lib/elemfilter.cc (1.6), lib/elemfilter.hh
 	(1.4), lib/lexer.cc (1.20), lib/router.cc (1.30),
-	linuxmodule/proc_element.cc (1.9), tools/Makefile.in (1.25),
-	tools/click-align/Makefile.in (1.6),
+	linuxmodule/proc_click.cc (1.9), linuxmodule/proc_element.cc (1.9),
+	tools/Makefile.in (1.25), tools/click-align/Makefile.in (1.6),
 	tools/click-fastclassifier/Makefile.in (1.6),
 	tools/click-install/Makefile.in (1.8),
-	tools/click-specialize/Makefile.in (1.5),
-	tools/click-specialize/specializer.cc (1.15),
 	tools/click-xform/Makefile.in (1.10): red fix
 
 2000-03-15 Wednesday 00:56  Max Poletto <maxp@lcs.mit.edu>
@@ -18926,8 +18923,9 @@
 	(1.24), lib/elemlink.hh (1.11), lib/errorelement.cc (1.5),
 	lib/errorelement.hh (1.3), lib/lexer.cc (1.19), lib/router.cc
 	(1.28), lib/router.hh (1.8), linuxmodule/module.cc (1.19),
-	linuxmodule/modulepriv.hh (1.5), linuxmodule/proc_element.cc (1.8),
-	userlevel/click.cc (1.17): thomer handler fix; added pokehandlers
+	linuxmodule/modulepriv.hh (1.5), linuxmodule/proc_click.cc (1.8),
+	linuxmodule/proc_element.cc (1.8), userlevel/click.cc (1.17):
+	thomer handler fix; added pokehandlers
 
 2000-02-15 Tuesday 14:44  Thomer Gil <thomer@lcs.mit.edu>
 
@@ -18964,10 +18962,7 @@
 	tools/click-install/.cvsignore (1.2),
 	tools/click-install/Makefile.in (1.7),
 	tools/click-install/click-install.cc (1.11),
-	tools/click-install/click-uninstall.cc (1.2),
-	tools/click-specialize/click-specialize.cc (1.9),
-	tools/click-specialize/cxxclass.cc (1.7),
-	tools/click-specialize/specializer.cc (1.14): fastclassifier |
+	tools/click-install/click-uninstall.cc (1.2): fastclassifier |
 	specialize + uninstall
 
 2000-02-05 Saturday 00:14  Benjie Chen <benjie@lcs.mit.edu>
@@ -18982,21 +18977,7 @@
 	elements/standard/classifier.cc (1.10), tools/Makefile.in (1.23),
 	tools/click-install/Makefile.in (1.6),
 	tools/click-install/click-install.cc (1.10),
-	tools/click-install/click-uninstall.cc (1.1),
-	tools/click-specialize/specializer.cc (1.13): sp[ecializer fix
-
-2000-02-04 Friday 21:19  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/specializer.cc (1.12): fadsjfadsjfads
-
-2000-02-04 Friday 20:47  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/: specializer.cc (1.10), specializer.cc
-	(1.11): not an idiot
-
-2000-02-04 Friday 20:38  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/specializer.cc (1.9): click-specialize/
+	tools/click-install/click-uninstall.cc (1.1): sp[ecializer fix
 
 2000-02-04 Friday 20:02  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -19011,25 +18992,10 @@
 	* lib/packet.hh (1.12), tools/click-compile.in (1.6): added -S to
 	click-compile; fixed anno(), which formerly did not inline skb()
 
-2000-02-04 Friday 13:06  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/: cxxclass.cc (1.6), cxxclass.hh (1.4),
-	specializer.cc (1.8): smaction oops
-
 2000-02-04 Friday 13:04  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: netdev.h (1.11), polldevice.cc (1.39): [no
 	log message]
-
-2000-02-04 Friday 12:50  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/specializer.cc (1.7): dont generate
-	functions that dont matter; also less checking
-
-2000-02-04 Friday 12:36  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/specializer.cc (1.6): better push_output
-	and pull_input functions
 
 2000-02-04 Friday 12:12  Eddie Kohler <kohler@aciri.org>
 
@@ -19040,9 +19006,6 @@
 	* doc/click-install.1 (1.2), tools/click-align/click-align.cc
 	(1.12), tools/click-fastclassifier/click-fastclassifier.cc (1.12),
 	tools/click-install/click-install.cc (1.9),
-	tools/click-specialize/click-specialize.cc (1.8),
-	tools/click-specialize/specializer.cc (1.5),
-	tools/click-specialize/specializer.hh (1.3),
 	tools/click-xform/click-xform.cc (1.16), tools/lib/routert.hh
 	(1.17), tools/lib/toolutils.cc (1.8), tools/lib/toolutils.hh (1.6):
 	tools updates
@@ -19060,10 +19023,6 @@
 	fastclassifier updates: first, it works at all (this is new);
 	second, it only generates code for 1 of a series of identical
 	classifiers
-
-2000-02-03 Thursday 21:00  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/click-specialize.cc (1.7): minibug
 
 2000-02-03 Thursday 20:55  Eddie Kohler <kohler@aciri.org>
 
@@ -19089,26 +19048,12 @@
 
 	* conf/fake-iprouter.click (1.4), conf/make-ip-conf.pl (1.6),
 	elements/standard/specializerinfo.cc (1.1),
-	elements/standard/specializerinfo.hh (1.1),
-	tools/click-specialize/click-specialize.cc (1.6),
-	tools/click-specialize/specializer.cc (1.4): fixed
-	click-specialize, added SpecializerInfo
-
-2000-02-03 Thursday 19:26  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/: click-specialize.cc (1.5),
-	specializer.cc (1.3), specializer.hh (1.2): added instructions
-	possibility to specializer; fix bugs
-
-2000-02-03 Thursday 17:01  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/cxxclass.cc (1.5): fixed bug in compiling;
-	invovled #if 0
+	elements/standard/specializerinfo.hh (1.1): fixed click-specialize,
+	added SpecializerInfo
 
 2000-02-03 Thursday 16:34  Eddie Kohler <kohler@aciri.org>
 
-	* tools/: Makefile.in (1.21), click-specialize/specializer.cc
-	(1.2): specializer fix
+	* tools/Makefile.in (1.21): specializer fix
 
 2000-02-03 Thursday 16:16  Eddie Kohler <kohler@aciri.org>
 
@@ -19199,16 +19144,10 @@
 	* doc/click.5 (1.9), elements/standard/counter.cc (1.8),
 	elements/standard/counter.hh (1.6), lib/confparse.cc (1.9),
 	lib/confparse.hh (1.5), lib/lexer.cc (1.17), lib/lexer.hh (1.10),
-	tools/Makefile.in (1.20), tools/click-specialize/Makefile.in (1.4),
-	tools/click-specialize/click-specialize.cc (1.4),
-	tools/click-specialize/cxxclass.cc (1.4),
-	tools/click-specialize/cxxclass.hh (1.3),
-	tools/click-specialize/specializer.cc (1.1),
-	tools/click-specialize/specializer.hh (1.1),
-	tools/click-xform/click-xform.cc (1.13), tools/lib/lexert.cc
-	(1.13), tools/lib/lexert.hh (1.8), tools/lib/routert.cc (1.14),
-	tools/lib/routert.hh (1.15): specializer updates; compounds take
-	formal parameters!
+	tools/Makefile.in (1.20), tools/click-xform/click-xform.cc (1.13),
+	tools/lib/lexert.cc (1.13), tools/lib/lexert.hh (1.8),
+	tools/lib/routert.cc (1.14), tools/lib/routert.hh (1.15):
+	specializer updates; compounds take formal parameters!
 
 2000-01-31 Monday 09:27  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -19247,9 +19186,6 @@
 	tools/click-fastclassifier/click-fastclassifier.cc (1.9),
 	tools/click-install/Makefile.in (1.5),
 	tools/click-install/click-install.cc (1.7),
-	tools/click-specialize/Makefile.in (1.3),
-	tools/click-specialize/click-specialize.cc (1.3),
-	tools/click-specialize/cxxclass.cc (1.3),
 	tools/click-xform/Makefile.in (1.9), tools/lib/toolutils.cc (1.5),
 	tools/lib/toolutils.hh (1.4): speclaizeilsi zmera
 
@@ -19269,15 +19205,6 @@
 
 	* elements/linuxmodule/: netdev.h (1.4), polldevice.cc (1.34): [no
 	log message]
-
-2000-01-26 Wednesday 18:33  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/click-specialize1.pl (1.4): bye bye perl
-
-2000-01-26 Wednesday 18:33  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/: click-specialize.cc (1.2), cxxclass.cc
-	(1.2), cxxclass.hh (1.2): another convenient checkin point
 
 2000-01-26 Wednesday 17:14  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -19312,11 +19239,6 @@
 
 	* elements/linuxmodule/todevice.cc (1.27): [no log message]
 
-2000-01-26 Wednesday 13:24  Eddie Kohler <kohler@aciri.org>
-
-	* tools/click-specialize/: Makefile.in (1.2), click-specialize.cc
-	(1.1), cxxclass.cc (1.1), cxxclass.hh (1.1): adding files
-
 2000-01-25 Tuesday 18:02  Max Poletto <maxp@lcs.mit.edu>
 
 	* elements/ip/: lookupiproute.cc (1.6), lookupiproute.hh (1.4): [no
@@ -19344,9 +19266,8 @@
 
 	* configure.in (1.28), elements/standard/scheduleinfo.cc (1.5),
 	lib/elemlink.cc (1.8), lib/elemlink.hh (1.9), lib/error.cc (1.7),
-	lib/error.hh (1.3), tools/click-specialize/Makefile.in (1.1): error
-	gets lmessage(); added set_tickets function; removed set_tickets
-	functionality from set-max_tickets
+	lib/error.hh (1.3): error gets lmessage(); added set_tickets
+	function; removed set_tickets functionality from set-max_tickets
 
 2000-01-25 Tuesday 13:16  Max Poletto <maxp@lcs.mit.edu>
 
@@ -19494,9 +19415,9 @@
 	(1.4), lib/timer.cc (1.6), lib/unlimelement.cc (1.4), lib/vector.cc
 	(1.4), lib/vectori.cc (1.3), lib/vectorv.cc (1.4),
 	linuxmodule/kernelerror.cc (1.4), linuxmodule/module.cc (1.16),
-	linuxmodule/proc_config.cc (1.5), linuxmodule/proc_element.cc
-	(1.7), linuxmodule/proc_mgr.cc (1.5), linuxmodule/sched.cc (1.11),
-	tools/click-align/alignclass.cc (1.4),
+	linuxmodule/proc_config.cc (1.5), linuxmodule/proc_click.cc (1.7),
+	linuxmodule/proc_element.cc (1.7), linuxmodule/proc_mgr.cc (1.5),
+	linuxmodule/sched.cc (1.11), tools/click-align/alignclass.cc (1.4),
 	tools/click-align/alignment.cc (1.4),
 	tools/click-align/click-align.cc (1.10),
 	tools/click-fastclassifier/click-fastclassifier.cc (1.8),
@@ -19805,7 +19726,6 @@
 	tools/click-compile.in (1.4), tools/click-align/Makefile.in (1.4),
 	tools/click-fastclassifier/Makefile.in (1.4),
 	tools/click-install/Makefile.in (1.4),
-	tools/click-specialize/click-specialize1.pl (1.3),
 	tools/click-xform/Makefile.in (1.8), tools/lib/.cvsignore (1.1),
 	tools/lib/Makefile.in (1.1), tools/lib/routert.cc (1.12),
 	tools/lib/routert.hh (1.14), userlevel/Makefile.in (1.11): changed
@@ -19992,11 +19912,10 @@
 	elements/ip/bigin.hh (1.5), elements/standard/queue.cc (1.6),
 	elements/standard/queue.hh (1.5), elements/aqm/red.cc (1.7),
 	elements/standard/red.cc (1.7), elements/aqm/red.hh (1.6),
-	elements/standard/red.hh (1.6),
-	tools/click-specialize/click-specialize1.pl (1.2),
-	tools/click-xform/click-xform.cc (1.9), tools/lib/routert.cc
-	(1.11), tools/lib/routert.hh (1.12): tool fixes for speed (6.854),
-	updated queue to be a Storable, updated BigIn to be correct
+	elements/standard/red.hh (1.6), tools/click-xform/click-xform.cc
+	(1.9), tools/lib/routert.cc (1.11), tools/lib/routert.hh (1.12):
+	tool fixes for speed (6.854), updated queue to be a Storable,
+	updated BigIn to be correct
 
 1999-12-05 Sunday 12:42  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -20046,8 +19965,6 @@
 	tools/click-fastclassifier/click-fastclassifier.cc (1.5),
 	tools/click-install/Makefile.in (1.3),
 	tools/click-install/click-install.cc (1.4),
-	tools/click-specialize/.cvsignore (1.1),
-	tools/click-specialize/click-specialize1.pl (1.1),
 	tools/click-xform/click-xform.cc (1.8), userlevel/Makefile.in
 	(1.10), userlevel/click.cc (1.11): beginning click-specialize;
 	added handlers section to element man pages; dynamic linking in
@@ -20113,8 +20030,9 @@
 	* lib/lexer.cc (1.10), lib/lexer.hh (1.8),
 	linuxmodule/clickmodule.hh (1.1), linuxmodule/kernelerror.cc (1.3),
 	linuxmodule/linuxmodule.hh (1.3), linuxmodule/module.cc (1.9),
-	linuxmodule/modulepriv.hh (1.1), linuxmodule/proc_config.cc (1.3),
-	linuxmodule/proc_element.cc (1.6), linuxmodule/proc_mgr.cc (1.4),
+	linuxmodule/modulepriv.hh (1.1), linuxmodule/proc_click.cc (1.6),
+	linuxmodule/proc_config.cc (1.3), linuxmodule/proc_element.cc
+	(1.6), linuxmodule/proc_mgr.cc (1.4),
 	tools/click-fastclassifier/click-fastclassifier.cc (1.2): more
 	fastclassifier and related stuff
 
@@ -20166,8 +20084,9 @@
 	lib/element.hh (1.11), lib/lexer.cc (1.8), lib/lexer.hh (1.6),
 	lib/router.cc (1.9), lib/router.hh (1.3), lib/strerror.c (1.1),
 	linuxmodule/linuxmodule.hh (1.2), linuxmodule/module.cc (1.7),
-	linuxmodule/proc_element.cc (1.5), linuxmodule/proc_mgr.cc (1.3),
-	tools/Makefile.in (1.7), tools/click-align/Makefile.in (1.2),
+	linuxmodule/proc_click.cc (1.5), linuxmodule/proc_element.cc (1.5),
+	linuxmodule/proc_mgr.cc (1.3), tools/Makefile.in (1.7),
+	tools/click-align/Makefile.in (1.2),
 	tools/click-align/click-align.cc (1.5),
 	tools/click-align/hashmapi.cc (1.2), tools/click-align/vectori.cc
 	(1.2), tools/click-xform/Makefile.in (1.5),
@@ -20294,8 +20213,9 @@
 	elements/standard/randomlossage.cc (1.5),
 	elements/standard/randomlossage.hh (1.4), elements/standard/red.cc
 	(1.4), lib/element.cc (1.7), lib/element.hh (1.7), lib/router.cc
-	(1.7), linuxmodule/module.cc (1.5), linuxmodule/proc_element.cc
-	(1.4): more programmers' manual stuff ; fixed some things
+	(1.7), linuxmodule/module.cc (1.5), linuxmodule/proc_click.cc
+	(1.4), linuxmodule/proc_element.cc (1.4): more programmers' manual
+	stuff ; fixed some things
 
 1999-10-21 Thursday 12:36  Eddie Kohler <kohler@aciri.org>
 
@@ -20434,15 +20354,15 @@
 	(1.3), lib/timer.cc (1.2), lib/unlimelement.cc (1.2), lib/vector.cc
 	(1.3), lib/vectori.cc (1.2), lib/vectorv.cc (1.3),
 	linuxmodule/kernelerror.cc (1.2), linuxmodule/kernelversion.c
-	(1.2), linuxmodule/module.cc (1.4), linuxmodule/proc_config.cc
-	(1.2), linuxmodule/proc_element.cc (1.3), linuxmodule/proc_mgr.cc
-	(1.2), tools/make-ip-conf.pl (1.3),
-	tools/click-xform/click-xform.cc (1.4),
-	tools/click-xform/hashmapi.cc (1.2), tools/click-xform/vectori.cc
-	(1.2), tools/lib/elementt.cc (1.3), tools/lib/lexert.cc (1.5),
-	tools/lib/routert.cc (1.4), userlevel/click.cc (1.6): updated
-	configurations, added copyrights everywhere, updated lots of
-	documentation
+	(1.2), linuxmodule/module.cc (1.4), linuxmodule/proc_click.cc
+	(1.3), linuxmodule/proc_config.cc (1.2),
+	linuxmodule/proc_element.cc (1.3), linuxmodule/proc_mgr.cc (1.2),
+	tools/make-ip-conf.pl (1.3), tools/click-xform/click-xform.cc
+	(1.4), tools/click-xform/hashmapi.cc (1.2),
+	tools/click-xform/vectori.cc (1.2), tools/lib/elementt.cc (1.3),
+	tools/lib/lexert.cc (1.5), tools/lib/routert.cc (1.4),
+	userlevel/click.cc (1.6): updated configurations, added copyrights
+	everywhere, updated lots of documentation
 
 1999-10-19 Tuesday 16:45  Robert Morris <rtm@lcs.mit.edu>
 
@@ -20811,8 +20731,9 @@
 	lib/errorelement.cc (1.2), lib/errorelement.hh (1.2),
 	lib/ipaddress.hh (1.2), lib/lexer.cc (1.2), lib/lexer.hh (1.2),
 	lib/router.cc (1.2), lib/timedelement.cc (1.2), lib/timedelement.hh
-	(1.2), linuxmodule/module.cc (1.2), linuxmodule/proc_element.cc
-	(1.2), tools/click-xform/Makefile.in (1.2),
+	(1.2), linuxmodule/module.cc (1.2), linuxmodule/proc_click.cc
+	(1.2), linuxmodule/proc_element.cc (1.2),
+	tools/click-xform/Makefile.in (1.2),
 	tools/click-xform/click-xform.cc (1.2), tools/lib/confparset.cc
 	(1.2), tools/lib/confparset.hh (1.2), tools/lib/lexert.cc (1.2),
 	tools/lib/lexert.hh (1.2), tools/lib/routert.hh (1.2),
@@ -20984,9 +20905,10 @@
 	linuxmodule/.cvsignore (1.1), linuxmodule/Makefile.in (1.1),
 	linuxmodule/kernelerror.cc (1.1), linuxmodule/kernelerror.hh (1.1),
 	linuxmodule/kernelversion.c (1.1), linuxmodule/linuxmodule.hh
-	(1.1), linuxmodule/module.cc (1.1), linuxmodule/proc_config.cc
-	(1.1), linuxmodule/proc_element.cc (1.1), linuxmodule/proc_mgr.cc
-	(1.1), linuxmodule/read-pmc.c (1.1), tools/Makefile.in (1.1),
+	(1.1), linuxmodule/module.cc (1.1), linuxmodule/proc_click.cc
+	(1.1), linuxmodule/proc_config.cc (1.1),
+	linuxmodule/proc_element.cc (1.1), linuxmodule/proc_mgr.cc (1.1),
+	linuxmodule/read-pmc.c (1.1), tools/Makefile.in (1.1),
 	tools/click-xform/Makefile.in (1.1),
 	tools/click-xform/click-xform.cc (1.1),
 	tools/click-xform/hashmapi.cc (1.1), tools/click-xform/vectori.cc
