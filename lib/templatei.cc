@@ -32,7 +32,7 @@ template class Vector<String>;
 
 #include <click/hashmap.cc>
 template class HashMap<String, int>;
-template class HashMap<String, int>::iterator;
+template class _HashMapIterator<String, int>;
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, unsigned>;

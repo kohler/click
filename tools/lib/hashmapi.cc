@@ -21,8 +21,8 @@
 
 #include <click/string.hh>
 template class HashMap<String, int>;
-template class HashMap<String, int>::iterator;
+template class _HashMapIterator<String, int>;
 template class HashMap<String, String>;
-template class HashMap<String, String>::iterator;
+template class _HashMapIterator<String, String>;
 template class HashMap<int, int>;
-template class HashMap<int, int>::iterator;
+template class _HashMapIterator<int, int>;
