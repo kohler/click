@@ -27,6 +27,7 @@
 #include <click/glue.hh>
 #include <click/click_ip.h>
 #include <click/click_ether.h>
+#include <click/click_fddi.h>
 #include <click/packet_anno.hh>
 #include "fakepcap.h"
 #include <unistd.h>
@@ -342,49 +343,55 @@ FromDump::uninitialize()
 bool
 FromDump::check_force_ip(Packet *p)
 {
+    const click_ip *iph = 0;
+    
     switch (_linktype) {
 
       case FAKE_DLT_RAW:
-	if (!p->ip_header()) {
-	    // packet was too small for an IP header
-	    checked_output_push(1, p);
-	    return false;
-	}
+	if (p->ip_header())	// header already set
+	    return true;
 	break;
 
       case FAKE_DLT_EN10MB: {
 	  const click_ether *ethh = (const click_ether *)p->data();
-	  const click_ip *iph = (const click_ip *)(ethh + 1);
+	  iph = (const click_ip *)(ethh + 1);
 	  if (p->length() < sizeof(click_ether) + sizeof(click_ip)
 	      || (ethh->ether_type != htons(ETHERTYPE_IP)
 		  && ethh->ether_type != htons(ETHERTYPE_IP6))
-	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2)) {
-	      checked_output_push(1, p);
-	      return false;
-	  }
-	  p->set_ip_header(iph, iph->ip_hl << 2);
+	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2))
+	      iph = 0;
 	  break;
       }
 
       case FAKE_DLT_FDDI: {
-	  const uint16_t *ether_type = (const uint16_t *)(p->data() + 19);
-	  const click_ip *iph = (const click_ip *)(p->data() + 21);
-	  if (p->length() < 21 + sizeof(click_ip)
-	      || (*ether_type != htons(ETHERTYPE_IP)
-		  && *ether_type != htons(ETHERTYPE_IP6))
-	      || p->length() < 21U + (iph->ip_hl << 2)) {
-	      checked_output_push(1, p);
-	      return false;
-	  }
-	  p->set_ip_header(iph, iph->ip_hl << 2);
+	  const click_fddi *fh = (const click_fddi *)p->data();
+	  if (p->length() < sizeof(click_fddi)
+	      || (fh->fc & FDDI_FC_LLCMASK) != FDDI_FC_LLC_ASYNC)
+	      break;
+	  const click_fddi_snap *fsh = (const click_fddi_snap *)fsh;
+	  if (p->length() < sizeof(*fsh) + sizeof(click_ip)
+	      || memcmp(&fsh->dsap, FDDI_SNAP_EXPECTED, FDDI_SNAP_EXPECTED_LEN) != 0
+	      || (fsh->ether_type != htons(ETHERTYPE_IP)
+		  && fsh->ether_type != htons(ETHERTYPE_IP6)))
+	      break;
+	  iph = (const click_ip *)(fsh + 1);
+	  if (p->length() < sizeof(*fsh) + (iph->ip_hl << 2))
+	      iph = 0;
 	  break;
       }
       
       default:
-	assert(0);
+	break;
 	
     }
-    return true;
+
+    if (iph) {
+	p->set_ip_header(iph, iph->ip_hl << 2);
+	return true;
+    } else {
+	checked_output_push(1, p);
+	return false;
+    }
 }
 
 Packet *

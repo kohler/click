@@ -1,8 +1,10 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * fromdevice.{cc,hh} -- element reads packets live from network via pcap
  * Douglas S. J. De Couto, Eddie Kohler, John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,6 +44,7 @@
 
 #include <click/click_ether.h>
 #include <click/click_ip.h>
+#include "fakepcap.h"
 
 FromDevice::FromDevice()
   : Element(0, 1), _promisc(0), _packetbuf_size(0)
@@ -227,6 +230,11 @@ FromDevice::initialize(ErrorHandler *errh)
 
   add_select(fd, SELECT_READ);
 
+  _datalink = pcap_datalink(_pcap);
+  if (_force_ip && _datalink != DLT_RAW && _datalink != DLT_EN10MB
+      && _datalink != DLT_FDDI)
+    errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, dl);
+
 #elif FROMDEVICE_LINUX
 
   _fd = open_packet_socket(_ifname, errh);
@@ -241,6 +249,8 @@ FromDevice::initialize(ErrorHandler *errh)
     _was_promisc = promisc_ok;
 
   add_select(_fd, SELECT_READ);
+
+  _datalink = FAKE_DLT_EN10MB;
   
 #else
 
@@ -273,18 +283,41 @@ FromDevice::uninitialize()
 bool
 FromDevice::check_force_ip(Packet *p)
 {
-  if (p->length() >= sizeof(click_ether) + sizeof(click_ip)) {
-    const click_ether *ethh = (const click_ether *)p->data();
-    const click_ip *iph = (const click_ip *)(p->data() + sizeof(click_ether));
-    if (ethh->ether_type == htons(ETHERTYPE_IP)
-	&& p->length() >= sizeof(click_ether) + (iph->ip_hl << 2)) {
-      p->pull(sizeof(click_ether));
-      p->set_ip_header(iph, iph->ip_hl << 2);
-      return true;
+    const click_ip *iph = 0;
+    switch (_datalink) {
+
+      case FAKE_DLT_EN10MB: {
+	  const click_ether *ethh = (const click_ether *)p->data();
+	  iph = (const click_ip *)(ethh + 1);
+	  if (p->length() < sizeof(click_ether) + sizeof(click_ip)
+	      || (ethh->ether_type != htons(ETHERTYPE_IP)
+		  && ethh->ether_type != htons(ETHERTYPE_IP6))
+	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2))
+	      iph = 0;
+	  break;
+      }
+
+      case FAKE_DLT_RAW: {
+	  iph = (const click_ip *)p->data();
+	  if (p->length() < sizeof(click_ip)
+	      || (int)p->length() < (iph->ip_hl << 2))
+	      iph = 0;
+	  break;
+      }
+
+      default:
+	break;
+
     }
-  }
-  p->kill();
-  return false;
+
+    if (iph) {
+	p->pull((const uint8_t *)iph - p->data());
+	p->set_ip_header(iph, iph->ip_hl << 2);
+	return true;
+    } else {
+	p->kill();
+	return false;
+    }
 }
 
 #if FROMDEVICE_PCAP

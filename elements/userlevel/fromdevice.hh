@@ -126,6 +126,7 @@ class FromDevice : public Element { public:
 			 const u_char *);
 #endif
   bool _force_ip;
+  int _datalink;
   
   String _ifname;
   bool _promisc : 1;
@@ -135,7 +136,7 @@ class FromDevice : public Element { public:
   String _bpf_filter;
 #endif
 
-  static bool check_force_ip(Packet *);
+  bool check_force_ip(Packet *);
 
 };
 
