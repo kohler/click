@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "setipchecksum.hh"
 #include <click/glue.hh>
 #include <click/click_ip.h>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "iprw.hh"
 #include "elements/ip/iprwpatterns.hh"
 #include <click/click_ip.h>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "icmprewriter.hh"
 #include <click/click_icmp.h>
 #include <click/confparse.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "arpquerier.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>

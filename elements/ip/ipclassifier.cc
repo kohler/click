@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ipclassifier.hh"
 #include <click/glue.hh>
 #include <click/error.hh>

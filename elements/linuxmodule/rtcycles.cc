@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "rtcycles.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

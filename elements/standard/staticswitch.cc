@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "staticswitch.hh"
 #include <click/confparse.hh>
 

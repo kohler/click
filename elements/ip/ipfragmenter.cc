@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ipfragmenter.hh"
 #include <click/click_ip.h>
 #include <click/confparse.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "fixipsrc.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>

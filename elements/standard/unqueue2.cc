@@ -20,7 +20,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/elemfilter.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "suppressor.hh"
 #include <click/bitvector.hh>
 #include <click/confparse.hh>

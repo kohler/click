@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "hashswitch.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>

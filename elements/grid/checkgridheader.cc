@@ -20,7 +20,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "checkgridheader.hh"
 #include <click/glue.hh>
 #include "grid.hh"

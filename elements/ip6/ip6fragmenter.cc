@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ip6fragmenter.hh"
 #include <click/click_ip6.h>
 #include <click/confparse.hh>

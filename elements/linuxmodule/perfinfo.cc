@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/perfctr.hh>
 #include "perfinfo.hh"
 #include <click/confparse.hh>

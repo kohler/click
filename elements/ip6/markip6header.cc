@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "markip6header.hh"
 #include <click/confparse.hh>
 #include <click/click_ip6.h>

@@ -19,7 +19,6 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "chattersocket.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

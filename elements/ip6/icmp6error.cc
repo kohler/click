@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/click_icmp6.h>
 #include <click/click_ip6.h>
 #include <click/click_ip.h>

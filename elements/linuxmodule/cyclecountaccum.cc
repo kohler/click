@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "cyclecountaccum.hh"
 #include <click/glue.hh>
 

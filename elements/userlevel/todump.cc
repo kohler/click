@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/glue.hh>
 #include "todump.hh"
 #include <click/confparse.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "pullswitch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "classifier.hh"
 #include <click/glue.hh>
 #include <click/error.hh>

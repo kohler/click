@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/click_ip6.h>
 #include "fastudpsrcip6.hh"
 #include <click/confparse.hh>
@@ -287,10 +286,5 @@ FastUDPSourceIP6::add_handlers()
   add_write_handler("limit", FastUDPSourceIP6_limit_write_handler, 0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(linuxmodule ip6)
 EXPORT_ELEMENT(FastUDPSourceIP6)
-
-
-
-
-

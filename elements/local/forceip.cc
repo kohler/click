@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "forceip.hh"
 #include <click/error.hh>
 #include <click/glue.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "decipttl.hh"
 #include <click/click_ip.h>
 #include <click/glue.hh>

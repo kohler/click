@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "spantree.hh"
 #include <click/confparse.hh>
 #include "elements/standard/suppressor.hh"

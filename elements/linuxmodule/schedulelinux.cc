@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include "schedulelinux.hh"

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #ifndef HAVE_IPSEC
 # error "Must #define HAVE_IPSEC in config.h"
 #endif

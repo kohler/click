@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "scramble.hh"
 
 Scramble::Scramble()

@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "sendpattern.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

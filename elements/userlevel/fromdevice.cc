@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "fromdevice.hh"
 #include "todevice.hh"
 #include <click/error.hh>

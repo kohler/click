@@ -21,7 +21,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/glue.hh>
 #include "polldevice.hh"
 #include "todevice.hh"
@@ -368,5 +367,5 @@ ToDevice::add_handlers()
   add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule)
+ELEMENT_REQUIRES(AnyDevice linuxmodule linux_2_2)
 EXPORT_ELEMENT(ToDevice)

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "rrswitch.hh"
 
 RoundRobinSwitch::RoundRobinSwitch()

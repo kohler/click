@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "stripipheader.hh"
 #include <click/click_ip.h>
 

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "nulls.hh"
 
 EXPORT_ELEMENT(Null1)

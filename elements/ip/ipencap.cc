@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ipencap.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>

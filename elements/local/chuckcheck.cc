@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "chuckcheck.hh"
 #include <click/straccum.hh>
 #include <click/click_ip.h>

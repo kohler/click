@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/glue.hh>
 #include "polldevice.hh"
 #include "fromdevice.hh"

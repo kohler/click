@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ripsend.hh"
 #include <click/confparse.hh>
 #include <click/glue.hh>

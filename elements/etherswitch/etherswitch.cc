@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "etherswitch.hh"
 
 #include <click/click_ether.h>

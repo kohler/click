@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "timedsource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -94,6 +93,8 @@ TimedSource::uninitialize()
 void
 TimedSource::run_scheduled()
 {
+  if (!_active)
+    return;
   if (_limit < 0 || _count < _limit) {
     Packet *p = _packet->clone();
     click_gettimeofday(&p->timestamp_anno());

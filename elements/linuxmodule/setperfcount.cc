@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "setperfcount.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

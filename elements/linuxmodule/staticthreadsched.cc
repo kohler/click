@@ -1,5 +1,4 @@
 #include <click/config.h>
-#include <click/package.hh>
 #include "../standard/scheduleinfo.hh"
 #include "staticthreadsched.hh"
 #include <click/task.hh>

@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "bim.hh"
 #include <click/error.hh>
 #include <click/packet.hh>

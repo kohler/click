@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "tcpipsend.hh"
 #include <click/click_ip.h>
 #include <click/click_tcp.h>

@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "red.hh"
 #include "queue.hh"
 #include <click/elemfilter.hh>

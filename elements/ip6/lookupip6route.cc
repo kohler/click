@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "lookupip6route.hh"
 #include <click/ip6address.hh>
 #include <click/confparse.hh>

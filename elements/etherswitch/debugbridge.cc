@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "debugbridge.hh"
 
 #include <click/glue.hh>

@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "b8b10.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>

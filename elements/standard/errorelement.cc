@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "errorelement.hh"
 #include <click/bitvector.hh>
 

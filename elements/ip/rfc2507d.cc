@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "rfc2507d.hh"
 #include <click/glue.hh>
 

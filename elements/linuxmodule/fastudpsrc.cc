@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <click/click_ip.h>
 #include "fastudpsrc.hh"
 #include <click/confparse.hh>

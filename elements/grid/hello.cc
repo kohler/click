@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "hello.hh"
 #include <click/click_ether.h>
 #include <click/confparse.hh>

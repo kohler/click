@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "checkcrc32.hh"
 
 extern "C" {

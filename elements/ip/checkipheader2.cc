@@ -19,7 +19,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "checkipheader2.hh"
 #include <click/click_ip.h>
 #include <click/ipaddressset.hh>

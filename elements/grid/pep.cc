@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "pep.hh"
 #include "amoeba.hh"
 #include <click/confparse.hh>

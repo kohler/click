@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "loctable.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>

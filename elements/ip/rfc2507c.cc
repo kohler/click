@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #ifdef __linux__
 # define _BSD_SOURCE
 #endif

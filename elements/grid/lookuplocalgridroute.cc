@@ -19,7 +19,6 @@
 
 #include <stddef.h>
 #include <click/config.h>
-#include <click/package.hh>
 #include "lookuplocalgridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

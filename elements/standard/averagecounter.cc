@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "averagecounter.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>

@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "markipheader.hh"
 #include <click/confparse.hh>
 #include <click/click_ip.h>
