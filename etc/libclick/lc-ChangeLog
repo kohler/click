@@ -1,3 +1,14 @@
+2001-10-18 Thursday 02:16  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: cpTimeval type takes suffixes like h for
+	hour
+
+2001-10-18 Thursday 01:29  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	add BailErrorHandler: exit on first error (for example); available
+	at userlevel
+
 2001-10-17 Wednesday 21:14  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/routerthread.hh, include/click/routerthread.hh,
