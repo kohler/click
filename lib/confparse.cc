@@ -28,7 +28,7 @@
 #include <click/ipaddressset.hh>
 #include <click/etheraddress.hh>
 #ifdef HAVE_IP6
-#include <click/ip6address.hh>
+# include <click/ip6address.hh>
 #endif
 #ifndef CLICK_TOOL
 # include <click/router.hh>
@@ -37,6 +37,7 @@
 # define CP_CONTEXT_ARG , Element *context
 # define CP_PASS_CONTEXT , context
 #else
+# include <click/hashmap.hh>
 # define CP_CONTEXT_ARG
 # define CP_PASS_CONTEXT
 #endif
@@ -2016,26 +2017,27 @@ find_argtype(const char *command)
 }
 
 static int
-cp_register_argtype(const char *name, const char *desc, int extra,
+cp_register_argtype(const char *name, const char *desc, int flags,
 		    cp_parsefunc parse, cp_storefunc store, int internal)
 {
   if (cp_argtype *t = find_argtype(name)) {
     t->use_count++;
     if (strcmp(desc, t->description) != 0
-	|| extra != t->extra
+	|| flags != t->flags
 	|| parse != t->parse
 	|| store != t->store
 	|| internal != t->internal)
       return -1;
     else
-      return 0;
+      return t->use_count - 1;
   }
   
   if (cp_argtype *t = new cp_argtype) {
     t->name = name;
     t->parse = parse;
     t->store = store;
-    t->extra = extra;
+    t->user_data = 0;
+    t->flags = flags;
     t->description = desc;
     t->internal = internal;
     t->use_count = 1;
@@ -2048,29 +2050,12 @@ cp_register_argtype(const char *name, const char *desc, int extra,
 }
 
 int
-cp_register_argtype(const char *name, const char *desc, int extra,
+cp_register_argtype(const char *name, const char *desc, int flags,
 		    cp_parsefunc parse, cp_storefunc store)
 {
-  return cp_register_argtype(name, desc, extra, parse, store, -1);
+  return cp_register_argtype(name, desc, flags, parse, store, -1);
 }
 
-void
-cp_unregister_argtype(const char *name)
-{
-  cp_argtype **prev = &argtype_hash[argtype_bucket(name)];
-  cp_argtype *trav = *prev;
-  while (trav && strcmp(trav->name, name) != 0) {
-    prev = &trav->next;
-    trav = trav->next;
-  }
-  if (trav) {
-    trav->use_count--;
-    if (trav->use_count <= 0) {
-      *prev = trav->next;
-      delete trav;
-    }
-  }
-}
 
 static void
 default_parsefunc(cp_value *v, const String &arg,
@@ -2546,6 +2531,87 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 }
 
 
+static void
+stringlist_parsefunc(cp_value *v, const String &arg,
+		     ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
+{
+  const char *desc = v->description;
+  const cp_argtype *argtype = v->argtype;
+#ifndef CLICK_TOOL
+  (void) context;
+#endif
+
+  if (HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(argtype->user_data)) {
+    String word;
+    if (cp_word(arg, &word))
+      if (int *valp = m->findp(word)) {
+	v->v.i = *valp;
+	return;
+      }
+  }
+
+  if (argtype->flags & cpArgAllowNumbers) {
+    if (!cp_integer(arg, &v->v.i))
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
+  } else
+    errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+}
+
+int
+cp_register_stringlist_argtype(const char *name, const char *desc, int flags)
+{
+  return cp_register_argtype(name, desc, flags, stringlist_parsefunc, default_storefunc, cpiInteger);
+}
+
+int
+cp_extend_stringlist_argtype(const char *name, ...)
+{
+  cp_argtype *t = find_argtype(name);
+  if (!t || t->parse != stringlist_parsefunc)
+    return -2;
+  HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(t->user_data);
+  if (!m)
+    t->user_data = m = new HashMap<String, int>();
+  
+  va_list val;
+  va_start(val, name);
+  const char *s;
+  int retval = 0;
+  while ((s = va_arg(val, const char *))) {
+    int value = va_arg(val, int);
+    if (cp_is_word(s))
+      m->insert(String(s), value);
+    else
+      retval = -1;
+  }
+  va_end(val);
+  return retval;
+}
+
+
+void
+cp_unregister_argtype(const char *name)
+{
+  cp_argtype **prev = &argtype_hash[argtype_bucket(name)];
+  cp_argtype *trav = *prev;
+  while (trav && strcmp(trav->name, name) != 0) {
+    prev = &trav->next;
+    trav = trav->next;
+  }
+  if (trav) {
+    trav->use_count--;
+    if (trav->use_count <= 0) {
+      if (trav->parse == stringlist_parsefunc)
+	delete reinterpret_cast<HashMap<String, int> *>(trav->user_data);
+      *prev = trav->next;
+      delete trav;
+    }
+  }
+}
+
+
 #define CP_VALUES_SIZE 80
 static cp_value *cp_values;
 static Vector<int> *cp_parameter_used;
@@ -2741,11 +2807,11 @@ cp_va_parsev(const Vector<String> &args,
     // store stuff in v
     v->argtype = argtype;
     v->description = va_arg(val, const char *);
-    if (argtype->extra == cpArgExtraInt)
+    if (argtype->flags & cpArgExtraInt)
       v->extra = va_arg(val, int);
     v->store_confirm = (confirm_keywords ? va_arg(val, bool *) : 0);
     v->store = va_arg(val, void *);
-    if (argtype->extra == cpArgStore2)
+    if (argtype->flags & cpArgStore2)
       v->store2 = va_arg(val, void *);
     v->v.i = (mandatory_keywords ? -1 : 0);
     nvalues++;

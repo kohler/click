@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/confparse.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/confparse.cc" -*-
 #ifndef CLICK_CONFPARSE_HH
 #define CLICK_CONFPARSE_HH
 #include <click/string.hh>
@@ -37,11 +37,11 @@ String cp_unspacevec(const Vector<String> &);
 String cp_pop_spacevec(String &);
 
 enum CpErrors {
-  CPE_OK = 0,
-  CPE_FORMAT,
-  CPE_NEGATIVE,
-  CPE_OVERFLOW,
-  CPE_INVALID
+    CPE_OK = 0,
+    CPE_FORMAT,
+    CPE_NEGATIVE,
+    CPE_OVERFLOW,
+    CPE_INVALID
 };
 extern int cp_errno;
 
@@ -138,62 +138,62 @@ bool cp_filename(const String &, String *);
 typedef const char * const CpVaParseCmd;
 static const CpVaParseCmd cpEnd = 0;
 extern CpVaParseCmd
-  cpOptional,
-  cpKeywords,
-  cpConfirmKeywords,
-  cpMandatoryKeywords,
-  cpIgnore,
-  cpIgnoreRest,
+    cpOptional,
+    cpKeywords,
+    cpConfirmKeywords,
+    cpMandatoryKeywords,
+    cpIgnore,
+    cpIgnoreRest,
 			// HELPER		RESULT
-  cpArgument,		//			String *
-  cpArguments,		//			Vector<String> *
-  cpString,		//			String *
-  cpWord,		//			String *
-  cpKeyword,		//			String *
-  cpBool,		//			bool *
-  cpByte,		//			unsigned char *
-  cpShort,		//			short *
-  cpUnsignedShort,	//			unsigned short *
-  cpInteger,		//			int *
-  cpUnsigned,		//			unsigned *
+    cpArgument,		//			String *
+    cpArguments,	//			Vector<String> *
+    cpString,		//			String *
+    cpWord,		//			String *
+    cpKeyword,		//			String *
+    cpBool,		//			bool *
+    cpByte,		//			unsigned char *
+    cpShort,		//			short *
+    cpUnsignedShort,	//			unsigned short *
+    cpInteger,		//			int *
+    cpUnsigned,		//			unsigned *
 #ifdef HAVE_INT64_TYPES
-  cpInteger64,		//			int64_t *
-  cpUnsigned64,		//			uint64_t *
+    cpInteger64,	//			int64_t *
+    cpUnsigned64,	//			uint64_t *
 #endif
-  cpUnsignedReal2,	// int frac_bits	unsigned *
-  cpReal10,		// int frac_digits	int *
-  cpUnsignedReal10,	// int frac_digits	unsigned *
+    cpUnsignedReal2,	// int frac_bits	unsigned *
+    cpReal10,		// int frac_digits	int *
+    cpUnsignedReal10,	// int frac_digits	unsigned *
 #ifdef HAVE_FLOAT_TYPES
-  cpDouble,		//			double *
+    cpDouble,		//			double *
 #endif
-  cpSeconds,		//			int *
-  cpSecondsAsMilli,	//			int *milliseconds
-  cpSecondsAsMicro,	//			int *microseconds
-  cpTimeval,		//			struct timeval *
-  cpInterval,		//			struct timeval *
-  cpIPAddress,		//			IPAddress *
-  cpIPPrefix,		//			IPAddress *a, IPAddress *mask
-  cpIPAddressOrPrefix,	//			IPAddress *a, IPAddress *mask
-  cpIPAddressSet,	//			IPAddressSet *
-  cpEthernetAddress,	//			EtherAddress *
-  cpElement,		//			Element **
-  cpHandlerName,	//			Element **e, String *hname
-  cpHandler,		//			Element **e, int *hid (INITIALIZE TIME)
-  cpReadHandler,	//			Element **e, int *hid (INITIALIZE TIME)
-  cpWriteHandler,	//			Element **e, int *hid (INITIALIZE TIME)
-  cpReadHandlerCall,	//			HandlerCall **
-  cpWriteHandlerCall,	//			HandlerCall **
-  cpIP6Address,		//			IP6Address *
-  cpIP6Prefix,		//			IP6Address *a, IP6Address *mask
-  cpIP6AddressOrPrefix,	//			IP6Address *a, IP6Address *mask
-  cpDesCblock,		//			uint8_t[8]
-  cpFilename,		//			String *
-  // old names, here for compatibility:
-  cpMilliseconds,	//			int *milliseconds
-  cpUnsignedLongLong,	//			uint64_t *
-  cpNonnegReal2,	// int frac_bits	unsigned *
-  cpNonnegReal10,	// int frac_digits	unsigned *
-  cpEtherAddress;	//			EtherAddress *
+    cpSeconds,		//			int *
+    cpSecondsAsMilli,	//			int *milliseconds
+    cpSecondsAsMicro,	//			int *microseconds
+    cpTimeval,		//			struct timeval *
+    cpInterval,		//			struct timeval *
+    cpIPAddress,	//			IPAddress *
+    cpIPPrefix,		//			IPAddress *a, IPAddress *mask
+    cpIPAddressOrPrefix,//			IPAddress *a, IPAddress *mask
+    cpIPAddressSet,	//			IPAddressSet *
+    cpEthernetAddress,	//			EtherAddress *
+    cpElement,		//			Element **
+    cpHandlerName,	//			Element **e, String *hname
+    cpHandler,		//			Element **e, int *hid (INITIALIZE TIME)
+    cpReadHandler,	//			Element **e, int *hid (INITIALIZE TIME)
+    cpWriteHandler,	//			Element **e, int *hid (INITIALIZE TIME)
+    cpReadHandlerCall,	//			HandlerCall **
+    cpWriteHandlerCall,	//			HandlerCall **
+    cpIP6Address,	//			IP6Address *
+    cpIP6Prefix,	//			IP6Address *a, IP6Address *mask
+    cpIP6AddressOrPrefix,//			IP6Address *a, IP6Address *mask
+    cpDesCblock,	//			uint8_t[8]
+    cpFilename,		//			String *
+    // old names, here for compatibility:
+    cpMilliseconds,	//			int *milliseconds
+    cpUnsignedLongLong,	//			uint64_t *
+    cpNonnegReal2,	// int frac_bits	unsigned *
+    cpNonnegReal10,	// int frac_digits	unsigned *
+    cpEtherAddress;	//			EtherAddress *
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
@@ -221,51 +221,57 @@ typedef void (*cp_parsefunc)(cp_value *, const String &arg,
 			     ErrorHandler *, const char *argdesc  CP_CONTEXT);
 typedef void (*cp_storefunc)(cp_value *  CP_CONTEXT);
 
-enum { cpArgNormal = 0, cpArgStore2, cpArgExtraInt };
+enum { cpArgNormal = 0, cpArgStore2 = 1, cpArgExtraInt = 2, cpArgAllowNumbers = 4 };
 int cp_register_argtype(const char *name, const char *description,
-			int extra, cp_parsefunc, cp_storefunc);
+			int flags, cp_parsefunc, cp_storefunc);
 void cp_unregister_argtype(const char *name);
 
+int cp_register_stringlist_argtype(const char *name, const char *description,
+				   int flags);
+int cp_extend_stringlist_argtype(const char *name, ...);
+// Takes: const char *name, int value, ...., const char *ender = 0
+
 struct cp_argtype {
-  const char *name;
-  cp_argtype *next;
-  cp_parsefunc parse;
-  cp_storefunc store;
-  int extra;
-  const char *description;
-  int internal;
-  int use_count;
+    const char *name;
+    cp_argtype *next;
+    cp_parsefunc parse;
+    cp_storefunc store;
+    void *user_data;
+    int flags;
+    const char *description;
+    int internal;
+    int use_count;
 };
 
 struct cp_value {
-  // set by cp_va_parse:
-  const cp_argtype *argtype;
-  const char *keyword;
-  const char *description;
-  int extra;
-  void *store;
-  void *store2;
-  bool *store_confirm;
-  // set by parsefunc, used by storefunc:
-  union {
-    bool b;
-    int32_t i;
-    uint32_t u;
+    // set by cp_va_parse:
+    const cp_argtype *argtype;
+    const char *keyword;
+    const char *description;
+    int extra;
+    void *store;
+    void *store2;
+    bool *store_confirm;
+    // set by parsefunc, used by storefunc:
+    union {
+	bool b;
+	int32_t i;
+	uint32_t u;
 #ifdef HAVE_INT64_TYPES
-    int64_t i64;
-    uint64_t u64;
+	int64_t i64;
+	uint64_t u64;
 #endif
 #ifdef HAVE_FLOAT_TYPES
-    double d;
+	double d;
 #endif
-    unsigned char address[16];
-    int is[4];
+	unsigned char address[16];
+	int is[4];
 #ifndef CLICK_TOOL
-    Element *element;
+	Element *element;
 #endif
-  } v, v2;
-  String v_string;
-  String v2_string;
+    } v, v2;
+    String v_string;
+    String v2_string;
 };
 
 #undef CP_VA_ARGS_REST
