@@ -60,11 +60,13 @@ struct ControlSocketErrorHandler : public ErrorHandler { public:
 void
 ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 {
-  switch (seriousness) {
-   case ERR_WARNING:			_nwarnings++; break;
-   case ERR_ERROR: case ERR_FATAL:	_nerrors++; break;
-   default:				break;
-  }
+  if (seriousness < ERR_MIN_WARNING)
+    /* do nothing */;
+  else if (seriousness < ERR_MIN_ERROR)
+    _nwarnings++;
+  else
+    _nerrors++;
+
   int pos = 0, nl;
   while ((nl = m.find_left('\n', pos)) >= 0) {
     _messages.push_back(m.substring(pos, nl - pos));

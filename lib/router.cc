@@ -848,7 +848,7 @@ Router::initialize_handlers(bool defaults, bool specifics)
 }
 
 int
-Router::initialize(ErrorHandler *errh, bool verbose_errors)
+Router::initialize(ErrorHandler *errh)
 {
   assert(!_initialized);
   if (!_preinitialized)
@@ -894,14 +894,13 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
 #endif
     ContextErrorHandler cerrh
       (errh, context_message(i, "While configuring"));
-    ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
-    int before = errh1->nerrors();
+    int before = cerrh.nerrors();
     conf.clear();
     cp_argvec(_element_configurations[i], conf);
-    if (_elements[i]->configure(conf, errh1) < 0) {
+    if (_elements[i]->configure(conf, &cerrh) < 0) {
       element_ok[i] = all_ok = false;
-      if (errh1->nerrors() == before)
-	errh1->error("unspecified error");
+      if (cerrh.nerrors() == before)
+	cerrh.error("unspecified error");
     }
   }
 
@@ -933,14 +932,13 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
 #endif
 	ContextErrorHandler cerrh
 	  (errh, context_message(i, "While initializing"));
-	ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
-	int before = errh1->nerrors();
-	if (_elements[i]->initialize(errh1) < 0) {
+	int before = cerrh.nerrors();
+	if (_elements[i]->initialize(&cerrh) < 0) {
 	  element_ok[i] = all_ok = false;
 	  // don't report `unspecified error' for ErrorElements: keep error
 	  // messages clean
-	  if (errh1->nerrors() == before && !_elements[i]->cast("Error"))
-	    errh1->error("unspecified error");
+	  if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
+	    cerrh.error("unspecified error");
 	}
       }
     }
@@ -956,8 +954,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
     _initialized = true;
     return 0;
   } else {
-    if (verbose_errors)
-      errh->error("Router could not be initialized!");
+    errh->verror_text(ErrorHandler::ERR_CONTEXT_ERROR, "", "Router could not be initialized!");
     
     // Clean up elements
     for (int ord = _elements.size() - 1; ord >= 0; ord--) {

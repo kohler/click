@@ -92,9 +92,9 @@ static StringAccum *error_log;
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness <= ERR_MESSAGE)
+  if (seriousness < ERR_MIN_WARNING)
     /* do nothing */;
-  else if (seriousness == ERR_WARNING)
+  else if (seriousness < ERR_MIN_ERROR)
     _nwarnings++;
   else
     _nerrors++;
@@ -115,7 +115,7 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
   if (_log && error_log)
     *error_log << message << "\n";
   
-  if (seriousness == ERR_FATAL)
+  if (seriousness >= ERR_MIN_FATAL)
     panic("click");
 }
 

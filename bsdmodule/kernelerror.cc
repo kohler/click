@@ -42,9 +42,9 @@ syslog_message(const String &message)
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness <= ERR_MESSAGE)
+  if (seriousness < ERR_MIN_WARNING)
     /* do nothing */;
-  else if (seriousness == ERR_WARNING)
+  else if (seriousness < ERR_MIN_ERROR)
     _nwarnings++;
   else
     _nerrors++;
@@ -53,7 +53,7 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
   if (all_errors)
     *all_errors << message << "\n";
   
-  if (seriousness == ERR_FATAL)
+  if (seriousness >= ERR_MIN_FATAL)
     panic("KernelErrorHandler");
 }
 

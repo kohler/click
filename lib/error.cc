@@ -36,6 +36,12 @@ static ErrorHandler::Conversion *error_items;
 const int ErrorHandler::OK_RESULT;
 const int ErrorHandler::ERROR_RESULT = -EINVAL;
 
+int
+ErrorHandler::min_verbosity() const
+{
+  return 0;
+}
+
 void
 ErrorHandler::debug(const char *format, ...)
 {
@@ -210,7 +216,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
   String s_placeholder;		// ditto, in case we change `s'
   numbuf[NUMBUF_SIZE-1] = 0;
   
-  if (seriousness == ERR_WARNING) {
+  if (seriousness >= ERR_MIN_WARNING && seriousness < ERR_MIN_ERROR) {
     // prepend `warning: ' to every line
     s_placeholder = prepend_lines("warning: ", s);
     s = s_placeholder.cc();
@@ -505,7 +511,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   String text = make_text(seriousness, s, val);
   text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, text);
-  return (seriousness >= ERR_WARNING ? ERROR_RESULT : OK_RESULT);
+  return (seriousness >= ERR_MIN_WARNING ? ERROR_RESULT : OK_RESULT);
 }
 
 int
@@ -515,7 +521,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   // text is already made
   String dec_text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, dec_text);
-  return (seriousness >= ERR_WARNING ? ERROR_RESULT : OK_RESULT);
+  return (seriousness >= ERR_MIN_WARNING ? ERROR_RESULT : OK_RESULT);
 }
 
 void
@@ -572,9 +578,9 @@ FileErrorHandler::reset_counts()
 void
 FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness <= ERR_MESSAGE)
+  if (seriousness < ERR_MIN_WARNING)
     /* do nothing */;
-  else if (seriousness == ERR_WARNING)
+  else if (seriousness < ERR_MIN_ERROR)
     _nwarnings++;
   else
     _nerrors++;
@@ -590,7 +596,7 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
     fwrite(s.data(), 1, s.length(), _f);
   }
   
-  if (seriousness >= ERR_FATAL)
+  if (seriousness >= ERR_MIN_FATAL)
     exit(1);
 }
 #endif
@@ -620,9 +626,11 @@ class SilentErrorHandler : public ErrorHandler { public:
 void
 SilentErrorHandler::handle_text(Seriousness seriousness, const String &)
 {
-  if (seriousness == ERR_WARNING)
+  if (seriousness < ERR_MIN_WARNING)
+    /* do nothing */;
+  else if (seriousness < ERR_MIN_ERROR)
     _nwarnings++;
-  if (seriousness == ERR_ERROR || seriousness == ERR_FATAL)
+  else
     _nerrors++;
 }
 
@@ -779,10 +787,16 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix
 {
   String context_lines;
   if (_context) {
-    context_lines = _errh->decorate_text(ERR_MESSAGE, String(), landmark, _context);
-    if (context_lines && context_lines.back() != '\n')
-      context_lines += '\n';
-    _context = String();
+    // do not print context or indent if underlying ErrorHandler doesn't want
+    // context
+    if (_errh->min_verbosity() > ERRVERBOSITY_CONTEXT)
+      _context = _indent = String();
+    else {
+      context_lines = _errh->decorate_text(ERR_MESSAGE, String(), landmark, _context);
+      if (context_lines && context_lines.back() != '\n')
+	context_lines += '\n';
+      _context = String();
+    }
   }
   return context_lines + _errh->decorate_text(seriousness, String(), landmark, prepend_lines(_indent + prefix, text));
 }
@@ -838,6 +852,30 @@ LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &prefi
     return _errh->decorate_text(seriousness, prefix, lm, text);
   else
     return _errh->decorate_text(seriousness, prefix, _landmark, text);
+}
+
+
+//
+// VERBOSE FILTER ERROR HANDLER
+//
+
+VerboseFilterErrorHandler::VerboseFilterErrorHandler(ErrorHandler *errh, int min_verbosity)
+  : ErrorVeneer(errh), _min_verbosity(min_verbosity)
+{
+}
+
+int
+VerboseFilterErrorHandler::min_verbosity() const
+{
+  int m = _errh->min_verbosity();
+  return (m >= _min_verbosity ? m : _min_verbosity);
+}
+
+void
+VerboseFilterErrorHandler::handle_text(Seriousness s, const String &text)
+{
+  if ((s & ERRVERBOSITY_MASK) >= _min_verbosity)
+    _errh->handle_text(s, text);
 }
 
 

@@ -132,7 +132,7 @@ class Router { public:
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
   void preinitialize();
-  int initialize(ErrorHandler *, bool verbose_errors = true);
+  int initialize(ErrorHandler *);
   void take_state(Router *, ErrorHandler *);
 
 #if CLICK_NS
