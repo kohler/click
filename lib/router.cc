@@ -786,52 +786,15 @@ Router::context_message(int element_no, const char *message) const
   return sa.take_string();
 }
 
-static void
-partition_configure_order(Vector<int> &order, const Vector<int> &phase,
-			  int left, int right,
-			  int &split_left, int &split_right)
+static const Vector<int> *configure_order_phase;
+
+extern "C" {
+static int
+configure_order_compar(const void *athunk, const void *bthunk)
 {
-  // Dutch national flag algorithm
-  int middle = left;
-  int pivot = phase[order[(left + right) / 2]];
-
-  // loop invariant:
-  // phase[order[i]] < pivot for all left_init <= i < left
-  // phase[order[i]] > pivot for all right < i <= right_init
-  // phase[order[i]] == pivot for all left <= i < middle
-  while (middle <= right) {
-    int p = phase[order[middle]];
-    if (p < pivot) {
-      int t = order[left];
-      order[left] = order[middle];
-      order[middle] = t;
-      left++;
-      middle++;
-    } else if (p > pivot) {
-      int t = order[right];
-      order[right] = order[middle];
-      order[middle] = t;
-      right--;
-    } else
-      middle++;
-  }
-
-  // afterwards, middle == right + 1
-  // so phase[order[i]] == pivot for all left <= i <= right
-  split_left = left - 1;
-  split_right = right + 1;
+  const int *a = (const int *)athunk, *b = (const int *)bthunk;
+  return (*configure_order_phase)[*a] - (*configure_order_phase)[*b];
 }
-
-static void
-qsort_configure_order(Vector<int> &order, const Vector<int> &phase,
-		      int left, int right)
-{
-  if (left < right) {
-    int split_left, split_right;
-    partition_configure_order(order, phase, left, right, split_left, split_right);
-    qsort_configure_order(order, phase, left, split_left);
-    qsort_configure_order(order, phase, split_right, right);
-  }
 }
 
 void
@@ -898,13 +861,16 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
   notify_hookup_range();
 
   // set up configuration order
-  Vector<int> configure_phase(nelements(), 0);
   _configure_order.assign(nelements(), 0);
-  for (int i = 0; i < _elements.size(); i++) {
-    configure_phase[i] = _elements[i]->configure_phase();
-    _configure_order[i] = i;
+  if (_configure_order.size()) {
+    Vector<int> configure_phase(nelements(), 0);
+    configure_order_phase = &configure_phase;
+    for (int i = 0; i < _elements.size(); i++) {
+      configure_phase[i] = _elements[i]->configure_phase();
+      _configure_order[i] = i;
+    }
+    click_qsort(&_configure_order[0], _configure_order.size(), sizeof(int), configure_order_compar);
   }
-  qsort_configure_order(_configure_order, configure_phase, 0, _elements.size() - 1);
 
   // Configure all elements in configure order. Remember the ones that failed
   Element::CleanupStage failure_stage = Element::CLEANUP_CONFIGURE_FAILED;

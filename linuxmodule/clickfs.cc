@@ -42,71 +42,6 @@ static spinlock_t click_config_lock;
 extern atomic_t click_config_generation;
 
 
-/******************************** Quicksort **********************************/
-
-static int
-click_qsort_partition(void *base_v, size_t size, int left, int right,
-		      int (*compar)(const void *, const void *),
-		      int &split_left, int &split_right)
-{
-    if (size >= 64) {
-	printk("<1>click_qsort_partition: elements too large!\n");
-	return -E2BIG;
-    }
-    
-    uint8_t pivot[64], tmp[64];
-    uint8_t *base = reinterpret_cast<uint8_t *>(base_v);
-
-    // Dutch national flag algorithm
-    int middle = left;
-    memcpy(&pivot[0], &base[size * ((left + right) / 2)], size);
-
-    // loop invariant:
-    // base[i] < pivot for all left_init <= i < left
-    // base[i] > pivot for all right < i <= right_init
-    // base[i] == pivot for all left <= i < middle
-    while (middle <= right) {
-	int cmp = compar(&base[size * middle], &pivot[0]);
-	if (cmp < 0) {
-	    memcpy(&tmp[0], &base[size * left], size);
-	    memcpy(&base[size * left], &base[size * middle], size);
-	    memcpy(&base[size * middle], &tmp[0], size);
-	    left++;
-	    middle++;
-	} else if (cmp > 0) {
-	    memcpy(&tmp[0], &base[size * right], size);
-	    memcpy(&base[size * right], &base[size * middle], size);
-	    memcpy(&base[size * middle], &tmp[0], size);
-	    right--;
-	} else
-	    middle++;
-    }
-
-    // afterwards, middle == right + 1
-    // so base[i] == pivot for all left <= i <= right
-    split_left = left - 1;
-    split_right = right + 1;
-}
-
-static void
-click_qsort_subroutine(void *base, size_t size, int left, int right, int (*compar)(const void *, const void *))
-{
-    // XXX recursion
-    if (left < right) {
-	int split_left, split_right;
-	click_qsort_partition(base, size, left, right, compar, split_left, split_right);
-	click_qsort_subroutine(base, size, left, split_left, compar);
-	click_qsort_subroutine(base, size, split_right, right, compar);
-    }
-}
-
-static void
-click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, const void *))
-{
-    click_qsort_subroutine(base, size, 0, n - 1, compar);
-}
-
-
 /*************************** Inode constants ********************************/
 
 #define CSE_NULL			0xFFFFU
@@ -340,16 +275,16 @@ calculate_handler_conflicts(int parent_eindex)
 
 /*************************** Inode operations ********************************/
 
-static void
+static int
 calculate_inode_nlink(struct inode *inode)
 {
     // must be called with config_lock held
-    unsigned long ino = inode->i_ino;
+    ino_t ino = inode->i_ino;
     int elementno = INO_ELEMENTNO(ino);
-    inode->i_nlink = 2;
+    int nlink = 2;
     if (INO_DIRTYPE(ino) != INO_DT_H) {
 	if (INO_DT_HAS_U(ino) && click_router)
-	    inode->i_nlink += click_router->nelements();
+	    nlink += click_router->nelements();
 	if (INO_DT_HAS_N(ino)) {
 	    int first_sindex = (elementno < 0 ? 0 : sorted_elements[elementno].sorted_index + 1);
 	    if (elementno >= 0
@@ -358,15 +293,16 @@ calculate_inode_nlink(struct inode *inode)
 	    int last_sindex = (elementno < 0 ? nsorted_elements : first_sindex + sorted_elements[first_sindex - 1].skip);
 	    while (first_sindex < last_sindex) {
 		if (!(sorted_elements[first_sindex].flags & CSE_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
-		    inode->i_nlink++;
+		    nlink++;
 		first_sindex += sorted_elements[first_sindex].skip + 1;
 	    }
 	}
     }
+    return nlink;
 }
 
 static struct inode *
-click_inode(struct super_block *sb, unsigned long ino)
+click_inode(struct super_block *sb, ino_t ino)
 {
     // Must be called with click_config_lock held.
 
@@ -393,13 +329,16 @@ click_inode(struct super_block *sb, unsigned long ino)
 #endif
 	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
 	} else {
+	    // can't happen
 	    iput(inode);
 	    inode = 0;
+	    panic("click_inode");
 	}
     } else if (elementno >= 0 && (!click_router || elementno >= nsorted_elements)) {
-	// invalid directory
+	// can't happen
 	iput(inode);
 	inode = 0;
+	panic("click_inode");
     } else {
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
@@ -407,7 +346,7 @@ click_inode(struct super_block *sb, unsigned long ino)
 #ifdef LINUX_2_4
 	inode->i_fop = &click_dir_file_ops;
 #endif
-	calculate_inode_nlink(inode);
+	inode->i_nlink = calculate_inode_nlink(inode);
     }
 
     //MDEBUG("leaving click_inode");
@@ -427,7 +366,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 	return reinterpret_cast<struct dentry *>(ERR_PTR(-ENOENT));
 
     //MDEBUG("click_dir_lookup");
-    unsigned long ino = dir->i_ino;
+    ino_t ino = dir->i_ino;
     int elementno = INO_ELEMENTNO(ino);
     String dentry_name = String::stable_string(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
     struct inode *inode = 0;
@@ -532,7 +471,7 @@ click_dir_revalidate(struct dentry *dentry)
 	if (atomic_read(&click_config_generation) != sorted_elements_generation)
 	    prepare_sorted_elements();
 	INODE_INFO(inode).config_generation = sorted_elements_generation;
-	calculate_inode_nlink(inode);
+	inode->i_nlink = calculate_inode_nlink(inode);
 	spin_unlock(&click_config_lock);
     }
     return 0;
@@ -569,7 +508,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     if (inode_out_of_date(inode))
 	return -ENOENT;
 
-    unsigned long ino = inode->i_ino;
+    ino_t ino = inode->i_ino;
     int elementno = INO_ELEMENTNO(ino);
     uint32_t f_pos = filp->f_pos;
     
@@ -654,7 +593,7 @@ extern "C" {
 static void
 click_read_inode(struct inode *inode)
 {
-    unsigned long ino = inode->i_ino;
+    ino_t ino = inode->i_ino;
 
     // XXX can do better for some handlers, particularly 'config'
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;

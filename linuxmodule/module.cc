@@ -245,7 +245,7 @@ init_module()
   return 0;
 }
 
-void print_and_free_chunks();
+void click_dmalloc_cleanup();
 
 extern "C" void
 cleanup_module()
@@ -289,7 +289,7 @@ cleanup_module()
     printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
   if (click_outstanding_news) {
     printk("<1>click error: %d outstanding news\n", click_outstanding_news);
-    print_and_free_chunks();
+    click_dmalloc_cleanup();
   }
 #ifdef HAVE_LINUX_READ_NET_SKBCOUNT
   printk("<1>net_skbcount: %d\n", read_net_skbcount());
