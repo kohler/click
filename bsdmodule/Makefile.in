@@ -72,7 +72,7 @@ CFLAGS = @CFLAGS_NDEBUG@ -g
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -g
 
 DEFS = @DEFS@ 
-INCLUDES = -nostdinc -I$(freebsdincdir) \
+INCLUDES = -I$(freebsdincdir) \
 	-I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir)
 LDFLAGS = @LDFLAGS@
