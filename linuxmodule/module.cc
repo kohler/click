@@ -267,17 +267,6 @@ click_remove_element_type(int i)
 
 extern void export_elements(Lexer *);
 
-static void
-next_root_handler(const char *name, ReadHandler read, void *read_thunk,
-		  WriteHandler write, void *write_thunk)
-{
-  if (read)
-    Router::add_global_read_handler(name, read, read_thunk);
-  if (write)
-    Router::add_global_write_handler(name, write, write_thunk);
-  register_handler(proc_click_entry, Router::find_global_handler(name));
-}
-
 static ErrorHandler *syslog_errh;
 
 extern "C" int
@@ -326,19 +315,23 @@ init_module()
   init_clickfs();
 #endif
 
-  // add handlers to the root directory. warning: this only works if there
-  // is no current_router while the handlers are being added.
-  next_root_handler("version", read_version, 0, 0, 0);
-  next_root_handler("list", read_list, 0, 0, 0);
-  next_root_handler("classes", read_classes, 0, 0, 0);
-  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
-  next_root_handler("packages", read_packages, 0, 0, 0);
-  next_root_handler("requirements", read_requirements, 0, 0, 0);
-  next_root_handler("meminfo", read_meminfo, 0, 0, 0);
-  next_root_handler("cycles", read_cycles, 0, 0, 0);
-  next_root_handler("threads", read_threads, 0, 0, 0);
-  next_root_handler("priority", read_priority, 0, write_priority, 0);
-  next_root_handler("stop", 0, 0, write_stop, 0);
+  // add more root handlers
+  Router::add_global_read_handler("version", read_version, 0);
+  Router::add_global_read_handler("list", read_list, 0);
+  Router::add_global_read_handler("classes", read_classes, 0);
+  Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
+  Router::add_global_read_handler("packages", read_packages, 0);
+  Router::add_global_read_handler("requirements", read_requirements, 0);
+  Router::add_global_read_handler("meminfo", read_meminfo, 0);
+  Router::add_global_read_handler("cycles", read_cycles, 0);
+  Router::add_global_read_handler("threads", read_threads, 0);
+  Router::add_global_read_handler("priority", read_priority, 0);
+  Router::add_global_write_handler("priority", write_priority, 0);
+  Router::add_global_write_handler("stop", write_stop, 0);
+
+  // add /proc/click entries for global handlers
+  for (int i = 0; i < Router::nglobal_handlers(); i++)
+    register_handler(proc_click_entry, Router::FIRST_GLOBAL_HANDLER + i);
 
   return 0;
 }

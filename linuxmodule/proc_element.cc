@@ -30,8 +30,13 @@ CLICK_CXX_UNPROTECT
 
 static proc_dir_entry **element_pdes = 0;
 
+struct HandlerStringInfo {
+  int next;
+  int flags;
+};
+
 static String *handler_strings = 0;
-static int *handler_strings_next = 0;
+static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 static spinlock_t handler_strings_lock;
@@ -87,8 +92,8 @@ increase_handler_strings()
   String *new_strs = new String[new_cap];
   if (!new_strs)
     return -1;
-  int *new_nexts = new int[new_cap];
-  if (!new_nexts) {
+  HandlerStringInfo *new_infos = new HandlerStringInfo[new_cap];
+  if (!new_infos) {
     delete[] new_strs;
     return -1;
   }
@@ -96,16 +101,16 @@ increase_handler_strings()
   for (int i = 0; i < handler_strings_cap; i++)
     new_strs[i] = handler_strings[i];
   for (int i = handler_strings_cap; i < new_cap; i++)
-    new_nexts[i] = i + 1;
-  new_nexts[new_cap - 1] = handler_strings_free;
-  memcpy(new_nexts, handler_strings_next, sizeof(int) * handler_strings_cap);
+    new_infos[i].next = i + 1;
+  new_infos[new_cap - 1].next = handler_strings_free;
+  memcpy(new_infos, handler_strings_info, sizeof(HandlerStringInfo) * handler_strings_cap);
 
   delete[] handler_strings;
-  delete[] handler_strings_next;
+  delete[] handler_strings_info;
   handler_strings_free = handler_strings_cap;
   handler_strings_cap = new_cap;
   handler_strings = new_strs;
-  handler_strings_next = new_nexts;
+  handler_strings_info = new_infos;
 
   return 0;
 }
@@ -118,9 +123,21 @@ next_handler_string()
     increase_handler_strings();
   int hs = handler_strings_free;
   if (hs >= 0)
-    handler_strings_free = handler_strings_next[hs];
+    handler_strings_free = handler_strings_info[hs].next;
   spin_unlock(&handler_strings_lock);
   return hs;
+}
+
+static void
+free_handler_string(int hs)
+{
+  spin_lock(&handler_strings_lock);
+  if (hs >= 0 && hs < handler_strings_cap) {
+    handler_strings[hs] = String();
+    handler_strings_info[hs].next = handler_strings_free;
+    handler_strings_free = hs;
+  }
+  spin_unlock(&handler_strings_lock);
 }
 
 static const Router::Handler *
@@ -159,21 +176,25 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
 
   if (stringno >= 0 && stringno < handler_strings_cap) {
     handler_strings[stringno] = s;
+    handler_strings_info[stringno].flags = h->flags();
     return 0;
   } else
     return -EINVAL;
 }
 
 static int
-prepare_handler_write(int eindex, int handlerno)
+prepare_handler_write(int eindex, int handlerno, int stringno)
 {
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->write_visible())
     return -EPERM;
-  else
+  else {
+    handler_strings[stringno] = String();
+    handler_strings_info[stringno].flags = h->flags();
     return 0;
+  }
 }
 
 static int
@@ -242,21 +263,16 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
   if (stringno < 0)
     return -ENOMEM;
   int retval;
-  if (writing) {
-    retval = prepare_handler_write(eindex, (int)pde->data);
-    handler_strings[stringno] = String();
-  } else
+  if (writing)
+    retval = prepare_handler_write(eindex, (int)pde->data, stringno);
+  else
     retval = prepare_handler_read(eindex, (int)pde->data, stringno);
   
   if (retval >= 0) {
     filp->private_data = (void *)stringno;
     return 0;
   } else {
-    // free handler string
-    spin_lock(&handler_strings_lock);
-    handler_strings_next[stringno] = handler_strings_free;
-    handler_strings_free = stringno;
-    spin_unlock(&handler_strings_lock);
+    free_handler_string(stringno);
     filp->private_data = (void *)-1;
     return retval;
   }
@@ -269,6 +285,16 @@ proc_element_handler_read(struct file *filp, char *buffer, size_t count, loff_t 
   int stringno = reinterpret_cast<int>(filp->private_data);
   if (stringno < 0 || stringno >= handler_strings_cap)
     return -EINVAL;
+
+  // reread string, if necessary
+  if (handler_strings_info[stringno].flags & HANDLER_REREAD) {
+    proc_dir_entry *pde = (proc_dir_entry *)filp->f_dentry->d_inode->u.generic_ip;
+    int eindex = parent_proc_dir_eindex(pde);
+    int retval = prepare_handler_read(eindex, (int)pde->data, stringno);
+    if (retval < 0)
+      return retval;
+  }
+  
   const String &s = handler_strings[stringno];
   if (f_pos + count > s.length())
     count = s.length() - f_pos;
@@ -289,7 +315,8 @@ proc_element_handler_write(struct file *filp, const char *buffer, size_t count, 
   int old_length = s.length();
 
 #ifdef LARGEST_HANDLER_WRITE
-  if (f_pos + count > LARGEST_HANDLER_WRITE)
+  if (f_pos + count > LARGEST_HANDLER_WRITE
+      && !(handler_strings_info[stringno].flags & HANDLER_WRITE_UNLIMITED))
     return -EFBIG;
 #endif
   
@@ -344,15 +371,8 @@ static int
 proc_element_handler_release(struct inode *, struct file *filp)
 {
   int stringno = reinterpret_cast<int>(filp->private_data);
-
-  // free handler string
-  if (stringno >= 0 && stringno < handler_strings_cap) {
-    spin_lock(&handler_strings_lock);
-    handler_strings_next[stringno] = handler_strings_free;
-    handler_strings_free = stringno;
-    spin_unlock(&handler_strings_lock);
-  }
-  
+  if (stringno >= 0)
+    free_handler_string(stringno);
   return 0;
 }
 
@@ -578,9 +598,9 @@ cleanup_proc_click_elements()
   // clean up handler_strings
   spin_lock(&handler_strings_lock);
   delete[] handler_strings;
-  delete[] handler_strings_next;
+  delete[] handler_strings_info;
   handler_strings = 0;
-  handler_strings_next = 0;
+  handler_strings_info = 0;
   handler_strings_cap = -1;
   handler_strings_free = -1;
   spin_unlock(&handler_strings_lock);

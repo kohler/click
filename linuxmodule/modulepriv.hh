@@ -19,9 +19,15 @@ CLICK_CXX_UNPROTECT
 # define LINUX_2_4 1
 #endif
 
-extern proc_dir_entry *proc_click_entry;
+#define HANDLER_REREAD			(Router::Handler::FIRST_USER_FLAG)
+#define HANDLER_NEED_READ		(Router::Handler::FIRST_USER_FLAG << 1)
+#define HANDLER_SPECIAL_INODE		(Router::Handler::FIRST_USER_FLAG << 2)
+#define HANDLER_WRITE_UNLIMITED		(Router::Handler::FIRST_USER_FLAG << 3)
+
 extern int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;
 extern int proc_click_mode_dir;
+
+extern proc_dir_entry *proc_click_entry;
 
 proc_dir_entry *click_find_pde(proc_dir_entry *, const String &);
 void remove_proc_entry_recursive(proc_dir_entry *, proc_dir_entry *parent);

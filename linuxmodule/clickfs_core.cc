@@ -383,7 +383,7 @@ click_inode(struct super_block *sb, unsigned long ino)
 	int hi = INO_HANDLERNO(ino);
 	if (Router::handler_ok(current_router, hi)) {
 	    const Router::Handler &h = Router::handler(current_router, hi);
-	    inode->i_mode = (h.read_visible() ? proc_click_mode_r : 0) | (h.write_visible() ? proc_click_mode_w : 0);
+	    inode->i_mode = S_IFREG | (h.read_visible() ? proc_click_mode_r : 0) | (h.write_visible() ? proc_click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
 	    inode->i_op = &click_handler_inode_ops;
 	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
@@ -515,7 +515,7 @@ click_dir_revalidate(struct dentry *dentry)
     if (!inode)
 	return -EINVAL;
     else if (INODE_INFO(inode).config_generation != atomic_read(&click_config_generation)) {
-	if (INO_ELEMENTNO(inode) >= 0) // not a global directory
+	if (INO_ELEMENTNO(inode->i_ino) >= 0) // not a global directory
 	    return -EIO;
 	spin_lock(&click_config_lock);
 	if (atomic_read(&click_config_generation) != sorted_elements_generation)
@@ -709,11 +709,20 @@ click_delete_dentry(struct dentry *dentry)
 
 /*************************** Handler operations ******************************/
 
+struct HandlerStringInfo {
+    int next;
+    int flags;
+};
+
 static String *handler_strings = 0;
-static int *handler_strings_next = 0;
+static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 static spinlock_t handler_strings_lock;
+
+#define FILP_STRINGNO(filp)		(reinterpret_cast<int>((filp)->private_data))
+#define FILP_READ_STRINGNO(filp)	FILP_STRINGNO(filp)
+#define FILP_WRITE_STRINGNO(filp)	FILP_STRINGNO(filp)
 
 static int
 increase_handler_strings()
@@ -727,8 +736,8 @@ increase_handler_strings()
     String *new_strs = new String[new_cap];
     if (!new_strs)
 	return -1;
-    int *new_nexts = new int[new_cap];
-    if (!new_nexts) {
+    HandlerStringInfo *new_infos = new HandlerStringInfo[new_cap];
+    if (!new_infos) {
 	delete[] new_strs;
 	return -1;
     }
@@ -736,31 +745,45 @@ increase_handler_strings()
     for (int i = 0; i < handler_strings_cap; i++)
 	new_strs[i] = handler_strings[i];
     for (int i = handler_strings_cap; i < new_cap; i++)
-	new_nexts[i] = i + 1;
-    new_nexts[new_cap - 1] = handler_strings_free;
-    memcpy(new_nexts, handler_strings_next, sizeof(int) * handler_strings_cap);
+	new_infos[i].next = i + 1;
+    new_infos[new_cap - 1].next = handler_strings_free;
+    memcpy(new_infos, handler_strings_info, sizeof(HandlerStringInfo) * handler_strings_cap);
 
     delete[] handler_strings;
-    delete[] handler_strings_next;
+    delete[] handler_strings_info;
     handler_strings_free = handler_strings_cap;
     handler_strings_cap = new_cap;
     handler_strings = new_strs;
-    handler_strings_next = new_nexts;
+    handler_strings_info = new_infos;
 
     return 0;
 }
 
 static int
-next_handler_string()
+next_handler_string(const Router::Handler *h)
 {
     spin_lock(&handler_strings_lock);
     if (handler_strings_free < 0)
 	increase_handler_strings();
     int hs = handler_strings_free;
-    if (hs >= 0)
-	handler_strings_free = handler_strings_next[hs];
+    if (hs >= 0) {
+	handler_strings_free = handler_strings_info[hs].next;
+	handler_strings_info[hs].flags = h->flags() | HANDLER_NEED_READ;
+    }
     spin_unlock(&handler_strings_lock);
     return hs;
+}
+
+static void
+free_handler_string(int hs)
+{
+    spin_lock(&handler_strings_lock);
+    if (hs >= 0 && hs < handler_strings_cap) {
+	handler_strings[hs] = String();
+	handler_strings_info[hs].next = handler_strings_free;
+	handler_strings_free = hs;
+    }
+    spin_unlock(&handler_strings_lock);
 }
 
 static const Router::Handler *
@@ -790,32 +813,22 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = -EACCES;
     else if (inode_out_of_date(inode))
 	retval = -EIO;
-    else if ((stringno = next_handler_string()) < 0)
-	retval = -ENOMEM;
     else if (!(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino))))
 	retval = -EIO;
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
 	retval = -EPERM;
-    else if (reading) {
-	int eindex = INO_ELEMENTNO(inode->i_ino);
-	Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
-	handler_strings[stringno] = h->call_read(e);
-	retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
-    } else if (writing) {
+    else if ((stringno = next_handler_string(h)) < 0)
+	retval = -ENOMEM;
+    else {
 	handler_strings[stringno] = String();
 	retval = 0;
-    } else
-	retval = -EINVAL;
+    }
 
     spin_unlock(&click_config_lock);
     
     if (retval < 0 && stringno >= 0) {
-	// free handler string
-	spin_lock(&handler_strings_lock);
-	handler_strings_next[stringno] = handler_strings_free;
-	handler_strings_free = stringno;
-	spin_unlock(&handler_strings_lock);
+	free_handler_string(stringno);
 	stringno = -1;
     }
     filp->private_data = reinterpret_cast<void *>(stringno);
@@ -826,9 +839,33 @@ static ssize_t
 handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
     loff_t f_pos = *store_f_pos;
-    int stringno = reinterpret_cast<int>(filp->private_data);
+    int stringno = FILP_READ_STRINGNO(filp);
     if (stringno < 0 || stringno >= handler_strings_cap)
 	return -EIO;
+
+    // (re)read handler if necessary
+    if (handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_NEED_READ)) {
+	spin_lock(&click_config_lock);
+	int retval;
+	const Router::Handler *h;
+	struct inode *inode = filp->f_dentry->d_inode;
+	if (inode_out_of_date(inode)
+	    || !(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino))))
+	    retval = -EIO;
+	else if (!h->read_visible())
+	    retval = -EPERM;
+	else {
+	    int eindex = INO_ELEMENTNO(inode->i_ino);
+	    Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+	    handler_strings[stringno] = h->call_read(e);
+	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
+	}
+	spin_unlock(&click_config_lock);
+	if (retval < 0)
+	    return retval;
+	handler_strings_info[stringno].flags &= ~HANDLER_NEED_READ;
+    }
+
     const String &s = handler_strings[stringno];
     if (f_pos + count > s.length())
 	count = s.length() - f_pos;
@@ -842,14 +879,15 @@ static ssize_t
 handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
     loff_t f_pos = *store_f_pos;
-    int stringno = reinterpret_cast<int>(filp->private_data);
+    int stringno = FILP_WRITE_STRINGNO(filp);
     if (stringno < 0 || stringno >= handler_strings_cap)
 	return -EIO;
     String &s = handler_strings[stringno];
     int old_length = s.length();
 
 #ifdef LARGEST_HANDLER_WRITE
-    if (f_pos + count > LARGEST_HANDLER_WRITE)
+    if (f_pos + count > LARGEST_HANDLER_WRITE
+	&& !(handler_strings_info[stringno].flags & HANDLER_WRITE_UNLIMITED))
 	return -EFBIG;
 #endif
 
@@ -880,7 +918,7 @@ static int
 handler_flush(struct file *filp)
 {
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
-    int stringno = reinterpret_cast<int>(filp->private_data);
+    int stringno = FILP_WRITE_STRINGNO(filp);
     int retval = 0;
 
 #ifdef LINUX_2_2
@@ -922,13 +960,9 @@ static int
 handler_release(struct inode *, struct file *filp)
 {
     // free handler string
-    int stringno = reinterpret_cast<int>(filp->private_data);
-    if (stringno >= 0 && stringno < handler_strings_cap) {
-	spin_lock(&handler_strings_lock);
-	handler_strings_next[stringno] = handler_strings_free;
-	handler_strings_free = stringno;
-	spin_unlock(&handler_strings_lock);
-    }
+    int stringno = FILP_READ_STRINGNO(filp);
+    if (stringno >= 0)
+	free_handler_string(stringno);
     return 0;
 }
 
@@ -1010,9 +1044,9 @@ cleanup_clickfs()
     // clean up handler_strings
     spin_lock(&handler_strings_lock);
     delete[] handler_strings;
-    delete[] handler_strings_next;
+    delete[] handler_strings_info;
     handler_strings = 0;
-    handler_strings_next = 0;
+    handler_strings_info = 0;
     handler_strings_cap = -1;
     handler_strings_free = -1;
     spin_unlock(&handler_strings_lock);
