@@ -1,3 +1,14 @@
+2002-10-31 Thursday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.25), floodinglocquerier.cc
+	(1.36), grid.hh (1.40), gridprobehandler.cc (1.14),
+	gridprobesender.cc (1.9), gridroutetable.cc (1.61), linktracker.cc
+	(1.13), locqueryresponder.cc (1.25), lookupgeogridroute.cc (1.28),
+	lookuplocalgridroute.cc (1.45), pingpong.cc (1.6), printgrid.cc
+	(1.26), simplelocquerier.cc (1.16), timeutils.hh (1.5): add
+	compile-time support for a smaller grid header; fixe weird include
+	bug regarding NULL in gridroutetable.cc
+
 2002-10-31 Thursday 02:04  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: toipsumdump.cc (1.33), toipsumdump.hh (1.28):
