@@ -414,6 +414,11 @@ int main(int c, char **v) {
     AC_DEFINE_UNQUOTED(HAVE_LINUXMODULE_TARGET, 1)
     SAVE_CXX="$CXX"
     CXX="$KERNEL_CXX"
+
+    dnl include the correct version of Linux
+    saveflags="$CPPFLAGS"
+    CPPFLAGS="$saveflags -I$linuxdir/include"
+
     AC_CACHE_CHECK(whether -fpermissive is required, ac_cv_f_permissive,
       AC_LANG_CPLUSPLUS
       AC_TRY_LINK([#define __KERNEL__
@@ -425,7 +430,9 @@ int main(int c, char **v) {
 #define class xxx_class
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive=no, ac_cv_f_permissive=yes))
+
     CXX="$SAVE_CXX"
+    CPPFLAGS="$saveflags"
     if test $ac_cv_f_permissive = yes; then
       KERNEL_CXX="$KERNEL_CXX -fpermissive"
     fi
