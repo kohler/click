@@ -1,3 +1,8 @@
+2003-10-13 Monday 13:39  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/: xml2click.cc (1.12), xml2click.hh (1.2):
+	xml2click compiles
+
 2003-10-13 Monday 11:57  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.73): update
