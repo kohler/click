@@ -82,12 +82,14 @@ Neighbor::push(int port, Packet *packet)
       click_chatter("Neighbor: got non-Grid packet");
       return;
     }
-    grid_hdr *gh = (grid_hdr *) packet->data() + sizeof(click_ether);
+    grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
     IPAddress ipaddr((unsigned char *) &gh->ip);
     EtherAddress *ethaddr = _addresses.findp(ipaddr);
     if (ethaddr == 0) {
       // this src addr not already in map, so add it
-      _addresses.insert(ipaddr, EtherAddress((unsigned char *) eh->ether_shost));
+      EtherAddress ea((unsigned char *) eh->ether_shost);
+      _addresses.insert(ipaddr, ea);
+      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
     }
 
     // perform further packet processing
