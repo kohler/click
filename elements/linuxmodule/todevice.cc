@@ -287,7 +287,9 @@ ToDevice::run_scheduled()
 #endif
   
   adjust_tickets(sent);
-  if (sent > 0 || _signal)
+  // If we're polling, never go to sleep! We're relying on ToDevice to clean
+  // the transmit ring.
+  if (sent > 0 || is_polling || _signal)
       _task.fast_reschedule();
 }
 
