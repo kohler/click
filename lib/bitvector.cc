@@ -74,7 +74,6 @@ Bitvector::operator=(const Bitvector &o)
 {
   if (&o != this) {
     resize(o._max + 1);
-    _max = o._max;
     int copy = u_max();
     if (copy < INLINE_UNSIGNEDS - 1) copy = INLINE_UNSIGNEDS - 1;
     for (int i = 0; i <= copy; i++)
@@ -87,7 +86,6 @@ Bitvector &
 Bitvector::assign(int n, bool value)
 {
   resize(n);
-  _max = n - 1;
   unsigned bits = (value ? 0xFFFFFFFFU : 0U);
   int copy = u_max();
   if (copy < INLINE_UNSIGNEDS - 1) copy = INLINE_UNSIGNEDS - 1;

@@ -40,7 +40,7 @@ class Bitvector {
   Bit force_bit(int);
   
   void clear();
-  void resize(int n)		{ resize(n, true); }
+  void resize(int n)	{ if (n > INLINE_BITS) resize(n, true); _max = n-1; }
   
   bool operator==(const Bitvector &) const;
   bool operator!=(const Bitvector &) const;
@@ -147,10 +147,8 @@ inline Bitvector::Bit
 Bitvector::force_bit(int i)
 {
   assert(i >= 0);
-  if (i > _max) {
+  if (i > _max)
     resize(i + 1);
-    _max = i;
-  }
   return Bit(_data[i>>5], i&31);
 }
 
