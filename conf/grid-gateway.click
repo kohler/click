@@ -8,7 +8,7 @@ li :: GridLocationInfo(POS_LAT, POS_LON);
 fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
 loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
 
-elementclass TTLChecker {
+elementclass GWTTLChecker {
   // expects grid packets with MAC headers --- place on output path to
   // dec TTL for next hop and provide traceroute support.
   
@@ -19,13 +19,12 @@ elementclass TTLChecker {
   // IP routing layer
   
   input 
-    -> cl :: Classifier(15/GRID_NBR_ENCAP_PROTO, -) [0]
-    -> ckip :: CheckIPHeader( , 78) // 78 is offset of IP in GRID_NBR_ENCAP
+    -> cl :: Classifier(15/GRID_NBR_ENCAP_PROTO !90/GRID_HEX_IP !90/GW_HEX_IP, -) [0] // don't dec ttl on packets we originate
+    -> ckip :: MarkIPHeader(78) // 78 is offset of IP in GRID_NBR_ENCAP
     -> dec :: DecIPTTL
     -> output;
 
   cl [1] -> output;
-  ckip [1] -> Discard;
   dec [1] -> ICMPError(GRID_IP, 11, 0) -> [1] output;
 };
 
@@ -34,11 +33,11 @@ elementclass TTLChecker {
 eth :: FromDevice(GW_NET_DEVICE, 0);
 to_eth :: ToDevice(GW_NET_DEVICE);
 
-connectiontunnel to_lr_ip/in -> to_lr_ip/out;
 
 wvlan :: FromDevice(WI_NET_DEVICE, 0);
-to_wvlan :: TTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
-to_wvlan [1] -> to_lr_ip/in;
+to_wvlan :: GWTTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
+connectiontunnel to_ip_cl/in -> to_ip_cl/out;
+to_wvlan [1] -> to_ip_cl/in;
 
 
 // IP interfaces on gateway machine
@@ -55,12 +54,12 @@ ip_cl :: Classifier(16/GW_HEX_IP, // ip for us as wired node
 	            16/GRID_HEX_IP, // ip for us as grid node 
 		    16/GRID_NET_HEX, // ip for our grid net
 		    -); // ip for the wired net or outside world
+to_ip_cl/out -> ip_cl;
+
 
 nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
-
-to_lr_ip/out -> [1] lr;
 
 grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets 
 			 15/GRID_LOC_QUERY_PROTO,  // loc query packets
@@ -68,7 +67,7 @@ grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets
 
 
 lr [0] -> to_wvlan;
-lr [1] -> ip_cl;
+lr [1] -> ip_cl; // decrement TTL on grid packets that we forward to wired net
 
 lr [2] -> fq -> [0] geo; // for geographic forwarding
 lr [3] -> Discard; // too many hops, or bad protocol 
@@ -92,10 +91,7 @@ eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, GW_MAC_ADDR) -> to_eth;
 eth_demux [2] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
 Idle -> to_tun1;
 eth_demux [3] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
-
-eth_demux [4] -> DropBroadcasts -> Strip(14) -> ckip1 :: CheckIPHeader -> dt1 :: DecIPTTL -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
-ckip1 [1] -> Discard;
-dt1 [1] -> ICMPError(GW_IP, 11, 0) -> ip_cl
+eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
 
 
 
@@ -107,7 +103,7 @@ wvlan_demux [0]
 -> [0] lr;
 
 
-check_grid [1]-> Print(bad_grid_hdr) -> Discard;
+check_grid [1]-> Print(BAD_GRID_HDR) -> Discard;
  fr [1] -> Discard; // out of range
 wvlan_demux [1] -> Discard; // not a grid packet
 
@@ -123,7 +119,7 @@ reply_demux [0] -> PrintGrid(REPLY_FOR_US) -> [1] fq; // handle reply to our loc
 reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
 
 loc_repl 
--> PrintGrid(REPLY__FROM__US) 
+-> PrintGrid(REPLY_FROM_US) 
 -> [0] lr; // forward loc reply packets initiated by us
 
 query_demux [0] 
@@ -139,7 +135,9 @@ query_demux [1]
 ip_cl [0] -> to_tun1;
 ip_cl [1] -> to_tun2;
 ip_cl [2] -> to_nb_ip; // send grid net packets to Grid processing
-ip_cl [3] -> gw_cl :: Classifier(16/GW_HEX_NET, -); // get local wired IP net traffic
+ip_cl [3] -> MarkIPHeader -> dec :: DecIPTTL -> gw_cl :: Classifier(16/GW_HEX_NET, -); // get local wired IP net traffic; decrement TTL
+dec [1] -> ICMPError(GRID_IP, 11, 0) -> ip_cl;
+
 gw_cl [0] -> GetIPAddress(16) -> [0] arpq; // ARP and send local net traffic
 gw_cl [1] -> SetIPAddress(GW_REAL_IP) -> [0] arpq; // ARP and send gateway traffic
 
