@@ -2606,7 +2606,7 @@ e1000_rx_poll(struct net_device *dev, int *want)
     if(!(rx_desc->status & E1000_RXD_STAT_EOP))
       good = 0;
     
-    if(good & (rx_desc->errors & E1000_RXD_ERR_FRAME_ERR_MASK)){
+    if(good && (rx_desc->errors & E1000_RXD_ERR_FRAME_ERR_MASK)){
       last_byte = *(skb->data + length - 1);
       if(TBI_ACCEPT(&adapter->hw,rx_desc->status,rx_desc->errors,length,
                     last_byte)) {
@@ -2635,7 +2635,7 @@ e1000_rx_poll(struct net_device *dev, int *want)
       }
       got++;
     } else {
-      dev_kfree_skb_irq(skb);
+      dev_kfree_skb(skb);
     }
     
 #if 0
