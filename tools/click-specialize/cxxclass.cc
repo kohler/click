@@ -417,6 +417,8 @@ remove_crap(const String &original_text)
   StringAccum new_text;
   char *o = new_text.extend(original_text.length());
 
+  char *if0_o_ptr = 0;
+  
   while (s < end_s) {
     // read one line
 
@@ -428,6 +430,7 @@ remove_crap(const String &original_text)
       break;
 
     if (*s == '#') {		// preprocessor directive
+      const char *first_s = s;
       while (1) {
 	while (s < end_s && *s != '\n' && *s != '\r')
 	  *o++ = ' ', s++;
@@ -436,6 +439,21 @@ remove_crap(const String &original_text)
 	  *o++ = *s++;
 	if (!backslash)
 	  break;
+      }
+      // check for `#if 0 .. #endif'
+      const char *ss = first_s + 1;
+      while (ss < s && isspace(*ss))
+	ss++;
+      if (ss < s - 5 && ss[0] == 'e' && ss[1] == 'n' && ss[2] == 'd'
+	  && ss[3] == 'i' && ss[4] == 'f') {
+	if (if0_o_ptr)
+	  while (if0_o_ptr < o)
+	    *if0_o_ptr++ = ' ';
+	if0_o_ptr = 0;
+      } else if (ss < s - 3 && ss[0] == 'i' && ss[1] == 'f') {
+	for (ss += 2; ss < s && isspace(*ss); ss++) ;
+	if (ss < s && ss[0] == '0')
+	  if0_o_ptr = o;
       }
       continue;
     }
