@@ -2684,8 +2684,18 @@ diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.18-pure/kernel/ksyms.c .
 *** ../linux-2.2.18-pure/kernel/ksyms.c	Sun Dec 10 16:49:44 2000
 --- ./kernel/ksyms.c	Sat May  4 23:31:20 2002
 ***************
+*** 342,347 ****
+--- 342,348 ----
+  
+  /* process management */
+  EXPORT_SYMBOL(__wake_up);
++ EXPORT_SYMBOL(wake_up_process);
+  EXPORT_SYMBOL(sleep_on);
+  EXPORT_SYMBOL(sleep_on_timeout);
+  EXPORT_SYMBOL(interruptible_sleep_on);
+***************
 *** 415,420 ****
---- 415,424 ----
+--- 416,425 ----
   EXPORT_SYMBOL(__down_trylock);
   EXPORT_SYMBOL(__up);
   EXPORT_SYMBOL(brw_page);
