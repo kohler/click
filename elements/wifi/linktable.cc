@@ -151,7 +151,7 @@ LinkTable::update_link(IPAddress from, IPAddress to,
   if (!from || !to || !metric) {
     return false;
   }
-  if (_stale_timeout.tv_sec < age) {
+  if (_stale_timeout.tv_sec < (int) age) {
     return true;
   }
 
