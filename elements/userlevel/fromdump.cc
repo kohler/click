@@ -350,7 +350,7 @@ FromDump::skip_ahead(ErrorHandler *errh)
     
 #ifdef ALLOW_MMAP
     if (_mmap) {
-	_mmap_off = want / _mmap_unit;
+	_mmap_off = (want / _mmap_unit) * _mmap_unit;
 	_pos = _len + want - _mmap_off;
 	return 0;
     }
@@ -366,6 +366,7 @@ FromDump::skip_ahead(ErrorHandler *errh)
     // try to seek
     if (lseek(_fd, want, SEEK_SET) != (off_t) -1) {
 	_pos = _len;
+	_file_offset = want - _len;
 	return 0;
     }
 
@@ -373,7 +374,7 @@ FromDump::skip_ahead(ErrorHandler *errh)
     while (_file_offset + _len < want && _len)
 	if (read_buffer(errh) < 0)
 	    return -1;
-
+    _pos = want - _file_offset;
     return 0;
 }
 
