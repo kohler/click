@@ -115,9 +115,6 @@ Monitor::update(IPAddress a, int val)
   assert(_base != NULL);
   unsigned int saddr = a.saddr();
 
-  /* struct timeval tv;       */
-  /* click_gettimeofday(&tv); */
-
   struct _stats *s = _base;
   struct _counter *c = NULL;
   int bitshift;
@@ -136,12 +133,29 @@ Monitor::update(IPAddress a, int val)
   assert(!(c->flags & SPLIT));
 
   c->value += val;
+
+  // Did value get larger than MAX within one second?
+  if(c->value >= _max) {
+    int diffjiff = c->last_update - click_jiffies();
+    if(diffjiff < 100) {
+      if(bitshift) {
+        c->flags |= SPLIT;
+        c->next_level = new struct _stats;
+        clean(c->next_level);
+      }
+    } else {
+      c->value = 0;
+      c->last_update = click_jiffies();
+    }
+  }
 }
 
 
 void
 Monitor::clean(_stats *s, int value = 0, bool recurse = false)
 {
+  int jiffs = click_jiffies();
+
   for(int i = 0; i < 256; i++) {
     if(recurse && (s->counter[i].flags & SPLIT)) {
       clean(s->counter[i].next_level, value, true);
@@ -149,6 +163,7 @@ Monitor::clean(_stats *s, int value = 0, bool recurse = false)
     }
     s->counter[i].flags = 0;
     s->counter[i].value = value;
+    s->counter[i].last_update = jiffs;
   }
 }
 

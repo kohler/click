@@ -91,12 +91,15 @@ private:
 #define SPLIT     0x0001
 
     union {
-      unsigned int value;
+      int value;
       struct _stats *next_level;
     };
+
+    int last_update;
   };
 
   struct _stats {
+    unsigned int level;
     struct _counter counter[256];
   };
 
