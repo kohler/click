@@ -38,8 +38,7 @@ extern "C" {
 //
 
 IPRw::Mapping::Mapping()
-  :  _is_reverse(false), // _used(false), 
-     _marked(false),
+  : _is_reverse(false), /* _used(false), */ _marked(false),
     _session_over(false), _free_tracked(false),
     _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
 {
@@ -547,8 +546,24 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 }
 
 
+inline IPRw::Mapping *
+IPRw::Mapping::free_from_list(Map &map, bool notify)
+{
+  // see also clear_map below
+  assert(is_forward());
+  //click_chatter("kill %s", reverse()->flow_id().rev().s().cc());
+  Mapping *next = _free_next;
+  if (notify && _pat)
+    _pat->mapping_freed(this);
+  map.remove(reverse()->flow_id().rev());
+  map.remove(flow_id().rev());
+  delete reverse();
+  delete this;
+  return next;
+}
+
 void
-IPRw::take_state_map(Map &map, Mapping **free_tracked,
+IPRw::take_state_map(Map &map, Mapping **free_head, Mapping **free_tail,
 		     const Vector<Pattern *> &in_patterns,
 		     const Vector<Pattern *> &out_patterns)
 {
@@ -570,8 +585,8 @@ IPRw::take_state_map(Map &map, Mapping **free_tracked,
       if (q && m->output() < no && m->reverse()->output() < no) {
 	q->accept_mapping(m);
 	if (m->free_tracked()) {
-	  if (free_tracked)
-	    *free_tracked = m->add_to_free_tracked(*free_tracked);
+	  if (free_head)
+	    m->free_append(*free_head, *free_tail);
 	  else
 	    m->clear_free_tracked();
 	}
@@ -582,50 +597,38 @@ IPRw::take_state_map(Map &map, Mapping **free_tracked,
     }
   }
 
-  while (to_free) {
-    Mapping *next = to_free->free_next();
-    map.remove(to_free->reverse()->flow_id().rev());
-    map.remove(to_free->flow_id().rev());
-    delete to_free->reverse();
-    delete to_free;
-    to_free = next;
-  }
+  while (to_free)
+    to_free = to_free->free_from_list(map, false);
 }
 
 void
-IPRw::clean_map(Map &table, unsigned interval_ms)
+IPRw::clean_map(Map &table, uint32_t last_jif)
 {
+  //click_chatter("cleaning map");
   Mapping *to_free = 0;
 
   for (Map::Iterator iter = table.first(); iter; iter++)
     if (Mapping *m = iter.value()) {
-      if (!m->is_reverse() && !m->used(interval_ms) && !m->free_tracked()
-	  && !m->reverse()->used(interval_ms)) {
+      if (!m->is_reverse() && !m->used_since(last_jif) && !m->free_tracked()
+	  && !m->reverse()->used_since(last_jif)) {
 	m->set_free_next(to_free);
 	to_free = m;
       }
     }
   
-  while (to_free) {
-    Mapping *next = to_free->free_next();
-    if (Pattern *p = to_free->pattern())
-      p->mapping_freed(to_free);
-    table.remove(to_free->reverse()->flow_id().rev());
-    table.remove(to_free->flow_id().rev());
-    delete to_free->reverse();
-    delete to_free;
-    to_free = next;
-  }
+  while (to_free)
+    to_free = to_free->free_from_list(table, true);
 }
 
 void
-IPRw::clean_map_free_tracked
-(Map &table, unsigned interval_ms, Mapping **free_tracked)
+IPRw::clean_map_free_tracked(Map &table,
+			     Mapping *&free_head, Mapping *&free_tail,
+			     uint32_t last_jif)
 {
-  Mapping *to_free = 0;
-  Mapping **prev_ptr = free_tracked;
+  Mapping *free_list = free_head;
+  Mapping **prev_ptr = &free_list;
 
-  Mapping *m = *free_tracked;
+  Mapping *m = free_list;
   while (m) {
     Mapping *next = m->free_next();
     assert(!m->is_reverse());
@@ -633,62 +636,56 @@ IPRw::clean_map_free_tracked
       // reuse of a port; take it off the free-tracked list
       *prev_ptr = next;
       m->clear_free_tracked();
-    } else if (!m->used(interval_ms) && !m->reverse()->used(interval_ms)) {
-      *prev_ptr = next;
-      m->set_free_next(to_free);
-      to_free = m;
-    } else 
+    } else if (m->used_since(last_jif) || m->reverse()->used_since(last_jif))
+      break;
+    else
       prev_ptr = &m->_free_next;
     m = next;
   }
+  
+  // cut off free_list before 'm'
+  *prev_ptr = 0;
+  
+  // move free_head forward, to 'm' or beyond
+  if (m && m->free_next()) {
+    // if 'm' exists, then shift it to the end of the list
+    free_head = m->free_next();
+    m->set_free_next(0);
+    m->free_append(free_head, free_tail);
+  } else if (m)
+    free_head = free_tail = m;
+  else
+    free_head = free_tail = 0;
 
-  while (to_free) {
-    Mapping *next = to_free->free_next();
-    if (Pattern *p = to_free->pattern())
-      p->mapping_freed(to_free);
-    table.remove(to_free->reverse()->flow_id().rev());
-    table.remove(to_free->flow_id().rev());
-    delete to_free->reverse();
-    delete to_free;
-    to_free = next;
-  }
+  // free contents of free_list
+  while (free_list)
+    free_list = free_list->free_from_list(table, true);
 }
 
 void
-IPRw::clean_map_free_ordered_tracked
-(Map &table, unsigned interval_ms, Mapping **free_tracked, Mapping **free_tail)
+IPRw::incr_clean_map_free_tracked(Map &table,
+				  Mapping *&free_head, Mapping *&free_tail,
+				  uint32_t last_jif)
 {
-  Mapping *to_free = 0;
-  Mapping **prev_ptr = free_tracked;
-
-  Mapping *m = *free_tracked;
-  while (m) {
-    Mapping *next = m->free_next();
-    assert(!m->is_reverse());
-    if (!m->session_over()) {
-      // reuse of a port; take it off the free-tracked list
-      *prev_ptr = next;
-      m->clear_free_tracked();
-    } else if (!m->used(interval_ms) && !m->reverse()->used(interval_ms)) {
-      *prev_ptr = next;
-      m->set_free_next(to_free);
-      to_free = m;
-    } else
-      break;
-    m = next;
-  }
-  // there is nothing left
-  if (!m) *free_tail = 0;
-
-  while (to_free) {
-    Mapping *next = to_free->free_next();
-    if (Pattern *p = to_free->pattern())
-      p->mapping_freed(to_free);
-    table.remove(to_free->reverse()->flow_id().rev());
-    table.remove(to_free->flow_id().rev());
-    delete to_free->reverse();
-    delete to_free;
-    to_free = next;
+  Mapping *m = free_head;
+  if (m->session_over()) {
+    // has been recycled; remove from free-tracked list
+    free_head = m->free_next();
+    if (!free_head)
+      free_tail = 0;
+    m->clear_free_tracked();
+  } else if (m->used_since(last_jif) || m->reverse()->used_since(last_jif)) {
+    // recently used; cycle to end of list
+    if (m->free_next()) {
+      free_head = m->free_next();
+      m->set_free_next(0);
+      m->free_append(free_head, free_tail);
+    }
+  } else {
+    // actually free; delete it
+    free_head = m->free_from_list(table, true);
+    if (!free_head)
+      free_tail = 0;
   }
 }
 
@@ -706,6 +703,8 @@ IPRw::clear_map(Map &table)
   }
   
   while (to_free) {
+    // don't call free_from_list, because there is no need to update 'table'
+    // incrementally
     Mapping *next = to_free->free_next();
     if (Pattern *pat = to_free->pattern())
       pat->mapping_freed(to_free);

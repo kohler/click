@@ -37,12 +37,12 @@ IPRewriter::IPRewriter()
     _tcp_gc_timer(tcp_gc_hook, this),
     _udp_gc_timer(udp_gc_hook, this)
 {
-  // no MOD_INC_USE_COUNT; rely on IPRw
+  MOD_INC_USE_COUNT;
 }
 
 IPRewriter::~IPRewriter()
 {
-  // no MOD_DEC_USE_COUNT; rely on IPRw
+  MOD_DEC_USE_COUNT;
   assert(!_tcp_gc_timer.scheduled() && !_udp_gc_timer.scheduled());
 }
 
@@ -73,12 +73,12 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;
-  _tcp_timeout_interval = 86400000;	// 24 hours
-  _tcp_done_timeout_interval = 30000;	// 30 seconds
-  _udp_timeout_interval = 60000;	// 1 minute
+  _tcp_timeout_jiffies = 86400000;	// 24 hours
+  _tcp_done_timeout_jiffies = 30000;	// 30 seconds
+  _udp_timeout_jiffies = 60000;		// 1 minute
   _tcp_gc_interval = 3600000;		// 1 hour
-  _udp_gc_interval = 10000;		// 10 seconds
   _tcp_done_gc_interval = 10000;	// 10 seconds
+  _udp_gc_interval = 10000;		// 10 seconds
   _tcp_done_gc_incr = false;
   
   for (int i = 0; i < conf.size(); i++) {
@@ -86,9 +86,9 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 			    "REAP_TCP", cpSecondsAsMilli, "TCP garbage collection interval", &_tcp_gc_interval,
 			    "REAP_TCP_DONE", cpSecondsAsMilli, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
 			    "REAP_UDP", cpSecondsAsMilli, "UDP garbage collection interval", &_udp_gc_interval,
-			    "TCP_TIMEOUT", cpSecondsAsMilli, "TCP timeout interval", &_tcp_timeout_interval,
-			    "TCP_DONE_TIMEOUT", cpSecondsAsMilli, "Completed TCP timeout interval", &_tcp_done_timeout_interval,
-			    "UDP_TIMEOUT", cpSecondsAsMilli, "UDP timeout interval", &_udp_timeout_interval,
+			    "TCP_TIMEOUT", cpSecondsAsMilli, "TCP timeout interval", &_tcp_timeout_jiffies,
+			    "TCP_DONE_TIMEOUT", cpSecondsAsMilli, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
+			    "UDP_TIMEOUT", cpSecondsAsMilli, "UDP timeout interval", &_udp_timeout_jiffies,
 			    "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
 			    0) != 0)
       continue;
@@ -99,6 +99,11 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
   }
 
+  // change timeouts into jiffies
+  _tcp_timeout_jiffies = (_tcp_timeout_jiffies * CLICK_HZ) / 1000;
+  _tcp_done_timeout_jiffies = (_tcp_done_timeout_jiffies * CLICK_HZ) / 1000;
+  _udp_timeout_jiffies = (_udp_timeout_jiffies * CLICK_HZ) / 1000;
+  
   if (ninputs == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");
   set_ninputs(ninputs);
@@ -176,8 +181,8 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
     pattern_map.push_back(q);
   }
   
-  take_state_map(_tcp_map, &_tcp_done, rw->_all_patterns, pattern_map);
-  take_state_map(_udp_map, 0, rw->_all_patterns, pattern_map);
+  take_state_map(_tcp_map, &_tcp_done, &_tcp_done_tail, rw->_all_patterns, pattern_map);
+  take_state_map(_udp_map, 0, 0, rw->_all_patterns, pattern_map);
   Mapping *m = _tcp_done;
   Mapping *mp = 0;
   while (m) {
@@ -197,7 +202,7 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 #elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
-  rw->clean_map(rw->_tcp_map, rw->_tcp_timeout_interval);
+  rw->clean_map(rw->_tcp_map, click_jiffies() - rw->_tcp_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
   } else wait = 20;
@@ -218,9 +223,9 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 #elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
-  rw->clean_map_free_ordered_tracked 
-    (rw->_tcp_map, rw->_tcp_done_timeout_interval, 
-     &rw->_tcp_done, &rw->_tcp_done_tail);
+  rw->clean_map_free_tracked 
+    (rw->_tcp_map, rw->_tcp_done, rw->_tcp_done_tail,
+     click_jiffies() - rw->_tcp_done_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
   } else wait = 20;
@@ -241,7 +246,7 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 #elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
-  rw->clean_map(rw->_udp_map, rw->_udp_timeout_interval);
+  rw->clean_map(rw->_udp_map, click_jiffies() - rw->_udp_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
   } else wait = 20;
@@ -267,8 +272,7 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   if (forward && reverse) {
     if (!pattern)
       Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
-    else if 
-      (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
+    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
       goto failure;
 
     IPFlowID reverse_flow = forward->flow_id().rev();
@@ -315,8 +319,7 @@ IPRewriter::push(int port, Packet *p_in)
 #elif IPRW_SPINLOCKS
   _spinlock.acquire();
 #endif
-  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : 
-                                       _udp_map.find(flow));
+  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
 
 #if IPRW_RWLOCKS
   _rwlock.release_read();
@@ -381,29 +384,22 @@ IPRewriter::push(int port, Packet *p_in)
   if (ip_p == IP_PROTO_TCP) {
     click_tcp *tcph = p->tcp_header();
     if (tcph->th_flags & (TH_SYN | TH_FIN | TH_RST)) {
+      
 #if IPRW_RWLOCKS
       if (!has_lock) {
         _rwlock.acquire_write();
         has_lock = true;
       }
 #endif
+      
       if (_tcp_done_gc_incr && (tcph->th_flags & TH_SYN))
-        clean_map_free_ordered_tracked 
-	  (_tcp_map, _tcp_done_timeout_interval, &_tcp_done, &_tcp_done_tail); 
-  
+        incr_clean_map_free_tracked 
+	  (_tcp_map, _tcp_done, _tcp_done_tail, click_jiffies() - _tcp_done_timeout_jiffies);
+
       // add to list for dropping TCP connections faster
-      if (!m->free_tracked()) { 
-	if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over()) {
-          if (_tcp_done == 0) {
-            _tcp_done = m->add_to_free_tracked(_tcp_done);
-	    _tcp_done_tail = _tcp_done;
-          } else {
-	    Mapping *madd = m->is_reverse() ? m->reverse() : m;
-	    _tcp_done_tail = _tcp_done_tail->add_to_free_tracked(madd);
-	    _tcp_done_tail = _tcp_done_tail->free_next();
-          }
-	}
-      }
+      if (!m->free_tracked() && (tcph->th_flags & (TH_FIN | TH_RST))
+	  && m->session_over())
+	m->add_to_free_tracked_tail(_tcp_done, _tcp_done_tail);
     }
   }
   

@@ -11,6 +11,7 @@ class IPRw : public Element { public:
 
   class Pattern;
   class Mapping;
+  typedef BigHashMap<IPFlowID, Mapping *> Map;
   enum InputSpecName {
     INPUT_SPEC_NOCHANGE, INPUT_SPEC_KEEP, INPUT_SPEC_DROP,
     INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER
@@ -52,19 +53,19 @@ class IPRw : public Element { public:
   
  protected:
 
-  typedef BigHashMap<IPFlowID, Mapping *> Map;
-  
   Vector<Pattern *> _all_patterns;
 
   static const int GC_INTERVAL_SEC = 3600;
 
-  void take_state_map
-    (Map &, Mapping **, const Vector<Pattern *> &, const Vector<Pattern *> &);
+  void take_state_map(Map &, Mapping **free_head, Mapping **free_tail,
+		      const Vector<Pattern *> &, const Vector<Pattern *> &);
   void clear_map(Map &);
-  void clean_map(Map &, unsigned ms);
-  void clean_map_free_tracked(Map &, unsigned ms, Mapping **free_tracked);
-  void clean_map_free_ordered_tracked
-    (Map &, unsigned ms, Mapping **free_tracked, Mapping **free_tail);
+  void clean_map(Map &, uint32_t last_jif);
+  void clean_map_free_tracked(Map &, Mapping *&free_head, Mapping *&free_tail,
+			      uint32_t last_jif);
+  void incr_clean_map_free_tracked(Map &, Mapping *&head, Mapping *&tail,
+				   uint32_t last_jif);
+
 };
 
 
@@ -83,7 +84,7 @@ class IPRw::Mapping { public:
   bool is_reverse() const		{ return _is_reverse; }
   Mapping *reverse() const		{ return _reverse; }
   
-  bool used(unsigned interval) const;
+  bool used_since(uint32_t) const;
   void mark_used()			{ _used = click_jiffies(); }
   
   bool marked() const			{ return _marked; }
@@ -106,7 +107,7 @@ class IPRw::Mapping { public:
   void clear_session_flow_over()	{ _session_over = false; }
 
   bool free_tracked() const		{ return _free_tracked; }
-  Mapping *add_to_free_tracked(Mapping *);
+  void add_to_free_tracked_tail(Mapping *&head, Mapping *&tail);
   void clear_free_tracked()		{ _free_tracked = 0; }
   
   void apply(WritablePacket *);
@@ -137,6 +138,9 @@ class IPRw::Mapping { public:
   Mapping *_free_next;
 
   friend class IPRw;
+
+  inline Mapping *free_from_list(Map &, bool notify);
+  void free_append(Mapping *&head, Mapping *&tail);
 
 };
 
@@ -237,19 +241,31 @@ IPRw::Mapping::pat_unlink()
   }
 }
 
-inline IPRw::Mapping *
-IPRw::Mapping::add_to_free_tracked(Mapping *m)
+inline void
+IPRw::Mapping::free_append(Mapping *&head, Mapping *&tail)
 {
-  Mapping *me = (_is_reverse ? _reverse : this);
-  me->_free_next = m;
+  assert((!head && !tail)
+	 || (head && tail && head->_free_tracked && tail->_free_tracked));
+  assert(!_free_next && is_forward());
+  if (tail)
+    tail = tail->_free_next = this;
+  else
+    head = tail = this;
+}
+
+inline void
+IPRw::Mapping::add_to_free_tracked_tail(Mapping *&head, Mapping *&tail)
+{
+  assert(!_free_tracked);
   _free_tracked = _reverse->_free_tracked = true;
-  return me;
+  Mapping *me = (_is_reverse ? _reverse : this);
+  me->free_append(head, tail);
 }
 
 inline bool
-IPRw::Mapping::used(unsigned interval) const
+IPRw::Mapping::used_since(uint32_t t) const
 { 
-  return (click_jiffies()-_used)*1000/CLICK_HZ < interval;
+  return ((int32_t)(_used - t)) >= 0;
 }
 
 #endif

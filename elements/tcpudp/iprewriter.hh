@@ -107,34 +107,33 @@ Keyword arguments determine how often stale mappings should be removed.
 
 =over 5
 
-=item REAP_TCP I<time>
-
-Reap TCP connections every I<time> seconds. If no packets corresponding to a
-given mapping have been seen for TCP_TIMEOUT, remove the mapping as stale.
-Default is 1 hour.
-
-=item REAP_TCP_DONE I<time>
-
-Reap completed TCP connections every I<time> seconds. FIN or RST flags mark a
-TCP connection as complete. Default is 10 seconds.
-
-=item REAP_UDP I<time>
-
-Reap UDP connections every I<time> seconds. Default is 10 seconds.
-
 =item TCP_TIMEOUT I<time>
 
-Timeout a TCP connections every I<time> seconds. Default is 24 hours.
+Time out TCP connections every I<time> seconds. Default is 24 hours.
 
 =item TCP_DONE_TIMEOUT I<time>
 
-Timeout a completed TCP connections every I<time> seconds. 
-Default is 30 seconds.
+Time out completed TCP connections every I<time> seconds. Default is 30
+seconds. FIN and RST flags mark TCP connections as complete.
 
 =item UDP_TIMEOUT I<time>
 
-Timeout a UDP connections every I<time> seconds. Default is 1 minute.
+Time out UDP connections every I<time> seconds. Default is 1 minute.
 
+=item REAP_TCP I<time>
+
+Reap timed-out TCP connections every I<time> seconds. If no packets
+corresponding to a given mapping have been seen for TCP_TIMEOUT, remove the
+mapping as stale. Default is 1 hour.
+
+=item REAP_TCP_DONE I<time>
+
+Reap timed-out completed TCP connections every I<time> seconds. Default is 10
+seconds.
+
+=item REAP_UDP I<time>
+
+Reap timed-out UDP connections every I<time> seconds. Default is 10 seconds.
 
 =back
 
@@ -202,9 +201,9 @@ class IPRewriter : public IPRw { public:
   Timer _tcp_done_gc_timer;
   Timer _tcp_gc_timer;
   Timer _udp_gc_timer;
-  int _udp_timeout_interval;
-  int _tcp_timeout_interval;
-  int _tcp_done_timeout_interval;
+  int _udp_timeout_jiffies;
+  int _tcp_timeout_jiffies;
+  int _tcp_done_timeout_jiffies;
   int _instance_index;
 
 #if IPRW_SPINLOCKS

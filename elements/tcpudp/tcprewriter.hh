@@ -31,16 +31,25 @@ Keyword arguments determine how often stale mappings should be removed.
 
 =over 5
 
+=item TCP_TIMEOUT I<time>
+
+Time out TCP connections every I<time> seconds. Default is 24 hours.
+
+=item TCP_DONE_TIMEOUT I<time>
+
+Time out completed TCP connections every I<time> seconds. Default is 30
+seconds. FIN and RST flags mark TCP connections as complete.
+
 =item REAP_TCP I<time>
 
-Reap TCP connections every I<time> seconds. If no packets corresponding to a
-given mapping have been seen since the last reap, remove the mapping as stale.
-Default is 24 hours.
+Reap timed-out TCP connections every I<time> seconds. If no packets
+corresponding to a given mapping have been seen for TCP_TIMEOUT, remove the
+mapping as stale. Default is 1 hour.
 
 =item REAP_TCP_DONE I<time>
 
-Reap completed TCP connections every I<time> seconds. FIN or RST flags mark a
-TCP connection as complete. Default is 4 minutes.
+Reap timed-out completed TCP connections every I<time> seconds. Default is 10
+seconds.
 
 =back
 
@@ -106,13 +115,16 @@ class TCPRewriter : public IPRw { public:
   
   Map _tcp_map;
   Mapping *_tcp_done;
+  Mapping *_tcp_done_tail;
 
   Vector<InputSpec> _input_specs;
 
   int _tcp_gc_interval;
-  Timer _tcp_gc_timer;
   int _tcp_done_gc_interval;
+  Timer _tcp_gc_timer;
   Timer _tcp_done_gc_timer;
+  int _tcp_timeout_jiffies;
+  int _tcp_done_timeout_jiffies;
 
   int _nmapping_failures;
   
