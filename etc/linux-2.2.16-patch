@@ -504,7 +504,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Wed May  3 20:16:43 2000
-+++ drivers/net/tulip.c	Mon Oct 30 16:35:56 2000
++++ drivers/net/tulip.c	Mon Oct 30 18:27:41 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -946,8 +946,8 @@ Index: drivers/net/tulip.c
 +static inline struct sk_buff*
 +tulip_get_recycled_skb(void)
 +{ 
-+  int bucket = current->processor % SKB_BUCKETS; 
 +  struct sk_buff* skb = 0; 
++  int bucket = current->processor % SKB_BUCKETS; 
 +  tulip_recycled_skb_inuse[bucket] = 1;
 +
 +  if (tulip_recycled_skb_head[bucket] != tulip_recycled_skb_tail[bucket]) {
@@ -977,7 +977,7 @@ Index: drivers/net/tulip.c
 +  return skb;
 +}
 +
-+#define SKB_RECYCLE_THRESH SKB_RECYCLED-2
++#define SKB_RECYCLE_THRESH SKB_RECYCLED
 +
 +/* tries to recycle an skb. if not successful, the skb passed in is freed */
 +static inline int
@@ -986,26 +986,26 @@ Index: drivers/net/tulip.c
 +  int recycled = 0;
 +  if (skb->truesize == tulip_recycled_skb_size) {
 +	int i, min_size, bucket, tail, next, size;
-+
 +	bucket = current->processor % SKB_BUCKETS;
++
 +	if (tulip_recycled_skb_head[bucket] <= tulip_recycled_skb_tail[bucket])
 +	  size = tulip_recycled_skb_tail[bucket] - tulip_recycled_skb_head[bucket];
 +	else
 +	  size = tulip_recycled_skb_tail[bucket] + SKB_RECYCLED + 1
 +	         - tulip_recycled_skb_head[bucket];
-+
 +	/* local queue fairly full, see if anyone else wants the packet */
-+	if (size >= SKB_RECYCLE_THRESH) {
++	if (size >= SKB_RECYCLE_THRESH) 
++	{
 +	  min_size = size;
 +	  for (i=0; i < SKB_BUCKETS; i++) {
 +		if (i == bucket) continue;
-+	    if (tulip_recycled_skb_head[i] <= tulip_recycled_skb_tail[i]) {
-+	      size = tulip_recycled_skb_tail[i] - tulip_recycled_skb_head[i];
-+	    } else {
-+	      size = tulip_recycled_skb_tail[i] + SKB_RECYCLED + 1
-+		         - tulip_recycled_skb_head[i];
-+	    }
 +	    if (tulip_recycled_skb_inuse[i]) {
++	      if (tulip_recycled_skb_head[i] <= tulip_recycled_skb_tail[i]) {
++	        size = tulip_recycled_skb_tail[i] - tulip_recycled_skb_head[i];
++	      } else {
++	        size = tulip_recycled_skb_tail[i] + SKB_RECYCLED + 1
++		           - tulip_recycled_skb_head[i];
++	      }
 +	      if (size < min_size || min_size == -1) {
 +	  	    min_size = size;
 +	  	    bucket = i;
