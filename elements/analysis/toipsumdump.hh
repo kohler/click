@@ -92,8 +92,8 @@ is false.
 
 Boolean. If true, then print `C<!bad truncated IP length>' lines for packets
 whose data plus extra length annotation is less than their IP length.
-B<Tcpdump> prints C<truncated-ip - N bytes missing> for such packets. Default
-is true.
+B<Tcpdump> prints `C<truncated-ip - N bytes missing>' for such packets.
+Default is true.
 
 =back
 
@@ -131,7 +131,7 @@ The characters corresponding to TCP flags are as follows:
    CWR        W          0x80
 
 Some old IP summary dumps might contain an unsigned integer, representing the
-flags byte, instead, or might use characters X and Y for flags ECE and CWR,
+flags byte, or might use characters X and Y for flags ECE and CWR,
 respectively.
 
 Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
