@@ -13,7 +13,7 @@ class EtherSwitch : public Element {
   EtherSwitch *clone() const;
   
   const char *class_name() const		{ return "EtherSwitch"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return "h/h"; }
   void notify_ninputs(int);
   void notify_noutputs(int);
   Bitvector forward_flow(int) const;

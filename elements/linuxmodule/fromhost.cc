@@ -55,18 +55,29 @@ FromLinux::configure(const String &conf, ErrorHandler *errh)
 int
 FromLinux::init_dev(void)
 {
-  if (!(_dev = kmalloc(sizeof(struct device), GFP_KERNEL)))
-    return -ENOMEM;
+  _dev = new struct device;
+  if (!_dev)
+    goto bad;
   memset(_dev, 0, sizeof(struct device));
-  if (!(_dev->name = kmalloc(IFNAMSIZ, GFP_KERNEL)))
-    return -ENOMEM;
+  _dev->name = new char[IFNAMSIZ];
+  if (!_dev->name)
+    goto bad;
   strncpy(_dev->name, _devname.cc(), IFNAMSIZ);
   _dev->init = fl_init;
-  if (!(_dev->priv = kmalloc(sizeof(struct fl_priv), GFP_KERNEL)))
-    return -ENOMEM;
+  _dev->priv = new struct fl_priv;
+  if (!_dev->priv)
+    goto bad;
   memset(_dev->priv, 0, sizeof(struct fl_priv));
   ((struct fl_priv *)(_dev->priv))->fl = this;
   return 0;
+
+ bad:
+  if (_dev && _dev->name)
+    delete[] _dev->name;
+  if (_dev && _dev->priv)
+    delete _dev->priv;
+  delete _dev;
+  return -ENOMEM;
 }
 
 int
@@ -77,7 +88,8 @@ FromLinux::init_rt(void)
        struct sockaddr d;
   } s;
 
-  if (!(_rt = kmalloc(sizeof(struct rtentry), GFP_KERNEL)))
+  _rt = new struct rtentry;
+  if (!_rt)
     return -ENOMEM;
   memset(_rt, 0, sizeof(struct rtentry));
 
@@ -152,7 +164,7 @@ FromLinux::uninitialize(void)
     if ((res = ip_rt_ioctl(SIOCDELRT, _rt)) < 0) {
       click_chatter("fromlinux: error %d removing route\n", res);
     }
-    kfree(_rt);
+    delete _rt;
     _rt = 0;
   }
 				// Bring down the interface
@@ -164,9 +176,11 @@ FromLinux::uninitialize(void)
   set_fs(oldfs);
 				// Uninstall fake interface
   if (_dev->priv)
-    kfree(_dev->priv);
+    delete _dev->priv;
   unregister_netdev(_dev);
-  kfree(_dev);
+  if (_dev->name)
+    delete[] _dev->name;
+  delete _dev;
   _dev = 0;
 }
 

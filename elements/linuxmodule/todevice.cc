@@ -335,7 +335,7 @@ ToDevice::queue_packet(Packet *p)
       printk("ToDevice: too small: len %d tailroom %d\n",
              skb1->len, skb_tailroom(skb1));
       kfree_skb(skb1);
-      return;
+      return -1;
     }
     skb_put(skb1, 60 - skb1->len);
   }
@@ -355,6 +355,7 @@ ToDevice::queue_packet(Packet *p)
     kfree_skb(skb1);
     _rejected++;
   }
+  return ret;
 }
 
 void

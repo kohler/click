@@ -24,7 +24,7 @@ class Idle : public Element {
   const char *class_name() const		{ return "Idle"; }
   void notify_ninputs(int);
   void notify_noutputs(int);
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return "a/a#"; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   

@@ -23,6 +23,7 @@
 extern "C" {
 # define new xxx_new
 # include <linux/netdevice.h>
+# include <linux/ip.h>
 # include <net/route.h>
 # undef new
 }

@@ -4,12 +4,15 @@
 
 class Suppressor : public UnlimitedElement {
   
-public:
+  fd_set _suppressed;
+  
+ public:
+  
   Suppressor();
   ~Suppressor();
   
   const char *class_name() const		{ return "Suppressor"; }
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return "a/a#"; }
   bool unlimited_inputs() const			{ return true; }
   bool unlimited_outputs() const		{ return true; }
   Bitvector forward_flow(int) const;
@@ -31,8 +34,6 @@ public:
 
   bool set(int output, bool suppressed);
 
-private:
-  fd_set _suppressed;
 };
 
 #endif

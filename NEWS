@@ -16,6 +16,8 @@ Version 1.0.3
   return PUSH; }'. The new way is more flexible and lets us abstract the
   element's processing code. See Element(3) for details.
 
+* Fixed bugs: RFC2507Decomp didn't compile.
+
 
 Version 1.0.2   20.Mar.2000
 

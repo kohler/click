@@ -84,9 +84,10 @@ click_register_new_dynamic_pde(proc_dir_entry *parent,
     pde->name = name;
     pde->data = data;
   }
-  if (click_register_pde(parent, pde) < 0)
-    return click_kill_dynamic_pde(pde);
-  else
+  if (click_register_pde(parent, pde) < 0) {
+    click_kill_dynamic_pde(pde);
+    return 0;
+  } else
     return pde;
 }
 

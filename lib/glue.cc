@@ -146,7 +146,7 @@ strtol(const char *nptr, char **endptr, int base)
   if (*nptr == '-' || *nptr == '+')
     nptr++;
   if (!isdigit(*nptr)) {
-    *endptr = *orig_nptr;
+    *endptr = (char *)orig_nptr;
     return INT_MIN;
   }
   unsigned long ul = simple_strtoul(nptr, endptr, base);

@@ -36,8 +36,6 @@ class PerfInfo : public Element {
   static unsigned _metric0;
   static unsigned _metric1;
 
-  static HashMap<String, unsigned> _metrics;
-
  public:
   
   PerfInfo() {}

@@ -19,10 +19,9 @@
 #include "glue.hh"
 #include "asm/msr.h"
 
-static unsigned PerfInfo::_init = 0;
-static unsigned PerfInfo::_metric0 = 0;
-static unsigned PerfInfo::_metric1 = 0;
-static HashMap<String, unsigned> PerfInfo::_metrics;
+unsigned PerfInfo::_init = 0;
+unsigned PerfInfo::_metric0 = 0;
+unsigned PerfInfo::_metric1 = 0;
 
 PerfInfo *
 PerfInfo::clone() const
@@ -38,16 +37,17 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
   if (_init)
     return errh->error("only one PerfInfo element allowed per configuration"); 
 
-  _metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
-  _metrics.insert("INST_RETIRED", 0xC0);
-  _metrics.insert("IFU_IFETCH", 0x80);
-  _metrics.insert("IFU_IFETCH_MISS", 0x81);
-  _metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
-  _metrics.insert("L2_LD", 0x29 | (0xf<<8));
-  _metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
+  HashMap<String, unsigned> metrics;
+  metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
+  metrics.insert("INST_RETIRED", 0xC0);
+  metrics.insert("IFU_IFETCH", 0x80);
+  metrics.insert("IFU_IFETCH_MISS", 0x81);
+  metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
+  metrics.insert("L2_LD", 0x29 | (0xf<<8));
+  metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
     
-  _metric0 = _metrics["DCU_MISS_OUTSTANDING"];
-  _metric1 = _metrics["IFU_IFETCH_MISS"];
+  _metric0 = metrics["DCU_MISS_OUTSTANDING"];
+  _metric1 = metrics["IFU_IFETCH_MISS"];
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -56,10 +56,10 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
 
-  if (!(_metric0 = _metrics[metric0]))
+  if (!(_metric0 = metrics[metric0]))
     return errh->error("unknown first metric");
 
-  if (!(_metric1 = _metrics[metric1]))
+  if (!(_metric1 = metrics[metric1]))
     return errh->error("unknown second metric");
 
   _init = 1;
@@ -77,13 +77,8 @@ PerfInfo::initialize(ErrorHandler *errh)
 void
 PerfInfo::uninitialize()
 {
-  _metrics.clear();
   _init = 0;
 }
-
-
-#include "hashmap.cc"
-template class HashMap<String, unsigned>;
 
 EXPORT_ELEMENT(PerfInfo)
 
