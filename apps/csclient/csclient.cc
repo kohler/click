@@ -255,8 +255,8 @@ ControlSocketClient::write(string el, string handler, const char *buf, int bufsz
     handler = el + "." + handler;
   char cbuf[10];
   snprintf(cbuf, sizeof(cbuf), "%d", bufsz);
-  string cmd = "WRITE " + handler + " " + buf + "\n";
-  
+  string cmd = "WRITEDATA " + handler + " " + cbuf + "\n";
+
   int res = ::write(_fd, cmd.c_str(), cmd.size());
   if (res < 0)
     return sys_err;
@@ -283,7 +283,10 @@ ControlSocketClient::write(string el, string handler, const char *buf, int bufsz
 
   int code = get_resp_code(line);
   if (code != CODE_OK && code != CODE_OK_WARN) 
+    {
+      cout << "CCCC " << code << endl;
     return handle_err_code(code);
+    }
   
   return no_err;
 }
@@ -442,7 +445,6 @@ ControlSocketClient::check_handler(string el, string h, bool is_write, bool &exi
   case CODE_NO_HANDLER:
   case CODE_HANDLER_ERR:
   case CODE_PERMISSION:
-    cout << "XXX " << code << endl;
     exists = false;
     return no_err;
   case CODE_UNIMPLEMENTED:
@@ -605,16 +607,41 @@ main(int argc, char **argv)
     /* is writeable? */
     err = cs.check_handler(vhi[i].element_name, vhi[i].handler_name,
 			   true, res);
-    ok(res);
+    ok(err);
     cout << "is_write:" << ((res == vhi[i].can_write) ? "pass" : "FAIL") << '\t';
 
     /* is readable? */
     err = cs.check_handler(vhi[i].element_name, vhi[i].handler_name,
 			   false, res);
-    ok(res);
+    ok(err);
     cout << "is_read:" << ((res == vhi[i].can_read) ? "pass" : "FAIL") << endl;
   }
 
+  cout << endl;
+  cout << "Read/Write handler test: ";
+  string data = "1234567891abcdefghij"; 
+  /* 
+   * NB: to place spaces in this handler's data requires that the
+   * string be quoted; however, the handler's read function won't
+   * return the quotes around the string so the read value doesn't
+   * exactly match the write value.  to avoid, we don't use spaces....  
+   */
+  err = cs.write("InfiniteSource@1", "data", data);
+  ok(err);
+  string data2;
+  err = cs.read("InfiniteSource@1", "data", data2);
+  ok(err);
+
+  if (data2 != data)
+    cout << "FAIL (wanted ``" << data << "'', but got ``" << data2 << "'')";
+  else
+    cout << "pass";
+  cout << endl;
+
+  cout << endl 
+       << endl
+       << "********** Tests complete **********" << endl;
+  
   return 0;
 }
 #endif;
