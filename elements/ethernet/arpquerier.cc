@@ -113,8 +113,10 @@ ARPQuerier::clear_map()
   for (int i = 0; i < NMAP; i++) {
     for (ARPEntry *t = _map[i]; t; ) {
       ARPEntry *n = t->next;
-      if (t->p)
+      if (t->p) {
 	t->p->kill();
+        _pkts_killed++;
+      }
       delete t;
       t = n;
     }
@@ -150,13 +152,15 @@ ARPQuerier::expire_hook(Timer *, void *thunk)
 	break;
       if (e->ok) {
 	int gap = jiff - e->last_response_jiffies;
-	if (gap > 120*CLICK_HZ) {
+	if (gap > 300*CLICK_HZ) {
 	  // click_chatter("ARPQuerier timing out %x", e->ip.addr());
 	  // delete entry from map
 	  if (prev) prev->next = e->next;
 	  else arpq->_map[i] = e->next;
-	  if (e->p)
+	  if (e->p) {
 	    e->p->kill();
+            arpq->_pkts_killed++;
+	  }
 	  delete e;
 	  continue;		// don't change prev
 	} else if (gap > 60*CLICK_HZ)
