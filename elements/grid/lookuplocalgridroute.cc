@@ -183,10 +183,12 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) co
   // is the destination an immediate nbr?
   UpdateGridRoutes::NbrEntry *ne = _nbr->_addresses.findp(dest_ip);
   if (ne != 0) {
+#if 0
     click_chatter("%s: found immediate nbr %s for next hop for %s",
                   id().cc(),
                   ne->ip.s().cc(),
                   dest_ip.s().cc());
+#endif
     *dest_eth = ne->eth;
     return true;
   }
@@ -198,10 +200,12 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) co
       ne = _nbr->_addresses.findp(IPAddress(fe->nbr.next_hop_ip));
       if (ne != 0) {
 	*dest_eth = ne->eth;
+#if 0
 	click_chatter("%s: trying to use next hop %s for %s",
 		      id().cc(),
 		      ne->ip.s().cc(),
 		      dest_ip.s().cc());
+#endif
 	return true;
       }
       else {
