@@ -11,6 +11,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
+datadir = @datadir@
 mandir = @mandir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
@@ -37,15 +38,14 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = codeblock.o expr.o exprxform.o feature.o field.o handler.o \
-	landmark.o main.o mesg.o namespace.o operator.o output.o \
-	permstr.o token.o type.o writer.o xerror.o yuck.o yucktype.o
+OBJS = cxxclass.o click-specialize.o
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL -DHAVE_PERMSTRING
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) \
+DEFS = @DEFS@ -DCLICK_SHAREDIR='"$(datadir)"' \
+	-I. -I$(top_builddir) -I$(srcdir) \
 	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
