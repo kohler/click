@@ -79,7 +79,7 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
   // check tunnel situation
   for (int i = 0; i < _pat->nelements(); i++) {
     ElementT &fac = _pat->element(i);
-    if (fac.type != RouterT::TUNNEL_TYPE)
+    if (!fac.tunnel())
       continue;
     else if (fac.tunnel_input >= 0 || fac.tunnel_output >= 0)
       errh->lerror(fac.landmark, "pattern has active connection tunnels");
@@ -314,24 +314,24 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
       _body->free_element(_match[i]);
     } else
       old_names.push_back(String());
-  //_body->check();
   
   // add replacement
   // collect new element indices in `changed_elements'
   _body->set_new_eindex_collector(&changed_elements);
 
   // make element named `prefix'
-  int new_eindex = _body->get_eindex(prefix, RouterT::TUNNEL_TYPE, String(), landmark);
+  int new_eindex = _body->get_eindex(prefix, ElementClassT::tunnel_type(), String(), landmark);
 
   // expand 'replacement' into '_body'; need crap compound element
   Vector<String> crap_args;
-  CompoundElementClassT comp(replacement);
+  CompoundElementClassT comp("<replacement>", replacement);
   comp.complex_expand_element(_body, new_eindex, String(), crap_args, _body, VariableEnvironment(), errh);
 
   // mark replacement
   for (int i = 0; i < changed_elements.size(); i++) {
     int j = changed_elements[i];
-    if (_body->element(j).type < 0) continue;
+    if (_body->element(j).dead())
+      continue;
     _body->element(j).flags = _patid;
     replace_config(_body->econfiguration(j));
   }
@@ -470,17 +470,20 @@ read_pattern_file(const char *name, ErrorHandler *errh)
 {
   patterns_attempted++;
   RouterT *pat_file = read_router_file(name, true, errh);
-  if (!pat_file) return;
+  if (!pat_file)
+    return;
+
+  Vector<ElementClassT *> compounds;
+  pat_file->collect_active_types(compounds);
   
-  for (int i = 0; i < pat_file->ntypes(); i++) {
-    ElementClassT *fclass = pat_file->type_class(i);
-    String name = pat_file->type_name(i);
-    if (fclass && name.length() > 12
+  for (int i = 0; i < compounds.size(); i++) {
+    String name = compounds[i]->name();
+    if (compounds[i]->cast_compound() && name.length() > 12
 	&& name.substring(-12) == "_Replacement") {
-      int ti = pat_file->type_index(name.substring(0, -12));
-      if (ti >= 0 && pat_file->type_class(ti)) {
-	RouterT *rep = fclass->cast_router();
-	RouterT *pat = pat_file->type_class(ti)->cast_router();
+      ElementClassT *tt = pat_file->try_type(name.substring(0, -12));
+      if (tt && tt->cast_compound()) {
+	RouterT *rep = compounds[i]->cast_router();
+	RouterT *pat = tt->cast_router();
 	if (rep && pat) {
 	  patterns.push_back(pat);
 	  replacements.push_back(rep);
@@ -601,14 +604,6 @@ particular purpose.\n");
     // flatten patterns
     for (int i = 0; i < patterns.size(); i++)
       patterns[i]->flatten(errh);
-
-    // unify pattern types
-    // (warning: creates circular element class references, which are
-    // removed below by remove_unused_element_types())
-    for (int i = 0; i < patterns.size(); i++) {
-      patterns[i]->unify_type_indexes(r);
-      replacements[i]->unify_type_indexes(r);
-    }
   }
   
   // clear r's flags, so we know the current element complement
@@ -640,7 +635,6 @@ particular purpose.\n");
   // write result
   if (nreplace)
     r->remove_dead_elements(0);
-  r->remove_unused_element_types(); // remove circular compound elements
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   return 0;

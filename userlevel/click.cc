@@ -246,20 +246,23 @@ call_read_handler(Element *e, String handler_name, Router *r,
   return 0;
 }
 
-static void
+static bool
 expand_handler_elements(const String &pattern, const String &handler_name,
 			Vector<Element *> &elements, Router *router)
 {
   int nelem = router->nelements();
+  bool any_elements = false;
   for (int i = 0; i < nelem; i++) {
     const String &id = router->ename(i);
     if (glob_match(id, pattern)) {
+      any_elements = true;
       Element *e = router->element(i);
       int hi = router->find_handler(e, handler_name);
       if (hi >= 0 && router->handler(hi).read_visible())
 	elements.push_back(e);
     }
   }
+  return any_elements;
 }
 
 static int
@@ -284,14 +287,10 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
     Vector<Element *> elements;
     if (Element *e = router->find(element_name))
       elements.push_back(e);
-    else {
-      expand_handler_elements(element_name, handler_name, elements, router);
+    else if (expand_handler_elements(element_name, handler_name, elements, router))
       print_names = true;
-    }
-    if (!elements.size()) {
-      errh->error("no element named `%s'", element_name.cc());
-      continue;
-    }
+    else
+      errh->error("no element matching `%s'", element_name.cc());
 
     for (int j = 0; j < elements.size(); j++)
       call_read_handler(elements[j], handler_name, router, print_names, errh);

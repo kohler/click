@@ -1,8 +1,10 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * processingt.{cc,hh} -- decide on a Click configuration's processing
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,163 +22,161 @@
 #include "processingt.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
-#include "toolutils.hh"
+#include "elementmap.hh"
 #include <ctype.h>
 #include <string.h>
 
 ProcessingT::ProcessingT()
-  : _router(0)
+    : _router(0)
 {
 }
 
 ProcessingT::ProcessingT(const RouterT *r, const ElementMap &em, ErrorHandler *errh)
-  : _router(0)
+    : _router(0)
 {
-  reset(r, em, errh);
+    reset(r, em, errh);
 }
 
 void
 ProcessingT::create_pidx(ErrorHandler *errh)
 {
-  int ne = _router->nelements();
-  _input_pidx.assign(ne, 0);
-  _output_pidx.assign(ne, 0);
+    int ne = _router->nelements();
+    _input_pidx.assign(ne, 0);
+    _output_pidx.assign(ne, 0);
 
-  // count used input and output ports for each element
-  int nh = _router->nhookup();
-  const Vector<Hookup> &hf = _router->hookup_from();
-  const Vector<Hookup> &ht = _router->hookup_to();
-  for (int i = 0; i < nh; i++) {
-    const Hookup &ho = hf[i];
-    if (ho.idx < 0)
-      continue;
-    if (ho.port >= _output_pidx[ho.idx])
-      _output_pidx[ho.idx] = ho.port + 1;
-    const Hookup &hi = ht[i];
-    if (hi.port >= _input_pidx[hi.idx])
-      _input_pidx[hi.idx] = hi.port + 1;
-  }
+    // count used input and output ports for each element
+    int nh = _router->nhookup();
+    const Vector<Hookup> &hf = _router->hookup_from();
+    const Vector<Hookup> &ht = _router->hookup_to();
+    for (int i = 0; i < nh; i++) {
+	const Hookup &ho = hf[i];
+	if (ho.idx < 0)
+	    continue;
+	if (ho.port >= _output_pidx[ho.idx])
+	    _output_pidx[ho.idx] = ho.port + 1;
+	const Hookup &hi = ht[i];
+	if (hi.port >= _input_pidx[hi.idx])
+	    _input_pidx[hi.idx] = hi.port + 1;
+    }
 
-  int ci = 0, co = 0;
-  for (int i = 0; i < ne; i++) {
-    int ni = _input_pidx[i], no = _output_pidx[i];
-    _input_pidx[i] = ci;
-    _output_pidx[i] = co;
-    ci += ni, co += no;
-  }
-  _input_pidx.push_back(ci);
-  _output_pidx.push_back(co);
+    int ci = 0, co = 0;
+    for (int i = 0; i < ne; i++) {
+	int ni = _input_pidx[i], no = _output_pidx[i];
+	_input_pidx[i] = ci;
+	_output_pidx[i] = co;
+	ci += ni, co += no;
+    }
+    _input_pidx.push_back(ci);
+    _output_pidx.push_back(co);
 
-  // create eidxes
-  _input_eidx.clear();
-  _output_eidx.clear();
-  ci = 0, co = 0;
-  for (int i = 1; i <= ne; i++) {
-    for (; ci < _input_pidx[i]; ci++)
-      _input_eidx.push_back(i - 1);
-    for (; co < _output_pidx[i]; co++)
-      _output_eidx.push_back(i - 1);
-  }
+    // create eidxes
+    _input_eidx.clear();
+    _output_eidx.clear();
+    ci = 0, co = 0;
+    for (int i = 1; i <= ne; i++) {
+	for (; ci < _input_pidx[i]; ci++)
+	    _input_eidx.push_back(i - 1);
+	for (; co < _output_pidx[i]; co++)
+	    _output_eidx.push_back(i - 1);
+    }
 
-  // complain about dead elements with live connections
-  if (errh) {
-    for (int i = 0; i < ne; i++)
-      if (_router->edead(i) && (ninputs(i) > 0 || noutputs(i) > 0))
-	errh->lwarning(_router->elandmark(i), "dead element %s has live connections", _router->ename(i).cc());
-  }
+    // complain about dead elements with live connections
+    if (errh) {
+	for (int i = 0; i < ne; i++)
+	    if (_router->edead(i) && (ninputs(i) > 0 || noutputs(i) > 0))
+		errh->lwarning(_router->elandmark(i), "dead element %s has live connections", _router->ename(i).cc());
+    }
 }
 
 static int
 next_processing_code(const String &str, int &pos, ErrorHandler *errh,
-		     const String &landmark, const String &etype)
+		     const String &landmark, ElementClassT *etype)
 {
-  const char *s = str.data();
-  int len = str.length();
-  if (pos >= len)
-    return -2;
-  
-  switch (s[pos]) {
-    
-   case 'h': case 'H':
-    pos++;
-    return ProcessingT::VPUSH;
-    
-   case 'l': case 'L':
-    pos++;
-    return ProcessingT::VPULL;
-    
-   case 'a': case 'A':
-    pos++;
-    return ProcessingT::VAGNOSTIC;
+    const char *s = str.data();
+    int len = str.length();
+    if (pos >= len)
+	return -2;
 
-   case '/':
-    return -2;
+    switch (s[pos]) {
 
-   default:
-    errh->lerror(landmark, "bad character `%c' in processing code for `%s'",
-		 s[pos], String(etype).cc());
-    pos++;
-    return -1;
+      case 'h': case 'H':
+	pos++;
+	return ProcessingT::VPUSH;
     
-  }
+      case 'l': case 'L':
+	pos++;
+	return ProcessingT::VPULL;
+	
+      case 'a': case 'A':
+	pos++;
+	return ProcessingT::VAGNOSTIC;
+
+      case '/':
+	return -2;
+
+      default:
+	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->name_cc());
+	pos++;
+	return -1;
+    
+    }
 }
 
 void
 ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *errh)
 {
-  // don't handle uprefs or tunnels
-  int etype = _router->etype(ei);
-  if (etype < 0 || etype == RouterT::TUNNEL_TYPE)
-    return;
-  
-  String etype_name = _router->type_name(etype);
-  String landmark = _router->elandmark(ei);
-  String pc = em.processing_code(etype_name);
-  if (!pc) {
-    errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype_name.cc());
-    return;
-  }
+    // don't handle uprefs or tunnels
+    ElementClassT *etype = _router->etype(ei);
+    if (!etype || etype == ElementClassT::tunnel_type())
+	return;
 
-  int pos = 0;
-  int len = pc.length();
+    String landmark = _router->elandmark(ei);
+    String pc = em.processing_code(etype);
+    if (!pc) {
+	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->name_cc());
+	return;
+    }
 
-  int start_in = _input_pidx[ei];
-  int start_out = _output_pidx[ei];
+    int pos = 0;
+    int len = pc.length();
 
-  int val = 0;
-  int last_val = 0;
-  for (int i = 0; i < ninputs(ei); i++) {
-    if (last_val >= 0)
-      last_val = next_processing_code(pc, pos, errh, landmark, etype_name);
-    if (last_val >= 0)
-      val = last_val;
-    _input_processing[start_in + i] = val;
-  }
+    int start_in = _input_pidx[ei];
+    int start_out = _output_pidx[ei];
 
-  while (pos < len && pc[pos] != '/')
-    pos++;
-  if (pos >= len)
-    pos = 0;
-  else
-    pos++;
+    int val = 0;
+    int last_val = 0;
+    for (int i = 0; i < ninputs(ei); i++) {
+	if (last_val >= 0)
+	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
+	if (last_val >= 0)
+	    val = last_val;
+	_input_processing[start_in + i] = val;
+    }
 
-  last_val = 0;
-  for (int i = 0; i < noutputs(ei); i++) {
-    if (last_val >= 0)
-      last_val = next_processing_code(pc, pos, errh, landmark, etype_name);
-    if (last_val >= 0)
-      val = last_val;
-    _output_processing[start_out + i] = val;
-  }
+    while (pos < len && pc[pos] != '/')
+	pos++;
+    if (pos >= len)
+	pos = 0;
+    else
+	pos++;
+
+    last_val = 0;
+    for (int i = 0; i < noutputs(ei); i++) {
+	if (last_val >= 0)
+	    last_val = next_processing_code(pc, pos, errh, landmark, etype);
+	if (last_val >= 0)
+	    val = last_val;
+	_output_processing[start_out + i] = val;
+    }
 }
 
 void
 ProcessingT::initial_processing(const ElementMap &em, ErrorHandler *errh)
 {
-  _input_processing.assign(ninput_pidx(), VAGNOSTIC);
-  _output_processing.assign(noutput_pidx(), VAGNOSTIC);
-  for (int i = 0; i < nelements(); i++)
-    initial_processing_for(i, em, errh);
+    _input_processing.assign(ninput_pidx(), VAGNOSTIC);
+    _output_processing.assign(noutput_pidx(), VAGNOSTIC);
+    for (int i = 0; i < nelements(); i++)
+	initial_processing_for(i, em, errh);
 }
 
 void
@@ -211,7 +211,7 @@ ProcessingT::check_processing(const ElementMap &em, ErrorHandler *errh)
       int port = i - _input_pidx[ei];
       int opidx = _output_pidx[ei];
       int noutputs = _output_pidx[ei+1] - opidx;
-      forward_flow(em.flow_code(_router->etype_name(ei)),
+      forward_flow(em.flow_code(_router->etype(ei)),
 		   port, noutputs, &bv);
       for (int j = 0; j < noutputs; j++)
 	if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC) {

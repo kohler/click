@@ -79,7 +79,7 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
   _oalign.assign(od, Alignment());
   // find aligners
   for (int i = 0; i < ne; i++) {
-    AlignClass *eclass = (AlignClass *)_router->etype_class(i);
+    AlignClass *eclass = (AlignClass *)_router->etype(i)->cast("AlignClass");
     Aligner *aligner = 0;
     if (eclass)
       aligner = eclass->create_aligner(_router->element(i), _router, errh);
@@ -232,61 +232,56 @@ RouterAlign::print(FILE *f)
 }
 
 
-RouterT *
-prepared_router()
+void
+prepare_classes()
 {
-  RouterT *r = new RouterT;
-  AlignClass *ac;
-
   // specialized classes
-  r->get_type_index("Align", new AlignAlignClass);
-  r->get_type_index("Strip", new StripAlignClass);
-  r->get_type_index("CheckIPHeader", new CheckIPHeaderAlignClass(1));
-  r->get_type_index("CheckIPHeader2", new CheckIPHeaderAlignClass(1));
-  r->get_type_index("MarkIPHeader", new CheckIPHeaderAlignClass(0));
-  r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
-  r->get_type_index("EtherEncap", new AlignClass(new ShifterAligner(-14)));
+  ElementClassT::set_default_class(new AlignAlignClass);
+  ElementClassT::set_default_class(new StripAlignClass);
+  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("CheckIPHeader", 1));
+  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("CheckIPHeader2", 1));
+  ElementClassT::set_default_class(new CheckIPHeaderAlignClass("MarkIPHeader", 0));
+  ElementClassT::set_default_class(new AlignClass("Classifier", new ClassifierAligner));
+  ElementClassT::set_default_class(new AlignClass("EtherEncap", new ShifterAligner(-14)));
 
-  r->get_type_index("IPInputCombo", new AlignClass(
+  ElementClassT::set_default_class(new AlignClass("IPInputCombo",
 	new CombinedAligner(new ShifterAligner(14),
 			    new WantAligner(Alignment(4, 2)))));
 
   // no alignment requirements, and do not transmit packets between input and
   // output
-  ac = new AlignClass(new NullAligner);
-  r->get_type_index("Idle", ac);
-  r->get_type_index("Discard", ac);
+  Aligner *a = new NullAligner;
+  ElementClassT::set_default_class(new AlignClass("Idle", a));
+  ElementClassT::set_default_class(new AlignClass("Discard", a));
   
   // generate alignment 4/2
-  ac = new AlignClass(new GeneratorAligner(Alignment(4, 2)));
-  r->get_type_index("FromDevice", ac);
-  r->get_type_index("PollDevice", ac);
-  r->get_type_index("FromLinux", ac);
+  a = new GeneratorAligner(Alignment(4, 2));
+  ElementClassT::set_default_class(new AlignClass("FromDevice", a));
+  ElementClassT::set_default_class(new AlignClass("PollDevice", a));
+  ElementClassT::set_default_class(new AlignClass("FromLinux", a));
 
   // generate alignment 4/0
-  ac = new AlignClass(new GeneratorAligner(Alignment(4, 0)));
-  r->get_type_index("RatedSource", ac);
-  r->get_type_index("ICMPError", ac);
+  a = new GeneratorAligner(Alignment(4, 0));
+  ElementClassT::set_default_class(new AlignClass("RatedSource", a));
+  ElementClassT::set_default_class(new AlignClass("ICMPError", a));
 
   // want alignment 4/2
-  ac = new AlignClass(new WantAligner(Alignment(4, 2)));
-  r->get_type_index("ToLinux", ac);
+  a = new WantAligner(Alignment(4, 2));
+  ElementClassT::set_default_class(new AlignClass("ToLinux", a));
 
   // want alignment 4/0
-  ac = new AlignClass(new WantAligner(Alignment(4, 0)));
-  r->get_type_index("IPEncap", ac);
-  r->get_type_index("UDPIPEncap", ac);
-  r->get_type_index("ICMPPingEncap", ac);
-  r->get_type_index("RandomUDPIPEncap", ac);
-  r->get_type_index("RoundRobinUDPIPEncap", ac);
-  r->get_type_index("RoundRobinTCPIPEncap", ac);
+  a = new WantAligner(Alignment(4, 0));
+  ElementClassT::set_default_class(new AlignClass("IPEncap", a));
+  ElementClassT::set_default_class(new AlignClass("UDPIPEncap", a));
+  ElementClassT::set_default_class(new AlignClass("ICMPPingEncap", a));
+  ElementClassT::set_default_class(new AlignClass("RandomUDPIPEncap", a));
+  ElementClassT::set_default_class(new AlignClass("RoundRobinUDPIPEncap", a));
+  ElementClassT::set_default_class(new AlignClass("RoundRobinTCPIPEncap", a));
 
   // want alignment 2/0
-  ac = new AlignClass(new WantAligner(Alignment(2, 0)));
-  r->get_type_index("ARPResponder", ac);
-  r->get_type_index("ARPQuerier", ac);
-  
-  return r;
+  a = new WantAligner(Alignment(2, 0));
+  ElementClassT::set_default_class(new AlignClass("ARPResponder", a));
+  ElementClassT::set_default_class(new AlignClass("ARPQuerier", a));
 }
 
 
@@ -404,13 +399,14 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *router = read_router_file(router_file, prepared_router(), errh);
+  prepare_classes();
+  RouterT *router = read_router_file(router_file, errh);
   if (router)
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  int align_tindex = router->get_type_index("Align", new AlignAlignClass);
-  assert(align_tindex >= 0);
+  ElementClassT *align_class = router->get_type("Align");
+  assert(align_class);
 
   int original_nelements = router->nelements();
   int anonymizer = original_nelements + 1;
@@ -443,7 +439,7 @@ particular purpose.\n");
 	  /* do nothing */;
 	else {
 	  int ei = router->get_eindex
-	    (aligner_name(anonymizer), align_tindex,
+	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
 	  router->insert_before(ei, Hookup(i, j));
@@ -460,8 +456,8 @@ particular purpose.\n");
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
       if (hf[i].idx >= 0
-	  && router->etype(ht[i].idx) == align_tindex
-	  && router->etype(hf[i].idx) == align_tindex) {
+	  && router->etype(ht[i].idx) == align_class
+	  && router->etype(hf[i].idx) == align_class) {
 	// skip over hf[i]
 	Vector<Hookup> above, below;
 	router->find_connections_to(hf[i], above);
@@ -501,7 +497,7 @@ particular purpose.\n");
 	  /* do nothing */;
 	else {
 	  int ei = router->get_eindex
-	    (aligner_name(anonymizer), align_tindex,
+	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
 	  router->insert_before(ei, Hookup(i, j));
@@ -525,7 +521,7 @@ particular purpose.\n");
     const Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
-      if (hf[i].idx >= 0 && router->etype(ht[i].idx) == align_tindex) {
+      if (hf[i].idx >= 0 && router->etype(ht[i].idx) == align_class) {
 	Alignment have = ral._oalign[ ral._ooffset[hf[i].idx] + hf[i].port ];
 	Alignment want = ral._oalign[ ral._ooffset[ht[i].idx] ];
 	if (have <= want) {
@@ -544,17 +540,17 @@ particular purpose.\n");
   }
 
   // remove unused Aligns (they have no input) and old AlignmentInfos
-  int aligninfo_tindex = router->get_type_index("AlignmentInfo", 0);
+  ElementClassT *aligninfo_class = router->get_type("AlignmentInfo");
   {
     Vector<int> ninputs, noutputs;
     router->count_ports(ninputs, noutputs);
     int nelem = router->nelements();
     for (int i = 0; i < nelem; i++)
-      if (router->etype(i) == align_tindex
+      if (router->etype(i) == align_class
 	  && (ninputs[i] == 0 || noutputs[i] == 0)) {
 	router->kill_element(i);
 	num_aligns_added--;
-      } else if (router->etype(i) == aligninfo_tindex)
+      } else if (router->etype(i) == aligninfo_class)
 	router->kill_element(i);
     router->remove_dead_elements();
   }
@@ -579,7 +575,7 @@ particular purpose.\n");
     }
     
     router->get_eindex(String("AlignmentInfo@click_align@") + String(nelem+1),
-		       aligninfo_tindex, sa.take_string(),
+		       aligninfo_class, sa.take_string(),
 		       "<click-align>");
   }
 

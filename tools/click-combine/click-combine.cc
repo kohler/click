@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
@@ -140,12 +141,12 @@ try_find_device(String devname, String class1, String class2,
     devname = words[0];
   }
   
-  int t1 = r->type_index(class1);
-  int t2 = r->type_index(class2);
+  ElementClassT *t1 = r->try_type(class1);
+  ElementClassT *t2 = r->try_type(class2);
   int found = -1;
   for (int i = 0; i < r->nelements(); i++) {
     const ElementT &e = r->element(i);
-    if (e.type >= 0 && (e.type == t1 || e.type == t2)) {
+    if (e.live() && (e.type() == t1 || e.type() == t2)) {
       Vector<String> words;
       cp_argvec(e.configuration, words);
       if (words.size() >= 1 && words[0] == devname) {
@@ -298,7 +299,7 @@ make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
   }
 
   // add new element
-  int link_type = combined->get_type_index("RouterLink");
+  ElementClassT *link_type = combined->get_type("RouterLink");
   int newe = combined->get_eindex
     ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
@@ -457,8 +458,8 @@ particular purpose.\n");
     exit(1);
 
   // nested combinations: change config strings of included RouterLinks
-  int link_type = combined->type_index("RouterLink");
-  if (link_type >= 0)
+  ElementClassT *link_type = combined->try_type("RouterLink");
+  if (link_type)
     for (int i = 0; i < combined->nelements(); i++)
       if (combined->etype(i) == link_type)
 	frob_nested_routerlink(combined->element(i));

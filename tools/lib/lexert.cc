@@ -1,9 +1,11 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * lexert.{cc,hh} -- configuration file parser for tools
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,22 +27,25 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+static LexerTInfo *stub_lexinfo = 0;
+
 LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _data(0), _len(0), _pos(0), _lineno(1),
     _ignore_line_directives(ignore_line_directives),
-    _tpos(0), _tfull(0), _router(0),
+    _tpos(0), _tfull(0), _router(0), _compound_class(0),
     _errh(errh)
 {
   if (!_errh)
     _errh = ErrorHandler::default_handler();
-  _lexinfo = new LexerTInfo;
+  if (!stub_lexinfo)
+    stub_lexinfo = new LexerTInfo;
+  _lexinfo = stub_lexinfo;
   clear();
 }
 
 LexerT::~LexerT()
 {
   clear();
-  delete _lexinfo;
 }
 
 void
@@ -68,6 +73,7 @@ LexerT::clear()
   if (_router)
     delete _router;
   _router = new RouterT;
+  _compound_class = 0;
   
   _big_string = "";
   // _data was freed by _big_string
@@ -81,6 +87,12 @@ LexerT::clear()
   
   _anonymous_offset = 0;
   _compound_depth = 0;
+}
+
+void
+LexerT::set_lexinfo(LexerTInfo *li)
+{
+  _lexinfo = (li ? li : stub_lexinfo);
 }
 
 void
@@ -183,6 +195,7 @@ LexerT::process_line_directive(unsigned pos)
 {
   const char *data = _data;
   unsigned len = _len;
+  unsigned first_pos = pos;
   
   for (pos++; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
     /* nada */;
@@ -194,7 +207,7 @@ LexerT::process_line_directive(unsigned pos)
   }
   if (pos >= len || !isdigit(data[pos])) {
     // complain about bad directive
-    lerror("unknown preprocessor directive");
+    lerror(first_pos, pos, "unknown preprocessor directive");
     return skip_line(pos);
   } else if (_ignore_line_directives)
     return skip_line(pos);
@@ -319,7 +332,7 @@ LexerT::next_lexeme()
   return Lexeme(_data[word_pos], _big_string.substring(word_pos, 1), word_pos);
 }
 
-String
+Lexeme
 LexerT::lex_config()
 {
   unsigned config_pos = _pos;
@@ -349,7 +362,8 @@ LexerT::lex_config()
   
   _pos = pos;
   _lexinfo->notify_config_string(config_pos, pos);
-  return _big_string.substring(config_pos, pos - config_pos);
+  return Lexeme(lexConfig, _big_string.substring(config_pos, pos - config_pos),
+		config_pos);
 }
 
 String
@@ -407,24 +421,35 @@ LexerT::unlex(const Lexeme &t)
 }
 
 bool
-LexerT::expect(int kind, bool report_error = true)
+LexerT::expect(int kind, bool report_error)
 {
-  // Never adds anything to '_tcircle'. This requires a nonobvious
-  // implementation.
-  if (_tpos != _tfull) {
-    if (_tcircle[_tpos].is(kind)) {
-      _tpos = (_tpos + 1) % TCIRCLE_SIZE;
-      return true;
+    // Never adds anything to '_tcircle'. This requires a nonobvious
+    // implementation.
+    if (_tpos != _tfull) {
+	if (_tcircle[_tpos].is(kind)) {
+	    _tpos = (_tpos + 1) % TCIRCLE_SIZE;
+	    return true;
+	}
+	if (report_error)
+	    lerror(_tcircle[_tpos], "expected %s", lexeme_string(kind).cc());
+    } else {
+	unsigned old_pos = _pos;
+	if (next_lexeme().is(kind))
+	    return true;
+	if (report_error)
+	    lerror(old_pos, _pos, "expected %s", lexeme_string(kind).cc());
+	_pos = old_pos;
     }
-  } else {
-    unsigned old_pos = _pos;
-    if (next_lexeme().is(kind))
-      return true;
-    _pos = old_pos;
-  }
-  if (report_error)
-    lerror("expected %s", lexeme_string(kind).cc());
-  return false;
+    return false;
+}
+
+int
+LexerT::next_pos() const
+{
+    if (_tpos != _tfull)
+	return _tcircle[_tpos].pos1();
+    else
+	return _pos;
 }
 
 
@@ -433,34 +458,61 @@ LexerT::expect(int kind, bool report_error = true)
 String
 LexerT::landmark() const
 {
-  return _filename + String(_lineno);
+    return _filename + String(_lineno);
+}
+
+void
+LexerT::vlerror(int pos1, int pos2, const String &lm, const char *format, va_list val)
+{
+    String text = _errh->make_text(ErrorHandler::ERR_ERROR, format, val);
+    _lexinfo->notify_error(text, pos1, pos2);
+    text = _errh->decorate_text(ErrorHandler::ERR_ERROR, String(), lm, text);
+    _errh->handle_text(ErrorHandler::ERR_ERROR, text);
 }
 
 int
-LexerT::lerror(const char *format, ...)
+LexerT::lerror(int pos1, int pos2, const char *format, ...)
 {
-  va_list val;
-  va_start(val, format);
-  _errh->verror(ErrorHandler::ERR_ERROR, landmark(), format, val);
-  va_end(val);
-  return -1;
+    va_list val;
+    va_start(val, format);
+    vlerror(pos1, pos2, landmark(), format, val);
+    va_end(val);
+    return -1;
+}
+
+int
+LexerT::lerror(const Lexeme &t, const char *format, ...)
+{
+    va_list val;
+    va_start(val, format);
+    vlerror(t.pos1(), t.pos2(), landmark(), format, val);
+    va_end(val);
+    return -1;
 }
 
 
 // ELEMENT TYPES
 
-int
-LexerT::element_type(const String &s) const
+ElementClassT *
+LexerT::element_type(const Lexeme &t) const
 {
-  return _router->type_index(s);
+    assert(t.is(lexIdent));
+    ElementClassT *type = _router->try_type(t.string());
+    if (type)
+	_lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
+    return type;
 }
 
-int
-LexerT::force_element_type(String s)
+ElementClassT *
+LexerT::force_element_type(const Lexeme &t)
 {
-  if (_router->eindex(s) >= 0 && _router->type_index(s) < 0)
-    lerror("`%s' was previously used as an element name", s.cc());
-  return _router->get_type_index(s);
+    assert(t.is(lexIdent));
+    String name = t.string();
+    if (_router->eindex(name) >= 0 && !_router->try_type(name))
+	lerror(t, "`%s' was previously used as an element name", name.cc());
+    ElementClassT *type = _router->get_type(name);
+    _lexinfo->notify_class_reference(type, t.pos1(), t.pos2());
+    return type;
 }
 
 
@@ -469,330 +521,342 @@ LexerT::force_element_type(String s)
 String
 LexerT::anon_element_name(const String &class_name) const
 {
-  String prefix = class_name + "@";
-  int anonymizer = _router->nelements() - _anonymous_offset + 1;
-  String name = prefix + String(anonymizer);
-  while (_router->eindex(name) >= 0) {
-    anonymizer++;
-    name = prefix + String(anonymizer);
-  }
-  return name;
+    String prefix = class_name + "@";
+    int anonymizer = _router->nelements() - _anonymous_offset + 1;
+    String name = prefix + String(anonymizer);
+    while (_router->eindex(name) >= 0) {
+	anonymizer++;
+	name = prefix + String(anonymizer);
+    }
+    return name;
 }
 
 String
 LexerT::anon_element_class_name(String prefix) const
 {
-  int anonymizer = _router->nelements() - _anonymous_offset + 1;
-  String name = prefix + String(anonymizer);
-  while (_router->type_index(name) >= 0) {
-    anonymizer++;
-    name = prefix + String(anonymizer);
-  }
-  return name;
-}
-
-int
-LexerT::make_element(String name, int ftype, const String &conf,
-		     const String &lm)
-{
-  // check `name' for validity
-  for (int i = 0; i < name.length(); i++) {
-    bool ok = false;
-    for (; i < name.length() && name[i] != '/'; i++)
-      if (!isdigit(name[i]))
-	ok = true;
-    if (!ok) {
-      lerror("element name `%s' has all-digit component", name.cc());
-      break;
+    int anonymizer = _router->nelements() - _anonymous_offset + 1;
+    String name = prefix + String(anonymizer);
+    while (_router->try_type(name)) {
+	anonymizer++;
+	name = prefix + String(anonymizer);
     }
-  }
-
-  return _router->get_eindex(name, ftype, conf, lm ? lm : landmark());
+    return name;
 }
 
 int
-LexerT::make_anon_element(const String &class_name, int ftype,
+LexerT::make_element(String name, const Lexeme &location,
+		     ElementClassT *type, const String &conf, const String &lm)
+{
+    // check `name' for validity
+    for (int i = 0; i < name.length(); i++) {
+	bool ok = false;
+	for (; i < name.length() && name[i] != '/'; i++)
+	    if (!isdigit(name[i]))
+		ok = true;
+	if (!ok) {
+	    lerror(location, "element name `%s' has all-digit component", name.cc());
+	    break;
+	}
+    }
+    _lexinfo->notify_element_declaration(name, type, _compound_class, location.pos1(), location.pos2());
+    _lexinfo->notify_element_reference(name, type, _compound_class, location.pos1(), location.pos2());
+    return _router->get_eindex(name, type, conf, lm ? lm : landmark());
+}
+
+int
+LexerT::make_anon_element(const Lexeme &what, ElementClassT *type,
 			  const String &conf, const String &lm)
 {
-  return make_element(anon_element_name(class_name), ftype, conf, lm);
+    return make_element(anon_element_name(type->name()), what, type, conf, lm);
 }
 
 void
 LexerT::connect(int element1, int port1, int port2, int element2)
 {
-  if (port1 < 0) port1 = 0;
-  if (port2 < 0) port2 = 0;
-  _router->add_connection(Hookup(element1, port1), Hookup(element2, port2),
-			  landmark());
+    if (port1 < 0)
+	port1 = 0;
+    if (port2 < 0)
+	port2 = 0;
+    _router->add_connection
+	(Hookup(element1, port1), Hookup(element2, port2), landmark());
 }
 
 
 // PARSING
 
 bool
-LexerT::yport(int &port)
+LexerT::yport(int &port, int &pos1, int &pos2)
 {
-  const Lexeme &tlbrack = lex();
-  if (!tlbrack.is('[')) {
-    unlex(tlbrack);
-    return false;
-  }
-  
-  const Lexeme &tword = lex();
-  if (tword.is(lexIdent)) {
-    String p = tword.string();
-    const char *ps = p.cc();
-    if (isdigit(ps[0]) || ps[0] == '-')
-      port = strtol(ps, (char **)&ps, 0);
-    if (*ps != 0) {
-      lerror("syntax error: port number should be integer");
-      port = 0;
+    const Lexeme &tlbrack = lex();
+    if (!tlbrack.is('[')) {
+	unlex(tlbrack);
+	return false;
     }
-    expect(']');
-    return true;
-  } else if (tword.is(']')) {
-    lerror("syntax error: expected port number");
-    port = 0;
-    return true;
-  } else {
-    lerror("syntax error: expected port number");
-    unlex(tword);
-    return false;
-  }
+    pos1 = tlbrack.pos1();
+
+    const Lexeme &tword = lex();
+    if (tword.is(lexIdent)) {
+	String p = tword.string();
+	const char *ps = p.cc();
+	if (isdigit(ps[0]) || ps[0] == '-')
+	    port = strtol(ps, (char **)&ps, 0);
+	if (*ps != 0) {
+	    lerror(tword, "syntax error: port number should be integer");
+	    port = 0;
+	}
+	expect(']');
+	pos2 = next_pos();
+	return true;
+    } else if (tword.is(']')) {
+	lerror(tword, "syntax error: expected port number");
+	port = 0;
+	pos2 = tword.pos2();
+	return true;
+    } else {
+	lerror(tword, "syntax error: expected port number");
+	unlex(tword);
+	return false;
+    }
 }
 
 bool
 LexerT::yelement(int &element, bool comma_ok)
 {
-  Lexeme t = lex();
-  String name;
-  int ftype;
+    Lexeme tname = lex();
+    String name;
+    ElementClassT *etype;
 
-  if (t.is(lexIdent)) {
-    name = t.string();
-    ftype = element_type(name);
-  } else if (t.is('{')) {
-    ftype = ycompound(String());
-    name = _router->type_name(ftype);
-  } else {
-    unlex(t);
-    return false;
-  }
-  
-  String configuration, lm;
-  const Lexeme &tparen = lex();
-  if (tparen.is('(')) {
-    lm = landmark();		// report landmark from before config string
-    if (ftype < 0) ftype = force_element_type(name);
-    configuration = lex_config();
-    expect(')');
-  } else
-    unlex(tparen);
-  
-  if (ftype >= 0)
-    element = make_anon_element(name, ftype, configuration, lm);
-  else {
-    const Lexeme &t2colon = lex();
-    unlex(t2colon);
-    if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
-      ydeclaration(name);
-      element = _router->eindex(name);
+    if (tname.is(lexIdent)) {
+	etype = element_type(tname);
+	name = tname.string();
+    } else if (tname.is('{')) {
+	etype = ycompound(String(), tname.pos1(), tname.pos1());
+	name = etype->name();
     } else {
-      element = _router->eindex(name);
-      if (element < 0) {
-	// assume it's an element type
-	ftype = force_element_type(name);
-	element = make_anon_element(name, ftype, configuration, lm);
-      }
+	unlex(tname);
+	return false;
     }
-  }
-  
-  return true;
+    
+    Lexeme configuration;
+    String lm;
+    const Lexeme &tparen = lex();
+    if (tparen.is('(')) {
+	lm = landmark();	// report landmark from before config string
+	if (!etype)
+	    etype = force_element_type(tname);
+	configuration = lex_config();
+	expect(')');
+    } else
+	unlex(tparen);
+
+    if (etype)
+	element = make_anon_element(tname, etype, configuration.string(), lm);
+    else {
+	const Lexeme &t2colon = lex();
+	unlex(t2colon);
+	if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
+	    ydeclaration(tname);
+	    element = _router->eindex(name);
+	} else {
+	    element = _router->eindex(name);
+	    if (element < 0) {
+		// assume it's an element type
+		etype = force_element_type(tname);
+		element = make_anon_element(tname, etype, configuration.string(), lm);
+	    } else
+		_lexinfo->notify_element_reference(name, _router->etype(element), _compound_class, tname.pos1(), tname.pos2());
+	}
+    }
+
+    return true;
 }
 
 void
-LexerT::ydeclaration(const String &first_element)
+LexerT::ydeclaration(const Lexeme &first_element)
 {
-  Vector<String> decls;
-  Lexeme t;
-  
-  if (first_element) {
-    decls.push_back(first_element);
-    goto midpoint;
-  }
-  
-  while (true) {
-    t = lex();
-    if (!t.is(lexIdent))
-      lerror("syntax error: expected element name");
-    else
-      decls.push_back(t.string());
-    
-   midpoint:
-    const Lexeme &tsep = lex();
-    if (tsep.is(','))
-      /* do nothing */;
-    else if (tsep.is(lex2Colon))
-      break;
-    else {
-      lerror("syntax error: expected `::' or `,'");
-      unlex(tsep);
-      return;
-    }
-  }
+    Vector<Lexeme> decls;
+    Lexeme t;
 
-  String lm = landmark();
-  int ftype;
-  t = lex();
-  if (t.is(lexIdent))
-    ftype = force_element_type(t.string());
-  else if (t.is('{'))
-    ftype = ycompound(String());
-  else {
-    lerror("missing element type in declaration");
-    return;
-  }
-  
-  String configuration;
-  t = lex();
-  if (t.is('(')) {
-    configuration = lex_config();
-    expect(')');
-  } else
-    unlex(t);
-  
-  for (int i = 0; i < decls.size(); i++) {
-    String name = decls[i];
-    int old_eidx = _router->eindex(name);
-    if (old_eidx >= 0) {
-      lerror("redeclaration of element `%s'", name.cc());
-      _errh->lerror(_router->elandmark(old_eidx), "`%s' previously declared here", _router->edeclaration(old_eidx).cc());
-    } else if (_router->type_index(name) >= 0)
-      lerror("`%s' is an element class", name.cc());
-    else
-      make_element(name, ftype, configuration, lm);
-  }
+    if (first_element) {
+	decls.push_back(first_element);
+	goto midpoint;
+    }
+
+    while (true) {
+	t = lex();
+	if (!t.is(lexIdent))
+	    lerror(t, "syntax error: expected element name");
+	else
+	    decls.push_back(t);
+    
+      midpoint:
+	const Lexeme &tsep = lex();
+	if (tsep.is(','))
+	    /* do nothing */;
+	else if (tsep.is(lex2Colon))
+	    break;
+	else {
+	    lerror(tsep, "syntax error: expected `::' or `,'");
+	    unlex(tsep);
+	    return;
+	}
+    }
+
+    String lm = landmark();
+    ElementClassT *etype;
+    t = lex();
+    if (t.is(lexIdent))
+	etype = force_element_type(t);
+    else if (t.is('{'))
+	etype = ycompound(String(), t.pos1(), t.pos1());
+    else {
+	lerror(t, "missing element type in declaration");
+	return;
+    }
+
+    Lexeme configuration;
+    t = lex();
+    if (t.is('(')) {
+	configuration = lex_config();
+	expect(')');
+    } else
+	unlex(t);
+
+    for (int i = 0; i < decls.size(); i++) {
+	String name = decls[i].string();
+	int old_eidx = _router->eindex(name);
+	if (old_eidx >= 0) {
+	    lerror(decls[i], "redeclaration of element `%s'", name.cc());
+	    _errh->lerror(_router->elandmark(old_eidx), "`%s' previously declared here", _router->edeclaration(old_eidx).cc());
+	} else if (_router->try_type(name))
+	    lerror(decls[i], "`%s' is an element class", name.cc());
+	else
+	    make_element(name, decls[i], etype, configuration.string(), lm);
+    }
 }
 
 bool
 LexerT::yconnection()
 {
-  int element1 = -1;
-  int port1;
-  Lexeme t;
-  
-  while (true) {
-    int element2;
-    int port2 = -1;
+    int element1 = -1;
+    int port1 = -1, port1_pos1 = -1, port1_pos2 = -1;
+    Lexeme t;
+
+    while (true) {
+	int element2;
+	int port2 = -1, port2_pos1, port2_pos2;
+
+	// get element
+	yport(port2, port2_pos1, port2_pos2);
+	if (!yelement(element2, element1 < 0)) {
+	    if (port1 >= 0)
+		lerror(port1_pos1, port1_pos2, "output port useless at end of chain");
+	    return element1 >= 0;
+	}
+
+	if (element1 >= 0)
+	    connect(element1, port1, port2, element2);
+	else if (port2 >= 0)
+	    lerror(port2_pos1, port2_pos2, "input port useless at start of chain");
     
-    // get element
-    yport(port2);
-    if (!yelement(element2, element1 < 0)) {
-      if (port1 >= 0)
-	lerror("output port useless at end of chain");
-      return element1 >= 0;
+	port1 = -1;
+    
+      relex:
+	t = lex();
+	switch (t.kind()) {
+      
+	  case ',':
+	  case lex2Colon:
+	    lerror(t, "syntax error before `%s'", t.string().cc());
+	    goto relex;
+      
+	  case lexArrow:
+	    break;
+      
+	  case '[':
+	    unlex(t);
+	    yport(port1, port1_pos1, port1_pos2);
+	    goto relex;
+      
+	  case lexIdent:
+	  case '{':
+	  case '}':
+	  case lex2Bar:
+	  case lexTunnel:
+	  case lexElementclass:
+	  case lexRequire:
+	    unlex(t);
+	    // FALLTHRU
+	  case ';':
+	  case lexEOF:
+	    if (port1 >= 0)
+		lerror(port1_pos1, port1_pos2, "output port useless at end of chain", port1);
+	    return true;
+      
+	  default:
+	    lerror(t, "syntax error near `%#s'", String(t.string()).cc());
+	    if (t.kind() >= lexIdent)	// save meaningful tokens
+		unlex(t);
+	    return true;
+      
+	}
+    
+	// have `x ->'
+	element1 = element2;
     }
-    
-    if (element1 >= 0)
-      connect(element1, port1, port2, element2);
-    else if (port2 >= 0)
-      lerror("input port useless at start of chain");
-    
-    port1 = -1;
-    
-   relex:
-    t = lex();
-    switch (t.kind()) {
-      
-     case ',':
-     case lex2Colon:
-      lerror("syntax error before `%s'", t.string().cc());
-      goto relex;
-      
-     case lexArrow:
-      break;
-      
-     case '[':
-      unlex(t);
-      yport(port1);
-      goto relex;
-      
-     case lexIdent:
-     case '{':
-     case '}':
-     case lex2Bar:
-     case lexTunnel:
-     case lexElementclass:
-     case lexRequire:
-      unlex(t);
-      // FALLTHRU
-     case ';':
-     case lexEOF:
-      if (port1 >= 0)
-	lerror("output port useless at end of chain", port1);
-      return true;
-      
-     default:
-      lerror("syntax error near `%#s'", String(t.string()).cc());
-      if (t.kind() >= lexIdent)	// save meaningful tokens
-	unlex(t);
-      return true;
-      
-    }
-    
-    // have `x ->'
-    element1 = element2;
-  }
 }
 
 void
-LexerT::yelementclass()
+LexerT::yelementclass(int pos1)
 {
-  Lexeme tname = lex();
-  String facclass_name;
-  if (!tname.is(lexIdent)) {
-    unlex(tname);
-    lerror("expected element type name");
-  } else {
-    String n = tname.string();
-    if (_router->eindex(n) >= 0)
-      lerror("`%s' already used as an element name", n.cc());
-    else
-      facclass_name = n;
-  }
+    Lexeme tname = lex();
+    String eclass_name;
+    if (!tname.is(lexIdent)) {
+	unlex(tname);
+	lerror(tname, "expected element type name");
+    } else {
+	String n = tname.string();
+	if (_router->eindex(n) >= 0)
+	    lerror(tname, "`%s' already used as an element name", n.cc());
+	else
+	    eclass_name = n;
+    }
 
-  Lexeme tnext = lex();
-  if (tnext.is('{'))
-    (void) ycompound(facclass_name);
-    
-  else if (tnext.is(lexIdent)) {
-    ElementClassT *tclass = _router->type_class(tnext.string());
-    if (facclass_name)
-      _router->add_type_index(facclass_name, new SynonymElementClassT(tnext.string(), tclass));
+    Lexeme tnext = lex();
+    if (tnext.is('{'))
+	(void) ycompound(eclass_name, pos1, tname.pos1());
 
-  } else
-    lerror("syntax error near `%#s'", String(tnext.string()).cc());
+    else if (tnext.is(lexIdent)) {
+	ElementClassT *ec = _router->get_type(tnext.string());
+	if (eclass_name) {
+	    ElementClassT *new_ec = new SynonymElementClassT(eclass_name, ec);
+	    _router->get_type(new_ec, true);
+	    _lexinfo->notify_class_declaration(new_ec, false, pos1, tname.pos1(), tnext.pos2());
+	}
+	
+    } else
+	lerror(tnext, "syntax error near `%#s'", String(tnext.string()).cc());
 }
 
 void
 LexerT::ytunnel()
 {
-  Lexeme tname1 = lex();
-  if (!tname1.is(lexIdent)) {
-    unlex(tname1);
-    lerror("expected tunnel input name");
-  }
+    Lexeme tname1 = lex();
+    if (!tname1.is(lexIdent)) {
+	unlex(tname1);
+	lerror(tname1, "expected tunnel input name");
+    }
+    
+    expect(lexArrow);
   
-  expect(lexArrow);
+    Lexeme tname2 = lex();
+    if (!tname2.is(lexIdent)) {
+	unlex(tname2);
+	lerror(tname2, "expected tunnel output name");
+    }
   
-  Lexeme tname2 = lex();
-  if (!tname2.is(lexIdent)) {
-    unlex(tname2);
-    lerror("expected tunnel output name");
-  }
-  
-  if (tname1.is(lexIdent) && tname2.is(lexIdent))
-    _router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
+    if (tname1.is(lexIdent) && tname2.is(lexIdent))
+	_router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
 }
 
 void
@@ -810,92 +874,103 @@ LexerT::ycompound_arguments(CompoundElementClassT *comptype)
     if (tsep.is('|'))
       return;
     else if (!tsep.is(',')) {
-      lerror("expected `,' or `|'");
+      lerror(tsep, "expected `,' or `|'");
       unlex(tsep);
       return;
     }
   }
 }
 
-int
-LexerT::ycompound(String name)
+ElementClassT *
+LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 {
-  bool anonymous = (name.length() == 0);
-  if (anonymous)
-    name = anon_element_class_name("@Class");
-  
-  // '{' was already read
-  RouterT *old_router = _router;
-  int old_offset = _anonymous_offset;
-  ElementClassT *created = 0;
+    bool anonymous = (name.length() == 0);
+    if (anonymous)
+	name = anon_element_class_name("@Class");
 
-  // check for '...'
-  const Lexeme &t = lex();
-  if (t.is(lex3Dot)) {
-    if (_router->type_index(name) < 0)
-      _router->add_type_index(name, new SynonymElementClassT(name, 0));
-    created = _router->type_class(name);
-    expect(lex2Bar);
-  } else
-    unlex(t);
-
-  ElementClassT *first = created;
-  
-  while (1) {
-    _router = new RouterT(old_router);
-    _router->get_eindex("input", RouterT::TUNNEL_TYPE, String(), landmark());
-    _router->get_eindex("output", RouterT::TUNNEL_TYPE, String(), landmark());
-    CompoundElementClassT *ct = new CompoundElementClassT(name, landmark(), _router, created, _compound_depth);
-    _anonymous_offset = 2;
+    // '{' was already read
+    RouterT *old_router = _router;
+    CompoundElementClassT *old_compound_class = _compound_class;
+    int old_offset = _anonymous_offset;
     _compound_depth++;
-
-    ycompound_arguments(ct);
-    while (ystatement(true))
-      /* nada */;
     
+    ElementClassT *created = 0;
+
+    // check for '...'
+    const Lexeme &t = lex();
+    if (t.is(lex3Dot)) {
+	if (anonymous) {
+	    lerror(t, "cannot extend anonymous compound element class");
+	    created = _router->get_type("Error");
+	} else {
+	    created = _router->get_type(name);
+	    _lexinfo->notify_class_extension(created, t.pos1(), t.pos2());
+	}
+	expect(lex2Bar);
+    } else
+	unlex(t);
+
+    ElementClassT *first = created;
+    int pos2;
+    
+    while (1) {
+	_router = new RouterT(old_router);
+	_router->get_eindex("input", ElementClassT::tunnel_type(), String(), landmark());
+	_router->get_eindex("output", ElementClassT::tunnel_type(), String(), landmark());
+	_compound_class = new CompoundElementClassT(name, landmark(), _router, created, _compound_depth);
+	_anonymous_offset = 2;
+
+	ycompound_arguments(_compound_class);
+	while (ystatement(true))
+	    /* nada */;
+
+	_compound_class->finish(_errh);
+	created = _compound_class;
+
+	// check for '||' or '}'
+	const Lexeme &t = lex();
+	if (!t.is(lex2Bar)) {
+	    pos2 = t.pos2();
+	    break;
+	}
+    }
+
     _compound_depth--;
     _anonymous_offset = old_offset;
     _router = old_router;
+    _compound_class = old_compound_class;
     
-    ct->finish(_errh);
-    created = ct;
+    created->cast_compound()->check_duplicates_until(first, _errh);
+    _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);
 
-    // check for '||' or '}'
-    const Lexeme &t = lex();
-    if (!t.is(lex2Bar))
-      break;
-  }
-
-  created->cast_compound()->check_duplicates_until(first, _errh);
-  
-  return old_router->add_type_index(name, created, anonymous);
+    return old_router->get_type(created, !anonymous);
 }
 
 void
 LexerT::yrequire()
 {
-  if (expect('(')) {
-    String requirement = lex_config();
-    expect(')');
-    // pre-read ';' to make it easier to write parsing extensions
-    expect(';', false);
-    
-    Vector<String> args;
-    String word;
-    cp_argvec(requirement, args);
-    for (int i = 0; i < args.size(); i++) {
-      Vector<String> words;
-      cp_spacevec(args[i], words);
-      if (words.size() == 0)
-	/* do nothing */;
-      else if (!cp_word(words[0], &word))
-	lerror("bad requirement: not a word");
-      else if (words.size() > 1)
-	lerror("bad requirement: too many words");
-      else
-	_router->add_requirement(word);
+    if (expect('(')) {
+	Lexeme requirement = lex_config();
+	expect(')');
+	// pre-read ';' to make it easier to write parsing extensions
+	expect(';', false);
+
+	Vector<String> args;
+	String word;
+	cp_argvec(requirement.string(), args);
+	for (int i = 0; i < args.size(); i++) {
+	    Vector<String> words;
+	    cp_spacevec(args[i], words);
+	    if (words.size() == 0)
+		/* do nothing */;
+	    else if (!cp_word(words[0], &word))
+		lerror(requirement, "bad requirement: not a word");
+	    else if (words.size() > 1)
+		lerror(requirement, "bad requirement: too many words");
+	    else
+		_router->add_requirement(word);
+	}
     }
-  }
 }
 
 bool
@@ -912,7 +987,7 @@ LexerT::ystatement(bool nested)
     return true;
     
    case lexElementclass:
-    yelementclass();
+    yelementclass(t.pos1());
     return true;
     
    case lexTunnel:
@@ -935,12 +1010,12 @@ LexerT::ystatement(bool nested)
     
    case lexEOF:
     if (nested)
-      lerror("expected `}'");
+      lerror(t, "expected `}'");
     return false;
     
    default:
    syntax_error:
-    lerror("syntax error near `%#s'", String(t.string()).cc());
+    lerror(t, "syntax error near `%#s'", String(t.string()).cc());
     return true;
     
   }
@@ -956,3 +1031,5 @@ LexerT::take_router()
   _router = 0;
   return r;
 }
+
+#include <click/vector.cc>

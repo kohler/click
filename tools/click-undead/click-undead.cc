@@ -22,6 +22,7 @@
 #include "routert.hh"
 #include "lexert.hh"
 #include "processingt.hh"
+#include "elementmap.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
@@ -130,13 +131,13 @@ save_element_nports(RouterT *r)
 static void
 remove_static_switches(RouterT *r, ErrorHandler *errh)
 {
-  int tindex = r->type_index("StaticSwitch");
-  if (tindex < 0)
+  ElementClassT *t = r->try_type("StaticSwitch");
+  if (!t)
     return;
-  int idle_tindex = r->get_type_index("Idle");
+  ElementClassT *idlet = r->get_type("Idle");
 
   for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != tindex)
+    if (r->etype(ei) != t)
       continue;
     
     String config = cp_uncomment(r->econfiguration(ei));
@@ -155,7 +156,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 	break;
       }
     
-    int idle = r->get_anon_eindex(idle_tindex, "", "<click-undead>");
+    int idle = r->get_anon_eindex(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
     Hookup jump_hook;
@@ -182,13 +183,13 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
 static void
 remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 {
-  int tindex = r->type_index("StaticPullSwitch");
-  if (tindex < 0)
+  ElementClassT *t = r->try_type("StaticPullSwitch");
+  if (!t)
     return;
-  int idle_tindex = r->get_type_index("Idle");
+  ElementClassT *idlet = r->get_type("Idle");
 
   for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != tindex)
+    if (r->etype(ei) != t)
       continue;
     
     String config = cp_uncomment(r->econfiguration(ei));
@@ -207,7 +208,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
 	break;
       }
     
-    int idle = r->get_anon_eindex(idle_tindex, "", "<click-undead>");
+    int idle = r->get_anon_eindex(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
     Hookup jump_hook;
@@ -250,13 +251,13 @@ skip_over_pull(RouterT *r, const Hookup &old_from, const Hookup &new_from)
 }
 
 static void
-remove_nulls(RouterT *r, int tindex, ErrorHandler *errh)
+remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
 {
-  if (tindex < 0)
+  if (!t)
     return;
 
   for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != tindex)
+    if (r->etype(ei) != t)
       continue;
     int nin = r->ninputs(ei), nout = r->noutputs(ei);
     if (nin != 1 || nout != 1) {
@@ -279,16 +280,16 @@ remove_nulls(RouterT *r, int tindex, ErrorHandler *errh)
 }
 
 static bool
-remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
-			    ErrorHandler *errh)
+remove_redundant_schedulers(RouterT *r, ElementClassT *t,
+			    bool config_eq_ninputs, ErrorHandler *errh)
 {
-  if (tindex < 0)
+  if (!t)
     return false;
-  int idle_tindex = r->get_type_index("Idle");
+  ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
   for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != tindex)
+    if (r->etype(ei) != t)
       continue;
     if (r->noutputs(ei) != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
@@ -306,7 +307,7 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
     }
     
     for (int p = 0; p < hprev.size(); p++)
-      if (hprev[p] == -1 || (hprev[p] >= 0 && r->etype(r->hookup_from(hprev[p]).idx) == idle_tindex)) {
+      if (hprev[p] == -1 || (hprev[p] >= 0 && r->etype(r->hookup_from(hprev[p]).idx) == idlet)) {
 	// remove that scheduler port
 	// check configuration first
 	if (config_eq_ninputs) {
@@ -344,16 +345,16 @@ remove_redundant_schedulers(RouterT *r, int tindex, bool config_eq_ninputs,
 }
 
 static bool
-remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
+remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 			   ErrorHandler *errh)
 {
-  if (tindex < 0)
+  if (!t)
     return false;
-  int idle_tindex = r->get_type_index("Idle");
+  ElementClassT *idlet = r->get_type("Idle");
 
   bool changed = false;
   for (int ei = 0; ei < r->nelements(); ei++) {
-    if (r->etype(ei) != tindex)
+    if (r->etype(ei) != t)
       continue;
     if (r->ninputs(ei) != 1) {
       errh->lwarning(r->elandmark(ei), "odd connections to `%s'", r->edeclaration(ei).cc());
@@ -365,7 +366,7 @@ remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
     r->find_connection_vector_from(ei, hnext);
     
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
-      if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idle_tindex)) {
+      if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idlet)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
@@ -400,12 +401,11 @@ remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
 
 static void
 find_live_elements(const RouterT *r, const char *filename,
-		   const Vector<int> &elementmap_indexes,
 		   const ElementMap &full_elementmap, int driver,
 		   bool indifferent, ProcessingT &processing,
 		   Bitvector &live_elements, ErrorHandler *errh)
 {
-  if (!indifferent && !full_elementmap.driver_compatible(elementmap_indexes, driver)) {
+  if (!indifferent && !full_elementmap.driver_compatible(r, driver)) {
     errh->error("%s: configuration incompatible with %s driver", filename, ElementMap::driver_name(driver));
     return;
   }
@@ -431,7 +431,7 @@ find_live_elements(const RouterT *r, const char *filename,
     if (e.live()) {
       int nin = processing.ninputs(ei);
       int nout = processing.noutputs(ei);
-      int source_flag = em->flag_value(r->type_name(e.type), 'S');
+      int source_flag = em->elt(e).flag_value('S');
 
       if (source_flag == 0) {	// neither source nor sink
 	dead[ei] = true;
@@ -509,7 +509,7 @@ find_live_elements(const RouterT *r, const char *filename,
   for (int ei = 0; ei < r->nelements(); ei++) {
     const ElementT &e = r->element(ei);
     if (e.live() && !live_elements[ei]) {
-      int live_flag = em->flag_value(r->type_name(e.type), 'L');
+      int live_flag = em->elt(e).flag_value('L');
       if (live_flag == 0)	// not live
 	continue;
       else if (live_flag == 1) { // live
@@ -547,7 +547,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (idle_index < 0)
-	  idle_index = r->get_anon_eindex(r->get_type_index("Idle"), "", "<click-undead>");
+	  idle_index = r->get_anon_eindex(r->get_type("Idle"), "", "<click-undead>");
 	r->add_connection(idle_index, idle_next_out++, p, ei);
       }
 
@@ -556,7 +556,7 @@ replace_blank_ports(RouterT *r)
     for (int p = 0; p < connv.size(); p++)
       if (connv[p] == -1) {	// unconnected port
 	if (idle_index < 0)
-	  idle_index = r->get_anon_eindex(r->get_type_index("Idle"), "", "<click-undead>");
+	  idle_index = r->get_anon_eindex(r->get_type("Idle"), "", "<click-undead>");
 	r->add_connection(ei, p, idle_next_in++, idle_index);
       }
   }
@@ -672,17 +672,15 @@ particular purpose.\n");
   elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
 
   // check configuration for driver indifference
-  Vector<int> elementmap_indexes;
-  elementmap.map_indexes(r, elementmap_indexes, default_errh);
-  bool indifferent = elementmap.driver_indifferent(elementmap_indexes);
+  bool indifferent = elementmap.driver_indifferent(r, ElementMap::ALL_DRIVERS, default_errh);
   if (indifferent) {
     if (check_kernel < 0 && check_userlevel < 0)
       // only bother to check one of them
       check_kernel = 0;
   } else {
     if (check_kernel < 0 && check_userlevel < 0) {
-      check_kernel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
-      check_userlevel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_USERLEVEL);
+      check_kernel = elementmap.driver_compatible(r, ElementMap::DRIVER_LINUXMODULE);
+      check_userlevel = elementmap.driver_compatible(r, ElementMap::DRIVER_USERLEVEL);
     }
   }
 
@@ -692,7 +690,7 @@ particular purpose.\n");
   // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
-  remove_nulls(r, r->type_index("Null"), default_errh);
+  remove_nulls(r, r->try_type("Null"), default_errh);
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
@@ -701,11 +699,11 @@ particular purpose.\n");
   Bitvector kernel_vec, user_vec;
   ProcessingT processing;
   if (check_kernel > 0)
-    find_live_elements(r, router_file, elementmap_indexes, elementmap,
+    find_live_elements(r, router_file, elementmap,
 		       ElementMap::DRIVER_LINUXMODULE, indifferent,
 		       processing, kernel_vec, default_errh);
   if (check_userlevel > 0)
-    find_live_elements(r, router_file, elementmap_indexes, elementmap,
+    find_live_elements(r, router_file, elementmap,
 		       ElementMap::DRIVER_USERLEVEL, indifferent,
 		       processing, user_vec, default_errh);
 
@@ -730,11 +728,11 @@ particular purpose.\n");
   // remove redundant schedulers
   while (1) {
     int nchanges = 0;
-    nchanges += remove_redundant_schedulers(r, r->type_index("RoundRobinSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, r->type_index("PrioSched"), false, default_errh);
-    nchanges += remove_redundant_schedulers(r, r->type_index("StrideSched"), true, default_errh);
-    nchanges += remove_redundant_tee_ports(r, r->type_index("Tee"), false, default_errh);
-    nchanges += remove_redundant_tee_ports(r, r->type_index("PullTee"), true, default_errh);
+    nchanges += remove_redundant_schedulers(r, r->try_type("RoundRobinSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, r->try_type("PrioSched"), false, default_errh);
+    nchanges += remove_redundant_schedulers(r, r->try_type("StrideSched"), true, default_errh);
+    nchanges += remove_redundant_tee_ports(r, r->try_type("Tee"), false, default_errh);
+    nchanges += remove_redundant_tee_ports(r, r->try_type("PullTee"), true, default_errh);
     if (!nchanges) break;
   }
 

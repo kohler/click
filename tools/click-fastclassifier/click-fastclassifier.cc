@@ -27,6 +27,7 @@
 #include <click/clp.h>
 #include <click/driver.hh>
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include "click-fastclassifier.hh"
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,12 +52,14 @@
 #define COMBINE_OPT		310
 #define COMPILE_OPT		311
 #define QUIET_OPT		312
+#define EXPR_OPT		313
 
 static Clp_Option options[] = {
   { "classes", 0, COMPILE_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "combine", 0, COMBINE_OPT, 0, Clp_Negate },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
+  { "expression", 'e', EXPR_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
@@ -93,6 +96,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n\
   -o, --output FILE             Write output to FILE.\n\
       --no-combine              Do not combine adjacent Classifiers.\n\
       --no-classes              Do not generate FastClassifier elements.\n\
@@ -115,7 +119,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static bool
 combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
 {
-  int classifier_t = router->type_index("Classifier");
+  ElementClassT *classifier_t = router->get_type("Classifier");
   assert(router->etype(from_i) == classifier_t && router->etype(to_i) == classifier_t);
   
   // find where `to_i' is heading for
@@ -168,7 +172,7 @@ combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
 static bool
 try_combine_classifiers(RouterT *router, int class_i)
 {
-  int classifier_t = router->type_index("Classifier");
+  ElementClassT *classifier_t = router->get_type("Classifier");
   if (router->etype(class_i) != classifier_t)
     // cannot combine IPClassifiers yet
     return false;
@@ -372,15 +376,13 @@ change_landmark(ElementT &classifier_e)
 }
 
 static void
-copy_elements(RouterT *oldr, RouterT *newr, const String &tname)
+copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
 {
-  int old_ti = oldr->type_index(tname);
-  if (old_ti >= 0) {
-    int new_ti = newr->get_type_index(tname);
+  if (type) {
     int nelements = oldr->nelements();
     for (int i = 0; i < nelements; i++)
-      if (oldr->etype(i) == old_ti)
-	newr->get_eindex(oldr->ename(i), new_ti, oldr->econfiguration(i), "");
+      if (oldr->etype(i) == type)
+	newr->get_eindex(oldr->ename(i), type, oldr->econfiguration(i), "");
   }
 }
 
@@ -390,14 +392,14 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
 {
   // set up new router
   RouterT nr;
-  int idle_nei = nr.get_anon_eindex(nr.get_type_index("Idle"));
+  int idle_nei = nr.get_anon_eindex(nr.get_type("Idle"));
   const Vector<String> &old_requirements = r->requirements();
   for (int i = 0; i < old_requirements.size(); i++)
     nr.add_requirement(old_requirements[i]);
   
   // copy AlignmentInfos and AddressInfos
-  copy_elements(r, &nr, "AlignmentInfo");
-  copy_elements(r, &nr, "AddressInfo");
+  copy_elements(r, &nr, r->try_type("AlignmentInfo"));
+  copy_elements(r, &nr, r->try_type("AddressInfo"));
 
   // copy all classifiers
   HashMap<String, int> classifier_map(-1);
@@ -406,12 +408,9 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
     int c = classifier_ei[i];
     classifier_map.insert(r->ename(c), i);
     
-    // check what kind it is
-    int classifier_nti = nr.get_type_index(r->etype_name(c));
-
     // add new classifier and connections to idle_nei
     int classifier_nei =
-      nr.get_eindex(r->ename(c), classifier_nti,
+      nr.get_eindex(r->ename(c), r->etype(c),
 		    r->econfiguration(c), r->elandmark(c));
   
     nr.add_connection(idle_nei, i, 0, classifier_nei);
@@ -565,7 +564,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
       // set new names
       String class_name = "Fast" + classifier_tname + "@@" + r->ename(cei);
       String cxx_name = translate_class_name(class_name);
-      c.type_index = r->get_type_index(class_name);
+      c.eclass = r->get_type(class_name);
       
       // add new program
       all_programs.push_back(c);
@@ -664,7 +663,7 @@ compile_classifiers(RouterT *r, const String &package_name,
   for (int i = 0; i < classifiers.size(); i++) {
     ElementT &classifier_e = r->element(classifiers[i]);
     const Classifier_Program &c = all_programs[program_map[i]];
-    classifier_e.type = c.type_index;
+    classifier_e.set_type(c.eclass);
     classifier_e.configuration = String();
     change_landmark(classifier_e);
   }
@@ -802,20 +801,19 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 		     &configurations, (void *)0);
 
   // prepare type_index_map : type_index -> configuration #
-  Vector<int> type_index_map(r->ntypes(), -1);
+  HashMap<int, int> type_uid_map(-1);
   for (int i = 0; i < click_names.size(); i++) {
-    int ti = r->type_index(click_names[i]);
-    if (ti >= 0)
-      type_index_map[ti] = i;
+    int x = r->get_type(click_names[i])->uid();
+    type_uid_map.insert(x, i);
   }
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT &e = r->element(i);
-    int ti = type_index_map[e.type];
-    if (ti >= 0) {
-      e.configuration = configurations[ti];
-      e.type = r->get_type_index(old_type_names[ti]);
+    int x = type_uid_map[e.type_uid()];
+    if (x >= 0) {
+      e.configuration = configurations[x];
+      e.set_type(r->get_type(old_type_names[x]));
     }
   }
 
@@ -867,6 +865,7 @@ main(int argc, char **argv)
   bool config_only = false;
   bool reverse = false;
   bool quiet = false;
+  bool file_is_expr = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -894,10 +893,19 @@ particular purpose.\n");
      case ROUTER_OPT:
      case Clp_NotOption:
       if (router_file) {
-	errh->error("router file specified twice");
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      break;
+
+     case EXPR_OPT:
+      if (router_file) {
+	errh->error("router configuration specified twice");
+	goto bad_option;
+      }
+      router_file = clp->arg;
+      file_is_expr = true;
       break;
 
      case OUTPUT_OPT:
@@ -953,7 +961,7 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = read_router_file(router_file, errh);
+  RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
     r->flatten(errh);
   if (!r || errh->nerrors() > 0)

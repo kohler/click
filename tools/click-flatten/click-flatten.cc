@@ -107,7 +107,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
-  String router_expr;
+  bool file_is_expr = false;
   int action = FLATTEN_OPT;
   
   while (1) {
@@ -148,16 +148,17 @@ particular purpose.\n");
       break;
 
      case EXPR_OPT:
-      if (router_file || router_expr) {
+      if (router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
-      router_expr = clp->arg;
+      router_file = clp->arg;
+      file_is_expr = true;
       break;
 
      case Clp_NotOption:
      case ROUTER_OPT:
-      if (router_file || router_expr) {
+      if (router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
@@ -177,11 +178,7 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *router;
-  if (router_expr)
-    router = read_router_string(router_expr, "<expr>", errh);
-  else
-    router = read_router_file(router_file, errh);
+  RouterT *router = read_router(router_file, file_is_expr, errh);
   if (router)
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
@@ -202,9 +199,11 @@ particular purpose.\n");
     break;
 
    case CLASSES_OPT: {
+     HashMap<String, int> m(-1);
+     router->collect_primitive_classes(m);
      Vector<String> classes;
-     for (int i = RouterT::FIRST_REAL_TYPE; i < router->ntypes(); i++)
-       classes.push_back(router->type_name(i));
+     for (HashMap<String, int>::Iterator iter = m.first(); iter; iter++)
+       classes.push_back(iter.key());
      output_sorted_one_per_line(classes, out);
      break;
    }

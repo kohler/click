@@ -21,6 +21,7 @@
 
 #include "routert.hh"
 #include "lexert.hh"
+#include "elementmap.hh"
 #include <click/error.hh>
 #include <click/driver.hh>
 #include <click/clp.h>
@@ -100,14 +101,13 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static void
 check_once(const RouterT *r, const char *filename,
-	   const Vector<int> &elementmap_indexes,
 	   const ElementMap &full_elementmap, int driver,
 	   bool indifferent, bool print_context, bool print_ok_message,
 	   ErrorHandler *full_errh)
 {
   const char *driver_name = ElementMap::driver_name(driver);
   
-  if (!indifferent && !full_elementmap.driver_compatible(elementmap_indexes, driver)) {
+  if (!indifferent && !full_elementmap.driver_compatible(r, driver)) {
     if (!full_elementmap.provides(0, driver_name))
       full_errh->error("%s: Click compiled without support for %s driver", filename, driver_name);
     else
@@ -258,19 +258,17 @@ particular purpose.\n");
   elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
 
   // check configuration for driver indifference
-  Vector<int> elementmap_indexes;
-  elementmap.map_indexes(r, elementmap_indexes, errh);
-  bool indifferent = elementmap.driver_indifferent(elementmap_indexes);
+  bool indifferent = elementmap.driver_indifferent(r, driver_indifferent_mask, errh);
   if (driver_indifferent_mask == ElementMap::ALL_DRIVERS) {
     for (int d = 0; d < ElementMap::NDRIVERS; d++)
-      if (elementmap.driver_compatible(elementmap_indexes, d))
+      if (elementmap.driver_compatible(r, d))
 	driver_mask |= 1 << d;
   }
 
   // actually check the drivers
   for (int d = 0; d < ElementMap::NDRIVERS; d++)
     if (driver_mask & (1 << d))
-      check_once(r, router_file, elementmap_indexes, elementmap,
+      check_once(r, router_file, elementmap,
 		 d, indifferent, driver_mask & ~(1 << d), !output && !quiet,
 		 errh);
   

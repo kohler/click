@@ -20,6 +20,7 @@
 #include "signature.hh"
 #include "processingt.hh"
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include <click/error.hh>
 #include <stdio.h>
 #include <string.h>
@@ -36,14 +37,14 @@ Signatures::create_phase_0(const ProcessingT &pt)
 {
   _sigs.clear();
   _sigs.push_back(SignatureNode(-1)); // not special
-  Vector<int> sig_eclass;
+  Vector<ElementClassT *> sig_eclass;
   sig_eclass.push_back(0);
 
   int ne = _router->nelements();
   for (int i = 0; i < ne; i++) {
     if (_sigid[i] == SIG_NOT_SPECIAL)
       continue;
-    int ec = _router->etype(i);
+    ElementClassT *ec = _router->etype(i);
     for (int j = 0; j < _sigs.size(); j++)
       if (sig_eclass[j] == ec && pt.same_processing(i, _sigs[j]._eid)) {
 	_sigid[i] = j;
@@ -178,10 +179,11 @@ Signatures::print_signature() const
 void
 Signatures::specialize_class(const String &eclass_name, bool doit)
 {
-  int ec = _router->type_index(eclass_name);
-  for (int i = 0; i < _router->nelements(); i++)
-    if (_router->etype(i) == ec)
-      _sigid[i] = (doit ? 1 : SIG_NOT_SPECIAL);
+  ElementClassT *ec = _router->try_type(eclass_name);
+  if (ec)
+    for (int i = 0; i < _router->nelements(); i++)
+      if (_router->etype(i) == ec)
+	_sigid[i] = (doit ? 1 : SIG_NOT_SPECIAL);
 }
 
 void

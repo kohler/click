@@ -22,6 +22,7 @@
 #include "routert.hh"
 #include <click/error.hh>
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include <click/straccum.hh>
 #include "signature.hh"
 #include <ctype.h>
@@ -43,9 +44,9 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
   }
 
   // prepare from element map
-  for (StringMap::Iterator x = em.first(); x; x++) {
-    int i = x.value();
-    add_type_info(x.key(), em.cxx(i), em.header_file(i), em.source_directory(i));
+  for (ElementMap::IndexIterator x = em.first(); x; x++) {
+    const ElementMap::Elt &e = em.elt(x.value());
+    add_type_info(e.name, e.cxx, e.header_file, em.source_directory(e));
   }
 }
 
@@ -449,7 +450,7 @@ Specializer::fix_elements()
   for (int i = 0; i < _nelements; i++) {
     SpecializedClass &spc = _specials[ _specialize[i] ];
     if (spc.special())
-      _router->element(i).type = _router->get_type_index(spc.click_name);
+      _router->element(i).set_type(_router->get_type(spc.click_name));
   }
 }
 
@@ -585,11 +586,10 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 {
   for (int i = 0; i < _specials.size(); i++)
     if (_specials[i].special()) {
-      int j = full_em.find(_specials[i].old_click_name);
+      const ElementMap::Elt &e = full_em.elt(_specials[i].old_click_name);
       em.add(_specials[i].click_name, _specials[i].cxx_name,
-	     filename, full_em.processing_code(j), full_em.flow_code(j),
-	     full_em.flags(j),
-	     requirements + _specials[i].old_click_name, String());
+	     filename, e.processing_code, e.flow_code,
+	     e.flags, requirements + _specials[i].old_click_name, String());
     }
 }
 

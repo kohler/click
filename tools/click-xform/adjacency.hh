@@ -1,5 +1,5 @@
-#ifndef ADJACENCY_HH
-#define ADJACENCY_HH
+#ifndef CLICK_XFORM_ADJACENCY_HH
+#define CLICK_XFORM_ADJACENCY_HH
 #include <click/vector.hh>
 class RouterT;
 

@@ -2,6 +2,7 @@
 #define CLICK_FASTCLASSIFIER_HH
 #include <click/vector.hh>
 #include <click/string.hh>
+class ElementClassT;
 
 struct Classifier_Insn {
   int yes;
@@ -24,7 +25,7 @@ struct Classifier_Program {
   int noutputs;
   Vector<Classifier_Insn> program;
   int type;
-  int type_index;
+  ElementClassT *eclass;
   Vector<String> handler_names;
   Vector<String> handler_values;
   const String &handler_value(const String &name) const;

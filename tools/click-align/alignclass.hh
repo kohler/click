@@ -1,6 +1,7 @@
 #ifndef ALIGNCLASS_HH
 #define ALIGNCLASS_HH
 #include "alignment.hh"
+#include "eclasst.hh"
 #include "elementt.hh"
 
 class Aligner {
@@ -73,9 +74,10 @@ class ClassifierAligner : public Aligner {
 class AlignClass : public ElementClassT {
   Aligner *_aligner;
  public:
-  AlignClass();
-  AlignClass(Aligner *);
+  AlignClass(const String &);
+  AlignClass(const String &, Aligner *);
   virtual Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+  void *cast(const char *);
 };
 
 class StripAlignClass : public AlignClass {
@@ -87,7 +89,7 @@ class StripAlignClass : public AlignClass {
 class CheckIPHeaderAlignClass : public AlignClass {
   int _argno;
  public:
-  CheckIPHeaderAlignClass(int);
+  CheckIPHeaderAlignClass(const String &, int);
   Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
 };
 

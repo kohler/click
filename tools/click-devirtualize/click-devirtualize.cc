@@ -25,6 +25,7 @@
 #include "lexert.hh"
 #include "routert.hh"
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include "cxxclass.hh"
 #include <click/archive.hh>
 #include "specializer.hh"
@@ -142,23 +143,20 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   Vector<String> new_click_names, old_click_names;
   parse_tabbed_lines(fc_ae.data, &new_click_names, &old_click_names, (void *)0);
 
-  // make sure new types are available for use
-  for (int i = 0; i < new_click_names.size(); i++)
-    r->get_type_index(old_click_names[i]);
-  
   // prepare type_index_map : type_index -> configuration #
-  Vector<int> type_index_map(r->ntypes(), -1);
+  HashMap<int, int> new_uid_map(-1);
+  Vector<ElementClassT *> old_class;
   for (int i = 0; i < new_click_names.size(); i++) {
-    int ti = r->type_index(new_click_names[i]);
-    if (ti >= 0)
-      type_index_map[ti] = r->type_index(old_click_names[i]);
+    new_uid_map.insert(r->get_type(new_click_names[i])->uid(), old_class.size());
+    old_class.push_back(ElementClassT::default_class(old_click_names[i]));
   }
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT &e = r->element(i);
-    if (type_index_map[e.type] >= 0)
-      e.type = type_index_map[e.type];
+    int nnm = new_uid_map[e.type_uid()];
+    if (nnm >= 0)
+      e.set_type(old_class[nnm]);
   }
 
   // remove requirements
@@ -357,7 +355,7 @@ particular purpose.\n");
   Signatures sigs(router);
 
   // follow instructions embedded in router definition
-  int devirtualize_info_class = router->type_index("DevirtualizeInfo");
+  ElementClassT *devirtualize_info_class = router->get_type("DevirtualizeInfo");
   for (int i = 0; i < router->nelements(); i++)
     if (router->etype(i) == devirtualize_info_class) {
       const String &s = router->econfiguration(i);
@@ -376,16 +374,15 @@ particular purpose.\n");
   }
 
   // choose driver for output
-  Vector<int> elementmap_indexes;
-  full_elementmap.map_indexes(router, elementmap_indexes, p_errh);
+  full_elementmap.check_completeness(router, p_errh);
 
   String cc_suffix = ".cc";
   String driver_requirement = "";
-  if (!full_elementmap.driver_indifferent(elementmap_indexes)) {
+  if (!full_elementmap.driver_indifferent(router)) {
     bool linuxmodule_ok = full_elementmap.driver_compatible
-      (elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
+      (router, ElementMap::DRIVER_LINUXMODULE);
     bool userlevel_ok = full_elementmap.driver_compatible
-      (elementmap_indexes, ElementMap::DRIVER_USERLEVEL);
+      (router, ElementMap::DRIVER_USERLEVEL);
     if (linuxmodule_ok && userlevel_ok
 	&& (compile_kernel > 0) == (compile_user > 0))
       p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify `-k' or `-u'");

@@ -65,8 +65,8 @@ AdjacencyMatrix::init(RouterT *r)
 
   _default_match.assign(n, -2);
   for (int i = 0; i < n; i++) {
-    int t = r->etype(i);
-    if (t >= 0 && t != RouterT::TUNNEL_TYPE) {
+    int t = r->etype_uid(i);
+    if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
       _x[i + (i<<cap)] = type_indicator(t);
       _default_match[i] = -1;
     }
@@ -113,8 +113,8 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
       _x[ k + (j<<cap) ] = _x[ j + (k<<cap) ] = 0;
 
     // set type
-    int t = r->etype(j);
-    if (t >= 0 && t != RouterT::TUNNEL_TYPE) {
+    int t = r->etype_uid(j);
+    if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
       _x[ j + (j<<cap) ] = type_indicator(t);
       _default_match[j] = -1;
     } else

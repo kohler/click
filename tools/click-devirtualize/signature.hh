@@ -22,6 +22,15 @@ class Signatures { public:
 
   static const int SIG_NOT_SPECIAL = 0;
 
+  Signatures(const RouterT *);
+
+  void specialize_class(const String &, bool);
+  
+  void analyze(const ElementMap &);
+
+  const Vector<int> &signature_ids() const	{ return _sigid; }
+  int nsignatures() const			{ return _sigs.size(); }
+
  private:
   
   const RouterT *_router;
@@ -33,17 +42,6 @@ class Signatures { public:
   void check_port_numbers(int eid, const ProcessingT &);
   bool next_phase(int phase, int eid, Vector<int> &, const ProcessingT &);
   void print_signature() const;
-
- public:
-
-  Signatures(const RouterT *);
-
-  void specialize_class(const String &, bool);
-  
-  void analyze(const ElementMap &);
-
-  const Vector<int> &signature_ids() const	{ return _sigid; }
-  int nsignatures() const			{ return _sigs.size(); }
   
 };
 

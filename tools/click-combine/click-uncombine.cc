@@ -23,6 +23,7 @@
 #include <click/error.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
+#include "elementmap.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/driver.hh>
@@ -87,8 +88,8 @@ static void
 remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 {
   // prepare
-  int link_type = r->type_index("RouterLink");
-  if (link_type < 0)
+  ElementClassT *link_type = r->try_type("RouterLink");
+  if (!link_type)
     return;
   component_endpoints.clear();
 
@@ -138,7 +139,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 	errh->lerror(r->elandmark(links[i]), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
 	errh->lerror(r->elandmark(r->eindex(name)), "(previous definition was here)");
       } else if (clauses[0] == component) {
-	int newe = r->get_eindex(clauses[1], r->get_type_index(clauses[2]), words[j+1], "<click-uncombine>");
+	int newe = r->get_eindex(clauses[1], r->get_type(clauses[2]), words[j+1], "<click-uncombine>");
 	if (j/2 < ninputs)
 	  r->insert_before(newe, Hookup(links[i], j/2));
 	else
@@ -198,7 +199,7 @@ static void
 frob_nested_routerlinks(RouterT *r, const String &compname)
 {
   int ne = r->nelements();
-  int t = r->get_type_index("RouterLink");
+  ElementClassT *t = r->get_type("RouterLink");
   int cnamelen = compname.length();
   for (int i = 0; i < ne; i++)
     if (r->etype(i) == t) {
