@@ -24,9 +24,10 @@
  * where x is a power of 2. It happens that 1/x = p, or x = (T+1)/2.  The
  * stability factor is log_2(x).
  *
- * Note: since we use shifts instead of mul/div, our rates are not very
- * accurate: keeping rates over the past 1hr, for example, uses a stability
- * factor that actually keeps rates over the past 1.5hr.
+ * Note: since we use shifts instead of mul/div for dividing x, rates become
+ * less accurate as desired time period becomes higher: rate over the past hr,
+ * for example, uses the same stability factor as rate over the past 1.5 hrs.
+ * The smaller the time period, the more accurate EWMA2 can be.
  */
 
 typedef long long quad_t;
