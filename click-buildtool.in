@@ -72,7 +72,7 @@ END {
 }
 
 findelem () {
-    prefix=
+    pfx=
     all=
     provisions=
     filenames=
@@ -84,11 +84,11 @@ findelem () {
 	standards=1; shift 1;;
     -p|--pre|--pref|--prefi|--prefix)
 	if test $# -lt 2; then findelem_usage; fi
-	shift 1; prefix="$1/"; shift 1;;
+	shift 1; pfx="$1/"; shift 1;;
     -p*)
-	prefix=`echo "$1" | sed 's/^-p//'`/; shift 1;;
+	pfx="`echo "$1" | sed 's/^-p//'`"/; shift 1;;
     --pre=*|--pref=*|--prefi=*|--prefix=*)
-	prefix=`echo "$1" | sed 's/^[^=]*=//'`/; shift 1;;
+	pfx="`echo "$1" | sed 's/^[^=]*=//'`"/; shift 1;;
     -f|--filenames)
 	filenames=f; shift 1;;
     -F|--filename-|--filename-p|--filename-pa|--filename-pai|--filename-pair|--filename-pairs)
@@ -102,35 +102,35 @@ findelem () {
 	shift 1; provisions="$1
 $provisions"; shift 1;;
     -r*)
-	provisions=`echo "$1" | sed 's/^-r//'`"
+	provisions="`echo "$1" | sed 's/^-r//'`
 $provisions"; shift 1;;
     --pro=*|--prov=*|--provi=*|--provid=*|--provide=*)
-	provisions=`echo "$1" | sed 's/^[^=]*=//'`"
+	provisions="`echo "$1" | sed 's/^[^=]*=//'`
 $provisions"; shift 1;;
     -x|--u|--un|--unp|--unpr|--unpro|--unprov|--unprovi|--unprovid|--unprovide)
 	if test $# -lt 2; then findelem_usage; fi
 	shift 1; unprovisions="$1
 $unprovisions"; shift 1;;
     -x*)
-	unprovisions=`echo "$1" | sed 's/^-x//'`"
+	unprovisions="`echo "$1" | sed 's/^-x//'`
 $unprovisions"; shift 1;;
     --u=*|--un=*|--unp=*|--unpr=*|--unpro=*|--unprov=*|--unprovi=*|--unprovid=*|--unprovide=*)
-	unprovisions=`echo "$1" | sed 's/^[^=]*=//'`"
+	unprovisions="`echo "$1" | sed 's/^[^=]*=//'`
 $unprovisions"; shift 1;;
     -e|--e|--el|--ele|--elem|--eleme|--elemen|--element|--elementm|--elementma|--elementmap)
 	if test $# -lt 2; then findelem_usage; fi
-	shift 1; provisions=`elementmap_provisions $1`"
+	shift 1; provisions="`elementmap_provisions "$1"`
 $provisions"; shift 1;;
     -e*)
-	emap=`echo "$1" | sed 's/^-e//'`
-	provisions=`elementmap_provisions $emap`"
+	emap="`echo "$1" | sed 's/^-e//'`"
+	provisions="`elementmap_provisions "$emap"`
 $provisions"; shift 1;;
     --e=*|--el=*|--ele=*|--elem=*|--eleme=*|--elemen=*|--element=*|--elementm=*|--elementma=*|--elementmap=*)
-	emap=`echo "$1" | sed 's/^[^=]*=//'`
-	provisions=`elementmap_provisions $emap`"
+	emap="`echo '$1' | sed 's/^[^=]*=//'`"
+	provisions="`elementmap_provisions "$emap"`
 $provisions"; shift 1;;
     -P|--pa|--pac|--pack|--packa|--packag|--package)
-	provisions=`elementmap_provisions ${clickdatadir}/elementmap.xml`"
+	provisions="`elementmap_provisions "${clickdatadir}/elementmap.xml"`
 $provisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
@@ -168,8 +168,8 @@ EOF
     esac
     done
 
-    if test -n "$verbose" -a -n "$prefix"; then
-	echo "Prefix: $prefix" 1>&2
+    if test -n "$verbose" -a -n "$pfx"; then
+	echo "Prefix: $pfx" 1>&2
     fi
 
     # add defaults to provisions
@@ -194,7 +194,7 @@ EOF
 
     # expand list of files
     if test -n "$all"; then
-	first_files=`cd ${prefix}elements >/dev/null && ls`
+	first_files=`cd ${pfx}elements >/dev/null && ls`
 	bad_first_files=`echo "$first_files
 $unprovisions" | sort | uniq -d`
 	first_files=`echo "$first_files
@@ -205,16 +205,16 @@ $bad_first_files" | sort | uniq -u`
 
     files=""
     for i in $first_files; do
-	pprefix="$prefix"
-	if test -d "${prefix}elements/$i" && echo "$i" | grep -v '^\.' >/dev/null; then
-	    pprefix="${prefix}elements/"
+	ppfx="$pfx"
+	if test -d "${pfx}elements/$i" && echo "$i" | grep -v '^\.' >/dev/null; then
+	    ppfx="${pfx}elements/"
 	fi
-	if test -d "${pprefix}$i"; then
+	if test -d "${ppfx}$i"; then
 	    files="$files
-"`find ${pprefix}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
-	elif test -r "${pprefix}$i"; then
+"`find ${ppfx}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
+	elif test -r "${ppfx}$i"; then
 	    files="$files
-${pprefix}$i"
+${ppfx}$i"
 	fi
     done
     files=`echo "$files" | sort | uniq | grep .`
@@ -620,7 +620,7 @@ EOF
 
 
 provides_usage () {
-    echo "Usage: click-buildtool provides [PROVISIONS]" 1>&2
+    echo "Usage: click-buildtool provides [REQS]" 1>&2
     echo "Try 'click-buildtool provides --help' for more information." 1>&2
     exit 1
 }
@@ -635,7 +635,7 @@ provides () {
     -q|--q|--qu|--que|--quer|--query)
 	query=y; shift 1;;
     -r|--p|--pr|--pro|--prov|--provi|--provid|--provide)
-	if test $# -lt 2; then findelem_usage; fi
+	if test $# -lt 2; then provides_usage; fi
 	shift 1; provisions="$1
 $provisions"; shift 1;;
     -r*)
@@ -645,7 +645,7 @@ $provisions"; shift 1;;
 	provisions=`echo "$1" | sed 's/^[^=]*=//'`"
 $provisions"; shift 1;;
     -e|--e|--el|--ele|--elem|--eleme|--elemen|--element|--elementm|--elementma|--elementmap)
-	if test $# -lt 2; then findelem_usage; fi
+	if test $# -lt 2; then provides_usage; fi
 	shift 1; provisions=`elementmap_provisions $1`"
 $provisions"; shift 1;;
     -e*)
@@ -682,16 +682,88 @@ $requirements"; shift 1;;
     esac
     done
 
-    [ $stdin = y ] && requirements=`cat`" $requirements"
-    provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
+    [ $stdin = y ] && requirements="`cat` $requirements"
+    provisions="`echo "$provisions" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`"
     [ $query = y ] && echo "$provisions"
-    requirements=`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
-    awk_provisions=`echo "$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`
+    requirements="`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`"
+    awk_provisions="`echo "$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`"
     echo "$requirements" | $awk -F: 'BEGIN {
 '"$awk_provisions"'
 }
 /./ { if (!dep[$1]) exit 1; }' >/dev/null 2>&1
     exit $?
+}
+
+
+findpackage_usage () {
+    echo "Usage: click-buildtool findpackage [REQS]" 1>&2
+    echo "Try 'click-buildtool findpackage --help' for more information." 1>&2
+    exit 1
+}
+
+findpackage () {
+    provisions="$default_provisions
+"`elementmap_provisions ${clickdatadir}/elementmap.xml`
+    requirements=""
+    stdin=n
+    while [ x"$1" != x ]; do
+    case $1 in
+    -C|--c|--cl|--cli|--clic|--click|--clickp|--clickpa|--clickpat|--clickpath)
+	if test $# -lt 2; then findpackage_usage; fi
+	shift 1; CLICKPATH="$1"; shift 1;;
+    -C*)
+	CLICKPATH=`echo "$1" | sed 's/^-C//'`; shift 1;;
+    --c=*|--cl=*|--cli=*|--clic=*|--click=*|--clickp=*|--clickpa=*|--clickpat=*|--clickpath=*)
+	CLICKPATH=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool findpackage' exits with status 0 if the Click installation
+provides all requirement(s) in REQ arguments, and status 1 otherwise.
+
+Usage: click-buildtool findpackage [OPTIONS] [REQ...]
+
+Options:
+  -C, --clickpath PATH       Use PATH for CLICKPATH.
+  -h, --help                 Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    -)
+	stdin=y; shift 1;;
+    -*)
+	findpackage_usage;;
+    *)
+	requirements="$1
+$requirements"; shift 1;;
+    esac
+    done
+
+    # expand CLICKPATH to find all elementmap.xml files
+    [ -z "$CLICKPATH" ] && CLICKPATH=:
+    default_datadir="$clickdatadir"
+    elementmaps=
+    for pathcmp in `echo "'$CLICKPATH'" | sed "s/:/' '/g"`; do
+	pathcmp="`echo "$pathcmp" | sed "s/^'\(.*\)'/\1/"`"
+	[ -z "$pathcmp" -a -z "$default_datadir" ] && continue
+	if [ -z "$pathcmp" ]; then
+	    pathcmp="$default_datadir"; default_datadir=
+	elif [ -d "$pathcmp/share/click" ]; then
+	    pathcmp="$pathcmp/share/click"
+	else
+	    pathcmp="$pathcmp/share"
+	fi
+	elementmaps="$elementmaps `ls "$pathcmp"/elementmap*.xml 2>/dev/null`"
+    done
+
+    [ $stdin = y ] && requirements="`cat` $requirements"
+    output=
+    while [ -n "$requirements" ]; do
+	requirements=`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
+	grep_requirements=`echo -n "$requirements" | tr '\012' ' ' | sed 's/ /\\\\|/g'`
+	grep " name=['"'"'"]$grep_requirements['"'"]' $elementmaps 
+    done
+    exit 0
 }
 
 
@@ -797,6 +869,8 @@ EOF
      elem2="export"; shift 1; elem2xxx "$@"; exit 0;;
   elem2package)
      elem2="package"; shift 1; elem2xxx "$@"; exit 0;;
+  findpackage)
+     shift 1; findpackage "$@"; exit 0;;
   provides)
      shift 1; provides "$@"; exit 0;;
   quietlink)
