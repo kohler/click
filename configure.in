@@ -154,7 +154,7 @@ ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], NO)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi support], NO)
 
-elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
+elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -follow -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' :`
 AC_SUBST(elements_vpath)
 
 
