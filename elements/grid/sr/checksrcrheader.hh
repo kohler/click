@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * CheckSRCRHeader([BADADDRS])
+ * CheckSRCRHeader()
  * =s SRCR
  * =d
  * Expects SRCR packets as input.

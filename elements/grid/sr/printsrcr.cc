@@ -79,6 +79,9 @@ PrintSRCR::simple_action(Packet *p)
   case PT_DATA:
     type = "DATA";
     break;
+  case PT_GATEWAY:
+    type = "GATEWAY";
+    break;
   default:
     type = "UNKNOWN";
   }

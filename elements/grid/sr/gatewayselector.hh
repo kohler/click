@@ -17,15 +17,22 @@ CLICK_DECLS
 
 /*
  * =c
- * GatewaySelector(IP, ETH, ETHERTYPE, [LS link-state-element])
+ * GatewaySelector(IP, ETH, ETHERTYPE, LinkTable, ARPTable, 
+ *                 [PERIOD timeout], [GW is_gateway], 
+ *                 [LS link-state-element])
  * =d
- * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet packets 
- * Input 1: ethernet data packets from device 
- * Input 2: IP packets from higher layer, w/ ip addr anno.
- * Input 3: IP packets from higher layer for gw, w/ ip addr anno.
- * Output 0: ethernet packets to device (protocol)
- * Output 1: ethernet packets to device (data)
+
+ * Input 0: packets from dev
+ * Input 1: packets for gateway node
+ * Output 0: packets to dev
+ * Output 1: packets with dst_ip anno set
+ *
+ * This element provides proactive gateway selection.  
+ * Each gateway broadcasts an ad every PERIOD seconds.  
+ * Non-gateway nodes select the gateway with the best metric
+ * and forward ads.
+ * 
+ * 
  *
  */
 

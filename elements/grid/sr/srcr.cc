@@ -137,7 +137,6 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
       pk->set_random_metric(get_metric(neighbor));
     }
   }
-  
   pk->set_num_hops(r.size());
   pk->set_next(1);
   int i;
@@ -246,12 +245,13 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return ;
   }
-  click_ether *eh_out = (click_ether *) p_in->data();
+  click_ether *eh_out = (click_ether *) p->data();
   struct sr_pkt *pk_out = (struct sr_pkt *) (eh_out+1);
   memcpy(pk_out, pk, len);
 
   pk_out->set_metric(pk_out->next() - 1, prev_metric);
   pk_out->set_next(pk->next() + 1);
+  pk_out->set_num_hops(pk->num_hops());
   eh_out->ether_type = htons(_et);
 
   srcr_assert(pk->next() < 8);

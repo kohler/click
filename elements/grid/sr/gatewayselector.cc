@@ -62,7 +62,6 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _is_gw = false;
-  int warmup_period = 25;
   _period = 15;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -71,10 +70,9 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "PERIOD", cpUnsigned, "Ad broadcast period (msecs)", &_period,
+		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
 		    "LS", cpElement, "LinkStat element", &_link_stat,
-		    "WARMUP", cpUnsigned, "Warmup period", &warmup_period,
                     0);
 
   if (_link_table && _link_table->cast("LinkTable") == 0) 
@@ -88,15 +86,15 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   _gw_expire.tv_sec = _period*4;
 
   struct timeval now;
-  struct timeval warmup;
-  struct timeval warmup_forward;
   click_gettimeofday(&now);
 
-  warmup_forward.tv_sec = warmup_period;
+  struct timeval warmup_forward;
+  warmup_forward.tv_sec = _period;
   warmup_forward.tv_usec = 0;
-  timeradd(&now, &warmup, &_warmup_forward_expire);
+  timeradd(&now, &warmup_forward, &_warmup_forward_expire);
 
-  warmup.tv_sec = warmup_period*2;
+  struct timeval warmup;
+  warmup.tv_sec = _period*2;
   warmup.tv_usec = 0;
   timeradd(&now, &warmup, &_warmup_expire);
 
@@ -127,10 +125,11 @@ GatewaySelector::run_timer ()
   }
   struct timeval _next_ad;
   click_gettimeofday(&_next_ad);
-  unsigned max_jitter = _period / 7;
+  unsigned p = _period * 1000;
+  unsigned max_jitter = p / 7;
   long r2 = random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
-  unsigned int delta_us = 1000 * ((r2 & 1) ? _period - j : _period + j);
+  unsigned int delta_us = 1000 * ((r2 & 1) ? p - j : p + j);
   _next_ad.tv_usec += delta_us;
   _next_ad.tv_sec +=  _next_ad.tv_usec / 1000000;
   _next_ad.tv_usec = (_next_ad.tv_usec % 1000000);
@@ -201,8 +200,10 @@ GatewaySelector::get_metric(IPAddress other)
 
 void
 GatewaySelector::update_link(IPAddress from, IPAddress to, int metric) {
-  _link_table->update_link(from, to, metric);
-  _link_table->update_link(to, from, metric);
+  if (_link_table) {
+    _link_table->update_link(from, to, metric);
+    _link_table->update_link(to, from, metric);
+  }
 }
 
 void
@@ -393,7 +394,6 @@ GatewaySelector::push(int port, Packet *p_in)
   }
   /* also get the metric from the neighbor */
   int m = get_metric(pk->get_hop(pk->num_hops()-1));
-  update_link(_ip, pk->get_hop(pk->num_hops()-1), m);
   metric += m;
   metrics.push_back(m);
   hops.push_back(_ip);

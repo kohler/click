@@ -8,7 +8,13 @@
 #include <click/hashmap.hh>
 CLICK_DECLS
 
-
+/*
+ * =c
+ * LinkTable(IP Address, [STALE timeout])
+ * =d
+ * 
+ *
+ */
 class IPPair {
 public:
 

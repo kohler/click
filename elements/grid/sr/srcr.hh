@@ -18,9 +18,10 @@ CLICK_DECLS
  * =d
  * DSR-inspired ad-hoc routing protocol.
  * Input 0: Incoming ethernet packets for me
- * Input 1: Incoming sniffed ethernet packets
  * Output 0: Outgoing ethernet packets
  * Output 1: IP packets for higher layer
+ *
+ * Normally usged in conjuction with ETT element
  *
  */
 
@@ -55,9 +56,9 @@ struct sr_pkt {
   uint16_t _random_metric;
 
   // PT_QUERY
-  in_addr _qdst; // Who are we looking for?
-  in_addr _random_from;
-  in_addr _random_to;
+  uint32_t _qdst; // Who are we looking for?
+  uint32_t _random_from;
+  uint32_t _random_to;
   uint32_t _seq;   // Originator's sequence number.
 
   
@@ -89,17 +90,17 @@ struct sr_pkt {
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
   
   static size_t len_wo_data(int nhops) {
-    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + (nhops) * sizeof(uint16_t);
+    return sizeof(struct sr_pkt) + nhops * sizeof(uint32_t) + (nhops) * sizeof(uint16_t);
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
   }
   
-  uint8_t num_hops() {
+  int num_hops() {
     return _nhops;
   }
 
-  uint8_t next() {
+  int next() {
     return _next;
   }
 
