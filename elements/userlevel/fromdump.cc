@@ -139,7 +139,7 @@ FromDump::error_helper(ErrorHandler *errh, const char *x)
 static void
 munmap_destructor(unsigned char *data, size_t amount)
 {
-    if (munmap(data, amount) < 0)
+    if (munmap((caddr_t)data, amount) < 0)
 	click_chatter("FromDump: munmap: %s", strerror(errno));
 }
 
@@ -181,7 +181,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
 
 #ifdef HAVE_MADVISE
     // don't care about errors
-    (void) madvise(mmap_data, _len, MADV_SEQUENTIAL);
+    (void) madvise((caddr_t)mmap_data, _len, MADV_SEQUENTIAL);
 #endif
     
     return 1;
