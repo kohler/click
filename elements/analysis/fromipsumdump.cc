@@ -783,6 +783,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    break;
 		  case W_TIMESTAMP:
 		  case W_FIRST_TIMESTAMP:
+		  case W_TIMESTAMP_USEC1:
 		    u1 = GET4(data);
 		    u2 = GET4(data + 4);
 		    data += 8;
@@ -890,6 +891,19 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_IP_TTL:
 		data = cp_unsigned(data, end, 0, &u1);
 		break;
+
+	      case W_TIMESTAMP_USEC1: {
+#if HAVE_INT64_TYPES
+		  uint64_t uu;
+		  data = cp_unsigned(data, end, 0, &uu);
+		  u1 = (uint32_t)(uu >> 32);
+		  u2 = (uint32_t) uu;
+#else
+		  // silently truncate large numbers
+		  data = cp_unsigned(data, end, 0, &u2);
+#endif
+		  break;
+	      }
 		
 	      case W_SRC:
 	      case W_DST:
@@ -1056,6 +1070,19 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TIMESTAMP_USEC:
 		if (u1 < 1000000)
 		    q->timestamp_anno().tv_usec = u1, ok++;
+		break;
+
+	      case W_TIMESTAMP_USEC1:
+		if (u1 == 0 && u2 < 1000000)
+		    q->set_timestamp_anno(0, u2), ok++;
+		else if (u1 == 0)
+		    q->set_timestamp_anno(u2/1000000, u2%1000000), ok++;
+#if HAVE_INT64_TYPES
+		else {
+		    uint64_t uu = ((uint64_t)u1 << 32) | u2;
+		    q->set_timestamp_anno(uu/1000000, uu%1000000), ok++;
+		}
+#endif
 		break;
 		
 	      case W_SRC:

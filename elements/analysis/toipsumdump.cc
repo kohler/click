@@ -523,6 +523,14 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	  case W_TIMESTAMP_USEC:
 	    sa << p->timestamp_anno().tv_usec;
 	    break;
+	  case W_TIMESTAMP_USEC1:
+#if HAVE_INT64_TYPES
+	    sa << (((uint64_t)p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec);
+#else
+	    // XXX silently output garbage if 64-bit ints not supported
+	    sa << ((p->timestamp_anno().tv_sec * 1000000) + p->timestamp_anno().tv_usec);
+#endif
+	    break;
 	  case W_SRC:
 	    if (!iph) goto no_data;
 	    sa << IPAddress(iph->ip_src);
@@ -885,6 +893,23 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	  case W_TIMESTAMP_USEC:
 	    v = p->timestamp_anno().tv_usec;
 	    goto output_4_host;
+	  case W_TIMESTAMP_USEC1: {
+#if HAVE_INT64_TYPES
+	      if (p->timestamp_anno().tv_sec < 4294) {
+#endif
+		  // XXX silently output garbage if 64-bit ints not supported
+		  PUT4(buf + pos, 0);
+		  PUT4(buf + pos + 4, p->timestamp_anno().tv_sec * 1000000 + p->timestamp_anno().tv_usec);
+#if HAVE_INT64_TYPES
+	      } else {
+		  uint64_t uu = p->timestamp_anno().tv_sec * (uint64_t)1000000 + p->timestamp_anno().tv_usec;
+		  PUT4(buf + pos, (uint32_t)(uu >> 32));
+		  PUT4(buf + pos + 4, (uint32_t) uu);
+	      }
+#endif
+	      pos += 8;
+	      break;
+	  }
 	  case W_SRC:
 	    if (iph)
 		v = iph->ip_src.s_addr;

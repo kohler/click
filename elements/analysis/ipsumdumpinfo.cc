@@ -27,7 +27,7 @@ static const char *content_names[] = {
     "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
     "count", "ip_frag", "ip_fragoff", "payload", "direction",
     "aggregate", "tcp_sack", "tcp_opt", "tcp_ntopt", "first_timestamp",
-    "tcp_window", "ip_opt", "ip_tos", "ip_ttl"
+    "tcp_window", "ip_opt", "ip_tos", "ip_ttl", "ts_usec1"
 };
 
 const char *
@@ -48,6 +48,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_TIMESTAMP_SEC;
     else if (word == "usec" || word == "ts_usec")
 	return W_TIMESTAMP_USEC;
+    else if (word == "usec1" || word == "ts_usec1")
+	return W_TIMESTAMP_USEC1;
     else if (word == "src" || word == "ip_src")
 	return W_SRC;
     else if (word == "dst" || word == "ip_dst")
@@ -114,7 +116,8 @@ static int content_binary_sizes[] = {
     4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
     4, 4, 4, 4, 8,      // W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT,
 			// W_FIRST_TIMESTAMP
-    2, 4, 1, 1		// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL
+    2, 4, 1, 1, 8	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
+    			// W_TIMESTAMP_USEC1
 };
 
 int

@@ -39,6 +39,8 @@ contain those fields. Valid field names, with examples, are:
    timestamp    Packet timestamp: '996033261.451094'
    ts_sec       Seconds portion of timestamp: '996033261'
    ts_usec      Microseconds portion of timestamp: '451094'
+   ts_usec1     Packet timestamp in microseconds
+                (ts_sec*1e6 + ts_usec): '996033261451094'
    ip_src       IP source address: '192.150.187.37'
    ip_dst       IP destination address: '192.168.1.100'
    ip_frag      IP fragment: 'F' (1st frag), 'f' (2nd or
@@ -245,7 +247,9 @@ Regular packet records have binary fields stored in the order indicated by
 the 'C<!data>' line, as follows:
 
    Field Name    Length  Description
-   timestamp        8    timestamp sec, usec
+   timestamp        8    timestamp sec + usec
+   ts_sec, ts_usec  4    timestamp sec/usec
+   ts_usec1         8    timestamp in usec
    ip_src           4    source IP address
    ip_dst           4    destination IP address
    sport            2    source port
@@ -267,7 +271,7 @@ the 'C<!data>' line, as follows:
    tcp_sack         ?    TCP SACK options
    payload_len      4    payload length
    count            4    packet count
-   first_timestamp  8    timestamp sec, usec
+   first_timestamp  8    timestamp sec + usec
 
 Each field is Length bytes long. Variable-length fields have Length 'C<?>' in
 the table; in a packet record, these fields consist of a single length byte,
