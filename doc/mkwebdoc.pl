@@ -42,20 +42,20 @@ close MK;
 
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
-    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_MAN_ELEMENTS='linuxmodule i586 i686'");
+    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_MAN_ELEMENTS='linuxmodule i586 i686 linux_2_2 linux_2_4'");
 }
 
 # 2. changetemplate.pl
-my(@elements, @ealpha, @esections, $cocked);
+my(@esubj, @ealpha, @esections, $cocked);
 open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
 while (<IN>) {
-    push @{$esections[-1]}, scalar(@elements) if /^\.SS/ && @esections;
-    push @esections, [$1, scalar(@elements)] if /^\.SS \"(.*)\"/;
-    push @elements, $1 if /^\.M (.*) n/ && $cocked;
+    push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
+    push @esections, [$1, scalar(@esubj)] if /^\.SS \"(.*)\"/;
+    push @esubj, $1 if /^\.M (.*) n/ && $cocked;
     $cocked = ($_ =~ /^\.TP/);
     last if (/^\.SH \"ALPHABETICAL/);
 }
-push @{$esections[-1]}, scalar(@elements);
+push @{$esections[-1]}, scalar(@esubj);
 while (<IN>) {
     push @ealpha, $1 if /^\.M (.*) n/ && $cocked;
     $cocked = ($_ =~ /^\.TP/);
@@ -69,7 +69,7 @@ while (<IN>) {
     if (/^<!-- clickdoc: ealpha (\d+)\/(\d+)/) {
 	print OUT;
 	my($num, $total) = ($1, $2);
-	my($amt) = ((@ealpha - 1) / $2) + 1;
+	my($amt) = int((@ealpha - 1) / $2) + 1;
 	my($index) = ($num - 1) * $amt;
 	for ($i = $index; $i < $index + $amt && $i < @ealpha; $i++) {
 	    print OUT "<li><a href='$ealpha[$i].n.html'>$ealpha[$i]</a></li>\n";
@@ -79,7 +79,7 @@ while (<IN>) {
     } elsif (/^<!-- clickdoc: esubject (\d+)\/(\d+)/) {
 	print OUT;
 	my($num, $total) = ($1, $2);
-	my($amt) = ((@ealpha - 1) / $2) + 1;
+	my($amt) = int((@esubj - 1) / $2) + 1;
 	my($index) = ($num - 1) * $amt;
 
 	# find first section number
@@ -102,7 +102,7 @@ while (<IN>) {
 	for ($i = $secno; $i < $secno2; $i++) {
 	    print OUT "<p>", $esections[$i]->[0], "</p>\n";
 	    for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
-		print OUT "<li><a href='$elements[$j].n.html'>$elements[$j]</a></li>\n";
+		print OUT "<li><a href='$esubj[$j].n.html'>$esubj[$j]</a></li>\n";
 	    }
 	}
 	
