@@ -2,6 +2,7 @@
 #define PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
+
 class IP6Address;
 struct click_ip;
 struct click_ip6;
@@ -24,9 +25,9 @@ class Packet { public:
   static Packet *make(struct sk_buff *);
   struct sk_buff *skb() const		{ return (struct sk_buff *)this; }
   struct sk_buff *steal_skb()		{ return skb(); }
-  void kill() 				{ kfree_skb(skb()); }
+  void kill();
 #else
-  static WritablePacket *make(unsigned char *, unsigned, void (*destructor)(unsigned char *));
+  static WritablePacket *make(unsigned char *, unsigned, void (*destructor)(unsigned char *, size_t));
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
 
@@ -57,7 +58,12 @@ class Packet { public:
   Packet *nonunique_push(unsigned nb);
   void pull(unsigned nb);		// Get rid of initial bytes.
   WritablePacket *put(unsigned nb);	// Add bytes to end of pkt.
+  Packet *nonunique_put(unsigned nb);
   void take(unsigned nb);		// Delete bytes from end of pkt.
+
+#ifndef __KERNEL__
+  void change_headroom_and_length(unsigned headroom, unsigned length);
+#endif
 
   // HEADER ANNOTATIONS
 #ifdef __KERNEL__
@@ -87,7 +93,7 @@ class Packet { public:
   // ANNOTATIONS
 
  private:
-  class Anno;
+  struct Anno;
 #ifdef __KERNEL__
   const Anno *anno() const		{ return (const Anno *)skb()->cb; }
   Anno *anno()				{ return (Anno *)skb()->cb; }
@@ -111,7 +117,7 @@ class Packet { public:
   void set_dst_ip6_anno(const IP6Address &a);
 
 #ifdef __KERNEL__
-  PacketType packet_type_anno() const	{ return (PacketType)skb()->pkt_type; }
+  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type); }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
   struct device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(struct device *dev) { skb()->dev = dev; }
@@ -131,6 +137,7 @@ class Packet { public:
 #endif
   unsigned user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
   void set_user_anno_u(int i, unsigned v) { anno()->user_flags.u[i] = v; }
+  unsigned *all_user_anno_u()		{ return &anno()->user_flags.u[0]; }
   int user_anno_i(int i) const		{ return anno()->user_flags.i[i]; }
   void set_user_anno_i(int i, int v)	{ anno()->user_flags.i[i] = v; }
   unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
@@ -140,21 +147,25 @@ class Packet { public:
   void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
 #endif
   
+  static const int USER_ANNO_U_SIZE = 3;
+  static const int USER_ANNO_I_SIZE = 3;
+  static const int USER_ANNO_SIZE = 12;
+
  private:
-  
+
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
-    union {
-      unsigned u[3];
-      int i[3];
-      unsigned char c[12];
-    } user_flags;
-    // flag allocations: see packet_anno.hh
-    
     union {
       unsigned dst_ip4;
       unsigned char dst_ip6[16];
     } dst_ip;
+    
+    union {
+      unsigned u[USER_ANNO_U_SIZE];
+      int i[USER_ANNO_I_SIZE];
+      unsigned char c[USER_ANNO_SIZE];
+    } user_flags;
+    // flag allocations: see packet_anno.hh
     
 #ifdef __KERNEL__
     unsigned long long perfctr;
@@ -169,7 +180,7 @@ class Packet { public:
   unsigned char *_data; /* where the packet starts */
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
-  void (*_destructor)(unsigned char *);
+  void (*_destructor)(unsigned char *, size_t);
   unsigned char _cb[48];
   union {
     click_ip *iph;
@@ -189,7 +200,7 @@ class Packet { public:
 #ifndef __KERNEL__
   Packet(int, int, int)			{ }
   static WritablePacket *make(int, int, int);
-  void alloc_data(unsigned, unsigned, unsigned);
+  bool alloc_data(unsigned, unsigned, unsigned);
 #endif
 
   WritablePacket *uniqueify_copy();
@@ -217,6 +228,14 @@ class WritablePacket : public Packet { public:
   unsigned char *transport_header() const	{ return _h_raw; }
 #endif
 
+ private:
+
+  WritablePacket()				{ }
+  WritablePacket(const Packet &)		{ }
+  ~WritablePacket()				{ }
+
+  friend class Packet;
+  
 };
 
 
@@ -250,6 +269,12 @@ Packet::make(struct sk_buff *skb)
   else
     return reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
 }
+
+inline void
+Packet::kill()
+{
+  kfree_skb(skb());
+}
 #endif
 
 inline bool
@@ -265,23 +290,25 @@ Packet::shared() const
 inline WritablePacket *
 Packet::uniqueify()
 {
-  if (shared())
-    return uniqueify_copy();
-  else
+  if (!shared())
     return static_cast<WritablePacket *>(this);
+  else
+    return uniqueify_copy();
 }
 
 inline WritablePacket *
 Packet::push(unsigned int nbytes)
 {
   if (headroom() >= nbytes) {
-    WritablePacket *p = uniqueify();
+    if (WritablePacket *q = uniqueify()) {
 #ifdef __KERNEL__
-    __skb_push(p->skb(), nbytes);
+      __skb_push(q->skb(), nbytes);
 #else
-    p->_data -= nbytes;
+      q->_data -= nbytes;
 #endif
-    return p;
+      return q;
+    } else
+      return 0;
   } else
     return expensive_push(nbytes);
 }
@@ -315,6 +342,37 @@ Packet::pull(unsigned int nbytes)
 #endif
 }
 
+inline WritablePacket *
+Packet::put(unsigned int nbytes)
+{
+  if (tailroom() >= nbytes) {
+    if (WritablePacket *q = uniqueify()) {
+#ifdef __KERNEL__
+      __skb_put(q->skb(), nbytes);
+#else
+      q->_tail += nbytes;
+#endif
+      return q;
+    } else
+      return 0;
+  } else
+    return expensive_put(nbytes);
+}
+
+inline Packet *
+Packet::nonunique_put(unsigned int nbytes)
+{
+  if (tailroom() >= nbytes) {
+#ifdef __KERNEL__
+    __skb_put(skb(), nbytes);
+#else
+    _tail += nbytes;
+#endif
+    return this;
+  } else
+    return expensive_put(nbytes);
+}
+
 /* Get rid of some bytes at the end of a packet */
 inline void
 Packet::take(unsigned int nbytes)
@@ -330,6 +388,17 @@ Packet::take(unsigned int nbytes)
   _tail -= nbytes;
 #endif    
 }
+
+#ifndef __KERNEL__
+inline void
+Packet::change_headroom_and_length(unsigned headroom, unsigned length)
+{
+  if (headroom + length <= total_length()) {
+    _data = _head + headroom;
+    _tail = _data + length;
+  }
+}
+#endif
 
 inline const IP6Address &
 Packet::dst_ip6_anno() const

@@ -45,18 +45,18 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
   unsigned size = len + headroom + tailroom;
-  struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC);
-  if (skb) {
+  if (struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC)) {
     skb_reserve(skb, headroom);	// leave some headroom
     __skb_put(skb, len);	// leave space for data
     if (data) memcpy(skb->data, data, len);
+    skb->pkt_type = HOST;
+    WritablePacket *q = reinterpret_cast<WritablePacket *>(skb);
+    q->clear_annotations();
+    return q;
   } else {
     click_chatter("oops, kernel could not allocate memory for skbuff");
     return 0;
   }
-  Packet *p = reinterpret_cast<Packet *>(skb);
-  p->clear_annotations();
-  return static_cast<WritablePacket *>(p);
 }
 
 #else /* !__KERNEL__ */
@@ -76,7 +76,7 @@ Packet::~Packet()
   if (_data_packet)
     _data_packet->kill();
   else if (_head && _destructor)
-    _destructor(_head);
+    _destructor(_head, _end - _head);
   else
     delete[] _head;
   _head = _data = 0;
@@ -89,7 +89,7 @@ Packet::make(int, int, int)
 }
 
 WritablePacket *
-Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *))
+Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *, size_t))
 {
   WritablePacket *p = new WritablePacket;
   if (p) {
@@ -100,15 +100,18 @@ Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *
   return p;
 }
 
-void
+bool
 Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 {
   unsigned n = len + headroom + tailroom;
+  _destructor = 0;
   _head = new unsigned char[n];
+  if (!_head)
+    return false;
   _data = _head + headroom;
   _tail = _data + len;
   _end = _head + n;
-  _destructor = 0;
+  return true;
 }
 
 WritablePacket *
@@ -116,10 +119,14 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
   WritablePacket *p = new WritablePacket;
-  if (p) {
-    p->alloc_data(headroom, len, tailroom);
-    if (data && p->data()) memcpy(p->data(), data, len);
+  if (!p)
+    return 0;
+  if (!p->alloc_data(headroom, len, tailroom)) {
+    delete p;
+    return 0;
   }
+  if (data)
+    memcpy(p->data(), data, len);
   return p;
 }
 
@@ -134,20 +141,22 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 Packet *
 Packet::clone()
 {
-  struct sk_buff *n = skb_clone(skb(), GFP_ATOMIC);
-  return reinterpret_cast<Packet *>(n);
+  struct sk_buff *nskb = skb_clone(skb(), GFP_ATOMIC);
+  return reinterpret_cast<Packet *>(nskb);
 }
 
 WritablePacket *
 Packet::uniqueify_copy()
 {
-  struct sk_buff *n = skb_copy(skb(), GFP_ATOMIC);
-  // all annotations, including IP header annotation, are copied,
-  // but IP header will point to garbage if old header was 0
-  if (!network_header())
-    n->nh.raw = n->h.raw = 0;
+  struct sk_buff *nskb = skb_copy(skb(), GFP_ATOMIC);
+  if (nskb) {
+    // all annotations, including IP header annotation, are copied,
+    // but IP header will point to garbage if old header was 0
+    if (!network_header())
+      nskb->nh.raw = nskb->h.raw = 0;
+  }
   kill();
-  return reinterpret_cast<WritablePacket *>(n);
+  return reinterpret_cast<WritablePacket *>(nskb);
 }
 
 #else /* user level */
@@ -176,18 +185,23 @@ WritablePacket *
 Packet::uniqueify_copy()
 {
   WritablePacket *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
-  if (!p) return 0;
-  p->_use_count = 1;
-  p->_data_packet = 0;
-  p->alloc_data(headroom(), length(), tailroom());
-  memcpy(p->_data, _data, _tail - _data);
-  p->copy_annotations(this);
-  if (_nh.raw) {
-    p->_nh.raw = p->_data + network_header_offset();
-    p->_h_raw = p->_data + transport_header_offset();
-  } else {
-    p->_nh.raw = 0;
-    p->_h_raw = 0;
+  if (p) {
+    p->_use_count = 1;
+    p->_data_packet = 0;
+    if (p->alloc_data(headroom(), length(), tailroom())) {
+      memcpy(p->_data, _data, _tail - _data);
+      p->copy_annotations(this);
+      if (_nh.raw) {
+	p->_nh.raw = p->_data + network_header_offset();
+	p->_h_raw = p->_data + transport_header_offset();
+      } else {
+	p->_nh.raw = 0;
+	p->_h_raw = 0;
+      }
+    } else {
+      delete p;
+      p = 0;
+    }
   }
   kill();
   return p;
@@ -197,7 +211,7 @@ Packet::uniqueify_copy()
 
 
 //
-// PUSH, PUT, TAKE
+// EXPENSIVE_PUSH, EXPENSIVE_PUT
 //
 
 /*
@@ -214,21 +228,24 @@ Packet::expensive_push(unsigned int nbytes)
     chatter++;
   }
 #ifdef __KERNEL__
-  struct sk_buff *new_skb = skb_realloc_headroom(skb(), nbytes);
+  struct sk_buff *nskb = skb_realloc_headroom(skb(), nbytes);
   // new packet guaranteed not to be shared
-  WritablePacket *q = static_cast<WritablePacket *>(Packet::make(new_skb));
-  // patch from Richard Mortier
-  __skb_push(q->skb(), nbytes);
-  // skb_realloc_headroom doesn't deal well with null network header
-  if (!network_header())
-    q->set_network_header(0, 0);
+  WritablePacket *q = reinterpret_cast<WritablePacket *>(nskb);
+  if (q) {
+    __skb_push(q->skb(), nbytes);
+    // skb_realloc_headroom doesn't deal well with null network header
+    if (!network_header())
+      q->set_network_header(0, 0);
+  }
 #else
   WritablePacket *q = Packet::make(nbytes + 128, total_data(), total_length(), 0);
-  q->_data += headroom() - nbytes;
-  q->_tail -= tailroom();
-  q->copy_annotations(this);
-  if (network_header())
-    q->set_network_header(q->data() + network_header_offset(), network_header_length());
+  if (q) {
+    q->_data += headroom() - nbytes;
+    q->_tail -= tailroom();
+    q->copy_annotations(this);
+    if (network_header())
+      q->set_network_header(q->data() + network_header_offset(), network_header_length());
+  }
 #endif
   kill();
   return q;
@@ -244,33 +261,20 @@ Packet::expensive_put(unsigned int nbytes)
     chatter++;
   }
   WritablePacket *q = Packet::make(0, total_data(), total_length(), nbytes + 128);
+  if (q) {
 #ifdef __KERNEL__
-  sk_buff *skb = q->skb();
-  skb->tail += nbytes - tailroom();
-  skb->data += headroom();
-  skb->len += nbytes - tailroom() - headroom();
+    sk_buff *skb = q->skb();
+    skb->tail += nbytes - tailroom();
+    skb->data += headroom();
+    skb->len += nbytes - tailroom() - headroom();
 #else
-  q->_tail += nbytes - tailroom();
-  q->_data += headroom();
+    q->_tail += nbytes - tailroom();
+    q->_data += headroom();
 #endif
-  q->copy_annotations(this);
-  if (network_header())
-    q->set_network_header(q->data() + network_header_offset(), network_header_length());
+    q->copy_annotations(this);
+    if (network_header())
+      q->set_network_header(q->data() + network_header_offset(), network_header_length());
+  }
   kill();
   return q;
-}
-
-WritablePacket *
-Packet::put(unsigned int nbytes)
-{
-  if (tailroom() >= nbytes) {
-    WritablePacket *q = uniqueify();
-#ifdef __KERNEL__
-    __skb_put(q->skb(), nbytes);
-#else
-    q->_tail += nbytes;
-#endif
-    return q;
-  } else
-    return expensive_put(nbytes);
 }
