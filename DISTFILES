@@ -209,7 +209,7 @@ include/click/ino.hh
 include/click/integers.hh
 include/click/ipaddress.hh
 include/click/ip6address.hh
-include/click/ipaddressset.hh
+include/click/ipaddresslist.hh
 include/click/ip6flowid.hh
 include/click/ipflowid.hh
 include/click/iptable.hh
@@ -276,7 +276,7 @@ lib/ino.cc
 lib/integers.cc
 lib/ipaddress.cc
 lib/ip6address.cc
-lib/ipaddressset.cc
+lib/ipaddresslist.cc
 lib/ip6flowid.cc
 lib/ipflowid.cc
 lib/iptable.cc
