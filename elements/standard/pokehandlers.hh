@@ -5,30 +5,61 @@
 #include <click/timer.hh>
 
 /*
- * =c
- * PokeHandlers([DELAY or HANDLER] ...)
- * =s debugging
- * calls write handlers at specified times
- * =io
- * None
- * =d
- *
- * Runs write handlers automatically at specified times. Each configuration
- * argument should be either `DELAY', a delay in seconds; `ELEMENT.HANDLERNAME
- * VALUE', a directive to write VALUE into ELEMENT's HANDLERNAME write
- * handler; `quit'; or `loop'. PokeHandlers processes its arguments in order,
- * writing to handlers as they appear. A `DELAY' directive causes it to wait
- * for DELAY seconds before continuing. `quit' stops the driver, and `loop'
- * restarts the program from the beginning.
- *
- * At user level, errors reported by write handlers are printed to standard
- * error. In the Linux kernel module, they are printed to /var/log/messages
- * (accessible through dmesg(1)) and to /proc/click/errors.
- * =e
- *   PokeHandlers(red.max_p 0.8,
- *                1.5, // delay for 1.5 seconds
- *                red.max_p 0.5);
- * =a PeekHandlers, dmesg(1) */
+=c
+
+PokeHandlers(DIRECTIVE, ...)
+
+=s debugging
+
+calls write handlers at specified times
+
+=io
+
+None
+
+=d
+
+Runs read and write handlers at specified times. Each configuration argument
+is a directive, taken from this list:
+
+=over 8
+
+=item `read HANDLER'
+
+Call a read handler and report its result. At user level, the result is
+printed on standard error; in a Linux kernel, it is printed to
+/var/log/messages. HANDLER should be either a global read handler name, or
+`ELEMENT.HNAME', where ELEMENT is an element name and HNAME the name of one of
+its read handlers.
+
+=item `write HANDLER [VALUE]'
+
+Call a write handler with a given value. At user level, errors reported by
+write handlers are printed to standard error. In the Linux kernel module, they
+are printed to /var/log/messages (accessible through dmesg(1)) and to
+/proc/click/errors.
+
+=item `stop'
+
+Stop the driver.
+
+=item `wait DELAY'
+
+Wait for DELAY seconds before continuing to the next directive.
+
+=item `loop'
+
+Start over from the first directive.
+
+=back
+
+=e
+
+  PokeHandlers(write red.max_p 0.8,
+               wait 1.5, // delay for 1.5 seconds
+               write red.max_p 0.5);
+
+=a dmesg(1) */
 
 class PokeHandlers : public Element { public:
 
@@ -44,7 +75,7 @@ class PokeHandlers : public Element { public:
 
   private:
 
-    static Element * const QUIT_MARKER = (Element *)1;
+    static Element * const STOP_MARKER = (Element *)1;
     static Element * const LOOP_MARKER = (Element *)2;
 
     int _pos;

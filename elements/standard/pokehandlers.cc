@@ -1,9 +1,10 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * pokehandlers.{cc,hh} -- element runs write handlers
+ * pokehandlers.{cc,hh} -- element runs read and write handlers
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,6 +22,8 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+
+static const char * const READ_MARKER = "r";
 
 PokeHandlers::PokeHandlers()
     : _timer(timer_hook, this)
@@ -50,42 +53,47 @@ PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
     _h_handler.clear();
     _h_value.clear();
     _h_timeout.clear();
+    
+    uint32_t timeout;
+    Element *e;
+    String hname;
 
     int next_timeout = 0;
     for (int i = 0; i < conf.size(); i++) {
-	if (!conf[i])
-	    continue;
-
-	String first, rest;
-	cp_word(conf[i], &first, &rest);
-	cp_eat_space(rest);
-	if (!rest) {
-	    int gap;
-	    if (first == "quit") {
-		add(QUIT_MARKER, "", "", next_timeout);
-		if (i < conf.size() - 1)
-		    errh->warning("arguments after `quit' directive ignored");
-		break;
-	    } else if (first == "loop") {
-		add(LOOP_MARKER, "", "", next_timeout);
-		if (i < conf.size() - 1)
-		    errh->warning("arguments after `loop' directive ignored");
-		break;
-	    } else if (cp_seconds_as_milli(first, reinterpret_cast<uint32_t *>(&gap))) {
-		next_timeout += gap;
-		continue;
+	String text = conf[i];
+	String word = cp_pop_spacevec(text);
+	if (!word)
+	    /* ignore empty arguments */;
+	else if (word == "quit" || word == "stop") {
+	    if (i < conf.size() - 1 || text)
+		errh->warning("arguments after `%s' directive ignored", word.cc());
+	    add(STOP_MARKER, "", "", next_timeout);
+	    break;
+	} else if (word == "loop") {
+	    if (i < conf.size() - 1 || text)
+		errh->warning("arguments after `loop' directive ignored");
+	    add(LOOP_MARKER, "", "", next_timeout);
+	    break;
+	} else if (word == "read") {
+	    if (cp_handler(text, this, &e, &hname, errh)) {
+		add(e, hname, String::stable_string(READ_MARKER), next_timeout);
+		next_timeout = 0;
 	    }
-	}
-
-	Element *e;
-	String hname;
-	if (cp_handler(first, this, &e, &hname, errh)) {
-	    add(e, hname, rest, next_timeout);
-	    next_timeout = 0;
-	    continue;
-	}
-
-	errh->error("argument %d: expected `TIMEOUT' or `ELEMENT.HANDLER VALUE'", i + 1);
+	} else if (word == "write") {
+	    word = cp_pop_spacevec(text);
+	    if (cp_handler(word, this, &e, &hname, errh)) {
+		add(e, hname, text, next_timeout);
+		next_timeout = 0;
+	    }
+	} else if (word == "wait") {
+	    if (cp_seconds_as_milli(text, &timeout))
+		next_timeout += timeout;
+	    else
+		errh->error("missing time in `wait TIME'");
+	} else if (cp_seconds_as_milli(word, &timeout) && !text)
+	    next_timeout += timeout;
+	else
+	    errh->error("unknown directive `%#s'", word.cc());
     }
 
     return 0;
@@ -120,7 +128,7 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	Element *he = poke->_h_element[h];
 	const String &hname = poke->_h_handler[h];
 
-	if (he == QUIT_MARKER) {
+	if (he == STOP_MARKER) {
 	    router->please_stop_driver();
 	    h++;
 	    break;
@@ -132,7 +140,15 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	int i = router->find_handler(he, hname);
 	if (i < 0)
 	    errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
-	else {
+	else if (poke->_h_value[h].data() == READ_MARKER) {
+	    const Router::Handler &rh = router->handler(i);
+	    if (rh.readable()) {
+		ErrorHandler *errh = ErrorHandler::default_handler();
+		String value = rh.call_read(he);
+		errh->message("%s:\n%s\n", rh.unparse_name(he).cc(), value.cc());
+	    } else
+		errh->error("%s: no read handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
+	} else {
 	    const Router::Handler &rh = router->handler(i);
 	    if (rh.writable()) {
 		ContextErrorHandler cerrh
