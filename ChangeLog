@@ -1,3 +1,10 @@
+2003-08-12 Tuesday 16:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* configure.in (1.213), etc/README (1.4),
+	etc/linux-2.4.20-wifi-patch (1.1), etc/make-linux-wifi-patch (1.1),
+	tools/make-linux-wifi-patch (1.2): Add WiFi kernel extensions
+	patch; update docs about WiFi extensions
+
 2003-08-12 Tuesday 12:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/make-linux-wifi-patch (1.1): script creates patch to enable
