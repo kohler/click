@@ -64,7 +64,7 @@ BridgeMessage::compare(const BridgeMessage::wire* other) const {
 
 int
 BridgeMessage::compare(const BridgeMessage* other,
-		       u_int64_t _bridge_id, u_int16_t _port_id) const {
+		       uint64_t _bridge_id, uint16_t _port_id) const {
   COMPARE(_root, other->_root, 4);
   COMPARE(_cost, other->_cost, 3);
   COMPARE(_bridge_id, other->_bridge_id, 2);
@@ -73,7 +73,7 @@ BridgeMessage::compare(const BridgeMessage* other,
 }
 
 void
-BridgeMessage::reset(u_int64_t bridge_id) {
+BridgeMessage::reset(uint64_t bridge_id) {
   _root = _bridge_id = bridge_id;
   _cost = 0;
   _timestamp.tv_sec = ~(1 << 31); // Never expire
@@ -95,8 +95,8 @@ bool BridgeMessage::expire(const timeval* cutoff) {
 /* If t is after the message's timestamp, make the message as bad as
    possible. */
 void BridgeMessage::expire() {
-  _root = _bridge_id = ~(u_int64_t)0; // Worst possible
-  _cost = ~(u_int16_t)0;	// Worst possible
+  _root = _bridge_id = ~(uint64_t)0; // Worst possible
+  _cost = ~(uint16_t)0;	// Worst possible
   _timestamp.tv_sec = ~(1 << 31); // Never expire
   _tc = false;
 }
@@ -205,7 +205,7 @@ void BridgeMessage::fill_tcm(BridgeMessage::wire* msg) {
   msg->type = 128;
 }
 
-u_int8_t BridgeMessage::_all_bridges[6] = {
+uint8_t BridgeMessage::_all_bridges[6] = {
   0x01, 0x80, 0xc2, 0x00, 0x00, 0x00
 };
 

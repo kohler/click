@@ -88,7 +88,7 @@ EtherSpanTree::initialize(ErrorHandler *)
   for (int i = 0; i < _port.size(); i++) {
     set_state(i, FORWARD);
   }
-  _best.reset(((u_int64_t)_bridge_priority << 48) | _bridge_id);
+  _best.reset(((uint64_t)_bridge_priority << 48) | _bridge_id);
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_best._hello_time * 1000);
   return 0;
@@ -159,7 +159,7 @@ EtherSpanTree::find_tree() {
   // First, determine _best, which will either be the bridge's own
   // message or the best message received on one of its ports.
   int root_port = -1;
-  u_int64_t my_id = ((u_int64_t)_bridge_priority << 48) | _bridge_id;
+  uint64_t my_id = ((uint64_t)_bridge_priority << 48) | _bridge_id;
   _best.reset(my_id);
   for (int i = 0; i < _port.size(); i++) {
     // Temporarily inc cost
@@ -305,7 +305,7 @@ EtherSpanTree::generate_packet(int output)
   } else {
     // We are designated bridge for this port, send _best.
     _best.to_wire(msg);
-    msg->bridge_id = htonq(((u_int64_t)_bridge_priority << 48) | _bridge_id);
+    msg->bridge_id = htonq(((uint64_t)_bridge_priority << 48) | _bridge_id);
     msg->port_id = htons(output);
     if (_topology_change) {
       timeval cutoff;

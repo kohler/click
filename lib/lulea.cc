@@ -30,8 +30,8 @@
 #define DIRECT_POINTER  (MT_MAX + 5)            // arbitrary value > MT_MAX
 
 bool IPTable2::_mt_done = false;
-u_int8_t IPTable2::_maptable[MT_MAX+1][8];
-u_int16_t IPTable2::_mask2index[256][256];      // see build_maptable()
+uint8_t IPTable2::_maptable[MT_MAX+1][8];
+uint16_t IPTable2::_mask2index[256][256];      // see build_maptable()
 
 IPTable2::IPTable2()
   : entries(0), dirty(false)
@@ -114,12 +114,12 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
   // XXX: don't do it this way.
   dst = ntohl(dst);
 
-  u_int16_t ix = (dst & 0xfff00000) >> 20;      // upper 12 bits.
-  u_int16_t bix = (dst & 0xffc00000) >> 22;     // upper 10 bits.
-  u_int8_t bit = (dst & 0x000f0000) >> 16;      // lower  4 of upper 16 bits.
-  u_int16_t codeword = codewords1[ix];
-  u_int16_t ten = (codeword & 0xffc0) >> 6;     // upper 10 bits.
-  u_int8_t six = codeword & 0x003f;             // lower  6 bits.
+  uint16_t ix = (dst & 0xfff00000) >> 20;      // upper 12 bits.
+  uint16_t bix = (dst & 0xffc00000) >> 22;     // upper 10 bits.
+  uint8_t bit = (dst & 0x000f0000) >> 16;      // lower  4 of upper 16 bits.
+  uint16_t codeword = codewords1[ix];
+  uint16_t ten = (codeword & 0xffc0) >> 6;     // upper 10 bits.
+  uint8_t six = codeword & 0x003f;             // lower  6 bits.
 
   // Offset is not offset but pointer to routing table. See 4.2.1 of Degermark.
   if(ten == DIRECT_POINTER) {
@@ -133,7 +133,7 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
     offset &= 0x0f;
   else
     offset >>= 4;
-  u_int16_t pix = baseindex1[bix] + six + offset;
+  uint16_t pix = baseindex1[bix] + six + offset;
   index = l1ptrs[pix];
 
 done:
@@ -152,7 +152,7 @@ done:
 void
 IPTable2::build()
 {
-  u_int16_t bitvector1[4096];
+  uint16_t bitvector1[4096];
   struct bit bit_admin[65536];
 
   for(register int i = 0; i < 65536; i++)
@@ -170,8 +170,8 @@ IPTable2::build()
 
     // masked, high16, dst, mask and 0x0000ffff in network order!
     // masked == (IP address range from router table)
-    u_int32_t masked = (_v[i]._dst & _v[i]._mask);
-    u_int16_t high16 = masked & 0x0000ffff;
+    uint32_t masked = (_v[i]._dst & _v[i]._mask);
+    uint16_t high16 = masked & 0x0000ffff;
     if(high16 == 0)
       continue;
     high16 = ntohs(high16);
@@ -185,7 +185,7 @@ IPTable2::build()
     // For all affected shorts in bitvector, check whether or not they are
     // 0 or 1 and if so apply the optimization described in section 4.2.1 of
     // Degermark.
-    u_int16_t bv;
+    uint16_t bv;
     int af_index;
     for(int j = 0; j < affected.size(); j++) {
       af_index = affected[j];
@@ -212,7 +212,7 @@ IPTable2::build()
 
   int mt_index = 0, bits_so_far = 0;
   for(int j = 0; j < 4096; j++) {
-    u_int16_t bv = bitvector1[j];
+    uint16_t bv = bitvector1[j];
     // click_chatter("bitvector1[%d] = %x", j, bitvector1[j]);
 
     // Write record-index of maptable in upper 10 bits. No such index exists
@@ -275,15 +275,15 @@ IPTable2::build()
 // rtable_idx   - index in sorted routing table where high16 came from
 // affected     - vector with indices of altered shorts in bitvector 
 void
-IPTable2::set_all_bits(u_int16_t bitvector[],
+IPTable2::set_all_bits(uint16_t bitvector[],
                        struct bit bit_admin[],
-                       u_int16_t high16,
+                       uint16_t high16,
                        int rtable_idx,
                        Vector<int> &affected)
 {
-  u_int16_t value;
+  uint16_t value;
 
-  u_int16_t headinfo = (NEXT_HOP | rtable_idx);
+  uint16_t headinfo = (NEXT_HOP | rtable_idx);
   for(int i = 0; i < 16; i++) {
     value = high16 >> (15-i);
 
@@ -296,7 +296,7 @@ IPTable2::set_all_bits(u_int16_t bitvector[],
   }
 
   // click_chatter("Setting bit on level 16");
-  u_int16_t masked = _v[rtable_idx]._dst & _v[rtable_idx]._mask;
+  uint16_t masked = _v[rtable_idx]._dst & _v[rtable_idx]._mask;
   headinfo = (((masked & 0xffff0000) ? CHUNK : NEXT_HOP) | rtable_idx);
   set_single_bit(bitvector, bit_admin, 16, 16, value, headinfo, affected);
   return;
@@ -327,12 +327,12 @@ IPTable2::set_all_bits(u_int16_t bitvector[],
 //
 // headinfo     - The headinfo to be placed in l1ptrs in a later phase.
 inline void
-IPTable2::set_single_bit(u_int16_t bitvector[],
+IPTable2::set_single_bit(uint16_t bitvector[],
                          struct bit bit_admin[],
-                         u_int32_t from_level,
-                         u_int32_t to_level,
-                         u_int32_t value,
-                         u_int16_t headinfo,
+                         uint32_t from_level,
+                         uint32_t to_level,
+                         uint32_t value,
+                         uint16_t headinfo,
                          Vector<int> &affected)
 {
   assert(from_level <= to_level);
@@ -358,8 +358,8 @@ IPTable2::set_single_bit(u_int16_t bitvector[],
 
 
 // Returns the index in _maptable where mask can be found.
-inline u_int16_t
-IPTable2::mt_indexfind(u_int16_t mask)
+inline uint16_t
+IPTable2::mt_indexfind(uint16_t mask)
 {
   assert(mask != 0x0000 && mask != 0x0001);
   return _mask2index[mask >> 8][mask & 0x00ff];
@@ -371,16 +371,16 @@ IPTable2::mt_indexfind(u_int16_t mask)
 void
 IPTable2::build_maptable()
 {
-  u_int8_t set_bits;
-  u_int16_t mask;
+  uint8_t set_bits;
+  uint16_t mask;
 
-  Vector<u_int16_t> masks = all_masks(4);
+  Vector<uint16_t> masks = all_masks(4);
   assert(masks.size() == MT_MAX + 1);
 
   for(int i = 0; i < masks.size(); i++) {
     mask = masks[i];
     _maptable[i][0] = set_bits = 0;
-    for(u_int8_t j = 1; j < 16; j++) {
+    for(uint8_t j = 1; j < 16; j++) {
       if(mask & 0x0001)
         set_bits++;
       mask >>= 1;
@@ -401,12 +401,12 @@ IPTable2::build_maptable()
 //
 // _mask2index is a two-dimensional array that translates masks to the index in
 // maptable related to that mask.
-Vector<u_int16_t>
+Vector<uint16_t>
 IPTable2::all_masks(int length, bool toplevel = true)
 {
   assert(length >= 0 && length <= 4);
 
-  Vector<u_int16_t> v;
+  Vector<uint16_t> v;
   if(length == 0) {
     v.push_back(0x0001);
     return v;
@@ -415,12 +415,12 @@ IPTable2::all_masks(int length, bool toplevel = true)
   v = all_masks(length-1, false);
 
   // Create the shifted version of all of masks in v.
-  Vector<u_int16_t> shifted_v;
+  Vector<uint16_t> shifted_v;
   for(int i = 0; i < v.size(); i++)
     shifted_v.push_back(v[i] << (0x0001 << (length-1)));
 
   // On toplevel, don't put 1 in there. See section 4.2.1
-  Vector<u_int16_t> v_new;
+  Vector<uint16_t> v_new;
   if(!toplevel)
     v_new.push_back(0x0001);
 
@@ -428,7 +428,7 @@ IPTable2::all_masks(int length, bool toplevel = true)
   int mt_index = 0;
   for(int i = 0; i < shifted_v.size(); i++) {
     for(int j = 0; j < v.size(); j++) {
-      u_int16_t mask = shifted_v[i] | v[j];
+      uint16_t mask = shifted_v[i] | v[j];
       v_new.push_back(mask);
       if(toplevel) {
          // click_chatter("Record %d is for mask %x", mt_index, mask);

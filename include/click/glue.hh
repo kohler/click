@@ -61,11 +61,11 @@ random()
   return seed^jiffies;
 }
 
-__inline__ u_int64_t
+__inline__ uint64_t
 click_get_cycles()
 {
-  u_int32_t low, high;
-  u_int64_t x;
+  uint32_t low, high;
+  uint64_t x;
   __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
   x = high;
   x <<= 32;

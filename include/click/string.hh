@@ -29,7 +29,7 @@ class String { public:
   explicit String(unsigned long);
 #ifdef HAVE_INT64_TYPES
   explicit String(int64_t);
-  explicit String(u_int64_t);
+  explicit String(uint64_t);
 #endif
 #ifndef __KERNEL__
   explicit String(double);

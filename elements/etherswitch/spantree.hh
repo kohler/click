@@ -42,12 +42,12 @@ private:
   timeval* _topology_change;	// If set, tc should be sent with messages.
   bool _send_tc_msg;		// If true, tcm should be sent to root port.
   
-  u_int64_t _bridge_id;		// Should be 48 bits
+  uint64_t _bridge_id;		// Should be 48 bits
   
-  u_int16_t _bridge_priority;	// High == unlikely to become the root node
-  u_int16_t _long_cache_timeout; // in seconds
+  uint16_t _bridge_priority;	// High == unlikely to become the root node
+  uint16_t _long_cache_timeout; // in seconds
   
-  u_int8_t _addr[6];
+  uint8_t _addr[6];
   
   BridgeMessage _best;
   

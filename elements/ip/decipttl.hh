@@ -38,7 +38,7 @@ class DecIPTTL : public Element { public:
   const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
   
-  u_int32_t drops()				{ return _drops; }
+  uint32_t drops()				{ return _drops; }
   
   DecIPTTL *clone() const;
   void add_handlers();

@@ -52,7 +52,7 @@ class IPGWOptions : public Element {
   IPGWOptions *clone() const;
   void add_handlers();
 
-  u_int32_t drops() const			{ return _drops; }
+  uint32_t drops() const			{ return _drops; }
   
   Packet *handle_options(Packet *);
   Packet *simple_action(Packet *);

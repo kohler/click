@@ -44,7 +44,7 @@ class IPInputCombo : public Element {
   const char *class_name() const		{ return "IPInputCombo"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  u_int32_t drops() const			{ return _drops; }
+  uint32_t drops() const			{ return _drops; }
   IPInputCombo *clone() const;
   void add_handlers();
   int configure(const Vector<String> &, ErrorHandler *);

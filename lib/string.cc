@@ -102,7 +102,7 @@ String::String(int64_t q)
   assign(sa.data(), sa.length());
 }
 
-String::String(u_int64_t q)
+String::String(uint64_t q)
 {
   StringAccum sa;
   sa << q;

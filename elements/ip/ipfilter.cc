@@ -258,9 +258,9 @@ IPFilter::Primitive::set_transp_proto(int x, ErrorHandler *errh)
 }
 
 int
-IPFilter::Primitive::set_mask(u_int32_t full_mask, int shift, ErrorHandler *errh)
+IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
 {
-  u_int32_t data = _u.u;
+  uint32_t data = _u.u;
   
   if (_op == OP_GT && data == 0) {
     _op = OP_EQ;
@@ -268,7 +268,7 @@ IPFilter::Primitive::set_mask(u_int32_t full_mask, int shift, ErrorHandler *errh
   }
   
   if (_op == OP_GT || _op == OP_LT) {
-    u_int32_t pow2 = (_op == OP_GT ? data + 1 : data);
+    uint32_t pow2 = (_op == OP_GT ? data + 1 : data);
     if ((pow2 & (pow2 - 1)) == 0 && (pow2 - 1) <= full_mask) {
       // have a power of 2
       _u.u = 0;
@@ -629,8 +629,8 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    }
 
    case TYPE_PORT: {
-     u_int32_t mask = (htons(_mask.u) << 16) | htons(_mask.u);
-     u_int32_t ports = (htons(_u.u) << 16) | htons(_u.u);
+     uint32_t mask = (htons(_mask.u) << 16) | htons(_mask.u);
+     uint32_t ports = (htons(_u.u) << 16) | htons(_u.u);
     
      // enforce first fragment: fragmentation offset == 0
      c->add_expr(tree, 4, 0, htonl(0x00001FFF));

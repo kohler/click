@@ -16,8 +16,8 @@ class IPAddress { public:
   static IPAddress make_prefix(int);
   
   operator bool() const		{ return _addr != 0; }
-  operator u_int32_t() const	{ return _addr; }
-  u_int32_t addr() const	{ return _addr; }
+  operator uint32_t() const	{ return _addr; }
+  uint32_t addr() const	{ return _addr; }
   
   operator struct in_addr() const;
   struct in_addr in_addr() const;
@@ -49,7 +49,7 @@ class IPAddress { public:
 
  private:
   
-  u_int32_t _addr;
+  uint32_t _addr;
 
 };
 

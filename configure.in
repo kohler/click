@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
 AC_SUBST(ac_configure_args)
-CLICK_VERSION=1.2.1
+CLICK_VERSION=1.2.0a
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in)
@@ -163,49 +163,50 @@ AC_SUBST(CFLAGS_NDEBUG)
 AC_SUBST(CXXFLAGS_NDEBUG)
 
 dnl
-dnl functions, types
+dnl functions
 dnl
 
 AC_REPLACE_FUNCS(strerror)
 AC_CHECK_FUNCS(strtoul)
 
-AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_underscore_t,
-[AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_u_underscore_t=yes, ac_cv_u_underscore_t=no)])
-if test $ac_cv_u_underscore_t = no; then
-  AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_u_t,
-[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_u_t=yes, ac_cv_u_t=no)])
-  if test $ac_cv_u_t = no; then
-    AC_MSG_ERROR("neither u_int32_t or uint32_t is defined by <sys/types.h>!")
-  else
-    AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT_TYPES, 1)
-  fi
-fi
+dnl
+dnl integer types
+dnl
 
 AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
 
-if test "x$enable_int64" = xyes; then
-  AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
-[AC_EGREP_HEADER(int64_t, sys/types.h, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
-  AC_CACHE_CHECK(for u_int64_t typedef, ac_cv_u_int64_t,
-[AC_EGREP_HEADER(u_int64_t, sys/types.h, ac_cv_u_int64_t=yes, ac_cv_u_int64_t=no)])
-  ac_cv_any_u_int64_t=$ac_cv_u_int64_t
-  if test $ac_cv_u_int64_t = no; then
-    AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
-[AC_EGREP_HEADER(uint64_t, sys/types.h, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
-    if test $ac_cv_uint64_t = yes; then
-      AC_DEFINE_UNQUOTED(SUBSTITUTE_U_INT64_TYPES, 1)
-      ac_cv_any_u_int64_t=yes
-    fi
+AC_CHECK_HEADERS(inttypes.h, have_inttypes_h=yes, have_inttypes_h=no)
+
+if test $have_inttypes_h = no; then
+  AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
+[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
+  if test $ac_cv_uint_t = no; then
+    AC_MSG_ERROR("uint32_t not defined by <inttypes.h> or <sys/types.h>!")
   fi
-  if test $ac_cv_int64_t = no -o $ac_cv_any_u_int64_t = no; then
-    AC_MSG_ERROR(int64_t types are not defined by <sys/types.h>!
+fi
+
+if test "x$enable_int64" = xyes; then
+
+  if test $have_inttypes_h = yes; then
+    inttypes_hdr='inttypes.h'
+  else
+    inttypes_hdr='sys/types.h'
+  fi
+
+  AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
+[AC_EGREP_HEADER(int64_t, $inttypes_hdr, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
+  AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
+[AC_EGREP_HEADER(uint64_t, $inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
+
+  if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
+    AC_MSG_ERROR(int64_t types not defined by $inttypes_hdr!
 Compile with "'`'"--disable-int64'.)
   else
     AC_DEFINE(HAVE_INT64_TYPES)
   fi
 fi
 
-dnl 
+dnl
 dnl build with multithread support?
 dnl
 

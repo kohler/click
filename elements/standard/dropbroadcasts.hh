@@ -28,7 +28,7 @@ class DropBroadcasts : public Element {
   DropBroadcasts *clone() const;
   void add_handlers();
 
-  u_int32_t drops() const		{ return _drops; }
+  uint32_t drops() const		{ return _drops; }
 
   void drop_it(Packet *);
   Packet *simple_action(Packet *);

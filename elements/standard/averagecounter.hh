@@ -38,7 +38,7 @@ class AverageCounter : public Element { protected:
   u_atomic32_t _count;
   u_atomic32_t _first;
   u_atomic32_t _last;
-  u_int32_t _ignore;
+  uint32_t _ignore;
   
  public:
 
@@ -49,10 +49,10 @@ class AverageCounter : public Element { protected:
   const char *processing() const		{ return AGNOSTIC; }
   int configure(const Vector<String> &, ErrorHandler *);
 
-  u_int32_t count() const			{ return _count; }
-  u_int32_t first() const			{ return _first; }
-  u_int32_t last() const			{ return _last; }
-  u_int32_t ignore() const			{ return _ignore; }
+  uint32_t count() const			{ return _count; }
+  uint32_t first() const			{ return _first; }
+  uint32_t last() const			{ return _last; }
+  uint32_t ignore() const			{ return _ignore; }
   void reset();
   
   AverageCounter *clone() const			{ return new AverageCounter; }

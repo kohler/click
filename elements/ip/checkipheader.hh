@@ -78,7 +78,7 @@ class CheckIPHeader : public Element { public:
  private:
   
   int _n_bad_src;
-  u_int *_bad_src; // array of illegal IP src addresses.
+  uint *_bad_src; // array of illegal IP src addresses.
   unsigned _offset;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned : 1;

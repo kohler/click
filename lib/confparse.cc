@@ -753,10 +753,10 @@ cp_integer(const String &str, int *return_value)
 
 #ifdef HAVE_INT64_TYPES
 
-static u_int64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
+static uint64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
 
 bool
-cp_unsigned64(const String &str, int base, u_int64_t *return_value)
+cp_unsigned64(const String &str, int base, uint64_t *return_value)
 {
   const char *s = str.data();
   int len = str.length();
@@ -781,10 +781,10 @@ cp_unsigned64(const String &str, int base, u_int64_t *return_value)
   if (i == len)			// no digits
     return false;
 
-  u_int64_t overflow_val = unsigned64_overflow_vals[base];
+  uint64_t overflow_val = unsigned64_overflow_vals[base];
   int64_t overflow_digit = 0xFFFFFFFFFFFFFFFFULL - (overflow_val * base);
 
-  u_int64_t val = 0;
+  uint64_t val = 0;
   cp_errno = CPE_OK;
   while (i < len) {
     // find digit
@@ -812,7 +812,7 @@ cp_unsigned64(const String &str, int base, u_int64_t *return_value)
 }
 
 bool
-cp_unsigned64(const String &str, u_int64_t *return_value)
+cp_unsigned64(const String &str, uint64_t *return_value)
 {
   return cp_unsigned64(str, 0, return_value);
 }
@@ -827,11 +827,11 @@ cp_integer64(const String &in_str, int base, int64_t *return_value)
     str = in_str.substring(1);
   }
 
-  u_int64_t value;
+  uint64_t value;
   if (!cp_unsigned64(str, base, &value))
     return false;
 
-  u_int64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
+  uint64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
   if (value > max) {
     cp_errno = CPE_OVERFLOW;
     value = max;
@@ -2083,7 +2083,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
 
    case cpiUnsigned64: {
-     u_int64_t *ullstore = (u_int64_t *)v->store;
+     uint64_t *ullstore = (uint64_t *)v->store;
      *ullstore = v->v.u64;
      break;
    }
@@ -2607,7 +2607,7 @@ cp_unparse_bool(bool b)
 #ifdef HAVE_INT64_TYPES
 
 String
-cp_unparse_unsigned64(u_int64_t q, int base, bool uppercase)
+cp_unparse_unsigned64(uint64_t q, int base, bool uppercase)
 {
   // Unparse an unsigned long long. Linux kernel sprintf can't handle %lld,
   // so we provide our own function.
@@ -2630,20 +2630,20 @@ cp_unparse_unsigned64(u_int64_t q, int base, bool uppercase)
     for (trav = lastbuf; q > 0; trav--) {
       
       // k = Approx[q/10] -- know that k <= q/10
-      u_int64_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
+      uint64_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
 	+ (q >> 12) + (q >> 13) + (q >> 16) + (q >> 17);
-      u_int64_t m;
+      uint64_t m;
       
       // increase k until it exactly equals floor(q/10). on exit, m is the
       // remainder: m < 10 and q == 10*k + m.
       while (1) {
 	// d = 10*k
-	u_int64_t d = (k << 3) + (k << 1);
+	uint64_t d = (k << 3) + (k << 1);
 	m = q - d;
 	if (m < 10) break;
 	
 	// delta = Approx[m/10] -- know that delta <= m/10
-	u_int64_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
+	uint64_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
 	if (m >= 0x1000)
 	  delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
 	

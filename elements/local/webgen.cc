@@ -68,10 +68,10 @@ WebGen::configure(const Vector<String> &conf, ErrorHandler *errh)
 IPAddress
 WebGen::pick_src()
 {
-  u_int32_t x;
-  u_int32_t mask = (u_int32_t) _mask;
+  uint32_t x;
+  uint32_t mask = (uint32_t) _mask;
 
-  x = (random() & ~mask) | ((u_int32_t)_src_prefix & mask);
+  x = (random() & ~mask) | ((uint32_t)_src_prefix & mask);
   
   return(IPAddress(x));
 }
@@ -135,7 +135,7 @@ WebGen::find_cb(unsigned src, unsigned short sport, unsigned short dport)
   for(i = 0; i < _ncbs; i++){
     if(sport == _cbs[i]->_sport &&
        dport == _cbs[i]->_dport &&
-       src == (u_int32_t) _cbs[i]->_src){
+       src == (uint32_t) _cbs[i]->_src){
       return(_cbs[i]);
     }
   }

@@ -82,7 +82,7 @@ IPOutputCombo::push(int, Packet *p_in)
     int oi;
   
     for (oi = 0; oi < olen; ) {
-      u_int type = oa[oi];
+      unsigned type = oa[oi];
       int xlen;
       if(type <= 1)
         xlen = 1;

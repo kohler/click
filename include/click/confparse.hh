@@ -52,8 +52,8 @@ bool cp_unsigned(const String &, int base, unsigned *);
 #ifdef HAVE_INT64_TYPES
 bool cp_integer64(const String &, int64_t *);
 bool cp_integer64(const String &, int base, int64_t *);
-bool cp_unsigned64(const String &, u_int64_t *);
-bool cp_unsigned64(const String &, int base, u_int64_t *);
+bool cp_unsigned64(const String &, uint64_t *);
+bool cp_unsigned64(const String &, int base, uint64_t *);
 #endif
 bool cp_real2(const String &, int frac_bits, int *);
 bool cp_unsigned_real2(const String &, int frac_bits, unsigned *);
@@ -66,7 +66,7 @@ bool cp_timeval(const String &, struct timeval *);
 String cp_unparse_bool(bool);
 #ifdef HAVE_INT64_TYPES
 String cp_unparse_integer64(int64_t, int base, bool uppercase);
-String cp_unparse_unsigned64(u_int64_t, int base, bool uppercase);
+String cp_unparse_unsigned64(uint64_t, int base, bool uppercase);
 #endif
 String cp_unparse_real2(int, int frac_bits);
 String cp_unparse_real2(unsigned, int frac_bits);
@@ -129,7 +129,7 @@ extern CpVaParseCmd
   cpInteger,	// int *result
   cpUnsigned,	// unsigned *result
   cpInteger64,	// int64_t *result
-  cpUnsigned64,	// u_int64_t *result
+  cpUnsigned64,	// uint64_t *result
   cpUnsignedReal2,  // int frac_bits, unsigned *result
   cpReal10,	    // int frac_digits, int *result
   cpUnsignedReal10, // int frac_digits, unsigned *result
@@ -150,7 +150,7 @@ extern CpVaParseCmd
   cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
   cpDesCblock,		// unsigned char result[8]
   // old names, here for compatibility:
-  cpUnsignedLongLong,	// u_int64_t *result
+  cpUnsignedLongLong,	// uint64_t *result
   cpNonnegReal2,  // int frac_bits, unsigned *result
   cpNonnegReal10, // int frac_digits, unsigned *result
   cpEtherAddress; // unsigned char result[6] (or EtherAddress *)
@@ -209,7 +209,7 @@ struct cp_value {
     unsigned u;
 #ifdef HAVE_INT64_TYPES
     int64_t i64;
-    u_int64_t u64;
+    uint64_t u64;
 #endif
     unsigned char address[16];
     int is[4];

@@ -65,11 +65,11 @@ class ChatterSocket : public Element { public:
   int _socket_fd;
   
   Vector<String> _messages;
-  Vector<u_int32_t> _message_pos;
-  u_int32_t _max_pos;
+  Vector<uint32_t> _message_pos;
+  uint32_t _max_pos;
   
   Vector<int> _fd_alive;
-  Vector<u_int32_t> _fd_pos;
+  Vector<uint32_t> _fd_pos;
   int _live_fds;
 
   static const char *protocol_version;

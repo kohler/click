@@ -43,7 +43,7 @@ class RandomLossage : public Element {
   
   int p_drop() const				{ return _p_drop; }
   bool on() const				{ return _on; }
-  u_int32_t drops() const			{ return _drops; }
+  uint32_t drops() const			{ return _drops; }
   
   RandomLossage *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

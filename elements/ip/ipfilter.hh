@@ -170,7 +170,7 @@ class IPFilter : public Classifier { public:
     int _transp_proto;
     
     union {
-      u_int32_t u;
+      uint32_t u;
       int32_t i;
       unsigned char c[4];
     } _u, _mask;
@@ -182,7 +182,7 @@ class IPFilter : public Classifier { public:
     void set_srcdst(int, ErrorHandler *);
     void set_transp_proto(int, ErrorHandler *);
     
-    int set_mask(u_int32_t full_mask, int shift, ErrorHandler *);
+    int set_mask(uint32_t full_mask, int shift, ErrorHandler *);
     int check(const Primitive &, ErrorHandler *);
     void add_exprs(Classifier *, Vector<int> &) const;
 

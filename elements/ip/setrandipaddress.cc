@@ -62,10 +62,10 @@ SetRandIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
 IPAddress
 SetRandIPAddress::pick()
 {
-  u_int32_t x;
-  u_int32_t mask = (u_int32_t) _mask;
+  uint32_t x;
+  uint32_t mask = (uint32_t) _mask;
 
-  x = (random() & ~mask) | ((u_int32_t)_ip & mask);
+  x = (random() & ~mask) | ((uint32_t)_ip & mask);
   
   return(IPAddress(x));
 }

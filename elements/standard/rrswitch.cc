@@ -45,7 +45,7 @@ RoundRobinSwitch::push(int, Packet *p)
   int i = _next;
 #ifndef __MTCLICK__
   _next++;
-  if (_next >= (u_int32_t)noutputs())
+  if (_next >= (uint32_t)noutputs())
     _next = 0;
 #else
   // in MT case try our best to be rr, but don't worry about it if we mess up

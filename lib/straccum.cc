@@ -96,7 +96,7 @@ operator<<(StringAccum &sa, int64_t q)
 }
 
 StringAccum &
-operator<<(StringAccum &sa, u_int64_t q)
+operator<<(StringAccum &sa, uint64_t q)
 {
   String qstr = cp_unparse_unsigned64(q, 10, false);
   return sa << qstr;

@@ -24,9 +24,9 @@
 #include <click/glue.hh>
   
 struct esp_new { 
-  u_int32_t esp_spi;
-  u_int32_t esp_rpl;
-  u_int8_t esp_iv[8];
+  uint32_t esp_spi;
+  uint32_t esp_rpl;
+  uint8_t esp_iv[8];
 };
 
 class IPsecESPEncap : public Element {

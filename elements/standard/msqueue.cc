@@ -82,7 +82,7 @@ MSQueue::uninitialize()
 void
 MSQueue::push(int, Packet *p)
 {
-  u_int32_t t, n;
+  uint32_t t, n;
   do {
     t = _tail.value();
     n = next_i(t);
@@ -104,7 +104,7 @@ MSQueue::pull(int)
     _can_pull = true;
   if (_can_pull || _pulls >= BATCH_FORCE) {
 #endif
-    u_int32_t h = _head.value();
+    uint32_t h = _head.value();
     if (h != _tail.value() && _q[h] != 0) {
       Packet *p = _q[h];
       _q[h] = 0;

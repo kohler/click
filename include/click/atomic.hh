@@ -8,10 +8,10 @@ class u_atomic32_t { public:
   // No constructors because, unfortunately, they cause GCC to generate worse
   // code. Use operator= instead.
   
-  operator u_int32_t() const		{ return atomic_read(&_val); }
-  u_int32_t value() const		{ return atomic_read(&_val); }
+  operator uint32_t() const		{ return atomic_read(&_val); }
+  uint32_t value() const		{ return atomic_read(&_val); }
   
-  u_atomic32_t &operator=(u_int32_t u)	{ atomic_set(&_val, u); return *this; }
+  u_atomic32_t &operator=(uint32_t u)	{ atomic_set(&_val, u); return *this; }
   u_atomic32_t &operator+=(int x)	{ atomic_add(x, &_val); return *this; }
   u_atomic32_t &operator-=(int x)	{ atomic_sub(x, &_val); return *this; }
   void operator++(int)			{ atomic_inc(&_val); }
@@ -23,8 +23,8 @@ class u_atomic32_t { public:
   // returns true if value is positive after increment
   bool inc_and_test_greater_zero()	{ return atomic_inc_and_test_greater_zero(&_val); }
   
-  u_int32_t read_and_add(int x);
-  u_int32_t compare_and_swap(u_int32_t old_value, u_int32_t new_value);
+  uint32_t read_and_add(int x);
+  uint32_t compare_and_swap(uint32_t old_value, u_int32_t new_value);
   
  private:
 
@@ -32,7 +32,7 @@ class u_atomic32_t { public:
 
 };
 
-inline u_int32_t
+inline uint32_t
 u_atomic32_t::read_and_add(int x)
 {
 #ifdef __i386__
@@ -45,8 +45,8 @@ u_atomic32_t::read_and_add(int x)
   return x;
 }
 
-inline u_int32_t
-u_atomic32_t::compare_and_swap(u_int32_t old_value, u_int32_t new_value)
+inline uint32_t
+u_atomic32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
 {
   int result;
   asm ("lock\n"
@@ -67,17 +67,17 @@ class u_atomic32_t { public:
   // No constructors because, unfortunately, they cause GCC to generate worse
   // code. Use operator= instead.
   
-  operator u_int32_t() const		{ return _val; }
-  u_int32_t value() const		{ return _val; }
+  operator uint32_t() const		{ return _val; }
+  uint32_t value() const		{ return _val; }
 
-  u_atomic32_t &operator=(u_int32_t u)	{ _val = u; return *this; }
+  u_atomic32_t &operator=(uint32_t u)	{ _val = u; return *this; }
   u_atomic32_t &operator+=(int x)	{ _val += x; return *this; }
   u_atomic32_t &operator-=(int x)	{ _val -= x; return *this; }
   void operator++(int)			{ _val++; }
   void operator--(int)			{ _val--; }
   
-  u_int32_t read_and_add(int x);
-  u_int32_t compare_and_swap(u_int32_t old_value, u_int32_t new_value);
+  uint32_t read_and_add(int x);
+  uint32_t compare_and_swap(uint32_t old_value, u_int32_t new_value);
  
   // returns true if value is 0 after decrement
   bool dec_and_test()			{ _val--; return _val == 0; }
@@ -87,35 +87,35 @@ class u_atomic32_t { public:
   
  private:
 
-  u_int32_t _val;
+  uint32_t _val;
   
 };
 
-inline u_int32_t
+inline uint32_t
 u_atomic32_t::read_and_add(int x)
 {
-  u_int32_t ov = _val;
+  uint32_t ov = _val;
   _val += x;
   return ov;
 }
 
-inline u_int32_t
-u_atomic32_t::compare_and_swap(u_int32_t old_value, u_int32_t new_value)
+inline uint32_t
+u_atomic32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
 {
-  u_int32_t ov = _val;
+  uint32_t ov = _val;
   if (_val == old_value) _val = new_value;
   return ov;
 }
 
 #endif
 
-inline u_int32_t
+inline uint32_t
 operator+(const u_atomic32_t &a, const u_atomic32_t &b)
 {
   return a.value() + b.value();
 }
 
-inline u_int32_t
+inline uint32_t
 operator-(const u_atomic32_t &a, const u_atomic32_t &b)
 {
   return a.value() - b.value();

@@ -80,7 +80,7 @@ StringAccum &operator<<(StringAccum &, long);
 StringAccum &operator<<(StringAccum &, unsigned long);
 #ifdef HAVE_INT64_TYPES
 StringAccum &operator<<(StringAccum &, int64_t);
-StringAccum &operator<<(StringAccum &, u_int64_t);
+StringAccum &operator<<(StringAccum &, uint64_t);
 #endif
 #ifndef __KERNEL__
 StringAccum &operator<<(StringAccum &, double);

@@ -131,8 +131,8 @@ class Packet { public:
   PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
 # ifdef HAVE_INT64_TYPES
-  u_int64_t perfctr_anno() const	{ return anno()->perfctr; }
-  void set_perfctr_anno(u_int64_t pc)	{ anno()->perfctr = pc; }
+  uint64_t perfctr_anno() const		{ return anno()->perfctr; }
+  void set_perfctr_anno(uint64_t pc)	{ anno()->perfctr = pc; }
 # endif
 #else
   const struct timeval &timestamp_anno() const { return _timestamp; }
@@ -177,7 +177,7 @@ class Packet { public:
     // flag allocations: see packet_anno.hh
     
 #if defined(__KERNEL__) && defined(HAVE_INT64_TYPES)
-    u_int64_t perfctr;
+    uint64_t perfctr;
 #endif
   };
 
