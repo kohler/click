@@ -2,10 +2,6 @@ John Jannotti
 jj@lcs.mit.edu
 design, Ethernet switch elements, user-level pcap/BPF elements
 
-M. Frans Kaashoek
-kaashoek@lcs.mit.edu
-design
-
 Eddie Kohler
 eddietwo@lcs.mit.edu
 design, core, Linux /proc interface, standard elements, optimizer,
@@ -19,3 +15,10 @@ radio elements, Linux kernel patches, other elements
 Alex Snoeren
 snoeren@lcs.mit.edu
 IP security elements
+
+
+Thanks to:
+
+M. Frans Kaashoek
+kaashoek@lcs.mit.edu
+initial design work
