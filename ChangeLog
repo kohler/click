@@ -1,3 +1,8 @@
+2001-02-25 Sunday 09:09  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: forceicmp.cc, forceicmp.hh: ForceICMP -- fix
+	ICMP checksum.
+
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/threadmonitor.hh: file threadmonitor.hh was
