@@ -1,9 +1,9 @@
 /* -*- mode: c; c-basic-offset: 4 -*- */
-#ifndef CLICK_RFC1483_H
-#define CLICK_RFC1483_H
+#ifndef CLICKNET_RFC1483_H
+#define CLICKNET_RFC1483_H
 
 /*
- * <click/rfc1483.h>
+ * <clicknet/rfc1483.h>
  */
 
 struct click_rfc1483 {

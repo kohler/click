@@ -2,7 +2,7 @@
 #ifndef CLICK_IP6ADDRESS_HH
 #define CLICK_IP6ADDRESS_HH
 #include <click/string.hh>
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 #include <click/ipaddress.hh>
 
 class IP6Address { public:

@@ -1,9 +1,9 @@
 /* -*- mode: c; c-basic-offset: 4 -*- */
-#ifndef CLICK_FDDI_H
-#define CLICK_FDDI_H
+#ifndef CLICKNET_FDDI_H
+#define CLICKNET_FDDI_H
 
 /*
- * <click/fddi.h> -- our own definitions of FDDI headers
+ * <clicknet/fddi.h> -- our own definitions of FDDI headers
  * based on a file from Linux
  */
 

@@ -3,7 +3,7 @@
 #define CLICK_IPADDRESS_HH
 #include <click/string.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 class IPAddress { public:
   
