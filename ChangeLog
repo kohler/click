@@ -1,3 +1,10 @@
+2002-03-05 Tuesday 14:20  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/clickfs.cc (1.6), bsdmodule/clickfs_element.cc (1.2),
+	bsdmodule/clickfs_vnops.cc (1.8), elements/bsdmodule/fromdevice.cc
+	(1.10), elements/bsdmodule/fromdevice.hh (1.8),
+	elements/bsdmodule/tohost.hh (1.3): bsdmodule updates from Luigi
+
 2002-03-05 Tuesday 11:43  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/: notifierqueue.hh (1.2), queue.hh (1.28): doc
