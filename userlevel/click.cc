@@ -248,9 +248,6 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
   if (!r)
     return 0;
 
-  if (r->nelements() == 0 && warnings)
-    errh->warning("%s: configuration has no elements", filename_landmark(text.c_str(), text_is_expr));
-
   // add new ControlSockets
   String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
   for (int i = 0; i < cs_ports.size(); i++)
@@ -283,8 +280,9 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
 {
   if (Router *q = parse_configuration(text, true, true, errh)) {
     if (hotswap_router)
-      delete hotswap_router;
+      hotswap_router->unuse();
     hotswap_router = q;
+    hotswap_router->use();
     hotswap_task.reschedule();
     return 0;
   } else
@@ -460,11 +458,11 @@ particular purpose.\n");
       hotswap_thunk_router = new Router("", router->master());
       hotswap_thunk_router->initialize(errh);
       hotswap_task.initialize(hotswap_thunk_router, false);
-      hotswap_thunk_router->activate(errh);
-      hotswap_thunk_router->set_runcount(0);
+      hotswap_thunk_router->activate(false, errh);
     }
     router->master()->thread(0)->driver();
-  }
+  } else if (!quit_immediately && warnings)
+    errh->warning("%s: configuration has no elements, exiting", filename_landmark(router_file, file_is_expr));
 
   gettimeofday(&after_time, 0);
   getrusage(RUSAGE_SELF, &after);
