@@ -1,3 +1,13 @@
+2004-08-23 Monday 13:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/samplepackage/m4/click.m4 (1.2), m4/click.m4 (1.42): m4
+	quoting
+
+2004-08-23 Monday 12:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/: DISTFILES (1.23), Makefile.in (1.11): libclick
+	fixlets
+
 2004-08-23 Monday 12:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* acclick.m4 (1.42), configure (1.27), configure.in (1.244),
