@@ -37,13 +37,15 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "gridroutetable.hh"
-#include "gridlocationinfo.hh"
+#include "grid.hh"
 #include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
 CLICK_DECLS
+
+class GridGenericRouteTable;
+class GridLocationInfo;
 
 class LookupGeographicGridRoute : public Element, public GridRouteActor {
   public:

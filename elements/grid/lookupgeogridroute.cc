@@ -17,16 +17,19 @@
 
 #include <click/config.h>
 #include <cstddef>
-#include "lookupgeogridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
 #include <click/standard/scheduleinfo.hh>
-#include "grid.hh"
 #include <click/router.hh>
 #include <click/glue.hh>
+#include "grid.hh"
+#include "lookupgeogridroute.hh"
+#include "gridgenericrt.hh"
 #include "filterbyrange.hh"
+#include "gridlocationinfo.hh"
+
 CLICK_DECLS
 
 LookupGeographicGridRoute::LookupGeographicGridRoute()
