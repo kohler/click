@@ -211,11 +211,9 @@ strtol(const char *nptr, char **endptr, int base)
   bool negative = (*nptr == '-');
   if (*nptr == '-' || *nptr == '+')
     nptr++;
-  if (!isdigit(*nptr)) {
-    *endptr = (char *)orig_nptr;
-    return INT_MIN;
-  }
   unsigned long ul = simple_strtoul(nptr, endptr, base);
+  if (endptr && nptr != orig_nptr && *endptr == nptr)
+    *endptr = orig_nptr;
   if (ul > LONG_MAX) {
     if (negative && ul == (unsigned long)(LONG_MAX) + 1)
       return LONG_MIN;
@@ -236,12 +234,16 @@ strtoul(const char *nptr, char **endptr, int base)
   const char *orig_nptr = nptr;
   while (isspace(*nptr))
     nptr++;
-  if (!isdigit(*nptr)) {
-    *endptr = (char *)orig_nptr;
-    return INT_MIN;
-  }
+  bool negative = (*nptr == '-');
+  if (*nptr == '-' || *nptr == '+')
+    nptr++;
   unsigned long ul = simple_strtoul(nptr, endptr, base);
-  return ul;
+  if (endptr && nptr != orig_nptr && *endptr == nptr)
+    *endptr = orig_nptr;
+  if (negative)
+    return -ul;
+  else
+    return ul;
 }
 
 };

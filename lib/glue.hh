@@ -67,6 +67,7 @@ click_get_cycles(void)
 }
 
 long strtol(const char *, char **, int);
+unsigned long strtoul(const char *, char **, int);
 
 }
 
