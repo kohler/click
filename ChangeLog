@@ -1,3 +1,7 @@
+2002-02-26 Tuesday 17:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.38): bugfixes
+
 2002-02-25 Monday 10:46  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/todevice.cc (1.20): duplicate-writer check at
