@@ -136,10 +136,7 @@ PollDevice::initialize(ErrorHandler *errh)
     _dev->poll_on(_dev);
   }
 
-  if (_promisc) {
-    if (_dev->promiscuity == 0) 
-      dev_set_promiscuity(_dev, 1);
-  }
+  if (_promisc) dev_set_promiscuity(_dev, 1);
 
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
@@ -172,11 +169,8 @@ PollDevice::uninitialize()
   if (poll_device_map.lookup(ifindex()) == 0) {
     if (_dev && _dev->polling > 0)
       _dev->poll_off(_dev);
-  } 
-  if (_promisc) {
-    if (_dev->promiscuity > 0) 
-      dev_set_promiscuity(_dev, -1);
   }
+  if (_promisc) dev_set_promiscuity(_dev, -1);
   unschedule();
 #endif
 }

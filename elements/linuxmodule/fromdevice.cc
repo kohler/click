@@ -118,10 +118,7 @@ FromDevice::initialize(ErrorHandler *errh)
   }
   registered_readers++;
   
-  if (_promisc) {
-    if (_dev->promiscuity == 0) 
-      dev_set_promiscuity(_dev, 1);
-  }
+  if (_promisc) dev_set_promiscuity(_dev, 1);
   
 #ifndef RR_SCHED
     // start out with default number of tickets, inflate up to max
@@ -149,10 +146,7 @@ FromDevice::uninitialize()
     _queue[i]->kill();
   _puller_ptr = _pusher_ptr = 0;
 
-  if (_promisc) {
-    if (_dev->promiscuity > 0) 
-      dev_set_promiscuity(_dev, -1);
-  }
+  if (_promisc) dev_set_promiscuity(_dev, -1);
 }
 
 void
