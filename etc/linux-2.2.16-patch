@@ -651,8 +651,8 @@ Index: drivers/net/tulip.c
  }
  
 +/* polling extension - intr stats */
-+unsigned int txdied = 0;
-+unsigned int pollintr = 0;
++static unsigned int txdied = 0;
++static unsigned int pollintr = 0;
 +
 +static __inline__ unsigned long long
 +tulip_get_cycles(void)
@@ -890,7 +890,7 @@ Index: drivers/net/tulip.c
 +/* prefetching of descriptor data */
 +#define PREFETCH   		1
 +
-+unsigned tulip_recycled_skb_size = 0;
++static unsigned tulip_recycled_skb_size = 0;
 +static int tulip_recycled_skb_cnt = 0;
 +static unsigned long tulip_recycle_skb_lock = 0;
 +static struct sk_buff *tulip_recycled_skbs[SKB_RECYCLED];
