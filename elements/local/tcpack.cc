@@ -115,8 +115,8 @@ TCPAck::iput(Packet *p)
   const click_tcp *tcph =
     reinterpret_cast<const click_tcp *>(p->transport_header());
   if (!_synack && (tcph->th_flags&(TH_SYN|TH_ACK))==(TH_SYN|TH_ACK)) {
-    /* synack on input, meaning next seqn to use is the ackn
-     * in packet and next ackn is the seqn in packet */
+    // synack on input, meaning next seqn to use is the ackn
+    // in packet and next ackn is the seqn in packet
     _seq_nxt = ntohl(tcph->th_ack);
     _ack_nxt = ntohl(tcph->th_seq)+1;
     _synack = true;
@@ -132,9 +132,14 @@ TCPAck::iput(Packet *p)
   if (tcph->th_flags & (TH_SYN|TH_FIN|TH_RST))
     return true;
 
+  // determine what the next ack should be
   if (TCPBuffer::seqno(p) == _ack_nxt) {
+    // if the packet is what we expected, increment the expected
+    // sequence number, and search for the next expected sequence
+    // number from the tcp buffer.
     _ack_nxt += TCPBuffer::seqlen(p);
     bool v = _tcpbuffer->next_missing_seq_no(_ack_nxt, _ack_nxt);
+    // passed seq, buffer cannot be empty
     assert(v);
   } else {
     click_chatter("seqno < ack_nxt: out of order or retransmitted packet");
@@ -155,8 +160,8 @@ TCPAck::oput(Packet *p)
   const click_tcp *tcph =
     reinterpret_cast<const click_tcp *>(p->transport_header());
   if (tcph->th_flags&(TH_SYN|TH_ACK) == (TH_SYN|TH_ACK)) {
-    /* synack on output, meaning next seqn to use is the seqn 
-     * in packet and next ackn is the ackn in packet */
+    // synack on output, meaning next seqn to use is the seqn 
+    // in packet and next ackn is the ackn in packet
     _seq_nxt = ntohl(tcph->th_seq)+1;
     _ack_nxt = ntohl(tcph->th_ack);
     _synack = true;
