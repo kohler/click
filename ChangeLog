@@ -1,3 +1,26 @@
+2003-10-05 Sunday 23:09  Eddie Kohler <kohler@icir.org>
+
+	* elements/: ip/ipclassifier.hh (1.27), ip/ipfilter.cc (1.37),
+	ip/ipfilter.hh (1.22), standard/classifier.cc (1.48),
+	standard/classifier.hh (1.29): IPFilter: add "a ? b : c"
+	expressions (requires changes to Classifier finish_expr_subtree);
+	in Classifier, extend Expr::not_implies() to handle the case when
+	both exprs check the same bit, but for different values
+
+2003-10-05 Sunday 23:07  Eddie Kohler <kohler@icir.org>
+
+	* lib/atomic.cc (1.5): nit
+
+2003-10-05 Sunday 23:07  Eddie Kohler <kohler@icir.org>
+
+	* include/click/handlercall.hh (1.9), lib/handlercall.cc (1.10):
+	add value() and set_value()
+
+2003-10-05 Sunday 22:54  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.38): make random() inkernel behave like
+	random() at userlevel by introducing RAND_MAX
+
 2003-10-05 Sunday 20:29  John Bicket <jbicket@mit.edu>
 
 	* elements/standard/simplequeue.hh (1.8),
