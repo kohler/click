@@ -1,3 +1,7 @@
+2001-08-22 Wednesday 10:18  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/divertsocket.cc (1.10): fixed parsing bugs
+
 2001-08-21 Tuesday 21:17  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* configure.in (1.141): Change test for BSD kernel patches because
