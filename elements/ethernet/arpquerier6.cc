@@ -1,6 +1,6 @@
 /*
- * arpquerier6.{cc,hh} -- ARP resolver element
- * Robert Morris, Eddie Kohler
+ * arpquerier6.{cc,hh} -- Neighborhood Solitation
+ * Robert Morris, Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -27,7 +27,7 @@ ARPQuerier6::ARPQuerier6()
 {
   add_input(); /* IP6 packets */
   add_input(); /* ether/ARP responses */
-  add_output();/* ether/IP6 and ether/ARP queries */
+  add_output();/* ether/IP6 and ether/NBSoli queries */
   for (int i = 0; i < NMAP; i++)
     _map[i] = 0;
 }
@@ -69,6 +69,7 @@ ARPQuerier6::notify_noutputs(int n)
 int
 ARPQuerier6::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  click_chatter("ARPQuerier6::configure !");
   return cp_va_parse(conf, this, errh,
 		     cpIP6Address, "IP6 address", &_my_ip6,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
@@ -146,35 +147,64 @@ ARPQuerier6::expire_hook(unsigned long thunk)
 }
 
 void
-ARPQuerier6::send_query_for(const IP6Address &want_ip6)
+ARPQuerier6::send_query_for(u_char want_ip6[16])
 {
-  //  click_ether *e;
-//    click_ether_arp6 *ea;
-//    WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
-//    if (q == 0) {
-//      click_chatter("in arp querier: cannot make packet!");
-//      assert(0);
-//    } 
-//    memset(q->data(), '\0', q->length());
-//    e = (click_ether *) q->data();
-//    ea = (click_ether_arp6 *) (e + 1);
-//    memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
-//    memcpy(e->ether_shost, _my_en.data(), 6);
-//    e->ether_type = htons(ETHERTYPE_ARP);
-//    ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-//    ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP6);
-//    ea->ea_hdr.ar_hln = 6;
-//    ea->ea_hdr.ar_pln = 16;
-//    ea->ea_hdr.ar_op = htons(ARPOP_REQUEST);
-//    memcpy(ea->arp_tpa, want_ip6.data(), 16);
-//    memcpy(ea->arp_sha, _my_en.data(), 6);
-//    memcpy(ea->arp_spa, _my_ip6.data(), 16);
-//    _arp_queries++;
-//    output(noutputs()-1).push(q); 
+  click_ether *e;
+  click_ip6 *ip6;
+  click_arp6req *ea;
+  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ip6) + sizeof(*ea));
+  if (q == 0) {
+    click_chatter("in arpquerier6: cannot make packet!");
+      assert(0);
+  } 
+
+  memset(q->data(), '\0', q->length());
+  e = (click_ether *) q->data();
+  ip6=(click_ip6 *)(e+1);
+  ea = (click_arp6req *) (ip6 + 1);
+
+  // set ethernet header
+  // dst add is a multicast add: first two octets : 0x3333, 
+  // last four octets is the lst four octets of DST IP6
+  e->ether_dhost[0] = 0x33;
+  e->ether_dhost[1] = 0x33;
+  e->ether_dhost[2] = want_ip6[12];
+  e->ether_dhost[3] = want_ip6[13]; 
+  e->ether_dhost[4] = want_ip6[14];
+  e->ether_dhost[5] = want_ip6[15]; 
+  memcpy(e->ether_shost, _my_en.data(), 6);
+  e->ether_type = htons(ETHERTYPE_IP6);
+  
+  // set ip6 header
+  ip6->ip6_v=6;
+  ip6->ip6_pri=0;
+  ip6->ip6_flow[0]=0;
+  ip6->ip6_flow[1]=0;
+  ip6->ip6_flow[2]=0;
+  ip6->ip6_plen=htons(sizeof(click_arp6req));
+  ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
+  ip6->ip6_hlim=0xff; //indicate no router has processed it
+  ip6->ip6_src = _my_ip6; 
+  ip6->ip6_dst = IP6Address(want_ip6);
+
+//set ICMP6 - Neighborhood Solicitation Message
+  ea->type = 0x87; 
+  ea->code =0;
+  ea->reserved = htonl(0);
+  memcpy(ea->arp_tpa, want_ip6, 16);
+  ea->option_type = 0x1;
+  ea->option_length = 0x1;
+  memcpy(ea->arp_sha, _my_en.data(), 6);
+ 
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_arp6req)));
+  
+  _arp_queries++;
+  output(noutputs()-1).push(q);
+
 }
 
 /*
- * If the packet's IP address is in the table, add an ethernet header
+ * If the packet's IP6 address is in the table, add an ethernet header
  * and push it out.
  * Otherwise push out a query packet.
  * May save the packet in the ARP table for later sending.
@@ -183,6 +213,7 @@ ARPQuerier6::send_query_for(const IP6Address &want_ip6)
 void
 ARPQuerier6::handle_ip6(Packet *p)
 {
+  click_chatter("ARPQuerier6::handle_ip6 ! -1");
   IP6Address ipa = p->dst_ip6_anno();
   int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
   ARPEntry6 *ae = _map[bucket];
@@ -190,11 +221,13 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae = ae->next;
 
   if (ae) {
+    click_chatter("ARPQuerier6::push ! -2");
     if (ae->polling) {
-      send_query_for(ae->ip6);
+      send_query_for(ae->ip6.data());
       ae->polling = 0;
+      click_chatter("ARPQuerier6::push ! -3");
     }
-    
+    //find the match IP address, send to output0
     if (ae->ok) {
       Packet *q = p->push(sizeof(click_ether));
       click_ether *e = (click_ether *)q->data();
@@ -202,13 +235,16 @@ ARPQuerier6::handle_ip6(Packet *p)
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP6);
       output(0).push(q);
+      click_chatter("ARPQuerier6::push ! -4");
     } else {
       if (ae->p) {
         ae->p->kill();
 	_pkts_killed++;
+	click_chatter("ARPQuerier6::push ! -5");
       }
       ae->p = p;
-      send_query_for(p->dst_ip6_anno());
+      send_query_for(p->dst_ip6_anno().data());
+      click_chatter("ARPQuerier6::push ! -6");
     }
     
   } else {
@@ -218,56 +254,62 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae->p = p;
     ae->next = _map[bucket];
     _map[bucket] = ae;
-    send_query_for(p->dst_ip6_anno());
+    send_query_for(p->dst_ip6_anno().data());
+    unsigned  char *d = p->dst_ip6_anno().data();
+    click_chatter("ARPQuerier6:: %x", (p->dst_ip6_anno().data())[15]);
+    click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
+    click_chatter("ARPQuerier6::push ! -7");
   }
 }
 
 /*
- * Got an ARP response.
+ * Got an Neighborhood Solitation Validation response.
  * Update our ARP table.
  * If there was a packet waiting to be sent, return it.
  */
 void
 ARPQuerier6::handle_response(Packet *p)
 {
- //   if (p->length() < sizeof(click_ether) + sizeof(click_ether_arp6))
-//      return;
+  if (p->length() < sizeof(click_ether) + sizeof(click_ip6) + sizeof(click_arp6req))
+    return;
   
-//    click_ether *ethh = (click_ether *) p->data();
-//    click_ether_arp6 *arph = (click_ether_arp6 *) (ethh + 1);
-//    IP6Address ipa = IP6Address(arph->arp_spa);
-//    EtherAddress ena = EtherAddress(arph->arp_sha);
-//    if (ntohs(ethh->ether_type) == ETHERTYPE_ARP
-//        && ntohs(arph->ea_hdr.ar_hrd) == ARPHRD_ETHER
-//        && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP6
-//        && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
+  click_ether *ethh = (click_ether *) p->data();
+  click_ip6 *ip6h = (click_ip6 *)(ethh+1);
+  click_arp6resp * eah = (click_arp6resp*)(ip6h+1);
+
+  IP6Address ipa = IP6Address(eah->arp_tpa);
+  EtherAddress ena = EtherAddress(eah->arp_tha);
+    if (ntohs(ethh->ether_type) == ETHERTYPE_IP6
+	&& ntohs(eah->type)==0x88) {
 //        && !ena.is_group()) {
     
-//      int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
-//      ARPEntry6 *ae = _map[bucket];
-//      while (ae && ae->ip6 != ipa)
-//        ae = ae->next;
-//      if (!ae)
-//        return;
+     int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
+      ARPEntry6 *ae = _map[bucket];
+      while (ae && ae->ip6 != ipa)
+        ae = ae->next;
+      if (!ae)
+        return;
     
-//      if (ae->ok && ae->en != ena)
-//        click_chatter("ARPQuerier6 overwriting an entry");
-//      ae->en = ena;
-//      ae->ok = 1;
-//      ae->polling = 0;
-//      ae->last_response_jiffies = click_jiffies();
-//      Packet *cached_packet = ae->p;
-//      ae->p = 0;
-//      if (cached_packet)
-//        handle_ip6(cached_packet);
-//    } 
+      if (ae->ok && ae->en != ena)
+        click_chatter("ARPQuerier6 overwriting an entry");
+      ae->en = ena;
+      ae->ok = 1;
+      ae->polling = 0;
+      ae->last_response_jiffies = click_jiffies();
+      Packet *cached_packet = ae->p;
+      ae->p = 0;
+      if (cached_packet)
+        handle_ip6(cached_packet);
+    } 
 }
 
 void
 ARPQuerier6::push(int port, Packet *p)
 {
-  if (port == 0)
-    handle_ip6(p);
+   click_chatter("ARPQuerier6::push ! -1");
+   if (port == 0){
+     click_chatter("ARPQuerier6::push ! -1");
+     handle_ip6(p); }
   else {
     handle_response(p);
     p->kill();
