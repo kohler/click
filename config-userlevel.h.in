@@ -47,7 +47,7 @@
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 
-/* Define if you have the <poll.h> header file. */
+/* Define if you have a non-emulated <poll.h> header file. */
 #undef HAVE_POLL_H
 
 /* Placement new is always provided below. */
