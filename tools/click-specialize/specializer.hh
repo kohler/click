@@ -31,6 +31,9 @@ class Specializer {
   Vector<int> _ninputs;
   Vector<int> _noutputs;
   Vector<int> _specialize;
+
+  HashMap<String, int> _specializing_classes;
+  Vector<int> _specialize_like;
   
   HashMap<String, int> _etinfo_map;
   Vector<ElementTypeInfo> _etinfo;
@@ -65,6 +68,9 @@ class Specializer {
   const ElementTypeInfo &etype_info(int) const;
   void add_type_info(const String &, const String &, const String & =String());
   void parse_elementmap(const String &);
+
+  void set_specializing_classes(const HashMap<String, int> &);
+  int set_specialize_like(String, String, ErrorHandler *);
 
   void specialize(ErrorHandler *);
   void fix_elements();

@@ -24,6 +24,8 @@ Specializer::Specializer(RouterT *router)
   : _router(router), _nelements(router->nelements()),
     _ninputs(router->nelements(), 0), _noutputs(router->nelements(), 0),
     _specialize(router->nelements(), 1), // specialize everything by default
+    _specializing_classes(1),
+    _specialize_like(_nelements, -1),
     _etinfo_map(0), _header_file_map(-1)
 {
   _etinfo.push_back(ElementTypeInfo());
@@ -152,17 +154,52 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
     }
 }
 
+void
+Specializer::set_specializing_classes(const HashMap<String, int> &sp)
+{
+  _specializing_classes = sp;
+}
+
+int
+Specializer::set_specialize_like(String e1, String e2, ErrorHandler *errh)
+{
+  int eindex1 = _router->eindex(e1);
+  if (eindex1 < 0)
+    return errh->error("no element named `%s'", e1.cc());
+  int eindex2 = _router->eindex(e2);
+  if (eindex2 < 0)
+    return errh->error("no element named `%s'", e2.cc());
+  _specialize_like[eindex1] = eindex2;
+  return 0;
+}
+
 int
 Specializer::check_specialize(int eindex, ErrorHandler *errh)
 {
-  if (_specialize[eindex] < 0)
-    return -1;
+  if (_specialize[eindex] != -97)
+    return _specialize[eindex];
+  _specialize[eindex] = -1;
   
-  // read source code
+  // specialize like something else?
+  if (_specialize_like[eindex] >= 0) {
+    _specialize[eindex] = check_specialize(_specialize_like[eindex], errh);
+    return _specialize[eindex];
+  }
+  
+  // get type info
   ElementTypeInfo &old_eti = etype_info(eindex);
   if (!old_eti.click_name)
     return errh->warning("no information about element class `%s'",
 			 old_eti.click_name.cc());
+  
+  // belongs to a non-specialized class?
+  int try_it = 1;
+  if (_specializing_classes[old_eti.click_name] <= 0)
+    try_it = 0;
+  if (try_it == 0)
+    return -1;
+
+  // read source code
   if (!old_eti.read_source)
     read_source(old_eti, errh);
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
@@ -182,7 +219,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   spc.eindex = eindex;
   add_type_info(spc.click_name, spc.cxx_name);
   _specials.push_back(spc);
-  return _specials.size() - 1;
+  return (_specialize[eindex] = _specials.size() - 1);
 }
 
 void
@@ -292,8 +329,7 @@ String
 Specializer::emangle(int eindex, bool push) const
 {
   // find the class, possibly a superclass, that defines the right vf
-  const ElementTypeInfo &eti = etype_info(eindex);
-  CxxClass *cxx_class = _cxxinfo.find_class(eti.cxx_name);
+  CxxClass *cxx_class = _cxxinfo.find_class(enew_cxx_type(eindex));
   while (cxx_class) {
     if (cxx_class->find(push ? "push" : "pull")) // success!
       break;
@@ -371,16 +407,18 @@ Specializer::create_connector_methods(SpecializedClass &spc)
 void
 Specializer::specialize(ErrorHandler *errh)
 {
+  _specialize.assign(_nelements, -97);
   for (int i = 0; i < _nelements; i++)
-    if (_specialize[i] >= 0)
-      _specialize[i] = check_specialize(i, errh);
+    check_specialize(i, errh);
 
   for (int s = 0; s < _specials.size(); s++) {
     create_class(_specials[s]);
     if (_specials[s].cxxc->find("simple_action"))
       do_simple_action(_specials[s]);
-    create_connector_methods(_specials[s]);
   }
+
+  for (int s = 0; s < _specials.size(); s++)
+    create_connector_methods(_specials[s]);
 }
 
 void
