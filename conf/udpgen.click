@@ -1,31 +1,67 @@
-// need to change the following lines to correspond to your particular
-// udpgen setting - hopefully we will have a script soon
+// udpgen.click
 
-ar   :: ARPResponder(7.0.0.2 00:E0:29:05:E2:D4);
-udph :: UDPIPEncap(7.0.0.2, 1234, 5.0.0.2, 1234, 1);
-ethh :: EtherEncap(0x0800, 00:E0:29:05:E2:D4, 00:C0:95:E2:09:14);
+// This file is a simple, fast UDP/IP load generator, meant to be used in
+// the Linux kernel module. It sends 64-byte UDP/IP packets from this
+// machine to another machine at a given rate. It can generate rates up to
+// about 147,000 packets/s on 733 MHz Pentium III machines using our
+// polling drivers.
 
-c0   :: Classifier(12/0806 20/0001, -);
-pd   :: PollDevice(eth1);
-td   :: ToDevice(eth1);
-out  :: Queue(8192) -> Counter -> td;
-tol  :: ToLinux;
+// The relevant address and rate arguments are specified as parameters to a
+// compound element UDPGen.
 
-pd -> [0]c0;
-c0[0] -> ar -> out;
-c0[1] -> tol;
+// UDPGen($device, $rate, $time, $saddr, $sport, $saddr_ethernet,
+//	$daddr, $dport, $daddr_ethernet);
+//
+//	$device		name of device to generate traffic on
+//	$rate		rate to generate traffic (packets/s)
+//	$time		generate traffic for this many seconds
+//	$saddr		this machine's IP address
+//	$sport		source port for generated traffic
+//	$saddr_ethernet	the Ethernet address of $device
+//	$daddr		destination machine's IP address
+//	$dport		destination port for generated traffic
+//	$daddr_ethernet the next-hop Ethernet address
 
-// ether header size 14
-// ip    header size 20
-// udp   header size 8
-// pkt len is 42+length of payload
-// generates 64 byte packets, which have 22 byte payloads
+// After creating a UDPGen named `u', the actual packet count and generated
+// rate are found in the files `/proc/click/u/counter/count' and
+// `/proc/click/u/counter/rate'.
 
-rs :: RatedSource(\<00000000111111112222222233333333444444445555>, 100000, 10);
 
-rs -> udph
-   -> ethh
-   -> out;
+elementclass UDPGen {
+  $device, $rate, $time,
+  $saddr, $sport, $saddr_ethernet, 
+  $daddr, $dport, $daddr_ethernet |
 
-// ticket for RatedSource must be smaller so it won't overflow the Queue
-ScheduleInfo(td 1, pd .1, rs .1);
+  source :: RatedSource(\<00000000111111112222222233333333444444445555>,
+	$rate, $time);
+  out :: Queue(8192);
+  counter :: Counter;
+  class :: Classifier(12/0806 20/0001, -);
+
+  pd :: PollDevice($device)		// may be need to be FromDevice
+	-> class;
+  class[0]				// ARP queries
+	-> ARPResponder($saddr $saddr_ethernet)
+	-> out;
+  class[1]				// all other packets
+	-> ToLinux;
+
+  source
+	-> UDPIPEncap($saddr, $sport, $daddr, $dport, true)
+	-> EtherEncap(0x0800, $saddr_ethernet, $daddr_ethernet)
+	-> out;
+
+  out
+	-> counter
+	-> td :: ToDevice($device);
+
+  // ticket for RatedSource must be smaller so it won't overflow the Queue
+  ScheduleInfo(td 1, pd .1, source .1);
+}
+
+
+// create a UDPGen
+
+u :: UDPGen(eth0, 10, .1,
+	1.0.0.2, 1234, 00:e0:29:05:e2:d4,
+	2.0.0.2, 1234, 00:c0:95:e2:09:14);

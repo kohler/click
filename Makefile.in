@@ -76,7 +76,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	conf/make-ip-conf.pl conf/ip.clickpat \
 	conf/fake-iprouter.click \
 	conf/test.click conf/test2.click conf/test3.click \
-	conf/testdevice.click \
+	conf/test-device.click \
 	conf/udpgen.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs \

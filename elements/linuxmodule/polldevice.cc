@@ -97,7 +97,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
   // must check both _dev->polling and _dev->poll_on as some drivers
   // memset() their device structures to all zero
   if (_dev->polling < 0 || !_dev->poll_on)
-    return errh->error("device `%s' not pollable", _devname.cc());
+    return errh->error("device `%s' not pollable, use FromDevice instead", _devname.cc());
 #endif
   return 0;
 }

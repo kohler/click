@@ -243,3 +243,5 @@ main()
   at.doit();
 }
 #endif
+
+ELEMENT_REQUIRES(userlevel)

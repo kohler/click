@@ -39,13 +39,13 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   String data = 
     "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
   int rate = 10;
-  int time = -1;
+  int time_ms = -1;
   bool active = true;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "packet data", &data,
 		  cpUnsigned, "sending rate (packets/s)", &rate,
-		  cpInteger, "sending time", &time,
+		  cpMilliseconds, "sending time", &time_ms,
 		  cpBool, "active?", &active,
 		  0) < 0)
     return -1;
@@ -53,7 +53,7 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   _data = data;
   _rate = rate;
   _ugap = (rate ? 1000000 / rate : 1000000);
-  _limit = (time >= 0 ? time*rate : -1);
+  _limit = (time_ms >= 0 ? time_ms*rate / 1000 : -1);
   _active = active;
   
   if (_packet) _packet->kill();
