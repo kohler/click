@@ -23,7 +23,7 @@ PullToPush::wants_packet_upstream() const
   return true;
 }
 
-bool
+void
 PullToPush::run_scheduled()
 {
   Packet *p;
@@ -36,9 +36,8 @@ PullToPush::run_scheduled()
     i++;
   } 
 
-  if (_idle > 128)
-    return false;
-  else return true;
+  if (_idle <= 128)
+    reschedule();
 }
 
 EXPORT_ELEMENT(PullToPush)

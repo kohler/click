@@ -112,7 +112,7 @@ class Element : public ElementLink { public:
   
   // Hooks for a non-empty Queue to tell an output driver to pull().
   virtual bool wants_packet_upstream() const;
-  virtual bool run_scheduled();
+  virtual void run_scheduled();
   
   virtual void push(int port, Packet *);
   virtual Packet *pull(int port);

@@ -220,6 +220,7 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
  * accept a packet even if they've marked themselves
  * as idle. What do we do with a rejected packet?
  */
+int total_packets_sent = 0;
 bool
 ToDevice::tx_intr()
 {
@@ -227,17 +228,26 @@ ToDevice::tx_intr()
   unsigned long long c0 = click_get_cycles();
 #endif
   int busy;
-  int tx_left = _dev->clean_tx(_dev);
+ 
+#if CLICK_POLLDEV
+  _dev->clean_tx(_dev);
+#endif
 
   while ((busy = _dev->tbusy) == 0) {
     Packet *p;
     _idle++;
     if (p = input(0).pull()) {
       push(0, p);
+      total_packets_sent++;
       _idle = 0;
     } 
     else break;
   }
+  
+#if CLICK_POLLDEV
+  int tx_left = _dev->clean_tx(_dev);
+  _last_txlen = tx_left;
+#endif
 
   /*
    * If we have packets left in the queue, arrange for
@@ -267,8 +277,7 @@ ToDevice::tx_intr()
 #endif
 
   if (busy || _idle <= 1024 || tx_left != 0)
-    return true;
-  return false;
+    reschedule();
 }
 
 void
@@ -314,11 +323,11 @@ ToDevice::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-bool
+void
 ToDevice::run_scheduled()
 {
   _pull_calls++;
-  return tx_intr();
+  tx_intr();
 }
 
 static String

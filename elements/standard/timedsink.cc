@@ -57,20 +57,18 @@ TimedSink::wants_packet_upstream() const
   return true;
 }
 
-bool
+void
 TimedSink::run_scheduled()
 {
   // if timer is scheduled, we don't care if a packet is upstream.
   if (_timer.scheduled())
-    return false;
+    return;
 
   Packet *p = input(0).pull();
   if (p) {
     p->kill();
     _timer.schedule_after_ms(_interval);
   }
-  // otherwise, rely on PACKET_UPSTREAM to wake us up
-  return false;
 }
 
 EXPORT_ELEMENT(TimedSink)

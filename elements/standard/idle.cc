@@ -71,7 +71,7 @@ Idle::wants_packet_upstream() const
   return false;
 }
 
-bool
+void
 Idle::run_scheduled()
 {
   _idle++;
@@ -81,8 +81,7 @@ Idle::run_scheduled()
 	p->kill();
 	_idle = 0;
       }
-  if (_idle > 128) return false;
-  return true;
+  if (_idle <= 128) reschedule();
 }
 
 EXPORT_ELEMENT(Idle)

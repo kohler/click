@@ -74,7 +74,11 @@ class Packet {
 
 #ifdef __KERNEL__
   // unuse() already took care of atomic_dec_and_test
-  void kill()				{ __kfree_skb(skb()); }
+  void kill() { 
+    extern int total_packets_killed;
+    __kfree_skb(skb()); 
+    total_packets_killed++;
+  }
 #else
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
@@ -157,10 +161,18 @@ Packet::make(const unsigned char *s, unsigned len)
 inline Packet *
 Packet::make(struct sk_buff *skb)
 {
+  extern int total_packets_inherited;
+  extern int total_packets_created;
   if (atomic_read(&skb->users) == 1)
+  {
+    total_packets_inherited++;
     return (Packet *)skb;
+  }
   else
+  {
+    total_packets_created++;
     return (Packet *)skb_clone(skb, GFP_ATOMIC);
+  }
 }
 #endif
 

@@ -15,8 +15,3 @@
 #endif
 #include "elemlink.hh"
 
-unsigned int ElementLink::_global_tickets;
-unsigned int ElementLink::_global_stride;
-unsigned long long ElementLink::_global_elapsed;
-unsigned long long ElementLink::_global_pass;
-

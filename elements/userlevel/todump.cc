@@ -106,11 +106,11 @@ ToDump::wants_packet_upstream() const
   return true;
 }
 
-bool
+void
 ToDump::run_scheduled()
 {
   Packet *p = input(0).pull();
-  if (!p) return false;
+  if (!p) return;
 
 #if HAVE_PCAP
   struct pcap_pkthdr h;
@@ -129,7 +129,6 @@ ToDump::run_scheduled()
 #endif
 
   p->kill();
-  return false;
 }
 
 EXPORT_ELEMENT(ToDump)

@@ -59,7 +59,7 @@ InfiniteSource::uninitialize()
   _packet = 0;
 }
 
-bool
+void
 InfiniteSource::run_scheduled()
 {
   int count = _count;
@@ -71,9 +71,8 @@ InfiniteSource::run_scheduled()
     for (int i = 0; i < count; i++)
       output(0).push(_packet->clone());
     _total += count;
-    return true;
+    reschedule();
   }
-  return false;
 }
 
 EXPORT_ELEMENT(InfiniteSource)

@@ -25,9 +25,6 @@
 #include "glue.hh"
 
 class PollDevice : public Element {
-  Element *_puller1;
-  Vector<Element *> _pullers;
-  
  public:
   
   PollDevice();
@@ -38,7 +35,7 @@ class PollDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "PollDevice"; }
-  Processing default_processing() const		{ return PULL; }
+  Processing default_processing() const		{ return PUSH; }
   
   PollDevice *clone() const;
   int configure(const String &, ErrorHandler *);
@@ -52,15 +49,17 @@ class PollDevice : public Element {
   void set_wakeup_when_busy();
   void woke_up();
 
-  Packet *pull(int port);
+  void run_scheduled();
   
  private:
-
   int _total_intr_wait;
   int _idle;
   String _devname;
   struct device *_dev;
   struct wait_queue _self_wq;
+
+  static int _num_polldevices;
+  static int _num_idle_polldevices;
 };
 
 #endif 

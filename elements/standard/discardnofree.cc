@@ -32,14 +32,11 @@ DiscardNoFree::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-bool
+void
 DiscardNoFree::run_scheduled()
 {
   if (Packet *p = input(0).pull())
-    /* Don't kill() */
-    return true;
-  else
-    return false;
+    reschedule();
 }
 
 EXPORT_ELEMENT(DiscardNoFree)

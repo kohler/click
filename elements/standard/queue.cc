@@ -115,6 +115,7 @@ Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
 void
 Queue::uninitialize()
 {
+  click_chatter("queue %s uninitializing: %d packets remaining",declaration().cc(),size());
   for (int i = _head; i != _tail; i = next_i(i))
     _q[i]->kill();
   delete[] _q;

@@ -15,28 +15,22 @@ class ElementLink {
   ElementLink *_prev;
   ElementLink *_next;
   long long _pass;
-
   unsigned int _stride;
-  long long _remain;
   int _ntickets;
-
   ElementLink *_list;
+  
+  void stride() { _pass += _stride; }
+  void schedule_before(ElementLink *);
+  void schedule_head();
+  void schedule_tail();
 
-  static unsigned int _global_tickets;
-  static unsigned int _global_stride;
-  static unsigned long long _global_elapsed;
-  static unsigned long long _global_pass;
-  
-  static void global_pass_update();
-  static void global_tickets_update(int delta);
-  
  public:
   
   ElementLink()				
-    : _prev(0), _next(0), _pass(0), _stride(0), _remain(0), _ntickets(-1) { }
+    : _prev(0), _next(0), _pass(0), _stride(0), _ntickets(-1) { }
   
   ElementLink(ElementLink *lst)
-    : _prev(0), _next(0), _pass(0), _stride(0), _remain(0), _ntickets(-1), 
+    : _prev(0), _next(0), _pass(0), _stride(0), _ntickets(-1), 
       _list(lst) { }
 
   bool scheduled() const		{ return _prev; }
@@ -47,21 +41,13 @@ class ElementLink {
   void initialize_link(ElementLink *);
   void initialize_head()		{ _prev = _next = _list = this; }
   
-  void unschedule();
-  void schedule_before(ElementLink *);
-  void schedule_head();
-  void schedule_tail();
-
   int ntickets() const			{ return _ntickets; }
   void set_ntickets(int);
   void join_scheduler();
-  void leave_scheduler();
   void reschedule();
-  
-  void stride() { _pass += _stride; }
+  void unschedule();
+
   void refresh_worklist_passes();
-  
-  static void elapse() { _global_elapsed++; }
 };
 
 
@@ -123,7 +109,9 @@ ElementLink::schedule_before(ElementLink *n)
 inline void
 ElementLink::reschedule()
 {
+  stride();
   unschedule();
+
   ElementLink *n = scheduled_list()->scheduled_next();
 
   while(n != scheduled_list()) {
@@ -136,61 +124,26 @@ ElementLink::reschedule()
 
   // largest pass value, schedule_tail so we don't reschedule immediately
   schedule_tail();
+  if (_pass > MAX_PASS) refresh_worklist_passes();
 }
 
 inline void
 ElementLink::join_scheduler()
 {
   if (_ntickets < 1 || scheduled()) return;
-    
-  global_pass_update();
-  _pass = _global_pass + _remain;
-  global_tickets_update(_ntickets);
-  
+  _pass = scheduled_list()->scheduled_next()->_pass;
   reschedule();
-}
-
-inline void
-ElementLink::leave_scheduler()
-{
-  if (_ntickets < 1) return;
-  
-  global_pass_update();
-  _remain = _pass - _global_pass;
-  global_tickets_update(0-_ntickets);
-  
-  unschedule();
 }
 
 inline void
 ElementLink::set_ntickets(int n)
 {
   _ntickets = n;
-  if (n > 0) {
+  if (n > 0)
     _stride = STRIDE1 / n;
-    _remain = _stride;
-  }
 }
 
 
-
-inline void 
-ElementLink::global_pass_update()
-{
-  _global_pass += _global_stride * _global_elapsed;
-  _global_elapsed = 0;
-}
-
-inline void 
-ElementLink::global_tickets_update(int delta)
-{
-  _global_tickets += delta;
-  if (_global_tickets > 0) 
-    _global_stride = STRIDE1 / _global_tickets;
-  else 
-    _global_stride = 0;
-}
-  
 inline void 
 ElementLink::refresh_worklist_passes()
 {
@@ -206,9 +159,6 @@ ElementLink::refresh_worklist_passes()
       click_chatter("warning: element has high pass value");
     n = n->scheduled_next();
   }
-
-  _global_pass = 0;
-  _global_elapsed = 0;
 }
 
 #endif

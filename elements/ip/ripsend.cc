@@ -47,7 +47,7 @@ RIPSend::initialize(ErrorHandler *)
   return 0;
 }
 
-bool
+void
 RIPSend::run_scheduled()
 {
   click_ip *ipp;
@@ -91,7 +91,6 @@ RIPSend::run_scheduled()
   output(0).push(p);
 
   timer_schedule_after_ms(30 * 1000);
-  return false;
 }
 
 EXPORT_ELEMENT(RIPSend)

@@ -25,8 +25,11 @@
 
 extern "C" {
 #include <linux/netdevice.h>
+#include <unistd.h>
 }
 
+static int PollDevice::_num_polldevices = 0;
+static int PollDevice::_num_idle_polldevices = 0;
 
 PollDevice::PollDevice()
   : _dev(0)
@@ -45,7 +48,6 @@ PollDevice::PollDevice(const String &devname)
 
 PollDevice::~PollDevice()
 {
-  uninitialize();
 }
 
 void
@@ -81,21 +83,11 @@ PollDevice::configure(const String &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
-  _pullers.clear();
-  _puller1 = 0;
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
-
-  WantsPacketUpstreamElementFilter ppff;
-  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
-    return errh->error("nobody wants packets from device `%s'", _devname.cc());
-  ppff.filter(_pullers);
-
-  if (_pullers.size() == 1)
-    _puller1 = _pullers[0];
 
   router()->can_wait(this);
 
@@ -103,6 +95,8 @@ PollDevice::initialize(ErrorHandler *errh)
   _dev->intr_defer = 1;
   _idle = 0;
   _total_intr_wait = 0;
+
+  _num_polldevices++;
   return 0;
 }
 
@@ -112,6 +106,11 @@ PollDevice::uninitialize()
 {
   if (_dev)
   { 
+    _num_polldevices--;
+    if (_idle >= 128) 
+      _num_idle_polldevices--;
+    _idle = 0;
+
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     click_chatter
@@ -121,8 +120,8 @@ PollDevice::uninitialize()
 }
 
 
-Packet *
-PollDevice::pull(int)
+void
+PollDevice::run_scheduled()
 {
   extern int rtm_ipackets;
   extern unsigned long long rtm_ibytes;
@@ -133,6 +132,8 @@ PollDevice::pull(int)
   _dev->clean_tx(_dev);
 
   if (skb != 0L) {
+    if (_idle >= 128)
+      _num_idle_polldevices--; 
     _idle = 0;
     rtm_ipackets++;
     rtm_ibytes += skb->len;
@@ -148,10 +149,38 @@ PollDevice::pull(int)
     if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
       p->set_mac_broadcast_anno(1);
 
-    return p;
-  } else {
+    output(0).push(p);
+  } else
     _idle++;
-    return 0L;
+
+  if (_idle < 128) reschedule();
+  else {
+    if (_idle == 128)
+      _num_idle_polldevices++;
+    if (_num_idle_polldevices == _num_polldevices)
+    {
+      // click_chatter("examining scheduler list to attempt to sleep");
+      Vector<PollDevice *> polldevices;
+      ElementLink *n = scheduled_list()->scheduled_next();
+      while(n != scheduled_list()) {
+        if (!((Element*)n)->is_a(class_name())) {
+	  /* still other elements scheduled */
+          reschedule();
+          return;
+        }
+	else 
+	  polldevices.push_back((PollDevice*)n);
+        n = n->scheduled_next();
+      }
+      if (polldevices.size() != _num_idle_polldevices-1)
+	click_chatter("polldevices: scheduling mishap");
+      PollDevice *p;
+      for(int i=0; i<polldevices.size(); i++)
+	polldevices[i]->unschedule();
+      // click_chatter("unscheduled all polldevices");
+      return;
+    }
+    reschedule();
   }
 }
  
@@ -174,13 +203,7 @@ PollDevice::woke_up()
   _dev->intr_off(_dev);
   remove_wait_queue(&(_dev->intr_wq), &_self_wq);
 
-  if (_puller1)
-    _puller1->join_scheduler();
-  else {
-    int n = _pullers.size();
-    for (int i=0; i<n; i++)
-      _pullers[i]->join_scheduler();
-  }
+  join_scheduler();
 }
 
 EXPORT_ELEMENT(PollDevice)

@@ -40,7 +40,7 @@ class Burster : public Element {
   void uninitialize();
 
   bool wants_packet_upstream() const;
-  bool run_scheduled();
+  void run_scheduled();
   
 };
 

@@ -54,12 +54,11 @@ TimedSource::uninitialize()
   _timer.unschedule();
 }
 
-bool
+void
 TimedSource::run_scheduled()
 {
   output(0).push(Packet::make(_data.data(), _data.length()));
   _timer.schedule_after_ms(_interval);
-  return false;
 }
 
 EXPORT_ELEMENT(TimedSource)

@@ -24,7 +24,7 @@ class PullToPush : public Element {
   PullToPush *clone() const			{ return new PullToPush; }
   
   bool wants_packet_upstream() const;
-  bool run_scheduled();
+  void run_scheduled();
 
 #ifdef __KERNEL__
   int initialize(ErrorHandler *) { return 0; }

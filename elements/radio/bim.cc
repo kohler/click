@@ -172,15 +172,14 @@ BIM::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-bool
+void
 BIM::run_scheduled()
 {
   if (Packet *p = input(0).pull())
   {
     push(0, p); 
-    return true;
-  } else
-    return false;
+    reschedule();
+  } 
 }
 
 void

@@ -38,7 +38,7 @@ class InfiniteSource : public Element { protected:
   int initialize(ErrorHandler *);
   void uninitialize();
   
-  bool run_scheduled();
+  void run_scheduled();
   
 };
 

@@ -502,11 +502,10 @@ Element::wants_packet_upstream() const
   return false;
 }
 
-bool
+void
 Element::run_scheduled()
 {
   assert(0 && "bad run_scheduled");
-  return false;
 }
 
 

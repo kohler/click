@@ -35,7 +35,7 @@ Discard::wants_packet_upstream() const
   return input_is_pull(0);
 }
 
-bool
+void
 Discard::run_scheduled()
 {
   Packet *p;
@@ -48,8 +48,8 @@ Discard::run_scheduled()
     i++;
   }
 
-  if (_idle > 128) return false;
-  return true;
+  if (_idle > 128) return;
+  reschedule();
 }
 
 EXPORT_ELEMENT(Discard)

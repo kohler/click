@@ -66,7 +66,7 @@ ARPFaker::initialize(ErrorHandler *)
   return 0;
 }
 
-bool
+void
 ARPFaker::run_scheduled()
 {
   output(0).push(make_response(_eth1.data(),
@@ -74,7 +74,6 @@ ARPFaker::run_scheduled()
                                _eth2.data(),
                                _ip2.data()));
   timer_schedule_after_ms(10 * 1000);
-  return false;
 }
 
 Packet *

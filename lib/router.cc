@@ -56,6 +56,17 @@ Router::~Router()
 #ifdef __KERNEL__
   initialize_head();		// get rid of scheduled wait queue
   _please_stop_driver = true;	// XXX races?
+  extern int total_packets_killed;
+  extern int total_packets_inherited;
+  extern int total_packets_created;
+  extern int total_packets_sent;
+  click_chatter("packets inherited %d, created %d, sent %d, killed %d",
+                total_packets_inherited, total_packets_created,
+		total_packets_sent,total_packets_killed);
+  total_packets_killed = 0;
+  total_packets_created = 0;
+  total_packets_inherited = 0;
+  total_packets_sent = 0;
 #endif
 }
 
@@ -758,7 +769,7 @@ Router::initialize(ErrorHandler *errh)
       if (e->ntickets() > 0) { 
 	bool schedulable = false; 
 	for(int j = 0; j < e->ninputs(); j++) 
-	  if (e->input_is_pull(j)) { 
+	  if (e->input_is_pull(j) || e->ninputs()==0) { 
 	    schedulable = true; 
 	    break; 
 	  } 
@@ -882,34 +893,16 @@ Router::run_scheduled()
 #endif
   
   while (fl=scheduled_next(), fl != this) {
+    fl->unschedule();
     
 #ifdef __KERNEL__
     scheduler_cycles += click_get_cycles() - c00;
 #endif
-    bool cont = ((Element *)fl)->run_scheduled();
+    ((Element *)fl)->run_scheduled();
 #ifdef __KERNEL__
     c00 = click_get_cycles();
 #endif
-
-    ElementLink::elapse();
-    fl->stride();
-
-    if (cont)
-      // if it didn't want to sleep, reschedule it
-      fl->reschedule();
-    else 
-      // otherwise, unschedule element completely
-      fl->leave_scheduler();
   }
-
-#if TODO
-  // should really do this somewhere else
-  for (int i=0; i<_schedinfos.size(); i++) 
-    if (_schedinfos[i].pass > MAX_PASS) {
-      refresh_worklist_passes();
-      break;
-    }
-#endif
   
 #ifdef __KERNEL__
   scheduler_cycles += click_get_cycles() - c00;

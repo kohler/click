@@ -20,6 +20,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
+#include "router.hh"
 
 ARPResponder::ARPResponder()
 {
@@ -85,6 +86,11 @@ ARPResponder::make_response(u_char tha[6], /* him */
   struct ether_header *e;
   struct ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  if (q == 0) {
+    click_chatter("in arp responder: cannot make packet!");
+    assert(0);
+  } else
+    click_chatter("arp responder making arp response packet");
   memset(q->data(), '\0', q->length());
   e = (struct ether_header *) q->data();
   ea = (struct ether_arp *) (e + 1);

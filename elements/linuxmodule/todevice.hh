@@ -46,7 +46,7 @@ class ToDevice : public Element {
   void add_handlers(HandlerRegistry *);
   
   bool wants_packet_upstream() const;
-  bool run_scheduled();
+  void run_scheduled();
   
   void push(int port, Packet *);
   
@@ -64,6 +64,7 @@ class ToDevice : public Element {
   String _devname;
   struct device *_dev;
   int _registered;
+  int _last_txlen;
   int _idle; // # of times pull didn't get a packet
 };
 

@@ -21,16 +21,23 @@
 #include "bitvector.hh"
 #include "error.hh"
 #include "glue.hh"
+#include "router.hh"
 
 ARPQuerier::ARPQuerier()
 {
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
   add_output();/* ether/IP and ether/ARP queries */
+  _resp_received = 0;
+  _pkts_made = 0;
+  _pkts_made_before_resp = -1;
 }
 
 ARPQuerier::~ARPQuerier()
 {
+  click_chatter("arp querier %s made %d packets, before %d, received %d", 
+                declaration().cc(), _pkts_made, _pkts_made_before_resp,
+		_resp_received);
 }
 
 Bitvector
@@ -82,6 +89,13 @@ ARPQuerier::make_query(u_char tpa[4], /* him */
   struct ether_header *e;
   struct ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  _pkts_made++;
+  if (q == 0) {
+    click_chatter("in arp querier: cannot make packet!");
+    assert(0);
+  } 
+  else
+    click_chatter("arp querier making arp query packet");
   memset(q->data(), '\0', q->length());
   e = (struct ether_header *) q->data();
   ea = (struct ether_arp *) (e + 1);
@@ -219,6 +233,10 @@ ARPQuerier::push(int port, Packet *p)
   if (port == 0){
     output(0).push(lookup(p));
   } else {
+    if (_pkts_made_before_resp == -1)
+      _pkts_made_before_resp = _pkts_made;
+    _resp_received++;
+    click_chatter("got an arp response");
     Packet *q = response(p);
     p->kill();
     if (q) output(0).push(q);
