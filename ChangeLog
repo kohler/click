@@ -1,3 +1,13 @@
+2004-05-16 Sunday 00:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmpsendpings.cc (1.30), icmpsendpings.hh (1.13):
+	ICMPPingSource prints statistics on exit
+
+2004-05-16 Sunday 00:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/integers.hh (1.7), lib/integers.cc (1.11): add
+	int_sqrt function
+
 2004-05-15 Saturday 18:20  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmpsendpings.cc (1.29): linuxmodule cxxprotect
