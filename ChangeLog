@@ -1,3 +1,18 @@
+2003-01-30 Thursday 15:18  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: kerneltun.hh (1.14), kerneltun.cc (1.37),
+	kerneltun.hh (1.15): KernelTun: a replacement for KernelTap that
+	just deals with IP packets
+
+2003-01-30 Thursday 15:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/kerneltun.cc (1.36): KernelTun updates
+
+2003-01-30 Thursday 15:16  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: kerneltap.cc (1.35), kerneltap.hh (1.14),
+	kerneltun.cc (1.35): disable KernelTun for now
+
 2003-01-30 Thursday 13:31  Eddie Kohler <kohler@icir.org>
 
 	* doc/click-elem2man (1.22): improve documentation generation:
@@ -23,9 +38,10 @@
 
 2003-01-29 Wednesday 18:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
-	* elements/userlevel/: kerneltap.cc (1.34), kerneltap.hh (1.13):
-	add IGNORE_QUEUE_OVERFLOWS keyword to KernelTap; works as in
-	ToDevice, but for both reads and writes
+	* elements/userlevel/: kerneltap.cc (1.34), kerneltap.hh (1.13),
+	kerneltun.cc (1.34), kerneltun.hh (1.13): add
+	IGNORE_QUEUE_OVERFLOWS keyword to KernelTap; works as in ToDevice,
+	but for both reads and writes
 
 2003-01-29 Wednesday 18:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -1654,6 +1670,8 @@
 	elements/userlevel/handlerproxy.hh (1.6),
 	elements/userlevel/kerneltap.cc (1.33),
 	elements/userlevel/kerneltap.hh (1.12),
+	elements/userlevel/kerneltun.cc (1.33),
+	elements/userlevel/kerneltun.hh (1.12),
 	elements/userlevel/khandlerproxy.cc (1.7),
 	elements/userlevel/khandlerproxy.hh (1.5),
 	elements/userlevel/printold.cc (1.9),
@@ -1822,7 +1840,8 @@
 2002-07-29 Monday 17:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: chattersocket.cc (1.12), controlsocket.cc
-	(1.33), kerneltap.cc (1.32): enable socket code on macos x
+	(1.33), kerneltap.cc (1.32), kerneltun.cc (1.32): enable socket
+	code on macos x
 
 2002-07-29 Monday 16:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -2938,7 +2957,8 @@
 	elements/tcpudp/udpipencap.cc (1.13), elements/tcpudp/udpipencap.hh
 	(1.7), elements/userlevel/chattersocket.cc (1.11),
 	elements/userlevel/fakepcap.cc (1.7),
-	elements/userlevel/kerneltap.cc (1.31), etc/libclick/DISTFILES
+	elements/userlevel/kerneltap.cc (1.31),
+	elements/userlevel/kerneltun.cc (1.31), etc/libclick/DISTFILES
 	(1.12), etc/libclick/lc-Makefile.in (1.8), etc/ron/changeuid.hh
 	(1.2), etc/ron/divertsocket.cc (1.20), etc/ron/ipdecappaint.cc
 	(1.2), etc/ron/ipencap2.hh (1.3), etc/ron/ipencappaint.hh (1.3),
@@ -3521,6 +3541,7 @@
 
 	* acclick.m4 (1.13), aclocal.m4 (1.13), configure.in (1.180),
 	elements/userlevel/kerneltap.cc (1.30),
+	elements/userlevel/kerneltun.cc (1.30),
 	etc/libclick/lc-configure.in (1.18): add patches for compiling on
 	Solaris, modified from patches sent by Scott Page
 	<page@cs.utexas.edu>
@@ -3651,7 +3672,8 @@
 	userlevel/controlsocket.hh (1.22), userlevel/fromdevice.cc (1.40),
 	userlevel/fromdevice.hh (1.21), userlevel/fromdump.cc (1.64),
 	userlevel/fromdump.hh (1.36), userlevel/kerneltap.cc (1.29),
-	userlevel/kerneltap.hh (1.11), userlevel/progressbar.cc (1.17),
+	userlevel/kerneltap.hh (1.11), userlevel/kerneltun.cc (1.29),
+	userlevel/kerneltun.hh (1.11), userlevel/progressbar.cc (1.17),
 	userlevel/progressbar.hh (1.12), userlevel/todevice.cc (1.23),
 	userlevel/todevice.hh (1.14), userlevel/todump.cc (1.36),
 	userlevel/todump.hh (1.24): Adapt to cleanup() changes. All
@@ -3969,8 +3991,9 @@
 	tcpudp/tcprewriter.hh (1.9), tcpudp/udpipencap.hh (1.6),
 	userlevel/chattersocket.hh (1.7), userlevel/controlsocket.hh
 	(1.21), userlevel/fromdevice.hh (1.20), userlevel/handlerproxy.hh
-	(1.4), userlevel/kerneltap.hh (1.10), userlevel/khandlerproxy.hh
-	(1.4), userlevel/printold.hh (1.3): anal header nitlets
+	(1.4), userlevel/kerneltap.hh (1.10), userlevel/kerneltun.hh
+	(1.10), userlevel/khandlerproxy.hh (1.4), userlevel/printold.hh
+	(1.3): anal header nitlets
 
 2002-03-26 Tuesday 17:03  Eddie Kohler <kohler@icir.org>
 
@@ -4933,6 +4956,8 @@
 	elements/userlevel/fromdump.hh (1.34),
 	elements/userlevel/kerneltap.cc (1.28),
 	elements/userlevel/kerneltap.hh (1.9),
+	elements/userlevel/kerneltun.cc (1.28),
+	elements/userlevel/kerneltun.hh (1.9),
 	elements/userlevel/khandlerproxy.cc (1.5),
 	elements/userlevel/khandlerproxy.hh (1.3),
 	elements/userlevel/printold.cc (1.8),
@@ -5291,14 +5316,15 @@
 
 2002-01-14 Monday 10:55  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
-	* elements/userlevel/: kerneltap.cc (1.27), todevice.cc (1.17):
-	removed debugging info
+	* elements/userlevel/: kerneltap.cc (1.27), kerneltun.cc (1.27),
+	todevice.cc (1.17): removed debugging info
 
 2002-01-14 Monday 10:52  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
-	* elements/userlevel/: kerneltap.cc (1.26), todevice.cc (1.16),
-	todevice.hh (1.10): changed _task & send_packet to protected access
-	to facilitate subclasses control over scheduling
+	* elements/userlevel/: kerneltap.cc (1.26), kerneltun.cc (1.26),
+	todevice.cc (1.16), todevice.hh (1.10): changed _task & send_packet
+	to protected access to facilitate subclasses control over
+	scheduling
 
 2002-01-11 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
