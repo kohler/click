@@ -26,16 +26,17 @@
 IPFlowID::IPFlowID(Packet *p)
 {
   const click_ip *iph = p->ip_header();
+  const click_udp *udph = p->udp_header();
+  assert(iph && udph);
+  
   _saddr = IPAddress(iph->ip_src.s_addr);
   _daddr = IPAddress(iph->ip_dst.s_addr);
-
-  const click_udp *udph = p->udp_header();
   _sport = udph->uh_sport;	// network byte order
   _dport = udph->uh_dport;	// network byte order
 }
 
 String
-IPFlowID::s() const
+IPFlowID::unparse() const
 {
   const unsigned char *p = (const unsigned char *)&_saddr;
   const unsigned char *q = (const unsigned char *)&_daddr;

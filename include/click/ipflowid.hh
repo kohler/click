@@ -32,8 +32,9 @@ class IPFlowID {
   
   IPFlowID rev() const;
 
-  operator String() const		{ return s(); }
-  String s() const;
+  String unparse() const;
+  operator String() const		{ return unparse(); }
+  String s() const			{ return unparse(); }
   
 };
 
