@@ -1203,7 +1203,7 @@ cp_seconds_suffix(const String &str, int *power, int *factor)
   return str.substring(0, len);
 }
 
-static bool
+bool
 cp_seconds_as(int want_power, const String &str_in, uint32_t *return_value)
 {
   int power, factor;
@@ -1882,6 +1882,7 @@ CpVaParseCmd
   cpUnsignedReal10	= "u_real10",
   cpNonnegReal10	= "u_real10", // synonym
   cpDouble		= "double",
+  cpSeconds		= "sec",
   cpSecondsAsMilli	= "msec",
   cpSecondsAsMicro	= "usec",
   cpMilliseconds	= "msec", // synonym
@@ -1930,6 +1931,7 @@ enum {
   cpiReal10,
   cpiUnsignedReal10,
   cpiDouble,
+  cpiSeconds,
   cpiSecondsAsMilli,
   cpiSecondsAsMicro,
   cpiTimeval,
@@ -2149,8 +2151,15 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 #endif
 
+   case cpiSeconds:
+    if (!cp_seconds_as(0, arg, &v->v.u))
+      errh->error("%s takes time in seconds (%s)", argname, desc);
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("%s (%s) too large; max %u", argname, desc, v->v.u);
+    break;
+
    case cpiSecondsAsMilli:
-    if (!cp_seconds_as_milli(arg, &v->v.u))
+    if (!cp_seconds_as(3, arg, &v->v.u))
       errh->error("%s takes time in seconds (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.u);
@@ -2159,7 +2168,7 @@ default_parsefunc(cp_value *v, const String &arg,
     break;
 
    case cpiSecondsAsMicro:
-    if (!cp_seconds_as_micro(arg, &v->v.u))
+    if (!cp_seconds_as(6, arg, &v->v.u))
       errh->error("%s takes time in seconds (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_microseconds(v->v.u);
@@ -2327,6 +2336,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiInteger:
    case cpiReal2:
    case cpiReal10:
+   case cpiSeconds:
    case cpiSecondsAsMilli:
    case cpiSecondsAsMicro: {
      int *istore = (int *)v->store;
@@ -3140,6 +3150,7 @@ cp_va_static_initialize()
 #ifdef HAVE_FLOAT_TYPES
   cp_register_argtype(cpDouble, "double", 0, default_parsefunc, default_storefunc, cpiDouble);
 #endif
+  cp_register_argtype(cpSeconds, "time in sec", 0, default_parsefunc, default_storefunc, cpiSeconds);
   cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
   cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
   cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);

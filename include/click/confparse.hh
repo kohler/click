@@ -66,6 +66,7 @@ bool cp_unsigned_real10(const String &, int frac_dig, uint32_t *, uint32_t *);
 #ifdef HAVE_FLOAT_TYPES
 bool cp_double(const String &, double *);
 #endif
+bool cp_seconds_as(int want_power, const String &, uint32_t *);
 bool cp_seconds_as_milli(const String &, uint32_t *);
 bool cp_seconds_as_micro(const String &, uint32_t *);
 bool cp_timeval(const String &, struct timeval *);
@@ -157,6 +158,7 @@ extern CpVaParseCmd
 #ifdef HAVE_FLOAT_TYPES
   cpDouble,	// double *result
 #endif
+  cpSeconds,	    // int *result
   cpSecondsAsMilli, // int *result_milli
   cpSecondsAsMicro, // int *result_micro
   cpTimeval,	// struct timeval *result
