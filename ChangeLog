@@ -1,3 +1,25 @@
+2002-01-14 Monday 10:59  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: discardnotify.cc (1.1), discardnotify.hh (1.1),
+	queuenotify.cc (1.1), queuenotify.hh (1.1), todevicenotify.cc
+	(1.1), todevicenotify.hh (1.1): added for userlevel No-Hog
+
+2002-01-14 Monday 10:57  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* elements/standard/discard.hh (1.16): changed _task to protected
+	access to facilitate subclasses control over scheduling
+
+2002-01-14 Monday 10:55  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* elements/userlevel/: kerneltap.cc (1.27), todevice.cc (1.17):
+	removed debugging info
+
+2002-01-14 Monday 10:52  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* elements/userlevel/: kerneltap.cc (1.26), todevice.cc (1.16),
+	todevice.hh (1.10): changed _task & send_packet to protected access
+	to facilitate subclasses control over scheduling
+
 2002-01-11 Friday 15:40  Eddie Kohler <kohler@aciri.org>
 
 	* drivers/e1000/e1000_kcompat.h (1.3): fixes for compilation under
