@@ -710,8 +710,10 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
       pos--;
   }
 
-  if (pos == first_pos)
-    return errh->error("empty term near `%s'", wd.cc());
+  if (pos == first_pos) {
+    errh->error("empty term near `%s'", wd.cc());
+    return pos;
+  }
   
   // add if it is valid
   prim._negated = negated;
@@ -739,7 +741,7 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
   //        |  ip | icmp | tcp | udp
   for (int argno = 0; argno < conf.size(); argno++) {
     Vector<String> words;
-    cp_spacevec(conf[argno].lower(), words);
+    cp_spacevec(conf[argno], words);
     separate_words(words);
 
     if (words.size() == 0) {

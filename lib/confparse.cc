@@ -856,7 +856,7 @@ cp_keyword(const String &str, String *return_value, String *rest)
   if (i == 0 || quote_state != 0)
     return false;
 
-  *return_value = cp_unquote(str.substring(0, i)).upper();
+  *return_value = cp_unquote(str.substring(0, i));
 
   if (i < len && s[i] == '=')
     i++;

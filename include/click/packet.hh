@@ -109,22 +109,24 @@ class Packet { public:
   const IP6Address &dst_ip6_anno() const;
   void set_dst_ip6_anno(const IP6Address &a);
 
-  unsigned char sniff_flags_anno() const{ return anno()->sniff_flags; }
-  void set_sniff_flags_anno(unsigned char c)   { anno()->sniff_flags = c; }
+  unsigned char sniff_flags_anno() const { return anno()->sniff_flags; }
+  void set_sniff_flags_anno(unsigned char c) { anno()->sniff_flags = c; }
 #ifdef __KERNEL__
   PacketType packet_type_anno() const	{ return (PacketType)skb()->pkt_type; }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
   struct device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(struct device *dev) { skb()->dev = dev; }
-  const struct timeval &timestamp_anno() const	{ return skb()->stamp; }
-  void set_timestamp_anno(const struct timeval &tv)	{ skb()->stamp = tv; }
+  const struct timeval &timestamp_anno() const { return skb()->stamp; }
+  struct timeval &timestamp_anno()	{ return skb()->stamp; }
+  void set_timestamp_anno(const struct timeval &tv) { skb()->stamp = tv; }
   void set_timestamp_anno(int s, int us) { skb()->stamp.tv_sec = s; skb()->stamp.tv_usec = us; }
 #else
   PacketType packet_type_anno() const	{ return _pkt_type; }
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
   struct device *device_anno() const	{ return 0; }
   void set_device_anno(struct device *) { }
-  const struct timeval &timestamp_anno() const	{ return _timestamp; }
+  const struct timeval &timestamp_anno() const { return _timestamp; }
+  struct timeval &timestamp_anno()	{ return _timestamp; }
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
   void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
 #endif

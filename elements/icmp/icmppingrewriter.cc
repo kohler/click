@@ -52,7 +52,7 @@ ICMPPingRewriter::notify_ninputs(int n)
 void
 ICMPPingRewriter::notify_noutputs(int n)
 {
-  set_ninputs(n < 2 ? 1 : 2);
+  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
