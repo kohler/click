@@ -294,7 +294,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-uncombine (Click) %s\n", VERSION);
-      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
+      printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

@@ -6,6 +6,7 @@
  * Benjie Chen: scheduling, internal queue
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2000 Mazu Networks, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later

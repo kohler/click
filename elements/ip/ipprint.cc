@@ -2,7 +2,7 @@
  * ipprint.{cc,hh} -- element prints packet contents to system log
  * Max Poletto
  *
- * Copyright (c) 2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2000 Mazu Networks, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later

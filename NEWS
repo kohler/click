@@ -102,6 +102,10 @@ Version 1.1
    Unlike handlers, LLRPCs can both take arguments and return results.
    IPRateMonitor(n), for example, uses LLRPCs to report rate information.
 
+** Lexer changes: Now single and double quotes are interpreted in
+   configuration arguments vaguely as in Perl. Configuration argument
+   parsing is generally more regular.
+
 * User-level driver
 
 ** User-level Click will no longer stop by default when an InfiniteSource

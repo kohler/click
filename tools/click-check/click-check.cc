@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2000 Mazu Networks, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -152,7 +153,8 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-check (Click) %s\n", VERSION);
-      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
+      printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
+Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

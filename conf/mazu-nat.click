@@ -1,7 +1,7 @@
 // mazu-nat.click
 
-// This configuration is a firewalling NAT gateway. A version of this
-// configuration was in daily use at Mazu Networks, Inc.
+// This configuration is the lion's share of a firewalling NAT gateway. A
+// version of this configuration was in daily use at Mazu Networks, Inc.
 //
 // Mazu was hooked up to the Internet via a single Ethernet connection (a
 // cable modem). This configuration ran on a gateway machine hooked up
@@ -9,8 +9,9 @@
 // hooked up to our internal network. Machines inside the internal network
 // were given internal IP addresses in net 10.
 //
-// Here is a network diagram. Names in *starred boxes* must have some
-// addresses specified in AddressInfo.
+// Here is a network diagram. Names in starred boxes must have addresses
+// specified in AddressInfo. (No bare IP addresses occur in this
+// configuration; everything has been specified through AddressInfo.)
 //
 //     +---------+  
 //    /           \                                              +-------
@@ -30,10 +31,16 @@
 //   world.
 // - Allows arbitrary FTP connections from the internal network to the outside
 //   world. This requires application-level packet rewriting to support FTP's
-//   PASV command.
+//   PASV command. See FTPPortMapper, below.
 // - New HTTP, HTTPS, and SSH connections from the outside world are allowed,
 //   but they are forwarded to the internal machine `intern_server'.
-// - All other packets from the outside world are dropped.
+// - All other packets from the outside world are sent to the gateway's Linux
+//   stack, where they are handled appropriately.
+//
+// The heart of this configuration is the IPRewriter element and associated
+// TCPRewriter and IPRewriterPatterns elements. You should probably look at
+// the documentation for IPRewriter before trying to understand the
+// configuration in depth.
 
 
 // ADDRESS INFORMATION
@@ -58,9 +65,8 @@ elementclass GatewayDevice {
   ScheduleInfo(from .1, to 1);
 }
 
-// The following version of this element class sends a copy of every
-// packet to ToLinuxSniffers, so that you can use tcpdump(1) to debug the
-// gateway.
+// The following version of GatewayDevice sends a copy of every packet to
+// ToLinuxSniffers, so that you can use tcpdump(1) to debug the gateway.
 
 elementclass SniffGatewayDevice {
   $device |
@@ -78,7 +84,7 @@ elementclass SniffGatewayDevice {
 extern_dev :: SniffGatewayDevice(extern:eth);
 intern_dev :: SniffGatewayDevice(intern:eth);
 
-to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
+ip_to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
 	-> ToLinux;
 
 
@@ -139,13 +145,13 @@ ip_to_intern :: GetIPAddress(16)
 
 // to outside world or gateway from inside network
 rw[0] -> ip_to_extern_class :: IPClassifier(dst host intern, -);
-  ip_to_extern_class[0] -> to_linux;
+  ip_to_extern_class[0] -> ip_to_linux;
   ip_to_extern_class[1] -> ip_to_extern;
 // to server
 rw[1] -> ip_to_intern;
 // only accept packets from outside world to gateway
 rw[2] -> IPClassifier(dst host extern)
-	-> to_linux;
+	-> ip_to_linux;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -191,15 +197,15 @@ intern_arp_class[2] -> Strip(14)
   	-> CheckIPHeader
 	-> ip_from_intern;
 ip_from_intern[0] -> my_ip_from_intern; // stuff for 10.0.0.1 from inside
-  my_ip_from_intern[0] -> to_linux; // SSH traffic to gw
+  my_ip_from_intern[0] -> ip_to_linux; // SSH traffic to gw
   my_ip_from_intern[1] -> [2]rw; // HTTP(S) traffic, redirect to server instead
   my_ip_from_intern[2] -> Discard;  // DNS (no DNS allowed yet)
-  my_ip_from_intern[3] -> to_linux; // auth traffic, gw will reject it
+  my_ip_from_intern[3] -> ip_to_linux; // auth traffic, gw will reject it
   my_ip_from_intern[4] -> [3]rw; // other TCP or UDP traffic, send to linux
                              	// but pass it thru rw in case it is the
 				// returning redirect HTTP traffic from server
-  my_ip_from_intern[5] -> to_linux; // non TCP or UDP traffic, to linux
-ip_from_intern[1] -> to_linux;	// other net 10 stuff, like broadcasts
+  my_ip_from_intern[5] -> ip_to_linux; // non TCP or UDP traffic, to linux
+ip_from_intern[1] -> ip_to_linux; // other net 10 stuff, like broadcasts
 ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_world_pat 0 1)
 		-> [0]tcp_rw;	// FTP traffic for outside needs special
 				// treatment

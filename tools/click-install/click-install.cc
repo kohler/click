@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2000 Mazu Networks, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -299,7 +300,8 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click-install (Click) %s\n", VERSION);
       printf("Click packages in %s, binaries in %s\n", CLICK_LIBDIR, CLICK_BINDIR);
-      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
+      printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
+Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
