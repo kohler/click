@@ -1909,7 +1909,7 @@ DSRRouteTable::get_metric(EtherAddress other)
   if (_metric) {
     GridGenericMetric::metric_t m = _metric->get_link_metric(other, false);
     unsigned char c = _metric->scale_to_char(m);
-    if (!m.good() || c == DSR_INVALID_HOP_METRIC)
+    if (!m.good() || c >= DSR_INVALID_HOP_METRIC)
       return DSR_INVALID_HOP_METRIC;
     return c;
   }
