@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 1.0.4
+Version 1.0.4   13.Apr.2000
 
 * Changed how FromDevice, ToDevice, and PollDevice interact with each
   other. Before, if you specify just PollDevice w/o ToDevice, the tx queue
@@ -18,12 +18,12 @@ Version 1.0.4
 * New elements: UDPEncap (put an UDP header on a packet), RatedSource (like
   infinite source, but send packets at a given rate).
 
-* udpgen click configuration (conf/udpgen.ipb): this is better than udpgen.o
-  in that you can utilize device driver polling extensions. Also, on some
-  machines we observe a delay (on order of ms) between when transmission
-  complete and tx interrupt. This causes the transmission queue to not get
-  cleaned fast enough for udpgen to send its packets. Using click, we control
-  when the tx queue is cleaned.
+* udpgen click configuration (conf/udpgen.click): This is better than
+  udpgen.o in that you can utilize device driver polling extensions. Also,
+  on some machines we observe a delay (on order of ms) between when
+  transmission complete and tx interrupt. This causes the transmission
+  queue to not get cleaned fast enough for udpgen to send its packets.
+  Using click, we control when the tx queue is cleaned.
 
 
 Version 1.0.3   9.Apr.2000

@@ -7,8 +7,8 @@ class IPFlowID {
 
   IPAddress _saddr;
   IPAddress _daddr;
-  unsigned short _sport;	// network byte order
-  unsigned short _dport;	// network byte order
+  unsigned short _sport;		// network byte order
+  unsigned short _dport;		// network byte order
 
  public:
 

@@ -50,7 +50,7 @@ for i in $first_files; do
   fi
   if test -d $i; then
     files="$files
-"`find $i \( -name \*.cc -o -name \*.c \) -print`
+"`find $i \( -name \[^.,]\*.cc -o -name \[^.,]\*.c \) -print`
   else
     files="$files
 $i"

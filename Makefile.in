@@ -75,6 +75,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	conf/make-ip-conf.pl conf/ip.clickpat \
 	conf/fake-iprouter.click \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \
+	conf/udpgen.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
 	etc/linux-2.2.14-patch \
@@ -155,7 +156,7 @@ distdir:
 	for dir in `cd $$d && find elements -type d | grep -v 'exopc\|CVS'`; do \
 	  mkdir $(distdir)/$$dir 2>/dev/null; \
 	  chmod 777 $(distdir)/$$dir; \
-	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -name \*.cc -or -name \*.c -or -name \*.hh -or -name \*.h \) -print`; do \
+	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -name \[^,.]\*.cc -or -name \[^,.]\*.c -or -name \[^,.]\*.hh -or -name \[^,.]\*.h \) -print`; do \
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
 	done

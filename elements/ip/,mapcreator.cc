@@ -82,7 +82,7 @@ MappingCreator::push(int port, Packet *p)
     rw->establish_mapping(p, cpat, cpat);
     rwi._cpat++;
     rwi._cpat %= rwi._npat;
-    _rwmap.insert(c1, rw->get_mapping(c1).flow_id());
+    _rwmap.insert(c1, rw->get_mapping(c1)->flow_id());
   }
   output(port).push(p);
 }
