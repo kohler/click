@@ -1,6 +1,7 @@
 #ifndef CLICK_TCPREWRITER_HH
 #define CLICK_TCPREWRITER_HH
 #include "elements/ip/iprw.hh"
+#include <click/click_tcp.h>
 
 /*
 =c
@@ -70,23 +71,18 @@ class TCPRewriter : public IPRw { public:
 
   class TCPMapping : public Mapping {
 
-    unsigned _seqno_delta;
-    unsigned _ackno_delta;
-    unsigned _interesting_seqno;
+    tcp_seq_t _trigger;
+    int32_t _delta;
+    tcp_seq_t _old_delta;
 
-    void change_udp_csum_delta(unsigned old_word, unsigned new_word);
-    
    public:
 
     TCPMapping(bool dst_anno);
 
     TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
 
-    unsigned interesting_seqno() const	{ return _interesting_seqno; }
-    void set_interesting_seqno(unsigned s) { _interesting_seqno = s; }
-    
-    void update_seqno_delta(int);
-    void update_ackno_delta(int);
+    int update_seqno_delta(tcp_seq_t old_seqno, int32_t delta);
+    int32_t delta_for(tcp_seq_t) const;
     
     void apply(WritablePacket *p);
 
@@ -144,20 +140,6 @@ class TCPRewriter : public IPRw { public:
 
 };
 
-inline void
-TCPRewriter::TCPMapping::update_seqno_delta(int d)
-{
-  change_udp_csum_delta(htonl(_seqno_delta), htonl(_seqno_delta + d));
-  _seqno_delta += d;
-}
-
-inline void
-TCPRewriter::TCPMapping::update_ackno_delta(int d)
-{
-  change_udp_csum_delta(htonl(_ackno_delta), htonl(_ackno_delta + d));
-  _ackno_delta += d;
-}
-
 inline TCPRewriter::TCPMapping *
 TCPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
 {
@@ -165,6 +147,12 @@ TCPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
     return static_cast<TCPMapping *>(_tcp_map[in]);
   else
     return 0;
+}
+
+inline int32_t
+TCPRewriter::TCPMapping::delta_for(tcp_seq_t seqno) const
+{
+  return (SEQ_GEQ(seqno, _trigger) ? _delta : _old_delta);
 }
 
 #endif

@@ -38,8 +38,7 @@ TCPRewriter::TCPMapping::update_seqno_delta(tcp_seq_t trigger, int32_t d)
   if (SEQ_LEQ(trigger, _trigger) && (_trigger || _delta || _old_delta))
     return -1;
   else {
-    if (trigger != _trigger)
-      _old_delta = _delta;
+    _old_delta = _delta;
     _trigger = trigger;
     _delta += d;
     return 0;
