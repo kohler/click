@@ -1,7 +1,7 @@
 #ifndef CLICK_ATOMIC_HH
 #define CLICK_ATOMIC_HH
 
-#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
+#if defined(__KERNEL__) && defined(__SMP__) /* && defined(__MTCLICK__) */
 
 class u_atomic32_t { public:
 
@@ -17,11 +17,14 @@ class u_atomic32_t { public:
   void operator++(int)			{ atomic_inc(&_val); }
   void operator--(int)			{ atomic_dec(&_val); }
 
+  // returns true if value is 0 after decrement
+  bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
+
+  // returns true if value is positive after increment
+  bool inc_and_test_greater_zero()	{ return atomic_inc_and_test_greater_zero(&_val); }
+  
   u_int32_t read_and_add(int x);
   u_int32_t compare_and_swap(u_int32_t old_value, u_int32_t new_value);
-  
-  // returns true if value is 0 after dec
-  bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
   
  private:
 
@@ -76,9 +79,12 @@ class u_atomic32_t { public:
   u_int32_t read_and_add(int x);
   u_int32_t compare_and_swap(u_int32_t old_value, u_int32_t new_value);
  
-  // returns true if value is 0 after dec
-  bool dec_and_test()			{ _val--; return _val==0; }
+  // returns true if value is 0 after decrement
+  bool dec_and_test()			{ _val--; return _val == 0; }
 
+  // returns true if value is positive after increment
+  bool inc_and_test_greater_zero()	{ _val++; return _val > 0; }
+  
  private:
 
   u_int32_t _val;
