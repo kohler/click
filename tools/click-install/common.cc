@@ -19,6 +19,7 @@
 
 #include <click/config.h>
 
+#include <click/glue.hh>
 #include "common.hh"
 #include "toolutils.hh"
 #include <unistd.h>
