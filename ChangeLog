@@ -1,3 +1,10 @@
+2005-01-20 Thursday 02:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/ipaddrpairrewriter.cc (1.2), ip/ipaddrrewriter.cc
+	(1.23), ip/ipaddrrewriter.hh (1.15), ip/iprw.cc (1.58), ip/iprw.hh
+	(1.30), tcpudp/tcprewriter.cc (1.37): IPAddrRewriter fixes:
+	document that you cannot change daddr (Robert Morris)
+
 2005-01-13 Thursday 13:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: ipsumdump_tcp.cc (1.3), ipsumdumpinfo.hh
