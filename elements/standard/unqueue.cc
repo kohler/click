@@ -46,7 +46,7 @@ Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 		       cpInteger, "burst size", &_burst,
 		       cpKeywords,
 		       "ACTIVE", cpBool, "is active?", &_active,
-		       0);
+		       cpEnd);
 }
 
 int

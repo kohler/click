@@ -111,7 +111,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
 #endif
 		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     // check sampling rate

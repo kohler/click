@@ -86,7 +86,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"ETT", cpElement, "ETT Metric element", &_ett_metric,
 			"ARP", cpElement, "ARPTable element", &_arp_table,
 			"2HOP_LINKSTATE", cpBool, "enable 2hop linkstate", &_2hop_linkstate,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   

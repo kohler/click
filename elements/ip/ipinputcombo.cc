@@ -49,7 +49,7 @@ IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "INTERFACES", "CheckIPHeader.INTERFACES", "router interface addresses", &_bad_src, &_good_dst,
 		  "BADSRC", "CheckIPHeader.BADSRC", "bad source addresses", &_bad_src,
 		  "GOODDST", "CheckIPHeader.BADSRC", "good destination addresses", &_good_dst,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED

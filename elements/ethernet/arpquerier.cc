@@ -57,7 +57,7 @@ ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_my_ip,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
-		     0);
+		     cpEnd);
 }
 
 int

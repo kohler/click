@@ -120,7 +120,7 @@ RED::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "QUEUES", cpArgument, "relevant queues", &queues_string,
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     return finish_configure(min_thresh, max_thresh, max_p, stability, queues_string, errh);
 }
@@ -137,7 +137,7 @@ RED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "QUEUES", cpArgument, "relevant queues", &queues_string,
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     // XXX This warning is a pain in the ass for "max_p" write handlers, so
     // it's commented out.

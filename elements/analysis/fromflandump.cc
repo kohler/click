@@ -68,7 +68,7 @@ FromFlanDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpConfirmKeywords,
 		    "PACKETS", cpBool, "output packets?", &have_packets, &packets,
 		    "FLOWS", cpBool, "output flows?", &have_flows, &flows,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     // check packets vs. flows

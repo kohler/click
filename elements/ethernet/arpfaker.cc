@@ -45,7 +45,7 @@ ARPFaker::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEthernetAddress, "target Ethernet address", &_eth1,
 		     cpIPAddress, "sender IP address", &_ip2,
 		     cpEthernetAddress, "sender Ethernet address", &_eth2,
-		     0);
+		     cpEnd);
 }
 
 int

@@ -158,7 +158,7 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 		"VERBOSE", cpBool, "be verbose?", &verbose,
 		"DETAILS", cpBool, "keep detailed counts?", &details,
 		"CHECKSUM", cpBool, "check checksum?", &_checksum,
-		0) < 0)
+		cpEnd) < 0)
     return -1;
 
   if (conf.size() == 1 && cp_unsigned(conf[0], &_offset))
@@ -166,7 +166,7 @@ CheckIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   else if (cp_va_parse(conf, this, errh, cpOptional,
 		       "CheckIPHeader.BADSRC_OLD", "bad source addresses", &_bad_src,
 		       cpUnsigned, "IP header offset", &_offset,
-		       0) < 0)
+		       cpEnd) < 0)
     return -1;
 
   _verbose = verbose;

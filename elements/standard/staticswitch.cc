@@ -44,7 +44,7 @@ StaticSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
   _output = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "active output", &_output,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_output >= noutputs())
     _output = -1;

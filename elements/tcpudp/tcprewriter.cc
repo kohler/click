@@ -232,7 +232,7 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
        "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
        "TCP_DONE_TIMEOUT", cpSeconds, "completed TCP timeout interval", &_tcp_done_timeout_jiffies,
        "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
-       0) < 0)
+       cpEnd) < 0)
     return -1;
 
   if (conf.size() == 0)

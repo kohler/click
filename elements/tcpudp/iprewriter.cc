@@ -91,7 +91,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
        "UDP_TIMEOUT", cpSeconds, "UDP timeout interval", &_udp_timeout_jiffies,
        "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
        "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
-       0) < 0)
+       cpEnd) < 0)
     return -1;
   
   if (conf.size() == 0)

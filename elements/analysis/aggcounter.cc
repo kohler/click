@@ -90,7 +90,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "AGGREGATE_CALL", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
 		    "COUNT_CALL", cpArgument, "call handler after count reaches N", &call_count,
 		    "BANNER", cpString, "output banner", &_output_banner,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     
     _bytes = bytes;

@@ -57,7 +57,7 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "COUNT_CALL", cpArgument, "handler to call after a count", &count_call,
 		  "BYTE_COUNT_CALL", cpArgument, "handler to call after a byte count", &byte_count_call,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   if (count_call) {

@@ -40,7 +40,7 @@ MessageElement::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpString, "message", &message,
 		    cpOptional,
 		    cpKeyword, "message type", &type,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     ErrorHandler::Seriousness s;
     if (type == "MESSAGE")

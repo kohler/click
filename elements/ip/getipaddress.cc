@@ -39,7 +39,7 @@ GetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "byte offset of IP address", &_offset,
-		     0);
+		     cpEnd);
 }
 
 Packet *

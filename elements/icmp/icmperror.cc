@@ -93,7 +93,7 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
 		  "MTU", cpUnsigned, "MTU", &_mtu,
                   "PMTU", cpUnsigned, "Next-Hop MTU", &_pmtu,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
     return errh->error("ICMP type and code must be between 0 and 255");

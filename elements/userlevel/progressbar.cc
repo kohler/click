@@ -71,7 +71,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    "CHECK_STDOUT", cpBool, "check if stdout is terminal?", &check_stdout,
 		    cpConfirmKeywords,
 		    "FIXED_SIZE", cpDouble, "fixed size", &have_size, &_size,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     Vector<String> words;

@@ -101,7 +101,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "SOURCE", cpElement, "packet source element", &_packet_source,
 		    cpConfirmKeywords,
 		    "FRAGMENTS", cpBool, "handle fragmented packets?", &gave_fragments, &fragments,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);

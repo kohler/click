@@ -61,7 +61,7 @@ IPRateMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional, 
 		  cpUnsigned, "memmax", &_memmax,
 		  cpBool, "annotate", &_anno_packets,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (count_what.upper() == "PACKETS")
     _count_packets = true;

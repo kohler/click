@@ -41,7 +41,7 @@ FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
                         cpElement, "GridGenericLocInfo element", &_locinfo,
-			0);
+			cpEnd);
   return res;
 }
 

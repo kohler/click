@@ -85,7 +85,7 @@ PI::configure(Vector<String> &conf, ErrorHandler *errh)
 	    "B", cpDouble, "b", &b,
 	    "QREF",  cpUnsigned, "target queue", &target_q,
 	    "STABILITY", cpUnsigned, "stability shift", &stability,
-	    "QUEUES", cpArgument, "relevant queues", &queues_string, 0) < 0)
+	    "QUEUES", cpArgument, "relevant queues", &queues_string, cpEnd) < 0)
 		return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)
@@ -133,7 +133,7 @@ PI::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 	    "B", cpDouble, "b", &b,
 	    "QREF",  cpUnsigned, "target queue", &target_q,
 	    "STABILITY", cpUnsigned, "stability shift", &stability,
-	    "QUEUES", cpArgument, "relevant queues", &queues_string, 0) < 0)
+	    "QUEUES", cpArgument, "relevant queues", &queues_string, cpEnd) < 0)
 		return -1;
 
     if (check_params(w, a, b, target_q, stability, errh) < 0)

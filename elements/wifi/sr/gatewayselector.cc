@@ -74,7 +74,7 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
 		    "LM", cpElement, "LinkMetric element", &_metric,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

@@ -71,7 +71,7 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			"22_WEIGHT", cpUnsigned, "LinkTable element", &_weight_22, 
 			"2WAY_METRICS", cpBool, "enable 2-way metrics", &_enable_twoway,
 			"ESTIMATE_ACKS", cpBool, "estimate ack", &_estimate_ack, 
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   if (_ett_stat == 0) 

@@ -45,7 +45,7 @@ Unqueue2::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpOptional,
 		     cpUnsigned, "burst size", &_burst,
-		     0);
+		     cpEnd);
 }
 
 int

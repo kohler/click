@@ -54,7 +54,7 @@ IP6NDSolicitor::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpIP6Address, "IP6 address", &_my_ip6,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
-		     0);
+		     cpEnd);
 }
 
 int

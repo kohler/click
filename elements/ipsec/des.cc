@@ -56,7 +56,7 @@ Des::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpDesCblock, "64-bit DES key", _key,
 		  cpOptional,
 		  cpInteger, "Bytes to ignore at the end", &_ignore,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _op = dec_int;
 #ifdef DEBUG

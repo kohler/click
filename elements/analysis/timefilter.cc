@@ -66,7 +66,7 @@ TimeFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "INTERVAL", cpTimeval, "interval", &interval,
 		    "STOP", cpBool, "stop when after end?", &stop,
 		    "END_CALL", cpWriteHandlerCall, "handler to call at end", &_last_h,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     _first_relative = _first_init_relative = _last_relative = _last_init_relative = _last_interval = false;

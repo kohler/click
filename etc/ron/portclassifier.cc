@@ -46,8 +46,7 @@ PortClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
                   cpString, "srcdst", &srcdst, 
 		  cpUnsigned, "base", &_base,
                   cpUnsigned, "stepping", &_stepping,
-		  
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   if (srcdst == "SRC")

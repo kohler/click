@@ -50,7 +50,7 @@ ThresholdMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"THRESH", cpUnsigned, "delivery ratio threshold, 0--100 percent", &_thresh,
 			"TWOWAY", cpBool, "apply threshold to delivery ratios in both link directions?", &_twoway,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   if (_ls == 0) 

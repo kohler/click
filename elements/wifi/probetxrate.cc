@@ -56,7 +56,7 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"THRESHOLD", cpUnsigned, "window", &_packet_size_threshold,
 			"RT", cpElement, "availablerates", &_rtable,
 			"FILTER_LOW_RATES", cpBool, "foo", &_filter_low_rates,
-			0);
+			cpEnd);
   if (ret < 0) {
     return ret;
   }

@@ -57,7 +57,7 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
 			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
-			0);
+			cpEnd);
   return ret;
 }
 

@@ -46,7 +46,7 @@ LinkTracker::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned int tau_int = 0;
   int res = cp_va_parse(conf, this, errh,
 			cpUnsigned, "time constant (tau) (milliseconds)", &tau_int,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   

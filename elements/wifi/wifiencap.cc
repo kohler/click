@@ -50,7 +50,7 @@ WifiEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

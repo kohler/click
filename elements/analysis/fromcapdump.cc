@@ -76,7 +76,7 @@ FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "AGGREGATE", cpUnsigned, "aggregate annotation", &_aggregate,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FLOWID", cpArgument, "default flow ID", &_flowid,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");

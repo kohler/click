@@ -39,13 +39,13 @@ StoreIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
     _use_address = false;
     return cp_va_parse(conf, this, errh,
 		       cpUnsigned, "byte offset of IP address", &_offset,
-		       0);
+		       cpEnd);
   } else {
     _use_address = true;
     return cp_va_parse(conf, this, errh,
 		       cpIPAddress, "IP address", &_address,
 		       cpUnsigned, "byte offset of IP address", &_offset,
-		       0);
+		       cpEnd);
   }
 }
 

@@ -50,7 +50,7 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "LENGTH_GE", cpInteger, "minimum packet length", &length_ge,
 		    "LENGTH_LE", cpInteger, "maximum packet length", &length_le,
 		    "ALIGNMENT", cpArgument, "packet alignment specification", &alignment,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     if ((length_eq >= 0) + (length_ge >= 0) + (length_le >= 0) > 1)
@@ -70,7 +70,7 @@ CheckPacket::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (cp_va_space_parse(alignment, this, errh,
 			      cpInteger, "modulus", &_alignment_chunk,
 			      cpInteger, "offset", &_alignment_offset,
-			      0) < 0)
+			      cpEnd) < 0)
 	    return -1;
 	else if (_alignment_chunk <= 1 || _alignment_offset < 0 || _alignment_offset >= _alignment_chunk)
 	    return errh->error("bad alignment modulus and/or offset");

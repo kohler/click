@@ -57,7 +57,7 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			  cpElement, "GridLocationInfo", &el,
 			  cpReal10, "latitude", 7, &int_vlat,
 			  cpReal10, "longitude", 7, &int_vlon,
-			  0) < 0)
+			  cpEnd) < 0)
       return -1;
     GridLocationInfo *li = (GridLocationInfo *)el->cast("GridLocationInfo");
     if (!li)

@@ -93,7 +93,7 @@ GridProbeHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpElement, "LookupLocalGridRoute element", &_lr_el,
 		     cpElement, "LookupGeographicsGridRoute element", &_gf_el,
 		     cpElement, "FloodingLocQuerier element", &_fq_el,
-		     0);
+		     cpEnd);
 }
 
 

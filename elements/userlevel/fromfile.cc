@@ -58,7 +58,7 @@ FromFile::configure_keywords(Vector<String> &conf, int first_keyword, Element *e
 #endif
     if (cp_va_parse_remove_keywords(conf, first_keyword, e, errh,
 		    "MMAP", cpBool, "access file with mmap()?", &mmap,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 #ifdef ALLOW_MMAP
     _mmap = mmap;

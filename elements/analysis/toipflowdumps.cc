@@ -553,7 +553,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "GZIP", cpBool, "gzip output files?", &gzip,
 		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
 		    "MINCOUNT", cpUnsigned, "output flows with at least this many packets", &_mincount,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     if (!_filename_pattern)

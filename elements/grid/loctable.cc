@@ -45,7 +45,7 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
 				cpReal10, "latitude", 7, &lat,
 				cpReal10, "longitude", 7, &lon,
 				cpInteger, "error_radius", &err,
-				0);
+				cpEnd);
     if (res < 0)
       return -1;
     
@@ -109,7 +109,7 @@ loc_write_handler(const String &arg, Element *element,
 			      cpReal10, "latitude", 7, &lat,
 			      cpReal10, "longitude", 7, &lon,
 			      cpInteger, "error_radius", &err,
-			      0);
+			      cpEnd);
   if (res < 0)
     return -1;
   grid_location loc((double) lat /  1.0e7, (double) lon /  1.0e7);

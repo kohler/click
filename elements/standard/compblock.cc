@@ -42,7 +42,7 @@ CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpInteger, "forward weight", &_fwd_weight,
 		     cpInteger, "reverse weight", &_rev_weight,
 		     cpInteger, "threshold", &_thresh,
-		     0);
+		     cpEnd);
 }
 
 void

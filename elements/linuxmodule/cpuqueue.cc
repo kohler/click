@@ -28,7 +28,8 @@ CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned new_capacity = 128;
   if (cp_va_parse(conf, this, errh, 
 	          cpOptional, 
-		  cpUnsigned, "maximum queue length", &new_capacity, 0) < 0) 
+		  cpUnsigned, "maximum queue length", &new_capacity,
+		  cpEnd) < 0) 
     return -1; 
   _capacity = new_capacity;
   return 0;

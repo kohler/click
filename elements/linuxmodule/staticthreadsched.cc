@@ -26,7 +26,7 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 	if (cp_va_space_parse(conf[i], this, errh,
 			      cpElement, "element", &e,
 			      cpInteger, "thread ID", &preference,
-			      0) < 0)
+			      cpEnd) < 0)
 	    return -1;
 	if (e->eindex() >= _thread_preferences.size())
 	    _thread_preferences.resize(e->eindex() + 1, THREAD_PREFERENCE_UNKNOWN);

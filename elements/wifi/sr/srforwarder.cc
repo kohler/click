@@ -71,7 +71,7 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "SRCR", cpElement, "SRCR element", &_srcr,
 		    "LT", cpElement, "LinkTable element", &_link_table,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

@@ -39,7 +39,7 @@ IPsecESPUnencap::~IPsecESPUnencap()
 int
 IPsecESPUnencap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh, 0) < 0)
+  if (cp_va_parse(conf, this, errh, cpEnd) < 0)
     return -1;
   return 0;
 }

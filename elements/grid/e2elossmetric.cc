@@ -49,7 +49,7 @@ E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpElement, "LinkStat element", &_ls,
 			cpKeywords, 
 			"TWOWAY", cpBool, "use delivery ratios in both link directions?", &_twoway,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   if (_ls == 0) 

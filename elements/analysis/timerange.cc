@@ -41,7 +41,7 @@ TimeRange::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "SIMPLE", cpBool, "timestamps arrive in increasing order?", &_simple,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     timerclear(&_first);
     timerclear(&_last);

@@ -54,7 +54,7 @@ LookupIPRouteRON::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of ports", &n,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (n < 1)
     return errh->error("number of ports must be at least 1");

@@ -48,7 +48,7 @@ IPAddressCounter::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpKeywords,
 		    "USE_SRC", cpBool, "", &track_src,
 		    "USE_DST", cpBool, "", &track_dst,
-                    0);
+                    cpEnd);
 
   if (!(track_src ^ track_dst)) {
     return errh->error("exactly one of SRC or DST must be specified\n");

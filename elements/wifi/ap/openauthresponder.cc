@@ -52,7 +52,7 @@ OpenAuthResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   return 0;

@@ -92,7 +92,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     // check sampling rate

@@ -52,7 +52,7 @@ GridProbeReplyReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
   String chan;
   int res = cp_va_parse(conf, this, errh,
 			cpString, "Channel name", &chan,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   _repl_errh = router()->chatter_channel(chan);

@@ -133,7 +133,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"LOGCHANNEL", cpString, "log channel name", &chan,
 			"METRIC", cpString, "route metric", &metric,
 			"LOG", cpElement, "GridLogger element", &_log,
-			0);
+			cpEnd);
 
   if (res < 0)
     return res;
@@ -1131,7 +1131,7 @@ GridRouteTable::write_metric_range(const String &arg, Element *el,
   int res = cp_va_space_parse(arg, rt, errh,
 			      cpInteger, "metric range max", &max,
 			      cpInteger, "metric range min", &min,
-			      0);
+			      cpEnd);
   if (res < 0)
     return -1;
 

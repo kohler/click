@@ -185,7 +185,7 @@ StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
   ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
   if (cp_va_parse(e->configuration(), &cerrh,
 		  cpInteger, "amount to strip", &m,
-		  0) < 0)
+		  cpEnd) < 0)
     return default_aligner();
   return new ShifterAligner(m);
 }
@@ -226,7 +226,7 @@ AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
   if (cp_va_parse(e->configuration(), &cerrh,
 		  cpUnsigned, "alignment modulus", &chunk,
 		  cpUnsigned, "alignment offset", &offset,
-		  0) < 0)
+		  cpEnd) < 0)
     return default_aligner();
   return new GeneratorAligner(Alignment(chunk, offset));
 }

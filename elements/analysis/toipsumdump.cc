@@ -72,7 +72,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "BAD_PACKETS", cpBool, "output `!bad' messages for non-IP or bad IP packets?", &bad_packets,
 		    "CAREFUL_TRUNC", cpBool, "output `!bad' messages for truncated IP packets?", &careful_trunc,
 		    "BINARY", cpBool, "output binary data?", &binary,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     Vector<String> v;

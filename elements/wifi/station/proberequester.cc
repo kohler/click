@@ -62,7 +62,7 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "SSID", cpString, "ssid", &_ssid,
 		  "ETH", cpEthernetAddress, "bssid", &_eth,
 		  "RT", cpElement, "availablerates", &_rtable,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   if (!_rtable || _rtable->cast("AvailableRates") == 0) 

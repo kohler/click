@@ -64,7 +64,7 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "HISTORY", cpUnsigned, "history", &_history,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

@@ -60,7 +60,7 @@ LookupGeographicGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpIPAddress, "source IP address", &_ipaddr,
                         cpElement, "GridGenericRouteTable element", &_rt,
 			cpElement, "GridLocationInfo element", &_li,
-			0);
+			cpEnd);
 
   if (res < 0)
     return res;

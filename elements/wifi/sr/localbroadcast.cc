@@ -64,7 +64,7 @@ LocalBroadcast::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

@@ -57,7 +57,7 @@ KernelHandlerProxy::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpKeywords,
 		     "VERBOSE", cpBool, "be verbose?", &_verbose,
-		     0);
+		     cpEnd);
 }
 
 void

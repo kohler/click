@@ -39,7 +39,7 @@ SetIP6DSCP::configure(const Vector<String> &conf, ErrorHandler *errh)
   unsigned dscp_val;
   if (cp_va_parse(conf, this, errh,
                   cpUnsigned, "diffserv code point", &dscp_val,
-                  0) < 0)
+                  cpEnd) < 0)
     return -1;
   if (dscp_val > 0x3F)
     return errh->error("diffserv code point out of range");

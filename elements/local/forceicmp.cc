@@ -47,7 +47,7 @@ ForceICMP::configure(Vector<String> &conf, ErrorHandler *errh)
                     cpOptional,
                     cpInteger, "ICMP type", &_type,
                     cpInteger, "ICMP code", &_code,
-                    0);
+                    cpEnd);
 
   return(ret);
 }

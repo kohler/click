@@ -72,7 +72,7 @@ FromTcpdump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ZERO", cpBool, "zero packet data?", &zero,
 		    "CHECKSUM", cpBool, "set packet checksums?", &checksum,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");

@@ -40,7 +40,7 @@ FixDstLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
                         cpElement, "LocationTable element", &_loctab,
-			0);
+			cpEnd);
   return res;
 }
 

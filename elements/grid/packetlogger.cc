@@ -26,7 +26,7 @@ PacketLogger::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "ETHERTYPE", cpUnsigned, "ethertype", &_et,
 		  "NBYTES", cpUnsigned, "number of bytes to record", &_nb,
-		  0) < 0) {
+		  cpEnd) < 0) {
     return -1;
   }
 

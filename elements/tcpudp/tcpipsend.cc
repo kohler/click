@@ -56,7 +56,7 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
        cpUnsigned, "seq number", &seqn,
        cpUnsigned, "ack number", &ackn,
        cpByte, "bits", &bits,
-       0) < 0)
+       cpEnd) < 0)
     return -1;
 
   Packet *p = me->make_packet(saddr, daddr, sport, dport, seqn, ackn, bits);

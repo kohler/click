@@ -60,7 +60,7 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "LIMIT", cpInteger, "total packet count", &limit,
 		  "ACTIVE", cpBool, "active?", &active,
 		  "STOP", cpBool, "stop driver when done?", &stop,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   
   _data = data;

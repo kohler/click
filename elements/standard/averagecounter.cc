@@ -50,7 +50,7 @@ AverageCounter::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of seconds to ignore", &_ignore,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _ignore *= CLICK_HZ;
   return 0;

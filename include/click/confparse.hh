@@ -171,8 +171,8 @@ bool cp_filename(const String &, String *);
 #endif
 
 typedef const char *CpVaParseCmd;
-static const CpVaParseCmd cpEnd = 0;
 extern const CpVaParseCmd
+    cpEnd,
     cpOptional,
     cpKeywords,
     cpConfirmKeywords,

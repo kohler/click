@@ -71,7 +71,7 @@ ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 
   ret = cp_va_parse(conf, this, errh,
                     cpUnsigned, "destination port", &dport,
-                    0);
+                    cpEnd);
   if(ret < 0)
     return(ret);
 

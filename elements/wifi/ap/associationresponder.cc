@@ -63,7 +63,7 @@ AssociationResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
 		  "INTERVAL", cpInteger, "interval_ms", &_interval_ms,
 		  "RT", cpElement, "availablerates", &_rtable,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
 

@@ -74,7 +74,7 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LENGTH", cpUnsigned, "maximum queue length", &new_capacity,
 		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &packet_to,
 		    "DEBUG", cpBool, "Debug", &_debug,
-                    0);
+                    cpEnd);
   if (ret < 0) {
     return ret;
   }

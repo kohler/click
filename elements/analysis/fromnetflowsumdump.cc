@@ -69,7 +69,7 @@ FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "ZERO", cpBool, "zero packet data?", &zero,
 		    "MULTIPACKET", cpBool, "generate multiple packets per flow?", &multipacket,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     _stop = stop;

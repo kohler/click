@@ -57,7 +57,7 @@ BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "CHANNEL", cpInteger, "channel", &_channel,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

@@ -63,7 +63,7 @@ DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
                   cpKeywords,
                   "ETHERTYPE", cpUnsigned, "Ethernet encapsulation type", &etht,
 		  "DEBUG", cpBool, "Debug", &_debug,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   _etht = etht;

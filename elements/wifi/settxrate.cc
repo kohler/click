@@ -47,7 +47,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
 		  "ETT", cpElement, "ETTMetric element", &_ett_l,
-		  0) < 0) {
+		  cpEnd) < 0) {
     return -1;
   }
 

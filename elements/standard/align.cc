@@ -40,7 +40,7 @@ Align::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "alignment modulus", &count,
 		  cpUnsigned, "alignment offset", &_offset,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (count != 2 && count != 4 && count != 8)
     return errh->error("align modulus must be 2, 4, or 8");

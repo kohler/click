@@ -83,7 +83,7 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "CLASS", cpInteger, "preserve class bits?", &_preserve_class,
 		    "PRESERVE_8", cpArgument, "list of /8s to preserve", &preserve_8,
 		    "SEED", cpBool, "seed random number generator?", &seed,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     // check CLASS value

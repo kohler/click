@@ -95,7 +95,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
 			"TAG", cpString, "location tag", &_tag,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

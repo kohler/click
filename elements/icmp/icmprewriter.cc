@@ -47,7 +47,7 @@ ICMPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   String arg;
   if (cp_va_parse(conf, this, errh,
 		  cpArgument, "rewriters", &arg,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   Vector<String> words;

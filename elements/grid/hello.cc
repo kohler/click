@@ -43,7 +43,7 @@ SendGridHello::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpInteger, "jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_from_eth,
 			cpIPAddress, "source IP address", &_from_ip,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

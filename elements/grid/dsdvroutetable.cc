@@ -240,7 +240,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 #if SEQ_METRIC
 			"USE_SEQ_METRIC", cpBool, "use `dsdv_seqs' metric?", &_use_seq_metric,
 #endif
-			0);
+			cpEnd);
 
   if (res < 0)
     return res;

@@ -43,7 +43,7 @@ FixIPSrc::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "local addr", &a,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _my_ip = a.in_addr();
   return 0;

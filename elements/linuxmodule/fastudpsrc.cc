@@ -65,7 +65,7 @@ FastUDPSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "do UDP checksum?", &_cksum,
 		  cpUnsigned, "interval", &_interval,
 		  cpBool, "active?", &_active,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (sp >= 0x10000 || dp >= 0x10000)
     return errh->error("source or destination port too large");

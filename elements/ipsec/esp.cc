@@ -49,7 +49,7 @@ IPsecESPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
   unsigned int spi_uc;
 
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Security Parameter Index", &spi_uc, 0) < 0)
+		  cpUnsigned, "Security Parameter Index", &spi_uc, cpEnd) < 0)
     return -1;
   _spi = spi_uc;
   return 0;

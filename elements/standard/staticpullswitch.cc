@@ -44,7 +44,7 @@ StaticPullSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
   _input = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "active input", &_input,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_input >= ninputs())
     _input = -1;

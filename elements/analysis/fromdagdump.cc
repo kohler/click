@@ -89,7 +89,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     // check sampling rate

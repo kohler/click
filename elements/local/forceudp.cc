@@ -45,7 +45,7 @@ ForceUDP::configure(Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
                     cpOptional,
                     cpInteger, "destination port", &_dport,
-                    0);
+                    cpEnd);
 
   return(ret);
 }

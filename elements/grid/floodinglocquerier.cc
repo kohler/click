@@ -53,7 +53,7 @@ FloodingLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
 		     cpIPAddress, "IP address", &_my_ip,
-		     0);
+		     cpEnd);
 }
 
 int

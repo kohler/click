@@ -64,7 +64,7 @@ UpdateGridRoutes::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpIPAddress, "source IP address", &_ipaddr,
 			cpOptional,
 			cpInteger, "max hops", &_max_hops,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

@@ -40,7 +40,7 @@ Burster::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpSecondsAsMilli, "packet pulling interval", &_interval,
 		  cpOptional,
 		  cpUnsigned, "max packets per interval", &_npackets,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_npackets <= 0)
     return errh->error("max packets per interval must be > 0");

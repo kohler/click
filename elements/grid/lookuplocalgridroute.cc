@@ -72,7 +72,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         "GWI", cpElement, "GridGatewayInfo element", &_gw_info,
 			"LT", cpElement, "LinkTracker element", &_link_tracker,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
-			0);
+			cpEnd);
   _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
   return res;
 }

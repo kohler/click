@@ -74,7 +74,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "SET_ERROR_ANNO", cpBool, "set annotation on error packets?", &_set_error_anno,
 		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (!_ifname)
     return errh->error("interface not set");

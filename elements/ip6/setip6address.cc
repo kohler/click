@@ -37,7 +37,7 @@ SetIP6Address::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIP6Address, "IP6 address", &_ip6,
-		     0);
+		     cpEnd);
 }
 
 Packet *

@@ -46,7 +46,7 @@ TXFeedbackStats::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"TAU", cpUnsigned, "TX feedback tracking period (msecs)", &_tau,
 			"MIN_PKTS", cpUnsigned, "minimum number of packets required to estimate TX count", &_min_pkts,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

@@ -45,7 +45,7 @@ EnsureEther::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "Ethernet encapsulation type", &etht,
 		  cpEthernetAddress, "source address", &_ethh.ether_shost,
 		  cpEthernetAddress, "destination address", &_ethh.ether_dhost,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (etht > 0xFFFF)
     return errh->error("argument 1 (Ethernet encapsulation type) must be <= 0xFFFF");

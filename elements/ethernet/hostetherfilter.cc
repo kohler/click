@@ -54,7 +54,7 @@ HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DROP_OWN", cpBool, "Drop packets from us?", &drop_own,
 		  "DROP_OTHER", cpBool, "Drop packets to others?", &drop_other,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _drop_own = drop_own;
   _drop_other = drop_other;

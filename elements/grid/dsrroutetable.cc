@@ -91,7 +91,7 @@ DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		      "METRIC", cpElement, "GridGenericMetric element", &_metric,
 		      "USE_BLACKLIST", cpBool, "use blacklist?", &_use_blacklist,
 		      "DEBUG", cpBool, "Debug", &_debug,
-		      0)<0);
+		      cpEnd)<0);
 
   if (_outq && _outq->cast("SimpleQueue") == 0)
     return errh->error("OUTQUEUE element is not a SimpleQueue");

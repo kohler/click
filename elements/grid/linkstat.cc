@@ -59,7 +59,7 @@ LinkStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
 			"USE_SECOND_PROTO", cpBool, "Use alternate protocol number?", &_use_proto2,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   

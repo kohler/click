@@ -53,7 +53,7 @@ TXStat::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEtherAddress, "Source Ethernet address", &_eth,
 			cpKeywords,
-			0);
+			cpEnd);
   return res;
   
 

@@ -72,7 +72,7 @@ SetPacketType::configure(Vector<String> &conf, ErrorHandler *errh)
     String ptype;
     if (cp_va_parse(conf, this, errh,
 		    cpWord, "packet type", &ptype,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     int ptype_val = parse_type(ptype.upper());
     if (ptype_val < 0)

@@ -57,7 +57,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
     router()->set_attachment("DriverManager", this);
 
     _check_handlers = true;
-    if (cp_va_parse_remove_keywords(conf, 0, this, errh, "CHECK_HANDLERS", cpBool, "check handlers for correctness?", &_check_handlers, 0) < 0)
+    if (cp_va_parse_remove_keywords(conf, 0, this, errh, "CHECK_HANDLERS", cpBool, "check handlers for correctness?", &_check_handlers, cpEnd) < 0)
 	return -1;
     
     int before = errh->nerrors();

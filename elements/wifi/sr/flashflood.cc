@@ -83,7 +83,7 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "SLOTS_EXPECTED_RX", cpBool, "foo", &_slots_erx,
 		    "SLOT_TIME_MS", cpInteger, "time (in ms) for a slot", &_slot_time_ms,
 		    "PROCESS_OWN_SENDS", cpBool, "foo", &_process_own_sends,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

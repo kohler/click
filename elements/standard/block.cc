@@ -38,7 +38,7 @@ Block::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "threshold", &_thresh,
-		     0);
+		     cpEnd);
 }
 
 void

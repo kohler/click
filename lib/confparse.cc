@@ -1967,6 +1967,7 @@ cp_filename(const String &str, String *return_value)
 // must begin with "\377"
 
 const CpVaParseCmd
+  cpEnd			= 0,
   cpOptional		= "OPTIONAL",
   cpKeywords		= "\377KEYWORDS",
   cpConfirmKeywords	= "\377CONFIRM_KEYWORDS",

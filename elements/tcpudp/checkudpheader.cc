@@ -62,7 +62,7 @@ CheckUDPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "VERBOSE", cpBool, "be verbose?", &verbose,
 		  "DETAILS", cpBool, "keep detailed counts?", &details,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   
   _verbose = verbose;

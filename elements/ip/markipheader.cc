@@ -39,7 +39,7 @@ MarkIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpOptional,
 		     cpUnsigned, "offset to IP header", &_offset,
-		     0);
+		     cpEnd);
 }
 
 Packet *

@@ -57,7 +57,7 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "ETH", cpEthernetAddress, "eth", &_eth,
 		  "RT", cpElement, "availablerates", &_rtable,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   

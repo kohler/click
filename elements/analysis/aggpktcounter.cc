@@ -111,7 +111,7 @@ AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
 		    "PACKETNO", cpInteger, "packet number annotation (-1..1)", &_packetno,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     if (_packetno > 1)

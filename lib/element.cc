@@ -790,7 +790,7 @@ Element::read_keyword_handler(Element *element, void *thunk)
   String s;
   for (int i = conf.size() - 1; i >= 0; i--)
     if (cp_va_parse_keyword(conf[i], element, ErrorHandler::silent_handler(),
-			    kw, cpArgument, &s, 0) > 0)
+			    kw, cpArgument, &s, cpEnd) > 0)
       break;
   // add trailing "\n" if appropriate
   if (s && s.back() != '\n')

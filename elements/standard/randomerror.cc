@@ -119,7 +119,7 @@ RandomBitErrors::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpString, "action (set/clear/flip)", &kind_str,
 		  cpBool, "active?", &on,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   unsigned kind;

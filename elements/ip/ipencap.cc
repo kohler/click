@@ -61,7 +61,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "ECT", cpKeyword, "ECN capable transport", &ect_str,
 		  "CE", cpBool, "ECN congestion experienced", &ce,
 		  "DF", cpBool, "don't fragment", &df,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   int ect = 0;

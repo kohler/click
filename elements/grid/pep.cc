@@ -59,7 +59,7 @@ PEP::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpBool, "fixed?", &fixed,
 			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
-			0);
+			cpEnd);
   if(res < 0)
     return(res);
 

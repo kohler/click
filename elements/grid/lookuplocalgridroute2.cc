@@ -62,7 +62,7 @@ LookupLocalGridRoute2::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
 			"VERBOSE", cpBool, "be verbose about drops?", &_verbose,
-			0);
+			cpEnd);
   return res;
 }
 

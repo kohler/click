@@ -62,7 +62,7 @@ FastTCPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "flow size", &_flowsize,
 		  cpOptional,
 		  cpBool, "active?", &_active,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_flowsize < 3) {
     click_chatter("warning: flow size < 3, defaulting to 3");

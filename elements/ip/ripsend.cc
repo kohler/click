@@ -43,7 +43,7 @@ RIPSend::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpIPAddress, "dst addr", &_dst,
                         cpIPPrefix, "advertised address", &_what, &_mask,
                         cpInteger, "metric", &_metric,
-                        0);
+                        cpEnd);
   if(ret < 0)
     return(ret);
 

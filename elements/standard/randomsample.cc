@@ -53,7 +53,7 @@ RandomSample::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &sampling_prob,
 		    "DROP", cpUnsignedReal2, "drop probability", SAMPLING_SHIFT, &drop_prob,
 		    "ACTIVE", cpBool, "active?", &active,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (sampling_prob == 0xFFFFFFFFU && drop_prob <= (1 << SAMPLING_SHIFT))
 	sampling_prob = (1 << SAMPLING_SHIFT) - drop_prob;

@@ -37,7 +37,7 @@ SetIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_ip,
-		     0);
+		     cpEnd);
 }
 
 Packet *

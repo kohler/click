@@ -70,7 +70,7 @@ WebGen::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpIPAddressOrPrefix, "IP address/len", &_src_prefix, &_mask,
                     cpIPAddress, "IP address/len", &_dst,
                     cpUnsigned, "connections per second", &cps,
-                    0);
+                    cpEnd);
 
   start_interval = 1000000 / cps;
   return ret;

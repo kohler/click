@@ -54,7 +54,7 @@ AdaptiveRED::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "QUEUES", cpArgument, "relevant queues", &queues_string,
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (target_q < 10)
 	target_q = 10;
@@ -74,7 +74,7 @@ AdaptiveRED::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "QUEUES", cpArgument, "relevant queues", &queues_string,
 		    "STABILITY", cpUnsigned, "stability shift", &stability,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (queues_string)
 	errh->warning("QUEUES argument ignored");

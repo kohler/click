@@ -41,7 +41,7 @@ FilterByRange::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "range (metres)", &_range,
                         cpElement, "GridLocationInfo element", &_locinfo,
-			0);
+			cpEnd);
 
   return res;
 }

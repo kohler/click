@@ -46,7 +46,7 @@ SendGridLRHello::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "UpdateGridRoutes element", &_nbr,
 			cpOptional,
 			cpInteger, "max nbr hops", &_hops,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

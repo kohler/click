@@ -45,7 +45,7 @@ CheckLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "max length", &_max,
-		     0);
+		     cpEnd);
 }
 
 void

@@ -44,7 +44,7 @@ IPEncap2::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpByte, "IP encapsulation protocol", &ip_p_uc,
 		  cpIPAddress, "source IP address", &_ip_src,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _ip_p = ip_p_uc;
 

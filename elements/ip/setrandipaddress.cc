@@ -44,7 +44,7 @@ SetRandIPAddress::configure(Vector<String> &conf, ErrorHandler *errh)
                     cpIPAddressOrPrefix, "IP address/len", &_ip, &_mask,
                     cpOptional,
                     cpInteger, "MAX addresses", &_max,
-                    0);
+                    cpEnd);
 
   if(_max >= 0){
     _addrs = new IPAddress [_max] ();

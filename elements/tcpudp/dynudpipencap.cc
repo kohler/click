@@ -51,7 +51,7 @@ DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &do_cksum,
 		  cpUnsigned, "change interval", &_interval,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   
   _id = 0;

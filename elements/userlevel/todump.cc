@@ -72,7 +72,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_NS
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
 #endif
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
 
     if (use_encap_from && encap_type)

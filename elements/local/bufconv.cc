@@ -39,7 +39,7 @@ int
 BufferConverter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "MTU threshold", &_mtu, 0);
+		     cpUnsigned, "MTU threshold", &_mtu, cpEnd);
   return 0;
 }
 

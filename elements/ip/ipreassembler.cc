@@ -61,7 +61,7 @@ IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "HIMEM", cpUnsigned, "memory consumption limit", &_mem_high_thresh,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     _mem_low_thresh = (_mem_high_thresh >> 2) * 3;
     return 0;

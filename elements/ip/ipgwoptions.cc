@@ -46,7 +46,7 @@ IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
                   cpIPAddress, "local IP address", &_preferred_addr,
 		  cpOptional,
 		  cpIPAddressList, "other interface IP addresses", &_my_addrs,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   _my_addrs.insert(_preferred_addr);
   return 0;

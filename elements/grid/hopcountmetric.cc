@@ -46,7 +46,7 @@ int
 HopcountMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			0);
+			cpEnd);
   return res;
 }
 

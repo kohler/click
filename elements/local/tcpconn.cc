@@ -257,7 +257,8 @@ TCPConn::ctrl_write_handler
 	cpInteger, "source port", &port0, 
 	cpOptional,
 	cpString, "destination address", &str_addr1,
-	cpInteger, "destinatin port", &port1, 0) < 0)
+	cpInteger, "destinatin port", &port1,
+	cpEnd) < 0)
     return -1;
   addr0 = IPAddress(str_addr0);
   addr1 = IPAddress(str_addr1);

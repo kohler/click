@@ -44,7 +44,7 @@ GridLogger::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"LOGFILE", cpString, "logfile name", &logfile,
 			"SHORT_IP", cpBool, "log short IP addresses?", &short_ip,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

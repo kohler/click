@@ -44,7 +44,7 @@ CheckPaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpByte, "color", &_color,
-		     0);
+		     cpEnd);
 }
 
 void

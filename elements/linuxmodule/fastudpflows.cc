@@ -63,7 +63,7 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &_cksum,
 		  cpBool, "active?", &_active,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (_len < 60) {
     click_chatter("warning: packet length < 60, defaulting to 60");

@@ -57,7 +57,7 @@ LocQueryResponder::configure(Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_eth,
 		     cpIPAddress, "IP address", &_ip,
-		     0);
+		     cpEnd);
 }
 
 void

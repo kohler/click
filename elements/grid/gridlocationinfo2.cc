@@ -57,7 +57,7 @@ GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
 			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
 			"TAG", cpString, "location tag", &_tag,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
 

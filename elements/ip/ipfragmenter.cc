@@ -59,7 +59,7 @@ IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpBool, "HONOR_DF", &_honor_df,
 		    cpKeywords,
 		    "HONOR_DF", cpBool, "honor DF bit?", &_honor_df,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (_mtu < 8)
 	return errh->error("MTU must be at least 8");

@@ -49,7 +49,7 @@ ForceTCP::configure(Vector<String> &conf, ErrorHandler *errh)
                     cpInteger, "destination port", &_dport,
                     cpBool, "randomize destination port", &_random,
                     cpInteger, "TCP flags", &_flags,
-                    0);
+                    cpEnd);
 
   return(ret);
 }

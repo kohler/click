@@ -41,7 +41,7 @@ IPOutputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "color (PaintTee)", &_color,
 		  cpIPAddress, "dest IP address", &_my_ip,
 		  cpUnsigned, "MTU (IPFragmenter)", &_mtu,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

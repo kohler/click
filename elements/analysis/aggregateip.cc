@@ -410,7 +410,7 @@ AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "INCREMENTAL", cpBool, "incremental?", &_incremental,
 		    "UNSHIFT_IP_ADDR", cpBool, "unshift IP address fields?", &_unshift_ip_addr,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     if (_f.parse(arg, errh) < 0)
 	return -1;

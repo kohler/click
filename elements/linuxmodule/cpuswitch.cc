@@ -37,7 +37,7 @@ CPUSwitch::notify_noutputs(int i)
 int
 CPUSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh, 0) < 0) return -1;
+  if (cp_va_parse(conf, this, errh, cpEnd) < 0) return -1;
   return 0;
 }
 

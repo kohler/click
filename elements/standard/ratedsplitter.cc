@@ -40,7 +40,7 @@ RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
     uint32_t r;
     CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
     if (cp_va_parse(conf, this, errh, 
-		    cmd, "split rate", &r, 0) < 0) 
+		    cmd, "split rate", &r, cpEnd) < 0) 
 	return -1;
     _rate.set_rate(r, errh);
     return 0;

@@ -62,7 +62,7 @@ ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
 		  cpWord, "encapsulation type",&encap_type,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (!_ifname)
     return errh->error("interface not set");

@@ -519,7 +519,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
     if (cp_va_space_parse(rest, this, ErrorHandler::silent_handler(),
 		    cpUnsigned, "forward output", &is.u.keep.fport,
 		    cpUnsigned, "reverse output", &is.u.keep.rport,
-		    0) < 0)
+		    cpEnd) < 0)
       return errh->error("%s: syntax error; expected `keep FOUTPUT ROUTPUT'", name.cc());
     if (is.u.keep.fport >= noutputs() || is.u.keep.rport >= noutputs())
       return errh->error("%s: output port out of range", name.cc());

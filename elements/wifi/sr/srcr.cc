@@ -100,7 +100,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "ROUTE_DAMPENING", cpBool, "Enable Route Dampening", &_route_dampening,
 		    "TIME_BEFORE_SWITCH", cpUnsigned, "", &_time_before_switch_sec,
-                    0);
+                    cpEnd);
 
   if (!_et) 
     return errh->error("ETHTYPE not specified");

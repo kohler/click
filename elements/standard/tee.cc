@@ -45,7 +45,7 @@ Tee::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of arms", &n,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (n < 1)
     return errh->error("number of arms must be at least 1");
@@ -91,7 +91,7 @@ PullTee::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of arms", &n,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if (n < 1)
     return errh->error("number of arms must be at least 1");

@@ -41,7 +41,7 @@ SetTCPChecksum::configure(Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
                   cpOptional,
 		  cpBool, "fix th_off?", &_fixoff,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

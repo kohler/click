@@ -123,12 +123,12 @@ IPRouteTable::add_route_handler(const String &conf, Element *e, void *, ErrorHan
     if (words.size() == 2)
 	ok = cp_va_parse(words, r, errh,
 			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
-			 cpInteger, "output port", &port, 0);
+			 cpInteger, "output port", &port, cpEnd);
     else
 	ok = cp_va_parse(words, r, errh,
 			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
 			 cpIPAddress, "gateway address", &gw,
-			 cpInteger, "output port", &port, 0);
+			 cpInteger, "output port", &port, cpEnd);
 
     if (ok >= 0 && (port < 0 || port >= r->noutputs()))
 	ok = errh->error("output port out of range");
@@ -152,12 +152,12 @@ IPRouteTable::remove_route_handler(const String &conf, Element *e, void *, Error
 	ok = cp_va_parse(words, r, errh,
 			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
 			 cpOptional,
-			 cpInteger, "output port", &port, 0);
+			 cpInteger, "output port", &port, cpEnd);
     else
 	ok = cp_va_parse(words, r, errh,
 			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
 			 cpIPAddress, "gateway address", &gw,
-			 cpInteger, "output port", &port, 0);
+			 cpInteger, "output port", &port, cpEnd);
 
     if (ok >= 0)
 	ok = r->remove_route(a, mask, gw, port, errh);

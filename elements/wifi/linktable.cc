@@ -75,7 +75,7 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
                     "IP", cpIPAddress, "IP address", &_ip,
 		    "STALE", cpUnsigned, "Stale info timeout", &stale_period,
-                    0);
+                    cpEnd);
   
   if (!_ip) 
     return errh->error("IP not specified");

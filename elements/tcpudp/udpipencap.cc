@@ -49,7 +49,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpUDPPort, "destination port", &_dport,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &do_cksum,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
 
   _id = 0;

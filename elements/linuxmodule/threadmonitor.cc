@@ -44,7 +44,7 @@ ThreadMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh, 
 		    cpOptional,
 		    cpUnsigned, "interval", &_interval,
-		    cpUnsigned, "threshold", &_thresh, 0) < 0)
+		    cpUnsigned, "threshold", &_thresh, cpEnd) < 0)
 	return -1;
     return 0;
 }

@@ -47,7 +47,7 @@ ICMP6Error::configure(Vector<String> &conf, ErrorHandler *errh)
                   cpIP6Address, "Source IP6 address", &_src_ip,
                   cpInteger, "ICMP6 Type", &_type,
                   cpInteger, "ICMP6 Code", &_code,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

@@ -64,7 +64,7 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
     return cp_va_parse(conf, this, errh,
 		       cpKeywords,
 		       "STOP", cpBool, "stop when queue empty?", &_stop,
-		       0);
+		       cpEnd);
 }
 
 int 

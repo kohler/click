@@ -52,7 +52,7 @@ BalancedThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh, 
 		    cpOptional,
 		    cpUnsigned, "interval", &_interval, 
-		    cpBool, "increasing?", &_increasing, 0) < 0)
+		    cpBool, "increasing?", &_increasing, cpEnd) < 0)
 	return -1;
     return 0;
 }

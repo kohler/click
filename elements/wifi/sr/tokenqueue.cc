@@ -82,7 +82,7 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "THRESHOLD", cpInteger, "packets", &threshold,
 		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "DEBUG", cpBool, "Debug", &_debug,
-                    0);
+                    cpEnd);
   if (ret < 0) {
     return ret;
   }

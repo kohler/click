@@ -52,7 +52,7 @@ AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "NOTIFIER", cpElement, "aggregate creation and deletion notifier", &e,
 		    "STOP_AFTER_CLEAR", cpBool, "stop router after 'clear' completes?", &_stop_after_clear,
-		    0) < 0)
+		    cpEnd) < 0)
 	return -1;
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

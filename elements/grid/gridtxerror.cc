@@ -48,7 +48,7 @@ GridTxError::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   return 0;

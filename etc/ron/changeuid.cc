@@ -44,7 +44,7 @@ ChangeUID::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
                   cpUnsigned, "UID", &_uid,
                   cpUnsigned, "time", &_timeout,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   return 0;
 }

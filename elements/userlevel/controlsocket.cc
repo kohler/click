@@ -94,7 +94,7 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 		"VERBOSE", cpBool, "be verbose?", &verbose,
 		"RETRIES", cpInteger, "number of retries", &_retries,
 		"RETRY_WARNINGS", cpBool, "warn on unsuccessful socket attempt?", &retry_warnings,
-		0) < 0)
+		cpEnd) < 0)
     return -1;
   _read_only = read_only;
   _verbose = verbose;
@@ -105,14 +105,14 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     _tcp_socket = true;
     unsigned short portno;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpUnsignedShort, "port number", &portno, 0) < 0)
+		    cpIgnore, cpUnsignedShort, "port number", &portno, cpEnd) < 0)
       return -1;
     _unix_pathname = String(portno);
 
   } else if (socktype == "UNIX") {
     _tcp_socket = false;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore, cpString, "filename", &_unix_pathname, 0) < 0)
+		    cpIgnore, cpString, "filename", &_unix_pathname, cpEnd) < 0)
       return -1;
     if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
       return errh->error("filename too long");

@@ -32,7 +32,7 @@ GridSRForwarder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh, 
 			cpIPAddress, "this node's IP", &_ip,
-			0);
+			cpEnd);
   return res;
 }
 

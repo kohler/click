@@ -42,7 +42,7 @@ PingPong::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpElement, "LinkStat element", &_ls,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   

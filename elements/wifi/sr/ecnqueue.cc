@@ -73,7 +73,7 @@ ECNQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpKeywords,
 		    "LENGTH", cpUnsigned, "maximum queue length", &new_capacity,
 		    "DEBUG", cpBool, "Debug", &_debug,
-                    0);
+                    cpEnd);
   if (ret < 0) {
     return ret;
   }

@@ -48,7 +48,7 @@ ETX2Metric::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpElement, "data packet size LinkStat element", &_ls_data,
 			cpElement, "ACK packet size LinkStat element", &_ls_ack,
-			0);
+			cpEnd);
   if (res < 0)
     return res;
   if (_ls_data == 0) 

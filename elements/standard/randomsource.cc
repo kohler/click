@@ -42,7 +42,7 @@ RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
   
   if (cp_va_parse(conf, this, errh,
 		  cpInteger, "packet length (bytes)", &length,
-		  0) < 0)
+		  cpEnd) < 0)
     return -1;
   if(length < 0 || length >= 64*1024)
     return errh->error("bad length %d", length);
