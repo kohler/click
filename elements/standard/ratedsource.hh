@@ -16,13 +16,13 @@ generates packets at specified rate
 
 =d
 
-Creates packets consisting of DATA. Pushes at most LIMIT such packets out
-its single output at a rate of RATE packets per second. It will send a
-maximum of one packet per scheduling, so very high RATEs may not be
-achievable. If LIMIT is negative, sends packets forever. Will send packets
-only if ACTIVE is true. Default DATA is at least 64 bytes long. Default
-RATE is 10. Default LIMIT is -1 (send packets forever). Default ACTIVE is
-true.
+Creates packets consisting of DATA, emitting at most LIMIT such packets out
+its single output at a rate of RATE packets per second. When used as a push
+element, RatedSource will send a maximum of one packet per scheduling, so very
+high RATEs may not be achievable. If LIMIT is negative, sends packets forever.
+Will send packets only if ACTIVE is true. Default DATA is at least 64 bytes
+long. Default RATE is 10. Default LIMIT is -1 (send packets forever). Default
+ACTIVE is true.
 
 Keyword arguments are:
 

@@ -131,15 +131,18 @@ Returns the filename supplied to FromDump.
 =h filesize read-only
 
 Returns the length of the FromDump file, in bytes, or "-" if that length
-cannot be determined.
+cannot be determined (because the file was compressed, for example).
 
 =h filepos read-only
 
-Returns FromDump's position in the file, in bytes.
+Returns FromDump's position in the (uncompressed) file, in bytes.
 
 =h packet_filepos read-only
 
-Returns the file position of the last packet emitted, in bytes.
+Returns the (uncompressed) file position of the last packet emitted, in bytes.
+This handler is useful for elements like AggregateIPFlows that can record
+statistics about portions of a trace; with packet_filepos, they can note
+exactly where the relevant portion begins.
 
 =h extend_interval write-only
 
@@ -149,7 +152,7 @@ set to true.
 
 =a
 
-ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */
+ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2), AggregateIPFlows */
 
 class FromDump : public Element { public:
 
