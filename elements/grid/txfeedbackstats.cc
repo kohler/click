@@ -87,9 +87,24 @@ TXFeedbackStats::simple_action(Packet *p)
   default: res = TxUnknownResult;
   }
 
-  // XXX should we add 1 to each retry counter (since we count all attempts, not just retries)?
-  add_stat(EtherAddress(eh->ether_dhost), p->length(), p->timestamp_anno(), 
-	   res, (int) p->user_anno_c(3), (int) p->user_anno_c(2));
+  unsigned n_data = p->user_anno_c(3);
+  unsigned n_rts = p->user_anno_c(2);
+
+  if (res == TxOk)
+    n_data++;
+  else if (n_data > 0) {
+    // we failed, but we know we were trying to make some data
+    // transmissions, not just waiting on RTS
+    n_data++; 
+  }
+  
+  // if we know we did at least some RTS, add one to number of
+  // retries.  we won't know if we were using RTS but the first RTS
+  // always succeeds.
+  if (n_rts > 0)
+    n_rts++;
+
+  add_stat(EtherAddress(eh->ether_dhost), p->length(), p->timestamp_anno(), res, n_data, n_rts);
 
   return p;
 }
