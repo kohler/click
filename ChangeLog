@@ -1,3 +1,8 @@
+2003-11-07 Friday 15:39  Eddie Kohler <kohler@icir.org>
+
+	* config-userlevel.h.in (1.16): fix #include <cassert> (should be
+	<assert.h>)
+
 2003-11-05 Wednesday 17:23  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/: drr.cc (1.7), drr.hh (1.6), priosched.cc
