@@ -260,6 +260,19 @@ elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir
 AC_SUBST(elements_vpath)
 
 dnl
+dnl objects required by element collections
+dnl
+
+EXTRA_DRIVER_OBJS=
+EXTRA_TOOL_OBJS=
+if test "x$enable_ip6" = xyes; then
+  EXTRA_DRIVER_OBJS="ip6address.o ip6flowid.o ip6table.o $EXTRA_DRIVER_OBJS"
+  EXTRA_TOOL_OBJS="ip6address.o $EXTRA_TOOL_OBJS"
+fi
+AC_SUBST(EXTRA_DRIVER_OBJS)
+AC_SUBST(EXTRA_TOOL_OBJS)
+
+dnl
 dnl dynamic linking
 dnl
 

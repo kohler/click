@@ -34,10 +34,9 @@
 CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #include <linux/sched.h>
+#include <asm/msr.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
-
-#include <asm/msr.h>
 
 /* for hot-swapping */
 static AnyDeviceMap poll_device_map;

@@ -44,20 +44,22 @@ endif
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
-	ipaddress.o ip6address.o ipaddressset.o ip6flowid.o ipflowid.o etheraddress.o \
+	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
 	confparse.o variableenv.o lexer.o archive.o elemfilter.o \
 	routerthread.o router.o \
-	crc32.o in_cksum.o iptable.o iptable2.o ip6table.o radix.o \
-	userutils.o
+	crc32.o in_cksum.o iptable.o iptable2.o radix.o \
+	$(EXTRA_DRIVER_OBJS)
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 -include elements.mk
 
 LIBOBJS = $(GENERIC_OBJS) \
 	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
-	drivermanager.o clp.o
+	drivermanager.o userutils.o clp.o
 OBJS = $(ELEMENT_OBJS) elements.o click.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL

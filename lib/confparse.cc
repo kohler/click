@@ -27,8 +27,10 @@
 #include <click/straccum.hh>
 #include <click/ipaddress.hh>
 #include <click/ipaddressset.hh>
-#include <click/ip6address.hh>
 #include <click/etheraddress.hh>
+#ifdef HAVE_IP6
+#include <click/ip6address.hh>
+#endif
 #ifndef CLICK_TOOL
 # include <click/router.hh>
 # include "elements/standard/addressinfo.hh"
@@ -1272,6 +1274,8 @@ cp_ip_address_set(const String &str, IPAddressSet *set
 }
 
 
+#ifdef HAVE_IP6
+
 static bool
 bad_ip6_address(const String &str, unsigned char *return_value
 		CP_CONTEXT_ARG)
@@ -1450,6 +1454,8 @@ cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
 {
   return cp_ip6_prefix(str, address->data(), prefix->data(), allow_bare_address  CP_PASS_CONTEXT);
 }
+
+#endif /* HAVE_IP6 */
 
 
 bool
@@ -1974,6 +1980,7 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }     
 
+#ifdef HAVE_IP6
    case cpiIP6Address:
     if (!cp_ip6_address(arg, (unsigned char *)v->v.address))
       errh->error("%s takes IPv6 address (%s)", argname, desc);
@@ -1986,6 +1993,7 @@ default_parsefunc(cp_value *v, const String &arg,
        errh->error("%s takes IPv6 address prefix (%s)", argname, desc);
      break;
    }
+#endif
 
    case cpiEthernetAddress:
     if (!cp_ethernet_address(arg, v->v.address CP_PASS_CONTEXT))
@@ -2122,10 +2130,12 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiIPAddress:
     address_bytes = 4;
     goto address;
-    
+
+#ifdef HAVE_IP6
    case cpiIP6Address:
     address_bytes = 16;
     goto address;
+#endif
 
    case cpiEthernetAddress:
     address_bytes = 6;
@@ -2152,6 +2162,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
+#ifdef HAVE_IP6
    case cpiIP6Prefix:
    case cpiIP6AddressOrPrefix: {
      unsigned char *addrstore = (unsigned char *)v->store;
@@ -2160,6 +2171,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      memcpy(maskstore, v->v2.address, 16);
      break;
    }
+#endif
 
    case cpiIPAddressSet: {
      // oog... parse set into stored set only when we know there are no errors
@@ -2828,9 +2840,11 @@ cp_va_static_initialize()
   cp_register_argtype(cpReadHandler, "read handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiReadHandler);
   cp_register_argtype(cpWriteHandler, "write handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiWriteHandler);
 #endif
+#ifdef HAVE_IP6
   cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
   cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
   cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
+#endif
 #ifdef HAVE_IPSEC
   cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
 #endif

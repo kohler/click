@@ -48,16 +48,19 @@ endif
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
-	ipaddress.o ip6address.o ipaddressset.o ip6flowid.o ipflowid.o etheraddress.o \
+	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o \
-	crc32.o iptable.o iptable2.o ip6table.o radix.o skbmgr.o
+	crc32.o iptable.o iptable2.o radix.o skbmgr.o \
+	$(EXTRA_DRIVER_OBJS)
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
 	proc_config.o proc_element.o proc_mgr.o read-pmc.o
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 -include elements.mk
 

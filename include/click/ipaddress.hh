@@ -2,9 +2,7 @@
 #define IPADDRESS_HH
 #include <click/string.hh>
 #include <click/glue.hh>
-#ifdef CLICK_LINUXMODULE
-#include <linux/in.h>
-#endif
+#include <click/click_ip.h>
 
 class IPAddress { public:
   

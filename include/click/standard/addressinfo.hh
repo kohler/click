@@ -2,7 +2,9 @@
 #define ADDRESSINFO_HH
 #include <click/element.hh>
 #include <click/hashmap.hh>
-#include <click/ip6address.hh>
+#ifdef HAVE_IP6
+# include <click/ip6address.hh>
+#endif
 
 /*
  * =c
@@ -50,7 +52,26 @@
  * C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
  * network address, and C<NAME:eth> is always an Ethernet address. */
 
-class AddressInfo : public Element {
+class AddressInfo : public Element { public:
+  
+  AddressInfo();
+  ~AddressInfo();
+  
+  const char *class_name() const	{ return "AddressInfo"; }
+  
+  AddressInfo *clone() const		{ return new AddressInfo; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
+  int configure(const Vector<String> &, ErrorHandler *);
+
+  static bool query_ip(String, unsigned char *, Element *);
+  static bool query_ip_prefix(String, unsigned char *, unsigned char *, Element *);
+#ifdef HAVE_IP6
+  static bool query_ip6(String, unsigned char *, Element *);
+  static bool query_ip6_prefix(String, unsigned char *, int *, Element *);
+#endif
+  static bool query_ethernet(String, unsigned char *, Element *);
+
+ private:
 
   static const unsigned INFO_IP = 1;
   static const unsigned INFO_IP_PREFIX = 2;
@@ -64,8 +85,10 @@ class AddressInfo : public Element {
       unsigned u;
       unsigned char c[4];
     } ip, ip_mask;
+#ifdef HAVE_IP6
     IP6Address ip6;
     int ip6_prefix;
+#endif
     unsigned char ether[6];
     Info() : have(0) { }
   };
@@ -76,23 +99,6 @@ class AddressInfo : public Element {
   int add_info(const Vector<String> &, const String &, ErrorHandler *);
   const Info *query(const String &, unsigned, const String &) const;
   static AddressInfo *find_element(Element *);
-
- public:
-  
-  AddressInfo();
-  ~AddressInfo();
-  
-  const char *class_name() const	{ return "AddressInfo"; }
-  
-  AddressInfo *clone() const		{ return new AddressInfo; }
-  int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
-  int configure(const Vector<String> &, ErrorHandler *);
-
-  static bool query_ip(String, unsigned char *, Element *);
-  static bool query_ip_prefix(String, unsigned char *, unsigned char *, Element *);
-  static bool query_ip6(String, unsigned char *, Element *);
-  static bool query_ip6_prefix(String, unsigned char *, int *, Element *);
-  static bool query_ethernet(String, unsigned char *, Element *);
   
 };
 

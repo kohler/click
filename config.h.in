@@ -148,9 +148,9 @@ inline void *operator new(size_t, void *v) { return v; }
 #define HAVE_PLACEMENT_NEW 1
 
 /* Explicit template instances? */
-#if __GNUC__ && __GNUC_MINOR__ < 90
+#if __GNUC__ == 2 && __GNUC_MINOR__ < 90
 #define EXPLICIT_TEMPLATE_INSTANCES 1
 #endif
-#endif
+#endif /* __cplusplus */
 
 #endif /* CLICK_CONFIG_H */

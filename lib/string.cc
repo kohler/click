@@ -21,11 +21,6 @@
 
 #include <click/string.hh>
 #include <click/straccum.hh>
-#ifdef __KERNEL__
-# include <linux/ctype.h>
-#else
-# include <ctype.h>
-#endif
 #include <click/glue.hh>
 #include <assert.h>
 

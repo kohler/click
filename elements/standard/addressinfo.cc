@@ -81,7 +81,8 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	      a.have |= INFO_IP;
 	  }
 	  a.ip_mask.u = scrap.ip_mask.u;
-	  
+
+#ifdef HAVE_IP6
 	} else if (cp_ip6_address(parts[j], scrap.ip6.data())) {
 	  if ((a.have & INFO_IP6) && scrap.ip6 != a.ip6)
 	    errh->warning("\"%s\" IPv6 addresses conflict", name.cc());
@@ -104,6 +105,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	  if (!(a.have & INFO_IP6))
 	    a.ip6 = scrap.ip6;
 	  a.ip6_prefix = scrap.ip6_prefix;
+#endif /* HAVE_IP6 */
 	  
 	} else if (cp_ethernet_address(parts[j], scrap.ether)) {
 	  if ((a.have & INFO_ETHER) && memcmp(scrap.ether, a.ether, 6) != 0)
@@ -210,6 +212,9 @@ AddressInfo::query_ip_prefix(String s, unsigned char *store,
   return false;
 }
 
+
+#ifdef HAVE_IP6
+
 bool
 AddressInfo::query_ip6(String s, unsigned char *store, Element *e)
 {
@@ -245,6 +250,9 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
     }
   return false;
 }
+
+#endif /* HAVE_IP6 */
+
 
 bool
 AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
