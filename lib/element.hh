@@ -10,6 +10,8 @@ class Element;
 class ErrorHandler;
 class Bitvector;
 
+// #define CLICK_STATS 5
+
 typedef String (*ReadHandler)(Element *, void *);
 typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 

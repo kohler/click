@@ -488,10 +488,10 @@ Element::add_default_handlers(bool allow_write_config)
   add_read_handler("outputs", read_element_outputs, 0);
   add_read_handler("tickets", read_element_tickets, 0);
 #if CLICK_STATS >= 1
-  add_read_handler("icounts", element_read_icounts, 0);
-  add_read_handler("ocounts", element_read_ocounts, 0);
+  add_read_handler("icounts", read_element_icounts, 0);
+  add_read_handler("ocounts", read_element_ocounts, 0);
 # if CLICK_STATS >= 2
-  add_read_handler("cycles", element_read_cycles, 0);
+  add_read_handler("cycles", read_element_cycles, 0);
 # endif
 #endif
 }
