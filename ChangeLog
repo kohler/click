@@ -1,3 +1,10 @@
+2004-09-18 Saturday 19:17  John Bicket <jbicket@mit.edu>
+
+	* include/clicknet/wifi.h (1.9), elements/wifi/prism2decap.cc
+	(1.1), elements/wifi/prism2decap.hh (1.1),
+	elements/wifi/prism2encap.cc (1.1), elements/wifi/prism2encap.hh
+	(1.1): add prism2 encap/decap elements
+
 2004-09-16 Thursday 23:12  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: ipsumdump_anno.cc (1.3), ipsumdump_ip.cc
