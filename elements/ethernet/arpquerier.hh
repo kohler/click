@@ -58,6 +58,7 @@ class ARPQuerier : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void take_state(Element *, ErrorHandler *);
   
   void push(int port, Packet *);
   

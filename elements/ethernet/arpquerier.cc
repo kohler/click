@@ -101,6 +101,19 @@ ARPQuerier::uninitialize()
 }
 
 void
+ARPQuerier::take_state(Element *e, ErrorHandler *)
+{
+  ARPQuerier *arpq = (ARPQuerier *)e->cast("ARPQuerier");
+  if (!arpq || _my_ip != arpq->_my_ip || _my_en != arpq->_my_en)
+    return;
+
+  ARPEntry *save[NMAP];
+  memcpy(save, _map, sizeof(ARPEntry *) * NMAP);
+  memcpy(_map, arpq->_map, sizeof(ARPEntry *) * NMAP);
+  memcpy(arpq->_map, save, sizeof(ARPEntry *) * NMAP);
+}
+
+void
 ARPQuerier::expire_hook(unsigned long thunk)
 {
   ARPQuerier *arpq = (ARPQuerier *)thunk;
