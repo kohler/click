@@ -142,20 +142,22 @@ struct wifi_information {
 	} challenge;
 };
 
-
 #define WIFI_RATES_MAXSIZE              15
 #define WIFI_NWID_MAXSIZE               32
-#define	WIFI_ELEMID_SSID		0
-#define	WIFI_ELEMID_RATES		1
-#define	WIFI_ELEMID_FHPARMS		2
-#define	WIFI_ELEMID_DSPARMS		3
-#define	WIFI_ELEMID_CFPARMS		4
-#define	WIFI_ELEMID_TIM			5
-#define	WIFI_ELEMID_IBSSPARMS		6
-#define	WIFI_ELEMID_CHALLENGE		16
-#define	WIFI_ELEMID_ERP		        42
-#define	WIFI_ELEMID_VENDOR	        221
 
+enum {
+  WIFI_ELEMID_SSID	     = 0,
+  WIFI_ELEMID_RATES	     = 1,
+  WIFI_ELEMID_FHPARMS	     = 2,
+  WIFI_ELEMID_DSPARMS	     = 3,
+  WIFI_ELEMID_CFPARMS	     = 4,
+  WIFI_ELEMID_TIM	     = 5,
+  WIFI_ELEMID_IBSSPARMS	     = 6,
+  WIFI_ELEMID_CHALLENGE	     = 16,
+  WIFI_ELEMID_ERP	     = 42,
+  WIFI_ELEMID_XRATES         = 50,
+  WIFI_ELEMID_VENDOR	     = 221,
+};
 /*
  * AUTH management packets
  *
@@ -246,6 +248,7 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #define	WIFI_RATE_BASIC			0x80
 #define	WIFI_RATE_VAL			0x7f
 
+#define WIFI_RATE_SIZE             0x08
 
 #define WIFI_SEQ_FRAG_MASK                 0x000f
 #define WIFI_SEQ_FRAG_SHIFT                0
