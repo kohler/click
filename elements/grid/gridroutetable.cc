@@ -74,11 +74,6 @@ GridRouteTable::GridRouteTable() :
 GridRouteTable::~GridRouteTable()
 {
   MOD_DEC_USE_COUNT;
-  if (_log)
-    delete _log;
-
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
 }
 
 
@@ -122,7 +117,6 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("est_tx_count");
-  String logfile;
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
 			cpInteger, "route broadcast period (msec)", &_period,
@@ -136,7 +130,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
 			"METRIC", cpString, "route metric", &metric,
-			"LOGFILE", cpString, "binary log file", &logfile,
+			"LOG", cpElement, "GridLogger element", &_log,
 			0);
 
   if (res < 0)
@@ -169,10 +163,6 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
 
-  _log = GridLogger::get_log();
-  if (logfile.length() > 0) 
-    GridLogger::open_log(logfile);
-  
   return res;
 }
 
@@ -1205,37 +1195,6 @@ GridRouteTable::write_frozen(const String &arg, Element *el,
   return 0;
 }
 
-
-int
-GridRouteTable::write_start_log(const String &arg, Element *, 
-				void *, ErrorHandler *errh)
-{
-  // GridRouteTable *rt = (GridRouteTable *) el;
-  
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
-  
-  bool res = GridLogger::open_log(arg);
-  if (!res) 
-    return errh->error("unable to start logging to file %s; any previous logging has been disabled",
-		       ((String) arg).cc());
-  return 0;
-}
-
-
-int
-GridRouteTable::write_stop_log(const String &, Element *, 
-			       void *, ErrorHandler *)
-{
-  // GridRouteTable *rt = (GridRouteTable *) el;
-
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
-
-  return 0;
-}
-
-
 String
 GridRouteTable::print_links(Element *e, void *)
 {
@@ -1295,8 +1254,6 @@ GridRouteTable::add_handlers()
   add_write_handler("est_type", write_est_type, 0);
   add_read_handler("seq_delay", print_seq_delay, 0);
   add_write_handler("seq_delay", write_seq_delay, 0);
-  add_write_handler("start_log", write_start_log, 0);
-  add_write_handler("stop_log", write_stop_log, 0);
   add_read_handler("frozen", print_frozen, 0);
   add_write_handler("frozen", write_frozen, 0);
 }
@@ -1641,7 +1598,6 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 }
 
 ELEMENT_REQUIRES(userlevel)
-ELEMENT_REQUIRES(gridlogger)
 EXPORT_ELEMENT(GridRouteTable)
 
 #include <click/bighashmap.cc>

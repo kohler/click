@@ -66,13 +66,13 @@
  * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
  * use hopcount.
  *
- * =item LOGFILE
+ * =item LOG
  *
- * String.  Filename of file to log activity to in binary format.
+ * GridLogger element.  Object to log events to.
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
- * LinkStat, LinkTracker, GridGatewayInfo */
+ * LinkStat, LinkTracker, GridGatewayInfo, GridLogger */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
@@ -299,9 +299,6 @@ private:
 
   static String print_seq_delay(Element *e, void *);
   static int write_seq_delay(const String &, Element *, void *, ErrorHandler *);
-
-  static int write_start_log(const String &, Element *, void *, ErrorHandler *);
-  static int write_stop_log(const String &, Element *, void *, ErrorHandler *);
 
   static String print_frozen(Element *e, void *);
   static int write_frozen(const String &, Element *, void *, ErrorHandler *);

@@ -70,9 +70,9 @@
  * (estimated transmission count).  The default is to use estimated
  * transmission count.
  *
- * =item LOGFILE
+ * =item LOG
  *
- * String.  Filename of file to log activity to in binary format.
+ * GridLogger element.  Object to log Grid events to.
  *
  * =item WST0 (zero, not``oh'')
  * 
@@ -84,7 +84,7 @@
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
- * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable */
+ * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
@@ -229,7 +229,7 @@ private:
   class RTable _rtes;
 
   void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
-  void insert_route(const RTEntry &, const bool was_sender);
+  void insert_route(const RTEntry &, const GridLogger::reason_t why);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
@@ -313,8 +313,8 @@ private:
   void hello_hook();
 
   class Timer _log_dump_timer;
-  static void static_log_dump_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->log_dump_hook(); }
-  void log_dump_hook();
+  static void static_log_dump_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->log_dump_hook(true); }
+  void log_dump_hook(bool reschedule);
 
 
   static void static_expire_hook(Timer *, void *v) 
@@ -382,9 +382,6 @@ private:
 
   static String print_seq_delay(Element *e, void *);
   static int write_seq_delay(const String &, Element *, void *, ErrorHandler *);
-
-  static int write_start_log(const String &, Element *, void *, ErrorHandler *);
-  static int write_stop_log(const String &, Element *, void *, ErrorHandler *);
 
   static String print_frozen(Element *e, void *);
   static int write_frozen(const String &, Element *, void *, ErrorHandler *);

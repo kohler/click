@@ -42,7 +42,8 @@ ifdef(`IS_GATEWAY',
    ggi :: GridGatewayInfo(false);
 )
 
-ghi :: GridHeaderInfo
+ghi :: GridHeaderInfo;
+gl :: GridLogger(SHORT_IP true);
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 ControlSocket(tcp, CONTROL2_PORT, CONTROL2_RO);
@@ -75,9 +76,10 @@ nb :: DSDVRouteTable(ROUTE_TIMEOUT,
                      lt,
                      ls,
 		     MAX_HOPS NUM_HOPS,
-                     METRIC est_tx_count);
+                     METRIC est_tx_count,
+                     LOG gl);
 
-lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi, lt);
+lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi, lt, LOG gl);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
 
 grid_demux :: Classifier(OFFSET_GRID_PROTO/GRID_PROTO_NBR_ENCAP,    // encapsulated (data) packets
@@ -106,7 +108,7 @@ to_grid_if [0] -> FixSrcLoc(li)
                -> PingPong(ls)
                -> SetGridChecksum
 	       -> ToDevice(GRID_NET_DEVICE, SET_ERROR_ANNO true) 
-               -> GridTxError;
+               -> GridTxError(LOG gl);
 
 // linux ip layer els
 tun0 :: KernelTap(GRID_IP/GRID_NETMASK, 1.2.3.4, TUN_INPUT_HEADROOM)

@@ -71,11 +71,6 @@ DSDVRouteTable::DSDVRouteTable() :
 DSDVRouteTable::~DSDVRouteTable()
 {
   MOD_DEC_USE_COUNT;
-  if (_log)
-    delete _log;
-
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
 
   for (TMIter i = _expire_timers.first(); i; i++) {
     if (i.value()->scheduled())
@@ -123,7 +118,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
-			"LOGFILE", cpString, "binary log file", &logfile,
+			"LOG", cpElement, "GridLoggerElement", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpDouble, "alpha parameter for settling time computation", &_alpha,
 			0);
@@ -152,10 +147,6 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_link_tracker == 0 || _link_stat == 0)
     errh->warning("One or both of LinkTracker and LinkStat not specified, some metrics may not work");
 
-  _log = GridLogger::get_log();
-  if (logfile.length() > 0) 
-    GridLogger::open_log(logfile);
-  
   return res;
 }
 
@@ -229,7 +220,7 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
 }
 
 void
-DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
+DSDVRouteTable::insert_route(const RTEntry &r, const GridLogger::reason_t why)
 {
   check_invariants();
 
@@ -270,8 +261,7 @@ DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
   // note, we don't change any pending triggered update for this updated dest.
 
   if (_log)
-    _log->log_added_route(was_sender? GridLogger::WAS_SENDER : GridLogger::WAS_ENTRY, 
-			  make_generic_rte(r));
+    _log->log_added_route(why, make_generic_rte(r));
   check_invariants();
 }
 
@@ -742,7 +732,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
       new_r.need_metric_ad = true;
       schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
     }
-    insert_route(new_r, was_sender);
+    insert_route(new_r, was_sender ? GridLogger::NEW_DEST_SENDER : GridLogger::NEW_DEST);
   }
   else if (old_r->seq_no == new_r.seq_no) {
     // Accept if better route
@@ -752,7 +742,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 	new_r.need_metric_ad = true;
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
       }
-      insert_route(new_r, was_sender);
+      insert_route(new_r, was_sender ? GridLogger::BETTER_RTE_SENDER : GridLogger::BETTER_RTE);
     }
   }
   else if (old_r->seq_no < new_r.seq_no) {
@@ -761,7 +751,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
     if (metrics_differ(new_r.metric, new_r.last_adv_metric))
       new_r.need_metric_ad = true;
-    insert_route(new_r, was_sender);
+    insert_route(new_r, was_sender ? GridLogger::NEWER_SEQ_SENDER : GridLogger::NEWER_SEQ);
   }
   else {
     assert(old_r->seq_no > new_r.seq_no);
@@ -1114,30 +1104,6 @@ DSDVRouteTable::write_frozen(const String &arg, Element *el,
   return 0;
 }
 
-
-int
-DSDVRouteTable::write_start_log(const String &arg, Element *, 
-				void *, ErrorHandler *errh)
-{
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
-  
-  bool res = GridLogger::open_log(arg);
-  if (!res) 
-    return errh->error("unable to start logging to file %s; any previous logging has been disabled",
-		       ((String) arg).cc());
-  return 0;
-}
-
-int
-DSDVRouteTable::write_stop_log(const String &, Element *, 
-			       void *, ErrorHandler *)
-{
-  if (GridLogger::log_is_open())
-    GridLogger::close_log();
-  return 0;
-}
-
 String
 DSDVRouteTable::print_links(Element *e, void *)
 {
@@ -1194,8 +1160,6 @@ DSDVRouteTable::add_handlers()
   add_write_handler("metric_type", write_metric_type, 0);
   add_read_handler("est_type", print_est_type, 0);
   add_write_handler("est_type", write_est_type, 0);
-  add_write_handler("start_log", write_start_log, 0);
-  add_write_handler("stop_log", write_stop_log, 0);
   add_read_handler("frozen", print_frozen, 0);
   add_write_handler("frozen", write_frozen, 0);
 }
@@ -1359,7 +1323,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
 }
 
 void
-DSDVRouteTable::log_dump_hook()
+DSDVRouteTable::log_dump_hook(bool reschedule)
 {
   if (_log) {
     struct timeval tv;
@@ -1368,7 +1332,8 @@ DSDVRouteTable::log_dump_hook()
     get_all_entries(vec);
     _log->log_route_dump(vec, tv);
   }
-  _log_dump_timer.schedule_after_ms(_log_dump_period); 
+  if (reschedule)
+    _log_dump_timer.schedule_after_ms(_log_dump_period); 
 }
 
 void
@@ -1437,7 +1402,6 @@ DSDVRouteTable::check_invariants(const IPAddress *ignore) const
 }
 
 ELEMENT_REQUIRES(userlevel)
-ELEMENT_REQUIRES(gridlogger)
 EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>

@@ -67,11 +67,10 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GenericGridRouteTable element", &_rtes,
                         cpElement, "GridGatewayInfo element", &_gw_info,
 			cpElement, "LinkTracker element", &_link_tracker,
+			cpKeywords,
+			"LOG", cpElement, "GridLogger element", &_log,
 			0);
   _any_gateway_ip = (_ipaddr.addr() & 0xFFffFF00) | 254;
-
-  _log = GridLogger::get_log();
-
   return res;
 }
 

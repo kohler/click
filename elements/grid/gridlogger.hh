@@ -1,6 +1,54 @@
 #ifndef GRIDLOGGER_HH
 #define GRIDLOGGER_HH
 
+/*
+ * =c
+ * GridLogger(I<KEYWORDS>)
+ *
+ * =s Grid
+ * Log Grid-related events.
+ *
+ * =d 
+ * 
+ * This element provides methods which other Grid components can call
+ * to log significant protocol events.
+ *
+ * Multiple GridLogger elements can co-exist.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item LOGFILE
+ *
+ * String.  Filename of binary format log file.  If this argument is
+ * supplied, the element starts logging to the specified file as soon
+ * as the element is initialized.  Otherwise, no logging takes place
+ * until the start_log handler is called.
+ *
+ * =item SHORT_IP
+ *
+ * Boolean.  Defaults to true.  If true, only log the last byte of IP
+ * Addresses.
+ *
+ * =back
+ *
+ * =h start_log write-only
+ *
+ * When a filename is written, starts logging to that file.  Any existing logfile is closed.
+ *
+ * =h stop_log write-only
+ *
+ * Stop logging and close any open logfile.
+ *
+ * =h logfile read-only
+ *
+ * Return the filename of the current logfile, if any.  May return the empty string.
+ *
+ * =a
+ * GridRouteTable, DSDVRouteTable, GridTxError, LookupLocalGridRoute
+ */
+
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -9,15 +57,12 @@
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <click/string.hh>
+#include <click/element.hh>
 #include "grid.hh"
 #include "gridgenericrt.hh"
 
-/* this code won't work if multithreaded and more than one thread is logging */
-
-class GridLogger {
+class GridLogger : public Element {
   
-  GridLogger() : _state(WAITING), _bufptr(0) {  }
-
   enum state_t {
     WAITING,
     RECV_AD,
@@ -26,9 +71,9 @@ class GridLogger {
 
   state_t _state;
 
-  static int _fd;
-  static String _fn;
-  static bool _log_full_ip;
+  int _fd;
+  String _fn;
+  bool _log_full_ip;
   
   unsigned char _buf[1024];
   size_t _bufptr; // index of next byte available in buf
@@ -36,8 +81,8 @@ class GridLogger {
   bool check_space(size_t needed) {
     size_t avail = sizeof(_buf) - _bufptr;
     if (avail < needed) {
-      click_chatter("GridLogger: log buffer is too small.  total buf size: %u, needed at least %u",
-		    sizeof(_buf), needed + _bufptr);
+      click_chatter("GridLogger %s: log buffer is too small.  total buf size: %u, needed at least %u",
+		    id().cc(), sizeof(_buf), needed + _bufptr);
       return false;
     }
     return true;
@@ -49,8 +94,8 @@ class GridLogger {
     }
     int res = write(_fd, _buf, _bufptr);
     if (res < 0)
-      click_chatter("GridLogger: error writing log buffer: %s",
-		    strerror(errno));
+      click_chatter("GridLogger %s: error writing log buffer: %s",
+		    id().cc(), strerror(errno));
     _bufptr = 0;
   }
   void clear_buf() { _bufptr = 0; }
@@ -125,35 +170,29 @@ class GridLogger {
 
 public:
 
-  static class GridLogger *get_log() { return new GridLogger;  }
-  ~GridLogger() { }
+  GridLogger() : _state(WAITING), _fd(-1), _bufptr(0) { MOD_INC_USE_COUNT; }
 
-  static bool open_log(const String &filename, bool log_full_ip = false) {
-    if (_fd != -1)
+  ~GridLogger() { 
+    MOD_DEC_USE_COUNT;
+    if (log_is_open())
       close_log();
-
-    _log_full_ip = log_full_ip;
-    _fn = filename;
-    _fd = open(_fn.cc(), O_WRONLY | O_CREAT, 0777);
-    if (_fd == -1) {
-      click_chatter("GridLogger: unable to open log file ``%s'', %s",
-		    _fn.cc(), strerror(errno));
-      return false;
-    }
-    
-    click_chatter("GridLogger: started logging to %s", _fn.cc());
-    return true;
   }
 
-  static void close_log() {
-    if (_fd != -1) {
-      close(_fd);
-      _fd = -1;
-      click_chatter("GridLogger: stopped logging on %s", _fn.cc());
-    }
-  }
+  const char *class_name() const { return "GridLogger"; }
+  GridLogger *clone() const { return new GridLogger; }
+  int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const { return false; }
 
-  static bool log_is_open() { return _fd >= 0; } 
+  void add_handlers();
+
+  // handlers
+  static String read_logfile(Element *, void *);
+  static int write_start_log(const String &, Element *, void *, ErrorHandler *);
+  static int write_stop_log(const String &, Element *, void *, ErrorHandler *);
+
+  bool open_log(const String &);
+  void close_log();
+  bool log_is_open() { return _fd >= 0; } 
 
 private:
   static const unsigned char SENT_AD_CODE               = 0x01;
@@ -178,7 +217,15 @@ public:
     WAS_ENTRY         = 0xf2,
     BROKEN_AD         = 0xf3,
     TIMEOUT           = 0xf4,
-    NEXT_HOP_EXPIRED  = 0xf5
+    NEXT_HOP_EXPIRED  = 0xf5,
+
+    // DSDV route insertion reason codes
+    NEW_DEST          = 0xe0,
+    NEW_DEST_SENDER   = 0xe1,
+    BETTER_RTE        = 0xe2,
+    BETTER_RTE_SENDER = 0xe3,
+    NEWER_SEQ         = 0xe4,
+    NEWER_SEQ_SENDER  = 0xe5
   };
 
   void log_sent_advertisement(unsigned seq_no, struct timeval when) { 

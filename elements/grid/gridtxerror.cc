@@ -26,19 +26,28 @@ GridTxError::GridTxError()
   : Element(1, 0), _log(0)
 {
   MOD_INC_USE_COUNT;
-  _log = GridLogger::get_log();
 }
 
 GridTxError::~GridTxError() 
 {
   MOD_DEC_USE_COUNT;
-  if (_log)
-    delete _log;
 }
 
 int
 GridTxError::initialize(ErrorHandler *)
 {
+  return 0;
+}
+
+int
+GridTxError::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+  int res = cp_va_parse(conf, this, errh,
+			cpKeywords,
+			"LOG", cpElement, "GridLogger element", &_log,
+			0);
+  if (res < 0)
+    return res;
   return 0;
 }
 
@@ -50,7 +59,8 @@ GridTxError::push(int, Packet *p)
   struct timeval tv;
   gettimeofday(&tv, 0);
 
-  _log->log_tx_err(p, err, tv);
+  if (_log)
+    _log->log_tx_err(p, err, tv);
 
   p->kill();
 }

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, GridGatewayInfo, LinkTracker)
+ * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, GridGatewayInfo, LinkTracker, I<KEYWORDS>)
  *
  * =s Grid
  * =d 
@@ -25,8 +25,18 @@
  * Output 3 is the error output; it pushes out packets that are bad:
  * e.g., Grid protocol packets with an unknown type.
  *
+ * Keywords are:
+ *
+ * =over 8
+ *
+ * =item LOG
+ *
+ * GridLogger element.  Object to log events to.
+ *
+ * =back
+ *
  * =a
- * LookupGeographicGridRoute, GenericGridRouteTable, GridGatewayInfo, LinkTracker
+ * LookupGeographicGridRoute, GenericGridRouteTable, GridGatewayInfo, LinkTracker, GridLogger
  */
 
 #include <click/element.hh>

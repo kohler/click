@@ -170,7 +170,7 @@ LinkTracker::add_bcast_stat(IPAddress dst, unsigned int num_rx, unsigned int num
     return;
 
   if (num_rx > num_expected) 
-    click_chatter("LinkTracker::add_bcast_stat WARNING num_rx (%d) > num_expected (%d) for %",
+    click_chatter("LinkTracker::add_bcast_stat WARNING num_rx (%d) > num_expected (%d) for %s",
 		  num_rx, num_expected, dst.s().cc());
 
   double num_rx_ = num_rx;

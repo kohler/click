@@ -7,6 +7,12 @@
  * GridTxError
  * =s Grid
  * Reports packet transmission error to Grid logging infrastructure
+ *=d
+ * Keywords:
+ * =over 8
+ * =item LOG
+ * GridLogger element.  If no LOG is specified in the configuration, no logging will occur.
+ * =a GridLogger
  */
 
 #include <click/element.hh>
@@ -22,7 +28,7 @@ class GridTxError : public Element { public:
 
   GridTxError *clone() const { return new GridTxError; }
   int initialize(ErrorHandler *);
-  
+  int configure(Vector<String> &, ErrorHandler *);
   void push(int, Packet *);
 
 private:
