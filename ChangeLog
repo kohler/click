@@ -1,3 +1,8 @@
+2002-05-15 Wednesday 15:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.9): log more detail for dropped
+	pkts
+
 2002-05-14 Tuesday 14:35  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: fromdevice.cc (1.42), fromdevice.hh (1.23),
