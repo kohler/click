@@ -112,6 +112,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
 void
 FromDump::run_scheduled()
 {
+#ifdef HAVE_PCAP
   timeval now;
   click_gettimeofday(&now);
   if (!_timing || timercmp(&now, &_pending_pkthdr.ts, >)) {
@@ -123,6 +124,7 @@ FromDump::run_scheduled()
     reschedule();
   else
     router()->please_stop_driver();
+#endif
 }
 
 EXPORT_ELEMENT(FromDump)
