@@ -213,12 +213,12 @@
 	about packet format, logs packet size.	Needs variable size storage
 	for packet data....
 
-2004-02-25 Wednesday 22:45  Max Krohn <max@pdos.lcs.mit.edu>
+2004-02-25 Wednesday 22:45  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.3): bugfix; now you can deactivate the
 	last node in the cluster.
 
-2004-02-25 Wednesday 22:42  Max Krohn <max@pdos.lcs.mit.edu>
+2004-02-25 Wednesday 22:42  Max Krohn <krohn@mit.edu>
 
 	* conf/: click-mkclgw.pl (1.2), example.clgw (1.2): natp --> napt
 	duh
@@ -245,13 +245,13 @@
 	include/click/routerthread.hh (1.20): ensure that <linux/sched.h>
 	is included before you call wake_up_process (reported by max krohn)
 
-2004-02-24 Tuesday 07:51  Max Krohn <max@pdos.lcs.mit.edu>
+2004-02-24 Tuesday 07:51  Max Krohn <krohn@mit.edu>
 
 	* elements/ip/: siphmapper.cc (1.2), siphmapper.hh (1.2): bug
 	fixes; random () only gives ints from 0 to 2^31, so, we'll scale
 	everything down to that range.
 
-2004-02-23 Monday 01:08  Max Krohn <max@pdos.lcs.mit.edu>
+2004-02-23 Monday 01:08  Max Krohn <krohn@mit.edu>
 
 	* elements/ip/: siphmapper.cc (1.1), siphmapper.hh (1.1):
 	SourceIPHashMapper ---	load balancing mapper; performs mappings
@@ -259,7 +259,7 @@
 	that mappings are not upset (too terribly) when nodes are removed
 	from the cluster.
 
-2004-02-23 Monday 00:30  Max Krohn <max@pdos.lcs.mit.edu>
+2004-02-23 Monday 00:30  Max Krohn <krohn@mit.edu>
 
 	* conf/: click-mkclgw.pl (1.1), example.clgw (1.1): click-mkclgw --
 	Make cluster gateway.  If you have a cluster of servers in their
