@@ -411,10 +411,15 @@ AggregateIP::configure(const Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("field specification does not fit within a single word");
     if (_f.length() > 32)
 	return errh->error("too many aggregates: field length too large, max 32");
-    _n = 1 << _f.length();
+    else if (_f.length() == 32 && _incremental)
+	return errh->error("`INCREMENTAL' is incompatible with field length 32");
+    if (_f.length() == 32)
+	_mask = 0xFFFFFFFFU;
+    else
+	_mask = (1 << _f.length()) - 1;
     _offset = (_f.offset() / 32) * 4;
     _shift = 31 - right % 32;
-    //errh->message("%d, %d -> %d %d %d", _f.offset(), _f.length(), _offset, _shift, _n);
+    //errh->message("%d, %d -> %d %d %d", _f.offset(), _f.length(), _offset, _shift, _mask);
     return 0;
 }
 
@@ -462,10 +467,10 @@ AggregateIP::handle_packet(Packet *p)
 	return bad_packet(p);
 
     uint32_t udata = *((const uint32_t *)(p->data() + offset));
-    uint32_t agg = (ntohl(udata) >> _shift) & (_n - 1);
+    uint32_t agg = (ntohl(udata) >> _shift) & _mask;
 
     if (_incremental)
-	SET_AGGREGATE_ANNO(p, AGGREGATE_ANNO(p)*_n + agg);
+	SET_AGGREGATE_ANNO(p, AGGREGATE_ANNO(p)*(_mask + 1) + agg);
     else
 	SET_AGGREGATE_ANNO(p, agg);
 

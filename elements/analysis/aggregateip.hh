@@ -155,7 +155,7 @@ class AggregateIP : public Element { public:
 
     uint32_t _offset;
     uint32_t _shift;
-    uint32_t _n;
+    uint32_t _mask;
     bool _incremental;
     Field _f;
 
