@@ -1,3 +1,8 @@
+2002-10-02 Wednesday 00:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/controlsocket.cc (1.36): add call to
+	shutdown()
+
 2002-09-30 Monday 12:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridsrforwarder.cc (1.5): bug fix
