@@ -270,6 +270,7 @@ IPReassembler::simple_action(Packet *p)
     WritablePacket *q = find_queue(p, &q_pprev);
     if (!q) {			// make a new queue
 	make_queue(p, q_pprev);
+	p->kill();
 	return 0;
     }
     WritablePacket *q_bucket_next = (WritablePacket *)(q->next());
@@ -294,8 +295,8 @@ IPReassembler::simple_action(Packet *p)
 	if (!(q = q->put(want_space))) {
 	    click_chatter("out of memory");
 	    *q_pprev = q_bucket_next;
-	    p->kill();
 	    _mem_used -= IPH_MEM_USED + old_transport_length;
+	    p->kill();
 	    return 0;
 	}
 	// get rid of extra space
@@ -355,6 +356,7 @@ IPReassembler::simple_action(Packet *p)
 
     // Otherwise, done for now
     //check();
+    p->kill();
     return 0;
 }
 
