@@ -1,3 +1,24 @@
+2001-03-29 Thursday 20:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* conf/: fake-iprouter.click, test.click, vpn-rl.ipb, vpn.ipb:
+	update comment to reflect new Print output, and take advantage of
+	comments inside \<...>
+
+2001-03-29 Thursday 20:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
+2001-03-29 Thursday 20:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/lexer.hh, lib/confparse.cc, lib/lexer.cc,
+	tools/lib/lexert.cc, tools/lib/lexert.hh: support comments within
+	\<...> hex strings, and restructure confparse functions to reduce
+	the number of String operations
+
+2001-03-29 Thursday 20:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/print.cc: Print format nitlet
+
 2001-03-29 Thursday 07:57  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/standard/: drr.cc, drr.hh: Deficit round robin packet
