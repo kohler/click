@@ -1,3 +1,15 @@
+2002-02-19 Tuesday 20:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: grid.hh (1.37), gridprobereplyreceiver.cc (1.9),
+	gridroutetable.cc (1.33), gridroutetable.hh (1.18), linkstat.cc
+	(1.2), linkstat.hh (1.2), linktracker.cc (1.4), linktracker.hh
+	(1.3), pingpong.cc (1.2), pingpong.hh (1.2), timeutils.hh (1.1):
+	firther grid development.  Bumped grid protocol version again. 
+	Added broadcast delivery rate to estimation codes, based on
+	observing route ad packets on each link.  delivery rate is sent
+	back to sender via same pingpong method as signal quality and
+	strength.
+
 2002-02-17 Sunday 22:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc (1.32), gridroutetable.hh
