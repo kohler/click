@@ -8,6 +8,7 @@
 #endif
 
 class IP6Address;
+struct click_ether;
 struct click_ip;
 struct click_ip6;
 struct click_tcp;
@@ -49,9 +50,6 @@ class Packet { public:
   bool shared() const;
   Packet *clone();
   WritablePacket *uniqueify();
-#ifndef CLICK_LINUXMODULE
-  int use_count() const			{ return _use_count; }
-#endif
   
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *data() const	{ return skb()->data; }
@@ -70,17 +68,29 @@ class Packet { public:
 #endif
   
   WritablePacket *push(uint32_t nb);	// Add more space before packet.
+  WritablePacket *push_mac_header(uint32_t nb);
   Packet *nonunique_push(uint32_t nb);
   void pull(uint32_t nb);		// Get rid of initial bytes.
   WritablePacket *put(uint32_t nb);	// Add bytes to end of pkt.
   Packet *nonunique_put(uint32_t nb);
   void take(uint32_t nb);		// Delete bytes from end of pkt.
 
+  Packet *shift_data(int offset, bool free_on_failure = true);
 #ifdef CLICK_USERLEVEL
   void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
 
   // HEADER ANNOTATIONS
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  const unsigned char *mac_header() const	{ return skb()->mac.raw; }
+  const click_ether *ether_header() const	{ return (click_ether *)skb()->mac.ethernet; }
+#else			/* User space and BSD kernel module */
+  const unsigned char *mac_header() const	{ return _mac.raw; }
+  const click_ether *ether_header() const	{ return _mac.ethernet; }
+#endif
+  int mac_header_offset() const;
+  uint32_t mac_header_length() const;
+
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
@@ -108,7 +118,11 @@ class Packet { public:
 #endif
   int transport_header_offset() const;
 
+  void set_mac_header(const unsigned char *);
+  void set_mac_header(const unsigned char *, uint32_t);
+  void set_ether_header(const click_ether *);
   void set_network_header(const unsigned char *, uint32_t);
+  void set_network_header_length(uint32_t);
   void set_ip_header(const click_ip *, uint32_t);
   void set_ip6_header(const click_ip6 *);
   void set_ip6_header(const click_ip6 *, uint32_t);
@@ -173,11 +187,17 @@ class Packet { public:
 #endif
 
   static const int USER_ANNO_SIZE = 12;
+  static const int USER_ANNO_US_SIZE = 6;
+  static const int USER_ANNO_S_SIZE = 6;
   static const int USER_ANNO_U_SIZE = 3;
   static const int USER_ANNO_I_SIZE = 3;
   
   uint8_t user_anno_c(int i) const	{ return anno()->user.c[i]; }
   void set_user_anno_c(int i, uint8_t v) { anno()->user.c[i] = v; }
+  uint16_t user_anno_us(int i) const	{ return anno()->user.us[i]; }
+  void set_user_anno_us(int i, uint16_t v) { anno()->user.us[i] = v; }
+  int16_t user_anno_s(int i) const	{ return anno()->user.us[i]; }
+  void set_user_anno_s(int i, int16_t v) { anno()->user.s[i] = v; }
   uint32_t user_anno_u(int i) const	{ return anno()->user.u[i]; }
   void set_user_anno_u(int i, uint32_t v) { anno()->user.u[i] = v; }
   uint32_t *all_user_anno_u()		{ return &anno()->user.u[0]; }
@@ -198,6 +218,8 @@ class Packet { public:
     
     union {
       uint8_t c[USER_ANNO_SIZE];
+      uint16_t us[USER_ANNO_US_SIZE];
+      int16_t s[USER_ANNO_S_SIZE];
       uint32_t u[USER_ANNO_U_SIZE];
       int32_t i[USER_ANNO_I_SIZE];
     } user;
@@ -219,8 +241,14 @@ class Packet { public:
   unsigned char *_data; /* where the packet starts */
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
+#ifdef CLICK_USERLEVEL
   void (*_destructor)(unsigned char *, size_t);
+#endif
   unsigned char _cb[48];
+  union {
+    unsigned char *raw;
+    click_ether *ethernet;
+  } _mac;
   union {
     unsigned char *raw;
     click_ip *iph;
@@ -253,7 +281,8 @@ class Packet { public:
   void assimilate_mbuf();
 #endif
 
-  WritablePacket *expensive_uniqueify();
+  inline void shift_header_annotations(int32_t shift);
+  WritablePacket *expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom, bool free_on_failure);
   WritablePacket *expensive_push(uint32_t nbytes);
   WritablePacket *expensive_put(uint32_t nbytes);
   
@@ -267,6 +296,8 @@ class WritablePacket : public Packet { public:
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   unsigned char *data() const			{ return skb()->data; }
   unsigned char *buffer_data() const		{ return skb()->head; }
+  unsigned char *mac_header() const		{ return skb()->mac.raw; }
+  click_ether *ether_header() const {return (click_ether*)skb()->mac.ethernet;}
   unsigned char *network_header() const		{ return skb()->nh.raw; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
@@ -276,6 +307,8 @@ class WritablePacket : public Packet { public:
 #else				/* User-space or BSD kernel module */
   unsigned char *data() const			{ return _data; }
   unsigned char *buffer_data() const		{ return _head; }
+  unsigned char *mac_header() const		{ return _mac.raw; }
+  click_ether *ether_header() const		{ return _mac.ethernet; }
   unsigned char *network_header() const		{ return _nh.raw; }
   click_ip *ip_header() const			{ return _nh.iph; }
   click_ip6 *ip6_header() const                 { return _nh.ip6h; }
@@ -401,7 +434,7 @@ Packet::uniqueify()
   if (!shared())
     return static_cast<WritablePacket *>(this);
   else
-    return expensive_uniqueify();
+    return expensive_uniqueify(0, 0, true);
 }
 
 inline WritablePacket *
@@ -556,6 +589,58 @@ Packet::set_dst_ip_anno(IPAddress a)
 }
 
 inline void
+Packet::set_mac_header(const unsigned char *h)
+{
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  skb()->mac.raw = const_cast<unsigned char *>(h);
+#else				/* User-space and BSD kernel module */
+  _mac.raw = const_cast<unsigned char *>(h);
+#endif
+}
+
+inline void
+Packet::set_mac_header(const unsigned char *h, uint32_t len)
+{
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  skb()->mac.raw = const_cast<unsigned char *>(h);
+  skb()->nh.raw = const_cast<unsigned char *>(h) + len;
+#else				/* User-space and BSD kernel module */
+  _mac.raw = const_cast<unsigned char *>(h);
+  _nh.raw = const_cast<unsigned char *>(h) + len;
+#endif
+}
+
+inline void
+Packet::set_ether_header(const click_ether *h)
+{
+  set_mac_header(reinterpret_cast<const unsigned char *>(h), 14);
+}
+
+inline WritablePacket *
+Packet::push_mac_header(uint32_t nbytes)
+{
+  WritablePacket *q;
+  if (headroom() >= nbytes && !shared()) {
+    q = (WritablePacket *)this;
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+    __skb_push(q->skb(), nbytes);
+#else				/* User-space and BSD kernel module */
+    q->_data -= nbytes;
+# ifdef CLICK_BSDMODULE
+    q->m()->m_data -= nbytes;
+    q->m()->m_len += nbytes;
+    q->m()->m_pkthdr.len += nbytes;
+# endif
+#endif
+  } else if ((q = expensive_push(nbytes)))
+    /* nada */;
+  else
+    return 0;
+  q->set_mac_header(q->data(), nbytes);
+  return q;
+}
+
+inline void
 Packet::set_network_header(const unsigned char *h, uint32_t len)
 {
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
@@ -564,6 +649,16 @@ Packet::set_network_header(const unsigned char *h, uint32_t len)
 #else				/* User-space and BSD kernel module */
   _nh.raw = const_cast<unsigned char *>(h);
   _h.raw = const_cast<unsigned char *>(h) + len;
+#endif
+}
+
+inline void
+Packet::set_network_header_length(uint32_t len)
+{
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+  skb()->h.raw = skb()->nh.raw + len;
+#else				/* User-space and BSD kernel module */
+  _h.raw = _nh.raw + len;
 #endif
 }
 
@@ -583,6 +678,18 @@ inline void
 Packet::set_ip6_header(const click_ip6 *ip6h)
 {
   set_ip6_header(ip6h, 40);
+}
+
+inline int
+Packet::mac_header_offset() const
+{
+  return mac_header() - data();
+}
+
+inline uint32_t
+Packet::mac_header_length() const
+{
+  return network_header() - mac_header();
 }
 
 inline int
@@ -634,6 +741,7 @@ Packet::clear_annotations()
   set_packet_type_anno(HOST);
   set_device_anno(0);
   set_timestamp_anno(0, 0);
+  set_mac_header(0);
   set_network_header(0, 0);
 }
 
@@ -644,6 +752,21 @@ Packet::copy_annotations(const Packet *p)
   set_packet_type_anno(p->packet_type_anno());
   set_device_anno(p->device_anno());
   set_timestamp_anno(p->timestamp_anno());
+}
+
+inline void
+Packet::shift_header_annotations(int32_t shift)
+{
+#if CLICK_USERLEVEL || CLICK_BSDMODULE
+  _mac.raw += (_mac.raw ? shift : 0);
+  _nh.raw += (_nh.raw ? shift : 0);
+  _h.raw += (_h.raw ? shift : 0);
+#else
+  struct sk_buff *mskb = skb();
+  mskb->mac.raw += (mskb->mac.raw ? shift : 0);
+  mskb->nh.raw += (mskb->nh.raw ? shift : 0);
+  mskb->h.raw += (mskb->h.raw ? shift : 0);
+#endif
 }
 
 #endif

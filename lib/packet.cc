@@ -64,8 +64,9 @@ Packet::Packet()
   _use_count = 1;
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
+#if CLICK_USERLEVEL
   _destructor = 0;
-#ifdef CLICK_BSDMODULE	/* BSD kernel module */
+#elif CLICK_BSDMODULE
   _m = 0;
 #endif
   clear_annotations();
@@ -75,17 +76,15 @@ Packet::~Packet()
 {
   if (_data_packet)
     _data_packet->kill();
+#if CLICK_USERLEVEL
   else if (_head && _destructor)
     _destructor(_head, _end - _head);
-  else {
-#ifdef CLICK_USERLEVEL
+  else
     delete[] _head;
-#endif
-
-#ifdef CLICK_BSDMODULE
+#elif CLICK_BSDMODULE
+  else
     m_freem(_m);
 #endif
-  }
   _head = _data = 0;
 }
 
@@ -119,31 +118,35 @@ Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
     tailroom = MIN_BUFFER_LENGTH - len - headroom;
     n = MIN_BUFFER_LENGTH;
   }
-  _destructor = 0;
-#ifdef CLICK_BSDMODULE		/* BSD kernel module */
+#if CLICK_USERLEVEL
+  unsigned char *d = new unsigned char[n];
+  if (!d)
+    return false;
+  _head = d;
+  _data = d + headroom;
+  _tail = _data + len;
+  _end = _head + n;
+#elif CLICK_BSDMODULE
   if (n > MCLBYTES) {
     click_chatter("trying to allocate %d bytes: too many\n", n);
     return false;
   }
-  MGETHDR(_m, M_WAIT, MT_DATA);
-  if (!_m)
+  struct mbuf *m;
+  MGETHDR(m, M_WAIT, MT_DATA);
+  if (!m)
     return false;
   if (n > MHLEN) {
-    MCLGET(_m, M_WAIT);
-    if (!(_m->m_flags & M_EXT))
+    MCLGET(m, M_WAIT);
+    if (!(m->m_flags & M_EXT)) {
+      m_freem(m);
       return false;
+    }
   }
+  _m = m;
   _m->m_data += headroom;
   _m->m_len = len;
   _m->m_pkthdr.len = len;
   assimilate_mbuf();
-#else			/* User-space */
-  _head = new unsigned char[n];
-  if (!_head)
-    return false;
-  _data = _head + headroom;
-  _tail = _data + len;
-  _end = _head + n;
 #endif
   return true;
 }
@@ -166,83 +169,150 @@ Packet::make(uint32_t headroom, const unsigned char *data, uint32_t len,
 
 #endif /* CLICK_LINUXMODULE */
 
+
 //
 // UNIQUEIFICATION
 //
 
-#ifdef CLICK_LINUXMODULE
-
 Packet *
 Packet::clone()
 {
+#if CLICK_LINUXMODULE
+  
   struct sk_buff *nskb = skb_clone(skb(), GFP_ATOMIC);
   return reinterpret_cast<Packet *>(nskb);
+  
+#elif CLICK_USERLEVEL || CLICK_BSDMODULE
+  
+  // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
+  Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
+  if (!p)
+    return 0;
+  memcpy(p, this, sizeof(Packet));
+  p->_use_count = 1;
+  p->_data_packet = this;
+  p->_destructor = 0;
+# if CLICK_BSDMODULE
+  p->_m = 0;
+# endif
+  // increment our reference count because of _data_packet reference
+  _use_count++;
+  return p;
+  
+#endif /* CLICK_LINUXMODULE */
 }
 
 WritablePacket *
-Packet::expensive_uniqueify()
+Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
+			    bool free_on_failure)
 {
-  // XXX would be better to reallocate data, but keep current header
-  struct sk_buff *nskb = skb_copy(skb(), GFP_ATOMIC);
-  if (nskb) {
-    // all annotations, including IP header annotation, are copied,
-    // but IP header will point to garbage if old header was 0
-    if (!network_header())
-      nskb->nh.raw = nskb->h.raw = 0;
+  assert(extra_headroom >= (int32_t)(-headroom()) && extra_tailroom >= (int32_t)(-tailroom()));
+  
+#if CLICK_LINUXMODULE
+  
+  struct sk_buff *nskb = skb();
+  unsigned char *old_head = nskb->head;
+  uint32_t old_headroom = headroom(), old_length = length();
+  
+  uint32_t size = buffer_length() + extra_headroom + extra_tailroom;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+  size = ((size + 15) & ~15); 
+  unsigned char *new_data = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(atomic_t), GFP_ATOMIC));
+# else
+  size = SKB_DATA_ALIGN(size);
+  unsigned char *new_data = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
+# endif
+  if (!new_data) {
+    if (free_on_failure)
+      kill();
+    return 0;
   }
-  kill();
-  return reinterpret_cast<WritablePacket *>(nskb);
-}
+
+  unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
+  unsigned char *end_copy = old_head + buffer_length() + (extra_tailroom >= 0 ? 0 : extra_tailroom);
+  memcpy(new_data + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+  if (!nskb->cloned || atomic_dec_and_test(skb_datarefp(nskb)))
+    kfree(old_head);
+# else
+  if (!nskb->cloned || atomic_dec_and_test(&(skb_shinfo(nskb)->dataref))) {
+    assert(!skb_shinfo(nskb)->nr_frags && !skb_shinfo(nskb)->frag_list);
+    kfree(old_head);
+  }
+# endif
+  
+  nskb->head = new_data;
+  nskb->data = new_data + old_headroom + extra_headroom;
+  nskb->tail = nskb->data + old_length;
+  nskb->end = new_data + size;
+  nskb->len = old_length;
+  nskb->is_clone = 0;
+  nskb->cloned = 0;
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+  nskb->truesize = size;
+  atomic_set(skb_datarefp(nskb), 1);
+# else
+  nskb->truesize = size + sizeof(struct sk_buff);
+  atomic_set(&(skb_shinfo(nskb)->dataref), 1);
+  skb_shinfo(nskb)->nr_frags = 0;
+  skb_shinfo(nskb)->frag_list = 0;
+# endif
+
+  shift_header_annotations(nskb->head + extra_headroom - old_head);
+  return static_cast<WritablePacket *>(this);
 
 #else		/* User-level or BSD kernel module */
 
-Packet *
-Packet::clone()
-{
-    // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
-    Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
-    if (!p)
-	return 0;
-    memcpy(p, this, sizeof(Packet));
-    p->_use_count = 1;
-    p->_data_packet = this;
-    p->_destructor = 0;
-#ifdef CLICK_BSDMODULE		/* BSD kernel module */
-    p->_m = 0;
-#endif
-    // increment our reference count because of _data_packet reference
-    _use_count++;
-    return p;
-}
-
-WritablePacket *
-Packet::expensive_uniqueify()
-{
-  // XXX would be better to reallocate data, but keep current header
-  WritablePacket *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
-  if (p) {
-    p->_use_count = 1;
-    p->_data_packet = 0;
-    if (p->alloc_data(headroom(), length(), tailroom())) {
-      memcpy(p->_data, _data, _tail - _data);
-      p->copy_annotations(this);
-      if (_nh.raw) {
-	p->_nh.raw = p->_data + network_header_offset();
-	p->_h.raw = p->_data + transport_header_offset();
-      } else {
-	p->_nh.raw = 0;
-	p->_h.raw = 0;
-      }
-    } else {
-      delete p;
-      p = 0;
-    }
+  // If someone else has cloned this packet, then we need to leave its data
+  // pointers around. Make a clone and uniqueify that.
+  if (_use_count > 1) {
+    Packet *p = clone();
+    WritablePacket *q = (p ? p->expensive_uniqueify(extra_headroom, extra_tailroom, true) : 0);
+    if (q || free_on_failure)
+      kill();
+    return q;
   }
-  kill();
-  return p;
+  
+  uint8_t *old_head = _head, *old_end = _end;
+# if CLICK_BSDMODULE
+  struct mbuf *old_m = _m;
+# endif
+  
+  if (!alloc_data(headroom() + extra_headroom, length(), tailroom() + extra_tailroom)) {
+    if (free_on_failure)
+      kill();
+    return 0;
+  }
+  
+  unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
+  unsigned char *end_copy = old_end + (extra_tailroom >= 0 ? 0 : extra_tailroom);
+  memcpy(_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+
+  // free old data
+  if (_data_packet)
+    _data_packet->kill();
+# if CLICK_USERLEVEL
+  else if (_destructor)
+    _destructor(old_head, old_end - old_head);
+  else
+    delete[] old_head;
+  _destructor = 0;
+# elif CLICK_BSDMODULE
+  else
+    m_freem(old_m);
+# endif
+
+  _use_count = 1;
+  _data_packet = 0;
+  shift_header_annotations(_head + extra_headroom - old_head);
+  return static_cast<WritablePacket *>(this);
+  
+#endif /* CLICK_LINUXMODULE */
 }
 
-#endif
+
 
 #ifdef CLICK_BSDMODULE		/* BSD kernel module */
 
@@ -280,36 +350,20 @@ Packet::expensive_push(uint32_t nbytes)
                   headroom(), nbytes);
     chatter++;
   }
-  WritablePacket *q = Packet::make((nbytes + 128) & ~3, buffer_data(), buffer_length(), 0);
-  if (q) {
-    // [N+128, H+L+T, 0 / H+L+T]
+  if (WritablePacket *q = expensive_uniqueify((nbytes + 128) & ~3, 0, true)) {
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
-    sk_buff *skb = q->skb();
-    skb->data -= nbytes - headroom();
-    // [128+H, N+L+T, 0 / H+L+T]
-    skb->tail -= tailroom();
-    // [128+H, N+L, T / H+L+T]
-    skb->len += nbytes - tailroom() - headroom();
-    // [128+H, N+L, T / N+L]
+    __skb_push(q->skb(), nbytes);
 #else				/* User-space and BSD kernel module */
-    q->_data -= nbytes - headroom();
-    // [128+H, N+L+T, 0]
-    q->_tail -= tailroom();
-    // [128+H, N+L, T]
-#ifdef CLICK_BSDMODULE		/* BSD kernel module */
-    q->m()->m_data -= nbytes - headroom();
-    // [128+H, N+L+T, 0]
-    q->m()->m_len -= tailroom();
-    q->m()->m_pkthdr.len -= tailroom();
-    // [128+H, N+L, T]
+    q->_data -= nbytes;
+# ifdef CLICK_BSDMODULE
+    q->m()->m_data -= nbytes;
+    q->m()->m_len += nbytes;
+    q->m()->m_pkthdr.len += nbytes;
+# endif
 #endif
-#endif
-    q->copy_annotations(this);
-    if (network_header())
-      q->set_network_header(q->data() + network_header_offset() + nbytes, network_header_length());
-  }
-  kill();
-  return q;
+    return q;
+  } else
+    return 0;
 }
 
 WritablePacket *
@@ -321,26 +375,48 @@ Packet::expensive_put(uint32_t nbytes)
                   tailroom(), nbytes);
     chatter++;
   }
-  WritablePacket *q = Packet::make(0, buffer_data(), buffer_length(), nbytes + 128);
-  if (q) {
-#ifdef CLICK_LINUXMODULE
-    sk_buff *skb = q->skb();
-    skb->tail += nbytes - tailroom();
-    skb->data += headroom();
-    skb->len += nbytes - tailroom() - headroom();
-#else				/* User-space and BSD module */
-    q->_tail += nbytes - tailroom();
-    q->_data += headroom();
-#ifdef CLICK_BSDMODULE		/* BSD */
-    q->m()->m_len += nbytes - tailroom();
-    q->m()->m_pkthdr.len += nbytes - tailroom();
-    q->m()->m_data += headroom();
+  if (WritablePacket *q = expensive_uniqueify(0, nbytes + 128, true)) {
+#ifdef CLICK_LINUXMODULE	/* Linux kernel module */
+    __skb_put(q->skb(), nbytes);
+#else				/* User-space and BSD kernel module */
+    q->_tail += nbytes;
+# ifdef CLICK_BSDMODULE
+    q->m()->m_len += nbytes;
+    q->m()->m_pkthdr.len += nbytes;
+# endif
 #endif
+    return q;
+  } else
+    return 0;
+}
+
+
+Packet *
+Packet::shift_data(int offset, bool free_on_failure)
+{
+  if (offset == 0)
+    return this;
+  else if (!shared() && (offset < 0 ? headroom() >= (uint32_t)(-offset) : tailroom() >= (uint32_t)offset)) {
+    WritablePacket *q = static_cast<WritablePacket *>(this);
+    memmove(q->data() + offset, q->data(), q->length());
+#if CLICK_LINUXMODULE
+    struct sk_buff *mskb = q->skb();
+    mskb->data += offset;
+    mskb->tail += offset;
+#else				/* User-space and BSD kernel module */
+    q->_data += offset;
+    q->_tail += offset;
+# if CLICK_BSDMODULE
+    q->m()->m_data += offset;
+# endif
 #endif
-    q->copy_annotations(this);
-    if (network_header())
-      q->set_network_header(q->data() + network_header_offset(), network_header_length());
+    shift_header_annotations(offset);
+    return this;
+  } else {
+    if (offset < 0 && headroom() < (uint32_t)(-offset))
+      offset = -headroom() + ((uintptr_t)(data() + offset) & 7);
+    else
+      offset += ((uintptr_t)buffer_data() & 7);
+    return expensive_uniqueify(offset, 0, free_on_failure);
   }
-  kill();
-  return q;
 }
