@@ -1,3 +1,18 @@
+2003-06-10 Tuesday 02:04  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.14): testie outputs offending lines if they appear
+	to contain only text, and supports %expectx sections (all regexes)
+
+2003-06-10 Tuesday 02:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/: linuxmodule/tohost.cc (1.41), icmp/icmpsendpings.cc
+	(1.23): nit
+
+2003-06-10 Tuesday 02:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/: icmpsendpings.cc (1.22), icmpsendpings.hh (1.8):
+	support LIMIT keyword argument, and ensure that ip_id is not 0
+
 2003-06-10 Tuesday 01:16  Eddie Kohler <kohler@icir.org>
 
 	* test/: testie (1.13), FTPPortMapper/local01.testie (1.3): %expect
