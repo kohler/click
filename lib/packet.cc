@@ -31,7 +31,7 @@
 
 Packet::Packet()
 {
-  static_assert(sizeof(Anno) <= 48);
+  static_assert(sizeof(Anno) <= sizeof(((struct sk_buff *)0)->cb));
   panic("Packet constructor");
 }
 
@@ -103,9 +103,9 @@ bool
 Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 {
   unsigned n = len + headroom + tailroom;
-  if (n < MIN_TOTAL_LENGTH) {
-    tailroom = MIN_TOTAL_LENGTH - len - headroom;
-    n = MIN_TOTAL_LENGTH;
+  if (n < MIN_BUFFER_LENGTH) {
+    tailroom = MIN_BUFFER_LENGTH - len - headroom;
+    n = MIN_BUFFER_LENGTH;
   }
   _destructor = 0;
   _head = new unsigned char[n];
@@ -151,6 +151,7 @@ Packet::clone()
 WritablePacket *
 Packet::expensive_uniqueify()
 {
+  // XXX would be better to reallocate data, but keep current header
   struct sk_buff *nskb = skb_copy(skb(), GFP_ATOMIC);
   if (nskb) {
     // all annotations, including IP header annotation, are copied,
@@ -187,6 +188,7 @@ Packet::clone()
 WritablePacket *
 Packet::expensive_uniqueify()
 {
+  // XXX would be better to reallocate data, but keep current header
   WritablePacket *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
   if (p) {
     p->_use_count = 1;
@@ -230,7 +232,7 @@ Packet::expensive_push(unsigned int nbytes)
                   headroom(), nbytes);
     chatter++;
   }
-  WritablePacket *q = Packet::make((nbytes + 128) & ~3, total_data(), total_length(), 0);
+  WritablePacket *q = Packet::make((nbytes + 128) & ~3, buffer_data(), buffer_length(), 0);
   if (q) {
     // [N+128, H+L+T, 0 / H+L+T]
 #ifdef __KERNEL__
@@ -264,7 +266,7 @@ Packet::expensive_put(unsigned int nbytes)
                   tailroom(), nbytes);
     chatter++;
   }
-  WritablePacket *q = Packet::make(0, total_data(), total_length(), nbytes + 128);
+  WritablePacket *q = Packet::make(0, buffer_data(), buffer_length(), nbytes + 128);
   if (q) {
 #ifdef __KERNEL__
     sk_buff *skb = q->skb();

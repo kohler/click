@@ -15,7 +15,7 @@ class Packet { public:
 
   // PACKET CREATION
   static const unsigned DEFAULT_HEADROOM = 28;
-  static const unsigned MIN_TOTAL_LENGTH = 64;
+  static const unsigned MIN_BUFFER_LENGTH = 64;
   
   static WritablePacket *make(unsigned);
   static WritablePacket *make(const char *, unsigned);
@@ -26,7 +26,8 @@ class Packet { public:
   // Packet::make(sk_buff *) wraps a Packet around an existing sk_buff.
   // Packet now owns the sk_buff (ie we don't increment skb->users).
   static Packet *make(struct sk_buff *);
-  struct sk_buff *skb() const		{ return (struct sk_buff *)this; }
+  struct sk_buff *skb()			{ return (struct sk_buff *)this; }
+  const struct sk_buff *skb() const	{ return (const struct sk_buff*)this; }
   struct sk_buff *steal_skb()		{ return skb(); }
   void kill();
 #else
@@ -46,15 +47,15 @@ class Packet { public:
   unsigned length() const		{ return skb()->len; }
   unsigned headroom() const		{ return skb()->data - skb()->head; }
   unsigned tailroom() const		{ return skb()->end - skb()->tail; }
-  const unsigned char *total_data() const { return skb()->head; }
-  unsigned total_length() const		{ return skb()->end - skb()->head; }
+  const unsigned char *buffer_data() const { return skb()->head; }
+  unsigned buffer_length() const	{ return skb()->end - skb()->head; }
 #else
   const unsigned char *data() const	{ return _data; }
   unsigned length() const		{ return _tail - _data; }
   unsigned headroom() const		{ return _data - _head; }
   unsigned tailroom() const		{ return _end - _tail; }
-  const unsigned char *total_data() const { return _head; }
-  unsigned total_length() const		{ return _end - _head; }
+  const unsigned char *buffer_data() const { return _head; }
+  unsigned buffer_length() const	{ return _end - _head; }
 #endif
   
   WritablePacket *push(unsigned nb);	// Add more space before packet.
@@ -73,26 +74,30 @@ class Packet { public:
   const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
-  const unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   const unsigned char *network_header() const	{ return _nh.raw; }
   const click_ip *ip_header() const		{ return _nh.iph; }
   const click_ip6 *ip6_header() const           { return _nh.ip6h; }
+#endif
+  int network_header_offset() const;
+  unsigned network_header_length() const;
+  int ip_header_offset() const;
+  unsigned ip_header_length() const;
+  int ip6_header_offset() const;
+  unsigned ip6_header_length() const;
+
+#ifdef __KERNEL__
+  const unsigned char *transport_header() const	{ return skb()->h.raw; }
+#else
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
-  unsigned network_header_offset() const;
-  unsigned network_header_length() const;
-  unsigned ip_header_offset() const;
-  unsigned ip_header_length() const;
-  unsigned ip6_header_length() const;
+  unsigned transport_header_offset() const;
 
   void set_network_header(const unsigned char *, unsigned);
   void set_ip_header(const click_ip *, unsigned);
   void set_ip6_header(const click_ip6 *);
   void set_ip6_header(const click_ip6 *, unsigned);
   
-  unsigned transport_header_offset() const;
-
   // ANNOTATIONS
 
  private:
@@ -111,49 +116,48 @@ class Packet { public:
     LOOPBACK = 5, FASTROUTE = 6
   };
 
-  void copy_annotations(Packet *);
-  void clear_annotations();
-  
   IPAddress dst_ip_anno() const;
-  void set_dst_ip_anno(IPAddress a);
+  void set_dst_ip_anno(IPAddress);
   const IP6Address &dst_ip6_anno() const;
-  void set_dst_ip6_anno(const IP6Address &a);
+  void set_dst_ip6_anno(const IP6Address &);
 
 #ifdef __KERNEL__
-  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
-  void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
-  net_device *device_anno() const	{ return skb()->dev; }
-  void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
   const struct timeval &timestamp_anno() const { return skb()->stamp; }
   struct timeval &timestamp_anno()	{ return skb()->stamp; }
   void set_timestamp_anno(const struct timeval &tv) { skb()->stamp = tv; }
   void set_timestamp_anno(int s, int us) { skb()->stamp.tv_sec = s; skb()->stamp.tv_usec = us; }
+  net_device *device_anno() const	{ return skb()->dev; }
+  void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
+  PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
+  void set_packet_type_anno(PacketType p) { skb()->pkt_type = (skb()->pkt_type & PACKET_CLEAN) | p; }
+  unsigned long long perfctr_anno() const { return anno()->perfctr; }
+  void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
 #else
-  PacketType packet_type_anno() const	{ return _pkt_type; }
-  void set_packet_type_anno(PacketType p) { _pkt_type = p; }
-  net_device *device_anno() const	{ return 0; }
-  void set_device_anno(net_device *)	{ }
   const struct timeval &timestamp_anno() const { return _timestamp; }
   struct timeval &timestamp_anno()	{ return _timestamp; }
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
   void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
+  net_device *device_anno() const	{ return 0; }
+  void set_device_anno(net_device *)	{ }
+  PacketType packet_type_anno() const	{ return _pkt_type; }
+  void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
+
+  static const int USER_ANNO_SIZE = 12;
+  static const int USER_ANNO_U_SIZE = 3;
+  static const int USER_ANNO_I_SIZE = 3;
+  
+  unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
+  void set_user_anno_c(int i, unsigned char v) { anno()->user_flags.c[i] = v; }
   unsigned user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
   void set_user_anno_u(int i, unsigned v) { anno()->user_flags.u[i] = v; }
   unsigned *all_user_anno_u()		{ return &anno()->user_flags.u[0]; }
   int user_anno_i(int i) const		{ return anno()->user_flags.i[i]; }
   void set_user_anno_i(int i, int v)	{ anno()->user_flags.i[i] = v; }
-  unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
-  void set_user_anno_c(int i, unsigned char v) { anno()->user_flags.c[i] = v; }
-#ifdef __KERNEL__
-  unsigned long long perfctr_anno() const { return anno()->perfctr; }
-  void set_perfctr_anno(unsigned long long pc) { anno()->perfctr = pc; }
-#endif
-  
-  static const int USER_ANNO_U_SIZE = 3;
-  static const int USER_ANNO_I_SIZE = 3;
-  static const int USER_ANNO_SIZE = 12;
 
+  void clear_annotations();
+  void copy_annotations(const Packet *);
+  
  private:
 
   // Anno must fit in sk_buff's char cb[48].
@@ -164,9 +168,9 @@ class Packet { public:
     } dst_ip;
     
     union {
+      unsigned char c[USER_ANNO_SIZE];
       unsigned u[USER_ANNO_U_SIZE];
       int i[USER_ANNO_I_SIZE];
-      unsigned char c[USER_ANNO_SIZE];
     } user_flags;
     // flag allocations: see packet_anno.hh
     
@@ -219,12 +223,14 @@ class WritablePacket : public Packet { public:
   
 #ifdef __KERNEL__
   unsigned char *data() const			{ return skb()->data; }
+  unsigned char *buffer_data() const		{ return skb()->head; }
   unsigned char *network_header() const		{ return skb()->nh.raw; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   unsigned char *data() const			{ return _data; }
+  unsigned char *buffer_data() const		{ return _head; }
   unsigned char *network_header() const		{ return _nh.raw; }
   click_ip *ip_header() const			{ return _nh.iph; }
   click_ip6 *ip6_header() const                 { return _nh.ip6h; }
@@ -266,8 +272,11 @@ Packet::make(struct sk_buff *skb)
 {
   if (atomic_read(&skb->users) == 1)
     return reinterpret_cast<Packet *>(skb);
-  else
-    return reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
+  else {
+    Packet *p = reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
+    atomic_dec(&skb->users);
+    return p;
+  }
 }
 
 inline void
@@ -284,7 +293,7 @@ inline bool
 Packet::shared() const
 {
 #ifdef __KERNEL__
-  return skb_cloned(skb());
+  return skb_cloned(const_cast<struct sk_buff *>(skb()));
 #else
   return (_data_packet || _use_count > 1);
 #endif
@@ -392,7 +401,7 @@ Packet::take(unsigned int nbytes)
 inline void
 Packet::change_headroom_and_length(unsigned headroom, unsigned length)
 {
-  if (headroom + length <= total_length()) {
+  if (headroom + length <= buffer_length()) {
     _data = _head + headroom;
     _tail = _data + length;
   }
@@ -449,11 +458,11 @@ Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
 
 inline void
 Packet::set_ip6_header(const click_ip6 *ip6h)
-{ 
+{
   set_ip6_header(ip6h, 40);
 }
 
-inline unsigned
+inline int
 Packet::network_header_offset() const
 {
   return network_header() - data();
@@ -465,7 +474,7 @@ Packet::network_header_length() const
   return transport_header() - network_header();
 }
 
-inline unsigned
+inline int
 Packet::ip_header_offset() const
 {
   return network_header_offset();
@@ -475,6 +484,12 @@ inline unsigned
 Packet::ip_header_length() const
 {
   return network_header_length();
+}
+
+inline int
+Packet::ip6_header_offset() const
+{
+  return network_header_offset();
 }
 
 inline unsigned
@@ -490,15 +505,6 @@ Packet::transport_header_offset() const
 }
 
 inline void
-Packet::copy_annotations(Packet *p)
-{
-  *anno() = *p->anno();
-  set_packet_type_anno(p->packet_type_anno());
-  set_device_anno(p->device_anno());
-  set_timestamp_anno(p->timestamp_anno());
-}
-
-inline void
 Packet::clear_annotations()
 {
   memset(anno(), '\0', sizeof(Anno));
@@ -506,6 +512,15 @@ Packet::clear_annotations()
   set_device_anno(0);
   set_timestamp_anno(0, 0);
   set_network_header(0, 0);
+}
+
+inline void
+Packet::copy_annotations(const Packet *p)
+{
+  *anno() = *p->anno();
+  set_packet_type_anno(p->packet_type_anno());
+  set_device_anno(p->device_anno());
+  set_timestamp_anno(p->timestamp_anno());
 }
 
 #endif
