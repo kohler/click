@@ -22,6 +22,8 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
+# XXX bogus static loc DB for manually deployed nodes
+$LOC_DB = "18.26.7.1 .0006 .00005, 18.26.7.6  .0006   .00005, 18.26.7.7  .0004   .0002, 18.26.7.8  .0005   .0002, 18.26.7.9  .0002   .00007, 18.26.7.10 .0007   0, 18.26.7.11 .0003   .00003";
 $HEADROOM = "44"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "10";
 $POS_LAT = "0";
@@ -389,6 +391,7 @@ $gw_net_hex = net_to_hex($lan_net);
 open(P, "| $click");
 while(<click_config_file>) {
 
+    s/LOC_DB/$LOC_DB/;
     s/HEADROOM/$HEADROOM/;
     s/NUM_HOPS/$NUM_HOPS/;
     s/CONTROL_PORT/$CONTROL_PORT/;

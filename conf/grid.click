@@ -5,6 +5,8 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
 li :: LocationInfo(POS_LAT, POS_LON);
 
+ls :: SimpleLocQuerier(LOC_DB);
+
 // protocol els
 nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
@@ -27,7 +29,7 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
   -> Classifier(15/GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan;
 
-lr [2] -> [0] geo; // packets for geo fwding
+lr [2] -> ls -> [0] geo; // packets for geo fwding
 lr [3] -> Discard; // bad packets
 
 geo [0] -> to_wvlan;

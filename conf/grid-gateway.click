@@ -5,6 +5,8 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
 li :: LocationInfo(POS_LAT, POS_LON);
 
+ls :: SimpleLocQuerier(LOC_DB);
+
 // device interface
 eth :: FromDevice(GW_NET_DEVICE, 0);
 to_eth :: ToDevice(GW_NET_DEVICE);
@@ -34,7 +36,7 @@ geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 lr [0] -> to_wvlan;
 lr [1] -> ip_cl;
 
-lr [2] -> [0] geo; // for geographic forwarding
+lr [2] -> ls -> [0] geo; // for geographic forwarding
 lr [3] -> Discard; // too many hops, or bad protocol 
 
 geo [0] -> to_wvlan;
