@@ -1,3 +1,60 @@
+2003-07-12 Saturday 16:03  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromipsumdump.cc (1.51),
+	analysis/fromipsumdump.hh (1.28), analysis/fromnetflowsumdump.cc
+	(1.13), analysis/fromnetflowsumdump.hh (1.10),
+	standard/delayunqueue.hh (1.12), standard/frontdropqueue.cc (1.15),
+	standard/idle.cc (1.22), standard/idle.hh (1.19),
+	standard/mixedqueue.cc (1.2), standard/notifierqueue.cc (1.8),
+	standard/notifierqueue.hh (1.9), userlevel/fromdump.cc (1.79),
+	userlevel/fromdump.hh (1.46): adapt to Notifier changes
+
+2003-07-12 Saturday 16:02  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: delayshaper.cc (1.10), delayshaper.hh (1.9):
+	DelayShaper rewrite: now it behaves somewhat like DelayUnqueue, and
+	it has a Notifier too
+
+2003-07-12 Saturday 16:02  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: timesortedsched.cc (1.2), timesortedsched.hh
+	(1.5): TimeSortedSched behaves correctly with respect to notifiers
+	(I think)
+
+2003-07-12 Saturday 16:01  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: classifier.cc (1.46), classifier.hh (1.28):
+	UBYTES is an enum, to avoid problems with devirtualize
+
+2003-07-12 Saturday 15:59  Eddie Kohler <kohler@icir.org>
+
+	* include/click/notifier.hh (1.7), lib/notifier.cc (1.9): Notifier
+	rewrite to deal with intermediate Notifiers (TimeSortedSched,
+	DelayShaper). Remove AbstractNotifier; rename Notifier ->
+	ActiveNotifier; add PassiveNotifier; Notifier is the abstract base
+	class. Remove Notifier::stop_search() in favor of
+	Notifier::notifier_search_op(); return SEARCH_DONE (stop search),
+	SEARCH_CONTINUE (keep looking), or SEARCH_UPSTREAM_LISTENERS (add
+	any Task to *listeners* from upstream Notifiers, but do *not*
+	include upstream NotifierSignals in the returned Signal). Also, add
+	more methods to NotifierSignal, including always_active() and
+	conflicted().
+
+2003-07-12 Saturday 15:55  Eddie Kohler <kohler@icir.org>
+
+	* lib/router.cc (1.145): nits
+
+2003-07-12 Saturday 15:55  Eddie Kohler <kohler@icir.org>
+
+	* include/click/elemfilter.hh (1.7), lib/elemfilter.cc (1.17):
+	ElementFilter::check_match() gets told which kind of port it is
+	dealing with
+
+2003-07-12 Saturday 15:53  Eddie Kohler <kohler@icir.org>
+
+	* include/click/straccum.hh (1.26), lib/straccum.cc (1.32): add
+	StringAccum&operator<<(StringAccum&, void*)
+
 2003-07-11 Friday 19:45  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/trieiplookup.hh (1.3), include/click/hashmap.hh
