@@ -581,8 +581,13 @@ dnl
 
 AC_MSG_CHECKING(for working makeinfo)
 MAKEINFO=${MAKEINFO-makeinfo}
-if ($MAKEINFO --version) < /dev/null > /dev/null 2>&1; then
-  AC_MSG_RESULT(found)
+if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
+  if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+    AC_MSG_RESULT(found)
+  else
+    MAKEINFO="$missing_dir/missing makeinfo"
+    AC_MSG_RESULT(old)
+  fi
 else
   MAKEINFO="$missing_dir/missing makeinfo"
   AC_MSG_RESULT(missing)
@@ -590,8 +595,13 @@ fi
 
 AC_MSG_CHECKING(for working texi2dvi)
 TEXI2DVI=${TEXI2DVI-texi2dvi}
-if ($TEXI2DVI --version) < /dev/null > /dev/null 2>&1; then
-  AC_MSG_RESULT(found)
+if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
+  if test `head -1 conftest.out | sed 's/.*Texinfo \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+    AC_MSG_RESULT(found)
+  else
+    TEXI2DVI="$missing_dir/missing texi2dvi"
+    AC_MSG_RESULT(old)
+  fi
 else
   TEXI2DVI="$missing_dir/missing texi2dvi"
   AC_MSG_RESULT(missing)
