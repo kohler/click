@@ -1,3 +1,29 @@
+2004-06-09 Wednesday 22:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.5): use new Message element to print a
+	deprecation warning
+
+2004-06-09 Wednesday 22:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: messageelement.cc (1.2), messageelement.hh
+	(1.2): change syntax
+
+2004-06-09 Wednesday 22:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: messageelement.cc (1.1), messageelement.hh
+	(1.1): add Message element
+
+2004-06-09 Wednesday 22:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/errorelement.cc (1.12),
+	include/click/standard/errorelement.hh (1.9): mention Message
+
+2004-06-09 Wednesday 22:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/error.hh (1.25), lib/error.cc (1.49),
+	lib/userutils.cc (1.37): merge from liblcdf; remove
+	IndentErrorHandler; move "warning: " prepending into handle_text
+
 2004-06-09 Wednesday 21:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltap.cc (1.41): visibly deprecate element
