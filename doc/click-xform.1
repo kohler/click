@@ -2,15 +2,6 @@
 .ds V 1.0
 .ds E " \-\- 
 .if t .ds E \(em
-.de OP
-.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
-..
-.de OA
-.IR "\fB\\$1\& \|\fI\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
-..
-.de QO
-.RB ` "\\$1" "'\\$2"
-..
 .de Sp
 .if n .sp
 .if t .sp 0.4
@@ -33,7 +24,13 @@
 .Sp
 .RE
 ..
-.TH CLICK 5 "16/Oct/1999" "Version \*V"
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-XFORM 1 "16/Oct/1999" "Version \*V"
 .SH NAME
 click-xform \- pattern-based Click router configuration optimizer
 '
@@ -61,7 +58,7 @@ is missing,
 will read that file from the standard input.
 .PP
 The pattern file uses the Click language (see
-.BR click (5)).
+.M click 5 ).
 It should contain an even number of `elementclass' definitions: half are
 patterns, and half are replacements. The replacement for a pattern named 
 .RI ` pattern '
@@ -243,6 +240,9 @@ and for every connection in the pattern
 there is a connection in the configuration
 .RI "`map(" q ") [" z "] -> [" y "] " c2 "'.)"
 .RE
+'
+.SH "SEE ALSO"
+.M click 5
 '
 .SH AUTHOR
 .na

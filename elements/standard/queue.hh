@@ -6,10 +6,12 @@
 
 /*
  * =c
- * Queue(max)
+ * Queue
+ * Queue(MAX)
  * =d
  * Stores incoming packets in a first-in-first-out queue.
- * Drops incoming packets if the queue already holds max packets.
+ * Drops incoming packets if the queue already holds MAX packets.
+ * The default for MAX is 1000.
  * =a RED
  */
 

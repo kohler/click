@@ -23,19 +23,27 @@
 .Sp
 .RE
 ..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
 .TH HANDLERREGISTRY 3 "19/Oct/1999" "Version \*V"
 .SH NAME
 Element::HandlerRegistry \- Click class for registering element handlers
 '
 .SH DESCRIPTION
 The HandlerRegistry class, which is a nested class of Element (see
-Element(3)), is used by elements to register handlers. A handler is an
-access point to get information about an element, or to change its
-behavior. Handlers can be read-only, write-only, or read/write; in the
-Linux kernel module (see click.o(8)), they are implemented as files in the
-/proc/click/ELEMENT directories. The environment running the Click router
-will subclass HandlerRegistry to change how handlers are implemented; the
-default HandlerRegistry ignores every request.
+.M Element 3 ),
+is used by elements to register handlers. A handler is an access point to
+get information about an element, or to change its behavior. Handlers can
+be read-only, write-only, or read/write; in the Linux kernel module (see
+.M click.o 8 ),
+they are implemented as files in the /proc/click/ELEMENT directories. The
+environment running the Click router will subclass HandlerRegistry to
+change how handlers are implemented; the default HandlerRegistry ignores
+every request.
 .PP
 Handlers are particular types of functions. A
 .I read handler
@@ -101,7 +109,8 @@ parameters. They simply call the full versions, passing them
 for \fIname_length\fP.
 '
 .SH "SEE ALSO"
-Element(3), click.o(8)
+.M Element 3 ,
+.M click.o 8
 '
 .SH AUTHOR
 .na

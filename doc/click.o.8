@@ -1,15 +1,6 @@
 .\" -*- mode: nroff -*-
 .ds E " \-\- 
 .if t .ds E \(em
-.de OP
-.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
-..
-.de OA
-.IR "\fB\\$1\& \|\fI\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
-..
-.de QO
-.RB ` "\\$1" "'\\$2"
-..
 .de Sp
 .if n .sp
 .if t .sp 0.4
@@ -32,6 +23,12 @@
 .Sp
 .RE
 ..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
 .TH CLICK.O 8 "19/Oct/1999" "Version \*V"
 .SH NAME
 click.o \- Click kernel module for Linux
@@ -45,13 +42,13 @@ handle them, send packets directly to devices, and send packets to Linux
 for normal processing.
 .PP
 Install the kernel module with
-.BR insmod (1):
+.M insmod 1 :
 `/sbin/insmod click.o'. Remove it with
-.BR rmmod (1):
+.M rmmod 1 :
 `/sbin/rmmod click'.
 .PP
 The module uses the /proc filesystem
-.RB ( proc (5))
+.RM ( proc 5 )
 for its API. It creates a number of files under /proc/click, some read-only
 and some read/write (writable by the superuser). You control the module by
 writing to files. For example, you install a router configuration by
@@ -60,14 +57,14 @@ writing it to /proc/click/config.
 The module does not change your machine's default networking setup until
 you write a configuration to /proc/click/config. This configuration can use
 most of Click's element classes (see
-.BR elements (n)).
+.M elements n ).
 Three kernel-only element classes control how packets are read from, and
 written to, devices:
-.BR FromDevice (n)
+.M FromDevice n
 steals packets from devices before Linux process them,
-.BR ToDevice (n)
+.M ToDevice n
 sends packets directly to devices, and
-.BR ToLinux (n)
+.M ToLinux n
 sends packets to Linux for normal processing. Removing the module or
 installing a null configuration will restore your machine's default
 networking setup.
@@ -76,8 +73,8 @@ networking setup.
 The files under /proc/click include:
 .TP 5
 .B /proc/click/config
-Read/write. Contains a Click-language description
-.RB "(see " click (5))
+Read/write. Contains a Click-language description (see
+.M click 5 )
 of the most recent router configuration, not including any run-time
 reconfiguration. Write a Click-language router description to this file to
 change the configuration.
@@ -149,17 +146,17 @@ push outputs) what they are connected to.
 '
 .PP
 Particular elements may add read-only, write-only, or read/write files to
-their directories. RED elements
-.RB "(see " RED (n))
+their directories. RED elements (see
+.M RED n )
 add read/write
 .BR min_thresh ", " max_thresh ", and " max_p
-files representing RED parameters, and Counter elements
-.RB "(see " Counter (n))
+files representing RED parameters, and Counter elements (see
+.M Counter n )
 provide read-only
 .BR count " and " rate
 files to report packet counts and the recent rate. See the element
 documentation
-.RB "(" elements (n))
+.RM ( elements n )
 for other examples.
 .PP
 The subdirectories are created even for erroneous configurations, but
@@ -167,7 +164,13 @@ element-specific files are created only if the router configuration is
 correct.
 '
 .SH "SEE ALSO"
-click(5), elements(n), FromDevice(n), ToDevice(n), ToLinux(n)
+.M insmod 1 ,
+.M rmmod 1 ,
+.M click 5 ,
+.M elements n ,
+.M FromDevice n ,
+.M ToDevice n ,
+.M ToLinux n
 '
 .SH AUTHOR
 .na

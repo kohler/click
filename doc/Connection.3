@@ -23,12 +23,19 @@
 .Sp
 .RE
 ..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
 .TH CONNECTION 3 "19/Oct/1999" "Version \*V"
 .SH NAME
 Element::Connection \- Click class for connections to elements
 '
 .SH DESCRIPTION
-The Connection class, which is a nested class of Element (see Element(n)),
+The Connection class, which is a nested class of Element (see
+.M Element n ),
 represents the element\-port pair connected to a particular port. Each
 input and output port corresponds to a Connection object, but only some of
 those objects are meaningful\*Eparticularly, push output ports and pull
@@ -79,7 +86,9 @@ on pull outputs and push inputs.
 .PD
 '
 .SH "SEE ALSO"
-Element(3), click(5), elements(n)
+.M Element 3 ,
+.M click 5 ,
+.M elements n
 '
 .SH AUTHOR
 .na

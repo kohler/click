@@ -23,6 +23,12 @@
 .Sp
 .RE
 ..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
 .de K
 .BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
 ..
@@ -127,7 +133,8 @@ Returns a Connection object corresponding to the given input or output
 port. These objects are most interesting for push outputs and pull inputs;
 for them, the Connection points to the unique element\-port pair that it is
 connected to. The Connection has methods for pushing packets to, and
-pulling packets from, that other element. See Connection(3).
+pulling packets from, that other element. See
+.M Connection 3 .
 '
 .Sp
 .TP
@@ -234,9 +241,12 @@ not be identical\*Efor example, an encapsulator might create and emit a new
 packet. This information is used for flow-based router context. If you
 aren't sure about the right flow pattern for a particular element, set up
 simple examples that would involve flow-based router context (for example,
-a RED(n) element before the input port in question and a Queue(n) element
-after the output port) and see how they work. The default implementation
-returns an
+a
+.M RED n
+element before the input port in question and a
+.M Queue n
+element after the output port) and see how they work. The default
+implementation returns an
 .RK all- true
 Bitvector.
 '
@@ -345,11 +355,12 @@ that would be passed to
 .BR configure() ;
 if reconfiguration succeeds, the element's state should be as if it were
 given that configuration string from the beginning. For example,
-reconfiguring a Queue(n) with an empty string does not keep the Queue's
-current maximum length, but reconfigures it with the default maximum length
-of 1000. However, packet-related state can and should be retained:
-reconfiguring a Queue keeps its packet contents, or as many packets as will
-fit in the new Queue.
+reconfiguring a
+.M Queue n
+with an empty string does not keep the Queue's current maximum length, but
+reconfigures it with the default maximum length of 1000. However,
+packet-related state can and should be retained: reconfiguring a Queue
+keeps its packet contents, or as many packets as will fit in the new Queue.
 .Sp
 Any errors should be reported to the \fIerrh\fP ErrorHandler. Should return
 0 if the live reconfiguration succeeded, or negative if an error occurred.
@@ -368,14 +379,18 @@ Called on every element during Router initialization. Called after every
 element has been successfully
 .BR initialize() d.
 Should call functions on the HandlerRegistry \fIregistry\fP (see
-HandlerRegistry(3)) to add handlers for the element. Handlers are user
-access points that return information about the element, or change its
-behavior. They are identified by name, and may be read-only, write-only, or
-read/write; in the Linux kernel module (see click.o(8)), they are
-implemented as files in a /proc/click/ELEMENT directory. The default
-implementation adds "class", "config", "inputs", "name", and "outputs"
-handlers (see click.o(8) for their descriptions). Any overriding definition
-should call the old definition,
+.M HandlerRegistry 3 )
+to add handlers for the element. Handlers are user access points that
+return information about the element, or change its behavior. They are
+identified by name, and may be read-only, write-only, or read/write; in the
+Linux kernel module (see
+.M click.o 8 ),
+they are implemented as files in a /proc/click/ELEMENT directory. The
+default implementation adds "class", "config", "inputs", "name", and
+"outputs" handlers (see
+.M click.o 8
+for their descriptions). Any overriding definition should call the old
+definition,
 .BI Element::add_handlers( registry )\fR,
 to add these default handlers as well as its own.
 '
@@ -384,9 +399,11 @@ to add these default handlers as well as its own.
 .BR "static String configuration_read_handler(" "Element *\fIe\fP,"
 .TP
 .RB "\%            void *\fIthunk\fP" )
-This generic read handler (see HandlerRegistry(3)) is provided as a
-convenience. It implements the common case where a read handler returns a
-single argument in a multi-argument configuration string. The
+This generic read handler (see 
+.M HandlerRegistry 3 )
+is provided as a convenience. It implements the common case where a read
+handler returns a single argument in a multi-argument configuration string.
+The
 .B configuration_read_handler()
 function determines the argument number by casting \fIthunk\fP to an
 integer; it decomposes the current configuration string and returns the
@@ -407,9 +424,11 @@ handler.
 .RB "\%            Element *\fIe\fP, void *\fIthunk\fP,"
 .TP
 .RB "\%            ErrorHandler *\fIerrh\fP" )
-This generic write handler (see HandlerRegistry(3)) is provided as a
-convenience. It implements the common case where a write handler changes a
-single argument in a multi-argument configuration string. The
+This generic write handler (see 
+.M HandlerRegistry 3 )
+is provided as a convenience. It implements the common case where a write
+handler changes a single argument in a multi-argument configuration string.
+The
 .B reconfigure_write_handler()
 function determines the argument number by casting \fIthunk\fP to an
 integer; it decomposes the current configuration string, replaces the
@@ -472,8 +491,13 @@ implementation reports an error.
 .PD
 '
 .SH "SEE ALSO"
-Connection(3), HandlerRegistry(3), click(5), click.o(8), elements(n),
-Queue(n)
+.M Connection 3 ,
+.M HandlerRegistry 3 ,
+.M click 5 ,
+.M click.o 8 ,
+.M elements n ,
+.M Queue n ,
+.M RED n
 '
 .SH AUTHOR
 .na
