@@ -348,7 +348,7 @@ Can't find $linuxdir/System.map!
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-[if grep ptype_dispatch $linuxdir/System.map >/dev/null 2>&1; then
+[if grep register_net_in $linuxdir/System.map >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
