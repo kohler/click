@@ -100,7 +100,7 @@ while (<grid_config>) {
 	$LOC_AWARE = $1;
     }
 
-    if (/LOC_TAG=(\w+)/) {
+    if (/TAG=(\w+)/) {
 	$LOC_TAG = $1;
     }
 
