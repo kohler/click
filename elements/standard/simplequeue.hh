@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_SIMPLEQUEUE_HH
 #define CLICK_SIMPLEQUEUE_HH
 #include <click/element.hh>
@@ -54,47 +55,48 @@ When written, drops all packets in the Queue.
 
 class SimpleQueue : public Element, public Storage { public:
 
-  SimpleQueue();
-  ~SimpleQueue();
+    SimpleQueue();
+    ~SimpleQueue();
   
-  int drops() const				{ return _drops; }
-  int highwater_length() const			{ return _highwater_length; }
+    int drops() const				{ return _drops; }
+    int highwater_length() const		{ return _highwater_length; }
   
-  void enq(Packet *);
-  void lifo_enq(Packet *);
-  Packet *deq();
-  Packet *head() const;
-  
-  Vector<Packet *> yank(bool (filter)(const Packet *, void *), void *);
+    void enq(Packet *);
+    void lifo_enq(Packet *);
+    Packet *deq();
+    Packet *head() const;
 
-  const char *class_name() const		{ return "SimpleQueue"; }
-  const char *processing() const		{ return PUSH_TO_PULL; }
-  void *cast(const char *);
-  SimpleQueue *clone() const			{ return new SimpleQueue; }
-  
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  bool can_live_reconfigure() const		{ return true; }
-  int live_reconfigure(Vector<String> &, ErrorHandler *);
-  void take_state(Element *, ErrorHandler *);
-  void add_handlers();
-  
-  void push(int port, Packet *);
-  Packet *pull(int port);
-  
- private:
-  
-  Packet **_q;
-  int _drops;
-  int _highwater_length;
+    template <typename Filter> Packet *yank1(Filter);
+    template <typename Filter> int yank(Filter, Vector<Packet *> &);
 
-  friend class FrontDropQueue;
-  friend class NotifierQueue;
-  friend class MixedQueue;
+    const char *class_name() const		{ return "SimpleQueue"; }
+    const char *processing() const		{ return PUSH_TO_PULL; }
+    void *cast(const char *);
+    SimpleQueue *clone() const			{ return new SimpleQueue; }
+  
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    bool can_live_reconfigure() const		{ return true; }
+    int live_reconfigure(Vector<String> &, ErrorHandler *);
+    void take_state(Element *, ErrorHandler *);
+    void add_handlers();
+  
+    void push(int port, Packet *);
+    Packet *pull(int port);
+  
+  private:
+  
+    Packet **_q;
+    int _drops;
+    int _highwater_length;
 
-  static String read_handler(Element *, void *);
-  static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    friend class FrontDropQueue;
+    friend class NotifierQueue;
+    friend class MixedQueue;
+
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
   
 };
 
@@ -102,46 +104,93 @@ class SimpleQueue : public Element, public Storage { public:
 inline void
 SimpleQueue::enq(Packet *p)
 {
-  assert(p);
-  int next = next_i(_tail);
-  if (next != _head) {
-    _q[_tail] = p;
-    _tail = next;
-  } else
-    p->kill();
+    assert(p);
+    int next = next_i(_tail);
+    if (next != _head) {
+	_q[_tail] = p;
+	_tail = next;
+    } else
+	p->kill();
 }
 
 inline void
 SimpleQueue::lifo_enq(Packet *p)
 {
-  // XXX NB: significantly more dangerous in a multithreaded environment
-  // than plain (FIFO) enq().
-  assert(p);
-  int prev = prev_i(_head);
-  if (prev == _tail) {
-    _tail = prev_i(_tail);
-    _q[_tail]->kill();
-  }
-  _q[prev] = p;
-  _head = prev;
+    // XXX NB: significantly more dangerous in a multithreaded environment
+    // than plain (FIFO) enq().
+    assert(p);
+    int prev = prev_i(_head);
+    if (prev == _tail) {
+	_tail = prev_i(_tail);
+	_q[_tail]->kill();
+    }
+    _q[prev] = p;
+    _head = prev;
 }
 
 inline Packet *
 SimpleQueue::deq()
 {
-  if (_head != _tail) {
-    Packet *p = _q[_head];
-    assert(p);
-    _head = next_i(_head);
-    return p;
-  } else
-    return 0;
+    if (_head != _tail) {
+	Packet *p = _q[_head];
+	assert(p);
+	_head = next_i(_head);
+	return p;
+    } else
+	return 0;
 }
 
 inline Packet *
 SimpleQueue::head() const
 {
-  return (_head != _tail ? _q[_head] : 0);
+    return (_head != _tail ? _q[_head] : 0);
+}
+
+template <typename Filter>
+Packet *
+SimpleQueue::yank1(Filter filter)
+    /* Remove from the queue and return the first packet that matches
+       'filter(Packet *)'. The returned packet must be deallocated by the
+       caller. */
+{
+    for (int trav = _head; trav != _tail; trav = next_i(trav))
+	if (filter(_q[trav])) {
+	    Packet *p = _q[trav];
+	    int prev = prev_i(trav);
+	    while (trav != _head) {
+		_q[trav] = _q[prev];
+		trav = prev;
+		prev = prev_i(prev);
+	    }
+	    _head = next_i(_head);
+	    return p;
+	}
+    return 0;
+}
+
+template <typename Filter>
+int
+SimpleQueue::yank(Filter filter, Vector<Packet *> &yank_vec)
+    /* Removes from the queue and adds to 'yank_vec' all packets in the queue
+       that match 'filter(Packet *)'. Packets are added to 'yank_vec' in LIFO
+       order, so 'yank_vec.back()' will equal the first packet in the queue
+       that matched 'filter()'. Caller should deallocate any packets returned
+       in 'yank_vec'. Returns the number of packets yanked. */
+{
+    int write_ptr = _tail;
+    int nyanked = 0;
+    for (int trav = _tail; trav != _head; ) {
+	trav = prev_i(trav);
+	if (filter(_q[trav])) {
+	    yank_vec.push_back(_q[trav]);
+	    nyanked++;
+	} else {
+	    write_ptr = prev_i(write_ptr);
+	    _q[write_ptr] = _q[trav];
+	}
+    }
+    _head = write_ptr;
+    return nyanked;
 }
 
 CLICK_ENDDECLS

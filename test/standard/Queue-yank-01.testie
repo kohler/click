@@ -1,0 +1,9 @@
+%script
+click -e '
+Idle -> q::Queue(6) -> Idle
+qyt::QueueYankTest(q)
+DriverManager(wait 0.1, stop)
+'
+
+%expect stderr
+qyt :: QueueYankTest: All tests pass!

@@ -171,6 +171,7 @@ SimpleQueue::pull(int)
   return deq();
 }
 
+#if 0
 Vector<Packet *>
 SimpleQueue::yank(bool (filter)(const Packet *, void *), void *thunk)
 {
@@ -192,6 +193,7 @@ SimpleQueue::yank(bool (filter)(const Packet *, void *), void *thunk)
 
   return v;
 }
+#endif
 
 
 String
