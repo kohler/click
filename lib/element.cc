@@ -83,19 +83,6 @@ Element::declaration() const
   return (_id ? _id + " :: " : String("")) + class_name();
 }
 
-String
-Element::context_message(const String &message) const
-{
-  String s;
-  if (_landmark)
-    s = _landmark + ": " + message;
-  else
-    s = message;
-  if (message)
-    s += " ";
-  return s + "`" + declaration() + "':";
-}
-
 // INPUTS AND OUTPUTS
 
 void

@@ -57,6 +57,7 @@ distclean:
 DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE README \
 	doc/Makefile.in doc/click.5 doc/click.o.8 doc/click-xform.1 \
 	doc/element2man.pl \
+	doc/Element.3 doc/Connection.3 \
 	conf/make-ip-conf.pl conf/ip.clickpat \
 	conf/fake-iprouter.click \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \

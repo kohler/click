@@ -662,7 +662,12 @@ Router::upstream_elements(Element *first_element, Vector<Element *> &results)
 String
 Router::context_message(int element_no, const char *message) const
 {
-  return _elements[element_no]->context_message(message);
+  Element *e = _elements[element_no];
+  String s;
+  if (e->landmark())
+    s = e->landmark() + ": ";
+  s += String(message) + " `" + e->declaration() + "':";
+  return s;
 }
 
 int

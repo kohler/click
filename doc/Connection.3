@@ -1,0 +1,89 @@
+.\" -*- mode: nroff -*-
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.TH CONNECTION 3 "19/Oct/1999" "Version \*V"
+.SH NAME
+Element::Connection \- Click class for connections to elements
+'
+.SH DESCRIPTION
+The Connection class, which is a nested class of Element (see Element(n)),
+represents the element\-port pair connected to a particular port. Each
+input and output port corresponds to a Connection object, but only some of
+those objects are meaningful\*Eparticularly, push output ports and pull
+input ports.
+.PP
+The interesting methods of Connection are:
+.PP
+'
+.PD 0
+.TP 5
+.BR "operator bool() const"
+Returns
+.B true
+iff the Connection is a pull input or a push output. The system ensures
+that every such connection has a unique endpoint. Pull outputs and push
+inputs can be connected an arbitrary number of times, or possibly not at
+all.
+'
+.Sp
+.TP
+.BR "void push(" "Packet *\fIp" ") const"
+Pushes the packet \fIp\fR to the Connection's other endpoint. Requires that
+the Connection is a push output. Roughly equivalent to 
+.nf
+\%     element()->push(p, port());
+.fi
+'
+.Sp
+.TP
+.BR "Packet *pull() const"
+Pulls a packet from the Connection's other endpoint and returns it.
+Requires that the Connection is a pull input. Roughly equivalent to
+.nf
+\%     return element()->pull(port());
+.fi
+'
+.Sp
+.TP
+.BR "Element *element() const"
+Returns the element on the other endpoint of the Connection. Returns 0 on
+pull outputs and push inputs.
+'
+.Sp
+.TP
+.BR "int port() const"
+Returns the port number of the other endpoint of the Connection. Returns -1
+on pull outputs and push inputs.
+.PD
+'
+.SH "SEE ALSO"
+Element(3), click(5), elements(n)
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

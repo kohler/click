@@ -23,6 +23,12 @@
 .Sp
 .RE
 ..
+.de K
+.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de RK
+.RB "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
 .TH ELEMENT 3 "19/Oct/1999" "Version \*V"
 .SH NAME
 Element \- Click superclass for elements
@@ -33,9 +39,80 @@ The C++ class Element is the superclass for all Click elements. This manual
 page describes its operations\*Especifically, the operations that an author
 of an Element subclass might use.
 '
-.SH "INPUT AND OUTPUT PORTS"
-.TP 5
+.SH "CREATION"
 .PD 0
+.TP 5
+.BR "Element()"
+The default Element constructor. Creates an Element with no inputs or
+outputs. Every Element subclass should have a default constructor.
+.Sp
+.TP
+.BR "Element(" "int \fIninputs\fP, int \fInoutputs\fP" )
+Creates an Element with \fIninputs\fP input ports and \fInoutputs\fP output
+ports.
+.Sp
+.TP
+.BR "virtual Element *clone() const"
+Should create and return a new element with the same class as this element.
+The new element need not have the same configuration or private data as
+this element, however. No default implementation.
+.PD
+'
+.SH "IDENTIFICATION"
+.PD 0
+.TP 5
+.BR "virtual const char *class_name() const"
+Should return the element's class name as a C string. No default
+implementation.
+'
+.Sp
+.TP
+.BR "virtual bool is_a(" "const char *\fIname" ") const"
+Should return
+.K true
+iff this element fits the \fIname\fP interface. \fIName\fP is most
+frequently an element class name, but could be anything. The default
+implementation returns
+.K true
+iff \fIname\fP equals
+.BR class_name() .
+'
+.Sp
+.TP
+.BR "Element *is_a_cast(" "const char *\fIname" )
+Returns
+.k this
+if
+.B "is_a(\fIname\fB)"
+is
+.k true ,
+0 otherwise. Intended to be used like this:
+.nf
+    Queue *q = (Queue *)element->is_a_cast("Queue");
+    // q will be 0 if element was not a Queue
+.fi
+'
+.Sp
+.TP
+.BR "const String &id() const"
+Returns the element's name as set in the configuration file.
+'
+.Sp
+.TP
+.BR "String declaration() const"
+Returns a string of the form ``\fIELEMENTNAME\fP :: \fICLASSNAME\fR''.
+'
+.Sp
+.TP
+.BR "const String &landmark() const"
+Returns a string that specifies the source file location of the element's
+declaration. At user level, has the form ``\fIFILE\fP:\fILINE\fP''; in the
+Linux kernel module, has the form ``line \fILINE\fP''.
+.PD
+'
+.SH "INPUT AND OUTPUT PORTS"
+.PD 0
+.TP 5
 .BR "int ninputs() const"
 .TP
 .BR "int noutputs() const"
@@ -47,7 +124,10 @@ Returns the number of input or output ports.
 .TP
 .BR "const Connection &output(" "int \fIport_number" ") const"
 Returns a Connection object corresponding to the given input or output
-port. See below for more on Connection objects.
+port. These objects are most interesting for push outputs and pull inputs;
+for them, the Connection points to the unique element\-port pair that it is
+connected to. The Connection has methods for pushing packets to, and
+pulling packets from, that other element. See Connection(3).
 '
 .Sp
 .TP
@@ -74,55 +154,226 @@ the number of that element's input and output ports that are used in the
 router configuration. This is one more than the maximum input or output
 port number that appears in a connection. Elements often react to these
 calls by creating or destroying ports, depending on whether they are needed
-in the router configuration.
+in the router configuration. The default implementations do nothing.
 '
 .PD
 '
-.SH "CONNECTIONS"
+.SH "ROUTER"
 '
 .PD 0
 .TP 5
-.BR "operator bool() const"
+.BR "Router *router() const"
+Returns a pointer to the Router object that this element is a part of.
+.PD
+'
+.SH "PROCESSING AND FLOW"
+'
+.PD 0
+.TP 5
+.BR "virtual void processing_vector(" "Vector<int> &\fIinput_vector\fP,"
+.TP 5
+.RB "\%            int \fIinput_offset\fP, Vector<int> &\fIoutput_vector\fP,"
+.TP 5
+.RB "\%            int \fIoutput_offset\fP" ") const"
+Should set elements of \fIinput_vector\fP and \fIoutput_vector\fP to
+indicate whether the element's input and output ports are push, pull, or
+agnostic. Specifically, this routine should set the
+.B ninputs()
+consecutive integers starting at
+.BR input_vector[input_offset] ,
+and the
+.B noutputs()
+consecutive integers starting at
+.BR output_vector[output_offset] .
+Possible values are
+.BR PUSH ", " PULL ", and " AGNOSTIC .
+If \fIn\fP is a valid input port (0 <= \fIn\fP < \fBninputs()\fP), then
+the value at
+.BR input_vector[input_offset+\fIn\fP]
+should be that port's initial processing type, and similarly for output
+ports. The default implementation sets these values based on
+.BR default_processing() .
+There's no reason to override this function unless you have more than one
+input port (output port) and those input ports (output ports) have
+different processing types.
+'
+.Sp
+.TP
+.BR "virtual Processing default_processing() const"
+Should return the element's default processing value. Possibilities are
+.BR PUSH ", " PULL ", " PUSH_TO_PULL ,
+.BR PULL_TO_PUSH ", and " AGNOSTIC .
+The default implementation returns
+.BR AGNOSTIC .
+This function is used by the default implementation of
+.BR processing_vector() .
+'
+.Sp
+.TP
+.BR "bool output_is_push(" "int \fIport_number" ") const"
+.TP
+.BR "bool input_is_pull(" "int \fIport_number" ") const"
 Returns
-.B true
-iff the Connection is a pull input or a push output. The system ensures
-that every such connection has a unique endpoint. Pull outputs and push
-inputs can be connected an arbitrary number of times, or possibly not at
-all.
+.K true
+iff the given output port (input port) is push (pull).
 '
 .Sp
 .TP
-.BR "void push(" "Packet *\fIp" ") const"
-Pushes the packet \fIp\fR to the Connection's other endpoint. Requires that
-the Connection is a push output. Roughly equivalent to 
-.nf
-\%     element()->push(p, port());
-.fi
+.BR "virtual Bitvector forward_flow(" "int \fIinput_number" ") const"
+Should return the element's internal forward flow pattern. This is a
+Bitvector with
+.BR noutputs()
+bits; its \fIn\fPth bit should be
+.K true
+iff a packet entering the element on input port \fIinput_number\fP could
+eventually be emitted on output port \fIn\fP. (Equivalently, it should be
+.K true
+iff a packet emitted on output port \fIn\fP could have come from input port
+\fIinput_number\fP.) The packet received and the packet transmitted need
+not be identical\*Efor example, an encapsulator might create and emit a new
+packet. This information is used for flow-based router context. If you
+aren't sure about the right flow pattern for a particular element, set up
+simple examples that would involve flow-based router context (for example,
+a RED(n) element before the input port in question and a Queue(n) element
+after the output port) and see how they work. The default implementation
+returns an
+.RK all- true
+Bitvector.
 '
 .Sp
 .TP
-.BR "Packet *pull() const"
-Pulls a packet from the Connection's other endpoint and returns it.
-Requires that the Connection is a pull input. Roughly equivalent to
-.nf
-\%     return element()->pull(port());
-.fi
+.BR "virtual Bitvector backward_flow(" "int \fIoutput_number" ") const"
+Should return the element's internal backward flow pattern. This is the
+dual of
+.BR forward_flow() .
+Specifically, it is a 
+Bitvector with
+.BR ninputs()
+bits; the bit
+.B backward_flow(\fIpo\fP)[\fIpi\fP]
+should be
+.K true
+iff the bit
+.B forward_flow(\fIpi\fP)[\fIpo\fP]
+is
+.K true .
+The default implementation returns an
+.RK all- true
+Bitvector.
+'
+.PD
+.SH "CONFIGURATION AND INITIALIZATION"
+'
+.PD 0
+.TP 5
+.BR "virtual int configure(" "const String &\fIconfig_string\fP,"
+.TP
+.RB "\%            ErrorHandler *\fIerrh\fP" )
+Called on every element during Router initialization. The
+\fIconfig_string\fP parameter contains the element's configuration string.
+The element should parse this string and change its private state
+accordingly, reporting any errors, warnings or messages to the \fIerrh\fP
+ErrorHandler. Its return value should be 0 if configuration succeeded, or
+negative if an error occurred. The default implementation reports an error
+unless \fIconfig_string\fP is empty.
+.Sp
+Most
+.B configure()
+functions create or destroy input or output ports and set private instance
+variables. The router has not yet been connected when
+.B configure()
+is called, so it cannot examine flow-based router context or the
+personalities of its ports. In general, it should examine and change only
+local element state; anything outside the element (devices or files, for
+example) should be examined and changed in the
+.B initialize()
+method. This is so
+.B configure()
+can run in a user-level tool, or some other context where outside-element
+state does not exist.
+.PD 0
 '
 .Sp
 .TP
-.BR "Element *element() const"
-Returns the element on the other endpoint of the Connection. Returns 0 on
-pull outputs and push inputs.
+.BR "virtual int initialize(" "ErrorHandler *\fIerrh" )
+Called on every element during Router initialization, after
+.BR configure() . 
+The element can react by initializing itself. It should report any errors,
+warnings or messages to the \fIerrh\fP ErrorHandler. Its return value
+should be 0 if initialization succeeded, or negative if an error occurred.
+The default implementation always succeeds.
+.Sp
+.B initialize()
+is called after the router has been connected, so it can examine flow-based
+router context and the processing types of its ports. The
+.B initialize()
+function can also examine and change state outside the element itself
+(devices or files, for example).
 '
 .Sp
 .TP
-.BR "int port() const"
-Returns the port number of the other endpoint of the Connection. Returns -1
-on pull outputs and push inputs.
+.BR "virtual void uninitialize()"
+Called on every initialized element in a Router when the Router is
+decommissioned. This may happen long before the element itself is
+destroyed. This function should undo the work of
+.BR initialize() :
+for example, by closing files or unregistering devices.
+.PD
+.SH "PACKET PASSING"
+.PD 0
+.TP 5
+.BR "virtual void push(" "int \fIport_number\fP, Packet *\fIp" )
+Called to push a packet to this element's input port \fIport_number\fP. The
+default implementation calls
+.BR simple_action() .
+'
+.Sp
+.TP
+.BR "virtual Packet *pull(" "int \fIport_number\fP" )
+Called to pull a packet from this element's output port \fIport_number\fP.
+The default implementation calls
+.BR simple_action() .
+'
+.Sp
+.TP
+.BR "virtual Packet *simple_action(" "Packet *\fIp" )
+A simple agnostic element can implement its action with
+.BR simple_action() 
+and not have to write
+.BR push() " and " pull()
+methods.
+.BR simple_action()
+is called when a packet passes through the element; that packet is its
+parameter. The element can modify the packet, return a different packet, or
+return 0 for no packet. (If it returns 0 or a different packet, it is
+responsible for freeing the input packet with `p->kill()'.) The default
+implementation just returns \fIp\fP.
+.PD
+.SH "WORK LIST"
+.PD 0
+.TP 5
+.BR "void schedule_tail()"
+Schedules this element at the end of the work list. If the element is
+already in the work list, this call does not change its position.
+'
+.Sp
+.TP
+.BR "void unschedule()"
+Removes this element from the work list. Does nothing if the element isn't
+on the work list.
+'
+.Sp
+.TP
+.BR "virtual void run_scheduled()"
+Called by the Router to run an element that was placed on the work list.
+Within this function, an element can schedule itself or other elements with
+.BR schedule_tail() ;
+they will be run the next time the work list is executed. The default
+implementation reports an error.
 .PD
 '
 .SH "SEE ALSO"
-click(5), elements(n)
+Connection(3), click(5), elements(n)
 '
 .SH AUTHOR
 .na

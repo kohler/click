@@ -35,7 +35,6 @@ class Element : public ElementLink { public:
   
   const String &landmark() const		{ return _landmark; }
   void set_landmark(const String &s)		{ _landmark = s; }
-  String context_message(const String &) const;
   
   int number() const				{ return _number; }
   void set_number(int n)			{ _number = n; }
