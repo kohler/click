@@ -22,6 +22,3 @@ tun -> Strip(14)
 
 ch[0] -> Print(tun-ok) -> Discard;
 ch[1] -> Print(tun-bad) -> Discard;
-
-
-
