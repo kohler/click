@@ -102,10 +102,10 @@ BigHashMap<K, V>::Elt *
 BigHashMap<K, V>::slow_alloc()
 {
   // XXX malloc failures
-  if (_free_arena >= 0) {
+  while (_free_arena >= 0 && _free_arena < _narenas) {
     Elt *e = _arenas[_free_arena]->alloc();
-    if (e)
-      return e;
+    if (e) return e;
+    _free_arena++;
   }
 
   // add an Arena
@@ -131,8 +131,9 @@ BigHashMap<K, V>::alloc()
     Elt *e = _free;
     _free = e->next;
     return e;
-  } else
+  } else {
     return slow_alloc();
+  }
 }
 
 template <class K, class V>
@@ -277,10 +278,12 @@ BigHashMap<K, V>::clear()
     }
     _buckets[i] = 0;
   }
+  _free = 0;
   _n = 0;
   for (int i = 0; i < _narenas; i++)
     _arenas[i]->clear();
   _free_arena = (_narenas > 0 ? 0 : -1);
+  // click_chatter("clear: %d arenas, free at %d", _narenas, _free_arena);
 }
 
 template <class K, class V>
