@@ -1,10 +1,11 @@
 THE CLICK MODULAR ROUTER RELEASE 0.5
 ====================================
 
-    This is the README file for the Click source distribution of October
-19, 1999. Look for more recent information at
+    This is the README file for a preliminary, pre-beta Click source
+distribution of October 19, 1999. The first thing you should do is look for
+more recent information on the Web at
 
-  http://www.pdos.lcs.mit.edu/click/
+	http://www.pdos.lcs.mit.edu/click/
 
     Click is a modular router toolkit. To use it you'll need to know how to
 compile and install the software, how to write router configurations, and
@@ -63,3 +64,22 @@ paper (`conf/make-ip-conf.pl') and a set of patterns for the Click
 optimizer (`conf/ip.clickpat'). The configurations are presently un- or
 under-documented. Please check back to our Web site for more up-to-date
 configurations.
+
+COPYRIGHT AND LICENSE
+=====================
+
+    We are distributing Click under the GNU Public License. See the files
+`COPYRIGHT', `LICENSE' and `AUTHORS' for details.
+
+BUGS, QUESTIONS, ETC.
+=====================
+
+    We welcome bug reports, questions, comments, code, whatever you'd like
+to give us. Write us at
+
+	click@pdos.lcs.mit.edu
+
+	- The Click software team:
+	  Eddie Kohler
+	  Robert Morris
+	  John Jannotti

@@ -103,7 +103,7 @@ __assert_fail(const char *__assertion,
 	 __file,
 	 __line,
 	 __function);
-  panic("IPB assertion failed");
+  panic("Click assertion failed");
 }
 
 /*

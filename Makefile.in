@@ -54,11 +54,11 @@ distclean:
 	-rm -f config.cache config.log mkelemlist.sh
 
 
-DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE \
+DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE README \
 	doc/Makefile.in doc/click.5 doc/click.o.8 doc/click-xform.1 \
 	doc/element2man.pl \
 	conf/make-ip-conf.pl conf/ip.clickpat \
-	conf/sample.click conf/fake-iprouter.click \
+	conf/fake-iprouter.click \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \

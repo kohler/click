@@ -46,7 +46,7 @@ FromBPF::configure(const String &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
-		  cpInteger, "be promiscuous", &_promisc,
+		  cpBool, "be promiscuous", &_promisc,
 		  cpEnd) < 0)
     return -1;
 

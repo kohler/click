@@ -330,9 +330,9 @@ Lexer::lex_config()
       pos++;
     else if (_data[pos] == '/' && pos < _len - 1) {
       if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2);
+	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2);
+	pos = skip_slash_star(pos + 2) - 1;
     }
   
   _pos = pos;

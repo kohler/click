@@ -296,8 +296,8 @@ String::hashcode() const
   else if (_length < 4)
     return _data[0] + (_data[1] << 3) + (_length << 12);
   else
-    return *((const int *)_data) + (_length << 12)
-      + (_data[_length-1] << 15);
+    return _data[0] + (_data[1] << 8) + (_data[2] << 16) + (_data[3] << 24)
+      + (_length << 12) + (_data[_length-1] << 10);
 }
 
 bool

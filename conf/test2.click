@@ -1,7 +1,8 @@
 // test2.click
 
-// This slight tweak on `test.click' adds both push and pull processing,
-// and Random Early Detection dropping.
+// This version of `test.click' adds both push and pull processing,
+// and Random Early Detection dropping (although no packets are dropped
+// in this configuration).
 
 InfiniteSource(5,\<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 45 00 00 28  00 00 00 00  40 11 77 c3  01 00 00 01  

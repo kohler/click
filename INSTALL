@@ -133,7 +133,8 @@ PORTABILITY
 
 The Click system currently relies on the x86's support for unaligned
 accesses. Click may compile on non-x86 architectures that also support
-unaligned accesses. We've tested it (at user-level) on Alphas, and (a bit)
-on SPARCs running Solaris. If you try running it on such an architecture,
-please let us know how it goes.
-
+unaligned accesses. We've tested it (at user-level) on Alphas; it sort of
+works, relying on the kernel's ability to fix up misaligned accesses. The
+software compiles on on SPARCs running Solaris, but does not run, because
+of alignment. If you are interested in a fixed-up Click, please let us
+know.

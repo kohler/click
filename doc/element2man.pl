@@ -3,6 +3,7 @@
 # element2man.pl -- creates man pages from structured comments in element
 # source code
 # Eddie Kohler
+# Robert Morris - original make-faction-html script
 #
 # Copyright (c) 1999 Massachusetts Institute of Technology.
 #
