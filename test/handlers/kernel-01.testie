@@ -12,6 +12,8 @@ config :: Idle;
 i :: Idle;
 i/i1 :: Idle;
 i/name :: Idle;
+j/k/x :: Idle;
+j/k/y :: Idle;
 
 %expect HANDLERS
 /click:
