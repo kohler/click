@@ -1,3 +1,14 @@
+2005-03-15 Tuesday 18:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdump_anno.cc (1.5): the precedence of |
+	just never stops sucking.
+
+2005-03-15 Tuesday 18:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.46), configure.in (1.255),
+	etc/libclick/lc-configure.in (1.39): check for madvise under C++,
+	not C; some versions of solaris dont define it under C++
+
 2005-03-15 Tuesday 12:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ethernet/arpquerier.cc (1.51): nit
