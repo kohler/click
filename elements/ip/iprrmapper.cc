@@ -39,9 +39,9 @@ IPRoundRobinMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   
   for (int i = 0; i < conf.size(); i++) {
-    IPRewriter::Pattern *p;
+    IPRw::Pattern *p;
     int f, r;
-    if (IPRewriter::Pattern::parse_with_ports(conf[i], &p, &f, &r, this, errh) >= 0) {
+    if (IPRw::Pattern::parse_with_ports(conf[i], &p, &f, &r, this, errh) >= 0) {
       p->use();
       _patterns.push_back(p);
       _forward_outputs.push_back(f);
@@ -60,7 +60,7 @@ IPRoundRobinMapper::uninitialize()
 }
 
 void
-IPRoundRobinMapper::notify_rewriter(IPRewriter *rw, ErrorHandler *errh)
+IPRoundRobinMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
 {
   int no = rw->noutputs();
   for (int i = 0; i < _patterns.size(); i++) {
@@ -70,24 +70,21 @@ IPRoundRobinMapper::notify_rewriter(IPRewriter *rw, ErrorHandler *errh)
   }
 }
 
-IPRewriter::Mapping *
-IPRoundRobinMapper::get_map(bool tcp, const IPFlowID &flow, IPRewriter *rw)
+IPRw::Mapping *
+IPRoundRobinMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
 {
-  IPRewriter::Mapping *forward, *reverse;
   int first_pattern = _last_pattern;
   do {
-    IPRewriter::Pattern *p = _patterns[_last_pattern];
+    IPRw::Pattern *p = _patterns[_last_pattern];
     int fport = _forward_outputs[_last_pattern];
     int rport = _reverse_outputs[_last_pattern];
     _last_pattern++;
-    if (p->create_mapping(flow, fport, rport, &forward, &reverse)) {
-      rw->install(tcp, forward, reverse);
-      return forward;
-    }
+    if (IPRw::Mapping *m = rw->apply_pattern(p, fport, rport, tcp, flow))
+      return m;
   } while (_last_pattern != first_pattern);
   return 0;
 }
 
 
-ELEMENT_REQUIRES(IPRewriter)
+ELEMENT_REQUIRES(IPRw)
 EXPORT_ELEMENT(IPRoundRobinMapper)

@@ -1,6 +1,6 @@
 #ifndef FTPPORTMAPPER_HH
 #define FTPPORTMAPPER_HH
-#include "elements/ip/iprewriter.hh"
+#include "elements/ip/tcprewriter.hh"
 
 /*
  * =c
@@ -52,8 +52,8 @@
 
 class FTPPortMapper : public Element {
 
-  IPRewriter *_rewriter;
-  IPRewriter::Pattern *_pattern;
+  TCPRewriter *_rewriter;
+  IPRw::Pattern *_pattern;
   int _forward_port;
   int _reverse_port;
   

@@ -63,8 +63,9 @@ CheckTCPHeader::simple_action(Packet *p)
 
   csum = ~in_cksum((unsigned char *)tcph, len) & 0xFFFF;
 #ifdef __KERNEL__
-  if (csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
-			len, IP_PROTO_TCP, csum) != 0)
+  csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
+			   len, IP_PROTO_TCP, csum);
+  if (csum != 0)
     goto bad;
 #else
   {
@@ -86,7 +87,7 @@ CheckTCPHeader::simple_action(Packet *p)
   
  bad:
   if (_drops == 0)
-    click_chatter("TCP checksum failed");
+    click_chatter("TCP checksum failed %d", csum);
   _drops++;
   
   if (noutputs() == 2)

@@ -35,13 +35,13 @@ FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
   Element *e = cp_element(conf[0], this, errh);
   if (!e)
     return -1;
-  _rewriter = (IPRewriter *)e->cast("IPRewriter");
+  _rewriter = (TCPRewriter *)e->cast("TCPRewriter");
   if (!_rewriter)
-    return errh->error("first argument must be an IPRewriter element");
+    return errh->error("first argument must be a TCPRewriter-like element");
 
   _pattern = 0;
-  if (IPRewriter::Pattern::parse_with_ports(conf[1], &_pattern, &_forward_port,
-					    &_reverse_port, this, errh) < 0)
+  if (IPRw::Pattern::parse_with_ports(conf[1], &_pattern, &_forward_port,
+				      &_reverse_port, this, errh) < 0)
     return -1;
   _pattern->use();
   _rewriter->notify_pattern(_pattern);
@@ -114,13 +114,16 @@ FTPPortMapper::simple_action(Packet *p)
   unsigned dst_data_port = htons(ntohs(tcph->th_dport) - 1);
   IPFlowID flow(src_data_addr, src_data_port,
 		IPAddress(iph->ip_dst), dst_data_port);
-  IPRewriter::Mapping *forward, *reverse;
-  if (!_pattern->create_mapping(flow, _forward_port, _reverse_port,
-				&forward, &reverse))
-    return p;
 
-  // install mapping
-  _rewriter->install(true, forward, reverse);
+  // check for existing mapping
+  IPRw::Mapping *forward = _rewriter->get_mapping(true, flow);
+  if (!forward) {
+    // create new mapping
+    forward = _rewriter->apply_pattern(_pattern, _forward_port, _reverse_port,
+				       true, flow);
+    if (!forward)
+      return p;
+  }
 
   // rewrite PORT command to reflect mapping
   IPFlowID new_flow = forward->flow_id();
@@ -131,6 +134,8 @@ FTPPortMapper::simple_action(Packet *p)
   sprintf(buf, "%d,%d,%d,%d,%d,%d%n", (new_saddr>>24)&255, (new_saddr>>16)&255,
 	  (new_saddr>>8)&255, new_saddr&255, (new_sport>>8)&255, new_sport&255,
 	  &buflen);
+  click_chatter("%s", forward->s().cc());
+  click_chatter("%s", buf);
 
   WritablePacket *wp;
   unsigned port_arg_len = pos - port_arg_offset;
@@ -162,6 +167,19 @@ FTPPortMapper::simple_action(Packet *p)
   // set TCP checksum
   // XXX should check old TCP checksum first!!!
   click_tcp *wp_tcph = reinterpret_cast<click_tcp *>(wp->transport_header());
+
+  // update sequence numbers in old mapping
+  IPFlowID p_flow(p);
+  if (TCPRewriter::TCPMapping *p_mapping = _rewriter->get_mapping(true, p_flow)) {
+    TCPRewriter::TCPMapping *rev_mapping =
+      static_cast<TCPRewriter::TCPMapping *>(p_mapping->reverse());
+    p_mapping->update_seqno_delta(buflen - port_arg_len);
+    rev_mapping->update_ackno_delta(port_arg_len - buflen);
+    // update sequence number in this packet so TCPRewriter will fix it
+    // XXX check if _rewriter is downstream
+    wp_tcph->th_seq = htonl(ntohl(wp_tcph->th_seq) - buflen + port_arg_len);
+  }
+
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
   unsigned csum = ~in_cksum((unsigned char *)wp_tcph, wp_tcp_len) & 0xFFFF;
@@ -187,5 +205,5 @@ FTPPortMapper::simple_action(Packet *p)
   return wp;
 }
 
-ELEMENT_REQUIRES(IPRewriter)
+ELEMENT_REQUIRES(TCPRewriter)
 EXPORT_ELEMENT(FTPPortMapper)

@@ -1,6 +1,6 @@
 #ifndef IPRRMAPPER_HH
 #define IPRRMAPPER_HH
-#include "elements/ip/iprewriter.hh"
+#include "elements/ip/iprw.hh"
 
 /*
  * =c
@@ -20,7 +20,7 @@
 
 class IPRoundRobinMapper : public Element, public IPMapper {
 
-  Vector<IPRewriter::Pattern *> _patterns;
+  Vector<IPRw::Pattern *> _patterns;
   Vector<int> _forward_outputs;
   Vector<int> _reverse_outputs;
   int _last_pattern;
@@ -33,12 +33,12 @@ class IPRoundRobinMapper : public Element, public IPMapper {
   void *cast(const char *);
   
   IPRoundRobinMapper *clone() const	{ return new IPRoundRobinMapper; }
-  int configure_phase() const		{ return IPRewriter::CONFIGURE_PHASE_MAPPER; }
+  int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
   int configure(const Vector<String> &, ErrorHandler *);
   void uninitialize();
   
-  void notify_rewriter(IPRewriter *, ErrorHandler *);
-  IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);
+  void notify_rewriter(IPRw *, ErrorHandler *);
+  IPRw::Mapping *get_map(IPRw *, bool, const IPFlowID &);
   
 };
 
