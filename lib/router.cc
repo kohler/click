@@ -19,9 +19,7 @@
 #include "straccum.hh"
 #include "elemfilter.hh"
 #include "confparse.hh"
-#ifndef __KERNEL__
-# include "timer.hh"
-#endif
+#include "timer.hh"
 #include <stdarg.h>
 #include <unistd.h>
 
@@ -837,7 +835,7 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
 }
 
 
-// DRIVER
+// DRIVER 
 
 void
 Router::wait()
@@ -882,6 +880,12 @@ Router::wait()
   Timer::run_timers();
   
 #else /* __KERNEL__ */
+ 
+#ifdef HAVE_POLLING
+  /* kernel polling mode needs to run its own timers */ 
+  Timer::run_timers();
+#endif
+
   schedule();
   if (signal_pending(current)) please_stop_driver();
 #endif

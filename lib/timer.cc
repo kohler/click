@@ -17,21 +17,34 @@
 #include "element.hh"
 #include "router.hh"
 
+/*
+ * Timer::element_timer is a callback that gets called when a Timer,
+ * constructed with just an Element instance, expires. 
+ * 
+ * When this is used in kernel interrupt mode, this callback gets called in
+ * the timer_bh of the kernel. Since linux kernel bottom halves are not
+ * reentrant (i.e. only ONE bottom half handler can be executing at a time -
+ * see kernel/softirq.c), this will not cause any race conditions with
+ * router->driver() in FromDevice.
+ *
+ * When used in userlevel or kernel polling mode, timer is maintained by
+ * Click, so Timer::element_timer is called within click.
+ */
 void
 Timer::element_timer(unsigned long thunk)
 {
   Element *f = (Element *)thunk;
-  // don't do anything - just put it on the work list
+  /* put itself on the work list */
   f->join_scheduler();
 #ifdef __KERNEL__
 #ifndef HAVE_POLLING
-  // run work list
+  /* run work list */
   f->router()->driver();
 #endif
 #endif
 }
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) || defined(HAVE_POLLING)
 
 static Timer timer_head(0, (unsigned long)0);
 
@@ -109,4 +122,5 @@ Timer::get_next_delay(struct timeval *tv)
   }  
 }
 
-#endif /* !__KERNEL__ */
+#endif /* !__KERNEL__ || HAVE_POLLING */
+

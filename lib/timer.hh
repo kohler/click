@@ -5,7 +5,7 @@ class Element;
 
 typedef void (*TimerHook)(unsigned long);
 
-#ifdef __KERNEL__
+#if defined(__KERNEL__) && !defined(HAVE_POLLING)
 #include <linux/timer.h>
 
 class Timer {
@@ -62,10 +62,10 @@ Timer::schedule_after_ms(int ms)
   }
 }
 
-#else /* !__KERNEL__ */
+#else /* polling or userspace */
 
 class Timer {
-  
+ 
   Timer *_prev;
   Timer *_next;
   struct timeval _expires;
@@ -91,7 +91,6 @@ class Timer {
   static void static_initialize();
   static void run_timers();
   static int get_next_delay(struct timeval *tv);
-  
 };
 
 inline
