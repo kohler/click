@@ -1,6 +1,6 @@
 Click NEWS
 
-Version
+Version 1.0.2   20.Mar.2000
 
 * Fixed reentrancy bug: in this release, when running in polling mode in
   kernel, timers are maintained by click, in the same fashion userlevel timers
@@ -22,6 +22,9 @@ Version
   `cast()', allows arbitrary interfaces.
 
 * Use Linux's fast checksum routines in CheckIPHeader and IPInputCombo.
+
+* Fixed bug in userlevel Click: elements weren't being scheduled, so
+  nothing seemed to happen.
 
 
 Version 1.0.1   28.Feb.2000
