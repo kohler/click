@@ -37,7 +37,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectori.o vectorv.o hashmapi.o \
-	integers.o ipaddress.o etheraddress.o packet.o \
+	integers.o ipaddress.o ipflowid.o etheraddress.o packet.o \
 	error.o glue.o timer.o \
 	elemlink.o element.o unlimelement.o timedelement.o errorelement.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
