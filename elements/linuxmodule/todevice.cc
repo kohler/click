@@ -276,7 +276,11 @@ ToDevice::tx_intr()
   _self_cycles += c1 - c0;
 #endif
 
+#if CLICK_POLLDEV
   if (busy || _idle <= 1024 || tx_left != 0)
+#else
+  if (busy || _idle <= 1024)
+#endif
     reschedule();
 }
 
