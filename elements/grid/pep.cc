@@ -364,6 +364,7 @@ PEP::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
+ELEMENT_REQUIRES(LocationInfo)
 EXPORT_ELEMENT(PEP)
 
 #include "vector.cc"

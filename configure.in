@@ -230,6 +230,14 @@ if test $ac_cv_poll_extension = yes; then
   AC_DEFINE_UNQUOTED(HAVE_POLLING, 1)
 fi
 
+AC_CACHE_CHECK(for SKB reuse kernel extension, ac_cv_skb_reuse,
+[if grep reuse_skb $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
+  ac_cv_skb_reuse=yes
+else ac_cv_skb_reuse=no; fi])
+if test $ac_cv_skb_reuse = yes; then
+  AC_DEFINE_UNQUOTED(HAVE_REUSE_SKB, 1)
+fi
+
 AC_CACHE_CHECK(for SMP, ac_cv_smp,
 [if grep "#define CONFIG_SMP 1" $linuxdir/include/linux/autoconf.h >/dev/null 2>&1; then
   ac_cv_smp=yes
@@ -250,6 +258,16 @@ dnl
 AC_ARG_ENABLE(stride, [  --enable-stride         enable stride scheduler (on by default)], :, enable_stride=yes)
 if test $enable_stride = yes; then
   AC_DEFINE_UNQUOTED(HAVE_STRIDE_SCHED, 1)
+fi
+
+
+dnl
+dnl debugging malloc
+dnl
+
+AC_ARG_ENABLE(dmalloc, [  --enable-dmalloc        enable debugging malloc], :, enable_dmalloc=no)
+if test $enable_dmalloc = yes; then
+  AC_DEFINE_UNQUOTED(CLICK_DMALLOC, 1)
 fi
 
 

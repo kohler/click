@@ -37,7 +37,7 @@ Router *current_router = 0;
 Router::Handler *root_handlers;
 int nroot_handlers = 0;
 
-static Vector<String> packages;
+static Vector<String> *packages;
 
 
 class LinuxModuleLexerExtra : public LexerExtra { public:
@@ -48,8 +48,8 @@ class LinuxModuleLexerExtra : public LexerExtra { public:
 void
 LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
 {
-  for (int i = 0; i < packages.size(); i++)
-    if (packages[i] == r)
+  for (int i = 0; i < packages->size(); i++)
+    if (packages->at(i) == r)
       return;
   errh->error("unsatisfied requirement `%s'", String(r).cc());
 }
@@ -300,8 +300,8 @@ static String
 read_packages(Element *, void *)
 {
   StringAccum sa;
-  for (int i = 0; i < packages.size(); i++)
-    sa << packages[i] << "\n";
+  for (int i = 0; i < packages->size(); i++)
+    sa << packages->at(i) << "\n";
   return sa.take_string();
 }
 
@@ -323,18 +323,18 @@ extern "C" void
 click_provide(const char *name)
 {
   MOD_INC_USE_COUNT;
-  packages.push_back(String(name));
+  packages->push_back(String(name));
 }
 
 extern "C" void
 click_unprovide(const char *name)
 {
   String n = name;
-  for (int i = 0; i < packages.size(); i++)
-    if (packages[i] == n) {
+  for (int i = 0; i < packages->size(); i++)
+    if (packages->at(i) == n) {
       MOD_DEC_USE_COUNT;
-      packages[i] = packages.back();
-      packages.pop_back();
+      packages->at(i) = packages->back();
+      packages->pop_back();
       break;
     }
 }
@@ -380,6 +380,7 @@ init_module()
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = new SyslogErrorHandler;
+  packages = new Vector<String>;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
   
@@ -426,6 +427,7 @@ cleanup_module()
   
   extern ErrorHandler *click_chatter_errh;
   delete click_chatter_errh;
+  delete packages;
   click_chatter_errh = 0;
   
   delete[] root_handlers;

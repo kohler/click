@@ -41,8 +41,6 @@ click_chatter(const char *fmt, ...)
 unsigned click_new_count = 0;
 unsigned click_outstanding_news = 0;
 
-#define CLICK_MEMDEBUG 0
-
 #define CHUNK_MAGIC -49281
 struct Chunk {
   int magic;
@@ -53,21 +51,21 @@ struct Chunk {
 };
 
 static Chunk *chunks = 0;
-int click_where;
+int click_dmalloc_where = 0x3F3F3F3F;
 
 void *
 operator new(unsigned int sz)
 {
   click_new_count++;
   click_outstanding_news++;
-#if CLICK_MEMDEBUG
+#if CLICK_DMALLOC
   void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
   Chunk *c = (Chunk *)v;
   c->magic = CHUNK_MAGIC;
   c->size = sz;
   c->next = chunks;
   c->prev = 0;
-  c->where = click_where;
+  c->where = click_dmalloc_where;
   if (chunks) chunks->prev = c;
   chunks = c;
   return (void *)((unsigned char *)v + sizeof(Chunk));
@@ -81,14 +79,14 @@ operator new [] (unsigned int sz)
 {
   click_new_count++;
   click_outstanding_news++;
-#if CLICK_MEMDEBUG
+#if CLICK_DMALLOC
   void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
   Chunk *c = (Chunk *)v;
   c->magic = CHUNK_MAGIC;
   c->size = sz;
   c->next = chunks;
   c->prev = 0;
-  c->where = click_where;
+  c->where = click_dmalloc_where;
   if (chunks) chunks->prev = c;
   chunks = c;
   return (void *)((unsigned char *)v + sizeof(Chunk));
@@ -102,7 +100,7 @@ operator delete(void *addr)
 {
   if (addr) {
     click_outstanding_news--;
-#if CLICK_MEMDEBUG
+#if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic != CHUNK_MAGIC) {
       printk("<1>click error: memory corruption on delete %p\n", addr);
@@ -123,7 +121,7 @@ operator delete [] (void *addr)
 {
   if (addr) {
     click_outstanding_news--;
-#if CLICK_MEMDEBUG
+#if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic != CHUNK_MAGIC) {
       printk("<1>click error: memory corruption on delete[] %p\n", addr);
@@ -142,15 +140,33 @@ operator delete [] (void *addr)
 void
 print_and_free_chunks()
 {
-#if CLICK_MEMDEBUG
+#if CLICK_DMALLOC
+  const char *hexstr = "0123456789ABCDEF";
   for (Chunk *c = chunks; c; ) {
     Chunk *n = c->next;
-    printk("<1>  chunk at %p size %d alloc in %d data ", (void *)(c + 1), c->size, c->where);
+
+    // set where buffer
+    char buf[13], *s = buf;
+    for (int i = 24; i >= 0; i -= 8) {
+      int ch = (c->where >> i) & 0xFF;
+      if (ch >= 32 && ch < 127)
+	*s++ = ch;
+      else {
+	*s++ = '%';
+	*s++ = hexstr[(ch>>4) & 0xF];
+	*s++ = hexstr[ch & 0xF];
+      }
+    }
+    *s++ = 0;
+    
+    printk("<1>  chunk at %p size %d alloc[%s] data ",
+	   (void *)(c + 1), c->size, buf);
     unsigned char *d = (unsigned char *)(c + 1);
     for (int i = 0; i < 20 && i < c->size; i++)
       printk("%02x", d[i]);
     printk("\n");
     kfree((void *)c);
+    
     c = n;
   }
 #endif

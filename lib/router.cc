@@ -739,6 +739,10 @@ Router::initialize(ErrorHandler *errh)
   FD_ZERO(&_write_select_fd_set);
   assert(!_selectors.size());
 #endif
+
+#if CLICK_DMALLOC
+  char dmalloc_buf[12];
+#endif
     
   if (check_hookup_elements(errh) < 0)
     return -1;
@@ -760,6 +764,10 @@ Router::initialize(ErrorHandler *errh)
   // Configure all elements in configure order. Remember the ones that failed
   for (int ord = 0; ord < _elements.size(); ord++) {
     int i = configure_order[ord];
+#if CLICK_DMALLOC
+    sprintf(dmalloc_buf, "c%d  ", i);
+    CLICK_DMALLOC_REG(dmalloc_buf);
+#endif
     ContextErrorHandler cerrh
       (errh, context_message(i, "While configuring"));
     int before = cerrh.nerrors();
@@ -771,6 +779,10 @@ Router::initialize(ErrorHandler *errh)
 	cerrh.error("unspecified error");
     }
   }
+
+#if CLICK_DMALLOC
+  CLICK_DMALLOC_REG("iHoo");
+#endif
   
   int before = errh->nerrors();
   check_hookup_range(errh);
@@ -786,6 +798,10 @@ Router::initialize(ErrorHandler *errh)
   for (int ord = 0; ord < _elements.size(); ord++) {
     int i = configure_order[ord];
     if (element_ok[i]) {
+#if CLICK_DMALLOC
+      sprintf(dmalloc_buf, "i%d  ", i);
+      CLICK_DMALLOC_REG(dmalloc_buf);
+#endif
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While initializing"));
       int before = cerrh.nerrors();
@@ -799,6 +815,10 @@ Router::initialize(ErrorHandler *errh)
     }
   }
 
+#if CLICK_DMALLOC
+  CLICK_DMALLOC_REG("iXXX");
+#endif
+  
   // clear handler offsets
   _ehandler_first_by_element.assign(nelements(), -1);
   assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0

@@ -147,7 +147,7 @@ MovementSimulator::find_entry(unsigned int t, event_entry **retval)
   return false;
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel LocationInfo)
 EXPORT_ELEMENT(MovementSimulator)
 
 #include "vector.cc"

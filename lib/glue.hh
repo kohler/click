@@ -22,6 +22,13 @@ typedef unsigned char u_int8_t;
 #define _LOOSE_KERNEL_NAMES 1
 #undef __KERNEL_STRICT_NAMES
 
+#if CLICK_DMALLOC
+extern int click_dmalloc_where;
+# define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (s[0]<<24) | (s[1]<<16) | (s[2]<<8) | s[3]; } while (0)
+#else
+# define CLICK_DMALLOC_REG(s)
+#endif
+
 extern "C" {
 
 #ifndef __OPTIMIZE__
@@ -101,6 +108,8 @@ void _leaving_ipb(void);
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+
+#define CLICK_DMALLOC_REG(s)
 
 __inline__ unsigned long long
 click_get_cycles(void)

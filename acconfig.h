@@ -59,6 +59,9 @@
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_POLLING
 
+/* Define if your Linux kernel has sk_buff reuse extensions. */
+#undef HAVE_REUSE_SKB
+
 /* Define if your Linux kernel is running in SMP mode. */
 #undef __SMP__
 
@@ -73,6 +76,9 @@
 #ifndef HAVE_STRIDE_SCHED
 # define RR_SCHED
 #endif
+
+/* Define for Click memory allocation debugging. */
+#undef CLICK_DMALLOC
 
 /* Prototype strerror if we don't have it. */
 #ifndef CLICK_LINUXMODULE

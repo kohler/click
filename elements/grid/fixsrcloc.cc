@@ -70,5 +70,5 @@ FixSrcLoc::simple_action(Packet *xp)
   return p;
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel LocationInfo)
 EXPORT_ELEMENT(FixSrcLoc)

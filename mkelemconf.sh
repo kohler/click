@@ -78,7 +78,8 @@ else
   INCLUDES[$1] = 1;
   sub(/EXPORT_ELEMENT\(/, "", $2);
   sub(/\)/, "", $2);
-  B = B "  lexer->add_element_type(new " $2 ");\n";
+  B = B "  CLICK_DMALLOC_REG(\"" $2 "\");\n\
+  lexer->add_element_type(new " $2 ");\n";
 }
 END {
   print "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n#include \"lexer.hh\"";
@@ -86,7 +87,7 @@ END {
     print "#include \"", file, "\"";
   }
   print "void\nexport_elements(Lexer *lexer)\n{";
-  print B, "}";
+  print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}";
 }
 '
 fi

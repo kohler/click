@@ -82,7 +82,7 @@ LocFromFile::choose_new_leg(double *nlat, double *nlon, double *nt)
     _next = 0;
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel LocationInfo)
 EXPORT_ELEMENT(LocFromFile)
 
 #include "vector.cc"

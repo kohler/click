@@ -136,5 +136,5 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
 }
 
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel LocationInfo)
 EXPORT_ELEMENT(FilterByRange)

@@ -181,6 +181,7 @@ RadioSim::add_handlers()
   add_read_handler("loc", rs_read_handler, (void *) 0);
 }
 
+ELEMENT_REQUIRES(FilterByRange)
 EXPORT_ELEMENT(RadioSim)
 
 #include "vector.cc"
