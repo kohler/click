@@ -62,7 +62,8 @@ in conjunction with PokeHandlers.
 
 =n
 
-Useful for profiling and experiments.
+Useful for profiling and experiments.  Packets' timestamp annotations are set
+to the current time.
 
 =h count read-only
 Returns the total number of packets that have been generated.
