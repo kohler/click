@@ -1,3 +1,8 @@
+2002-01-11 Friday 02:40  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.18): fix bug found by Anne
+	Dudfield <anne@mazunetworks.com>: _insn_arg was not initialized
+
 2002-01-08 Tuesday 21:34  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.13), fromipsumdump.hh
