@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
 
 sub mysystem ($) {
   my($sys) = @_;
@@ -102,7 +102,8 @@ href="http://www.pdos.lcs.mit.edu/click/">here</a>. You may also be
 interested in <a
 href="http://www.pdos.lcs.mit.edu/papers/click:tocs00/">our TOCS
 paper</a>.</p>
-<p>Below are all Click element classes that have manual page documentation.</p>
+<p>Below are all the Click element classes that have manual page
+documentation.</p>
 EOF
     next;
   }
