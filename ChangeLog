@@ -1,3 +1,8 @@
+2004-11-18 Thursday 14:58  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/: kerneltun.cc (1.50), kerneltun.hh (1.21):
+	add DEV_NAME option.
+
 2004-11-17 Wednesday 14:00  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: todevice.cc (1.41), todevice.hh (1.30): 
