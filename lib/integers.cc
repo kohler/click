@@ -77,8 +77,8 @@ int_sqrt(uint32_t u)
     return work;
 }
 
-#ifdef HAVE_INT64_TYPES
-
+#if HAVE_INT64_TYPES && !CLICK_LINUXMODULE
+// linuxmodule does not support uint64_t division 
 uint64_t
 int_sqrt(uint64_t u)
 {
@@ -89,7 +89,6 @@ int_sqrt(uint64_t u)
 	    prev = work, work = (work + (u/work))/2;
     return work;
 }
-
 #endif
 
 CLICK_ENDDECLS

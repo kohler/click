@@ -26,7 +26,7 @@ int first_bit_set(uint64_t);
 #endif
 
 uint32_t int_sqrt(uint32_t);
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && !CLICK_LINUXMODULE
 uint64_t int_sqrt(uint64_t);
 #endif
 

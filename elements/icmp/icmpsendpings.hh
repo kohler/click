@@ -134,7 +134,7 @@ class ICMPPingSource : public Element { public:
     bool _active;
     bool _verbose;
 
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && !CLICK_LINUXMODULE
     typedef uint64_t counter_t;
 #else
     typedef uint32_t counter_t;
