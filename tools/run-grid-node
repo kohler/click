@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 
-# $Id: run-grid-node,v 1.1 2000/08/03 23:24:30 decouto Exp $
+# $Id: run-grid-node,v 1.2 2000/08/03 23:59:48 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [no-gw]
 
@@ -8,6 +8,15 @@
 
 $click = "../userlevel/click";
 $click_config_name = "../conf/grid3.click";
+
+$GRID_GW = "18.26.7.1";
+$GRID_NETMASK = "255.255.255.0";
+$GRID_NET_HEX = "16/121a07"; # 18.26.7.*
+$NBR_TIMEOUT = "2000"; # msecs
+$HELLO_PERIOD = "500"; # msecs
+$HELLO_JITTER = "100"; # msecs
+$GRID_ETH_PROTO = "12/7FFF";
+$GRID_NBR_ENCAP_PROTO = "15/03";
 
 sub ip_to_hex {
     ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
@@ -55,7 +64,7 @@ if ($system_type =~ /Linux/) {
     }
     $hw_addr = $1;
     
-    $tun_dev_type = "tap";
+    $tun_dev = "tap0";
 }
 elsif ($system_type =~ /FreeBSD/) {
     if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
@@ -64,7 +73,7 @@ elsif ($system_type =~ /FreeBSD/) {
     }
     $hw_addr = $1;
 
-    $tun_dev_type = "tun";
+    $tun_dev = "tun0";
 }
 else {
     print stderr "This system is not supported\n";
@@ -72,19 +81,28 @@ else {
 }
 
 # turn off routing etc. for grid interface
-# turn on routing for Tun.
+# optionally setup default gw
+
+if ($system_type =~ /Linux/) {
+    system "ifconfig $grid_if down";
+    system "ifconfig $grid_if 0";
+    system "ifconfig $tun_dev up";
+    if ($use_grid_gw) {
+	system "route add default gw $GRID_GW";
+    }
+}
+elsif ($system_type =~ /FreeBSD/) {
+}
+else {
+    print stderr "This system is not supported\n";
+    exit 1;
+}
+
+
+# fire up click, substituting appropriate values into the confi file,
+# and piping it into click stdin.
 
 open(click_config_file, $click_config_name) || die "can't open click configuration ", $click_config_name, "\n";
-
-
-$GRID_GW = "18.26.7.1";
-$GRID_NETMASK = "255.255.255.0";
-$GRID_NET_HEX = "16/121a07"; # 18.26.7.*
-$NBR_TIMEOUT = "2000"; # msecs
-$HELLO_PERIOD = "500"; # msecs
-$HELLO_JITTER = "100"; # msecs
-$GRID_ETH_PROTO = "12/7FFF";
-$GRID_NBR_ENCAP_PROTO = "15/03";
 
 $grid_addr_hex = ip_to_hex($grid_addr);
 
@@ -103,7 +121,7 @@ while(<click_config_file>) {
     s/GRID_HEX_IP/$grid_addr_hex/;
     s/NET_DEVICE/$grid_if/;
     s/MAC_ADDR/$hw_addr/;
-    s/TUN_DEVICE/$tun_dev_type/;
+    s/TUN_DEVICE/$tun_dev/;
     
     print P $_;
 }
