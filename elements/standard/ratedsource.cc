@@ -141,22 +141,21 @@ RatedSource::pull(int)
 void
 RatedSource::setup_packet() 
 {
-  if (_packet) _packet->kill();
+    if (_packet)
+	_packet->kill();
 
-  // note: if you change `headroom', change `click-align'
-  unsigned int headroom = 16+20+24;
+    // note: if you change `headroom', change `click-align'
+    unsigned int headroom = 16+20+24;
 
-  if (_datasize != -1 && _datasize > _data.length()) {
-    // make up some data to fill extra space
-    String new_data;
-    do {
-      new_data += _data;
-    }
-    while (new_data.length() < _datasize);    
-    _packet = Packet::make(headroom, (unsigned char *) new_data.data(), _datasize, 0);
-  }
-  else
-    _packet = Packet::make(headroom, (unsigned char *) _data.data(), _data.length(), 0);
+    if (_datasize != -1 && _datasize > _data.length()) {
+	// make up some data to fill extra space
+	String new_data;
+	do {
+	    new_data += _data;
+	} while (new_data.length() < _datasize);    
+	_packet = Packet::make(headroom, (unsigned char *) new_data.data(), _datasize, 0);
+    } else
+	_packet = Packet::make(headroom, (unsigned char *) _data.data(), _data.length(), 0);
 }
 
 String
