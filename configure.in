@@ -290,7 +290,7 @@ dnl
 if test $ac_have_bsd_kernel = y; then
 
 AC_CACHE_CHECK(for Click BSD kernel extensions, ac_cv_click_bsd_kernel,
-[if grep if_click_rcv /usr/include/net/if_var.h >/dev/null 2>&1; then
+[if grep click_intrq /usr/include/net/if_var.h >/dev/null 2>&1; then
   ac_cv_click_bsd_kernel=yes
 else ac_cv_click_bsd_kernel=no; fi])
 if test $ac_cv_click_bsd_kernel = yes; then
