@@ -16,6 +16,8 @@ my @files = (
 	"pci/if_fxpreg.h",
 	"pci/if_fxp.c",
 	"sys/namei.h",
+	"sys/queue.h",
+	"sys/libkern.h",
 	);
 
 $| = 1;

@@ -1,7 +1,7 @@
 
 Index: net/if_var.h
---- net/if_var.h.orig	Thu Aug  2 19:47:22 2001
-+++ net/if_var.h	Mon Aug 20 11:08:49 2001
+--- net/if_var.h.orig	Sun Mar  4 16:09:45 2001
++++ net/if_var.h	Tue Aug 21 18:47:08 2001
 @@ -137,6 +137,45 @@
  		__P((void *));
  	int	(*if_resolvemulti)	/* validate/resolve multicast */
@@ -50,8 +50,8 @@ Index: net/if_var.h
  	struct	ifprefixhead if_prefixhead; /* list of prefixes per if */
 
 Index: net/if_ethersubr.c
---- net/if_ethersubr.c.orig	Thu Aug  2 19:47:46 2001
-+++ net/if_ethersubr.c	Mon Aug 20 12:16:48 2001
+--- net/if_ethersubr.c.orig	Tue Mar 13 17:00:32 2001
++++ net/if_ethersubr.c	Tue Aug 21 18:47:08 2001
 @@ -500,6 +500,22 @@
  	register struct llc *l;
  #endif
@@ -77,8 +77,8 @@ Index: net/if_ethersubr.c
  #endif
 
 Index: pci/if_fxpvar.h
---- pci/if_fxpvar.h.orig	Thu Aug  2 19:45:57 2001
-+++ pci/if_fxpvar.h	Wed Jul 25 14:48:58 2001
+--- pci/if_fxpvar.h.orig	Tue Oct 24 17:47:36 2000
++++ pci/if_fxpvar.h	Tue Aug 21 18:47:08 2001
 @@ -53,6 +53,7 @@
  	bus_space_handle_t sc_sh;	/* bus space handle */
  	struct mbuf *rfa_headm;		/* first mbuf in receive frame area */
@@ -89,8 +89,8 @@ Index: pci/if_fxpvar.h
  	int need_mcsetup;		/* multicast filter needs programming */
 
 Index: pci/if_fxpreg.h
---- pci/if_fxpreg.h.orig	Thu Aug  2 19:46:24 2001
-+++ pci/if_fxpreg.h	Tue Jul 24 20:19:47 2001
+--- pci/if_fxpreg.h.orig	Wed Oct  4 06:16:12 2000
++++ pci/if_fxpreg.h	Tue Aug 21 18:47:08 2001
 @@ -97,6 +97,9 @@
  #define FXP_SCB_COMMAND_RU_BASE		6
  #define FXP_SCB_COMMAND_RU_RBDRESUME	7
@@ -103,8 +103,8 @@ Index: pci/if_fxpreg.h
   */
 
 Index: pci/if_fxp.c
---- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
-+++ pci/if_fxp.c	Mon Aug 20 16:39:12 2001
+--- pci/if_fxp.c.orig	Tue Oct 24 17:47:36 2000
++++ pci/if_fxp.c	Tue Aug 21 18:47:08 2001
 @@ -237,6 +237,15 @@
  static void fxp_stats_update	__P((void *));
  static void fxp_mc_setup	__P((struct fxp_softc *));
@@ -486,8 +486,8 @@ Index: pci/if_fxp.c
  }
 
 Index: sys/namei.h
---- sys/namei.h.orig	Thu Aug  2 19:45:12 2001
-+++ sys/namei.h	Tue Jul 31 14:51:31 2001
+--- sys/namei.h.orig	Fri Nov  3 10:55:40 2000
++++ sys/namei.h	Tue Aug 21 18:47:08 2001
 @@ -40,6 +40,23 @@
  #include <sys/queue.h>
  #include <sys/uio.h>
@@ -555,3 +555,39 @@ Index: sys/namei.h
  {
  	ndp->ni_cnd.cn_nameiop = op;
  	ndp->ni_cnd.cn_flags = flags;
+
+Index: sys/queue.h
+--- sys/queue.h.orig	Tue Aug 21 20:18:22 2001
++++ sys/queue.h	Tue Aug 21 20:19:33 2001
+@@ -516,7 +516,8 @@
+ static __inline void
+ insque(void *a, void *b)
+ {
+-	struct quehead *element = a, *head = b;
++	struct quehead *element = (struct quehead *) a,
++		       *head = (struct quehead *) b;
+ 
+ 	element->qh_link = head->qh_link;
+ 	element->qh_rlink = head;
+@@ -527,7 +528,7 @@
+ static __inline void
+ remque(void *a)
+ {
+-	struct quehead *element = a;
++	struct quehead *element = (struct quehead *) a;
+ 
+ 	element->qh_link->qh_rlink = element->qh_rlink;
+ 	element->qh_rlink->qh_link = element->qh_link;
+
+Index: sys/libkern.h
+--- sys/libkern.h.orig	Tue Aug 21 20:19:41 2001
++++ sys/libkern.h	Tue Aug 21 20:19:51 2001
+@@ -103,7 +103,7 @@
+ 	if (c == 0)
+ 		bzero(b, len);
+ 	else
+-		for (bb = b; len--; )
++		for (bb = (char *) b; len--; )
+ 			*bb++ = c;
+ 	return (b);
+ }

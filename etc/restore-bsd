@@ -4,3 +4,5 @@ mv pci/if_fxpvar.h{.orig,}
 mv pci/if_fxpreg.h{.orig,}
 mv pci/if_fxp.c{.orig,}
 mv sys/namei.h{.orig,}
+mv sys/queue.h{.orig,}
+mv sys/libkern.h{.orig,}
