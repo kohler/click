@@ -86,8 +86,8 @@ class Packet { public:
 
   Packet *shift_data(int offset, bool free_on_failure = true);
 #ifdef CLICK_USERLEVEL
-  void shrink_data(const unsigned char *, uint32_t length);
-  void change_headroom_and_length(uint32_t headroom, uint32_t length);
+  inline void shrink_data(const unsigned char *, uint32_t length);
+  inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
 
   // HEADER ANNOTATIONS

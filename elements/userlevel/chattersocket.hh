@@ -136,7 +136,7 @@ class ChatterSocket : public Element { public:
   int _retries;
   Timer *_retry_timer;
   
-  static const char * const protocol_version;
+  static const char protocol_version[];
   enum { MAX_BACKLOG = 500000 };
 
   int initialize_socket_error(ErrorHandler *, const char *);

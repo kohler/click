@@ -106,8 +106,8 @@ class Router { public:
 
     // MASTER
     Master* master() const			{ return _master; }
-    enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PAUSED = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
-  
+    enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PREPARING = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
+
     // RUNCOUNT AND RUNCLASS
     void please_stop_driver()			{ adjust_runcount(-1); }
     void reserve_driver()			{ adjust_runcount(1); }
@@ -122,7 +122,7 @@ class Router { public:
     void unparse_classes(StringAccum&, const String& = String()) const;
     void unparse_declarations(StringAccum&, const String& = String()) const;
     void unparse_connections(StringAccum&, const String& = String()) const;
-  
+
     String element_ports_string(int) const;
   
     // INITIALIZATION

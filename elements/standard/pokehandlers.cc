@@ -25,7 +25,7 @@
 #include <click/router.hh>
 CLICK_DECLS
 
-static const char * const READ_MARKER = "r";
+static const char READ_MARKER[] = "r";
 Element * const PokeHandlers::STOP_MARKER = (Element *)1;
 Element * const PokeHandlers::LOOP_MARKER = (Element *)2;
 Element * const PokeHandlers::PAUSE_MARKER = (Element *)3;

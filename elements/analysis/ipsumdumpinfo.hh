@@ -89,7 +89,7 @@ void unparse_ip_opt(StringAccum&, const click_ip*, int mask);
 void unparse_ip_opt_binary(StringAccum&, const uint8_t*, int olen, int mask);
 void unparse_ip_opt_binary(StringAccum&, const click_ip*, int mask);
 
-extern const char* const tcp_flags_word;
+extern const char tcp_flags_word[];
 extern const uint8_t tcp_flag_mapping[256];
 
 enum { DO_TCPOPT_PADDING = 1,

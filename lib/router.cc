@@ -50,7 +50,7 @@ static int nglobalh;
 static int globalh_cap;
 
 Router::Router(const String &configuration, Master *m)
-    : _master(m), _state(ROUTER_NEW),
+    : _master(0), _state(ROUTER_NEW),
       _allow_star_handler(true), _running(RUNNING_INACTIVE),
       _handler_bufs(0), _nhandlers_bufs(0), _free_handler(-1),
       _root_element(0),
@@ -61,17 +61,15 @@ Router::Router(const String &configuration, Master *m)
 {
     _refcount = 0;
     _runcount = 0;
-  
     _root_element = new ErrorElement;
     _root_element->attach_router(this, -1);
-
-    _master->use();
+    m->register_router(this);
 }
 
 Router::~Router()
 {
     if (_refcount > 0)
-	click_chatter("deleting router while ref count > 0");
+	click_chatter("deleting router while ref count = %d", _refcount.value());
 
     // unuse the hotswap router
     if (_hotswap_router)
@@ -83,7 +81,7 @@ Router::~Router()
     // Clean up elements in reverse configuration order
     if (_state == ROUTER_LIVE) {
 	// Unschedule tasks and timers
-	_master->remove_router(this);
+	_master->kill_router(this);
 	for (int ord = _elements.size() - 1; ord >= 0; ord--)
 	    _elements[ _element_configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
     } else if (_state != ROUTER_DEAD) {
@@ -118,7 +116,7 @@ Router::~Router()
     delete[] _handler_bufs;
     delete[] _notifier_signals;
     delete _name_info;
-    _master->unuse();
+    _master->unregister_router(this);
 }
 
 void
@@ -791,7 +789,7 @@ Router::initialize(ErrorHandler *errh)
 	return -1;
   
     _runcount = 1;
-    _master->register_router(this);
+    _master->prepare_router(this);
 
     // set up configuration order
     _element_configure_order.assign(nelements(), 0);
@@ -890,7 +888,7 @@ Router::initialize(ErrorHandler *errh)
 	errh->verror_text(ErrorHandler::ERR_CONTEXT_ERROR, "", "Router could not be initialized!");
     
 	// Unschedule tasks and timers
-	master()->remove_router(this);
+	master()->kill_router(this);
 
 	// Clean up elements
 	for (int ord = _elements.size() - 1; ord >= 0; ord--) {
@@ -909,13 +907,13 @@ Router::initialize(ErrorHandler *errh)
 void
 Router::activate(bool foreground, ErrorHandler *errh)
 {
-    if (_state != ROUTER_LIVE || _running != RUNNING_PAUSED)
+    if (_state != ROUTER_LIVE || _running != RUNNING_PREPARING)
 	return;
   
     // Take state if appropriate
     if (_hotswap_router && _hotswap_router->_state == ROUTER_LIVE) {
 	// Unschedule tasks and timers
-	master()->remove_router(_hotswap_router);
+	master()->kill_router(_hotswap_router);
       
 	for (int i = 0; i < _elements.size(); i++) {
 	    Element *e = _elements[i];

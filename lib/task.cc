@@ -146,7 +146,7 @@ Task::add_pending(int p)
 {
     Master *m = _router->master();
     SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
-    if (_router->_running >= Router::RUNNING_PAUSED) {
+    if (_router->_running >= Router::RUNNING_PREPARING) {
 	_pending |= p;
 	if (!_pending_next && _pending) {
 	    _pending_next = m->_task_list._pending_next;

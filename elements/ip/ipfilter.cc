@@ -128,7 +128,7 @@ IPFilter::lookup(String word, int type, int proto, uint32_t &data, ErrorHandler 
 	    sa << '\'' << unparse_word(db2type[i], proto, word) << '\'';
 	}
     if (errh)
-	errh->error("'%s' is %s; specify one of %s", unparse_word(type, proto, word).c_str(), (ngot > 1 ? "ambiguous" : "meaningless"), sa.c_str());
+	errh->error("'%s' is %s; try %s", unparse_word(type, proto, word).c_str(), (ngot > 1 ? "ambiguous" : "meaningless"), sa.c_str());
     return -2;
 }
 

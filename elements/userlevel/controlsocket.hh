@@ -234,7 +234,7 @@ class ControlSocket : public Element { public:
 
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
 
-  static const char * const protocol_version;
+  static const char protocol_version[];
 
   int initialize_socket_error(ErrorHandler *, const char *);
   int initialize_socket(ErrorHandler *);

@@ -259,7 +259,7 @@ ReadWriteLock::release_read()
 inline void
 ReadWriteLock::acquire_write()
 {
-    for(unsigned i=0; i<smp_num_cpus; i++)
+    for (unsigned i = 0; i < smp_num_cpus; i++)
 	_l[i]._lock.acquire();
 }
 
@@ -268,23 +268,21 @@ ReadWriteLock::attempt_write()
 {
     bool all = true;
     unsigned i;
-    for(i=0; i<smp_num_cpus; i++) {
+    for (i = 0; i < smp_num_cpus; i++)
 	if (!(_l[i]._lock.attempt())) {
 	    all = false;
 	    break;
 	}
-    }
-    if (!all) {
-	for(unsigned j=0; j<i; j++)
+    if (!all)
+	for (unsigned j = 0; j < i; j++)
 	    _l[j]._lock.release();
-    }
     return all;
 }
 
 inline void
 ReadWriteLock::release_write()
 {
-    for(unsigned i=0; i<smp_num_cpus; i++)
+    for (unsigned i = 0; i < smp_num_cpus; i++)
 	_l[i]._lock.release();
 }
 

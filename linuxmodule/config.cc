@@ -67,7 +67,7 @@ void
 LinuxModuleLexerExtra::require(String r, ErrorHandler *errh)
 {
     if (!click_has_provision(r.c_str()))
-	errh->error("unsatisfied requirement `%s'", r.cc());
+	errh->error("unsatisfied requirement '%s'", r.cc());
 }
 
 static Router *

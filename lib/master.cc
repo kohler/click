@@ -67,6 +67,20 @@ Master::Master(int nthreads)
 
 Master::~Master()
 {
+    _master_lock.acquire();
+    _refcount++;
+    while (_routers) {
+	Router *r = _routers;
+	_master_lock.release();
+	delete r;
+	_master_lock.acquire();
+    }
+    _refcount--;
+    _master_lock.release();
+
+    if (_refcount > 0)
+	click_chatter("deleting master while ref count = %d", _refcount);
+    
     for (int i = 0; i < _threads.size(); i++)
 	delete _threads[i];
 #if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
@@ -101,74 +115,67 @@ void
 Master::register_router(Router *router)
 {
     _master_lock.acquire();
-    _master_paused++;
-
-    // add router to the list
-    assert(router && router->_running == Router::RUNNING_INACTIVE && !router->_next_router);
-    router->_running = Router::RUNNING_PAUSED;
+    assert(router && router->_master == 0 && router->_running == Router::RUNNING_INACTIVE && !router->_next_router);
+    _refcount++;		// balanced in unregister_router()
+    router->_master = this;
     router->_next_router = _routers;
     _routers = router;
     _master_lock.release();
 }
 
 void
+Master::prepare_router(Router *router)
+{
+    // increments _master_paused; should quickly call run_router() or
+    // kill_router()
+    _master_lock.acquire();
+    assert(router && router->_master == this && router->_running == Router::RUNNING_INACTIVE);
+    _master_paused++;
+    router->_running = Router::RUNNING_PREPARING;
+    _master_lock.release();
+}
+
+void
 Master::run_router(Router *router, bool foreground)
 {
-    assert(router->_running == Router::RUNNING_PAUSED);
     _master_lock.acquire();
+    assert(router && router->_master == this && router->_running == Router::RUNNING_PREPARING);
     router->_running = (foreground ? Router::RUNNING_ACTIVE : Router::RUNNING_BACKGROUND);
     _master_paused--;
     _master_lock.release();
 }
 
 void
-Master::remove_router(Router *router)
+Master::kill_router(Router *router)
 {
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
     
     _master_lock.acquire();
+    assert(router && router->_master == this);
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
     if (was_running >= Router::RUNNING_BACKGROUND)
 	_master_paused++;
-    else if (was_running == Router::RUNNING_PAUSED)
+    else if (was_running == Router::RUNNING_PREPARING)
 	/* nada */;
     else {
+	/* could not have anything on the list */
 	assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
 	_master_lock.release();
 	return;
     }
-    _master_lock.release();
 
-    // Remove router, fix runcount
-    {
-	_runcount_lock.acquire();
-	_runcount = -0x7FFFFFFF;
-	Router **pprev = &_routers;
-	bool found = false;
-	for (Router *r = *pprev; r; r = r->_next_router)
-	    if (r == router)
-		found = true;
-	    else {
-		*pprev = r;
-		pprev = &r->_next_router;
-		if (r->_running == Router::RUNNING_ACTIVE
-		    && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
-		    _runcount = r->_runcount;
-	    }
-	*pprev = 0;
-	_runcount_lock.release();
-	if (!found) {
-	    if (was_running >= Router::RUNNING_BACKGROUND) {
-		_master_lock.acquire();
-		_master_paused--;
-		_master_lock.release();
-	    }
-	    return;
-	}
-    }
+    // Fix runcount
+    _runcount_lock.acquire();
+    _runcount = -0x7FFFFFFF;
+    for (Router *r = _routers; r; r = r->_next_router)
+	if (r->_running == Router::RUNNING_ACTIVE
+	    && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
+	    _runcount = r->_runcount;
+    _runcount_lock.release();
+    _master_lock.release();
     
     // Remove tasks
     for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
@@ -239,6 +246,25 @@ Master::remove_router(Router *router)
 	(*tp)->unsleep();
 }
 
+void
+Master::unregister_router(Router *router)
+{
+    _master_lock.acquire();
+    assert(router && router->_master == this);
+    if (router->_running >= Router::RUNNING_PREPARING)
+	kill_router(router);
+    
+    Router **pprev = &_routers;
+    for (Router *r = *pprev; r; r = r->_next_router)
+	if (r != router) {
+	    *pprev = r;
+	    pprev = &r->_next_router;
+	}
+    *pprev = 0;
+    _refcount--;		// balanced in register_router()
+    _master_lock.release();
+}
+
 bool
 Master::check_driver()
 {
@@ -258,12 +284,15 @@ Master::check_driver()
 		if (dm)
 		    while (dm->handle_stopped_driver() && r->_runcount <= 0)
 			/* nada */;
+		if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
+		    kill_router(r);
+		    goto next;
+		}
 	    }
-	    if (r->_runcount <= 0)
-		remove_router(r);
-	    else if (r->_running == Router::RUNNING_ACTIVE
-		     && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
+	    if (r->_running == Router::RUNNING_ACTIVE
+		&& (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
 		_runcount = r->_runcount;
+	  next:
 	    r = next_router;
 	}
     }

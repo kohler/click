@@ -30,7 +30,7 @@
 #include <fcntl.h>
 CLICK_DECLS
 
-const char * const ChatterSocket::protocol_version = "1.0";
+const char ChatterSocket::protocol_version[] = "1.0";
 
 struct ChatterSocketErrorHandler : public ErrorVeneer {
 

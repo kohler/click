@@ -42,7 +42,7 @@ class Master { public:
     void run_selects(bool more_tasks);
 #endif
 
-    void remove_router(Router*);
+    void kill_router(Router*);
     
 #if CLICK_NS
     void initialize_ns(simclick_sim, simclick_click);
@@ -63,7 +63,9 @@ class Master { public:
     Router* _routers;
     int _refcount;
     void register_router(Router*);
+    void prepare_router(Router*);
     void run_router(Router*, bool foreground);
+    void unregister_router(Router*);
 
     // THREADS
     Vector<RouterThread*> _threads;

@@ -32,7 +32,7 @@
 #include <fcntl.h>
 CLICK_DECLS
 
-const char * const ControlSocket::protocol_version = "1.1";
+const char ControlSocket::protocol_version[] = "1.1";
 
 struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 

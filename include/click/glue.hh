@@ -15,7 +15,7 @@
 # endif
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-# if defined(CLICK_PACKAGE) || defined(WANT_MOD_USE_COUNT)
+# ifdef WANT_MOD_USE_COUNT
 #  define __NO_VERSION__
 #  include <linux/module.h>
 #  define HAVE_MOD_USE_COUNT 1

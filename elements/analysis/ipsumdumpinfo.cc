@@ -309,7 +309,7 @@ void outb(const PacketDesc& d, bool, int thunk)
 }
 
 
-const char *const tcp_flags_word = "FSRPAUECN";
+const char tcp_flags_word[] = "FSRPAUECN";
 
 const uint8_t tcp_flag_mapping[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x0-
