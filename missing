@@ -187,7 +187,7 @@ WARNING: \`$1' is missing on your system; trying to use plain \`tex'
     fi
     dir=`echo "$file" | sed 's/\/[^/]*$//'`
     if test "$dir" != "$file" -a "$dir" != "./"; then
-      TEXINPUTS=$dir:${TEXINPUTS-}
+      TEXINPUTS=.:$dir:${TEXINPUTS-}
       export TEXINPUTS
     fi
     tex $file
