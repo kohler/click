@@ -79,7 +79,7 @@ BigHashMapTest::initialize(ErrorHandler *errh)
     return 0;
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(BigHashMapTest)
 
 #include <click/bighashmap.cc>
+CLICK_ENDDECLS
