@@ -88,6 +88,7 @@ public:
   void push(int port, Packet *p);
   Packet *pull(int port);
 
+
 private:
   typedef RateEWMAX<5, 10, HalfSecondsTimer> MyEWMA;
   
@@ -125,6 +126,7 @@ private:
   int _alloced_mem;                 // total allocated memory
   struct Stats *_first, *_last;     // first and last element in linked list
   int _packet_counter;
+
 
   // XXX: HACK
   Stats *_prev_deleted;

@@ -208,7 +208,8 @@ IPRateMonitor::Stats::~Stats()
     _rm->set_last(this->_prev);
 
   // Unset pointer to this in parent
-  this->_parent->next_level = 0;
+  if(this->_parent)
+    this->_parent->next_level = 0;
   _rm->update_alloced_mem(-sizeof(*this));
 }
 
