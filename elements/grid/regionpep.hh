@@ -5,11 +5,11 @@
  * =c
  * EstimateRouterRegion(IP, [fixed?, fix-lat, fix-lon])
  *
- * =d Run the Region-based Grid Position Estimation Protocol. Subtypes
+ * =d
+ * Run the Region-based Grid Position Estimation Protocol. Subtypes
  * LocationInfo, and can be used in its place.
  *
- * =a PEP
- * =a LocationInfo */
+ * =a PEP, LocationInfo */
 
 #include "element.hh"
 #include "timer.hh"
