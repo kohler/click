@@ -1,3 +1,10 @@
+2003-01-28 Tuesday 23:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/classifier.cc (1.44): Classifier optimizer bug:
+	one could have e.compatible(ee) but e.offset != ee.offset, if e was
+	the first expr, and it was "true"; which would optimize "true &&
+	foo" into something other than "foo".
+
 2003-01-28 Tuesday 18:10  Eddie Kohler <kohler@icir.org>
 
 	* elements/: analysis/fromdagdump.cc (1.13), userlevel/fromdump.cc
