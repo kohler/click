@@ -420,7 +420,8 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
      case TYPE_TCPOPT:
      case TYPE_ICMP_TYPE:
       _type = _data;
-      if (!_srcdst) _srcdst = p._srcdst;
+      if (!_srcdst)
+	_srcdst = p._srcdst;
       break;
 
      case TYPE_PROTO:
@@ -429,8 +430,10 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       
      case TYPE_PORT:
       _type = TYPE_PORT;
-      if (!_srcdst) _srcdst = p._srcdst;
-      if (_transp_proto == UNKNOWN) _transp_proto = p._transp_proto;
+      if (!_srcdst)
+	_srcdst = p._srcdst;
+      if (_transp_proto == UNKNOWN)
+	_transp_proto = p._transp_proto;
       break;
       
      case TYPE_INT:
@@ -552,9 +555,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
    case TYPE_IPCE:
     if (_data != TYPE_NONE)
       return errh->error("`ip ce' directive takes no data");
-    _type = TYPE_TOS;
     _mask.u = IP_ECNMASK;
     _u.u = IP_ECN_CE;
+    _type = TYPE_TOS;
     break;
 
    case TYPE_TTL:
@@ -587,12 +590,14 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
    case TYPE_IPFRAG:
     if (_data != TYPE_NONE)
       return errh->error("`ip frag' directive takes no data");
+    _mask.u = 1; // don't want mask to be 0
     break;
 
    case TYPE_IPUNFRAG:
     if (_data != TYPE_NONE)
       return errh->error("`ip unfrag' directive takes no data");
     _op_negated = true;
+    _mask.u = 1; // don't want mask to be 0
     _type = TYPE_IPFRAG;
     break;
     
@@ -639,17 +644,17 @@ IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int 
     return;
   }
 
-  // To implement a greater-than test for "input > U/MASK":
-  // Check the top bit of U/MASK.
+  // To implement a greater-than test for "input&MASK > U":
+  // Check the top bit of U&MASK.
   // If the top bit is 0, then:
-  //    Find TOPMASK, the top bits of MASK s.t. U/TOPMASK == 0.
-  //    If "input/TOPMASK == 0", continue testing with lower bits of U & MASK;
-  //    combine with OR.
+  //    Find TOPMASK, the top bits of MASK s.t. U&TOPMASK == 0.
+  //    If "input&TOPMASK == 0", continue testing with lower bits of
+  //    U and MASK; combine with OR.
   //    Otherwise, succeed.
   // If the top bit is 1, then:
-  //    Find TOPMASK, the top bits of MASK s.t. (U+1)/TOPMASK == TOPMASK.
-  //    If "input/TOPMASK == TOPMASK", continue testing with lower bits of
-  //    U & MASK; combine with AND.
+  //    Find TOPMASK, the top bits of MASK s.t. (U+1)&TOPMASK == TOPMASK.
+  //    If "input&TOPMASK == TOPMASK", continue testing with lower bits of
+  //    U and MASK; combine with AND.
   //    Otherwise, fail.
   // Stop testing when U >= MASK.
   
