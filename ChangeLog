@@ -1,3 +1,8 @@
+2003-08-06 Wednesday 13:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/linkstat.cc (1.25): error msgs should not be
+	commented out, configurations should be fixed
+
 2003-08-05 Tuesday 14:58  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linktable.cc (1.11): minor tweaks to handlers for
