@@ -1,3 +1,8 @@
+2003-12-07 Sunday 13:35  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: wifitxfeedback.cc (1.9), wifitxfeedback.hh (1.7):
+	fix bug to make wifitxfeedback do cleanup correctly
+
 2003-12-07 Sunday 01:05  John Bicket <jbicket@mit.edu>
 
 	* elements/: grid/sr/dupefilter.cc (1.4), grid/sr/dupefilter.hh
