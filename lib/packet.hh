@@ -97,9 +97,6 @@ private:
 #endif
 
   bool shared() const;
-  int uses() const;
-  void ref();
-  void unref();
   Packet *clone();
   Packet *uniqueify();
   
@@ -198,16 +195,6 @@ Packet::make(struct sk_buff *skb)
     return (Packet *)skb_clone(skb, GFP_ATOMIC);
 }
 #endif
-
-inline int
-Packet::uses() const
-{
-#ifdef __KERNEL__
-  return atomic_read(&(skb()->users));
-#else
-  return _use_count;
-#endif
-}
 
 inline bool
 Packet::shared() const

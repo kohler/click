@@ -25,6 +25,9 @@ class IPFlowID {
   IPAddress daddr() const		{ return _daddr; }
   unsigned short sport() const		{ return _sport; }
   unsigned short dport() const		{ return _dport; }
+
+  void set_saddr(IPAddress a)		{ _saddr = a; }
+  void set_daddr(IPAddress a)		{ _daddr = a; }
   
   IPFlowID rev() const;
 
@@ -53,15 +56,6 @@ class IPFlowID2 : public IPFlowID {
   
   IPFlowID2 rev() const;
   
-};
-
-class IPFlowID3 : public IPFlowID {  // diff hashcode from IPFlowID
-  public:
-    IPFlowID3() : IPFlowID() {}
-    IPFlowID3(struct in_addr saddr, unsigned short sport,
-	      struct in_addr daddr, unsigned short dport)
-      : IPFlowID(saddr, sport, daddr, dport) {}
-    unsigned hashcode() const;
 };
 
 inline
@@ -136,17 +130,21 @@ IPFlowID2::rev() const
   return IPFlowID2(daddr(), dport(), saddr(), sport(), _protocol);
 }
 
+
+#define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
+
+#if 0
 inline unsigned
 IPFlowID::hashcode() const
 { 
 #define CHUCK_MAGIC 0x4c6d92b3;
-#define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
   return (ROT(_saddr.hashcode(), 13) 
 	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
 }
+#endif
 
 inline unsigned
-IPFlowID3::hashcode() const
+IPFlowID::hashcode() const
 { 
   // more complicated hashcode, but causes less collision
   unsigned short s = ntohs(_sport);
@@ -155,6 +153,8 @@ IPFlowID3::hashcode() const
           ^ ROT(_daddr.hashcode(), 31-d%16))
 	  ^ ((d << 16) | s);
 }
+
+#undef ROT
 
 inline bool
 operator==(const IPFlowID &a, const IPFlowID &b)

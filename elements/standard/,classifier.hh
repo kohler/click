@@ -27,16 +27,10 @@
  *
  * As a special case, a pattern consisting of "-" matches every packet.
  *
- * The patterns are scanned in order, and the packet is sent to the output
- * corresponding to the first matching pattern. Thus more specific patterns
- * should come before less specific ones. You will get a warning if no packet
- * could ever match a pattern. Usually, this is because an earlier pattern is
- * more general, or because your pattern is contradictory (`12/0806 12/0800').
- *
- * =n
- *
- * The IPClassifier element has a friendlier syntax if you are classifying IP
- * packets.
+ * The patterns are scanned in order, and the packet is sent
+ * to the output corresponding to the first matching pattern.
+ * Thus more specific patterns should come before less
+ * specific ones.
  *
  * =e
  * For example,
@@ -65,8 +59,7 @@
  * = 3  12/08000000%ffff0000  yes->[2]  no->[3]
  * = safe length 22
  * = alignment offset 0
- *
- * =a IPClassifier */
+ */
 
 class Classifier : public Element { protected:
   
@@ -82,11 +75,24 @@ class Classifier : public Element { protected:
     } value;
     int yes;
     int no;
-    bool implies(const Expr &) const;
-    bool implies_not(const Expr &) const;
-    bool not_implies(const Expr &) const;
-    bool not_implies_not(const Expr &) const;
-    bool compatible(const Expr &) const;
+  };
+  
+  struct Spread {
+    int _length;
+    unsigned *_urelevant;
+    unsigned *_uvalue;
+    Spread();
+    Spread(const Spread &);
+    Spread &operator=(const Spread &);
+    ~Spread();
+    int grow(int);
+    int add(const Expr &);
+    bool conflicts(const Expr &) const;
+    bool alw_implies_match(const Expr &) const;
+    bool nev_implies_no_match(const Expr &) const;
+    void alw_combine(const Spread &);
+    void nev_combine(const Spread &alw, const Spread &nev,
+		     const Spread &cur_alw);
   };
   
   Vector<Expr> _exprs;
@@ -94,16 +100,12 @@ class Classifier : public Element { protected:
   unsigned _safe_length;
   unsigned _align_offset;
 
-#if 0
-  int check_path(int ei, int interested, int eventual, bool first, bool yet) const;
-#else
-  int check_path(const Vector<int> &path, int ei, int interested, int eventual, bool first, bool yet) const;
-#endif
-  int check_path(int, bool) const;
-  void drift_expr(int);
+  int drift_one_edge(const Spread &, const Spread &, int) const;
+  void handle_vertex(int, Vector<Spread *> &, Vector<Spread *> &,
+		     Vector<int> &);
+  void drift_edges();
   void unaligned_optimize();
   void remove_unused_states();
-  void combine_compatible_states();
   void optimize_exprs(ErrorHandler *);
   
   static String program_string(Element *, void *);
@@ -122,15 +124,6 @@ class Classifier : public Element { protected:
   int configure(const Vector<String> &, ErrorHandler *);
   void add_handlers();
 
-  // creating Exprs
-  enum { NEVER = -2147483647, FAILURE, SUCCESS };
-  void add_expr(Vector<int> &, const Expr &);
-  void add_expr(Vector<int> &, int offset, unsigned value, unsigned mask);
-  void init_expr_subtree(Vector<int> &);
-  void start_expr_subtree(Vector<int> &);
-  void negate_expr_subtree(Vector<int> &);
-  void finish_expr_subtree(Vector<int> &, bool is_and, int success = SUCCESS, int failure = FAILURE);
-  
   void push(int port, Packet *);
   
 };

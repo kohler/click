@@ -106,12 +106,16 @@ static Router *router;
 static Vector<String> call_handlers;
 static ErrorHandler *errh;
 static const char *handler_dir = 0;
+static bool started = 0;
 
 static void
 catch_sigint(int)
 {
   /* call exit so -pg file is written */
   // exit(0);
+  signal(SIGINT, SIG_DFL);
+  if (!started)
+    kill(getpid(), SIGINT);
   router->please_stop_driver();
 }
 
@@ -572,10 +576,12 @@ particular purpose.\n");
     e->add_default_handlers(false);
     e->add_handlers();
   }
-  
+
   // run driver
-  if (!quit_immediately)
+  if (!quit_immediately) {
+    started = true;
     router->driver();
+  }
 
   gettimeofday(&after_time, 0);
   getrusage(RUSAGE_SELF, &after);

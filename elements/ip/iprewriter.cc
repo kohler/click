@@ -292,11 +292,12 @@ IPRewriter::Pattern::create_mapping(const IPFlowID &in,
     if (!new_sport)
       return false;
   }
-  
-  IPFlowID out(_saddr ? _saddr : in.saddr(),
-	       new_sport,
-	       _daddr ? _daddr : in.daddr(),
-	       _dport ? htons((short)_dport) : in.dport());
+
+  // convoluted logic avoids internal compiler errors in gcc-2.95.2
+  unsigned short new_dport = (_dport ? htons((short)_dport) : in.dport());
+  IPFlowID out(_saddr, new_sport, _daddr, new_dport);
+  if (!_saddr) out.set_saddr(in.saddr());
+  if (!_daddr) out.set_daddr(in.daddr());
 
   if (Mapping::make_pair(in, out, this, _forward_output, _reverse_output,
 			 forward, reverse)) {

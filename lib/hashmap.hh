@@ -33,7 +33,7 @@ class HashMap {
   
   bool insert(K, const V &);
   void clear();
-  int size() 				{ return _size; }
+  int size() const			{ return _size; }
   void set_size(int i);
   
   bool each(int &, K &, V &) const;

@@ -14,28 +14,28 @@
 typedef	unsigned int tcp_seq;
 
 struct click_tcp {
-    unsigned short th_sport;		/* source port */
-    unsigned short th_dport;		/* destination port */
-    tcp_seq th_seq;			/* sequence number */
-    tcp_seq th_ack;			/* acknowledgement number */
+    unsigned short th_sport;		/* 0-1   source port */
+    unsigned short th_dport;		/* 2-3   destination port */
+    tcp_seq th_seq;			/* 4-7   sequence number */
+    tcp_seq th_ack;			/* 8-11  acknowledgement number */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned char th_x2:4;		/* (unused) */
-    unsigned char th_off:4;		/* data offset */
+    unsigned char th_x2:4;		/* 12    (unused) */
+    unsigned char th_off:4;		/*       data offset */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-    unsigned char th_off:4;		/* data offset */
-    unsigned char th_x2:4;		/* (unused) */
+    unsigned char th_off:4;		/* 12    data offset */
+    unsigned char th_x2:4;		/*       (unused) */
 #endif
-    unsigned char th_flags;
+    unsigned char th_flags;		/* 13    flags */
 #define	TH_FIN	0x01
 #define	TH_SYN	0x02
 #define	TH_RST	0x04
 #define	TH_PUSH	0x08
 #define	TH_ACK	0x10
 #define	TH_URG	0x20
-    unsigned short th_win;		/* window */
-    unsigned short th_sum;		/* checksum */
-    unsigned short th_urp;		/* urgent pointer */
+    unsigned short th_win;		/* 14-15 window */
+    unsigned short th_sum;		/* 16-17 checksum */
+    unsigned short th_urp;		/* 18-19 urgent pointer */
 };
 
 /*

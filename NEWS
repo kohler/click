@@ -52,7 +52,7 @@ Version 1.0.7
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
 
-** Added QuitWatcher, FrontDropQueue, and StripIPHeader.
+** Added QuitWatcher, FrontDropQueue, StripIPHeader, and IPClassifier.
 
 ** Fixed FromBPF and ToBPF bugs. Now FromBPF will not starve other router
    processing, and ToBPF works on Linux.

@@ -109,18 +109,6 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 
 #ifdef __KERNEL__
 
-void
-Packet::ref()
-{
-  atomic_inc(&(skb()->users));
-}
-
-void
-Packet::unref()
-{
-  atomic_dec(&(skb()->users));
-}
-
 Packet *
 Packet::clone()
 {
@@ -140,19 +128,6 @@ Packet::uniqueify_copy()
 }
 
 #else /* user level */
-
-void
-Packet::ref()
-{
-  _use_count++;
-}
-
-void
-Packet::unref()
-{
-  assert(_use_count > 0); 
-  _use_count--;
-}
 
 Packet *
 Packet::clone()

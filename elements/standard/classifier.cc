@@ -21,206 +21,68 @@
 #include "elements/standard/alignmentinfo.hh"
 
 //
-// CLASSIFIER::SPREAD OPERATIONS
+// CLASSIFIER::EXPR OPERATIONS
 //
 
 #define UBYTES ((int)sizeof(unsigned))
 
-Classifier::Spread::Spread()
-  : _length(0), _urelevant(new unsigned[32/UBYTES]),
-    _uvalue(new unsigned[32/UBYTES])
-{
-  memset(_urelevant, 0, 32);
-}
-
-Classifier::Spread::Spread(const Spread &o)
-  : _length(o._length)
-{
-  int l = (_length < 32 ? 32 : _length);
-  _urelevant = new unsigned[l/UBYTES];
-  memcpy(_urelevant, o._urelevant, l);
-  _uvalue = new unsigned[l/UBYTES];
-  memcpy(_uvalue, o._uvalue, l);
-}
-
-Classifier::Spread &
-Classifier::Spread::operator=(const Spread &o)
-{
-  delete[] _urelevant;
-  delete[] _uvalue;
-  Spread sacrifice(o);
-  memcpy(this, &sacrifice, sizeof(Spread));
-  sacrifice._urelevant = sacrifice._uvalue = 0;
-  return *this;
-}
-
-Classifier::Spread::~Spread()
-{
-  delete[] _urelevant;
-  delete[] _uvalue;
-}
-
-int
-Classifier::Spread::grow(int want)
-{
-  if (want <= _length)
-    return 0;
-  if (_length <= 0)
-    _length = 32;
-  int old_length = _length;
-  while (_length < want)
-    _length *= 2;
-  unsigned *new_relevant = new unsigned[_length/UBYTES];
-  unsigned *new_value = new unsigned[_length/UBYTES];
-  if (!new_relevant || !new_value) {
-    delete[] new_relevant;
-    delete[] new_value;
-    return -1;
-  }
-  memcpy(new_relevant, _urelevant, old_length);
-  memset((char *)new_relevant + old_length, 0, _length - old_length);
-  memcpy(new_value, _uvalue, old_length);
-  delete[] _urelevant;
-  delete[] _uvalue;
-  _urelevant = new_relevant;
-  _uvalue = new_value;
-  return 0;
-}
-
-int
-Classifier::Spread::add(const Expr &e)
-{
-  if (_length < 0)
-    return 0;
-  if (e.offset >= _length && grow(e.offset + 4) < 0)
-    return -1;
-  _urelevant[e.offset/UBYTES] |= e.mask.u;
-  _uvalue[e.offset/UBYTES] &= ~e.mask.u;
-  _uvalue[e.offset/UBYTES] |= e.value.u;
-  return 0;
-}
-
 bool
-Classifier::Spread::conflicts(const Expr &e) const
-  /* Returns true iff a packet matching `*this' cannot match `e'. */
+Classifier::Expr::implies(const Expr &e) const
+  /* Returns true iff a packet that matches `*this' must match `e'. */
 {
-  if (_length < 0)
+  if (!e.mask.u)
     return true;
-  if (e.offset >= _length)
+  else if (e.offset != offset)
     return false;
-  int o = e.offset/UBYTES;
-  int both_relevant = _urelevant[o] & e.mask.u;
-  return (_uvalue[o] & both_relevant) != (e.value.u & both_relevant);
+  unsigned both_mask = mask.u & e.mask.u;
+  return both_mask == e.mask.u
+    && (value.u & both_mask) == e.value.u;
 }
 
 bool
-Classifier::Spread::alw_implies_match(const Expr &e) const
-  /* Returns true iff a packet matching `*this' must match `e'. */
+Classifier::Expr::not_implies(const Expr &e) const
+  /* Returns true iff a packet that DOES NOT match `*this' must match `e'. */
 {
-  if (e.offset >= _length)
+  if (!e.mask.u)
+    return true;
+  else
     return false;
-  int o = e.offset/UBYTES;
-  unsigned both_relevant = _urelevant[o] & e.mask.u;
-  return both_relevant == e.mask.u
-    && (_uvalue[o] & e.mask.u) == e.value.u;
 }
 
 bool
-Classifier::Spread::nev_implies_no_match(const Expr &e) const
-  /* Returns true iff a packet that DOES NOT match `*this' cannot match `e'. */
+Classifier::Expr::implies_not(const Expr &e) const
+  /* Returns true iff a packet that matches `*this' CANNOT match `e'. */
 {
-  if (e.offset >= _length)
+  if (!e.mask.u || e.offset != offset)
     return false;
-  int o = e.offset/UBYTES;
-  unsigned both_relevant = _urelevant[o] & e.mask.u;
-  return both_relevant
-    && both_relevant == _urelevant[o]
-    && (_uvalue[o] & both_relevant) == (e.value.u & both_relevant);
+  unsigned both_mask = mask.u & e.mask.u;
+  return both_mask == e.mask.u
+    && (value.u & both_mask) != (e.value.u & both_mask);
 }
 
-void
-Classifier::Spread::alw_combine(const Spread &o)
+bool
+Classifier::Expr::not_implies_not(const Expr &e) const
+  /* Returns true iff a packet that DOES NOT match `*this' CANNOT match `e'. */
 {
-  int min_length = (o._length < _length ? o._length : _length);
-  _length = min_length;
-  for (int i = 0; i < min_length/UBYTES; i++) {
-    unsigned both_relevant = _urelevant[i] & o._urelevant[i];
-    unsigned different_values = _uvalue[i] ^ o._uvalue[i];
-    _urelevant[i] = both_relevant;
-    _uvalue[i] &= both_relevant & ~different_values;
-  }
-  for (int i = min_length/UBYTES; i < 32/UBYTES; i++)
-    _urelevant[i] = 0;
+  if (!mask.u)
+    return true;
+  else if (e.offset != offset)
+    return false;
+  unsigned both_mask = mask.u & e.mask.u;
+  return both_mask == mask.u
+    && (value.u & both_mask) == (e.value.u & both_mask);
 }
 
-void
-Classifier::Spread::nev_combine(const Spread &alw, const Spread &nev,
-				const Spread &cur_alw)
+bool
+Classifier::Expr::compatible(const Expr &e) const
 {
-  int a_length = alw._length;
-  int n_length = nev._length;
-  int ca_length = cur_alw._length;
-  grow(nev._length);
-  
-  // merge data from `nev' and `alw' into `*this'
-  for (int i = 0; i < _length/UBYTES; i++) {
-    
-    // if `*this' has no constraints here, but `nev' does; and we know
-    // that the current value doesn't match `nev' (because of
-    // `cur_alw'), then use `nev'.
-    if (!_urelevant[i] && i < ca_length/UBYTES && i < n_length/UBYTES) {
-      unsigned mask = nev._urelevant[i] & cur_alw._urelevant[i];
-      if ((nev._uvalue[i] & mask) != (cur_alw._uvalue[i] & mask)) {
-	_urelevant[i] = nev._urelevant[i];
-	_uvalue[i] = nev._uvalue[i];
-	continue;
-      }
-    }
-    
-    // otherwise, if `*this' has no constraints here, we must skip
-    if (!_urelevant[i])
-      continue;
-
-    // if `*this' has a constraint here, and the incoming value doesn't match
-    // the constraint because of `alw', keep the constraint
-    if (i < a_length/UBYTES) {
-      unsigned mask = _urelevant[i] & alw._urelevant[i];
-      if ((_uvalue[i] & mask) != (alw._uvalue[i] & mask))
-	continue;
-    }
-
-    // otherwise, if `nev' has no constraints here, we must skip
-    if (i >= n_length/UBYTES || !nev._urelevant[i]) {
-      _urelevant[i] = 0;
-      continue;
-    }
-
-    // otherwise, pick the bigger constraint, if they're compatible
-    unsigned either_relevant = _urelevant[i] | nev._urelevant[i];
-    unsigned different_values = _uvalue[i] ^ nev._uvalue[i];
-    _uvalue[i] = (_uvalue[i] & _urelevant[i])
-      | (nev._uvalue[i] & nev._urelevant[i]);
-    _urelevant[i] = (different_values & either_relevant ? 0 : either_relevant);
-  }
+  if (!mask.u || !e.mask.u)
+    return true;
+  else if (e.offset != offset)
+    return false;
+  unsigned both_mask = mask.u & e.mask.u;
+  return (value.u & both_mask) == (e.value.u & both_mask);
 }
-
-#if 0
-static void
-print_spread(Classifier::Spread &s)
-{
-  unsigned char *relevant = (unsigned char *)s._urelevant;
-  unsigned char *value = (unsigned char *)s._uvalue;
-  for (int i = 0; i < s._length; i++) {
-    if (!relevant[i])
-      fprintf(stderr, "??");
-    else
-      fprintf(stderr, "%02x", value[i]);
-    if (i % 4 == 3)
-      fprintf(stderr, " ");
-  }
-  fprintf(stderr, "\n");
-}
-#endif
 
 //
 // CLASSIFIER ITSELF
@@ -247,160 +109,130 @@ Classifier::clone() const
 
 // OPTIMIZATION
 
-// the optimization algorithm uses `alw' and `nev' (for `always' and `never')
-// to represent information about what kinds of packets can traverse a link.
-//
-// every packet traversing the link must equal the relevant part of `alw'. 
-// NO packet traversing the link can equal the relevant part of `nev'.
-// `alw' is whole-cloth -- the packet must equal all relevant parts of `alw'.
-// `nev' is piecemeal -- a packet cannot match any 4-byte chunk of `nev'.
+#if 0
 
 int
-Classifier::drift_one_edge(const Spread &alw, const Spread &nev, int dst) const
+Classifier::check_path(int ei, int interested, int eventual,
+		       bool first, bool yet) const
 {
-  // move dst ahead as far as you can
-  while (dst > 0) {
-    const Expr &e = _exprs[dst];
-    if (alw.alw_implies_match(e))
-      dst = e.yes;
-    else if (nev.nev_implies_no_match(e) || alw.conflicts(e))
-      dst = e.no;
-    else if (e.yes == e.no)
-      dst = e.yes;
-    else
+  if (ei > interested && ei != eventual && !yet)
+    return FAILURE;
+  if (ei < 0 || (ei == 0 && !first))
+    return (!yet ? FAILURE : ei);
+
+  const Expr &e = _exprs[ei];
+  const Expr &interest = _exprs[interested];
+  bool interest_yes = (interest.yes == eventual);
+  if (ei == eventual)
+    yet = true;
+
+  int yes_answer = FAILURE, no_answer = FAILURE;
+  if (ei < interested || (interest_yes ? !interest.implies_not(e) : !interest.not_implies_not(e)))
+    yes_answer = check_path(e.yes, interested, eventual, false, yet);
+  if (ei < interested || (interest_yes ? !interest.implies(e) : !interest.not_implies(e)))
+    no_answer = check_path(e.no, interested, eventual, false, yet);
+
+  //fprintf(stderr, "   %d -> (%d,%d) ", ei, yes_answer, no_answer);
+
+  if (yes_answer >= eventual) {
+    const Expr &event = _exprs[yes_answer];
+    if (e.implies(event))
+      yes_answer = event.yes;
+    else if (e.implies_not(event))
+      yes_answer = event.no;
+  }
+  if (no_answer >= eventual) {
+    const Expr &event = _exprs[no_answer];
+    if (e.not_implies(event))
+      no_answer = event.yes;
+    else if (e.not_implies_not(event))
+      no_answer = event.no;
+  }
+  
+  //fprintf(stderr, "(%d,%d)\n", yes_answer, no_answer);
+
+  if (ei == interested)
+    return (e.yes == eventual ? yes_answer : no_answer);
+  else if (yes_answer != FAILURE && no_answer != FAILURE && yes_answer != no_answer)
+    return (ei >= eventual ? ei : eventual);
+  else
+    return (yes_answer != FAILURE ? yes_answer : no_answer);
+}
+
+#else
+
+int
+Classifier::check_path(const Vector<int> &path,
+		       int ei, int interested, int eventual,
+		       bool first, bool yet) const
+{
+  if (ei > interested && ei != eventual && !yet)
+    return FAILURE;
+  if (ei < 0 || (ei == 0 && !first))
+    return (!yet ? FAILURE : ei);
+
+  const Expr &e = _exprs[ei];
+  if (ei == eventual)
+    yet = true;
+
+  Vector<int> new_path(path);
+  new_path.push_back(ei);
+  
+  int yes_answer = 0;
+  for (int i = 0; i < new_path.size() - 1 && !yes_answer; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
+      yes_answer = FAILURE;
+  }
+  if (!yes_answer)
+    yes_answer = check_path(new_path, e.yes, interested, eventual, false, yet);
+  
+  int no_answer = 0;
+  for (int i = 0; i < new_path.size() - 1 && !no_answer; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
+      no_answer = FAILURE;
+  }
+  if (!no_answer)
+    no_answer = check_path(new_path, e.no, interested, eventual, false, yet);
+
+  //fprintf(stderr, "(%d,%d)\n", yes_answer, no_answer);
+  
+  if (ei == interested)
+    return (e.yes == eventual ? yes_answer : no_answer);
+  else if (yes_answer != FAILURE && no_answer != FAILURE && yes_answer != no_answer)
+    return (ei >= eventual ? ei : eventual);
+  else
+    return (yes_answer != FAILURE ? yes_answer : no_answer);
+}
+
+#endif
+
+int
+Classifier::check_path(int ei, bool yes) const
+{
+  int next_ei = (yes ? _exprs[ei].yes : _exprs[ei].no);
+  //fprintf(stderr, "%d.%s -> %d\n", ei, yes?"y":"n", next_ei);
+  if (next_ei > 0)
+    next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
+  //fprintf(stderr, "      %d.%s -> %d\n", ei, yes?"y":"n", next_ei);
+  return next_ei;
+}
+
+void
+Classifier::drift_expr(int ei)
+{
+  Expr &e = _exprs[ei];
+  while (1) {
+    Expr save(e);
+    e.yes = check_path(ei, true);
+    e.no = check_path(ei, false);
+    if (save.yes == e.yes && save.no == e.no)
       break;
   }
-
-  // if <= 0, we're done: return it
-  if (dst <= 0)
-    return dst;
-
-  // otherwise, try to look ahead through the graph
-  // XXX may be time-expensive; is there a way to limit lookahead?
-  int yes_dst = _exprs[dst].yes;
-  if (yes_dst > 0) {
-    Spread alw_yes(alw);
-    alw_yes.add(_exprs[dst]);
-    Spread nev_yes(nev);
-    yes_dst = drift_one_edge(alw_yes, nev_yes, yes_dst);
-  }
-
-  int no_dst = _exprs[dst].no;
-  if (no_dst > 0) {
-    Spread alw_no(alw);
-    Spread nev_no(nev);
-    nev_no.add(_exprs[dst]);
-    no_dst = drift_one_edge(alw_no, nev_no, no_dst);
-  }
-
-  return (yes_dst == no_dst ? yes_dst : dst);
-}
-
-static void
-combine_edges(Classifier::Spread &alw, Classifier::Spread &nev,
-	      const Classifier::Spread &alw_input,
-	      const Classifier::Spread &nev_input, bool any)
-{
-  if (any) {
-    nev.nev_combine(alw_input, nev_input, alw);
-    alw.alw_combine(alw_input);
-  } else {
-    nev = nev_input;
-    alw = alw_input;
-  }
-}
-
-void
-Classifier::handle_vertex(int ei, Vector<Spread *> &alw_edges,
-			  Vector<Spread *> &nev_edges,
-			  Vector<int> &input_counts)
-{
-  // ei is the expr we're working on
-  int nexprs = _exprs.size();
-  Expr &e = _exprs[ei];
-  
-  // find `alw'/`nev' state at entry, by combining data from incoming edges
-  Spread alw, nev;
-  bool any = false;
-  if (ei != 0)		// no inputs to expr 0
-    for (int i = 0; i < nexprs; i++) {
-      Expr &ee = _exprs[i];
-      if (ee.yes == ei) {
-	combine_edges(alw, nev, *alw_edges[2*i], *nev_edges[2*i], any);
-	any = true;
-      }
-      if (ee.no == ei) {
-	combine_edges(alw, nev, *alw_edges[2*i+1], *nev_edges[2*i+1], any);
-	any = true;
-      }
-    }
-
-  //fprintf(stderr, "** %d\n", ei);
-  //fputs("*y ", stderr); print_spread(alw);
-  //fputs("*n ", stderr); print_spread(nev);
-  
-  // calculate edge states
-  alw_edges[2*ei] = new Spread(alw);
-  alw_edges[2*ei]->add(e);
-  nev_edges[2*ei] = new Spread(nev);
-  alw_edges[2*ei+1] = new Spread(alw);
-  nev_edges[2*ei+1] = new Spread(nev);
-  nev_edges[2*ei+1]->add(e);
-
-  //fputs("Yy ", stderr); print_spread(*alw_edges[2*ei]);
-  //fputs("Yn ", stderr); print_spread(*nev_edges[2*ei]);
-  //fputs("Ny ", stderr); print_spread(*alw_edges[2*ei+1]);
-  //fputs("Nn ", stderr); print_spread(*nev_edges[2*ei+1]);
-  
-  // account for inputs done
-  if (e.yes > 0) input_counts[e.yes]--;
-  if (e.no > 0) input_counts[e.no]--;
-  
-  // drift destinations
-  e.yes = drift_one_edge(*alw_edges[2*ei], *nev_edges[2*ei], e.yes);
-  e.no = drift_one_edge(*alw_edges[2*ei+1], *nev_edges[2*ei+1], e.no);
-  
-  // reset input_counts[ei] to avoid infinite loop
-  input_counts[ei] = -1;
-}
-			  
-
-void
-Classifier::drift_edges()
-{
-  //fputs(program_string(this, 0).cc(), stderr);
-  
-  // count uncalculated inputs to each expr
-  int nexprs = _exprs.size();
-  Vector<int> input_counts(nexprs, 0);
-  for (int i = 0; i < nexprs; i++) {
-    Expr &e = _exprs[i];
-    if (e.yes > 0) input_counts[e.yes]++;
-    if (e.no > 0) input_counts[e.no]++;
-  }
-  // don't count unreachable states
-  for (int i = 1; i < nexprs; i++)
-    if (input_counts[i] == 0)
-      input_counts[i] = -1;
-  
-  // create information about edges
-  Vector<Spread *> alw_edges(2*nexprs, (Spread *)0);
-  Vector<Spread *> nev_edges(2*nexprs, (Spread *)0);
-  
-  // loop over all exprs
-  while (true) {
-    int expr_i = 0;
-    while (expr_i < nexprs && input_counts[expr_i] != 0)
-      expr_i++;
-    if (expr_i >= nexprs) break;
-    handle_vertex(expr_i, alw_edges, nev_edges, input_counts);
-  }
-
-  // delete spreads
-  for (int i = 0; i < 2*nexprs; i++) {
-    delete alw_edges[i];
-    delete nev_edges[i];
-  }
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
 }
 
 void
@@ -447,6 +279,16 @@ Classifier::unaligned_optimize()
 void
 Classifier::remove_unused_states()
 {
+  // remove uninteresting expr[0]s
+  while (_output_everything < 0
+	 && (_exprs[0].yes == _exprs[0].no || _exprs[0].mask.u == 0)) {
+    int next = _exprs[0].yes;
+    if (next <= 0)
+      _output_everything = -next;
+    else
+      _exprs[0] = _exprs[next];
+  }
+  
   // Now remove unreachable states.
   for (int i = 1; i < _exprs.size(); i++) {
     for (int j = 0; j < i; j++)	// all branches are forward
@@ -466,20 +308,41 @@ Classifier::remove_unused_states()
 }
 
 void
+Classifier::combine_compatible_states()
+{
+  for (int i = 0; i < _exprs.size(); i++) {
+    Expr &e = _exprs[i];
+    if (e.yes > 0 && e.no == _exprs[e.yes].no && _exprs[e.yes].compatible(e)) {
+      Expr &ee = _exprs[e.yes];
+      e.yes = ee.yes;
+      e.value.u = (e.value.u & e.mask.u) | (ee.value.u & ee.mask.u);
+      e.mask.u |= ee.mask.u;
+      i--;
+    }
+  }
+}
+
+void
 Classifier::optimize_exprs(ErrorHandler *errh)
 {
   // optimize edges by drifting
-  drift_edges();
+  for (int i = 0; i < _exprs.size(); i++)
+    drift_expr(i);
+  
+  // get rid of unused states
+  combine_compatible_states();
+  remove_unused_states();
+
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   
   // Check for case where all patterns have conflicts: _exprs will be empty
   // but _output_everything will still be < 0. We require that, when _exprs
   // is empty, _output_everything is >= 0.
   if (_exprs.size() == 0 && _output_everything < 0)
     _output_everything = noutputs();
+  else if (_output_everything >= 0)
+    _exprs.clear();
 
-  // get rid of unused states
-  remove_unused_states();
-  
   // Calculate _safe_length
   _safe_length = 0;
   for (int i = 0; i < _exprs.size(); i++) {
@@ -512,6 +375,99 @@ Classifier::optimize_exprs(ErrorHandler *errh)
 // CONFIGURATION
 //
 
+void
+Classifier::init_expr_subtree(Vector<int> &tree)
+{
+  assert(!tree.size());
+  tree.push_back(0);
+}
+
+void
+Classifier::add_expr(Vector<int> &tree, const Expr &e)
+{
+  _exprs.push_back(e);
+  Expr &ee = _exprs.back();
+  ee.yes = SUCCESS;
+  ee.no = FAILURE;
+  int level = tree[0];
+  tree.push_back(level);
+}
+
+void
+Classifier::add_expr(Vector<int> &tree, int offset, unsigned value, unsigned mask)
+{
+  Expr e;
+  e.offset = offset;
+  e.value.u = value & mask;
+  e.mask.u = mask;
+  add_expr(tree, e);
+}
+
+void
+Classifier::start_expr_subtree(Vector<int> &tree)
+{
+  tree[0]++;
+}
+
+void
+Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
+				int success = SUCCESS, int failure = FAILURE)
+{
+  int level = tree[0];
+  Vector<int> subtrees;
+  
+  for (int i = _exprs.size() - 1; i >= 0; i--)
+    if (tree[i+1] == level)
+      subtrees.push_back(i);
+    else if (tree[i+1] >= 0 && tree[i+1] < level)
+      break;
+
+  if (subtrees.size()) {
+    int first = subtrees.back();
+    
+    tree[first+1] = level - 1;
+    for (int i = first + 1; i < _exprs.size(); i++)
+      tree[i+1] = -1;
+    
+    int change_from = (is_and ? SUCCESS : FAILURE);
+    while (subtrees.size()) {
+      subtrees.pop_back();
+      int next = (subtrees.size() ? subtrees.back() : _exprs.size());
+      if (!subtrees.size()) change_from = NEVER;
+      /* click_chatter("%d %d   %d %d", first, next, change_from, next); */
+      for (int i = first; i < next; i++) {
+	Expr &e = _exprs[i];
+	if (e.yes == change_from) e.yes = next;
+	else if (e.yes == SUCCESS) e.yes = success;
+	else if (e.yes == FAILURE) e.yes = failure;
+	if (e.no == change_from) e.no = next;
+	else if (e.no == SUCCESS) e.no = success;
+	else if (e.no == FAILURE) e.no = failure;
+      }
+      first = next;
+    }
+  }
+
+  tree[0]--;
+}
+
+void
+Classifier::negate_expr_subtree(Vector<int> &tree)
+{
+  int level = tree[0];
+  int first = _exprs.size() - 1;
+  while (first >= 0 && tree[first+1] != level)
+    first--;
+
+  for (int i = first; i < _exprs.size(); i++) {
+    Expr &e = _exprs[i];
+    if (e.yes == FAILURE) e.yes = SUCCESS;
+    else if (e.yes == SUCCESS) e.yes = FAILURE;
+    if (e.no == FAILURE) e.no = SUCCESS;
+    else if (e.no == SUCCESS) e.no = FAILURE;
+  }
+}
+
 static void
 update_value_mask(int c, int shift, int &value, int &mask)
 {
@@ -534,7 +490,6 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   set_noutputs(conf.size());
   
   _output_everything = -1;
-  int FAIL = -noutputs();
 
   // set align offset
   {
@@ -550,6 +505,10 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
   }
   
+  Vector<int> tree;
+  init_expr_subtree(tree);
+  start_expr_subtree(tree);
+  
   for (int slot = 0; slot < conf.size(); slot++) {
     int i = 0;
     int len = conf[slot].length();
@@ -558,12 +517,11 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
     int slot_branch = _exprs.size();
     Vector<Expr> slot_exprs;
 
-    if (s[0] == '-' && len == 1) {
+    start_expr_subtree(tree);
+
+    if (s[0] == '-' && len == 1)
       // slot accepting everything
-      if (!slot_branch) _output_everything = slot;
-      slot_branch = -slot;
       i = 1;
-    }
     
     while (i < len) {
       
@@ -571,6 +529,8 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 	i++;
       if (i >= len) break;
 
+      start_expr_subtree(tree);
+      
       // negated?
       bool negated = false;
       if (s[i] == '!') {
@@ -581,7 +541,7 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
       }
       
       if (i >= len || !isdigit(s[i]))
-	return errh->error("slot %d: expected a digit", slot);
+	return errh->error("pattern %d: expected a digit", slot);
 
       // read offset
       int offset = 0;
@@ -592,7 +552,7 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
       }
       
       if (i >= len || s[i] != '/')
-	return errh->error("slot %d: expected `/'", slot);
+	return errh->error("pattern %d: expected `/'", slot);
       i++;
 
       // scan past value
@@ -614,18 +574,18 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 
       // check lengths
       if (value_end - value_pos < 2) {
-	errh->error("slot %d: value has less than 2 hex digits", slot);
+	errh->error("pattern %d: value has less than 2 hex digits", slot);
 	value_end = value_pos;
 	mask_end = mask_pos;
       }
       if ((value_end - value_pos) % 2 != 0) {
-	errh->error("slot %d: value has odd number of hex digits", slot);
+	errh->error("pattern %d: value has odd number of hex digits", slot);
 	value_end--;
 	mask_end--;
       }
       if (mask_pos >= 0 && (mask_end - mask_pos) != (value_end - value_pos)) {
 	bool too_many = (mask_end - mask_pos) > (value_end - value_pos);
-	errh->error("slot %d: mask has too %s hex digits", slot,
+	errh->error("pattern %d: mask has too %s hex digits", slot,
 		    (too_many ? "many" : "few"));
 	if (too_many)
 	  mask_end = mask_pos + value_end - value_pos;
@@ -649,59 +609,47 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 	  m = m & mv & mm;
 	}
 	if (first || offset % 4 == 0) {
-	  Expr e;
-	  e.offset = (offset / 4) * 4;
-	  e.mask.u = e.value.u = 0;
-	  e.yes = slot_branch + slot_exprs.size() + 1;
-	  e.no = FAIL;
-	  slot_exprs.push_back(e);
+	  add_expr(tree, (offset / 4) * 4, 0, 0);
 	  first = false;
 	}
-	slot_exprs.back().mask.c[offset % 4] = m;
-	slot_exprs.back().value.c[offset % 4] = v & m;
+	_exprs.back().mask.c[offset % 4] = m;
+	_exprs.back().value.c[offset % 4] = v & m;
 	offset++;
       }
 
-      // switch pointers of last expr in a negated block to implement negation
-      if (negated && !first) {
-	slot_exprs.back().yes = FAIL;
-	slot_exprs.back().no = slot_branch + slot_exprs.size();
-      }
+      // combine with "and"
+      finish_expr_subtree(tree, true);
+
+      if (negated)
+	negate_expr_subtree(tree);
     }
 
-    // patch success pointers to point to `slot'
-    if (slot_exprs.size()) {
-      Expr &e = slot_exprs.back();
-      if (e.yes != FAIL) e.yes = -slot;
-      if (e.no != FAIL) e.no = -slot;
-    }
-    
-    // patch previous failure pointers to point to this pattern
-    for (int ei = 0; ei < _exprs.size(); ei++) {
-      Expr &e = _exprs[ei];
-      if (e.yes == FAIL) e.yes = slot_branch;
-      if (e.no == FAIL) e.no = slot_branch;
-    }
+    // add fake expr if required
+    if (_exprs.size() == slot_branch)
+      add_expr(tree, 0, 0, 0);
 
-    // add slot_exprs to _exprs
-    for (int ei = 0; ei < slot_exprs.size(); ei++)
-      _exprs.push_back(slot_exprs[ei]);
+    finish_expr_subtree(tree, true, -slot);
   }
 
+  finish_expr_subtree(tree, false, -noutputs(), -noutputs());
+
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   optimize_exprs(errh);
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   return 0;
 }
 
 String
 Classifier::program_string(Element *element, void *)
 {
-  Classifier *f = (Classifier *)element;
+  Classifier *c = (Classifier *)element;
   StringAccum sa;
-  for (int i = 0; i < f->_exprs.size(); i++) {
-    Expr &e = f->_exprs[i];
+  for (int i = 0; i < c->_exprs.size(); i++) {
+    Expr &e = c->_exprs[i];
     char buf[20];
-    int offset = e.offset - f->_align_offset;
-    sa << i << (offset < 10 ? "   " : "  ") << offset << "/";
+    int offset = e.offset - c->_align_offset;
+    sprintf(buf, "%2d %3d/", i, offset);
+    sa << buf;
     for (int j = 0; j < 4; j++)
       sprintf(buf + 2*j, "%02x", e.value.c[j]);
     sprintf(buf + 8, "%%");
@@ -719,10 +667,10 @@ Classifier::program_string(Element *element, void *)
       sa << "step " << e.no;
     sa << "\n";
   }
-  if (f->_exprs.size() == 0)
-    sa << "all->[" << f->_output_everything << "]\n";
-  sa << "safe length " << f->_safe_length << "\n";
-  sa << "alignment offset " << f->_align_offset << "\n";
+  if (c->_exprs.size() == 0)
+    sa << "all->[" << c->_output_everything << "]\n";
+  sa << "safe length " << c->_safe_length << "\n";
+  sa << "alignment offset " << c->_align_offset << "\n";
   return sa.take_string();
 }
 
