@@ -1,31 +1,40 @@
 CLICK INSTALLATION INSTRUCTIONS
 ===============================
 
-The user-level version of Click should compile and run on Intel x86 systems
-running Unix, using the BPF (Berkeley Packet Filter) system to communicate
-with the network. The Linux kernel module requires a patched Linux 2.2
-system (we've tested on recent Linux kernels like 2.2.10 and 2.2.11).
+To compile any version of Click, you will need the GNU C compiler; the GNU
+C++ compiler (version 2.8 or above, or a recent version of egcs); and GNU
+Make. (You may have luck with other C++ compilers if you change the
+Makefiles. There is no GNU-specific code, only GNU-specific compiler
+options.)
+
+The user-level version of Click should compile and run on any Intel x86
+Unix systems that have the pcap library. (The pcap library is necessary to
+communicate with the network.) The Linux kernel module requires a patched
+Linux 2.2 system; we've tested on recent Linux kernels like 2.2.10 and
+2.2.11.
 
 First, run
 
 	./configure
 
 This will test your system and decide the versions that will work for you
-(user-level, Linux module, or both). To compile Click at user level, you
-must have the pcap library on your system.
+(user-level, Linux module, or both). It will tell you what is wrong if it
+cannot compile a version.
 
-Un-tar the Click source and remember where you put it:
+USERLEVEL
+---------
 
-  tar xf click.tar
-  cd click
-  set d=`pwd`
+The configure script may not be able to find your pcap library if it's in a
+nonstandard place. To fix this, set your `PCAP_HEADER_PATH' and
+`PCAP_LIBRARY_PATH' environment variables and rerun `./configure'. The
+`PCAP_HEADER_PATH' variable is for options that tell the C preprocessor
+where to find `pcap.h'; the `PCAP_LIBRARY_PATH' variable is for options
+that tell the linker where to find `libpcap.a'. One example setting would
+be `PCAP_HEADER_PATH=-I/usr/local/include/pcap' and
+`PCAP_LIBRARY_PATH=-L/usr/local/lib/pcap'.
 
-You can compile the userlevel version of Click right away:
-
-  cd $d
-  ./configure
-  cd userlevel
-  gmake
+LINUX MODULE
+------------
 
 Before you can compile or use the Click loadable kernel module, you
 need to install, patch, compile, and boot a compatible Linux kernel.

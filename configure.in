@@ -170,8 +170,9 @@ AC_SUBST(TARGETS)
 
 dnl check userlevel for pcap library
 
-if test ${PCAP_HEADER_PATH-NO} != NO; then 
-  ac_cv_pcap_header_path=$PCAP_HEADER_PATH
+ac_cv_pcap_header_path=
+if test "${PCAP_HEADER_PATH-NO}" != NO; then
+  ac_cv_pcap_header_path="$PCAP_HEADER_PATH"
 else
   saveflags="$CPPFLAGS"
   AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path,
@@ -189,8 +190,9 @@ else
   fi
 fi
 
+ac_cv_pcap_library_path=
 if test ${PCAP_LIBRARY_PATH-NO} != NO; then
-  ac_cv_pcap_library_path=$PCAP_LIBRARY_PATH
+  ac_cv_pcap_header_path="$PCAP_LIBRARY_PATH"
 else
   saveflags="$LDFLAGS"
   savelibs="$LIBS"
