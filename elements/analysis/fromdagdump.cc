@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * fromdagdump.{cc,hh} -- element reads packets from tcpdump file
+ * fromdagdump.{cc,hh} -- element reads packets from DAG (Waikato) file
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -24,7 +24,6 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/handlercall.hh>
-#include <click/packet_anno.hh>
 #include <clicknet/rfc1483.h>
 #include <click/userutils.hh>
 #include "elements/userlevel/fakepcap.hh"
@@ -81,8 +80,6 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
-		    cpOptional,
-		    cpBool, "use original packet timing?", &timing,
 		    cpKeywords,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,

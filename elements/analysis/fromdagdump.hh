@@ -8,7 +8,7 @@ class HandlerCall;
 /*
 =c
 
-FromDAGDump(FILENAME [, TIMING, I<KEYWORDS>])
+FromDAGDump(FILENAME [, I<KEYWORDS>])
 
 =s analysis
 
@@ -18,9 +18,7 @@ reads packets from a DAG file
 
 Reads packets from a file in DAG format, produced by the University of
 Waikato's DAG tools. Pushes them out the output, and optionally stops the
-driver when there are no more packets. If TIMING is true, then FromDAGDump
-tries to maintain the timing of the original packet stream. TIMING is false by
-default.
+driver when there are no more packets.
 
 FromDAGDump also transparently reads gzip- and bzip2-compressed files, if you
 have zcat(1) and bzcat(1) installed.
@@ -83,7 +81,8 @@ time is reached.
 
 =item TIMING
 
-Boolean. Same as the TIMING argument.
+Boolean. If true, then FromDAGDump tries to maintain the inter-packet timing
+of the original packet stream. False by default.
 
 =item ACTIVE
 
