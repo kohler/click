@@ -65,7 +65,7 @@ freebsd_includedir = @freebsd_includedir@
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
 U_CC = @CC@
-K_CC = @CC@
+K_CC = @KERNEL_CC@
 B_CC = @CC@
 CPP = @CPP@
 U_CXX = @CXX@

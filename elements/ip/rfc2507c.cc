@@ -16,9 +16,6 @@
  */
 
 #include <click/config.h>
-#ifdef __linux__
-# define _BSD_SOURCE
-#endif
 #include "rfc2507c.hh"
 CLICK_DECLS
 

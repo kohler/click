@@ -49,16 +49,13 @@ class BigHashMap { public:
   const_iterator begin() const;
   iterator begin();
   
-  typedef iterator Iterator;
+  typedef iterator Iterator;		// for compatibility
 
   // dynamic resizing
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
   void set_dynamic_resizing(bool);
 
-  // dangerous operations
-  static const K &key_of_value(V *v)	{ return *(const K *)((char *)v - offsetof(Elt, v)); }
-  
  private:
   
   struct Elt {
@@ -193,11 +190,10 @@ class BigHashMap<K, void *> { public:
   // iterators
   typedef _BigHashMap_const_iterator<K, void *> const_iterator;
   typedef _BigHashMap_iterator<K, void *> iterator;
-
   const_iterator begin() const;
   iterator begin();
 
-  typedef iterator Iterator;
+  typedef iterator Iterator;		// for compatibility
   
   // dynamic resizing
   void resize(int);
@@ -343,12 +339,11 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
 
   // iteration
   typedef _BigHashMap_const_iterator<K, T *> const_iterator;
-  typedef _BigHashMap_iterator<K, T *> iterator;
-  
+  typedef _BigHashMap_iterator<K, T *> iterator;  
   const_iterator begin() const;
   iterator begin();
 
-  typedef iterator Iterator;
+  typedef iterator Iterator;		// for compatibility
 
   // dynamic resizing
   void resize(int s)			{ inherited::resize(s); }

@@ -14,6 +14,7 @@ dnl
 
 AC_DEFUN([CLICK_INIT], [
     ac_user_cc= ; test -n "$CC" && ac_user_cc=y
+    ac_user_kernel_cc= ; test -n "$KERNEL_CC" && ac_user_kernel_cc=y
     ac_user_cxx= ; test -n "$CXX" && ac_user_cxx=y
     ac_user_build_cxx= ; test -n "$BUILD_CXX" && ac_user_build_cxx=y
     ac_user_kernel_cxx= ; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
@@ -31,8 +32,10 @@ dnl
 
 AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
+
+    ac_base_cc="$CC"
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	CC="$CC -Wall -MD"
+	CC="$CC -W -Wall -MD"
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
@@ -67,15 +70,13 @@ and Linux header files are GCC-specific.)
     fi
 
     AC_LANG_CPLUSPLUS
-    AC_CACHE_CHECK(for recent version of C++, ac_cv_good_cxx,
-	AC_TRY_COMPILE([], [#ifdef __GNUG__
-#if (__GNUC__ == 2) && (__GNUC_MINOR__ <= 7)
-#error "fuckers! fuckers!"
-#endif
-#endif
-return 0;], ac_cv_good_cxx=yes, ac_cv_good_cxx=no))
-    if test "$ac_cv_good_cxx" != yes; then
-	AC_MSG_ERROR([
+    if test -n "$GXX"; then
+	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`changequote([,])
+	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
+	GXX_MINOR=`echo $GXX_VERSION | sed 's/.*\.//'`
+
+	if test $GXX_MAJOR -lt 2 -o \( $GXX_MAJOR -eq 2 -a $GXX_MINOR -le 7 \); then
+	    AC_MSG_ERROR([
 =========================================
 
 Your GNU C++ compiler ($CXX) is too old!
@@ -83,6 +84,7 @@ Either download a newer compiler, or tell me to use a different compiler
 by setting the "'`'"CXX' environment variable and rerunning me.
 
 =========================================])
+	fi
     fi
 
     dnl check for <new> and <new.h>
@@ -107,11 +109,25 @@ by setting the "'`'"CXX' environment variable and rerunning me.
 	fi
     fi
 
+    dnl check for -fvtable-thunks
+
+    VTABLE_THUNKS=
+    test -n "$GXX" && test "$GXX_MAJOR" -lt 3 && VTABLE_THUNKS=-fvtable-thunks
+
+    dnl define correct warning options
+
+    CXX_WARNINGS=
+    if test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings"; then
+	if test "$GXX_MAJOR" -ge 3; then
+	    CXX_WARNINGS='-W -Wall'
+	else
+	    CXX_WARNINGS='-Wp,-w -W -Wall'
+	fi
+    fi
+
     ac_base_cxx="$CXX"
-    test -z "$ac_user_cxx" -a -n "$GXX" && \
-	CXX="$CXX -fno-exceptions -fno-rtti -fvtable-thunks -MD"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX -Wp,-w -W -Wall"
+	CXX="$CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -MD"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -126,8 +142,23 @@ dnl
 AC_DEFUN([CLICK_PROG_BUILD_CXX], [
     dnl This doesn't really work, but it's close.
     ac_base_build_cxx="$CXX"
-    test -z "$ac_user_build_cxx" && \
-	BUILD_CXX="$CXX"
+    test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
+	BUILD_CXX="$BUILD_CXX $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS"
+])
+
+
+dnl
+dnl CLICK_PROG_KERNEL_CC
+dnl Prepare the kernel-ready C compiler.
+dnl
+
+AC_DEFUN([CLICK_PROG_KERNEL_CC], [
+    AC_REQUIRE([CLICK_PROG_CC])
+    test -z "$ac_user_kernel_cc" && \
+	KERNEL_CC="$ac_base_cc -MD"
+    test -z "$ac_user_kernel_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+	KERNEL_CC="$ac_base_cc -w $CXX_WARNINGS -MD"
+    AC_SUBST(KERNEL_CC)
 ])
 
 
@@ -139,9 +170,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx -fno-exceptions -fno-rtti -fvtable-thunks -fno-strict-aliasing -MD"
+	KERNEL_CXX="$ac_base_cxx -MD"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$KERNEL_CXX -w -Wall"
+	KERNEL_CXX="$ac_base_cxx -w $CXX_WARNINGS -fno-exceptions -fno-rtti $VTABLE_THUNKS -MD"
     AC_SUBST(KERNEL_CXX)
 ])
 

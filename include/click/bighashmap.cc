@@ -402,7 +402,7 @@ BigHashMap<K, void *>::bucket(const K &key) const
 }
 
 template <class K>
-BigHashMap<K, void *>::Elt *
+typename BigHashMap<K, void *>::Elt *
 BigHashMap<K, void *>::find_elt(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND

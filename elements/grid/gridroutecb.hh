@@ -102,4 +102,4 @@ protected:
 };
 
 CLICK_ENDDECLS
-#endif GRIDROUTECB_HH
+#endif /* GRIDROUTECB_HH */

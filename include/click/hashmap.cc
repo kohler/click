@@ -15,6 +15,9 @@
  * legally binding.
  */
 
+#ifndef CLICK_HASHMAP_CC
+#define CLICK_HASHMAP_CC
+
 CLICK_ENDDECLS
 #include <click/hashmap.hh>
 CLICK_DECLS
@@ -182,3 +185,5 @@ _HashMapIterator<K, V>::operator++(int)
   for (_pos++; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;
 }
+
+#endif

@@ -2,23 +2,18 @@
 #ifndef CLICK_CONFIG_NS_H
 #define CLICK_CONFIG_NS_H
 
-/* Include userlevel configuration. */
-#define CLICK_USERLEVEL 1
-#include <click/config-userlevel.h>
-
 #ifdef __cplusplus
 
-/* Redefine macros that surround Click declarations. */
-#undef CLICK_DECLS
-#undef CLICK_ENDDECLS
-#undef CLICK_USING_DECLS
-#undef CLICK_NAME
-
+/* Define macros that surround Click declarations. */
 #define CLICK_DECLS		namespace Click {
 #define CLICK_ENDDECLS		}
 #define CLICK_USING_DECLS	using namespace Click;
 #define CLICK_NAME(name)	Click::name
 
 #endif /* __cplusplus */
+
+/* Include userlevel configuration. */
+#define CLICK_USERLEVEL 1
+#include <click/config-userlevel.h>
 
 #endif /* CLICK_CONFIG_NS_H */

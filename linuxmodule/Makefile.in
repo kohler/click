@@ -16,7 +16,7 @@ linuxdir = @linuxdir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/linuxmodule@elements_vpath@
 
-CC = @CC@
+CC = @KERNEL_CC@
 CPP = @CPP@
 CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@

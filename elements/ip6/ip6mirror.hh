@@ -40,4 +40,4 @@ class IP6Mirror : public Element {
 };
 
 CLICK_ENDDECLS
-#endif IP6MIRROR_HH
+#endif /* IP6MIRROR_HH */
