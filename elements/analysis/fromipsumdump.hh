@@ -3,6 +3,7 @@
 #define CLICK_FROMIPSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/ipflowid.hh>
 CLICK_DECLS
 
 /*
@@ -72,6 +73,12 @@ generated per record.
 String, containing a space-separated list of content names (see
 ToIPSummaryDump for the possibilities). Defines the default contents of the
 dump.
+
+=item DEFAULT_FLOWID
+
+String, containing a space-separated flow ID (source address, source port,
+destination address, destination port, and, optionally, protocol). Defines the
+IP addresses and ports used by default.
 
 =back
 
@@ -158,12 +165,15 @@ class FromIPSummaryDump : public Element { public:
     Vector<int> _contents;
     uint16_t _default_proto;
     uint32_t _sampling_prob;
+    IPFlowID _flowid;
 
     bool _stop : 1;
     bool _format_complaint : 1;
-    bool _zero;
-    bool _active;
-    bool _multipacket;
+    bool _zero : 1;
+    bool _active : 1;
+    bool _multipacket : 1;
+    bool _have_flowid : 1;
+    bool _use_flowid : 1;
     Packet *_work_packet;
     uint32_t _multipacket_extra_length;
 
@@ -174,12 +184,15 @@ class FromIPSummaryDump : public Element { public:
     FILE *_pipe;
     off_t _file_offset;
     int _minor_version;
+    IPFlowID _given_flowid;
 
     int error_helper(ErrorHandler *, const char *);
     int read_buffer(ErrorHandler *);
     int read_line(String &, ErrorHandler *);
 
     void bang_data(const String &, ErrorHandler *);
+    void bang_flowid(const String &, click_ip *, ErrorHandler *);
+    void check_flowid();
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);
 

@@ -65,7 +65,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = false, multipacket = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    String default_contents;
+    String default_contents, default_flowid;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -77,6 +77,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROTO", cpByte, "default IP protocol", &default_proto,
 		    "MULTIPACKET", cpBool, "generate multiple packets per record?", &multipacket,
 		    "DEFAULT_CONTENTS", cpArgument, "default contents of log", &default_contents,
+		    "DEFAULT_FLOWID", cpArgument, "default flow ID", &default_flowid,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -90,8 +91,11 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = active;
     _zero = zero;
     _multipacket = multipacket;
+    _have_flowid = false;
     if (default_contents)
 	bang_data(default_contents, errh);
+    if (default_flowid)
+	bang_flowid(default_flowid, 0, errh);
     return 0;
 }
 
@@ -283,6 +287,67 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	for (int i = 0; i < _contents.size(); i++)
 	    if (_contents[i] == W_FRAG)
 		_contents[i] = W_NONE;
+
+    // recheck whether to use `!flowid'
+    check_flowid();
+}
+
+void
+FromIPSummaryDump::check_flowid()
+{
+    _use_flowid = false;
+    if (_have_flowid) {
+	_flowid = _given_flowid;
+	for (int i = 0; i < _contents.size(); i++)
+	    if (_contents[i] == W_SRC)
+		_flowid.set_saddr(IPAddress());
+	    else if (_contents[i] == W_DST)
+		_flowid.set_daddr(IPAddress());
+	    else if (_contents[i] == W_SPORT)
+		_flowid.set_sport(0);
+	    else if (_contents[i] == W_DPORT)
+		_flowid.set_dport(0);
+	if (_flowid || _flowid.sport() || _flowid.dport())
+	    _use_flowid = true;
+    }
+}
+
+void
+FromIPSummaryDump::bang_flowid(const String &line, click_ip *iph,
+			       ErrorHandler *errh)
+{
+    Vector<String> words;
+    cp_spacevec(line, words);
+
+    IPAddress src, dst;
+    uint32_t sport = 0, dport = 0, proto = 0;
+    if (words.size() < 5
+	|| (!cp_ip_address(words[1], &src) && words[1] != "-")
+	|| (!cp_unsigned(words[2], &sport) && words[2] != "-")
+	|| (!cp_ip_address(words[3], &dst) && words[3] != "-")
+	|| (!cp_unsigned(words[4], &dport) && words[4] != "-")
+	|| sport > 65535 || dport > 65535) {
+	error_helper(errh, "bad !flowid specification");
+	_have_flowid = _use_flowid = false;
+    } else {
+	if (words.size() >= 6) {
+	    if (cp_unsigned(words[5], &proto) && proto < 256)
+		_default_proto = proto;
+	    else if (words[5] == "T")
+		_default_proto = IP_PROTO_TCP;
+	    else if (words[5] == "U")
+		_default_proto = IP_PROTO_UDP;
+	    else if (words[5] == "I")
+		_default_proto = IP_PROTO_ICMP;
+	    else
+		error_helper(errh, "bad protocol in !flowid");
+	}
+	_given_flowid = IPFlowID(src, htons(sport), dst, htons(dport));
+	_have_flowid = true;
+	check_flowid();
+	if (iph)
+	    iph->ip_p = _default_proto;
+    }
 }
 
 Packet *
@@ -320,6 +385,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    continue;
 	} else if (len >= 7 && memcmp(data, "!proto", 6) == 0 && isspace(data[6])) {
 	    //handle_proto_line(line, errh);
+	    continue;
+	} else if (len >= 8 && memcmp(data, "!flowid", 7) == 0 && isspace(data[7])) {
+	    bang_flowid(line, iph, errh);
 	    continue;
 	} else if (len == 0 || data[0] == '!' || data[0] == '#')
 	    continue;
@@ -583,6 +651,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
 	else
 	    q->take(sizeof(click_tcp));
+	
 	if (have_payload) {	// XXX what if byte_count indicates IP options?
 	    iph->ip_len = ntohs(q->length() + payload.length());
 	    if ((q = q->put(payload.length())))
@@ -596,6 +665,19 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	} else
 	    iph->ip_len = ntohs(q->length());
 
+	// set data from flow ID
+	if (_use_flowid) {
+	    IPFlowID flowid = (PAINT_ANNO(q) ? _flowid.rev() : _flowid);
+	    if (flowid.saddr())
+		iph->ip_src = flowid.saddr();
+	    if (flowid.daddr())
+		iph->ip_dst = flowid.daddr();
+	    if (flowid.sport() && IP_FIRSTFRAG(iph))
+		q->tcp_header()->th_sport = flowid.sport();
+	    if (flowid.dport() && IP_FIRSTFRAG(iph))
+		q->tcp_header()->th_dport = flowid.dport();
+	}
+	
 	return q;
     }
 
