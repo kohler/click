@@ -64,7 +64,7 @@ Queue::initialize(ErrorHandler *errh)
   _empty_jiffies = click_jiffies();
   _head = _tail = 0;
   _drops = 0;
-  _max_length = 0;
+  _highwater_length = 0;
   return 0;
 }
 
@@ -119,7 +119,7 @@ Queue::take_state(Element *e, ErrorHandler *errh)
     j = q->next_i(j);
   }
   _tail = i;
-  _max_length = size();
+  _highwater_length = size();
 
   if (j != q->_tail)
     errh->warning("some packets lost (old length %d, new capacity %d)",
@@ -178,8 +178,8 @@ Queue::push(int, Packet *packet)
 #endif
     
     int s = size();
-    if (s > _max_length)
-      _max_length = s;
+    if (s > _highwater_length)
+      _highwater_length = s;
     
   } else {
     // if (!(_drops % 100))
@@ -197,35 +197,58 @@ Queue::pull(int)
   return deq();
 }
 
-static String
-queue_read_length(Element *f, void *thunk)
+
+String
+Queue::read_handler(Element *e, void *thunk)
 {
-  Queue *q = (Queue *)f;
-  switch ((int)thunk) {
+  Queue *q = static_cast<Queue *>(e);
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
    case 0:
     return String(q->size()) + "\n";
    case 1:
-    return String(q->max_length()) + "\n";
-   default:
+    return String(q->highwater_length()) + "\n";
+   case 2:
     return String(q->capacity()) + "\n";
+   case 3:
+    return String(q->_drops) + "\n";
+   default:
+    return "";
   }
 }
 
-static String
-queue_read_drops(Element *f, void *)
+int
+Queue::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
 {
-  Queue *q = (Queue *)f;
-  return String(q->drops()) + "\n";
+  Queue *q = static_cast<Queue *>(e);
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
+   case 0:
+    q->_drops = 0;
+    q->_highwater_length = 0;
+    return 0;
+   case 1:
+    while (q->_head != q->_tail) {
+      int i = q->_head;
+      q->_head = q->next_i(q->_head);
+      q->_q[i]->kill();
+    }
+    return 0;
+   default:
+    return errh->error("internal error");
+  }
 }
 
 void
 Queue::add_handlers()
 {
-  add_read_handler("length", queue_read_length, (void *)0);
-  add_read_handler("highwater_length", queue_read_length, (void *)1);
-  add_read_handler("capacity", queue_read_length, (void *)2);
+  add_read_handler("length", read_handler, (void *)0);
+  add_read_handler("highwater_length", read_handler, (void *)1);
+  add_read_handler("capacity", read_handler, (void *)2);
+  add_read_handler("drops", read_handler, (void *)3);
   add_write_handler("capacity", reconfigure_write_handler, (void *)0);
-  add_read_handler("drops", queue_read_drops, 0);
+  add_write_handler("reset_counts", write_handler, (void *)0);
+  add_write_handler("reset", write_handler, (void *)1);
 }
 
 ELEMENT_PROVIDES(Storage)

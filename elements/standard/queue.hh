@@ -23,6 +23,10 @@
  * Returns or sets the queue's capacity.
  * =h drops read-only
  * Returns the number of packets dropped by the Queue so far.
+ * =h reset_counts write-only
+ * When written, resets the C<drops> and C<highwater_length> counters.
+ * =h reset write-only
+ * When written, drops all packets in the Queue.
  * =a RED, FrontDropQueue
  */
 
@@ -55,12 +59,15 @@ class Queue : public Element, public Storage {
   
   Packet **_q;
   int _drops;
-  int _max_length;
+  int _highwater_length;
 
   int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
   int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
 
   friend class FrontDropQueue;
+
+  static String read_handler(Element *, void *);
+  static int write_handler(const String &, Element *, void *, ErrorHandler *);
   
  public:
   
@@ -72,7 +79,7 @@ class Queue : public Element, public Storage {
   const char *processing() const		{ return PUSH_TO_PULL; }
   
   int drops() const				{ return _drops; }
-  int max_length() const			{ return _max_length; }
+  int highwater_length() const			{ return _highwater_length; }
   
   void enq(Packet *);
   Packet *deq();

@@ -21,6 +21,10 @@
  * Returns or sets the queue's capacity.
  * =h drops read-only
  * Returns the number of packets dropped by the Queue so far.
+ * =h reset_counts write-only
+ * When written, resets the C<drops> and C<highwater_length> counters.
+ * =h reset write-only
+ * When written, drops all packets in the Queue.
  * =a Queue, RED
  */
 

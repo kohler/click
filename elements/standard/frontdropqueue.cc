@@ -85,7 +85,7 @@ FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
     _q[i] = q->_q[j];
   }
   _head = i;
-  _max_length = size();
+  _highwater_length = size();
 
   if (j != q->_head)
     errh->warning("some packets lost (old length %d, new capacity %d)",
@@ -116,8 +116,8 @@ FrontDropQueue::push(int, Packet *packet)
   _tail = next;
   
   int s = size();
-  if (s > _max_length)
-    _max_length = s;
+  if (s > _highwater_length)
+    _highwater_length = s;
 }
 
 ELEMENT_REQUIRES(Queue)
