@@ -1,3 +1,7 @@
+2003-09-05 Friday 22:00  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.cc (1.16): modify keyword ordering
+
 2003-09-05 Friday 21:29  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.55),
