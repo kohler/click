@@ -1,3 +1,13 @@
+2004-09-09 Thursday 17:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/task.hh (1.32): comment updates, and off-by-one
+	error in the reverse-list case (Nikitas)
+
+2004-09-09 Thursday 17:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/unqueue.cc (1.28): Unqueue.count returns an
+	integer (Nikitas)
+
 2004-09-07 Tuesday 21:53  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: printwifi.cc (1.5), wifidecap.cc (1.8),
