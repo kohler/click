@@ -84,7 +84,7 @@ static void anno_outa(const PacketDesc& d, int thunk)
 	break;
       case T_TIMESTAMP_USEC1:
 #if HAVE_INT64_TYPES
-	*d.sa << (((uint64_t)d.v) << 32) | d.v2;
+	*d.sa << ((((uint64_t)d.v) << 32) | d.v2);
 #else
 	*d.sa << d.v2;
 #endif
