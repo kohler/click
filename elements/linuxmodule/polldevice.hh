@@ -54,6 +54,7 @@ class PollDevice : public Element {
  private:
   int _total_intr_wait;
   int _idle;
+  int _pkts_received;
   String _devname;
   struct device *_dev;
   struct wait_queue _self_wq;

@@ -35,6 +35,7 @@ PollDevice::PollDevice()
   : _dev(0)
 {
   add_output();
+  _pkts_received=0;
 }
 
 PollDevice::PollDevice(const String &devname)
@@ -44,10 +45,12 @@ PollDevice::PollDevice(const String &devname)
   _bm_done = 0;
 #endif
   add_output();
+  _pkts_received=0;
 }
 
 PollDevice::~PollDevice()
 {
+  click_chatter("%s received %d packets", declaration().cc(), _pkts_received);
 }
 
 void
@@ -107,7 +110,7 @@ PollDevice::uninitialize()
   if (_dev)
   { 
     _num_polldevices--;
-    if (_idle >= 128) 
+    if (_idle >= 32) 
       _num_idle_polldevices--;
     _idle = 0;
 
@@ -126,13 +129,12 @@ PollDevice::run_scheduled()
   extern int rtm_ipackets;
   extern unsigned long long rtm_ibytes;
   struct sk_buff *skb;
+  int got=0;
 
-  skb = _dev->rx_poll(_dev);
-  _dev->fill_rx(_dev);
-  _dev->clean_tx(_dev);
+  while((skb = _dev->rx_poll(_dev)) && got<32) {
+    _pkts_received++;
 
-  if (skb != 0L) {
-    if (_idle >= 128)
+    if (_idle >= 32)
       _num_idle_polldevices--; 
     _idle = 0;
     rtm_ipackets++;
@@ -150,12 +152,14 @@ PollDevice::run_scheduled()
       p->set_mac_broadcast_anno(1);
 
     output(0).push(p);
-  } else
-    _idle++;
+    got++;
+  }
+  _dev->fill_rx(_dev);
+  _dev->clean_tx(_dev);
+  _idle++;
 
-  if (_idle < 128) reschedule();
-  else {
-    if (_idle == 128)
+  if (_idle >= 32) {
+    if (_idle == 32)
       _num_idle_polldevices++;
     if (_num_idle_polldevices == _num_polldevices)
     {
@@ -180,8 +184,9 @@ PollDevice::run_scheduled()
       // click_chatter("unscheduled all polldevices");
       return;
     }
-    reschedule();
   }
+
+  reschedule();
 }
  
 void
