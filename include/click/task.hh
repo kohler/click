@@ -8,7 +8,7 @@
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
-typedef void (*TaskHook)(void *);
+typedef void (*TaskHook)(Task *, void *);
 class RouterThread;
 class TaskList;
 
@@ -24,7 +24,6 @@ class Task { public:
 
   bool initialized() const		{ return _all_prev; }
   bool scheduled() const		{ return _prev; }
-  bool have_scheduler() const		{ return _list; }
 
   TaskHook hook() const			{ return _hook; }
   void *thunk() const			{ return _thunk; }
@@ -36,9 +35,7 @@ class Task { public:
   
 #ifndef RR_SCHED
   int tickets() const			{ return _tickets; }
-  int max_tickets() const		{ return _max_tickets; }
   
-  void set_max_tickets(int);
   void set_tickets(int);
   void adj_tickets(int);
 #endif
@@ -76,7 +73,6 @@ class Task { public:
   unsigned _pass;
   unsigned _stride;
   int _tickets;
-  int _max_tickets;
 #endif
   
   TaskHook _hook;
@@ -99,7 +95,7 @@ class Task { public:
   
   void join_scheduler(RouterThread *);
 
-  static void error_hook(void *);
+  static void error_hook(Task *, void *);
   
   friend class TaskList;
   friend class RouterThread;
@@ -131,7 +127,7 @@ inline
 Task::Task(TaskHook hook, void *thunk)
   : _prev(0), _next(0),
 #ifndef RR_SCHED
-    _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
+    _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(hook), _thunk(thunk),
 #if __MTCLICK__
@@ -145,7 +141,7 @@ inline
 Task::Task(Element *e)
   : _prev(0), _next(0),
 #ifndef RR_SCHED
-    _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
+    _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(0), _thunk(e),
 #if __MTCLICK__
@@ -187,8 +183,8 @@ Task::fast_unschedule()
 inline void 
 Task::set_tickets(int n)
 {
-  if (n > _max_tickets)
-    n = _max_tickets;
+  if (n > MAX_TICKETS)
+    n = MAX_TICKETS;
   else if (n < 1)
     n = 1;
   _tickets = n;
@@ -206,7 +202,7 @@ inline void
 Task::fast_reschedule()
 {
   // should not be scheduled at this point
-  assert(have_scheduler() && !_next);
+  assert(_list && !_next);
 
   // increase pass
   _pass += _stride;
@@ -241,7 +237,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_reschedule()
 {
-  assert(have_scheduler() && !_next);
+  assert(_list && !_next);
   _prev = _list->_prev;
   _next = _list;
   _list->_prev = this;
@@ -259,7 +255,7 @@ Task::call_hook()
   if (!_hook)
     ((Element *)_thunk)->run_scheduled();
   else
-    _hook(_thunk);
+    _hook(this, _thunk);
 }
 
 #if __MTCLICK__

@@ -25,7 +25,7 @@
 #include <click/routerthread.hh>
 
 void
-Task::error_hook(void *)
+Task::error_hook(Task *, void *)
 {
   assert(0);
 }
@@ -35,16 +35,6 @@ Task::~Task()
   assert(!scheduled() || _list == this);
   //assert(!initialized());
 }
-
-#ifndef RR_SCHED
-void
-Task::set_max_tickets(int n)
-{
-  if (n > MAX_TICKETS)
-    n = MAX_TICKETS;
-  _max_tickets = n;
-}
-#endif
 
 void
 Task::initialize(Router *r, bool join)
@@ -110,19 +100,21 @@ Task::join_scheduler(RouterThread *rt)
 void
 Task::reschedule()
 {
-  assert(have_scheduler());
-  if (_list->attempt_lock_tasks()) {
+  assert(_list);
+  if (!scheduled()) {
+    if (_list->attempt_lock_tasks()) {
 #ifndef RR_SCHED
-    if (_tickets >= 1) {
-      _pass = _list->_next->_pass;
-      fast_reschedule();
-    }
+      if (_tickets >= 1) {
+	_pass = _list->_next->_pass;
+	fast_reschedule();
+      }
 #else
-    fast_reschedule();
+      fast_reschedule();
 #endif
-    _list->unlock_tasks();
-  } else
-    _list->add_task_request(RouterThread::SCHEDULE_TASK, this);
+      _list->unlock_tasks();
+    } else
+      _list->add_task_request(RouterThread::SCHEDULE_TASK, this);
+  }
 }
 
 void
