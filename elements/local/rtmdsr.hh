@@ -84,7 +84,9 @@ class RTMDSR : public Element {
   
   void push(int, Packet *);
   void run_timer();
-  static time_t time(void);
+  static timeval get_timeval(void);
+  static timeval add_millisec(timeval t, int milli);
+  static bool timeval_past(timeval a, timeval b); // return if a is past b
 
   // Statistics for handlers.
   int _queries;
@@ -113,6 +115,7 @@ private:
                     PT_DATA  = 0x33 };
 
   enum PacketFlags { PF_BETTER = 1 };
+
 
   // Packet format.
   struct pkt {
@@ -151,6 +154,16 @@ private:
     u_char *data() { return ether_dhost + hlen(); }
   };
 
+  struct DelayPacket{
+  public:
+    struct pkt *p;
+    timeval t;
+    DelayPacket(pkt *pp, timeval then) : p(pp), t(then) { }
+  };
+
+  Vector<DelayPacket> _query_packets;
+
+
   // Description of a single hop in a route.
   class Hop {
   public:
@@ -161,11 +174,11 @@ private:
   // Description of a route to a destination.
   class Route {
   public:
-    time_t _when; // When we learned about this route.
+    timeval _when; // When we learned about this route.
     u_short _metric;
     Vector<Hop> _hops;
     String s();
-    Route() { _when = 0; _metric = 9999; };
+    Route() { _when.tv_sec = 0; _when.tv_usec = 0; _metric = 9999; };
     Route(const struct pkt *pk);
   };
 
@@ -174,10 +187,10 @@ private:
   // We might know some routes to this destination.
   class Dst {
   public:
-    Dst(IPAddress ip) { _ip = ip; _seq = 0; _when = 0; }
+    Dst(IPAddress ip) { _ip = ip; _seq = 0; _when.tv_sec = 0; _when.tv_usec = 0; }
     IPAddress _ip;
     u_long _seq; // Of last query sent out.
-    time_t _when; // When we sent last query.
+    timeval _when; // When we sent last query.
     Vector<Route> _routes;
   };
 
@@ -187,12 +200,18 @@ private:
   class Seen {
   public:
     IPAddress _src;
+    IPAddress _dst;
     u_long _seq;
-    time_t _when;
+    timeval _when;
     u_short _metric; // To help us pass queries that are better.
-    Seen(IPAddress src, u_long seq, u_short metric, time_t now) {
-      _src = src; _seq = seq; _metric = metric; _when = now;
+    Vector<Hop> _hops; // the best route we've seen so far
+    u_short _nhops;
+    bool _forwarded;
+    Seen(IPAddress src, IPAddress dst, u_long seq, timeval now, u_short metric, Vector<Hop> hops, u_short nhops) {
+      _src = src; _dst = dst; _seq = seq; _metric = metric; _when = now; _hops = hops; _nhops = nhops; _forwarded = false;
     }
+    String s();
+    
   };
   Vector<Seen> _seen;
 
@@ -203,14 +222,20 @@ private:
   public:
     IPAddress _ip;
     EtherAddress _en;
-    time_t _when; // When we last heard from this node.
-    ARP(IPAddress ip, EtherAddress en, time_t now) {
+    timeval _when; // When we last heard from this node.
+    ARP(IPAddress ip, EtherAddress en, timeval now) {
       _ip = ip; _en = en; _when = now;
     }
   };
   Vector<ARP> _arp;
 
   Route _no_route;
+
+
+   
+   static void static_query_hook(Timer *t, void *v) 
+   { ((RTMDSR *) v)->query_hook(t); }
+
 
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);
@@ -219,7 +244,8 @@ private:
   u_short get_metric(IPAddress other);
   void got_pkt(Packet *p_in);
   void start_query(IPAddress);
-  void forward_query(struct pkt *pk);
+  void process_query(struct pkt *pk);
+  void forward_query(Seen s);
   void start_reply(struct pkt *pk1);
   void forward_reply(struct pkt *pk);
   void got_reply(struct pkt *pk);
@@ -228,6 +254,10 @@ private:
   void forward_data(struct pkt *pk);
   void send(WritablePacket *);
   void forward(const struct pkt *pk1);
+
+  void query_hook(Timer *t);
+
+  void dsr_assert_(const char *, int, const char *) const;
 };
 
 CLICK_ENDDECLS

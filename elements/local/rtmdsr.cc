@@ -22,7 +22,11 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
+
+
+#define dsr_assert(e) ((e) ? (void) 0 : dsr_assert_(__FILE__, __LINE__, #e))
 
 RTMDSR::RTMDSR()
   :  _queries(0), _querybytes(0),
@@ -38,15 +42,18 @@ RTMDSR::RTMDSR()
 
   MaxSeen = 200;
   MaxHops = 30;
-  QueryInterval = 10;
-  QueryLife = 3;
-  ARPLife = 30;
+  /**
+   *  These are in milliseconds.
+   */
+  QueryInterval = 10000;
+  QueryLife = 3000; 
+  ARPLife = 30000;
 
   // Pick a starting sequence number that we have not used before.
   struct timeval tv;
   click_gettimeofday(&tv);
   _seq = tv.tv_usec;
-
+  
   _no_route = Route();
 }
 
@@ -89,18 +96,18 @@ void
 RTMDSR::run_timer ()
 {
   // Delete stale entries from list of queries we've seen.
-  time_t now = time();
+  timeval now = get_timeval();
   Vector<Seen> v;
   int i;
   for(i = 0; i < _seen.size(); i++)
-    if(_seen[i]._when + QueryLife >= now)
+    if(timeval_past(add_millisec(_seen[i]._when, QueryLife),  now))
       v.push_back(_seen[i]);
   _seen = v;
 
   // Delete stale entries from our ARP-like cache.
   Vector<ARP> av;
   for(i = 0; i < _arp.size(); i++)
-    if(_arp[i]._when + ARPLife >= now)
+    if(timeval_past(add_millisec(_arp[i]._when, ARPLife), now))
       av.push_back(_arp[i]);
   _arp = av;
 
@@ -120,7 +127,7 @@ RTMDSR::find_dst(IPAddress ip, bool create)
   if(create){
     _dsts.push_back(Dst(ip));
     i = find_dst(ip, false);
-    assert(i >= 0);
+    dsr_assert(i >= 0);
     return i;
   }
 
@@ -152,14 +159,39 @@ RTMDSR::best_route(IPAddress dstip)
   return _no_route; // Oops
 }
 
-time_t
-RTMDSR::time()
+
+timeval 
+RTMDSR::get_timeval()
 {
   timeval tv;
   click_gettimeofday(&tv);
-  return tv.tv_sec;
+  return tv;
+
+}
+bool
+RTMDSR::timeval_past(timeval a, timeval b) 
+{
+  if (a.tv_sec == b.tv_sec) 
+    return a.tv_usec > b.tv_usec;
+
+  return a.tv_sec > b.tv_sec;
+
 }
 
+timeval
+RTMDSR::add_millisec(timeval t, int milli)
+ {
+  timeval new_time;
+
+  new_time = t;
+  new_time.tv_usec += milli*1000;
+  while (new_time.tv_usec > 1000000) {
+    new_time.tv_sec++;
+    new_time.tv_usec -= 1000000;
+  }
+
+  return new_time;
+}
 void
 RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
 {
@@ -195,8 +227,8 @@ RTMDSR::start_query(IPAddress dstip)
   int di = find_dst(dstip, true);
   Dst &d = _dsts[di];  
 
-  time_t now = time();
-  if(d._when != 0 && now < d._when + QueryInterval){
+  timeval now = get_timeval();
+  if(d._when.tv_sec != 0 && timeval_past(add_millisec(d._when, QueryInterval), now)){
     // We sent a query less than 10 seconds ago, don't repeat.
     return;
   }
@@ -218,7 +250,10 @@ RTMDSR::start_query(IPAddress dstip)
   pk->_hops[0] = _ip.in_addr();
   
   d._when = now;
-  _seen.push_back(Seen(_ip.in_addr(), pk->_seq, 0, now));
+
+  Vector<Hop> hops;
+  hops.push_back(Hop(_ip));
+  _seen.push_back(Seen(_ip.in_addr(), dstip, pk->_seq, now, 0, hops, 1));
 
   send(p);
 }
@@ -238,7 +273,7 @@ RTMDSR::forward(const struct pkt *pk1)
   } else if(type == PT_DATA){
     next = next + 1;
   } else {
-    assert(0);
+    dsr_assert(0);
   }
 
   if(next >= nhops)
@@ -273,12 +308,12 @@ RTMDSR::got_arp(IPAddress ip, u_char xen[6])
                       en.s().cc());
       }
       _arp[i]._en = en;
-      _arp[i]._when = time();
+      _arp[i]._when = get_timeval();
       return;
     }
   }
       
-  _arp.push_back(ARP(ip, en, time()));
+  _arp.push_back(ARP(ip, en, get_timeval()));
 }
 
 // Given an IP address, look in our local ARP table to see
@@ -319,7 +354,7 @@ RTMDSR::send(WritablePacket *p)
     _querybytes += p->length();
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
-    assert(next < MaxHops + 2);
+    dsr_assert(next < MaxHops + 2);
     struct in_addr nxt = pk->_hops[next];
     find_arp(IPAddress(nxt), pk->ether_dhost);
     if(type == PT_REPLY){
@@ -330,7 +365,7 @@ RTMDSR::send(WritablePacket *p)
       _databytes += p->length();
     }
   } else {
-    assert(0);
+    dsr_assert(0);
     return;
   }
 
@@ -364,15 +399,34 @@ RTMDSR::get_metric(IPAddress other)
 // Continue flooding a query by broadcast.
 // Maintain a list of querys we've already seen.
 void
-RTMDSR::forward_query(struct pkt *pk1)
+RTMDSR::process_query(struct pkt *pk1)
 {
   IPAddress src(pk1->_hops[0]);
-  u_short metric = ntohs(pk1->_metric);
+  IPAddress dst(pk1->_qdst);
+  u_short nhops = ntohs(pk1->_nhops) + 1;
+  u_short last_hop_metric = get_metric(pk1->_hops[nhops-1]);
+  u_short metric = ntohs(pk1->_metric) + last_hop_metric;
+  u_long seq = ntohl(pk1->_seq);
   int si;
   bool better = false;
+  bool seen_before = false;
+  bool already_forwarded = false;
+
+  Vector<Hop> hops;
+  for(int i = 0; i < nhops-1; i++) {
+    hops.push_back(Hop(pk1->_hops[i]));
+    if (pk1->_hops[i] == _ip) {
+      /* I'm already in this route! */
+      return;
+    }
+  }
+
+  hops.push_back(Hop(_ip));
+
   for(si = 0; si < _seen.size(); si++){
-    if(src == _seen[si]._src && pk1->_seq == _seen[si]._seq){
-      _seen[si]._when = time();
+    if(src == _seen[si]._src && seq == _seen[si]._seq){
+      _seen[si]._when = get_timeval();
+      seen_before = true;
       if(metric < _seen[si]._metric){
         // OK, pass this new better route.
         click_chatter("DSR %s: better old=%d new=[%s]",
@@ -380,35 +434,93 @@ RTMDSR::forward_query(struct pkt *pk1)
                       _seen[si]._metric,
                       Route(pk1).s().cc());
         _seen[si]._metric = metric;
+	_seen[si]._nhops = nhops;
+	_seen[si]._hops = hops;
+	already_forwarded = _seen[si]._forwarded;
         better = true;
-        break;
-      } else {
-        return;
-      }
+      } 
+      break;
     }
   }
 
-  if(_seen.size() > MaxSeen)
+  if(_seen.size() > MaxSeen) {
      return;
-  if(better == false)
-    _seen.push_back(Seen(src, pk1->_seq, metric, time()));
-
-  u_short nhops = ntohs(pk1->_nhops);
-  if(nhops > MaxHops)
+  }
+  if(nhops > MaxHops) {
     return;
+  }
+  if (seen_before && !better) {
+    return;
+  }
 
-  int len = pkt::hlen1(nhops + 1);
+  click_chatter("DSR %s: process_query src=%s, dst=%s seq=%d metric=%d hops=%d",
+		_ip.s().cc(),
+		src.s().cc(),
+		dst.s().cc(),
+		seq,
+		metric,
+		nhops);
+
+
+  if (!seen_before) {
+    int delay_time = (last_hop_metric- 100)/10;
+    click_chatter("DSR %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
+    dsr_assert(delay_time > 0);
+
+    Seen s = Seen(src, dst, seq, get_timeval(), metric, hops, nhops);
+    _seen.push_back(s);
+
+    Timer *t = new Timer(static_query_hook, (void *) this);
+    t->initialize(this);
+    
+    t->schedule_after_ms(delay_time);
+  } else if (already_forwarded) {
+
+    click_chatter("DSR %s: forwarding immediately", _ip.s().cc());
+    forward_query(Seen(src, dst, seq, get_timeval(), metric, hops, nhops));
+  }
+  
+}
+void
+RTMDSR::forward_query(Seen s)
+{
+  u_short nhops = s._nhops;
+  u_short metric = s._metric;
+  IPAddress src = s._hops[0]._ip;
+  IPAddress dst = s._dst;
+  
+  click_chatter("DSR %s: foward_query src=%s, dst=%s seq %d %s",
+		_ip.s().cc(),
+		src.s().cc(),
+		dst.s().cc(),
+		s._seq,
+		s.s().cc());
+		
+
+
+  int len = pkt::hlen1(nhops);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
   struct pkt *pk = (struct pkt *) p->data();
-  memcpy(pk, pk1, len);
+  memset(pk, '\0', len);
 
-  pk->_nhops = htons(nhops + 1);
-  pk->_hops[nhops] = _ip.in_addr();
-  pk->_metric = htons(metric + get_metric(IPAddress(pk->_hops[nhops-1])));
-  if(better)
+  pk->_type = PT_QUERY;
+  pk->_flags = 0;
+  pk->_qdst = s._dst;
+  pk->_seq = htonl(s._seq);
+  pk->_nhops = htons(nhops);
+  pk->_metric = htons(metric);
+
+  for(int i=0; i < nhops; i++) {
+    pk->_hops[i] = s._hops[i]._ip;
+  }
+
+  if(s._forwarded) {
     pk->_flags |= PF_BETTER;
+  }
+
+  s._forwarded = true;
 
   send(p);
 }
@@ -442,9 +554,26 @@ RTMDSR::Route::s()
   return s;
 }
 
+String
+RTMDSR::Seen::s()
+{
+  StringAccum sa;
+  sa << "[m="<< _metric << " ";
+  sa << "nhops=" << _nhops << " ";
+  for (int i= 0; i < _nhops; i++) {
+    sa << _hops[i]._ip << " ";
+    if(i + 1 < _nhops) {
+      sa << " ";
+    }
+  }
+  sa << "]";
+
+  return sa.take_string();
+}
+
 RTMDSR::Route::Route(const struct pkt *pk)
 {
-  _when = time();
+  _when = get_timeval();
   _metric = ntohs(pk->_metric);
   int i;
   for(i = 0; i < ntohs(pk->_nhops); i++){
@@ -516,9 +645,10 @@ RTMDSR::got_pkt(Packet *p_in)
 {
   struct pkt *pk = (struct pkt *) p_in->data();
   if(p_in->length() < 20 || p_in->length() < pk->len()){
-    click_chatter("DSR %s: bad pkt len %d",
+    click_chatter("DSR %s: bad pkt len %d, expected %d",
                   _ip.s().cc(),
-                  p_in->length());
+                  p_in->length(),
+		  pk->len());
     return;
   }
   if(pk->ether_type != _et){
@@ -537,7 +667,7 @@ RTMDSR::got_pkt(Packet *p_in)
     if(pk->_qdst == _ip.in_addr()){
       start_reply(pk);
     } else {
-      forward_query(pk);
+      process_query(pk);
     }
   } else if(type == PT_REPLY && next < nhops){
     if(pk->_hops[next] != _ip.in_addr()){
@@ -608,6 +738,28 @@ RTMDSR::push(int port, Packet *p_in)
   p_in->kill();
 }
 
+
+void
+RTMDSR::query_hook(Timer *t) 
+{
+  dsr_assert(t);
+
+  Vector<Seen> v;
+  timeval now = get_timeval();
+  for (int i = 0; i < _seen.size(); i++) {
+    if (_seen[i]._when.tv_sec != 0) {
+      if (timeval_past(add_millisec(_seen[i]._when, QueryLife), now)) {
+	forward_query(_seen[i]);
+      } else {
+	v.push_back(_seen[i]);
+      }
+    } 
+  }
+  _seen = v;
+
+
+}
+
 static String
 RTMDSR_read_stats(Element *f, void *)
 {
@@ -627,10 +779,24 @@ RTMDSR::add_handlers()
   add_read_handler("stats", RTMDSR_read_stats, 0);
 }
 
+ void
+RTMDSR::dsr_assert_(const char *file, int line, const char *expr) const
+{
+  click_chatter("RTMDSR %s assertion \"%s\" failed: file %s, line %d",
+		id().cc(), expr, file, line);
+#ifdef CLICK_USERLEVEL  
+  abort();
+#else
+  click_chatter("Continuing execution anyway, hold on to your hats!\n");
+#endif
+
+}
+
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<RTMDSR::Dst>;
+template class Vector<RTMDSR::Hops>;
 #endif
 
 CLICK_ENDDECLS
