@@ -1,4 +1,3 @@
-// -*- c++ -*-
 // grid-single-if-gw.click
 
 // configuration for running a click userlevel grid gateway on a
@@ -15,8 +14,8 @@
 
 
 // device interface
-eth :: PacketSocket(eth0, 0)
-to_eth :: Queue -> eth
+eth :: FromDevice(eth0, 0) 
+to_eth :: Queue -> ToDevice(eth0) 
 
 // IP interfaces on gateway machine
 tun1 :: Tun(tap, 18.26.4.25, 255.255.255.0) // gateway's regular address
