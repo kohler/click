@@ -1,3 +1,12 @@
+2003-05-11 Sunday 22:28  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/rtmdsr.hh (1.8): Now ARP actually works.
+
+2003-05-11 Sunday 22:06  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.7), rtmdsr.hh (1.7): Implement its
+	own ARP to avoid broadcast for data and replies.
+
 2003-05-11 Sunday 07:49  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.6), rtmdsr.hh (1.6): Fixed packet
