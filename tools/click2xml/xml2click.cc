@@ -38,11 +38,13 @@
 #define ROUTER_OPT		303
 #define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
+#define FLATTEN_OPT		306
 
 static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+    { "flatten", 'F', FLATTEN_OPT, 0, Clp_Negate },
     { "help", 0, HELP_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -53,6 +55,8 @@ static const char *program_name;
 
 static ErrorHandler *xml_errh;
 static String xml_file;
+
+static bool flatten = false;
 
 static inline String
 xml_landmark(XML_Parser parser)
@@ -108,14 +112,15 @@ struct CxConfig {
     String _landmark;
     String _xml_landmark;
 
+    int _decl_ninputs;
+    int _decl_noutputs;
+    int _decl_nformals;
+
     ElementClassT *_type;
     bool _completing;
     RouterT *_router;
     
-    CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark)
-	: _enclosing(enclosing), _depth(depth), _filled(false),
-	  _xml_landmark(xml_landmark), _type(0), _completing(false),
-	  _router(0) { }
+    CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark);
     ~CxConfig();
 
     String readable_name() const;
@@ -123,6 +128,14 @@ struct CxConfig {
     int complete_elementclass(ErrorHandler *);
     int complete(ErrorHandler *);
 };
+
+CxConfig::CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark)
+    : _enclosing(enclosing), _depth(depth), _filled(false),
+      _xml_landmark(xml_landmark),
+      _decl_ninputs(-1), _decl_noutputs(-1), _decl_nformals(-1),
+      _type(0), _completing(false), _router(0)
+{
+}
 
 CxConfig::~CxConfig()
 {
@@ -182,10 +195,10 @@ do_element(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	    line = a[1];
 	else if (strcmp(a[0], "ninputs") == 0) {
 	    if (!cp_integer(a[1], &e.ninputs))
-		errh->lerror(landmark, "'ninputs' attribute not an integer");
+		errh->lerror(landmark, "'ninputs' attribute must be an integer");
 	} else if (strcmp(a[0], "noutputs") == 0) {
-	    if (!cp_integer(a[1], &e.ninputs))
-		errh->lerror(landmark, "'noutputs' attribute not an integer");
+	    if (!cp_integer(a[1], &e.noutputs))
+		errh->lerror(landmark, "'noutputs' attribute must be an integer");
 	}
     
     if (file && line)
@@ -323,6 +336,7 @@ do_synonym(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	errh->lerror(landmark, "synonym refers to no other class");
     
     cx->_filled = true;
+    cx->_is_synonym = true;
     return CX_IN_EMPTY;
 }
 
@@ -348,6 +362,16 @@ do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 	    cx->_prev_class_name = a[1];
 	} else if (strcmp(a[0], "prevclassid") == 0)
 	    cx->_prev_class_id = a[1];
+	else if (strcmp(a[0], "ninputs") == 0) {
+	    if (!cp_integer(a[1], &cx->_decl_ninputs))
+		errh->lerror(landmark, "'ninputs' attribute must be an integer");
+	} else if (strcmp(a[0], "noutputs") == 0) {
+	    if (!cp_integer(a[1], &cx->_decl_noutputs))
+		errh->lerror(landmark, "'noutputs' attribute must be an integer");
+	} else if (strcmp(a[0], "nformals") == 0) {
+	    if (!cp_integer(a[1], &cx->_decl_nformals))
+		errh->lerror(landmark, "'noutputs' attribute must be an integer");
+	}
     // XXX nformals etc.
 
     if (cx->_prev_class_name && cx->_prev_class_id) {
@@ -356,6 +380,7 @@ do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
     }
 
     cx->_filled = true;
+    cx->_is_synonym = false;
     return CX_COMPOUND;
 }
 
@@ -458,7 +483,7 @@ complete_elementclass(const String &id, const String &xml_landmark, ErrorHandler
     assert(id);
     int which = class_id_map[id];
     if (which < 0) {
-	errh->lerror(xml_landmark, "no such element class `%s'", String(id).cc());
+	errh->lerror(xml_landmark, "no such element class '%s'", String(id).cc());
 	return 0;
     } else {
 	classes[which]->complete_elementclass(errh);
@@ -472,14 +497,16 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     if (_type)			// already complete
 	return 0;
     if (_completing)
-	return errh->lerror(_xml_landmark, "circular definition of elementclass `%s'", readable_name().cc());
+	return errh->lerror(_xml_landmark, "circular definition of elementclass '%s'", readable_name().cc());
 
     _completing = true;
+    ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
+    int before_nerrors = cerrh.nerrors();
 
     // get referred-to class
     ElementClassT *prev_class;
     if (_prev_class_id)
-	prev_class = ::complete_elementclass(_prev_class_id, _xml_landmark, errh);
+	prev_class = ::complete_elementclass(_prev_class_id, _xml_landmark, &cerrh);
     else if (_prev_class_name)
 	prev_class = ElementClassT::default_class(_prev_class_name);
     else
@@ -490,31 +517,46 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	return 0;
     if (_is_synonym && prev_class) {
 	_type = new SynonymElementClassT(_name, prev_class);
+	_type->use();
 	return 0;
     }
 
     // otherwise, compound
     assert(_enclosing);
-    RouterT *enclosing_scope = _enclosing->router(errh);
+    RouterT *enclosing_scope = _enclosing->router(&cerrh);
     CompoundElementClassT *c = new CompoundElementClassT(_name, prev_class, _depth, enclosing_scope, (_landmark ? _landmark : _xml_landmark));
     _type = c;
+    _type->use();
     _router = c->cast_router();
+    _router->use();
 
     // handle formals
     HashMap<String, int> formal_map(-1);
     for (int i = 0; i < _formals.size(); i++)
-	if (!_formals.size())
-	    errh->lerror(_xml_landmark, "definition missing for formal %d", i);
+	if (!_formals[i])
+	    cerrh.lerror(_xml_landmark, "definition missing for formal %d", i);
 	else if (formal_map[_formals[i]] >= 0)
-	    errh->lerror(_xml_landmark, "redeclaration of formal `$%s'", _formals[i].cc());
+	    cerrh.lerror(_xml_landmark, "redeclaration of formal '$%s'", _formals[i].cc());
 	else
 	    c->add_formal(_formals[i]);
+    if (_decl_nformals >= 0 && _formals.size() != _decl_nformals)
+	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
     // add to enclosing scope
     enclosing_scope->get_type(c);
     
     // handle elements
-    return complete(errh);
+    if (complete(&cerrh) < 0)
+	return -1;
+
+    // finally, finish elementclass
+    if (c->finish(&cerrh) < 0)
+	return -1;
+    if (_decl_ninputs >= 0 && c->ninputs() != _decl_ninputs)
+	cerrh.lerror(_xml_landmark, "input port count and 'ninputs' attribute disagree");
+    if (_decl_noutputs >= 0 && c->noutputs() != _decl_noutputs)
+	cerrh.lerror(_xml_landmark, "output port count and 'noutputs' attribute disagree");
+    return (cerrh.nerrors() == before_nerrors ? 0 : -1);
 }
 
 RouterT *
@@ -612,6 +654,10 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	    classes[i]->complete_elementclass(errh);
 	xstack.back()->complete(errh);
     }
+
+    // flatten router if appropriate
+    if (errh->nerrors() == before && ::flatten)
+	xstack.back()->router(errh)->flatten(errh);
     
     // if no errors, write output
     if (errh->nerrors() == before)
@@ -632,7 +678,7 @@ void
 short_usage()
 {
     fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	    program_name, program_name);
 }
 
@@ -640,7 +686,7 @@ void
 usage()
 {
     printf("\
-`Xml2click' reads an XML description of a Click router configuration and\n\
+'Xml2click' reads an XML description of a Click router configuration and\n\
 outputs a Click-language file corresponding to that configuration.\n\
 \n\
 Usage: %s [OPTION]... [XMLFILE]\n\
@@ -649,6 +695,7 @@ Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
   -e, --expression EXPR       Use EXPR as XML router configuration.\n\
   -o, --output FILE           Write output to FILE.\n\
+  -F, --flatten               Flatten configuration before output.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
@@ -716,6 +763,10 @@ particular purpose.\n");
 	    output_file = clp->arg;
 	    break;
 
+	  case FLATTEN_OPT:
+	    flatten = !clp->negated;
+	    break;
+	    
 	  bad_option:
 	  case Clp_BadOption:
 	    short_usage();

@@ -48,7 +48,7 @@ class ElementClassT { public:
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
-    virtual void report_signatures(const String &, String, ErrorHandler *);
+    virtual void report_signatures(String, ErrorHandler *);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     virtual void collect_primitive_classes(HashMap<String, int> &);
     virtual void collect_prerequisites(Vector<ElementClassT *> &);
@@ -128,11 +128,11 @@ class CompoundElementClassT : public ElementClassT { public:
     int noutputs() const		{ return _noutputs; }
     ElementClassT *previous() const	{ return _prev; }
     
-    void finish(ErrorHandler *);
+    int finish(ErrorHandler *);
     void check_duplicates_until(ElementClassT *, ErrorHandler *);
 
     ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
-    void report_signatures(const String &, String, ErrorHandler *);
+    void report_signatures(String, ErrorHandler *);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     void collect_primitive_classes(HashMap<String, int> &);
     void collect_prerequisites(Vector<ElementClassT *> &);

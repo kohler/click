@@ -151,9 +151,9 @@ ElementClassT::find_relevant_class(int, int, const Vector<String> &)
 }
 
 void
-ElementClassT::report_signatures(const String &lm, String name, ErrorHandler *errh)
+ElementClassT::report_signatures(String name, ErrorHandler *errh)
 {
-    errh->lmessage(lm, "`%s[...]'", name.cc());
+    errh->message("`%s[...]'", name.cc());
 }
 
 ElementT *
@@ -221,8 +221,8 @@ ElementClassT::expand_element(
     if (!found_c) {
 	String lm = e->landmark(), name = e->type_name();
 	errh->lerror(lm, "no match for `%s'", name.cc(), signature(name, inputs_used, outputs_used, args.size()).cc());
-	ContextErrorHandler cerrh(errh, "possibilities are:", "  ");
-	c->report_signatures(lm, name, &cerrh);
+	ContextErrorHandler cerrh(errh, "possibilities are:", "  ", lm);
+	c->report_signatures(name, &cerrh);
 	if (fromr == tor)
 	    e->kill();
 	return 0;
@@ -369,11 +369,12 @@ CompoundElementClassT::~CompoundElementClassT()
 	_prev->unuse();
 }
 
-void
+int
 CompoundElementClassT::finish(ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
+    int before_nerrors = errh->nerrors();
 
     if (ElementT *einput = _router->element("input")) {
 	_ninputs = einput->noutputs();
@@ -409,6 +410,8 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 
     // resolve anonymous element names
     _router->deanonymize_elements();
+
+    return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
 
 void
@@ -468,11 +471,11 @@ CompoundElementClassT::signature() const
 }
 
 void
-CompoundElementClassT::report_signatures(const String &lm, String name, ErrorHandler *errh)
+CompoundElementClassT::report_signatures(String name, ErrorHandler *errh)
 {
     if (_prev)
-	_prev->report_signatures(lm, name, errh);
-    errh->lmessage(lm, "`%s'", signature().cc());
+	_prev->report_signatures(name, errh);
+    errh->lmessage(landmark(), "`%s'", signature().cc());
 }
 
 ElementT *
