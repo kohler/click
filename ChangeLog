@@ -1,3 +1,19 @@
+2003-07-11 Friday 19:45  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/trieiplookup.hh (1.3), include/click/hashmap.hh
+	(1.13): remove int hashcode(int) function, it caused problems under
+	gcc-3.3
+
+2003-07-11 Friday 19:45  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/config.cc (1.9): remove unused variable
+
+2003-07-11 Friday 19:44  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.70), INSTALL (1.26), etc/README (1.3),
+	etc/linux-2.4.21-patch (1.1): add patch for 2.4.21 (patch not yet
+	tested!), update documentation to refer to it
+
 2003-07-10 Thursday 23:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.59): use correct packets zie
