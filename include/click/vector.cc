@@ -94,6 +94,16 @@ Vector<T>::reserve(int want)
 }
 
 template <class T> void
+Vector<T>::shrink(int nn)
+{
+  if (nn < _n) {
+    for (int i = nn; i < _n; i++)
+      _l[i].~T();
+    _n = nn;
+  }
+}
+
+template <class T> void
 Vector<T>::resize(int nn, const T &e)
 {
   if (nn <= _cap || reserve(nn)) {

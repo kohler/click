@@ -28,7 +28,7 @@ class Vector { public:
   void push_back(const T &);
   void pop_back();
   
-  void clear()				{ resize(0); }
+  void clear()				{ shrink(0); }
   bool reserve(int);
   void resize(int nn, const T &e = T());
   
@@ -44,6 +44,7 @@ class Vector { public:
 
   void *velt(int i) const		{ return (void *)&_l[i]; }
   static void *velt(T *l, int i)	{ return (void *)&l[i]; }
+  void shrink(int nn);
 
   friend class Subvector<T>;
   
