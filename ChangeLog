@@ -1,3 +1,26 @@
+2001-03-20 Tuesday 16:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: updates
+
+2001-03-20 Tuesday 16:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: add const String
+	&prefix argument to add_task_handlers(), so people can add task
+	handlers for multiple tasks
+
+2001-03-20 Tuesday 16:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipfilter.cc: adapt to StringAccum interface changes
+
+2001-03-20 Tuesday 16:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh, lib/straccum.cc: rename pop() method
+	to pop_back(); add operator<<(long long)
+
+2001-03-20 Tuesday 16:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh, lib/string.cc: add long long constructor
+
 2001-03-19 Monday 19:39  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in: remove conftest* files
