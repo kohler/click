@@ -74,15 +74,13 @@ Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 #ifdef __KERNEL__
   _cpu = print_cpu;
 #endif
-  if (_label)
-    _label += ": ";
   return 0;
 }
 
 Packet *
 Print::simple_action(Packet *p)
 {
-  StringAccum sa(3*_bytes + _label.length() + 40);
+  StringAccum sa(3*_bytes + _label.length() + 45);
   if (!sa.capacity()) {
     click_chatter("no memory for Print");
     return p;
@@ -93,12 +91,14 @@ Print::simple_action(Packet *p)
   if (_cpu)
     sa << '(' << current->processor << ')';
 #endif
+  if (_label)
+    sa << ": ";
   if (_timestamp)
-    sa << p->timestamp_anno() << ':';
+    sa << p->timestamp_anno() << ": ";
 
   // sa.reserve() must return non-null; we checked capacity above
   int len;
-  sprintf(sa.reserve(8), " %4d | %n", p->length(), &len);
+  sprintf(sa.reserve(9), "%4d | %n", p->length(), &len);
   sa.forward(len);
 
   char *buf = sa.data() + sa.length();
