@@ -69,22 +69,22 @@ then the InfiniteSource's final scaling parameter would be 10.5.
 
 class ScheduleInfo : public Element { public:
 
-  static const int FRAC_BITS = 10;
+  enum { FRAC_BITS = 10 };
   
   ScheduleInfo();
   ~ScheduleInfo();
   
-  const char *class_name() const	{ return "ScheduleInfo"; }
+  const char* class_name() const	{ return "ScheduleInfo"; }
   
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(Vector<String>&, ErrorHandler*);
 
-  bool query(const String &, int &) const;
-  bool query_prefixes(const String &, int &, String &) const;
-  static int query(Element *, ErrorHandler *);
-  static void initialize_task(Element *, Task *, bool sched, ErrorHandler *);
-  static void initialize_task(Element *, Task *, ErrorHandler *);
-  static void join_scheduler(Element *, Task *, ErrorHandler *);
+  bool query(const String&, int&) const;
+  bool query_prefixes(const String&, int&, String&) const;
+  static int query(Element*, ErrorHandler*);
+  static void initialize_task(Element*, Task*, bool sched, ErrorHandler*);
+  static void initialize_task(Element*, Task*, ErrorHandler*);
+  static void join_scheduler(Element*, Task*, ErrorHandler*);
   
  private:
 
@@ -96,13 +96,13 @@ class ScheduleInfo : public Element { public:
 
 
 inline void
-ScheduleInfo::initialize_task(Element *e, Task *t, ErrorHandler *errh)
+ScheduleInfo::initialize_task(Element* e, Task* t, ErrorHandler* errh)
 {
   initialize_task(e, t, true, errh);
 }
 
 inline void
-ScheduleInfo::join_scheduler(Element *e, Task *t, ErrorHandler *errh)
+ScheduleInfo::join_scheduler(Element* e, Task* t, ErrorHandler* errh)
 {
   initialize_task(e, t, true, errh);
 }
