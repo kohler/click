@@ -7,6 +7,8 @@
 #include "error.hh"
 #include "timer.hh"
 
+#include "elements/etherswitch/bridgemessage.hh"
+
 void
 catchint(int)
 {
@@ -73,6 +75,8 @@ main(int argc, char **argv)
   }
   
   signal(SIGINT, catchint);
+
+  fprintf(stderr, "%d\n", sizeof(BridgeMessage::wire));
   
   if (router->initialize(errh) >= 0) {
     //router->print_structure(errh);
