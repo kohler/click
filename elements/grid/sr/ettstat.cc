@@ -41,6 +41,7 @@ ETTStat::ETTStat()
     _sent(0),
     _ett_metric(0),
     _arp_table(0),
+    _next_neighbor_to_ad(0),
     _timer_small(0),
     _timer_1(0),
     _timer_2(0),
