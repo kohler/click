@@ -30,7 +30,7 @@
 @syncodeindex fn cp
 
 @titlepage
-@title The Click Modular Router Programming Manual
+@title Programming the Click Modular Router
 @author Eddie Kohler
 @end titlepage
 
@@ -228,8 +228,8 @@ A variable or method which counts something is often named
 
 @item
 Use a bare @samp{0} for a null pointer, except where some ambiguity
-might arise (for example, if a different overloading might be selected
-for a pointer).
+might arise (for example, where an incorrect overloading might be
+selected).
 @end itemize
 
 
@@ -1678,7 +1678,7 @@ user; for example, generally only the system calls @code{clone}.
   Method Name                    constr notify config  init   run  
 @end example
 
-The headings on the right mean as follows:
+The headings denote:
 
 @table @samp
 @item constr
@@ -1692,7 +1692,8 @@ Inside the @code{notify_ninputs} and @code{notify_noutputs} methods.
 Inside the @code{configure} method.
 
 @item init
-Inside the @code{initialize} and @code{uninitialize} methods.
+Inside the @code{initialize}, @code{add_handlers}, and
+@code{uninitialize} methods.
 
 @item run
 At run time. That is, inside some @code{run_scheduled}, @code{push}, or
@@ -1739,8 +1740,8 @@ used in a connection.
 @deftypemethodx Element {virtual void} notify_noutputs (int @var{noutputs})
 
 The @var{ninputs} and @var{noutputs} arguments specify how many input
-and output ports were used in the configuration, respectively. For
-example, if @var{ninputs} is 5, then input ports 0 through 4 were
+and output ports were used in the configuration. For example, if
+@var{ninputs} is 5, then input ports 0 through 4 were
 used.@footnote{Strictly speaking, it is possible that one or more of the
 lower-numbered ports were not used---for example, that input port 0 was
 not used by the configuration. This is always a configuration error,
