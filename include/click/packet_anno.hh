@@ -79,6 +79,15 @@
 #define WIFI_MAX_RETRIES_ANNO(p)    ((p)->user_anno_c(18))
 #define SET_WIFI_MAX_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(18, (v)))
 
+#define WIFI_RX_STATUS_ANNO(p) ((p)->user_anno_c(19))
+#define SET_RX_STATUS_ANNO(p, v)    ((p)->set_user_anno_c(19, (v)))
+
+#define WIFI_RX_ERR_ANNO(p) ((p)->user_anno_c(20))
+#define SET_RX_ERR_ANNO(p, v)    ((p)->set_user_anno_c(20, (v)))
+
+#define WIFI_RX_MORE_ANNO(p) ((p)->user_anno_c(21))
+#define SET_RX_MORE_ANNO(p, v)    ((p)->set_user_anno_c(21, (v)))
+
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
 #define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))
