@@ -1,3 +1,8 @@
+2003-04-24 Thursday 12:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: fromdump.cc (1.78), fromdump.hh (1.45),
+	todump.cc (1.49), todump.hh (1.30): add hotswap capability
+
 2003-04-23 Wednesday 18:36  Eddie Kohler <kohler@icir.org>
 
 	* tools/click-align/click-align.cc (1.45): better comments
