@@ -101,7 +101,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "save" || insn_name == "append") {
 	    if (words.size() == 3)
-		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, words[1] + " " + words[2]);
+		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, words[1] + " " + cp_unquote(words[2]));
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
