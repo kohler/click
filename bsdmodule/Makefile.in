@@ -11,7 +11,7 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-freebsddir = @freebsddir@
+freebsdincdir = @freebsddir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule@elements_vpath@
 
@@ -72,8 +72,9 @@ CFLAGS = @CFLAGS_NDEBUG@ -g
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -g
 
 DEFS = @DEFS@ 
-INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I$(freebsddir)
+INCLUDES = -nostdinc -I$(freebsdincdir) \
+	-I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

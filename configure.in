@@ -85,18 +85,18 @@ dnl
 dnl How to build bsdmodule driver?
 dnl
 
-AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/src/sys]],
-  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys; fi],
+AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/include]],
+  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/inclde; fi],
   freebsddir=NONE)
 
 if test "x$freebsddir" = xNONE; then
-  if test -d /usr/src/sys; then
-    freebsddir=/usr/src/sys
+  if test -d /usr/include; then
+    freebsddir=/usr/include
   elif test "x$enable_bsdmodule" = xyes; then
     AC_MSG_WARN([
 =========================================
 
-I can't find /usr/src/sys, so I'm not compiling the bsdmodule driver.
+I can't find /usr/include, so I'm not compiling the bsdmodule driver.
 (You may need the --with-freebsd=DIR option.)
 
 =========================================])
@@ -355,6 +355,13 @@ AC_CACHE_CHECK(for device polling BSD kernel extension, ac_cv_bsd_poll_extension
   ac_cv_bsd_poll_extension=yes
 else ac_cv_bsd_poll_extension=no; fi])
 if test $ac_cv_bsd_poll_extension = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
+else
+    dnl
+    dnl XXX lr 010928 force extensions
+    dnl
+
+    AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
     AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
 fi
 

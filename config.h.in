@@ -84,6 +84,16 @@
 # define NDEBUG 1
 #endif
 
+/* Define stuff under a FreeBSD module. */
+#ifdef CLICK_BSDMODULE
+# ifndef __FreeBSD__
+#  error "I must be compiled on a FreeBSD machine"
+# endif
+# define _KERNEL
+# define MODULE
+# define NDEBUG 1
+#endif
+
 /* Define if your Linux kernel has Click extensions. */
 #undef HAVE_CLICK_KERNEL
 
@@ -164,7 +174,7 @@ char *strerror(int errno);
 #undef inline
 
 /* Provide placement new. */
-#ifdef CLICK_LINUXMODULE
+#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
 inline void *operator new(size_t, void *v) { return v; }
 #elif HAVE_NEW_H
 # include <new.h>
