@@ -1,3 +1,8 @@
+2000-12-23 Saturday 10:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ethernet/ethermirror.cc: EtherMirror bug fix, thanks to
+	Samuel Dobbs <samdobbs@hotmail.com>
+
 2000-12-21 Thursday 00:02  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* acconfig.h, elements/icmp/checkicmpheader.cc,
