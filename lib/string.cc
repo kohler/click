@@ -29,6 +29,7 @@
 #include <click/glue.hh>
 #include <assert.h>
 
+
 String::Memo *String::null_memo = 0;
 String::Memo *String::permanent_memo = 0;
 String *String::null_string_p = 0;

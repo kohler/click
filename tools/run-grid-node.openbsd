@@ -24,7 +24,11 @@ $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
 $HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
+<<<<<<< run-grid-node.openbsd
+$NUM_HOPS = "100";
+=======
 $NUM_HOPS = "100"; # always run DSDV -- assumer less than 100 hops in net ;>
+>>>>>>> 1.5
 $POS_LAT = "0";
 $POS_LON = "0";
 $RANGE = "-1"; # don't filter

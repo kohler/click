@@ -4,6 +4,10 @@
 # include "permstr.hh"
 #endif
 
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h> // for int64 types
+#endif 
+
 class String { public:
   
   // Call static_initialize() before any function which might deal with

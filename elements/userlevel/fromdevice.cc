@@ -295,6 +295,13 @@ FromDevice::get_packet(u_char* clientdata,
   int res = gettimeofday(&tv, 0);
   if (res == 0) 
     p->set_timestamp_anno(tv);
+
+#if 1
+  assert(sizeof(long) == sizeof(int));
+  assert(Packet::USER_ANNO_I_SIZE >= 2);
+  p->set_user_anno_i(0, pkthdr->ts.tv_sec);
+  p->set_user_anno_i(1, pkthdr->ts.tv_usec);
+#endif
   
   fd->output(0).push(p);
 }

@@ -202,7 +202,7 @@ if test "x$enable_int64" = xyes; then
     AC_MSG_ERROR(int64_t types not defined by $inttypes_hdr!
 Compile with "'`'"--disable-int64'.)
   else
-    AC_DEFINE(HAVE_INT64_TYPES)
+    AC_DEFINE_UNQUOTED(HAVE_INT64_TYPES)
   fi
 fi
 

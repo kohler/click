@@ -101,7 +101,7 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
   strcpy(dev_prefix, "tun");
 #endif
 
-  for (int i = 0; i < 1 /*32*/; i++) {
+  for (int i = 0; i < 6 /*32*/; i++) {
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, O_RDWR | O_NONBLOCK);
     if (fd < 0) {

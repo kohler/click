@@ -12,6 +12,9 @@ extern "C" {
  * long as this notice and the copyright notice above are kept intact and this
  * source code is made available. There is no warranty, express or implied. */
 
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 
 /* Argument types */
 #define Clp_NoArg		0
