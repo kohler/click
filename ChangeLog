@@ -1,3 +1,11 @@
+2001-08-02 Thursday 20:43  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.25), click-mkelemmap (1.11),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.15),
+	tools/lib/toolutils.hh (1.26): support sourcefiles in elementmaps;
+	update click-mkmindriver to new elements.conf format (it works
+	again)
+
 2001-08-02 Thursday 19:41  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.94), click-mkelemmap (1.10),
