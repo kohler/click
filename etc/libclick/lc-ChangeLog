@@ -1,3 +1,7 @@
+2002-08-26 Monday 00:59  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/: tcp.h, tcp.h: add definitions of TCP options
+
 2002-08-20 Tuesday 10:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* libsrc/clp.c: Fix constness of char pointer
