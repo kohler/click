@@ -1,3 +1,9 @@
+2003-05-23 Friday 20:10  jbicket
+
+	* elements/local/: rtmdsr.cc (1.17), rtmdsr.hh (1.20): Added
+	per-hop query delaying in RTMDSR element so high throughput routes
+	are found first.  Plus some other small changes.  --john
+
 2003-05-20 Tuesday 10:13  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.16), rtmdsr.hh (1.19): Record
