@@ -353,7 +353,7 @@ ControlSocket::selected(int fd)
 {
   if (fd == _socket_fd) {
     struct sockaddr_in sa;
-    int sa_len;
+    unsigned int sa_len = sizeof(sa);
     int new_fd = accept(_socket_fd, (struct sockaddr *)&sa, &sa_len);
 
     if (new_fd < 0) {
