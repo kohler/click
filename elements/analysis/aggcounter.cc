@@ -17,13 +17,15 @@
 
 #include <click/config.h>
 #include "aggcounter.hh"
+#include "handlercall.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
+#include <click/router.hh>
 #include <packet_anno.hh>
 
 AggregateCounter::AggregateCounter()
-    : Element(1, 1), _root(0), _free(0)
+    : Element(1, 1), _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -31,6 +33,8 @@ AggregateCounter::AggregateCounter()
 AggregateCounter::~AggregateCounter()
 {
     MOD_DEC_USE_COUNT;
+    delete _call_nnz_h;
+    delete _call_count_h;
 }
 
 AggregateCounter::Node *
@@ -67,27 +71,58 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
     bool bytes = false;
     bool packet_count = true;
     bool extra_length = true;
-    _freeze_nnz = 0xFFFFFFFFU;
-    _freeze_count = (uint64_t)(-1);
+    uint32_t freeze_nnz, stop_nnz;
+    uint64_t freeze_count, stop_count;
+    freeze_nnz = stop_nnz = _call_nnz = (uint32_t)(-1);
+    freeze_count = stop_count = _call_count = (uint64_t)(-1);
+    
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "BYTES", cpBool, "count bytes?", &bytes,
 		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
 		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
-		    "FREEZE_AFTER_AGG", cpUnsigned, "freeze after N nonzero aggregates", &_freeze_nnz,
-		    "FREEZE_AFTER_COUNT", cpUnsigned64, "freeze after count reaches N", &_freeze_count,
+		    "FREEZE_AFTER_AGG", cpUnsigned, "freeze after N nonzero aggregates", &freeze_nnz,
+		    "FREEZE_AFTER_COUNT", cpUnsigned64, "freeze after count reaches N", &freeze_count,
+		    "STOP_AFTER_AGG", cpUnsigned, "stop router after N nonzero aggregates", &stop_nnz,
+		    "STOP_AFTER_COUNT", cpUnsigned64, "stop router after count reaches N", &stop_count,
 		    0) < 0)
 	return -1;
+    
     _bytes = bytes;
     _packet_count = packet_count;
     _extra_length = extra_length;
-    _frozen = false;
+
+    if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) > 1)
+	return errh->error("I can handle at most one of `FREEZE_AFTER_AGG' and `STOP_AFTER_AGG'");
+    else if (freeze_nnz != (uint32_t)(-1)) {
+	_call_nnz = freeze_nnz;
+	_call_nnz_h = new HandlerCall(id() + ".freeze true");
+    } else if (stop_nnz != (uint32_t)(-1)) {
+	_call_nnz = stop_nnz;
+	_call_nnz_h = new HandlerCall(id() + ".stop");
+    }
+    
+    if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) > 1)
+	return errh->error("I can handle at most one of `FREEZE_AFTER_AGG' and `STOP_AFTER_AGG'");
+    else if (freeze_count != (uint64_t)(-1)) {
+	_call_count = freeze_count;
+	_call_count_h = new HandlerCall(id() + ".freeze true");
+    } else if (stop_count != (uint64_t)(-1)) {
+	_call_count = stop_count;
+	_call_count_h = new HandlerCall(id() + ".stop");
+    }
+    
     return 0;
 }
 
 int
 AggregateCounter::initialize(ErrorHandler *errh)
 {
+    if (_call_nnz_h && _call_nnz_h->initialize_write(this, errh) < 0)
+	return -1;
+    if (_call_count_h && _call_count_h->initialize_write(this, errh) < 0)
+	return -1;
+    
     if (!(_root = new_node())) {
 	uninitialize();
 	return errh->error("out of memory!");
@@ -98,6 +133,8 @@ AggregateCounter::initialize(ErrorHandler *errh)
     _num_nonzero = 0;
     _count = 0;
     
+    _frozen = false;
+    _active = true;
     return 0;
 }
 
@@ -107,6 +144,9 @@ AggregateCounter::uninitialize()
     for (int i = 0; i < _blocks.size(); i++)
 	delete[] _blocks[i];
     _blocks.clear();
+    delete _call_nnz_h;
+    delete _call_count_h;
+    _call_nnz_h = _call_count_h = 0;
 }
 
 // from tcpdpriv
@@ -216,30 +256,41 @@ AggregateCounter::update(Packet *p, bool frozen)
 	    amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
 	else
 	    amount = p->length() + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-	if (amount && !n->count)
+	
+	// update _num_nonzero; possibly call handler
+	if (amount && !n->count) {
+	    if (_num_nonzero == _call_nnz) {
+		_call_nnz_h->call_write(this);
+		_call_nnz = (uint32_t)(-1);
+		// handler may have stopped or frozen us
+		if (_frozen || !_active)
+		    return;
+	    }
 	    _num_nonzero++;
+	}
+	
 	n->count += amount;
 	_count += amount;
-	if (_num_nonzero >= _freeze_nnz || _count >= _freeze_count)
-	    _frozen = true;
+	if (_count >= _call_count) {
+	    _call_count_h->call_write(this);
+	    _call_count = (uint64_t)(-1);
+	}
     }
 }
 
 void
 AggregateCounter::push(int port, Packet *p)
 {
-    update(p, _frozen || (port == 1));
-    if (port == 0)
-	output(0).push(p);
-    else
-	output(noutputs() - 1).push(p);
+    if (_active)
+	update(p, _frozen || (port == 1));
+    output(port == 0 ? 0 : noutputs() - 1).push(p);
 }
 
 Packet *
 AggregateCounter::pull(int port)
 {
     Packet *p = input(port).pull();
-    if (p)
+    if (p && _active)
 	update(p, _frozen || (port == 1));
     return p;
 }
@@ -330,6 +381,8 @@ AggregateCounter::read_handler(Element *e, void *thunk)
     switch ((int)thunk) {
       case 0:
 	return cp_unparse_bool(ac->_frozen) + "\n";
+      case 1:
+	return cp_unparse_bool(ac->_active) + "\n";
       default:
 	return "<error>";
     }
@@ -348,6 +401,17 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	  ac->_frozen = val;
 	  return 0;
       }
+      case 1: {
+	  bool val;
+	  if (!cp_bool(s, &val))
+	      return errh->error("argument to `active' should be bool");
+	  ac->_active = val;
+	  return 0;
+      }
+      case 2:
+	ac->_active = false;
+	ac->router()->please_stop_driver();
+	return 0;
       default:
 	return errh->error("internal error");
     }
@@ -360,7 +424,10 @@ AggregateCounter::add_handlers()
     add_write_handler("write_file", write_file_handler, (void *)1);
     add_read_handler("freeze", read_handler, (void *)0);
     add_write_handler("freeze", write_handler, (void *)0);
+    add_read_handler("active", read_handler, (void *)1);
+    add_write_handler("active", write_handler, (void *)1);
+    add_write_handler("stop", write_handler, (void *)2);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel HandlerCall)
 EXPORT_ELEMENT(AggregateCounter)

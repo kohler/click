@@ -1,6 +1,7 @@
 #ifndef CLICK_AGGCOUNTER_HH
 #define CLICK_AGGCOUNTER_HH
 #include <click/element.hh>
+class HandlerCall;
 
 /*
 =c
@@ -48,15 +49,27 @@ Boolean. If true, and BYTES is true, then include packets' extra length
 annotations in the byte counts. Elements like FromDump set this annotation.
 Default is true.
 
+=item STOP_AFTER_AGG I<n>
+
+Unsigned. Stop the router once I<n> distinct aggregates have been seen.
+Default is never to stop.
+
 =item FREEZE_AFTER_AGG I<n>
 
 Unsigned. Freeze the AggregateCounter once I<n> distinct aggregates have been
-seen. Default is never to freeze.
+seen. Default is never to freeze. You can't give both STOP_AFTER_AGG and
+FREEZE_AFTER_AGG.
+
+=item STOP_AFTER_COUNT I<n>
+
+Unsigned. Stop the router once the total count (of bytes or packets) has
+reached or exceeded I<n>. Default is never to stop.
 
 =item FREEZE_AFTER_COUNT I<n>
 
-Unsigned. Freeze the AggregateCounter once the total count (of bytes or
-packets) has reached or exceeded I<n>. Default is never to freeze.
+Unsigned. Freeze the AggregateCounter once the total count has reached or
+exceeded I<n>. Default is never to freeze. You can't give both
+STOP_AFTER_COUNT and FREEZE_AFTER_COUNT.
 
 =back
 
@@ -81,6 +94,17 @@ decimal, a space, then the count in decimal.
 
 Returns or sets the AggregateCounter's frozen state, which is `true' or
 `false'. AggregateCounter starts off unfrozen.
+
+=h active read/write
+
+Returns or sets the AggregateCounter's active state. When AggregateCounter is
+inactive (`false'), it does not record information about any packets that
+pass. It starts out active.
+
+=h stop write-only
+
+When any value is written to this handler, AggregateCounter sets `active' to
+false and additionally stops the driver.
 
 =n
 
@@ -142,6 +166,7 @@ class AggregateCounter : public Element { public:
     bool _packet_count : 1;
     bool _extra_length : 1;
     bool _frozen : 1;
+    bool _active : 1;
     
     Node *_root;
     Node *_free;
@@ -149,8 +174,10 @@ class AggregateCounter : public Element { public:
     uint32_t _num_nonzero;
     uint64_t _count;
 
-    uint32_t _freeze_nnz;
-    uint64_t _freeze_count;
+    uint32_t _call_nnz;
+    HandlerCall *_call_nnz_h;
+    uint64_t _call_count;
+    HandlerCall *_call_count_h;
 
     Node *new_node();
     Node *new_node_block();
