@@ -1,3 +1,8 @@
+2003-04-28 Monday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.49), linkstat.cc (1.21):
+	clarify some error messages
+
 2003-04-27 Sunday 15:52  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/todevice.cc (1.132): ToDevice will
