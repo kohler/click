@@ -1,3 +1,60 @@
+2001-02-14 Wednesday 23:51  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.cc: fix compile problems under __MTCLICK__
+
+2001-02-14 Wednesday 23:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* DISTFILES, elements/linuxmodule/polldevice.cc,
+	elements/linuxmodule/todevice.cc, include/click/packet.hh,
+	include/click/skbmgr.h, include/click/skbmgr.h.old,
+	include/click/skbmgr.hh, linuxmodule/module.cc,
+	linuxmodule/skbmgr.c, linuxmodule/skbmgr.c.old,
+	linuxmodule/skbmgr.cc: merge in skbmgr changes from mazu: use only
+	2 buckets, 1800 and 500 bytes, also use c++ interface instead of c
+	interface
+
+2001-02-14 Wednesday 19:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/packet.hh, lib/packet.cc: PACKET_TYPE_MASK changes
+	to support PACKET_CLEAN; also nitlets (Mazu)
+
+2001-02-14 Wednesday 19:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/checkipheader.cc, elements/ip/checkipheader2.cc,
+	include/click/ipaddress.hh, include/click/ipflowid.hh,
+	lib/confparse.cc: improve IPAddress constructors; for instance, add
+	IPAddress(int32_t) so that IPAddress(0) is nonambiguous
+
+2001-02-14 Wednesday 19:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, lib/error.cc: added
+	ErrorHandler::{debug,ldebug} methods (Anne Dudfield, Mazu)
+
+2001-02-14 Wednesday 17:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/proc_element.cc: use new append_fill() method on
+	String; thanks to Benjie for catching this bug earlier
+
+2001-02-14 Wednesday 17:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh, lib/string.cc: added append_fill(int
+	char_value, int length) [like memset] and append_space(int length)
+	[like realloc: added space contains undetermined data] methods
+
+2001-02-14 Wednesday 11:21  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/: unqueue.cc, unqueue.hh: unqueue: added
+	prefetching code to unqueue, ifdefed for kernel
+
+2001-02-14 Wednesday 11:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* DISTFILES: mplock.hh does not exist, should not be in DISTFILES
+
+2001-02-14 Wednesday 11:07  Benjie Chen <benjie@lcs.mit.edu>
+
+	* configure.in: ipsec elements are fixed so they would compile and
+	run with click 1.1
+
 2001-02-13 Tuesday 23:41  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: anydevice.cc, anydevice.hh, fromdevice.cc,
