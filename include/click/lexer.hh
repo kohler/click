@@ -48,10 +48,10 @@ class Lexer { public:
   class Synonym;
   typedef Router::Hookup Hookup;
   
-  Lexer(ErrorHandler * = 0);
+  Lexer();
   virtual ~Lexer();
   
-  int begin_parse(const String &data, const String &filename, LexerExtra *);
+  int begin_parse(const String &data, const String &filename, LexerExtra *, ErrorHandler * = 0);
   void end_parse(int);
 
   ErrorHandler *errh() const		{ return _errh; }

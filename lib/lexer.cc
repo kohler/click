@@ -361,17 +361,15 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
 // LEXER
 //
 
-Lexer::Lexer(ErrorHandler *errh)
+Lexer::Lexer()
   : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
     _last_element_type(-1),
     _free_element_type(-1),
     _element_map(-1),
-    _definputs(0), _defoutputs(0),
-    _errh(errh)
+    _definputs(0), _defoutputs(0)
 {
-  if (!_errh) _errh = ErrorHandler::default_handler();
   end_parse(-1);		// clear private state
   add_element_type("<tunnel>", new ErrorElement);
   add_element_type(new ErrorElement);
@@ -385,7 +383,7 @@ Lexer::~Lexer()
 
 int
 Lexer::begin_parse(const String &data, const String &filename,
-		   LexerExtra *lextra)
+		   LexerExtra *lextra, ErrorHandler *errh)
 {
   _big_string = data;
   _data = _big_string.data();
@@ -401,6 +399,8 @@ Lexer::begin_parse(const String &data, const String &filename,
   _lineno = 1;
 
   _lextra = lextra;
+  _errh = (errh ? errh : ErrorHandler::default_handler());
+  
   return lexical_scoping_in();
 }
 
@@ -436,6 +436,8 @@ Lexer::end_parse(int cookie)
   
   _anonymous_offset = 0;
   _compound_depth = 0;
+
+  _errh = ErrorHandler::default_handler();
 }
 
 
@@ -1547,7 +1549,7 @@ Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
 Router *
 Lexer::create_router()
 {
-  Router *router = new Router;
+  Router *router = new Router(_big_string);
   if (!router)
     return 0;
   
