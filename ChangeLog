@@ -1,3 +1,9 @@
+2003-10-11 Saturday 22:45  Eddie Kohler <kohler@icir.org>
+
+	* lib/templatei.cc (1.15): add HashMap_const_iterator<String, int>
+	template instantiation; someone anonymously sent in a patch
+	indicating it was necessary
+
 2003-10-10 Friday 11:23  Eddie Kohler <kohler@icir.org>
 
 	* test/handlers/kernel-01.testie (1.3): ignore adaptive-sched
