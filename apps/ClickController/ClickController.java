@@ -37,7 +37,7 @@ class ClickController extends JPanel {
     private static void addController(ClickController cntr) {
 	synchronized (controllers) {
 	    if (!controllers.contains(cntr)) {
-		controllers.add(cntr);
+		controllers.addElement(cntr);
 		for (int i = 0; i < controllers.size() - 1; i++)
 		    ((ClickController) controllers.elementAt(i)).enableClose();
 	    }
