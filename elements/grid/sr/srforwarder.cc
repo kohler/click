@@ -122,9 +122,12 @@ SRForwarder::get_metric(IPAddress other)
   srforwarder_assert(other);
   if (_srcr_stat) {
     metric = _srcr_stat->get_etx(other);
+    update_link(_ip, other, metric);
+    return metric;
+    
+  } else {
+    return 0;
   }
-  update_link(_ip, other, metric);
-  return metric;
 }
 
 void

@@ -9,6 +9,7 @@
 #include <click/bighashmap.hh>
 #include <click/dequeue.hh>
 #include "path.hh"
+#include <elements/standard/notifierqueue.hh>
 CLICK_DECLS
 
 /*
@@ -34,12 +35,12 @@ class SRScheduler : public Element {
   ~SRScheduler();
   
   const char *class_name() const		{ return "SRScheduler"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return "hl/hl"; }
   int initialize(ErrorHandler *);
   SRScheduler *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
-  void push(Packet *, int);
-
+  void push(int, Packet *);
+  Packet *pull(int);
   /* handler stuff */
   void add_handlers();
   static int static_clear(const String &arg, Element *e,
@@ -51,20 +52,37 @@ private:
   class ScheduleInfo {
   public:
     Path _p;
+    bool _token; // do I have the token?
+    int _packets_sent;
+    struct timeval _last_tx;
     struct timeval _last_rx;
-    struct timeval _next_start;
-    struct timeval _next_end;    
-    bool _scheduled;
-    bool _source; // am I the source?
+    ScheduleInfo() : 
+      _p(), 
+      _token(false), 
+      _packets_sent(0)
+    { }
+
   };
   
   typedef BigHashMap<Path, ScheduleInfo> ScheduleTable;
   typedef ScheduleTable::const_iterator STIter;
   ScheduleTable _schedules;
 
-  class PullSwitch *_ps;
-  struct timeval _duration;
+  struct timeval _hop_duration;
+  struct timeval _rt_duration;
+  struct timeval _endpoint_duration;
 
+  class SRForwarder *_sr_forwarder;
+
+  Vector<NotifierQueue *> _queues;
+  NotifierQueue *_queue1;
+
+
+  bool _debug_token;
+
+  int _threshold;
+  class ScheduleInfo * find_nfo(Path p);
+  class ScheduleInfo * create_nfo(Path p);
   void call_switch(int);
   void start_hook();
   void end_hook();

@@ -87,7 +87,17 @@ PrintSR::simple_action(Packet *p)
     type = "UNKNOWN";
   }
   String flags = "";
-  sa << ": " << type << " (" << flags << ") ";
+  sa << ": " << type << " (";
+  if (pk->flag(FLAG_SCHEDULE)) {
+    sa << " FLAG_SCHEDULE ";
+  }
+  if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
+    sa << " FLAG_SCHEDULE_TOKEN ";
+  }
+  if (pk->flag(FLAG_SCHEDULE_FAKE)) {
+    sa << " FLAG_SCHEDULE_FAKE ";
+  }
+  sa << flags << ") ";
 
   if (pk->_type == PT_DATA) {
     sa << "len=" << pk->hlen_with_data() << " ";
