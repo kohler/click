@@ -171,10 +171,9 @@ void
 ScheduleInfo::join_scheduler(Element *e, Task *task, ErrorHandler *errh)
 {
 #ifndef RR_SCHED
-  int max_tickets = query(e, errh);
-  if (max_tickets > 0) {
-    task->set_max_tickets(max_tickets);
-    task->set_tickets(max_tickets);
+  int tickets = query(e, errh);
+  if (tickets > 0) {
+    task->set_tickets(tickets);
     task->initialize(e, true);
   }
 #else

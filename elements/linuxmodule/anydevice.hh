@@ -81,6 +81,7 @@ class AnyDevice : public Element { public:
   struct device *_dev;
 
   Task _task;
+  int _max_tickets;
   int _idles;
   
   AnyDevice *_next;
@@ -91,23 +92,29 @@ class AnyDevice : public Element { public:
 inline void
 AnyDevice::adjust_tickets(int work)
 {
-#if CLICK_DEVICE_ADJUST_TICKETS  
-  int adj = 0;
+#if CLICK_DEVICE_ADJUST_TICKETS
+  int tix = _task.tickets();
+  
   // simple additive increase damped multiplicative decrease scheme
   if (work > 2) {
-    adj = work;
+    tix += work;
+    if (tix > _max_tickets)
+      tix = _max_tickets;
     _idles = 0;
-  }
-  else if (work == 0) {
-    _idles ++;
+  } else if (work == 0) {
+    _idles++;
     if (_idles >= 64) {
-      adj = 0-(_task.tickets()>>5);
-      if (adj == 0) 
-	adj = -2;
+      if (tix > 64)
+	tix -= (tix >> 5);
+      else
+	tix -= 2;
+      if (tix < 1)
+	tix = 1;
       _idles = 0;
     }
   }
-  _task.adj_tickets(adj);
+
+  _task.set_tickets(tix);
 #endif
 }
 

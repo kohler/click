@@ -141,9 +141,7 @@ PollDevice::initialize(ErrorHandler *errh)
 
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
-  int max_tickets;
-  max_tickets = ScheduleInfo::query(this, errh);
-  _task.set_max_tickets(max_tickets);
+  _max_tickets = ScheduleInfo::query(this, errh);
   _task.set_tickets(ScheduleInfo::DEFAULT);
 #endif
   _task.initialize(this, true);
