@@ -52,24 +52,12 @@ Align::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 Align::smaction(Packet *p)
 {
-  int delta =
-    _offset - (reinterpret_cast<unsigned long>(p->data()) & _mask);
+  int delta = _offset - (reinterpret_cast<uintptr_t>(p->data()) & _mask);
   if (delta == 0)
     return p;
-  else if (delta < 0)
+  if (delta < 0)
     delta += _mask + 1;
-  if (!p->shared() && p->tailroom() >= (unsigned)delta) {
-    WritablePacket *q = reinterpret_cast<WritablePacket *>(p);
-    memmove(q->data() + delta, q->data(), q->length());
-    q->pull(delta);
-    q->put(delta);
-    return q;
-  } else {
-    WritablePacket *q = Packet::make(p->headroom() + delta, p->data(), p->length(), p->tailroom());
-    q->copy_annotations(p);
-    p->kill();
-    return q;
-  }
+  return p->shift_data(delta);
 }
 
 void
