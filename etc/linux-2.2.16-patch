@@ -469,7 +469,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Wed May  3 20:16:43 2000
-+++ drivers/net/tulip.c	Sat Oct 28 17:25:54 2000
++++ drivers/net/tulip.c	Sat Oct 28 17:42:04 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -502,7 +502,7 @@ Index: drivers/net/tulip.c
 +/* demand polling */
 +#define DEMAND_POLLTX	1
 +/* prefetching of descriptor data */
-+#define PREFETCH   	1
++// #define PREFETCH   	1
 +
 +static unsigned tulip_recycled_skb_size;
 +static int tulip_recycled_skb_cnt[SKB_BUCKETS];
