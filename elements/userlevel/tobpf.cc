@@ -18,7 +18,6 @@
 #include "etheraddress.hh"
 #include "confparse.hh"
 #include "router.hh"
-#include "frombpf.hh"
 #include "elements/standard/scheduleinfo.hh"
 
 #include <stdio.h>

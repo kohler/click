@@ -33,10 +33,10 @@ class AlignmentInfo : public Element {
   
   AlignmentInfo();
   
-  const char *class_name() const		{ return "AlignmentInfo"; }
+  const char *class_name() const	{ return "AlignmentInfo"; }
   
-  AlignmentInfo *clone() const			{ return new AlignmentInfo; }
-  bool configure_first() const;
+  AlignmentInfo *clone() const		{ return new AlignmentInfo; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(const String &, ErrorHandler *);
 
   bool query1(Element *, int port, int &chunk, int &offset) const;

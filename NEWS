@@ -2,6 +2,20 @@ Click NEWS
 
 Version 1.0.7
 
+* General
+
+** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
+   netmasks in element configuration strings. Old-style netmasks are still
+   supported. So for the 18.26.7 subnet, you can write either `18.26.7.0
+   255.255.255.0' or `18.26.7.0/24'.
+
+** Added new `tickets' handler, available by default on every element.
+
+** Changed Element method `bool configure_first() const' to `int
+   configure_phase() const'. Now element classes can specify their relative
+   configuration and initialization order; for example, ToBPF specifies
+   that it should be configured and initialized after any FromBPFs.
+
 * User-level driver
 
 ** User-level Click will no longer stop by default when an InfiniteSource
@@ -20,18 +34,14 @@ Version 1.0.7
 
 * Elements
 
-** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
-   netmasks. Old-style netmasks are still supported. So for the 18.26.7
-   subnet, you can write either `18.26.7.0 255.255.255.0' or
-   `18.26.7.0/24'.
-
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
 
 ** Added QuitWatcher, FrontDropQueue, and StripIPHeader.
 
-** Renamed the SetIPAddress element to StoreIPAddress. Added a different
-   SetIPAddress element.
+** Fixed FromBPF and ToBPF bugs. Now FromBPF will not starve other router
+   processing, and ToBPF works on Linux (if a patched libpcap is installed;
+   we suggest using a libpcap-0.4 RPM, or see the FAQ).
 
 ** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
    device (this happens while installing a new configuration: initialize is
@@ -44,12 +54,13 @@ Version 1.0.7
 ** Modified ToDevice: ToDevice now sends linux packets if device is idle. This
    prevents click from starving out packets sent by other processes / linux.
 
+** Renamed the SetIPAddress element to StoreIPAddress. Added a different
+   SetIPAddress element.
+
 ** Radio elements are not compiled by default.
 
 ** Added new `elements/local' directory for your own elements. They are not
    compiled by default.
-
-** Added new `tickets' handler, available by default.
 
 * Tools
 

@@ -2,6 +2,7 @@
 #define TOBPF_HH
 #include "element.hh"
 #include "string.hh"
+#include "elements/userlevel/frombpf.hh"
 
 /*
  * =c
@@ -55,6 +56,7 @@ class ToBPF : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   
   ToBPF *clone() const;
+  int configure_phase() const	{ return FromBPF::CONFIGURE_PHASE_TOBPF; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

@@ -40,14 +40,20 @@ extern "C" {
 
 class FromBPF : public Element {
  public:
+
+  enum ConfigurePhase {
+    CONFIGURE_PHASE_FROMBPF = CONFIGURE_PHASE_DEFAULT,
+    CONFIGURE_PHASE_TOBPF = CONFIGURE_PHASE_FROMBPF + 1
+  };
   
   FromBPF();
   ~FromBPF();
   
-  const char *class_name() const		{ return "FromBPF"; }
-  const char *processing() const		{ return PUSH; }
+  const char *class_name() const	{ return "FromBPF"; }
+  const char *processing() const	{ return PUSH; }
   
   FromBPF *clone() const;
+  int configure_phase() const		{ return CONFIGURE_PHASE_FROMBPF; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

@@ -31,12 +31,6 @@ IPLoadBalancingMapper::cast(const char *name)
     return 0;
 }
 
-bool
-IPLoadBalancingMapper::configure_first() const
-{
-  return true;
-}
-
 int
 IPLoadBalancingMapper::configure(const String &conf, ErrorHandler *errh)
 {

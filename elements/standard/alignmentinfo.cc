@@ -23,12 +23,6 @@ AlignmentInfo::AlignmentInfo()
 {
 }
 
-bool
-AlignmentInfo::configure_first() const
-{
-  return true;
-}
-
 int
 AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
 {

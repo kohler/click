@@ -23,12 +23,6 @@ ScheduleInfo::ScheduleInfo()
 {
 }
 
-bool
-ScheduleInfo::configure_first() const
-{
-  return true;
-}
-
 int
 ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
 {

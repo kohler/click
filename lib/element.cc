@@ -315,10 +315,10 @@ Element::set_processing_vector(const Subvector<int> &in_v,
 
 // CLONING AND CONFIGURING
 
-bool
-Element::configure_first() const
+int
+Element::configure_phase() const
 {
-  return false;
+  return CONFIGURE_PHASE_DEFAULT;
 }
 
 int

@@ -17,6 +17,12 @@ class Element : public ElementLink { public:
   
   enum Processing { VAGNOSTIC, VPUSH, VPULL };
   static const char *AGNOSTIC, *PUSH, *PULL, *PUSH_TO_PULL, *PULL_TO_PUSH;
+
+  enum ConfigurePhase {
+    CONFIGURE_PHASE_INFO = 0,
+    CONFIGURE_PHASE_DEFAULT = 100
+  };
+  
   class Connection;
   
   Element();
@@ -77,7 +83,7 @@ class Element : public ElementLink { public:
   
   // CLONING AND CONFIGURATION
   virtual Element *clone() const = 0;
-  virtual bool configure_first() const;
+  virtual int configure_phase() const;
   virtual int configure(const String &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();

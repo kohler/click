@@ -689,6 +689,40 @@ Router::context_message(int element_no, const char *message) const
   return s;
 }
 
+static int
+partition_configure_order(Vector<int> &order, const Vector<int> &phase,
+			  int left, int right)
+{
+  int pivot_idx = (left + right) / 2;
+  int pivot = order[pivot_idx];
+  order[pivot_idx] = order[right];
+  int pivot_phase = phase[pivot];
+
+  while (left < right) {
+    if (phase[order[left]] <= pivot_phase)
+      left++;
+    else {
+      order[right] = order[left];
+      order[left] = order[right - 1];
+      right--;
+    }
+  }
+
+  order[right] = pivot;
+  return right;
+}
+
+static void
+qsort_configure_order(Vector<int> &order, const Vector<int> &phase,
+		      int left, int right)
+{
+  if (left < right) {
+    int split = partition_configure_order(order, phase, left, right);
+    qsort_configure_order(order, phase, left, split - 1);
+    qsort_configure_order(order, phase, split + 1, right);
+  }
+}
+
 int
 Router::initialize(ErrorHandler *errh)
 {
@@ -698,27 +732,31 @@ Router::initialize(ErrorHandler *errh)
     return -1;
   
   Bitvector element_ok(nelements(), true);
-  Vector<int> configure_phase(nelements(), 0);
   bool all_ok = true;
-  
-  for (int i = 0; i < _elements.size(); i++)
-    configure_phase[i] = !_elements[i]->configure_first();
-  
-  notify_hookup_range();
 
-  // Configure all elements. Remember the ones that failed
-  for (int phase = 0; phase < 2; phase++)
-    for (int i = 0; i < _elements.size(); i++)
-      if (configure_phase[i] == phase) {
-	ContextErrorHandler cerrh
-	  (errh, context_message(i, "While configuring"));
-	int before = cerrh.nerrors();
-	if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
-	  element_ok[i] = all_ok = false;
-	  if (cerrh.nerrors() == before)
-	    cerrh.error("unspecified error");
-	}
-      }
+  notify_hookup_range();
+  
+  // set up configuration order
+  Vector<int> configure_phase(nelements(), 0);
+  Vector<int> configure_order(nelements(), 0);
+  for (int i = 0; i < _elements.size(); i++) {
+    configure_phase[i] = _elements[i]->configure_phase();
+    configure_order[i] = i;
+  }
+  qsort_configure_order(configure_order, configure_phase, 0, _elements.size() - 1);
+
+  // Configure all elements in configure order. Remember the ones that failed
+  for (int ord = 0; ord < _elements.size(); ord++) {
+    int i = configure_order[ord];
+    ContextErrorHandler cerrh
+      (errh, context_message(i, "While configuring"));
+    int before = cerrh.nerrors();
+    if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
+      element_ok[i] = all_ok = false;
+      if (cerrh.nerrors() == before)
+	cerrh.error("unspecified error");
+    }
+  }
   
   int before = errh->nerrors();
   check_hookup_range(errh);
@@ -731,7 +769,8 @@ Router::initialize(ErrorHandler *errh)
     all_ok = false;
 
   // Initialize elements that are OK so far.
-  for (int i = 0; i < _elements.size(); i++)
+  for (int ord = 0; ord < _elements.size(); ord++) {
+    int i = configure_order[ord];
     if (element_ok[i]) {
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While initializing"));
@@ -744,6 +783,7 @@ Router::initialize(ErrorHandler *errh)
 	  cerrh.error("unspecified error");
       }
     }
+  }
 
   // clear handler offsets
   _handler_offset.assign(nelements(), -1);

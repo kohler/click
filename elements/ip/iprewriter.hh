@@ -207,6 +207,10 @@ class IPMapper {
 
  public:
 
+  enum ConfigurePhase {
+    CONFIGURE_PHASE_IPMAPPER = 30
+  };
+  
   IPMapper()				{ }
   virtual ~IPMapper()			{ }
 
