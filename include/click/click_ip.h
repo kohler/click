@@ -33,14 +33,17 @@ unsigned short in_cksum(const unsigned char *addr, int len);
 
 struct click_ip {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  unsigned char ip_hl:4;		/* 0     header length */
-  unsigned char ip_v:4;			/*       version == 4 */
+  unsigned char ip_hl : 4;		/* 0     header length */
+  unsigned char ip_v : 4;		/*       version == 4 */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-  unsigned char ip_v:4;			/* 0     version == 4 */
-  unsigned char ip_hl:4;		/*       header length */
+  unsigned char ip_v : 4;		/* 0     version == 4 */
+  unsigned char ip_hl : 4;		/*       header length */
 #endif
   unsigned char ip_tos;			/* 1     type of service */
+#define IP_DSCPMASK 0xFC		/*         diffserv code point */
+#define IP_ECN_ECT 0x02			/*         ECN capable transport */
+#define IP_ECN_CE 0x01			/*         ECN congestion exp'd */
   unsigned short ip_len;		/* 2-3   total length */
   unsigned short ip_id;			/* 4-5   identification */
   unsigned short ip_off;		/* 6-7   fragment offset field */
