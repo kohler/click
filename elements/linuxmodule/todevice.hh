@@ -76,8 +76,8 @@ class ToDevice : public AnyDevice {
 #endif
   unsigned long _rejected;
   unsigned long _hard_start;
-  unsigned long long _busy_returns;
-  unsigned long long _pkts_sent;
+  unsigned long _busy_returns;
+  unsigned long _pkts_sent;
 
   bool polling() const			{ return _polling; }
   

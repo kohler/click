@@ -63,8 +63,8 @@ class PollDevice : public AnyDevice {
   unsigned long long _perfcnt2_pushing;
   unsigned long _activations;
 #endif
-#if CLICK_DEVICE_THESIS_STATS
   unsigned _npackets;
+#if CLICK_DEVICE_THESIS_STATS
   unsigned long long _push_cycles;
 #endif
     

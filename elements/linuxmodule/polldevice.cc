@@ -153,8 +153,8 @@ PollDevice::initialize(ErrorHandler *errh)
   _perfcnt2_pushing = 0;
 #endif
 
-#if CLICK_DEVICE_THESIS_STATS
   _npackets = 0;
+#if CLICK_DEVICE_THESIS_STATS
   _push_cycles = 0;
 #endif
   
@@ -235,8 +235,8 @@ PollDevice::run_scheduled()
 
     Packet *p = Packet::make(skb);
 
-#if CLICK_DEVICE_THESIS_STATS
     _npackets++;
+#if CLICK_DEVICE_THESIS_STATS
     _push_cycles -= click_get_cycles();
 #endif
     output(0).push(p);
@@ -309,7 +309,6 @@ PollDevice_read_calls(Element *f, void *)
 #endif
 }
 
-#if CLICK_DEVICE_THESIS_STATS
 static String
 PollDevice_read_stats(Element *e, void *thunk)
 {
@@ -318,8 +317,10 @@ PollDevice_read_stats(Element *e, void *thunk)
   switch (which) {
    case 0:
     return String(pd->_npackets) + "\n";
+#if CLICK_DEVICE_THESIS_STATS
    case 1:
     return String(pd->_push_cycles) + "\n";
+#endif
    default:
     return String();
   }
@@ -330,20 +331,21 @@ PollDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
   PollDevice *pd = (PollDevice *)e;
   pd->_npackets = 0;
+#if CLICK_DEVICE_THESIS_STATS
   pd->_push_cycles = 0;
+#endif
   return 0;
 }
-#endif
 
 void
 PollDevice::add_handlers()
 {
   add_read_handler("calls", PollDevice_read_calls, 0);
-#if CLICK_DEVICE_THESIS_STATS
   add_read_handler("packets", PollDevice_read_stats, 0);
+#if CLICK_DEVICE_THESIS_STATS
   add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
-  add_write_handler("reset_counts", PollDevice_write_stats, 0);
 #endif
+  add_write_handler("reset_counts", PollDevice_write_stats, 0);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
