@@ -1,0 +1,271 @@
+// -*- c-basic-offset: 4 -*-
+/*
+ * click2xml.cc -- translate Click configurations into and out of XML
+ * Eddie Kohler
+ *
+ * Copyright (c) 2002 International Computer Science Institute
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
+ */
+
+#include <click/config.h>
+#include <click/pathvars.h>
+
+#include "routert.hh"
+#include "lexert.hh"
+#include "lexertinfo.hh"
+#include <click/error.hh>
+#include <click/driver.hh>
+#include <click/straccum.hh>
+#include <click/confparse.hh>
+#include <click/clp.h>
+#include "toolutils.hh"
+#include "processingt.hh"
+#include "elementmap.hh"
+
+#define HELP_OPT		300
+#define VERSION_OPT		301
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+
+#define FIRST_DRIVER_OPT	1000
+#define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
+#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
+#define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
+
+static Clp_Option options[] = {
+    { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
+    { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
+    { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+    { "help", 0, HELP_OPT, 0, 0 },
+    { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
+    { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
+    { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+    { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
+    { "version", 'v', VERSION_OPT, 0, 0 },
+};
+
+static String::Initializer string_initializer;
+static const char *program_name;
+static int specified_driver = -1;
+
+
+//
+// main loop
+//
+
+static FILE *
+open_output_file(const char *outfile, ErrorHandler *errh)
+{
+    FILE *outf = stdout;
+    if (outfile && strcmp(outfile, "-") != 0) {
+	outf = fopen(outfile, "w");
+	if (!outf)
+	    errh->error("%s: %s", outfile, strerror(errno));
+    }
+    return outf;
+}
+
+static void
+process(const char *infile, bool file_is_expr, const char *outfile,
+	ErrorHandler *errh)
+{
+    RouterT *r = read_router(infile, file_is_expr, errh);
+    if (!r)
+	return;
+    r->flatten(errh);
+
+    // open output file
+    FILE *outf = open_output_file(outfile, errh);
+    if (!outf) {
+	delete r;
+	return;
+    }
+
+    // get element map and processing
+    ElementMap emap;
+    emap.parse_all_files(r, CLICK_SHAREDIR, errh);
+
+    int driver = specified_driver;
+    if (driver < 0) {
+	int driver_mask = 0;
+	for (int d = 0; d < Driver::COUNT; d++)
+	    if (emap.driver_compatible(r, d))
+		driver_mask |= 1 << d;
+	if (driver_mask == 0)
+	    errh->warning("configuration not compatible with any driver");
+	else {
+	    for (int d = Driver::COUNT - 1; d >= 0; d--)
+		if (driver_mask & (1 << d))
+		    driver = d;
+	    // don't complain if only a single driver works
+	    if ((driver_mask & (driver_mask - 1)) != 0
+		&& !emap.driver_indifferent(r, driver_mask, errh))
+		errh->warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(driver));
+	}
+    } else if (!emap.driver_compatible(r, driver))
+	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
+
+    emap.set_driver(driver);
+    ProcessingT processing(r, &emap, errh);
+    processing.resolve_agnostics();
+
+    ElementMap::push_default(&emap);
+
+    // print elements
+    for (RouterT::iterator e = r->first_element(); e; e++) {
+	fprintf(outf, "<element name='%s' class='%s'",
+		e->name_cc(), e->type_name_cc());
+	String s = e->landmark();
+	int colon = s.find_left(':');
+	if (colon >= 0 && s.substring(colon + 1) != "0")
+	    fprintf(outf, "\n\tfile='%s' line='%s'", s.substring(0, colon).cc(), s.substring(colon + 1).cc());
+	fprintf(outf, "\n\tninputs='%d' noutputs='%d' processing='%s'",
+		e->ninputs(), e->noutputs(), processing.processing_code(e).cc());
+	fprintf(outf, "/>\n");
+    }
+
+    // print connections
+    const Vector<ConnectionT> &conn = r->connections();
+    for (int i = 0; i < conn.size(); i++) {
+	int p = processing.output_processing(conn[i].from());
+	fprintf(outf, "<connection fromelement='%s' fromport='%d' toelement='%s' toport='%d' processing='%c'/>\n",
+		conn[i].from_elt()->name_cc(), conn[i].from_port(),
+		conn[i].to_elt()->name_cc(), conn[i].to_port(),
+		ProcessingT::processing_letters[p]);
+    }
+    
+    ElementMap::pop_default();
+    
+    // close files, return
+    if (outf != stdout)
+	fclose(outf);
+    delete r;
+}
+
+void
+short_usage()
+{
+    fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
+Try `%s --help' for more information.\n",
+	    program_name, program_name);
+}
+
+void
+usage()
+{
+    printf("\
+`Click2xml' reads a Click router configuration and outputs an XML file\n\
+corresponding to that configuration.\n\
+\n\
+Usage: %s [OPTION]... [ROUTERFILE]\n\
+\n\
+Options:\n\
+  -f, --file FILE             Read router configuration from FILE.\n\
+  -e, --expression EXPR       Use EXPR as router configuration.\n\
+  -o, --output FILE           Write HTML output to FILE.\n\
+  -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
+      --help                  Print this message and exit.\n\
+  -v, --version               Print version number and exit.\n\
+\n\
+Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
+int
+main(int argc, char **argv)
+{
+    String::static_initialize();
+    ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+    ErrorHandler *errh = ErrorHandler::default_handler();
+    ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-pretty: ");
+    CLICK_DEFAULT_PROVIDES;
+
+    // read command line arguments
+    Clp_Parser *clp =
+	Clp_NewParser(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
+    program_name = Clp_ProgramName(clp);
+
+    const char *router_file = 0;
+    bool file_is_expr = false;
+    const char *output_file = 0;
+
+    while (1) {
+	int opt = Clp_Next(clp);
+	switch (opt) {
+
+	  case HELP_OPT:
+	    usage();
+	    exit(0);
+	    break;
+
+	  case VERSION_OPT:
+	    printf("click2xml (Click) %s\n", CLICK_VERSION);
+	    printf("Copyright (c) 2002 International Computer Science Institute\n\
+This is free software; see the source for copying conditions.\n\
+There is NO warranty, not even for merchantability or fitness for a\n\
+particular purpose.\n");
+	    exit(0);
+	    break;
+
+	  case CLICKPATH_OPT:
+	    set_clickpath(clp->arg);
+	    break;
+
+	  case ROUTER_OPT:
+	  case EXPRESSION_OPT:
+	  case Clp_NotOption:
+	    if (router_file) {
+		p_errh->error("router configuration specified twice");
+		goto bad_option;
+	    }
+	    router_file = clp->arg;
+	    file_is_expr = (opt == EXPRESSION_OPT);
+	    break;
+
+	  case OUTPUT_OPT:
+	    if (output_file) {
+		p_errh->error("output file specified twice");
+		goto bad_option;
+	    }
+	    output_file = clp->arg;
+	    break;
+
+	  case USERLEVEL_OPT:
+	  case LINUXMODULE_OPT:
+	  case BSDMODULE_OPT:
+	    if (specified_driver >= 0) {
+		p_errh->error("driver specified twice");
+		goto bad_option;
+	    }
+	    specified_driver = opt - FIRST_DRIVER_OPT;
+	    break;
+
+	  bad_option:
+	  case Clp_BadOption:
+	    short_usage();
+	    exit(1);
+	    break;
+
+	  case Clp_Done:
+	    goto done;
+
+	}
+    }
+
+  done:
+    process(router_file, file_is_expr, output_file, errh);
+	
+    exit(errh->nerrors() > 0 ? 1 : 0);
+}

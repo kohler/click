@@ -24,6 +24,7 @@ struct ElementT {
     
     ElementClassT *type() const		{ return _type; }
     String type_name() const		{ return _type->name(); }
+    const char *type_name_cc() const	{ return _type->name_cc(); }
     int type_uid() const		{ return _type ? _type->uid() : -1; }
     void set_type(ElementClassT *);
 

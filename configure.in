@@ -475,7 +475,7 @@ dnl
 TARGETS=
 AC_SUBST(TARGETS)
 
-for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform; do
+for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
     test -d $srcdir/tools/$i &&	\
       TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
 done

@@ -47,6 +47,8 @@ click-undead: lib Makefile
 	@cd click-undead && $(MAKE) all-local
 click-xform: lib Makefile
 	@cd click-xform && $(MAKE) all-local
+click2xml: lib Makefile
+	@cd click2xml && $(MAKE) all-local
 udpgen: Makefile
 	@cd udpgen && $(MAKE) all
 always:

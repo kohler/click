@@ -403,6 +403,20 @@ ProcessingT::same_processing(int a, int b) const
     return true;
 }
 
+String
+ProcessingT::processing_code(const ElementT *e) const
+{
+    assert(e->router() == _router);
+    int ei = e->idx();
+    StringAccum sa;
+    for (int i = _input_pidx[ei]; i < _input_pidx[ei+1]; i++)
+	sa << processing_letters[_input_processing[i]];
+    sa << '/';
+    for (int i = _output_pidx[ei]; i < _output_pidx[ei+1]; i++)
+	sa << processing_letters[_output_processing[i]];
+    return sa.take_string();
+}
+
 // FLOW CODES
 
 static void

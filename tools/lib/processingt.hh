@@ -41,6 +41,8 @@ class ProcessingT { public:
 
     bool same_processing(int, int) const;
 
+    String processing_code(const ElementT *) const;
+    
     static int forward_flow(const String &code, int input_port, int noutputs, Bitvector *, ErrorHandler * = 0);
     static int forward_flow(const PortT &, Bitvector *, ErrorHandler * = 0);
     static int backward_flow(const String &code, int output_port, int ninputs, Bitvector *, ErrorHandler * = 0);

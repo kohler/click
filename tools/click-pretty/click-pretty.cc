@@ -45,8 +45,8 @@
 #define PACKAGE_URLS_OPT	310
 
 #define FIRST_DRIVER_OPT	1000
-#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
+#define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
 #define BSDMODULE_OPT		(1000 + Driver::BSDMODULE)
 
 static Clp_Option options[] = {
