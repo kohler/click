@@ -58,23 +58,23 @@ Counter::pull(int)
 
 
 static String
-counter_read_count_handler(Element *f, void *)
+counter_read_count_handler(Element *e, void *)
 {
-  Counter *c = (Counter *)f;
+  Counter *c = (Counter *)e;
   return String(c->count()) + "\n";
 }
 
 static String
-counter_read_rate_handler(Element *f, void *)
+counter_read_rate_handler(Element *e, void *)
 {
-  Counter *c = (Counter *)f;
+  Counter *c = (Counter *)e;
   return cp_unparse_real(c->rate()*CLICK_HZ, c->rate_scale()) + "\n";
 }
 
 static int
-counter_reset_write_handler(Element *f, const String &, void *, ErrorHandler *)
+counter_reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
-  Counter *c = (Counter *)f;
+  Counter *c = (Counter *)e;
   c->reset();
   return 0;
 }

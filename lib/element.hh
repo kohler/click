@@ -90,7 +90,8 @@ class Element : public ElementLink { public:
   
   // HANDLERS
   virtual void add_handlers(HandlerRegistry *);
-  static int reconfigure_write_handler(Element *, const String &, void *,
+  static String configure_read_handler(Element *, void *);
+  static int reconfigure_write_handler(const String &, Element *, void *,
 				       ErrorHandler *);
   
   // RUNNING user level input elements.
@@ -171,7 +172,7 @@ class Element : public ElementLink { public:
 };
 
 typedef String (*ReadHandler)(Element *, void *);
-typedef int (*WriteHandler)(Element *, const String &, void *, ErrorHandler *);
+typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 
 class Element::HandlerRegistry { public:
   

@@ -22,8 +22,7 @@ class SetIPDSCP : public Element {
   
  public:
   
-  SetIPDSCP(unsigned char = 0);
-  ~SetIPDSCP();
+  SetIPDSCP();
   
   const char *class_name() const		{ return "SetIPDSCP"; }
   Processing default_processing() const	{ return AGNOSTIC; }

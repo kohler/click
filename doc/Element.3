@@ -273,9 +273,9 @@ Called on every element during Router initialization. The
 \fIconfig_string\fP parameter contains the element's configuration string.
 The element should parse this string and change its private state
 accordingly, reporting any errors, warnings or messages to the \fIerrh\fP
-ErrorHandler. Its return value should be 0 if configuration succeeded, or
-negative if an error occurred. The default implementation reports an error
-unless \fIconfig_string\fP is empty.
+ErrorHandler. Should return 0 if configuration succeeded, or negative if an
+error occurred. The default implementation reports an error unless
+\fIconfig_string\fP is empty.
 .Sp
 Most
 .B configure()
@@ -299,9 +299,9 @@ state does not exist.
 Called on every element during Router initialization, after
 .BR configure() . 
 The element can react by initializing itself. It should report any errors,
-warnings or messages to the \fIerrh\fP ErrorHandler. Its return value
-should be 0 if initialization succeeded, or negative if an error occurred.
-The default implementation always succeeds.
+warnings or messages to the \fIerrh\fP ErrorHandler. Should return 0 if
+initialization succeeded, or negative if an error occurred. The default
+implementation always succeeds.
 .Sp
 .B initialize()
 is called after the router has been connected, so it can examine flow-based
@@ -319,6 +319,105 @@ destroyed. This function should undo the work of
 .BR initialize() :
 for example, by closing files or unregistering devices.
 .PD
+.SH "RUN-TIME RECONFIGURATION"
+.PD 0
+.TP 5
+.BR "virtual bool can_live_reconfigure() const"
+Returns
+.K true
+iff this element supports live reconfiguration. The
+.B live_reconfigure()
+method will be called only if
+.B can_live_reconfigure()
+returns
+.K true .
+The default implementation returns
+.K false .
+'
+.Sp
+.TP
+.BR "virtual int live_reconfigure(" "const String &\fIconfig_string\fP,"
+.TP
+.RB "\%            ErrorHandler *\fIerrh\fP" )
+Called to reconfigure the element at run time with the configuration string
+\fIconfig_string\fP. This string is exactly like a configuration string
+that would be passed to
+.BR configure() ;
+if reconfiguration succeeds, the element's state should be as if it were
+given that configuration string from the beginning. For example,
+reconfiguring a Queue(n) with an empty string does not keep the Queue's
+current maximum length, but reconfigures it with the default maximum length
+of 1000. However, packet-related state can and should be retained:
+reconfiguring a Queue keeps its packet contents, or as many packets as will
+fit in the new Queue.
+.Sp
+Any errors should be reported to the \fIerrh\fP ErrorHandler. Should return
+0 if the live reconfiguration succeeded, or negative if an error occurred.
+If an error occurs, the element should be left in the same state it had
+before the live reconfiguration was attempted. The default implementation
+just calls
+.BR configure( "\fIconfig_string\fP, \fIerrh\fP" )
+and returns its value.
+.PD
+'
+.SH "HANDLERS"
+.PD 0
+.TP 5
+.BR "virtual void add_handlers(" "HandlerRegistry *\fIregistry" )
+Called on every element during Router initialization. Called after every
+element has been successfully
+.BR initialize() d.
+Should call functions on the HandlerRegistry \fIregistry\fP (see
+HandlerRegistry(3)) to add handlers for the element. Handlers are user
+access points that return information about the element, or change its
+behavior. They are identified by name, and may be read-only, write-only, or
+read/write; in the Linux kernel module (see click.o(8)), they are
+implemented as files in a /proc/click/ELEMENT directory. The default
+implementation adds "class", "config", "inputs", "name", and "outputs"
+handlers (see click.o(8) for their descriptions). Any overriding definition
+should call the old definition,
+.BI Element::add_handlers( registry )\fR,
+to add these default handlers as well as its own.
+'
+.Sp
+.TP
+.BR "static String configure_read_handler(" "Element *\fIe\fP,"
+.TP
+.RB "\%            void *\fIthunk\fP" )
+This generic read handler (see HandlerRegistry(3)) is provided as a
+convenience. It implements the common case where a read handler returns a
+single argument in a multi-argument configuration string. The
+.B configure_read_handler()
+function determines the argument number by casting \fIthunk\fP to an
+integer; it decomposes the current configuration string and returns the
+\fIthunk\fPth argument.
+.Sp
+Think twice before using this generic handler. For example, it behaves
+oddly for optional configuration arguments: if an optional argument was
+left off,
+.B configure_read_handler()
+will return an empty string for that argument. You probably want to return
+the defaulted value instead, which requires that you write your own
+handler.
+'
+.Sp
+.TP
+.BR "static int reconfigure_write_handler(" "const String &\fIs\fP,"
+.TP
+.RB "\%            Element *\fIe\fP, void *\fIthunk\fP,"
+.TP
+.RB "\%            ErrorHandler *\fIerrh\fP" )
+This generic write handler (see HandlerRegistry(3)) is provided as a
+convenience. It implements the common case where a write handler changes a
+single argument in a multi-argument configuration string. The
+.B reconfigure_write_handler()
+function determines the argument number by casting \fIthunk\fP to an
+integer; it decomposes the current configuration string, replaces the
+\fIthunk\fPth argument with \fIs\fP, and calls
+.B live_reconfigure()
+on the given element with the new configuration string.
+.PD
+'
 .SH "PACKET PASSING"
 .PD 0
 .TP 5
@@ -373,7 +472,8 @@ implementation reports an error.
 .PD
 '
 .SH "SEE ALSO"
-Connection(3), click(5), elements(n)
+Connection(3), HandlerRegistry(3), click(5), click.o(8), elements(n),
+Queue(n)
 '
 .SH AUTHOR
 .na

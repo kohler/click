@@ -26,19 +26,17 @@ class RandomBitErrors : public Element {
  public:
   
   RandomBitErrors();
-  RandomBitErrors(const RandomBitErrors &);
   
   const char *class_name() const		{ return "RandomBitErrors"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
 
   unsigned p_bit_error() const			{ return _p_bit_error; }
   int kind() const				{ return _kind; }
   bool on() const				{ return _on; }
   void set_bit_error(unsigned);	// out of 0xFFFF
   
-  RandomBitErrors *clone() const;
+  RandomBitErrors *clone() const		{ return new RandomBitErrors; }
   int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers(HandlerRegistry *);
   

@@ -258,7 +258,7 @@ read_classes(Element *, void *)
 }
 
 static int
-write_driver(Element *, const String &conf_in, void *, ErrorHandler *errh)
+write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
 {
   int num;
   String conf = cp_arg(conf_in);

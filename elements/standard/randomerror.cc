@@ -69,20 +69,8 @@ static unsigned char bit_flip_array[] = {
 };
 
 RandomBitErrors::RandomBitErrors()
-  : Element(1, 1), _kind(-1), _on(true)
+  : Element(1, 1)
 {
-}
-
-RandomBitErrors::RandomBitErrors(const RandomBitErrors &o)
-  : Element(1, 1), _kind(o._kind), _on(o._on)
-{
-  memcpy(_p_error, o._p_error, sizeof(_p_error));
-}
-
-RandomBitErrors *
-RandomBitErrors::clone() const
-{
-  return new RandomBitErrors(*this);
 }
 
 void
@@ -114,39 +102,37 @@ int
 RandomBitErrors::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned bit_error;
-  String kind = (_kind < 0 ? "flip" : "");
+  String kind_str = "flip";
+  bool on = true;
   if (cp_va_parse(conf, this, errh,
 		  cpNonnegReal2, "bit error probability", 16, &bit_error,
 		  cpOptional,
-		  cpString, "action (set/clear/flip)", &kind,
-		  cpBool, "active?", &_on,
+		  cpString, "action (set/clear/flip)", &kind_str,
+		  cpBool, "active?", &on,
 		  0) < 0)
     return -1;
-  
-  if (kind == "flip")
-    _kind = 2;
-  else if (kind == "set")
-    _kind = 1;
-  else if (kind == "clear")
-    _kind = 0;
-  else if (kind)		// null string == keep default
+
+  unsigned kind;
+  if (kind_str == "flip" || kind_str == "")
+    kind = 2;
+  else if (kind_str == "set")
+    kind = 1;
+  else if (kind_str == "clear")
+    kind = 0;
+  else
     return errh->error("bad action `%s' (must be `set', `clear', or `flip')",
-		       kind.cc());
+		       kind_str.cc());
   
   if (bit_error > 0x10000)
     return errh->error("drop probability must be between 0 and 1");
   if (bit_error == 0)
     errh->warning("zero bit error probability (underflow?)");
-  set_bit_error(bit_error);
-  
-  return 0;
-}
 
-int
-RandomBitErrors::initialize(ErrorHandler *errh)
-{
-  if (_kind < 0)
-    return errh->error("not configured");
+  // configuration OK; set variables
+  set_bit_error(bit_error);
+  _kind = kind;
+  _on = on;
+  
   return 0;
 }
 

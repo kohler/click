@@ -22,7 +22,7 @@
 #include <errno.h>
 
 RED::RED()
-  : Element(1, 1), _min_thresh(1000), _max_thresh(1000), _max_p(-1)
+  : Element(1, 1)
 {
 }
 
@@ -50,11 +50,11 @@ RED::set_C1_and_C2()
 int
 RED::configure(const String &conf, ErrorHandler *errh)
 {
-  int min_thresh, max_thresh;
+  int min_thresh, max_thresh, max_p;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
-		  cpNonnegReal2, "max_p drop probability", 16, &_max_p,
+		  cpNonnegReal2, "max_p drop probability", 16, &max_p,
 		  0) < 0)
     return -1;
   
@@ -63,15 +63,16 @@ RED::configure(const String &conf, ErrorHandler *errh)
     return errh->error("`min_thresh' too large (max %d)", max_allow_thresh);
   if (max_thresh > max_allow_thresh)
     return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
-  
-  _min_thresh = min_thresh << QUEUE_SCALE;
-  _max_thresh = max_thresh << QUEUE_SCALE;
-  if (_min_thresh > _max_thresh)
+  if (min_thresh > max_thresh)
     return errh->error("`min_thresh' greater than `max_thresh'");
   
-  if (_max_p > 0x10000)
+  if (max_p > 0x10000)
     return errh->error("`max_p' parameter must be between 0 and 1");
-  
+
+  // OK: set variables
+  _min_thresh = min_thresh << QUEUE_SCALE;
+  _max_thresh = max_thresh << QUEUE_SCALE;
+  _max_p = max_p;
   set_C1_and_C2();
   return 0;
 }

@@ -17,15 +17,15 @@
 #include "confparse.hh"
 #include "error.hh"
 
-RandomLossage::RandomLossage(int p_drop, bool on)
-  : Element(1, 1), _p_drop(p_drop), _on(on)
+RandomLossage::RandomLossage()
+  : Element(1, 1)
 {
 }
 
 RandomLossage *
 RandomLossage::clone() const
 {
-  return new RandomLossage(_p_drop, _on);
+  return new RandomLossage;
 }
 
 void
@@ -46,22 +46,27 @@ RandomLossage::processing_vector(Vector<int> &in_v, int in_offset,
 int
 RandomLossage::configure(const String &conf, ErrorHandler *errh)
 {
+  int p_drop;
+  bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpNonnegReal2, "max_p drop probability", 16, &_p_drop,
+		  cpNonnegReal2, "max_p drop probability", 16, &p_drop,
 		  cpOptional,
-		  cpBool, "active?", &_on,
+		  cpBool, "active?", &on,
 		  0) < 0)
     return -1;
   if (_p_drop > 0x10000)
     return errh->error("drop probability must be between 0 and 1");
+
+  // OK: set variables
+  _p_drop = p_drop;
+  _on = on;
+  
   return 0;
 }
 
 int
 RandomLossage::initialize(ErrorHandler *errh)
 {
-  if (_p_drop < 0)
-    return errh->error("not configured");
   _drops = 0;
   return 0;
 }

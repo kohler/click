@@ -1,0 +1,111 @@
+.\" -*- mode: nroff -*-
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.TH HANDLERREGISTRY 3 "19/Oct/1999" "Version \*V"
+.SH NAME
+Element::HandlerRegistry \- Click class for registering element handlers
+'
+.SH DESCRIPTION
+The HandlerRegistry class, which is a nested class of Element (see
+Element(3)), is used by elements to register handlers. A handler is an
+access point to get information about an element, or to change its
+behavior. Handlers can be read-only, write-only, or read/write; in the
+Linux kernel module (see click.o(8)), they are implemented as files in the
+/proc/click/ELEMENT directories. The environment running the Click router
+will subclass HandlerRegistry to change how handlers are implemented; the
+default HandlerRegistry ignores every request.
+.PP
+Handlers are particular types of functions. A
+.I read handler
+has type
+.Rs
+String (*ReadHandler)(Element *\fIe\fP, void *\fIthunk\fP).
+.Re
+It should return a string representing the value read. The \fIe\fP
+parameter is the relevant element; \fIthunk\fP is a piece of callback
+data\*Ea value given to the HandlerRegistry when the handler was registered
+and passed through unchanged. A
+.I write handler
+has type
+.Rs
+int (*WriteHandler)(const String &\fIs\fP, Element *\fIe\fP,
+.br
+\%        void *\fIthunk\fP, ErrorHandler *\fIerrh\fP).
+.Re
+The \fIe\fP and \fIthunk\fP parameters are as above. The \fIs\fP parameter
+is the string written to the handler, and \fIerrh\fP is an ErrorHandler for
+reporting errors. The handler should return 0 if the write succeeded or
+negative if there was an error.
+.PP
+A HandlerRegistry object has virtual functions for registering handlers.
+They are:
+.PP
+'
+.PD 0
+.TP 5
+.BR "virtual void add_read(" "const char *\fIname\fP, int \fIname_length\fP,"
+.TP
+.RB "\%            ReadHandler \fIhandler\fP, void *\fIthunk" )
+Adds a read handler. Its name is the first \fIname_length\fP characters of
+\fIname\fP. Removes any previous read and/or write handlers for this
+element that had the same name.
+'
+.Sp
+.TP
+.BR "virtual void add_write(" "const char *\fIname\fP, int \fIname_length\fP,"
+.TP
+.RB "\%            WriteHandler \fIhandler\fP, void *\fIthunk" )
+Similarly adds a write handler. Removes any previous read and/or write
+handlers for this element that had the same name.
+'
+.Sp
+.TP
+.BR "virtual void add_read_write"
+.TP
+.RB "\%           \fB(\fPconst char *\fIname\fP, int \fIname_length\fP, "
+.TP
+.RB "\%            ReadHandler \fIrh\fP, void *\fIread_thunk\fP,"
+.TP
+.RB "\%            WriteHandler \fIwh\fP, void *\fIwrite_thunk\fP" )
+Similarly adds a read handler and a write handler that share the same name.
+(This implements read/write handlers.) Removes any previous read and/or
+write handlers for this element that had the same name.
+'
+.PD
+.PP
+There are versions of these functions that don't take \fIname_length\fP
+parameters. They simply call the full versions, passing them
+.BR strlen(\fIname\fP)
+for \fIname_length\fP.
+'
+.SH "SEE ALSO"
+Element(3), click.o(8)
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

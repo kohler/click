@@ -321,8 +321,27 @@ element_read_cycles(Element *f, void *)
 }
 #endif
 
+String
+Element::configure_read_handler(Element *element, void *vno)
+{
+  Router *router = element->router();
+  Vector<String> args;
+  cp_argvec(router->configuration(element->number()), args);
+  int no = (int)vno;
+  if (no >= args.size())
+    return String();
+  String s = args[no];
+  // add trailing "\n" if appropriate
+  if (s) {
+    int c = s[s.length() - 1];
+    if (c != '\n' && c != '\\')
+      s += "\n";
+  }
+  return s;
+}
+
 int
-Element::reconfigure_write_handler(Element *element, const String &arg,
+Element::reconfigure_write_handler(const String &arg, Element *element,
 				   void *vno, ErrorHandler *errh)
 {
   Router *router = element->router();
@@ -372,20 +391,20 @@ Element::HandlerRegistry::add_read_write(const char *, int, ReadHandler,
 void
 Element::HandlerRegistry::add_read(const char *n, ReadHandler f, void *t)
 {
-  add_read(n, -1, f, t);
+  add_read(n, strlen(n), f, t);
 }
 
 void
 Element::HandlerRegistry::add_write(const char *n, WriteHandler f, void *t)
 {
-  add_write(n, -1, f, t);
+  add_write(n, strlen(n), f, t);
 }
 
 void
 Element::HandlerRegistry::add_read_write(const char *n, ReadHandler rf,
 					 void *rt, WriteHandler wf, void *wt)
 {
-  add_read_write(n, -1, rf, rt, wf, wt);
+  add_read_write(n, strlen(n), rf, rt, wf, wt);
 }
 
 // RUNNING

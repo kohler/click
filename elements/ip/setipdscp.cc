@@ -18,36 +18,35 @@
 #include "confparse.hh"
 #include "error.hh"
 
-SetIPDSCP::SetIPDSCP(unsigned char dscp)
-  : _dscp(dscp), _ip_offset(0)
+SetIPDSCP::SetIPDSCP()
 {
   add_input();
   add_output();
 }
 
-SetIPDSCP::~SetIPDSCP()
-{
-}
-
 SetIPDSCP *
 SetIPDSCP::clone() const
 {
-  return new SetIPDSCP(_dscp);
+  return new SetIPDSCP;
 }
 
 int
 SetIPDSCP::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
+  int ip_offset = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "diffserv code point", &dscp_val,
 		  cpOptional,
-		  cpUnsigned, "IP header offset", &_ip_offset,
+		  cpUnsigned, "IP header offset", &ip_offset,
 		  0) < 0)
     return -1;
   if (dscp_val > 0x3F)
     return errh->error("diffserv code point out of range");
+
+  // OK: set values
   _dscp = (dscp_val << 2);
+  _ip_offset = ip_offset;
   return 0;
 }
 

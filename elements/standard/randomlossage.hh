@@ -25,7 +25,7 @@ class RandomLossage : public Element {
   
  public:
   
-  RandomLossage(int p_drop = -1, bool = true);
+  RandomLossage();
   
   const char *class_name() const		{ return "RandomLossage"; }
   void notify_noutputs(int);

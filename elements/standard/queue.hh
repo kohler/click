@@ -30,7 +30,7 @@ class Queue : public Element {
   
  public:
   
-  Queue(int max_packets = 1000);
+  Queue();
   ~Queue();
   
   const char *class_name() const		{ return "Queue"; }
@@ -48,7 +48,7 @@ class Queue : public Element {
   Packet *deq();
   Packet *head() const;
   
-  Queue *clone() const				{ return new Queue(_max); }
+  Queue *clone() const				{ return new Queue; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

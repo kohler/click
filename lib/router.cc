@@ -750,8 +750,10 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
   Element *f = _elements[elementno];
   if (!f->can_live_reconfigure())
     return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
-  _configurations[elementno] = conf;
-  return f->live_reconfigure(conf, errh);
+  int result = f->live_reconfigure(conf, errh);
+  if (result >= 0)
+    _configurations[elementno] = conf;
+  return result;
 }
 
 

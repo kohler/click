@@ -146,15 +146,15 @@ static struct proc_dir_entry proc_element_read_write_handler_prototype = {
 static int
 prepare_handler_read(int elementno, int handler, String **store)
 {
-  Element *f = (elementno >= 0 ? current_router->element(elementno) : 0);
+  Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
   String s;
   int out_of_memory = String::out_of_memory_count();
   
   if (handler < 0 || handler >= nhandlers)
     return -ENOENT;
-  Handler *fc = &handlers[handler];
-  if (fc->read)
-    s = fc->read(f, fc->rthunk);
+  Handler *h = &handlers[handler];
+  if (h->read)
+    s = h->read(e, h->rthunk);
   else
     return -EPERM;
   
@@ -171,11 +171,10 @@ prepare_handler_read(int elementno, int handler, String **store)
 static int
 prepare_handler_write(int elementno, int handler)
 {
-  Element *f = (elementno >= 0 ? current_router->element(elementno) : 0);
   if (handler < 0 || handler >= nhandlers)
     return -ENOENT;
-  Handler *fc = &handlers[handler];
-  if (fc->write)
+  Handler *h = &handlers[handler];
+  if (h->write)
     return 0;
   else
     return -EPERM;
@@ -184,16 +183,16 @@ prepare_handler_write(int elementno, int handler)
 static int
 finish_handler_write(int elementno, int handler, String *s)
 {
-  Element *f = (elementno >= 0 ? current_router->element(elementno) : 0);
+  Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
   if (handler < 0 || handler >= nhandlers)
     return -ENOENT;
-  Handler *fc = &handlers[handler];
-  if (fc->write) {
+  Handler *h = &handlers[handler];
+  if (h->write) {
     String context_string = "While writing `"
-      + String(fc->name, fc->namelen) + "'";
-    if (f) context_string += String(" for `") + f->declaration() + "'";
+      + String(h->name, h->namelen) + "'";
+    if (e) context_string += String(" for `") + e->declaration() + "'";
     ContextErrorHandler cerrh(kernel_errh, context_string + ":");
-    return fc->write(f, *s, fc->wthunk, &cerrh);
+    return h->write(*s, e, h->wthunk, &cerrh);
   } else
     return -EPERM;
 }
@@ -401,12 +400,16 @@ static String
 read_element_config(Element *f, void *)
 {
   String s = current_router->configuration(f->number());
-  if (s) s += "\n";
+  if (s) {
+    int c = s[s.length() - 1];
+    if (c != '\n' && c != '\\')
+      s += "\n";
+  }
   return s;
 }
 
 static int
-write_element_config(Element *f, const String &conf, void *,
+write_element_config(const String &conf, Element *f, void *,
 		     ErrorHandler *errh)
 {
   if (f->can_live_reconfigure())

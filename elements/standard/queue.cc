@@ -19,11 +19,9 @@
 #include "router.hh"
 #include "elemfilter.hh"
 
-Queue::Queue(int max)
-  : Element(1, 1), _q(0), _max(max), _head(0), _tail(0),
-    _drops(0), _max_length(0)
+Queue::Queue()
+  : Element(1, 1), _q(0)
 {
-  assert(max > 0);
 }
 
 Queue::~Queue()
@@ -34,14 +32,12 @@ Queue::~Queue()
 int
 Queue::configure(const String &conf, ErrorHandler *errh)
 {
-  int new_max = _max;
+  int new_max = 1000;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpInteger, "maximum queue length", &new_max,
+		  cpUnsigned, "maximum queue length", &new_max,
 		  0) < 0)
     return -1;
-  if (new_max <= 0)
-    return errh->error("maximum queue length must be > 0");
   _max = new_max;
   return 0;
 }
@@ -66,6 +62,9 @@ Queue::initialize(ErrorHandler *errh)
     return errh->error("out of memory");
 
   _empty_jiffies = click_jiffies();
+  _head = _tail = 0;
+  _drops = 0;
+  _max_length = 0;
   return 0;
 }
 
@@ -78,13 +77,13 @@ Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
     return -1;
   if (_max == old_max)
     return 0;
+  int new_max = _max;
+  _max = old_max;
   
-  Packet **new_q = new Packet *[_max + 1];
+  Packet **new_q = new Packet *[new_max + 1];
   if (new_q == 0)
     return errh->error("out of memory");
   
-  int new_max = _max;
-  _max = old_max;
   int i, j;
   for (i = _head, j = 0; i != _tail; i = next_i(i)) {
     new_q[j++] = _q[i];
@@ -98,7 +97,6 @@ Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
   _head = 0;
   _tail = j;
   _max = new_max;
-  _max_length = _tail;		// XXX?
   return 0;
 }
 
