@@ -1,3 +1,9 @@
+2002-01-27 Sunday 20:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_fddi.h, click_fddi.h, click_rfc1483.h,
+	click_rfc1483.h: add ATM RFC1483 encapsulation, and FromDAGDump to
+	read Waikato's DAG files
+
 2002-01-24 Thursday 14:20  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: ipflowid.hh, ipflowid.hh: IPFlowID nitlets

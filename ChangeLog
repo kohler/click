@@ -1,3 +1,16 @@
+2002-01-27 Sunday 20:07  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/fromdagdump.cc (1.1),
+	elements/analysis/fromdagdump.hh (1.1),
+	elements/analysis/fromipsumdump.hh (1.12),
+	elements/userlevel/fakepcap.cc (1.2),
+	elements/userlevel/fakepcap.hh (1.11),
+	elements/userlevel/fromdevice.cc (1.37),
+	elements/userlevel/fromdump.cc (1.58),
+	elements/userlevel/fromdump.hh (1.33), include/click/click_fddi.h
+	(1.2), include/click/click_rfc1483.h (1.1): add ATM RFC1483
+	encapsulation, and FromDAGDump to read Waikato's DAG files
+
 2002-01-25 Friday 12:44  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.23), lookupiprouteron.hh (1.18):
