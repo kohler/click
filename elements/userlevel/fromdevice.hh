@@ -86,6 +86,8 @@ class FromDevice : public Element {
 #endif
 #if FROMDEVICE_LINUX
   int fd() const			{ return _fd; }
+  int select_fd()			{ return _fd; }
+  void selected(int fd);
 #endif
 
   void run_scheduled();

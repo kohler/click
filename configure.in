@@ -349,7 +349,9 @@ else
 fi
 
 if test "$ac_cv_pcap_library_path" = "not found" -o "$ac_cv_pcap_library_path" = "not found"; then
-  AC_MSG_WARN(pcap.h or -lpcap not found; userlevel can't steal packets)
+  if test $ac_under_linux != y; then
+    AC_MSG_WARN(pcap.h or -lpcap not found; userlevel can't steal packets)
+  fi
 else
   AC_DEFINE_UNQUOTED(HAVE_PCAP, 1)
 fi

@@ -220,7 +220,9 @@ FromDevice::initialize(ErrorHandler *errh)
   
 #endif
 
+#if !FROMDEVICE_LINUX
   ScheduleInfo::join_scheduler(this, errh);
+#endif
   return 0;
 }
 
@@ -277,5 +279,22 @@ FromDevice::run_scheduled()
 #endif
   reschedule();
 }
+
+#if FROMDEVICE_LINUX
+void
+FromDevice::selected(int)
+{
+  struct sockaddr_ll sa;
+  //memset(&sa, 0, sizeof(sa));
+  socklen_t fromlen = sizeof(sa);
+  int len = recvfrom(_fd, _packetbuf, _packetbuf_size, 0,
+		     (sockaddr *)&sa, &fromlen);
+  if (len > 0) {
+    if (sa.sll_pkttype != PACKET_OUTGOING)
+      output(0).push(Packet::make(_packetbuf, len));
+  } else if (errno != EAGAIN)
+    click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+}
+#endif
 
 EXPORT_ELEMENT(FromDevice)
