@@ -73,8 +73,8 @@ class PollDevice : public Element {
  private:
   struct device *_dev;
   String _devname;
-  unsigned int _last_rx;
   unsigned _registered;
+  unsigned int _last_rx;
   unsigned _manage_tx;
 };
 

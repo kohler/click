@@ -1,5 +1,17 @@
 Click NEWS
 
+Version 1.0.4
+
+* Changed how FromDevice, ToDevice, and PollDevice interact with each
+  other. Before, if you specify just PollDevice w/o ToDevice, the tx queue
+  does not get cleaned because in polling mode tx queue cleaning must be
+  scheduled explicitly. Now, PollDevice looks for a ToDevice on the same
+  device. If no such element exists, it remembers to clean the tx queue
+  itself. Also ToDevice looks for a PollDevice to decide if it should use
+  polling extensions. Some of this code was in the 1.0.3 release, but there
+  was a bug.
+
+
 Version 1.0.3   9.Apr.2000
 
 * Added `--with-linux[=DIR]' option to `./configure'. Suggested by Richard

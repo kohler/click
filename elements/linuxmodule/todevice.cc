@@ -37,12 +37,11 @@ extern "C" {
 #include "asm/msr.h"
 
 static struct notifier_block notifier;
-static int registered_writers;
 
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
 
 ToDevice::ToDevice()
-  : Element(1, 0), _dev(0), _polling(0),
+  : Element(1, 0), _dev(0), _polling(0), _registered(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0), _activations(0)
 {
@@ -64,7 +63,7 @@ ToDevice::ToDevice()
 }
 
 ToDevice::ToDevice(const String &devname)
-  : Element(1, 0), _devname(devname), _dev(0), _polling(0),
+  : Element(1, 0), _devname(devname), _dev(0), _polling(0), _registered(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0), _activations(0)
 {
@@ -87,7 +86,7 @@ ToDevice::ToDevice(const String &devname)
 
 ToDevice::~ToDevice()
 {
-  uninitialize();
+  if (_registered) uninitialize();
 }
 
 void
@@ -128,11 +127,6 @@ ToDevice::initialize(ErrorHandler *errh)
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   
-  void *p = update_ifindex_map(_dev->ifindex, errh, TODEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
-  
   /* see if a PollDevice with the same device exists: if so, use polling
    * extensions */
   for(int fi = 0; fi < router()->nelements(); fi++) {
@@ -144,7 +138,13 @@ ToDevice::initialize(ErrorHandler *errh)
       break;
     }
   }
-  registered_writers++;
+  
+  void *p = update_ifindex_map(_dev->ifindex, errh, TODEV_OBJ, this);
+  if (p == 0) return -1;
+  else if (p != this)
+    return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
+  
+  _registered = 1;
     
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
@@ -160,10 +160,9 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::uninitialize()
 {
-  registered_writers--;
-
   /* remove from ifindex_map */
   remove_ifindex_map(_dev->ifindex, TODEV_OBJ);
+  _registered = 0;
   unschedule();
 }
 

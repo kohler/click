@@ -82,6 +82,7 @@ class ToDevice : public Element {
   int queue_packet(Packet *p);
   struct device *_dev;
   String _devname;
+  unsigned _registered;
   unsigned _polling;
   int _dev_idle;
   int _last_dma_length;

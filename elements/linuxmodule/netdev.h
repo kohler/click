@@ -55,6 +55,13 @@
 extern unsigned first_time;
 extern void* ifindex_map[MAX_DEVICES][DEV_ELEM_TYPES];
 
+/* Updates the interface map, which contains, for each device number, a list
+ * of three possible objects: a FromDevice object, a PollDevice object, or a
+ * ToDevice object. Returns 0 if the device number (ifindex argument) or type
+ * of object (which argument) is bad. If the map already has an object of the
+ * given type for the given device, returns that object ptr. Otherwise, stores
+ * the given pointer (value argument) in the map.
+ */
 inline void *
 update_ifindex_map(unsigned ifindex, ErrorHandler *errh, 
     		   unsigned which, void *value)
@@ -75,13 +82,13 @@ update_ifindex_map(unsigned ifindex, ErrorHandler *errh,
     first_time = 0;
   }
 
-  click_chatter("%d: update_ifindex_map, type %d", ifindex, which);
-
   if (ifindex_map[ifindex][which] == 0L)
     ifindex_map[ifindex][which] = value;
   return ifindex_map[ifindex][which];
 }
 
+/* returns the entry for the given device (ifindex argument) and object type
+ * (which argument). */
 inline void *
 lookup_ifindex_map(unsigned ifindex, unsigned which)
 {
@@ -92,6 +99,8 @@ lookup_ifindex_map(unsigned ifindex, unsigned which)
   return ifindex_map[ifindex][which];
 }
 
+/* reset the entry for the given device (ifindex argument) and object type
+ * (which argument) to 0 */
 inline void
 remove_ifindex_map(unsigned ifindex, unsigned which)
 {

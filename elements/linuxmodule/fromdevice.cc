@@ -39,14 +39,14 @@ extern "C" int click_FromDevice_in
 
 
 FromDevice::FromDevice()
-  : _dev(0), _puller_ptr(0), _pusher_ptr(0)
+  : _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0)
 {
   add_output();
   for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
 }
 
 FromDevice::FromDevice(const String &devname)
-  : _devname(devname), _dev(0), _puller_ptr(0), _pusher_ptr(0)
+  : _devname(devname), _registered(0), _dev(0), _puller_ptr(0), _pusher_ptr(0)
 {
   add_output();
   for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
@@ -54,7 +54,7 @@ FromDevice::FromDevice(const String &devname)
 
 FromDevice::~FromDevice()
 {
-  uninitialize();
+  if (_registered) uninitialize();
 }
 
 void
@@ -99,11 +99,6 @@ FromDevice::initialize(ErrorHandler *errh)
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   
-  void *p = update_ifindex_map(_dev->ifindex, errh, FROMDEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate FromDevice for device `%s'", _devname.cc());
-  
   /* can't have a PollDevice with the same device */
   for(int fi = 0; fi < router()->nelements(); fi++) {
     Element *f = router()->element(fi);
@@ -113,6 +108,13 @@ FromDevice::initialize(ErrorHandler *errh)
 	                  _devname.cc());
   }
 
+  void *p = update_ifindex_map(_dev->ifindex, errh, FROMDEV_OBJ, this);
+  if (p == 0) return -1;
+  else if (p != this)
+    return errh->error("duplicate FromDevice for device `%s'", _devname.cc());
+  
+  _registered = 1;
+  
   if (!registered_readers) {
 #ifdef HAVE_CLICK_KERNEL
     notifier.next = 0;
@@ -121,7 +123,6 @@ FromDevice::initialize(ErrorHandler *errh)
     errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
   }
-    
   registered_readers++;
   
 #ifndef RR_SCHED
@@ -142,9 +143,8 @@ FromDevice::uninitialize()
   if (registered_readers == 0)
     unregister_net_in(&notifier);
 #endif
-
-  // remove from ifindex_map
   remove_ifindex_map(_dev->ifindex, FROMDEV_OBJ);
+  _registered = 0;
   unschedule();
 }
 

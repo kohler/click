@@ -57,6 +57,7 @@ class FromDevice : public Element {
   
   String _devname;
   struct device *_dev;
+  unsigned _registered;
   
   Packet* _queue[FROMDEV_QSIZE];
   unsigned _puller_ptr;

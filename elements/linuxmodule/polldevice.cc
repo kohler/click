@@ -33,7 +33,7 @@ extern "C" {
 #include "asm/msr.h"
 
 PollDevice::PollDevice()
-  : _activations(0), _dev(0), _last_rx(0), _manage_tx(1)
+  : _activations(0), _dev(0), _registered(0), _last_rx(0), _manage_tx(1)
 {
   add_output();
 #if _CLICK_STATS_
@@ -52,7 +52,8 @@ PollDevice::PollDevice()
 }
 
 PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _activations(0), _dev(0), _last_rx(0), _manage_tx(1)
+  : _devname(devname), _activations(0), _dev(0), _registered(0), 
+    _last_rx(0), _manage_tx(1)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
@@ -75,6 +76,7 @@ PollDevice::PollDevice(const String &devname)
 
 PollDevice::~PollDevice()
 {
+  if (_registered) uninitialize();
 }
 
 void
@@ -117,11 +119,6 @@ PollDevice::initialize(ErrorHandler *errh)
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
   
-  void *p = update_ifindex_map(_dev->ifindex, errh, POLLDEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate PollDevice for device `%s'", _devname.cc());
-
   /* try to find a ToDevice with the same device: if none exists, then we need
    * to manage tx queue as well as rx queue */
   for(int fi = 0; fi < router()->nelements(); fi++) {
@@ -132,9 +129,14 @@ PollDevice::initialize(ErrorHandler *errh)
       break;
     }
   }
+  
+  void *p = update_ifindex_map(_dev->ifindex, errh, POLLDEV_OBJ, this);
+  if (p == 0) return -1;
+  else if (p != this)
+    return errh->error("duplicate PollDevice for device `%s'", _devname.cc());
 
+  _registered = 1;
   _dev->intr_off(_dev);
-
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
@@ -159,6 +161,7 @@ PollDevice::uninitialize()
     _dev->intr_on(_dev);
   }
   remove_ifindex_map(_dev->ifindex, POLLDEV_OBJ);
+  _registered = 0;
   unschedule();
 #endif
 }
