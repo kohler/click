@@ -69,18 +69,18 @@ CLICKDIR/tools/click-pretty	... pretty-prints Click configuration as HTML
 CLICKDIR/tools/click-undead	... removes dead code from configurations
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/tools/click2xml	... convert Click language <-> XML
-CLICKDIR/userlevel		user-level `click' driver
+CLICKDIR/userlevel		user-level 'click' driver
 
 DOCUMENTATION
 -------------
 
-    The `INSTALL' file in this directory contains installation
-instructions. User documentation is in the `doc' subdirectory. This
+    The 'INSTALL' file in this directory contains installation
+instructions. User documentation is in the 'doc' subdirectory. This
 directory contains manual pages for the Click language, the Linux kernel
 module, and several tools; it also has a script that generates manual pages
 for many of the elements distributed in this package. To install these
-manual pages so you can read them, follow the `INSTALL' instructions, but
-`make install-man' instead of `make install'.
+manual pages so you can read them, follow the 'INSTALL' instructions, but
+'make install-man' instead of 'make install'.
 
 RUNNING A CLICK ROUTER
 ----------------------
@@ -88,8 +88,8 @@ RUNNING A CLICK ROUTER
     Before playing with a Click router, you should get familiar with the
 Click configuration language. You use this to tell Click how to process
 packets. The language describes a graph of "elements", or packet processing
-modules. See the `doc/click.5' manual page for a detailed description, or
-check the `conf' directory for some simple examples.
+modules. See the 'doc/click.5' manual page for a detailed description, or
+check the 'conf' directory for some simple examples.
 
     Click can be compiled as a user-level program or as a kernel module for
 Linux. Either driver can receive and send packets; the kernel module
@@ -100,37 +100,37 @@ User-Level Program
 ..................
 
     Run the user-level program by giving it the name of a configuration
-file: `click CONFIGFILE'.
+file: 'click CONFIGFILE'.
 
 Linux Kernel Module
 ...................
 
-    You must patch your Linux kernel first. See `INSTALL' for more
+    You must patch your Linux kernel first. See 'INSTALL' for more
 information.
 
-    See the `doc/click.o.8' manual page for a detailed description. To
-summarize, install a configuration by running `click-install CONFIGFILE'.
+    See the 'doc/click.o.8' manual page for a detailed description. To
+summarize, install a configuration by running 'click-install CONFIGFILE'.
 This will also install the kernel module if necessary and report any errors
-to standard error. (You must run `make install' before `click-install' will
+to standard error. (You must run 'make install' before 'click-install' will
 work.)
 
-    You can also install the kernel module with `/sbin/insmod click.o', and
-then install a configuration by hand with `cat CONFIGFILE >
+    You can also install the kernel module with '/sbin/insmod click.o', and
+then install a configuration by hand with 'cat CONFIGFILE >
 /proc/click/config'. If any errors occurred, they will appear in
-`/proc/click/errors'. But `click-install' is easier.
+'/proc/click/errors'. But 'click-install' is easier.
 
 NS Simulator
 ............
 
-    Give `./configure' the `--enable-ns' option. XXXX.
+    Give './configure' the '--enable-ns' option. XXXX.
 
 Configurations
 ..............
 
-    A few configurations are included in the `conf' directory, including a
+    A few configurations are included in the 'conf' directory, including a
 Perl script that generated the IP router configurations used in our TOCS
-paper (`conf/make-ip-conf.pl') and a set of patterns for the Click pattern
-optimizer, click-xform (`conf/ip.clickpat'). Please check back to our Web
+paper ('conf/make-ip-conf.pl') and a set of patterns for the Click pattern
+optimizer, click-xform ('conf/ip.clickpat'). Please check back to our Web
 site for more up-to-date configurations.
 
 ADDING YOUR OWN ELEMENTS
@@ -143,7 +143,7 @@ COPYRIGHT AND LICENSE
 ---------------------
 
     We are distributing Click under a version of the "MIT License", which
-is a BSD-like license. See the files `LICENSE' and `AUTHORS' for details.
+is a BSD-like license. See the files 'LICENSE' and 'AUTHORS' for details.
 
 BUGS, QUESTIONS, ETC.
 ---------------------

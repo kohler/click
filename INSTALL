@@ -2,7 +2,7 @@ CLICK INSTALLATION INSTRUCTIONS
 ===============================
 
 To compile any version of Click, you will need the GNU C compiler; the GNU
-C++ compiler (version 2.95 or above); and GNU Make. The `./configure'
+C++ compiler (version 2.95 or above); and GNU Make. The './configure'
 script should complain if it cannot find software it needs.
 
 The user-level version of Click should compile and run on any Intel x86
@@ -24,7 +24,7 @@ CONFIGURING
 -----------
 
 If you plan to use the Linux kernel module, you must patch your kernel
-first. See the `Linux module' section below.
+first. See the 'Linux module' section below.
 
 Run
 
@@ -36,46 +36,46 @@ cannot compile a version. Run
 
 	./configure --help
 
-to see more options for `./configure'.
+to see more options for './configure'.
 
    Notes: You can also build Click in a different directory than the source
           directory. Just change into the build directory and run
-          `PATH_TO_SRCDIR/configure'.
+          'PATH_TO_SRCDIR/configure'.
 
-          If the distribution does not contain a `configure' script, you
+          If the distribution does not contain a 'configure' script, you
           probably checked it out from CVS. Change into the source
-          directory and run `autoconf', then continue as above.
+          directory and run 'autoconf', then continue as above.
 
-After running `./configure', the `make install' command will install the
-user-level executable `click', the kernel module `click.o', configuration
-optimizers like `click-xform' and other tools, and manual pages for the
+After running './configure', the 'make install' command will install the
+user-level executable 'click', the kernel module 'click.o', configuration
+optimizers like 'click-xform' and other tools, and manual pages for the
 Click language, the kernel module, and many of the element classes, all
 under PREFIX (which defaults to /usr/local).
 
 USERLEVEL
 ---------
 
-Build the user-level Click program in the `userlevel' directory:
+Build the user-level Click program in the 'userlevel' directory:
 
 	cd CLICKDIR/userlevel
 	gmake
 
-This will eventually create an executable named `click'. Test it by
+This will eventually create an executable named 'click'. Test it by
 passing it the file name of a Click-language router description
 (see doc/click.5); for example,
 
 	./click ../conf/test.click
 
-The `conf' directory in this distribution has a few sample configuration
+The 'conf' directory in this distribution has a few sample configuration
 files.
 
 The configure script may not be able to find your pcap library if it's in a
 nonstandard place. It will report an error in this case. To fix the error,
-set your `PCAP_INCLUDES' and `PCAP_LIBS' environment variables and rerun
-`./configure'. `PCAP_INCLUDES' tells the C preprocessor where to find
-`pcap.h', and `PCAP_LIBS' tells the linker where to find `libpcap.a'. One
-example setting would be `PCAP_INCLUDES=-I/usr/local/include/pcap' and
-`PCAP_LIBS=-L/usr/local/lib/pcap'.
+set your 'PCAP_INCLUDES' and 'PCAP_LIBS' environment variables and rerun
+'./configure'. 'PCAP_INCLUDES' tells the C preprocessor where to find
+'pcap.h', and 'PCAP_LIBS' tells the linker where to find 'libpcap.a'. One
+example setting would be 'PCAP_INCLUDES=-I/usr/local/include/pcap' and
+'PCAP_LIBS=-L/usr/local/lib/pcap'.
 
 LINUX MODULE
 ------------
@@ -116,19 +116,19 @@ and running Linux kernels.
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
-    `struct device' kernel data structure. Therefore, you WILL need to
+    'struct device' kernel data structure. Therefore, you WILL need to
     recompile any kernel modules that touch 'struct device'.
 
  4. If your archived, working kernel has the same version number as the
     patched kernel (they're both 2.4.18, for example), then it is a good
-    idea to change the patched kernel's `EXTRAVERSION'. This way, the
+    idea to change the patched kernel's 'EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
-    Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
-    `EXTRAVERSION = -click', or whatever you would like.
+    Edit /usr/src/linux/Makefile and change the line 'EXTRAVERSION =' to
+    'EXTRAVERSION = -click', or whatever you would like.
 
  5. Configure the new kernel. The Click patch does not add any
     configuration options, so you can start from your old configuration, or
-    you can do the usual `make menuconfig'. Use a minimal set of
+    you can do the usual 'make menuconfig'. Use a minimal set of
     options.
 
  6. Compile and install the kernel:
@@ -150,13 +150,13 @@ and running Linux kernels.
  8. Reboot your machine with the new kernel.
 
  9. Now you are ready to compile and install the Click module. Rerun
-    `./configure' to tell the system about your new kernel:
+    './configure' to tell the system about your new kernel:
 
 	rm -f config.cache ; ./configure [OPTIONS]
 
-    If your Linux source is not in /usr/src/linux, give `./configure' the
-    `--with-linux=LINUXDIR' option. If your System.map file is not in
-    LINUXDIR/System.map, give it the `--with-linux-map=MAPFILE' option.
+    If your Linux source is not in /usr/src/linux, give './configure' the
+    '--with-linux=LINUXDIR' option. If your System.map file is not in
+    LINUXDIR/System.map, give it the '--with-linux-map=MAPFILE' option.
 
     If './configure' reports "Your header files must be patched before a
     C++ program can include them", check that you applied the patch in Step
@@ -176,8 +176,8 @@ and running Linux kernels.
     type means you should turn off AppleTalk via CONFIG_ATALK), and try
     again.
 
-11. This will create two module object files, `linuxmodule/click.o' and
-    `linuxmodule/proclikefs.o', and place them in `CLICKPREFIX/lib'. To
+11. This will create two module object files, 'linuxmodule/click.o' and
+    'linuxmodule/proclikefs.o', and place them in 'CLICKPREFIX/lib'. To
     install these modules and a router configuration, run
 
 	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
@@ -193,7 +193,7 @@ unaligned accesses are OK (for instance, that it is OK to load a word from
 an address that isn't start on a four-byte boundary). On most
 architectures, however, unaligned accesses cause problems. To run Click on
 such an architecture, you'll need to run your configurations through the
-`click-align' tool before installing them. `Click-align' (see
+'click-align' tool before installing them. 'Click-align' (see
 doc/click-align.1) figures out what alignment is required and adds elements
-as necessary to make that alignment happen. It also adds an `AlignmentInfo'
+as necessary to make that alignment happen. It also adds an 'AlignmentInfo'
 element to tell every element what kind of alignment it can expect.

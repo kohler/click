@@ -13,7 +13,7 @@ Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. We currently distribute pactches
    for Linux 2.2.18, 2.2.19 [patch also works for 2.2.20 and 2.2.21],
-   2.4.18, and 2.4.20. These patches may also work for later versions.
+   2.4.18, 2.4.20, and 2.4.21. These patches may also work for later versions.
 
 
 Q. How fast can Click route packets?

@@ -9364,17 +9364,31 @@ _ACEOF
     { echo "$as_me:$LINENO: WARNING:
 =========================================
 
-Your header files must be patched before a C++ program
-can include them. Apply the patch that came with this distribution
-if you want to compile Click as a Linux module.
+Your Linux kernel header files cause errors when included by a C++ program,
+so I won't try to compile the linuxmodule driver.
+
+There are two common reasons for this error:
+1. You have not applied the Linux kernel patch that comes with this
+   distribution.  Apply the right patch and try again.
+2. Your Linux configuration enables some functionality that is not yet
+   covered by our patches.  Turn off this functionality and try again,
+   or fix the error and tell us how you did it.  See the config.log file
+   for more detailed information on the error.
 
 =========================================" >&5
 echo "$as_me: WARNING:
 =========================================
 
-Your header files must be patched before a C++ program
-can include them. Apply the patch that came with this distribution
-if you want to compile Click as a Linux module.
+Your Linux kernel header files cause errors when included by a C++ program,
+so I won't try to compile the linuxmodule driver.
+
+There are two common reasons for this error:
+1. You have not applied the Linux kernel patch that comes with this
+   distribution.  Apply the right patch and try again.
+2. Your Linux configuration enables some functionality that is not yet
+   covered by our patches.  Turn off this functionality and try again,
+   or fix the error and tell us how you did it.  See the config.log file
+   for more detailed information on the error.
 
 =========================================" >&2;}
   fi
