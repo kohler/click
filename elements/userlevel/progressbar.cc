@@ -48,7 +48,7 @@ int
 ProgressBar::initialize(ErrorHandler *errh)
 {
     Vector<String> conf;
-    configuration(conf, false);
+    configuration(conf);
     _interval = 1000;
 
     if (cp_va_parse(conf, this, errh,
