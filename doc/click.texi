@@ -962,7 +962,7 @@ Parses the format string @var{format} with arguments from @var{val},
 returning the results as a @var{String} object.
 
 The default implementation processes the formatting escapes described
-above (@pxref{Error Formatting Escapes}). It also prepends every line of
+above (@pxref{Error Format Strings}). It also prepends every line of
 the error message with @samp{warning: } if @var{s} equals
 @code{ERR_WARNING}.
 @end deftypemethod
