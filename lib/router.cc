@@ -978,6 +978,21 @@ Router::take_state(Router *r, ErrorHandler *errh)
 
 // HANDLERS
 
+String
+Router::Handler::unparse_name(Element *e, const String &hname)
+{
+  if (e)
+    return e->id() + "." + hname;
+  else
+    return hname;
+}
+
+String
+Router::Handler::unparse_name(Element *e) const
+{
+  return unparse_name(e, name);
+}
+
 // 11.Jul.2000 - We had problems with handlers for medium-sized configurations
 // (~400 elements): the Linux kernel would crash with a "kmalloc too large".
 // The solution: Observe that most handlers are shared. For example, all

@@ -67,14 +67,12 @@ PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 
     Element *e;
     String hname;
-    if (first.find_left('.') > 0) {
-      if (cp_handler(first, this, &e, &hname, errh)) {
-	_h_element.push_back(e);
-	_h_handler.push_back(hname);
-	_h_value.push_back(rest);
-	_h_timeout.push_back(next_timeout);
-	next_timeout = 0;
-      }
+    if (cp_handler(first, this, &e, &hname, errh)) {
+      _h_element.push_back(e);
+      _h_handler.push_back(hname);
+      _h_value.push_back(rest);
+      _h_timeout.push_back(next_timeout);
+      next_timeout = 0;
       continue;
     }
     
@@ -114,23 +112,23 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
     Element *he = poke->_h_element[h];
     String hname = poke->_h_handler[h];
 
-    if (he == 0) {		// `quit' directive
+    if (!hname) {		// `quit' directive
       router->please_stop_driver();
       h++;
       break;
     }
-      
+    
     int i = router->find_handler(he, hname);
     if (i < 0)
-      errh->error("%s: no handler `%s.%s'", poke->id().cc(), he->id().cc(), hname.cc());
+      errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
     else {
       const Router::Handler &rh = router->handler(i);
       if (rh.write) {
 	ContextErrorHandler cerrh
-	  (errh, "In write handler `" + hname + "' for `" + he->declaration() + "':");
+	  (errh, "In write handler `" + rh.unparse_name(he) + "':");
 	rh.write(poke->_h_value[h], he, rh.write_thunk, &cerrh);
       } else
-	errh->error("%s: no write handler `%s.%s'", poke->id().cc(), he->id().cc(), hname.cc());
+	errh->error("%s: no write handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
     }
     h++;
   } while (h < poke->_h_timeout.size() && poke->_h_timeout[h] == 0);

@@ -1535,15 +1535,16 @@ cp_handler(const String &str, Element *context, Element **result_element,
     errh = ErrorHandler::silent_handler();
   
   String text;
-  if (!cp_string(str, &text)) {
-    errh->error("bad name format");
+  if (!cp_string(str, &text) || !text) {
+    errh->error("bad handler name format");
     return false;
   }
 
   int leftmost_dot = text.find_left('.');
   if (leftmost_dot < 0) {
-    errh->error("handler name syntax error: should have contained a dot `.'");
-    return false;
+    *result_element = 0;
+    *result_hname = text;
+    return true;
   } else if (leftmost_dot == text.length() - 1) {
     errh->error("empty handler name");
     return false;
@@ -1573,18 +1574,21 @@ cp_handler(const String &str, Element *context, bool need_read,
 
   int hid = context->router()->find_handler(e, hname);
   if (hid < 0) {
-    errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
-    if (context->router()->nhandlers() == 0)
-      errh->error("because handlers have not been added yet!");
+    if (e) {
+      errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
+      if (context->router()->nhandlers() == 0)
+	errh->error("because handlers have not been added yet!");
+    } else
+      errh->error("no global `%s' handler", hname.cc());
     return false;
   }
 
   const Router::Handler &h = context->router()->handler(hid);
   if (need_read && !h.read) {
-    errh->error("`%s.%s' is not a read handler", e->id().cc(), hname.cc());
+    errh->error("`%s' is not a read handler", h.unparse_name(e).cc());
     return false;
   } else if (need_write && !h.write) {
-    errh->error("`%s.%s' is not a write handler", e->id().cc(), hname.cc());
+    errh->error("`%s' is not a write handler", h.unparse_name(e).cc());
     return false;
   } else {
     *result_element = e;

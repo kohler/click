@@ -73,9 +73,8 @@ PeekHandlers::do_configure(const Vector<String> &conf, ErrorHandler *errh)
       if (i < conf.size() - 1)
 	errh->warning("arguments after `loop' directive ignored");
       break;
-    } else if (conf[i].find_left('.') > 0) {
-      if (cp_handler(conf[i], this, true, false, &e, &extra, errh))
-	push_command(e, extra, 0);
+    } else if (cp_handler(conf[i], this, true, false, &e, &extra, errh)) {
+      push_command(e, extra, 0);
       continue;
     }
     
@@ -132,10 +131,10 @@ PeekHandlers::timer_hook(Timer *, void *thunk)
       peek->_timer.schedule_now();
       break;
     }
-      
+    
     const Router::Handler &rh = router->handler(hid);
     String value = rh.read(he, rh.read_thunk);
-    errh->message("%s.%s:\n%s\n", he->id().cc(), String(rh.name).cc(), value.cc());
+    errh->message("%s:\n%s\n", rh.unparse_name(he).cc(), value.cc());
     pos++;
   }
 

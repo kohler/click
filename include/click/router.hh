@@ -221,8 +221,11 @@ struct Router::Handler {
   void *read_thunk;
   WriteHandler write;
   void *write_thunk;
-};
   
+  static String unparse_name(Element *, const String &);
+  String unparse_name(Element *e) const;
+};
+
 #if CLICK_USERLEVEL
 struct Router::Selector {
   int fd;
