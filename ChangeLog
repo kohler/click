@@ -1,3 +1,12 @@
+2002-01-29 Tuesday 16:01  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-all-config.pl (1.2): working for server creation
+
+2002-01-29 Tuesday 14:59  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: make-all-config (1.2), make-all-config.pl (1.1),
+	nodelist (1.2): [no log message]
+
 2002-01-29 Tuesday 14:13  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: make-all-config (1.1), nodelist (1.1): added
