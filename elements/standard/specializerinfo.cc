@@ -13,18 +13,15 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "scheduleinfo.hh"
+#include "specializerinfo.hh"
 #include "glue.hh"
-#include "confparse.hh"
-#include "router.hh"
-#include "error.hh"
 
-ScheduleInfo::ScheduleInfo()
+SpecializerInfo::SpecializerInfo()
 {
 }
 
 int
-ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
+SpecializerInfo::configure(const String &, ErrorHandler *)
 {
   return 0;
 }

@@ -10,7 +10,7 @@ class SpecializerInfo : public Element {
   
   const char *class_name() const		{ return "SpecializerInfo"; }
   
-  ScheduleInfo *clone() const			{ return new SpecializerInfo; }
+  SpecializerInfo *clone() const		{ return new SpecializerInfo; }
   int configure(const String &, ErrorHandler *);
 
 };
