@@ -1,7 +1,8 @@
 elementclass GridNode {
   $ena, $ipa, $lat, $lon | 
 
-  li :: LocationInfo($lat, $lon, 0);
+#  li :: LocationInfo($lat, $lon, 0);
+  li :: LocFromFile($ipa);
 
   input
     -> HostEtherFilter($ena)

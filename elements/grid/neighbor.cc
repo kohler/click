@@ -448,7 +448,8 @@ Neighbor::expire_routes()
 
   // remove expired immediate nbr entries
   for (xa_t::Iterator iter = expired_addresses.first(); iter; iter++) {
-    click_chatter("%s: expiring address for %s", id().cc(), iter.key());
+    click_chatter("%s: expiring address for %s",
+                  id().cc(), iter.key().s().cc());
     assert(_addresses.remove(iter.key()));
   }
 
