@@ -3,15 +3,15 @@
 
 /*
  * =c
- * IPFragmenter(mtu)
+ * IPFragmenter(MTU)
  * =d
- * Expects IP packets as input.
- * If the IP packet size is <= mtu, just emits the packet on output 0.
- * If the size is greater than mtu and DF isn't set, splits into
- * fragments emitted on output 0.
- * If DF is set and size is greater than mtu, sends to output 1.
+ *
+ * Expects IP packets as input. If the IP packet size is <= MTU, just emits
+ * the packet on output 0. If the size is greater than MTU and the
+ * don't-fragment bit (DF) isn't set, splits into fragments emitted on output
+ * 0. If DF is set and the packet size is greater than MTU, sends to output 1.
  * 
- * Ordinarily output 1 is connected to an ICMP error packet generator
+ * Ordinarily output 1 is connected to an ICMPError element
  * with type 3 (UNREACH) and code 4 (NEEDFRAG).
  *
  * Only the mac_broadcast annotation is copied into the fragments.
@@ -25,6 +25,7 @@
  * = fr[1] -> ICMPError(18.26.4.24, 3, 4) -> ...
  *
  * =a ICMPError
+ * =a CheckLength
  */
 
 #include "element.hh"

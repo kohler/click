@@ -23,6 +23,12 @@ Tee::clone() const
   return new Tee;
 }
 
+void
+Tee::notify_noutputs(int n)
+{
+  set_noutputs(n < 1 ? 1 : n);
+}
+
 int
 Tee::configure(const String &conf, ErrorHandler *errh)
 {
@@ -32,6 +38,8 @@ Tee::configure(const String &conf, ErrorHandler *errh)
 		  cpUnsigned, "number of arms", &n,
 		  0) < 0)
     return -1;
+  if (n < 1)
+    return errh->error("number of arms must be at least 1");
   set_noutputs(n);
   return 0;
 }
@@ -42,10 +50,7 @@ Tee::push(int, Packet *p)
   int n = noutputs();
   for (int i = 0; i < n - 1; i++)
     output(i).push(p->clone());
-  if (n > 0)
-    output(n - 1).push(p);
-  else
-    p->kill();
+  output(n - 1).push(p);
 }
 
 //
@@ -55,7 +60,13 @@ Tee::push(int, Packet *p)
 PullTee *
 PullTee::clone() const
 {
-  return new PullTee(noutputs());
+  return new PullTee;
+}
+
+void
+PullTee::notify_noutputs(int n)
+{
+  set_noutputs(n < 1 ? 1 : n);
 }
 
 int
@@ -67,8 +78,8 @@ PullTee::configure(const String &conf, ErrorHandler *errh)
 		  cpUnsigned, "number of arms", &n,
 		  0) < 0)
     return -1;
-  if (n == 0)
-    return errh->error("number of arms must be > 0");
+  if (n < 1)
+    return errh->error("number of arms must be at least 1");
   set_noutputs(n - noutputs());
   return 0;
 }

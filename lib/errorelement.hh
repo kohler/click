@@ -9,7 +9,7 @@
  * The Error element always fails to initialize. It has any number of inputs
  * and outputs, and accepts any configuration string without complaint. It is
  * useful to prevent a router from initializing while avoiding
- * spurious error messages.
+ * spurious error messages about bad configuration strings or connections.
  */
 
 class ErrorElement : public Element {

@@ -7,9 +7,9 @@ extern "C" {
 
 /*
  * =c
- * PollDevice(devname)
+ * PollDevice(DEVNAME)
  * =d
- * Poll packets received by the Linux network interface named devname.
+ * Poll packets received by the Linux network interface named DEVNAME.
  * Packets will be pushed to output 0. The packets include the link-level
  * header.
  *

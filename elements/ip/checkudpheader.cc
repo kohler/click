@@ -49,16 +49,15 @@ CheckUDPHeader::simple_action(Packet *p)
 {
   click_ip *iph = p->ip_header();
   unsigned len, iph_len;
-  click_udp *udph;
+  click_udp *udph = (click_udp *)p->transport_header();
   
   if (!iph || iph->ip_p != IP_PROTO_UDP)
     goto bad;
 
   iph_len = iph->ip_hl << 2;
-  udph = (click_udp *)((unsigned char *)iph + iph_len);
   len = ntohs(udph->uh_ulen);
   if (len < sizeof(click_udp)
-      || p->length() < len + iph_len + ((unsigned char *)iph - p->data()))
+      || p->length() < len + iph_len + p->ip_header_offset())
     goto bad;
 
   if (udph->uh_sum != 0) {

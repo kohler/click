@@ -11,13 +11,13 @@
  * expect. Each configuration argument has the form
  * `ELEMENT [MODULUS0 OFFSET0 MODULUS1 OFFSET1 ...]',
  * where there are zero or more MODULUS-OFFSET pairs.
- * This means that the element named ELEMENT
- * can expect all packets arriving on its <i>n</i>th input
- * to start `OFFSET<i>n</i>' bytes
+ * All packets arriving at ELEMENT's
+ * <i>n</i>th input will start `OFFSET<i>n</i>' bytes
  * off from a `MODULUS<i>n</i>'-byte boundary.
  * =n
  * This element is inserted automatically by the click-align tool.
  * =a Align
+ * =a click-align(1)
  */
 
 #include "element.hh"

@@ -42,8 +42,8 @@ my $prologue = <<'EOD;';
 EOD;
 chomp $prologue;
 
-sub nroffize ($;$$) {
-  my($t, $embolden, $otherelts) = @_;
+sub nroffize ($;$$$) {
+  my($t, $embolden, $srelated, $related_source) = @_;
   my($i);
 
   # embolden & manpageize
@@ -52,8 +52,8 @@ sub nroffize ($;$$) {
       $t =~ s{(^|[^\w@/])$i($|[^\w@/])}{$1<B>$i</B>$2}gs;
     }
   }
-  if (defined $otherelts) {
-    foreach $i (sort { length($b) <=> length($a) } @$otherelts) {
+  if (defined $srelated) {
+    foreach $i (@$srelated) {
       $t =~ s{(^|[^\w@/])$i($|[^\w@/(])}{$1<\#>$i</\#>$2}gs;
     }
   }
@@ -67,7 +67,7 @@ sub nroffize ($;$$) {
   $t =~ s/^\s*$/.PP\n/gm;
   $t =~ s/<i>(.*?)<\/i>/\\fI$1\\fP/ig;
   $t =~ s/<b>(.*?)<\/b>/\\fB$1\\fP/ig;
-  $t =~ s/<\#>(.*?)<\/\#>(\S*)\s*/\n.M $1 n $2\n/g;
+  $t =~ s/<\#>(.*?)<\/\#>(\S*)\s*/\n.M $1 $related_source->{$1} $2\n/g;
   1 while ($t =~ s/^\.PP\n\.PP\n/.PP\n/gm);
   $t =~ s/^= (.*\n)/.nf\n$1.fi\n/mg;
   $t =~ s/^\.fi\n\.nf\n//mg;
@@ -81,7 +81,7 @@ sub process_processing ($) {
     $t = $processing_constants{$t};
   }
   $t =~ tr/\"\s//d;
-  $t =~ s{\A([^/]*)\Z}{$1/$2};
+  $t =~ s{\A([^/]*)\Z}{$1/$2} if $t;
   if (exists($processing_text{$t})) {
     return $processing_text{$t};
   }
@@ -150,24 +150,33 @@ EOD;
     print OUT nroffize($x{'io'});
   }
 
-  my @related;
+  my(@related, @srelated, %related_source);
   if ($x{'a'}) {
-    @related = sort map(split(/\s+/), @{$x{'a'}});
+    foreach $i (map(split(/\s+/), @{$x{'a'}})) {
+      if ($i =~ /^(.*)\((.*)\)$/) {
+	push @related, $1;
+	$related_source{$1} = $2;
+      } else {
+	push @related, $i;
+	$related_source{$i} = 'n';
+      }
+    }
+    @srelated = sort { length($b) <=> length($a) } @related;
   }
 
   if ($x{'d'}) {
     print OUT ".SH \"DESCRIPTION\"\n";
-    print OUT nroffize($x{'d'}, \@classes, \@related);
+    print OUT nroffize($x{'d'}, \@classes, \@srelated, \%related_source);
   }
 
   if ($x{'n'}) {
     print OUT ".SH \"NOTES\"\n";
-    print OUT nroffize($x{'n'}, \@classes, \@related);
+    print OUT nroffize($x{'n'}, \@classes, \@srelated, \%related_source);
   }
 
   if ($x{'e'}) {
     print OUT ".SH \"EXAMPLES\"\n";
-    print OUT nroffize($x{'e'}, \@classes, \@related);
+    print OUT nroffize($x{'e'}, \@classes, \@srelated, \%related_source);
   }
 
   if ($x{'h'} && @{$x{'h'}}) {
@@ -185,8 +194,8 @@ EOD;
   if ($x{'a'} && @{$x{'a'}}) {
     print OUT ".SH \"SEE ALSO\"\n";
     my($last) = pop @related;
-    print OUT map(".M $_ n ,\n", @related);
-    print OUT ".M $last n\n";
+    print OUT map(".M $_ " . $related_source{$_} . " ,\n", @related);
+    print OUT ".M $last ", $related_source{$last}, "\n";
   }
 
   # close output file & make links if appropriate

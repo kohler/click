@@ -5,19 +5,21 @@
 
 /*
  * =c
- * GetIPAddress(offset)
+ * GetIPAddress(OFFSET)
  * =d
- * Copies 4 bytes from the packet to the destination IP address annotation.
- * The offset is usually 16, to fetch the dst address from
- * an IP packet (w/o ether header).
  *
+ * Copies 4 bytes from the packet, starting at OFFSET, to the destination IP
+ * address annotation. OFFSET is usually 16, to fetch the destination address
+ * from an IP packet.
+ *
+ * =n
  * The destination address annotation is used by elements
  * that need to know where the packet is going.
- * Such elements include ArpQuerier and SetIPRoute.
+ * Such elements include ARPQuerier and LookupIPRoute.
  *
- * =a ArpQuerier
- * =a LinuxSetIPRoute
- * =a SetIPRoute
+ * =a ARPQuerier
+ * =a LookupIPRoute
+ * =a SetIPAddress
  */
 
 

@@ -21,8 +21,8 @@
  *
  * Discards all packets that are preceded by more than 500 siblings.
  *
- * =h thresh (read-write)
- * read/write value of THRESH
+ * =h thresh read/write
+ * value of THRESH
  *
  * =a RED
  * =a Monitor

@@ -45,6 +45,8 @@ Version 1.0.5
 * The click user-level driver can now compile package sources, like
   click-install(1).
 
+* Removed Broadcast in favor of Tee.
+
 
 Version 1.0.4   13.Apr.2000
 

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPInputCombo(paint color, bad IP addresses)
+ * IPInputCombo(COLOR, BADADDRS)
  * =d
  * A single element encapsulating common tasks on an IP router's input path.
  * Effectively equivalent to

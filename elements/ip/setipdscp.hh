@@ -3,10 +3,10 @@
 
 /*
  * =c
- * SetIPDSCP(x)
+ * SetIPDSCP(VAL)
  * =d
- * Expects IP packet as input and
- * sets its Differential Services Code Point to x.
+ * Expects IP packets as input and
+ * sets their Differential Services Code Point to VAL.
  * Then it incrementally recalculates the IP checksum
  * and passes the packet to output 0.
  * The DSCP is the upper 6 bits of the IP TOS field.

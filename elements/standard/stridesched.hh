@@ -5,10 +5,10 @@
 
 /*
  * =c
- * StrideSched(ticket_1, ..., ticket_n)
+ * StrideSched(TICKET1, ..., TICKET<i>n</i>)
  * =d
  * Has one output and n inputs.  Performs simple packet-based stride
- * scheduling, assigning ticket_i to input_i for each i in 1 to n.
+ * scheduling, assigning TICKET<i>i</i> to input <i>i</i> for each input.
  * 
  * Each time a pull comes in on the output, it pulls on its inputs in the order
  * specified by the stride scheduling queue, until all inputs have been tried

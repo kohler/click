@@ -7,9 +7,9 @@ extern "C" {
 
 /*
  * =c
- * ToDevice(devname)
+ * ToDevice(DEVNAME)
  * =d
- * Sends packets out a Linux network interface device.
+ * Sends packets out the Linux network interface named DEVNAME.
  *
  * Packets must have a link header. For ethernet, ToDevice
  * makes sure every packet is at least 60 bytes long.
@@ -35,6 +35,8 @@ extern "C" {
  * This element is only available inside the kernel module.
  *
  * =a FromDevice
+ * =a PollDevice
+ * =a FromLinux
  * =a ToLinux
  */
 

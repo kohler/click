@@ -3,26 +3,26 @@
 
 /*
  * =c
- * EtherEncap(EtherType, SourceAddr, DestAddr)
+ * EtherEncap(ETHERTYPE, SADDR, DADDR)
  * =d
- * Encapsulates each packet in an ethernet header.
- * The EtherType specified in the configuration argument
+ * Encapsulates each packet in an Ethernet header.
+ * The ETHERTYPE specified in the configuration argument
  * should be in host order; the element
  * will convert it to network byte order.
  * =e
- * Encapsulate packets in an ethernet header with type
- * ETHERTYPE_IP (0x0800):
+ * Encapsulate packets in an Ethernet header with type
+ * ETHERTYPE_IP (0x0800), source address 1:1:1:1:1:1, and
+ * destination address 2:2:2:2:2:2:
  * 
  * = EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
  *
  * =n
- * For IP packets you probably want to use ArpQuerier instead.
+ * For IP packets you probably want to use ARPQuerier instead.
  *
- * =a ArpQuerier
+ * =a ARPQuerier
  */
 
 #include "element.hh"
-
 class EtherAddress;
 
 class EtherEncap : public Element {

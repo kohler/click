@@ -26,7 +26,7 @@ class ToLinux : public Element {
   ~ToLinux();
   
   const char *class_name() const		{ return "ToLinux"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   ToLinux *clone() const;
   

@@ -3,10 +3,10 @@
 
 /*
  * =c
- * IPEncap(p, s, d)
+ * IPEncap(PROTOCOL, SADDR, DADDR)
  * =d
  * Encapsulates each incoming packet in an IP packet with protocol
- * p, source address s, and destination address d.
+ * PROTOCOL, source address SADDR, and destination address DADDR.
  * This is most useful for IP-in-IP encapsulation.
  *
  * If the input packet has TTL and TOS annotations, these

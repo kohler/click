@@ -6,11 +6,19 @@
  * =c
  * Align(MODULUS, OFFSET)
  * =d
- * Aligns packet data to start OFFSET bytes off from
- * a MODULUS-byte boundary. May involve a packet copy.
+ *
+ * Aligns packet data. Each input packet is aligned so that its first byte is
+ * OFFSET bytes off from a MODULUS-byte boundary. This may involve a packet
+ * copy.
+ *
+ * MODULUS must be 2, 4, or 8.
+ * =n
+ * The click-align tool will insert this element automatically wherever it is
+ * required.
  * =e
  * = ... -> Align(4, 0) -> ...
- */
+ * =a AlignmentInfo
+ * =a click-align(1) */
 
 class Align : public Element {
 

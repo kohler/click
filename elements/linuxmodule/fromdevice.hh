@@ -7,10 +7,10 @@ extern "C" {
 
 /*
  * =c
- * FromDevice(devname)
+ * FromDevice(DEVNAME)
  * =d
  * Intercepts all packets received by the Linux network interface
- * named devname and pushes them out output 0.
+ * named DEVNAME and pushes them out output 0.
  * The packets include the link-level header.
  *
  * Linux won't see any packets from the device.

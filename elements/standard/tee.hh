@@ -9,26 +9,27 @@
  * PullTee([N])
  * =d
  * Tee sends a copy of each incoming packet out each output.
- * The optional argument controls how many outputs the Tee
- * has, and defaults to 2.
  *
- * PullTee has one pull output and N-1 push outputs.
- * Each time the pull output pulls a packet, the PullTee
+ * PullTee's input and its first output are pull; its other outputs are push.
+ * Each time the pull output pulls a packet, it
  * sends a copy out the push outputs.
  *
- * =a Broadcast
+ * By default, Tee and PullTee have an unlimited number of outputs,
+ * but you can set a specific number of outputs by giving the optional
+ * argument N.
  */
 
 class Tee : public Element {
   
  public:
   
-  Tee()						: Element(1, 2) { }
+  Tee()						{ add_input(); }
   
   const char *class_name() const		{ return "Tee"; }
   const char *processing() const		{ return PUSH; }
   
   Tee *clone() const;
+  void notify_noutputs(int);
   int configure(const String &, ErrorHandler *);
   
   void push(int, Packet *);
@@ -39,13 +40,13 @@ class PullTee : public Element {
   
  public:
   
-  PullTee()					: Element(1, 2) { }
-  explicit PullTee(int n)			: Element(1, n) { }
+  PullTee()					{ add_input(); }
   
   const char *class_name() const		{ return "PullTee"; }
   const char *processing() const		{ return "l/lh"; }
   
   PullTee *clone() const;
+  void notify_noutputs(int);
   int configure(const String &, ErrorHandler *);
   
   Packet *pull(int);

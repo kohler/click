@@ -5,7 +5,7 @@
 
 /*
  * =c
- * PokeHandlers([TIME or HANDLER] ...)
+ * PokeHandlers([DELAY or HANDLER] ...)
  * =io
  * None
  * =d

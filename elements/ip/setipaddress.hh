@@ -5,10 +5,10 @@
 
 /*
  * =c
- * SetIPAddress(off)
+ * SetIPAddress(OFFSET)
  * =d
  * Copy the destination IP address annotation into the packet
- * at offset off.
+ * at offset OFFSET.
  *
  * =a GetIPAddress
  */

@@ -3,13 +3,12 @@
 
 /*
  * =c
- * FromBPF(devname, promisc?)
+ * FromBPF(DEVNAME, PROMISC?)
  * =d
  * Reads ethernet packets from the Berkeley Packet Filter
  * (or Linux equivalent), from the network interface
- * device named devname.
- * Puts the device in promiscuous mode if the 2nd configuration
- * argument is 1.
+ * device named DEVNAME.
+ * Puts the device in promiscuous mode if PROMISC? (a Boolean) is true.
  *
  * If a ToBPF is defined with the same device name
  * subsequently, that ToBPF will share a file descriptor
@@ -23,17 +22,14 @@
  * This element is only available at user level.
  * 
  * =e
- * = FromBPF(eth0, 0)
+ * = FromBPF(eth0, 0) -> ...
  *
  * =a ToBPF
  * =a FromDump
  * =a ToDump
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+
 #include "element.hh"
-#include "string.hh"
 
 #ifdef HAVE_PCAP
 extern "C" {
@@ -45,6 +41,7 @@ extern "C" {
 
 class FromBPF : public Element {
  public:
+  
   FromBPF();
   ~FromBPF();
   
@@ -55,7 +52,7 @@ class FromBPF : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  int select_fd()	       { return (_pcap?pcap_fileno(_pcap):-1); }
+  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
   void selected(int);
   
   void run_scheduled();

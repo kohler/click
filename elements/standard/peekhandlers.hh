@@ -5,7 +5,7 @@
 
 /*
  * =c
- * PeekHandlers([TIME or HANDLER] ...)
+ * PeekHandlers([DELAY or HANDLER] ...)
  * =io
  * None
  * =d

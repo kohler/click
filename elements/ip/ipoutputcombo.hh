@@ -3,16 +3,16 @@
 
 /*
  * =c
- * IPOutputCombo(paint color, interface IP address, MTU)
+ * IPOutputCombo(COLOR, IPADDR, MTU)
  * =d
  * A single element encapsulating common tasks on an IP router's output path.
  * Effectively equivalent to
  *
- * = elementclass IPOutputCombo { $COLOR, $IP, $MTU |
+ * = elementclass IPOutputCombo { $COLOR, $IPADDR, $MTU |
  * =   input[0] -> DropBroadcasts
  * =         -> c::CheckPaint($COLOR)
- * =         -> g::IPGWOptions($IP)
- * =         -> FixIPSrc($IP)
+ * =         -> g::IPGWOptions($IPADDR)
+ * =         -> FixIPSrc($IPADDR)
  * =         -> d::DecIPTTL
  * =         -> l::CheckLength($MTU)
  * =         -> [0]output;
@@ -25,14 +25,20 @@
  * Output 0 is the path for normal packets; outputs 1 through 3 are error
  * outputs for CheckPaint, IPGWOptions, and DecIPTTL, respectively; and
  * output 4 is for packets longer than MTU.
+ *
+ * =n
+ *
+ * IPOutputCombo does no fragmentation. You'll still need an IPFragmenter for
+ * that.
+ *
  * =a DropBroadcasts
  * =a CheckPaint
+ * =a CheckLength
  * =a IPGWOptions
  * =a FixIPSrc
  * =a DecIPTTL
  * =a IPFragmenter
- * =a IPInputCombo
- */
+ * =a IPInputCombo */
 
 #include "element.hh"
 #include "glue.hh"

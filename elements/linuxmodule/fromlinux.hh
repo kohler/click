@@ -4,23 +4,24 @@
 
 /*
  * =c
- * FromLinux(device-name, dest-addr, dest-mask)
+ * FromLinux(DEVNAME, ADDR, MASK)
  * =d
  * Captures packets orginating from the Linux kernel and pushes
  * them on output 0.
  *
- * Installs a fake interface called "device-name", and changes the routing
- * table so that every packet destined for "dest-addr/dest-mask" is sent
+ * Installs a fake interface called DEVNAME, and changes the routing
+ * table so that every packet destined for ADDR/MASK is sent
  * through that interface.  The packet then leaves on output 0.
  *
  * After the fake device is created, the effect of bringing up the interface
  * and changing the routing table is analogous to:
  *
- * = % /sbin/ifconfig <device-name> up
- * = % /sbin/route add -net <dest-addr> netmask <dest-mask> <device-name>
+ * = % /sbin/ifconfig DEVNAME up
+ * = % /sbin/route add -net ADDR netmask MASK DEVNAME
  *
  * =a ToLinux
  * =a FromDevice
+ * =a PollDevice
  * =a ToDevice
  */
 

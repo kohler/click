@@ -3,19 +3,19 @@
 
 /*
  * =c
- * FixIPSrc(ip-addr)
+ * FixIPSrc(IPADDR)
  * =d
- * If the fix_ip_src annotation is set, then change ip_src to
- * ip-addr and recompute the checksum. Used by elements such
- * as ICMPError that are required by standards to use the
- * IP address on the outgoing interface as the source. Such
- * elements must set ip_src to something reasonable in case
- * the outgoing interface has no IP address.
  *
- * Expects an IP packet as input. Clears the fix_ip_src annotation.
+ * Expects an IP packet as input. If its fix_ip_src annotation is set, then
+ * changes its IP source address field to IPADDR and recomputes the checksum.
+ * Used by elements such as ICMPError that are required by standards to use
+ * the IP address on the outgoing interface as the source. Such elements must
+ * set ip_src to something reasonable in case the outgoing interface has no IP
+ * address.
+ *
+ * Also clears the fix_ip_src annotation.
  * 
- * =a ICMPError
- */
+ * =a ICMPError */
 
 #include "element.hh"
 #include "glue.hh"
@@ -28,7 +28,7 @@ public:
   ~FixIPSrc();
   
   const char *class_name() const		{ return "FixIPSrc"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   FixIPSrc *clone() const;
   int configure(const String &, ErrorHandler *);
 
