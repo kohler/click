@@ -1,3 +1,12 @@
+2004-12-12 Sunday 16:27  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/: fromhost.cc (1.3), fromhost.hh (1.3): use
+	downstream_nonfull_signal. call set_ip_header before push.
+
+2004-12-12 Sunday 16:21  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifidecap.cc (1.10): check size before pulling.
+
 2004-12-11 Saturday 10:48  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* ns/nsclick.cc (1.23): Added an implementation of kill, also now
