@@ -425,7 +425,7 @@ DivertSocket::uninitialize()
 #else
   
 #endif
-  
+    fprintf(stderr, "closing _fd\n");
     close (_fd);
     remove_select(_fd, SELECT_READ);
     _fd = -1;
