@@ -1,3 +1,19 @@
+2005-03-01 Tuesday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-5.x/: LICENSE (1.1), README (1.1), e1000.7 (1.1),
+	e1000.spec (1.1), ldistrib.txt (1.1), src/Makefile (1.1),
+	src/e1000.h (1.1), src/e1000_ethtool.c (1.1), src/e1000_hw.c (1.1),
+	src/e1000_hw.h (1.1), src/e1000_main.c (1.1), src/e1000_osdep.h
+	(1.1), src/e1000_param.c (1.1), src/kcompat.c (1.1), src/kcompat.h
+	(1.1), src/kcompat_ethtool.c (1.1): add initial version of 5.7.6
+	driver
+
+2005-03-01 Tuesday 11:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-4.x/src/: e1000.h (1.2), e1000_main.c (1.4):
+	calculate a correct count of the receive buffers to be refilled
+	(11/7/03 patch from Kevin Lahey)
+
 2005-03-01 Tuesday 03:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.35): xml quoting
