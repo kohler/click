@@ -29,6 +29,8 @@ static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
 static int fl_init(struct device *dev);
 
+static HashMap<String, struct devrt *> devmap(0);
+
 FromLinux::FromLinux()
 {
   _dev = 0; _rt = 0;
@@ -37,7 +39,17 @@ FromLinux::FromLinux()
 
 FromLinux::~FromLinux()
 {
-  uninitialize();
+}
+
+void
+FromLinux::static_initialize()
+{
+  devmap.clear();
+}
+
+void
+FromLinux::static_cleanup()
+{
 }
 
 FromLinux *
@@ -79,6 +91,7 @@ FromLinux::init_dev(void)
   if (_dev && _dev->name)
     delete[] _dev->name;
   delete _dev;
+  _dev = 0L;
   return -ENOMEM;
 }
 
@@ -105,18 +118,34 @@ FromLinux::init_rt(void)
   return 0;
 }
 
+#define CLEAN_DEV { if (_dev->name) delete[] _dev->name; \
+		    delete _dev; _dev = 0L; }
+#define CLEAN_RT  { delete _rt; _rt = 0L; }
+
 int
 FromLinux::initialize(ErrorHandler *errh)
 {
   int res;
-				// Install fake interface
+  struct devrt *dr;
+
+  if ((dr = devmap.find(_devname))) {
+    _dev = dr->_dev;
+    _rt = dr->_rt;
+    dr->_refcnt++;
+    return 0;
+  }
+
+  // Install fake interface
   if ((res = init_dev()) < 0)
     return errh->error("error %d initializing device %s",
-		       res, _devname.cc());
-  if ((res = register_netdev(_dev)) < 0)
+		         res, _devname.cc());
+  if ((res = register_netdev(_dev)) < 0) {
+    CLEAN_DEV;
     return errh->error("error %d registering device %s",
-		       res, _devname.cc());
-				// Bring up the interface
+		         res, _devname.cc());
+  }
+
+  // Bring up the interface
   struct ifreq ifr;
   strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
   struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
@@ -128,27 +157,34 @@ FromLinux::initialize(ErrorHandler *errh)
 
   if ((res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0) {
     set_fs(oldfs);
+    CLEAN_DEV;
     return errh->error("error %d setting address for interface %s",
-		       res, _devname.cc());
+		         res, _devname.cc());
   }
   if ((res = iff_set(&ifr, IFF_UP|IFF_RUNNING)) < 0) {
     set_fs(oldfs);
+    CLEAN_DEV;
     return errh->error("error %d bringing up interface %s", 
-		       res, _devname.cc());
+		         res, _devname.cc());
   }
-				// Establish the route
+				  // Establish the route
   if ((res = init_rt()) < 0) {
     set_fs(oldfs);
+    CLEAN_DEV;
     return errh->error("error %d initializing route", res);
   }
   if ((res = ip_rt_ioctl(SIOCADDRT, _rt)) < 0) {
-    delete _rt;
-    _rt = 0;
     set_fs(oldfs);
+    CLEAN_DEV; CLEAN_RT;
     return errh->error("error %d establishing route", res);
   }
 
   set_fs(oldfs);
+
+  dr = new struct devrt;
+  dr->_rt = _rt; dr->_dev = _dev; dr->_refcnt = 1;
+  devmap.insert(_devname, dr);
+
   return res;
 }
 
@@ -156,9 +192,13 @@ void
 FromLinux::uninitialize()
 {
   int res;
+  struct devrt *dr;
 
-  if (!_dev)
+  if (!(dr = devmap.find(_devname)) || --dr->_refcnt) {
+    _dev = 0; 
+    _rt = 0;
     return;
+  }
 
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
@@ -169,8 +209,7 @@ FromLinux::uninitialize()
       click_chatter("FromLinux(%s): error %d removing route\n",
 		    _devname.cc(), res);
     }
-    delete _rt;
-    _rt = 0;
+    CLEAN_RT;
   }
 				// Bring down the interface
   struct ifreq ifr;
@@ -181,10 +220,9 @@ FromLinux::uninitialize()
   set_fs(oldfs);
 				// Uninstall fake interface
   unregister_netdev(_dev);
-  if (_dev->name)
-    delete[] _dev->name;
-  delete _dev;
-  _dev = 0;
+  CLEAN_DEV;
+  devmap.insert(_devname, 0);
+  delete dr;
 }
 
 /*
@@ -266,5 +304,8 @@ iff_clear(struct ifreq *ifr, short flag)
 /*
  * Routing table management
  */
+
+#include "hashmap.cc"
+template class HashMap<String, struct devrt *>;
 
 EXPORT_ELEMENT(FromLinux)

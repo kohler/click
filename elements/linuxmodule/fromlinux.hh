@@ -30,6 +30,14 @@ extern "C" {
 #include <linux/route.h>
 }
 
+#include "hashmap.hh"
+
+struct devrt {
+  struct device *_dev;
+  struct rtentry *_rt;
+  int _refcnt;
+};
+
 class FromLinux : public Element {
 
   String _devname;
@@ -49,6 +57,9 @@ class FromLinux : public Element {
   FromLinux();
   ~FromLinux();
   FromLinux *clone() const;
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const	{ return "FromLinux"; }
   const char *processing() const	{ return PUSH; }
