@@ -9,6 +9,7 @@
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
+CLICK_DECLS
 class ElementFilter;
 class RouterThread;
 
@@ -373,4 +374,5 @@ Router::run_timers()
   _timer_list.run();
 }
 
+CLICK_ENDDECLS
 #endif

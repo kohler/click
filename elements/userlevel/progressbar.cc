@@ -28,6 +28,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+CLICK_DECLS
 
 ProgressBar::ProgressBar()
     : _timer(this)
@@ -488,5 +489,6 @@ ProgressBar::add_handlers()
     add_write_handler("reset", write_handler, (void *)H_RESET);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ProgressBar)

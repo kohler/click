@@ -1,5 +1,8 @@
 #ifndef CLICK_SETIPCHECKSUM_HH
 #define CLICK_SETIPCHECKSUM_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -16,9 +19,6 @@
  *
  * =a CheckIPHeader, DecIPTTL, SetIPDSCP, IPRewriter */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-
 class SetIPChecksum : public Element {
 public:
   SetIPChecksum();
@@ -31,4 +31,5 @@ public:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

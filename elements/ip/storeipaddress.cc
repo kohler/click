@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "storeipaddress.hh"
 #include <click/confparse.hh>
+CLICK_DECLS
 
 StoreIPAddress::StoreIPAddress()
   : Element(1, 1)
@@ -52,5 +53,6 @@ StoreIPAddress::simple_action(Packet *p)
     return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StoreIPAddress)
 ELEMENT_MT_SAFE(StoreIPAddress)

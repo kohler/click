@@ -1,5 +1,11 @@
-#ifndef ArpFaker_HH
-#define ArpFaker_HH
+#ifndef CLICK_ARPFAKER_HH
+#define CLICK_ARPFAKER_HH
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/hashmap.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -25,12 +31,6 @@
  * =a
  * ARPQuerier, ARPResponder
  */
-
-#include <click/element.hh>
-#include <click/timer.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/hashmap.hh>
 
 class ARPFaker : public Element {
   
@@ -62,4 +62,5 @@ private:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -16,8 +16,8 @@
  */
 
 #include <click/bighashmap.hh>
-
 #define BIGHASHMAP_REARRANGE_ON_FIND 1
+CLICK_DECLS
 
 template <class K, class V>
 void
@@ -690,3 +690,5 @@ BigHashMapIterator<K, void *>::operator++(int)
     _elt = 0;
   }
 }
+
+CLICK_ENDDECLS

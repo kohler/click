@@ -1,8 +1,9 @@
-#ifndef COPYTCPSEQ_HH
-#define COPYTCPSEQ_HH
+#ifndef CLICK_COPYTCPSEQ_HH
+#define CLICK_COPYTCPSEQ_HH
 #include <click/element.hh>
 #include <clicknet/tcp.h>
 #include <click/ipflowid.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -43,5 +44,5 @@ public:
 
 };
 
+CLICK_ENDDECLS
 #endif
-

@@ -1,6 +1,7 @@
 #ifndef CLICK_COMPBLOCK_HH
 #define CLICK_COMPBLOCK_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -64,6 +65,5 @@ class CompareBlock : public Element { public:
   static String thresh_read_handler(Element *e, void *);
 };
 
+CLICK_ENDDECLS
 #endif
-
-

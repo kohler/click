@@ -25,6 +25,7 @@
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
+CLICK_DECLS
 
 UDPIPEncap::UDPIPEncap()
   : Element(1, 1)
@@ -143,5 +144,6 @@ UDPIPEncap::simple_action(Packet *p_in)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(UDPIPEncap)
 ELEMENT_MT_SAFE(UDPIPEncap)

@@ -1,6 +1,7 @@
 #ifndef CLICK_CHECKPAINT_HH
 #define CLICK_CHECKPAINT_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -36,8 +37,9 @@ class CheckPaint : public Element { public:
   
  private:
   
-  unsigned char _color;
+  uint8_t _color;
   
 };
 
+CLICK_ENDDECLS
 #endif

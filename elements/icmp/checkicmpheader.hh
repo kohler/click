@@ -1,5 +1,8 @@
-#ifndef CHECKICMPHEADER_HH
-#define CHECKICMPHEADER_HH
+#ifndef CLICK_CHECKICMPHEADER_HH
+#define CLICK_CHECKICMPHEADER_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -45,9 +48,6 @@ subdivided by error. Only available if the DETAILS keyword argument was true.
 
 =a CheckIPHeader, CheckUDPHeader, MarkIPHeader */
 
-#include <click/element.hh>
-#include <click/atomic.hh>
-
 class CheckICMPHeader : public Element { public:
   
   CheckICMPHeader();
@@ -82,4 +82,5 @@ class CheckICMPHeader : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

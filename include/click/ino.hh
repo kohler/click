@@ -2,6 +2,7 @@
 #ifndef CLICK_INO_HH
 #define CLICK_INO_HH
 #include <click/string.hh>
+CLICK_DECLS
 class Router;
 
 // NB: inode number 0 is reserved for the system.
@@ -106,4 +107,5 @@ ClickIno::elementno(int xindex) const
     return _x[xindex].elementno_plus1 - 1;
 }
 
+CLICK_ENDDECLS
 #endif

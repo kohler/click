@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "notifierqueue.hh"
+CLICK_DECLS
 
 NotifierQueue::NotifierQueue()
     : _sleepiness(0)
@@ -86,5 +87,6 @@ NotifierQueue::pull(int)
     return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(SimpleQueue)
 EXPORT_ELEMENT(NotifierQueue NotifierQueue-NotifierQueue)

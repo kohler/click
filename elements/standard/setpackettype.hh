@@ -2,6 +2,7 @@
 #ifndef CLICK_SETPACKETTYPE_HH
 #define CLICK_SETPACKETTYPE_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -43,4 +44,5 @@ class SetPacketType : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

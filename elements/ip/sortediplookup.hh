@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_SORTEDIPLOOKUP_HH
 #define CLICK_SORTEDIPLOOKUP_HH
+#include "lineariplookup.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -19,8 +21,6 @@ LinearIPLookup. Its worst-case lookup time is still O(N), where N is the
 number of routes.
 
 =a LinearIPLookup */
-
-#include "lineariplookup.hh"
 
 class SortedIPLookup : public LinearIPLookup { public:
 
@@ -44,4 +44,5 @@ class SortedIPLookup : public LinearIPLookup { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

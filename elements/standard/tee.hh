@@ -1,6 +1,7 @@
 #ifndef CLICK_TEE_HH
 #define CLICK_TEE_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -57,4 +58,5 @@ class PullTee : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

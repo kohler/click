@@ -25,6 +25,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IP6NDAdvertiser::IP6NDAdvertiser()
 {
@@ -276,11 +277,14 @@ IP6NDAdvertiser::simple_action(Packet *p)
   return(q);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(IP6NDAdvertiser)
 
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
+CLICK_DECLS
 template class Vector<IP6NDAdvertiser::Entry>;
+CLICK_ENDDECLS
 #endif

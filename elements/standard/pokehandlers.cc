@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+CLICK_DECLS
 
 static const char * const READ_MARKER = "r";
 Element * const PokeHandlers::STOP_MARKER = (Element *)1;
@@ -160,4 +161,5 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
     poke->_pos = h;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(PokeHandlers)

@@ -19,6 +19,7 @@
 #include "queue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 Queue::Queue()
   : Element(1, 1), _q(0)
@@ -227,5 +228,6 @@ Queue::add_handlers()
   add_write_handler("reset", write_handler, (void *)1);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(Queue)

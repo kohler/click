@@ -22,6 +22,7 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SortedIPLookup::SortedIPLookup()
 {
@@ -170,7 +171,8 @@ SortedIPLookup::push(int, Packet *p)
     output(e.output).push(p);
 }
 
-#include <click/vector.cc>
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(LinearIPLookup)
 EXPORT_ELEMENT(SortedIPLookup)
+
+#include <click/vector.cc>

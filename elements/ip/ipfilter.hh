@@ -1,7 +1,8 @@
-#ifndef IPFILTER_HH
-#define IPFILTER_HH
+#ifndef CLICK_IPFILTER_HH
+#define CLICK_IPFILTER_HH
 #include "elements/standard/classifier.hh"
 #include <click/hashmap.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -229,4 +230,5 @@ IPFilter::Primitive::negation_is_simple() const
     return _type == TYPE_HOST || _type == TYPE_TOS || _type == TYPE_IPFRAG;
 }
 
+CLICK_ENDDECLS
 #endif

@@ -24,6 +24,7 @@
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IP6NDSolicitor::IP6NDSolicitor()
 : _expire_timer(expire_hook, this)
@@ -326,5 +327,6 @@ IP6NDSolicitor::add_handlers()
   add_read_handler("stats", IP6NDSolicitor_read_stats, (void *)0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(IP6NDSolicitor)

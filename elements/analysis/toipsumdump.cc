@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
+CLICK_DECLS
 
 ToIPSummaryDump::ToIPSummaryDump()
     : Element(1, 0), _f(0), _task(this)
@@ -438,5 +439,6 @@ ToIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel FromIPSummaryDump)
 EXPORT_ELEMENT(ToIPSummaryDump)

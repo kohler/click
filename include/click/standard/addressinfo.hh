@@ -6,6 +6,7 @@
 #ifdef HAVE_IP6
 # include <click/ip6address.hh>
 #endif
+CLICK_DECLS
 
 /*
 =c
@@ -117,4 +118,5 @@ class AddressInfo : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,9 +1,10 @@
 /* -*- c-basic-offset: 2 -*- */
-#ifndef ICMPSENDPINGS_HH
-#define ICMPSENDPINGS_HH
+#ifndef CLICK_ICMPSENDPINGS_HH
+#define CLICK_ICMPSENDPINGS_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -69,4 +70,5 @@ class ICMPSendPings : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

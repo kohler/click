@@ -1,6 +1,7 @@
-#ifndef IP6MIRROR_HH
-#define IP6MIRROR_HH
+#ifndef CLICK_IP6MIRROR_HH
+#define CLICK_IP6MIRROR_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -38,4 +39,5 @@ class IP6Mirror : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif IP6MIRROR_HH

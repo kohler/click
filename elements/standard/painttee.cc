@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 PaintTee::PaintTee()
   : Element(1, 2)
@@ -56,5 +57,6 @@ PaintTee::simple_action(Packet *p)
   return(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(PaintTee)
 ELEMENT_MT_SAFE(PaintTee)

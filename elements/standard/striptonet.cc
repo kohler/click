@@ -20,6 +20,7 @@
 #include "striptonet.hh"
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 StripToNetworkHeader::StripToNetworkHeader()
     : Element(1, 1)
@@ -43,5 +44,6 @@ StripToNetworkHeader::simple_action(Packet *p)
 	return p->nonunique_push(-off);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StripToNetworkHeader)
 ELEMENT_MT_SAFE(StripToNetworkHeader)

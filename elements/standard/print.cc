@@ -22,12 +22,13 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #ifdef CLICK_LINUXMODULE
-#include <click/cxxprotect.h>
+# include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/sched.h>
+# include <linux/sched.h>
 CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
+# include <click/cxxunprotect.h>
 #endif
+CLICK_DECLS
 
 Print::Print()
   : Element(1, 1)
@@ -116,5 +117,6 @@ Print::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Print)
 ELEMENT_MT_SAFE(Print)

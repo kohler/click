@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 Shaper::Shaper()
     : Element(1, 1)
@@ -73,4 +74,5 @@ Shaper::add_handlers()
     add_write_handler("rate", reconfigure_positional_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Shaper)

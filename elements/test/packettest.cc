@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "packettest.hh"
 #include <click/error.hh>
+CLICK_DECLS
 
 PacketTest::PacketTest()
 {
@@ -125,4 +126,5 @@ PacketTest::initialize(ErrorHandler *errh)
     return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(PacketTest)

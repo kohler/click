@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 class HandlerCall;
 
 /*
@@ -125,4 +126,5 @@ class Counter : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

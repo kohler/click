@@ -1,6 +1,9 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_IPROUTETABLE_HH
 #define CLICK_IPROUTETABLE_HH
+#include <click/glue.hh>
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -51,9 +54,6 @@
  * =a StaticIPLookup, RadixIPLookup
  */
 
-#include <click/glue.hh>
-#include <click/element.hh>
-
 class IPRouteTable : public Element { public:
 
     void *cast(const char *);
@@ -73,4 +73,5 @@ class IPRouteTable : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/scheduleinfo.cc" -*-
 #ifndef CLICK_SCHEDULEINFO_HH
 #define CLICK_SCHEDULEINFO_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -65,8 +67,6 @@ For example, if the second ScheduleInfo element above was
 then the InfiniteSource's final scaling parameter would be 10.5.
 */
 
-#include <click/element.hh>
-
 class ScheduleInfo : public Element { public:
 
   static const int FRAC_BITS = 10;
@@ -108,4 +108,5 @@ ScheduleInfo::join_scheduler(Element *e, Task *t, ErrorHandler *errh)
   initialize_task(e, t, true, errh);
 }
 
+CLICK_ENDDECLS
 #endif

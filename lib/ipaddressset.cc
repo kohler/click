@@ -17,10 +17,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/ipaddressset.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 void
 IPAddressSet::insert(IPAddress ip)
@@ -52,3 +52,5 @@ IPAddressSet::list_copy()
     memcpy(x, &_s[0], sizeof(unsigned) * _s.size());
   return x;
 }
+
+CLICK_ENDDECLS

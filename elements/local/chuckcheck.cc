@@ -19,6 +19,7 @@
 #include "chuckcheck.hh"
 #include <click/straccum.hh>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 ChuckCheck::ChuckCheck()
   : Element(1, 1)
@@ -99,5 +100,6 @@ ChuckCheck::add_handlers()
     add_read_handler("info", read_handler, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(ChuckCheck)

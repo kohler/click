@@ -1,6 +1,7 @@
 #ifndef CLICK_SUBVECTOR_HH
 #define CLICK_SUBVECTOR_HH
 #include <click/vector.hh>
+CLICK_DECLS
 
 template <class T>
 class Subvector { public:
@@ -117,4 +118,5 @@ class Subvector<T *>: public Subvector<void *> { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

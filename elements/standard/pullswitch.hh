@@ -1,6 +1,7 @@
 #ifndef CLICK_PULLSWITCH_HH
 #define CLICK_PULLSWITCH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -61,4 +62,5 @@ class PullSwitch : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -21,6 +21,7 @@
 #include <click/glue.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
+CLICK_DECLS
 
 RIPSend::RIPSend()
   : _timer(this)
@@ -100,4 +101,5 @@ RIPSend::run_scheduled()
   _timer.schedule_after_ms(30 * 1000);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RIPSend)

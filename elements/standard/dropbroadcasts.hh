@@ -2,6 +2,7 @@
 #define CLICK_DROPBROADCASTS_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -37,4 +38,5 @@ private:
   uatomic32_t _drops;
 };
 
+CLICK_ENDDECLS
 #endif

@@ -28,6 +28,7 @@
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
+CLICK_DECLS
 
 const char *CheckIPHeader::reason_texts[NREASONS] = {
   "tiny packet", "bad IP version", "bad IP header length",
@@ -222,4 +223,5 @@ CheckIPHeader::add_handlers()
     add_read_handler("drop_details", read_handler, (void *)1);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckIPHeader)

@@ -43,6 +43,8 @@
 58    char ar_fmag[2];		// Always contains ARFMAG == "`\n".
 */
 
+CLICK_DECLS
+
 static int
 read_uint(const char *data, int max_len,
 	  const char *type, ErrorHandler *errh, int base = 10)
@@ -223,6 +225,10 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
     return sa.take_string();
 }
 
+CLICK_ENDDECLS
+
 // generate Vector template instance
 #include <click/vector.cc>
+CLICK_DECLS
 template class Vector<ArchiveElement>;
+CLICK_ENDDECLS

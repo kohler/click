@@ -2,6 +2,7 @@
 #define CLICK_DELAYSHAPER_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -44,4 +45,5 @@ class DelayShaper : public Element { public:
   Packet *_p;
 };
 
+CLICK_ENDDECLS
 #endif

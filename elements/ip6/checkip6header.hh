@@ -1,5 +1,8 @@
-#ifndef CHECKIP6HEADER_HH
-#define CHECKIP6HEADER_HH
+#ifndef CLICK_CHECKIP6HEADER_HH
+#define CLICK_CHECKIP6HEADER_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -20,10 +23,6 @@
  * for example, but okay for link local packets.
  *
  * =a MarkIP6Header */
-
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class CheckIP6Header : public Element {
 
@@ -57,4 +56,5 @@ class CheckIP6Header : public Element {
 
 };
 
+CLICK_ENDDECLS
 #endif

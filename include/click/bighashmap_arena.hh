@@ -1,6 +1,7 @@
 // -*- related-file-name: "../../lib/bighashmap_arena.cc" -*-
 #ifndef CLICK_BIGHASHMAP_ARENA_HH
 #define CLICK_BIGHASHMAP_ARENA_HH
+CLICK_DECLS
 
 struct BigHashMap_Arena {
   
@@ -26,4 +27,5 @@ BigHashMap_Arena::alloc(unsigned esize)
     return 0;
 }
 
+CLICK_ENDDECLS
 #endif

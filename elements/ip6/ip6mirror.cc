@@ -20,6 +20,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/ip6.h>
 #include <clicknet/udp.h>
+CLICK_DECLS
 
 IP6Mirror::IP6Mirror()
   : Element(1, 1)
@@ -54,5 +55,6 @@ IP6Mirror::simple_action(Packet *p_in)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IP6Mirror)
 ELEMENT_MT_SAFE(IP6Mirror)

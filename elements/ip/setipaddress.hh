@@ -2,6 +2,7 @@
 #define CLICK_SETIPADDRESS_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -34,4 +35,5 @@ class SetIPAddress : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

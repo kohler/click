@@ -1,12 +1,12 @@
 #ifndef CLICK_ADDRESSTRANSLATOR_HH
 #define CLICK_ADDRESSTRANSLATOR_HH
-
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
 #include <click/element.hh>
 #include <click/bighashmap.hh>
 #include <click/ip6flowid.hh>
+CLICK_DECLS
 
 //#include <time.h>
 
@@ -164,4 +164,5 @@ class AddressTranslator::Mapping {
   friend class AddressTranslator;
 };
 
+CLICK_ENDDECLS
 #endif

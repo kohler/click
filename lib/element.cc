@@ -35,6 +35,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+CLICK_DECLS
 
 const char * const Element::AGNOSTIC = "a";
 const char * const Element::PUSH = "h";
@@ -866,3 +867,4 @@ Element::run_scheduled()
   assert(0 && "bad run_scheduled");
 }
 
+CLICK_ENDDECLS

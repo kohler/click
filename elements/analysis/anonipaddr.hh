@@ -1,6 +1,7 @@
 #ifndef CLICK_ANONIPADDR_HH
 #define CLICK_ANONIPADDR_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -159,4 +160,5 @@ AnonymizeIPAddr::free_node(Node *n)
     _free = n;
 }
 
+CLICK_ENDDECLS
 #endif

@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <click/crc32.h>
 #include "setcrc32.hh"
+CLICK_DECLS
 
 SetCRC32::SetCRC32()
   : Element(1, 1)
@@ -43,5 +44,6 @@ SetCRC32::simple_action(Packet *p)
   return(q);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetCRC32)
 ELEMENT_MT_SAFE(SetCRC32)

@@ -2,6 +2,7 @@
 #define CLICK_PRINTOLD_HH
 #include <click/element.hh>
 #include <click/string.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -47,4 +48,5 @@ class PrintOld : public Element { public:
   int _thresh;
 };
 
+CLICK_ENDDECLS
 #endif

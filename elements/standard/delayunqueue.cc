@@ -23,6 +23,7 @@
 #include <click/glue.hh>
 #include "delayunqueue.hh"
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 DelayUnqueue::DelayUnqueue()
   : Element(1, 1), _p(0), _task(this), _timer(&_task)
@@ -101,5 +102,6 @@ DelayUnqueue::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DelayUnqueue)
 ELEMENT_MT_SAFE(DelayUnqueue)

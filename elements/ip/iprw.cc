@@ -37,6 +37,8 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 #endif
 
+CLICK_DECLS
+
 
 //
 // IPRw::Mapping
@@ -722,12 +724,15 @@ IPRw::clear_map(Map &table)
     table.clear();
 }
 
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(IPRw)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
+CLICK_DECLS
 template class BigHashMap<IPFlowID, IPRw::Mapping *>;
 template class BigHashMapIterator<IPFlowID, IPRw::Mapping *>;
 template class Vector<IPRw::InputSpec>;
+CLICK_ENDDECLS
 #endif

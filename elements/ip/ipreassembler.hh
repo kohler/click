@@ -1,6 +1,11 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_IPREASSEMBLER_HH
 #define CLICK_IPREASSEMBLER_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <clicknet/ip.h>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -35,11 +40,6 @@ The upper bound for memory consumption, in bytes. Default is 256K.
 =back
 
 =a IPFragmenter */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <clicknet/ip.h>
-#include <click/timer.hh>
 
 class IPReassembler : public Element { public:
   
@@ -111,4 +111,5 @@ IPReassembler::same_segment(const click_ip *h, const click_ip *h2)
 	&& h->ip_dst.s_addr == h2->ip_dst.s_addr;
 }
 
+CLICK_ENDDECLS
 #endif

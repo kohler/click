@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "stripipheader.hh"
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 StripIPHeader::StripIPHeader()
   : Element(1, 1)
@@ -37,5 +38,6 @@ StripIPHeader::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StripIPHeader)
 ELEMENT_MT_SAFE(StripIPHeader)

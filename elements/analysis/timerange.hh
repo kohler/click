@@ -2,6 +2,7 @@
 #ifndef CLICK_TIMERANGE_HH
 #define CLICK_TIMERANGE_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -79,4 +80,5 @@ class TimeRange : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

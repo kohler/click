@@ -1,6 +1,7 @@
 #ifndef CLICK_PRIOSCHED_HH
 #define CLICK_PRIOSCHED_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -35,4 +36,5 @@ class PrioSched : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

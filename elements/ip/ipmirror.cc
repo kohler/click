@@ -20,6 +20,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 IPMirror::IPMirror()
   : Element(1, 1)
@@ -60,5 +61,6 @@ IPMirror::simple_action(Packet *p_in)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPMirror)
 ELEMENT_MT_SAFE(IPMirror)

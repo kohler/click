@@ -4,6 +4,7 @@
 #include <click/string.hh>
 #include <clicknet/ip6.h>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 class IP6Address { public:
  
@@ -179,4 +180,5 @@ hashcode(const IP6Address &a)
   return a.data32()[3];
 }
 
+CLICK_ENDDECLS
 #endif

@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 Paint::Paint()
   : Element(1, 1)
@@ -69,5 +70,6 @@ Paint::add_handlers()
   add_write_handler("color", reconfigure_positional_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Paint)
 ELEMENT_MT_SAFE(Paint)

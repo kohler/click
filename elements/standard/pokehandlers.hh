@@ -3,6 +3,7 @@
 #define CLICK_POKEHANDLERS_HH
 #include <click/element.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -89,4 +90,5 @@ class PokeHandlers : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

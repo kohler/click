@@ -20,6 +20,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include "tcpbuffer.hh"
+CLICK_DECLS
 
 TCPBuffer::TCPBuffer()
   : Element(1, 1), _chain(0)
@@ -102,5 +103,5 @@ TCPBuffer::pull(int)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPBuffer)
-

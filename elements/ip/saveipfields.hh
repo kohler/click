@@ -1,6 +1,7 @@
-#ifndef SAVEIPFIELDS_HH
-#define SAVEIPFIELDS_HH
+#ifndef CLICK_SAVEIPFIELDS_HH
+#define CLICK_SAVEIPFIELDS_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -31,4 +32,5 @@ class SaveIPFields : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

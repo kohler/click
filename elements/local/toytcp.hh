@@ -1,5 +1,10 @@
-#ifndef TOYTCP_HH
-#define TOYTCP_HH
+#ifndef CLICK_TOYTCP_HH
+#define CLICK_TOYTCP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/timer.hh>
+#include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,11 +19,6 @@
  *   -> EtherEncap(0x0800, ..., ...)
  *   -> ToDevice(...)
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/timer.hh>
-#include <click/ipaddress.hh>
 
 class ToyTCP : public Element {
  public:
@@ -60,4 +60,5 @@ private:
   void restart();
 };
 
+CLICK_ENDDECLS
 #endif

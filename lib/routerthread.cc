@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
@@ -29,6 +28,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+CLICK_DECLS
 
 #define DEBUG_RT_SCHED		0
 
@@ -271,3 +271,5 @@ RouterThread::unschedule_all_tasks()
     t->fast_unschedule();
   unlock_tasks();
 }
+
+CLICK_ENDDECLS

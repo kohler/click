@@ -23,6 +23,7 @@
 #include <clicknet/ether.h>
 #include <clicknet/fddi.h>
 #include <clicknet/rfc1483.h>
+CLICK_DECLS
 
 int
 fake_pcap_parse_dlt(const String &str)
@@ -160,5 +161,6 @@ fake_pcap_force_ip(Packet *&p, int dlt)
     return false;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(FakePcap)

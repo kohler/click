@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_STATICIPLOOKUP_HH
 #define CLICK_STATICIPLOOKUP_HH
+#include "lineariplookup.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -22,8 +24,6 @@ Outputs a human-readable version of the current routing table.
 
 =a LinearIPLookup, LinuxIPLookup, RadixIPLookup */
 
-#include "lineariplookup.hh"
-
 class StaticIPLookup : public LinearIPLookup { public:
 
     StaticIPLookup();
@@ -39,4 +39,5 @@ class StaticIPLookup : public LinearIPLookup { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define SetRandIPAddress_hh
 #include <click/element.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -39,4 +40,5 @@ class SetRandIPAddress : public Element {
   IPAddress pick();
 };
 
+CLICK_ENDDECLS
 #endif

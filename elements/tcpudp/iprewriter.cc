@@ -26,6 +26,7 @@
 #include <click/timer.hh>
 #include <click/router.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0), 
@@ -541,6 +542,7 @@ IPRewriter::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPRewriter)
 

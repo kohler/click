@@ -27,6 +27,7 @@
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
+CLICK_DECLS
 
 const char *CheckUDPHeader::reason_texts[NREASONS] = {
   "not UDP", "bad packet length", "bad UDP checksum"
@@ -165,4 +166,5 @@ CheckUDPHeader::add_handlers()
     add_read_handler("drop_details", read_handler, (void *)1);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckUDPHeader)

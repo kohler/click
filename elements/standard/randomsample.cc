@@ -21,6 +21,7 @@
 #include "randomsample.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 RandomSample::RandomSample()
     : Element(1, 1)
@@ -136,5 +137,6 @@ RandomSample::add_handlers()
     add_write_handler("drop_prob", reconfigure_keyword_handler, (void *)"DROP");
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RandomSample)
 ELEMENT_MT_SAFE(RandomSample)

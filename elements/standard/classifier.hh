@@ -1,6 +1,7 @@
 #ifndef CLICK_CLASSIFIER_HH
 #define CLICK_CLASSIFIER_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -182,4 +183,5 @@ class Classifier : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

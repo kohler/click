@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "ethermirror.hh"
 #include <clicknet/ether.h>
+CLICK_DECLS
 
 EtherMirror::EtherMirror()
 {
@@ -45,4 +46,5 @@ EtherMirror::simple_action(Packet *p)
     return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherMirror)

@@ -1,7 +1,8 @@
-#ifndef IPRWPATTERNS_HH
-#define IPRWPATTERNS_HH
+#ifndef CLICK_IPRWPATTERNS_HH
+#define CLICK_IPRWPATTERNS_HH
 #include "elements/ip/iprw.hh"
 #include <click/hashmap.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -41,4 +42,5 @@ class IPRewriterPatterns : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -5,6 +5,7 @@
 #include <click/vector.hh>
 #include <click/string.hh>
 #include <click/packet.hh>
+CLICK_DECLS
 class Router;
 class Task;
 class Element;
@@ -321,4 +322,5 @@ Element::checked_output_push(int o, Packet *p) const
 }
 
 #undef CONNECTION_CTOR_INIT
+CLICK_ENDDECLS
 #endif

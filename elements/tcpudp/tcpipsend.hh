@@ -1,5 +1,9 @@
 #ifndef CLICK_TCPIPSEND_HH
 #define CLICK_TCPIPSEND_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -17,10 +21,6 @@
  * obvious meaning. Bits is the value of the 6 TCP flags.
  *
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <clicknet/tcp.h>
 
 class TCPIPSend : public Element {
 public:
@@ -40,6 +40,5 @@ private:
                        unsigned short, unsigned, unsigned, unsigned char);
 };
 
-
-
+CLICK_ENDDECLS
 #endif

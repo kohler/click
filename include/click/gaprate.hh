@@ -2,6 +2,7 @@
 #ifndef CLICK_GAPRATE_HH
 #define CLICK_GAPRATE_HH
 #include <click/glue.hh>
+CLICK_DECLS
 class ErrorHandler;
 
 class GapRate { public:
@@ -84,4 +85,5 @@ GapRate::need_update(const struct timeval &now)
   return ((int)need >= _sec_count);
 }
 
+CLICK_ENDDECLS
 #endif

@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 FixIPSrc::FixIPSrc()
 {
@@ -81,5 +82,6 @@ FixIPSrc::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(FixIPSrc)
 ELEMENT_MT_SAFE(FixIPSrc)

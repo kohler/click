@@ -19,6 +19,7 @@
 #include "rripmapper.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 RoundRobinIPMapper::RoundRobinIPMapper()
 {
@@ -98,6 +99,6 @@ RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow, Packet *)
   return 0;
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw)
 EXPORT_ELEMENT(RoundRobinIPMapper)

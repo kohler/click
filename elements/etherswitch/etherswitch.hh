@@ -1,8 +1,9 @@
-#ifndef ETHERSWITCH_HH
-#define ETHERSWITCH_HH
+#ifndef CLICK_ETHERSWITCH_HH
+#define CLICK_ETHERSWITCH_HH
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/hashmap.hh>
+CLICK_DECLS
 
 class EtherSwitch : public Element {
   
@@ -40,4 +41,5 @@ private:
   void broadcast(int source, Packet*);
 };
 
+CLICK_ENDDECLS
 #endif

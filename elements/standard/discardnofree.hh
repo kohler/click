@@ -2,6 +2,7 @@
 #define CLICK_DISCARDNOFREE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -34,4 +35,5 @@ class DiscardNoFree : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

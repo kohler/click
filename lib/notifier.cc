@@ -21,6 +21,7 @@
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/elemfilter.hh>
+CLICK_DECLS
 
 #define NUM_SIGNALS 4096
 static uint32_t signals[NUM_SIGNALS / 32];
@@ -154,3 +155,5 @@ Notifier::upstream_pull_signal(Element *e, int port, Task *t)
 
     return filter._signal;
 }
+
+CLICK_ENDDECLS

@@ -38,6 +38,8 @@
 # include <dlfcn.h>
 #endif
 
+CLICK_DECLS
+
 
 bool
 glob_match(const String &str, const String &pattern)
@@ -607,3 +609,5 @@ clickdl_load_package(String package, ErrorHandler *errh)
 }
 
 #endif
+
+CLICK_ENDDECLS

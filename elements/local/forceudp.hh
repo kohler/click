@@ -1,5 +1,8 @@
-#ifndef FORCEUDP_HH
-#define FORCEUDP_HH
+#ifndef CLICK_FORCEUDP_HH
+#define CLICK_FORCEUDP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -11,9 +14,6 @@
  * packet look like UDP. If DPORT is specified and not -1, forces
  * the destination port to be DPORT.
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class ForceUDP : public Element {
 public:
@@ -32,4 +32,5 @@ private:
   int _dport;
 };
 
+CLICK_ENDDECLS
 #endif

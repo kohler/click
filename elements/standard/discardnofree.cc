@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "discardnofree.hh"
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 DiscardNoFree::DiscardNoFree()
   : Element(1, 0), _task(this)
@@ -58,5 +59,6 @@ DiscardNoFree::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DiscardNoFree)
 ELEMENT_MT_SAFE(DiscardNoFree)

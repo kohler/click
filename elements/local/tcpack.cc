@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include "tcpbuffer.hh"
 #include "tcpack.hh"
+CLICK_DECLS
 
 TCPAck::TCPAck()
   : Element(2, 3), _timer(this)
@@ -203,6 +204,5 @@ TCPAck::send_ack()
   output(2).push(q);
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPAck)
-

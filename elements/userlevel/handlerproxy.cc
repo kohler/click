@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "handlerproxy.hh"
 #include <click/error.hh>
+CLICK_DECLS
 
 HandlerProxy::HandlerProxy()
   : _err_rcvs(0), _nerr_rcvs(0)
@@ -64,5 +65,6 @@ HandlerProxy::check_handler(const String &hname, bool, ErrorHandler *errh)
   return -1;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(HandlerProxy)

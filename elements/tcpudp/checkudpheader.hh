@@ -1,5 +1,8 @@
 #ifndef CLICK_CHECKUDPHEADER_HH
 #define CLICK_CHECKUDPHEADER_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -48,9 +51,6 @@ true.
 
 =a CheckIPHeader, CheckTCPHeader, MarkIPHeader */
 
-#include <click/element.hh>
-#include <click/atomic.hh>
-
 class CheckUDPHeader : public Element { public:
 
   CheckUDPHeader();
@@ -88,4 +88,5 @@ class CheckUDPHeader : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -3,6 +3,7 @@
 #define CLICK_ADAPTIVERED_HH
 #include "red.hh"
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -51,4 +52,5 @@ class AdaptiveRED : public RED { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,6 @@
 #ifndef CLICK_ATOMIC_HH
 #define CLICK_ATOMIC_HH
+CLICK_DECLS
 
 #if defined(__KERNEL__) && defined(__SMP__) /* && defined(__MTCLICK__) */
 
@@ -173,4 +174,5 @@ operator<=(const uatomic32_t &a, const uatomic32_t &b)
 
 typedef uatomic32_t u_atomic32_t;
 
+CLICK_ENDDECLS
 #endif

@@ -4,6 +4,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 class IPAddress { public:
   
@@ -189,4 +190,5 @@ hashcode(IPAddress a)
   return a.addr();
 }
 
+CLICK_ENDDECLS
 #endif

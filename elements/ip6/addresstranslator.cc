@@ -23,7 +23,7 @@
 #include <clicknet/icmp6.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
-
+CLICK_DECLS
 
 AddressTranslator::AddressTranslator()
   : _in_map(0), _out_map(0), _rover(0), _rover2(0), _nmappings(0)
@@ -785,7 +785,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
     }
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance

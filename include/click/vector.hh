@@ -1,5 +1,6 @@
 #ifndef CLICK_VECTOR_HH
 #define CLICK_VECTOR_HH
+CLICK_DECLS
 template <class T> class Subvector;
 
 template <class T>
@@ -167,4 +168,5 @@ class Vector<T *>: private Vector<void *> {
   
 };
 
+CLICK_ENDDECLS
 #endif

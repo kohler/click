@@ -23,6 +23,7 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 CheckIPHeader2::CheckIPHeader2()
 {
@@ -142,4 +143,5 @@ CheckIPHeader2::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckIPHeader2)

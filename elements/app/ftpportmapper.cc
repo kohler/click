@@ -23,6 +23,7 @@
 #include <click/elemfilter.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 FTPPortMapper::FTPPortMapper()
   : Element(1, 1), _pattern(0)
@@ -234,5 +235,6 @@ FTPPortMapper::simple_action(Packet *p)
   return wp;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(TCPRewriter)
 EXPORT_ELEMENT(FTPPortMapper)

@@ -1,6 +1,7 @@
 #ifndef CLICK_ALIGN_HH
 #define CLICK_ALIGN_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /* =c
  * Align(MODULUS, OFFSET)
@@ -45,4 +46,5 @@ class Align : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

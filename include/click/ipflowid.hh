@@ -2,6 +2,7 @@
 #ifndef CLICK_IPFLOWID_HH
 #define CLICK_IPFLOWID_HH
 #include <click/ipaddress.hh>
+CLICK_DECLS
 class Packet;
 
 class IPFlowID { public:
@@ -95,4 +96,5 @@ operator!=(const IPFlowID &a, const IPFlowID &b)
 
 StringAccum &operator<<(StringAccum &, const IPFlowID &);
 
+CLICK_ENDDECLS
 #endif

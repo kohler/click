@@ -4,6 +4,7 @@
 #include <click/glue.hh>
 #include <click/element.hh>
 #include "iproutetable.hh"
+CLICK_DECLS
 class Radix;
 
 /*
@@ -217,4 +218,5 @@ Radix::bits(unsigned x, unsigned k, unsigned char j)
     return (x >> k) & (0xffffffff >> (KEYSIZE-j));
 }
 
+CLICK_ENDDECLS
 #endif

@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 2; related-file-name: "../../../elements/standard/alignmentinfo.cc" -*-
 #ifndef CLICK_ALIGNMENTINFO_HH
 #define CLICK_ALIGNMENTINFO_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -21,8 +23,6 @@
  * This element is inserted automatically by click-align(1).
  * =a Align, click-align(1)
  */
-
-#include <click/element.hh>
 
 class AlignmentInfo : public Element { public:
 
@@ -46,4 +46,5 @@ class AlignmentInfo : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

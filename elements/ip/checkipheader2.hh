@@ -1,5 +1,7 @@
-#ifndef CHECKIPHEADER2_HH
-#define CHECKIPHEADER2_HH
+#ifndef CLICK_CHECKIPHEADER2_HH
+#define CLICK_CHECKIPHEADER2_HH
+#include "elements/ip/checkipheader.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -62,8 +64,6 @@ subdivided by error. Only available if the DETAILS keyword argument was true.
 
 =a CheckIPHeader, StripIPHeader, MarkIPHeader */
 
-#include "elements/ip/checkipheader.hh"
-
 class CheckIPHeader2 : public CheckIPHeader { public:
   
   CheckIPHeader2();
@@ -81,4 +81,5 @@ class CheckIPHeader2 : public CheckIPHeader { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

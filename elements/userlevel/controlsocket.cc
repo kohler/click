@@ -28,6 +28,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+CLICK_DECLS
 
 const char * const ControlSocket::protocol_version = "1.1";
 
@@ -610,5 +611,6 @@ ControlSocket::proxy_error_function(const String &h, void *thunk)
   return (h == cs->_proxied_handler ? cs->_proxied_errh : 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ControlSocket)

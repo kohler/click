@@ -20,6 +20,7 @@
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 Suppressor::Suppressor()
 {
@@ -127,4 +128,5 @@ Suppressor::add_handlers()
   add_write_handler("reset", write_reset, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Suppressor)

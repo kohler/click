@@ -1,6 +1,7 @@
 #ifndef CLICK_DEVIRTUALIZEINFO_HH
 #define CLICK_DEVIRTUALIZEINFO_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 class DevirtualizeInfo : public Element {
 
@@ -15,4 +16,5 @@ class DevirtualizeInfo : public Element {
 
 };
 
+CLICK_ENDDECLS
 #endif

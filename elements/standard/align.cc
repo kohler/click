@@ -20,6 +20,7 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 Align::Align()
   : Element(1, 1)
@@ -73,5 +74,6 @@ Align::pull(int)
   return (p ? smaction(p) : 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Align)
 ELEMENT_MT_SAFE(Align)

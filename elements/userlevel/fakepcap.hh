@@ -2,6 +2,7 @@
 #define CLICK_FAKEPCAP_HH
 #include <click/string.hh>
 #include <click/packet.hh>
+CLICK_DECLS
 
 #define FAKE_PCAP_MAGIC			0xa1b2c3d4
 #define	FAKE_MODIFIED_PCAP_MAGIC	0xa1b2cd34
@@ -72,4 +73,5 @@ fake_pcap_force_ip(WritablePacket *&p, int dlt)
     return fake_pcap_force_ip(reinterpret_cast<Packet *&>(p), dlt);
 }
 
+CLICK_ENDDECLS
 #endif

@@ -1,6 +1,7 @@
-#ifndef HOSTETHERFILTER_HH
-#define HOSTETHERFILTER_HH
+#ifndef CLICK_HOSTETHERFILTER_HH
+#define CLICK_HOSTETHERFILTER_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -65,4 +66,5 @@ class HostEtherFilter : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,8 @@
 #ifndef LOOKUPIPROUTE2_HH
 #define LOOKUPIPROUTE2_HH
+#include <click/glue.hh>
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,9 +17,6 @@
  * =a RadixIPLookup
  */
 
-#include <click/glue.hh>
-#include <click/element.hh>
-
 class LookupIPRoute2 : public Element {
 public:
   LookupIPRoute2();
@@ -28,5 +28,5 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
 };
 
+CLICK_ENDDECLS
 #endif
-

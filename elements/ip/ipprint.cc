@@ -33,6 +33,8 @@
 # include <stdio.h>
 #endif
 
+CLICK_DECLS
+
 IPPrint::IPPrint()
   : Element(1, 1)
 {
@@ -300,4 +302,5 @@ IPPrint::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPPrint)

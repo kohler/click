@@ -20,6 +20,7 @@
 #include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 MarkIPCE::MarkIPCE()
   : Element(1, 1)
@@ -102,5 +103,6 @@ MarkIPCE::add_handlers()
   add_read_handler("drops", read_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(MarkIPCE)
 ELEMENT_MT_SAFE(MarkIPCE)

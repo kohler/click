@@ -1,9 +1,9 @@
-#ifndef BRIDGEMESSAGE_HH
-#define BRIDGEMESSAGE_HH
-
+#ifndef CLICK_BRIDGEMESSAGE_HH
+#define CLICK_BRIDGEMESSAGE_HH
 #include <click/glue.hh>
 #include <click/string.hh>
 #include <click/integers.hh>
+CLICK_DECLS
 
 class BridgeMessage {
 public:
@@ -86,4 +86,5 @@ public:  uint32_t _cost; private: // Put in an incrementer JJJ
   static uint8_t _all_bridges[6];
 };
 
+CLICK_ENDDECLS
 #endif

@@ -4,6 +4,7 @@
 #include <click/hashmap.hh>
 #include <click/router.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 class LexerExtra;
 class VariableEnvironment;
 
@@ -178,5 +179,6 @@ class LexerExtra { public:
   virtual void require(String, ErrorHandler *);
 
 };
-  
+
+CLICK_ENDDECLS
 #endif

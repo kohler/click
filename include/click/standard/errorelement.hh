@@ -2,6 +2,7 @@
 #ifndef CLICK_ERRORELEMENT_HH
 #define CLICK_ERRORELEMENT_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -32,4 +33,5 @@ class ErrorElement : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

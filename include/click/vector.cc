@@ -18,6 +18,7 @@
 #include <click/glue.hh>
 #include <click/vector.hh>
 #include <click/subvector.hh>
+CLICK_DECLS
 
 template <class T>
 Vector<T>::Vector(const Vector<T> &o)
@@ -116,3 +117,5 @@ Vector<T>::swap(Vector<T> &o)
   o._n = n;
   o._cap = cap;
 }
+
+CLICK_ENDDECLS

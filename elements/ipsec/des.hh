@@ -1,5 +1,8 @@
-#ifndef IPSEC_DES_HH
-#define IPSEC_DES_HH
+#ifndef CLICK_IPSECDES_HH
+#define CLICK_IPSECDES_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -16,9 +19,6 @@
  *
  * =a IPsecESPEncap, IPsecESPUnencap, IPsecAuthSHA1
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 typedef unsigned char des_cblock[8];
 typedef struct des_ks_struct { 
@@ -62,4 +62,5 @@ private:
   des_key_schedule _ks;
 };
 
+CLICK_ENDDECLS
 #endif

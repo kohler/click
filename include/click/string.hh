@@ -4,6 +4,7 @@
 #ifdef HAVE_PERMSTRING
 # include "permstr.hh"
 #endif
+CLICK_DECLS
 
 class String { public:
   
@@ -443,4 +444,5 @@ operator+(PermString p1, PermString p2)
 
 int hashcode(const String &);
 
+CLICK_ENDDECLS
 #endif

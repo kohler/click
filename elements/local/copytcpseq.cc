@@ -19,6 +19,7 @@
 #include <click/confparse.hh>
 #include <clicknet/tcp.h>
 #include "copytcpseq.hh"
+CLICK_DECLS
 
 CopyTCPSeq::CopyTCPSeq()
   : Element(2, 2)
@@ -109,5 +110,5 @@ CopyTCPSeq::reset_write_handler
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CopyTCPSeq)
-

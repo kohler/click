@@ -22,7 +22,8 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
- 
+CLICK_DECLS
+
 LookupIP6Route::LookupIP6Route()
 {
   MOD_INC_USE_COUNT;
@@ -153,15 +154,5 @@ LookupIP6Route::push(int, Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(LookupIP6Route)
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,7 @@
 #ifndef CLICK_HASHSWITCH_HH
 #define CLICK_HASHSWITCH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -42,4 +43,5 @@ class HashSwitch : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

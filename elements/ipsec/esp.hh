@@ -1,5 +1,9 @@
-#ifndef IPSEC_ESP_HH
-#define IPSEC_ESP_HH
+#ifndef CLICK_IPSEC_ESP_HH
+#define CLICK_IPSEC_ESP_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -19,10 +23,6 @@
  * =a IPsecESPUnencap, IPsecAuthSHA1, IPsecDES 
  */
 
-#include <click/element.hh>
-#include <click/atomic.hh>
-#include <click/glue.hh>
-  
 struct esp_new { 
   uint32_t esp_spi;
   uint32_t esp_rpl;
@@ -52,5 +52,5 @@ private:
   enum { BLKS = 8 };
 };
 
+CLICK_ENDDECLS
 #endif
-

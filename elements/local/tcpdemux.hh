@@ -1,11 +1,11 @@
-
-#ifndef TCPDEMUX_HH
-#define TCPDEMUX_HH
+#ifndef CLICK_TCPDEMUX_HH
+#define CLICK_TCPDEMUX_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <clicknet/tcp.h>
 #include <click/bighashmap.hh>
 #include <click/ipflowid.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -50,5 +50,5 @@ public:
                    IPAddress da, unsigned short dp);
 };
 
+CLICK_ENDDECLS
 #endif
-

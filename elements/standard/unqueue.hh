@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/notifier.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -71,4 +72,5 @@ class Unqueue : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

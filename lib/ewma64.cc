@@ -17,9 +17,9 @@
  */
 
 #include <click/config.h>
-
 #ifdef HAVE_INT64_TYPES
 #include <click/ewma64.hh>
+CLICK_DECLS
 
 void
 DirectEWMA64::update_zero_period(unsigned period)
@@ -33,4 +33,6 @@ DirectEWMA64::update_zero_period(unsigned period)
 	    _avg += static_cast<int64_t>(-_avg + comp) >> stability_shift();
     }
 }
+
+CLICK_ENDDECLS
 #endif

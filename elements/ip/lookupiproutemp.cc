@@ -29,6 +29,7 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+CLICK_DECLS
 
 LookupIPRouteMP::LookupIPRouteMP()
 {
@@ -143,5 +144,6 @@ LookupIPRouteMP::push(int, Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(LookupIPRouteMP)

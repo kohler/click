@@ -1,6 +1,7 @@
 #ifndef CLICK_SWITCH_HH
 #define CLICK_SWITCH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -62,4 +63,5 @@ class Switch : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -3,6 +3,7 @@
 #define CLICK_RANDOMSWITCH_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -31,4 +32,5 @@ class RandomSwitch : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

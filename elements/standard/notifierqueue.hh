@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/notifier.hh>
 #include "simplequeue.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -76,4 +77,5 @@ class NotifierQueue : public SimpleQueue, public Notifier { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 InfiniteSource::InfiniteSource()
   : Element(0, 1), _packet(0), _task(this)
@@ -218,4 +219,5 @@ InfiniteSource::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(InfiniteSource)

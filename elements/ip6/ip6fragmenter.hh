@@ -1,5 +1,8 @@
-#ifndef IP6FRAGMENTER_HH
-#define IP6FRAGMENTER_HH
+#ifndef CLICK_IP6FRAGMENTER_HH
+#define CLICK_IP6FRAGMENTER_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -28,9 +31,6 @@
  *
  * =a ICMP6Error, CheckLength
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class IP6Fragmenter : public Element {
 
@@ -62,4 +62,5 @@ class IP6Fragmenter : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -3,6 +3,7 @@
 #define CLICK_RED_HH
 #include <click/element.hh>
 #include <click/ewma64.hh>
+CLICK_DECLS
 class Storage;
 
 /*
@@ -164,4 +165,5 @@ class RED : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

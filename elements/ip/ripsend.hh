@@ -1,8 +1,9 @@
-#ifndef RIPSEND_HH
-#define RIPSEND_HH
+#ifndef CLICK_RIPSEND_HH
+#define CLICK_RIPSEND_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -50,4 +51,5 @@ class RIPSend : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -18,12 +18,12 @@
  */
 
 #include <click/config.h>
-
 #include <click/packet.hh>
 #include <click/glue.hh>
 #ifdef CLICK_USERLEVEL
 #include <unistd.h>
 #endif
+CLICK_DECLS
 
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
 
@@ -424,3 +424,5 @@ Packet::shift_data(int offset, bool free_on_failure)
     return expensive_uniqueify(offset, tailroom_offset, free_on_failure);
   }
 }
+
+CLICK_ENDDECLS

@@ -1,11 +1,12 @@
 /* -*- c-basic-offset: 2 -*- */
-#ifndef ICMPREWRITER_HH
-#define ICMPREWRITER_HH
+#ifndef CLICK_ICMPREWRITER_HH
+#define CLICK_ICMPREWRITER_HH
 #include <click/element.hh>
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
 #include "elements/ip/iprw.hh"
 #include "elements/icmp/icmppingrewriter.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -74,4 +75,5 @@ class ICMPRewriter : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

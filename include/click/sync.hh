@@ -11,6 +11,7 @@
 # include <linux/sched.h>
 # define my_cpu current->processor
 #endif
+CLICK_DECLS
 
 // loop-in-cache spinlock implementation: 8 bytes. if the size of this class
 // changes, change size of padding in ReadWriteLock below.
@@ -246,6 +247,5 @@ class ReadWriteLock { public:
 
 #endif /* defined(__KERNEL__) && defined(__SMP__) */
 
+CLICK_ENDDECLS
 #endif
-
-

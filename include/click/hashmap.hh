@@ -1,5 +1,6 @@
 #ifndef CLICK_HASHMAP_HH
 #define CLICK_HASHMAP_HH
+CLICK_DECLS
 
 // K AND V REQUIREMENTS:
 //
@@ -134,4 +135,5 @@ hashcode(unsigned u)
   return u;
 }
 
+CLICK_ENDDECLS
 #endif

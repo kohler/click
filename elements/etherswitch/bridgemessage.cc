@@ -16,10 +16,10 @@
  */
 
 #include <click/config.h>
-
 #include "bridgemessage.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 String
 BridgeMessage::s(String tag) const {
@@ -209,5 +209,6 @@ uint8_t BridgeMessage::_all_bridges[6] = {
   0x01, 0x80, 0xc2, 0x00, 0x00, 0x00
 };
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(int64)
 ELEMENT_PROVIDES(EtherSwitchBridgeMessage)

@@ -1,5 +1,7 @@
-#ifndef STRIPIPHEADER_HH
-#define STRIPIPHEADER_HH
+#ifndef CLICK_STRIPIPHEADER_HH
+#define CLICK_STRIPIPHEADER_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -11,8 +13,6 @@
  *
  * =a CheckIPHeader, CheckIPHeader2, MarkIPHeader, UnstripIPHeader
  */
-
-#include <click/element.hh>
 
 class StripIPHeader : public Element {
 
@@ -28,4 +28,5 @@ class StripIPHeader : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

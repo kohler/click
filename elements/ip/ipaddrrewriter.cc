@@ -23,6 +23,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 
 void
 IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
@@ -275,5 +276,6 @@ IPAddrRewriter::add_handlers()
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPAddrRewriter)

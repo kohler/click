@@ -2,6 +2,7 @@
 #define CLICK_PRINT_HH
 #include <click/element.hh>
 #include <click/string.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -66,4 +67,5 @@ class Print : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

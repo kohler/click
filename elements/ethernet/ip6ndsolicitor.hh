@@ -1,5 +1,10 @@
-#ifndef IP6NDSOLICITOR_HH
-#define IP6NDSOLICITOR_HH
+#ifndef CLICK_IP6NDSOLICITOR_HH
+#define CLICK_IP6NDSOLICITOR_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ip6address.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -41,11 +46,6 @@
  * =a
  * IP6NDAdvertiser
  */
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ip6address.hh>
-#include <click/timer.hh>
 
 class IP6NDSolicitor : public Element {
  public:
@@ -106,5 +106,5 @@ class IP6NDSolicitor : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif
-

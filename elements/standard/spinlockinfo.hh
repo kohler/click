@@ -4,6 +4,7 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/sync.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -39,5 +40,5 @@ public:
   Spinlock *query(const String &, const String &) const;
 };
 
+CLICK_ENDDECLS
 #endif
-

@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_LINEARIPLOOKUP_HH
 #define CLICK_LINEARIPLOOKUP_HH
+#include "iproutetable.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -65,8 +67,6 @@ Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
 
 =a StaticIPLookup, RadixIPLookup */
 
-#include "iproutetable.hh"
-
 #define IP_RT_CACHE2 1
 
 class LinearIPLookup : public IPRouteTable { public:
@@ -116,4 +116,5 @@ class LinearIPLookup : public IPRouteTable { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,7 +1,8 @@
-#ifndef IPPRINT_HH
-#define IPPRINT_HH
+#ifndef CLICK_IPPRINT_HH
+#define CLICK_IPPRINT_HH
 #include <click/element.hh>
 #include <click/string.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -118,4 +119,5 @@ class IPPrint : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

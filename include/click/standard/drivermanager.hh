@@ -3,6 +3,7 @@
 #define CLICK_DRIVERMANAGER_HH
 #include <click/element.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -131,4 +132,5 @@ class DriverManager : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

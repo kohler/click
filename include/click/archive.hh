@@ -3,6 +3,7 @@
 #define CLICK_ARCHIVE_HH
 #include <click/string.hh>
 #include <click/vector.hh>
+CLICK_DECLS
 class ErrorHandler;
 
 struct ArchiveElement {
@@ -24,4 +25,5 @@ int separate_ar_string(const String &, Vector<ArchiveElement> &,
 		       ErrorHandler * = 0);
 String create_ar_string(const Vector<ArchiveElement> &, ErrorHandler * = 0);
 
+CLICK_ENDDECLS
 #endif

@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <ctype.h>
+CLICK_DECLS
 
 KernelHandlerProxy::KernelHandlerProxy()
   : _detailed_error_message(false)
@@ -240,5 +241,6 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
     return 0;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel HandlerProxy)
 EXPORT_ELEMENT(KernelHandlerProxy)

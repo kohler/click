@@ -17,11 +17,11 @@
 
 #include <click/config.h>
 #include "etherswitch.hh"
-
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
 #include <click/bitvector.hh>
+CLICK_DECLS
 
 EtherSwitch::EtherSwitch()
   : _table(0), _timeout(300)
@@ -132,9 +132,12 @@ EtherSwitch::add_handlers()
   add_read_handler("table", read_table, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherSwitch)
 
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
+CLICK_DECLS
 template class HashMap<EtherAddress, EtherSwitch::AddrInfo*>;
+CLICK_ENDDECLS
 #endif

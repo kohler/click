@@ -23,6 +23,7 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 DriverManager::DriverManager()
     : _timer(this)
@@ -231,5 +232,6 @@ DriverManager::run_scheduled()
 	/* nada */;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DriverManager)
 ELEMENT_HEADER(<click/standard/drivermanager.hh>)

@@ -1,5 +1,9 @@
-#ifndef DECIPTTL_HH
-#define DECIPTTL_HH
+#ifndef CLICK_DECIPTTL_HH
+#define CLICK_DECIPTTL_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -25,10 +29,6 @@
  * =a ICMPError, CheckIPHeader
  */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
-
 class DecIPTTL : public Element { public:
 
   DecIPTTL();
@@ -52,4 +52,5 @@ class DecIPTTL : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

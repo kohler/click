@@ -1,5 +1,8 @@
-#ifndef CHECKIPHEADER_HH
-#define CHECKIPHEADER_HH
+#ifndef CLICK_CHECKIPHEADER_HH
+#define CLICK_CHECKIPHEADER_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -59,9 +62,6 @@ subdivided by error. Only available if the DETAILS keyword argument was true.
 
 =a CheckIPHeader2, MarkIPHeader, SetIPChecksum, StripIPHeader */
 
-#include <click/element.hh>
-#include <click/atomic.hh>
-
 class CheckIPHeader : public Element { public:
 
   CheckIPHeader();
@@ -107,4 +107,5 @@ class CheckIPHeader : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

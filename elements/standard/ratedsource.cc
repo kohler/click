@@ -22,6 +22,7 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 const unsigned RatedSource::NO_LIMIT;
 
@@ -242,5 +243,5 @@ RatedSource::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RatedSource)
-

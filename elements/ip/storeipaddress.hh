@@ -2,6 +2,7 @@
 #define STOREADDRESS_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -32,4 +33,5 @@ class StoreIPAddress : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

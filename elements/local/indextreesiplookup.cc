@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "indextreesiplookup.hh"
+CLICK_DECLS
 
 IndexTreesIPLookup::IndexTreesIPLookup()
 {
@@ -70,5 +71,5 @@ IndexTreesIPLookup::lookup_route(IPAddress d, IPAddress &gw)
   int h = hash(d);
 }
 
+CLICK_ENDDECLS
 // EXPORT_ELEMENT(IndexTreesIPLookup)
-

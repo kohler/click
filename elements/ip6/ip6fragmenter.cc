@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IP6Fragmenter::IP6Fragmenter()
   : _drops(0)
@@ -162,21 +163,5 @@ IP6Fragmenter::push(int, Packet *p)
     }
 }
 
-//  Packet *
-//  IP6Fragmenter::pull(int)
-//  {
-//    Packet *p = input(0).pull();
-//    if(p)
-//      {
-//        //click_chatter("IP6Fragmenter::pull before smaction");
-//        p = smaction(p);
-//      }
-//    else
-//      {
-//        //click_chatter(" IP6Fragmenter::pull, not have p"); 
-//      }
-//    return(p); 
-//  }
-
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IP6Fragmenter)

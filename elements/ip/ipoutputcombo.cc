@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 IPOutputCombo::IPOutputCombo()
   : Element(1, 5)
@@ -202,5 +203,6 @@ IPOutputCombo::push(int, Packet *p_in)
   output(2).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPOutputCombo)
 ELEMENT_MT_SAFE(IPOutputCombo)

@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 ScheduleInfo::ScheduleInfo()
 {
@@ -173,5 +174,6 @@ ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
 #endif
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ScheduleInfo)
 ELEMENT_HEADER(<click/standard/scheduleinfo.hh>)

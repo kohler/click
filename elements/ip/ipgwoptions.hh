@@ -1,5 +1,9 @@
-#ifndef IPGWOPTIONS_HH
-#define IPGWOPTIONS_HH
+#ifndef CLICK_IPGWOPTIONS_HH
+#define CLICK_IPGWOPTIONS_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -29,10 +33,6 @@
  *
  * =a IPDstOptions, ICMPError */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
-
 class IPGWOptions : public Element {
   
   uatomic32_t _drops;
@@ -59,4 +59,5 @@ class IPGWOptions : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include "duppath.hh"
+CLICK_DECLS
 
 DupPath::DupPath()
   : Element(1,2)
@@ -75,6 +76,6 @@ DupPath::pull(int)
   return deq();
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DupPath)
 ELEMENT_MT_SAFE(DupPath)
-

@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
+CLICK_DECLS
 
 IPEncap::IPEncap()
   : Element(1, 1)
@@ -174,5 +175,6 @@ IPEncap::add_handlers()
   add_write_handler("dst", reconfigure_positional_handler, (void *)2);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPEncap)
 ELEMENT_MT_SAFE(IPEncap)

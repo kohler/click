@@ -19,6 +19,7 @@
 #include "decipttl.hh"
 #include <clicknet/ip.h>
 #include <click/glue.hh>
+CLICK_DECLS
 
 DecIPTTL::DecIPTTL()
   : Element(1, 1)
@@ -97,5 +98,6 @@ DecIPTTL::add_handlers()
   add_read_handler("drops", DecIPTTL_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DecIPTTL)
 ELEMENT_MT_SAFE(DecIPTTL)

@@ -1,6 +1,7 @@
 #ifndef CLICK_SETTIMESTAMP_HH
 #define CLICK_SETTIMESTAMP_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -40,4 +41,5 @@ class SetTimestamp : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

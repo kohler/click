@@ -24,6 +24,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 ICMPSendPings::ICMPSendPings()
   : _timer(this)
@@ -104,4 +105,5 @@ ICMPSendPings::run_scheduled()
   _ip_id++;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ICMPSendPings)

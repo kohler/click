@@ -24,20 +24,28 @@
 #include <click/etheraddress.hh>
 
 #include <click/vector.cc>
+CLICK_DECLS
 template class Vector<Router::Hookup>;
 template class Vector<int>;
 template class Vector<unsigned int>;
 template class Vector<String>;
+CLICK_ENDDECLS
 
 #include <click/hashmap.cc>
+CLICK_DECLS
 template class HashMap<String, int>;
 template class HashMapIterator<String, int>;
+CLICK_ENDDECLS
 
 #include <click/bighashmap.cc>
+CLICK_DECLS
 template class BigHashMap<IPAddress, unsigned>;
 template class BigHashMap<IPFlowID, bool>;
 template class BigHashMapIterator<IPAddress, unsigned>;
 template class BigHashMapIterator<IPFlowID, bool>;
+CLICK_ENDDECLS
 
 #include <click/ewma.cc>
+CLICK_DECLS
 template class DirectEWMAX<4, 10>;
+CLICK_ENDDECLS

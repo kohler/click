@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "nullelement.hh"
+CLICK_DECLS
 
 NullElement::NullElement()
   : Element(1, 1)
@@ -69,6 +70,7 @@ PullNullElement::pull(int)
   return input(0).pull();
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(NullElement)
 EXPORT_ELEMENT(PushNullElement)
 EXPORT_ELEMENT(PullNullElement)

@@ -1,5 +1,12 @@
 #ifndef CLICK_IPRATEMON_HH
 #define CLICK_IPRATEMON_HH
+#include <click/glue.hh>
+#include <clicknet/ip.h>
+#include <click/element.hh>
+#include <click/ewma.hh>
+#include <click/vector.hh>
+#include <click/packet_anno.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -57,13 +64,6 @@
  * monitor subnet or host addresses (e.g. 18.26.4.*).
  *
  * =a IPFlexMonitor, CompareBlock */
-
-#include <click/glue.hh>
-#include <clicknet/ip.h>
-#include <click/element.hh>
-#include <click/ewma.hh>
-#include <click/vector.hh>
-#include <click/packet_anno.hh>
 
 struct IPRateMonitor_HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
@@ -313,4 +313,5 @@ IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
     update(ip->ip_dst.s_addr, val, p, false, update_ewma);
 }
 
+CLICK_ENDDECLS
 #endif /* CLICK_IPRATEMON_HH */

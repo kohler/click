@@ -1,5 +1,8 @@
-#ifndef IPSEC_DESP_HH
-#define IPSEC_DESP_HH
+#ifndef CLICK_IPSEC_DESP_HH
+#define CLICK_IPSEC_DESP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -13,9 +16,6 @@
  *
  * =a IPsecESPUnencap, IPsecDES, IPsecAuthSHA1
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class IPsecESPUnencap : public Element {
 public:
@@ -31,5 +31,5 @@ public:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif
-

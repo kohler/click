@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 ToyTCP::ToyTCP()
   : _timer(this)
@@ -213,4 +214,5 @@ ToyTCP::tcp_output(Packet *xp)
   _out++;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ToyTCP)

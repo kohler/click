@@ -20,6 +20,7 @@
 #include "rrunqueue.hh"
 #include <click/confparse.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 RoundRobinUnqueue::RoundRobinUnqueue()
   : _task(this), _next(0)
@@ -101,5 +102,6 @@ RoundRobinUnqueue::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RoundRobinUnqueue)
 ELEMENT_MT_SAFE(RoundRobinUnqueue)

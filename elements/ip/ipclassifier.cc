@@ -20,6 +20,7 @@
 #include <click/glue.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 IPClassifier::IPClassifier()
 {
@@ -49,6 +50,7 @@ IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
   return IPFilter::configure(new_conf, errh);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPFilter)
 EXPORT_ELEMENT(IPClassifier)
 ELEMENT_MT_SAFE(IPClassifier)

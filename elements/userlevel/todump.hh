@@ -6,6 +6,7 @@
 #include <click/task.hh>
 #include <click/notifier.hh>
 #include <stdio.h>
+CLICK_DECLS
 
 /*
 =c
@@ -107,4 +108,5 @@ class ToDump : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

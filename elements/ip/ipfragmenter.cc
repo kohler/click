@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IPFragmenter::IPFragmenter()
 {
@@ -205,6 +206,6 @@ IPFragmenter::add_handlers()
     add_read_handler("fragments", IPFragmenter_read_fragments, 0);
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPFragmenter)
 ELEMENT_MT_SAFE(IPFragmenter)

@@ -1,5 +1,8 @@
 #ifndef CLICK_CHECKCRC32_HH
 #define CLICK_CHECKCRC32_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -12,9 +15,6 @@
  * Otherwise, drop the packet.
  * =a SetCRC32
  */
-
-#include <click/element.hh>
-#include <click/atomic.hh>
 
 class EtherAddress;
 
@@ -36,4 +36,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

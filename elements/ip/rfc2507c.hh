@@ -1,6 +1,12 @@
-#ifndef RFC2507C_HH
-#define RFC2507C_HH
+#ifndef CLICK_RFC2507C_HH
+#define CLICK_RFC2507C_HH
 #include <click/element.hh>
+#include <click/hashmap.hh>
+#include <click/glue.hh>
+#include <click/ipflowid.hh>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * RFC2507 IPv4/TCP header compressor.
@@ -12,12 +18,6 @@
  * of output on a different output() and let further modules
  * sort it out. Then we wouldn't be AGNOSTIC...
  */
-
-#include <click/hashmap.hh>
-#include <click/glue.hh>
-#include <click/ipflowid.hh>
-#include <clicknet/ip.h>
-#include <clicknet/tcp.h>
 
 class RFC2507c : public Element {
 public:
@@ -67,4 +67,5 @@ private:
   Packet *make_compressed(int cid, Packet *p);
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_RATEDSPLITTER_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -61,4 +62,5 @@ class RatedSplitter : public Element { protected:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,7 @@
-#ifndef ICMPPINGRESPONDER_HH
-#define ICMPPINGRESPONDER_HH
+#ifndef CLICK_ICMPPINGRESPONDER_HH
+#define CLICK_ICMPPINGRESPONDER_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -24,8 +26,6 @@ there are two outputs; otherwise, they are dropped.
 
 ICMPSendPings, ICMPError */
 
-#include <click/element.hh>
-
 class ICMPPingResponder : public Element { public:
   
   ICMPPingResponder();
@@ -41,4 +41,5 @@ class ICMPPingResponder : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -18,11 +18,11 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 IPAddress::IPAddress(const unsigned char *data)
 {
@@ -95,3 +95,5 @@ operator<<(StringAccum &sa, IPAddress ipa)
   sa.append(buf, amt);
   return sa;
 }
+
+CLICK_ENDDECLS

@@ -2,6 +2,7 @@
 #ifndef CLICK_ELEMFILTER_HH
 #define CLICK_ELEMFILTER_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 class ElementFilter { public:
 
@@ -48,4 +49,5 @@ ElementFilter::check_match(Element *, int)
     return false;
 }
 
+CLICK_ENDDECLS
 #endif

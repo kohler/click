@@ -1,5 +1,16 @@
 #ifndef CLICK_FROMDEVICE_HH
 #define CLICK_FROMDEVICE_HH
+#include <click/element.hh>
+#ifdef __linux__
+# define FROMDEVICE_LINUX 1
+#elif defined(HAVE_PCAP)
+# define FROMDEVICE_PCAP 1
+extern "C" {
+# include <pcap.h>
+void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
+}
+#endif
+CLICK_DECLS
 
 /*
 =title FromDevice.u
@@ -81,18 +92,6 @@ Returns a string indicating the encapsulation type on this link. Can be
 
 =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
-#include <click/element.hh>
-
-#ifdef __linux__
-# define FROMDEVICE_LINUX 1
-#elif defined(HAVE_PCAP)
-# define FROMDEVICE_PCAP 1
-extern "C" {
-# include <pcap.h>
-void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
-}
-#endif
-
 class FromDevice : public Element { public:
 
   enum ConfigurePhase {
@@ -155,4 +154,5 @@ class FromDevice : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

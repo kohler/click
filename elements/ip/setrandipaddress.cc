@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "setrandipaddress.hh"
 #include <click/confparse.hh>
+CLICK_DECLS
 
 SetRandIPAddress::SetRandIPAddress()
   : Element(1, 1)
@@ -83,5 +84,6 @@ SetRandIPAddress::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetRandIPAddress)
 ELEMENT_MT_SAFE(SetRandIPAddress)

@@ -1,5 +1,9 @@
-#ifndef IPSEC_AUTH_SHA1_HH
-#define IPSEC_AUTH_SHA1_HH
+#ifndef CLICK_IPSECAUTHSHA1_HH
+#define CLICK_IPSECAUTHSHA1_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -15,10 +19,6 @@
  * =a IPsecESPEncap, IPsecDES 
  */
 
-#include <click/element.hh>
-#include <click/atomic.hh>
-#include <click/glue.hh>
-  
 class IPsecAuthSHA1 : public Element {
 
 public:
@@ -46,5 +46,5 @@ private:
   enum { COMPUTE_AUTH = 0, VERIFY_AUTH = 1 };
 };
 
+CLICK_ENDDECLS
 #endif
-

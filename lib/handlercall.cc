@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 const char * const HandlerCall::READ_MARKER = "r";
 
@@ -177,3 +178,5 @@ HandlerCall::unparse(const Element *context) const
 	    return name + " " + cp_quote(_value);
     }
 }
+
+CLICK_ENDDECLS

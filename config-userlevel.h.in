@@ -100,6 +100,12 @@ inline void *operator new(size_t, void *v) { return v; }
 #endif
 #define HAVE_PLACEMENT_NEW 1
 
+/* Define macros that surround Click declarations. */
+#define CLICK_DECLS		/* */
+#define CLICK_ENDDECLS		/* */
+#define CLICK_USING_DECLS	/* */
+#define CLICK_NAME(name)	name
+
 #endif /* __cplusplus */
 
-#endif /* CLICK_CONFIG_H */
+#endif /* CLICK_CONFIG_USERLEVEL_H */

@@ -1,14 +1,14 @@
 // -*- c-basic-offset: 2; related-file-name: "../../lib/ip6table.cc" -*-
 #ifndef CLICK_IP6TABLE_HH
 #define CLICK_IP6TABLE_HH
+#include <click/glue.hh>
+#include <click/vector.hh>
+#include <click/ip6address.hh>
+CLICK_DECLS
 
 // IP6 routing table.
 // Lookup by longest prefix.
 // Each entry contains a gateway and an output index.
-
-#include <click/glue.hh>
-#include <click/vector.hh>
-#include <click/ip6address.hh>
 
 class IP6Table { public:
   
@@ -34,4 +34,5 @@ class IP6Table { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -27,7 +27,7 @@
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
-
+CLICK_DECLS
 
 CheckIP6Header::CheckIP6Header()
   : _bad_src(0), _drops(0)
@@ -169,4 +169,5 @@ CheckIP6Header::add_handlers()
   add_read_handler("drops", CheckIP6Header_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckIP6Header)

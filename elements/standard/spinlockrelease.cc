@@ -16,6 +16,7 @@
 #include <click/error.hh>
 #include "spinlockinfo.hh"
 #include "spinlockrelease.hh"
+CLICK_DECLS
 
 int
 SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
@@ -35,6 +36,5 @@ SpinlockRelease::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SpinlockRelease)
-

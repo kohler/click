@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "iproutetable.hh"
+CLICK_DECLS
 
 void *
 IPRouteTable::cast(const char *name)
@@ -183,4 +184,5 @@ IPRouteTable::table_handler(Element *e, void *)
     return r->dump_routes();
 }
 
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(IPRouteTable)

@@ -20,6 +20,7 @@
 #include "setpackettype.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SetPacketType::SetPacketType()
     : Element(1, 1)
@@ -87,5 +88,6 @@ SetPacketType::simple_action(Packet *p)
     return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetPacketType)
 ELEMENT_MT_SAFE(SetPacketType)

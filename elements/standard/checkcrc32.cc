@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <click/crc32.h>
 #include "checkcrc32.hh"
+CLICK_DECLS
 
 CheckCRC32::CheckCRC32()
   : Element(1, 1)
@@ -58,6 +59,6 @@ CheckCRC32::simple_action(Packet *p)
   return 0;
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckCRC32)
 ELEMENT_MT_SAFE(CheckCRC32)

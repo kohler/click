@@ -1,17 +1,17 @@
-#ifndef RFC2507D_HH
-#define RFC2507D_HH
+#ifndef CLICK_RFC2507D_HH
+#define CLICK_RFC2507D_HH
 #include <click/element.hh>
+#include <click/hashmap.hh>
+#include <click/glue.hh>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * RFC2507 IPv4/TCP header de-compressor.
  * Input packets should be as produced by RFC2507c.
  * Spits out IP packets.
  */
-
-#include <click/hashmap.hh>
-#include <click/glue.hh>
-#include <clicknet/ip.h>
-#include <clicknet/tcp.h>
 
 class RFC2507d : public Element {
 public:
@@ -52,4 +52,5 @@ private:
   void decode(const u_char * &in, unsigned int &);
 };
 
+CLICK_ENDDECLS
 #endif

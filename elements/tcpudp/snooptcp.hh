@@ -6,6 +6,7 @@
 #include <click/hashmap.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * SnoopTCP
@@ -111,5 +112,5 @@ struct SnoopTCP::PCB {
   
 };
 
-
+CLICK_ENDDECLS
 #endif

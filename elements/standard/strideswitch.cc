@@ -20,6 +20,7 @@
 #include "strideswitch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 StrideSwitch::StrideSwitch()
 {
@@ -56,5 +57,6 @@ StrideSwitch::push(int, Packet *p)
   output(o).push(p);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(StrideSched)
 EXPORT_ELEMENT(StrideSwitch)

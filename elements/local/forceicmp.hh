@@ -1,5 +1,8 @@
-#ifndef FORCEICMP_HH
-#define FORCEICMP_HH
+#ifndef CLICK_FORCEICMP_HH
+#define CLICK_FORCEICMP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -10,9 +13,6 @@
  * Sets the ICMP checksum of an ICMP-in-IP packet. Optionally
  * sets the TYPE and CODE of the ICMP header.
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class ForceICMP : public Element {
 public:
@@ -32,4 +32,5 @@ private:
   int _code;
 };
 
+CLICK_ENDDECLS
 #endif

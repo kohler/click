@@ -27,6 +27,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "elements/ipsec/sha1_impl.hh"
+CLICK_DECLS
 
 #define SHA_DIGEST_LEN 20
 
@@ -120,6 +121,6 @@ IPsecAuthSHA1::add_handlers()
   add_read_handler("drops", drop_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPsecAuthSHA1)
 ELEMENT_MT_SAFE(IPsecAuthSHA1)
-

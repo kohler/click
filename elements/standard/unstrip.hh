@@ -1,6 +1,7 @@
 #ifndef CLICK_UNSTRIP_HH
 #define CLICK_UNSTRIP_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -36,4 +37,5 @@ class Unstrip : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

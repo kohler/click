@@ -18,10 +18,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 EtherAddress::EtherAddress(const unsigned char *addr)
 {
@@ -48,3 +48,5 @@ operator<<(StringAccum &sa, const EtherAddress &ea)
   sa.append(buf, 17);
   return sa;
 }
+
+CLICK_ENDDECLS

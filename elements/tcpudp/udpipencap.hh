@@ -1,5 +1,10 @@
 #ifndef CLICK_UDPIPENCAP_HH
 #define CLICK_UDPIPENCAP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+#include <clicknet/udp.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -20,11 +25,6 @@
  *   UDPIPEncap(1.0.0.1, 1234, 2.0.0.2, 1234)
  * =a Strip, IPEncap
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
-#include <clicknet/udp.h>
 
 class UDPIPEncap : public Element { public:
 
@@ -53,4 +53,5 @@ class UDPIPEncap : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

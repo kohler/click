@@ -4,6 +4,7 @@
 #include <click/ewma.hh>
 #include <click/atomic.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -63,4 +64,5 @@ class AverageCounter : public Element { protected:
   
 };
 
+CLICK_ENDDECLS
 #endif

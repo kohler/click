@@ -1,5 +1,8 @@
 #ifndef CLICK_SETIPDSCP_HH
 #define CLICK_SETIPDSCP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -13,9 +16,6 @@
  * and passes the packet to output 0.
  * The DSCP is the upper 6 bits of the IP TOS field.
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class SetIPDSCP : public Element {
 
@@ -42,4 +42,5 @@ class SetIPDSCP : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

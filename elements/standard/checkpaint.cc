@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 CheckPaint::CheckPaint()
   : Element(1, 1)
@@ -66,4 +67,5 @@ CheckPaint::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckPaint)

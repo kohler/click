@@ -47,6 +47,8 @@
 # endif
 #endif
 
+CLICK_DECLS
+
 ToDevice::ToDevice()
   : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false)
 {
@@ -211,5 +213,6 @@ ToDevice::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(FromDevice userlevel)
 EXPORT_ELEMENT(ToDevice)

@@ -1,9 +1,9 @@
-
 #include <click/config.h>
 #include "msqueue.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 #define PREFETCH    1
 #define BATCHING    1
@@ -150,4 +150,5 @@ MSQueue::add_handlers()
   add_read_handler("drops", read_handler, (void *)2);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(MSQueue)

@@ -1,6 +1,7 @@
 #ifndef CLICK_CHECKLENGTH_HH
 #define CLICK_CHECKLENGTH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -39,4 +40,5 @@ class CheckLength : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

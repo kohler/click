@@ -1,8 +1,7 @@
-
-#ifndef DUPPATH_HH
-#define DUPPATH_HH
-
+#ifndef CLICK_DUPPATH_HH
+#define CLICK_DUPPATH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 class DupPath : public Element {
   struct {
@@ -29,4 +28,5 @@ class DupPath : public Element {
   Packet *pull(int port);
 };
 
+CLICK_ENDDECLS
 #endif

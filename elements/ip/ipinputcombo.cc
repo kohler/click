@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 #include <click/standard/alignmentinfo.hh>
+CLICK_DECLS
 
 IPInputCombo::IPInputCombo()
   : _bad_src(0)
@@ -187,5 +188,6 @@ IPInputCombo::add_handlers()
   add_read_handler("drops", IPInputCombo_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPInputCombo)
 ELEMENT_MT_SAFE(IPInputCombo)

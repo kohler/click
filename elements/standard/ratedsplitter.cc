@@ -20,6 +20,7 @@
 #include <click/glue.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 RatedSplitter::RatedSplitter()
   : Element(1, 2)
@@ -95,4 +96,5 @@ RatedSplitter::add_handlers()
   add_write_handler("rate", rate_write_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RatedSplitter)

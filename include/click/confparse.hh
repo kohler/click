@@ -3,6 +3,7 @@
 #define CLICK_CONFPARSE_HH
 #include <click/string.hh>
 #include <click/vector.hh>
+CLICK_DECLS
 class ErrorHandler;
 class StringAccum;
 #ifndef CLICK_TOOL
@@ -269,4 +270,5 @@ struct cp_value {
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT
 #undef CP_CONTEXT
+CLICK_ENDDECLS
 #endif

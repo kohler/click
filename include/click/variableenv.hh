@@ -3,6 +3,7 @@
 #define CLICK_VARIABLEENVIRONMENT_HH
 #include <click/string.hh>
 #include <click/vector.hh>
+CLICK_DECLS
 
 class VariableEnvironment { public:
   
@@ -29,4 +30,5 @@ class VariableEnvironment { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

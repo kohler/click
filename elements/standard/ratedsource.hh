@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/gaprate.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -108,4 +109,5 @@ class RatedSource : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

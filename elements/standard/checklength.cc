@@ -19,6 +19,7 @@
 #include "checklength.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 CheckLength::CheckLength()
   : Element(1, 1)
@@ -67,5 +68,6 @@ CheckLength::pull(int)
     return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckLength)
 ELEMENT_MT_SAFE(CheckLength)

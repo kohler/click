@@ -2,6 +2,8 @@
 #define CLICK_QUEUE_HH
 #include <click/element.hh>
 #include <click/standard/storage.hh>
+#error "you should not include this file"
+CLICK_DECLS
 
 /*
 =c
@@ -124,4 +126,5 @@ Queue::head() const
   return (_head != _tail ? _q[_head] : 0);
 }
 
+CLICK_ENDDECLS
 #endif

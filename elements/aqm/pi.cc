@@ -25,6 +25,7 @@
 #include <click/router.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 #define PI_DEBUG 0
 
@@ -359,6 +360,6 @@ PI::add_handlers()
     add_read_handler("avg_queue_size", read_parameter, (void *)3);
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(int64 false)
 EXPORT_ELEMENT(PI)

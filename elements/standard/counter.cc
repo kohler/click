@@ -20,12 +20,11 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/handlercall.hh>
+CLICK_DECLS
 
 #ifdef HAVE_INT64_TYPES
-# define PARSEVAL cpUnsigned64
 # define PARSECMD cp_unsigned64
 #else
-# define PARSEVAL cpUnsigned
 # define PARSECMD cp_unsigned
 #endif
 
@@ -208,5 +207,5 @@ Counter::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Counter)

@@ -2,6 +2,7 @@
 #define CLICK_BANDWIDTHMETER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -63,4 +64,5 @@ class BandwidthMeter : public Element { protected:
   
 };
 
+CLICK_ENDDECLS
 #endif

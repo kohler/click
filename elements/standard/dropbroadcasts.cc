@@ -1,6 +1,7 @@
 #include <click/config.h>
 #include "dropbroadcasts.hh"
 #include <click/glue.hh>
+CLICK_DECLS
 
 DropBroadcasts::DropBroadcasts()
   : Element(1, 1)
@@ -61,5 +62,6 @@ DropBroadcasts::add_handlers()
   add_read_handler("drops", dropbroadcasts_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DropBroadcasts)
 ELEMENT_MT_SAFE(DropBroadcasts)

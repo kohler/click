@@ -1,6 +1,7 @@
 #ifndef CLICK_BWRATEDSPLITTER_HH
 #define CLICK_BWRATEDSPLITTER_HH
 #include "elements/standard/ratedsplitter.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -36,4 +37,5 @@ class BandwidthRatedSplitter : public RatedSplitter {
 
 };
 
+CLICK_ENDDECLS
 #endif

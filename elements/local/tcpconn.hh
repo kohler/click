@@ -1,10 +1,11 @@
-#ifndef TCPCONN_HH
-#define TCPCONN_HH
+#ifndef CLICK_TCPCONN_HH
+#define CLICK_TCPCONN_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <clicknet/tcp.h>
 #include <click/bighashmap.hh>
 #include <click/ipflowid.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -63,5 +64,6 @@ public:
     (const String &, Element *, void *, ErrorHandler *);
 };
 
+CLICK_ENDDECLS
 #endif
 

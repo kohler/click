@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 EtherEncap::EtherEncap()
   : Element(1, 1)
@@ -100,4 +101,5 @@ EtherEncap::add_handlers()
   add_write_handler("dst", reconfigure_positional_handler, (void *)2);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherEncap)

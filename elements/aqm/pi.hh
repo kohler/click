@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/ewma64.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 class Storage;
 
 class PI : public Element { public:
@@ -63,7 +64,7 @@ class PI : public Element { public:
 
     static const int MAX_RAND=2147483647;
 
-
 };
 
+CLICK_ENDDECLS
 #endif

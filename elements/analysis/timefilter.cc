@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/handlercall.hh>
+CLICK_DECLS
 
 TimeFilter::TimeFilter()
     : Element(1, 1), _last_h(0)
@@ -186,4 +187,5 @@ TimeFilter::add_handlers()
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TimeFilter)

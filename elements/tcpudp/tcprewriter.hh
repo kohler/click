@@ -2,6 +2,7 @@
 #define CLICK_TCPREWRITER_HH
 #include "elements/ip/iprw.hh"
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
 =c
@@ -155,4 +156,5 @@ TCPRewriter::TCPMapping::delta_for(tcp_seq_t seqno) const
   return (SEQ_GEQ(seqno, _trigger) ? _delta : _old_delta);
 }
 
+CLICK_ENDDECLS
 #endif

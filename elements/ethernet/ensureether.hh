@@ -1,5 +1,8 @@
-#ifndef ENSUREETHER_HH
-#define ENSUREETHER_HH
+#ifndef CLICK_ENSUREETHER_HH
+#define CLICK_ENSUREETHER_HH
+#include <click/element.hh>
+#include <clicknet/ether.h>
+CLICK_DECLS
 
 /*
 =c
@@ -35,9 +38,6 @@ For IP packets you probably want to use ARPQuerier instead.
 
 EtherEncap */
 
-#include <click/element.hh>
-#include <clicknet/ether.h>
-
 class EnsureEther : public Element { public:
   
   EnsureEther();
@@ -59,4 +59,5 @@ class EnsureEther : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

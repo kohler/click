@@ -2,6 +2,7 @@
 #ifndef CLICK_IP6FLOWID_HH
 #define CLICK_IP6FLOWID_HH
 #include <click/ip6address.hh>
+CLICK_DECLS
 class Packet;
 
 class IP6FlowID { public:
@@ -69,7 +70,6 @@ IP6FlowID::rev() const
 inline unsigned
 IP6FlowID::hashcode() const
 { 
-#define CHUCK_MAGIC 0x4c6d92b3;
   return (ROT(_saddr.hashcode(), 13) 
 	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
 }
@@ -95,4 +95,5 @@ operator==(const IP6FlowID &a, const IP6FlowID &b)
     && a.daddr() == b.daddr() && a.saddr() == b.saddr();
 }
 
+CLICK_ENDDECLS
 #endif

@@ -1,7 +1,8 @@
 #ifndef BIGEWMA_HH
 #define BIGEWMA_HH
-#include "glue.hh"
-#include "ewma.hh"
+#include <click/glue.hh>
+#include <click/ewma.hh>
+CLICK_DECLS
 
 template <unsigned Stability_shift, unsigned Scale>
 class DirectBigEWMAX {
@@ -116,4 +117,5 @@ RateBigEWMAX<stability_shift, scale, n, Timer>::update(int64_t delta,
   update_now(delta, which);
 }
 
+CLICK_ENDDECLS
 #endif

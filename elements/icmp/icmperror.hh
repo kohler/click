@@ -1,5 +1,7 @@
-#ifndef ICMPERROR_HH
-#define ICMPERROR_HH
+#ifndef CLICK_ICMPERROR_HH
+#define CLICK_ICMPERROR_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -55,8 +57,6 @@
  *
  * =a DecIPTTL, FixIPSrc, IPGWOptions */
 
-#include <click/element.hh>
-
 class ICMPError : public Element {
 public:
   ICMPError();
@@ -85,4 +85,5 @@ private:
   
 };
 
+CLICK_ENDDECLS
 #endif

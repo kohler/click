@@ -1,5 +1,7 @@
 #ifndef CLICK_SETCRC32_HH
 #define CLICK_SETCRC32_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -12,22 +14,20 @@
  * =a CheckCRC32
  */
 
-#include <click/element.hh>
-
 class EtherAddress;
 
-class SetCRC32 : public Element {
-public:
+class SetCRC32 : public Element { public:
+  
   SetCRC32();
   ~SetCRC32();
 
-  const char *class_name() const		{ return "SetCRC32"; }
+  const char *class_name() const	{ return "SetCRC32"; }
   const char *processing() const	{ return AGNOSTIC; }
-  
-  SetCRC32 *clone() const { return(new SetCRC32()); }
+  SetCRC32 *clone() const		{ return new SetCRC32; }
   
   Packet *simple_action(Packet *);
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,6 +1,7 @@
 #ifndef CLICK_HANDLERPROXY_HH
 #define CLICK_HANDLERPROXY_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 class HandlerProxy : public Element { public:
 
@@ -37,4 +38,5 @@ class HandlerProxy : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

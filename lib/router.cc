@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-
 #include <click/router.hh>
 #include <click/routerthread.hh>
 #include <click/bitvector.hh>
@@ -34,6 +33,7 @@
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
 #endif
+CLICK_DECLS
 
 static Router::Handler *globalh;
 static int nglobalh;
@@ -1269,7 +1269,7 @@ Router::find_global_handler(const String &name)
 int
 Router::nglobal_handlers()
 {
-  return ::nglobalh;
+  return nglobalh;
 }
 
 void
@@ -1640,3 +1640,5 @@ Router::element_ports_string(int ei) const
 // Vector template instance
 # include <click/vector.cc>
 #endif
+
+CLICK_ENDDECLS

@@ -1,7 +1,8 @@
-#ifndef GETIP6ADDRESS_HH
-#define GETIP6ADDRESS_HH
+#ifndef CLICK_GETIP6ADDRESS_HH
+#define CLICK_GETIP6ADDRESS_HH
 #include <click/element.hh>
 #include <click/ip6address.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -40,4 +41,5 @@ class GetIP6Address : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

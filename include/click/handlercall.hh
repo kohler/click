@@ -2,6 +2,7 @@
 #ifndef CLICK_HANDLERCALL_HH
 #define CLICK_HANDLERCALL_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 class HandlerCall { public:
 
@@ -95,4 +96,5 @@ HandlerCall::call_write(const Element *context, ErrorHandler *errh) const
     return call_write(context->router(), errh);
 }
 
+CLICK_ENDDECLS
 #endif

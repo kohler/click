@@ -1,5 +1,8 @@
 #ifndef CLICK_ICMP6ERROR_HH
 #define CLICK_ICMP6ERROR_HH
+#include <click/element.hh>
+#include <click/ip6address.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -46,9 +49,6 @@
  *
  * =a DecIP6HLIM */
 
-#include <click/element.hh>
-#include <click/ip6address.hh>
-
 class ICMP6Error : public Element {
 public:
   ICMP6Error();
@@ -76,4 +76,5 @@ private:
   
 };
 
+CLICK_ENDDECLS
 #endif

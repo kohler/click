@@ -22,6 +22,7 @@
 #include <click/glue.hh>
 #include "delayshaper.hh"
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 DelayShaper::DelayShaper()
   : Element(1, 1), _p(0)
@@ -92,5 +93,6 @@ DelayShaper::add_handlers()
   add_read_handler("delay", read_param, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DelayShaper)
 ELEMENT_MT_SAFE(DelayShaper)

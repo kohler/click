@@ -22,6 +22,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 ForceTCP::ForceTCP()
   : Element(1, 1)
@@ -138,4 +139,5 @@ ForceTCP::simple_action(Packet *p_in)
   return(0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ForceTCP)

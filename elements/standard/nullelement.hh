@@ -1,6 +1,7 @@
 #ifndef CLICK_NULLELEMENT_HH
 #define CLICK_NULLELEMENT_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -83,4 +84,5 @@ class PullNullElement : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

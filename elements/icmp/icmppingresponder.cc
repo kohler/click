@@ -26,6 +26,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 ICMPPingResponder::ICMPPingResponder()
     : Element(1, 1)
@@ -103,5 +104,6 @@ ICMPPingResponder::simple_action(Packet *p_in)
     return q;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ICMPPingResponder)
 ELEMENT_MT_SAFE(ICMPPingResponder)

@@ -2,6 +2,7 @@
 #ifndef CLICK_IPADDRREWRITER_HH
 #define CLICK_IPADDRREWRITER_HH
 #include "elements/ip/iprw.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -143,4 +144,5 @@ IPAddrRewriter::get_mapping(int, const IPFlowID &in_flow) const
     return _map[rev];
 }
 
+CLICK_ENDDECLS
 #endif

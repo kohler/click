@@ -20,6 +20,7 @@
 #include "checkpacket.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 CheckPacket::CheckPacket()
     : Element(1, 1)
@@ -115,4 +116,5 @@ CheckPacket::simple_action(Packet *p)
     return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckPacket)

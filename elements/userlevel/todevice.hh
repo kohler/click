@@ -5,6 +5,7 @@
 #include <click/task.hh>
 #include <click/notifier.hh>
 #include "elements/userlevel/fromdevice.hh"
+CLICK_DECLS
 
 /*
  * =title ToDevice.u
@@ -110,4 +111,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

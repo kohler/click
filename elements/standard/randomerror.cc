@@ -19,6 +19,7 @@
 #include "randomerror.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 static int bit_flip_array_idx[] = {
   0, 1, 9, 37, 93, 163, 219, 247, 255, 256
@@ -209,5 +210,6 @@ RandomBitErrors::add_handlers()
   add_write_handler("active", reconfigure_positional_handler, (void *)2);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RandomBitErrors)
 ELEMENT_MT_SAFE(RandomBitErrors)

@@ -3,6 +3,7 @@
 #define CLICK_SHAPER_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -55,4 +56,5 @@ class Shaper : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

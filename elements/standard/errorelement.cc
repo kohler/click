@@ -20,6 +20,7 @@
 #include <click/config.h>
 #include <click/standard/errorelement.hh>
 #include <click/bitvector.hh>
+CLICK_DECLS
 
 ErrorElement::ErrorElement()
 {
@@ -63,5 +64,6 @@ ErrorElement::initialize(ErrorHandler *)
   return -1;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ErrorElement)
 ELEMENT_HEADER(<click/standard/errorelement.hh>)

@@ -25,6 +25,7 @@
 #include <click/glue.hh>
 #include <click/sync.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 
 IPRateMonitor::IPRateMonitor()
   : _count_packets(true), _anno_packets(true),
@@ -625,6 +626,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPRateMonitor)
 
 // template instances

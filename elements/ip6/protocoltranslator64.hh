@@ -1,10 +1,10 @@
-#ifndef PROTOCOLTRANSLATOR64_HH
-#define PROTOCOLTRANSLATOR64_HH
-
+#ifndef CLICK_PROTOCOLTRANSLATOR64_HH
+#define CLICK_PROTOCOLTRANSLATOR64_HH
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -54,5 +54,5 @@ private:
 
 };
 		   
-
+CLICK_ENDDECLS
 #endif

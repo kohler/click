@@ -2,6 +2,7 @@
 #define CLICK_SIMPLEQUEUE_HH
 #include <click/element.hh>
 #include <click/standard/storage.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -124,4 +125,5 @@ SimpleQueue::head() const
   return (_head != _tail ? _q[_head] : 0);
 }
 
+CLICK_ENDDECLS
 #endif

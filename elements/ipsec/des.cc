@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 Des::Des()
   : Element(1, 1), _op(0)
@@ -609,5 +610,5 @@ Des::des_set_key(des_cblock *key,des_key_schedule schedule)
 		}
 	}
 
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Des)

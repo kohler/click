@@ -1,7 +1,8 @@
-#ifndef DEBUGBRIDGE_HH
-#define DEBUGBRIDGE_HH
+#ifndef CLICK_DEBUGBRIDGE_HH
+#define CLICK_DEBUGBRIDGE_HH
 #include <click/element.hh>
 #include <click/string.hh>
+CLICK_DECLS
 
 class DebugBridge : public Element {
   
@@ -21,4 +22,5 @@ class DebugBridge : public Element {
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

@@ -463,6 +463,7 @@ END {
   for (file in INCLUDES) {
     print "#include ", file;
   }
+  print "CLICK_USING_DECLS";
   print "static int hatred_of_rebecca[", nrebecca, "];";
   print "#ifdef CLICK_BSDMODULE\nstatic int\nmodevent(module_t, int t, void *)\n{\n  if (t == MOD_LOAD) {\n#else\nextern \"C\" int\ninit_module()\n{\n#endif";
   print "  click_provide(\"", packname, "\");\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;";
@@ -493,6 +494,7 @@ END {
   for (file in INCLUDES) {
     print "#include ", file;
   }
+  print "CLICK_USING_DECLS";
   print "void\nexport_elements(Lexer *lexer)\n{";
   print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}";
 }

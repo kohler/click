@@ -21,10 +21,11 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/elemfilter.hh>
-#include "queue.hh"
+#include <click/standard/storage.hh>
 #include "unqueue2.hh"
 #include <click/confparse.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 Unqueue2::Unqueue2()
   : Element(1, 1), _task(this)
@@ -119,5 +120,6 @@ Unqueue2::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Unqueue2)
 ELEMENT_MT_SAFE(Unqueue2)

@@ -25,6 +25,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/icmp.h>
 #include <click/hashmap.hh>
+CLICK_DECLS
 
 static HashMap<String, int> *wordmap;
 static int ip_filter_count;
@@ -1181,5 +1182,6 @@ IPFilter::push(int, Packet *p)
   checked_output_push(-pos, p);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(Classifier)
 EXPORT_ELEMENT(IPFilter)

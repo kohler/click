@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 AlignmentInfo::AlignmentInfo()
 {
@@ -109,5 +110,6 @@ AlignmentInfo::query(Element *e, int port, int &chunk, int &offset)
     return false;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(AlignmentInfo)
 ELEMENT_HEADER(<click/standard/alignmentinfo.hh>)

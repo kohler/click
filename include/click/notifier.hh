@@ -2,6 +2,7 @@
 #ifndef CLICK_NOTIFIER_HH
 #define CLICK_NOTIFIER_HH
 #include <click/task.hh>
+CLICK_DECLS
 
 class NotifierSignal { public:
 
@@ -139,4 +140,5 @@ Notifier::wake_listeners()
     _signal.set_active(true);
 }
 
+CLICK_ENDDECLS
 #endif

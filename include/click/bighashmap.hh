@@ -1,6 +1,7 @@
 #ifndef CLICK_BIGHASHMAP_HH
 #define CLICK_BIGHASHMAP_HH
 #include <click/bighashmap_arena.hh>
+CLICK_DECLS
 
 // K AND V REQUIREMENTS:
 //
@@ -318,4 +319,5 @@ class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> { public
   
 };
 
+CLICK_ENDDECLS
 #endif

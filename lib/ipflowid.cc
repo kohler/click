@@ -17,13 +17,13 @@
  */
 
 #include <click/config.h>
-
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 IPFlowID::IPFlowID(Packet *p)
 {
@@ -55,3 +55,5 @@ operator<<(StringAccum &sa, const IPFlowID &flow_id)
 {
   return (sa << flow_id.unparse());
 }
+
+CLICK_ENDDECLS

@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "rrsched.hh"
+CLICK_DECLS
 
 RRSched::RRSched()
 {
@@ -53,4 +54,5 @@ RRSched::pull(int)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RRSched)

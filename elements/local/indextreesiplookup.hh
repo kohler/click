@@ -1,5 +1,9 @@
-#ifndef INDEXTREEIPLOOKUP_HH
-#define INDEXTREEIPLOOKUP_HH
+#ifndef CLICK_INDEXTREEIPLOOKUP_HH
+#define CLICK_INDEXTREEIPLOOKUP_HH
+#include <click/glue.hh>
+#include <click/element.hh>
+#include "../ip/iproutetable.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -15,10 +19,6 @@
  *
  * =a IPRouteTable
  */
-
-#include <click/glue.hh>
-#include <click/element.hh>
-#include "../ip/iproutetable.hh"
 
 class TreeNode {
 public:
@@ -67,6 +67,5 @@ private:
   static int hash(unsigned a) { return ((a>>24)&255); }
 };
 
-
+CLICK_ENDDECLS
 #endif
-

@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "staticswitch.hh"
 #include <click/confparse.hh>
+CLICK_DECLS
 
 StaticSwitch::StaticSwitch()
 {
@@ -65,5 +66,6 @@ StaticSwitch::push(int, Packet *p)
     output(_output).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StaticSwitch)
 ELEMENT_MT_SAFE(StaticSwitch)

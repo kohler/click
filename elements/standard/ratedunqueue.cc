@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 RatedUnqueue::RatedUnqueue()
   : Element(1, 1), _task(this)
@@ -106,5 +107,6 @@ RatedUnqueue::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RatedUnqueue)
 ELEMENT_MT_SAFE(RatedUnqueue)

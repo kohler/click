@@ -25,6 +25,7 @@
 #include "tcpdemux.hh"
 #include "tcpbuffer.hh"
 #include "tcpconn.hh"
+CLICK_DECLS
 
 TCPConn::TCPConn()
   : Element(2, 3), _active(false)
@@ -274,5 +275,5 @@ TCPConn::ctrl_write_handler
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPConn)
-

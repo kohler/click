@@ -7,6 +7,7 @@
 // NB: user must #include <click/task.hh> before <click/routerthread.hh>.
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
+CLICK_DECLS
 
 class RouterThread : public Task { public:
 
@@ -88,4 +89,5 @@ RouterThread::unlock_tasks()
   _task_lock.release();
 }
 
+CLICK_ENDDECLS
 #endif

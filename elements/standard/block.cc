@@ -20,6 +20,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 Block::Block()
   : Element(1, 2)
@@ -90,5 +91,6 @@ Block::add_handlers()
   add_write_handler("thresh", thresh_write_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Block)
 ELEMENT_MT_SAFE(Block)

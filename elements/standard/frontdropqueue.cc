@@ -19,6 +19,7 @@
 #include "frontdropqueue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 FrontDropQueue::FrontDropQueue()
 {
@@ -125,5 +126,6 @@ FrontDropQueue::push(int, Packet *packet)
     _highwater_length = s;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(Queue)
 EXPORT_ELEMENT(FrontDropQueue)

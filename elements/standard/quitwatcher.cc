@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 QuitWatcher::QuitWatcher()
   : _timer(this)
@@ -82,4 +83,5 @@ QuitWatcher::run_scheduled()
   _timer.schedule_after_ms(10);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(QuitWatcher)

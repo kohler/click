@@ -46,7 +46,7 @@
 // GENERIC PACKAGE SUPPORT
 
 struct ClickProvision {
-  String name;
+  CLICK_NAME(String) name;
   bool loaded : 1;
   int provided;
 };
@@ -55,7 +55,7 @@ static int provisions_cap;
 static ClickProvision *provisions;
 
 static ClickProvision *
-find_provision(const String &name)
+find_provision(const CLICK_NAME(String) &name)
 {
   for (int i = 0; i < nprovisions; i++)
     if (provisions[i].name == name)
@@ -114,7 +114,7 @@ click_has_provision(const char *package)
 }
 
 extern "C" void
-click_public_packages(Vector<String> &v)
+click_public_packages(CLICK_NAME(Vector)<CLICK_NAME(String)> &v)
 {
   for (int i = 0; i < nprovisions; i++)
     if (provisions[i].provided > 0 && provisions[i].name && provisions[i].name[0] != '@')
@@ -133,6 +133,7 @@ click_cleanup_packages()
 
 
 #if HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+CLICK_DECLS
 
 static String::Initializer crap_initializer;
 static String click_compile_prog, tmpdir;
@@ -273,4 +274,5 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     clickdl_load_package(package, &cerrh);
 }
 
+CLICK_ENDDECLS
 #endif /* HAVE_DYNAMIC_LINKING && !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE) */

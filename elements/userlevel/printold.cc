@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 PrintOld::PrintOld()
   : Element(1, 1)
@@ -140,6 +141,6 @@ PrintOld::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PrintOld)
-

@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "staticpullswitch.hh"
 #include <click/confparse.hh>
+CLICK_DECLS
 
 StaticPullSwitch::StaticPullSwitch()
 {
@@ -65,5 +66,6 @@ StaticPullSwitch::pull(int)
     return input(_input).pull();
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StaticPullSwitch)
 ELEMENT_MT_SAFE(StaticPullSwitch)

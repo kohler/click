@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "timestampaccum.hh"
 #include <click/glue.hh>
+CLICK_DECLS
 
 TimestampAccum::TimestampAccum()
     : Element(1, 1)
@@ -84,5 +85,6 @@ TimestampAccum::add_handlers()
     add_write_handler("reset_counts", reset_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(TimestampAccum)

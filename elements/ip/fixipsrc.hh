@@ -1,5 +1,8 @@
-#ifndef FIXIPSRC_HH
-#define FIXIPSRC_HH
+#ifndef CLICK_FIXIPSRC_HH
+#define CLICK_FIXIPSRC_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -23,9 +26,6 @@
  * 
  * =a ICMPError */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-
 class FixIPSrc : public Element {
   struct in_addr _my_ip;
 
@@ -43,4 +43,5 @@ public:
   
 };
 
+CLICK_ENDDECLS
 #endif

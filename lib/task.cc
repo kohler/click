@@ -17,10 +17,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/task.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
+CLICK_DECLS
 
 void
 Task::error_hook(Task *, void *)
@@ -187,3 +187,4 @@ TaskList::TaskList()
   _all_prev = _all_next = _all_list = this;
 }
 
+CLICK_ENDDECLS

@@ -18,12 +18,12 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 IP6Address::IP6Address()
 {
@@ -372,3 +372,5 @@ in6_cksum(const struct click_in6_addr *saddr,
 	  answer = ~csum;          // truncate to 16 bits 
 	  return answer;
 }
+
+CLICK_ENDDECLS

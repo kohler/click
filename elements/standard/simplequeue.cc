@@ -19,6 +19,7 @@
 #include "simplequeue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SimpleQueue::SimpleQueue()
   : Element(1, 1), _q(0)
@@ -224,5 +225,6 @@ SimpleQueue::add_handlers()
   add_write_handler("reset", write_handler, (void *)1);
 }
 
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(Storage)
 EXPORT_ELEMENT(SimpleQueue)

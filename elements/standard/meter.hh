@@ -1,6 +1,7 @@
 #ifndef CLICK_METER_HH
 #define CLICK_METER_HH
 #include "bandwidthmeter.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -50,4 +51,5 @@ class Meter : public BandwidthMeter { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

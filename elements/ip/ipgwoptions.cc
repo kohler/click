@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 IPGWOptions::IPGWOptions()
 {
@@ -220,5 +221,6 @@ IPGWOptions::add_handlers()
   add_read_handler("drops", IPGWOptions_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPGWOptions)
 ELEMENT_MT_SAFE(IPGWOptions)

@@ -21,6 +21,7 @@
 #include <click/variableenv.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 VariableEnvironment::VariableEnvironment(const String &prefix)
   : _prefix(prefix)
@@ -172,3 +173,5 @@ VariableEnvironment::print() const
   fprintf(stderr, "\n");
 }
 #endif
+
+CLICK_ENDDECLS

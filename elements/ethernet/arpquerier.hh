@@ -1,5 +1,11 @@
-#ifndef ARPQUERIER_HH
-#define ARPQUERIER_HH
+#ifndef CLICK_ARPQUERIER_HH
+#define CLICK_ARPQUERIER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/sync.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -48,12 +54,6 @@ are sent to the second output.
 
 ARPResponder, ARPFaker, AddressInfo
 */
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/sync.hh>
-#include <click/timer.hh>
 
 class ARPQuerier : public Element { public:
   
@@ -117,4 +117,5 @@ class ARPQuerier : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

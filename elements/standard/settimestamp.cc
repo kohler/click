@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 SetTimestamp::SetTimestamp()
 {
@@ -78,4 +79,5 @@ SetTimestamp::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetTimestamp)

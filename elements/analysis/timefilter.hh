@@ -2,6 +2,7 @@
 #ifndef CLICK_TIMEFILTER_HH
 #define CLICK_TIMEFILTER_HH
 #include <click/element.hh>
+CLICK_DECLS
 class HandlerCall;
 
 /*
@@ -112,4 +113,5 @@ class TimeFilter : public Element { public:
     static int write_handler(const String &, Element *, void*, ErrorHandler *);
 };
 
+CLICK_ENDDECLS
 #endif

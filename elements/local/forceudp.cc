@@ -22,6 +22,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 ForceUDP::ForceUDP()
   : Element(1, 1)
@@ -108,4 +109,5 @@ ForceUDP::simple_action(Packet *p_in)
   return(0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ForceUDP)

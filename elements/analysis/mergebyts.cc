@@ -22,6 +22,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
+CLICK_DECLS
 
 MergeByTimestamp::MergeByTimestamp()
     : Element(1, 1), _vec(0)
@@ -105,4 +106,5 @@ MergeByTimestamp::pull(int)
     }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(MergeByTimestamp)

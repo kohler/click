@@ -3,6 +3,7 @@
 #define CLICK_PROGRESSBAR_HH
 #include <click/element.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -176,4 +177,5 @@ class ProgressBar : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

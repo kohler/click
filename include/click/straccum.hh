@@ -1,8 +1,8 @@
 // -*- c-basic-offset: 2; related-file-name: "../../lib/straccum.cc" -*-
 #ifndef CLICK_STRACCUM_HH
 #define CLICK_STRACCUM_HH
-#include <click/string.hh>
 #include <click/glue.hh>
+#include <click/string.hh>
 #ifdef CLICK_LINUXMODULE
 # include <asm/string.h>
 #elif defined(CLICK_BSDMODULE)
@@ -10,6 +10,7 @@
 #else	/* User-space */
 # include <string.h>
 #endif
+CLICK_DECLS
 
 class StringAccum { public:
   
@@ -97,8 +98,6 @@ StringAccum &operator<<(StringAccum &, uint64_t);
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &operator<<(StringAccum &, double);
 #endif
-
-struct timeval;
 StringAccum &operator<<(StringAccum &, const struct timeval &);
 
 
@@ -257,4 +256,5 @@ operator<<(StringAccum &sa, const StringAccum &sb)
   return sa;
 }
 
+CLICK_ENDDECLS
 #endif

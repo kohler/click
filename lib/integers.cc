@@ -17,11 +17,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/config.h>
 #include <click/glue.hh>
 #include <click/integers.hh>
-
+CLICK_DECLS
 
 // first_bit_set(uint32_t) borrowed from tcpdpriv
 
@@ -66,3 +65,5 @@ first_bit_set(uint64_t value)
 }
 
 #endif
+
+CLICK_ENDDECLS

@@ -1,5 +1,10 @@
-#ifndef WEBGEN_HH
-#define WEBGEN_HH
+#ifndef CLICK_WEBGEN_HH
+#define CLICK_WEBGEN_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/timer.hh>
+#include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -15,11 +20,6 @@
  *    -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
  *    -> kt;
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/timer.hh>
-#include <click/ipaddress.hh>
 
 class WebGen : public Element {
  public:
@@ -78,4 +78,5 @@ private:
   IPAddress pick_src();
 };
 
+CLICK_ENDDECLS
 #endif

@@ -18,8 +18,8 @@
  */
 
 #include <click/config.h>
-
 #include <click/bitvector.hh>
+CLICK_DECLS
 
 void
 Bitvector::finish_copy_constructor(const Bitvector &o)
@@ -208,3 +208,5 @@ Bitvector::nonzero_intersection(const Bitvector &o) const
 	    return true;
     return false;
 }
+
+CLICK_ENDDECLS

@@ -1,5 +1,8 @@
 #ifndef CLICK_QUITWATCHER_HH
 #define CLICK_QUITWATCHER_HH
+#include <click/element.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -24,9 +27,6 @@ scheduled.
 This element is inserted automatically by the user-level driver when
 it is given the `--stop' option. */
 
-#include <click/element.hh>
-#include <click/timer.hh>
-
 class QuitWatcher : public Element { public:
 
   QuitWatcher();
@@ -47,4 +47,5 @@ class QuitWatcher : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

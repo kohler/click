@@ -17,12 +17,12 @@
  */
 
 #include <click/config.h>
-
 #include <click/timer.hh>
 #include <click/element.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * element_hook is a callback that gets called when a Timer,
@@ -220,3 +220,5 @@ TimerList::unschedule_all()
   }
   release_lock();
 }
+
+CLICK_ENDDECLS

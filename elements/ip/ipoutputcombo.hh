@@ -1,5 +1,9 @@
-#ifndef IPOUTPUTCOMBO_HH
-#define IPOUTPUTCOMBO_HH
+#ifndef CLICK_IPOUTPUTCOMBO_HH
+#define CLICK_IPOUTPUTCOMBO_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <clicknet/ip.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -36,12 +40,6 @@
  * =a DropBroadcasts, PaintTee, CheckLength, IPGWOptions, FixIPSrc, DecIPTTL,
  * IPFragmenter, IPInputCombo */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <clicknet/ip.h>
-
-class Address;
-
 class IPOutputCombo : public Element {
   
  public:
@@ -65,4 +63,5 @@ class IPOutputCombo : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

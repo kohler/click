@@ -1,6 +1,7 @@
 #ifndef CLICK_STRIDESWITCH_HH
 #define CLICK_STRIDESWITCH_HH
 #include "elements/standard/stridesched.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -27,12 +28,13 @@ class StrideSwitch : public StrideSched { public:
 
   const char *class_name() const		{ return "StrideSwitch"; }
   const char *processing() const		{ return PUSH; }
-  
   StrideSwitch *clone() const			{ return new StrideSwitch; }
+  
   int configure(Vector<String> &conf, ErrorHandler *errh);
   
   void push(int, Packet *);
 
 };
 
+CLICK_ENDDECLS
 #endif

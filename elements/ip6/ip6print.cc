@@ -12,10 +12,10 @@
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
 #include <click/ip6address.hh>
-
 #if CLICK_USERLEVEL
 # include <stdio.h>
 #endif
+CLICK_DECLS
 
 IP6Print::IP6Print()
   : Element(1, 1)
@@ -94,4 +94,5 @@ IP6Print::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IP6Print)

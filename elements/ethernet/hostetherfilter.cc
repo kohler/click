@@ -22,6 +22,7 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <clicknet/ether.h>
+CLICK_DECLS
 
 HostEtherFilter::HostEtherFilter()
 {
@@ -99,4 +100,5 @@ HostEtherFilter::simple_action(Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(HostEtherFilter)

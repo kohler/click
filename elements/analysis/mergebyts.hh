@@ -2,6 +2,7 @@
 #ifndef CLICK_MERGEBYTS_HH
 #define CLICK_MERGEBYTS_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -79,4 +80,5 @@ class MergeByTimestamp : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

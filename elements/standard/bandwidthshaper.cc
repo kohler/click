@@ -19,6 +19,7 @@
 
 #include <click/config.h>
 #include "bandwidthshaper.hh"
+CLICK_DECLS
 
 BandwidthShaper::BandwidthShaper()
 {
@@ -49,4 +50,5 @@ BandwidthShaper::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BandwidthShaper)

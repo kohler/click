@@ -25,6 +25,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IPsecESPUnencap::IPsecESPUnencap()
   : Element(1, 1)
@@ -82,5 +83,6 @@ IPsecESPUnencap::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPsecESPUnencap)
 ELEMENT_MT_SAFE(IPsecESPUnencap)

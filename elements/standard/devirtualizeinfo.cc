@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "devirtualizeinfo.hh"
 #include <click/glue.hh>
+CLICK_DECLS
 
 DevirtualizeInfo::DevirtualizeInfo()
 {
@@ -35,4 +36,5 @@ DevirtualizeInfo::configure(Vector<String> &, ErrorHandler *)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DevirtualizeInfo)

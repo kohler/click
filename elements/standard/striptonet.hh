@@ -2,6 +2,7 @@
 #ifndef CLICK_STRIPTONET_HH
 #define CLICK_STRIPTONET_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -37,4 +38,5 @@ class StripToNetworkHeader : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

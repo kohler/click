@@ -1,7 +1,8 @@
-#ifndef RRUNQUEUE_HH
-#define RRUNQUEUE_HH
+#ifndef CLICK_RRUNQUEUE_HH
+#define CLICK_RRUNQUEUE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -45,4 +46,5 @@ class RoundRobinUnqueue : public Element { public:
   int _next;
 };
 
+CLICK_ENDDECLS
 #endif

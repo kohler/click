@@ -2,6 +2,7 @@
 #define CLICK_SPINLOCKACQUIRE_HH
 #include <click/element.hh>
 #include <click/sync.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -31,4 +32,5 @@ public:
   Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }
 };
 
+CLICK_ENDDECLS
 #endif

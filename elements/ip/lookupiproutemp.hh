@@ -1,5 +1,8 @@
 #ifndef LOOKUPIPROUTEMP_HH
 #define LOOKUPIPROUTEMP_HH
+#include <click/element.hh>
+#include <click/iptable.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,9 +17,6 @@
  *
  * =a LookupIPRoute
  */
-
-#include <click/element.hh>
-#include <click/iptable.hh>
 
 class LookupIPRouteMP : public Element {
 #ifdef CLICK_LINUXMODULE
@@ -55,4 +55,5 @@ public:
   void push(int port, Packet *p);
 };
 
+CLICK_ENDDECLS
 #endif

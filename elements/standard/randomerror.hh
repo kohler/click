@@ -1,6 +1,7 @@
 #ifndef CLICK_RANDOMERROR_HH
 #define CLICK_RANDOMERROR_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -55,4 +56,5 @@ class RandomBitErrors : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

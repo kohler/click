@@ -2,6 +2,7 @@
 #ifndef CLICK_CHECKPACKET_HH
 #define CLICK_CHECKPACKET_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -82,4 +83,5 @@ class CheckPacket : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,9 @@
 #ifndef CLICK_KERNELTAP_HH
 #define CLICK_KERNELTAP_HH
+#include <click/element.hh>
+#include <click/ipaddress.hh>
+#include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -31,10 +35,6 @@
  *
  * =a
  * ToLinux, ifconfig(8) */
-
-#include <click/element.hh>
-#include <click/ipaddress.hh>
-#include <click/task.hh>
 
 class KernelTap : public Element {
  public:
@@ -73,4 +73,5 @@ class KernelTap : public Element {
   void dealloc_tun();
 };
 
+CLICK_ENDDECLS
 #endif

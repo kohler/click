@@ -1,5 +1,9 @@
-#ifndef FORCEIP_HH
-#define FORCEIP_HH
+#ifndef CLICK_FORCEIP_HH
+#define CLICK_FORCEIP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <clicknet/ip.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -19,10 +23,6 @@
  *  -> ForceIP() -> ...
  */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <clicknet/ip.h>
-
 class ForceIP : public Element {
 
   int _count;
@@ -41,4 +41,5 @@ class ForceIP : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

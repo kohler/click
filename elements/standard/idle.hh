@@ -2,6 +2,7 @@
 #define CLICK_IDLE_HH
 #include <click/element.hh>
 #include <click/notifier.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -37,4 +38,5 @@ class Idle : public Element, public AbstractNotifier { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

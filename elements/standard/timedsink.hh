@@ -2,6 +2,7 @@
 #define CLICK_TIMEDSINK_HH
 #include <click/element.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -35,4 +36,5 @@ class TimedSink : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_IPREWRITER_HH
 #include "elements/ip/iprw.hh"
 #include <click/sync.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -244,4 +245,5 @@ IPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
     return 0;
 }
 
+CLICK_ENDDECLS
 #endif

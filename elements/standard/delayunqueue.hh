@@ -4,6 +4,7 @@
 #include <click/task.hh>
 #include <click/timer.hh>
 #include <click/notifier.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -49,4 +50,5 @@ class DelayUnqueue : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,10 @@
-#ifndef TCPREFLECTOR_HH
-#define TCPREFLECTOR_HH
+#ifndef CLICK_TCPREFLECTOR_HH
+#define CLICK_TCPREFLECTOR_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/timer.hh>
+#include <click/ipaddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -20,11 +25,6 @@
  *   -> ToDevice(eth1);
  */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/timer.hh>
-#include <click/ipaddress.hh>
-
 class TCPReflector : public Element {
  public:
   
@@ -39,4 +39,5 @@ class TCPReflector : public Element {
   Packet *TCPReflector::tcp_input(Packet *xp);
 };
 
+CLICK_ENDDECLS
 #endif

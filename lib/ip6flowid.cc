@@ -17,13 +17,13 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/ip6flowid.hh>
 #include <clicknet/ip6.h>
 #include <clicknet/udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 IP6FlowID::IP6FlowID(Packet *p)
 {
@@ -51,3 +51,5 @@ IP6FlowID::s() const
   return _saddr.s() + ", " + String(ntohs(_sport)) + ", " +  _daddr.s()+ ", " + String(ntohs(_dport));
   
 }
+
+CLICK_ENDDECLS

@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 Strip::Strip()
     : Element(1, 1)
@@ -48,5 +49,6 @@ Strip::simple_action(Packet *p)
     return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Strip)
 ELEMENT_MT_SAFE(Strip)

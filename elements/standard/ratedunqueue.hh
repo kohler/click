@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/gaprate.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -42,4 +43,5 @@ class RatedUnqueue : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

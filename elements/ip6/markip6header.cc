@@ -19,6 +19,7 @@
 #include "markip6header.hh"
 #include <click/confparse.hh>
 #include <clicknet/ip6.h>
+CLICK_DECLS
 
 MarkIP6Header::MarkIP6Header()
 {
@@ -56,4 +57,5 @@ MarkIP6Header::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(MarkIP6Header)

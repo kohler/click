@@ -2,6 +2,7 @@
 #ifndef CLICK_ETHERADDRESS_HH
 #define CLICK_ETHERADDRESS_HH
 #include <click/string.hh>
+CLICK_DECLS
 
 class EtherAddress { public:
   
@@ -73,4 +74,5 @@ hashcode(const EtherAddress &ea)
   return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
 }
 
+CLICK_ENDDECLS
 #endif

@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "bwratedsplitter.hh"
+CLICK_DECLS
 
 BandwidthRatedSplitter::BandwidthRatedSplitter()
 {
@@ -40,4 +41,5 @@ BandwidthRatedSplitter::push(int, Packet *p)
     output(1).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BandwidthRatedSplitter)

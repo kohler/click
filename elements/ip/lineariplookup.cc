@@ -23,6 +23,7 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 LinearIPLookup::LinearIPLookup()
 {
@@ -312,7 +313,8 @@ LinearIPLookup::add_handlers()
     add_read_handler("table", table_handler, 0);
 }
 
-#include <click/vector.cc>
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(LinearIPLookup)
+
+#include <click/vector.cc>

@@ -20,6 +20,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
+CLICK_DECLS
 
 ForceIP::ForceIP()
   : Element(1, 1)
@@ -66,4 +67,5 @@ ForceIP::simple_action(Packet *p_in)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ForceIP)

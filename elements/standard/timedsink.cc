@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 TimedSink::TimedSink()
   : Element(1, 0), _timer(this)
@@ -63,5 +64,6 @@ TimedSink::run_scheduled()
   _timer.reschedule_after_ms(_interval);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TimedSink)
 ELEMENT_MT_SAFE(TimedSink)

@@ -16,10 +16,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/vector.hh>
 #include <click/subvector.hh>
+CLICK_DECLS
 
 Vector<void *>::Vector(const Vector<void *> &o)
   : _l(0), _n(0), _cap(0)
@@ -109,3 +109,5 @@ Vector<void *>::swap(Vector<void *> &o)
   o._n = n;
   o._cap = cap;
 }
+
+CLICK_ENDDECLS

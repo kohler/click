@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 WebGen::WebGen()
   : _timer(this)
@@ -334,4 +335,5 @@ WebGen::tcp_output(CB *cb, Packet *xp)
   output(0).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(WebGen)

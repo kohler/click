@@ -2,6 +2,7 @@
 #define CLICK_STRIDESCHED_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -125,4 +126,5 @@ StrideSched::Client::stride()
   _pass += _stride;
 }
 
+CLICK_ENDDECLS
 #endif

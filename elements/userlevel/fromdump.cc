@@ -35,6 +35,7 @@
 #ifdef ALLOW_MMAP
 #include <sys/mman.h>
 #endif
+CLICK_DECLS
 
 #define	SWAPLONG(y) \
 	((((y)&0xff)<<24) | (((y)&0xff00)<<8) | (((y)&0xff0000)>>8) | (((y)>>24)&0xff))
@@ -700,5 +701,6 @@ FromDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(FromDump)

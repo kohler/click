@@ -21,6 +21,7 @@
 #include "adaptivered.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 AdaptiveRED::AdaptiveRED()
     : _timer(this)
@@ -118,5 +119,6 @@ AdaptiveRED::run_scheduled()
     _timer.reschedule_after_ms(ADAPTIVE_INTERVAL);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(RED)
 EXPORT_ELEMENT(AdaptiveRED)

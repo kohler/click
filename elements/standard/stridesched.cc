@@ -19,6 +19,7 @@
 #include "stridesched.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 StrideSched::StrideSched()
 {
@@ -178,4 +179,5 @@ StrideSched::add_handlers()
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(StrideSched)

@@ -44,6 +44,7 @@
 # include <pwd.h>
 #endif
 #include <stdarg.h>
+CLICK_DECLS
 
 int cp_errno;
 
@@ -3288,3 +3289,5 @@ cp_va_static_cleanup()
   cp_values = 0;
   cp_parameter_used = 0;
 }
+
+CLICK_ENDDECLS

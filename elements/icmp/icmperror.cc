@@ -25,6 +25,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 ICMPError::ICMPError()
 {
@@ -252,5 +253,6 @@ ICMPError::simple_action(Packet *p)
   return(q);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ICMPError)
 ELEMENT_MT_SAFE(ICMPError)

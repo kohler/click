@@ -2,6 +2,7 @@
 #define CLICK_IP6PRINT_HH
 #include <click/element.hh>
 #include <click/string.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -44,4 +45,5 @@ class IP6Print : public Element { public:
   bool _contents;
 };
 
+CLICK_ENDDECLS
 #endif

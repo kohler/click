@@ -33,6 +33,8 @@ CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
 
+CLICK_DECLS
+
 LinuxIPLookup::LinuxIPLookup()
 {
   MOD_INC_USE_COUNT;
@@ -187,5 +189,6 @@ LinuxIPLookup::push(int, Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel|linuxmodule)
 EXPORT_ELEMENT(LinuxIPLookup)

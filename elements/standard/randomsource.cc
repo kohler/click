@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 RandomSource::RandomSource()
   : Element(0, 1), _task(this)
@@ -99,5 +100,6 @@ RandomSource::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RandomSource)
 ELEMENT_MT_SAFE(RandomSource)

@@ -23,6 +23,7 @@
 #include <click/ipaddress.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 StaticIPLookup::StaticIPLookup()
 {
@@ -60,5 +61,6 @@ StaticIPLookup::add_handlers()
     add_read_handler("table", table_handler, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(LinearIPLookup)
 EXPORT_ELEMENT(StaticIPLookup)

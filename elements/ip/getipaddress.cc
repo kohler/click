@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 GetIPAddress::GetIPAddress()
   : Element(1, 1)
@@ -48,5 +49,6 @@ GetIPAddress::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(GetIPAddress)
 ELEMENT_MT_SAFE(GetIPAddress)

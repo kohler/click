@@ -16,8 +16,8 @@
  */
 
 #include <click/config.h>
-
-#include "bigewma.hh"
+#include <click/bigewma.hh>
+CLICK_DECLS
 
 template <unsigned stability_shift, unsigned scale>
 void
@@ -32,3 +32,5 @@ DirectBigEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
       _avg += static_cast<int64_t>(-_avg + compensation) >> stability_shift;
   }
 }
+
+CLICK_ENDDECLS

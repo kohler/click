@@ -22,6 +22,7 @@
 #include <click/sync.hh>
 #include <click/glue.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 AverageCounter::AverageCounter()
   : Element(1, 1)
@@ -106,6 +107,6 @@ AverageCounter::add_handlers()
   add_write_handler("reset", averagecounter_reset_write_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(AverageCounter)
 ELEMENT_MT_SAFE(AverageCounter)
-

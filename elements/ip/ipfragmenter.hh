@@ -1,5 +1,9 @@
 #ifndef CLICK_IPFRAGMENTER_HH
 #define CLICK_IPFRAGMENTER_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -30,10 +34,6 @@
  *
  * =a ICMPError, CheckLength
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
 
 class IPFragmenter : public Element {
 
@@ -66,4 +66,5 @@ class IPFragmenter : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

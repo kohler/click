@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include <click/elemfilter.hh>
+CLICK_DECLS
 
 void
 ElementFilter::filter(Vector<Element *> &v)
@@ -40,3 +41,5 @@ CastElementFilter::check_match(Element *e, int)
 {
     return e->cast(_what) != 0;
 }
+
+CLICK_ENDDECLS

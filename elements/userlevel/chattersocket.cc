@@ -28,6 +28,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+CLICK_DECLS
 
 const char *ChatterSocket::protocol_version = "1.0";
 
@@ -360,5 +361,6 @@ ChatterSocket::selected(int fd)
   flush(fd, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ChatterSocket)

@@ -31,6 +31,7 @@
 #include <net/if.h>
 #include <net/if_tun.h>
 #endif
+CLICK_DECLS
 
 KernelTap::KernelTap()
   : Element(1, 1), _fd(-1), _task(this)
@@ -354,5 +355,6 @@ KernelTap::add_handlers()
   add_read_handler("dev_name", print_dev_name, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(KernelTap)

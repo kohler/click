@@ -22,6 +22,7 @@
 #include <click/timer.hh>
 #include <click/error.hh>
 #include "bufconv.hh"
+CLICK_DECLS
 
 BufferConverter::BufferConverter()
   : Element(2, 1), _timer(this)
@@ -159,5 +160,5 @@ BufferConverter::data_read_handler(Element *e, void *)
   return reinterpret_cast<BufferConverter*>(e)->iput();
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BufferConverter)
-

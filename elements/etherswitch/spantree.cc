@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include "elements/standard/suppressor.hh"
 #include <click/error.hh>
+CLICK_DECLS
 
 EtherSpanTree::EtherSpanTree()
   : _input_sup(0), _output_sup(0), _topology_change(0),
@@ -318,11 +319,14 @@ EtherSpanTree::generate_packet(int output)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherSpanTree)
 ELEMENT_REQUIRES(Suppressor EtherSwitchBridgeMessage)
 
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
+CLICK_DECLS
 template class Vector<EtherSpanTree::PortInfo>;
+CLICK_ENDDECLS
 #endif

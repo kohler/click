@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 Unstrip::Unstrip(unsigned nbytes)
   : Element(1, 1), _nbytes(nbytes)
@@ -52,5 +53,6 @@ Unstrip::simple_action(Packet *p)
   return p->push(_nbytes);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Unstrip)
 ELEMENT_MT_SAFE(Unstrip)

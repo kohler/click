@@ -17,13 +17,13 @@
  */
 
 #include <click/config.h>
-
 #include <click/error.hh>
 #include <click/straccum.hh>
 #ifndef CLICK_TOOL
 # include <click/element.hh>
 #endif
 #include <click/confparse.hh>
+CLICK_DECLS
 
 const int ErrorHandler::OK_RESULT;
 const int ErrorHandler::ERROR_RESULT = -EINVAL;
@@ -787,3 +787,5 @@ BailErrorHandler::handle_text(Seriousness s, const String &text)
 }
 
 #endif
+
+CLICK_ENDDECLS

@@ -22,6 +22,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 ForceICMP::ForceICMP()
   : Element(1, 1)
@@ -102,4 +103,5 @@ ForceICMP::simple_action(Packet *p_in)
   return(0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ForceICMP)

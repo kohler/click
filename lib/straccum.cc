@@ -17,12 +17,12 @@
  */
 
 #include <click/config.h>
-
 #include <click/straccum.hh>
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <stdarg.h>
+CLICK_DECLS
 
 void
 StringAccum::make_out_of_memory()
@@ -157,3 +157,5 @@ StringAccum::snprintf(int n, const char *format, ...)
   return *this;
 }
 #endif
+
+CLICK_ENDDECLS

@@ -28,6 +28,7 @@
 #include <string.h>
 #include <assert.h>
 #include "fakepcap.hh"
+CLICK_DECLS
 
 ToDump::ToDump()
     : Element(1, 0), _fp(0), _task(this), _use_encap_from(0)
@@ -224,5 +225,6 @@ ToDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(ToDump)

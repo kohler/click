@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 Unqueue::Unqueue()
   : Element(1, 1), _task(this)
@@ -128,5 +129,6 @@ Unqueue::add_handlers()
   add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Unqueue)
 ELEMENT_MT_SAFE(Unqueue)

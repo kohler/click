@@ -3,6 +3,7 @@
 #define CLICK_RANDOMSAMPLE_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -94,4 +95,5 @@ class RandomSample : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

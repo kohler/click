@@ -17,8 +17,8 @@
  */
 
 #include <click/config.h>
-
 #include <click/bighashmap_arena.hh>
+CLICK_DECLS
 
 BigHashMap_Arena *
 BigHashMap_Arena::new_arena(unsigned esize)
@@ -35,3 +35,5 @@ BigHashMap_Arena::delete_arena(BigHashMap_Arena *arena)
 {
   delete[] reinterpret_cast<unsigned char *>(arena);
 }
+
+CLICK_ENDDECLS

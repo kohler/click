@@ -16,12 +16,11 @@
  */
 
 #include <click/config.h>
-#include "debugbridge.hh"
-
 #include <click/glue.hh>
 #include <click/confparse.hh>
-
+#include "debugbridge.hh"
 #include "bridgemessage.hh"
+CLICK_DECLS
 
 DebugBridge::DebugBridge()
   : Element(1, 1)
@@ -57,5 +56,6 @@ DebugBridge::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DebugBridge)
 ELEMENT_REQUIRES(EtherSwitchBridgeMessage)

@@ -1,6 +1,7 @@
 #ifndef CLICK_FTPPORTMAPPER_HH
 #define CLICK_FTPPORTMAPPER_HH
 #include "elements/tcpudp/tcprewriter.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -112,4 +113,5 @@ class FTPPortMapper : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

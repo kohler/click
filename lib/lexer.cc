@@ -18,7 +18,6 @@
  */
 
 #include <click/config.h>
-
 #include <click/lexer.hh>
 #include <click/router.hh>
 #include <click/error.hh>
@@ -27,6 +26,7 @@
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
 #include <click/standard/errorelement.hh>
+CLICK_DECLS
 
 //
 // CLASS LEXER::TUNNELEND
@@ -1674,3 +1674,5 @@ Lexer::expand_connection(const Hookup &this_end, bool is_out,
 		    element_name(this_end.idx).cc());
   }
 }
+
+CLICK_ENDDECLS

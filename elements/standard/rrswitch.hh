@@ -2,6 +2,7 @@
 #define CLICK_RRSWITCH_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -36,4 +37,5 @@ class RoundRobinSwitch : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

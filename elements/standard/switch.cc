@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 
 Switch::Switch()
 {
@@ -113,5 +114,6 @@ Switch::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Switch)
 ELEMENT_MT_SAFE(Switch)

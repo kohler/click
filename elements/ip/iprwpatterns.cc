@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 IPRewriterPatterns::IPRewriterPatterns()
   : _name_map(-1)
@@ -85,5 +86,6 @@ IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
   return 0;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw)
 EXPORT_ELEMENT(IPRewriterPatterns)

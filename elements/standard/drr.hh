@@ -1,6 +1,7 @@
 #ifndef CLICK_DRR_HH
 #define CLICK_DRR_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -42,4 +43,5 @@ class DRRSched : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

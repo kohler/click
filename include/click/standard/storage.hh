@@ -1,5 +1,6 @@
 #ifndef CLICK_STORAGE_HH
 #define CLICK_STORAGE_HH
+CLICK_DECLS
 
 class Storage { public:
 
@@ -33,4 +34,5 @@ Storage::size() const
   return (x >= 0 ? x : _capacity + x + 1);
 }
 
+CLICK_ENDDECLS
 #endif

@@ -3,6 +3,7 @@
 #define CLICK_EWMA_HH
 #include <click/glue.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 template <unsigned Stability_shift, unsigned Scale>
 class DirectEWMAX { public:
@@ -149,4 +150,5 @@ RateEWMAX<stability_shift, scale, n, Timer>::unparse(unsigned which) const
   return cp_unparse_real2(average(which) * Timer::freq(), scale);
 }
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_SPINLOCKRELEASE_HH
 #include <click/element.hh>
 #include <click/sync.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -29,6 +30,8 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *p)  	{ _lock->release(); return p; }
+  
 };
 
+CLICK_ENDDECLS
 #endif

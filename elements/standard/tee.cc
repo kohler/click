@@ -19,6 +19,7 @@
 #include "tee.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 Tee::Tee()
 {
@@ -123,6 +124,7 @@ PullTee::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Tee PullTee)
 ELEMENT_MT_SAFE(Tee)
 ELEMENT_MT_SAFE(PullTee)

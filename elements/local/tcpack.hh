@@ -1,8 +1,9 @@
-#ifndef TCPACK_HH
-#define TCPACK_HH
+#ifndef CLICK_TCPACK_HH
+#define CLICK_TCPACK_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -75,5 +76,5 @@ public:
   void run_scheduled();
 };
 
+CLICK_ENDDECLS
 #endif
-

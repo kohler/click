@@ -1,6 +1,7 @@
 #ifndef CLICK_FRONTDROPQUEUE_HH
 #define CLICK_FRONTDROPQUEUE_HH
 #include "queue.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -43,4 +44,5 @@ class FrontDropQueue : public Queue { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

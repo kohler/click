@@ -22,12 +22,12 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
-
 #if defined(__linux__) && CLICK_USERLEVEL
 # include <net/if.h>
 # include <sys/ioctl.h>
 # include <net/if_arp.h>
 #endif
+CLICK_DECLS
 
 AddressInfo::AddressInfo()
   : _map(-1)
@@ -303,6 +303,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
   return false;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(AddressInfo)
 ELEMENT_HEADER(<click/standard/addressinfo.hh>)
 

@@ -20,6 +20,7 @@
 #include "burster.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 Burster::Burster()
   : Element(1, 1), _npackets(0), _timer(this)
@@ -79,4 +80,5 @@ Burster::run_scheduled()
   _timer.reschedule_after_ms(_interval);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Burster)

@@ -2,6 +2,7 @@
 #ifndef CLICK_EWMA64_HH
 #define CLICK_EWMA64_HH
 #include <click/confparse.hh>
+CLICK_DECLS
 
 class DirectEWMA64 { public:
 
@@ -34,4 +35,5 @@ DirectEWMA64::update_with(uint64_t val)
     // XXX implementation-defined right shift behavior
 }
 
+CLICK_ENDDECLS
 #endif

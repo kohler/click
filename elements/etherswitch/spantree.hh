@@ -1,8 +1,9 @@
-#ifndef SPANTREE_HH
-#define SPANTREE_HH
+#ifndef CLICK_SPANTREE_HH
+#define CLICK_SPANTREE_HH
 #include <click/element.hh>
 #include "bridgemessage.hh"
 #include <click/timer.hh>
+CLICK_DECLS
 class Suppressor;
 class EtherSwitch;
 
@@ -70,4 +71,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_CHATTERSOCKET_HH
 #include <click/element.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -122,4 +123,5 @@ ChatterSocket::handle_text(ErrorHandler::Seriousness, const String &message)
   }
 }
 
+CLICK_ENDDECLS
 #endif

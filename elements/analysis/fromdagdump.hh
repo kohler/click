@@ -3,6 +3,7 @@
 #define CLICK_FROMDAGDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 class HandlerCall;
 
 /*
@@ -235,4 +236,5 @@ class FromDAGDump : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

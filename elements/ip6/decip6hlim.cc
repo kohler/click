@@ -19,6 +19,7 @@
 #include "decip6hlim.hh"
 #include <clicknet/ip6.h>
 #include <click/glue.hh>
+CLICK_DECLS
 
 DecIP6HLIM::DecIP6HLIM()
   : _drops(0)
@@ -88,4 +89,5 @@ DecIP6HLIM::add_handlers()
   add_read_handler("drops", DecIP6HLIM_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DecIP6HLIM)

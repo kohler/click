@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 EnsureEther::EnsureEther()
   : Element(1, 1)
@@ -97,4 +98,5 @@ EnsureEther::pull(int)
     return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(EnsureEther)

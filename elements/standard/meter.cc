@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "meter.hh"
+CLICK_DECLS
 
 Meter::Meter()
 {
@@ -56,4 +57,5 @@ Meter::push(int, Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Meter)

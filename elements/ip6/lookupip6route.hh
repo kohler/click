@@ -1,5 +1,8 @@
-#ifndef LOOKUPIP6ROUTE_HH
-#define LOOKUPIP6ROUTE_HH
+#ifndef CLICK_LOOKUPIP6ROUTE_HH
+#define CLICK_LOOKUPIP6ROUTE_HH
+#include <click/element.hh>
+#include <click/ip6table.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -35,9 +38,6 @@
  *
  */
 
-#include <click/element.hh>
-#include <click/ip6table.hh>
-
 class LookupIP6Route : public Element {
 public:
   LookupIP6Route();
@@ -68,4 +68,5 @@ private:
   
 };
 
+CLICK_ENDDECLS
 #endif

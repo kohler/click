@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ip6.h>
+CLICK_DECLS
 
 GetIP6Address::GetIP6Address()
   : Element(1, 1)
@@ -51,5 +52,5 @@ GetIP6Address::simple_action(Packet *p)
   return p;
 }
 
- 
+CLICK_ENDDECLS 
 EXPORT_ELEMENT(GetIP6Address)

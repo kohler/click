@@ -19,6 +19,7 @@
 #include "setipchecksum.hh"
 #include <click/glue.hh>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 SetIPChecksum::SetIPChecksum()
   : Element(1, 1)
@@ -63,5 +64,6 @@ SetIPChecksum::simple_action(Packet *p_in)
   return(0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetIPChecksum)
 ELEMENT_MT_SAFE(SetIPChecksum)

@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -45,4 +46,5 @@ class Burster : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

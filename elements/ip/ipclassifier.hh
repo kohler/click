@@ -1,6 +1,7 @@
-#ifndef IPCLASSIFIER_HH
-#define IPCLASSIFIER_HH
+#ifndef CLICK_IPCLASSIFIER_HH
+#define CLICK_IPCLASSIFIER_HH
 #include "elements/ip/ipfilter.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -209,4 +210,5 @@ class IPClassifier : public IPFilter {
   
 };
 
+CLICK_ENDDECLS
 #endif

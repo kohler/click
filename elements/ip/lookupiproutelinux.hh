@@ -1,5 +1,8 @@
 #ifndef CLICK_LINUXIPLOOKUP_HH
 #define CLICK_LINUXIPLOOKUP_HH
+#include <click/element.hh>
+#include <click/iptable.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -34,9 +37,6 @@
  * StaticIPLookup
  */
 
-#include <click/element.hh>
-#include <click/iptable.hh>
-
 class LinuxIPLookup : public Element {
 public:
   LinuxIPLookup();
@@ -64,4 +64,5 @@ private:
 #endif
 };
 
+CLICK_ENDDECLS
 #endif

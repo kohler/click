@@ -1,6 +1,7 @@
 #ifndef CLICK_CONTROLSOCKET_HH
 #define CLICK_CONTROLSOCKET_HH
 #include "elements/userlevel/handlerproxy.hh"
+CLICK_DECLS
 class ControlSocketErrorHandler;
 
 /*
@@ -208,4 +209,5 @@ class ControlSocket : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

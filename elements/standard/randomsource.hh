@@ -2,6 +2,7 @@
 #define CLICK_RANDOMSOURCE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -37,4 +38,5 @@ class RandomSource : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_INFINITESOURCE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -112,4 +113,5 @@ class InfiniteSource : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

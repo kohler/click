@@ -1,7 +1,8 @@
-#ifndef COPYFLOWID_HH
-#define COPYFLOWID_HH
+#ifndef CLICK_COPYFLOWID_HH
+#define CLICK_COPYFLOWID_HH
 #include <click/element.hh>
 #include <click/ipflowid.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -42,5 +43,5 @@ public:
 
 };
 
+CLICK_ENDDECLS
 #endif
-

@@ -5,6 +5,7 @@
 #include <click/task.hh>
 #include <click/straccum.hh>
 #include <click/notifier.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -195,4 +196,5 @@ class ToIPSummaryDump : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

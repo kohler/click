@@ -1,5 +1,8 @@
 #ifndef CLICK_SETTCPCHECKSUM_HH
 #define CLICK_SETTCPCHECKSUM_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -15,11 +18,8 @@
  * =a CheckTCPHeader, SetIPChecksum, CheckIPHeader, SetUDPChecksum
  */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-
-class SetTCPChecksum : public Element {
-public:
+class SetTCPChecksum : public Element { public:
+  
   SetTCPChecksum();
   ~SetTCPChecksum();
   
@@ -34,4 +34,5 @@ private:
   bool _fixoff;
 };
 
+CLICK_ENDDECLS
 #endif

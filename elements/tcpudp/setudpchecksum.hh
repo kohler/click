@@ -1,6 +1,9 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_SETUDPCHECKSUM_HH
 #define CLICK_SETUDPCHECKSUM_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -15,9 +18,6 @@
  *
  * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-
 class SetUDPChecksum : public Element { public:
     
     SetUDPChecksum();
@@ -31,4 +31,5 @@ class SetUDPChecksum : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -6,6 +6,7 @@
 # include <stdio.h>
 #endif
 #include <stdarg.h>
+CLICK_DECLS
 
 class ErrorHandler { public:
   
@@ -165,4 +166,5 @@ class BailErrorHandler : public ErrorVeneer { public:
 };
 #endif
 
+CLICK_ENDDECLS
 #endif

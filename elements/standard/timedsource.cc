@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
+CLICK_DECLS
 
 TimedSource::TimedSource()
   : Element(0, 1), _packet(0), _timer(this)
@@ -193,5 +194,6 @@ TimedSource::add_handlers()
   add_write_handler("reset", change_param, (void *)5);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TimedSource)
 ELEMENT_MT_SAFE(TimedSource)

@@ -1,5 +1,9 @@
-#ifndef IPINPUTCOMBO_HH
-#define IPINPUTCOMBO_HH
+#ifndef CLICK_IPINPUTCOMBO_HH
+#define CLICK_IPINPUTCOMBO_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -20,10 +24,6 @@
  *
  * =a Paint, CheckIPHeader, Strip, GetIPAddress, IPOutputCombo
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
 
 class IPInputCombo : public Element {
   
@@ -55,4 +55,5 @@ class IPInputCombo : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 ICMPRewriter::ICMPRewriter()
   : Element(1, 1)
@@ -213,5 +214,6 @@ ICMPRewriter::push(int, Packet *p_in)
   }
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw ICMPPingRewriter)
 EXPORT_ELEMENT(ICMPRewriter)

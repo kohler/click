@@ -25,6 +25,7 @@
 #ifdef CLICK_LINUXMODULE
 # include <net/checksum.h>
 #endif
+CLICK_DECLS
 
 TCPIPSend::TCPIPSend()
   : Element(0, 1)
@@ -146,7 +147,5 @@ TCPIPSend::add_handlers()
   add_write_handler("send", send_write_handler, 0);
 }
 
-
-
-
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPIPSend)

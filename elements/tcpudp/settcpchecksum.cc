@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 SetTCPChecksum::SetTCPChecksum()
   : Element(1, 1), _fixoff(false)
@@ -102,5 +103,6 @@ SetTCPChecksum::simple_action(Packet *p_in)
   return(0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetTCPChecksum)
 ELEMENT_MT_SAFE(SetTCPChecksum)

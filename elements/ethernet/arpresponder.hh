@@ -1,5 +1,10 @@
-#ifndef ARPRESPONDER_HH
-#define ARPRESPONDER_HH
+#ifndef CLICK_ARPRESPONDER_HH
+#define CLICK_ARPRESPONDER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -49,11 +54,6 @@
  *
  * ARPQuerier, ARPFaker, AddressInfo */
 
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/vector.hh>
-
 class ARPResponder : public Element { public:
   
   ARPResponder();
@@ -91,4 +91,5 @@ private:
   
 };
 
+CLICK_ENDDECLS
 #endif

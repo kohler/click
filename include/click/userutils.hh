@@ -3,6 +3,7 @@
 #define CLICK_USERUTILS_HH
 #include <click/archive.hh>
 #include <stdio.h>
+CLICK_DECLS
 class ErrorHandler;
 
 bool glob_match(const String &string, const String &pattern);
@@ -37,4 +38,5 @@ int clickdl_load_package(String, ErrorHandler *);
 void clickdl_load_requirement(String, const Vector<ArchiveElement> *archive, ErrorHandler *);
 #endif
 
+CLICK_ENDDECLS
 #endif

@@ -2,6 +2,7 @@
 #define CLICK_UNQUEUE2_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -45,4 +46,5 @@ class Unqueue2 : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

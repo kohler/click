@@ -83,6 +83,8 @@ click_check_header_sizes()
 
 // DEBUGGING OUTPUT
 
+CLICK_USING_DECLS
+
 void
 click_chatter(const char *fmt, ...)
 {

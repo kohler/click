@@ -3,6 +3,7 @@
 #define CLICK_IPADDRESSSET_HH
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
+CLICK_DECLS
 
 class IPAddressSet { public:
 
@@ -25,4 +26,5 @@ class IPAddressSet { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

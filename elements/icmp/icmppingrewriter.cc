@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 ICMPPingRewriter::ICMPPingRewriter()
   : Element(1, 1), _request_map(0), _reply_map(0), _timer(this)
@@ -325,4 +326,5 @@ ICMPPingRewriter::add_handlers()
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ICMPPingRewriter)

@@ -7,6 +7,7 @@
 # include <click/atomic.hh>
 # include <click/ewma.hh>
 #endif
+CLICK_DECLS
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
@@ -133,7 +134,9 @@ class TaskList : public Task { public:
 
 
 // need RouterThread's definition for inline functions
+CLICK_ENDDECLS
 #include <click/routerthread.hh>
+CLICK_DECLS
 
 
 inline
@@ -318,4 +321,5 @@ TaskList::attempt_lock()
   return _lock.attempt();
 }
 
+CLICK_ENDDECLS
 #endif

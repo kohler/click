@@ -21,6 +21,7 @@
 #include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SaveIPFields::SaveIPFields()
   : Element(1, 1)
@@ -50,6 +51,7 @@ SaveIPFields::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SaveIPFields)
 ELEMENT_MT_SAFE(SaveIPFields)

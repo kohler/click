@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+CLICK_DECLS
 
 FromNetFlowSummaryDump::FromNetFlowSummaryDump()
     : Element(0, 1), _fd(-1), _pos(0), _len(0), _work_packet(0),
@@ -417,5 +418,6 @@ FromNetFlowSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromNetFlowSummaryDump)

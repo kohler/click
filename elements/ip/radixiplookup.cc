@@ -25,6 +25,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include "radixiplookup.hh"
+CLICK_DECLS
 
 RadixIPLookup::RadixIPLookup()
     : _entries(0)
@@ -158,9 +159,10 @@ RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned 
     return true;
 }
 
-// generate Vector template instance
-#include <click/vector.cc>
-template class Vector<RadixIPLookup::Entry>;
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(RadixIPLookup)
+
+// generate Vector template instance
+#include <click/vector.cc>
+//template class Vector<RadixIPLookup::Entry>;

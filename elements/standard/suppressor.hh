@@ -1,6 +1,7 @@
 #ifndef CLICK_SUPPRESSOR_HH
 #define CLICK_SUPPRESSOR_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -52,4 +53,5 @@ class Suppressor : public Element {
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -25,12 +25,12 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/bitvector.hh>
-
 #ifdef DEBUG
 # define DEBUG_CHATTER(args...) click_chatter(args)
 #else
 # define DEBUG_CHATTER(args...) /* nothing */
 #endif
+CLICK_DECLS
 
 SnoopTCP::SnoopTCP()
   : Element(2, 4)
@@ -623,8 +623,8 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 }
 #endif
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SnoopTCP)
 
 #include <click/hashmap.cc>
-template class HashMap<IPFlowID, SnoopTCP::PCB *>;

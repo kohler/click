@@ -26,10 +26,11 @@
 #include <click/llrpc.h>
 #include <click/integers.hh>	// for first_bit_set
 #ifdef CLICK_USERLEVEL
-#include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
+# include <unistd.h>
+# include <time.h>
+# include <sys/time.h>
 #endif
+CLICK_DECLS
 
 AnonymizeIPAddr::AnonymizeIPAddr()
     : Element(1, 0), _root(0), _free(0)
@@ -289,4 +290,5 @@ AnonymizeIPAddr::llrpc(unsigned command, void *data)
 	return Element::llrpc(command, data);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(AnonymizeIPAddr)

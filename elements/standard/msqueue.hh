@@ -1,5 +1,11 @@
 #ifndef CLICK_MSQUEUE_HH
 #define CLICK_MSQUEUE_HH
+#include <click/element.hh>
+#include <click/bitvector.hh>
+#include <click/glue.hh>
+#include <click/sync.hh>
+#include <click/standard/storage.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -19,13 +25,6 @@
  * Returns or sets the queue's capacity.
  * =a Queue
  */
-
-#include <click/element.hh>
-#include <click/bitvector.hh>
-#include <click/glue.hh>
-#include <click/sync.hh>
-#include "elements/standard/queue.hh"
-
 
 class MSQueue : public Element {
 
@@ -100,4 +99,5 @@ MSQueue::head() const
   return (_head.value() != _tail.value() ? _q[_head.value()] : 0);
 }
 
+CLICK_ENDDECLS
 #endif

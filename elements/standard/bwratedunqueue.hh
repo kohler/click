@@ -1,6 +1,7 @@
 #ifndef CLICK_BWRATEDUNQUEUE_HH
 #define CLICK_BWRATEDUNQUEUE_HH
 #include "elements/standard/ratedunqueue.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -28,4 +29,5 @@ class BandwidthRatedUnqueue : public RatedUnqueue { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 ARPFaker::ARPFaker()
   : _timer(this)
@@ -99,4 +100,5 @@ ARPFaker::make_response(u_char tha[6], /* him */
   return q;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPFaker)

@@ -3,6 +3,7 @@
 #define CLICK_TIMER_HH
 #include <click/sync.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 class Element;
 class Router;
 class Timer;
@@ -102,4 +103,5 @@ Timer::reschedule_at(const struct timeval &tv)
   schedule_at(tv);
 }
 
+CLICK_ENDDECLS
 #endif

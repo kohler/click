@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/integers.cc" -*-
 #ifndef CLICK_INTEGERS_HH
 #define CLICK_INTEGERS_HH
+CLICK_DECLS
 
 #ifdef HAVE_INT64_TYPES
 
@@ -24,4 +25,5 @@ int first_bit_set(uint32_t);
 int first_bit_set(uint64_t);
 #endif
 
+CLICK_ENDDECLS
 #endif

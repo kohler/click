@@ -239,6 +239,8 @@ unsigned click_jiffies();
   } while (0)
 #endif
 
+#ifndef CLICK_TIMEVAL_OPERATORS
+
 inline bool
 operator==(const struct timeval &a, const struct timeval &b)
 {
@@ -312,6 +314,8 @@ operator-(struct timeval a, const struct timeval &b)
   a -= b;
   return a;
 }
+
+#endif
 
 
 // CYCLE COUNTS

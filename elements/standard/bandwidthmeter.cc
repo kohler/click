@@ -20,6 +20,7 @@
 #include "bandwidthmeter.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 BandwidthMeter::BandwidthMeter()
   : Element(1, 1), _meters(0), _nmeters(0)
@@ -132,4 +133,5 @@ BandwidthMeter::add_handlers()
   add_read_handler("meters", BandwidthMeter::meters_read_handler, 0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BandwidthMeter)

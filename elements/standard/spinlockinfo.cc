@@ -16,6 +16,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SpinlockInfo::SpinlockInfo()
   : _map(-1)
@@ -97,6 +98,7 @@ SpinlockInfo::query(const String &name,
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SpinlockInfo)
 
 // template instance

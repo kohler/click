@@ -1,5 +1,8 @@
-#ifndef FORCETCP_HH
-#define FORCETCP_HH
+#ifndef CLICK_FORCETCP_HH
+#define CLICK_FORCETCP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,9 +17,6 @@
  * has no effect if DPORT is not -1. If FLAGS is specified and not -1, set the
  * TCP flags field to FLAGS.
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class ForceTCP : public Element {
 public:
@@ -37,4 +37,5 @@ private:
   bool _random;
 };
 
+CLICK_ENDDECLS
 #endif

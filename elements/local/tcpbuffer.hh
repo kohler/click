@@ -1,7 +1,8 @@
-#ifndef TCPBUFFER_HH
-#define TCPBUFFER_HH
+#ifndef CLICK_TCPBUFFER_HH
+#define CLICK_TCPBUFFER_HH
 #include <click/element.hh>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -231,5 +232,5 @@ TCPBuffer::seqno(Packet *p)
   return ntohl(tcph->th_seq);
 }
 
+CLICK_ENDDECLS
 #endif
-

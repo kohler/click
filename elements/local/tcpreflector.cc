@@ -21,6 +21,7 @@
 #include <clicknet/ip.h>
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 TCPReflector::TCPReflector()
 {
@@ -126,4 +127,5 @@ TCPReflector::simple_action(Packet *p)
   return(tcp_input(p));
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPReflector)

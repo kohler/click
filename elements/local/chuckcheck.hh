@@ -1,6 +1,7 @@
-#ifndef CHUCKCHECK_HH
-#define CHUCKCHECK_HH
+#ifndef CLICK_CHUCKCHECK_HH
+#define CLICK_CHUCKCHECK_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -97,4 +98,5 @@ class ChuckCheck : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,6 +1,7 @@
 #ifndef CLICK_RRIPMAPPER_HH
 #define CLICK_RRIPMAPPER_HH
 #include "elements/ip/iprw.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -45,4 +46,5 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   
 };
 
+CLICK_ENDDECLS
 #endif

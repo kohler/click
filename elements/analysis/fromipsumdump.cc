@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+CLICK_DECLS
 
 const char * const FromIPSummaryDump::tcp_flags_word = "FSRPAUEW";
 static uint8_t flag_mapping[256];
@@ -814,5 +815,6 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_NONE;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromIPSummaryDump)

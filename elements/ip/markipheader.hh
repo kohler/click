@@ -1,5 +1,7 @@
-#ifndef MARKIPHEADER_HH
-#define MARKIPHEADER_HH
+#ifndef CLICK_MARKIPHEADER_HH
+#define CLICK_MARKIPHEADER_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -16,8 +18,6 @@
  * CheckIPHeader2 for that.
  *
  * =a CheckIPHeader, CheckIPHeader2, StripIPHeader */
-
-#include <click/element.hh>
 
 class MarkIPHeader : public Element {
 
@@ -36,4 +36,5 @@ class MarkIPHeader : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

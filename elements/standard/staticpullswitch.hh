@@ -1,6 +1,7 @@
 #ifndef CLICK_STATICPULLSWITCH_HH
 #define CLICK_STATICPULLSWITCH_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -40,4 +41,5 @@ class StaticPullSwitch : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

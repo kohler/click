@@ -18,9 +18,9 @@
  */
 
 #include <click/config.h>
-
 #include <click/gaprate.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 void
 GapRate::set_rate(unsigned r, ErrorHandler *errh)
@@ -29,3 +29,5 @@ GapRate::set_rate(unsigned r, ErrorHandler *errh)
     errh->error("rate too large; lowered to %u", GapRate::MAX_RATE);
   set_rate(r);
 }
+
+CLICK_ENDDECLS

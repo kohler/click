@@ -20,6 +20,7 @@
 #include "hashswitch.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 HashSwitch::HashSwitch()
   : _offset(-1)
@@ -77,5 +78,6 @@ HashSwitch::push(int, Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(HashSwitch)
 ELEMENT_MT_SAFE(HashSwitch)

@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "priosched.hh"
+CLICK_DECLS
 
 PrioSched::PrioSched()
 {
@@ -46,5 +47,6 @@ PrioSched::pull(int)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(PrioSched)
 ELEMENT_MT_SAFE(PrioSched)

@@ -1,5 +1,10 @@
-#ifndef IPENCAP_HH
-#define IPENCAP_HH
+#ifndef CLICK_IPENCAP_HH
+#define CLICK_IPENCAP_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/atomic.hh>
+#include <clicknet/ip.h>
+CLICK_DECLS
 
 /*
 =c
@@ -72,11 +77,6 @@ Returns or sets the DST parameter.
 
 =a UDPIPEncap, StripIPHeader */
 
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/atomic.hh>
-#include <clicknet/ip.h>
-
 class IPEncap : public Element { public:
   
   IPEncap();
@@ -106,4 +106,5 @@ class IPEncap : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

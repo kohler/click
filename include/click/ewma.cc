@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include <click/ewma.hh>
+CLICK_DECLS
 
 template <unsigned stability_shift, unsigned scale>
 void
@@ -30,3 +31,5 @@ DirectEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
     for (; period > 0; period--)
       _avg += static_cast<int>(-_avg + compensation) >> stability_shift;
 }
+
+CLICK_ENDDECLS

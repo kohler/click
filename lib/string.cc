@@ -17,10 +17,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 String::Memo *String::null_memo = 0;
 String::Memo *String::permanent_memo = 0;
@@ -607,3 +607,5 @@ String::static_cleanup()
     null_memo = permanent_memo = oom_memo = 0;
   }
 }
+
+CLICK_ENDDECLS

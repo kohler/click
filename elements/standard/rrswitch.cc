@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "rrswitch.hh"
+CLICK_DECLS
 
 RoundRobinSwitch::RoundRobinSwitch()
 {
@@ -55,6 +56,6 @@ RoundRobinSwitch::push(int, Packet *p)
   output(i).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RoundRobinSwitch)
 ELEMENT_MT_SAFE(RoundRobinSwitch)
-

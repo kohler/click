@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "rfc2507d.hh"
 #include <click/glue.hh>
+CLICK_DECLS
 
 RFC2507d::RFC2507d()
 {
@@ -192,4 +193,5 @@ RFC2507d::simple_action(Packet *p)
   return(q);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RFC2507d)

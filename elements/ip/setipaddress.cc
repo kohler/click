@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "setipaddress.hh"
 #include <click/confparse.hh>
+CLICK_DECLS
 
 SetIPAddress::SetIPAddress()
   : Element(1, 1)
@@ -46,5 +47,6 @@ SetIPAddress::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetIPAddress)
 ELEMENT_MT_SAFE(SetIPAddress)

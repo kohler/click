@@ -23,6 +23,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
+CLICK_DECLS
 
 SetUDPChecksum::SetUDPChecksum()
     : Element(1, 1)
@@ -73,5 +74,6 @@ SetUDPChecksum::simple_action(Packet *p_in)
     return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetUDPChecksum)
 ELEMENT_MT_SAFE(SetUDPChecksum)

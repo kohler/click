@@ -21,6 +21,7 @@
 #include "timerange.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 TimeRange::TimeRange()
     : Element(1, 1)
@@ -109,4 +110,5 @@ TimeRange::add_handlers()
     add_write_handler("reset", write_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(TimeRange)

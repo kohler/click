@@ -6,6 +6,7 @@
 #include <click/bighashmap.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/ip.h>
+CLICK_DECLS
 class IPMapper;
 
 class IPRw : public Element { public:
@@ -276,4 +277,5 @@ IPRw::Mapping::used_since(uint32_t t) const
     return ((int32_t)(_used - t)) >= 0 || ((int32_t)(_reverse->_used - t)) >= 0;
 }
 
+CLICK_ENDDECLS
 #endif

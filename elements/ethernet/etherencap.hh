@@ -1,5 +1,8 @@
-#ifndef ETHERENCAP_HH
-#define ETHERENCAP_HH
+#ifndef CLICK_ETHERENCAP_HH
+#define CLICK_ETHERENCAP_HH
+#include <click/element.hh>
+#include <clicknet/ether.h>
+CLICK_DECLS
 
 /*
 =c
@@ -39,9 +42,6 @@ Returns or sets the DST parameter.
 
 ARPQuerier, EnsureEther */
 
-#include <click/element.hh>
-#include <clicknet/ether.h>
-
 class EtherEncap : public Element { public:
   
   EtherEncap();
@@ -67,4 +67,5 @@ class EtherEncap : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

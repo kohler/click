@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "randomswitch.hh"
+CLICK_DECLS
 
 RandomSwitch::RandomSwitch()
 {
@@ -43,6 +44,6 @@ RandomSwitch::push(int, Packet *p)
     output(o).push(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(RandomSwitch)
 ELEMENT_MT_SAFE(RandomSwitch)
-

@@ -17,10 +17,10 @@
  */
 
 #include <click/config.h>
-
 #include <click/glue.hh>
 #include <click/ino.hh>
 #include <click/router.hh>
+CLICK_DECLS
 
 void
 ClickIno::initialize()
@@ -425,3 +425,5 @@ ClickIno::info() const
     return sa.take_string();
 }
 #endif
+
+CLICK_ENDDECLS

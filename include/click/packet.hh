@@ -6,13 +6,14 @@
 #ifdef CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
 #endif
-
-class IP6Address;
 struct click_ether;
 struct click_ip;
 struct click_ip6;
 struct click_tcp;
 struct click_udp;
+CLICK_DECLS
+
+class IP6Address;
 class WritablePacket;
 
 class Packet { public:
@@ -795,4 +796,5 @@ Packet::shift_header_annotations(int32_t shift)
 #endif
 }
 
+CLICK_ENDDECLS
 #endif

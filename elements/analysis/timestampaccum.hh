@@ -1,6 +1,8 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_TIMESTAMPACCUM_HH
 #define CLICK_TIMESTAMPACCUM_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -32,8 +34,6 @@ Resets C<count> and C<time> counters to zero when written.
 
 =a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
-#include <click/element.hh>
-
 class TimestampAccum : public Element { public:
     
     TimestampAccum();
@@ -58,4 +58,5 @@ class TimestampAccum : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

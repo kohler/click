@@ -1,6 +1,7 @@
 #ifndef CLICK_BANDWIDTHSHAPER_HH
 #define CLICK_BANDWIDTHSHAPER_HH
 #include "shaper.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -37,4 +38,5 @@ class BandwidthShaper : public Shaper {
   
 };
 
+CLICK_ENDDECLS
 #endif

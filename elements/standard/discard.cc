@@ -20,6 +20,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/standard/scheduleinfo.hh>
+CLICK_DECLS
 
 Discard::Discard()
   : Element(1, 0), _task(this)
@@ -65,5 +66,6 @@ Discard::add_handlers()
     add_task_handlers(&_task);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Discard)
 ELEMENT_MT_SAFE(Discard)

@@ -4,6 +4,7 @@
 #include <click/glue.hh>
 #include <click/vector.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 // IP routing table.
 // Lookup by longest prefix.
@@ -33,4 +34,5 @@ class IPTable { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

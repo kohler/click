@@ -25,6 +25,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 ARPQuerier::ARPQuerier()
   : _expire_timer(expire_hook, this)
@@ -357,6 +358,6 @@ ARPQuerier::add_handlers()
   add_read_handler("stats", ARPQuerier_read_stats, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPQuerier)
 ELEMENT_MT_SAFE(ARPQuerier)
-

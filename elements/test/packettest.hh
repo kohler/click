@@ -2,6 +2,7 @@
 #ifndef CLICK_PACKETTEST_HH
 #define CLICK_PACKETTEST_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -37,4 +38,5 @@ class PacketTest : public Element { public:
 
 };
 
+CLICK_ENDDECLS
 #endif

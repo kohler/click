@@ -25,6 +25,7 @@
 #include <clicknet/ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 IPsecESPEncap::IPsecESPEncap()
   : Element(1, 1), _spi(-1)
@@ -111,5 +112,6 @@ IPsecESPEncap::simple_action(Packet *p)
   return(q);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPsecESPEncap)
 ELEMENT_MT_SAFE(IPsecESPEncap)

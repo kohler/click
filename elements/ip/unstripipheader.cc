@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include "unstripipheader.hh"
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 UnstripIPHeader::UnstripIPHeader()
   : Element(1, 1)
@@ -39,5 +40,6 @@ UnstripIPHeader::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(UnstripIPHeader)
 ELEMENT_MT_SAFE(UnstripIPHeader)

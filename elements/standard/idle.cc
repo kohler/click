@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "idle.hh"
+CLICK_DECLS
 
 Idle::Idle() 
 {
@@ -63,5 +64,6 @@ Idle::pull(int)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Idle)
 ELEMENT_MT_SAFE(Idle)

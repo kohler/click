@@ -48,6 +48,8 @@
 
 #include "fakepcap.hh"
 
+CLICK_DECLS
+
 FromDevice::FromDevice()
   : Element(0, 1), _promisc(0), _snaplen(0)
 {
@@ -278,6 +280,7 @@ FromDevice::cleanup(CleanupStage)
 }
 
 #if FROMDEVICE_PCAP
+CLICK_ENDDECLS
 extern "C" {
 void
 FromDevice_get_packet(u_char* clientdata,
@@ -325,6 +328,7 @@ FromDevice_get_packet(u_char* clientdata,
 	p->kill();
 }
 }
+CLICK_DECLS
 #endif
 
 void
@@ -413,5 +417,6 @@ FromDevice::add_handlers()
     add_read_handler("encap", read_encap, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(FromDevice)

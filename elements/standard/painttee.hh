@@ -1,6 +1,7 @@
 #ifndef CLICK_PAINTTEE_HH
 #define CLICK_PAINTTEE_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -42,4 +43,5 @@ class PaintTee : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

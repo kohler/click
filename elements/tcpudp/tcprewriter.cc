@@ -24,6 +24,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+CLICK_DECLS
 
 // TCPMapping
 
@@ -451,6 +452,6 @@ TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_w
 }
 #endif
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(TCPRewriter)

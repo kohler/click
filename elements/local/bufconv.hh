@@ -1,8 +1,9 @@
-#ifndef BUFCONV_HH
-#define BUFCONV_HH
+#ifndef CLICK_BUFCONV_HH
+#define CLICK_BUFCONV_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <clicknet/tcp.h>
+CLICK_DECLS
 
 /*
  * =c
@@ -47,5 +48,5 @@ public:
   void add_handlers();
 };
 
+CLICK_ENDDECLS
 #endif
-

@@ -1,6 +1,7 @@
 #ifndef CLICK_KERNELHANDLERPROXY_HH
 #define CLICK_KERNELHANDLERPROXY_HH
 #include "elements/userlevel/handlerproxy.hh"
+CLICK_DECLS
 
 /*
 =c
@@ -78,4 +79,5 @@ class KernelHandlerProxy : public HandlerProxy { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

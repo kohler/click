@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include "bwratedunqueue.hh"
+CLICK_DECLS
 
 BandwidthRatedUnqueue::BandwidthRatedUnqueue()
 {
@@ -43,5 +44,6 @@ BandwidthRatedUnqueue::run_scheduled()
   _task.fast_reschedule();
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BandwidthRatedUnqueue)
 ELEMENT_MT_SAFE(BandwidthRatedUnqueue)

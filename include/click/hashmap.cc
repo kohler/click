@@ -16,6 +16,7 @@
  */
 
 #include <click/hashmap.hh>
+CLICK_DECLS
 
 template <class K, class V>
 HashMap<K, V>::HashMap()
@@ -180,3 +181,5 @@ HashMapIterator<K, V>::operator++(int)
   for (_pos++; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;
 }
+
+CLICK_ENDDECLS

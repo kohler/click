@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 LookupIPRoute2::LookupIPRoute2()
 {
@@ -42,5 +43,5 @@ LookupIPRoute2::configure(Vector<String> &, ErrorHandler *errh)
   return errh->error("LookupIPRoute2 has been renamed as RadixIPLookup");
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(LookupIPRoute2)
-

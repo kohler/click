@@ -2,6 +2,7 @@
 #ifndef CLICK_BITVECTOR_HH
 #define CLICK_BITVECTOR_HH
 #include <click/glue.hh>
+CLICK_DECLS
 
 class Bitvector { public:
 
@@ -231,4 +232,5 @@ Bitvector::operator-(const Bitvector &o) const
     return *this & ~o;
 }
 
+CLICK_ENDDECLS
 #endif

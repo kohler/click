@@ -31,6 +31,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+CLICK_DECLS
 
 #define PACKET_CHUNK(p)		(((PacketInfo *)((p)->all_user_anno_u()))->chunk)
 #define PACKET_DLEN(p)		((p)->transport_length())
@@ -400,4 +401,5 @@ IPReassembler::expire_hook(Timer *, void *thunk)
     ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(IPReassembler)

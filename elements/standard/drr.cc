@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <click/error.hh>
 #include "drr.hh"
+CLICK_DECLS
 
 DRRSched::DRRSched()
   : _quantum(500), _head(0), _deficit(0), _next(0)
@@ -97,4 +98,5 @@ DRRSched::pull(int)
   return 0;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(DRRSched)

@@ -1,6 +1,7 @@
 #ifndef CLICK_NULLS_HH
 #define CLICK_NULLS_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -146,4 +147,5 @@ class Null8 : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

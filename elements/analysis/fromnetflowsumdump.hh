@@ -2,6 +2,7 @@
 #define CLICK_FROMNETFLOWSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -153,4 +154,5 @@ class FromNetFlowSummaryDump : public Element { public:
     
 };
 
+CLICK_ENDDECLS
 #endif

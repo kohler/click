@@ -1,5 +1,8 @@
-#ifndef MARKIPCE_HH
-#define MARKIPCE_HH
+#ifndef CLICK_MARKIPCE_HH
+#define CLICK_MARKIPCE_HH
+#include <click/element.hh>
+#include <click/atomic.hh>
+CLICK_DECLS
 
 /*
 =c
@@ -16,9 +19,6 @@ Expects IP packets as input. Sets each incoming packet's ECN field to
 Congestion Experienced (value 3), incrementally recalculates the IP checksum,
 and passes the packet to output 0. Non-IP packets, and IP packets whose ECN
 field is zero (not ECN-capable), are dropped. */
-
-#include <click/element.hh>
-#include <click/atomic.hh>
 
 class MarkIPCE : public Element { public:
   
@@ -44,4 +44,5 @@ class MarkIPCE : public Element { public:
   
 };
 
+CLICK_ENDDECLS
 #endif

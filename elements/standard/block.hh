@@ -1,6 +1,7 @@
 #ifndef CLICK_BLOCK_HH
 #define CLICK_BLOCK_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -58,4 +59,5 @@ class Block : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif
