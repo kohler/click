@@ -16,8 +16,8 @@ elementclass ToGridDev {
   input -> cl :: Classifier(OFFSET_GRID_PROTO/GRID_PROTO_LR_HELLO,
 			    OFFSET_GRID_PROTO/GRID_PROTO_NBR_ENCAP);
   prio :: PrioSched;
-  cl [1] -> route_counter :: Counter -> route_q :: Queue(5) -> [1] prio;
-  cl [2] ->  data_counter :: Counter ->  data_q :: Queue(5) -> [2] prio;
+  cl [0] -> route_counter :: Counter -> route_q :: Queue(5) -> [0] prio;
+  cl [1] ->  data_counter :: Counter ->  data_q :: Queue(5) -> [1] prio;
   prio
     -> FixSrcLoc(li)
     -> SetGridChecksum
@@ -67,6 +67,11 @@ ip_demux :: IPClassifier(dst host GRID_IP,                      // ip for us
 grid_data_demux :: IPClassifier(dst host GRID_IP,                      // ip for us
 				dst net GRID_NET1/GRID_NET1_NETMASK);  // ip for Grid network
 
+// dev0
+FromGridDev(REAL_NET_DEVICE, GRID_MAC_ADDR) -> Paint(0) -> grid_demux
+dev0 :: ToGridDev(REAL_NET_DEVICE);
+
+
 grid_demux [0] -> Align(4, 2) -> CheckIPHeader( , OFFSET_ENCAP_IP) -> grid_data_demux;
 grid_demux [1] -> nb -> dev0;
 
@@ -82,11 +87,7 @@ grid_data_demux [0] -> Strip(OFFSET_ENCAP_IP) -> to_host_encap;  // receive pack
 grid_data_demux [1] -> lr;                                       // forward packet from net for someone else
 
 lr -> dev0;
-dec_ip_ttl [1] -> ip_demux;
 
-// dev0
-FromGridDev(REAL_NET_DEVICE, GRID_MAC_ADDR) -> Paint(0) -> grid_demux
-dev0 :: ToGridDev(REAL_NET_DEVICE);
 
 
 
