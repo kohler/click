@@ -630,7 +630,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
 #if SEQ_METRIC
   case MetricDSDVSeqs: {
     r.metric = metric_t(r.num_hops());
-    QVec<unsigned> *q = _seq_history.findp(r.dest_ip);
+    DEQueue<unsigned> *q = _seq_history.findp(r.dest_ip);
     if (!q || q->size() < MAX_BCAST_HISTORY) {
       r.metric.val += 2;
       break;
@@ -1103,9 +1103,9 @@ DSDVRouteTable::simple_action(Packet *packet)
   RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
-  QVec<unsigned> *q = _seq_history.findp(new_r.dest_ip);
+  DEQueue<unsigned> *q = _seq_history.findp(new_r.dest_ip);
   if (!q) {
-    _seq_history.insert(new_r.dest_ip, QVec<unsigned>());
+    _seq_history.insert(new_r.dest_ip, DEQueue<unsigned>());
     q = _seq_history.findp(new_r.dest_ip);
   }
   unsigned bcast_num = ntohl(grid_hdr::get_pad_bytes(*gh));
@@ -1845,4 +1845,8 @@ EXPORT_ELEMENT(DSDVRouteTable)
 template class BigHashMap<IPAddress, DSDVRouteTable::RTEntry>;
 template class BigHashMap<IPAddress, Timer *>;
 template class Vector<DSDVRouteTable::RTEntry>;
+
+#include <click/dequeue.cc>
+template class DEQueue<unsigned>;
+
 CLICK_ENDDECLS

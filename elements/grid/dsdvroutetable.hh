@@ -7,7 +7,7 @@
 #include <elements/grid/gridgenericrt.hh>
 #include <click/timer.hh>
 #include <elements/grid/gridgenericlogger.hh>
-#include "qvec.hh"
+#include <click/dequeue.hh>
 CLICK_DECLS
 
 /*
@@ -158,7 +158,7 @@ public:
 private:
 
 #if SEQ_METRIC
-  BigHashMap<IPAddress, QVec<unsigned> > _seq_history;
+  BigHashMap<IPAddress, DEQueue<unsigned> > _seq_history;
 #endif
 
   struct metric_t {
