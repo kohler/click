@@ -87,7 +87,7 @@ HashMap<K, V>::increase(int min_size)
   int ocap = _capacity;
   _e = ne;
   _capacity = ncap;
-  _grow_limit = (int)(0.8 * _capacity) - 1;
+  _grow_limit = ((3 * _capacity) >> 2) - 1;
   
   Elt *otrav = oe;
   for (int i = 0; i < ocap; i++, otrav++)
