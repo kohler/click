@@ -1,3 +1,9 @@
+2002-01-04 Friday 02:50  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-pretty.1 (1.1), tools/click-pretty/click-pretty.cc
+	(1.9), tools/click-pretty/html.cc (1.2), tools/click-pretty/html.hh
+	(1.2): x
+
 2002-01-02 Wednesday 16:22  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-pretty/Makefile.in (1.2),
