@@ -1,3 +1,10 @@
+2004-11-11 Thursday 11:17  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autoratefallback.cc (1.11), madwifirate.cc
+	(1.10), probetxrate.cc (1.14), settxrate.cc (1.18), sr/ettstat.cc
+	(1.13), sr/ettstat.hh (1.10): fix ettstat to work with 802.11a
+	rates.	other bitrate algorithm changes.
+
 2004-11-09 Tuesday 15:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/test/schedordertest.hh (1.2): documentation
