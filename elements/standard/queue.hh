@@ -1,5 +1,5 @@
-#ifndef QUEUE_HH
-#define QUEUE_HH
+#ifndef CLICK_QUEUE_HH
+#define CLICK_QUEUE_HH
 #include <click/element.hh>
 
 /*
@@ -87,6 +87,7 @@ class Queue : public Element, public Storage { public:
   int _highwater_length;
 
   friend class FrontDropQueue;
+  friend class NotifierQueue;
 
   static String read_handler(Element *, void *);
   static int write_handler(const String &, Element *, void *, ErrorHandler *);
