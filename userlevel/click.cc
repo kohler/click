@@ -208,6 +208,15 @@ read_global_handler(Element *, void *thunk)
   }
 }
 
+int
+stop_global_handler(const String &s, Element *, void *, ErrorHandler *)
+{
+  int n = 1;
+  (void) cp_integer(cp_uncomment(s), &n);
+  router->adjust_driver_reservations(-n);
+  return 0;
+}
+
 
 // report handler results
 
@@ -521,6 +530,7 @@ particular purpose.\n");
   Router::add_global_read_handler("flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
   Router::add_global_read_handler("packages", read_global_handler, (void *)GH_PACKAGES);
   Router::add_global_read_handler("requirements", read_global_handler, (void *)GH_REQUIREMENTS);
+  Router::add_global_write_handler("stop", stop_global_handler, 0);
 
   // catch control-C
   signal(SIGINT, catch_sigint);
