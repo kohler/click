@@ -39,9 +39,15 @@ click_chatter(const char *fmt, ...)
     errh->verror(ErrorHandler::ERR_MESSAGE, "", fmt, val);
   else {
 #ifdef CLICK_LINUXMODULE
+#if __MTCLICK__
+    static char buf[NR_CPUS][512];	// XXX
+    int i = vsprintf(buf[current->processor], fmt, val);
+    printk("<1>%s\n", buf[current->processor]);
+#else
     static char buf[512];		// XXX
     int i = vsprintf(buf, fmt, val);
     printk("<1>%s\n", buf);
+#endif
 #else
     vfprintf(stderr, fmt, val);
     fprintf(stderr, "\n");
