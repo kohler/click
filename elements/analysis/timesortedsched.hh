@@ -1,13 +1,14 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef CLICK_MERGEBYTS_HH
-#define CLICK_MERGEBYTS_HH
+#ifndef CLICK_TIMESORTEDSCHED_HH
+#define CLICK_TIMESORTEDSCHED_HH
 #include <click/element.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
 =c
 
-MergeByTimestamp(I<KEYWORDS>)
+TimeSortedSched(I<KEYWORDS>)
 
 =s analysis
 
@@ -19,8 +20,11 @@ One output, zero or more inputs
 
 =d
 
-MergeByTimestamp responds to pull requests by returning the chronologically
+TimeSortedSched responds to pull requests by returning the chronologically
 next packet pulled from its inputs, determined by packet timestamps.
+
+TimeSortedSched listens for notification from its inputs to avoid useless
+pulls, and provides notification for its output.
 
 Keyword arguments are:
 
@@ -28,13 +32,9 @@ Keyword arguments are:
 
 =item STOP
 
-Boolean. If true, stop the driver when there are no packets available
-upstream. Default is false.
-
-=item NULL_IS_DEAD
-
-Boolean. If true, then ignore input ports as soon as they return null pointers
-instead of packets. Default is false.
+Boolean. If true, stop the driver when there are no packets available (and the
+upstream notifiers indicate that no packets will become available soon).
+Default is false.
 
 =back
 
@@ -43,7 +43,7 @@ instead of packets. Default is false.
 This example merges multiple tcpdump(1) files into a single, time-sorted
 stream, and stops the driver when all the files are exhausted.
 
-  m :: MergeByTimestamp(STOP true);
+  m :: TimeSortedSched(STOP true);
   FromDump(FILE1) -> [0] m;
   FromDump(FILE2) -> [1] m;
   FromDump(FILE3) -> [2] m;
@@ -55,14 +55,15 @@ stream, and stops the driver when all the files are exhausted.
 FromDump
 */
 
-class MergeByTimestamp : public Element { public:
+class TimeSortedSched : public Element, public Notifier { public:
 
-    MergeByTimestamp();
-    ~MergeByTimestamp();
+    TimeSortedSched();
+    ~TimeSortedSched();
 
-    const char *class_name() const	{ return "MergeByTimestamp"; }
+    const char *class_name() const	{ return "TimeSortedSched"; }
     const char *processing() const	{ return PULL; }
-    MergeByTimestamp *clone() const	{ return new MergeByTimestamp; }
+    void *cast(const char *);
+    TimeSortedSched *clone() const	{ return new TimeSortedSched; }
 
     void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);
@@ -74,9 +75,8 @@ class MergeByTimestamp : public Element { public:
   private:
 
     Packet **_vec;
+    NotifierSignal *_signals;
     bool _stop;
-    bool _dead_null;
-    bool _new;
     
 };
 

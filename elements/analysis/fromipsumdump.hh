@@ -3,6 +3,7 @@
 #define CLICK_FROMIPSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 #include <click/ipflowid.hh>
 #include "ipsumdumpinfo.hh"
 CLICK_DECLS
@@ -129,6 +130,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     const char *class_name() const	{ return "FromIPSummaryDump"; }
     const char *processing() const	{ return AGNOSTIC; }
     FromIPSummaryDump *clone() const	{ return new FromIPSummaryDump; }
+    void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -175,7 +177,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     uint32_t _multipacket_extra_length;
 
     Task _task;
-    Vector<String> _words;	// for speed
+    Notifier _notifier;
 
     String _filename;
     FILE *_pipe;

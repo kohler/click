@@ -57,6 +57,16 @@ FromIPSummaryDump::~FromIPSummaryDump()
     MOD_DEC_USE_COUNT;
 }
 
+void *
+FromIPSummaryDump::cast(const char *n)
+{
+    if (strcmp(n, "Notifier") == 0 && !output_is_push(0)) {
+	_notifier.initialize(router());
+	return &_notifier;
+    } else
+	return Element::cast(n);
+}
+
 int
 FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -210,6 +220,10 @@ FromIPSummaryDump::read_line(String &result, ErrorHandler *errh)
 int
 FromIPSummaryDump::initialize(ErrorHandler *errh)
 {
+    // make sure notifier is initialized
+    if (!output_is_push(0))
+	_notifier.initialize(router());
+    
     _pipe = 0;
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
@@ -1061,6 +1075,7 @@ FromIPSummaryDump::pull(int)
 	if (!p) {
 	    if (_stop)
 		router()->please_stop_driver();
+	    _notifier.set_listeners(false);
 	    return 0;
 	}
 	if (_multipacket)
@@ -1072,7 +1087,8 @@ FromIPSummaryDump::pull(int)
 	if (p)
 	    p->kill();
     }
-    
+
+    _notifier.set_listeners(true);
     return p;
 }
 
@@ -1116,8 +1132,10 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->_active = active;
-	      if (active && fd->output_is_push(0) && !fd->_task.scheduled())
+	      if (fd->output_is_push(0) && active && !fd->_task.scheduled())
 		  fd->_task.reschedule();
+	      else if (!fd->output_is_push(0))
+		  fd->_notifier.set_listeners(active);
 	      return 0;
 	  } else
 	      return errh->error("`active' should be Boolean");

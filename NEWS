@@ -13,6 +13,8 @@ Version 1.3pre1
 
 ** Deprecated KernelTap element in favor of KernelTun.
 
+** Renamed MergeByTimestamp to TimeSortedSched.
+
 ** '--enable-clickfs' is the default. (Clickfs provides a symlink from
    /proc/click to /click to make upgrading easier.)
 

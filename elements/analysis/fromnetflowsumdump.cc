@@ -47,6 +47,16 @@ FromNetFlowSummaryDump::~FromNetFlowSummaryDump()
     MOD_DEC_USE_COUNT;
 }
 
+void *
+FromNetFlowSummaryDump::cast(const char *n)
+{
+    if (strcmp(n, "Notifier") == 0 && !output_is_push(0)) {
+	_notifier.initialize(router());
+	return &_notifier;
+    } else
+	return Element::cast(n);
+}
+
 int
 FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -146,6 +156,9 @@ FromNetFlowSummaryDump::read_line(String &result, ErrorHandler *errh)
 int
 FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
 {
+    if (!output_is_push(0))
+	_notifier.initialize(router());
+    
     _pipe = 0;
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
@@ -349,10 +362,13 @@ FromNetFlowSummaryDump::run_task()
 Packet *
 FromNetFlowSummaryDump::pull(int)
 {
-    if (!_active)
+    if (!_active) {
+	_notifier.sleep_listeners();
 	return 0;
+    }
 
     Packet *p = (_work_packet ? _work_packet : read_packet(0));
+    _notifier.set_listeners(p != 0);
     if (!p && _stop)
 	router()->please_stop_driver();
     if (_multipacket)
@@ -396,8 +412,11 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->_active = active;
-	      if (active && fd->output_is_push(0) && !fd->_task.scheduled())
-		  fd->_task.reschedule();
+	      if (fd->output_is_push(0)) {
+		  if (active && !fd->_task.scheduled())
+		      fd->_task.reschedule();
+	      } else
+		  fd->_notifier.set_listeners(active);
 	      return 0;
 	  } else
 	      return errh->error("`active' should be Boolean");

@@ -3,6 +3,7 @@
 #define CLICK_FROMNETFLOWSUMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -108,6 +109,7 @@ class FromNetFlowSummaryDump : public Element { public:
     const char *class_name() const	{ return "FromNetFlowSummaryDump"; }
     const char *processing() const	{ return AGNOSTIC; }
     FromNetFlowSummaryDump *clone() const { return new FromNetFlowSummaryDump;}
+    void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -137,6 +139,7 @@ class FromNetFlowSummaryDump : public Element { public:
     uint32_t _multipacket_extra_length;
 
     Task _task;
+    Notifier _notifier;
 
     struct timeval _time_offset;
     String _filename;
