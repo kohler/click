@@ -1,3 +1,10 @@
+2003-05-08 Thursday 15:28  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: fromhost.cc (1.41), fromhost.hh (1.34):
+	try to fix FromHost's race condition: the interrupt routine
+	(hard_start_xmit) sticks packets on a queue; the Click-domain code
+	is a task that takes packets off the queue
+
 2003-04-28 Monday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.49), linkstat.cc (1.21):
