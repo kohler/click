@@ -1,3 +1,10 @@
+2001-10-16 Tuesday 16:25  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in, include/click/confparse.hh,
+	include/click/confparse.hh, libsrc/confparse.cc: add cp_double and
+	cpDouble when floating-point arithmetic is OK (userlevel driver,
+	tools) (requested by Jitu)
+
 2001-10-16 Tuesday 13:10  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/glue.cc: provide a definition of strlen() under certain
