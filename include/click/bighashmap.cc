@@ -57,7 +57,7 @@ BigHashMap<K, V>::~BigHashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; e = e->next) {
-      e->k.~K();
+      e->key.~K();
       e->v.~V();
     }
   delete[] _buckets;
@@ -139,7 +139,7 @@ BigHashMap<K, V>::find_elt(const K &key) const
   Elt *prev = 0;
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
-    if (e->k == key) {
+    if (e->key == key) {
       if (prev) {
         // move to front
         prev->next = e->next;
@@ -151,7 +151,7 @@ BigHashMap<K, V>::find_elt(const K &key) const
   return 0;
 #else
   for (Elt *e = _buckets[bucket(key)]; e; e = e->next)
-    if (e->k == key)
+    if (e->key == key)
       return e;
   return 0;
 #endif
@@ -176,7 +176,7 @@ BigHashMap<K, V>::resize0(int new_nbuckets)
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
-      int b = bucket(e->k);
+      int b = bucket(e->key);
       e->next = new_buckets[b];
       new_buckets[b] = e;
       e = n;
@@ -202,7 +202,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
-    if (e->k == key) {
+    if (e->key == key) {
       e->v = value;
       return false;
     }
@@ -212,7 +212,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
     b = bucket(key);
   }
   Elt *e = alloc();
-  new(reinterpret_cast<void *>(&e->k)) K(key);
+  new(reinterpret_cast<void *>(&e->key)) K(key);
   new(reinterpret_cast<void *>(&e->v)) V(value);
   e->next = _buckets[b];
   _buckets[b] = e;
@@ -227,7 +227,7 @@ BigHashMap<K, V>::remove(const K &key)
   int b = bucket(key);
   Elt *prev = 0;
   Elt *e = _buckets[b];
-  while (e && !(e->k == key)) {
+  while (e && !(e->key == key)) {
     prev = e;
     e = e->next;
   }
@@ -236,7 +236,7 @@ BigHashMap<K, V>::remove(const K &key)
       prev->next = e->next;
     else
       _buckets[b] = e->next;
-    e->k.~K();
+    e->key.~K();
     e->v.~V();
     free(e);
     _n--;
@@ -246,20 +246,22 @@ BigHashMap<K, V>::remove(const K &key)
 }
 
 template <class K, class V>
-V &
-BigHashMap<K, V>::find_force(const K &key)
+V *
+BigHashMap<K, V>::findp_force(const K &key)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
-    if (e->k == key)
-      return e->v;
-  Elt *e = alloc();
-  new(reinterpret_cast<void *>(&e->k)) K(key);
-  new(reinterpret_cast<void *>(&e->v)) V(_default_v);
-  e->next = _buckets[b];
-  _buckets[b] = e;
-  _n++;
-  return e->v;
+    if (e->key == key)
+      return &e->v;
+  if (Elt *e = alloc()) {
+    new(reinterpret_cast<void *>(&e->key)) K(key);
+    new(reinterpret_cast<void *>(&e->v)) V(_default_v);
+    e->next = _buckets[b];
+    _buckets[b] = e;
+    _n++;
+    return &e->v;
+  } else
+    return 0;
 }
 
 template <class K, class V>
@@ -268,7 +270,7 @@ BigHashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; e = e->next) {
-      e->k.~K();
+      e->key.~K();
       e->v.~V();
     }
     _buckets[i] = 0;
@@ -412,7 +414,7 @@ BigHashMap<K, void *>::~BigHashMap()
 {
   for (int i = 0; i < _nbuckets; i++)
     for (Elt *e = _buckets[i]; e; e = e->next)
-      e->k.~K();
+      e->key.~K();
   delete[] _buckets;
   for (int i = 0; i < _narenas; i++)
     BigHashMap_Arena::delete_arena(_arenas[i]);
@@ -492,7 +494,7 @@ BigHashMap<K, void *>::find_elt(const K &key) const
   Elt *prev = 0;
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
-    if (e->k == key) {
+    if (e->key == key) {
       if (prev) {
         // move to front
         prev->next = e->next;
@@ -504,7 +506,7 @@ BigHashMap<K, void *>::find_elt(const K &key) const
   return 0;
 #else
   for (Elt *e = _buckets[bucket(key)]; e; e = e->next)
-    if (e->k == key)
+    if (e->key == key)
       return e;
   return 0;
 #endif
@@ -529,7 +531,7 @@ BigHashMap<K, void *>::resize0(int new_nbuckets)
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
       Elt *n = e->next;
-      int b = bucket(e->k);
+      int b = bucket(e->key);
       e->next = new_buckets[b];
       new_buckets[b] = e;
       e = n;
@@ -555,7 +557,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
-    if (e->k == key) {
+    if (e->key == key) {
       e->v = value;
       return false;
     }
@@ -565,7 +567,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
     b = bucket(key);
   }
   Elt *e = alloc();
-  new(reinterpret_cast<void *>(&e->k)) K(key);
+  new(reinterpret_cast<void *>(&e->key)) K(key);
   e->v = value;
   e->next = _buckets[b];
   _buckets[b] = e;
@@ -580,7 +582,7 @@ BigHashMap<K, void *>::remove(const K &key)
   int b = bucket(key);
   Elt *prev = 0;
   Elt *e = _buckets[b];
-  while (e && !(e->k == key)) {
+  while (e && !(e->key == key)) {
     prev = e;
     e = e->next;
   }
@@ -589,7 +591,7 @@ BigHashMap<K, void *>::remove(const K &key)
       prev->next = e->next;
     else
       _buckets[b] = e->next;
-    e->k.~K();
+    e->key.~K();
     free(e);
     _n--;
     return true;
@@ -598,20 +600,22 @@ BigHashMap<K, void *>::remove(const K &key)
 }
 
 template <class K>
-void *&
-BigHashMap<K, void *>::find_force(const K &key)
+void **
+BigHashMap<K, void *>::findp_force(const K &key)
 {
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
-    if (e->k == key)
-      return e->v;
-  Elt *e = alloc();
-  new(reinterpret_cast<void *>(&e->k)) K(key);
-  e->v = _default_v;
-  e->next = _buckets[b];
-  _buckets[b] = e;
-  _n++;
-  return e->v;
+    if (e->key == key)
+      return &e->v;
+  if (Elt *e = alloc()) {
+    new(reinterpret_cast<void *>(&e->key)) K(key);
+    e->v = _default_v;
+    e->next = _buckets[b];
+    _buckets[b] = e;
+    _n++;
+    return &e->v;
+  } else
+    return 0;
 }
 
 template <class K>
@@ -620,7 +624,7 @@ BigHashMap<K, void *>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
     for (Elt *e = _buckets[i]; e; e = e->next)
-      e->k.~K();
+      e->key.~K();
     _buckets[i] = 0;
   }
   _free = 0;

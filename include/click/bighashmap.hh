@@ -33,6 +33,7 @@ class BigHashMap { public:
   V *findp(const K &) const;
   const V &operator[](const K &k) const;
   V &find_force(const K &);
+  V *findp_force(const K &);
   
   bool insert(const K &, const V &);
   bool remove(const K &);
@@ -46,11 +47,14 @@ class BigHashMap { public:
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
   void set_dynamic_resizing(bool);
+
+  // dangerous operations
+  static const K &key_of_value(V *v)	{ return *(const K *)((char *)v - offsetof(Elt, v)); }
   
  private:
   
   struct Elt {
-    K k;
+    K key;
     V v;
     Elt *next;
   };
@@ -92,7 +96,7 @@ class BigHashMapIterator { public:
   void operator++(int);
   void operator++()			{ (*this)++; }
   
-  const K &key() const			{ return _elt->k; }
+  const K &key() const			{ return _elt->key; }
   const V &value() const		{ return _elt->v; }
   
  private:
@@ -127,6 +131,13 @@ BigHashMap<K, V>::findp(const K &key) const
   return e ? &e->v : 0;
 }
 
+template <class K, class V>
+inline V &
+BigHashMap<K, V>::find_force(const K &key)
+{
+  return *findp_force(key);
+}
+
 
 template <class K>
 class BigHashMap<K, void *> { public:
@@ -145,6 +156,7 @@ class BigHashMap<K, void *> { public:
   void **findp(const K &) const;
   void *operator[](const K &k) const;
   void *&find_force(const K &);
+  void **findp_force(const K &);
   
   bool insert(const K &, void *);
   bool remove(const K &);
@@ -158,11 +170,14 @@ class BigHashMap<K, void *> { public:
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
   void set_dynamic_resizing(bool);
+
+  // dangerous operations
+  static const K &key_of_value(void **v) { return *(const K *)((char *)v - offsetof(Elt, v)); }
   
  private:
   
   struct Elt {
-    K k;
+    K key;
     void *v;
     Elt *next;
   };
@@ -204,7 +219,7 @@ class BigHashMapIterator<K, void *> { public:
   void operator++(int);
   void operator++()			{ (*this)++; }
   
-  const K &key() const			{ return _elt->k; }
+  const K &key() const			{ return _elt->key; }
   void *value() const			{ return _elt->v; }
   
  private:
@@ -236,6 +251,13 @@ BigHashMap<K, void *>::findp(const K &key) const
 {
   Elt *e = find_elt(key);
   return e ? &e->v : 0;
+}
+
+template <class K>
+inline void *&
+BigHashMap<K, void *>::find_force(const K &key)
+{
+  return *findp_force(key);
 }
 
 template <class K>
