@@ -37,7 +37,8 @@ SRCR::SRCR()
      _datas(0), 
      _databytes(0),
      _arp_table(0),
-     _ett(0)
+     _ett(0),
+     _metric(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -62,14 +63,16 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpEtherAddress, "Ethernet Address", &_eth,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
+		    "METRIC", cpElement, "Metricelement", &_metric,
 		    "ETT", cpElement, "ETT element", &_ett,
                     0);
 
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a Arptable");
+  if (_metric && _metric->cast("GridGenericMetric") == 0) 
+    return errh->error("METRIC element is not a GridGenericMetric");
   if (_ett && _ett->cast("ETT") == 0) 
-    return errh->error("ETT element is not a ETT");
-
+    return errh->error("ETT element is not a Grid");
 
   if (res < 0) {
     return res;
@@ -93,18 +96,21 @@ SRCR::initialize (ErrorHandler *)
 int
 SRCR::get_metric(IPAddress other)
 {
-  if (_ett) {
-    return _ett->get_metric(other);
+  int metric = 0;
+  if (_metric && _arp_table) {
+    EtherAddress neighbor = _arp_table->lookup(other);
+    metric = _metric->get_link_metric(neighbor).val();
   }
+  update_link(_ip, other, metric);
   return 0;
 }
 
 void
 SRCR::update_link(IPAddress from, IPAddress to, int metric) 
 {
-  if (_ett) {
-    _ett->update_link(from, to, metric);
-    _ett->update_link(to, from, metric);
+  if (_link_table) {
+    _link_table->update_link(from, to, metric);
+    _link_table->update_link(to, from, metric);
   }
 
 }

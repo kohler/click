@@ -124,7 +124,7 @@ private:
   bool _is_gw;
 
   class LinkTable *_link_table;
-  class LinkStat *_link_stat;
+  class GridGenericMetric *_metric;
   class ARPTable *_arp_table;
   Timer _timer;
 

@@ -34,7 +34,7 @@ CLICK_DECLS
 GatewaySelector::GatewaySelector()
   :  Element(2,2),
      _warmup(0),
-     _link_stat(0),
+     _metric(0),
      _arp_table(0),
      _timer(this)
 {
@@ -72,13 +72,13 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpKeywords,
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
-		    "LS", cpElement, "LinkStat element", &_link_stat,
+		    "METRIC", cpElement, "Metric element", &_metric,
                     0);
 
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
-    return errh->error("Link element is not a LinkStat");
+  if (_metric && _metric->cast("GridGenericMetric") == 0) 
+    return errh->error("METRIC element is not a GridGenericMetric");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
@@ -176,23 +176,11 @@ int
 GatewaySelector::get_metric(IPAddress other)
 {
   int metric = 0;
-  if (!_link_stat || !_arp_table) {
+  if (!_metric || !_arp_table) {
     metric = 9999;
-  } else {
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    if(!_link_stat->get_forward_rate(_arp_table->lookup(other), 
-				     &frate, &tau, &tv)) {
-      metric = 9999;
-    } else if (!_link_stat->get_reverse_rate(_arp_table->lookup(other), 
-					     &rrate, &tau)) {
-      metric = 9999;
-    } else if (frate == 0 || rrate == 0) {
-      metric = 9999;
-    } else {
-      metric = 100 * 100 * 100 / (frate * (int) rrate);
-    } 
+  } else if (_metric && _arp_table) {
+    EtherAddress neighbor = _arp_table->lookup(other);
+    metric = _metric->get_link_metric(neighbor).val();
   }
   update_link(_ip, other, metric);
   return metric;

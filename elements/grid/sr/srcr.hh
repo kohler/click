@@ -6,6 +6,7 @@
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <elements/grid/linktable.hh>
+#include <elements/grid/gridgenericmetric.hh>
 #include <click/vector.hh>
 #include "ett.hh"
 #include <elements/grid/sr/path.hh>
@@ -181,9 +182,9 @@ private:
   EtherAddress _bcast;
 
   class LinkTable *_link_table;
-  IPAddress _ls_net;
   class ARPTable *_arp_table;
   class ETT *_ett;
+  class GridGenericMetric *_metric;
   
   int get_metric(IPAddress other);
 

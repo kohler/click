@@ -35,7 +35,7 @@ ETT::ETT()
   :  Element(3,2),
      _timer(this), 
      _warmup(0),
-     _link_stat(0),
+     _metric(0),
      _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
@@ -85,7 +85,7 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "LS", cpElement, "LinkStat element", &_link_stat,
+		    "METRIC", cpElement, "METRIC element", &_metric,
 		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
 
@@ -93,8 +93,8 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
-    return errh->error("Link element is not a LinkStat");
+  if (_metric && _metric->cast("GridGenericMetric") == 0) 
+    return errh->error("METRIC element is not a GridGenericMetric");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
@@ -217,23 +217,9 @@ ETT::get_metric(IPAddress other)
   int metric = 0;
   if (n && n->still_bad() ) {
     metric = 9999;
-  } else if (!_link_stat || !_arp_table) {
-    metric = 9999;
-  } else {
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    if(!_link_stat->get_forward_rate(_arp_table->lookup(other), 
-				     &frate, &tau, &tv)) {
-      metric = 9999;
-    } else if (!_link_stat->get_reverse_rate(_arp_table->lookup(other), 
-					     &rrate, &tau)) {
-      metric = 9999;
-    } else if (frate == 0 || rrate == 0) {
-      metric = 9999;
-    } else {
-      metric = 100 * 100 * 100 / (frate * (int) rrate);
-    } 
+  } else if (_metric && _arp_table) {
+    EtherAddress neighbor = _arp_table->lookup(other);
+    metric = _metric->get_link_metric(neighbor).val();
   }
   update_link(_ip, other, metric);
   return metric;
