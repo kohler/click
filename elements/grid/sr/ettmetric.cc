@@ -18,14 +18,13 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include "ettmetric.hh"
-#include "srcrstat.hh"
+#include "ettstat.hh"
 #include <elements/grid/linktable.hh>
 CLICK_DECLS 
 
 ETTMetric::ETTMetric()
   : LinkMetric(), 
-    _ss_small(0), 
-    _ss_big(0)
+    _ett_stat(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -50,21 +49,16 @@ int
 ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpElement, "Small SrcrStat element", &_ss_small,
-			cpElement, "Big SrcrStat element", &_ss_big,
+			cpElement, "ETTStat element", &_ett_stat,
 			cpKeywords,
 			"LT", cpElement, "LinkTable element", &_link_table, 
 			0);
   if (res < 0)
     return res;
-  if (_ss_small == 0) 
-    errh->error("no Small SrcrStat element specified");
-  if (_ss_big == 0) 
-    errh->error("no Big SrcrStat element specified");
-  if (_ss_small->cast("SrcrStat") == 0)
-    return errh->error("Small SrcrStat argument is wrong element type (should be SrcrStat)");
-  if (_ss_big->cast("SrcrStat") == 0)
-    return errh->error("Big SrcrStat argument is wrong element type (should be SrcrStat)");
+  if (_ett_stat == 0) 
+    errh->error("no ETTStat element specified");
+  if (_ett_stat->cast("ETTStat") == 0)
+    return errh->error("ETTStat argument is wrong element type (should be ETTStat)");
   if (_link_table && _link_table->cast("LinkTable") == 0) {
     return errh->error("LinkTable element is not a LinkTable");
   }
@@ -72,7 +66,7 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int rev) 
+ETTMetric::update_link(IPAddress from, IPAddress to, int fwd, int rev) 
 {
   IPOrderedPair p = IPOrderedPair(from, to);
 
@@ -91,8 +85,8 @@ ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int 
   if (!nfo) {
     _links.insert(p, LinkInfo(p));
     nfo = _links.findp(p);
-    nfo->update_small(0, 0);
-    nfo->update_big(0, 0);
+    nfo->_fwd = 0;
+    nfo->_rev = 0;
   }
 
 
@@ -101,22 +95,14 @@ ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int 
   
 
   
-  if (ss == _ss_small) {
-    nfo->update_small(fwd, rev);
-    nfo->_last_small = now;
-  } else if (ss == _ss_big) {
-    nfo->update_big(fwd, rev);
-    nfo->_last_big = now;
-  } else {
-    click_chatter("%{element} called with weird SrcrStat\n",
-		  this);
-  }
+  nfo->_fwd = fwd;
+  nfo->_rev = rev;
 
-  if (now.tv_sec - nfo->_last_small.tv_sec < 30 &&
-      now.tv_sec - nfo->_last_big.tv_sec < 30) {
+
+  if (now.tv_sec - nfo->_last.tv_sec < 30) {
     /* update linktable */
-    int fwd = nfo->fwd_metric();
-    int rev = nfo->rev_metric();
+    int fwd = nfo->_fwd;
+    int rev = nfo->_rev;
     if (!_link_table->update_link(from, to, fwd)) {
       click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		    this,
@@ -136,27 +122,10 @@ ETTMetric::update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int 
 int 
 ETTMetric::get_fwd_metric(IPAddress ip)
 {
-  int small_fwd = 7777;
-  int small_rev = 7777;
-  int big_fwd = 7777;
-  int big_rev = 7777;
-  
-  if (_ss_big) {
-    big_fwd = _ss_big->get_fwd(ip);
-    big_rev = _ss_big->get_rev(ip);
-  }
-  if (_ss_small) {
-    small_fwd = _ss_small->get_fwd(ip);
-    small_rev = _ss_small->get_rev(ip);
-  }
-  IPAddress _ip = _ss_big->_ip;
-  update_link(_ss_big, ip, _ip, big_fwd, big_rev);
-  update_link(_ss_small, ip, _ip, small_fwd, small_rev);
-
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
   if (nfo) {
-    return nfo->fwd_metric();
+    return nfo->_fwd;
   }
   return 7777;
 }
@@ -164,24 +133,10 @@ ETTMetric::get_fwd_metric(IPAddress ip)
 int 
 ETTMetric::get_rev_metric(IPAddress ip)
 {
-  int small_fwd = 7777;
-  int small_rev = 7777;
-  int big_fwd = 7777;
-  int big_rev = 7777;
-
-  if (_ss_big) {
-    big_fwd = _ss_big->get_fwd(ip);
-    big_rev = _ss_big->get_rev(ip);
-  }
-  if (_ss_small) {
-    small_fwd = _ss_small->get_fwd(ip);
-    small_rev = _ss_small->get_rev(ip);
-  }
-  IPAddress _ip = _ss_big->_ip;
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
   if (nfo) {
-    return nfo->rev_metric();
+    return nfo->_rev;
   }
   return 7777;
 }
@@ -196,14 +151,9 @@ ETTMetric::read_stats(Element *xf, void *)
   for(LTable::const_iterator i = e->_links.begin(); i; i++) {
     LinkInfo nfo = i.value();
     sa << nfo._p._a << " " << nfo._p._b;
-    sa << " fwd_metric " << nfo.fwd_metric();
-    sa << " rev_metric " << nfo.rev_metric();
-    sa << " small_fwd " << nfo._small_fwd;
-    sa << " small_rev " << nfo._small_rev;
-    sa << " last_small " << now - nfo._last_small;
-    sa << " big_fwd " << nfo._big_fwd;
-    sa << " big_rev " << nfo._big_rev;
-    sa << " last_big " << now - nfo._last_big;
+    sa << " fwd " << nfo._fwd;
+    sa << " rev " << nfo._rev;
+    sa << " last " << now - nfo._last;
     sa << "\n";
   }
   return sa.take_string();

@@ -4,7 +4,6 @@
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
 #include <elements/grid/linktable.hh>
-#include "loss_table.h"
 CLICK_DECLS
 
 /*
@@ -52,7 +51,7 @@ hashcode(IPOrderedPair p)
 {
   return hashcode(p._a) + hashcode(p._b);
 }
-class SrcrStat;
+class ETTStat;
 
 class ETTMetric : public LinkMetric {
   
@@ -77,55 +76,31 @@ public:
   int get_rev_metric(IPAddress ip);
 
 
-  void update_link(SrcrStat *ss, IPAddress from, IPAddress to, int fwd, int rev);
+  void update_link(IPAddress from, IPAddress to, int fwd, int rev);
 
   class LinkInfo {
   public:
     IPOrderedPair _p;
-    int _small_fwd;
-    int _small_rev;
-    int _big_fwd;
-    int _big_rev;
-    struct timeval _last_small;
-    struct timeval _last_big;
+    int _fwd;
+    int _rev;
+    struct timeval _last;
     LinkInfo() { }
     LinkInfo(IPOrderedPair p) {
       _p = p;
     }
 
-    void update_small(int fwd, int rev) {
-      _small_fwd = fwd;
-      _small_rev = rev;
-    }
-    void update_big(int fwd, int rev) {
-      _big_fwd = fwd;
-      _big_rev = rev;
-    }
-    
-    int fwd_metric() {
-      int fwd_rate = lookup_delivery_rate(_small_fwd, _big_fwd, 1500);
-      if (fwd_rate > 0 && _small_rev > 0) {
-	return (100 * 100 * 100) / (fwd_rate * _small_rev);
-      }
-      
-      return 7777;
-    }
-    int rev_metric() {
-      int rev_rate = lookup_delivery_rate(_small_rev, _big_rev, 1500);
-      if (rev_rate > 0 && _small_fwd > 0) {
-	return (100 * 100 * 100) / (rev_rate * _small_fwd);
-      }
-      return 7777;
-
+    void update(int fwd, int rev) {
+      _fwd = fwd;
+      _rev = rev;
     }
   };
 
   typedef HashMap<IPOrderedPair, LinkInfo> LTable;
   class LTable _links;
 private:
-  SrcrStat *_ss_small;
-  SrcrStat *_ss_big;
+  ETTStat *_ett_stat;
   LinkTable *_link_table;
+  IPAddress _ip;
 };
 
 CLICK_ENDDECLS

@@ -304,7 +304,7 @@ SrcrStat::simple_action(Packet *p)
       l->fwd = le->rev;
     } else {
       if (_ett_metric) {
-	_ett_metric->update_link(this, ip, le->ip, le->fwd, le->rev);
+	//_ett_metric->update_link(this, ip, le->ip, le->fwd, le->rev);
       }
     }
   }
@@ -314,7 +314,7 @@ SrcrStat::simple_action(Packet *p)
    * the fwd metric
    */
   if (_ett_metric) {
-    _ett_metric->update_link(this, _ip, ip, l->fwd, l->rev_rate(_start));
+    //_ett_metric->update_link(this, _ip, ip, l->fwd, l->rev_rate(_start));
   }
 
   p->kill();
