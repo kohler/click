@@ -1,0 +1,79 @@
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_FROMFILE_HH
+#define CLICK_FROMFILE_HH
+#include <click/string.hh>
+#include <click/vector.hh>
+#include <stdio.h>
+CLICK_DECLS
+class ErrorHandler;
+class Element;
+class Packet;
+class WritablePacket;
+
+class FromFile { public:
+
+    FromFile();
+    ~FromFile()				{ cleanup(); }
+    
+    const String &filename() const	{ return _filename; }
+    String &filename()			{ return _filename; }
+    String print_filename() const;
+
+    off_t file_pos() const		{ return _file_offset + _pos; }
+
+    int configure_keywords(Vector<String> &conf, int first_keyword, Element *, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void add_handlers(Element *) const;
+    void cleanup();
+    void take_state(FromFile &, ErrorHandler *);
+
+    int seek(off_t want, ErrorHandler *);
+
+    int read(void *, uint32_t, ErrorHandler * = 0);
+    const uint8_t *get_aligned(size_t, void *, ErrorHandler * = 0);
+    Packet *get_packet(size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
+    Packet *get_packet_from_data(const void *, size_t, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *);
+    void shift_pos(int delta)		{ _pos += delta; }
+    
+    int error(ErrorHandler *, const char *format, ...) const;
+    
+  private:
+
+    enum { BUFFER_SIZE = 32768 };
+    
+    int _fd;
+    const uint8_t *_buffer;
+    uint32_t _pos;
+    uint32_t _len;
+    
+    WritablePacket *_data_packet;
+
+#ifdef ALLOW_MMAP
+    bool _mmap : 1;
+#endif
+
+#ifdef ALLOW_MMAP
+    enum { WANT_MMAP_UNIT = 4194304 }; // 4 MB
+    size_t _mmap_unit;
+    off_t _mmap_off;
+#endif
+
+    String _filename;
+    FILE *_pipe;
+    off_t _file_offset;
+
+#ifdef ALLOW_MMAP
+    int read_buffer_mmap(ErrorHandler *);
+#endif
+    int read_buffer(ErrorHandler *);
+    bool read_packet(ErrorHandler *);
+    int skip_ahead(ErrorHandler *);
+
+    static String filename_handler(Element *, void *);
+    static String filesize_handler(Element *, void *);
+    static String filepos_handler(Element *, void *);
+    
+};
+
+CLICK_ENDDECLS
+#endif
