@@ -4,7 +4,7 @@
 
 /*
  * =c
- * DRR
+ * DRRSched
  * =s packet scheduling
  * pulls from inputs with deficit round robin scheduling
  * =io
@@ -14,21 +14,21 @@
  * Shreedhar and Varghese's SIGCOMM 1995 paper "Efficient Fair
  * Queuing using Deficit Round Robin."
  *
- * =a PrioSched, StrideSched, RoundRobinSwitch, RoundRobinSched
+ * =a PrioSched, StrideSched, RoundRobinSched
  */
 
-class DRR : public Element {
+class DRRSched : public Element { public:
   
- public:
+  DRRSched();
+  ~DRRSched();
   
-  DRR();
-  ~DRR();
-  
-  const char *class_name() const		{ return "DRR"; }
+  const char *class_name() const		{ return "DRRSched"; }
   const char *processing() const		{ return PULL; }
-  void notify_ninputs(int);
+  DRRSched *clone() const			{ return new DRRSched; }
   
-  DRR *clone() const			{ return new DRR; }
+  void notify_ninputs(int);
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   Packet *pull(int port);
 
@@ -39,6 +39,7 @@ class DRR : public Element {
   Packet **_head; // First packet from each queue.
   unsigned *_deficit;  // Each queue's deficit.
   int _next;      // Next input to consider.
+  
 };
 
-#endif DRR_HH
+#endif

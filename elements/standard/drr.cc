@@ -1,5 +1,5 @@
 /*
- * DRR.{cc,hh} -- deficit round-robin scheduler
+ * drr.{cc,hh} -- deficit round-robin scheduler
  * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -19,9 +19,10 @@
 
 #include <click/config.h>
 #include <click/package.hh>
+#include <click/error.hh>
 #include "drr.hh"
 
-DRR::DRR()
+DRRSched::DRRSched()
 {
   MOD_INC_USE_COUNT;
   add_output();
@@ -31,41 +32,48 @@ DRR::DRR()
   _quantum = 500;
 }
 
-DRR::~DRR()
+DRRSched::~DRRSched()
 {
   MOD_DEC_USE_COUNT;
 }
 
 void
-DRR::notify_ninputs(int i)
+DRRSched::notify_ninputs(int i)
 {
-  int j;
-
-  if(_head){
-    for(j = 0; j < ninputs(); j++){
-      if(_head[j]){
-        _head[j]->kill();
-        _head[j] = 0;
-      }
-    }
-    delete _head;
-  }
-  if(_deficit)
-    delete _deficit;
-
   set_ninputs(i);
+}
 
-  _head = new Packet * [ninputs()];
-  _deficit = new unsigned [ninputs()];
-  for(j = 0; j < ninputs(); j++){
-    _head[j] = 0;
-    _deficit[j] = 0;
+int
+DRRSched::initialize(ErrorHandler *errh)
+{
+  _head = new Packet *[ninputs()];
+  _deficit = new unsigned[ninputs()];
+  if (!_head || !_deficit) {
+    uninitialize();
+    return errh->error("out of memory!");
+  }
+
+  for (int i = 0; i < ninputs(); i++) {
+    _head[i] = 0;
+    _deficit[i] = 0;
   }
   _next = 0;
+  return 0;
+}
+
+void
+DRRSched::uninitialize()
+{
+  if (_head)
+    for (int j = 0; j < ninputs(); j++)
+      if (_head[j])
+        _head[j]->kill();
+  delete[] _head;
+  delete[] _deficit;
 }
 
 Packet *
-DRR::pull(int)
+DRRSched::pull(int)
 {
   int n = ninputs();
 
@@ -93,7 +101,8 @@ DRR::pull(int)
       _next = 0;
     _deficit[_next] += _quantum;
   }
+  
   return 0;
 }
 
-EXPORT_ELEMENT(DRR)
+EXPORT_ELEMENT(DRRSched)
