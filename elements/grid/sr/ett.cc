@@ -56,8 +56,10 @@ ETT::ETT()
 
   _query_wait.tv_sec = 5;
   _query_wait.tv_usec = 0;
-  _reply_wait.tv_sec = 2;
-  _reply_wait.tv_usec = 0;
+
+
+  _black_list_timeout.tv_sec = 60;
+  _black_list_timeout.tv_usec = 0;
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -135,7 +137,11 @@ ETT::start_query(IPAddress dstip)
 
   q->_seq = _seq;
   click_gettimeofday(&q->_last_query);
-
+  q->_count++;
+  q->_metric = 0;
+  if (q->_count > 3 && dstip == _gw) {
+    _gw = IPAddress("255.255.255.255");
+  }
   click_chatter("ETT %s : starting query for %s", 
 		_ip.s().cc(),
 		dstip.s().cc());
@@ -194,6 +200,12 @@ int
 ETT::get_metric(IPAddress other)
 {
   u_short dft = 0; // default metric
+
+  BadNeighbor *n = _black_list.findp(other);
+
+  if (n &&  n->still_bad()) {
+    return 9999;
+  }
   if(_link_stat){
     unsigned int tau;
     struct timeval tv;
@@ -244,9 +256,6 @@ ETT::process_query(struct sr_pkt *pk1)
     }
     hops.push_back(hop);
     if (hop == _ip) {
-      click_chatter("ETT %s: I'm already in this query from %s to %s!  - dropping\n",
-		    _ip.s().cc(),
-		    src.s().cc(), dst.s().cc());
       /* I'm already in this route! */
       return;
     }
@@ -258,10 +267,8 @@ ETT::process_query(struct sr_pkt *pk1)
   metric += m;
   metrics.push_back(m);
   hops.push_back(_ip);
-  click_chatter("ETT %s: got metric for neighbor %s of %d\n",
-		id().cc(),
-		pk1->get_hop(pk1->num_hops()-1).s().cc(),
-		m);
+
+  
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
       break;
@@ -269,6 +276,10 @@ ETT::process_query(struct sr_pkt *pk1)
   }
 
   if (si == _seen.size()) {
+    if (_seen.size() == 100) {
+      _seen.pop_front();
+      si--;
+    }
     _seen.push_back(Seen(src, dst, seq, 0));
   }
   _seen[si]._count++;
@@ -284,23 +295,56 @@ ETT::process_query(struct sr_pkt *pk1)
   if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
     /* query for me */
     click_chatter("ETT %s: got a query for me from %s\n", 
-		  _ip.s().cc(),
-		    src.s().cc());
+		  id().cc(),
+		  src.s().cc());
     
     start_reply(src, dst, seq);
   } else {
-    /* query for someone else */
-    click_chatter("ETT %s: forwarding immediately", _ip.s().cc());
-    forward_query(_seen[si], hops, metrics);
+    _seen[si]._hops = hops;
+    _seen[si]._metrics = metrics;
+    if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
+      /* a timer has already been scheduled */
+      return;
+    } else {
+      /* schedule timer */
+      int delay_time = random() % 500;
+      click_chatter("ETT %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
+      ett_assert(delay_time > 0);
+
+      struct timeval delay;
+      delay.tv_sec = 0;
+      delay.tv_usec = delay_time*1000;
+      timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+      _seen[si]._forwarded = false;
+      Timer *t = new Timer(static_forward_query_hook, (void *) this);
+      t->initialize(this);
+      
+      t->schedule_at(_seen[si]._to_send);
+    }
   }
 
 }
 void
-ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<int> metrics)
+ETT::forward_query_hook() 
 {
-  int nhops = hops.size();
+  struct timeval now;
+  click_gettimeofday(&now);
+  for (int x = 0; x < _seen.size(); x++) {
+    if (timercmp(&_seen[x]._to_send, &now, <) && !_seen[x]._forwarded) {
+      forward_query(&_seen[x]);
+    }
+  }
+}
+void
+ETT::forward_query(Seen *s)
+{
+  click_chatter("ETT %s: forward_query called for %s -> %s\n", 
+		id().cc(),
+		s->_src.s().cc(),
+		s->_dst.s().cc());
+  int nhops = s->_hops.size();
 
-  ett_assert(hops.size() == metrics.size()+1);
+  ett_assert(s->_hops.size() == s->_metrics.size()+1);
 
   //click_chatter("forward query called");
   int len = sr_pkt::len_wo_data(nhops);
@@ -312,19 +356,19 @@ ETT::forward_query(Seen s, Vector<IPAddress> hops, Vector<int> metrics)
   pk->_version = _srcr_version;
   pk->_type = PT_QUERY;
   pk->_flags = 0;
-  pk->_qdst = s._dst;
-  pk->_seq = htonl(s._seq);
+  pk->_qdst = s->_dst;
+  pk->_seq = htonl(s->_seq);
   pk->set_num_hops(nhops);
 
   for(int i=0; i < nhops; i++) {
-    pk->set_hop(i, hops[i]);
+    pk->set_hop(i, s->_hops[i]);
   }
 
   for(int i=0; i < nhops - 1; i++) {
-    pk->set_metric(i, metrics[i]);
+    pk->set_metric(i, s->_metrics[i]);
   }
 
-
+  s->_forwarded = true;
   send(p);
 }
 
@@ -360,8 +404,6 @@ ETT::forward_reply(struct sr_pkt *pk1)
 
 void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
 {
-  click_chatter("ETT %s: start_reply called for %s\n", _ip.s().cc(), 
-		src.s().cc());
   _link_table->dijkstra();
   Path path = _link_table->best_route(src);
   click_chatter("ETT %s: start_reply: found path to %s: [%s]\n", 
@@ -413,7 +455,9 @@ ETT::got_reply(struct sr_pkt *pk)
 
   IPAddress dst = IPAddress(pk->_qdst);
 
-  click_chatter("ETT: got reply from %s\n", dst.s().cc());
+  click_chatter("ETT %s: got reply from %s\n", 
+		id().cc(),
+		dst.s().cc());
   _link_table->dijkstra();
   
   Path p;
@@ -428,10 +472,14 @@ ETT::got_reply(struct sr_pkt *pk)
     q = _queries.findp(dst);
   }
   ett_assert(q);
-  if (!q->_metric || q->_metric > metric) {
+  q->_count = 0;
+  if ((!q->_metric || q->_metric > metric) && metric < 9999) {
     q->_metric = metric;
     if (dst == IPAddress("255.255.255.255")) {
       _gw = pk->get_hop(pk->num_hops() - 1);
+      click_chatter("ETT %s: set gw to %s",
+		    id().cc(),
+		    _gw.s().cc());
     }
   }
 }
@@ -448,11 +496,83 @@ ETT::route_to_string(Vector<IPAddress> s)
   sa << "]";
   return sa.take_string();
 }
+
+void
+ETT::process_data(Packet *p_in)
+{
+  struct sr_pkt *pk_in = (struct sr_pkt *) p_in->data();
+  
+  IPAddress dst = pk_in->get_hop(pk_in->next());
+  IPAddress src = pk_in->get_hop(0);
+  BadNeighbor *n = _black_list.findp(dst);
+  if (!n || !n->still_bad()) {
+    return;
+  }
+  int *count = n->_errors_sent.findp(src);
+  if (!count) {
+    n->_errors_sent.insert(src, 0);
+    count = n->_errors_sent.findp(src);
+  }
+  ett_assert(count);
+  n->_errors_sent.insert(src, *count + 1);
+  if (*count % 10 != 0) {
+    return;
+  }
+  
+  Path path = _link_table->best_route(pk_in->get_hop(0));
+
+  if (!_link_table->valid_route(path)) {
+    click_chatter("ETT %s: couldn't send error to %s about neighbor %s,no route\n",
+		  id().cc(),
+		  pk_in->get_hop(0).s().cc(),
+		  dst.s().cc());
+  }
+  click_chatter("ETT %s: sending err to %s about neighbor %s\n",
+		id().cc(),
+		pk_in->get_hop(0).s().cc(),
+		dst.s().cc());
+
+  int len = sr_pkt::len_wo_data(path.size()+1);
+  WritablePacket *p = Packet::make(len);
+  if(p == 0) {
+    click_chatter("ETT %s: couldn't make packet in process_data\n",
+		  id().cc());
+    return;
+  }
+  
+  /* send error */
+  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  memset(pk, '\0', len);
+  pk->_version = _srcr_version;
+  pk->_type = PT_REPLY;
+  pk->_flags = FLAG_ERROR;
+  pk->_qdst = dst;
+  pk->_seq = 0;
+  pk->set_next(path.size()-2);
+  pk->set_num_hops(path.size()+1);
+  int i;
+  for(i = 0; i < path.size(); i++) {
+    pk->set_hop(i, path[path.size() - 1 - i]);
+    pk->set_metric(i,0);
+    //click_chatter("reply: set hop %d to %s\n", i, pk->get_hop(i).s().cc());
+  }
+  pk->set_hop(path.size(), dst);
+  pk->set_metric(path.size()-1, 9999);
+
+  send(p);
+  return;
+
+}
 void
 ETT::push(int port, Packet *p_in)
 {
   if (_warmup < _warmup_period) {
     click_chatter("ETT %s: still warming up, dropping packet\n", id().cc());
+    p_in->kill();
+    return;
+  }
+  if (port == 1) {
+    process_data(p_in);
     p_in->kill();
     return;
   }
@@ -487,27 +607,25 @@ ETT::push(int port, Packet *p_in)
       q = _queries.findp(dst);
     }
     ett_assert(q);
-    
-    if (sent_packet && q->_metric && metric * 2 > q->_metric) {
+
+    if (q->_metric > metric) {
+      q->_metric = metric;
+    }
+    if (sent_packet && metric < 2 * q->_metric) {
       return;
     }
-    //click_chatter("ETT %s: need route to %s\n", _ip.s().cc(), dst.s().cc());
     
     struct timeval n;
     click_gettimeofday(&n);
     struct timeval expire;
     timeradd(&q->_last_query, &_query_wait, &expire);
     if (timercmp(&expire, &n, <)) {
-      click_chatter("ETT %s: calling start_query to %s\n", 
-		    _ip.s().cc(), 
-		    dst.s().cc());
       start_query(dst);
-    
-    } else {
-	//click_chatter("recent query to %s, so discarding packet\n", dst.s().cc());
     }
     return;
-  } else if (port ==  0 || port == 1) {
+
+    
+  } else if (port ==  0) {
     struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
   if (pk->_version != _srcr_version) {
     click_chatter("ETT %s: bad sr_pkt version. wanted %d, got %d\n",
@@ -545,16 +663,16 @@ ETT::push(int port, Packet *p_in)
       IPAddress a = pk->get_hop(i);
       IPAddress b = pk->get_hop(i+1);
       int m = pk->get_metric(i);
-      if (m != 0) {
+      if (m != 0 && a != _ip && b != _ip) {
+	/* 
+	 * don't update the link for my neighbor
+	 * we'll do that below
+	 */
 	update_link(a,b,m);
       }
     }
     
     
-    if (port == 1) {
-      p_in->kill();
-      return;
-    }
     IPAddress neighbor = IPAddress();
     switch (type) {
     case PT_QUERY:
@@ -567,7 +685,7 @@ ETT::push(int port, Packet *p_in)
       ett_assert(0);
     }
     _arp_table->insert(neighbor, pk->get_shost());
-
+    update_link(_ip, neighbor, get_metric(neighbor));
     if(type == PT_QUERY){
       process_query(pk);
       
@@ -725,11 +843,24 @@ ETT::link_failure(EtherAddress dst)
   if (ip == IPAddress()) {
     click_chatter("ETT %s: reverse arp found no ip\n",
 		  id().cc());
-  } else {
-    click_chatter("ETT %s: reverse arp found %s\n",
-		  id().cc(),
-		  ip.s().cc());
+    return;
   }
+  click_chatter("ETT %s: reverse arp found %s\n",
+		id().cc(),
+		ip.s().cc());
+  update_link(_ip, ip, 9999);
+
+  BadNeighbor b = BadNeighbor(ip);
+  click_gettimeofday(&b._when);
+  b._timeout.tv_sec = _black_list_timeout.tv_sec;
+  b._errors_sent.clear();
+  _black_list.insert(ip, b);
+
+  /*
+   * run dijkstra so the next time we need a route
+   * we're forced to do a query
+   */
+  _link_table->dijkstra();
 }
 
 void
@@ -760,8 +891,10 @@ ETT::ett_assert_(const char *file, int line, const char *expr) const
 #include <click/vector.cc>
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
+#include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<ETT::IPAddress>;
+template class DEQueue<ETT::Seen>;
 #endif
 
 CLICK_ENDDECLS

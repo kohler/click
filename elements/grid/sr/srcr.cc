@@ -33,7 +33,7 @@ CLICK_DECLS
 
 
 SRCR::SRCR()
-  :  Element(2,2), 
+  :  Element(1,2), 
      _datas(0), 
      _databytes(0),
      _arp_table(0),
@@ -41,6 +41,9 @@ SRCR::SRCR()
 
 {
   MOD_INC_USE_COUNT;
+
+  static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  _bcast = EtherAddress(bcast_addr);
 }
 
 SRCR::~SRCR()
@@ -184,14 +187,19 @@ SRCR::push(int port, Packet *p_in)
   }
 
   if(port == 0 && pk->get_hop(pk->next()) != _ip){
-    // it's not for me. these are supposed to be unicast,
-    // so how did this get to me?
-    click_chatter("SRCR %s: data not for me %d/%d %s %s",
-		  _ip.s().cc(),
-		  pk->next(),
-		  pk->num_hops(),
-		  pk->get_hop(pk->next()).s().cc(),
-		  pk->get_dhost().s().cc());
+    if (pk->get_dhost() != _bcast) {
+      /* 
+       * if the arp doesn't have a ethernet address, it
+       * will broadcast the packet. in this case,
+       * don't complain. But otherwise, something's up
+       */
+      click_chatter("SRCR %s: data not for me %d/%d ip %s eth %s",
+		    _ip.s().cc(),
+		    pk->next(),
+		    pk->num_hops(),
+		    pk->get_hop(pk->next()).s().cc(),
+		    pk->get_dhost().s().cc());
+    }
     p_in->kill();
     return;
   }
@@ -201,20 +209,23 @@ SRCR::push(int port, Packet *p_in)
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
     int m = pk->get_metric(i);
-    if (m != 0) {
+    if (m != 0 && a != _ip && b != _ip) {
+      /* 
+       * don't update the link for my neighbor
+       * we'll do that below
+       */
       //click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
       update_link(a,b,m);
     }
   }
   
-  if (port == 1) {
-    /* we're just sniffing this packet */
-    click_chatter("SRCR %s: killing sniffed packet\n", id().cc());
-    p_in->kill();
-    return;
-  }
+
   IPAddress prev = pk->get_hop(pk->next()-1);
   _arp_table->insert(prev, pk->get_shost());
+
+  int prev_metric = get_metric(prev);
+  update_link(_ip, prev, prev_metric);
+
   if(pk->next() == pk->num_hops() - 1){
     //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
     // I'm the ultimate consumer of this data.
@@ -241,15 +252,12 @@ SRCR::push(int port, Packet *p_in)
   struct sr_pkt *pk_out = (struct sr_pkt *) p->data();
   memcpy(pk_out, pk, len);
 
-  
+  pk_out->set_metric(pk_out->next() - 1, prev_metric);
   pk_out->set_next(pk->next() + 1);
   pk_out->ether_type = htons(_et);
 
   srcr_assert(pk->next() < 8);
   IPAddress nxt = pk_out->get_hop(pk_out->next());
-  int prev_metric = get_metric(prev);
-  pk_out->set_metric(pk_out->next() - 2, prev_metric);
-  update_link(_ip, prev, prev_metric);
 
 
 

@@ -31,6 +31,10 @@ enum SRCRPacketType { PT_QUERY = (1<<0),
 
 
 
+enum SRCRPacketFlags {
+  FLAG_ERROR = (1<<0),
+};
+
 static const uint8_t _srcr_version = 0x04;
 
 // Packet format.
@@ -79,7 +83,7 @@ struct sr_pkt {
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
   
   static size_t len_wo_data(int nhops) {
-    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + nhops * sizeof(uint16_t);
+    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + (nhops) * sizeof(uint16_t);
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
@@ -107,9 +111,16 @@ struct sr_pkt {
     return ntohs(_dlen);
   }
   uint16_t get_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
-    return ndx[h];
+    uint16_t *ndx = (uint16_t *) (this+1);
+    return ndx[h + num_hops()*2];
   }
+
+  void set_metric(int hop, uint16_t s) { 
+    uint16_t *ndx = (uint16_t *) (this+1);
+    ndx[hop + num_hops()*2] = s;
+  }
+
+
 
   IPAddress get_hop(int h) { 
     in_addr *ndx = (in_addr *) (this + 1);
@@ -120,11 +131,6 @@ struct sr_pkt {
     in_addr *ndx = (in_addr *) (this + 1);
     ndx[hop] = p.in_addr();
   }
-  void set_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
-    ndx[hop] = s;
-  }
-
   
   /* remember that if you call this you must have set the number of hops in this packet! */
   u_char *data() { return (ether_dhost + len_wo_data(num_hops())); }
@@ -203,7 +209,8 @@ private:
   // Statistics for handlers.
   int _datas;
   int _databytes;
-  
+
+  EtherAddress _bcast;
   class PathInfo {
   public:
     Path _p;
@@ -217,7 +224,6 @@ private:
   typedef PathTable::const_iterator PIter;
   
   class PathTable _paths;
-  EtherAddress _bcast;
   class LinkTable *_link_table;
   IPAddress _ls_net;
   class ARPTable *_arp_table;

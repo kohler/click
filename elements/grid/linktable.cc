@@ -416,16 +416,18 @@ LinkTable::print_routes()
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     const IPAddress &ip = i.key();
     Vector <IPAddress> r = best_route(ip);
-    sa << "route: " << ip.s().cc() << " : ";
-    for (int i = 0; i < r.size(); i++) {
-      sa << " " << r[i] << " ";
-      if (i != r.size()-1) {
-	LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
-	lt_assert(l);
-	sa << "<" << l->_metric << ">";
+    if (valid_route(r)) {
+      sa << ip.s().cc() << " ";
+      for (int i = 0; i < r.size(); i++) {
+	sa << " " << r[i] << " ";
+	if (i != r.size()-1) {
+	  LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
+	  lt_assert(l);
+	  sa << l->_metric;
+	}
       }
+      sa << "\n";
     }
-    sa << "\n";
   }
   return sa.take_string();
 }
@@ -461,14 +463,12 @@ LinkTable::dijkstra()
   IPMap ip_addrs;
 
   for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo n = iter.value();
-    ip_addrs.insert(n._ip, true);
+    ip_addrs.insert(iter.value()._ip, true);
   }
   
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     /* clear them all initially */
-    const IPAddress &ip = i.key();
-    HostInfo *n = _hosts.findp(ip);
+    HostInfo *n = _hosts.findp(i.key());
     n->clear();
   }
   HostInfo *root_info = _hosts.findp(src);
@@ -486,8 +486,7 @@ LinkTable::dijkstra()
 
 
     for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
-      const IPAddress &ip = i.key();
-      HostInfo *neighbor = _hosts.findp(ip);
+      HostInfo *neighbor = _hosts.findp(i.key());
       lt_assert(neighbor);
       if (!neighbor->_marked) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
@@ -502,8 +501,7 @@ LinkTable::dijkstra()
     current_min_ip = IPAddress();
     int min_metric = 32000;
     for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
-      const IPAddress &ip = i.key();
-      HostInfo *nfo = _hosts.findp(ip);
+      HostInfo *nfo = _hosts.findp(i.key());
       if (!nfo->_marked && nfo->_metric && nfo->_metric < min_metric) {
 	current_min_ip = nfo->_ip;
 	min_metric = nfo->_metric;

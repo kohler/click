@@ -100,14 +100,14 @@ PrintSRCR::simple_action(Packet *p)
   }
 
   sa << "seq=" << pk->_seq << " ";
-  sa << "nhops=" << ntohs(pk->_nhops) << " ";
-  sa << "next=" << ntohs(pk->_next) << " ";
+  sa << "nhops=" << pk->num_hops() << " ";
+  sa << "next=" << pk->next() << " ";
 
   sa << "[";
-  for(int i = 0; i< ntohs(pk->_nhops); i++) {
-    sa << " "<< IPAddress(pk->get_hop(i)).s().cc() << " ";
-    if (i != ntohs(pk->_nhops) - 1) {
-      //sa << "<" << pk->get_metric(i) << ">";
+  for(int i = 0; i< pk->num_hops(); i++) {
+    sa << " "<< pk->get_hop(i).s().cc() << " ";
+    if (i != pk->num_hops() - 1) {
+      sa << "<" << pk->get_metric(i) << ">";
     }
 
   }
