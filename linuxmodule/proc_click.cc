@@ -371,29 +371,30 @@ proc_element_handler_ioctl(struct inode *ino, struct file *filp,
   int retval;
   
   // allocate ioctl buffer
-  if (_IOC_SIZE(command) <= 128)
+  int size = _CLICK_IOC_SIZE(command);
+  if (size <= 128)
     data = ubuf.buf;
-  else if (_IOC_SIZE(command) > 16384 || !(data = new char[_IOC_SIZE(command)])) {
+  else if (size > 16384 || !(data = new char[size])) {
     retval = -ENOMEM;
     goto exit;
   }
 
   // fetch incoming data if necessary
   address_ptr = reinterpret_cast<void *>(address);
-  if (_IOC_SIZE(command) && (command & IOC_IN)
-      && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, _IOC_SIZE(command))) < 0)
+  if (size && (command & IOC_IN)
+      && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, size)) < 0)
     goto exit;
 
   // call llrpc
-  arg_ptr = (_IOC_SIZE(command) && (command & (IOC_INOUT)) ? data : address_ptr);
+  arg_ptr = (size && (command & (IOC_INOUT)) ? data : address_ptr);
   if (click_router->initialized())
     retval = e->llrpc(command, arg_ptr);
   else
     retval = e->Element::llrpc(command, arg_ptr);
 
   // store outgoing data if necessary
-  if (retval >= 0 && _IOC_SIZE(command) && (command & IOC_OUT))
-    retval = CLICK_LLRPC_PUT_DATA(address_ptr, data, _IOC_SIZE(command));
+  if (retval >= 0 && size && (command & IOC_OUT))
+    retval = CLICK_LLRPC_PUT_DATA(address_ptr, data, size);
 
  free_exit:
   if (data != ubuf.buf)
