@@ -2,6 +2,7 @@
 #define CLICK_DISCARD_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 
 /*
  * =c
@@ -10,8 +11,9 @@
  * drops all packets
  * =d
  * Discards all packets received on its single input.
- * If used in a Pull context, it initiates pulls whenever
- * packets are available.
+ * If used in a pull context, it initiates pulls whenever
+ * packets are available, and listens for activity notification; see
+ * NotifierQueue.
  */
 
 class Discard : public Element { public:
@@ -29,9 +31,10 @@ class Discard : public Element { public:
   void push(int, Packet *);
   void run_scheduled();
 
-protected:
+ protected:
 
   Task _task;
+  NotifierSignal _signal;
   
 };
 
