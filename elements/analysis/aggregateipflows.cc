@@ -238,7 +238,7 @@ AggregateIPFlows::simple_action(Packet *p)
     if (_next != old_next) {
 	notify(_next - 1, AggregateListener::NEW_AGG, p);
 	if (_flowinfo_file)
-	    fprintf(_flowinfo_file, "%ld.%06ld %u > %s %d %s %d %c\n", p->timestamp_anno().tv_sec, p->timestamp_anno().tv_usec, _next - 1, flow.saddr().s().cc(), ntohs(flow.sport()), flow.daddr().s().cc(), ntohs(flow.dport()), (iph->ip_p == IP_PROTO_TCP ? 'T' : 'U'));
+	    fprintf(_flowinfo_file, "%ld.%06ld %u %s %d %s %d %c\n", p->timestamp_anno().tv_sec, p->timestamp_anno().tv_usec, _next - 1, flow.saddr().s().cc(), ntohs(flow.sport()), flow.daddr().s().cc(), ntohs(flow.dport()), (iph->ip_p == IP_PROTO_TCP ? 'T' : 'U'));
     }
     
     // GC if necessary
