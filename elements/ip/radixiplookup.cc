@@ -57,6 +57,7 @@ RadixIPLookup::uninitialize()
     _radix = 0;
 }
 
+
 String
 RadixIPLookup::dump_routes()
 {

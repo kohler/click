@@ -57,9 +57,10 @@
 class IPRouteTable : public Element { public:
 
     void *cast(const char *);
+    int configure(const Vector<String> &, ErrorHandler *);
 
     virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
-    virtual int remove_route(IPAddress, IPAddress, ErrorHandler*);
+    virtual int remove_route(IPAddress, IPAddress, ErrorHandler *);
     virtual int lookup_route(IPAddress, IPAddress &) const = 0;
     virtual String dump_routes();
   

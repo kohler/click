@@ -35,6 +35,36 @@ IPRouteTable::cast(const char *name)
 }
 
 int
+IPRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+    int before = errh->nerrors();
+    for (int i = 0; i < conf.size(); i++) {
+	IPAddress dst, mask, gw;
+	int32_t port;
+	bool ok;
+
+	Vector<String> words;
+	cp_spacevec(conf[i], words);
+
+	if ((words.size() == 2 || words.size() == 3)
+	    && cp_ip_prefix(words[0], &dst, &mask, true, this) // allow base IP addresses
+	    && cp_integer(words.back(), &port)) {
+	    if (words.size() == 3)
+		ok = cp_ip_address(words[1], &gw, this);
+	    else
+		ok = true;
+	}
+
+	if (ok && port >= 0)
+	    (void) add_route(dst, mask, gw, port, errh);
+	else
+	    errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
+    }
+
+    return (errh->nerrors() != before ? -1 : 0);
+}
+
+int
 IPRouteTable::add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh)
 {
     // by default, cannot add routes
