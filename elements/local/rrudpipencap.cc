@@ -120,7 +120,7 @@ RoundRobinUDPIPEncap::simple_action(Packet *p)
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   // set up IP header
-  ip->ip_v = IPVERSION;
+  ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(addr->id++);
