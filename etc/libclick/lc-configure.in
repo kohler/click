@@ -38,7 +38,7 @@ dnl build userlevel? Linux module? are we compiling on Linux?
 dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
-AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(linuxmodule, [  --enable-linuxmodule    enable Linux kernel driver], :, enable_linuxmodule=no)
 AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
