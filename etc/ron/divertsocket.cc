@@ -211,7 +211,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 DivertSocket::initialize(ErrorHandler *errh) 
 {
-  int ret;
+  int ret, n;
   struct sockaddr_in bindPort; //, sin;
 
 
@@ -245,6 +245,15 @@ DivertSocket::initialize(ErrorHandler *errh)
   bindPort.sin_port=htons(_divertport);
   bindPort.sin_addr.s_addr=0;
 
+  // set REUSE option
+  n = 1;
+  if (setsockopt (_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&n, sizeof (n)) < 0) {
+    errh->error("could not set REUSEADDR");
+    close (_fd);
+    return -1;
+  }
+  
+  // bind to port
   ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
 
   if (ret != 0) {
