@@ -531,10 +531,12 @@ scheduled.
 .Sp
 .TP
 .BR "virtual void run_scheduled()"
-Called by the Router to run an element that was placed on the work list.
-Within this function, an element can schedule itself or other elements with
-.BR schedule_tail() ;
-they will be run the next time the work list is executed. The default
+Called by the Router to run an element that was on the schedule.
+Within
+.BR run_scheduled() ,
+an element can schedule itself or other elements with
+.BR reschedule() ;
+they will be run at some later time. The default
 implementation reports an error.
 .PD
 '
