@@ -1,0 +1,181 @@
+.\" -*- mode: nroff -*-
+.ds E " \-\- 
+.if t .ds E \(em
+.de OP
+.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de OA
+.IR "\fB\\$1\& \|\fI\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de QO
+.RB ` "\\$1" "'\\$2"
+..
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.TH CLICK.O 8 "19/Oct/1999" "Version \*V"
+.SH NAME
+click.o \- Click kernel module for Linux
+'
+.SH DESCRIPTION
+'
+The Click modular router can be compiled as a Linux kernel module, called
+.BR click.o .
+It can steal packets from network devices before Linux gets a chance to
+handle them, send packets directly to devices, and send packets to Linux
+for normal processing.
+.PP
+Install the kernel module with
+.BR insmod (1):
+`/sbin/insmod click.o'. Remove it with
+.BR rmmod (1):
+`/sbin/rmmod click'.
+.PP
+The module uses the /proc filesystem
+.RB ( proc (5))
+for its API. It creates a number of files under /proc/click, some read-only
+and some read/write (writable by the superuser). You control the module by
+writing to files. For example, you install a router configuration by
+writing it to /proc/click/config.
+.PP
+The module does not change your machine's default networking setup until
+you write a configuration to /proc/click/config. This configuration can use
+most of Click's element classes (see
+.BR elements (n)).
+Three kernel-only element classes control how packets are read from, and
+written to, devices:
+.BR FromDevice (n)
+steals packets from devices before Linux process them,
+.BR ToDevice (n)
+sends packets directly to devices, and
+.BR ToLinux (n)
+sends packets to Linux for normal processing. Removing the module or
+installing a null configuration will restore your machine's default
+networking setup.
+.PP
+.SS "/proc/click"
+The files under /proc/click include:
+.TP 5
+.B /proc/click/config
+Read/write. Contains a Click-language description
+.RB "(see " click (5))
+of the most recent router configuration, not including any run-time
+reconfiguration. Write a Click-language router description to this file to
+change the configuration.
+'
+.TP
+.B /proc/click/errors
+Read-only. All errors and messages reported by the Click router since the
+last reconfiguration (that is, the last write to /proc/click/config). These
+messages are also printed to the system log.
+'
+.TP
+.B /proc/click/classes
+Read-only. A newline-separated list of primitive element classes supported
+by the router.
+'
+.TP
+.B /proc/click/list
+Read-only. The elements in the current router configuration, listed one per
+line by name. The first line is an integer: the number of elements.
+'
+.TP
+.B /proc/click/flatconfig
+Read-only. A Click-language description of the current router
+configuration, including the effects of any run-time reconfiguration. All
+the element declarations come first, then all connections, and any compound
+elements have been compiled away.
+'
+.TP
+.B /proc/click/cycles, /proc/click/meminfo
+Read-only. Cycle count and memory usage statistics.
+'
+.SS "Element directories"
+'
+Every element in the current router configuration has a directory under
+/proc/click. You can access the directory by number or element name. The
+.IR i th
+element in /proc/click/list has directory
+.RI `/proc/click/ i ',
+and if the element is named
+.IR n ,
+that directory can be accessed as
+.RI `/proc/click/ n '.
+This works even if the name contains slashes 
+.RB ( click.o
+creates directories for each name component).
+.PP
+The files in these directories include:
+'
+.TP 5
+.BI /proc/click/xxx/class
+Read-only. The element class.
+.TP
+.BI /proc/click/xxx/name
+Read-only. The element's name.
+.TP
+.BI /proc/click/xxx/config
+Read/write if the element supports run-time reconfiguration; otherwise
+read-only. The element's current configuration. Writing to this file (if it
+is writable) causes the element to reconfigure itself on the fly. If the
+reconfiguration fails, the element's old configuration is used instead.
+.TP
+.BI /proc/click/xxx/inputs
+Read-only. Describes the element's inputs: how many there are, and (for
+pull inputs) what they are connected to.
+.TP
+.BI /proc/click/xxx/outputs
+Read-only. Describes the element's outputs: how many there are, and (for
+push outputs) what they are connected to.
+'
+.PP
+Particular elements may add read-only, write-only, or read/write files to
+their directories. RED elements
+.RB "(see " RED (n))
+add read/write
+.BR min_thresh ", " max_thresh ", and " max_p
+files representing RED parameters, and Counter elements
+.RB "(see " Counter (n))
+provide read-only
+.BR count " and " rate
+files to report packet counts and the recent rate. See the element
+documentation
+.RB "(" elements (n))
+for other examples.
+.PP
+The subdirectories are created even for erroneous configurations, but
+element-specific files are created only if the router configuration is
+correct.
+'
+.SH "SEE ALSO"
+click(5), elements(n), FromDevice(n), ToDevice(n), ToLinux(n)
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+John Jannotti, jj@lcs.mit.edu
+.br
+Robert Morris, rtm@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'
