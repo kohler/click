@@ -10,13 +10,14 @@
  * Keywords:
  * =over 8
  * =item LOG
- * GridLogger element.  If no LOG is specified in the configuration, no logging will occur.
+ * GridGenericLogger element.  If no LOG is specified in the configuration, no logging will occur.
  * =a GridLogger
  */
 
 #include <click/element.hh>
-#include "gridlogger.hh"
 CLICK_DECLS
+
+class GridGenericLogger;
 
 class GridTxError : public Element { public:
   
@@ -32,7 +33,7 @@ class GridTxError : public Element { public:
   void push(int, Packet *);
 
 private:
-  GridLogger *_log;
+  GridGenericLogger *_log;
 
 };
 

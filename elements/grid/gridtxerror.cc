@@ -21,6 +21,8 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/packet_anno.hh>
+#include "gridgenericlogger.hh"
+
 CLICK_DECLS
 
 GridTxError::GridTxError() 
@@ -45,7 +47,7 @@ GridTxError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
-			"LOG", cpElement, "GridLogger element", &_log,
+			"LOG", cpElement, "GridGenericLogger element", &_log,
 			0);
   if (res < 0)
     return res;
@@ -58,7 +60,7 @@ GridTxError::push(int, Packet *p)
   /* log the error */
   int err = SEND_ERR_ANNO(p);
   struct timeval tv;
-  gettimeofday(&tv, 0);
+  click_gettimeofday(&tv);
 
   if (_log)
     _log->log_tx_err(p, err, tv);
@@ -67,5 +69,4 @@ GridTxError::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridTxError);

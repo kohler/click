@@ -43,9 +43,11 @@ public:
     return (double) _h / 1000.0;
   }
 
+#ifdef CLICK_USERLEVEL
   // What is the distance between l1 and l2 in meters?
   // (definition in gridlocationinfo.cc)
   static double calc_range(const grid_location &l1, const grid_location &l2);    
+#endif
 
   String s() const {
     char buf[255];
@@ -98,8 +100,10 @@ public:
   const unsigned int radius() { return ntohl(_radius); }
   const struct grid_location center() { return _center; }
 
+#ifdef CLICK_USERLEVEL
   bool contains(const grid_location &l) 
   { return grid_location::calc_range(l, _center) <= _radius; }
+#endif
 
 private:
   struct grid_location _center;

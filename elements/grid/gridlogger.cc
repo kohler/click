@@ -46,6 +46,18 @@ GridLogger::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+void *
+GridLogger::cast(const char *n)
+{
+  if (strcmp(n, "GridLogger") == 0)
+    return (GridLogger *) this;
+  else if (strcmp(n, "GridGenericLogger") == 0)
+    return (GridGenericLogger *) this;
+  else
+    return 0;
+}
+
+
 void
 GridLogger::add_handlers()
 {

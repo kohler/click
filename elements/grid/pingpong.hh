@@ -19,8 +19,9 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
-#include "linkstat.hh"
 CLICK_DECLS
+
+class LinkStat;
 
 class PingPong : public Element {
 

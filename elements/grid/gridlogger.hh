@@ -11,6 +11,7 @@
 #include <click/element.hh>
 #include "grid.hh"
 #include "gridgenericrt.hh"
+#include "gridgenericlogger.hh"
 CLICK_DECLS
 
 /*
@@ -61,7 +62,7 @@ CLICK_DECLS
  * GridRouteTable, DSDVRouteTable, GridTxError, LookupLocalGridRoute
  */
 
-class GridLogger : public Element {
+class GridLogger : public GridGenericLogger {
   
   enum state_t {
     WAITING,
@@ -190,7 +191,7 @@ public:
   GridLogger *clone() const { return new GridLogger; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }
-
+  void cast(const char *);
   void add_handlers();
 
   // handlers
@@ -203,6 +204,7 @@ public:
   bool log_is_open() { return _fd >= 0; } 
 
 private:
+  // these must be distinct from the inherited reason_t values
   static const unsigned char SENT_AD_CODE               = 0x01;
   static const unsigned char BEGIN_RECV_CODE            = 0x02;
   static const unsigned char END_RECV_CODE              = 0x03;
@@ -220,24 +222,6 @@ private:
   static const unsigned char RECV_ADD_ROUTE_CODE_EXTRA  = 0x0F;
 
 public:
-  // these need to be different than the above codes
-  enum reason_t {
-    WAS_SENDER        = 0xf1,
-    WAS_ENTRY         = 0xf2,
-    BROKEN_AD         = 0xf3,
-    TIMEOUT           = 0xf4,
-    NEXT_HOP_EXPIRED  = 0xf5,
-
-    // DSDV route insertion reason codes
-    NEW_DEST          = 0xe0,
-    NEW_DEST_SENDER   = 0xe1,
-    BETTER_RTE        = 0xe2,
-    BETTER_RTE_SENDER = 0xe3,
-    NEWER_SEQ         = 0xe4,
-    NEWER_SEQ_SENDER  = 0xe5,
-    REBOOT_SEQ        = 0xe6,
-    REBOOT_SEQ_SENDER = 0xe7
-  };
 
   void log_sent_advertisement(unsigned seq_no, struct timeval when) { 
     if (!check_state(WAITING)) 

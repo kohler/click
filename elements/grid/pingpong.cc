@@ -20,10 +20,8 @@
 #include <clicknet/ether.h>
 #include "pingpong.hh"
 #include <click/glue.hh>
-#include <sys/time.h>
 #include "grid.hh"
-#include <cmath>
-#include "timeutils.hh"
+#include "linkstat.hh"
 CLICK_DECLS
 
 PingPong::PingPong()
@@ -124,5 +122,4 @@ PingPong::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PingPong)

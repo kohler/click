@@ -1,7 +1,6 @@
 #ifndef GRIDLOCATIONINFO_HH
 #define GRIDLOCATIONINFO_HH
 #include <click/element.hh>
-#include "grid.hh"
 #include <click/timer.hh>
 CLICK_DECLS
 

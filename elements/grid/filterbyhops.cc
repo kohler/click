@@ -73,5 +73,4 @@ FilterByGridHops::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(FilterByGridHops)

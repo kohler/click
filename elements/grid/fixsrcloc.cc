@@ -88,5 +88,5 @@ FixSrcLoc::simple_action(Packet *xp)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel GridLocationInfo)
+ELEMENT_REQUIRES(GridLocationInfo)
 EXPORT_ELEMENT(FixSrcLoc)

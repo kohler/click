@@ -129,5 +129,4 @@ CheckGridHeader::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(CheckGridHeader)

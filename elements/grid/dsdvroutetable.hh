@@ -123,7 +123,7 @@ public:
   ~DSDVRouteTable();
 
   const char *class_name() const		{ return "DSDVRouteTable"; }
-  void *cast(const char *);
+  void *castlink(const char *);
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
   DSDVRouteTable *clone() const                 { return new DSDVRouteTable; }

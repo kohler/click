@@ -22,7 +22,6 @@
 #include "linkstat.hh"
 #include <click/glue.hh>
 #include <click/timer.hh>
-#include <sys/time.h>
 #include "grid.hh"
 #include "timeutils.hh"
 CLICK_DECLS
@@ -87,9 +86,8 @@ LinkStat::send_hook()
   memset(p->data(), 0, p->length());
 
   struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
+  click_gettimeofday(&tv);
+  p->set_timestamp_anno(tv);
   
   /* fill in ethernet header */
   click_ether *eh = (click_ether *) p->data();
@@ -137,7 +135,7 @@ LinkStat::simple_action(Packet *p)
   EtherAddress ea(eh->ether_shost);
 
   stat_t s;
-  gettimeofday(&s.when, 0);
+  click_gettimeofday(&s.when);
 
   bool res1 = _ai->get_signal_info(ea, s.sig, s.qual);
   int t1, t2;
@@ -194,7 +192,7 @@ void
 LinkStat::add_bcast_stat(const EtherAddress &e, const IPAddress &ip, const grid_link_probe *lp)
 {
   struct timeval now;
-  gettimeofday(&now, 0);
+  click_gettimeofday(&now);
   probe_t probe(now, ntohl(lp->seq_no));
   
   unsigned int new_period = ntohl(lp->period);
@@ -285,6 +283,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 }
 
 
+#ifdef CLICK_USERLEVEL
 int
 LinkStat::write_window(const String &arg, Element *el, 
 		       void *, ErrorHandler *errh)
@@ -300,7 +299,7 @@ LinkStat::write_window(const String &arg, Element *el,
 
   return 0;
 }
-
+#endif
 
 void
 LinkStat::add_handlers()
@@ -308,10 +307,11 @@ LinkStat::add_handlers()
   add_read_handler("stats", read_stats, 0);
   add_read_handler("bcast_stats", read_bcast_stats, 0);
   add_read_handler("window", read_window, 0);
+#ifdef CLICK_USERLEVEL
   add_write_handler("window", write_window, 0);
+#endif
 }
 
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LinkStat)
 
 #include <click/bighashmap.cc>

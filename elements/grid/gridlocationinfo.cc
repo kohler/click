@@ -16,12 +16,12 @@
  */
 
 #include <click/config.h>
+#include "grid.hh"
 #include "gridlocationinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
-
 #include <cmath>
 CLICK_DECLS
 
@@ -296,7 +296,7 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
    * pretty much accurate when points are close enough enough
    * together when their heights are important.  
    */
-  
+
   // convert degrees to radians
   double l1_lat = l1.lat() * GRID_RAD_PER_DEG;
   double l1_lon = l1.lon() * GRID_RAD_PER_DEG;
