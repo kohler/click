@@ -1,3 +1,9 @@
+2003-09-06 Saturday 19:10  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.17), linktable.hh (1.15): code
+	re-org for source routing. Also more top5 changes on the way to a
+	working implementation.
+
 2003-09-05 Friday 22:00  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linktable.cc (1.16): modify keyword ordering
