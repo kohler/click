@@ -506,7 +506,7 @@ sub check_expects ($$) {
 	$ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq 'stderr';
 	if ($ignores ne '') {
 	    $ignores =~ s/([!\#<>])/\\$1/g;
-	    $ignores =~ s{^(\s*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
+	    $ignores =~ s{^([ \t]*\S[^\n]*)}{\$text =~ s<^$1\[ \\t\]*\$><\\377>mg;\n}mg;
 	    eval($ignores);
 	}
 
