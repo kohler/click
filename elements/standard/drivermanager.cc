@@ -71,13 +71,13 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    /* nada */;
 
 	else if (!cp_keyword(words[0], &insn_name))
-	    errh->error("missing or bad instruction name; should be `INSNNAME [ARG]'");
+	    errh->error("missing or bad instruction name; should be 'INSNNAME [ARG]'");
     
 	else if (insn_name == "wait_stop" || insn_name == "wait_pause"
 		 || (insn_name == "wait" && words.size() == 1)) {
 	    unsigned n = 1;
 	    if (words.size() > 2 || (words.size() == 2 && !cp_unsigned(words[1], &n)))
-		errh->error("expected `%s [COUNT]'", insn_name.cc());
+		errh->error("expected '%s [COUNT]'", insn_name.cc());
 	    else
 		add_insn(INSN_WAIT_STOP, n);
 
@@ -88,32 +88,40 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    else if (words.size() == 3)
 		add_insn(insn, 0, words[1] + " " + words[2]);
 	    else
-		errh->error("expected `%s ELEMENT.HANDLER [ARG]'", insn_name.cc());
+		errh->error("expected '%s ELEMENT.HANDLER [ARG]'", insn_name.cc());
 
 	} else if (insn_name == "read" || insn_name == "print") {
 	    if (words.size() == 2)
 		add_insn(INSN_READ, 0, words[1]);
 	    else
-		errh->error("expected `%s ELEMENT.HANDLER'", insn_name.cc());
+		errh->error("expected '%s ELEMENT.HANDLER'", insn_name.cc());
 
+#if CLICK_USERLEVEL || CLICK_TOOL
+	} else if (insn_name == "save") {
+	    if (words.size() == 3)
+		add_insn(INSN_SAVE, 0, words[1] + " " + words[2]);
+	    else
+		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
+#endif
+	    
 	} else if (insn_name == "wait_for" || insn_name == "wait") {
 	    uint32_t ms;
 	    if (words.size() != 2 || !cp_seconds_as_milli(words[1], &ms))
-		errh->error("expected `%s TIME'", insn_name.cc());
+		errh->error("expected '%s TIME'", insn_name.cc());
 	    else
 		add_insn(INSN_WAIT, ms);
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
 	    if (words.size() != 1)
-		errh->error("expected `%s'", insn_name.cc());
+		errh->error("expected '%s'", insn_name.cc());
 	    else {
 		if (i < conf.size() - 1)
-		    errh->warning("arguments after `%s' ignored", insn_name.cc());
+		    errh->warning("arguments after '%s' ignored", insn_name.cc());
 		add_insn(INSN_STOP, 0);
 	    }
 
 	} else
-	    errh->error("unknown instruction `%s'", insn_name.cc());
+	    errh->error("unknown instruction '%s'", insn_name.cc());
     }
 
     if (_insns.size() == 0)
@@ -133,11 +141,24 @@ DriverManager::initialize(ErrorHandler *errh)
     // process 'read' and 'write' instructions
     Element *e;
     int hi;
-    for (int i = 0; i < _insns.size(); i++)
-	if (_insns[i] == INSN_WRITE || _insns[i] == INSN_WRITE_SKIP) {
-	    String text;
+    for (int i = 0; i < _insns.size(); i++) {
+	String text;
+	CpVaParseCmd command;
+	switch (_insns[i]) {
+	  case INSN_WRITE:
+	  case INSN_WRITE_SKIP:
+	    command = cpWriteHandler;
+	    goto parse;
+	  case INSN_READ:
+#if CLICK_USERLEVEL || CLICK_TOOL
+	  case INSN_SAVE:
+#endif
+	    command = cpReadHandler;
+	    goto parse;
+	  parse:
 	    if (cp_va_space_parse(_args3[i], this, errh,
-				  cpWriteHandler, "write handler", &e, &hi,
+				  command, "handler", &e, &hi,
+				  cpOptional,
 				  cpString, "data", &text,
 				  0) < 0)
 		_insns[i] = INSN_IGNORE;
@@ -146,16 +167,9 @@ DriverManager::initialize(ErrorHandler *errh)
 		_args2[i] = hi;
 		_args3[i] = text;
 	    }
-	} else if (_insns[i] == INSN_READ) {
-	    if (cp_va_space_parse(_args3[i], this, errh,
-				  cpReadHandler, "read handler", &e, &hi,
-				  0) < 0)
-		_insns[i] = INSN_IGNORE;
-	    else {
-		_args[i] = e->eindex();
-		_args2[i] = hi;
-	    }
+	    break;
 	}
+    }
 
     _insn_pos = 0;
     _insn_arg = 0;
@@ -188,7 +202,7 @@ DriverManager::step_insn()
 	StringAccum sa;
 	Element *e = router()->element(_args[_insn_pos]);
 	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
-	sa << "While calling `" << h->unparse_name(e) << "' from " << declaration() << ":";
+	sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
 	ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
 	h->call_write(_args3[_insn_pos], e, &cerrh);
 	return true;
@@ -199,6 +213,28 @@ DriverManager::step_insn()
 	ErrorHandler *errh = ErrorHandler::default_handler();
 	errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
 	return true;
+#if CLICK_USERLEVEL || CLICK_TOOL
+    } else if (insn == INSN_SAVE) {
+	Element *e = router()->element(_args[_insn_pos]);
+	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	String result = h->call_read(e);
+	ErrorHandler *errh = ErrorHandler::default_handler();
+	FILE *f;
+	if (_args3[_insn_pos] == "-")
+	    f = stdout;
+	else if (!(f = fopen(_args3[_insn_pos].c_str(), "wb"))) {
+	    int saved_errno = errno;
+	    StringAccum sa;
+	    sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
+	    ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
+	    cerrh.error("%s: %s", _args3[_insn_pos].c_str(), strerror(saved_errno));
+	    return true;
+	}
+	fwrite(result.data(), 1, result.length(), f);
+	if (f != stdout)
+	    fclose(f);
+	return true;
+#endif
     } else if (insn == INSN_WRITE_SKIP || insn == INSN_IGNORE)
 	return true;
 

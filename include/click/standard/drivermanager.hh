@@ -26,9 +26,9 @@ when the Click driver should stop.
 Any Click element may request a I<driver pause>. Normally, the first pause
 encountered stops the Click driver---that is, the user-level driver calls
 C<exit(0)>, or the kernel driver kills the relevant kernel threads. In element
-documentation, therefore, a driver pause is usually called ``stopping the
-driver'', and the user asks an element to request a driver pause by supplying
-a `STOP true' keyword argument.
+documentation, therefore, a driver pause is usually called "stopping the
+driver", and the user asks an element to request a driver pause by supplying a
+'STOP true' keyword argument.
 
 The DriverManager element changes this behavior. When the driver detects a
 pause, it asks DriverManager what to do. Depending on its arguments,
@@ -41,43 +41,54 @@ these instructions sequentially. Instructions include:
 
 =over 8
 
-=item `C<stop>'
+=item 'C<stop>'
 
 Stop the driver.
 
-=item `C<wait>'
+=item 'C<wait>'
 
 Wait for a driver pause, then go to the next instruction.
 
-=item `C<wait_for> TIME'
+=item 'C<wait_for> TIME'
 
 Wait for TIME seconds, or until a driver pause, whichever comes first; then go
 to the next instruction.
 
-=item `C<wait_pause> [COUNT]'
+=item 'C<wait_pause> [COUNT]'
 
 Wait for COUNT driver pauses, then go to the next instruction. COUNT defaults
-to one. You may say `C<wait_stop>' instead of `C<wait_pause>'.
+to one. You may say 'C<wait_stop>' instead of 'C<wait_pause>'.
 
-=item `C<write> ELEMENT.HANDLER [DATA]'
+=item 'C<write> ELEMENT.HANDLER [DATA]'
 
 Call ELEMENT's write handler named HANDLER, passing it the string DATA; then
 go to the next instruction. DATA defaults to the empty string.
 
-=item `C<read> ELEMENT.HANDLER'
+=item 'C<read> ELEMENT.HANDLER'
 
 Call ELEMENT's read handler named HANDLER and print the result.
 
-=item `C<write_skip>' ELEMENT.HANDLER [DATA]'
+=item 'C<write_skip>' ELEMENT.HANDLER [DATA]'
 
-Same as `C<write>', except that this directive is skipped when there is
+Same as 'C<write>', except that this directive is skipped when there is
 another driver pause pending.
 
 =back
 
-DriverManager adds an implicit `C<stop>' instruction to the end of its
-instruction list. As a special case, `C<DriverManager()>', with no arguments,
-is equivalent to `C<DriverManager(wait_pause, stop)>'.
+The user level driver supports an additional instruction:
+
+=over 8
+
+=item 'C<save> ELEMENT.HANDLER FILE'
+
+Call ELEMENT's read handler named HANDLER and save the result to FILE.  If
+FILE is 'C<->', writes the file to the standard output.
+
+=back
+
+DriverManager adds an implicit 'C<stop>' instruction to the end of its
+instruction list. As a special case, 'C<DriverManager()>', with no arguments,
+is equivalent to 'C<DriverManager(wait_pause, stop)>'.
 
 DriverManager accepts the following keyword argument:
 
@@ -125,7 +136,7 @@ class DriverManager : public Element { public:
   private:
 
     enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ,
-		INSN_WRITE_SKIP, INSN_IGNORE };
+		INSN_WRITE_SKIP, INSN_SAVE, INSN_IGNORE };
 
     Vector<int> _insns;
     Vector<int> _args;
