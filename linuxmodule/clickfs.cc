@@ -367,12 +367,14 @@ calculate_inode_nlink(struct inode *inode)
 static struct inode *
 click_inode(struct super_block *sb, unsigned long ino)
 {
+    // Must be called with click_config_lock held.
+
+    //MDEBUG("i_get");
     struct inode *inode = iget(sb, ino);
     if (!inode)
 	return 0;
 
-    spin_lock(&click_config_lock);
-    
+    //MDEBUG("entering click_inode");
     int elementno = INO_ELEMENTNO(ino);
     if (atomic_read(&click_config_generation) != sorted_elements_generation)
 	prepare_sorted_elements();
@@ -407,7 +409,7 @@ click_inode(struct super_block *sb, unsigned long ino)
 	calculate_inode_nlink(inode);
     }
 
-    spin_unlock(&click_config_lock);
+    //MDEBUG("leaving click_inode");
     return inode;
 }
 
@@ -422,7 +424,8 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 {
     if (inode_out_of_date(dir))
 	return reinterpret_cast<struct dentry *>(ERR_PTR(-ENOENT));
-    
+
+    //MDEBUG("click_dir_lookup");
     unsigned long ino = dir->i_ino;
     int elementno = INO_ELEMENTNO(ino);
     String dentry_name = String::stable_string(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
@@ -688,15 +691,17 @@ click_put_inode(struct inode *inode)
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
-    MDEBUG("click_read_super");
-    MDEBUG("post lock_super");
-    
+    //MDEBUG("click_read_super");
     sb->s_blocksize = 1024;
     sb->s_blocksize_bits = 10;
     //sb->s_magic = PROC_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
+    //MDEBUG("click_config_lock");
+    spin_lock(&click_config_lock);
+    //MDEBUG("click_inode");
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
-    MDEBUG("got root inode %p", root_inode);
+    spin_unlock(&click_config_lock);
+    //MDEBUG("got root inode %p", root_inode);
     if (!root_inode)
 	goto out_no_root;
 #ifdef LINUX_2_4
@@ -708,9 +713,9 @@ click_read_super(struct super_block *sb, void * /* data */, int)
 	goto out_no_root;
     // XXX options
 
-    MDEBUG("got root directory");
+    //MDEBUG("got root directory");
     proclikefs_read_super(sb);
-    MDEBUG("done click_read_super");
+    //MDEBUG("done click_read_super");
     return sb;
 
   out_no_root:
@@ -726,7 +731,9 @@ click_reread_super(struct super_block *sb)
     lock_super(sb);
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
+	spin_lock(&click_config_lock);
 	sb->s_root->d_inode = click_inode(sb, INO_GLOBALDIR);
+	spin_unlock(&click_config_lock);
 	iput(old_inode);
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
@@ -1087,6 +1094,7 @@ init_clickfs()
 #endif
 
     spin_lock_init(&handler_strings_lock);
+    spin_lock_init(&click_config_lock);
     sorted_elements_generation = 0; // click_config_generation starts at 1
 
     clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
