@@ -52,7 +52,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s -p PKGNAME [OPTION]... [ROUTERFILE]...\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -60,12 +60,12 @@ void
 usage()
 {
   printf("\
-`Click-mkmindriver' produces a Makefile that builds a minimum Click driver\n\
+'Click-mkmindriver' produces a Makefile that builds a minimum Click driver\n\
 for a set of router configurations. This driver contains just the elements\n\
-those configurations require. Run `click-mkmindriver' in the relevant driver's\n\
-build directory and supply a package name with the `-p PKG' option. The\n\
-resulting Makefile is called `Makefile.PKG'; it will build either a `PKGclick'\n\
-user-level driver or a `PKGclick.o' kernel module.\n\
+those configurations require. Run 'click-mkmindriver' in the relevant driver's\n\
+build directory and supply a package name with the '-p PKG' option. The\n\
+resulting Makefile is called 'Makefile.PKG'; it will build either a 'PKGclick'\n\
+user-level driver or a 'PKGclick.o' kernel module.\n\
 \n\
 Usage: %s -p PKG [OPTION]... [ROUTERFILE]...\n\
 \n\
@@ -77,8 +77,8 @@ Options:\n\
                            even those in unused compound elements.\n\
   -k, --linuxmodule        Build Makefile for Linux kernel module driver.\n\
   -u, --userlevel          Build Makefile for user-level driver (default).\n\
-  -d, --directory DIR      Put files in DIR. DIR must contain a `Makefile'\n\
-                           for the relevant driver. Default is `.'.\n\
+  -d, --directory DIR      Put files in DIR. DIR must contain a 'Makefile'\n\
+                           for the relevant driver. Default is '.'.\n\
   -E, --elements ELTS      Include element classes ELTS.\n\
   -A, --align              Include element classes required by click-align.\n\
       --no-file            Don't read a configuration from standard input.\n\
@@ -92,7 +92,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static void
 handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *errh)
 {
-  // decide if `filename' should be flattened
+  // decide if 'filename' should be flattened
   bool flattenable = (filename_in[0] != 'a');
   bool file_is_expr = (filename_in[1] == 'e');
   const char *filename = filename_in.cc() + 2;
@@ -138,7 +138,7 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
   }
 
   if (nmissing == 1)
-    errh->fatal("%s: cannot locate required element class `%s'\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
+    errh->fatal("%s: cannot locate required element class '%s'\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
   else if (nmissing > 1)
     errh->fatal("%s: cannot locate these required element classes:\n  %s\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
 }
@@ -154,7 +154,8 @@ add_stuff(int ti, const ElementMap &emap,
     Vector<String> args;
     cp_spacevec(t.provisions, args);
     for (int j = 0; j < args.size(); j++)
-      provisions.insert(args[j], 1);
+      if (ti || Driver::driver(args[j].c_str()) < 0)
+	provisions.insert(args[j], 1);
   }
   if (t.name)
     provisions.insert(t.name, 1);
@@ -170,23 +171,38 @@ add_stuff(int ti, const ElementMap &emap,
     source_files.insert(t.source_file, 1);
 }
 
-static void
-find_requirement(const String &requirement, const ElementMap &emap,
-		 Vector<int> &new_emapi, ErrorHandler *errh)
+static bool
+find_requirement(const String &requirement,
+		 const HashMap<String, int> &provisions,
+		 const ElementMap &emap, Vector<int> &new_emapi,
+		 ErrorHandler *errh, bool complain = true)
 {
+  if (provisions[requirement] > 0)
+    return true;
+
   int try_name_emapi = emap.traits_index(requirement);
   if (try_name_emapi > 0) {
     new_emapi.push_back(try_name_emapi);
-    return;
+    return true;
   }
   
   for (int i = 1; i < emap.size(); i++)
     if (emap.traits_at(i).provides(requirement)) {
       new_emapi.push_back(i);
-      return;
+      return true;
     }
 
-  errh->error("cannot satisfy requirement `%s' from default elementmap", requirement.c_str());
+  // check for '|' requirements
+  const char *begin = requirement.begin(), *bar;
+  while ((bar = find(begin, requirement.end(), '|')) < requirement.end()) {
+    if (find_requirement(requirement.substring(begin, bar), provisions, emap, new_emapi, errh, false))
+      return true;
+    begin = bar + 1;
+  }
+
+  if (complain)
+    errh->error("cannot satisfy requirement '%s' from default elementmap", requirement.c_str());
+  return false;
 }
 
 static void
@@ -404,7 +420,7 @@ particular purpose.\n");
   if (!router_filenames.size() && need_file)
     router_filenames.push_back(specifier + "f-");
   if (!package_name)
-    errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
+    errh->fatal("fatal error: no package name specified\nPlease supply the '-p PKG' option.");
 
   ElementMap default_emap;
   if (!default_emap.parse_default_file(CLICK_SHAREDIR, errh))
@@ -416,13 +432,12 @@ particular purpose.\n");
   // add types that are always required
   initial_requirements.insert("AddressInfo", 1);
   initial_requirements.insert("AlignmentInfo", 1);
-  initial_requirements.insert("Error", 1);
-  initial_requirements.insert("ScheduleInfo", 1);
   initial_requirements.insert("DriverManager", 1);
-  if (driver == Driver::USERLEVEL) {
-    initial_requirements.insert("QuitWatcher", 1);
+  initial_requirements.insert("Error", 1);
+  initial_requirements.insert("PortInfo", 1);
+  initial_requirements.insert("ScheduleInfo", 1);
+  if (driver == Driver::USERLEVEL)
     initial_requirements.insert("ControlSocket", 1);
-  }
 
   // add manually specified element classes
   for (int i = 0; i < elements.size(); i++)
@@ -451,10 +466,7 @@ particular purpose.\n");
   while (1) {
     Vector<int> new_emapi;
     for (int i = 0; i < requirements.size(); i++)
-      if (provisions[ requirements[i] ] > 0)
-	/* OK; already have provision */;
-      else
-	find_requirement(requirements[i], default_emap, new_emapi, errh);
+      find_requirement(requirements[i], provisions, default_emap, new_emapi, errh);
 
     if (!new_emapi.size())
       break;
@@ -490,9 +502,9 @@ particular purpose.\n");
   // Final message
   if (errh->nerrors() == 0) {
     if (driver == Driver::USERLEVEL)
-      errh->message("Build `%sclick' with `make -f Makefile.%s'.", package_name, package_name);
+      errh->message("Build '%sclick' with 'make -f Makefile.%s'.", package_name, package_name);
     else
-      errh->message("Build `%sclick.o' with `make -f Makefile.%s'.", package_name, package_name);
+      errh->message("Build '%sclick.o' with 'make -f Makefile.%s'.", package_name, package_name);
     return 0;
   } else
     exit(1);

@@ -31,17 +31,16 @@
 static String::Initializer string_initializer;
 ElementTraits ElementTraits::the_null_traits;
 
+static const char * const driver_names[] = {
+    "userlevel", "linuxmodule", "bsdmodule", "ns"
+};
+
 const char *
 Driver::name(int d)
 {
-    if (d == USERLEVEL)
-	return "userlevel";
-    else if (d == LINUXMODULE)
-	return "linuxmodule";
-    else if (d == BSDMODULE)
-	return "bsdmodule";
-    else if (d == NSMODULE)
-	return "ns";
+    static_assert(USERLEVEL == 0 && LINUXMODULE == 1 && BSDMODULE == 2 && NSMODULE == 3);
+    if (d >= 0 && d < COUNT)
+	return driver_names[d];
     else
 	return "??";
 }
@@ -49,17 +48,38 @@ Driver::name(int d)
 const char *
 Driver::requirement(int d)
 {
-    if (d == USERLEVEL)
-	return "userlevel";
-    else if (d == LINUXMODULE)
-	return "linuxmodule";
-    else if (d == BSDMODULE)
-	return "bsdmodule";
-    else if (d == NSMODULE)
-	return "ns";
+    if (d >= 0 && d < COUNT)
+	return driver_names[d];
     else
 	return "";
 }
+
+int
+Driver::driver(const char *name)
+{
+    for (int d = 0; d < COUNT; d++)
+	if (strcmp(driver_names[d], name) == 0)
+	    return d;
+    return -1;
+}
+
+int
+Driver::driver_mask(const char *name)
+{
+    int d = driver(name);
+    if (d >= 0)
+	return 1 << d;
+    
+    int m = 0;
+    const char *end_name = name + strlen(name), *bar;
+    while ((bar = find(name, end_name, '|')) < end_name) {
+	if ((d = driver(String(name, bar).c_str())) >= 0)
+	    m |= 1 << d;
+	name = bar + 1;
+    }
+    return m;
+}
+
 
 static bool
 requirement_contains(const String &req, const String &n)

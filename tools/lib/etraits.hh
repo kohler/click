@@ -9,6 +9,8 @@ struct Driver {
     };
     static const char *name(int);
     static const char *requirement(int);
+    static int driver(const char *);
+    static int driver_mask(const char *);
 };
     
 
