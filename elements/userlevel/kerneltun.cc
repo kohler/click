@@ -112,11 +112,27 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 
     _dev_name = String(dev_prefix) + String(i);
 
+
+// #if defined(__OpenBSD__)  && !defined(TUNSIFMODE)
+//     /* see OpenBSD bug: http://cvs.openbsd.org/cgi-bin/wwwgnats.pl/full/782 */
+// #define       TUNSIFMODE      _IOW('t', 88, int)
+// #endif
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
     {
       int mode = IFF_BROADCAST;
       if (ioctl(fd, TUNSIFMODE, &mode) != 0)
 	return errh->error("TUNSIFMODE failed: %s", strerror(errno));
+    }
+#endif
+#if defined(__OpenBSD__)
+    {
+      struct tuninfo ti;
+      memset(&ti, 0, sizeof(struct tuninfo));
+      if (ioctl(fd, TUNGIFINFO, &ti) != 0)
+	return errh->error("TUNGIFINFO failed: %s", strerror(errno));
+      ti.flags &= IFF_BROADCAST;
+      if (ioctl(fd, TUNSIFINFO, &ti) != 0)
+	return errh->error("TUNSIFINFO failed: %s", strerror(errno));
     }
 #endif
     
@@ -222,7 +238,7 @@ KernelTap::selected(int fd)
     memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
     output(0).push(p);
 #elif defined (__linux__)
-    // Linux prefixes packet 2 bytes of 0, then ether_header.
+    // Linux prefixes packet with 2 extra bytes for alignment, then ether_header.
     Packet *p = Packet::make(_headroom, b + 2, cc - 2, 0);
     output(0).push(p);
 #endif
