@@ -416,3 +416,17 @@ click_random_srandom()
     }
     srandom(result);
 }
+
+
+#if defined(CLICK_LINUXMODULE) && !defined(__HAVE_ARCH_STRLEN) && !defined(HAVE_LINUX_STRLEN_EXPOSED)
+// Need to provide a definition of 'strlen'. This one is taken from Linux.
+extern "C" {
+size_t strlen(const char * s)
+{
+    const char *sc;
+    for (sc = s; *sc != '\0'; ++sc)
+	/* nothing */;
+    return sc - s;
+}
+}
+#endif
