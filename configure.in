@@ -628,6 +628,7 @@ done
 for ac_dir in etc include; do
   test ! -d "$ac_dir" && mkdir "$ac_dir"
 done
+rm -rf conftest*
 
 AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
   test $ac_file = config.h && echo > stamp-h
