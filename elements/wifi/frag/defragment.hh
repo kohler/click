@@ -70,9 +70,9 @@ class Defragment : public Element { public:
     PacketInfo() {
 
     }
-    PacketInfo(EtherAddress src, int p, 
+    PacketInfo(EtherAddress s, int p, 
 	       int fs, int nf) {
-
+      src = s;
       packet = p;
       frag_size = fs;
       num_frags = nf;
