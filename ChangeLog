@@ -1,3 +1,10 @@
+2003-05-13 Tuesday 02:32  jbicket
+
+	* elements/local/: rtmdsr.cc (1.8), rtmdsr.hh (1.9): Fixed
+	rtmdsr.{cc,hh} to load in the kernel module click.o because it
+	wasn't playing nice with static declarations.  As a result, insmod
+	wouldn't load becuase the function atexit couldn't be resolved.
+
 2003-05-11 Sunday 22:28  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/rtmdsr.hh (1.8): Now ARP actually works.
