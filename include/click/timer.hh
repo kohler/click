@@ -25,7 +25,8 @@ class Timer { public:
   void initialize(TimerList *);
   void initialize(Router *);
   void initialize(Element *);
-  void uninitialize()			{ unschedule(); }
+  void cleanup()			{ unschedule(); }
+  void uninitialize()			{ cleanup(); } // deprecated
 
   void schedule_now();
   void schedule_at(const struct timeval &);

@@ -68,7 +68,7 @@ Task::initialize(Element *e, bool join)
 }
 
 void
-Task::uninitialize()
+Task::cleanup()
 {
   if (initialized()) {
     unschedule();

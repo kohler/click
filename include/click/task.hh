@@ -46,7 +46,8 @@ class Task { public:
 
   void initialize(Element *, bool scheduled);
   void initialize(Router *, bool scheduled);
-  void uninitialize();
+  void cleanup();
+  void uninitialize()			{ cleanup(); } // deprecated
 
   void reschedule();
   void unschedule();
