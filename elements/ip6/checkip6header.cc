@@ -24,7 +24,7 @@
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif
-//#include "bitvector.hh"
+
 
 CheckIP6Header::CheckIP6Header()
   : _bad_src(0), _drops(0)
@@ -112,36 +112,34 @@ Packet *
 CheckIP6Header::simple_action(Packet *p)
 {
   const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
-  //const click_ip6 *ip66;
   struct IP6Address src;
-  //unsigned hlen;
   
-//check if the packet is bigger than ip6 header
+  //check if the packet is larger than ip6 header
   if(p->length() < sizeof(click_ip6))  {
-    click_chatter("CheckIP6HEader: length %d smaller than header",
-                  p->length());
+    click_chatter("CheckIP6Header: packet length %d smaller than header 
+length %d", p->length(), sizeof(click_ip6));
     goto bad;
   }
   
-//check version
+ //check version
   if(ip->ip6_v != 6) {
-    click_chatter("CheckIP6Header: version is %d, not 6",
-                  ip->ip6_v);
     goto bad;
   }
 
-//check if the PayloadLength field is valid
+  //check if the PayloadLength field is valid
   // Hey, isn't it also an error for the plen to
   // be too long?
-   if(ntohs(ip->ip6_plen) < (p->length()-40)){
-     click_chatter("CheckIP6Header: plen %d smaller than payload len %d",
+   if(ntohs(ip->ip6_plen) > (p->length()-40)){
+     click_chatter("CheckIP6Header: payload length field in ip6 header  %d, 
+                   is greater than the payload length %d",
                    ntohs(ip->ip6_plen),
                    p->length() - 40);
      goto bad;
    }
+   
 
   /*
-   * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
+   * discard illegal source addresses.
    * Configuration string should have listed all subnet
    * broadcast addresses known to this router.
    */
@@ -153,12 +151,18 @@ CheckIP6Header::simple_action(Packet *p)
    }
 
   /*
-   * RFC1812 4.2.3.1: discard illegal destinations.
-   * We now do this in the IP routing table.
+   * discard illegal destinations.
+   * We will do this in the IP6 routing table.
+   * 
+   * 
    */
+
   p->set_ip6_header(ip);
-  //ip66 = p->ip6_header();
-  //click_chatter(" \n hop limit is : %x \n", ip66->ip6_hlim);
+
+  // shorten packet according to IP6 payload length field 
+  if(ntohs(ip->ip6_plen) < (p->length()-40)) 
+    p->take(p->length() - 40 - ip->ip6_plen); 
+
   return(p);
   
  bad:

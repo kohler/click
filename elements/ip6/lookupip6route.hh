@@ -19,15 +19,11 @@
  *
  * =e
  * This example delivers broadcasts and packets addressed to the local
- * host (18.26.4.24) to itself, packets to net 18.26.4 to the
- * local interface, and all others via gateway 18.26.4.1:
+ * host (::1261:027d) to itself, all others via gateway ::ffff:c0a8:1:
  *
- *   ... -> GetIPAddress(16) -> rt;
- *   rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
- *                   18.26.4.255 255.255.255.255 0.0.0.0 0,
- *                   18.26.4.0   255.255.255.255 0.0.0.0 0,
- *                   18.26.4.0 255.255.255.0 0.0.0.0 1,
- *                   0.0.0.0 0.0.0.0 18.26.4.1 1);
+ *   ... -> GetIP6Address(24) -> rt;
+ *   rt :: LookupIP6Route(::ffff:1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
+ *	                  ::0 ::0 ::ffff:c0a8:1 1);
  *   rt[0] -> ToLinux;
  *   rt[1] -> ... -> ToDevice(eth0);
  *
