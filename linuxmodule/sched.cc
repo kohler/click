@@ -3,7 +3,7 @@
  * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2002-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -265,7 +265,7 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
   
   int32_t frac;
   if (!cp_real10(cp_uncomment(conf), 3, &frac) || frac < 1 || frac > 999)
-    return errh->error("%scpu_share must be a real number between 0.001 and 0.999");
+    return errh->error("%scpu_share must be a real number between 0.001 and 0.999", name);
 
   (thunk ? max_click_frac : min_click_frac) = frac;
 
