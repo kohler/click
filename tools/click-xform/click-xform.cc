@@ -255,8 +255,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
   int count = (*last_uniqueifier)[base_prefix];
   
   while (1) {
-    String prefix = base_prefix;
-    prefix += "@" + String(count);
+    String prefix = base_prefix + "@" + String(count);
     count++;
     
     // look for things starting with that name
@@ -304,12 +303,14 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
 
   // free old elements
   Vector<int> changed_elements;
-  int old_nelements = _body->nelements();
-  for (int i = 0; i < old_nelements; i++)
-    if (_back_match[i] >= 0) {
-      changed_elements.push_back(i);
-      _body->kill_element(i);
-    }
+  Vector<String> old_names;
+  for (int i = 0; i < _match.size(); i++)
+    if (_match[i] >= 0) {
+      changed_elements.push_back(_match[i]);
+      old_names.push_back(_body->ename(_match[i]));
+      _body->kill_element(_match[i]);
+    } else
+      old_names.push_back(String());
   _body->free_dead_elements();
   
   // add replacement
@@ -325,6 +326,18 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
     _body->element(j).flags = _patid;
     replace_config(_body->econfiguration(j));
   }
+
+  // save old element name if matched element and some replacement element
+  // have the same name
+  for (int i = 0; i < _match.size(); i++)
+    if (_match[i] >= 0) {
+      String n = _pat->ename(i);
+      if (replacement->eindex(n) >= 0) {
+	int new_index = _body->eindex(prefix + "/" + n);
+	assert(new_index >= 0 && _body->eindex(old_names[i]) < 0);
+	_body->change_ename(new_index, old_names[i]);
+      }
+    }
 
   // find input and output, add connections to tunnels
   int new_pp = _body->eindex(prefix);
@@ -342,7 +355,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   _match.clear();
 
   // finally, update the adjacency matrix
-  _body_m->update(_body, changed_elements);
+  _body_m->update(changed_elements);
   //_body_m->init(_body);
 }
 

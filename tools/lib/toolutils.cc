@@ -69,7 +69,7 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   // add archive bits
   if (router && archive.size()) {
     for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name != "config" && archive[i].name)
+      if (archive[i].live() && archive[i].name != "config")
 	router->add_archive(archive[i]);
   }
 
@@ -101,7 +101,7 @@ write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
     
     // add other archive elements
     for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name && archive[i].name != "config")
+      if (archive[i].live() && archive[i].name != "config")
 	narchive.push_back(archive[i]);
 
     if (narchive.size() > 1)

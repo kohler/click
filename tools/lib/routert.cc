@@ -467,6 +467,23 @@ RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
   return false;
 }
 
+bool
+RouterT::find_connection_from(const Hookup &h, Hookup &out) const
+{
+  int i = _hookup_first[h.idx].from;
+  out.idx = -1;
+  while (i >= 0) {
+    if (_hookup_from[i] == h) {
+      if (out.idx == -1)
+	out = _hookup_to[i];
+      else
+	out.idx = -2;
+    }
+    i = _hookup_next[i].from;
+  }
+  return out.idx >= 0;
+}
+
 void
 RouterT::find_connections_from(const Hookup &h, Vector<Hookup> &v) const
 {

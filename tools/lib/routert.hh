@@ -102,7 +102,7 @@ class RouterT : public ElementClassT {
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
   const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
   const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
-  bool hookup_live(int i) const		{ return _hookup_from[i].idx >= 0; }
+  bool hookup_live(int i) const		{ return _hookup_from[i].live(); }
  
   void add_tunnel(String, String, const String &, ErrorHandler *);
   
@@ -125,6 +125,7 @@ class RouterT : public ElementClassT {
   ArchiveElement &archive(const String &s);
   
   bool has_connection(const Hookup &, const Hookup &) const;
+  bool find_connection_from(const Hookup &, Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
   void find_connections_to(const Hookup &, Vector<Hookup> &) const;
   void find_connection_vector_from(int, Vector<int> &) const;

@@ -215,6 +215,18 @@ parse_link(String text, ErrorHandler *errh)
 }
 
 static void
+frob_nested_routerlink(ElementT &e)
+{
+  String prefix = e.name.substring(0, e.name.find_left('/') + 1);
+  assert(prefix.length() > 1 && prefix.back() == '/');
+  Vector<String> words;
+  cp_argvec(e.configuration, words);
+  for (int i = 0; i < words.size(); i += 2)
+    words[i] = prefix + words[i];
+  e.configuration = cp_unargvec(words);
+}
+
+static void
 combine_links()
 {
   link_id.clear();
@@ -249,8 +261,8 @@ make_link(const Vector<Hookup> &from, const Vector<Hookup> &to,
     int r = all[i].idx, e = all[i].port;
     String name = router_names[r] + "/" + routers[r]->ename(e);
     combes.push_back(combined->eindex(name));
-    words.push_back(name);
-    words.push_back(routers[r]->etype_name(e));
+    words.push_back(router_names[r] + " " + routers[r]->ename(e)
+		    + " " + routers[r]->etype_name(e));
     words.push_back(routers[r]->econfiguration(e));
   }
 
@@ -418,6 +430,13 @@ particular purpose.\n");
     routers[i]->expand_into(combined, ei, combined, RouterScope(), errh);
   }
 
+  // nested combinations: change config strings of included RouterLinks
+  int link_type = combined->type_index("RouterLink");
+  if (link_type >= 0)
+    for (int i = 0; i < combined->nelements(); i++)
+      if (combined->etype(i) == link_type)
+	frob_nested_routerlink(combined->element(i));
+
   // make links
   if (links_from.size() == 0)
     errh->warning("no links between routers");
@@ -427,14 +446,37 @@ particular purpose.\n");
   
   // add elementmap to archive
   {
-    if (combined->archive_index("elementmap") < 0)
-      combined->add_archive(init_archive_element("elementmap", 0600));
+    combined->add_archive(init_archive_element("elementmap", 0600));
     ArchiveElement &ae = combined->archive("elementmap");
     ElementMap em(ae.data);
     em.add("RouterLink", "", "", "l/h");
+    // add data from included elementmaps
+    for (int i = 0; i < routers.size(); i++)
+      if (routers[i]->archive_index("elementmap") >= 0) {
+	ArchiveElement &nae = routers[i]->archive("elementmap");
+	em.parse(nae.data);
+      }
     ae.data = em.unparse();
   }
 
+  // add componentmap to archive
+  {
+    combined->add_archive(init_archive_element("componentmap", 0600));
+    ArchiveElement &ae = combined->archive("componentmap");
+    StringAccum sa;
+    for (int i = 0; i < routers.size(); i++) {
+      sa << router_names[i] << '\n';
+      if (routers[i]->archive_index("componentmap") >= 0) {
+	ArchiveElement &nae = routers[i]->archive("componentmap");
+	Vector<String> combines;
+	cp_spacevec(cp_subst(nae.data), combines);
+	for (int j = 0; j < combines.size(); j++)
+	  sa << router_names[i] << '/' << combines[j] << '\n';
+      }
+    }
+    ae.data = sa.take_string();
+  }
+  
   write_router_file(combined, outf, errh);
   exit(0);
 }

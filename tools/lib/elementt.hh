@@ -36,6 +36,9 @@ struct Hookup {
   Hookup()				: idx(-1) { }
   Hookup(int i, int p)			: idx(i), port(p) { }
 
+  bool live() const			{ return idx >= 0; }
+  bool dead() const			{ return idx < 0; }
+  
   int index_in(const Vector<Hookup> &, int start = 0) const;
   int force_index_in(Vector<Hookup> &, int start = 0) const;
 

@@ -78,8 +78,10 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
+static Vector<int> component_endpoints;
+
 static void
-remove_links(RouterT *r, ErrorHandler *errh)
+remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 {
   int link_type = r->type_index("RouterLink");
   if (link_type < 0)
@@ -87,31 +89,112 @@ remove_links(RouterT *r, ErrorHandler *errh)
 
   Vector<int> links;
   for (int i = 0; i < r->nelements(); i++)
-    if (r->etype(i) == link_type && r->ename(i).find_left('/') < 0)
+    if (r->etype(i) == link_type)
       links.push_back(i);
 
   for (int i = 0; i < links.size(); i++) {
+    // check configuration string for correctness
+    String link_name = r->ename(links[i]);
     Vector<String> words;
     cp_argvec(r->econfiguration(links[i]), words);
-    String link_name = r->ename(links[i]);
-    if (words.size() % 3 != 0)
+    int ninputs = r->ninputs(links[i]);
+    int noutputs = r->noutputs(links[i]);
+    if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
       errh->error("RouterLink `%s' has strange configuration", link_name.cc());
-    else {
-      int ninputs = r->ninputs(links[i]);
-      for (int j = 0; j < words.size(); j += 3) {
-	if (r->eindex(words[j]) >= 0)
-	  errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), words[j].cc());
-	else {
-	  int newe = r->get_eindex(words[j], r->get_type_index(words[j+1]), words[j+2], String());
-	  if (j < ninputs)
-	    r->insert_before(newe, Hookup(links[i], j));
-	  else
-	    r->insert_after(newe, Hookup(links[i], j - ninputs));
-	}
-      }
-      r->free_element(links[i]);
+      continue;
     }
+    
+    // check if this RouterLink involves the interesting component
+    bool interesting = false, bad = false, subcomponent = false;
+    for (int j = 0; !bad && j < words.size(); j += 2) {
+      Vector<String> clauses;
+      cp_spacevec(words[j], clauses);
+      if (clauses.size() != 3) {
+	errh->error("RouterLink `%s' has strange configuration", link_name.cc());
+	bad = true;
+      } else if (clauses[0] == component)
+	interesting = true;
+      else if (clauses[0].substring(0, component.length()) == component
+	       && clauses[0][component.length()] == '/')
+	subcomponent = true;
+    }
+    if (subcomponent && !bad && !interesting)
+      component_endpoints.push_back(i);	// save as part of this component
+    if (bad || !interesting)
+      continue;
+
+    // separate out this component
+    for (int j = 0; j < words.size(); j += 2) {
+      Vector<String> clauses;
+      cp_spacevec(words[j], clauses);
+      if (r->eindex(clauses[1]) >= 0)
+	errh->error("RouterLink `%s' element `%s' already exists", link_name.cc(), clauses[1].cc());
+      else if (clauses[0] == component) {
+	int newe = r->get_eindex(clauses[1], r->get_type_index(clauses[2]), words[j+1], String());
+	if (j/2 < ninputs)
+	  r->insert_before(newe, Hookup(links[i], j/2));
+	else
+	  r->insert_after(newe, Hookup(links[i], j/2 - ninputs));
+	component_endpoints.push_back(newe);
+      }
+    }
+
+    // remove link
+    r->free_element(links[i]);
   }
+}
+
+static void
+mark_component(RouterT *r, String compname, Vector<int> &live)
+{
+  int ne = r->nelements();
+  int nh = r->nhookup();
+  const Vector<Hookup> &hf = r->hookup_from();
+  const Vector<Hookup> &ht = r->hookup_to();
+  
+  // mark endpoints
+  for (int i = 0; i < component_endpoints.size(); i++)
+    live[component_endpoints[i]] = 1;
+
+  // mark everything named with a `compname' prefix
+  int compl = compname.length();
+  for (int i = 0; i < ne; i++)
+    if (r->ename(i).substring(0, compl) == compname)
+      live[i] = 1;
+
+  // now find things connected to live elements
+  bool changed;
+  do {
+    changed = false;
+    for (int i = 0; i < nh; i++)
+      if (hf[i].dead())
+	/* nada */;
+      else if (live[hf[i].idx] && !live[ht[i].idx]) {
+	live[ht[i].idx] = 1;
+	changed = true;
+      } else if (live[ht[i].idx] && !live[hf[i].idx]) {
+	live[hf[i].idx] = 1;
+	changed = true;
+      }
+  } while (changed);
+}
+
+static void
+frob_nested_routerlinks(RouterT *r, const String &compname)
+{
+  int ne = r->nelements();
+  int t = r->get_type_index("RouterLink");
+  int cnamelen = compname.length();
+  for (int i = 0; i < ne; i++)
+    if (r->etype(i) == t) {
+      Vector<String> words;
+      cp_argvec(r->econfiguration(i), words);
+      for (int j = 0; j < words.size(); j += 2) {
+	if (words[j].substring(0, cnamelen) == compname)
+	  words[j] = words[j].substring(cnamelen);
+      }
+      r->econfiguration(i) = cp_unargvec(words);
+    }
 }
 
 int
@@ -203,51 +286,76 @@ particular purpose.\n");
   r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
+  if (!router_file || strcmp(router_file, "-") == 0)
+    router_file = "<stdin>";
   r->flatten(errh);
-      
-  // remove links
-  remove_links(r, errh);
-  
+
   // find component names
   HashMap<String, int> component_map(-1);
-  int link_type = r->type_index("RouterLink");
-  for (int i = 0; i < r->nelements(); i++)
-    if (r->elive(i)) {
-      String s = r->ename(i);
-      int slash = s.find_left('/');
-      if (slash >= 0)
-	component_map.insert(s.substring(0, slash), 0);
-      else if (r->etype(i) != link_type) {
-	static int warned = 0;
-	if (!warned)
-	  p_errh->warning("router might not be a combination (strange element names)");
-	warned++;
-      }
-    }
+  Vector<String> component_names;
+  if (r->archive_index("componentmap") < 0)
+    errh->fatal("%s: not created by `click-combine' (no `componentmap')", router_file);
+  {
+    ArchiveElement &ae = r->archive("componentmap");
+    cp_spacevec(cp_subst(ae.data), component_names);
+    for (int i = 0; i < component_names.size(); i++)
+      component_map.insert(component_names[i], 0);
+  }
 
   // check if component exists
   if (!component)
     p_errh->fatal("no component specified");
+  else if (component.find_left('/') >= 0)
+    p_errh->fatal("cannot extract nested component");
   else if (component_map[component] < 0)
-    p_errh->fatal("no component `%s' in r router", component.cc());
+    p_errh->fatal("%s: no `%s' component", router_file, component.cc());
 
-  // remove everything not part of the component
+  // remove top-level links
+  remove_component_links(r, errh, component);
+
+  // mark everything connected to the endpoints
   component += "/";
-  int clen = component.length();
+  Vector<int> live(r->nelements(), 0);
+  mark_component(r, component, live);
+  
+  // remove everything not part of the component
   for (int i = 0; i < r->nelements(); i++)
-    if (r->elive(i)) {
+    if (!live[i] && r->elive(i))
+      r->kill_element(i);
+  r->free_dead_elements();
+
+  // rename component
+  int cnamelen = component.length();
+  for (int i = 0; i < r->nelements(); i++)
+    if (live[i]) {
       String name = r->ename(i);
-      if (name.substring(0, clen) != component)
-	r->kill_element(i);
-      else
-	r->change_ename(i, name.substring(clen));
+      if (name.substring(0, cnamelen) == component
+	  && r->eindex(name.substring(cnamelen)) < 0)
+	r->change_ename(i, name.substring(cnamelen));
     }
 
+  // fix nested RouterLinks
+  frob_nested_routerlinks(r, component);
+  
   // exit if there have been errors
   r->flatten(errh);  
   if (errh->nerrors() != 0)
     exit(1);
 
+  // update or remove componentmap
+  {
+    ArchiveElement &ae = r->archive("componentmap");
+    StringAccum sa;
+    int len = component.length();
+    for (int i = 0; i < component_names.size(); i++)
+      if (component_names[i].substring(0, len) == component)
+	sa << component_names[i].substring(len) << '\n';
+    if (sa.length())
+      ae.data = sa.take_string();
+    else
+      ae.kill();
+  }
+  
   // open output file
   FILE *outf = stdout;
   if (output_file && strcmp(output_file, "-") != 0) {
