@@ -66,22 +66,6 @@ StringAccum::operator<<(const char *s)
   return *this;
 }
 
-#ifdef HAVE_PERMSTRING
-StringAccum &
-StringAccum::operator<<(PermString s)
-{
-  push(s.cc(), s.length());
-  return *this;
-}
-#endif
-
-StringAccum &
-StringAccum::operator<<(const String &s)
-{
-  push(s.data(), s.length());
-  return *this;
-}
-
 StringAccum &
 StringAccum::operator<<(long i)
 {

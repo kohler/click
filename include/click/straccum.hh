@@ -55,6 +55,7 @@ class StringAccum {
   StringAccum &operator<<(PermString);
 #endif
   StringAccum &operator<<(const String &);
+  StringAccum &operator<<(const StringAccum &);
   StringAccum &operator<<(short);
   StringAccum &operator<<(unsigned short);
   StringAccum &operator<<(int);
@@ -153,6 +154,29 @@ inline StringAccum &
 StringAccum::operator<<(unsigned u)
 {
   return *this << static_cast<unsigned long>(u);
+}
+
+#ifdef HAVE_PERMSTRING
+inline StringAccum &
+StringAccum::operator<<(PermString s)
+{
+  push(s.cc(), s.length());
+  return *this;
+}
+#endif
+
+inline StringAccum &
+StringAccum::operator<<(const String &s)
+{
+  push(s.data(), s.length());
+  return *this;
+}
+
+inline StringAccum &
+StringAccum::operator<<(const StringAccum &sa)
+{
+  push(sa.data(), sa.length());
+  return *this;
 }
 
 #endif
