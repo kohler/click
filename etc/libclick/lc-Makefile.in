@@ -30,9 +30,7 @@ all: libsrc Makefile
 libsrc: Makefile stamp-h
 	@cd libsrc && $(MAKE) all
 
-install: stamp-h
-	@(cd libsrc && $(MAKE) install) || exit 1
-	@$(MAKE) install-local install-include
+install: install-lib install-local install-include
 install-lib: stamp-h
 	@(cd libsrc && $(MAKE) install) || exit 1
 install-local: $(srcdir)/click-buildtool click-compile
@@ -68,14 +66,39 @@ stamp-h: $(srcdir)/config.h.in config.status
 	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
 	echo > stamp-h
 
+
+distdir = $(PACKAGE)-$(VERSION)
+top_distdir = $(distdir)
+
+dist: distdir
+	tar czf $(distdir).tar.gz $(distdir)
+	-rm -rf $(distdir)
+distdir: $(srcdir)/configure
+	-rm -rf $(distdir)
+	mkdir $(distdir)
+	@-chmod 777 $(distdir)
+	@echo Copying library, documentation, configuration, and driver files...
+	@for file in `cat $(srcdir)/DISTFILES`; do \
+	  d=$(srcdir); \
+	  if test -d "$$d/$$file"; then \
+	    mkdir $(distdir)/$$file; \
+	    chmod 777 $(distdir)/$$file; \
+	  else \
+	    test -f "$(distdir)/$$file" \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || echo "Could not copy $$d/$$file!" 1>&2; \
+	  fi; \
+	done
+
 clean:
 	@cd libsrc && $(MAKE) clean
-	-rm -f elementmap
+	-rm -rf elementmap $(distdir) $(distdir).tar.gz
 distclean:
 	@cd libsrc && $(MAKE) distclean
 	-rm -f config.h Makefile config.status
 	-rm -f config.cache config.log click-compile stamp-h
 
 
-.PHONY: all libsrc clean distclean \
+.PHONY: all libsrc clean distclean distdir dist \
 	install install-lib install-local install-include

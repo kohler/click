@@ -33,19 +33,24 @@ Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-distclean:
-	-rm -f Makefile
-
-
 distdir = libclick-$(VERSION)
 top_distdir = $(distdir)
 
-dist: distdir
+clean:
+	-rm -rf $(distdir) $(distdir).tar.gz
+distclean: clean
+	-rm -f Makefile
+
+dist: $(distdir).tar.gz
+	-rm -rf $(distdir)
+$(distdir).tar.gz: distdir
+	tar czf $(distdir).tar.gz $(distdir)
 distdir:
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
 	@echo Copying library, documentation, configuration, and driver files...
+	@echo DISTFILES >>$(distdir)/DISTFILES
 	@for file in `cat $(srcdir)/DISTFILES`; do \
 	  d=$(top_srcdir); \
 	  sf=`echo "$$file:$$file:" | sed 's/^\([^:]*\):.*/\1/'`; \
@@ -59,6 +64,7 @@ distdir:
 	    || cp -p $$d/$$sf $(distdir)/$$df \
 	    || echo "Could not copy $$d/$$sf!" 1>&2; \
 	  fi; \
+	  echo $$df >>$(distdir)/DISTFILES; \
 	done
 	cd $(distdir) && $(AUTOCONF)
 
