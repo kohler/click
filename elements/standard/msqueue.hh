@@ -21,7 +21,9 @@ CLICK_DECLS
  *
  * =h length read-only
  * Returns the current number of packets in the queue.
- * =h capacity read-only
+ * =h dropd read-only
+ * Returns the number of packets dropped by the queue so far.
+ * =h capacity read/write
  * Returns or sets the queue's capacity.
  * =a Queue
  */
