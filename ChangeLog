@@ -1,3 +1,13 @@
+2004-07-27 Tuesday 15:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.64): remove typedef Handler from
+	Router, since gcc-3.4.1 complains
+
+2004-07-27 Tuesday 15:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/linkfailuredetection.cc (1.10): remove reference to
+	Router::Handler in favor of Handler
+
 2004-07-27 Tuesday 02:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromcapdump.cc (1.9), fromcapdump.hh (1.5),
