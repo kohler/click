@@ -1,3 +1,8 @@
+2004-05-20 Thursday 13:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/atomic.hh (1.12): provide non-x86 versions of
+	read_and_add and compare_and_swap
+
 2004-05-20 Thursday 04:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmpsendpings.hh (1.16), include/click/integers.hh
