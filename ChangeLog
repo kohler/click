@@ -1,3 +1,8 @@
+2004-12-07 Tuesday 15:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/bsdmodule/anydevice.hh (1.9), lib/master.cc (1.17):
+	s/fast_reschedule/reschedule/
+
 2004-12-07 Tuesday 03:33  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/autoratefallback.cc (1.14),
