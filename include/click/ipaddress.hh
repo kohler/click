@@ -5,16 +5,17 @@
 #include <click/glue.hh>
 #include <clicknet/ip.h>
 CLICK_DECLS
+class StringAccum;
 
 class IPAddress { public:
   
     IPAddress()			: _addr(0) { }
-    explicit IPAddress(const unsigned char *);
+    explicit IPAddress(const unsigned char*);
     IPAddress(unsigned int);		// network byte order IP address
     explicit IPAddress(int);		// network byte order IP address
     explicit IPAddress(unsigned long);	// network byte order IP address
     explicit IPAddress(long);		// network byte order IP address
-    explicit IPAddress(const String &);	// "18.26.4.99"
+    explicit IPAddress(const String&);	// "18.26.4.99"
     IPAddress(struct in_addr);
     static IPAddress make_prefix(int);
   
@@ -25,8 +26,8 @@ class IPAddress { public:
     operator struct in_addr() const;
     struct in_addr in_addr() const;
 
-    unsigned char *data();
-    const unsigned char *data() const;
+    unsigned char* data();
+    const unsigned char* data() const;
   
     int mask_to_prefix_len() const;
     bool matches_prefix(IPAddress addr, IPAddress mask) const;
@@ -39,10 +40,12 @@ class IPAddress { public:
   
     // IPAddress operator&(IPAddress, IPAddress);
     // IPAddress operator|(IPAddress, IPAddress);
+    // IPAddress operator^(IPAddress, IPAddress);
     // IPAddress operator~(IPAddress);
   
-    IPAddress &operator&=(IPAddress);
-    IPAddress &operator|=(IPAddress);
+    IPAddress& operator&=(IPAddress);
+    IPAddress& operator|=(IPAddress);
+    IPAddress& operator^=(IPAddress);
 
     String unparse() const;
     String unparse_mask() const;
@@ -111,16 +114,16 @@ operator!=(IPAddress a, uint32_t b)
     return a.addr() != b;
 }
 
-inline const unsigned char *
+inline const unsigned char*
 IPAddress::data() const
 {
-    return reinterpret_cast<const unsigned char *>(&_addr);
+    return reinterpret_cast<const unsigned char*>(&_addr);
 }
 
-inline unsigned char *
+inline unsigned char*
 IPAddress::data()
 {
-    return reinterpret_cast<unsigned char *>(&_addr);
+    return reinterpret_cast<unsigned char*>(&_addr);
 }
 
 inline struct in_addr
@@ -137,8 +140,7 @@ IPAddress::operator struct in_addr() const
     return in_addr();
 }
 
-class StringAccum;
-StringAccum &operator<<(StringAccum &, IPAddress);
+StringAccum& operator<<(StringAccum&, IPAddress);
 
 inline bool
 IPAddress::matches_prefix(IPAddress a, IPAddress mask) const
@@ -158,7 +160,7 @@ operator&(IPAddress a, IPAddress b)
     return IPAddress(a.addr() & b.addr());
 }
 
-inline IPAddress &
+inline IPAddress&
 IPAddress::operator&=(IPAddress a)
 {
     _addr &= a._addr;
@@ -171,10 +173,23 @@ operator|(IPAddress a, IPAddress b)
     return IPAddress(a.addr() | b.addr());
 }
 
-inline IPAddress &
+inline IPAddress&
 IPAddress::operator|=(IPAddress a)
 {
     _addr |= a._addr;
+    return *this;
+}
+
+inline IPAddress
+operator^(IPAddress a, IPAddress b)
+{
+    return IPAddress(a.addr() ^ b.addr());
+}
+
+inline IPAddress&
+IPAddress::operator^=(IPAddress a)
+{
+    _addr ^= a._addr;
     return *this;
 }
 
