@@ -143,13 +143,15 @@ class FromIPSummaryDump : public Element { public:
 
   private:
 
-    static const uint32_t BUFFER_SIZE = 32768;
+    static const int BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
     
     int _fd;
-    String _buffer;
+    char *_buffer;
     int _pos;
     int _len;
+    int _buffer_len;
+    int _save_char;
 
     Vector<int> _contents;
     uint16_t _default_proto;
@@ -164,6 +166,7 @@ class FromIPSummaryDump : public Element { public:
     uint32_t _multipacket_extra_length;
 
     Task _task;
+    Vector<String> _words;	// for speed
 
     struct timeval _time_offset;
     String _filename;

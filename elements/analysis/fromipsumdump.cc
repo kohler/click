@@ -36,8 +36,8 @@
 static uint8_t flag_mapping[256];
 
 FromIPSummaryDump::FromIPSummaryDump()
-    : Element(0, 1), _fd(-1), _pos(0), _len(0), _work_packet(0),
-      _task(this), _pipe(0)
+    : Element(0, 1), _fd(-1), _buffer(0), _pos(0), _len(0), _buffer_len(0),
+      _work_packet(0), _task(this), _pipe(0)
 {
     MOD_INC_USE_COUNT;
     if (!flag_mapping[(uint8_t)'A']) {
@@ -102,22 +102,22 @@ FromIPSummaryDump::error_helper(ErrorHandler *errh, const char *x)
 int
 FromIPSummaryDump::read_buffer(ErrorHandler *errh)
 {
-    if (_pos == 0 && _len == _buffer.length())
-	_buffer.append_garbage(BUFFER_SIZE);
+    if (_pos == 0 && _len == _buffer_len) {
+	_buffer_len += BUFFER_SIZE;
+	if (!(_buffer = (char *)realloc(_buffer, _buffer_len)))
+	    return error_helper(errh, strerror(ENOMEM));
+    }
 
-    unsigned char *data = (unsigned char *)_buffer.mutable_data();
-    int buffer_len = _buffer.length();
-
-    if (_len == buffer_len) {
-	memmove(data, data + _pos, _len - _pos);
+    if (_len == _buffer_len) {
+	memmove(_buffer, _buffer + _pos, _len - _pos);
 	_len -= _pos;
 	_file_offset += _pos;
 	_pos = 0;
     }
     int initial_len = _len;
     
-    while (_len < buffer_len) {
-	ssize_t got = read(_fd, data + _len, buffer_len - _len);
+    while (_len < _buffer_len) {
+	ssize_t got = read(_fd, _buffer + _len, _buffer_len - _len);
 	if (got > 0)
 	    _len += got;
 	else if (got == 0)	// premature end of file
@@ -133,6 +133,8 @@ int
 FromIPSummaryDump::read_line(String &result, ErrorHandler *errh)
 {
     int epos = _pos;
+    if (_save_char)
+	_buffer[epos] = _save_char;
 
     while (1) {
 	bool done = false;
@@ -147,16 +149,25 @@ FromIPSummaryDump::read_line(String &result, ErrorHandler *errh)
 	    epos = _pos + delta;
 	}
 
-	const char *d = _buffer.data();
-	while (epos < _len && d[epos] != '\n' && d[epos] != '\r')
+	while (epos < _len && _buffer[epos] != '\n' && _buffer[epos] != '\r')
 	    epos++;
 
 	if (epos < _len || done) {
-	    result = _buffer.substring(_pos, epos - _pos);
-	    if (epos < _len && d[epos] == '\r')
+	    if (epos < _len && _buffer[epos] == '\r')
 		epos++;
-	    if (epos < _len && d[epos] == '\n')
+	    if (epos < _len && _buffer[epos] == '\n')
 		epos++;
+
+	    // add terminating '\0'
+	    if (epos == _buffer_len) {
+		_buffer_len += BUFFER_SIZE;
+		if (!(_buffer = (char *)realloc(_buffer, _buffer_len)))
+		    return error_helper(errh, strerror(ENOMEM));
+	    }
+	    _save_char = _buffer[epos];
+	    _buffer[epos] = '\0';
+
+	    result = String::stable_string(_buffer + _pos, epos - _pos);
 	    _pos = epos;
 	    return 1;
 	}
@@ -177,8 +188,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     if (_fd < 0)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
-    _pos = _len = _file_offset = 0;
-    _buffer = String();
+    _pos = _len = _file_offset = _save_char = 0;
     int result = read_buffer(errh);
     if (result < 0) {
 	uninitialize();
@@ -209,10 +219,12 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	uninitialize();
 	return -1;
     } else if (line.substring(0, 14) != "!IPSummaryDump"
-	       && line.substring(0, 8) != "!creator"
-	       && !_contents.size() /* don't warn on DEFAULT_CONTENTS */) {
-	errh->warning("%s: missing banner line; is this an IP summary dump?", _filename.cc());
-	_pos = 0;
+	       && line.substring(0, 8) != "!creator") {
+	if (!_contents.size() /* don't warn on DEFAULT_CONTENTS */)
+	    errh->warning("%s: missing banner line; is this an IP summary dump?", _filename.cc());
+	if (_save_char)
+	    _buffer[_pos] = _save_char;
+	_pos = _save_char = 0;
     }
     
     _format_complaint = false;
@@ -234,7 +246,8 @@ FromIPSummaryDump::uninitialize()
     }
     _fd = -1;
     _pipe = 0;
-    _buffer = String();
+    free(_buffer);
+    _buffer = 0;
     _task.unschedule();
 }
 
@@ -286,8 +299,6 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     iph->ip_off = 0;
     
     String line;
-    Vector<String> words;
-    uint32_t j;
     
     while (1) {
 
@@ -308,144 +319,212 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	} else if (len == 0 || data[0] == '!' || data[0] == '#')
 	    continue;
 
-	words.clear();
-	cp_spacevec(line, words);
-	if (words.size() != _contents.size() || _contents.size() == 0)
-	    break;		// bad format
-
 	int ok = 0;
+	int pos = 0;
 	uint32_t byte_count = 0;
 	uint32_t payload_len = 0;
-	for (int i = 0; i < _contents.size(); i++)
+	bool have_payload_len = false;
+	
+	for (int i = 0; pos < len && i < _contents.size(); i++) {
+	    int original_pos = pos;
+	    char *next;
+	    uint32_t u1 = 0, u2 = 0;
+
+	    // first, parse contents
 	    switch (_contents[i]) {
 
 	      case W_TIMESTAMP:
-		ok += cp_timeval(words[i], &q->timestamp_anno());
+		u1 = strtoul(data + pos, &next, 10);
+		if (next > data + pos) {
+		    pos = next - data;
+		    if (data[pos] == '.') {
+			int digit = 0;
+			for (pos++; digit < 6 && isdigit(data[pos]); digit++, pos++)
+			    u2 = (u2 * 10) + data[pos] - '0';
+			for (; digit < 6; digit++)
+			    u2 = (u2 * 10);
+			for (; isdigit(data[pos]); pos++)
+			    /* nada */;
+		    }
+		}
 		break;
-
+		
 	      case W_TIMESTAMP_SEC:
-		ok += cp_integer(words[i], (int32_t *)&q->timestamp_anno().tv_sec);
-		break;
-
 	      case W_TIMESTAMP_USEC:
-		ok += cp_integer(words[i], (int32_t *)&q->timestamp_anno().tv_usec);
+	      case W_LENGTH:
+	      case W_PAYLOAD_LENGTH:
+	      case W_IPID:
+	      case W_SPORT:
+	      case W_DPORT:
+	      case W_TCP_SEQ:
+	      case W_TCP_ACK:
+	      case W_COUNT:
+		u1 = strtoul(data + pos, &next, 0);
+		pos = next - data;
 		break;
 		
 	      case W_SRC:
-		ok += cp_ip_address(words[i], (unsigned char *)&iph->ip_src);
-		break;
-
 	      case W_DST:
-		ok += cp_ip_address(words[i], (unsigned char *)&iph->ip_dst);
+		for (int j = 0; j < 4; j++) {
+		    int x = 0, p = pos;
+		    while (isdigit(data[pos]) && x < 256)
+			(x = (x * 10) + data[pos] - '0'), pos++;
+		    if (x >= 256 || pos == p || (j < 3 && data[pos] != '.')) {
+			pos = original_pos;
+			break;
+		    }
+		    u1 = (u1 << 8) + x;
+		    if (j < 3)
+			pos++;
+		}
 		break;
-		
-	      case W_LENGTH:
-		ok += (cp_unsigned(words[i], &j) && j <= 0xFFFF);
-		iph->ip_len = htons(j);
-		byte_count = j;
-		break;
-		
-	      case W_PAYLOAD_LENGTH:
-		ok += (cp_unsigned(words[i], &j) && j <= 0xFFFF);
-		payload_len = j;
-		break;
-		
-	      case W_PROTO: {
-		  const String &w = words[i];
-		  if (w.length() == 1) {
-		      if (w[0] == 'T')
-			  j = IP_PROTO_TCP;
-		      else if (w[0] == 'U')
-			  j = IP_PROTO_UDP;
-		      else if (w[0] == 'I')
-			  j = IP_PROTO_ICMP;
-		      else if (w[0] >= '0' && w[0] <= '9')
-			  j = w[0] - '0';
-		      else
-			  break;
-		  } else if (cp_unsigned(words[i], &j) && j <= 255)
-		      /* nada */;
-		  else
-		      break;
-		  iph->ip_p = j;
-		  ok++;
-		  break;
-	      }
 
-	      case W_IPID:
-		if (cp_unsigned(words[i], &j) && j <= 0xFFFF)
-		    iph->ip_id = htons(j), ok++;
+	      case W_PROTO:
+		if (data[pos] == 'T') {
+		    u1 = IP_PROTO_TCP;
+		    pos++;
+		} else if (data[pos] == 'U') {
+		    u1 = IP_PROTO_UDP;
+		    pos++;
+		} else if (data[pos] == 'I') {
+		    u1 = IP_PROTO_ICMP;
+		    pos++;
+		} else {
+		    u1 = strtoul(data + pos, &next, 0);
+		    pos = next - data;
+		}
 		break;
 
 	      case W_FRAG:
-		if (words[i].length() == 1) {
-		    if (words[i][0] == 'F')
-			iph->ip_off = htons(IP_MF), ok++;
-		    else if (words[i][0] == 'f')
-			iph->ip_off = htons(10), ok++; // random number
-		    else if (words[i][0] == '.')
-			ok++;
+		if (data[pos] == 'F') {
+		    u1 = htons(IP_MF);
+		    pos++;
+		} else if (data[pos] == 'f') {
+		    u1 = htons(10);	// random number
+		    pos++;
+		} else if (data[pos] == '.')
+		    pos++;	// u1 already 0
+		break;
+
+	      case W_FRAGOFF:
+		u1 = strtoul(data + pos, &next, 0);
+		if (next > data + pos) {
+		    pos = next - data;
+		    if (data[pos] == '+') {
+			u1 |= IP_MF;
+			pos++;
+		    }
 		}
-		break;
-
-	      case W_FRAGOFF: {
-		  String s = words[i];
-		  if (s.length() > 1 && s.back() == '+')
-		      iph->ip_off |= htons(IP_MF), s = s.substring(0, s.length() - 1);
-		  if (cp_unsigned(s, &j) && j <= IP_OFFMASK)
-		      iph->ip_off |= htons(j), ok++;
-		  break;
-	      }
-
-	      case W_SPORT:
-		if (cp_unsigned(words[i], &j) && j <= 0xFFFF)
-		    q->udp_header()->uh_sport = htons(j), ok++;
-		break;
-
-	      case W_DPORT:
-		if (cp_unsigned(words[i], &j) && j <= 0xFFFF)
-		    q->udp_header()->uh_dport = htons(j), ok++;
-		break;
-
-	      case W_TCP_SEQ:
-		if (cp_unsigned(words[i], &j))
-		    q->tcp_header()->th_seq = htonl(j), ok++;
-		break;
-
-	      case W_TCP_ACK:
-		if (cp_unsigned(words[i], &j))
-		    q->tcp_header()->th_ack = htonl(j), ok++;
 		break;
 
 	      case W_TCP_FLAGS:
-		if (cp_unsigned(words[i], &j) && j <= 0xFF)
-		    q->tcp_header()->th_flags = j, ok++;
-		else {
-		    const uint8_t *data = (const uint8_t *)words[i].data();
-		    int len = words[i].length();
-		    j = 0;
-		    for (int i = 0; i < len; i++)
-			if (flag_mapping[data[i]])
-			    j |= 1 << (flag_mapping[data[i]] - 1);
-			else if (data[i] == (uint8_t)'.' && len == 1)
-			    ;
-			else
-			    goto bad_flags;
-		    q->tcp_header()->th_flags = j, ok++;
-		  bad_flags:
-		    /* nothing to do */;
-		}
+		if (isdigit(data[pos])) {
+		    u1 = strtoul(data + pos, &next, 0);
+		    pos = next - data;
+		} else if (data[pos] == '.')
+		    pos++;
+		else
+		    while (flag_mapping[data[pos]]) {
+			u1 |= 1 << (flag_mapping[data[pos]] - 1);
+			pos++;
+		    }
+		break;
+		
+	    }
+
+	    // check whether we correctly parsed something
+	    bool this_ok = (pos > original_pos && (!data[pos] || isspace(data[pos])));
+	    while (data[pos] && !isspace(data[pos]))
+		pos++;
+	    while (isspace(data[pos]))
+		pos++;
+	    if (!this_ok)
+		continue;
+
+	    // store contents
+	    switch (_contents[i]) {
+
+	      case W_TIMESTAMP:
+		if (u2 < 1000000)
+		    q->set_timestamp_anno(u1, u2), ok++;
+		break;
+
+	      case W_TIMESTAMP_SEC:
+		q->timestamp_anno().tv_sec = u1, ok++;
+		break;
+
+	      case W_TIMESTAMP_USEC:
+		if (u1 < 1000000)
+		    q->timestamp_anno().tv_usec = u1, ok++;
+		break;
+		
+	      case W_SRC:
+		iph->ip_src.s_addr = htonl(u1), ok++;
+		break;
+
+	      case W_DST:
+		iph->ip_dst.s_addr = htonl(u1), ok++;
+		break;
+		
+	      case W_LENGTH:
+		if (u1 <= 0xFFFF)
+		    byte_count = u1, ok++;
+		break;
+		
+	      case W_PAYLOAD_LENGTH:
+		if (u1 <= 0xFFFF)
+		    payload_len = u1, have_payload_len = true, ok++;
+		break;
+		
+	      case W_PROTO:
+		if (u1 <= 255)
+		    iph->ip_p = u1, ok++;
+		break;
+
+	      case W_IPID:
+		if (u1 <= 0xFFFF)
+		    iph->ip_id = htons(u1), ok++;
+		break;
+
+	      case W_FRAG:
+		iph->ip_off = u1, ok++;
+		break;
+
+	      case W_FRAGOFF:
+		if ((u1 & ~IP_MF) <= IP_OFFMASK)
+		    iph->ip_off = htons(u1), ok++;
+		break;
+
+	      case W_SPORT:
+		if (u1 <= 0xFFFF)
+		    q->udp_header()->uh_sport = htons(u1), ok++;
+		break;
+
+	      case W_DPORT:
+		if (u1 <= 0xFFFF)
+		    q->udp_header()->uh_dport = htons(u1), ok++;
+		break;
+
+	      case W_TCP_SEQ:
+		q->tcp_header()->th_seq = htonl(u1), ok++;
+		break;
+
+	      case W_TCP_ACK:
+		q->tcp_header()->th_ack = htonl(u1), ok++;
+		break;
+
+	      case W_TCP_FLAGS:
+		if (u1 <= 0xFF)
+		    q->tcp_header()->th_flags = u1, ok++;
 		break;
 
 	      case W_COUNT:
-		if (cp_unsigned(words[i], &j)) {
-		    if (j == 0)
-			continue;
-		    SET_EXTRA_PACKETS_ANNO(q, j - 1), ok++;
-		}
+		if (u1)
+		    SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;
 		break;
 
 	    }
+	}
 
 	if (!ok)
 	    break;
@@ -457,10 +536,13 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
 	else
 	    q->take(sizeof(click_tcp));
-	if (byte_count)
+	if (byte_count) {
+	    iph->ip_len = ntohs(byte_count);
 	    SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
-	else if (payload_len)
+	} else if (have_payload_len) {
+	    iph->ip_len = ntohs(q->length() + payload_len);
 	    SET_EXTRA_LENGTH_ANNO(q, payload_len);
+	}
 
 	return q;
     }
