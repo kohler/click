@@ -52,6 +52,7 @@
  * LinkTracker, PingPong */
 
 #include <click/bighashmap.hh>
+#include <click/dequeue.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
@@ -88,7 +89,7 @@ private:
     unsigned int    ip;
     unsigned int    period;   // period of this node's probes, as reported by the node
     unsigned int    tau;      // this node's stats averaging period, as reported by the node
-    Vector<probe_t> probes;   // most recently received probes
+    DEQueue<probe_t> probes;   // most recently received probes
     probe_list_t(unsigned int ip_, unsigned int p, unsigned int t) : ip(ip_), period(p), tau(t) { }
     probe_list_t() : ip(0), period(0), tau(0) { }
   };

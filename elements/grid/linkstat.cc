@@ -339,19 +339,15 @@ LinkStat::add_bcast_stat(const IPAddress &ip, const grid_link_probe *lp)
     click_chatter("LinkStat %s: node %s has changed its link probe period from %u to %u; clearing probe info\n",
 		  id().cc(), ip.s().cc(), l->period, new_period);
     l->probes.clear();
+    l->period = new_period;
     return;
   }
   
   l->probes.push_back(probe);
 
   /* only keep stats for last _window *unique* sequence numbers */
-  if ((unsigned) l->probes.size() > _window) {
-    Vector<probe_t> new_vec;
-    for (int i = l->probes.size() - _window; i < l->probes.size(); i++) 
-      new_vec.push_back(l->probes.at(i));
-  
-    l->probes = new_vec;  
-  }
+  while ((unsigned) l->probes.size() > _window) 
+    l->probes.pop_front();
 }
 
 String
@@ -485,7 +481,7 @@ LinkStat::add_handlers()
 EXPORT_ELEMENT(LinkStat)
 
 #include <click/bighashmap.cc>
-#include <click/vector.cc>
-template class Vector<LinkStat::probe_t>;
+#include <click/dequeue.cc>
+template class DEQueue<LinkStat::probe_t>;
 template class BigHashMap<EtherAddress, LinkStat::probe_list_t>;
 CLICK_ENDDECLS
