@@ -1,3 +1,11 @@
+2003-10-05 Sunday 20:29  John Bicket <jbicket@mit.edu>
+
+	* elements/standard/simplequeue.hh (1.8),
+	include/click/packet_anno.hh (1.18): minor tweaks to wifi elements,
+	make tokenqueue work.
+	
+	--jbicket
+
 2003-09-25 Thursday 01:08  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/arptable.hh (1.6): make _bcast public
