@@ -35,11 +35,10 @@ CLICK_DECLS
 
 #define PACKET_CHUNK(p)		(((PacketInfo *)((p)->all_user_anno_u()))->chunk)
 #define PACKET_DLEN(p)		((p)->transport_length())
-#define Q_PACKET_JIFFIES(p)	((p)->timestamp_anno().tv_usec)
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 
 IPReassembler::IPReassembler()
-    : Element(1, 1), _expire_timer(expire_hook, (void *) this)
+    : Element(1, 1)
 {
     MOD_INC_USE_COUNT;
     for (int i = 0; i < NMAP; i++)
@@ -69,9 +68,8 @@ IPReassembler::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 IPReassembler::initialize(ErrorHandler *)
 {
-    _expire_timer.initialize(this);
-    _expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
     _mem_used = 0;
+    _reap_time = 0;
     return 0;
 }
 
@@ -214,7 +212,6 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     // link it up
     q->set_next(*q_pprev);
     *q_pprev = q;
-    Q_PACKET_JIFFIES(q) = click_jiffies();
     
     check();
 }
@@ -237,6 +234,15 @@ IPReassembler::simple_action(Packet *p)
     if (!IP_ISFRAG(iph))
 	return p;
 
+    // reap if necessary
+    int now = p->timestamp_anno().tv_sec;
+    if (!now) {
+	click_gettimeofday(&p->timestamp_anno());
+	now = p->timestamp_anno().tv_sec;
+    }
+    if (now >= _reap_time)
+	reap(now);
+
     // calculate packet edges
     int p_off = IP_BYTE_OFF(iph);
     int p_lastoff = p_off + ntohs(iph->ip_len) - (iph->ip_hl << 2);
@@ -255,7 +261,7 @@ IPReassembler::simple_action(Packet *p)
 
     // clean up memory if necessary
     if (_mem_used > _mem_high_thresh)
-	garbage_collect();
+	reap_overfull(now);
 
     // get its Packet queue
     WritablePacket **q_pprev;
@@ -346,26 +352,22 @@ IPReassembler::simple_action(Packet *p)
 	return emit_whole_packet(q, q_pprev, p);
 
     // Otherwise, done for now
-    // mark the queue packet with the current time
-    Q_PACKET_JIFFIES(q) = click_jiffies();
     //check();
     return 0;
 }
 
 void
-IPReassembler::garbage_collect()
+IPReassembler::reap_overfull(int now)
 {
     check();
 
-    int now = click_jiffies();
-
     // First throw away fragments at least 10 seconds old, then at least 5
     // seconds old, then any fragments.
-    for (int delta = 10 * CLICK_HZ; delta >= 0; delta -= 5 * CLICK_HZ)
+    for (int delta = 10; delta >= 0; delta -= 5)
 	for (int bucket = 0; bucket < NMAP; bucket++) {
 	    WritablePacket **pprev = &_map[bucket];
 	    for (WritablePacket *q = *pprev; q; q = *pprev)
-		if (Q_PACKET_JIFFIES(q) <= now - delta) {
+		if (q->timestamp_anno().tv_sec < now - delta) {
 		    *pprev = (WritablePacket *)q->next();
 		    _mem_used -= IPH_MEM_USED + q->transport_length();
 		    q->kill();
@@ -379,17 +381,16 @@ IPReassembler::garbage_collect()
 }
 
 void
-IPReassembler::expire_hook(Timer *, void *thunk)
+IPReassembler::reap(int now)
 {
     // look at all queues. If no activity for 30 seconds, kill that queue
 
-    IPReassembler *ipr = reinterpret_cast<IPReassembler *>(thunk);
-    int kill_time = click_jiffies() - EXPIRE_TIMEOUT * CLICK_HZ;
+    int kill_time = now - REAP_TIMEOUT;
 
     for (int i = 0; i < NMAP; i++) {
-	WritablePacket **q_pprev = &ipr->_map[i];
+	WritablePacket **q_pprev = &_map[i];
 	for (WritablePacket *q = *q_pprev; q; ) {
-	    if (Q_PACKET_JIFFIES(q) < kill_time) {
+	    if (q->timestamp_anno().tv_sec < kill_time) {
 		*q_pprev = (WritablePacket *)q->next();
 		q->kill();
 	    } else
@@ -398,7 +399,7 @@ IPReassembler::expire_hook(Timer *, void *thunk)
 	}
     }
 
-    ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
+    _reap_time = now + REAP_INTERVAL;
 }
 
 CLICK_ENDDECLS

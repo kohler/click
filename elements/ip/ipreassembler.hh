@@ -69,14 +69,15 @@ class IPReassembler : public Element { public:
 
   private:
 
-    enum { EXPIRE_TIMEOUT = 30, // seconds
-	   EXPIRE_TIMER_INTERVAL_MS = 10000, // ms
+    enum { REAP_TIMEOUT = 30, // seconds
+	   REAP_INTERVAL = 10, // seconds
 	   IPH_MEM_USED = 40 };
 
     enum { NMAP = 256 };
     WritablePacket *_map[NMAP];
 
-    Timer _expire_timer;
+    int _reap_time;
+
     uint32_t _mem_used;
     uint32_t _mem_high_thresh;	// defaults to 256K
     uint32_t _mem_low_thresh;	// defaults to 3/4 * _mem_high_thresh
@@ -88,9 +89,9 @@ class IPReassembler : public Element { public:
     void make_queue(Packet *, WritablePacket **);
     static ChunkLink *next_chunk(WritablePacket *, ChunkLink *);
     Packet *emit_whole_packet(WritablePacket *, WritablePacket **, Packet *);
-    void garbage_collect();
+    void reap_overfull(int);
+    void reap(int);
     static void check_error(ErrorHandler *, int, const Packet *, const char *, ...);
-    static void expire_hook(Timer *, void *);
 
 };
 
