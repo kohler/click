@@ -1,0 +1,461 @@
+\input texinfo.tex
+@setfilename click.info
+@settitle Click
+@footnotestyle end
+
+@ifinfo
+@macro click {arg}
+@code{\arg\}
+@end macro
+@end ifinfo
+@ifnotinfo
+@macro click {arg}
+@emph{\arg\}
+@end macro
+@end ifnotinfo
+
+@syncodeindex vr cp
+@syncodeindex fn cp
+
+@titlepage
+@title The Click Modular Router Programming Manual
+@author Eddie Kohler
+@end titlepage
+
+@node Top, Coding Standards, (dir), (dir)
+@top
+
+@ifinfo
+This document describes@dots{}
+@end ifinfo
+
+@menu
+* Coding Standards::
+* Element Initialization::      
+* Tasks::                       
+* Timers::
+* Index::
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Coding Standards
+
+* Upper and lower case names::
+* Common name patterns::
+
+Element Initialization
+
+* notify_ninputs notify_noutputs::
+* configure::
+* processing::
+* initialize::
+* configure_phase::
+* uninitialize::
+* Initialization Phases::
+
+@end detailmenu
+@end menu
+
+@node Coding Standards, Element Initialization, Top, Top
+@chapter Coding Standards
+
+
+@menu
+* Upper and lower case names::
+* Common name patterns::
+@end menu
+
+
+@node Upper and lower case names, Common name patterns, Coding Standards, Coding Standards
+@section Upper and Lower Case in Names
+
+Keep to the following consistent scheme for choosing between upper and
+lower case when naming variables, types, and functions.
+
+@table @strong
+@item Classes
+Use mixed case with an initial capital letter and no underscores:
+@code{LookupIPRoute}.
+
+@item Methods
+Use all lower case with underscores separating words:
+@code{negation_is_simple}.
+
+@item Constants
+Use all upper case with underscores separating words:
+@code{TYPE_ICMP_TYPE}.
+
+@item Instance variables
+Begin with an underscore, then use all lower case with underscores
+separating words: @code{_length}.
+
+@item Regular variables
+Use all lower case with underscores separating words: @code{i},
+@code{the_handler}.
+
+@item Class variables
+These variables are declared as @code{static} in the class header. Name
+them like regular variables: @code{nelements_allocated}.
+
+@item Functions
+Name them like methods: @code{quicksort_hook}.
+
+@item Other types
+This includes typedefs and enumerated types. Name them like classes:
+@code{CpVaParseCmd}, @code{ConfigurePhase}.
+@end table
+
+There are exceptions to these guidelines. In particular:
+
+@itemize
+@item
+Instance variables in C structs---that is, classes with few methods and
+whose instance variables are mostly public---may be named like regular
+variables: without a preceding underscore. The same goes for the
+components of unions.
+
+@item
+Classes that act like simple types, such as @code{u_atomic32_t}, take
+names similar to the types they replace (in this case @code{u_int32_t}).
+@end itemize
+
+
+@node Common name patterns,  , Upper and lower case names, Coding Standards
+@section Common Name Patterns
+
+@itemize
+@item
+Many instance variables have associated @dfn{getter methods} that return
+their values, and/or @dfn{setter methods} that change their values. For
+an instance variable named @code{_x}, the getter method should be named
+@code{x()} and the setter method should be named @code{set_x()}.
+
+@item
+A variable or method which counts something is often named
+@code{n@var{object}s}---for instance, @code{_nwarnings},
+@code{ninputs()}, @code{_npackets}.
+@end itemize
+
+
+@node Element Initialization, Tasks, Coding Standards, Top
+@chapter Element Initialization
+
+The process of making an element ready for inclusion in an active router
+is called @dfn{element initialization}. This includes processing the
+element's configuration string, setting up internal state and any input
+and output ports, and querying the router about neighboring elements.
+
+Every element in an active router must have successfully initialized. If
+there is an error initializing even one element, the router is aborted.
+Router initialization happens in sequential phases: every element must
+successfully complete one phase before the next phase begins.
+
+@menu
+* notify_ninputs notify_noutputs::
+* configure::
+* processing::
+* initialize::
+* configure_phase::
+* uninitialize::
+* Initialization Phases::
+@end menu
+
+
+@node notify_ninputs notify_noutputs, configure, Element Initialization, Element Initialization
+@section @code{notify_ninputs} and @code{notify_noutputs}
+
+The router calls each element's @code{notify_ninputs} and
+@code{notify_noutputs} methods to tell it how many of its input and
+output ports were used in the configuration. A port is used if it is
+used in a connection.
+
+@deftypemethod Element {virtual void} notify_ninputs (int @var{ninputs})
+@deftypemethodx Element {virtual void} notify_noutputs (int @var{noutputs})
+
+The @var{ninputs} and @var{noutputs} arguments specify how many input
+and output ports were used in the configuration, respectively. For
+example, if @var{ninputs} is 5, then input ports 0 through 4 were
+used.@footnote{Strictly speaking, it is possible that one or more of the
+lower-numbered ports were not used---for example, that input port 0 was
+not used by the configuration. This is always a configuration error,
+however. A later stage will report unused ports as errors and abort
+router initialization.}
+
+These methods' default implementations do nothing.
+@end deftypemethod
+
+@code{notify_ninputs} and @code{notify_noutputs} are called early in the
+initialization process---before @code{configure}, for example, and
+before ports are assigned to push or pull. They may create and destroy
+input and output ports or set other private element state.
+
+A @code{notify_ninputs} or @code{notify_noutputs} method should
+generally be very short and stylized. It should call no Element methods
+except for possibly @code{set_ninputs} or @code{set_noutputs}. The
+following typical @code{notify_noutputs} method sets the element's
+number of outputs to one or two, depending on how many outputs were
+actually used:
+
+@example
+void
+CheckIPHeader::notify_noutputs(int n)
+@{
+  set_noutputs(n < 2 ? 1 : 2);
+@}
+@end example
+
+
+@node configure, processing, notify_ninputs notify_noutputs, Element Initialization
+@section @code{configure}
+
+The @code{configure} method is passed the element's configuration
+string. This method is expected to parse the configuration string,
+report any errors, and initialize the element's internal state.
+
+@deftypemethod Element {virtual int} configure (const Vector<String> &@var{conf}, ErrorHandler *@var{errh})
+The @var{conf} argument is the element's configuration string, divided
+into configuration arguments by splitting at commas, and with comments
+and extraneous whitespace removed. If @var{conf} is empty, the element
+was not supplied with a configuration string (or its configuration
+string contained only comments and whitespace).
+
+Any errors, warnings, or messages should be reported to @var{errh}.
+Messages should not specify the element name or type; this information
+will be supplied externally.
+
+This method should return zero if configuration succeeds, or a negative
+number if it fails. Returning a negative number prevents the router from
+initializing.
+
+The default @code{configure} method succeeds if and only if there are no
+configuration arguments.
+@end deftypemethod
+
+@code{configure} is called relatively early in the initialization
+process. For instance, @code{configure} may create or destroy input and
+output ports---the port validity check happens after @code{configure}
+completes. @code{configure} cannot determine whether a port is push or
+pull; neither can it query the router for information about its
+neighbors.
+
+A @code{configure} method should not perform potentially harmful
+actions, such as truncating files or attaching to devices. These actions
+should be left for the @code{initialize} method, which is called later.
+This avoids harm if another element cannot be configured, or if the
+router is incorrectly connected, since in these cases @code{initialize}
+will never be called.
+
+
+@node processing, initialize, configure, Element Initialization
+@section @code{processing}---Push and Pull Processing
+
+Elements use the @code{processing} and @code{processing_vector} methods
+to specify whether their ports push, pull, or agnostic. 
+
+
+@node initialize, configure_phase, processing, Element Initialization
+@section @code{initialize}---Final Initialization
+
+The @code{initialize} method is called just before the router is placed
+on line. It performs any final initialization, and provides the last
+chance to abort router installation with an error.
+
+@deftypemethod Element {virtual int} initialize (ErrorHandler *@var{errh})
+Any errors, warnings, or messages should be reported to @var{errh}.
+Messages should not specify the element name; this information will be
+supplied externally.
+
+This method should return zero if initialization succeeds, or a negative
+number if it fails. Returning a negative number prevents the router from
+initializing.
+
+The default @code{initialize} method simply returns zero.
+@end deftypemethod
+
+An @code{initialize} method may not create or destroy input or output
+ports. It may, however, check whether its ports are push or pull, or
+query the router for information about its neighbors.
+
+If every element's @code{initialize} method succeeds, then the router is
+installed, and will remain installed until another router replaces it.
+Any errors that occur later than @code{initialize}---during a
+@code{push} or @code{pull} method, perhaps---will not take the router
+off line.
+
+
+@node configure_phase, uninitialize, initialize, Element Initialization
+@section Initialization Order
+
+Some elements depend on being configured and initialized before or after
+other elements. For example, the @click{AddressInfo} element must be
+configured before all other elements, since its address abbreviations
+must be available in their configuration strings. The
+@code{configure_phase} method makes this possible.
+
+@deftypemethod Element {virtual int} configure_phase () const
+Returns the element's @dfn{configure phase}, an integer that specifies
+when it should be configured and initialized relative to other elements.
+
+An element with a low configure phase will be configured before an
+element with a high configure phase. Elements with the same configure
+phase may be configured in any order relative to one another.
+
+The following basic configure phase constants are defined in
+@code{<click/element.hh>}:
+
+@table @code
+@item CONFIGURE_PHASE_ZERO
+Configure first.
+@item CONFIGURE_PHASE_INFO
+Configure early. Appropriate for most information elements.
+@item CONFIGURE_PHASE_DEFAULT
+Default configuration phase. Appropriate for most elements.
+@item CONFIGURE_PHASE_LATE
+Configure last.
+@end table
+
+@code{configure_phase} may also return a number based on these
+constants. For example, all @click{FromLinux} elements should be
+initialized before any @click{ToDevice} elements. The @click{FromLinux}
+element therefore contains the following definitions:
+
+@example
+enum @{ CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
+       CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 @};
+@end example
+
+@noindent
+@code{FromLinux::configure_phase} returns
+@code{CONFIGURE_PHASE_FROMLINUX}, and @code{ToDevice::configure_phase}
+returns @code{FromLinux::CONFIGURE_PHASE_TODEVICE}.
+
+The default implementation returns @code{CONFIGURE_PHASE_DEFAULT}.
+@end deftypemethod
+
+Click uses all elements' configure phases to construct a single element
+configuration order. It then configures elements in this order and, if
+there were no errors, initializes them in the same order. The
+@code{configure_phase} method is called once, relatively early---before
+@code{configure} and @code{initialize}.
+
+An element's configure phase should depend only on its class. In
+particular, the body of any @code{configure_phase} method should consist
+of a single @code{return} statement returning some constant.
+
+
+@node uninitialize, Initialization Phases, configure_phase, Element Initialization
+@section @code{uninitialize}---Removing Initialization State
+
+The @code{uninitialize} method should undo any effects of
+initialization---for example, it should close any open files, free up
+memory, and unhook from network devices. Every element's
+@code{uninitialize} method is called when a successfully initialized
+router is taken off line. @code{uninitialize} is also called on certain
+elements in an aborted router, namely those that did successfully
+initialize.
+
+@deftypemethod Element {virtual void} uninitialize ()
+This method takes no arguments and returns no results. It should never
+report errors to any source.
+
+The default @code{uninitialize} method does nothing.
+@end deftypemethod
+
+An element's @code{uninitialize} method will be called by Click if and
+only if its @code{initialize} method succeeded (returned zero).
+Furthermore, it will be called by Click exactly once. However, it often
+makes sense to write @code{uninitialize} so that it may be called from
+other places---from the element's destructor, for example, or from
+a partially completed @code{initialize}.
+
+@code{uninitialize} serves some of the same functions as an element's
+destructor and, in the normal case, it is called immediately before the
+element is destroyed. However, @code{uninitialize} may be called long
+before destruction. Elements that are part of an erroneous router are
+uninitialized, but kept around for debugging purposes until another
+router is installed.
+
+
+@node Initialization Phases,  , uninitialize, Element Initialization
+@section Initialization Phases
+
+@enumerate
+@item
+Determines how many ports are used on each element and calls their
+@code{notify_ninputs} and @code{notify_noutputs} methods.
+
+@item
+Calls each element's @code{configure_phase} method, and uses the
+result to construct a configuration order.
+
+@item
+Calls each element's @code{configure} method, passing in the relevant
+configuration string. The elements are configured according to the
+configuration order.
+
+@item
+Checks that each connection connects a valid input port to a valid
+output port. This catches errors where a connection uses a port that
+does not exist.
+
+@item
+Calls each element's @code{processing_vector} method to determine
+whether its ports are push, pull, or agnostic.
+
+@item
+For each agnostic input port, calls the corresponding
+@code{forward_flow} method to determine constraints linking agnostic
+input ports to agnostic output ports.
+
+@item
+Runs the constraint-satisfaction algorithm that determines whether each
+agnostic port is push or pull. This catches errors where a single
+agnostic port is used as both push and pull.
+
+@item
+Checks that every connection is between two push ports or two pull
+ports.
+
+@item
+Checks that push output ports and pull input ports are connected exactly
+once.
+
+@item
+Checks that no input or output port goes unused.
+
+@item
+If there have been no errors up to this point, then calls each element's
+@code{initialize} method. The elements are initialized according to the
+configuration order. No @code{initialize} methods are called if there
+were any errors in any previous phase.
+
+@item
+If there were no errors, then router initialization has succeeded: the
+router can be placed on line.
+
+@item
+If there were errors, then Click calls the @code{uninitialize} method on
+each element whose @code{initialize} method returned successfully.
+Router initialization has failed.
+@end enumerate
+
+
+@node Tasks, Timers, Element Initialization, Top
+@chapter Tasks
+
+A Click router contains 
+
+
+@node Timers, Index, Tasks, Top
+@chapter Timers
+
+Timers
+
+
+@node Index,  , Timers, Top
+@unnumbered Index
+
+@printindex cp
+
+@bye

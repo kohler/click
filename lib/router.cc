@@ -848,25 +848,28 @@ Router::initialize(ErrorHandler *errh)
     all_ok = false;
 
   // Initialize elements that are OK so far.
-  for (int ord = 0; ord < _elements.size(); ord++) {
-    int i = configure_order[ord];
-    if (element_ok[i]) {
+  if (all_ok) {
+    for (int ord = 0; ord < _elements.size(); ord++) {
+      int i = configure_order[ord];
+      if (element_ok[i]) {
 #if CLICK_DMALLOC
-      sprintf(dmalloc_buf, "i%d  ", i);
-      CLICK_DMALLOC_REG(dmalloc_buf);
+	sprintf(dmalloc_buf, "i%d  ", i);
+	CLICK_DMALLOC_REG(dmalloc_buf);
 #endif
-      ContextErrorHandler cerrh
-	(errh, context_message(i, "While initializing"));
-      int before = cerrh.nerrors();
-      if (_elements[i]->initialize(&cerrh) < 0) {
-	element_ok[i] = all_ok = false;
-	// don't report `unspecified error' for ErrorElements: keep error
-	// messages clean
-	if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
-	  cerrh.error("unspecified error");
+	ContextErrorHandler cerrh
+	  (errh, context_message(i, "While initializing"));
+	int before = cerrh.nerrors();
+	if (_elements[i]->initialize(&cerrh) < 0) {
+	  element_ok[i] = all_ok = false;
+	  // don't report `unspecified error' for ErrorElements: keep error
+	  // messages clean
+	  if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
+	    cerrh.error("unspecified error");
+	}
       }
     }
-  }
+  } else
+    element_ok.assign(nelements(), false);
 
 #if CLICK_DMALLOC
   CLICK_DMALLOC_REG("iXXX");
