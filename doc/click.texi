@@ -88,6 +88,7 @@ StringAccum
 
 * StringAccum Constructors::    
 * StringAccum operator<<::      
+* Special StringAccum operator<<::  
 * StringAccum Manipulation::    
 * StringAccum Contents::        
 * StringAccum Results::         
@@ -95,12 +96,13 @@ StringAccum
 
 ErrorHandler
 
+* ErrorHandler Initialization::  
 * Reporting Errors::            
 * Error Format Strings::        
 * Counting Errors::             
 * Basic ErrorHandlers::        
 * Error Veneers::               
-* Writing ErrorHandlers::       
+* Writing ErrorHandlers::      
 
 IPAddress
 
@@ -182,7 +184,9 @@ Live Reconfiguration
 
 Configuration Strings
 
-* Configuration String Structure::  
+* Config String Structure::     
+* Quoting::                     
+* Config String Splitting::     
 
 Tasks
 
@@ -2906,9 +2910,9 @@ report any errors, and initialize the element's internal state.
 @deftypemethod Element {virtual int} configure (const Vector<String> &@var{conf}, ErrorHandler *@var{errh})
 The @var{conf} argument is the element's configuration string, divided
 into configuration arguments by splitting at commas, and with comments
-and extraneous whitespace removed. If @var{conf} is empty, the element
-was not supplied with a configuration string (or its configuration
-string contained only comments and whitespace).
+and leading and trailing whitespace removed. If @var{conf} is empty, the
+element was not supplied with a configuration string (or its
+configuration string contained only comments and whitespace).
 
 Any errors, warnings, or messages should be reported to @var{errh}.
 Messages should not specify the element name or type; this information
@@ -2935,6 +2939,9 @@ should be left for the @code{initialize} method, which is called later.
 This avoids harm if another element cannot be configured, or if the
 router is incorrectly connected, since in these cases @code{initialize}
 will never be called.
+
+The @var{conf} argument is created by calling @code{cp_argvec} on the
+element's configuration string; see @ref{Config String Splitting}.
 
 
 @node processing, flow_code, configure, Element Initialization
@@ -3576,10 +3583,12 @@ Click users interact with a running router through @dfn{handlers}.
 @chapter Configuration Strings
 
 @menu
-* Configuration String Structure::  
+* Config String Structure::     
+* Quoting::                     
+* Config String Splitting::     
 @end menu
 
-@node Configuration String Structure,  , Configuration Strings, Configuration Strings
+@node Config String Structure, Quoting, Configuration Strings, Configuration Strings
 @section Structure
 
 Configuration strings consist of a list of comma-separated
@@ -3686,43 +3695,196 @@ such sequences expand to @samp{@key{CHAR}}, but their semantics may
 eventually change.
 
 
-@node Quoting
+@node Quoting, Config String Splitting, Config String Structure, Configuration Strings
 @section Quoting and Unquoting
 
 These functions interpret quote sequences and comments in configuration
-strings. @code{cp_unquote} expands quote sequences and removes comments.
-@code{cp_quote} protects special characters, such as spaces and commas,
-within double quotes. Finally, @code{cp_uncomment} removes comments and
-leading and trailing spaces, but does not expand quote sequences.
+strings. @code{cp_uncomment} removes comments and leading and trailing
+spaces, but does not expand quote sequences. @code{cp_unquote} both
+removes comments and expands quote sequences. Finally, @code{cp_quote}
+protects special characters, such as spaces and commas, within double
+quotes.
 
-@deftypefun String cp_unquote (@w{const String &@var{text}})
-Processes @var{text} by replacing every quoted string by its expansion
-and every comment by a single space, and returns the result.
+@deftypefun String cp_uncomment (@w{const String &@var{str}})
+Replaces any comments in @var{str} by single spaces, then removes any
+leading and trailing space and returns the result.
 @end deftypefun
 
-@deftypefun String cp_quote (@w{const String &@var{text}}, @w{bool @var{allow_newlines} = false})
-Returns a quoted version of @var{text}. Any spaces, commas, comments,
-quote sequences, and non-ASCII characters in @var{text} are protected
+@deftypefun String cp_unquote (@w{const String &@var{str}})
+Replaces any comments in @var{str} by single spaces, then removes any
+leading and trailing space. Finally, replaces every quoted string by its
+expansion and returns the result.
+@end deftypefun
+
+@deftypefun String cp_quote (@w{const String &@var{str}}, @w{bool @var{allow_newlines} = false})
+Returns a quoted version of @var{str}. Any spaces, commas, comments,
+quote sequences, and non-ASCII characters in @var{str} are protected
 within double quotes. If @var{allow_newlines} is true, then the result
 may contain newline characters (within double quotes); otherwise, any
-newline characters in @var{text} are replaced by @samp{\n} sequences.
+newline characters in @var{str} are replaced by @samp{\n} sequences.
 The returned result is never empty (unless Click has run out of memory).
-If @var{text} is the empty string, @code{cp_quote} will return @samp{""}
+If @var{str} is the empty string, @code{cp_quote} will return @samp{""}
 (a string containing two double quotes).
-@end deftypefun
-
-@deftypefun String cp_uncomment (@w{const String &@var{text}})
-Replaces any comments in @var{text} by single spaces, then removes any
-leading and trailing space and returns the result.
 @end deftypefun
 
 For example:
 
 @display
 @t{cp_uncomment(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{"quote" \<2 c>}
-@t{cp_unquote(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{    quote ,}
+@t{cp_unquote(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{quote ,}
 @t{cp_quote(}@samp{quote ,}@t{)} @result{} @samp{"quote ,"}
 @end display
+
+@node Config String Splitting,  , Quoting, Configuration Strings
+@section Splitting and Combining
+
+@deftypefun void cp_argvec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
+Splits @var{str} into arguments by breaking it at every comma not part
+of a quote or comment. Comments and leading and trailing spaces are
+removed from each argument, as by @code{cp_uncomment}, and the results
+are pushed, in order, onto the vector @var{conf}. If @var{str} contains
+only spaces and comments, nothing is pushed onto @var{conf}.
+@end deftypefun
+
+@deftypefun void cp_spacevec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
+Splits @var{str} into arguments by breaking it at every sequence of
+spaces and/or comments. Leading and trailing spaces are removed from
+each argument, as by @code{cp_uncomment}, and the results are pushed, in
+order, onto the vector @var{conf}. If @var{str} contains only spaces and
+comments, nothing is pushed onto @var{conf}.
+@end deftypefun
+
+For example:
+
+@display
+@t{cp_argvec(}@samp{  x/* ,,, */ab" c",  \<de>  , ','}@t{, @var{vec})}
+       @result{} 3 arguments:   @samp{x ab" c"}   @samp{\<de>}   @samp{','}
+@t{cp_argvec(}@samp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
+       @result{} 0 arguments
+@t{cp_argvec(}@samp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
+       @result{} 2 empty arguments:   @samp{}   @samp{}
+@t{cp_spacevec(}@samp{  x/* ,,, */yz" w"  \<d e>  ""}@t{, @var{vec})}
+       @result{} 4 arguments:   @samp{x}   @samp{yz" w"}   @samp{\<d e>}   @samp{""}
+@t{cp_spacevec(}@samp{  /* blah, blah, blah, blah */  }@t{, @var{vec})}
+       @result{} 0 arguments
+@t{cp_spacevec(}@samp{  /* blah, blah, blah, blah */,  }@t{, @var{vec})}
+       @result{} 1 argument:   @samp{,}
+@end display
+
+Since the @code{const Vector<String> &@var{conf}} arguments passed to
+elements' @code{configure} methods (@pxref{configure}) have been
+processed by @code{cp_argvec}, there is no need to process them with
+@code{cp_uncomment}.
+
+The @code{cp_unargvec} and @code{cp_unspacevec} functions take a vector
+of arguments and combine them into a single string. These functions do
+not protect their arguments by quoting; use @code{cp_quote} explicitly
+when necessary (@pxref{Quoting}). If the arguments are properly quoted,
+then calling @code{cp_argvec(cp_unargvec(@var{conf}), @var{conf2})} or
+@code{cp_spacevec(cp_unspacevec(@var{conf}), @var{conf2})} will produce
+a new vector of arguments equal to the original.
+
+@deftypefun String cp_unargvec (@w{const Vector<String> &@var{conf}})
+Returns a string consisting of the elements of @var{conf} separated by
+@w{@samp{,@ }}.
+@end deftypefun
+
+@deftypefun String cp_unspacevec (@w{const Vector<String> &@var{conf}})
+Returns a string consisting of the elements of @var{conf} separated by
+@w{@samp{@ }}.
+@end deftypefun
+
+For example:
+
+@display
+@t{cp_unargvec(}[@samp{x ab" c"}, @samp{\<de>}, @samp{','}]@t{)}
+       @result{} @samp{x ab" c", \<de>, ','}
+@t{cp_unargvec(}[@samp{whatever}]@t{)}
+       @result{} @samp{whatever}
+@t{cp_unargvec(}[ ]@t{)}
+       @result{} @samp{}
+@t{cp_unargvec(}[@samp{,}, @samp{,}]@t{)}
+       (Probably an error: caller should have quoted the arguments!)
+       @result{} @samp{,, ,}
+@t{cp_unspacevec(}[@samp{xy" z"}, @samp{\<de>}, @samp{','}]@t{)}
+       @result{} @samp{xy" z" \<de> ','}
+@end display
+
+
+@node Parsing Functions
+@section Parsing Functions
+
+@menu
+* Parsing Strings::             
+* Parsing Booleans::            
+* Parsing Integers::            
+* Parsing Reals::               
+* Parsing IP Addresses::        
+* Parsing IPv6 Addresses::      
+* Parsing Ethernet Addresses::  
+* Parsing Element Names::       
+* Parsing Miscellaneous::       
+@end menu
+
+@node Parsing Strings
+@subsection Strings and Words
+
+@deftypefun bool cp_string (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+Parses a string from the beginning of @var{str} and stores the result in
+@code{*@var{result}}. Returns true if and only if @var{str} contained a
+valid string. The parsed string may contain single and double quotes and
+hex strings (@samp{\< @dots{} >}), which are processed as by
+@code{cp_unquote} (@pxref{Quoting}).
+
+If the @var{rest} argument is null and @var{str} contains any unquoted
+spaces, then parsing will fail. If @var{rest} is not null, then parsing
+stops at the first unquoted space, and the remains of @var{str},
+starting at that unquoted space, are stored in @code{*@var{rest}}.
+
+For example:
+
+@display
+@t{cp_string(}@samp{"a b c d"}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @samp{a b c d}
+@t{cp_string(}@samp{}@t{, @var{result})} @result{} false
+@t{cp_string(}@samp{ "a b c d"}@t{, @var{result})} @result{} false
+       (@var{str} began with an unquoted space)
+@t{cp_string(}@samp{"a b c d" e}@t{, @var{result})} @result{} false
+       (@var{str} contained an unquoted space)
+@t{cp_string(}@samp{"a b c d" e}@t{, @var{result}, @var{rest})} @result{} true
+       @t{*@var{result}} = @samp{a b c d}, @t{*@var{rest}} = @samp{ e}
+@end display
+@end deftypefun
+
+@deftypefun bool cp_word (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+@end deftypefun
+
+@deftypefun bool cp_keyword (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+@end deftypefun
+
+@node Parsing Booleans
+@subsection Booleans
+
+@node Parsing Integers
+@subsection Integers
+
+@node Parsing Reals
+@subsection Real Numbers
+
+@node Parsing IP Addresses
+@subsection IP Addresses
+
+@node Parsing IPv6 Addresses
+@subsection IPv6 Addresses
+
+@node Parsing Ethernet Addresses
+@subsection Ethernet Addresses
+
+@node Parsing Element Names
+@subsection Element Names
+
+@node Parsing Miscellaneous
+@subsection Miscellaneous
 
 @node Tasks, Timers, Configuration Strings, Top
 @chapter Tasks
