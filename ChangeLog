@@ -1,3 +1,10 @@
+2004-02-18 Wednesday 16:31  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: counterflood.cc (1.5), counterflood.hh (1.5),
+	flashflood.cc (1.3), flashflood.hh (1.3), localbroadcast.cc (1.2),
+	localbroadcast.hh (1.2), pflood.cc (1.3), pflood.hh (1.3): flooding
+	algorithm updates
+
 2004-02-18 Wednesday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/infinitesource.cc (1.43): dont try to schedule
