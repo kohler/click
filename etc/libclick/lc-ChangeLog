@@ -1,3 +1,8 @@
+2001-10-18 Thursday 15:31  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: add aggregate
+	annotation
+
 2001-10-18 Thursday 14:04  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool: nitlet: fix --prefix option to findelem
