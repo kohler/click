@@ -165,11 +165,13 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
 
   // set ethernet header
   // dst add is a multicast add: first two octets : 0x3333, 
-  // last four octets is the lst four octets of DST IP6Address
+  // last four octets is the lst four octets of DST IP6Address 
+  // which is the solicited-node multicast address: "ff02::1:ff00:0" +
+  // 24 bits from targest ip6 address 
   e->ether_dhost[0] = 0x33;
   e->ether_dhost[1] = 0x33;
-  e->ether_dhost[2] = want_ip6[12];
-  e->ether_dhost[3] = want_ip6[13]; 
+  e->ether_dhost[2] = 0xff;
+  e->ether_dhost[3] = want_ip6[13];
   e->ether_dhost[4] = want_ip6[14];
   e->ether_dhost[5] = want_ip6[15]; 
   memcpy(e->ether_shost, _my_en.data(), 6);
@@ -185,7 +187,19 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
   ip6->ip6_src = _my_ip6; 
-  ip6->ip6_dst = IP6Address("ff02::1"); //set dst as multicast IP6 Address
+  unsigned char  dst2[16];
+  dst2[0]=0xff;
+  dst2[1]=0x02;
+  for (int i=2; i<11; i++) {
+    dst2[i]=0;
+  }
+  dst2[11]=1;
+  dst2[12]=0xff;
+  dst2[13]=want_ip6[13];
+  dst2[14]=want_ip6[14];
+  dst2[15]=want_ip6[15];
+  ip6->ip6_dst = IP6Address(dst2);
+  //ip6->ip6_dst = IP6Address("ff02::1"); //set dst as multicast IP6 Address
 
   //set ICMP6 - Neighborhood Solicitation Message
   ea->type = 0x87; 
@@ -247,8 +261,8 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae->p = p;
     ae->next = _map[bucket];
     _map[bucket] = ae;
+
     send_query_for(p->dst_ip6_anno().data());
-    //unsigned  char *d = p->dst_ip6_anno().data();
     //click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
   }
 }
