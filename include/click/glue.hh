@@ -190,15 +190,6 @@ typedef struct device net_device;
 #define static_assert(c) switch (c) case 0: case (c):
 
 
-// MODULE USE COUNTS
-
-#ifndef HAVE_MOD_USE_COUNT
-# define MOD_INC_USE_COUNT
-# define MOD_DEC_USE_COUNT
-# define MOD_IN_USE		0
-#endif
-
-
 // TIMEVALS AND JIFFIES
 
 #if CLICK_LINUXMODULE
