@@ -117,4 +117,3 @@ DelayUnqueue::add_handlers()
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(DelayUnqueue)
-ELEMENT_MT_SAFE(DelayUnqueue)

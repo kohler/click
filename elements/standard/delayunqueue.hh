@@ -8,9 +8,13 @@ CLICK_DECLS
 
 /*
 =c
+
 DelayUnqueue(DELAY)
+
 =s packet scheduling
-pull-to-push converter
+
+delay inducing pull-to-push converter
+
 =d
 
 Pulls packets from the single input port. Delays them for at least DELAY
@@ -21,8 +25,8 @@ the current time.
 DelayUnqueue listens for upstream notification, such as that available from
 Queue.
 
-=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, DelayShaper,
-SetTimestamp */
+=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, LinkUnqueue,
+DelayShaper, SetTimestamp */
 
 class DelayUnqueue : public Element { public:
   
