@@ -100,7 +100,7 @@ Index: include/linux/skbuff.h
  extern __inline__ struct sk_buff *dev_alloc_skb(unsigned int length)
  {
  	struct sk_buff *skb;
-+#if 1
++#if 0
 +#define SKB_RESERVE_LENGTH 32
 +#else
 +#define SKB_RESERVE_LENGTH 16

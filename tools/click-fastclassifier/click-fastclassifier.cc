@@ -297,9 +297,10 @@ translate_class_name(const String &s)
 static void
 write_checked_program(const Classificand &c, StringAccum &source)
 {
+  int align_off = c.align_offset;
   if (c.type == AC_CLASSIFIER)
     source << "  const unsigned *data = (const unsigned *)(p->data() - "
-	   << c.align_offset << ");\n  int l = p->length();\n";
+	   << align_off << ");\n  int l = p->length();\n";
   else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
     source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
   const unsigned *transp_data = (const unsigned *)p->transport_header();\n\
@@ -330,7 +331,7 @@ write_checked_program(const Classificand &c, StringAccum &source)
     String datavar;
     String length_check;
     if (c.type == AC_CLASSIFIER) {
-      offset = e.offset/4;
+      offset = (e.offset + align_off)/4;
       datavar = "data";
       length_check = "l < " + String(want_l);
     } else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
@@ -378,9 +379,10 @@ write_checked_program(const Classificand &c, StringAccum &source)
 static void
 write_unchecked_program(const Classificand &c, StringAccum &source)
 {
+  int align_off = c.align_offset;
   if (c.type == AC_CLASSIFIER)
     source << "  const unsigned *data = (const unsigned *)(p->data() - "
-	   << c.align_offset << ");\n";
+	   << align_off << ");\n";
   else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
     source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
   const unsigned *transp_data = (const unsigned *)p->transport_header();\n";
@@ -396,7 +398,7 @@ write_unchecked_program(const Classificand &c, StringAccum &source)
     int offset = 0;
     String datavar;
     if (c.type == AC_CLASSIFIER)
-      offset = e.offset/4, datavar = "data";
+      offset = (e.offset + align_off)/4, datavar = "data";
     else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
       if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
 	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4, datavar = "transp_data";
