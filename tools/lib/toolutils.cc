@@ -54,7 +54,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
     errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
 
   StringAccum sa;
-  while (!feof(p) && sa.length() < 20000) {
+  while (!feof(p) && sa.length() < 200000) {
     int x = fread(sa.reserve(2048), 1, 2048, p);
     if (x > 0) sa.forward(x);
   }
