@@ -1,3 +1,8 @@
+2004-09-21 Tuesday 18:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/diagrams/elements.mp (1.7): input rboxes instead of boxes,
+	because if you include them both, thats often an error
+
 2004-09-21 Tuesday 15:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipfragmenter.cc (1.33), ipfragmenter.hh (1.26): add
