@@ -411,12 +411,12 @@ skbmgr_allocate_skbs(unsigned size, int *want)
   int producer = cpu;
 
   size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
-  int bucket = size_to_higher_bucket(size);
+  int bucket = RecycledSkbPool::size_to_higher_bucket(size);
 
   if (pool[producer].bucket(bucket).size() < *want && smp_num_cpus > 1) {
     if (pool[cpu]._last_producer < 0 ||
 	pool[pool[cpu]._last_producer].bucket(bucket).size() < *want)
-      find_consumer(cpu, bucket);
+      RecycledSkbPool::find_consumer(cpu, bucket);
     if (pool[cpu]._last_producer >= 0)
       producer = pool[cpu]._last_producer;
   }
