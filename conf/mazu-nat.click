@@ -41,6 +41,10 @@
 // TCPRewriter and IPRewriterPatterns elements. You should probably look at
 // the documentation for IPRewriter before trying to understand the
 // configuration in depth.
+//
+// Note that the configuration will only forward TCP and UDP through the 
+// firewall. ICMP is not passed. A nice exercise: Add ICMP support to the
+// configuration using the ICMPRewriter and ICMPPingRewriter elements.
 
 
 // ADDRESS INFORMATION
