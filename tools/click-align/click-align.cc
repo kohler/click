@@ -63,14 +63,16 @@ struct RouterAlign {
 RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
 {
   _router = r;
-  _router->count_ports(_icount, _ocount);
-  int ne = _icount.size();
+  int ne = r->nelements();
   int id = 0, od = 0;
   for (int i = 0; i < ne; i++) {
     _ioffset.push_back(id);
     _ooffset.push_back(od);
-    id += _icount[i];
-    od += _ocount[i];
+    ElementT *e = r->elt(i);
+    _icount.push_back(e->ninputs());
+    _ocount.push_back(e->noutputs());
+    id += e->ninputs();
+    od += e->noutputs();
   }
   _ioffset.push_back(id);
   _ooffset.push_back(od);
@@ -456,7 +458,7 @@ particular purpose.\n");
 	  && router->etype(conn[i].to_idx()) == align_class
 	  && router->etype(conn[i].from_idx()) == align_class) {
 	// skip over hf[i]
-	Vector<HookupI> above, below;
+	Vector<Hookup> above, below;
 	router->find_connections_to(conn[i].from(), above);
 	router->find_connections_from(conn[i].from(), below);
 	if (below.size() == 1) {
@@ -522,7 +524,7 @@ particular purpose.\n");
 	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_idx()] ];
 	if (have <= want) {
 	  changed = true;
-	  Vector<HookupI> align_dest;
+	  Vector<Hookup> align_dest;
 	  router->find_connections_from(conn[i].to(), align_dest);
 	  for (int j = 0; j < align_dest.size(); j++)
 	    router->add_connection(conn[i].from(), align_dest[j]);
@@ -538,16 +540,12 @@ particular purpose.\n");
   // remove unused Aligns (they have no input) and old AlignmentInfos
   ElementClassT *aligninfo_class = router->get_type("AlignmentInfo");
   {
-    Vector<int> ninputs, noutputs;
-    router->count_ports(ninputs, noutputs);
-    int nelem = router->nelements();
-    for (int i = 0; i < nelem; i++)
-      if (router->etype(i) == align_class
-	  && (ninputs[i] == 0 || noutputs[i] == 0)) {
-	router->element(i)->kill();
+    for (RouterT::iterator x = router->first_element(); x; x++)
+      if (x->type() == align_class && (x->ninputs() == 0 || x->noutputs() == 0)) {
+	x->kill();
 	num_aligns_added--;
-      } else if (router->etype(i) == aligninfo_class)
-	router->element(i)->kill();
+      } else if (x->type() == aligninfo_class)
+	x->kill();
     router->remove_dead_elements();
   }
   

@@ -305,11 +305,11 @@ make_link(const Vector<HookupI> &from, const Vector<HookupI> &to,
 
   for (int i = 0; i < from.size(); i++) {
     combined->insert_before(HookupI(newe, i), HookupI(combes[i], 0));
-    combined->free_element(combes[i]);
+    combined->free_element(combined->elt(combes[i]));
   }
   for (int j = from.size(); j < combes.size(); j++) {
     combined->insert_after(HookupI(newe, j-from.size()), HookupI(combes[j], 0));
-    combined->free_element(combes[j]);
+    combined->free_element(combined->elt(combes[j]));
   }
 }
 

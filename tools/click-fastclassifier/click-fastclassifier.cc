@@ -3,7 +3,8 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2000-2001 Mazu Networks, Inc.
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -117,15 +118,15 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 // Classifier related stuff
 
 static bool
-combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
+combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to)
 {
   ElementClassT *classifier_t = router->get_type("Classifier");
-  assert(router->etype(from_i) == classifier_t && router->etype(to_i) == classifier_t);
+  assert(from->type() == classifier_t && to->type() == classifier_t);
   
-  // find where `to_i' is heading for
+  // find where `to' is heading for
   Vector<int> first_hop, second_hop;
-  router->find_connection_vector_from(from_i, first_hop);
-  router->find_connection_vector_from(to_i, second_hop);
+  router->find_connection_vector_from(from, first_hop);
+  router->find_connection_vector_from(to, second_hop);
 
   // check for weird configurations
   for (int i = 0; i < first_hop.size(); i++)
@@ -139,8 +140,8 @@ combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
 
   // combine configurations
   Vector<String> from_words, to_words;
-  cp_argvec(router->econfiguration(from_i), from_words);
-  cp_argvec(router->econfiguration(to_i), to_words);
+  cp_argvec(from->configuration(), from_words);
+  cp_argvec(to->configuration(), to_words);
   if (from_words.size() != first_hop.size()
       || to_words.size() != second_hop.size())
     return false;
@@ -156,35 +157,34 @@ combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
       new_words.push_back(from_words[from_port] + " " + to_words[i]);
   for (int i = from_port + 1; i < from_words.size(); i++)
     new_words.push_back(from_words[i]);
-  router->econfiguration(from_i) = cp_unargvec(new_words);
+  from->configuration() = cp_unargvec(new_words);
 
   // change connections
   router->kill_connection(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
-    router->change_connection_from(first_hop[i], HookupI(from_i, i + to_words.size() - 1));
+    router->change_connection_from(first_hop[i], Hookup(from, i + to_words.size() - 1));
   const Vector<ConnectionT> &conn = router->connections();
   for (int i = 0; i < second_hop.size(); i++)
-    router->add_connection(HookupI(from_i, from_port + i), conn[second_hop[i]].to());
+    router->add_connection(Hookup(from, from_port + i), conn[second_hop[i]].to());
 
   return true;
 }
 
 static bool
-try_combine_classifiers(RouterT *router, int class_i)
+try_combine_classifiers(RouterT *router, ElementT *classifier)
 {
   ElementClassT *classifier_t = router->get_type("Classifier");
-  if (router->etype(class_i) != classifier_t)
+  if (classifier->type() != classifier_t)
     // cannot combine IPClassifiers yet
     return false;
 
-  const Vector<ConnectionT> &conn = router->connections();
-  for (int i = 0; i < conn.size(); i++)
-    if (conn[i].from_idx() == class_i
-	&& router->etype(conn[i].to_idx()) == classifier_t
-	&& conn[i].to_port() == 0) {
+  Vector<Hookup> branches;
+  router->find_connections_to(Hookup(classifier, 0), branches);
+  for (int i = 0; i < branches.size(); i++)
+    if (branches[i].elt->type() == classifier_t) {
       // perform a combination
-      if (combine_classifiers(router, class_i, conn[i].from_port(), conn[i].to_idx())) {
-	try_combine_classifiers(router, class_i);
+      if (combine_classifiers(router, branches[i].elt, branches[i].port, classifier)) {
+	try_combine_classifiers(router, classifier);
 	return true;
       }
     }
@@ -193,13 +193,13 @@ try_combine_classifiers(RouterT *router, int class_i)
 }
 
 static void
-try_remove_classifiers(RouterT *router, Vector<int> &classifiers)
+try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
 {
   for (int i = 0; i < classifiers.size(); i++) {
-    Vector<HookupI> v;
-    router->find_connections_to(HookupI(classifiers[i], 0), v);
+    Vector<Hookup> v;
+    router->find_connections_to(Hookup(classifiers[i], 0), v);
     if (v.size() == 0) {
-      router->element(classifiers[i])->kill();
+      classifiers[i]->kill();
       classifiers[i] = classifiers.back();
       classifiers.pop_back();
       i--;
@@ -386,12 +386,12 @@ copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
 }
 
 static void
-analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
+analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
 		    ErrorHandler *errh)
 {
   // set up new router
   RouterT nr;
-  int idle_nei = nr.get_anon_eindex(nr.get_type("Idle"));
+  ElementT *idle = nr.add_anon_element(nr.get_type("Idle"));
   const Vector<String> &old_requirements = r->requirements();
   for (int i = 0; i < old_requirements.size(); i++)
     nr.add_requirement(old_requirements[i]);
@@ -403,20 +403,20 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
   // copy all classifiers
   HashMap<String, int> classifier_map(-1);
   Vector<Classifier_Program> iprograms;
-  for (int i = 0; i < classifier_ei.size(); i++) {
-    int c = classifier_ei[i];
-    classifier_map.insert(r->ename(c), i);
+  for (int i = 0; i < classifiers.size(); i++) {
+    ElementT *c = classifiers[i];
+    classifier_map.insert(c->name(), i);
     
-    // add new classifier and connections to idle_nei
+    // add new classifier and connections to idle
     int classifier_nei =
-      nr.get_eindex(r->ename(c), r->etype(c),
-		    r->econfiguration(c), r->elandmark(c));
+      nr.get_eindex(c->name(), c->type(), c->configuration(), c->landmark());
+    ElementT *nc = nr.element(classifier_nei);
   
-    nr.add_connection(idle_nei, i, 0, classifier_nei);
+    nr.add_connection(idle, i, nc, 0);
     // count number of output ports
-    int noutputs = r->e(c)->noutputs();
+    int noutputs = c->noutputs();
     for (int j = 0; j < noutputs; j++)
-      nr.add_connection(classifier_nei, j, 0, idle_nei);
+      nr.add_connection(nc, j, idle, 0);
 
     // add program
     iprograms.push_back(Classifier_Program());
@@ -499,16 +499,16 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
       program_map.push_back(-1);
       continue;
     }
-    int cei = classifier_ei[ci];
+    ElementT *c = classifiers[ci];
 
     // yes: valid handler; now parse program
-    Classifier_Program &c = iprograms[ci];
-    String classifier_tname = r->etype_name(cei);
-    c.type = cid_name_map[classifier_tname];
-    assert(c.type >= 0);
+    Classifier_Program &prog = iprograms[ci];
+    String classifier_tname = c->type_name();
+    prog.type = cid_name_map[classifier_tname];
+    assert(prog.type >= 0);
     
-    c.safe_length = c.output_everything = c.align_offset = -1;
-    c.noutputs = r->e(cei)->noutputs();
+    prog.safe_length = prog.output_everything = prog.align_offset = -1;
+    prog.noutputs = c->noutputs();
     while (program) {
       // find step
       int newline = program.find_left('\n');
@@ -542,44 +542,42 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
 	} else
 	  sscanf(step, "step %d", &e.no);
 	// push expr onto list
-	c.program.push_back(e);
-      } else if (sscanf(step, "all->[%d]", &c.output_everything))
+	prog.program.push_back(e);
+      } else if (sscanf(step, "all->[%d]", &prog.output_everything))
 	/* nada */;
-      else if (sscanf(step, "safe length %d", &c.safe_length))
+      else if (sscanf(step, "safe length %d", &prog.safe_length))
 	/* nada */;
-      else if (sscanf(step, "alignment offset %d", &c.align_offset))
+      else if (sscanf(step, "alignment offset %d", &prog.align_offset))
 	/* nada */;
     }
 
     // search for an existing fast classifier with the same program
     bool found_program = false;
     for (int i = 0; i < all_programs.size() && !found_program; i++)
-      if (c == all_programs[i]) {
+      if (prog == all_programs[i]) {
 	program_map.push_back(i);
 	found_program = true;
       }
 
     if (!found_program) {
       // set new names
-      String class_name = "Fast" + classifier_tname + "@@" + r->ename(cei);
+      String class_name = "Fast" + classifier_tname + "@@" + c->name();
       String cxx_name = translate_class_name(class_name);
-      c.eclass = r->get_type(class_name);
+      prog.eclass = r->get_type(class_name);
       
       // add new program
-      all_programs.push_back(c);
+      all_programs.push_back(prog);
       gen_eclass_names.push_back(class_name);
       gen_cxxclass_names.push_back(cxx_name);
-      old_configurations.push_back(r->econfiguration(cei));
+      old_configurations.push_back(c->configuration());
       program_map.push_back(all_programs.size() - 1);
     }
   }
 
   // complain if any programs missing
   for (int i = 0; i < iprograms.size(); i++)
-    if (program_map[i] < 0) {
-      int cei = classifier_ei[i];
-      errh->fatal("classifier program missing for `%s :: %s'!", r->ename(cei).cc(), r->etype_name(cei).cc());
-    }
+    if (program_map[i] < 0)
+      errh->fatal("classifier program missing for `%s :: %s'!", classifiers[i]->name_cc(), classifiers[i]->type_name().cc());
 }
 
 static void
@@ -589,33 +587,33 @@ output_classifier_program(int which,
 {
   String cxx_name = gen_cxxclass_names[which];
   String class_name = gen_eclass_names[which];
-  const Classifier_Program &c = all_programs[which];
-  FastClassifier_Cid *cid = cids[c.type];
+  const Classifier_Program &prog = all_programs[which];
+  FastClassifier_Cid *cid = cids[prog.type];
   
   header << "class " << cxx_name << " : public Element {\n\
   void devirtualize_all() { }\n\
  public:\n  "
-	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << c.noutputs
+	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << prog.noutputs
 	 << "); MOD_INC_USE_COUNT; }\n  ~"
 	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
   " << cxx_name << " *clone() const { return new " << cxx_name << "; }\n\
   const char *processing() const { return PUSH; }\n";
 
-  if (c.output_everything >= 0) {
+  if (prog.output_everything >= 0) {
     header << "  void push(int, Packet *);\n};\n";
     source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
-    if (c.output_everything < c.noutputs)
-      source << "  output(" << c.output_everything << ").push(p);\n";
+    if (prog.output_everything < prog.noutputs)
+      source << "  output(" << prog.output_everything << ").push(p);\n";
     else
       source << "  p->kill();\n";
     source << "}\n";
   } else {
-    bool need_checked = (c.safe_length >= cid->guaranteed_packet_length);
+    bool need_checked = (prog.safe_length >= cid->guaranteed_packet_length);
     if (need_checked) {
       header << "  void length_checked_push(Packet *);\n";
       source << "void\n" << cxx_name << "::length_checked_push(Packet *p)\n{\n";
-      cid->checked_body(c, source);
+      cid->checked_body(prog, source);
       source << "}\n";
     }
     
@@ -623,11 +621,11 @@ output_classifier_program(int which,
   void push(int, Packet *);\n};\n";
     source << "inline void\n" << cxx_name
 	   << "::length_unchecked_push(Packet *p)\n{\n";
-    cid->unchecked_body(c, source);
+    cid->unchecked_body(prog, source);
     source << "}\n";
 
     source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
-    cid->push_body(c, source);
+    cid->push_body(prog, source);
     source << "}\n";
   }
 }
@@ -635,7 +633,7 @@ output_classifier_program(int which,
 
 static void
 compile_classifiers(RouterT *r, const String &package_name,
-		    Vector<int> &classifiers,
+		    Vector<ElementT *> &classifiers,
 		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
 {
   // create C++ files
@@ -660,9 +658,9 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // change element landmarks and types
   for (int i = 0; i < classifiers.size(); i++) {
-    ElementT *classifier_e = r->element(classifiers[i]);
-    const Classifier_Program &c = all_programs[program_map[i]];
-    classifier_e->set_type(c.eclass);
+    ElementT *classifier_e = classifiers[i];
+    const Classifier_Program &prog = all_programs[program_map[i]];
+    classifier_e->set_type(prog.eclass);
     classifier_e->set_configuration(String());
     change_landmark(classifier_e);
   }
@@ -878,7 +876,8 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click-fastclassifier (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
-Copyright (c) 2000 Mazu Networks, Inc.\n\
+Copyright (c) 2000-2001 Mazu Networks, Inc.\n\
+Copyright (c) 2001 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -995,10 +994,10 @@ particular purpose.\n");
     click_compile_prog += " -q";
 
   // find Classifiers
-  Vector<int> classifiers;
-  for (int i = 0; i < r->nelements(); i++)
-    if (cid_name_map[r->etype_name(i)] >= 0)
-      classifiers.push_back(i);
+  Vector<ElementT *> classifiers;
+  for (RouterT::iterator x = r->first_element(); x; x++)
+    if (cid_name_map[x->type_name()] >= 0)
+      classifiers.push_back(x);
 
   // quit early if no Classifiers
   if (classifiers.size() == 0) {

@@ -41,25 +41,25 @@ class Matcher {
   AdjacencyMatrix *_body_m;
   int _patid;
 
-  int _pat_input_idx;
-  int _pat_output_idx;
+  ElementT *_pat_input;
+  ElementT *_pat_output;
   
-  Vector<int> _match;
-  Vector<int> _back_match;
+  Vector<ElementT *> _match;
+  Vector<ElementT *> _back_match;
   HashMap<String, String> _defs;
 
-  Vector<HookupI> _to_pp_from;
-  Vector<HookupI> _to_pp_to;
-  Vector<HookupI> _from_pp_from;
-  Vector<HookupI> _from_pp_to;
+  Vector<Hookup> _to_pp_from;
+  Vector<Hookup> _to_pp_to;
+  Vector<Hookup> _from_pp_from;
+  Vector<Hookup> _from_pp_to;
 
  public:
 
   Matcher(RouterT *, AdjacencyMatrix *, RouterT *, AdjacencyMatrix *, int, ErrorHandler *);
   ~Matcher();
 
-  bool check_into(const HookupI &, const HookupI &);
-  bool check_out_of(const HookupI &, const HookupI &);
+  bool check_into(const Hookup &, const Hookup &);
+  bool check_out_of(const Hookup &, const Hookup &);
 
   bool check_match();
   bool next_match();
@@ -74,21 +74,20 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
 		 RouterT *body, AdjacencyMatrix *body_m,
 		 int patid, ErrorHandler *errh)
   : _pat(pat), _pat_m(pat_m), _body(body), _body_m(body_m), _patid(patid),
-    _pat_input_idx(-1), _pat_output_idx(-1)
+    _pat_input(0), _pat_output(0)
 {
   // check tunnel situation
-  for (int i = 0; i < _pat->nelements(); i++) {
-    ElementT &fac = *(_pat->element(i));
-    if (!fac.tunnel())
-      continue;
-    else if (fac.tunnel_connected())
-      errh->lerror(fac.landmark(), "pattern has active connection tunnels");
-    else if (fac.name() == "input" && _pat_input_idx < 0)
-      _pat_input_idx = i;
-    else if (fac.name() == "output" && _pat_output_idx < 0)
-      _pat_output_idx = i;
+  for (RouterT::iterator x = _pat->first_element(); x; x++) {
+    if (!x->tunnel())
+      /* nada */;
+    else if (x->tunnel_connected())
+      errh->lerror(x->landmark(), "pattern has active connection tunnels");
+    else if (x->name() == "input" && !_pat_input)
+      _pat_input = x;
+    else if (x->name() == "output" && !_pat_output)
+      _pat_output = x;
     else
-      errh->lerror(fac.landmark(), "connection tunnel with funny name `%s'", fac.name_cc());
+      errh->lerror(x->landmark(), "connection tunnel with funny name `%s'", x->name_cc());
   }
 }
 
@@ -97,22 +96,22 @@ Matcher::~Matcher()
 }
 
 bool
-Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
+Matcher::check_into(const Hookup &houtside, const Hookup &hinside)
 {
   const Vector<ConnectionT> &pconn = _pat->connections();
-  HookupI phinside(_back_match[hinside.idx], hinside.port);
-  HookupI success(_pat->nelements(), 0);
+  Hookup phinside(_back_match[hinside.idx()], hinside.port);
+  Hookup success;
   // now look for matches
   for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].to() == phinside && pconn[i].from_idx() == _pat_input_idx
-	&& pconn[i].from() < success) {
-      Vector<HookupI> pfrom_phf, from_houtside;
+    if (pconn[i].to() == phinside && pconn[i].from_elt() == _pat_input
+	&& (success.dead() || pconn[i].from() < success)) {
+      Vector<Hookup> pfrom_phf, from_houtside;
       // check that it's valid: all connections from tunnels are covered
       // in body
       _pat->find_connections_from(pconn[i].from(), pfrom_phf);
       _body->find_connections_from(houtside, from_houtside);
       for (int j = 0; j < pfrom_phf.size(); j++) {
-	HookupI want(_match[pfrom_phf[j].idx], pfrom_phf[j].port);
+	Hookup want(_match[pfrom_phf[j].idx()], pfrom_phf[j].port);
 	if (want.index_in(from_houtside) < 0)
 	  goto no_match;
       }
@@ -121,7 +120,7 @@ Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
      no_match: ;
     }
   // if succeeded, save it
-  if (success.idx < _pat->nelements()) {
+  if (success.live()) {
     _to_pp_from.push_back(houtside);
     _to_pp_to.push_back(success);
     return true;
@@ -130,22 +129,22 @@ Matcher::check_into(const HookupI &houtside, const HookupI &hinside)
 }
 
 bool
-Matcher::check_out_of(const HookupI &hinside, const HookupI &houtside)
+Matcher::check_out_of(const Hookup &hinside, const Hookup &houtside)
 {
   const Vector<ConnectionT> &pconn = _pat->connections();
-  HookupI phinside(_back_match[hinside.idx], hinside.port);
-  HookupI success(_pat->nelements(), 0);
+  Hookup phinside(_back_match[hinside.idx()], hinside.port);
+  Hookup success;
   // now look for matches
   for (int i = 0; i < pconn.size(); i++)
-    if (pconn[i].from() == phinside && pconn[i].to_idx() == _pat_output_idx
-	&& pconn[i].to() < success) {
-      Vector<HookupI> pto_pht, to_houtside;
+    if (pconn[i].from() == phinside && pconn[i].to_elt() == _pat_output
+	&& (success.dead() || pconn[i].to() < success)) {
+      Vector<Hookup> pto_pht, to_houtside;
       // check that it's valid: all connections to tunnels are covered
       // in body
       _pat->find_connections_to(pconn[i].to(), pto_pht);
       _body->find_connections_to(houtside, to_houtside);
       for (int j = 0; j < pto_pht.size(); j++) {
-	HookupI want(_match[pto_pht[j].idx], pto_pht[j].port);
+	Hookup want(_match[pto_pht[j].idx()], pto_pht[j].port);
 	if (want.index_in(to_houtside) < 0)
 	  goto no_match;
       }
@@ -154,7 +153,7 @@ Matcher::check_out_of(const HookupI &hinside, const HookupI &houtside)
      no_match: ;
     }
   // if succeeded, save it
-  if (success.idx < _pat->nelements()) {
+  if (success.live()) {
     _from_pp_from.push_back(success);
     _from_pp_to.push_back(houtside);
     return true;
@@ -174,22 +173,21 @@ Matcher::check_match()
   // check configurations
   //fprintf(stderr, "CONF\n");
   for (int i = 0; i < _match.size(); i++)
-    if (_match[i] >= 0) {
-      if (!match_config(_pat->econfiguration(i), _body->econfiguration(_match[i]), _defs))
+    if (_match[i]) {
+      if (!match_config(_pat->econfiguration(i), _match[i]->configuration(), _defs))
 	return false;
     }
   
   int bnf = _body->nelements();
-  _back_match.assign(bnf, -1);
+  _back_match.assign(bnf, 0);
   bool all_previous_match = true;
-  for (int i = 0; i < _match.size(); i++) {
-    int j = _match[i];
-    if (j >= 0) {
-      _back_match[j] = i;
-      if (_body->eflags(j) != _patid)	// comes from replacement of same pat
+  for (int i = 0; i < _match.size(); i++)
+    if (ElementT *m = _match[i]) {
+      _back_match[m->idx()] = _pat->elt(i);
+      if (m->flags != _patid)	// doesn't come from replacement of same pat
 	all_previous_match = false;
     }
-  }
+
   // don't allow match if it consists entirely of elements previously replaced
   // by this pattern
   if (all_previous_match)
@@ -203,15 +201,15 @@ Matcher::check_match()
   for (int i = 0; i < nhook; i++) {
     if (conn[i].dead())
       continue;
-    const HookupI &hf = conn[i].from(), &ht = conn[i].to();
-    int pf = _back_match[hf.idx], pt = _back_match[ht.idx];
-    if (pf >= 0 && pt >= 0) {
-      if (!_pat->has_connection(HookupI(pf, hf.port), HookupI(pt, ht.port)))
+    const Hookup &hf = conn[i].from(), &ht = conn[i].to();
+    ElementT *pf = _back_match[hf.idx()], *pt = _back_match[ht.idx()];
+    if (pf && pt) {
+      if (!_pat->has_connection(Hookup(pf, hf.port), Hookup(pt, ht.port)))
 	return false;
-    } else if (pf < 0 && pt >= 0) {
+    } else if (!pf && pt) {
       if (!check_into(hf, ht))
 	return false;
-    } else if (pf >= 0 && pt < 0) {
+    } else if (pf && !pt) {
       if (!check_out_of(hf, ht))
 	return false;
     }
@@ -221,11 +219,11 @@ Matcher::check_match()
   //fprintf(stderr, "UNC\n");
   const Vector<ConnectionT> &pconn = _pat->connections();
   for (int i = 0; i < pconn.size(); i++) {
-    if (pconn[i].from_idx() == _pat_input_idx
-	&& HookupI(pconn[i].from()).index_in(_to_pp_to) < 0)
+    if (pconn[i].from_elt() == _pat_input
+	&& pconn[i].from().index_in(_to_pp_to) < 0)
       return false;
-    if (pconn[i].to_idx() == _pat_output_idx
-	&& HookupI(pconn[i].to()).index_in(_from_pp_from) < 0)
+    if (pconn[i].to_elt() == _pat_output
+	&& pconn[i].to().index_in(_from_pp_from) < 0)
       return false;
   }
 
@@ -306,9 +304,9 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   Vector<int> changed_elements;
   Vector<String> old_names;
   for (int i = 0; i < _match.size(); i++)
-    if (_match[i] >= 0) {
-      changed_elements.push_back(_match[i]);
-      old_names.push_back(_body->ename(_match[i]));
+    if (_match[i]) {
+      changed_elements.push_back(_match[i]->idx());
+      old_names.push_back(_match[i]->name());
       _body->free_element(_match[i]);
     } else
       old_names.push_back(String());

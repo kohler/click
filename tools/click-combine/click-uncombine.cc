@@ -104,8 +104,8 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     String link_name = r->ename(links[i]);
     Vector<String> words;
     cp_argvec(r->econfiguration(links[i]), words);
-    int ninputs = r->e(links[i])->ninputs();
-    int noutputs = r->e(links[i])->noutputs();
+    int ninputs = r->elt(links[i])->ninputs();
+    int noutputs = r->elt(links[i])->noutputs();
     if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
       errh->error("RouterLink `%s' has strange configuration", link_name.cc());
       continue;
@@ -149,7 +149,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     }
 
     // remove link
-    r->free_element(links[i]);
+    r->free_element(r->element(links[i]));
   }
 }
 

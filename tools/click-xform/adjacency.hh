@@ -2,6 +2,7 @@
 #define CLICK_XFORM_ADJACENCY_HH
 #include <click/vector.hh>
 class RouterT;
+class ElementT;
 
 class AdjacencyMatrix {
 
@@ -28,11 +29,11 @@ class AdjacencyMatrix {
 
   bool connection_exists(int i, int j) const;
 
-  bool next_subgraph_isomorphism(const AdjacencyMatrix *, Vector<int> &) const;
+  bool next_subgraph_isomorphism(const AdjacencyMatrix *, Vector<ElementT *> &) const;
   
 };
 
-bool check_subgraph_isomorphism(const RouterT *, const RouterT *, const Vector<int> &);
+bool check_subgraph_isomorphism(const RouterT *, const RouterT *, const Vector<ElementT *> &);
 
 inline bool
 AdjacencyMatrix::connection_exists(int i, int j) const

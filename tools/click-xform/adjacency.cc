@@ -176,27 +176,33 @@ AdjacencyMatrix::print() const
 
 bool
 AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
-					   Vector<int> &matchv) const
+					   Vector<ElementT *> &matchv_e) const
 {
   int pat_n = _n;
   int pat_cap = _cap;
   unsigned *pat_x = _x;
   int input_cap = input->_cap;
   unsigned *input_x = input->_x;
-  
+
+  // assign 'matchv' from 'matchv_e'
+  Vector<int> matchv(_default_match);
   int match_idx;
   int direction;
-  if (matchv.size() == 0) {
-    matchv = _default_match;
+  
+  if (matchv_e.size() == 0) {
     match_idx = 0;
     direction = 1;
   } else {
+    for (int i = 0; i < matchv.size(); i++)
+      if (matchv[i] == -1)
+	matchv[i] = matchv_e[i]->idx();
     match_idx = pat_n - 1;
     direction = -1;
   }
   
   int *match = &matchv[0];	// avoid bounds checks
-  if (!_output_0_of.size()) init_pattern();
+  if (!_output_0_of.size())
+    init_pattern();
   int *output_0_of = &_output_0_of[0];
   
   //print();
@@ -267,6 +273,12 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
   }
 
+  // initialize 'matchv_e' from 'matchv'
+  matchv_e.assign(matchv.size(), 0);
+  for (int i = 0; i < match_idx; i++)
+    if (match[i] >= 0)
+      matchv_e[i] = input->_router->element(match[i]);
+  
   //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");*/fputs("\n",stderr);
   return (match_idx >= 0 ? true : false);
 }
@@ -274,16 +286,17 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
 
 bool
 check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
-			   const Vector<int> &match)
+			   const Vector<ElementT *> &match)
 {
   // check connections
   const Vector<ConnectionT> &conn = pat->connections();
   int nh = conn.size();
   for (int i = 0; i < nh; i++) {
-    if (match[conn[i].from_idx()] < 0 || match[conn[i].to_idx()] < 0)
+    int fi = conn[i].from_idx(), ti = conn[i].to_idx();
+    if (!match[fi] || !match[ti])
       continue;
-    if (!input->has_connection(HookupI(match[conn[i].from_idx()], conn[i].from_port()),
-			       HookupI(match[conn[i].to_idx()], conn[i].to_port())))
+    if (!input->has_connection(Hookup(match[fi], conn[i].from_port()),
+			       Hookup(match[ti], conn[i].to_port())))
       return false;
   }
   return true;
