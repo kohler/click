@@ -1,8 +1,7 @@
 /*
  * ipratemon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
- * Eddie Kohler
- * Benjie Chen (minor changes)
+ * Benjie Chen, Eddie Kohler (minor changes)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
