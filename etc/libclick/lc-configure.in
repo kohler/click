@@ -121,9 +121,9 @@ dnl
 dnl nanosecond-precision timestamps
 dnl
 
-AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps], :, enable_nanotimestamp=yes)
+AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
 if test "x$enable_nanotimestamp" = xyes; then
-    AC_DEFINE(HAVE_NANOTIMESTAMP)
+    AC_DEFINE(HAVE_NANOTIMESTAMP_ENABLED)
 fi
 
 
