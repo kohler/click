@@ -54,6 +54,8 @@ extern void e1000_update_stats(struct e1000_adapter *adapter);
 #include "kcompat_ethtool.c"
 #endif
 
+#define CLICK_ALLOW_TXDR_RXDR 1
+
 #ifdef ETHTOOL_GSTATS
 struct e1000_stats {
 	char stat_string[ETH_GSTRING_LEN];
@@ -913,10 +915,12 @@ e1000_free_desc_rings(struct e1000_adapter *adapter)
 	if(rxdr->desc)
 		pci_free_consistent(pdev, rxdr->size, rxdr->desc, rxdr->dma);
 
+#if CLICK_ALLOW_TXDR_RXDR
 	if(txdr->buffer_info)
 		kfree(txdr->buffer_info);
 	if(rxdr->buffer_info)
 		kfree(rxdr->buffer_info);
+#endif
 
 	return;
 }
@@ -935,10 +939,12 @@ e1000_setup_desc_rings(struct e1000_adapter *adapter)
 	txdr->count = 80;
 
 	size = txdr->count * sizeof(struct e1000_buffer);
+#if CLICK_ALLOW_TXDR_RXDR
 	if(!(txdr->buffer_info = kmalloc(size, GFP_KERNEL))) {
 		ret_val = 1;
 		goto err_nomem;
 	}
+#endif
 	memset(txdr->buffer_info, 0, size);
 
 	txdr->size = txdr->count * sizeof(struct e1000_tx_desc);
@@ -990,10 +996,12 @@ e1000_setup_desc_rings(struct e1000_adapter *adapter)
 	rxdr->count = 80;
 
 	size = rxdr->count * sizeof(struct e1000_buffer);
+#if CLICK_ALLOW_TXDR_RXDR
 	if(!(rxdr->buffer_info = kmalloc(size, GFP_KERNEL))) {
 		ret_val = 4;
 		goto err_nomem;
 	}
+#endif
 	memset(rxdr->buffer_info, 0, size);
 
 	rxdr->size = rxdr->count * sizeof(struct e1000_rx_desc);

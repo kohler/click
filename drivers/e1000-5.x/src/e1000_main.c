@@ -170,6 +170,7 @@ static void e1000_clean_rx_ring(struct e1000_adapter *adapter);
 static void e1000_set_multi(struct net_device *netdev);
 static void e1000_update_phy_info(unsigned long data);
 static void e1000_watchdog(unsigned long data);
+void e1000_watchdog_1(struct e1000_adapter *adapter);
 static void e1000_82547_tx_fifo_stall(unsigned long data);
 static int e1000_xmit_frame(struct sk_buff *skb, struct net_device *netdev);
 static struct net_device_stats * e1000_get_stats(struct net_device *netdev);
@@ -220,6 +221,16 @@ static int e1000_resume(struct pci_dev *pdev);
 static void e1000_netpoll (struct net_device *netdev);
 #endif
 
+/* For Click polling */
+static int e1000_tx_pqueue(struct net_device *dev, struct sk_buff *skb);
+static int e1000_tx_start(struct net_device *dev);
+static int e1000_rx_refill(struct net_device *dev, struct sk_buff **);
+static int e1000_tx_eob(struct net_device *dev);
+static struct sk_buff *e1000_tx_clean(struct net_device *dev);
+static struct sk_buff *e1000_rx_poll(struct net_device *dev, int *want);
+static int e1000_poll_on(struct net_device *dev);
+static int e1000_poll_off(struct net_device *dev);
+
 struct notifier_block e1000_notifier_reboot = {
 	.notifier_call	= e1000_notify_reboot,
 	.next		= NULL,
@@ -264,6 +275,8 @@ e1000_init_module(void)
 	printk(KERN_INFO "%s - version %s\n",
 	       e1000_driver_string, e1000_driver_version);
 
+	printk(KERN_INFO " w/ Click polling\n");
+	
 	printk(KERN_INFO "%s\n", e1000_copyright);
 
 	ret = pci_module_init(&e1000_driver);
@@ -551,6 +564,17 @@ e1000_probe(struct pci_dev *pdev,
 	netdev->mem_start = mmio_start;
 	netdev->mem_end = mmio_start + mmio_len;
 	netdev->base_addr = adapter->hw.io_base;
+
+        /* Click - polling extensions */
+        netdev->polling = 0;
+        netdev->rx_poll = e1000_rx_poll;
+        netdev->rx_refill = e1000_rx_refill;
+        netdev->tx_queue = e1000_tx_pqueue;
+        netdev->tx_eob = e1000_tx_eob;
+        netdev->tx_start = e1000_tx_start;
+        netdev->tx_clean = e1000_tx_clean;
+        netdev->poll_off = e1000_poll_off;
+        netdev->poll_on = e1000_poll_on;
 
 	adapter->bd_number = cards_found;
 
@@ -1583,12 +1607,25 @@ static void
 e1000_watchdog(unsigned long data)
 {
 	struct e1000_adapter *adapter = (struct e1000_adapter *) data;
+
+	if (adapter->netdev->polling)
+		adapter->do_poll_watchdog = 1;
+	else
+		e1000_watchdog_1(adapter);
+
+	/* Reset the timer */
+	mod_timer(&adapter->watchdog_timer, jiffies + 2 * HZ);
+}
+
+void
+e1000_watchdog_1(struct e1000_adapter *adapter)
+{
 	struct net_device *netdev = adapter->netdev;
 	struct e1000_desc_ring *txdr = &adapter->tx_ring;
 	uint32_t link;
 
 	e1000_check_for_link(&adapter->hw);
-
+	
 	if((adapter->hw.media_type == e1000_media_type_internal_serdes) &&
 	   !(E1000_READ_REG(&adapter->hw, TXCW) & E1000_TXCW_ANE))
 		link = !adapter->hw.serdes_link_down;
@@ -1666,9 +1703,6 @@ e1000_watchdog(unsigned long data)
 
 	/* Force detection of hung controller every watchdog period*/
 	adapter->detect_tx_hung = TRUE;
-
-	/* Reset the timer */
-	mod_timer(&adapter->watchdog_timer, jiffies + 2 * HZ);
 }
 
 #define E1000_TX_FLAGS_CSUM		0x00000001
@@ -2342,12 +2376,21 @@ e1000_intr(int irq, void *data, struct pt_regs *regs)
 		E1000_WRITE_REG(&adapter->hw, IMC, ~0);
 	}
 
-	for(i = 0; i < E1000_MAX_INTR; i++)
-		if(unlikely(!e1000_clean_rx_irq(adapter) &
-		   !e1000_clean_tx_irq(adapter)))
-			break;
+       /* 26.Jun.2004 - Do not print a message if we get an interrupt
+	  in polling mode.  Andy Van Maele reports that e1000
+	  adapters can share interrupts with other devices, such as
+	  other network cards.  Thus, it is not necessarily a problem
+	  if we get an interrupt; and printing a message is very
+	  expensive. So scrap it.  It might be better to keep a
+	  counter. */
+       if (!netdev->polling)
+	       for(i = 0; i < E1000_MAX_INTR; i++)
+		       if(unlikely(!e1000_clean_rx_irq(adapter) &
+				   !e1000_clean_tx_irq(adapter)))
+			       break;
 
-	if(hw->mac_type == e1000_82547 || hw->mac_type == e1000_82547_rev_2)
+	if ((hw->mac_type == e1000_82547 || hw->mac_type == e1000_82547_rev_2)
+	    && !netdev->polling)
 		e1000_irq_enable(adapter);
 #endif
 #ifdef E1000_COUNT_ICR
@@ -3246,5 +3289,337 @@ e1000_netpoll (struct net_device *netdev)
 	enable_irq(adapter->pdev->irq);
 }
 #endif
+
+
+/* Click polling support */
+
+static struct sk_buff *
+e1000_rx_poll(struct net_device *dev, int *want)
+{
+	struct e1000_adapter *adapter = dev->priv;
+	struct pci_dev *pdev = adapter->pdev;
+	struct e1000_rx_desc *rx_desc;
+	int i;
+	uint32_t length;
+	struct sk_buff *skb;
+	uint8_t last_byte;
+	unsigned long flags;
+	struct sk_buff *skb_head = 0, *skb_last = 0;
+	int good;
+	int got = 0;
+
+	i = adapter->rx_ring.next_to_clean;
+	rx_desc = E1000_RX_DESC(adapter->rx_ring, i);
+
+	while(got < *want){
+		if((rx_desc->status & E1000_RXD_STAT_DD) == 0)
+			break;
+		pci_unmap_single(pdev, adapter->rx_ring.buffer_info[i].dma,
+				 adapter->rx_ring.buffer_info[i].length,
+				 PCI_DMA_FROMDEVICE);
+
+		skb = adapter->rx_ring.buffer_info[i].skb;
+		length = le16_to_cpu(rx_desc->length);
+		good = 1;
+
+		if(!(rx_desc->status & E1000_RXD_STAT_EOP))
+			good = 0;
+    
+		if(good && (rx_desc->errors & E1000_RXD_ERR_FRAME_ERR_MASK)){
+			last_byte = *(skb->data + length - 1);
+			if(TBI_ACCEPT(&adapter->hw,rx_desc->status,rx_desc->errors,length,
+				      last_byte)) {
+				spin_lock_irqsave(&adapter->stats_lock, flags);
+				e1000_tbi_adjust_stats(&adapter->hw, &adapter->stats,
+						       length, skb->data);
+				spin_unlock_irqrestore(&adapter->stats_lock, flags);
+				length--;
+			} else {
+				good = 0;
+			}
+		}
+
+		if(good){
+			skb_put(skb, length - CRC_LENGTH);
+			e1000_rx_checksum(adapter, rx_desc, skb);
+			skb_pull(skb, dev->hard_header_len);
+			if (got == 0) {
+				skb_head = skb;
+				skb_last = skb;
+				skb_last->next = NULL;
+			} else {
+				skb_last->next = skb;
+				skb->next = NULL;
+				skb_last = skb;
+			}
+			got++;
+		} else {
+			dev_kfree_skb(skb);
+		}
+    
+#if 0
+		memset(rx_desc, 0, 16);
+#endif
+
+#if 0
+		/*
+		 * This mb() generates a "lock addl" even on a uniprocessor.
+		 * It's slow (slows down ip forwarding by 15%?) and I do
+		 * not believe it's needed.
+		 */
+		mb();
+#endif
+		adapter->rx_ring.buffer_info[i].skb = NULL;
+		i = i + 1;
+		if(i >= adapter->rx_ring.count)
+			i = 0;
+		rx_desc = E1000_RX_DESC(adapter->rx_ring, i);
+	}
+
+	adapter->rx_ring.next_to_clean = i;
+	*want = got;
+
+	return skb_head;
+}
+
+int
+e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
+{
+	struct e1000_adapter *adapter = dev->priv;
+	struct pci_dev *pdev = adapter->pdev;
+	struct e1000_rx_desc *rx_desc;
+	int i, nfilled = 0, last_filled = -1;
+	struct sk_buff *skb_list;
+
+	if(skbs == 0)
+		return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
+
+	i = adapter->rx_ring.next_to_use;
+	skb_list = *skbs;
+  
+	while(adapter->rx_ring.buffer_info[i].skb == NULL && skb_list){
+		struct sk_buff *skb = skb_list;
+		skb_list = skb_list->next;
+		rx_desc = E1000_RX_DESC(adapter->rx_ring, i);
+		skb->dev = dev;
+		adapter->rx_ring.buffer_info[i].skb = skb;
+		adapter->rx_ring.buffer_info[i].length = adapter->rx_buffer_len;
+		adapter->rx_ring.buffer_info[i].dma =
+			pci_map_single(pdev, skb->data, adapter->rx_buffer_len,
+				       PCI_DMA_FROMDEVICE);
+		rx_desc->status = 0;
+		rx_desc->buffer_addr = cpu_to_le64(adapter->rx_ring.buffer_info[i].dma);
+		last_filled = i;
+		i = i + 1;
+		if(i >= adapter->rx_ring.count)
+			i = 0;
+		nfilled++;
+	}
+
+	*skbs = skb_list;
+
+	adapter->rx_ring.next_to_use = i;
+	if(nfilled){
+#if 0
+		mb();
+#endif
+		/*
+		 * Intel driver code sets RDT to last filled slot.
+		 * e1000 manual implies (I think) one beyond.
+		 */
+		E1000_WRITE_REG(&adapter->hw, RDT, last_filled);
+	}
+
+	/*
+	 * Update statistics counters, check link.
+	 * do_poll_watchdog is set by the timer interrupt e1000_watchdog(),
+	 * but we don't want to do the work in an interrupt (since it may
+	 * happen while polling code is active), so defer it to here.
+	 */
+	if(adapter->do_poll_watchdog){
+		adapter->do_poll_watchdog = 0;
+		e1000_watchdog_1(adapter);
+	}
+
+	return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
+}
+
+static int
+e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
+{
+	/*
+	 * This function is just a streamlined version of
+	 * return e1000_xmit_frame(skb, netdev);
+	 */
+
+	struct e1000_adapter *adapter = netdev->priv;
+	struct pci_dev *pdev = adapter->pdev;
+	struct e1000_tx_desc *tx_desc;
+	int i, len, offset, txd_needed;
+	uint32_t txd_upper, txd_lower, max_per_txd = E1000_MAX_DATA_PER_TXD;
+
+	if(!netif_carrier_ok(netdev)) {
+		netif_stop_queue(netdev);
+		return 1;
+	}
+
+	txd_needed = TXD_USE_COUNT(skb->len, max_txd_pwr);
+
+	/* make sure there are enough Tx descriptors available in the ring */
+	if(E1000_DESC_UNUSED(&adapter->tx_ring) <= (txd_needed + 1)) {
+		adapter->net_stats.tx_dropped++;
+		netif_stop_queue(netdev);
+		return 1;
+	}
+
+	txd_upper = 0;
+	txd_lower = adapter->txd_cmd;
+	
+	if(e1000_tx_csum(adapter, skb)){
+		txd_lower |= E1000_TXD_CMD_DEXT | E1000_TXD_DTYP_D;
+		txd_upper |= E1000_TXD_POPTS_TXSM << 8;
+	}
+
+	i = adapter->tx_ring.next_to_use;
+	tx_desc = E1000_TX_DESC(adapter->tx_ring, i);
+
+	len = skb->len;
+	offset = 0;
+
+	adapter->tx_ring.buffer_info[i].length = len;
+	adapter->tx_ring.buffer_info[i].dma =
+		pci_map_page(pdev, virt_to_page(skb->data + offset),
+			     (unsigned long) (skb->data + offset) & ~PAGE_MASK, len,
+			     PCI_DMA_TODEVICE);
+
+	tx_desc->buffer_addr = cpu_to_le64(adapter->tx_ring.buffer_info[i].dma);
+	tx_desc->lower.data = cpu_to_le32(txd_lower | len);
+	tx_desc->upper.data = cpu_to_le32(txd_upper);
+
+	/* EOP and SKB pointer go with the last fragment */
+	tx_desc->lower.data |= cpu_to_le32(E1000_TXD_CMD_EOP);
+	adapter->tx_ring.buffer_info[i].skb = skb;
+
+	i = i + 1;
+	if(i >= adapter->tx_ring.count)
+		i = 0;
+
+	/* Move the HW Tx Tail Pointer */
+	adapter->tx_ring.next_to_use = i;
+	
+	netdev->trans_start = jiffies;
+	
+	return 0;
+}
+
+static int
+e1000_tx_eob(struct net_device *dev)
+{
+	struct e1000_adapter *adapter = dev->priv;
+	E1000_WRITE_REG(&adapter->hw, TDT, adapter->tx_ring.next_to_use);
+	return 0;
+}
+
+static int
+e1000_tx_start(struct net_device *dev)
+{
+	/*   printk("e1000_tx_start called\n"); */
+	e1000_tx_eob(dev);
+	return 0;
+}
+
+static struct sk_buff *
+e1000_tx_clean(struct net_device *netdev)
+{
+	/*
+	 * This function is a streamlined version of
+	 * return e1000_clean_tx_irq(adapter, 1);
+	 */
+
+	struct e1000_adapter *adapter = netdev->priv;
+	struct pci_dev *pdev = adapter->pdev;
+	int i;
+	struct e1000_tx_desc *tx_desc;
+	struct sk_buff *skb_head, *skb_last;
+
+	skb_head = skb_last = 0;
+
+	i = adapter->tx_ring.next_to_clean;
+	tx_desc = E1000_TX_DESC(adapter->tx_ring, i);
+
+	while(tx_desc->upper.data & cpu_to_le32(E1000_TXD_STAT_DD)) {
+		if(adapter->tx_ring.buffer_info[i].dma != 0) {
+			pci_unmap_page(pdev, adapter->tx_ring.buffer_info[i].dma,
+				       adapter->tx_ring.buffer_info[i].length,
+				       PCI_DMA_TODEVICE);
+			adapter->tx_ring.buffer_info[i].dma = 0;
+		}
+
+		if(adapter->tx_ring.buffer_info[i].skb != NULL) {
+			struct sk_buff *skb = adapter->tx_ring.buffer_info[i].skb;
+			if (skb_head == 0) {
+				skb_head = skb;
+				skb_last = skb;
+				skb_last->next = NULL;
+			} else {
+				skb_last->next = skb;
+				skb->next = NULL;
+				skb_last = skb;
+			}
+			adapter->tx_ring.buffer_info[i].skb = NULL;
+		}
+    
+		i = i + 1;
+		if(i >= adapter->tx_ring.count)
+			i = 0;
+
+		tx_desc->upper.data = 0;
+		tx_desc = E1000_TX_DESC(adapter->tx_ring, i);
+	}
+
+	adapter->tx_ring.next_to_clean = i;
+
+	if(netif_queue_stopped(netdev) &&
+	   (E1000_DESC_UNUSED(&adapter->tx_ring) > E1000_TX_QUEUE_WAKE)) {
+		netif_start_queue(netdev);
+	}
+
+	return skb_head;
+}
+
+static int
+e1000_poll_on(struct net_device *dev)
+{
+	struct e1000_adapter *adapter = dev->priv;
+	unsigned long flags;
+
+	if (!dev->polling) {
+		printk("e1000_poll_on\n");
+
+		save_flags(flags);
+		cli();
+
+		dev->polling = 2;
+		e1000_irq_disable(adapter);
+
+		restore_flags(flags);
+	}
+
+	return 0;
+}
+
+static int
+e1000_poll_off(struct net_device *dev)
+{
+	struct e1000_adapter *adapter = dev->priv;
+
+	if (dev->polling > 0) {
+		dev->polling = 0;
+		e1000_irq_enable(adapter);
+		printk("e1000_poll_off\n");
+	}
+
+	return 0;
+}
 
 /* e1000_main.c */

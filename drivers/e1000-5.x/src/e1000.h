@@ -187,6 +187,9 @@ struct e1000_desc_ring {
 #define E1000_DESC_UNUSED(R) \
 	((((R)->next_to_clean > (R)->next_to_use) ? 0 : (R)->count) + \
 	(R)->next_to_clean - (R)->next_to_use - 1)
+#define E1000_RX_DESC_UNUSED(R) \
+	((((R)->next_to_clean > (R)->next_to_use) ? 0 : (R)->count) + \
+	(R)->next_to_clean - (R)->next_to_use)
 
 #define E1000_GET_DESC(R, i, type)	(&(((struct type *)((R).desc))[i]))
 #define E1000_RX_DESC(R, i)		E1000_GET_DESC(R, i, e1000_rx_desc)
@@ -283,5 +286,8 @@ struct e1000_adapter {
 
 	uint32_t pci_state[16];
 	int msg_enable;
+
+	/* Click polling */
+	int do_poll_watchdog;
 };
 #endif /* _E1000_H_ */
