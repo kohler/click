@@ -1,3 +1,8 @@
+2004-02-05 Thursday 03:52  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.26): there is nothing
+	better than valgrind
+
 2004-02-04 Wednesday 15:47  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/aggregateipflows.cc (1.25): use a less crappy
