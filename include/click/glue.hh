@@ -1,9 +1,8 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/glue.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/glue.cc" -*-
 #ifndef CLICK_GLUE_HH
 #define CLICK_GLUE_HH
 // Removes many common #include <header>s and abstracts differences between
 // kernel and user space, and between operating systems.
-
 
 // HEADERS
 
@@ -131,7 +130,7 @@ long strtol(const char *, char **, int);
 inline unsigned long
 strtoul(const char *nptr, char **endptr, int base)
 {
-  return simple_strtoul(nptr, endptr, base);
+    return simple_strtoul(nptr, endptr, base);
 }
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
@@ -140,7 +139,7 @@ int click_strcmp(const char *, const char *);
 inline int
 strcmp(const char *a, const char *b)
 {
-  return click_strcmp(a, b);
+    return click_strcmp(a, b);
 }
 # endif
 
@@ -256,85 +255,125 @@ CLICK_ENDDECLS
 inline struct timeval
 make_timeval(int sec, int usec)
 {
-  struct timeval tv;
-  tv.tv_sec = sec;
-  tv.tv_usec = usec;
-  return tv;
+    struct timeval tv;
+    tv.tv_sec = sec;
+    tv.tv_usec = usec;
+    return tv;
 }
 
 inline bool
 operator==(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec == b.tv_sec && a.tv_usec == b.tv_usec;
+    return a.tv_sec == b.tv_sec && a.tv_usec == b.tv_usec;
 }
 
 inline bool
 operator!=(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec != b.tv_sec || a.tv_usec != b.tv_usec;
+    return a.tv_sec != b.tv_sec || a.tv_usec != b.tv_usec;
 }
 
 inline bool
 operator<(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec < b.tv_usec);
+    return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec < b.tv_usec);
 }
 
 inline bool
 operator<=(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec <= b.tv_usec);
+    return a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec <= b.tv_usec);
 }
 
 inline bool
 operator>=(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec >= b.tv_usec);
+    return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec >= b.tv_usec);
 }
 
 inline bool
 operator>(const struct timeval &a, const struct timeval &b)
 {
-  return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec > b.tv_usec);
+    return a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_usec > b.tv_usec);
 }
 
 inline struct timeval &
 operator+=(struct timeval &a, const struct timeval &b)
 {
-  a.tv_sec += b.tv_sec;
-  a.tv_usec += b.tv_usec;
-  if (a.tv_usec >= 1000000) {
-    a.tv_sec++;
-    a.tv_usec -= 1000000;
-  }
-  return a;
+    a.tv_sec += b.tv_sec;
+    a.tv_usec += b.tv_usec;
+    if (a.tv_usec >= 1000000) {
+	a.tv_sec++;
+	a.tv_usec -= 1000000;
+    }
+    return a;
 }
 
 inline struct timeval &
 operator-=(struct timeval &a, const struct timeval &b)
 {
-  a.tv_sec -= b.tv_sec;
-  a.tv_usec -= b.tv_usec;
-  if (a.tv_usec < 0) {
-    a.tv_sec--;
-    a.tv_usec += 1000000;
-  }
-  return a;
+    a.tv_sec -= b.tv_sec;
+    a.tv_usec -= b.tv_usec;
+    if (a.tv_usec < 0) {
+	a.tv_sec--;
+	a.tv_usec += 1000000;
+    }
+    return a;
 }
 
 inline struct timeval
 operator+(struct timeval a, const struct timeval &b)
 {
-  a += b;
-  return a;
+    a += b;
+    return a;
 }
 
 inline struct timeval
 operator-(struct timeval a, const struct timeval &b)
 {
-  a -= b;
-  return a;
+    a -= b;
+    return a;
 }
+
+# if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+inline double
+timeval2double(const struct timeval &a)
+{
+    return a.tv_sec + (a.tv_usec / 1000000.);
+}
+
+inline struct timeval
+double2timeval(double d)
+{
+    uint32_t sec = (uint32_t)d;
+    uint32_t usec = (uint32_t)((d - sec)*1000000 + 0.5);
+    return make_timeval(sec, usec);
+}
+
+inline struct timeval
+operator*(const struct timeval &a, double b)
+{
+    return double2timeval(timeval2double(a) * b);
+}
+
+inline struct timeval
+operator*(double a, const struct timeval &b)
+{
+    return double2timeval(timeval2double(b) * a);
+}
+
+inline struct timeval
+operator/(const struct timeval &a, double b)
+{
+    return double2timeval(timeval2double(a) / b);
+}
+
+inline double
+operator/(const struct timeval &a, const struct timeval &b)
+{
+    return timeval2double(a) / timeval2double(b);
+}
+# endif /* !CLICK_LINUXMODULE && !CLICK_BSDMODULE */
 
 #endif
 
