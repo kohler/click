@@ -338,12 +338,10 @@ NameInfo::removedb(NameDB *db)
     NameDB **pp = (db->_prefix_parent ? &db->_prefix_parent->_prefix_child
 		   : &ni->_namedb_roots[m]);
     // Remove from sibling list
-    for (NameDB *sib = *pp; sib; sib = sib->_prefix_sibling)
-	if (sib->_prefix_sibling == db) {
-	    sib->_prefix_sibling = db->_prefix_sibling;
-	    break;
-	}
+    for (NameDB *sib = *pp; sib != db; sib = sib->_prefix_sibling)
+	/* do nothing */;
     // Patch children in
+    *pp = db->_prefix_sibling;
     while (NameDB *cdb = db->_prefix_child) {
 	db->_prefix_child = cdb->_prefix_sibling;
 	cdb->_prefix_parent = db->_prefix_parent;

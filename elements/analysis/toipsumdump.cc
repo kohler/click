@@ -48,6 +48,12 @@ ToIPSummaryDump::static_initialize()
     IPSummaryDump::udp_register_unparsers();
 }
 
+void
+ToIPSummaryDump::static_cleanup()
+{
+    IPSummaryDump::static_cleanup();
+}
+
 int
 ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {

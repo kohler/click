@@ -427,7 +427,6 @@ particular purpose.\n");
   router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!router)
     exit(1);
-  router->use();
 
   int exit_value = 0;
 
@@ -507,7 +506,8 @@ particular purpose.\n");
     }
   }
 
-  router->unuse();
+  delete router->master();
   click_static_cleanup();
+  Clp_DeleteParser(clp);
   exit(exit_value);
 }

@@ -309,6 +309,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     const char *flags() const		{ return "S2"; }
 
     static void static_initialize();
+    static void static_cleanup();
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

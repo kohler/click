@@ -534,19 +534,25 @@ String::Initializer::Initializer()
 void
 String::static_initialize()
 {
-  // function called to initialize static globals
-  if (!null_memo) {
-    null_memo = new Memo;
-    null_memo->_refcount++;
-    permanent_memo = new Memo;
-    permanent_memo->_refcount++;
-    // use a separate string for oom_memo's data, so we can distinguish
-    // the pointer
-    oom_memo = new Memo;
-    oom_memo->_refcount++;
-    oom_memo->_real_data = const_cast<char*>(&oom_string_data);
-    null_string_p = new String;
-    oom_string_p = new String(oom_memo->_real_data, 0, oom_memo);
+    // function called to initialize static globals
+    if (!null_memo) {
+#if CLICK_DMALLOC
+	CLICK_DMALLOC_REG("str0");
+#endif
+	null_memo = new Memo;
+	null_memo->_refcount++;
+	permanent_memo = new Memo;
+	permanent_memo->_refcount++;
+	// use a separate string for oom_memo's data, so we can distinguish
+	// the pointer
+	oom_memo = new Memo;
+	oom_memo->_refcount++;
+	oom_memo->_real_data = const_cast<char*>(&oom_string_data);
+	null_string_p = new String;
+	oom_string_p = new String(oom_memo->_real_data, 0, oom_memo);
+#if CLICK_DMALLOC
+	CLICK_DMALLOC_REG("????");
+#endif
   }
 }
 

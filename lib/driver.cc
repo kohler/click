@@ -50,6 +50,7 @@
 # include <click/notifier.hh>
 # include <click/straccum.hh>
 # include <click/nameinfo.hh>
+# include <click/bighashmap_arena.hh>
 #endif
 
 
@@ -390,6 +391,7 @@ click_static_cleanup()
     ErrorHandler::static_cleanup();
     cp_va_static_cleanup();
     NameInfo::static_cleanup();
+    HashMap_ArenaFactory::static_cleanup();
     String::static_cleanup();
 }
 

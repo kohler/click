@@ -225,14 +225,16 @@ Clp_NewParser(int argc, const char * const *argv, int nopt, Clp_Option *opt)
     cli->opt = opt;
     cli->nopt = nopt;
   
-    cli->argtype = (Clp_ArgType *)malloc(sizeof(Clp_ArgType) * 5);
+    cli->argtype = (Clp_ArgType *)malloc(sizeof(Clp_ArgType) * 8);
     if (!cli->argtype)
 	goto failed;
-    cli->nargtype = 5;
+    for (i = 0; i < 8; i++)
+	cli->argtype[i].func = 0;
+    cli->nargtype = 8;
   
     for (i = 0; i < 256; i++)
 	cli->option_class[i] = 0;
-    cli->option_class['-'] = Clp_Short;
+    cli->option_class[(unsigned char) '-'] = Clp_Short;
     cli->both_short_and_long = 0;
   
     cli->is_short = 0;
@@ -347,14 +349,14 @@ Clp_SetOptionChar(Clp_Parser *clp, int c, int option_type)
 	for (i = 1; i < 256; i++)
 	    cli->option_class[i] = option_type;
     else
-	cli->option_class[c] = option_type;
+	cli->option_class[(unsigned char) c] = option_type;
 
     /* If an option character can introduce either short or long options, then
        we need to fix up the long_min_match values. We may have set the
-       long_min_match for option '--abcde' to 1, if no other option starts
+       long_min_match for option 'abcde' to 1, if no other option starts
        with 'a'. But if '-' can introduce either a short option or a long
        option, AND a short option '-a' exists, then the long_min_match for
-       '--abcde' must be set to 2! */
+       'abcde' must be set to 2! */
     if (!cli->both_short_and_long) {
 	int either_short = option_type & (Clp_Short | Clp_ShortNegated);
 	int either_long = option_type & (Clp_Long | Clp_LongNegated);

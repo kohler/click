@@ -216,6 +216,14 @@ int register_unparser(const char* name, int thunk, void (*prepare)(PacketDesc&),
     return 0;
 }
 
+void static_cleanup()
+{
+    while (Field* f = fields) {
+	fields = f->next;
+	delete f;
+    }
+}
+
 int register_synonym(const char* name, const char* synonym)
 {
     Field* synf = const_cast<Field*>(find_field(synonym));
