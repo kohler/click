@@ -51,6 +51,7 @@ bool cp_real(const String &, int frac_digits, int *, int *);
 bool cp_real(const String &, int frac_digits, int *);
 bool cp_real2(const String &, int frac_bits, int *);
 bool cp_milliseconds(const String &, int *);
+bool cp_timeval(const String &, struct timeval *);
 
 String cp_unparse_bool(bool);
 String cp_unparse_real(unsigned, int frac_bits);
@@ -111,6 +112,7 @@ extern CpVaParseCmd
   cpNonnegReal,	// int frac_digits, int *value
   cpNonnegFixed, // int frac_bits, int *value
   cpMilliseconds, // int *value_milliseconds
+  cpTimeval,	// struct timeval *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
   cpIPPrefix,	// unsigned char value[4], unsigned char mask[4]
   cpIPAddressOrPrefix,	// unsigned char value[4], unsigned char mask[4]
@@ -175,6 +177,7 @@ struct cp_value {
     int i;
     unsigned u;
     unsigned char address[32];
+    int is[8];
 #ifndef CLICK_TOOL
     Element *element;
 #endif

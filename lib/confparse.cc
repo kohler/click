@@ -747,6 +747,27 @@ cp_milliseconds(const String &str, int *return_value)
 }
 
 bool
+cp_timeval(const String &str, struct timeval *return_value)
+{
+  int dot = str.find_left('.');
+  if (dot < 0)
+    dot = str.length();
+  unsigned sec = 0;
+  if (dot > 0) {
+    if (!cp_unsigned(str.substring(0, dot), &sec))
+      return false;
+  }
+  int usec = 0;
+  if (dot < str.length() - 1) {
+    if (!cp_real(str.substring(dot), 6, &usec))
+      return false;
+  }
+  return_value->tv_sec = sec;
+  return_value->tv_usec = usec;
+  return true;
+}
+
+bool
 cp_string(const String &str, String *return_value, String *rest = 0)
 {
   const char *s = str.data();
@@ -1363,6 +1384,7 @@ CpVaParseCmd
   cpNonnegReal		= "u_real",
   cpNonnegFixed		= "u_real_fixed",
   cpMilliseconds	= "msec",
+  cpTimeval		= "timeval",
   cpIPAddress		= "ip_addr",
   cpIPPrefix		= "ip_prefix",
   cpIPAddressOrPrefix	= "ip_addr_or_prefix",
@@ -1394,6 +1416,7 @@ enum {
   cpiNonnegReal,
   cpiNonnegFixed,
   cpiMilliseconds,
+  cpiTimeval,
   cpiIPAddress,
   cpiIPPrefix,
   cpiIPAddressOrPrefix,
@@ -1576,6 +1599,22 @@ default_parsefunc(cp_value *v, const String &arg,
     }
     break;
 
+   case cpiTimeval: {
+     struct timeval tv;
+     if (!cp_timeval(arg, &tv)) {
+       if (cp_errno == CPE_OVERFLOW)
+	 errh->error("overflow on %s (%s)", argname, desc);
+       else if (cp_errno == CPE_NEGATIVE)
+	 errh->error("%s (%s) must be >= 0", argname, desc);
+       else
+	 errh->error("%s should be %s (time in seconds)", argname, desc);
+     } else {
+       v->v.is[0] = tv.tv_sec;
+       v->v.is[1] = tv.tv_usec;
+     }
+     break;
+   }
+
    case cpiNonnegFixed:
     assert(v->extra > 0);
     if (!cp_real2(arg, v->extra, &v->v.i)) {
@@ -1695,6 +1734,13 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      unsigned *ustore = (unsigned *)v->store; 
      *ustore = v->v.u; 
      break; 
+   }
+
+   case cpiTimeval: {
+     struct timeval *tvstore = (struct timeval *)v->store;
+     tvstore->tv_sec = v->v.is[0];
+     tvstore->tv_usec = v->v.is[1];
+     break;
    }
 
    case cpiString:
