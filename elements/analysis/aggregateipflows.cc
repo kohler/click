@@ -385,8 +385,13 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 	    // if this flow is actually dead (but has not yet been garbage
 	    // collected), then kill it for consistent semantics
 	    int age = p->timestamp_anno().tv_sec - finfo->_last_timestamp.tv_sec;
-	    if (age > _smallest_timeout
-		&& age > relevant_timeout(finfo, m)) {
+	    // 4.Feb.2004 - Also start a new flow if the old flow closed off,
+	    // and we have a SYN.
+	    if ((age > _smallest_timeout
+		 && age > relevant_timeout(finfo, m))
+		|| (finfo->_flow_over == 3
+		    && p->ip_header()->ip_p == IP_PROTO_TCP
+		    && (p->tcp_header()->th_flags & TH_SYN))) {
 		// old aggregate has died
 		notify(finfo->aggregate(), AggregateListener::DELETE_AGG, 0);
 		const click_ip *iph = good_ip_header(p);
