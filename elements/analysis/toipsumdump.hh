@@ -53,6 +53,8 @@ contain those fields. Valid field names, with examples, are:
    tcp_seq      TCP sequence number: `93167339'
    tcp_ack      TCP acknowledgement number: `93178192'
    tcp_flags    TCP flags: `SA', `.'
+   tcp_opt      TCP options (see below)
+   tcp_sack     TCP SACK options (see below)
    payload_len  Payload length (not including IP/TCP/UDP
                 headers): `34'
    count        Number of packets: `1'
@@ -203,9 +205,28 @@ newline (possibly padded with zero bytes on the right), same as in a regular
 ASCII IPSummaryDump file. For instance, `C<!bad>' records are stored this
 way.
 
+=head1 TCP OPTIONS
+
+Single TCP option fields have the following representations.
+
+    EOL, NOP        No representation
+    MSS             `mss1400'
+    Window scale    `wscale10'
+    SACK permitted  `sackok'
+    SACK            `sack95:98'; each SACK block
+                    is listed separately
+    Timestamp       `timestamp669063908:38382731'
+    Other options   `98' (zero-length option 98),
+                    `99=0:5:10' (option with data, data
+		    octets separated by colons)
+
+Multiple options are separated by commas. Any invalid option causes the entire
+field to be replaced by a single question mark `C<?>'. A period `C<.>' is used
+for packets with no options (except possibly EOL and NOP).
+
 =a
 
-FromDump, ToDump */
+FromIPSummaryDump, FromDump, ToDump */
 
 class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
@@ -229,6 +250,11 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void write_line(const String &);
     void flush_buffer();
 
+    enum { DO_TCPOPT_MSS = 1, DO_TCPOPT_WSCALE = 2, DO_TCPOPT_SACK = 4,
+	   DO_TCPOPT_TIMESTAMP = 8, DO_TCPOPT_UNKNOWN = 16,
+	   DO_TCPOPT_ALL = 0xFFFFFFFFU };
+    static void store_tcp_opt_ascii(const click_tcp *, int, StringAccum &);
+    
   private:
 
     String _filename;

@@ -410,6 +410,143 @@ FromIPSummaryDump::bang_binary(const String &line, ErrorHandler *errh)
     _binary = true;
 }
 
+static void
+append_net_uint32_t(StringAccum &sa, uint32_t u)
+{
+    sa << (char)(u >> 24) << (char)(u >> 16) << (char)(u >> 8) << (char)u;
+}
+
+int
+FromIPSummaryDump::parse_tcp_opt_ascii(const char *data, int pos, String *result, int contents)
+{
+    StringAccum sa;
+    int original_pos = pos;
+    
+    while (1) {
+	char *next;
+	uint32_t u1, u2;
+
+	if (strncmp(data + pos, "mss", 3) == 0
+	    && (contents & DO_TCPOPT_MSS)) {
+	    u1 = strtoul(data + pos + 3, &next, 0);
+	    if (u1 <= 0xFFFFU)
+		sa << (char)TCPOPT_MAXSEG << (char)TCPOLEN_MAXSEG << (char)(u1 >> 8) << (char)u1;
+	    else
+		goto bad_opt;
+	    pos = next - data;
+	} else if (strncmp(data + pos, "wscale", 6) == 0
+		   && (contents & DO_TCPOPT_WSCALE)) {
+	    u1 = strtoul(data + pos + 6, &next, 0);
+	    if (u1 <= 255)
+		sa << (char)TCPOPT_WSCALE << (char)TCPOLEN_WSCALE << (char)u1;
+	    else
+		goto bad_opt;
+	    pos = next - data;
+	} else if (strncmp(data + pos, "sackok", 6) == 0
+		   && (contents & DO_TCPOPT_SACK)) {
+	    sa << (char)TCPOPT_SACK_PERMITTED << (char)TCPOLEN_SACK_PERMITTED;
+	    pos += 6;
+	} else if (strncmp(data + pos, "sack", 4) == 0
+		   && (contents & DO_TCPOPT_SACK)) {
+	    // combine adjacent SACK options into a block
+	    int sa_pos = sa.length();
+	    sa << (char)TCPOPT_SACK << (char)0;
+	    pos += 4;
+	    while (1) {
+		u1 = strtoul(data + pos, &next, 0);
+		if (*next != ':')
+		    goto bad_opt;
+		u2 = strtoul(next + 1, &next, 0);
+		append_net_uint32_t(sa, u1);
+		append_net_uint32_t(sa, u2);
+		pos = next - data;
+		if (next < data + pos + 3 // at least 1 digit in each block
+		    || strncmp(next, ",sack", 5) != 0
+		    || !isdigit(next[5]))
+		    break;
+		pos = (next + 5) - data;
+	    }
+	    sa[sa_pos + 1] = (char)(sa.length() - sa_pos);
+	} else if (strncmp(data + pos, "timestamp", 9) == 0
+		   && (contents & DO_TCPOPT_TIMESTAMP)) {
+	    u1 = strtoul(data + pos + 9, &next, 0);
+	    if (*next != ':')
+		goto bad_opt;
+	    u2 = strtoul(next + 1, &next, 0);
+	    if (sa.length() == 0)
+		sa << (char)TCPOPT_NOP << (char)TCPOPT_NOP;
+	    sa << (char)TCPOPT_TIMESTAMP << (char)TCPOLEN_TIMESTAMP;
+	    append_net_uint32_t(sa, u1);
+	    append_net_uint32_t(sa, u2);
+	    pos = next - data;
+	} else if (isdigit(data[pos])
+		   && (contents & DO_TCPOPT_UNKNOWN)) {
+	    u1 = strtoul(data + pos, &next, 0);
+	    if (u1 >= 256)
+		goto bad_opt;
+	    sa << (char)u1;
+	    if (*next == '=' && isdigit(next[1])) {
+		int pos0 = sa.length();
+		sa << (char)0;
+		do {
+		    u1 = strtoul(next + 1, &next, 0);
+		    if (u1 >= 256)
+			goto bad_opt;
+		    sa << (char)u1;
+		} while (*next == ':' && isdigit(next[1]));
+		if (sa.length() > pos0 + 254)
+		    goto bad_opt;
+		sa[pos0] = (char)(sa.length() - pos0 + 1);
+	    }
+	    pos = next - data;
+	} else if (strncmp(data + pos, "nop", 3) == 0
+		   && (contents & DO_TCPOPT_PADDING)) {
+	    sa << (char)TCPOPT_NOP;
+	    pos += 3;
+	} else if (strncmp(data + pos, "eol", 3) == 0
+		   && (contents & DO_TCPOPT_PADDING)
+		   && data[pos + 3] != ',') {
+	    sa << (char)TCPOPT_EOL;
+	    pos += 3;
+	} else
+	    goto bad_opt;
+
+	if (isspace(data[pos]) || !data[pos]) {
+	    // check for improper padding
+	    while (sa.length() > 40 && sa[0] == TCPOPT_NOP) {
+		memmove(&sa[0], &sa[1], sa.length() - 1);
+		sa.pop_back();
+	    }
+	    // options too long?
+	    if (sa.length() > 40)
+		goto bad_opt;
+	    // otherwise ok
+	    *result = sa.take_string();
+	    return pos;
+	} else if (data[pos] != ',')
+	    goto bad_opt;
+
+	pos++;
+    }
+
+  bad_opt:
+    *result = String();
+    return original_pos;
+}
+
+static WritablePacket *
+handle_tcp_opt(WritablePacket *q, const String &optstr)
+{
+    int olen = (optstr.length() + 3) & ~3;
+    if (!(q = q->put(olen)))
+	return 0;
+    q->tcp_header()->th_off = (sizeof(click_tcp) + olen) >> 2;
+    memcpy(q->tcp_header() + 1, optstr.data(), optstr.length());
+    if (optstr.length() & 3)
+	*(reinterpret_cast<uint8_t *>(q->tcp_header() + 1) + optstr.length()) = TCPOPT_EOL;
+    return q;
+}
+
 Packet *
 FromIPSummaryDump::read_packet(ErrorHandler *errh)
 {
@@ -429,6 +566,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     
     String line;
     StringAccum payload;
+    String tcp_opt;
     
     while (1) {
 
@@ -462,10 +600,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	bool have_payload_len = false;
 	bool have_payload = false;
 	
+	uint32_t u1 = 0, u2 = 0;
+	
 	for (int i = 0; pos < len && i < _contents.size(); i++) {
 	    int original_pos = pos;
 	    char *next;
-	    uint32_t u1 = 0, u2 = 0;
 
 	    // check binary case
 	    if (_binary) {
@@ -509,7 +648,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    if (data[pos] == 'F')
 			u1 = htons(IP_MF);
 		    else if (data[pos] == 'f')
-			u1 = htons(10);	// random number
+			u1 = htons(100); // random number
 		    pos++;	// u1 already 0
 		    break;
 		}
@@ -588,7 +727,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    u1 = htons(IP_MF);
 		    pos++;
 		} else if (data[pos] == 'f') {
-		    u1 = htons(10);	// random number
+		    u1 = htons(100);	// random number
 		    pos++;
 		} else if (data[pos] == '.')
 		    pos++;	// u1 already 0
@@ -619,6 +758,22 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 			u1 |= 1 << (tcp_flag_mapping[data[pos]] - 1);
 			pos++;
 		    }
+		break;
+
+	      case W_TCP_SACK:
+		if (data[pos] == '.') {
+		    tcp_opt = String();
+		    pos++;
+		} else if (data[pos] != '-')
+		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_SACK);
+		break;
+		
+	      case W_TCP_OPT:
+		if (data[pos] == '.') {
+		    tcp_opt = String();
+		    pos++;
+		} else if (data[pos] != '-')
+		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_ALL);
 		break;
 		
 	      case W_LINK:
@@ -766,17 +921,23 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    break;
 
 	// set TCP offset to a reasonable value; possibly reduce packet length
-	if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph))
-	    q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
-	else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
+	if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
+	    if (!tcp_opt)
+		q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
+	    else if (!(q = handle_tcp_opt(q, tcp_opt)))
+		return 0;
+	    else		// iph may have changed!!
+		iph = q->ip_header();
+	} else if (iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph))
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
 	else
 	    q->take(sizeof(click_tcp));
 	
 	if (have_payload) {	// XXX what if byte_count indicates IP options?
-	    iph->ip_len = ntohs(q->length() + payload.length());
+	    int old_length = q->length();
+	    iph->ip_len = ntohs(old_length + payload.length());
 	    if ((q = q->put(payload.length())))
-		memcpy(q->transport_header() + sizeof(click_tcp), payload.data(), payload.length());
+		memcpy(q->data() + old_length, payload.data(), payload.length());
 	} else if (byte_count) {
 	    iph->ip_len = ntohs(byte_count);
 	    SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());

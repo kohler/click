@@ -22,11 +22,11 @@
 CLICK_DECLS
 
 static const char *content_names[] = {
-    "??", "timestamp", "ts_sec", "ts_usec",
-    "ip_src", "ip_dst", "ip_len", "ip_proto", "ip_id",
-    "sport", "dport", "tcp_seq", "tcp_ack", "tcp_flags",
-    "payload_len", "count", "ip_frag", "ip_fragoff",
-    "payload", "direction", "aggregate"
+    "??", "timestamp", "ts_sec", "ts_usec", "ip_src",
+    "ip_dst", "ip_len", "ip_proto", "ip_id", "sport",
+    "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
+    "count", "ip_frag", "ip_fragoff", "payload", "direction",
+    "aggregate", "tcp_sack", "tcp_opt"
 };
 
 const char *
@@ -71,6 +71,10 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_TCP_ACK;
     else if (word == "tcp_flags")
 	return W_TCP_FLAGS;
+    else if (word == "tcp_sack")
+	return W_TCP_SACK;
+    else if (word == "tcp_opt")
+	return W_TCP_OPT;
     else if (word == "payload_len" || word == "payload_length")
 	return W_PAYLOAD_LENGTH;
     else if (word == "count" || word == "pkt_count" || word == "packet_count")
@@ -89,11 +93,11 @@ IPSummaryDumpInfo::parse_content(const String &word)
 }
 
 static int content_binary_sizes[] = {
-    -10000, 8, 4, 4,  // W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC
-    4, 4, 4, 1, 2,    // W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID
-    2, 2, 4, 4, 1,    // W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS
-    4, 4, 1, 2,	      // W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF
-    -10000, 1, 4      // W_PAYLOAD, W_LINK, W_AGGREGATE
+    -10000, 8, 4, 4, 4,	// W_NONE, W_TIMESTAMP, W_TS_SEC, W_TS_USEC, W_SRC
+    4, 4, 1, 2, 2,	// W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT
+    2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PL_LEN
+    4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
+    4, -10000, -10000	// W_AGGREGATE, W_TCP_SACK, W_TCP_OPT
 };
 
 int
