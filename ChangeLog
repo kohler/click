@@ -1,3 +1,17 @@
+2000-12-15 Friday 04:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* NODIST, README, acconfig.h, click-buildtool, configure.in,
+	etc/samplepackage/Makefile.in: configuration updates for building
+	on System V and other platforms; documentation changes
+
+2000-12-15 Friday 04:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ip/iprw.cc, ip/iprw.hh, tcpudp/tcprewriter.cc: be
+	careful about dead mappings in case of port reuse. When you see a
+	SYN packet corresponding to a dead mapping, take the mapping off
+	the free-tracked list. Then it won't be nuked on 4 minutes of idle
+	time.
+
 2000-12-15 Friday 02:44  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* README: mentioned anonymous CVS repository
@@ -7043,9 +7057,12 @@
 	click-devirtualize/specializer.cc,
 	click-devirtualize/specializer.hh,
 	click-fastclassifier/click-fastclassifier.cc,
-	click-install/click-install.cc, click-xform/click-xform.cc,
-	lib/routert.cc, lib/routert.hh, lib/toolutils.cc, lib/toolutils.hh:
-	thing
+	click-install/click-install.cc, click-specialize/.cvsignore,
+	click-specialize/Makefile.in, click-specialize/click-specialize.cc,
+	click-specialize/cxxclass.cc, click-specialize/cxxclass.hh,
+	click-specialize/specializer.cc, click-specialize/specializer.hh,
+	click-xform/click-xform.cc, lib/routert.cc, lib/routert.hh,
+	lib/toolutils.cc, lib/toolutils.hh: thing
 
 2000-03-29 Wednesday 10:38  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7167,8 +7184,10 @@
 	linuxmodule/proc_element.cc, tools/Makefile.in,
 	tools/click-align/Makefile.in,
 	tools/click-fastclassifier/Makefile.in,
-	tools/click-install/Makefile.in, tools/click-xform/Makefile.in: red
-	fix
+	tools/click-install/Makefile.in,
+	tools/click-specialize/Makefile.in,
+	tools/click-specialize/specializer.cc,
+	tools/click-xform/Makefile.in: red fix
 
 2000-03-15 Wednesday 00:56  Max Poletto <maxp@lcs.mit.edu>
 
@@ -7383,7 +7402,10 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/.cvsignore, tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-install/click-uninstall.cc: fastclassifier | specialize
+	tools/click-install/click-uninstall.cc,
+	tools/click-specialize/click-specialize.cc,
+	tools/click-specialize/cxxclass.cc,
+	tools/click-specialize/specializer.cc: fastclassifier | specialize
 	+ uninstall
 
 2000-02-05 Saturday 00:14  Benjie Chen <benjie@lcs.mit.edu>
@@ -7397,7 +7419,21 @@
 	elements/standard/classifier.cc, tools/Makefile.in,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-install/click-uninstall.cc: sp[ecializer fix
+	tools/click-install/click-uninstall.cc,
+	tools/click-specialize/specializer.cc: sp[ecializer fix
+
+2000-02-04 Friday 21:19  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/specializer.cc: fadsjfadsjfads
+
+2000-02-04 Friday 20:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/: specializer.cc, specializer.cc: not an
+	idiot
+
+2000-02-04 Friday 20:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/specializer.cc: click-specialize/
 
 2000-02-04 Friday 20:02  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7412,9 +7448,24 @@
 	* lib/packet.hh, tools/click-compile.in: added -S to click-compile;
 	fixed anno(), which formerly did not inline skb()
 
+2000-02-04 Friday 13:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/: cxxclass.cc, cxxclass.hh,
+	specializer.cc: smaction oops
+
 2000-02-04 Friday 13:04  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: netdev.h, polldevice.cc: [no log message]
+
+2000-02-04 Friday 12:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/specializer.cc: dont generate functions
+	that dont matter; also less checking
+
+2000-02-04 Friday 12:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/specializer.cc: better push_output and
+	pull_input functions
 
 2000-02-04 Friday 12:12  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7425,6 +7476,9 @@
 	* doc/click-install.1, tools/click-align/click-align.cc,
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/click-install.cc,
+	tools/click-specialize/click-specialize.cc,
+	tools/click-specialize/specializer.cc,
+	tools/click-specialize/specializer.hh,
 	tools/click-xform/click-xform.cc, tools/lib/routert.hh,
 	tools/lib/toolutils.cc, tools/lib/toolutils.hh: tools updates
 
@@ -7439,6 +7493,10 @@
 	tools/click-fastclassifier/click-fastclassifier.cc: fastclassifier
 	updates: first, it works at all (this is new); second, it only
 	generates code for 1 of a series of identical classifiers
+
+2000-02-03 Thursday 21:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/click-specialize.cc: minibug
 
 2000-02-03 Thursday 20:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7462,12 +7520,26 @@
 
 	* conf/fake-iprouter.click, conf/make-ip-conf.pl,
 	elements/standard/specializerinfo.cc,
-	elements/standard/specializerinfo.hh: fixed click-specialize, added
-	SpecializerInfo
+	elements/standard/specializerinfo.hh,
+	tools/click-specialize/click-specialize.cc,
+	tools/click-specialize/specializer.cc: fixed click-specialize,
+	added SpecializerInfo
+
+2000-02-03 Thursday 19:26  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/: click-specialize.cc, specializer.cc,
+	specializer.hh: added instructions possibility to specializer; fix
+	bugs
+
+2000-02-03 Thursday 17:01  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/cxxclass.cc: fixed bug in compiling;
+	invovled #if 0
 
 2000-02-03 Thursday 16:34  Eddie Kohler <eddietwo@lcs.mit.edu>
 
-	* tools/Makefile.in: specializer fix
+	* tools/: Makefile.in, click-specialize/specializer.cc: specializer
+	fix
 
 2000-02-03 Thursday 16:16  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7551,6 +7623,12 @@
 	* doc/click.5, elements/standard/counter.cc,
 	elements/standard/counter.hh, lib/confparse.cc, lib/confparse.hh,
 	lib/lexer.cc, lib/lexer.hh, tools/Makefile.in,
+	tools/click-specialize/Makefile.in,
+	tools/click-specialize/click-specialize.cc,
+	tools/click-specialize/cxxclass.cc,
+	tools/click-specialize/cxxclass.hh,
+	tools/click-specialize/specializer.cc,
+	tools/click-specialize/specializer.hh,
 	tools/click-xform/click-xform.cc, tools/lib/lexert.cc,
 	tools/lib/lexert.hh, tools/lib/routert.cc, tools/lib/routert.hh:
 	specializer updates; compounds take formal parameters!
@@ -7590,8 +7668,10 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-xform/Makefile.in, tools/lib/toolutils.cc,
-	tools/lib/toolutils.hh: speclaizeilsi zmera
+	tools/click-specialize/Makefile.in,
+	tools/click-specialize/click-specialize.cc,
+	tools/click-specialize/cxxclass.cc, tools/click-xform/Makefile.in,
+	tools/lib/toolutils.cc, tools/lib/toolutils.hh: speclaizeilsi zmera
 
 2000-01-26 Wednesday 19:00  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7608,6 +7688,15 @@
 2000-01-26 Wednesday 18:34  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: netdev.h, polldevice.cc: [no log message]
+
+2000-01-26 Wednesday 18:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/click-specialize1.pl: bye bye perl
+
+2000-01-26 Wednesday 18:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/: click-specialize.cc, cxxclass.cc,
+	cxxclass.hh: another convenient checkin point
 
 2000-01-26 Wednesday 17:14  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7640,6 +7729,11 @@
 
 	* elements/linuxmodule/todevice.cc: [no log message]
 
+2000-01-26 Wednesday 13:24  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-specialize/: Makefile.in, click-specialize.cc,
+	cxxclass.cc, cxxclass.hh: adding files
+
 2000-01-25 Tuesday 18:02  Max Poletto <maxp@lcs.mit.edu>
 
 	* elements/ip/: lookupiproute.cc, lookupiproute.hh: [no log
@@ -7665,8 +7759,9 @@
 2000-01-25 Tuesday 15:32  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in, elements/standard/scheduleinfo.cc, lib/elemlink.cc,
-	lib/elemlink.hh, lib/error.cc, lib/error.hh: error gets lmessage();
-	added set_tickets function; removed set_tickets functionality from
+	lib/elemlink.hh, lib/error.cc, lib/error.hh,
+	tools/click-specialize/Makefile.in: error gets lmessage(); added
+	set_tickets function; removed set_tickets functionality from
 	set-max_tickets
 
 2000-01-25 Tuesday 13:16  Max Poletto <maxp@lcs.mit.edu>
@@ -8052,9 +8147,11 @@
 	tools/Makefile.in, tools/click-compile.in,
 	tools/click-align/Makefile.in,
 	tools/click-fastclassifier/Makefile.in,
-	tools/click-install/Makefile.in, tools/click-xform/Makefile.in,
-	tools/lib/.cvsignore, tools/lib/Makefile.in, tools/lib/routert.cc,
-	tools/lib/routert.hh, userlevel/Makefile.in: changed making
+	tools/click-install/Makefile.in,
+	tools/click-specialize/click-specialize1.pl,
+	tools/click-xform/Makefile.in, tools/lib/.cvsignore,
+	tools/lib/Makefile.in, tools/lib/routert.cc, tools/lib/routert.hh,
+	userlevel/Makefile.in: changed making
 
 1999-12-21 Tuesday 17:36  Peilei Fan <peilei@lcs.mit.edu>
 
@@ -8225,6 +8322,7 @@
 	elements/ip/bigin.cc, elements/ip/bigin.hh,
 	elements/standard/queue.cc, elements/standard/queue.hh,
 	elements/standard/red.cc, elements/standard/red.hh,
+	tools/click-specialize/click-specialize1.pl,
 	tools/click-xform/click-xform.cc, tools/lib/routert.cc,
 	tools/lib/routert.hh: tool fixes for speed (6.854), updated queue
 	to be a Storable, updated BigIn to be correct
@@ -8274,6 +8372,8 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
+	tools/click-specialize/.cvsignore,
+	tools/click-specialize/click-specialize1.pl,
 	tools/click-xform/click-xform.cc, userlevel/Makefile.in,
 	userlevel/click.cc: beginning click-specialize; added handlers
 	section to element man pages; dynamic linking in user-level click;
