@@ -30,6 +30,7 @@ class SetIPAddress : public Element {
   SetIPAddress *clone() const			{ return new SetIPAddress; }
   
   int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
   
   Packet *simple_action(Packet *);
   
