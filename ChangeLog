@@ -4,7 +4,7 @@
 
 2003-02-16 Sunday 12:10  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/fromipsumdump.cc (1.44),
+	* NEWS (1.142), elements/analysis/fromipsumdump.cc (1.44),
 	elements/analysis/fromipsumdump.hh (1.24),
 	elements/analysis/fromnetflowsumdump.cc (1.12),
 	elements/analysis/fromnetflowsumdump.hh (1.9),
@@ -21,6 +21,10 @@
 
 2003-02-16 Sunday 03:15  Eddie Kohler <kohler@icir.org>
 
+	* NEWS (1.141): mention aggregate elements
+
+2003-02-16 Sunday 03:15  Eddie Kohler <kohler@icir.org>
+
 	* elements/analysis/toipflowdumps.hh (1.16): docnits
 
 2003-02-15 Saturday 23:10  Eddie Kohler <kohler@icir.org>
@@ -29,9 +33,9 @@
 
 2003-02-15 Saturday 23:09  Eddie Kohler <kohler@icir.org>
 
-	* AUTHORS (1.23), FAQ (1.14), README (1.37), configure.in (1.200),
-	test/handlers/k01.testie (1.1): expand NEWS and the like for
-	1.3pre1; bump version number to 1.3pre1
+	* AUTHORS (1.23), FAQ (1.14), NEWS (1.140), README (1.37),
+	configure.in (1.200), test/handlers/k01.testie (1.1): expand NEWS
+	and the like for 1.3pre1; bump version number to 1.3pre1
 
 2003-02-15 Saturday 23:08  Eddie Kohler <kohler@icir.org>
 
@@ -1431,13 +1435,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
-	typename where required by later GCCs
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/packet.hh (1.42): add end_data() function (= data()
-	+ length())
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
 
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
@@ -1516,13 +1520,13 @@
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/task.hh (1.19): remove unused method
-
-2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
-
 	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
 	RouterThread::driver() gives waiting threads a chance before
 	restarting (Mz)
+
+2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/task.hh (1.19): remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
@@ -2754,7 +2758,7 @@
 
 2002-07-25 Thursday 16:14  Eddie Kohler <kohler@icir.org>
 
-	* doc/click.texi (1.52): correct docs
+	* NEWS (1.139), doc/click.texi (1.52): correct docs
 
 2002-07-25 Thursday 11:31  Eddie Kohler <kohler@icir.org>
 
@@ -3765,7 +3769,7 @@
 
 2002-05-21 Tuesday 20:03  Eddie Kohler <kohler@icir.org>
 
-	* DISTFILES (1.57), Makefile.in (1.104),
+	* DISTFILES (1.57), Makefile.in (1.104), NEWS (1.138),
 	elements/analysis/anonipaddr.cc (1.5),
 	elements/analysis/fromdagdump.cc (1.6),
 	elements/analysis/fromipsumdump.cc (1.18),
@@ -3908,9 +3912,9 @@
 
 2002-05-21 Tuesday 13:06  Eddie Kohler <kohler@icir.org>
 
-	* AUTHORS (1.21), DISTFILES (1.56), README (1.31), configure.in
-	(1.184), etc/libclick/lc-configure.in (1.20): prepare for 1.2.4
-	release
+	* AUTHORS (1.21), DISTFILES (1.56), NEWS (1.137), README (1.31),
+	configure.in (1.184), etc/libclick/lc-configure.in (1.20): prepare
+	for 1.2.4 release
 
 2002-05-21 Tuesday 11:43  Eddie Kohler <kohler@icir.org>
 
@@ -4746,11 +4750,11 @@
 
 2002-03-29 Friday 15:02  Eddie Kohler <kohler@icir.org>
 
-	* elements/standard/idle.cc (1.20), elements/standard/idle.hh
-	(1.16), elements/userlevel/fromdump.cc (1.63),
-	include/click/elemfilter.hh (1.5), include/click/notifier.hh (1.4),
-	lib/elemfilter.cc (1.14), lib/notifier.cc (1.5): add
-	AbstractNotifier, and better logic in
+	* NEWS (1.136), elements/standard/idle.cc (1.20),
+	elements/standard/idle.hh (1.16), elements/userlevel/fromdump.cc
+	(1.63), include/click/elemfilter.hh (1.5),
+	include/click/notifier.hh (1.4), lib/elemfilter.cc (1.14),
+	lib/notifier.cc (1.5): add AbstractNotifier, and better logic in
 	Notifier::upstream_pull_signal(); Idle is an AbstractNotifier whose
 	signal is always off
 
@@ -5528,7 +5532,8 @@
 
 2002-02-08 Friday 17:49  Eddie Kohler <kohler@icir.org>
 
-	* doc/click.texi (1.37), elements/ethernet/arpresponder.cc (1.37),
+	* NEWS (1.135), doc/click.texi (1.37),
+	elements/ethernet/arpresponder.cc (1.37),
 	elements/ip/lineariplookup.cc (1.2), elements/ip/lineariplookup.hh
 	(1.2), elements/ip/sortediplookup.cc (1.1),
 	elements/ip/sortediplookup.hh (1.1), include/click/ipaddress.hh
