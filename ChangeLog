@@ -1,3 +1,11 @@
+2002-09-30 Monday 12:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridsrforwarder.cc (1.5): bug fix
+
+2002-09-30 Monday 12:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid (1.16): tun/tap bug fix, throw awat old crap code
+
 2002-09-21 Saturday 12:12  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.20), aclocal.m4 (1.20): nitlet
