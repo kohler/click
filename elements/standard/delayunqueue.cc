@@ -38,14 +38,13 @@ int
 DelayUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "delay (ms)", &_delay, 0);
+		     cpUnsigned, "delay (us)", &_delay, 0);
 }
 
 int
 DelayUnqueue::initialize(ErrorHandler *errh)
 {
   _p = 0;
-  _delay *= 1000;
   ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
@@ -97,7 +96,7 @@ String
 DelayUnqueue::read_param(Element *e, void *)
 {
   DelayUnqueue *u = (DelayUnqueue *)e;
-  return String(u->_delay) + " ms\n";
+  return String(u->_delay) + " us\n";
 }
 
 void

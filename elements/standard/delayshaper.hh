@@ -10,7 +10,7 @@
  * shapes traffic to meet delay requirements
  * =d
  * Pulls packets from input port. queues packet if current timestamp minus
- * packet timestamp is less than DELAY ms. otherwise return packet on output.
+ * packet timestamp is less than DELAY us. otherwise return packet on output.
  *
  * SetTimestamp element can be used to stamp the packet.
  *

@@ -38,14 +38,13 @@ int
 DelayShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "delay (ms)", &_delay, 0);
+		     cpUnsigned, "delay (us)", &_delay, 0);
 }
 
 int
 DelayShaper::initialize(ErrorHandler *)
 {
   _p = 0;
-  _delay *= 1000;
   return 0;
 }
 
@@ -93,7 +92,7 @@ String
 DelayShaper::read_param(Element *e, void *)
 {
   DelayShaper *u = (DelayShaper *)e;
-  return String(u->_delay) + " ms\n";
+  return String(u->_delay) + " us\n";
 }
 
 void
