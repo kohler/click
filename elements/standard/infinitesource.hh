@@ -6,7 +6,7 @@
 /*
 =c
 
-InfiniteSource([DATA, LIMIT, BURSTSIZE, ACTIVE?, I<KEYWORDS>])
+InfiniteSource([DATA, LIMIT, BURST, ACTIVE?, I<KEYWORDS>])
 
 =s sources
 
@@ -14,12 +14,12 @@ generates packets whenever scheduled
 
 =d
 
-Creates packets consisting of DATA. Pushes BURSTSIZE such packets out its
-single output every time it is scheduled (which will be often). Stops sending
-after LIMIT packets are generated; but if LIMIT is negative, sends packets
-forever. Will send packets only if ACTIVE is true. (ACTIVE is true by
-default.) Default DATA is at least 64 bytes long. Default LIMIT is -1 (send
-packets forever). Default BURSTSIZE is 1.
+Creates packets consisting of DATA. Pushes BURST such packets out its single
+output every time it is scheduled (which will be often). Stops sending after
+LIMIT packets are generated; but if LIMIT is negative, sends packets forever.
+Will send packets only if ACTIVE is true. (ACTIVE is true by default.) Default
+DATA is at least 64 bytes long. Default LIMIT is -1 (send packets forever).
+Default BURST is 1.
 
 Keyword arguments are:
 
@@ -32,6 +32,10 @@ String. Same as the DATA argument.
 =item LIMIT
 
 Integer. Same as the LIMIT argument.
+
+=item BURST
+
+Integer. Same as the BURST argument.
 
 =item ACTIVE
 

@@ -62,12 +62,13 @@ InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DATA", cpString, "packet data", &data,
 		  "LIMIT", cpInteger, "total packet count", &limit,
+		  "BURST", cpInteger, "burst size (packets per scheduling)", &burstsize,
 		  "ACTIVE", cpBool, "active?", &active,
 		  "STOP", cpBool, "stop driver when done?", &stop,
 		  0) < 0)
     return -1;
   if (burstsize < 1)
-    return errh->error("argument 3 (burst size) must be >= 1");
+    return errh->error("burst size must be >= 1");
 
   _data = data;
   _limit = limit;
