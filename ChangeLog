@@ -1,3 +1,60 @@
+2001-04-02 Monday 16:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: major update to
+	real number parsing functions: fix bugs, and in particular, handle
+	overflow and rounding better; also minor updates elsewhere
+
+2001-04-02 Monday 15:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/red.cc: bug fix: check for negative max_p
+
+2001-04-02 Monday 15:54  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/ip6ndadvertiser.cc,
+	ethernet/ip6ndadvertiser.hh, ip6/icmp6error.cc,
+	ip6/lookupip6route.cc, ip6/protocoltranslator46.cc,
+	ip6/protocoltranslator64.cc: adapt to new IP6Address interface, and
+	use new matches_prefix and mask_more_specific methods
+
+2001-04-02 Monday 15:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: lookupiproute.cc, lookupiproutelinux.cc,
+	lookupiproutemp.cc: adapt to new IPTable interface
+
+2001-04-02 Monday 15:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ip6table.hh, lib/ip6table.cc: methods take const
+	IP6Address &; use new IP6Address matches_prefix and
+	mask_more_specific methods for correctness
+
+2001-04-02 Monday 15:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/iptable.hh, lib/iptable.cc: methods take
+	IPAddresses, not unsigneds; use new IPAddress matches_prefix and
+	mask_more_specific methods for correctness
+
+2001-04-02 Monday 15:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ethernet/: arpresponder.cc, arpresponder.hh: use new
+	IPAddress matches_prefix and mask_more_specific methods for
+	correctness
+
+2001-04-02 Monday 15:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ipaddress.hh: added matches_prefix and
+	mask_more_specific methods
+
+2001-04-02 Monday 15:49  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ip6address.hh, lib/ip6address.cc: update IP6Address
+	method names to follow IPAddress; add matches_prefix and
+	mask_more_specific methods; removed addr() method in favor of
+	in6_addr(); added mask_to_prefix_bits(); fixed bugs
+
+2001-04-02 Monday 15:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-03-30 Friday 19:27  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi: doc updates
