@@ -31,6 +31,7 @@ ForceTCP::ForceTCP()
 {
   MOD_INC_USE_COUNT;
   _count = 0;
+  _random = false;
   _dport = -1;
   _flags = -1;
 }
@@ -48,6 +49,7 @@ ForceTCP::configure(const Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
                     cpOptional,
                     cpInteger, "destination port", &_dport,
+                    cpBool, "randomize destination port", &_random,
                     cpInteger, "TCP flags", &_flags,
                     0);
 
@@ -100,10 +102,13 @@ ForceTCP::simple_action(Packet *p_in)
 
   if(_dport >= 0){
     th->th_dport = htons(_dport);
-  } else if((_count & 7) < 2){
-    th->th_dport = htons(80);
-  } else if((_count & 7) == 3){
-    th->th_dport = htons(random() % 1024);
+  } 
+  else if (_random) { 
+    if((_count & 7) < 2){
+      th->th_dport = htons(80);
+    } else if((_count & 7) == 3){
+      th->th_dport = htons(random() % 1024);
+    }
   }
   _count++;
 
