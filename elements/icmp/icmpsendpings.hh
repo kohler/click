@@ -1,4 +1,4 @@
-/* -*- c-basic-offset: 2 -*- */
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_ICMPSENDPINGS_HH
 #define CLICK_ICMPSENDPINGS_HH
 #include <click/element.hh>
@@ -9,7 +9,8 @@ CLICK_DECLS
 /*
 =c
 
-ICMPPingSource(SADDR, DADDR, I<KEYWORDS>)
+ICMPPingSource(SADDR, DADDR [, I<keywords> INTERVAL, IDENTIFIER, LIMIT, DATA,
+ACTIVE])
 
 =s ICMP, sources
 
@@ -43,6 +44,10 @@ forever. Default is -1.
 
 String. Extra data in emitted pings. Default is the empty string (nothing).
 
+=item ACTIVE
+
+Boolean.  Whether ICMPPingSource is active.  Default is true.
+
 =back
 
 =a
@@ -51,28 +56,36 @@ ICMPPingEncap, ICMPPingResponder, ICMPPingRewriter */
 
 class ICMPPingSource : public Element { public:
   
-  ICMPPingSource();
-  ~ICMPPingSource();
+    ICMPPingSource();
+    ~ICMPPingSource();
   
-  const char *class_name() const		{ return "ICMPPingSource"; }
-  const char *processing() const		{ return PUSH; }
+    const char *class_name() const		{ return "ICMPPingSource"; }
+    const char *processing() const		{ return PUSH; }
+    void notify_ninputs(int);
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
   
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+    void run_timer();
+    void push(int, Packet *);
   
-  void run_timer();
+  private:
   
- private:
-  
-  struct in_addr _src;
-  struct in_addr _dst;
-  int _count;
-  int _limit;
-  uint16_t _icmp_id;
-  int _interval;
-  Timer _timer;
-  String _data;
-  
+    struct in_addr _src;
+    struct in_addr _dst;
+    int _count;
+    int _limit;
+    uint16_t _icmp_id;
+    int _interval;
+    Timer _timer;
+    String _data;
+    bool _active;
+    
+    struct timeval *_timestamp_record;
+
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
+    
 };
 
 CLICK_ENDDECLS
