@@ -104,18 +104,26 @@ LinkFailureDetection::simple_action(Packet *p_in)
     _neighbors.insert(dst, foo);
     nfo = _neighbors.findp(dst);
   }
+  click_gettimeofday(&nfo->_last_received);
   if (success) {
     nfo->_successive_failures = 0;
     nfo->_notified = false;
   } else {
     nfo->_successive_failures++;
+    StringAccum sa;
+    sa  << nfo->_last_received;
+    click_chatter("LFD %s: succ. failure %d for %s at %s\n",
+		  id().cc(),
+		  nfo->_successive_failures,
+		  nfo->_eth.s().cc(),
+		  sa.take_string().cc());
+
     if (!nfo->_notified && nfo->_successive_failures >= _threshold) {
       /* call handler */
       call_handler(dst);
       nfo->_notified = true;
     }
   }
-  click_gettimeofday(&nfo->_last_received);
   return p_in;
 }
 String
