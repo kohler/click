@@ -51,8 +51,8 @@ ProgressBar::initialize(ErrorHandler *errh)
     Vector<String> conf;
     configuration(conf);
     _interval = 1000;
+    _delay_ms = 0;
     _active = true;
-    _min_size = 0;
     String position_str, size_str;
 
     if (cp_va_parse(conf, this, errh,
@@ -63,17 +63,13 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
 		    "BANNER", cpString, "banner string", &_banner,
 		    "ACTIVE", cpBool, "start active?", &_active,
-#if HAVE_INT64_TYPES
-		    "MINSIZE", cpUnsigned64, "minimum interesting size", &_min_size,
-#else
-		    "MINSIZE", cpUnsigned, "minimum interesting size", &_min_size,
-#endif
+		    "DELAY", cpSecondsAsMilli, "display delay (s)", &_delay_ms,
 		    0) < 0)
 	return -1;
 
     Vector<String> words;
     cp_spacevec(size_str, words);
-    _first_pos = words.size();
+    _first_pos_h = words.size();
     cp_spacevec(position_str, words);
     _es.assign(words.size(), 0);
     _his.assign(words.size(), -1);
@@ -209,39 +205,40 @@ ProgressBar::run_scheduled()
 	return;
     
     // get size on first time through
-    if (_status == ST_FIRST) {
-	_have_size = get_value(0, _first_pos, &_size);
+    if (_status == ST_FIRST || _status == ST_FIRSTDONE) {
+	if (!_have_size)
+	    _have_size = get_value(0, _first_pos_h, &_size);
 	_last_pos = 0;
 	click_gettimeofday(&_start_time);
 	_last_time = _start_time;
 	timerclear(&_stall_time);
-	if (_have_size && _min_size && _size < _min_size) {
-	    _status = ST_NEVER;
-	    return;
-	}
+	struct timeval delay;
+	delay.tv_sec = _delay_ms / 1000;
+	delay.tv_usec = (_delay_ms % 1000) * 1000;
+	timeradd(&_start_time, &delay, &_delay_time);
+	if (_status == ST_FIRST)
+	    _status = ST_MIDDLE;
     }
 
     // exit if not in foreground
     if (!foregroundproc()) {
 	_timer.reschedule_after_ms(_interval);
-	if (_status == ST_FIRST)
-	    _status = ST_MIDDLE;
 	return;
     }
-
-    // start sa
-    StringAccum sa;
-    sa << "\r";
-    if (_banner)
-	sa << _banner << ' ';
-    
-    // get position
-    thermometer_t pos;
-    bool have_pos = get_value(_first_pos, _es.size(), &pos);
 
     // get current time
     struct timeval now;
     click_gettimeofday(&now);
+
+    // exit if wait time not passed
+    if (timercmp(&now, &_delay_time, <)) {
+	_timer.reschedule_at(_delay_time);
+	return;
+    }
+    
+    // get position
+    thermometer_t pos;
+    bool have_pos = get_value(_first_pos_h, _es.size(), &pos);
 
     // measure how far along we are
     int thermpos;
@@ -257,7 +254,11 @@ ProgressBar::run_scheduled()
     } else
 	thermpos = 100;
 
-    // print percentage
+    // start sa, print percentage
+    StringAccum sa;
+    sa << "\r";
+    if (_banner)
+	sa << _banner << ' ';
     if (have_pos && _have_size)
 	sa.snprintf(6, "%3d%% ", thermpos);
     else if (_have_size)
@@ -358,19 +359,17 @@ ProgressBar::run_scheduled()
 	_timer.reschedule_after_ms(_interval);
     else
 	_active = false;
-    if (_status == ST_FIRST)
-	_status = ST_MIDDLE;
 }
 
 void
 ProgressBar::complete(bool is_full)
 {
-    if (is_full) {
-	_have_size = true;
-	_size = _last_pos;
-    }
     if (_status < ST_DONE && _active) {
-	_status = ST_DONE;
+	if (is_full) {
+	    _have_size = true;
+	    (void) get_value(_first_pos_h, _es.size(), &_size);
+	}
+	_status = (_status == ST_FIRST ? ST_FIRSTDONE : ST_DONE);
 	_timer.unschedule();
 	run_scheduled();
     }
@@ -393,7 +392,7 @@ ProgressBar::read_handler(Element *e, void *thunk)
       case H_SIZEHANDLER: {
 	  bool is_pos = ((int)thunk == H_POSHANDLER);
 	  StringAccum sa;
-	  for (int i = (is_pos ? pb->_first_pos : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos); i++) {
+	  for (int i = (is_pos ? pb->_first_pos_h : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos_h); i++) {
 	      if (sa.length()) sa << ' ';
 	      sa << pb->router()->handler(pb->_his[i]).unparse_name(pb->_es[i]);
 	  }
@@ -423,8 +422,8 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  Vector<String> words;
 	  cp_spacevec(str, words);
 	  bool is_pos = ((int)thunk == H_POSHANDLER);
-	  int total = (is_pos ? pb->_first_pos + words.size() : pb->_es.size() - pb->_first_pos + words.size());
-	  int offset = (is_pos ? pb->_first_pos : 0);
+	  int total = (is_pos ? pb->_first_pos_h + words.size() : pb->_es.size() - pb->_first_pos_h + words.size());
+	  int offset = (is_pos ? pb->_first_pos_h : 0);
 	  
 	  Vector<Element *> es;
 	  Vector<int> his;
@@ -435,15 +434,15 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	      if (!cp_handler(words[i], pb, true, false, &es[i + offset], &his[i + offset], errh))
 		  return -1;
 
-	  offset = (is_pos ? 0 : words.size() - pb->_first_pos);
-	  for (int i = (is_pos ? 0 : pb->_first_pos); i < (is_pos ? pb->_first_pos : pb->_es.size()); i++)
+	  offset = (is_pos ? 0 : words.size() - pb->_first_pos_h);
+	  for (int i = (is_pos ? 0 : pb->_first_pos_h); i < (is_pos ? pb->_first_pos_h : pb->_es.size()); i++)
 	      es[i + offset] = pb->_es[i], his[i + offset] = pb->_his[i];
 	  
 	  es.swap(pb->_es);
 	  his.swap(pb->_his);
 	  if (!is_pos) {
 	      pb->_have_size = false;
-	      pb->_first_pos = words.size();
+	      pb->_first_pos_h = words.size();
 	  }
 	  return 0;
       }

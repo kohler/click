@@ -50,11 +50,11 @@ this frequency. Default is 1 second.
 Boolean. The progress bar will not initially display itself if this is false.
 Default is true.
 
-=item MINSIZE
+=item DELAY
 
-The minimum interesting size. If the total size returned by the SIZEHANDLERs
-is less than MINSIZE, then the progress bar will not be printed. Default is no
-minimum size.
+Time in seconds (millisecond precision). Don't print a progress bar until at
+least DELAY seconds have passed. Use this to avoid trivial progress bars (that
+is, progress bars that immediately go to 100%). Default is no delay.
 
 =back
 
@@ -143,25 +143,26 @@ class ProgressBar : public Element { public:
     typedef uint32_t thermometer_t;
 #endif
 
-    enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_NEVER };
+    enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_FIRSTDONE, ST_NEVER };
     
     bool _have_size;
     int _status;
     thermometer_t _size;
     thermometer_t _last_pos;
-    thermometer_t _min_size;
     struct timeval _start_time;
     struct timeval _stall_time;
     struct timeval _last_time;
+    struct timeval _delay_time;
     String _banner;
 
     Timer _timer;
     uint32_t _interval;
+    uint32_t _delay_ms;
     bool _active;
 
     Vector<Element *> _es;
     Vector<int> _his;
-    int _first_pos;
+    int _first_pos_h;
 
     bool get_value(int first, int last, thermometer_t *);
     
