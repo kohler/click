@@ -368,7 +368,7 @@ FromDump::check_force_ip(Packet *p)
 	  if (p->length() < sizeof(click_fddi)
 	      || (fh->fc & FDDI_FC_LLCMASK) != FDDI_FC_LLC_ASYNC)
 	      break;
-	  const click_fddi_snap *fsh = (const click_fddi_snap *)fsh;
+	  const click_fddi_snap *fsh = (const click_fddi_snap *)fh;
 	  if (p->length() < sizeof(*fsh) + sizeof(click_ip)
 	      || memcmp(&fsh->dsap, FDDI_SNAP_EXPECTED, FDDI_SNAP_EXPECTED_LEN) != 0
 	      || (fsh->ether_type != htons(ETHERTYPE_IP)
