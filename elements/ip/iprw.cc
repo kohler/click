@@ -22,8 +22,6 @@
 #include "straccum.hh"
 #include "error.hh"
 
-#include <limits.h>
-
 #ifdef CLICK_LINUXMODULE
 extern "C" {
 #include <asm/softirq.h>
@@ -176,7 +174,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
     } else
       sporth = sportl;
   }
-  if (sportl > sporth || sportl < 0 || sporth > USHRT_MAX)
+  if (sportl > sporth || sportl < 0 || sporth > 0xFFFF)
     return errh->error("source port(s) %d-%d out of range in pattern spec", sportl, sporth);
 
   if (words[2] == "-")
@@ -188,7 +186,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
     dport = 0;
   else if (!cp_integer(words[3], &dport))
     return errh->error("bad destination port `%s' in pattern spec", words[3].cc());
-  if (dport < 0 || dport > USHRT_MAX)
+  if (dport < 0 || dport > 0xFFFF)
     return errh->error("destination port %d out of range in pattern spec", dport);
 
   *pstore = new Pattern(saddr, sportl, sporth, daddr, dport);
