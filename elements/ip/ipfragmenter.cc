@@ -61,8 +61,10 @@ IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_parse(conf, this, errh,
 		    cpUnsigned, "MTU", &_mtu,
-		    cpOptional, 
+		    cpOptional,
 		    cpBool, "HONOR_DF", &_honor_df,
+		    cpKeywords,
+		    "HONOR_DF", cpBool, "honor DF bit?", &_honor_df,
 		    0) < 0)
 	return -1;
     if (_mtu < 8)
