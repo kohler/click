@@ -32,7 +32,7 @@ static Clp_Option options[] = {
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
   { "elements", 'e', ELEMENT_OPT, Clp_ArgString, 0 },
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "file", 'f', ROUTER_OPT, Clp_ArgString, Clp_Negate },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
   { "linuxmodule", 0, KERNEL_OPT, 0, 0 },
@@ -79,6 +79,7 @@ Options:\n\
                             for the relevant driver. Default is `.'.\n\
   -e, --elements ELTS       Include element classes ELTS.\n\
   -A, --align               Include element classes required by click-align.\n\
+      --no-file             Don't read a configuration from standard input.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
@@ -313,6 +314,7 @@ main(int argc, char **argv)
   String specifier = "f";
   const char *package_name = 0;
   String directory;
+  bool need_file = true;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -369,7 +371,10 @@ particular purpose.\n");
       
      case Clp_NotOption:
      case ROUTER_OPT:
-      router_filenames.push_back(specifier + clp->arg);
+      if (clp->negated)
+	need_file = false;
+      else
+	router_filenames.push_back(specifier + clp->arg);
       break;
 
      case Clp_BadOption:
@@ -386,7 +391,7 @@ particular purpose.\n");
  done:
   if (driver < 0)
     driver = Driver::USERLEVEL;
-  if (!router_filenames.size() && !elements.size())
+  if (!router_filenames.size() && need_file)
     router_filenames.push_back(specifier + "-");
   if (!package_name)
     errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
