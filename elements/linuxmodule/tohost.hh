@@ -20,7 +20,8 @@
  * =a ToDevice
  */
 
-class ToLinux : public Element { public:
+class ToLinux : public Element {
+ public:
   
   ToLinux();
   ~ToLinux();

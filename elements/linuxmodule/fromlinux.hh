@@ -50,7 +50,7 @@ class FromLinux : public AnyDevice {
 
   enum { FROMLINUX_CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT,
 	 TODEVICE_CONFIGURE_PHASE };
-  
+    
   FromLinux();
   ~FromLinux();
 

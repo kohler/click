@@ -128,7 +128,7 @@ ARPQuerier::expire_hook(unsigned long thunk)
       if (e->ok) {
 	int gap = jiff - e->last_response_jiffies;
 	if (gap > 120*CLICK_HZ) {
-	  click_chatter("ARPQuerier timing out %x", e->ip.addr());
+	  // click_chatter("ARPQuerier timing out %x", e->ip.addr());
 	  // delete entry from map
 	  if (prev) prev->next = e->next;
 	  else arpq->_map[i] = e->next;
