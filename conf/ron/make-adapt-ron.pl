@@ -213,7 +213,7 @@ for ($i=2; $i<$neigh+2; $i++) {
 print "\n";
 
 print "// Direct rewrite pattern\n";
-print "iprw[0] -> Queue(50) -> DelayShaper(2000) -> Unqueue -> IPPrint(IPRewritten0) -> setgw;\n";
+print "iprw[0] -> Queue(50) -> DelayShaper(1) -> Unqueue -> IPPrint(IPRewritten0) -> setgw;\n";
 print "iprw[1] -> IPPrint(IPRewritten1) -> GetIPAddress(16) -> [1]routingtable;\n\n";
 
 for ($i=1; $i<$neigh+1; $i++) {
