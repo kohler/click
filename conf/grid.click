@@ -66,12 +66,15 @@ rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
 rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
+ai :: AiroInfo(GRID_NET_DEVICE);
+lt :: LinkTracker(LINK_TRACKER_TAU);
+
 nb :: DSDVRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER, BROADCAST_MIN_PERIOD,
 		     GRID_MAC_ADDR, GRID_IP, 
-		     ggi, 
-                     lt,
-                     ls,
+		     GW ggi, 
+                     LT lt,
+                     LS ls,
 		     MAX_HOPS NUM_HOPS,
                      METRIC est_tx_count,
                      LOG gl);
@@ -96,25 +99,12 @@ rph [0] -> PrintGrid("rph0 ") -> [0] lr;     // forward probes that need to cont
 rph [1] -> PrintGrid("rph1 ") -> grid_demux; // insert probe replies into grid demux so we can get our own reply
 
 
-// input processing
-
-ai :: AiroInfo(GRID_NET_DEVICE);
+// device layer els
 
 from_grid_if :: FromDevice(GRID_NET_DEVICE, 0);
-  -> Paint(0) // replace with interface number, e.g. 0, 1, 2, etc.
-  -> Classifier(12/GRID_ETH_PROTO)
-  -> HostEtherFilter(GRID_MAC_ADDR, 1)
-  -> check_grid :: CheckGridHeader
-  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
-  -> ls :: LinkStat(ai, LINK_STAT_WINDOW)
-  -> lt :: LinkTracker(LINK_TRACKER_TAU)
-  -> grid_demux;
+to_grid_if :: TTLChecker;
 
-
-// output processing
-
-to_grid_if :: TTLChecker [0]
-               -> FixSrcLoc(li)
+to_grid_if [0] -> FixSrcLoc(li)
                -> PingPong(ls)
                -> SetGridChecksum
 	       -> ToDevice(GRID_NET_DEVICE, SET_ERROR_ANNO true) 
@@ -126,11 +116,25 @@ tun0 :: KernelTap(GRID_IP/GRID_NETMASK, 1.2.3.4, TUN_INPUT_HEADROOM)
 to_tun0 :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) 
         -> tun0;
 
-
-// input demuxes
+from_grid_if 
+  -> Classifier(12/GRID_ETH_PROTO)
+  -> HostEtherFilter(GRID_MAC_ADDR, 1)
+  -> check_grid :: CheckGridHeader
+//  -> PrintGrid("XXX")
+  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
+//  -> PrintGrid("post_fr")
+  -> ls :: LinkStat(ai, LINK_STAT_WINDOW)
+//  -> PrintGrid("post_ls")
+  -> lt
+//  -> PrintGrid("post_lt")
+//  -> Print("post_lt", 80)
+  -> grid_demux;
 
 grid_demux [0]
+//	       -> PrintGrid("gd0 ")
+//               -> Print("gd0", 80)
                -> Align(4, 2)
+//               -> Print("after_gd0_align")
 	       -> [0] lr;
 
 grid_demux [1]
