@@ -332,7 +332,7 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 		  off = 0;
 		  len = p->length();
 	      }
-	      String s = String::stable_string((const char *)(p->data() + off), len - off);
+	      String s = String::stable_string((const char *)(p->data() + off), len);
 	      sa << cp_quote(s);
 	      break;
 	  }

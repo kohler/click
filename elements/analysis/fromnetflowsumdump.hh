@@ -19,8 +19,8 @@ summary format described below, then creates packets containing info from the
 descriptors and pushes them out the output. Optionally stops the driver when
 there are no more packets.
 
-FILE may be compressed with gzip(1) or bzip2(1); FromIPSummaryDump will run
-zcat(1) or bzcat(1) to uncompress it.
+FILE may be compressed with gzip(1) or bzip2(1); FromNetFlowSummaryDump will
+run zcat(1) or bzcat(1) to uncompress it.
 
 Keyword arguments are:
 
@@ -28,13 +28,13 @@ Keyword arguments are:
 
 =item STOP
 
-Boolean. If true, then FromIPSummaryDump will ask the router to stop when it
-is done reading. Default is false.
+Boolean. If true, then FromNetFlowSummaryDump will ask the router to stop when
+it is done reading. Default is false.
 
 =item ACTIVE
 
-Boolean. If false, then FromIPSummaryDump will not emit packets (until the
-`C<active>' handler is written). Default is true.
+Boolean. If false, then FromNetFlowSummaryDump will not emit packets (until
+the `C<active>' handler is written). Default is true.
 
 =item ZERO
 
