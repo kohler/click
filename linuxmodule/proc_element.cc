@@ -34,7 +34,6 @@ static String *handler_strings = 0;
 static int *handler_strings_next = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-
 static spinlock_t handler_strings_spinlock;
 
 
