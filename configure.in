@@ -127,25 +127,26 @@ AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
   linuxdir=NONE)
 
-if test $linuxdir = NONE; then
+if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
   if test -d /usr/src/linux; then
     linuxdir=/usr/src/linux
-  else
+  elif test "x$enable_linuxmodule" = xyes; then
     AC_MSG_WARN([can't find /usr/src/linux; not compiling for Linux
   (or try the --with-linux=DIR option)])
   fi
 fi
 
-ac_have_linux_kernel=n
-if test $linuxdir != NONE -a $linuxdir != no -a $enable_linuxmodule = yes; then
-  if test -r $linuxdir/include/linux/skbuff.h; then
-    ac_have_linux_kernel=y
-  else
-    AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
+if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
+  ac_have_linux_kernel=n
+  linuxdir=NONE
+elif test -r $linuxdir/include/linux/skbuff.h; then
+  ac_have_linux_kernel=y
+else
+  AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
   are you sure $linuxdir holds the Linux source code?])
-  fi
 fi
 AC_SUBST(linuxdir)
+AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_COMPILE([], [#ifndef __linux__
@@ -674,14 +675,6 @@ AC_SUBST(TEXI2DVI)
 AC_SUBST(INSTALL_INFO)
 
 dnl
-dnl Expand 'infodir' to check for Red Hat
-dnl
-
-if test x$infodir = 'x${prefix}/info'; then
-  test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
-fi
-
-dnl
 dnl Set path variables
 dnl
 
@@ -694,6 +687,11 @@ shell_expand () {
 dnl Preset $prefix and $exec_prefix.
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+dnl Expand 'infodir' to check for Red Hat
+if test x$infodir = 'x${prefix}/info'; then
+  test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
+fi
 
 shell_expand bindir
 shell_expand libdir
@@ -724,7 +722,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/samplepackage/Makefile"
+config_files="Makefile click-compile tools/Makefile tools/lib/Makefile doc/Makefile"
 for ac_dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $ac_dir/Makefile"
 done

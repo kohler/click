@@ -1,14 +1,17 @@
-/* Process this file with configure to produce pathvars.h */
+/* Process this file with configure to produce pathvars.h. -*- mode: c -*- */
 #ifndef CLICK_PATHVARS_H
 #define CLICK_PATHVARS_H
 
-/* Directory for binaries */
+/* Directory for binaries. */
 #undef CLICK_BINDIR
 
-/* Directory for packages and kernel module */
+/* Directory for packages and kernel module. */
 #undef CLICK_LIBDIR
 
-/* Directory for shared files */
+/* Directory for shared files. */
 #undef CLICK_SHAREDIR
+
+/* Directory containing Linux sources. */
+#undef LINUX_SRCDIR
 
 #endif
