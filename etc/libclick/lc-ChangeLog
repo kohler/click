@@ -1,3 +1,15 @@
+2002-07-31 Wednesday 21:51  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: more
+	change_headroom_and_length fixes
+
+2002-07-31 Wednesday 21:17  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh, packet.hh, packet.hh: get
+	rid of change_headroom_and_length in favor of shrink_data, to avoid
+	expensive uniqueify()s when there's a lot of CRAP in the headroom.
+	Vern reported a problem with ipsumdump
+
 2002-07-31 Wednesday 20:27  Eddie Kohler <kohler@icir.org>
 
 	* include/click/handlercall.hh, include/click/handlercall.hh,

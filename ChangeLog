@@ -1,8 +1,40 @@
+2002-07-31 Wednesday 21:58  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromflandump.cc (1.5): nitlet
+
+2002-07-31 Wednesday 21:56  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/fromdevice.cc (1.44): avoid warning
+
+2002-07-31 Wednesday 21:50  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/fromdevice.cc (1.43), include/click/packet.hh
+	(1.38): more change_headroom_and_length fixes
+
+2002-07-31 Wednesday 21:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromdagdump.cc (1.9): FromDAGDump uses
+	shrink_packet
+
+2002-07-31 Wednesday 21:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/fromdump.cc (1.68), include/click/packet.hh
+	(1.36), include/click/packet.hh (1.37): get rid of
+	change_headroom_and_length in favor of shrink_data, to avoid
+	expensive uniqueify()s when there's a lot of CRAP in the headroom.
+	Vern reported a problem with ipsumdump
+
+2002-07-31 Wednesday 20:44  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: timestampaccum.cc (1.1), timestampaccum.hh
+	(1.1): add TimestampAccum element
+
 2002-07-31 Wednesday 20:35  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/: cyclecountaccum.cc (1.8),
 	cyclecountaccum.hh (1.8), perfcountaccum.cc (1.11),
-	perfcountaccum.hh (1.6): handlers are named "count" for consistency
+	perfcountaccum.hh (1.6), cyclecountaccum.hh (1.9),
+	perfcountaccum.hh (1.7): handlers are named "count" for consistency
 	(was "packets")
 
 2002-07-31 Wednesday 20:27  Eddie Kohler <kohler@icir.org>
