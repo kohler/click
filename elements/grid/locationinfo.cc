@@ -19,8 +19,15 @@
 #include "router.hh"
 #include "error.hh"
 
-LocationInfo::LocationInfo() : _loc(32.2816, -64.7685) // my house in bermuda -- doug
+LocationInfo::LocationInfo()
 {
+  _move = 0;
+  _lat0 = 32.2816;  // Doug's house in Vermuda.
+  _lon0 = -64.7685;
+  _t0 = 0;
+  _t1 = 0;
+  _vlat = 0;
+  _vlon = 0;
 }
 
 LocationInfo::~LocationInfo()
@@ -30,11 +37,14 @@ LocationInfo::~LocationInfo()
 int
 LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
+  bool do_move = false;
   int lat_int, lon_int;
   int res = cp_va_parse(conf, this, errh,
 			// 5 fractional digits ~= 1 metre precision
 			cpReal, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal, "longitude (decimal degrees)", 5, &lon_int,
+                        cpOptional,
+                        cpBool, "move?", &do_move,
 			0);
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
@@ -43,7 +53,9 @@ LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   if (lon > 180 || lon < -180)
     return errh->error("%s: longitude must be between +/- 180 degrees", id().cc());
 
-  _loc.set(lat, lon);
+  _lat0 = lat;
+  _lon0 = lon;
+  _move = do_move;
 
   return res;
 }
@@ -51,6 +63,64 @@ int
 LocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return read_args(conf, errh);
+}
+
+double
+LocationInfo::now()
+{
+  struct timeval tv;
+  double t;
+
+  click_gettimeofday(&tv);
+  t = tv.tv_sec + (tv.tv_usec / 1000000.0);
+  return(t);
+}
+
+double
+LocationInfo::xlat()
+{
+  if(_move){
+    return(_lat0 + _vlat * (now() - _t0));
+  } else {
+    return(_lat0);
+  }
+}
+
+double
+LocationInfo::xlon()
+{
+  if(_move){
+    return(_lon0 + _vlon * (now() - _t0));
+  } else {
+    return(_lon0);
+  }
+}
+
+double
+LocationInfo::uniform()
+{
+  double x;
+        
+  x = (double)random() / 0x7fffffff;
+  return(x);
+}
+
+grid_location
+LocationInfo::get_current_location()
+{
+  double t = now();
+
+  if(_move && t >= _t1){
+    _lat0 = xlat();
+    _lon0 = xlon();
+    _t0 = t;
+    _t1 = _t0 + 10 * uniform();
+    _vlat = uniform() * 0.0002;
+    _vlon = uniform() * 0.0002;
+  }
+
+  grid_location gl(xlat(), xlon());
+  return(gl);
 }
 
 static String

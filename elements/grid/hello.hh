@@ -12,6 +12,8 @@
  * than 0, JITTER must be positive and less than JITTER.  Produces
  * Grid packets with MAC headers.
  *
+ * FixSrcLoc puts the node's position into the packet.
+ *
  * =e
  * Hello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115) -> ? -> ToDevice(eth0)
  *
