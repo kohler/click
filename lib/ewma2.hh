@@ -5,8 +5,8 @@
 /*
  * Exponential Weighted Moving Average: unlike EWMA, EWMA2 class uses long
  * long type and has a METER SCALE of 30. This implies that the stability
- * factor, which correlates to time period of the average, can be larger as
- * well. Time periods are measured in seconds.
+ * factor, which correlates to time period of the average, can be in order or
+ * minutes, and values kept track can be large (e.g. bytes/second).
  *
  * The formula to compute EWMA time period is 
  *
@@ -30,15 +30,12 @@
  * The smaller the time period, the more accurate EWMA2 can be.
  */
 
-typedef long long quad_t;
-
 class EWMA2 {
   
   int _now_jiffies;
-  
-  quad_t _now;
-  quad_t _avg;
   int _stability_shift;
+  long long _now;
+  long long _avg;
 
   static const int METER_SCALE = 30;
   static const int FRAC_BITS   = 10;
@@ -48,8 +45,6 @@ class EWMA2 {
   inline void update_now(int delta)	{ _now += delta; }
   
  public:
-
-  EWMA2() {}
 
   int average() const	{ return (int) (_avg >> (METER_SCALE-FRAC_BITS)); }
   int stability_shift() const 		{ return _stability_shift; }
@@ -66,7 +61,7 @@ EWMA2::update_time()
   int jj = _now_jiffies;
   if (j != jj) {
     // adjust the average rate using the last measured packets
-    quad_t now_scaled = _now << METER_SCALE;
+    long long now_scaled = _now << METER_SCALE;
     int compensation = 1 << (_stability_shift - 1); // round off
     _avg += (now_scaled - _avg + compensation) >> _stability_shift;
 
