@@ -1,3 +1,8 @@
+2001-10-09 Tuesday 11:57  Eddie Kohler <kohler@aciri.org>
+
+	* lib/glue.cc (1.27): use nonblocking I/O to read /dev/random in
+	click_random_srandom()
+
 2001-10-09 Tuesday 03:54  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: fromdevice.cc (1.34), fromdevice.hh (1.18):
