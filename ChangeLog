@@ -1,3 +1,15 @@
+2003-06-23 Monday 23:02  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/massage-vnode_if.pl (1.2), conf/make-ip-conf.pl (1.22),
+	conf/make-udpcount.pl (1.6), conf/make-udpgen.pl (1.10),
+	doc/click-elem2man (1.24), doc/mkwebdoc.pl (1.42),
+	etc/make-bsd-patch (1.4), etc/make-linux-patch (1.4),
+	etc/make-linux24-patch (1.3), test/testie (1.15),
+	tools/build-grid-config.sh (1.13), tools/click-viz (1.3),
+	tools/make-linux-patch (1.2), tools/run-grid (1.20),
+	click-buildtool (1.43), click-compile.in (1.23), click-mkelemmap
+	(1.24), install-sh (1.2), missing (1.10): shell script nits
+
 2003-06-23 Monday 21:55  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: wifiqueue.cc (1.1), wifiqueue.hh (1.1): WifiQueue
