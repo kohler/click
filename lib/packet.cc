@@ -21,7 +21,6 @@
 #include <click/packet.hh>
 #include <click/glue.hh>
 #ifdef CLICK_USERLEVEL
-#include <stdarg.h>
 #include <unistd.h>
 #endif
 #include <assert.h>
