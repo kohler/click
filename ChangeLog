@@ -1,3 +1,15 @@
+2002-05-22 Wednesday 14:59  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.59), elements/aqm/pi.cc (1.6), elements/aqm/red.cc
+	(1.40), elements/bsdmodule/fromdevice.cc (1.13),
+	elements/bsdmodule/fromdevice.hh (1.10),
+	elements/linuxmodule/fromdevice.cc (1.71),
+	elements/linuxmodule/fromdevice.hh (1.33),
+	elements/standard/queue.hh (1.31), etc/libclick/DISTFILES (1.14),
+	include/click/standard/storage.hh (1.1): add storage.hh in
+	<click/standard/> (so Storage is always available); use it instead
+	of "elements/standard/queue.hh"
+
 2002-05-22 Wednesday 13:53  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/ipreassembler.cc (1.13): CLICK_HZ oops

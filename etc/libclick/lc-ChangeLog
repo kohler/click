@@ -1,3 +1,9 @@
+2002-05-22 Wednesday 14:59  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/: storage.hh, storage.hh, storage.hh: add
+	storage.hh in <click/standard/> (so Storage is always available);
+	use it instead of "libsrc/queue.hh"
+
 2002-05-21 Tuesday 22:28  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_ether.h, click_ether.h, click_icmp.h,
