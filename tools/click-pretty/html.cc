@@ -99,27 +99,6 @@ html_unquote(const char *x, const char *end)
 
 // tag processing
 
-static const char *
-skip_comment(const char *x)
-{
-    while (1) {
-	if (!*x)
-	    return x;
-	else if (*x == '>')
-	    return x + 1;
-	else if (x[0] == '-' && x[1] == '-') {
-	    for (x += 2; *x && (x[0] != '-' || x[1] != '-'); x++)
-		/* nada */;
-	    if (*x)		// skip whitespace after comment
-		for (x += 2; isspace(*x); x++)
-		    /* nada */;
-	} else {		// should not happen
-	    for (x++; *x && (x[0] != '-' || x[1] != '-') && *x != '>'; x++)
-		/* nada */;
-	}
-    }
-}
-
 const char *
 process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 	    bool &ended, bool unquote_value = true)
@@ -197,54 +176,24 @@ process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 }
 
 const char *
-output_main_template_until_tag(const char *templ, FILE *outf,
-			       String &tag, HashMap<String, String> &attrs,
-			       bool &ended)
-{
-    // skip to next directive
-    const char *x = templ;
-    int q;
-    while (*x) {
-	if (x[0] == '<' && x[1] == '!') {
-	    if (memcmp(x + 2, "-- click-pretty:", 16) == 0) {
-		fwrite(templ, 1, x - templ, outf);
-		return process_tag(x + 18, tag, attrs, ended, false);
-	    } else
-		x = skip_comment(x + 2);
-	} else if (x[0] == '<') {
-	    for (x++; *x && *x != '>'; x++)
-		if (*x == '\'' || *x == '\"') {
-		    for (x++, q = *x; *x && *x != q; x++)
-			/* nada */;
-		    x--;
-		}
-	} else
-	    x++;
-    }
-
-    fwrite(templ, 1, x - templ, outf);
-    tag = String();
-    return 0;
-}
-
-const char *
-output_subtemplate_until_tag(const char *templ, StringAccum &sa,
-			     String &tag, HashMap<String, String> &attrs,
-			     bool &ended, String *sep = 0)
+output_template_until_tag(const char *templ, StringAccum &sa,
+			  String &tag, HashMap<String, String> &attrs,
+			  bool unquote = true, String *sep = 0)
 {
     // skip to next directive
     tag = String();
     attrs.clear();
+    bool ended;
     
     const char *x = templ;
     while (*x) {
-	if (x[0] == '<' && x[1] == '?') {
+	if (x[0] == '<' && x[1] == '~') {
 	    if (sep && x > templ) {
 		sa << *sep;
 		*sep = String();
 	    }
 	    sa.append(templ, x - templ);
-	    return process_tag(x + 2, tag, attrs, ended);
+	    return process_tag(x + 2, tag, attrs, ended, unquote);
 	} else
 	    x++;
     }
@@ -255,4 +204,15 @@ output_subtemplate_until_tag(const char *templ, StringAccum &sa,
     }
     sa.append(templ, x - templ);
     return 0;
+}
+
+const char *
+output_template_until_tag(const char *templ, FILE *outf,
+			  String &tag, HashMap<String, String> &attrs,
+			  bool unquote = true, String *sep = 0)
+{
+    StringAccum sa;
+    templ = output_template_until_tag(templ, outf, tag, attrs, unquote, sep);
+    fputs(sa.cc(), outf);
+    return templ;
 }

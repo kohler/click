@@ -1,0 +1,269 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-PRETTY 1 "3/Jan/2002" "Version \*V"
+.SH NAME
+click-pretty \- turns Click configurations into HTML
+'
+.SH SYNOPSIS
+.B click-pretty
+.RI \%[ options ]
+.RI \%[ router\-file ]
+.RI "> " output\-file
+'
+.SH DESCRIPTION
+The
+.B click-pretty
+tool pretty-prints Click configurations into HTML files, including syntax
+highlighting and optional indexes.
+.B Click-pretty
+reads a router configuration and, optionally, an HTML-like template file,
+replaces special tags in the template with HTML code derived from the
+configuration, and writes the result to the standard output.
+.PP
+Special HTML-like tags that start with a tilde "~" control 
+.BR click-pretty 's
+operation.
+'
+.SH "THE ELEMENTS TAG"
+'
+.PP
+The
+.B "<~elements>"
+tag renders an alphabetical list of the elements and/or element classes
+used by the router configuration. The tag's
+.B entry
+attribute determines how elements are rendered;
+.B typeentry
+does the same for classes. The text of these attributes may contain to
+additional tags, like
+.BR <~name> ,
+.BR <~type> ,
+and
+.BR <~inputs> ,
+that expand to information about the relevant element or type. For example,
+this
+.B <~elements>
+tag expands to a comma-separated list of the configuration's elements:
+.Es
+<~elements entry="<~name>" sep=", ">
+.Ee
+This one expands to an unordered list of declarations, with element names
+and type names linked to relevant declarations in the configuration:
+.Es
+<ul>
+<~elements entry="<li><~name link> :: <~type link></li>">
+</ul>
+.Ee
+'
+.SS "Attributes"
+.TP 5
+.BR entry =\fItext
+Sets the text used for each element in the configuration. If this attribute
+is absent, the
+.B <~element>
+tag's expansion will not mention elements.
+'
+.TP 5
+.BR typeentry =\fItext
+Sets the text used for each element type used by the configuration. If this
+attribute is absent, the
+.B <~element>
+tag's expansion will not mention element types.
+'
+.TP 5
+.BR sep =\fItext
+Sets the text used to separate entries in the expansion.
+'
+.TP 5
+.BR column =\fIwhich\fR/\fIcount
+If present,
+.I count
+should be a number greater than 1, and
+.I which
+should be between 1 and
+.IR count .
+The
+.B <~element>
+tag is expanded, then broken into
+.I count
+columns at entry boundaries. Only the
+.IR which th
+column is printed.
+'
+.TP 5
+.BR configlink =\fItext
+See the
+.B <~configlink>
+subtag below.
+'
+.TP 5
+.BR typeref =\fItext
+See the
+.B <~typerefs>
+subtag below.
+'
+.TP 5
+.BR inputentry "=\fItext\fR, " noinputentry "=\fItext\fR"
+See the
+.B <~inputs>
+subtag below.
+'
+.TP 5
+.BR outputentry "=\fItext\fR, " nooutputentry "=\fItext\fR"
+See the
+.B <~outputs>
+subtag below.
+'
+.TP 5
+.BR inputconnection "=\fItext\fR, " noinputconnection "=\fItext\fR"
+See the
+.B <~inputconnections>
+subtag below.
+'
+.TP 5
+.BR outputconnection "=\fItext\fR, " nooutputconnection "=\fItext\fR"
+See the
+.B <~outputconnections>
+subtag below.
+'
+.PD
+'
+.SS "Subtags"
+.TP 5
+.BR "<~name [link" "=\fIlink\fR" "]>"
+Expands to the current element's name. When the
+.B link
+attribute is present, the name is contained in a link pointing at the
+declaration site within the router configuration or, when
+.I link
+equals "type", the element class's Web documentation.
+'
+.TP 5
+.BR "<~type [link]>"
+Expands to the current element type's name, or the current element's
+type-name. When the
+.B link
+attribute is present, the name is contained in a link pointing at the
+the element class's Web documentation.
+'
+.TP 5
+.BR "<~config [limit" "=\fIlimit" "] [parens]>"
+Element-only. Expands to the current element's configuration string. The
+result contains at most \fIlimit\fR characters; when \fIlimit\fR is too
+short, Click will append an ellipsis. If
+.B parens
+was supplied, any non-empty configuration string is enclosed in
+parentheses.
+'
+.TP 5
+.BR "<~typerefs [sep" "=\fISEP" "]>"
+Foo.
+'
+.TP 5
+.BR "<~ninputs [english]>"
+Foo.
+'
+.TP 5
+.BR "<~outputs [english]>"
+Foo.
+'
+.TP 5
+.BR "<~inputs [sep" "=\fITEXT\fR" "]>"
+Foo.
+'
+.TP 5
+.BR "<~outputs [sep" "=\fITEXT\fR" "]>"
+Foo.
+.PD
+'
+.SS "Port-Specific Subtags"
+.TP 5
+.BR "<~inputconnections [sep" "=\fISEP\fR" "]>"
+Foo.
+'
+.TP 5
+.BR "<~outputconnections [sep" "=\fISEP\fR" "]>"
+Foo.
+'
+.TP 5
+.BR "<~port>"
+Foo.
+.PD
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-align
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 5 ,
+.M Align n ,
+.M AlignmentInfo n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, kohler@icir.org
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

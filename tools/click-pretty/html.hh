@@ -12,13 +12,12 @@ String html_unquote(const char *x, const char *end);
 const char *process_tag(const char *x, String &tag,
 	HashMap<String, String> &attr, bool &ended, bool unquote_value = true);
 
-const char *output_main_template_until_tag
+const char *output_template_until_tag
 	(const char *templ, FILE *outf, String &tag,
-	 HashMap<String, String> &attrs, bool &ended);
-const char *output_subtemplate_until_tag
+	 HashMap<String, String> &attrs, bool unquote = true, String *sep = 0);
+const char *output_template_until_tag
 	(const char *templ, StringAccum &sa, String &tag,
-	 HashMap<String, String> &attrs, bool &ended,
-	 String *sep = 0);
+	 HashMap<String, String> &attrs, bool unquote = true, String *sep = 0);
 
 
 inline String

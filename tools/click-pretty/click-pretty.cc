@@ -48,10 +48,12 @@
 #define CLASS_URLS_OPT		305
 #define TEMPLATE_OPT		306
 #define WRITE_TEMPLATE_OPT	307
+#define DEFINE_OPT		308
 
 static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "class-urls", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
+    { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
@@ -62,6 +64,7 @@ static Clp_Option options[] = {
 
 static String::Initializer string_initializer;
 static const char *program_name;
+static HashMap<String, String> definitions;
 
 static const char *default_template = "\
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\
@@ -107,21 +110,21 @@ TABLE.conntable {\n\
 --></style>\n\
 <body>\n\
 <h1>Configuration</h1>\n\
-<!-- click-pretty:config /-->\n\
+<~config>\n\
 <h1><a name='index'>Element index</a></h1>\n\
 <table cellspacing='0' cellpadding='0' border='0'>\n\
 <tr valign='top'>\n\
-<td><!-- click-pretty:elements\n\
-  entry='<p class=\"ei\"><b><?name></b> :: <?type link> - <?configlink sep=\", \"><a href=\"#et-<?name>\"><i>table</i></a></p>'\n\
-  typeentry='<p class=\"eit\"><b><?type link></b> (type)<br><i>see</i> <?typerefs sep=\", \"></p>'\n\
-  typeref='<?name>'\n\
+<td><~elements\n\
+  entry='<p class=\"ei\"><b><~name></b> :: <~type link> - <~configlink sep=\", \"><a href=\"#et-<~name>\"><i>table</i></a></p>'\n\
+  typeentry='<p class=\"eit\"><b><~type link></b> (type)<br><i>see</i> <~typerefs sep=\", \"></p>'\n\
+  typeref='<~name>'\n\
   configlink='<i>config</i>'\n\
   column='1/2' /--></td>\n\
 <td width='15'>&nbsp;</td>\n\
-<td><!-- click-pretty:elements\n\
-  entry='<p class=\"ei\"><b><?name></b> :: <?type link> - <?configlink sep=\", \"><a href=\"#et-<?name>\"><i>table</i></a></p>'\n\
-  typeentry='<p class=\"eit\"><b><?type link></b> (type)<br><i>see</i> <?typerefs sep=\", \"></p>'\n\
-  typeref='<?name>'\n\
+<td><~elements\n\
+  entry='<p class=\"ei\"><b><~name></b> :: <~type link> - <~configlink sep=\", \"><a href=\"#et-<~name>\"><i>table</i></a></p>'\n\
+  typeentry='<p class=\"eit\"><b><~type link></b> (type)<br><i>see</i> <~typerefs sep=\", \"></p>'\n\
+  typeref='<~name>'\n\
   configlink='<i>config</i>'\n\
   column='2/2' /--></td>\n\
 </tr>\n\
@@ -129,41 +132,41 @@ TABLE.conntable {\n\
 <h1><a name='tables'>Element tables</a></h1>\n\
 <table cellspacing='0' cellpadding='0' border='0'>\n\
 <tr valign='top'>\n\
-<td><!-- click-pretty:elements\n\
+<td><~elements\n\
   entry='<table cellspacing=\"0\" cellpadding=\"2\" border=\"0\">\n\
-    <tr valign=\"top\"><td colspan=\"2\"><p class=\"et\"><a name=\"et-<?name>\"><b><?name></b></a> :: <?type link> <?configlink></p></td></tr>\n\
+    <tr valign=\"top\"><td colspan=\"2\"><p class=\"et\"><a name=\"et-<~name>\"><b><~name></b></a> :: <~type link> <~configlink></p></td></tr>\n\
     <tr valign=\"top\"><td width=\"20\">&nbsp;</td>\n\
        <td><table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" class=\"conntable\">\n\
-         <?inputs><?outputs>\n\
+         <~inputs><~outputs>\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><?port></td><td>&nbsp;&lt;-&nbsp;</td><td><?inputconnections sep=\", \"></td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
   noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><?port></td><td>&nbsp;-&gt;&nbsp;</td><td><?outputconnections sep=\", \"></td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
   nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
-  inputconnection='<a href=\"#et-<?name>\"><?name></a>&nbsp;[<?port>]'\n\
-  outputconnection='[<?port>]&nbsp;<a href=\"#et-<?name>\"><?name></a>'\n\
+  inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
+  outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
   noinputconnection='not connected'\n\
   nooutputconnection='not connected'\n\
   column='1/2'\n\
   /-->\n\
 </td><td width='20'>&nbsp;</td>\n\
-<td><!-- click-pretty:elements\n\
+<td><~elements\n\
   entry='<table cellspacing=\"0\" cellpadding=\"2\" border=\"0\">\n\
-    <tr valign=\"top\"><td colspan=\"2\"><p class=\"et\"><a name=\"et-<?name>\"><b><?name></b></a> :: <?type link> <?configlink></p></td></tr>\n\
+    <tr valign=\"top\"><td colspan=\"2\"><p class=\"et\"><a name=\"et-<~name>\"><b><~name></b></a> :: <~type link> <~configlink></p></td></tr>\n\
     <tr valign=\"top\"><td width=\"20\">&nbsp;</td>\n\
        <td><table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" class=\"conntable\">\n\
-         <?inputs><?outputs>\n\
+         <~inputs><~outputs>\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><?port></td><td>&nbsp;&lt;-&nbsp;</td><td><?inputconnections sep=\", \"></td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
   noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><?port></td><td>&nbsp;-&gt;&nbsp;</td><td><?outputconnections sep=\", \"></td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
   nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
-  inputconnection='<a href=\"#et-<?name>\"><?name></a>&nbsp;[<?port>]'\n\
-  outputconnection='[<?port>]&nbsp;<a href=\"#et-<?name>\"><?name></a>'\n\
+  inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
+  outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
   noinputconnection='not connected'\n\
   nooutputconnection='not connected'\n\
   column='2/2'\n\
@@ -658,11 +661,10 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
     
     String tag;
     HashMap<String, String> attrs;
-    bool ended;
     const char *templ = templ_str.cc();
 
     while (templ) {
-	templ = output_subtemplate_until_tag(templ, _sa, tag, attrs, ended, &_sep);
+	templ = output_template_until_tag(templ, _sa, tag, attrs, true, &_sep);
 
 	String next_sep;
 	if (tag == "name") {
@@ -681,11 +683,24 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 		_sa << _sep << "<a href='" << href << "'>" << t->name() << "</a>";
 	    else
 		_sa << _sep << t->name();
-	} else if (tag == "typerefs" && is_type) {
+	} else if (tag == "config" && !is_type) {
+	    int limit = 0;
+	    if (attrs["limit"])
+		cp_integer(html_unquote(attrs["limit"]), &limit);
+	    String config = e->configuration();
+	    if (limit && config.length() > limit)
+		config = config.substring(0, limit) + "...";
+	    if (config && attrs["parens"])
+		_sa << _sep << '(' << html_quote_attr(config) << ')';
+	    else if (config)
+		_sa << _sep << html_quote_attr(config);
+	    else
+		next_sep = _sep;
+	} else if (tag == "typerefs") {
 	    String subsep = attrs["sep"];
 	    String text = _main_attrs["typeref"];
 	    for (int i = 0; i < _elements.size(); i++)
-		if (_elements[i]->type() == t && _elements[i] != e) {
+		if (_elements[i]->type() == t && _elements[i]->landmark() != type_landmark) {
 		    run_template(text, _elements[i], -1);
 		    _sep = subsep;
 		}
@@ -758,6 +773,9 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	    }
 	} else if (tag == "port" && port >= 0) {
 	    _sa << _sep << port;
+	} else if (definitions[tag]) {
+	    String text = definitions[tag];
+	    run_template(text, e, port);
 	} else
 	    next_sep = _sep;
 	_sep = next_sep;
@@ -783,7 +801,9 @@ ElementsOutput::run(FILE *f)
     parse_columns(_main_attrs["column"], which_col, ncol);
     int per_col = ((_elements.size() - 1) / ncol) + 1;
     int first = (which_col - 1) * per_col;
-    int last = (which_col == ncol ? _elements.size() : which_col * per_col);
+    int last = which_col * per_col;
+    if (which_col == ncol || last > _elements.size())
+	last = _elements.size();
 
     // actually do output
     for (int i = first; i < last; i++)
@@ -808,6 +828,27 @@ open_output_file(const char *outfile, ErrorHandler *errh)
 }
 
 static void
+run_template(const char *templ, RouterT *r, const String &r_config, FILE *outf)
+{
+    String tag;
+    HashMap<String, String> attrs;
+
+    while (templ) {
+	templ = output_template_until_tag(templ, outf, tag, attrs, false);
+
+	if (tag == "config")
+	    output_config(r_config, outf);
+	else if (tag == "elements") {
+	    ElementsOutput eo(r, attrs);
+	    eo.run(outf);
+	} else if (definitions[tag]) {
+	    String text = definitions[tag];
+	    run_template(text, r, r_config, outf);
+	}
+    }
+}
+
+static void
 pretty_process(const char *infile, const char *outfile,
 	       const char *templ, ErrorHandler *errh)
 {
@@ -824,19 +865,7 @@ pretty_process(const char *infile, const char *outfile,
     }
 
     // process template
-    while (templ) {
-	String tag;
-	HashMap<String, String> attrs;
-	bool ended;
-	templ = output_main_template_until_tag(templ, outf, tag, attrs, ended);
-
-	if (tag == "config")
-	    output_config(r_config, outf);
-	else if (tag == "elements") {
-	    ElementsOutput eo(r, attrs);
-	    eo.run(outf);
-	}
-    }
+    run_template(templ, r, r_config, outf);
     
     // close files, return
     if (outf != stdout)
@@ -916,6 +945,16 @@ particular purpose.\n");
 	  case TEMPLATE_OPT:
 	    html_template = file_string(clp->arg, p_errh);
 	    break;
+
+	  case DEFINE_OPT: {
+	      String s = clp->arg;
+	      int equals = s.find_left('=');
+	      if (equals >= 0)
+		  definitions.insert(s.substring(0, equals), s.substring(equals + 1));
+	      else
+		  definitions.insert(s, "");
+	      break;
+	  }
 
 	  case WRITE_TEMPLATE_OPT:
 	    write_template = !clp->negated;
