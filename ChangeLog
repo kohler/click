@@ -1,3 +1,12 @@
+2004-03-03 Wednesday 09:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* linuxmodule/proc_click.cc (1.52): Handle failure of
+	create_proc_entry
+
+2004-03-03 Wednesday 09:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* lib/router.cc (1.155): Don't delete[] null pointer
+
 2004-03-03 Wednesday 02:58  Eddie Kohler <kohler@icir.org>
 
 	* lib/master.cc (1.5): nit
