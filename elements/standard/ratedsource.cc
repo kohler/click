@@ -36,7 +36,8 @@ RatedSource::clone() const
 int
 RatedSource::configure(const String &conf, ErrorHandler *errh)
 {
-  String data = "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
+  String data = 
+    "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
   int rate = 10;
   int time = -1;
   bool active = true;
@@ -44,7 +45,7 @@ RatedSource::configure(const String &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpString, "packet data", &data,
 		  cpUnsigned, "sending rate (packets/s)", &rate,
-		  cpReal, 3, "sending time", &time,
+		  cpInteger, "sending time", &time,
 		  cpBool, "active?", &active,
 		  0) < 0)
     return -1;
@@ -52,7 +53,7 @@ RatedSource::configure(const String &conf, ErrorHandler *errh)
   _data = data;
   _rate = rate;
   _ugap = (rate ? 1000000 / rate : 1000000);
-  _limit = (time >= 0 ? time * rate : -1);
+  _limit = (time >= 0 ? time*rate : -1);
   _active = active;
   
   if (_packet) _packet->kill();
@@ -74,10 +75,9 @@ RatedSource::initialize(ErrorHandler *errh)
   /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
-  set_tickets(1);
+  set_tickets(ScheduleInfo::DEFAULT);
 #endif
   join_scheduler();
-  // ScheduleInfo::join_scheduler(this, errh);
 
   click_gettimeofday(&_start_time);
   _inactive_time = _start_time;

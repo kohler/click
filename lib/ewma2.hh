@@ -41,7 +41,7 @@ class EWMA2 {
   static const int FRAC_BITS   = 10;
   
   inline int set_stability_shift(int);
-  inline void update_time();
+  inline void update_time(int j);
   inline void update_now(int delta)	{ _now += delta; }
   
  public:
@@ -49,16 +49,13 @@ class EWMA2 {
   int average() const	{ return (int) (_avg >> (METER_SCALE-FRAC_BITS)); }
   int stability_shift() const 		{ return _stability_shift; }
   int scale() const			{ return FRAC_BITS; }
-  int now() const			{ return _now_jiffies; }
-
   void initialize(int seconds);
-  inline void update(int delta);
+  inline void update(int delta, int jiffies);
 };
 
 inline void
-EWMA2::update_time()
+EWMA2::update_time(int j)
 {
-  int j = click_jiffies();
   int jj = _now_jiffies;
   if (j != jj) {
     // adjust the average rate using the last measured packets
@@ -76,9 +73,9 @@ EWMA2::update_time()
 }
 
 inline void
-EWMA2::update(int delta)
+EWMA2::update(int delta, int j)
 {
-  update_time();
+  update_time(j);
   update_now(delta);
 }
   

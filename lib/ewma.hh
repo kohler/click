@@ -28,7 +28,6 @@ class EWMA {
   inline void update_time();
   inline void update_now(int delta)	{ _now += delta; }
   inline void update(int delta);
-  
 };
 
 

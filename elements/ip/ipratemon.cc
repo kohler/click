@@ -22,7 +22,8 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : Element(2,2), _pb(COUNT_PACKETS), _offset(0), _period(1), _base(NULL)
+  : Element(2,2), _pb(COUNT_PACKETS), _offset(0), _annobydst(true), 
+    _period(1), _base(NULL)
 {
 }
 
@@ -38,7 +39,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() != 4)
+  if(args.size() != 5)
     return errh->error("too few or too many arguments.");
 
   // PACKETS/BYTES
@@ -47,24 +48,29 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   else if(args[0] == "BYTES")
     _pb = COUNT_BYTES;
   else
-    return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
+    return errh->error("first argument should be \"PACKETS\" or \"BYTES\".");
 
   // OFFSET
   int offset;
   if(!cp_integer(args[1], offset))
     return errh->error
-      ("third argument (OFFSET) should be a non-negative integer.");
+      ("second argument (OFFSET) should be a non-negative integer.");
   _offset = (unsigned int) offset;
 
   // THRESH
   if(!cp_integer(args[2], _thresh))
     return errh->error
-      ("fourth argument (THRESH) should be non-negative integer.");
+      ("third argument (THRESH) should be non-negative integer.");
  
   // PERIOD
   if(!cp_integer(args[3], _period))
     return errh->error
-      ("fifth argument (PERIOD) should be non-negative integer.");
+      ("forth argument (PERIOD) should be non-negative integer.");
+
+  // ANNOBYDST
+  if(!cp_bool(args[4], _annobydst))
+    return errh->error
+      ("fifth argument (ANNOBYDST) should be boolean.");
 
   set_resettime();
 
@@ -87,25 +93,10 @@ IPRateMonitor::clone() const
   return new IPRateMonitor;
 }
 
-Packet *
-IPRateMonitor::simple_action(Packet *p)
-{
-  IPAddress a;
-  click_ip *ip = (click_ip *) (p->data() + _offset);
-  int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
-  
-  a = IPAddress(ip->ip_src);
-  update(a, false, val, p);
-  a = IPAddress(ip->ip_dst);
-  update(a, true, val, p);
-
-  return p;
-}
-
 void
 IPRateMonitor::push(int port, Packet *p)
 {
-  p = simple_action(p);
+  p = update_rates(p, port == 0);
   if (p) output(port).push(p);
 }
 
@@ -113,7 +104,7 @@ Packet *
 IPRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) p = simple_action(p);
+  if (p) p = update_rates(p, port == 0);
   return p;
 }
 
@@ -166,11 +157,8 @@ IPRateMonitor::print(_stats *s, String ip = "")
 
       if (s->counter[i].dst_rate.average() > 0 ||
 	  s->counter[i].src_rate.average() > 0) {
-	if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
-	  s->counter[i].src_rate.update(0);
-	  s->counter[i].dst_rate.update(0);
-	  s->counter[i].last_update = s->counter[i].dst_rate.now();
-	}
+	s->counter[i].src_rate.update(0, jiffs);
+	s->counter[i].dst_rate.update(0, jiffs);
 	ret += "\t"; 
 	ret += cp_unparse_real(s->counter[i].src_rate.average()*CLICK_HZ, 
 	                       s->counter[i].src_rate.scale());
@@ -218,7 +206,10 @@ String
 IPRateMonitor::what_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
-  return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
+  String ab;
+  if (me->_annobydst) ab = String("Annotate by DST\n");
+  else ab = String("Annotate by SRC\n");
+  return (me->_pb == COUNT_PACKETS ? "PACKETS, " : "BYTES, ")+ab;
 }
 
 
