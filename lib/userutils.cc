@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/userutils.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/userutils.hh"-*-
 /*
  * userutils.{cc,hh} -- utility routines for user-level + tools
  * Eddie Kohler
@@ -178,16 +178,31 @@ click_strcmp(const String &a, const String &b)
     
     while (ad < ae && bd < be) {
 	if (isdigit(*ad) && isdigit(*bd)) {
+	    // compare the two numbers, but don't treat them as numbers in
+	    // case of overflow
+	    // first, skip initial '0's
 	    const char *iad = ad, *ibd = bd;
-	    int an = 0, bn = 0;
+	    while (ad < ae && *ad == '0')
+		ad++;
+	    while (bd < be && *bd == '0')
+		bd++;
+	    int longer_zeros = (ad - iad) - (bd - ibd);
+	    // skip to end of number
+	    const char *nad = ad, *nbd = bd;
 	    while (ad < ae && isdigit(*ad))
-		an = (an * 10) + *ad - '0', ad++;
+		ad++;
 	    while (bd < be && isdigit(*bd))
-		bn = (bn * 10) + *bd - '0', bd++;
-	    if (an != bn)
-		return an - bn;
-	    else if ((ad - iad) != (bd - ibd))
-		return (bd - ibd) - (ad - iad);
+		bd++;
+	    // longer number must be larger
+	    if ((ad - nad) != (bd - nbd))
+		return (ad - nad) - (bd - nbd);
+	    // otherwise, compare numbers with the same length
+	    for (; nad < ad && nbd < bd; nad++, nbd++)
+		if (*nad != *nbd)
+		    return *nad - *nbd;
+	    // finally, longer string of initial '0's wins
+	    if (longer_zeros != 0)
+		return longer_zeros;
 	} else if (isdigit(*ad))
 	    return (isalpha(*bd) ? -1 : 1);
 	else if (isdigit(*bd))
