@@ -18,9 +18,9 @@ class ChuckCheck : public Element {
   static const unsigned BUCKETS = 4096;
   
   Stat _info[BUCKETS];
-  int _head;
-  int _tail;
-  int _first;
+  unsigned _head;
+  unsigned _tail;
+  unsigned _first;
 
   static String read_handler(Element *, void *);
 

@@ -1,6 +1,5 @@
 /*
- * proc_element.cc -- support /proc/click/ELEMENT directories. Includes
- * definition of KernelHandlerRegistry				     
+ * proc_element.cc -- support /proc/click/ELEMENT directories
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -150,10 +149,18 @@ prepare_handler_read(int elementno, int handlerno, String **store)
   const Router::Handler *h = find_handler(elementno, handlerno);
   if (!h)
     return -ENOENT;
-  else if (h->read)
-    s = h->read(e, h->read_thunk);
-  else
+  else if (!h->read)
     return -EPERM;
+  
+  // prevent interrupts
+  unsigned cli_flags;
+  save_flags(cli_flags);
+  cli();
+  
+  s = h->read(e, h->read_thunk);
+  
+  // restore interrupts
+  restore_flags(cli_flags);
   
   if (String::out_of_memory_count() != out_of_memory)
     return -ENOMEM;
@@ -171,10 +178,10 @@ prepare_handler_write(int elementno, int handlerno)
   const Router::Handler *h = find_handler(elementno, handlerno);
   if (!h)
     return -ENOENT;
-  else if (h->write)
-    return 0;
-  else
+  else if (!h->write)
     return -EPERM;
+  else
+    return 0;
 }
 
 static int
@@ -184,14 +191,25 @@ finish_handler_write(int elementno, int handlerno, String *s)
   const Router::Handler *h = find_handler(elementno, handlerno);
   if (!h)
     return -ENOENT;
-  else if (h->write) {
-    String context_string = "While writing `"
-      + String(h->name, h->namelen) + "'";
-    if (e) context_string += String(" for `") + e->declaration() + "'";
-    ContextErrorHandler cerrh(kernel_errh, context_string + ":");
-    return h->write(*s, e, h->write_thunk, &cerrh);
-  } else
+  else if (!h->write)
     return -EPERM;
+  
+  String context_string = "While writing `"
+    + String(h->name, h->namelen) + "'";
+  if (e) context_string += String(" for `") + e->declaration() + "'";
+  ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+  
+  // prevent interrupts
+  unsigned cli_flags;
+  save_flags(cli_flags);
+  cli();
+
+  int result = h->write(*s, e, h->write_thunk, &cerrh);
+
+  // restore interrupts
+  restore_flags(cli_flags);
+  
+  return result;
 }
 
 static int
@@ -222,7 +240,7 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
   int elementno = parent_proc_dir_elementno(pde);
   if (elementno < -1) return elementno;
   
-  String *s;
+  String *s = 0;
   int retval;
   if (writing) {
     retval = prepare_handler_write(elementno, (int)pde->data);
@@ -237,8 +255,10 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
     filp->private_data = (void *)s;
     MOD_INC_USE_COUNT;
     return 0;
-  } else
+  } else {
+    filp->private_data = 0;
     return retval;
+  }
 }
 
 static
@@ -246,6 +266,8 @@ DECLARE_READ_FILEOP(proc_element_handler_read)
 {
   loff_t f_pos = FILEOP_F_POS;
   String *s = (String *)filp->private_data;
+  if (!s)
+    return -ENOMEM;
   if (f_pos + count > s->length())
     count = s->length() - f_pos;
   if (copy_to_user(buffer, s->data() + f_pos, count) > 0)
@@ -259,6 +281,8 @@ DECLARE_WRITE_FILEOP(proc_element_handler_write)
 {
   loff_t f_pos = FILEOP_F_POS;
   String *s = (String *)filp->private_data;
+  if (!s)
+    return -ENOMEM;
   int old_length = s->length();
   
   if (f_pos + count > LARGEST_HANDLER_WRITE)
