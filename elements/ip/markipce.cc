@@ -47,26 +47,31 @@ MarkIPCE::smaction(Packet *p)
 {
   const click_ip *iph = p->ip_header();
 
-  if (!iph || !(iph->ip_tos & IP_ECN_ECT)) {
+  if (!iph || (iph->ip_tos & IP_ECNMASK) == IP_ECN_NOT_ECT) {
     p->kill();
     return 0;
-  } else if (iph->ip_tos & IP_ECN_CE)
+  } else if ((iph->ip_tos & IP_ECNMASK) == IP_ECN_CE)
     return p;
   else {
     WritablePacket *q = p->uniqueify();
     click_ip *q_iph = q->ip_header();
   
-    q_iph->ip_tos |= IP_ECN_CE;
-
     // incrementally update IP checksum
     // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
     //         = ~(~old_sum + ~old_halfword + (old_halfword + 0x0001))
     //         = ~(~old_sum + ~old_halfword + old_halfword + 0x0001)
     //         = ~(~old_sum + ~0 + 0x0001)
     //         = ~(~old_sum + 0x0001)
-    unsigned sum = (~ntohs(q_iph->ip_sum) & 0xFFFF) + 0x0001;
-    q_iph->ip_sum = ~htons(sum + (sum >> 16));
+    if ((q_iph->ip_tos & IP_ECNMASK) == IP_ECN_ECT2) {
+      unsigned sum = (~ntohs(q_iph->ip_sum) & 0xFFFF) + 0x0001;
+      q_iph->ip_sum = ~htons(sum + (sum >> 16));
+    } else {
+      unsigned sum = (~ntohs(q_iph->ip_sum) & 0xFFFF) + 0x0002;
+      q_iph->ip_sum = ~htons(sum + (sum >> 16));
+    }
 
+    q_iph->ip_tos |= IP_ECN_CE;
+    
     return q;
   }
 }
