@@ -30,12 +30,14 @@
 #if FOR_BSDMODULE
 # include <sys/param.h>
 # include <sys/mount.h>
+#elif FOR_LINUXMODULE && HAVE_CLICKFS
+# include <sys/mount.h>
 #endif
 
-#if FOR_LINUXMODULE
-const char *clickfs_prefix = "/proc/click";
-#elif FOR_BSDMODULE
+#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_CLICKFS)
 const char *clickfs_prefix = "/click";
+#elif FOR_LINUXMODULE
+const char *clickfs_prefix = "/proc/click";
 #endif
 
 bool verbose = false;
@@ -169,8 +171,10 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
 int
 unload_click(ErrorHandler *errh)
 {
+  String clickfs_packages = clickfs_prefix + String("/packages");
+  
   // do nothing if Click not installed
-  if (access(clickfs_prefix, F_OK) < 0)
+  if (access(clickfs_packages, F_OK) < 0)
     return 0;
   
   // first, write nothing to /proc/click/config -- frees up modules
@@ -201,8 +205,14 @@ unload_click(ErrorHandler *errh)
   (void) system("/sbin/kldunload click.ko");
 #endif
 
+#if FOR_LINUXMODULE && HAVE_CLICKFS
+  // proclikefs will take care of the unmount for us, but we'll give it a shot
+  // anyway.
+  (void) umount(clickfs_prefix);
+#endif
+
   // see if we successfully removed it
-  if (access(clickfs_prefix, F_OK) >= 0) {
+  if (access(clickfs_packages, F_OK) >= 0) {
     errh->warning("could not uninstall Click module");
     return -1;
   }

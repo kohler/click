@@ -38,6 +38,8 @@
 #if FOR_BSDMODULE
 # include <sys/param.h>
 # include <sys/mount.h>
+#elif FOR_LINUXMODULE && HAVE_CLICKFS
+# include <sys/mount.h>
 #endif
 #include <fcntl.h>
 #include <unistd.h>
@@ -445,7 +447,19 @@ particular purpose.\n");
     unload_click(errh);
   
   // install Click module if required
-  if (access(clickfs_prefix, F_OK) < 0) {
+  if (access(clickfs_packages, F_OK) < 0) {
+#if FOR_LINUXMODULE && HAVE_CLICKFS
+    // find and install proclikefs.o
+    StringMap modules(-1);
+    if (read_active_modules(modules, errh) && modules["proclikefs"] < 0) {
+      String proclikefs_o =
+	clickpath_find_file("proclikefs.o", "lib", CLICK_LIBDIR, errh);
+      if (verbose)
+	errh->message("Installing proclikefs (%s)", proclikefs_o.cc());
+      install_module(proclikefs_o, String(), errh);
+    }
+#endif
+    
     // find loadable module 
 #if FOR_LINUXMODULE
     String click_o =
@@ -469,15 +483,25 @@ particular purpose.\n");
     install_module(click_o, String(), errh);
 #endif
 
-#if FOR_BSDMODULE
+#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_CLICKFS)
+    // make clickfs_prefix directory if required
+    if (access(clickfs_prefix, F_OK) < 0 && errno == ENOENT) {
+      if (mkdir(clickfs_prefix, 0777) < 0)
+	errh->fatal("cannot make directory %s: %s", clickfs_prefix, strerror(errno));
+    }
+    
     // mount Click file system
+# if FOR_BSDMODULE
     int mount_retval = mount("click", clickfs_prefix, 0, 0);
-    if (mount_retval < 0)
-      errh->fatal("cannot mount %s: %s", clickfs_prefix, strerror(errno));
+# else
+    int mount_retval = mount("none", clickfs_prefix, "click", 0, 0);
+# endif
+    if (mount_retval < 0 && (verbose || errno != EBUSY))
+      errh->error("cannot mount %s: %s", clickfs_prefix, strerror(errno));
 #endif
 
     // check that all is well
-    if (access(clickfs_prefix, F_OK) < 0)
+    if (access(clickfs_packages, F_OK) < 0)
       errh->fatal("cannot install Click module");
   } else {
 #if FOR_LINUXMODULE
@@ -504,7 +528,7 @@ particular purpose.\n");
     fclose(f);
   }
 
-  // write flattened configuration to /proc/click/config
+  // write flattened configuration to CLICKFS/config
   int exit_status = 0;
   {
     String config_place = (hotswap ? clickfs_hotconfig : clickfs_config);

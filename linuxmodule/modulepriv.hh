@@ -4,7 +4,9 @@
 #include <click/router.hh>
 #include <click/driver.hh>
 #include <click/pathvars.h>	/* for HAVE_CLICKFS */
-#define HAVE_PROC_CLICK 1
+#ifndef HAVE_CLICKFS
+# define HAVE_PROC_CLICK 1	/* if not clickfs, then /proc/click */
+#endif
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
