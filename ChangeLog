@@ -1,3 +1,8 @@
+2002-06-06 Thursday 17:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: radiosim.cc (1.17), radiosim.hh (1.10): allow x/y
+	coords in metres with USE_XY keyword
+
 2002-06-06 Thursday 12:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.8), dsdvroutetable.hh (1.9),
