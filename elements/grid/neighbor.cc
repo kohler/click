@@ -342,10 +342,14 @@ Neighbor::expire_routes()
       expired_nbrs.push_back(iter.key());
     
   // remove expired entries
-  for (int i = 0; i < expired_addresses.size(); i++)
+  for (int i = 0; i < expired_addresses.size(); i++) {
+    click_chatter("%s: expiring address for %s", id().cc(), expired_addresses[i].s().cc());
     _addresses.remove(expired_addresses[i]);
-  for (int i = 0; i < expired_nbrs.size(); i++)
+  }
+  for (int i = 0; i < expired_nbrs.size(); i++) {
+    click_chatter("%s: expiring route entry for %s", id().cc(), expired_nbrs[i].s().cc());
     _nbrs.remove(expired_nbrs[i]);
+  }
 }
 
 
