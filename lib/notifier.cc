@@ -26,17 +26,18 @@
 CLICK_DECLS
 
 // should be const, but we need to explicitly initialize it
-atomic_uint32_t NotifierSignal::true_value;
-const char * const Notifier::EMPTY_NOTIFIER = "Notifier.EMPTY";
+atomic_uint32_t NotifierSignal::static_value;
+const char* const Notifier::EMPTY_NOTIFIER = "Notifier.EMPTY";
+const char* const Notifier::NONFULL_NOTIFIER = "Notifier.NONFULL";
 
 void
 NotifierSignal::static_initialize()
 {
-    true_value = 0xFFFFFFFFU;
+    static_value = TRUE_MASK | TRUE_CONFLICT_MASK;
 }
 
-NotifierSignal &
-NotifierSignal::operator+=(const NotifierSignal &o)
+NotifierSignal&
+NotifierSignal::operator+=(const NotifierSignal& o)
 {
     if (!_mask)
 	_value = o._value;
@@ -50,7 +51,7 @@ NotifierSignal::operator+=(const NotifierSignal &o)
     else if (_value == o._value || !o._mask)
 	_mask |= o._mask;
     else
-	*this = conflicted_signal();
+	*this = conflicted_signal(true);
     
     return *this;
 }
@@ -77,19 +78,19 @@ Notifier::notifier_search_op()
 }
 
 int
-Notifier::add_listener(Task *)
+Notifier::add_listener(Task*)
 {
     return 0;
 }
 
 void
-Notifier::remove_listener(Task *)
+Notifier::remove_listener(Task*)
 {
 }
 
 
 int
-PassiveNotifier::initialize(Router *r)
+PassiveNotifier::initialize(Router* r)
 {
     if (_signal == NotifierSignal())
 	return r->new_notifier_signal(_signal);
@@ -110,7 +111,7 @@ ActiveNotifier::ActiveNotifier()
 }
 
 int
-ActiveNotifier::add_listener(Task *new_l)
+ActiveNotifier::add_listener(Task* new_l)
 {
     if (!_listeners && (!_listener1 || _listener1 == new_l)) {
 	_listener1 = new_l;
@@ -125,9 +126,9 @@ ActiveNotifier::add_listener(Task *new_l)
 		return 0;
 	    n++;
 	}
-    Task **old_list = (_listener1 ? &_listener1 : _listeners);
+    Task** old_list = (_listener1 ? &_listener1 : _listeners);
     
-    Task **new_list = new Task *[n + 2];
+    Task** new_list = new Task *[n + 2];
     if (!new_list) {
 	click_chatter("out of memory in Notifier::add_listener!");
 	return -1;
@@ -141,7 +142,7 @@ ActiveNotifier::add_listener(Task *new_l)
 }
 
 void
-ActiveNotifier::remove_listener(Task *bad_l)
+ActiveNotifier::remove_listener(Task* bad_l)
 {
     if (!bad_l)
 	/* nada */;
@@ -149,7 +150,7 @@ ActiveNotifier::remove_listener(Task *bad_l)
 	_listener1 = 0;
     else if (_listeners) {
 	int n = 0, which = -1;
-	for (Task **l = _listeners; *l; l++) {
+	for (Task** l = _listeners; *l; l++) {
 	    if (*l == bad_l)
 		which = n;
 	    n++;
@@ -162,12 +163,12 @@ ActiveNotifier::remove_listener(Task *bad_l)
 }
 
 void
-ActiveNotifier::listeners(Vector<Task *> &v) const
+ActiveNotifier::listeners(Vector<Task*>& v) const
 {
     if (_listener1)
 	v.push_back(_listener1);
     else if (_listeners)
-	for (Task **l = _listeners; *l; l++)
+	for (Task** l = _listeners; *l; l++)
 	    v.push_back(*l);
 }
 
@@ -175,24 +176,25 @@ ActiveNotifier::listeners(Vector<Task *> &v) const
 namespace {
 
 class NotifierElementFilter : public ElementFilter { public:
-    NotifierElementFilter(const char *name);
-    bool check_match(Element *, int, PortType);
-    Vector<Notifier *> _notifiers;
+    NotifierElementFilter(const char* name);
+    bool check_match(Element*, int, PortType);
+    Vector<Notifier*> _notifiers;
     NotifierSignal _signal;
     bool _pass2;
     bool _need_pass2;
-    const char *_name;
+    const char* _name;
 };
 
-NotifierElementFilter::NotifierElementFilter(const char *name)
-    : _signal(false), _pass2(false), _need_pass2(false), _name(name)
+NotifierElementFilter::NotifierElementFilter(const char* name)
+    : _signal(NotifierSignal::empty_signal()),
+      _pass2(false), _need_pass2(false), _name(name)
 {
 }
 
 bool
-NotifierElementFilter::check_match(Element *e, int port, PortType pt)
+NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 {
-    if (Notifier *n = (Notifier *) (e->cast(_name))) {
+    if (Notifier* n = (Notifier*) (e->cast(_name))) {
 	_notifiers.push_back(n);
 	_signal += n->notifier_signal();
 	Notifier::SearchOp search_op = n->notifier_search_op();
@@ -202,10 +204,10 @@ NotifierElementFilter::check_match(Element *e, int port, PortType pt)
 	} else
 	    return search_op == Notifier::SEARCH_DONE;
 	
-    } else if (pt == OUTPUT) {
-	Bitvector bflow;
-	if (e->output_is_push(port)
-	    || (e->backward_flow(port, &bflow), bflow.zero())) {
+    } else if (pt != NONE) {
+	Bitvector flow;
+	if (e->port_is_push(pt, port)
+	    || (e->port_flow(pt, port, &flow), flow.zero())) {
 	    _signal = NotifierSignal::always_active_signal();
 	    return true;
 	} else
@@ -219,10 +221,10 @@ NotifierElementFilter::check_match(Element *e, int port, PortType pt)
 
 
 NotifierSignal
-Notifier::upstream_empty_signal(Element *e, int port, Task *t)
+Notifier::upstream_empty_signal(Element* e, int port, Task* t)
 {
     NotifierElementFilter filter(EMPTY_NOTIFIER);
-    Vector<Element *> v;
+    Vector<Element*> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
 
     NotifierSignal signal = filter._signal;
@@ -234,6 +236,33 @@ Notifier::upstream_empty_signal(Element *e, int port, Task *t)
     }
     
     // All bets are off if filter ran into a push output. That means there was
+    // a regular Queue in the way (for example).
+    if (ok < 0 || signal == NotifierSignal())
+	return NotifierSignal();
+
+    if (t)
+	for (int i = 0; i < filter._notifiers.size(); i++)
+	    filter._notifiers[i]->add_listener(t);
+
+    return signal;
+}
+
+NotifierSignal
+Notifier::downstream_nonfull_signal(Element* e, int port, Task* t)
+{
+    NotifierElementFilter filter(NONFULL_NOTIFIER);
+    Vector<Element*> v;
+    int ok = e->router()->downstream_elements(e, port, &filter, v);
+
+    NotifierSignal signal = filter._signal;
+
+    // maybe run another pass
+    if (ok >= 0 && signal != NotifierSignal() && filter._need_pass2) {
+	filter._pass2 = true;
+	ok = e->router()->downstream_elements(e, port, &filter, v);
+    }
+    
+    // All bets are off if filter ran into a pull input. That means there was
     // a regular Queue in the way (for example).
     if (ok < 0 || signal == NotifierSignal())
 	return NotifierSignal();
