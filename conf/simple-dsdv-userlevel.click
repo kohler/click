@@ -4,6 +4,10 @@
 
 // to be used with tools/build-grid-config.sh
 
+// Note: This configuration file will not work unless you supplied
+// the "--enable-grid" option when configuring Click.
+
+
 ControlSocket(tcp, CONTROL_PORT, READONLY CONTROL_RO);
 
 elementclass ToGridDev {
