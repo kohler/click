@@ -1,3 +1,10 @@
+2002-03-29 Friday 19:44  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-mkmindriver.1 (1.3),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.19): fix
+	click-mkmindriver a la Doug: read a file from stdin even if you
+	give -A and/or -e, unless you give --no-file
+
 2002-03-29 Friday 15:05  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/: discard.cc (1.22), discard.hh (1.18): Discard
