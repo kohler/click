@@ -108,17 +108,11 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 
   for (int i = 0; i < 32; i++) {
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
-    fd = open(tmp, O_RDWR);
+    fd = open(tmp, O_RDWR | O_NONBLOCK);
     if (fd < 0) {
       if (saved_errno == 0 || errno != ENOENT)
         saved_errno = errno;
       continue;
-    }
-
-    int yes = 1;
-    if (ioctl(fd, FIONBIO, &yes) < 0) {
-      close(fd);
-      return errh->error("FIONBIO failed: %s", strerror(errno));
     }
 
     _dev_name = String(dev_prefix) + String(i);
@@ -134,7 +128,7 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 #if defined(TUNSIFHEAD) || defined(__FreeBSD__)
     // Each read/write prefixed with a 32-bit address family,
     // just as in OpenBSD.
-    yes = 1;
+    int yes = 1;
     if (ioctl(fd, TUNSIFHEAD, &yes) != 0)
       return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
 #endif        
