@@ -80,24 +80,26 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
   *portl =  *porth = 0;;
   dash = param.find_left('-');
 
+  printf("param = %s\n", param.cc());
+  
   if (dash < 0) 
     dash = param.length();
 
   if (!cp_integer(param.substring(0,dash), portl)){
-    //errh->error("bad port in rule spec");
+    errh->error("1 bad port in rule spec");
     return -1;
   }
 
   if (dash < param.length()) {
     if (!cp_integer(param.substring(dash+1), porth)) {
-      //errh->error("bad port in rule spec");
+      errh->error("2 bad port in rule spec");
       return -1;
     }
   } else 
     *porth = *portl;
 
   if (*portl > *porth || *portl < 0 || *porth > 0xFFFF) {
-    //errh->error("port(s) %d-%d out of range in rule spec", portl, porth);
+    errh->error("port(s) %d-%d out of range in rule spec", portl, porth);
     return -1;
   }
   return 0;
@@ -161,6 +163,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
+  //printf("1 confindex = %d (%s)\n", confindex, conf[confindex].cc());
   // parse dst addr/mask
   if (cp_ip_prefix(conf[confindex], &_daddr, &_dmask, true) < 0)
     return -1;
@@ -171,13 +174,16 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
+
   // parse dst ports
-  if (conf.size() == confindex + 1) {
+  if (confindex < conf.size()) {
+    //printf("2 confindex = %d (%s)\n", confindex, conf[confindex].cc());
     if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
       if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) < 0)
 	_have_dport = false;
       else {
 	_have_dport = true;
+ 	printf("have dport!\n");
 	confindex++;
       }
     } else if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) >= 0) {
@@ -186,9 +192,9 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
   }
 
-
   // parse in/out
-  if (conf.size() == confindex + 1) {
+  if (confindex < conf.size() ) {
+    //printf("3 confindex = %d (%s)\n", confindex, conf[confindex].cc());
     if (cp_va_parse(conf[confindex], this, errh, cpString, "in/out", &_inout) < 0)
       return -1;
     if ( (_inout != "") && (_inout != "in") && (_inout != "out") ) {
@@ -293,19 +299,26 @@ DivertSocket::initialize(ErrorHandler *errh)
   fw.fw_redirpt=htons(bindPort.sin_port);
   //fw.fw_redirpt=bindPort.sin_port;
 
-  fw.fw_spts[0]=_sportl;
-  fw.fw_spts[1]=_sporth;
-  fw.fw_dpts[0]=_dportl;
-  fw.fw_dpts[1]=_dporth;
-
+  if (_have_sport) {
+    fw.fw_spts[0]=_sportl;
+    fw.fw_spts[1]=_sporth;
+  } else {
+    fw.fw_spts[0]=0;
+    fw.fw_spts[1]=0xffff;
+  }
+  if (_have_dport) {
+    fw.fw_dpts[0]=_dportl;
+    fw.fw_dpts[1]=_dporth;
+  } else {
+    fw.fw_dpts[0]=0;
+    fw.fw_dpts[1]=0xffff;
+  }
   
 
   fw.fw_src.s_addr = _saddr.in_addr().s_addr;
   fw.fw_smsk.s_addr= _smask.in_addr().s_addr;
-
   fw.fw_dst.s_addr = _daddr.in_addr().s_addr;
   fw.fw_dmsk.s_addr= _dmask.in_addr().s_addr;
-
   strcpy(fw.fw_vianame, _device.cc() );
 
 
