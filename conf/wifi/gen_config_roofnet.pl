@@ -198,8 +198,22 @@ for (my $x = 0; $x < 1500; $x++) {
 $data = "\\<$data>";
 
 
-system "cat /home/roofnet/scripts/srcr.click";
-system "cat /home/roofnet/scripts/etx.click";
+# we need to find srcr.click
+# first, try the directory where the script was run from
+my $srcr_file = $0;
+$srcr_file =~ s/gen_config_roofnet\.pl/srcr\.click/g;
+
+if (! -f $srcr_file) {
+    # ok, try srcr.click
+    $srcr_file = "/home/roofnet/scripts/srcr.click";
+}
+
+if (! -f $srcr_file) {
+    die "couldn't find srcr.click: tried $srcr_file\n";
+}
+
+print STDERR "using $srcr_file\n";
+system "cat $srcr_file";
 
 print <<EOF;
 // has one input and one output
