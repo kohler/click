@@ -1,3 +1,9 @@
+2002-01-31 Thursday 16:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: airoinfo.cc (1.1), airoinfo.hh (1.1),
+	gridroutetable.cc (1.25), gridroutetable.hh (1.12): Added AiroInfo
+	element, only works on OpenBSD
+
 2002-01-31 Thursday 16:28  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/insert_fwrules.sh (1.4): insert_fwrules.sh
