@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 /*
  * confparse.{cc,hh} -- configuration string parsing
  * Eddie Kohler
@@ -37,6 +38,9 @@
 #else
 # define CP_CONTEXT_ARG
 # define CP_PASS_CONTEXT
+#endif
+#ifndef CLICK_LINUXMODULE
+# include <pwd.h>
 #endif
 #include <stdarg.h>
 
@@ -1633,6 +1637,47 @@ cp_des_cblock(const String &str, unsigned char *return_value)
 }
 #endif
 
+#ifndef CLICK_LINUXMODULE
+bool
+cp_filename(const String &str, String *return_value)
+{
+  String fn;
+  if (!cp_string(str, &fn) || !fn)
+    return false;
+
+  // expand home directory substitutions
+  if (fn[0] == '~') {
+    if (fn.length() == 1 || fn[1] == '/') {
+      const char *home = getenv("HOME");
+      if (home)
+	fn = String(home) + fn.substring(1);
+    } else {
+      int off = 1;
+      while (off < fn.length() && fn[off] != '/')
+	off++;
+      String username = fn.substring(1, off - 1);
+      struct passwd *pwd = getpwnam(username.cc());
+      if (pwd && pwd->pw_dir)
+	fn = String(pwd->pw_dir) + fn.substring(off);
+    }
+  }
+
+  // replace double slashes with single slashes
+  int len = fn.length();
+  for (int i = 0; i < len - 1; i++)
+    if (fn[i] == '/' && fn[i+1] == '/') {
+      fn = fn.substring(0, i) + fn.substring(i + 1);
+      i--;
+      len--;
+    }
+
+  // return
+  *return_value = fn;
+  return true;
+}
+#endif
+
+
 //
 // CP_VA_PARSE AND FRIENDS
 //
@@ -1682,7 +1727,8 @@ CpVaParseCmd
   cpIP6Address		= "ip6_addr",
   cpIP6Prefix		= "ip6_prefix",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
-  cpDesCblock		= "des_cblock";
+  cpDesCblock		= "des_cblock",
+  cpFilename		= "filename";
 
 enum {
   cpiEnd = 0,
@@ -1723,7 +1769,8 @@ enum {
   cpiIP6Address,
   cpiIP6Prefix,
   cpiIP6AddressOrPrefix,
-  cpiDesCblock
+  cpiDesCblock,
+  cpiFilename
 };
 
 #define NARGTYPE_HASH 128
@@ -2032,6 +2079,13 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 #endif
+
+#ifndef CLICK_LINUXMODULE
+   case cpiFilename:
+    if (!cp_filename(arg, &v->v_string))
+      errh->error("%s takes filename (%s)", argname, desc);
+    break;
+#endif
     
   }
 }
@@ -2109,7 +2163,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiArgument:
    case cpiString:
    case cpiWord:
-   case cpiKeyword: {
+   case cpiKeyword:
+   case cpiFilename: {
      String *sstore = (String *)v->store;
      *sstore = v->v_string;
      break;
@@ -2206,7 +2261,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 #endif
-   
+
    default:
     // no argument provided
     break;
@@ -2850,6 +2905,9 @@ cp_va_static_initialize()
 #endif
 #ifdef HAVE_IPSEC
   cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
+#endif
+#ifndef CLICK_LINUXMODULE
+  cp_register_argtype(cpFilename, "filename", 0, default_parsefunc, default_storefunc, cpiFilename);
 #endif
 
   cp_values = new cp_value[CP_VALUES_SIZE];

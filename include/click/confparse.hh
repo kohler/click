@@ -111,6 +111,10 @@ bool cp_handler(const String &, Element *, bool need_r, bool need_w, Element **,
 bool cp_des_cblock(const String &, unsigned char *);
 #endif
 
+#ifndef CLICK_LINUXMODULE
+bool cp_filename(const String &, String *);
+#endif
+
 typedef const char * const CpVaParseCmd;
 static CpVaParseCmd cpEnd = 0;
 extern CpVaParseCmd
@@ -151,6 +155,7 @@ extern CpVaParseCmd
   cpIP6Prefix,	// unsigned char result[16], unsigned char result_mask[16]
   cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
   cpDesCblock,		// unsigned char result[8]
+  cpFilename,	// String *result
   // old names, here for compatibility:
   cpUnsignedLongLong,	// uint64_t *result
   cpNonnegReal2,  // int frac_bits, unsigned *result
