@@ -1,3 +1,10 @@
+2001-07-25 Wednesday 15:45  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/error.hh (1.11), include/click/straccum.hh (1.13),
+	include/click/userutils.hh (1.4), lib/error.cc (1.31),
+	lib/userutils.cc (1.15): Don't try to use stdio in the kernel, and
+	don't assert in ErrorHandler::default_handler().
+
 2001-07-25 Wednesday 04:20  Eddie Kohler <kohler@aciri.org>
 
 	* etc/libclick/lc-configure.in (1.5): GNU makelessness changes
