@@ -80,7 +80,7 @@ public:
   const char *processing() const		{ return PUSH; }
   LookupIPRouteRON *clone() const;
   
-  int configure(Vector<String> &, ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
 

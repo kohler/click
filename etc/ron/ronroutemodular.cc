@@ -54,7 +54,7 @@ LookupIPRouteRON::clone() const
 }
 
 int
-LookupIPRouteRON::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupIPRouteRON::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int n = noutputs();
   if (cp_va_parse(conf, this, errh,
@@ -1178,5 +1178,5 @@ LookupIPRouteRON::print_time(char* s) {
 // must always generate the whole instance! LookupIPRoute demands it
 template class Vector<LookupIPRouteRON::FlowTableEntry>;
 
-
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(LookupIPRouteRON)
