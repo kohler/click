@@ -31,6 +31,7 @@ extern "C" {
 #define new xxx_new
 #include <asm/types.h>
 #include <asm/uaccess.h>
+#include <linux/ip.h>
 #include <linux/inetdevice.h>
 #include <net/route.h>
 #undef new
