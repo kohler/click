@@ -1,3 +1,12 @@
+2002-08-30 Friday 14:41  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/templatei.cc: adapt to const_iterators change
+
+2002-08-30 Friday 14:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,
+	bighashmap.hh: add const_iterators to BigHashMap
+
 2002-08-26 Monday 21:18  Eddie Kohler <kohler@icir.org>
 
 	* include/click/bitvector.hh, include/click/bitvector.hh,

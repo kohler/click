@@ -1,3 +1,12 @@
+2002-08-30 Friday 14:41  Eddie Kohler <kohler@icir.org>
+
+	* lib/templatei.cc (1.11): adapt to const_iterators change
+
+2002-08-30 Friday 14:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc (1.14), bighashmap.hh (1.12): add
+	const_iterators to BigHashMap
+
 2002-08-26 Monday 21:25  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/processingt.cc (1.24): adapt to Bitvector changes
