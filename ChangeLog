@@ -1,3 +1,18 @@
+2001-12-04 Tuesday 12:40  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.168): stupidity
+
+2001-12-04 Tuesday 12:24  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.167): nit
+
+2001-12-04 Tuesday 12:20  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.43), INSTALL (1.19), README (1.28), configure.in
+	(1.166), elements/bsdmodule/polldevice.cc (1.5),
+	include/click/packet.hh (1.30): finish merging Luigi's changes for
+	FreeBSD 4.5 support
+
 2001-12-03 Monday 22:05  Eddie Kohler <kohler@aciri.org>
 
 	* bsdmodule/Makefile.in (1.10), bsdmodule/clickfs.cc (1.5),
