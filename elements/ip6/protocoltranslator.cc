@@ -128,7 +128,7 @@ ProtocolTranslator::make_translate64(IPAddress src,
 
     }
   
-  else if (ip->ip6_nxt ==17) //UDP
+  else if (ip6->ip6_nxt ==17) //UDP
     {
       ip->ip_p = ip6->ip6_nxt;
       
