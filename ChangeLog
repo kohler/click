@@ -1,3 +1,7 @@
+2004-09-14 Tuesday 03:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/udpcount.click (1.2): improve comment
+
 2004-09-13 Monday 22:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.87), conf/mazu-nat.click (1.12),
