@@ -293,9 +293,9 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      if (!tcph)
 		  goto no_data;
 	      int flags = tcph->th_flags;
-	      for (int i = 0; i < 7; i++)
-		  if (flags & (1 << i))
-		      sa << FromIPSummaryDump::tcp_flags_word[i];
+	      for (int flag = 0; flag < 7; flag++)
+		  if (flags & (1 << flag))
+		      sa << FromIPSummaryDump::tcp_flags_word[flag];
 	      if (!flags)
 		  sa << '.';
 	      break;
