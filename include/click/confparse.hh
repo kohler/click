@@ -77,14 +77,12 @@ inline bool cp_unsigned(const String &, unsigned long *);
 #endif
 
 #ifdef HAVE_INT64_TYPES
-# if !HAVE_64_BIT_LONG
 const char *cp_integer(const char *begin, const char *end, int base, int64_t *);
 bool cp_integer(const String &, int base, int64_t *);
 inline bool cp_integer(const String &, int64_t *);
 const char *cp_unsigned(const char *begin, const char *end, int base, uint64_t *);
 bool cp_unsigned(const String &, int base, uint64_t *);
 inline bool cp_unsigned(const String &, uint64_t *);
-# endif
 # define cp_integer64 cp_integer
 # define cp_unsigned64 cp_unsigned
 #endif
