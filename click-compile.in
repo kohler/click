@@ -190,6 +190,6 @@ EOF
     exit 0
   fi
 else
-  exec_command "$@"
+  exec_command "$command $@"
   exit 0
 fi
