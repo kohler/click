@@ -97,13 +97,7 @@ while true; do
   split($2, deps, / +/);
   for (j in deps) {
     i = deps[j]
-    if (i ~ /^!/) {
-      sub(/^!/, "", i);
-      if (dep[i]) {
-        print $1;
-        break;
-      }
-    } else if (!dep[i]) {
+    if (!dep[i]) {
       print $1;
       break;
     }
@@ -125,5 +119,5 @@ $bad_files"
   fi
 done
 
-# output files!
+# output files
 echo "$files"

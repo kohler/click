@@ -17,7 +17,7 @@ class Bitvector {
   
   void finish_copy_constructor(const Bitvector &);
   void clear_last();
-  void resize(int, bool);
+  void resize_x(int, bool);
   
  public:
   
@@ -40,7 +40,7 @@ class Bitvector {
   Bit force_bit(int);
   
   void clear();
-  void resize(int n)	{ if (n > INLINE_BITS) resize(n, true); _max = n-1; }
+  void resize(int n)	{ if (n > INLINE_BITS) resize_x(n, true); _max = n-1; }
   
   bool operator==(const Bitvector &) const;
   bool operator!=(const Bitvector &) const;
@@ -89,21 +89,21 @@ inline
 Bitvector::Bitvector(int n)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > INLINE_BITS) resize(n, false);
+  if (n > INLINE_BITS) resize_x(n, false);
 }
 
 inline
 Bitvector::Bitvector(unsigned n)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > static_cast<unsigned>(INLINE_BITS)) resize(n, false);
+  if (n > static_cast<unsigned>(INLINE_BITS)) resize_x(n, false);
 }
 
 inline
 Bitvector::Bitvector(int n, bool b)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > INLINE_BITS) resize(n, false);
+  if (n > INLINE_BITS) resize_x(n, false);
   if (b) assign(n, b);
 }
 
@@ -111,7 +111,7 @@ inline
 Bitvector::Bitvector(unsigned n, bool b)
   : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
-  if (n > static_cast<unsigned>(INLINE_BITS)) resize(n, false);
+  if (n > static_cast<unsigned>(INLINE_BITS)) resize_x(n, false);
   if (b) assign(n, b);
 }
 

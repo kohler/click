@@ -17,7 +17,6 @@
 #include "infinitesource.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "router.hh"
 #include "scheduleinfo.hh"
 #include "glue.hh"
 

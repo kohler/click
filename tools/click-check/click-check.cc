@@ -34,12 +34,16 @@
 #define ROUTER_OPT		302
 #define OUTPUT_OPT		303
 #define FILTER_OPT		304
+#define KERNEL_OPT		305
+#define USERLEVEL_OPT		306
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "filter", 'p', FILTER_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -65,13 +69,55 @@ any error messages to standard error.\n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE             Read router configuration from FILE.\n\
-  -o, --output FILE           If valid, write configuration to FILE.\n\
-  -p, --filter                If valid, write configuration to standard output.\n\
-      --help                  Print this message and exit.\n\
-  -v, --version               Print version number and exit.\n\
+  -f, --file FILE           Read router configuration from FILE.\n\
+  -o, --output FILE         If valid, write configuration to FILE.\n\
+  -p, --filter              If valid, write configuration to standard output.\n\
+  -k, --kernel              Check kernel driver version of configuration.\n\
+  -u, --user                Check user-level driver version of configuration.\n\
+      --help                Print this message and exit.\n\
+  -v, --version             Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
+static const char *driver_name[] = {
+  "kernel", "user-level"
+};
+
+static void
+check_once(const RouterT *r, const char *filename,
+	   const Vector<int> &elementmap_indexes,
+	   const ElementMap &full_elementmap, int driver,
+	   bool indifferent, bool print_context, bool print_ok_message,
+	   ErrorHandler *full_errh)
+{
+  if (!indifferent && !full_elementmap.driver_compatible(elementmap_indexes, driver)) {
+    full_errh->error("%s: configuration incompatible with %s driver", filename, driver_name[driver]);
+    return;
+  }
+  
+  const ElementMap *em = &full_elementmap;
+  if (!indifferent) {
+    ElementMap *new_em = new ElementMap(full_elementmap);
+    new_em->limit_driver(ElementMap::DRIVER_LINUXMODULE);
+    em = new_em;
+  }
+  ErrorHandler *errh = full_errh;
+  if (print_context)
+    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(driver_name[driver]) + " driver:");
+  int before = errh->nerrors();
+  int before_warnings = errh->nwarnings();
+
+  // get processing
+  ProcessingT p(r, *em, errh);
+  // ... it will report errors as required
+
+  if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
+    full_errh->message("%s: configuration OK in %s driver", filename, driver_name[driver]);
+  if (!indifferent)
+    delete em;
+  if (print_context)
+    delete errh;
 }
 
 int
@@ -81,6 +127,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-check: ");
+  assert(sizeof(driver_name) / sizeof(driver_name[0]) == ElementMap::NDRIVERS);
 
   // read command line arguments
   Clp_Parser *clp =
@@ -91,6 +138,8 @@ main(int argc, char **argv)
   const char *router_file = 0;
   const char *output_file = 0;
   bool output = false;
+  int check_kernel = -1;
+  int check_userlevel = -1;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -129,7 +178,20 @@ particular purpose.\n");
       break;
 
      case FILTER_OPT:
+      if (output_file) {
+	p_errh->error("output file specified twice");
+	goto bad_option;
+      }
+      output_file = "-";
       output = true;
+      break;
+
+     case KERNEL_OPT:
+      check_kernel = (clp->negated ? 0 : 1);
+      break;
+      
+     case USERLEVEL_OPT:
+      check_userlevel = (clp->negated ? 0 : 1);
       break;
       
      bad_option:
@@ -148,6 +210,8 @@ particular purpose.\n");
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
+  if (!router_file || strcmp(router_file, "-") == 0)
+    router_file = "<stdin>";
   r->flatten(errh);
 
   // open output file
@@ -172,8 +236,32 @@ particular purpose.\n");
   if (r->archive_index("elementmap") >= 0)
     elementmap.parse(r->archive("elementmap").data);
 
-  // get processing
-  ProcessingT p(r, elementmap, errh);
+  // check configuration for driver indifference
+  Vector<int> elementmap_indexes;
+  elementmap.map_indexes(r, elementmap_indexes, errh);
+  bool indifferent = elementmap.driver_indifferent(elementmap_indexes);
+  if (indifferent) {
+    if (check_kernel < 0 && check_userlevel < 0)
+      // only bother to check one of them
+      check_kernel = 0;
+  } else {
+    if (check_kernel < 0 && check_userlevel < 0) {
+      check_kernel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
+      check_userlevel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_USERLEVEL);
+    }
+  }
+
+  // actually check the drivers
+  if (check_kernel > 0)
+    check_once(r, router_file, elementmap_indexes, elementmap,
+	       ElementMap::DRIVER_LINUXMODULE, indifferent,
+	       check_userlevel > 0, !output,
+	       errh);
+  if (check_userlevel > 0)
+    check_once(r, router_file, elementmap_indexes, elementmap,
+	       ElementMap::DRIVER_USERLEVEL, indifferent,
+	       check_kernel > 0, !output,
+	       errh);
   
   // write configuration
   if (errh->nerrors() != 0)

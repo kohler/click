@@ -222,6 +222,7 @@ main(int argc, char **argv)
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
+  ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-devirtualize: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -260,7 +261,7 @@ particular purpose.\n");
      case Clp_NotOption:
      case ROUTER_OPT:
       if (router_file) {
-	errh->error("router file specified twice");
+	p_errh->error("router file specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
@@ -268,7 +269,7 @@ particular purpose.\n");
 
      case OUTPUT_OPT:
       if (output_file) {
-	errh->error("output file specified twice");
+	p_errh->error("output file specified twice");
 	goto bad_option;
       }
       output_file = clp->arg;
@@ -349,7 +350,7 @@ particular purpose.\n");
     String elementmap_fn =
       clickpath_find_file("elementmap", "share", CLICK_SHAREDIR);
     if (!elementmap_fn)
-      errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
+      p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'", CLICK_SHAREDIR);
     else
       full_elementmap.parse(file_string(elementmap_fn, errh));
   }
@@ -369,7 +370,7 @@ particular purpose.\n");
       Vector<String> args;
       cp_argvec(s, args);
       for (int j = 0; j < args.size(); j++)
-	parse_instruction(args[j], sigs, errh);
+	parse_instruction(args[j], sigs, p_errh);
     }
 
   // follow instructions from command line
@@ -380,15 +381,41 @@ particular purpose.\n");
       sigs.specialize_class(iter.key(), iter.value());
   }
 
+  // choose driver for output
+  Vector<int> elementmap_indexes;
+  full_elementmap.map_indexes(router, elementmap_indexes, p_errh);
+
+  String cc_suffix = ".cc";
+  String driver_requirement = "";
+  if (!full_elementmap.driver_indifferent(elementmap_indexes)) {
+    bool linuxmodule_ok = full_elementmap.driver_compatible
+      (elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
+    bool userlevel_ok = full_elementmap.driver_compatible
+      (elementmap_indexes, ElementMap::DRIVER_USERLEVEL);
+    if (linuxmodule_ok && userlevel_ok
+	&& (compile_kernel > 0) == (compile_user > 0))
+      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify `-k' or `-u'");
+    else if (!linuxmodule_ok && compile_kernel > 0)
+      p_errh->fatal("configuration incompatible with kernel driver");
+    else if (!userlevel_ok && compile_user > 0)
+      p_errh->fatal("configuration incompatible with user-level driver");
+    else if (linuxmodule_ok) {
+      cc_suffix = ".k.cc";
+      driver_requirement = "linuxmodule ";
+      full_elementmap.limit_driver(ElementMap::DRIVER_LINUXMODULE);
+    } else {
+      cc_suffix = ".u.cc";
+      driver_requirement = "userlevel ";
+      full_elementmap.limit_driver(ElementMap::DRIVER_USERLEVEL);
+    }
+  }
+  
   // analyze signatures to determine specialization
   sigs.analyze(full_elementmap);
   
   // initialize specializer
   Specializer specializer(router, full_elementmap);
   specializer.specialize(sigs, errh);
-
-  // find Click binaries
-  String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
 
   // quit early if nothing was done
   if (specializer.nspecials() == 0) {
@@ -412,7 +439,7 @@ particular purpose.\n");
   String package_name = "devirtualize";
   int uniqueifier = 1;
   while (1) {
-    if (router->archive_index(package_name + ".cc") < 0)
+    if (router->archive_index(package_name + cc_suffix) < 0)
       break;
     uniqueifier++;
     package_name = "devirtualize" + String(uniqueifier);
@@ -435,8 +462,11 @@ particular purpose.\n");
     if (chdir(tmpdir.cc()) < 0)
       errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
     
+    // find Click binaries
+    String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+
     // write C++ file
-    String cxx_filename = package_name + ".cc";
+    String cxx_filename = package_name + cc_suffix;
     FILE *f = fopen(cxx_filename, "w");
     if (!f)
       errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
@@ -487,7 +517,7 @@ particular purpose.\n");
   
   // read .cc and .?o files, add them to archive
   {
-    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
+    ArchiveElement ae = init_archive_element(package_name + cc_suffix, 0600);
     ae.data = out.take_string();
     router->add_archive(ae);
 
@@ -510,7 +540,7 @@ particular purpose.\n");
       router->add_archive(init_archive_element("elementmap", 0600));
     ArchiveElement &ae = router->archive("elementmap");
     ElementMap em(ae.data);
-    specializer.output_new_elementmap(full_elementmap, em, package_name + ".cc");
+    specializer.output_new_elementmap(full_elementmap, em, package_name + cc_suffix, driver_requirement);
     ae.data = em.unparse();
   }
 

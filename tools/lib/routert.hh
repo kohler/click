@@ -59,6 +59,9 @@ class RouterT : public ElementClassT {
   RouterT(const RouterT &);
   virtual ~RouterT();
 
+  void check() const;
+  bool is_flat() const;
+  
   void add_formal(const String &n)	{ _formals.push_back(n); }
   
   int ntypes() const			{ return _element_classes.size(); }
@@ -146,11 +149,8 @@ class RouterT : public ElementClassT {
   int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
   bool expands_away() const			{ return true; }
   
-  void check() const;
   void remove_unused_element_types();
-  
   void remove_duplicate_connections();
-  
   void remove_dead_elements(ErrorHandler * = 0);
   
   void remove_compound_elements(ErrorHandler *);

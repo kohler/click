@@ -43,10 +43,11 @@ Bitvector::zero() const
 }
 
 void
-Bitvector::resize(int n, bool valid_n)
+Bitvector::resize_x(int n, bool valid_n)
 {
   int want_u = ((n-1)/32) + 1;
-  int have_u = (valid_n ? u_max() + 1 : 2);
+  int have_u = (valid_n ? u_max() + 1 : INLINE_UNSIGNEDS);
+  if (have_u < INLINE_UNSIGNEDS) have_u = INLINE_UNSIGNEDS;
   if (want_u <= have_u) return;
   
   unsigned *new_data = new unsigned[want_u];

@@ -288,6 +288,19 @@ String::find_left(int c, int start) const
 }
 
 int
+String::find_left(const String &s, int start) const
+{
+  if (start < 0) start = 0;
+  if (!s.length()) return 0;
+  int first_c = s[0], pos = 0, max_pos = length() - s.length();
+  for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
+       pos = find_left(first_c, pos + 1))
+    if (!memcmp(_data + pos, s._data, s.length()))
+      return pos;
+  return -1;
+}
+
+int
 String::find_right(int c, int start) const
 {
   if (start >= _length) start = _length - 1;

@@ -14,9 +14,9 @@ my(%processing_constants) =
     ('AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
 %processing = ('Element' => 'a/a');
-my(@class_file, @class_name, @cxx_name,
+my(@class_file, @click_name, @cxx_name,
    @parents, @processing, @requirements, @provisions,
-   %cxx_name_to_id);
+   %click_name_to_id, %cxx_name_to_id);
 
 sub process_file ($) {
   my($filename) = @_;
@@ -45,9 +45,9 @@ sub process_file ($) {
       push @parents, [];
     }
     if (/class_name.*return\s*\"([^\"]+)\"/) {
-      push @class_name, $1;
+      push @click_name, $1;
     } else {
-      push @class_name, "";
+      push @click_name, "";
     }
     if (/processing.*return\s*(.*?);/) {
       my $p = $1;
@@ -78,6 +78,21 @@ sub process_file ($) {
   for ($i = $first; $i < @processing; $i++) {
     push @requirements, $req;
     push @provisions, $prov;
+    
+    # check to see if overloading is valid
+    if ($click_name[$i] && exists($click_name_to_id{$click_name[$i]})) {
+      my($j) = $click_name_to_id{$click_name[$i]};
+      if (($requirements[$i] =~ /\blinuxmodule\b/ && $requirements[$j] =~ /\buserlevel\b/)
+	  || ($requirements[$i] =~ /\buserlevel\b/ && $requirements[$j] =~ /\blinuxmodule\b/)) {
+	# ok
+      } else {
+	print STDERR "invalid multiple definition of element class \`$click_name[$i]'\n";
+	print STDERR $class_file[$j], ": first definition here\n";
+	print STDERR $class_file[$i], ": second definition here\n";
+	print STDERR "(Two classes may share a name only if one of them is valid only at userlevel\nand the other is valid only in the Linux kernel module. Add explicit\nELEMENT_REQUIRES(linuxmodule) and ELEMENT_REQUIRES(userlevel) statements.)\n";
+      }
+    }
+    $click_name_to_id{$click_name[$i]} = $i;
   }
 }
 
@@ -152,8 +167,8 @@ foreach $fn (@files) {
 umask(022);
 open(OUT, ">&STDOUT");
 print OUT "# Click class name\tC++ class name\theader file\tprocessing code\trequirements\tprovisions\n";
-foreach $id (sort { $class_name[$a] cmp $class_name[$b] } 0..$#class_name) {
-  my($n) = $class_name[$id];
+foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
+  my($n) = $click_name[$id];
   $n = '""' if !$n;
   
   my($f) = $class_file[$id];
@@ -161,7 +176,6 @@ foreach $id (sort { $class_name[$a] cmp $class_name[$b] } 0..$#class_name) {
 
   my($p) = $processing[$id];
   $p = parents_processing($class) if !$p;
-  $p = '?' if !$p;
 
   my($req) = $requirements[$id];
   my($prov) = $provisions[$id];

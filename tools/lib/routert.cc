@@ -139,6 +139,16 @@ RouterT::check() const
     assert(_hookup_from[i].live() == (bool)bv[i]);
 }
 
+bool
+RouterT::is_flat() const
+{
+  for (int i = 0; i < _element_classes.size(); i++)
+    if (ElementClassT *ec = _element_classes[i])
+      if (ec->cast_router())
+	return false;
+  return true;
+}
+
 
 ElementClassT *
 RouterT::find_type_class(const String &s) const
@@ -163,13 +173,13 @@ RouterT::get_type_index(const String &s)
 }
 
 int
-RouterT::get_type_index(const String &s, ElementClassT *eclass)
+RouterT::get_type_index(const String &name, ElementClassT *eclass)
 {
-  int i = _element_type_map[s];
+  int i = _element_type_map[name];
   if (i < 0) {
     i = _element_classes.size();
-    _element_type_map.insert(s, i);
-    _element_type_names.push_back(s);
+    _element_type_map.insert(name, i);
+    _element_type_names.push_back(name);
     _element_classes.push_back(eclass);
     if (eclass) eclass->use();
   }
@@ -177,23 +187,23 @@ RouterT::get_type_index(const String &s, ElementClassT *eclass)
 }
 
 int
-RouterT::get_anon_type_index(const String &name, ElementClassT *fclass)
+RouterT::get_anon_type_index(const String &name, ElementClassT *eclass)
 {
   int i = _element_classes.size();
   _element_type_names.push_back(name);
-  _element_classes.push_back(fclass);
-  if (fclass) fclass->use();
+  _element_classes.push_back(eclass);
+  if (eclass) eclass->use();
   return i;
 }
 
 int
-RouterT::add_type_index(const String &s, ElementClassT *eclass)
+RouterT::add_type_index(const String &name, ElementClassT *eclass)
 {
-  int i = _element_type_map[s];
+  int i = _element_type_map[name];
   if (i < 0 || _element_classes[i] != eclass) {
     i = _element_classes.size();
-    _element_type_map.insert(s, i);
-    _element_type_names.push_back(s);
+    _element_type_map.insert(name, i);
+    _element_type_names.push_back(name);
     _element_classes.push_back(eclass);
     if (eclass) eclass->use();
   }
@@ -1302,8 +1312,8 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   if (sa.length() != old_sa_len)
     sa << "\n";
   
-  // print element types
-  old_sa_len = sa.length();
+  // print element declarations
+  int nprinted_elements = 0;
   for (int i = 0; i < nelements; i++) {
     const ElementT &e = _elements[i];
     if (e.dead() || e.type == TUNNEL_TYPE || e.type == UPREF_TYPE)
@@ -1317,8 +1327,9 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     if (e.configuration)
       sa << "(" << e.configuration << ")";
     sa << ";\n";
+    nprinted_elements++;
   }
-  if (sa.length() != old_sa_len)
+  if (nprinted_elements)
     sa << "\n";
 
   // mark loser connections
@@ -1348,7 +1359,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   }
 
   // count line numbers so we can give reasonable error messages
-  {
+  if (nprinted_elements) {
     int lineno = 1;
     const char *s = sa.data();
     int len = sa.length();

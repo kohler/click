@@ -252,4 +252,4 @@ BIM::send_packet(const unsigned char buf[], unsigned int len)
 }
 
 EXPORT_ELEMENT(BIM)
-ELEMENT_REQUIRES(!linuxmodule)
+ELEMENT_REQUIRES(userlevel)

@@ -22,8 +22,8 @@
 #include "subvector.hh"
 #include "timer.hh"
 #include <stdarg.h>
-#include <unistd.h>
 #ifdef CLICK_USERLEVEL
+# include <unistd.h>
 # include <errno.h>
 #endif
 
@@ -737,6 +737,7 @@ Router::initialize(ErrorHandler *errh)
 #if CLICK_USERLEVEL
   FD_ZERO(&_read_select_fd_set);
   FD_ZERO(&_write_select_fd_set);
+  _max_select_fd = -1;
   assert(!_selectors.size());
 #endif
 
@@ -1073,6 +1074,8 @@ Router::add_select(int fd, int element, int mask)
     FD_SET(fd, &_read_select_fd_set);
   if (mask & SELECT_WRITE)
     FD_SET(fd, &_write_select_fd_set);
+  if ((mask & (SELECT_READ | SELECT_WRITE)) && fd > _max_select_fd)
+    _max_select_fd = fd;
   
   for (int i = 0; i < _selectors.size(); i++)
     if (_selectors[i].fd == fd && _selectors[i].element == element) {
@@ -1102,6 +1105,8 @@ Router::remove_select(int fd, int element, int mask)
       if (!s.mask) {
 	s = _selectors.back();
 	_selectors.pop_back();
+	if (_selectors.size() == 0)
+	  _max_select_fd = -1;
       }
       return 0;
     }
@@ -1124,16 +1129,20 @@ Router::wait()
   // And call relevant elements' selected() methods.
   fd_set read_mask = _read_select_fd_set;
   fd_set write_mask = _write_select_fd_set;
-  bool any = (_selectors.size() > 0);
+  bool selects = (_selectors.size() > 0);
 
-  struct timeval tv;
-  if (!any && !_timer_head.get_next_delay(&tv))
+  struct timeval wait, *wait_ptr = &wait;
+  bool timers = _timer_head.get_next_delay(&wait);
+  if (!selects && !timers)
     return;
   // never wait if anything is scheduled
+  // otherwise, if no timers, block indefinitely
   if (scheduled_next() != this)
-    tv.tv_sec = tv.tv_usec = 0;
+    wait.tv_sec = wait.tv_usec = 0;
+  else if (!timers)
+    wait_ptr = 0;
 
-  int n = select(FD_SETSIZE, &read_mask, &write_mask, (fd_set*)0, &tv);
+  int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
   
   if (n < 0 && errno != EINTR)
     perror("select");

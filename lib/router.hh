@@ -20,6 +20,7 @@ class Router : public ElementLink {
   struct Selector;
   fd_set _read_select_fd_set;
   fd_set _write_select_fd_set;
+  int _max_select_fd;
   Vector<Selector> _selectors;
 #endif
   

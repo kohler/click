@@ -33,7 +33,8 @@
 bool ignore_line_directives = false;
 
 RouterT *
-read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
+read_router_file(const char *filename, bool empty_ok, RouterT *router,
+		 ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -63,6 +64,8 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   // read router
   if (!filename || strcmp(filename, "-") == 0)
     filename = "<stdin>";
+  if (!s.length() && !empty_ok)
+    errh->warning("%s: empty configuration", filename);
   LexerT lexer(errh, ignore_line_directives);
   lexer.reset(s, filename);
   if (router)
@@ -80,6 +83,25 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   // done
   return router;
 }
+
+RouterT *
+read_router_file(const char *filename, bool empty_ok, ErrorHandler *errh)
+{
+  return read_router_file(filename, empty_ok, 0, errh);
+}
+
+RouterT *
+read_router_file(const char *filename, RouterT *prepared_router, ErrorHandler *errh)
+{
+  return read_router_file(filename, false, prepared_router, errh);
+}
+
+RouterT *
+read_router_file(const char *filename, ErrorHandler *errh)
+{
+  return read_router_file(filename, false, 0, errh);
+}
+
 
 void
 write_router_file(RouterT *r, FILE *f, ErrorHandler *errh)
@@ -135,32 +157,16 @@ write_router_file(RouterT *r, const char *name, ErrorHandler *errh)
 // ELEMENTMAP
 
 ElementMap::ElementMap()
-  : _name_map(0), _cxx_name_map(0), _requirement_map(-1), _nrequirements(0)
+  : _name_map(0), _cxx_map(0)
 {
-  (void) requirement("linuxmodule");
-  _requirement_map.insert("userlevel", 1);
-  _requirement_map.insert("!userlevel", 0);
-  _requirement_name[1] = "userlevel";
-  add(String(), String(), String(), String());
+  add(String(), String(), String(), String(), String(), String());
 }
 
 ElementMap::ElementMap(const String &str)
-  : _name_map(0), _cxx_name_map(0), _requirement_map(-1), _nrequirements(0)
+  : _name_map(0), _cxx_map(0)
 {
-  (void) requirement("linuxmodule");
-  _requirement_map.insert("userlevel", 1);
-  _requirement_map.insert("!userlevel", 0);
-  _requirement_name[1] = "userlevel";
-  add(String(), String(), String(), String());
+  add(String(), String(), String(), String(), String(), String());
   parse(str);
-}
-
-ElementMap::~ElementMap()
-{
-  for (int i = 0; i < _name.size(); i++) {
-    delete _requirements[i];
-    delete _provisions[i];
-  }
 }
 
 String
@@ -169,71 +175,53 @@ ElementMap::processing_code(const String &n) const
   return _processing_code[ _name_map[n] ];
 }
 
-int
-ElementMap::requirement(const String &s)
+void
+ElementMap::set_driver(int i, const String &requirements)
 {
-  bool negated = (s.length() && s[0] == '!');
-  String req = (negated ? s.substring(1) : s);
-  int i = _requirement_map[req];
-  if (i < 0) {
-    i = _nrequirements;
-    _nrequirements += 2;
-    _requirement_map.insert(req, i);
-    _requirement_name.push_back(req);
-    _requirement_name.push_back("!" + req);    
-  }
-  return i ^ (negated ? 1 : 0);
+  int inreq = requirements.find_left("linuxmodule");
+  if (inreq >= 0)		// XXX linuxmodule as substring?
+    _driver[i] = DRIVER_LINUXMODULE;
+  inreq = requirements.find_left("userlevel");
+  if (inreq >= 0)
+    _driver[i] = DRIVER_USERLEVEL;
 }
 
 int
-ElementMap::add(const String &click_name, String cxx_name,
-		String header_file, String processing_code)
+ElementMap::add(const String &click_name, const String &cxx_name,
+		const String &header_file, const String &processing_code,
+		const String &requirements, const String &provisions)
 {
   if (!click_name && !cxx_name)
     return -1;
 
-  if (cxx_name == "?")
-    cxx_name = String();
-  if (header_file == "?")
-    header_file = String();
-  if (processing_code == "?")
-    processing_code = String();
-  
   int old_name = _name_map[click_name];
-  int old_cxx_name = _cxx_name_map[cxx_name];
+  int old_cxx = _cxx_map[cxx_name];
 
+  int i = _name.size();
   _name.push_back(click_name);
-  _cxx_name.push_back(cxx_name);
+  _cxx.push_back(cxx_name);
   _header_file.push_back(header_file);
   _processing_code.push_back(processing_code);
-  _requirements.push_back(0);
-  _provisions.push_back(0);
-
-  int i = _name.size() - 1;
+  _requirements.push_back(requirements);
+  _provisions.push_back(provisions);
+  _driver.push_back(-1);
+  if (requirements)
+    set_driver(i, requirements);
+  
   _name_map.insert(click_name, i);
-  _cxx_name_map.insert(cxx_name, i);
+  _cxx_map.insert(cxx_name, i);
   _name_next.push_back(old_name);
-  _cxx_name_next.push_back(old_cxx_name);
+  _cxx_next.push_back(old_cxx);
   
   return i;
 }
 
-void
-ElementMap::add_requirement(int i, int r)
+int
+ElementMap::add(const String &click_name, const String &cxx_name,
+		const String &header_file, const String &processing_code)
 {
-  Bitvector *b = _requirements[i];
-  if (!b)
-    b = _requirements[i] = new Bitvector(_nrequirements);
-  b->force_bit(r) = true;
-}
-
-void
-ElementMap::add_provision(int i, int r)
-{
-  Bitvector *b = _provisions[i];
-  if (!b)
-    b = _provisions[i] = new Bitvector(_nrequirements);
-  b->force_bit(r) = true;
+  return add(click_name, cxx_name, header_file, processing_code,
+	     String(), String());
 }
 
 void
@@ -251,15 +239,15 @@ ElementMap::remove(int i)
     _name_map.insert(_name[i], _name_next[i]);
 
   p = -1;
-  for (int t = _cxx_name_map[ _cxx_name[i] ]; t > 0; p = t, t = _cxx_name_next[t])
+  for (int t = _cxx_map[ _cxx[i] ]; t > 0; p = t, t = _cxx_next[t])
     /* nada */;
   if (p >= 0)
-    _cxx_name_next[p] = _cxx_name_next[i];
+    _cxx_next[p] = _cxx_next[i];
   else
-    _cxx_name_map.insert(_cxx_name[i], _cxx_name_next[i]);
+    _cxx_map.insert(_cxx[i], _cxx_next[i]);
 
   _name[i] = String();
-  _cxx_name[i] = String();
+  _cxx[i] = String();
 }
 
 void
@@ -268,36 +256,9 @@ ElementMap::parse(const String &str)
   Vector<String> name, cxx_name, header, processing, requirements, provisions;
   parse_tabbed_lines(str, &name, &cxx_name, &header, &processing,
 		     &requirements, &provisions, (void *)0);
-  for (int i = 0; i < name.size(); i++) {
-    int which = add(name[i], cxx_name[i], header[i], processing[i]);
-    if (which < 0)
-      continue;
-    if (requirements[i]) {
-      Vector<String> words;
-      cp_spacevec(requirements[i], words);
-      for (int j = 0; j < words.size(); j++)
-	add_requirement(which, requirement(words[j]));
-    }
-    if (provisions[i]) {
-      Vector<String> words;
-      cp_spacevec(requirements[i], words);
-      for (int j = 0; j < words.size(); j++)
-	add_provision(which, requirement(words[j]));
-    }
-  }
-}
-
-void
-ElementMap::unparse_requirements(Bitvector *b, StringAccum &sa) const
-{
-  bool any = false;
-  sa << '"';
-  for (int j = 0; j < b->size(); j++)
-    if ((*b)[j]) {
-      sa << (any ? " " : "") << _requirement_name[j];
-      any = true;
-    }
-  sa << '"';
+  for (int i = 0; i < name.size(); i++)
+    (void) add(name[i], cxx_name[i], header[i], processing[i],
+	       requirements[i], provisions[i]);
 }
 
 String
@@ -305,34 +266,80 @@ ElementMap::unparse() const
 {
   StringAccum sa;
   for (int i = 1; i < size(); i++) {
-    if (!_name[i] && !_cxx_name[i])
+    if (!_name[i] && !_cxx[i])
       continue;
-    if (_name[i])
-      sa << _name[i] << '\t';
-    else
-      sa << "\"\"\t";
-    if (_cxx_name[i])
-      sa << _cxx_name[i] << '\t';
-    else
-      sa << "?\t";
-    if (_header_file[i])
-      sa << _header_file[i] << '\t';
-    else
-      sa << "?\t";
-    if (_processing_code[i])
-      sa << _processing_code[i] << '\t';
-    else
-      sa << "?\t";
-    if (_requirements[i])
-      unparse_requirements(_requirements[i], sa);
-    else
-      sa << "\"\"";
-    sa << '\t';
-    if (_provisions[i])
-      unparse_requirements(_provisions[i], sa);
-    else
-      sa << "\"\"";
-    sa << '\n';
+    sa << cp_quote(_name[i]) << '\t'
+       << cp_quote(_cxx[i]) << '\t'
+       << cp_quote(_header_file[i]) << '\t'
+       << cp_quote(_processing_code[i]) << '\t'
+       << cp_quote(_requirements[i]) << '\t'
+       << cp_quote(_provisions[i]) << '\n';
   }
   return sa.take_string();
+}
+
+void
+ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
+			ErrorHandler *errh) const
+{
+  assert(r->is_flat());
+  map_indexes.assign(r->ntypes(), -1);
+  for (int i = 0; i < r->nelements(); i++) {
+    int t = r->etype(i);
+    if (t >= 0 && map_indexes[t] == -1) {
+      int idx = _name_map[r->type_name(t)];
+      if (idx <= 0) {
+	if (errh)
+	  errh->error("nothing known about element class `%s'", String(r->type_name(t)).cc());
+	map_indexes[t] = -2;
+      } else
+	map_indexes[t] = idx;
+    }
+  }
+}
+
+bool
+ElementMap::driver_indifferent(const Vector<int> &map_indexes) const
+{
+  for (int i = 0; i < map_indexes.size(); i++) {
+    int idx = map_indexes[i];
+    if (idx > 0 && _driver[idx] >= 0)
+      return false;
+  }
+  return true;
+}
+
+bool
+ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
+{
+  for (int i = 0; i < map_indexes.size(); i++) {
+    int idx = map_indexes[i];
+    if (idx <= 0 || _driver[idx] < 0)
+      continue;
+    bool any = false;
+    while (idx > 0 && !any) {
+      if (_driver[idx] < 0 || _driver[idx] == driver)
+	any = true;
+      else
+	idx = _name_next[idx];
+    }
+    if (!any)
+      return false;
+  }
+  return true;
+}
+
+void
+ElementMap::limit_driver(int driver)
+{
+  for (HashMap<String, int>::Iterator i = _name_map.first(); i; i++) {
+    int t = i.value();
+    while (t > 0 && _driver[t] >= 0 && _driver[t] != driver)
+      t = i.value() = _name_next[t];
+  }
+  for (HashMap<String, int>::Iterator i = _cxx_map.first(); i; i++) {
+    int t = i.value();
+    while (t > 0 && _driver[t] >= 0 && _driver[t] != driver)
+      t = i.value() = _cxx_next[t];
+  }
 }

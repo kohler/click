@@ -343,7 +343,11 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
   // analyze archive
   for (int i = 0; i < archive.size(); i++) {
     const ArchiveElement &ae = archive[i];
-    if (ae.name.substring(-3) == ".cc") {
+    if (ae.name.substring(-5) == ".u.cc") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -5));
+      if (have == -1 || have >= 0) // prefer .u.cc to .cc
+	have = i;
+    } else if (ae.name.substring(-3) == ".cc" && (ae.name.length() < 5 || ae.name[ae.name.length()-5] != '.')) {
       int &have = have_requirements.find_force(ae.name.substring(0, -3));
       if (have == -1)
 	have = i;
@@ -373,7 +377,7 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
 	(errh, "While compiling package `" + package + ".uo':");
 
       // write .cc file
-      String filename = package + ".cc";
+      String filename = archive[archive_index].name;
       String source_text = archive[archive_index].data;
       FILE *f = fopen(filename, "w");
       if (!f)
@@ -577,6 +581,9 @@ particular purpose.\n");
     /* do nothing */;
   router = lexer->create_router();
   lexer->end_parse(cookie);
+
+  if (router->nelements() == 0)
+    errh->warning("%s: configuration has no elements", router_file);
 
   // handle stop option by adding a QuitWatcher element
   if (stop && stop_guess) {

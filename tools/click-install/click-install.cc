@@ -124,7 +124,10 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
   // analyze archive
   for (int i = 0; i < archive.size(); i++) {
     const ArchiveElement &ae = archive[i];
-    if (ae.name.substring(-3) == ".cc") {
+    if (ae.name.substring(-5) == ".k.cc") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -5));
+      have |= 1;
+    } if (ae.name.substring(-3) == ".cc" && (ae.name.length() < 5 || ae.name[ae.name.length()-5] != '.')) {
       int &have = have_requirements.find_force(ae.name.substring(0, -3));
       have |= 1;
     } else if (ae.name.substring(-3) == ".ko") {
@@ -152,7 +155,9 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
 	(errh, "While compiling package `" + package + ".ko':");
 
       // write .cc file
-      String filename = package + ".cc";
+      String filename = package + ".k.cc";
+      if (r->archive_index(filename) < 0)
+	filename = package + ".cc";
       assert(r->archive_index(filename) >= 0);
       String source_text = r->archive(filename).data;
       FILE *f = fopen(filename, "w");

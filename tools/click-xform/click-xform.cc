@@ -462,7 +462,7 @@ void
 read_pattern_file(const char *name, ErrorHandler *errh)
 {
   patterns_attempted++;
-  RouterT *pat_file = read_router_file(name, errh);
+  RouterT *pat_file = read_router_file(name, true, errh);
   if (!pat_file) return;
   
   for (int i = 0; i < pat_file->ntypes(); i++) {

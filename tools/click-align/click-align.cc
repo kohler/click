@@ -314,7 +314,7 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *router = read_router_file(router_file, errh, prepared_router());
+  RouterT *router = read_router_file(router_file, prepared_router(), errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
   router->flatten(errh);
