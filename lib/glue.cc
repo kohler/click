@@ -61,7 +61,8 @@ click_chatter(const char *fmt, ...)
 unsigned click_new_count = 0;
 unsigned click_outstanding_news = 0;
 
-#define CHUNK_MAGIC -49281
+#define CHUNK_MAGIC		0xffff3f7f	/* -49281 */
+#define CHUNK_MAGIC_FREED	0xc66b04f5
 struct Chunk {
   int magic;
   int size;
@@ -122,10 +123,16 @@ operator delete(void *addr)
     click_outstanding_news--;
 #if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
+    if (c->magic == CHUNK_MAGIC_FREED) {
+      printk("<1>click error: double-free of memory at %p (%d @ %p)\n",
+	     addr, c->size, c->where);
+      return;
+    }
     if (c->magic != CHUNK_MAGIC) {
       printk("<1>click error: memory corruption on delete %p\n", addr);
       return;
     }
+    c->magic = CHUNK_MAGIC_FREED;
     if (c->prev) c->prev->next = c->next;
     else chunks = c->next;
     if (c->next) c->next->prev = c->prev;
@@ -143,10 +150,16 @@ operator delete [] (void *addr)
     click_outstanding_news--;
 #if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
+    if (c->magic == CHUNK_MAGIC_FREED) {
+      printk("<1>click error: double-free of memory at %p (%d @ %p)\n",
+	     addr, c->size, c->where);
+      return;
+    }
     if (c->magic != CHUNK_MAGIC) {
       printk("<1>click error: memory corruption on delete[] %p\n", addr);
       return;
     }
+    c->magic = CHUNK_MAGIC_FREED;
     if (c->prev) c->prev->next = c->next;
     else chunks = c->next;
     if (c->next) c->next->prev = c->prev;
