@@ -1,5 +1,5 @@
-#ifndef CLP_H
-#define CLP_H
+#ifndef LCDF_CLP_H
+#define LCDF_CLP_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -7,7 +7,7 @@ extern "C" {
 /* clp.h - Public interface to CLP.
  * This file is part of CLP, the command line parser package.
  *
- * Copyright (c) 1997-2002 Eddie Kohler, kohler@icir.org
+ * Copyright (c) 1997-2003 Eddie Kohler, kohler@icir.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,17 +30,18 @@ extern "C" {
 #define Clp_ArgUnsigned		5
 #define Clp_ArgDouble		6
 
-#define Clp_MaxDefaultType	Clp_ArgDouble
+#define Clp_FirstUserType	10
 
 /* Argument type flags */
-#define Clp_DisallowOptions	(1<<0)
+#define Clp_DisallowOptions	(1<<0)	/* Argument won't resemble an option */
 
 /* Flags for individual Clp_Options */
-#define Clp_Mandatory		(1<<0)
-#define Clp_Optional		(1<<1)
-#define Clp_Negate		(1<<2)
-#define Clp_AllowDash		(1<<3)
-#define Clp_OnlyNegated		(1<<4)
+#define Clp_Mandatory		(1<<0)	/* Has mandatory argument */
+#define Clp_Optional		(1<<1)	/* Has optional argument */
+#define Clp_Negate		(1<<2)	/* Allow --no-OPT */
+#define Clp_OnlyNegated		(1<<3)	/* Allow --no-OPT, but not --OPT */
+#define Clp_PreferredMatch	(1<<4)	/* Prefer --OPT to --OPTwhatever when
+					   matching option prefixes */
 
 /* Option types for Clp_SetOptionChar */
 /*	Clp_NotOption		0 */
@@ -114,7 +115,7 @@ struct Clp_Parser {
 };
 
 
-Clp_Parser *	Clp_NewParser(int argc, char * const argv[],
+Clp_Parser *	Clp_NewParser(int argc, const char * const *argv,
 			      int nopt, Clp_Option *opt);
 void		Clp_DeleteParser(Clp_Parser *);
 
