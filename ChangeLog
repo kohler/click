@@ -1,3 +1,10 @@
+2001-08-15 Wednesday 13:18  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/: linux-2.4.4-patch (1.5), make-linux24-patch (1.1),
+	restore-linux24 (1.1): Fix a transmit ring overflow in the 2.4
+	tulip polling driver, and make the scripts to generate patches
+	against a 2.4 kernel.
+
 2001-08-14 Tuesday 11:15  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/divertsocket.cc (1.7): set timestamp
