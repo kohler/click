@@ -24,25 +24,35 @@
 #include <click/error.hh>
 
 #include <limits.h>
-
-#ifdef __KERNEL__
-
-ErrorHandler *click_chatter_errh;
+#ifndef CLICK_LINUXMODULE
+# include <stdarg.h>
+#endif
 
 void
 click_chatter(const char *fmt, ...)
 {
   va_list val;
   va_start(val, fmt);
-  if (click_chatter_errh)
-    click_chatter_errh->verror(ErrorHandler::Message, "chatter", fmt, val);
+
+  ErrorHandler *errh = ErrorHandler::default_handler();
+  if (errh)
+    errh->verror(ErrorHandler::Message, "", fmt, val);
   else {
+#ifdef CLICK_LINUXMODULE
     static char buf[512];		// XXX
     int i = vsprintf(buf, fmt, val);
     printk("<1>%s\n", buf);
+#else
+    vfprintf(stderr, fmt, val);
+    fprintf(stderr, "\n");
+#endif
   }
+  
   va_end(val);
 }
+
+
+#ifdef __KERNEL__
 
 // Just for statistics.
 unsigned click_new_count = 0;
@@ -241,20 +251,6 @@ strtol(const char *nptr, char **endptr, int base)
 };
 
 #else /* !__KERNEL__ */
-
-#include <stdarg.h>
-
-void
-click_chatter(const char *fmt, ...)
-{
-  va_list args;
-  
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-  
-  fprintf(stderr, "\n");
-}
 
 int click_new_count; /* dummy */
 

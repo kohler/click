@@ -53,7 +53,8 @@ typedef unsigned long long u_quad_t;
 #undef delete
 #undef class
 
-__inline__ unsigned int random(void)
+__inline__ unsigned int
+random()
 {
   static unsigned long seed=152L;
   seed=seed*69069L+1;
@@ -61,7 +62,7 @@ __inline__ unsigned int random(void)
 }
 
 __inline__ unsigned long long
-click_get_cycles(void)
+click_get_cycles()
 {
     unsigned long low, high;
     unsigned long long x;
@@ -112,7 +113,7 @@ void _leaving_ipb(void);
 #define CLICK_DMALLOC_REG(s)
 
 __inline__ unsigned long long
-click_get_cycles(void)
+click_get_cycles()
 {
   return(0);
 }
