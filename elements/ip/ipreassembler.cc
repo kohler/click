@@ -404,7 +404,7 @@ IPReassembler::queue_glue(IPQueue *qp)
   next = qp->frags;
 
   
-#ifdef 0
+#if 0
   while(next){
     
     pos = 0;
