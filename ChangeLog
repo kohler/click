@@ -1,3 +1,16 @@
+2001-08-06 Monday 13:04  Eddie Kohler <kohler@aciri.org>
+
+	* lib/ipaddress.cc (1.24): use new HAVE_INDIFFERENT_ALIGNMENT
+	symbol (problem reported by Kyle Jamieson <jamieson@mit.edu>)
+
+2001-08-06 Monday 13:04  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.96), configure.in (1.136), acclick.m4 (1.3),
+	aclocal.m4 (1.3), etc/libclick/lc-configure.in (1.7),
+	etc/samplepackage/acclick.m4 (1.2), config.h.in (1.11): configure
+	noodling: add CLICK_CHECK_INTEGER_TYPES, CLICK_CHECK_INT64_TYPES,
+	CLICK_CHECK_ALIGNMENT; fix CLICK_CHECK_PCAP bug
+
 2001-08-04 Saturday 13:30  Eddie Kohler <kohler@aciri.org>
 
 	* click-mkelemmap (1.13): mkelemmap nitlet
