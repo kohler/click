@@ -1,3 +1,16 @@
+2001-07-30 Monday 12:12  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.24), tools/run-grid
+	(1.3), conf/grid.click (1.33): [no log message]
+
+2001-07-30 Monday 11:43  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/grid.hh (1.26), elements/grid/gridroutetable.cc
+	(1.7), elements/grid/gridroutetable.hh (1.4),
+	elements/grid/lookuplocalgridroute.cc (1.23),
+	elements/grid/lookuplocalgridroute.hh (1.8), tools/run-grid (1.2),
+	conf/grid.click (1.32): multiple gateways support for grid
+
 2001-07-30 Monday 10:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/lookupiprouteron.cc (1.4): added RST handlers
