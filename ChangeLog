@@ -1,3 +1,29 @@
+2003-12-15 Monday 09:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.73), dsdvroutetable.hh
+	(1.51): add IGNORE_INVALID_ROUTES option to tell DSDV to throw out
+	any routes with invalid metrics, and not use them for routing
+
+2003-12-15 Monday 09:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsrroutetable.cc (1.5), dsrroutetable.hh (1.4):
+	changes (untested...) to allow DSR to work with generic metric
+	elements
+
+2003-12-15 Monday 09:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: yarvismetric.cc (1.1), yarvismetric.hh (1.1): new
+	e2e loss metric using sum of logs of each link delivery rate, based
+	on paper by yarvis et al.
+
+2003-12-15 Monday 09:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: e2elossmetric.hh (1.4), etxmetric.cc (1.4),
+	etxmetric.hh (1.4), gridgenericmetric.hh (1.5), hopcountmetric.hh
+	(1.3), lirmetric.hh (1.4), threshmetric.hh (1.3): added functions
+	to scale metrics to/from single-byte values (i.e. to work with DSR
+	impl)
+
 2003-12-14 Sunday 00:38  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: srcr.cc (1.35), srcr.hh (1.30): add
