@@ -1,3 +1,74 @@
+2001-03-23 Friday 13:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: chattersocket.cc, chattersocket.hh: added
+	ChatterSocket element for Doug
+
+2001-03-23 Friday 13:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/grid/gridlocationinfo.cc, elements/grid/locationinfo.cc,
+	elements/grid/loctable.cc, elements/grid/movesim.cc,
+	elements/grid/pep.cc, elements/grid/radiosim.cc,
+	elements/grid/regionpep.cc, elements/grid/simplelocquerier.cc,
+	elements/ip/ipratemon.cc, elements/standard/bandwidthmeter.cc,
+	elements/standard/probsplitter.cc,
+	elements/standard/randomerror.cc,
+	elements/standard/randomlossage.cc, elements/standard/red.cc,
+	elements/standard/scheduleinfo.cc, include/click/ewma.hh,
+	linuxmodule/module.cc: adapt to confparse interface changes
+
+2001-03-23 Friday 13:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: controlsocket.cc, controlsocket.hh: listen()
+	happens at initialize time, not configure time
+
+2001-03-23 Friday 13:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: timedsource.cc, timedsource.hh: add keyword
+	arguments a la InfiniteSource/RatedSource and lots of handlers
+
+2001-03-23 Friday 13:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: print.cc, print.hh: added keyword arguments
+	to Print; use StringAccum to build up message; change output format
+	to be more like IPPrint
+
+2001-03-23 Friday 13:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: infinitesource.cc, infinitesource.hh,
+	ratedsource.cc: add specialized write handler for "data" (keyword
+	arguments make changing argument 0 a bad idea)
+
+2001-03-23 Friday 13:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh: add schedule_now() function
+
+2001-03-23 Friday 13:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/sync.hh: use #error, not StaticAssert
+
+2001-03-23 Friday 13:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh: added back() methods; header file
+	rearrangement
+
+2001-03-23 Friday 13:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, lib/error.cc: added set_default_handler
+	static method
+
+2001-03-23 Friday 13:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: starting to
+	document confparse: changed cp_real functions to cp_real10, and
+	constants to cpReal10; changed cpNonnegFixed to cpNonnegReal2 for
+	consistency; added cp_unsigned_real2 and cpReal2; added
+	cp_unparse_real10() functions and cp_unparse_milliseconds();
+	rearrangements for readability
+
+2001-03-23 Friday 13:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-03-22 Thursday 15:27  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* missing: nitlet: always put "." first on TEXINPUTS
