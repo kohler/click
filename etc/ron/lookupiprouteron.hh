@@ -44,7 +44,7 @@ public:
   static const int POLICY_PROBE3_UNPROBED       = 4;
   static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
 
-  static const int NUM_POLICIES = 2;
+  static const int NUM_POLICIES = 3;
 
   LookupIPRouteRON();
   ~LookupIPRouteRON();
