@@ -130,7 +130,12 @@ Tun::push(int, Packet *p)
    * alignment bytes 
    */
   char big[2048];
-  char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; // ethertap driver is very picky about what address we use here
+  /*
+   * ethertap driver is very picky about what address we use here.
+   * e.g. if we have the wrong address, linux might ignore all the
+   * packets, or accept udp or icmp, but ignore tcp.  aaarrrgh, well
+   * this works.  -ddc */
+  char to[] = { 0xfe, 0xfd, 0x0, 0x0, 0x0, 0x0 }; 
   char *from = to;
   short protocol = htons(0x0800);
   if(p->length()+16 >= sizeof(big)){
