@@ -7,19 +7,28 @@
 
 #include "grid.hh"
 
-// A PEP packet carries a bunch of pep_fixes. Each describes the
+#define pep_proto_fixes 5  // Max # of fixes in a packet.
+#define pep_max_hops 10    // Don't propagate farther than this.
+
+// Intervals, in seconds:
+
+#define pep_update 1       // Broadcast updates this often.
+#define pep_stale 5        // Don't send fixes older than this.
+#define pep_purge 100      // Delete cache entries older than this.
+
+// A PEP packet carries a bunch of pep_fixes. Each fix describes the
 // probable distance to a different node with a known position.
+
 struct pep_fix {
-  unsigned long fix_id;         // IP address in network byte order.
-  struct grid_location fix_loc; // Location of node id.
-  unsigned long fix_d;          // Estimated meters from sender to id.
-  // Ought to include a timestamp in case the fix moves. Like DSDV.
+  int fix_id;             // IP address.
+  int fix_seq;            // fix's sequence number.
+  grid_location fix_loc;  // Location of node fix_id.
+  int fix_hops;           // # of hops to fix_id.
 };
 
 struct pep_proto {
-  unsigned long id;        // The sender of this packet.
+  int id;            // The sender of this packet.
   int n_fixes;
-#define pep_proto_fixes 5
   struct pep_fix fixes[pep_proto_fixes];
 };
 

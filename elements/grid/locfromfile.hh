@@ -10,9 +10,10 @@
  *
  *   interval lat lon
  *
- * This means "spend interval seconds moving to lat/lon."
+ * This means means "spend interval seconds moving to lat/lon."
+ *
  * Here's a reasonable test file that keeps the node more or
- * less within radio range of 0,0:
+ * less within 250 meters of 0,0:
  *
  * 1 0 0
  * 10 .002 .002

@@ -12,6 +12,43 @@
  * means UDP/IP/Ether.
  *
  * Also expects packets with just PEP payload.
+ *
+ * A node that knows its location originates a PEP "fix" every
+ * second. Each fix update has a new sequence number.
+ *
+ * All nodes remember all the fixes they've heard about in the
+ * last 100 seconds, along with the number of hops to the fix.
+ *
+ * A node accepts a new update if the sequence number is
+ * higher than remembered, or if seq is equal and hop count
+ * is less. The node remembers the time-stamp of the last
+ * time it accepted each fix.
+ *
+ * Every second, a node broadcasts the nearest fixes it knows about.
+ * Only fixes heard about in the last 5 seconds are broadcast.
+ * Also only fixes with hop count < 10.
+ * 
+ * There's a problem that an update with a new sequence number
+ * may move quickly along a long path, and supersede an older
+ * slower update that moved along the minimum length path.
+ *
+ * Here's how the PEP protocol handles some interesting cases:
+ *
+ * Crash: after about five seconds, nearby nodes will stop propagating
+ * a crashed fix's updates. But they remember the fix for 100 seconds,
+ * so won't accept looped updates with high hop counts. The 100
+ * seconds has to be longer than 5 seconds plus the maximum
+ * allowed hop count; otherwise updates may loop forever.
+ *
+ * Re-start: a fix node is only allowed to re-start if it has stayed
+ * down for >= 100 seconds, long enough for nodes to flush their entries.
+ *
+ * Move closer: if a fix moves closer to you, you'll see (and
+ * believe) smaller hop counts.
+ *
+ * Move farther: if a fix moves farther from you, you'll see
+ * higher hop counts but you'll believe them because the sequence
+ * number is larger.
  */
 
 #include "element.hh"
@@ -34,7 +71,6 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  Packet *make_PEP();
   Packet *simple_action(Packet *p);
   
   void run_scheduled();
@@ -43,21 +79,25 @@ private:
   
   IPAddress _my_ip;
   Timer _timer;
-  int _period;  // Milliseconds between updates we send.
 
   bool _fixed;  // We have a static, known location in _lat / _lon.
   float _lat;
   float _lon;
+  int _seq;
 
   struct Entry {
-    bool _valid;
-    unsigned long _id;
-    grid_location _loc;
-    unsigned _d; // Estimated meters to _loc. In host byte order.
+    time_t _when;
+    pep_fix _fix;
   };
-#define PEPMaxEntries 10
-  Entry _entries[PEPMaxEntries];
-  Entry *findEntry(unsigned id, int allocate);
+  Vector<Entry> _entries;
+  int findEntry(int id, bool allocate);
+
+  void purge_old();
+  void sort_entries();
+  bool sendable(Entry);
+  void externalize(pep_fix *);
+  void internalize(pep_fix *);
+  Packet *make_PEP();
 };
 
 #endif

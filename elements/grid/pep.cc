@@ -22,11 +22,7 @@ PEP::PEP()
   : Element(1, 1), _timer(this)
 {
   _fixed = 0;
-  _period = 1000;
-
-  int i;
-  for(i = 0; i < PEPMaxEntries; i++)
-    _entries[i]._valid = false;
+  _seq = 1;
 }
 
 PEP::~PEP()
@@ -75,15 +71,84 @@ int
 PEP::initialize(ErrorHandler *)
 {
   _timer.attach(this);
-  _timer.schedule_after_ms(_period);
+  _timer.schedule_after_ms(pep_update * 1000);
   return 0;
 }
 
 void
 PEP::run_scheduled()
 {
+  purge_old();
   output(0).push(make_PEP());
-  _timer.schedule_after_ms(random() % (_period * 2));
+  _timer.schedule_after_ms(random() % (pep_update * 1000 * 2));
+}
+
+void
+PEP::purge_old()
+{
+  struct timeval tv;
+
+  click_gettimeofday(&tv);
+
+  int i = 0;
+  int j;
+  for(j = 0; j < _entries.size(); j++){
+    if(tv.tv_sec - _entries[j]._when <= pep_purge){
+      _entries[i++] = _entries[j];
+    } else {
+      click_chatter("PEP: purging an old entry");
+    }
+  }
+
+  static Entry dud;
+  _entries.resize(i, dud);
+}
+
+void
+PEP::sort_entries()
+{
+  int n = _entries.size();
+  int i, j;
+
+  for(i = 0; i < n; i++){
+    int h = _entries[i]._fix.fix_hops;
+    for(j = i + 1; j < n; j++){
+      if(_entries[j]._fix.fix_hops < h){
+        Entry tmp = _entries[i];
+        _entries[i] = _entries[j];
+        _entries[j] = tmp;
+      }
+    }
+  }
+}
+
+// Are we allowed to send a particular update?
+bool
+PEP::sendable(Entry e)
+{
+  struct timeval tv;
+
+  click_gettimeofday(&tv);
+  if(e._when + pep_stale < tv.tv_sec &&
+     e._fix.fix_hops < pep_max_hops){
+    return(true);
+  }
+
+  return(false);
+}
+
+void
+PEP::externalize(pep_fix *fp)
+{
+  fp->fix_seq = htonl(fp->fix_seq);
+  fp->fix_hops = htonl(fp->fix_hops);
+}
+
+void
+PEP::internalize(pep_fix *fp)
+{
+  fp->fix_seq = ntohl(fp->fix_seq);
+  fp->fix_hops = ntohl(fp->fix_hops);
 }
 
 Packet *
@@ -100,19 +165,19 @@ PEP::make_PEP()
     pep_fix *f = pp->fixes + nf;
     nf++;
     f->fix_id = _my_ip.addr();
+    f->fix_seq = htonl(_seq++);
     f->fix_loc = grid_location(_lat, _lon);
-    f->fix_d = htonl(0);
+    f->fix_hops = htonl(0);
   }
 
+  sort_entries();
+
   int i;
-  for(i = 0; i < PEPMaxEntries && nf < pep_proto_fixes; i++){
-    Entry *e = _entries + i;
-    if(e->_valid){
-      pep_fix *f = pp->fixes + nf;
-      nf++;
-      f->fix_id = e->_id;
-      f->fix_loc = e->_loc;
-      f->fix_d = htonl(e->_d + 250);
+  for(i = 0; i < _entries.size() && nf < pep_proto_fixes; i++){
+    if(sendable(_entries[i])){
+      pp->fixes[nf] = _entries[i]._fix;
+      pp->fixes[nf].fix_hops += 1;
+      externalize(&(pp->fixes[nf]));
     }
   }
 
@@ -121,28 +186,24 @@ PEP::make_PEP()
   return p;
 }
 
-PEP::Entry *
-PEP::findEntry(unsigned id, int allocate)
+int
+PEP::findEntry(int id, bool create)
 {
   int i;
-  int unused = -1;
-  
-  for(i = 0; i < PEPMaxEntries; i++){
-    if(_entries[i]._valid && _entries[i]._id == id){
-      return(_entries + i);
-    }
-    if(_entries[i]._valid == 0)
-      unused = i;
-  }
 
-  if(allocate && unused != -1){
-    Entry *e = _entries + unused;
-    e->_valid = true;
-    e->_id = id;
-    return(e);
-  }
+  for(i = 0; i < _entries.size(); i++)
+    if(_entries[i]._fix.fix_id == id)
+      return(i);
 
-  return(0);
+  if(create){
+    i = _entries.size();
+    Entry e;
+    e._fix.fix_id = id;
+    _entries.push_back(e);
+    return(i);
+  } else {
+    return(-1);
+  }
 }
 
 Packet *
@@ -150,6 +211,9 @@ PEP::simple_action(Packet *p)
 {
   int nf;
   pep_proto *pp;
+  struct timeval tv;
+
+  click_gettimeofday(&tv);
 
   if(p->length() != sizeof(pep_proto)){
     click_chatter("PEP: bad size packet (%d bytes)", p->length());
@@ -163,14 +227,22 @@ PEP::simple_action(Packet *p)
     goto out;
   }
 
-  pep_fix *f;
-  for(f = pp->fixes; f < pp->fixes + nf; f++){
-    if(f->fix_id != _my_ip.addr()){
-      Entry *e = findEntry(f->fix_id, 1);
-      if(e){
-        e->_loc = f->fix_loc;
-        e->_d = ntohl(f->fix_d);
-      }
+  int i;
+  for(i = 0; i < nf && i < pep_proto_fixes; i++){
+    pep_fix f = pp->fixes[i];
+    internalize(&f);
+    if((unsigned) f.fix_id == _my_ip.addr())
+      continue;
+    int j = findEntry(f.fix_id, true);
+    if(j < 0)
+      continue;
+
+    int os = _entries[j]._fix.fix_seq;
+    int oh = _entries[j]._fix.fix_hops;
+    if(f.fix_seq > os ||
+       (f.fix_seq == os && f.fix_hops < oh)){
+      _entries[j]._fix = f;
+      _entries[j]._when = tv.tv_sec;
     }
   }
 
@@ -180,3 +252,6 @@ PEP::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(PEP)
+
+#include "vector.cc"
+template class Vector<PEP::Entry>;
