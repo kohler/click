@@ -70,7 +70,10 @@ IPRoute::unparse(StringAccum& sa, bool tabs) const
 	sa << '-' << tab;
     if (sa.length() < l + 9 && tabs)
 	sa << '\t';
-    sa << port;
+    if (!real())
+	sa << "-1";
+    else
+	sa << port;
     return sa;
 }
 

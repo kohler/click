@@ -101,18 +101,19 @@ C<requirements>. See click.o(8) for more information.)
 
 =over 5
 
-=item READ I<handler>
+=item READ I<handler> [I<params...>]
 
-Call a read I<handler>
-and return the results. On success, responds with a "success" message (response
+Call a read I<handler>, passing the I<params>, if any,
+as arguments, and return the results.
+On success, responds with a "success" message (response
 code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
 decimal integer indicating the length of the read handler data. The I<n>
 bytes immediately following (the CRLF that terminates) the DATA line are
 the handler's results.
 
-=item WRITE I<handler> I<args...>
+=item WRITE I<handler> I<params...>
 
-Call a write I<handler>, passing the I<args>, if any, as arguments.
+Call a write I<handler>, passing the I<params>, if any, as arguments.
 
 =item WRITEDATA I<handler> I<n>
 
@@ -244,14 +245,14 @@ class ControlSocket : public Element { public:
   int transfer_messages(int fd, int default_code, const String &first_message,
 			ControlSocketErrorHandler *);
   
-  String proxied_handler_name(const String &) const;
-  const Handler* parse_handler(int fd, const String &, Element **);
-  int read_command(int fd, const String &);
-  int write_command(int fd, const String &, const String &);
-  int check_command(int fd, const String &, bool write);
-  int llrpc_command(int fd, const String &, String);
-  int parse_command(int fd, const String &);
-  void flush_write(int fd, bool read_needs_processing);
+    String proxied_handler_name(const String &) const;
+    const Handler* parse_handler(int fd, const String &, Element **);
+    int read_command(int fd, const String &, const String &);
+    int write_command(int fd, const String &, const String &);
+    int check_command(int fd, const String &, bool write);
+    int llrpc_command(int fd, const String &, String);
+    int parse_command(int fd, const String &);
+    void flush_write(int fd, bool read_needs_processing);
 
   int report_proxy_errors(int fd, const String &);
   static ErrorHandler *proxy_error_function(const String &, void *);

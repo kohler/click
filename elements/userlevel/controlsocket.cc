@@ -396,7 +396,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 }
 
 int
-ControlSocket::read_command(int fd, const String &handlername)
+ControlSocket::read_command(int fd, const String &handlername, const String &param)
 {
   Element *e;
   const Handler* h = parse_handler(fd, handlername, &e);
@@ -410,7 +410,7 @@ ControlSocket::read_command(int fd, const String &handlername)
   _proxied_handler = h->name();
   _proxied_errh = &errh;
   
-  String data = h->call_read(e);
+  String data = h->call_read(e, param);
 
   // did we get an error message?
   if (errh.nerrors() > 0)
@@ -571,10 +571,10 @@ ControlSocket::parse_command(int fd, const String &line)
   const char *data = line.data();
   int len = line.length();
   for (int pos = 0; pos < len; ) {
-    while (pos < len && isspace(data[pos]))
+      while (pos < len && isspace((unsigned char) data[pos]))
       pos++;
     int first = pos;
-    while (pos < len && !isspace(data[pos]))
+    while (pos < len && !isspace((unsigned char) data[pos]))
       pos++;
     if (first < pos)
       words.push_back(line.substring(first, pos - first));
@@ -585,17 +585,20 @@ ControlSocket::parse_command(int fd, const String &line)
   // branch on command
   String command = words[0].upper();
   if (command == "READ" || command == "GET") {
-    if (words.size() != 2)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    return read_command(fd, words[1]);
+      if (words.size() < 2)
+	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+      String param;
+      if (words.size() > 2)
+	  param = line.substring(words[2].begin(), words.back().end());
+      return read_command(fd, words[1], param);
     
   } else if (command == "WRITE" || command == "SET") {
-    if (words.size() < 2)
-      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
-    String data;
-    for (int i = 2; i < words.size(); i++)
-      data += (i == 2 ? "" : " ") + words[i];
-    return write_command(fd, words[1], data);
+      if (words.size() < 2)
+	  return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+      String data;
+      if (words.size() > 2)
+	  data = line.substring(words[2].begin(), words.back().end());
+      return write_command(fd, words[1], data);
     
   } else if (command == "WRITEDATA" || command == "SETDATA") {
     if (words.size() != 3)
