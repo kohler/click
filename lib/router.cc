@@ -57,7 +57,6 @@ Router::~Router()
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
   }
-  clear_attachments();
   for (int i = 0; i < _threads.size(); i++)
     delete _threads[i];
   for (int i = 0; i < _elements.size(); i++)
@@ -1309,20 +1308,6 @@ Router::set_attachment(const String &name, void *value)
   _attachment_names.push_back(name);
   _attachments.push_back(value);
   return 0;
-}
-
-void
-Router::clear_attachments()
-{
-  // Remove any attachments whose semantics we understand.
-  // Right now, this is ChatterChannel.
-  for (int i = 0; i < _attachments.size(); i++) {
-    const String &aname = _attachment_names[i];
-    if (aname.length() > 15 && memcmp(aname.data(), "ChatterChannel.", 15)== 0)
-      delete (ErrorHandler *)_attachments[i];
-  }
-  _attachment_names.clear();
-  _attachments.clear();
 }
 
 ErrorHandler *

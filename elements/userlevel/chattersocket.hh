@@ -42,9 +42,8 @@ Keyword arguments are:
 
 =item CHANNEL
 
-Text word. The chatter channel: the socket generates messages sent to this
-channel. Default is the default channel, which corresponds to
-C<click_chatter>.
+Text word. The socket outputs messages sent to this chatter channel. Default
+is the default channel, which corresponds to C<click_chatter>.
 
 Channels help you organize extensive debugging output. For example, you could
 send extremely verbose messages to a `C<verbose>' channel, then only connect
@@ -97,6 +96,7 @@ class ChatterSocket : public Element { public:
   int _socket_fd;
   String _channel;
   bool _greeting : 1;
+  bool _alive : 1;
 
   Vector<String> _messages;
   Vector<uint32_t> _message_pos;

@@ -85,13 +85,15 @@ static ChatterSocketErrorHandler *chatter_socket_errh;
 static ErrorHandler *base_default_errh;
 
 ChatterSocket::ChatterSocket()
-  : _channel("default")
+  : _channel("default"), _alive(false)
 {
   MOD_INC_USE_COUNT;
 }
 
 ChatterSocket::~ChatterSocket()
 {
+  if (_alive)
+    uninitialize();		// might happen if initialize() never called
   MOD_DEC_USE_COUNT;
 }
 
@@ -174,21 +176,28 @@ ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _greeting = greeting;
 
-  // create channel now, so that other configure() methods will get it.
-  if (_channel == "default" && !chatter_socket_errh) {
+  // Create channel now, so that other configure() methods will get it.
+  ChatterSocketErrorHandler *cserrh;
+  if (_channel == "default" && chatter_socket_errh)
+    cserrh = chatter_socket_errh;
+  else if (_channel == "default") {
     base_default_errh = ErrorHandler::default_handler();
     chatter_socket_errh = new ChatterSocketErrorHandler(base_default_errh);
     ErrorHandler::set_default_handler(chatter_socket_errh);
-  } else if (_channel != "default") {
-    void *v = router()->attachment("ChatterChannel." + _channel);
-    if (!v) {
-      ErrorHandler *base = (quiet_channel ? ErrorHandler::silent_handler() : base_default_errh);
-      if (!base) base = ErrorHandler::default_handler();
-      ErrorHandler *cserrh = new ChatterSocketErrorHandler(base);
-      router()->set_attachment("ChatterChannel." + _channel, cserrh);
-    }
+    cserrh = chatter_socket_errh;
+  } else if (void *v = router()->attachment("ChatterChannel." + _channel))
+    cserrh = (ChatterSocketErrorHandler *)v;
+  else {
+    ErrorHandler *base = (quiet_channel ? ErrorHandler::silent_handler() : base_default_errh);
+    if (!base) base = ErrorHandler::default_handler();
+    cserrh = new ChatterSocketErrorHandler(base);
+    router()->set_attachment("ChatterChannel." + _channel, cserrh);
   }
 
+  // install ChatterSocketErrorHandler
+  cserrh->add_chatter_socket(this);
+  _alive = true;
+  
   return 0;
 }
 
@@ -209,15 +218,6 @@ ChatterSocket::initialize(ErrorHandler *errh)
   _max_pos = 0;
   _live_fds = 0;
 
-  // install ChatterSocketErrorHandler
-  if (_channel == "default")
-    chatter_socket_errh->add_chatter_socket(this);
-  else {
-    ChatterSocketErrorHandler *cserrh =
-      (ChatterSocketErrorHandler *)(router()->attachment("ChatterChannel." + _channel));
-    cserrh->add_chatter_socket(this);
-  }
-  
   return 0;
 }
 
@@ -244,6 +244,7 @@ ChatterSocket::uninitialize()
       unlink(_unix_pathname);
   }
   _socket_fd = -1;
+  
   for (int i = 0; i < _fd_alive.size(); i++)
     if (_fd_alive[i]) {
       close(i);
@@ -256,8 +257,9 @@ ChatterSocket::uninitialize()
     remove_chatter_channel(chatter_socket_errh, this);
   else
     remove_chatter_channel
-      ((ChatterSocketErrorHandler *&)(router()->force_attachment("ChatterChannel." + _channel)),
-       this);
+      ((ChatterSocketErrorHandler *&)(router()->force_attachment("ChatterChannel." + _channel)), this);
+
+  _alive = false;
 }
 
 int

@@ -213,8 +213,6 @@ class Router { public:
   static Handler fetch_global_handler(const String &);
   static void store_global_handler(const Handler &);
 
-  void clear_attachments();
-  
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
 
