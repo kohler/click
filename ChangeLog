@@ -1,3 +1,10 @@
+2003-02-04 Tuesday 15:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridheaderinfo.cc (1.8), gridheaderinfo.hh (1.7),
+	gridlocationinfo2.cc (1.2), lookuplocalgridroute.cc (1.48),
+	lookuplocalgridroute.hh (1.19): Fixup location handling in kernel
+	mode
+
 2003-02-03 Monday 20:38  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: ipprint.cc (1.37), ipprint.hh (1.20): TIMESTAMP
