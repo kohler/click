@@ -39,6 +39,8 @@ class ElementMap { public:
   ElementMap();
   ElementMap(const String &);
 
+  int size() const				{ return _e.size(); }
+  
   const Elt &elt(int i) const			{ return _e[i]; }
   const String &name(int i) const		{ return _e[i].name; }
   const String &cxx(int i) const		{ return _e[i].cxx; }
@@ -77,7 +79,9 @@ class ElementMap { public:
   
   void parse(const String &data);
   void parse(const String &data, const String &package_name);
-  void parse_all_required(RouterT *, String, ErrorHandler *);
+  bool parse_default_file(const String &default_path, ErrorHandler *);
+  bool parse_requirement_files(RouterT *, const String &default_path, ErrorHandler *, String *not_found = 0);
+  bool parse_all_files(RouterT *, String default_path, ErrorHandler *);
   String unparse() const;
   
   void map_indexes(const RouterT *, Vector<int> &, ErrorHandler *) const;

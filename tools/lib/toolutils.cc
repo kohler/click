@@ -411,6 +411,7 @@ ElementMap::unparse() const
        << cp_quote(e.cxx) << '\t'
        << cp_quote(e.header_file) << '\t'
        << cp_quote(e.processing_code) << '\t'
+       << cp_quote(e.flow_code) << '\t'
        << cp_quote(e.flags) << '\t'
        << cp_quote(e.requirements) << '\t'
        << cp_quote(e.provisions) << '\n';
@@ -485,29 +486,31 @@ ElementMap::limit_driver(int driver)
 }
 
 
-void
-ElementMap::parse_all_required(RouterT *r, String default_path,
-			       ErrorHandler *errh)
+bool
+ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 {
-  bool not_found_default = false;
-  String not_found_other;
-  
-  // first, parse default elementmap
   String default_fn = clickpath_find_file("elementmap", "share/click", default_path);
   if (default_fn) {
     String text = file_string(default_fn, errh);
     parse(text);
+    return true;
   } else {
-    errh->warning("cannot find main elementmap");
-    not_found_default = true;
+    errh->warning("cannot find default elementmap");
+    return false;
   }
+}
 
-  // second, try elementmap in archive
+bool
+ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, String *not_found_store = 0)
+{
+  String not_found;
+
+  // try elementmap in archive
   int defaultmap_aei = r->archive_index("elementmap");
   if (defaultmap_aei >= 0)
-    parse(r->archive(defaultmap_aei).data);
+    parse(r->archive(defaultmap_aei).data, "<archive>");
   
-  // now, parse elementmaps for requirements in required order
+  // parse elementmaps for requirements in required order
   const Vector<String> &requirements = r->requirements();
   for (int i = 0; i < requirements.size(); i++) {
     String req = requirements[i];
@@ -516,24 +519,38 @@ ElementMap::parse_all_required(RouterT *r, String default_path,
     // look for elementmap in archive
     int map_aei = r->archive_index(mapname);
     if (map_aei >= 0)
-      parse(r->archive(map_aei).data);
+      parse(r->archive(map_aei).data, req);
     else {
       String fn = clickpath_find_file(mapname, "share/click", default_path);
       if (fn) {
 	String text = file_string(fn, errh);
-	parse(text);
+	parse(text, req);
       } else {
-	if (not_found_other)
-	  not_found_other += ", ";
-	not_found_other += "`" + req + "'";
+	if (not_found)
+	  not_found += ", ";
+	not_found += "`" + req + "'";
       }
     }
   }
 
-  if (not_found_default || not_found_other) {
-    if (not_found_other)
-      errh->warning("cannot find package-specific elementmaps:\n  %s", not_found_other.cc());
-    
+  if (not_found_store)
+    *not_found_store = not_found;
+  if (not_found) {
+    errh->warning("cannot find package-specific elementmaps:\n  %s", not_found.cc());
+    return false;
+  } else
+    return true;
+}
+
+bool
+ElementMap::parse_all_files(RouterT *r, String default_path, ErrorHandler *errh)
+{
+  bool found_default = parse_default_file(default_path, errh);
+  bool found_other = parse_requirement_files(r, default_path, errh);
+
+  if (found_default && found_other)
+    return true;
+  else {
     const char *path = getenv("CLICKPATH");
     bool allows_default = path_allows_default_path(path);
     if (!allows_default)
@@ -543,10 +560,12 @@ ElementMap::parse_all_required(RouterT *r, String default_path,
     else
       errh->warning("in CLICKPATH or `%s'", default_path.cc());
 
-    if (not_found_default)
+    if (!found_default)
       errh->message("(You may get unknown element class errors.\nTry `make install' or set the CLICKPATH evironment variable.)");
     else
       errh->message("(You may get unknown element class errors.)");
+
+    return false;
   }
 }
 
