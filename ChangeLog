@@ -1,3 +1,8 @@
+2004-12-16 Thursday 13:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click-install/Makefile.in (1.24): Makefile bug reported by
+	Michele Mordenti
+
 2004-12-13 Monday 15:19  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.125): spaces in directories
