@@ -6,38 +6,45 @@
 class Aligner {
  public:
   Aligner();
-  virtual void flow(const Vector<Alignment> &in, int ioff, int nin,
-		    Vector<Alignment> &out, int ooff, int nout);
-  virtual Alignment want(int, const Alignment &);
+  virtual void have_flow(const Vector<Alignment> &in, int ioff, int nin,
+			 Vector<Alignment> &out, int ooff, int nout);
+  virtual void want_flow(Vector<Alignment> &in, int ioff, int nin,
+			 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 class GeneratorAligner : public Aligner {
   Alignment _alignment;
  public:
   GeneratorAligner(const Alignment &a) : _alignment(a) { }
-  void flow(const Vector<Alignment> &in, int ioff, int nin,
-	    Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
+		 Vector<Alignment> &out, int ooff, int nout);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 class ShifterAligner : public Aligner {
   int _shift;
  public:
   ShifterAligner(int shift) : _shift(shift) { }
-  void flow(const Vector<Alignment> &in, int ioff, int nin,
-	    Vector<Alignment> &out, int ooff, int nout);
+  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
+		 Vector<Alignment> &out, int ooff, int nout);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 class WantAligner : public Aligner {
   Alignment _alignment;
  public:
   WantAligner(Alignment a) : _alignment(a) { }
-  Alignment want(int, const Alignment &);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 class ClassifierAligner : public Aligner {
  public:
   ClassifierAligner() { }
-  Alignment want(int, const Alignment &);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 

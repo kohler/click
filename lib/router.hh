@@ -60,6 +60,8 @@ class Router : public ElementLink {
   String connection_number_string(const Connection &) const;
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
+  Element *find(String, const String &, ErrorHandler * = 0) const;
+  
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
   
@@ -75,12 +77,15 @@ class Router : public ElementLink {
   bool initialized() const			{ return _initialized; }
   
   int nelements() const				{ return _elements.size(); }
+  Element *element(int) const;
+  int eindex(Element *);
+  const String &configuration(int) const;
+  const Vector<Element *> &elements() const	{ return _elements; }
+  Element *find(const String &, ErrorHandler * = 0) const;
+  Element *find(Element *, const String &, ErrorHandler * = 0) const;
+
   int ninput_pidx() const			{ return _input_fidx.size(); }
   int noutput_pidx() const			{ return _output_fidx.size(); }
-  Element *element(int) const;
-  const String &configuration(int) const;
-  Element *find(const String &, ErrorHandler * = 0) const;
-  int findex(Element *);
   
   int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
   int downstream_elements(Element *, int o, Vector<Element *> &);
@@ -127,6 +132,12 @@ inline bool
 operator!=(const Router::Hookup &a, const Router::Hookup &b)
 {
   return a.idx != b.idx || a.port != b.port;
+}
+
+inline Element *
+Router::find(const String &name, ErrorHandler *errh) const
+{
+  return find("", name, errh);
 }
 
 inline bool

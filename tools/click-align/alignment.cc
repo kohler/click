@@ -18,7 +18,9 @@
 bool
 Alignment::operator<=(const Alignment &o) const
 {
-  if (o._chunk <= 1)
+  if (_chunk < 0 || o._chunk < 0)
+    return false;
+  else if (o._chunk <= 1)
     return true;
   else if (_chunk <= 1)
     return false;
@@ -42,9 +44,9 @@ Alignment::operator+=(int delta)
 Alignment &
 Alignment::operator|=(const Alignment &o)
 {
-  if (_chunk == 0)
+  if (_chunk == 0 || o._chunk < 0)
     return (*this = o);
-  else if (_chunk == 1 || o._chunk == 0)
+  else if (_chunk <= 1 || o._chunk == 0)
     return *this;
   
   // new_chunk = gcd(_chunk, o._chunk)
@@ -77,4 +79,17 @@ Alignment::operator|=(const Alignment &o)
   }
   
   return *this;
+}
+
+Alignment &
+Alignment::operator&=(const Alignment &o)
+{
+  // XXX doesn't work for arbitrary alignments; should use some set method
+  // and least-common-multiple
+  if (o <= *this)
+    return (*this = o);
+  else if (*this <= o)
+    return *this;
+  else
+    return (*this = Alignment(-1, 0, 0));
 }

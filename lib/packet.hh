@@ -100,12 +100,12 @@ class Packet {
   Packet *put(unsigned int nbytes);	// Add bytes to end of pkt.
   Packet *take(unsigned int nbytes);	// Delete bytes from end of pkt.
 
-#ifndef __KERNEL__
-  click_ip *ip_header() const		{ return _nh_iph; }
-  void set_ip_header(click_ip *h)	{ _nh_iph = h; }
-#else
+#ifdef __KERNEL__
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   void set_ip_header(click_ip *h)	{ skb()->nh.iph = (struct iphdr *)h; }
+#else
+  click_ip *ip_header() const		{ return _nh_iph; }
+  void set_ip_header(click_ip *h)	{ _nh_iph = h; }
 #endif
   unsigned ip_header_offset() const;
 

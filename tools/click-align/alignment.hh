@@ -7,6 +7,8 @@ class Alignment {
   int _chunk;
   int _offset;
 
+  Alignment(int a, int b, int)		: _chunk(a), _offset(b) { }
+  
  public:
 
   Alignment()				: _chunk(0), _offset(0) { }
@@ -14,6 +16,8 @@ class Alignment {
 
   int chunk() const			{ return _chunk; }
   int offset() const			{ return _offset; }
+  bool bad() const			{ return _chunk < 0; }
+  bool empty() const			{ return _chunk == 0; }
 
   bool operator==(const Alignment &) const;
   bool operator!=(const Alignment &) const;
@@ -22,6 +26,7 @@ class Alignment {
   Alignment &operator+=(int);
   Alignment &operator-=(int);
   Alignment &operator|=(const Alignment &);
+  Alignment &operator&=(const Alignment &);
 
 };
 
@@ -66,6 +71,12 @@ inline Alignment
 operator|(Alignment a, const Alignment &b)
 {
   return a |= b;
+}
+
+inline Alignment
+operator&(Alignment a, const Alignment &b)
+{
+  return a &= b;
 }
 
 #endif

@@ -154,7 +154,7 @@ Packet::uniqueify_copy()
   memcpy(p->_data, _data, _tail - _data);
   p->copy_annotations(this);
   if (_nh_iph)
-    p->_nh_iph = (click_ip *)(p->_data + ((unsigned char *)_nh_iph - _data));
+    p->_nh_iph = (click_ip *)(p->_data + ip_header_offset());
   else
     p->_nh_iph = 0;
   memcpy(p->_cb, _cb, sizeof(_cb));

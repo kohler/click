@@ -19,6 +19,7 @@
 #include "confparse.hh"
 #include "bitvector.hh"
 #include "straccum.hh"
+#include "alignmentinfo.hh"
 
 //
 // CLASSIFIER::SPREAD OPERATIONS
@@ -476,9 +477,11 @@ Classifier::optimize_exprs(ErrorHandler *errh)
   // is empty, _output_everything is >= 0.
   if (_exprs.size() == 0 && _output_everything < 0)
     _output_everything = noutputs();
-  
+
+#if 0
   // combine adjacent half-full exprs into one full unaligned expr
   unaligned_optimize();
+#endif
 
   // get rid of unused states
   remove_unused_states();
@@ -539,6 +542,19 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
   
   _output_everything = -1;
   int FAIL = -noutputs();
+
+  // set align offset
+  {
+    int c, o;
+    if (AlignmentInfo::query(this, 0, c, o) && c >= 4)
+      _align_offset = o % 4;
+    else {
+#ifndef __i386__
+      errh->error("no AlignmentInfo available: you may experience unaligned accesses");
+#endif
+      _align_offset = 0;
+    }
+  }
   
   for (int slot = 0; slot < args.size(); slot++) {
     int i = 0;
@@ -627,6 +643,7 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
 
       // add values to exprs
       bool first = true;
+      offset += _align_offset;
       while (value_pos < value_end) {
 	int v = 0, m = 0;
 	update_value_mask(s[value_pos], 4, v, m);
@@ -680,6 +697,7 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
   }
 
   optimize_exprs(errh);
+  errh->warning(decompile_string(this, 0));
   return 0;
 }
 
@@ -691,7 +709,8 @@ Classifier::decompile_string(Element *element, void *)
   for (int i = 0; i < f->_exprs.size(); i++) {
     Expr &e = f->_exprs[i];
     char buf[20];
-    sa << i << (e.offset < 10 ? "   " : "  ") << e.offset << "/";
+    int offset = e.offset - f->_align_offset;
+    sa << i << (offset < 10 ? "   " : "  ") << offset << "/";
     bool need_mask = 0;
     for (int j = 0; j < 4; j++) {
       int m = e.mask.c[j], v = e.value.c[j];
@@ -723,6 +742,7 @@ Classifier::decompile_string(Element *element, void *)
   if (f->_exprs.size() == 0)
     sa << "all->[" << f->_output_everything << "]\n";
   sa << "safe length " << f->_safe_length << "\n";
+  sa << "alignment offset " << f->_align_offset << "\n";
   return sa.take_string();
 }
 
@@ -740,13 +760,12 @@ Classifier::add_handlers(HandlerRegistry *fcr)
 void
 Classifier::length_checked_push(Packet *p)
 {
-  int packet_length = p->length(); // XXX >= MAXINT?
-  const unsigned char *packet_data = p->data();
+  const unsigned char *packet_data = p->data() - _align_offset;
+  int packet_length = p->length() + _align_offset; // XXX >= MAXINT?
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
   goto start;
   
-  // XXX alignment issues?
   while (pos > 0) {
     
    start:
@@ -778,7 +797,7 @@ Classifier::length_checked_push(Packet *p)
 void
 Classifier::push(int, Packet *p)
 {
-  const unsigned char *packet_data = p->data();
+  const unsigned char *packet_data = p->data() - _align_offset;
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
   
@@ -787,13 +806,12 @@ Classifier::push(int, Packet *p)
     // out of range
     pos = -_output_everything;
     goto found;
-  } else if (p->length() < _safe_length) {
+  } else if (p->length() + _align_offset < _safe_length) {
     // common case never checks packet length
     length_checked_push(p);
     return;
   }
   
-  // XXX alignment issues?
   do {
     if ((*((unsigned *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
 	== ex[pos].value.u)
@@ -807,6 +825,7 @@ Classifier::push(int, Packet *p)
 }
 
 
+ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 
 // generate Vector template instance

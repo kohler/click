@@ -80,6 +80,7 @@ class Element : public ElementLink { public:
   
   // CLONING AND CONFIGURATION
   virtual Element *clone() const = 0;
+  virtual bool configure_first() const;
   virtual int configure(const String &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();

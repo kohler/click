@@ -36,8 +36,11 @@ struct RouterAlign {
 
   RouterAlign(RouterT *, ErrorHandler *);
 
-  bool calc_input();
-  void calc_output();
+  bool have_input();
+  void have_output();
+  
+  void want_input();
+  bool want_output();
   
   void print(FILE *);
   
@@ -71,16 +74,16 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
 }
 
 void
-RouterAlign::calc_output()
+RouterAlign::have_output()
 {
   int ne = _icount.size();
   for (int i = 0; i < ne; i++)
-    _aligners[i]->flow(_ialign, _ioffset[i], _icount[i],
-		       _oalign, _ooffset[i], _ocount[i]);
+    _aligners[i]->have_flow(_ialign, _ioffset[i], _icount[i],
+			    _oalign, _ooffset[i], _ocount[i]);
 }
 
 bool
-RouterAlign::calc_input()
+RouterAlign::have_input()
 {
   const Vector<Hookup> &hf = _router->hookup_from();
   const Vector<Hookup> &ht = _router->hookup_to();
@@ -100,6 +103,42 @@ RouterAlign::calc_input()
     if (new_ialign[i] != _ialign[i])
       changed = true;
   _ialign.swap(new_ialign);
+  return changed;
+}
+
+void
+RouterAlign::want_input()
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    _aligners[i]->want_flow(_ialign, _ioffset[i], _icount[i],
+			    _oalign, _ooffset[i], _ocount[i]);
+}
+
+bool
+RouterAlign::want_output()
+{
+  const Vector<Hookup> &hf = _router->hookup_from();
+  const Vector<Hookup> &ht = _router->hookup_to();
+  int nh = hf.size();
+  int noalign = _oalign.size();
+
+  Vector<Alignment> new_oalign(noalign, Alignment());
+  for (int i = 0; i < nh; i++) {
+    int ioff = _ioffset[ht[i].idx] + ht[i].port;
+    int ooff = _ooffset[hf[i].idx] + hf[i].port;
+    new_oalign[ooff] &= _ialign[ioff];
+  }
+  for (int i = 0; i < noalign; i++)
+    if (new_oalign[i].bad())
+      new_oalign[i] = Alignment();
+
+  // see if anything happened
+  bool changed = false;
+  for (int i = 0; i < noalign && !changed; i++)
+    if (new_oalign[i] != _oalign[i])
+      changed = true;
+  _oalign.swap(new_oalign);
   return changed;
 }
 
@@ -159,6 +198,12 @@ prepare_router(RouterT *r)
   r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
   Aligner *a = new WantAligner(Alignment(4, 0));
   r->get_type_index("CheckIPHeader", new AlignClass(a));
+  r->get_type_index("IPEncap", new AlignClass(a));
+  a = new WantAligner(Alignment(4, 2));
+  r->get_type_index("ToLinux", new AlignClass(a));
+  a = new WantAligner(Alignment(2, 0));
+  r->get_type_index("ARPResponder", new AlignClass(a));
+  r->get_type_index("ARPQuerier", new AlignClass(a));
 }
 
 RouterT *
@@ -172,7 +217,7 @@ read_router_file(const char *filename, ErrorHandler *errh)
     f = stdin;
     filename = "<stdin>";
   }
-  
+
   FileLexerTSource lex_source(filename, f);
   LexerT lexer(errh);
   lexer.reset(&lex_source);
@@ -212,14 +257,20 @@ main(int, char **argv)
     // calculate current alignment
     RouterAlign ral(router, errh);
     do {
-      ral.calc_output();
-    } while (ral.calc_input());
+      ral.have_output();
+    } while (ral.have_input());
     
+    // calculate desired alignment
+    RouterAlign want_ral(router, errh);
+    do {
+      want_ral.want_input();
+    } while (want_ral.want_output());
+
     // add required aligns
     for (int i = 0; i < original_nelements; i++)
       for (int j = 0; j < ral._icount[i]; j++) {
 	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
-	Alignment want = ral._aligners[i]->want(j, have);
+	Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
 	if (have <= want)
 	  /* do nothing */;
 	else {
@@ -232,7 +283,7 @@ main(int, char **argv)
       }
   }
 
-  // remove redundant Aligns
+  // remove useless Aligns
   {
     Vector<Hookup> &hf = router->hookup_from();
     Vector<Hookup> &ht = router->hookup_to();
@@ -260,8 +311,8 @@ main(int, char **argv)
     // calculate current alignment
     RouterAlign ral(router, errh);
     do {
-      ral.calc_output();
-    } while (ral.calc_input());
+      ral.have_output();
+    } while (ral.have_input());
 
     bool changed = false;
     
@@ -299,6 +350,30 @@ main(int, char **argv)
 	  && (ninputs[i] == 0 || noutputs[i] == 0))
 	router->element(i).type = -1;
     router->remove_blank_elements();
+  }
+
+  // make the AlignmentInfo element
+  {
+    RouterAlign ral(router, errh);
+    do {
+      ral.have_output();
+    } while (ral.have_input());
+
+    StringAccum sa;
+    int nelem = router->nelements();
+    for (int i = 0; i < nelem; i++) {
+      if (sa.length()) sa << ",\n  ";
+      sa << router->ename(i);
+      for (int j = 0; j < ral._icount[i]; j++) {
+	const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
+	sa << "  " << a.chunk() << " " << a.offset();
+      }
+    }
+
+    int aligninfo_t = router->get_type_index("AlignmentInfo", 0);
+    router->get_eindex(String("AlignmentInfo@click_align@") + String(nelem+1),
+		       aligninfo_t,
+		       sa.take_string());
   }
   
   fputs(router->configuration_string(), stdout);

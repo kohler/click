@@ -74,28 +74,43 @@ Router::~Router()
 // ACCESS
 
 Element *
-Router::find(const String &id, ErrorHandler *errh) const
+Router::find(String prefix, const String &name, ErrorHandler *errh) const
 {
-  int got = -1;
-  for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i]->id() == id) {
-      if (got >= 0) {
-	if (errh) errh->error("more than one element named `%s'",
-			      String(id).cc());
-	return 0;
-      } else
-	got = i;
-    }
-  if (got >= 0)
-    return _elements[got];
-  else {
-    if (errh) errh->error("no element named `%s'", String(id).cc());
-    return 0;
+  while (1) {
+    int got = -1;
+    for (int i = 0; i < _elements.size(); i++)
+      if (_elements[i]->id() == name) {
+	if (got >= 0) {
+	  if (errh) errh->error("more than one element named `%s'",
+				String(name).cc());
+	  return 0;
+	} else
+	  got = i;
+      }
+    if (got >= 0)
+      return _elements[got];
+    if (!prefix)
+      break;
+    
+    int slash = prefix.find_right('/', prefix.length() - 2);
+    prefix = (slash >= 0 ? prefix.substring(0, slash) : String());
   }
+  
+  if (errh) errh->error("no element named `%s'", String(name).cc());
+  return 0;
+}
+
+Element *
+Router::find(Element *me, const String &name, ErrorHandler *errh) const
+{
+  String prefix = me->id();
+  int slash = prefix.find_right('/');
+  return find((slash >= 0 ? prefix.substring(0, slash) : String()),
+	      name, errh);
 }
 
 int
-Router::findex(Element *f)
+Router::eindex(Element *f)
 {
   for (int i = 0; i < _elements.size(); i++)
     if (_elements[i] == f)
@@ -523,7 +538,7 @@ Router::downstream_inputs(Element *first_element, int first_output,
   Bitvector diff;
   
   Bitvector outputs(nopidx, false);
-  int first_fid = findex(first_element);
+  int first_fid = eindex(first_element);
   if (first_fid < 0) return -1;
   for (int i = 0; i < _elements[first_fid]->noutputs(); i++)
     if (first_output < 0 || first_output == i)
@@ -597,7 +612,7 @@ Router::upstream_outputs(Element *first_element, int first_input,
   Bitvector diff;
   
   Bitvector inputs(nipidx, false);
-  int first_fid = findex(first_element);
+  int first_fid = eindex(first_element);
   if (first_fid < 0) return -1;
   for (int i = 0; i < _elements[first_fid]->ninputs(); i++)
     if (first_input < 0 || first_input == i)
@@ -679,35 +694,41 @@ Router::initialize(ErrorHandler *errh)
     return -1;
   }
   
-  int before = errh->nerrors();
   Bitvector element_ok(nelements(), true);
+  Vector<int> configure_phase(nelements(), 0);
   bool all_ok = true;
   
   for (int i = 0; i < _elements.size(); i++) {
     _elements[i]->set_number(i);
     _elements[i]->initialize_link(this);
+    configure_phase[i] = !_elements[i]->configure_first();
   }
   
   notify_hookup_range();
 
   // Configure all elements. Remember the ones that failed
-  for (int i = 0; i < _elements.size(); i++) {
-    ContextErrorHandler cerrh
-      (errh, context_message(i, "While configuring"));
-    int before = cerrh.nerrors();
-    if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
-      element_ok[i] = all_ok = false;
-      if (cerrh.nerrors() == before)
-	cerrh.error("unspecified error");
-    }
-  }
+  for (int phase = 0; phase < 2; phase++)
+    for (int i = 0; i < _elements.size(); i++)
+      if (configure_phase[i] == phase) {
+	ContextErrorHandler cerrh
+	  (errh, context_message(i, "While configuring"));
+	int before = cerrh.nerrors();
+	if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
+	  element_ok[i] = all_ok = false;
+	  if (cerrh.nerrors() == before)
+	    cerrh.error("unspecified error");
+	}
+      }
   
+  int before = errh->nerrors();
   check_hookup_range(errh);
   make_pidxes();
   check_push_and_pull(errh);
   check_hookup_completeness(errh);
   set_connections();
   _have_connections = true;
+  if (before != errh->nerrors())
+    all_ok = false;
 
   // Initialize elements that are OK so far.
   for (int i = 0; i < _elements.size(); i++)
@@ -726,7 +747,7 @@ Router::initialize(ErrorHandler *errh)
   
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
-  if (errh->nerrors() != before || !all_ok) {
+  if (!all_ok) {
     errh->error("router could not be initialized");
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])

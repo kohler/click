@@ -241,6 +241,12 @@ Element::processing_name(int p)
 
 // CLONING AND CONFIGURING
 
+bool
+Element::configure_first() const
+{
+  return false;
+}
+
 int
 Element::configure(const String &conf, ErrorHandler *errh)
 {

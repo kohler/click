@@ -81,6 +81,7 @@ class Classifier : public Element {
   Vector<Expr> _exprs;
   int _output_everything;
   unsigned _safe_length;
+  unsigned _align_offset;
 
   int drift_one_edge(const Spread &, const Spread &, int) const;
   void handle_vertex(int, Vector<Spread *> &, Vector<Spread *> &,
