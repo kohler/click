@@ -1,3 +1,37 @@
+2002-07-25 Thursday 16:31  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click-devirtualize/specializer.cc (1.28),
+	lib/processingt.cc (1.22), lib/processingt.hh (1.14): add
+	ProcessingT::resolve_agnostics() function and constructor argument;
+	use the constructor argument
+
+2002-07-25 Thursday 16:30  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/: elementmap.cc (1.7), elementmap.hh (1.4): add new
+	explicit TraitsIterator, so that iterating over known element
+	classes skips classes irrelevant for the current driver
+
+2002-07-25 Thursday 16:29  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-devirtualize/signature.cc (1.13): calculate
+	processing forcing all AGNOSTICs to PUSH
+
+2002-07-25 Thursday 16:28  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-devirtualize/cxxclass.cc (1.10): consider selected()
+	functions as well, when deciding whether an element is worth
+	specializing
+
+2002-07-25 Thursday 16:20  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-devirtualize/click-devirtualize.cc (1.32): correctly
+	compile user-level code if requested; problem reported by Vlemincx
+	Koen
+
+2002-07-25 Thursday 16:14  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.52): correct docs
+
 2002-07-25 Thursday 11:31  Eddie Kohler <kohler@icir.org>
 
 	* userlevel/click.cc (1.67): small update for code consistency with
