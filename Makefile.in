@@ -22,6 +22,8 @@ INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+EXTRA_PROVIDES =
+
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
@@ -78,7 +80,7 @@ elemlist elemlists:
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -r "@provisions@ $$t" -Iinclude) > elementmap
+	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ $(EXTRA_PROVIDES)" | $(PERL) ./click-mkelemmap -r "@provisions@ $$t" -Iinclude) > elementmap
 always:
 	@:
 
