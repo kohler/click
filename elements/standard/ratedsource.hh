@@ -20,7 +20,7 @@
  * in conjunction with PokeHandlers.
  *
  * =e
- * = RatedSource(\<0800>, 10, 10) -> Queue -> ...
+ *   RatedSource(\<0800>, 10, 10) -> Queue -> ...
  * =n
  * Useful for profiling and experiments.
  *
@@ -37,7 +37,7 @@
  * =h active read/write
  * Makes the element active or inactive.
  *
- * =a InfiniteSource PokeHandlers
+ * =a InfiniteSource, PokeHandlers
  */
 
 class RatedSource : public Element { protected:

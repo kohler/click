@@ -17,9 +17,7 @@
  *
  * Only available in user-level processes.
  *
- * =a ToDump
- * =a FromDevice.u
- * =a ToDevice.u */
+ * =a ToDump, FromDevice.u, ToDevice.u */
 
 #ifdef HAVE_PCAP
 extern "C" {

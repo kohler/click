@@ -10,9 +10,7 @@
  * Pushes invalid packets out on output 1, unless output 1 was unused;
  * if so, drops invalid packets.
  *
- * =a CheckIPHeader
- * =a CheckTCPHeader
- * =a MarkIPHeader
+ * =a CheckIPHeader, CheckTCPHeader, MarkIPHeader
  */
 
 #include "element.hh"

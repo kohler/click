@@ -10,7 +10,7 @@
  * Set the destination IP address annotation of incoming packets to the
  * static IP address IP.
  *
- * =a StoreIPAddress GetIPAddress
+ * =a StoreIPAddress, GetIPAddress
  */
 
 class SetIPAddress : public Element {

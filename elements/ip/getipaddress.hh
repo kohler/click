@@ -17,9 +17,7 @@
  * that need to know where the packet is going.
  * Such elements include ARPQuerier and LookupIPRoute.
  *
- * =a ARPQuerier
- * =a LookupIPRoute
- * =a SetIPAddress StoreIPAddress
+ * =a ARPQuerier, LookupIPRoute, SetIPAddress, StoreIPAddress
  */
 
 

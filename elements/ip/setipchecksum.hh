@@ -12,7 +12,7 @@
  * header, like DecIPTTL, SetIPDSCP, and IPRewriter, already update the
  * checksum incrementally.
  *
- * =a CheckIPHeader DecIPTTL SetIPDSCP IPRewriter */
+ * =a CheckIPHeader, DecIPTTL, SetIPDSCP, IPRewriter */
 
 #include "element.hh"
 #include "glue.hh"

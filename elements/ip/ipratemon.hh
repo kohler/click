@@ -2,7 +2,8 @@
 #define IPRATEMON_HH
 
 /*
- * =c IPRateMonitor(PB, OFF, RATIO, THRESH [, MEMORY, ANNO])
+ * =c
+ * IPRateMonitor(PB, OFF, RATIO, THRESH [, MEMORY, ANNO])
  *
  * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
@@ -48,15 +49,14 @@
  * expanding when 18.26.4 is reached for the next 100 seconds. After 100
  * seconds, any level below 18.26.4 may be reached again.
  *
- * =e Example: 
- * = IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
+ * =e
+ *   IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
  *
  * Monitors packet rates. The memory usage is limited to 600K. When rate for a
  * network address (e.g. 18.26.*.*) exceeds 256 packets per second, start
  * monitor subnet or host addresses (e.g. 18.26.4.*).
  *
- * =a IPFlexMonitor
- * =a CompareBlock
+ * =a IPFlexMonitor, CompareBlock
  */
 
 #include "glue.hh"

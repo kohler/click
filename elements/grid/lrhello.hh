@@ -17,8 +17,8 @@
  * =e
  * LocalRouteHello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115, nel) -> ? -> ToDevice(eth0)
  *
- * =a Neighbor
- * =a LocalRoute
+ * =a
+ * Neighbor, LocalRoute
  */
 
 #include "element.hh"

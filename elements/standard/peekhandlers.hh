@@ -22,10 +22,10 @@
  * error. In the Linux kernel module, they are printed to /var/log/messages
  * (accessible through dmesg(1)) and to /proc/click/errors.
  * =e
- * = PeekHandlers(q.length,
- * =              1.5, // delay for 1.5 seconds
- * =              q.length);
- * =a PokeHandlers */
+ *   PeekHandlers(q.length,
+ *                1.5, // delay for 1.5 seconds
+ *                q.length);
+ * =a PokeHandlers, dmesg(1) */
 
 class PeekHandlers : public Element {
 

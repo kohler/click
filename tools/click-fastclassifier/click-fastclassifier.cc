@@ -551,6 +551,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
   ElementT &classifier_e = r->element(classifier_ei);
   classifier_e.type = c.type_index;
   classifier_e.configuration = String();
+  classifier_e.landmark = "<click-fastclassifier>" + classifier_e.landmark;
   all_programs.push_back(c);
 }
 

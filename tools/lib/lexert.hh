@@ -49,6 +49,7 @@ class LexerT { protected:
   unsigned skip_line(unsigned);
   unsigned skip_slash_star(unsigned);
   unsigned skip_quote(unsigned, char);
+  unsigned process_line_directive(unsigned);
   Lexeme next_lexeme();
   static String lexeme_string(int);
   
@@ -89,8 +90,8 @@ class LexerT { protected:
   int element_type(const String &) const;
   int force_element_type(String);
   
-  int make_element(String, int, const String &);
-  int make_anon_element(const String &, int, const String &);
+  int make_element(String, int, const String &, const String & = String());
+  int make_anon_element(const String &, int, const String &, const String & = String());
   void connect(int f1, int p1, int p2, int f2);
   
   bool yport(int &port);

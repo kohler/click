@@ -14,7 +14,6 @@
  * Expects a string "saddr sport daddr dport seqn ackn bits" with their
  * obvious meaning. Bits is the value of the 6 TCP flags.
  *
- * =a
  */
 
 #include "element.hh"

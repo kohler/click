@@ -15,9 +15,8 @@
  * The Strip element can be used by the receiver to get rid of the
  * encapsulation header.
  * =e
- * = UDPIPEncap(1.0.0.1, 1234, 2.0.0.2, 1234)
- * =a Strip
- * =a IPEncap
+ *   UDPIPEncap(1.0.0.1, 1234, 2.0.0.2, 1234)
+ * =a Strip, IPEncap
  */
 
 #include "element.hh"

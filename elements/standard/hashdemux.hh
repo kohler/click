@@ -14,7 +14,7 @@
  * This element expects IP packets and chooses the output
  * based on a hash of the IP destination address:
  * 
- * = HashDemux(16, 4)
+ *   HashDemux(16, 4)
  */
 
 class HashDemux : public Element {

@@ -21,7 +21,8 @@
  * is not 0.0.0.0), Tun tries to set up a default route through that
  * host.
  *
- * =a ToLinux */
+ * =a
+ * ToLinux */
 
 #include "element.hh"
 #include "ipaddress.hh"

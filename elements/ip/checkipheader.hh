@@ -19,10 +19,7 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface (RFC1812 5.3.7).
  *
- * =a CheckIPHeader2
- * =a MarkIPHeader
- * =a SetIPChecksum
- * =a StripIPHeader */
+ * =a CheckIPHeader2, MarkIPHeader, SetIPChecksum, StripIPHeader */
 
 #include "element.hh"
 #include "glue.hh"

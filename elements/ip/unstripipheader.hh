@@ -9,8 +9,7 @@
  * annotation from MarkIPHeader. If IP header already on, forwards packet
  * unmodified.
  *
- * =a MarkIPHeader
- * =a StripIPHeader
+ * =a MarkIPHeader, StripIPHeader
  */
 
 #include "element.hh"

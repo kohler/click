@@ -16,18 +16,15 @@
  * After the fake device is created, the effect of bringing up the interface
  * and changing the routing table is analogous to:
  *
- * = % /sbin/ifconfig DEVNAME up
- * = % /sbin/route add -net ADDR netmask MASK DEVNAME
+ *   % /sbin/ifconfig DEVNAME up
+ *   % /sbin/route add -net ADDR netmask MASK DEVNAME
  *
  * This element is only available in the Linux kernel module.
  *
  * =e
- * = FromLinux(fake0, 192.0.0.0/8) -> ...;
+ *   FromLinux(fake0, 192.0.0.0/8) -> ...;
  *
- * =a ToLinux
- * =a FromDevice
- * =a PollDevice
- * =a ToDevice
+ * =a ToLinux, FromDevice, PollDevice, ToDevice
  */
 
 extern "C" {

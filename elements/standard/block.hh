@@ -15,11 +15,11 @@
  * Is THRESH is 0 then all packets are pushed on output 0.
  *
  * =e
- * = b :: Block(500);
- * = 
- * = ... -> Monitor(...) ->
- * = ... -> b[0] -> ...
- * = ... -> b[1] -> Discard;
+ *   b :: Block(500);
+ *   
+ *   ... -> Monitor(...) ->
+ *   ... -> b[0] -> ...
+ *   ... -> b[1] -> Discard;
  *
  * Discards all packets that are preceded by more than 500 siblings.
  *

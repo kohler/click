@@ -8,18 +8,15 @@
  * A single element encapsulating common tasks on an IP router's input path.
  * Effectively equivalent to
  *
- * = elementclass IPInputCombo { $COLOR, $BADADDRS |
- * =   input[0] -> Paint($COLOR)
- * =         -> Strip(14)
- * =         -> CheckIPHeader($BADADDRS)
- * =         -> GetIPAddress(16)
- * =         -> [0]output;
- * = }
- * =a Paint
- * =a CheckIPHeader
- * =a Strip
- * =a GetIPAddress
- * =a IPOutputCombo
+ *   elementclass IPInputCombo { $COLOR, $BADADDRS |
+ *     input[0] -> Paint($COLOR)
+ *           -> Strip(14)
+ *           -> CheckIPHeader($BADADDRS)
+ *           -> GetIPAddress(16)
+ *           -> [0]output;
+ *   }
+ *
+ * =a Paint, CheckIPHeader, Strip, GetIPAddress, IPOutputCombo
  */
 
 #include "element.hh"

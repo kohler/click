@@ -25,9 +25,7 @@
  * Returns a human-readable description of the IPRewriter's current set of
  * mappings.
  *
- * =a IPRewriter
- * =a IPRewriterPatterns
- * =a FTPPortMapper */
+ * =a IPRewriter, IPRewriterPatterns, FTPPortMapper */
 
 class TCPRewriter : public IPRw {
 

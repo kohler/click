@@ -39,9 +39,9 @@
  * messages in response to TTL expirations, but limits the
  * rate at which such messages can be sent to 10 per second:
  *
- * = dt : DecIPTTL();
- * = dt[1] -> ICMPError(18.26.4.24, 11, 0) -> m :: PacketMeter(10) -> ...
- * = m[1] -> Discard;
+ *   dt : DecIPTTL();
+ *   dt[1] -> ICMPError(18.26.4.24, 11, 0) -> m :: PacketMeter(10) -> ...
+ *   m[1] -> Discard;
  *
  * =n
  *
@@ -49,9 +49,7 @@
  * IP directed broadcast address; it is supposed to ignore packets with such
  * addresses.
  *
- * =a DecIPTTL
- * =a FixIPSrc
- * =a IPGWOptions */
+ * =a DecIPTTL, FixIPSrc, IPGWOptions */
 
 #include "element.hh"
 #include "ip6address.hh"

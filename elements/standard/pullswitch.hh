@@ -15,7 +15,7 @@
  * =h switch read/write
  * Return or set the K parameter.
  *
- * =a PrioSched RoundRobinSched StrideSched Switch
+ * =a PrioSched, RoundRobinSched, StrideSched, Switch
  */
 
 class PullSwitch : public Element {

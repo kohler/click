@@ -21,15 +21,13 @@
  * The Strip element can be used by the receiver to get rid of the
  * encapsulation header.
  * =e
- * = RandomUDPIPEncap(1.0.0.1 1234 2.0.0.2 1234 1 1,
- * = 		      1.0.0.2 1093 2.0.0.2 1234 2 1)
+ *   RandomUDPIPEncap(1.0.0.1 1234 2.0.0.2 1234 1 1,
+ *   		      1.0.0.2 1093 2.0.0.2 1234 2 1)
  * 
  * Will send about twice as much UDP/IP packets with 1.0.0.2 as its source
  * address than packets with 1.0.0.1 as its source address.
  *
- * =a Strip
- * =a UDPIPEncap
- * =a RoundRobinUDPIPEncap
+ * =a Strip, UDPIPEncap, RoundRobinUDPIPEncap
  */
 
 #include "element.hh"

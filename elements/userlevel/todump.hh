@@ -13,9 +13,8 @@
  *
  * This element is only available at user level.
  * 
- * =a FromDump
- * =a FromDevice.u
- * =a ToDevice.u
+ * =a
+ * FromDump, FromDevice.u, ToDevice.u
  */
 
 class ToDump : public Element {

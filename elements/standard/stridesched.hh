@@ -5,10 +5,10 @@
 
 /*
  * =c
- * StrideSched(TICKETS0, ..., TICKETS<i>N-1</i>)
+ * StrideSched(TICKETS0, ..., TICKETSI<N-1>)
  * =d
  * Has one output and N inputs.  Performs simple packet-based stride
- * scheduling, assigning TICKETS<i>i</i> to input <i>i</i> for each input.
+ * scheduling, assigning TICKETSI<i> to input I<i> for each input.
  * 
  * Each time a pull comes in on the output, it pulls on its inputs in the order
  * specified by the stride scheduling queue, until all inputs have been tried
@@ -18,11 +18,10 @@
  * an input that produces a packet, if any, is found as soon as possible,
  * consistently with the stride scheduler ordering.
  *
- * =h tickets0...tickets<i>N-1</i> read/write
+ * =h tickets0...ticketsI<N-1> read/write
  * Returns or sets the number of tickets for each input port.
  *
- * =a PrioSched RoundRobinSched
- * =a StrideSwitch
+ * =a PrioSched, RoundRobinSched, StrideSwitch
  */
 
 class StrideSched : public Element { protected:

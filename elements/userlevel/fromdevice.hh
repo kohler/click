@@ -2,7 +2,7 @@
 #define FROMDEVICE_HH
 
 /*
- * =page FromDevice.u
+ * =title FromDevice.u
  * =c
  * FromDevice(DEVNAME [, PROMISC? [, MAXPACKETSIZE]])
  * =d
@@ -25,12 +25,9 @@
  * mileage may vary.
  *
  * =e
- * = FromDevice(eth0, 0) -> ...
+ *   FromDevice(eth0, 0) -> ...
  *
- * =a ToDevice.u
- * =a FromDump
- * =a ToDump
- * =a FromDevice */
+ * =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
 #include "element.hh"
 

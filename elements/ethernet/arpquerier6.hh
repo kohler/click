@@ -23,14 +23,14 @@
  * instances of ARPQuerier.
  *
  * =e
- * = c :: Classifier(12/0806 20/0001, 12/0800, ...);
- * = a :: ARPQuerier6(0::121A:0459, 00:00:C0:AE:67:EF);
- * = c[0] -> a[1];
- * = c[1] -> ... -> a[0];
- * = a[0] -> ... -> ToDevice(eth0);
+ *    c :: Classifier(12/0806 20/0001, 12/0800, ...);
+ *    a :: ARPQuerier6(0::121A:0459, 00:00:C0:AE:67:EF);
+ *    c[0] -> a[1];
+ *    c[1] -> ... -> a[0];
+ *    a[0] -> ... -> ToDevice(eth0);
  *
- * =a ARPResponder6
- * =a ARPFaker6
+ * =a
+ * ARPResponder6, ARPFaker6
  */
 
 #include "element.hh"

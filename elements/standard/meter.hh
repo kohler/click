@@ -5,7 +5,7 @@
 
 /*
  * =c
- * Meter(RATE1, RATE2, ..., RATE<i>n</i>)
+ * Meter(RATE1, RATE2, ..., RATEI<n>)
  * =d
  *
  * Classifies packets based on the rate of packet arrival. The rate is
@@ -13,24 +13,22 @@
  * (The related PacketMeter element measures rates in packets per second.)
  * 
  * The configuration string consists of one or more rate arguments. Earlier
- * rates in the list must be less than later rates. A Meter with <i>n</i> rate
- * arguments will have <i>n</i>+1 outputs. It sends packets out the output
+ * rates in the list must be less than later rates. A Meter with I<n> rate
+ * arguments will have I<n>+1 outputs. It sends packets out the output
  * corresponding to the current rate. If the rate is less than RATE1 packets
  * are sent to output 0; if it is >= RATE1 but < RATE2, packets are sent to
- * output 1; and so on. If it is >= RATE<i>n</i>, packets are sent to output
- * <i>n</i>.
+ * output 1; and so on. If it is >= RATEI<n>, packets are sent to output
+ * I<n>.
  *
  * =e
  *
  * This configuration fragment drops the input stream when it is generating
  * more than 20,000 bytes per second.
  *
- * = ... -> m :: Meter(20000) -> ...;
- * = m[1] -> Discard;
+ *   ... -> m :: Meter(20000) -> ...;
+ *   m[1] -> Discard;
  *
- * =a PacketMeter
- * =a Shaper
- * =a PacketShaper */
+ * =a PacketMeter, Shaper, PacketShaper */
 
 class Meter : public Element { protected:
 

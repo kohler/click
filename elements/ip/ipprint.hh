@@ -19,8 +19,7 @@
  * `false'. The NBYTES argument determines the number of bytes to dump as hex.
  * The default value is 1500.
  *
- * =a Print
- * =a CheckIPHeader
+ * =a Print, CheckIPHeader
  * */
 
 class IPPrint : public Element {

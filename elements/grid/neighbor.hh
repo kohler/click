@@ -17,10 +17,8 @@
  * must be greater than 0, JITTER must be positive and less than
  * JITTER.  Produces Ethernet packets.
  *
- * =a Hello 
- * =a FixSrcLoc 
- * =a SetGridChecksum
- * =a LocalRoute 
+ * =a
+ * Hello, FixSrcLoc, SetGridChecksum, LocalRoute 
  */
 
 

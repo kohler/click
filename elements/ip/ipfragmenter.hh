@@ -19,13 +19,10 @@
  * Sends the first fragment last.
  *
  * =e
- * Example:
+ *   ... -> fr::IPFragmenter -> Queue(20) -> ...
+ *   fr[1] -> ICMPError(18.26.4.24, 3, 4) -> ...
  *
- * = ... -> fr::IPFragmenter -> Queue(20) -> ...
- * = fr[1] -> ICMPError(18.26.4.24, 3, 4) -> ...
- *
- * =a ICMPError
- * =a CheckLength
+ * =a ICMPError, CheckLength
  */
 
 #include "element.hh"

@@ -16,7 +16,7 @@
  * Responds to mapping requests from an IPRewriter by trying the PATTERNs in
  * round-robin order and returning the first successfully created mapping.
  *
- * =a IPRewriter IPRewriterPatterns */
+ * =a IPRewriter, IPRewriterPatterns */
 
 class IPRoundRobinMapper : public Element, public IPMapper {
 

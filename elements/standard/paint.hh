@@ -8,6 +8,7 @@
  * =d
  * Sets each packet's paint annotation to X, an integer 0..255.
  * Note that a packet may only be painted with one color.
+ * =a CheckPaint
  */
 
 class Paint : public Element {

@@ -22,11 +22,7 @@
  * This is bad for performance. If you care about performance and have a
  * polling-capable device, use PollDevice instead.
  *
- * =a PollDevice
- * =a ToDevice
- * =a FromLinux
- * =a ToLinux
- * =a FromDevice.u */
+ * =a PollDevice, ToDevice, FromLinux, ToLinux, FromDevice.u */
 
 #include "anydevice.hh"
 

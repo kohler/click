@@ -14,9 +14,7 @@
  *
  * There are usually Queues both upstream and downstream
  * of Shaper elements.
- * =a Shaper
- * =a Meter
- * =a PacketMeter
+ * =a Shaper, Meter, PacketMeter
  */
 
 class PacketShaper : public Shaper {

@@ -35,10 +35,10 @@
  * =e
  * For example,
  *
- * = Classifier(12/0806 20/0001,
- * =            12/0806 20/0002,
- * =            12/0800,
- * =            -);
+ *   Classifier(12/0806 20/0001,
+ *              12/0806 20/0002,
+ *              12/0800,
+ *              -);
  *
  * creates an element with four outputs intended to process
  * Ethernet packets.
@@ -53,12 +53,12 @@
  *
  * The Classifier patterns above compile into the following program:
  *
- * = 0  12/08060000%ffff0000  yes->step 1  no->step 3
- * = 1  20/00010000%ffff0000  yes->[0]  no->step 2
- * = 2  20/00020000%ffff0000  yes->[1]  no->[3]
- * = 3  12/08000000%ffff0000  yes->[2]  no->[3]
- * = safe length 22
- * = alignment offset 0
+ *   0  12/08060000%ffff0000  yes->step 1  no->step 3
+ *   1  20/00010000%ffff0000  yes->[0]  no->step 2
+ *   2  20/00020000%ffff0000  yes->[1]  no->[3]
+ *   3  12/08000000%ffff0000  yes->[2]  no->[3]
+ *   safe length 22
+ *   alignment offset 0
  */
 
 class Classifier : public Element { protected:

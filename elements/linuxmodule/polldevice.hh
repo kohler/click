@@ -17,10 +17,7 @@
  *
  * This element is only available in the Linux kernel module.
  *
- * =a FromDevice
- * =a ToDevice
- * =a FromLinux
- * =a ToLinux */
+ * =a FromDevice, ToDevice, FromLinux, ToLinux */
 
 #include "anydevice.hh"
 

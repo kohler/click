@@ -11,7 +11,8 @@
  * Write packets to the ethernet via xok ethernet interface. Expects packets
  * that already have an ether header. 
  *
- * =a xokReader
+ * =a
+ * xokReader
  */
 
 class xokWriter : public Element {

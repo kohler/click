@@ -21,9 +21,7 @@
  * This element does all the work of CheckIPHeader except for checking
  * the checksum.
  *
- * =a CheckIPHeader
- * =a StripIPHeader
- * =a MarkIPHeader */
+ * =a CheckIPHeader, StripIPHeader, MarkIPHeader */
 
 #include "element.hh"
 #include "glue.hh"

@@ -10,9 +10,8 @@
  * =e
  * Use this to get rid of the Ethernet header:
  *
- * = Strip(14)
- * =a EtherEncap
- * =a IPEncap
+ *   Strip(14)
+ * =a EtherEncap, IPEncap
  */
 
 class Strip : public Element {

@@ -132,6 +132,50 @@ LexerT::skip_quote(unsigned pos, char endc)
   return _len;
 }
 
+unsigned
+LexerT::process_line_directive(unsigned pos)
+{
+  const char *data = _data;
+  unsigned len = _len;
+  
+  for (pos++; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+    /* nada */;
+  if (pos < len - 4 && data[pos] == 'l' && data[pos+1] == 'i'
+      && data[pos+2] == 'n' && data[pos+3] == 'e'
+      && (data[pos+4] == ' ' || data[pos+4] == '\t')) {
+    for (pos += 5; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+      /* nada */;
+  }
+  if (pos >= len || !isdigit(data[pos])) {
+    // complain about bad directive
+    lerror("unknown preprocessor directive");
+    return skip_line(pos);
+  }
+  
+  // parse line number
+  for (_lineno = 0; pos < len && isdigit(data[pos]); pos++)
+    _lineno = _lineno * 10 + data[pos] - '0';
+  _lineno--;			// account for extra line
+  
+  for (; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+    /* nada */;
+  if (pos < len && data[pos] == '\"') {
+    // parse filename
+    unsigned first_in_filename = pos;
+    for (pos++; pos < len && data[pos] != '\"' && data[pos] != '\n' && data[pos] != '\r'; pos++)
+      if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
+	pos++;
+    _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+  }
+
+  // reach end of line
+  for (; pos < len && data[pos] != '\n' && data[pos] != '\r'; pos++)
+    /* nada */;
+  if (pos < len - 1 && data[pos] == '\r' && data[pos+1] == '\n')
+    pos++;
+  return pos;
+}
+
 Lexeme
 LexerT::next_lexeme()
 {
@@ -156,7 +200,9 @@ LexerT::next_lexeme()
 	pos = skip_slash_star(pos + 2);
       else
 	break;
-    } else
+    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r'))
+      pos = process_line_directive(pos);
+    else
       break;
   }
   
@@ -350,16 +396,17 @@ LexerT::anon_element_name(const String &class_name) const
 }
 
 int
-LexerT::make_element(String name, int ftype, const String &conf)
+LexerT::make_element(String name, int ftype, const String &conf,
+		     const String &lm)
 {
-  return _router->get_eindex(name, ftype, conf, landmark());
+  return _router->get_eindex(name, ftype, conf, lm ? lm : landmark());
 }
 
 int
 LexerT::make_anon_element(const String &class_name, int ftype,
-			  const String &conf)
+			  const String &conf, const String &lm)
 {
-  return make_element(anon_element_name(class_name), ftype, conf);
+  return make_element(anon_element_name(class_name), ftype, conf, lm);
 }
 
 void
@@ -441,9 +488,10 @@ LexerT::yelement(int &element, bool comma_ok)
     return false;
   }
   
-  String configuration;
+  String configuration, lm;
   const Lexeme &tparen = lex();
   if (tparen.is('(')) {
+    lm = landmark();		// report landmark from before config string
     if (ftype < 0) ftype = force_element_type(name);
     configuration = lex_config();
     expect(')');
@@ -451,7 +499,7 @@ LexerT::yelement(int &element, bool comma_ok)
     unlex(tparen);
   
   if (ftype >= 0)
-    element = make_anon_element(name, ftype, configuration);
+    element = make_anon_element(name, ftype, configuration, lm);
   else {
     String lookup_name = _element_prefix + name;
     element = _router->eindex(lookup_name);
@@ -464,7 +512,7 @@ LexerT::yelement(int &element, bool comma_ok)
       } else {
 	// assume it's an element type
 	ftype = force_element_type(name);
-	element = make_anon_element(name, ftype, configuration);
+	element = make_anon_element(name, ftype, configuration, lm);
       }
     }
   }
@@ -502,7 +550,8 @@ LexerT::ydeclaration(const String &first_element)
       return;
     }
   }
-  
+
+  String lm = landmark();
   int ftype;
   t = lex();
   if (t.is(lexIdent))
@@ -532,7 +581,7 @@ LexerT::ydeclaration(const String &first_element)
     else if (_router->type_index(lookup_name) >= 0)
       lerror("`%s' is an element class", lookup_name.cc());
     else
-      make_element(lookup_name, ftype, configuration);
+      make_element(lookup_name, ftype, configuration, lm);
   }
 }
 

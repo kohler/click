@@ -20,22 +20,21 @@
  * host (18.26.4.24) to itself, packets to net 18.26.4 to the
  * local interface, and all others via gateway 18.26.4.1:
  *
- * = ... -> GetIPAddress(16) -> rt;
- * = rt :: LookupIPRoute(18.26.4.24/32 0,
- * =                     18.26.4.255/32 0,
- * =                     18.26.4.0/32 0,
- * =                     18.26.4.0/24 1,
- * =                     0.0.0.0/0 18.26.4.1 1);
- * = rt[0] -> ToLinux;
- * = rt[1] -> ... -> ToDevice(eth0);
+ *   ... -> GetIPAddress(16) -> rt;
+ *   rt :: LookupIPRoute(18.26.4.24/32 0,
+ *                       18.26.4.255/32 0,
+ *                       18.26.4.0/32 0,
+ *                       18.26.4.0/24 1,
+ *                       0.0.0.0/0 18.26.4.1 1);
+ *   rt[0] -> ToLinux;
+ *   rt[1] -> ... -> ToDevice(eth0);
  *
  * =n
  * Only static routes are allowed. If you need a dynamic routing
  * protocol such as RIP, run it at user-level and use
  * LookupIPRouteLinux or LookupIPRoute2.
  *
- * =a LookupIPRoute2
- * =a LookupIPRouteLinux
+ * =a LookupIPRoute2, LookupIPRouteLinux
  */
 
 #include "element.hh"

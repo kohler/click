@@ -18,7 +18,8 @@
  * Returns or sets the element's location
  * information, in this format: ``lat, lon''.
  *
- * =a FixSrcLoc */
+ * =a
+ * FixSrcLoc */
 
 #include "element.hh"
 #include "grid.hh"

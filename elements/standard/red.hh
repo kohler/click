@@ -22,7 +22,7 @@ class Storage;
  * elements.
  *
  * =e
- * = ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
+ *   ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
  *
  * =h min_thresh read/write
  * Returns or sets the MIN_THRESH configuration parameter.

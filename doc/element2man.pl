@@ -12,7 +12,22 @@
 # version. For more information, see the `COPYRIGHT' file in the source
 # distribution.
 
-my(%section_is_array) = ( 'h' => 1, 'a' => 1, 'page' => 1 );
+my(%section_break) =
+    ( 'head1' => 1, 'c' => 1, 'io' => 1, 'processing' => 1,
+      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 1, 'title' => 1 );
+my(%section_takes_args) =
+    ( 'head1' => 1, 'c' => 0, 'io' => 0, 'processing' => 0,
+      'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1 );
+my(%section_takes_text) =
+    ( 'head1' => 1, 'c' => 1, 'io' => 1, 'processing' => 1,
+      'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0 );
+my(%xsection_takes_args) =
+    ( 'head1' => 1, 'head2' => 1, 'item' => 1, 'over' => 1, 'back' => 0 );
+
+my(%podentities) =
+    ( 'lt' => '<', 'gt' => '>', 'amp' => '&', 'solid' => '/',
+      'verbar' => '|' );
+
 my $directory;
 my $section = 'n';
 my(@all_outnames, %all_outsections, %class_name, %processing);
@@ -21,10 +36,10 @@ my(%processing_constants) =
     ( 'AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
       'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h' );
 my(%processing_text) =
-    ( 'a/a' => 'agnostic', 'h/h' => 'push', 'l/l' => 'pull',
-      'h/l' => 'push inputs, pull outputs',
-      'l/h' => 'pull inputs, push outputs',
-      'a/ah' => 'agnostic, but output 1 is push' );
+    ( 'a/a' => 'Agnostic', 'h/h' => 'Push', 'l/l' => 'Pull',
+      'h/l' => 'Push inputs, pull outputs',
+      'l/h' => 'Pull inputs, push outputs',
+      'a/ah' => 'Agnostic, but output 1 is push' );
 
 # find date
 my($today) = '';
@@ -34,49 +49,176 @@ if (localtime =~ /\w*\s+(\w*)\s+(\d*)\s+\S*\s+(\d*)/) {
 
 my $prologue = <<'EOD;';
 .de M
-.BR "\\$1" "(\\$2)\\$3"
+.IR "\\$1" "(\\$2)\\$3"
 ..
 .de RM
-.RB "\\$1" "\\$2" "(\\$3)\\$4"
+.RI "\\$1" "\\$2" "(\\$3)\\$4"
 ..
 EOD;
 chomp $prologue;
 
-sub nroffize ($;$$) {
-  my($t, $related, $related_source) = @_;
+# Unrolling [^A-Z>]|[A-Z](?!<) gives:    // MRE pp 165.
+my $nonest = '(?:[^A-Z>]*(?:[A-Z](?!<)[^A-Z>]*)*)';
+
+
+
+# XXX one paragraph at a time
+
+my($Filename, @Related, %RelatedSource, @Over);
+
+sub quote ($) {
+  my($x) = @_;
+  $x =~ tr/\000-\177/\200-\377/;
+  $x;
+}
+
+sub unentity ($) {
+  my($x) = @_;
+  $x =~ tr/\200-\377/\000-\177/;
+  if ($x =~ /^\d+$/) {
+    chr($x);
+  } elsif ($podentities{$x}) {
+    $podentities{$x};
+  } else {
+    print STDERR "$Filename: unknown entity E<$x>\n";
+    "";
+  }
+}
+
+sub nroffize_text ($) {
+  my($t) = @_;
   my($i);
 
   # embolden & manpageize
-  if (defined $related) {
-    foreach $i (@$related) {
-      $t =~ s{(^|[^\w@/>])$i($|[^\w@/])}{$1<\#>$i</\#>$2}gs;
-    }
+  foreach $i (@Related) {
+    $t =~ s{(^|[^\w@/<])($i)($|[^\w@/]|[A-Z]<)}{$1L<$2>$3}gs;
   }
 
-  # remove emboldening & manpaging on examples
-  1 while ($t =~ s{^= (.*)</?[\#]>}{= $1}gm);
-  
   $t =~ s/\\/\\\\/g;
-  $t =~ s/^(= )?\./$1\\&./gm;
-  $t =~ s/^(= )?'/$1\\&'/gm;
+  $t =~ s/^\./$1\\&./gm;
+  $t =~ s/^'/$1\\&'/gm;
   $t =~ s/^\s*$/.PP\n/gm;
-  $t =~ s/^.PP\n\s*\((.*?)\) /.TP 5\n$1\n/gm;
-  $t =~ s/<i>(.*?)<\/i>/\\fI$1\\fP/ig;
-  $t =~ s/<b>(.*?)<\/b>/\\fB$1\\fP/ig;
-  $t =~ s/<tt>(.*?)<\/tt>/\\f(CW$1\\fP/ig;
-  $t =~ s{<\#>(.*?)<\/\#>(\S*)(\s*)}{
-    if ($related_source->{$1}) {
-      "\n.M $1 \"$related_source->{$1}\" $2\n";
+  $t =~ s/^(\.PP\n)+/.PP\n/gm;
+  $t =~ s{\A\s*(\.PP\n)?}{}s;
+  if (@Over > 0) {
+    $t =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
+  }
+
+  # get rid of entities
+  $t =~ s{[\200-\377]}{"E<" . ord($1) . ">"}ge;
+  $t =~ s{(E<[^>]*>)}{quote($1)}ge;
+  
+  my $maxnest = 10;
+  while ($maxnest-- && $t =~ /[A-Z]</) {
+    
+    # can't do C font here
+    $t =~ s/([BI])<($nonest)>/\\f$1$2\\fP/g;
+    
+    # files and filelike refs in italics
+    $t =~ s/F<($nonest)>/I<$1>/g;
+    
+    # LREF: man page references
+    $t =~ s{L<($nonest)\(([\dln])\)>(\S*)(\s*)}{\n.M $1 $2 $3\n}g;
+    
+    # LREF: a la HREF L<show this text|man/section>
+    $t =~ s{L<($nonest)>(\S*)(\s*)}{
+    if ($RelatedSource{$1}) {
+      "\n.M $1 \"$RelatedSource{$1}\" $2\n";
     } else {
-      "\\fB$1\\fP$2$3";
+      $i = index($1, "|");
+      ($i >= 0 ? substr($1, 0, $i) . $2 . $3 : "\\fB$1\\fP$2$3");
     }
-  }eg;
-  $t =~ s{\n\.M (\S+) \"(\S+)\" \(\2\)(.*)\n}{\n.M $1 "$2" $3\n}g;
-  1 while ($t =~ s/^\.PP\n\.PP\n/.PP\n/gm);
-  $t =~ s/^= (.*\n)/.nf\n$1.fi\n/mg;
-  $t =~ s/^\.fi\n\.nf\n//mg;
+    }eg;
+    
+    $t =~ s/Z<>/\\&/g;
+    $t =~ s/N<>(\n?)/\n.br\n/g;
+
+    # comes last because not subject to reprocessing
+    $t =~ s/C<($nonest)>/\\f(CW$1\\fP/g;
+  }
+
+  # replace entities
+  $t =~ s/\305\274([^\276]*)\276/unentity($1)/ge;
   $t =~ s/\n+/\n/sg;
+  $t =~ s/^\n+//;
+  $t =~ s/\n+$//;
   $t;
+}
+
+sub nroffize ($) {
+  my($t) = @_;
+
+  $t =~ s{\n[ \t\r]+$}{\n}gm;
+  
+  if ($t =~ /^[ \t]/m) {
+    # worry about verbatims
+    my(@x) = split(/(^[ \t].*$)/m, $t);
+    my($o, $i) = '';
+    for ($i = 0; $i < @x; $i += 2) {
+      $o .= nroffize_text($x[$i]) . "\n" if $x[$i];
+      if ($x[$i+1]) {
+	$x[$i+1] =~ s/\t/        /g;
+	$o .= ".nf\n\\&" . $x[$i+1] . "\n.fi\n.PP\n";
+      }
+    }
+    $o =~ s/\n\.fi\n\.PP\n\n\.nf\n/\n/g;
+    $o;
+  } else {
+    nroffize_text($t);
+  }
+}
+
+sub do_section_x($$$) {
+  my($name, $args, $text) = @_;
+  if (!exists($xsection_takes_args{$name})) {
+    print STDERR "$Filename: unknown section \`=$name' ignored\n";
+    return;
+  }
+  print STDERR "$Filename: section \`=$name' requires arguments\n"
+      if ($xsection_takes_args{$name} && !$args);
+  print STDERR "$Filename: section \`=$name' arguments ignored\n"
+      if (!$xsection_takes_args{$name} && $args);
+  if ($name eq 'head1') {
+    print OUT ".SH \"", nroffize($args), "\"\n";
+  } elsif ($name eq 'head2') {
+    print OUT ".SS \"", nroffize($args), "\"\n";
+  } elsif ($name eq 'over') {
+    if ($args =~ /^\s*(\d+)\s*/s) {
+      print OUT ".RS $Over[-1]\n" if @Over;
+      push @Over, $1;
+    } else {
+      print STDERR "$Filename: bad arguments to \`=over'\n";
+    }
+  } elsif ($name eq 'item') {
+    if (@Over == 0) {
+      print STDERR "$Filename: \`=item' outside any \`=over' section\n";
+    } else {
+      print OUT ".IP \"", nroffize($args), "\" $Over[-1]\n";
+    }
+  } elsif ($name eq 'back') {
+    if (@Over == 0) {
+      print STDERR "$Filename: too many \`=back's\n";
+    } else {
+      pop @Over;
+      print OUT ".RE\n" if @Over;
+      print OUT (@Over ? ".IP \"\" $Over[-1]\n" : ".PP\n");
+    }
+  }
+  print OUT nroffize($text), "\n";
+}
+
+sub do_section($$$) {
+  my($name, $args, $text) = @_;
+  my(@text) = split(/^(=\w.*)$/m, $text);
+  my($i);
+  @Over = ();
+  for ($i = 0; $i < @text; ) {
+    do_section_x($name, $args, $text[$i]);
+    ($name, $args) = ($text[$i+1] =~ /=(\w+)\s*(.*)/)
+	if ($i < @text - 1);
+    $i += 2;
+  }
+  do_section_x('back', '', '') while @Over;
 }
 
 sub process_processing ($) {
@@ -94,38 +236,78 @@ sub process_processing ($) {
 
 sub process_comment ($$) {
   my($t, $filename) = @_;
-  my(%x, $i);
-
-  while ($t =~ m{^=(\w+)\s*([\0-\377]*?)(?=\n=\w|\Z)}mg) {
-    if ($section_is_array{$1}) {
-      push @{$x{$1}}, "$2\n";
+  my($i);
+  $Filename = $filename;
+  
+  # split document into sections
+  my(@section_text, @section_args, @section_name, $bad_section, $ref);
+  $ref = \$bad_section;
+  while ($t =~ m{^=(\w+)([ \t]*)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
+    if ($section_break{$1}) {
+      push @section_name, $1;
+      push @section_args, $3;
+      push @section_text, $4;
+      $ref = \$section_text[-1];
     } else {
-      $x{$1} .= "$2\n";
+      $$ref .= '=' . $1 . $2 . $3 . $4;
     }
   }
 
-  # snarf class names
+  # check document for sectioning errors
+  print STDERR "$Filename: warning: comment does not start with section\n"
+      if $bad_section;
+  my(%num_sections, %first_in_section);
+  foreach $i (0..$#section_name) {
+    my($n) = $section_name[$i];
+    print STDERR "$Filename: warning: section \`=$n' requires arguments\n"
+	if $section_takes_args{$n} == 1 && !$section_args[$i];
+    print STDERR "$Filename: warning: section \`=$n' arguments ignored\n"
+	if $section_takes_args{$n} == 0 && $section_args[$i];
+    print STDERR "$Filename: warning: empty section \`=$n'\n"
+	if $section_takes_text{$n} == 1 && !$section_text[$i];
+    print STDERR "$Filename: warning: section \`=$n' text ignored\n"
+	if $section_takes_text{$n} == 0 && $section_text[$i] =~ /\S/;
+    $num_sections{$n}++;
+    $first_in_section{$n} = $i if $num_sections{$n} == 1;
+  }
+  foreach $i ('a', 'c', 'd', 'n', 'e', 'title', 'io', 'processing') {
+    print STDERR "$Filename: warning: multiple \`=$i' sections; some may be ignored\n"
+	if $num_sections{$i} && $num_sections{$i} > 1;
+  }
+  
+  # read class names from configuration arguments section
+  $i = $first_in_section{'c'};
+  if (!defined($i)) {
+    print STDERR "$Filename: section \`=c' missing; cannot continue\n";
+    return;
+  }
   my(@classes, %classes);
-  while ($x{'c'} =~ /^\s*(\w+)\(/mg) { # configuration arguments section
+  while ($section_text[$i] =~ /^\s*(\w+)\(/mg) {
     push @classes, $1 if !exists $classes{$1};
     $classes{$1} = 1;
   }
-  if (!@classes && $x{'c'} =~ /^\s*([\w@]+)\s*$/) {
+  if (!@classes && $section_text[$i] =~ /^\s*([\w@]+)\s*$/) {
     push @classes, $1;
     $classes{$1} = 1;
   }
   if (!@classes) {
-    print STDERR "$filename: no class definitions\n    (did you forget `()' in the =c section?)\n";
+    print STDERR "$Filename: no class definitions\n    (did you forget `()' in the =c section?)\n";
     return;
   }
 
-  # output filenames might be specified in 'page' section
-  my(@outfiles) = @classes;
-  my(@outsections) = ($section) x @classes;
-  if ($x{'page'}) {
-    @outfiles = ();
-    @outsections = ();
-    foreach $i (map(split(/\s+/), @{$x{'page'}})) {
+  # output filenames might be specified in 'title' section
+  my(@outfiles, @outsections, $title);
+  if (defined($first_in_section{'title'})) {
+    $title = $section_args[ $first_in_section{'title'} ];
+    if (!$title) {
+      print STDERR "$Filename: \`=title' section present, but empty\n";
+      return;
+    }
+    if ($title =~ /[^-.\w@+,]/) {
+      print STDERR "$Filename: strange characters in \`=title', aborting\n";
+      return;
+    }
+    foreach $i (split(/\s+/, $title)) {
       if ($i =~ /^(.*)\((.*)\)$/) {
 	push @outfiles, $1;
 	push @outsections, $2;
@@ -134,6 +316,10 @@ sub process_comment ($$) {
 	push @outsections, $section;
       }
     }
+  } else {
+    $title = join(', ', @classes);
+    @outfiles = @classes;
+    @outsections = ($section) x @classes;
   }
 
   # open new output file if necessary
@@ -149,88 +335,97 @@ sub process_comment ($$) {
   $all_outsections{$outfiles[0]} = $outsections[0];
 
   # front matter
-  my($classes_text) = join(', ', @classes);
-  my($oneliner) = ($x{'desc'} ? $x{'desc'} : (@classes == 1 ? "Click element" : "Click elements"));
-  my($outfiles_text) = join(', ', @outfiles);
+  my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");
 
   print OUT <<"EOD;";
 .\\" -*- mode: nroff -*-
-.\\" Generated by \`element2man.pl' from \`$filename'
+.\\" Generated by \`element2man.pl' from \`$Filename'
 $prologue
-.TH "\U$outfiles_text\E" $outsections[0] "$today" "Click"
+.TH "\U$title\E" $outsections[0] "$today" "Click"
 .SH "NAME"
-$classes_text \- $oneliner
+$title \- $oneliner
 EOD;
   
   # prepare related
-  my(@related, @srelated, %related_source, %srelated_source);
-  if ($x{'a'}) {
-    foreach $i (map(split(/\s+/), @{$x{'a'}})) {
-      if ($i =~ /^(.*)\((.*)\)$/) {
-	push @related, $1;
-	$related_source{$1} = $2;
-      } else {
-	push @related, $i;
-	$related_source{$i} = 'n';
+  %RelatedSource = ();
+  $i = $first_in_section{'a'};
+  if (defined($i)) {
+    $section_text[$i] = $section_args[$i] . "\n" . $section_text[$i]
+	if $section_args[$i];
+    if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
+      my($bit, $last) = ($1, $2);
+      while ($bit =~ m{([-\w@.+=]+)([,\s]|\Z)}g) {
+	$RelatedSource{$1} = 'n';
       }
-    }
-  }
-  @srelated = sort { length($b) <=> length($a) } (@related, @classes);
-  %srelated_source = %related_source;
-  map(delete $srelated_source{$_}, @classes);
-
-  if ($x{'c'}) {
-    print OUT ".SH \"SYNOPSIS\"\n";
-    while ($x{'c'} =~ /^\s*(\S.*)$/mg) {
-      print OUT nroffize($1, \@srelated), "\n.br\n";
-    }
-  }
-
-  if (@classes == 1 && $processing{$classes[0]}) {
-    my $p = process_processing($processing{$classes[0]});
-    if ($p) {
-      print OUT ".SH \"PROCESSING TYPE\"\n";
-      print OUT nroffize($p), "\n";
-    }
-  }
-
-  if ($x{'io'}) {
-    print OUT ".SH \"INPUTS AND OUTPUTS\"\n";
-    print OUT nroffize($x{'io'});
-  }
-
-  if ($x{'d'}) {
-    print OUT ".SH \"DESCRIPTION\"\n";
-    print OUT nroffize($x{'d'}, \@srelated, \%srelated_source);
-  }
-
-  if ($x{'n'}) {
-    print OUT ".SH \"NOTES\"\n";
-    print OUT nroffize($x{'n'}, \@srelated, \%srelated_source);
-  }
-
-  if ($x{'e'}) {
-    print OUT ".SH \"EXAMPLES\"\n";
-    print OUT nroffize($x{'e'}, \@srelated, \%srelated_source);
-  }
-
-  if ($x{'h'} && @{$x{'h'}}) {
-    print OUT ".SH \"HANDLERS\"\n";
-    print OUT "The ", $classes[0], " element installs the following additional handlers.\n";
-    foreach $i (@{$x{'h'}}) {
-      if ($i =~ /^(\S+)\s*(\S*)\n(.*)$/s) {
-	print OUT ".TP 5\n.BR ", nroffize($1);
-	print OUT " \" (", $2, ")\"" if $2;
-	print OUT "\n.RS\n", nroffize($3), ".RE\n.Sp\n";
+      $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1(n)$2}g;
+      while ($bit =~ m{([-\w@.+=]+\(([0-9ln])\))}g) {
+	$RelatedSource{$1} = $2;
       }
+      $section_text[$i] = $bit . $last;
     }
   }
+  map(delete $RelatedSource{$_}, @outfiles);
+  @Related = sort { length($b) <=> length($a) } (keys %RelatedSource, @classes);
+  @Related = map { s{([][^$()|\\.])}{\\$1}g; $_ } @Related;
 
-  if (@related) {
-    print OUT ".SH \"SEE ALSO\"\n";
-    my($last) = pop @related;
-    print OUT map(".M $_ " . $related_source{$_} . " ,\n", @related);
-    print OUT ".M $last ", $related_source{$last}, "\n";
+  # process order
+  my(@nsec_name, @nsec_args, @nsec_text);
+  my($insert_processing) = -1;
+  if (!defined($first_in_section{'processing'})) {
+    $insert_processing = $first_in_section{'io'};
+    $insert_processing = $first_in_section{'c'} if !defined($insert_processing);
+  }
+  
+  for ($i = 0; $i < @section_text; $i++) {
+    my($s) = $section_name[$i];
+    my($x) = $section_text[$i];
+    if ($s eq 'c') {
+      $x =~ s{(\S\s*)\n}{$1N<>\n}g;
+      do_section('head1', 'SYNOPSIS', $x);
+    } elsif ($s eq 'io') {
+      do_section('head1', 'INPUTS AND OUTPUTS', $x);
+    } elsif ($s eq 'processing') {
+      do_section('head1', 'PROCESSING TYPE', $x);
+    } elsif ($s eq 'd') {
+      do_section('head1', 'DESCRIPTION', $x);
+    } elsif ($s eq 'n') {
+      do_section('head1', 'NOTES', $x);
+    } elsif ($s eq 'e') {
+      do_section('head1', 'EXAMPLES', $x);
+    } elsif ($s eq 'h') {
+      my($t) = "=over 5\n";
+      while ($i < @section_text && $section_name[$i] eq 'h') {
+	if ($section_args[$i] =~ /\A\s*(\S+)\s*(\S+)\s*\Z/) {
+	  $t .= "=item B<$1> ($2)\n";
+	} else {
+	  print STDERR "$Filename: bad handler section arguments (\`=h $section_args[$i]')\n";
+	  $t .= "=item B<$section_args[$i]>\n";
+	}
+	$t .= $section_text[$i] . "\n";
+	$i++;
+      }
+      $i--;
+      do_section('head1', 'ELEMENT HANDLERS', $t);
+    } elsif ($s eq 'a') {
+      do_section('head1', 'SEE ALSO', $x);
+    } elsif ($s eq 'title') {
+      # nada
+    } else {
+      do_section($s, $section_args[$i], $x);
+    }
+    if ($i == $insert_processing) {
+      my($can) = 1;
+      my($ptype, $j);
+      for ($j = 0; $j < @classes && $can; $j++) {
+	my($t) = $processing{$classes[$j]};
+	$can = 0 if !$t || (defined($ptype) && $t ne $ptype);
+	$ptype = $t;
+      }
+      $ptype = process_processing($ptype)
+	  if ($can && $ptype);
+      do_section('head1', 'PROCESSING TYPE', $ptype)
+	  if ($can && $ptype);
+    }
   }
 
   # close output file & make links if appropriate
@@ -274,7 +469,7 @@ sub process_file ($) {
     if (/^\/\*/ && /^[\/*\s]+=/) {
       s/^\/\*\s*//g;
       s/\s*\*\/$//g;
-      s/^[ \t]*\*[ \t]*//gm;
+      s/^ ?\* ?//gm;
       process_comment($_, $filename);
     }
   }

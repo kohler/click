@@ -14,9 +14,7 @@
  * last produced a packet. This amounts to a round robin
  * scheduler.
  *
- * =a PrioSched
- * =a StrideSched
- * =a RoundRobinSwitch
+ * =a PrioSched, StrideSched, RoundRobinSwitch
  */
 
 class RRSched : public Element {

@@ -5,7 +5,7 @@
 #include "elements/userlevel/fromdevice.hh"
 
 /*
- * =page ToDevice.u
+ * =title ToDevice.u
  * =c
  * ToDevice(DEVNAME)
  * =d
@@ -20,16 +20,14 @@
  * header prepended. This means that ARP processing,
  * for example, must already have been done.
  *
- * Under Linux, a FromDevice element will not receive packets sent by a
+ * Under Linux, a L<FromDevice(n)> element will not receive packets sent by a
  * ToDevice element for the same device. Under other operating systems, your
  * mileage may vary.
  *
  * This element is only available at user level.
  * 
- * =a FromDevice.u
- * =a FromDump
- * =a ToDump
- * =a ToDevice */
+ * =a
+ * FromDevice.u, FromDump, ToDump, ToDevice(n) */
 
 #ifdef HAVE_PCAP
 extern "C" {

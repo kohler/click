@@ -15,9 +15,9 @@
  * route 18.26.4.24 knows how to get to net 10 with hop
  * count 10:
  *
- * = RIPSend(18.26.4.24, 18.26.4.255, 10.0.0.0/8, 10) ->
- * = EtherEncap(0x0008, 00:00:c0:ae:67:ef, ff:ff:ff:ff:ff:ff) ->
- * = ToDevice(eth0);
+ *   RIPSend(18.26.4.24, 18.26.4.255, 10.0.0.0/8, 10) ->
+ *   EtherEncap(0x0008, 00:00:c0:ae:67:ef, ff:ff:ff:ff:ff:ff) ->
+ *   ToDevice(eth0);
  * =n
  * Note that this is just a tiny piece of a full RIP implementation.
  */

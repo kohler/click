@@ -10,7 +10,8 @@
  * location to the Grid node's location.  This element uses the
  * LocationInfo element named by the argument.
  *
- * =a LocationInfo 
+ * =a
+ * LocationInfo 
  */
 
 #include "element.hh"

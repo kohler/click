@@ -1,0 +1,355 @@
+.\" -*- mode: nroff -*-
+.ds V 1.1
+.ds D 29/Apr/2000
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.de K
+.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de RK
+.RB "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.TH ELEMENTDOC 7 "\*D" "Version \*V"
+.SH NAME
+elementdoc \- Click documentation for elements
+'
+.SH DESCRIPTION
+Documentation for a Click element is automatically generated from formatted
+comments in its header files. This manual page describes how to write one
+of these formatted comments.
+.PP
+Click element documentation syntax is based on Perl-style PODs; see
+.M perlpod 1
+for more information. However, not all POD constructs are usable in element
+documentation at the moment; and Click element documentation is
+line-oriented, not paragraph-oriented.
+'
+.SH "COMMAND QUICK REFERENCE"
+Here are the sectioning commands and the sections they correspond to,
+listed in the conventional order.
+.RS 5
+.PP
+.PD 0
+.IP "\f(CW=c\fR" 15
+SYNOPSIS
+.IP "\f(CW=io\fR" 15
+INPUTS AND OUTPUTS
+.IP "\f(CW=processing\fR" 15
+PROCESSING TYPE
+.IP "\f(CW=d\fR" 15
+DESCRIPTION
+.IP "\f(CW=n\fR" 15
+NOTES
+.IP "\f(CW=e\fR" 15
+EXAMPLES
+.IP "\f(CW=h\fR \fIname\fR \fItype\fR" 15
+HANDLERS
+.IP "\f(CW=a\fR" 15
+SEE ALSO
+.IP "\f(CW=head1\fR \fItext\fR" 15
+other heading
+.PD
+.RE
+.PP
+Here are the other commands used in element documentation.
+.RS 5
+.PP
+.PD 0
+.IP "\f(CW=head2\fR \fItext\fR" 15
+subheading
+.IP "\f(CW=over\fR \fIamount\fR" 15
+begin item list
+.IP "\f(CW=item\fR \fItext\fR" 15
+add item
+.IP "\f(CW=back\fR" 15
+end item list
+.PD
+.RE
+.PP
+And here are the formatting commands, used inside ordinary text.
+.RS 5
+.PP
+.PD 0
+.IP "\f(CWB<\fItext\f(CW>\fR" 15
+boldface
+.IP "\f(CWI<\fItext\f(CW>\fR" 15
+italics
+.IP "\f(CWC<\fItext\f(CW>\fR" 15
+code (fixed-width)
+.IP "\f(CWF<\fItext\f(CW>\fR" 15
+filename (italics)
+.IP "\f(CWL<\fItext\fR|\fIlink\f(CW>\fR" 15
+hyperlink
+.IP "\f(CWN<>\fR" 15
+line break
+.PD
+.RE
+'
+.SH "COMMENT SYNTAX"
+Each piece of documentation is stored in a single block comment
+`\f(CW/*...*/\fR'. Two kinds of block comment are recognized:
+.PP
+.nf
+    /*
+    =c
+    ElementName(...)
+    ... and so on ...
+    */
+
+    /*
+     * =c
+     * ElementName(...)
+     * ... and so on ...
+     */
+.fi
+.PP
+In the first form, commands and normal text MUST begin in the first column
+of each line. In the second form, commands and normal text MUST begin in
+the fourth column of each line, immediately following the initial star and
+spaces `\f(CW\ *\ \fR'. Indented lines are treated as verbatim text, as in
+POD.
+'
+.SH "COMMANDS"
+Commands are lines that begin with `\f(CW=\fR' and a lower-case letter.
+There are two kinds of commands, those that start new sections and those
+that occur within sections. There is also a set of formatting
+commands\*Efor turning text bold, for example\*Ethat occurs inside normal
+text; they are described in the next section.
+'
+.SS "Section Commands"
+.TP 5
+\f(CW=c\fR
+Begin the synopsis section. This section is mandatory.
+.RS 5
+.PP
+The \f(CW=c\fR section gives the element's name and any of its
+configuration arguments. For example:
+.nf
+   =c
+   IPEncap(PROTOCOL, SADDR, DADDR)
+.fi
+.PP
+Configuration arguments should be specified as all-upper-case words. The
+description section will use those upper-case words to talk about the
+arguments. Use brackets to show that an argument is optional:
+.nf
+   =c
+   UDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM?])
+.fi
+.PP
+Do not use anything more complicated than brackets. If an element has
+complex syntax, either use upper-case words and talk about the syntax more
+in the description section, or give multiple lines:
+.nf
+   =c
+   ControlSocket(tcp, PORTNUMBER [, READONLY?])
+   ControlSocket(unix, PORTNUMBER [, READONLY?])
+.fi
+(`tcp' and `unix' are lowercase because they should be typed verbatim.)
+.RE
+'
+.TP 5
+\f(CW=io\fR
+Begin the inputs and outputs section. This section mentions how many inputs
+and outputs the element has. It is usually quite short; for example:
+.nf
+   =io
+   None
+.fi
+This section is optional, and most elements don't bother to have one; they
+mention inputs and outputs in the description section.
+'
+.TP 5
+\f(CW=processing\fR
+Begin the processing type section. This section mentions the processing
+types of the element's input and output ports. It is usually quite short; for
+example:
+.nf
+   =processing
+   Push inputs, pull outputs
+.fi
+This section is optional. Documentation processing tools will generate a
+\f(CW=processing\fR section from the element's \fBprocessing\fP() method,
+if possible.
+'
+.TP 5
+\f(CW=d\fR
+Begin the description section.
+.RS 5
+.PP
+This section tells how the element should be used. It is usually the
+longest section. When mentioning configuration arguments, use the
+upper-case words given in the \f(CW=c\fR section.
+.RE
+'
+.TP 5
+\f(CW=n\fR
+Begin the notes section.
+'
+.TP 5
+\f(CW=e\fR
+Begin the examples section.
+'
+.TP 5
+\f(CW=h\fR \fIhandlername\fP \fItype\fP
+Begin a handler description. Use this section to describe any special
+handlers that the element installs. \fIHandlername\fP should be the name of
+the handler, and \fItype\fP its type (either `\f(CWread-only\fR',
+`\f(CWwrite-only\fR', or `\f(CWread/write\fR'). The following text should
+describe that handler. For example:
+.nf
+   =h capacity read/write
+   Returns or sets the queue's capacity.
+.fi
+'
+.TP 5
+\f(CW=a\fR [\fItext\fP]
+Begin the "see also" section. Use this section to mention other relevant
+elements and programs, when appropriate. The more references, the better.
+For example:
+.nf
+   =a RED, FrontDropQueue
+.fi
+The optional \fItext\fP is just part of the body of the section.
+.RS 5
+.PP
+The references in this section should be either manual page references,
+like `\f(CWtcpdump(1)\fR', or text references, like `RFC 959: File Transfer
+Protocol'. However, the first paragraph in the section is special. In the
+first paragraph, you can just give element names without `\f(CW(n)\fP'
+suffixes.
+.PP
+If one of these references occurs in some other section, it will be
+formatted like a link. For example, in
+.nf
+   =d
+   This element is like Queue.
+   =a Queue
+.fi
+the mention of `\f(CWQueue\fR' in the description section will be formatted
+like a link.
+.RE
+'
+.TP 5
+\f(CW=head1\fR \fIsectionname\fR
+Begin a section other than those listed. \fISectionname\fR is the name of
+the section.
+'
+.SS "Other Commands"
+.TP 5
+\f(CW=head2\fR \fItext\fR
+Produce a subheading with \fItext\fR as the text.
+.TP 5
+\f(CW=over\fR \fIamount\fR
+Begin a list of items that is indented by
+\fIamount\fR characters. (Some translators may ignore \fIamount\fR.)
+.TP 5
+\f(CW=item\fR \fItext\fR
+Add an item to the latest list opened by \f(CW=over\fR. It is illegal to
+use \f(CW=item\fR outside of any \f(CW=over\fR list. The text of the item
+is \fItext\fR. If you are creating a bulleted list, use `\f(CW*\fR' as the
+text; if you are creating a numbered list, use `\f(CW1.\fR', `\f(CW2.\fR',
+and so forth.
+.TP 5
+\f(CW=back\fR
+Close the latest list opened by \f(CW=over\fR.
+'
+.SH TEXT
+Each line that doesn't begin with `\f(CW=\fR' and a lower-case letter is
+treated as text. (Unless it starts with a space or tab; see verbatim text,
+below.) This text is formatted nicely, and perhaps even justified. You can
+use several formatting commands inside normal text; they consist of an
+uppercase letter, followed by `\f(CW<\fR', some text, and `\f(CW>\fR'. The
+commands are:
+.TP 10
+\f(CWB<\fItext\f(CW>\fR
+Print \fItext\fR in \fBboldface\fR.
+.TP 10
+\f(CWI<\fItext\f(CW>\fR
+Print \fItext\fR in \fIitalic\fR.
+.TP 10
+\f(CWC<\fItext\f(CW>\fR
+Print \fItext\fR like source code, in a constant-width font.
+.TP 10
+\f(CWF<\fItext\f(CW>\fR
+Print \fItext\fR like a filename. By default, filenames appear in italics.
+.TP 10
+\f(CWL<\fItext\fR|\fIlink\f(CW>\fR
+Print \fItext\fR as a hyperlink with destination \fIlink\fR. This usually
+just comes out as \fItext\fR.
+.TP 10
+\f(CWN<>\fR
+Put a line break here.
+'
+.SH VERBATIM TEXT
+Lines that start with a space or tab character are printed out
+verbatim\*Ethat is, without any changes, and with the line breaks and
+indentation you specified. You can't use formatting commands
+in verbatim text. Verbatim text is useful for showing example code; for
+example:
+.PP
+.nf
+  This code
+     q :: Queue;
+     ... -> RED(5, 50, 0.02) -> q -> ...
+  adds RED dropping to q.
+.fi
+'
+.SH EXAMPLE
+.nf
+/* =c
+ * Align(MODULUS, OFFSET)
+ * =d
+ * Aligns packet data. Each input packet is aligned so that
+ * its first byte is OFFSET bytes off from a MODULUS-byte
+ * boundary. This may involve a packet copy.
+ *
+ * MODULUS I<must> be 2, 4, or 8.
+ * =n
+ * The click-align(1) tool will insert this element 
+ * automatically wherever it is required.
+ * =e
+ *   ... -> Align(4, 0) -> ...
+ * =a AlignmentInfo, click-align(1) */
+.fi
+'
+.SH "SEE ALSO"
+.M perlpod 1 ,
+.M click 1 ,
+.M click 5
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+Robert Morris, rtm@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

@@ -20,14 +20,14 @@
  * host (18.26.4.24) to itself, packets to net 18.26.4 to the
  * local interface, and all others via gateway 18.26.4.1:
  *
- * = ... -> GetIPAddress(16) -> rt;
- * = rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.255 255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.0   255.255.255.255 0.0.0.0 0,
- * =                 18.26.4.0 255.255.255.0 0.0.0.0 1,
- * =                 0.0.0.0 0.0.0.0 18.26.4.1 1);
- * = rt[0] -> ToLinux;
- * = rt[1] -> ... -> ToDevice(eth0);
+ *   ... -> GetIPAddress(16) -> rt;
+ *   rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
+ *                   18.26.4.255 255.255.255.255 0.0.0.0 0,
+ *                   18.26.4.0   255.255.255.255 0.0.0.0 0,
+ *                   18.26.4.0 255.255.255.0 0.0.0.0 1,
+ *                   0.0.0.0 0.0.0.0 18.26.4.1 1);
+ *   rt[0] -> ToLinux;
+ *   rt[1] -> ... -> ToDevice(eth0);
  *
  * =n
  * Only static routes are allowed. If you need a dynamic routing

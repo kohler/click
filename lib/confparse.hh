@@ -77,7 +77,7 @@ enum CpVaParseCmd {
   cpEthernetAddress, // unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]
-  cpIP6Address  //unsigned char value[16] (or IPV6Address *, or unsigned char *)
+  cpIP6Address  // unsigned char value[16] (or IP6Address *)
 };
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);

@@ -7,7 +7,7 @@
  * =d
  *
  * This manual page describes the Linux kernel module version of the ToDevice
- * element. For the user-level element, read the ToDevice.u(n) manual page.
+ * element. For the user-level element, read the ToDevice.u manual page.
  *
  * Sends packets out the Linux network interface named DEVNAME.
  *
@@ -25,11 +25,7 @@
  * we depend on the net driver's send operation for synchronization (e.g.
  * tulip send operation uses a bit lock).
  *
- * =a FromDevice
- * =a PollDevice
- * =a FromLinux
- * =a ToLinux
- * =a ToDevice.u */
+ * =a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
 
 #include "anydevice.hh"
 #include "fromlinux.hh"

@@ -19,9 +19,7 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface 
  *
- * =a CheckIP6Header2
- * =a MarkIP6Header
- * =a StripIP6Header */
+ * =a CheckIP6Header2, MarkIP6Header, StripIP6Header */
 
 
 #include "element.hh"

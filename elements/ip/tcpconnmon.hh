@@ -17,17 +17,16 @@
  * Input 1 : FINs.
  *
  * =e
- * = c :: Classifier(33/12, 33/?2, 33/1?, -);
- * = t :: TCPConnectionMonitor(15);
- * = t[0] -> ...
- * = c[0] -> ...        // SYN/ACK
- * = c[1] -> [0]t;      // SYN
- * = c[2] -> [1]t;      // ACK
- * = c[3] -> ...        // other
+ *   c :: Classifier(33/12, 33/?2, 33/1?, -);
+ *   t :: TCPConnectionMonitor(15);
+ *   t[0] -> ...
+ *   c[0] -> ...        // SYN/ACK
+ *   c[1] -> [0]t;      // SYN
+ *   c[2] -> [1]t;      // ACK
+ *   c[3] -> ...        // other
  *
  * Keeps track of half-open connections.
  *
- * =a
  */
 
 #include "element.hh"

@@ -8,7 +8,8 @@
  * Expects a Grid MAC packet as input.
  * Calculates the Grid header's checksum and sets the checksum header field.
  *
- * =a CheckGridHeader */
+ * =a
+ * CheckGridHeader */
 
 #include "element.hh"
 #include "glue.hh"

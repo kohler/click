@@ -21,11 +21,10 @@
  * =e
  * Example:
  *
- * = ... -> fr::IP6Fragmenter -> Queue(20) -> ...
- * = fr[1] -> ICMP6Error(18.26.4.24, 3, 4) -> ...
+ *   ... -> fr::IP6Fragmenter -> Queue(20) -> ...
+ *   fr[1] -> ICMP6Error(18.26.4.24, 3, 4) -> ...
  *
- * =a ICMP6Error
- * =a CheckLength
+ * =a ICMP6Error, CheckLength
  */
 
 #include "element.hh"

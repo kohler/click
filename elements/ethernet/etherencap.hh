@@ -14,12 +14,13 @@
  * ETHERTYPE_IP (0x0800), source address 1:1:1:1:1:1, and
  * destination address 2:2:2:2:2:2:
  * 
- * = EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
+ *   EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
  *
  * =n
  * For IP packets you probably want to use ARPQuerier instead.
  *
- * =a ARPQuerier
+ * =a
+ * ARPQuerier
  */
 
 #include "element.hh"

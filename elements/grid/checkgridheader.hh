@@ -10,7 +10,8 @@
  * and that the Grid header length, length, and
  * checksum fields are valid.
  *
- * =a SetGridChecksum
+ * =a
+ * SetGridChecksum
  */
 
 #include "element.hh"

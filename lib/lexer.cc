@@ -56,18 +56,21 @@ class Lexer::Compound : public Element {
   
   mutable String _name;
   String _body;
+  String _filename;
   unsigned _lineno;
   Vector<String> _arguments;
   
  public:
   
-  Compound(const String &, const String &, unsigned, const Vector<String> &);
+  Compound(const String &, const String &, const String &, unsigned,
+	   const Vector<String> &);
   
   const char *class_name() const	{ return _name.cc(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
   
   const String &body() const		{ return _body; }
+  const String &filename() const	{ return _filename; }
   unsigned lineno() const		{ return _lineno; }
   int narguments() const		{ return _arguments.size(); }
   const String &argument(int i) const	{ return _arguments[i]; }
@@ -75,8 +78,10 @@ class Lexer::Compound : public Element {
 };
 
 Lexer::Compound::Compound(const String &name, const String &body,
-			  unsigned lineno, const Vector<String> &args)
-  : _name(name), _body(body), _lineno(lineno), _arguments(args)
+			  const String &filename, unsigned lineno,
+			  const Vector<String> &args)
+  : _name(name), _body(body), _filename(filename), _lineno(lineno),
+    _arguments(args)
 {
 }
 
@@ -228,6 +233,50 @@ Lexer::skip_quote(unsigned pos, char endc)
   return _len;
 }
 
+unsigned
+Lexer::process_line_directive(unsigned pos)
+{
+  const char *data = _data;
+  unsigned len = _len;
+  
+  for (pos++; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+    /* nada */;
+  if (pos < len - 4 && data[pos] == 'l' && data[pos+1] == 'i'
+      && data[pos+2] == 'n' && data[pos+3] == 'e'
+      && (data[pos+4] == ' ' || data[pos+4] == '\t')) {
+    for (pos += 5; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+      /* nada */;
+  }
+  if (pos >= len || !isdigit(data[pos])) {
+    // complain about bad directive
+    lerror("unknown preprocessor directive");
+    return skip_line(pos);
+  }
+  
+  // parse line number
+  for (_lineno = 0; pos < len && isdigit(data[pos]); pos++)
+    _lineno = _lineno * 10 + data[pos] - '0';
+  _lineno--;			// account for extra line
+  
+  for (; pos < len && (data[pos] == ' ' || data[pos] == '\t'); pos++)
+    /* nada */;
+  if (pos < len && data[pos] == '\"') {
+    // parse filename
+    unsigned first_in_filename = pos;
+    for (pos++; pos < len && data[pos] != '\"' && data[pos] != '\n' && data[pos] != '\r'; pos++)
+      if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
+	pos++;
+    _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+  }
+
+  // reach end of line
+  for (; pos < len && data[pos] != '\n' && data[pos] != '\r'; pos++)
+    /* nada */;
+  if (pos < len - 1 && data[pos] == '\r' && data[pos+1] == '\n')
+    pos++;
+  return pos;
+}
+
 Lexeme
 Lexer::next_lexeme()
 {
@@ -252,7 +301,9 @@ Lexer::next_lexeme()
 	pos = skip_slash_star(pos + 2);
       else
 	break;
-    } else
+    } else if (_data[pos] == '#' && (pos == 0 || _data[pos-1] == '\n' || _data[pos-1] == '\r'))
+      pos = process_line_directive(pos);
+    else
       break;
   }
   
@@ -618,7 +669,8 @@ Lexer::add_tunnel(String namein, String nameout)
 // ELEMENTS
 
 int
-Lexer::get_element(String name, int etype, const String &conf)
+Lexer::get_element(String name, int etype, const String &conf,
+		   const String &lm)
 {
   assert(name && etype >= 0 && etype < _element_types.size());
   
@@ -644,7 +696,7 @@ Lexer::get_element(String name, int etype, const String &conf)
   _element_map.insert(name, eid);
   _element_names.push_back(name);
   _element_configurations.push_back(conf);
-  _element_landmarks.push_back(landmark());
+  _element_landmarks.push_back(lm ? lm : landmark());
   _elements.push_back(e);
   return eid;
 }
@@ -736,6 +788,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   String old_big_string = _big_string;
   unsigned old_len = _len;
   unsigned old_pos = _pos;
+  String old_filename = _filename;
   unsigned old_lineno = _lineno;
   Lexeme old_tcircle[TCIRCLE_SIZE];
   old_tcircle = _tcircle;
@@ -749,6 +802,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   _data = _big_string.data();
   _len = _big_string.length();
   _pos = 0;
+  _filename = compound->filename();
   _lineno = compound->lineno();
   _tpos = _tfull;
   // manipulate the anonymous offset so anon elements in 2 instances of the
@@ -770,6 +824,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   _data = _big_string.data();
   _len = old_len;
   _pos = old_pos;
+  _filename = old_filename;
   _lineno = old_lineno;
   _tcircle = old_tcircle;
   _tpos = old_tpos;
@@ -899,10 +954,11 @@ Lexer::yelement(int &element, bool comma_ok)
     unlex(t);
     return false;
   }
-  
-  String configuration;
+
+  String configuration, lm;
   const Lexeme &tparen = lex();
   if (tparen.is('(')) {
+    lm = landmark();		// report landmark from before config string
     if (etype < 0) etype = force_element_type(name);
     configuration = lex_config();
     expect(')');
@@ -910,7 +966,7 @@ Lexer::yelement(int &element, bool comma_ok)
     unlex(tparen);
   
   if (etype >= 0)
-    element = get_element(anon_element_name(name), etype, configuration);
+    element = get_element(anon_element_name(name), etype, configuration, lm);
   else {
     String lookup_name = _element_prefix + name;
     element = _element_map[lookup_name];
@@ -961,6 +1017,7 @@ Lexer::ydeclaration(const String &first_element)
     }
   }
 
+  String lm = landmark();
   int etype;
   t = lex();
   if (t.is(lexIdent))
@@ -990,7 +1047,7 @@ Lexer::ydeclaration(const String &first_element)
     else if (_element_type_map[lookup_name] >= 0)
       lerror("`%s' is an element class", lookup_name.cc());
     else
-      get_element(lookup_name, etype, configuration);
+      get_element(lookup_name, etype, configuration, lm);
   }
 }
 
@@ -1132,12 +1189,13 @@ Lexer::ylocal(String name)
   _pos = old_pos;
   
   // opening brace was already read
-  unsigned original_lineno = _lineno;
+  String body_filename = _filename;
+  unsigned body_lineno = _lineno;
   String body = lex_compound_body();
   expect('}');
 
   return add_element_type
-    (name, new Compound(name, body, original_lineno, arguments));
+    (name, new Compound(name, body, body_filename, body_lineno, arguments));
 }
 
 void

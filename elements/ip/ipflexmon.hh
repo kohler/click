@@ -58,14 +58,14 @@
  *
  * For example,
  *
- * = c :: Classifier(SYN, SYN-ACK);
- * =
- * = ... -> c;
+ *   c :: Classifier(SYN, SYN-ACK);
+ *  
+ *   ... -> c;
  *
- * = m :: IPFlexMonitor(PACKETS, 10, DST 1, DST -1);
- * =
- * = c[0] -> [0]m -> ...
- * = c[1] -> [1]m -> ...
+ *   m :: IPFlexMonitor(PACKETS, 10, DST 1, DST -1);
+ *  
+ *   c[0] -> [0]m -> ...
+ *   c[1] -> [1]m -> ...
  *
  * makes m count packets based on the destination IP address. For every
  * SYN-packet, the value is raised by 1, for every SYN-ACK packet the value is
@@ -73,9 +73,7 @@
  *
  * (Classifier has been simplified in this example)
  *
- * =a Classifier
- * =a Block
- * =a RateMonitor
+ * =a Classifier, Block, RateMonitor
  */
 #include "glue.hh"
 #include "click_ip.h"

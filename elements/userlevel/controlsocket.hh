@@ -35,54 +35,68 @@
  *
  * The server currently supports the following commands:
  *
- * (READ <i>element</i>.<i>handlername</i>) Call the read handler named
- * <i>handlername</i> on the element named <i>element</i> and return the
- * results. On success, responds with a "success" message (response code 2xy)
- * followed by a line like "DATA <i>n</i>". Here, <i>n</i> is a decimal
- * integer indicating the length of the read handler data. The <i>n</i> bytes
- * immediately following (the CRLF that terminates) the DATA line are the
- * handler's results.
+ * =over 5
  *
- * (WRITE <i>element</i>.<i>handlername</i> <i>args...</i>) Call the write
- * handler named <i>handlername</i> on the element named <i>element</i>,
- * passing the <i>args</i> (if any) as arguments.
+ * =item READ I<element>.I<handlername>
  *
- * (WRITEDATA <i>element</i>.<i>handlername</i> <i>n</i>) Call the write
- * handler named <i>handlername</i> on the element named <i>element</i>. The
- * arguments to pass are the <i>n</i> bytes immediately following (the CRLF
- * that terminates) the WRITEDATA line.
+ * Call the read handler named I<handlername> on the element named I<element>
+ * and return the results. On success, responds with a "success" message
+ * (response code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
+ * decimal integer indicating the length of the read handler data. The I<n>
+ * bytes immediately following (the CRLF that terminates) the DATA line are
+ * the handler's results.
  *
- * (QUIT) Close the connection.
+ * =item WRITE I<element>.I<handlername> I<args...>
+ *
+ * Call the write handler named I<handlername> on the element named
+ * I<element>, passing the I<args> (if any) as arguments.
+ *
+ * =item WRITEDATA I<element>.I<handlername> I<n>
+ *
+ * Call the write handler named I<handlername> on the element named
+ * I<element>. The arguments to pass are the I<n> bytes immediately following
+ * (the CRLF that terminates) the WRITEDATA line.
+ *
+ * =item QUIT
+ *
+ * Close the connection.
+ *
+ * =back
  *
  * The server's response codes follow this pattern.
  *
- * (2xy) The command succeeded.
+ * =over 5
  *
- * (5xy) The command failed.
+ * =item 2xy
+ * The command succeeded.
+ *
+ * =item 5xy
+ * The command failed.
+ *
+ * =back
  *
  * Here are some of the particular error messages:
  *
- * (200) OK.
+ * 200 OK.
  *
- * (220) OK, but the handler reported some warnings.
+ * 220 OK, but the handler reported some warnings.
  *
- * (500) Syntax error.
+ * 500 Syntax error.
  *
- * (501) Unimplemented command.
+ * 501 Unimplemented command.
  *
- * (510) No such element.
+ * 510 No such element.
  *
- * (511) No such handler.
+ * 511 No such handler.
  *
- * (520) Handler error.
+ * 520 Handler error.
  *
- * (530) Permission denied.
+ * 530 Permission denied.
  *
  * Only available in user-level processes.
  *
  * =e
- * = ControlSocket(unix, /tmp/clicksocket);
- */
+ *   ControlSocket(unix, /tmp/clicksocket); */
 
 class ControlSocket : public Element {
 

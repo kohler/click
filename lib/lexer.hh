@@ -53,7 +53,8 @@ class Lexer {
   
   unsigned skip_line(unsigned);
   unsigned skip_slash_star(unsigned);
-  unsigned skip_quote(unsigned, char endc);
+  unsigned skip_quote(unsigned, char);
+  unsigned process_line_directive(unsigned);
   Lexeme next_lexeme();
   static String lexeme_string(int);
   
@@ -102,7 +103,7 @@ class Lexer {
   int lerror(const char *, ...);
 
   String anon_element_name(const String &) const;
-  int get_element(String, int, const String & = String());
+  int get_element(String, int, const String & = String(), const String & = String());
   int lexical_scoping_in() const;
   void lexical_scoping_out(int);
   void lexical_scoping_back(int, Vector<int> &);

@@ -591,8 +591,8 @@ A configuration string starts immediately following a left parenthesis `(',
 and continues up to the next unbalanced right parenthesis `)'. However,
 parentheses inside single or double quotes or comments do not affect
 balancing. Here are several examples; in each case, the configuration
-string starts immediately after the first `#' and continues to right before
-the second `#'.
+string consists of the text between the `#' marks (including the `#' marks
+themselves).
 .Rs
 C1(#simple string#)
 .br
@@ -606,6 +606,13 @@ C4(#// end-of-line comment)
 .br
 C5(#/* slash-star comment) */ and backslash \e#)
 .Re
+.PP
+A Click program may contain C preprocessor-style line directives. These
+lines start with `#' and have the form `# \fIlinenumber\fP
+"\fIfilename\fP"' or `#line \fIlinenumber\fP "\fIfilename\fP"'; they change
+the filenames and line numbers used for error messages. The filename
+portion is optional. Line directives are not recognized inside
+configuration strings.
 '
 .SH "ARCHIVES"
 Many Click programs also accept

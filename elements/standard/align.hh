@@ -2,8 +2,7 @@
 #define ALIGN_HH
 #include "element.hh"
 
-/*
- * =c
+/* =c
  * Align(MODULUS, OFFSET)
  * =d
  *
@@ -13,12 +12,14 @@
  *
  * MODULUS must be 2, 4, or 8.
  * =n
- * The click-align tool will insert this element automatically wherever it is
- * required.
+ *
+ * The click-align(1) tool will insert this element automatically wherever it
+ * is required.
+ *
  * =e
- * = ... -> Align(4, 0) -> ...
- * =a AlignmentInfo
- * =a click-align(1) */
+ *   ... -> Align(4, 0) -> ...
+ *
+ * =a AlignmentInfo, click-align(1) */
 
 class Align : public Element {
 

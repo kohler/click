@@ -17,7 +17,7 @@
  * To generate a particular traffic pattern, use this element and RatedSource
  * in conjunction with PokeHandlers.
  * =e
- * = InfiniteSource(\<0800>) -> Queue -> ...
+ *   InfiniteSource(\<0800>) -> Queue -> ...
  * =n
  * Useful for profiling and experiments.
  * =h count read-only
@@ -33,8 +33,7 @@
  * Returns or sets the BURSTSIZE parameter.
  * =h active read/write
  * Makes the element active or inactive.
- * =a RatedSource
- * =a PokeHandlers
+ * =a RatedSource, PokeHandlers
  */
 
 class InfiniteSource : public Element { protected:

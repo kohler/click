@@ -15,9 +15,7 @@
  * that need to know where the packet is going.
  * Such elements include ArpQuerier6 and LookupIP6Route.
  *
- * =a ArpQuerier
- * =a LookupIP6Route
- * =a SetIP6Address StoreIP6Address
+ * =a ARPQuerier, LookupIP6Route, SetIP6Address, StoreIP6Address
  */
 
 

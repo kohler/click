@@ -24,22 +24,22 @@
  * factor affecting the compound's components. For example, consider this
  * configuration,
  *
- * = elementclass Compound {
- * =   i :: InfiniteSource -> output;
- * =   ScheduleInfo(i 0.5);
- * = }
- * = c :: Compound -> Discard;
- * = ScheduleInfo(c 4);
+ *    elementclass Compound {
+ *      i :: InfiniteSource -> output;
+ *      ScheduleInfo(i 0.5);
+ *    }
+ *    c :: Compound -> Discard;
+ *    ScheduleInfo(c 4);
  *
  * which is the same as the following configuration, after compound elements
  * are expanded.
  *
- * = c/i :: InfiniteSource -> Discard@3 :: Discard;
- * = c/ScheduleInfo@2 :: ScheduleInfo(i 0.5);
- * = ScheduleInfo@4 :: ScheduleInfo(c 4);
+ *    c/i :: InfiniteSource -> Discard@3 :: Discard;
+ *    c/ScheduleInfo@2 :: ScheduleInfo(i 0.5);
+ *    ScheduleInfo@4 :: ScheduleInfo(c 4);
  *
  * The name of the first ScheduleInfo element starts with `c/', so it is
- * used to look up scheduling parameters for elements named `c/<i>whatever</i>'.
+ * used to look up scheduling parameters for elements named `c/I<whatever>'.
  * (This includes all components of the compound element `c'.) 
  * The second ScheduleInfo element, however, has no slash in its name,
  * so it is used to look up all scheduling parameters,
@@ -50,7 +50,7 @@
  * An outer ScheduleInfo element can override local scheduling parameters.
  * For example, if the second ScheduleInfo element above was
  *
- * = ScheduleInfo@4 :: ScheduleInfo(c 4, c/i 10.5)
+ *    ScheduleInfo@4 :: ScheduleInfo(c 4, c/i 10.5)
  *
  * then the InfiniteSource's final scaling parameter would be 10.5.
  */

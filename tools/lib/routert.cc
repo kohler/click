@@ -1244,6 +1244,18 @@ RouterT::ename_upref(int idx) const
     return String("/*BAD_") + String(idx) + String("*/");
 }
 
+static void
+add_line_directive(StringAccum &sa, const String &landmark)
+{
+  int colon = landmark.find_right(':');
+  // XXX protect filename
+  if (colon >= 0)
+    sa << "# " << landmark.substring(colon + 1) << " \""
+       << landmark.substring(0, colon) << "\"\n";
+  else
+    sa << "# 0 \"" << landmark << "\"\n";
+}
+
 void
 RouterT::configuration_string(StringAccum &sa, const String &indent) const
 {
@@ -1277,6 +1289,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     if (_elements[i].type == TUNNEL_TYPE
 	&& _elements[i].tunnel_output >= 0
 	&& _elements[i].tunnel_output < nelements) {
+      add_line_directive(sa, _elements[i].landmark);
       sa << indent << "connectiontunnel " << _elements[i].name << " -> "
 	 << _elements[ _elements[i].tunnel_output ].name << ";\n";
     }
@@ -1289,6 +1302,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     const ElementT &e = _elements[i];
     if (e.dead() || e.type == TUNNEL_TYPE || e.type == UPREF_TYPE)
       continue; // skip tunnels and uprefs
+    add_line_directive(sa, e.landmark);
     sa << indent << e.name << " :: ";
     if (e.type < nelemtype)
       sa << _element_type_names[e.type];

@@ -16,14 +16,14 @@
  * as well as proxy ARP for all machines on net 18.26.7
  * directing their packets to the local machine:
  *
- * = c :: Classifier(12/0806 20/0002, ...);
- * = ar :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
- * =                    18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF)
- * = c[0] -> ar;
- * = ar -> ToDevice(eth0);
+ *   c :: Classifier(12/0806 20/0002, ...);
+ *   ar :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
+ *                      18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF)
+ *   c[0] -> ar;
+ *   ar -> ToDevice(eth0);
  *
- * =a ARPQuerier6
- * =a ARPFaker6
+ * =a
+ * ARPQuerier6, ARPFaker6
  */
 
 #include "element.hh"

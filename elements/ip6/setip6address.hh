@@ -10,7 +10,7 @@
  * Set the destination IP6 address annotation of incoming packets to the
  * static IP6 address IP6
  *
- * =a StoreIP6Address GetIP6Address
+ * =a StoreIP6Address, GetIP6Address
  */
 
 class SetIP6Address : public Element {

@@ -11,14 +11,13 @@
  * probability. Otherwise, packet is pushed onto port 0.
  *
  * =e
- * = ProbSplitter(.2);
+ *   ProbSplitter(.2);
  * Pushes packets with 20% probability.
  *
  * =h prob read/write
  * sample probability
  *
- * =a Tee
- * =a RatedSplitter
+ * =a Tee, RatedSplitter
  */
 
 class ProbSplitter : public Element {

@@ -16,9 +16,7 @@
  * There are usually Queues both upstream and downstream of PacketShaper2
  * elements.
  *
- * =a PacketShaper
- * =a Shaper
- * =a RatedSampler
+ * =a PacketShaper, Shaper, RatedSampler
  */
 
 class PacketShaper2 : public Element { protected:

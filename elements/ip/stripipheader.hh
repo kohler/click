@@ -7,9 +7,7 @@
  * =d
  * Removes the outermost IP header from IP packets based on the IP Header annotation.
  *
- * =a CheckIPHeader
- * =a CheckIPHeader2
- * =a MarkIPHeader
+ * =a CheckIPHeader, CheckIPHeader2, MarkIPHeader
  */
 
 #include "element.hh"

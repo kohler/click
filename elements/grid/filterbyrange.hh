@@ -13,7 +13,8 @@
  * simulating physical topologies.  This element uses the
  * LocationInfo element named by the 2nd argument.
  *
- * =a LocationInfo */
+ * =a
+ * LocationInfo */
 
 #include "element.hh"
 #include "locationinfo.hh"

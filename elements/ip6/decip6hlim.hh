@@ -17,11 +17,10 @@
  * =e
  * This is a typical IP6 input processing sequence:
  *
- * = ... -> CheckIP6Header -> dt::DECIP6HLIM -> ...
- * = dt[1] -> ICMP6Error(18.26.4.24, 11, 0) -> ...
+ *   ... -> CheckIP6Header -> dt::DecIP6HLIM -> ...
+ *   dt[1] -> ICMP6Error(18.26.4.24, 11, 0) -> ...
  *
- * =a ICMP6Error
- * =a CheckIP6Header
+ * =a ICMP6Error, CheckIP6Header
  */
 
 #include "element.hh"

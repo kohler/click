@@ -12,12 +12,11 @@
  * `ELEMENT [MODULUS0 OFFSET0 MODULUS1 OFFSET1 ...]',
  * where there are zero or more MODULUS-OFFSET pairs.
  * All packets arriving at ELEMENT's
- * <i>n</i>th input will start `OFFSET<i>n</i>' bytes
- * off from a `MODULUS<i>n</i>'-byte boundary.
+ * I<n>th input will start `OFFSETI<n>' bytes
+ * off from a `MODULUSI<n>'-byte boundary.
  * =n
- * This element is inserted automatically by the click-align tool.
- * =a Align
- * =a click-align(1)
+ * This element is inserted automatically by click-align(1).
+ * =a Align, click-align(1)
  */
 
 #include "element.hh"

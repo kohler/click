@@ -12,25 +12,23 @@
  * rate R. Otherwise, packets are pushed out on port 0.
  *
  * =e
- * = RatedSplitter(2000);
+ *   RatedSplitter(2000);
  * Split packets on port 1 at 2000 packets per second.
  *
- * = elementclass RatedSampler {
- * =   input -> rs :: RatedSplitter(2000);
- * =   rs [0] -> [0] output;
- * =   rs [1] -> t :: Tee;
- * =   t [0] -> [0] output;
- * =   t [1] -> [1] output;
- * = };
+ *   elementclass RatedSampler {
+ *     input -> rs :: RatedSplitter(2000);
+ *     rs [0] -> [0] output;
+ *     rs [1] -> t :: Tee;
+ *     t [0] -> [0] output;
+ *     t [1] -> [1] output;
+ *   };
  * In the above example, RatedSampler is a compound element that 
  * samples input packets at 2000 packets per second.
  *
  * =h rate read/write
  * rate of splitting
  *
- * =a Tee
- * =a ProbSplitter
- * =a PacketShaper2
+ * =a Tee, ProbSplitter, PacketShaper2
  */
 
 class RatedSplitter : public Element {

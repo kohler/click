@@ -24,10 +24,6 @@
 
 #define UBYTES ((int)sizeof(unsigned))
 
-//
-// CLASSIFIER ITSELF
-//
-
 IPClassifier::IPClassifier()
 {
 }
@@ -52,6 +48,7 @@ IPClassifier::Primitive::clear()
   _type = _srcdst = 0;
   _net_proto = _transp_proto = UNKNOWN;
   _data = 0;
+  _op = 0;
 }
 
 void
@@ -87,6 +84,42 @@ IPClassifier::Primitive::set_transp_proto(int x, int slot, ErrorHandler *errh)
 }
 
 int
+IPClassifier::Primitive::set_mask(int *data_store, int full_mask, int shift, int slot, ErrorHandler *errh)
+{
+  int data = *data_store;
+  
+  if (_op == OP_GT && data == 0) {
+    _op = OP_EQ;
+    _op_negated = !_op_negated;
+  }
+  
+  if (_op == OP_GT || _op == OP_LT) {
+    for (int what = 1, mask_away = 0;
+	 (what - 1) <= full_mask;
+	 what <<= 1, mask_away = (mask_away<<1) | 1)
+      if ((_op == OP_GT ? data + 1 : data) == what) {
+	*data_store = 0;
+	_mask = (full_mask & ~mask_away) << shift;
+	if (_op == OP_GT)
+	  _op_negated = !_op_negated;
+	return 0;
+      }
+    if ((_op == OP_LT && data == 0) || (_op == OP_GT && data >= full_mask))
+      return errh->error("pattern %d: value %d out of range", slot, data);
+    return errh->error("pattern %d: bad relation `%s%s %d'\n\
+(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n\
+`> POW-1' where POW is a power of 2.)", slot, ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
+  }
+
+  if (data < 0 || data > full_mask)
+    return errh->error("pattern %d: value %d out of range", slot, data);
+
+  *data_store = data << shift;
+  _mask = full_mask << shift;
+  return 0;
+}
+
+int
 IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
 {
   int old_srcdst = _srcdst;
@@ -119,14 +152,21 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       return errh->error("pattern %d: syntax error, no primitive type", slot);
   }
 
+  // clear _mask
+  _mask = 0;
+  
   // check that _data and _type agree
   if (_type == TYPE_HOST) {
     if (_data != DATA_IP)
       return errh->error("pattern %d: `host' directive requires IP address", slot);
+    if (_op != OP_EQ)
+      return errh->error("pattern %d: can't use relational operators with `host'", slot);
     
   } else if (_type == TYPE_NET) {
     if (_data != DATA_IPMASK)
       return errh->error("pattern %d: `net' directive requires IP address and mask", slot);
+    if (_op != OP_EQ)
+      return errh->error("pattern %d: can't use relational operators with `net'", slot);
     
   } else if (_type == TYPE_PROTO) {
     if (_data == DATA_INT || _data == DATA_PROTO) {
@@ -137,8 +177,10 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     }
     if (_data != DATA_NONE)
       return errh->error("pattern %d: `proto' directive requires IP protocol", slot);
-    else if ((_transp_proto < 0 || _transp_proto > 255) && _transp_proto != IP_PROTO_TCP_OR_UDP)
-      return errh->error("pattern %d: protocol %d out of range", slot, _transp_proto);
+    if (_transp_proto != IP_PROTO_TCP_OR_UDP && _op != OP_EQ)
+      return errh->error("pattern %d: can't use relational operators with `tcp or udp'", slot);
+    if (set_mask(&_transp_proto, 0xFF, 0, slot, errh) < 0)
+      return -1;
     
   } else if (_type == TYPE_PORT) {
     if (_data == DATA_INT)
@@ -149,30 +191,35 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
     else if (_transp_proto != IP_PROTO_TCP && _transp_proto != IP_PROTO_UDP && _transp_proto != IP_PROTO_TCP_OR_UDP)
       return errh->error("pattern %d: bad protocol %d for `port' directive", slot, _transp_proto);
+    if (set_mask(&_u.i, 0xFFFF, 0, slot, errh) < 0)
+      return -1;
 
   } else if (_type == TYPE_TCPOPT) {
     if (_data == DATA_INT)
       _data = DATA_TCPOPT;
     if (_data != DATA_TCPOPT)
-      return errh->error("pattern %d: `tcpopt' directive requires TCP options", slot);
+      return errh->error("pattern %d: `tcp opt' directive requires TCP options", slot);
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP;
     else if (_transp_proto != IP_PROTO_TCP)
-      return errh->error("pattern %d: bad protocol %d for `tcpopt' directive", slot, _transp_proto);
+      return errh->error("pattern %d: bad protocol %d for `tcp opt' directive", slot, _transp_proto);
+    if (_op != OP_EQ || _op_negated)
+      return errh->error("pattern %d: can't use relational operators with `tcp opt'", slot);
     if (_u.i < 0 || _u.i > 255)
-      return errh->error("pattern %d: TCP option %d out of range", slot, _u.i);
+      return errh->error("pattern %d: value %d out of range", slot, _u.i);
 
   } else if (_type == TYPE_TOS) {
     if (_data != DATA_INT)
       return errh->error("pattern %d: `ip tos' directive requires TOS value", slot);
-    if (_u.i < 0 || _u.i > 255)
-      return errh->error("pattern %d: IP TOS %d out of range", slot, _u.i);
+    if (set_mask(&_u.i, 0xFF, 0, slot, errh) < 0)
+      return -1;
 
   } else if (_type == TYPE_DSCP) {
     if (_data != DATA_INT)
       return errh->error("pattern %d: `ip dscp' directive requires TOS value", slot);
-    if (_u.i < 0 || _u.i > 63)
-      return errh->error("pattern %d: IP DSCP %d out of range", slot, _u.i);
+    if (set_mask(&_u.i, 0x3F, 2, slot, errh) < 0)
+      return -1;
+    _type = TYPE_TOS;
 
   } else if (_type == TYPE_ICMP_TYPE) {
     if (_data == DATA_INT)
@@ -183,8 +230,8 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       _transp_proto = IP_PROTO_ICMP;
     else if (_transp_proto != IP_PROTO_ICMP)
       return errh->error("pattern %d: bad protocol %d for `icmptype' directive", slot, _transp_proto);
-    if (_u.i < 0 || _u.i > 255)
-      return errh->error("pattern %d: TCP option %d out of range", slot, _u.i);
+    if (set_mask(&_u.i, 0xFF, 0, slot, errh) < 0)
+      return -1;
   }
 
   // fix _srcdst
@@ -198,90 +245,73 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
 }
 
 void
-IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree, bool negated) const
+IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 {
   Expr e;
+  bool negated = _negated;
 
   if (_type == TYPE_HOST || _type == TYPE_NET) {
     e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
-    e.value.u = (_u.ip.s_addr & e.mask.u);
+    e.value.u = _u.ip.s_addr;
     c->start_expr_subtree(tree);
     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
-      c->add_expr(tree, offsetof(click_ip, ip_src), e.value.u, e.mask.u);
+      c->add_expr(tree, 12, e.value.u, e.mask.u);
     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
-      c->add_expr(tree, offsetof(click_ip, ip_dst), e.value.u, e.mask.u);
+      c->add_expr(tree, 16, e.value.u, e.mask.u);
     c->finish_expr_subtree(tree, _srcdst != SD_OR);
+    if (_op_negated) c->negate_expr_subtree(tree);
     
   } else if (_type == TYPE_PROTO || _type == TYPE_PORT) {
-    e.mask.u = 0;
-    e.mask.c[1] = 0xFF;
-    e.value.u = 0;
-
     if (_type == TYPE_PORT) c->start_expr_subtree(tree);
 
     c->start_expr_subtree(tree);
     if (_transp_proto == IP_PROTO_TCP_OR_UDP) {
-      e.value.c[1] = IP_PROTO_TCP;
-      c->add_expr(tree, 8, e.value.u, e.mask.u);
-      e.value.c[1] = IP_PROTO_UDP;
-      c->add_expr(tree, 8, e.value.u, e.mask.u);
+      c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
+      c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
     } else {
-      e.value.c[1] = _transp_proto;
-      c->add_expr(tree, 8, e.value.u, e.mask.u);
+      unsigned mask = (_type == TYPE_PROTO ? _mask : 0xFF);
+      c->add_expr(tree, 8, htonl(_transp_proto << 16), htonl(mask << 16));
     }
     c->finish_expr_subtree(tree, false);
     
     if (_type == TYPE_PORT) {
-      e.mask.u = 0;
-      e.mask.c[0] = e.mask.c[1] = 0xFF;
+      unsigned mask = (htons(_mask) << 16) | htons(_mask);
       unsigned ports = (htons(_u.i) << 16) | htons(_u.i);
       
       c->start_expr_subtree(tree);
       if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
-	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, e.mask.u);
+	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
       if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
-	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, ~e.mask.u);
+	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
       c->finish_expr_subtree(tree, _srcdst != SD_OR);
+      if (_op_negated) c->negate_expr_subtree(tree);
 
       c->finish_expr_subtree(tree, true);
     }
 
   } else if (_type == TYPE_TCPOPT) {
     c->start_expr_subtree(tree);
-    e.mask.u = 0;
-    e.mask.c[1] = 0xFF;
-    e.value.u = 0;
-    e.value.c[1] = IP_PROTO_TCP;
-    c->add_expr(tree, 8, e.value.u, e.mask.u);
-    e.mask.c[1] = _u.i;
-    e.value.c[1] = (negated ? 0 : _u.i);
-    c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, e.value.u, e.mask.u);
+    c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
+    unsigned val = (negated ? 0 : _u.i);
+    c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(val << 16), htonl(_u.i << 16));
     c->finish_expr_subtree(tree, true);
     negated = false;		// did our own negation
 
-  } else if (_type == TYPE_TOS | _type == TYPE_DSCP) {
+  } else if (_type == TYPE_TOS) {
     c->start_expr_subtree(tree);
-    e.mask.u = 0;
-    e.mask.c[1] = (_type == TYPE_DSCP ? 0xFC : 0xFF);
-    e.value.u = 0;
-    e.value.c[1] = (_type == TYPE_DSCP ? _u.i<<2 : _u.i);
-    c->add_expr(tree, 0, e.value.u, e.mask.u);
+    c->add_expr(tree, 0, htonl(_u.i << 16), htonl(_mask << 16));
     c->finish_expr_subtree(tree, true);
+    if (_op_negated) c->negate_expr_subtree(tree);
 
   } else if (_type == TYPE_ICMP_TYPE) {
     c->start_expr_subtree(tree);
-    e.mask.u = 0;
-    e.mask.c[1] = 0xFF;
-    e.value.u = 0;
-    e.value.c[1] = IP_PROTO_ICMP;
-    c->add_expr(tree, 8, e.value.u, e.mask.u);
-    e.mask.u = 0;
-    e.mask.c[0] = 0xFF;
-    e.value.u = 0;
-    e.value.c[0] = _u.i;
-    c->add_expr(tree, TRANSP_FAKE_OFFSET, e.value.u, e.mask.u);
+    c->add_expr(tree, 8, htonl(IP_PROTO_ICMP << 16), htonl(0x00FF0000));
+    c->start_expr_subtree(tree);
+    c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.i << 24), htonl(_mask << 24));
     c->finish_expr_subtree(tree, true);
-  } 
+    if (_op_negated) c->negate_expr_subtree(tree);
+    c->finish_expr_subtree(tree, true);
+  }
 
   if (negated)
     c->negate_expr_subtree(tree);
@@ -463,8 +493,30 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
       }
       // end collect qualifiers
 
-      // now collect the actual data
+      // optional relational operation
       String wd = (w >= words.size() ? String() : words[w]);
+      w++;
+      prim._op = OP_EQ;
+      prim._op_negated = false;
+      if (wd == "=" || wd == "==")
+	/* nada */;
+      else if (wd == "!=")
+	prim._op_negated = true;
+      else if (wd == ">")
+	prim._op = OP_GT;
+      else if (wd == "<")
+	prim._op = OP_LT;
+      else if (wd == ">=") {
+	prim._op = OP_LT;
+	prim._op_negated = true;
+      } else if (wd == "<=") {
+	prim._op = OP_GT;
+	prim._op_negated = true;
+      } else
+	w--;
+      
+      // now collect the actual data
+      wd = (w >= words.size() ? String() : words[w]);
       if (w >= words.size())
 	/* no extra data */;
       else if (wd == "and" || wd == "or" || wd == "&&" || wd == "||"
@@ -492,8 +544,9 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 	errh->error("pattern %d: syntax error near `%s'", slot, wd.cc());
 
       // add if it is valid
+      prim._negated = negate;
       if (prim.check(slot, prev_prim, errh) >= 0) {
-	prim.add_exprs(this, tree, negate);
+	prim.add_exprs(this, tree);
 	prev_prim = prim;
       }
       

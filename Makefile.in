@@ -72,7 +72,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	doc/click-fastclassifier.1 doc/click-install.1 doc/click-uncombine.1 \
 	doc/click-uninstall.1 doc/click-xform.1 \
 	doc/element2man.pl doc/mkelementmap.pl \
-	doc/Element.3 doc/Connection.3 \
+	doc/Element.3 doc/Connection.3 doc/elementdoc.7 \
 	conf/make-ip-conf.pl conf/ip.clickpat \
 	conf/fake-iprouter.click \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \

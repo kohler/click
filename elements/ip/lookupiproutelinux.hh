@@ -23,10 +23,10 @@
  * just once (at startup) from /proc/net/route.
  *
  * =e
- * = r : LookupIPRouteLinux(eth0, eth1)
- * = r[0] -> ... -> ToDevice(eth0)
- * = r[1] -> ... -> ToDevice(eth1)
- * = r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
+ *   r : LookupIPRouteLinux(eth0, eth1)
+ *   r[0] -> ... -> ToDevice(eth0)
+ *   r[1] -> ... -> ToDevice(eth1)
+ *   r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
  */
 
 #include "element.hh"

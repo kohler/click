@@ -17,11 +17,7 @@
  * 
  * This element is only available in the Linux kernel module.
  *
- * =a ToLinux
- * =a FromLinux
- * =a FromDevice
- * =a PollDevice
- * =a ToDevice */
+ * =a ToLinux, FromLinux, FromDevice, PollDevice, ToDevice */
 
 class ToLinuxSniffers : public Element {
 

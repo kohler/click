@@ -14,7 +14,7 @@
  * the packet is pushed on output 1, otherwise on output 0.
  *
  * =e
- * = b :: CompareBlock(5, 2, 100);
+ *   b :: CompareBlock(5, 2, 100);
  * if (5*fwd_rate > 2*rev_rate) AND (fwd_rate > 100 or rev_rate > 100), send
  * packet out on output 1, otherwise on output 0.
  * 
@@ -27,8 +27,7 @@
  * =h thresh read/write
  * value of THRESH
  *
- * =a Block
- * =a IPRateMonitor
+ * =a Block, IPRateMonitor
  */
 
 class CompareBlock : public Element {

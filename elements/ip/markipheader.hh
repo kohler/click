@@ -11,9 +11,7 @@
  * check length fields for sanity or shorten packets to the IP length; use
  * CheckIPHeader or CheckIPHeader2 for that.
  *
- * =a CheckIPHeader
- * =a CheckIPHeader2
- * =a StripIPHeader */
+ * =a CheckIPHeader, CheckIPHeader2, StripIPHeader */
 
 #include "element.hh"
 

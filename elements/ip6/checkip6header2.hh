@@ -18,9 +18,7 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface (RFC1812 5.3.7).
  *
-  * =a CheckIP6Header
- * =a StripIP6Header
- * =a MarkIP6Header */
+ * =a CheckIP6Header, StripIP6Header, MarkIP6Header */
 
 
 #include "element.hh"

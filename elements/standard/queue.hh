@@ -20,7 +20,7 @@
  * Returns or sets the queue's capacity.
  * =h drops read-only
  * Returns the number of packets dropped by the Queue so far.
- * =a RED FrontDropQueue
+ * =a RED, FrontDropQueue
  */
 
 class Storage {

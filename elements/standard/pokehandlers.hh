@@ -21,10 +21,10 @@
  * error. In the Linux kernel module, they are printed to /var/log/messages
  * (accessible through dmesg(1)) and to /proc/click/errors.
  * =e
- * = PokeHandlers(red.max_p 0.8,
- * =              1.5, // delay for 1.5 seconds
- * =              red.max_p 0.5);
- * =a PeekHandlers */
+ *   PokeHandlers(red.max_p 0.8,
+ *                1.5, // delay for 1.5 seconds
+ *                red.max_p 0.5);
+ * =a PeekHandlers, dmesg(1) */
 
 class PokeHandlers : public Element {
 
