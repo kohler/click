@@ -1,3 +1,14 @@
+2001-11-28 Wednesday 03:56  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/classifier.cc (1.36): fix bug reported by Doug
+	on 11/15: Classifier allowed routers to initialize even when it was
+	initialized badly
+
+2001-11-28 Wednesday 03:43  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/delayshaper.hh (1.4): Brecht reported missing
+	=c nitlet
+
 2001-11-23 Friday 16:34  Eddie Kohler <kohler@aciri.org>
 
 	* mkinstalldirs (1.2), elements/analysis/fromipsumdump.cc (1.11),
