@@ -21,7 +21,6 @@
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/glue.hh>
-#include <assert.h>
 
 String::Memo *String::null_memo = 0;
 String::Memo *String::permanent_memo = 0;

@@ -16,7 +16,6 @@
  */
 
 #include <click/hashmap.hh>
-#include <assert.h>
 
 template <class K, class V>
 HashMap<K, V>::HashMap()

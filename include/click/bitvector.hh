@@ -1,7 +1,6 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/bitvector.cc" -*-
 #ifndef CLICK_BITVECTOR_HH
 #define CLICK_BITVECTOR_HH
-#include <assert.h>
 #include <click/glue.hh>
 
 class Bitvector { public:

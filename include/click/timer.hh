@@ -3,7 +3,6 @@
 #define CLICK_TIMER_HH
 #include <click/sync.hh>
 #include <click/glue.hh>
-#include <assert.h>
 class Element;
 class Router;
 class Timer;

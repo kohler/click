@@ -2,7 +2,6 @@
 #define CLICK_SYNC_HH
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#include <assert.h>
 #if defined(__KERNEL__) && defined(__SMP__)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #  include <linux/tasks.h>

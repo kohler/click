@@ -22,7 +22,6 @@
 #include <click/glue.hh>
 #include <click/atomic.hh>
 #include <click/skbmgr.hh>
-#include <assert.h>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT

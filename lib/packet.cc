@@ -24,7 +24,6 @@
 #ifdef CLICK_USERLEVEL
 #include <unistd.h>
 #endif
-#include <assert.h>
 
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
 

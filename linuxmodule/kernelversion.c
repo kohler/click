@@ -22,8 +22,6 @@
  *  "kernel_version=" "2.2.6" ;
  */
 
-#define __KERNEL__
-#define MODULE
 #include <click/config.h>
 #include <linux/module.h>
 

@@ -21,11 +21,9 @@
 #include <click/glue.hh>
 #include <click/error.hh>
 
-#include <limits.h>
-#ifndef CLICK_LINUXMODULE
-# include <stdarg.h>
-#endif
 #ifdef CLICK_USERLEVEL
+# include <limits.h>
+# include <stdarg.h>
 # include <unistd.h>
 # include <sys/types.h>
 # include <sys/stat.h>

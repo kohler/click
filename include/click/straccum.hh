@@ -3,7 +3,6 @@
 #define CLICK_STRACCUM_HH
 #include <click/string.hh>
 #include <click/glue.hh>
-#include <assert.h>
 #ifdef CLICK_LINUXMODULE
 # include <asm/string.h>
 #elif defined(CLICK_BSDMODULE)

@@ -1,6 +1,10 @@
 #ifndef CLICK_LLRPC_H
 #define CLICK_LLRPC_H
-#include <errno.h>
+#if CLICK_LINUXMODULE
+# include <linux/errno.h>
+#else
+# include <errno.h>
+#endif
 
 // Click low-level RPC interface
 
