@@ -26,6 +26,7 @@
 #include <termio.h>
 #endif
 #include <termios.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
 
 ProgressBar::ProgressBar()
@@ -54,6 +55,7 @@ ProgressBar::initialize(ErrorHandler *errh)
     _delay_ms = 0;
     _active = true;
     String position_str, size_str;
+    bool check_stdout = false;
 
     if (cp_va_parse(conf, this, errh,
 		    cpArgument, "position handler", &position_str,
@@ -64,6 +66,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    "BANNER", cpString, "banner string", &_banner,
 		    "ACTIVE", cpBool, "start active?", &_active,
 		    "DELAY", cpSecondsAsMilli, "display delay (s)", &_delay_ms,
+		    "CHECK_STDOUT", cpBool, "check if stdout is terminal?", &check_stdout,
 		    0) < 0)
 	return -1;
 
@@ -78,10 +81,14 @@ ProgressBar::initialize(ErrorHandler *errh)
 	if (!cp_handler(words[i], this, true, false, &_es[i], &_his[i], errh))
 	    return -1;
 
+    if (!isatty(STDERR_FILENO) || (check_stdout && isatty(STDOUT_FILENO)))
+	_status = ST_DEAD;
+    else
+	_status = ST_FIRST;
+    
     _have_size = false;
-    _status = ST_FIRST;
     _timer.initialize(this);
-    if (_active)
+    if (_active && _status != ST_DEAD)
 	_timer.schedule_now();
     return 0;
 }
@@ -95,9 +102,13 @@ ProgressBar::uninitialize()
     }
 }
 
-// from openssh scp
+
+// Code based on the progress bar in the OpenSSH project's B<scp> program. Its
+// authors are listed as Timo Rinne, Tatu Ylonen, Theo de Raadt, and Aaron
+// Campbell. Under a BSD-like copyright.
+
 static bool
-foregroundproc()
+foregroundproc(int fd)
 {
     static pid_t pgrp = -1;
     int ctty_pgrp;
@@ -106,18 +117,13 @@ foregroundproc()
 	pgrp = getpgrp();
 
 #ifdef HAVE_TCGETPGRP
-    return ((ctty_pgrp = tcgetpgrp(STDERR_FILENO)) != -1 &&
+    return ((ctty_pgrp = tcgetpgrp(fd)) != -1 &&
 	    ctty_pgrp == pgrp);
 #else
-    return ((ioctl(STDERR_FILENO, TIOCGPGRP, &ctty_pgrp) != -1 &&
+    return ((ioctl(fd, TIOCGPGRP, &ctty_pgrp) != -1 &&
 	     ctty_pgrp == pgrp));
 #endif
 }
-
-
-// Code based on the progress bar in the OpenSSH project's B<scp> program. Its
-// authors are listed as Timo Rinne, Tatu Ylonen, Theo de Raadt, and Aaron
-// Campbell. Under a BSD-like copyright.
 
 static int
 getttywidth()
@@ -201,7 +207,7 @@ void
 ProgressBar::run_scheduled()
 {
     // check _active
-    if (!_active)
+    if (!_active || _status == ST_DEAD)
 	return;
     
     // get size on first time through
@@ -221,7 +227,7 @@ ProgressBar::run_scheduled()
     }
 
     // exit if not in foreground
-    if (!foregroundproc()) {
+    if (!foregroundproc(STDERR_FILENO)) {
 	_timer.reschedule_after_ms(_interval);
 	return;
     }

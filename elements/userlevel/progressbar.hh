@@ -56,6 +56,11 @@ Time in seconds (millisecond precision). Don't print a progress bar until at
 least DELAY seconds have passed. Use this to avoid trivial progress bars (that
 is, progress bars that immediately go to 100%). Default is no delay.
 
+=item CHECK_STDOUT
+
+Boolean. If true, and the standard output is connected to a terminal, then do
+not print a progress bar. Default is false.
+
 =back
 
 Only available in user-level processes.
@@ -143,7 +148,7 @@ class ProgressBar : public Element { public:
     typedef uint32_t thermometer_t;
 #endif
 
-    enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_FIRSTDONE, ST_NEVER };
+    enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_FIRSTDONE, ST_DEAD };
     
     bool _have_size;
     int _status;
