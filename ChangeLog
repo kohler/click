@@ -1,3 +1,13 @@
+2002-06-07 Friday 14:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.10), gridroutetable.cc
+	(1.54): very bad bug fixed: update_metric (in both DSDVRouteTable
+	and GridRouteTable) asserted that the route it was updating was
+	good.  but the code also sent broken route ads through
+	update_metric.	this never crashed using all GridRouteTables, since
+	that code never advertised its broken routes.  discovered by
+	running DSDVRouteTable and GridRouteTable together
+
 2002-06-07 Friday 12:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/grid-params.m4 (1.6), conf/grid.click (1.59): removed last
