@@ -46,14 +46,41 @@ pushed out on output 1; otherwise, they are dropped.) Default is false.
 Boolean. If true, then FromDump will ask the router to stop when it is done
 reading its tcpdump file. Default is false.
 
-=item ACTIVE
+=item START
 
-Boolean. If false, then FromDump will not emit packets (until the `C<active>'
-handler is written). Default is true.
+Absolute time in seconds since the epoch. FromDump will output packets with
+timestamps after that time.
+
+=item START_AFTER
+
+Argument is relative time in seconds (or supply a suffix like `min', `h').
+FromDump will skip the first I<T> seconds in the log.
+
+=item END
+
+Absolute time in seconds since the epoch. FromDump will stop when encountering
+a packet with timestamp at or after that time.
+
+=item END_AFTER
+
+Argument is relative time in seconds (or supply a suffix like `min', `h').
+FromDump will stop at the first packet whose timestamp is at least I<T>
+seconds after the first timestamp in the log.
+
+=item INTERVAL
+
+Argument is relative time in seconds (or supply a suffix like `min', `h').
+FromDump will stop at the first packet whose timestamp is at least I<T>
+seconds after the first packet output.
 
 =item TIMING
 
 Boolean. Same as the TIMING argument.
+
+=item ACTIVE
+
+Boolean. If false, then FromDump will not emit packets (until the `C<active>'
+handler is written). Default is true.
 
 =item MMAP
 
@@ -63,6 +90,9 @@ regular file discipline is pretty optimized, so the difference is often small
 in practice. Default is true on most operating systems, but false on Linux.
 
 =back
+
+You can supply at most one of START and START_AFTER, and at most one of END,
+END_AFTER, and INTERVAL.
 
 Only available in user-level processes.
 
@@ -129,6 +159,12 @@ class FromDump : public Element { public:
 #ifdef ALLOW_MMAP
     bool _mmap : 1;
 #endif
+    bool _have_first_time : 1;
+    bool _have_last_time : 1;
+    bool _have_any_times : 1;
+    bool _first_time_relative : 1;
+    bool _last_time_relative : 1;
+    bool _last_time_interval : 1;
     bool _active;
     unsigned _extra_pkthdr_crap;
     unsigned _sampling_prob;
@@ -140,6 +176,9 @@ class FromDump : public Element { public:
     size_t _mmap_unit;
     off_t _mmap_off;
 #endif
+
+    struct timeval _first_time;
+    struct timeval _last_time;
     
     Task _task;
   
@@ -154,6 +193,8 @@ class FromDump : public Element { public:
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
     Packet *read_packet(ErrorHandler *);
+
+    void prepare_relative_times(const struct fake_bpf_timeval &);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

@@ -22,26 +22,26 @@ Keyword arguments are:
 
 =over 8
 
-=item START I<T>
+=item START
 
 I<T> is absolute time in seconds since the epoch. Output packets with
 timestamps at least I<T>.
 
-=item START_AFTER I<T>
+=item START_AFTER
 
 I<T> is relative time in seconds (or use suffixes like `ms', `hr'). Output
 packets with timestamps at least I<T> seconds after the first packet seen.
 
-=item END I<T>
+=item END
 
 I<T> is absolute time. Output packets with timestamps up to I<T>.
 
-=item END_AFTER I<T>
+=item END_AFTER
 
 I<T> is relative time. Output packets with timestamps up to I<T> seconds after
 the first packet seen.
 
-=item INTERVAL I<T>
+=item INTERVAL
 
 I<T> is relative time. Output packets for I<T> seconds after the start time,
 as specified by START or START_AFTER.

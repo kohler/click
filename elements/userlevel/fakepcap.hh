@@ -30,8 +30,8 @@ struct fake_pcap_file_header {
 
 struct fake_bpf_timeval
 {
-	uint32_t tv_sec;
-	uint32_t tv_usec;
+	int32_t tv_sec;
+	int32_t tv_usec;
 };
 
 /*

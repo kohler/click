@@ -68,6 +68,12 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 #else
     bool mmap = true;
 #endif
+    struct timeval first_time, first_time_off, last_time, last_time_off, interval;
+    timerclear(&first_time);
+    timerclear(&first_time_off);
+    timerclear(&last_time);
+    timerclear(&last_time_off);
+    timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
     
     if (cp_va_parse(conf, this, errh,
@@ -81,14 +87,46 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "MMAP", cpBool, "access file with mmap()?", &mmap,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
+		    "START", cpTimeval, "starting time", &first_time,
+		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
+		    "END", cpTimeval, "ending time", &last_time,
+		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
+		    "INTERVAL", cpTimeval, "time interval", &interval,
 		    0) < 0)
 	return -1;
+
+    // check sampling rate
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
 	errh->warning("SAMPLE probability reduced to 1");
 	_sampling_prob = (1 << SAMPLING_SHIFT);
     } else if (_sampling_prob == 0)
 	errh->warning("SAMPLE probability is 0; emitting no packets");
+
+    // check times
+    if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
+	return errh->error("`START' and `START_AFTER' are mutually exclusive");
+    else if (timerisset(&first_time))
+	_first_time = first_time, _have_first_time = true, _first_time_relative = false;
+    else if (timerisset(&first_time_off))
+	_first_time = first_time_off, _have_first_time = true, _first_time_relative = true;
+    else {
+	timerclear(&_first_time);
+	_have_first_time = false, _first_time_relative = true;
+    }
     
+    if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
+	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
+    else if (timerisset(&last_time))
+	_last_time = last_time, _have_last_time = true, _last_time_relative = false, _last_time_interval = false;
+    else if (timerisset(&last_time_off))
+	_last_time = last_time_off, _have_last_time = true, _last_time_relative = true, _last_time_interval = false;
+    else if (timerisset(&interval))
+	_last_time = interval, _have_last_time = true, _last_time_relative = false, _last_time_interval = true;
+    else
+	_have_last_time = false;
+
+    // set other variables
+    _have_any_times = false;
     _timing = timing;
     _stop = stop;
     _force_ip = force_ip;
@@ -359,6 +397,18 @@ FromDump::uninitialize()
     _pipe = 0;
 }
 
+void
+FromDump::prepare_relative_times(const fake_bpf_timeval &btv)
+{
+    if (_first_time_relative)
+	timeradd(&btv, &_first_time, &_first_time);
+    if (_last_time_relative)
+	timeradd(&btv, &_last_time, &_last_time);
+    else if (_last_time_interval)
+	timeradd(&_first_time, &_last_time, &_last_time);
+    _have_any_times = true;
+}
+
 Packet *
 FromDump::read_packet(ErrorHandler *errh)
 {
@@ -400,6 +450,19 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // compensate for modified pcap versions
     _pos += _extra_pkthdr_crap;
+
+    // check timing
+    if (!_have_any_times)
+	prepare_relative_times(ph->ts);
+    if (_have_first_time) {
+	if (timercmp(&ph->ts, &_first_time, <)) {
+	    _pos += caplen;
+	    goto retry;
+	} else
+	    _have_first_time = false;
+    }
+    if (_have_last_time && !timercmp(&ph->ts, &_last_time, <))
+	return 0;
     
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
