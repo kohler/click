@@ -78,6 +78,7 @@ AggregateCounter::initialize(ErrorHandler *errh)
     _root->aggregate = 0;
     _root->count = 0;
     _root->child[0] = _root->child[1] = 0;
+    _num_nonzero = 0;
     
     return 0;
 }
@@ -188,15 +189,14 @@ AggregateCounter::simple_action(Packet *p)
     // AGGREGATE_ANNO is already in host byte order!
     uint32_t agg = AGGREGATE_ANNO(p);
     if (Node *n = find_node(agg)) {
-	if (!_bytes) {
-	    n->count++;
-	    if (_packet_count && PACKET_COUNT_ANNO(p))
-		n->count += PACKET_COUNT_ANNO(p) - 1;
-	} else {
-	    n->count += p->length();
-	    if (_extra_length)
-		n->count += EXTRA_LENGTH_ANNO(p);
-	}
+	uint32_t amount;
+	if (!_bytes)
+	    amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
+	else
+	    amount = p->length() + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+	if (amount && !n->count)
+	    _num_nonzero++;
+	n->count += amount;
     }
     return p;
 }
@@ -212,13 +212,11 @@ write_batch(FILE *f, bool binary, uint32_t *buffer, int pos,
 	    fprintf(f, "%u %u\n", buffer[i], buffer[i+1]);
 }
 
-uint32_t
+void
 AggregateCounter::write_nodes(Node *n, FILE *f, bool binary,
 				 uint32_t *buffer, int &pos, int len,
 				 ErrorHandler *errh)
 {
-    uint32_t nnz;
-    
     if (n->count > 0) {
 	buffer[pos++] = n->aggregate;
 	buffer[pos++] = n->count;
@@ -226,16 +224,12 @@ AggregateCounter::write_nodes(Node *n, FILE *f, bool binary,
 	    write_batch(f, binary, buffer, pos, errh);
 	    pos = 0;
 	}
-	nnz = 1;
-    } else
-	nnz = 0;
+    }
 
     if (n->child[0])
-	nnz += write_nodes(n->child[0], f, binary, buffer, pos, len, errh);
+	write_nodes(n->child[0], f, binary, buffer, pos, len, errh);
     if (n->child[1])
-	nnz += write_nodes(n->child[1], f, binary, buffer, pos, len, errh);
-
-    return nnz;
+	write_nodes(n->child[1], f, binary, buffer, pos, len, errh);
 }
 
 int
@@ -250,24 +244,15 @@ AggregateCounter::write_file(String where, bool binary,
     if (!f)
 	return errh->error("%s: %s", where.cc(), strerror(errno));
     
-    bool seekable = (fseek(f, 1, SEEK_SET) >= 0);
-    if (seekable) {
-	rewind(f);
-	fprintf(f, "$num_nonzero            \n");
-    }
+    fprintf(f, "$num_nonzero %u\n", _num_nonzero);
     if (binary)
 	fprintf(f, "$packed\n");
     
     uint32_t buf[1024];
     int pos = 0;
-    uint32_t nnz = write_nodes(_root, f, binary, buf, pos, 1024, errh);
+    write_nodes(_root, f, binary, buf, pos, 1024, errh);
     if (pos)
 	write_batch(f, binary, buf, pos, errh);
-
-    if (seekable) {
-	fseek(f, 0, SEEK_SET);
-	fprintf(f, "$num_nonzero %u", nnz);
-    }
 
     bool had_err = ferror(f);
     if (f != stdout)

@@ -114,6 +114,7 @@ class AggregateCounter : public Element { public:
     Node *_root;
     Node *_free;
     Vector<Node *> _blocks;
+    uint32_t _num_nonzero;
 
     Node *new_node();
     Node *new_node_block();
@@ -122,7 +123,7 @@ class AggregateCounter : public Element { public:
     Node *make_peer(uint32_t, Node *);
     Node *find_node(uint32_t);
 
-    static uint32_t write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
+    static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
