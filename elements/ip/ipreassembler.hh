@@ -45,6 +45,8 @@ The upper bound for memory consumption, in bytes. Default is 256K.
 You may want to attach an C<ICMPError(ADDR, timeexceeded, reassembly)> to the
 second output.
 
+IPReassembler destroys its input packets' "next packet" annotations.
+
 =a IPFragmenter */
 
 class IPReassembler : public Element { public:
