@@ -1,3 +1,9 @@
+2003-07-13 Sunday 16:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: linkstat.cc (1.23), linkstat.hh (1.12): bug fix:
+	when encoutnering probes with different period, remember the new
+	probe period
+
 2003-07-12 Saturday 16:03  Eddie Kohler <kohler@icir.org>
 
 	* elements/: analysis/fromipsumdump.cc (1.51),
