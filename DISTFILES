@@ -83,7 +83,6 @@ dnsproxy.click
 example.clgw
 fake-iprouter.click
 fromhost-tunnel.click
-gen_config_roofnet.pl
 grid.click
 ip.clickpat
 kernel.clickpat
@@ -94,6 +93,7 @@ make-udpcount.pl
 make-udpgen.pl
 mazu-nat.click
 print-pings.click
+roofnet
 sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
@@ -106,6 +106,23 @@ thomer-nat.click
 udpcount.click
 udpgen.click
 unarp.clickpat
+wifi
+
+./conf/roofnet:
+etx.click
+gen_config_roofnet.pl
+read_handler.pl
+srcr.click
+
+./conf/wifi:
+access-point.click
+associate.pl
+dump.click
+pseudo-ibss.click
+read_handler.pl
+scan.pl
+station.click
+write_handler.pl
 
 ./doc:
 Makefile.in
@@ -428,23 +445,34 @@ userlevel
 
 ./test/IPRewriter:
 FTPPortMapper-01.testie
+IPAddrPairRewriter-01.testie
+IPAddrRewriter-01.testie
+IPAddrRewriter-02.testie
 IPRewriter-01.testie
+IPRewriter-02.testie
+IPRewriter-03.testie
 RoundRobinIPMapper-01.testie
 TCPRewriter-01.testie
 
 ./test/analysis:
 FromIPSummaryDump-ipopt-01.testie
+FromTcpdump-01.testie
+FromTcpdump-02.testie
+IPSummaryDump-01.testie
 
 ./test/compound:
 input-01.testie
 overload-01.testie
 
 ./test/handlers:
+KernelHandlerProxy-01.testie
+handlercall-01.testie
 kernel-01.testie
 
 ./test/icmp:
 ICMPError-sourceroute-01.testie
 ICMPPingEncap-01.testie
+ICMPRewriter-01.testie
 
 ./test/linuxmodule:
 ToHost-01.testie
@@ -453,6 +481,7 @@ deviceup-01.testie
 
 ./test/standard:
 DelayShaper-notifier-01.testie
+FullNoteQueue-upstream-notifier-01.testie
 LinkUnqueue-01.testie
 MixedQueue-01.testie
 MixedQueue-02.testie
@@ -461,6 +490,7 @@ StrideSched-01.testie
 notifier-01.testie
 notifier-02.testie
 notifier-03.testie
+notifier-04.testie
 
 ./test/tcpudp:
 UDPIPEncap-01.testie
