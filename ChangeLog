@@ -1,3 +1,26 @@
+2002-07-31 Wednesday 20:35  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: cyclecountaccum.cc (1.8),
+	cyclecountaccum.hh (1.8), perfcountaccum.cc (1.11),
+	perfcountaccum.hh (1.6): handlers are named "count" for consistency
+	(was "packets")
+
+2002-07-31 Wednesday 20:27  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/counter.cc (1.28): use new
+	HandlerCall::initialize and fix parsing discipline
+
+2002-07-31 Wednesday 20:27  Eddie Kohler <kohler@icir.org>
+
+	* include/click/handlercall.hh (1.6), lib/confparse.cc (1.101),
+	lib/handlercall.cc (1.5): add static HandlerCall::initialize()
+	function, to initialize a HandlerCall object that might be null
+
+2002-07-31 Wednesday 20:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/switch.cc (1.20): use checked_output_push
+	instead of rewriting it
+
 2002-07-31 Wednesday 18:24  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/: counter.cc (1.27), counter.hh (1.26): change
