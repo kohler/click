@@ -18,10 +18,10 @@
 #include <click/config.h>
 #include "gridproxy.hh"
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 GridProxy::GridProxy()
-  : _map(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -100,12 +100,9 @@ void
 GridProxy::reverse_mapping(Packet *p_in) {
 
   /* decide where to send it */
-  IPAddress dst;
-  IPAddress gateway;
-  dst = IPAddress(p_in->ip_header()->ip_dst);
-  gateway = IPAddress(_map[dst]);
-
-  if (!gateway) {
+  IPAddress dst = IPAddress(p_in->ip_header()->ip_dst);
+  DstInfo *nfo = _map.findp(dst);
+  if (!nfo) {
     //click_chatter("couldn't find a gateway for %s!\n", dst.s().cc());
     p_in->kill();
     return;
@@ -122,9 +119,9 @@ GridProxy::reverse_mapping(Packet *p_in) {
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(_id.read_and_add(1));
 
-  p->set_dst_ip_anno(gateway);
+  p->set_dst_ip_anno(nfo->_gw);
   p->set_ip_header(ip, sizeof(click_ip));
-  p->ip_header()->ip_dst = gateway.in_addr();
+  p->ip_header()->ip_dst = nfo->_gw.in_addr();
 
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
@@ -159,15 +156,44 @@ GridProxy::forward_mapping(Packet *p_in) {
   /* record the gateway that the src picked */
   src = IPAddress(p_in->ip_header()->ip_src);
 
-  _map.insert(src, gateway);
+  struct timeval now;
+  click_gettimeofday(&now);
+  _map.insert(src, DstInfo(src, gateway, now));
 
   output(0).push(p_in);  
   return;
 }
+
+String
+GridProxy::static_print_stats(Element *e, void *)
+{
+  GridProxy *n = (GridProxy *) e;
+  return n->print_stats();
+}
+
+String
+GridProxy::print_stats() 
+{
+  StringAccum sa;
+
+  struct timeval now;
+  click_gettimeofday(&now);
+
+  for (ProxyMap::iterator iter = _map.begin(); iter; iter++) {
+    DstInfo nfo = iter.value();
+    sa << nfo._ip.s().cc() << " ";
+    sa << nfo._gw.s().cc() << " ";
+    sa << now - nfo._last_updated << "\n";
+    
+  }
+  return sa.take_string();
+
+}
 void
 GridProxy::add_handlers()
 {
-
+  add_default_handlers(false);
+  add_read_handler("stats", static_print_stats, 0);
 }
 
 

@@ -26,7 +26,21 @@ CLICK_DECLS
  */
 class GridProxy : public Element { 
 
-  HashMap<IPAddress, IPAddress> _map;
+  class DstInfo {
+  public:
+    IPAddress _ip;
+    timeval _last_updated;
+    IPAddress _gw;
+    DstInfo() {_ip = IPAddress(0); _last_updated.tv_sec = 0; _gw = IPAddress(0); }
+    DstInfo(IPAddress ip, IPAddress gw, timeval now) {
+      _ip = ip;
+      _last_updated = now;
+      _gw = gw;
+    }
+
+  };
+  typedef HashMap<IPAddress, DstInfo> ProxyMap;
+  class ProxyMap _map;
   
   click_ip _iph;
   uatomic32_t _id;
@@ -53,7 +67,9 @@ public:
     void cleanup(CleanupStage);
 
     void push(int, Packet *);
-
+  
+  static String static_print_stats(Element *e, void *);
+  String print_stats();
 
     
 };
