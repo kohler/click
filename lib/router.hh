@@ -1,12 +1,14 @@
 #ifndef ROUTER_HH
 #define ROUTER_HH
 #include "element.hh"
+#include "mplock.hh"
 #include "timer.hh"
 #include "bitvector.hh"
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
 class ElementFilter;
+class RouterThread;
 
 class Router : public ElementLink {
 
@@ -14,7 +16,7 @@ class Router : public ElementLink {
   struct Handler;
 
   Timer _timer_head;
-  bool _please_stop_driver;
+  Spinlock _timer_lock;
 
 #ifdef CLICK_USERLEVEL
   struct Selector;
@@ -22,6 +24,7 @@ class Router : public ElementLink {
   fd_set _write_select_fd_set;
   int _max_select_fd;
   Vector<Selector> _selectors;
+  Spinlock _wait_lock;
 #endif
   
   int _refcount;
@@ -30,6 +33,8 @@ class Router : public ElementLink {
   Vector<String> _element_names;
   Vector<String> _configurations;
   Vector<String> _element_landmarks;
+
+  Vector<RouterThread*> _threads;
   
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
@@ -94,7 +99,6 @@ class Router : public ElementLink {
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
 
-  static const unsigned int _max_driver_count = 10000;
 
  public:
   
@@ -106,6 +110,8 @@ class Router : public ElementLink {
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   void add_requirement(const String &);
+  void add_thread(RouterThread *);
+  void remove_thread(RouterThread *);
   
   bool initialized() const			{ return _initialized; }
   
@@ -152,16 +158,13 @@ class Router : public ElementLink {
   int remove_select(int fd, int element, int mask);
 #endif
   
-  void driver();
-  void driver_once();
-  void wait();
-  
   String flat_configuration_string() const;
   String element_list_string() const;
   String element_ports_string(int) const;
-  
-  void please_stop_driver()			{ _please_stop_driver = 1; }
-  
+ 
+  int wait_in_select();
+  void run_timers();
+  void please_stop_driver();
 };
 
 

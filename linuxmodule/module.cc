@@ -33,6 +33,7 @@ click_proc_dir_entry *proc_click_entry = reinterpret_cast<click_proc_dir_entry *
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
+static int threads = 1;
 Router *current_router = 0;
 
 Router::Handler *root_handlers;
@@ -74,7 +75,7 @@ void
 kill_current_router()
 {
   if (current_router) {
-    kill_click_sched(current_router);
+    current_router->please_stop_driver();
     //printk("<1>  killed\n");
     cleanup_router_element_procs();
     //printk("<1>  cleaned\n");
@@ -91,7 +92,7 @@ install_current_router(Router *r)
   r->use();
   init_router_element_procs();
   if (r->initialized())
-    start_click_sched(r, kernel_errh);
+    start_click_sched(r, threads, kernel_errh);
 }
 
 /*
@@ -284,6 +285,9 @@ next_root_handler(const char *name, ReadHandler read, void *read_thunk,
   root_handlers[i].write_thunk = write_thunk;
   register_handler(proc_click_entry, -1, i);
 }
+
+EXPORT_NO_SYMBOLS;
+extern "C" MODULE_PARM(threads, "i");
 
 extern "C" int
 init_module()

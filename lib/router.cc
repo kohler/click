@@ -15,6 +15,7 @@
 # include <config.h>
 #endif
 #include "router.hh"
+#include "routerthread.hh"
 #include "bitvector.hh"
 #include "error.hh"
 #include "straccum.hh"
@@ -29,8 +30,7 @@
 #endif
 
 Router::Router()
-  : _please_stop_driver(0), _refcount(0),
-    _initialized(0), _have_connections(0), _have_hookpidx(0),
+  : _refcount(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   initialize_head();
@@ -39,16 +39,31 @@ Router::Router()
 
 Router::~Router()
 {
-  if (_initialized)
+  if (_refcount > 0)
+    click_chatter("deleting router while ref count > 0");
+  if (_initialized) {
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
+    for (int i = 0; i < _threads.size(); i++) {
+      if (_threads[i])
+	_threads[i]->please_stop_driver();
+    }
+  }
   for (int i = 0; i < _elements.size(); i++)
     delete _elements[i];
   delete[] _handlers;
 #ifdef __KERNEL__
   initialize_head();		// get rid of scheduled wait queue
-  _please_stop_driver = true;	// XXX races?
 #endif
+}
+
+void
+Router::please_stop_driver()
+{
+  for (int i = 0; i < _threads.size(); i++) {
+    if (_threads[i])
+      _threads[i]->please_stop_driver();
+  }
 }
 
 void
@@ -175,6 +190,20 @@ Router::add_requirement(const String &r)
 {
   assert(cp_is_word(r));
   _requirements.push_back(r);
+}
+
+void
+Router::add_thread(RouterThread *rt)
+{
+  _threads.push_back(rt);
+}
+
+void
+Router::remove_thread(RouterThread *rt)
+{
+  for (int i=0; i<_threads.size(); i++) {
+    if (_threads[i] == rt) _threads[i] = 0;
+  }
 }
 
 
@@ -518,6 +547,76 @@ Router::set_connections()
   }
 }
 
+// TIMERS
+
+void
+Router::run_timers()
+{
+  if (_timer_lock.attempt()) {
+    _timer_head.run();
+    _timer_lock.release();
+  }
+}
+
+#ifndef __KERNEL__
+int
+Router::wait_in_select()
+{
+  struct timeval wait, *wait_ptr = &wait;
+
+  if (scheduled_next() != this)
+    return 0;
+
+  if (_wait_lock.attempt()) 
+  {
+    // wait in select() for input or timer.
+    // and call relevant elements' selected() methods.
+    fd_set read_mask = _read_select_fd_set;
+    fd_set write_mask = _write_select_fd_set;
+    bool selects = (_selectors.size() > 0);
+
+    bool timers = _timer_head.get_next_delay(&wait);
+    if (!selects && !timers) {
+      _wait_lock.release();
+      return 0;
+    }
+    if (!timers)
+      wait_ptr = 0;
+  
+    int n = select
+      (_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
+    _wait_lock.release();
+    
+    if (n < 0 && errno != EINTR) {
+      perror("select");
+      return 0;
+    }
+    else if (n > 0) {
+      for (int i = 0; i < _selectors.size(); i++) {
+        const Selector &s = _selectors[i];
+        if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
+	    || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
+	  _elements[s.element]->selected(s.fd);
+      }
+      return 1;
+    }
+  }
+  else {
+    /* no work to be done, and someone else is waiting in select for a
+     * descriptor to be ready, so we just give up the processor, and try again
+     * later */
+    wait.tv_sec = 0;
+    wait.tv_usec = 1000;
+    /* hopefully this will cause a reschedule */
+    int n = select(0, (fd_set*)0, (fd_set*)0, (fd_set*)0, wait_ptr);
+    if (n < 0 && errno != EINTR)
+      perror("select");
+    return 0;
+  }
+  assert(0);
+  return 0;
+}
+#endif
 
 // FLOWS
 
@@ -1117,87 +1216,6 @@ Router::remove_select(int fd, int element, int mask)
 }
 
 #endif
-
-
-// DRIVER 
-
-void
-Router::wait()
-{
-#ifndef __KERNEL__
-  
-  // Wait in select() for input or timer.
-  // And call relevant elements' selected() methods.
-  fd_set read_mask = _read_select_fd_set;
-  fd_set write_mask = _write_select_fd_set;
-  bool selects = (_selectors.size() > 0);
-
-  struct timeval wait, *wait_ptr = &wait;
-  bool timers = _timer_head.get_next_delay(&wait);
-  if (!selects && !timers)
-    return;
-  // never wait if anything is scheduled
-  // otherwise, if no timers, block indefinitely
-  if (scheduled_next() != this)
-    wait.tv_sec = wait.tv_usec = 0;
-  else if (!timers)
-    wait_ptr = 0;
-
-  int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
-  
-  if (n < 0 && errno != EINTR)
-    perror("select");
-  else if (n > 0) {
-    for (int i = 0; i < _selectors.size(); i++) {
-      const Selector &s = _selectors[i];
-      if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
-	  || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
-	_elements[s.element]->selected(s.fd);
-    }
-  }
-  
-#else /* __KERNEL__ */
-
-  schedule();
-
-#endif
-  
-  // always run timers
-  _timer_head.run();
-}
-
-
-// WORK LIST
-
-void
-Router::driver()
-{
-  ElementLink *l;
-  while (1) {
-    int c = 10000;
-    while (l = scheduled_next(), l != this && !_please_stop_driver && c >= 0) {
-      l->unschedule();
-      ((Element *)l)->run_scheduled();
-      c--;
-    }
-    if (_please_stop_driver)
-      break;
-    else
-      wait();
-  }
-}
-
-void
-Router::driver_once()
-{
-  if (_please_stop_driver)
-    return;
-  ElementLink *l = scheduled_next();
-  if (l != this) {
-    l->unschedule();
-    ((Element *)l)->run_scheduled();
-  }
-}
 
 
 // PRINTING

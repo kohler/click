@@ -46,7 +46,6 @@ Spinlock::release()
 inline bool
 Spinlock::attempt()
 {
-  assert(0);
   return true;
 }
 

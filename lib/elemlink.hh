@@ -1,6 +1,7 @@
 #ifndef ELEMLINK_HH
 #define ELEMLINK_HH
 #include "glue.hh"
+#include "mplock.hh"
 #include <assert.h>
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
@@ -19,6 +20,7 @@ class ElementLink {
   int _max_tickets;
 #endif
   ElementLink *_list;
+  Spinlock _worklist_lock;
 
  public:
 
@@ -32,6 +34,10 @@ class ElementLink {
     , _pass(0), _stride(0), _tickets(-1), _max_tickets(-1)
 #endif
     { }
+
+  bool worklist_lock_attempt();
+  void worklist_lock_acquire();
+  void worklist_lock_release();
 
   bool scheduled() const		{ return _prev; }
   ElementLink *scheduled_next() const	{ return _next; }
@@ -58,6 +64,29 @@ class ElementLink {
 };
 
 
+inline bool
+ElementLink::worklist_lock_attempt()
+{
+  if (_list) 
+    return _list->_worklist_lock.attempt();
+  else
+    return true;
+}
+
+inline void
+ElementLink::worklist_lock_acquire()
+{
+  if (_list)
+    _list->_worklist_lock.acquire();
+}
+
+inline void
+ElementLink::worklist_lock_release()
+{
+  if (_list) 
+    _list->_worklist_lock.release();
+}
+
 inline void
 ElementLink::initialize_link(ElementLink *r)
 {
@@ -68,11 +97,13 @@ ElementLink::initialize_link(ElementLink *r)
 inline void
 ElementLink::unschedule()
 {
+  worklist_lock_acquire();
   if (_next) {
     _next->_prev = _prev;
     _prev->_next = _next;
   }
   _next = _prev = 0;
+  worklist_lock_release();
 }
 
 #ifndef RR_SCHED
@@ -98,6 +129,8 @@ ElementLink::adj_tickets(int delta)
 inline void
 ElementLink::reschedule()
 {
+  worklist_lock_acquire();
+
   // should not be scheduled at this point
   if (_next) {
     _next->_prev = _prev;
@@ -130,18 +163,26 @@ ElementLink::reschedule()
   _prev->_next = this;
   n->_prev = this;
 #endif
+ 
+  worklist_lock_release();
 }
 
 inline void
 ElementLink::join_scheduler()
 {
-  if (_tickets < 1 || scheduled()) return;
+  worklist_lock_acquire();
+  if (_tickets < 1 || scheduled()) {
+    worklist_lock_release();
+    return;
+  }
   if (_list->_next == _list)
     /* nothing on worklist */
     _pass = 0;
   else 
     _pass = _list->_next->_pass;
   reschedule();
+ 
+  worklist_lock_release();
 }
 
 #else /* RR_SCHED */
@@ -149,18 +190,22 @@ ElementLink::join_scheduler()
 inline void
 ElementLink::reschedule()
 {
+  worklist_lock_acquire();
   ElementLink *n = _list->_next;
   _prev = _list->_prev;
   _next = _list;
   _list->_prev = this;
   _prev->_next = this;
+  worklist_lock_release();
 }
 
 inline void
 ElementLink::join_scheduler()
 {
+  worklist_lock_acquire();
   if (!scheduled())
     reschedule();
+  worklist_lock_release();
 }
 
 #endif /* RR_SCHED */
@@ -168,6 +213,7 @@ ElementLink::join_scheduler()
 inline void
 ElementLink::schedule_immediately()
 {
+  worklist_lock_acquire();
   // should not be scheduled at this point
   if (_next) {
     _next->_prev = _prev;
@@ -178,6 +224,8 @@ ElementLink::schedule_immediately()
   _prev = _list;
   _list->_next = this;
   _next->_prev = this;
+  
+  worklist_lock_release();
 }
 
 #endif
