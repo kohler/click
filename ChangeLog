@@ -1,3 +1,12 @@
+2004-08-17 Tuesday 00:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/userutils.cc (1.38): fewer backticks
+
+2004-08-17 Tuesday 00:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/samplepackage/: README (1.4), sampleelt.cc (1.9):
+	samplepackage updates
+
 2004-08-16 Monday 20:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromdagdump.cc (1.22), fromdagdump.cc (1.23):
