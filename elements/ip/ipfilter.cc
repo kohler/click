@@ -277,13 +277,13 @@ IPFilter::Primitive::set_mask(u_int32_t full_mask, int shift, ErrorHandler *errh
 	_op_negated = !_op_negated;
       return 0;
     } else if ((_op == OP_LT && data == 0) || data >= full_mask)
-      return errh->error("value %d out of range", data);
+      return errh->error("comparison to value %d out of range (0-%u)", data, full_mask);
     else
       return errh->error("bad relation `%s%s %d'\n(I can only handle relations of the form `< POW', `>= POW', `<= POW-1', or\n`> POW-1' where POW is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
   }
 
   if (data > full_mask)
-    return errh->error("value %d out of range", data);
+    return errh->error("value %d out of range (0-%u)", data, full_mask);
 
   _u.u = data << shift;
   _mask.u = full_mask << shift;
@@ -493,17 +493,24 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     break;
 
    case TYPE_IPECT:
-    if (_data != TYPE_NONE)
-      return errh->error("`ip ect' directive takes no data");
+    if (_data == TYPE_NONE) {
+      _mask.u = IP_ECNMASK;
+      _u.u = 0;
+      _op_negated = true;
+    } else if (_data == TYPE_INT) {
+      if (set_mask(0x3, 0, errh) < 0)
+	return -1;
+    } else
+      return errh->error("weird data given to `ip ect' directive");
     _type = TYPE_TOS;
-    _u.u = _mask.u = IP_ECN_ECT;
     break;
 
    case TYPE_IPCE:
     if (_data != TYPE_NONE)
       return errh->error("`ip ce' directive takes no data");
     _type = TYPE_TOS;
-    _u.u = _mask.u = IP_ECN_CE;
+    _mask.u = IP_ECNMASK;
+    _u.u = IP_ECN_CE;
     break;
 
    case TYPE_TTL:
@@ -864,7 +871,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     prev_prim.clear();
   
   // optional relational operation
-  String wd = (pos >= words.size() ? String() : words[pos]);
+  String wd = (pos >= words.size() - 1 ? String() : words[pos]);
   pos++;
   if (wd == "=" || wd == "==")
     /* nada */;
@@ -925,8 +932,11 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
     } else if (cp_ip_prefix(wd, prim._u.c, prim._mask.c, this))
       prim._data = TYPE_NET;
 
-    else
+    else {
+      if (prim._op != OP_EQ || prim._op_negated)
+	errh->error("dangling operator near `%s'", wd.cc());
       pos--;
+    }
   }
 
   if (pos == first_pos) {
@@ -1006,7 +1016,7 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
       
       int pos = parse_expr(words, 1, tree, prev_prim, &cerrh);
       if (pos < words.size())
-	cerrh.error("garbage after expression near `%s'", String(words[pos]).cc());
+	cerrh.error("garbage after expression at `%s'", String(words[pos]).cc());
     }
     
     finish_expr_subtree(tree, true, -slot);
