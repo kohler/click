@@ -3,7 +3,7 @@
 
 /*
  * =c
- * Monitor("SRC"|"DST", MAX, VAR1, VAR2, ..., VARN)
+ * Monitor("SRC"|"DST", MAX [, VAR1, VAR2, ..., VARn])
  * =d
  * Input: IP packets (no ether header).
  *
@@ -19,8 +19,12 @@
  * number of packets going to/coming from a cluster exceeds MAX, it is split
  * based on the second byte, and so on.
  *
- * The number of inputs and outputs for Monitor equals N in VARN. Each VARx
- * is related to one input and one output. 
+ * The number of inputs for Monitor equals n in VARn. Each VARx is related to
+ * one input. Packets coming in on input x will cause the value of that src/dst
+ * cluster to be changed with the value of VARx. If no VAR is supplied, then
+ * Monitor has one input with a weight of 1.
+ *
+ * Monitor has one output.
  *
  * Monitor should be used together with Classifier to count packets with
  * specific features.
@@ -38,16 +42,18 @@
  *
  * For example,
  *
- * = c :: Classifier(SYN, NON-SYN);
+ * = c :: Classifier(SYN, SYN-ACK);
  * =
  * = ... -> c;
- * =
- * = c[0] -> Monitor(DST, 10, 1);
- * = c[1] -> ...
  *
- * makes Monitor count the number of SYN packets going to which destinations. If
- * the number of SYN packets going to one cluster exceeds 10 per second, it is
- * split.
+ * = m :: Monitor(DST, 10, 1, -2);
+ * =
+ * = c[0] -> [0]m -> ...
+ * = c[1] -> [1]m -> ...
+ *
+ * makes m count packets based on the destination IP address. For every
+ * SYN-packet, the value is raised by 1, for every SYN-ACK packet the value is
+ * lowered by 2.
  *
  * =a Classifier
  */

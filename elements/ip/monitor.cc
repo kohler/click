@@ -1,5 +1,5 @@
 /*
- * monitor.{cc,hh} -- counts all kinds of things.
+ * monitor.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -22,6 +22,7 @@
 
 Monitor::Monitor()
 {
+  add_output();
 }
 
 Monitor::~Monitor()
@@ -64,19 +65,17 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   int change;
   for (int i = 2; i < args.size(); i++) {
     String arg = args[i];
-    if(cp_integer(arg, change, &arg) && cp_eat_space(arg)) {
+    if(cp_integer(arg, change, &arg) && cp_eat_space(arg))
       createbase(change);
-    } else {
+    else {
       errh->error("expects \"SRC\"|\"DST\", MAX [, VAL1, VAL2, ..., VALn]");
       return -1;
     }
   }
 
   // Add default if not supplied.
-  if(bases.size() == 0) {
+  if(bases.size() == 0)
     createbase();
-  }
-
   return 0;
 #endif
 }
@@ -92,7 +91,6 @@ Monitor::createbase(int change = 1)
   bases.push_back(b);
 
   add_input();
-  add_output();
 }
 
 
