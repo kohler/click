@@ -38,8 +38,6 @@ public:
   
   void push(int port, Packet *);
 
-  static double calc_range(grid_location l1, grid_location l2);
-
 private:
   GridLocationInfo *_locinfo;
   int _range; // in metres, negative meand don't filter

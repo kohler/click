@@ -3,36 +3,38 @@
 
 /*
  * =c
- * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes)
+ * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes, GridLocationInfo)
  *
  * =s Grid
  * =d 
  *
- * Forward packets geographically according to the tables accumulated by the
- * UpdateGridRoutes element.  MAC-ADDRESS and IP-ADDRESS are the local
- * machine's addresses.
+ * Forward packets geographically according to the tables accumulated
+ * by the UpdateGridRoutes element, and the node's own position as
+ * reported by the GridLocationInfo element.  MAC-ADDRESS and
+ * IP-ADDRESS are the local machine's addresses.
  *
- * Input 0 expects GRID_NBR_ENCAP packets with MAC headers.  Assumes
+ * Input 0 expects Grid packets with MAC headers.  Assumes
  * packets aren't for us.
  *
  * Output 0 pushes out packets to be sent by a device, with next hop
- * info filled in.  These will be GRID_NBR_ENCAP packets with MAC
+ * info filled in.  These will be Grid packets with MAC
  * headers.
  *
- * Output 1 pushes out packets the LookupGeographicGridRoute doesn't
- * know how to handle (e.g. we don't know how to route around a hole).
- * These will also be GRID_NBR_ENCAP packets with MAC headers.
- *
- * Output 2 it the error output; it pushes out packets that are bad:
- * e.g., Grid protocol packets with an unknown type.
+ * Output 1 is the error output: it pushes out packets the
+ * LookupGeographicGridRoute doesn't know how to handle (e.g. we don't
+ * know how to route around a hole, or we don't know our own
+ * location), or are bad (e.g. some type we don't know how to handle).
+ * These will also be Grid packets with MAC headers.
  *
  * =a
  * LookupLocalGridRoute
- * UpdateGridRoutes */
+ * UpdateGridRoutes 
+ * GridLocationInfo */
 
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "gridroutetable.hh"
+#include "gridlocationinfo.hh"
 #include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
@@ -60,10 +62,16 @@ class LookupGeographicGridRoute : public Element, public GridRouteActor {
 
 private:
 
-  bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth,
-			       IPAddress *dest_ip, IPAddress *best_hop_ip) const;
+  bool get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth,
+			       IPAddress *dest_ip, IPAddress *best_nbr_ip) const;
+
+  void increment_hops_travelled(WritablePacket *p) const;
+  bool dont_forward(const Packet *p) const;
+  bool dest_loc_good(const Packet *p) const;
+  grid_location get_dest_loc(const Packet *p) const;
 
   GridRouteTable *_rt;
+  GridLocationInfo *_li;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
   Task _task;

@@ -1,7 +1,7 @@
 #ifndef GRID_HH
 #define GRID_HH
 
-// XXX when these settle, we can reorder, align and pack the fields etc...
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
 // packet data should be 4 byte aligned
 #define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
@@ -9,21 +9,56 @@
 /* All multibyte values sent over the wire in network byte order,
    unless otherwise noted (e.g. IP addresses) */
 
+static const double GRID_RAD_PER_DEG = 0.017453293; // from xcalc
+static const double GRID_EARTH_RADIUS = 6378156; // metres XXX do i believe this?
+static const double GRID_PI = 3.1415927;
+
 // A geographical position.
 // Suitable for including inside a packet.
 struct grid_location {
+public:
+  // default: all zeroes
+  grid_location() : _mslat(0), _mslon(0), _h(0) { };
 
-// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+  // lat, lon in degrees, height in metres
+  grid_location(double lat, double lon, double h = 0) 
+  { set(lat, lon, h); }
 
+  // Latitude in degrees.
+  double lat() const {
+    return(toDeg(_mslat));
+  }
+
+  // Longitude in degrees.
+  double lon() const {
+    return(toDeg(_mslon));
+  }
+
+  // Height in metres.
+  double h() const {
+    return (double) _h / 1000.0;
+  }
+
+  // What is the distance between l1 and l2 in meters?
+  // (definition in gridlocationinfo.cc)
+  static double calc_range(const grid_location &l1, const grid_location &l2);    
+
+  String s() const {
+    char buf[255];
+    snprintf(buf, 255, "%.5f,%.5f,%.3f", lat(), lon(), h());
+    return String(buf);
+  }
+
+private:
   // Internally, we remember positions as lat/lon in milliseconds,
   // as 32-bit integers in network order.
   long _mslat;
   long _mslon;
 
-  grid_location() : _mslat(0), _mslon(0) { };
-  grid_location(float lat, float lon) {
-    set(lat, lon);
-  }    
+  // heights as millimetres.  we don't really have a good height datum.
+  long _h;
+
+  //  long _pad; // XXX ???
 
   // Convert milliseconds to degrees.
   static double toDeg(long ms) {
@@ -36,36 +71,45 @@ struct grid_location {
     return(htonl((long)(d * 1000 * 60 * 60)));
   }
 
-  // Latitude in degrees.
-  double lat() const {
-    return(toDeg(_mslat));
-  }
-
-  // Longitude in degrees.
-  double lon() const {
-    return(toDeg(_mslon));
-  }
-
-  // Set the lat and lon, in degrees.
-  void set(double lat, double lon) {
+  // Set the lat, lon in degrees, h in metres
+  void set(double lat, double lon, double h) {
     _mslat = toMS(lat);
     _mslon = toMS(lon);
+    _h = (long) (h * 1000);
   }
 
-  String s() const {
-    char buf[255];
-    snprintf(buf, 255, "%f %f", lat(), lon());
-    return String(buf);
-  }
+  static int sign(double x) { return (((x) < 0) ? -1 : 1); }
+
 };
+
+
+// regions for geocast
+struct grid_region {
+public:
+  grid_region(const grid_location &c, unsigned long r) 
+    : _center(c) { _radius = htonl(r); }
+
+  grid_region() : _radius(0) { }
+
+  const unsigned int radius() { return ntohl(_radius); }
+  const struct grid_location center() { return _center; }
+
+  bool contains(const grid_location &l) 
+  { return grid_location::calc_range(l, _center) <= _radius; }
+
+private:
+  struct grid_location _center;
+  unsigned int _radius; // stored in network byte order
+};
+
+
 
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfecf;
+  static const unsigned int GRID_VERSION = 0xfed0;
 
-  unsigned int version; // look, doug, a coherent variable name
-                        // (should maybe be called nbr_vrs or something)
+  unsigned int version;     // which version of the grid protocol we are using
 
   unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
 
@@ -77,6 +121,7 @@ struct grid_hdr {
   static const unsigned char GRID_LOC_REPLY   = 5;  // followed by grid_nbr_encap 
   static const unsigned char GRID_ROUTE_PROBE = 6;  // followed by grid_nbr_encap and grid_route_probe
   static const unsigned char GRID_ROUTE_REPLY = 7;  // followed by grid_nbr_encap and grid_route_reply
+  static const unsigned char GRID_GEOCAST     = 8;  // followed by grid_geocast
 
   unsigned char pad1, pad2;
 
@@ -151,6 +196,8 @@ struct grid_nbr_entry {
     unsigned int ttl;
   };
 
+  unsigned int metric;
+
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
@@ -222,6 +269,15 @@ struct grid_route_reply {
   unsigned int data2;
 };
 
+struct grid_geocast {
+  struct grid_region dst_region;
+  unsigned short dst_loc_err;
+  unsigned char hops_travelled;
+  char pad;
+  unsigned int seq_no;
+  // no payload length field, use grid_hdr total_len field.
+  // no loc_good flag; by definition, the destination location must be good.
+};
 
 inline String
 grid_hdr::type_string(unsigned char type)
@@ -234,13 +290,9 @@ grid_hdr::type_string(unsigned char type)
   case GRID_LOC_QUERY: return String("GRID_LOC_QUERY"); break;
   case GRID_ROUTE_PROBE: return String("GRID_ROUTE_PROBE"); break;
   case GRID_ROUTE_REPLY: return String("GRID_ROUTE_REPLY"); break;
+  case GRID_GEOCAST: return String("GRID_GEOCAST"); break;
   default: return String("Unknown-type");
   }
 }
-
-
-static const double GRID_RAD_PER_DEG = 0.017453293; // from xcalc
-static const double GRID_EARTH_RADIUS = 6378156; // metres XXX do i believe this?
-static const double GRID_PI = 3.1415927;
 
 #endif

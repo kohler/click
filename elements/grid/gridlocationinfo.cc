@@ -22,12 +22,15 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
+#include <math.h>
+
 GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, this)
 {
   MOD_INC_USE_COUNT;
   _move = 0;
   _lat0 = 32.2816;  // Doug's house in Bermuda.
   _lon0 = -64.7685;
+  _h0 = 0;
   _t0 = 0;
   _t1 = 0;
   _vlat = 0;
@@ -52,7 +55,7 @@ GridLocationInfo::logging_hook(Timer *, void *thunk) {
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "loc %f %f\n\n", loc.lat(), loc.lon());
+  int res = snprintf(buf, BUFSZ, "loc %s\n\n", loc.s().cc());
   if (res < 0) {
     click_chatter("LocationInfo read handler buffer too small");
     return;
@@ -67,11 +70,15 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int do_move = 0;
   int lat_int, lon_int;
+  int h_int = 0;
+
   String chan("routelog");
   int res = cp_va_parse(conf, this, errh,
 			// 5 fractional digits ~= 1 metre precision at the equator
 			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
+			cpOptional,
+			cpReal10, "height (decimal metres)", 3, &h_int,
 			cpKeywords,
                         "MOVESIM", cpInteger, "simulate moving?", &do_move,
 			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
@@ -82,8 +89,9 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
 
-  float lat = ((float) lat_int) / 100000.0f;
-  float lon = ((float) lon_int) / 100000.0f; 
+  double lat = ((double) lat_int) / 1e5;
+  double lon = ((double) lon_int) / 1e5; 
+  double h = ((double) h_int) / 1e3;
   if (lat > 90 || lat < -90)
     return errh->error("%s: latitude must be between +/- 90 degrees", id().cc());
   if (lon > 180 || lon < -180)
@@ -91,6 +99,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 
   _lat0 = lat;
   _lon0 = lon;
+  _h0 = h;
   _move = do_move;
 
   _extended_logging_errh = router()->chatter_channel(chan);
@@ -182,7 +191,7 @@ GridLocationInfo::get_current_location(unsigned int *seq_no)
     _seq_no++;
   }
 
-  grid_location gl(xlat(), xlon());
+  grid_location gl(xlat(), xlon(), _h0);
   if (seq_no != 0)
     *seq_no = _seq_no;
   return(gl);
@@ -196,7 +205,7 @@ loc_read_handler(Element *f, void *)
   
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  int res = snprintf(buf, BUFSZ, "%f, %f (err=%hu good=%s seq=%u)\n", loc.lat(), loc.lon(),
+  int res = snprintf(buf, BUFSZ, "%s (err=%hu good=%s seq=%u)\n", loc.s().cc(),
 		     l->loc_err(), (l->loc_good() ? "yes" : "no"), l->seq_no());
   if (res < 0) {
     click_chatter("GridLocationInfo read handler buffer too small");
@@ -262,6 +271,72 @@ GridLocationInfo::set_new_dest(double v_lat, double v_lon)
   _t0 = t;
   _vlat = v_lat;
   _vlon = v_lon;
+}
+
+
+double 
+grid_location::calc_range(const grid_location &l1, const grid_location &l2)
+{
+  /* Assumes all angles are valid latitude or longitudes */
+  
+  /*
+   * Calculates distance between two 3-D locations by pretending the
+   * curved surface of the earth is actually a flat plane.  We can
+   * use Euclidean distance, first calculating the great circle
+   * distance between two points on earth, then pretending that
+   * distance is along a straight line, and treating it as the
+   * bottom of a right triangle whose vertical side is the
+   * difference in the heights of the two points.  This ought to be
+   * pretty much accurate when points are close enough enough
+   * together when their heights are important.  
+   */
+  
+  // convert degrees to radians
+  double l1_lat = l1.lat() * GRID_RAD_PER_DEG;
+  double l1_lon = l1.lon() * GRID_RAD_PER_DEG;
+  double l2_lat = l2.lat() * GRID_RAD_PER_DEG;
+  double l2_lon = l2.lon() * GRID_RAD_PER_DEG;
+  
+  double diff_lon;
+  if (sign(l1_lon) == sign(l2_lon))
+    diff_lon = fabs(l1_lon - l2_lon);
+  else {
+    if (sign(l1_lon) < 0)
+      diff_lon = l2_lon - l1_lon;
+    else
+      diff_lon = l1_lon - l2_lon;
+  }
+  
+  double sin_term = sin(l1_lat) * sin(l2_lat);
+  double cos_term = cos(l1_lat) * cos(l2_lat);
+  double cos_dl = cos(diff_lon);
+  double cos_g_c = sin_term + cos_term*cos_dl; 
+  
+  // linux precision issues?
+#define EPSILON 1.0e-7
+  if ((cos_g_c + 1.0 <= EPSILON) ||
+      (cos_g_c - 1.0 >= EPSILON)) {
+#if 1
+    click_chatter("cos_g_c: %0.30f", cos_g_c);
+    click_chatter("sin_term: %0.30f", sin_term);
+    click_chatter("cos_term: %0.30f", cos_term);
+    click_chatter("cos_dl: %0.30f", cos_dl);
+    click_chatter("l1_lat: %0.30f", l1_lat);
+    click_chatter("l1_lon: %0.30f", l1_lon);
+    click_chatter("l2_lat: %0.30f", l2_lat);
+    click_chatter("l2_lon: %0.30f", l2_lon);
+    click_chatter("l1.lat: %0.30f", l1.lat());
+    click_chatter("l1.lon: %0.30f", l1.lon());
+    click_chatter("l2.lat: %0.30f", l2.lat());
+    click_chatter("l2.lon: %0.30f", l2.lon());
+#endif
+    return -1; // bogus angles
+  }
+  double g_c_dist = acos(cos_g_c) * GRID_EARTH_RADIUS;
+  
+  double dh = fabs(l1.h() - l2.h());
+  double r_squared = dh*dh + g_c_dist*g_c_dist;
+  return sqrt(r_squared);
 }
 
 

@@ -41,7 +41,8 @@ public:
     NoLocalRoute = 2,
     NoDestLoc = 3,
     NoCloserNode = 4,
-    ConfigError = 5
+    ConfigError = 5,
+    OwnLocUnknown = 6
   };    
 
   virtual void route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2) = 0;

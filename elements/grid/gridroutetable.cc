@@ -27,13 +27,15 @@
 #include <click/glue.hh>
 #include "gridroutetable.hh"
 
+#define METRIC 1
 
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
   _seq_no(0),
   _max_hops(3), 
   _expire_timer(expire_hook, this),
-  _hello_timer(hello_hook, this)
+  _hello_timer(hello_hook, this),
+  _metric_type(MetricHopCount)
 {
   MOD_INC_USE_COUNT;
 }
@@ -64,14 +66,13 @@ GridRouteTable::log_route_table ()
     const RTEntry &f = i.value();
     
     snprintf(str, sizeof(str), 
-	    "%s %f %f %s %d %c %u\n", 
-	    f.dest_ip.s().cc(),
-	    f.loc.lat(),
-	    f.loc.lon(),
-	    f.next_hop_ip.s().cc(),
-	    f.num_hops,
-	    (f.is_gateway ? 'y' : 'n'),
-	    f.seq_no);
+	     "%s %s %s %d %c %u\n", 
+	     f.dest_ip.s().cc(),
+	     f.loc.s().cc(),
+	     f.next_hop_ip.s().cc(),
+	     f.num_hops,
+	     (f.is_gateway ? 'y' : 'n'),
+	     f.seq_no);
     _extended_logging_errh->message(str);
   }
   _extended_logging_errh->message("\n");
@@ -82,6 +83,7 @@ int
 GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
+  String metric("hopcount");
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
 			cpInteger, "route broadcast period (msec)", &_period,
@@ -89,9 +91,10 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
 			cpElement, "GridGatewayInfo element", &_gw_info,
-			cpOptional,
-			cpInteger, "max hops", &_max_hops,
-			cpString, "log channel name", &chan,
+			cpKeywords,
+			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
+			"LOGCHANNEL", cpString, "log channel name", &chan,
+			"METRIC", cpString, "route metric", &metric,
 			0);
 
   if (res < 0)
@@ -119,6 +122,10 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _extended_logging_errh = router()->chatter_channel(chan);
   assert(_extended_logging_errh);
+
+  _metric_type = check_metric_type(metric);
+  if (_metric_type < 0)
+    return errh->error("Unknown metric type ``%s''", metric.cc());
   
   return res;
 }
@@ -152,6 +159,73 @@ GridRouteTable::current_gateway()
   return NULL;
 }
 
+
+void
+GridRouteTable::initialize_metric(RTEntry &r)
+{
+  switch (_metric_type) {
+  case MetricHopCount:
+    r.metric = r.num_hops;
+    r.metric_valid = true;
+    break;
+  case MetricCumulativeDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinSigStrength:
+    assert(0);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+void 
+GridRouteTable::update_metric(RTEntry &r)
+{
+  switch (_metric_type) {
+  case MetricHopCount:
+    r.metric = r.num_hops;
+    r.metric_valid = true;
+    break;
+  case MetricCumulativeDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinSigStrength:
+    assert(0);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+
+bool
+GridRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
+{
+  switch (_metric_type) {
+  case MetricHopCount:
+    return r1.num_hops < r2.num_hops;
+    break;
+  case MetricCumulativeDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinDeliveryRate:
+    assert(0);
+    break;
+  case MetricMinSigStrength:
+    assert(0);
+    break;
+  default:
+    assert(0);
+  }
+  return false;
+}
 
 /*
  * expects grid LR packets, with ethernet and grid hdrs
@@ -210,8 +284,11 @@ GridRouteTable::simple_action(Packet *packet)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
-  if (ntohl(hlo->ttl) > 0)
-    _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
+  if (ntohl(hlo->ttl) > 0) {
+    RTEntry r(ipaddr, ethaddr, gh, hlo, jiff);
+    initialize_metric(r);
+    _rtes.insert(ipaddr, r);
+  }
   
   /*
    * loop through and process other route entries in hello message 
@@ -226,6 +303,8 @@ GridRouteTable::simple_action(Packet *packet)
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     RTEntry route(ipaddr, ethaddr, curr, jiff);
+
+    update_metric(route);
 
     /* ignore route if ttl has run out */
     if (route.ttl <= 0)
@@ -247,7 +326,12 @@ GridRouteTable::simple_action(Packet *packet)
      */
     if (curr->num_hops == 0) {
 
-      assert(route.seq_no & 1); // broken routes have odd seq_no
+      if ((route.seq_no & 1) == 0) {
+	// broken routes should have odd seq_no
+	click_chatter("ignoring invalid broken route entry from %s for %s: num_hops was 0 but seq_no was even\n",
+		      ipaddr.s().cc(), route.dest_ip.s().cc());
+	continue;
+      }
     
       /* if we don't have a route to this destination, ignore it */
       if (!our_rte)
@@ -287,11 +371,12 @@ GridRouteTable::simple_action(Packet *packet)
      * regular route entry 
      */
 
-    /* ignore old routes and long routes */
+    /* ignore old routes and routes with bad metrics */
     if (our_rte                                  // we already have a route
+	&& our_rte->metric_valid                 // which has a valid metric
 	&& (our_rte->seq_no > route.seq_no       // which has a newer seq_no
-	    || (our_rte->seq_no == route.seq_no  // or the same seq_no
-		&& route.num_hops + 1 >= our_rte->num_hops))) // and is as close
+	    || (our_rte->seq_no == route.seq_no  //           or the same seq_no
+		&& !metric_preferable(route, *our_rte)))) //     and no better metric
       continue;
 
     /* add the entry */
@@ -308,7 +393,7 @@ GridRouteTable::simple_action(Packet *packet)
 
   /* send triggered updates */
   if (triggered_rtes.size() > 0)
-    send_routing_update(triggered_rtes, false); // XXX should seq_no get incremented?
+    send_routing_update(triggered_rtes, false); // XXX should seq_no get incremented for triggered routes -- probably?
 
   packet->kill();
   return 0;
@@ -398,6 +483,66 @@ GridRouteTable::print_eth(Element *e, void *)
   return n->_eth.s();
 }
 
+String
+GridRouteTable::print_metric_type(Element *e, void *)
+{
+  GridRouteTable *n = (GridRouteTable *) e;
+
+  switch (n->_metric_type) {
+  case MetricHopCount: return "hopcount\n"; break;
+  case MetricCumulativeDeliveryRate: return "cumulative_delivery_rate\n"; break;
+  case MetricMinDeliveryRate: return "min_delivery_rate\n"; break;
+  case MetricMinSigStrength: return "min_sig_strength\n"; break;
+  default: 
+    assert(0);
+    return "";
+  }
+}
+
+int 
+GridRouteTable::check_metric_type(const String &s)
+{
+  String s2 = s.lower();
+  if (s2 == "hopcount")
+    return MetricHopCount;
+  else if (s2 == "cumulative_delivery_rate")
+    return MetricCumulativeDeliveryRate;
+  else if (s2 == "min_delivery_rate")
+    return MetricMinDeliveryRate;
+  else if (s2 == "min_sig_strength")
+    return MetricMinSigStrength;
+  else
+    return -1;
+}
+
+int
+GridRouteTable::write_metric_type(const String &arg, Element *el, 
+				  void *, ErrorHandler *errh)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  int type = check_metric_type(arg);
+  if (type < 0)
+    return errh->error("unknown metric type ``%s''", ((String) arg).cc());
+  
+  if (type != rt->_metric_type) {
+    rt->_metric_type = type;
+
+    /* make sure we don't try to use the old metric for a route */
+    
+    Vector<RTEntry> entries;
+    for (RTIter i = rt->_rtes.first(); i; i++) {
+      /* skanky, but there's no reason for this to be quick.  i guess
+         the BigHashMap doesn't let you change its values. */
+      RTEntry e = i.value();
+      e.metric_valid = false;
+      entries.push_back(e);
+    }
+    
+    for (int i = 0; i < entries.size(); i++) 
+      rt->_rtes.insert(entries[i].dest_ip, entries[i]);
+  }
+  return 0;
+}
 
 void
 GridRouteTable::add_handlers()
@@ -408,6 +553,8 @@ GridRouteTable::add_handlers()
   add_read_handler("rtes", print_rtes, 0);
   add_read_handler("ip", print_ip, 0);
   add_read_handler("eth", print_eth, 0);
+  add_read_handler("metric_type", print_metric_type, 0);
+  add_write_handler("metric_type", write_metric_type, 0);
 }
 
 
@@ -630,10 +777,9 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
     const RTEntry &f = rte_info[i];
     snprintf(str, sizeof(str), 
-	     "%s %f %f %s %d %c %u\n", 
+	     "%s %s %s %d %c %u\n", 
 	     f.dest_ip.s().cc(),
-	     f.loc.lat(),
-	     f.loc.lon(),
+	     f.loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
 	     f.num_hops,
 	     (f.is_gateway ? 'y' : 'n'),
@@ -673,3 +819,4 @@ template class BigHashMap<IPAddress, bool>;
 #include <click/vector.cc>
 template class Vector<IPAddress>;
 template class Vector<GridRouteTable::RTEntry>;
+

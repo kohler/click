@@ -73,7 +73,7 @@ table_read_handler(Element *f, void *)
   char buf[BUFSZ];
   for (LocationTable::Table::Iterator iter = l->_locs.first(); iter; iter++) {
     const LocationTable::entry &ent = iter.value();
-    int r = snprintf(buf, BUFSZ, "%s lat=%f lon=%f err=%d\n", iter.key().s().cc(), ent.loc.lat(), ent.loc.lon(), ent.err);
+    int r = snprintf(buf, BUFSZ, "%s loc=%s err=%d\n", iter.key().s().cc(), ent.loc.s().cc(), ent.err);
     if (r < 0) {
       click_chatter("LocationTable %s read handler buffer too small", l->id().cc());
       return String("");

@@ -56,8 +56,7 @@ SimpleLocQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
 			  cpReal10, "longitude", 7, &ilon,
 			  0) < 0)
       return -1;
-    grid_location loc;
-    loc.set((double) ilat /  1.0e7, (double) ilon /  1.0e7);
+    grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
     _locs.insert(ip, loc);
   }
   return 0;
@@ -119,8 +118,7 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
 			cpReal10, "longitude", 7, &ilon,
 			0) < 0)
     return -1;
-  grid_location loc;
-  loc.set((double) ilat /  1.0e7, (double) ilon /  1.0e7);
+  grid_location loc((double) ilat /  1.0e7, (double) ilon /  1.0e7);
   l->_locs.insert(ip, loc);
 
   return 0;

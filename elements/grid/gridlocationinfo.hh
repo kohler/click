@@ -3,18 +3,21 @@
 
 /*
  * =c
- * GridLocationInfo(LATITUDE, LONGITUDE [, I<KEYWORDS>])
+ * GridLocationInfo(LATITUDE, LONGITUDE [, HEIGHT, I<KEYWORDS>])
  * =s Grid
  * =io
  * None
  * =d
  *
  * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
- * North and East, negative is South and West.
+ * North and East, negative is South and West.  HEIGHT is in metres,
+ * positive is up.
  *
- * Only 5 digits of precision are used, the rest are ignored and
- * rounding is not performed on the remaining digits.  This should
- * provide about 1 metre of precision near the equator.
+ * Only 5 fractional digits are used for latitude and longitude, the
+ * rest are ignored and rounding is not performed on the remaining
+ * digits.  This should provide about 1 metre of precision near the
+ * equator.  Only 3 fractional digits are used for the height, giving
+ * 1 millimetre precision in height.
  *
  *
  * Keyword arguments are:
@@ -50,7 +53,7 @@
  * =h loc read/write 
  *
  * When reading, returns the element's location information, in this
- * format: ``lat, lon (err=<err-radius> good=<good?> seq=<seq>)''.
+ * format: ``lat, lon, height (err=<err-radius> good=<good?> seq=<seq>)''.
  *
  *  <err-radius> is in metres, <good?> is "yes" or "no", indicating
  *  whether the location information is at all valid (i.e. don't
@@ -107,6 +110,7 @@ protected:
   int _move;    // Should we move?
   double _lat0; // Where we started.
   double _lon0;
+  double _h0;
   double _t0;   // When we started.
   double _t1;   // When we're to pick new velocities.
   double _vlat; // Latitude velocity (in degrees).

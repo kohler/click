@@ -71,7 +71,7 @@ nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     ggi,
 		     NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
-geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
 
 grid_demux :: Classifier(OFFSET_GRID_PROTO/GRID_PROTO_NBR_ENCAP,    // encapsulated (data) packets
 			 OFFSET_GRID_PROTO/GRID_PROTO_LOC_QUERY,    // loc query packets
@@ -217,7 +217,6 @@ lr [3]
 
 geo [0] -> to_grid_if;
 geo [1] -> Discard; // geo route can't handle
-geo [2] -> Discard; // bad packet
 
 fr [1] -> Discard; // out of range
 

@@ -63,7 +63,7 @@ PrintGrid::encap_to_string(grid_nbr_encap *nb)
   line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
   if (nb->dst_loc_good) {
     char buf[50];
-    snprintf(buf, 50, "dst_lat=%.5f dst_lon=%.5f ", nb->dst_loc.lat(), nb->dst_loc.lon());
+    snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().cc());
     line += buf;
     line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
   }
@@ -107,7 +107,7 @@ PrintGrid::simple_action(Packet *p)
   line += "ip=" + IPAddress(gh->ip).s() + " ";
   if (gh->loc_good) {
     char buf[50];
-    snprintf(buf, 50, "lat=%.5f lon=%.5f ", gh->loc.lat(), gh->loc.lon());
+    snprintf(buf, 50, "loc=%s ", gh->loc.s().cc());
     line += buf;
     line += "loc_err=" + String(ntohs(gh->loc_err)) + " ";
   }
@@ -119,7 +119,7 @@ PrintGrid::simple_action(Packet *p)
   line += "tx_ip=" + IPAddress(gh->tx_ip).s() + " ";
   if (gh->tx_loc_good) {
     char buf[50];
-    snprintf(buf, 50, "tx_lat=%.5f tx_lon=%.5f ", gh->tx_loc.lat(), gh->tx_loc.lon());
+    snprintf(buf, 50, "tx_loc=%s ", gh->tx_loc.s().cc());
     line += buf;
     line += "tx_loc_err=" + String(ntohs(gh->tx_loc_err)) + " ";
   }
@@ -189,11 +189,11 @@ PrintGrid::simple_action(Packet *p)
     for(i = 0; i < h->num_nbrs; i++){
       char tmp[100];
       snprintf(tmp, sizeof(buf), "%s %s %d %f %f ",
-              IPAddress(na[i].ip).s().cc(),
-              IPAddress(na[i].next_hop_ip).s().cc(),
-              na[i].num_hops,
-              na[i].loc.lat(),
-              na[i].loc.lon());
+	       IPAddress(na[i].ip).s().cc(),
+	       IPAddress(na[i].next_hop_ip).s().cc(),
+	       na[i].num_hops,
+	       na[i].loc.lat(),
+	       na[i].loc.lon());
       strcat(buf, tmp);
     }
   }

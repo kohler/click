@@ -3,17 +3,19 @@
 
 /*
  * =c
- * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW [, MAX-HOPS [, LOG-CHANNEL]])
+ * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV-like local routing protocol
  *
- * =d 
- * Implements a DSDV-like loop-free routing protocol by originating
+ * =d Implements a DSDV-like loop-free routing protocol by originating
  * routing messages based on its routing tables, and processing
  * routing update messages from other nodes.  Maintains an immediate
  * neighbor table, and a multi-hop route table.  Route entries are
- * removed TIMEOUT milliseconds after being installed.
+ * removed TIMEOUT milliseconds after being installed.  PERIOD is the
+ * milliseconds between route broadcasts, randomly offset by up to
+ * JITTER milliseconds.  ETH and IP describe this node's Grid
+ * addresses, and GW is the GridGatewayInfo element.
  *
  * Routing message entries are marked with both a sequence number
  * (originated by the destination of the entry) and a real-time ttl.
@@ -39,10 +41,29 @@
  * broken route advertisement and sends an advertisement for the the
  * new route.
  *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item MAX_HOPS
+ * 
+ * Integer.  The maximum number of hops for which a route should
+ * propagate.  The default number of hops is 3.
+ *
+ * =item LOGCHANNEL
+ *
+ * String.  The name of the chatter channel to which route action log
+ * messages should be logged.  Default channel is ``routelog''.
+ *
+ * =item METRIC
+ *
+ * String.  The type of metric that should be used to compare two
+ * routes.  Allowable values are: ``hopcount'',
+ * ``cumulative_delivery_rate'', ``min_delivery_rate'', and
+ * ``min_sig_strength''.  The default is to use hopcount.
  *
  * =a
- * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes 
- */
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
@@ -66,6 +87,8 @@ public:
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
+
+  virtual bool can_live_reconfigure() const { return false; }
 
   Packet *simple_action(Packet *);
 
@@ -93,9 +116,16 @@ public:
 
     int last_updated_jiffies; // last time this entry was updated
 
+    unsigned int metric; // generic metric -- routing code must interpret this as neccessary
+    bool metric_valid;   /* metrics are invalid until updated to
+                            incorporate the last hop's link, i.e. by
+                            calling initialize_metric or
+                            update_metric. */
+
+
     RTEntry() : 
       _init(false), num_hops(0), loc_good(false), is_gateway(false), 
-      seq_no(0), ttl(0), last_updated_jiffies(-1) { }
+      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false) { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
@@ -105,7 +135,7 @@ public:
       next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
       loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
       seq_no(_seq_no), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies)
+      last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
@@ -113,7 +143,7 @@ public:
 	    unsigned int jiff) :
       _init(true), dest_ip(ip), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
-      last_updated_jiffies(jiff)
+      last_updated_jiffies(jiff), metric_valid(false)
     { 
       loc_err = ntohs(gh->loc_err); 
       seq_no = ntohl(hlo->seq_no); 
@@ -125,7 +155,8 @@ public:
 	    unsigned int jiff) :
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
       num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
-      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff)      
+      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
+      metric(nbr->metric), metric_valid(false)
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
@@ -200,12 +231,37 @@ private:
   static int msec_to_jiff(int m)
   { return (CLICK_HZ * m) / 1000; }
 
+  /* update route metric with the last hop from the advertising node */
+  void update_metric(RTEntry &);
+
+  /* initialize metric for one-hop route */
+  void initialize_metric(RTEntry &);
+
+  /* true iff first route's metric is preferable to second route's metric */
+  bool metric_preferable(const RTEntry &, const RTEntry &);
 
   static String print_rtes(Element *e, void *);
   static String print_rtes_v(Element *e, void *);
   static String print_nbrs(Element *e, void *);
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
+  static String print_metric_type(Element *e, void *);
+
+  static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
+
+  static int check_metric_type(const String &);
+  
+
+  enum MetricType {
+    MetricHopCount = 0,            // unsigned int hop count
+    MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
+    MetricMinDeliveryRate,         // unsigned int percentage (0-100)
+    MetricMinSigStrength           // unsigned int negative dBm.  e.g. -40 dBm is 40
+  };
+
+  int _metric_type;
+    
+
 };
 
 #endif

@@ -55,24 +55,32 @@ LookupGeographicGridRoute::configure(const Vector<String> &conf, ErrorHandler *e
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
                         cpElement, "GridRouteTable element", &_rt,
+			cpElement, "GridLocationInfo element", &_li,
 			0);
+
+  if (res < 0)
+    return res;
+
+  if (_rt->cast("GridRouteTable") == 0) {
+    errh->warning("%s: GridRouteTable argument %s has the wrong type",
+                  id().cc(),
+                  _rt->id().cc());
+    return -1;
+  }
+
+  if (_li->cast("GridLocationInfo") == 0) {
+    errh->warning("%s: GridLocationInfo argument %s has the wrong type",
+                  id().cc(),
+                  _li->id().cc());
+    return -1;
+  }
+
   return res;
 }
 
 int
 LookupGeographicGridRoute::initialize(ErrorHandler *errh)
 {
-
-  if(_rt && _rt->cast("GridRouteTable") == 0){
-    errh->warning("%s: GridRouteTable argument %s has the wrong type",
-                  id().cc(),
-                  _rt->id().cc());
-    _rt = 0;
-  } else if (_rt == 0) {
-    errh->warning("%s: no GridRouteTable element given",
-                  id().cc());
-  }
-
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
@@ -99,59 +107,43 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
 
-  /*
-   * send unknown packet type out error output
-   */
-  if (gh->type != grid_hdr::GRID_NBR_ENCAP &&
-      gh->type != grid_hdr::GRID_LOC_REPLY) {
-    click_chatter("LookupGeographicGridRoute %s: received unexpected Grid packet type: %s", 
+  if (dont_forward(packet)) {
+    click_chatter("LookupGeographicGridRoute %s: not supposed to forward packet of type %s",
 		  id().cc(), grid_hdr::type_string(gh->type).cc());
     notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
-    output(2).push(packet);
+    output(1).push(packet);
     return;
-  }
+  } 
 
-  struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + gh->hdr_len);
-  /*
-   * drop packet meant for us; someone else should have already handled it
-   */
-  IPAddress dest_ip(encap->dst_ip);
-  if (dest_ip == _ipaddr) {
-    click_chatter("LookupGeographicGridroute %s: got an IP packet for us %s, dropping it",
-		  id().cc(),
-		  dest_ip.s().cc());
-    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::ConfigError, 0);
-    packet->kill();
-    return;
+  unsigned dest_ip = 0; // XXX this is a total fuckup, since we can only extract dest_ip for nbr_encap packets
+  if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
+    struct grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
+    dest_ip = nb->dst_ip;
   }
-
   
-  if (_rt == 0) {
-    // no UpdateGridRoutes next-hop table in configuration
-    click_chatter("LookupGeographicGridRoute %s: can't forward packet for %s; there is no routing table", id().cc(), dest_ip.s().cc());
-    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::ConfigError, 0);
+
+  if (!_li->loc_good()) {
+    click_chatter("LookupGeographicGridRoute %s: can't forward packet; we don't know our own location", id().cc());
+    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::OwnLocUnknown, 0);
     output(1).push(packet);
     return;
   }
 
-  if (!encap->dst_loc_good) {
-    click_chatter("LookupGeographicGridroute %s: bad destination location in packet for %s",
-                  id().cc(),
-                  dest_ip.s().cc());
+  if (!dest_loc_good(packet)) {
+    click_chatter("LookupGeographicGridRoute %s: received packet of type %s without good destination location",
+		  id().cc(), grid_hdr::type_string(gh->type).cc());
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoDestLoc, 0);
-    output(2).push(packet);
+    output(1).push(packet);
     return;
   }
 
-  WritablePacket *xp = packet->uniqueify();
-  /*
-   * This code will update the hop count, tx ip (us) and dst/src MAC
-   * addresses.  
-   */
+
   EtherAddress next_hop_eth;
   IPAddress next_hop_ip;
   IPAddress best_nbr_ip;
-  bool found_next_hop = get_next_geographic_hop(dest_ip, encap->dst_loc, &next_hop_eth, &next_hop_ip, &best_nbr_ip);
+  bool found_next_hop = get_next_geographic_hop(get_dest_loc(packet), &next_hop_eth, &next_hop_ip, &best_nbr_ip);
+
+  WritablePacket *xp = packet->uniqueify();
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) xp->data();
@@ -159,23 +151,26 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     memcpy(eh->ether_dhost, next_hop_eth.data(), 6);
     struct grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
     gh->tx_ip = _ipaddr;
-    encap->hops_travelled++;
+    increment_hops_travelled(xp);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardGF, next_hop_ip, best_nbr_ip);
     // leave src location update to FixSrcLoc element
     output(0).push(xp);
   }
   else {
+    click_chatter("LookupGeographicGridRoute %s: unable to forward %s packet with geographic routing", 
+		  id().cc(), grid_hdr::type_string(gh->type).cc());
 #if 0
-    click_chatter("LookupGeographicGridRoute %s: unable to forward packet for %s with geographic routing", id().cc(), dest_ip.s().cc());
-    int ip_off = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap);
-    xp->pull(ip_off);
-    IPAddress src_ip(xp->data() + 12);
-    IPAddress dst_ip(xp->data() + 16);
-    unsigned short *sp = (unsigned short *) (xp->data() + 20);
-    unsigned short *dp = (unsigned short *) (xp->data() + 22);
-    unsigned short src_port = ntohs(*sp);
-    unsigned short dst_port = ntohs(*dp);
-    click_chatter("packet info: %s:%hu -> %s:%hu", src_ip.s().cc(), src_port, dst_ip.s().cc(), dst_port);
+    if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
+      int ip_off = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap);
+      xp->pull(ip_off);
+      IPAddress src_ip(xp->data() + 12);
+      IPAddress dst_ip(xp->data() + 16);
+      unsigned short *sp = (unsigned short *) (xp->data() + 20);
+      unsigned short *dp = (unsigned short *) (xp->data() + 22);
+      unsigned short src_port = ntohs(*sp);
+      unsigned short dst_port = ntohs(*dp);
+      click_chatter("IP packet info: %s:%hu -> %s:%hu", src_ip.s().cc(), src_port, dst_ip.s().cc(), dst_port);
+    }
 #endif
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoCloserNode, 0);
     output(1).push(xp);
@@ -184,22 +179,24 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
 
 bool 
-LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest_loc, 
-						   EtherAddress *dest_eth, IPAddress *dest_ip, IPAddress *best_nbr) const
+LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, EtherAddress *dest_eth, 
+						   IPAddress *dest_ip, IPAddress *best_nbr) const
 {
   /*
    * search through table for all nodes we have routes to and for whom
    * we know the position.  of these, choose the node closest to the
-   * destination location to send the packet to.  
+   * destination location to send the packet to.  Our node may be the
+   * closest; in that case, the packet should be dropped.
    */
   IPAddress next_hop;
-  double d = 0;
+  assert(_li->loc_good());
+  double d = grid_location::calc_range(dest_loc, _li->get_current_location());
   bool found_one = false;
   for (GridRouteTable::RTIter iter = _rt->_rtes.first(); iter; iter++) {
     const GridRouteTable::RTEntry &rte = iter.value();
     if (!rte.loc_good)
-      continue; // negative err means don't believe info at all
-    double new_d = FilterByRange::calc_range(dest_loc, rte.loc);
+      continue; 
+    double new_d = grid_location::calc_range(dest_loc, rte.loc);
     if (!found_one) {
       found_one = true;
       d = new_d;
@@ -256,6 +253,110 @@ LookupGeographicGridRoute::add_handlers()
   add_default_handlers(true);
 }
 
+
+void
+LookupGeographicGridRoute::increment_hops_travelled(WritablePacket *p) const
+{
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  struct grid_nbr_encap *encap = 0;
+  struct grid_geocast *gc = 0;
+
+  switch (gh->type) {
+  case grid_hdr::GRID_NBR_ENCAP:
+  case grid_hdr::GRID_LOC_REPLY:
+  case grid_hdr::GRID_ROUTE_PROBE:
+  case grid_hdr::GRID_ROUTE_REPLY:
+    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    encap->hops_travelled++;
+    break;
+  case grid_hdr::GRID_GEOCAST:
+    gc = (grid_geocast *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    gc->hops_travelled++;
+    break;
+  default:
+    /* packet doesn't have a hops_travelled field */
+    break;
+  }
+}
+
+bool
+LookupGeographicGridRoute::dont_forward(const Packet *p) const
+{
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  struct grid_nbr_encap *encap = 0;
+  struct grid_geocast *gc = 0;
+
+  switch (gh->type) {
+  case grid_hdr::GRID_NBR_ENCAP:
+  case grid_hdr::GRID_LOC_REPLY:
+  case grid_hdr::GRID_ROUTE_PROBE:
+  case grid_hdr::GRID_ROUTE_REPLY:
+    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    return IPAddress(encap->dst_ip) == _ipaddr;
+    break;
+  case grid_hdr::GRID_GEOCAST:
+    gc = (grid_geocast *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    assert(_li->loc_good());
+    return gc->dst_region.contains(_li->get_current_location());
+    break;
+  default:
+    return true;
+    break;
+  }
+  return true;
+}
+
+bool
+LookupGeographicGridRoute::dest_loc_good(const Packet *p) const
+{
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  struct grid_nbr_encap *encap = 0;
+    
+  switch (gh->type) {
+  case grid_hdr::GRID_NBR_ENCAP:
+  case grid_hdr::GRID_LOC_REPLY:
+  case grid_hdr::GRID_ROUTE_PROBE:
+  case grid_hdr::GRID_ROUTE_REPLY:
+    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    return encap->dst_loc_good;
+    break;
+  case grid_hdr::GRID_GEOCAST:
+    return true;
+    break;
+  default:
+    return false;
+    break;
+  }
+  return false;
+}
+
+grid_location
+LookupGeographicGridRoute::get_dest_loc(const Packet *p) const
+{
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  struct grid_nbr_encap *encap = 0;
+  struct grid_geocast *gc = 0;
+
+  switch (gh->type) {
+  case grid_hdr::GRID_NBR_ENCAP:
+  case grid_hdr::GRID_LOC_REPLY:
+  case grid_hdr::GRID_ROUTE_PROBE:
+  case grid_hdr::GRID_ROUTE_REPLY:
+    encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    return encap->dst_loc;
+    break;
+  case grid_hdr::GRID_GEOCAST:
+    gc = (grid_geocast *) (p->data() + sizeof(click_ether) + gh->hdr_len);
+    return gc->dst_region.center();
+    break;
+  default:
+    assert(0);
+    break;
+  }
+  return grid_location();
+}
+
+
 /* XXX I feel like there is a general pattern here of filling in the
  * packet based on some information looked up in the routing table.
  * could get all generic here and provide an interface to the table
@@ -266,3 +367,4 @@ LookupGeographicGridRoute::add_handlers()
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LookupGeographicGridRoute)
+  

@@ -104,7 +104,7 @@ RadioSim::run_scheduled()
       for(out = 0; out < noutputs(); out++){
         grid_location g1 = grid_location(_nodes[in]._lat, _nodes[in]._lon);
         grid_location g2 = grid_location(_nodes[out]._lat, _nodes[out]._lon);
-        double r = FilterByRange::calc_range(g1, g2);
+        double r = grid_location::calc_range(g1, g2);
         if(r < 250){
           output(out).push(p->clone());
         }
