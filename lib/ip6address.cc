@@ -220,7 +220,7 @@ unsigned short
 in6_fast_cksum(const struct click_in6_addr *saddr,
                const struct click_in6_addr *daddr,
                unsigned short len,
-               unsigned short proto,
+               unsigned char  proto,
                unsigned short ori_csum,
                const unsigned char *addr,
                unsigned short len2)
@@ -255,7 +255,7 @@ in6_fast_cksum(const struct click_in6_addr *saddr,
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
-	unsigned short nleft = len2;
+	unsigned short nleft = ntohs(len2);
 	const unsigned short *w = (const unsigned short *)addr;
 	while (nleft > 1)  { 
 	    unsigned short w2=*w++;
@@ -285,7 +285,7 @@ unsigned short
 in6_cksum(const struct click_in6_addr *saddr,
 	  const struct click_in6_addr *daddr,
 	  unsigned short len, 
-	  unsigned short proto,
+	  unsigned char proto,
 	  unsigned short ori_csum,
 	  unsigned char *addr,
 	  unsigned short len2)
@@ -313,7 +313,7 @@ in6_cksum(const struct click_in6_addr *saddr,
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
-	unsigned short nleft = len2;
+	unsigned short nleft = ntohs(len2);
 	const unsigned short *w = (const unsigned short *)addr;
 	while (nleft > 1)  { 
 	    unsigned short w2=*w++;

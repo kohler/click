@@ -157,7 +157,7 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   ea->option_type = 0x2;
   ea->option_length = 0x1;
   memcpy(ea->nd_tha, tha, 6);
-  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_nd_adv)));
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_adv))));
   
   return q;
 }
@@ -216,7 +216,7 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   
   memcpy(ea->nd_tpa, tpa, 16);
  
-  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_nd_adv2)));
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_adv2))));
   
   return q;
 }
@@ -258,7 +258,7 @@ IP6NDAdvertiser::simple_action(Packet *p)
    IP6Address ipa = IP6Address(tpa);
 
    //check see if the packet is corrupted by recalculate its checksum
-   unsigned short int csum2 = in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, ea->checksum, (unsigned char *)(ip6+1), sizeof(click_nd_sol));
+   unsigned short int csum2 = in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, ea->checksum, (unsigned char *)(ip6+1), htons(sizeof(click_nd_sol)));
 
    Packet *q = 0;
 

@@ -225,9 +225,9 @@ AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai,
 	  if (_static_mapping[1]  && (lookup_direction ==_direction))
 	    match =  match && (_v[i]._ipi == ipi);
 	  if (_static_mapping[0] && (lookup_direction != _direction))
-  	    match =  match && (_v[i]._mai == iai);
+  	    match =  match && (_v[i]._mai == mai);
   	  if (_static_mapping[1] && (lookup_direction != _direction))
-  	    match =  match && (_v[i]._mpi == ipi); 
+  	    match =  match && (_v[i]._mpi == mpi); 
 	  
 	  if (match)
 	    {
@@ -350,8 +350,13 @@ AddressTranslator::handle_outward(Packet *p)
   memcpy(start_new, start, p->length());
   click_ip6 *ip6_new = (click_ip6 * )q->data();
       
+  
+
   if (ip6_new->ip6_nxt ==0x3a) //the upper layer is an icmp6 packet
-    {
+    {}
+    /*
+      {
+      click_chatter("a icmp6 packet");
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
       click_ip6 * ip6_new2 = 0;
       
@@ -373,7 +378,8 @@ AddressTranslator::handle_outward(Packet *p)
 	break;
       default: ; break;
       }
-	 
+	
+ 
       //replace with the mapped port in the tcp packet  
       // click_ip6 *ip6_new2 = (click_ip6 *)(icmp6+1);
       unsigned char * tcp2 = (unsigned char *)(ip6_new2+1);
@@ -383,8 +389,8 @@ AddressTranslator::handle_outward(Packet *p)
 
       if (lookup(ip6_src, th_dport, ip6_msrc, th_mport, ip6_dst, th_sport, _direction))
 	{
-	  ip6_new->ip6_src = ip6_msrc;
-	  ip6_new2->ip6_dst = ip6_msrc;
+	  ip6_new->ip6_src = ip6_msrc.in6_addr();
+	  ip6_new2->ip6_dst = ip6_msrc.in6_addr();
 	  tcp2[1]=th_mport;   
 	  
 	  WritablePacket *q2 = 0;
@@ -392,8 +398,9 @@ AddressTranslator::handle_outward(Packet *p)
 	  memset(q2->data(), '\0', q2->length());
 	  memcpy(q2->data(), q->data(), q2->length());
 	  p->kill();
-	  q->kill();
-	  output(0).push(q2);
+	  q2= q;
+	  //q->kill();
+	  output(0).push(q);
 	}
       else
 	{
@@ -401,6 +408,8 @@ AddressTranslator::handle_outward(Packet *p)
 	  p->kill();
 	}
     }
+
+  */
 
   else //the upper layer is an tcp/udp packet
     {
@@ -414,7 +423,7 @@ AddressTranslator::handle_outward(Packet *p)
 	  tcp_new->th_sport = htons(th_mport);
 	  //recalculate the checksum for TCP, deal with fragment later
 	  //tcp_new->th_sum = 0;
-	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ntohs(ip6_new->ip6_plen)));
+	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
 	 
 	 
 	  WritablePacket *q2 =0;
@@ -465,45 +474,52 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
   click_ip6 *ip6_new = (click_ip6 * )q->data();
       
   if (ip6_new->ip6_nxt ==0x3a) //the upper layer is an icmp6 packet
-    {
+    
+     {
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-	
-       click_ip6 *ip6_new2 = 0;
+      icmp6_generic * icmp6;
+      //click_ip6 *ip6_new2 = 0;
+      unsigned char *ip6_new2 = 0;
       switch (icmp6_start[0])  {
       case 1  : ;
       case 3  : ;
       case 128: ;
       case 129: {
-	icmp6_generic * icmp6 = (icmp6_generic *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
+	icmp6 = (icmp6_generic *)(ip6_new +1); 
+	//ip6_new2 = (click_ip6 *)(icmp6+1); 
+       }
       break;
       case 2: { 
 	icmp6_pkt_toobig * icmp6 = (icmp6_pkt_toobig *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
+	//ip6_new2 = (click_ip6 *)(icmp6+1); 
+        ip6_new2 = (unsigned char *)(icmp6+1); }
       break;
       case 4: {
 	icmp6_param * icmp6 = (icmp6_param *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
+	//ip6_new2 = (click_ip6 *)(icmp6+1); 
+	ip6_new2 = (unsigned char *)(icmp6+1); }
       break;
       default: ;
       }
 	 
       //replace with the mapped port in the tcp packet  
      
-      unsigned char * tcp2 = (unsigned char *)(ip6_new2+1);
-      th_sport = tcp2[0];
-      th_mport = tcp2[1];
+      //unsigned char * tcp2 = (unsigned char *)(ip6_new2+1);
+      //th_sport = tcp2[0];
+      //th_mport = tcp2[1];
 
       if (lookup(ip6_dst, th_dport, ip6_mdst, th_mport, ip6_src, th_sport, 1))
 	{
 	  ip6_new->ip6_dst = ip6_dst;
-	  ip6_new2->ip6_src = ip6_dst;
-	  tcp2[0]=th_dport;   
-	  
+	  //ip6_new2->ip6_src = ip6_dst;
+	  //tcp2[0]=th_dport;   
+	 
+	  icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, icmp6->icmp6_cksum, (unsigned char *)icmp6, ip6_new->ip6_plen));
+
 	  Packet *q2 = 0;
 	  q2= q;
 	  p->kill();
-	  q->kill();
+	  //q->kill();
 	  output(1).push(q2);
 	}
       else
@@ -512,6 +528,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	  p->kill();
 	}
     }
+    
 
   else //the upper layer is an tcp/udp packet
     {
@@ -524,7 +541,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	  tcp_new->th_dport = th_dport;
 	  //recalculate the checksum for TCP, deal with fragment later
 	  //tcp_new->th_sum = 0;
-	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ntohs(ip6_new->ip6_plen)));
+	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
 	 
 	  WritablePacket *q2 = 0;
 	  q2 = Packet::make(q->length());

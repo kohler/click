@@ -219,7 +219,7 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   ea->option_length = 0x1;
   memcpy(ea->nd_sha, _my_en.data(), 6);
  
-  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_nd_sol)));
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), htons(sizeof(click_nd_sol))));
   
   _arp_queries++;
   output(noutputs()-1).push(q);

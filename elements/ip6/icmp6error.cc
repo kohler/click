@@ -205,7 +205,7 @@ if(_type == 2 && _code == 0){
   }
   
   memcpy((void *)(icp + 1), p->data(), xlen);
-  icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, sizeof(icmp6_generic)));
+  icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, nip->ip6_plen));
 
   
   q->set_dst_ip6_anno(IP6Address(nip->ip6_dst));
