@@ -12,67 +12,36 @@
 
 #include "bighashmap.hh"
 
+#ifdef HAVE_NEW_H
+# include <new.h>
+#elif !HAVE_PLACEMENT_NEW
+inline void *operator new(size_t, void *v) { return v; }
+# define HAVE_PLACEMENT_NEW 1
+#endif
+
 template<class K, class V>
 inline
 BigHashMap<K, V>::Arena::Arena()
 {
-  _free = -1;
-  _first = _nalloc = 0;
+  _first = 0;
 }
 
 template<class K, class V>
 inline void
 BigHashMap<K, V>::Arena::clear()
 {
-  _free = -1;
-  _first = _nalloc = 0;
-}
-
-template<class K, class V>
-inline bool
-BigHashMap<K, V>::Arena::owns(Elt *e) const
-{
-  int *x = reinterpret_cast<int *>(e);
-  return x >= _x && x < _x + ELT_SIZE * SIZE;
-}
-
-template<class K, class V>
-inline bool
-BigHashMap<K, V>::Arena::elt_is_below(Elt *e) const
-{
-  int *x = reinterpret_cast<int *>(e);
-  return x < _x;
+  _first = 0;
 }
 
 template<class K, class V>
 BigHashMap<K, V>::Elt *
 BigHashMap<K, V>::Arena::alloc()
 {
-  if (_free >= 0) {
-    Elt *e = reinterpret_cast<Elt *>(&_x[ELT_SIZE * _free]);
-    _free = _x[ELT_SIZE * _free];
-    _nalloc++;
-    return e;
-  } else if (_first < SIZE) {
-    Elt *e = reinterpret_cast<Elt *>(&_x[ELT_SIZE * _first]);
-    _first++;
-    _nalloc++;
-    return e;
-  } else
+  if (_first < SIZE)
+    return elt(_first++);
+  else
     return 0;
 }
-
-template<class K, class V>
-inline void
-BigHashMap<K, V>::Arena::free(Elt *e)
-{
-  int *x = reinterpret_cast<int *>(e);
-  int which = (x - _x) / ELT_SIZE;
-  *x = _free;
-  _free = which;
-  _nalloc--;
-}
-
 
 
 template <class K, class V>
@@ -87,6 +56,7 @@ BigHashMap<K, V>::initialize()
 
   _n = 0;
 
+  _free = 0;
   _free_arena = -1;
   _arenas = new Arena *[4];
   _narenas = 0;
@@ -123,19 +93,15 @@ BigHashMap<K, V>::~BigHashMap()
 
 template <class K, class V>
 BigHashMap<K, V>::Elt *
-BigHashMap<K, V>::alloc()
+BigHashMap<K, V>::slow_alloc()
 {
   // XXX malloc failures
-
-  int tries = 0;
-  while (_free_arena >= 0 && tries < _narenas) {
+  if (_free_arena >= 0) {
     Elt *e = _arenas[_free_arena]->alloc();
-    if (e) return e;
-    _free_arena++;
-    if (_free_arena == _narenas) _free_arena = 0;
-    tries++;
+    if (e)
+      return e;
   }
-  
+
   // add an Arena
   if (_narenas >= _arenas_cap) {
     _arenas_cap *= 2;
@@ -146,37 +112,29 @@ BigHashMap<K, V>::alloc()
   }
 
   Arena *new_arena = new Arena;
-  int pos = 0;
-  while (pos < _narenas && new_arena > _arenas[pos])
-    pos++;
-  memmove(_arenas + pos + 1, _arenas + pos, sizeof(Arena *) * (_narenas - pos));
-  _arenas[pos] = new_arena;
-  _free_arena = pos;
+  _arenas[_narenas++] = new_arena;
+  _free_arena = _narenas - 1;
   return new_arena->alloc();
 }
 
 template <class K, class V>
-void
+inline BigHashMap<K, V>::Elt *
+BigHashMap<K, V>::alloc()
+{
+  if (_free) {
+    Elt *e = _free;
+    _free = e->next;
+    return e;
+  } else
+    return slow_alloc();
+}
+
+template <class K, class V>
+inline void
 BigHashMap<K, V>::free(Elt *e)
 {
-  if (_free_arena >= 0 && _arenas[_free_arena]->owns(e))
-    _arenas[_free_arena]->free(e);
-  else {
-    int l = 0;
-    int r = _narenas - 1;
-    while (l <= r) {
-      int m = (l + r) >> 1;
-      if (_arenas[m]->owns(e)) {
-	_arenas[m]->free(e);
-	_free_arena = m;
-	return;
-      } else if (_arenas[m]->elt_is_below(e))
-	r = m - 1;
-      else
-	l = m + 1;
-    }
-    assert(0);
-  }
+  e->next = _free;
+  _free = e;
 }
 
 
@@ -200,10 +158,8 @@ BigHashMap<K, V>::find_elt(const K &key) const
 
 template <class K, class V>
 void
-BigHashMap<K, V>::increase(int new_nbuckets = -1)
+BigHashMap<K, V>::resize0(int new_nbuckets)
 {
-  if (new_nbuckets < 0)
-    new_nbuckets = _nbuckets * 2;
   Elt **new_buckets = new Elt *[new_nbuckets];
   for (int i = 0; i < new_nbuckets; i++)
     new_buckets[i] = 0;
@@ -227,10 +183,14 @@ BigHashMap<K, V>::increase(int new_nbuckets = -1)
 }
 
 template <class K, class V>
-inline void
-BigHashMap<K, V>::check_size()
+void
+BigHashMap<K, V>::resize(int want_nbuckets)
 {
-  //if (_n >= _capacity) increase();
+  int new_nbuckets = 1;
+  while (new_nbuckets < want_nbuckets && new_nbuckets > 0)
+    new_nbuckets <<= 1;
+  if (new_nbuckets > 0)
+    resize0(new_nbuckets);
 }
 
 template <class K, class V>
@@ -245,7 +205,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
     }
 
   if (_n >= _capacity) {
-    increase();
+    resize0(_nbuckets << 1);
     b = bucket(key);
   }
   Elt *e = alloc();
@@ -288,14 +248,14 @@ BigHashMap<K, V>::find_force(const K &key)
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->k == key)
-      return _e[i].v;
+      return e->v;
   Elt *e = alloc();
   new(reinterpret_cast<void *>(&e->k)) K(key);
   new(reinterpret_cast<void *>(&e->v)) V(_default_v);
   e->next = _buckets[b];
   _buckets[b] = e;
   _n++;
-  return _e[i].v;
+  return e->v;
 }
 
 template <class K, class V>
@@ -303,7 +263,7 @@ void
 BigHashMap<K, V>::clear()
 {
   for (int i = 0; i < _nbuckets; i++) {
-    for (Elt *e = _buckets[i]; e; e = e->_next) {
+    for (Elt *e = _buckets[i]; e; e = e->next) {
       e->k.~K();
       e->v.~V();
     }
@@ -319,18 +279,19 @@ template <class K, class V>
 void
 BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
 {
-  Elt **t_elt;
+  Elt **t_elts, *t_elt;
   V t_v;
   int t_int;
   Arena **t_arenas;
 
-  t_elt = _buckets; _buckets = o._buckets; o._buckets = t_elt;
+  t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
   t_v = _default_v; _default_v = o._default_v; o._default_v = t_v;
 
   t_int = _n; _n = o._n; o._n = t_int;
   t_int = _capacity; _n = o._capacity; o._capacity = t_int;
-  
+
+  t_elt = _free; _free = o._free; o._free = t_elt;
   t_int = _free_arena; _free_arena = o._free_arena; o._free_arena = t_int;
   t_arenas = _arenas; _arenas = o._arenas; o._arenas = t_arenas;
   t_int = _narenas; _narenas = o._narenas; o._narenas = t_int;
@@ -368,3 +329,38 @@ BigHashMapIterator<K, V>::operator++(int = 0)
     _elt = 0;
   }
 }
+
+#if 0
+static int
+BigHashMap_partition_elts(void **elts, int left, int right)
+{
+  void *pivot = elts[(left + right) / 2];
+
+  // loop invariant:
+  // elts[i] < pivot for all left_init <= i < left
+  // elts[i] > pivot for all right < i <= right_init
+  while (left < right) {
+    if (elts[left] < pivot)
+      left++;
+    else if (elts[right] > pivot)
+      right--;
+    else {
+      void *x = elts[left];
+      elts[left] = elts[right];
+      elts[right] = x;
+    }
+  }
+
+  return left;
+}
+
+void
+BigHashMap_qsort_elts(void **elts, int left, int right)
+{
+  if (left < right) {
+    int split = BigHashMap_partition_elts(elts, left, right);
+    BigHashMap_qsort_elts(elts, left, split);
+    BigHashMap_qsort_elts(elts, split, right);
+  }
+}
+#endif

@@ -79,7 +79,15 @@ char *strerror(int errno);
 #endif
 
 #ifdef __cplusplus
-/* Get rid of inline macro under C++ */
-# undef inline
+/* Get rid of inline macro under C++. */
+#undef inline
+
+/* Provide placement new. */
+#if HAVE_NEW_H
+#include <new.h>
+#else
+inline void *operator new(size_t, void *v) { return v; }
 #endif
 #endif
+
+#endif CONFIG_H

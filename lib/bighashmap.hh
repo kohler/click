@@ -23,6 +23,7 @@ class BigHashMap { public:
   explicit BigHashMap(const V &);
   ~BigHashMap();
   
+  int nbuckets() const			{ return _nbuckets; }
   int count() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
   
@@ -38,6 +39,11 @@ class BigHashMap { public:
   void swap(BigHashMap<K, V> &);
   
   Iterator first() const		{ return Iterator(this); }
+
+  // dynamic resizing
+  void resize(int);
+  bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
+  void set_dynamic_resizing(bool);
   
  private:
   
@@ -50,19 +56,14 @@ class BigHashMap { public:
   struct Arena {
     static const int SIZE = 128;
     static const int ELT_SIZE = sizeof(Elt) / sizeof(int);
-    int _free;
     int _first;
-    int _nalloc;
     int _padding;		// pad to 8-byte boundary
     int _x[ELT_SIZE * SIZE];
 
     Arena();
     void clear();
-    bool full() const			{ return _free < 0 && _first >= SIZE; }
-    bool owns(Elt *e) const;
-    bool elt_is_below(Elt *e) const;
     Elt *alloc();
-    void free(Elt *e);
+    Elt *elt(int i)	{ return reinterpret_cast<Elt *>(_x + ELT_SIZE*i); }
   };
 
   Elt **_buckets;
@@ -72,18 +73,19 @@ class BigHashMap { public:
   int _n;
   int _capacity;
 
+  Elt *_free;
   int _free_arena;
   Arena **_arenas;
   int _narenas;
   int _arenas_cap;
 
   void initialize();
-  void increase(int = -1);
-  void check_size();
+  void resize0(int = -1);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
 
   Elt *alloc();
+  Elt *slow_alloc();
   void free(Elt *);
 
   friend class BigHashMapIterator<K, V>;

@@ -1,12 +1,6 @@
 #ifndef VECTOR_HH
 #define VECTOR_HH
 #include <assert.h>
-#ifdef HAVE_NEW_H
-# include <new.h>
-#else
-inline void *operator new(size_t, void *v) { return v; }
-#endif
-
 template <class T> class Subvector;
 
 template <class T>
