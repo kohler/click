@@ -209,8 +209,10 @@ dnl
 dnl functions
 dnl
 
+AC_LANG_C
 AC_REPLACE_FUNCS(strerror)
 AC_CHECK_FUNCS(snprintf strtoul tcgetpgrp vsnprintf)
+AC_LANG_CPLUSPLUS
 
 
 dnl
