@@ -65,6 +65,8 @@ distclean:
 install: install-subdirs
 install-subdirs: lib
 	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
+install-include:
+	@cd lib && $(MAKE) install-include
 
 
-.PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
+.PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-man install-subdirs install-include

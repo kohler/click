@@ -47,7 +47,7 @@ tools: Makefile
 
 install: click-compile stamp-h
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
-	@$(MAKE) install-local install-doc install-include
+	@$(MAKE) install-local install-doc install-local-include
 install-local: elementmap $(srcdir)/click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
@@ -64,7 +64,7 @@ install-info:
 	@cd doc && $(MAKE) install-info
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
-install-include: stamp-h
+install-local-include: stamp-h
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
@@ -74,8 +74,8 @@ install-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
 	$(mkinstalldirs) $(netincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
-	$(mkinstalldirs) $(toolincludedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/tools/lib/*.hh $(toolincludedir)
+install-include: install-local-include
+	@cd tools && $(MAKE) install-include
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \
@@ -170,4 +170,4 @@ distdir: $(srcdir)/configure
 .PHONY: all always elemlist elemlists \
 	bsdmodule exopc linuxmodule tools userlevel \
 	clean distclean dist distdir \
-	install install-doc install-man install-local install-include
+	install install-doc install-man install-local install-include install-local-include
