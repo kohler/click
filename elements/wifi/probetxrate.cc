@@ -29,6 +29,7 @@ CLICK_DECLS
 
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
+    _offset(0),
     _packet_size_threshold(0),
     _rate_window_ms(0),
     _rtable(0)
@@ -49,13 +50,19 @@ int
 ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _filter_low_rates = false;
-
+  _filter_never_success = false;
+  _aggressive_alt_rate = false;
+  _debug = false;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
+			"OFFSET", cpUnsigned, "offset", &_offset,
 			"WINDOW", cpUnsigned, "window", &_rate_window_ms,
+			"DEBUG", cpBool, "debug", &_debug,
 			"THRESHOLD", cpUnsigned, "window", &_packet_size_threshold,
 			"RT", cpElement, "availablerates", &_rtable,
 			"FILTER_LOW_RATES", cpBool, "foo", &_filter_low_rates,
+			"FILTER_NEVER_SUCCESS", cpBool, "foo", &_filter_never_success,
+			"AGGRESSIVE_ALT_RATE", cpBool, "foo", &_aggressive_alt_rate,
 			cpEnd);
   if (ret < 0) {
     return ret;
@@ -86,8 +93,8 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     return;
   }
 
-  click_ether *eh = (click_ether *) p_in->data();
-  EtherAddress dst = EtherAddress(eh->ether_dhost);
+  uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
+  EtherAddress dst = EtherAddress(dst_ptr);
   SET_WIFI_FROM_CLICK(p_in);
 
   if (dst == _bcast) {
@@ -105,10 +112,11 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   click_gettimeofday(&now);
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
-  int rate = nfo->pick_rate(_filter_low_rates);
+  int rate = nfo->pick_rate();
+  int alt_rate = _aggressive_alt_rate ? nfo->pick_alt_rate() : 2;
   SET_WIFI_RATE_ANNO(p_in, rate);
   SET_WIFI_MAX_RETRIES_ANNO(p_in, 3);
-  SET_WIFI_ALT_RATE_ANNO(p_in, 2);
+  SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
   SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 3);
   return;
 }
@@ -121,10 +129,10 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   if (!p_in) {
     return;
   }
-  click_ether *eh = (click_ether *) p_in->data();
-  EtherAddress dst = EtherAddress(eh->ether_dhost);
+  uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
+  EtherAddress dst = EtherAddress(dst_ptr);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = WIFI_RETRIES_ANNO(p_in);
+  int retries = min (3, WIFI_RETRIES_ANNO(p_in));
   int rate = WIFI_RATE_ANNO(p_in);
 
   struct timeval now;
@@ -159,10 +167,19 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
-  if ((status & WIFI_TX_STATUS_USED_ALT_RATE)) {
+  if (_debug && (status & WIFI_TX_STATUS_USED_ALT_RATE)) {
     click_chatter("%{element} used alt rate status %d\n",
 		  this,
 		  status);
+  }
+  if ((status & WIFI_FAILURE)) {
+    click_chatter("%{element} packet failed %s status %d retries %d rate %d alt %d\n",
+		  this,
+		  dst.s().cc(),
+		  status,
+		  retries,
+		  rate,
+		  WIFI_ALT_RATE_ANNO(p_in));
   }
   nfo->add_result(now, rate, retries , (status == 0));
 
@@ -207,6 +224,7 @@ ProbeTXRate::print_rates()
       sa << " " << nfo._rates[x];
       sa << " " << nfo._total_tries[x];
       sa << " " << nfo._total_success[x];
+      sa << " " << nfo._total_fail[x];
       sa << " " << nfo._total_usecs[x];
       sa << " " << nfo._perfect_usecs[x];
       sa << " ";
@@ -223,7 +241,12 @@ ProbeTXRate::print_rates()
 }
 
 
-enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET, H_FILTER_LOW_RATES};
+enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET, 
+      H_FILTER_LOW_RATES,
+      H_FILTER_NEVER_SUCCESS,
+      H_AGGRESSIVE_ALT_RATE,
+      H_OFFSET,
+     };
 
 
 static String
@@ -235,8 +258,14 @@ ProbeTXRate_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_THRESHOLD:
     return String(td->_packet_size_threshold) + "\n";
+  case H_OFFSET:
+    return String(td->_offset) + "\n";
   case H_FILTER_LOW_RATES:
     return String(td->_filter_low_rates) + "\n";
+  case H_FILTER_NEVER_SUCCESS:
+    return String(td->_filter_never_success) + "\n";
+  case H_AGGRESSIVE_ALT_RATE:
+    return String(td->_aggressive_alt_rate) + "\n";
   case H_RATES: {
     return td->print_rates();
   }
@@ -265,11 +294,32 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     f->_filter_low_rates = filter_low_rates;
     break;
   }
+  case H_FILTER_NEVER_SUCCESS: {
+    bool filter_never_success;
+    if (!cp_bool(s, &filter_never_success)) 
+      return errh->error("filter_never_success parameter must be boolean");
+    f->_filter_never_success = filter_never_success;
+    break;
+  }
+  case H_AGGRESSIVE_ALT_RATE: {
+    bool aggressive_alt_rate;
+    if (!cp_bool(s, &aggressive_alt_rate)) 
+      return errh->error("aggressive_alt_rate parameter must be boolean");
+    f->_aggressive_alt_rate = aggressive_alt_rate;
+    break;
+  }
   case H_THRESHOLD: {
     unsigned m;
     if (!cp_unsigned(s, &m)) 
       return errh->error("threshold parameter must be unsigned");
     f->_packet_size_threshold = m;
+    break;
+  }
+  case H_OFFSET: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("offset parameter must be unsigned");
+    f->_offset = m;
     break;
   }
   case H_RESET:
@@ -288,12 +338,18 @@ ProbeTXRate::add_handlers()
 
   add_read_handler("debug", ProbeTXRate_read_param, (void *) H_DEBUG);
   add_read_handler("filter_low_rates", ProbeTXRate_read_param, (void *) H_FILTER_LOW_RATES);
+  add_read_handler("filter_never_success", ProbeTXRate_read_param, (void *) H_FILTER_NEVER_SUCCESS);
+  add_read_handler("aggressive_alt_rate", ProbeTXRate_read_param, (void *) H_AGGRESSIVE_ALT_RATE);
   add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);
+  add_read_handler("offset", ProbeTXRate_read_param, (void *) H_OFFSET);
 
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
   add_write_handler("filter_low_rates", ProbeTXRate_write_param, (void *) H_FILTER_LOW_RATES);
+  add_write_handler("filter_never_success", ProbeTXRate_write_param, (void *) H_FILTER_NEVER_SUCCESS);
+  add_write_handler("aggressive_alt_rate", ProbeTXRate_write_param, (void *) H_AGGRESSIVE_ALT_RATE);
   add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
+  add_write_handler("offset", ProbeTXRate_write_param, (void *) H_OFFSET);
   add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
   
 }

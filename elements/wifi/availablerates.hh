@@ -56,6 +56,7 @@ class AvailableRates : public Element { public:
   typedef RTable::const_iterator RIter;
   
   RTable _rtable;
+  Vector<int> _default_rates;
 private:
 };
 

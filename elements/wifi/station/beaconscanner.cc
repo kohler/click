@@ -26,7 +26,9 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
+#include <elements/wifi/availablerates.hh>
 #include "beaconscanner.hh"
+
 
 CLICK_DECLS
 
@@ -36,7 +38,8 @@ CLICK_DECLS
 
 
 BeaconScanner::BeaconScanner()
-  : Element(1, 1)
+  : Element(1, 1),
+    _rtable(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -57,8 +60,13 @@ BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "CHANNEL", cpInteger, "channel", &_channel,
+		  "RT", cpElement, "availablerates", &_rtable,
 		  cpEnd) < 0)
     return -1;
+
+  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+    return errh->error("AvailableRates element is not provided or not a AvailableRates");
+
   return 0;
 }
 
@@ -195,6 +203,7 @@ BeaconScanner::simple_action(Packet *p)
   ap->_beacon_int = beacon_int;
   ap->_basic_rates.clear();
   ap->_rates.clear();
+  Vector<int> all_rates;
   click_gettimeofday(&ap->_last_rx);
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
@@ -205,10 +214,13 @@ BeaconScanner::simple_action(Packet *p)
       } else {
 	ap->_rates.push_back((int)(rate & WIFI_RATE_VAL));
       }
+      all_rates.push_back((int)(rate & WIFI_RATE_VAL));
     }
   }
 
-
+  if (_rtable) {
+    _rtable->insert(bssid, all_rates);
+  }
   
   return p;
 }

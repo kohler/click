@@ -26,8 +26,8 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
-#include "associationrequester.hh"
 #include <elements/wifi/availablerates.hh>
+#include "associationrequester.hh"
 
 CLICK_DECLS
 
@@ -79,9 +79,19 @@ AssociationRequester::send_assoc_req()
     
     
   WritablePacket *p = Packet::make(len);
+
+
+
+
   if(p == 0)
     return;
 
+
+  if (!rates.size()) {
+    click_chatter("%{element}: couldn't lookup rates for %s\n",
+		  this,
+		  _bssid.s().cc());
+  }
   struct click_wifi *w = (struct click_wifi *) p->data();
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_REQ;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

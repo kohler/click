@@ -16,6 +16,7 @@
  */
 
 #include <click/config.h>
+#include <click/error.hh>
 #include <click/confparse.hh>
 #include "incseqno.hh"
 CLICK_DECLS
@@ -77,6 +78,20 @@ void
 IncrementSeqNo::add_handlers() {
   add_default_handlers(true);
   add_read_handler("seq", next_seq, 0);
+  add_write_handler("seq", write_seq, 0);
+}
+
+int 
+IncrementSeqNo::write_seq(const String &in_s, Element *e, void *vparam,
+			  ErrorHandler *errh)
+{
+    IncrementSeqNo *e2 = (IncrementSeqNo *) e;
+
+    unsigned i;
+    if (!cp_unsigned(in_s, &i)) {
+      return errh->error("seq must be unsigned");
+    }
+    e2->_seqno = i;
 }
 
 String

@@ -58,6 +58,26 @@ PacketLogger2::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("log", print_log, 0);
+  add_write_handler("clear", clear, 0);
+  add_read_handler("left", left, 0);
+}
+
+int
+PacketLogger2::clear(const String &foo, Element *e, void *vparam, ErrorHandler *errh) 
+{
+  PacketLogger2 *p = (PacketLogger2 *) e;
+  while (p->_p.size()) {
+    p->_p.pop_front();
+  }
+}
+
+
+
+String
+PacketLogger2::left(Element *e, void *)
+{
+  PacketLogger2 *p = (PacketLogger2 *) e;
+  return String(p->_p.size());
 }
 
 #define MAX_PROC_SIZE  16384

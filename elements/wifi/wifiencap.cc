@@ -133,7 +133,8 @@ WifiEncap::simple_action(Packet *p)
 
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
-  w->i_fc[1] = _mode;
+  w->i_fc[1] = 0;
+  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
 
   w->i_dur[0] = 0;
   w->i_dur[1] = 0;

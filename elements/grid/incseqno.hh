@@ -64,7 +64,8 @@ class IncrementSeqNo : public Element  {
 private:
 
   static String next_seq(Element *e, void *);
-
+  static int write_seq(const String &in_s, Element *e, void *vparam,
+		       ErrorHandler *errh);
   uint32_t _seqno;
   unsigned int _offset;
   bool _use_net_byteorder;

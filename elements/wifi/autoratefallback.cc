@@ -34,6 +34,7 @@ AutoRateFallback::AutoRateFallback()
   : Element(2, 1),
     _stepup(0),
     _stepdown(0),
+    _offset(0),
     _packet_size_threshold(0)
 {
   MOD_INC_USE_COUNT;
@@ -53,6 +54,7 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
+			"OFFSET", cpUnsigned, "offset", &_offset,
 			"STEPUP", cpInteger, "0-100", &_stepup,
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
@@ -68,14 +70,14 @@ AutoRateFallback::process_feedback(Packet *p_in)
   if (!p_in) {
     return;
   }
-  click_ether *eh = (click_ether *) p_in->data();
-  EtherAddress dst = EtherAddress(eh->ether_dhost);
+  uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
+  EtherAddress dst = EtherAddress(dst_ptr);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
   int rate = WIFI_RATE_ANNO(p_in);
 
   struct timeval now;
   click_gettimeofday(&now);
-
+  
   if (dst == _bcast) {
     /* don't record info for bcast packets */
     return;
@@ -103,6 +105,16 @@ AutoRateFallback::process_feedback(Packet *p_in)
     return;
   }
 
+  if ((status & WIFI_FAILURE)) {
+    click_chatter("%{element} packet failed %s status %d rate %d alt %d\n",
+		  this,
+		  dst.s().cc(),
+		  status,
+		  rate,
+		  WIFI_ALT_RATE_ANNO(p_in)
+		  );
+  }
+
 
   if (status == 0) {
     nfo->_successes++;
@@ -117,7 +129,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 				      nfo->_current_index + 1)]);
       }
       nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
-      
+      nfo->_successes = 0;
     }
   } else {
     if (nfo->_rates.size()) {
@@ -144,8 +156,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
     return;
   }
 
-  click_ether *eh = (click_ether *) p_in->data();
-  EtherAddress dst = EtherAddress(eh->ether_dhost);
+  uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
+  EtherAddress dst = EtherAddress(dst_ptr);
   SET_WIFI_FROM_CLICK(p_in);
 
   if (dst == _bcast) {
@@ -209,7 +221,7 @@ AutoRateFallback::print_rates()
 }
 
 
-enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET};
+enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, H_OFFSET};
 
 
 static String
@@ -225,6 +237,8 @@ AutoRateFallback_read_param(Element *e, void *thunk)
     return String(td->_stepup) + "\n";
   case H_THRESHOLD:
     return String(td->_packet_size_threshold) + "\n";
+  case H_OFFSET:
+    return String(td->_offset) + "\n";
   case H_RATES: {
     return td->print_rates();
   }
@@ -267,6 +281,13 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
     f->_packet_size_threshold = m;
     break;
   }
+  case H_OFFSET: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("offset parameter must be unsigned");
+    f->_offset = m;
+    break;
+  }
   case H_RESET: 
     f->_neighbors.clear();
     break;
@@ -285,12 +306,14 @@ AutoRateFallback::add_handlers()
   add_read_handler("threshold", AutoRateFallback_read_param, (void *) H_THRESHOLD);
   add_read_handler("stepup", AutoRateFallback_read_param, (void *) H_STEPUP);
   add_read_handler("stepdown", AutoRateFallback_read_param, (void *) H_STEPDOWN);
+  add_read_handler("offset", AutoRateFallback_read_param, (void *) H_OFFSET);
 
   add_write_handler("debug", AutoRateFallback_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
   add_write_handler("stepup", AutoRateFallback_write_param, (void *) H_STEPUP);
   add_write_handler("stepdown", AutoRateFallback_write_param, (void *) H_STEPDOWN);
   add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET);
+  add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
 
 }
 // generate Vector template instance

@@ -76,7 +76,7 @@ class BeaconScanner : public Element { public:
   typedef APTable::const_iterator APIter;
   
   class APTable _waps;
-
+  class AvailableRates *_rtable;
 };
 
 CLICK_ENDDECLS

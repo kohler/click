@@ -126,6 +126,7 @@ class ProbeTXRate : public Element { public:
 
 
   bool _debug;
+  unsigned _offset;
   unsigned _packet_size_threshold;
   String print_rates();
 
@@ -231,24 +232,30 @@ class ProbeTXRate : public Element { public:
       return (found) ? best_ndx : -1;
     }
 
-    int random_fast_ndx(int best_ndx) {
-      int r;
-      Vector<int> potential_ndx;
-      int best_usecs = _total_usecs[best_ndx] / _total_success[best_ndx];
-      for (int x = 0; x < _rates.size(); x++) {
-	if (_perfect_usecs[x] <= best_usecs) {
-	  potential_ndx.push_back(x);
-	}
-      }
-      r = random() % potential_ndx.size();
-      if (r < 0 || r > potential_ndx.size()) {
-	click_chatter("weird random rates for %s, index %d\n",
-		      _eth.s().cc(), r);
+    int pick_alt_rate() {
+      /*
+       * pick the fastest rate that hasn't failed yet.
+       */
+      int best_ndx = -1;
+      int best_usecs = 0;
+      bool found = false;
+      if (!_rates.size()) {
 	return -1;
       }
-      return potential_ndx[r];
+      for (int x = 0; x < _rates.size(); x++) {
+	if (_total_success[x] && !_total_fail[x]) {
+	  int usecs = _total_usecs[x] / _total_success[x];
+	  if (!found || usecs < best_usecs) {
+	    best_ndx = x;
+	    best_usecs = usecs;
+	    found = true;
+	  }
+	}
+      }
+      return (found) ? _rates[best_ndx] : 2;
     }
-    int pick_rate(bool filter_low_rates) {
+
+    int pick_rate() {
       int best_ndx = best_rate_ndx();
 
       if (_rates.size() == 0) {
@@ -261,10 +268,6 @@ class ProbeTXRate : public Element { public:
 	for (int x = _rates.size() - 1; x >= 0; x--) {
 	  /* pick the first rate that hasn't failed yet */
 	  if (_total_tries[x] == 0) {
-	    click_chatter("picking unfailed rate for %s %d\n",
-			  _eth.s().cc(),
-			  _rates[x]);
-			  
 	    return _rates[x];
 	  }
 	}
@@ -272,20 +275,38 @@ class ProbeTXRate : public Element { public:
 	 * pick the lowest rate possible */
 	return _rates[0];
       }
-      
-      if (random() % 11 == 0) {
-	int r = (filter_low_rates) ? random_fast_ndx(best_ndx) : 
-	  random() % _rates.size();
-	if (r < 0 || r > _rates.size()) {
-	  click_chatter("weird random_fast_ndx for %s, index %d\n",
-			_eth.s().cc(), r);
-	  return _rates[0];
+
+      int best_usecs = _total_usecs[best_ndx] / _total_success[best_ndx];
+
+      int probe_ndx = -1;
+      for (int x = 0; x < _rates.size(); x++) {
+	if (best_usecs < _perfect_usecs[x]) {
+	  /* couldn't possibly be better */
+	  continue;
 	}
-	return _rates[r];
+	
+
+	if (_total_tries[x] && _total_tries[x] >=  2 * _total_success[x]) {
+	  /* this rate doesn't work */
+	  if (_rates[x] >= 22) {
+	    /* give up now */
+	    break;
+	  }
+	  continue;
+	}
+	
+	if (_total_tries[x] > 10) {
+	  continue;
+	}
+	
+	probe_ndx = x;
+	break;
       }
-
-
-      return _rates[best_ndx];
+      
+      if (probe_ndx == -1) {
+	return _rates[best_ndx];
+      }
+      return _rates[probe_ndx];
     }
 
 
@@ -316,6 +337,9 @@ class ProbeTXRate : public Element { public:
 
   class AvailableRates *_rtable;
   bool _filter_low_rates;
+  bool _filter_never_success;
+  bool _aggressive_alt_rate;
+
 };
 
 CLICK_ENDDECLS

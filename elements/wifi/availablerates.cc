@@ -59,12 +59,22 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
   if (args.size() < 2) {
     return errh->error("error param %s must have > 1 arg", s.cc());
   }
-  if (!cp_ethernet_address(args[0], &e)) 
-    return errh->error("error param %s: must start with ethernet address", s.cc());
+  bool default_rates = false;
+  if (args[0] == "DEFAULT") {
+    default_rates = true;
+  } else {
+    if (!cp_ethernet_address(args[0], &e)) 
+      return errh->error("error param %s: must start with ethernet address", s.cc());
+  }
+  
   for (int x = 1; x< args.size(); x++) {
     int r;
     cp_integer(args[x], &r);
-    rates.push_back(r);
+    if (default_rates) {
+      _default_rates.push_back(r);
+    } else {
+      rates.push_back(r);
+    }
   }
   
   DstInfo d = DstInfo(e);
@@ -95,6 +105,7 @@ AvailableRates::take_state(Element *e, ErrorHandler *)
   _rtable = q->_rtable;
 
 }
+
 Vector<int>
 AvailableRates::lookup(EtherAddress eth)
 {
@@ -102,10 +113,16 @@ AvailableRates::lookup(EtherAddress eth)
     click_chatter("%s: lookup called with NULL eth!\n", id().cc());
     return Vector<int>();
   }
+
   DstInfo *dst = _rtable.findp(eth);
   if (dst) {
     return dst->_rates;
   }
+
+  if (_default_rates.size()) {
+    return _default_rates;
+  }
+
   return Vector<int>();
 }
 

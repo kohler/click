@@ -211,6 +211,11 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #define	WIFI_STATUS_SEQUENCE		14
 #define	WIFI_STATUS_CHALLENGE		15
 #define	WIFI_STATUS_TIMEOUT		16
+#define	WIFI_STATUS_BASIC_RATES		18
+#define WIFI_STATUS_TOO_MANY_STATIONS   22
+#define	WIFI_STATUS_RATES		23
+#define WIFI_STATUS_SHORTSLOT_REQUIRED  25
+
 
 #define	WIFI_WEP_KEYLEN			5	/* 40bit */
 #define	WIFI_WEP_IVLEN			3	/* 24bit */

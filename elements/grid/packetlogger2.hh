@@ -50,6 +50,8 @@ class PacketLogger2 : public Element { public:
 
   void add_handlers();
   static String print_log(Element *, void *);
+  static int clear(const String &foo, Element *e, void *vparam, ErrorHandler *errh);
+  static String left(Element *, void *);
 
   enum { NBYTES = 18 };
   
