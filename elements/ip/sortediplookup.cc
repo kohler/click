@@ -51,7 +51,7 @@ SortedIPLookup::check() const
 static bool
 entry_subset(const LinearIPLookup::Entry &a, const LinearIPLookup::Entry &b)
 {
-    return ((a.addr & b.mask) == b.addr && a.mask.mask_as_long(b.mask));
+    return ((a.addr & b.mask) == b.addr && a.mask.mask_as_specific(b.mask));
 }
 
 void
