@@ -1,3 +1,14 @@
+2003-12-08 Monday 02:19  Eddie Kohler <kohler@icir.org>
+
+	* conf/mazu-nat.click (1.10): gael schinkel noticed no ICMP;
+	document this
+
+2003-12-08 Monday 01:45  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ettmetric.cc (1.10), ettmetric.hh (1.10),
+	ettstat.cc (1.4), ettstat.hh (1.4), srcr.cc (1.34), srcr.hh (1.29):
+	be able to toggle new enhancements to srcr.
+
 2003-12-07 Sunday 13:35  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: wifitxfeedback.cc (1.9), wifitxfeedback.hh (1.7):
