@@ -49,7 +49,7 @@ class net_uint64_t {
 class una_net_uint16_t {
   unsigned char _d[2];
  public:
-  una_net_uint16_t(uint16_t x)		{ *((u_int16_t *)_d) = htons(x); }
+  una_net_uint16_t(uint16_t x)		{ *((uint16_t *)_d) = htons(x); }
   operator uint16_t() const		{ return ntohs(*((uint16_t *)_d)); }
   uint16_t v() const			{ return ntohs(*((uint16_t *)_d)); }
   una_net_uint16_t &operator=(uint16_t x) {
@@ -60,7 +60,7 @@ class una_net_uint16_t {
 class una_net_uint32_t {
   unsigned char _d[4];
  public:
-  una_net_uint32_t(uint32_t x)		{ *((u_int32_t *)_d) = htonl(x); }
+  una_net_uint32_t(uint32_t x)		{ *((uint32_t *)_d) = htonl(x); }
   operator uint32_t() const		{ return ntohl(*((uint32_t *)_d)); }
   uint32_t v() const			{ return ntohl(*((uint32_t *)_d)); }
   una_net_uint32_t &operator=(uint32_t x) {
@@ -71,7 +71,7 @@ class una_net_uint32_t {
 class una_net_uint64_t {
   unsigned char _d[8];
  public:
-  una_net_uint64_t(uint64_t x)		{ *((u_int64_t *)_d) = htonq(x); }
+  una_net_uint64_t(uint64_t x)		{ *((uint64_t *)_d) = htonq(x); }
   operator uint64_t() const		{ return ntohq(*((uint64_t *)_d)); }
   uint64_t v() const			{ return ntohq(*((uint64_t *)_d)); }
   una_net_uint64_t &operator=(uint64_t x) {

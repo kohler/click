@@ -24,7 +24,7 @@ class u_atomic32_t { public:
   bool inc_and_test_greater_zero()	{ return atomic_inc_and_test_greater_zero(&_val); }
   
   uint32_t read_and_add(int x);
-  uint32_t compare_and_swap(uint32_t old_value, u_int32_t new_value);
+  uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
   
  private:
 
@@ -77,7 +77,7 @@ class u_atomic32_t { public:
   void operator--(int)			{ _val--; }
   
   uint32_t read_and_add(int x);
-  uint32_t compare_and_swap(uint32_t old_value, u_int32_t new_value);
+  uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
  
   // returns true if value is 0 after decrement
   bool dec_and_test()			{ _val--; return _val == 0; }

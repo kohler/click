@@ -88,7 +88,7 @@ struct Clp_Parser {
     void *pv;
 #ifdef HAVE_INT64_TYPES
     int64_t i64;
-    u_int64_t u64;
+    uint64_t u64;
 #endif
   } val;
   
