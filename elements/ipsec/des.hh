@@ -3,20 +3,18 @@
 
 /*
  * =c
- * IPsecDES(ENCRYPT/DECRYPT, IV, KEY)
+ * IPsecDES(DECRYPT/ENCRYPT/REENCRYPT, IV, KEY)
  * =s encryption
- * encrypt packet using DES
+ * encrypt packet using DES-CBC
  * =d
  * 
- * encrypts or decrypts packet using DES. DES key is set to KEY, IV as the
- * integrity value. see RFC 2406.
+ * Encrypts or decrypts packet using DES-CBC. If the first argument is 0,
+ * IPsecDES will decrypt. If the first argument is 1, IPsecDES will encrypt,
+ * using IV as the initial integrity value and DES as the key. If the first
+ * argument is 2, IPsecDES will re-encrypt, using existing IV value.
  *
- * IPsecDES should NOT be used with multiple sources, since it uses integrity
- * value from one packet in the encryption process of the next packet.
- * Therefore packets going into IPsecDES must be one stream, in the right
- * order.
- *
- * =a IPsecESPEncap, IPsecESPUnencap */
+ * =a IPsecESPEncap, IPsecESPUnencap 
+ */
 
 #include <click/element.hh>
 #include <click/glue.hh>
@@ -29,9 +27,6 @@ typedef struct des_ks_struct {
     unsigned long pad[2]; 
   } ks; 
 } des_key_schedule[16];
-
-#define DES_ENCRYPT	1
-#define DES_DECRYPT	0
 
 class Address;
 
@@ -49,6 +44,10 @@ public:
   int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
+
+  static const unsigned DES_DECRYPT = 0;
+  static const unsigned DES_ENCRYPT = 1;
+  static const unsigned DES_REENCRYPT = 2;
   
 private:
 
@@ -58,7 +57,7 @@ private:
   int des_ecb_encrypt(des_cblock *input, des_cblock *output,
 		      des_key_schedule ks, int encrypt);
 
-  int _decrypt;
+  int _op;
   des_cblock _iv; 
   des_cblock _key;
   des_key_schedule _ks;

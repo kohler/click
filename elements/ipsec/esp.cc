@@ -28,12 +28,12 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-Esp::Esp()
+IPsecESPEncap::IPsecESPEncap()
   : Element(1, 1), _spi(-1)
 {
 }
 
-Esp::Esp(int spi, int blks)
+IPsecESPEncap::IPsecESPEncap(int spi, int blks)
 {
   add_input();
   add_output();
@@ -42,18 +42,18 @@ Esp::Esp(int spi, int blks)
 
 }
 
-Esp::~Esp()
+IPsecESPEncap::~IPsecESPEncap()
 {
 }
 
-Esp *
-Esp::clone() const
+IPsecESPEncap *
+IPsecESPEncap::clone() const
 {
-  return new Esp(_spi, _blks);
+  return new IPsecESPEncap(_spi, _blks);
 }
 
 int
-Esp::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPsecESPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   unsigned int spi_uc;
   int blk_int;
@@ -69,7 +69,7 @@ Esp::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-Esp::initialize(ErrorHandler *errh)
+IPsecESPEncap::initialize(ErrorHandler *errh)
 {
   if (_spi < 0)
     return errh->error("not configured");
@@ -79,45 +79,41 @@ Esp::initialize(ErrorHandler *errh)
 
 
 Packet *
-Esp::simple_action(Packet *p)
+IPsecESPEncap::simple_action(Packet *p)
 {
   int i;
 
-  // Extract Protocol Header 
+  // extract protocol header
   const click_ip *ip = p->ip_header();
   u_char ip_p = ip->ip_p;
   
-  // Make room for ESP header and padding
+  // make room for ESP header and padding
   int plen = p->length();
   int padding = ((_blks - ((plen + 2) % _blks)) % _blks) + 2;
   
-  // WritablePacket *q = Packet::make(sizeof(esp_new) + plen + padding);
-  // // Copy data
-  // memcpy((q->data() + sizeof(esp_new)), p->data(), plen);
-  // p->kill();
-
   WritablePacket *q = p->push(sizeof(esp_new));
   q = q->put(padding);
   
   struct esp_new *esp = (struct esp_new *) q->data();  
   u_char *pad = ((u_char *) q->data()) + sizeof(esp_new) + plen;
 
-  // Copy in ESP header
+  // copy in ESP header
   esp->esp_spi = htonl(_spi);
   _rpl++;
   int rpl = _rpl;
   esp->esp_rpl = htonl(rpl);
   memcpy(q->data(), esp, sizeof(struct esp_new));
 
-  // Self describing padding
+  // default padding specified by RFC 2406
   for (i = 0; i < padding - 2; i++)
     pad[i] = i + 1;
   pad[padding - 2] = padding - 2;
-  // Next header 
+  
+  // next header = ip protocol number
   pad[padding - 1] = ip_p;
 
   return(q);
 }
 
-EXPORT_ELEMENT(Esp)
-ELEMENT_MT_SAFE(Esp)
+EXPORT_ELEMENT(IPsecESPEncap)
+ELEMENT_MT_SAFE(IPsecESPEncap)

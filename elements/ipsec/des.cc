@@ -1,6 +1,6 @@
 /*
  * des.{cc,hh} -- element implements IPsec encryption using DES
- * Alex Snoeren
+ * Alex Snoeren, Benjie Chen
  * contains code from other sources; see below
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -30,7 +30,7 @@
 #include <click/glue.hh>
 
 Des::Des()
-  : Element(1, 1), _decrypt(-1)
+  : Element(1, 1), _op(-1)
 {
 }
 
@@ -42,14 +42,14 @@ Des::Des(int decrypt, unsigned char * key)
 {
   add_input();
   add_output();
-  _decrypt = decrypt;
+  _op = decrypt;
   memcpy(_key, key, 8);
 }
 
 Des *
 Des::clone() const
 {
-  return new Des(_decrypt, (unsigned char *)_key);
+  return new Des(_op, (unsigned char *)_key);
 }
 
 int
@@ -58,12 +58,12 @@ Des::configure(const Vector<String> &conf, ErrorHandler *errh)
   int dec_int;
 
   if (cp_va_parse(conf, this, errh,
-		  cpInteger, "Encrypt/Decrypt (0/1)", &dec_int,
+		  cpInteger, "Decrypt/Encrypt/ReEncrypt (0/1/2)", &dec_int,
 		  cpDesCblock, "8 byte IV", _iv,
 		  cpDesCblock, "64-bit DES key", _key,
 		  0) < 0)
     return -1;
-  _decrypt = dec_int;
+  _op = dec_int;
 #ifdef DEBUG
   click_chatter("Key: %x%x%x%x%x%x%x%x",_key[0], _key[1], _key[2], _key[3],
 	      _key[4], _key[5], _key[6], _key[7]);
@@ -74,7 +74,7 @@ Des::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Des::initialize(ErrorHandler *errh)
 {
-  if (_decrypt < 0)
+  if (_op < 0)
     return errh->error("not configured");
   des_set_key(&_key, _ks);
   return 0;
@@ -93,51 +93,40 @@ Des::simple_action(Packet *p_in)
   int i, plen = p->length() - sizeof(esp_new);
   idat = p->data() + sizeof(esp_new);
   
-  // Copy in IV on encryption
-  if(!_decrypt)
+  // copy in IV on encryption
+  if(_op == DES_ENCRYPT)
     memcpy(ivp, _iv, 8);
+  else if (_op == DES_DECRYPT)
+    memcpy(_iv, ivp, 8);
 
-  // De/Encrypt the payload
-
+  // de/encrypt the payload
   while (plen > 0) {
-
-    if(_decrypt) {
-
+    if(_op == DES_DECRYPT) {
       memcpy(hold, idat, 8);
-
       des_ecb_encrypt((des_cblock *)idat, (des_cblock *)idat,
 		      _ks, DES_DECRYPT);
-
       /* CBC: XOR with the IV */
-
-      for (i = 0; i < 8; i++) {
+      for (i = 0; i < 8; i++)
 	idat[i] ^= ivp[i];
-      }
-
       memcpy(ivp, hold, 8);
       
     } else {
-
       /* CBC: XOR with the IV */
-
-      for (i = 0; i < 8; i++) {
+      for (i = 0; i < 8; i++)
 	idat[i] ^= ivp[i];
-      }
-    
       des_ecb_encrypt((des_cblock *)idat, (des_cblock *)idat, 
 		      _ks, DES_ENCRYPT);
       ivp = idat;
     }
-
     idat += 8;
     plen -= 8;
-  
   }
 
-  if(!_decrypt)
-    //Save the last encrypted block, to be used as the next IV */
+  // save the last encrypted block, to be used as the next IV */
+  if(_op != DES_DECRYPT)
     memcpy(_iv, ivp, 8);
-
+  else
+    memcpy(ivp, _iv, 8);
   return(p);
 }
 

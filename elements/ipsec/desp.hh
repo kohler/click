@@ -8,24 +8,25 @@
  * removes IPSec encapsulation
  * =d
  * 
- * removes and verifies ESP header, added by IPsecESPEncap, according to RFC
- * 2406. does not perform anti-replay attack checks.
+ * Removes and verifies ESP header added by IPsecESPEncap. see RFC 2406. does
+ * not perform anti-replay attack checks. If DES-CBC encryption and decryption
+ * are used, IPsecDES must be used before IPsecESPUnencap.
  *
- * =a IPsecESPUnencap, IPsecDES */
-
+ * =a IPsecESPUnencap, IPsecDES 
+ */
 
 #include <click/element.hh>
 #include <click/glue.hh>
 
-class DeEsp : public Element {
+class IPsecESPUnencap : public Element {
 public:
-  DeEsp();
-  ~DeEsp();
+  IPsecESPUnencap();
+  ~IPsecESPUnencap();
   
-  const char *class_name() const		{ return "IPsecESPUnencap"; }
+  const char *class_name() const	{ return "IPsecESPUnencap"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  DeEsp *clone() const;
+  IPsecESPUnencap *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
@@ -36,6 +37,4 @@ private:
 };
 
 #endif
-
-
 

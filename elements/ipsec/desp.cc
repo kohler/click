@@ -28,23 +28,23 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-DeEsp::DeEsp()
+IPsecESPUnencap::IPsecESPUnencap()
   : Element(1, 1)
 {
 }
 
-DeEsp::~DeEsp()
+IPsecESPUnencap::~IPsecESPUnencap()
 {
 }
 
-DeEsp *
-DeEsp::clone() const
+IPsecESPUnencap *
+IPsecESPUnencap::clone() const
 {
-  return new DeEsp();
+  return new IPsecESPUnencap();
 }
 
 int
-DeEsp::configure(const Vector<String> &conf, ErrorHandler *errh)
+IPsecESPUnencap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  0) < 0)
@@ -54,7 +54,7 @@ DeEsp::configure(const Vector<String> &conf, ErrorHandler *errh)
 
 
 Packet *
-DeEsp::simple_action(Packet *p)
+IPsecESPUnencap::simple_action(Packet *p)
 {
 
   int i, blks;
@@ -89,5 +89,5 @@ DeEsp::simple_action(Packet *p)
   return p;
 }
 
-EXPORT_ELEMENT(DeEsp)
-ELEMENT_MT_SAFE(DeEsp)
+EXPORT_ELEMENT(IPsecESPUnencap)
+ELEMENT_MT_SAFE(IPsecESPUnencap)
