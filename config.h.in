@@ -21,6 +21,9 @@
 /* Define if 64-bit integer types are enabled. */
 #undef HAVE_INT64_TYPES
 
+/* Define if '[unsigned] long' has 64 bits. */
+#undef HAVE_64_BIT_LONG
+
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
 

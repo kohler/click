@@ -486,6 +486,16 @@ Compile with "'`'"--disable-int64'.
     else
 	AC_DEFINE(HAVE_INT64_TYPES)
 	have_int64_types=yes
+
+	AC_CACHE_CHECK(whether long and int64_t are the same type,
+	    ac_cv_long_64, [AC_LANG_CPLUSPLUS
+	    AC_TRY_COMPILE([#include <$inttypes_hdr>
+void f1(long);
+void f1(int64_t); // will fail if long and int64_t are the same type
+], [], ac_cv_long_64=no, ac_cv_long_64=yes)])
+	if test $ac_cv_long_64 = yes; then
+	    AC_DEFINE(HAVE_64_BIT_LONG)
+	fi
     fi])
 
 

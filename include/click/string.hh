@@ -28,7 +28,7 @@ class String { public:
   explicit String(unsigned);
   explicit String(long);
   explicit String(unsigned long);
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && !HAVE_64_BIT_LONG
   explicit String(int64_t);
   explicit String(uint64_t);
 #endif

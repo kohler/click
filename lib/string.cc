@@ -85,7 +85,7 @@ String::String(unsigned long u)
   assign(buf, -1);
 }
 
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && !HAVE_64_BIT_LONG
 // Implemented a lovely [u]int64_t converter in StringAccum
 // (use the code even at user level to hunt out bugs)
 

@@ -75,7 +75,8 @@ typedef u_int32_t uint32_t;
 # ifdef HAVE_INT64_TYPES
 typedef u_int64_t uint64_t;
 # endif
-typedef unsigned uintptr_t;	/* XXX? */
+typedef long intptr_t;		/* XXX? */
+typedef unsigned long uintptr_t;
 #endif
 
 /* Include assert macro. */

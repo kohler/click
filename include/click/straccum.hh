@@ -90,7 +90,7 @@ StringAccum &operator<<(StringAccum &, int);
 StringAccum &operator<<(StringAccum &, unsigned);
 StringAccum &operator<<(StringAccum &, long);
 StringAccum &operator<<(StringAccum &, unsigned long);
-#ifdef HAVE_INT64_TYPES
+#if HAVE_INT64_TYPES && !HAVE_64_BIT_LONG
 StringAccum &operator<<(StringAccum &, int64_t);
 StringAccum &operator<<(StringAccum &, uint64_t);
 #endif
