@@ -21,6 +21,10 @@ enum {
   WIFI_EXTRA_TX_USED_ALT_RATE      = (1<<2), /* used alternate bitrate */
   WIFI_EXTRA_RX_ERR                = (1<<3), /* failed crc check */
   WIFI_EXTRA_RX_MORE               = (1<<4), /* first part of a fragmented skb */
+  WIFI_EXTRA_NO_SEQ                = (1<<5),
+  WIFI_EXTRA_NO_TXF                = (1<<6),
+  WIFI_EXTRA_DO_RTS_CTS             = (1<<7),
+  WIFI_EXTRA_DO_CTS             = (1<<8),
 };
 
 

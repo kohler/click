@@ -68,17 +68,16 @@ RXStats::simple_action(Packet *p_in)
   nfo->_rate = ceh->rate;
   nfo->_signal = ceh->rssi;
   nfo->_noise = ceh->silence;
+
+  nfo->_packets++;
+  nfo->_sum_signal += ceh->rssi;
+  nfo->_sum_noise += ceh->silence;
   click_gettimeofday(&nfo->_last_received);
-
-
-  _sum_signal += ceh->rssi;
-  _sum_noise += ceh->silence;
-  _packets++;
 
   return p_in;
 }
 
-enum {H_STATS, H_SIGNAL, H_NOISE};
+enum {H_STATS, H_RESET};
 
 static String
 RXStats_read_param(Element *e, void *thunk)
@@ -94,30 +93,43 @@ RXStats_read_param(Element *e, void *thunk)
       RXStats::DstInfo n = iter.value();
       struct timeval age = now - n._last_received;
       sa << n._eth.s().cc();
-      sa << " rate: " << n._rate;
-      sa << " signal: " << n._signal;
-      sa << " noise: " << n._noise;
-      sa << " last_received: " << age << "\n";
+      sa << " rate " << n._rate;
+      sa << " signal " << n._signal;
+      sa << " noise " << n._noise;
+      sa << " avg_signal " << (n._packets ? (n._sum_signal / n._packets) : 0);
+      sa << " avg_noise " << (n._packets ? (n._sum_noise / n._packets) : 0);
+      sa << " total_signal " << n._sum_signal;
+      sa << " total_noise " << n._sum_noise;
+      sa << " packets " << n._packets;
+      sa << " last_received " << age << "\n";
     }
     return sa.take_string();
   }
-  case H_SIGNAL: 
-    return td->_packets ? String(td->_sum_signal/td->_packets) : String((int)0);
-  case H_NOISE:
-    return td->_packets ? String(td->_sum_noise/td->_packets) : String((int)0);
+
   default:
     return String();
   }
   
 }  
+
+static int 
+RXStats_write_param(const String &in_s, Element *e, void *vparam,
+		      ErrorHandler *)
+{
+  RXStats *f = (RXStats *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_RESET: f->_neighbors.clear(); return 0;
+  }
+  return 0;
+}
 	  
 void
 RXStats::add_handlers()
 {
   add_default_handlers(true);
   add_read_handler("stats", RXStats_read_param, (void *) H_STATS);
-  add_read_handler("signal", RXStats_read_param, (void *) H_SIGNAL);
-  add_read_handler("noise", RXStats_read_param, (void *) H_NOISE);
+  add_write_handler("reset", RXStats_write_param, (void *) H_RESET);
 
 }
 // generate Vector template instance

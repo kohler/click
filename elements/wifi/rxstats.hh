@@ -41,6 +41,10 @@ class RXStats : public Element { public:
     int _rate;
     int _noise;
     int _signal;
+
+    int _packets;
+    unsigned _sum_signal;
+    unsigned _sum_noise;
     struct timeval _last_received;
     
     DstInfo() { 
@@ -61,9 +65,6 @@ class RXStats : public Element { public:
   int _tau;
 
 
-  int _sum_signal;
-  int _sum_noise;
-  int _packets;
 };
 
 CLICK_ENDDECLS

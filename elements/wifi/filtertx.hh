@@ -12,14 +12,11 @@ CLICK_DECLS
  * FilterTX([I<KEYWORDS>])
  *
  * =s wifi
- * Filters out packets that have failed at least MAX_FAILURES times.
+ * Filters out packets that were sent by this node, and
+ * got received via transmit feedback.
  * Sends these packets to output 1 if it is present, 
  * otherwise it drops the packets.
  * 
- * Arguments:
- * =item MAX_FAILURES
- * The default MAX_FAILURES is 1
- *
  * =s wifi
  *
  * =a WifiTXFeedback
