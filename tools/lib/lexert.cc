@@ -389,7 +389,7 @@ LexerT::lerror(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  _errh->verror(ErrorHandler::Error, landmark(), format, val);
+  _errh->verror(ErrorHandler::ERR_ERROR, landmark(), format, val);
   va_end(val);
   return -1;
 }

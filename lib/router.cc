@@ -527,7 +527,7 @@ Router::element_lerror(ErrorHandler *errh, Element *f,
 {
   va_list val;
   va_start(val, format);
-  errh->verror(ErrorHandler::Error, f->landmark(), format, val);
+  errh->verror(ErrorHandler::ERR_ERROR, f->landmark(), format, val);
   va_end(val);
   return -1;
 }

@@ -489,7 +489,7 @@ main(int argc, char **argv)
   Vector<String> stops;
   Vector<String> unix_sockets;
   Vector<int> ports;
-  
+
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {

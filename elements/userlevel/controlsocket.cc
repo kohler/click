@@ -65,9 +65,9 @@ void
 ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 {
   switch (seriousness) {
-   case Warning: _nwarnings++; break;
-   case Error: case Fatal: _nerrors++; break;
-   default: break;
+   case ERR_WARNING:			_nwarnings++; break;
+   case ERR_ERROR: case ERR_FATAL:	_nerrors++; break;
+   default:				break;
   }
   int pos = 0, nl;
   while ((nl = m.find_left('\n', pos)) >= 0) {

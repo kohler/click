@@ -36,7 +36,7 @@ click_chatter(const char *fmt, ...)
 
   ErrorHandler *errh = ErrorHandler::default_handler();
   if (errh)
-    errh->verror(ErrorHandler::Message, "", fmt, val);
+    errh->verror(ErrorHandler::ERR_MESSAGE, "", fmt, val);
   else {
 #ifdef CLICK_LINUXMODULE
     static char buf[512];		// XXX

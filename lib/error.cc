@@ -33,7 +33,7 @@ ErrorHandler::debug(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Debug, String(), format, val);
+  verror(ERR_DEBUG, String(), format, val);
   va_end(val);
 }
 
@@ -42,7 +42,7 @@ ErrorHandler::message(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Message, String(), format, val);
+  verror(ERR_MESSAGE, String(), format, val);
   va_end(val);
 }
 
@@ -51,7 +51,7 @@ ErrorHandler::warning(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Warning, String(), format, val);
+  verror(ERR_WARNING, String(), format, val);
   va_end(val);
   return -EINVAL;
 }
@@ -61,7 +61,7 @@ ErrorHandler::error(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Error, String(), format, val);
+  verror(ERR_ERROR, String(), format, val);
   va_end(val);
   return -EINVAL;
 }
@@ -71,18 +71,9 @@ ErrorHandler::fatal(const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Fatal, String(), format, val);
+  verror(ERR_FATAL, String(), format, val);
   va_end(val);
   return -EINVAL;
-}
-
-void
-ErrorHandler::lmessage(const String &where, const char *format, ...)
-{
-  va_list val;
-  va_start(val, format);
-  verror(Message, where, format, val);
-  va_end(val);
 }
 
 void
@@ -90,7 +81,16 @@ ErrorHandler::ldebug(const String &where, const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Debug, where, format, val);
+  verror(ERR_DEBUG, where, format, val);
+  va_end(val);
+}
+
+void
+ErrorHandler::lmessage(const String &where, const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  verror(ERR_MESSAGE, where, format, val);
   va_end(val);
 }
 
@@ -99,7 +99,7 @@ ErrorHandler::lwarning(const String &where, const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Warning, where, format, val);
+  verror(ERR_WARNING, where, format, val);
   va_end(val);
   return -EINVAL;
 }
@@ -109,7 +109,7 @@ ErrorHandler::lerror(const String &where, const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Error, where, format, val);
+  verror(ERR_ERROR, where, format, val);
   va_end(val);
   return -EINVAL;
 }
@@ -119,7 +119,7 @@ ErrorHandler::lfatal(const String &where, const char *format, ...)
 {
   va_list val;
   va_start(val, format);
-  verror(Fatal, where, format, val);
+  verror(ERR_FATAL, where, format, val);
   va_end(val);
   return -EINVAL;
 }
@@ -164,6 +164,10 @@ static char *
 do_number_flags(char *pos, char *after_last, int base, int flags,
 		int precision, int field_width)
 {
+  // remove ALTERNATE_FORM for zero results in base 16
+  if ((flags & ALTERNATE_FORM) && base == 16 && *pos == '0')
+    flags &= ~ALTERNATE_FORM;
+  
   // account for zero padding
   if (precision >= 0)
     while (after_last - pos < precision)
@@ -205,7 +209,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
   String s_placeholder;		// ditto, in case we change `s'
   numbuf[NUMBUF_SIZE-1] = 0;
   
-  if (seriousness == Warning) {
+  if (seriousness == ERR_WARNING) {
     // prepend `warning: ' to every line
     s_placeholder = prepend_lines("warning: ", s);
     s = s_placeholder.cc();
@@ -271,9 +275,12 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
     width_flag = 0;
    width_flags:
     switch (*s) {
-     case 'h': width_flag = 'h'; s++; goto width_flags;
-     case 'l': width_flag = 'l'; s++; goto width_flags;
-     case 'L': case 'q': width_flag = 'q'; s++; goto width_flags;
+     case 'h':
+      width_flag = 'h'; s++; goto width_flags;
+     case 'l':
+      width_flag = (width_flag == 'l' ? 'q' : 'l'); s++; goto width_flags;
+     case 'L': case 'q':
+      width_flag = 'q'; s++; goto width_flags;
     }
     
     // conversion character
@@ -284,35 +291,36 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
       
      case 's': {
        s1 = va_arg(val, const char *);
-       if (!s1) s1 = "(null)";
+       if (!s1)
+	 s1 = "(null)";
        for (s2 = s1; *s2 && precision != 0; s2++)
-	 if (precision > 0) precision--;
+	 if (precision > 0)
+	   precision--;
        break;
      }
-     
+
      case 'c': {
        int c = va_arg(val, int);
-       if (flags & ALTERNATE_FORM) {
-	 // assume ASCII
-	 if (c == '\n')
-	   strcpy(numbuf, "\\n");
-	 else if (c == '\t')
-	   strcpy(numbuf, "\\t");
-	 else if (c == '\r')
-	   strcpy(numbuf, "\\r");
-	 else if (c < 32)
-	   sprintf(numbuf, "^%c", c + 64);
-	 else if (c < 0177)
-	   sprintf(numbuf, "%c", c);
-	 else
-	   sprintf(numbuf, "\\%03o", c);
-	 s1 = numbuf;
-	 s2 = strchr(numbuf, 0);
-       } else {
-	 numbuf[0] = c;
-	 s1 = numbuf;
-	 s2 = s1 + 1;
-       }
+       // check for extension of 'signed char' to 'int'
+       if (c < 0)
+	 c += 256;
+       // assume ASCII
+       if (c == '\n')
+	 strcpy(numbuf, "\\n");
+       else if (c == '\t')
+	 strcpy(numbuf, "\\t");
+       else if (c == '\r')
+	 strcpy(numbuf, "\\r");
+       else if (c == '\0')
+	 strcpy(numbuf, "\\0");
+       else if (c < 0 || c >= 256)
+	 strcpy(numbuf, "(bad char)");
+       else if (c < 32 || c >= 0177)
+	 sprintf(numbuf, "\\%03o", c);
+       else
+	 sprintf(numbuf, "%c", c);
+       s1 = numbuf;
+       s2 = strchr(numbuf, 0);
        break;
      }
      
@@ -325,9 +333,11 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 
 #ifndef CLICK_TOOL
      case 'e': {
-       Element *f = va_arg(val, Element *);
-       if (f) placeholder = f->declaration();
-       else placeholder = "(null)";
+       Element *e = va_arg(val, Element *);
+       if (e)
+	 placeholder = e->declaration();
+       else
+	 placeholder = "(null)";
        s1 = placeholder.data();
        s2 = s1 + placeholder.length();
        break;
@@ -340,14 +350,15 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
      case 'u':
      number: {
        // protect numbuf from overflow
-       if (field_width > NUMBUF_SIZE) field_width = NUMBUF_SIZE;
-       if (precision > NUMBUF_SIZE-4) precision = NUMBUF_SIZE-4;
+       if (field_width > NUMBUF_SIZE)
+	 field_width = NUMBUF_SIZE;
+       if (precision > NUMBUF_SIZE-4)
+	 precision = NUMBUF_SIZE-4;
        
        s2 = numbuf + NUMBUF_SIZE;
        
        unsigned long num;
        if (width_flag == 'q') {
-#if 1
 	 unsigned long long qnum = va_arg(val, unsigned long long);
 	 if ((flags & SIGNED) && (long long)qnum < 0)
 	   qnum = -(long long)qnum, flags |= NEGATIVE;
@@ -355,9 +366,6 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 	 s1 = s2 - q.length();
 	 memcpy((char *)s1, q.data(), q.length());
 	 goto got_number;
-#else
-	 assert(0 && "can't pass %q to errorhandler in a tool");
-#endif
        } else if (width_flag == 'h') {
 	 num = (unsigned short)va_arg(val, int);
 	 if ((flags & SIGNED) && (short)num < 0)
@@ -392,7 +400,9 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
      case 'p': {
        void *v = va_arg(val, void *);
        s2 = numbuf + NUMBUF_SIZE;
-       s1 = do_number((unsigned long)v, (char *)s2, 16, 0);
+       s1 = do_number((unsigned long)v, (char *)s2, 16, flags);
+       s1 = do_number_flags((char *)s1, (char *)s2, 16, flags | ALTERNATE_FORM,
+			    precision, field_width);
        break;
      }
      
@@ -419,25 +429,36 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 }
 
 String
-ErrorHandler::decorate_text(Seriousness, const String &landmark, const String &text)
+ErrorHandler::decorate_text(Seriousness, const String &prefix, const String &landmark, const String &text)
 {
+  String new_text;
+  
   if (!landmark)
-    return text;
+    new_text = text;
 
-  // special-purpose landmarks begin and end with a backslash `\'; ignore them
-  if (landmark.length() > 2 && landmark[0] == '\\' && landmark.back() == '\\')
-    return text;
+  else if (landmark.length() > 2 && landmark[0] == '\\'
+	   && landmark.back() == '\\')
+    // ignore special-purpose landmarks (begin and end with a backslash `\')
+    new_text = text;
 
-  // fix landmark: skip trailing spaces and trailing colon
-  int i, len = landmark.length();
-  for (i = len - 1; i >= 0; i--)
-    if (!isspace(landmark[i]))
-      break;
-  if (i >= 0 && landmark[i] == ':')
-    i--;
+  else {
+    // fix landmark: skip trailing spaces and trailing colon
+    int i, len = landmark.length();
+    for (i = len - 1; i >= 0; i--)
+      if (!isspace(landmark[i]))
+	break;
+    if (i >= 0 && landmark[i] == ':')
+      i--;
 
-  // return new text
-  return prepend_lines(landmark.substring(0, i+1) + ": ", text);
+    // prepend landmark
+    new_text = prepend_lines(landmark.substring(0, i+1) + ": ", text);
+  }
+
+  // prepend prefix, if any
+  if (prefix)
+    return prepend_lines(prefix, new_text);
+  else
+    return new_text;
 }
 
 int
@@ -445,7 +466,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
 		     const char *s, va_list val)
 {
   String text = make_text(seriousness, s, val);
-  text = decorate_text(seriousness, where, text);
+  text = decorate_text(seriousness, String(), where, text);
   handle_text(seriousness, text);
   return -EINVAL;
 }
@@ -499,9 +520,12 @@ FileErrorHandler::reset_counts()
 void
 FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness == Message) /* do nothing */;
-  else if (seriousness == Warning) _nwarnings++;
-  else _nerrors++;
+  if (seriousness <= ERR_MESSAGE)
+    /* do nothing */;
+  else if (seriousness == ERR_WARNING)
+    _nwarnings++;
+  else
+    _nerrors++;
 
   int pos = 0, nl;
   while ((nl = message.find_left('\n', pos)) >= 0) {
@@ -514,7 +538,7 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
     fwrite(s.data(), 1, s.length(), _f);
   }
   
-  if (seriousness == Fatal)
+  if (seriousness == ERR_FATAL)
     exit(1);
 }
 #endif
@@ -524,13 +548,8 @@ FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 // SILENT ERROR HANDLER
 //
 
-class SilentErrorHandler : public ErrorHandler {
-  
-  int _nwarnings;
-  int _nerrors;
-  
- public:
-  
+class SilentErrorHandler : public ErrorHandler { public:
+
   SilentErrorHandler()			: _nwarnings(0), _nerrors(0) { }
   
   int nwarnings() const			{ return _nwarnings; }
@@ -538,14 +557,20 @@ class SilentErrorHandler : public ErrorHandler {
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
 
   void handle_text(Seriousness, const String &);  
+
+ private:
+  
+  int _nwarnings;
+  int _nerrors;
+  
 };
 
 void
 SilentErrorHandler::handle_text(Seriousness seriousness, const String &)
 {
-  if (seriousness == Warning)
+  if (seriousness == ERR_WARNING)
     _nwarnings++;
-  if (seriousness == Error || seriousness == Fatal)
+  if (seriousness == ERR_ERROR || seriousness == ERR_FATAL)
     _nerrors++;
 }
 
@@ -616,9 +641,9 @@ ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
 }
 
 String
-ErrorVeneer::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+ErrorVeneer::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, landmark, text);
+  return _errh->decorate_text(seriousness, prefix, landmark, text);
 }
 
 void
@@ -640,16 +665,16 @@ ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 }
 
 String
-ContextErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
   String context_lines;
   if (_context) {
-    context_lines = _errh->decorate_text(Message, landmark, _context);
+    context_lines = _errh->decorate_text(ERR_MESSAGE, String(), landmark, _context);
     if (context_lines && context_lines.back() != '\n')
       context_lines += '\n';
     _context = String();
   }
-  return context_lines + _errh->decorate_text(seriousness, landmark, prepend_lines(_indent, text));
+  return context_lines + _errh->decorate_text(seriousness, prefix, landmark, prepend_lines(_indent, text));
 }
 
 
@@ -664,14 +689,9 @@ PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 }
 
 String
-PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmark, const String &text)
+PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
-  // prefix is supposed to precede landmarks, so resolve landmark now
-  String ntext = text;
-  if (landmark)
-    ntext = ErrorHandler::decorate_text(seriousness, landmark, text);
-  
-  return _errh->decorate_text(seriousness, String(), prepend_lines(_prefix, ntext));
+  return _errh->decorate_text(seriousness, _prefix + prefix, landmark, text);
 }
 
 
@@ -685,10 +705,10 @@ LandmarkErrorHandler::LandmarkErrorHandler(ErrorHandler *errh, const String &lan
 }
 
 String
-LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &lm, const String &text)
+LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &lm, const String &text)
 {
   if (lm)
-    return _errh->decorate_text(seriousness, lm, text);
+    return _errh->decorate_text(seriousness, prefix, lm, text);
   else
-    return _errh->decorate_text(seriousness, _landmark, text);
+    return _errh->decorate_text(seriousness, prefix, _landmark, text);
 }

@@ -78,15 +78,18 @@ update_proc_click_errors()
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (seriousness == Message) /* do nothing */;
-  else if (seriousness == Warning) _nwarnings++;
-  else _nerrors++;
+  if (seriousness <= ERR_MESSAGE)
+    /* do nothing */;
+  else if (seriousness == ERR_WARNING)
+    _nwarnings++;
+  else
+    _nerrors++;
 
   syslog_message(message);
   *all_errors << message << "\n";
   update_proc_click_errors();
   
-  if (seriousness == Fatal)
+  if (seriousness == ERR_FATAL)
     panic("KernelErrorHandler");
 }
 
