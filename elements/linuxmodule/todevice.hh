@@ -53,13 +53,13 @@ class ToDevice : public Element {
 
 #if DEV_KEEP_STATS
   // Statistics.
-  unsigned long long _idle_calls;  
+  unsigned long long _idle_calls;
+  unsigned long long _idle_pulls;
   unsigned long long _busy_returns;
   unsigned long long _activations; 
   unsigned long long _pkts_sent;    
   unsigned long long _time_clean;
   unsigned long long _time_tx;
-  unsigned long long _time_running;
 #endif
   unsigned long _rejected;
   unsigned long _hard_start;

@@ -46,13 +46,13 @@ ToDevice::ToDevice()
     _rejected(0), _hard_start(0)
 {
 #if DEV_KEEP_STATS
+  _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
   _activations = 0; 
   _pkts_sent = 0; 
   _time_clean = 0;
   _time_tx = 0;
-  _time_running = 0;
 #endif
 }
 
@@ -62,13 +62,13 @@ ToDevice::ToDevice(const String &devname)
     _rejected(0), _hard_start(0)
 {
 #if DEV_KEEP_STATS
+  _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
   _activations = 0; 
   _pkts_sent = 0; 
   _time_clean = 0;
   _time_tx = 0;
-  _time_running = 0;
 #endif
 }
 
@@ -282,6 +282,7 @@ ToDevice::tx_intr()
   if (_activations > 0 || sent > 0) {
     _activations++;
     if (sent == 0) _idle_calls++;
+    if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
 #if HAVE_POLLING
@@ -327,7 +328,7 @@ ToDevice::tx_intr()
   int dmal = 16;
 #endif
 
-  int dma_thresh_high = dmal-dmal/4;
+  int dma_thresh_high = dmal-dmal/8;
   int dma_thresh_low  = dmal/4;
   int adj = tickets()/4;
   if (adj<2) adj=2;
@@ -353,10 +354,6 @@ ToDevice::tx_intr()
   _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
-#endif
-
-#if DEV_KEEP_STATS
-  if (_activations>0) _time_running += get_cycles()-time_now;
 #endif
 }
 
@@ -409,11 +406,11 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_hard_start) + " hard start xmit\n" +
 #if DEV_KEEP_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
+    String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_pkts_sent) + " packets sent\n" +
     String(td->_time_clean) + " cycles cleaning\n" +
     String(td->_time_tx) + " cycles tx\n" +
-    String(td->_time_running) + " cycles running\n" +
     String(td->_activations) + " transmit activations\n";
 #else
     String();
