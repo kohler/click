@@ -1,3 +1,12 @@
+2003-02-18 Tuesday 11:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/simple-dsdv.click (1.2): Try it without the bugs
+
+2003-02-18 Tuesday 11:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/simple-dsdv.click (1.1), tools/build-grid-config.sh (1.12),
+	tools/grid-params.m4 (1.7): add latest grid config updates
+
 2003-02-17 Monday 02:06  Eddie Kohler <kohler@icir.org>
 
 	* lib/task.cc (1.23): Task::reschedule: don't lock tasks if we're
