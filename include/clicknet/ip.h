@@ -114,13 +114,24 @@ struct click_ip {
 
 #if !CLICK_LINUXMODULE
 uint16_t click_in_cksum(const unsigned char *addr, int len);
-uint16_t click_in_cksum_pseudohdr(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len);
+uint16_t click_in_cksum_pseudohdr_raw(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len);
 #else
 # define click_in_cksum(addr, len) \
 		ip_compute_csum((unsigned char *)(addr), (len))
-# define click_in_cksum_pseudohdr(csum, src, dst, proto, packet_len) \
+# define click_in_cksum_pseudohdr_raw(csum, src, dst, proto, packet_len) \
 		csum_tcpudp_magic((src), (dst), (packet_len), (proto), ~(csum) & 0xFFFF)
 #endif
+uint16_t click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int packet_len);
+
+/* use if you're not sure whether there are source routing options */
+static inline uint16_t
+click_in_cksum_pseudohdr(uint32_t csum, const struct click_ip *iph, int packet_len)
+{
+    if (iph->ip_hl == 5)
+	return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, iph->ip_p, packet_len);
+    else
+	return click_in_cksum_pseudohdr_hard(csum, iph, packet_len);
+}
 
 static inline void
 click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)

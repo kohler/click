@@ -6,7 +6,13 @@
 
 #include <click/config.h>
 #include <clicknet/ip.h>
+#if CLICK_LINUXMODULE
+# include <linux/string.h>
+#else
+# include <string.h>
+#endif
 
+#if !CLICK_LINUXMODULE
 uint16_t
 click_in_cksum(const unsigned char *addr, int len)
 {
@@ -41,11 +47,11 @@ click_in_cksum(const unsigned char *addr, int len)
 }
 
 uint16_t
-click_in_cksum_pseudohdr(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len)
+click_in_cksum_pseudohdr_raw(uint32_t csum, uint32_t src, uint32_t dst, int proto, int packet_len)
 {
     assert(csum <= 0xFFFF);
     csum = ~csum & 0xFFFF;
-#ifdef __i386__
+# ifdef __i386__
     // borrowed from Linux
     __asm__("\n\
 	addl %1, %0\n\
@@ -60,11 +66,42 @@ click_in_cksum_pseudohdr(uint32_t csum, uint32_t src, uint32_t dst, int proto, i
 	    : "=r" (csum)
 	    : "r" (csum << 16), "0" (csum & 0xFFFF0000));
     return (~csum) >> 16;
-#else
+# else
     csum += (src & 0xffff) + (src >> 16);
     csum += (dst & 0xffff) + (dst >> 16);
     csum += htons(packet_len) + htons(proto);
     csum = (csum & 0xffff) + (csum >> 16);
     return ~(csum + (csum >> 16)) & 0xFFFF;
+# endif
+}
 #endif
+
+uint16_t
+click_in_cksum_pseudohdr_hard(uint32_t csum, const struct click_ip *iph, int packet_len)
+{
+    const uint8_t *opt = (const uint8_t *)(iph + 1);
+    const uint8_t *end_opt = ((const uint8_t *)iph) + (iph->ip_hl << 2);
+    while (opt < end_opt) {
+	/* check one-byte options */
+	if (*opt == IPOPT_NOP) {
+	    opt++;
+	    continue;
+	} else if (*opt == IPOPT_EOL)
+	    break;
+
+	/* check option length */
+	if (opt + 1 >= end_opt || opt[1] < 2 || opt + opt[1] > end_opt)
+	    break;
+
+	/* grab correct final destination from source routing option */
+	if ((*opt == IPOPT_SSRR || *opt == IPOPT_LSRR) && opt[1] >= 7) {
+	    uint32_t daddr;
+	    memcpy(&daddr, opt + opt[1] - 4, 4);
+	    return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, daddr, iph->ip_p, packet_len);
+	}
+
+	opt += opt[1];
+    }
+
+    return click_in_cksum_pseudohdr_raw(csum, iph->ip_src.s_addr, iph->ip_src.s_addr, iph->ip_p, packet_len);
 }
