@@ -184,8 +184,9 @@ FromDevice::initialize(ErrorHandler *errh)
                          _promisc,
                          1,     /* timeout: don't wait for packets */
                          ebuf);
+  // Note: pcap error buffer will contain the interface name
   if (!_pcap)
-    return errh->error("%s: %s", ifname, ebuf);
+    return errh->error("%s", ebuf);
 
   // nonblocking I/O on the packet socket so we can poll
   int fd = pcap_fileno(_pcap);
@@ -210,7 +211,7 @@ FromDevice::initialize(ErrorHandler *errh)
   bpf_u_int32 netmask;
   bpf_u_int32 localnet;
   if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0) {
-    errh->warning("%s: %s", ifname, ebuf);
+    errh->warning("%s", ebuf);
   }
   
   struct bpf_program fcode;
