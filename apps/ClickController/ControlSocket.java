@@ -86,6 +86,7 @@ public class ControlSocket {
     private Socket _sock;
     private BufferedReader _in;
     private BufferedWriter _out;
+    private int _protocolMinorVersion;
     
     private static final int CODE_OK = 200;
     private static final int CODE_OK_WARN = 220;
@@ -96,7 +97,9 @@ public class ControlSocket {
     private static final int CODE_HANDLER_ERR = 520;
     private static final int CODE_NO_PERM = 530;
     
-    public static final String CTRL_SOCK_VER = "1.0";
+    public static final int PROTOCOL_MAJOR_VERSION = 1;
+    public static final int PROTOCOL_MINOR_VERSION = 0;
+
     /* XXX not sure timeout is a good idea; if we do timeout, we should
        reset the connection (close and re-open) to get rid of all old
        data... */
@@ -133,20 +136,25 @@ public class ControlSocket {
 	 */
 	try {
 	    String banner = _in.readLine();
-	    int i = banner.indexOf('/');
-	    if (i < 0) {
+	    int slash = banner.indexOf('/');
+	    int dot = (slash >= 0 ? banner.indexOf('.', slash + 1) : -1);
+	    if (slash < 0 || dot < 0) {
 		_sock.close();
 		throw new IOException("Unexpected greeting from ControlSocket");
 	    }
-	    
-	    String ver_str = banner.substring(i + 1);
-	    if (!ver_str.equals(CTRL_SOCK_VER)) {
+	    int majorVersion = Integer.parseInt(banner.substring(slash + 1, dot));
+	    int minorVersion = Integer.parseInt(banner.substring(dot + 1));
+	    if (majorVersion != PROTOCOL_MAJOR_VERSION
+		|| minorVersion < PROTOCOL_MINOR_VERSION) {
 		_sock.close();
 		throw new IOException("Wrong ControlSocket version");
 	    }
-	} catch (InterruptedIOException ex) {
+	    _protocolMinorVersion = minorVersion;
+	} catch (InterruptedIOException e) {
 	    // read timed out
-	    throw ex;
+	    throw e;
+	} catch (NumberFormatException e) {
+	    throw new IOException("Unexpected greeting from ControlSocket");
 	}
     }
     
@@ -371,6 +379,8 @@ public class ControlSocket {
 	    if (j == s.length())
 		throw new HandlerFormatException(elementName + ".handlers");
 	    HandlerInfo hi = new HandlerInfo(elementName, s.substring(0, j).trim());
+	    while (j < s.length() && Character.isWhitespace(s.charAt(j)))
+		j++;
 	    for ( ; j < s.length(); j++) {
 		char c = s.charAt(j);
 		if (Character.toLowerCase(c) == 'r')
@@ -397,7 +407,7 @@ public class ControlSocket {
      * @exception PermissionDeniedException If the router would not let us access the handler.
      * @exception IOException If there was some other error accessing
      * the handler (e.g., there was a stream or socket error, the
-     * ControlSocket returned an unknwon unknown error code, or the
+     * ControlSocket returned an unknown unknown error code, or the
      * response could otherwise not be understood). 
      * @see #write
      * @see #getConfigElementNames
@@ -429,7 +439,7 @@ public class ControlSocket {
 	int num_bytes = getDataLength(response);
 	if (num_bytes < 0)
 	    throw new ControlSocketException("Bad length returned from ControlSocket");
-	
+
 	if (num_bytes == 0) 
 	    return new char[0];
 	
