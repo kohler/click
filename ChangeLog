@@ -1,3 +1,8 @@
+2003-08-01 Friday 23:18  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.10), linktable.hh (1.10): bugfix:
+	don't call findp inside an iter!!!! --jbicket
+
 2003-07-31 Thursday 13:26  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linkstat.cc (1.24): made multi-hop work and tested
