@@ -53,6 +53,7 @@ Consume a driver stop event, then go to the next instruction.
 
 Wait for TIME seconds, or until a driver stop event occurs, whichever comes
 first; then go to the next instruction.  Any driver stop is not consumed.
+TIME has microsecond precision.
 
 =item 'C<wait_stop> [COUNT]'
 
@@ -160,7 +161,7 @@ class DriverManager : public Element { public:
 
     Timer _timer;
 
-    void add_insn(int, int, const String & = String());
+    void add_insn(int, int, int = 0, const String & = String());
     bool step_insn();
 
 };

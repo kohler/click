@@ -37,7 +37,7 @@ DriverManager::~DriverManager()
 }
 
 void
-DriverManager::add_insn(int insn, int arg, const String &arg3)
+DriverManager::add_insn(int insn, int arg, int arg2, const String &arg3)
 {
     // first instruction must be WAIT or WAIT_STOP, so add INITIAL if
     // necessary
@@ -45,7 +45,7 @@ DriverManager::add_insn(int insn, int arg, const String &arg3)
 	add_insn(INSN_INITIAL, 0);
     _insns.push_back(insn);
     _args.push_back(arg);
-    _args2.push_back(0);
+    _args2.push_back(arg2);
     _args3.push_back(arg3);
 }
 
@@ -84,34 +84,34 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	} else if (insn_name == "write" || insn_name == "write_skip" || insn_name == "call") {
 	    int insn = (insn_name == "write_skip" ? INSN_WRITE_SKIP : INSN_WRITE);
 	    if (words.size() == 2)
-		add_insn(insn, 0, words[1]);
+		add_insn(insn, 0, 0, words[1]);
 	    else if (words.size() == 3)
-		add_insn(insn, 0, words[1] + " " + cp_unquote(words[2]));
+		add_insn(insn, 0, 0, words[1] + " " + cp_unquote(words[2]));
 	    else if (words.size() > 3)
-		add_insn(insn, 0, cp_unspacevec(words.begin()+1, words.end()));
+		add_insn(insn, 0, 0, cp_unspacevec(words.begin()+1, words.end()));
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER [ARGS]'", insn_name.cc());
 
 	} else if (insn_name == "read" || insn_name == "print") {
 	    if (words.size() == 2)
-		add_insn(INSN_READ, 0, words[1]);
+		add_insn(INSN_READ, 0, 0, words[1]);
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER'", insn_name.cc());
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "save" || insn_name == "append") {
 	    if (words.size() == 3)
-		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, words[1] + " " + cp_unquote(words[2]));
+		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, 0, words[1] + " " + cp_unquote(words[2]));
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
 	    
 	} else if (insn_name == "wait_time" || insn_name == "wait_for" || insn_name == "wait") {
-	    uint32_t ms;
-	    if (words.size() != 2 || !cp_seconds_as_milli(words[1], &ms))
+	    timeval tv;
+	    if (words.size() != 2 || !cp_timeval(words[1], &tv))
 		errh->error("expected '%s TIME'", insn_name.cc());
 	    else
-		add_insn(INSN_WAIT_TIME, ms);
+		add_insn(INSN_WAIT_TIME, tv.tv_sec, tv.tv_usec);
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
 	    if (words.size() != 1)
@@ -173,11 +173,11 @@ DriverManager::initialize(ErrorHandler *errh)
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
     if (insn == INSN_WAIT_TIME)
-	_timer.schedule_after_ms(_args[_insn_pos]);
+	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
     else if (insn == INSN_INITIAL)
 	// get rid of the initial runcount so we get called right away
 	router()->adjust_runcount(-1);
-    
+
     return (errh->nerrors() == before || !_check_handlers ? 0 : -1);
 }
 
@@ -195,7 +195,7 @@ DriverManager::step_insn()
     if (insn == INSN_STOP)
 	router()->adjust_runcount(-1);
     else if (insn == INSN_WAIT_TIME)
-	_timer.schedule_after_ms(_args[_insn_pos]);
+	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
     else if (insn == INSN_WAIT_STOP)
 	/* nada */;
     else if (insn == INSN_WRITE) {
