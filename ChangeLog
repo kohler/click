@@ -1,3 +1,9 @@
+2005-02-16 Wednesday 13:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/: linux-2.4.20-patch (1.10), linux-2.4.21-patch (1.5),
+	linux-2.4.26-patch (1.4): make sure all netif_receive_skbs use the
+	new format (Indian Mogul)
+
 2005-02-16 Wednesday 02:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.hh (1.5), iproutetable.cc (1.9),
