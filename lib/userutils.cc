@@ -540,6 +540,34 @@ init_archive_element(const String &name, int mode)
 }
 
 
+bool
+compressed_data(const unsigned char *buf, int len)
+{
+  return (len >= 3
+	  && ((buf[0] == 037 && buf[1] == 0235)
+	      || (buf[0] == 037 && buf[1] == 0213)
+	      || (buf[0] == 'B' && buf[1] == 'Z' && buf[2] == 'h')));
+}
+
+FILE *
+open_uncompress_pipe(const String &filename, const unsigned char *buf, int, ErrorHandler *errh)
+{
+  String command;
+  if (buf[0] == 'B')
+    command = "bzcat " + filename;
+  else if (access("/usr/bin/gzcat", X_OK) >= 0)
+    command = "/usr/bin/gzcat " + filename;
+  else 
+    command = "zcat " + filename;
+  if (FILE *p = popen(command.cc(), "r"))
+    return p;
+  else {
+    errh->error("`%s': %s", command.cc(), strerror(errno));
+    return 0;
+  }
+}
+
+
 #if HAVE_DYNAMIC_LINKING
 
 extern "C" {

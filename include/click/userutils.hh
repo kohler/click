@@ -29,6 +29,9 @@ void parse_tabbed_lines(const String &, Vector<String> *, ...);
 
 ArchiveElement init_archive_element(const String &, int);
 
+bool compressed_data(const unsigned char *, int);
+FILE *open_uncompress_pipe(const String &filename, const unsigned char *, int, ErrorHandler *);
+
 #if HAVE_DYNAMIC_LINKING
 int clickdl_load_package(String, ErrorHandler *);
 void clickdl_load_requirement(String, const Vector<ArchiveElement> *archive, ErrorHandler *);
