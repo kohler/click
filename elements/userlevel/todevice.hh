@@ -73,18 +73,20 @@ class ToDevice : public Element { public:
   void push(int port, Packet *);
   void run_scheduled();
 
- private:
+protected:
+  Task _task;
+  void send_packet(Packet *);
+
+private:
 
   String _ifname;
   int _fd;
   bool _my_fd;
-  Task _task;
   
 #if TODEVICE_BSD_DEV_BPF
   pcap_t *_pcap;
 #endif
 
-  void send_packet(Packet *);
   
 };
 

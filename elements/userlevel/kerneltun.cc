@@ -286,6 +286,7 @@ KernelTap::push(int, Packet *p)
 #if defined (__OpenBSD__) || defined(__FreeBSD__)
   char big[2048];
   int af;
+  struct timeval tp;
 
   if(type == ETHERTYPE_IP){
     af = AF_INET;
@@ -305,6 +306,10 @@ KernelTap::push(int, Packet *p)
   af = htonl(af);
   memcpy(big, &af, 4);
   memcpy(big+4, data, length);
+  
+  gettimeofday(&tp, NULL);
+  //click_chatter("pOUT_KERN: (%d,%d)", tp.tv_sec, tp.tv_usec);
+
   if(write(_fd, big, length+4) != (int)length+4){
     perror("write tun");
   }
