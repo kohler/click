@@ -1,3 +1,24 @@
+2001-03-16 Friday 20:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: click-check/click-check.cc, lib/processingt.cc,
+	lib/processingt.hh, lib/toolutils.cc, lib/toolutils.hh: click-check
+	bugfix: always check at least one driver; and the code that checks
+	processing values takes flow codes into account!
+
+2001-03-16 Friday 20:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/etherswitch/etherswitch.cc,
+	elements/etherswitch/etherswitch.hh, elements/ipsec/des.cc,
+	elements/ipsec/desp.cc, elements/ipsec/esp.cc,
+	elements/standard/suppressor.hh, include/click/router.hh,
+	lib/element.cc, lib/router.cc: nitlets; and treat flow_code()
+	strings carefully: don't crash on erroneous strings
+
+2001-03-16 Friday 19:51  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/: des.hh, sha1.cc, sha1.hh, sha1_impl.hh: faster
+	implementation of sha1, from eric young
+
 2001-03-16 Friday 18:34  Benjie Chen <benjie@lcs.mit.edu>
 
 	* conf/ipsec-3des.click: fix example
