@@ -1,3 +1,30 @@
+2002-01-15 Tuesday 10:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.47), elements/grid/gridroutetable.cc (1.24),
+	elements/grid/lookupgeogridroute.cc (1.20): nitlets for new grid
+	headers
+
+2002-01-15 Tuesday 10:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.hh (1.11): documentation nitlet
+
+2002-01-15 Tuesday 09:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.46), elements/grid/filterbyrange.cc (1.23),
+	elements/grid/filterbyrange.hh (1.11), elements/grid/grid.hh
+	(1.34), elements/grid/gridlocationinfo.cc (1.13),
+	elements/grid/gridlocationinfo.hh (1.8),
+	elements/grid/gridroutecb.hh (1.7), elements/grid/gridroutetable.cc
+	(1.23), elements/grid/gridroutetable.hh (1.10),
+	elements/grid/loctable.cc (1.10),
+	elements/grid/lookupgeogridroute.cc (1.19),
+	elements/grid/lookupgeogridroute.hh (1.8),
+	elements/grid/printgrid.cc (1.20), elements/grid/radiosim.cc
+	(1.15), elements/grid/simplelocquerier.cc (1.10): lots of changes:
+	added 3D positions.  started route metric code.  these changes are
+	incompatible with previous code: the header sizes and version
+	numbers have changed.
+
 2002-01-14 Monday 20:39  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/error.hh (1.15), lib/error.cc (1.37): add
