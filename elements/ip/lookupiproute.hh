@@ -48,7 +48,7 @@ public:
   ~LookupIPRoute();
   
   const char *class_name() const		{ return "LookupIPRoute"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   LookupIPRoute *clone() const;
   
   int configure(const String &, ErrorHandler *);

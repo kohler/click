@@ -79,10 +79,10 @@ LookupIPRoute::initialize(ErrorHandler *)
   return 0;
 }
 
-#define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
 void
 LookupIPRoute::push(int, Packet *p)
 {
+#define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
   IPAddress a = p->dst_ip_anno();
   unsigned gw = 0;
   int ifi = -1;

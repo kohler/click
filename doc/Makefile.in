@@ -23,23 +23,23 @@ Makefile: $(srcdir)/Makefile.in
 
 install: install-man
 	$(mkinstalldirs) $(datadir)
-	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
+	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > $(datadir)/elementmap
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
 	/bin/rm -f $(datadir)/src
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
 
 install-man:
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man8 $(mandir)/mann
-	$(INSTALL_DATA) click.1 $(mandir)/man1/click.1
-	$(INSTALL_DATA) click.5 $(mandir)/man5/click.5
-	$(INSTALL_DATA) click.o.8 $(mandir)/man8/click.o.8
-	$(INSTALL_DATA) click-align.1 $(mandir)/man1/click-align.1
-	$(INSTALL_DATA) click-install.1 $(mandir)/man1/click-install.1
-	$(INSTALL_DATA) click-xform.1 $(mandir)/man1/click-xform.1
-	$(INSTALL_DATA) Element.3 $(mandir)/man3/Element.3
-	$(INSTALL_DATA) Connection.3 $(mandir)/man3/Connection.3
-	$(INSTALL_DATA) HandlerRegistry.3 $(mandir)/man3/HandlerRegistry.3
-	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
+	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1
+	$(INSTALL_DATA) $(srcdir)/click.5 $(mandir)/man5/click.5
+	$(INSTALL_DATA) $(srcdir)/click.o.8 $(mandir)/man8/click.o.8
+	$(INSTALL_DATA) $(srcdir)/click-align.1 $(mandir)/man1/click-align.1
+	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
+	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
+	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3
+	$(INSTALL_DATA) $(srcdir)/Connection.3 $(mandir)/man3/Connection.3
+	$(INSTALL_DATA) $(srcdir)/HandlerRegistry.3 $(mandir)/man3/HandlerRegistry.3
+	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
 
 clean:
 distclean: clean

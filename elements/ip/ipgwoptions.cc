@@ -183,19 +183,6 @@ IPGWOptions::handle_options(Packet *p)
   return 0;
 }
 
-static String
-IPGWOptions_read_drops(Element *xf, void *)
-{
-  IPGWOptions *f = (IPGWOptions *)xf;
-  return String(f->drops()) + "\n";
-}
-
-void
-IPGWOptions::add_handlers(HandlerRegistry *fcr)
-{
-  fcr->add_read("drops", IPGWOptions_read_drops, 0);
-}
-
 void
 IPGWOptions::push(int, Packet *p)
 {
@@ -218,6 +205,19 @@ IPGWOptions::pull(int)
       p = handle_options(p);
   }
   return p;
+}
+
+static String
+IPGWOptions_read_drops(Element *xf, void *)
+{
+  IPGWOptions *f = (IPGWOptions *)xf;
+  return String(f->drops()) + "\n";
+}
+
+void
+IPGWOptions::add_handlers(HandlerRegistry *fcr)
+{
+  fcr->add_read("drops", IPGWOptions_read_drops, 0);
 }
 
 EXPORT_ELEMENT(IPGWOptions)

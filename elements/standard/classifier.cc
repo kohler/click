@@ -205,7 +205,7 @@ Classifier::Spread::nev_combine(const Spread &alw, const Spread &nev,
   }
 }
 
-#if 0 && defined(CLICK_USERLEVEL)
+#if 0
 static void
 print_spread(Classifier::Spread &s)
 {
@@ -477,11 +477,6 @@ Classifier::optimize_exprs(ErrorHandler *errh)
   // is empty, _output_everything is >= 0.
   if (_exprs.size() == 0 && _output_everything < 0)
     _output_everything = noutputs();
-
-#if 0
-  // combine adjacent half-full exprs into one full unaligned expr
-  unaligned_optimize();
-#endif
 
   // get rid of unused states
   remove_unused_states();

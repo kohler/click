@@ -38,6 +38,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 
 OBJS = click-install.o
+UN_OBJS = click-uninstall.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
@@ -56,13 +57,16 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libclicktool.a click-install
+all: libclicktool.a click-install click-uninstall
 
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
 click-install: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
+
+click-uninstall: Makefile $(UN_OBJS) ../lib/libclicktool.a
+	$(CXXLINK) $(UN_OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -73,13 +77,14 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-install
+install: click-install click-uninstall
 	$(mkinstalldirs) $(sbindir)
 	$(INSTALL) click-install $(sbindir)/click-install
+	$(INSTALL) click-uninstall $(sbindir)/click-uninstall
 install-man:
 
 clean:
-	rm -f *.d *.o click-install
+	rm -f *.d *.o click-install click-uninstall
 distclean: clean
 	-rm -f Makefile
 

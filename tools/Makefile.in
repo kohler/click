@@ -76,6 +76,7 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-fastclassifier/click-fastclassifier.cc \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
+	click-install/click-uninstall.cc \
 	click-specialize/Makefile.in \
 	click-specialize/click-specialize.cc \
 	click-specialize/cxxclass.cc click-specialize/cxxclass.hh \

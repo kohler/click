@@ -1,5 +1,5 @@
 /*
- * click-install.cc -- configuration installer for Click kernel module
+ * click-uninstall.cc -- uninstall Click kernel module
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -28,10 +28,8 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
 
 static Clp_Option options[] = {
-  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -50,12 +48,11 @@ void
 usage()
 {
   printf("\
-`Click-install' installs a Click configuration into the current Linux kernel.\n\
+`Click-uninstall' uninstalls Click from the current Linux kernel.\n\
 \n\
-Usage: %s [OPTION]... [ROUTERFILE]\n\
+Usage: %s [OPTION]...\n\
 \n\
 Options:\n\
-  -f, --file FILE               Read router configuration from FILE.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -117,7 +114,7 @@ main(int argc, char **argv)
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = new PrefixErrorHandler
-    (ErrorHandler::default_handler(), "click-install: ");
+    (ErrorHandler::default_handler(), "click-uninstall: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -125,8 +122,6 @@ main(int argc, char **argv)
   Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
-  const char *router_file = 0;
-  
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
@@ -137,24 +132,15 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-install (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
+      printf("click-uninstall (Click) %s\n", VERSION);
+      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
       
-     case ROUTER_OPT:
      case Clp_NotOption:
-      if (router_file) {
-	errh->error("router file specified twice");
-	goto bad_option;
-      }
-      router_file = clp->arg;
-      break;
-
-     bad_option:
      case Clp_BadOption:
       short_usage();
       exit(1);
@@ -167,104 +153,22 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = read_router_file(router_file, errh);
-  if (!r || errh->nerrors() > 0)
-    exit(1);
-  r->flatten(errh);
-
-  // check for Click module; install it if not available
-  if (access("/proc/click", F_OK) < 0) {
-    String click_o =
-      clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
-    String cmdline = "/sbin/insmod " + click_o;
-    (void) system(cmdline);
-    if (access("/proc/click", F_OK) < 0)
-      errh->fatal("cannot install Click module");
-  }
+  // do nothing if Click not installed
+  if (access("/proc/click", F_OK) < 0)
+    exit(0);
+  
+  // first, write nothing to /proc/click/config -- frees up modules
+  FILE *f = fopen("/proc/click/config", "w");
+  if (!f)
+    errh->fatal("cannot install configuration: %s", strerror(errno));
+  fputs("// nothing\n", f);
+  fclose(f);
 
   // find current packages
   HashMap<String, int> active_modules(-1);
   HashMap<String, int> packages(-1);
   read_package_file("/proc/modules", active_modules, errh);
   read_package_file("/proc/click/packages", packages, errh);
-
-  // install archived objects. mark them with leading underscores.
-  // may require renaming to avoid clashes in `insmod'
-  {
-    const Vector<ArchiveElement> &archive = r->archive();
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name.length() > 2
-	  && archive[i].name.substring(-3) == ".ko") {
-	
-	// choose module name
-	String module_name = archive[i].name.substring(0, -3);
-	String insmod_name = "_" + module_name;
-	while (active_modules[insmod_name] >= 0)
-	  insmod_name = "_" + insmod_name;
-
-	// install module
-	String tmpnam = unique_tmpnam("x*.o", errh);
-	if (!tmpnam) exit(1);
-	FILE *f = fopen(tmpnam.cc(), "w");
-	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
-	fclose(f);
-	String cmdline = "/sbin/insmod -o " + insmod_name + " " + tmpnam;
-	int retval = system(cmdline);
-	if (retval != 0)
-	  errh->fatal("`insmod %s' failed", module_name.cc());
-
-	// cleanup
-	packages.insert(module_name, 1);
-	active_modules.insert(insmod_name, 1);
-      }
-  }
-  
-  // install missing requirements
-  {
-    const HashMap<String, int> &requirements = r->requirement_map();
-    int thunk = 0, value; String key;
-    while (requirements.each(thunk, key, value))
-      if (value >= 0 && packages[key] < 0) {
-	String package = clickpath_find_file
-	  (key + ".ko", "lib", CLICK_LIBDIR);
-	if (!package)
-	  package = clickpath_find_file
-	    (key + ".o", "lib", CLICK_LIBDIR);
-	if (!package) {
-	  errh->message("cannot find required package `%s.o'", key.cc());
-	  errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
-	}
-	String cmdline = "/sbin/insmod " + package;
-	int retval = system(cmdline);
-	if (retval != 0)
-	  errh->fatal("`insmod %s' failed: %s", package.cc(), strerror(errno));
-	active_modules.insert(package, 1);
-      }
-  }
-  
-  // write flattened configuration to /proc/click/config
-  FILE *f = fopen("/proc/click/config", "w");
-  if (!f)
-    errh->fatal("cannot install configuration: %s", strerror(errno));
-  // XXX include packages?
-  String config = r->configuration_string();
-  fwrite(config.data(), 1, config.length(), f);
-  fclose(f);
-
-  // report errors
-  {
-    char buf[1024];
-    FILE *f = fopen("/proc/click/errors", "r");
-    if (!f)
-      errh->warning("/proc/click/errors: %s", strerror(errno));
-    else {
-      while (!feof(f)) {
-	size_t s = fread(buf, 1, 1024, f);
-	fwrite(buf, 1, s, stderr);
-      }
-      fclose(f);
-    }
-  }
 
   // remove unused packages
   {
@@ -273,6 +177,10 @@ particular purpose.\n");
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
       (void) system(cmdline);
     }
+    String cmdline = "/sbin/rmmod click";
+    int retval = system(cmdline);
+    if (retval != 0)
+      errh->fatal("`rmmod click' failed");
   }
   
   return 0;

@@ -324,7 +324,7 @@ Specializer::do_simple_action(SpecializedClass &spc)
   spc.cxxc->defun
     (CxxFunction("push", false, "void", "(int, Packet *p)",
 		 "\n  if (Packet *q = smaction(p))\n\
-    push_output(0, p);\n", ""));
+    push_output(0, q);\n", ""));
   spc.cxxc->defun
     (CxxFunction("pull", false, "Packet *", "(int)",
 		 "\n  Packet *p = pull_input(0);\n\
@@ -431,6 +431,8 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       sa << "return " << input_function[r1] << "(input(i).element(), "
 	 << input_port[r1] << ");";
     }
+    if (range1.size() == 0)
+      sa << "\n  return 0;";	// shut up warnings
     sa << "\n";
     cxxc->find("pull_input")->set_body(sa.take_string());
     
