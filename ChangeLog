@@ -1,3 +1,8 @@
+2001-11-04 Sunday 01:35  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: timefilter.cc (1.4), timefilter.hh (1.5):
+	TimeFilter: add extend_interval handler
+
 2001-11-03 Saturday 16:37  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.102), doc/Makefile.in (1.41), doc/mkwebdoc.pl
