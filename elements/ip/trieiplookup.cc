@@ -33,6 +33,9 @@ TrieIPLookup::TrieIPLookup()
     _default_rope.push_back(4);
     _default_rope.push_back(8);
     _default_rope.push_back(16);
+
+    // default route
+    _route_vector.push_back(Prefix(0, 0, 0, -1));
 }
 
 TrieIPLookup::~TrieIPLookup()
@@ -72,32 +75,25 @@ TrieIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
         }
 
         if (ok && port >= 0) {
-            add_to_route_vector(dst, mask, gw, port, errh);
+            if (port >= noutputs())
+                errh->error("port number out of range");
+
+            dst &= mask;
+            _route_vector.push_back(Prefix(dst, mask, gw, port));
         } else
             errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
     }
 
     if (errh->nerrors() == before) {
+        configure_route_vector();
         build_main();
         return 0;
     } else
         return -1;
 }
 
-inline int
-TrieIPLookup::add_to_route_vector(IPAddress addr, IPAddress mask, IPAddress gw, int output, ErrorHandler *errh)
-{
-    if (output < 0 || output >= noutputs())
-        return errh->error("port number out of range");
-
-    addr &= mask;
-    _route_vector.push_back(Prefix(addr, mask, gw, output));
-
-    return 0;
-}
-
 inline void
-TrieIPLookup::build_init()
+TrieIPLookup::configure_route_vector()
 {
     // sort _route_vector
     click_qsort(&_route_vector[0], _route_vector.size(), sizeof(Prefix), prefix_order_compar);
@@ -118,18 +114,19 @@ TrieIPLookup::build_init()
     for (int i = 0; i < _route_vector.size() - n_last - 1; i++) {
         _route_vector.pop_back();
     }
+}
 
-    int n_increment = 0;
-    // if there's no root node, add it
-    if (_route_vector[0].mask.mask_to_prefix_len() != 0) {
-        trie_vector.push_back(TrieNode(0, 0, 0, -1, true, n_increment++));
-    }
+inline void
+TrieIPLookup::build_init()
+{
+    // make sure there's a root node
+    assert (_route_vector[0].mask.mask_to_prefix_len() == 0);
 
-    // fill trie_vector
+    // fill _trie_vector
     for (int i = 0; i < _route_vector.size(); i++) {
         const Prefix prefix = _route_vector[i];
-        trie_vector.push_back(TrieNode(prefix.addr, prefix.mask, prefix.gw,
-                                       prefix.output, true, i+n_increment));
+        _trie_vector.push_back(TrieNode(prefix.addr, prefix.mask, prefix.gw,
+                                        prefix.output, true, i));
     }
 }
 
@@ -144,7 +141,7 @@ TrieIPLookup::build_exists_middle(const TrieNode& parent, const TrieNode& child)
 
     // sibling to with common prefix with
     const TrieNode &sibling = -1 != parent.right_child ?
-        trie_vector[parent.right_child] : trie_vector[parent.left_child];
+        _trie_vector[parent.right_child] : _trie_vector[parent.left_child];
 
     // just making sure
     assert(parent.mask.mask_to_prefix_len() < child.mask.mask_to_prefix_len());
@@ -175,53 +172,53 @@ TrieIPLookup::build_middle(int prefix_length, const TrieNode& parent, const Trie
 {
     assert(-1 != parent.left_child);
     const TrieNode &sibling = -1 != parent.right_child ?
-        trie_vector[parent.right_child] : trie_vector[parent.left_child];
+        _trie_vector[parent.right_child] : _trie_vector[parent.left_child];
 
     // create middle node
     IPAddress mask = IPAddress::make_prefix(prefix_length);
-    TrieNode middle(child.addr & mask, mask, parent.gw, parent.output, false, trie_vector.size());
+    TrieNode middle(child.addr & mask, mask, parent.gw, parent.output, false, _trie_vector.size());
     middle.left_child = sibling.index;
     middle.right_child = child.index;
     middle.parent = parent.index;
-    trie_vector.push_back(middle);
+    _trie_vector.push_back(middle);
 
     // make all child/parent connections
     if (-1 != parent.right_child) {
-        trie_vector[parent.index].right_child = middle.index;
+        _trie_vector[parent.index].right_child = middle.index;
     } else {
-        trie_vector[parent.index].left_child = middle.index;
+        _trie_vector[parent.index].left_child = middle.index;
     }
 
-    trie_vector[sibling.index].parent = middle.index;
-    trie_vector[child.index].parent = middle.index;
+    _trie_vector[sibling.index].parent = middle.index;
+    _trie_vector[child.index].parent = middle.index;
 
     // just making sure
     check_trie_node(middle);
-    check_trie_node(trie_vector[middle.left_child]);
-    check_trie_node(trie_vector[middle.right_child]);
+    check_trie_node(_trie_vector[middle.left_child]);
+    check_trie_node(_trie_vector[middle.right_child]);
 }
 
 
 inline void
 TrieIPLookup::build_trie()
 {
-    if (trie_vector.size() == 0)
+    if (_trie_vector.size() == 0)
         return;
 
-    TrieNode cn = trie_vector[0];
+    TrieNode cn = _trie_vector[0];
 
     // take care of the rest
-    int trie_vector_size = trie_vector.size();
-    for (int i = 1; i < trie_vector_size; i++) {
+    int _trie_vector_size = _trie_vector.size();
+    for (int i = 1; i < _trie_vector_size; i++) {
 
-        check_trie(trie_vector[0]);
+        check_trie(_trie_vector[0]);
 
-        TrieNode tn = trie_vector[i];
+        TrieNode tn = _trie_vector[i];
 
         while ((tn.mask.mask_to_prefix_len() <= cn.mask.mask_to_prefix_len()) ||
                ((tn.addr & cn.mask) != cn.addr)) {
             // while the above condition is true, tn should not be a child of cn
-            cn = trie_vector[cn.parent];
+            cn = _trie_vector[cn.parent];
         }
 
         // make sure tn should be a child of cn
@@ -230,19 +227,19 @@ TrieIPLookup::build_trie()
         // should we create a fake node?
         int prefix_length = build_exists_middle(cn, tn);
         if (prefix_length) {
-            check_trie_node(trie_vector[cn.left_child]);
+            check_trie_node(_trie_vector[cn.left_child]);
             build_middle(prefix_length, cn, tn);
         } else {
             assert(-1 == cn.right_child);
             if (-1 != cn.left_child) {
-                trie_vector[cn.index].right_child = tn.index;
+                _trie_vector[cn.index].right_child = tn.index;
             } else {
-                trie_vector[cn.index].left_child = tn.index;
+                _trie_vector[cn.index].left_child = tn.index;
             }
-            trie_vector[tn.index].parent = cn.index;
-            check_trie_node(trie_vector[tn.index]);
+            _trie_vector[tn.index].parent = cn.index;
+            check_trie_node(_trie_vector[tn.index]);
         }
-        cn = trie_vector[tn.index];
+        cn = _trie_vector[tn.index];
     }
 }
 
@@ -253,8 +250,10 @@ TrieIPLookup::build_main()
     click_gettimeofday(&tv);
     click_chatter("starting to init data structure: %d\n", tv.tv_sec);
 
+    check_route_vector_sorted();
+
     // build initial data structure
-    trie_vector.clear();
+    _trie_vector.clear();
     build_init();
     check_init();
 
@@ -263,14 +262,14 @@ TrieIPLookup::build_main()
 
     // build trie
     build_trie();
-    check_trie(trie_vector[0]);
+    check_trie(_trie_vector[0]);
 
     click_gettimeofday(&tv);
     click_chatter("starting to set children lengths: %d\n", tv.tv_sec);
 
     // set children lengths
     build_children_lengths(0);
-    check_lengths(trie_vector[0]);
+    check_lengths(_trie_vector[0]);
 
     click_gettimeofday(&tv);
     click_chatter("starting to rebuild hash: %d\n", tv.tv_sec);
@@ -284,7 +283,7 @@ TrieIPLookup::build_main()
     click_gettimeofday(&tv);
     click_chatter("done initializaton: %d\n", tv.tv_sec);
 
-    trie_vector.clear();
+    _trie_vector.clear();
 }
 
 inline void
@@ -292,7 +291,7 @@ TrieIPLookup::build_hash(int index)
 {
     if (-1 == index) return;
 
-    TrieNode &tn = trie_vector[index];
+    TrieNode &tn = _trie_vector[index];
 
     // maybe add this node to the hashmap
     build_hash_node(tn, _default_rope, 32);
@@ -386,7 +385,7 @@ TrieIPLookup::build_hash_marker(Marker &new_marker, TrieNode tn, int n_prefix_le
 
     // set gw & output
     while(n_array_index < tn.mask.mask_to_prefix_len()) {
-        tn = trie_vector[tn.parent];
+        tn = _trie_vector[tn.parent];
     }
     new_marker.gw = tn.gw;
     new_marker.output = tn.output;
@@ -396,13 +395,13 @@ inline void
 TrieIPLookup::build_children_lengths(int index)
 {
     // initialize it to 0
-    TrieNode &tn = trie_vector[index];
+    TrieNode &tn = _trie_vector[index];
     tn.children_lengths = 0;
 
     // loop through children and get their lengths
     if (-1 != tn.left_child) {
         build_children_lengths(tn.left_child);
-        TrieNode &left_child = trie_vector[tn.left_child];
+        TrieNode &left_child = _trie_vector[tn.left_child];
 	
         // update my variable
         int distance = left_child.mask.mask_to_prefix_len() - tn.mask.mask_to_prefix_len();
@@ -416,7 +415,7 @@ TrieIPLookup::build_children_lengths(int index)
 
     if (-1 != tn.right_child) {
         build_children_lengths(tn.right_child);
-        TrieNode &right_child = trie_vector[tn.right_child];
+        TrieNode &right_child = _trie_vector[tn.right_child];
 	
         // update my variable
         int distance = right_child.mask.mask_to_prefix_len() - tn.mask.mask_to_prefix_len();
@@ -430,26 +429,90 @@ TrieIPLookup::build_children_lengths(int index)
 }
 
 void
-TrieIPLookup::add_handlers() {
+TrieIPLookup::add_handlers()
+{
 }
 
+// returns the position in the vector pf belongs
+inline int
+TrieIPLookup::binary_search(const Vector<Prefix> &vec, const Prefix &pf)
+{
+    long n_upperbound = vec.size() - 1;
+    long n_lowerbound = 0;
+    long n_middle;
+
+    while (n_upperbound >= n_lowerbound) {
+        n_middle = (n_upperbound + n_lowerbound) / 2;
+        int n_compare = prefix_order_compar(&pf, &_route_vector[n_middle]);
+        if (0 == n_compare) {
+            n_lowerbound = n_middle;
+            break;
+        } else if (0 < n_compare)
+            n_lowerbound = n_middle + 1;
+        else
+            n_upperbound = n_middle - 1;
+    }
+    return n_lowerbound;
+}
 
 int
 TrieIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
                         int output, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
-    add_to_route_vector(addr, mask, gw, output, errh);
-    if (errh->nerrors() == before) {
-        build_main();
-        return 0;
-    } else
+    if (output < 0 || output >= noutputs()) {
+        errh->error("port number out of range");
         return -1;
+    }
+    addr &= mask;
+    Prefix pf(addr, mask, gw, output);
+    
+    // add route to sorted _route_vector
+    long n_position = binary_search(_route_vector, pf);
+
+    if (_route_vector.size() == n_position) {
+        _route_vector.push_back(pf);
+    } else {
+        int n_compare = prefix_order_compar(&pf, &_route_vector[n_position]);
+        if (0 == n_compare)
+            _route_vector[n_position] = pf;
+        else {
+            assert(n_compare < 0);
+            _route_vector.push_back(_route_vector[_route_vector.size() - 1]);
+            for (int i = _route_vector.size() - 3; i >= n_position; i--) {
+                _route_vector[i + 1] = _route_vector[i];
+            }
+            _route_vector[n_position] = pf;
+        }
+    }
+
+    // build the rest of the data structure
+    build_main();
+    return 0;
 }
 
 int
-TrieIPLookup::remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *)
+TrieIPLookup::remove_route(IPAddress addr, IPAddress mask, IPAddress gw,
+                           int port, ErrorHandler *errh)
 {
+    addr &= mask;
+    Prefix pf(addr, mask, gw, port);
+
+    long n_position = binary_search(_route_vector, pf);
+    if (_route_vector.size() == n_position ||
+        (_route_vector[n_position].addr == addr &&
+         _route_vector[n_position].mask.mask_to_prefix_len() == mask.mask_to_prefix_len())) {
+        errh->warning("no routes removed");
+        return 0;
+    }
+
+    // shift elements forward
+    for (int i = n_position; i < _route_vector.size() - 1; i++) {
+        _route_vector[i] = _route_vector[i+1];
+    }
+    _route_vector.pop_back();
+
+    // rebuild the rest of the data structure
+    build_main();
     return 0;
 }
 
@@ -508,22 +571,35 @@ TrieIPLookup::print_trie(const TrieNode& tn) const
 }
 
 void
+TrieIPLookup::check_route_vector_sorted()
+{
+    if (_route_vector.size() == 0) return;
+
+    // sorted and no duplicates
+    Prefix last_prefix = _route_vector[0];
+
+    for (int i = 1; i < _route_vector.size(); i++) {
+        assert(prefix_order_compar(&last_prefix, &_route_vector[i]) < 0);
+    }
+}
+
+void
 TrieIPLookup::check_init()
 {
-    assert(_route_vector.size() >= trie_vector.size());
-    if (!trie_vector.size()) return;
+    assert(_route_vector.size() == _trie_vector.size());
+    if (!_trie_vector.size()) return;
 
     // elements should be in order and there should be no duplicates
-    TrieNode last_node = trie_vector[0];
+    TrieNode last_node = _trie_vector[0];
 
-    for (int i = 1; i < trie_vector.size(); i++) {
-        assert(last_node < trie_vector[i]);
-        last_node = trie_vector[i];
+    for (int i = 1; i < _trie_vector.size(); i++) {
+        assert(last_node < _trie_vector[i]);
+        last_node = _trie_vector[i];
     }
 
     // these should be the same elements as in _route_vector
-    for (int i = 0; i < trie_vector.size(); i++) {
-        TrieNode tn = trie_vector[i];
+    for (int i = 0; i < _trie_vector.size(); i++) {
+        TrieNode tn = _trie_vector[i];
         bool ok = false;
         for (int i = 0; i < _route_vector.size(); i++) {
             Prefix prefix = _route_vector[i];
@@ -536,8 +612,8 @@ TrieIPLookup::check_init()
         assert(ok);
     }
 
-    for (int i = 0; i < trie_vector.size(); i++) {
-        TrieNode tn = trie_vector[i];
+    for (int i = 0; i < _trie_vector.size(); i++) {
+        TrieNode tn = _trie_vector[i];
         assert((tn.mask & tn.addr) == tn.addr);
     }
 }
@@ -554,7 +630,7 @@ TrieIPLookup::check_trie_node(const TrieNode& node)
     } else {
         assert(-1 != node.parent);
         assert(0 < node.index);
-        TrieNode &parent = trie_vector[node.parent];
+        TrieNode &parent = _trie_vector[node.parent];
         assert(parent.mask.mask_to_prefix_len() < node.mask.mask_to_prefix_len());
         assert((node.addr & parent.mask) == parent.addr);
     }
@@ -568,11 +644,11 @@ TrieIPLookup::check_trie(const TrieNode& root)
     check_trie_node(root);
 
     if (-1 != root.left_child) {
-        check_trie(trie_vector[root.left_child]);
+        check_trie(_trie_vector[root.left_child]);
     }
 
     if (-1 != root.right_child) {
-        check_trie(trie_vector[root.right_child]);
+        check_trie(_trie_vector[root.right_child]);
     }
 }
 
@@ -580,7 +656,7 @@ void
 TrieIPLookup::check_lengths(const TrieNode& root) {
     uint32_t children_lengths = 0;
     if (-1 != root.left_child) {
-        TrieNode &left_child = trie_vector[root.left_child];
+        TrieNode &left_child = _trie_vector[root.left_child];
         int distance = left_child.mask.mask_to_prefix_len() - root.mask.mask_to_prefix_len();
         children_lengths |= (left_child.children_lengths << distance);
 
@@ -592,7 +668,7 @@ TrieIPLookup::check_lengths(const TrieNode& root) {
     }
 
     if (-1 != root.right_child) {
-        TrieNode &right_child = trie_vector[root.right_child];
+        TrieNode &right_child = _trie_vector[root.right_child];
         int distance = right_child.mask.mask_to_prefix_len() - root.mask.mask_to_prefix_len();
         children_lengths |= (right_child.children_lengths << distance);
 

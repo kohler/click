@@ -152,11 +152,13 @@ public:
 
 protected:
     // helper methods
-    inline int  add_to_route_vector(IPAddress addr, IPAddress mask, IPAddress gw, int output, ErrorHandler *errh);
+    inline void configure_route_vector();
+    inline int binary_search(const Vector<Prefix> &vec, const Prefix &pf);
+
+     // build methods
     void build_main();
     inline void build_init();
     inline void build_trie();
-
     // return the length of the mask of the middle, 0 if no middle
     inline int  build_exists_middle(const TrieNode& parent, const TrieNode& child);
     inline void build_middle(int prefix_length, const TrieNode& parent, const TrieNode& child);
@@ -166,13 +168,13 @@ protected:
     inline void build_hash_marker(Marker &new_marker, TrieNode tn, int n_prefix_length,
                                   int n_array_index, int upper_bound_inclusive);
 
-
     // print methods for debugging
     void print_route_vector() const;
     void print_lengthhash(const LengthHash& lengthhash) const;
     void print_trie(const TrieNode& tn) const;
     
     // check methods
+    void check_route_vector_sorted();
     void check_init();
     void check_trie_node(const TrieNode&);
     void check_trie(const TrieNode&);
@@ -182,8 +184,9 @@ protected:
     Rope _default_rope;
     LengthHash _lengths_array[33];     // array containing a hashmap for each length + 0
     Vector<Prefix> _route_vector;      // vector of all routes we know about
+                                       // must be sorted and no duplicates
 
-    Vector<TrieNode> trie_vector;      // used only during build
+    Vector<TrieNode> _trie_vector;      // used only during build
 };
 
 CLICK_ENDDECLS
