@@ -104,7 +104,7 @@ Index: pci/if_fxpreg.h
 
 Index: pci/if_fxp.c
 --- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
-+++ pci/if_fxp.c	Mon Aug 20 15:21:40 2001
++++ pci/if_fxp.c	Mon Aug 20 16:39:12 2001
 @@ -237,6 +237,15 @@
  static void fxp_stats_update	__P((void *));
  static void fxp_mc_setup	__P((struct fxp_softc *));
@@ -121,15 +121,6 @@ Index: pci/if_fxp.c
  /*
   * Set initial transmit threshold at 64 (512 bytes). This is
   * increased by 64 (512 bytes) at a time, to maximum of 192
-@@ -269,7 +278,7 @@
-  * Number of receive frame area buffers. These are large so chose
-  * wisely.
-  */
--#define FXP_NRFABUFS	64
-+#define FXP_NRFABUFS	16
- 
- /*
-  * Maximum number of seconds that the receiver can be idle before we
 @@ -616,6 +625,19 @@
  	ifp->if_watchdog = fxp_watchdog;
  
