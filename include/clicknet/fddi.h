@@ -44,7 +44,4 @@ struct click_fddi_snap {,
 #define	FDDI_FC_LLC_ASYNC	0x50
 #define	FDDI_FC_LLCMASK 	0xF0    	/* length/class/format bits */
 
-#define FDDI_SNAP_EXPECTED	"\xAA\xAA\x03\x00\x00\x00"
-#define FDDI_SNAP_EXPECTED_LEN	6
-
 #endif

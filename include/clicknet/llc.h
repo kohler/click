@@ -40,8 +40,8 @@
  * $FreeBSD: src/sys/net/if_llc.h,v 1.7 1999/08/28 00:48:18 peter Exp $
  */
 
-#ifndef _NET_IF_LLC_H_
-#define _NET_IF_LLC_H_
+#ifndef CLICKNET_LLC_H
+#define CLICKNET_LLC_H
 
 /*
  * IEEE 802.2 Link Level Control headers, for use in conjunction with
@@ -145,6 +145,7 @@ struct click_llc {
 /*
  * ISO PDTR 10178 contains among others
  */
+#define LLC_IP_LSAP	0x06
 #define LLC_X25_LSAP	0x7e
 #define LLC_SNAP_LSAP	0xaa
 #define LLC_ISO_LSAP	0xfe
