@@ -817,6 +817,35 @@ EOF
 }
 
 
+prefix_usage () {
+    echo "Usage: click-buildtool prefix" 1>&2
+    echo "Try 'click-buildtool prefix --help' for more information." 1>&2
+    exit 1
+}
+
+prefix () {
+    while [ x"$1" != x ]; do
+    case $1 in
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool prefix' prints the Click prefix directory.
+
+Usage: click-buildtool prefix
+
+Options:
+  -h, --help                 Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    *)
+	prefix_usage;;
+    esac
+    done
+    echo $prefix
+}
+
+
 ################
 # MAIN PROGRAM #
 ################
@@ -846,10 +875,11 @@ EOF
 'Click-buildtool' is a set of tools used when building Click. For information
 on a particular tool, run 'click-buildtool TOOLNAME --help'.
 
-Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
-   or: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
+Usage: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2export [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2package [-V] [-p PREFIX] PACKAGENAME < [ELEMENTS]
+   or: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
+   or: click-buildtool prefix
    or: click-buildtool provides [REQS]
    or: click-buildtool quietlink
 
@@ -871,6 +901,8 @@ EOF
      elem2="package"; shift 1; elem2xxx "$@"; exit 0;;
   findpackage)
      shift 1; findpackage "$@"; exit 0;;
+  prefix)
+     shift 1; prefix "$@"; exit 0;;
   provides)
      shift 1; provides "$@"; exit 0;;
   quietlink)
