@@ -1,3 +1,7 @@
+2002-05-21 Tuesday 13:06  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, README, configure.in: prepare for 1.2.4 release
+
 2002-05-16 Thursday 13:17  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: packet.hh, packet.hh: header file rearrangement,
