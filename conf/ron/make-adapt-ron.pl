@@ -14,7 +14,7 @@ sub TOHEX {
 # --------- MAIN ----------
 if (scalar(@ARGV) < 4){
     print("Not enough arguments\n");
-    print("usage: generate-adapt-ron2.pl meIP meHW exitpointIP gwIP [neighborIP...]\n\n");
+    print("usage: make-adapt-ron.pl meIP meHW exitpointIP gwIP [neighborIP...]\n\n");
     exit(-1);
 }
 
