@@ -516,7 +516,7 @@ EOF
 	    AC_TRY_EVAL(ac_try)
 	    ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 	    if test -z "$ac_err"; then
-		ac_cv_endian=`grep '^[1234]' conftest.result`
+		ac_cv_endian=`grep '^[[1234]]' conftest.result`
 		test -z "$ac_cv_endian" && ac_cv_endian=0
 	    else
 		echo "$ac_err" >&5
