@@ -42,7 +42,8 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0), 
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), _rejected(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
+    _rejected(0), _hard_start(0)
 {
 #if DEV_KEEP_STATS
   _idle_calls = 0; 
@@ -57,7 +58,8 @@ ToDevice::ToDevice()
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), _rejected(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
+    _rejected(0), _hard_start(0)
 {
 #if DEV_KEEP_STATS
   _idle_calls = 0; 
@@ -295,6 +297,7 @@ ToDevice::tx_intr()
       /* device didn't send anything, ping it */
       _dev->tx_start(_dev);
       _dev_idle=0;
+      _hard_start++;
     }
   } else
     _dev_idle = 0;
@@ -382,6 +385,7 @@ ToDevice::queue_packet(Packet *p)
   int ret = _dev->tx_queue(skb1, _dev);
 #else
   int ret = _dev->hard_start_xmit(skb1, _dev);
+  _hard_start++;
 #endif
   if(ret != 0){
     printk("<1>ToDevice %s tx oops\n", _dev->name);
@@ -402,6 +406,7 @@ ToDevice_read_calls(Element *f, void *)
   ToDevice *td = (ToDevice *)f;
   return
     String(td->_rejected) + " packets rejected\n" +
+    String(td->_hard_start) + " hard start xmit\n" +
 #if DEV_KEEP_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_busy_returns) + " device busy returns\n" +

@@ -62,6 +62,7 @@ class ToDevice : public Element {
   unsigned long long _time_running;
 #endif
   unsigned long _rejected;
+  unsigned long _hard_start;
   
  private:
 
