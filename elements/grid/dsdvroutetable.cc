@@ -1215,7 +1215,14 @@ DSDVRouteTable::print_links(Element *e, void *)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
+#if 0
     LinkStat::stat_t *s1 = rt->_link_stat ? rt->_link_stat->_stats.findp(r.next_hop_eth) : 0;
+#else
+    struct {
+      int qual;
+      int sig;
+    } *s1 = 0;
+#endif
     struct timeval last;
     unsigned int window = 0;
     unsigned int num_rx = 0;
@@ -1323,7 +1330,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
-    click_chatter("in %s: cannot make packet!", id().cc());
+    click_chatter("DSDVRouteTable %s: cannot make packet!", id().cc());
     dsdv_assert(0);
   } 
   ASSERT_ALIGNED(p->data());
@@ -1399,7 +1406,15 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
   if (ls && num_hops() == 1) {
+#if 0
     LinkStat::stat_t *s = ls ? ls->_stats.findp(next_hop_eth) : 0;
+#else
+    struct {
+      int qual;
+      int sig;
+      struct timeval when;
+    } *s = 0;
+#endif
     if (s) {
       nb->link_qual = htonl(s->qual);
       nb->link_sig = htonl(s->sig);

@@ -289,8 +289,8 @@ private:
   // Trigger timer invariants: any route may have a timer in this
   // table.  All timers in the table must be running.  Every entry in
   // _trigger_timers has a corresponding TimerHook pointer stored in
-  // _trigger_hooks.  Note: a route entry t may have a trigger timer
-  // even r.need_seq_ad and r.need_metric_ad flags are false.  We
+  // _trigger_hooks.  Note: a route entry r may have a trigger timer
+  // even if r.need_seq_ad and r.need_metric_ad flags are false.  We
   // might have sent a full update before r's triggered update timer
   // expired, but after r.advertise_ok_jiffies: the triggered update
   // was delayed past r.advertise_ok_jiffies to enforce the minimum

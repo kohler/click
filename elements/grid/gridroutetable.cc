@@ -341,7 +341,15 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
       h(103);
       return false;
     }
+#if 0
     LinkStat::stat_t *s = _link_stat->_stats.findp(r->next_hop_eth);
+#else
+    struct {
+      int qual;
+      int sig;
+      struct timeval when;
+    } *s = 0;
+#endif
     if (s == 0) {
       return false;
       h(104);
@@ -1212,7 +1220,16 @@ GridRouteTable::print_links(Element *e, void *)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
+#if 0
     LinkStat::stat_t *s1 = rt->_link_stat->_stats.findp(r.next_hop_eth);
+#else
+    struct {
+      int qual;
+      int sig;
+      struct timeval when;
+    } *s1 = 0;
+#endif
+
     struct timeval last;
     unsigned int window = 0;
     unsigned int num_rx = 0;
@@ -1569,7 +1586,15 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
   if (ls && num_hops() == 1) {
+#if 0
     LinkStat::stat_t *s = ls->_stats.findp(next_hop_eth);
+#else
+    struct {
+      int qual;
+      int sig;
+      struct timeval when;
+    } *s = 0;
+#endif
     if (s) {
       nb->link_qual = htonl(s->qual);
       nb->link_sig = htonl(s->sig);

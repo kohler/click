@@ -126,6 +126,7 @@ struct grid_hdr {
   static const unsigned char GRID_ROUTE_PROBE = 6;  // followed by grid_nbr_encap and grid_route_probe
   static const unsigned char GRID_ROUTE_REPLY = 7;  // followed by grid_nbr_encap and grid_route_reply
   static const unsigned char GRID_GEOCAST     = 8;  // followed by grid_geocast
+  static const unsigned char GRID_LINK_PROBE  = 9;  // followed by grid_link_probe
 
   unsigned char pad1, pad2;
 
@@ -317,6 +318,20 @@ struct grid_geocast {
   // no loc_good flag; by definition, the destination location must be good.
 };
 
+struct grid_link_probe {
+  unsigned int seq_no;
+  unsigned int period;      // period of this node's probe broadcasts, in msecs
+  unsigned int num_links;   // number of grid_link_info entries following
+  unsigned int window;      // this node's linkstat window, in msecs
+};
+
+struct grid_link_entry {
+  unsigned int ip;
+  unsigned int period;      // period of node's probe broadcasts, in msecs
+  struct timeval last;      // time of most recent broadcast received from node
+  unsigned int num_rx;      // number of probe bcasts received from node during window
+};
+
 inline String
 grid_hdr::type_string(unsigned char type)
 {
@@ -329,6 +344,7 @@ grid_hdr::type_string(unsigned char type)
   case GRID_ROUTE_PROBE: return String("GRID_ROUTE_PROBE"); break;
   case GRID_ROUTE_REPLY: return String("GRID_ROUTE_REPLY"); break;
   case GRID_GEOCAST: return String("GRID_GEOCAST"); break;
+  case GRID_LINK_PROBE: return String("GRID_LINK_PROBE"); break;
   default: return String("Unknown-type");
   }
 }
