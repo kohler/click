@@ -15,7 +15,6 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#include "routerthread.hh"
 #include "router.hh"
 #include "kernelerror.hh"
 
@@ -41,41 +40,44 @@ atomic_t num_click_threads;
 static int
 click_sched(void *thunk)
 {
-  RouterThread *rt = (RouterThread *)thunk;
+  Router *router = (Router *)thunk;
   current->session = 1;
   current->pgrp = 1;
   sprintf(current->comm, "click");
-  printk("<1>click: starting router thread %p\n", rt);
+  printk("<1>click: starting router %p\n", router);
 
-  rt->driver();
-  delete rt;
+  router->driver();
 
+  router->unuse();
   atomic_dec(&num_click_threads);
-  printk("<1>click: stopping router thread %p\n", rt);
+  printk("<1>click: stopping router %p\n", router);
   return 0;
 }
 
 int
-start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
+start_click_sched(Router *r, ErrorHandler *kernel_errh)
 {
   /* no thread if no router */
   if (r->nelements() == 0)
     return 0;
-  click_chatter("starting %d threads", threads); 
-  while (threads > 0) {
-    atomic_inc(&num_click_threads);
-    RouterThread *rt = new RouterThread(r);
-    pid_t pid = kernel_thread 
-      (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
-    if (pid < 0) {
-      delete rt;
-      atomic_dec(&num_click_threads);
-      kernel_errh->error("cannot create kernel thread!"); 
-      return -1;
-    }
-    threads--;
-  }
-  return 0;
+  
+  atomic_inc(&num_click_threads);
+  r->use();
+  pid_t pid = kernel_thread 
+    (click_sched, r, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
+  if (pid < 0) {
+    r->unuse();
+    atomic_dec(&num_click_threads);
+    kernel_errh->error("cannot create kernel thread!"); 
+    return -1;
+  } else
+    return 0;
+}
+
+void
+kill_click_sched(Router *r)
+{
+  r->please_stop_driver();
 }
 
 void
