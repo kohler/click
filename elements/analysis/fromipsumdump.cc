@@ -549,7 +549,7 @@ handle_tcp_opt(WritablePacket *q, const String &optstr)
 Packet *
 FromIPSummaryDump::read_packet(ErrorHandler *errh)
 {
-    WritablePacket *q = Packet::make((const char *)0, sizeof(click_ip) + sizeof(click_tcp));
+    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 8);
     if (!q) {
 	error_helper(errh, "out of memory!");
 	return 0;
@@ -599,7 +599,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	uint32_t payload_len = 0;
 	bool have_payload_len = false;
 	bool have_payload = false;
-		
+	bool have_tcp_opt = false;
+	
 	for (int i = 0; pos < len && i < _contents.size(); i++) {
 	    int original_pos = pos;
 	    char *next;
@@ -652,6 +653,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_TCP_SACK:
 		    if (pos + 1 + data[pos] <= len) {
 			tcp_opt = line.substring(pos + 1, data[pos]);
+			have_tcp_opt = true;
 			pos += data[pos] + 1;
 		    }
 		    break;
@@ -766,19 +768,21 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		break;
 
 	      case W_TCP_SACK:
-		if (data[pos] == '.') {
-		    tcp_opt = String();
+		if (data[pos] == '.')
 		    pos++;
-		} else if (data[pos] != '-')
+		else if (data[pos] != '-') {
+		    have_tcp_opt = true;
 		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_SACK);
+		}
 		break;
 		
 	      case W_TCP_OPT:
-		if (data[pos] == '.') {
-		    tcp_opt = String();
+		if (data[pos] == '.')
 		    pos++;
-		} else if (data[pos] != '-')
+		else if (data[pos] != '-') {
+		    have_tcp_opt = true;
 		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_ALL);
+		}
 		break;
 		
 	      case W_LINK:
@@ -936,7 +940,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	// set TCP offset to a reasonable value; possibly reduce packet length
 	if (iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
-	    if (!tcp_opt)
+	    if (!have_tcp_opt || !tcp_opt)
 		q->tcp_header()->th_off = sizeof(click_tcp) >> 2;
 	    else if (!(q = handle_tcp_opt(q, tcp_opt)))
 		return 0;
