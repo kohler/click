@@ -59,16 +59,20 @@ GridRouteTable::cast(const char *n)
 void
 GridRouteTable::log_route_table ()
 {
+  char str[80];
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
-    _extended_logging_errh->message ("%s %d %d %s %d %c %d\n", 
-				     f.dest_ip.s().cc(),
-				     int(f.loc.lat()*1000),
-				     int(f.loc.lon()*1000),
-				     f.next_hop_ip.s().cc(),
-				     f.num_hops,
-				     (f.is_gateway ? 'y' : 'n'),
-				     f.seq_no);
+    
+    sprintf (str, 
+	     "%s %f %f %s %d %c %u\n", 
+	     f.dest_ip.s().cc(),
+	     f.loc.lat(),
+	     f.loc.lon(),
+	     f.next_hop_ip.s().cc(),
+	     f.num_hops,
+	     (f.is_gateway ? 'y' : 'n'),
+	     f.seq_no);
+    _extended_logging_errh->message (str);
   }
   _extended_logging_errh->message ("\n");
 }
@@ -184,7 +188,7 @@ GridRouteTable::simple_action(Packet *packet)
   // extended logging
   timeval tv;
   gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("recvd %d from %s %ld %ld", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+  _extended_logging_errh->message ("recvd %u from %s %ld %ld", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
 
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
@@ -407,6 +411,8 @@ GridRouteTable::expire_routes()
   timeval tv;
   gettimeofday (&tv, NULL);
 
+  bool table_changed = false;
+
   /* 1. loop through RT once, remembering destinations which have been
      in our RT too long (last_updated_jiffies too old) or have
      exceeded their ttl.  Also note those expired 1-hop entries --
@@ -417,6 +423,7 @@ GridRouteTable::expire_routes()
       expired_rtes.insert(i.value().dest_ip, true);
 
       _extended_logging_errh->message ("expiring %s %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      table_changed = true;
 
       if (i.value().num_hops == 1) /* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
@@ -452,7 +459,8 @@ GridRouteTable::expire_routes()
     assert(removed);
   }
 
-  log_route_table ();  // extended logging
+  if (table_changed)
+    log_route_table ();  // extended logging
 
   return retval;
 }
@@ -552,25 +560,27 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   
   // extended logging
   gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("sending %d %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
+  _extended_logging_errh->message ("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
 
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
+
+  char str[80];
   for (int i = 0; i < num_rtes; i++, curr++) {
 
-    // extended logging    
-    IPAddress ip((unsigned char *) &curr->ip);
-    IPAddress next((unsigned char *) &curr->next_hop_ip);
-    _extended_logging_errh->message ("%s %d %d %s %d %c %d\n", 
-		   ip.s().cc(),
-		   int(curr->loc.lat()*1000),
-		   int(curr->loc.lon()*1000),
-		   next.s().cc(),
-		   curr->num_hops,
-		   (curr->is_gateway ? 'y' : 'n'),
-		   curr->seq_no);
-    
+    const RTEntry &f = rte_info[i];
+    sprintf (str, 
+	     "%s %f %f %s %d %c %u\n", 
+	     f.dest_ip.s().cc(),
+	     f.loc.lat(),
+	     f.loc.lon(),
+	     f.next_hop_ip.s().cc(),
+	     f.num_hops,
+	     (f.is_gateway ? 'y' : 'n'),
+	     f.seq_no);
+    _extended_logging_errh->message (str);
+
     rte_info[i].fill_in(curr);
   }
   _extended_logging_errh->message ("\n");
