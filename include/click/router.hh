@@ -35,9 +35,10 @@ class Router { public:
   int nelements() const				{ return _elements.size(); }
   Element *element(int) const;
   const String &ename(int) const;
-  const String &econfiguration(int) const;
   const String &elandmark(int) const;
   const Vector<Element *> &elements() const	{ return _elements; }
+  const String &default_configuration_string(int) const;
+  void set_default_configuration_string(int, const String &);
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(Element *, const String &, ErrorHandler * = 0) const;
 
@@ -63,10 +64,6 @@ class Router { public:
   void element_handlers(int, Vector<int> &) const;
   int nhandlers() const				{ return _nhandlers; }
   const Handler &handler(int i) const;
-
-  int live_reconfigure(int, const String &, ErrorHandler *);
-  int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
-  void set_configuration(int, const String &);
 
   // thread(-1) is the quiescent thread
   int nthreads() const				{ return _threads.size() - 1; }

@@ -117,12 +117,12 @@ Router::find(Element *me, const String &name, ErrorHandler *errh) const
 }
 
 Element *
-Router::element(int fi) const
+Router::element(int ei) const
 {
-  if (fi < 0 || fi >= nelements())
+  if (ei < 0 || ei >= nelements())
     return 0;
   else
-    return _elements[fi];
+    return _elements[ei];
 }
 
 const String &
@@ -135,12 +135,19 @@ Router::ename(int ei) const
 }
 
 const String &
-Router::econfiguration(int ei) const
+Router::default_configuration_string(int ei) const
 {
   if (ei < 0 || ei >= nelements())
     return String::null_string();
   else
     return _configurations[ei];
+}
+
+void
+Router::set_default_configuration_string(int ei, const String &s)
+{
+  if (ei >= 0 && ei < nelements())
+    _configurations[ei] = s;
 }
 
 const String &
@@ -359,12 +366,12 @@ Router::make_pidxes()
   _output_pidx.clear();
   _output_pidx.push_back(0);
   for (int i = 0; i < _elements.size(); i++) {
-    Element *f = _elements[i];
-    _input_pidx.push_back(_input_pidx.back() + f->ninputs());
-    _output_pidx.push_back(_output_pidx.back() + f->noutputs());
-    for (int j = 0; j < f->ninputs(); j++)
+    Element *e = _elements[i];
+    _input_pidx.push_back(_input_pidx.back() + e->ninputs());
+    _output_pidx.push_back(_output_pidx.back() + e->noutputs());
+    for (int j = 0; j < e->ninputs(); j++)
       _input_eidx.push_back(i);
-    for (int j = 0; j < f->noutputs(); j++)
+    for (int j = 0; j < e->noutputs(); j++)
       _output_eidx.push_back(i);
   }
 }
@@ -524,12 +531,12 @@ Router::check_push_and_pull(ErrorHandler *errh)
 // SET CONNECTIONS
 
 int
-Router::element_lerror(ErrorHandler *errh, Element *f,
+Router::element_lerror(ErrorHandler *errh, Element *e,
 		       const char *format, ...) const
 {
   va_list val;
   va_start(val, format);
-  errh->verror(ErrorHandler::ERR_ERROR, f->landmark(), format, val);
+  errh->verror(ErrorHandler::ERR_ERROR, e->landmark(), format, val);
   va_end(val);
   return -1;
 }
@@ -540,11 +547,11 @@ Router::set_connections()
   // actually assign ports
   for (int c = 0; c < _hookup_from.size(); c++) {
     Hookup &hfrom = _hookup_from[c];
-    Element *fromf = _elements[hfrom.idx];
+    Element *frome = _elements[hfrom.idx];
     Hookup &hto = _hookup_to[c];
-    Element *tof = _elements[hto.idx];
-    fromf->connect_output(hfrom.port, tof, hto.port);
-    tof->connect_input(hto.port, fromf, hfrom.port);
+    Element *toe = _elements[hto.idx];
+    frome->connect_output(hfrom.port, toe, hto.port);
+    toe->connect_input(hto.port, frome, hfrom.port);
   }
 }
 
@@ -575,11 +582,11 @@ Router::downstream_inputs(Element *first_element, int first_output,
   Bitvector diff, scratch;
   
   Bitvector outputs(nopidx, false);
-  int first_fid = first_element->eindex(this);
-  if (first_fid < 0) return -1;
-  for (int i = 0; i < _elements[first_fid]->noutputs(); i++)
+  int first_eid = first_element->eindex(this);
+  if (first_eid < 0) return -1;
+  for (int i = 0; i < _elements[first_eid]->noutputs(); i++)
     if (first_output < 0 || first_output == i)
-      outputs[_output_pidx[first_fid]+i] = true;
+      outputs[_output_pidx[first_eid]+i] = true;
   
   while (true) {
     old_results = results;
@@ -649,11 +656,11 @@ Router::upstream_outputs(Element *first_element, int first_input,
   Bitvector diff, scratch;
   
   Bitvector inputs(nipidx, false);
-  int first_fid = first_element->eindex(this);
-  if (first_fid < 0) return -1;
-  for (int i = 0; i < _elements[first_fid]->ninputs(); i++)
+  int first_eid = first_element->eindex(this);
+  if (first_eid < 0) return -1;
+  for (int i = 0; i < _elements[first_eid]->ninputs(); i++)
     if (first_input < 0 || first_input == i)
-      inputs[_input_pidx[first_fid]+i] = true;
+      inputs[_input_pidx[first_eid]+i] = true;
   
   while (true) {
     old_results = results;
@@ -1090,42 +1097,6 @@ Router::element_handlers(int eindex, Vector<int> &handlers) const
 }
 
 
-// LIVE RECONFIGURATION
-
-int
-Router::live_reconfigure(int eindex, const Vector<String> &conf,
-			 ErrorHandler *errh)
-{
-  assert(_initialized);
-  if (eindex < 0 || eindex >= nelements())
-    return errh->error("no element number %d", eindex);
-  Element *f = _elements[eindex];
-  if (!f->can_live_reconfigure())
-    return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
-  int result = f->live_reconfigure(conf, errh);
-  if (result >= 0)
-    _configurations[eindex] = cp_unargvec(conf);
-  return result;
-}
-
-int
-Router::live_reconfigure(int eindex, const String &confstr,
-			 ErrorHandler *errh)
-{
-  Vector<String> conf;
-  cp_argvec(confstr, conf);
-  return live_reconfigure(eindex, conf, errh);
-}
-
-void
-Router::set_configuration(int eindex, const String &conf)
-{
-  assert(_initialized);
-  if (eindex >= 0 && eindex < nelements())
-    _configurations[eindex] = conf;
-}
-
-
 // SELECT
 
 #if CLICK_USERLEVEL
@@ -1244,10 +1215,13 @@ Router::flat_configuration_string() const
     sa << "require(" << cp_unargvec(_requirements) << ");\n\n";
   
   // element classes
+  Vector<String> conf;
   for (int i = 0; i < nelements(); i++) {
     sa << _element_names[i] << " :: " << _elements[i]->class_name();
-    if (_configurations[i])
-      sa << "(" << _configurations[i] << ")";
+    _elements[i]->configuration(conf);
+    if (conf.size())
+      sa << "(" << cp_unargvec(conf) << ")";
+    conf.clear();
     sa << ";\n";
   }
   
@@ -1322,65 +1296,71 @@ Router::element_list_string() const
 }
 
 String
-Router::element_ports_string(int fi) const
+Router::element_ports_string(int ei) const
 {
-  if (fi < 0 || fi >= nelements()) return String();
+  if (ei < 0 || ei >= nelements())
+    return String();
+  
   StringAccum sa;
-  Element *f = _elements[fi];
-  Vector<int> pers(f->ninputs() + f->noutputs(), 0);
-  Subvector<int> in_pers(pers, 0, f->ninputs());
-  Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
-  f->processing_vector(in_pers, out_pers, 0);
+  Element *e = _elements[ei];
+  Vector<int> pers(e->ninputs() + e->noutputs(), 0);
+  Subvector<int> in_pers(pers, 0, e->ninputs());
+  Subvector<int> out_pers(pers, e->ninputs(), e->noutputs());
+  e->processing_vector(in_pers, out_pers, 0);
 
-  sa << f->ninputs() << (f->ninputs() == 1 ? " input\n" : " inputs\n");
-  for (int i = 0; i < f->ninputs(); i++) {
+  sa << e->ninputs() << (e->ninputs() == 1 ? " input\n" : " inputs\n");
+  for (int i = 0; i < e->ninputs(); i++) {
     // processing
-    const char *persid = (f->input_is_pull(i) ? "pull" : "push");
-    if (in_pers[i] == Element::VAGNOSTIC) sa << persid << "-\t";
-    else sa << persid << "\t";
+    const char *persid = (e->input_is_pull(i) ? "pull" : "push");
+    if (in_pers[i] == Element::VAGNOSTIC)
+      sa << persid << "-\t";
+    else
+      sa << persid << "\t";
     
     // counts
 #if CLICK_STATS >= 1
-    if (f->input_is_pull(i) || CLICK_STATS >= 2)
-      sa << f->input(i).npackets() << "\t";
+    if (e->input_is_pull(i) || CLICK_STATS >= 2)
+      sa << e->input(i).npackets() << "\t";
     else
 #endif
       sa << "-\t";
     
     // connections
-    Hookup h(fi, i);
+    Hookup h(ei, i);
     const char *sep = "";
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_to[c] == h) {
-	sa << sep << _element_names[_hookup_from[c].idx];
-	sa << " [" << _hookup_from[c].port << "]";
+	sa << sep << _element_names[_hookup_from[c].idx]
+	   << " [" << _hookup_from[c].port << "]";
 	sep = ", ";
       }
     sa << "\n";
   }
 
-  sa << f->noutputs() << (f->noutputs() == 1 ? " output\n" : " outputs\n");
-  for (int i = 0; i < f->noutputs(); i++) {
+  sa << e->noutputs() << (e->noutputs() == 1 ? " output\n" : " outputs\n");
+  for (int i = 0; i < e->noutputs(); i++) {
     // processing
-    const char *persid = (f->output_is_push(i) ? "push" : "pull");
-    if (out_pers[i] == Element::VAGNOSTIC) sa << "(" << persid << ")\t";
-    else sa << persid << "\t";
+    const char *persid = (e->output_is_push(i) ? "push" : "pull");
+    if (out_pers[i] == Element::VAGNOSTIC)
+      sa << "(" << persid << ")\t";
+    else
+      sa << persid << "\t";
     
     // counts
 #if CLICK_STATS >= 1
-    if (f->output_is_push(i) || CLICK_STATS >= 2)
-      sa << f->output(i).npackets() << "\t";
+    if (e->output_is_push(i) || CLICK_STATS >= 2)
+      sa << e->output(i).npackets() << "\t";
     else
 #endif
       sa << "-\t";
     
     // hookup
-    Hookup h(fi, i);
+    Hookup h(ei, i);
     const char *sep = "";
     for (int c = 0; c < _hookup_from.size(); c++)
       if (_hookup_from[c] == h) {
-	sa << sep << "[" << _hookup_to[c].port << "] ";
-	sa << _element_names[_hookup_to[c].idx];
+	sa << sep << "[" << _hookup_to[c].port << "] "
+	   << _element_names[_hookup_to[c].idx];
 	sep = ", ";
       }
     sa << "\n";
