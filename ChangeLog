@@ -1,3 +1,8 @@
+2001-07-04 Wednesday 12:27  Eddie Kohler <kohler@aciri.org>
+
+	* elements/local/: chuckcheck.cc (1.11), chuckcheck.hh (1.6):
+	ChuckCheck documentation
+
 2001-07-04 Wednesday 01:42  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/: tcpack.cc (1.2), tcpack.hh (1.2): minor updates
