@@ -1,23 +1,25 @@
 #ifndef CLICK_PACKAGE_HH
 #define CLICK_PACKAGE_HH
+#include <click/vector.hh>
+#include <click/string.hh>
+#ifndef CLICK_TOOL
 class Element;
-extern "C" {
-
-#if defined(CLICK_LINUXMODULE) && defined(CLICK_PACKAGE)
-# define __NO_VERSION__
-# define new linux_new
-# include <linux/module.h>
-# undef new
-#else
-# define MOD_INC_USE_COUNT
-# define MOD_DEC_USE_COUNT
-# define MOD_IN_USE		0
 #endif
+
+extern "C" {
 
 void click_provide(const char *);
 void click_unprovide(const char *);
+bool click_has_provision(const char *);
+void click_public_packages(Vector<String> &);
+
+#ifndef CLICK_TOOL
 int click_add_element_type(const char *, Element *);
 void click_remove_element_type(int);
+#endif
 
 }
+
+#define CLICK_DEFAULT_PROVIDES	/* nada */
+
 #endif

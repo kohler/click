@@ -29,6 +29,11 @@ extern int click_dmalloc_where;
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+#if defined(CLICK_PACKAGE) || defined(WANT_MOD_USE_COUNT)
+# define __NO_VERSION__
+# include <linux/module.h>
+# define HAVE_MOD_USE_COUNT 1
+#endif
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -147,5 +152,11 @@ typedef struct device net_device;
 
 /* static assert, for compile-time assertion checking */
 #define static_assert(c) switch (c) case 0: case (c):
+
+#ifndef HAVE_MOD_USE_COUNT
+# define MOD_INC_USE_COUNT
+# define MOD_DEC_USE_COUNT
+# define MOD_IN_USE		0
+#endif
 
 #endif
