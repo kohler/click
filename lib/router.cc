@@ -1318,8 +1318,8 @@ Router::clear_attachments()
   // Right now, this is ChatterChannel.
   for (int i = 0; i < _attachments.size(); i++) {
     const String &aname = _attachment_names[i];
-    if (aname.length() > 15 && memcpy(aname.data(), "ChatterChannel.", 15)== 0)
-      delete (ErrorHandler *)_attachment_data[i];
+    if (aname.length() > 15 && memcmp(aname.data(), "ChatterChannel.", 15)== 0)
+      delete (ErrorHandler *)_attachments[i];
   }
   _attachment_names.clear();
   _attachments.clear();

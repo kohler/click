@@ -92,13 +92,6 @@ ChatterSocket::ChatterSocket()
 
 ChatterSocket::~ChatterSocket()
 {
-  // make sure we delete chatter sockets!
-  if (_channel != "default")
-    if (void *&v = router()->force_attachment("ChatterChannel." + _channel)) {
-      ChatterSocketErrorHandler *cserrh = (ChatterSocketErrorHandler *)v;
-      delete cserrh;
-      v = 0;
-    }
   MOD_DEC_USE_COUNT;
 }
 
