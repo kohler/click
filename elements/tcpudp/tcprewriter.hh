@@ -70,17 +70,13 @@ mappings.
 
 class TCPRewriter : public IPRw { public:
 
-  class TCPMapping : public Mapping {
-
-    tcp_seq_t _trigger;
-    int32_t _delta;
-    tcp_seq_t _old_delta;
-
-   public:
+  class TCPMapping : public Mapping { public:
 
     TCPMapping(bool dst_anno);
 
     TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
+
+    bool have_seqno_delta() const	{ return _delta || _old_delta; }
 
     int update_seqno_delta(tcp_seq_t old_seqno, int32_t delta);
     tcp_seq_t new_seq(tcp_seq_t) const;
@@ -90,6 +86,14 @@ class TCPRewriter : public IPRw { public:
 
     String s() const;
     
+   private:
+
+    tcp_seq_t _trigger;
+    int32_t _delta;
+    int32_t _old_delta;
+
+    uint32_t apply_sack(click_tcp *, int transport_length);
+
   };
 
   TCPRewriter();

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * tcprewriter.{cc,hh} -- rewrites packet source and destination
  * Eddie Kohler
@@ -30,79 +31,137 @@ CLICK_DECLS
 // TCPMapping
 
 TCPRewriter::TCPMapping::TCPMapping(bool dst_anno)
-  : Mapping(dst_anno), _trigger(0), _delta(0), _old_delta(0)
+    : Mapping(dst_anno), _trigger(0), _delta(0), _old_delta(0)
 {
 }
 
 int
 TCPRewriter::TCPMapping::update_seqno_delta(tcp_seq_t trigger, int32_t d)
 {
-  if (SEQ_LEQ(trigger, _trigger) && (_trigger || _delta || _old_delta))
-    return -1;
-  else {
-    _old_delta = _delta;
-    _trigger = trigger;
-    _delta += d;
-    return 0;
-  }
+    if (SEQ_LEQ(trigger, _trigger) && (_trigger || _delta || _old_delta))
+	return -1;
+    else {
+	_old_delta = _delta;
+	_trigger = trigger;
+	_delta += d;
+	return 0;
+    }
+}
+
+uint32_t
+TCPRewriter::TCPMapping::apply_sack(click_tcp *tcph, int len)
+{
+    if ((int)(tcph->th_off << 2) < len)
+	len = tcph->th_off << 2;
+    uint8_t *begin_opt = reinterpret_cast<uint8_t *>(tcph + 1);
+    uint8_t *end_opt = reinterpret_cast<uint8_t *>(tcph) + len;
+    uint32_t csum_delta = 0;
+
+    uint8_t *opt = begin_opt;
+    while (opt < end_opt)
+	switch (*opt) {
+	  case TCPOPT_EOL:
+	    goto done;
+	  case TCPOPT_NOP:
+	    opt++;
+	    break;
+	  case TCPOPT_SACK:
+	    if (opt + opt[1] > end_opt || (opt[1] % 8) != 2)
+		goto done;
+	    uint8_t *end_sack = opt + opt[1];
+
+	    // develop initial checksum value
+	    uint16_t *csum_begin = reinterpret_cast<uint16_t *>(begin_opt + ((opt + 2 - begin_opt) & ~1));
+	    for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
+		csum_delta += ~*csum & 0xFFFF;
+	    
+	    for (opt += 2; opt < end_sack; opt += 8) {
+#if HAVE_INDIFFERENT_ALIGNMENT
+		uint32_t *uopt = reinterpret_cast<uint32_t *>(opt);
+		uopt[0] = htonl(new_ack(ntohl(uopt[0])));
+		uopt[1] = htonl(new_ack(ntohl(uopt[1])));
+#else
+		uint32_t buf[2];
+		memcpy(&buf[0], opt, 8);
+		buf[0] = htonl(new_ack(ntohl(buf[0])));
+		buf[1] = htonl(new_ack(ntohl(buf[1])));
+		memcpy(opt, &buf[0], 8);
+#endif
+	    }
+
+	    // finish off csum_delta calculation
+	    for (uint16_t *csum = csum_begin; reinterpret_cast<uint8_t *>(csum) < end_sack; csum++)
+		csum_delta += *csum;
+	    break;
+	}
+
+  done:
+    return csum_delta;
 }
 
 void
 TCPRewriter::TCPMapping::apply(WritablePacket *p)
 {
-  click_ip *iph = p->ip_header();
-  assert(iph);
+    click_ip *iph = p->ip_header();
+    assert(iph);
+
+    // IP header
+    iph->ip_src = _mapto.saddr();
+    iph->ip_dst = _mapto.daddr();
+    if (_dst_anno)
+	p->set_dst_ip_anno(_mapto.daddr());
+
+    uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
+    sum = (sum & 0xFFFF) + (sum >> 16);
+    iph->ip_sum = ~(sum + (sum >> 16));
+
+    mark_used();
   
-  // IP header
-  iph->ip_src = _mapto.saddr();
-  iph->ip_dst = _mapto.daddr();
-  if (_dst_anno)
-    p->set_dst_ip_anno(_mapto.daddr());
-
-  uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
-  sum = (sum & 0xFFFF) + (sum >> 16);
-  iph->ip_sum = ~(sum + (sum >> 16));
-
-  mark_used();
+    // end if not first fragment
+    if (!IP_FIRSTFRAG(iph))
+	return;
   
-  // end if not first fragment
-  if (!IP_FIRSTFRAG(iph))
-    return;
-  
-  // TCP header
-  click_tcp *tcph = p->tcp_header();
-  tcph->th_sport = _mapto.sport();
-  tcph->th_dport = _mapto.dport();
+    // TCP header
+    click_tcp *tcph = p->tcp_header();
+    tcph->th_sport = _mapto.sport();
+    tcph->th_dport = _mapto.dport();
 
-  // update sequence numbers
-  uint32_t csum_delta = _udp_csum_delta;
-  
-  uint32_t newval = htonl(new_seq(ntohl(tcph->th_seq)));
-  if (tcph->th_seq != newval) {
-    csum_delta += (~tcph->th_seq >> 16) + (~tcph->th_seq & 0xFFFF)
-      + (newval >> 16) + (newval & 0xFFFF);
-    tcph->th_seq = newval;
-  }
+    // update sequence numbers
+    uint32_t csum_delta = _udp_csum_delta;
 
-  newval = htonl(reverse()->new_ack(ntohl(tcph->th_ack)));
-  if (tcph->th_ack != newval) {
-    csum_delta += (~tcph->th_ack >> 16) + (~tcph->th_ack & 0xFFFF)
-      + (newval >> 16) + (newval & 0xFFFF);
-    tcph->th_ack = newval;
-  }
+    uint32_t newval = htonl(new_seq(ntohl(tcph->th_seq)));
+    if (tcph->th_seq != newval) {
+	csum_delta += (~tcph->th_seq >> 16) + (~tcph->th_seq & 0xFFFF)
+	    + (newval >> 16) + (newval & 0xFFFF);
+	tcph->th_seq = newval;
+    }
 
-  // update checksum
-  uint32_t sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
-  sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-  tcph->th_sum = ~(sum2 + (sum2 >> 16));
+    newval = htonl(reverse()->new_ack(ntohl(tcph->th_ack)));
+    if (tcph->th_ack != newval) {
+	csum_delta += (~tcph->th_ack >> 16) + (~tcph->th_ack & 0xFFFF)
+	    + (newval >> 16) + (newval & 0xFFFF);
+	tcph->th_ack = newval;
+    }
 
-  // check for session ending flags
-  if (tcph->th_flags & TH_RST)
-    set_session_over();
-  else if (tcph->th_flags & TH_FIN)
-    set_session_flow_over();
-  else if (tcph->th_flags & TH_SYN)
-    clear_session_flow_over();
+    // update SACK sequence numbers
+    if ((tcph->th_off > 8
+	 || (tcph->th_off == 8
+	     && *(reinterpret_cast<const uint32_t *>(tcph + 1)) != htonl(0x0101080A)))
+	&& reverse()->have_seqno_delta())
+	csum_delta += reverse()->apply_sack(tcph, p->transport_length());
+
+    // update checksum
+    uint32_t sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
+    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+    tcph->th_sum = ~(sum2 + (sum2 >> 16));
+
+    // check for session ending flags
+    if (tcph->th_flags & TH_RST)
+	set_session_over();
+    else if (tcph->th_flags & TH_FIN)
+	set_session_flow_over();
+    else if (tcph->th_flags & TH_SYN)
+	clear_session_flow_over();
 }
 
 String
