@@ -93,18 +93,38 @@ FromDump::pcap_packet_hook(u_char* clientdata,
 			   const u_char* data)
 {
   FromDump *e = (FromDump *)clientdata;
+  static bool once = true;
 
   // If first time called, set up offset for syncing up real time with
   // the time of the dump.
   if (!timerisset(&e->_offset)) {
     click_gettimeofday(&e->_offset);
     timersub(&e->_offset, &pkthdr->ts, &e->_offset);
+    e->_init = pkthdr->ts;
   }
 
   e->_pending_packet = Packet::make(data, pkthdr->caplen);
   
   // Fill pkthdr and bump the timestamp by offset
   memcpy(&e->_pending_pkthdr, pkthdr, sizeof(pcap_pkthdr));
+
+  if (once && (e->_pending_pkthdr.ts.tv_sec-e->_init.tv_sec >= 30)) {
+    timeval now;
+    click_gettimeofday(&now);
+    char *s1 = ctime((time_t*)&now);
+    *(s1+strlen(s1)-1) = '\0';
+    click_chatter("now: %s",s1);
+    s1 = ctime((time_t*)&e->_pending_pkthdr.ts.tv_sec);
+    *(s1+strlen(s1)-1) = '\0';
+    click_chatter("has: %s",s1);
+    once = false;
+    e->_init = e->_pending_pkthdr.ts;
+  }
+  if (!once && e->_pending_pkthdr.ts.tv_sec > e->_init.tv_sec) {
+    click_chatter("reset");
+    once = true;
+  }
+
   timeradd(&e->_pending_pkthdr.ts, &e->_offset, &e->_pending_pkthdr.ts);
 }
 #endif

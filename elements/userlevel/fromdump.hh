@@ -39,6 +39,7 @@ class FromDump : public Element {
 #endif
   Packet* _pending_packet;
   timeval _offset;
+  timeval _init;
   String _filename;
   bool _timing;
 
