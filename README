@@ -40,6 +40,7 @@ CLICKDIR/elements/local		... for your own elements (empty)
 CLICKDIR/elements/radio		... for communicating with wireless radios
 CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/tcpudp	... for TCP and UDP elements
+CLICKDIR/elements/test		... for regression test elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/etc			Linux patches and other files
 CLICKDIR/etc/samplepackage	sample source code for Click element package

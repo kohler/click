@@ -75,7 +75,8 @@ my(%section_headers) =
       'ICMP' => 'IP, ICMP, and IGMP',
       'IGMP' => 'IP, ICMP, and IGMP',
       'UDP' => 'UDP and TCP',
-      'TCP' => 'UDP and TCP' );
+      'TCP' => 'UDP and TCP',
+      'test' => 'Regression Tests' );
 
 my(%default_packages) =
     ( 'standard' => 'standard (standard package)',
