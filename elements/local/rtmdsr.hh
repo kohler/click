@@ -48,6 +48,7 @@ CLICK_DECLS
  *   Maybe use expected transmission *time*.
  * Observations on the indoor Grid net (w/o "forward if better"):
  *   Queries often arrive out of order -- longer paths first.
+ *   Also replies along different paths arrive out of order.
  *   Very common to end up with one direction sub-optimal e.g.
  *     [m=430 1.0.0.26 1.0.0.18 1.0.0.19 1.0.0.37]
  *     [m=273 1.0.0.37 1.0.0.28 1.0.0.26]
@@ -98,9 +99,11 @@ private:
   uint16_t _et;     // This protocol's ethertype.
   class LinkStat *_link_stat;
 
-  enum PacketType { PT_QUERY = 0x0101,
-                    PT_REPLY = 0x0202,
-                    PT_DATA  = 0x0303 };
+  enum PacketType { PT_QUERY = 0x11,
+                    PT_REPLY = 0x22,
+                    PT_DATA  = 0x33 };
+
+  enum PacketFlags { PF_BETTER = 1 };
 
   // Packet format.
   struct pkt {
@@ -108,7 +111,8 @@ private:
     uint8_t	ether_shost[6];
     uint16_t	ether_type;
 
-    u_short _type;  // PacketType
+    u_char _type;  // PacketType
+    u_char _flags; // PacketFlags
 
     // PT_QUERY
     in_addr _qdst; // Who are we looking for?

@@ -166,7 +166,7 @@ RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
   WritablePacket *p = Packet::make(len);
   struct pkt *pk = (struct pkt *) p->data();
   memset(pk, '\0', len);
-  pk->_type = htons(PT_DATA);
+  pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
   pk->_nhops = htons(hops);
   pk->_next = htons(0);
@@ -207,7 +207,8 @@ RTMDSR::start_query(IPAddress dstip)
     return;
   struct pkt *pk = (struct pkt *) p->data();
   memset(pk, '\0', len);
-  pk->_type = htons(PT_QUERY);
+  pk->_type = PT_QUERY;
+  pk->_flags = 0;
   pk->_qdst = d._ip;
   pk->_seq = htonl(d._seq);
   pk->_metric = htons(0);
@@ -227,7 +228,7 @@ RTMDSR::start_query(IPAddress dstip)
 void
 RTMDSR::forward(const struct pkt *pk1)
 {
-  u_short type = ntohs(pk1->_type);
+  u_char type = pk1->_type;
   u_short next = ntohs(pk1->_next);
   u_short nhops = ntohs(pk1->_nhops);
   if(type == PT_REPLY){
@@ -309,7 +310,7 @@ RTMDSR::send(WritablePacket *p)
   pk->ether_type = _et;
   memcpy(pk->ether_shost, _en.data(), 6);
 
-  u_short type = ntohs(pk->_type);
+  u_char type = pk->_type;
   if(type == PT_QUERY){
     memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   } else if(type == PT_REPLY || type == PT_DATA){
@@ -357,7 +358,7 @@ RTMDSR::forward_query(struct pkt *pk1)
   IPAddress src(pk1->_hops[0]);
   u_short metric = ntohs(pk1->_metric);
   int si;
-  bool new_query = true;
+  bool better = false;
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && pk1->_seq == _seen[si]._seq){
       _seen[si]._when = time();
@@ -368,7 +369,7 @@ RTMDSR::forward_query(struct pkt *pk1)
                       _seen[si]._metric,
                       Route(pk1).s().cc());
         _seen[si]._metric = metric;
-        new_query = false;
+        better = true;
         break;
       } else {
         return;
@@ -378,7 +379,7 @@ RTMDSR::forward_query(struct pkt *pk1)
 
   if(_seen.size() > MaxSeen)
      return;
-  if(new_query == true)
+  if(better == false)
     _seen.push_back(Seen(src, pk1->_seq, metric, time()));
 
   u_short nhops = ntohs(pk1->_nhops);
@@ -395,6 +396,8 @@ RTMDSR::forward_query(struct pkt *pk1)
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
   pk->_metric = htons(metric + get_metric(IPAddress(pk->_hops[nhops-1])));
+  if(better)
+    pk->_flags |= PF_BETTER;
 
   send(p);
 }
@@ -451,15 +454,16 @@ RTMDSR::start_reply(struct pkt *pk1)
   struct pkt *pk = (struct pkt *) p->data();
   
   memcpy(pk, pk1, len);
-  pk->_type = htons(PT_REPLY);
+  pk->_type = PT_REPLY;
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
   pk->_metric = htons(ntohs(pk->_metric) +
                       get_metric(IPAddress(pk->_hops[nhops-1])));
   pk->_next = htons(nhops - 1); // Indicates next hop.
 
-  click_chatter("DSR %s: start_reply [%s]",
+  click_chatter("DSR %s: start_reply%s [%s]",
                 _ip.s().cc(),
+                (pk->_flags & PF_BETTER) ? " B" : "",
                 Route(pk).s().cc());
 
   send(p);
@@ -488,8 +492,9 @@ RTMDSR::got_reply(struct pkt *pk)
 
   Route r(pk);
   dst._routes.push_back(r);
-  click_chatter("DSR %s: installed route to %s via [%s]",
+  click_chatter("DSR %s: installed%s route to %s via [%s]",
                 _ip.s().cc(),
+                (pk->_flags & PF_BETTER) ? " B" : "",
                 dst._ip.s().cc(),
                 r.s().cc());
 }
@@ -512,7 +517,7 @@ RTMDSR::got_pkt(Packet *p_in)
     return;
   }
 
-  u_short type = ntohs(pk->_type);
+  u_char type = pk->_type;
   u_short nhops = ntohs(pk->_nhops);
   u_short next = ntohs(pk->_next);
 
