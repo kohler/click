@@ -1,3 +1,41 @@
+2001-03-14 Wednesday 16:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-mkelemmap, doc/click.texi, elements/ethernet/arpquerier.hh,
+	elements/ethernet/ip6ndsolicitor.hh, elements/tcpudp/snooptcp.hh,
+	lib/element.cc, tools/Makefile.in,
+	tools/click-combine/click-combine.cc,
+	tools/click-devirtualize/specializer.cc,
+	tools/click-fastclassifier/click-fastclassifier.cc,
+	tools/lib/processingt.hh, tools/lib/toolutils.cc,
+	tools/lib/toolutils.hh: "elementmap" now contains flow codes; tools
+	adapted to parse and generate flow codes correctly
+
+2001-03-14 Wednesday 15:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: ErrorHandler section complete?
+
+2001-03-14 Wednesday 15:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.cc, include/click/error.hh,
+	lib/error.cc, lib/glue.cc, lib/lexer.cc, lib/router.cc,
+	linuxmodule/kernelerror.cc, tools/lib/lexert.cc,
+	userlevel/click.cc: ErrorHandler fixes: Renamed Seriousness
+	constants to follow naming guidelines: Debug => ERR_DEBUG, and so
+	forth; added extra "const String &prefix" argument to decorate_text
+	methods, for better behavior when mixing PrefixErrorHandlers with
+	other ErrorHandlers; cleaned up format string handling a bit to
+	make it follow C more closely; bug fixlets and cleanups
+
+2001-03-14 Wednesday 15:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh, lib/archive.cc, lib/etheraddress.cc,
+	lib/ipaddress.cc, lib/straccum.cc: renamed StringAccum::push method
+	to StringAccum::append
+
+2001-03-14 Wednesday 15:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-03-13 Tuesday 21:08  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/task.hh, lib/task.cc: TaskHook takes a Task * in
