@@ -55,6 +55,7 @@ bool cp_integer64(const String &, int base, int64_t *);
 bool cp_unsigned64(const String &, uint64_t *);
 bool cp_unsigned64(const String &, int base, uint64_t *);
 #endif
+#define CP_REAL2_MAX_FRAC_BITS 28
 bool cp_real2(const String &, int frac_bits, int32_t *);
 bool cp_unsigned_real2(const String &, int frac_bits, uint32_t *);
 bool cp_real10(const String &, int frac_digits, int32_t *);

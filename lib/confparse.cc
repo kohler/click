@@ -1028,10 +1028,15 @@ cp_unsigned_real10(const String &str, int frac_digits,
     return unsigned_real10_2to1(int_part, frac_part, frac_digits, return_value);
 }
 
+static uint32_t ureal2_digit_fractions[] = {
+  0x00000000, 0x19999999, 0x33333333, 0x4CCCCCCC, 0x66666666,
+  0x80000000, 0x99999999, 0xB3333333, 0xCCCCCCCC, 0xE6666666
+};
+
 bool
 cp_unsigned_real2(const String &str, int frac_bits, uint32_t *return_value)
 {
-  if (frac_bits < 0 || frac_bits >= 29) {
+  if (frac_bits < 0 || frac_bits > CP_REAL2_MAX_FRAC_BITS) {
     cp_errno = CPE_INVALID;
     return false;
   }
@@ -1045,13 +1050,12 @@ cp_unsigned_real2(const String &str, int frac_bits, uint32_t *return_value)
   // method from Knuth's TeX, round_decimals. Works well with
   // cp_unparse_real2 below
   uint32_t fraction = 0;
-  uint32_t two = 2U << frac_bits;
   for (int i = 0; i < 9; i++) {
     uint32_t digit = frac_part % 10;
-    fraction = (fraction + digit*two) / 10;
+    fraction = (fraction / 10) + ureal2_digit_fractions[digit];
     frac_part /= 10;
   }
-  fraction = (fraction + 1) / 2;
+  fraction = ((fraction >> (31 - frac_bits)) + 1) / 2;
 
   // This can happen! (for example, 16 bits of fraction, .999999) Why?
   if (fraction == (1U << frac_bits) && int_part < 0xFFFFFFFFU)
@@ -2843,7 +2847,7 @@ cp_unparse_real2(uint32_t real, int frac_bits)
   // cp_real2(cp_unparse_real2(x, FRAC_BITS), FRAC_BITS, &y) == true && x == y
   
   StringAccum sa;
-  assert(frac_bits < 29);
+  assert(frac_bits <= CP_REAL2_MAX_FRAC_BITS);
 
   uint32_t int_part = real >> frac_bits;
   sa << int_part;
@@ -2871,7 +2875,8 @@ cp_unparse_real2(uint32_t real, int frac_bits)
   return sa.take_string();
 }
 
-#if 0
+#undef TEST_REAL2
+#ifdef TEST_REAL2
 void
 test_unparse_real2()
 {
@@ -3014,6 +3019,10 @@ cp_va_static_initialize()
 #endif
 
   cp_values = new cp_value[CP_VALUES_SIZE];
+
+#ifdef TEST_REAL2
+  test_unparse_real2();
+#endif
 }
 
 void
