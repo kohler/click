@@ -1,3 +1,13 @@
+2004-09-21 Tuesday 15:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipfragmenter.cc (1.33), ipfragmenter.hh (1.26): add
+	VERBOSE keyword
+
+2004-09-21 Tuesday 15:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipreassembler.cc (1.20): fix memory leak reported by
+	Erwin Van de Velde
+
 2004-09-18 Saturday 19:17  John Bicket <jbicket@mit.edu>
 
 	* include/clicknet/wifi.h (1.9), elements/wifi/prism2decap.cc
