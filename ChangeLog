@@ -1,3 +1,7 @@
+2002-05-10 Friday 00:19  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fakepcap.cc (1.5): signedness nitlet
+
 2002-05-09 Thursday 16:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.55), tools/build-grid-config.sh (1.8),
