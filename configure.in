@@ -48,8 +48,13 @@ if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
   if test -d /usr/src/linux; then
     linuxdir=/usr/src/linux
   elif test "x$enable_linuxmodule" = xyes; then
-    AC_MSG_WARN([can't find /usr/src/linux; not compiling for Linux
-  (or try the --with-linux=DIR option)])
+    AC_MSG_WARN([
+=========================================
+
+I can't find /usr/src/linux, so I'm not compiling for Linux
+(or try the --with-linux=DIR option).
+
+=========================================])
   fi
 fi
 
@@ -59,8 +64,13 @@ if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != 
 elif test -r $linuxdir/include/linux/skbuff.h; then
   ac_have_linux_kernel=y
 else
-  AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
-  are you sure $linuxdir holds the Linux source code?])
+  AC_MSG_ERROR([
+=========================================
+
+I can't find $linuxdir/include/linux/skbuff.h:
+Are you sure $linuxdir holds the Linux source code?
+
+=========================================])
 fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
@@ -200,7 +210,12 @@ dnl
 if test $ac_have_linux_kernel = y; then
 
 if test ! -f $linuxdir/System.map; then
-    AC_MSG_ERROR(can't find $linuxdir/System.map)
+    AC_MSG_ERROR([
+=========================================
+
+Can't find $linuxdir/System.map!
+
+=========================================])
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
@@ -353,7 +368,12 @@ dnl
 if test "$enable_userlevel" = yes; then
     CLICK_CHECK_LIBPCAP
     if test "$HAVE_PCAP" != yes -a "$ac_cv_under_linux" != yes; then
-	AC_MSG_WARN(pcap.h or -lpcap not found; user-level driver can't steal packets)
+	AC_MSG_WARN([
+=========================================
+
+pcap.h or -lpcap not found; user-level driver can't steal packets
+
+=========================================])
     fi
     TARGETS="$TARGETS userlevel"
 fi
@@ -424,9 +444,14 @@ if test $ac_have_linux_kernel = y; then
     TOOL_TARGETS="$TOOL_TARGETS click-install"
     HAVE_LINUXMODULE_TARGET=1
   else
-    AC_MSG_WARN(Your header files must be patched before a C++ program
+    AC_MSG_WARN([
+=========================================
+
+Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution
-if you want to compile Click as a Linux module.)
+if you want to compile Click as a Linux module.
+
+=========================================])
   fi
 fi
 AC_SUBST(HAVE_LINUXMODULE_TARGET)
@@ -452,9 +477,14 @@ CLICK_PROG_AUTOCONF
 CLICK_PROG_PERL5
 
 if test -z "$GMAKE"; then
-    AC_MSG_ERROR([can't find GNU make. Either put "'`'"gmake' on your PATH and
+    AC_MSG_ERROR([
+==============================================
+
+I can't find GNU make. Either put "'`'"gmake' on your PATH and
 rerun "'`'"./configure', or set the GMAKE environment variable to
-GNU make's pathname.])
+GNU make's pathname.
+
+==============================================])
 fi
 
 
