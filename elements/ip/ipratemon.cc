@@ -192,7 +192,6 @@ IPRateMonitor::set_thresh(String str)
   return true;
 }
 
-#if 0
 //
 // Prints out nice data.
 //
@@ -201,83 +200,35 @@ IPRateMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
-    bool nonzero = false;
-    String rates = "";
-    String this_ip;
-    if(ip)
-      this_ip = ip + "." + String(i);
-    else
-      this_ip = String(i);
-
-
     if (s->counter[i].flags != CLEAN) {
-      int j;
-  
-      // First rate is hidden
-      for(j = 1; j < _no_of_rates; j++) {
-	// Update the rate first, so we have correct info
-        s->counter[i].values[j].update(0);
+      bool nonzero = false;
+      String this_ip;
+      if(ip)
+        this_ip = ip + "." + String(i);
+      else
+        this_ip = String(i);
+      ret += this_ip;
+
+      for(int j = 1; j < _no_of_rates; j++) {
+        // s->counter[i].values[j].update(0);
 	if (s->counter[i].values[j].average() > 0)
 	  nonzero = true;
       }
 
       if (nonzero) {
-        for(j = 1; j < _no_of_rates; j++) {
-          rates += "\t";
-	  rates += cp_unparse_real
-	    (s->counter[i].values[j].average() * CLICK_HZ,
-	     s->counter[i].values[j].scale());
-        }
-      }
-    }
-    
-    if (nonzero) {
-      ret += this_ip + rates + "\n";
-      if(s->counter[i].flags & SPLIT) 
-	ret += print(s->counter[i].next_level, "\t" + this_ip);
-    }
-  }
-  return ret;
-}
-#endif
-
-//
-// Prints out nice data.
-//
-String
-IPRateMonitor::print(_stats *s, String ip = "")
-{
-  String ret = "";
-  for(int i = 0; i < MAX_COUNTERS; i++) {
-    bool nonzero = false;
-    String this_ip;
-    if(ip)
-      this_ip = ip + "." + String(i);
-    else
-      this_ip = String(i);
-    ret += this_ip;
-
-    if (s->counter[i].flags != CLEAN) {
-      int j;
-  
-      for(j = 1; j < _no_of_rates; j++)
-	if (s->counter[i].values[j].average() > 0)
-	  nonzero = true;
-
-      if (nonzero) {
-	for(j = 1; j < _no_of_rates; j++) { 
+	for(int j = 1; j < _no_of_rates; j++) { 
 	  ret += "\t"; 
 	  ret += cp_unparse_real 
 	    (s->counter[i].values[j].average() * CLICK_HZ, 
 	     s->counter[i].values[j].scale());
         }
       } else
-	for(j = 1; j < _no_of_rates; j++) ret += "\t0";
-    }
+	for(int j = 1; j < _no_of_rates; j++) ret += "\t0";
     
-    ret += "\n";
-    if(s->counter[i].flags & SPLIT) 
-      ret += print(s->counter[i].next_level, "\t" + this_ip);
+      ret += "\n";
+      if(s->counter[i].flags & SPLIT) 
+        ret += print(s->counter[i].next_level, "\t" + this_ip);
+    }
   }
   return ret;
 }
