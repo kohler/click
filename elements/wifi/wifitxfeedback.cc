@@ -133,7 +133,7 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
   
   ScheduleInfo::initialize_task(this, &_task, 1, errh);
 
-  _map_index = static_initialize(this);
+  _map_index = ::static_initialize(this);
   if (_map_index < 0) {
     click_chatter("%{element}: couldn't intialize, got %d !!!\n",
 		  this,
@@ -154,7 +154,7 @@ WifiTXFeedback::cleanup(CleanupStage)
     _queue[i]->kill();
   _head = _tail = 0;    
 
-  if (!static_cleanup(_map_index)) {
+  if (!::static_cleanup(_map_index)) {
     click_chatter("%{element}: couldn't cleanup - %d !!!\n",
 		  this,
 		  _map_index);
