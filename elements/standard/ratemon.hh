@@ -19,6 +19,14 @@
  * printed line is the number of 'jiffies' that have past since the last reset.
  * There are 100 jiffies in one second.
  *
+ * =h srcdst (read)
+ *
+ *
+ * =h what (read)
+ *
+ *
+ * =h thresh (read-write)
+ *
  * =e
  *
  * =a Monitor
@@ -92,16 +100,19 @@ private:
   struct _stats *_base;                 // base struct for monitoring
   long unsigned int _resettime;         // time of last reset
 
+  void set_resettime();
+  bool set_thresh(String str);
+  void update(IPAddress a, int val);
+
+  String print(_stats *s, String ip = "");
   void clean(_stats *s);
   void destroy(_stats *s);
-  void set_resettime();
-  void update(IPAddress a, int val);
-  String print(_stats *s, String ip = "");
 
   void add_handlers();
   static String thresh_read_handler(Element *e, void *);
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
+  static String srcdst_read_handler(Element *e, void *);
 
   static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);

@@ -70,32 +70,11 @@ RateMonitor::configure(const String &conf, ErrorHandler *errh)
   _offset = (unsigned int) offset;
 
   // THRESH
-  int len = args[3].length();
-  const char *s = args[3].data();
-  int i = 0;
-
-  // read threshold
-  _thresh = 0;
-  while (i < len && isdigit(s[i])) {
-    _thresh *= 10;
-    _thresh += s[i] - '0';
-    i++;
-  }
-  if (i >= len || s[i] != '/')
-    return errh->error("expected `/' in threshold");
-  i++;
-
-  // read seconds
-  int _threshrate = 0;
-  while (i < len && isdigit(s[i])) {
-    _threshrate *= 10;
-    _threshrate += s[i] - '0';
-    i++;
-  }
-
   // First in row is hidden for the outside world. We use to determine when to
   // split entries in the table.
-  _rates.push_back(_threshrate);
+  if(!set_thresh(args[3]))
+    return errh->error("error parsing threshold. should be int/int.");
+
 
   // RATES
   int rate;
@@ -154,7 +133,7 @@ RateMonitor::simple_action(Packet *p)
 
 
 //
-// Dives in tables based on a and raises the appropriate entry by val.
+// Dives in tables based on a and raises all rates by val.
 //
 // XXX: Make this interrupt driven.
 //
@@ -166,6 +145,8 @@ RateMonitor::update(IPAddress a, int val)
   struct _stats *s = _base;
   struct _counter *c = NULL;
   int bitshift;
+
+  // Find entry on correct level
   for(bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
     unsigned char byte = (saddr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
@@ -181,28 +162,27 @@ RateMonitor::update(IPAddress a, int val)
     c->values = new Vector<EWMA>;
     c->values->resize(_no_of_rates);
     for(int i = 0; i < _no_of_rates; i++)
-      (*(c->values))[i].initialize();
+      c->values->at(i).initialize();
   }
 
-  // For all rates: increase value.
+  // Update values.
   for(int i = 0; i < _no_of_rates; i++)
-    (*(c->values))[i].update(val*(_rates[i]));
+    c->values->at(i).update(val*_rates[i]);
 
-  // Did value get larger than THRESH within one second?
-  // XXX: not that simple.
-  if((*(c->values))[0].average() >= _thresh) {
+  // Did value get larger than THRESH in the specified period?
+  if(c->values->at(0).average() >= _thresh)
     if(bitshift < MAX_SHIFT) {
       c->flags |= SPLIT;
       struct _stats *tmp = new struct _stats;
       clean(tmp);
       c->next_level = tmp;
-    } else {
-      // c->last_update = click_jiffies();
     }
-  }
 }
 
 
+//
+// Recursively destroys tables.
+//
 void
 RateMonitor::destroy(_stats *s)
 {
@@ -218,6 +198,9 @@ RateMonitor::destroy(_stats *s)
   }
 }
 
+//
+// Cleans entry
+//
 void
 RateMonitor::clean(_stats *s)
 {
@@ -229,6 +212,49 @@ RateMonitor::clean(_stats *s)
   }
 }
 
+
+bool
+RateMonitor::set_thresh(String str)
+{
+  int len = str.length();
+  const char *s = str.data();
+  int i = 0;
+
+  // read threshold
+  int tmp_thresh = 0;
+  while (i < len && isdigit(s[i])) {
+    tmp_thresh *= 10;
+    tmp_thresh += s[i] - '0';
+    i++;
+  }
+  if (i >= len || s[i] != '/')
+    return false;
+  i++;
+
+  // read seconds
+  int threshrate = 0;
+  while (i < len && isdigit(s[i])) {
+    threshrate *= 10;
+    threshrate += s[i] - '0';
+    i++;
+  }
+
+  if(threshrate <= 0)
+    return false;
+
+  _thresh = tmp_thresh;
+  if(!_rates.size())
+    _rates.push_back(threshrate);
+  else
+    _rates[0] = threshrate;
+
+  return true;
+}
+
+
+//
+// Prints out nice data.
+//
 String
 RateMonitor::print(_stats *s, String ip = "")
 {
@@ -249,7 +275,7 @@ RateMonitor::print(_stats *s, String ip = "")
 
       // First rate is hidden
       for(int j = 1; j < _no_of_rates; j++)
-        ret += "\t" + String((*(s->counter[i].values))[j].average());
+        ret += "\t" + String(s->counter[i].values->at(j).average());
       ret += "\n";
     }
   }
@@ -285,8 +311,17 @@ String
 RateMonitor::thresh_read_handler(Element *e, void *)
 {
   RateMonitor *me = (RateMonitor *) e;
-  return String(me->_thresh) + "\n";
+  return String(me->_thresh) + "/" + String(me->_rates[0]) + "\n";
 }
+
+
+String
+RateMonitor::srcdst_read_handler(Element *e, void *)
+{
+  RateMonitor *me = (RateMonitor *) e;
+  return (me->_sd == SRC) ? "SRC\n" : "DST\n";
+}
+
 
 String
 RateMonitor::what_read_handler(Element *e, void *)
@@ -304,15 +339,13 @@ RateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorH
   RateMonitor* me = (RateMonitor *) e;
 
   if(args.size() != 1) {
-    errh->error("expecting 1 integer");
+    errh->error("expecting 1 string");
     return -1;
   }
-  int thresh;
-  if(!cp_integer(args[0], thresh)) {
-    errh->error("not an integer");
+  if(!me->set_thresh(args[0])) {
+    errh->error("error parsing threshold. should be int/int.");
     return -1;
   }
-  me->_thresh = thresh;
   return 0;
 }
 
@@ -334,6 +367,7 @@ RateMonitor::add_handlers()
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
 
+  add_read_handler("srcdst", srcdst_read_handler, 0);
   add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
 
