@@ -269,6 +269,8 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
   *dest_eth = rte->next_hop_eth;
   *next_hop_ip = rte->next_hop_ip;
 
+#if NEXT_HOP_ETH_FIXUP
+#error This is likely to drop lots of packets...
   /* sanity check routing table entries -- does entry's next_hop_eth
      actually match the next hop's eth? */
   GridRouteTable::RTEntry *nhr = _rtes->_rtes.findp(rte->next_hop_ip);
@@ -276,7 +278,8 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
     click_chatter("LookupLocalGridRoute %s: route table inconsistency looking up route for %s", id().cc(), dest_ip.s().cc());
     return false;
   }
-  
+#endif
+
   return true;
 }
 

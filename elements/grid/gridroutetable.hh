@@ -83,6 +83,10 @@
 #include "grid.hh"
 #include <click/timer.hh>
 
+
+#define NEXT_HOP_ETH_FIXUP 0
+
+
 class GridLogger;
 
 class GridRouteTable : public Element {
@@ -115,8 +119,10 @@ public:
 
   public:
     IPAddress dest_ip; // IP address of this destination
+    EtherAddress dest_eth; // Eth of this destination; may be all 0s if we don't hear any ads...
     IPAddress next_hop_ip; // IP address of next hop for this destination
     EtherAddress next_hop_eth; // hardware address of next hop
+
     unsigned char num_hops; // number of hops to dest
 
     struct grid_location loc; // location of dest, as contained in its route ads
@@ -154,7 +160,7 @@ public:
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
-      _init(true), dest_ip(ip), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
+      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
       last_updated_jiffies(jiff), metric_valid(false)
     { 

@@ -456,7 +456,7 @@ GridRouteTable::init_metric(RTEntry &r)
   }
   break;
   case MetricEstTxCount: {
-#if 1
+#if 0
     click_chatter("XXX");
 #endif
     double fwd_rate = 0;
@@ -751,6 +751,8 @@ GridRouteTable::simple_action(Packet *packet)
 	_link_stat->remove_all_stats(r->next_hop_eth);
       }
     }
+    if (r)
+      r->dest_eth = ethaddr;
   }
   
   /*
@@ -844,6 +846,24 @@ GridRouteTable::simple_action(Packet *packet)
 	/* clear old 1-hop stats */
 	_link_tracker->remove_all_stats(our_rte->dest_ip);
 	_link_stat->remove_all_stats(our_rte->next_hop_eth);
+
+#if NEXT_HOP_ETH_FIXUP
+	/* fix up route entries for which this dest had been the next hop */
+	Vector<RTEntry> changed_next_hop;
+	for (RTIter i = _rtes.first(); i; i++) {
+	  if (i.value().next_hop_ip == route.dest_ip) {
+	    RTEntry r = i.value();
+	    /* some skoochy stuff here, this will make it very hard to keep track of things... */
+	    r.next_hop_ip = route.next_hop_ip;
+	    r.next_hop_eth = route.next_hop_eth;
+	    // XXX how to calculate num_hops???, metric, etc.
+	    // XXX also, last_updated_jiffies, etc.
+	  }
+	}	
+	for (int i = 0; i < changed_next_hop.size(); i++)
+	  _rtes.insert(changed_next_hop[i].dest_ip, changed_next_hop[i]);
+#endif
+
       }
       
       if (_log)
