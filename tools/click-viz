@@ -1,0 +1,136 @@
+#!/usr/bin/python
+#
+# -*- Mode: Python; tab-width: 4 -*-
+# vim:sw=4:expandtab:syntax=python:
+#
+# click-viz : a program to graphically visualize click scripts.
+#
+# Author: Jose Vasconcellos <jvasco@bellatlantic.net>
+# Copyright (C) 2002 Jose Vasconcellos
+#
+
+import sys
+import re
+from string import *
+
+verbose = 0
+name = "stdin"
+edict = {}
+
+
+class token:
+    def __init__(self, file):
+        self.script = file.read(1000000)
+        self.idx = 0
+
+        self.pat = re.compile(r"""
+\s+                     |
+[#].*$                  |
+//.*$                   |
+/\*[^*]*\*/             |
+(?P<id>[a-zA-Z0-9_@/]+) |
+(?P<dblcolon>::)        |
+(?P<conn>->)            |
+\((?P<config>[^)]*)\)   |
+\[\s*(?P<port>\d+)\s*\] |
+(?P<end>;)
+""", re.VERBOSE | re.MULTILINE)
+
+    def gettoken(self):
+        global verbose
+        while 1:
+            m = self.pat.match(self.script, self.idx)
+            if m:
+                self.idx = m.end()
+                if m.lastgroup:
+                    if verbose:
+                        print "%s %s" % ( m.lastgroup, m.group(m.lastgroup) )
+                    break
+            else:
+                break
+        return m
+
+
+#read the script
+tstream = token(sys.stdin)
+  
+print "digraph %s {" % name
+print "node [shape=record,height=.1]"
+print "edge [arrowhead=normal,arrowtail=dot]"
+#print "edge [arrowhead=normal,arrowtail=dot,samehead=true]"
+
+while 1:
+    m = tstream.gettoken()
+    if m == None:
+        break
+    if m.lastgroup != "id":
+        print "Syntax error: id expected (%s)" %m.group(m.lastgroup)
+        break;
+    id = m.group(m.lastgroup)
+
+    m = tstream.gettoken()
+    if m.lastgroup == "dblcolon":
+        m = tstream.gettoken()
+        elt = m.group(m.lastgroup)
+
+        m = tstream.gettoken()
+        if m.lastgroup != "end":
+            cfg = m.group(m.lastgroup)
+            m = tstream.gettoken()
+        else:
+            cfg = ""
+        if m.lastgroup != "end":
+            print "Syntax error: ';' expected (%s)" %m.group(m.lastgroup)
+            break;
+        edict[id] = [elt, cfg, -1, -1]
+    else:
+        while m.lastgroup != "end":
+            if m.lastgroup == "port":
+                port = m.group(m.lastgroup)
+                m = tstream.gettoken()
+            else:
+                port = "0"
+
+            if edict[id][3] < int(port):
+                edict[id][3] = int(port)
+
+            str = '"' + id + '":o' + port
+            if m.lastgroup != "conn":
+                print "Syntax error: '->' expected (%s)" %m.group(m.lastgroup)
+                break;
+            str = str + " -> "
+            m = tstream.gettoken()
+
+            if m.lastgroup == "port":
+                port = m.group(m.lastgroup)
+                m = tstream.gettoken()
+            else:
+                port = "0"
+
+            if m.lastgroup != "id":
+                print "Syntax error: id expected (%s)" %m.group(m.lastgroup)
+                break;
+            id =m.group(m.lastgroup)
+            if edict[id][2] < int(port):
+                edict[id][2] = int(port)
+            print str + '"' + id + '":i' + port + ';'
+
+            m = tstream.gettoken()
+
+# now print all the definitions
+for k, v in edict.items():
+    if v[2] == -1 and v[3] == -1:
+        print '"'+k+'" [label="'+v[0]+'"];'
+    elif v[2] == -1:
+        print '"'+k+'" [label="{'+v[0]+'|{<'+ '>|<'.join(["o%d"% (i)
+                for i in range(v[3]+1)])+'>}}"];'
+    elif v[3] == -1:
+        print '"'+k+'" [label="{{<'+ '>|<'.join(["i%d"% (i)
+                for i in range(v[2]+1)])+'>}|'+v[0]+'}"];'
+    else:
+        print '"'+k+'" [label="{{<'+ '>|<'.join(["i%d"% (i)
+                for i in range(v[2]+1)])+'>}|'+v[0]+'|{<'+ '>|<'.join(["o%d"% (j)
+                for j in range(v[3]+1)])+'>}}"];'
+
+print "}"
+
