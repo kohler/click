@@ -1,3 +1,45 @@
+2000-12-28 Thursday 11:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/atomic.cc: added
+
+2000-12-28 Thursday 11:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.cc: unsigned int -> socklen_t
+	(reported as a Mac OS X bug by Justin  C. Walker
+	<justin@apple.com>)
+
+2000-12-28 Thursday 11:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc, ipfilter.hh: removed
+	Primitive::_negated member, to simplify analysis; required other
+	changes and cleanups (Mazu; previous changes also Mazu)
+
+2000-12-28 Thursday 11:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/Makefile.in, userlevel/Makefile.in: added atomic.o to
+	object files
+
+2000-12-28 Thursday 11:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/integers.cc: #include buglet
+
+2000-12-28 Thursday 11:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ipaddress.hh, lib/ipaddress.cc: added
+	mask_to_prefix_bits()
+
+2000-12-28 Thursday 11:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: classifier.cc, classifier.hh: added combining
+	compatible states, improved support for flippable (i.e. one-bit
+	mask) expressions: this moves "tcp opt" optimization support more
+	clearly into Classifier
+
+2000-12-28 Thursday 11:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc, ipprint.hh: added OUTFILE keyword
+	argument
+
 2000-12-23 Saturday 10:05  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ethernet/ethermirror.cc: EtherMirror bug fix, thanks to
