@@ -33,8 +33,22 @@
 bool match_config(const String &, const String &, HashMap<String, String> &);
 // TODO: allow some special pports to be unconnected
 
-class Matcher {
+class Matcher { public:
 
+  Matcher(RouterT *, AdjacencyMatrix *, RouterT *, AdjacencyMatrix *, int, ErrorHandler *);
+  ~Matcher();
+
+  bool check_into(const PortT &, const PortT &);
+  bool check_out_of(const PortT &, const PortT &);
+
+  bool check_match();
+  bool next_match();
+
+  void replace_config(String &) const;
+  void replace(RouterT *, const String &, const String &, ErrorHandler *);
+
+ private:
+  
   RouterT *_pat;
   AdjacencyMatrix *_pat_m;
   RouterT *_body;
@@ -52,20 +66,6 @@ class Matcher {
   Vector<PortT> _to_pp_to;
   Vector<PortT> _from_pp_from;
   Vector<PortT> _from_pp_to;
-
- public:
-
-  Matcher(RouterT *, AdjacencyMatrix *, RouterT *, AdjacencyMatrix *, int, ErrorHandler *);
-  ~Matcher();
-
-  bool check_into(const PortT &, const PortT &);
-  bool check_out_of(const PortT &, const PortT &);
-
-  bool check_match();
-  bool next_match();
-
-  void replace_config(String &) const;
-  void replace(RouterT *, const String &, const String &, ErrorHandler *);
   
 };
 
@@ -322,6 +322,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // expand 'replacement' into '_body'; need crap compound element
   Vector<String> crap_args;
   CompoundElementClassT comp("<replacement>", replacement);
+  comp.use();
   comp.complex_expand_element(new_e, String(), crap_args, _body, VariableEnvironment(), errh);
 
   // mark replacement
