@@ -1,3 +1,7 @@
+2002-09-21 Saturday 12:12  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.20), aclocal.m4 (1.20): nitlet
+
 2002-09-19 Thursday 15:14  Eddie Kohler <kohler@icir.org>
 
 	* include/click/router.hh (1.39), lib/router.cc (1.133): improve
