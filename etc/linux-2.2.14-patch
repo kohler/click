@@ -55,8 +55,8 @@ Index: net/core/skbuff.c
   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
   *			Florian La Roche <rzsfl@rz.uni-sb.de>
   *
-- *	Version:	$Id: click-patch-1.0.5,v 1.9 2000/04/22 20:48:12 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.5,v 1.9 2000/04/22 20:48:12 benjie Exp $
+- *	Version:	$Id: click-patch-1.0.5,v 1.10 2000/04/22 23:52:06 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.5,v 1.10 2000/04/22 23:52:06 benjie Exp $
   *
   *	Fixes:	
   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
@@ -448,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Sat Apr 22 12:33:42 2000
++++ drivers/net/tulip.c	Sat Apr 22 19:45:10 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -767,7 +767,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3345,3 +3424,347 @@
+@@ -3345,3 +3424,348 @@
   *  tab-width: 4
   * End:
   */
@@ -803,7 +803,8 @@ Index: drivers/net/tulip.c
 +
 +/* set to 0 if don't want to do recycle, otherwise, 128 is a good number */
 +#define SKB_RECYCLED	128
-+/* demand polling at 5.2us should not be used */
++// #define SKB_RECYCLED	0
++/* demand polling */
 +#define DEMAND_POLLTX 	1
 +/* prefetching of descriptor data */
 +#define PREFETCH   		1
