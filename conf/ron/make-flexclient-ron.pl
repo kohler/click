@@ -14,7 +14,7 @@ sub TOHEX {
 # --------- MAIN ----------
 if (scalar(@ARGV) < 5){
     print("Not enough arguments\n");
-    print("usage: make-flexcliet-ron.pl device meIP meHW gwIP serverIP0 [serverIP1 ...]\n\n");
+    print("usage: make-flexclient-ron.pl device meIP meHW gwIP serverIP0 [serverIP1 ...]\n\n");
     exit(-1);
 }
 
