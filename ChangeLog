@@ -1,3 +1,13 @@
+2002-04-27 Saturday 16:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh (1.23): another stdc++ fix from Scott Page:
+	s/__inline__/inline/g;
+
+2002-04-27 Saturday 16:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: hashmap.cc (1.10), hashmap.hh (1.9): another
+	stdc++ fix from Scott Page
+
 2002-04-26 Friday 14:47  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: hashmap.cc (1.9), hashmap.hh (1.8): fixes from
