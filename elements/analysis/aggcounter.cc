@@ -175,7 +175,8 @@ AggregateCounter::find_node(uint32_t a)
 Packet *
 AggregateCounter::simple_action(Packet *p)
 {
-    uint32_t agg = ntohl(AGGREGATE_ANNO(p));
+    // AGGREGATE_ANNO is already in host byte order!
+    uint32_t agg = AGGREGATE_ANNO(p);
     if (Node *n = find_node(agg)) {
 	if (!_bytes)
 	    n->count++;
