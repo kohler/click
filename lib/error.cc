@@ -714,7 +714,7 @@ IndentErrorHandler::IndentErrorHandler(ErrorHandler *errh,
 String
 IndentErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, String(), landmark, _indent + prefix + text);
+  return _errh->decorate_text(seriousness, String(), landmark, prepend_lines(_indent + prefix, text));
 }
 
 

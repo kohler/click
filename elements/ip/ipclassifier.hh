@@ -60,13 +60,11 @@ value (the upper 6 bits of TOS).
 
 =item B<ip ect>
 
-Matches IP packets with the ECN Capable Transport bit set (the next-lowest bit
-of TOS).
+Matches IP packets with ECN Capable Transport turned on.
 
 =item B<ip ce>
 
-Matches IP packets with the ECN Congestion Experienced bit set (the lowest bit
-of TOS).
+Matches IP packets with ECN Congestion Experienced set.
 
 =item B<ip ttl TTL>
 
