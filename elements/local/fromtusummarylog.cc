@@ -165,6 +165,7 @@ FromTUSummaryLog::try_read_packet()
     ip->ip_len = htons(q->length());
     ip->ip_src.s_addr = htonl((src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3]);
     ip->ip_dst.s_addr = htonl((dst[0] << 24) | (dst[1] << 16) | (dst[2] << 8) | dst[3]);
+    ip->ip_off = 0;
 
     if (t == 'T') {
 	ip->ip_p = IPPROTO_TCP;
