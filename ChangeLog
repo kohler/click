@@ -1,3 +1,13 @@
+2001-04-08 Sunday 16:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: rrunqueue.cc, rrunqueue.hh: unqueue from
+	multiple inputs in round robin fashion; has multiple outputs: send
+	packets from input 0 to output 0, input 1 to output 1, etc.
+
+2001-04-08 Sunday 16:56  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/: iprw.cc, iprw.hh: clear used no longer used
+
 2001-04-06 Friday 16:42  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: fasttcpflows.cc, fasttcpflows.hh,
