@@ -60,6 +60,7 @@ my $ap = 0;
 my $txf = 1;
 my $interval = 10000;
 my $rate_control = "static-2";
+my $kernel = 0;
 GetOptions('device=s' => \$dev,
 	   'channel=i' => \$channel,
 	   'ssid=s' => \$ssid,
@@ -68,6 +69,7 @@ GetOptions('device=s' => \$dev,
 	   'ap!' => \$ap,
 	   'txf!' => \$txf,
 	   'rate-control=s' => \$rate_control,
+	   'kernel!' => \$kernel,
 	   ) or usage();
 
 
@@ -137,10 +139,10 @@ if (-f "/sbin/iwconfig") {
 system "$iwconfig $dev mode Ad-Hoc";
 system "$iwconfig $dev channel $channel";
 
-if (!($dev =~ /ath/)) {
-#    system "/sbin/ifconfig $dev $safe_ip";
-#    system "/sbin/ifconfig $dev mtu 1650";
-}
+
+#system "/sbin/ifconfig $dev $safe_ip";
+system "/sbin/ifconfig $dev mtu 1650";
+
 
 if ($dev =~ /wlan/) {
     system "/home/roofnet/bin/prism2_param $dev ptype 6";
@@ -198,9 +200,18 @@ $wireless_mac 12 18 24 36 48 72 96 108);\n\n";
 system "cat /home/roofnet/scripts/srcr.click";
 system "cat /home/roofnet/scripts/etx.click";
 
+
+if ($kernel) {
 print <<EOF;
 // has one input and one output
 // takes and spits out ip packets
+
+elementclass LinuxHost {
+    \$dev, \$ip, \$nm, \$mac |
+    input -> ToHost(\$dev);
+    FromHost(\$dev, \$ip/\$nm, ETHER \$mac) -> output;
+}
+
 elementclass LinuxIPHost {
     \$dev, \$ip, \$nm |
 
@@ -235,6 +246,7 @@ elementclass LinuxIPHost {
 
 elementclass SniffDevice {
     \$device, \$promisc|
+
   from_dev :: FromDevice(\$device, PROMISC \$promisc)
   -> t1 :: Tee
   -> output;
@@ -248,11 +260,51 @@ elementclass SniffDevice {
     t2 [1] -> ToHostSniffers(\$device);
 }
 
+EOF
+} else {
+    print <<EOF;
+
+
+elementclass LinuxHost {
+    \$dev, \$ip, \$nm, \$mac |
+
+    input -> KernelTap(\$ip/\$nm, MTU 1500, ETHER \$mac) -> output;
+}
+// has one input and one output
+// takes and spits out ip packets
+elementclass LinuxIPHost {
+    \$dev, \$ip, \$nm |
+
+  input -> KernelTun(\$ip/\$nm, MTU 1500) 
+  -> MarkIPHeader(0)
+  -> CheckIPHeader()
+  -> output;
+
+}
+
+elementclass SniffDevice {
+    \$device, \$promisc|
+  from_dev :: FromDevice(\$device, PROMISC \$promisc)
+  -> output;
+  input
+  -> to_dev :: ToDevice(\$device);
+}
+
+EOF
+    }
+
+if (!$kernel) {
+    print "control :: ControlSocket(\"TCP\", 7777);\n";
+    print "chatter :: ChatterSocket(\"TCP\", 7778);\n";
+}
+
+print <<EOF;
 sniff_dev :: SniffDevice($dev, false);
 
 sched :: PrioSched()
--> prism2_encap :: Prism2Encap()
+//-> prism2_encap :: Prism2Encap()
 -> set_power :: SetTXPower(POWER 63)
+-> extra_encap :: ExtraEncap()
 //-> Print ("to_dev", TIMESTAMP true)
 -> sniff_dev;
 
@@ -347,27 +399,22 @@ EOF
 print <<EOF;
 
 sniff_dev 
--> SetTimestamp() 
--> tx_filter :: FilterTX()
 -> prism2_decap :: Prism2Decap()
+-> extra_decap :: ExtraDecap()
+-> phyerr_filter :: PhyErrFilter()
+//-> PrintWifi(fromdev)
+-> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter(WINDOW 20) 
--> wifi_cl :: Classifier(0/00%0c, //mgt
-			 0/04%0c, //ctl
+-> wifi_cl :: Classifier(0/00%0c 0/08%f0, //beacons
 			 0/08%0c, //data
-			 -);
+			 );
 
 
 wifi_cl [0] 
--> management_cl :: Classifier(0/80%f0, //beacon
-			       );
-
-management_cl [0] 
 -> bs :: BeaconScanner(RT rates) 
 -> Discard;
 
-wifi_cl [1] -> Discard;
-wifi_cl [3] -> Discard;
-wifi_cl [2]
+wifi_cl [1]
 -> WifiDecap()
 -> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
 -> rxstats :: RXStats()
@@ -382,16 +429,28 @@ wifi_cl [2]
 ncl [0] -> srcr;
 ncl [1] -> etx;
 
-ncl[2] -> StoreData(12,\\<0806>) -> ToHost(rate);
-ncl[3] -> StoreData(12,\\<0800>) -> ToHost(rate);
-ncl[4] -> ToHost(safe);
+rate_host :: LinuxHost(rate, $rate_ip, 255.255.255.0, $wireless_mac);
 
-FromHost(safe, $safe_ip/8, ETHER $wireless_mac) 
--> WifiEncap(0x0, 00:00:00:00:00:00)
--> SetTXRate(RATE 2)
--> route_q;
+ncl[2] 
+-> StoreData(12,\\<0806>) 
+-> rate_host;
 
-FromHost(rate, $rate_ip/8, ETHER $wireless_mac) 
+ncl[3] 
+-> StoreData(12,\\<0800>) 
+-> rate_host;
+
+ncl[4] 
+EOF
+
+if ($kernel) {
+    print "-> ToHost(ath0);\n";
+} else {
+    print "-> Discard;\n";
+}
+
+print <<EOF;
+
+rate_host
 -> arp_cl :: Classifier(12/0806,
 			12/0800);
 arp_cl [0] 
@@ -410,17 +469,22 @@ EOF
     if ($txf) {
 print <<EOF;
 tx_filter [1] 
--> prism2_decap_txf :: Prism2Decap()
-//-> Print(txf)
+//-> PrintWifi(txf)
 -> rate_cl :: Classifier(30/0100, 
 			 -);
 
-FromHost(rate-txf, 1.1.1.1/32) -> Discard;
 
 rate_cl 
 -> txf_t :: Tee(4)
 -> PushAnno() 
--> ToHost(rate-txf);
+EOF
+if ($kernel) {
+    print "-> ToHost(rate-txf);\n";
+    print "FromHost(rate-txf, 1.1.1.1/32)\n";
+}
+print <<EOF;
+-> Discard;
+
 
 rate_cl [1] 
 -> txf_t2 :: Tee(3);
