@@ -126,9 +126,10 @@ CLICK_CHECK_INTEGER_TYPES
 if test "x$enable_int64" = xyes; then
     CLICK_CHECK_INT64_TYPES
 fi
+CLICK_CHECK_ENDIAN
 
 dnl
-dnl dynamic linking
+dnl headers, dynamic linking
 dnl
 
 AC_CHECK_HEADERS(unistd.h)

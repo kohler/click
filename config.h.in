@@ -30,6 +30,15 @@
 /* Define if the machine is indifferent to alignment. */
 #undef HAVE_INDIFFERENT_ALIGNMENT
 
+/* Define to byte order of target machine. */
+#undef CLICK_BYTE_ORDER
+#define CLICK_BIG_ENDIAN	4321
+#define CLICK_LITTLE_ENDIAN	1234
+#define CLICK_NO_ENDIAN		0
+
+/* Define if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
 /* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 

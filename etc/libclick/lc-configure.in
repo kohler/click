@@ -48,8 +48,13 @@ if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
   if test -d /usr/src/linux; then
     linuxdir=/usr/src/linux
   elif test "x$enable_linuxmodule" = xyes; then
-    AC_MSG_WARN([can't find /usr/src/linux; not compiling for Linux
-  (or try the --with-linux=DIR option)])
+    AC_MSG_WARN([
+=========================================
+
+I can't find /usr/src/linux, so I'm not compiling for Linux
+(or try the --with-linux=DIR option).
+
+=========================================])
   fi
 fi
 
@@ -59,8 +64,13 @@ if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != 
 elif test -r $linuxdir/include/linux/skbuff.h; then
   ac_have_linux_kernel=y
 else
-  AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
-  are you sure $linuxdir holds the Linux source code?])
+  AC_MSG_ERROR([
+=========================================
+
+I can't find $linuxdir/include/linux/skbuff.h:
+Are you sure $linuxdir holds the Linux source code?
+
+=========================================])
 fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
@@ -113,6 +123,7 @@ CLICK_CHECK_INTEGER_TYPES
 if test "x$enable_int64" = xyes; then
     CLICK_CHECK_INT64_TYPES
 fi
+CLICK_CHECK_ENDIAN
 
 
 dnl

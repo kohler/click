@@ -124,15 +124,13 @@ include/click/ipaddressset.hh
 include/click/ip6flowid.hh
 include/click/ipflowid.hh
 include/click/iptable.hh
-include/click/iptable2.hh
 include/click/ip6table.hh
 include/click/lexer.hh
 include/click/llrpc.h
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
-include/click/perfctr.hh
-include/click/radix.hh
+include/click/perfctr-i586.hh
 include/click/router.hh
 include/click/routerthread.hh
 include/click/skbmgr.hh
@@ -181,7 +179,6 @@ lib/ip6table.cc
 lib/lexer.cc
 lib/packageutils.cc
 lib/packet.cc
-lib/radix.cc
 lib/router.cc
 lib/routerthread.cc
 lib/straccum.cc

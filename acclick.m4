@@ -47,11 +47,16 @@ AC_DEFUN([CLICK_PROG_CXX], [
     AC_REQUIRE([AC_PROG_CXX])
 
     if test -z "$GXX"; then
-	AC_MSG_WARN(Your C++ compiler ($CXX) is not a GNU C++ compiler!
+	AC_MSG_WARN([
+=========================================
+
+Your C++ compiler ($CXX) is not a GNU C++ compiler!
 Either set the "'`'"CXX' environment variable to tell me where
-[a GNU C++ compiler is, or compile at your own risk.
+a GNU C++ compiler is, or compile at your own risk.
 (This code uses a few GCC extensions and GCC-specific compiler options,
-and Linux header files are GCC-specific.)])
+and Linux header files are GCC-specific.)
+
+=========================================])
     fi
 
     AC_LANG_CPLUSPLUS
@@ -63,9 +68,14 @@ and Linux header files are GCC-specific.)])
 #endif
 return 0;], ac_cv_good_cxx=yes, ac_cv_good_cxx=no))
     if test "$ac_cv_good_cxx" != yes; then
-	AC_MSG_ERROR(Your GNU C++ compiler ($CXX) is too old!
-[Either download a newer compiler, or tell me to use a different compiler
-by setting the "'`'"CXX' environment variable and rerunning me.])
+	AC_MSG_ERROR([
+=========================================
+
+Your GNU C++ compiler ($CXX) is too old!
+Either download a newer compiler, or tell me to use a different compiler
+by setting the "'`'"CXX' environment variable and rerunning me.
+
+=========================================])
     fi
 
     dnl check for <new.h>
@@ -358,7 +368,12 @@ AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
 	AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
 	[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
 	if test $ac_cv_uint_t = no; then
-	    AC_MSG_ERROR("uint32_t not defined by <inttypes.h> or <sys/types.h>!")
+	    AC_MSG_ERROR([
+=========================================
+
+uint32_t not defined by <inttypes.h> or <sys/types.h>!
+
+=========================================])
 	fi
     fi])
 
@@ -383,9 +398,75 @@ AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
 [AC_EGREP_HEADER(uint64_t, $inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
 
     if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
-	AC_MSG_ERROR(int64_t types not defined by $inttypes_hdr!
-Compile with "'`'"--disable-int64'.)
+	AC_MSG_ERROR([
+=========================================
+
+int64_t types not defined by $inttypes_hdr!
+Compile with "'`'"--disable-int64'.
+
+=========================================])
     else
-	AC_DEFINE_UNQUOTED(HAVE_INT64_TYPES)
+	AC_DEFINE(HAVE_INT64_TYPES)
     fi])
 
+
+dnl
+dnl CLICK_CHECK_ENDIAN
+dnl Checks endianness of machine.
+dnl
+
+AC_DEFUN([CLICK_CHECK_ENDIAN], [
+    if test "x$cross_compiling" = xyes -o x = x; then
+	AC_CHECK_HEADERS(endian.h machine/endian.h, endian_hdr=$ac_hdr; break, endian_hdr=no)
+	if test "x$endian_hdr" != xno; then
+	    AC_CACHE_CHECK(endianness, ac_cv_endian,
+	    dnl can't use AC_TRY_CPP because it throws out the results
+	    ac_cv_endian=0
+	    [cat > conftest.$ac_ext <<EOF
+[#]line __oline__ "configure"
+#include "confdefs.h"
+#include <$endian_hdr>
+#ifdef __BYTE_ORDER
+__BYTE_ORDER
+#elif defined(BYTE_ORDER)
+BYTE_ORDER
+#else
+0
+#endif
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
+AC_TRY_EVAL(ac_try)
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  ac_cv_endian=`grep '^[1234]' conftest.result`
+  test -z "$ac_cv_endian" && ac_cv_endian=0
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+fi
+rm -f conftest*])
+	else
+	    ac_cv_endian=0
+	fi
+    else
+	AC_CACHE_CHECK(endianness, ac_cv_endian,
+	    [AC_TRY_RUN([#ifdef __cplusplus
+extern "C" void exit(int);
+#else
+void exit(int status);
+#endif
+#include <stdio.h>
+int main(int argc, char *argv[]) {
+    union { int i; char c[4]; } u;
+    FILE *f = fopen("conftestdata", "w");
+    if (!f)
+	exit(1);
+    u.i = ('1') | ('2' << 8) | ('3' << 16) | ('4' << 24);
+    fprintf(f, "%4.4s\n", u.c);
+    exit(0);
+}], ac_cv_endian=`cat conftestdata`, ac_cv_endian=0, ac_cv_endian=0)])
+    fi
+    AC_DEFINE_UNQUOTED(CLICK_BYTE_ORDER, $ac_cv_endian)
+    AC_CHECK_HEADERS(byteswap.h)
+    ])

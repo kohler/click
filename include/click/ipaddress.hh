@@ -18,7 +18,7 @@ class IPAddress { public:
   
   operator bool() const		{ return _addr != 0; }
   operator uint32_t() const	{ return _addr; }
-  uint32_t addr() const	{ return _addr; }
+  uint32_t addr() const		{ return _addr; }
   
   operator struct in_addr() const;
   struct in_addr in_addr() const;
