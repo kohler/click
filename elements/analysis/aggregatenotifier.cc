@@ -1,5 +1,4 @@
 // -*- c-basic-offset: 4 -*-
-#include <config.h>
 #include <click/config.h>
 #include "aggregatenotifier.hh"
 CLICK_DECLS

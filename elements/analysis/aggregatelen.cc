@@ -1,8 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 
-#include <config.h>
 #include <click/config.h>
-
 #include "aggregatelen.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
