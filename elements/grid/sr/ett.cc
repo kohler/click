@@ -125,6 +125,16 @@ ETT::run_timer ()
   _timer.schedule_after_ms(1000);
 }
 
+IPAddress
+ETT::get_random_neighbor()
+{
+  if (!_neighbors_v.size()) {
+    return IPAddress();
+  }
+  int ndx = random() % _neighbors_v.size();
+  return _neighbors_v[ndx];
+
+}
 void
 ETT::start_query(IPAddress dstip)
 {
@@ -668,6 +678,12 @@ ETT::push(int port, Packet *p_in)
     default:
       ett_assert(0);
     }
+
+    if (!_neighbors.findp(neighbor)) {
+      _neighbors.insert(neighbor, true);
+      _neighbors_v.push_back(neighbor);
+    }
+
     _arp_table->insert(neighbor, pk->get_shost());
     update_link(_ip, neighbor, get_metric(neighbor));
     if(type == PT_QUERY){

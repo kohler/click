@@ -56,9 +56,9 @@ struct sr_pkt {
   // PT_QUERY
   in_addr _qdst; // Who are we looking for?
   
-  in_addr extra1;
-  in_addr extra2;
-  uint16_t extra;
+  in_addr _random_from;
+  in_addr _random_to;
+  uint16_t _random_metric;
   
   uint32_t _seq;   // Originator's sequence number.
 
@@ -78,6 +78,26 @@ struct sr_pkt {
   void set_shost(EtherAddress _eth) {
     memcpy(ether_shost, _eth.data(), 6);
   }
+  void set_random_from(IPAddress ip) {
+    _random_from = ip;
+  }
+  void set_random_to(IPAddress ip) {
+    _random_to = ip;
+  }
+  void set_random_metric(uint16_t m) {
+    _random_metric = m;
+  }
+  IPAddress get_random_from() {
+    return _random_from;
+  }
+  IPAddress get_random_to() {
+    return _random_to;
+  }
+  int get_random_metric() {
+    return _random_metric;
+  }
+
+
   // How long should the packet be?
   size_t hlen_wo_data() const { return len_wo_data(_nhops); }
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }

@@ -83,6 +83,7 @@ class ETT : public Element {
   void update_link(IPAddress from, IPAddress to, int metric);
   static String route_to_string(Vector<IPAddress> s);
   void forward_query_hook();
+  IPAddress get_random_neighbor();
 private:
 
   class Query {
@@ -143,6 +144,10 @@ private:
 
   typedef HashMap<IPAddress, Query> QueryTable;
   QueryTable _queries;
+
+  typedef BigHashMap<IPAddress, bool> IPMap;
+  IPMap _neighbors;
+  Vector<IPAddress> _neighbors_v;
 
   DEQueue<Seen> _seen;
 

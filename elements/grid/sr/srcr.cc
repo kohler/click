@@ -128,6 +128,15 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
 
+  if (_ett) {
+    IPAddress neighbor = _ett->get_random_neighbor();
+    if (neighbor) {
+      pk->set_random_from(_ip);
+      pk->set_random_to(neighbor);
+      pk->set_random_metric(get_metric(neighbor));
+    }
+  }
+  
   pk->set_num_hops(r.size());
   pk->set_next(1);
   int i;
@@ -184,6 +193,13 @@ SRCR::push(int port, Packet *p_in)
   }
 
   /* update the metrics from the packet */
+  IPAddress r_from = pk->get_random_from();
+  IPAddress r_to = pk->get_random_to();
+  int r_metric = pk->get_random_metric();
+  if (r_from && r_to) {
+    update_link(r_from, r_to, r_metric);
+  }
+
   for(int i = 0; i < pk->num_hops()-1; i++) {
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
@@ -237,7 +253,19 @@ SRCR::push(int port, Packet *p_in)
 
   srcr_assert(pk->next() < 8);
   IPAddress nxt = pk_out->get_hop(pk_out->next());
-
+  
+  /*
+   * put new information in the random link field
+   * with probability = 1/num_hops in the packet
+   */
+  if (_ett && random() % pk_out->num_hops() == 0) {
+    IPAddress r_neighbor = _ett->get_random_neighbor();
+    if (r_neighbor) {
+      pk_out->set_random_from(_ip);
+      pk_out->set_random_to(r_neighbor);
+      pk_out->set_random_metric(get_metric(r_neighbor));
+    }
+  }
 
 
   EtherAddress eth_dest = _arp_table->lookup(nxt);
