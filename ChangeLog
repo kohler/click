@@ -1,3 +1,37 @@
+2004-08-10 Tuesday 23:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/linuxmodule/ToHost-01.testie (1.7): ping args
+
+2004-08-10 Tuesday 23:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromdagdump.cc (1.20), fromdagdump.hh (1.13),
+	fromdagdump.cc (1.21): add support for new-format ERF dumps;
+	reported by Holger Dreger
+
+2004-08-10 Tuesday 23:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: todump.cc (1.57), todump.hh (1.34): nits
+
+2004-08-10 Tuesday 23:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fakepcap.cc (1.14), fakepcap.hh (1.17),
+	fromdump.cc (1.93): add FAKE_DLT_SUNATM and FAKE_DLT_HOST_RAW and
+	fake_pcap_canonical_dlt (file DLT constants can differ from host
+	DLT constants)
+
+2004-08-10 Tuesday 23:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/fromnlanrdump.cc (1.6), userlevel/fromfile.cc
+	(1.8), userlevel/fromfile.hh (1.4):
+	FromFile::get_packet_from_data() can take some packet stuff from
+	the provided buffer, and some packet data from the file
+
+2004-08-10 Tuesday 23:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/wifidecap.cc (1.4), elements/wifi/wifiencap.cc
+	(1.7), include/clicknet/llc.h (1.2): use standard integer types,
+	and rename struct llc -> struct click_llc for consistency
+
 2004-08-05 Thursday 11:13  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.12): Removed unneeded ports for HP ILO;
