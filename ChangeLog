@@ -1,3 +1,24 @@
+2001-03-22 Thursday 15:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* missing: nitlet: always put "." first on TEXINPUTS
+
+2001-03-22 Thursday 15:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, Makefile.in, tools/Makefile.in: tools no longer
+	responsible for distributing themselves; use main DISTFILES. Also
+	DISTFILES fixes.
+
+2001-03-22 Thursday 15:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in, missing, doc/Makefile.in, doc/texinfo.tex,
+	DISTFILES: add texinfo.tex to doc/ subdirectory, so any texi2dvi
+	should do (stop checking its version number in configure.in). Also
+	added "make clean" target, and add a "missing texi2dvi".
+
+2001-03-22 Thursday 15:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-03-21 Wednesday 19:40  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in, etc/samplepackage/Makefile.in,
