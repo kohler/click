@@ -69,7 +69,7 @@ int
 IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
-  int ninputs = 0;
+  
   // numbers in seconds
   _tcp_timeout_jiffies = 86400;		// 24 hours
   _tcp_done_timeout_jiffies = 30;	// 30 seconds
@@ -93,12 +93,14 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
        0) < 0)
     return -1;
   
+  if (conf.size() == 0)
+    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
+  set_ninputs(conf.size());
+  
   for (int i = 0; i < conf.size(); i++) {
     InputSpec is;
-    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0) {
+    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
       _input_specs.push_back(is);
-      ninputs++;
-    }
   }
 
   // change timeouts into jiffies
@@ -106,9 +108,6 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_done_timeout_jiffies *= CLICK_HZ;
   _udp_timeout_jiffies *= CLICK_HZ;
   
-  if (ninputs == 0)
-    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
-  set_ninputs(ninputs);
   if (errh->nerrors() == before)
     return 0;
   else {
