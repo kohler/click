@@ -183,18 +183,23 @@ ToIPSummaryDump::bad_packet(StringAccum &sa, const String &s, int what) const
 }
 
 void
-ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, StringAccum &sa)
+ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int contents, StringAccum &sa)
 {
     int initial_sa_len = sa.length();
-    const uint8_t *opt = reinterpret_cast<const uint8_t *>(tcph + 1);
-    const uint8_t *end_opt = opt + ((tcph->th_off << 2) - sizeof(click_tcp));
+    const uint8_t *end_opt = opt + opt_len;
     const char *sep = "";
     
     while (opt < end_opt)
 	switch (*opt) {
 	  case TCPOPT_EOL:
+	    if (contents & DO_TCPOPT_PADDING)
+		sa << sep << "eol";
 	    goto done;
 	  case TCPOPT_NOP:
+	    if (contents & DO_TCPOPT_PADDING) {
+		sa << sep << "nop";
+		sep = ",";
+	    }
 	    opt++;
 	    break;
 	  case TCPOPT_MAXSEG:
@@ -266,7 +271,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, String
 	      break;
 	  }
 	  unknown:
-	    opt += (opt[1] ? 128 : opt[1]);
+	    opt += (opt[1] ? opt[1] : 128);
 	    break;
 	}
 
@@ -276,8 +281,14 @@ ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, String
     return;
 
   bad_opt:
-    sa.pop_back(sa.length() - initial_sa_len);
+    sa.set_length(initial_sa_len);
     sa << '?';
+}
+
+inline void
+ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, StringAccum &sa)
+{
+    store_tcp_opt_ascii(reinterpret_cast<const uint8_t *>(tcph + 1), (tcph->th_off << 2) - sizeof(click_tcp), contents, sa);
 }
 
 #define BAD_IP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); iph = 0; } while (0)
@@ -285,7 +296,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const click_tcp *tcph, int contents, String
 #define BAD_UDP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); udph = 0; } while (0)
 
 bool
-ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
+ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 {
     // Not all of these will be valid, but we calculate them just once.
     const click_ip *iph = p->ip_header();
@@ -431,7 +442,7 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	    if (tcph->th_off <= 5)
 		sa << '.';
 	    else
-		store_tcp_opt_ascii(tcph, DO_TCPOPT_ALL, sa);
+		store_tcp_opt_ascii(tcph, DO_TCPOPT_ALL_NOPAD, sa);
 	    break;
 	  case W_TCP_SACK:
 	    if (!tcph)
@@ -521,12 +532,71 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 #undef BAD_TCP
 #undef BAD_UDP
 
+#define T ToIPSummaryDump
+static int tcp_opt_contents_mapping[] = {
+    T::DO_TCPOPT_PADDING, T::DO_TCPOPT_PADDING,	// EOL, NOP
+    T::DO_TCPOPT_MSS, T::DO_TCPOPT_WSCALE,	// MAXSEG, WSCALE
+    T::DO_TCPOPT_SACK, T::DO_TCPOPT_SACK,	// SACK_PERMITTED, SACK
+    T::DO_TCPOPT_UNKNOWN, T::DO_TCPOPT_UNKNOWN,	// 6, 7
+    T::DO_TCPOPT_TIMESTAMP			// TIMESTAMP
+};
+#undef T
+
+int
+ToIPSummaryDump::store_tcp_opt_binary(const uint8_t *opt, int opt_len, int contents, StringAccum &sa)
+{
+    const uint8_t *end_opt = opt + opt_len;
+
+    if (contents == (int)DO_TCPOPT_ALL) {
+	// store all options
+	sa.append((char)(end_opt - opt));
+	sa.append(opt, end_opt - opt);
+	return end_opt - opt;
+    }
+
+    int initial_sa_len = sa.length();
+    sa.append('\0');
+    
+    while (opt < end_opt) {
+	// one-byte options
+	if (*opt == TCPOPT_EOL) {
+	    if (contents & DO_TCPOPT_PADDING)
+		sa.append(opt, 1);
+	    goto done;
+	} else if (*opt == TCPOPT_NOP) {
+	    if (contents & DO_TCPOPT_PADDING)
+		sa.append(opt, 1);
+	    opt++;
+	    continue;
+	}
+	
+	// quit copying options if you encounter something obviously invalid
+	if (opt[1] == 0 || opt + opt[1] > end_opt)
+	    break;
+
+	int this_content = (*opt > TCPOPT_TIMESTAMP ? (int)DO_TCPOPT_UNKNOWN : tcp_opt_contents_mapping[*opt]);
+	if (contents & this_content)
+	    sa.append(opt, opt[1]);
+	opt += opt[1];
+    }
+
+  done:
+    sa[initial_sa_len] = sa.length() - initial_sa_len - 1;
+    return sa.length() - initial_sa_len;
+}
+
+inline int
+ToIPSummaryDump::store_tcp_opt_binary(const click_tcp *tcph, int contents, StringAccum &sa)
+{
+    return store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(tcph + 1), (tcph->th_off << 2) - sizeof(click_tcp), contents, sa);
+}
+
 bool
 ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp *tcph, const click_udp *udph, StringAccum &sa) const
 {
+    assert(sa.length() == 0);
     char *buf = sa.extend(_binary_size);
     int pos = 4;
-    *(reinterpret_cast<uint32_t *>(buf + 0)) = htonl(_binary_size >> 2);
     
     // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
@@ -588,6 +658,28 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    if (tcph)
 		v = tcph->th_flags;
 	    goto output_1;
+	  case W_TCP_OPT: {
+	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2))
+		  goto output_1;
+	      int left = sa.length() - pos;
+	      sa.set_length(pos);
+	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_ALL, sa);
+	      sa.extend(left);
+	      buf = sa.data();
+	      break;
+	  }
+	  case W_TCP_SACK: {
+	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2)
+		  || (tcph->th_off == 8
+		      && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+		  goto output_1;
+	      int left = sa.length() - pos;
+	      sa.set_length(pos);
+	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_SACK, sa);
+	      sa.extend(left);
+	      buf = sa.data();
+	      break;
+	  }
 	  case W_LENGTH:
 	    if (iph)
 		v = htonl(ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p));
@@ -635,6 +727,10 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    break;
 	}
     }
+
+    pos = (pos + 3) & ~3;
+    sa.set_length(pos);
+    *(reinterpret_cast<uint32_t *>(buf)) = htonl(pos >> 2);
     return true;
 }
 
@@ -656,7 +752,7 @@ ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 	}
     } else {
 	_sa.clear();
-	if (ascii_summary(p, _sa))
+	if (summary(p, _sa))
 	    fwrite(_sa.data(), 1, _sa.length(), _f);
 	else
 	    write_line(_sa.take_string());

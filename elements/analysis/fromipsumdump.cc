@@ -651,6 +651,13 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 			u1 = htons(100); // random number
 		    pos++;	// u1 already 0
 		    break;
+		  case W_TCP_OPT:
+		  case W_TCP_SACK:
+		    if (pos + 1 + data[pos] <= len) {
+			tcp_opt = line.substring(pos + 1, data[pos]);
+			pos += data[pos] + 1;
+		    }
+		    break;
 		}
 		goto store_contents;
 	    }

@@ -138,10 +138,10 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void run_scheduled();
     Packet *pull(int);
 
-    enum { DO_TCPOPT_MSS = 1, DO_TCPOPT_WSCALE = 2, DO_TCPOPT_SACK = 4,
-	   DO_TCPOPT_TIMESTAMP = 8, DO_TCPOPT_UNKNOWN = 16,
-	   DO_TCPOPT_PADDING = 32,
-	   DO_TCPOPT_ALL = 0xFFFFFFFFU };    
+    enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
+	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
+	   DO_TCPOPT_UNKNOWN = 32,
+	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU };
     static int parse_tcp_opt_ascii(const char *, int, String *, int);
     
   private:

@@ -97,7 +97,7 @@ static int content_binary_sizes[] = {
     4, 4, 1, 2, 2,	// W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT
     2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PL_LEN
     4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
-    4, -10000, -10000	// W_AGGREGATE, W_TCP_SACK, W_TCP_OPT
+    4, 4, 4		// W_AGGREGATE, W_TCP_SACK, W_TCP_OPT
 };
 
 int

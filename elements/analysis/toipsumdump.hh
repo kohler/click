@@ -116,7 +116,7 @@ Here are a couple lines from the start of a sample verbose dump.
   !creator "aciri-ipsumdump -i wvlan0"
   !host no.lcdf.org
   !runtime 996022410.322317 (Tue Jul 24 17:53:30 2001)
-  !data 'ip src' 'ip dst'
+  !data ip_src ip_dst
   63.250.213.167 192.150.187.106
   63.250.213.167 192.150.187.106
 
@@ -125,6 +125,9 @@ packets were dropped before they could be entered into the dump.
 
 A `C<!flowid>' comment can specify source and destination addresses and ports
 for packets that otherwise don't have one.
+
+Any packet line may contain fewer fields than specified in the `C<!data>'
+line, down to one field. Missing fields are treated as `C<->'.
 
 =n
 
@@ -190,15 +193,20 @@ the `C<!data>' line, as follows:
    tcp_seq        4     4    TCP seqnece number
    tcp_ack        4     4    TCP ack number
    tcp_flags      1     1    TCP flags
+   tcp_opt        ?     1    TCP options
+   tcp_sack       ?     1    TCP SACK options
    payload_len    4     4    payload length
    count          4     4    packet count
 
 Each field is Length bytes long, and aligned on an Align-byte boundary,
-possibly by introducing padding between fields. Some CONTENTS orders may
-introduce unnecessary padding. For example, the records for CONTENTS
-`C<sport src dport>' will be 12 bytes long (because `C<sport>' is
-padded by two bytes so `C<src>' can start on a 4-byte boundary), but the
-records for `C<src sport dport>' will be 8 bytes long.
+possibly by introducing padding between fields. Variable-length fields have
+Length `C<?>' in the table. In a packet record, these fields consist of a
+single length byte, followed by that many bytes of data.
+
+Some CONTENTS orders may introduce unnecessary padding. For example, the
+records for CONTENTS `C<sport src dport>' will be 12 bytes long (because
+`C<sport>' is padded by two bytes so `C<src>' can start on a 4-byte boundary),
+but the records for `C<src sport dport>' will be 8 bytes long.
 
 The data stored in a metadata record is just an ASCII string, ending with
 newline (possibly padded with zero bytes on the right), same as in a regular
@@ -250,10 +258,14 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void write_line(const String &);
     void flush_buffer();
 
-    enum { DO_TCPOPT_MSS = 1, DO_TCPOPT_WSCALE = 2, DO_TCPOPT_SACK = 4,
-	   DO_TCPOPT_TIMESTAMP = 8, DO_TCPOPT_UNKNOWN = 16,
-	   DO_TCPOPT_ALL = 0xFFFFFFFFU };
-    static void store_tcp_opt_ascii(const click_tcp *, int, StringAccum &);
+    enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
+	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
+	   DO_TCPOPT_UNKNOWN = 32,
+	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU };
+    static void store_tcp_opt_ascii(const uint8_t *, int olen, int, StringAccum &);
+    static inline void store_tcp_opt_ascii(const click_tcp *, int, StringAccum &);
+    static int store_tcp_opt_binary(const uint8_t *, int olen, int, StringAccum &);
+    static inline int store_tcp_opt_binary(const click_tcp *, int, StringAccum &);
     
   private:
 
@@ -274,7 +286,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     
     String _banner;
 
-    bool ascii_summary(Packet *, StringAccum &) const;
+    bool summary(Packet *, StringAccum &) const;
     bool binary_summary(Packet *, const click_ip *, const click_tcp *, const click_udp *, StringAccum &) const;
     bool bad_packet(StringAccum &, const String &, int) const;
     void write_packet(Packet *, bool multipacket = false);
