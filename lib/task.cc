@@ -24,6 +24,18 @@
 #include <click/router.hh>
 #include <click/routerthread.hh>
 
+void
+Task::error_hook(void *)
+{
+  assert(0);
+}
+
+Task::~Task()
+{
+  assert(!scheduled());
+  //assert(!initialized());
+}
+
 #ifndef RR_SCHED
 void
 Task::set_max_tickets(int n)
@@ -126,6 +138,7 @@ Task::unschedule()
 }
 
 TaskList::TaskList()
+  : Task(Task::error_hook, 0)
 {
   _all_prev = _all_next = _all_list = this;
 }

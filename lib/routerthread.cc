@@ -13,7 +13,7 @@ extern "C" {
 #define DEBUG_RT_SCHED 0
 
 RouterThread::RouterThread(Router *r)
-  : _router(r), _please_stop_driver(0)
+  : Task(Task::error_hook, 0), _router(r), _please_stop_driver(0)
 {
   _prev = _next = _list = this;
   router()->add_thread(this);

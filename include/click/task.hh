@@ -18,9 +18,9 @@ class Task { public:
   static const unsigned MAX_STRIDE = 1U<<31;
   static const int MAX_TICKETS = 1U<<15;
   
-  Task();
   Task(TaskHook, void *);
-  Task(Element *);
+  Task(Element *);			// call element->run_scheduled()
+  ~Task();
 
   bool initialized() const		{ return _all_prev; }
   bool scheduled() const		{ return _prev; }
@@ -94,8 +94,13 @@ class Task { public:
   Task *_all_next;
   TaskList *_all_list;
 
+  Task(const Task &);
+  Task &operator=(const Task &);
+  
   void join_scheduler(RouterThread *);
 
+  static void error_hook(void *);
+  
   friend class TaskList;
   friend class RouterThread;
   
@@ -121,20 +126,6 @@ class TaskList : public Task { public:
 // need RouterThread's definition for inline functions
 #include <click/routerthread.hh>
 
-
-inline
-Task::Task()
-  : _prev(0), _next(0),
-#ifndef RR_SCHED
-    _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
-#endif
-    _hook(0), _thunk(0),
-#if __MTCLICK__
-    _thread_preference(0), _update_cycle_runs(0),
-#endif
-    _list(0), _all_prev(0), _all_next(0), _all_list(0)
-{
-}
 
 inline
 Task::Task(TaskHook hook, void *thunk)
