@@ -39,7 +39,7 @@ int
 ProbSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh, 
-	          cpNonnegReal2, "split probability", 16, &_p, 0) < 0) 
+	          cpUnsignedReal2, "split probability", 16, &_p, 0) < 0) 
     return -1;
   if (_p > 0x10000)
     return errh->error("split probability must be between 0 and 1");

@@ -64,7 +64,7 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
   _anno_packets = true;
   if (cp_va_parse(conf, this, errh,
 		  cpWord, "monitor type", &count_what,
-		  cpNonnegReal2, "ratio", 16, &_ratio,
+		  cpUnsignedReal2, "ratio", 16, &_ratio,
 		  cpUnsigned, "threshold", &_thresh,
 		  cpOptional, 
 		  cpUnsigned, "memmax", &_memmax,

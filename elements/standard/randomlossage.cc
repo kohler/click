@@ -49,10 +49,10 @@ RandomLossage::notify_noutputs(int n)
 int
 RandomLossage::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int p_drop;
+  unsigned p_drop;
   bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpNonnegReal2, "max_p drop probability", 16, &p_drop,
+		  cpUnsignedReal2, "max_p drop probability", 16, &p_drop,
 		  cpOptional,
 		  cpBool, "active?", &on,
 		  0) < 0)

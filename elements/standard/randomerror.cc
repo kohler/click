@@ -117,7 +117,7 @@ RandomBitErrors::configure(const Vector<String> &conf, ErrorHandler *errh)
   String kind_str = "flip";
   bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpNonnegReal2, "bit error probability", 16, &bit_error,
+		  cpUnsignedReal2, "bit error probability", 16, &bit_error,
 		  cpOptional,
 		  cpString, "action (set/clear/flip)", &kind_str,
 		  cpBool, "active?", &on,
