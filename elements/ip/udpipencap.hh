@@ -3,15 +3,14 @@
 
 /*
  * =c
- * UDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM? [, INTERVAL]])
+ * UDPIPEncap(SADDR, SPORT, DADDR, DPORT [, CHECKSUM?])
  * =s encapsulation, UDP
  * encapsulates packets in static UDP/IP headers
  * =d
  * Encapsulates each incoming packet in a UDP/IP packet with source address
  * SADDR, source port SPORT, destination address DADDR, and destination port
  * DPORT. The UDP checksum is calculated if CHECKSUM? is true; it is true by
- * default. SPORT and DPORT are incremented by 1 every INTERVAL number of
- * packets. By default, INTERVAL is 0, which means do not increment.
+ * default.
  *
  * The UDPIPEncap element adds both a UDP header and an IP header.
  *
@@ -35,8 +34,6 @@ class UDPIPEncap : public Element {
   bool _cksum : 1;
   bool _aligned : 1;
   unsigned short _id;
-  unsigned _count;
-  unsigned _interval;
 
  public:
   

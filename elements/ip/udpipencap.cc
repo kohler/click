@@ -54,7 +54,6 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
   unsigned sp, dp;
-  _interval = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "source address", &_saddr,
 		  cpUnsigned, "source port", &sp,
@@ -62,7 +61,6 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "destination port", &dp,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &do_cksum,
-		  cpUnsigned, "change interval", &_interval,
 		  0) < 0)
     return -1;
   if (sp >= 0x10000 || dp >= 0x10000)
@@ -72,7 +70,6 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
   _dport = dp;
   _id = 0;
   _cksum = do_cksum;
-  _count = 0;
 
 #ifdef __KERNEL__
   // check alignment
@@ -101,7 +98,7 @@ UDPIPEncap::simple_action(Packet *p_in)
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(_id++);
+  ip->ip_id = htons(click_atomic_add_short(1, &_id));
   ip->ip_p = IP_PROTO_UDP;
   ip->ip_src = _saddr;
   ip->ip_dst = _daddr;
@@ -148,12 +145,6 @@ UDPIPEncap::simple_action(Packet *p_in)
   } else
     udp->uh_sum = 0;
  
-  _count++;
-  if (_count==_interval && _interval > 0) {
-    _sport ++;
-    _dport ++;
-    _count = 0;
-  }
   return p;
 }
 
