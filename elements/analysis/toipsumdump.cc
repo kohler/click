@@ -18,7 +18,6 @@
 
 #include <click/config.h>
 #include "toipsumdump.hh"
-#include "fromipsumdump.hh"
 #include <click/standard/scheduleinfo.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -50,7 +49,8 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool verbose = false;
     bool bad_packets = false;
     bool careful_trunc = true;
-    _multipacket = false;
+    bool multipacket = false;
+    bool binary = false;
 
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump filename", &_filename,
@@ -58,20 +58,30 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "CONTENTS", cpArgument, "log contents", &save,
 		    "VERBOSE", cpBool, "be verbose?", &verbose,
 		    "BANNER", cpString, "banner", &_banner,
-		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &_multipacket,
+		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &multipacket,
 		    "BAD_PACKETS", cpBool, "output `!bad' messages for non-IP or bad IP packets?", &bad_packets,
 		    "CAREFUL_TRUNC", cpBool, "output `!bad' messages for truncated IP packets?", &careful_trunc,
+		    "BINARY", cpBool, "output binary data?", &binary,
 		    0) < 0)
 	return -1;
 
     Vector<String> v;
     cp_spacevec(save, v);
+    _binary_size = 4;
     for (int i = 0; i < v.size(); i++) {
 	String word = cp_unquote(v[i]);
-	int what = FromIPSummaryDump::parse_content(word);
-	if (what > W_NONE && what < W_LAST)
+	int what = parse_content(word);
+	if (what > W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
-	else
+	    int s = content_binary_size(what);
+	    if (s == 4 || s == 8)
+		_binary_size = (_binary_size + 3) & ~3;
+	    else if (s == 2)
+		_binary_size = (_binary_size + 1) & ~1;
+	    else if (s < 0 && binary)
+		errh->error("cannot use CONTENTS %s with BINARY", word.cc());
+	    _binary_size += s;
+	} else
 	    errh->error("unknown content type `%s'", word.cc());
     }
     if (_contents.size() == 0)
@@ -85,6 +95,8 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _verbose = verbose;
     _bad_packets = bad_packets;
     _careful_trunc = careful_trunc;
+    _multipacket = multipacket;
+    _binary = binary;
 
     return (before == errh->nerrors() ? 0 : -1);
 }
@@ -109,33 +121,42 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     _active = true;
 
     // magic number
-    fprintf(_f, "!IPSummaryDump %d.%d\n", FromIPSummaryDump::MAJOR_VERSION, FromIPSummaryDump::MINOR_VERSION);
+    StringAccum sa;
+    sa << "!IPSummaryDump " << MAJOR_VERSION << '.' << MINOR_VERSION << '\n';
 
     if (_banner)
-	fprintf(_f, "!creator %s\n", cp_quote(_banner).cc());
+	sa << "!creator " << cp_quote(_banner) << '\n';
     
     // host and start time
     if (_verbose) {
 	char buf[BUFSIZ];
 	buf[BUFSIZ - 1] = '\0';	// ensure NUL-termination
 	if (gethostname(buf, BUFSIZ - 1) >= 0)
-	    fprintf(_f, "!host %s\n", buf);
+	    sa << "!host " << buf << '\n';
 
 	time_t when = time(0);
 	const char *cwhen = ctime(&when);
 	struct timeval tv;
 	if (gettimeofday(&tv, 0) >= 0)
-	    fprintf(_f, "!runtime %lu.%06ld (%.*s)\n",
-		    (unsigned long)tv.tv_sec, (long)tv.tv_usec,
-		    (int)(strlen(cwhen) - 1), cwhen);
+	    sa << "!runtime " << tv << " (" << String(cwhen, strlen(cwhen) - 1) << ")\n";
     }
 
     // data description
-    fprintf(_f, "!data ");
+    sa << "!data ";
     for (int i = 0; i < _contents.size(); i++)
-	fprintf(_f, (i ? " %s" : "%s"), FromIPSummaryDump::unparse_content(_contents[i]));
-    fprintf(_f, "\n");
+	sa << (i ? " " : "") << unparse_content(_contents[i]);
+    sa << '\n';
 
+    // binary marker
+    if (_binary) {
+	sa << "!binary";
+	if ((sa.length() & 3) != 3)
+	    sa.append("    ", 3 - (sa.length() & 3));
+	sa << '\n';
+    }
+
+    // print output
+    fwrite(sa.data(), 1, sa.length(), _f);
     _output_count = 0;
     return 0;
 }
@@ -155,10 +176,10 @@ ToIPSummaryDump::bad_packet(StringAccum &sa, const String &s, int what) const
     int pos = s.find_left("%d");
     if (pos >= 0)
 	sa << "!bad " << s.substring(0, pos) << what
-	   << s.substring(pos + 2) << "\n";
+	   << s.substring(pos + 2) << '\n';
     else
-	sa << "!bad " << s << "\n";
-    return true;
+	sa << "!bad " << s << '\n';
+    return false;
 }
 
 #define BAD_IP(msg, val)	do { if (_bad_packets) return bad_packet(sa, msg, val); iph = 0; } while (0)
@@ -216,6 +237,10 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	    SET_EXTRA_LENGTH_ANNO(p, full_len);
 	}
     }
+
+    // Binary output if you don't like.
+    if (_binary)
+	return binary_summary(p, iph, tcph, udph, sa);
     
     // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
@@ -296,7 +321,7 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      int flags = tcph->th_flags;
 	      for (int flag = 0; flag < 7; flag++)
 		  if (flags & (1 << flag))
-		      sa << FromIPSummaryDump::tcp_flags_word[flag];
+		      sa << tcp_flags_word[flag];
 	      if (!flags)
 		  sa << '.';
 	      break;
@@ -378,6 +403,123 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 #undef BAD_TCP
 #undef BAD_UDP
 
+bool
+ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp *tcph, const click_udp *udph, StringAccum &sa) const
+{
+    char *buf = sa.extend(_binary_size);
+    int pos = 4;
+    *(reinterpret_cast<uint32_t *>(buf + 0)) = htonl(_binary_size >> 2);
+    
+    // Print actual contents.
+    for (int i = 0; i < _contents.size(); i++) {
+	uint32_t v = 0;
+	switch (_contents[i]) {
+	  case W_TIMESTAMP:
+	    pos = (pos + 3) & ~3;
+	    *(reinterpret_cast<uint32_t *>(buf + pos)) = htonl(p->timestamp_anno().tv_sec);
+	    *(reinterpret_cast<uint32_t *>(buf + pos + 4)) = htonl(p->timestamp_anno().tv_usec);
+	    pos += 8;
+	    break;
+	  case W_TIMESTAMP_SEC:
+	    v = htonl(p->timestamp_anno().tv_sec);
+	    goto output_4;
+	  case W_TIMESTAMP_USEC:
+	    v = htonl(p->timestamp_anno().tv_usec);
+	    goto output_4;
+	  case W_SRC:
+	    if (iph)
+		v = iph->ip_src.s_addr;
+	    goto output_4;
+	  case W_DST:
+	    if (iph)
+		v = iph->ip_dst.s_addr;
+	    goto output_4;
+	  case W_FRAG:
+	    if (iph)
+		v = (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
+	    goto output_1;
+	  case W_FRAGOFF:
+	    if (iph)
+		v = iph->ip_off;
+	    goto output_2;
+	  case W_SPORT:
+	    if (tcph || udph)
+		v = (tcph ? tcph->th_sport : udph->uh_sport);
+	    goto output_2;
+	  case W_DPORT:
+	    if (tcph || udph)
+		v = (tcph ? tcph->th_dport : udph->uh_dport);
+	    goto output_2;
+	  case W_IPID:
+	    if (iph)
+		v = iph->ip_id;
+	    goto output_2;
+	  case W_PROTO:
+	    if (iph)
+		v = iph->ip_p;
+	    goto output_1;
+	  case W_TCP_SEQ:
+	    if (tcph)
+		v = tcph->th_seq;
+	    goto output_4;
+	  case W_TCP_ACK:
+	    if (tcph)
+		v = tcph->th_ack;
+	    goto output_4;
+	  case W_TCP_FLAGS:
+	    if (tcph)
+		v = tcph->th_flags;
+	    goto output_1;
+	  case W_LENGTH:
+	    if (iph)
+		v = htonl(ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p));
+	    else
+		v = htonl(p->length() + EXTRA_LENGTH_ANNO(p));
+	    goto output_4;
+	  case W_PAYLOAD_LENGTH:
+	    v = EXTRA_LENGTH_ANNO(p);
+	    if (iph) {
+		int32_t off = p->transport_header_offset();
+		if (tcph)
+		    off += (tcph->th_off << 2);
+		else if (udph)
+		    off += sizeof(click_udp);
+		else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
+		    off = ntohs(iph->ip_len) + p->network_header_offset();
+		v += ntohs(iph->ip_len) + p->network_header_offset() - off;
+	    } else
+		v += p->length();
+	    v = htonl(v);
+	    goto output_4;
+	  case W_COUNT:
+	    v = htonl(1 + EXTRA_PACKETS_ANNO(p));
+	    goto output_4;
+	  case W_LINK:
+	    v = PAINT_ANNO(p);
+	    goto output_1;
+	  case W_AGGREGATE:
+	    v = htonl(AGGREGATE_ANNO(p));
+	    goto output_4;
+	  output_1:
+	    *(buf + pos) = v;
+	    pos++;
+	    break;
+	  output_2:
+	    pos = (pos + 1) & ~1;
+	    *(reinterpret_cast<uint16_t *>(buf + pos)) = v;
+	    pos += 2;
+	    break;
+	  output_4:
+	  default:
+	    pos = (pos + 3) & ~3;
+	    *(reinterpret_cast<uint32_t *>(buf + pos)) = v;
+	    pos += 4;
+	    break;
+	}
+    }
+    return true;
+}
+
 void
 ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 {
@@ -396,10 +538,11 @@ ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 	}
     } else {
 	_sa.clear();
-	if (ascii_summary(p, _sa)) {
+	if (ascii_summary(p, _sa))
 	    fwrite(_sa.data(), 1, _sa.length(), _f);
-	    _output_count++;
-	}
+	else
+	    write_line(_sa.take_string());
+	_output_count++;
     }
 }
 
@@ -425,9 +568,19 @@ ToIPSummaryDump::run_scheduled()
 }
 
 void
-ToIPSummaryDump::write_string(const String &s)
+ToIPSummaryDump::write_line(const String &s)
 {
-    fwrite(s.data(), 1, s.length(), _f);
+    if (s.length()) {
+	assert(s.back() == '\n');
+	if (_binary) {
+	    uint32_t marker = htonl(((7 + s.length()) >> 2) | 0x80000000U);
+	    fwrite(&marker, 4, 1, _f);
+	    fwrite(s.data(), 1, s.length(), _f);
+	    if (s.length() & 3)
+		fwrite("\0\0\0", 1, 4 - (s.length() & 3), _f);
+	} else
+	    fwrite(s.data(), 1, s.length(), _f);
+    }
 }
 
 void
@@ -443,6 +596,6 @@ ToIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FromIPSummaryDump)
+ELEMENT_REQUIRES(userlevel IPSummaryDumpInfo)
 EXPORT_ELEMENT(ToIPSummaryDump)
+CLICK_ENDDECLS

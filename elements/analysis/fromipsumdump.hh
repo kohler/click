@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/ipflowid.hh>
+#include "ipsumdumpinfo.hh"
 CLICK_DECLS
 
 /*
@@ -120,7 +121,7 @@ When written, sets `active' to false and stops the driver.
 
 ToIPSummaryDump */
 
-class FromIPSummaryDump : public Element { public:
+class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     FromIPSummaryDump();
     ~FromIPSummaryDump();
@@ -136,20 +137,6 @@ class FromIPSummaryDump : public Element { public:
 
     void run_scheduled();
     Packet *pull(int);
-
-    enum Content {	// must agree with ToIPSummaryDump
-	W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC,
-	W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID,
-	W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
-	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
-	W_PAYLOAD, W_LINK, W_AGGREGATE,
-	W_LAST
-    };
-    static int parse_content(const String &);
-    static const char *unparse_content(int);
-
-    static const char * const tcp_flags_word;
-    enum { MAJOR_VERSION = 1, MINOR_VERSION = 1 };
 
   private:
 
@@ -177,8 +164,10 @@ class FromIPSummaryDump : public Element { public:
     bool _use_flowid : 1;
     bool _have_aggregate : 1;
     bool _use_aggregate : 1;
+    bool _binary : 1;
     Packet *_work_packet;
     uint32_t _multipacket_extra_length;
+    int _binary_size;
 
     Task _task;
     Vector<String> _words;	// for speed
@@ -196,6 +185,7 @@ class FromIPSummaryDump : public Element { public:
     void bang_data(const String &, ErrorHandler *);
     void bang_flowid(const String &, click_ip *, ErrorHandler *);
     void bang_aggregate(const String &, ErrorHandler *);
+    void bang_binary(const String &, ErrorHandler *);
     void check_defaults();
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);
