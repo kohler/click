@@ -1,5 +1,6 @@
-#ifndef COUNTER_HH
-#define COUNTER_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_COUNTER_HH
+#define CLICK_COUNTER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/llrpc.h>
@@ -17,16 +18,20 @@ Passes packets unchanged from its input to its output, maintaining statistics
 information about packet count and packet rate.
 
 =h count read-only
+
 Returns the number of packets that have passed through.
 
 =h byte_count read-only
+
 Returns the number of packets that have passed through.
 
 =h rate read-only
+
 Returns the recent arrival rate (measured by exponential
 weighted moving average) in packets/bytes per second.
 
 =h reset write-only
+
 Resets the counts and rates to zero.
 
 =h CLICK_LLRPC_GET_RATE llrpc
@@ -51,29 +56,34 @@ components.
 
 class Counter : public Element { public:
 
-  Counter();
-  ~Counter();
-  
-  const char *class_name() const		{ return "Counter"; }
-  const char *processing() const		{ return AGNOSTIC; }
+    Counter();
+    ~Counter();
 
-  void reset();
-  
-  Counter *clone() const			{ return new Counter; }
-  int initialize(ErrorHandler *);
-  void add_handlers();
-  int llrpc(unsigned, void *);
-  
-  Packet *simple_action(Packet *);
+    const char *class_name() const		{ return "Counter"; }
+    const char *processing() const		{ return AGNOSTIC; }
 
- private:
-   
-  unsigned _count;
-  unsigned _byte_count;
-  RateEWMA _rate;
+    void reset();
 
-  static String read_handler(Element *, void *);
-  
+    Counter *clone() const			{ return new Counter; }
+    int initialize(ErrorHandler *);
+    void add_handlers();
+    int llrpc(unsigned, void *);
+
+    Packet *simple_action(Packet *);
+
+  private:
+
+#ifdef HAVE_INT64_TYPES
+    uint64_t _count;
+    uint64_t _byte_count;
+#else
+    uint32_t _count;
+    uint32_t _byte_count;
+#endif
+    RateEWMA _rate;
+
+    static String read_handler(Element *, void *);
+
 };
 
 #endif

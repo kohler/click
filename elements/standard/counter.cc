@@ -101,8 +101,8 @@ Counter::llrpc(unsigned command, void *data)
     unsigned d;
     if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || (d != 0 && d != 1))
       return -EINVAL;
-    unsigned *what = (d == 0 ? &_count : &_byte_count);
-    return CLICK_LLRPC_PUT_DATA(data, what, sizeof(*what));
+    unsigned what = (d == 0 ? (unsigned)_count : (unsigned)_byte_count);
+    return CLICK_LLRPC_PUT_DATA(data, &what, sizeof(what));
     
   } else if (command == CLICK_LLRPC_GET_COUNTS) {
     click_llrpc_counts_st *user_cs = (click_llrpc_counts_st *)data;
