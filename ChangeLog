@@ -1,3 +1,8 @@
+2004-02-25 Wednesday 13:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: ackretrysender.cc (1.5), ackretrysender2.cc
+	(1.4): no floats, knucklehead, so we can run in kernel
+
 2004-02-25 Wednesday 12:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: ackretrysender2.cc (1.3), ackretrysender2.hh
