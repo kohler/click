@@ -1,3 +1,8 @@
+2003-12-14 Sunday 00:38  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srcr.cc (1.35), srcr.hh (1.30): add
+	time_before_switch, a parameter to route damping.
+
 2003-12-13 Saturday 19:31  Eddie Kohler <kohler@icir.org>
 
 	* include/click/string.hh (1.29): add String::data_shared() method
