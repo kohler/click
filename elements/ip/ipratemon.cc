@@ -42,7 +42,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 
   // Enough args?
   if(args.size() < 6)
-    return errh->error("too few or too many arguments.");
+    return errh->error("too few arguments.");
 
   // N of PORT PAIRS
   int n;
