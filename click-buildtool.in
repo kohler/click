@@ -42,8 +42,11 @@ findelements () {
     all=0
     provisions=""
     filenames=""
+    standards=''
     while [ x"$1" != x ]; do
     case $1 in
+    -S|--s|--st|--sta|--stan|--stand|--standa|--standar|--standard|--standards)
+	standards=1; shift 1;;
     -p|--pre|--pref|--prefi|--prefix)
 	if test $# -lt 2; then findelem_usage; fi
 	shift 1; prefix="$1/"; shift 1;;
@@ -88,6 +91,7 @@ Options:
   -V, --verbose              Print more information about dependency checking.
   -p, --prefix PREFIX        Preprend PREFIX to every file and/or directory.
   -r, --provide REQ          Mark requirement(s) REQ as available.
+  -S, --standards            Mark standard elements as available.
   -f, --filenames            Output filenames only.
   -F, --filename-pairs       Output "sourcefile:headerfile" pairs for elements.
   -h, --help                 Print this message and exit.
@@ -104,7 +108,12 @@ EOF
 	echo "Prefix: $verbose" 1>&2
     fi
 
-    # expand provisions
+    # add standards to provisions if necessary
+    if test "x$standards" != x; then
+	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement ScheduleInfo"
+    fi
+
+    # expand provisions: require one per line
     provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012'`
 
     # expand list of files
