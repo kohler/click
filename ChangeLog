@@ -1,3 +1,11 @@
+2004-07-29 Thursday 15:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/fromdagdump.cc (1.19),
+	analysis/fromdagdump.hh (1.12), analysis/fromnlanrdump.cc (1.5),
+	analysis/fromnlanrdump.hh (1.4), userlevel/fromdump.cc (1.92),
+	userlevel/fromdump.hh (1.55): END_CALL is called when the dump runs
+	out, as well as when the time runs out; suggested by jbicket
+
 2004-07-29 Thursday 12:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.1 (1.15), userlevel/click.cc (1.95): add support for -h
