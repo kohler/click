@@ -1,3 +1,45 @@
+2005-01-12 Wednesday 04:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.26): fix amd64 ipsumdump; problem reported by
+	Kirill Ponomarew
+
+2005-01-12 Wednesday 03:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/ipaddress.cc (1.28): use ffs_lsb in
+	IPAddress::mask_to_prefix_len()
+
+2005-01-12 Wednesday 03:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/ip6address.cc (1.29): improve
+	IP6Address::mask_to_prefix_len(), ip4_address(), and unparse()
+
+2005-01-12 Wednesday 03:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.44), include/click/integers.hh (1.11), aclocal.m4
+	(1.45), config-userlevel.h.in (1.24), config.h.in (1.31),
+	m4/click.m4 (1.46), lib/integers.cc (1.15): add ffs_lsb, to
+	complement ffs_msb
+
+2005-01-12 Wednesday 03:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ip6table.hh (1.5), lib/ip6table.cc (1.13): IP6Table
+	fixes (Marko)
+
+2005-01-12 Wednesday 03:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/delayshaper.cc (1.15): nit
+
+2005-01-12 Wednesday 03:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip6/: ip6routetable.cc (1.1), ip6routetable.hh (1.1):
+	add IP6RouteTable (Marko)
+
+2005-01-12 Wednesday 03:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/trieiplookup.cc (1.8), ip6/lookupip6route.cc
+	(1.20), ip6/lookupip6route.hh (1.12): add add_route type handlers
+	(Marko)
+
 2005-01-11 Tuesday 15:46  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: availablerates.cc (1.7), printwifi.cc (1.12),
