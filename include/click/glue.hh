@@ -76,7 +76,7 @@ CLICK_ENDDECLS
 // DEBUG MALLOC
 
 #if CLICK_DMALLOC && (CLICK_LINUXMODULE || CLICK_BSDMODULE)
-extern int click_dmalloc_where;
+extern uint32_t click_dmalloc_where;
 # define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
 #else
 # define CLICK_DMALLOC_REG(s)
