@@ -101,7 +101,8 @@ Returns the number of incorrect packets CheckIPHeader has seen.
 Returns a text file showing how many erroneous packets CheckIPHeader has seen,
 subdivided by error. Only available if the DETAILS keyword argument was true.
 
-=a CheckIPHeader2, MarkIPHeader, SetIPChecksum, StripIPHeader */
+=a CheckIPHeader2, MarkIPHeader, SetIPChecksum, StripIPHeader,
+CheckTCPHeader, CheckUDPHeader, CheckICMPHeader */
 
 class CheckIPHeader : public Element { public:
 

@@ -41,7 +41,7 @@ C<drop_details> handler. False by default.
 
 =h drops read-only
 
-Returns the number of incorrect packets CheckUDPHeader has seen.
+Returns the number of incorrect packets CheckTCPHeader has seen.
 
 =h drop_details read-only
 
@@ -49,7 +49,7 @@ Returns a text file showing how many erroneous packets CheckTCPHeader has
 seen, subdivided by error. Only available if the DETAILS keyword argument was
 true.
 
-=a CheckIPHeader, CheckUDPHeader, MarkIPHeader */
+=a CheckIPHeader, CheckUDPHeader, CheckICMPHeader, MarkIPHeader */
 
 class CheckTCPHeader : public Element { public:
   

@@ -49,7 +49,7 @@ Returns a text file showing how many erroneous packets CheckUDPHeader has
 seen, subdivided by error. Only available if the DETAILS keyword argument was
 true.
 
-=a CheckIPHeader, CheckTCPHeader, MarkIPHeader */
+=a CheckIPHeader, CheckTCPHeader, CheckICMPHeader, MarkIPHeader */
 
 class CheckUDPHeader : public Element { public:
 
