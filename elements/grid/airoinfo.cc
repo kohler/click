@@ -40,6 +40,17 @@
 #endif
 #endif
 
+#ifdef __linux__
+#include <linux/wireless.h>
+#ifdef IW_MAX_SPY
+#undef IW_MAX_SPY
+#define IW_MAX_SPY 40 /* more fuckation -- this constant must be the same across all the drivers as well */
+#endif
+/* bullshit problem: dealing with different headers between the
+   application cross-compile environment and the kernel cross-compile
+   environment */
+#endif
+
 AiroInfo::AiroInfo() : 
   Element(0, 0), _fd(-1)
 {
@@ -71,9 +82,9 @@ AiroInfo::initialize(ErrorHandler *errh)
   _ifr.ifr_name[sizeof(_ifr.ifr_name) - 1] = 0;
 
   _fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (_fd < 0)
+  if (_fd < 0) 
     return errh->error("Unable to open socket to %s device", _ifr.ifr_name);
-
+  
   return 0;
 }
 
@@ -125,7 +136,7 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
   areq.an_len = AN_MAX_DATALEN;
   areq.an_type = AN_RID_READ_LLFAIL;
   
-    _ifr.ifr_data = (char *) &areq;
+  _ifr.ifr_data = (char *) &areq;
   int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
   if (res == -1) {
     click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading tx stats cache: %s\n", 
@@ -146,9 +157,48 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
   }
   return false;
 }
+#endif
 
-#else 
+#ifdef __linux__
+bool
+AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
+{
+  char buf[(sizeof(struct iw_quality) + sizeof(struct sockaddr)) * IW_MAX_SPY];
 
+  _ifr.u.data.pointer = buf;
+  _ifr.u.data.length = 0;
+  _ifr.u.data.flags = 0;
+  int res = ioctl(_fd, SIOCGIWSPY, &_ifr);
+  if (res == -1) {
+    click_chatter("AiroInfo: ioctl(SIOCGIWSPY) error when reading signal info: %s\n", 
+		  strerror(errno));
+    return false;
+  }
+
+  int n = _ifr.u.data.length;
+
+  for (int i = 0; i < n; i++) {
+    struct sockaddr *sa = (struct sockaddr *) (buf + i * sizeof(struct sockaddr));
+    if (e == EtherAddress((unsigned char *) &sa->sa_data)) {
+      struct iw_quality *q = (struct iw_quality *) (buf + n*sizeof(struct sockaddr) + i*sizeof(struct iw_quality));
+      dbm = ((int) q->level) - 256;
+      quality = q->qual;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
+{
+  return false;
+}
+#endif
+
+
+#if !defined(__linux__) && !defined(__OpenBSD__)
 bool
 AiroInfo::get_signal_info(const EtherAddress &, int &, int &)
 {
@@ -160,7 +210,7 @@ AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
 {
   return false;
 }
-#endif /* __OpenBSD__ */
+#endif /* !__linux__ && !__OpenBSD__ */
 
 
 

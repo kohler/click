@@ -12,17 +12,25 @@
  *
  * This element requires a BSD kernel with an Aironet driver that is
  * modified to support the required ioctls.
+ *
+ * OR, this element will work under linux using the Wireless
+ * Extensions, but the wireless card driver will still need to be
+ * modified to automatically add entries to the ``spy list''.
  * 
  * =a ToDevice */
 
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 
+#ifdef __linux__
+#include <linux/wireless.h>
+#else
 /* OpenBSD 2.9 doesn't protect <net/if.h> from multiple inclusion, but
    later versions do */
 #ifndef CLICK_NET_IF_H
 #define CLICK_NET_IF_H
 #include <net/if.h>
+#endif
 #endif
 
 class AiroInfo : public Element {
@@ -57,7 +65,12 @@ private:
   int _fd;
   String _ifname;
 
+#ifdef __linux__
+  struct iwreq _ifr;
+#else
   struct ifreq _ifr;
+#endif
+
 };
 
 #endif
