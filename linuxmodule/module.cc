@@ -296,6 +296,13 @@ static ErrorHandler *syslog_errh;
 extern "C" int
 init_module()
 {
+  // check for another click module already existing
+  for (proc_dir_entry *de = proc_root.subdir; de; de = de->next)
+    if (de->low_ino && de->namelen == 5 && memcmp(de->name, "click", 5) == 0) {
+      printk("<1>Some Click module is already installed! You must remove it.\n");
+      return -EBUSY;
+    }
+  
   // first call C++ static initializers
   String::static_initialize();
   cp_va_static_initialize();
