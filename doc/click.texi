@@ -3,6 +3,11 @@
 @settitle Click
 @footnotestyle end
 
+@dircategory Click modular router
+@direntry
+* Click: (click).           The Click modular router programming manual.
+@end direntry
+
 @ifnottex
 @macro leq
 <=
@@ -1410,7 +1415,7 @@ Any spaces and/or a final colon are stripped from the end of
 @samp{\}, are ignored.
 @end deftypemethod
 
-@deftypemethod ErrorHandler {virtual void} handle_text @w{(Seriousness @var{s}}, @w{const String &@var{text})}
+@deftypemethod ErrorHandler {virtual void} handle_text (@w{Seriousness @var{s}, const String &@var{text}})
 This method is responsible for printing or otherwise informing the user
 about the error message @var{text}. If @var{s} equals @code{ERR_FATAL},
 the method should exit the program or perform some other drastic action.
@@ -2500,7 +2505,7 @@ methods to see if you have run out of memory.
 Every element belongs to a single element class, and every element class
 has a name. The @code{class_name} virtual function returns that name.
 
-@deftypemethod Element {virtual const char *} class_name {() const}
+@deftypemethod Element {virtual const char *} class_name () const
 Returns the element's class name as a null-terminated C string. This
 method has no default implementation; every element must supply a
 definition.
@@ -2526,7 +2531,7 @@ system finds the appropriate prototype and calls its @code{clone}
 method. This method creates and returns a new element with the same
 element class as the prototype.
 
-@deftypemethod Element {virtual Element *} clone {() const}
+@deftypemethod Element {virtual Element *} clone () const
 Returns a new element with the same element class as this element. This
 method has no default implementation; every element must supply a
 definition.
@@ -2574,8 +2579,8 @@ interface by calling its @code{cast} method. This method takes an
 interface name and returns a non-null pointer if and only if the
 element implements that interface.
 
-@deftypemethod Element {virtual void *} cast {(const char *@var{name})}
-The @var{name} argument is an interface name represented a
+@deftypemethod Element {virtual void *} cast (const char *@var{name})
+The @var{name} argument is an interface name, represented as a
 null-terminated C string. If this element implements the @var{name}
 interface, @code{cast} should return a pointer to the corresponding
 data. If it does not, @code{cast} should return a null pointer.
