@@ -1,29 +1,47 @@
 #ifndef HOSTETHERFILTER_HH
 #define HOSTETHERFILTER_HH
-
-/*
- * =c
- * HostEtherFilter(MACADDR [, DROP-OWN])
- * =s dropping, Ethernet
- * drops Ethernet packets sent to other machines
- * =d
- *
- * Expects ethernet packets as input. Pushes packets that aren't addressed to
- * MACADDR or to a broadcast or multicast address to the second output, or
- * discards them if there is no second output. If DROP-OWN is true, drops
- * packets originated by MACADDR; defaults to false. That is, tries to act
- * like Ethernet input hardware. */
-
 #include <click/element.hh>
 
-class HostEtherFilter : public Element {
+/*
+=c
 
-  bool _drop_own;
-  unsigned char _addr[6];
+HostEtherFilter(ETHER [, DROP_OWN, DROP_OTHER, I<KEYWORDS>])
 
-  inline Packet *drop(Packet *);
-  
- public:
+=s dropping, Ethernet
+
+drops Ethernet packets sent to other machines
+
+=d
+
+Expects Ethernet packets as input. Acts basically like Ethernet input hardware
+for a device with address ETHER.
+
+In particular, HostEtherFilter sets each packet's packet type annotation to
+HOST, BROADCAST, MULTICAST, or OTHERHOST based on its Ethernet destination
+address. Emits most packets on the first output. If DROP_OWN is true, drops
+packets whose source address is ETHER; defaults to false. If DROP_OTHER is
+true, drops packets sent to hosts other than ETHER (that is, packets with
+unicast destination addresses not equal to ETHER); defaults to true. If the
+element has two outputs, filtered packets are emitted on the second output
+rather than dropped.
+
+Keyword arguments are:
+
+=over 8
+
+=item DROP_OWN
+
+Same as the DROP_OWN parameter.
+
+=item DROP_OTHER
+
+Same as the DROP_OTHER parameter.
+
+=back
+
+*/
+
+class HostEtherFilter : public Element { public:
   
   HostEtherFilter();
   ~HostEtherFilter();
@@ -36,6 +54,14 @@ class HostEtherFilter : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
+  
+ private:
+
+  bool _drop_own : 1;
+  bool _drop_other : 1;
+  unsigned char _addr[6];
+
+  inline Packet *drop(Packet *);
   
 };
 
