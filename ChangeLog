@@ -1,3 +1,9 @@
+2003-01-28 Tuesday 03:45  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: proclikefs.c (1.9), sched.cc (1.36): move printk()
+	inside locked section, to reduce chance of a thread hanging around
+	after the module is unloaded
+
 2003-01-28 Tuesday 01:46  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/: clickfs.cc (1.25), proclikefs.c (1.8): fix
