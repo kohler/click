@@ -76,6 +76,11 @@ Returns the sampling probability (see the SAMPLE keyword argument).
 
 Value is a Boolean.
 
+=n
+
+FromDump sets packets' extra length annotations to any additional length
+recorded in the dump.
+
 =a
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */

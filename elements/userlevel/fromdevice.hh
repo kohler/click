@@ -63,6 +63,10 @@ using the pcap library to read its packets, any filter expression is ignored.
 
   FromDevice(eth0) -> ...
 
+=n
+
+FromDevice sets packets' extra length annotations as appropriate.
+
 =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
 #include <click/element.hh>

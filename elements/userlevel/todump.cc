@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <click/packet_anno.hh>
 #include <string.h>
 #include <assert.h>
 #include "fakepcap.h"
@@ -49,6 +50,8 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String encap_type;
   _snaplen = 2000;
+  _extra_length = true;
+  
   if (cp_va_parse(conf, this, errh,
 		  cpFilename, "dump filename", &_filename,
 		  cpOptional,
@@ -57,6 +60,7 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "SNAPLEN", cpUnsigned, "max packet length", &_snaplen,
 		  "ENCAP", cpWord, "encapsulation type", &encap_type,
+		  "EXTRA_LENGTH", cpBool, "record extra length?", &_extra_length,
 		  0) < 0)
     return -1;
 
@@ -131,10 +135,10 @@ ToDump::write_packet(Packet *p)
   }
 
   unsigned to_write = p->length();
+  ph.len = to_write + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
   if (to_write > _snaplen)
     to_write = _snaplen;
   ph.caplen = to_write;
-  ph.len = p->length();
 
   // XXX writing to pipe?
   if (fwrite(&ph, sizeof(ph), 1, _fp) == 0

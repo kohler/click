@@ -20,6 +20,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -28,12 +29,12 @@
 #if FROMDEVICE_LINUX
 # include <sys/socket.h>
 # include <net/if.h>
-# include <net/if_packet.h>
 # include <features.h>
 # if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
 #  include <netpacket/packet.h>
 #  include <net/ethernet.h>
 # else
+#  include <net/if_packet.h>
 #  include <linux/if_packet.h>
 #  include <linux/if_ether.h>
 # endif
@@ -306,8 +307,9 @@ FromDevice::get_packet(u_char* clientdata,
       p->set_packet_type_anno(Packet::MULTICAST);
   }
 
-  // set timestamp annotation
+  // set annotations
   p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+  SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
 
   if (!fd->_force_ip || fd->check_force_ip(p))
     fd->output(0).push(p);

@@ -38,9 +38,18 @@ Integer. Same as the SNAPLEN argument.
 
 Either `C<IP>' or `C<ETHER>'. Same as the ENCAP argument.
 
+=item EXTRA_LENGTH
+
+Boolean. Set to true if you want ToDump to store any extra length as recorded
+in packets' extra length annotations. Default is true.
+
 =back
 
 This element is only available at user level.
+
+=n
+
+ToDump stores packets' true length annotations when available.
 
 =a
 
@@ -71,6 +80,7 @@ class ToDump : public Element { public:
   unsigned _snaplen;
   unsigned _encap_type;
   bool _active;
+  bool _extra_length;
   Task _task;
   
   void write_packet(Packet *);

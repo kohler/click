@@ -26,6 +26,7 @@
 #include <click/glue.hh>
 #include <click/click_ip.h>
 #include <click/click_ether.h>
+#include <click/packet_anno.hh>
 #include "fakepcap.h"
 #include <unistd.h>
 #include <sys/types.h>
@@ -419,6 +420,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	}
 	p->change_headroom_and_length(_pos, caplen);
 	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
+	SET_EXTRA_LENGTH_ANNO(p, ph->len - caplen);
 	_pos += caplen;
 	
     } else {
@@ -427,8 +429,9 @@ FromDump::read_packet(ErrorHandler *errh)
 	    error_helper(errh, "out of memory!");
 	    return 0;
 	}
-	// set timestamp anno now: may unmap earlier memory!
+	// set annotations now: may unmap earlier memory!
 	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
+	SET_EXTRA_LENGTH_ANNO(wp, ph->len - caplen);
 	
 	if (read_into(wp->data(), caplen, errh) < caplen) {
 	    error_helper(errh, "short packet");

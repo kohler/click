@@ -28,7 +28,6 @@ InfiniteSource::InfiniteSource()
   : Element(0, 1), _packet(0), _task(this)
 {
   MOD_INC_USE_COUNT;
-  _packet = 0;
 }
 
 InfiniteSource::~InfiniteSource()
