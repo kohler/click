@@ -1,0 +1,10 @@
+
+ed0_reader :: xokReader(32, 12/0800 30/12170322 23/01);  // 18.23.3.34
+ed0_writer :: xokWriter(ed0);
+		        
+de0_reader :: xokReader(32, 12/0800 30/1217032C 23/01);  // 18.23.3.44
+de0_writer :: xokWriter(de0);
+   
+de0_reader -> ICMPPing -> de0_writer
+ed0_reader -> ICMPPing -> ed0_writer
+

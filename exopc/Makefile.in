@@ -76,7 +76,7 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: setup click
+all: setup click ipb
 
 setup:
 	ln -sf cross-compile.sh g++
@@ -88,6 +88,8 @@ click: Makefile $(OBJS)
 	$(SETMAGIC) click 700
 	mkdir -p $(INSTALLDIR)
 	cp click $(INSTALLDIR)
+
+ipb:
 	cp samples/*.* $(INSTALLDIR)
 
 

@@ -805,7 +805,7 @@ Lexer::ydeclaration(const String &first_element)
 {
   Vector<String> decls;
   Lexeme t;
-  
+
   if (first_element) {
     decls.push_back(first_element);
     goto midpoint;
@@ -847,6 +847,9 @@ Lexer::ydeclaration(const String &first_element)
   if (t.is('(')) {
     configuration = lex_config();
     expect(')');
+#ifdef EXOPC
+    configuration.cc();
+#endif
   } else
     unlex(t);
 
