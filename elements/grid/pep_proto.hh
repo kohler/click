@@ -2,7 +2,7 @@
 #define pep_proto_hh
 
 //
-// Protocol packet format for the Position Estimation Protocol (PEP).
+// Protocol packet formats for the Position Estimation Protocol (PEP).
 //
 
 #include "grid.hh"
@@ -31,5 +31,25 @@ struct pep_proto {
   int n_fixes;
   struct pep_fix fixes[pep_proto_fixes];
 };
+
+
+// PEP region protocol.  regions are rectangles in lat/lon space, we
+// ignore the fact that they may not be rectangles on the earth's flat
+// surface.
+
+struct pep_rgn_fix {
+  unsigned fix_id;        // IP address.
+  int fix_seq;            // fix's sequence number.
+  grid_location fix_loc;  // location of region's lower left corner.
+  grid_location fix_dim;  // region's height and width, stored as lat/lon respectively
+  int fix_hops;           // # of hops to fix_id.
+};
+
+struct pep_rgn_proto {
+  unsigned id;
+  int n_fixes;
+  struct pep_rgn_fix fixes[pep_proto_fixes];
+};
+
 
 #endif

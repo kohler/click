@@ -17,6 +17,7 @@
 #include "pep_proto.hh"
 #include "grid.hh"
 #include "locationinfo.hh"
+#include "region.hh"
 
 class EstimateRouterRegion : public LocationInfo {
   
@@ -58,7 +59,7 @@ private:
   Vector<Entry> _entries; // hops stored and transmitted are hops to us
   int findEntry(unsigned id, bool allocate);
 
-  grid_location estimate_location();
+  RectRegion build_region();
 
   void purge_old();
   void sort_entries();
@@ -66,7 +67,7 @@ private:
   void externalize(pep_rgn_fix *);
   void internalize(pep_rgn_fix *);
   Packet *make_PEP();
-  double radio_range(grid_location) { return .002; } // XXX degrees lat covered by range
+  double radio_range(grid_location); 
 };
 
 #endif

@@ -14,7 +14,6 @@
 # include <config.h>
 #endif
 #include "regionpep.hh"
-#include "region.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "grid.hh"
@@ -189,6 +188,17 @@ EstimateRouterRegion::make_PEP()
     f->fix_dim = grid_location(0, 0);
     f->fix_hops = htonl(0);
   }
+  else if (_entries.size() > 0) {
+    // always include the best estimate of our region
+    pep_rgn_fix *f = pp->fixes + nf;
+    nf++;
+    f->fix_id = _my_ip.addr();
+    f->fix_seq = htonl(_seq++);
+    RectRegion rgn = build_region();
+    f->fix_loc = grid_location(rgn.y(), rgn.x());
+    f->fix_dim = grid_location(rgn.h(), rgn.w());
+    f->fix_hops = htonl(0);
+  }
 
   sort_entries();
 
@@ -290,8 +300,12 @@ EstimateRouterRegion::simple_action(Packet *p)
   return(0);
 }
 
-grid_location
-EstimateRouterRegion::estimate_location()
+double 
+EstimateRouterRegion::radio_range(grid_location) // XXX degrees lat covered by range
+{ return 0.002; }
+
+RectRegion
+EstimateRouterRegion::build_region()
 {
   pep_rgn_fix f = _entries[0]._fix;
   RectRegion rgn(f.fix_loc.lon(), f.fix_loc.lat(), f.fix_dim.lon(), f.fix_dim.lat());
@@ -311,7 +325,7 @@ EstimateRouterRegion::estimate_location()
     rgn = new_rgn;
   }
 
-  return grid_location(rgn.center_y(), rgn.center_x());
+  return rgn;
 }
 
 grid_location
@@ -323,7 +337,8 @@ EstimateRouterRegion::get_current_location()
   if(_entries.size() < 1)
     return(grid_location(0.0, 0.0));
 
-  return estimate_location();
+  RectRegion rgn = build_region();
+  return grid_location(rgn.center_y(), rgn.center_x());
 }
 
 static String

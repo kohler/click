@@ -36,6 +36,8 @@ RectRegion
 RectRegion::intersect(RectRegion &r)
 {
   RectRegion ret; // empty default region
+  if (empty() || r.empty()) 
+    return r;
   if (!(r._x > _x + _w ||
 	r._x + r._w < _x ||
 	r._y > _y + _h ||
@@ -46,4 +48,16 @@ RectRegion::intersect(RectRegion &r)
     ret._h = min(_y + _h, r._h + r._h) - ret._y;
   }
   return ret;  
+}
+
+
+RectRegion
+RectRegion::expand(double l)
+{
+  RectRegion r(*this);
+  r._x -= l;
+  r._y -= l;
+  r._w += 2 * l;
+  r._h += 2 * l;
+  return r;
 }
