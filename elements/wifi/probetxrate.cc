@@ -26,6 +26,7 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
+#define PROBE_MAX_RETRIES 6
 
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
@@ -52,9 +53,9 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _filter_never_success = false;
   _aggressive_alt_rate = false;
   _debug = false;
-  _alt_rate = false;
+  _alt_rate = true;
   _active = true;
-  _original_retries = 3;
+  _original_retries = 4;
   _min_sample = 20;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
@@ -125,9 +126,9 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   nfo->trim(old);
   //nfo->check();
   ceh->rate = nfo->pick_rate(_min_sample);
-  ceh->max_retries = (_alt_rate) ? _original_retries : WIFI_MAX_RETRIES;
-  ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
-  ceh->alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - _original_retries : 0;
+  ceh->max_retries = PROBE_MAX_RETRIES;
+  ceh->alt_rate = 0;
+  ceh->alt_max_retries = 0;
 
   return;
 }

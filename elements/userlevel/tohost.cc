@@ -133,5 +133,5 @@ ToHost::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel linux FromHost)
+ELEMENT_REQUIRES(userlevel FromHost)
 EXPORT_ELEMENT(ToHost)

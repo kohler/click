@@ -235,21 +235,16 @@ class ProbeTXRate : public Element { public:
       return (found) ? best_ndx : -1;
     }
 
-    int pick_alt_rate(bool aggressive) {
-      /*
-       * pick the fastest rate that hasn't failed yet.
-       */
-      int best_ndx = -1;
+    int pick_alt_rate(int rate) {
+      int ndx = rate_index(rate);
       int best_time = 0;
       bool found = false;
-      if (!_rates.size()) {
-	return -1;
-      }
-      if (!aggressive) {
-	return _rates[0];
-      }
-      for (int x = 0; x < _rates.size(); x++) {
-	if (_total_success[x] && !_total_fail[x]) {
+      int best_ndx = 0;
+      /*
+       * pick the fastest rate that is less than ndx
+       */
+      for (int x = 0; x < ndx; x++) {
+	if (_total_success[x]) {
 	  int time = _total_time[x] / _total_success[x];
 	  if (!found || time < best_time) {
 	    best_ndx = x;
@@ -271,9 +266,8 @@ class ProbeTXRate : public Element { public:
       }
       
       if (best_ndx < 0) {
-	/* no rate has had a successful packet yet. 
-	 * pick the lowest rate possible */
-	return _rates[0];
+	/* no rate has had a successful packet yet */
+	return _rates[random() % _rates.size()];
       }
       
       int best_time = _total_time[best_ndx] / _total_success[best_ndx];
@@ -285,7 +279,7 @@ class ProbeTXRate : public Element { public:
 	  continue;
 	}
 	
-	if (_total_fail[x] && _total_success[x] < _total_fail[x]) {
+	if (_total_fail[x] > 5 && _total_success[x] < _total_fail[x]) {
 	  if (_rates[x] >= 22) {
 	    /* give up now */
 	    break;

@@ -691,23 +691,42 @@ ETTStat::simple_action(Packet *p)
   p->kill();
   return 0;
 }
+
+
+extern "C" {
+static int ipaddr_sorter(const void *va, const void *vb) {
+    IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
+    return a == b ? 0 : a > b;
+}
+
+static int ratesize_sorter(const void *va, const void *vb) {
+  RateSize *a = (RateSize *)va, *b = (RateSize *)vb;
+  if (a->_rate == b->_rate) {
+    return a->_size - b->_size;
+  }
+  return a->_rate - b->_rate;
+}
+
+}
   
 
 String
 ETTStat::read_bcast_stats()
 {
-  typedef HashMap<IPAddress, bool> IPMap;
-  IPMap ip_addrs;
+  Vector<IPAddress> ip_addrs;
   
   for (ProbeMap::const_iterator i = _bcast_stats.begin(); i; i++) 
-    ip_addrs.insert(i.key(), true);
+    ip_addrs.push_back(i.key());
 
   struct timeval now;
   click_gettimeofday(&now);
 
   StringAccum sa;
-  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
-    IPAddress ip  = i.key();
+
+  click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
+
+  for (int i = 0; i < ip_addrs.size(); i++) {
+    IPAddress ip  = ip_addrs[i];
     probe_list_t *pl = _bcast_stats.findp(ip);
     //sa << _ip << " " << _eth << " ";
     sa << ip;
@@ -721,6 +740,8 @@ ETTStat::read_bcast_stats()
     } else {
       sa << " ?";
     }
+
+    click_qsort(pl->_probe_types.begin(), pl->_probe_types.size(), sizeof(RateSize), ratesize_sorter);
     for (int x = 0; x < pl->_probe_types.size(); x++) {
       sa << " [ " << pl->_probe_types[x]._rate << " ";
       sa << pl->_probe_types[x]._size << " ";

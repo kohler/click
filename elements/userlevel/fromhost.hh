@@ -67,7 +67,6 @@ CLICK_DECLS
  *  =e
  *
  *  FromHost(192.0.0.1/8) -> ...;
- * =n
  * 
  * An error like "could not allocate a /dev/tap* device : No such file or
  * directory" usually means that you have not enabled /dev/tap* in your
@@ -115,7 +114,6 @@ class FromHost : public Element { public:
     EtherAddress _macaddr;
 
     bool _ignore_q_errs;
-    bool _printed_write_err;
     bool _printed_read_err;
 
     static String print_dev_name(Element *e, void *);

@@ -31,10 +31,11 @@ CLICK_DECLS
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
+
 AutoRateFallback::AutoRateFallback()
   : Element(2, 1),
-    _stepup(0),
-    _stepdown(0),
+    _stepup(10),
+    _stepdown(1),
     _offset(0),
     _packet_size_threshold(0)
 {
@@ -53,7 +54,6 @@ AutoRateFallback::~AutoRateFallback()
 int
 AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _alt_rate = false;
   _active = true;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
@@ -62,7 +62,6 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
 			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
-			"ALT_RATE", cpBool, "xxx", &_alt_rate,
 			"ACTIVE", cpBool, "xxx", &_active,
 			cpEnd);
   return ret;
@@ -80,7 +79,6 @@ AutoRateFallback::process_feedback(Packet *p_in)
   bool success = !(eh->flags & WIFI_EXTRA_TX_FAIL);
   bool used_alt_rate = (eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
   int rate = eh->rate;
-  int alt_rate = eh->alt_rate;
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -108,45 +106,41 @@ AutoRateFallback::process_feedback(Packet *p_in)
   }
 
 
-  if (nfo->pick_rate() != rate) {
+  if (nfo->_rates[nfo->_current_index] != rate) {
     return;
   }
 
-  if (!success || used_alt_rate) {
-    click_chatter("%{element} packet failed %s rate %d alt %d\n",
-		  this,
-		  dst.s().cc(),
-		  rate,
-		  alt_rate
-		  );
-  }
 
-
-  if (success && !used_alt_rate) {
-    nfo->_successes++;
-    if (nfo->_successes > _stepup && 
-	nfo->_current_index != nfo->_rates.size() - 1) {
-      if (nfo->_rates.size()) {
-	click_chatter("%{element} steping up for %s from %d to %d\n",
-		      this,
-		      nfo->_eth.s().cc(),
-		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[min(nfo->_rates.size() - 1, 
-				      nfo->_current_index + 1)]);
-      }
-      nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
-      nfo->_successes = 0;
-    }
-  } else {
-    if (nfo->_rates.size()) {
-      click_chatter("%{element} steping down for %s from %d to %d\n",
+  if (used_alt_rate || !success) {
+    /* step down 1 or 2 rates */
+    int down = eh->retries / 2;
+    int next_index = max(0, nfo->_current_index - down);
+    if (_debug) {
+      click_chatter("%{element} stepping down for %s from %d to %d\n",
 		    this,
 		    nfo->_eth.s().cc(),
 		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[max(0, nfo->_current_index - 1)]);
+		    nfo->_rates[next_index]);
     }
     nfo->_successes = 0;
-    nfo->_current_index = max(nfo->_current_index - 1, 0);
+    nfo->_current_index = next_index;
+    return;
+  }
+
+
+  nfo->_successes++;
+  if (nfo->_successes > _stepup && 
+      nfo->_current_index != nfo->_rates.size() - 1) {
+    if (_debug) {
+      click_chatter("%{element} steping up for %s from %d to %d\n",
+		    this,
+		    nfo->_eth.s().cc(),
+		    nfo->_rates[nfo->_current_index],
+		    nfo->_rates[min(nfo->_rates.size() - 1, 
+				    nfo->_current_index + 1)]);
+    }
+    nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+    nfo->_successes = 0;
   }
   return;
 }
@@ -183,21 +177,28 @@ AutoRateFallback::assign_rate(Packet *p_in)
     nfo->_rates = _rtable->lookup(dst);
     nfo->_successes = 0;
     
-    nfo->_current_index = nfo->_rates[nfo->_rates.size()-1];
-    click_chatter("%{element} initial rate for %s is %d\n",
-		  this,
-		  nfo->_eth.s().cc(),
-		  nfo->_rates[nfo->_current_index]);
+    /* start at the highest rate */
+    nfo->_current_index = nfo->_rates.size() - 1;
+    if (_debug) {
+      click_chatter("%{element} initial rate for %s is %d\n",
+		    this,
+		    nfo->_eth.s().cc(),
+		    nfo->_rates[nfo->_current_index]);
+    }
   }
 
-  int rate = nfo->pick_rate();
-  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  int max_retries = (_alt_rate) ? 2 : WIFI_MAX_RETRIES;
-  int alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 2 : 0;
-  eh->rate = rate;
-  eh->max_retries = max_retries;
-  eh->alt_rate = alt_rate;
-  eh->alt_max_retries = alt_max_retries;
+
+
+  int ndx = nfo->_current_index;
+  eh->rate = nfo->_rates[ndx];
+  eh->alt_rate = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
+  eh->alt_rate_1 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
+  eh->alt_rate_2 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+
+  eh->max_retries = (ndx > 0) ? 2 : 4;
+  eh->alt_max_retries = (ndx - 1 >= 0) ? 2 : 0;
+  eh->alt_max_retries_1 = (ndx - 2 >= 0) ? 2 : 0;
+  eh->alt_max_retries_2 = (ndx - 3 >= 0) ? 2 : 0;
   return;
   
 }
@@ -248,7 +249,7 @@ AutoRateFallback::print_rates()
 
 
 enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
-      H_OFFSET, H_ACTIVE, H_ALT_RATE};
+      H_OFFSET, H_ACTIVE};
 
 
 static String
@@ -271,8 +272,6 @@ AutoRateFallback_read_param(Element *e, void *thunk)
   }
   case H_ACTIVE: 
     return String(td->_active) + "\n";
-  case H_ALT_RATE: 
-    return String(td->_alt_rate) + "\n";
   default:
     return String();
   }
@@ -329,13 +328,6 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
     f->_active = active;
     break;
   }
- case H_ALT_RATE: {
-    bool alt_rate;
-    if (!cp_bool(s, &alt_rate)) 
-      return errh->error("alt_rate must be boolean");
-    f->_alt_rate = alt_rate;
-    break;
-  }
   }
   return 0;
 }
@@ -353,7 +345,6 @@ AutoRateFallback::add_handlers()
   add_read_handler("stepdown", AutoRateFallback_read_param, (void *) H_STEPDOWN);
   add_read_handler("offset", AutoRateFallback_read_param, (void *) H_OFFSET);
   add_read_handler("active", AutoRateFallback_read_param, (void *) H_ACTIVE);
-  add_read_handler("alt_rate", AutoRateFallback_read_param, (void *) H_ALT_RATE);
 
   add_write_handler("debug", AutoRateFallback_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
@@ -362,7 +353,6 @@ AutoRateFallback::add_handlers()
   add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET);
   add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
   add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
-  add_write_handler("alt_rate", AutoRateFallback_write_param, (void *) H_ALT_RATE);
 }
 // generate Vector template instance
 #include <click/bighashmap.cc>

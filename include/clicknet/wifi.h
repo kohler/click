@@ -44,10 +44,14 @@ struct click_wifi_extra {,
   u_int8_t alt_rate;          /* if specifying alternate rate is supported */
   u_int8_t alt_max_retries;
 
+  u_int8_t alt_rate_1;
+  u_int8_t alt_max_retries_1;
+  u_int8_t alt_rate_2;
+  u_int8_t alt_max_retries_2;
+
   u_int8_t virt_col;
   u_int8_t retries;
-  u_int8_t pad2;
-  u_int8_t pad3;
+  u_int16_t len;
 });
 
 

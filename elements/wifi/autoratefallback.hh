@@ -23,7 +23,7 @@ ARF wireless bit-rate selection algorithm
 AutoRateFallback is based on the algorithm presented in
 "WaveLAN-II: A High-Performance Wireless LAN for the 
 Unliscensed Band" by Ad Kamerman and Leo Monteban
-Automatically determine the txrate for a give ethernet Address
+Automatically determine the txrate for a give ethernet address.
 
 =a SetTXRate, FilterTX
 */

@@ -51,6 +51,8 @@ void
 MadwifiRate::run_timer()
 {
   _timer.schedule_after_ms(1000);
+  adjust_all();
+
 }
 MadwifiRate::~MadwifiRate()
 {
@@ -116,39 +118,29 @@ MadwifiRate::adjust(EtherAddress dst)
     stepup = true;
 
   if (stepdown) {
-    if (nfo->_rates.size()) {
-      if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
-	click_chatter("%{element} stepping down for %s from %d to %d\n",
-		      this,
-		      nfo->_eth.s().cc(),
-		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[max(0, nfo->_current_index - 1)]);
-      }
+    if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
+      click_chatter("%{element} stepping down for %s from %d to %d\n",
+		    this,
+		    nfo->_eth.s().cc(),
+		    nfo->_rates[nfo->_current_index],
+		    nfo->_rates[max(0, nfo->_current_index - 1)]);
     }
     nfo->_current_index = max(nfo->_current_index - 1, 0);
-    nfo->_successes = 0;
-    nfo->_failures = 0;
-    nfo->_retries = 0;
   } else if (stepup) {
-    if (nfo->_current_index == nfo->_rates.size() - 1) {
-      return;
-    }
-    if (nfo->_rates.size()) {
-      if (_debug) {
-	click_chatter("%{element} steping up for %s from %d to %d\n",
-		      this,
-		      nfo->_eth.s().cc(),
-		      nfo->_rates[nfo->_current_index],
-		      nfo->_rates[min(nfo->_rates.size() - 1, 
-				      nfo->_current_index + 1)]);
-      }
+    if (_debug) {
+      click_chatter("%{element} steping up for %s from %d to %d\n",
+		    this,
+		    nfo->_eth.s().cc(),
+		    nfo->_rates[nfo->_current_index],
+		    nfo->_rates[min(nfo->_rates.size() - 1, 
+				    nfo->_current_index + 1)]);
     }
     nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
-    nfo->_successes = 0;
-    nfo->_failures = 0;
-    nfo->_retries = 0;
   }
-  
+  nfo->_successes = 0;
+  nfo->_failures = 0;
+  nfo->_retries = 0;
+
 
 
 
@@ -173,30 +165,13 @@ MadwifiRate::process_feedback(Packet *p_in)
   struct timeval now;
   click_gettimeofday(&now);
 
-  if (dst.is_group()) {
-    /* don't record info for bcast packets */
-    return;
-  }
-
-  if (0 == ceh->rate) {
-    /* rate wasn't set */
-    return;
-  }
-  if (success && p_in->length() < _packet_size_threshold) {
-    /* 
-     * don't deal with short packets, 
-     * since they can skew what rate we should be at 
-     */
+  if (dst.is_group() || !ceh->rate || 
+      (success && p_in->length() < _packet_size_threshold)) {
     return;
   }
 
   DstInfo *nfo = _neighbors.findp(dst);
-  if (!nfo) {
-    return;
-  }
-
-
-  if (nfo->pick_rate() != ceh->rate) {
+  if (!nfo || nfo->pick_rate() != ceh->rate) {
     return;
   }
 
@@ -248,9 +223,13 @@ MadwifiRate::assign_rate(Packet *p_in)
   }
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo || !nfo->_rates.size()) {
+    Vector<int> rates = _rtable->lookup(dst);
+    if (!rates.size()) {
+      return;
+    }
     _neighbors.insert(dst, DstInfo(dst));
     nfo = _neighbors.findp(dst);
-    nfo->_rates = _rtable->lookup(dst);
+    nfo->_rates = rates;
     nfo->_successes = 0;
     nfo->_retries = 0;
     nfo->_failures = 0;
@@ -267,10 +246,18 @@ MadwifiRate::assign_rate(Packet *p_in)
     }
   }
 
-  ceh->rate = nfo->pick_rate();
-  ceh->max_retries = (_alt_rate) ? 3 : WIFI_MAX_RETRIES;
-  ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  ceh->alt_max_retries = (_alt_rate) ? WIFI_MAX_RETRIES - 3 : 0;
+  ceh->magic = WIFI_EXTRA_MAGIC;
+  int ndx = nfo->_current_index;
+  ceh->rate = nfo->_rates[ndx];
+  ceh->alt_rate = (ndx - 1 >= 0) ? nfo->_rates[max(ndx - 1, 0)] : 0;
+  ceh->alt_rate_1 = (ndx - 2 >= 0) ? nfo->_rates[max(ndx - 2, 0)] : 0;
+  ceh->alt_rate_2 = (ndx - 3 >= 0) ? nfo->_rates[max(ndx - 3, 0)] : 0;
+
+  ceh->max_retries = 4;
+  ceh->alt_max_retries = (ndx - 1 >= 0) ? 2 : 0;
+  ceh->alt_max_retries_1 = (ndx - 2 >= 0) ? 2 : 0;
+  ceh->alt_max_retries_2 = (ndx - 3 >= 0) ? 2 : 0;
+
   return;
   
 }

@@ -40,7 +40,7 @@ FromHost::FromHost()
   : Element(0, 1), 
     _fd(-1),
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
-    _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
+    _ignore_q_errs(false), _printed_read_err(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -121,7 +121,7 @@ FromHost::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *errh
 	
 	sprintf(tmp, "/sbin/ifconfig %s arp", _dev_name.cc());
 	if (system(tmp) != 0) 
-	    return errh->error("%s: %s", tmp, strerror(errno));
+	    return errh->error("%s: couldn't set arp flags: %s", tmp, strerror(errno));
     }
 
     strcpy(tmp0, inet_ntoa(near));
