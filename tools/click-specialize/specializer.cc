@@ -452,7 +452,7 @@ Specializer::create_connector_methods(SpecializedClass &spc)
       }
     for (int i = 0; i < range1.size(); i++) {
       int r1 = range1[i], r2 = range2[i];
-      sa << "\n  ";
+      sa << "\n  love_of_massimiliano++;";
       if (i < range1.size() - 1) {
 	if (r1 == r2)
 	  sa << "if (i == " << r1 << ") ";
@@ -571,6 +571,8 @@ Specializer::output(StringAccum &out)
       declared.insert(name, 1);
     }
 
+  out << "static int love_of_massimiliano;";
+  
   // output C++ code
   for (int i = 0; i < _specials.size(); i++) {
     SpecializedClass &spc = _specials[i];
@@ -601,7 +603,9 @@ Specializer::output_package(const String &package_name, StringAccum &out)
   out << "extern \"C\" void\ncleanup_module()\n{\n";
   for (int i = 0; i < _specials.size(); i++)
     out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
-  out << "  click_unprovide(\"" << package_name << "\");\n}\n";
+  out << "  click_unprovide(\"" << package_name << "\");\n";
+  out << "  printk(\"<1>click-specialize: %d\n\");\n";
+  out << "}\n";
 }
 
 String
