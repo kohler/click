@@ -1,16 +1,33 @@
 Click NEWS
 
-Version
+Version 1.0   25.Feb.2000
+
+* Added polling support. Result: 4-5 times better peak performance. The
+  optimization tools can get it up to 6 times better (435,000 64-byte
+  packets per second).
+
+* Replaced work list with stride scheduler.
+
+* In the Linux kernel, Click now runs in a kernel thread.
+
+* Removed packet-upstream events and the associated processing in Queue,
+  Shaper, and so forth. The stride scheduler solves the same problem more
+  elegantly.
 
 * Added `click-specialize' tool.
 
 * Added `click-uninstall' tool.
 
-* Added polling support.
+* Added dynamic IP routing table element (LookupIPRoute2).
 
-* Added PokeHandlers element so you can test write handlers at user level.
+* Added stride scheduling packet scheduler element (StrideSched).
+
+* Added PeekHandlers and PokeHandlers elements so you can test read and
+  write handlers at user level.
 
 * Fixed lexer bug: compound elements with `{' are accepted everywhere.
+
+* Added arguments to compound elements.
 
 * Rearranged directory structure. (Include files placed in
   PREFIX/include/click, not directly in PREFIX/include.)
@@ -19,6 +36,8 @@ Version
 
 * Changed interface for registering handlers. See
   `elements/standard/red.cc' or the Element.3 manual page for examples.
+
+* Many other changes, bug fixes and improvements.
 
 
 Version 0.6   11.Dec.1999

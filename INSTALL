@@ -42,7 +42,7 @@ This will eventually create an executable named `click'. Test it by
 passing it the file name of a Click-language router description
 (see doc/click.5); for example,
 
-	./click ../conf/test.ipb
+	./click ../conf/test.click
 
 The `conf' directory in this distribution has a few sample configuration
 files.
@@ -125,7 +125,7 @@ module with
 
 At this point you can load a configuration file (see doc/click.5) with
 
-        cat xxx.ipb > /proc/click/config
+        cat xxx.click > /proc/click/config
 
 PORTABILITY
 -----------

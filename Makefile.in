@@ -77,7 +77,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
-	etc/linux-2.2-patch \
+	etc/linux-2.2.14-patch \
 	lib/archive.cc lib/archive.hh \
 	lib/bitvector.cc lib/bitvector.hh \
 	lib/click_ether.h \
