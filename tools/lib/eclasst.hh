@@ -48,20 +48,19 @@ class ElementClassT { public:
     // where was this type declared?
     virtual RouterT *declaration_scope() const;
     virtual ElementClassT *overload_type() const;
-    virtual int overload_depth() const;
     
     virtual void collect_types(HashMap<ElementClassT *, int> &) const;
     virtual void collect_overloads(Vector<ElementClassT *> &) const;
 
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
-    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args);
+    virtual ElementClassT *resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *, const String &landmark);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
     virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
     virtual String unparse_signature() const;
-    static String unparse_signature(const String &, int, int, int);
+    static String unparse_signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
     virtual void *cast(const char *)		{ return 0; }
     virtual SynonymElementClassT *cast_synonym() { return 0; }
@@ -90,7 +89,7 @@ class SynonymElementClassT : public ElementClassT { public:
 
     ElementClassT *synonym_of() const	{ return _eclass; }
 
-    ElementClassT *resolve(int, int, Vector<String> &);
+    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     
     void collect_types(HashMap<ElementClassT *, int> &) const;
@@ -103,7 +102,6 @@ class SynonymElementClassT : public ElementClassT { public:
     
     RouterT *declaration_scope() const;
     ElementClassT *overload_type() const { return _eclass; }
-    int overload_depth() const		{ return _eclass->overload_depth(); }
     
     SynonymElementClassT *cast_synonym() { return this; }
     RouterT *cast_router();

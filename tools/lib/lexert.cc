@@ -364,24 +364,24 @@ LexerT::lexeme_string(int kind)
   else if (kind == lexVariable)
     return "variable";
   else if (kind == lexArrow)
-    return "`->'";
+    return "'->'";
   else if (kind == lex2Colon)
-    return "`::'";
+    return "'::'";
   else if (kind == lex2Bar)
-    return "`||'";
+    return "'||'";
   else if (kind == lex3Dot)
-    return "`...'";
+    return "'...'";
   else if (kind == lexTunnel)
-    return "`connectiontunnel'";
+    return "'connectiontunnel'";
   else if (kind == lexElementclass)
-    return "`elementclass'";
+    return "'elementclass'";
   else if (kind == lexRequire)
-    return "`require'";
+    return "'require'";
   else if (kind >= 32 && kind < 127) {
-    sprintf(buf, "`%c'", kind);
+    sprintf(buf, "'%c'", kind);
     return buf;
   } else {
-    sprintf(buf, "`\\%03d'", kind);
+    sprintf(buf, "'\\%03d'", kind);
     return buf;
   }
 }
@@ -911,7 +911,7 @@ LexerT::ycompound_arguments(RouterT *comptype)
     } else if (!positional)
       error = true;
   if (error)
-    lerror(t1, "bad compound element parameter order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+    lerror(t1, "compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
 }
 
 ElementClassT *
@@ -922,28 +922,34 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     // '{' was already read
     RouterT *old_router = _router;
     int old_offset = _anonymous_offset;
-    
-    ElementClassT *created = 0;
 
-    // check for '...'
-    const Lexeme &t = lex();
-    if (t.is(lex3Dot)) {
-	if (anonymous) {
-	    lerror(t, "cannot extend anonymous compound element class");
-	    created = ElementClassT::base_type("Error");
-	} else {
-	    created = force_element_type(Lexeme(lexIdent, name, name_pos1));
-	    _lexinfo->notify_class_extension(created, t.pos1(), t.pos2());
-	}
-	expect(lex2Bar);
-    } else
-	unlex(t);
+    RouterT *first = 0, *last = 0;
+    ElementClassT *extension = 0;
 
-    ElementClassT *first = created;
-    int pos2;
+    int pos2 = name_pos1;
     
     while (1) {
-	RouterT *compound_class = new RouterT(name, landmark(), old_router, created);
+	Lexeme dots = lex();
+	if (dots.is(lex3Dot)) {
+	    // '...' marks an extension type
+	    if (anonymous) {
+		lerror(dots, "cannot extend anonymous compound element class");
+		extension = ElementClassT::base_type("Error");
+	    } else {
+		extension = force_element_type(Lexeme(lexIdent, name, name_pos1));
+		_lexinfo->notify_class_extension(extension, dots.pos1(), dots.pos2());
+	    }
+	    
+	    dots = lex();
+	    if (!first || !dots.is('}'))
+		lerror(dots.pos1(), dots.pos2(), "'...' should occur last, after one or more compounds");
+	    if (dots.is('}') && first)
+		break;
+	}
+	unlex(dots);
+
+	// create a compound
+	RouterT *compound_class = new RouterT(name, landmark(), old_router);
 	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
 
@@ -953,16 +959,11 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 
 	compound_class->finish_type(_errh);
 
-	// check for redeclaration with same signature
-	if (created) {
-#if 0
-	    ElementClassT *t = created->resolve(compound_class->ninputs(), compound_class->noutputs(), compound_class->formals());
-	    if (t && t->overload_depth() > (first ? first->overload_depth() : -1))
-		ElementT::redeclaration_error(_errh, "", compound_class->unparse_signature(), compound_class->landmark(), t->landmark());
-#endif
-	}
-	
-	created = compound_class;
+	if (last)
+	    last->set_overload_type(compound_class);
+	else
+	    first = compound_class;
+	last = compound_class;
 
 	// check for '||' or '}'
 	const Lexeme &t = lex();
@@ -974,11 +975,12 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 
     _anonymous_offset = old_offset;
     _router = old_router;
-    
-    _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);
 
-    old_router->add_declared_type(created, anonymous);
-    return created;
+    if (extension)
+	last->set_overload_type(extension);
+    old_router->add_declared_type(first, anonymous);
+    _lexinfo->notify_class_declaration(first, anonymous, decl_pos1, name_pos1, pos2);
+    return first;
 }
 
 void

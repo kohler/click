@@ -11,7 +11,7 @@ typedef HashMap<String, int> StringMap;
 class RouterT : public ElementClassT { public:
 
     RouterT();
-    RouterT(const String &name, const String &landmark, RouterT *declaration_scope = 0, ElementClassT *overload = 0);
+    RouterT(const String &name, const String &landmark, RouterT *declaration_scope = 0);
     virtual ~RouterT();
 
     // ELEMENTS
@@ -143,11 +143,11 @@ class RouterT : public ElementClassT { public:
     RouterT *declaration_scope() const	{ return _declaration_scope; }
     int declaration_depth() const	{ return _declaration_depth; }
     ElementClassT *overload_type() const { return _overload_type; }
-    int overload_depth() const		{ return _overload_depth; }
+    void set_overload_type(ElementClassT *);
 
     int finish_type(ErrorHandler *);
     
-    ElementClassT *resolve(int, int, Vector<String> &);
+    ElementClassT *resolve(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     String unparse_signature() const;
@@ -204,7 +204,6 @@ class RouterT : public ElementClassT { public:
     int _ninputs;
     int _noutputs;
     ElementClassT *_overload_type;
-    int _overload_depth;
     String _type_landmark;
     mutable ElementTraits _traits;
     bool _circularity_flag;

@@ -28,6 +28,7 @@ struct CxConfig {
     Vector<CxConnection> _connections;
     
     Vector<String> _formals;
+    Vector<String> _formal_types;
     CxConfig *_enclosing;
     int _depth;
     String _name;

@@ -99,7 +99,7 @@ Lexer::Synonym::cast(const char *s)
 
 class Lexer::Compound : public Element { public:
   
-  Compound(const String &, const String &, int, Element *);
+  Compound(const String &, const String &, int);
 
   const String &name() const		{ return _name; }
   const char *printable_name_cc();
@@ -112,25 +112,26 @@ class Lexer::Compound : public Element { public:
 
   void swap_router(Lexer *);
   void finish(Lexer *, ErrorHandler *);
-  void check_duplicates_until(Element *, ErrorHandler *);
 
-  Element *find_relevant_class(int, int, Vector<String> &);
-  void report_signatures(ErrorHandler *);
+  Element *find_relevant_class(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
   void expand_into(Lexer *, int, const VariableEnvironment &);
   
   const char *class_name() const	{ return _name.cc(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
 
+  void set_overload_type(Element *e)	{ _overload_type = e; }
+  inline Compound *overload_compound() const;
+
   String signature() const;
-  static String signature(const String &, int, int, int);
+  static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
  private:
   
   mutable String _name;
   String _landmark;
   int _depth;
-  Element *_next;
+  Element *_overload_type;
 
   Vector<String> _formals;
   Vector<String> _formal_types;
@@ -147,8 +148,8 @@ class Lexer::Compound : public Element { public:
   
 };
 
-Lexer::Compound::Compound(const String &name, const String &lm, int depth, Element *next)
-  : _name(name), _landmark(lm), _depth(depth), _next(next),
+Lexer::Compound::Compound(const String &name, const String &lm, int depth)
+  : _name(name), _landmark(lm), _depth(depth), _overload_type(0),
     _ninputs(0), _noutputs(0)
 {
 }
@@ -237,92 +238,81 @@ Lexer::Compound::finish(Lexer *lexer, ErrorHandler *errh)
       _element_names[i] = lexer->deanonymize_element_name(_element_names[i], i);
 }
 
-void
-Lexer::Compound::check_duplicates_until(Element *last, ErrorHandler *errh)
+inline Lexer::Compound *
+Lexer::Compound::overload_compound() const
 {
-  if (this == last || !_next)
-    return;
-  
-  Element *n = _next;
-  while (n && n != last) {
-    Compound *nc = (Compound *)n->cast("Lexer::Compound");
-    if (!nc) break;
-    if (nc->_ninputs == _ninputs && nc->_noutputs == _noutputs && nc->_formals.size() == _formals.size()) {
-      for (int i = 0; i < nc->_formals.size(); i++)
-	if (nc->_formal_types[i] != _formal_types[i])
-	  goto not_redeclaration;
-      redeclaration_error(errh, "", signature(), _landmark, nc->_landmark);
-      break;
-	   
-    }
-   not_redeclaration:
-    n = nc->_next;
-  }
-
-  if (Compound *nc = (Compound *)_next->cast("Lexer::Compound"))
-    nc->check_duplicates_until(last, errh);
+  return (_overload_type ? (Compound *)_overload_type->cast("Lexer::Compound") : 0);
 }
 
 Element *
-Lexer::Compound::find_relevant_class(int ninputs, int noutputs, Vector<String> &args)
+Lexer::Compound::find_relevant_class(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
   // Try to return an element class, even if it is wrong -- the error messages
   // are friendlier
   Compound *ct = this;
   Compound *closest = 0;
-  int nclosest = 0;
   
-  while (1) {
+  while (ct) {
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs
-	&& cp_assign_arguments(args, ct->_formal_types, args) >= 0)
+	&& cp_assign_arguments(args, ct->_formal_types, &args) >= 0)
       return ct;
-
-    // replace 'closest'
-    if (ct->_formals.size() == args.size()) {
+    else if (cp_assign_arguments(args, ct->_formal_types) >= 0)
       closest = ct;
-      nclosest++;
-    }
 
-    Element *e = ct->_next;
-    if (!e)
-      return (nclosest == 1 ? closest : 0);
-    else if (Compound *next = (Compound *)e->cast("Lexer::Compound"))
+    if (Compound *next = ct->overload_compound())
       ct = next;
+    else if (ct->_overload_type)
+      return ct->_overload_type;
     else
-      return e;
+      break;
   }
+
+  errh->lerror(landmark, "no match for '%s'", signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+  ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+  for (ct = this; ct; ct = ct->overload_compound())
+    cerrh.lmessage(ct->landmark(), "%s", ct->signature().c_str());
+  if (closest)
+    cp_assign_arguments(args, closest->_formal_types, &args);
+  return closest;
 }
 
 String
-Lexer::Compound::signature(const String &name, int ninputs, int noutputs, int nargs)
+Lexer::Compound::signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs)
 {
   StringAccum sa;
+  sa << (name ? name : String("<anonymous>"));
+  
+  if (formal_types && formal_types->size()) {
+    sa << '(';
+    for (int i = 0; i < formal_types->size(); i++) {
+      if (i)
+	sa << ", ";
+      if ((*formal_types)[i] == "")
+	sa << "<arg>";
+      else if ((*formal_types)[i] == "__REST__")
+	sa << "...";
+      else
+	sa << (*formal_types)[i];
+    }
+    sa << ')';
+  }
+
   const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
   const char *pl_ins = (ninputs == 1 ? " input, " : " inputs, ");
   const char *pl_outs = (noutputs == 1 ? " output" : " outputs");
-  sa << (name ? name : String("<anonymous>"))
-     << '[' << nargs << pl_args
-     << ninputs << pl_ins
-     << noutputs << pl_outs << ']';
+  sa << '[';
+  if (!formal_types && nargs > 0)
+    sa << nargs << pl_args;
+  sa << ninputs << pl_ins << noutputs << pl_outs;
+  sa << ']';
+  
   return sa.take_string();
 }
 
 String
 Lexer::Compound::signature() const
 {
-  return signature(_name, _ninputs, _noutputs, _formals.size());
-}
-
-void
-Lexer::Compound::report_signatures(ErrorHandler *errh)
-{
-  if (_next) {
-    if (Compound *n = (Compound *)_next->cast("Lexer::Compound"))
-      n->report_signatures(errh);
-    else
-      errh->lmessage(_landmark, "'%s[...]'", printable_name_cc());
-  }
-  errh->lmessage(_landmark, "'%s'", signature().cc());
+  return signature(_name, &_formal_types, -1, _ninputs, _noutputs);
 }
 
 void
@@ -720,7 +710,7 @@ Lexer::lexeme_string(int kind)
   char buf[12];
   if (kind == lexIdent)
     return "identifier";
-  else if (kind == lexIdent)
+  else if (kind == lexVariable)
     return "variable";
   else if (kind == lexArrow)
     return "'->'";
@@ -1385,7 +1375,7 @@ Lexer::ycompound_arguments(Compound *comptype)
     } else if (!positional)
       error = true;
   if (error)
-    lerror("bad compound element parameter order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+    lerror("compound element parameters out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
 }
 
 int
@@ -1395,26 +1385,31 @@ Lexer::ycompound(String name)
   old_element_map.swap(_element_map);
   HashMap<String, int> old_type_map(_element_type_map);
   int old_offset = _anonymous_offset;
-  Element *created = 0;
-
-  // check for '...'
-  const Lexeme &t = lex();
-  if (t.is(lex3Dot)) {
-    if (_element_type_map[name] < 0) {
-      lerror("extending unknown element class '%s'", name.cc());
-      add_element_type(name, new ErrorElement, true);
-    }
-    created = _element_types[ _element_type_map[name] ];
-    expect(lex2Bar);
-  } else
-    unlex(t);
-
-  Element *first = created;
+  
+  Compound *first = 0, *last = 0;
+  Element *extension = 0;
 
   while (1) {
-    // prepare
+    Lexeme dots = lex();
+    if (dots.is(lex3Dot)) {
+      // '...' marks an extension type
+      if (_element_type_map[name] < 0) {
+	lerror("cannot extend unknown element class '%s'", name.cc());
+	add_element_type(name, new ErrorElement, true);
+      }
+      extension = _element_types[ _element_type_map[name] ];
+      
+      dots = lex();
+      if (!first || !dots.is('}'))
+	lerror("'...' should occur last, after one or more compounds");
+      if (dots.is('}') && first)
+	break;
+    }
+    unlex(dots);
+      
+    // create a compound
     _element_map.clear();
-    Compound *ct = new Compound(name, landmark(), _compound_depth, created);
+    Compound *ct = new Compound(name, landmark(), _compound_depth);
     ct->swap_router(this);
     get_element("input", TUNNEL_TYPE);
     get_element("output", TUNNEL_TYPE);
@@ -1431,22 +1426,28 @@ Lexer::ycompound(String name)
     ct->swap_router(this);
 
     ct->finish(this, _errh);
-    created = ct;
+
+    if (last)
+      last->set_overload_type(ct);
+    else
+      first = ct;
+    last = ct;
 
     // check for '||' or '}'
     const Lexeme &t = lex();
     if (!t.is(lex2Bar))
       break;
-
-    // add the intermediate type to ensure it is freed later
-    add_element_type(name, created, true);
   }
-  
+
   // on the way out
-  ((Compound *)created)->check_duplicates_until(first, _errh);
   old_element_map.swap(_element_map);
-  
-  return add_element_type(name, created, true);
+
+  // add all types to ensure they're freed later
+  for (Compound *ct = first->overload_compound(); ct; ct = ct->overload_compound())
+    add_element_type(name, ct, true);
+  if (extension)
+    last->set_overload_type(extension);
+  return add_element_type(name, first, true);
 }
 
 void
@@ -1583,11 +1584,8 @@ Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
       outputs_used = hf.port + 1;
   }
   
-  Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
+  Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args, _errh, landmark());
   if (!found_c) {
-    _errh->lerror(c->landmark(), "no match for '%s'", Compound::signature(c->name(), inputs_used, outputs_used, args.size()).cc());
-    ContextErrorHandler cerrh(_errh, "possibilities are:", "  ");
-    c->report_signatures(&cerrh);
     _elements[which] = ERROR_TYPE;
     return;
   }

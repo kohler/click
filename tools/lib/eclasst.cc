@@ -142,7 +142,7 @@ ElementClassT::documentation_url() const
 
 
 ElementClassT *
-ElementClassT::resolve(int, int, Vector<String> &)
+ElementClassT::resolve(int, int, Vector<String> &, ErrorHandler *, const String &)
 {
     return this;
 }
@@ -208,18 +208,8 @@ ElementClassT::expand_element(
     String new_configuration = env.interpolate(e->configuration());
     cp_argvec(new_configuration, args);
 
-    ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args);
-    if (!found_c) {
-	// report error message
-	String lm = e->landmark(), name = e->type_name();
-	errh->lerror(lm, "no match for '%s'", unparse_signature(name, inputs_used, outputs_used, args.size()).cc());
-	Vector<ElementClassT *> overloads;
-	c->collect_overloads(overloads);
-	ContextErrorHandler cerrh(errh, "possibilities are:", "  ", lm);
-	for (int i = 0; i < overloads.size(); i++)
-	    cerrh.lmessage(overloads[i]->landmark(), "'%s'", overloads[i]->unparse_signature().c_str());
-
-	// destroy element
+    ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args, errh, e->landmark());
+    if (!found_c) {		// destroy element
 	if (fromr == tor)
 	    e->kill();
 	return 0;
@@ -239,13 +229,35 @@ ElementClassT::complex_expand_element(
 }
 
 String
-ElementClassT::unparse_signature(const String &name, int ninputs, int noutputs, int nargs)
+ElementClassT::unparse_signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs)
 {
+    StringAccum sa;
+    sa << (name ? name : String("<anonymous>"));
+  
+    if (formal_types && formal_types->size()) {
+	sa << '(';
+	for (int i = 0; i < formal_types->size(); i++) {
+	    if (i)
+		sa << ", ";
+	    if ((*formal_types)[i] == "")
+		sa << "<arg>";
+	    else if ((*formal_types)[i] == "__REST__")
+		sa << "...";
+	    else
+		sa << (*formal_types)[i];
+	}
+	sa << ')';
+    }
+
     const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
     const char *pl_ins = (ninputs == 1 ? " input, " : " inputs, ");
     const char *pl_outs = (noutputs == 1 ? " output" : " outputs");
-    StringAccum sa;
-    sa << name << '[' << nargs << pl_args << ninputs << pl_ins << noutputs << pl_outs << ']';
+    sa << '[';
+    if (!formal_types && nargs > 0)
+	sa << nargs << pl_args;
+    sa << ninputs << pl_ins << noutputs << pl_outs;
+    sa << ']';
+  
     return sa.take_string();
 }
 
@@ -257,9 +269,9 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
 }
 
 ElementClassT *
-SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args)
+SynonymElementClassT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
-    return _eclass->resolve(ninputs, noutputs, args);
+    return _eclass->resolve(ninputs, noutputs, args, errh, landmark);
 }
 
 ElementT *
@@ -299,12 +311,6 @@ SynonymElementClassT::declaration_scope() const
 
 ElementClassT *
 ElementClassT::overload_type() const
-{
-    return 0;
-}
-
-int
-ElementClassT::overload_depth() const
 {
     return 0;
 }

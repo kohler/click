@@ -38,12 +38,12 @@ RouterT::RouterT()
       _declared_type_map(-1),
       _archive_map(-1),
       _declaration_scope(0), _declaration_depth(1), _scope_cookie(0),
-      _ninputs(0), _noutputs(0), _overload_type(0), _overload_depth(0),
+      _ninputs(0), _noutputs(0), _overload_type(0),
       _circularity_flag(false)
 {
 }
 
-RouterT::RouterT(const String &name, const String &landmark, RouterT *declaration_scope, ElementClassT *overload)
+RouterT::RouterT(const String &name, const String &landmark, RouterT *declaration_scope)
     : ElementClassT(name),
       _element_name_map(-1), _free_element(0), _n_live_elements(0),
       _new_eindex_collector(0),
@@ -51,13 +51,10 @@ RouterT::RouterT(const String &name, const String &landmark, RouterT *declaratio
       _declared_type_map(-1),
       _archive_map(-1),
       _declaration_scope(declaration_scope), _scope_cookie(0),
-      _ninputs(0), _noutputs(0), _overload_type(overload),
-      _overload_depth(overload ? overload->overload_depth() + 1 : 1),
+      _ninputs(0), _noutputs(0), _overload_type(0),
       _type_landmark(landmark), _circularity_flag(false)
 {
     // borrow definitions from `declaration'
-    if (_overload_type)
-	_overload_type->use();
     if (_declaration_scope) {
 	_declaration_scope_cookie = _declaration_scope->_scope_cookie;
 	_declaration_scope->_scope_cookie++;
@@ -1213,36 +1210,46 @@ RouterT::finish_type(ErrorHandler *errh)
     return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
 
+void
+RouterT::set_overload_type(ElementClassT *t)
+{
+    assert(!_overload_type);
+    _overload_type = t;
+    if (_overload_type)
+	_overload_type->use();
+}
+
 ElementClassT *
-RouterT::resolve(int ninputs, int noutputs, Vector<String> &args)
+RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
     // Try to return an element class, even if it is wrong -- the error
     // messages are friendlier
     RouterT *r = this;
     RouterT *closest = 0;
-    int nclosest = 0;
 
     while (1) {
 	if (r->_ninputs == ninputs && r->_noutputs == noutputs
-	    && cp_assign_arguments(args, r->_formal_types, args) >= 0)
+	    && cp_assign_arguments(args, r->_formal_types, &args) >= 0)
 	    return r;
-
-	// replace `closest'
-	if (r->_formals.size() == args.size()) {
+	else if (cp_assign_arguments(args, r->_formal_types) >= 0)
 	    closest = r;
-	    nclosest++;
-	}
 
 	ElementClassT *overload = r->_overload_type;
-	if (!overload)
-	    return (nclosest == 1 ? closest : 0);
-	else if ((r = overload->cast_router()))
-	    /* run through the loop again */;
-	else if (ElementClassT *result = overload->resolve(ninputs, noutputs, args))
+	if (RouterT *next = (overload ? overload->cast_router() : 0))
+	    r = next;
+	else if (ElementClassT *result = overload->resolve(ninputs, noutputs, args, errh, landmark))
 	    return result;
 	else
-	    return (nclosest == 1 ? closest : 0);
+	    break;
     }
+
+    errh->lerror(landmark, "no match for '%s'", ElementClassT::unparse_signature(name(), 0, args.size(), ninputs, noutputs).c_str());
+    ContextErrorHandler cerrh(errh, "candidates are:", "  ");
+    for (r = this; r; r = (r->_overload_type ? r->_overload_type->cast_router() : 0))
+	cerrh.lmessage(r->landmark(), "%s", r->unparse_signature().c_str());
+    if (closest)
+	cp_assign_arguments(args, closest->_formal_types, &args);
+    return closest;
 }
 
 ElementT *
@@ -1301,7 +1308,7 @@ RouterT::complex_expand_element(
 String
 RouterT::unparse_signature() const
 {
-    return ElementClassT::unparse_signature(name(), ninputs(), noutputs(), nformals());
+    return ElementClassT::unparse_signature(name(), &_formal_types, -1, ninputs(), noutputs());
 }
 
 

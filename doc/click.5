@@ -491,7 +491,7 @@ elementclass MyQueue {
 .br
 }
 .Re
-For each use of an overloaded compound element, Click will choose one
+For each use of an overloaded compound element, Click will choose the first
 definition that matches the provided number of input ports, number of
 output ports, and configuration arguments. It is an error if no definition
 matches these properties exactly.
@@ -500,11 +500,13 @@ It is also possible to extend an existing element class with new overloaded
 definitions with "\f(CW...\fR". For example, this definition introduces a
 two-argument version of Queue:
 .Rs
-elementclass Queue { ... ||
+elementclass Queue {
 .br
 \%  $cap, $rate | input -> Queue($cap)
 .br
 \%                -> Shaper($rate) -> output;
+.br
+\%|| ...
 .br
 }
 .Re
@@ -518,7 +520,7 @@ elementclass Test { $a | /* nothing */ }
 .br
 test :: Test(1, 2);
 .br
-elementclass Test { ... || $a, $b | /* nothing */ }
+elementclass Test { $a, $b | /* nothing */ || ... }
 .Re
 '
 .SH "CONNECTION TUNNELS"
@@ -721,7 +723,7 @@ kernel module will not accept archives; use
 .br
 .IR class " ::= identifier | ""{"" " compounds " ""}"""
 .br
-.RI "    | ""{"" ""..."" ""||"" " compounds " ""}"""
+.RI "    | ""{"" " compounds " ""||"" ""..."" ""}"""
 .br
 .IR compounds " ::= " compound " | " compounds " ""||"" " compound
 .br

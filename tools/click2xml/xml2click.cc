@@ -344,23 +344,31 @@ do_formal(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
     }
 
     int number = -1;
-    String name;
+    String name, key;
     for (const XML_Char **a = attrs; *a; a += 2)
 	if (strcmp(a[0], "name") == 0) {
+	    name = a[1];
 	    if (!cp_is_word(name))
 		errh->lerror(landmark, "'name' should be formal name");
-	    name = a[1];
 	} else if (strcmp(a[0], "number") == 0) {
 	    if (!cp_integer(a[1], &number) || number < 0)
 		errh->lerror(landmark, "'number' should be formal argument position");
+	} else if (strcmp(a[0], "key") == 0) {
+	    key = a[1];
+	    if (!cp_is_word(key))
+		errh->lerror(landmark, "'key' should be formal keyword");
 	}
 
-    while (xstack.back()->_formals.size() < number)
+    while (xstack.back()->_formals.size() <= number) {
 	xstack.back()->_formals.push_back(String());
+	xstack.back()->_formal_types.push_back(String());
+    }
     if (xstack.back()->_formals[number])
 	errh->lerror(landmark, "formal parameter %d already defined as '$%s'", number, xstack.back()->_formals[number].cc());
-    else
+    else {
 	xstack.back()->_formals[number] = name;
+	xstack.back()->_formal_types[number] = key;
+    }
     return CX_IN_EMPTY;
 }
 
@@ -475,20 +483,28 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 
     // otherwise, compound
     assert(_enclosing);
-    _type = _router = new RouterT(_name, (_landmark ? _landmark : _xml_landmark), enclosing_type, prev_class);
+    _type = _router = new RouterT(_name, (_landmark ? _landmark : _xml_landmark), enclosing_type);
     _type->use();
     _router->use();
     enclosing_type->add_declared_type(_type, true);
+    _router->set_overload_type(prev_class);
 
     // handle formals
     HashMap<String, int> formal_map(-1);
+    int formal_state = 0;
     for (int i = 0; i < _formals.size(); i++)
 	if (!_formals[i])
 	    cerrh.lerror(_xml_landmark, "definition missing for formal %d", i);
 	else if (formal_map[_formals[i]] >= 0)
 	    cerrh.lerror(_xml_landmark, "redeclaration of formal '$%s'", _formals[i].cc());
-	else
-	    _router->add_formal(_formals[i]);
+	else {
+	    if ((!_formal_types[i] && formal_state == 1)
+		|| (_formal_types[i] == "__REST__" && i != _formals.size() - 1))
+		cerrh.lerror(_xml_landmark, "formals out of order\n(The correct order is '[positional], [keywords], [__REST__]'.)");
+	    if (_formal_types[i])
+		formal_state = 1;
+	    _router->add_formal(_formals[i], _formal_types[i]);
+	}
     if (_decl_nformals >= 0 && _formals.size() != _decl_nformals)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
