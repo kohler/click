@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 1.4
+Version 1.4   29.Jun.2004
 
 * Elements
 
@@ -47,6 +47,8 @@ Version 1.4
 ** Other improvements to DriverManager, RatedUnqueue, DelayShaper,
    CycleCountAccum, From/ToIPSummaryDump, ControlSocket.
 
+** Bug fixes to StrideSched and others.
+
 * Drivers
 
 ** The user-level driver will quit immediately if given a configuration
@@ -54,12 +56,14 @@ Version 1.4
 
 * Bug fixes
 
-** Bug fixes in compound element parsing.
+** Fix compound element parsing.
 
 ** Fix race conditions on the task list.
 
 ** Fix bugs with "atomic_uint32_t::operator{&=,|=}", and fix their
-   definitions on ARM; with StrideSched; with user-level hotswapping
+   definitions on ARM.
+
+** Fix user-level hotswapping.
 
 ** Fix TCP/UDP checksum calculation in the presence of IP source routing
    options.
