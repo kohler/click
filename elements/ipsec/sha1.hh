@@ -16,6 +16,7 @@
  */
 
 #include <click/element.hh>
+#include <click/atomic.hh>
 #include <click/glue.hh>
   
 class IPsecAuthSHA1 : public Element {
@@ -30,12 +31,18 @@ public:
   IPsecAuthSHA1 *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void notify_noutputs(int n);
 
   Packet *simple_action(Packet *);
+  void add_handlers();
+  
+  static String drop_handler(Element *e, void *thunk);
   
 private:
 
   int _op;
+  u_atomic32_t _drops;
+
   static const int COMPUTE_AUTH = 0;
   static const int VERIFY_AUTH = 1;
 };

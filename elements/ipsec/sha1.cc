@@ -33,12 +33,19 @@
 unsigned SHA1_IV[ 5 ] = { H0, H1, H2, H3, H4 };
 
 IPsecAuthSHA1::IPsecAuthSHA1()
-  : Element(1, 1)
 {
+  add_input();
+  add_output();
 }
 
 IPsecAuthSHA1::~IPsecAuthSHA1()
 {
+}
+
+void
+IPsecAuthSHA1::notify_noutputs(int n)
+{ 
+  set_noutputs(n);
 }
 
 IPsecAuthSHA1 *
@@ -59,6 +66,7 @@ IPsecAuthSHA1::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 IPsecAuthSHA1::initialize(ErrorHandler *)
 {
+  _drops = 0;
   return 0;
 }
 
@@ -87,13 +95,31 @@ IPsecAuthSHA1::simple_action(Packet *p)
     SHA1_final (&ctx);
     const unsigned char *digest = SHA1_digest(&ctx);
     if (memcmp(ah, digest, 12)) {
-      click_chatter("Invalid SHA1 authentication digest");
-      p->kill();
-      return(0);
+      if (_drops == 0) 
+	click_chatter("Invalid SHA1 authentication digest");
+      _drops++;
+      if (noutputs() > 1) 
+	output(1).push(p);
+      else 
+	p->kill(); 
+      return 0;
     }
     p->take(12);
     return p;
   }
+}
+
+static String
+IPsecAuthSHA1::drop_handler(Element *e, void *thunk)
+{
+  IPsecAuthSHA1 *a = (IPsecAuthSHA1 *)e;
+  return String(a->_drops) + "\n";
+}
+
+void
+IPsecAuthSHA1::add_handlers()
+{
+  add_read_handler("drops", drop_handler, 0);
 }
 
 EXPORT_ELEMENT(IPsecAuthSHA1)

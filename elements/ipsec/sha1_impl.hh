@@ -279,12 +279,12 @@ inline void SHA1_final( SHA1_ctx* ctx )
 
 inline const unsigned char* SHA1_get_digest( const SHA1_ctx* ctx )
 {
-  static unsigned char digest[ SHA1_DIGEST_BYTES ];
+  static unsigned char digest [NR_CPUS] [SHA1_DIGEST_BYTES];
     
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  memmove( digest, ctx->H, SHA1_DIGEST_BYTES );
-  make_big_endian32( digest, SHA1_DIGEST_WORDS );
-  return digest;
+  memmove( digest[current->processor], ctx->H, SHA1_DIGEST_BYTES );
+  make_big_endian32( digest[current->processor], SHA1_DIGEST_WORDS );
+  return digest[current->processor];
 #else
   return (const unsigned char*) ( ctx->H );
 #endif
