@@ -93,7 +93,7 @@ class Packet { public:
   // HEADER ANNOTATIONS
 #ifdef CLICK_LINUXMODULE	/* Linux kernel module */
   const unsigned char *mac_header() const	{ return skb()->mac.raw; }
-  const click_ether *ether_header() const	{ return (click_ether *)skb()->mac.ethernet; }
+  const click_ether *ether_header() const	{ return (click_ether *)skb()->mac.raw; }
   
   const unsigned char *network_header() const	{ return skb()->nh.raw; }
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
@@ -358,7 +358,7 @@ class WritablePacket : public Packet { public:
   unsigned char *end_data() const		{ return skb()->tail; }
   unsigned char *buffer_data() const		{ return skb()->head; }
   unsigned char *mac_header() const		{ return skb()->mac.raw; }
-  click_ether *ether_header() const {return (click_ether*)skb()->mac.ethernet;}
+  click_ether *ether_header() const	{ return (click_ether*)skb()->mac.raw;}
   unsigned char *network_header() const		{ return skb()->nh.raw; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }

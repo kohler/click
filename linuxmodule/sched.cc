@@ -37,20 +37,27 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#ifdef LINUX_2_2
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# define MIN_PRIO	MAX_RT_PRIO
+/* MAX_PRIO already defined */
+# define PRIO2NICE(p)	((p) - MIN_PRIO - 20)
+# define NICE2PRIO(n)	(MIN_PRIO + (n) + 20)
+# define DEF_PRIO	NICE2PRIO(0)
+# define TASK_PRIO(t)	((t)->static_prio)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+# define MIN_PRIO	(-20)
+# define MAX_PRIO	20
+# define PRIO2NICE(p)	(p)
+# define NICE2PRIO(n)	(n)
+# define DEF_PRIO	DEF_NICE
+# define TASK_PRIO(t)	((t)->nice)
+#else
 # define MIN_PRIO	1
 # define MAX_PRIO	(2 * DEF_PRIORITY)
 # define PRIO2NICE(p)	(DEF_PRIORITY - (p))
 # define NICE2PRIO(n)	(DEF_PRIORITY - (n))
 # define DEF_PRIO	DEF_PRIORITY
 # define TASK_PRIO(t)	((t)->priority)
-#else
-# define MIN_PRIO	(-20)
-# define MAX_PRIO	19
-# define PRIO2NICE(p)	(p)
-# define NICE2PRIO(n)	(n)
-# define DEF_PRIO	DEF_NICE
-# define TASK_PRIO(t)	((t)->nice)
 #endif
 
 #define SOFT_SPIN_LOCK(l)	do { MDEBUG("soft_lock %s", #l); soft_spin_lock((l)); } while (0)
@@ -82,10 +89,15 @@ click_sched(void *thunk)
   if (current->files)
     atomic_inc(&current->files->count);
 #endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+  daemonize("kclick");
+#else
   daemonize();
+  strcpy(current->comm, "kclick");
+#endif
   
   TASK_PRIO(current) = click_thread_priority;
-  strcpy(current->comm, "kclick");
 
   RouterThread *rt = (RouterThread *)thunk;
 #ifdef HAVE_ADAPTIVE_SCHEDULER
@@ -178,8 +190,8 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
   if (priority < MIN_PRIO) {
     priority = MIN_PRIO;
     errh->warning("priority pinned at %d", PRIO2NICE(priority));
-  } else if (priority > MAX_PRIO) {
-    priority = MAX_PRIO;
+  } else if (priority >= MAX_PRIO) {
+    priority = MAX_PRIO - 1;
     errh->warning("priority pinned at %d", PRIO2NICE(priority));
   }
 

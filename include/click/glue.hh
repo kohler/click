@@ -123,6 +123,13 @@ template <class T> void swap(T &x, T &y) {
 
 #if CLICK_LINUXMODULE
 
+// current processor
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#  define click_current_processor()	(current_thread_info()->cpu)
+# else
+#  define click_current_processor()	(current->processor)
+# endif
+
 // provide a definition for net_device for kernel compatibility
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 typedef struct device net_device;

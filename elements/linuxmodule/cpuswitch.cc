@@ -42,7 +42,7 @@ CPUSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 CPUSwitch::push(int, Packet *p)
 {
-  int n = current->processor % noutputs();
+  int n = click_current_processor() % noutputs();
   output(n).push(p);
 }
 

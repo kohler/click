@@ -86,7 +86,7 @@ Print::simple_action(Packet *p)
   sa << _label;
 #ifdef CLICK_LINUXMODULE
   if (_cpu)
-    sa << '(' << current->processor << ')';
+    sa << '(' << click_current_processor() << ')';
 #endif
   if (_label)
     sa << ": ";

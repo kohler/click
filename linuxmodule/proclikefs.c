@@ -29,8 +29,21 @@
 #include "proclikefs.h"
 #include <linux/string.h>
 #include <linux/slab.h>
-#include <linux/locks.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# include <linux/locks.h>
+#endif
 #include <linux/file.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# define INODE_INFO(inode)	((struct proclikefs_inode_info *)((inode)->u.generic_ip))
+#else
+# define INODE_INFO(inode)	((struct proclikefs_inode_info *)(&(inode)->u))
+#endif
+
+#ifndef MOD_DEC_USE_COUNT
+# define MOD_DEC_USE_COUNT	module_put(THIS_MODULE)
+#endif
+
 
 #if 0
 # define DEBUG(args...) do { printk("<1>proclikefs: " args); printk("\n"); } while (0)
@@ -79,7 +92,11 @@ proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 
 struct proclikefs_file_system *
 proclikefs_register_filesystem(const char *name, int fs_flags,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	struct super_block *(*get_sb) (struct file_system_type *, int, const char *, void *),
+#else
 	struct super_block *(*read_super) (struct super_block *, void *, int),
+#endif
 	void (*reread_super) (struct super_block *))
 {
     struct proclikefs_file_system *newfs = 0;
@@ -88,6 +105,15 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     
     if (!name)
 	return 0;
+    
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    if (!try_module_get(THIS_MODULE)) {
+	printk("<1>proclikefs: error using module\n");
+	return 0;
+    }
+#else 
+    MOD_INC_USE_COUNT;
+#endif
 
     spin_lock(&fslist_lock);
     
@@ -96,6 +122,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	if (strcmp(name, newfs->name) == 0) {
 	    if (newfs->live > 0) { /* active filesystem with that name */
 		spin_unlock(&fslist_lock);
+		MOD_DEC_USE_COUNT;
 		return 0;
 	    } else
 		break;
@@ -106,6 +133,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	newfs = kmalloc(sizeof(struct proclikefs_file_system) + strlen(name), GFP_KERNEL);
 	if (!newfs) {		/* out of memory */
 	    spin_unlock(&fslist_lock);
+	    MOD_DEC_USE_COUNT;
 	    return 0;
 	}
 	INIT_LIST_HEAD(&newfs->i_list);
@@ -125,14 +153,19 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
     }
 
     newfs->fs.fs_flags = fs_flags;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    newfs->fs.get_sb = get_sb;
+    newfs->fs.kill_sb = kill_anon_super;
+#else
     newfs->fs.read_super = read_super;
+#endif
     newfs->live = 1;
     DEBUG("pfs[%p]: created filesystem %s", newfs, name);
 
     if (newfs_is_new) {
 	int err = register_filesystem(&newfs->fs);
 	if (err != 0)
-	    printk("<1>proclikefs error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
+	    printk("<1>proclikefs: error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
     } else if (reread_super) {
 	/* transfer superblocks */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
@@ -143,7 +176,7 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 	    if (sb->s_type == &newfs->fs)
 		(*reread_super)(sb);
 	    else
-		printk("<1>proclikefs confusion\n");
+		printk("<1>proclikefs: confusion\n");
 	}
 	spin_unlock(&sb_lock);
 #else
@@ -154,8 +187,6 @@ proclikefs_register_filesystem(const char *name, int fs_flags,
 		(*reread_super)(sb);
 #endif
     }
-    
-    MOD_INC_USE_COUNT;
 
     spin_unlock(&fslist_lock);
     return newfs;
@@ -290,7 +321,9 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 #endif
 
     pfs->live = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     pfs->fs.read_super = proclikefs_null_read_super;
+#endif
     MOD_DEC_USE_COUNT;
 
     spin_unlock(&pfs->lock);
@@ -303,7 +336,12 @@ proclikefs_read_super(struct super_block *sb)
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_inc(&pfs->nsuper);
     DEBUG("pfs[%p]: read_super for %s", pfs, pfs->fs.name);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    if (!try_module_get(THIS_MODULE))
+	printk("<1>proclikefs: error using module\n");
+#else 
     MOD_INC_USE_COUNT;
+#endif
 }
 
 void
@@ -326,7 +364,7 @@ void
 proclikefs_read_inode(struct inode *inode)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (inode->i_sb->s_type);
-    struct proclikefs_inode_info *inode_info = (struct proclikefs_inode_info *) (&inode->u);
+    struct proclikefs_inode_info *inode_info = INODE_INFO(inode);
 
     DEBUG("pfs[%p]: add inode %p", pfs, inode);
     spin_lock(&pfs->lock);
@@ -338,7 +376,7 @@ void
 proclikefs_delete_inode(struct inode *inode)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (inode->i_sb->s_type);
-    struct proclikefs_inode_info *inode_info = (struct proclikefs_inode_info *) (&inode->u);
+    struct proclikefs_inode_info *inode_info = INODE_INFO(inode);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     inode->i_state = I_CLEAR;
@@ -376,6 +414,12 @@ cleanup_module(void)
     spin_unlock(&fslist_lock);
 }
 
+#ifdef MODULE_AUTHOR
+MODULE_AUTHOR("Eddie Kohler <kohler@cs.ucla.edu>");
+#endif
+#ifdef MODULE_DESCRIPTION
+MODULE_DESCRIPTION("Proclikefs: allow module unload of mounted filesystems");
+#endif
 #ifdef MODULE_LICENSE
 MODULE_LICENSE("GPL");
 #endif

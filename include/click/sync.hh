@@ -10,7 +10,7 @@
 #  include <linux/tasks.h>
 # endif
 # include <linux/sched.h>
-# define my_cpu current->processor
+# define my_cpu click_current_processor()
 #endif
 CLICK_DECLS
 

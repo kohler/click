@@ -101,7 +101,7 @@ LookupIPRouteMP::push(int, Packet *p)
   IPAddress gw;
   int ifi = -1;
 #ifdef CLICK_LINUXMODULE
-  int bucket = current->processor;
+  int bucket = click_current_processor();
   struct cache_entry *e = &_cache[bucket];
 #else
   int bucket = 0;

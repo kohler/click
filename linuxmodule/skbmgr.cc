@@ -70,7 +70,7 @@ class RecycledSkbPool { public:
  private:
 
   RecycledSkbBucket _buckets[NBUCKETS];
-  atomic_t _lock;
+  volatile unsigned long _lock;
 #if __MTCLICK__
   int _last_producer;
   atomic_uint32_t _consumers;
@@ -148,8 +148,8 @@ RecycledSkbBucket::deq()
 inline void
 RecycledSkbPool::lock()
 {
-  while (test_and_set_bit(0, (void *)&_lock)) {
-    while (atomic_read(&_lock))
+  while (test_and_set_bit(0, &_lock)) {
+    while (_lock)
       /* nothing */;
   }
 }
@@ -157,14 +157,14 @@ RecycledSkbPool::lock()
 inline void
 RecycledSkbPool::unlock()
 {
-  clear_bit(0, (void *)&_lock);
+  clear_bit(0, &_lock);
 }
 
 
 void
 RecycledSkbPool::initialize()
 {
-  atomic_set(&_lock, 0);
+  _lock = 0;
   for (int i = 0; i < NBUCKETS; i++)
     _buckets[i].initialize();
 #if __MTCLICK__
@@ -419,7 +419,7 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
     headroom = SKBMGR_DEF_HEADSZ;
   
 #if __MTCLICK__
-  int cpu = current->processor;
+  int cpu = click_current_processor();
   int producer = cpu;
   size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
   int bucket = RecycledSkbPool::size_to_higher_bucket(headroom + size);
@@ -442,7 +442,7 @@ void
 skbmgr_recycle_skbs(struct sk_buff *skbs)
 {
 #if __MTCLICK__
-  int cpu = current->processor;
+  int cpu = click_current_processor();
   pool[cpu].recycle(skbs);
 #else
   pool.recycle(skbs);

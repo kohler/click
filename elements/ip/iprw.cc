@@ -30,7 +30,9 @@
 #ifdef CLICK_LINUXMODULE
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <asm/softirq.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# include <asm/softirq.h>
+#endif
 #include <net/sock.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
