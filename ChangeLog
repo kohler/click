@@ -1,3 +1,17 @@
+2001-12-14 Friday 20:30  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh (1.17), elements/local/chuckcheck.cc
+	(1.12), lib/straccum.cc (1.22), lib/string.cc (1.33),
+	doc/click.texi (1.33): add String::garbage_string method; remove
+	String::claim_string method
+
+2001-12-14 Friday 20:02  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: fromlinux.cc (1.36), fromlinux.hh (1.29),
+	tolinux.cc (1.30), tolinux.hh (1.19), tolinuxsniffers.cc (1.25),
+	tolinuxsniffers.hh (1.14): remove old *linux sources (moving
+	element names to *Host)
+
 2001-12-14 Friday 11:47  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ip/radixiplookup.hh (1.2): fix braindead bug:
@@ -2238,10 +2252,11 @@
 
 2001-08-20 Monday 17:29  Eddie Kohler <kohler@aciri.org>
 
-	* elements/: linuxmodule/tolinux.hh (1.18),
-	standard/setpackettype.cc (1.1), standard/setpackettype.hh (1.1):
-	add SetPacketType element; update ToLinux documentation to mention
-	the requirement for correct device and packet type annotations
+	* elements/: linuxmodule/tohost.hh (1.18), linuxmodule/tolinux.hh
+	(1.18), standard/setpackettype.cc (1.1), standard/setpackettype.hh
+	(1.1): add SetPacketType element; update ToLinux documentation to
+	mention the requirement for correct device and packet type
+	annotations
 
 2001-08-20 Monday 17:29  Eddie Kohler <kohler@aciri.org>
 
@@ -2312,8 +2327,9 @@
 
 2001-08-18 Saturday 04:17  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: tolinux.cc (1.29), tolinuxsniffers.cc
-	(1.24): set _dev correctly to null on entry
+	* elements/linuxmodule/: tohost.cc (1.29), tohostsniffers.cc
+	(1.24), tolinux.cc (1.29), tolinuxsniffers.cc (1.24): set _dev
+	correctly to null on entry
 
 2001-08-17 Friday 23:48  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -2361,12 +2377,12 @@
 2001-08-17 Friday 20:58  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: anydevice.hh (1.34), cyclecount.cc (1.12),
-	cyclecount.hh (1.9), fromlinux.cc (1.35), perfcount.cc (1.16),
-	perfcount.hh (1.11), perfcountaccum.cc (1.8), perfcountuser.cc
-	(1.12), perfinfo.cc (1.22), perfinfo.hh (1.12), polldevice.cc
-	(1.121), setperfcount.cc (1.8), todevice.cc (1.117): use new "i586"
-	requirement, so elements are not compiled when building for ARM;
-	also #if __i386__ in a couple places
+	cyclecount.hh (1.9), fromhost.cc (1.35), fromlinux.cc (1.35),
+	perfcount.cc (1.16), perfcount.hh (1.11), perfcountaccum.cc (1.8),
+	perfcountuser.cc (1.12), perfinfo.cc (1.22), perfinfo.hh (1.12),
+	polldevice.cc (1.121), setperfcount.cc (1.8), todevice.cc (1.117):
+	use new "i586" requirement, so elements are not compiled when
+	building for ARM; also #if __i386__ in a couple places
 
 2001-08-17 Friday 20:55  Eddie Kohler <kohler@aciri.org>
 
@@ -2416,13 +2432,15 @@
 2001-08-17 Friday 13:42  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: anydevice.cc (1.22), anydevice.hh (1.33),
-	fromdevice.cc (1.65), fromdevice.hh (1.27), fromlinux.cc (1.34),
-	fromlinux.hh (1.28), polldevice.cc (1.120), polldevice.hh (1.56),
-	todevice.cc (1.116), todevice.hh (1.53), tolinux.cc (1.28),
-	tolinuxsniffers.cc (1.23), tolinuxsniffers.hh (1.13), tulipstats.cc
-	(1.12): fix dev_hold/dev_put bugs in Linux 2.4 (would show up
-	particularly on installing bad configurations, or devices named by
-	Ethernet address). Also, make FromLinux work on 2.4.
+	fromdevice.cc (1.65), fromdevice.hh (1.27), fromhost.cc (1.34),
+	fromhost.hh (1.28), fromlinux.cc (1.34), fromlinux.hh (1.28),
+	polldevice.cc (1.120), polldevice.hh (1.56), todevice.cc (1.116),
+	todevice.hh (1.53), tohost.cc (1.28), tohostsniffers.cc (1.23),
+	tohostsniffers.hh (1.13), tolinux.cc (1.28), tolinuxsniffers.cc
+	(1.23), tolinuxsniffers.hh (1.13), tulipstats.cc (1.12): fix
+	dev_hold/dev_put bugs in Linux 2.4 (would show up particularly on
+	installing bad configurations, or devices named by Ethernet
+	address). Also, make FromLinux work on 2.4.
 
 2001-08-17 Friday 13:36  Eddie Kohler <kohler@aciri.org>
 
@@ -2451,9 +2469,9 @@
 
 2001-08-16 Thursday 03:58  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: fromlinux.cc (1.33), fromlinux.hh (1.27):
-	FromLinux: add ETHER keyword argument for Robert Gardner
-	<robert_gardner@agilent.com>
+	* elements/linuxmodule/: fromhost.cc (1.33), fromhost.hh (1.27),
+	fromlinux.cc (1.33), fromlinux.hh (1.27): FromLinux: add ETHER
+	keyword argument for Robert Gardner <robert_gardner@agilent.com>
 
 2001-08-16 Thursday 03:58  Eddie Kohler <kohler@aciri.org>
 
@@ -3782,10 +3800,10 @@
 
 2001-06-26 Tuesday 13:49  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
-	* elements/linuxmodule/: fromdevice.cc (1.61), fromlinux.cc (1.32),
-	polldevice.cc (1.112), todevice.cc (1.111), tolinux.cc (1.27): Only
-	use dev_put/dev_hold on 2.4 kernels, and dev_put/dev_hold on
-	interface up/down events.
+	* elements/linuxmodule/: fromdevice.cc (1.61), fromhost.cc (1.32),
+	fromlinux.cc (1.32), polldevice.cc (1.112), todevice.cc (1.111),
+	tohost.cc (1.27), tolinux.cc (1.27): Only use dev_put/dev_hold on
+	2.4 kernels, and dev_put/dev_hold on interface up/down events.
 
 2001-06-26 Tuesday 13:36  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
@@ -3800,7 +3818,8 @@
 
 2001-06-26 Tuesday 13:26  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
-	* elements/linuxmodule/fromlinux.cc (1.31), include/click/sync.hh
+	* elements/linuxmodule/fromhost.cc (1.31),
+	elements/linuxmodule/fromlinux.cc (1.31), include/click/sync.hh
 	(1.7): Port to 2.4 kernels.
 
 2001-06-26 Tuesday 13:24  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
@@ -3816,9 +3835,9 @@
 
 2001-06-26 Tuesday 13:22  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
-	* elements/linuxmodule/: tolinux.cc (1.26), tolinux.hh (1.17):
-	Properly reduce the refcount on the interface when we're done using
-	it.
+	* elements/linuxmodule/: tohost.cc (1.26), tolinux.cc (1.26),
+	tohost.hh (1.17), tolinux.hh (1.17): Properly reduce the refcount
+	on the interface when we're done using it.
 
 2001-06-26 Tuesday 13:13  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
@@ -3849,11 +3868,12 @@
 2001-06-21 Thursday 15:56  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: anydevice.cc (1.19), anydevice.hh (1.30),
-	fromdevice.cc (1.60), fromlinux.cc (1.30), polldevice.cc (1.109),
-	polldevice.hh (1.54), todevice.cc (1.109), todevice.hh (1.51),
-	tulipstats.cc (1.10): linuxmodule device elements: watch NETDEV_UP
-	and NETDEV_DOWN notifications so we are robust against drivers
-	being brought down while the configuration is active.
+	fromdevice.cc (1.60), fromhost.cc (1.30), fromlinux.cc (1.30),
+	polldevice.cc (1.109), polldevice.hh (1.54), todevice.cc (1.109),
+	todevice.hh (1.51), tulipstats.cc (1.10): linuxmodule device
+	elements: watch NETDEV_UP and NETDEV_DOWN notifications so we are
+	robust against drivers being brought down while the configuration
+	is active.
 
 2001-06-20 Wednesday 13:53  Eddie Kohler <kohler@aciri.org>
 
@@ -4170,11 +4190,12 @@
 
 2001-05-29 Tuesday 15:16  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: tolinux.cc (1.25), tolinuxsniffers.cc
-	(1.22): ToLinux, ToLinuxSniffers: inline relevant portions of
-	ether_type_trans. Do not call e_t_t, because it does things that we
-	don't want: reset skb->pkt_type, for example. Reported as a problem
-	by Atanu Ghosh and Brecht Vermeulen.
+	* elements/linuxmodule/: tohost.cc (1.25), tohostsniffers.cc
+	(1.22), tolinux.cc (1.25), tolinuxsniffers.cc (1.22): ToLinux,
+	ToLinuxSniffers: inline relevant portions of ether_type_trans. Do
+	not call e_t_t, because it does things that we don't want: reset
+	skb->pkt_type, for example. Reported as a problem by Atanu Ghosh
+	and Brecht Vermeulen.
 
 2001-05-29 Tuesday 15:13  Eddie Kohler <kohler@aciri.org>
 
@@ -4287,6 +4308,7 @@
 	elements/linuxmodule/fastudpsrc.cc (1.9),
 	elements/linuxmodule/fastudpsrcip6.cc (1.8),
 	elements/linuxmodule/fromdevice.cc (1.58),
+	elements/linuxmodule/fromhost.cc (1.29),
 	elements/linuxmodule/fromlinux.cc (1.29),
 	elements/linuxmodule/perfcount.cc (1.15),
 	elements/linuxmodule/perfcountaccum.cc (1.7),
@@ -4300,6 +4322,8 @@
 	elements/linuxmodule/setperfcount.cc (1.7),
 	elements/linuxmodule/storecycles.cc (1.14),
 	elements/linuxmodule/todevice.cc (1.107),
+	elements/linuxmodule/tohost.cc (1.24),
+	elements/linuxmodule/tohostsniffers.cc (1.21),
 	elements/linuxmodule/tolinux.cc (1.24),
 	elements/linuxmodule/tolinuxsniffers.cc (1.21),
 	elements/linuxmodule/tulipstats.cc (1.9),
@@ -4436,8 +4460,8 @@
 2001-05-24 Thursday 19:57  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: fromdevice.cc (1.57), todevice.cc (1.106),
-	tolinux.cc (1.23), tolinuxsniffers.cc (1.20): update to support
-	Linux 2.4
+	tohost.cc (1.23), tohostsniffers.cc (1.20), tolinux.cc (1.23),
+	tolinuxsniffers.cc (1.20): update to support Linux 2.4
 
 2001-05-24 Thursday 19:57  Eddie Kohler <kohler@aciri.org>
 
@@ -4504,17 +4528,18 @@
 	(1.6), linuxmodule/fasttcpflows.cc (1.2),
 	linuxmodule/fastudpflows.cc (1.3), linuxmodule/fastudpsrc.cc (1.8),
 	linuxmodule/fastudpsrcip6.cc (1.7), linuxmodule/fromdevice.cc
-	(1.56), linuxmodule/fromlinux.cc (1.28), linuxmodule/perfcount.cc
-	(1.14), linuxmodule/perfcountaccum.cc (1.6),
-	linuxmodule/perfcountinfo.cc (1.4), linuxmodule/perfcountuser.cc
-	(1.10), linuxmodule/perfinfo.cc (1.20), linuxmodule/polldevice.cc
-	(1.107), linuxmodule/rtcycles.cc (1.7),
-	linuxmodule/schedulelinux.cc (1.15), linuxmodule/setcyclecount.cc
-	(1.6), linuxmodule/setperfcount.cc (1.6),
-	linuxmodule/sortedsched.cc (1.2), linuxmodule/staticthreadsched.cc
-	(1.2), linuxmodule/storecycles.cc (1.13),
-	linuxmodule/threadmonitor.cc (1.2), linuxmodule/todevice.cc
-	(1.105), linuxmodule/tolinux.cc (1.22),
+	(1.56), linuxmodule/fromhost.cc (1.28), linuxmodule/fromlinux.cc
+	(1.28), linuxmodule/perfcount.cc (1.14),
+	linuxmodule/perfcountaccum.cc (1.6), linuxmodule/perfcountinfo.cc
+	(1.4), linuxmodule/perfcountuser.cc (1.10), linuxmodule/perfinfo.cc
+	(1.20), linuxmodule/polldevice.cc (1.107), linuxmodule/rtcycles.cc
+	(1.7), linuxmodule/schedulelinux.cc (1.15),
+	linuxmodule/setcyclecount.cc (1.6), linuxmodule/setperfcount.cc
+	(1.6), linuxmodule/sortedsched.cc (1.2),
+	linuxmodule/staticthreadsched.cc (1.2), linuxmodule/storecycles.cc
+	(1.13), linuxmodule/threadmonitor.cc (1.2), linuxmodule/todevice.cc
+	(1.105), linuxmodule/tohost.cc (1.22), linuxmodule/tolinux.cc
+	(1.22), linuxmodule/tohostsniffers.cc (1.19),
 	linuxmodule/tolinuxsniffers.cc (1.19), linuxmodule/tulipstats.cc
 	(1.8), local/chuckcheck.cc (1.9), local/duppath.cc (1.3),
 	local/forceicmp.cc (1.3), local/forceip.cc (1.8), local/forcetcp.cc
@@ -4708,6 +4733,7 @@
 2001-05-16 Wednesday 13:31  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.81), doc/Makefile.in (1.30),
+	elements/linuxmodule/fromhost.cc (1.27),
 	elements/linuxmodule/fromlinux.cc (1.27), linuxmodule/Makefile.in
 	(1.54), userlevel/Makefile.in (1.52): use "-r" options to
 	click-buildtool and click-mkelemmap to add provisions, such as
@@ -4735,10 +4761,14 @@
 
 	* elements/ip/iprw.cc (1.31), elements/linuxmodule/anydevice.hh
 	(1.28), elements/linuxmodule/fromdevice.cc (1.54),
+	elements/linuxmodule/fromhost.cc (1.26),
+	elements/linuxmodule/fromhost.hh (1.26),
 	elements/linuxmodule/fromlinux.cc (1.26),
 	elements/linuxmodule/fromlinux.hh (1.26),
 	elements/linuxmodule/polldevice.cc (1.104),
 	elements/linuxmodule/todevice.cc (1.103),
+	elements/linuxmodule/tohost.cc (1.21),
+	elements/linuxmodule/tohostsniffers.cc (1.18),
 	elements/linuxmodule/tolinux.cc (1.21),
 	elements/linuxmodule/tolinuxsniffers.cc (1.18),
 	elements/linuxmodule/tulipstats.cc (1.7), include/click/click_ip.h
@@ -5157,9 +5187,10 @@
 2001-04-24 Tuesday 21:43  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: fromdevice.cc (1.53), polldevice.cc
-	(1.102), todevice.cc (1.102), tolinux.cc (1.20), tolinuxsniffers.cc
-	(1.17), tulipstats.cc (1.6): better error messages: change "no
-	device" to "unknown device"
+	(1.102), todevice.cc (1.102), tohost.cc (1.20), tohostsniffers.cc
+	(1.17), tolinux.cc (1.20), tolinuxsniffers.cc (1.17), tulipstats.cc
+	(1.6): better error messages: change "no device" to "unknown
+	device"
 
 2001-04-24 Tuesday 21:41  Eddie Kohler <kohler@aciri.org>
 
@@ -5632,9 +5663,9 @@
 
 2001-04-05 Thursday 17:18  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/: tolinux.cc (1.19), tolinuxsniffers.cc
-	(1.16): add header file, needed for click tools to compile file
-	correct
+	* elements/linuxmodule/: tohost.cc (1.19), tolinux.cc (1.19),
+	tohostsniffers.cc (1.16), tolinuxsniffers.cc (1.16): add header
+	file, needed for click tools to compile file correct
 
 2001-04-05 Thursday 09:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -5657,8 +5688,9 @@
 
 2001-04-03 Tuesday 14:12  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: tolinux.cc (1.18), tolinuxsniffers.cc
-	(1.15): be more careful about locking (Mazu discovered a crash)
+	* elements/linuxmodule/: tohost.cc (1.18), tohostsniffers.cc
+	(1.15), tolinux.cc (1.18), tolinuxsniffers.cc (1.15): be more
+	careful about locking (Mazu discovered a crash)
 
 2001-04-03 Tuesday 14:12  Eddie Kohler <kohler@aciri.org>
 
@@ -6015,8 +6047,11 @@
 	elements/linuxmodule/anydevice.hh (1.25),
 	elements/linuxmodule/fromdevice.cc (1.50),
 	elements/linuxmodule/fromdevice.hh (1.25),
+	elements/linuxmodule/fromhost.cc (1.25),
 	elements/linuxmodule/fromlinux.cc (1.25),
+	elements/linuxmodule/tohost.hh (1.16),
 	elements/linuxmodule/tolinux.hh (1.16),
+	elements/linuxmodule/tohostsniffers.hh (1.12),
 	elements/linuxmodule/tolinuxsniffers.hh (1.12),
 	elements/linuxmodule/tulipstats.cc (1.5),
 	elements/linuxmodule/tulipstats.hh (1.4), elements/local/webgen.cc
@@ -6613,7 +6648,8 @@
 
 2001-03-11 Sunday 20:49  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: fromlinux.hh (1.25), todevice.hh (1.50),
+	* elements/linuxmodule/: fromhost.hh (1.25), fromlinux.hh (1.25),
+	todevice.hh (1.50), tohost.hh (1.15), tohostsniffers.hh (1.11),
 	tolinux.hh (1.15), tolinuxsniffers.hh (1.11): nitlets: constant
 	names
 
@@ -6853,65 +6889,67 @@
 	linuxmodule/cyclecount.cc (1.9), linuxmodule/cyclecountaccum.cc
 	(1.5), linuxmodule/fastudpsrc.cc (1.7),
 	linuxmodule/fastudpsrcip6.cc (1.6), linuxmodule/fromdevice.cc
-	(1.47), linuxmodule/fromlinux.cc (1.24), linuxmodule/perfcount.cc
-	(1.13), linuxmodule/perfcountaccum.cc (1.5),
-	linuxmodule/perfcountinfo.cc (1.3), linuxmodule/perfcountuser.cc
-	(1.8), linuxmodule/perfinfo.cc (1.19), linuxmodule/polldevice.cc
-	(1.95), linuxmodule/rtcycles.cc (1.6), linuxmodule/schedulelinux.cc
-	(1.13), linuxmodule/setcyclecount.cc (1.5),
-	linuxmodule/setperfcount.cc (1.5), linuxmodule/storecycles.cc
-	(1.12), linuxmodule/todevice.cc (1.97), linuxmodule/tolinux.cc
-	(1.17), linuxmodule/tolinuxsniffers.cc (1.14),
-	linuxmodule/tulipstats.cc (1.4), local/chuckcheck.cc (1.8),
-	local/forceicmp.cc (1.2), local/forceip.cc (1.7), local/forcetcp.cc
-	(1.8), local/forceudp.cc (1.2), local/toytcp.cc (1.15),
-	radio/b8b10.cc (1.10), radio/bim.cc (1.21), radio/checkpattern.cc
-	(1.9), radio/scramble.cc (1.7), radio/sendpattern.cc (1.10),
-	standard/addressinfo.cc (1.10), standard/align.cc (1.12),
-	standard/alignmentinfo.cc (1.12), standard/averagecounter.cc (1.7),
-	standard/bandwidthmeter.cc (1.6), standard/bandwidthshaper.cc
-	(1.8), standard/block.cc (1.15), standard/burster.cc (1.16),
-	standard/bwratedsplitter.cc (1.4), standard/bwratedunqueue.cc
-	(1.8), standard/checkcrc32.cc (1.9), standard/checklength.cc (1.9),
-	standard/checkpaint.cc (1.14), standard/classifier.cc (1.30),
-	standard/compblock.cc (1.14), standard/counter.cc (1.18),
-	standard/devirtualizeinfo.cc (1.6), standard/discard.cc (1.17),
-	standard/discardnofree.cc (1.14), standard/dropbroadcasts.cc
-	(1.11), standard/errorelement.cc (1.3), standard/frontdropqueue.cc
-	(1.7), standard/hashdemux.cc (1.14), standard/hashswitch.cc (1.6),
-	standard/idle.cc (1.15), standard/infinitesource.cc (1.24),
-	standard/meter.cc (1.17), standard/msqueue.cc (1.4),
-	standard/nullelement.cc (1.7), standard/nulls.cc (1.6),
-	standard/paint.cc (1.14), standard/painttee.cc (1.7),
-	standard/peekhandlers.cc (1.12), standard/pokehandlers.cc (1.12),
-	standard/print.cc (1.14), standard/priosched.cc (1.8),
-	standard/probsplitter.cc (1.6), aqm/red.cc (1.22),
-	standard/pullswitch.cc (1.10), standard/pulltopush.cc (1.22),
-	standard/queue.cc (1.32), standard/quitwatcher.cc (1.9),
-	standard/randomerror.cc (1.15), standard/randomlossage.cc (1.17),
-	standard/randomsource.cc (1.10), standard/ratedsource.cc (1.32),
-	standard/ratedsplitter.cc (1.10), standard/ratedunqueue.cc (1.9),
-	standard/red.cc (1.22), standard/rrsched.cc (1.7),
-	standard/rrswitch.cc (1.8), standard/scheduleinfo.cc (1.21),
-	standard/setcrc32.cc (1.9), standard/shaper.cc (1.24),
-	standard/spinlockacquire.cc (1.3), standard/spinlockinfo.cc (1.3),
-	standard/spinlockrelease.cc (1.3), standard/staticpullswitch.cc
-	(1.6), standard/staticswitch.cc (1.6), standard/stridesched.cc
-	(1.12), standard/strideswitch.cc (1.7), standard/strip.cc (1.12),
-	standard/suppressor.cc (1.14), standard/switch.cc (1.10),
-	standard/tee.cc (1.15), standard/timedsink.cc (1.17),
-	standard/timedsource.cc (1.19), standard/unqueue.cc (1.10),
-	tcpudp/checktcpheader.cc (1.3), tcpudp/checkudpheader.cc (1.3),
-	tcpudp/dynudpipencap.cc (1.3), tcpudp/iprewriter.cc (1.6),
-	tcpudp/settcpchecksum.cc (1.3), tcpudp/snooptcp.cc (1.2),
-	tcpudp/tcpipsend.cc (1.2), tcpudp/tcprewriter.cc (1.6),
-	tcpudp/udpipencap.cc (1.5), userlevel/controlsocket.cc (1.18),
-	userlevel/frombpf.cc (1.21), userlevel/fromdevice.cc (1.18),
-	userlevel/fromdump.cc (1.27), userlevel/kerneltap.cc (1.14),
-	userlevel/tobpf.cc (1.24), userlevel/todevice.cc (1.11),
-	userlevel/todump.cc (1.24): removed #if HAVE_CONFIG_H/#include
-	<config.h>/#endif from all elements. Instead, the first #include of
-	each element MUST be #include <click/config.h>.
+	(1.47), linuxmodule/fromhost.cc (1.24), linuxmodule/fromlinux.cc
+	(1.24), linuxmodule/perfcount.cc (1.13),
+	linuxmodule/perfcountaccum.cc (1.5), linuxmodule/perfcountinfo.cc
+	(1.3), linuxmodule/perfcountuser.cc (1.8), linuxmodule/perfinfo.cc
+	(1.19), linuxmodule/polldevice.cc (1.95), linuxmodule/rtcycles.cc
+	(1.6), linuxmodule/schedulelinux.cc (1.13),
+	linuxmodule/setcyclecount.cc (1.5), linuxmodule/setperfcount.cc
+	(1.5), linuxmodule/storecycles.cc (1.12), linuxmodule/todevice.cc
+	(1.97), linuxmodule/tohost.cc (1.17), linuxmodule/tohostsniffers.cc
+	(1.14), linuxmodule/tolinux.cc (1.17),
+	linuxmodule/tolinuxsniffers.cc (1.14), linuxmodule/tulipstats.cc
+	(1.4), local/chuckcheck.cc (1.8), local/forceicmp.cc (1.2),
+	local/forceip.cc (1.7), local/forcetcp.cc (1.8), local/forceudp.cc
+	(1.2), local/toytcp.cc (1.15), radio/b8b10.cc (1.10), radio/bim.cc
+	(1.21), radio/checkpattern.cc (1.9), radio/scramble.cc (1.7),
+	radio/sendpattern.cc (1.10), standard/addressinfo.cc (1.10),
+	standard/align.cc (1.12), standard/alignmentinfo.cc (1.12),
+	standard/averagecounter.cc (1.7), standard/bandwidthmeter.cc (1.6),
+	standard/bandwidthshaper.cc (1.8), standard/block.cc (1.15),
+	standard/burster.cc (1.16), standard/bwratedsplitter.cc (1.4),
+	standard/bwratedunqueue.cc (1.8), standard/checkcrc32.cc (1.9),
+	standard/checklength.cc (1.9), standard/checkpaint.cc (1.14),
+	standard/classifier.cc (1.30), standard/compblock.cc (1.14),
+	standard/counter.cc (1.18), standard/devirtualizeinfo.cc (1.6),
+	standard/discard.cc (1.17), standard/discardnofree.cc (1.14),
+	standard/dropbroadcasts.cc (1.11), standard/errorelement.cc (1.3),
+	standard/frontdropqueue.cc (1.7), standard/hashdemux.cc (1.14),
+	standard/hashswitch.cc (1.6), standard/idle.cc (1.15),
+	standard/infinitesource.cc (1.24), standard/meter.cc (1.17),
+	standard/msqueue.cc (1.4), standard/nullelement.cc (1.7),
+	standard/nulls.cc (1.6), standard/paint.cc (1.14),
+	standard/painttee.cc (1.7), standard/peekhandlers.cc (1.12),
+	standard/pokehandlers.cc (1.12), standard/print.cc (1.14),
+	standard/priosched.cc (1.8), standard/probsplitter.cc (1.6),
+	aqm/red.cc (1.22), standard/pullswitch.cc (1.10),
+	standard/pulltopush.cc (1.22), standard/queue.cc (1.32),
+	standard/quitwatcher.cc (1.9), standard/randomerror.cc (1.15),
+	standard/randomlossage.cc (1.17), standard/randomsource.cc (1.10),
+	standard/ratedsource.cc (1.32), standard/ratedsplitter.cc (1.10),
+	standard/ratedunqueue.cc (1.9), standard/red.cc (1.22),
+	standard/rrsched.cc (1.7), standard/rrswitch.cc (1.8),
+	standard/scheduleinfo.cc (1.21), standard/setcrc32.cc (1.9),
+	standard/shaper.cc (1.24), standard/spinlockacquire.cc (1.3),
+	standard/spinlockinfo.cc (1.3), standard/spinlockrelease.cc (1.3),
+	standard/staticpullswitch.cc (1.6), standard/staticswitch.cc (1.6),
+	standard/stridesched.cc (1.12), standard/strideswitch.cc (1.7),
+	standard/strip.cc (1.12), standard/suppressor.cc (1.14),
+	standard/switch.cc (1.10), standard/tee.cc (1.15),
+	standard/timedsink.cc (1.17), standard/timedsource.cc (1.19),
+	standard/unqueue.cc (1.10), tcpudp/checktcpheader.cc (1.3),
+	tcpudp/checkudpheader.cc (1.3), tcpudp/dynudpipencap.cc (1.3),
+	tcpudp/iprewriter.cc (1.6), tcpudp/settcpchecksum.cc (1.3),
+	tcpudp/snooptcp.cc (1.2), tcpudp/tcpipsend.cc (1.2),
+	tcpudp/tcprewriter.cc (1.6), tcpudp/udpipencap.cc (1.5),
+	userlevel/controlsocket.cc (1.18), userlevel/frombpf.cc (1.21),
+	userlevel/fromdevice.cc (1.18), userlevel/fromdump.cc (1.27),
+	userlevel/kerneltap.cc (1.14), userlevel/tobpf.cc (1.24),
+	userlevel/todevice.cc (1.11), userlevel/todump.cc (1.24): removed
+	#if HAVE_CONFIG_H/#include <config.h>/#endif from all elements.
+	Instead, the first #include of each element MUST be #include
+	<click/config.h>.
 
 2001-03-04 Sunday 16:15  Eddie Kohler <kohler@aciri.org>
 
@@ -7393,9 +7431,9 @@
 	* elements/linuxmodule/: anydevice.cc (1.11), anydevice.hh (1.21),
 	fromdevice.cc (1.44), fromdevice.hh (1.23), polldevice.cc (1.90),
 	polldevice.hh (1.52), todevice.cc (1.93), todevice.hh (1.49),
-	tolinux.cc (1.16), tolinuxsniffers.cc (1.13): device elements now
-	use new polling interface; tolinux elements now set the packet type
-	correctly
+	tohost.cc (1.16), tohostsniffers.cc (1.13), tolinux.cc (1.16),
+	tolinuxsniffers.cc (1.13): device elements now use new polling
+	interface; tolinux elements now set the packet type correctly
 
 2001-02-13 Tuesday 23:40  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -8059,7 +8097,9 @@
 
 	* DISTFILES (1.14), FAQ (1.9), INSTALL (1.14), NODIST (1.25),
 	README (1.19), elements/ip/iprw.cc (1.23), elements/ip/iprw.hh
-	(1.12), elements/linuxmodule/fromlinux.cc (1.23),
+	(1.12), elements/linuxmodule/fromhost.cc (1.23),
+	elements/linuxmodule/fromhost.hh (1.24),
+	elements/linuxmodule/fromlinux.cc (1.23),
 	elements/linuxmodule/fromlinux.hh (1.24),
 	elements/standard/ratedsource.cc (1.28),
 	elements/tcpudp/iprewriter.cc (1.2), elements/tcpudp/iprewriter.hh
@@ -8156,7 +8196,8 @@
 
 2000-12-06 Wednesday 10:41  Eddie Kohler <kohler@aciri.org>
 
-	* elements/: linuxmodule/fromlinux.cc (1.22),
+	* elements/: linuxmodule/fromhost.cc (1.22),
+	linuxmodule/fromlinux.cc (1.22), linuxmodule/tohost.cc (1.15),
 	linuxmodule/tolinux.cc (1.15), userlevel/fromdump.cc (1.24): other
 	changes caused by click_ip.h changes (Mz)
 
@@ -8915,6 +8956,7 @@
 	elements/linuxmodule/cyclecountaccum.hh (1.4),
 	elements/linuxmodule/fastudpsrc.hh (1.3),
 	elements/linuxmodule/fromdevice.hh (1.21),
+	elements/linuxmodule/fromhost.hh (1.23),
 	elements/linuxmodule/fromlinux.hh (1.23),
 	elements/linuxmodule/perfcount.hh (1.10),
 	elements/linuxmodule/perfcountaccum.hh (1.3),
@@ -8925,6 +8967,8 @@
 	elements/linuxmodule/setperfcount.hh (1.3),
 	elements/linuxmodule/storecycles.hh (1.12),
 	elements/linuxmodule/todevice.hh (1.46),
+	elements/linuxmodule/tohost.hh (1.14),
+	elements/linuxmodule/tohostsniffers.hh (1.10),
 	elements/linuxmodule/tolinux.hh (1.14),
 	elements/linuxmodule/tolinuxsniffers.hh (1.10),
 	elements/linuxmodule/tulipstats.hh (1.2), elements/local/forceip.hh
@@ -9276,11 +9320,11 @@
 2000-10-23 Monday 15:33  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: linuxmodule/fromdevice.hh (1.20),
-	linuxmodule/fromlinux.hh (1.22), linuxmodule/polldevice.hh (1.46),
-	linuxmodule/todevice.cc (1.81), linuxmodule/todevice.hh (1.43),
-	linuxmodule/tulipstats.cc (1.1), linuxmodule/tulipstats.hh (1.1),
-	local/tulipstats.cc (1.10), local/tulipstats.hh (1.5): from Mazu:
-	some updates for TulipStats
+	linuxmodule/fromhost.hh (1.22), linuxmodule/fromlinux.hh (1.22),
+	linuxmodule/polldevice.hh (1.46), linuxmodule/todevice.cc (1.81),
+	linuxmodule/todevice.hh (1.43), linuxmodule/tulipstats.cc (1.1),
+	linuxmodule/tulipstats.hh (1.1), local/tulipstats.cc (1.10),
+	local/tulipstats.hh (1.5): from Mazu: some updates for TulipStats
 
 2000-10-23 Monday 15:32  Eddie Kohler <kohler@aciri.org>
 
@@ -9484,6 +9528,7 @@
 	elements/linuxmodule/cyclecountaccum.cc (1.4),
 	elements/linuxmodule/cyclecountaccum.hh (1.3),
 	elements/linuxmodule/fromdevice.cc (1.42),
+	elements/linuxmodule/fromhost.cc (1.21),
 	elements/linuxmodule/fromlinux.cc (1.21),
 	elements/linuxmodule/perfcount.cc (1.12),
 	elements/linuxmodule/perfcountaccum.cc (1.4),
@@ -9503,6 +9548,8 @@
 	elements/linuxmodule/setperfcount.hh (1.2),
 	elements/linuxmodule/storecycles.cc (1.11),
 	elements/linuxmodule/todevice.cc (1.79),
+	elements/linuxmodule/tohost.cc (1.14),
+	elements/linuxmodule/tohostsniffers.cc (1.12),
 	elements/linuxmodule/tolinux.cc (1.14),
 	elements/linuxmodule/tolinuxsniffers.cc (1.12),
 	elements/local/chuckcheck.cc (1.6), elements/local/chuckcheck.hh
@@ -9806,7 +9853,9 @@
 	elements/linuxmodule/cyclecountaccum.cc (1.3),
 	elements/linuxmodule/cyclecountaccum.hh (1.2),
 	elements/linuxmodule/fromdevice.cc (1.41),
+	elements/linuxmodule/fromhost.cc (1.20),
 	elements/linuxmodule/fromlinux.cc (1.20),
+	elements/linuxmodule/fromhost.hh (1.21),
 	elements/linuxmodule/fromlinux.hh (1.21),
 	elements/linuxmodule/perfcount.cc (1.11),
 	elements/linuxmodule/perfcount.hh (1.9),
@@ -9826,6 +9875,8 @@
 	elements/linuxmodule/storecycles.cc (1.10),
 	elements/linuxmodule/storecycles.hh (1.11),
 	elements/linuxmodule/todevice.cc (1.77),
+	elements/linuxmodule/tohost.cc (1.13),
+	elements/linuxmodule/tohostsniffers.cc (1.11),
 	elements/linuxmodule/tolinux.cc (1.13),
 	elements/linuxmodule/tolinuxsniffers.cc (1.11),
 	elements/local/chuckcheck.cc (1.5), elements/local/chuckcheck.hh
@@ -10290,6 +10341,7 @@
 	elements/linuxmodule/cyclecount.cc (1.6),
 	elements/linuxmodule/cyclecountaccum.cc (1.2),
 	elements/linuxmodule/fromdevice.cc (1.40),
+	elements/linuxmodule/fromhost.cc (1.19),
 	elements/linuxmodule/fromlinux.cc (1.19),
 	elements/linuxmodule/perfcount.cc (1.10),
 	elements/linuxmodule/perfcountaccum.cc (1.2),
@@ -10302,6 +10354,8 @@
 	elements/linuxmodule/setperfcount.cc (1.2),
 	elements/linuxmodule/storecycles.cc (1.9),
 	elements/linuxmodule/todevice.cc (1.75),
+	elements/linuxmodule/tohost.cc (1.12),
+	elements/linuxmodule/tohostsniffers.cc (1.10),
 	elements/linuxmodule/tolinux.cc (1.12),
 	elements/linuxmodule/tolinuxsniffers.cc (1.10),
 	elements/local/chuckcheck.cc (1.4), elements/local/forceip.cc
@@ -10643,6 +10697,8 @@
 	(1.18), elements/ip/setipaddress.cc (1.8),
 	elements/ip/storeipaddress.cc (1.6), elements/ip/tcprewriter.hh
 	(1.9), elements/ip6/setip6address.cc (1.2),
+	elements/linuxmodule/fromhost.cc (1.18),
+	elements/linuxmodule/fromhost.hh (1.20),
 	elements/linuxmodule/fromlinux.cc (1.18),
 	elements/linuxmodule/fromlinux.hh (1.20),
 	elements/standard/classifier.hh (1.18), lib/bighashmap.hh (1.4),
@@ -10897,12 +10953,18 @@
 	(1.15), elements/ip/ipoutputcombo.cc (1.5),
 	elements/ip/tcpipsend.hh (1.6), elements/ip6/icmp6error.cc (1.7),
 	elements/linuxmodule/fromdevice.cc (1.39),
+	elements/linuxmodule/fromhost.cc (1.17),
+	elements/linuxmodule/fromhost.hh (1.19),
 	elements/linuxmodule/fromlinux.cc (1.17),
 	elements/linuxmodule/fromlinux.hh (1.19),
 	elements/linuxmodule/polldevice.cc (1.69),
+	elements/linuxmodule/tohost.cc (1.11),
+	elements/linuxmodule/tohost.hh (1.13),
+	elements/linuxmodule/tohostsniffers.cc (1.9),
 	elements/linuxmodule/tolinux.cc (1.11),
 	elements/linuxmodule/tolinux.hh (1.13),
 	elements/linuxmodule/tolinuxsniffers.cc (1.9),
+	elements/linuxmodule/tohostsniffers.hh (1.9),
 	elements/linuxmodule/tolinuxsniffers.hh (1.9),
 	elements/standard/align.cc (1.6),
 	elements/standard/dropbroadcasts.cc (1.7), lib/confparse.cc (1.37),
@@ -11287,6 +11349,8 @@
 	* DISTFILES (1.2), configure.in (1.65), doc/Makefile.in (1.17),
 	doc/mkelementmap.pl (1.7), elements/exopc/xokreader.hh (1.8),
 	elements/exopc/xokwriter.hh (1.9), elements/ip/ripsend.hh (1.14),
+	elements/linuxmodule/tohost.hh (1.12),
+	elements/linuxmodule/tohostsniffers.hh (1.8),
 	elements/linuxmodule/tolinux.hh (1.12),
 	elements/linuxmodule/tolinuxsniffers.hh (1.8),
 	elements/standard/idle.hh (1.11),
@@ -11345,9 +11409,11 @@
 	elements/ip/iprw.cc (1.9), elements/ip/iprwpatterns.cc (1.3),
 	elements/ip/tcprewriter.cc (1.6), elements/linuxmodule/anydevice.cc
 	(1.5), elements/linuxmodule/fromdevice.cc (1.38),
+	elements/linuxmodule/fromhost.cc (1.16),
 	elements/linuxmodule/fromlinux.cc (1.16),
 	elements/linuxmodule/polldevice.cc (1.68),
 	elements/linuxmodule/todevice.cc (1.66),
+	elements/linuxmodule/tohostsniffers.cc (1.8),
 	elements/linuxmodule/tolinuxsniffers.cc (1.8),
 	elements/standard/classifier.cc (1.23),
 	elements/standard/packetshaper.cc (1.9),
@@ -11544,7 +11610,8 @@
 
 	* elements/linuxmodule/: anydevice.cc (1.4), anydevice.hh (1.8),
 	fromdevice.cc (1.36), polldevice.cc (1.67), todevice.cc (1.65),
-	tolinuxsniffers.cc (1.7): context to find_dev_by_eth_addr
+	tohostsniffers.cc (1.7), tolinuxsniffers.cc (1.7): context to
+	find_dev_by_eth_addr
 
 2000-08-25 Friday 12:15  Eddie Kohler <kohler@aciri.org>
 
@@ -11569,6 +11636,8 @@
 	conf/ip6ndsolicitor.click (1.2), elements/ip/ipclassifier.cc
 	(1.12), elements/ip/ipclassifier.hh (1.8),
 	elements/ip/iprewriter.cc (1.22), elements/ip/tcprewriter.cc (1.5),
+	elements/linuxmodule/tohostsniffers.cc (1.6),
+	elements/linuxmodule/tohostsniffers.hh (1.7),
 	elements/linuxmodule/tolinuxsniffers.cc (1.6),
 	elements/linuxmodule/tolinuxsniffers.hh (1.7),
 	elements/standard/suppressor.cc (1.8),
@@ -11971,8 +12040,9 @@
 	* elements/ethernet/arpresponder.cc (1.21),
 	elements/ip/ipclassifier.cc (1.11), elements/ip/lookupiproute.cc
 	(1.13), elements/ip/lookupiproute2.cc (1.12),
-	elements/ip/ripsend.cc (1.17), elements/linuxmodule/fromlinux.cc
-	(1.15), elements/standard/addressinfo.cc (1.4),
+	elements/ip/ripsend.cc (1.17), elements/linuxmodule/fromhost.cc
+	(1.15), elements/linuxmodule/fromlinux.cc (1.15),
+	elements/standard/addressinfo.cc (1.4),
 	elements/standard/addressinfo.hh (1.4),
 	include/click/standard/addressinfo.hh (1.4), lib/click_ip.h (1.12),
 	lib/click_ip6.h (1.6), lib/confparse.cc (1.29), lib/confparse.hh
@@ -12103,6 +12173,7 @@
 
 	* elements/linuxmodule/rtcycles.cc (1.1),
 	elements/linuxmodule/rtcycles.hh (1.1),
+	elements/linuxmodule/tohostsniffers.cc (1.5),
 	elements/linuxmodule/tolinuxsniffers.cc (1.5),
 	elements/standard/queue.hh (1.19), lib/llrpc.h (1.3): [no log
 	message]
@@ -12524,10 +12595,13 @@
 	(1.3), elements/ip6/lookupip6route.hh (1.3),
 	elements/ip6/markip6header.hh (1.3), elements/ip6/setip6address.hh
 	(1.3), elements/linuxmodule/fromdevice.hh (1.18),
+	elements/linuxmodule/fromhost.hh (1.18),
 	elements/linuxmodule/fromlinux.hh (1.18),
 	elements/linuxmodule/polldevice.hh (1.37),
 	elements/linuxmodule/schedulelinux.hh (1.6),
 	elements/linuxmodule/todevice.hh (1.37),
+	elements/linuxmodule/tohost.hh (1.11),
+	elements/linuxmodule/tohostsniffers.hh (1.6),
 	elements/linuxmodule/tolinux.hh (1.11),
 	elements/linuxmodule/tolinuxsniffers.hh (1.6),
 	elements/standard/align.hh (1.8), elements/standard/checkcrc32.hh
@@ -12635,6 +12709,7 @@
 	(1.8), elements/ip/unstripipheader.hh (1.3),
 	elements/linuxmodule/cyclecount.hh (1.6),
 	elements/linuxmodule/fromdevice.hh (1.17),
+	elements/linuxmodule/fromhost.hh (1.17),
 	elements/linuxmodule/fromlinux.hh (1.17),
 	elements/linuxmodule/perfcount.hh (1.8),
 	elements/linuxmodule/perfinfo.hh (1.8),
@@ -12642,6 +12717,8 @@
 	elements/linuxmodule/schedulelinux.hh (1.5),
 	elements/linuxmodule/storecycles.hh (1.10),
 	elements/linuxmodule/todevice.hh (1.36),
+	elements/linuxmodule/tohost.hh (1.10),
+	elements/linuxmodule/tohostsniffers.hh (1.5),
 	elements/linuxmodule/tolinux.hh (1.10),
 	elements/linuxmodule/tolinuxsniffers.hh (1.5),
 	elements/standard/,classifier.hh (1.3), elements/standard/align.hh
@@ -12849,9 +12926,12 @@
 	(1.2), elements/ip6/lookupip6route.hh (1.2),
 	elements/ip6/markip6header.hh (1.2), elements/ip6/setip6address.hh
 	(1.2), elements/linuxmodule/fromdevice.hh (1.16),
+	elements/linuxmodule/fromhost.hh (1.16),
 	elements/linuxmodule/fromlinux.hh (1.16),
 	elements/linuxmodule/polldevice.hh (1.35),
 	elements/linuxmodule/todevice.hh (1.35),
+	elements/linuxmodule/tohost.hh (1.9),
+	elements/linuxmodule/tohostsniffers.hh (1.4),
 	elements/linuxmodule/tolinux.hh (1.9),
 	elements/linuxmodule/tolinuxsniffers.hh (1.4),
 	elements/local/randudpipencap.hh (1.4),
@@ -12996,8 +13076,8 @@
 
 2000-08-03 Thursday 17:18  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/: fromlinux.cc (1.14), fromlinux.hh (1.15):
-	[no log message]
+	* elements/linuxmodule/: fromhost.cc (1.14), fromhost.hh (1.15),
+	fromlinux.cc (1.14), fromlinux.hh (1.15): [no log message]
 
 2000-08-03 Thursday 16:41  Peilei Fan <peilei@lcs.mit.edu>
 
@@ -13141,8 +13221,8 @@
 
 2000-08-01 Tuesday 18:27  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/: fromlinux.cc (1.13), fromlinux.hh (1.14):
-	[no log message]
+	* elements/linuxmodule/: fromhost.cc (1.13), fromhost.hh (1.14),
+	fromlinux.cc (1.13), fromlinux.hh (1.14): [no log message]
 
 2000-08-01 Tuesday 15:29  Robert Morris <rtm@lcs.mit.edu>
 
@@ -13200,9 +13280,12 @@
 	* Makefile.in (1.49), elements/app/ftpportmapper.cc (1.2),
 	elements/ip/iprewriter.cc (1.19), elements/ip/iprewriter.hh (1.14),
 	elements/ip/iprrmapper.cc (1.2), elements/ip/iprrmapper.hh (1.2),
+	elements/linuxmodule/fromhost.hh (1.13),
 	elements/linuxmodule/fromlinux.hh (1.13),
 	elements/linuxmodule/polldevice.hh (1.34),
+	elements/linuxmodule/tohost.hh (1.8),
 	elements/linuxmodule/tolinux.hh (1.8),
+	elements/linuxmodule/tohostsniffers.hh (1.3),
 	elements/linuxmodule/tolinuxsniffers.hh (1.3), lib/bighashmap.cc
 	(1.2), lib/bighashmap.hh (1.2): bighashmap fixes and swap method;
 	linuxmodule element doc fixes; iprewriter takestate and check port
@@ -13378,7 +13461,8 @@
 
 2000-07-28 Friday 14:45  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/: linuxmodule/fromlinux.hh (1.12),
+	* elements/: linuxmodule/fromhost.hh (1.12),
+	linuxmodule/fromlinux.hh (1.12), linuxmodule/tohost.hh (1.7),
 	linuxmodule/tolinux.hh (1.7), ethernet/arpquerier.cc (1.21): [no
 	log message]
 
@@ -13394,9 +13478,10 @@
 
 2000-07-28 Friday 12:16  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: tolinux.cc (1.9), tolinuxsniffers.cc
-	(1.3), tolinux.cc (1.10), tolinuxsniffers.cc (1.4): be nice to
-	tcpdump
+	* elements/linuxmodule/: tohost.cc (1.9), tohostsniffers.cc (1.3),
+	tolinux.cc (1.9), tolinuxsniffers.cc (1.3), tohost.cc (1.10),
+	tohostsniffers.cc (1.4), tolinux.cc (1.10), tolinuxsniffers.cc
+	(1.4): be nice to tcpdump
 
 2000-07-28 Friday 11:19  Eddie Kohler <kohler@aciri.org>
 
@@ -13410,8 +13495,10 @@
 
 2000-07-28 Friday 10:33  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/: fromlinux.hh (1.11), tolinux.hh (1.6),
-	tolinuxsniffers.cc (1.2), tolinuxsniffers.hh (1.2): tolinuxsniffers
+	* elements/linuxmodule/: fromhost.hh (1.11), fromlinux.hh (1.11),
+	tohost.hh (1.6), tohostsniffers.cc (1.2), tohostsniffers.hh (1.2),
+	tolinux.hh (1.6), tolinuxsniffers.cc (1.2), tolinuxsniffers.hh
+	(1.2): tolinuxsniffers
 
 2000-07-28 Friday 10:00  Eddie Kohler <kohler@aciri.org>
 
@@ -13508,12 +13595,15 @@
 
 	* elements/: linuxmodule/anydevice.cc (1.3),
 	linuxmodule/cyclecount.cc (1.4), linuxmodule/fromdevice.cc (1.33),
-	linuxmodule/fromdevice.hh (1.15), linuxmodule/fromlinux.cc (1.12),
+	linuxmodule/fromdevice.hh (1.15), linuxmodule/fromhost.cc (1.12),
+	linuxmodule/fromlinux.cc (1.12), linuxmodule/fromhost.hh (1.10),
 	linuxmodule/fromlinux.hh (1.10), linuxmodule/perfcount.cc (1.8),
 	linuxmodule/perfinfo.cc (1.12), linuxmodule/polldevice.cc (1.61),
 	linuxmodule/schedulelinux.cc (1.7), linuxmodule/storecycles.cc
 	(1.7), linuxmodule/todevice.cc (1.63), linuxmodule/todevice.hh
-	(1.33), linuxmodule/tolinux.cc (1.8), linuxmodule/tolinux.hh (1.5),
+	(1.33), linuxmodule/tohost.cc (1.8), linuxmodule/tohost.hh (1.5),
+	linuxmodule/tohostsniffers.cc (1.1), linuxmodule/tohostsniffers.hh
+	(1.1), linuxmodule/tolinux.cc (1.8), linuxmodule/tolinux.hh (1.5),
 	linuxmodule/tolinuxsniffers.cc (1.1),
 	linuxmodule/tolinuxsniffers.hh (1.1), userlevel/frombpf.cc (1.17),
 	userlevel/fromdevice.cc (1.6), userlevel/fromdump.cc (1.18),
@@ -13529,6 +13619,8 @@
 	(1.4), elements/grid/neighbor.cc (1.24),
 	elements/grid/setgridchecksum.cc (1.4),
 	elements/linuxmodule/fromdevice.cc (1.32),
+	elements/linuxmodule/fromhost.cc (1.11),
+	elements/linuxmodule/fromhost.hh (1.9),
 	elements/linuxmodule/fromlinux.cc (1.11),
 	elements/linuxmodule/fromlinux.hh (1.9),
 	elements/linuxmodule/polldevice.cc (1.60), lib/lexer.cc (1.28),
@@ -13540,6 +13632,7 @@
 	* doc/click.1 (1.7), elements/exopc/xokreader.cc (1.5),
 	elements/linuxmodule/fromdevice.cc (1.31),
 	elements/linuxmodule/fromdevice.hh (1.14),
+	elements/linuxmodule/fromhost.cc (1.10),
 	elements/linuxmodule/fromlinux.cc (1.10),
 	elements/linuxmodule/polldevice.cc (1.59),
 	elements/linuxmodule/polldevice.hh (1.33),
@@ -14080,7 +14173,8 @@
 
 2000-07-12 Wednesday 16:38  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/tolinux.cc (1.7): [no log message]
+	* elements/linuxmodule/: tohost.cc (1.7), tolinux.cc (1.7): [no log
+	message]
 
 2000-07-12 Wednesday 16:27  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -14287,6 +14381,8 @@
 	(1.3), elements/linuxmodule/cyclecount.hh (1.5),
 	elements/linuxmodule/fromdevice.cc (1.29),
 	elements/linuxmodule/fromdevice.hh (1.12),
+	elements/linuxmodule/fromhost.cc (1.9),
+	elements/linuxmodule/fromhost.hh (1.8),
 	elements/linuxmodule/fromlinux.cc (1.9),
 	elements/linuxmodule/fromlinux.hh (1.8),
 	elements/linuxmodule/perfcount.cc (1.7),
@@ -14452,6 +14548,8 @@
 
 	* elements/ethernet/arpresponder.cc (1.14),
 	elements/ethernet/arpresponder.hh (1.7),
+	elements/linuxmodule/fromhost.cc (1.8),
+	elements/linuxmodule/fromhost.hh (1.7),
 	elements/linuxmodule/fromlinux.cc (1.8),
 	elements/linuxmodule/fromlinux.hh (1.7), lib/click_ip.h (1.7),
 	lib/confparse.cc (1.15): updates mostly to comments
@@ -14645,6 +14743,7 @@
 	elements/ip/lookupiproute.cc (1.9), elements/ip/lookupiproute2.cc
 	(1.9), elements/ip/lookupiproutelinux.cc (1.10),
 	elements/ip/ripsend.cc (1.13), elements/ip/tcpconnmon.cc (1.3),
+	elements/linuxmodule/fromhost.cc (1.7),
 	elements/linuxmodule/fromlinux.cc (1.7): saddr -> addr
 
 2000-06-08 Thursday 23:38  Eddie Kohler <kohler@aciri.org>
@@ -14768,7 +14867,9 @@
 
 2000-05-30 Tuesday 15:35  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fromlinux.cc (1.6),
+	* elements/linuxmodule/fromhost.cc (1.6),
+	elements/linuxmodule/fromhost.hh (1.6),
+	elements/linuxmodule/fromlinux.cc (1.6),
 	elements/linuxmodule/fromlinux.hh (1.6), linuxmodule/module.cc
 	(1.26): [no log message]
 
@@ -14776,6 +14877,7 @@
 
 	* elements/linuxmodule/todevice.cc (1.51),
 	elements/linuxmodule/todevice.hh (1.27),
+	elements/linuxmodule/tohost.cc (1.6),
 	elements/linuxmodule/tolinux.cc (1.6), linuxmodule/module.cc
 	(1.25): [no log message]
 
@@ -14785,9 +14887,9 @@
 
 2000-05-30 Tuesday 10:09  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/: fromlinux.cc (1.5), fromlinux.hh (1.5):
-	fix fromlinux problem with uninitialize and initialize out of
-	squence
+	* elements/linuxmodule/: fromhost.cc (1.5), fromhost.hh (1.5),
+	fromlinux.cc (1.5), fromlinux.hh (1.5): fix fromlinux problem with
+	uninitialize and initialize out of squence
 
 2000-05-29 Monday 14:50  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -15309,9 +15411,11 @@
 	elements/ip/ipinputcombo.hh (1.4), elements/ip/ipoutputcombo.hh
 	(1.3), elements/ip/setipaddress.hh (1.4), elements/ip/setipdscp.hh
 	(1.7), elements/linuxmodule/fromdevice.hh (1.9),
+	elements/linuxmodule/fromhost.hh (1.4),
 	elements/linuxmodule/fromlinux.hh (1.4),
 	elements/linuxmodule/polldevice.hh (1.27),
 	elements/linuxmodule/todevice.hh (1.23),
+	elements/linuxmodule/tohost.hh (1.4),
 	elements/linuxmodule/tolinux.hh (1.4), elements/standard/align.hh
 	(1.4), elements/standard/alignmentinfo.hh (1.4),
 	elements/standard/block.hh (1.3), elements/standard/broadcast.cc
@@ -15327,7 +15431,7 @@
 2000-04-28 Friday 16:59  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: fromdevice.hh (1.8), polldevice.hh (1.26),
-	tolinux.hh (1.3): doc
+	tohost.hh (1.3), tolinux.hh (1.3): doc
 
 2000-04-28 Friday 15:08  Thomer Gil <thomer@lcs.mit.edu>
 
@@ -15795,9 +15899,12 @@
 2000-04-09 Sunday 11:18  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.40), doc/click-devirtualize.1 (1.2),
+	elements/linuxmodule/fromhost.cc (1.4),
+	elements/linuxmodule/fromhost.hh (1.3),
 	elements/linuxmodule/fromlinux.cc (1.4),
 	elements/linuxmodule/fromlinux.hh (1.3),
 	elements/linuxmodule/perfinfo.cc (1.5),
+	elements/linuxmodule/tohost.cc (1.5),
 	elements/linuxmodule/tolinux.cc (1.5), etc/linux-2.2.14-patch
 	(1.2), lib/archive.cc (1.3), lib/glue.hh (1.6), lib/lexer.cc
 	(1.21), lib/router.cc (1.34), lib/router.hh (1.9), lib/timer.hh
@@ -15824,6 +15931,7 @@
 	elements/etherswitch/switch.hh (1.5),
 	elements/ip/lookupiproutelinux.cc (1.9), elements/ip/rfc2507d.hh
 	(1.5), elements/ip/snooptcp.hh (1.5),
+	elements/linuxmodule/fromhost.cc (1.3),
 	elements/linuxmodule/fromlinux.cc (1.3),
 	elements/linuxmodule/perfinfo.cc (1.4),
 	elements/linuxmodule/perfinfo.hh (1.3),
@@ -15912,12 +16020,14 @@
 	(1.4), elements/ipsec/des.hh (1.3), elements/ipsec/desp.hh (1.3),
 	elements/ipsec/esp.hh (1.3), elements/linuxmodule/cyclecount.hh
 	(1.3), elements/linuxmodule/fromdevice.hh (1.4),
+	elements/linuxmodule/fromhost.hh (1.2),
 	elements/linuxmodule/fromlinux.hh (1.2),
 	elements/linuxmodule/perfcount.hh (1.6),
 	elements/linuxmodule/polldevice.hh (1.23),
 	elements/linuxmodule/schedulelinux.hh (1.3),
 	elements/linuxmodule/storecycles.hh (1.7),
 	elements/linuxmodule/todevice.hh (1.19),
+	elements/linuxmodule/tohost.hh (1.2),
 	elements/linuxmodule/tolinux.hh (1.2), elements/radio/b8b10.hh
 	(1.3), elements/radio/bim.hh (1.7), elements/radio/checkpattern.hh
 	(1.3), elements/radio/scramble.hh (1.2),
@@ -16825,12 +16935,14 @@
 	elements/linuxmodule/cyclecount.cc (1.2),
 	elements/linuxmodule/cyclecount.hh (1.2),
 	elements/linuxmodule/fromdevice.cc (1.11),
+	elements/linuxmodule/fromhost.cc (1.2),
 	elements/linuxmodule/fromlinux.cc (1.2),
 	elements/linuxmodule/polldevice.cc (1.26),
 	elements/linuxmodule/schedulelinux.cc (1.5),
 	elements/linuxmodule/storecycles.cc (1.3),
 	elements/linuxmodule/storecycles.hh (1.3),
 	elements/linuxmodule/todevice.cc (1.20),
+	elements/linuxmodule/tohost.cc (1.4),
 	elements/linuxmodule/tolinux.cc (1.4), elements/radio/b8b10.cc
 	(1.4), elements/radio/bim.cc (1.9), elements/radio/checkpattern.cc
 	(1.4), elements/radio/scramble.cc (1.3),
@@ -17060,6 +17172,8 @@
 	* acconfig.h (1.8), configure.in (1.25), conf/rewriter.click (1.1),
 	doc/Connection.3 (1.3), doc/click.5 (1.7), elements/ip/rewriter.cc
 	(1.1), elements/ip/rewriter.hh (1.1),
+	elements/linuxmodule/fromhost.cc (1.1),
+	elements/linuxmodule/fromhost.hh (1.1),
 	elements/linuxmodule/fromlinux.cc (1.1),
 	elements/linuxmodule/fromlinux.hh (1.1),
 	elements/linuxmodule/polldevice.cc (1.14),
@@ -17770,6 +17884,7 @@
 	elements/ipsec/desp.cc (1.3), elements/ipsec/esp.cc (1.3),
 	elements/linuxmodule/fromdevice.cc (1.6),
 	elements/linuxmodule/todevice.cc (1.5),
+	elements/linuxmodule/tohost.cc (1.3),
 	elements/linuxmodule/tolinux.cc (1.3), elements/radio/b8b10.cc
 	(1.3), elements/radio/bim.cc (1.4), elements/radio/checkpattern.cc
 	(1.3), elements/radio/scramble.cc (1.2),
@@ -18000,6 +18115,7 @@
 	elements/ip/lookupiproutelinux.hh (1.3), elements/ip/ripsend.hh
 	(1.3), elements/linuxmodule/fromdevice.cc (1.3),
 	elements/linuxmodule/todevice.cc (1.3),
+	elements/linuxmodule/tohost.cc (1.2),
 	elements/linuxmodule/tolinux.cc (1.2),
 	elements/standard/checkpaint.hh (1.3), elements/aqm/red.hh (1.3),
 	elements/standard/classifier.hh (1.3),
@@ -18274,6 +18390,8 @@
 	(1.1), elements/linuxmodule/fromdevice.hh (1.1),
 	elements/linuxmodule/todevice.cc (1.1),
 	elements/linuxmodule/todevice.hh (1.1),
+	elements/linuxmodule/tohost.cc (1.1),
+	elements/linuxmodule/tohost.hh (1.1),
 	elements/linuxmodule/tolinux.cc (1.1),
 	elements/linuxmodule/tolinux.hh (1.1), elements/radio/b8b10.cc
 	(1.1), elements/radio/b8b10.hh (1.1), elements/radio/bim-proto.hh
