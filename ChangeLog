@@ -1,3 +1,10 @@
+2003-06-30 Monday 15:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridgenericrt.hh (1.8), gridroutetable.cc (1.67),
+	gridroutetable.hh (1.38), lookuplocalgridroute.cc (1.50): const
+	changed to GridGenericRouteTable interface; added good()/bad()
+	route status methods to RouteEntry
+
 2003-06-27 Friday 17:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/txfeedbackstats.cc (1.2): be smart about mapping
