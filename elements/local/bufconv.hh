@@ -44,7 +44,7 @@ public:
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *p);
-  void run_scheduled();
+  void run_timer();
   void add_handlers();
 };
 

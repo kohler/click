@@ -73,7 +73,7 @@ public:
 
   void push(int, Packet *);
   Packet *pull(int);
-  void run_scheduled();
+  void run_timer();
 };
 
 CLICK_ENDDECLS

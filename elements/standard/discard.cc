@@ -49,14 +49,16 @@ Discard::push(int, Packet *p)
   p->kill();
 }
 
-void
-Discard::run_scheduled()
+bool
+Discard::run_task()
 {
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     p->kill();
   else if (!_signal)
-    return;
+    return false;
   _task.fast_reschedule();
+  return p != 0;
 }
 
 void

@@ -11,7 +11,7 @@ CLICK_DECLS
 
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
-typedef void (*TaskHook)(Task *, void *);
+typedef bool (*TaskHook)(Task *, void *);
 class RouterThread;
 class TaskList;
 
@@ -23,7 +23,7 @@ class Task { public:
 #endif
 
   Task(TaskHook, void *);
-  Task(Element *);			// call element->run_scheduled()
+  Task(Element *);			// call element->run_task()
   ~Task();
 
   bool initialized() const		{ return _all_prev; }
@@ -64,7 +64,7 @@ class Task { public:
   void wakeup();
 #endif
   
-  void call_hook();
+  bool call_hook();
 
 #if __MTCLICK__
   int cycles() const;
@@ -115,7 +115,7 @@ class Task { public:
   inline void lock_tasks();
   inline bool attempt_lock_tasks();
 
-  static void error_hook(Task *, void *);
+  static bool error_hook(Task *, void *);
   
   friend class TaskList;
   friend class RouterThread;
@@ -299,16 +299,16 @@ Task::wakeup()
 }
 #endif
 
-inline void
+inline bool
 Task::call_hook()
 {
 #if __MTCLICK__
   _update_cycle_runs++;
 #endif
   if (!_hook)
-    ((Element *)_thunk)->run_scheduled();
+    return ((Element *)_thunk)->run_task();
   else
-    _hook(this, _thunk);
+    return _hook(this, _thunk);
 }
 
 #if __MTCLICK__

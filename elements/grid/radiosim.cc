@@ -108,8 +108,8 @@ RadioSim::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-RadioSim::run_scheduled()
+bool
+RadioSim::run_task()
 {
   int in, out;
 
@@ -137,6 +137,7 @@ RadioSim::run_scheduled()
   }
 
   _task.fast_reschedule();
+  return true;
 }
 
 RadioSim::Node

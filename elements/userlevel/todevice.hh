@@ -106,7 +106,7 @@ class ToDevice : public Element { public:
   int fd() const				{ return _fd; }
 
   void push(int port, Packet *);
-  void run_scheduled();
+  bool run_task();
 
 protected:
   Task _task;

@@ -52,11 +52,12 @@ ScheduleLinux::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-ScheduleLinux::run_scheduled()
+bool
+ScheduleLinux::run_task()
 {
   schedule();
   _task.fast_reschedule();
+  return true;
 }
 
 void

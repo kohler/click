@@ -99,7 +99,7 @@ ProgressBar::cleanup(CleanupStage)
 {
     if (_status == ST_MIDDLE) {
 	_status = ST_DONE;
-	run_scheduled();
+	run_timer();
     }
 }
 
@@ -205,7 +205,7 @@ ProgressBar::get_value(int first, int last, thermometer_t *value)
 }
 
 void
-ProgressBar::run_scheduled()
+ProgressBar::run_timer()
 {
     // check _active
     if (!_active || _status == ST_DEAD)
@@ -378,7 +378,7 @@ ProgressBar::complete(bool is_full)
 	}
 	_status = (_status == ST_FIRST ? ST_FIRSTDONE : ST_DONE);
 	_timer.unschedule();
-	run_scheduled();
+	run_timer();
     }
 }
 

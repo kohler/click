@@ -15,7 +15,7 @@ typedef void (*TimerHook)(Timer *, void *);
 class Timer { public:
 
   Timer(TimerHook, void *);
-  Timer(Element *);			// call element->run_scheduled()
+  Timer(Element *);			// call element->run_timer()
   Timer(Task *);			// call task->reschedule()
   ~Timer()				{ if (scheduled()) unschedule(); }
 

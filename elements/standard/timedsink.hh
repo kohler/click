@@ -32,7 +32,7 @@ class TimedSink : public Element {
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  void run_scheduled();
+  void run_timer();
   
 };
 

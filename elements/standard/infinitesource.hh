@@ -94,7 +94,7 @@ class InfiniteSource : public Element { public:
   bool can_live_reconfigure() const		{ return true; }
   void cleanup(CleanupStage);
 
-  void run_scheduled();
+  bool run_task();
   Packet *pull(int);
 
  protected:

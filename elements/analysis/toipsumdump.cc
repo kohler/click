@@ -791,17 +791,21 @@ ToIPSummaryDump::push(int, Packet *p)
     p->kill();
 }
 
-void
-ToIPSummaryDump::run_scheduled()
+bool
+ToIPSummaryDump::run_task()
 {
     if (!_active)
-	return;
+	return false;
     if (Packet *p = input(0).pull()) {
 	write_packet(p, _multipacket);
 	p->kill();
-    } else if (!_signal)
-	return;
-    _task.fast_reschedule();
+	_task.fast_reschedule();
+	return true;
+    } else if (_signal) {
+	_task.fast_reschedule();
+	return false;
+    } else
+	return false;
 }
 
 void

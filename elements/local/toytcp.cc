@@ -95,7 +95,7 @@ ToyTCP::initialize(ErrorHandler *)
 }
 
 void
-ToyTCP::run_scheduled()
+ToyTCP::run_timer()
 {
   if(_reset)
     restart();

@@ -582,11 +582,11 @@ FromDump::read_packet(ErrorHandler *errh)
     return true;
 }
 
-void
-FromDump::run_scheduled()
+bool
+FromDump::run_task()
 {
     if (!_active)
-	return;
+	return false;
 
     bool more = true;
     if (!_packet)
@@ -597,7 +597,7 @@ FromDump::run_scheduled()
 	timersub(&now, &_time_offset, &now);
 	if (timercmp(&_packet->timestamp_anno(), &now, >)) {
 	    _task.fast_reschedule();
-	    return;
+	    return false;
 	}
     }
 
@@ -609,7 +609,9 @@ FromDump::run_scheduled()
     if (_packet) {
 	output(0).push(_packet);
 	_packet = 0;
-    }
+	return true;
+    } else
+	return false;
 }
 
 Packet *

@@ -167,8 +167,8 @@ ToDevice::cleanup(CleanupStage)
 # define netif_wake_queue(dev)		mark_bh(NET_BH)
 #endif
 
-void
-ToDevice::run_scheduled()
+bool
+ToDevice::run_task()
 {
   int busy;
   int sent = 0;
@@ -178,7 +178,7 @@ ToDevice::run_scheduled()
   if (!spin_trylock(&_dev->xmit_lock)) {
     local_bh_enable();
     _task.fast_reschedule();
-    return;
+    return false;
   }
 
   _dev->xmit_lock_owner = smp_processor_id();
@@ -196,22 +196,22 @@ ToDevice::run_scheduled()
   if (is_polling) {
     struct sk_buff *skbs = _dev->tx_clean(_dev);
 
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
     if (_activations > 0 && skbs) {
       GET_STATS_RESET(low00, low10, time_now, 
 		      _perfcnt1_clean, _perfcnt2_clean, _time_clean);
     }
-#endif
+# endif
 
     if (skbs)
       skbmgr_recycle_skbs(skbs);
     
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
     if (_activations > 0 && skbs) {
       GET_STATS_RESET(low00, low10, time_now, 
 		      _perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
     }
-#endif
+# endif
   }
 #endif
   
@@ -291,6 +291,7 @@ ToDevice::run_scheduled()
   // the transmit ring.
   if (sent > 0 || is_polling || _signal)
       _task.fast_reschedule();
+  return sent > 0;
 }
 
 int

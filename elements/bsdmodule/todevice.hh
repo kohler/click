@@ -83,7 +83,7 @@ class ToDevice : public AnyDevice {
   void cleanup(CleanupStage);
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
 
   void reset_counts();
 

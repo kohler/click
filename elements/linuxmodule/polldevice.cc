@@ -192,23 +192,23 @@ PollDevice::cleanup(CleanupStage)
 #endif
 }
 
-void
-PollDevice::run_scheduled()
+bool
+PollDevice::run_task()
 {
 #if HAVE_LINUX_POLLING
   struct sk_buff *skb_list, *skb;
   int got=0;
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
   uint64_t time_now;
   unsigned low00, low10;
-#endif
+# endif
 
   SET_STATS(low00, low10, time_now);
 
   got = _burst;
   skb_list = _dev->rx_poll(_dev, &got);
 
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
   if (got > 0 || _activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
@@ -217,7 +217,7 @@ PollDevice::run_scheduled()
     else 
       _activations++;
   }
-#endif
+# endif
 
   int nskbs = got;
   if (got == 0)
@@ -231,19 +231,19 @@ PollDevice::run_scheduled()
      */
     struct sk_buff *new_skbs = skbmgr_allocate_skbs(0, 1536+16, &nskbs);
 
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
     if (_activations > 0)
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_allocskb, _perfcnt2_allocskb, _time_allocskb);
-#endif
+# endif
 
     nskbs = _dev->rx_refill(_dev, &new_skbs);
 
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
     if (_activations > 0) 
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_refill, _perfcnt2_refill, _time_refill);
-#endif
+# endif
 
     if (new_skbs) {
 	for (struct sk_buff *skb = new_skbs; skb; skb = skb->next)
@@ -260,11 +260,11 @@ PollDevice::run_scheduled()
     if (skb_list) {
       // prefetch annotation area, and first 2 cache
       // lines that contain ethernet and ip headers.
-#if __i386__ && HAVE_INTEL_CPU
+# if __i386__ && HAVE_INTEL_CPU
       asm volatile("prefetcht0 %0" : : "m" (skb_list->cb[0]));
       // asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data)));
       asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data+32)));
-#endif
+# endif
     }
 
     /* Retrieve the ether header. */
@@ -274,35 +274,37 @@ PollDevice::run_scheduled()
 
     Packet *p = Packet::make(skb); 
    
-#ifndef CLICK_WARP9
+# ifndef CLICK_WARP9
     struct timeval &tv = p->timestamp_anno(); 
     click_gettimeofday(&tv);
-#endif
+# endif
 
     _npackets++;
-#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
+# if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     uint64_t before_push_cycles = click_get_cycles();
-#endif
+# endif
     output(0).push(p);
-#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
+# if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     _push_cycles += click_get_cycles() - before_push_cycles - CLICK_CYCLE_COMPENSATION;
-#endif
+# endif
   }
 
-#if CLICK_DEVICE_STATS
+# if CLICK_DEVICE_STATS
   if (_activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _push_cycles);
-#if _DEV_OVRN_STATS_
+#  if _DEV_OVRN_STATS_
     if ((_activations % 1024) == 0)
 	_dev->get_stats(_dev);
-#endif
+#  endif
   }
-#endif
+# endif
 
   adjust_tickets(got);
   _task.fast_reschedule();
-
+  return got > 0;
+#else
+  return false;
 #endif /* HAVE_LINUX_POLLING */
 }
 

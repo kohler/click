@@ -211,11 +211,12 @@ TulipStats::stats_poll()
     _tbusy++;
 }
 
-void
-TulipStats::run_scheduled()
+bool
+TulipStats::run_task()
 {
   stats_poll();
   _task.fast_reschedule();
+  return true;
 }
 
 void

@@ -135,7 +135,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    void run_scheduled();
+    bool run_task();
     Packet *pull(int);
 
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,

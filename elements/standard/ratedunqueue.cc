@@ -64,18 +64,21 @@ RatedUnqueue::set_rate(unsigned r, ErrorHandler *errh)
   _rate.set_rate(r, errh);
 }
 
-void
-RatedUnqueue::run_scheduled()
+bool
+RatedUnqueue::run_task()
 {
   struct timeval now;
   click_gettimeofday(&now);
+  bool worked = false;
   if (_rate.need_update(now)) {
     if (Packet *p = input(0).pull()) {
       _rate.update();
       output(0).push(p);
+      worked = true;
     }
   }
   _task.fast_reschedule();
+  return worked;
 }
 
 

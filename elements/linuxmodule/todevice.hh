@@ -91,7 +91,7 @@ class ToDevice : public AnyDevice { public:
   void cleanup(CleanupStage);
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
 
   void reset_counts();
   void change_device(net_device *);

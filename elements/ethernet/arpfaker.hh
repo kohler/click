@@ -49,7 +49,7 @@ public:
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
                         unsigned char sha[6], unsigned char spa[4]);
   
-  void run_scheduled();
+  void run_timer();
   
 private:
   

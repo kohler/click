@@ -71,7 +71,7 @@ class TimedSource : public Element { public:
   void cleanup(CleanupStage);
   void add_handlers();
   
-  void run_scheduled();
+  void run_timer();
   
  private:
   

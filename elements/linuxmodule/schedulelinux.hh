@@ -29,7 +29,7 @@ class ScheduleLinux : public Element { public:
   int initialize(ErrorHandler *);
   void add_handlers();
 
-  void run_scheduled();
+  bool run_task();
 
  private:
 

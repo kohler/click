@@ -285,11 +285,11 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
   if (!fd) return;
 }
 
-void
-FromDevice::run_scheduled()
+bool
+FromDevice::run_task()
 {
     int npq = 0;
-    // click_chatter("FromDevice::run_scheduled().");
+    // click_chatter("FromDevice::run_task().");
     while (npq < _burst) {
 	struct mbuf *m = 0;
 
@@ -300,7 +300,7 @@ FromDevice::run_scheduled()
 	    set_need_wakeup();
 	    splx(s);
 	    adjust_tickets(npq);
-	    return;
+	    return npq > 0;
 	}
 	splx(s);
 
@@ -315,6 +315,7 @@ FromDevice::run_scheduled()
     adjust_tickets(npq);
 #endif
     _task.fast_reschedule();
+    return true;
 }
 
 int

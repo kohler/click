@@ -345,6 +345,8 @@ CxxClass::find_should_rewrite()
   bool any = reach(_fn_map["push"], reached);
   any |= reach(_fn_map["pull"], reached);
   any |= reach(_fn_map["run_scheduled"], reached);
+  any |= reach(_fn_map["run_task"], reached);
+  any |= reach(_fn_map["run_timer"], reached);
   any |= reach(_fn_map["selected"], reached);
   int simple_action = _fn_map["simple_action"];
   if (simple_action >= 0) {

@@ -70,7 +70,7 @@ ICMPSendPings::initialize(ErrorHandler *)
 }
 
 void
-ICMPSendPings::run_scheduled()
+ICMPSendPings::run_timer()
 {
   WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_sequenced) + _data.length());
   memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct icmp_sequenced));

@@ -255,7 +255,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	skb_push(skb, skb->data - skb->mac.raw);
 
 	Packet *p = Packet::make(skb);
-	_queue[_tail] = p; /* hand it to run_scheduled */
+	_queue[_tail] = p; /* hand it to run_task */
 	_tail = next;
 
     } else {
@@ -267,8 +267,8 @@ FromDevice::got_skb(struct sk_buff *skb)
     return 1;
 }
 
-void
-FromDevice::run_scheduled()
+bool
+FromDevice::run_task()
 {
     int npq = 0;
     while (npq < _burst && _head != _tail) {
@@ -281,6 +281,7 @@ FromDevice::run_scheduled()
     adjust_tickets(npq);
 #endif
     _task.fast_reschedule();
+    return npq > 0;
 }
 
 void

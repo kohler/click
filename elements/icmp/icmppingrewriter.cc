@@ -214,7 +214,7 @@ ICMPPingRewriter::Mapping::s() const
 }
 
 void
-ICMPPingRewriter::run_scheduled()
+ICMPPingRewriter::run_timer()
 {
   Vector<Mapping *> to_free;
   

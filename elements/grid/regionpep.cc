@@ -93,7 +93,7 @@ EstimateRouterRegion::initialize(ErrorHandler *)
 }
 
 void
-EstimateRouterRegion::run_scheduled()
+EstimateRouterRegion::run_timer()
 {
   purge_old();
   output(0).push(make_PEP());

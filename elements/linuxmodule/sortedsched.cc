@@ -51,7 +51,7 @@ SortedTaskSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-SortedTaskSched::run_scheduled()
+SortedTaskSched::run_timer()
 {
 #if __MTCLICK__
   Vector<Task*> tasks;

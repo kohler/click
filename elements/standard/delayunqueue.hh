@@ -37,7 +37,7 @@ class DelayUnqueue : public Element { public:
   void cleanup(CleanupStage);
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
   static String read_param(Element *e, void *);
 
  private:

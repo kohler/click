@@ -52,7 +52,7 @@ StaticThreadSched::initialize(ErrorHandler *)
 }
 
 void
-StaticThreadSched::run_scheduled()
+StaticThreadSched::run_timer()
 {
 #if __MTCLICK__
   TaskList *task_list = router()->task_list();

@@ -59,9 +59,11 @@ DelayUnqueue::cleanup(CleanupStage)
     _p->kill();
 }
 
-void
-DelayUnqueue::run_scheduled()
+bool
+DelayUnqueue::run_task()
 {
+  bool worked = false;
+  
  retry:
   // read a packet
   if (!_p && (_p = input(0).pull())) {
@@ -80,6 +82,7 @@ DelayUnqueue::run_scheduled()
       _p->timestamp_anno() = now;
       output(0).push(_p);
       _p = 0;
+      worked = true;
       goto retry;
     } else if (diff.tv_sec == 0 && diff.tv_usec < 100000)
       // small delta, reschedule Task
@@ -87,15 +90,16 @@ DelayUnqueue::run_scheduled()
     else {
       // large delta, schedule Timer
       _timer.schedule_at(_p->timestamp_anno());
-      return;			// without rescheduling
+      return false;		// without rescheduling
     }
   } else {
     // no Packet available
     if (!_signal)
-      return;			// without rescheduling
+      return false;		// without rescheduling
   }
 
   _task.fast_reschedule();
+  return worked;
 }
 
 String

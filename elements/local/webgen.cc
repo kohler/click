@@ -189,7 +189,7 @@ WebGen::do_perf_stats ()
 }
 
 void
-WebGen::run_scheduled ()
+WebGen::run_timer ()
 {
   CB *cb;
   struct timeval now;

@@ -36,7 +36,7 @@ static void
 element_hook(Timer *, void *thunk)
 {
   Element *e = (Element *)thunk;
-  e->run_scheduled();
+  e->run_timer();
 }
 
 static void

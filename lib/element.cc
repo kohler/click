@@ -861,10 +861,29 @@ Element::simple_action(Packet *p)
   return p;
 }
 
+bool
+Element::run_task()
+{
+  static int nwarn = 0;
+  if (nwarn++ < 3)
+    click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_task() in your code");
+  run_scheduled();
+  return true;
+}
+
+void
+Element::run_timer()
+{
+  static int nwarn = 0;
+  if (nwarn++ < 3)
+    click_chatter("warning: calling deprecated run_scheduled() method;\nreplace with run_timer() in your code");
+  run_scheduled();
+}
+
 void
 Element::run_scheduled()
 {
-  assert(0 && "bad run_scheduled");
+  assert(0 && "bad run_task");
 }
 
 CLICK_ENDDECLS

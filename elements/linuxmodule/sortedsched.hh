@@ -34,7 +34,7 @@ class SortedTaskSched : public Element {
   SortedTaskSched *clone() const	{ return new SortedTaskSched; }
 
   int initialize(ErrorHandler *);
-  void run_scheduled();
+  void run_timer();
 };
 
 #endif

@@ -62,7 +62,7 @@ Burster::initialize(ErrorHandler *)
 }
 
 void
-Burster::run_scheduled()
+Burster::run_timer()
 {
   // don't run if the timer is scheduled (an upstream queue went empty but we
   // don't care)

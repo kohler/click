@@ -220,17 +220,19 @@ ToDump::pull(int)
     return p;
 }
 
-void
-ToDump::run_scheduled()
+bool
+ToDump::run_task()
 {
     if (!_active)
-	return;
-    if (Packet *p = input(0).pull()) {
+	return false;
+    Packet *p = input(0).pull();
+    if (p) {
 	write_packet(p);
 	p->kill();
     } else if (!_signal)
-	return;
+	return false;
     _task.fast_reschedule();
+    return p != 0;
 }
 
 void

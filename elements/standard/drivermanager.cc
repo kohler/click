@@ -224,7 +224,7 @@ DriverManager::handle_stopped_driver()
 }
 
 void
-DriverManager::run_scheduled()
+DriverManager::run_timer()
 {
     // called when a timer expires
     assert(_insns[_insn_pos] == INSN_WAIT);

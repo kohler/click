@@ -108,12 +108,14 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-LookupLocalGridRoute::run_scheduled()
+bool
+LookupLocalGridRoute::run_task()
 {
-  if (Packet *p = input(0).pull())
-    push(0, p); 
+  Packet *p = input(0).pull();
+  if (p)
+    push(0, p);
   _task.fast_reschedule();
+  return p != 0;
 }
 
 typedef GridRouteActionCallback GRCB;

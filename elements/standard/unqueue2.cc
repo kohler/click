@@ -61,8 +61,8 @@ Unqueue2::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-Unqueue2::run_scheduled()
+bool
+Unqueue2::run_task()
 {
   int burst = -1;
   for (int i=0; i<_queue_elements.size(); i++) {
@@ -76,7 +76,7 @@ Unqueue2::run_scheduled()
   if (burst > _burst) burst = _burst;
   else if (burst == 0) {
     _task.fast_reschedule();
-    return;
+    return false;
   }
 
   int sent = 0;
@@ -104,6 +104,7 @@ Unqueue2::run_scheduled()
   }
   
   _task.fast_reschedule();
+  return sent > 0;
 }
 
 String

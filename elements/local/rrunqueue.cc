@@ -54,19 +54,18 @@ RoundRobinUnqueue::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-RoundRobinUnqueue::run_scheduled()
+bool
+RoundRobinUnqueue::run_task()
 {
-  int sent = 0;
+  int tries = 0;
   Packet *p_next = input(_next).pull();
   
   while (p_next) {
     Packet *p = p_next;
-    sent++;
-    if (sent < _burst || _burst == 0) {
+    tries++;
+    if (tries < _burst || _burst == 0) {
       p_next = input(_next).pull();
-    }
-    else 
+    } else 
       p_next = 0;
 #ifdef CLICK_LINUXMODULE
 #if __i386__ && HAVE_INTEL_CPU
@@ -86,6 +85,7 @@ RoundRobinUnqueue::run_scheduled()
   else 
     _next++;
   _task.fast_reschedule();
+  return true;
 }
 
 String

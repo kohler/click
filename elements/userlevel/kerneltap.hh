@@ -83,7 +83,7 @@ class KernelTap : public Element { public:
     void selected(int fd);
 
     void push(int port, Packet *);
-    void run_scheduled();
+    bool run_task();
 
   private:
 

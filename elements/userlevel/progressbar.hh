@@ -137,7 +137,7 @@ class ProgressBar : public Element { public:
     void cleanup(CleanupStage);
     void add_handlers();
 
-    void run_scheduled();
+    void run_timer();
 
     void complete(bool is_full);
 

@@ -57,7 +57,7 @@ class Unqueue : public Element { public:
   int initialize(ErrorHandler *);
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
 
   static String read_param(Element *e, void *);
   static int write_param(const String &, Element *, void *, ErrorHandler *);

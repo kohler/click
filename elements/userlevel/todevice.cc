@@ -200,15 +200,17 @@ ToDevice::push(int, Packet *p)
   send_packet(p);
 }
 
-void
-ToDevice::run_scheduled()
+bool
+ToDevice::run_task()
 {
   // XXX reduce tickets when idle
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     send_packet(p);
   else if (!_signal)
-    return;
+    return false;
   _task.fast_reschedule();
+  return p != 0;
 }
 
 void

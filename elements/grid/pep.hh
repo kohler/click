@@ -77,7 +77,7 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   virtual void *cast(const char *);
-  void run_scheduled();
+  void run_timer();
   void add_handlers();
   Packet *simple_action(Packet *p);
   

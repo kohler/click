@@ -89,7 +89,7 @@ class FromDevice : public AnyDevice, public Storage { public:
     
     int get_inq_drops();	// get some performance stats
 
-    void run_scheduled();
+    bool run_task();
 
     int _npackets;
 #if CLICK_DEVICE_STATS

@@ -59,7 +59,7 @@ RIPSend::initialize(ErrorHandler *)
 }
 
 void
-RIPSend::run_scheduled()
+RIPSend::run_timer()
 {
   WritablePacket *p = Packet::make(sizeof(click_ip) + sizeof(click_udp) + 24);
   memset(p->data(), '\0', p->length());

@@ -87,12 +87,14 @@ LookupGeographicGridRoute::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-LookupGeographicGridRoute::run_scheduled()
+bool
+LookupGeographicGridRoute::run_task()
 {
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     push(0, p); 
   _task.fast_reschedule();
+  return p != 0;
 }
 
 typedef GridRouteActionCallback GRCB;

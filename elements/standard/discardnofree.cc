@@ -45,11 +45,12 @@ DiscardNoFree::push(int, Packet *)
   // Don't kill().
 }
 
-void
-DiscardNoFree::run_scheduled()
+bool
+DiscardNoFree::run_task()
 {
-  (void) input(0).pull();
+  Packet *p = input(0).pull();	// Not killed!
   _task.fast_reschedule();
+  return p != 0;
 }
 
 void

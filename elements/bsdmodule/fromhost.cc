@@ -101,11 +101,11 @@ FromHost::cleanup(CleanupStage)
     free(q, M_DEVBUF);
 }
 
-void
-FromHost::run_scheduled()
+bool
+FromHost::run_task()
 {
     int npq = 0;
-    // click_chatter("FromHost::run_scheduled().");
+    // click_chatter("FromHost::run_task().");
     while (npq < _burst) {
 	struct mbuf *m = 0;
         int s = splimp();
@@ -113,7 +113,7 @@ FromHost::run_scheduled()
         if (m == NULL) {
             set_need_wakeup();
             splx(s);
-	    return ;
+	    return npq > 0;
 	}
 	splx(s);
     
@@ -126,6 +126,7 @@ FromHost::run_scheduled()
     adjust_tickets(npq);
 #endif
     _task.fast_reschedule();
+    return true;
 }
 
 ELEMENT_REQUIRES(AnyDevice bsdmodule)

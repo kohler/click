@@ -90,7 +90,7 @@ TimedSource::cleanup(CleanupStage)
 }
 
 void
-TimedSource::run_scheduled()
+TimedSource::run_timer()
 {
   if (!_active)
     return;

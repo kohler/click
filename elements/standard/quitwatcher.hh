@@ -37,7 +37,7 @@ class QuitWatcher : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  void run_scheduled();
+  void run_timer();
 
  private:
     

@@ -62,30 +62,32 @@ Unqueue::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-Unqueue::run_scheduled()
+bool
+Unqueue::run_task()
 {
   if (!_active)
-    return;
+    return false;
 
-  uint32_t end_count = _count + _burst;
-  while (_count != end_count) {
+  int worked = 0;
+  while (worked < _burst) {
     if (Packet *p = input(0).pull()) {
-      _count++;
+      worked++;
       output(0).push(p);
     } else {
       if (!_signal)
-	return;
+	return worked > 0;
       break;
     }
   }
-
+  
   _task.fast_reschedule();
+  _count += worked;
+  return worked > 0;
 }
 
 #if 0 && defined(CLICK_LINUXMODULE)
 #if __i386__ && HAVE_INTEL_CPU
-/* Old prefetching code from run_scheduled(). */
+/* Old prefetching code from run_task(). */
   if (p_next) {
     struct sk_buff *skb = p_next->steal_skb();
     asm volatile("prefetcht0 %0" : : "m" (skb->len));

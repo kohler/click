@@ -88,7 +88,7 @@ SendGridLRHello::initialize(ErrorHandler *errh)
 }
 
 void
-SendGridLRHello::run_scheduled()
+SendGridLRHello::run_timer()
 {
   output(0).push(make_hello());
 

@@ -56,7 +56,7 @@ TimedSink::initialize(ErrorHandler *)
 }
 
 void
-TimedSink::run_scheduled()
+TimedSink::run_timer()
 {
   Packet *p = input(0).pull();
   if (p)

@@ -247,7 +247,7 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void add_handlers();
 
     void push(int, Packet *);
-    void run_scheduled();
+    bool run_task();
 
     String filename() const		{ return _filename; }
     uint32_t output_count() const	{ return _output_count; }

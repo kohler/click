@@ -30,18 +30,21 @@ BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
   // no MOD_DEC_USE_COUNT; rely on RatedUnqueue
 }
 
-void
-BandwidthRatedUnqueue::run_scheduled()
+bool
+BandwidthRatedUnqueue::run_task()
 {
   struct timeval now;
   click_gettimeofday(&now);
+  bool worked = false;
   if (_rate.need_update(now)) {
     if (Packet *p = input(0).pull()) {
       _rate.update_with(p->length());
+      worked = true;
       output(0).push(p);
     }
   }
   _task.fast_reschedule();
+  return worked;
 }
 
 CLICK_ENDDECLS

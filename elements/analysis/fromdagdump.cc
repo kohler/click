@@ -488,11 +488,11 @@ FromDAGDump::read_packet(ErrorHandler *errh)
     return more;
 }
 
-void
-FromDAGDump::run_scheduled()
+bool
+FromDAGDump::run_task()
 {
     if (!_active)
-	return;
+	return false;
 
     bool more;
     if (_packet || read_packet(0)) {
@@ -502,7 +502,7 @@ FromDAGDump::run_scheduled()
 	    timersub(&now, &_time_offset, &now);
 	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
 		_task.fast_reschedule();
-		return;
+		return false;
 	    }
 	}
 	output(0).push(_packet);
@@ -514,6 +514,7 @@ FromDAGDump::run_scheduled()
 	_task.fast_reschedule();
     else if (_stop)
 	router()->please_stop_driver();
+    return true;
 }
 
 Packet *

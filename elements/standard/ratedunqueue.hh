@@ -31,7 +31,7 @@ class RatedUnqueue : public Element { public:
   int initialize(ErrorHandler *);
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
 
   unsigned rate() const				{ return _rate.rate(); }
   void set_rate(unsigned, ErrorHandler * = 0);

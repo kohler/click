@@ -1017,11 +1017,11 @@ FromIPSummaryDump::handle_multipacket(Packet *p)
     return p;
 }
 
-void
-FromIPSummaryDump::run_scheduled()
+bool
+FromIPSummaryDump::run_task()
 {
     if (!_active)
-	return;
+	return false;
     Packet *p;
 
     while (1) {
@@ -1029,7 +1029,7 @@ FromIPSummaryDump::run_scheduled()
 	if (!p) {
 	    if (_stop)
 		router()->please_stop_driver();
-	    return;
+	    return false;
 	}
 	if (_multipacket)
 	    p = handle_multipacket(p);
@@ -1044,6 +1044,7 @@ FromIPSummaryDump::run_scheduled()
     if (p)
 	output(0).push(p);
     _task.fast_reschedule();
+    return true;
 }
 
 Packet *

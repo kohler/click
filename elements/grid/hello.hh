@@ -44,7 +44,7 @@ public:
   
   Packet *make_hello();
   
-  void run_scheduled();
+  void run_timer();
   
 private:
   

@@ -70,7 +70,7 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
 
   void add_handlers();
   
-  void run_scheduled();
+  bool run_task();
 
   void push(int port, Packet *);
 

@@ -323,13 +323,14 @@ KernelTap::selected(int fd)
 #endif
 }
 
-void
-KernelTap::run_scheduled()
+bool
+KernelTap::run_task()
 {
-  if (Packet *p = input(0).pull()) {
-    push(0, p); 
-  }
-  _task.fast_reschedule();
+    Packet *p = input(0).pull();
+    if (p)
+	push(0, p); 
+    _task.fast_reschedule();
+    return p != 0;
 }
 
 void

@@ -150,7 +150,7 @@ IPAddrRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
 }
 
 void
-IPAddrRewriter::run_scheduled()
+IPAddrRewriter::run_timer()
 {
   clean_map(_map, GC_INTERVAL_SEC * 1000);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);

@@ -103,7 +103,7 @@ AdaptiveRED::cleanup(CleanupStage)
 }
 
 void
-AdaptiveRED::run_scheduled()
+AdaptiveRED::run_timer()
 {
     uint32_t part = (_max_thresh - _min_thresh) / 2;
     uint32_t avg = (_size.average() >> QUEUE_SCALE);

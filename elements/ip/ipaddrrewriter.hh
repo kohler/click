@@ -108,7 +108,7 @@ class IPAddrRewriter : public IPRw { public:
     void cleanup(CleanupStage);
     //void take_state(Element *, ErrorHandler *);
 
-    void run_scheduled();
+    void run_timer();
 
     int notify_pattern(Pattern *, ErrorHandler *);
     IPAddrMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);

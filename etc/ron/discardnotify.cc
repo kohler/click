@@ -68,14 +68,16 @@ DiscardNotify::notify(int signal)
 }
 
 
-void
-DiscardNotify::run_scheduled()
+bool
+DiscardNotify::run_task()
 {
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     p->kill();
   
   if (_data_ready)
     _task.fast_reschedule();
+  return p != 0;
 }
 
 

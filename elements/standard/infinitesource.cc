@@ -92,11 +92,11 @@ InfiniteSource::cleanup(CleanupStage)
     _packet->kill();
 }
 
-void
-InfiniteSource::run_scheduled()
+bool
+InfiniteSource::run_task()
 {
   if (!_active)
-    return;
+    return false;
   int n = _burstsize;
   if (_limit >= 0 && _count + n >= _limit)
     n = _limit - _count;
@@ -108,8 +108,12 @@ InfiniteSource::run_scheduled()
     }
     _count += n;
     _task.fast_reschedule();
-  } else if (_stop)
-    router()->please_stop_driver();
+    return true;
+  } else {
+    if (_stop)
+      router()->please_stop_driver();
+    return false;
+  }
 }
 
 Packet *

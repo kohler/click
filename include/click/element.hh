@@ -116,8 +116,10 @@ class Element { public:
   virtual void push(int port, Packet *);
   virtual Packet *pull(int port);
   virtual Packet *simple_action(Packet *);
-  
-  virtual void run_scheduled();
+
+  virtual bool run_task();		// return true iff did useful work
+  virtual void run_timer();
+  virtual void run_scheduled();		// deprecated, use run_{task,timer}()
   
 #if CLICK_USERLEVEL
   enum { SELECT_READ = 1, SELECT_WRITE = 2 };

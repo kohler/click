@@ -24,7 +24,7 @@ class DiscardNotify : public Discard, public NotifiedElement { public:
   int initialize(ErrorHandler *);
 
   void notify(int signal);
-  void run_scheduled();
+  bool run_task();
 protected:
   bool _data_ready;
 };

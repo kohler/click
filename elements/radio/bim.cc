@@ -174,12 +174,14 @@ BIM::got_char(int c)
   }
 }
 
-void
-BIM::run_scheduled()
+bool
+BIM::run_task()
 {
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     push(0, p); 
   _task.fast_reschedule();
+  return p != 0;
 }
 
 void

@@ -90,7 +90,7 @@ class ToDump : public Element { public:
 
     void push(int, Packet *);
     Packet *pull(int);
-    void run_scheduled();
+    bool run_task();
 
   private:
 

@@ -127,20 +127,22 @@ ToSimDevice::push(int, Packet *p)
   send_packet(p);
 }
 
-void
-ToSimDevice::run_scheduled()
+bool
+ToSimDevice::run_task()
 {
   // XXX reduce tickets when idle
-  Router* myrouter = router();
-  if (myrouter->sim_if_ready(_fd)) {
+  bool active = false;
+  if (router()->sim_if_ready(_fd)) {
     //fprintf(stderr,"Hey!!! Pulling ready!!!\n");
     if (Packet *p = input(0).pull()) {
       //fprintf(stderr,"Hey!!! Sending a packet!!!\n");
-      send_packet(p); 
+      send_packet(p);
+      active = true;
     }
   }
 
   _task.fast_reschedule();
+  return active;
 }
 
 void

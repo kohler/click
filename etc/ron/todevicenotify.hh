@@ -59,7 +59,7 @@ class ToDeviceNotify : public ToDevice, public NotifiedElement { public:
   const char *class_name() const		{ return "ToDeviceNotify"; }
   ToDeviceNotify *clone() const;
   int initialize(ErrorHandler *);
-  void run_scheduled();
+  bool run_task();
   void notify(int signal);
 
 protected:

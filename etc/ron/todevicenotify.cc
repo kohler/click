@@ -98,14 +98,16 @@ ToDeviceNotify::notify(int signal)
   }
 }
 
-void
-ToDeviceNotify::run_scheduled()
+bool
+ToDeviceNotify::run_task()
 {
-  if (Packet *p = input(0).pull())
+  Packet *p = input(0).pull();
+  if (p)
     send_packet(p);
   
   if (_data_ready)
     _task.fast_reschedule();
+  return p != 0;
 }
 
 EXPORT_ELEMENT(ToDeviceNotify)

@@ -27,7 +27,7 @@ class RandomSource : public Element { public:
   void add_handlers();
 
   Packet *pull(int);
-  void run_scheduled();
+  bool run_task();
 
  protected:
   

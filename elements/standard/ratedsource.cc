@@ -98,15 +98,15 @@ RatedSource::cleanup(CleanupStage)
   _packet = 0;
 }
 
-void
-RatedSource::run_scheduled()
+bool
+RatedSource::run_task()
 {
   if (!_active)
-    return;
+    return false;
   if (_limit != NO_LIMIT && _count >= _limit) {
     if (_stop)
       router()->please_stop_driver();
-    return;
+    return false;
   }
   
   struct timeval now;
@@ -117,9 +117,12 @@ RatedSource::run_scheduled()
     p->set_timestamp_anno(now);
     output(0).push(p);
     _count++;
+    _task.fast_reschedule();
+    return true;
+  } else {
+    _task.fast_reschedule();
+    return false;
   }
-
-  _task.fast_reschedule();
 }
 
 Packet *

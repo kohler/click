@@ -29,7 +29,7 @@ CLICK_DECLS
 ACKRetrySender::ACKRetrySender() 
   : Element(2, 1), _timeout(0), _max_retries(0), 
   _num_retries(0), _waiting_packet(0), 
-  _verbose (true), _timer(static_timer_hook, this), _task(this)
+  _verbose (true), _timer(this), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -80,13 +80,13 @@ ACKRetrySender::push(int port, Packet *p)
   check();
 }
 
-void
-ACKRetrySender::run_scheduled()
+bool
+ACKRetrySender::run_task()
 {
   check();
 
   if (_waiting_packet)
-    return;
+    return true;
   
   Packet *p = input(0).pull();
 
@@ -101,6 +101,7 @@ ACKRetrySender::run_scheduled()
   check();
 
   output(0).push(p);
+  return true;
 }
 
 int
@@ -137,7 +138,7 @@ ACKRetrySender::initialize(ErrorHandler *errh)
 }
 
 void
-ACKRetrySender::timer_hook()
+ACKRetrySender::run_timer()
 {
   assert(_waiting_packet && !_timer.scheduled());
   

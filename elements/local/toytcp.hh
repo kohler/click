@@ -33,7 +33,7 @@ class ToyTCP : public Element {
   ToyTCP *clone() const;
 
   Packet *simple_action(Packet *);
-  void run_scheduled();
+  void run_timer();
 
 private:
   Timer _timer;

@@ -161,7 +161,7 @@ TCPAck::oput(Packet *p)
 }
 
 void
-TCPAck::run_scheduled()
+TCPAck::run_timer()
 {
   if (_needack) {
     send_ack();

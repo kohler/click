@@ -29,10 +29,11 @@ CLICK_DECLS
 // - Either _thread_preference == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
 
-void
+bool
 Task::error_hook(Task *, void *)
 {
   assert(0);
+  return false;
 }
 
 Task::~Task()
@@ -132,7 +133,7 @@ Task::unschedule()
   // Thanksgiving 2001: unschedule() will always unschedule the task. This
   // seems more reliable, since some people depend on unschedule() ensuring
   // that the task is not scheduled any more, no way, no how. Possible
-  // problem: calling unschedule() from run_scheduled() will hang!
+  // problem: calling unschedule() from run_task() will hang!
   if (_thread) {
     lock_tasks();
     fast_unschedule();

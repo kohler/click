@@ -62,7 +62,8 @@ public:
   void notify_ninputs(int n)  { set_ninputs(n); }
   void notify_noutputs(int n) { set_noutputs(n); }
 
-  void run_scheduled();
+  bool run_task();
+  void run_timer();
   void push(int, Packet *);
 
 private:
@@ -72,9 +73,6 @@ private:
 
   Packet *_waiting_packet;
   bool _verbose;
-
-  static void static_timer_hook(Timer *, void *v) { ((ACKRetrySender *) v)->timer_hook(); }
-  void timer_hook();
 
   Timer _timer;
   Task _task;

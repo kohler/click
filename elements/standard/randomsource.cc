@@ -79,12 +79,13 @@ RandomSource::make_packet()
   return(p);
 }
 
-void
-RandomSource::run_scheduled()
+bool
+RandomSource::run_task()
 {
   Packet *p = make_packet();
   output(0).push(p);
   _task.fast_reschedule();
+  return true;
 }
 
 Packet *

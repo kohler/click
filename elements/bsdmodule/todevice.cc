@@ -131,8 +131,8 @@ ToDevice::cleanup(CleanupStage)
     to_device_map.remove(this);
 }
 
-void
-ToDevice::run_scheduled()
+bool
+ToDevice::run_task()
 {
     int busy;
     int sent = 0;
@@ -156,6 +156,7 @@ ToDevice::run_scheduled()
     adjust_tickets(sent);
 #endif
     _task.fast_reschedule();
+    return sent > 0;
 }
 
 static String

@@ -43,7 +43,7 @@ ThreadMonitor::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ThreadMonitor::run_scheduled()
+ThreadMonitor::run_timer()
 {
 #if __MTCLICK__
   int print = 0;

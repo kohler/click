@@ -40,7 +40,7 @@ class AdaptiveRED : public RED { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
 
-    void run_scheduled();
+    void run_timer();
 
   protected:
 
