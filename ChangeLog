@@ -1,3 +1,26 @@
+2002-07-25 Thursday 11:31  Eddie Kohler <kohler@icir.org>
+
+	* userlevel/click.cc (1.67): small update for code consistency with
+	tools
+
+2002-07-25 Thursday 11:26  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-align/click-align.cc (1.41),
+	tools/click-check/click-check.cc (1.23),
+	tools/click-devirtualize/click-devirtualize.cc (1.31),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.50),
+	tools/click-flatten/click-flatten.cc (1.9),
+	tools/click-install/click-install.cc (1.50),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.21),
+	tools/click-pretty/click-pretty.cc (1.17),
+	tools/click-undead/click-undead.cc (1.28),
+	tools/click-xform/click-xform.cc (1.47), tools/lib/toolutils.hh
+	(1.32), doc/click-align.1 (1.5), doc/click-devirtualize.1 (1.5),
+	doc/click-fastclassifier.1 (1.6), doc/click-flatten.1 (1.5),
+	doc/click-mkmindriver.1 (1.4), doc/click-pretty.1 (1.8),
+	doc/click-undead.1 (1.4), doc/click-xform.1 (1.8): most tools
+	support --expression/-e, for consistency
+
 2002-07-23 Tuesday 20:47  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/todevice.cc (1.127): polling ToDevice does
