@@ -185,6 +185,14 @@ FromDevice::initialize(ErrorHandler *errh)
   }
 #endif
 
+#if defined(BIOCIMMEDIATE) || defined(__FreeBSD__)
+  {
+    int yes = 1;
+    if(ioctl(fd, BIOCIMMEDIATE, &yes) != 0){
+      return errh->error("FromDevice: BIOCIMMEDIATE failed");
+    }
+  }
+#endif
 
   bpf_u_int32 netmask;
   bpf_u_int32 localnet;
