@@ -32,7 +32,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 
-#define PACKET_LINK(p)		((PacketLink *)((p)->all_user_anno_u()))
+#define PACKET_CHUNK(p)		(((PacketInfo *)((p)->all_user_anno_u()))->chunk)
 #define PACKET_DLEN(p)		((p)->transport_length())
 #define Q_PACKET_JIFFIES(p)	((p)->timestamp_anno().tv_usec)
 #define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
@@ -43,7 +43,7 @@ IPReassembler::IPReassembler()
     MOD_INC_USE_COUNT;
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
-    static_assert(sizeof(PacketLink) <= Packet::USER_ANNO_SIZE);
+    static_assert(sizeof(PacketInfo) <= Packet::USER_ANNO_SIZE);
     static_assert(sizeof(ChunkLink) <= 8);
 }
 
@@ -79,7 +79,7 @@ IPReassembler::cleanup(CleanupStage)
 {
     for (int i = 0; i < NMAP; i++)
 	while (_map[i]) {
-	    WritablePacket *next = PACKET_LINK(_map[i])->bucket_next;
+	    WritablePacket *next = (WritablePacket *)(_map[i]->next());
 	    _map[i]->kill();
 	    _map[i] = next;
 	}
@@ -107,12 +107,12 @@ IPReassembler::check(ErrorHandler *errh)
 	errh = ErrorHandler::default_handler();
     uint32_t mem_used = 0;
     for (int b = 0; b < NMAP; b++)
-	for (WritablePacket *q = _map[b]; q; q = PACKET_LINK(q)->bucket_next)
+	for (WritablePacket *q = _map[b]; q; q = (WritablePacket *)(q->next()))
 	    if (const click_ip *qip = q->ip_header()) {
 		if (bucketno(qip) != b)
 		    check_error(errh, b, q, "in wrong bucket");
 		mem_used += IPH_MEM_USED + q->transport_length();
-		ChunkLink *chunk = &PACKET_LINK(q)->chunk;
+		ChunkLink *chunk = &PACKET_CHUNK(q);
 		int off = 0;
 #if VERBOSE_DEBUG
 		check_error(errh, b, q, "");
@@ -123,7 +123,7 @@ IPReassembler::check(ErrorHandler *errh)
 		    chunk = next_chunk(q, chunk);
 		}
 		errh->message("  %s", sa.cc());
-		chunk = &PACKET_LINK(q)->chunk;
+		chunk = &PACKET_CHUNK(q);
 		off = 0;
 #endif
 		while (chunk) {
@@ -150,7 +150,7 @@ IPReassembler::find_queue(Packet *p, WritablePacket ***store_pprev)
     int bucket = bucketno(iph);
     WritablePacket **pprev = &_map[bucket];
     WritablePacket *q;
-    for (q = *pprev; q; pprev = &PACKET_LINK(q)->bucket_next, q = *pprev) {
+    for (q = *pprev; q; pprev = (WritablePacket **)&q->next(), q = *pprev) {
 	const click_ip *qiph = q->ip_header();
 	if (same_segment(iph, qiph)) {
 	    *store_pprev = pprev;
@@ -165,16 +165,17 @@ Packet *
 IPReassembler::emit_whole_packet(WritablePacket *q, WritablePacket **q_pprev,
 				 Packet *p_in)
 {
+    *q_pprev = (WritablePacket *)q->next();
+
     click_ip *q_iph = q->ip_header();
     q_iph->ip_len = htons(q->network_length());
     q_iph->ip_sum = 0;
     q_iph->ip_sum = click_in_cksum((const unsigned char *)q_iph, q_iph->ip_hl << 2);
 
     // zero out the annotations we used
-    memset(&PACKET_LINK(q)->bucket_next, 0, sizeof(struct PacketLink) - offsetof(struct PacketLink, bucket_next));
+    memset(&PACKET_CHUNK(q), 0, sizeof(struct PacketInfo) - offsetof(struct PacketInfo, chunk));
     q->set_timestamp_anno(p_in->timestamp_anno());
-
-    *q_pprev = PACKET_LINK(q)->bucket_next;
+    q->set_next(0);
 
     p_in->kill();
     _mem_used -= IPH_MEM_USED + q->transport_length();
@@ -206,11 +207,11 @@ IPReassembler::make_queue(Packet *p, WritablePacket **q_pprev)
     
     // copy data
     memcpy(q->transport_header() + p_off, p->transport_header(), PACKET_DLEN(p));
-    PACKET_LINK(q)->chunk.off = p_off;
-    PACKET_LINK(q)->chunk.lastoff = p_lastoff;
+    PACKET_CHUNK(q).off = p_off;
+    PACKET_CHUNK(q).lastoff = p_lastoff;
 
     // link it up
-    PACKET_LINK(q)->bucket_next = *q_pprev;
+    q->set_next(*q_pprev);
     *q_pprev = q;
     Q_PACKET_JIFFIES(q) = click_jiffies();
     
@@ -262,7 +263,7 @@ IPReassembler::simple_action(Packet *p)
 	make_queue(p, q_pprev);
 	return 0;
     }
-    WritablePacket *q_bucket_next = PACKET_LINK(q)->bucket_next;
+    WritablePacket *q_bucket_next = (WritablePacket *)(q->next());
 
     // extend the packet if necessary
     if (p_lastoff > q->transport_length()) {
@@ -298,7 +299,7 @@ IPReassembler::simple_action(Packet *p)
     }
 
     // find chunks before and after p
-    ChunkLink *chunk = &PACKET_LINK(q)->chunk;
+    ChunkLink *chunk = &PACKET_CHUNK(q);
     while (chunk->lastoff < p_off)
 	chunk = next_chunk(q, chunk);
     ChunkLink *last = chunk;
@@ -339,8 +340,8 @@ IPReassembler::simple_action(Packet *p)
     
     // Are we done with this packet?
     if ((q->ip_header()->ip_off & htons(IP_MF)) == 0
-	&& PACKET_LINK(q)->chunk.off == 0
-	&& PACKET_LINK(q)->chunk.lastoff == q->transport_length())
+	&& PACKET_CHUNK(q).off == 0
+	&& PACKET_CHUNK(q).lastoff == q->transport_length())
 	return emit_whole_packet(q, q_pprev, p);
 
     // Otherwise, done for now
@@ -364,13 +365,13 @@ IPReassembler::garbage_collect()
 	    WritablePacket **pprev = &_map[bucket];
 	    for (WritablePacket *q = *pprev; q; q = *pprev)
 		if (Q_PACKET_JIFFIES(q) <= now - delta) {
-		    *pprev = PACKET_LINK(q)->bucket_next;
+		    *pprev = (WritablePacket *)q->next();
 		    _mem_used -= IPH_MEM_USED + q->transport_length();
 		    q->kill();
 		    if (_mem_used <= _mem_low_thresh)
 			return;
 		} else
-		    pprev = &PACKET_LINK(q)->bucket_next;
+		    pprev = (WritablePacket **)&q->next();
 	}
 
     click_chatter("IPReassembler: cannot free enough memory!");
@@ -388,10 +389,10 @@ IPReassembler::expire_hook(Timer *, void *thunk)
 	WritablePacket **q_pprev = &ipr->_map[i];
 	for (WritablePacket *q = *q_pprev; q; ) {
 	    if (Q_PACKET_JIFFIES(q) < kill_time) {
-		*q_pprev = PACKET_LINK(q)->bucket_next;
+		*q_pprev = (WritablePacket *)q->next();
 		q->kill();
 	    } else
-		q_pprev = &PACKET_LINK(q)->bucket_next;
+		q_pprev = (WritablePacket **)&q->next();
 	    q = *q_pprev;
 	}
     }

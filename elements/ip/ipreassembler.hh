@@ -62,9 +62,8 @@ class IPReassembler : public Element { public:
 	uint16_t off;
 	uint16_t lastoff;
     };
-    struct PacketLink {
-	uint32_t padding[2];	// preserve paint annotation
-	WritablePacket *bucket_next;
+    struct PacketInfo {
+	uint32_t padding[3];	// preserve paint annotation
 	ChunkLink chunk;
     };
 
