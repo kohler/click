@@ -329,81 +329,81 @@ Mindriver::print_elements_conf(FILE *f, String package, const ElementMap &emap)
 static int
 print_makefile(const String &directory, const String &pkg, const StringAccum &sa, ErrorHandler *errh)
 {
-  String fn = directory + "Makefile." + pkg;
-  errh->message("Creating %s...", fn.c_str());
-  FILE *f = fopen(fn.c_str(), "w");
-  if (!f)
-    return errh->error("%s: %s", fn.c_str(), strerror(errno));
+    String fn = directory + "Makefile." + pkg;
+    errh->message("Creating %s...", fn.c_str());
+    FILE *f = fopen(fn.c_str(), "w");
+    if (!f)
+	return errh->error("%s: %s", fn.c_str(), strerror(errno));
   
-  fwrite(sa.data(), 1, sa.length(), f);
+    fwrite(sa.data(), 1, sa.length(), f);
   
-  fclose(f);
-  return 0;
+    fclose(f);
+    return 0;
 }
 
 static int
 print_u_makefile(const String &directory, const String &pkg, bool check, ErrorHandler *errh)
 {
-  int before = errh->nerrors();
+    int before = errh->nerrors();
 
-  if (check) {
-    String fn = directory + "Makefile";
-    String text = file_string(fn, errh);
-    if (before != errh->nerrors())
-      return -1;
+    if (check) {
+	String fn = directory + "Makefile";
+	String text = file_string(fn, errh);
+	if (before != errh->nerrors())
+	    return -1;
 
-    String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
-    if (text.find_left(expectation) < 0)
-      return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
-  }
+	String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
+	if (text.find_left(expectation) < 0)
+	    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+    }
   
-  StringAccum sa;
-  sa << "INSTALLPROGS = " << pkg << "click\n\
+    StringAccum sa;
+    sa << "INSTALLPROGS = " << pkg << "click\n\
 include Makefile\n\n";
-  sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
-elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2export) < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
+    sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
+	$(top_builddir)/click-buildtool elem2make -x \"$(STD_ELEMENT_OBJS)\" -v ELEMENT_OBJS_" << pkg << " < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
+elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
+	$(top_builddir)/click-buildtool elem2export < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
 	@rm -f elements_" << pkg << ".d\n";
-  sa << "-include elements_" << pkg << ".mk\n";
-  sa << "OBJS_" << pkg << " = $(ELEMENT_OBJS_" << pkg << ") elements_" << pkg << ".o click.o\n";
-  sa << pkg << "click: Makefile Makefile." << pkg << " libclick.a $(OBJS_" << pkg << ")\n\
+    sa << "-include elements_" << pkg << ".mk\n";
+    sa << "OBJS_" << pkg << " = $(ELEMENT_OBJS_" << pkg << ") elements_" << pkg << ".o click.o\n";
+    sa << pkg << "click: Makefile Makefile." << pkg << " libclick.a $(OBJS_" << pkg << ")\n\
 	$(CXXLINK) -rdynamic $(OBJS_" << pkg << ") $(LIBS) libclick.a\n";
 
-  return print_makefile(directory, pkg, sa, errh);
+    return print_makefile(directory, pkg, sa, errh);
 }
 
 static int
 print_k_makefile(const String &directory, const String &pkg, bool check, ErrorHandler *errh)
 {
-  int before = errh->nerrors();
+    int before = errh->nerrors();
 
-  if (check) {
-    String fn = directory + "Makefile";
-    String text = file_string(fn, errh);
-    if (before != errh->nerrors())
-      return -1;
+    if (check) {
+	String fn = directory + "Makefile";
+	String text = file_string(fn, errh);
+	if (before != errh->nerrors())
+	    return -1;
 
-    String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
-    if (text.find_left(expectation) < 0)
-      return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
-  }
+	String expectation = String("\n## Click ") + Driver::requirement(driver) + " driver Makefile ##\n";
+	if (text.find_left(expectation) < 0)
+	    return errh->error("%s does not contain magic string\n(Does this directory have a Makefile for Click's %s driver?)", fn.c_str(), Driver::name(driver));
+    }
   
-  StringAccum sa;
-  sa << "INSTALLOBJS = " << pkg << "click.o\n\
+    StringAccum sa;
+    sa << "INSTALLOBJS = " << pkg << "click.o\n\
 include Makefile\n\n";
-  sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
-elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2export) < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
+    sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
+	$(top_builddir)/click-buildtool elem2make -x \"$(STD_ELEMENT_OBJS)\" -v ELEMENT_OBJS_" << pkg << " < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
+elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_builddir)/click-buildtool\n\
+	$(top_builddir)/click-buildtool elem2export < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
 	@rm -f elements_" << pkg << ".d\n";
-  sa << "-include elements_" << pkg << ".mk\n";
-  sa << "OBJS_" << pkg << " = $(GENERIC_OBJS) $(ELEMENT_OBJS_" << pkg << ") $(LINUXMODULE_OBJS) elements_" << pkg << ".o\n";
-  sa << pkg << "click.o: Makefile Makefile." << pkg << " $(OBJS_" << pkg << ")\n\
+    sa << "-include elements_" << pkg << ".mk\n";
+    sa << "OBJS_" << pkg << " = $(GENERIC_OBJS) $(ELEMENT_OBJS_" << pkg << ") $(LINUXMODULE_OBJS) elements_" << pkg << ".o\n";
+    sa << pkg << "click.o: Makefile Makefile." << pkg << " $(OBJS_" << pkg << ")\n\
 	$(LD) -r -o " << pkg << "click.o $(OBJS_" << pkg << ")\n\
 	$(STRIP) -g " << pkg << "click.o\n";
 
-  return print_makefile(directory, pkg, sa, errh);
+    return print_makefile(directory, pkg, sa, errh);
 }
 
 int
