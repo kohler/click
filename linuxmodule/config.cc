@@ -36,12 +36,9 @@ uint32_t click_config_generation;
 static Lexer *lexer = 0;
 
 extern "C" int
-click_add_element_type(const char *name, Element *e)
+click_add_element_type(const char *name, Element *(*factory)(uintptr_t), uintptr_t thunk)
 {
-    if (name)
-	return lexer->add_element_type(name, e);
-    else
-	return lexer->add_element_type(e);
+    lexer->add_element_type(name, factory, thunk);
 }
 
 extern "C" void

@@ -324,14 +324,13 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 static Lexer *click_lexer;
 
 extern "C" int
-click_add_element_type(const char *ename, Element *e)
+click_add_element_type(const char *ename, Element *(*func)(uintptr_t), uintptr_t thunk)
 {
+    assert(ename);
     if (!click_lexer && !(click_lexer = new Lexer))
 	return -99;
-    else if (ename)
-	return click_lexer->add_element_type(ename, e);
     else
-	return click_lexer->add_element_type(e);
+	return click_lexer->add_element_type(ename, func, thunk);
 }
 
 extern "C" void

@@ -114,7 +114,7 @@ static String configuration_string;
 
 #if 0
 extern "C" int
-click_add_element_type(const char *, Element *)
+click_add_element_type(const char *, Element *(*)(uintptr_t), uintptr_t)
 {
   // if (name)
   //   return lexer->add_element_type(name, e);

@@ -54,7 +54,6 @@ class Element { public:
   // CHARACTERISTICS
   virtual const char *class_name() const = 0;
   virtual void *cast(const char *);
-  virtual Element *clone() const = 0;
   
   String id() const;
   String declaration() const;

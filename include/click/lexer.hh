@@ -45,7 +45,6 @@ class Lexer { public:
   
   class TunnelEnd;
   class Compound;
-  class Synonym;
   typedef Router::Hookup Hookup;
   
   Lexer();
@@ -66,8 +65,8 @@ class Lexer { public:
   
   bool expect(int, bool report_error = true);
 
-  int add_element_type(Element *);
-  int add_element_type(const String &, Element *, bool scoped = false);
+  typedef Element *(*ElementFactory)(uintptr_t);
+  int add_element_type(const String &, ElementFactory factory, uintptr_t thunk, bool scoped = false);
   int element_type(const String &) const;
   int force_element_type(String);
 
@@ -126,11 +125,15 @@ class Lexer { public:
   int _tfull;
   
   // element types
+  struct ElementType {
+    ElementFactory factory;
+    uintptr_t thunk;
+    String name;
+    int next;
+  };
   HashMap<String, int> _element_type_map;
-  Vector<Element *> _element_types;
-  Vector<String> _element_type_names;
+  Vector<ElementType> _element_types;
   enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
-  Vector<int> _element_type_next;
   int _last_element_type;
   int _free_element_type;
 

@@ -16,7 +16,7 @@ bool click_has_provision(const char *);
 void click_public_packages(CLICK_NAME(Vector)<CLICK_NAME(String)> &);
 
 #ifndef CLICK_TOOL
-int click_add_element_type(const char *, CLICK_NAME(Element) *);
+int click_add_element_type(const char *element_name, CLICK_NAME(Element) *(*factory)(uintptr_t thunk), uintptr_t thunk);
 void click_remove_element_type(int);
 #endif
 

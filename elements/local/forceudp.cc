@@ -74,7 +74,7 @@ ForceUDP::simple_action(Packet *p_in)
     goto bad;
 
   ilen = ntohs(ip->ip_len);
-  if(ilen > plen || ilen < hlen + sizeof(click_udp))
+  if(/*ilen > plen || */ilen < hlen + sizeof(click_udp))
     goto bad;
 
   uh = (click_udp *) (((char *)ip) + hlen);
