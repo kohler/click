@@ -261,8 +261,9 @@ SRForwarder::push(int port, Packet *p_in)
        * will broadcast the packet. in this case,
        * don't complain. But otherwise, something's up
        */
-      click_chatter("SRForwarder %s: data not for me %d/%d ip %s eth %s",
-		    _ip.s().cc(),
+      click_chatter("SRForwarder %s: data not for me seq %d %d/%d ip %s eth %s",
+		    id().cc(),
+		    pk->data_seq(),
 		    pk->next(),
 		    pk->num_hops(),
 		    pk->get_hop(pk->next()).s().cc(),

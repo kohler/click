@@ -638,11 +638,40 @@ SRCR::push(int port, Packet *p_in)
       return;
     }
     srcr_assert(dst);
-    Path p = _link_table->best_route(dst);
-    int metric = _link_table->get_route_metric(p);
+    Path best = _link_table->best_route(dst);
+    bool best_valid = _link_table->valid_route(best);
+    int best_metric = _link_table->get_route_metric(best);
 
-    if (_link_table->valid_route(p)) {
-      _sr_forwarder->send(p_in, p, 0);
+    if (best_valid) {
+      CurrentPath *current_path = _path_cache.findp(dst);
+      if (!current_path) {
+	_path_cache.insert(dst, CurrentPath(best));
+	current_path = _path_cache.findp(dst);
+	click_gettimeofday(&current_path->_last_switch);
+	click_gettimeofday(&current_path->_first_selected);
+      }
+      bool current_path_valid = _link_table->valid_route(current_path->_p);
+      int current_path_metric = _link_table->get_route_metric(current_path->_p);
+
+      struct timeval expire;
+      struct timeval now;
+      click_gettimeofday(&now);
+
+      struct timeval max_switch;
+      max_switch.tv_sec = 10;
+      max_switch.tv_usec = 0;
+      timeradd(&current_path->_last_switch, &max_switch, &expire);
+
+      if (!current_path_valid || 
+	  current_path_metric > 2 * best_metric ||
+	  timercmp(&expire, &now, <)) {
+	if (current_path->_p != best) {
+	  click_gettimeofday(&current_path->_first_selected);
+	}
+	current_path->_p = best;
+	click_gettimeofday(&current_path->_last_switch);
+      }
+      _sr_forwarder->send(p_in, current_path->_p, 0);
       sent_packet = true;
     } else {
       p_in->kill();
@@ -656,10 +685,10 @@ SRCR::push(int port, Packet *p_in)
     }
     srcr_assert(q);
 
-    if (q->_metric > metric) {
-      q->_metric = metric;
+    if (q->_metric > best_metric) {
+      q->_metric = best_metric;
     }
-    if (sent_packet && metric < 2 * q->_metric) {
+    if (sent_packet && best_metric < 2 * q->_metric) {
       return;
     }
     
@@ -772,6 +801,13 @@ SRCR::static_print_stats(Element *f, void *)
 }
 
 String
+SRCR::static_print_path_cache(Element *f, void *)
+{
+  SRCR *d = (SRCR *) f;
+  return d->print_path_cache();
+}
+
+String
 SRCR::print_stats()
 {
   
@@ -782,6 +818,29 @@ SRCR::print_stats()
     String(_bytes_replies) + " bytes of reply sent\n";
 }
 
+String
+SRCR::print_path_cache()
+{
+  StringAccum sa;
+  struct timeval now;
+  click_gettimeofday(&now);
+  for (PathCache::const_iterator iter = _path_cache.begin(); iter; iter++) {
+    CurrentPath cp = iter.value();
+    int current_path_metric = _link_table->get_route_metric(cp._p);
+    if (cp._p.size() > 0) {
+      sa << cp._p[cp._p.size()-1];
+    } else {
+      sa << "???";
+    }
+    sa << " " << current_path_metric;
+    sa << " " << now - cp._first_selected;
+    sa << " " << now - cp._last_switch;
+    sa << " [ ";
+    sa << path_to_string(cp._p);
+    sa << " ]\n";
+  }
+  return sa.take_string();
+}
 int
 SRCR::static_clear(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
@@ -877,6 +936,7 @@ void
 SRCR::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
+  add_read_handler("path_cache", static_print_path_cache, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
   add_write_handler("link_failure", static_link_failure, 0);
@@ -897,7 +957,6 @@ SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 
 // generate Vector template instance
 #include <click/vector.cc>
-#include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES

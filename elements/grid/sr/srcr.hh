@@ -65,6 +65,9 @@ class SRCR : public Element {
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
+  static String static_print_path_cache(Element *e, void *);
+  String print_path_cache();
+
   void push(int, Packet *);
   void run_timer();
 
@@ -141,6 +144,19 @@ private:
     PathInfo() {memset(this,0,sizeof(*this)); }
     PathInfo(Path p) { _p = p; }
   };
+
+
+  class CurrentPath {
+  public:
+    Path _p;
+    struct timeval _last_switch;    // last time we picked a new best route
+    struct timeval _first_selected; // when _p was first selected as best route
+    CurrentPath() { }
+    CurrentPath(Path p) { _p = p; }
+  };
+
+  typedef HashMap<IPAddress, CurrentPath> PathCache;
+  PathCache _path_cache;
 
   typedef HashMap<Path, PathInfo> PathTable;
   PathTable _paths;
