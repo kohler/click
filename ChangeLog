@@ -1,3 +1,7 @@
+2001-09-02 Sunday 00:45  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.30): doc updates
+
 2001-09-02 Sunday 00:34  Eddie Kohler <kohler@aciri.org>
 
 	* doc/: Makefile.in (1.38), mkwebdoc.pl (1.13): mkwebdoc explicitly
