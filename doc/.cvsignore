@@ -1,1 +1,4 @@
 Makefile
+click.cps click.log click.dvi click.aux click.toc click.tmp
+click.cp click.fn click.vr click.tp click.ky click.pg
+click.info click.html
