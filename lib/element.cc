@@ -525,6 +525,24 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
     return 0;
 }
 
+void
+Element::change_configuration(const String &conf)
+{
+  router()->set_configuration(number(), conf);
+}
+
+void
+Element::change_configuration(int which, const String &arg)
+{
+  assert(which >= 0);
+  Vector<String> args;
+  cp_argvec(router()->econfiguration(number()), args);
+  while (args.size() <= which)
+    args.push_back(String());
+  args[which] = cp_subst(arg);
+  router()->set_configuration(number(), cp_unargvec(args));
+}
+
 // RUNNING
 
 void

@@ -34,7 +34,18 @@
 #include "click_ip.h"
 
 class IPEncap : public Element {
-public:
+  
+  int _ip_p; // IP protocol number field.
+  struct in_addr _ip_src;
+  struct in_addr _ip_dst;
+#ifdef __KERNEL__
+  bool _aligned;
+#endif
+
+  short _id;
+
+ public:
+  
   IPEncap();
   ~IPEncap();
   
@@ -47,14 +58,6 @@ public:
 
   Packet *simple_action(Packet *);
   
-private:
-
-  int _ip_p; // IP protocol number field.
-  struct in_addr _ip_src;
-  struct in_addr _ip_dst;
-
-  short _id;
-
 };
 
 #endif

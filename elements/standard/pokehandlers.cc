@@ -46,7 +46,7 @@ PokeHandlers::configure(const String &conf, ErrorHandler *errh)
     if (!rest) {
       int gap;
       if (cp_va_parse(first, this, errh,
-		      cpInterval, "timeout interval", &gap, 0) >= 0)
+		      cpMilliseconds, "timeout interval", &gap, 0) >= 0)
 	next_timeout += gap;
       continue;
     } else {

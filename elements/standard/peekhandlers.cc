@@ -44,7 +44,7 @@ PeekHandlers::configure(const String &conf, ErrorHandler *errh)
     cp_word(args[i], first);
     int gap;
     if (cp_va_parse(first, this, silent_errh,
-		    cpInterval, "timeout interval", &gap, 0) >= 0) {
+		    cpMilliseconds, "timeout interval", &gap, 0) >= 0) {
       next_timeout += gap;
       continue;
     } else {

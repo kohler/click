@@ -5,13 +5,13 @@
 
 /*
  * =c
- * RatedSource([DATA, COUNTPERSEC, SEC])
+ * RatedSource([DATA, RATE, TIME, ACTIVE])
  * =d
  * Creates packets consisting of DATA. The desired behavior is to push
- * COUNTPERSEC such packets out its single output per second, do so for SEC
+ * RATE such packets out its single output per second, do so for 
  * number of seconds. After all packets are sent, stops the driver. Default
- * DATA is at least 64 bytes long. Default COUNTPERSEC is 10. Default SEC is
- * 10 (send 10*10=100 number of packets).
+ * DATA is at least 64 bytes long. Default RATE is 10. Default TIME is
+ * -1 (send 10*10=100 number of packets).
  * =e
  * = RatedSource(\<0800>, 10, 10) -> Queue -> ...
  * =n
@@ -23,14 +23,17 @@
 class RatedSource : public Element { protected:
   
   String _data;
-  unsigned _time;
-  unsigned _persec;
-  unsigned _total_sent;
-  unsigned _total;
+  unsigned _rate;
+  int _count;
+  int _limit;
   unsigned _ngap;
+  bool _active;
   Packet *_packet;
-  struct timeval _tv1, _tv2, _diff;
+  struct timeval _start_time;
 
+  static String read_param(Element *, void *);
+  static int change_param(const String &, Element *, void *, ErrorHandler *);
+  
  public:
   
   RatedSource();
@@ -44,8 +47,8 @@ class RatedSource : public Element { protected:
   int initialize(ErrorHandler *);
   void uninitialize();
 
-  int total_sent() const			{ return _total_sent; }
   void run_scheduled();
+  
 };
 
 #endif

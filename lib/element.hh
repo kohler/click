@@ -95,6 +95,8 @@ class Element : public ElementLink { public:
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,
 				       ErrorHandler *);
+  void change_configuration(const String &);
+  void change_configuration(int, const String &);
   
   // RUNNING user level input elements.
   virtual int select_fd()		{ return(-1); }

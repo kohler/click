@@ -33,7 +33,7 @@ tools: Makefile
 	@cd tools && $(MAKE) all
 
 install:
-	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install); done
+	@for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-include
 install-doc:
 	@cd doc && $(MAKE) install

@@ -33,7 +33,6 @@ class Router : public ElementLink {
 
   Vector<String> _requirements;
 
-  bool _closed: 1;
   bool _initialized: 1;
   bool _have_connections: 1;
   bool _have_hookpidx: 1;
@@ -87,8 +86,7 @@ class Router : public ElementLink {
   
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
   int connect(int from_idx, int from_port, int to_idx, int to_port);
-  int close(ErrorHandler *);
-  bool closed() const				{ return _closed; }
+  
   bool initialized() const			{ return _initialized; }
   
   int nelements() const				{ return _elements.size(); }
@@ -124,6 +122,7 @@ class Router : public ElementLink {
   const Handler &handler(int i) const;
   
   int live_reconfigure(int, const String &, ErrorHandler *);
+  void set_configuration(int, const String &);
 
   Timer *timer_head()				{ return &_timer_head; }
   

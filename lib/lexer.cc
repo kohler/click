@@ -1246,12 +1246,6 @@ Lexer::create_router()
   for (int i = 0; i < _requirements.size(); i++)
     router->add_requirement(_requirements[i]);
   
-  String context = landmark();
-  if (context) context += ": ";
-  context += "While defining the router:";
-  ContextErrorHandler cerrh(_errh, context);
-  router->close(&cerrh);
-
   return router;
 }
 

@@ -34,7 +34,7 @@ int
 TimedSink::configure(const String &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpInterval, "packet pull interval", &_interval,
+		     cpMilliseconds, "packet pull interval", &_interval,
 		     0);
 }
 

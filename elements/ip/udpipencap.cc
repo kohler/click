@@ -18,6 +18,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
+#include "elements/standard/alignmentinfo.hh"
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif
@@ -41,7 +42,7 @@ UDPIPEncap::clone() const
 int
 UDPIPEncap::configure(const String &conf, ErrorHandler *errh)
 {
-  _cksum = true;
+  bool do_cksum = true;
   unsigned sp, dp;
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "source address", &_saddr,
@@ -49,14 +50,30 @@ UDPIPEncap::configure(const String &conf, ErrorHandler *errh)
 		  cpIPAddress, "destination address", &_daddr,
 		  cpUnsigned, "destination port", &dp,
 		  cpOptional,
-		  cpBool, "do UDP checksum?", &_cksum,
+		  cpBool, "do UDP checksum?", &do_cksum,
 		  0) < 0)
     return -1;
   if (sp >= 0x10000 || dp >= 0x10000)
     return errh->error("source or destination port too large");
+  
   _sport = sp;
   _dport = dp;
   _id = 0;
+  _cksum = do_cksum;
+
+#ifdef __KERNEL__
+  // check alignment
+  {
+    int ans, c, o;
+    ans = AlignmentInfo::query(this, 0, c, o);
+    _aligned = (ans && c == 4 && o == 0);
+    if (!_aligned)
+      errh->warning("IP header unaligned, cannot use fast IP checksum");
+    if (!ans)
+      errh->message("(Try passing the configuration through `click-align'.)");
+  }
+#endif
+  
   return 0;
 }
 
@@ -88,12 +105,13 @@ UDPIPEncap::simple_action(Packet *p)
   }
 
   ip->ip_sum = 0;
-#if !defined(__KERNEL__) || 1
+#ifdef __KERNEL__
+  if (_aligned) {
+    ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+  } else {
+#endif
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
-#else
-  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
-  { unsigned g = (unsigned)((void *)ip);
-  if (g % 4 != 0) click_chatter("fucker!\n");
+#ifdef __KERNEL__
   }
 #endif
   

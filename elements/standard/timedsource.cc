@@ -35,7 +35,7 @@ int
 TimedSource::configure(const String &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpInterval, "packet generation interval", &_interval,
+		     cpMilliseconds, "packet generation interval", &_interval,
 		     cpOptional,
 		     cpString, "packet data", &_data,
 		     0);

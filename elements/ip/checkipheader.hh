@@ -30,6 +30,9 @@ class CheckIPHeader : public Element {
 
   int _n_bad_src;
   u_int *_bad_src; // array of illegal IP src addresses.
+#ifdef __KERNEL__
+  bool _aligned;
+#endif
   int _drops;
   
  public:

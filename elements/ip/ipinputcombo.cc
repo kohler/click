@@ -18,6 +18,7 @@
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
+#include "elements/standard/alignmentinfo.hh"
 
 IPInputCombo::IPInputCombo()
   : _drops(0), _bad_src(0)
@@ -71,6 +72,19 @@ IPInputCombo::configure(const String &conf, ErrorHandler *errh)
   _bad_src = new u_int [_n_bad_src];
   memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
 
+#ifdef __KERNEL__
+  // check alignment
+  {
+    int ans, c, o;
+    ans = AlignmentInfo::query(this, 0, c, o);
+    _aligned = (ans && c == 4 && o == 2);
+    if (!_aligned)
+      errh->warning("IP header unaligned, cannot use fast IP checksum");
+    if (!ans)
+      errh->message("(Try passing the configuration through `click-align'.)");
+  }
+#endif
+  
   return 0;
 }
 
@@ -105,12 +119,16 @@ IPInputCombo::smaction(Packet *p)
   if(hlen > p->length())
     goto bad;
   
-#ifndef __KERNEL__
-  if(in_cksum((unsigned char *)ip, hlen) != 0)
+#ifdef __KERNEL__
+  if (_aligned) {
+    if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
+      goto bad;
+  } else {
+#endif
+  if (in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
-#else
-  if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
-    goto bad;
+#ifdef __KERNEL__
+  }
 #endif
   
   if(ntohs(ip->ip_len) < hlen)

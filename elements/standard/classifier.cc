@@ -18,7 +18,7 @@
 #include "error.hh"
 #include "confparse.hh"
 #include "straccum.hh"
-#include "alignmentinfo.hh"
+#include "elements/standard/alignmentinfo.hh"
 
 //
 // CLASSIFIER::SPREAD OPERATIONS

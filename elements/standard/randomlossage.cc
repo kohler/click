@@ -40,7 +40,7 @@ RandomLossage::configure(const String &conf, ErrorHandler *errh)
   int p_drop;
   bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpNonnegReal2, "max_p drop probability", 16, &p_drop,
+		  cpNonnegFixed, "max_p drop probability", 16, &p_drop,
 		  cpOptional,
 		  cpBool, "active?", &on,
 		  0) < 0)

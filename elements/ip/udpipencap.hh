@@ -24,7 +24,17 @@
 #include "click_udp.h"
 
 class UDPIPEncap : public Element {
-public:
+  
+  struct in_addr _saddr;
+  unsigned short _sport;
+  struct in_addr _daddr;
+  unsigned short _dport;
+  bool _cksum : 1;
+  bool _aligned : 1;
+  short _id;
+
+ public:
+  
   UDPIPEncap();
   ~UDPIPEncap();
   
@@ -36,13 +46,6 @@ public:
 
   Packet *simple_action(Packet *);
   
-private:
-  struct in_addr _saddr;
-  unsigned short _sport;
-  struct in_addr _daddr;
-  unsigned short _dport;
-  bool _cksum;
-  short _id;
 };
 
 #endif

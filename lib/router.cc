@@ -29,7 +29,7 @@
 
 Router::Router()
   : _please_stop_driver(0), _refcount(0),
-    _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
+    _initialized(0), _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   initialize_head();
@@ -147,19 +147,25 @@ int
 Router::add_element(Element *e, const String &ename, const String &conf,
 		    const String &landmark)
 {
-  if (_closed || !e) return -1;
+  if (_initialized || !e) return -1;
   _elements.push_back(e);
   _element_names.push_back(ename);
   _element_landmarks.push_back(landmark);
   _configurations.push_back(conf);
+  int i = _elements.size() - 1;
   e->use();
-  return _elements.size() - 1;
+  e->set_number(i);
+  /* make all elements use Router as its link: subsequent calls to
+   * schedule_xxxx places elements on this link, therefore allow
+   * driver to see them */
+  e->initialize_link(this);
+  return i;
 }
 
 int
 Router::connect(int from_idx, int from_port, int to_idx, int to_port)
 {
-  if (_closed) return -1;
+  if (_initialized) return -1;
   Hookup hfrom(from_idx, from_port);
   Hookup hto(to_idx, to_port);
   // only add new connections
@@ -169,13 +175,6 @@ Router::connect(int from_idx, int from_port, int to_idx, int to_port)
   _hookup_from.push_back(hfrom);
   _hookup_to.push_back(hto);
   return 0;
-}
-
-int
-Router::close(ErrorHandler *errh)
-{
-  _closed = true;
-  return check_hookup_elements(errh);
 }
 
 void
@@ -694,23 +693,16 @@ int
 Router::initialize(ErrorHandler *errh)
 {
   assert(!_initialized);
-  if (!_closed) {
-    errh->error("compound element could not be initialized");
+  
+  if (check_hookup_elements(errh) < 0)
     return -1;
-  }
   
   Bitvector element_ok(nelements(), true);
   Vector<int> configure_phase(nelements(), 0);
   bool all_ok = true;
   
-  for (int i = 0; i < _elements.size(); i++) {
-    _elements[i]->set_number(i);
-    /* make all elements use Router as its link: subsequent calls to
-     * schedule_xxxx places elements on this link, therefore allow
-     * driver to see them */
-    _elements[i]->initialize_link(this);
+  for (int i = 0; i < _elements.size(); i++)
     configure_phase[i] = !_elements[i]->configure_first();
-  }
   
   notify_hookup_range();
 
@@ -874,6 +866,14 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
   if (result >= 0)
     _configurations[elementno] = conf;
   return result;
+}
+
+void
+Router::set_configuration(int elementno, const String &conf)
+{
+  assert(_initialized);
+  if (elementno >= 0 && elementno < nelements())
+    _configurations[elementno] = conf;
 }
 
 

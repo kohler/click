@@ -40,10 +40,12 @@ click \- runs router configurations at user level
 .RI \%[ router\-file ]
 '
 .SH DESCRIPTION
-The Click modular router can be compiled as a user-level program. It reads
-a router configuration file, sets up the router according to that file, and
-generally runs until interrupted. The router configuration is written in
-the Click language (see 
+The
+.B click
+driver executes a Click modular router specification in a user-level
+program. It reads a router configuration file, sets up the router according
+to that file, and generally continues until interrupted. The router
+configuration is written in the Click language (see
 .M click 5 ),
 and can contain dynamically loadable code, which
 .B click
@@ -72,9 +74,9 @@ If any filename argument is a single dash "-",
 .B click
 will use the standard input or output instead, as appropriate.
 '
-.PD 0
 .TP 5
 .BI \-f " file"
+.PD 0
 .TP
 .BI \-\-file " file"
 Read the router configuration from
@@ -90,6 +92,26 @@ Write the router configuration to
 .IR file
 with all compound elements removed, and without any additional archive
 members.
+'
+.Sp
+.TP
+.BR \-s "[\fIelement\fR]"
+.TP
+.BR \-\-stop "[=\fIelement\fR]"
+Exit when \fIelement\fR is no longer scheduled. Normally, \fIelement\fR is
+a source of packets, and you want the driver to exit as soon as the packet
+source is exhausted. You can provide multiple
+.B \-\-stop
+options; then
+.B click
+will exit as soon as any one of the \fIelement\fRs is no longer scheduled.
+If you do not provide the \fIelement\fR option, the driver will use any
+.M InfiniteSource n ,
+.M RatedSource n ,
+and
+.M FromDump n
+elements in the configuration. This option is useful when profiling a
+configuration or running the driver from a trace.
 '
 .Sp
 .TP

@@ -26,6 +26,7 @@ bool cp_bool(String, bool &, String *rest = 0);
 bool cp_integer(String, int &, String *rest = 0);
 bool cp_integer(String, int base, int &, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int &, int &, String *rest = 0);
+int cp_real(const String &, int frac_digits, int &, String *rest = 0);
 int cp_real2(const String &, int frac_bits, int &, String *rest = 0);
 bool cp_word(String, String &, String *rest = 0);
 
@@ -55,10 +56,10 @@ enum CpVaParseCmd {
   cpByte,	// unsigned char *value
   cpInteger,	// int *value
   cpUnsigned,	// int *value
-  cpReal,	// int frac_digits, int *int_value, int *frac_value
-  cpNonnegReal,	// int frac_digits, int *int_value, int *frac_value
-  cpNonnegReal2,// int frac_bits, int *value
-  cpInterval,	// int *value_milliseconds
+  cpReal,	// int frac_digits, int *value
+  cpNonnegReal,	// int frac_digits, int *value
+  cpMilliseconds, // int *value_milliseconds
+  cpNonnegFixed, // int frac_bits, int *value
   cpString,	// String *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
   cpIPAddressMask, // unsigned char value[4], unsigned char mask[4]
@@ -78,6 +79,7 @@ int cp_va_space_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
 // cp_va_parse stores no values in the value_store arguments
 // unless it succeeds.
 
+String cp_unparse_bool(bool);
 String cp_unparse_real(int, int frac_bits);
 String cp_unparse_ulonglong(unsigned long long, int base, bool uppercase);
 

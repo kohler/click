@@ -55,7 +55,7 @@ RED::configure(const String &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
-		  cpNonnegReal2, "max_p drop probability", 16, &max_p,
+		  cpNonnegFixed, "max_p drop probability", 16, &max_p,
 		  cpOptional,
 		  cpString, "relevant queues", &queues_string,
 		  0) < 0)

@@ -4,7 +4,7 @@
 // Print ok | 100 : 45000028 00000000 401177c3 01000001 02000002 13691369
 
 // You can run it at user level as
-// `userlevel/click < conf/test.click'
+// `userlevel/click -s < conf/test.click'
 
 InfiniteSource(\<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 45 00 00 28  00 00 00 00  40 11 77 c3  01 00 00 01  

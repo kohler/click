@@ -178,6 +178,8 @@ prepared_router()
   r->get_type_index("FromDevice", new AlignClass(a));
   r->get_type_index("PollDevice", new AlignClass(a));
   r->get_type_index("FromLinux", new AlignClass(a));
+  a = new GeneratorAligner(Alignment(4, 0));
+  r->get_type_index("RatedSource", new AlignClass(a));
   a = new WantAligner(Alignment(4, 2));
   r->get_type_index("ToLinux", new AlignClass(a));
   a = new WantAligner(Alignment(4, 0));

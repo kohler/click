@@ -4,7 +4,7 @@
 
 /*
  * =c
- * RandomBitErrors(P [, KIND [, ACTIVE]])
+ * RandomBitErrors(P [, KIND, ACTIVE])
  * =d
  *
  * Change each bit in each packet with probability P. The KIND parameter

@@ -4,6 +4,10 @@ Version 1.0.7
 
 * User-level driver
 
+** User-level Click will no longer stop by default when an InfiniteSource
+   (or RatedSource or FromDump) runs out of packets to send. Supply the
+   `-s' option to get the old behavior.
+
 ** User-level Click can optionally dump the output of element read handlers
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration specified by argument to CallReadHandler element).
@@ -14,6 +18,11 @@ Version 1.0.7
    netmasks. Old-style netmasks are still supported. So for the 18.26.7
    subnet, you can write either `18.26.7.0 255.255.255.0' or
    `18.26.7.0/24'.
+
+** Fixed kernel alignment bug in IP header checking elements: can't use
+   Linux's `fast_ip_csum' on unaligned data.
+
+** Added QuitWatcher.
 
 * Tools
 

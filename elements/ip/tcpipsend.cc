@@ -44,9 +44,6 @@ TCPIPSend::configure(const String &, ErrorHandler *)
   return 0;
 }
 
-
-
-
 int
 TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
@@ -100,7 +97,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   tcp->th_win = htons(0);
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
-#ifndef __KERNEL__
+#if 1 || !defined(__KERNEL__)
   tcp->th_sum = in_cksum((unsigned char *)tcp, sizeof(click_tcp));
 #else
   tcp->th_sum = ip_fast_csum((unsigned char *)tcp, sizeof(click_tcp) >> 2);

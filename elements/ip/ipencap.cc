@@ -18,6 +18,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
+#include "elements/standard/alignmentinfo.hh"
 
 IPEncap::IPEncap()
   : Element(1, 1), _ip_p(-1)
@@ -45,6 +46,20 @@ IPEncap::configure(const String &conf, ErrorHandler *errh)
 		  0) < 0)
     return -1;
   _ip_p = ip_p_uc;
+
+#ifdef __KERNEL__
+  // check alignment
+  {
+    int ans, c, o;
+    ans = AlignmentInfo::query(this, 0, c, o);
+    _aligned = (ans && c == 4 && o == 0);
+    if (!_aligned)
+      errh->warning("IP header unaligned, cannot use fast IP checksum");
+    if (!ans)
+      errh->message("(Try passing the configuration through `click-align'.)");
+  }
+#endif
+  
   return 0;
 }
 
@@ -82,10 +97,14 @@ IPEncap::simple_action(Packet *p)
   }
 
   ip->ip_sum = 0;
-#ifndef __KERNEL__
+#ifdef __KERNEL__
+  if (_aligned) {
+    ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+  } else {
+#endif
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
-#else
-  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+#ifdef __KERNEL__
+  }
 #endif
   
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));

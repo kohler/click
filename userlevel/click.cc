@@ -34,7 +34,9 @@
 #include "glue.hh"
 #include "clickpackage.hh"
 #include "userutils.hh"
+#include "confparse.hh"
 #include "elements/userlevel/readhandler.hh"
+#include "elements/standard/quitwatcher.hh"
 
 #if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
 # define HAVE_DYNAMIC_LINKING 1
@@ -49,6 +51,7 @@
 #define HANDLER_OPT		305
 #define TIME_OPT		306
 #define DIR_OPT			307
+#define STOP_OPT		308
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
@@ -57,6 +60,7 @@ static Clp_Option options[] = {
   { "directory", 'd', DIR_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
+  { "stop", 's', STOP_OPT, Clp_ArgString, Clp_Optional },
   { "time", 't', TIME_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -88,6 +92,9 @@ Options:\n\
   -d, --directory DIR		Write output of read handlers into DIR. \n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
+  -s, --stop[=ELEMENT]          Stop driver once ELEMENT is done. Can be given\n\
+                                multiple times. If not specified, ELEMENTS are\n\
+                                the configuration's packet sources.\n\
   -t, --time                    Print information on how long driver took.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -376,6 +383,9 @@ main(int argc, char **argv)
   const char *output_file = 0;
   bool quit_immediately = false;
   bool report_time = false;
+  bool stop = false;
+  bool stop_guess = false;
+  Vector<String> stops;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -406,6 +416,18 @@ main(int argc, char **argv)
       handler_dir = clp->arg;
       break;
 
+     case STOP_OPT:
+      if (stop && ((stop_guess && clp->have_arg) || (!stop_guess && !clp->have_arg))) {
+	errh->error("conflicting `--stop' options: guess or not?");
+	goto bad_option;
+      }
+      stop = true;
+      if (!clp->have_arg)
+	stop_guess = true;
+      else
+	stops.push_back(clp->arg);
+      break;
+      
      case HANDLER_OPT:
       call_handlers.push_back(clp->arg);
       break;
@@ -497,7 +519,22 @@ particular purpose.\n");
     /* do nothing */;
   router = lexer->create_router();
   lexer->end_parse(cookie);
-  
+
+  // handle stop option
+  if (stop && stop_guess) {
+    for (int i = 0; i < router->nelements(); i++) {
+      Element *e = router->element(i);
+      if (e->cast("InfiniteSource") || e->cast("RatedSource")
+	  || e->cast("FromDump"))
+	stops.push_back(e->id());
+    }
+  }
+  if (stop && !stops.size())
+    errh->error("`--stop' option given, but configuration has no packet sources");
+  if (stop)
+    router->add_element(new QuitWatcher, "click_driver@@QuitWatcher", cp_unargvec(stops), "click");
+
+  // catch control-C
   signal(SIGINT, catch_sigint);
 
   if (router->initialize(errh) < 0)

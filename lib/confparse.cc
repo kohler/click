@@ -535,6 +535,24 @@ cp_real(const String &str, int frac_digits, int &int_part, int &frac_part,
 }
 
 int
+cp_real(const String &str, int frac_digits, int &value, String *rest = 0)
+{
+  int int_part, frac_part;
+  if (!cp_real(str, frac_digits, int_part, frac_part, rest))
+    return -1;
+  
+  int one = 1;
+  for (int i = 0; i < frac_digits; i++)
+    one *= 10;
+  int max = 0x7FFFFFFF / one;
+  if (int_part >= 0 ? int_part >= max : -int_part >= max)
+    return -3;
+  
+  value = (int_part * one + frac_part);
+  return 0;
+}
+
+int
 cp_real2(const String &str, int frac_bits, int &value, String *rest = 0)
 {
   int frac_digits = 1;
@@ -542,19 +560,19 @@ cp_real2(const String &str, int frac_bits, int &value, String *rest = 0)
   for (; base_ten_one < (1 << frac_bits); base_ten_one *= 10)
     frac_digits++;
   
-  int store_int, store_frac;
-  if (!cp_real(str, frac_digits, store_int, store_frac, rest))
+  int int_part, frac_part;
+  if (!cp_real(str, frac_digits, int_part, frac_part, rest))
     return -1;
-  else if (store_int < 0 || store_frac < 0)
+  else if (int_part < 0 || frac_part < 0)
     return -2;
-  else if (store_int > (1 << (32 - frac_bits)) - 1)
+  else if (int_part > (1 << (32 - frac_bits)) - 1)
     return -3;
   else {
-    value = store_int << frac_bits;
+    value = int_part << frac_bits;
     base_ten_one /= 2;
     for (int i = frac_bits - 1; i >= 0; i--, base_ten_one /= 2)
-      if (store_frac >= base_ten_one) {
-	store_frac -= base_ten_one;
+      if (frac_part >= base_ten_one) {
+	frac_part -= base_ten_one;
 	value |= (1 << i);
       }
     return 0;
@@ -753,11 +771,6 @@ struct Values {
   union {
     bool b;
     int i;
-    struct {
-      int int_part;
-      int frac_part;
-    } real10;
-    int real2;
     unsigned char address[8];
 #ifndef CLICK_TOOL
     Element *element;
@@ -779,7 +792,8 @@ cp_command_name(int cp_command)
    case cpInteger: return "int";
    case cpUnsigned: return "unsigned";
    case cpReal: return "real";
-   case cpNonnegReal: case cpNonnegReal2: return "unsigned real";
+   case cpMilliseconds: return "time in seconds";
+   case cpNonnegReal: case cpNonnegFixed: return "unsigned real";
    case cpString: return "string";
    case cpIPAddress: return "IP address";
    case cpIPAddressMask: return "IP address with netmask";
@@ -810,19 +824,12 @@ store_value(int cp_command, Values &v)
    
    case cpInteger:
    case cpUnsigned:
-   case cpNonnegReal2:
-   case cpInterval: {
+   case cpReal:
+   case cpNonnegReal:
+   case cpMilliseconds:
+   case cpNonnegFixed: {
      int *istore = (int *)v.store;
      *istore = v.v.i;
-     break;
-   }
-   
-   case cpReal:
-   case cpNonnegReal: {
-     int *istore = (int *)v.store;
-     int *fracstore = (int *)v.store2;
-     *istore = v.v.real10.int_part;
-     *fracstore = v.v.real10.frac_part;
      break;
    }
    
@@ -955,28 +962,24 @@ cp_va_parsev(Vector<String> &args,
      
      case cpReal:
      case cpNonnegReal:
-     case cpInterval: {
+     case cpMilliseconds: {
        const char *desc = va_arg(val, const char *);
-       int frac_digits = 3; // default for cpInterval
-       if (cp_command != cpInterval) frac_digits = va_arg(val, int);
+       int frac_digits = 3; // default for cpMilliseconds
+       if (cp_command != cpMilliseconds) frac_digits = va_arg(val, int);
        v.store = va_arg(val, int *);
-       if (cp_command != cpInterval) v.store2 = va_arg(val, int *);
        if (skip) break;
-       if (!cp_real(args[argno], frac_digits, v.v.real10.int_part,
-		    v.v.real10.frac_part))
+       int rv = cp_real(args[argno], frac_digits, v.v.i);
+       if (rv == -1)
 	 errh->error("argument %d should be %s (real)", argno+1, desc);
-       else if (cp_command == cpNonnegReal
-		&& (v.v.real10.int_part < 0 || v.v.real10.frac_part < 0))
+       else if (rv == -3)
+	 errh->error("overflow on argument %d (%s)", argno+1, desc);
+       else if ((cp_command == cpNonnegReal || cp_command == cpMilliseconds)
+		&& v.v.i < 0)
 	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
-       else if (cp_command == cpInterval) {
-	 if (v.v.real10.int_part >= 0x7FFFFFFF / 1000)
-	   errh->error("overflow on argument %d (%s)", argno+1, desc);
-	 v.v.i = (v.v.real10.int_part * 1000 + v.v.real10.frac_part);
-       }
        break;
      }
      
-     case cpNonnegReal2: {
+     case cpNonnegFixed: {
        const char *desc = va_arg(val, const char *);
        int frac_bits = va_arg(val, int);
        v.store = va_arg(val, int *);
@@ -1169,6 +1172,12 @@ cp_va_space_parse(const String &argument,
 
 
 // UNPARSING
+
+String
+cp_unparse_bool(bool b)
+{
+  return String(b ? "true" : "false");
+}
 
 String
 cp_unparse_real(int real, int frac_bits)

@@ -69,7 +69,7 @@ FromDump::initialize(ErrorHandler *errh)
 #endif
 
   if (_pending_packet) 
-    SchedulerInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, errh);
   
   return 0;
 }
@@ -145,8 +145,6 @@ FromDump::run_scheduled()
   }
   if (_pending_packet)
     reschedule();
-  else
-    router()->please_stop_driver();
 #endif
 }
 
