@@ -1,3 +1,20 @@
+2003-02-23 Sunday 13:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.39): print routes packets
+	would actuall use in route table read handlers
+
+2003-02-23 Sunday 13:36  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.202): wrap configure check in AC_LANG_C to avoid
+	prototype conflict
+
+2003-02-23 Sunday 13:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.38), dsdvroutetable.hh
+	(1.29): add use_old_route r/w handler; false -> routes with new
+	seqnos are used immediately; true -> route's aren't used until it's
+	okay to advertise them
+
 2003-02-22 Saturday 11:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.37), dsdvroutetable.hh
