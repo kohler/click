@@ -3,9 +3,13 @@
 
 /*
  * =c
+ *
  * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
+ *
  * =s Ethernet
+ *
  * generates responses to ARP queries
+ *
  * =d
  *
  * Input should be ARP request packets, including the Ethernet header.
@@ -15,9 +19,11 @@
  * well as producing replies for a host's own address.
  *
  * The IP/MASK arguments are IP network addresses (IP address/netmask pairs).
- * The netmask can be specified in dotted decimal form
- * (`C<18.26.7.0/255.255.255.0>') or CIDR form
- * (`C<18.26.7.0/24>').
+ * The netmask can be specified in CIDR form (`C<18.26.7.0/24>') or dotted
+ * decimal form (`C<18.26.7.0/255.255.255.0>').
+ *
+ * ARPResponder sets the device annotations on generated ARP responses to the
+ * device annotations from the corresponding queries.
  *
  * =n
  *
@@ -29,6 +35,7 @@
  * address. (You can say C<NAME:ipnet> to use the IP network address.)
  *
  * =e
+ *
  * Produce ARP replies for the local machine (18.26.4.24)
  * as well as proxy ARP for all machines on net 18.26.7
  * directing their packets to the local machine:
@@ -39,6 +46,7 @@
  *   ar -> ToDevice(eth0);
  *
  * =a
+ *
  * ARPQuerier, ARPFaker, AddressInfo */
 
 #include <click/element.hh>
