@@ -1153,7 +1153,10 @@ DSDVRouteTable::write_metric_type(const String &arg, Element *el,
 				  void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  MetricType type = check_metric_type(arg);
+  String s;
+  if (!cp_word(arg, &s))
+    return errh->error("unable to get metric type from argument ``%s''", ((String) arg).cc());
+  MetricType type = check_metric_type(s);
   if (type < 0)
     return errh->error("unknown metric type ``%s''", ((String) arg).cc());
   
