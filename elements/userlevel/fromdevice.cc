@@ -45,7 +45,7 @@
 #include "fakepcap.hh"
 
 FromDevice::FromDevice()
-  : Element(0, 1), _promisc(0), _packetbuf_size(0)
+  : Element(0, 1), _promisc(0), _snaplen(0)
 {
   MOD_INC_USE_COUNT;
 #if FROMDEVICE_PCAP
@@ -72,22 +72,22 @@ int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   bool promisc = false;
-  _packetbuf_size = 2046;
+  _snaplen = 2046;
   _force_ip = false;
   String bpf_filter;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
 		  cpBool, "be promiscuous?", &promisc,
-		  cpUnsigned, "maximum packet length", &_packetbuf_size,
+		  cpUnsigned, "maximum packet length", &_snaplen,
 		  cpKeywords,
 		  "PROMISC", cpBool, "be promiscuous?", &promisc,
-		  "SNAPLEN", cpUnsigned, "maximum packet length", &_packetbuf_size,
+		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
 		  "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
 		  "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
 		  cpEnd) < 0)
     return -1;
-  if (_packetbuf_size > 8190 || _packetbuf_size < 14)
+  if (_snaplen > 8190 || _snaplen < 14)
     return errh->error("maximum packet length out of range");
 #if FROMDEVICE_PCAP
   _bpf_filter = bpf_filter;
@@ -325,10 +325,14 @@ FromDevice::selected(int)
     // and that the buffer allocated by Packet::make is also 4-byte
     // aligned.  Actually, it doesn't matter if the packet is 4-byte
     // aligned; perhaps there is some efficiency aspect?  who cares....
-    WritablePacket *p = Packet::make(2, 0, _packetbuf_size, 0);
-    int len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
+    WritablePacket *p = Packet::make(2, 0, _snaplen, 0);
+    int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
     if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
-	p->change_headroom_and_length(2, len);
+	if (len > _snaplen) {
+	    p->change_headroom_and_length(2, _snaplen);
+	    SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
+	} else
+	    p->change_headroom_and_length(2, len);
 	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
 	if (!_force_ip || fake_pcap_force_ip(p, _datalink))

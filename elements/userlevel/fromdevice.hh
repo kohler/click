@@ -146,7 +146,7 @@ class FromDevice : public Element { public:
   String _ifname;
   bool _promisc : 1;
   int _was_promisc : 2;
-  int _packetbuf_size;
+  int _snaplen;
 #if FROMDEVICE_PCAP
   String _bpf_filter;
 #endif
