@@ -656,3 +656,22 @@ PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &landmar
   
   return _errh->decorate_text(seriousness, String(), prepend_lines(_prefix, ntext));
 }
+
+
+//
+// LANDMARK ERROR HANDLER
+//
+
+LandmarkErrorHandler::LandmarkErrorHandler(ErrorHandler *errh, const String &landmark)
+  : ErrorVeneer(errh), _landmark(landmark)
+{
+}
+
+String
+LandmarkErrorHandler::decorate_text(Seriousness seriousness, const String &lm, const String &text)
+{
+  if (lm)
+    return _errh->decorate_text(seriousness, lm, text);
+  else
+    return _errh->decorate_text(seriousness, _landmark, text);
+}

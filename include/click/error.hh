@@ -112,4 +112,18 @@ class PrefixErrorHandler : public ErrorVeneer {
   
 };
 
+class LandmarkErrorHandler : public ErrorVeneer {
+  
+  String _landmark;
+  
+ public:
+  
+  LandmarkErrorHandler(ErrorHandler *, const String &);
+  
+  void set_landmark(const String &s)	{ _landmark = s; }
+  
+  String decorate_text(Seriousness, const String &, const String &);
+  
+};
+
 #endif
