@@ -82,7 +82,8 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: $(LIBCLICKTOOL) all-local
+install: $(LIBCLICKTOOL) install-local
+install-local: all-local
 	$(mkinstalldirs) $(sbindir)
 	$(INSTALL) click-install $(sbindir)/click-install
 	$(INSTALL) click-uninstall $(sbindir)/click-uninstall
@@ -93,4 +94,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all all-local clean distclean install install-bin install-man $(LIBCLICKTOOL)
+.PHONY: all all-local clean distclean \
+	install install-local install-bin install-man $(LIBCLICKTOOL)

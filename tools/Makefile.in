@@ -66,7 +66,7 @@ distclean:
 
 install: install-subdirs
 install-subdirs: lib
-	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
+	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install-local) || exit 1; done
 install-include:
 	@cd lib && $(MAKE) install-include
 

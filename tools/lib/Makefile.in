@@ -101,7 +101,8 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: libclicktool.a install-include
+install: install-local
+install-local: libclicktool.a install-include
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL) libclicktool.a $(libdir)/libclicktool.a
 install-include:
@@ -114,4 +115,5 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean install install-bin install-man install-include
+.PHONY: all clean distclean \
+	install install-local install-bin install-man install-include
