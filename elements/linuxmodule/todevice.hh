@@ -8,7 +8,7 @@ ToDevice(DEVNAME [, BURST, I<KEYWORDS>])
 
 =s devices
 
-sends packets to network device (kernel)
+sends packets to network device (Linux kernel)
 
 =d
 

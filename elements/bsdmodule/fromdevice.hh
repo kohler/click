@@ -10,7 +10,7 @@ FromDevice(DEVNAME [, PROMISC, BURST, I<KEYWORDS>])
 
 =s devices
 
-reads packets from network device (kernel)
+reads packets from network device (BSD kernel)
 
 =d
 

@@ -166,20 +166,28 @@ sub expand_ereq ($) {
     $ereq{$e};
 }
 
-if ($ELEMENTS) {
-    map { expand_ereq($_) } keys %ereq;
-}
-
 
 # 2.2. changetemplate.pl
-my(@esubj, @ealpha, @esections, $cocked, %edeprecated);
+my(@esubj, @ealpha, @esections, %edefn, $cocked, %edeprecated);
 if ($ELEMENTS) {
     open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
+    $cocked = 0;
     while (<IN>) {
 	push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
 	push @esections, [$1, scalar(@esubj)] if /^\.SS \"(.*)\"/;
-	push @esubj, $1 if /^\.M (.*) n/ && $cocked;
-	$cocked = ($_ =~ /^\.TP/);
+	if (/^\.M (.*) n/ && $cocked == 1) {
+	    push @esubj, $1;
+	    $edefn{$1} = '';
+	    $cocked = 2;
+	} elsif (/^[^\.]/ && $cocked >= 2) {
+	    $edefn{$esubj[-1]} .= $_;
+	    $cocked = 3;
+	} elsif (/^\.M (\S*)/ && $cocked == 3) {
+	    $edefn{$esubj[-1]} .= " " . $1 . " ";
+	} else {
+	    $edefn{$esubj[-1]} = '' if $cocked == 2;
+	    $cocked = ($_ =~ /^\.TP/);
+	}
 	last if (/^\.SH \"ALPHABETICAL/);
     }
     push @{$esections[-1]}, scalar(@esubj);
@@ -192,68 +200,78 @@ if ($ELEMENTS) {
     close IN;
 }
 
-sub element_li ($) {
+my($eli_rownum) = 0;
+sub eli ($) {
     my($e) = @_;
-    my($t) = "<li><a href='$e.n.html'>$e</a>";
-    my(@x);
-    push @x, "D" if $edeprecated{$e};
-    if ($ereq{$e}) {
-	my($r) = $ereq{$e};
-	push @x, "U" if $r =~ /\buserlevel\b/;
-	push @x, "L" if $r =~ /\blinuxmodule\b/;
-	push @x, "B" if $r =~ /\bbsdmodule\b/;
-	push @x, "Ns" if $r =~ /\bns\b/;
+
+    my($pe) = $e;
+    $pe =~ s/\..*//;
+    
+    my($t) = "<tr class='list" . ($eli_rownum + 1) . "'><td>&nbsp;</td>";
+    $eli_rownum = ($eli_rownum + 1) % 2;
+    $t .= "<td><a href='$e.n.html'>$pe</a></td><td>&nbsp;&nbsp;&nbsp;</td>";
+
+    if ($edeprecated{$e}) {
+	$t .= "<td class='deprecated'><s>" . $edefn{$e} . "</s> (deprecated)</td>";
+    } else {
+	$t .= "<td>" . $edefn{$e} . "</td>";
     }
-    $t .= " <small>[" . join('&nbsp;', @x) . "]</small>" if @x;
-    "$t</li>\n";
+
+    $t .= "<td>&nbsp;&nbsp;&nbsp;</td>";
+    
+    if ($ereq{$e}) {
+	my(@x);
+	for (my $i = 0; $i < 2; $i++) {
+	    my($r) = $ereq{$e};
+	    push @x, "U" if $r =~ /\buserlevel\b/;
+	    push @x, "L" if $r =~ /\blinuxmodule\b/;
+	    push @x, "B" if $r =~ /\bbsdmodule\b/;
+	    push @x, "ns" if $r =~ /\bns\b/;
+	    last if @x;
+	    expand_ereq($e);
+	}
+	if (@x) {
+	    $t .= "<td class='drivers'>" . join(', ', @x) . "</td>";
+	} else {
+	    $t .= "<td class='drivers'></td>";
+	}
+    } else {
+	$t .= "<td class='drivers'></td>";
+    }
+    
+    $t . "<td>&nbsp;&nbsp;&nbsp;</td></tr>\n";
 }
 
-if ($ELEMENTS) {
-    open(IN, "$DOCDIR/index.html") || die "$DOCDIR/index.html: $!\n";
-    open(OUT, ">$DOCDIR/index.html.new") || die "$DOCDIR/index.html.new: $!\n";
+sub elist_file ($) {
+    my($file) = @_;
+    open(IN, "$file") || die "$file: $!\n";
+    open(OUT, ">$file.new") || die "$file.new: $!\n";
     while (<IN>) {
-	if (/^<!-- clickdoc: ealpha (\d+)\/(\d+)/) {
+	if (/^<!-- clickdoc: ename/) {
 	    print OUT;
-	    my($num, $total) = ($1, $2);
-	    my($amt) = int((@ealpha - 1) / $2) + 1;
-	    my($index) = ($num - 1) * $amt;
-	    for ($i = $index; $i < $index + $amt && $i < @ealpha; $i++) {
-		print OUT element_li($ealpha[$i]);
+
+	    for ($i = 0; $i < @ealpha; $i++) {
+		print OUT eli($ealpha[$i]);
 	    }
+
 	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
 	    print OUT;
-	} elsif (/^<!-- clickdoc: esubject (\d+)\/(\d+)/) {
+	} elsif (/^<!-- clickdoc: ecat/) {
 	    print OUT;
-	    my($num, $total) = ($1, $2);
-	    my($amt) = int((@esubj + 2*@esections - 1) / $2) + 1;
-	    my($index) = ($num - 1) * $amt;
-	    my($ul) = "<ul>";
-	    $ul = "<ul class='$1'>" if m/ulclass='(\w+)'/;
 
-	    # find first section number
-	    my($secno, $secno2);
-	    for ($secno = 0; $secno < @esections; $secno++) {
-		my($diffa, $diffb) = ($esections[$secno]->[1] + 2*$secno - $index, $esections[$secno]->[2] + 2*($secno + 1) - $index);
-		last if $diffa >= 0;
-		last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
-	    }
+	    my($ncat) = 0;
+	    foreach my $cat (@esections) {
+		print OUT "<tr><td>&nbsp;</td></tr>\n" if $ncat != 0;
+		$ncat++;
 
-	    # find last section number
-	    $index += $amt;
-	    for ($secno2 = $secno; $secno2 < @esections; $secno2++) {
-		my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno2 - $index, $esections[$secno2]->[2] + 2*($secno2 + 1) - $index);
-		last if $diffa >= 0;
-		last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
-	    }
+		# print subject heading
+		print OUT "<tr class='listh'><td>&nbsp;</td><th colspan='4'>", $cat->[0], "</th><th colspan='2'><a href='#drivers'>Drivers</a></th></tr>\n";
 
-	    # iterate over sections
-	    for ($i = $secno; $i < $secno2; $i++) {
-		print OUT "<p class='esubject'>", $esections[$i]->[0], "</p>\n";
-		print OUT "$ul\n";
-		for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
-		    print OUT element_li($esubj[$j]);
+		# print elements
+		$eli_rownum = 0;
+		for (my $i = $cat->[1]; $i < $cat->[2]; $i++) {
+		    print OUT eli($esubj[$i]);
 		}
-		print OUT "</ul>\n";
 	    }
 	
 	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
@@ -264,12 +282,18 @@ if ($ELEMENTS) {
     }
     close IN;
     close OUT;
-    if (system("cmp $DOCDIR/index.html $DOCDIR/index.html.new >/dev/null 2>&1")) {
-	unlink("$DOCDIR/index.html") || die "unlink $DOCDIR/index.html: $!\n";
-	rename("$DOCDIR/index.html.new", "$DOCDIR/index.html") || die "rename $DOCDIR/index.html.new: $!\n";
+    if (system("cmp $file $file.new >/dev/null 2>&1")) {
+	unlink("$file") || die "unlink $file: $!\n";
+	rename("$file.new", "$file") || die "rename $file.new: $!\n";
     } else {
-	unlink("$DOCDIR/index.html.new") || die "unlink $DOCDIR/index.html.new: $!\n";
+	unlink("$file.new") || die "unlink $file.new: $!\n";
     }
+}
+
+
+if ($ELEMENTS) {
+    elist_file("$DOCDIR/elemcat.html");
+    elist_file("$DOCDIR/elemname.html");
 }
 
 # 3. call `man2html'
