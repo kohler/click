@@ -1,3 +1,8 @@
+2002-10-06 Sunday 14:09  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/tcprewriter.cc (1.29): fix htonl bug reported by
+	Wang Po-Cheng <pcwang@cs.stanford.edu>
+
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
 	* include/click/task.hh (1.19): remove unused method
