@@ -29,7 +29,7 @@ class Discard : public Element { public:
   void push(int, Packet *);
   void run_scheduled();
 
- private:
+protected:
 
   Task _task;
   
