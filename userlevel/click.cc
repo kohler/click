@@ -32,6 +32,7 @@
 #include "archive.hh"
 #include "glue.hh"
 #include "clickpackage.hh"
+#include "userutils.hh"
 
 #if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
 # define HAVE_DYNAMIC_LINKING 1
@@ -101,42 +102,6 @@ catch_sigint(int)
 
 
 // stuff for dynamic linking
-
-String
-unique_tmpnam(const String &pattern, ErrorHandler *errh)
-{
-  String tmpdir;
-  if (const char *path = getenv("TMPDIR"))
-    tmpdir = path;
-#ifdef P_tmpdir
-  else if (P_tmpdir)
-    tmpdir = P_tmpdir;
-#endif
-  else
-    tmpdir = "/tmp";
-
-  int star_pos = pattern.find_left('*');
-  String left, right;
-  if (star_pos >= 0) {
-    left = "/" + pattern.substring(0, star_pos);
-    right = pattern.substring(star_pos + 1);
-  } else
-    left = "/" + pattern;
-  
-  int uniqueifier = getpid();
-  while (1) {
-    String name = tmpdir + left + String(uniqueifier) + right;
-    int result = open(name.cc(), O_WRONLY | O_CREAT | O_EXCL, S_IRWXU);
-    if (result >= 0) {
-      close(result);
-      return name;
-    } else if (errno != EEXIST) {
-      errh->error("cannot create temporary file: %s", strerror(errno));
-      return String();
-    }
-    uniqueifier++;
-  }
-}
 
 #if HAVE_DYNAMIC_LINKING
 extern "C" {
@@ -231,6 +196,123 @@ call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh)
   return 0;
 }
 
+
+// compile packages
+
+#if HAVE_DYNAMIC_LINKING
+
+static bool
+prepare_compile_tmpdir(Vector<ArchiveElement> &archive,
+		       String &tmpdir, String &compile_prog,
+		       ErrorHandler *errh)
+{
+  ContextErrorHandler cerrh(errh, "While preparing to compile packages:");
+  
+  // change to temporary directory
+  tmpdir = click_mktmpdir(&cerrh);
+  if (!tmpdir)
+    return false;
+  if (chdir(tmpdir.cc()) < 0)
+    cerrh.fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+
+  // find compile program
+  compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, &cerrh);
+  if (!compile_prog)
+    return false;
+
+  // look for .hh files
+  for (int i = 0; i < archive.size(); i++)
+    if (archive[i].name.substring(-3) == ".hh") {
+      String filename = archive[i].name;
+      FILE *f = fopen(filename, "w");
+      if (!f)
+	cerrh.warning("%s: %s", filename.cc(), strerror(errno));
+      else {
+	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+	fclose(f);
+      }
+    }
+
+  return true;
+}
+
+static void
+compile_archive_packages(Vector<ArchiveElement> &archive,
+			 ErrorHandler *errh)
+{
+  HashMap<String, int> have_requirements(-1);
+
+  // analyze archive
+  for (int i = 0; i < archive.size(); i++) {
+    const ArchiveElement &ae = archive[i];
+    if (ae.name.substring(-3) == ".cc") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -3));
+      if (have == -1)
+	have = i;
+    } else if (ae.name.substring(-3) == ".uo") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -3));
+      have = -2;
+    }
+  }
+  
+  String tmpdir;
+  String click_compile_prog;
+  
+  // check requirements
+  int thunk = 0, value; String package;
+  while (have_requirements.each(thunk, package, value))
+    if (value >= 0) {
+      // have source, but not package; compile it
+      // XXX what if it's not required?
+      
+      if (!click_compile_prog)
+	if (!prepare_compile_tmpdir(archive, tmpdir, click_compile_prog, errh))
+	  exit(1);
+
+      ContextErrorHandler cerrh
+	(errh, "While compiling package `" + package + ".uo':");
+
+      // write .cc file
+      String filename = package + ".cc";
+      String source_text = archive[value].data;
+      FILE *f = fopen(filename, "w");
+      if (!f)
+	cerrh.fatal("%s: %s", filename.cc(), strerror(errno));
+      fwrite(source_text.data(), 1, source_text.length(), f);
+      fclose(f);
+      // grab compiler options
+      String compiler_options;
+      if (source_text.substring(0, 17) == "// click-compile:") {
+	const char *s = source_text.data();
+	int pos = 17;
+	int len = source_text.length();
+	while (pos < len && s[pos] != '\n' && s[pos] != '\r')
+	  pos++;
+	// XXX check user input for shell metas?
+	compiler_options = source_text.substring(17, pos - 17) + " ";
+      }
+      
+      // run click-compile
+      errh->message("Compiling `%s.uo'...", package.cc());
+      String compile_command = click_compile_prog + " --target=user --package=" + package + ".uo " + compiler_options + filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	cerrh.fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	cerrh.fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	cerrh.fatal("`%s' failed", compile_command.cc());
+
+      // grab object file and add to archive
+      ArchiveElement ae = init_archive_element(package + ".uo", 0600);
+      ae.data = file_string(package + ".uo", &cerrh);
+      archive.push_back(ae);
+    }
+}
+
+#endif
+
+
 // main
 
 extern void export_elements(Lexer *);
@@ -314,29 +396,11 @@ particular purpose.\n");
   }
   
  done:
-  FILE *f;
-  String filename;
-  if (router_file && strcmp(router_file, "-") != 0) {
-    f = fopen(router_file, "r");
-    if (!f)
-      errh->fatal("%s: %s", router_file, strerror(errno));
-    filename = router_file;
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-
-  // read string from file
-  StringAccum config_sa;
-  while (!feof(f)) {
-    if (char *x = config_sa.reserve(2048)) {
-      int r = fread(x, 1, 2048, f);
-      config_sa.forward(r);
-    } else
-      errh->fatal("out of memory");
-  }
-  if (f != stdin)
-    fclose(f);
+  String config_str = file_string(router_file, errh);
+  if (errh->nerrors() > 0)
+    exit(1);
+  if (!router_file || strcmp(router_file, "-") == 0)
+    router_file = "<stdin>";
 
   // prepare lexer (for packages)
   lexer = new Lexer(errh);
@@ -348,7 +412,6 @@ particular purpose.\n");
 #endif
   
   // find config string in archive
-  String config_str = config_sa.take_string();
   if (config_str.length() != 0 && config_str[0] == '!') {
     Vector<ArchiveElement> archive;
     separate_ar_string(config_str, archive, errh);
@@ -359,9 +422,9 @@ particular purpose.\n");
 	found_config = true;
       }
 #if HAVE_DYNAMIC_LINKING
-      else if (HAVE_DYNAMIC_LINKING
-	       && archive[i].name.length() > 3
-	       && archive[i].name.substring(-3) == ".uo") {
+    compile_archive_packages(archive, errh);
+    for (int i = 0; i < archive.size(); i++)
+      if (archive[i].name.substring(-3) == ".uo") {
 	num_packages++;
 	String tmpnam = unique_tmpnam("package" + String(num_packages) + "-*.uo", errh);
 	if (!tmpnam) exit(1);
@@ -380,7 +443,7 @@ particular purpose.\n");
   }
 
   // lex
-  int cookie = lexer->begin_parse(config_str, filename, 0);
+  int cookie = lexer->begin_parse(config_str, router_file, 0);
   while (lexer->ystatement())
     /* do nothing */;
   router = lexer->create_router();

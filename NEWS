@@ -23,16 +23,23 @@ Version 1.0.5
 
 * Added select_fd() and selected() to ToBPF.
 
-* conf/make-udpgen.pl: a perl script that generates udpgen configuration.
+* conf/make-udpgen.pl: a Perl script that generates udpgen configuration.
 
-* conf/make-udpcount.pl: a perl script that generates udpcount configuration.
+* conf/make-udpcount.pl: a Perl script that generates udpcount configuration.
 
 * Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
 * TimedSource::initialize now sets tickets, allowing TimedSource to be
   scheduled.
 
-* Bug fixes in click-xform.
+* click-xform: Bug fixes and performance improvements.
+
+* click-devirtualize: Bug fixes.
+
+* Added click-combine and click-uncombine.
+
+* The click user-level driver can now compile package sources, like
+  click-install(1).
 
 
 Version 1.0.4   13.Apr.2000
