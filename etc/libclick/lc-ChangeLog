@@ -1,3 +1,8 @@
+2002-08-02 Friday 15:57  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4, libsrc-Makefile.in: get rid of -MD from Makefiles,
+	shove it on CC and CXX instead; requested by David Scott Page
+
 2002-08-01 Thursday 14:05  Eddie Kohler <kohler@icir.org>
 
 	* include/click/glue.hh, include/click/glue.hh, libsrc/element.cc,

@@ -1,3 +1,34 @@
+2002-08-02 Friday 15:57  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.18), aclocal.m4 (1.18), bsdmodule/Makefile.in
+	(1.23), etc/libclick/lc-libsrc-Makefile.in (1.9),
+	etc/samplepackage/Makefile.in (1.29), exopc/Makefile.in (1.14),
+	linuxmodule/Makefile.in (1.75), tools/click-align/Makefile.in
+	(1.15), tools/click-check/Makefile.in (1.11),
+	tools/click-combine/Makefile.in (1.11),
+	tools/click-devirtualize/Makefile.in (1.11),
+	tools/click-fastclassifier/Makefile.in (1.16),
+	tools/click-flatten/Makefile.in (1.7),
+	tools/click-install/Makefile.in (1.19),
+	tools/click-mkmindriver/Makefile.in (1.10),
+	tools/click-pretty/Makefile.in (1.4),
+	tools/click-undead/Makefile.in (1.10),
+	tools/click-xform/Makefile.in (1.19), tools/lib/Makefile.in (1.27),
+	tools/udpgen/Makefile.in (1.6), userlevel/Makefile.in (1.66): get
+	rid of -MD from Makefiles, shove it on CC and CXX instead;
+	requested by David Scott Page
+
+2002-08-02 Friday 14:50  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: oldipreassembler.cc (1.2), oldipreassembler.hh
+	(1.3): foo on oldipreassembler
+
+2002-08-02 Friday 14:49  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.20): in clickfs, add a symlink
+	/proc/click -> /click, to make it easier for people to
+	--enable-clickfs
+
 2002-08-01 Thursday 14:05  Eddie Kohler <kohler@icir.org>
 
 	* include/click/glue.hh (1.28), lib/element.cc (1.73), lib/glue.cc
