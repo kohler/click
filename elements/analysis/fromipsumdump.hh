@@ -49,6 +49,11 @@ Boolean. If false, then FromIPSummaryDump will not emit packets (until the
 Boolean. Determines the contents of packet data not set by the dump. If true,
 this data is zero. If false (the default), this data is random garbage.
 
+=item CHECKSUM
+
+Boolean. If true, then output packets' IP, TCP, and UDP checksums are set. If
+false (the default), the checksum fields contain random garbage.
+
 =item PROTO
 
 Byte (0-255). Sets the IP protocol used for output packets when the dump
@@ -173,6 +178,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _stop : 1;
     bool _format_complaint : 1;
     bool _zero : 1;
+    bool _checksum : 1;
     bool _active : 1;
     bool _multipacket : 1;
     bool _have_flowid : 1;
