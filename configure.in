@@ -160,7 +160,7 @@ dnl check whether tools should be built for host or build
 dnl
 
 AC_ARG_ENABLE(tools,
-  [  --enable-tools=WHERE    build tools to run WHERE [mixed]],
+  [  --enable-tools=WHERE    build tools to run WHERE [[mixed]]],
   :, enable_tools=mixed)
 
 if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build; then
