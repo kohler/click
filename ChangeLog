@@ -1,3 +1,14 @@
+2001-11-21 Wednesday 00:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.43), elements/grid/gridlocationinfo.cc (1.12),
+	elements/grid/gridlocationinfo.hh (1.6),
+	elements/grid/locationinfo.cc (1.25), elements/grid/locationinfo.hh
+	(1.15), tools/build-grid-config.sh (1.3), tools/grid-params.m4
+	(1.3), tools/run-grid (1.8): added location tag support for grid. 
+	due to script heinousness, these ags must be strings with nos
+	spaces or weird chars.	doubtless a more motivated hacket could fix
+	the scripts to properly quote the various tag strings...
+
 2001-11-20 Tuesday 23:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyhops.cc (1.10), gridlocationinfo.cc
