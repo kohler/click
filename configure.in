@@ -538,7 +538,15 @@ dnl
 dnl Provisions
 dnl
 
-provisions=''
+dnl start out with CPU
+provisions="$target_cpu"
+case "$target_cpu" in
+  i386) :;;
+  i486|i586) provisions="$provisions i386";;
+  i686|i786) provisions="$provisions i386 i586";;
+esac
+
+dnl add Linux provisions
 if test $ac_have_linux_kernel = y; then
   ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
   if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
@@ -547,6 +555,7 @@ if test $ac_have_linux_kernel = y; then
     provisions="linux_2_4 $provisions"
   fi
 fi
+
 AC_SUBST(provisions)
 
 dnl
