@@ -1,3 +1,17 @@
+2004-06-30 Wednesday 18:27  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: madwifirate.cc (1.1), madwifirate.hh (1.1),
+	settxpower.cc (1.4), settxpower.hh (1.4): add more wifi elements.
+
+2004-06-30 Wednesday 18:27  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/autoratefallback.cc (1.5),
+	elements/wifi/autoratefallback.hh (1.4),
+	elements/wifi/probetxrate.cc (1.7), elements/wifi/probetxrate.hh
+	(1.6), elements/wifi/wifidupefilter.cc (1.1),
+	elements/wifi/wifidupefilter.hh (1.1), include/clicknet/wifi.h
+	(1.5): add seq. dupe filter for 802.11 packets.
+
 2004-06-30 Wednesday 14:41  John Bicket <jbicket@mit.edu>
 
 	* conf/gen_config_roofnet.pl (1.2): add gateway support.
