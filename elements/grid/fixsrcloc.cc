@@ -65,10 +65,13 @@ Packet *
 FixSrcLoc::simple_action(Packet *p)
 {
   assert(_locinfo);
-  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
+  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->loc = _locinfo->get_current_location();
-  gh->loc.lat = (float) htonl((unsigned long) gh->loc.lat);
-  gh->loc.lon = (float) htonl((unsigned long) gh->loc.lon);
+  assert(sizeof(float) == sizeof(unsigned long));
+  long t1 = htonl(*(unsigned long *) &gh->loc.lat);
+  long t2 = htonl(*(unsigned long *) &gh->loc.lon);
+  gh->loc.lat = *(float *) &t1;
+  gh->loc.lon = *(float *) &t2;
   return p;
 }
 

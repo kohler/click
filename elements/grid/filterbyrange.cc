@@ -68,8 +68,10 @@ FilterByRange::push(int, Packet *p)
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_location remote_loc(gh->loc);
   assert(sizeof(float) == sizeof(unsigned long));
-  remote_loc.lat = (float) ntohl((unsigned long) remote_loc.lat);
-  remote_loc.lon = (float) ntohl((unsigned long) remote_loc.lon);
+  long t1 = ntohl(*(unsigned long *) &remote_loc.lat);
+  long t2 = ntohl(*(unsigned long *) &remote_loc.lon);
+  remote_loc.lat = *(float *) &t1;
+  remote_loc.lon = *(float *) &t2;
 
   assert(_locinfo);
   grid_location our_loc = _locinfo->get_current_location();
@@ -82,6 +84,8 @@ FilterByRange::push(int, Packet *p)
 
 #define GRID_RAD_PER_DEG 0.017453293 // from xcalc
 #define GRID_EARTH_RADIUS 6378156 // metres XXX do i believe this?
+
+#define sign(x) (((x) < 0) ? -1 : 1)
 
 double
 FilterByRange::calc_range(grid_location l1, grid_location l2)
@@ -97,9 +101,23 @@ FilterByRange::calc_range(grid_location l1, grid_location l2)
   double l2_lat = l2.lat * GRID_RAD_PER_DEG;
   double l2_lon = l2.lon * GRID_RAD_PER_DEG;
 
-  double cos_g_c = sin(l1_lat)*sin(l2_lat) + cos(l1_lat)*cos(l2_lat)*cos(l1_lon - l2_lon);
+  double diff_lon;
+  if (sign(l1_lon) == sign(l2_lon))
+    diff_lon = fabs(l1_lon - l2_lon);
+  else {
+    if (sign(l1_lon) < 0)
+      diff_lon = l2_lon - l1_lon;
+    else
+      diff_lon = l1_lon - l2_lon;
+  }
 
-  assert(cos_g_c >= -1 && cos_g_c <= 1); 
+  double sin_term = sin(l1_lat) * sin(l2_lat);
+  double cos_term = cos(l1_lat) * cos(l2_lat);
+  double cos_dl = cos(diff_lon);
+  volatile double cos_g_c = sin_term + cos_term*cos_dl; // volatile: linux precision issues?
+
+  // without making cos_g_c volatile, this assert fails when cos_g_c is 1.
+  assert(cos_g_c >= -1.0 && cos_g_c <= 1.0); 
   double g_c_angle = acos(cos_g_c);
   return g_c_angle * GRID_EARTH_RADIUS;
 }
