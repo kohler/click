@@ -1,3 +1,13 @@
+2003-01-27 Monday 16:32  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipsumdump.cc (1.36), toipsumdump.hh (1.31):
+	add ToIPSummaryDump::add_note()
+
+2003-01-27 Monday 16:32  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: progressbar.cc (1.21), progressbar.hh
+	(1.14): ProgressBar: faster default UPDATE period
+
 2003-01-26 Sunday 21:57  Eddie Kohler <kohler@icir.org>
 
 	* etc/linux-2.4.20-patch (1.2): Doug reported a missing conversion
