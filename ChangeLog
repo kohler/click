@@ -1,3 +1,13 @@
+2002-08-13 Tuesday 15:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ipflowid.hh (1.12), lib/ipflowid.cc (1.18): add
+	IPFlowID(const click_ip *) constructor
+
+2002-08-13 Tuesday 15:43  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/: icmprewriter.cc (1.13), icmprewriter.hh (1.7):
+	buglet fixlets
+
 2002-08-12 Monday 23:51  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.24), fromipsumdump.hh
