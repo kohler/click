@@ -538,7 +538,7 @@ EOF
 
     # set up awk program
     if test -n "$package"; then
-	test -n "$includes" && includes='  print "#ifdef HAVE_CONFIG_H\n#include <config.h>\n#endif\n#include <click/config.h>\n#include <click/package.hh>\n#include <click/glue.hh>";
+	test -n "$includes" && includes='  print "#define WANT_MOD_USE_COUNT 1\n#ifdef HAVE_CONFIG_H\n#include <config.h>\n#endif\n#include <click/config.h>\n#include <click/package.hh>\n#include <click/glue.hh>";
   for (file in INCLUDES) {
     print "#include ", file;
   }'
