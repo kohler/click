@@ -33,12 +33,17 @@ AC_CHECK_TOOL(STRIP, strip, :)
 
 
 dnl
-dnl build userlevel? Linux module? are we compiling on Linux?
+dnl check drivers to enable
 dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
 AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
+
+
+dnl
+dnl How to build linuxmodule driver?
+dnl
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
@@ -51,8 +56,8 @@ if test "x$linuxdir" = xNONE; then
     AC_MSG_WARN([
 =========================================
 
-I can't find /usr/src/linux, so I'm not compiling for Linux
-(or try the --with-linux=DIR option).
+I can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
+(You may need the --with-linux=DIR option.)
 
 =========================================])
   fi
@@ -67,24 +72,57 @@ else
   AC_MSG_ERROR([
 =========================================
 
-I can't find $linuxdir/include/linux/skbuff.h:
-Are you sure $linuxdir holds the Linux source code?
+I can't find $linuxdir/include/linux/skbuff.h!
+Are you sure $linuxdir contains Linux kernel source?
 
 =========================================])
 fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
 
+
+dnl
+dnl How to build bsdmodule driver?
+dnl
+
 AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/src/sys]],
   [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys; fi],
   freebsddir=NONE)
 
-if test "x$enable_bsdmodule" = xyes -a -d $freebsddir; then
+if test "x$freebsddir" = xNONE; then
+  if test -d /usr/src/sys; then
+    freebsddir=/usr/src/sys
+  elif test "x$enable_bsdmodule" = xyes; then
+    AC_MSG_WARN([
+=========================================
+
+I can't find /usr/src/sys, so I'm not compiling the bsdmodule driver.
+(You may need the --with-freebsd=DIR option.)
+
+=========================================])
+  fi
+fi
+
+if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
+  ac_have_bsd_kernel=n
+  freebsddir=NONE
+elif test -r $freebsddir/net/if_var.h; then
   ac_have_bsd_kernel=y
 else
-  ac_have_bsd_kernel=n
+  AC_MSG_ERROR([
+=========================================
+
+I can't find $freebsddir/net/if_var.h!
+Are you sure $freebsddir contains FreeBSD kernel source?
+
+=========================================])
 fi
 AC_SUBST(freebsddir)
+
+
+dnl
+dnl check whether target is Linux
+dnl
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_COMPILE([], [#ifndef __linux__
