@@ -1,3 +1,13 @@
+2001-07-30 Monday 14:11  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-adapt-ron.pl (1.4): added checkipheader to update
+	annotations
+
+2001-07-30 Monday 13:04  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/: make-linux-patch (1.3), restore-linux (1.3): keep scripts
+	consistent
+
 2001-07-30 Monday 12:12  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc (1.24), tools/run-grid
