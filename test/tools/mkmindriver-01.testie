@@ -1,0 +1,42 @@
+%script
+click-mkmindriver -E Print -p foo --no-check -u
+mv elements_foo.conf elements_foo.conf~
+sort elements_foo.conf~ > elements_foo.conf
+
+%stdin
+FromDevice(eth0) -> ToDump(/tmp/x);
+
+%expect stderr
+Creating Makefile.foo...
+Creating elements_foo.conf...
+Build 'fooclick' with 'make -f Makefile.foo'.
+
+%expect elements_foo.conf
+elements/standard/addressinfo.cc	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
+elements/standard/alignmentinfo.cc	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
+elements/standard/drivermanager.cc	<click/standard/drivermanager.hh>	DriverManager-DriverManager
+elements/standard/errorelement.cc	<click/standard/errorelement.hh>	ErrorElement-Error
+elements/standard/portinfo.cc	<click/standard/portinfo.hh>	PortInfo-PortInfo
+elements/standard/print.cc	"elements/standard/print.hh"	Print-Print
+elements/standard/scheduleinfo.cc	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo
+elements/userlevel/controlsocket.cc	"elements/userlevel/controlsocket.hh"	ControlSocket-ControlSocket
+elements/userlevel/fakepcap.cc	"elements/userlevel/fakepcap.hh"	
+elements/userlevel/fromdevice.cc	"elements/userlevel/fromdevice.hh"	FromDevice-FromDevice
+elements/userlevel/todump.cc	"elements/userlevel/todump.hh"	ToDump-ToDump
+
+%expect Makefile.foo
+INSTALLPROGS = fooclick
+include Makefile
+
+elements_foo.mk: elements_foo.conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" -v ELEMENT_OBJS_foo < elements_foo.conf > elements_foo.mk
+elements_foo.cc: elements_foo.conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < elements_foo.conf > elements_foo.cc
+	@rm -f elements_foo.d
+-include elements_foo.mk
+OBJS_foo = $(ELEMENT_OBJS_foo) elements_foo.o click.o
+fooclick: Makefile Makefile.foo libclick.a $(OBJS_foo)
+	$(CXXLINK) -rdynamic $(OBJS_foo) $(LIBS) libclick.a
+
+%ignore
+#.*

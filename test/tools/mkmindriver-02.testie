@@ -1,0 +1,45 @@
+%script
+click-mkmindriver -E Print -p foo --no-check -k
+mv elements_foo.conf elements_foo.conf~
+sort elements_foo.conf~ > elements_foo.conf
+
+%stdin
+FromDevice(eth0) -> BandwidthShaper -> ToHostSniffers(eth1);
+
+%expect stderr
+Creating Makefile.foo...
+Creating elements_foo.conf...
+Build 'fooclick.o' with 'make -f Makefile.foo'.
+
+%expect elements_foo.conf
+elements/linuxmodule/anydevice.cc	"elements/linuxmodule/anydevice.hh"	
+elements/linuxmodule/fromdevice.cc	"elements/linuxmodule/fromdevice.hh"	FromDevice-FromDevice
+elements/linuxmodule/tohost.cc	"elements/linuxmodule/tohost.hh"	ToHost-ToHost
+elements/linuxmodule/tohostsniffers.cc	"elements/linuxmodule/tohostsniffers.hh"	ToHostSniffers-ToHostSniffers
+elements/standard/addressinfo.cc	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
+elements/standard/alignmentinfo.cc	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
+elements/standard/bandwidthshaper.cc	"elements/standard/bandwidthshaper.hh"	BandwidthShaper-BandwidthShaper
+elements/standard/drivermanager.cc	<click/standard/drivermanager.hh>	DriverManager-DriverManager
+elements/standard/errorelement.cc	<click/standard/errorelement.hh>	ErrorElement-Error
+elements/standard/portinfo.cc	<click/standard/portinfo.hh>	PortInfo-PortInfo
+elements/standard/print.cc	"elements/standard/print.hh"	Print-Print
+elements/standard/scheduleinfo.cc	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo
+elements/standard/shaper.cc	"elements/standard/shaper.hh"	Shaper-Shaper
+
+%expect Makefile.foo
+INSTALLOBJS = fooclick.o
+include Makefile
+
+elements_foo.mk: elements_foo.conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" -v ELEMENT_OBJS_foo < elements_foo.conf > elements_foo.mk
+elements_foo.cc: elements_foo.conf $(top_builddir)/click-buildtool
+	$(top_builddir)/click-buildtool elem2export < elements_foo.conf > elements_foo.cc
+	@rm -f elements_foo.d
+-include elements_foo.mk
+OBJS_foo = $(GENERIC_OBJS) $(ELEMENT_OBJS_foo) $(LINUXMODULE_OBJS) elements_foo.o
+fooclick.o: Makefile Makefile.foo $(OBJS_foo)
+	$(LD) -r -o fooclick.o $(OBJS_foo)
+	$(STRIP) -g fooclick.o
+
+%ignore
+#.*
