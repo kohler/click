@@ -1,3 +1,9 @@
+2005-02-07 Monday 17:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.70), lib/lexer.cc (1.80),
+	lib/router.cc (1.174): improve module reference system: reference
+	the module BEFORE calling the factory function
+
 2005-02-07 Monday 16:19  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/glue.hh (1.45): don't provide convenience
