@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_STRIDESCHED_HH
 #define CLICK_STRIDESCHED_HH
 #include <click/element.hh>
@@ -33,100 +34,98 @@ CLICK_DECLS
 
 class StrideSched : public Element { public:
   
-  StrideSched();
-  ~StrideSched();
+    StrideSched();
+    ~StrideSched();
 
-  const char *class_name() const		{ return "StrideSched"; }
-  const char *processing() const		{ return PULL; }
+    const char *class_name() const		{ return "StrideSched"; }
+    const char *processing() const		{ return PULL; }
   
-  int configure(Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure(Vector<String> &conf, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
 
-  enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
-  int tickets(int) const;
-  int set_tickets(int, int, ErrorHandler *);
+    enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
+    int tickets(int) const;
+    int set_tickets(int, int, ErrorHandler *);
   
-  Packet *pull(int port);
+    Packet *pull(int port);
 
- protected:
+  protected:
   
-  struct Client {
-
-    Client *_prev;
-    Client *_next;
-    unsigned _pass;
-    unsigned _stride;
-    int _tickets;
-    NotifierSignal _signal;
-    int _port;
+    struct Client {
+	Client *_prev;
+	Client *_next;
+	unsigned _pass;
+	unsigned _stride;
+	int _tickets;
+	NotifierSignal _signal;
+	int _port;
+	Client *_list;
+    
+	Client() : _prev(0), _next(0), _pass(0), _stride(0), _tickets(-1), _port(-1) { }
+	inline Client(int port, int tickets);
+    
+	void set_tickets(int);
+	
+	void make_head();
+    
+	void insert(Client *c);
+	void remove();
+	void stride();
+    };
+  
     Client *_list;
-    
-    Client() : _prev(0), _next(0), _pass(0), _stride(0), _tickets(-1), _port(-1) {}
-    Client(int port, int tickets);
-    
-    void set_tickets(int);
-    
-    void make_head();
-    
-    void insert(Client *c);
-    void remove();
-    void stride();
-
-  };
-  
-  Client *_list;
 
 };
 
 inline
 StrideSched::Client::Client(int port, int tickets)
-  : _prev(0), _next(0), _pass(0), _stride(STRIDE1 / tickets),
-    _tickets(tickets), _port(port)
+    : _prev(0), _next(0), _pass(0), _stride(STRIDE1 / tickets),
+      _tickets(tickets), _port(port)
 {
-  _pass = _stride;
+    _pass = _stride;
 }
 
 inline void
 StrideSched::Client::make_head()
 {
-  _prev = _next = _list = this;
+    _prev = _next = _list = this;
 }
 
 inline void
 StrideSched::Client::insert(Client *c)
 {
-  assert(this == _list);
-  Client *x = _next;
-  while (x != _list && PASS_GT(c->_pass, x->_pass))
-    x = x->_next;
-  // insert c before x
-  c->_next = x;
-  c->_prev = x->_prev;
-  c->_prev->_next = c;
-  x->_prev = c;
+    assert(this == _list);
+    Client *x = _next;
+    while (x != _list && PASS_GT(c->_pass, x->_pass))
+	x = x->_next;
+    // insert c before x
+    c->_next = x;
+    c->_prev = x->_prev;
+    c->_prev->_next = c;
+    x->_prev = c;
 }
 
 inline void
 StrideSched::Client::remove()
 {
-  _next->_prev = _prev;
-  _prev->_next = _next;
-  _next = _prev = 0;
+    _next->_prev = _prev;
+    _prev->_next = _next;
+    _next = _prev = 0;
 }
 
 inline void
 StrideSched::Client::set_tickets(int tickets)
 {
-  _tickets = tickets;
-  _stride = STRIDE1 / tickets;
+    _tickets = tickets;
+    _stride = STRIDE1 / tickets;
 }
 
 inline void
 StrideSched::Client::stride()
 {
-  _pass += _stride;
+    _pass += _stride;
 }
 
 CLICK_ENDDECLS
