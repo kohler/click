@@ -108,7 +108,7 @@ Radix::node_lookup(KEYTYPE v)
 
 
 inline KEYTYPE
-bits(KEYTYPE x, KEYTYPE k, unsigned char j)
+Radix::bits(KEYTYPE x, KEYTYPE k, unsigned char j)
 {
   return (x >> k) & (0xffffffff >> (KEYSIZE-j));
 }
