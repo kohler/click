@@ -360,12 +360,11 @@ AddressTranslator::handle_outward(Packet *p)
   memcpy(start_new, start, p->length());
   click_ip6 *ip6_new = (click_ip6 * )q->data();
       
-
   if (ip6_new->ip6_nxt ==0x3a) //the upper layer is an icmp6 packet
     {
 
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      unsigned char * ip6_new2 = 0;
+      //unsigned char * ip6_new2 = 0;
        if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, _direction))
 	{
 	 
@@ -491,9 +490,9 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
     
      {
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      unsigned char *ip6_new2 = 0;
+      //unsigned char *ip6_new2 = 0;
       
-      if (lookup(ip6_dst, th_dport, ip6_mdst, th_mport, ip6_src, th_sport, 1))
+      if (lookup(ip6_dst, dport, ip6_mdst, mport, ip6_src, sport, 1))
 	{
 	   ip6_new->ip6_dst = ip6_dst;
 	   switch (icmp6_start[0])  {
