@@ -54,6 +54,8 @@ class SetTXRate : public Element { public:
   void add_handlers();
   static String rate_read_handler(Element *e, void *);
   static String auto_read_handler(Element *e, void *);  
+  static int rate_write_handler(const String &arg, Element *e,
+				void *, ErrorHandler *errh);
  private:
   
   int _rate;

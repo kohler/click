@@ -55,6 +55,8 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   }
 
   switch (_rate) {
+  case 0:
+    /* fallthrough */
   case 1:
     /* fallthrough */
   case 2:
@@ -64,7 +66,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   case 11:
     break;
   default:
-    return errh->error("RATE must be 1,2,5, or 11");
+    return errh->error("RATE must be 0, 1,2,5, or 11");
   }
 
   if (_auto && _auto->cast("AutoTXRate") == 0) {
@@ -96,6 +98,34 @@ SetTXRate::rate_read_handler(Element *e, void *)
   SetTXRate *foo = (SetTXRate *)e;
   return String(foo->_rate) + "\n";
 }
+
+int
+SetTXRate::rate_write_handler(const String &arg, Element *e,
+			      void *, ErrorHandler *errh) 
+{
+  SetTXRate *n = (SetTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`rate' must be an integer");
+  switch (b) {
+  case 0:
+    /* fallthrough */
+  case 1:
+    /* fallthrough */
+  case 2:
+    /* fallthrough */
+  case 5:
+    /* fallthrough */
+  case 11:
+    break;
+  default:
+    return errh->error("RATE must be 0, 1,2,5, or 11");
+  }
+  n->_rate = b;
+  return 0;
+}
+
 String
 SetTXRate::auto_read_handler(Element *e, void *)
 {
@@ -111,6 +141,7 @@ SetTXRate::add_handlers()
 {
   add_default_handlers(true);
   add_read_handler("rate", rate_read_handler, 0);
+  add_write_handler("rate", rate_write_handler, 0);
   add_read_handler("auto", auto_read_handler, 0);
 }
 

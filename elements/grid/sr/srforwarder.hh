@@ -48,8 +48,8 @@ class SRForwarder : public Element {
 
   void push(int, Packet *);
   
-  void send(const u_char *payload, u_long len, Vector<IPAddress>, int flags);
-  Packet *encap(const u_char *payload, u_long len, Vector<IPAddress>, int flags);
+  void send(Packet *, Vector<IPAddress>, int flags);
+  Packet *encap(Packet *, Vector<IPAddress>, int flags);
   IPAddress ip() { return _ip; }
 private:
 
@@ -66,6 +66,18 @@ private:
   class ARPTable *_arp_table;
   class SRCR *_srcr;
   class SrcrStat *_srcr_stat;
+  
+  class PathInfo {
+  public:
+    Path _p;
+    int _seq;
+    struct timeval _last_tx;
+    void reset() { _seq = 0; }
+    PathInfo() :  _p() { reset(); }
+    PathInfo(Path p) :  _p(p)  { reset(); }
+  };
+  typedef BigHashMap<Path, PathInfo> PathTable;
+  PathTable _paths;
   
   int get_metric(IPAddress other);
 

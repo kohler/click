@@ -1,7 +1,7 @@
 #ifndef CLICK_SRPAKCET_HH
 #define CLICK_SRPAKCET_HH
 #include <click/ipaddress.hh>
-
+#include <elements/grid/sr/path.hh>
 
 enum SRCRPacketType { PT_QUERY = 0x01,
 		      PT_REPLY = 0x02,
@@ -19,7 +19,8 @@ enum SRCRPacketFlags {
   FLAG_TOP5_BEST_ROUTE = (1<<3),
   FLAG_SCHEDULE = (1<<4),
   FLAG_SCHEDULE_TOKEN = (1<<5),
-  FLAG_SCHEDULE_FAKE = (1<<6)
+  FLAG_SCHEDULE_FAKE = (1<<6),
+  FLAG_ECN = (1<<7)
 };
 
 static const uint8_t _sr_version = 0x06;
@@ -39,8 +40,11 @@ struct srpacket {
 
   uint16_t _random_metric;
 
-  // PT_QUERY
-  uint32_t _qdst; // Who are we looking for?
+  /* PT_QUERY
+   * _qdst is used for the query destination in control packets
+   * and a extra 32 bit seq number in data packets
+   */
+  uint32_t _qdst;
   uint32_t _random_from;
   uint32_t _random_to;
   uint32_t _seq;   // Originator's sequence number.
@@ -87,8 +91,19 @@ struct srpacket {
   int next() {
     return _next;
   }
-
-
+  Path get_path() {
+    Path p;
+    for (int x = 0; x < num_hops(); x++) {
+      p.push_back(get_hop(x));
+    }
+    return p;
+  }
+  void set_data_seq(uint32_t n) {
+    _qdst = htonl(n);
+  }
+  uint32_t data_seq() {
+    return ntohl(_qdst);
+  }
   void set_seq(uint32_t n) {
     _seq = htonl(n);
   }
@@ -118,6 +133,10 @@ struct srpacket {
   bool flag(int f) {
     int x = ntohs(_flags);
     return x & f;
+  }
+  void unset_flag(uint16_t f) {
+    uint16_t flags = ntohs(_flags);
+    _flags = htons(flags & !f);
   }
 
   uint16_t get_metric(int h) { 

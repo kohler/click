@@ -680,8 +680,7 @@ Top5::push(int port, Packet *p_in)
 
     if (d->_finished) {
       Path p = d->_paths[d->_best_path];
-      _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
-      p_in->kill();
+      _sr_forwarder->encap(p_in, p, 0);
       return;
     }
 
@@ -716,7 +715,8 @@ Top5::push(int port, Packet *p_in)
       }
       Path p = d->_paths[d->_best_path];
       
-      Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
+      // BROKEN
+      Packet *p_out = _sr_forwarder->encap(p_in, p, 0);
       click_ether *eh_out = (click_ether *) p_out->data();
       struct srpacket *pk_out = (struct srpacket *) (eh_out+1);
       pk_out->set_seq(d->_seq);
@@ -737,7 +737,8 @@ Top5::push(int port, Packet *p_in)
 
     Path p = d->_paths[d->_current_path];
 
-    Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
+    // BROKEN
+    Packet *p_out = _sr_forwarder->encap(p_in, p, 0);
     click_ether *eh_out = (click_ether *) p_out->data();
     struct srpacket *pk_out = (struct srpacket *) (eh_out+1);
     pk_out->set_seq(d->_seq);

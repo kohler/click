@@ -642,11 +642,11 @@ SRCR::push(int port, Packet *p_in)
     int metric = _link_table->get_route_metric(p);
 
     if (_link_table->valid_route(p)) {
-      _sr_forwarder->send(p_in->data(), p_in->length(), p, 0);
+      _sr_forwarder->send(p_in, p, 0);
       sent_packet = true;
+    } else {
+      p_in->kill();
     }
-
-    p_in->kill();
 
     Query *q = _queries.findp(dst);
     if (!q) {

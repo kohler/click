@@ -44,7 +44,7 @@
 #define WIFI_NUM_FAILURES(p)           ((p)->user_anno_c(8))
 #define SET_WIFI_NUM_FAILURES(p, v)    ((p)->set_user_anno_c(8, (v)))
 
-#define WIFI_FROM_CLICK(p)           (((p)->user_anno_c(9) == 0xaa)
+#define WIFI_FROM_CLICK(p)           ((p)->user_anno_c(9) == 0xaa)
 #define SET_WIFI_FROM_CLICK(p)    ((p)->set_user_anno_c(9, (0xaa)))
 
 #define WIFI_TX_SUCCESS_ANNO(p)           ((p)->user_anno_c(10))

@@ -301,18 +301,6 @@ SRScheduler::push(int port, Packet *p_in)
   nfo->_seq = pk->seq();
 
   if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
-    if (_debug_token) {
-      struct timeval now;
-      click_gettimeofday(&now);
-      StringAccum sa;
-      sa << "SRScheduler " << now;
-      sa << " seq " << nfo->_seq;
-      sa << " token_rx";
-      sa << " towards " << p[p.size()-1];
-      sa << " rx " << nfo->_packets_rx;
-      click_chatter("%s", sa.take_string().cc());
-    }
-    nfo->_token = true;
     nfo->_seq = pk->seq() + 1;
   }
 
@@ -439,61 +427,7 @@ SRScheduler::pull(int)
   IPAddress ip = _sr_forwarder->ip();
 
   if (!p_out) {
-    Path p = Path();
-    /* find an expired token */
-    struct timeval now;
-    click_gettimeofday(&now);
-    
-    for (STIter iter = _schedules.begin(); iter; iter++) {
-      const ScheduleInfo &nfo = iter.value();
-      /* 
-       * only send a fake if I'm active
-       * an endpoint, and the last rx packet wasn't a fake.
-       */
-      if (nfo._active && 
-	  nfo._token &&
-	  nfo.is_endpoint(ip) &&
-	  timercmp(&nfo._last_rx, &nfo._last_real, ==)) {
-	p = nfo._p;
-	break;
-      }
-    }
-    
-    if (!p.size()) {
-      return (0);
-    }
 
-    if (ip == p[p.size()-1]) {
-      p = reverse_path(p);
-    }
-    
-    if (ip != p[0]) {
-      /* i'm an intermediate hop 
-       *  intermediate hop's don't send fake packets
-       */
-      return (0);
-    }
-
-    /* fake up a token packet */
-    p_out = _sr_forwarder->encap((0), 0, p, 0);
-    if (!p_out) {
-      return 0;
-    }
-    click_ether *eh = (click_ether *) p_out->data();
-    struct srpacket *pk = (struct srpacket *) (eh+1);
-    pk->set_flag(FLAG_SCHEDULE | FLAG_SCHEDULE_TOKEN | FLAG_SCHEDULE_FAKE);
-    if (_debug_token) {
-      ScheduleInfo *nfo = find_nfo(p);
-      struct timeval now;
-      click_gettimeofday(&now);
-      StringAccum sa;
-      sa << "SRScheduler " << now;
-      sa << " seq " << nfo->_seq;
-      sa << " fake    ";
-      sa << " towards " << p[p.size()-1].s();
-      sa << " rx " << nfo->_packets_rx;
-      click_chatter("%s", sa.take_string().cc());
-    }
   }
   
   click_ether *eh = (click_ether *) p_out->data();

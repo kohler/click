@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
 #include "printsr.hh"
@@ -64,9 +65,9 @@ PrintSR::simple_action(Packet *p)
   struct srpacket *pk = (struct srpacket *) (eh+1);
 
   StringAccum sa;
-  sa << "PrintSR ";
+  sa << "PrintSR";
   if (_label[0] != 0) {
-    sa << _label.cc() << " ";
+    sa << " " << _label.cc() << ": ";
   }
 
   String type;
@@ -87,7 +88,8 @@ PrintSR::simple_action(Packet *p)
     type = "UNKNOWN";
   }
   String flags = "";
-  sa << ": " << type << " (";
+  sa << type;
+  sa << " flags (";
   if (pk->flag(FLAG_SCHEDULE)) {
     sa << " FLAG_SCHEDULE ";
   }
@@ -100,25 +102,36 @@ PrintSR::simple_action(Packet *p)
   sa << flags << ") ";
 
   if (pk->_type == PT_DATA) {
-    sa << "len=" << pk->hlen_with_data() << " ";
+    sa << " len=" << pk->hlen_with_data();
   } else {
-    sa << "len=" << pk->hlen_wo_data() << " ";
+    sa << " len=" << pk->hlen_wo_data();
   }
+  
+  sa << " cksum = 0x" << (unsigned long) ntohs(pk->_cksum);
+  int failures = WIFI_NUM_FAILURES(p);
+  sa << " failures " << failures;
+  sa << " from_click " << WIFI_FROM_CLICK(p);
+  int success = WIFI_TX_SUCCESS_ANNO(p);
+  sa << " success " << success;
+  int rate = WIFI_RATE_ANNO(p);
+  sa << " rate " << rate;
 
-  if (pk->_type != PT_DATA) {
-    sa << "qdst=" << IPAddress(pk->_qdst) << " ";
-    sa << "seq=" << pk->_seq << " ";
+  if (pk->_type == PT_DATA) {
+    sa << " dataseq = " << pk->data_seq();
+  } else {
+    sa << " qdst=" << IPAddress(pk->_qdst);
+    sa << " seq=" << pk->_seq;
   }
 
   if (pk->_type == PT_DATA) {
-    sa << "dlen=" << ntohs(pk->_dlen) << " ";
+    sa << " dlen=" << ntohs(pk->_dlen);
   }
 
-  sa << "seq=" << pk->_seq << " ";
-  sa << "nhops=" << pk->num_hops() << " ";
-  sa << "next=" << pk->next() << " ";
+  sa << " seq=" << pk->_seq;
+  sa << " nhops=" << pk->num_hops();
+  sa << " next=" << pk->next();
 
-  sa << "[";
+  sa << " [";
   for(int i = 0; i< pk->num_hops(); i++) {
     sa << " "<< pk->get_hop(i).s().cc() << " ";
     if (i != pk->num_hops() - 1) {
@@ -128,8 +141,7 @@ PrintSR::simple_action(Packet *p)
   }
   sa << "]";
 
-
-
+  
   click_chatter("%s", sa.cc());
 
   return p;

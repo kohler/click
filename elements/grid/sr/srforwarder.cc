@@ -143,29 +143,40 @@ SRForwarder::update_link(IPAddress from, IPAddress to, int metric)
 
 
 void
-SRForwarder::send(const u_char *payload, u_long payload_len, Vector<IPAddress> r, int flags)
+SRForwarder::send(Packet *p_in, Vector<IPAddress> r, int flags)
 {
-  Packet *p_out = encap(payload, payload_len, r, flags);
+  Packet *p_out = encap(p_in, r, flags);
   output(1).push(p_out);
 
 }
 Packet *
-SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r, int flags)
+SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 {
-  int hops = r.size();
-  int len = srpacket::len_with_data(hops, payload_len);
   srforwarder_assert(r.size() > 1);
-  WritablePacket *p = Packet::make(len + sizeof(click_ether));
+  int hops = r.size();
+  int extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
+  int payload_len = p_in->length();
+  WritablePacket *p = p_in->push(extra);
   click_ether *eh = (click_ether *) p->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
-  memset(pk, '\0', len);
+  memset(pk, '\0', srpacket::len_wo_data(hops));
 
   memcpy(eh->ether_shost, _eth.data(), 6);
-  EtherAddress eth_dest = _arp_table->lookup(r[1]);
+  int next = index_of(r, _ip) + 1;
+  if (next < 0 || next >= r.size()) {
+    click_chatter("SRForwarder %s: encap couldn't find %s (%d) in path %s",
+		  id().cc(),
+		  _ip.s().cc(),
+		  next,
+		  path_to_string(r).cc());
+    p_in->kill();
+    return (0);
+  }
+  EtherAddress eth_dest = _arp_table->lookup(r[next]);
   if (eth_dest == _arp_table->_bcast) {
     click_chatter("SRForwarder %s: arp lookup failed for %s",
 		  id().cc(),
-		  r[1].s().cc());
+		  r[next].s().cc());
   }
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
   eh->ether_type = htons(_et);
@@ -182,38 +193,54 @@ SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> 
     }
   }
   pk->set_num_hops(r.size());
-  pk->set_next(1);
+  pk->set_next(next);
   pk->set_flag(flags);
   int i;
   for(i = 0; i < hops; i++) {
     pk->set_hop(i, r[i]);
   }
-  memcpy(pk->data(), payload, payload_len);
 
+  PathInfo *nfo = _paths.findp(r);
+  if (!nfo) {
+    _paths.insert(r, PathInfo(r));
+    nfo = _paths.findp(r);
+  }
+  pk->set_data_seq(nfo->_seq);
+  
+  click_gettimeofday(&nfo->_last_tx);
+  nfo->_seq++;
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
     (pk->data());
   p->set_ip_header(ip, pk->data_len());
 
+  SET_WIFI_NUM_FAILURES(p, 0);
   return p;
 }
 
 void
 SRForwarder::push(int port, Packet *p_in)
 {
-  if (port > 1) {
-    p_in->kill();
+
+  WritablePacket *p = p_in->uniqueify();
+
+  if (!p) {
     return;
   }
-  click_ether *eh = (click_ether *) p_in->data();
+
+  if (port > 1) {
+    p->kill();
+    return;
+  }
+  click_ether *eh = (click_ether *) p->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
 
   if(eh->ether_type != htons(_et)){
     click_chatter("SRForwarder %s: bad ether_type %04x",
                   _ip.s().cc(),
                   ntohs(eh->ether_type));
-    p_in->kill();
+    p->kill();
     return;
   }
 
@@ -221,7 +248,7 @@ SRForwarder::push(int port, Packet *p_in)
     click_chatter("SRForwarder %s: bad packet_type %04x",
                   _ip.s().cc(),
                   pk->_type);
-    p_in->kill();
+    p->kill();
     return ;
   }
 
@@ -241,7 +268,7 @@ SRForwarder::push(int port, Packet *p_in)
 		    pk->get_hop(pk->next()).s().cc(),
 		    EtherAddress(eh->ether_dhost).s().cc());
     }
-    p_in->kill();
+    p->kill();
     return;
   }
 
@@ -275,56 +302,35 @@ SRForwarder::push(int port, Packet *p_in)
   update_link(_ip, prev, prev_metric);
 
   if(pk->next() == pk->num_hops() - 1){
-    //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
     // I'm the ultimate consumer of this data.
-    /* need to decap */
-    WritablePacket *p_out = Packet::make(pk->data_len());
-    if (p_out == 0){
-      click_chatter("SRForwarder %s: couldn't make packet\n", id().cc());
-      p_in->kill();
-      return;
-    }
-    memcpy(p_out->data(), pk->data(), pk->data_len());
-
-    /* set the dst to the gateway it came from 
+    int extra = pk->hlen_wo_data() + sizeof(click_ether);
+    p->pull(extra);
+    /*
+     * set the dst to the gateway it came from 
      * this is kinda weird.
      */
-    SET_MISC_IP_ANNO(p_out, pk->get_hop(0));
+    SET_MISC_IP_ANNO(p, pk->get_hop(0));
 
-    output(2).push(p_out);
-    p_in->kill();
+    output(2).push(p);
     return;
   } 
 
-  int len = pk->hlen_with_data();
-  WritablePacket *p = Packet::make(len + sizeof(click_ether));
-  if(p == 0) {
-    click_chatter("SRForwarder %s: couldn't make packet\n", id().cc());
-    p_in->kill();
-    return ;
-  }
-  click_ether *eh_out = (click_ether *) p->data();
-  struct srpacket *pk_out = (struct srpacket *) (eh_out+1);
-  memcpy(pk_out, pk, len);
-
-  pk_out->set_metric(pk_out->next() - 1, prev_metric);
-  pk_out->set_next(pk->next() + 1);
-  pk_out->set_num_hops(pk->num_hops());
-  eh_out->ether_type = htons(_et);
+  pk->set_metric(pk->next() - 1, prev_metric);
+  pk->set_next(pk->next() + 1);
 
   srforwarder_assert(pk->next() < 8);
-  IPAddress nxt = pk_out->get_hop(pk_out->next());
+  IPAddress nxt = pk->get_hop(pk->next());
   
   /*
    * put new information in the random link field
    * with probability = 1/num_hops in the packet
    */
-  if (_srcr && random() % pk_out->num_hops() == 0) {
+  if (_srcr && random() % pk->num_hops() == 0) {
     IPAddress r_neighbor = _srcr->get_random_neighbor();
     if (r_neighbor) {
-      pk_out->set_random_from(_ip);
-      pk_out->set_random_to(r_neighbor);
-      pk_out->set_random_metric(get_metric(r_neighbor));
+      pk->set_random_from(_ip);
+      pk->set_random_to(r_neighbor);
+      pk->set_random_metric(get_metric(r_neighbor));
     }
   }
 
@@ -335,16 +341,14 @@ SRForwarder::push(int port, Packet *p_in)
 		  id().cc(),
 		  nxt.s().cc());
   }
-  memcpy(eh_out->ether_dhost, eth_dest.data(), 6);
-  memcpy(eh_out->ether_shost, _eth.data(), 6);
+  memcpy(eh->ether_dhost, eth_dest.data(), 6);
+  memcpy(eh->ether_shost, _eth.data(), 6);
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
-    (pk_out->data());
-  p->set_ip_header(ip, pk_out->data_len());
-
-
-  p_in->kill();
+    (pk->data());
+  p->set_ip_header(ip, pk->data_len());
+  SET_WIFI_NUM_FAILURES(p, 0);
   output(0).push(p);
   return;
 

@@ -112,9 +112,11 @@ LinkFailureDetection::simple_action(Packet *p_in)
     nfo->_successive_failures++;
     StringAccum sa;
     sa  << nfo->_last_received;
-    click_chatter("LFD %s: succ. failure %d for %s at %s\n",
-		  id().cc(),
+    click_chatter("%{element}: succ. failure %d, packet %d ethtype %x %s at %s\n",
+		  this,
 		  nfo->_successive_failures,
+		  WIFI_NUM_FAILURES(p_in),
+		  ntohs(eh->ether_type),
 		  nfo->_eth.s().cc(),
 		  sa.take_string().cc());
 

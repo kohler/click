@@ -102,8 +102,7 @@ SetSourceRoute::simple_action(Packet *p_in)
     return 0;
   }
 
-  Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), *p, 0);
-  p_in->kill();
+  Packet *p_out = _sr_forwarder->encap(p_in, *p, 0);
   return p_out;
 }
 
