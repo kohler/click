@@ -32,6 +32,10 @@ class ToHostSniffers : public ToHost { public:
     ToHostSniffers();
     ~ToHostSniffers();
 
+    // prevent ToHost::static_initialize() from being called twice
+    static void static_initialize()		{ }
+    static void static_cleanup()		{ }
+
     const char *class_name() const		{ return "ToHostSniffers"; }
   
 };
