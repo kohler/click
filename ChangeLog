@@ -1,3 +1,20 @@
+2004-07-07 Wednesday 11:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/tohostsniffers.hh (1.20): fix crash reported
+	by jbicket: ToHostSniffers must not call
+	ToHost::static_initialize()
+
+2004-07-07 Wednesday 11:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/config.cc (1.17): adjust order in which
+	click_[un]export_elements() is called
+
+2004-07-07 Wednesday 11:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: anydevice.cc (1.27), fromdevice.cc (1.82),
+	fromhost.cc (1.48), polldevice.cc (1.137), todevice.cc (1.138),
+	tulipstats.cc (1.20): get rid of backticks
+
 2004-07-07 Wednesday 03:38  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/click-mkmindriver/click-mkmindriver.cc (1.32): fix how
