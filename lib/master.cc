@@ -284,15 +284,19 @@ Master::check_driver()
 
     if (_runcount <= 0) {
 	_runcount = 0;
-	for (Router *r = _routers; r; r = r->_next_router) {
+	for (Router *r = _routers; r; ) {
+	    Router *next_router = r->_next_router;
 	    if (r->_runcount <= 0 && r->_running == Router::RUNNING_ACTIVE) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
 		if (dm)
 		    while (dm->handle_stopped_driver() && r->_runcount <= 0)
 			/* nada */;
 	    }
-	    if (r->_runcount > _runcount)
+	    if (r->_runcount <= 0)
+		remove_router(r);
+	    else if (r->_runcount > _runcount)
 		_runcount = r->_runcount;
+	    r = next_router;
 	}
     }
     
