@@ -59,10 +59,10 @@ AnyDeviceMap::remove(AnyDevice *d)
 
 
 struct device *
-find_device_by_ether_address(const String &name)
+find_device_by_ether_address(const String &name, Element *context)
 {
   unsigned char en[6];
-  if (!cp_ethernet_address(name, en))
+  if (!cp_ethernet_address(name, en, context))
     return 0;
   for (struct device *dev = dev_base; dev; dev = dev->next)
     if (dev->addr_len == 6 && memcmp(en, dev->dev_addr, 6) == 0)

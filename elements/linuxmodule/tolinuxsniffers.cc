@@ -47,7 +47,7 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (devname) {
     _dev = dev_get(devname.cc());
     if (!_dev)
-      _dev = find_device_by_ether_address(devname);
+      _dev = find_device_by_ether_address(devname, this);
     if (!_dev)
       return errh->error("no such device `%s'", devname.cc());
   } else
