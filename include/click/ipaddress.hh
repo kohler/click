@@ -31,7 +31,9 @@ class IPAddress { public:
   bool mask_more_specific(IPAddress) const;
 
   // bool operator==(IPAddress, IPAddress);
+  // bool operator==(IPAddress, uint32_t);
   // bool operator!=(IPAddress, IPAddress);
+  // bool operator!=(IPAddress, uint32_t);
   
   // IPAddress operator&(IPAddress, IPAddress);
   // IPAddress operator|(IPAddress, IPAddress);
@@ -90,9 +92,21 @@ operator==(IPAddress a, IPAddress b)
 }
 
 inline bool
+operator==(IPAddress a, uint32_t b)
+{
+  return a.addr() == b;
+}
+
+inline bool
 operator!=(IPAddress a, IPAddress b)
 {
   return a.addr() != b.addr();
+}
+
+inline bool
+operator!=(IPAddress a, uint32_t b)
+{
+  return a.addr() != b;
 }
 
 inline const unsigned char *
