@@ -287,7 +287,7 @@ DSDVRouteTable::current_gateway(RouteEntry &gw)
 
   for (Vector<IPAddress>::const_iterator i = gw_addrs.begin(); i != gw_addrs.end(); i++) {
     RTEntry r;
-    bool res = get_one_entry(*i, r);
+    bool res = lookup_route(*i, r);
     dsdv_assert(res);
     if (r.is_gateway && r.good() && (!found_gateway || metric_preferable(r, best))) {
       best = r;
@@ -1479,7 +1479,7 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
     return errh->error("`paused' must be a boolean");
   
   click_chatter("DSDVRouteTable %s: %s", 
-		rt->id().cc(), rt->_paused ? "pausing packet routes *_paused = true)" : 
+		rt->id().cc(), rt->_paused ? "pausing packet routes (_paused = true)" : 
 		"unpausing packet routes (_paused = false)");
 
   if (!was_paused && rt->_paused) {
