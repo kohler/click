@@ -324,8 +324,11 @@ EOF
 elem2xxx () {
     package=""
     date=`date`
+    standards=''
     while [ x"$1" != x ]; do
     case $1 in
+    -S|--s|--st|--sta|--stan|--stand|--standa|--standar|--standard|--standards)
+	standards=1; shift 1;;
     -V|--verb|--verbo|--verbos|--verbose)
 	verbose=1; shift 1;;
     -h|--h|--he|--hel|--help)
@@ -352,6 +355,7 @@ EOF
 	cat <<'EOF' 1>&2
 
 Options:
+  -S, --standards          Export standard required elements as well.
   -V, --verbose            Print more information.
   -h, --help               Print this message and exit.
 
@@ -365,9 +369,9 @@ EOF
     esac
     done
 
-    # output files!
+    # set up awk program
     if test -n "$package"; then
-	$awk 'BEGIN {
+	awk_program='BEGIN {
   OFS = ""; nrebecca = 0; packname="'"$package"'";
 }
 /^#/ { next; }
@@ -396,7 +400,7 @@ END {
 '
 
     else
-	$awk 'BEGIN {
+	awk_program='BEGIN {
   OFS = "";
 }
 /^#/ { next; }
@@ -418,6 +422,21 @@ END {
   print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}";
 }
 '
+    fi
+
+    # Actually generate the command!
+    if test -z "$standards"; then
+	$awk "$awk_program"
+    else
+	cat <<EOF >/tmp/click-buildtool-standards.$$
+-	<click/standard/addressinfo.hh>	AddressInfo
+-	<click/standard/alignmentinfo.hh>	AlignmentInfo
+-	<click/standard/drivermanager.hh>	DriverManager
+-	<click/standard/errorelement.hh>	ErrorElement
+-	<click/standard/scheduleinfo.hh>	ScheduleInfo
+EOF
+	cat - /tmp/click-buildtool-standards.$$ | $awk "$awk_program"
+	/bin/rm -f /tmp/click-buildtool-standards.$$
     fi
 }
 
