@@ -339,10 +339,12 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	io->permission = (void *) return_EIO;
 	io->setattr = (void *) return_EIO;
 	io->getattr = (void *) return_EIO;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 20)
 	io->setxattr = (void *) return_EIO;
 	io->getxattr = (void *) return_EIO;
 	io->listxattr = (void *) return_EIO;
 	io->removexattr = (void *) return_EIO;
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	io->put_link = (void *) return_EIO;
 #else
