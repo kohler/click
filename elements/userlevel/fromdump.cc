@@ -581,7 +581,7 @@ FromDump::read_handler(Element *e, void *thunk)
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
       case FILESIZE_THUNK: {
 	  struct stat s;
-	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0)
+	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
 	      return String(s.st_size) + "\n";
 	  else
 	      return "-\n";

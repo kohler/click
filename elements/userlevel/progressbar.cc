@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * thermometer.{cc,hh} -- element displays a thermometer on stderr
+ * progressbar.{cc,hh} -- element displays a progress bar on stderr
  * Eddie Kohler
  *
  * Copyright (c) 2001 International Computer Science Institute
@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "thermometer.hh"
+#include "progressbar.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -36,25 +36,25 @@
 #endif
 #include <termio.h>
 
-Thermometer::Thermometer()
+ProgressBar::ProgressBar()
     : _timer(this)
 {
     MOD_INC_USE_COUNT;
 }
 
-Thermometer::~Thermometer()
+ProgressBar::~ProgressBar()
 {
     MOD_DEC_USE_COUNT;
 }
 
 int
-Thermometer::configure(const Vector<String> &, ErrorHandler *)
+ProgressBar::configure(const Vector<String> &, ErrorHandler *)
 {
     return 0;
 }
 
 int
-Thermometer::initialize(ErrorHandler *errh)
+ProgressBar::initialize(ErrorHandler *errh)
 {
     Vector<String> conf;
     configuration(conf, false);
@@ -76,7 +76,7 @@ Thermometer::initialize(ErrorHandler *errh)
 }
 
 void
-Thermometer::uninitialize()
+ProgressBar::uninitialize()
 {
     if (_status != ST_FIRST) {
 	_status = ST_DONE;
@@ -246,7 +246,7 @@ atomicio(f, fd, _s, n)
 #define STALLTIME	5
 
 void
-Thermometer::run_scheduled()
+ProgressBar::run_scheduled()
 {
     // get size on first time through
     if (_status == ST_FIRST) {
@@ -259,6 +259,7 @@ Thermometer::run_scheduled()
 	_last_pos = 0;
 	click_gettimeofday(&_start_time);
 	_last_time = _start_time;
+	timerclear(&_stall_time);
     }
 
     // exit if not in foreground
@@ -291,7 +292,7 @@ Thermometer::run_scheduled()
     if (!have_pos)
 	thermpos = -1;
     else if (!_have_size) {
-	thermpos = (pos / 1000) % 200;
+	thermpos = (pos / 10000) % 200;
 	if (thermpos > 100) thermpos = 200 - thermpos;
     } else if (_size > 0) {
 	thermpos = (int)(100.0 * pos / _size);
@@ -338,13 +339,14 @@ Thermometer::run_scheduled()
 	_last_time = now;
 	_last_pos = pos;
 	if (wait.tv_sec >= STALLTIME)
-	    timeradd(&_start_time, &wait, &_start_time);
+	    timeradd(&_stall_time, &wait, &_stall_time);
 	wait.tv_sec = 0;
     }
 
     // check elapsed time
     struct timeval tv;
     timersub(&now, &_start_time, &tv);
+    timersub(&tv, &_stall_time, &tv);
     double elapsed = tv.tv_sec + (tv.tv_usec / 1000000.0);
 
     // collect time
@@ -394,4 +396,4 @@ Thermometer::run_scheduled()
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(Thermometer)
+EXPORT_ELEMENT(ProgressBar)

@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef CLICK_THERMOMETER_HH
-#define CLICK_THERMOMETER_HH
+#ifndef CLICK_PROGRESSBAR_HH
+#define CLICK_PROGRESSBAR_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 
@@ -134,13 +134,13 @@ Returns FromIPSummaryDump's position in the file, in bytes.
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */
 
-class Thermometer : public Element { public:
+class ProgressBar : public Element { public:
 
-    Thermometer();
-    ~Thermometer();
+    ProgressBar();
+    ~ProgressBar();
 
-    const char *class_name() const		{ return "Thermometer"; }
-    Thermometer *clone() const			{ return new Thermometer; }
+    const char *class_name() const		{ return "ProgressBar"; }
+    ProgressBar *clone() const			{ return new ProgressBar; }
 
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -163,6 +163,7 @@ class Thermometer : public Element { public:
     thermometer_t _size;
     thermometer_t _last_pos;
     struct timeval _start_time;
+    struct timeval _stall_time;
     struct timeval _last_time;
 
     Timer _timer;
