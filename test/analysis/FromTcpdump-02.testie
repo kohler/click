@@ -2,6 +2,9 @@
 false
 # tcpdump format changes make this test unreasonable
 
+%require -q
+click-buildtool provides FromTcpdump
+
 %script
 
 # read from tcpdump output file; check headers, emit to a dump

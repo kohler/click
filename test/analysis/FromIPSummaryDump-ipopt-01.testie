@@ -1,3 +1,6 @@
+%require -q
+click-buildtool provides FromIPSummaryDump
+
 %script
 
 # read from a hand-written IPSummaryDump file; check headers, emit to a dump
