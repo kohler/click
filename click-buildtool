@@ -116,7 +116,7 @@ EOF
 $provisions"
 	    files="$files
 "`find ${pprefix}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
-	else
+	elif test -r "${pprefix}$i"; then
 	    files="$files
 $i"
 	fi
