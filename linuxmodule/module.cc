@@ -322,7 +322,6 @@ init_module()
   init_proc_click_config();
   init_proc_click_elements();
   init_proc_click_errors();
-  init_proc_click_dir();
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
@@ -351,7 +350,6 @@ cleanup_module()
   
   kill_current_router();
 
-  cleanup_proc_click_dir();
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();
