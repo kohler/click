@@ -1,3 +1,8 @@
+2001-09-28 Friday 14:11  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/clp.h (1.7): add more space in Clp_Parser for
+	values
+
 2001-09-27 Thursday 04:12  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: checkipheader.cc (1.40), checkipheader.hh (1.30),

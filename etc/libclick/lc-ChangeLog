@@ -1,3 +1,8 @@
+2001-09-28 Friday 14:11  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: clp.h, clp.h: add more space in Clp_Parser for
+	values
+
 2001-09-25 Tuesday 04:50  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: atomic.hh, router.hh, task.hh, atomic.hh,
