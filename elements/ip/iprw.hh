@@ -13,12 +13,17 @@ class IPRw : public Element { protected:
   class Mapping;
 
   enum InputSpecName {
-    INPUT_SPEC_NOCHANGE, INPUT_SPEC_DROP, INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER
+    INPUT_SPEC_NOCHANGE, INPUT_SPEC_KEEP, INPUT_SPEC_DROP,
+    INPUT_SPEC_PATTERN, INPUT_SPEC_MAPPER
   };
   struct InputSpec {
     int kind;
     union {
       int output;
+      struct {
+	int fport;
+	int rport;
+      } keep;
       struct {
 	Pattern *p;
 	int fport;
@@ -104,7 +109,7 @@ class IPRw::Mapping { protected:
   void pat_unlink();
   Mapping *pat_prev() const		{ return _pat_prev; }
   Mapping *pat_next() const		{ return _pat_next; }
-    
+  
   void apply(WritablePacket *p);
 
   String s() const;

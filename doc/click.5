@@ -247,9 +247,7 @@ equivalent to `abc'.
 \(bu
 .B Integers
 preceded by an optional `+' or `\-' sign. Decimal, octal (first digit `0'),
-and hexadecimal (starting with `0x') are allowed. Network byte order is
-supported with `0n', which must be followed by 4 or 8 hexadecimal digits;
-the resulting number is translated into a network-order short or long.
+and hexadecimal (starting with `0x') are allowed. 
 .TP
 \(bu
 .B Real numbers
@@ -260,8 +258,13 @@ in decimal notation.
 in the conventional `n.n.n.n' form (for example, `18.26.4.15').
 .TP
 \(bu
-.B IP network addresses
+.B IP network prefixes
 in the CIDR form `n.n.n.n/k' (for example, `18.26.4.0/24').
+.TP
+\(bu
+.B IPv6 addresses
+in any of the conventional forms (for example, `::',
+`1080::8:800:200C:417A', or `::18.26.4.15').
 .TP
 \(bu
 .B Ethernet addresses
@@ -471,7 +474,7 @@ a -> b;
 .Re
 The connections to p1's 
 .IR i th
-input port have been expanded to jump over the connections from p2's
+input port have been expanded into connections from p2's
 .IR i th
 output port. Thus, a is connected to b in the result because a was
 connected to p1's input port 0, and p2's output port 0 was connected to b.

@@ -23,16 +23,16 @@
  * identifier should be rewritten into another. A mapping consists of an input
  * flow ID, an output flow ID, a protocol, and an output port number. For
  * example, an IPRewriter might contain the mapping (1.0.0.1, 20, 2.0.0.2, 30)
- *  > (1.0.0.1, 20, 5.0.0.5, 80) with protocol TCP and output 4. If TCP packet
- * arrived on one of its input ports with flow ID (1.0.0.1, 20, 2.0.0.2, 30)
- * -- the packet is going from port 20 on machine 1.0.0.1, to port 30 on
- * machine 2.0.0.2 -- then the IPRewriter will change that packet's data so
- * the packet has flow ID (1.0.0.1, 20, 5.0.0.5, 80). The packet is now
- * heading to machine 5.0.0.5. It will then output the packet on output port
- * 4. Furthermore, if reply packets from 5.0.0.5 go through the IPRewriter,
- * they will be rewritten to look as if they came from 2.0.0.2; this
- * corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20) => (2.0.0.2,
- * 30, 1.0.0.1, 20).
+ * => (1.0.0.1, 20, 5.0.0.5, 80) with protocol TCP and output 4. Say a TCP
+ * packet with flow ID (1.0.0.1, 20, 2.0.0.2, 30) arrived on one of that
+ * IPRewriter's input ports. (Thus, the packet is going from port 20 on
+ * machine 1.0.0.1 to port 30 on machine 2.0.0.2.) Then the IPRewriter will
+ * change that packet's data so the packet has flow ID (1.0.0.1, 20, 5.0.0.5,
+ * 80). The packet is now heading to machine 5.0.0.5. It will then output the
+ * packet on output port 4. Furthermore, if reply packets from 5.0.0.5 go
+ * through the IPRewriter, they will be rewritten to look as if they came from
+ * 2.0.0.2; this corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20)
+ * => (2.0.0.2, 30, 1.0.0.1, 20).
  *
  * When it is first initialized, IPRewriter has no mappings. Mappings are
  * created on the fly as new flows are encountered in the form of packets with
@@ -46,10 +46,16 @@
  * =item `drop'
  * Packets with no existing mapping are dropped.
  *
- * =item `nochange PORT'
+ * =item `nochange OUTPUT'
  *
- * Packets with no existing mapping are sent to output port PORT. No mappings
+ * Packets with no existing mapping are sent to output port OUTPUT. No mappings
  * are installed.
+ *
+ * =item `keep FOUTPUT ROUTPUT'
+ *
+ * Packets with no existing mapping are sent to output port FOUTPUT. A mapping
+ * is installed that keeps the packet's flow ID the same. Reply packets are
+ * mapped to ROUTPUT.
  *
  * =item `pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
  *

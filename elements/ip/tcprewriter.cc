@@ -223,17 +223,23 @@ TCPRewriter::apply_pattern(Pattern *pattern, int fport, int rport,
 	 && tcp);
   TCPMapping *forward = new TCPMapping;
   TCPMapping *reverse = new TCPMapping;
-  if (forward && reverse
-      && pattern->create_mapping(flow, fport, rport, forward, reverse)) {
+
+  if (forward && reverse) {
+    if (!pattern)
+      Mapping::make_pair(flow, flow, fport, rport, forward, reverse);
+    else if (!pattern->create_mapping(flow, fport, rport, forward, reverse))
+      goto failure;
+    
     IPFlowID reverse_flow = forward->flow_id().rev();
     _tcp_map.insert(flow, forward);
     _tcp_map.insert(reverse_flow, reverse);
     return forward;
-  } else {
-    delete forward;
-    delete reverse;
-    return 0;
   }
+
+ failure:
+  delete forward;
+  delete reverse;
+  return 0;
 }
 
 void
@@ -256,6 +262,13 @@ TCPRewriter::push(int port, Packet *p_in)
 
      case INPUT_SPEC_DROP:
       break;
+
+     case INPUT_SPEC_KEEP: {
+       int fport = is.u.keep.fport;
+       int rport = is.u.keep.rport;
+       m = TCPRewriter::apply_pattern(0, fport, rport, true, flow);
+       break;
+     }
 
      case INPUT_SPEC_PATTERN: {
        Pattern *pat = is.u.pattern.p;

@@ -380,6 +380,16 @@ IPRw::parse_input_spec(const String &line, InputSpec &is, String name,
     is.kind = INPUT_SPEC_NOCHANGE;
     is.u.output = outnum;
     
+  } else if (word == "keep") {
+    if (cp_va_parse(rest, this, ErrorHandler::silent_handler(),
+		    cpUnsigned, "forward output", &is.u.keep.fport,
+		    cpUnsigned, "reverse output", &is.u.keep.rport,
+		    0) < 0)
+      return errh->error("%s: syntax error; expected `keep FOUTPUT ROUTPUT'", name.cc());
+    if (is.u.keep.fport >= noutputs() || is.u.keep.rport >= noutputs())
+      return errh->error("%s: port out of range", name.cc());
+    is.kind = INPUT_SPEC_KEEP;
+    
   } else if (word == "drop") {
     if (rest)
       return errh->error("%s: syntax error; expected `drop'", name.cc());

@@ -144,8 +144,13 @@ IPRewriter::apply_pattern(Pattern *pattern, int fport, int rport,
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs());
   Mapping *forward = new Mapping;
   Mapping *reverse = new Mapping;
-  if (forward && reverse
-      && pattern->create_mapping(flow, fport, rport, forward, reverse)) {
+
+  if (forward && reverse) {
+    if (!pattern)
+      Mapping::make_pair(flow, flow, fport, rport, forward, reverse);
+    else if (!pattern->create_mapping(flow, fport, rport, forward, reverse))
+      goto failure;
+
     IPFlowID reverse_flow = forward->flow_id().rev();
     if (is_tcp) {
       _tcp_map.insert(flow, forward);
@@ -155,11 +160,12 @@ IPRewriter::apply_pattern(Pattern *pattern, int fport, int rport,
       _udp_map.insert(reverse_flow, reverse);
     }
     return forward;
-  } else {
-    delete forward;
-    delete reverse;
-    return 0;
   }
+
+ failure:
+  delete forward;
+  delete reverse;
+  return 0;
 }
 
 void
@@ -183,6 +189,13 @@ IPRewriter::push(int port, Packet *p_in)
 
      case INPUT_SPEC_DROP:
       break;
+
+     case INPUT_SPEC_KEEP: {
+       int fport = is.u.keep.fport;
+       int rport = is.u.keep.rport;
+       m = IPRewriter::apply_pattern(0, fport, rport, tcp, flow);
+       break;
+     }
 
      case INPUT_SPEC_PATTERN: {
        Pattern *pat = is.u.pattern.p;
