@@ -28,10 +28,10 @@ Version 1.0.5   1.May.2000
 ** The click user-level driver can now automatically compile any required
    package sources. (Click-install has been able to do this for a while.)
 
-** Every router has its own list of Timers. Originally requested by Leigh
-   Stoller <stoller@fast.cs.utah.edu>. This changed the Timer abstraction;
-   you now need to call Timer::attach() on a Timer before using it. See
-   timedsource.cc for an example.
+** Every router has its own list of Timers, so Timer has no global state.
+   Originally requested by Leigh Stoller <stoller@fast.cs.utah.edu>. This
+   changed the Timer abstraction; you now need to call Timer::attach() on a
+   Timer before using it. See timedsource.cc for an example.
 
 ** Fixed bugs and memory leaks.
 
@@ -70,7 +70,7 @@ Version 1.0.5   1.May.2000
    udpcount-like Click configuration.
 
 
-Version 1.0.4   13.Apr.2000
+Version 1.0.4   13.Apr.2000 (not released)
 
 * Changed how FromDevice, ToDevice, and PollDevice interact with each
   other. Before, if you specify just PollDevice w/o ToDevice, the tx queue
