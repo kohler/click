@@ -58,7 +58,6 @@ DivertSocket::DivertSocket() : Element(0,1)
 {
   MOD_INC_USE_COUNT;
   _fd = -1;
-  _saw_first = false;
 }
 
 
@@ -465,10 +464,6 @@ DivertSocket::selected(int fd)
   
   WritablePacket *p;
   int len;
-
-  _saw_first = true;
-  setuid(32767);
-  setgid(100);
 
   if (fd != _fd) 
     return;
