@@ -78,7 +78,8 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	conf/test.click conf/test2.click conf/test3.click conf/testbpf.click \
 	conf/udpgen.click \
 	Makefile.in acconfig.h config.h.in configure.in configure \
-	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
+	install-sh missing mkinstalldirs \
+	findelements.sh mkelemlist.sh.in mkelemconf.sh \
 	etc/linux-2.2.14-patch \
 	etc/linux-2.2.16-patch \
 	etc/pcmcia-cs-3.1.16-patch \

@@ -11,26 +11,30 @@
 # distribution.
 
 # determine mode
-expand=0
 prefix=""
 all=0
+verbose=""
 while [ x"$1" != x ]; do
 case $1 in
-  -m|--m|--ma|--mak|--make|--makef|--makefi|--makefil|--makefile)
-     makefile=1; shift 1;;
-  -c|--c|--cx|--cxx)
-     makefile=0; shift 1;;
-  -x|--e|--ex|--exp|--expa|--expan|--expand)
-     expand=1; shift 1;;
   -p|--p|--pr|--pre|--pref|--prefi|--prefix)
      shift 1; prefix="$1/"; shift 1;;
+  -p*)
+     prefix=`echo "$1" | sed 's/^-p//'`; shift 1;;
+  --p=*|--pr=*|--pre=*|--pref=*|--prefi=*|--prefix=*)
+     prefix=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+  -v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+     verbose=1; shift 1;;
   -a|--a|--al|--all)
      all=1; shift 1;;
   *)
-     echo "Usage: ./findelements.sh [-m|-c|-x] < [FILES AND DIRECTORIES]" 1>&2
+     echo "Usage: ./findelements.sh [-a] [-v] [-pPREFIX] < [FILES AND DIRECTORIES]" 1>&2
      exit 1;;
 esac
 done
+
+if test -n "$verbose" -a -n "$prefix"; then
+  echo "Prefix: $verbose" 1>&2
+fi
 
 # expand list of files
 if test $all = 1; then
@@ -56,12 +60,7 @@ for i in $first_files; do
 $i"
   fi
 done
-files=`echo "$files" | sort | uniq`
-
-# exit if expanded
-if test $expand = 1; then
-  echo "$files" | grep .; exit 0
-fi
+files=`echo "$files" | sort | uniq | grep .`
 
 # find a good version of awk
 if test -x /usr/bin/gawk; then
@@ -102,6 +101,12 @@ while true; do
     }
   }
 }' | sort | uniq`
+  if test -n "$verbose"; then
+    echo
+    echo "Files: $files" 1>&2
+    echo
+    echo "Bad files: $bad_files" 1>&2
+  fi
   if test -z "$new_bad_files"; then
     break
   else
@@ -113,31 +118,4 @@ $bad_files"
 done
 
 # output files!
-if test $makefile = 1; then
-  echo "ELEMENT_OBJS = \\"
-  echo "$files" | sed -e 's/\.cc*$/.o \\/;s/^.*\///' | grep .
-  echo
-  # for i in `echo "$bad_files" | sort | uniq`; do
-  #   echo "*** warning: dependency check failed for $i" 1>&2
-  # done
-else
-  grep '^EXPORT_ELEMENT' $files | $awk -F: 'BEGIN {
-   OFS = "";
-}
-{
-  sub(/\.cc/, ".hh", $1);
-  INCLUDES[$1] = 1;
-  sub(/EXPORT_ELEMENT\(/, "", $2);
-  sub(/\)/, "", $2);
-  B = B "  lexer->add_element_type(new " $2 ");\n";
-}
-END {
-  print "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n#include \"lexer.hh\"";
-  for (file in INCLUDES) {
-    print "#include \"", file, "\"";
-  }
-  print "void\nexport_elements(Lexer *lexer)\n{";
-  print B, "}";
-}
-'
-fi
+echo "$files"

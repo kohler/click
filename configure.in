@@ -424,7 +424,8 @@ for dir in $TOOLDIRS; do
   config_files="$config_files tools/$dir/Makefile"
 done
 
-AC_OUTPUT_COMMANDS([if test ${CONFIG_ELEMLISTS-yes} = yes; then
+AC_OUTPUT_COMMANDS([chmod +x mkelemlist.sh
+if test ${CONFIG_ELEMLISTS-yes} = yes; then
   echo creating element lists
   /bin/sh mkelemlist.sh
 fi])

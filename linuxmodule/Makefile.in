@@ -78,11 +78,11 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist elements.conf:
-	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./findelements.sh -x) > elements.conf
-elements.mk: elements.conf $(top_srcdir)/findelements.sh
-	(cd $(top_srcdir); /bin/sh ./findelements.sh -m) < elements.conf > elements.mk
-elements.cc: elements.conf $(top_srcdir)/findelements.sh
-	(cd $(top_srcdir); /bin/sh ./findelements.sh -c) < elements.conf > elements.cc
+	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./findelements.sh) > elements.conf
+elements.mk: elements.conf $(top_srcdir)/mkelemconf.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemconf.sh -m) < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/mkelemconf.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemconf.sh -c) < elements.conf > elements.cc
 	@rm -f elements.d
 
 DEPFILES := $(wildcard *.d)
