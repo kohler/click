@@ -1542,20 +1542,22 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void FASTCALL(lru_cache_add(struct page *));
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/types.h ./include/linux/types.h
 --- ../x/linux-2.4.18-pure/include/linux/types.h	2001-11-22 11:46:18.000000000 -0800
-+++ ./include/linux/types.h	2002-11-21 13:51:29.000000000 -0800
-@@ -127,4 +127,21 @@
++++ ./include/linux/types.h	2003-02-10 10:07:37.000000000 -0800
+@@ -127,4 +127,23 @@
  	char			f_fpack[6];
  };
  
 +/*
-+ * Click: Macros for defining empty structures. Needed because GCC 3.0's C and
-+ * C++ compilers have different ABIs for empty structures.
++ * Click: Macros for defining empty structures. Needed because GCC's C and C++
++ * compilers have different ABIs for empty structures.
 + */
 +
-+#if __GNUC__ < 2 || __GNUC__ >= 3
++#if 1
 +# define EMPTY_STRUCT_DECL(s)	struct s { int gcc_is_buggy; }
 +# define EMPTY_STRUCT_INIT(s)	(s) { 0 }
 +#else
++/* This code remains in case GCC ever gets an option to give empty structures
++ * zero size. */
 +# define EMPTY_STRUCT_DECL(s)	struct s { }
 +# ifdef __cplusplus
 +#  define EMPTY_STRUCT_INIT(s)	s()
