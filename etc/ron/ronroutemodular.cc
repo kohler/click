@@ -37,7 +37,7 @@ RONRouteModular::RONRouteModular() {
 
   _flowtable = new FlowTable();
 
-  probe0 = new PolicyProbe(this, .4, 2, 1, 10, 10);
+  probe0 = new PolicyProbe(this, .4, 3, 1, 10, 10, 300);
 
   _policies.push_back(probe0);
 }
@@ -179,6 +179,8 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
   click_ip *iphdr;
   click_tcp *tcphdr;
 
+  click_chatter("SENDING RST: port %d seq: %u\n", outport, seq);
+
   rst_pkt = WritablePacket::make(40);
   rst_pkt->set_network_header(rst_pkt->data(), 20);
   iphdr  = rst_pkt->ip_header();
@@ -186,7 +188,7 @@ void RONRouteModular::send_rst(Packet *p, unsigned long seq, int outport) {
 
   tcphdr->th_sport = p->tcp_header()->th_dport;	
   tcphdr->th_dport = p->tcp_header()->th_sport;
-  tcphdr->th_seq   = seq;
+  tcphdr->th_seq   = htonl(seq);
   tcphdr->th_ack   = htonl(ntohl(p->tcp_header()->th_seq) + 1);
   tcphdr->th_off   = 5;
   tcphdr->th_flags  = TH_RST | TH_ACK;

@@ -50,6 +50,7 @@ public:
   void notify_noutputs(int);
 
   void push(int inport, Packet *p);
+  void send_rst(Packet *p, unsigned long seq, int outport);
 
 protected:
   FlowTable *_flowtable;
@@ -59,7 +60,6 @@ protected:
   void push_reverse_packet(int inport, Packet *p);
 
   void duplicate_pkt(Packet *p);
-  void send_rst(Packet *p, unsigned long seq, int outport);
   static int myrandom(int x);
   static void print_time(char* s);
 

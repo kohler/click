@@ -16,7 +16,7 @@
  */
 #include <sys/time.h>
 #include "ronroutemodular.hh"
-#define HISTORY 300
+//#define HISTORY 15
 
 class PolicyProbe : public RONRouteModular::Policy {
 
@@ -27,7 +27,8 @@ public:
 
   PolicyProbe(RONRouteModular *parent, 
 	      long double delays, unsigned int numprobes, int numrandom,
-	      long double link_down_penalty, long double link_down_timeout);
+	      long double link_down_penalty, long double link_down_timeout, 
+	      long double history_timeout);
   ~PolicyProbe();
   void initialize(int numpaths);
   void push_forward_syn(Packet *p) ;
@@ -53,6 +54,7 @@ public:
     return tv.tv_sec + (long double)((long double) tv.tv_usec 
 				      / (long double)1000000);
   }
+  
 protected:
   class FlowTable;
   class FlowTableEntry;  
@@ -62,7 +64,7 @@ protected:
   FlowTable *_flowtable;
   TimerQueue *_timerqueue;
   RTTHistory *_history;
-  long double _delays, _link_down_penalty, _link_down_timeout;
+  long double _delays, _link_down_penalty, _link_down_timeout, _history_timeout;
   int _numprobes, _numrandom;
 
   Timer _timer;
@@ -82,16 +84,34 @@ protected:
     long double rtt;
   };
   Vector<entry> _history[15];
-  
+  long double _timeout;
 public:
+  void set_timeout(long double timeout) {_timeout = timeout;}
   void punt_old(int port) {
+    int debug = 0;
     int i=0, j=0;
     long double now = gettime();
-    for (i=0; i<_history[port].size() && _history[port][i].timestamp + HISTORY < now; i++);
+
+    if (debug){
+      click_chatter("Punting");
+      for(i=0; i<_history[port].size(); i++) {
+	fprintf(stderr, "before: %.4Lf %.4Lf\n", 
+		_history[port][i].timestamp, _history[port][i].rtt );
+      }
+    }
+
+    for (i=0; i<_history[port].size() && _history[port][i].timestamp + _timeout < now; i++);
     for (j=0; j<_history[port].size()-i; j++)
       _history[port][j] = _history[port][j+i];
     for(j=0; j<i; j++)
       _history[port].pop_back();
+
+    if (debug) {
+      for(i=0; i<_history[port].size(); i++) {
+	fprintf(stderr, "after : %.4Lf %.4Lf\n", 
+		_history[port][i].timestamp, _history[port][i].rtt );
+      }
+    }
   }
   void add_history(int port, long double rtt) {
     struct entry e;
@@ -103,6 +123,7 @@ public:
   long double get_avg_rtt(int port) {
     int i; 
     long double sum=0;
+    punt_old(port);
     if (!_history[port].size())  return 0;
 
     for(i=0; i<_history[port].size(); i++)
@@ -125,16 +146,21 @@ public:
   IPAddress src, dst;
   unsigned short sport, dport; // network order
   Vector<int> ports_tried;
+  Vector<int> times_tried;
   Vector<long double> sent_time;
   Vector<long double> rtt;
   Packet *syn_pkt;
+  unsigned long syn_seq;
+  FlowTableEntry *next;
+  
+  
   FlowTableEntry() {
     syn_pkt = NULL;
     _port = 0;
     _forward_up = _reverse_up = 1;
   };
   ~FlowTableEntry() {
-    if (syn_pkt) syn_pkt->kill();
+    if (syn_pkt) syn_pkt->kill(); // HERE IS THE PROBLEM
   }
 
   void print() {
@@ -156,10 +182,12 @@ public:
     for(i=0; i<ports_tried.size(); i++) {
       if (ports_tried[i] == port){
 	sent_time[i] = time;
+	times_tried[i] = times_tried[i] + 1;
 	return;
       }
     }
     ports_tried.push_back(port);
+    times_tried.push_back(1);
     sent_time.push_back(time);
     rtt.push_back(100);
     assert(ports_tried.size() == sent_time.size());
@@ -181,6 +209,16 @@ public:
       }
     }
     return -1;
+  }
+  int get_times_tried(int port) {
+    int i;
+    for(i=0; i<ports_tried.size(); i++) {
+      if (ports_tried[i] == port){
+	return times_tried[i];
+      }
+    }
+    return 0;
+    
   }
   long double get_rtt(int port) {
     int i;
@@ -211,14 +249,14 @@ protected:
 
 class PolicyProbe::FlowTable {
 protected:
-  Vector<FlowTableEntry> _v;
+  FlowTableEntry *_head;
 
 public:
-  FlowTable(){}
+  FlowTable(){ _head = NULL;}
 
   PolicyProbe::FlowTableEntry * 
   insert(IPAddress src, unsigned short sport,
-	 IPAddress dst, unsigned short dport);
+	 IPAddress dst, unsigned short dport, unsigned long syn_seq);
   
   PolicyProbe::FlowTableEntry * 
   lookup(IPAddress src, unsigned short sport,
@@ -255,6 +293,8 @@ public:
     }
   }
   void schedule() {
+    uint32_t dmsec;
+    long double diff;
     assert(_head || !_scheduled);
 
     if (!_head) {
@@ -264,13 +304,18 @@ public:
     }
 
     if (_scheduled) _timer->unschedule();
-    fprintf(stderr, "Scheduling after %dms\n", (uint32_t) (1000*(_head->time - gettime())));
-    _timer->schedule_after_ms( (uint32_t) (1000*(_head->time - gettime())) );
+    diff =  _head->time - gettime();
+    if (diff < 0) diff = 0;
+    dmsec = (uint32_t) (1000*( diff ));
+    
+    //fprintf(stderr, "Scheduling after %ums (%Lf, %Lf)\n", dmsec, _head->time, gettime());
+    _timer->schedule_after_ms( dmsec );
     _scheduled = 1;
     
   }
   void print() {
     struct TimerEntry *p = _head;
+    return;
     while(p){
       fprintf(stderr, " timerqueue: %Lf %d %d ", p->time, p->action, p->data);
       p->entry->print();
@@ -307,6 +352,10 @@ public:
       *action = _head->action;
       r       = _head->time;
       if (data) *data   = _head->data;
+    } else {
+      *entry = NULL;
+      *action = 0;
+      r = -1;
     }
     return r;
   }
@@ -319,15 +368,15 @@ public:
       _head = p;
     }
   }
-  void remove(FlowTableEntry *entry) {
-    fprintf(stderr, "removing: ");
-    entry->print();
-    fprintf(stderr, "\n");
+  void remove(FlowTableEntry *entry, int data=0) {
+    //fprintf(stderr, "timerqueue removing: ");
+    //entry->print();
+    //fprintf(stderr, "\n");
     struct TimerEntry **last = &_head;
     struct TimerEntry *p = _head;
 
     while(p) {
-      if (p->entry == entry) {
+      if ( (p->entry == entry) && (p->data == data) ) {
 	*last = p->next;
 	free(p);
 	p = *last;

@@ -47,11 +47,22 @@ PortClassifier::notify_noutputs(int n)
 int
 PortClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  String srcdst;
   if (cp_va_parse(conf, this, errh,
-                  cpUnsigned, "base", &_base,
+                  cpString, "srcdst", &srcdst, 
+		  cpUnsigned, "base", &_base,
                   cpUnsigned, "stepping", &_stepping,
+		  
 		  0) < 0)
     return -1;
+
+  if (srcdst == "SRC")
+    _src = 1;
+  else if (srcdst == "DST")
+    _src = 0;
+  else 
+    return -1;
+
   return 0;
 }
 
@@ -64,7 +75,11 @@ PortClassifier::push(int, Packet *p)
   sport = ntohs(tcph->th_sport);
   dport = ntohs(tcph->th_dport);
 
-  port = sport / _stepping - _base / _stepping;
+  if (_src) 
+    port = sport / _stepping - _base / _stepping;
+  else
+    port = dport / _stepping - _base / _stepping;
+    
   if (port >= noutputs())
     port = noutputs()-1;
 

@@ -37,7 +37,7 @@ class PortClassifier : public Element { public:
  private:
   unsigned int _noutputs;
   unsigned int _base, _stepping;
-
+  int _src;
 };
 
 #endif
