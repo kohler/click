@@ -205,15 +205,12 @@ print_nbrs(Element *f, void *)
   s += String(n->_addresses.count());
   s += "):\n";
 
-  int i = 0;
-  IPAddress ipaddr;
-  Neighbor::NbrEntry nbr;
-  while (n->_addresses.each(i, ipaddr, nbr)) {
+  for (Neighbor::Table::Iterator iter = n->_addresses.first(); iter; iter++) {
     if (n->_timeout_jiffies < 0 || 
-	(jiff - nbr.last_updated_jiffies) < n->_timeout_jiffies) {
-      s += ipaddr.s();
+	(jiff - iter.value().last_updated_jiffies) < n->_timeout_jiffies) {
+      s += iter.key().s();
       s += " -- ";
-      s += nbr.eth.s();
+      s += iter.value().eth.s();
       s += '\n';
     }
   }

@@ -498,18 +498,17 @@ IPRewriter::mark_live_tcp()
 }
 
 void
-IPRewriter::clear_map(HashMap<IPFlowID, Mapping *> &h)
+IPRewriter::clear_map(Map &h)
 {
   Vector<Mapping *> to_free;
   
-  int i = 0;
-  IPFlowID flow;
-  Mapping *m;
-  while (h.each(i, flow, m))
+  for (Map::Iterator iter = h.first(); iter; iter++) {
+    Mapping *m = iter.value();
     if (m && m->is_forward())
       to_free.push_back(m);
+  }
 
-  for (i = 0; i < to_free.size(); i++) {
+  for (int i = 0; i < to_free.size(); i++) {
     Mapping *m = to_free[i];
     if (Pattern *p = m->pattern())
       p->mapping_freed(m);
@@ -519,27 +518,24 @@ IPRewriter::clear_map(HashMap<IPFlowID, Mapping *> &h)
 }
 
 void
-IPRewriter::clean_map(HashMap<IPFlowID, Mapping *> &h)
+IPRewriter::clean_map(Map &h)
 {
   Vector<Mapping *> to_free;
   
-  int i = 0;
-  IPFlowID flow;
-  Mapping *m;
-  while (h.each(i, flow, m))
-    if (m) {
+  for (Map::Iterator iter = h.first(); iter; iter++)
+    if (Mapping *m = iter.value()) {
       if (!m->used() && !m->reverse()->used() && !m->is_reverse())
 	to_free.push_back(m);
       else
 	m->clear_used();
     }
   
-  for (i = 0; i < to_free.size(); i++) {
-    m = to_free[i];
+  for (int i = 0; i < to_free.size(); i++) {
+    Mapping *m = to_free[i];
     if (Pattern *p = m->pattern())
       p->mapping_freed(m);
-    h.insert(m->reverse()->flow_id().rev(), 0);
-    h.insert(m->flow_id().rev(), 0);
+    h.remove(m->reverse()->flow_id().rev());
+    h.remove(m->flow_id().rev());
     delete m->reverse();
     delete m;
   }
@@ -627,17 +623,20 @@ IPRewriter::push(int port, Packet *p_in)
 String
 IPRewriter::dump_table()
 {
-  StringAccum tcps, udps;
-  int i = 0;
-  IPFlowID2 in;
-  Mapping *m;
-  while (_tcp_map.each(i, in, m))
+  StringAccum tcps;
+  for (Map::Iterator iter = _tcp_map.first(); iter; iter++) {
+    Mapping *m = iter.value();
     if (m && !m->is_reverse())
-      tcps << in.s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
-  i = 0;
-  while (_udp_map.each(i, in, m))
+      tcps << iter.key().s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
+  }
+
+  StringAccum udps;
+  for (Map::Iterator iter = _udp_map.first(); iter; iter++) {
+    Mapping *m = iter.value();
     if (m && !m->is_reverse())
-      udps << in.s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
+      udps << iter.key().s() << " => " << m->flow_id().s() << " [" << String(m->output()) << "]\n";
+  }
+
   if (tcps.length() && udps.length())
     return "TCP:\n" + tcps.take_string() + "\nUDP:\n" + udps.take_string();
   else if (tcps.length())
@@ -682,5 +681,5 @@ IPRewriter::add_handlers()
 ELEMENT_REQUIRES(IPRewriterPatterns)
 EXPORT_ELEMENT(IPRewriter)
 
-#include "hashmap.cc"
+#include "bighashmap.cc"
 #include "vector.cc"

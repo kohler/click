@@ -44,7 +44,7 @@ private:
     click_tcp _tcp;
     operator bool() const { return(_ip.ip_src.s_addr != 0); }
     tcpip() { _ip.ip_src.s_addr = 0; }
-    int hashcode();
+    int hashcode() const;
   };
   
   /* per-connection control block, indexed by CID */

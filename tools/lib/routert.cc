@@ -88,12 +88,11 @@ RouterT::check() const
   assert(_elements.size() == _hookup_first.size());
 
   // check element names
-  {
-    int i = 0;
-    String key; int value;
-    while (_element_name_map.each(i, key, value))
-      if (value >= 0)
-	assert(value < ne && _elements[value].name == key && _elements[value].live());
+  for (StringMap::Iterator iter = _element_name_map.first(); iter; iter++) {
+    String key = iter.key();
+    int value = iter.value();
+    if (value >= 0)
+      assert(value < ne && _elements[value].name == key && _elements[value].live());
   }
 
   // check elements
@@ -1147,13 +1146,9 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
   }
 
   // add requirements
-  {
-    int thunk = 0, val;
-    String key;
-    while (_require_map.each(thunk, key, val))
-      if (val > 0)
-	tor->add_requirement(key);
-  }
+  for (StringMap::Iterator iter = _require_map.first(); iter; iter++)
+    if (iter.value() > 0)
+      tor->add_requirement(iter.key());
   
   // yes, we expanded it
   return new_eindex;
@@ -1258,12 +1253,10 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   // print requirements
   {
     StringAccum require_sa;
-    int thunk = 0, val;
-    String key;
-    while (_require_map.each(thunk, key, val))
-      if (val > 0) {
+    for (StringMap::Iterator iter = _require_map.first(); iter; iter++)
+      if (iter.value() > 0) {
 	if (require_sa.length()) require_sa << ", ";
-	require_sa << key;
+	require_sa << iter.key();
       }
     if (require_sa.length())
       sa << "require(" << require_sa.take_string() << ");\n\n";

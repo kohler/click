@@ -96,14 +96,14 @@ TCPConnectionMonitor::look_read_handler(Element *e, void *)
   
   // Go through all src/addr combi's and see if one has more than _thresh half
   // open connections.
-  int i = 0;
-  IPFlowID flid;
-  HalfOpenConnections *hocs;
 
   // For each src/dst combincation
   // Too mony half-open connections?
   // Print out portnumber for open connections.
-  while(me->_hoc.each(i, flid, hocs))
+  for (TCPConnectionMonitor::Table::Iterator iter = me->_hoc.first();
+       iter; iter++) {
+    IPFlowID flid = iter.key();
+    HalfOpenConnections *hocs = iter.value();
     if(hocs != 0 && hocs->amount() >= me->_thresh)
       for(int j = 0; j < MAX_HALF_OPEN; j++) {
         HalfOpenPorts hops;
@@ -113,6 +113,7 @@ TCPConnectionMonitor::look_read_handler(Element *e, void *)
                  String((int) hops.sport) + "\t" +
                  String((int) hops.dport) + "\n";
       }
+  }
 
   return ret;
 }

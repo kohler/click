@@ -80,16 +80,15 @@ read_package_file(String filename, HashMap<String, int> &packages,
 }
 
 static String
-packages_to_remove(const HashMap<String, int> &active_modules,
-		   const HashMap<String, int> &packages)
+packages_to_remove(const StringMap &active_modules, const StringMap &packages)
 {
   // remove extra packages
-  int thunk = 0, value; String key;
   String to_remove;
   // go over all modules; figure out which ones are Click packages
   // by checking `packages' array; mark old Click packages for removal
-  while (active_modules.each(thunk, key, value))
-    if (value == 0) {
+  for (StringMap::Iterator iter = active_modules.first(); iter; iter++)
+    if (iter.value() == 0) {
+      String key = iter.key();
       if (packages[key] >= 0)
 	to_remove += " " + key;
       else {

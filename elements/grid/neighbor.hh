@@ -39,7 +39,8 @@ public:
     { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
 
-  HashMap<IPAddress, NbrEntry> _addresses; // immediate nbrs
+  typedef HashMap<IPAddress, NbrEntry> Table;
+  Table _addresses; // immediate nbrs
   struct far_entry {
     far_entry() : last_updated_jiffies(0) { }
     far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), nbr(n) { }

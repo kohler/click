@@ -1,6 +1,7 @@
 #ifndef IPRWPATTERNS_HH
 #define IPRWPATTERNS_HH
 #include "elements/ip/iprewriter.hh"
+#include "hashmap.hh"
 
 /*
  * =c

@@ -154,12 +154,11 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // remove requirements
   {
-    const HashMap<String, int> &requirements = r->requirement_map();
-    int thunk = 0, value; String key;
+    const StringMap &requirements = r->requirement_map();
     Vector<String> removers;
-    while (requirements.each(thunk, key, value))
-      if (value > 0 && key.substring(0, 12) == "devirtualize")
-	removers.push_back(key);
+    for (StringMap::Iterator iter = requirements.first(); iter; iter++)
+      if (iter.value() > 0 && iter.key().substring(0, 12) == "devirtualize")
+	removers.push_back(iter.key());
     for (int i = 0; i < removers.size(); i++)
       r->remove_requirement(removers[i]);
   }
@@ -366,9 +365,8 @@ particular purpose.\n");
   {
     for (int i = 0; i < instruction_files.size(); i++)
       parse_instruction_file(instruction_files[i], sigs, errh);
-    int thunk = 0; String key; int value;
-    while (specializing.each(thunk, key, value))
-      sigs.specialize_class(key, value);
+    for (StringMap::Iterator iter = specializing.first(); iter; iter++)
+      sigs.specialize_class(iter.key(), iter.value());
   }
 
   // follow instructions embedded in router definition

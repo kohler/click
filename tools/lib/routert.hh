@@ -4,6 +4,7 @@
 #include "error.hh"
 #include "hashmap.hh"
 #include "archive.hh"
+typedef HashMap<String, int> StringMap;
 
 class RouterT : public ElementClassT {
 
@@ -17,11 +18,11 @@ class RouterT : public ElementClassT {
   RouterT *_enclosing_scope;
   Vector<String> _formals;
   
-  HashMap<String, int> _element_type_map;
+  StringMap _element_type_map;
   Vector<String> _element_type_names;
   Vector<ElementClassT *> _element_classes;
   
-  HashMap<String, int> _element_name_map;
+  StringMap _element_name_map;
   Vector<ElementT> _elements;	// contains types
   int _free_element;
   int _real_ecount;
@@ -34,9 +35,9 @@ class RouterT : public ElementClassT {
   Vector<Pair> _hookup_first;
   int _free_hookup;
 
-  HashMap<String, int> _require_map;
+  StringMap _require_map;
 
-  HashMap<String, int> _archive_map;
+  StringMap _archive_map;
   Vector<ArchiveElement> _archive;
 
   int add_element(const ElementT &);
@@ -115,7 +116,7 @@ class RouterT : public ElementClassT {
 
   void add_requirement(const String &);
   void remove_requirement(const String &);
-  const HashMap<String, int> &requirement_map() const { return _require_map; }
+  const StringMap &requirement_map() const	{ return _require_map; }
 
   void add_archive(const ArchiveElement &);
   int narchive() const				{ return _archive.size(); }

@@ -26,8 +26,7 @@ template class Vector<String>;
 
 #include "hashmap.cc"
 template class HashMap<String, int>;
-template class HashMap<IPAddress, EtherAddress>;
-template class HashMap<IPAddress, IPAddress>;
+template class HashMapIterator<String, int>;
 
 #include "ewma.cc"
 template class DirectEWMAX<4, 10>;

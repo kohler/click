@@ -116,9 +116,9 @@ prepare_compile_tmpdir(RouterT *r, String &tmpdir, String &compile_prog,
 static void
 compile_archive_packages(RouterT *r, ErrorHandler *errh)
 {
-  const HashMap<String, int> &requirements = r->requirement_map();
+  const StringMap &requirements = r->requirement_map();
   const Vector<ArchiveElement> &archive = r->archive();
-  HashMap<String, int> have_requirements(0);
+  StringMap have_requirements(0);
 
   // analyze archive
   for (int i = 0; i < archive.size(); i++) {
@@ -136,8 +136,9 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
   String click_compile_prog;
   
   // check requirements
-  int thunk = 0, value; String package;
-  while (requirements.each(thunk, package, value))
+  for (StringMap::Iterator iter = requirements.first(); iter; iter++) {
+    String package = iter.key();
+    int value = iter.value();
     if (value > 0 && have_requirements[package] == 1) {
       // have source, but not package; compile it
       
@@ -185,11 +186,11 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
       ae.data = file_string(package + ".ko", &cerrh);
       r->add_archive(ae);
     }
+  }
 }
 
 static bool
-read_package_file(String filename, HashMap<String, int> &packages,
-		  ErrorHandler *errh)
+read_package_file(String filename, StringMap &packages, ErrorHandler *errh)
 {
   if (!errh && access(filename.cc(), F_OK) < 0)
     return false;
@@ -208,18 +209,17 @@ read_package_file(String filename, HashMap<String, int> &packages,
 }
 
 static String
-packages_to_remove(const HashMap<String, int> &active_modules,
-		   const HashMap<String, int> &packages)
+packages_to_remove(const StringMap &active_modules, const StringMap &packages)
 {
   // remove extra packages
-  int thunk = 0, value; String key;
   String to_remove;
   // go over all modules; figure out which ones are Click packages
   // by checking `packages' array; mark old Click packages for removal
-  while (active_modules.each(thunk, key, value))
+  for (StringMap::Iterator iter = active_modules.first(); iter; iter++)
     // only remove packages that weren't used in this configuration.
     // packages used in this configuration have value > 0
-    if (value == 0) {
+    if (iter.value() == 0) {
+      String key = iter.key();
       if (packages[key] >= 0)
 	to_remove += " " + key;
       else {
@@ -410,9 +410,10 @@ particular purpose.\n");
   
   // install missing requirements
   {
-    const HashMap<String, int> &requirements = r->requirement_map();
-    int thunk = 0, value; String key;
-    while (requirements.each(thunk, key, value))
+    const StringMap &requirements = r->requirement_map();
+    for (StringMap::Iterator iter = requirements.first(); iter; iter++) {
+      String key = iter.key();
+      int value = iter.value();
       if (value > 0 && packages[key] < 0) {
 	String package = clickpath_find_file
 	  (key + ".ko", "lib", CLICK_LIBDIR);
@@ -431,6 +432,7 @@ particular purpose.\n");
 	  errh->fatal("`insmod %s' failed: %s", package.cc(), strerror(errno));
 	active_modules.insert(package, 1);
       }
+    }
   }
   
   // write flattened configuration to /proc/click/config

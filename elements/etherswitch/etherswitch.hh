@@ -32,7 +32,9 @@ class EtherSwitch : public Element {
   };
 
 private:
-  HashMap<EtherAddress,AddrInfo*> _table;
+
+  typedef HashMap<EtherAddress, AddrInfo *> Table;
+  Table _table;
   int _timeout;
   
   void broadcast(int source, Packet*);

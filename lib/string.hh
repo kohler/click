@@ -48,6 +48,7 @@ class String {
   String(PermString p);
 #endif
   explicit String(char);
+  explicit String(unsigned char);
   explicit String(int);
   explicit String(unsigned);
   explicit String(unsigned long);
@@ -161,6 +162,12 @@ inline
 String::String(char c)
 {
   assign(&c, 1);
+}
+
+inline
+String::String(unsigned char c)
+{
+  assign(reinterpret_cast<char *>(&c), 1);
 }
 
 inline

@@ -299,11 +299,13 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
   String click_compile_prog;
   
   // check requirements
-  int thunk = 0, value; String package;
-  while (have_requirements.each(thunk, package, value))
-    if (value >= 0) {
+  for (HashMap<String, int>::Iterator iter = have_requirements.first();
+       iter; iter++)
+    if (iter.value() >= 0) {
       // have source, but not package; compile it
       // XXX what if it's not required?
+      String package = iter.key();
+      int archive_index = iter.value();
       
       if (!click_compile_prog)
 	if (!prepare_compile_tmpdir(archive, tmpdir, click_compile_prog, errh))
@@ -314,7 +316,7 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
 
       // write .cc file
       String filename = package + ".cc";
-      String source_text = archive[value].data;
+      String source_text = archive[archive_index].data;
       FILE *f = fopen(filename, "w");
       if (!f)
 	cerrh.fatal("%s: %s", filename.cc(), strerror(errno));

@@ -268,7 +268,7 @@ RFC2507c::simple_action(Packet *p)
 }
 
 int
-RFC2507c::tcpip::hashcode()
+RFC2507c::tcpip::hashcode() const
 {
   unsigned int xx;
   xx = this->_ip.ip_src.s_addr +

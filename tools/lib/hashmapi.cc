@@ -17,4 +17,6 @@
 
 #include "string.hh"
 template class HashMap<String, int>;
+template class HashMapIterator<String, int>;
 template class HashMap<String, String>;
+template class HashMapIterator<String, String>;

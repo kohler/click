@@ -40,14 +40,15 @@ HashMap<K, V>::HashMap(const V &def)
 template <class K, class V>
 HashMap<K, V>::HashMap(const HashMap<K, V> &m)
   : _size(m._size), _capacity(m._capacity), _n(m._n),
-    _e(new HashMapElt[m._size]), _default_v(m._default_v)
+    _e(new Elt[m._size]), _default_v(m._default_v)
 {
   for (int i = 0; i < _size; i++)
     _e[i] = m._e[i];
 }
 
 
-template <class K, class V> HashMap<K, V> &
+template <class K, class V>
+HashMap<K, V> &
 HashMap<K, V>::operator=(const HashMap<K, V> &o)
 {
   // This works with self-assignment.
@@ -57,7 +58,7 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
   _n = o._n;
   _default_v = o._default_v;
   
-  HashMapElt *new_e = new HashMapElt[_size];
+  Elt *new_e = new Elt[_size];
   for (int i = 0; i < _size; i++)
     new_e[i] = o._e[i];
   
@@ -67,14 +68,16 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
   return *this;
 }
 
-template <class K, class V> inline void
+template <class K, class V>
+inline void
 HashMap<K, V>::set_size(int i)
 {
   while (i > _size) increase();
 }
 
-template <class K, class V> inline int
-HashMap<K, V>::bucket(K key) const
+template <class K, class V>
+inline int
+HashMap<K, V>::bucket(const K &key) const
 {
   int hc = key.hashcode();
   int i =  (hc >> 2) & (_size - 1);
@@ -87,18 +90,19 @@ HashMap<K, V>::bucket(K key) const
 }
 
 
-template <class K, class V> void
+template <class K, class V>
+void
 HashMap<K, V>::increase()
 {
-  HashMapElt *oe = _e;
+  Elt *oe = _e;
   int osize = _size;
   
   _size *= 2;
   if (_size < 8) _size = 8;
   _capacity = (int)(0.8 * _size) - 1;
-  _e = new HashMapElt[_size];
+  _e = new Elt[_size];
   
-  HashMapElt *otrav = oe;
+  Elt *otrav = oe;
   for (int i = 0; i < osize; i++, otrav++)
     if (otrav->k) {
       int j = bucket(otrav->k);
@@ -108,14 +112,16 @@ HashMap<K, V>::increase()
   delete[] oe;
 }
 
-template <class K, class V> inline void
+template <class K, class V>
+inline void
 HashMap<K, V>::check_size()
 {
   if (_n >= _capacity) increase();
 }
 
-template <class K, class V> bool
-HashMap<K, V>::insert(K key, const V &val)
+template <class K, class V>
+bool
+HashMap<K, V>::insert(const K &key, const V &val)
 {
   check_size();
   int i = bucket(key);
@@ -126,8 +132,9 @@ HashMap<K, V>::insert(K key, const V &val)
   return is_new;
 }
 
-template <class K, class V> V &
-HashMap<K, V>::find_force(K key)
+template <class K, class V>
+V &
+HashMap<K, V>::find_force(const K &key)
 {
   check_size();
   int i = bucket(key);
@@ -139,7 +146,8 @@ HashMap<K, V>::find_force(K key)
   return _e[i].v;
 }
 
-template <class K, class V> void
+template <class K, class V>
+void
 HashMap<K, V>::clear()
 {
   delete[] _e;
@@ -148,37 +156,14 @@ HashMap<K, V>::clear()
   increase();
 }
 
-template <class K, class V> bool
-HashMap<K, V>::each(int &ival, K &k, V &v) const
-{
-  if (ival < 0) return false;
-  while (ival < _size && !(bool)_e[ival].k) ival++;
-  if (ival >= _size) return false;
-  k = _e[ival].k;
-  v = _e[ival].v;
-  ival++;
-  return true;
-}
-
-template <class K, class V> bool
-HashMap<K, V>::eachp(int &ival, K *&kp, V *&vp) const
-{
-  if (ival < 0) return false;
-  while (ival < _size && !(bool)_e[ival].k) ival++;
-  if (ival >= _size) return false;
-  kp = &_e[ival].k;
-  vp = &_e[ival].v;
-  ival++;
-  return true;
-}
-
-template <class K, class V> void
+template <class K, class V>
+void
 HashMap<K, V>::swap(HashMap<K, V> &o)
 {
   int size = _size;
   int capacity = _capacity;
   int n = _n;
-  HashMapElt *e = _e;
+  Elt *e = _e;
   V default_v = _default_v;
   _size = o._size;
   _capacity = o._capacity;
@@ -190,4 +175,24 @@ HashMap<K, V>::swap(HashMap<K, V> &o)
   o._n = n;
   o._e = e;
   o._default_v = default_v;
+}
+
+template <class K, class V>
+HashMapIterator<K, V>::HashMapIterator(const HashMap<K, V> *hm)
+  : _hm(hm)
+{
+  HashMap<K, V>::Elt *e = _hm->_e;
+  int size = _hm->_size;
+  for (_pos = 0; _pos < size && !(bool)e[_pos].k; _pos++)
+    ;
+}
+
+template <class K, class V>
+void
+HashMapIterator<K, V>::operator++(int = 0)
+{
+  HashMap<K, V>::Elt *e = _hm->_e;
+  int size = _hm->_size;
+  for (_pos++; _pos < size && !(bool)e[_pos].k; _pos++)
+    ;
 }

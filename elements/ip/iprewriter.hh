@@ -2,7 +2,7 @@
 #define IPREWRITER_HH
 #include "element.hh"
 #include "timer.hh"
-#include "hashmap.hh"
+#include "bighashmap.hh"
 #include "ipflowid.hh"
 #include "click_ip.h"
 class IPMapper;
@@ -107,19 +107,20 @@ class IPRewriter : public Element {
       IPMapper *mapper;
     } u;
   };
-  
+
+  typedef BigHashMap<IPFlowID, Mapping *> Map;
   Vector<InputSpec> _input_specs;
-  HashMap<IPFlowID, Mapping *> _tcp_map;
-  HashMap<IPFlowID, Mapping *> _udp_map;
+  Map _tcp_map;
+  Map _udp_map;
 
   Timer _timer;
 
   static const int GC_INTERVAL_SEC = 3600;
 
   void mark_live_tcp();
-  void clean_map(HashMap<IPFlowID, Mapping *> &);
+  void clean_map(Map &);
   void clean();
-  void clear_map(HashMap<IPFlowID, Mapping *> &);
+  void clear_map(Map &);
 
  public:
 

@@ -32,11 +32,8 @@ EtherSwitch::EtherSwitch()
 
 EtherSwitch::~EtherSwitch()
 {
-  int i=0;
-  EtherAddress s;
-  AddrInfo *a;
-  while (_table.each(i, s, a))
-    delete a;
+  for (Table::Iterator iter = _table.first(); iter; iter++)
+    delete iter.value();
   _table.clear();
 }
 
@@ -140,13 +137,8 @@ String
 EtherSwitch::read_table(Element* f, void *) {
   EtherSwitch* sw = (EtherSwitch*)f;
   String s;
-  EtherAddress ea;
-  AddrInfo* ai;
-
-  int i = 0;
-  while (sw->_table.each(i, ea, ai)) {
-    s += ea.s() + " " + String(ai->port) + "\n";
-  }
+  for (Table::Iterator iter = sw->_table.first(); iter; iter++)
+    s += iter.key().s() + " " + String(iter.value()->port) + "\n";
   return s;
 }
 

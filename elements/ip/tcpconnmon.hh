@@ -80,8 +80,9 @@ private:
       HalfOpenPorts *_hops[MAX_HALF_OPEN];
       short _free_slots[MAX_HALF_OPEN];
   };
-  
-  HashMap<IPFlowID, HalfOpenConnections *> _hoc;
+
+  typedef HashMap<IPFlowID, HalfOpenConnections *> Table;
+  Table _hoc;
   int _thresh;
 
   void add_handlers();
