@@ -171,6 +171,24 @@ void LookupIPRouteRON::push_forward_rst(Packet *p)
   FlowTableEntry *match = NULL;
 
   tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
+  printf("FOR TCP RST\n");
+
+  match = _flow_table->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
+			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
+  
+  if (match) {
+    if (!match->is_pending()) {
+      printf("found match, non-pending, forwarding...\n");
+      match->saw_forward_packet();
+      match->forw_alive = 0; // forward & reverse flows are over
+      match->rev_alive = 0; 
+      output(match->outgoing_port).push(p);
+      return;
+    }
+  }
+  
+  printf("could not find non-pending match. Killing packet\n");
+  p->kill();
 }
 
 void LookupIPRouteRON::push_forward_normal(Packet *p) 
@@ -283,13 +301,31 @@ void LookupIPRouteRON::push_reverse_fin(Packet *p)
   }
 
   printf(" could not find non-pending match. Killing pkt.\n");
-
+  p->kill();
 }
 void LookupIPRouteRON::push_reverse_rst(Packet *p) 
 {
   const click_tcp *tcph;
   FlowTableEntry *match = NULL;
   tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
+  match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
+			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
+  
+  printf("REV TCP RST\n");
+
+  if (match) {
+    if (!match->is_pending()) {
+      printf(" found match, not pending, ending reverse direction\n");
+      match->saw_reply_packet();
+      match->forw_alive = 0;
+      match->rev_alive = 0;
+      output(0).push(p);
+      return;
+    }
+  }
+
+  printf(" could not find non-pending match. Killing pkt.\n");
+  p->kill();
 }
 void LookupIPRouteRON::push_reverse_normal(Packet *p) 
 {
