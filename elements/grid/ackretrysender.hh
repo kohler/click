@@ -5,6 +5,7 @@
 #include <click/packet.hh>
 #include <click/task.hh>
 #include <click/timer.hh>
+#include <click/dequeue.hh>
 CLICK_DECLS
 
 /*
@@ -28,9 +29,9 @@ CLICK_DECLS
  *
  * =over 8
  *
- * =item MAX_RETRIES
+ * =item MAX_TRIES
  *
- * Unsigned integer, > 0.  Resend the packet up to this many times
+ * Unsigned integer, > 0.  Send the packet up to this many times
  * before giving up.  Default is 16.  This includes the initial
  * transmission.
  *
@@ -39,12 +40,28 @@ CLICK_DECLS
  * Unsigned integer, > 0.  Milliseconds.  Wait this long before
  * resending the packet.  Default is 10.
  *
+ * =item HISTORY_SZ
+ *
+ * Unsigned integer.  Number of most recent packets for which to
+ * remember retry data.  Defaults to 500.
+ *
  * =item VERBOSE
  *
  * Boolean.  Be noisy.  True by default.
  *
+ * =back
+ *
+ * =h summary read-only
+ * Print summary of packet retry statistics
+ *
+ * =h history read-only
+ * Print packet retry history.
+ *
+ * =h clear write-only
+ * Clear out packet retry history.
+ *
  * =a 
- * ACKResponder */
+ * ACKResponder, ACKRetrySender2, ACKResponder2 */
 
 class ACKRetrySender : public Element {
 public:
@@ -66,10 +83,24 @@ public:
   void run_timer();
   void push(int, Packet *);
 
+  void add_handlers();
+
 private:
   unsigned int _timeout; // msecs
-  unsigned int _max_retries;
-  unsigned int _num_retries;
+  unsigned int _max_tries; // max number of times to tx before quitting
+  unsigned int _num_tries; // number of times current packet has been sent
+  unsigned int _history_length;
+
+  struct tx_result_t {
+    tx_result_t(const struct timeval &t, unsigned n, bool s) 
+      : pkt_time(t), num_tx(n), success(s) { }
+    struct timeval pkt_time;
+    unsigned num_tx;
+    bool success;
+  };
+
+  typedef DEQueue<tx_result_t> HistQ;
+  HistQ _history;
 
   Packet *_waiting_packet;
   bool _verbose;
@@ -78,6 +109,10 @@ private:
   Task _task;
 
   void check();
+
+  static String print_history(Element *e, void *);
+  static String print_summary(Element *e, void *);
+  static int clear_history(const String &, Element *, void *, ErrorHandler *);
 };
 
 CLICK_ENDDECLS
