@@ -453,7 +453,7 @@ AggregateIPFlows::handle_packet(Packet *p)
     int paint = 0;
 
     // assign timestamp if no timestamp given
-    if (!p->timestamp_anno().tv_sec) {
+    if (!timerisset(&p->timestamp_anno())) {
 	if (!_timestamp_warning) {
 	    click_chatter("%{element}: warning: packet received without timestamp", this);
 	    _timestamp_warning = true;
