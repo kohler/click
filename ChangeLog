@@ -1,3 +1,29 @@
+2004-07-07 Wednesday 03:38  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click-mkmindriver/click-mkmindriver.cc (1.32): fix how
+	click-buildtool is called
+
+2004-07-07 Wednesday 03:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-mkmindriver.1 (1.5),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.31),
+	tools/lib/etraits.cc (1.10), tools/lib/etraits.hh (1.7): add
+	--no-check and --verbose, and it works
+
+2004-07-07 Wednesday 03:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.27): --prefix affects --include directories
+	(old makefiles will work now)
+
+2004-07-07 Wednesday 03:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click-flatten/click-flatten.cc (1.21): doc update
+
+2004-07-07 Wednesday 03:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/string.hh (1.33): String::String(const char *s1,
+	const char *s2) works if s2 < s1 (returning the null string)
+
 2004-07-06 Tuesday 20:55  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/: click-align/alignclass.cc (1.18),
