@@ -34,7 +34,7 @@ extern struct proto tcp_prot;
 }
 #endif
 
-#define debugging
+//#define debugging
 
 //
 // Rewriter::Connection
@@ -270,7 +270,9 @@ Rewriter::Mapping::add(Packet *p, Pattern *pat)
   Connection *out = new Connection();
   if (!pat->apply(in, out))
     return false;
+#ifdef debugging
   click_chatter("mapping::add inserting %s", out->s().cc());
+#endif
   _fwd.insert(*in, Rewrite(out,pat));
   _rev.insert(*out, *in);
   
@@ -285,10 +287,14 @@ Rewriter::Mapping::apply(Packet *p, int *port)
   if ((out = _fwd[c])) {
     *port = out.pattern()->output();
     out.connection()->set(p);
+#ifdef debugging
     click_chatter("mapping::apply applied %s", out.connection()->s().cc());
+#endif
     return true;
   } else {
+#ifdef debugging
     click_chatter("mapping::apply could not find %s", c.s().cc());
+#endif
     return false;
   }
 }
@@ -439,7 +445,6 @@ Rewriter::initialize(ErrorHandler *)
   click_chatter("rewriter: Running in userlevel mode.  "
 		"Cannot remove stale mappings.");
   click_chatter("Patterns:\n%s", dump_patterns().cc());
-  click_chatter("Table:\n%s", dump_table().cc());
 #endif
 
   return 0;
@@ -488,7 +493,9 @@ Rewriter::push(int port, Packet *p)
 	}
 	_mapping.apply(p, &oport);
       }
+#ifdef debugging
       click_chatter("Table:\n%s", dump_table().cc());
+#endif
       output(oport).push(p);
     } else {
       if (_mapping.apply(p, &oport))
