@@ -1,3 +1,8 @@
+2003-05-10 Saturday 18:41  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.4), rtmdsr.hh (1.4): Can now send
+	data one hop.
+
 2003-05-10 Saturday 17:44  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.3), rtmdsr.hh (1.3): some one-hop
