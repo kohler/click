@@ -373,12 +373,12 @@ while (@ARGV) {
     } elsif (/^-I(.+)$/) {
 	push @includes, $prefix . $1;
     } elsif (long_option_match($_, '--sourcedir', 3) && /^[^=]*=(.*)$/) {
-	$sourcedir = $1;
+	$sourcedir = xml_quote($1);
     } elsif (/^-s$/ || long_option_match($_, '--sourcedir', 3)) {
 	die "not enough arguments" if !@ARGV;
-	$sourcedir = shift @ARGV;
+	$sourcedir = xml_quote(shift @ARGV);
     } elsif (/^-s(.+)$/) {
-	$sourcedir = $1;
+	$sourcedir = xml_quote($1);
     } elsif ((long_option_match($_, '--dochref', 3) || long_option_match($_, '--webdoc', 3))
 	     && /^[^=]*=(.*)$/) {
 	die "repeated --dochref" if defined($dochref);
