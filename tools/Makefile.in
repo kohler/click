@@ -9,29 +9,32 @@ srcdir = @srcdir@
 top_builddir = ..
 subdir = tools
 
-TOOLS = click-xform click-align
+TOOLS = click-align click-install click-xform
+TARGETS = @TOOL_TARGETS@
 
-all: $(TOOLS)
+all: $(TARGETS)
 
-click-xform: Makefile
-	@cd click-xform; $(MAKE) all
 click-align: Makefile
 	@cd click-align; $(MAKE) all
+click-install: Makefile
+	@cd click-install; $(MAKE) all
+click-xform: Makefile
+	@cd click-xform; $(MAKE) all
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 clean:
-	@-for d in $(TOOLS); do cd $$d; $(MAKE) clean; done
+	@-for d in $(TOOLS); do (cd $$d; $(MAKE) clean); done
 distclean:
-	@-for d in $(TOOLS); do cd $$d; $(MAKE) distclean; done
+	@-for d in $(TOOLS); do (cd $$d; $(MAKE) distclean); done
 	-rm -f Makefile
 
 install:
-	@for d in $(TOOLS); do cd $$d; $(MAKE) install; done
+	@for d in $(TARGETS); do (cd $$d; $(MAKE) install); done
 install-man:
-	@for d in $(TOOLS); do cd $$d; $(MAKE) install-man; done
+	@for d in $(TARGETS); do (cd $$d; $(MAKE) install-man); done
 
 DISTFILES = Makefile.in \
 	lib/elementt.cc lib/elementt.hh \
@@ -41,8 +44,8 @@ DISTFILES = Makefile.in \
 	lib/vectori.cc \
 	click-xform/Makefile.in \
 	click-xform/click-xform.cc \
-	click-flatten/Makefile.in \
-	click-flatten/click-flatten.cc \
+	click-install/Makefile.in \
+	click-install/click-install.cc \
 	click-align/Makefile.in \
 	click-align/click-align.cc \
 	click-align/alignment.cc click-align/alignment.hh \

@@ -46,6 +46,7 @@ class RED : public Element {
   void set_C1_and_C2();
 
   static String read_stats(Element *, void *);
+  static String read_queues(Element *, void *);
   static String read_parameter(Element *, void *);
   
  public:

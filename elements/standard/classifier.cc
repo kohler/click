@@ -710,22 +710,11 @@ Classifier::decompile_string(Element *element, void *)
     char buf[20];
     int offset = e.offset - f->_align_offset;
     sa << i << (offset < 10 ? "   " : "  ") << offset << "/";
-    bool need_mask = 0;
-    for (int j = 0; j < 4; j++) {
-      int m = e.mask.c[j], v = e.value.c[j];
-      for (int k = 0; k < 2; k++, m <<= 4, v <<= 4)
-	if ((m & 0xF0) == 0x00)
-	  sprintf(buf + 2*j + k, "?");
-	else {
-	  sprintf(buf + 2*j + k, "%x", (v >> 4) & 0xF);
-	  if ((m & 0xF0) != 0xF0) need_mask = 1;
-	}
-    }
-    if (need_mask) {
-      sprintf(buf + 8, "%%");
-      for (int j = 0; j < 4; j++)
-	sprintf(buf + 9 + 2*j, "%02x", e.mask.c[j]);
-    }
+    for (int j = 0; j < 4; j++)
+      sprintf(buf + 2*j, "%02x", e.value.c[j]);
+    sprintf(buf + 8, "%%");
+    for (int j = 0; j < 4; j++)
+      sprintf(buf + 9 + 2*j, "%02x", e.mask.c[j]);
     sa << buf << "  yes->";
     if (e.yes <= 0)
       sa << "[" << -e.yes << "]";

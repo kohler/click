@@ -82,4 +82,22 @@ class ContextErrorHandler : public ErrorHandler {
   
 };
 
+class PrefixErrorHandler : public ErrorHandler {
+  
+  String _prefix;
+  ErrorHandler *_errh;
+  
+ public:
+  
+  PrefixErrorHandler(ErrorHandler *, const String &prefix);
+  
+  int nwarnings() const			{ return _errh->nwarnings(); }
+  int nerrors() const			{ return _errh->nerrors(); }
+  void reset_counts();
+  
+  int verror(Seriousness, const String &, const char *, va_list);
+  void vmessage(Seriousness, const String &);
+  
+};
+
 #endif

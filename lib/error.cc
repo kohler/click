@@ -540,3 +540,33 @@ ContextErrorHandler::vmessage(Seriousness seriousness, const String &message)
   }
   _errh->vmessage(seriousness, _indent + message);
 }
+
+
+//
+// PREFIX ERROR HANDLER
+//
+
+PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
+				       const String &prefix)
+  : _prefix(prefix), _errh(errh)
+{
+}
+
+void
+PrefixErrorHandler::reset_counts()
+{
+  _errh->reset_counts();
+}
+
+int
+PrefixErrorHandler::verror(Seriousness seriousness, const String &where,
+			   const char *format, va_list val)
+{
+  return _errh->verror(seriousness, _prefix + where, format, val);
+}
+
+void
+PrefixErrorHandler::vmessage(Seriousness seriousness, const String &message)
+{
+  _errh->vmessage(seriousness, _prefix + message);
+}

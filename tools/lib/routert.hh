@@ -75,6 +75,7 @@ class RouterT : public ElementClassT {
   void remove_connection(int);
 
   void add_requirement(const String &);
+  const HashMap<String, int> &requirement_map() const { return _require_map; }
   
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;

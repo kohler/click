@@ -38,7 +38,7 @@ ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
 Router *current_router = 0;
 
-static Vector<String> provisions;
+static Vector<String> packages;
 
 
 class LinuxModuleLexerSource : public MemoryLexerSource {
@@ -51,8 +51,8 @@ class LinuxModuleLexerSource : public MemoryLexerSource {
 void
 LinuxModuleLexerSource::require(const String &r, ErrorHandler *errh)
 {
-  for (int i = 0; i < provisions.size(); i++)
-    if (provisions[i] == r)
+  for (int i = 0; i < packages.size(); i++)
+    if (packages[i] == r)
       return;
   errh->error("unsatisfied requirement `%s'", String(r).cc());
 }
@@ -73,8 +73,8 @@ initialize_router(const char *data, unsigned len)
   lexer->clear();
   
   if (current_router) {
-    if (current_router->initialize(kernel_errh) >= 0)
-      current_router->print_structure(kernel_errh);
+    current_router->initialize(kernel_errh);
+    // current_router->print_structure(kernel_errh);
     init_router_element_procs();
   }
 }
@@ -268,10 +268,20 @@ read_list(Element *, void *)
 static String
 read_classes(Element *, void *)
 {
-  int nft = lexer->permanent_element_types();
+  Vector<String> v;
+  lexer->element_type_names(v);
   StringAccum sa;
-  for (int i = lexer->first_element_type(); i < nft; i++)
-    sa << lexer->element_type(i)->class_name() << "\n";
+  for (int i = 0; i < v.size(); i++)
+    sa << v[i] << "\n";
+  return sa.take_string();
+}
+
+static String
+read_packages(Element *, void *)
+{
+  StringAccum sa;
+  for (int i = 0; i < packages.size(); i++)
+    sa << packages[i] << "\n";
   return sa.take_string();
 }
 
@@ -314,18 +324,18 @@ extern "C" void
 click_provide(const char *name)
 {
   MOD_INC_USE_COUNT;
-  provisions.push_back(String(name));
+  packages.push_back(String(name));
 }
 
 extern "C" void
 click_unprovide(const char *name)
 {
   String n = name;
-  for (int i = 0; i < provisions.size(); i++)
-    if (provisions[i] == n) {
+  for (int i = 0; i < packages.size(); i++)
+    if (packages[i] == n) {
       MOD_DEC_USE_COUNT;
-      provisions[i] = provisions.back();
-      provisions.pop_back();
+      packages[i] = packages.back();
+      packages.pop_back();
       break;
     }
 }
@@ -334,6 +344,7 @@ extern "C" void
 click_add_element_type(const char *name, Element *e)
 {
   lexer->add_element_type(name, e);
+  lexer->save_element_types();
 }
 
 extern "C" void
@@ -379,6 +390,7 @@ init_module()
   kfr.add_read("flatconfig", read_flatconfig, 0);
   kfr.add_read("list", read_list, 0);
   kfr.add_read("classes", read_classes, 0);
+  kfr.add_read("packages", read_packages, 0);
   kfr.add_read("requirements", read_requirements, 0);
   kfr.add_write("driver", write_driver, 0);
   

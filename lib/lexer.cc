@@ -513,6 +513,8 @@ Lexer::remove_element_type(int j)
       if (_element_types[i])
 	return;
     _element_types.resize(j);
+    _element_type_names.resize(j);
+    _prev_element_type.resize(j);
   }
 }
 
@@ -520,6 +522,18 @@ void
 Lexer::remove_element_type(const String &name)
 {
   remove_element_type(_element_type_map[name]);
+}
+
+void
+Lexer::element_type_names(Vector<String> &v) const
+{
+  for (int i = FIRST_REAL_TYPE; i < _reset_element_types; i++)
+    if (_element_types[i] && _element_type_map[_element_type_names[i]] == i)
+      v.push_back(_element_type_names[i]);
+  /*  int thunk = 0, value; String key;
+  while (_element_type_map.each(thunk, key, value))
+    if (value >= 0 && value < _reset_element_types && key[0] != '<')
+    v.push_back(key);*/
 }
 
 

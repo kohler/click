@@ -175,13 +175,6 @@ RouterT::remove_connection(int i)
 }
 
 
-void
-RouterT::add_requirement(const String &s)
-{
-  _require_map.insert(s, 0);
-}
-
-
 bool
 RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
 {
@@ -273,6 +266,13 @@ RouterT::add_tunnel(String in, String out, const String &landmark,
     _elements[in_idx].tunnel_output = out_idx;
     _elements[out_idx].tunnel_input = in_idx;
   }
+}
+
+
+void
+RouterT::add_requirement(const String &s)
+{
+  _require_map.insert(s, 0);
 }
 
 

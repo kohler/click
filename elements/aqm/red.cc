@@ -232,11 +232,26 @@ RED::read_stats(Element *f, void *)
     ;
 }
 
+String
+RED::read_queues(Element *f, void *)
+{
+  RED *r = (RED *)f;
+  if (r->_queue1)
+    return r->_queue1->id() + "\n";
+  else {
+    String s;
+    for (int i = 0; i < r->_queues.size(); i++)
+      s += r->_queues[i]->id() + "\n";
+    return s;
+  }
+}
+
 void
 RED::add_handlers(HandlerRegistry *fcr)
 {
   fcr->add_read("drops", red_read_drops, 0);
   fcr->add_read("stats", read_stats, 0);
+  fcr->add_read("queues", read_queues, 0);
   fcr->add_read_write("min_thresh", read_parameter, (void *)0,
 		      reconfigure_write_handler, (void *)0);
   fcr->add_read_write("max_thresh", read_parameter, (void *)1,

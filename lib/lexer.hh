@@ -126,9 +126,7 @@ class Lexer {
   int force_element_type(String);
   void save_element_types();
 
-  int first_element_type() const	{ return FIRST_REAL_TYPE; }
-  int permanent_element_types() const	{ return _reset_element_types; }
-  Element *element_type(int i) const	{ return _element_types[i]; }
+  void element_type_names(Vector<String> &) const;
   
   void remove_element_type(int);
   void remove_element_type(const String &);

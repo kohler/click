@@ -16,6 +16,13 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 dnl
+dnl packagedir
+dnl
+
+packagesdir='$(localstatedir)/packages'
+AC_SUBST(packagesdir)
+
+dnl
 dnl check for C++
 dnl
 
@@ -203,6 +210,8 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
+TOOL_TARGETS="click-align click-xform"
+AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library
 
@@ -272,6 +281,7 @@ int main(int c, char **v) {
     ac_cv_cxx_aware_system=no))
   if test $ac_cv_cxx_aware_system = yes; then
     TARGETS="$TARGETS linuxmodule"
+    TOOL_TARGETS="$TOOL_TARGETS click-install"
   else
     AC_MSG_WARN(Your header files must be patched before a C++ program
 can include them. Apply the patch that came with this distribution
@@ -305,7 +315,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh tools/Makefile tools/click-xform/Makefile tools/click-align/Makefile doc/Makefile"
+config_files="Makefile mkelemlist.sh tools/Makefile tools/click-align/Makefile tools/click-install/Makefile tools/click-xform/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

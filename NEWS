@@ -2,7 +2,14 @@ Click NEWS
 
 Version 0.52
 
-* Added `--help', `--version', etc. options to tools.
+* Added `--help', `--version', etc. options to tools
+
+* Added "dynamic linking" support to kernel module
+
+* More options for user-level Click, and support for hander invocations on the
+  command line
+
+* Fixed dynamic reconfiguration bug: no more doubled characters
 
 
 Version 0.51   12.Nov.1999
