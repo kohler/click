@@ -32,7 +32,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-#define NOISY 0
+#define NOISY 1
 
 FloodingLocQuerier::FloodingLocQuerier()
   : _expire_timer(expire_hook, (unsigned long)this)
@@ -358,18 +358,43 @@ FloodingLocQuerier::push(int port, Packet *p)
 }
 
 String
+FloodingLocQuerier::read_seqs(Element *e, void *)
+{
+  FloodingLocQuerier *q = (FloodingLocQuerier *)e;
+  String s;
+  
+  int jiff = click_jiffies();
+
+  typedef seq_map::Iterator si_t;
+  for (si_t i = q->_query_seqs.first(); i; i++) {
+    const seq_t &e = i.value();
+    int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
+    s += i.key().s() + " seq=" + String(e.seq_no) + " age=" + String(age) + "\n";
+  }
+  
+  return s;
+}
+
+String
 FloodingLocQuerier::read_table(Element *e, void *)
 {
   FloodingLocQuerier *q = (FloodingLocQuerier *)e;
   String s;
 
+  int jiff = click_jiffies();
+
   typedef qmap::Iterator smi_t;
   for (smi_t i = q->_queries.first(); i; i++) {
     const LocEntry &e = i.value();
-    if (e.p == 0)
-      s += e.ip.s() + " " + e.loc.s() + " " + e.loc_seq_no + "\n";
+    int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
+    if (e.p == 0) {
+      char locbuf[255];
+      sprintf(locbuf, " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
+      s += e.ip.s() + locbuf
+	+ " seq=" + String(e.loc_seq_no) + " age=" + String(age) + "\n";
+    }
     else
-      s += e.ip.s() + "<no loc yet>\n";
+      s += e.ip.s() + " <no loc yet> age=" + String(age) + "\n";
   }
   return s;
 }
@@ -387,6 +412,7 @@ void
 FloodingLocQuerier::add_handlers()
 {
   add_read_handler("table", read_table, (void *)0);
+  add_read_handler("queries", read_seqs, (void *)0);
   add_read_handler("stats", FloodingLocQuerier_read_stats, (void *)0);
 }
 
@@ -396,3 +422,9 @@ EXPORT_ELEMENT(FloodingLocQuerier)
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, FloodingLocQuerier::LocEntry>;
 template class BigHashMap<IPAddress, FloodingLocQuerier::seq_t>;
+
+
+
+
+
+

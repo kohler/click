@@ -32,6 +32,8 @@
 #include <click/glue.hh>
 #include "grid.hh"
 
+#define NOISY 1
+
 LocQueryResponder::LocQueryResponder()
 {
   MOD_INC_USE_COUNT;
@@ -84,6 +86,9 @@ LocQueryResponder::simple_action(Packet *p)
   unsigned int seq_no = ntohl(lq->seq_no);
   unsigned int *old_seq = _query_seqs.findp(gh->ip);
   if (old_seq && *old_seq >= seq_no) {
+#if NOISY
+    click_chatter("LocQueryResponder %s: ignoring old query from %s (%u) ", id().cc(), IPAddress(gh->ip).s().cc(), seq_no);
+#endif
     p->kill();
     return 0;
   }
