@@ -115,18 +115,19 @@ Master::run_router(Router *router)
 void
 Master::remove_router(Router *router)
 {
+    _master_lock.acquire();
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
-    if (was_running == Router::RUNNING_ACTIVE) {
-	_master_lock.acquire();
+    if (was_running == Router::RUNNING_ACTIVE)
 	_master_paused++;
-	_master_lock.release();
-    } else if (was_running == Router::RUNNING_PAUSED)
+    else if (was_running == Router::RUNNING_PAUSED)
 	/* nada */;
     else {
 	assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
+	_master_lock.release();
 	return;
     }
+    _master_lock.release();
 
     // Remove router, fix runcount
     {

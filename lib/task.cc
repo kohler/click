@@ -172,13 +172,18 @@ void
 Task::true_reschedule()
 {
     assert(_thread);
-    if (_router->_running == Router::RUNNING_ACTIVE && attempt_lock_tasks()) {
-	if (!scheduled()) {
-	    fast_schedule();
-	    _thread->unsleep();
+    bool done = false;
+    if (attempt_lock_tasks()) {
+	if (_router->_running == Router::RUNNING_ACTIVE) {
+	    if (!scheduled()) {
+		fast_schedule();
+		_thread->unsleep();
+	    }
+	    done = true;
 	}
 	_thread->unlock_tasks();
-    } else
+    }
+    if (!done)
 	add_pending(RESCHEDULE);
 }
 
