@@ -95,15 +95,14 @@ while (<IN>) {
   s|<a href="index\.html">(.*?)</a>|<b>$1</b>|;
   if (/<p>This page lists all Click element classes that have manual page documentation./) {
     print OUT <<'EOF';
-<p>This page presents programmer's documentation available for Click. All
-these files have been automatically translated from manual pages provided
+<p>Here is the programmer's documentation available for Click. All
+these files have been automatically translated from documentation provided
 with the distribution, which you can get <a
 href="http://www.pdos.lcs.mit.edu/click/">here</a>. You may also be
 interested in <a
 href="http://www.pdos.lcs.mit.edu/papers/click:tocs00/">our TOCS
 paper</a>.</p>
-<p>Below are all the Click element classes that have manual page
-documentation.</p>
+<p>The Click element classes that have manual page documentation are:</p>
 EOF
     next;
   }
