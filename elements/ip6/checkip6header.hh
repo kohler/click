@@ -4,6 +4,8 @@
 /*
  * =c
  * CheckIP6Header([BADADDRS])
+ * =s
+ * V<checking, IPv6>
  * =d
  *
  * Expects IP6 packets as input. Checks that the packet's length is reasonable,

@@ -4,7 +4,9 @@
 /*
  * =c
  * Tun(dev-prefix, address, netmask [, default-gw])
- * =s user-level interface to /dev/tun or ethertap V<device>
+ * =s
+ * user-level interface to /dev/tun or ethertap
+ * V<devices>
  * =d
  * Reads and writes packets from/to a /dev/<dev-prefix>* device.
  * This allows a user-level Click to hand packets to the

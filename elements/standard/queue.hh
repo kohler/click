@@ -8,7 +8,9 @@
  * =c
  * Queue
  * Queue(CAPACITY)
- * =s stores packets in a FIFO queue
+ * =s
+ * stores packets in a FIFO queue
+ * V<storage>
  * =d
  * Stores incoming packets in a first-in-first-out queue.
  * Drops incoming packets if the queue already holds CAPACITY packets.

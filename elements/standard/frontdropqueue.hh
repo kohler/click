@@ -6,7 +6,9 @@
  * =c
  * FrontDropQueue
  * FrontDropQueue(CAPACITY)
- * =s stores packets in drop-from-front FIFO queue
+ * =s
+ * stores packets in drop-from-front FIFO queue
+ * V<storage>
  * =d
  * Stores incoming packets in a first-in-first-out queue.
  * Drops the head packet before inserting the incoming packet if the queue already holds CAPACITY packets.

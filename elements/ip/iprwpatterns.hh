@@ -8,7 +8,7 @@
  * IPRewriterPatterns(NAME PATTERN, ...)
  * =s
  * specifies shared IPRewriter(n) patterns
- * V<modifies>
+ * V<TCP>
  * =io
  * None
  * =d

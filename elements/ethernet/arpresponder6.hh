@@ -4,6 +4,8 @@
 /*
  * =c
  * ARPResponder6(IP1 MASK1 ETH1, IP2 MASK2 ETH2, ...)
+ * =s
+ * V<ARP>
  * =d
  * Input should be ARP request packets, including the
  * ethernet header.

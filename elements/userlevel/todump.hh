@@ -7,8 +7,9 @@
 /*
  * =c
  * ToDump(FILENAME)
- * =s writes packets to a tcpdump(1) file
- * V<device>
+ * =s
+ * writes packets to a tcpdump(1) file
+ * V<sinks>
  * =d
  * Writes incoming packets to FILENAME in `tcpdump -w' format. This file
  * can be read by FromDump on a later run.

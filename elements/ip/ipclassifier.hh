@@ -5,7 +5,9 @@
 /*
  * =c
  * IPClassifier(PATTERN_1, ..., PATTERN_N)
- * =s classifies IP packets by contents
+ * =s
+ * classifies IP packets by contents
+ * V<classification>
  * =d
  *
  * Classifies IP packets according to tcpdump(1)-like patterns. The

@@ -4,7 +4,9 @@
 /*
  * =c
  * CheckIPHeader2([BADADDRS])
- * =s checks IP header, no checksum
+ * =s
+ * checks IP header, no checksum
+ * V<checking>
  * =d
  *
  * Expects IP packets as input. Checks that the packet's length is reasonable,

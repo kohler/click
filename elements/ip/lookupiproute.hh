@@ -4,7 +4,8 @@
 /*
  * =c
  * LookupIPRoute(DST1/MASK1 [GW1] OUT1, DST2/MASK2 [GW2] OUT2, ...)
- * =s simple static IP routing table
+ * =s
+ * simple static IP routing table
  * V<classification>
  * =d
  * Input: IP packets (no ether header).

@@ -4,7 +4,9 @@
 /*
  * =c
  * ScheduleInfo(ELEMENT PARAM, ...)
- * =s specifies scheduling parameters
+ * =s
+ * specifies scheduling parameters
+ * V<information>
  * =io
  * None
  * =d

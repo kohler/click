@@ -4,7 +4,8 @@
 /*
  * =c
  * LookupIPRoute2()
- * =s simple dynamic IP routing table
+ * =s
+ * simple dynamic IP routing table
  * V<classification>
  * =d
  * Input: IP packets (no ether header).

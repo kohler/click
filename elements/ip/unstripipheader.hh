@@ -4,8 +4,9 @@
 /*
  * =c
  * UnstripIPHeader()
- * =s restores outermost IP header
- * V<strips>
+ * =s
+ * restores outermost IP header
+ * V<encapsulation>
  * =d
  *
  * Put outermost IP header back onto a striped packet, based on the IP Header

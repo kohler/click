@@ -627,15 +627,28 @@ close OUT if !$directory;
 
 my(%el_generated);
 sub one_elementlist (@) {
-  print OUT ".PP\n.PD 0\n";
+  my($t);
+  $t .= ".PP\n.PD 0\n";
   foreach $_ (sort @_) {
-    print OUT ".TP 20\n.M ", $_, " ", $all_outsections{$_}, "\n";
-    print OUT $all_roff_summaries{$_}, "\n"
+    $t .= ".TP 20\n.M " . $_ . " " . $all_outsections{$_} . "\n";
+    $t .= $all_roff_summaries{$_} . "\n"
 	if $all_roff_summaries{$_};
     $el_generated{$_} = 1;
   }
-  print OUT ".PD\n";
+  $t . ".PD\n";
 }
+
+my(@Links, $Text);
+
+sub one_summary ($&) {
+  my($name, $func) = @_;
+  my($a) = $name;
+  $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
+  $a =~ tr/ /+/;
+  push @Links, "<a href=\"#$a\">$name</a>";
+  $Text .= ".SS \"$name\"\n";
+  $Text .= one_elementlist(grep(&$func, @all_outfiles));
+};
 
 sub make_elementlist () {
   if ($directory) {
@@ -654,36 +667,41 @@ elements \- documented Click element classes
 .SH "DESCRIPTION"
 This page lists all Click element classes that have manual page documentation.
 EOD;
-  print OUT ".SH \"BY FUNCTION\"\n";
+
+  $Text = "";
   my($s) = \%all_summaries;
-  print OUT ".SS \"Generating Packets\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bgenerates\b|\bgeneration\b/i, @all_outfiles));
-  print OUT ".SS \"Dropping\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bdrops\b/i, @all_outfiles));
-  print OUT ".SS \"Classification\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bclassifies\b|\bclassification\b/i, @all_outfiles));
-  print OUT ".SS \"Duplication\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bduplicates\b/i, @all_outfiles));
-  print OUT ".SS \"Checking Packet Validity\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bchecks\b/i, @all_outfiles));
-  print OUT ".SS \"Measurement\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bmeasures\b/i, @all_outfiles));
-  print OUT ".SS \"Packet Scheduling\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bpacket\s+scheduling\b/i, @all_outfiles));
-  print OUT ".SS \"Storage\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bstores\b/i, @all_outfiles));
-  print OUT ".SS \"Encapsulation\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bencapsulates\b|\bstrips\b/i, @all_outfiles));
-  print OUT ".SS \"Modification\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bsets\b|\bmodifies\b|\bchanges\b/i, @all_outfiles));
-  print OUT ".SS \"Network Devices, Packet Sources, Packet Sinks\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bdevice\b/i, @all_outfiles));
-  print OUT ".SS \"Debugging and Profiling\"\n";
-  one_elementlist(grep($s->{$_} =~ /\bdebugging\b/i, @all_outfiles));
-  print OUT ".SS \"Miscellaneous\"\n";
-  one_elementlist(grep(!$el_generated{$_}, @all_outfiles));
+  one_summary('Network Devices',	sub { $s->{$_} =~ /\bdevices\b/i });
+  one_summary('Other Sources and Sinks', sub { $s->{$_} =~ /\bsources\b|\bsinks\b/i });
+  one_summary('Classification',		sub { $s->{$_} =~ /\bclassification\b/i });
+  one_summary('Checking Validity',	sub { $s->{$_} =~ /\bchecking\b/i });
+  one_summary('Duplication',		sub { $s->{$_} =~ /\bduplication\b/i });
+  one_summary('Storage',		sub { $s->{$_} =~ /\bstorage\b/i });
+  one_summary('Dropping',		sub { $s->{$_} =~ /\bdropping\b/i });
+  one_summary('Packet Scheduling',	sub { $s->{$_} =~ /\bpacket\s+scheduling\b|\bpull-to-push\b/i });
+  one_summary('Encapsulation',		sub { $s->{$_} =~ /\bencapsulation\b/i });
+  one_summary('Modification',		sub { $s->{$_} =~ /\bmodification\b/i });
+  one_summary('Annotations',		sub { $s->{$_} =~ /\bannotations?\b/i });
+  one_summary('Measurement',		sub { $s->{$_} =~ /\bmeasurement\b/i });
+  one_summary('Debugging and Profiling', sub { $s->{$_} =~ /\bdebugging\b/i });
+  one_summary('Informational Elements',	sub { $s->{$_} =~ /\binformation\b/i });
+  one_summary('Ethernet',		sub { $s->{$_} =~ /\bEthernet\b|\bARP\b/i });
+  one_summary('IP, ICMP, and IGMP',	sub { $s->{$_} =~ /\bIP\b|\bICMP\b|\bIGMP\b/i && $s->{$_} !~ /\bTCP\b|\bUDP\b|\bEthernet\b/i });
+  one_summary('UDP and TCP',		sub { $s->{$_} =~ /\bTCP\b|\bUDP\b/i });
+  one_summary('IPv6',			sub { $s->{$_} =~ /\bIPv6\b/i });
+  one_summary('Miscellaneous',		sub { !$el_generated{$_} });
+
+  my($links) = join(" - ", @Links);
+  print OUT <<"EOD;";
+.\\"html <p><a href="#BY+FUNCTION"><b>By Function</b></a>:
+.\\"html $links<br>
+.\\"html <a href="#ALPHABETICAL+LIST"><b>Alphabetical List</b></a></p>
+EOD;
+
+  print OUT ".SH \"BY FUNCTION\"\n";
+  print OUT $Text;
   print OUT ".SH \"ALPHABETICAL LIST\"\n";
-  one_elementlist(@all_outfiles);
+  print OUT one_elementlist(@all_outfiles);
+
   close OUT if $directory;
 }
 

@@ -4,8 +4,9 @@
 /*
  * =c
  * FromDump(FILENAME [, TIMING])
- * =s reads packets from a tcpdump(1) file
- * V<device>
+ * =s
+ * reads packets from a tcpdump(1) file
+ * V<sources>
  * =d
  *
  * Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump.

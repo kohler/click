@@ -7,7 +7,9 @@
  * =c
  * TimedSource(I)
  * TimedSource(I, DATA)
- * =s periodically generates a packet
+ * =s
+ * periodically generates a packet
+ * V<sources>
  * =d
  * Creates packets consisting of DATA. Pushes such a packet out
  * its single output about once every I seconds.

@@ -5,7 +5,9 @@
 /*
  * =c
  * CheckPaint(X)
- * =s duplicates packets with given paint annotation
+ * =s
+ * duplicates packets with given paint annotation
+ * V<duplication>
  * =d
  * CheckPaint sends every packet through output 0. If the packet's
  * color annotation is equal to X (an integer), CheckPaint also

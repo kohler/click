@@ -4,6 +4,8 @@
 /*
  * =c
  * ICMP6Error(IPADDR, TYPE, CODE)
+ * =s
+ * V<IPv6>
  * =d
  * need to rewrite the following comments.
  * Generate an ICMP error packet, with specified TYPE and CODE,

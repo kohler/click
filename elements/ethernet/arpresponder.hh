@@ -4,7 +4,8 @@
 /*
  * =c
  * ARPResponder(IP/MASK1 [IP/MASK...] ETH1, IP/MASK2 ETH2, ...)
- * =s generates responses to ARP queries
+ * =s
+ * generates responses to ARP queries
  * =d
  *
  * Input should be ARP request packets, including the Ethernet header.

@@ -5,7 +5,9 @@
 /*
  * =c
  * CheckLength(MAX)
- * =s drops large packets
+ * =s
+ * drops large packets
+ * V<checking>
  * =d
  * CheckLength checks every packet's length against MAX. If the packet has
  * length MAX or smaller, it is sent to output 0; otherwise, it is sent to output 1 (or dropped if there is no output 1).

@@ -4,6 +4,8 @@
 /*
  * =c
  * ARPFaker6(IP1, ETH1, IP2, ETH2)
+ * =s
+ * V<ARP>
  * =d
  * Every 10 seconds,
  * sends an ARP "reply" packet to IP1/ETH1 claiming that IP2 has ethernet

@@ -4,7 +4,9 @@
 /*
  * =c
  * CheckUDPHeader()
- * =s checks UDP header on UDP/IP packets
+ * =s
+ * checks UDP header on UDP/IP packets
+ * V<checking>
  * =d
  * Expects UDP/IP packets as input.
  * Checks that the UDP header length and checksum fields are valid.

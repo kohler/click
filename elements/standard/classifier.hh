@@ -5,7 +5,9 @@
 /*
  * =c
  * Classifier(pattern1, ..., patternN)
- * =s classifies packets by contents
+ * =s
+ * classifies packets by contents
+ * V<classification>
  * =d
  * Classifies packets. The Classifier has N outputs, each associated with the
  * corresponding pattern from the configuration string.

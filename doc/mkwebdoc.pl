@@ -105,7 +105,9 @@ close OUT;
 mysystem("man2html -l -m '<b>@</b>' -t $WEBDIR/template -d $WEBDIR /tmp/%click-webdoc/man/man*/*.?");
 
 # 5. call `changelog2html'
-mysystem("changelog2html -d $WEBDIR click-$VERSION/NEWS $WEBDIR/../news.html");
+if ($INSTALL) {
+  mysystem("changelog2html -d $WEBDIR click-$VERSION/NEWS $WEBDIR/../news.html");
+}
 
 # 6. edit `news.html'
 open(IN, "$WEBDIR/../news.html") || die "$WEBDIR/../news.html: $!\n";

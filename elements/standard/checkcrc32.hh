@@ -4,7 +4,9 @@
 /*
  * =c
  * CheckCRC32()
- * =s checks packet CRC32s
+ * =s
+ * checks packet CRC32s
+ * V<checking>
  * =d
  * Check that the CRC32 appended by SetCRC32 is OK.
  * If so, delete the CRC from the packet.

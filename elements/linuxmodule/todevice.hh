@@ -4,7 +4,9 @@
 /*
  * =c
  * ToDevice(DEVNAME)
- * =s sends packets to network device (kernel)
+ * =s
+ * sends packets to network device (kernel)
+ * V<devices>
  * =d
  *
  * This manual page describes the Linux kernel module version of the ToDevice

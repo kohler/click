@@ -53,7 +53,7 @@ documentation at the moment; and Click element documentation is
 line-oriented, not paragraph-oriented.
 '
 .SH "COMMAND QUICK REFERENCE"
-Here are the sectioning commands and the sections they correspond to,
+These are the sectioning commands and the sections they correspond to,
 listed in the conventional order.
 .RS 5
 .PP
@@ -81,7 +81,7 @@ other heading
 .PD
 .RE
 .PP
-Here are the other commands used in element documentation.
+These are the other commands used in element documentation.
 .RS 5
 .PP
 .PD 0
@@ -102,7 +102,7 @@ selective formatting
 .PD
 .RE
 .PP
-And here are the formatting commands, used inside ordinary text.
+These are the formatting commands, used inside ordinary text.
 .RS 5
 .PP
 .PD 0
@@ -123,7 +123,51 @@ line break
 .IP "\f(CWE<\fIname\fR\f(CW>\fR" 15
 entity
 .IP "\f(CWV<\fItext\fR\f(CW>\fR" 15
-comment
+hide text
+.PD
+.RE
+.PP
+And these are the category keywords, used in the summary section to
+categorize elements.
+.RS 5
+.PP
+.PD 0
+.IP "\f(CWdevices\fR" 22
+Network Devices
+.IP "\f(CWsources\fR, \f(CWsinks\fR" 22
+Other Sources and Sinks
+.IP "\f(CWclassification\fR" 22
+Classification
+.IP "\f(CWchecking\fR" 22
+Checking Validity
+.IP "\f(CWduplication\fR" 22
+Duplication
+.IP "\f(CWstorage\fR" 22
+Storage
+.IP "\f(CWdropping\fR" 22
+Dropping
+.IP "\f(CWpacket scheduling\fR, \f(CWpull-to-push\fR" 22
+Packet Scheduling
+.IP "\f(CWencapsulation\fR" 22
+Encapsulation
+.IP "\f(CWmodification\fR" 22
+Modification
+.IP "\f(CWannotation\fR, \f(CWannotations\fR" 22
+Annotations
+.IP "\f(CWmeasurement\fR" 22
+Measurement
+.IP "\f(CWdebugging\fR" 22
+Debugging and Profiling
+.IP "\f(CWinformation\fR" 22
+Informational Elements
+.IP "\f(CWEthernet\fR, \f(CWARP\fR" 22
+Ethernet
+.IP "\f(CWIP\fR, \f(CWICMP\fR, \f(CWIGMP\fR" 22
+IP, ICMP, and IGMP
+.IP "\f(CWUDP\fR, \f(CWTCP\fR" 22
+UDP and TCP
+.IP "\f(CWIPv6\fR" 22
+IPv6
 .PD
 .RE
 '
@@ -165,9 +209,27 @@ one-line summary of the element's function. For example, for a
 .M Queue n
 element:
 .nf
-   =s stores packets in a FIFO queue
+   =s
+   stores packets in a FIFO queue
 .fi
 The optional \fItext\fR is just part of the body of the section.
+.RS 5
+.PP
+The summary section should generally be a verb phrase. It should also
+contain one or more
+.I category keywords,
+which documentation tools use to divide elements into manageable
+categories. They can be hidden from the user by wrapping them in a
+\f(CWV<...>\fR formatting command (see Formatting Commands, below). For
+example,
+.M Queue n 's
+summary section concludes with the \f(CWstorage\fR keyword:
+.nf
+   V<storage>
+.fi
+The list of category keywords is given above in the Command Quick
+Reference.
+.RE
 .TP 5
 \f(CW=c\fR
 Begin the synopsis section. This section is mandatory.
@@ -263,9 +325,8 @@ The optional \fItext\fP is just part of the body of the section.
 .PP
 The references in this section should be either manual page references,
 like `\f(CWtcpdump(1)\fR', or text references, like `RFC 959: File Transfer
-Protocol'. However, the first paragraph in the section is special. In the
-first paragraph, you can just give element names without `\f(CW(n)\fP'
-suffixes.
+Protocol'. However, the first paragraph in the section is special; there,
+you can just give element names without `\f(CW(n)\fP' suffixes.
 .PP
 If one of these references occurs in some other section, it will be
 formatted like a link. For example, in
@@ -360,7 +421,7 @@ Print the HTML-style entity named \fIname\fR. There are six entities:
 \f(CWE<lt>\fR is `<', \f(CWE<gt>\fR is `>', \f(CWE<amp>\fR is `&',
 \f(CWE<solid>\fR is `/', \f(CWE<verbar>\fR is `|', and \f(CWE<eq>\fR is
 `='. This is useful for typing one of these characters in a context that
-would seem like a command or formatting command.
+would otherwise seem like a command or formatting command.
 .TP 10
 \f(CWV<\fItext\fR\f(CW>\fR
 Do not print \fItext\fR.
@@ -385,6 +446,7 @@ example:
  * Align(MODULUS, OFFSET)
  * =s
  * aligns packet data
+ * V<modification>
  * =d
  * Aligns packet data. Each input packet is aligned so that
  * its first byte is OFFSET bytes off from a MODULUS-byte
@@ -404,6 +466,7 @@ example:
  * Counter([TYPE])
  * =s
  * measures packet count and rate
+ * V<measurement>
  * =d
  * Passes packets unchanged from its input to its output,
  * maintaining statistics information about packet count and

@@ -4,6 +4,8 @@
 /*
  * =c
  * ARPQuerier6(I, E)
+ * =s
+ * V<ARP, encapsulation>
  * =d
  * Handles most of the ARP protocol. Argument I should be
  * this host's IP6 address, and E should be this host's

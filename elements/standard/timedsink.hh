@@ -6,7 +6,9 @@
 /*
  * =c
  * TimedSink(I)
- * =s periodically pulls a packet
+ * =s
+ * periodically pulls and drops a packet
+ * V<sinks>
  * =d
  * Pulls one packet every I seconds from its input.
  * Discards the packet.

@@ -7,7 +7,7 @@
  * IPRewriter(INPUTSPEC1, ..., INPUTSPECn)
  * =s
  * rewrites UDP/TCP packets' addresses and ports
- * V<modifies>
+ * V<TCP>
  * =d
  *
  * Rewrites UDP and TCP flows by changing their source address, source port,

@@ -5,7 +5,9 @@
 /*
  * =c
  * RandomBitErrors(P [, KIND, ACTIVE])
- * =s changes packet data with some probability
+ * =s
+ * changes packet data with some probability
+ * V<modification>
  * =d
  *
  * Change each bit in each packet with probability P. The KIND parameter

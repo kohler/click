@@ -6,6 +6,8 @@
 /*
  * =c
  * ReadHandlerCaller(n)
+ * =s
+ * V<debugging>
  * =d
  * Dumps the output of read handlers by calling a routine in the userlevel
  * driver. Run roughly every n seconds. If delayed, will not try to catch up,

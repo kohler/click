@@ -5,7 +5,9 @@
  * =title FromDevice.u
  * =c
  * FromDevice(DEVNAME [, PROMISC? [, MAXPACKETSIZE]])
- * =s reads packets from network device (user-level)
+ * =s
+ * reads packets from network device (user-level)
+ * V<devices>
  * =d
  *
  * This manual page describes the user-level version of the FromDevice

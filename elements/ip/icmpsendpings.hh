@@ -7,8 +7,8 @@
 /*
  * =c
  * ICMPSendPings(SADDR, DADDR)
- * =s periodically sends ICMP echo requests
- * V<generates>
+ * =s
+ * periodically sends ICMP echo requests
  * =d
  * Send one ping packet per second. SADDR and DADDR are IP addresses.
  */

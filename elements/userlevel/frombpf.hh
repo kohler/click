@@ -4,7 +4,9 @@
 /*
  * =c
  * FromBPF(DEVNAME, PROMISC?)
- * =s (deprecated) V<device>
+ * =s
+ * (deprecated)
+ * V<devices>
  * =d
  *
  * This element has been deprecated. Use FromDevice(DEVNAME, PROMISC?)

@@ -4,6 +4,8 @@
 /*
  * =c
  * MarkIP6Header([OFFSET])
+ * =s
+ * V<IPv6>
  * =d
  *
  * Marks packets as IP6 packets by setting the IP6 Header annotation. The IP6

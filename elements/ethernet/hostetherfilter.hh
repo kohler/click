@@ -4,7 +4,9 @@
 /*
  * =c
  * HostEtherFilter(MACADDR)
- * =s drops Ethernet packets sent to other machines
+ * =s
+ * drops Ethernet packets sent to other machines
+ * V<dropping>
  * =d
  * Expects ethernet packets as input. Discards packets that
  * aren't addressed to MACADDR or to a broadcast or

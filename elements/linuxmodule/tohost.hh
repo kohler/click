@@ -5,8 +5,9 @@
 /*
  * =c
  * ToLinux
- * =s sends packets to Linux
- * V<device>
+ * =s
+ * sends packets to Linux
+ * V<sinks>
  * =d
  * Hands packets to the ordinary Linux protocol stack.
  * Expects packets with Ethernet headers.
