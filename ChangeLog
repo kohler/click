@@ -1,9 +1,23 @@
+2003-02-24 Monday 20:50  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/Makefile.in (1.24), lib/driver.cc (1.9),
+	lib/packageutils.cc (1.9), linuxmodule/Makefile.in (1.78),
+	ns/Makefile.in (1.4), userlevel/Makefile.in (1.67): file renaming
+
+2003-02-24 Monday 20:46  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/module.cc (1.11), linuxmodule/config.cc (1.6),
+	linuxmodule/module.cc (1.76), userlevel/click.cc (1.76): use new
+	click_static_{initialize,cleanup}() functions, and
+	default-available global handlers
+
 2003-02-24 Monday 20:38  Eddie Kohler <kohler@icir.org>
 
-	* include/click/driver.hh (1.2), lib/packageutils.cc (1.8): add
-	click_static_{initialize,cleanup}() functions, and
-	click_read_router(), taking over most of userlevel/click.cc's
-	functionality; this will make it easier to write other drivers
+	* include/click/driver.hh (1.2), lib/driver.cc (1.8),
+	lib/packageutils.cc (1.8): add click_static_{initialize,cleanup}()
+	functions, and click_read_router(), taking over most of
+	userlevel/click.cc's functionality; this will make it easier to
+	write other drivers
 
 2003-02-24 Monday 20:35  Eddie Kohler <kohler@icir.org>
 
@@ -1501,9 +1515,9 @@
 	elements/userlevel/fromdump.hh (1.39),
 	elements/userlevel/khandlerproxy.cc (1.9),
 	elements/userlevel/todump.cc (1.46), include/click/string.hh
-	(1.24), include/click/userutils.hh (1.13), lib/elemfilter.cc
-	(1.16), lib/packageutils.cc (1.7), lib/userutils.cc (1.30),
-	linuxmodule/config.cc (1.4),
+	(1.24), include/click/userutils.hh (1.13), lib/driver.cc (1.7),
+	lib/elemfilter.cc (1.16), lib/packageutils.cc (1.7),
+	lib/userutils.cc (1.30), linuxmodule/config.cc (1.4),
 	tools/click-devirtualize/click-devirtualize.cc (1.37),
 	tools/click-fastclassifier/click-fastclassifier.cc (1.54),
 	tools/click-install/click-install.cc (1.52),
@@ -1700,9 +1714,9 @@
 	include/click/error.hh (1.17), include/click/glue.hh (1.32),
 	include/click/llrpc.h (1.21), include/click/straccum.hh (1.22),
 	include/click/userutils.hh (1.11), lib/confparse.cc (1.104),
-	lib/glue.cc (1.39), lib/packageutils.cc (1.6), lib/router.cc
-	(1.134), lib/straccum.cc (1.28), lib/userutils.cc (1.28),
-	ns/nsclick-test.cc (1.2), ns/nsclick.cc (1.4),
+	lib/driver.cc (1.6), lib/glue.cc (1.39), lib/packageutils.cc (1.6),
+	lib/router.cc (1.134), lib/straccum.cc (1.28), lib/userutils.cc
+	(1.28), ns/nsclick-test.cc (1.2), ns/nsclick.cc (1.4),
 	tools/click-align/alignclass.cc (1.15),
 	tools/click-align/alignment.hh (1.5),
 	tools/click-align/click-align.cc (1.43),
@@ -2729,15 +2743,15 @@
 	lib/ip6flowid.cc (1.8), lib/ip6table.cc (1.11), lib/ipaddress.cc
 	(1.26), lib/ipaddressset.cc (1.8), lib/ipflowid.cc (1.16),
 	lib/iptable.cc (1.16), lib/iptable2.cc (1.15), lib/lexer.cc (1.59),
-	lib/notifier.cc (1.7), lib/packageutils.cc (1.5), lib/packet.cc
-	(1.57), lib/router.cc (1.129), lib/routerthread.cc (1.24),
-	lib/straccum.cc (1.27), lib/string.cc (1.40), lib/task.cc (1.19),
-	lib/templatei.cc (1.9), lib/timer.cc (1.27), lib/userutils.cc
-	(1.26), lib/variableenv.cc (1.7), lib/vectorv.cc (1.10),
-	userlevel/click.cc (1.69): first step of Colorado's nsclick
-	integration: surround declarations with CLICK_DECLS/CLICK_ENDDECLS,
-	to support placing Click objects in some namespace; also add
-	CLICK_NAME and CLICK_USING_DECLS macros
+	lib/driver.cc (1.5), lib/notifier.cc (1.7), lib/packageutils.cc
+	(1.5), lib/packet.cc (1.57), lib/router.cc (1.129),
+	lib/routerthread.cc (1.24), lib/straccum.cc (1.27), lib/string.cc
+	(1.40), lib/task.cc (1.19), lib/templatei.cc (1.9), lib/timer.cc
+	(1.27), lib/userutils.cc (1.26), lib/variableenv.cc (1.7),
+	lib/vectorv.cc (1.10), userlevel/click.cc (1.69): first step of
+	Colorado's nsclick integration: surround declarations with
+	CLICK_DECLS/CLICK_ENDDECLS, to support placing Click objects in
+	some namespace; also add CLICK_NAME and CLICK_USING_DECLS macros
 
 2002-08-02 Friday 15:57  Eddie Kohler <kohler@icir.org>
 
