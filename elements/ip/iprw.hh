@@ -129,7 +129,10 @@ class IPRw::Pattern {
   Mapping *_rover;		// walks along circular list ordered by port
 
   int _refcount;
-    
+
+  Pattern(const Pattern &);
+  Pattern &operator=(const Pattern &);
+  
   unsigned short find_sport();
     
  public:
