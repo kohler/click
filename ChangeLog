@@ -1,3 +1,7 @@
+2003-10-24 Friday 14:10  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.18): better error messages on bad %file names
+
 2003-10-23 Thursday 14:50  Eddie Kohler <kohler@icir.org>
 
 	* ns/nsclick.cc (1.15): adapt to new initialization procedure;
