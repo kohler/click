@@ -1,3 +1,23 @@
+2004-04-28 Wednesday 04:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.1 (1.14), userlevel/click.cc (1.89): add "click
+	--exit-handler"
+
+2004-04-28 Wednesday 04:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.44), lib/confparse.cc (1.123):
+	provide cp_integer() and cp_unsigned() variants for int and long
+	both
+
+2004-04-28 Wednesday 04:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.5), configure.in (1.224): add
+	AC_CHECK_SIZEOF(int,long)
+
+2004-04-28 Wednesday 04:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config.h.in (1.23): rearrange and add SIZEOF_INT and SIZEOF_LONG
+
 2004-04-27 Tuesday 22:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* FAQ (1.16), INSTALL (1.30), README (1.43), configure (1.4),
