@@ -83,6 +83,42 @@ LookupIPRouteRON::initialize(ErrorHandler *)
   return 0;
 }
 
+void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p)
+{
+  int i, x;
+
+  switch (flow->policy) {
+  case POLICY_LOCAL: 
+    flow->outgoing_port = 1;
+    output(1).push(p);
+    break;
+  case POLICY_RANDOM:
+    flow->outgoing_port = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1) );
+    output(flow->outgoing_port).push(p);
+    break;
+  case POLICY_PROBE3:
+    // Choose 3 random unique ports
+    // TODO: optimize this. It's really dumb.
+    flow->probed_ports[0] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+    for (flow->probed_ports[1] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+	 flow->probed_ports[1] == flow->probed_ports[0]; 
+	 flow->probed_ports[1] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1)));
+    for (flow->probed_ports[2] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1));
+	 (flow->probed_ports[2] == flow->probed_ports[0] || 
+	  flow->probed_ports[2] == flow->probed_ports[1])
+	 flow->probed_ports[2] = 1 + (int) (((float)(random() & 0xff)/256) * (noutputs()-1)));
+
+    for(i=0; i<3; i++) { output(flow->probed_ports[i]).push(p); }
+    break;
+  default:
+    click_chatter("Unknown policy syn");
+    assert(0);
+    break;
+  }
+  return;
+    
+}
+
 void LookupIPRouteRON::duplicate_pkt(Packet *p) {
   // send <p> out on all outgoing ports except 0
 
@@ -103,10 +139,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
   const click_tcp *tcph= p->tcp_header();
   unsigned tcp_seq = ntohl(tcph->th_seq) + 
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
-  //click_chatter("syn seq: %u\n", tcp_seq);
 
-  //gettimeofday(&tp, NULL);
-  //click_chatter("SAWSYN: (%ld,%ld)", tp.tv_sec, tp.tv_usec);
   print_time("SAWSYN:");
 
   tcph = p->tcp_header();
@@ -115,7 +148,6 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
   rtprintf ("FOR TCP SYN\n");
-  //fflush(NULL);
 
   if (match) {
     // Match found
@@ -124,7 +156,15 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     if (match->is_pending()){
       rtprintf("FLOW match(pending), send PROBE\n");
       match->outstanding_syns++;
+      
+#if MEASURE_NATRON
+      // We're seeing retransmitted syns, let the policy handle it
+      policy_handle_syn(match, p);
+#else
+      // retransmit SYN
       duplicate_pkt(p);
+#endif
+
     } else {
       // this can happen if an identical flow is started before the last one
       // was removed from the flow table.
@@ -132,7 +172,6 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 	     match->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc());
-      //fflush(NULL);
       output(match->outgoing_port).push(p);
       return;
     }    
@@ -152,7 +191,6 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 	     new_entry->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc() );
-      //fflush(NULL);
       output(new_entry->outgoing_port).push(p);
       return;
 
@@ -160,7 +198,15 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
       rtprintf("DST nomatch, send PROBE\n");
       new_entry->outgoing_port = 0;
       new_entry->outstanding_syns++;
+
+#ifdef MEASURE_NATRON
+      // We're seeing the first syn, choose policy
+      new_entry->policy = 1 + (int) (((float)(random() & 0xff)/256) * (NUM_POLICIES) );
+      click_chatter("Policy(%d)", new_entry->policy);
+      policy_handle_syn(new_entry, p);
+#else
       duplicate_pkt(p);
+#endif
     }
   }
   
@@ -319,6 +365,7 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
       }
 
       return;
+
 #else
       // save to dst_table
       _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); 
@@ -558,6 +605,35 @@ LookupIPRouteRON::add_handlers()
   add_read_handler("scheduled", read_handler, 0);
 }
 
+
+unsigned int
+LookupIPRouteRON::pick_fastest(int policy, FlowTableEntry flow, unsigned int port)
+{  return port; }
+
+int 
+LookupIPRouteRON::policy_handle_synack(FlowTableEntry flow, unsigned int port)
+{
+  switch (flow->policy) {
+  case POLICY_LOCAL:
+    flow->outstanding_syns = 0;
+    output(0).push(p);
+    break;
+  case POLICY_RANDOM:
+    flow->outstanding_syns = 0;
+    output(0).push(p);
+    break;
+  case POLICY_PROBE3:
+    flow->outstanding_syns = 0;
+    flow->outgoing_port = port;
+    output(0).push(p);
+    break;
+  default:
+    click_chatter("Unknown policy synack");
+    assert(0);
+    break;
+  }
+  return;
+}
 
 
 // ------ FlowTable methods -------

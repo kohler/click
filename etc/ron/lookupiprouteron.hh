@@ -36,6 +36,16 @@
 class LookupIPRouteRON : public Element {
 public:
 
+  const static int POLICY_LOCAL                 = 0;
+  const static int POLICY_RANDOM                = 1;
+  const static int POLICY_PROBE3                = 2;
+
+  const static int POLICY_PROBE3_LOCAL          = 3;
+  const static int POLICY_PROBE3_UNPROBED       = 4;
+  const static int POLICY_PROBE3_UNPROBED_LOCAL = 5;
+
+  const static int NUM_POLICIES = 1;
+
   LookupIPRouteRON();
   ~LookupIPRouteRON();
   
@@ -73,6 +83,13 @@ protected:
 
   void duplicate_pkt(Packet *p);
   void send_rst(Packet *p, FlowTableEntry *match, int outport);
+
+  unsigned int pick_random();
+  unsigned int pick_portno(int policy);
+
+  void policy_handle_syn(FlowTableEntry *flow, Packet *p);
+  void policy_handle_synack(FlowTableEntry *flow, Packet *p);
+
 private:
   FlowTable *_flow_table;
   DstTable  *_dst_table;
@@ -101,11 +118,14 @@ public:
   bool valid, all_answered;
   unsigned long syn_seq;
 
+  int policy;
+  int probed_ports[32];
+  
+
   FlowTableEntry() {valid = 1; all_answered = 1;}
 
   bool is_old() const        { return (probe_time + ROUTE_TABLE_TIMEOUT
 				       < click_jiffies());}
-  //bool is_waiting() const    { return (waiting.size() > 0); } // waiting for a different probe
   bool is_pending() const    { return (outstanding_syns > 0);}
   bool is_valid() const      { return (valid); }
   bool is_active() const     { return ((forw_alive || rev_alive) && 
