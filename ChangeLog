@@ -1,3 +1,7 @@
+2005-01-26 Wednesday 11:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/directiplookup.cc (1.2): a little Marko patch
+
 2005-01-26 Wednesday 02:42  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/click2xml/: click2xml.cc (1.18), xml2click.cc (1.16): XML
