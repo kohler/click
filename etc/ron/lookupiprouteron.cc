@@ -1,5 +1,5 @@
 /*
- * lookupiprouteron.{cc,hh} -- element looks up next-hop address for RON
+ * lookupiprouteron.{cc,hh} -- element looks up next-hop address for NAT-RON
  * Alexander Yip
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
@@ -102,8 +102,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
   const click_ip  *iph = p->ip_header();
   const click_tcp *tcph= p->tcp_header();
   unsigned tcp_seq = ntohl(tcph->th_seq) + 
-    ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2);
-
+    ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
   click_chatter("syn seq: %u\n", tcp_seq);
 
 
@@ -297,14 +296,20 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	output(0).push(p);
 	return;
       } else {
-	rtprintf("Incorrect return port, replying with RST\n");
+	click_chatter("Incorrect return port, replying with RST\n");
 	WritablePacket *rst_pkt = Packet::make(40);
+	rst_pkt->set_ip_header((click_ip*)rst_pkt->data(),0);
+	rst_pkt->set_network_header(rst_pkt->data(), 20);
+
+	click_chatter("ip_header(): %u\n", rst_pkt->ip_header());
+	click_chatter("tcp_header(): %u\n", rst_pkt->tcp_header());
+
 	click_ip *iphdr   = reinterpret_cast<click_ip *>(rst_pkt->ip_header());
 	click_tcp *tcphdr = reinterpret_cast<click_tcp*>(rst_pkt->tcp_header());
 
 	tcphdr->th_sport = p->tcp_header()->th_dport;	
 	tcphdr->th_dport = p->tcp_header()->th_sport;
-	tcphdr->th_seq   = 0;
+	tcphdr->th_seq   = match->syn_seq;
 	tcphdr->th_ack   = p->tcp_header()->th_seq + 1;
 	tcphdr->th_win   = 16384;
 	tcphdr->th_urp   = 0;
@@ -318,6 +323,8 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 
 	tcphdr->th_sum = click_in_cksum((unsigned char *)iphdr, 40);
 
+	iphdr->ip_v   = 4;
+	iphdr->ip_hl  = 5;
 	iphdr->ip_id  = htons(0x1234);
 	iphdr->ip_off = htons(0);
 	iphdr->ip_ttl = htons(32);
