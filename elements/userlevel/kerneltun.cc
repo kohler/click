@@ -369,5 +369,5 @@ KernelTap::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel false)
 EXPORT_ELEMENT(KernelTap)
