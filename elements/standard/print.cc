@@ -26,18 +26,22 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#ifdef __KERNEL__
+extern "C" {
+#include <linux/sched.h>
+}
+#endif
+
 
 Print::Print()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
-  _buf = 0;
 }
 
 Print::~Print()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _buf;
 }
 
 Print *
@@ -56,26 +60,34 @@ Print::configure(const Vector<String> &conf, ErrorHandler* errh)
 		  cpInteger, "max bytes to print", &_bytes,
 		  cpEnd) < 0)
     return -1;
-  delete[] _buf;
-  _buf = new char[3*_bytes+1];
-  if (_buf)
-    return 0;
-  else
-    return errh->error("out of memory");
+  return 0;
 }
 
 Packet *
 Print::simple_action(Packet *p)
 {
+  char *buf = new char[3*_bytes+1];
+  if (!buf) {
+    click_chatter("no memory for Print");
+    return p;
+  }
   int pos = 0;  
   for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-    sprintf(_buf + pos, "%02x", p->data()[i] & 0xff);
+    sprintf(buf + pos, "%02x", p->data()[i] & 0xff);
     pos += 2;
-    if ((i % 4) == 3) _buf[pos++] = ' ';
+    if ((i % 4) == 3) buf[pos++] = ' ';
   }
-  _buf[pos++] = '\0';
-  click_chatter("Print %s |%4d : %s", _label.cc(), p->length(), _buf);
+  buf[pos++] = '\0';
+#ifdef __KERNEL__
+  click_chatter("Print %s (%d) |%4d : %s", 
+                _label.cc(), current->processor, p->length(), buf);
+#else
+  click_chatter("Print %s |%4d : %s", _label.cc(), p->length(), buf);
+#endif
+  delete[] buf;
   return p;
 }
 
 EXPORT_ELEMENT(Print)
+ELEMENT_MT_SAFE(Print)
+

@@ -111,33 +111,34 @@ LookupIPRouteMP::push(int, Packet *p)
   unsigned gw = 0;
   int ifi = -1;
 #ifdef __KERNEL__
-  int bucket = current->processor % _cache_buckets;
+  int bucket = current->processor;
+  struct cache_entry *e = &_cache[bucket];
 #else
   int bucket = 0;
 #endif
 
   if (a) {
-    if (a == _cache[bucket]._last_addr_1) {
-      if (_cache[bucket]._last_gw_1)
-	p->set_dst_ip_anno(_cache[bucket]._last_gw_1);
-      output(_cache[bucket]._last_output_1).push(p);
+    if (a == e->_last_addr_1) {
+      if (e->_last_gw_1)
+	p->set_dst_ip_anno(e->_last_gw_1);
+      output(e->_last_output_1).push(p);
       return;
     } 
-    else if (a == _cache[bucket]._last_addr_2) {
-      if (_cache[bucket]._last_gw_2)
-	p->set_dst_ip_anno(_cache[bucket]._last_gw_2);
-      output(_cache[bucket]._last_output_2).push(p);
+    else if (a == e->_last_addr_2) {
+      if (e->_last_gw_2)
+	p->set_dst_ip_anno(e->_last_gw_2);
+      output(e->_last_output_2).push(p);
       return;
     } 
   }
   
   if (_t.lookup(a.addr(), gw, ifi) == true) {
-    _cache[bucket]._last_addr_2 = _cache[bucket]._last_addr_1;
-    _cache[bucket]._last_gw_2 = _cache[bucket]._last_gw_1;
-    _cache[bucket]._last_output_2 = _cache[bucket]._last_output_1;
-    _cache[bucket]._last_addr_1 = a;
-    _cache[bucket]._last_gw_1 = gw;
-    _cache[bucket]._last_output_1 = ifi;
+    e->_last_addr_2 = e->_last_addr_1;
+    e->_last_gw_2 = e->_last_gw_1;
+    e->_last_output_2 = e->_last_output_1;
+    e->_last_addr_1 = a;
+    e->_last_gw_1 = gw;
+    e->_last_output_1 = ifi;
     if (gw != 0)
       p->set_dst_ip_anno(IPAddress(gw));
     output(ifi).push(p);
@@ -147,4 +148,5 @@ LookupIPRouteMP::push(int, Packet *p)
   }
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(LookupIPRouteMP)

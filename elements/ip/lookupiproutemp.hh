@@ -25,9 +25,7 @@ class LookupIPRouteMP : public Element {
   static const int _cache_buckets = 1;
 #endif
  
-  // XXX a bit annoying that we don't get better alignment =(
-  int _pad[2];
-  struct {
+  struct cache_entry {
     IPAddress _last_addr_1;
     IPAddress _last_gw_1;
     int _last_output_1;
@@ -35,7 +33,11 @@ class LookupIPRouteMP : public Element {
     IPAddress _last_gw_2;
     int _last_output_2;
     int pad[2];
-  } _cache[_cache_buckets];
+  };
+  
+  // XXX a bit annoying that we don't get better alignment =(
+  int _pad[2];
+  struct cache_entry _cache[_cache_buckets];
 
   IPTable _t;
 

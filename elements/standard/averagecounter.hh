@@ -2,21 +2,26 @@
 #define AVERAGECOUNTER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
+#include <click/atomic.hh>
 #include <click/timer.hh>
 
 /*
  * =c
- * AverageCounter()
+ * AverageCounter([IGNORE])
  * =s measurement
  * measures historical packet count and rate
  * =d
  *
- * Passes packets unchanged from its input to its output, maintaining
- * statistics information about packet count and packet rate using a strict
- * average.
+ * Passes packets unchanged from its input to its
+ * output, maintaining statistics information about
+ * packet count and packet rate using a strict average.
  *
- * The rate covers only the time between the first and most recent
- * packets.
+ * The rate covers only the time between the first and
+ * most recent packets. 
+ *
+ * IGNORE, by default, is 0. If it is greater than 0,
+ * the first IGNORE number of seconds are ignored. in
+ * the count.
  *
  * =h count read-only
  * Returns the number of packets that have passed through.
@@ -30,9 +35,10 @@
 
 class AverageCounter : public Element { protected:
   
-  int _count;
-  unsigned long _first;
-  unsigned long _last;
+  u_atomic32_t _count;
+  u_atomic32_t _first;
+  u_atomic32_t _last;
+  u_int32_t _ignore;
   
  public:
 
@@ -41,10 +47,12 @@ class AverageCounter : public Element { protected:
   
   const char *class_name() const		{ return "AverageCounter"; }
   const char *processing() const		{ return AGNOSTIC; }
+  int configure(const Vector<String> &, ErrorHandler *);
 
-  int count() const				{ return _count; }
-  unsigned long first() const			{ return _first; }
-  unsigned long last() const			{ return _last; }
+  u_int32_t count() const			{ return _count; }
+  u_int32_t first() const			{ return _first; }
+  u_int32_t last() const			{ return _last; }
+  u_int32_t ignore() const			{ return _ignore; }
   void reset();
   
   AverageCounter *clone() const			{ return new AverageCounter; }

@@ -25,6 +25,7 @@
 #include "averagecounter.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/sync.hh>
 #include <click/glue.hh>
 #include <click/error.hh>
 
@@ -48,6 +49,19 @@ AverageCounter::reset()
 }
 
 int
+AverageCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  _ignore = 0;
+  if (cp_va_parse(conf, this, errh,
+		  cpOptional,
+		  cpUnsigned, "number of seconds to ignore", &_ignore,
+		  0) < 0)
+    return -1;
+  _ignore *= CLICK_HZ;
+  return 0;
+}
+
+int
 AverageCounter::initialize(ErrorHandler *)
 {
   reset();
@@ -57,8 +71,8 @@ AverageCounter::initialize(ErrorHandler *)
 Packet *
 AverageCounter::simple_action(Packet *p)
 {
-  _count++;
-  if (_first == 0) _first = click_jiffies();
+  _first.compare_and_swap(0, click_jiffies());
+  if (click_jiffies() - _first >= _ignore) _count++;
   _last = click_jiffies();
   return p;
 }
@@ -75,6 +89,7 @@ averagecounter_read_rate_handler(Element *e, void *)
 {
   AverageCounter *c = (AverageCounter *)e;
   int d = c->last() - c->first();
+  d -= c->ignore();
   if (d < 1) d = 1;
   int rate = c->count() * CLICK_HZ / d;
   return String(rate) + "\n";
@@ -97,5 +112,6 @@ AverageCounter::add_handlers()
   add_write_handler("reset", averagecounter_reset_write_handler, 0);
 }
 
-
 EXPORT_ELEMENT(AverageCounter)
+ELEMENT_MT_SAFE(AverageCounter)
+

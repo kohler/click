@@ -17,7 +17,6 @@ class Print : public Element {
   
   String _label;
   unsigned _bytes;		// How many bytes of a packet to print
-  char* _buf;			// To hold print message
   
  public:
   

@@ -46,10 +46,21 @@ void
 RoundRobinSwitch::push(int, Packet *p)
 {
   int i = _next;
+#ifndef __MTCLICK__
   _next++;
   if (_next >= (u_int32_t)noutputs())
     _next = 0;
+#else
+  // in MT case try our best to be rr, but don't worry about it if we mess up
+  // once in awhile 
+  int newval = i+1;
+  if (newval >= noutputs())
+    newval = 0;
+  _next.compare_and_swap(i, newval);
+#endif
   output(i).push(p);
 }
 
 EXPORT_ELEMENT(RoundRobinSwitch)
+ELEMENT_MT_SAFE(RoundRobinSwitch)
+
