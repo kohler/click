@@ -49,8 +49,13 @@ CheckIPHeader2::notify_noutputs(int n)
 int
 CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() > 1)
-    return errh->error("too many arguments to `CheckIPHeader2([ADDRS])'");
+  _offset = 0;
+  if (conf.size() > 2)
+    return errh->error("too many arguments to `CheckIPHeader2([ADDRS, OFFSET])'");
+  else if (conf.size() == 2) {
+    if (!cp_unsigned(conf[1], &_offset))
+      return errh->error("argument 2 should be IP header offset (unsigned)");
+  }
   
   Vector<u_int> ips;
   ips.push_back(0);
@@ -81,22 +86,23 @@ CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
 inline Packet *
 CheckIPHeader2::smaction(Packet *p)
 {
-  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
+  const click_ip *ip = reinterpret_cast<const click_ip *>(p->data() + _offset);
+  unsigned plen = p->length() - _offset;
   unsigned int src;
   unsigned hlen, len;
   
-  if(p->length() < sizeof(click_ip))
+  if ((int)plen < (int)sizeof(click_ip))
     goto bad;
   
-  if(ip->ip_v != 4)
+  if (ip->ip_v != 4)
     goto bad;
   
   hlen = ip->ip_hl << 2;
-  if(hlen < sizeof(click_ip))
+  if (hlen < sizeof(click_ip))
     goto bad;
   
   len = ntohs(ip->ip_len);
-  if (len > p->length() || len < hlen)
+  if (len > plen || len < hlen)
     goto bad;
 
   /*
@@ -117,8 +123,8 @@ CheckIPHeader2::smaction(Packet *p)
   p->set_ip_header(ip, hlen);
 
   // shorten packet according to IP length field -- 7/28/2000
-  if (p->length() > len)
-    p->take(p->length() - len);
+  if (plen > len)
+    p->take(plen - len);
   
   return(p);
   

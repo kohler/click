@@ -82,7 +82,6 @@ class TCPRewriter : public IPRw {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  void add_handlers();
   void take_state(Element *, ErrorHandler *);
   
   void run_scheduled();
@@ -91,6 +90,9 @@ class TCPRewriter : public IPRw {
   TCPMapping *get_mapping(bool, const IPFlowID &) const;
   
   void push(int, Packet *);
+
+  void add_handlers();
+  int llrpc(unsigned, void *);
 
 };
 

@@ -3,18 +3,19 @@
 
 /*
  * =c
- * CheckIPHeader2([BADADDRS])
+ * CheckIPHeader2([BADADDRS, OFFSET])
  * =s
  * checks IP header, no checksum
  * V<checking>
  * =d
  *
- * Expects IP packets as input. Checks that the packet's length is reasonable,
- * and that the IP version, header length, and length fields are valid. Checks
- * that the IP source address is a legal unicast address. Shortens packets to
- * the IP length, if the IP length is shorter than the nominal packet length
- * (due to Ethernet padding, for example). Pushes invalid packets out on
- * output 1, unless output 1 was unused; if so, drops invalid packets.
+ * Input packets should have IP headers starting OFFSET bytes in. Default
+ * OFFSET is zero. Checks that the packet's length is reasonable, and that the
+ * IP version, header length, and length fields are valid. Checks that the IP
+ * source address is a legal unicast address. Shortens packets to the IP
+ * length, if the IP length is shorter than the nominal packet length (due to
+ * Ethernet padding, for example). Pushes invalid packets out on output 1,
+ * unless output 1 was unused; if so, drops invalid packets.
  *
  * The BADADDRS argument is a space-separated list of IP addresses
  * that are not to be tolerated as source addresses.
@@ -31,9 +32,10 @@
 
 class CheckIPHeader2 : public Element {
 
-  int _drops;
   int _n_bad_src;
   u_int *_bad_src; // array of illegal IP src addresses.
+  unsigned _offset;
+  int _drops;
   
  public:
   

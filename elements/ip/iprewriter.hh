@@ -126,7 +126,6 @@ class IPRewriter : public IPRw {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  void add_handlers();
   void take_state(Element *, ErrorHandler *);
   
   void run_scheduled();
@@ -135,6 +134,9 @@ class IPRewriter : public IPRw {
   Mapping *get_mapping(bool, const IPFlowID &) const;
   
   void push(int, Packet *);
+
+  void add_handlers();
+  int llrpc(unsigned, void *);
 
 };
 

@@ -21,6 +21,7 @@
 #include "confparse.hh"
 #include "straccum.hh"
 #include "error.hh"
+#include "llrpc.h"
 
 #include <limits.h>
 
@@ -267,6 +268,51 @@ IPRewriter::add_handlers()
 {
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
+}
+
+int
+IPRewriter::llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_IPREWRITER_MAP_TCP) {
+
+    // Data	: unsigned saddr, daddr; unsigned short sport, dport
+    // Incoming : the flow ID
+    // Outgoing : If there is a mapping for that flow ID, then stores the
+    //		  mapping into 'data' and returns zero. Otherwise, returns
+    //		  -EAGAIN.
+
+    IPFlowID flowid;
+    if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
+      return -EFAULT;
+    Mapping *m = get_mapping(true, flowid);
+    if (!m)
+      return -EAGAIN;
+    flowid = m->flow_id();
+    if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
+      return -EFAULT;
+    return 0;
+    
+  } else if (command == CLICK_LLRPC_IPREWRITER_MAP_UDP) {
+
+    // Data	: unsigned saddr, daddr; unsigned short sport, dport
+    // Incoming : the flow ID
+    // Outgoing : If there is a mapping for that flow ID, then stores the
+    //		  mapping into 'data' and returns zero. Otherwise, returns
+    //		  -EAGAIN.
+
+    IPFlowID flowid;
+    if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
+      return -EFAULT;
+    Mapping *m = get_mapping(false, flowid);
+    if (!m)
+      return -EAGAIN;
+    flowid = m->flow_id();
+    if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
+      return -EFAULT;
+    return 0;
+    
+  } else
+    return Element::llrpc(command, data);
 }
 
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
