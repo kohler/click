@@ -24,7 +24,7 @@
 #include "router.hh"
 #include "glue.hh"
 
-LocalRoute::LocalRoute() : Element(2, 3), _nbr(0), _max_forwarding_hops(5)
+LocalRoute::LocalRoute() : Element(2, 4), _nbr(0), _max_forwarding_hops(5)
 {
 }
 
@@ -124,7 +124,7 @@ LocalRoute::push(int port, Packet *packet)
     default:
       click_chatter("%s: received unexpected Grid packet type: %s", 
 		    id().cc(), grid_hdr::type_string(gh->type).cc());
-      output(2).push(packet);
+      output(3).push(packet);
     }
   }
   else {
@@ -188,7 +188,7 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   if (_nbr == 0) {
     // no Neighbor next-hop table in configuration
-    click_chatter("%s: can't forward packet for %s; there is no neighbor table", id().cc(), dest_ip.s().cc());
+    click_chatter("%s: can't forward packet for %s; there is no neighbor table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
     return;
   }
@@ -199,7 +199,7 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
                   id().cc(),
                   encap->hops_travelled,
                   dest_ip.s().cc());
-    output(2).push(packet);
+    output(3).push(packet);
     return;
   }
 
@@ -217,7 +217,7 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     output(0).push(packet);
   }
   else {
-    click_chatter("%s: unable to forward packet for %s", id().cc(), dest_ip.s().cc());
+    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
   }
 }

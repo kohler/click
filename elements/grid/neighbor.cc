@@ -23,13 +23,20 @@
 #include "router.hh"
 #include "grid.hh"
 
-Neighbor::Neighbor() : Element(1, 2), _max_hops(3), _timer(this), _seq_no(0)
+
+
+Neighbor::Neighbor() : Element(1, 2), _max_hops(3), 
+  _hello_timer(hello_hook, (unsigned long) this), 
+  _expire_timer(expire_hook, (unsigned long) this),
+  _seq_no(0)
 {
 }
 
 Neighbor::~Neighbor()
 {
 }
+
+
 
 void *
 Neighbor::cast(const char *n)
@@ -40,12 +47,13 @@ Neighbor::cast(const char *n)
     return 0;
 }
 
+
+
 int
 Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int msec_timeout = 0;
   int res = cp_va_parse(conf, this, errh,
-			cpInteger, "entry timeout (msec)", &msec_timeout,
+			cpInteger, "entry timeout (msec)", &_timeout,
 			cpInteger, "Hello broadcast period (msec)", &_period,
 			cpInteger, "Hello broadcast jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
@@ -55,13 +63,13 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 			0);
 
   // convert msecs to jiffies
-  if (msec_timeout > 0) {
-    _timeout_jiffies = (CLICK_HZ * msec_timeout) / 1000;
-    if (_timeout_jiffies < 1) 
+  if (_timeout == 0)
+    _timeout = -1;
+  if (_timeout > 0) {
+    _timeout_jiffies = (CLICK_HZ * _timeout) / 1000;
+    if (_timeout_jiffies < 1)
       return errh->error("timeout interval is too small");
   }
-  else // never timeout
-    _timeout_jiffies = -1;
 
   if (_period <= 0)
     return errh->error("period must be greater than 0");
@@ -75,15 +83,23 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
+
+
 int
 Neighbor::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
-  _timer.attach(this);
-  _timer.schedule_after_ms(_period); // Send periodically
+  _hello_timer.attach(this);
+  _hello_timer.schedule_after_ms(_period); // Send periodically
+
+  _expire_timer.attach(this);
+  if (_timeout > 0)
+    _expire_timer.schedule_after_ms(_timeout);
 
   return 0;
 }
+
+
 
 Packet *
 Neighbor::simple_action(Packet *packet)
@@ -115,57 +131,45 @@ Neighbor::simple_action(Packet *packet)
   }
   else {
     // update jiffies and MAC for existing entry
-    int old_jiff = nbr->last_updated_jiffies;
     nbr->last_updated_jiffies = jiff;
-    if (nbr->eth != ethaddr) {
-      if (_timeout_jiffies >= 0 && 
-	  (jiff - old_jiff) < _timeout_jiffies) {
-	// entry changed before timeout!
-	click_chatter("%s: updating %s -- %s", id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
-      }
-      nbr->eth = ethaddr;
-    }
+    if (nbr->eth != ethaddr) 
+      click_chatter("%s: updating %s -- %s", id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
+    nbr->eth = ethaddr;
   }
   
-  /*
-   * update far nbr info with this hello sender info -- list sender as
-   * its own next hop.
-   */
-  int i;
-  for (i = 0; i < _nbrs.size() && gh->ip != _nbrs[i].nbr.ip; i++) 
-    ; // do it
-  if (i == _nbrs.size()) {
-    // we don't already know about it, so add it
-
-    // XXX shit how to deal with seq num????? maybe don't mix
-    // immediate nbrs info with routing table info?
-
-    _nbrs.push_back(far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, 0)));
-    _nbrs[i].last_updated_jiffies = jiff;
-    _nbrs[i].nbr.loc = gh->loc;
-  } else { 
-    // update pre-existing information
-    _nbrs[i].last_updated_jiffies = jiff;
-    _nbrs[i].nbr.num_hops = 1;
-    _nbrs[i].nbr.next_hop_ip = gh->ip;
-    _nbrs[i].nbr.loc = gh->loc;
-  }
-  
-  /*
-   * XXX when do we actually remove expired nbr info, as opposed to
-   * just ignore it? eventually we will run out of space!
-   */
   
   /*
    * perform further packet processing
    */
   switch (gh->type) {
   case grid_hdr::GRID_LR_HELLO:
-    {    /* 
-	  * add this sender's nbrs to our far neighbor list.  
-	  */
-
+    {   
       grid_hello *hlo = (grid_hello *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
+
+      /*
+       * update far nbr info with this hello sender info -- list sender as
+       * its own next hop.
+       */
+      far_entry *fe = _nbrs.findp(ipaddr);
+      if (fe == 0) {
+	// we don't already know about it, so add it
+	/* XXX not using HashMap2 very efficiently --- fix later */
+	_nbrs.insert(ipaddr, far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, ntohl(hlo->seq_no))));
+	fe = _nbrs.findp(ipaddr);
+	fe->last_updated_jiffies = jiff;
+	fe->nbr.loc = gh->loc;
+      } else { 
+	// update pre-existing information
+	fe->last_updated_jiffies = jiff;
+	fe->nbr.num_hops = 1;
+	fe->nbr.next_hop_ip = gh->ip;
+	fe->nbr.loc = gh->loc;
+	fe->nbr.seq_no = ntohl(hlo->seq_no);
+      }
+
+      /* 
+       * add this sender's nbrs to our far neighbor list.  
+       */
       int entry_sz = hlo->nbr_entry_sz;
       // XXX n^2 loop to check if entries are already there
       for (int i = 0; i < hlo->num_nbrs; i++) {
@@ -178,31 +182,24 @@ Neighbor::simple_action(Packet *packet)
 	if (IPAddress(curr->next_hop_ip) == _ipaddr)
 	  continue; // pseduo-split-horizon: ignore routes from nbrs that go back through us
 	
-	int j;
-	for (j = 0; j < _nbrs.size() && curr->ip != _nbrs[j].nbr.ip; j++) 
-	  ; // do it
-	if (j == _nbrs.size()) {
+	IPAddress curr_ip(curr->ip);
+	fe = _nbrs.findp(curr_ip);
+	if (fe == 0) {
 	  // we don't already know about this nbr
-	  _nbrs.push_back(far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, 
-							 curr->num_hops + 1, ntohl(curr->seq_no))));
-	  _nbrs[j].nbr.loc = curr->loc;
-	  _nbrs[j].last_updated_jiffies = jiff;
+	  _nbrs.insert(curr_ip, far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1, ntohl(curr->seq_no))));
+	  fe =_nbrs.findp(curr_ip);
+	  fe->nbr.loc = curr->loc;
 	}
 	else { 
-	  // update pre-existing information.  replace all information
-	  // if next hop is the same as in the old entry; if the next
-	  // hop is different, only update if old info is timed out or
-	  // more hops away.
-
-	  // XXX check seq num stuff!!
-
-	  if (_nbrs[j].nbr.next_hop_ip == gh->ip ||
-	      jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies ||
-	      _nbrs[j].nbr.num_hops > curr->num_hops) {
-	    _nbrs[j].nbr.num_hops = curr->num_hops + 1;
-	    _nbrs[j].nbr.next_hop_ip = gh->ip;
-	    _nbrs[j].nbr.loc = curr->loc;
-	    _nbrs[j].last_updated_jiffies = jiff;
+	  // replace iff seq_no is newer, or if seq_no is same and hops are less
+	  unsigned int curr_seq = ntohl(curr->seq_no);
+	  if (curr_seq > fe->nbr.seq_no ||
+	      (curr_seq == fe->nbr.seq_no && (curr->num_hops + 1) < fe->nbr.num_hops)) {
+	    fe->nbr.num_hops = curr->num_hops + 1;
+	    fe->nbr.next_hop_ip = gh->ip;
+	    fe->nbr.loc = curr->loc;
+	    fe->nbr.seq_no = curr_seq;
+	    fe->last_updated_jiffies = jiff;
 	  }
 	}
       }
@@ -215,6 +212,8 @@ Neighbor::simple_action(Packet *packet)
   return packet;
 }
 
+
+
 Neighbor *
 Neighbor::clone() const
 {
@@ -223,40 +222,36 @@ Neighbor::clone() const
 
 
 static String
-print_nbrs(Element *f, void *)
+print_nbrs(Element *e, void *)
 {
-  int jiff = click_jiffies();
-  Neighbor *n = (Neighbor *) f;
+  Neighbor *n = (Neighbor *) e;
 
   String s = "\nimmediate neighbor addrs (";
   s += String(n->_addresses.count());
   s += "):\n";
 
   for (Neighbor::Table::Iterator iter = n->_addresses.first(); iter; iter++) {
-    if (n->_timeout_jiffies < 0 || 
-	(jiff - iter.value().last_updated_jiffies) < n->_timeout_jiffies) {
-      s += iter.key().s();
-      s += " -- ";
-      s += iter.value().eth.s();
-      s += '\n';
-    }
+    s += iter.key().s();
+    s += " -- ";
+    s += iter.value().eth.s();
+    s += '\n';
   }
 
   s += "\nmulti-hop neighbors (";
-  s += String(n->_nbrs.size());
+  s += String(n->_nbrs.count());
   s += "):\n";
+  s += "ip next-hop num-hops loc seq-no\n";
 
-  for (int i = 0; i < n->_nbrs.size(); i++) {
-    Neighbor::far_entry f = n->_nbrs[i];
-    if (n->_timeout_jiffies < 0 || 
-	(jiff - f.last_updated_jiffies) < n->_timeout_jiffies) {
-      s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
-	+ " " + String(f.nbr.num_hops) + " " + f.nbr.loc.s() + "\n";
-    }
+  for (Neighbor::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+    Neighbor::far_entry f = iter.value();
+    s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
+      + " " + String(f.nbr.num_hops) + " " + f.nbr.loc.s() 
+      + " " + String(f.nbr.seq_no) + "\n";
   }
 
   return s;
 }
+
 
 
 void
@@ -266,17 +261,16 @@ Neighbor::add_handlers()
   add_read_handler("nbrs", print_nbrs, 0);
 }
 
+
+
 bool
 Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 {
   assert(dest_eth != 0);
-  int jiff = click_jiffies();  
 
   // is the destination an immediate nbr?
   NbrEntry *ne = _addresses.findp(dest_ip);
-  if (ne != 0 && 
-      (_timeout_jiffies < 0 || 
-       jiff - ne->last_updated_jiffies <= _timeout_jiffies)) {    
+  if (ne != 0) {
     click_chatter("%s: found immediate nbr %s for next hop for %s",
                   id().cc(),
                   ne->ip.s().cc(),
@@ -286,66 +280,99 @@ Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
   }
   if (ne == 0) {
     // not an immediate nbr, search multihop nbrs
-    int i;
-    for (i = 0; i < _nbrs.size() && dest_ip.addr() != _nbrs[i].nbr.ip; i++)
-      ; // do it
-    if (i < _nbrs.size() &&
-	(_timeout_jiffies < 0 ||
-	 jiff - _nbrs[i].last_updated_jiffies <= _timeout_jiffies)) {
+    far_entry *fe = _nbrs.findp(dest_ip);
+    if (fe != 0) {
       // we know how to get to this dest, look up MAC addr for next hop
-      ne = _addresses.findp(IPAddress(_nbrs[i].nbr.next_hop_ip));
-      click_chatter("%s: trying to use next hop %s for %s",
-                    id().cc(),
-                    ne->ip.s().cc(),
-                    dest_ip.s().cc());
-      if (ne != 0 &&
-	  (_timeout_jiffies < 0 ||
-	   jiff - ne->last_updated_jiffies <= _timeout_jiffies)) {
+      ne = _addresses.findp(IPAddress(fe->nbr.next_hop_ip));
+      if (ne != 0) {
 	*dest_eth = ne->eth;
+	click_chatter("%s: trying to use next hop %s for %s",
+		      id().cc(),
+		      ne->ip.s().cc(),
+		      dest_ip.s().cc());
 	return true;
+      }
+      else {
+	click_chatter("%s: dude, MAC nbr table and routing table are not consistent!", id().cc());
       }
     }
   }
   return false;
 }
 
+
+
 void
 Neighbor::get_nbrs(Vector<grid_nbr_entry> *retval) const
 {
   assert(retval != 0);
-  int jiff = click_jiffies();
-  for (int i = 0; i < _nbrs.size(); i++) 
-    if ((_timeout_jiffies < 0 ||
-	 jiff - _nbrs[i].last_updated_jiffies < _timeout_jiffies) &&
-	_nbrs[i].nbr.num_hops <= _max_hops)
-      retval->push_back(_nbrs[i].nbr);
+  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++)
+    retval->push_back(iter.value().nbr);
 }
 
 
 void
-Neighbor::run_scheduled()
+Neighbor::expire_hook(unsigned long thunk) 
 {
-  output(0).push(make_hello());
+  Neighbor *n = (Neighbor *) thunk;
+  n->expire_routes();
+}
+
+
+void
+Neighbor::expire_routes()
+{
+  assert(_timeout > 0);
+  int jiff = click_jiffies();
+
+  // XXX not sure if we are allowed to iterate while modifying map
+  // (i.e. erasing entries), so figure out what to expire first.
+  Vector<IPAddress> expired_addresses;
+  Vector<IPAddress> expired_nbrs;
+
+  // find the expired entries
+  for (Neighbor::Table::Iterator iter = _addresses.first(); iter; iter++) 
+    if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies)
+      expired_addresses.push_back(iter.key());
+  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++) 
+    if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies)
+      expired_nbrs.push_back(iter.key());
+    
+  // remove expired entries
+  for (int i = 0; i < expired_addresses.size(); i++)
+    _addresses.remove(expired_addresses[i]);
+  for (int i = 0; i < expired_nbrs.size(); i++)
+    _nbrs.remove(expired_nbrs[i]);
+}
+
+
+
+void
+Neighbor::hello_hook(unsigned long thunk)
+{
+  Neighbor *n = (Neighbor *) thunk;
+
+  n->output(0).push(n->make_hello());
 
   // XXX this random stuff is not right i think... wouldn't it be nice
   // if click had a phat RNG like ns?
   int r2 = random();
   double r = (double) (r2 >> 1);
-  int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
+  int jitter = (int) (((double) n->_jitter) * r / ((double) 0x7FffFFff));
   if (r2 & 1)
     jitter *= -1;
-  _timer.schedule_after_ms(_period + (int) jitter);
+  n->_hello_timer.schedule_after_ms(n->_period + (int) jitter);
 }
+
+
 
 Packet *
 Neighbor::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  int num_nbrs = 0;
-  Vector<grid_nbr_entry> nbrs;
-  get_nbrs(&nbrs);
+  int num_nbrs =_nbrs.count();
 
-  psz += sizeof(grid_nbr_entry) * nbrs.size();
+  psz += sizeof(grid_nbr_entry) * num_nbrs;
 
   WritablePacket *p = Packet::make(psz);
   memset(p->data(), 0, p->length());
@@ -366,21 +393,26 @@ Neighbor::make_hello()
   hlo->num_nbrs = (unsigned char) num_nbrs;
 #if 1
   click_chatter("num_nbrs = %d , _hops = %d, nbrs.size() = %d",
-		num_nbrs, _max_hops, nbrs.size());
+		num_nbrs, _max_hops, _nbrs.count());
 #endif
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
+  /* originating sequence numbers are even, starting at 0.  odd
+     numbers are reserved for other nodes to advertise a broken route
+     to us.  from DSDV paper. */
   _seq_no += 2;
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
 					     sizeof(grid_hdr) + sizeof(grid_hello));
-  for (int i = 0; i < nbrs.size(); i++) {
-    // only include nbrs that are not too many hops away
-    if (nbrs[i].num_hops <= _max_hops) {
-      memcpy(curr, &nbrs[i], sizeof(grid_nbr_entry));
-      curr->seq_no = htonl(curr->seq_no);
-      curr++;
-    }
+  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+    /* XXX if everyone is using the same max-hops parameter, we could
+       leave out all of our entries that are exactly max-hops hops
+       away, because we know those entries will be greater than
+       max-hops at any neighbor.  but, let's leave it in case we have
+       different max-hops across the network */
+    memcpy(curr, &iter.value().nbr, sizeof(grid_nbr_entry));
+    curr->seq_no = htonl(curr->seq_no);
+    curr++;
   }
 
   return p;
@@ -389,9 +421,9 @@ Neighbor::make_hello()
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Neighbor)
 
-#include "hashmap.cc"
-  template class HashMap<IPAddress, Neighbor::NbrEntry>;
-
+#include "bighashmap.cc"
+template class BigHashMap<IPAddress, Neighbor::NbrEntry>;
+template class BigHashMap<IPAddress, Neighbor::far_entry>;
 #include "vector.cc"
-template class Vector<Neighbor::far_entry>;
+template class Vector<IPAddress>;
 template class Vector<grid_nbr_entry>;

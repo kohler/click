@@ -13,9 +13,14 @@
  * Input 1 is down from higher level protocols, output 1 is is up to
  * higher level protocols. The format of both is IP packets.
  *
- * Output 2 is where all the packets go the LocalRoute doesn't know
- * what to do with.  e.g., Grid protocol packets with an unknown type,
- * too many hops have been travelled, or there is no next hop.  */
+ * Output 2 pushes out packets that LocalRoute doesn't know what to do
+ * with (we don't know have a route with a next hop), but are still
+ * valid.  e.g. to be sent to geographic forwarding.
+ *
+ * Output 3 pushes out packets that are bad: e.g., Grid protocol
+ * packets with an unknown type, or too many hops have been
+ * travelled. 
+ */
 
 #include "element.hh"
 #include "glue.hh"

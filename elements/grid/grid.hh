@@ -3,7 +3,7 @@
 
 // XXX when these settle, we can reorder, align and pack the fields etc...
 
-/* All mltibyte values sent over the wire in network byte order,
+/* All multibyte values sent over the wire in network byte order,
    unless otherwise noted (e.g. IP addresses) */
 
 // A geographical position.
@@ -99,7 +99,6 @@ struct grid_hello {
 struct grid_nbr_encap {
   unsigned int dst_ip;
   unsigned char hops_travelled;
-  unsigned int seq_no;
 };
 
 

@@ -145,3 +145,4 @@ click_chatter("num_nbrs = %d , _hops = %d, nbrs.size() = %d",
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocalRouteHello)
+

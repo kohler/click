@@ -24,8 +24,12 @@ from_wvlan -> Classifier(GRID_ETH_PROTO)
   -> [0] nb [0]
   -> Classifier(GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan
-lr[2] -> Discard
-fr[1] -> Discard
+
+lr [2] -> Discard // packets for geo fwding
+lr [3] -> Discard // bad packets
+
+fr [1] -> Discard // out of range
+
 check_grid [1] -> Print(bad_grid_hdr) -> Discard
 
 linux -> cl :: Classifier(32/GRID_HEX_IP, // ip for us

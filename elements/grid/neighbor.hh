@@ -24,7 +24,7 @@
 
 #include "element.hh"
 #include "glue.hh"
-#include "hashmap.hh"
+#include "bighashmap.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
 #include "grid.hh"
@@ -48,16 +48,27 @@ public:
     String s() const 
     { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
-
-  typedef HashMap<IPAddress, NbrEntry> Table;
+  typedef BigHashMap<IPAddress, NbrEntry> Table;
   Table _addresses; // immediate nbrs
+  /* 
+   * _addresses is a mapping from IP to ether for nodes within our
+   * radio range.  this information is extraced by snooping on all
+   * packets with grid headers .  
+   */
+ 
   struct far_entry {
     far_entry() : last_updated_jiffies(0) { }
     far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), nbr(n) { }
     int last_updated_jiffies;
     grid_nbr_entry nbr;
   };
-  Vector<far_entry> _nbrs; // immediate and multihop nbrs
+  typedef BigHashMap<IPAddress, far_entry> FarTable;
+  FarTable _nbrs; // immediate and multihop nbrs
+  /* 
+   * _nbrs is our routing table; its information is maintained by
+   * processing Grid Hello packets only.  one invariant: any entry
+   * listed as one hop in _nbrs has an entry in _addresses. 
+   */
 
   Neighbor();
   ~Neighbor();
@@ -79,10 +90,10 @@ public:
 
   Packet *make_hello();
   
-  void run_scheduled();
-
-  int _timeout_jiffies; // -1 if we are not timing out entries
 private:
+  int _timeout; // -1 if we are not timing out entries
+  int _timeout_jiffies;
+
   String get_nbrs();
 
   IPAddress _ipaddr;
@@ -91,8 +102,13 @@ private:
 
   int _period;
   int _jitter;
-  Timer _timer;
+  Timer _hello_timer;
+  Timer _expire_timer;
   unsigned int _seq_no;
+
+  static void expire_hook(unsigned long);
+  static void hello_hook(unsigned long);
+  void expire_routes();
 };
 
 #endif
