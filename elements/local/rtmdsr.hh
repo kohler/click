@@ -15,8 +15,9 @@ CLICK_DECLS
  * Data packets from higher layer into input zero, with IP Dst
  * annotation set.
  * Protocol packets into input one.
- * Broadcast packets out output zero.
- * Unicast packets out output one.
+ * Output zero goes to upper layers on this host.
+ * Broadcast packets out output one.
+ * Unicast packets out output two.
  * Assumes just one network interface.
  * =e
  */
@@ -40,7 +41,9 @@ private:
   Timer _timer;
   IPAddress _ip; // Our IP address.
 
-  enum PacketType { PT_QUERY=0x01010101, PT_REPLY=0x02020202 };
+  enum PacketType { PT_QUERY = 0x01010101,
+                    PT_REPLY = 0x02020202,
+                    PT_DATA  = 0x03030303 };
 
   // Packet format.
   struct pkt {
@@ -53,13 +56,25 @@ private:
     // PT_REPLY
     // The data is in the PT_QUERY fields.
 
+    // PT_DATA
+    u_short _dlen;
+
     // Route
     u_short _nhops;
     u_short _next;   // Index of next node who should process this packet.
     in_addr _hops[];
 
-    size_t len() { return sizeof(struct pkt) +
-                     ntohs(_nhops) * sizeof(_hops[0]); }
+    // How long should the packet be?
+    size_t hlen() { return hlen1(_nhops); }
+    size_t len() { return len1(_nhops, _dlen); }
+    static size_t hlen1(int nhops) {
+      return sizeof(struct pkt)
+        + ntohs(nhops) * sizeof(in_addr);
+    }
+    static size_t len1(int nhops, int dlen) {
+      return hlen1(nhops) + dlen;
+    }
+    u_char *data() { return ((u_char*)&_type) + hlen(); }
   };
 
   // Description of a single hop in a route.
@@ -95,14 +110,17 @@ private:
 
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);
-  void RTMDSR::start_query(IPAddress);
   void got_pkt(Packet *p_in);
   time_t time(void);
-  void send_reply(struct pkt *pk1);
+  void start_query(IPAddress);
   void forward_query(struct pkt *pk);
-  bool already_seen(in_addr src, u_long seq);
-  void got_reply(struct pkt *pk);
+  void start_reply(struct pkt *pk1);
   void forward_reply(struct pkt *pk);
+  void got_reply(struct pkt *pk);
+  void start_data(const u_char *data, u_long len, Route &r);
+  void got_data(struct pkt *pk);
+  void forward_data(struct pkt *pk);
+  bool already_seen(in_addr src, u_long seq);
 };
 
 CLICK_ENDDECLS
