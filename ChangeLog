@@ -1,3 +1,13 @@
+2003-08-15 Friday 17:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/make-dsdv-config.pl (1.2): Set KernelTun MTU to account for
+	Grid headers
+
+2003-08-15 Friday 17:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/kerneltun.cc (1.44): Set tun/tap interface mtu
+	according to MTU keyword argument value.
+
 2003-08-14 Thursday 11:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: make-dsdv-config.pl (1.1), make-dsr-config.pl (1.1): add
