@@ -144,9 +144,8 @@ UDPIPEncap::simple_action(Packet *p_in)
 #endif
   } else
     udp->uh_sum = 0;
- 
+  
   return p;
 }
 
 EXPORT_ELEMENT(UDPIPEncap)
-

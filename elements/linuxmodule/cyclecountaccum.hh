@@ -2,31 +2,33 @@
 #define CYCLECOUNTACCUM_HH
 
 /*
- * =c
- * CycleCountAccum(TYPE)
- * =s profiling
- * collects differences in cycle counters
- * =d
- *
- * Expects incoming packets to have their cycle counter annotation set.
- * Measures the current value of the cycle counter, and keeps track of the
- * total accumulated difference.
- *
- * =n
- *
- * A packet has room for either exactly one cycle count or exactly one
- * performance metric.
- *
- * =h packets read-only
- * Returns the number of packets that have passed.
- *
- * =h cycles read-only
- * Returns the accumulated cycles for all passing packets.
- *
- * =h reset_counts write-only
- * Resets C<packets> and C<accum> counters to zero when written.
- * 
- * =a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
+=c
+CycleCountAccum()
+
+=s profiling
+collects differences in cycle counters
+
+=d
+
+Expects incoming packets to have their cycle counter annotation set.
+Measures the current value of the cycle counter, and keeps track of the
+total accumulated difference.
+
+=n
+
+A packet has room for either exactly one cycle count or exactly one
+performance metric.
+
+=h packets read-only
+Returns the number of packets that have passed.
+
+=h cycles read-only
+Returns the accumulated cycles for all passing packets.
+
+=h reset_counts write-only
+Resets C<packets> and C<accum> counters to zero when written.
+
+=a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
 #include <click/element.hh>
 
