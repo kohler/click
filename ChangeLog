@@ -1,3 +1,8 @@
+2004-11-28 Sunday 03:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.57): allow spaces and tabs after
+	EXPORT_ELEMENT (why not?) [Indian Mogul]
+
 2004-11-19 Friday 15:05  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/filtertx.hh (1.2), elements/wifi/rxstats.cc (1.12),
