@@ -485,6 +485,7 @@ cleanup_module()
   ErrorHandler::static_cleanup();
   FromDevice::static_cleanup();
   ToDevice::static_cleanup();
+  FromLinux::static_cleanup();
   
   printk("<1>click module exiting\n");
     
