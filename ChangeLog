@@ -1,3 +1,8 @@
+2001-03-27 Tuesday 21:58  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: webgen.cc, webgen.hh: WebGen allows control over
+	source IP address.
+
 2001-03-23 Friday 13:42  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/userlevel/: chattersocket.cc, chattersocket.hh: added
