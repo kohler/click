@@ -1,3 +1,13 @@
+2003-05-08 Thursday 18:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/fromhost.cc (1.42): use netif_wake_queue,
+	not netif_start_queue, to re-wake queue; fixes latency problem
+
+2003-05-08 Thursday 18:15  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: storeipaddress.cc (1.17), storeipaddress.hh (1.10):
+	implement two-argument form: StoreIPAddress(ADDR, OFFSET)
+
 2003-05-08 Thursday 15:28  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/: fromhost.cc (1.41), fromhost.hh (1.34):
