@@ -17,4 +17,13 @@
 /* FreeBSD kernel include directory. */
 #undef FREEBSD_INCLUDEDIR
 
+/* Define if the user-level driver was compiled. */
+#undef HAVE_USERLEVEL_DRIVER
+
+/* Define if the Linux kernel module driver was compiled. */
+#undef HAVE_LINUXMODULE_DRIVER
+
+/* Define if the BSD kernel module driver was compiled. */
+#undef HAVE_BSDMODULE_DRIVER
+
 #endif

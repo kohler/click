@@ -9,9 +9,6 @@
 #define __KERNEL__ 1
 #define MODULE 1
 
-/* Define if the Linux kernel module target will be compiled. */
-#undef HAVE_LINUXMODULE_TARGET
-
 /* Define if your Linux kernel has Click extensions. */
 #undef HAVE_CLICK_KERNEL
 
