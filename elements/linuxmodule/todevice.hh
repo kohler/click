@@ -65,16 +65,25 @@ to synchronize.
 Packets sent via ToDevice will not be received by any packet sniffers on the
 machine. Use Tee and ToHostSniffers to send packets to sniffers explicitly.
 
-=h packets read-only
+=h count read-only
 
 Returns the number of packets ToDevice has pulled.
 
+=h calls read-only
+
+Returns a summary of ToDevice statistics.
+
+=h drops read-only
+
+Returns the number of packets ToDevice has dropped.  ToDevice will drop
+packets because they are too short for the device, or because the device
+explicitly rejected them.
+
 =h reset_counts write-only
 
-Resets C<packets> counter to zero when written.
+Resets counters to zero when written.
 
-=a FromDevice, PollDevice, FromHost, ToHost, ToDevice.u, Tee,
-ToHostSniffers
+=a FromDevice, PollDevice, FromHost, ToHost, ToDevice.u, Tee, ToHostSniffers
 
 */
 
@@ -125,6 +134,7 @@ class ToDevice : public AnyTaskDevice { public:
   uint32_t _rejected;
   uint32_t _hard_start;
   uint32_t _busy_returns;
+  uint32_t _too_short;
 
 #if HAVE_LINUX_POLLING
   bool polling() const			{ return _dev && _dev->polling > 0; }

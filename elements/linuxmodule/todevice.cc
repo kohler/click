@@ -132,7 +132,8 @@ ToDevice::reset_counts()
 {
   _npackets = 0;
   
-  _busy_returns = 0; 
+  _busy_returns = 0;
+  _too_short = 0;
   _runs = 0;
   _pulls = 0;
 #if CLICK_DEVICE_STATS
@@ -399,27 +400,30 @@ ToDevice_read_calls(Element *f, void *)
 	;
 }
 
+enum { H_COUNT, H_DROPS, H_PULL_CYCLES, H_TIME_QUEUE, H_TIME_CLEAN };
+
 static String
 ToDevice_read_stats(Element *e, void *thunk)
 {
-  ToDevice *td = (ToDevice *)e;
-  int which = reinterpret_cast<int>(thunk);
-  switch (which) {
-   case 0:
-    return String(td->_npackets) + "\n";
+    ToDevice *td = (ToDevice *)e;
+    switch ((uintptr_t) thunk) {
+      case H_COUNT:
+	return String(td->_npackets) + "\n";
+      case H_DROPS:
+	return String(td->_rejected + td->_too_short) + "\n";
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-   case 1:
-    return String(td->_pull_cycles) + "\n";
+      case H_PULL_CYCLES:
+	return String(td->_pull_cycles) + "\n";
 #endif
 #if CLICK_DEVICE_STATS
-   case 2:
-    return String(td->_time_queue) + "\n";
-   case 3:
-    return String(td->_time_clean) + "\n";
+      case H_TIME_QUEUE:
+	return String(td->_time_queue) + "\n";
+      case H_TIME_CLEAN:
+	return String(td->_time_clean) + "\n";
 #endif
-   default:
-    return String();
-  }
+      default:
+	return String();
+    }
 }
 
 static int
@@ -434,13 +438,16 @@ void
 ToDevice::add_handlers()
 {
     add_read_handler("calls", ToDevice_read_calls, 0);
-    add_read_handler("packets", ToDevice_read_stats, 0);
+    add_read_handler("count", ToDevice_read_stats, (void *)H_COUNT);
+    add_read_handler("drops", ToDevice_read_stats, (void *)H_DROPS);
+    // XXX deprecated
+    add_read_handler("packets", ToDevice_read_stats, (void *)H_COUNT);
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-    add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
+    add_read_handler("pull_cycles", ToDevice_read_stats, (void *)H_PULL_CYCLES);
 #endif
 #if CLICK_DEVICE_STATS
-    add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)2);
-    add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)3);
+    add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)H_TIME_QUEUE);
+    add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)H_TIME_CLEAN);
 #endif
     add_write_handler("reset_counts", ToDevice_write_stats, 0);
     add_task_handlers(&_task);
