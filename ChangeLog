@@ -1,3 +1,33 @@
+2004-04-25 Sunday 21:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggpktcounter.cc (1.2), aggpktcounter.hh
+	(1.2): changes
+
+2004-04-25 Sunday 21:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromcapdump.cc (1.3),
+	include/click/packet_anno.hh (1.20): multiple PACKET_NUMBER_ANNOs
+
+2004-04-25 Sunday 21:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggpktcounter.cc (1.1), aggpktcounter.hh
+	(1.1): add AggregatePacketCounter element, which counts by
+	aggregate AND packet counter annotations
+
+2004-04-25 Sunday 21:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/aggcounter.cc (1.28): nits
+
+2004-04-25 Sunday 21:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromcapdump.cc (1.2), fromcapdump.hh (1.2):
+	DEFAULT_AGGREGATE equals 1
+
+2004-04-25 Sunday 21:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/tosocket.cc (1.2): use IP_PROTO_TCP, which is
+	more portable than SOL_TCP
+
 2004-04-23 Friday 18:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromcapdump.cc (1.1),
