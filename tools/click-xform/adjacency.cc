@@ -34,7 +34,7 @@ AdjacencyMatrix::init(RouterT *r, RouterT *type_model = 0)
   int n = _n = r->nelements();
   delete[] _x;
   _default_match.clear();
-  _x = new int[n*n];
+  _x = new unsigned[n*n];
   
   for (int i = 0; i < n*n; i++)
     _x[i] = 0;
@@ -59,7 +59,11 @@ AdjacencyMatrix::init(RouterT *r, RouterT *type_model = 0)
   for (int i = 0; i < hf.size(); i++)
     // add connections. always add 1 so it's not 0 if the connection is from
     // port 0 to port 0. (DUH!)
-    _x[ hf[i].idx + n*ht[i].idx ] += hf[i].port + 10*ht[i].port + 1;
+    if (hf[i].idx != ht[i].idx) {
+      int p1 = hf[i].port % 32;
+      int p2 = (ht[i].port + 16) % 32;
+      _x[ hf[i].idx + n*ht[i].idx ] |= (1U<<p1) | (1U<<p2);
+    }
 }
 
 void
@@ -67,7 +71,7 @@ AdjacencyMatrix::print() const
 {
   for (int i = 0; i < _n; i++) {
     for (int j = 0; j < _n; j++)
-      fprintf(stderr, "%3d ", _x[_n*i + j]);
+      fprintf(stderr, "%3u ", _x[_n*i + j]);
     fprintf(stderr, "\n");
   }
   fprintf(stderr, "\n");
@@ -78,9 +82,9 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
 					   Vector<int> &match) const
 {
   int pat_n = _n;
-  int *pat_x = _x;
+  unsigned *pat_x = _x;
   int input_n = input->_n;
-  int *input_x = input->_x;
+  unsigned *input_x = input->_x;
   
   int match_idx;
   int direction;
@@ -109,14 +113,24 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     
       // S_{k,k}(input) =? S_{k,n}(P) * M * (S_{k,n}(P))^T
       // test only the new border
-      for (int i = 0; i <= match_idx; i++)
-	if (match[i] >= 0 &&
-	    pat_x[ i*pat_n + match_idx ] != input_x[ match[i]*input_n + match[match_idx] ])
-	  goto failure;
-      for (int j = 0; j < match_idx; j++)
-	if (match[j] >= 0 &&
-	    pat_x[ match_idx*pat_n + j ] != input_x[ match[match_idx]*input_n + match[j] ])
-	  goto failure;
+      for (int i = 0; i <= match_idx; i++) {
+	int m = match[i];
+	if (m >= 0) {
+	  unsigned px = pat_x[ i*pat_n + match_idx ];
+	  unsigned ix = input_x[ m*input_n + match[match_idx] ];
+	  if ((px & ix) != px)
+	    goto failure;
+	}
+      }
+      for (int j = 0; j < match_idx; j++) {
+	int m = match[j];
+	if (m >= 0) {
+	  unsigned px = pat_x[ match_idx*pat_n + j ];
+	  unsigned ix = input_x[ match[match_idx]*input_n + m ];
+	  if ((px & ix) != px)
+	    goto failure;
+	}
+      }
       break;
       
      failure: rover++;
@@ -132,7 +146,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     }
   }
 
-  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%s ", match[i] >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");fputs("\n",stderr);
+  //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");*/fputs("\n",stderr);
   return (match_idx >= 0 ? true : false);
 }
 

@@ -5,7 +5,7 @@ class RouterT;
 
 class AdjacencyMatrix {
 
-  int *_x;
+  unsigned *_x;
   int _n;
   Vector<int> _default_match;
 

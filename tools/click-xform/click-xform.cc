@@ -194,6 +194,7 @@ Matcher::check_match()
     return false;
 
   // find the pattern ports any cross-pattern jumps correspond to
+  //fprintf(stderr, "XPJ\n");
   const Vector<Hookup> &hfrom = _body->hookup_from();
   const Vector<Hookup> &hto = _body->hookup_to();
   int nhook = hfrom.size();
@@ -214,6 +215,7 @@ Matcher::check_match()
   }
 
   // check for unconnected tunnels in the pattern
+  //fprintf(stderr, "UNC\n");
   const Vector<Hookup> &phf = _pat->hookup_from();
   const Vector<Hookup> &pht = _pat->hookup_to();
   for (int i = 0; i < phf.size(); i++) {
