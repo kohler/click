@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/straccum.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/straccum.hh" -*-
 /*
  * straccum.{cc,hh} -- build up strings with operator<<
  * Eddie Kohler
@@ -27,109 +27,109 @@ CLICK_DECLS
 void
 StringAccum::make_out_of_memory()
 {
-  assert(_cap >= 0);
-  delete[] _s;
-  _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_string().data()));
-  _cap = -1;
-  _len = 0;
+    assert(_cap >= 0);
+    delete[] _s;
+    _s = reinterpret_cast<unsigned char *>(const_cast<char *>(String::out_of_memory_string().data()));
+    _cap = -1;
+    _len = 0;
 }
 
 bool
 StringAccum::grow(int want)
 {
-  // can't append to out-of-memory strings
-  if (_cap < 0)
-    return false;
+    // can't append to out-of-memory strings
+    if (_cap < 0)
+	return false;
   
-  int ncap = (_cap ? _cap * 2 : 128);
-  while (ncap <= want)
-    ncap *= 2;
+    int ncap = (_cap ? _cap * 2 : 128);
+    while (ncap <= want)
+	ncap *= 2;
   
-  unsigned char *n = new unsigned char[ncap];
-  if (!n) {
-    make_out_of_memory();
-    return false;
-  }
+    unsigned char *n = new unsigned char[ncap];
+    if (!n) {
+	make_out_of_memory();
+	return false;
+    }
   
-  if (_s)
-    memcpy(n, _s, _cap);
-  delete[] _s;
-  _s = n;
-  _cap = ncap;
-  return true;
+    if (_s)
+	memcpy(n, _s, _cap);
+    delete[] _s;
+    _s = n;
+    _cap = ncap;
+    return true;
 }
 
 const char *
 StringAccum::c_str()
 {
-  if (_len < _cap || grow(_len))
-    _s[_len] = '\0';
-  return reinterpret_cast<char *>(_s);
+    if (_len < _cap || grow(_len))
+	_s[_len] = '\0';
+    return reinterpret_cast<char *>(_s);
 }
 
 unsigned char *
 StringAccum::take_bytes()
 {
-  unsigned char *str = _s;
-  erase();
-  return str;
+    unsigned char *str = _s;
+    erase();
+    return str;
 }
 
 String
 StringAccum::take_string()
 {
-  int len = length();
-  if (len) {
-    int capacity = _cap;
-    unsigned char *str = _s;
-    erase();
-    return String::claim_string(reinterpret_cast<char *>(str), len, capacity);
-  } else if (out_of_memory())
-    return String::out_of_memory_string();
-  else
-    return String();
+    int len = length();
+    if (len) {
+	int capacity = _cap;
+	unsigned char *str = _s;
+	erase();
+	return String::claim_string(reinterpret_cast<char *>(str), len, capacity);
+    } else if (out_of_memory())
+	return String::out_of_memory_string();
+    else
+	return String();
 }
 
 void
 StringAccum::append_fill(int c, int len)
 {
-  if (char *s = extend(len))
-    memset(s, c, len);
+    if (char *s = extend(len))
+	memset(s, c, len);
 }
 
 StringAccum &
 operator<<(StringAccum &sa, long i)
 {
-  if (char *x = sa.reserve(24)) {
-    int len = sprintf(x, "%ld", i);
-    sa.forward(len);
-  }
-  return sa;
+    if (char *x = sa.reserve(24)) {
+	int len = sprintf(x, "%ld", i);
+	sa.forward(len);
+    }
+    return sa;
 }
 
 StringAccum &
 operator<<(StringAccum &sa, unsigned long u)
 {
-  if (char *x = sa.reserve(24)) {
-    int len = sprintf(x, "%lu", u);
-    sa.forward(len);
-  }
-  return sa;
+    if (char *x = sa.reserve(24)) {
+	int len = sprintf(x, "%lu", u);
+	sa.forward(len);
+    }
+    return sa;
 }
 
 #if HAVE_INT64_TYPES && !HAVE_64_BIT_LONG
 StringAccum &
 operator<<(StringAccum &sa, int64_t q)
 {
-  String qstr = cp_unparse_integer64(q, 10, false);
-  return sa << qstr;
+    String qstr = cp_unparse_integer64(q, 10, false);
+    return sa << qstr;
 }
 
 StringAccum &
 operator<<(StringAccum &sa, uint64_t q)
 {
-  String qstr = cp_unparse_unsigned64(q, 10, false);
-  return sa << qstr;
+    String qstr = cp_unparse_unsigned64(q, 10, false);
+    return sa << qstr;
 }
 #endif
 
@@ -137,56 +137,54 @@ operator<<(StringAccum &sa, uint64_t q)
 StringAccum &
 operator<<(StringAccum &sa, double d)
 {
-  if (char *x = sa.reserve(256)) {
-    int len = sprintf(x, "%.12g", d);
-    sa.forward(len);
-  }
-  return sa;
+    if (char *x = sa.reserve(256)) {
+	int len = sprintf(x, "%.12g", d);
+	sa.forward(len);
+    }
+    return sa;
 }
 #endif
 
 StringAccum &
 operator<<(StringAccum &sa, const struct timeval &tv)
 {
-  if (char *x = sa.reserve(30)) {
-    int len;
-    if (tv.tv_sec >= 0)
-      len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
-    else
-      len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
-    sa.forward(len);
-  }
-  return sa;
+    if (char *x = sa.reserve(30)) {
+	int len;
+	if (tv.tv_sec >= 0)
+	    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
+	else
+	    len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
+	sa.forward(len);
+    }
+    return sa;
 }
 
 StringAccum &
 operator<<(StringAccum &sa, void *v)
 {
-  if (char *x = sa.reserve(30)) {
-    int len = sprintf(x, "%p", v);
-    sa.forward(len);
-  }
-  return sa;
+    if (char *x = sa.reserve(30)) {
+	int len = sprintf(x, "%p", v);
+	sa.forward(len);
+    }
+    return sa;
 }
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &
 StringAccum::snprintf(int n, const char *format, ...)
 {
-  va_list val;
-  va_start(val, format);
-  if (char *x = reserve(n + 1)) {
-#ifdef HAVE_VSNPRINTF
-    int len = vsnprintf(x, n + 1, format, val);
+    va_list val;
+    va_start(val, format);
+    if (char *x = reserve(n + 1)) {
+#if CLICK_LINUXMODULE || HAVE_VSNPRINTF
+	int len = vsnprintf(x, n + 1, format, val);
 #else
-    int len = vsprintf(x, format, val);
-    assert(len <= n);
+	int len = vsprintf(x, format, val);
+	assert(len <= n);
 #endif
-    forward(len);
-  }
-  va_end(val);
-  return *this;
+	forward(len);
+    }
+    va_end(val);
+    return *this;
 }
-#endif
 
 CLICK_ENDDECLS
