@@ -61,8 +61,9 @@ GENERIC_OBJS = string.o straccum.o \
 	integers.o crc32.o iptable.o ewma64.o \
 	driver.o skbmgr.o \
 	$(EXTRA_DRIVER_OBJS) \
-	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
-	drivermanager.o
+	$(STD_ELEMENT_OBJS)
+STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
+	errorelement.o portinfo.o scheduleinfo.o
 
 HAVE_CLICKFS = @HAVE_CLICKFS@
 ifeq ($(HAVE_CLICKFS),1)
@@ -118,7 +119,7 @@ elemlist:
 elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
 	echo "linuxmodule @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem -r "linuxmodule @provisions@") > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
-	$(top_srcdir)/click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o < elements.conf > elements.mk
+	$(top_srcdir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool
 	$(top_srcdir)/click-buildtool elem2export < elements.conf > elements.cc
 	@rm -f elements.d
