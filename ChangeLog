@@ -1,3 +1,9 @@
+2003-10-31 Friday 15:50  Eddie Kohler <kohler@icir.org>
+
+	* conf/test-tun.click (1.11), elements/userlevel/kerneltun.cc
+	(1.46), elements/userlevel/kerneltun.hh (1.19): KernelTun uses
+	notification on its upstream input
+
 2003-10-27 Monday 21:40  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.22): document stderr usage
