@@ -1,3 +1,13 @@
+2004-05-10 Monday 17:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: todump.cc (1.54), todump.hh (1.33): ToDump
+	has a "filename" handler
+
+2004-05-10 Monday 17:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/sync.hh (1.14): local_irq_save already does cli;
+	and flags_t is an unsigned long (Nikitas)
+
 2004-05-10 Monday 04:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromcapdump.cc (1.5), fromcapdump.cc (1.6):
