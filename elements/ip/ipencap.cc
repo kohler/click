@@ -58,7 +58,7 @@ IPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   _ip_p = ip_p_uc;
 
-#ifdef __KERNEL__
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
     int ans, c, o;
@@ -99,20 +99,41 @@ IPEncap::simple_action(Packet *p_in)
   ip->ip_ttl = 250;
 
   ip->ip_sum = 0;
-#ifdef __KERNEL__
-  if (_aligned) {
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+  if (_aligned)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
-  } else {
-#endif
+  else
+    ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+#elif HAVE_FAST_CHECKSUM
+  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+#else
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
-#ifdef __KERNEL__
-  }
 #endif
   
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   p->set_ip_header(ip, sizeof(click_ip));
   
   return p;
+}
+
+String
+IPEncap::read_handler(Element *e, void *thunk)
+{
+  IPEncap *ipe = static_cast<IPEncap *>(e);
+  switch ((int)thunk) {
+   case 0:	return IPAddress(ipe->_ip_src).s() + "\n";
+   case 1:	return IPAddress(ipe->_ip_dst).s() + "\n";
+   default:	return "<error>\n";
+  }
+}
+
+void
+IPEncap::add_handlers()
+{
+  add_read_handler("src", read_handler, (void *)0);  
+  add_write_handler("src", reconfigure_write_handler, (void *)1);
+  add_read_handler("dst", read_handler, (void *)1);  
+  add_write_handler("dst", reconfigure_write_handler, (void *)2);
 }
 
 EXPORT_ELEMENT(IPEncap)

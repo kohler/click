@@ -65,4 +65,24 @@ EtherEncap::pull(int)
     return 0;
 }
 
+String
+EtherEncap::read_handler(Element *e, void *thunk)
+{
+  EtherEncap *ee = static_cast<EtherEncap *>(e);
+  switch ((int)thunk) {
+   case 0:	return EtherAddress(ee->_ethh.ether_shost).s() + "\n";
+   case 1:	return EtherAddress(ee->_ethh.ether_dhost).s() + "\n";
+   default:	return "<error>\n";
+  }
+}
+
+void
+EtherEncap::add_handlers()
+{
+  add_read_handler("src", read_handler, (void *)0);
+  add_write_handler("src", reconfigure_write_handler, (void *)1);
+  add_read_handler("dst", read_handler, (void *)1);
+  add_write_handler("dst", reconfigure_write_handler, (void *)2);
+}
+
 EXPORT_ELEMENT(EtherEncap)
