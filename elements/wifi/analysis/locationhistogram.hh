@@ -6,20 +6,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * LocationHistogram()
- * 
- * =s wifi
- * 
- * Accumulate locationhistogram for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
-
-
 class LocationHistogram : public Element { public:
   
   LocationHistogram();

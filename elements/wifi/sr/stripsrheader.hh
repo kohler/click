@@ -4,15 +4,21 @@
 CLICK_DECLS
 
 /*
- * =c
- * StripSRHeader()
- * =s encapsulation, SR
- * strips outermost SR header
- * =d
- * Removes the outermost SR header from SR packets based on the SR Header annotation.
- *
- * =a CheckSRHeader
- */
+=c
+StripSRHeader()
+
+=s Wifi, Wireless Routing
+
+Strips outermost SR header
+
+=d
+
+Removes the outermost SR header from SR packets based on the SR Header
+annotation.
+
+=a CheckSRHeader
+
+*/
 
 class StripSRHeader : public Element {
 

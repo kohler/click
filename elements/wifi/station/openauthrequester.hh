@@ -7,32 +7,34 @@ CLICK_DECLS
 /*
 =c
 
-OpenAuthRequester(CHANNEL)
+OpenAuthRequeser
 
-=s decapsulation, Wifi -> Ethernet
+=s Wifi, Wireless Station
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
+Sends 802.11 open authentication requests when poked.
 
-=d
+=d 
 
+=h bssid read/write
+The bssid to associate to
 
-If channel is 0, it doesn't filter any beacons.
-If channel is < 0, it doesn't look at any beconds
-if channel is > 0, it looks at only beacons with on channel.
-=e
+=h eth read/write
+The station's ethernet address
 
+=h ssid read/write
+The ssid to associate to
 
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
+=h listen_interval read/write
+The listen interval for the station, in milliseconds
 
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: OpenAuthRequester() -> ...
+=h associated read only
+If a association response was received and its status equals 0, this will
+be true.
 
-=a
+=h send_auth_req
+Sends an authentication request based on values of the handlers.
 
-EtherEncap */
+=a BeaconScanner */
 
 class OpenAuthRequester : public Element { public:
   

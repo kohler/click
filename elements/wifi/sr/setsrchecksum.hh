@@ -2,15 +2,21 @@
 #define SETSRCHECKSUM_HH
 
 /*
- * =c
- * SetSRChecksum()
- * =s SR
- * =d
- * Expects a SR MAC packet as input.
- * Calculates the SR header's checksum and sets the version and checksum header fields.
- *
- * =a
- * CheckSRHeader */
+=c
+
+SetSRChecksum()
+
+=s Wifi, Wireless Routing
+
+Set Checksum for Source Routed packet.
+
+=d
+
+Expects a SR MAC packet as input. Calculates the SR header's checksum
+and sets the version and checksum header fields.
+
+=a CheckSRHeader 
+*/
 
 #include <click/element.hh>
 #include <click/glue.hh>

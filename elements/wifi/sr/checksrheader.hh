@@ -6,17 +6,22 @@
 CLICK_DECLS
 
 /*
- * =c
- * CheckSRHeader()
- * =s SR
- * =d
- * Expects SR packets as input.
- * Checks that the packet's length is reasonable,
- * and that the SR header length, length, and
- * checksum fields are valid.
- *
- * =a
- * SetSRChecksum
+=c
+
+CheckSRHeader()
+
+=s Wifi, Wireless Routing
+
+Check the Source Route header of a packet.
+
+=d
+
+Expects SR packets as input.
+Checks that the packet's length is reasonable,
+and that the SR header length, length, and
+checksum fields are valid.
+
+=a SetSRChecksum
  */
 
 class CheckSRHeader : public Element {

@@ -2,15 +2,21 @@
 #define IPADDRESSCOUNTER_HH
 
 /*
- * =c
- * IPAddressCounter()
- * =s SR
- * =d
- * Expects a SR MAC packet as input.
- * Calculates the SR header's checksum and sets the version and checksum header fields.
- *
- * =a
- * CheckSRHeader */
+=c
+
+IPAddressCounter()
+
+=s Wifi, Wireless Routing
+
+Count traffic for individual ip addresses.
+
+=d
+
+Expects a SR MAC packet as input.
+Calculates the SR header's checksum and sets the version and checksum header fields.
+
+=a
+CheckSRHeader */
 
 #include <click/element.hh>
 #include <click/glue.hh>

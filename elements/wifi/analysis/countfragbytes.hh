@@ -6,20 +6,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * CountFragBytes()
- * 
- * =s wifi
- * 
- * Accumulate countfragbytes for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
-
-
 class CountFragBytes : public Element { public:
   
   CountFragBytes();

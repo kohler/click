@@ -6,19 +6,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * ErrorThreshold()
- * 
- * =s wifi
- * 
- * Accumulate errorthreshold for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
-
 
 class ErrorThreshold : public Element { public:
   

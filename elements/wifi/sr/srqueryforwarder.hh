@@ -16,18 +16,17 @@
 CLICK_DECLS
 
 /*
- * =c
- * SRQueryForwarder(IP, ETH, ETHERTYPE, SRQueryForwarder element, LinkTable element, ARPtable element, 
- *    [METRIC GridGenericMetric], [WARMUP period in seconds])
- * =d
- * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet data packets from device 
- * Input 1: IP packets from higher layer, w/ ip addr anno.
- * Input 2: data packets
- * Output 0: ethernet packets to device (protocol)
- * Output 1: ethernet packets to device (data)
- *
- */
+=c
+SRQueryForwarder(IP, ETH, ETHERTYPE, SRQueryForwarder element, LinkTable element, ARPtable element, 
+   [METRIC GridGenericMetric], [WARMUP period in seconds])
+
+=s Wifi, Wireless Routing
+
+Forwards Route Queries
+
+=d
+
+*/
 
 
 class SRQueryForwarder : public Element {

@@ -11,17 +11,24 @@
 CLICK_DECLS
 
 /*
- * =c
- * SRForwarder(ETHERTYPE, IP, ETH, ARPTable element, LT LinkTable element
- *     [ETT element], [METRIC GridGenericMetric] )
- * =d
- * DSR-inspired ad-hoc routing protocol.
- * Input 0: packets that I receive off the wire
- * Output 0: Outgoing ethernet packets that I forward
- * Output 1: packets that were addressed to me.
- *
- * Normally usged in conjuction with ETT element
- *
+=c
+
+SRForwarder(ETHERTYPE, IP, ETH, ARPTable element, LT LinkTable element
+    [ETT element], [METRIC GridGenericMetric] )
+
+=s Wifi, Wireless Routing
+
+Forwards source-routed packets.
+
+=d
+DSR-inspired ad-hoc routing protocol.
+Input 0: packets that I receive off the wire
+Output 0: Outgoing ethernet packets that I forward
+Output 1: packets that were addressed to me.
+
+
+Normally used in conjuction with ETT element
+
  */
 
 

@@ -7,35 +7,40 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * LinkFailureDetection(THRESHOLD, HANDLER)
- * 
- * Takes ethernet packets and checks if the wifi tx_success
- * is set to failure.  
- * after THRESHOLD failures for a particular ethernet destination,
- * it will call HANDLER.
- * A successful transmission resets the failure count to 0.
- * 
- * Regular Arguments:
- * =over 8
- *
- * =item THRESHOLD
- *
- * Unsigned integer. Number of failures before HANLDER is called
- *
- *
- * =item  HANDLER
- *
- * The write handler to call when a link failure is detected.
- * This handler will be called with a string that is the ethernet
- * mac address of the failed destination.
- * =back
- * 
- *
- * =s wifi
- *
- *
+=c
+
+LinkFailureDetection(THRESHOLD, HANDLER)
+
+=s Wifi
+
+Calls a handler after a certain number of successfive transmit failures.
+
+=d 
+
+Takes ethernet packets and checks if the wifi tx_success
+is set to failure.  
+after THRESHOLD failures for a particular ethernet destination,
+it will call HANDLER.
+A successful transmission resets the failure count to 0.
+
+Regular Arguments:
+=over 8
+
+=item THRESHOLD
+
+Unsigned integer. Number of failures before HANLDER is called
+
+=item  HANDLER
+
+The write handler to call when a link failure is detected.
+This handler will be called with a string that is the ethernet
+mac address of the failed destination.
+=back 8
+
+=h stats
+Shows successive failures and last received statistics for each destination.
+
+=a FilterFailures
  */
 
 

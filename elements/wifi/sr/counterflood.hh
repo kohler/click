@@ -16,37 +16,38 @@
 CLICK_DECLS
 
 /*
- * =c
- * CounterFlood(ETHTYPE eth, IP ip, BCAST_IP ip, ETH eth, COUNT int, 
- *              MAX_DELAY int, 
- *              [DEBUG bool], [HISTORY int]);
- * =d
- * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet packets from dev
- * Input 1: ip packets from higher layer 
- * Output 0: ethernet packets to device (protocol)
- * Output 1: ip packets to higher layer
- *
- * =over 8
- *
- * =item COUNT
- * 
- * count of x indicates don't forward if you've recieved x packets
- * Count of 0 indicates always forward
- * Count of 1 indicates never forward; like a local broadcast
- * 
- * 
- * =item MAX_DELAY
- *
- * max time to wait after 1st packet rx to forward packet. default is 750
- *
- * =item HISTORY
- *
- * number of sequence numbers to remember. default is 100
- *
- *
- *
- *
+=c
+CounterFlood(ETHTYPE eth, IP ip, BCAST_IP ip, ETH eth, COUNT int, 
+             MAX_DELAY int, 
+             [DEBUG bool], [HISTORY int]);
+=s Wifi, Wireless Routing
+
+Flood packets; Forward if you hear it less than a threshold.
+
+=d
+
+Keyword arguments are:
+
+=over 8
+
+=item COUNT
+
+count of x indicates don't forward if you've recieved x packets
+Count of 0 indicates always forward
+Count of 1 indicates never forward; like a local broadcast
+
+
+=item MAX_DELAY
+
+max time to wait after 1st packet rx to forward packet. default is 750
+
+=item HISTORY
+
+number of sequence numbers to remember. default is 100
+
+=back 8
+
+
  */
 
 

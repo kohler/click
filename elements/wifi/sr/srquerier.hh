@@ -14,17 +14,16 @@
 CLICK_DECLS
 
 /*
- * =c
- * SRQuerier(IP, ETH, ETHERTYPE, SRQuerier element, LinkTable element, ARPtable element, 
- *    [METRIC GridGenericMetric], [WARMUP period in seconds])
- * =d
- * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet data packets from device 
- * Input 1: IP packets from higher layer, w/ ip addr anno.
- * Input 2: data packets
- * Output 0: ethernet packets to device (protocol)
- * Output 1: ethernet packets to device (data)
- *
+
+=c
+
+SRQuerier(IP, ETH, ETHERTYPE, SRQuerier element, LinkTable element, ARPtable element, 
+   [METRIC GridGenericMetric], [WARMUP period in seconds])
+
+=s Wifi, Wireless Routing
+Sends route queries if it can't find a valid source route.
+
+=d
  */
 
 

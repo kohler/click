@@ -2,53 +2,48 @@
 #define ETTSTATHH
 
 /*
- * =c
- * ETTStat([I<KEYWORDS>])
- * =s Grid
- * Track broadcast loss rates. 
- *
- * =d
- *
- * Expects Link probe packets as input.  Records the last WINDOW unique
- * (not neccessarily sequential) sequence numbers of link probes from
- * each host, and calculates loss rates over the last TAU milliseconds
- * for each host.  If the output is connected, sends probe
- * packets every PERIOD milliseconds.  The source Ethernet 
- * address ETH must be specified if the second output is
- * connected.
- *
- * Keyword arguments are:
- *
- * =over 8
- *
- * =item ETH
- *
- * Ethernet address of this node; required if output is connected.
- *
- * =item PERIOD
- *
- * Unsigned integer.  Millisecond period between sending link probes
- * if second output is connected.  Defaults to 1000 (1 second).
- *
- * =item WINDOW
- *
- * Unsigned integer.  Number of most recent sequence numbers to remember
- * for each host.  Defaults to 100.
- *
- * =item TAU
- *
- * Unsigned integer.  Millisecond period over which to calculate loss
- * rate for each host.  Defaults to 10,000 (10 seconds).
- *
- * =item SIZE
- *
- * Unsigned integer.  Total number of bytes in probe packet, including
- * ethernet header and above.  Defaults to 1000.
- *
- * This element is a disaster and needs to be rewritten.
- *
- * =back
- */
+=c
+ETTStat([I<KEYWORDS>])
+
+=s Wifi, Wireless Routing
+
+Track broadcast loss rates at different bitrates.
+
+=d
+
+Expects probe packets as input.  Records the last WINDOW unique
+(not neccessarily sequential) sequence numbers of link probes from
+each host, and calculates loss rates over the last TAU milliseconds
+for each host.  If the output is connected, sends probe
+packets every PERIOD milliseconds.  The source Ethernet 
+address ETH must be specified if the second output is
+connected.
+
+This element is a disaster and needs to be rewritten.
+
+Keyword arguments are:
+
+=over 8
+
+=item ETH
+Ethernet address of this node; required if output is connected.
+
+=item PERIOD
+Unsigned integer.  Millisecond period between sending link probes
+if second output is connected.  Defaults to 1000 (1 second).
+
+=item WINDOW
+Unsigned integer.  Number of most recent sequence numbers to remember
+for each host.  Defaults to 100.
+
+=item TAU
+Unsigned integer.  Millisecond period over which to calculate loss
+rate for each host.  Defaults to 10,000 (10 seconds).
+
+ =back
+
+=a LinkStat
+*/
 
 #include <click/bighashmap.hh>
 #include <click/dequeue.hh>

@@ -12,18 +12,17 @@
 CLICK_DECLS
 
 /*
- * =c
- * SetSourceRoute(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, 
- *    [METRIC GridGenericMetric], [WARMUP period in seconds])
- * =d
- * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet packets 
- * Input 1: ethernet data packets from device 
- * Input 2: IP packets from higher layer, w/ ip addr anno.
- * Input 3: IP packets from higher layer for gw, w/ ip addr anno.
- * Output 0: ethernet packets to device (protocol)
- * Output 1: ethernet packets to device (data)
- *
+=c
+
+SetSourceRoute(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, 
+   [METRIC GridGenericMetric], [WARMUP period in seconds])
+
+=s Wifi, Wireless Routing
+
+Set the Source Route for packet
+
+=d
+
  */
 
 

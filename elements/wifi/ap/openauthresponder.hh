@@ -8,32 +8,35 @@ CLICK_DECLS
 /*
 =c
 
-OpenAuthResponder(CHANNEL)
+OpenAuthResponder([, I<KEYWORDS>])
 
-=s decapsulation, Wifi -> Ethernet
+=s Wifi, Wireless AccessPoint
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
+Respond to 802.11 open authentication requests.
 
 =d
 
+Keyword arguments are: 
 
-If channel is 0, it doesn't filter any beacons.
-If channel is < 0, it doesn't look at any beconds
-if channel is > 0, it looks at only beacons with on channel.
-=e
+=over 8
 
+=item CHANNEL
+The wireless channel it is operating on.
 
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
+=item SSID
+The SSID of the access point.
 
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: OpenAuthResponder() -> ...
+=item BSSID
+An Ethernet Address (usually the same as the ethernet address of the wireless card).
 
-=a
+=item INTERVAL
+How often beacon packets are sent, in milliseconds.
 
-EtherEncap */
+=back 8
+
+=a BeaconScanner
+
+*/
 
 class OpenAuthResponder : public Element { public:
   

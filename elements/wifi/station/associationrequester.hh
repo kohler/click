@@ -7,32 +7,35 @@ CLICK_DECLS
 /*
 =c
 
-AssociationRequester(CHANNEL)
+AssociationRequester
 
-=s decapsulation, Wifi -> Ethernet
+=s Wifi, Wireless Station
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
-
-=d
+Sends 802.11 association requests when poked.
 
 
-If channel is 0, it doesn't filter any beacons.
-If channel is < 0, it doesn't look at any beconds
-if channel is > 0, it looks at only beacons with on channel.
-=e
+=d 
 
+=h bssid read/write
+The bssid to associate to
 
-  wifi_cl :: Classifier (0/00%0c, 
-                         0/04%0c,
-                         0/08%0c);
+=h eth read/write
+The station's ethernet address
 
-  wifi_cl [0] -> Discard; //mgt 
-  wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: AssociationRequester() -> ...
+=h ssid read/write
+The ssid to associate to
 
-=a
+=h listen_interval read/write
+The listen interval for the station, in milliseconds
 
-EtherEncap */
+=h associated read only
+If a association response was received and its status equals 0, this will
+be true.
+
+=h send_assoc_req
+Sends an association request based on values of the handlers.
+
+=a BeaconScanner */
 
 class AssociationRequester : public Element { public:
   

@@ -6,20 +6,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * CountFecBytes()
- * 
- * =s wifi
- * 
- * Accumulate countfecbytes for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
-
-
 class CountFecBytes : public Element { public:
   
   CountFecBytes();

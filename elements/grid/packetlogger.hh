@@ -11,8 +11,11 @@ CLICK_DECLS
  * 
  * PacketLogger(ETHERTYPE ethertype)
  * 
- * =s wifi
+ * =s Grid
  * 
+ * Log packets for later dumping/analysis.
+ * 
+ * =d
  * expects packets with ethernet headers.  records timestamp, source
  * MAC address, and the first few bytes of every packet to pass through.
  * the list of recorded data can be dumped by repeated calls to the
@@ -21,8 +24,6 @@ CLICK_DECLS
  * this is for logging received experiment packets on the roofnet.
  *
  * an NBYTES keyword would be nice.
- *
- * =over 8
  *
  */
 

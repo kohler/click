@@ -8,11 +8,28 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * AvailableRates()
- * 
- *
+=c
+ 
+AvailableRates()
+
+=s Wifi, Wireless Station, Wireless AccessPoint
+
+Tracks bit-rate capabilities of other stations.
+
+=d
+
+Tracks a list of bitrates other stations are capable of.
+
+=h insert write-only
+Inserts an ethernet address and a list of bitrates to the database.
+
+=h remove write-only
+Removes an ethernet address from the database.
+
+=h rates read-only
+Shows the entries in the database.
+
+=a BeaconScanner
  */
 
 

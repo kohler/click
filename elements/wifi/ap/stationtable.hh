@@ -7,16 +7,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * StationTable()
- * 
- *
- */
-
-
-
 class Station {
 public:
   EtherAddress _eth;

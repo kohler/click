@@ -14,24 +14,28 @@
 CLICK_DECLS
 
 /*
- * =c
- * GatewaySelector(IP, ETH, ETHERTYPE, LinkTable, ARPTable, 
- *                 [PERIOD timeout], [GW is_gateway], 
- *                 [METRIC GridGenericMetric])
- * =d
+=c
+GatewaySelector(IP, ETH, ETHERTYPE, LinkTable, ARPTable, 
+                [PERIOD timeout], [GW is_gateway], 
+                [METRIC GridGenericMetric])
 
- * Input 0: packets from dev
- * Input 1: packets for gateway node
- * Output 0: packets to dev
- * Output 1: packets with dst_ip anno set
- *
- * This element provides proactive gateway selection.  
- * Each gateway broadcasts an ad every PERIOD seconds.  
- * Non-gateway nodes select the gateway with the best metric
- * and forward ads.
- * 
- * 
- *
+=s Wifi, Wireless Routing
+
+Select a gateway to send a packet to based on TCP connection
+state and metric to gateway.
+
+=d
+
+Input 0: packets from dev
+Input 1: packets for gateway node
+Output 0: packets to dev
+Output 1: packets with dst_ip anno set
+
+This element provides proactive gateway selection.  
+Each gateway broadcasts an ad every PERIOD seconds.  
+Non-gateway nodes select the gateway with the best metric
+and forward ads.
+
  */
 
 

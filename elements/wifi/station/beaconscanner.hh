@@ -8,11 +8,25 @@ CLICK_DECLS
 /*
 =c
 
-BeaconScanner(CHANNEL)
+BeaconScanner
 
-=s decapsulation, Wifi -> Ethernet
+=s Wifi, Wireless Station
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
+Listens for 802.11 beacons and sends probe requests.
+
+=d
+
+=h scan read only
+Statistics about access points that the element has received beacons from.
+
+=h reset read/write
+Clear the list of access points.
+
+=h channel
+If the channel is greater than 0, it will only record statistics for 
+beacons received with that channel in the packet.
+If channel is 0, it will record statistics for all beacons received.
+If channel is less than 0, it will discard all beaconds
 
 =d
 

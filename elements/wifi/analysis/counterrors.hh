@@ -6,20 +6,6 @@
 #include <click/glue.hh>
 CLICK_DECLS
 
-/*
- * =c
- * 
- * CountErrors()
- * 
- * =s wifi
- * 
- * Accumulate counterrors for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
-
-
 class CountErrors : public Element { public:
   
   CountErrors();
