@@ -167,8 +167,11 @@ ToDevice::cleanup(CleanupStage)
 void
 ToDevice::selected(int) 
 {
-  Packet *p = _q;
-  if (!p) {
+  Packet *p;
+  if (_q) {
+    p = _q;
+    _q = 0;
+  } else {
     p = input(0).pull();
   }
   if (p) {
