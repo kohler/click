@@ -42,7 +42,7 @@ const char *clickfs_prefix = "/proc/click";
 
 bool verbose = false;
 
-bool
+static void
 read_package_string(const String &text, StringMap &packages)
 {
   const char *s = text.data();
@@ -55,7 +55,6 @@ read_package_string(const String &text, StringMap &packages)
     packages.insert(text.substring(start, pos - start), 0);
     pos = text.find_left('\n', pos) + 1;
   }
-  return (bool)text;
 }
 
 bool
@@ -63,7 +62,12 @@ read_package_file(String filename, StringMap &packages, ErrorHandler *errh)
 {
   if (!errh && access(filename.cc(), F_OK) < 0)
     return false;
-  return read_package_string(file_string(filename, errh), packages);
+  int before = errh->nerrors();
+  String str = file_string(filename, errh);
+  if (!str && errh->nerrors() != before)
+    return false;
+  read_package_string(str, packages);
+  return true;
 }
 
 bool
