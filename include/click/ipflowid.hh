@@ -5,7 +5,8 @@ class Packet;
 
 class IPFlowID {
  protected:
-
+  
+  // note: several functions depend on this field order!
   IPAddress _saddr;
   IPAddress _daddr;
   unsigned short _sport;		// network byte order
@@ -36,37 +37,9 @@ class IPFlowID {
   
 };
 
-class IPFlowID2 : public IPFlowID {
-
-  unsigned _protocol;		// only really need one byte
-
- public:
-
-  IPFlowID2();
-  IPFlowID2(struct in_addr, unsigned short, 
-            struct in_addr, unsigned short, unsigned char);
-  IPFlowID2(IPAddress, unsigned short, 
-            IPAddress, unsigned short, unsigned char);
-  IPFlowID2(const IPFlowID &, unsigned char);
-  explicit IPFlowID2(Packet *);
-
-  operator bool() const;
-
-  unsigned protocol() const		{ return _protocol; }
-  
-  IPFlowID2 rev() const;
-  
-};
-
 inline
 IPFlowID::IPFlowID()
   : _saddr(), _daddr(), _sport(0), _dport(0)
-{
-}
-
-inline
-IPFlowID2::IPFlowID2()
-  : IPFlowID(), _protocol(0)
 {
 }
 
@@ -85,49 +58,15 @@ IPFlowID::IPFlowID(IPAddress saddr, unsigned short sport,
 }
 
 inline
-IPFlowID2::IPFlowID2(struct in_addr saddr, unsigned short sport,
-		     struct in_addr daddr, unsigned short dport,
-		     unsigned char p)
-  : IPFlowID(saddr, sport, daddr, dport), _protocol(p)
-{
-}
-
-inline
-IPFlowID2::IPFlowID2(IPAddress saddr, unsigned short sport,
-		     IPAddress daddr, unsigned short dport,
-		     unsigned char p)
-  : IPFlowID(saddr, sport, daddr, dport), _protocol(p)
-{
-}
-
-inline
-IPFlowID2::IPFlowID2(const IPFlowID &o, unsigned char p)
-  : IPFlowID(o), _protocol(p)
-{
-}
-
-inline
 IPFlowID::operator bool() const
 {
   return _saddr || _daddr;
-}
-
-inline
-IPFlowID2::operator bool() const
-{
-  return _protocol != 0;
 }
 
 inline IPFlowID
 IPFlowID::rev() const
 {
   return IPFlowID(_daddr, _dport, _saddr, _sport);
-}
-
-inline IPFlowID2
-IPFlowID2::rev() const
-{
-  return IPFlowID2(daddr(), dport(), saddr(), sport(), _protocol);
 }
 
 
@@ -161,14 +100,6 @@ operator==(const IPFlowID &a, const IPFlowID &b)
 {
   return a.dport() == b.dport() && a.sport() == b.sport()
     && a.daddr() == b.daddr() && a.saddr() == b.saddr();
-}
-
-inline bool
-operator==(const IPFlowID2 &a, const IPFlowID2 &b)
-{
-  return a.saddr() == b.saddr() && a.daddr() == b.daddr()
-    && a.sport() == b.sport() && a.dport() == b.dport()
-    && a.protocol() == b.protocol();
 }
 
 #endif

@@ -37,13 +37,6 @@ IPFlowID::IPFlowID(Packet *p)
   _dport = udph->uh_dport;	// network byte order
 }
 
-IPFlowID2::IPFlowID2(Packet *p)
-  : IPFlowID(p)
-{
-  const click_ip *iph = p->ip_header();
-  _protocol = iph->ip_p;
-}
-
 String
 IPFlowID::s() const
 {

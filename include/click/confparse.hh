@@ -18,14 +18,15 @@ bool cp_eat_space(String &);
 bool cp_is_space(const String &);
 bool cp_is_word(const String &);
 
-// argument lists <-> lists of arguments
-String cp_uncomment(const String &);
-void cp_argvec(const String &, Vector<String> &);
-void cp_spacevec(const String &, Vector<String> &);
-String cp_unargvec(const Vector<String> &);
-String cp_unspacevec(const Vector<String> &);
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
+String cp_uncomment(const String &);
+
+// argument lists <-> lists of arguments
+void cp_argvec(const String &, Vector<String> &);
+String cp_unargvec(const Vector<String> &);
+void cp_spacevec(const String &, Vector<String> &);
+String cp_unspacevec(const Vector<String> &);
 
 enum CpErrors {
   CPE_OK = 0,

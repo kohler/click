@@ -93,8 +93,8 @@ xvalue(int x)
     return -1;
 }
 
-void
-cp_argvec(const String &conf, Vector<String> &args)
+static void
+cp_argvec(const String &conf, Vector<String> &args, bool split_comma)
 {
   const char *s = conf.data();
   int len = conf.length();
@@ -117,7 +117,9 @@ cp_argvec(const String &conf, Vector<String> &args)
       switch (s[i]) {
 	
        case ',':
-	goto done;
+	if (split_comma)
+	  goto done;
+	break;
 	
        case '/':
 	// skip comments
@@ -141,7 +143,7 @@ cp_argvec(const String &conf, Vector<String> &args)
 
        case '\"':
 	for (i++; i < len && s[i] != '\"'; i++)
-	  if (s[i] == '\\')
+	  if (s[i] == '\\' && i < len - 1)
 	    i++;
 	break;
 	
@@ -178,6 +180,20 @@ cp_argvec(const String &conf, Vector<String> &args)
   }
 }
 
+void
+cp_argvec(const String &str, Vector<String> &v)
+{
+  cp_argvec(str, v, true);
+}
+
+String
+cp_uncomment(const String &str)
+{
+  Vector<String> v;
+  cp_argvec(str, v, false);
+  return (v.size() ? v[0] : String());
+}
+
 String
 cp_unargvec(const Vector<String> &args)
 {
@@ -198,14 +214,6 @@ cp_unspacevec(const Vector<String> &args)
     sa << args[i];
   }
   return sa.take_string();
-}
-
-String
-cp_uncomment(const String &str)
-{
-  Vector<String> v;
-  cp_argvec(str, v);
-  return cp_unargvec(v);
 }
 
 void
