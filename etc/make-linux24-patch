@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+
+# make-linux24-patch
+
+# Make a patch file for a Linux kernel that adds our hooks.
+# The resulting output can be used thus:
+#  cd /usr/src/linux
+#  patch -p0 -b < patch-file
+
+# List of files that we modified and that should be patched.
+# Each must be accompanied by a file.orig.
+my @files = (
+	"include/asm-i386/highmem.h",
+	"include/asm-i386/rwlock.h",
+	"include/asm-i386/string.h",
+	"include/linux/highmem.h",
+	"include/linux/inetdevice.h",
+	"include/linux/mm.h",
+	"include/linux/netdevice.h",
+	"include/linux/skbuff.h",
+	"include/net/route.h",
+	"net/core/skbuff.c",
+	"net/core/dev.c",
+	"net/ipv4/arp.c",
+	"net/netsyms.c",
+	"fs/proc/inode.c",
+	"drivers/net/tulip/interrupt.c",
+	"drivers/net/tulip/tulip_core.c",
+	"drivers/net/eepro100.c",
+	);
+
+$| = 1;
+my $f;
+foreach $f (@files) {
+    print "\nIndex: $f\n";
+    system("diff -u ${f}.orig $f");
+}
