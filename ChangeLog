@@ -1,3 +1,8 @@
+2004-05-31 Monday 19:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/: simple-dsdv-userlevel.click (1.4), simple-dsdv.click
+	(1.5): mention the need for --enable-grid
+
 2004-05-27 Thursday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/mkwebdoc.pl (1.50): doc FAQ
