@@ -103,7 +103,7 @@ FromBPF::initialize(ErrorHandler *errh)
   errh->warning("can't get packets: not compiled with pcap support");
 #endif
 
-  SchedulerInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, errh);
   
   return 0;
 }
