@@ -1,3 +1,8 @@
+2004-07-30 Friday 19:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggpktcounter.cc (1.5), aggpktcounter.hh
+	(1.7): read handlers take arguments in practice
+
 2004-07-30 Friday 18:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipaddrrewriter.cc (1.20), ipaddrrewriter.hh (1.11):
