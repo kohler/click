@@ -215,7 +215,8 @@ IPRateMonitor::print(_stats *s, String ip = "")
       if (nonzero) {
 	bool updated = false;
 	ret += "\t"; 
-	ret += String((unsigned long) (s->counter[i].total/(jiffs-_resettime)));
+	ret += String
+	  ((unsigned long)s->counter[i].total/((jiffs-_resettime)/CLICK_HZ));
 	for(int j = 1; j < _no_of_rates; j++) { 
 	  if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
 	    s->counter[i].values[j].update(0);
