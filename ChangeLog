@@ -1,3 +1,18 @@
+2004-07-08 Thursday 11:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.21), configure.in (1.239): make sure that the root
+	directory / would work in the absolute-path checkers, rather than
+	generate syntax errors
+
+2004-07-08 Thursday 11:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.20), configure.in (1.238): --with-wifi also checks
+	relative paths
+
+2004-07-08 Thursday 11:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tun.click (1.12): nit
+
 2004-07-07 Wednesday 20:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.19), configure.in (1.237): prevent --with-linux and
