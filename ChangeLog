@@ -1,3 +1,9 @@
+2001-04-06 Friday 12:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/tcpudp/: iprewriter.cc, iprewriter.hh: added keyword
+	optional argument for how often to try to gc and timeout interval;
+	other minor changes
+
 2001-04-05 Thursday 18:11  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/tcpudp/iprewriter.cc: make udp clean up every 5
