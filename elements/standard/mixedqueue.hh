@@ -18,14 +18,14 @@ stores packets in a FIFO/LIFO queue
 
 Stores incoming packets in a mixed first-in-first-out/last-in-first-out queue.
 In particular, MixedQueue's first input is FIFO, but its second input is LIFO.
-The queue is full when it holds CAPACITY packets. In that state, drops
+The queue is full when it holds CAPACITY packets. When full, MixedQueue drops
 incoming FIFO packets, but drops the oldest packet to make room for incoming
 LIFO packets. The default for CAPACITY is 1000.
 
 MixedQueue notifies interested parties when it becomes empty and when a
 formerly-empty queue receives a packet. The empty notification takes place
-some time after the queue goes empty for the first time, to prevent thrashing
-for queues that tend to hover around 1 or 2 packets.
+some time after the queue goes empty, to prevent thrashing for queues that
+hover around 1 or 2 packets long.
 
 =e
 
@@ -41,10 +41,10 @@ through E. The queue's head is on the left.
 
 =head1 SYNCHRONIZATION
 
-Unlike Queue, whose input and output ports need not be synchronized,
-MixedQueue requires synchronization between its LIFO input and its output. You
-will need to prevent a thread from pushing to the LIFO input at the same time
-that a different thread pulls from the output.
+Note for multithreaded Click: Unlike Queue, whose input and output ports need
+not be synchronized, MixedQueue requires synchronization between its LIFO
+input and its output. You will need to prevent a thread from pushing to the
+LIFO input at the same time that a different thread pulls from the output.
 
 =h length read-only
 

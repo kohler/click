@@ -24,9 +24,9 @@ The default for CAPACITY is 1000.
 
 Queue notifies interested parties when it becomes empty and when a
 formerly-empty queue receives a packet. The empty notification takes place
-some time after the queue goes empty for the first time, to prevent thrashing
-for queues that tend to hover around 1 or 2 packets. In all other respects, it
-behaves like SimpleQueue.
+some time after the queue goes empty, to prevent thrashing for queues that
+hover around 1 or 2 packets long. In all other respects, Queue behaves like
+SimpleQueue.
 
 You may also use the old element name "NotifierQueue".
 
