@@ -101,25 +101,36 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
 int
 DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int confindex = 2;
+  int confindex = 5;
   _have_sport = _have_dport = false;
 
   for(int i=0; i < conf.size(); i++){
     printf("  %s\n", ((String)conf[i]).cc());
   }
 	   
-  if (conf.size() < 3) {
+  if (conf.size() < 6) {
     errh->error("not enough parameters for DivertSocket");
     return -1;
   }
-  if (conf.size() > 6) {
+  if (conf.size() > 9) {
     errh->error("too many parameters for DivertSocket");
     return -1;
   }
 
+  // parse devicename
+  if (cp_va_parse(conf[0], this, errh, cpString, "device", &_device) < 0)
+    return -1;
+  // parse divert port number
+  if (cp_va_parse(conf[1], this, errh, cpUnsigned, "divertport", &_divertport) < 0)
+    return -1;
+  // parse rule number
+  if (cp_va_parse(conf[2], this, errh, cpUnsigned, "rulenumber", &_rulenumber) < 0)
+    return -1;
+  
+
   // parse protocol & src addr/mask
-  if ((cp_va_parse(conf[0], this, errh, cpByte, "protocol", &_protocol, cpEnd) < 0) ||
-      (cp_ip_prefix(conf[1], &_saddr, &_smask, true) < 0))
+  if ((cp_va_parse(conf[3], this, errh, cpByte, "protocol", &_protocol, cpEnd) < 0) ||
+      (cp_ip_prefix(conf[4], &_saddr, &_smask, true) < 0))
     return -1;
 
   if (_saddr.addr() == 0) {
@@ -127,20 +138,20 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  if ((_protocol != IP_PROTO_UDP && _protocol != IP_PROTO_TCP) && (conf.size() > 4)) {
+  if ((_protocol != IP_PROTO_UDP && _protocol != IP_PROTO_TCP) && (conf.size() > 7)) {
     errh->error("too many parameters for non TCP/UDP rule");
     return -1;
   }
   
   // parse src ports
   if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
-    if (parse_ports(conf[2], errh, &_sportl, &_sporth) < 0)
+    if (parse_ports(conf[5], errh, &_sportl, &_sporth) < 0)
       _have_sport = false;
     else {
       _have_sport = true;
       confindex++;
     }
-  } else if (parse_ports(conf[2], errh, &_sportl, &_sporth) >= 0) {
+  } else if (parse_ports(conf[5], errh, &_sportl, &_sporth) >= 0) {
     errh->error("ports not required for non TCP/UDP rules");
     return -1;
   }
@@ -170,7 +181,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
 
   // parse in/out
-  if (conf.size() == 6) {
+  if (conf.size() == confindex + 1) {
     if (cp_va_parse(conf[confindex], this, errh, cpString, "in/out", &_inout) < 0)
       return -1;
     if ( (_inout != "") && (_inout != "in") && (_inout != "out") ) {
@@ -237,9 +248,10 @@ DivertSocket::initialize(ErrorHandler *errh)
     dport[0]=0;
   }
 
-  sprintf(tmp, "/sbin/ipfw add 50 divert 2002 %s from %s:%s %s to %s:%s %s via fxp0",
+  sprintf(tmp, "/sbin/ipfw add %u divert %u %s from %s:%s %s to %s:%s %s %s via %s",
+	  _rulenumber, _divertport, 
 	  prot, _saddr.s().cc(), _smask.s().cc(), sport,
-	  _daddr.s().cc(), _dmask.s().cc(), dport, _inout.cc());
+	  _daddr.s().cc(), _dmask.s().cc(), dport, _inout.cc(), _device.cc() );
   printf("%s\n", tmp);
 
   //if (system("/sbin/ipfw add 50 divert 2002 ip from 18.26.4.104 to me in via fxp0") != 0) {
@@ -249,6 +261,9 @@ DivertSocket::initialize(ErrorHandler *errh)
     return -1;
   }
 
+  printf("Device  : \t%s\n", _device.cc());
+  printf("DIV port: \t%u\n", _divertport);
+  printf("Rule Num: \t%u\n", _rulenumber);
   printf("Protocol: \t%d\n", _protocol);
   printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
   printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
@@ -264,8 +279,11 @@ DivertSocket::initialize(ErrorHandler *errh)
 void 
 DivertSocket::uninitialize()
 {
+  char tmp[64];
+
   if (_fd >= 0) {
-    system("/sbin/ipfw delete 50");
+    sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
+    system(tmp);
     close (_fd);
     remove_select(_fd, SELECT_READ);
     _fd = -1;
