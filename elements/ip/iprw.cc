@@ -501,7 +501,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
   
   is.kind = INPUT_SPEC_DROP;
   
-  if (word == "nochange") {
+  if (word == "nochange" || word == "passthru" || word == "passthrough") {
     int32_t outnum = 0;
     if (rest && !cp_integer(rest, &outnum))
       return errh->error("%s: syntax error; expected `nochange [OUTPUT]'", name.cc());

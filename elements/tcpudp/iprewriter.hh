@@ -52,7 +52,7 @@ the corresponding input port. There are six forms of INPUTSPEC:
 
 Packets with no existing mapping are dropped.
 
-=item `nochange OUTPUT'
+=item `passthrough OUTPUT'
 
 Packets with no existing mapping are sent to output port OUTPUT. No mappings
 are installed.
@@ -100,8 +100,8 @@ RoundRobinIPMapper.
 =back
 
 IPRewriter drops all fragments except the first, unless those fragments
-arrived on an input port with a `nochange OUTPUT' specification. In that case,
-the fragments are emitted on output OUTPUT.
+arrived on an input port with a `passthrough OUTPUT' specification. In that
+case, the fragments are emitted on output OUTPUT.
 
 Keyword arguments determine how often stale mappings should be removed.
 

@@ -377,6 +377,9 @@ enddef;
 vardef drawconnarrow expr p =
   _apth:=p; _finarr withpen connectionpen
 enddef;
+vardef drawconnarrowna expr p =
+  draw p withpen connectionpen
+enddef;
 vardef drawdblconnarrow expr p =
   _apth:=p; _findarr withpen connectionpen
 enddef;

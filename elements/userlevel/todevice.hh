@@ -1,5 +1,5 @@
-#ifndef TODEVICE_HH
-#define TODEVICE_HH
+#ifndef CLICK_TODEVICE_HH
+#define CLICK_TODEVICE_HH
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
