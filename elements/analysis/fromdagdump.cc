@@ -553,7 +553,7 @@ String
 FromDAGDump::read_handler(Element *e, void *thunk)
 {
     FromDAGDump *fd = static_cast<FromDAGDump *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case SAMPLING_PROB_THUNK:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case ACTIVE_THUNK:
@@ -579,7 +579,7 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 {
     FromDAGDump *fd = static_cast<FromDAGDump *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case ACTIVE_THUNK: {
 	  bool active;
 	  if (cp_bool(s, &active)) {

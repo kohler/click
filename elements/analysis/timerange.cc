@@ -67,7 +67,7 @@ TimeRange::read_handler(Element *e, void *thunk)
 {
     TimeRange *tr = static_cast<TimeRange *>(e);
     StringAccum sa;
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case 0:
 	sa << tr->_first;
 	break;

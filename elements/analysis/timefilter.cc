@@ -164,7 +164,7 @@ TimeFilter::write_handler(const String &s_in, Element *e, void *thunk, ErrorHand
 {
     TimeFilter *tf = static_cast<TimeFilter *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_EXTEND_INTERVAL: {
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {

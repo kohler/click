@@ -131,7 +131,7 @@ String
 InfiniteSource::read_param(Element *e, void *vparam)
 {
   InfiniteSource *is = (InfiniteSource *)e;
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
    case 0:			// data
     return is->_data;
    case 1:			// limit
@@ -153,7 +153,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
 {
   InfiniteSource *is = (InfiniteSource *)e;
   String s = cp_uncomment(in_s);
-  switch ((int)vparam) {
+  switch ((intptr_t)vparam) {
 
    case 0: {			// data
      String data;

@@ -439,7 +439,7 @@ String
 FromFlanDump::read_handler(Element *e, void *thunk)
 {
     FromFlanDump *fd = static_cast<FromFlanDump *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case ACTIVE_THUNK:
 	return cp_unparse_bool(fd->_active) + "\n";
       case FILESIZE_THUNK: {
@@ -461,7 +461,7 @@ FromFlanDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHa
 {
     FromFlanDump *fd = static_cast<FromFlanDump *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case ACTIVE_THUNK: {
 	  bool active;
 	  if (cp_bool(s, &active)) {

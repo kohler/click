@@ -389,14 +389,14 @@ String
 ProgressBar::read_handler(Element *e, void *thunk)
 {
     ProgressBar *pb = static_cast<ProgressBar *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_BANNER:
 	return pb->_banner + "\n";
       case H_ACTIVE:
 	return cp_unparse_bool(pb->_active) + "\n";
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
-	  bool is_pos = ((int)thunk == H_POSHANDLER);
+	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
 	  StringAccum sa;
 	  for (int i = (is_pos ? pb->_first_pos_h : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos_h); i++) {
 	      if (sa.length()) sa << ' ';
@@ -415,10 +415,12 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 {
     ProgressBar *pb = static_cast<ProgressBar *>(e);
     String str = cp_uncomment(in_str);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_MARK_STOPPED:
+	pb->complete(false);
+	return 0;
       case H_MARK_DONE:
-	pb->complete((int)thunk == H_MARK_DONE);
+	pb->complete(true);
 	return 0;
       case H_BANNER:
 	pb->_banner = str;
@@ -427,7 +429,7 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
       case H_SIZEHANDLER: {
 	  Vector<String> words;
 	  cp_spacevec(str, words);
-	  bool is_pos = ((int)thunk == H_POSHANDLER);
+	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
 	  int total = (is_pos ? pb->_first_pos_h + words.size() : pb->_es.size() - pb->_first_pos_h + words.size());
 	  int offset = (is_pos ? pb->_first_pos_h : 0);
 	  

@@ -734,7 +734,7 @@ Element::read_positional_handler(Element *element, void *thunk)
 {
   Vector<String> conf;
   element->configuration(conf);
-  int no = (int)thunk;
+  int no = (intptr_t)thunk;
   if (no >= conf.size())
     return String();
   String s = conf[no];
@@ -805,7 +805,7 @@ int
 Element::reconfigure_positional_handler(const String &arg, Element *e,
 					void *thunk, ErrorHandler *errh)
 {
-  return reconfigure_handler(arg, e, (int)thunk, 0, errh);
+  return reconfigure_handler(arg, e, (intptr_t)thunk, 0, errh);
 }
 
 int

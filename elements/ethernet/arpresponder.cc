@@ -200,7 +200,7 @@ String
 ARPResponder::read_handler(Element *e, void *thunk)
 {
   ARPResponder *ar = static_cast<ARPResponder *>(e);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
 
   case 0: {			// table
     StringAccum sa;

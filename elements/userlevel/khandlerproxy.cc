@@ -184,7 +184,7 @@ KernelHandlerProxy::read_handler(Element *e, void *thunk)
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
   Router *r = e->router();
-  int handleri = (int)thunk;
+  int handleri = (intptr_t)thunk;
   const Router::Handler &h = r->handler(handleri);
 
   errno = 0;
@@ -207,7 +207,7 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
   Router *r = e->router();
-  int handleri = (int)thunk;
+  int handleri = (intptr_t)thunk;
   const Router::Handler &h = r->handler(handleri);
 
   String fn = handler_name_to_file_name(h.name());

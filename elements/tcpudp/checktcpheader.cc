@@ -141,7 +141,7 @@ String
 CheckTCPHeader::read_handler(Element *e, void *thunk)
 {
   CheckTCPHeader *c = reinterpret_cast<CheckTCPHeader *>(e);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
 
    case 0:			// drops
     return String(c->_drops) + "\n";

@@ -365,7 +365,7 @@ String
 FromNetFlowSummaryDump::read_handler(Element *e, void *thunk)
 {
     FromNetFlowSummaryDump *fd = static_cast<FromNetFlowSummaryDump *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
@@ -389,7 +389,7 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
 {
     FromNetFlowSummaryDump *fd = static_cast<FromNetFlowSummaryDump *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {

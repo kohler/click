@@ -150,7 +150,7 @@ String
 CheckICMPHeader::read_handler(Element *e, void *thunk)
 {
   CheckICMPHeader *c = reinterpret_cast<CheckICMPHeader *>(e);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
 
    case 0:			// drops
     return String(c->_drops) + "\n";

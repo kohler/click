@@ -106,7 +106,7 @@ Unqueue::write_param(const String &conf, Element *e,
 {
   Unqueue *uq = (Unqueue *)e;
   String s = cp_uncomment(conf);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
     
    case 1: {			// active
      if (!cp_bool(s, &uq->_active))

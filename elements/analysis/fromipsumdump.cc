@@ -691,7 +691,7 @@ String
 FromIPSummaryDump::read_handler(Element *e, void *thunk)
 {
     FromIPSummaryDump *fd = static_cast<FromIPSummaryDump *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case H_ACTIVE:
@@ -717,7 +717,7 @@ FromIPSummaryDump::write_handler(const String &s_in, Element *e, void *thunk, Er
 {
     FromIPSummaryDump *fd = static_cast<FromIPSummaryDump *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {

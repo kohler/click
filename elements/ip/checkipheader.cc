@@ -196,7 +196,7 @@ String
 CheckIPHeader::read_handler(Element *e, void *thunk)
 {
   CheckIPHeader *c = reinterpret_cast<CheckIPHeader *>(e);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
 
    case 0:			// drops
     return String(c->_drops) + "\n";

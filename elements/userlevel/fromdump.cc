@@ -625,7 +625,7 @@ String
 FromDump::read_handler(Element *e, void *thunk)
 {
     FromDump *fd = static_cast<FromDump *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case H_ACTIVE:
@@ -657,7 +657,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 {
     FromDump *fd = static_cast<FromDump *>(e);
     String s = cp_uncomment(s_in);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {

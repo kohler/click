@@ -50,7 +50,7 @@ int
 Notifier::initialize(Router *r)
 {
     void *&val = r->force_attachment("NotifierSignal count");
-    uint32_t nsignals = (uint32_t) val;
+    uintptr_t nsignals = (uintptr_t) val;
     if (nsignals < NUM_SIGNALS) {
 	_signal = NotifierSignal(&signals[nsignals / 32], 1 << (nsignals % 32));
 	val = (void *)(nsignals + 1);

@@ -110,7 +110,7 @@ String
 RandomSample::read_handler(Element *e, void *thunk)
 {
     RandomSample *rs = static_cast<RandomSample *>(e);
-    switch ((int)thunk) {
+    switch ((intptr_t)thunk) {
       case 0:
 	return cp_unparse_real2(rs->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case 1:

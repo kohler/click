@@ -139,7 +139,7 @@ String
 CheckUDPHeader::read_handler(Element *e, void *thunk)
 {
   CheckUDPHeader *c = reinterpret_cast<CheckUDPHeader *>(e);
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
 
    case 0:			// drops
     return String(c->_drops) + "\n";

@@ -120,7 +120,7 @@ String
 Counter::read_handler(Element *e, void *thunk)
 {
   Counter *c = (Counter *)e;
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
    case H_COUNT:
     return String(c->_count) + "\n";
    case H_BYTE_COUNT:
@@ -137,7 +137,7 @@ int
 Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandler *errh)
 {
   Counter *c = (Counter *)e;
-  switch ((int)thunk) {
+  switch ((intptr_t)thunk) {
    case H_CALL_AFTER_COUNT:
     if (cp_va_space_parse(in_str, c, errh,
 			  parse_cmd, "count trigger", &c->_count_trigger,

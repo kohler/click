@@ -151,7 +151,7 @@ static String
 read_tickets_handler(Element *e, void *thunk)
 {
   StrideSched *ss = (StrideSched *)e;
-  int port = (int)thunk;
+  int port = (intptr_t)thunk;
   return String(ss->tickets(port)) + "\n";
 }
 
@@ -159,7 +159,7 @@ static int
 write_tickets_handler(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
 {
   StrideSched *ss = (StrideSched *)e;
-  int port = (int)thunk;
+  int port = (intptr_t)thunk;
   String s = cp_uncomment(in_s);
   int tickets;
   if (!cp_integer(s, &tickets))
