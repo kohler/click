@@ -6,9 +6,8 @@
 #ifndef __linux__
 # error "I must be compiled on a Linux machine"
 #endif
-#define __KERNEL__
-#define MODULE
-#define NDEBUG 1
+#define __KERNEL__ 1
+#define MODULE 1
 
 /* Define if the Linux kernel module target will be compiled. */
 #undef HAVE_LINUXMODULE_TARGET
@@ -33,6 +32,9 @@
 
 /* Include integer type definitions. */
 #include <linux/types.h>
+
+/* Define assert macro. */
+#define assert(x) /* nada */
 
 /* Define if fast checksum functions available. */
 #define HAVE_FAST_CHECKSUM 1

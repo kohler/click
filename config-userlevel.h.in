@@ -64,6 +64,9 @@
 #endif
 #include <sys/types.h>
 
+/* Include assert macro. */
+#include <assert.h>
+
 /* Floating point arithmetic is allowed. */
 #define HAVE_FLOAT_TYPES 1
 

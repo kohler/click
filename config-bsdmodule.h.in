@@ -6,11 +6,9 @@
 #ifndef __FreeBSD__
 # error "I must be compiled on a FreeBSD machine"
 #endif
-#ifndef _KERNEL
-# define _KERNEL
-#endif
-#define MODULE
-#define NDEBUG 1
+#define KERNEL 1
+#define _KERNEL 1
+#define KLD_MODULE 1
 
 /* Define if the BSD kernel module target will be compiled. */
 #undef HAVE_BSDMODULE_TARGET
@@ -23,6 +21,9 @@
 
 /* Include integer and other type definitions. */
 #include <sys/types.h>
+
+/* Define assert macro. */
+#define assert(x) /* nada */
 
 #ifdef __cplusplus
 
