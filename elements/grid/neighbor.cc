@@ -92,7 +92,7 @@ Neighbor::push(int port, Packet *packet)
       // this src addr not already in map, so add it
       EtherAddress ea((unsigned char *) eh->ether_shost);
       _addresses.insert(ipaddr, ea);
-      //      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
+      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
     }
 
     // perform further packet processing
@@ -136,7 +136,10 @@ Neighbor::push(int port, Packet *packet)
       gh->len = sizeof(grid_hdr);
       gh->type = GRID_NBR_ENCAP;
       memcpy((unsigned char *) &gh->ip, _ipaddr.data(), 4);
-      output(1).push(packet);
+      
+      click_chatter("got packet for %s -- %s", dst.s().cc(), ethaddr->s().cc());
+
+      output(0).push(packet);
     }
   }
 }
