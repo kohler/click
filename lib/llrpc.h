@@ -16,10 +16,10 @@
 
 #if CLICK_USERLEVEL
 
-# define CLICK_LLRPC_GET_DATA(local, remote, size) -EFAULT
-# define CLICK_LLRPC_PUT_DATA(remote, local, size) -EFAULT
-# define CLICK_LLRPC_GET(local_obj, remote_addr) -EFAULT
-# define CLICK_LLRPC_PUT(remote_addr, local_obj) -EFAULT
+# define CLICK_LLRPC_GET_DATA(local, remote, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
+# define CLICK_LLRPC_PUT_DATA(remote, local, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
+# define CLICK_LLRPC_GET(local_obj, remote_addr) ((void)(local_obj), (void)(remote_addr), -EFAULT)
+# define CLICK_LLRPC_PUT(remote_addr, local_obj) ((void)(local_obj), (void)(remote_addr), -EFAULT)
 
 #elif CLICK_LINUXMODULE
 

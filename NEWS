@@ -84,6 +84,13 @@ Version 1.1
    updated and documented the format for doc comments (see
    `doc/elementdoc.7').
 
+** Added low-level RPC capability. LLRPCs are low-level handlers designed
+   for speed rather than ease of use or human-readable results. In the
+   Linux kernel module, LLRPCs are called in response to ioctl(2) commands
+   on handler files. (The user-level program doesn't support LLRPCs yet.)
+   Unlike handlers, LLRPCs can both take arguments and return results.
+   IPRateMonitor(n), for example, uses LLRPCs to report rate information.
+
 * User-level driver
 
 ** User-level Click will no longer stop by default when an InfiniteSource
