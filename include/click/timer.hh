@@ -28,6 +28,7 @@ class Timer { public:
   void initialize(Element *);
   void uninitialize();			// equivalent to unschedule()
 
+  void schedule_now();
   void schedule_at(const struct timeval &);
   void schedule_after_ms(int);
   void unschedule();
@@ -87,6 +88,12 @@ inline bool
 Timer::is_list() const
 {
   return _head == this;
+}
+
+inline void
+Timer::schedule_now()
+{
+  schedule_after_ms(0);
 }
 
 #endif
