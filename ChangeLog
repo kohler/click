@@ -1,3 +1,37 @@
+2000-10-29 Sunday 16:59  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch: better recycle skb queue
+
+2000-10-29 Sunday 12:33  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc, lookuplocalgridroute.cc:
+	minor cleanups
+
+2000-10-29 Sunday 12:14  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-el.click: [no log message]
+
+2000-10-29 Sunday 12:12  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/checkgridheader.cc: Now prints element name in
+	failed checksum alert
+
+2000-10-29 Sunday 12:11  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/printgrid.cc: Now prints element name in addition
+	to tag
+
+2000-10-29 Sunday 12:10  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: filterbyrange.cc, filterbyrange.hh: Now accepts
+	negative range parameter; means don't bother checking ranges and
+	pass all packets through
+
+2000-10-29 Sunday 12:08  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc, floodinglocquerier.hh:
+	Fixed bug in location reply handling
+
 2000-10-28 Saturday 17:46  Benjie Chen <benjie@lcs.mit.edu>
 
 	* etc/linux-2.2.16-patch: [no log message]
