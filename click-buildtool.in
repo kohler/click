@@ -345,7 +345,8 @@ fragment defining the ELEMENT_OBJS variable to the standard output.
 Usage: click-buildtool elem2make [-t TARGET] [-V] < elements.conf
 
 Options:
-  -t, --target TARGET      Set target to TARGET (either `kernel' or `user').
+  -t, --target TARGET      Set target to TARGET (`userlevel', `linuxmodule', 
+                           or `bsdmodule').
   -v, --make-variable N    Use make variable N.
   -x, --exclude FILE       Do not include FILE.
   -V, --verbose            Print more information.
@@ -362,12 +363,15 @@ EOF
     osuffix=".o"
     defmakevar="ELEMENT_OBJS"
     if test -n "$driver"; then
-	if test "$driver" = 'kernel'; then
-	    osuffix=".ko"
-	    defmakevar="K_ELEMENT_OBJS"
-	elif test "$driver" = 'user'; then
+	if test "$driver" = 'user' -o "$driver" = 'userlevel'; then
 	    osuffix=".uo"
 	    defmakevar="U_ELEMENT_OBJS"
+	elif test "$driver" = 'kernel' -o "$driver" = 'linuxmodule'; then
+	    osuffix=".ko"
+	    defmakevar="K_ELEMENT_OBJS"
+	elif test "$driver" = 'bsdmodule'; then
+	    osuffix=".bo"
+	    defmakevar="B_ELEMENT_OBJS"
 	else
 	    echo "Unknown driver $driver" 1>&2
 	    exit 1
@@ -462,9 +466,11 @@ END {
     print "#include ", file;
   }
   print "static int hatred_of_rebecca[", nrebecca, "];";
-  print "extern \"C\" int\ninit_module()\n{\n  click_provide(\"", packname, "\");";
-  print B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}";
-  print "extern \"C\" void\ncleanup_module()\n{\n", C, "  click_unprovide(\"", packname, "\");\n}";
+  print "#ifdef CLICK_BSDMODULE\nstatic int\nmodevent(module_t, int t, void *)\n{\n  if (t == MOD_LOAD) {\n#else\nextern \"C\" int\ninit_module()\n{\n#endif";
+  print "  click_provide(\"", packname, "\");\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;";
+  print "#ifdef CLICK_BSDMODULE\n  } else if (t == MOD_UNLOAD) {\n#else\n}\nextern \"C\" void\ncleanup_module()\n{\n#endif";
+  print C, "  click_unprovide(\"", packname, "\");";
+  print "#ifdef CLICK_BSDMODULE\n  return 0;\n  } else\n    return 0;\n}\nstatic moduledata_t modinfo = {\n  \"", packname, "\", modevent, 0\n};\nDECLARE_MODULE(", packname, ", modinfo, SI_SUB_PSEUDO, SI_ORDER_ANY);\n#else\n}\n#endif";
 }
 '
 
