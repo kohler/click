@@ -50,14 +50,12 @@ Index: include/linux/netdevice.h
  };
  
  
-@@ -361,6 +402,11 @@
+@@ -361,6 +402,9 @@
  extern int		unregister_netdevice(struct device *dev);
  extern int 		register_netdevice_notifier(struct notifier_block *nb);
  extern int		unregister_netdevice_notifier(struct notifier_block *nb);
 +extern int 		register_net_in(struct notifier_block *nb); /* Click */
 +extern int		unregister_net_in(struct notifier_block *nb); /* Click */
-+extern int 		register_net_out(struct notifier_block *nb); /* Click */
-+extern int		unregister_net_out(struct notifier_block *nb); /* Click */
 +extern void		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
  extern int		dev_new_index(void);
  extern struct device	*dev_get_by_index(int ifindex);
@@ -475,71 +473,16 @@ Index: net/core/dev.c
    	
    	/*
 
-Index: net/sched/sch_generic.c
---- net/sched/sch_generic.c.orig	Tue Oct 26 20:53:42 1999
-+++ net/sched/sch_generic.c	Wed May  2 12:14:36 2001
-@@ -76,6 +76,24 @@
- 	return q->q.qlen;
- }
- 
-+/*
-+ * Click hooks to be notified when a network device
-+ * is idle and could send a packet.
-+ */
-+static struct notifier_block *net_out_chain = 0;
-+
-+int
-+register_net_out(struct notifier_block *nb)
-+{
-+  return(notifier_chain_register(&net_out_chain, nb));
-+}
-+
-+int
-+unregister_net_out(struct notifier_block *nb)
-+{
-+  return(notifier_chain_unregister(&net_out_chain, nb));
-+}
-+
- /* Scan transmission queue and kick devices.
- 
-    Deficiency: slow devices (ppp) and fast ones (100Mb ethernet)
-@@ -93,9 +111,14 @@
- 	hp = &qdisc_head.forw;
- 	while ((h = *hp) != &qdisc_head) {
- 		int res = -1;
-+                int res1 = -1;
- 		struct Qdisc *q = (struct Qdisc*)h;
- 		struct device *dev = q->dev;
- 
-+                /* Click */
-+                if(dev->tbusy == 0)
-+                  res1 = notifier_call_chain(&net_out_chain, 0, dev);
-+
- 		while (!dev->tbusy && (res = qdisc_restart(dev)) < 0)
- 			/* NOTHING */;
- 
-@@ -108,7 +131,7 @@
- 		   No problem, we will unlink it during the next round.
- 		 */
- 
--		if (res == 0 && *hp == h) {
-+		if (res1 == 0 && res == 0 && *hp == h) {
- 			*hp = h->forw;
- 			h->forw = NULL;
- 			continue;
-
 Index: net/netsyms.c
 --- net/netsyms.c.orig	Sun Dec 10 19:49:44 2000
 +++ net/netsyms.c	Wed May  2 12:14:36 2001
-@@ -464,6 +464,15 @@
+@@ -464,6 +464,13 @@
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
  #endif
  
 +/* Click */
 +EXPORT_SYMBOL(register_net_in);
 +EXPORT_SYMBOL(unregister_net_in);
-+EXPORT_SYMBOL(register_net_out);
-+EXPORT_SYMBOL(unregister_net_out);
 +EXPORT_SYMBOL(ptype_dispatch);
 +struct inet_protocol *inet_get_protocol(unsigned char prot);
 +EXPORT_SYMBOL(inet_get_protocol);
@@ -547,7 +490,7 @@ Index: net/netsyms.c
  /* support for loadable net drivers */
  #ifdef CONFIG_NET
  EXPORT_SYMBOL(loopback_dev);
-@@ -487,6 +496,7 @@
+@@ -487,6 +494,7 @@
  EXPORT_SYMBOL(eth_copy_and_sum);
  EXPORT_SYMBOL(alloc_skb);
  EXPORT_SYMBOL(__kfree_skb);
