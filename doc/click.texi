@@ -4664,13 +4664,36 @@ handler. Returns false if these checks aren't met.
 @node Parsing Miscellaneous,  , Parsing Handlers, Parsing Functions
 @subsection Miscellaneous
 
-The @code{cp_milliseconds} and @code{cp_timeval} functions parse strings
+The @code{cp_seconds_as} and @code{cp_timeval} functions parse strings
 into time.
 
-@deftypefn {Parsing Function} bool cp_milliseconds (@w{const String &@var{str}}, @w{int *@var{result}})
-Parses @var{str} as a real number with 3 decimal digits of fraction.
-Fails on negative numbers. Basically equivalent to
-@code{cp_unsigned_real10(@var{str}, 3, @var{result})}.
+@deftypefn {Parsing Function} bool cp_seconds_as (@w{int @var{p}}, @w{const String &@var{str}}, @w{int *@var{result}})
+Parses @var{str} as a possibly fractional length of time in seconds. The
+returned @var{result} is measured in
+@tex
+$(@r{seconds} * 10^{-p})$;
+@end tex
+@ifnottex
+@math{(@r{seconds} * 10^-@var{p})};
+@end ifnottex
+for example, if @var{p} is 3, then @var{result} is measured in
+milliseconds, and @code{cp_seconds_as(3, "8", @var{result})} stores 8000
+in @code{*@var{result}}. 
+
+@var{Str} may contain an optional time unit suffix. Valid units are
+@samp{h} or @samp{hr} for hours, @samp{m}/@samp{min} for minutes,
+@samp{s}/@samp{sec} for seconds, @samp{ms}/@samp{msec} for milliseconds,
+@samp{us}/@samp{usec} for microseconds, and @samp{ns}/@samp{nsec} for
+nanoseconds. For example, @code{cp_seconds_as(0, "1h", @var{result})}
+stores 3600 in @code{*@var{result}}.
+
+Negative values are not allowed.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_seconds_as_milli (@w{const String &@var{str}}, @w{int *@var{result}})
+@deftypefnx {Parsing Function} bool cp_seconds_as_micro (@w{const String &@var{str}}, @w{int *@var{result}})
+Same as @code{cp_seconds_as(3, @var{s}, @var{result})} and
+@code{cp_seconds_as(6, @var{s}, @var{result})}, respectively.
 @end deftypefn
 
 @deftypefn {Parsing Function} bool cp_timeval (@w{const String &@var{str}}, @w{struct timeval *@var{result}})
@@ -4679,7 +4702,7 @@ seconds and microseconds. Textually, this looks like a nonnegative real
 number with 6 decimal digits of fraction. Stores the integer part of the
 result in @code{@var{result}->tv_sec} and the fraction part in
 @code{@var{result}->tv_usec}. Basically equivalent to
-@code{cp_unparse_real10(@var{str}, 6, &@var{result}->tv_sec,
+@code{cp_unsigned_real10(@var{str}, 6, 0, &@var{result}->tv_sec,
 &@var{result}->tv_usec)}.
 @end deftypefn
 
@@ -4793,7 +4816,11 @@ error to call any @code{cp_va} function after calling
 @multitable @columnfractions .3 .7
 @item @code{cpBool}
 @tab @code{@w{bool *@var{result}}}
-@item @code{cpMilliseconds}
+@item @code{cpSeconds}
+@tab @code{@w{int *@var{result}}}
+@item @code{cpSecondsAsMilli}
+@tab @code{@w{int *@var{result}}}
+@item @code{cpSecondsAsMicro}
 @tab @code{@w{int *@var{result}}}
 @item @code{cpTimeval}
 @tab @code{@w{struct timeval *@var{result}}}
@@ -4887,8 +4914,12 @@ error to call any @code{cp_va} function after calling
 @multitable @columnfractions .3 .7
 @item @code{cpBool}
 @tab @code{cp_bool(arg, @var{result})}
-@item @code{cpMilliseconds}
-@tab @code{cp_milliseconds(arg, @var{result})}
+@item @code{cpSeconds}
+@tab @code{cp_seconds_as(0, arg, @var{result})}
+@item @code{cpSecondsAsMilli}
+@tab @code{cp_seconds_as(3, arg, @var{result})}
+@item @code{cpSecondsAsMicro}
+@tab @code{cp_seconds_as(6, arg, @var{result})}
 @item @code{cpTimeval}
 @tab @code{cp_timeval(arg, @var{result})}
 @end multitable
