@@ -24,7 +24,7 @@
  * =h active read/write
  * Makes the element active or inactive.
  *
- * =a RandomLossage */
+ * =a RandomSample */
 
 class RandomBitErrors : public Element {
   
