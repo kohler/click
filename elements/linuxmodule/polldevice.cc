@@ -129,9 +129,10 @@ PollDevice::run_scheduled()
   /* order of && clauses important */
   while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
     _pkts_received++;
-
+#if 0
     if (_idle >= POLLDEV_IDLE_LIMIT)
       _num_idle_polldevices--; 
+#endif
     _idle = 0;
     rtm_ipackets++;
     rtm_ibytes += skb->len;
@@ -157,6 +158,7 @@ PollDevice::run_scheduled()
   _dev->clean_tx(_dev);
   _idle++;
 
+#if 0
   if (_idle >= POLLDEV_IDLE_LIMIT) {
     if (_idle == POLLDEV_IDLE_LIMIT)
       _num_idle_polldevices++;
@@ -179,7 +181,7 @@ PollDevice::run_scheduled()
       return;
     }
   }
-
+#endif 
   if (got == POLLDEV_MAX_PKTS_PER_RUN)
     adj_tickets(max_ntickets());
   else if (_idle > 2) {

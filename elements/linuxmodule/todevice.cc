@@ -41,15 +41,15 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0),
-    _pull_calls(0), _idle_calls(0), _drain_returns(0), _busy_returns(0),
-    _rejected(0), _idle(0), _pkts_sent(0), _activations(0)
+    _idle_calls(0), _busy_returns(0), _rejected(0), 
+    _idle(0), _pkts_sent(0), _activations(0)
 {
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _pull_calls(0), _idle_calls(0), _drain_returns(0), 
-    _busy_returns(0), _rejected(0), _idle(0), _pkts_sent(0), _activations(0)
+    _idle_calls(0), _busy_returns(0), _rejected(0), 
+    _idle(0), _pkts_sent(0), _activations(0)
 {
 }
 
@@ -265,11 +265,8 @@ ToDevice::tx_intr()
     }
   }
   
-  if (busy) {
+  if (busy)
     _busy_returns++;
-  } else {
-    _drain_returns++;
-  }
 
 #if CLICK_STATS >= 2
   unsigned long long c1 = click_get_cycles();
@@ -277,7 +274,7 @@ ToDevice::tx_intr()
   _self_cycles += c1 - c0;
 #endif
   
-  if (sent == TODEV_MAX_PKTS_PER_RUN)
+  if (busy)
     adj_tickets(max_ntickets());
   else if (_idle > 2) {
     int n = ntickets()/4;
@@ -285,10 +282,12 @@ ToDevice::tx_intr()
     adj_tickets(0-n);
   }
 
+#if 0
 #if CLICK_POLLDEV
   if (busy || _idle <= TODEV_IDLE_LIMIT || tx_left != 0)
 #else
   if (busy || _idle <= TODEV_IDLE_LIMIT)
+#endif
 #endif
     reschedule();
 }
@@ -340,7 +339,6 @@ ToDevice::wants_packet_upstream() const
 void
 ToDevice::run_scheduled()
 {
-  _pull_calls++;
   tx_intr();
 }
 
@@ -349,9 +347,7 @@ ToDevice_read_calls(Element *f, void *)
 {
   ToDevice *kw = (ToDevice *)f;
   return
-    String(kw->_pull_calls) + " pull calls\n" +
     String(kw->_idle_calls) + " tx ready calls\n" +
-    String(kw->_drain_returns) + " queue empty returns\n" +
     String(kw->_busy_returns) + " device busy returns\n" +
     String(kw->_rejected) + " hard_start rejections\n" +
     String(kw->_activations) + " transmit activations\n" +

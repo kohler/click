@@ -47,24 +47,14 @@ click_sched(void *thunk)
     Router *current_router = (Router*) thunk;
     current->session = 1;
     current->pgrp = 1;
-    sprintf(current->comm, "click_sched");
-    
-    while(current_router->driver())
-    {
-	if (signal_pending(current)) 
-	{ 
-#if why_doesnt_this_work 
-	    if (sigismember(&current->signal,SIGKILL))
-#endif 
-		break; 
-#if why_doesnt_this_work
-	    flush_signals(current);
-#endif
-	}
+    sprintf(current->comm, "click");
+   
+    while(current_router->driver()) {
+	if (signal_pending(current)) break; 
     }
 
     click_sched_pid = -1;
-    printk("click_sched: router stopped, exiting!\n");
+    printk("click: router stopped, exiting!\n");
     return 0;
 }
 
@@ -74,17 +64,15 @@ start_click_sched(ErrorHandler *kernel_errh)
 {
     extern Router *current_router;
 
-    if (click_sched_pid > 0)
-    {
-	kernel_errh->error("another click_sched running.\n");
+    if (click_sched_pid > 0) {
+	kernel_errh->error("another click thread running.\n");
 	return;
     }
     click_sched_pid = kernel_thread
 	(click_sched, current_router, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-    if (click_sched_pid < 0)
-    {
+    if (click_sched_pid < 0) {
 	kernel_errh->error
-	    ("cannot create kernel thread, not running click_sched.\n");
+	    ("cannot create kernel thread.\n");
 	return;
     }
 }
@@ -93,8 +81,7 @@ start_click_sched(ErrorHandler *kernel_errh)
 extern "C" void
 kill_click_sched()
 {
-    if (click_sched_pid > 0)
-    {
+    if (click_sched_pid > 0) {
 	kill_proc(click_sched_pid, SIGKILL, 1);
 
 	/* wait for thread to die - paranoid =) */
@@ -102,6 +89,5 @@ kill_click_sched()
 	    schedule();
 	    asm volatile ("" : : : "memory");
 	}
-	// tulip_print_stats();
     }
 }

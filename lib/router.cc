@@ -816,6 +816,7 @@ Router::wait()
 
 #ifdef CLICK_POLLDEV
 
+#if 0
   if (_waiting_elements.size() == 0) return;
 
   /* set state to be interruptible, so if in between now and actually waiting
@@ -837,6 +838,7 @@ Router::wait()
     Element *f = _waiting_elements[i];
     f->woke_up();
   }
+#endif
 
 #endif /* CLICK_POLLDEV */
 
@@ -851,7 +853,7 @@ Router::run_scheduled()
 {
   ElementLink *fl;
  
-  while (fl=scheduled_next(), fl != this) {
+  while (fl=scheduled_next(), fl != this && !_please_stop_driver) {
     // click_chatter("running %s", ((Element*)fl)->declaration().cc());
     fl->unschedule();
     ((Element *)fl)->run_scheduled();

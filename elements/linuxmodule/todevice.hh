@@ -57,9 +57,7 @@ class ToDevice : public Element {
   bool tx_intr();
 
   // Statistics.
-  int _pull_calls;   // # of times please_pull() called.
   int _idle_calls;   // # of times called because driver was idle.
-  int _drain_returns;// # of times returned because queue was empty.
   int _busy_returns; // # of times returned because dev->tbusy.
   int _rejected;     // # of packets rejected by hard_start_xmit().
   int _pkts_sent;    // # number of packet sent
