@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/element.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/element.hh" -*-
 /*
  * element.{cc,hh} -- the Element base class
  * Eddie Kohler
@@ -125,70 +125,70 @@ Element::landmark() const
 void
 Element::set_nports(int new_ninputs, int new_noutputs)
 {
-  // exit on bad counts, or if already initialized
-  if (new_ninputs < 0 || new_noutputs < 0 || _ports0[0].initialized())
-    return;
+    // exit on bad counts, or if already initialized
+    if (new_ninputs < 0 || new_noutputs < 0 || _ports0[0].initialized())
+	return;
   
-  // decide if inputs & outputs were inlined
-  bool old_in_inline =
-    (_inputs == _ports0);
-  bool old_out_inline =
-    (_outputs == _ports0 || _outputs == _ports0 + _ninputs);
+    // decide if inputs & outputs were inlined
+    bool old_in_inline =
+	(_inputs == _ports0);
+    bool old_out_inline =
+	(_outputs == _ports0 || _outputs == _ports0 + _ninputs);
 
-  // decide if inputs & outputs should be inlined
-  bool new_in_inline =
-    (new_ninputs == 0
-     || new_ninputs + new_noutputs <= INLINE_PORTS
-     || (new_ninputs <= INLINE_PORTS && new_noutputs > INLINE_PORTS)
-     || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
-	 && processing() == PULL));
-  bool new_out_inline =
-    (new_noutputs == 0
-     || new_ninputs + new_noutputs <= INLINE_PORTS
-     || (new_noutputs <= INLINE_PORTS && !new_in_inline));
+    // decide if inputs & outputs should be inlined
+    bool new_in_inline =
+	(new_ninputs == 0
+	 || new_ninputs + new_noutputs <= INLINE_PORTS
+	 || (new_ninputs <= INLINE_PORTS && new_noutputs > INLINE_PORTS)
+	 || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
+	     && processing() == PULL));
+    bool new_out_inline =
+	(new_noutputs == 0
+	 || new_ninputs + new_noutputs <= INLINE_PORTS
+	 || (new_noutputs <= INLINE_PORTS && !new_in_inline));
 
-  // create new port arrays
-  Port *new_inputs =
-    (new_in_inline ? _ports0 : new Port[new_ninputs]);
-  if (!new_inputs)		// out of memory -- return
-    return;
+    // create new port arrays
+    Port *new_inputs =
+	(new_in_inline ? _ports0 : new Port[new_ninputs]);
+    if (!new_inputs)		// out of memory -- return
+	return;
 
-  Port *new_outputs =
-    (new_out_inline ? (new_in_inline ? _ports0 + new_ninputs : _ports0)
-     : new Port[new_noutputs]);
-  if (!new_outputs) {		// out of memory -- return
-    if (!new_in_inline)
-      delete[] new_inputs;
-    return;
-  }
+    Port *new_outputs =
+	(new_out_inline ? (new_in_inline ? _ports0 + new_ninputs : _ports0)
+	 : new Port[new_noutputs]);
+    if (!new_outputs) {		// out of memory -- return
+	if (!new_in_inline)
+	    delete[] new_inputs;
+	return;
+    }
 
-  // install information
-  if (!old_in_inline)
-    delete[] _inputs;
-  if (!old_out_inline)
-    delete[] _outputs;
-  _inputs = new_inputs;
-  _outputs = new_outputs;
-  _ninputs = new_ninputs;
-  _noutputs = new_noutputs;
+    // install information
+    if (!old_in_inline)
+	delete[] _inputs;
+    if (!old_out_inline)
+	delete[] _outputs;
+    _inputs = new_inputs;
+    _outputs = new_outputs;
+    _ninputs = new_ninputs;
+    _noutputs = new_noutputs;
 }
 
 void
 Element::set_ninputs(int count)
 {
-  set_nports(count, _noutputs);
+    set_nports(count, _noutputs);
 }
 
 void
 Element::set_noutputs(int count)
 {
-  set_nports(_ninputs, count);
+    set_nports(_ninputs, count);
 }
 
 bool
 Element::ports_frozen() const
 {
-  return _ports0[0].initialized();
+    return _ports0[0].initialized();
 }
 
 void
@@ -204,41 +204,41 @@ Element::notify_noutputs(int)
 void
 Element::initialize_ports(const int *in_v, const int *out_v)
 {
-  // always initialize _ports0[0] so set_nports will know whether to quit
-  if (_inputs != _ports0 && _outputs != _ports0)
-    _ports0[0] = Port(this, 0, -1);
+    // always initialize _ports0[0] so set_nports will know whether to quit
+    if (_inputs != _ports0 && _outputs != _ports0)
+	_ports0[0] = Port(this, 0, -1);
   
-  for (int i = 0; i < ninputs(); i++) {
-    // allowed iff in_v[i] == VPULL
-    int port = (in_v[i] == VPULL ? 0 : -1);
-    _inputs[i] = Port(this, 0, port);
-  }
+    for (int i = 0; i < ninputs(); i++) {
+	// allowed iff in_v[i] == VPULL
+	int port = (in_v[i] == VPULL ? 0 : -1);
+	_inputs[i] = Port(this, 0, port);
+    }
   
-  for (int o = 0; o < noutputs(); o++) {
-    // allowed iff out_v[o] != VPULL
-    int port = (out_v[o] == VPULL ? -1 : 0);
-    _outputs[o] = Port(this, 0, port);
-  }
+    for (int o = 0; o < noutputs(); o++) {
+	// allowed iff out_v[o] != VPULL
+	int port = (out_v[o] == VPULL ? -1 : 0);
+	_outputs[o] = Port(this, 0, port);
+    }
 }
 
 int
 Element::connect_input(int i, Element *f, int port)
 {
-  if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
-    _inputs[i] = Port(this, f, port);
-    return 0;
-  } else
-    return -1;
+    if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
+	_inputs[i] = Port(this, f, port);
+	return 0;
+    } else
+	return -1;
 }
 
 int
 Element::connect_output(int o, Element *f, int port)
 {
-  if (o >= 0 && o < noutputs() && _outputs[o].allowed()) {
-    _outputs[o] = Port(this, f, port);
-    return 0;
-  } else
-    return -1;
+    if (o >= 0 && o < noutputs() && _outputs[o].allowed()) {
+	_outputs[o] = Port(this, f, port);
+	return 0;
+    } else
+	return -1;
 }
 
 // FLOW
@@ -246,142 +246,142 @@ Element::connect_output(int o, Element *f, int port)
 const char *
 Element::flow_code() const
 {
-  return COMPLETE_FLOW;
+    return COMPLETE_FLOW;
 }
 
 static void
 skip_flow_code(const char *&p)
 {
-  if (*p != '/' && *p != 0) {
-    if (*p == '[') {
-      for (p++; *p != ']' && *p; p++)
-	/* nada */;
-      if (*p)
-	p++;
-    } else
-      p++;
-  }
+    if (*p != '/' && *p != 0) {
+	if (*p == '[') {
+	    for (p++; *p != ']' && *p; p++)
+		/* nada */;
+	    if (*p)
+		p++;
+	} else
+	    p++;
+    }
 }
 
 static int
 next_flow_code(const char *&p, int port, Bitvector &code,
 	       ErrorHandler *errh, const Element *e)
 {
-  if (*p == '/' || *p == 0) {
-    // back up to last code character
-    if (p[-1] == ']') {
-      for (p -= 2; *p != '['; p--)
-	/* nada */;
-    } else
-      p--;
-  }
+    if (*p == '/' || *p == 0) {
+	// back up to last code character
+	if (p[-1] == ']') {
+	    for (p -= 2; *p != '['; p--)
+		/* nada */;
+	} else
+	    p--;
+    }
 
-  code.assign(256, false);
+    code.assign(256, false);
 
-  if (*p == '[') {
-    bool negated = false;
-    if (p[1] == '^')
-      negated = true, p++;
-    for (p++; *p != ']' && *p; p++) {
-      if (isalpha(*p))
+    if (*p == '[') {
+	bool negated = false;
+	if (p[1] == '^')
+	    negated = true, p++;
+	for (p++; *p != ']' && *p; p++) {
+	    if (isalpha(*p))
+		code[*p] = true;
+	    else if (*p == '#')
+		code[port + 128] = true;
+	    else if (errh)
+		errh->error("'%{element}' flow code: invalid character '%c'", e, *p);
+	}
+	if (negated)
+	    code.negate();
+	if (!*p) {
+	    if (errh)
+		errh->error("'%{element}' flow code: missing ']'", e);
+	    p--;			// don't skip over final '\0'
+	}
+    } else if (isalpha(*p))
 	code[*p] = true;
-      else if (*p == '#')
+    else if (*p == '#')
 	code[port + 128] = true;
-      else if (errh)
-	errh->error("`%{element}' flow code: invalid character `%c'", e, *p);
+    else {
+	if (errh)
+	    errh->error("'%{element}' flow code: invalid character '%c'", e, *p);
+	p++;
+	return -1;
     }
-    if (negated)
-      code.negate();
-    if (!*p) {
-      if (errh)
-	errh->error("`%{element}' flow code: missing `]'", e);
-      p--;			// don't skip over final '\0'
-    }
-  } else if (isalpha(*p))
-    code[*p] = true;
-  else if (*p == '#')
-    code[port + 128] = true;
-  else {
-    if (errh)
-      errh->error("`%{element}' flow code: invalid character `%c'", e, *p);
-    p++;
-    return -1;
-  }
 
-  p++;
-  return 0;
+    p++;
+    return 0;
 }
 
 void
 Element::forward_flow(int input_port, Bitvector *bv) const
 {
-  const char *f = flow_code();
-  if (input_port < 0 || input_port >= ninputs()) {
+    const char *f = flow_code();
+    if (input_port < 0 || input_port >= ninputs()) {
+	bv->assign(noutputs(), false);
+	return;
+    } else if (!f || f == COMPLETE_FLOW) {
+	bv->assign(noutputs(), true);
+	return;
+    }
+
     bv->assign(noutputs(), false);
-    return;
-  } else if (!f || f == COMPLETE_FLOW) {
-    bv->assign(noutputs(), true);
-    return;
-  }
-
-  bv->assign(noutputs(), false);
-  ErrorHandler *errh = ErrorHandler::default_handler();
+    ErrorHandler *errh = ErrorHandler::default_handler();
   
-  const char *f_in = f;
-  const char *f_out = strchr(f, '/');
-  if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%{element}' flow code: missing or bad `/'", this);
-    return;
-  }
-  f_out++;
+    const char *f_in = f;
+    const char *f_out = strchr(f, '/');
+    if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+	errh->error("'%{element}' flow code: missing or bad '/'", this);
+	return;
+    }
+    f_out++;
   
-  Bitvector in_code;
-  for (int i = 0; i < input_port; i++)
-    skip_flow_code(f_in);
-  next_flow_code(f_in, input_port, in_code, errh, this);
+    Bitvector in_code;
+    for (int i = 0; i < input_port; i++)
+	skip_flow_code(f_in);
+    next_flow_code(f_in, input_port, in_code, errh, this);
 
-  Bitvector out_code;
-  for (int i = 0; i < noutputs(); i++) {
-    next_flow_code(f_out, i, out_code, errh, this);
-    if (in_code.nonzero_intersection(out_code))
-      (*bv)[i] = true;
-  }
+    Bitvector out_code;
+    for (int i = 0; i < noutputs(); i++) {
+	next_flow_code(f_out, i, out_code, errh, this);
+	if (in_code.nonzero_intersection(out_code))
+	    (*bv)[i] = true;
+    }
 }
 
 void
 Element::backward_flow(int output_port, Bitvector *bv) const
 {
-  const char *f = flow_code();
-  if (output_port < 0 || output_port >= noutputs()) {
+    const char *f = flow_code();
+    if (output_port < 0 || output_port >= noutputs()) {
+	bv->assign(ninputs(), false);
+	return;
+    } else if (!f || f == COMPLETE_FLOW) {
+	bv->assign(ninputs(), true);
+	return;
+    }
+
     bv->assign(ninputs(), false);
-    return;
-  } else if (!f || f == COMPLETE_FLOW) {
-    bv->assign(ninputs(), true);
-    return;
-  }
-
-  bv->assign(ninputs(), false);
-  ErrorHandler *errh = ErrorHandler::default_handler();
+    ErrorHandler *errh = ErrorHandler::default_handler();
   
-  const char *f_in = f;
-  const char *f_out = strchr(f, '/');
-  if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%{element}' flow code: missing or bad `/'", this);
-    return;
-  }
-  f_out++;
+    const char *f_in = f;
+    const char *f_out = strchr(f, '/');
+    if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+	errh->error("'%{element}' flow code: missing or bad '/'", this);
+	return;
+    }
+    f_out++;
   
-  Bitvector out_code;
-  for (int i = 0; i < output_port; i++)
-    skip_flow_code(f_out);
-  next_flow_code(f_out, output_port, out_code, errh, this);
+    Bitvector out_code;
+    for (int i = 0; i < output_port; i++)
+	skip_flow_code(f_out);
+    next_flow_code(f_out, output_port, out_code, errh, this);
 
-  Bitvector in_code;
-  for (int i = 0; i < ninputs(); i++) {
-    next_flow_code(f_in, i, in_code, errh, this);
-    if (in_code.nonzero_intersection(out_code))
-      (*bv)[i] = true;
-  }
+    Bitvector in_code;
+    for (int i = 0; i < ninputs(); i++) {
+	next_flow_code(f_in, i, in_code, errh, this);
+	if (in_code.nonzero_intersection(out_code))
+	    (*bv)[i] = true;
+    }
 }
 
 // PUSH OR PULL PROCESSING
@@ -389,74 +389,75 @@ Element::backward_flow(int output_port, Bitvector *bv) const
 const char *
 Element::processing() const
 {
-  return AGNOSTIC;
+    return AGNOSTIC;
 }
 
 static int
 next_processing_code(const char *&p, ErrorHandler *errh)
 {
-  switch (*p) {
+    switch (*p) {
     
-   case 'h': case 'H':
-    p++;
-    return Element::VPUSH;
+      case 'h': case 'H':
+	p++;
+	return Element::VPUSH;
     
-   case 'l': case 'L':
-    p++;
-    return Element::VPULL;
+      case 'l': case 'L':
+	p++;
+	return Element::VPULL;
     
-   case 'a': case 'A':
-    p++;
-    return Element::VAGNOSTIC;
+      case 'a': case 'A':
+	p++;
+	return Element::VAGNOSTIC;
 
-   case '/': case 0:
-    return -2;
+      case '/': case 0:
+	return -2;
 
-   default:
-    if (errh) errh->error("invalid character `%c' in processing code", *p);
-    p++;
-    return -1;
+      default:
+	if (errh)
+	    errh->error("invalid character '%c' in processing code", *p);
+	p++;
+	return -1;
     
-  }
+    }
 }
 
 void
 Element::processing_vector(int *in_v, int *out_v, ErrorHandler *errh) const
 {
-  const char *p_in = processing();
-  int val = 0;
+    const char *p_in = processing();
+    int val = 0;
 
-  const char *p = p_in;
-  int last_val = 0;
-  for (int i = 0; i < ninputs(); i++) {
-    if (last_val >= 0)
-      last_val = next_processing_code(p, errh);
-    if (last_val >= 0)
-      val = last_val;
-    in_v[i] = val;
-  }
+    const char *p = p_in;
+    int last_val = 0;
+    for (int i = 0; i < ninputs(); i++) {
+	if (last_val >= 0)
+	    last_val = next_processing_code(p, errh);
+	if (last_val >= 0)
+	    val = last_val;
+	in_v[i] = val;
+    }
 
-  while (*p && *p != '/')
-    p++;
-  if (!*p)
-    p = p_in;
-  else
-    p++;
+    while (*p && *p != '/')
+	p++;
+    if (!*p)
+	p = p_in;
+    else
+	p++;
 
-  last_val = 0;
-  for (int i = 0; i < noutputs(); i++) {
-    if (last_val >= 0)
-      last_val = next_processing_code(p, errh);
-    if (last_val >= 0)
-      val = last_val;
-    out_v[i] = val;
-  }
+    last_val = 0;
+    for (int i = 0; i < noutputs(); i++) {
+	if (last_val >= 0)
+	    last_val = next_processing_code(p, errh);
+	if (last_val >= 0)
+	    val = last_val;
+	out_v[i] = val;
+    }
 }
 
 const char *
 Element::flags() const
 {
-  return "";
+    return "";
 }
 
 // CLONING AND CONFIGURING
@@ -464,19 +465,19 @@ Element::flags() const
 int
 Element::configure_phase() const
 {
-  return CONFIGURE_PHASE_DEFAULT;
+    return CONFIGURE_PHASE_DEFAULT;
 }
 
 int
 Element::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh, cpEnd);
+    return cp_va_parse(conf, this, errh, cpEnd);
 }
 
 int
 Element::initialize(ErrorHandler *)
 {
-  return 0;
+    return 0;
 }
 
 void
@@ -582,6 +583,12 @@ void
 Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 {
   Router::add_write_handler(this, name, h, thunk);
+}
+
+void
+Element::add_select_handler(const String &name, SelectHandler h, void *thunk)
+{
+  Router::add_select_handler(this, name, h, thunk);
 }
 
 static String
