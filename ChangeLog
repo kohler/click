@@ -1,3 +1,49 @@
+2001-06-26 Tuesday 13:49  kolya
+
+	* elements/linuxmodule/: fromdevice.cc (1.61), fromlinux.cc (1.32),
+	polldevice.cc (1.112), todevice.cc (1.111), tolinux.cc (1.27): Only
+	use dev_put/dev_hold on 2.4 kernels, and dev_put/dev_hold on
+	interface up/down events.
+
+2001-06-26 Tuesday 13:36  kolya
+
+	* linuxmodule/sched.cc (1.28): Avoid a deadlock condition where the
+	Click configuration executes and exits before the parent thread
+	gets a chance to run and release click_thread_spinlock.
+
+2001-06-26 Tuesday 13:34  kolya
+
+	* lib/glue.cc (1.22): Some additional checking to report
+	doubly-freed chunks in debug mode.
+
+2001-06-26 Tuesday 13:26  kolya
+
+	* elements/linuxmodule/fromlinux.cc (1.31), include/click/sync.hh
+	(1.7): Port to 2.4 kernels.
+
+2001-06-26 Tuesday 13:24  kolya
+
+	* elements/linuxmodule/polldevice.cc (1.111): Properly reduce
+	refcount when we're done using the device.
+
+2001-06-26 Tuesday 13:24  kolya
+
+	* elements/linuxmodule/todevice.cc (1.110): Properly reduce
+	refcount on the device when we're done using it.  Port to 2.4
+	kernel.
+
+2001-06-26 Tuesday 13:22  kolya
+
+	* elements/linuxmodule/: tolinux.cc (1.26), tolinux.hh (1.17):
+	Properly reduce the refcount on the interface when we're done using
+	it.
+
+2001-06-26 Tuesday 13:13  kolya
+
+	* etc/linux-2.4.4-patch (1.2): Fix locking bug in ARP queries in
+	the 2.4.4 kernel, and port the polling extensions for tulip driver
+	to 2.4.4.
+
 2001-06-26 Tuesday 11:20  kolya
 
 	* include/click/.cvsignore (1.2): pathvars.h is also automatically
