@@ -320,7 +320,7 @@ IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
   
   StringAccum sa;
   for (Mapping *m = rw->_tcp_done; m; m = m->free_next()) {
-    if (!m->is_reverse())
+    if (m->session_over())
       sa << m->s() << "\n";
   }
   return sa.take_string();
