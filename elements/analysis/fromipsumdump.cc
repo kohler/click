@@ -24,6 +24,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
 #include <clicknet/tcp.h>
@@ -301,6 +302,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
     iph->ip_off = 0;
     
     String line;
+    StringAccum payload;
     
     while (1) {
 
@@ -326,6 +328,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	uint32_t byte_count = 0;
 	uint32_t payload_len = 0;
 	bool have_payload_len = false;
+	bool have_payload = false;
 	
 	for (int i = 0; pos < len && i < _contents.size(); i++) {
 	    int original_pos = pos;
@@ -448,6 +451,27 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		}
 		break;
 
+	      case W_PAYLOAD:
+		if (data[pos] == '\"') {
+		    payload.clear();
+		    int fpos = pos + 1;
+		    for (pos++; pos < len && data[pos] != '\"'; pos++)
+			if (data[pos] == '\\' && pos < len - 1) {
+			    payload.append(data + fpos, pos - fpos);
+			    fpos = cp_process_backslash(data, pos, len, payload);
+			    pos = fpos - 1; // account for loop increment
+			}
+		    payload.append(data + fpos, pos - fpos);
+		    // bag payload if it didn't parse correctly
+		    if (pos >= len || data[pos] != '\"')
+			pos = original_pos;
+		    else {
+			have_payload = have_payload_len = true;
+			payload_len = payload.length();
+		    }
+		}
+		break;
+		
 	    }
 
 	    // check whether we correctly parsed something
@@ -558,7 +582,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    q->take(sizeof(click_tcp) - sizeof(click_udp));
 	else
 	    q->take(sizeof(click_tcp));
-	if (byte_count) {
+	if (have_payload) {	// XXX what if byte_count indicates IP options?
+	    iph->ip_len = ntohs(q->length() + payload.length());
+	    if ((q = q->put(payload.length())))
+		memcpy(q->transport_header() + sizeof(click_tcp), payload.data(), payload.length());
+	} else if (byte_count) {
 	    iph->ip_len = ntohs(byte_count);
 	    SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
 	} else if (have_payload_len) {

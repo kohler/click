@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
+#include <math.h>
 #include "elements/grid/filterbyrange.hh"
 
 RadioSim::RadioSim()

@@ -24,6 +24,7 @@ bool cp_is_word(const String &);
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 String cp_uncomment(const String &);
+int cp_process_backslash(const char *, int pos, int len, StringAccum &);
 
 // argument lists <-> lists of arguments
 void cp_argvec(const String &, Vector<String> &);

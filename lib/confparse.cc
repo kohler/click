@@ -225,8 +225,8 @@ cp_uncomment(const String &str)
   return partial_uncomment(str, 0, 0);
 }
 
-static int
-process_backslash(const char *s, int i, int len, StringAccum &sa)
+int
+cp_process_backslash(const char *s, int i, int len, StringAccum &sa)
 {
   assert(i < len - 1 && s[i] == '\\');
   
@@ -337,7 +337,7 @@ cp_unquote(const String &in_str)
       if (i < len - 1 && (quote_state == '\"'
 			  || (quote_state == 0 && s[i+1] == '<'))) {
 	sa << str.substring(start, i - start);
-	start = process_backslash(s, i, len, sa);
+	start = cp_process_backslash(s, i, len, sa);
 	i = start - 1;
       }
       break;
