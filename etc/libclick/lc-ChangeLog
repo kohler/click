@@ -1,3 +1,7 @@
+2002-10-24 Thursday 17:32  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/glue.cc: __cxa_pure_virtual required by newer GCCs
+
 2002-10-22 Tuesday 13:22  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4, click-compile.in: autoconf-2.53 support
