@@ -24,7 +24,7 @@ TimeSortedSched responds to pull requests by returning the chronologically
 next packet pulled from its inputs, determined by packet timestamps.
 
 TimeSortedSched listens for notification from its inputs to avoid useless
-pulls, and provides notification for its output.
+pulls, and provides notification for its outputs.
 
 Keyword arguments are:
 
@@ -32,9 +32,8 @@ Keyword arguments are:
 
 =item STOP
 
-Boolean. If true, stop the driver when there are no packets available (and the
-upstream notifiers indicate that no packets will become available soon).
-Default is false.
+Boolean. If true, stop the driver when there are no packets available
+upstream. Default is false.
 
 =back
 
