@@ -1,3 +1,12 @@
+2002-01-02 Wednesday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-pretty/Makefile.in (1.2),
+	click-pretty/click-pretty.cc (1.8), click-pretty/html.cc (1.1),
+	click-pretty/html.hh (1.1), lib/eclasst.cc (1.9), lib/eclasst.hh
+	(1.5), lib/elementt.hh (1.21), lib/lexert.cc (1.44),
+	lib/lexertinfo.cc (1.4), lib/lexertinfo.hh (1.5), lib/routert.cc
+	(1.57), lib/routert.hh (1.48): click-pretty updates: getting there!
+
 2002-01-01 Tuesday 23:13  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-pretty/: click-pretty.cc (1.6), click-pretty.cc
