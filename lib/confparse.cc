@@ -1781,6 +1781,7 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
 #ifndef CLICK_TOOL
   return PortInfo::query(str, ip_p, *return_value, context);
 #else
+  (void)ip_p;
   return false;
 #endif
 }

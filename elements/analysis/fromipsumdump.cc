@@ -942,8 +942,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		else if (*data == '.')
 		    data++;
 		else
-		    while (data < end && tcp_flag_mapping[*data]) {
-			u1 |= 1 << (tcp_flag_mapping[*data] - 1);
+		    while (data < end && tcp_flag_mapping[(unsigned char)*data]) {
+			u1 |= 1 << (tcp_flag_mapping[(unsigned char)*data] - 1);
 			data++;
 		    }
 		break;
