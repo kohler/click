@@ -1,3 +1,12 @@
+2002-06-03 Monday 02:58  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/toipsumdump.hh (1.15): documentation nitlets
+
+2002-06-03 Monday 02:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: toipsumdump.cc (1.17), toipsumdump.hh (1.14):
+	add CArEFUL_TRUNC option, to ignore truncated IP packets optionally
+
 2002-06-03 Monday 02:30  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.20), toipsumdump.hh
