@@ -1,3 +1,21 @@
+2003-07-23 Wednesday 14:57  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.hh (1.21): don't return objects of void
+	type
+
+2003-07-23 Wednesday 14:57  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipratemon.hh (1.66): s/struct Stats/Stats/
+
+2003-07-23 Wednesday 14:57  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/classifier.cc (1.47): idiom change to avoid
+	warnings on non-GCC
+
+2003-07-23 Wednesday 14:56  Eddie Kohler <kohler@icir.org>
+
+	* lib/clp.c (1.13): change assertion idiom
+
 2003-07-22 Tuesday 19:02  Eddie Kohler <kohler@icir.org>
 
 	* elements/: standard/simplequeue.cc (1.6), standard/simplequeue.hh
