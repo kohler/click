@@ -1,3 +1,7 @@
+2002-01-08 Tuesday 15:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutecb.hh (1.6): nitlet
+
 2002-01-07 Monday 18:12  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/bitvector.hh (1.5): fix Bitvector bug caught by
