@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../include/click/standard/errorelement.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../include/click/standard/errorelement.hh" -*-
 /*
  * errorelement.{cc,hh} -- an element that does absolutely nothing
  * Used as a placeholder for undefined element classes.
@@ -19,43 +19,42 @@
 
 #include <click/config.h>
 #include <click/standard/errorelement.hh>
-#include <click/bitvector.hh>
 CLICK_DECLS
 
 ErrorElement::ErrorElement()
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 ErrorElement::~ErrorElement()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 void
 ErrorElement::notify_ninputs(int i)
 {
-  set_ninputs(i);
+    set_ninputs(i);
 }
 
 void
 ErrorElement::notify_noutputs(int i)
 {
-  set_noutputs(i);
+    set_noutputs(i);
 }
 
 int
 ErrorElement::configure(Vector<String> &, ErrorHandler *)
 {
-  /* ignore any configuration arguments */
-  return 0;
+    /* ignore any configuration arguments */
+    return 0;
 }
 
 int
 ErrorElement::initialize(ErrorHandler *)
 {
-  /* always fail */
-  return -1;
+    /* always fail */
+    return -1;
 }
 
 CLICK_ENDDECLS
