@@ -16,7 +16,7 @@ wvlan :: FromDevice(WI_NET_DEVICE, 0);
 to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
 
 // IP interfaces on gateway machine
-tun1 :: KernelTap(GW_IP/GW_NETMASK, GW_REAL_IP); // gateway's regular address
+tun1 :: KernelTap(GW_IP/GW_NETMASK, GW_REAL_IP, HEADROOM); // gateway's regular address
 to_tun1 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun1;
 tun1 -> from_tun1 :: Strip(14);
 
@@ -72,8 +72,6 @@ wvlan_demux [0]
 -> grid_demux [0]
 -> [0] lr;
 
-grid_demux [2] -> [0] lr; // forward query reply packets like encap packets
-loc_repl -> [0] lr; // forward query packets initiated by us
 
 check_grid [1]-> Print(bad_grid_hdr) -> Discard;
 // fr [1] -> Discard; // out of range
@@ -81,9 +79,19 @@ wvlan_demux [1] -> Discard; // not a grid packet
 
 query_demux :: Classifier(48/GRID_HEX_IP, // loc query for us
 			  -);
+reply_demux :: Classifier(48/GRID_HEX_IP, // loc reply for us
+			  -);
+
 grid_demux [1] -> query_demux;
-query_demux [0] -> loc_repl; // reply to this query
-query_demux [1] -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
+grid_demux [2] -> reply_demux; 
+
+reply_demux [0] -> [1] fq; // handle reply to our loc query
+reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
+
+loc_repl -> [0] lr; // forward loc reply packets initiated by us
+
+query_demux [0] -> PrintGrid(qd0) -> loc_repl; // reply to this query
+query_demux [1] -> PrintGrid(qd1) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
 
 
 ip_cl [0] -> to_tun1;
