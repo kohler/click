@@ -3,16 +3,20 @@
 
 /*
  * =c
- * IPFragmenter(MTU)
+ * IPFragmenter(MTU, [HONOR_DF])
  * =s IP
  * fragments large IP packets
  * =d
  *
  * Expects IP packets as input. If the IP packet size is <= MTU, just emits
  * the packet on output 0. If the size is greater than MTU and the
- * don't-fragment bit (DF) isn't set, splits into fragments emitted on output
- * 0. If DF is set and the packet size is greater than MTU, sends to output 1.
+ * don't-fragment bit (DF) isn't set or HONOR_DF is false, IPFragmenter
+ * splits the packet into fragments emitted on output 0. If DF is set,
+ * HONOR_DF is true, and the packet size is greater than MTU, sends to 
+ * output 1.
  * 
+ * The default value for HONOR_DF is true.
+ *
  * Ordinarily output 1 is connected to an ICMPError element
  * with type 3 (UNREACH) and code 4 (NEEDFRAG).
  *
@@ -33,6 +37,7 @@
 
 class IPFragmenter : public Element {
 
+  bool _honor_df;
   unsigned _mtu;
   uatomic32_t _drops;
   uatomic32_t _fragments;
@@ -41,7 +46,8 @@ class IPFragmenter : public Element {
   int optcopy(const click_ip *ip1, click_ip *ip2);
   
  public:
-  
+
+
   IPFragmenter();
   ~IPFragmenter();
   

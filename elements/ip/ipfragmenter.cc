@@ -27,6 +27,7 @@ IPFragmenter::IPFragmenter()
   MOD_INC_USE_COUNT;
   _fragments = 0;
   _mtu = 0;
+  _honor_df = true;
   _drops = 0;
   add_input();
   add_output();
@@ -57,6 +58,8 @@ IPFragmenter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
                   cpUnsigned, "MTU", &_mtu,
+		  cpOptional, 
+		  cpBool, "HONOR_DF", &_honor_df,
 		  0) < 0)
     return -1;
   return 0;
@@ -106,16 +109,17 @@ IPFragmenter::fragment(Packet *p)
   int hlen = ip->ip_hl << 2;
   int len = (_mtu - hlen) & ~7;
   int ipoff = ntohs(ip->ip_off);
-  if ((ipoff & IP_DF) || len < 8) {
+  if ( ((ipoff & IP_DF) && _honor_df) || len < 8) {
     click_chatter("IPFragmenter(%d) DF %s %s len=%d",
                   _mtu,
                   IPAddress(ip->ip_src).s().cc(),
                   IPAddress(ip->ip_dst).s().cc(),
                   p->length());
     _drops++;
-    if (noutputs() == 2)
+    if (noutputs() == 2){
+      assert(p);
       output(1).push(p);
-    else
+    } else
       p->kill();
     return;
   }
@@ -152,6 +156,7 @@ IPFragmenter::fragment(Packet *p)
     p1->copy_annotations(p);
     p1->set_ip_header(ip1, h1len);
 
+    assert(p);
     output(0).push(p1);
     _fragments++;
   }
@@ -165,12 +170,15 @@ IPFragmenter::fragment(Packet *p)
   qip->ip_sum = 0;
   qip->ip_sum = click_in_cksum(reinterpret_cast<unsigned char *>(qip), hlen);
   q->set_ip_header(qip, sizeof(click_ip)); // XXX correct headerlength?
+  assert(p);
   output(0).push(q);
 }
 
 void
 IPFragmenter::push(int, Packet *p)
 {
+  assert(p);
+
   if (p->length() <= _mtu)
     output(0).push(p);
   else
