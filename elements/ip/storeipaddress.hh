@@ -27,8 +27,8 @@ You'll need to recalculate their checksums as well. Here's a useful compound
 element:
 
   elementclass FixChecksums {
-      // fix the IP checksum, and any embedded checksums that include data
-      // from the IP header (TCP and UDP in particular)
+      // fix the IP checksum, and any embedded checksums that
+      // include data from the IP header (TCP and UDP in particular)
       input -> SetIPChecksum
 	  -> ipc :: IPClassifier(tcp, udp, -)
 	  -> SetTCPChecksum
