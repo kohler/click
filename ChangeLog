@@ -1,3 +1,8 @@
+2003-06-24 Tuesday 20:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/local/: pct.cc (1.1), pct.hh (1.1): repeat %% bug in
+	chatter?
+
 2003-06-23 Monday 23:02  Eddie Kohler <kohler@icir.org>
 
 	* bsdmodule/massage-vnode_if.pl (1.2), conf/make-ip-conf.pl (1.22),
