@@ -1,3 +1,8 @@
+2004-04-04 Sunday 23:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/testie (1.27): testie: handle %ignore lines that start with
+	a space
+
 2004-03-30 Tuesday 21:40  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/flashflood.cc (1.7): imporovements for mist
