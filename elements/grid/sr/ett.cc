@@ -251,6 +251,7 @@ ETT::process_query(struct sr_pkt *pk1)
       return;
     }
   }
+  _link_table->dijkstra();
   /* also get the metric from the neighbor */
   int m = get_metric(pk1->get_hop(pk1->num_hops()-1));
   update_link(_ip, pk1->get_hop(pk1->num_hops()-1), m);
@@ -332,8 +333,9 @@ void
 ETT::forward_reply(struct sr_pkt *pk1)
 {
   u_char type = pk1->_type;
-  
   ett_assert(type == PT_REPLY);
+
+  _link_table->dijkstra();
   click_chatter("ETT %s: forwarding reply\n", _ip.s().cc());
   if(pk1->next() >= pk1->num_hops()) {
     click_chatter("ETT %s: forward_reply strange next=%d, nhops=%d", 

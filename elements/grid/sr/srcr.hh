@@ -110,7 +110,7 @@ struct sr_pkt {
   uint16_t data_len() {
     return ntohs(_dlen);
   }
-  uint8_t get_metric(int h) { 
+  uint16_t get_metric(int h) { 
     uint16_t *ndx = (uint16_t *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     return ndx[h];
   }

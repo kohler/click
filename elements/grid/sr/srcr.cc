@@ -201,7 +201,7 @@ SRCR::push(int port, Packet *p_in)
     IPAddress b = pk->get_hop(i+1);
     int m = pk->get_metric(i);
     if (m != 0) {
-      click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
+      //click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
       update_link(a,b,m);
     }
   }
@@ -221,16 +221,19 @@ SRCR::push(int port, Packet *p_in)
     WritablePacket *p_out = Packet::make(pk->data_len());
     if (p_out == 0){
       click_chatter("SRCR %s: couldn't make packet\n", id().cc());
+      p_in->kill();
       return;
     }
     memcpy(p_out->data(), pk->data(), pk->data_len());
     output(1).push(p_out);
+    p_in->kill();
     return;
   } 
 
   int len = pk->hlen_with_data();
   WritablePacket *p = Packet::make(len);
   if(p == 0) {
+    click_chatter("SRCR %s: couldn't make packet\n", id().cc());
     p_in->kill();
     return ;
   }
