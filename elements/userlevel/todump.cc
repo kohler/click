@@ -76,7 +76,7 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	return -1;
 
     if (use_encap_from && encap_type)
-	return errh->error("specify at most one of `ENCAP' and `USE_ENCAP_FROM'");
+	return errh->error("specify at most one of 'ENCAP' and 'USE_ENCAP_FROM'");
     else if (use_encap_from) {
 	Vector<String> words;
 	cp_spacevec(use_encap_from, words);
@@ -86,11 +86,11 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		return -1;
 	_use_encap_from[words.size()] = 0;
 	if (words.size() == 0)
-	    return errh->error("element names missing after `USE_ENCAP_FROM'");
+	    return errh->error("element names missing after 'USE_ENCAP_FROM'");
     } else if (!encap_type)
-	_encap_type = FAKE_DLT_EN10MB;
-    else if ((_encap_type = fake_pcap_parse_dlt(encap_type)) < 0)
-	return errh->error("bad encapsulation type, expected `ETHER', `IP', or `FDDI'");
+	_linktype = FAKE_DLT_EN10MB;
+    else if ((_linktype = fake_pcap_parse_dlt(encap_type)) < 0)
+	return errh->error("bad encapsulation type");
 
 #ifdef CLICK_NS
     if (per_node) {
@@ -110,7 +110,7 @@ ToDump::hotswap_element() const
     if (Element *e = Element::hotswap_element())
 	if (ToDump *td = (ToDump *)e->cast("ToDump"))
 	    if (td->_filename == _filename
-		&& td->_encap_type == _encap_type)
+		&& td->_linktype == _linktype)
 		return td;
     return 0;
 }
@@ -120,18 +120,18 @@ ToDump::initialize(ErrorHandler *errh)
 {
     // check _use_encap_from
     if (_use_encap_from) {
-	_encap_type = -1;
+	_linktype = -1;
 	for (int i = 0; _use_encap_from[i]; i++) {
 	    const Handler *h = Router::handler(_use_encap_from[i], "encap");
 	    if (!h || !h->readable())
-		return errh->error("`%{element}' has no `encap' read handler", _use_encap_from[i]);
+		return errh->error("'%{element}' has no 'encap' read handler", _use_encap_from[i]);
 	    int et = fake_pcap_parse_dlt(cp_uncomment(h->call_read(_use_encap_from[i])));
 	    if (et < 0)
-		return errh->error("`%{element}.encap' did not return a valid encapsulation type", _use_encap_from[i]);
-	    else if (_encap_type >= 0 && et != _encap_type)
-		return errh->error("`USE_ENCAP_FROM' elements have different encapsulation types");
+		return errh->error("'%{element}.encap' did not return a valid encapsulation type", _use_encap_from[i]);
+	    else if (_linktype >= 0 && et != _linktype)
+		return errh->error("'USE_ENCAP_FROM' elements have different encapsulation types");
 	    else
-		_encap_type = et;
+		_linktype = et;
 	}
     }
 
@@ -158,7 +158,7 @@ ToDump::initialize(ErrorHandler *errh)
 	h.thiszone = 0;		// timestamps are in GMT
 	h.sigfigs = 0;		// XXX accuracy of timestamps?
 	h.snaplen = _snaplen;
-	h.linktype = _encap_type;
+	h.linktype = _linktype;
 
 	size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
 	if (wrote_header != 1)

@@ -102,7 +102,7 @@ class ToDump : public Element { public:
     String _filename;
     FILE *_fp;
     unsigned _snaplen;
-    int _encap_type;
+    int _linktype;
     bool _active;
     bool _extra_length;
     Task _task;
