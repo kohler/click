@@ -21,6 +21,7 @@
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
 #include "settxrate.hh"
+#include <clicknet/ether.h>
 CLICK_DECLS
 
 SetTXRate::SetTXRate()
@@ -43,18 +44,16 @@ SetTXRate::clone() const
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _auto = false;
+  _auto = NULL;
   if (cp_va_parse(conf, this, errh,
+		  cpUnsigned, "rate", &_rate, 
 		  cpKeywords, 
-		  "RATE", cpUnsigned, "rate", &_rate, 
-		  "AUTO", cpBool, "auto rate scaling", &_auto,
+		  "AUTO", cpElement, "AutoTXRate element", &_auto,
 		  0) < 0) {
     return -1;
   }
 
   switch (_rate) {
-  case 0: 
-    /* fallthrough */
   case 1:
     /* fallthrough */
   case 2:
@@ -64,7 +63,11 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   case 11:
     break;
   default:
-    return errh->error("rate must be 0,1,2,5, or 11");
+    return errh->error("rate must be 1,2,5, or 11");
+  }
+
+  if (_auto && _auto->cast("AutoTXRate") == 0) {
+    return errh->error("AUTO element is not a AutoTXRate");
   }
 
   return 0;
@@ -73,11 +76,16 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetTXRate::simple_action(Packet *p_in)
 {
+  click_ether *eh = (click_ether *) p_in->data();
+  EtherAddress dst = EtherAddress(eh->ether_dhost);
   if (_auto) {
-    SET_WIFI_RATE_ANNO(p_in, 0);  
-  } else {
-    SET_WIFI_RATE_ANNO(p_in, _rate);  
+    int rate = _auto->get_tx_rate(dst);
+    if (rate) {
+      SET_WIFI_RATE_ANNO(p_in, rate);  
+      return p_in;
+    }
   }
+  SET_WIFI_RATE_ANNO(p_in, _rate);  
   return p_in;
 }
 String
@@ -90,7 +98,10 @@ String
 SetTXRate::auto_read_handler(Element *e, void *)
 {
   SetTXRate *foo = (SetTXRate *)e;
-  return String(foo->_auto) + "\n";
+  if (foo->_auto) {
+    return String("true") + "\n";
+  }
+  return String("false") + "\n";
 }
 
 void

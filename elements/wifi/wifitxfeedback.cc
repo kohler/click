@@ -17,6 +17,7 @@ WifiTXFeedback::WifiTXFeedback()
 
 WifiTXFeedback::~WifiTXFeedback()
 {
+  register_click_wifi_tx_cb(NULL, NULL);
   MOD_DEC_USE_COUNT;
 }
 
