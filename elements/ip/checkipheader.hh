@@ -21,6 +21,7 @@
  * =a CheckIPHeader2
  * =a MarkIPHeader
  * =a SetIPChecksum
+ * =a StripIPHeader
  */
 
 #include "element.hh"

@@ -26,7 +26,7 @@ Version 1.0.7
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
 
-** Added QuitWatcher and FrontDropQueue.
+** Added QuitWatcher, FrontDropQueue, and StripIPHeader.
 
 ** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
    device (this happens while installing a new configuration: initialize is

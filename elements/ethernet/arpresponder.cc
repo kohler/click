@@ -37,6 +37,16 @@ ARPResponder::clone() const
   return new ARPResponder;
 }
 
+void
+ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
+{
+  struct Entry e;
+  e._dst = ipa;
+  e._mask = mask;
+  e._ena = ena;
+  _v.push_back(e);
+}
+
 int
 ARPResponder::configure(const String &conf, ErrorHandler *errh)
 {
@@ -47,31 +57,35 @@ ARPResponder::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   _v.clear();
-  
+
+  int before = errh->nerrors();
+  int last_ip_only = -1;
   for (int i = 0; i < args.size(); i++) {
-    String arg = args[i];
-    if (cp_ip_address_mask(arg, ipa, mask, &arg)
+    String arg;
+    if (cp_ip_address_mask(args[i], ipa, mask, &arg)
         && cp_eat_space(arg)
-	&& cp_ethernet_address(arg, ena))
-      set_map(ipa, mask, ena);
-    else {
-      errh->error("ARPResponder configuration expected ip, mask, and ether addr");
-      return -1;
-    }
+	&& cp_ethernet_address(arg, ena)) {
+      if (last_ip_only >= 0)
+	errh->error("argument %d should be Ethernet address", i);
+      add_map(ipa, mask, ena);
+    } else if (cp_ip_address_mask(args[i], ipa, mask)) {
+      if (last_ip_only < 0) last_ip_only = _v.size();
+      add_map(ipa, mask, EtherAddress());
+    } else if (cp_ip_address(args[i], ipa)) {
+      if (last_ip_only < 0) last_ip_only = _v.size();
+      add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
+    } else if (cp_ethernet_address(args[i], ena)) {
+      for (int j = last_ip_only; j >= 0 && j < _v.size(); j++)
+	_v[j]._ena = ena;
+      last_ip_only = -1;
+    } else
+      errh->error("argument %d should be `IPADDR MASK ETHADDR'", i);
   }
+  if (last_ip_only >= 0)
+    errh->error("missing Ethernet address");
+  if (before != errh->nerrors()) return -1;
   
   return 0;
-}
-
-void
-ARPResponder::set_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
-{
-  struct Entry e;
-
-  e._dst = ipa;
-  e._mask = mask;
-  e._ena = ena;
-  _v.push_back(e);
 }
 
 Packet *

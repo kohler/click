@@ -22,6 +22,8 @@
  * the checksum.
  *
  * =a CheckIPHeader
+ * =a StripIPHeader
+ * =a MarkIPHeader
  */
 
 #include "element.hh"

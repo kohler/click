@@ -41,6 +41,7 @@ struct click_ip {
 #define IP_PROTO_ICMP		1
 #define IP_PROTO_IGMP		2
 #define IP_PROTO_GGP		3
+#define IP_PROTO_IPIP		4
 #define IP_PROTO_ST		5
 #define IP_PROTO_TCP		6
 #define IP_PROTO_UCL		7

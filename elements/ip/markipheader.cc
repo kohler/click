@@ -34,6 +34,7 @@ MarkIPHeader::configure(const String &conf, ErrorHandler *errh)
 {
   _offset = 0;
   return cp_va_parse(conf, this, errh,
+		     cpOptional,
 		     cpUnsigned, "offset to IP header", &_offset,
 		     0);
 }

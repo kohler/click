@@ -30,9 +30,9 @@ arpq[0] -> outq;
 // We ought to have whole-subnet proxy ARP.
 // The point here is to trick nephron into sending
 // LCS packets to punish's ethernet address.
-arpr :: ARPResponder(18.26.4.1 00:90:27:26:53:b6,
-                     18.26.4.200 00:90:27:26:53:b6,
-                     18.26.4.97 00:90:27:26:53:b6);
+arpr :: ARPResponder(18.26.4.1/32 00:90:27:26:53:b6,
+                     18.26.4.200/32 00:90:27:26:53:b6,
+                     18.26.4.97/32 00:90:27:26:53:b6);
 fi[1] -> Print(gotquery) -> arpr;
 arpr -> outq;
 

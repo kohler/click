@@ -11,6 +11,7 @@
  *
  * =a CheckIPHeader
  * =a CheckIPHeader2
+ * =a StripIPHeader
  */
 
 #include "element.hh"
