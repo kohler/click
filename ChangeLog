@@ -1,3 +1,33 @@
+2001-03-16 Friday 16:02  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc, grid.hh, hello.cc,
+	locqueryresponder.cc, lrhello.cc, updateroutes.cc: fixes for packet
+	data alignment
+
+2001-03-16 Friday 15:29  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/checkgridheader.cc: added more verbose messages
+	describing packet errors.
+
+2001-03-16 Friday 15:24  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* include/click/click_ether.h: added packed attribute to
+	click_ether.  on arm-linux, e.g. iPaq, sizeof(click_ether) is 16
+	unless the packed attribute is used.  there should probably be a
+	better way of dealing with this.
+
+2001-03-16 Friday 15:18  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* configure.in: now checks for new.h properly while cross-compiling
+
+2001-03-16 Friday 14:49  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: fromdevice.cc, kerneltap.cc: make sure that
+	the data portions of incoming packets (from device or O/S are
+	4-byte aligned.  This is neccessary e.g. on the iPaq with a
+	StrongARM.  assumes incoming packets are preceded by a 14-byte
+	ethernet header
+
 2001-03-16 Friday 14:34  Douglas De Couto <decouto@lcs.mit.edu>
 
 	* userlevel/Makefile.in, tools/lib/Makefile.in: Changes to
