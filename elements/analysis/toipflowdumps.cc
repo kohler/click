@@ -27,14 +27,17 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
+#include "elements/analysis/toipsumdump.hh"
 CLICK_DECLS
 
 ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
-			  bool absolute_time, bool absolute_seq)
+			  bool absolute_time, bool absolute_seq,
+			  bool binary, bool sack)
     : _next(0),
       _flowid(p), _ip_p(p->ip_header()->ip_p), _aggregate(AGGREGATE_ANNO(p)),
-      _filename(filename), _outputted(false),
-      _npkt(0), _nnote(0), _pkt_off(0)
+      _filename(filename), _outputted(false), _binary(binary), _sack(sack),
+      _npkt(0), _nnote(0)
 {
     // use the encapsulated IP header for ICMP errors
     if (_ip_p == IP_PROTO_ICMP) {
@@ -80,86 +83,240 @@ ToIPFlowDumps::Flow::create_directories(const String &n, ErrorHandler *errh)
 // from FromIPSummaryDump
 static const char * const tcp_flags_word = "FSRPAUEW";
 
-int
-ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
+void
+ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 {
-    FILE *f;
-    if (_filename == "-")
-	f = stdout;
-    else if (_outputted)
-	f = fopen(_filename.cc(), "a");
-    else if (create_directories(_filename, errh) < 0)
-	return -1;
-    else
-	f = fopen(_filename.cc(), "w");
-    if (!f)
-	return errh->error("%s: %s", _filename.cc(), strerror(errno));
-
-    if (!_outputted) {
-	fprintf(f, "!IPSummaryDump 1.1\n!flowid %s %d %s %d %c\n!aggregate %d\n",
-		_flowid.saddr().s().cc(), ntohs(_flowid.sport()),
-		_flowid.daddr().s().cc(), ntohs(_flowid.dport()),
-		(_ip_p == IP_PROTO_TCP ? 'T' : 'U'),
-		_aggregate);
-	if (_ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!data timestamp direction tcp_flags tcp_seq payload_len tcp_ack\n");
-	else
-	    fprintf(f, "!data timestamp direction payload_len\n");
-	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!firstseq > %u\n", _first_seq[0]);
-	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!firstseq < %u\n", _first_seq[1]);
-	if (timerisset(&_first_timestamp)) {
-	    struct timeval real_firsttime = _first_timestamp + make_timeval(0, 1);
-	    fprintf(f, "!firsttime %lu.%06ld\n", real_firsttime.tv_sec, real_firsttime.tv_usec);
-	}
-    }
-
+    char buf[30];
     int pi = 0, ni = 0;
+    const uint16_t *sack = reinterpret_cast<const uint16_t *>(_sack_info.data());
+    const uint16_t *end_sack = sack + (_sack_info.length() / 2);
+    
     while (pi < _npkt || ni < _nnote)
-	if (ni >= _nnote || _note[ni].before_pkt > _pkt_off + pi) {
-	    int direction = _pkt[pi].direction;
-	    fprintf(f, "%lu.%06ld %c ", _pkt[pi].timestamp.tv_sec,
-		    _pkt[pi].timestamp.tv_usec, (direction == 0 ? '>' : '<'));
-
+	if (ni >= _nnote || _note[ni].before_pkt > pi) {
+	    *(reinterpret_cast<uint32_t *>(buf + 4)) = ntohl(_pkt[pi].timestamp.tv_sec);
+	    *(reinterpret_cast<uint32_t *>(buf + 8)) = ntohl(_pkt[pi].timestamp.tv_usec);
+	    *(buf + 12) = _pkt[pi].direction;
 	    if (_ip_p == IP_PROTO_TCP) {
-		int flags = _pkt[pi].th_flags;
-		if (flags == TH_ACK)
-		    fputc('A', f);
-		else if (flags == (TH_ACK | TH_PUSH))
-		    fputs("PA", f);
-		else if (flags == 0)
-		    fputc('.', f);
-		else
-		    for (int flag = 0; flag < 7; flag++)
-			if (flags & (1 << flag))
-			    fputc(tcp_flags_word[flag], f);
+		*(buf + 13) = _pkt[pi].th_flags;
+		*(reinterpret_cast<uint32_t *>(buf + 16)) = ntohl(_pkt[pi].th_seq);
+		*(reinterpret_cast<uint32_t *>(buf + 20)) = ntohl(_pkt[pi].payload_len);
+		*(reinterpret_cast<uint32_t *>(buf + 24)) = ntohl(_pkt[pi].th_ack);
+		*(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(28 >> 2);
+		sa.append(buf, 28);
 
-		fprintf(f, " %u %u %u\n", _pkt[pi].th_seq, _pkt[pi].payload_len, _pkt[pi].th_ack);
-	    } else
-		fprintf(f, "%u\n", _pkt[pi].payload_len);
+		if (sack < end_sack && sack[0] == pi) {
+		    int original_pos = sa.length() - 28;
+		    ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(sack + 2), sack[1], ToIPSummaryDump::DO_TCPOPT_SACK, sa);
+		    int want_len = (sa.length() - original_pos + 3) & ~3;
+		    sa.append("\0\0\0", (original_pos + want_len) - sa.length());
+		    *(reinterpret_cast<uint32_t *>(sa.data() + original_pos)) = ntohl(want_len >> 2);
+		    sack += 2 + (sack[1] / 2);
+		}
+		
+	    } else {
+		*(reinterpret_cast<uint32_t *>(buf + 16)) = ntohl(_pkt[pi].payload_len);
+		*(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(20);
+		sa.append(buf, 20);
+	    }
 
 	    pi++;
 	} else {
-	    fputc('#', f);
 	    int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
-	    fwrite(_note_text.data() + _note[ni].pos, 1, len, f);
-	    fputc('\n', f);
+	    int record_len = (len + 2 + 7) & ~3;
+	    *(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(record_len | 0x80000000U);
+	    *(buf + 4) = '#';
+	    sa.append(buf, 5);
+	    sa.append(_note_text.data() + _note[ni].pos, len);
+	    sa.append("\n\0\0\0", record_len - (len + 5));
 	    ni++;
 	}
+}
 
-    _pkt_off += _npkt;
+int
+ToIPFlowDumps::Flow::output(ErrorHandler *errh)
+{
+    int fd;
+    if (_filename == "-")
+	fd = STDOUT_FILENO;
+    else if (_outputted)
+	fd = open(_filename.cc(), O_WRONLY | O_APPEND);
+    else if (create_directories(_filename, errh) < 0)
+	return -1;
+    else
+	fd = open(_filename.cc(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0)
+	return errh->error("%s: %s", _filename.cc(), strerror(errno));
+
+    // make a guess about how much data we'll need
+    StringAccum sa(_npkt * (_binary ? 28 : 50) + _note_text.length() + _nnote * 8 + _sack_info.length() + 16);
+    
+    if (!_outputted) {
+	sa << "!IPSummaryDump 1.1\n!flowid "
+	   << _flowid.saddr() << ' ' << ntohs(_flowid.sport()) << ' '
+	   << _flowid.daddr() << ' ' << ntohs(_flowid.dport()) << ' '
+	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')
+	   << "\n!aggregate " << _aggregate << '\n';
+	if (_ip_p == IP_PROTO_TCP) {
+	    sa << "!data timestamp direction tcp_flags tcp_seq payload_len tcp_ack";
+	    if (_sack)
+		sa << " tcp_sack";
+	    sa << '\n';
+	} else
+	    sa << "!data timestamp direction payload_len\n";
+	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
+	    sa << "!firstseq > " << _first_seq[0] << '\n';
+	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
+	    sa << "!firstseq < " << _first_seq[1] << '\n';
+	if (timerisset(&_first_timestamp))
+	    sa << "!firsttime " << _first_timestamp << '\n';
+	if (_binary) {
+	    sa << "!binary";
+	    if ((sa.length() & 3) != 3)
+		sa.append("   ", 3 - (sa.length() & 3));
+	    sa << '\n';
+	}
+    }
+
+    if (_binary)
+	output_binary(sa);
+    else {
+	int pi = 0, ni = 0;
+	const uint16_t *sack = reinterpret_cast<const uint16_t *>(_sack_info.data());
+	const uint16_t *end_sack = sack + (_sack_info.length() / 2);
+	
+	while (pi < _npkt || ni < _nnote)
+	    if (ni >= _nnote || _note[ni].before_pkt > pi) {
+		int direction = _pkt[pi].direction;
+		sa << _pkt[pi].timestamp << ' '
+		   << (direction == 0 ? '>' : '<') << ' ';
+		
+		if (_ip_p == IP_PROTO_TCP) {
+		    int flags = _pkt[pi].th_flags;
+		    if (flags == TH_ACK)
+			sa << 'A';
+		    else if (flags == (TH_ACK | TH_PUSH))
+			sa << 'P' << 'A';
+		    else if (flags == 0)
+			sa << '.';
+		    else
+			for (int flag = 0; flag < 7; flag++)
+			    if (flags & (1 << flag))
+				sa << tcp_flags_word[flag];
+
+		    sa << ' ' << _pkt[pi].th_seq
+		       << ' ' << _pkt[pi].payload_len
+		       << ' ' << _pkt[pi].th_ack;
+		    
+		    if (sack < end_sack && sack[0] == pi) {
+			sa << ' ';
+			ToIPSummaryDump::store_tcp_opt_ascii(reinterpret_cast<const uint8_t *>(sack + 2), sack[1], ToIPSummaryDump::DO_TCPOPT_SACK, sa);
+			sack += 2 + (sack[1] / 2);
+		    }
+		    
+		    sa << '\n';
+		} else
+		    sa << _pkt[pi].payload_len << '\n';
+
+		pi++;
+	    } else {
+		int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
+		sa << '#';
+		sa.append(_note_text.data() + _note[ni].pos, len);
+		sa << '\n';
+		ni++;
+	    }
+    }
+
     _npkt = 0;
+    _sack_info.clear();
     
     _note_text.clear();
     _nnote = 0;
 
-    if (done)
-	fprintf(f, "!eof\n");
-    if (f != stdout)
-	fclose(f);
+    // actually write data
+    int pos = 0;
+    while (pos < sa.length()) {
+	int written = write(fd, sa.data() + pos, sa.length() - pos);
+	if (written < 0 && errno != EINTR) {
+	    errh->error("%s: %s", _filename.cc(), strerror(errno));
+	    break;
+	}
+	pos += written;
+    }
+    
+    if (fd != STDOUT_FILENO)
+	close(fd);
     _outputted = true;
     return 0;
+}
+
+void
+ToIPFlowDumps::Flow::store_sack(const click_tcp *tcph, int direction)
+{
+    const uint8_t *opt = reinterpret_cast<const uint8_t *>(tcph + 1);
+    const uint8_t *end_opt = opt + ((tcph->th_off << 2) - sizeof(click_tcp));
+    bool any = false;
+    int original_len = _sack_info.length();
+    char *data;
+    
+    while (opt < end_opt)
+	switch (*opt) {
+	  case TCPOPT_EOL:
+	    goto done;
+	  case TCPOPT_NOP:
+	    opt++;
+	    break;
+	  case TCPOPT_SACK_PERMITTED:
+	    if (opt[1] != TCPOLEN_SACK_PERMITTED || opt + opt[1] > end_opt)
+		goto bad_opt;
+	    if (!any && (data = _sack_info.extend(4)))
+		*(reinterpret_cast<uint16_t *>(data)) = _npkt;
+	    if ((data = _sack_info.extend(TCPOLEN_SACK_PERMITTED)))
+		memcpy(data, opt, TCPOLEN_SACK_PERMITTED);
+	    opt += TCPOLEN_SACK_PERMITTED;
+	    any = true;
+	    break;
+	  case TCPOPT_SACK:
+	    if (opt[1] % 8 != 2 || opt + opt[1] > end_opt)
+		goto bad_opt;
+	    if (!any && (data = _sack_info.extend(4)))
+		*(reinterpret_cast<uint16_t *>(data)) = _npkt;
+	    if ((data = _sack_info.extend(opt[1]))) {
+		// argh... must number sequence numbers in sack blocks 
+		memcpy(data, opt, 2);
+		const uint8_t *end_sack = opt + opt[1];
+		for (opt += 2, data += 2; opt < end_sack; opt += 8, data += 8) {
+		    uint32_t buf[2];
+		    memcpy(buf, opt, 8);
+		    if (!_have_first_seq[!direction]) {
+			_first_seq[!direction] = ntohl(buf[0]);
+			_have_first_seq[!direction] = true;
+		    }
+		    buf[0] = htonl(ntohl(buf[0]) - _first_seq[!direction]);
+		    buf[1] = htonl(ntohl(buf[1]) - _first_seq[!direction]);
+		    memcpy(data, buf, 8);
+		}
+	    } else
+		opt += opt[1];
+	    any = true;
+	    break;
+	  default:
+	    if (opt[1] == 0 || opt + opt[1] > end_opt)
+		goto bad_opt;
+	    opt += opt[1];
+	    break;
+	}
+
+  done:
+    if (any) {
+	if (_sack_info.length() & 1)
+	    _sack_info.append('\0');
+	*(reinterpret_cast<uint16_t *>(_sack_info.data() + original_len) + 1) = _sack_info.length() - original_len - 4;
+    }
+    return;
+    
+  bad_opt:
+    _sack_info.set_length(original_len);
 }
 
 int
@@ -173,7 +330,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	return add_note(sa.take_string(), errh);
     }
     
-    if (_npkt >= NPKT && output(false, errh) < 0)
+    if (_npkt >= NPKT && output(errh) < 0)
 	return -1;
     
     int direction = (PAINT_ANNO(p) & 1);
@@ -203,6 +360,12 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	_pkt[_npkt].th_ack = a - _first_seq[!direction];
 	_pkt[_npkt].th_flags = tcph->th_flags;
 	_pkt[_npkt].payload_len = ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2); // XXX check for correctness?
+
+	if (_sack
+	    && tcph->th_off > (sizeof(click_tcp) >> 2)
+	    && (tcph->th_off != 8 || *(reinterpret_cast<const uint32_t *>(tcph + 1)) != htonl(0x0101080A)))
+	    store_sack(tcph, direction);
+	
     } else
 	_pkt[_npkt].payload_len = ntohs(iph->ip_len) - sizeof(click_udp);
     
@@ -214,10 +377,10 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 int
 ToIPFlowDumps::Flow::add_note(const String &s, ErrorHandler *errh)
 {
-    if (_nnote >= NNOTE && output(false, errh) < 0)
+    if (_nnote >= NNOTE && output(errh) < 0)
 	return -1;
 
-    _note[_nnote].before_pkt = _pkt_off + _npkt;
+    _note[_nnote].before_pkt = _npkt;
     _note[_nnote].pos = _note_text.length();
     _note_text << s;
     _nnote++;
@@ -250,7 +413,7 @@ int
 ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    bool absolute_time = false, absolute_seq = false;
+    bool absolute_time = false, absolute_seq = false, binary = false, sack = false;
     
     if (cp_va_parse(conf, this, errh,
 		    cpOptional,
@@ -260,6 +423,8 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
 		    "ABSOLUTE_TIME", cpBool, "print absolute timestamps?", &absolute_time,
 		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
+		    "BINARY", cpBool, "output binary records?", &binary,
+		    "SACK", cpBool, "output TCP SACK information?", &sack,
 		    0) < 0)
 	return -1;
 
@@ -273,6 +438,8 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 
     _absolute_time = absolute_time;
     _absolute_seq = absolute_seq;
+    _binary = binary;
+    _sack = sack;
 
     return 0;
 }
@@ -283,7 +450,7 @@ ToIPFlowDumps::cleanup(CleanupStage)
     for (int i = 0; i < NFLOWMAP; i++)
 	while (_flowmap[i]) {
 	    Flow *n = _flowmap[i]->next();
-	    _flowmap[i]->output(true, ErrorHandler::default_handler());
+	    _flowmap[i]->output(ErrorHandler::default_handler());
 	    delete _flowmap[i];
 	    _flowmap[i] = n;
 	}
@@ -387,7 +554,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 
     if (f)
 	/* nada */;
-    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq)))
+    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _sack)))
 	prev = f;
     else
 	return 0;
@@ -449,13 +616,9 @@ ToIPFlowDumps::add_note(uint32_t agg, const String &s, ErrorHandler *errh)
 }
 
 void
-ToIPFlowDumps::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet *pkt)
+ToIPFlowDumps::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet *)
 {
-    if (event == NEW_AGG)
-	(void) find_aggregate(agg, pkt);
-    else if (event != DELETE_AGG)
-	return;
-    else if (find_aggregate(agg, 0)) {
+    if (event == DELETE_AGG && find_aggregate(agg, 0)) {
 	_gc_aggs.push_back(agg);
 	_gc_aggs.push_back(click_jiffies());
 	if (!_gc_timer.scheduled())
@@ -471,7 +634,7 @@ ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
     int i;
     for (i = 0; i < td->_gc_aggs.size() && SEQ_LEQ(td->_gc_aggs[i+1], limit_jiff); i += 2)
 	if (Flow *f = td->find_aggregate(td->_gc_aggs[i], 0)) {
-	    f->output(true, ErrorHandler::default_handler());
+	    f->output(ErrorHandler::default_handler());
 	    int bucket = (f->aggregate() & (NFLOWMAP - 1));
 	    assert(td->_flowmap[bucket] == f);
 	    td->_flowmap[bucket] = f->next();
@@ -485,5 +648,5 @@ ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel ToIPSummaryDump)
 EXPORT_ELEMENT(ToIPFlowDumps)
