@@ -1,3 +1,24 @@
+2004-04-27 Tuesday 13:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.26),
+	include/click/standard/drivermanager.hh (1.15): add "append"
+	user-level instruction
+
+2004-04-27 Tuesday 13:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: ipflowrawsockets.cc (1.2),
+	ipflowrawsockets.hh (1.2): fix Timer destruction bug
+
+2004-04-27 Tuesday 13:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.26): add E<lparen> entity and friends, to
+	stop Emacs syntax highlighting from getting confused
+
+2004-04-27 Tuesday 13:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* apps/ClickController/Util.java (1.7): rename "assert" to
+	"uassert"
+
 2004-04-27 Tuesday 11:55  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/standard/drivermanager.hh (1.14): documentation
