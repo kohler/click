@@ -4,6 +4,7 @@
 /*
  * =c
  * ARPQuerier(I, E)
+ * =s encapsulates IP packets in Ethernet headers; find Ethernet addresses using ARP
  * =d
  * Handles most of the ARP protocol. Argument I should be
  * this host's IP address, and E should be this host's

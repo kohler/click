@@ -48,9 +48,10 @@ if ($INSTALL) {
 my(@elements);
 open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
 while (<IN>) {
-  if (/^\.M (.*) n/) {
-    push @elements, $1;
-  }
+  last if (/^\.SH "ALPHABETICAL/);
+}
+while (<IN>) {
+  push @elements, $1 if /^\.M (.*) n/;
 }
 close IN;
 
@@ -62,7 +63,8 @@ while (<IN>) {
     $active = 1;
   } elsif ($active == 1 && m{</p}) {
     $active = -1;
-  } elsif ($active == 1 && m{\.n\.html}) {
+  } elsif ($active == 1 && m{<!-- elements go here -->}) {
+    print OUT;
     foreach $_ (sort { lc($a) cmp lc($b) } @elements) {
       print OUT "<a href=\"$_.n.html\">$_</a><br>\n";
     }

@@ -6,6 +6,8 @@
 /*
  * =c
  * IPPrint(TAG [, CONTENTS [, NBYTES]])
+ * =s pretty-prints IP packets
+ * V<debugging>
  * =d
  * Expects IP packets as input.  Should be placed downstream of a 
  * CheckIPHeader or equivalent element.

@@ -6,6 +6,8 @@
 /*
  * =c
  * ToLinuxSniffers([DEVNAME])
+ * =s sends packets to Linux packet sniffers
+ * V<device>
  * =d
  *
  * Hands packets to any packet sniffers registered with Linux, such as packet

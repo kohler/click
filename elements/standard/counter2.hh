@@ -7,6 +7,7 @@
 /*
  * =c
  * Counter2()
+ * =s measures historical packet count and rate
  * =d
  *
  * Passes packets unchanged from its input to its output, maintaining

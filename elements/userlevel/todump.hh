@@ -7,6 +7,8 @@
 /*
  * =c
  * ToDump(FILENAME)
+ * =s writes packets to a tcpdump(1) file
+ * V<device>
  * =d
  * Writes incoming packets to FILENAME in `tcpdump -w' format. This file
  * can be read by FromDump on a later run.
@@ -14,7 +16,7 @@
  * This element is only available at user level.
  * 
  * =a
- * FromDump, FromDevice.u, ToDevice.u
+ * FromDump, FromDevice.u, ToDevice.u, tcpdump(1)
  */
 
 class ToDump : public Element {

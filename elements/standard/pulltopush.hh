@@ -5,6 +5,7 @@
 /*
  * =c
  * PullToPush([BURSTSIZE])
+ * =s pull-to-push converter
  * =d
  * Pulls packets whenever they are available, then pushes them out
  * its single output. Pulls a maximum of BURSTSIZE packets every time

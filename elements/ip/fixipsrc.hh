@@ -4,6 +4,7 @@
 /*
  * =c
  * FixIPSrc(IPADDR)
+ * =s sets IP source field if requested by annotation
  * =d
  *
  * Expects an IP packet as input. If its fix_ip_src annotation is set, then

@@ -5,6 +5,7 @@
 /*
  * =c
  * HashDemux(OFFSET, LENGTH)
+ * =s classifies packets by hash of contents
  * =d
  * Can have any number of outputs.
  * Chooses the output on which to emit each packet based on

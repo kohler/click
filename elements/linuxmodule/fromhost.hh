@@ -5,6 +5,8 @@
 /*
  * =c
  * FromLinux(DEVNAME, ADDR/MASK)
+ * =s reads packets from Linux
+ * V<device>
  * =d
  * Captures packets orginating from the Linux kernel and pushes
  * them on output 0.

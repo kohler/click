@@ -4,6 +4,8 @@
 /*
  * =c
  * LookupIPRoute2()
+ * =s simple dynamic IP routing table
+ * V<classification>
  * =d
  * Input: IP packets (no ether header).
  * Expects a destination IP address annotation with each packet. Looks up the

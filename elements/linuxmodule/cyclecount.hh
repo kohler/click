@@ -5,6 +5,8 @@
 /*
  * =c
  * CycleCount(X)
+ * =s manipulates cycle counter annotations
+ * V<debugging>
  * =d
  * Assign cycle counter to a packet's cycle counters. Each packet can store 4
  * cycle counts, X specifies which storage to use.

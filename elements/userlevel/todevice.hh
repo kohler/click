@@ -8,6 +8,7 @@
  * =title ToDevice.u
  * =c
  * ToDevice(DEVNAME)
+ * =s sends packets to network device (user-level)
  * =d
  *
  * This manual page describes the user-level version of the ToDevice element.

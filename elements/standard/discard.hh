@@ -4,7 +4,8 @@
 
 /*
  * =c
- * Discard()
+ * Discard
+ * =s drops all packets
  * =d
  * Discards all packets received on its single input.
  * If used in a Pull context, it initiates pulls whenever

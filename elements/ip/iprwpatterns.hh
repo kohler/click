@@ -6,6 +6,8 @@
 /*
  * =c
  * IPRewriterPatterns(NAME PATTERN, ...)
+ * =s specifies shared IPRewriter(n) patterns
+ * V<modifies>
  * =io
  * None
  * =d

@@ -4,6 +4,7 @@
 /*
  * =c
  * TCPIPSend()
+ * =s generates TCP/IP packets when requested
  * =d
  *
  * Sends TCP/IP packets when asked to do so. No inputs. One output.

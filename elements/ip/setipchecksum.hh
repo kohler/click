@@ -4,6 +4,7 @@
 /*
  * =c
  * SetIPChecksum()
+ * =s sets IP packets' checksums
  * =d
  * Expects an IP packet as input.
  * Calculates the IP header's checksum and sets the checksum header field.

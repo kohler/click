@@ -5,6 +5,7 @@
 /*
  * =c
  * Paint(X)
+ * =s sets packet paint annotations
  * =d
  * Sets each packet's paint annotation to X, an integer 0..255.
  * Note that a packet may only be painted with one color.

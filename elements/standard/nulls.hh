@@ -12,6 +12,7 @@
  * Null6()
  * Null7()
  * Null8()
+ * =s copies of Null
  * =d
  * Copies of Null that do not share code.
  * =a Null
@@ -28,8 +29,7 @@ class Null1 : public Element {
   
   Null1 *clone() const				{ return new Null1; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -44,8 +44,7 @@ class Null2 : public Element {
   
   Null2 *clone() const				{ return new Null2; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -60,8 +59,7 @@ class Null3 : public Element {
   
   Null3 *clone() const				{ return new Null3; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -76,8 +74,7 @@ class Null4 : public Element {
   
   Null4 *clone() const				{ return new Null4; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -92,8 +89,7 @@ class Null5 : public Element {
   
   Null5 *clone() const				{ return new Null5; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -108,8 +104,7 @@ class Null6 : public Element {
   
   Null6 *clone() const				{ return new Null6; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -124,8 +119,7 @@ class Null7 : public Element {
   
   Null7 *clone() const				{ return new Null7; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 
@@ -140,8 +134,7 @@ class Null8 : public Element {
   
   Null8 *clone() const				{ return new Null8; }
 
-  void push(int, Packet *p)			{ output(0).push(p); }
-  Packet *pull(int)				{ return input(0).pull(); }
+  Packet *simple_action(Packet *p)		{ return p; }
   
 };
 

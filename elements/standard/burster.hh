@@ -6,6 +6,7 @@
 /*
  * =c
  * Burster(I, N)
+ * =s pull-to-push converter
  * =d
  * Pulls N packets each interval I (seconds) from its input.
  * Pushes them out its single output. The interval can be

@@ -3,7 +3,8 @@
 
 /*
  * =c
- * ICMPPing()
+ * ICMPPing
+ * =s responds to ICMP echo requests
  * =d
  * Respond to ICMP pings. The input packet must be an ethernet packet with
  * link header. Respond by modifying that same ether packet.

@@ -3,10 +3,11 @@
 
 /*
  * =c
- * HostEtherFilter(mac-addr)
+ * HostEtherFilter(MACADDR)
+ * =s drops Ethernet packets sent to other machines
  * =d
  * Expects ethernet packets as input. Discards packets that
- * aren't addressed to mac-addr or to a broadcast or
+ * aren't addressed to MACADDR or to a broadcast or
  * multicast address. That is, tries to act like
  * Ethernet input hardware.
  */

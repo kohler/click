@@ -7,6 +7,7 @@
 /*
  * =c
  * RIPSend(SRC, DST, WHAT/MASK, METRIC)
+ * =s periodically generates specified RIP II packet
  * =d
  * Sends periodic RIP II packets with specified contents,
  * including UDP and IP headers.

@@ -4,7 +4,8 @@
 
 /*
  * =c
- * Null()
+ * Null
+ * =s passes packets unchanged
  * =d
  * Just passes packets along without doing anything else.
  */

@@ -4,6 +4,7 @@
 /*
  * =c
  * SetIPDSCP(VAL)
+ * =s sets IP packets' DSCP fields
  * =d
  * Expects IP packets as input and
  * sets their Differential Services Code Point to VAL.

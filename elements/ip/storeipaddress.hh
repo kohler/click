@@ -6,6 +6,7 @@
 /*
  * =c
  * StoreIPAddress(OFFSET)
+ * =s stores dest IP address annotation in packet
  * =d
  * Copy the destination IP address annotation into the packet
  * at offset OFFSET.

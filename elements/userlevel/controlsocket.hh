@@ -6,6 +6,8 @@
  * =c
  * ControlSocket(tcp, PORTNUMBER [, READONLY?])
  * ControlSocket(unix, FILENAME [, READONLY?])
+ * =s opens control sockets for other programs
+ * V<debugging>
  * =io
  * None
  * =d

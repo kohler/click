@@ -5,6 +5,8 @@
 /*
  * =c
  * PullSwitch([K])
+ * =s pulls packets from settable input
+ * V<packet scheduling>
  * =d
  *
  * On every pull, PullSwitch returns the packet pulled from one of its input

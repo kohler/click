@@ -4,7 +4,8 @@
 
 /*
  * =c
- * RoundRobinSwitch()
+ * RoundRobinSwitch
+ * =s sends packets to round-robin outputs V<classifies>
  * =io
  * One input, one or more outputs
  * =d

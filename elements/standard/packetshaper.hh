@@ -5,6 +5,8 @@
 /*
  * =c
  * PacketShaper(RATE)
+ * =s shapes traffic to maximum rate (pkt/s)
+ * V<packet scheduling>
  * =d
  * PacketShaper is a pull element that allows a maximum of RATE packets per
  * second to pass through. It measures RATE using an exponential weighted

@@ -39,7 +39,7 @@
 ..
 .TH ELEMENTDOC 7 "\*D" "Version \*V"
 .SH NAME
-elementdoc \- Click documentation for elements
+elementdoc \- how to write Click element documentation
 '
 .SH DESCRIPTION
 Documentation for a Click element is automatically generated from formatted
@@ -60,6 +60,8 @@ listed in the conventional order.
 .PD 0
 .IP "\f(CW=c\fR" 15
 SYNOPSIS
+.IP "\f(CW=s\fR" 15
+NAME (one-line summary)
 .IP "\f(CW=io\fR" 15
 INPUTS AND OUTPUTS
 .IP "\f(CW=processing\fR" 15
@@ -91,6 +93,12 @@ begin item list
 add item
 .IP "\f(CW=back\fR" 15
 end item list
+.IP "\f(CW=for\fR \fIformat\fR" 15
+selective formatting
+.IP "\f(CW=begin\fR \fIformat\fR" 15
+selective formatting
+.IP "\f(CW=end\fR \fIformat\fR" 15
+selective formatting
 .PD
 .RE
 .PP
@@ -102,6 +110,8 @@ And here are the formatting commands, used inside ordinary text.
 boldface
 .IP "\f(CWI<\fItext\fR\f(CW>\fR" 15
 italics
+.IP "\f(CWR<\fItext\fR\f(CW>\fR" 15
+roman
 .IP "\f(CWC<\fItext\fR\f(CW>\fR" 15
 code (fixed-width)
 .IP "\f(CWF<\fItext\fR\f(CW>\fR" 15
@@ -112,6 +122,8 @@ hyperlink
 line break
 .IP "\f(CWE<\fIname\fR\f(CW>\fR" 15
 entity
+.IP "\f(CWV<\fItext\fR\f(CW>\fR" 15
+comment
 .PD
 .RE
 '
@@ -147,6 +159,15 @@ commands\*Efor turning text bold, for example\*Ethat occurs inside normal
 text; they are described in the next section.
 '
 .SS "Section Commands"
+.IP "\f(CW=s\fR [\fItext\fR]" 5
+Begin the summary section. This section should contain a very short,
+one-line summary of the element's function. For example, for a
+.M Queue n
+element:
+.nf
+   =s stores packets in a FIFO queue
+.fi
+The optional \fItext\fR is just part of the body of the section.
 .TP 5
 \f(CW=c\fR
 Begin the synopsis section. This section is mandatory.
@@ -205,12 +226,9 @@ if possible.
 .TP 5
 \f(CW=d\fR
 Begin the description section.
-.RS 5
-.PP
 This section tells how the element should be used. It is usually the
 longest section. When mentioning configuration arguments, use the
 upper-case words given in the \f(CW=c\fR section.
-.RE
 '
 .TP 5
 \f(CW=n\fR
@@ -283,6 +301,27 @@ and so forth.
 .TP 5
 \f(CW=back\fR
 Close the latest list opened by \f(CW=over\fR.
+.TP 5
+\f(CW=for\fR \fIformat\fR
+'
+Output the next paragraph only when generating documentation in
+\fIformat\fR. Valid \fIformat\fRs include `html', `man', and `roff'. The
+paragraph ends at the next command or blank line, and it consists of text
+in the given format, not element documentation. For example, this code
+includes a picture in HTML mode:
+.nf
+   =for html
+   <p>Here is a pretty picture:
+   <img src="pretty.gif"></p>
+
+   Back to B<normal text> here.
+.fi
+.TP 5
+\f(CW=begin\fR \fIformat\fR ... \f(CW=end\fR \fIformat\fR
+'
+This is like \f(CW=for\fR, but can encompass multiple paragraphs. It
+outputs text in between the \f(CW=begin\fR command and the \f(CW=end\fR
+command only when generating documentation in \fIformat\fR.
 '
 .SH TEXT
 Each line that doesn't begin with `\f(CW=\fR' and a lower-case letter is
@@ -297,6 +336,10 @@ Print \fItext\fR in \fBboldface\fR.
 .TP 10
 \f(CWI<\fItext\fR\f(CW>\fR
 Print \fItext\fR in \fIitalic\fR.
+.TP 10
+\f(CWR<\fItext\fR\f(CW>\fR
+Print \fItext\fR in \fRroman\fR. Useful inside \f(CWB<...>\fR and so forth,
+or to prevent words from being highlighted.
 .TP 10
 \f(CWC<\fItext\fR\f(CW>\fR
 Print \fItext\fR like source code, in a constant-width font.
@@ -318,6 +361,9 @@ Print the HTML-style entity named \fIname\fR. There are six entities:
 \f(CWE<solid>\fR is `/', \f(CWE<verbar>\fR is `|', and \f(CWE<eq>\fR is
 `='. This is useful for typing one of these characters in a context that
 would seem like a command or formatting command.
+.TP 10
+\f(CWV<\fItext\fR\f(CW>\fR
+Do not print \fItext\fR.
 '
 .SH VERBATIM TEXT
 Lines that start with a space or tab character are printed out
@@ -337,6 +383,8 @@ example:
 .nf
 /* =c
  * Align(MODULUS, OFFSET)
+ * =s
+ * aligns packet data
  * =d
  * Aligns packet data. Each input packet is aligned so that
  * its first byte is OFFSET bytes off from a MODULUS-byte
@@ -354,6 +402,8 @@ example:
 .nf
 /* =c
  * Counter([TYPE])
+ * =s
+ * measures packet count and rate
  * =d
  * Passes packets unchanged from its input to its output,
  * maintaining statistics information about packet count and

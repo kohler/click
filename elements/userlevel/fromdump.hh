@@ -4,6 +4,8 @@
 /*
  * =c
  * FromDump(FILENAME [, TIMING])
+ * =s reads packets from a tcpdump(1) file
+ * V<device>
  * =d
  *
  * Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump.
@@ -17,7 +19,7 @@
  *
  * Only available in user-level processes.
  *
- * =a ToDump, FromDevice.u, ToDevice.u */
+ * =a ToDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
 #ifdef HAVE_PCAP
 extern "C" {

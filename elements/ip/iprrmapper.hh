@@ -5,6 +5,8 @@
 /*
  * =c
  * IPRoundRobinMapper(PATTERN1, ..., PATTERNn)
+ * =s round-robin mapper for IPRewriter(n)
+ * V<modifies>
  * =io
  * None
  * =d
@@ -16,7 +18,7 @@
  * Responds to mapping requests from an IPRewriter by trying the PATTERNs in
  * round-robin order and returning the first successfully created mapping.
  *
- * =a IPRewriter, IPRewriterPatterns */
+ * =a IPRewriter, TCPRewriter, IPRewriterPatterns */
 
 class IPRoundRobinMapper : public Element, public IPMapper {
 

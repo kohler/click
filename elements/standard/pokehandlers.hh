@@ -6,6 +6,7 @@
 /*
  * =c
  * PokeHandlers([DELAY or HANDLER] ...)
+ * =s calls write handlers at specified times
  * =io
  * None
  * =d

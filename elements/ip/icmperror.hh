@@ -4,6 +4,7 @@
 /*
  * =c
  * ICMPError(IPADDR, TYPE, CODE)
+ * =s generates ICMP error packets
  * =d
  * Generate an ICMP error packet, with specified TYPE and CODE,
  * in response to an incoming IP packet. The output is an IP/ICMP packet.

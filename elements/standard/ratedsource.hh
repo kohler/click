@@ -6,6 +6,7 @@
 /*
  * =c
  * RatedSource([DATA, RATE, TIME, ACTIVE])
+ * =s generates packets at specified rate
  * =d
  *
  * Creates packets consisting of DATA. Pushes RATE such packets out its single

@@ -5,6 +5,7 @@
 /*
  * =c
  * Strip(N)
+ * =s strips bytes from front of packets
  * =d
  * Deletes the first N bytes from each packet.
  * =e

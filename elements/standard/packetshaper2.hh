@@ -7,6 +7,8 @@
 /*
  * =c
  * PacketShaper2(RATE)
+ * =s shapes traffic to maximum rate (pkt/s) 
+ * V<packet scheduling>
  * =d
  *
  * PacketShaper2 is a pull element that allows a maxmimum of RATE packets per

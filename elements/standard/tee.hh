@@ -7,6 +7,7 @@
  * Tee([N])
  *
  * PullTee([N])
+ * =s duplicates packets
  * =d
  * Tee sends a copy of each incoming packet out each output.
  *

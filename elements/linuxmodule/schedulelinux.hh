@@ -4,10 +4,16 @@
 
 /*
  * =c
- * ScheduleLinux()
+ * ScheduleLinux
+ * =s returns to Linux scheduler
+ * =io
+ * None
  * =d
- * Go back to linux scheduler.
- */
+ *
+ * Returns to Linux's scheduler every time it is scheduled by Click. Use
+ * ScheduleInfo to specify how often this should happen.
+ *
+ * =a ScheduleInfo */
 
 class ScheduleLinux : public Element {
   
@@ -17,7 +23,6 @@ class ScheduleLinux : public Element {
   ~ScheduleLinux() {}
   
   const char *class_name() const		{ return "ScheduleLinux"; }
-  const char *processing() const		{ return AGNOSTIC; }
   
   ScheduleLinux *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

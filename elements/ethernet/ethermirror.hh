@@ -5,6 +5,8 @@
 /*
  * =c
  * EtherMirror()
+ * =s swaps Ethernet source and destination
+ * V<modifies>
  * =d
  *
  * Incoming packets are Ethernet. Their source and destination Ethernet

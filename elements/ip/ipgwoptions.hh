@@ -4,6 +4,8 @@
 /*
  * =c
  * IPGWOptions(local-ip-addr)
+ * =s processes router IP options
+ * V<modifies>
  * =d
  * Process the IP options that should be processed by every router,
  * not just when ip_dst refers to the current router. At the moment

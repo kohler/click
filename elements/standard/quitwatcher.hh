@@ -4,6 +4,7 @@
 /*
  * =c
  * QuitWatcher(ELEMENT, ...)
+ * =s stops router processing
  * =io
  * None
  * =d

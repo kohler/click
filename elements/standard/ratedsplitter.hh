@@ -6,6 +6,8 @@
 /*
  * =c
  * RatedSplitter(R)
+ * =s splits flow of packets at specified rate
+ * V<classifies>
  * =d
  * 
  * RatedSplitter has two output ports. It will push packets out on port 1 at

@@ -4,6 +4,7 @@
 /*
  * =c
  * TCPConnectionMonitor()
+ * =s keeps track of TCP connections
  * =d
  *
  * Keeps track of all half-open connections or all open connections.

@@ -5,6 +5,7 @@
 /*
  * =c
  * PacketMeter(RATE1, RATE2, ..., RATEI<n>)
+ * =s classifies packet stream by rate (pkt/s)
  * =d
  *
  * Classifies packets based on the rate of packet arrival. The rate is

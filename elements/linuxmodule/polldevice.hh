@@ -4,6 +4,7 @@
 /*
  * =c
  * PollDevice(DEVNAME)
+ * =s polls packets from network device (kernel)
  * =d
  * Poll packets received by the Linux network interface named DEVNAME.
  * Packets will be pushed to output 0. The packets include the link-level

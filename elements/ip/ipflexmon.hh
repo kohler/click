@@ -4,6 +4,7 @@
 /*
  * =c
  * IPFlexMonitor(PB, OFFSET, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
+ * =s measures IP traffic rates
  * =d
  * Input: IP packets (no ether header).
  *

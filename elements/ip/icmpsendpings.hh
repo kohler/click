@@ -6,9 +6,11 @@
 
 /*
  * =c
- * ICMPSendPings(src-ip, dst-ip)
+ * ICMPSendPings(SADDR, DADDR)
+ * =s periodically sends ICMP echo requests
+ * V<generates>
  * =d
- * Send one ping packet per second.
+ * Send one ping packet per second. SADDR and DADDR are IP addresses.
  */
 
 class ICMPSendPings : public Element {

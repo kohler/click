@@ -3,7 +3,9 @@
 
 /*
  * =c
- * Idle()
+ * Idle
+ * =s discards packets
+ * V<drops>
  * =d
  *
  * Has zero or more agnostic outputs and zero or more agnostic inputs. It

@@ -5,6 +5,7 @@
 /*
  * =c
  * InfiniteSource([DATA, LIMIT, BURSTSIZE, ACTIVE])
+ * =s generates packets whenever scheduled
  * =d
  * Creates packets consisting of DATA. Pushes BURSTSIZE such packets
  * out its single output every time it is scheduled (which will be often).

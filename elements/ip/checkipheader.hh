@@ -4,6 +4,7 @@
 /*
  * =c
  * CheckIPHeader([BADADDRS])
+ * =s checks IP header
  * =d
  *
  * Expects IP packets as input. Checks that the packet's length is reasonable,

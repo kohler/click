@@ -6,9 +6,10 @@
 /*
  * =c
  * Meter(RATE1, RATE2, ..., RATEI<n>)
+ * =s classifies packet stream by arrival rate
  * =d
  *
- * Classifies packets based on the rate of packet arrival. The rate is
+ * Classifies packet stream based on the rate of packet arrival. The rate is
  * measured in bytes per second using an exponential weighted moving average.
  * (The related PacketMeter element measures rates in packets per second.)
  * 

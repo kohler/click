@@ -5,6 +5,7 @@
 /*
  * =c
  * Switch([K])
+ * =s sends packet stream to settable output V<classifies>
  * =d
  *
  * Switch sends every incoming packet to one of its output ports --

@@ -4,13 +4,15 @@
 /*
  * =c
  * UnstripIPHeader()
+ * =s restores outermost IP header
+ * V<strips>
  * =d
- * Put outermost IP header back onto a striped packet, based on the IP Header
- * annotation from MarkIPHeader. If IP header already on, forwards packet
- * unmodified.
  *
- * =a MarkIPHeader, StripIPHeader
- */
+ * Put outermost IP header back onto a striped packet, based on the IP Header
+ * annotation from MarkIPHeader or CheckIPHeader. If IP header already on,
+ * forwards packet unmodified.
+ *
+ * =a CheckIPHeader, MarkIPHeader, StripIPHeader */
 
 #include "element.hh"
 

@@ -4,6 +4,7 @@
 /*
  * =c
  * IPEncap(PROTOCOL, SADDR, DADDR)
+ * =s encapsulates packets in static IP header
  * =d
  * Encapsulates each incoming packet in an IP packet with protocol
  * PROTOCOL, source address SADDR, and destination address DADDR.

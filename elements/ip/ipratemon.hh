@@ -4,6 +4,7 @@
 /*
  * =c
  * IPRateMonitor(PB, OFF, RATIO, THRESH [, MEMORY, ANNO])
+ * =s measures coming and going IP traffic rates
  *
  * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per

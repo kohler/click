@@ -5,6 +5,8 @@
 
 /* =c
  * Counter([TYPE])
+ * =s
+ * measures packet count and rate
  * =d
  * Passes packets unchanged from its input to its output,
  * maintaining statistics information about packet count and

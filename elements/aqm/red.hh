@@ -7,6 +7,7 @@ class Storage;
 /*
  * =c
  * RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
+ * =s drops packets according to R<RED>
  * =d
  * Implements the Random Early Detection packet dropping
  * algorithm.
@@ -38,6 +39,10 @@ class Storage;
  * Returns some human-readable statistics.
  *
  * =a Queue
+ *
+ * Sally Floyd and Van Jacobson. I<Random Early Detection Gateways for
+ * Congestion Avoidance>. ACM Transactions on Networking, B<1>(4), August
+ * 1993, pp 397-413.
  */
 
 class RED : public Element {

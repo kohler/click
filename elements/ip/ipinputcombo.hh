@@ -4,6 +4,7 @@
 /*
  * =c
  * IPInputCombo(COLOR, BADADDRS)
+ * =s input combo for IP routing
  * =d
  * A single element encapsulating common tasks on an IP router's input path.
  * Effectively equivalent to

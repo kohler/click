@@ -4,6 +4,7 @@
 /*
  * =c
  * FromDevice(DEVNAME)
+ * =s reads packets from network device (kernel)
  * =d
  *
  * This manual page describes the Linux kernel module version of the

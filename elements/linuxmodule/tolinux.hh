@@ -4,7 +4,9 @@
 
 /*
  * =c
- * ToLinux()
+ * ToLinux
+ * =s sends packets to Linux
+ * V<device>
  * =d
  * Hands packets to the ordinary Linux protocol stack.
  * Expects packets with Ethernet headers.

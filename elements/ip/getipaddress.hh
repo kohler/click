@@ -6,6 +6,7 @@
 /*
  * =c
  * GetIPAddress(OFFSET)
+ * =s sets destination IP address annotation from packet data
  * =d
  *
  * Copies 4 bytes from the packet, starting at OFFSET, to the destination IP
