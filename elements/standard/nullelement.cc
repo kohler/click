@@ -32,17 +32,49 @@ NullElement::~NullElement()
   MOD_DEC_USE_COUNT;
 }
 
-NullElement *
-NullElement::clone() const
-{
-  return new NullElement;
-}
-
 Packet *
 NullElement::simple_action(Packet *p)
 {
   return p;
 }
 
+PushNullElement::PushNullElement()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+PushNullElement::~PushNullElement()
+{
+  MOD_DEC_USE_COUNT;
+}
+
+void
+PushNullElement::push(int, Packet *p)
+{
+  output(0).push(p);
+}
+
+PullNullElement::PullNullElement()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+PullNullElement::~PullNullElement()
+{
+  MOD_DEC_USE_COUNT;
+}
+
+Packet *
+PullNullElement::pull(int)
+{
+  return input(0).pull();
+}
+
 EXPORT_ELEMENT(NullElement)
+EXPORT_ELEMENT(PushNullElement)
+EXPORT_ELEMENT(PullNullElement)
 ELEMENT_MT_SAFE(NullElement)
+ELEMENT_MT_SAFE(PushNullElement)
+ELEMENT_MT_SAFE(PullNullElement)
