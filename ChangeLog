@@ -1,3 +1,12 @@
+2003-05-19 Monday 09:28  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/rtmdsr.hh (1.16): I am an idiot.
+
+2003-05-19 Monday 09:23  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.13), rtmdsr.hh (1.15): Better query
+	sequence number plan.
+
 2003-05-18 Sunday 20:48  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/rtmdsr.hh (1.14): this and that
