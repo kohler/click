@@ -582,24 +582,36 @@ IPRw::mark_live_tcp(Map &)
 void
 IPRw::clean_map(Map &table)
 {
+  static const int max_count = 20000;
   Vector<Mapping *> to_free;
-  
-  for (Map::Iterator iter = table.first(); iter; iter++)
-    if (Mapping *m = iter.value()) {
-      if (!m->used() && !m->reverse()->used() && !m->is_reverse())
-	to_free.push_back(m);
-      else
-	m->clear_used();
+
+  while (1) {
+    
+    for (Map::Iterator iter = table.first(); iter; iter++)
+      if (Mapping *m = iter.value()) {
+	if (!m->used() && !m->reverse()->used() && !m->is_reverse()) {
+	  to_free.push_back(m);
+	  if (to_free.size() > max_count)
+	    break;
+	} else
+	  m->clear_used();
+      }
+    
+    for (int i = 0; i < to_free.size(); i++) {
+      Mapping *m = to_free[i];
+      if (Pattern *p = m->pattern())
+	p->mapping_freed(m);
+      table.remove(m->reverse()->flow_id().rev());
+      table.remove(m->flow_id().rev());
+      delete m->reverse();
+      delete m;
     }
-  
-  for (int i = 0; i < to_free.size(); i++) {
-    Mapping *m = to_free[i];
-    if (Pattern *p = m->pattern())
-      p->mapping_freed(m);
-    table.remove(m->reverse()->flow_id().rev());
-    table.remove(m->flow_id().rev());
-    delete m->reverse();
-    delete m;
+
+    if (to_free.size() <= max_count)
+      break;
+
+    to_free.clear();
+        
   }
 }
 
