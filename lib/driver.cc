@@ -323,7 +323,10 @@ static Lexer *click_lexer;
 extern "C" int
 click_add_element_type(const char *ename, Element *e)
 {
-    return click_lexer->add_element_type(ename, e);
+    if (ename)
+	return click_lexer->add_element_type(ename, e);
+    else
+	return click_lexer->add_element_type(e);
 }
 
 extern "C" void

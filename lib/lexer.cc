@@ -373,7 +373,7 @@ Lexer::Lexer()
 {
   end_parse(-1);		// clear private state
   add_element_type("<tunnel>", new ErrorElement);
-  add_element_type(new ErrorElement);
+  add_element_type("Error", new ErrorElement);
   assert(element_type("<tunnel>") == TUNNEL_TYPE && element_type("Error") == ERROR_TYPE);
 }
 
@@ -792,33 +792,32 @@ Lexer::lerror(const char *format, ...)
 int
 Lexer::add_element_type(Element *e)
 {
-  // Lexer now owns `e'
-  return add_element_type("", e);
+  // Lexer now owns 'e'
+  return add_element_type(e->class_name(), e, false);
 }
 
 int
-Lexer::add_element_type(String name, Element *e)
+Lexer::add_element_type(const String &name, Element *e, bool scoped)
 {
-  assert(e);
-  // Lexer now owns `e'
+  assert(e && name);
+  // Lexer now owns 'e'
   int tid;
-  if (!name)
-    name = e->class_name();
   if (_free_element_type < 0) {
     tid = _element_types.size();
     _element_types.push_back(e);
     _element_type_names.push_back(name);
-    _element_type_next.push_back(_last_element_type);
+    _element_type_next.push_back(scoped ? _last_element_type : -1);
   } else {
     tid = _free_element_type;
     _free_element_type = _element_type_next[tid];
     _element_types[tid] = e;
     _element_type_names[tid] = name;
-    _element_type_next[tid] = _last_element_type;
+    _element_type_next[tid] = (scoped ? _last_element_type : -1);
   }
   if (name)
     _element_type_map.insert(name, tid);
-  _last_element_type = tid;
+  if (scoped)
+    _last_element_type = tid;
   return tid;
 }
 
@@ -835,7 +834,7 @@ Lexer::force_element_type(String s)
   if (ftid >= 0)
     return ftid;
   lerror("unknown element class `%s'", s.cc());
-  return add_element_type(s, new ErrorElement);
+  return add_element_type(s, new ErrorElement, true);
 }
 
 int
@@ -1271,11 +1270,11 @@ Lexer::yelementclass()
     // define synonym type
     int t = force_element_type(tnext.string());
     Element *et = _element_types[t];
-    add_element_type(name, new Synonym(et));
+    add_element_type(name, new Synonym(et), true);
 
   } else {
     lerror("syntax error near `%#s'", String(tnext.string()).cc());
-    add_element_type(name, new ErrorElement);
+    add_element_type(name, new ErrorElement, true);
   }
 }
 
@@ -1336,7 +1335,7 @@ Lexer::ycompound(String name)
   if (t.is(lex3Dot)) {
     if (_element_type_map[name] < 0) {
       lerror("extending unknown element class `%s'", name.cc());
-      add_element_type(name, new ErrorElement);
+      add_element_type(name, new ErrorElement, true);
     }
     created = _element_types[ _element_type_map[name] ];
     expect(lex2Bar);
@@ -1373,14 +1372,14 @@ Lexer::ycompound(String name)
       break;
 
     // add the intermediate type to ensure it is freed later
-    add_element_type(name, created);
+    add_element_type(name, created, true);
   }
   
   // on the way out
   ((Compound *)created)->check_duplicates_until(first, _errh);
   old_element_map.swap(_element_map);
   
-  return add_element_type(name, created);
+  return add_element_type(name, created, true);
 }
 
 void

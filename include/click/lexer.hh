@@ -65,9 +65,9 @@ class Lexer { public:
   String landmark() const;
   
   bool expect(int, bool report_error = true);
-  
+
   int add_element_type(Element *);
-  int add_element_type(String, Element *);
+  int add_element_type(const String &, Element *, bool scoped = false);
   int element_type(const String &) const;
   int force_element_type(String);
 

@@ -531,8 +531,8 @@ END {
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
-    name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
-    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  lexer->add_element_type(" name ", new " ans[1] ");\n";
+    name = (ans[2] == "" ? "" : "\"" ans[2] "\", ");
+    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  lexer->add_element_type(" name "new " ans[1] ");\n";
   }
 }
 END {

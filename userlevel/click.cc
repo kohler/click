@@ -388,16 +388,17 @@ particular purpose.\n");
   }
   
  done:
+  // provide hotconfig handler if asked
+  if (allow_reconfigure)
+    Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0);
+
+  // parse configuration
   router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!router)
     exit(1);
 
   int exit_value = 0;
 
-  // provide hotconfig handler if asked
-  if (allow_reconfigure)
-    Router::add_write_handler(0, "hotconfig", hotconfig_handler, 0);
-  
   // output flat configuration
   if (output_file) {
     FILE *f = 0;
