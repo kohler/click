@@ -159,9 +159,8 @@ contained spaces instead of underscores.
 
 Binary IPSummaryDump files begin with several ASCII lines, just like regular
 files. The line `C<!binary>' indicates that the rest of the file, starting
-immediately after the newline, consists of binary records. (`C<!binary>' may
-be followed by several space characters to ensure that the first binary record
-begins on a 4-byte boundary.) Each record looks like this:
+immediately after the newline, consists of binary records. Each record looks
+like this:
 
    +---------------+------------...
    |X|record length|    data

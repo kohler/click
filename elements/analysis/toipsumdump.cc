@@ -160,12 +160,8 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     sa << '\n';
 
     // binary marker
-    if (_binary) {
-	sa << "!binary";
-	if ((sa.length() & 3) != 3)
-	    sa.append("    ", 3 - (sa.length() & 3));
-	sa << '\n';
-    }
+    if (_binary)
+	sa << "!binary\n";
 
     // print output
     fwrite(sa.data(), 1, sa.length(), _f);
