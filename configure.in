@@ -108,24 +108,15 @@ fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
 
-if test "x$enable_wifi" = xyes -a ! "x$enable_linuxmodule" = xyes; then
-AC_MSG_ERROR([                                                                                                                                                             
-=========================================                                                                                                                                  
---enable-wifi requires --with-linux.
-
-=========================================])
-
-
-fi 
-
 if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
 if test ! -f $linuxdir/include/linux/click_wifi.h; then
 AC_MSG_ERROR([
 =========================================
 
-You used --enable-wifi but '$linuxdir/click_wifi.h' can't be found.
-You must apply the Click WiFi patch to your Linux source, and supply
-the correct argument to --with-linux.
+You used --enable-wifi and --enable-linuxmodule but
+'$linuxdir/click_wifi.h' can't be found.  You must apply the Click
+WiFi patch to your Linux source, and supply the correct argument to
+--with-linux.
 
 =========================================])
 fi
