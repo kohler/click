@@ -1,3 +1,16 @@
+2000-10-26 Thursday 19:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.hh, perfinfo.cc, polldevice.cc:
+	[no log message]
+
+2000-10-26 Thursday 12:06  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/click_ip6.h: add in_ip4_cksum(..) metahod.
+
+2000-10-26 Thursday 12:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* lib/click_ip6.h: should not be there
+
 2000-10-25 Wednesday 19:04  Peilei Fan <peilei@lcs.mit.edu>
 
 	* lib/: click_ip6.h, ip6address.cc: add a method in_ip4_cksum(...).
