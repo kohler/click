@@ -58,7 +58,6 @@ class FromDevice : public Element {
   pcap_t* _pcap;
   static void get_packet(u_char *, const struct pcap_pkthdr *,
 			 const u_char *);
-  int do_select(int waitms);
 #endif
 
  public:
@@ -89,8 +88,6 @@ class FromDevice : public Element {
 #endif
 
   void selected(int fd);
-
-  void run_scheduled();
 
 #if FROMDEVICE_LINUX
   static int open_packet_socket(String, ErrorHandler *);

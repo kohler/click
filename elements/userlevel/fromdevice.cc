@@ -18,7 +18,6 @@
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
-#include "elements/standard/scheduleinfo.hh"
 #include "glue.hh"
 #include <unistd.h>
 #include <fcntl.h>
@@ -281,32 +280,11 @@ FromDevice::get_packet(u_char* clientdata,
 #endif
 
 void
-FromDevice::run_scheduled()
-{
-#if FROMDEVICE_PCAP
-  // Read and push() at most one packet.
-  pcap_dispatch(_pcap, 1, FromDevice::get_packet, (u_char *) this);
-#endif
-#if FROMDEVICE_LINUX
-  struct sockaddr_ll sa;
-  //memset(&sa, 0, sizeof(sa));
-  socklen_t fromlen = sizeof(sa);
-  int len = recvfrom(_fd, _packetbuf, _packetbuf_size, 0,
-		     (sockaddr *)&sa, &fromlen);
-  if (len > 0) {
-    if (sa.sll_pkttype != PACKET_OUTGOING)
-      output(0).push(Packet::make(_packetbuf, len));
-  } else if (errno != EAGAIN)
-    click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
-#endif
-  reschedule();
-}
-
-void
 FromDevice::selected(int)
 {
 #ifdef FROMDEVICE_PCAP
-  run_scheduled();
+  // Read and push() at most one packet.
+  pcap_dispatch(_pcap, 1, FromDevice::get_packet, (u_char *) this);
 #endif
 #ifdef FROMDEVICE_LINUX
   struct sockaddr_ll sa;
