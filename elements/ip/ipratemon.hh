@@ -98,8 +98,8 @@ class IPRateMonitor : public Element { public:
 
   struct Stats {
     Counter counter[MAX_COUNTERS];
-    Stats(const IPRateMonitor *m);
-    Stats(const IPRateMonitor *m, const MyEWMA &, const MyEWMA &);
+    Stats(IPRateMonitor *m);
+    Stats(IPRateMonitor *m, const MyEWMA &, const MyEWMA &);
     ~Stats();
     void clear();
   private:
@@ -174,8 +174,8 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
       c->next_level = new Stats(this, c->fwd_rate, c->rev_rate);
-      if (!c->next_level)
-	click_chatter("fuck !!!!!!!!!!!!!!!!!!!!!!!");
+      if(!c->next_level)
+        click_chatter("FUCK!!!!!!!!!!!!!!!!!!!!!");
     }
   }
 }
