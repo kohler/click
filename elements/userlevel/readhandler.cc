@@ -6,13 +6,19 @@
 # include <config.h>
 #endif
 #include "readhandler.hh"
-
+  
+int
+ReadHandlerCaller::initialize(ErrorHandler *errh)
+{
+  ScheduleInfo::join_scheduler(this, errh);
+}
+  
 void
 ReadHandlerCaller::run_scheduled()
 {
   extern int call_read_handlers();
   call_read_handlers();
-  unschedule();
+  reschedule();
 }
 
 EXPORT_ELEMENT(ReadHandlerCaller)
