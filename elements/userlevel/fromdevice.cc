@@ -23,6 +23,7 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
+#include <click/standard/scheduleinfo.hh>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -51,14 +52,14 @@
 CLICK_DECLS
 
 FromDevice::FromDevice()
-  : Element(0, 1), _promisc(0), _snaplen(0)
-{
-#if FROMDEVICE_PCAP
-  _pcap = 0;
-#endif
+    : Element(0, 1),
 #if FROMDEVICE_LINUX
-  _fd = -1;
+      _fd(-1),
+#elif FROMDEVICE_PCAP
+      _pcap(0), _task(this), _pcap_complaints(0),
 #endif
+      _promisc(0), _snaplen(0)
+{
 }
 
 FromDevice::~FromDevice()
@@ -199,7 +200,13 @@ FromDevice::initialize(ErrorHandler *errh)
 
     // nonblocking I/O on the packet socket so we can poll
     int pcap_fd = fd();
-    fcntl(pcap_fd, F_SETFL, O_NONBLOCK);
+# if HAVE_PCAP_SETNONBLOCK
+    if (pcap_setnonblock(_pcap, 1, ebuf) < 0)
+	errh->warning("pcap_setnonblock: %s", ebuf);
+# else
+    if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
+	errh->warning("setting nonblocking: %s", strerror(errno));
+# endif
 
 # ifdef BIOCSSEESENT
     {
@@ -234,6 +241,8 @@ FromDevice::initialize(ErrorHandler *errh)
     _datalink = pcap_datalink(_pcap);
     if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
 	errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
+
+    ScheduleInfo::initialize_task(this, &_task, false, errh);
 
 #elif FROMDEVICE_LINUX
 
@@ -335,10 +344,14 @@ CLICK_DECLS
 void
 FromDevice::selected(int)
 {
-#if defined(FROMDEVICE_PCAP)
+#if FROMDEVICE_PCAP
     // Read and push() at most one packet.
-    pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
-#elif defined(FROMDEVICE_LINUX)
+    int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
+    if (r > 0)
+	_task.reschedule();
+    else if (r < 0 && ++_pcap_complaints < 5)
+	ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
+#elif FROMDEVICE_LINUX
     struct sockaddr_ll sa;
     socklen_t fromlen = sizeof(sa);
     // store data offset 2 bytes into the packet, assuming that first 14
@@ -369,16 +382,30 @@ FromDevice::selected(int)
 #endif
 }
 
+#if FROMDEVICE_PCAP
+bool
+FromDevice::run_task()
+{
+    // Read and push() at most one packet.
+    int r = pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
+    if (r > 0)
+	_task.fast_reschedule();
+    else if (r < 0 && ++_pcap_complaints < 5)
+	ErrorHandler::default_handler()->error("%{element}: %s", this, pcap_geterr(_pcap));
+    return r > 0;
+}
+#endif
+
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#if defined(FROMDEVICE_PCAP)
+#if FROMDEVICE_PCAP
     struct pcap_stat stats;
     if (pcap_stats(_pcap, &stats) >= 0)
 	known = true, max_drops = stats.ps_drop;
     else
 	known = false, max_drops = -1;
-#elif defined(FROMDEVICE_LINUX)
+#elif FROMDEVICE_LINUX
     // You might be able to do this better by parsing netstat/ifconfig output,
     // but for now, we just give up.
     known = false, max_drops = -1;

@@ -5,6 +5,7 @@
 # define FROMDEVICE_LINUX 1
 #elif defined(HAVE_PCAP)
 # define FROMDEVICE_PCAP 1
+# include <click/task.hh>
 extern "C" {
 # include <pcap.h>
 void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
@@ -133,6 +134,9 @@ class FromDevice : public Element { public:
 #endif
 
   void selected(int fd);
+#if FROMDEVICE_PCAP
+  bool run_task();
+#endif
 
 #if FROMDEVICE_LINUX
   static int open_packet_socket(String, ErrorHandler *);
@@ -148,6 +152,8 @@ class FromDevice : public Element { public:
   unsigned char *_packetbuf;
 #elif FROMDEVICE_PCAP
   pcap_t* _pcap;
+  Task _task;
+  int _pcap_complaints;
   friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
 				    const u_char*);
 #endif
