@@ -1,3 +1,11 @@
+2002-06-12 Wednesday 09:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.41): 1. don't use log
+	objects that don't exist.  2. ip addresses are in net byte order,
+	stupid.  at the current rate of 35 bugs in the last 4 days, i
+	figure there are only about 1,379 left to be found before i am
+	forced to graduate.
+
 2002-06-11 Tuesday 20:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/ClickController/ControlSocket.java (1.14): handle readLine()
