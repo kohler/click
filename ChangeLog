@@ -1,3 +1,13 @@
+2002-12-19 Thursday 12:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/addressinfo.cc (1.23): fix refcnt bug on
+	devices
+
+2002-12-19 Thursday 12:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/lookupiproutelinux.cc (1.28): disable LinuxIPLookup
+	in linux kernel because of bad device handling
+
 2002-12-18 Wednesday 12:27  Eddie Kohler <kohler@icir.org>
 
 	* include/click/glue.hh (1.33): nitlet found by Xiao Phong
