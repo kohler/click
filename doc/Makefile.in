@@ -14,6 +14,8 @@ datadir = @datadir@/click
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
+MAKEINFO = @MAKEINFO@
+TEXI2DVI = @TEXI2DVI@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 all: install Makefile
@@ -43,6 +45,11 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/Connection.3 $(mandir)/man3/Connection.3
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
 	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -f -
+
+click.info: $(srcdir)/click.texi
+	$(MAKEINFO) $(srcdir)/click.texi
+click.dvi: $(srcdir)/click.texi
+	$(TEXI2DVI) $(srcdir)/click.texi
 
 clean:
 distclean: clean
