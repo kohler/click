@@ -76,7 +76,7 @@ FromDevice::clone() const
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool promisc = false;
+  bool promisc = false, outbound = false;
   _snaplen = 2046;
   _force_ip = false;
   String bpf_filter;
@@ -90,6 +90,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
 		  "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
 		  "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
+		  "OUTBOUND", cpBool, "emit outbound packets?", &outbound,
 		  cpEnd) < 0)
     return -1;
   if (_snaplen > 8190 || _snaplen < 14)
@@ -101,6 +102,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     errh->warning("not using pcap library, BPF filter ignored");
 #endif
   _promisc = promisc;
+  _outbound = outbound;
   return 0;
 }
 
@@ -108,157 +110,161 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FromDevice::open_packet_socket(String ifname, ErrorHandler *errh)
 {
-  int fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-  if (fd == -1)
-    return errh->error("%s: socket: %s", ifname.cc(), strerror(errno));
+    int fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (fd == -1)
+	return errh->error("%s: socket: %s", ifname.cc(), strerror(errno));
 
-  // get interface index
-  struct ifreq ifr;
-  memset(&ifr, 0, sizeof(ifr));
-  strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
-  int res = ioctl(fd, SIOCGIFINDEX, &ifr);
-  if (res != 0) {
-    close(fd);
-    return errh->error("%s: SIOCGIFINDEX: %s", ifname.cc(), strerror(errno));
-  }
-  int ifindex = ifr.ifr_ifindex;
+    // get interface index
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
+    int res = ioctl(fd, SIOCGIFINDEX, &ifr);
+    if (res != 0) {
+	close(fd);
+	return errh->error("%s: SIOCGIFINDEX: %s", ifname.cc(), strerror(errno));
+    }
+    int ifindex = ifr.ifr_ifindex;
 
-  // bind to the specified interface.  from packet man page, only
-  // sll_protocol and sll_ifindex fields are used; also have to set
-  // sll_family
-  sockaddr_ll sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sll_family = AF_PACKET;
-  sa.sll_protocol = htons(ETH_P_ALL);
-  sa.sll_ifindex = ifindex;
-  res = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
-  if (res != 0) {
-    close(fd);
-    return errh->error("%s: bind: %s", ifname.cc(), strerror(errno));
-  }
+    // bind to the specified interface.  from packet man page, only
+    // sll_protocol and sll_ifindex fields are used; also have to set
+    // sll_family
+    sockaddr_ll sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sll_family = AF_PACKET;
+    sa.sll_protocol = htons(ETH_P_ALL);
+    sa.sll_ifindex = ifindex;
+    res = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
+    if (res != 0) {
+	close(fd);
+	return errh->error("%s: bind: %s", ifname.cc(), strerror(errno));
+    }
 
-  // nonblocking I/O on the packet socket so we can poll
-  fcntl(fd, F_SETFL, O_NONBLOCK);
+    // nonblocking I/O on the packet socket so we can poll
+    fcntl(fd, F_SETFL, O_NONBLOCK);
   
-  return fd;
+    return fd;
 }
 
 int
 FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 {
-  // get interface flags
-  struct ifreq ifr;
-  memset(&ifr, 0, sizeof(ifr));
-  strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
-  int res = ioctl(fd, SIOCGIFFLAGS, &ifr);
-  if (res != 0)
-    return -2;
-  int was_promisc = (ifr.ifr_flags & IFF_PROMISC ? 1 : 0);
+    // get interface flags
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, ifname.cc(), sizeof(ifr.ifr_name));
+    if (ioctl(fd, SIOCGIFFLAGS, &ifr) != 0)
+	return -2;
+    int was_promisc = (ifr.ifr_flags & IFF_PROMISC ? 1 : 0);
 
-  // set or reset promiscuous flag
-  if (was_promisc != promisc) {
-    ifr.ifr_flags = (promisc ? ifr.ifr_flags | IFF_PROMISC : ifr.ifr_flags & ~IFF_PROMISC);
-    res = ioctl(fd, SIOCSIFFLAGS, &ifr);
-    if (res != 0)
-      return -3;
-  }
+    // set or reset promiscuous flag
+#ifdef SOL_PACKET
+    if (ioctl(fd, SIOCGIFINDEX, &ifr) != 0)
+	return -2;
+    struct packet_mreq mr;
+    memset(&mr, 0, sizeof(mr));
+    mr.mr_ifindex = ifr.ifr_ifindex;
+    mr.mr_type = (promisc ? PACKET_MR_PROMISC : PACKET_MR_ALLMULTI);
+    if (setsockopt(fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) < 0)
+	return -3;
+#else
+    if (was_promisc != promisc) {
+	ifr.ifr_flags = (promisc ? ifr.ifr_flags | IFF_PROMISC : ifr.ifr_flags & ~IFF_PROMISC);
+	if (ioctl(fd, SIOCSIFFLAGS, &ifr) < 0)
+	    return -3;
+    }
+#endif
 
-  return was_promisc;
+    return was_promisc;
 }
 #endif
 
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-  if (!_ifname)
-    return errh->error("interface not set");
+    if (!_ifname)
+	return errh->error("interface not set");
 
-  /* 
-   * Later versions of pcap distributed with linux (e.g. the redhat
-   * linux pcap-0.4-16) want to have a filter installed before they
-   * will pick up any packets.
-   */
+    /* 
+     * Later versions of pcap distributed with linux (e.g. the redhat
+     * linux pcap-0.4-16) want to have a filter installed before they
+     * will pick up any packets.
+     */
 
 #if FROMDEVICE_PCAP
   
-  assert(!_pcap);
-  char *ifname = _ifname.mutable_c_str();
-  char ebuf[PCAP_ERRBUF_SIZE];
-  _pcap = pcap_open_live(ifname,
-                         12000, /* XXX snaplen */
-                         _promisc,
-                         1,     /* timeout: don't wait for packets */
-                         ebuf);
-  // Note: pcap error buffer will contain the interface name
-  if (!_pcap)
-    return errh->error("%s", ebuf);
+    assert(!_pcap);
+    char *ifname = _ifname.mutable_c_str();
+    char ebuf[PCAP_ERRBUF_SIZE];
+    _pcap = pcap_open_live(ifname, _snaplen, _promisc,
+			   1,     /* timeout: don't wait for packets */
+			   ebuf);
+    // Note: pcap error buffer will contain the interface name
+    if (!_pcap)
+	return errh->error("%s", ebuf);
 
-  // nonblocking I/O on the packet socket so we can poll
-  int pcap_fd = fd();
-  fcntl(pcap_fd, F_SETFL, O_NONBLOCK);
+    // nonblocking I/O on the packet socket so we can poll
+    int pcap_fd = fd();
+    fcntl(pcap_fd, F_SETFL, O_NONBLOCK);
 
 #ifdef BIOCSSEESENT
-  {
-    int no = 0;
-    if (ioctl(pcap_fd, BIOCSSEESENT, &no) != 0)
-      return errh->error("FromDevice: BIOCSEESENT failed");
-  }
+    {
+	int accept = _outbound;
+	if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
+	    return errh->error("FromDevice: BIOCSEESENT failed");
+    }
 #endif
 
-#if defined( BIOCIMMEDIATE ) && ! defined( __sun ) // pcap/bpf ioctl, not in DLPI/bufmod
-  {
-    int yes = 1;
-    if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
-      return errh->error("FromDevice: BIOCIMMEDIATE failed");
-  }
+#if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
+    {
+	int yes = 1;
+	if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
+	    return errh->error("FromDevice: BIOCIMMEDIATE failed");
+    }
 #endif
 
-  bpf_u_int32 netmask;
-  bpf_u_int32 localnet;
-  if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0) {
-    errh->warning("%s", ebuf);
-  }
+    bpf_u_int32 netmask;
+    bpf_u_int32 localnet;
+    if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0)
+	errh->warning("%s", ebuf);
   
-  struct bpf_program fcode;
-  // compile the BPF filter
-  if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0) {
-    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
-  }
+    // compile the BPF filter
+    struct bpf_program fcode;
+    if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_c_str(), 0, netmask) < 0)
+	return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+    if (pcap_setfilter(_pcap, &fcode) < 0)
+	return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
 
-  if (pcap_setfilter(_pcap, &fcode) < 0) {
-    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
-  }
+    add_select(pcap_fd, SELECT_READ);
 
-  add_select(pcap_fd, SELECT_READ);
-
-  _datalink = pcap_datalink(_pcap);
-  if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
-    errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
+    _datalink = pcap_datalink(_pcap);
+    if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
+	errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
 
 #elif FROMDEVICE_LINUX
 
-  _fd = open_packet_socket(_ifname, errh);
-  if (_fd < 0) return -1;
+    _fd = open_packet_socket(_ifname, errh);
+    if (_fd < 0)
+	return -1;
 
-  int promisc_ok = set_promiscuous(_fd, _ifname, _promisc);
-  if (promisc_ok < 0) {
-    if (_promisc)
-      errh->warning("cannot set promiscuous mode");
-    _was_promisc = -1;
-  } else
-    _was_promisc = promisc_ok;
+    int promisc_ok = set_promiscuous(_fd, _ifname, _promisc);
+    if (promisc_ok < 0) {
+	if (_promisc)
+	    errh->warning("cannot set promiscuous mode");
+	_was_promisc = -1;
+    } else
+	_was_promisc = promisc_ok;
 
-  add_select(_fd, SELECT_READ);
+    add_select(_fd, SELECT_READ);
 
-  _datalink = FAKE_DLT_EN10MB;
-  
+    _datalink = FAKE_DLT_EN10MB;
+
 #else
 
-  return errh->error("FromDevice is not supported on this platform");
+    return errh->error("FromDevice is not supported on this platform");
   
 #endif
-
-  return 0;
+    
+    return 0;
 }
 
 void
@@ -349,7 +355,7 @@ FromDevice::selected(int)
     // aligned; perhaps there is some efficiency aspect?  who cares....
     WritablePacket *p = Packet::make(2, 0, _snaplen, 0);
     int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
-    if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
+    if (len > 0 && (sa.sll_pkttype != PACKET_OUTGOING || _outbound)) {
 	if (len > _snaplen) {
 	    assert(p->length() == (uint32_t)_snaplen);
 	    SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);

@@ -17,7 +17,7 @@ CLICK_DECLS
 
 =c
 
-FromDevice(DEVNAME [, PROMISC, SNAPLEN, I<KEYWORDS>])
+FromDevice(DEVNAME [, PROMISC, SNAPLEN, I<keywords> PROMISC, SNAPLEN, FORCE_IP, BPF_FILTER, OUTBOUND])
 
 =s devices
 
@@ -67,6 +67,12 @@ but the IP header annotation has been set appropriately.) Default is false.
 String. A BPF filter expression used to select the interesting packets.
 Default is the empty string, which means all packets. If FromDevice is not
 using the pcap library to read its packets, any filter expression is ignored.
+
+=item OUTBOUND
+
+Boolean. If true, then emit packets that the kernel sends to the given
+interface, as well as packets that the kernel receives from it. Default is
+false.
 
 =back
 
@@ -143,6 +149,7 @@ class FromDevice : public Element { public:
   
   String _ifname;
   bool _promisc : 1;
+  bool _outbound : 1;
   int _was_promisc : 2;
   int _snaplen;
 #if FROMDEVICE_PCAP
