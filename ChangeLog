@@ -1,3 +1,14 @@
+2002-06-11 Tuesday 20:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.14): i hate bugs
+
+2002-06-11 Tuesday 20:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.13), dsdvroutetable.hh
+	(1.12), gridgenericrt.hh (1.4), gridlogger.hh (1.17),
+	gridroutetable.cc (1.56), gridroutetable.hh (1.34): buglets &
+	beefed up error checking and asserts (again...)
+
 2002-06-11 Tuesday 11:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.12): doc nitlets.	bugs fixed
