@@ -110,24 +110,21 @@ Counter::llrpc(unsigned command, void *data)
     unsigned *what = (d == 0 ? &_count : &_byte_count);
     return CLICK_LLRPC_PUT_DATA(data, what, sizeof(*what));
     
-  } else if (command == CLICK_LLRPC_GET_COUNTS || command == CLICK_LLRPC_GET_COUNTS_RESET) {
+  } else if (command == CLICK_LLRPC_GET_COUNTS) {
+    click_llrpc_counts_st *user_cs = (click_llrpc_counts_st *)data;
     click_llrpc_counts_st cs;
-    if (CLICK_LLRPC_GET_DATA(&cs, data, sizeof(cs)) < 0
+    if (CLICK_LLRPC_GET_DATA(&cs, data, sizeof(cs.n) + sizeof(cs.keys)) < 0
 	|| cs.n >= CLICK_LLRPC_COUNTS_SIZE)
       return -EINVAL;
     for (unsigned i = 0; i < cs.n; i++) {
-      unsigned *what;
-      if (cs.v[i].key == 0)
-	what = &_count;
-      else if (cs.v[i].key == 1)
-	what = &_byte_count;
+      if (cs.keys[i] == 0)
+	cs.values[i] = _count;
+      else if (cs.keys[i] == 1)
+	cs.values[i] = _byte_count;
       else
 	return -EINVAL;
-      cs.v[i].value = *what;
-      if (command == CLICK_LLRPC_GET_COUNTS_RESET)
-	*what = 0;
     }
-    return CLICK_LLRPC_PUT_DATA(data, &cs, sizeof(cs));
+    return CLICK_LLRPC_PUT_DATA(&user_cs->values, &cs.values, sizeof(cs.values));
     
   } else
     return Element::llrpc(command, data);

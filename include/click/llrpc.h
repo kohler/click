@@ -17,15 +17,12 @@
 #define CLICK_LLRPC_GET_RATES				0xC400C70B
 #define CLICK_LLRPC_GET_COUNT				0xC400C70C
 #define CLICK_LLRPC_GET_COUNTS				0xC400C70D
-#define CLICK_LLRPC_GET_COUNTS_RESET			0xC400C70E
 
-#define CLICK_LLRPC_COUNTS_SIZE			8
+#define CLICK_LLRPC_COUNTS_SIZE 8
 struct click_llrpc_counts_st {
   unsigned n;
-  struct {
-    unsigned key;
-    unsigned value;
-  } v[CLICK_LLRPC_COUNTS_SIZE];
+  unsigned keys[CLICK_LLRPC_COUNTS_SIZE];
+  unsigned values[CLICK_LLRPC_COUNTS_SIZE];
 };
 
 

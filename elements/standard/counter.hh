@@ -30,6 +30,7 @@ weighted moving average) in packets/bytes per second.
 Resets the counts and rates to zero.
 
 =h CLICK_LLRPC_GET_RATE llrpc
+
 Argument is a pointer to an integer that must be 0.  Returns the recent
 arrival rate (measured by exponential weighted moving average) in
 packets per second. 
@@ -44,10 +45,6 @@ count). Returns the current packet or byte count.
 Argument is a pointer to an array of 16 integers. First integer is number of
 counts to pull. Remaining integers must each be 0 (packet count) or 1 (byte
 count). Stores the corresponding count on top of each integer.
-
-=h CLICK_LLRPC_GET_COUNTS_RESET llrpc
-
-Same as CLICK_LLRPC_GET_COUNTS, but any counters read are reset.
 
 */
 
