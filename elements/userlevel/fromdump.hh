@@ -30,6 +30,9 @@ extern "C" {
 #endif
 #include <sys/types.h>
 #include "element.hh"
+#ifndef HAVE_BPF_TIMEVAL
+typedef struct timeval bpf_timeval;
+#endif
 
 class FromDump : public Element {
   

@@ -22,6 +22,9 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
+/* Define if <pcap.h> uses bpf_timeval. */
+#undef HAVE_BPF_TIMEVAL
+
 @TOP@
 @BOTTOM@
 
