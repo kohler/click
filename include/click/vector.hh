@@ -35,8 +35,6 @@ class Vector { public:
   Vector<T> &assign(int n, const T &e = T());
   void swap(Vector<T> &);
 
-  Subvector<T> subvector(int, int) const;
-  
  private:
   
   T *_l;
@@ -101,8 +99,6 @@ class Vector<void *> { public:
   Vector<void *> &assign(int n, void *e = 0);
   void swap(Vector<void *> &);
 
-  Subvector<void *> subvector(int, int) const;
-  
  private:
   
   void **_l;
@@ -168,8 +164,6 @@ class Vector<T *>: private Vector<void *> {
   Vector<T *> &assign(int n, T *e = 0)
   		{ Base::assign(n, (void *)e); return *this; }
   void swap(Vector<T *> &o)	{ Base::swap(o); }
-  
-  Subvector<T *> subvector(int, int) const;
   
 };
 
