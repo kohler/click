@@ -186,10 +186,14 @@ static String
 FastUDPSource_read_rate_handler(Element *e, void *)
 {
   FastUDPSource *c = (FastUDPSource *)e;
-  int d = c->last() - c->first();
-  if (d < 1) d = 1;
-  int rate = c->count() * CLICK_HZ / d;
-  return String(rate) + "\n";
+  if(c->last() != 0){
+    int d = c->last() - c->first();
+    if (d < 1) d = 1;
+    int rate = c->count() * CLICK_HZ / d;
+    return String(rate) + "\n";
+  } else {
+    return String("0\n");
+  }
 }
 
 static int

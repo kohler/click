@@ -284,7 +284,7 @@ ToDevice::queue_packet(Packet *p)
   }
   if(ret != 0){
     if(_rejected == 0)
-      printk("<1>ToDevice %s tx oops\n", _dev->name);
+      printk("<1>ToDevice %s rejected a packet!\n", _dev->name);
     kfree_skb(skb1);
     _rejected++;
   }
