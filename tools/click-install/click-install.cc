@@ -499,7 +499,8 @@ particular purpose.\n");
     (void) system(cmdline);
     if (access("/proc/click/version", F_OK) < 0)
       errh->fatal("cannot install Click module");
-  }
+  } else if (threads > 1)
+      errh->warning("Click module already installed, `--threads' option ignored");
 
   // find current packages
   HashMap<String, int> active_modules(-1);
