@@ -168,7 +168,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
 
     // actually mmap
     _len = _mmap_unit;
-    if (_mmap_off + _len > (uint32_t)statbuf.st_size)
+    if ((off_t)(_mmap_off + _len) > statbuf.st_size)
 	_len = statbuf.st_size - _mmap_off;
     
     void *mmap_data = mmap(0, _len, PROT_READ, MAP_SHARED, _fd, _mmap_off);
