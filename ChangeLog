@@ -1,3 +1,7 @@
+2004-10-21 Thursday 19:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.cc (1.39): nit
+
 2004-10-21 Thursday 16:15  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/extradecap.cc (1.2), elements/wifi/extraencap.cc
