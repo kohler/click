@@ -575,7 +575,7 @@ if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
   if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
     AC_MSG_RESULT(found)
   else
-    MAKEINFO='$(conf_auxdir)/missing texi2dvi'
+    TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
     AC_MSG_RESULT(old)
   fi
 else
