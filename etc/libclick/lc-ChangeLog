@@ -1,3 +1,8 @@
+2002-01-17 Thursday 14:23  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: add Element::ports_frozen() method
+
 2002-01-14 Monday 20:39  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:

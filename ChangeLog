@@ -1,3 +1,20 @@
+2002-01-17 Thursday 14:24  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: iproutetable.cc (1.4), iproutetable.hh (1.5),
+	radixiplookup.cc (1.4), radixiplookup.hh (1.4): more IPRouteTable
+	updates
+
+2002-01-17 Thursday 14:23  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh (1.19), lib/element.cc (1.63): add
+	Element::ports_frozen() method
+
+2002-01-17 Thursday 13:54  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: iproutetable.cc (1.3), iproutetable.hh (1.4),
+	radixiplookup.cc (1.3), radixiplookup.hh (1.3):
+	IPRouteTable/RadixIPLookup cleanup, initial phase
+
 2002-01-15 Tuesday 18:54  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/fwrules (1.1): added
