@@ -26,7 +26,8 @@ class PullToPush : public Element {
   bool wants_packet_upstream() const;
   void run_scheduled();
 
-  /* XXX - hack - I can't find another place to do this scheduling */
+#ifdef __KERNEL__
+  /* hack - I can't find another place to do this scheduling */
   virtual struct wait_queue** get_wait_queue() 
   { 
       if (first_time_schedule) 
@@ -36,6 +37,7 @@ class PullToPush : public Element {
       }
       return 0L; 
   }
+#endif
 };
 
 #endif
