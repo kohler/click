@@ -207,7 +207,7 @@ ToDump::write_packet(Packet *p)
 
   unsigned to_write = p->length();
   ph.len = to_write + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-  if (to_write > _snaplen)
+  if (_snaplen && to_write > _snaplen)
     to_write = _snaplen;
   ph.caplen = to_write;
 
