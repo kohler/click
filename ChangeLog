@@ -1,3 +1,12 @@
+2005-02-07 Monday 15:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.36), etc/README (1.9): 2.4.26 patch applies to 2.4.28
+	fine
+
+2005-02-07 Monday 15:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.89): include timestamp.{hh,cc}
+
 2005-02-05 Saturday 21:41  Nikitas Liogkas <nikitas@cs.ucla.edu>
 
 	* elements/local/sleeptriggercontroller.cc (1.1): file
