@@ -322,7 +322,7 @@ ToDevice::tx_intr()
     if (_activations>0) _q_empty_resched++;
   }
   
-  /* handle burstiness */
+  /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
            _last_tx < dma_thresh_low && !_last_busy) {
     adj *= 2;
@@ -331,6 +331,9 @@ ToDevice::tx_intr()
   
   /* prevent backlog and keep device running */
   else if (sent > dmal/2) {
+    if (sent > dma_thresh_high) 
+      /* semi-bursty: start a bit faster if we sent a lot */
+      if (adj<8) adj=8;
     if (_activations>0) _q_full_resched++;
   }
   
