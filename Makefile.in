@@ -27,11 +27,13 @@ PROVISIONS = @provisions@ $(EXTRA_PROVIDES)
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-includedir = @includedir@/click
-netincludedir = @includedir@/clicknet
-toolincludedir = @includedir@/clicktool
+includedir = @includedir@
+clickincludedir = $(includedir)/click
+netincludedir = $(includedir)/clicknet
+toolincludedir = $(includedir)/clicktool
 bindir = @bindir@
-datadir = @datadir@/click
+datadir = @datadir@
+clickdatadir = $(datadir)/click
 
 all: @TARGETS@ tools Makefile
 
@@ -56,11 +58,11 @@ install-local: elementmap.xml $(srcdir)/click-buildtool click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
-	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) elementmap.xml $(datadir)/elementmap.xml
-	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
-	/bin/rm -rf $(datadir)/src
-	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
+	$(mkinstalldirs) $(clickdatadir)
+	$(INSTALL_DATA) elementmap.xml $(clickdatadir)/elementmap.xml
+	(cd $(top_srcdir); pwd) > $(clickdatadir)/srcdir
+	/bin/rm -rf $(clickdatadir)/src
+	/bin/ln -s `cd $(top_srcdir); pwd` $(clickdatadir)/src
 install-doc:
 	@cd doc && $(MAKE) install
 install-info:
@@ -68,13 +70,13 @@ install-info:
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-local-include: stamp-h
-	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(includedir)
-	$(mkinstalldirs) $(includedir)/standard
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
+	$(mkinstalldirs) $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(clickincludedir)
+	$(mkinstalldirs) $(clickincludedir)/standard
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(clickincludedir)/standard
 	$(mkinstalldirs) $(netincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
 install-include: install-local-include
@@ -84,11 +86,11 @@ uninstall:
 	@for d in @TARGETS@ doc tools; do (cd $$d && $(MAKE) uninstall) || exit 1; done
 	@$(MAKE) uninstall-local uninstall-local-include
 uninstall-local:
-	/bin/rm -f $(bindir)/click-buildtool $(bindir)/click-compile $(bindir)/click-mkelemmap $(datadir)/elementmap.xml $(datadir)/srcdir $(datadir)/src
+	/bin/rm -f $(bindir)/click-buildtool $(bindir)/click-compile $(bindir)/click-mkelemmap $(clickdatadir)/elementmap.xml $(clickdatadir)/srcdir $(clickdatadir)/src
 uninstall-local-include:
-	cd $(srcdir)/include/click; for i in *.h *.hh *.cc; do /bin/rm -f $(includedir)/$$i; done
-	cd $(top_builddir); for i in *.h; do /bin/rm -f $(includedir)/$$i; done
-	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(includedir)/standard/$$i; done
+	cd $(srcdir)/include/click; for i in *.h *.hh *.cc; do /bin/rm -f $(clickincludedir)/$$i; done
+	cd $(top_builddir); for i in *.h; do /bin/rm -f $(clickincludedir)/$$i; done
+	cd $(srcdir)/include/click/standard; for i in *.hh; do /bin/rm -f $(clickincludedir)/standard/$$i; done
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(netincludedir)/$$i; done
 
 elemlist elemlists:

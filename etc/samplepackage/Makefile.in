@@ -11,9 +11,13 @@ package := sample
 top_builddir := .
 subdir := .
 
-# Set `clicksharedir' to the Click share directory.
+# The Click prefix. Set this to affect other variables.
 # Generally, you will provide a `--with-click=CLICKPREFIX' option, and set:
-clicksharedir := @clickprefix@/share/click
+clickprefix := @clickprefix@
+
+# Set `clicksharedir' to the Click share directory.
+# Generally, you will set:
+clicksharedir := $(clickprefix)/share/click
 
 # Set `clicksrcdir' to the Click source directory.
 # Generally, you will set:
@@ -21,11 +25,11 @@ clicksrcdir := $(clicksharedir)/src
 
 # Set `clickbindir' to the Click binary directory.
 # Generally, you will set:
-clickbindir := @clickprefix@/bin
+clickbindir := $(clickprefix)/bin
 
 # Set `clickincludedir' to the Click include directory.
 # Generally, you will set:
-clickincludedir := @clickprefix@/include
+clickincludedir := $(clickprefix)/include
 
 
 # Set `MAKE_UPACKAGE', `MAKE_KPACKAGE', and `MAKE_BPACKAGE' to `0' or `1' 
@@ -61,7 +65,8 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 mandir = @mandir@
-datadir = @datadir@/click
+datadir = @datadir@
+clickdatadir = $(datadir)/click
 linuxdir = @linuxdir@
 freebsd_includedir = @freebsd_includedir@
 
@@ -202,8 +207,8 @@ include $(DEPFILES)
 endif
 
 install: install-obj install-man elementmap-$(package).xml always
-	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) elementmap-$(package).xml $(datadir)/elementmap-$(package).xml
+	$(mkinstalldirs) $(clickdatadir)
+	$(INSTALL_DATA) elementmap-$(package).xml $(clickdatadir)/elementmap-$(package).xml
 install-obj: $(TARGETS) always
 	$(mkinstalldirs) $(libdir)
 	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
@@ -213,7 +218,7 @@ install-man: always
 	echo $(srcdir) | $(CLICK_BUILDTOOL) findelem -r "$(DRIVERS)" -r $(package) -e $(clicksharedir)/elementmap.xml | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f - -e $(clicksharedir)/elementmap.xml
 
 uninstall: uninstall-obj uninstall-man always
-	/bin/rm -f $(datadir)/elementmap-$(package).xml
+	/bin/rm -f $(clickdatadir)/elementmap-$(package).xml
 uninstall-obj: always
 	for i in $(TARGETS); do /bin/rm -f $(libdir)/$$i; done
 uninstall-man: always

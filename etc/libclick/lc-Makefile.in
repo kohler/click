@@ -24,10 +24,10 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-includedir = @includedir@/click
-netincludedir = @includedir@/clicknet
+includedir = @includedir@
+clickincludedir = $(includedir)/click
+netincludedir = $(includedir)/clicknet
 bindir = @bindir@
-datadir = @datadir@/click
 
 all: libsrc Makefile
 
@@ -43,13 +43,13 @@ install-local: $(srcdir)/click-buildtool click-compile
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 install-include: stamp-h
-	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(includedir)
-	$(mkinstalldirs) $(includedir)/standard
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
+	$(mkinstalldirs) $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(clickincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(clickincludedir)
+	$(mkinstalldirs) $(clickincludedir)/standard
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(clickincludedir)/standard
 	$(mkinstalldirs) $(netincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
 
