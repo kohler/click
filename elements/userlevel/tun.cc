@@ -171,45 +171,44 @@ Tun::push(int, Packet *p)
  * Exits on failure.
  */
 int
-Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
+Tun::alloc_tun(const char *dev_name, struct in_addr near, struct in_addr far,
                ErrorHandler *errh)
 {
-  int i, fd, yes = 1;
+  int fd, yes = 1;
   char tmp[512], tmp0[64], tmp1[64];;
 
-  for(i = 0; i < 32; i++){
-    sprintf(tmp, "/dev/%s%d", dev_prefix, i);
-    fd = open(tmp, 2);
-    if(fd >= 0){
-      if(ioctl(fd, FIONBIO, &yes) < 0){
-        close(fd);
-        return errh->error("FIONBIO failed");
-      }
-
+  sprintf(tmp, "/dev/%s", dev_name);
+  fd = open(tmp, 2);
+  if(fd >= 0){
+    if(ioctl(fd, FIONBIO, &yes) < 0){
+      close(fd);
+      return errh->error("FIONBIO failed");
+    }
+    
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
-      {
-        int mode = IFF_BROADCAST;
-        if(ioctl(fd, TUNSIFMODE, &mode) != 0){
-          perror("Tun: TUNSIFMODE");
-          return errh->error("cannot set TUNSIFMODE");
-        }
+    {
+      int mode = IFF_BROADCAST;
+      if(ioctl(fd, TUNSIFMODE, &mode) != 0){
+	perror("Tun: TUNSIFMODE");
+	return errh->error("cannot set TUNSIFMODE");
       }
+    }
 #endif
 
-      strcpy(tmp0, inet_ntoa(near));
-      strcpy(tmp1, inet_ntoa(far));
-      // treat far address as netmask 
-      sprintf(tmp, "ifconfig %s%d %s netmask %s up", dev_prefix, i, tmp0, tmp1);
-
-      if(system(tmp) != 0){
-        close(fd);
-        return errh->error("failed: %s", tmp);
-      }
-      return(fd);
+    strcpy(tmp0, inet_ntoa(near));
+    strcpy(tmp1, inet_ntoa(far));
+    
+    // treat far address as netmask 
+    sprintf(tmp, "ifconfig %s %s netmask %s up", dev_name, tmp0, tmp1);
+    
+    if(system(tmp) != 0){
+      close(fd);
+      return errh->error("failed: %s", tmp);
     }
+    return(fd);
   }
 
-  return errh->error("could not allocate a free /dev/%s* device", dev_prefix);
+  return errh->error("could not allocate the /dev/%s device", dev_name);
 }
 
 ELEMENT_REQUIRES(userlevel)
