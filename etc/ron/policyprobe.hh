@@ -112,14 +112,18 @@ public:
   Vector<long double> sent_time;
   Packet *syn_pkt;
 
-  FlowTableEntry(IPAddress s, unsigned short sp,
-		 IPAddress d, unsigned short dp) {
+  FlowTableEntry() {
+    syn_pkt = NULL;
+  };
+  ~FlowTableEntry() {
+    if (syn_pkt) syn_pkt->kill();
+  }
+
+  void initialize(IPAddress s, unsigned short sp,
+		  IPAddress d, unsigned short dp) {
     src = s; sport = sp;
     dst = d; dport = dp;
   } 
-  ~FlowTableEntry() {
-    syn_pkt->kill();
-  }
 
   bool match(IPAddress s, unsigned short sp,
 	     IPAddress d, unsigned short dp) {

@@ -50,13 +50,18 @@ void PolicyProbe::push_forward_syn(Packet *p) {
   click_chatter("SAW FORWARD PKT");
 
   // Lookup this flow
-  entry = _flowtable->lookup(p->ip_header()->ip_src, ntohs(tcph->th_sport),
-			     p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+  entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_src),
+			     ntohs(tcph->th_sport),
+			     IPAddress(p->ip_header()->ip_dst),
+			     ntohs(tcph->th_dport));
   // If there's no matching flow, create one
   if (!entry) {
     first_syn = 1;
-    entry = _flowtable->insert(p->ip_header()->ip_src, ntohs(tcph->th_sport),
-			       p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+    
+    entry = _flowtable->insert(IPAddress(p->ip_header()->ip_src), 
+			       ntohs(tcph->th_sport),
+			       IPAddress(p->ip_header()->ip_dst),
+			       ntohs(tcph->th_dport));
   }
 
   // if it's the first syn, remember <now> for sending on the direct path
@@ -97,13 +102,14 @@ PolicyProbe::FlowTableEntry *
 PolicyProbe::FlowTable::insert(IPAddress src, unsigned short sport,
 			       IPAddress dst, unsigned short dport) {
   int i;
-  for(i=_v.size()-1; i>=0; i--)
+  for(i=_v.size()-1; i>=0; i--) {
     if (_v[i].match(src,sport,dst,dport)) {
       //_v[i].policy = policy;
       return &_v[i];
     }
-  
-  FlowTableEntry e(src, sport, dst, dport);
+  }
+  FlowTableEntry e;
+  e.initialize(src, sport, dst, dport);
   _v.push_back(e);
   return &_v[_v.size()-1];
 }
@@ -133,5 +139,6 @@ PolicyProbe::FlowTable::remove(IPAddress src, unsigned short sport,
 
 #include <click/vector.cc>
 template class Vector<PolicyProbe::FlowTableEntry*>;
+template class Vector<PolicyProbe::FlowTableEntry>;
 ELEMENT_PROVIDES(PolicyProbe)
 

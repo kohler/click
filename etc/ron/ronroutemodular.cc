@@ -86,6 +86,7 @@ void RONRouteModular::push(int inport, Packet *p)
   } else {
     push_reverse_packet(inport, p);
   }
+  d2printf(" ");
 }
 
 void RONRouteModular::push_forward_packet(Packet *p) 
@@ -94,7 +95,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   int policy = PAINT_ANNO(p);
 
   // Verify policy is in valid range.
-  d2printf("policies size: %d", _policies.size());
+  //d2printf("policies size: %d", _policies.size());
   if (policy >= _policies.size()){
     d2printf(" No such policy: %d", policy);
     p->kill();
@@ -110,9 +111,9 @@ void RONRouteModular::push_forward_packet(Packet *p)
 
   // Switch on TCP packet type
   tcph = p->tcp_header();
-  _flowtable->insert(p->ip_header()->ip_src, ntohs(tcph->th_sport),
-		   p->ip_header()->ip_dst, ntohs(tcph->th_dport), 
-		   policy);
+  _flowtable->insert(IPAddress(p->ip_header()->ip_src), ntohs(tcph->th_sport),
+		     IPAddress(p->ip_header()->ip_dst), ntohs(tcph->th_dport), 
+		     policy);
 
   if (tcph->th_flags & TH_SYN) {
     _policies[policy]->push_forward_syn(p);
@@ -123,6 +124,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   } else {
     _policies[policy]->push_forward_normal(p);
   }
+  click_chatter("");
   return;
 }
 
@@ -139,8 +141,12 @@ void RONRouteModular::push_reverse_packet(int inport, Packet *p)
     return;
   }
 
-  entry = _flowtable->lookup(p->ip_header()->ip_src, ntohs(tcph->th_sport),
-			     p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+  tcph = p->tcp_header();
+  entry = _flowtable->lookup(IPAddress(p->ip_header()->ip_dst), 
+			     ntohs(tcph->th_dport), 
+			     IPAddress(p->ip_header()->ip_src), 
+			     ntohs(tcph->th_sport));
+			     
   if (!entry) {
     d2printf(" Could not find flow");
     p->kill();
@@ -243,6 +249,9 @@ RONRouteModular::FlowTable::insert(IPAddress src, unsigned short sport,
   
   FlowTableEntry e(src, sport, dst, dport, policy);
   _v.push_back(e);
+  d2printf(" inserting %s(%d) -> %s(%d)", 
+	   src.unparse().cc(), _v[_v.size()-1].sport, 
+	   dst.unparse().cc(), _v[_v.size()-1].dport);
   return &_v[_v.size()-1];
 }
 
@@ -250,9 +259,10 @@ RONRouteModular::FlowTableEntry *
 RONRouteModular::FlowTable::lookup(IPAddress src, unsigned short sport,
 				   IPAddress dst, unsigned short dport) {
   int i;
-  for(i=_v.size()-1; i>=0; i--)
+  for(i=_v.size()-1; i>=0; i--){
     if (_v[i].match(src,sport,dst,dport))
       return &_v[i];
+  }
 
   return NULL;
 }
