@@ -1,3 +1,29 @@
+2003-02-09 Sunday 18:13  Eddie Kohler <kohler@icir.org>
+
+	* test/FTPPortMapper/local01.testie (1.1): add a workable
+	FTPPortMapper test
+
+2003-02-09 Sunday 18:11  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/: tcprewriter.cc (1.30), tcprewriter.hh (1.14):
+	fix TCPRewriter, AGAIN; this time a problem was reported by Tomasz
+	Jaskolski <tj@onyx.pl>; now we have a test, so it is more likely to
+	be correct. The bug: the ACK adjustment was determined by looking
+	at the raw ACK number; but that is wrong; you should look at (ACK -
+	DELTA) and compare that to TRIGGER. For instance, say TRIGGER=5,
+	DELTA=-2. Then an ACK for 3 should be changed to an ACK for 5. But
+	obviously !(3 >= 5). However, (3 - -2) >= 5 is true.
+
+2003-02-09 Sunday 18:08  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipprint.cc (1.39), ipprint.hh (1.21): print
+	aggregates and paint annotations slightly differently; also, add
+	PAYLOAD, for printing packet payload but not IP/TCP/UDP headers
+
+2003-02-09 Sunday 18:06  Eddie Kohler <kohler@icir.org>
+
+	* lib/error.cc (1.42): nit
+
 2003-02-09 Sunday 03:16  Eddie Kohler <kohler@icir.org>
 
 	* elements/icmp/: icmperror.cc (1.13), icmperror.hh (1.5): BADADDRS
