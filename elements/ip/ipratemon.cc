@@ -141,12 +141,15 @@ IPRateMonitor::simple_action(Packet *p)
 void
 IPRateMonitor::destroy(_stats *s)
 {
-  for(int i = 0; i < 256; i++) {
+  int jiffs = click_jiffies();
+  for(int i = 0; i < MAX_COUNTERS; i++) {
     if(s->counter[i].flags & SPLIT) {
       destroy(s->counter[i].next_level);
       delete s->counter[i].next_level;
       s->counter[i].next_level = NULL;
     }
+    s->counter[i].flags = CLEAN;
+    s->counter[i].last_update = jiffs;
   }
 }
 
@@ -157,7 +160,7 @@ void
 IPRateMonitor::clean(_stats *s)
 {
   int jiffs = click_jiffies();
-  for(int i = 0; i < 256; i++) {
+  for(int i = 0; i < MAX_COUNTERS; i++) {
     s->counter[i].flags = CLEAN;
     s->counter[i].next_level = NULL;
     s->counter[i].last_update = jiffs;
@@ -208,7 +211,7 @@ String
 IPRateMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
-  for(int i = 0; i < 256; i++) {
+  for(int i = 0; i < MAX_COUNTERS; i++) {
     String this_ip;
     if(ip)
       this_ip = ip + "." + String(i);
