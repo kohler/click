@@ -866,9 +866,10 @@ case $1 in
   --vers|--versi|--versio|--version)
      cat <<'EOF'
 click-buildtool (Click) 1.2.3
-Copyright (C) 2000-2001 Massachusetts Institute of Technology
-Copyright (C) 2000-2001 Mazu Networks, Inc.
-Copyright (C) 2001 International Computer Science Institute
+Copyright (c) 2000-2001 Massachusetts Institute of Technology
+Copyright (c) 2000-2004 Mazu Networks, Inc.
+Copyright (c) 2001-2003 International Computer Science Institute
+Copyright (c) 2004 Regents of the University of California
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
