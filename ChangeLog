@@ -1,3 +1,9 @@
+2005-03-14 Monday 14:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/iproutetable.cc (1.15), userlevel/controlsocket.cc
+	(1.58), userlevel/controlsocket.hh (1.39): allow ControlSocket READ
+	to take arguments (inspired by Marko Zec)
+
 2005-03-14 Monday 12:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromsocket.cc (1.5), fromsocket.hh (1.4),
