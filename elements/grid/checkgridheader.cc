@@ -104,7 +104,8 @@ CheckGridHeader::simple_action(Packet *p)
   if (click_in_cksum((unsigned char *) gh, tlen) != 0) {
 #if 1
     click_chatter("%s: bad Grid checksum", id().cc());
-    click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), (unsigned long) ntohs(gh->cksum));
+    click_chatter("%s: length: %d, cksum: 0x%.4x", 
+		  id().cc(), p->length(), (unsigned long) ntohs(gh->cksum));
 #endif
     goto bad;
   }

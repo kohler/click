@@ -20,6 +20,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
+#include "elements/grid/linkstat.hh"
 CLICK_DECLS
 
 /*
@@ -53,6 +54,9 @@ handler_info_array[] = {
   { "sizeof_grid_route_reply"        , sizeof(grid_route_reply)		, 'd', -1 },
   { "sizeof_grid_link_probe"         , sizeof(grid_link_probe)		, 'd', -1 },
   { "sizeof_grid_link_entry"         , sizeof(grid_link_entry)		, 'd', -1 },
+
+  { "sizeof_linkstat_link_probe"     , LinkStat::link_probe::size       , 'd', -1 },
+  { "sizeof_linkstat_link_entry"     , LinkStat::link_entry::size       , 'd', -1 },
  	
   { "offsetof_grid_hdr_version"      , offsetof(grid_hdr, version)	, 'd', -1 },
   { "offsetof_grid_hdr_type"         , offsetof(grid_hdr, type)		, 'd', -1 },
