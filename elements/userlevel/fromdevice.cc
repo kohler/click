@@ -347,7 +347,7 @@ FromDevice::selected(int)
     int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
     if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
 	if (len > _snaplen) {
-	    assert(p->length() == _snaplen);
+	    assert(p->length() == (uint32_t)_snaplen);
 	    SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
 	} else
 	    p->take(_snaplen - len);
