@@ -4,12 +4,15 @@
 SHELL = @SHELL@
 @SUBMAKE@
 
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 AUTOHEADER = autoheader
 AUTOCONF = autoconf
 
-all: @TARGETS@
+all: @TARGETS@ tools
 
 linuxmodule: stamp-h Makefile
 	@cd linuxmodule; $(MAKE) all
@@ -21,6 +24,7 @@ tools: stamp-h Makefile
 	@cd tools; $(MAKE) all
 
 elemlist elemlists: stamp-h elemlist-simple
+
 elemlist-simple:
 	@f=linuxmodule/elements.conf; \
 	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
@@ -33,10 +37,12 @@ elemlist-simple:
 	  rm $$f~; echo "$$f is unchanged"; exit 0; \
 	fi; fi; mv $$f~ $$f; rm -f userlevel/elements.d
 	@f=exopc/elements.conf; \
+	if test -d exopc; then \
 	echo "exopc@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
 	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
 	  rm $$f~; echo "$$f is unchanged"; exit 0; \
-	fi; fi; mv $$f~ $$f; rm -f exopc/elements.d
+	fi; fi; mv $$f~ $$f; rm -f exopc/elements.d; \
+	fi
 
 stamp-h: $(srcdir)/configure
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/config.h.in
@@ -55,15 +61,95 @@ check-filenames:
 clean:
 	@-cd linuxmodule; $(MAKE) clean
 	@-cd userlevel; $(MAKE) clean
-	@-cd exopc; $(MAKE) clean
+	@-if -d exopc; then cd exopc; $(MAKE) clean; fi
 	@-cd tools; $(MAKE) clean
 distclean:
 	@-cd linuxmodule; $(MAKE) distclean
 	@-cd userlevel; $(MAKE) distclean
-	@-cd exopc; $(MAKE) distclean
+	@-if -d exopc; then cd exopc; $(MAKE) distclean; fi
 	@-cd tools; $(MAKE) distclean
 	-rm -f config.h Makefile config.status
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
+
+DISTFILES = Makefile.in acconfig.h config.h.in configure.in configure \
+	mkelemlist.sh stamp-h.in \
+	lib/bitvector.cc lib/bitvector.hh \
+	lib/click_ether.h \
+	lib/click_icmp.h \
+	lib/click_ip.h \
+	lib/click_tcp.h \
+	lib/click_udp.h \
+	lib/confparse.cc lib/confparse.hh \
+	lib/crc32.c lib/crc32.h \
+	lib/element.cc lib/element.hh \
+	lib/elemfilter.cc lib/elemfilter.hh \
+	lib/elemlink.cc lib/elemlink.hh \
+	lib/error.cc lib/error.hh \
+	lib/errorelement.cc lib/errorelement.hh \
+	lib/etheraddress.cc lib/etheraddress.hh \
+	lib/ewma.cc lib/ewma.hh \
+	lib/glue.cc lib/glue.hh \
+	lib/hashmap.cc lib/hashmap.hh lib/hashmapi.cc \
+	lib/in_cksum.c \
+	lib/ipaddress.cc lib/ipaddress.hh \
+	lib/iptable.cc lib/iptable.hh \
+	lib/lexer.cc lib/lexer.hh \
+	lib/packet.cc lib/packet.hh \
+	lib/router.cc lib/router.hh \
+	lib/straccum.cc lib/straccum.hh \
+	lib/string.cc lib/string.hh \
+	lib/timedelement.cc lib/timedelement.hh \
+	lib/timer.cc lib/timer.hh \
+	lib/unlimelement.cc lib/unlimelement.hh \
+	lib/vector.cc lib/vector.hh lib/vectori.cc lib/vectorv.cc \
+	userlevel/Makefile.in \
+	userlevel/click.cc \
+	linuxmodule/Makefile.in \
+	linuxmodule/kernelerror.cc linuxmodule/kernelerror.hh \
+	linuxmodule/kernelversion.c \
+	linuxmodule/linuxmodule.hh \
+	linuxmodule/module.cc \
+	linuxmodule/proc_config.cc \
+	linuxmodule/proc_element.cc \
+	linuxmodule/proc_mgr.cc \
+	linuxmodule/read-pmc.c
+
+distdir = $(PACKAGE)-$(VERSION)
+top_distdir = $(distdir)
+
+dist: distdir
+distdir:
+	-rm -rf $(distdir)
+	mkdir $(distdir)
+	@-chmod 777 $(distdir)
+	mkdir $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@-chmod 777 $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+	mkdir $(distdir)/elements
+	@-chmod 777 $(distdir)/elements
+	@d=$(srcdir); \
+	for dir in `cd $$d; find elements -type d | grep -v 'exopc\|CVS'`; do \
+	  mkdir $(distdir)/$$dir 2>/dev/null; \
+	  chmod 777 $(distdir)/$$dir; \
+	  for cfile in `cd $$d; find $$dir -maxdepth 1 \( -name \*.cc -or -name \*.c -or -name \*.hh -or -name \*.h \) -print`; do \
+	    ln $$d/$$cfile $(distdir)/$$cfile; \
+	  done; \
+	done
+	@for subdir in tools; do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
+	      || exit 1; \
+	done
+
+
 .PHONY: all elemlist elemlists elemlist-simple \
-	linuxmodule userlevel exopc tools clean distclean
+	linuxmodule userlevel exopc tools clean distclean dist distdir

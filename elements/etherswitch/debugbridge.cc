@@ -44,3 +44,4 @@ DebugBridge::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(DebugBridge)
+ELEMENT_REQUIRES(EtherSwitchBridgeMessage)

@@ -1,8 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(acconfig.h)
 AC_SUBST(ac_configure_args)
-AC_DEFINE(PACKAGE, "click")
-AC_DEFINE(VERSION, "0.5")
+PACKAGE=click
+VERSION=0.5
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_CONFIG_HEADER(config.h)
@@ -138,8 +140,13 @@ dnl
 dnl Output
 dnl
 
+config_files="Makefile linuxmodule/Makefile userlevel/Makefile tools/Makefile tools/click-xform/Makefile stamp-h"
+if test -d $srcdir/exopc; then
+  config_files="$config_files exopc/Makefile"
+fi
+
 AC_OUTPUT_COMMANDS([if test ${CONFIG_ELEMLISTS-yes} = yes; then
   echo creating element lists
-  make -s elemlist-simple
+  make elemlist-simple
 fi])
-AC_OUTPUT(Makefile linuxmodule/Makefile userlevel/Makefile exopc/Makefile tools/Makefile tools/click-xform/Makefile stamp-h)
+AC_OUTPUT($config_files)

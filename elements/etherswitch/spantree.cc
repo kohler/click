@@ -312,7 +312,7 @@ EtherSpanTree::generate_packet(int output)
 }
 
 EXPORT_ELEMENT(EtherSpanTree)
-ELEMENT_REQUIRES(Suppressor)
+ELEMENT_REQUIRES(Suppressor EtherSwitchBridgeMessage)
 
 // generate Vector template instance
 #include "vector.cc"

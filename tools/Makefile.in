@@ -24,4 +24,32 @@ distclean:
 	@-cd click-xform; $(MAKE) distclean
 	-rm -f Makefile
 
-.PHONY: all click-xform clean distclean
+
+DISTFILES = Makefile.in \
+	lib/confparset.cc lib/confparset.hh \
+	lib/elementt.cc lib/elementt.hh \
+	lib/lexert.cc lib/lexert.hh \
+	lib/routert.cc lib/routert.hh \
+	click-xform/Makefile.in \
+	click-xform/click-xform.cc \
+	click-xform/hashmapi.cc \
+	click-xform/vectori.cc
+
+distdir:
+	mkdir $(distdir)
+	@-chmod 777 $(distdir)
+	mkdir $(distdir)/lib $(distdir)/click-xform
+	@-chmod 777 $(distdir)/lib $(distdir)/click-xform
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+
+
+.PHONY: all click-xform clean distclean distdir

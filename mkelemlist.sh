@@ -80,9 +80,9 @@ if test $makefile = 1; then
   echo "ELEMENT_OBJS = \\"
   echo "$files" | sed -e 's/\.cc*$/.o \\/;s/^.*\///' | grep .
   echo
-  for i in `echo "$bad_files" | sort | uniq`; do
-    echo "*** warning: dependency check failed for $i" 1>&2
-  done
+  # for i in `echo "$bad_files" | sort | uniq`; do
+  #   echo "*** warning: dependency check failed for $i" 1>&2
+  # done
 else
   grep ^EXPORT_ELEMENT $files | awk -F: 'BEGIN {
    OFS = "";
