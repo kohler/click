@@ -1,3 +1,8 @@
+2004-08-17 Tuesday 12:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.54): double quotes within backticks (hope
+	it works)
+
 2004-08-17 Tuesday 00:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/userutils.cc (1.38): fewer backticks
