@@ -35,8 +35,10 @@ Packet *
 StoreIPAddress::simple_action(Packet *p)
 {
   IPAddress ipa = p->dst_ip_anno();
-  if (ipa && _offset + 4 <= p->length())
+  if (ipa && _offset + 4 <= p->length()) {
+    p = p->uniqueify();
     memcpy(p->data() + _offset, &ipa, 4);
+  }
   // XXX error reporting?
   return p;
 }

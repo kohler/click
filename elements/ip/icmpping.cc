@@ -82,18 +82,18 @@ ICMPPing::simple_action(Packet *p)
   {
     click_chatter("icmpresponder: packet not an ICMP packet");
     p->kill();
-    return 0L;
+    return 0;
   }
 
-  switch(icmp->icmp_type)
-  {
-    case ICMP_ECHO:
-      make_echo_response(p);
-      return p;
-    default:
-      click_chatter("icmpresponder: packet not an ICMP-echo packet");
-      p->kill();
-      return 0L;
+  switch (icmp->icmp_type) {
+   case ICMP_ECHO:
+    p = p->uniqueify();
+    make_echo_response(p);
+    return p;
+   default:
+    click_chatter("icmpresponder: packet not an ICMP-echo packet");
+    p->kill();
+    return 0;
   }
 }
 
