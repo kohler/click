@@ -1,3 +1,11 @@
+2004-01-14 Wednesday 13:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/linkstat.hh (1.17): badd gcc 2.96ness?
+
+2004-01-14 Wednesday 13:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.75): comment nitlet
+
 2004-01-14 Wednesday 00:19  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: ecnqueue.cc (1.3), ettmetric.cc (1.12),
