@@ -62,7 +62,7 @@ AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AggregateLast::initialize(ErrorHandler *errh)
+AggregateLast::initialize(ErrorHandler *)
 {
     if (_agg_notifier)
 	_agg_notifier->add_listener(this);

@@ -59,7 +59,7 @@ AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AggregateFirst::initialize(ErrorHandler *errh)
+AggregateFirst::initialize(ErrorHandler *)
 {
     if (_agg_notifier)
 	_agg_notifier->add_listener(this);
