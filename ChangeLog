@@ -1,3 +1,21 @@
+2001-10-15 Monday 14:54  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.40), Makefile.in (1.101), acclick.m4 (1.5),
+	aclocal.m4 (1.5), config-bsdmodule.h.in (1.1),
+	config-linuxmodule.h.in (1.1), config-userlevel.h.in (1.1),
+	config.h.in (1.16), configure.in (1.150),
+	elements/etherswitch/bridgemessage.cc (1.17),
+	elements/linuxmodule/polldevice.cc (1.122),
+	elements/linuxmodule/todevice.cc (1.118),
+	elements/linuxmodule/todevice.hh (1.54),
+	elements/linuxmodule/tulipstats.cc (1.13), etc/libclick/DISTFILES
+	(1.6), etc/libclick/lc-Makefile.in (1.7),
+	etc/libclick/lc-configure.in (1.12), lib/error.cc (1.34),
+	linuxmodule/module.cc (1.60): split config.h into config.h,
+	config-bsdmodule.h, config-linuxmodule.h, and config-userlevel.h.
+	Also change the names of a couple symbols, and add the "int64"
+	provision
+
 2001-10-12 Friday 17:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh (1.28), gridroutetable.cc (1.14),
