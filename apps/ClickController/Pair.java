@@ -17,7 +17,7 @@
  */
 
 /**
- * String utility routines.
+ * Utility routines.
  * 
  * @author Eddie Kohler
  */
