@@ -125,8 +125,9 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 	const char *cwhen = ctime(&when);
 	struct timeval tv;
 	if (gettimeofday(&tv, 0) >= 0)
-	    fprintf(_f, "!starttime %ld.%ld (%.*s)\n", (long)tv.tv_sec,
-		    (long)tv.tv_usec, (int)(strlen(cwhen) - 1), cwhen);
+	    fprintf(_f, "!runtime %lu.%06ld (%.*s)\n",
+		    (unsigned long)tv.tv_sec, (long)tv.tv_usec,
+		    (int)(strlen(cwhen) - 1), cwhen);
     }
 
     // data description

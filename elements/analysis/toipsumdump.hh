@@ -105,7 +105,7 @@ Here are a couple lines from the start of a sample verbose dump.
   !IPSummaryDump 1.1
   !creator "aciri-ipsumdump -i wvlan0"
   !host no.lcdf.org
-  !starttime 996022410.322317 (Tue Jul 24 17:53:30 2001)
+  !runtime 996022410.322317 (Tue Jul 24 17:53:30 2001)
   !data 'ip src' 'ip dst'
   63.250.213.167 192.150.187.106
   63.250.213.167 192.150.187.106
