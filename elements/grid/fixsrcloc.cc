@@ -72,6 +72,7 @@ FixSrcLoc::simple_action(Packet *p)
   long t2 = htonl(*(unsigned long *) &gh->loc.lon);
   gh->loc.lat = *(float *) &t1;
   gh->loc.lon = *(float *) &t2;
+
   return p;
 }
 
