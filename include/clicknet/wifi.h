@@ -39,10 +39,10 @@ struct click_wifi_extra {,
   uint8_t power;
   uint8_t pad;
 
-  uint8_t rate;              /* bitrate in Mbps*2 */
-  uint8_t rate1;              /* bitrate in Mbps*2 */
-  uint8_t rate2;              /* bitrate in Mbps*2 */
-  uint8_t rate3;              /* bitrate in Mbps*2 */
+  uint8_t rate;			/* bitrate in Mbps*2 */
+  uint8_t rate1;		/* bitrate in Mbps*2 */
+  uint8_t rate2;		/* bitrate in Mbps*2 */
+  uint8_t rate3;		/* bitrate in Mbps*2 */
 
   uint8_t max_tries;
   uint8_t max_tries1;
