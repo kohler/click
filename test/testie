@@ -582,15 +582,15 @@ sub execute_test ($$$) {
     # print description in superverbose mode
     if ($verbose > 1) {
 	return 0 if $tt->empty;
-	print "\n" if $any_tests_done;
+	print STDERR "\n" if $any_tests_done;
 	if ($tt->{'desc'}) {
 	    my($desc) = $tt->{'desc'};
 	    $desc =~ s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm
 		while $desc =~ /\t/;
 	    $desc =~ s/^/  /;
-	    print $fn, " Description:\n", $desc;
+	    print STDERR $fn, " Description:\n", $desc;
 	}
-	print $fn, " Results:\n";
+	print STDERR $fn, " Results:\n";
 	$tt->{'errprefix'} = "  ";
     }
     
