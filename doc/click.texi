@@ -191,7 +191,13 @@ Handlers
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
+* Fetching Handlers::           
 * LLRPC Overview::              
+
+Fetching Handlers
+
+* The Router::Handler Type::    
+* Handler Indexes::             
 
 Live Reconfiguration
 
@@ -3628,6 +3634,7 @@ while @dfn{LLRPCs} provide a remote procedure call interface.
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
+* Fetching Handlers::           
 * LLRPC Overview::              
 @end menu
 
@@ -3702,24 +3709,45 @@ will generally call these methods only from within your element's
 @code{add_handlers} method (@pxref{add_handlers}), although nothing
 prevents you from adding handlers at any time.
 
-@deftypemethod Element void add_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{handler}}, @w{void *@var{thunk}})
-Adds a read handler named @var{name} for this element. When handler
-@var{name} is accessed, the function @var{handler} will be called with
-@code{this} and @var{thunk} as parameters.
-@end deftypemethod
-
-@deftypemethod Element void add_write_handler (@w{const String &@var{name}}, @w{WriteHandler @var{handler}}, @w{void *@var{thunk}})
-Adds a write handler named @var{name} for this element. When handler
-@var{name} is accessed, the function @var{handler} will be called with
-the relevant data, @code{this}, @var{thunk}, and an @code{ErrorHandler}
+@deftypemethod Element void add_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{func}}, @w{void *@var{thunk}})
+Adds a read handler named @var{name} for this element. When the handler
+is accessed, @var{func} will be called with @code{this} and @var{thunk}
 as parameters.
 @end deftypemethod
 
+@deftypemethod Element void add_write_handler (@w{const String &@var{name}}, @w{WriteHandler @var{func}}, @w{void *@var{thunk}})
+Adds a write handler named @var{name} for this element. When the handler
+is accessed, @var{func} will be called with the relevant data,
+@code{this}, @var{thunk}, and an @code{ErrorHandler} as parameters.
+@end deftypemethod
+
 To create a read/write handler, call @code{add_read_handler} and
-@code{add_write_handler} for the component handlers.
+@code{add_write_handler} and supply the same handler name.
+
+Similar static methods on the @code{Router} class add global read and
+write handlers to the system.
+
+@deftypeop {Static Method} Router void add_global_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{func}}, @w{void *@var{thunk}})
+@deftypeopx {Static Method} Router void add_global_write_handler (@w{const String &@var{name}}, @w{WriteHandler @var{func}}, @w{void *@var{thunk}})
+Adds a global read or write handler to the system. When the handler is
+accessed, @var{func} will be called with a null pointer for
+@var{element}. All its other arguments will be the same as in the
+element handler case.
+@end deftypeop
+
+The @code{change_handler_flags} method lets you change a handler's flags
+word (@pxref{The Router::Handler Type}).
+
+@deftypeop {Static Method} Router void change_handler_flags (@w{Element *@var{element}}, @w{const String &@var{name}}, @w{uint32_t @var{clear_flags}}, @w{uint32_t @var{set_flags}})
+Changes the flags for @var{element}'s @var{name} handler, or the global
+@var{name} handler if @var{element} is null. The flags are changed by
+first clearing the bits set in @var{clear_flags}, then setting the bits
+set in @var{set_flags}. This method fails and returns @math{-1} when the
+specified handler does not exist; otherwise, it returns 0.
+@end deftypeop
 
 
-@node Default Handlers, LLRPC Overview, Adding Handlers, Handlers
+@node Default Handlers, Fetching Handlers, Adding Handlers, Handlers
 @subsection Default Read and Write Handlers
 
 Every element automatically provides five handlers, @handler{class},
@@ -3742,8 +3770,8 @@ does not end in newline, the hander appends a newline itself. Example
 result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
 
 If @code{can_live_reconfigure} returns true, @handler{config} is also a
-write handler. Writing to it reconfigures the element.
-@xref{Live Reconfiguration}.
+write handler, and writing to it reconfigures the element. @xref{Live
+Reconfiguration}.
 
 @item @handler{ports}
 Returns a multi-line string describing the element's ports and what they
@@ -3776,11 +3804,11 @@ If Click was compiled with statistics collection enabled, the dash on
 each line is replaced by a packet count.
 
 @item @handler{handlers}
-Returns a string listing the element's handlers, one per line. Each line
-contains the handler name, a tab, and then either @samp{r}, @samp{w}, or
-@samp{rw}, depending on whether the handler is read-only, write-only, or
-read/write. Example result for an @click{InfiniteSource} element, which
-has many handlers:
+Returns a string listing the element's visible handlers, one per line.
+Each line contains the handler name, a tab, and then either @samp{r},
+@samp{w}, or @samp{rw}, depending on whether the handler is read-only,
+write-only, or read/write. Example result for an @click{InfiniteSource}
+element, which has many handlers:
 
 @example
 scheduled       r
@@ -3800,7 +3828,132 @@ class   r
 @end table
 
 
-@node LLRPC Overview,  , Default Handlers, Handlers
+@node Accessing Handlers, LLRPC Overview, Default Handlers, Handlers
+@subsection Accessing Handlers
+
+Element handlers are stored in the relevant @code{Router} as objects
+with type @code{Router::Handler}. (This design allows handler objects to
+be shared between elements when possible.) Handlers are often referred
+to by index; indexes between 0 and @code{Router::FIRST_GLOBAL_HANDLER
+@minus{} 1} refer to element handlers, while indexes above
+@code{Router::FIRST_GLOBAL_HANDLER} refer to global handlers. Indexes
+less than 0 are used for error returns, such as nonexistent handlers.
+@code{Router} methods translate between handler indexes and
+@code{Router::Handler} objects, and find handler indexes given handler
+names.
+
+@menu
+* The Router::Handler Type::    
+* Handler Indexes::             
+@end menu
+
+@node The Router::Handler Type, Handler Indexes, Fetching Handlers, Fetching Handlers
+@subsubsection The Router::Handler Type
+
+The @code{Router::Handler} type allows you to check a handler's
+properties and call the handler. All of its methods are @code{const};
+you must go through @code{Router} to change a handler's properties.
+@code{Router::Handler} objects do not contain element references, since
+they are shared among elements. That means you can't easily find the
+element (if any) to which a particular @code{Router::Handler} is
+attached.
+
+@deftypemethod Router::Handler {const String &} name () const
+Returns the handler's name.
+@end deftypemethod
+
+@deftypemethod Router::Handler uint32_t flags () const
+Returns the handler's flags as an integer. The lower bits of the flags
+word are reserved for the system, and four bits are reserved for
+drivers, but the upper bits (at least 16) are left uninterpreted, and
+may be used by elements. The first user flag bit is called
+@code{Router::Handler::USER_FLAG_0}; its position in the word equals
+@code{Router::Handler::USER_FLAG_SHIFT}. To change a handler's flags,
+use the @code{Router::change_handler_flags} method (@pxref{Changing
+Handler Flags}).
+@end deftypemethod
+
+@deftypemethod Router::Handler bool readable () const
+Returns true iff this handler is readable.
+@end deftypemethod
+
+@deftypemethod Router::Handler bool read_visible () const
+Returns true iff this handler is readable, and that read handler should
+be externally visible. Drivers and the ControlSocket element use
+@code{read_visible} rather than @code{readable} when deciding whether to
+tell the user that a read handler exists. Inter-element communication
+within the router, however, may use @code{readable} rather than
+@code{read_visible}.
+@end deftypemethod
+
+@deftypemethod Router::Handler bool writable () const
+@deftypemethodx Router::Handler bool write_visible () const
+The analogous methods for write handlers.
+@end deftypemethod
+
+@deftypemethod Router::Handler bool visible () const
+Equivalent to @code{read_visible() || write_visible()}.
+@end deftypemethod
+
+@deftypemethod Router::Handler String unparse_name (@w{Element *@var{element}}) const
+Returns the handler's name, including its attached element's name if
+@var{element} is non-null. For example, calling @code{unparse_name} on
+element @samp{e}'s @samp{foo} handler would return @samp{e.foo}, while
+calling it on a global @samp{bar} handler would return @samp{bar}.
+@end deftypemethod
+
+@deftypemethod Router::Handler String call_read (@w{Element *@var{element}}) const
+Calls this read handler on @var{element} and returns the result. Do not
+use this method unless you know the handler is @code{readable()}.
+@end deftypemethod
+
+@deftypemethod Router::Handler int call_write (@w{const String &@var{data}}, @w{Element *@var{element}}, @w{ErrorHandler *@var{errh}}) const
+Calls this write handler on @var{element}, passing it @var{data} and
+@var{errh}, and returns the result. Do not use this method unless you
+know the handler is @code{writable()}.
+@end deftypemethod
+
+
+@node Handler Indexes,  , The Router::Handler Type, Fetching Handlers
+@subsubsection Handler Indexes
+
+@deftypeop {Static Method} Router bool handler_ok (@w{const Router *@var{router}}, @w{int @var{handler_index}})
+Returns true if @var{handler_index} is a valid element handler index for
+@var{router} (and @var{router} is non-null), or if @var{handler_index}
+is a valid global handler index.
+@end deftypeop
+
+@deftypemethod Router bool handler_ok (@w{int @var{handler_index}}) const
+Same as @code{handler_ok(this, @var{handler_index})}.
+@end deftypemethod
+
+@deftypeop {Static Method} Router {const Router::Handler &} handler (@w{const Router *@var{router}}, @w{int @var{handler_index}})
+Returns the handler with index @var{handler_index}. Do not call this
+method unless @code{handler_ok(@var{router}, @var{handler_index})} would
+return true.
+@end deftypeop
+
+@deftypemethod Router {const Router::Handler &} handler (@w{int @var{handler_index}}) const
+Same as @code{handler(this, @var{handler_index})}.
+@end deftypemethod
+
+
+@node Locating Handlers
+@subsubsection Locating Handlers
+
+@deftypeop {Static Method} Router int find_handler (@w{Element *@var{element}}, @w{const String &@var{name}})
+Returns the handler index for @var{element}'s @var{name} handler, or the
+global @var{name} handler if @var{element} is null, or @math{-1} if
+there is no such handler.
+@end deftypeop
+
+@deftypeop {Static Method} Router void element_handlers (@w{const Router *@var{router}}, @w{int @var{eindex}}, @w{Vector<int> &@var{results}})
+Adds to @var{results} a list of all the handler indexes for handlers
+supported by @var{router}'s element number @var{eindex}, or all global
+handlers if @math{@var{eindex} < 0}.
+@end deftypeop
+
+@node LLRPC Overview,  , Fetching Handlers, Handlers
 @subsection LLRPC Overview
 
 @node Live Reconfiguration,  , Handlers, Element Runtime
