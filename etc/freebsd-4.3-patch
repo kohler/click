@@ -104,7 +104,7 @@ Index: pci/if_fxpreg.h
 
 Index: pci/if_fxp.c
 --- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
-+++ pci/if_fxp.c	Mon Aug 20 12:19:36 2001
++++ pci/if_fxp.c	Mon Aug 20 15:21:40 2001
 @@ -237,6 +237,15 @@
  static void fxp_stats_update	__P((void *));
  static void fxp_mc_setup	__P((struct fxp_softc *));
@@ -121,6 +121,15 @@ Index: pci/if_fxp.c
  /*
   * Set initial transmit threshold at 64 (512 bytes). This is
   * increased by 64 (512 bytes) at a time, to maximum of 192
+@@ -269,7 +278,7 @@
+  * Number of receive frame area buffers. These are large so chose
+  * wisely.
+  */
+-#define FXP_NRFABUFS	64
++#define FXP_NRFABUFS	16
+ 
+ /*
+  * Maximum number of seconds that the receiver can be idle before we
 @@ -616,6 +625,19 @@
  	ifp->if_watchdog = fxp_watchdog;
  
@@ -199,7 +208,7 @@ Index: pci/if_fxp.c
  	sc->rfa_tailm = m;
  
  	return (m == oldm);
-@@ -2150,4 +2188,280 @@
+@@ -2150,4 +2188,284 @@
  
  	ifp->if_timer = 2;
  	return;
@@ -251,6 +260,63 @@ Index: pci/if_fxp.c
 +	return 0;
 +}
 +
++static int fxp_ru_check(struct fxp_softc *sc, struct mbuf *last_m) {
++	struct fxp_rfa *rfa;
++	struct mbuf *m = fxp_first_free_m(last_m);
++	int statack;
++
++	/*
++	 * Optimization: don't read registers unless we've got
++	 * an empty RFA which we can feed to the RU..
++	 */
++	if (m) {
++		statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK);
++		CSR_WRITE_1(sc, FXP_CSR_SCB_STATACK, statack);
++	}
++
++	if (statack & FXP_SCB_STATACK_RNR) {
++		/*
++		 * Recompute the last free mbuf to avoid race
++		 * conditions above.  At this point, we know
++		 * the card is stalled and shouldn't be DMAing
++		 * to the RFA.
++		 */
++		m = fxp_first_free_m(m);
++		if (!m) {
++			/*
++			 * We've acknowledged the RNR condition
++			 * but all the RFAs are already in use.
++			 * So we must reload the card with some
++			 * buffer..  Blow away the last packet.
++			 */
++			m = last_m;
++			while (m && m->m_next)
++				m = m->m_next;
++
++			rfa = (struct fxp_rfa *) (m->m_ext.ext_buf +
++						  RFA_ALIGNMENT_FUDGE);
++			rfa->rfa_status = 0;
++		} else {
++			rfa = (struct fxp_rfa *) (m->m_ext.ext_buf +
++						  RFA_ALIGNMENT_FUDGE);
++		}
++
++		printf(FXP_FORMAT ": Rx stall, restarting\n",
++		       FXP_ARGS(sc));
++		if (rfa->rfa_status & FXP_RFA_STATUS_C)
++			printf(FXP_FORMAT ": RFA inconsistency!\n",
++			       FXP_ARGS(sc));
++		fxp_scb_wait(sc);
++		CSR_WRITE_4(sc, FXP_CSR_SCB_GENERAL,
++			    vtophys(rfa));
++		CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND,
++			    FXP_SCB_COMMAND_RU_START);
++		return 1;
++	}
++
++	return 0;
++}
++
 +static struct mbuf *fxp_rx_poll(struct ifnet *ifp, int *want) {
 +	struct fxp_softc *sc = ifp->if_softc;
 +	int need = *want, got = 0;
@@ -283,9 +349,6 @@ Index: pci/if_fxp.c
 +		sc->rfa_bufs--;
 +		m->m_next = NULL;
 +
-+/*printf("%p (%p) << from DMA ring\n", m->m_ext.ext_buf,
-+sc->rfa_headm->m_ext.ext_buf);
-+*/
 +		/*
 +		 * Compute the actual size of the packet,
 +		 * verify that it's sane.
@@ -293,7 +356,6 @@ Index: pci/if_fxp.c
 +		total_len = rfa->actual_size & (MCLBYTES - 1);
 +		if (total_len <
 +		    sizeof(struct ether_header)) {
-+printf("%p << packet too small\n", m->m_ext.ext_buf);
 +			m_freem(m);
 +			continue;
 +		}
@@ -317,43 +379,11 @@ Index: pci/if_fxp.c
 +	}
 +
 +	/*
-+	 * Don't bother checking for RU stalls here: the only
-+	 * failure mode should be "all the completed RFA's are
-+	 * taken except the last one, and there are no more".
-+	 * The refill will do an RU restart in that case.
-+	 *
-+	 * XXX why does it stall anyway?
++	 * If we weren't able to receive any packets, and the queue
++	 * might have free packets, check the RU status.
 +	 */
-+
-+	/*
-+	 * Check if we're out of mbufs on the receive list..
-+	 * Don't bother restarting RU if we don't actually
-+	 * have any free buffers though.
-+	 */
-+	if (got == 0 && sc->rfa_headm) {
-+		int rustat = (CSR_READ_1(sc, FXP_CSR_SCB_RUSCUS) & 0x3c) >> 2;
-+		struct mbuf *m = fxp_first_free_m(sc->rfa_headm);
-+
-+		if (m && (rustat == FXP_SCB_RUS_NORESOURCES)) {
-+			struct fxp_rfa *rfa2;
-+
-+			printf(FXP_FORMAT ": Rx stall in poll, restarting\n",
-+			       FXP_ARGS(sc));
-+
-+			rfa2 = (struct fxp_rfa *) (m->m_ext.ext_buf +
-+						   RFA_ALIGNMENT_FUDGE);
-+			fxp_scb_wait(sc);
-+if (rfa2->rfa_status & FXP_RFA_STATUS_C)
-+printf("*** newly restarted rfa is already completed (pre)\n");
-+			CSR_WRITE_4(sc, FXP_CSR_SCB_GENERAL,
-+				    vtophys(rfa2));
-+			CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND,
-+				    FXP_SCB_COMMAND_RU_START);
-+if (rfa2->rfa_status & FXP_RFA_STATUS_C)
-+printf("*** newly restarted rfa is already completed (post)\n");
-+		}
-+else { if(rustat!=4)printf("RU status: %d\n", rustat); }
-+	}
++	if (got == 0 && sc->rfa_headm && sc->rfa_headm->m_next)
++		fxp_ru_check(sc, sc->rfa_headm);
 +
 +	*want = got;
 +	return m_list;
@@ -371,6 +401,10 @@ Index: pci/if_fxp.c
 +	 */
 +	last_m = sc->rfa_headm ? sc->rfa_tailm : NULL;
 +
++	/*
++	 * Actually do the refill by allocating buffers until we have
++	 * enough (FXP_NRFABUFS).
++	 */
 +	while (sc->rfa_bufs < FXP_NRFABUFS) {
 +		int ret;
 +
@@ -419,29 +453,8 @@ Index: pci/if_fxp.c
 +	 * If we have succeeded in allocating some receive buffers,
 +	 * and we need to check the RU, do so now.
 +	 */
-+	if (check_ru_stall && last_m) {
-+		int statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK);
-+		struct mbuf *m = fxp_first_free_m(last_m);
-+
-+		if (m && (statack & FXP_SCB_STATACK_RNR)) {
-+			struct fxp_rfa *rfa;
-+
-+			rfa = (struct fxp_rfa *) (m->m_ext.ext_buf +
-+						  RFA_ALIGNMENT_FUDGE);
-+			printf(FXP_FORMAT ": Rx stall in refill, restarting\n",
-+			       FXP_ARGS(sc));
-+
-+if (rfa->rfa_status & FXP_RFA_STATUS_C)
-+printf("*** newly restarted rfa(refill) is already completed (pre)\n");
-+			fxp_scb_wait(sc);
-+			CSR_WRITE_4(sc, FXP_CSR_SCB_GENERAL,
-+				    vtophys(rfa));
-+			CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND,
-+				    FXP_SCB_COMMAND_RU_START);
-+if (rfa->rfa_status & FXP_RFA_STATUS_C)
-+printf("*** newly restarted rfa(refill) is already completed (post)\n");
-+		}
-+	}
++	if (check_ru_stall && last_m)
++		fxp_ru_check(sc, last_m);
 +
 +	return 0;
 +}
