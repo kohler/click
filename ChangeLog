@@ -1,3 +1,8 @@
+2003-07-09 Wednesday 21:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/delivery_rate_table.hh (1.2): put right packet
+	sizes into delivery rate table
+
 2003-07-09 Wednesday 20:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: delivery_rate_table.hh (1.1), dsdvroutetable.cc
