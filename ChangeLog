@@ -1,3 +1,15 @@
+2001-12-02 Sunday 18:24  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.22): log the right seqno
+
+2001-12-02 Sunday 17:10  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.164): whitespace
+
+2001-12-02 Sunday 17:01  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.32): doc nit
+
 2001-12-02 Sunday 16:29  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click.texi (1.31): doc update for Task changes
