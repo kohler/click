@@ -17,12 +17,12 @@ Version 1.0.4
 * New elements: UDPEncap (put an UDP header on a packet), RatedSource (like
   infinite source, but send packets at a given rate).
 
-* udpgen click configuration: this is better than udpgen.o in that you can
-  utilize device driver polling extensions. Also, on some machines we observe
-  a delay (on order of ms) between when transmission complete and tx
-  interrupt. This causes the transmission queue to not get cleaned fast enough
-  for udpgen to send its packets. Using click, we control when the tx queue is
-  cleaned.
+* udpgen click configuration (conf/udpgen.ipb): this is better than udpgen.o
+  in that you can utilize device driver polling extensions. Also, on some
+  machines we observe a delay (on order of ms) between when transmission
+  complete and tx interrupt. This causes the transmission queue to not get
+  cleaned fast enough for udpgen to send its packets. Using click, we control
+  when the tx queue is cleaned.
 
 
 Version 1.0.3   9.Apr.2000
