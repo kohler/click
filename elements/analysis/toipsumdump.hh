@@ -249,7 +249,9 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void push(int, Packet *);
     void run_scheduled();
 
+    String filename() const		{ return _filename; }
     uint32_t output_count() const	{ return _output_count; }
+    void add_note(const String &);
     void write_line(const String &);
     void flush_buffer();
 
