@@ -1,3 +1,10 @@
+2004-01-26 Monday 12:51  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.220), etc/libclick/DISTFILES (1.18),
+	etc/libclick/lc-configure.in (1.27),
+	etc/libclick/lc-libsrc-Makefile.in (1.13): configury, including
+	dumb libclick mistake
+
 2004-01-26 Monday 12:02  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.76), acclick.m4 (1.37), aclocal.m4 (1.37),
