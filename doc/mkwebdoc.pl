@@ -137,10 +137,7 @@ if ($ELEMENTS) {
 
 	$v = $x{'requires'};
 	$ereq{ $x{'name'} } = $v if $x{'name'} && $v;
-	next if !$x{'provides'};
-	foreach $i (split(/\s+/, $x{'provides'})) {
-	    $ereq{$i} = $v;
-	}
+	map { $ereq{$_} = $v } split(/\s+/, $x{'provides'}) if $x{'provides'};
     }
 }
 
