@@ -2,6 +2,7 @@
 #define CLICK_LOOKUPIP6ROUTE_HH
 #include <click/element.hh>
 #include <click/ip6table.hh>
+#include "ip6routetable.hh"
 CLICK_DECLS
 
 /*
@@ -38,7 +39,7 @@ CLICK_DECLS
  *
  */
 
-class LookupIP6Route : public Element {
+class LookupIP6Route : public IP6RouteTable {
 public:
   LookupIP6Route();
   ~LookupIP6Route();
@@ -48,8 +49,13 @@ public:
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void add_handlers();
 
   void push(int port, Packet *p);
+
+  int add_route(IP6Address, IP6Address, IP6Address, int, ErrorHandler *);
+  int remove_route(IP6Address, IP6Address, ErrorHandler *);
+  String dump_routes() 				{ return _t.dump(); };
 
 private:
 

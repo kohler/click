@@ -431,6 +431,10 @@ TrieIPLookup::build_children_lengths(int index)
 void
 TrieIPLookup::add_handlers()
 {
+    add_write_handler("add", add_route_handler, 0);
+    add_write_handler("remove", remove_route_handler, 0);
+    add_write_handler("ctrl", ctrl_handler, 0);
+    add_read_handler("table", table_handler, 0);
 }
 
 // returns the position in the vector pf belongs
@@ -499,10 +503,11 @@ TrieIPLookup::remove_route(IPAddress addr, IPAddress mask, IPAddress gw,
 
     long n_position = binary_search(_route_vector, pf);
     if (_route_vector.size() == n_position ||
-        (_route_vector[n_position].addr == addr &&
-         _route_vector[n_position].mask.mask_to_prefix_len() == mask.mask_to_prefix_len())) {
+        _route_vector[n_position].addr != addr ||
+         _route_vector[n_position].mask.mask_to_prefix_len() !=
+	  mask.mask_to_prefix_len()) {
         errh->warning("no routes removed");
-        return 0;
+        return 1;
     }
 
     // shift elements forward
@@ -542,7 +547,12 @@ TrieIPLookup::lookup_route(IPAddress a, IPAddress &gw) const
 String
 TrieIPLookup::dump_routes() const
 {
-    return NULL;
+    StringAccum sa;
+    if (_route_vector.size())
+	sa << "# Active routes\n";
+    for (int i = 0; i < _route_vector.size(); i++)
+	    sa << _route_vector[i].unparse() << '\n';
+    return sa.take_string();
 }
 
 void

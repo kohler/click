@@ -21,7 +21,6 @@
 #include <click/ip6address.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/glue.hh>
 CLICK_DECLS
 
 LookupIP6Route::LookupIP6Route()
@@ -146,6 +145,34 @@ LookupIP6Route::push(int, Packet *p)
   } else {
     p->kill();
   }
+}
+
+int
+LookupIP6Route::add_route(IP6Address addr, IP6Address mask, IP6Address gw,
+                          int output, ErrorHandler *errh)
+{
+  if (output < 0 && output >= noutputs())
+    return errh->error("port number out of range"); // Can't happen...
+
+  _t.add(addr, mask, gw, output); 
+  return 0;
+}
+
+int
+LookupIP6Route::remove_route(IP6Address addr, IP6Address mask,
+			     ErrorHandler *errh)
+{
+  _t.del(addr, mask); 
+  return 0;
+}
+
+void
+LookupIP6Route::add_handlers()
+{
+    add_write_handler("add", add_route_handler, 0);
+    add_write_handler("remove", remove_route_handler, 0);
+    add_write_handler("ctrl", ctrl_handler, 0);
+    add_read_handler("table", table_handler, 0);
 }
 
 CLICK_ENDDECLS
