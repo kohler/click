@@ -8,7 +8,7 @@ Click NEWS
    used with different device drivers. This requires a different 2.2.18 
    patch.
 
-** Add new Intel EPro 1000 gigabit driver: this new driver delivers much
+** Add new Intel EEPro 1000 gigabit driver: this new driver delivers much
    higher throughput for 64 byte packets. Upto 1 million 64 byte packets
    can be sent and received.
 
@@ -16,7 +16,6 @@ Click NEWS
 
 ** Device elements are changed. They now use the new polling interface. See
    "Kernel patch" bullet above.
-
 
 
 Version 1.1   15.Dec.2000
@@ -31,8 +30,8 @@ Version 1.1   15.Dec.2000
    stored in `include/click/' instead. Do not say `#include "element.hh"'
    any more; say `#include <click/element.hh>' instead. Similar statements
    hold for `<click/packet.hh>', `<click/confparse.hh>', and many others.
-   many other include files. Check under include/click for a full list.
-   Required for element package support.
+   Check under include/click for a full list. Required for element package
+   support.
 
 ** Every element should say `MOD_INC_USE_COUNT;' in its constructor and
    `MOD_DEC_USE_COUNT;' in its destructor. Required for element package
