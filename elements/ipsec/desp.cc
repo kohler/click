@@ -23,7 +23,6 @@
 #endif
 #include "esp.hh"
 #include "desp.hh"
-#include "sha1.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -47,11 +46,7 @@ IPsecESPUnencap::clone() const
 int
 IPsecESPUnencap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _sha1 = false;
-  if (cp_va_parse(conf, this, errh,
-	          cpOptional, 
-		  cpBool, "verify SHA1", &_sha1,
-		  0) < 0)
+  if (cp_va_parse(conf, this, errh, 0) < 0)
     return -1;
   return 0;
 }
@@ -63,24 +58,6 @@ IPsecESPUnencap::simple_action(Packet *p)
 
   int i, blks;
   const unsigned char * blk;
-
-  // chop off authentication header
-  if (_sha1) {
-    const u_char *ah = p->data() + p->length() - 12;
-    SHA1_ctx ctx;
-    SHA1_init (&ctx);
-    SHA1_update (&ctx, 
-	         ((u_char*) p->data())+sizeof(esp_new), 
-		 p->length()-12-sizeof(esp_new));
-    SHA1_final (&ctx);
-    const unsigned char *digest = SHA1_digest(&ctx);
-    if (memcmp(ah, digest, 12)) {
-      click_chatter("Invalid SHA1 authentication digest");
-      p->kill();
-      return(0);
-    }
-    p->take(12);
-  }
 
   // rip off ESP header
   p->pull(sizeof(esp_new));

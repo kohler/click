@@ -30,7 +30,7 @@
 #include <click/glue.hh>
 
 Des::Des()
-  : Element(1, 1), _op(-1)
+  : Element(1, 1), _op(0)
 {
 }
 
@@ -56,11 +56,13 @@ int
 Des::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int dec_int;
+  _ignore = 12;
 
   if (cp_va_parse(conf, this, errh,
-		  cpInteger, "Decrypt/Encrypt/ReEncrypt (0/1/2)", &dec_int,
-		  cpDesCblock, "8 byte IV", _iv,
+		  cpInteger, "Decrypt/Encrypt (0/1)", &dec_int,
 		  cpDesCblock, "64-bit DES key", _key,
+		  cpOptional,
+		  cpInteger, "Bytes to ignore at the end", &_ignore,
 		  0) < 0)
     return -1;
   _op = dec_int;
@@ -72,10 +74,8 @@ Des::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-Des::initialize(ErrorHandler *errh)
+Des::initialize(ErrorHandler *)
 {
-  if (_op < 0)
-    return errh->error("not configured");
   des_set_key(&_key, _ks);
   return 0;
 }
@@ -88,16 +88,14 @@ Des::simple_action(Packet *p_in)
   unsigned char hold[8];
   unsigned char *idat = p->data();
   struct esp_new *esp = (struct esp_new *)p->data();
+  des_cblock iv;
 
   unsigned char *ivp = esp->esp_iv;
-  int i, plen = p->length() - sizeof(esp_new);
+  int i, plen = p->length() - sizeof(esp_new) - _ignore;
   idat = p->data() + sizeof(esp_new);
   
-  // copy in IV on encryption
-  if(_op == DES_ENCRYPT)
-    memcpy(ivp, _iv, 8);
-  else if (_op == DES_DECRYPT)
-    memcpy(_iv, ivp, 8);
+  if (_op == DES_DECRYPT)
+    memcpy(iv, ivp, 8);
 
   // de/encrypt the payload
   while (plen > 0) {
@@ -122,11 +120,8 @@ Des::simple_action(Packet *p_in)
     plen -= 8;
   }
 
-  // save the last encrypted block, to be used as the next IV */
-  if(_op != DES_DECRYPT)
-    memcpy(_iv, ivp, 8);
-  else
-    memcpy(ivp, _iv, 8);
+  if (_op == DES_DECRYPT) 
+    memcpy(ivp, iv, 8);
   return(p);
 }
 

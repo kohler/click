@@ -1,34 +1,34 @@
 
-InfiniteSource(DATA \<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
-45 00 00 28  00 00 00 00  40 11 77 c3  01 00 00 01
-02 00 00 02  13 69 13 69  00 14 d6 41  55 44 50 20
-70 61 63 6b  65 74 21 0a>, LIMIT 2, STOP true)
-	-> Strip(14)
+RatedSource(\<0000000011111111222222223333333344444444555555556666>,
+            1,1,1)
+	-> IPEncap(17, 4.0.0.2, 1.0.0.2) 
+	-> SetIPChecksum
 	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
-        -> Print(encrypt0)
-        
-	-> IPsecESPEncap(0x00000001, 8, true)
-        -> IPsecDES(1, FFFFFFFFFFFFFFFF, 0123456789abcdef)
-        -> Print(encrypt1)
-        -> IPsecDES(0, FFFFFFFFFFFFFFFF, 9876543210fedcba)
-        -> Print(encrypt2)
-        -> IPsecDES(2, FFFFFFFFFFFFFFFF, 0123456789ABCDEF)
-        -> Print(encrypt3)
+        -> Print(crypt,128)
 
-        -> IPEncap(50, 1.0.0.2, 2.0.0.2)
+	-> IPsecESPEncap(0x00000001)
+	-> IPsecAuthSHA1(0)
+        -> Print(auth0,128)
+
+        -> IPsecDES(1, 0123456789abcdef)
+        -> IPsecDES(0, a12345ddd9abcdef)
+        -> IPsecDES(2, A12345ccc9abcdef)
+
+        -> IPEncap(50, 4.0.0.10, 1.0.0.2)
         -> SetIPChecksum
+	-> EtherEncap(0x0800, 0:0:0:0:0:0, 1:1:1:1:1:1)
+	-> Strip(14)
         -> Strip(20)
 	-> MarkIPHeader
 
-        -> Print(decrypt3)
-        -> IPsecDES(0, FFFFFFFFFFFFFFFF, 0123456789ABCDEF)
-        -> Print(decrypt2)
-        -> IPsecDES(2, FFFFFFFFFFFFFFFF, 9876543210fedcba)
-        -> Print(decrypt1)
-        -> IPsecDES(0, FFFFFFFFFFFFFFFF, 0123456789abcdef)
+        -> IPsecDES(0, A12345ccc9abcdef)
+        -> IPsecDES(2, a12345ddd9abcdef)
+        -> IPsecDES(0, 0123456789abcdef)
 
-        -> IPsecESPUnencap(true)
-	-> MarkIPHeader
-        -> Print(decrypt0)
+        -> Print(auth0, 128)
+	-> IPsecAuthSHA1(1)
+        -> IPsecESPUnencap()
+        -> Print(crypt,128)
+
 	-> Discard;
   

@@ -3,18 +3,15 @@
 
 /*
  * =c
- * IPsecESPUnencap([SHA1])
+ * IPsecESPUnencap()
  * =s encapsulation
  * removes IPSec encapsulation
  * =d
  * 
- * Removes and verifies ESP header added by IPsecESPEncap. see RFC 2406. does
- * not perform anti-replay attack checks. If DES-CBC encryption and decryption
- * are used, IPsecDES must be used before IPsecESPUnencap.
+ * Removes ESP header added by IPsecESPEncap. see RFC 2406. Does not perform
+ * the optional anti-replay attack checks.
  *
- * If SHA1 is true (false by default), checks SHA1 authentication header.
- *
- * =a IPsecESPUnencap, IPsecDES 
+ * =a IPsecESPUnencap, IPsecDES, IPsecAuthSHA1
  */
 
 #include <click/element.hh>
@@ -32,10 +29,6 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
-  
-private:
-  bool _sha1;
-
 };
 
 #endif

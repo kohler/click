@@ -27,23 +27,17 @@
 #include <click/click_ip.h>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include "sha1.hh"
-
-unsigned SHA1_IV[ 5 ] = { H0, H1, H2, H3, H4 };
-
 
 IPsecESPEncap::IPsecESPEncap()
   : Element(1, 1), _spi(-1)
 {
 }
 
-IPsecESPEncap::IPsecESPEncap(int spi, int blks)
+IPsecESPEncap::IPsecESPEncap(int spi)
 {
   add_input();
   add_output();
   _spi = spi;
-  _blks = blks;
-
 }
 
 IPsecESPEncap::~IPsecESPEncap()
@@ -53,25 +47,18 @@ IPsecESPEncap::~IPsecESPEncap()
 IPsecESPEncap *
 IPsecESPEncap::clone() const
 {
-  return new IPsecESPEncap(_spi, _blks);
+  return new IPsecESPEncap(_spi);
 }
 
 int
 IPsecESPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _sha1 = false;
   unsigned int spi_uc;
-  int blk_int;
 
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Security Parameter Index", &spi_uc,
-		  cpInteger, "Block size", &blk_int,
-		  cpOptional,
-		  cpBool, "Compute SHA1 hash?", &_sha1,
-		  0) < 0)
+		  cpUnsigned, "Security Parameter Index", &spi_uc, 0) < 0)
     return -1;
   _spi = spi_uc;
-  _blks = blk_int;
   return 0;
 }
 
@@ -109,7 +96,11 @@ IPsecESPEncap::simple_action(Packet *p)
   _rpl++;
   int rpl = _rpl;
   esp->esp_rpl = htonl(rpl);
-  memcpy(q->data(), esp, sizeof(struct esp_new));
+  i = random() >> 2;
+  memmove(&esp->esp_iv[0], &i, 4);
+  i = random() >> 2;
+  memmove(&esp->esp_iv[4], &i, 4);
+  memmove(q->data(), esp, sizeof(struct esp_new));
 
   // default padding specified by RFC 2406
   for (i = 0; i < padding - 2; i++)
@@ -118,20 +109,6 @@ IPsecESPEncap::simple_action(Packet *p)
   
   // next header = ip protocol number
   pad[padding - 1] = ip_p;
-
-  // compute sha1
-  if (_sha1) {
-    u_char *ah = ((u_char*) q->data()) + q->length(); 
-    q = q->put(12);
-    SHA1_ctx ctx;
-    SHA1_init (&ctx);
-    SHA1_update (&ctx, 
-	         ((u_char*) q->data())+sizeof(esp_new), 
-		 q->length()-12-sizeof(esp_new));
-    SHA1_final (&ctx);
-    const unsigned char *digest = SHA1_digest(&ctx);
-    memmove(ah, digest, 12);
-  }
 
   return(q);
 }

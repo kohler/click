@@ -1,11 +1,27 @@
 
 These elements do not support IPsec fully. The stuff that are missing are:
 
-  - anti-reply attack detection during ESP unencapsulation process
+  - anti-reply attack detection during ESP unencapsulation process.
   - to use IPsec, you would need to hook up a Classifier to statically
     configure a SAD. we don't have a tunnel and SAD setup mechanism.
+  - no AH support.
 
 Are you interested in reviving IPsec support yourself, or is IPsec important
 for you? If so, please contact the Click team via email:
 
 	click@pdos.lcs.mit.edu
+
+
+
+ IPSec elements:
+
+   IPSecEspEncap    - places an ESP header onto the packet, set the
+                      SPI, reply counter, and IV. RFC 2405, 2406.
+
+   IPSecEspAuthSHA1 - computes or verifies SHA1 authentication digest. 
+                      digest is append after the Esp header. use first
+		      96 bits only. RFC 2404, 2406.
+
+   IPSecDES         - encrypts or decrypts payload only, using DES-CBC
+                      with 8 byte blocks. RFC 1829, 2405.
+
