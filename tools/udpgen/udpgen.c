@@ -408,6 +408,7 @@ slow_output_packet(struct udpgen_opt *uopt)
   
   if (hh) {
     /* read_lock_irq(&hh->hh_lock); */
+    printk("<1>%d %d %d %d\n", hh->hh_data[0], hh->hh_data[1], hh->hh_data[2], hh->hh_data[3]);
     memcpy(skb->data - 16, hh->hh_data, 16);
     /* read_unlock_irq(&hh->hh_lock); */
     skb->mac.raw = skb_push(skb, skb->dev->hard_header_len);
