@@ -39,10 +39,11 @@ Try \`click-buildtool findelem --help' for more information." 1>&2
 
 findelements () {
     prefix=""
-    all=0
+    all=
     provisions=""
     filenames=""
     standards=''
+    unprovisions='false 0'
     while [ x"$1" != x ]; do
     case $1 in
     -S|--s|--st|--sta|--stan|--stand|--standa|--standar|--standard|--standards)
@@ -72,6 +73,16 @@ $provisions"; shift 1;;
     --pro=*|--prov=*|--provi=*|--provid=*|--provide=*)
 	provisions=`echo "$1" | sed 's/^[^=]*=//'`"
 $provisions"; shift 1;;
+    -x|--u|--un|--unp|--unpr|--unpro|--unprov|--unprovi|--unprovid|--unprovide)
+	if test $# -lt 2; then findelem_usage; fi
+	shift 1; unprovisions="$1
+$unprovisions"; shift 1;;
+    -x*)
+	unprovisions=`echo "$1" | sed 's/^-r//'`"
+$unprovisions"; shift 1;;
+    --u=*|--un=*|--unp=*|--unpr=*|--unpro=*|--unprov=*|--unprovi=*|--unprovid=*|--unprovide=*)
+	unprovisions=`echo "$1" | sed 's/^[^=]*=//'`"
+$unprovisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 `Click-buildtool findelem' locates valid Click element source code. It starts
@@ -92,6 +103,7 @@ Options:
   -p, --prefix PREFIX        Preprend PREFIX to every file and/or directory.
   -r, --provide REQ          Mark requirement(s) REQ as available.
   -S, --standards            Mark standard elements as available.
+  -x, --unprovide REQ        Mark requirement(s) REQ as unavailable.
   -f, --filenames            Output filenames only.
   -F, --filename-pairs       Output "sourcefile:headerfile" pairs for elements.
   -h, --help                 Print this message and exit.
@@ -113,12 +125,17 @@ EOF
 	provisions="$provisions AddressInfo AlignmentInfo DriverManager ErrorElement ScheduleInfo"
     fi
 
-    # expand provisions: require one per line
+    # expand provisions and unprovisions: require one per line
     provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012'`
+    unprovisions=`echo "$unprovisions" | tr -s ' \011\015\014\013' '\012'`
 
     # expand list of files
-    if test $all = 1; then
-	first_files=`cd ${prefix}elements; ls`
+    if test -n "$all"; then
+	first_files=`cd ${prefix}elements >/dev/null && ls`
+	bad_first_files=`echo "$first_files
+$unprovisions" | sort | uniq -d`
+	first_files=`echo "$first_files
+$bad_first_files" | sort | uniq -u`
     else
 	first_files=`cat`
     fi
@@ -147,27 +164,58 @@ ${pprefix}$i"
 	exit 1
     fi
 
+    # if `$all', then accept all dependencies except the unprovisions
+    dep_test='<='
+    if test -n "$all"; then
+	dep_test='<'
+    fi
+
     # check dependencies: generate a list of bad files, then remove those files
     # from the list of good files
-    bad_files=''
+
+    # first remove files that provide an unprovision
+    awk_exports=`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
+    bad_files=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/EXPORT_ELEMENT(\(.*\)).*/\1/
+s/ELEMENT_PROVIDES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
+{
+  split($2, deps, / +/);
+  for (j in deps) {
+    if (dep[deps[j]] < 0) {
+      print $1;
+      break;
+    }
+  }
+}' | sort | uniq`
+    if test -n "$verbose" -a -n "$bad_files"; then
+	echo
+	echo "Files: $files" 1>&2
+	echo
+	echo "Bad files: $bad_files" 1>&2
+    fi
+    if test -n "$bad_files"; then
+	files=`echo "$files
+$bad_files" | sort | uniq -u`
+	unprovisions="$unprovisions
+"`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $bad_files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
+    fi
+
+    # then cycle, removing files that require something not provided
     while true; do
 	provides=`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
 	awk_exports=`echo "$provides"'
-'"$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`
-	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;
-}
+'"$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`"
+"`echo "$unprovisions" | sed 's/\(..*\)/dep["\1"]=-1;/'`
+	new_bad_files=`grep '^ELEMENT_REQUIRES' $files | sed 's/ELEMENT_REQUIRES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;}
 {
   split($2, deps, / +/);
   for (j in deps) {
     i = deps[j]
-    if (!dep[i]) {
+    if (dep[i] <= 0) {
       bad = 1;
-      if (i ~ /\|/) {
-	split(i, or_deps, /\|+/);
-	for (k in or_deps) {
-	  if (dep[ or_deps[k] ])
-	    bad = 0;
-	}
+      split(i, or_deps, /\|+/);
+      for (k in or_deps) {
+	if (!(dep[or_deps[k]] '"$dep_test"' 0))
+	  bad = 0;
       }
       if (bad) {
 	print $1;
@@ -180,7 +228,7 @@ ${pprefix}$i"
 	    echo
 	    echo "Files: $files" 1>&2
 	    echo
-	    echo "Bad files: $bad_files" 1>&2
+	    echo "Bad files: $new_bad_files" 1>&2
 	fi
 	if test -z "$new_bad_files"; then
 	    break
@@ -189,9 +237,12 @@ ${pprefix}$i"
 $new_bad_files" | sort | uniq -u`
 	    bad_files="$new_bad_files
 $bad_files"
+	    unprovisions="$unprovisions
+"`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $new_bad_files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
 	fi
     done
 
+    # generate output
     if test "$filenames" = f; then
 	postprocess='awk "{ print $1 }"'
     elif test "$filenames" = F; then
@@ -524,10 +575,10 @@ while [ x"$1" != x ]; do
 case $1 in
   --vers|--versi|--versio|--version)
      cat <<'EOF'
-click-buildtool (Click) 1.2.0
+click-buildtool (Click) 1.2.3
 Copyright (C) 2000-2001 Massachusetts Institute of Technology
 Copyright (C) 2000-2001 Mazu Networks, Inc.
-Copyright (C) 2001 ACIRI
+Copyright (C) 2001 International Computer Science Institute
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
