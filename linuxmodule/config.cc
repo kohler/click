@@ -176,7 +176,6 @@ void
 click_init_config()
 {
     lexer = new Lexer;
-    click_export_elements();
   
     Router::add_read_handler(0, "classes", read_classes, 0);
     Router::add_write_handler(0, "config", write_config, 0);
@@ -186,13 +185,15 @@ click_init_config()
   
     click_config_generation = 1;
     current_config = new String;
+
+    click_export_elements();
 }
 
 void
 click_cleanup_config()
 {
     kill_router();
+    click_unexport_elements();
     delete current_config;
     delete lexer;
-    click_unexport_elements();
 }
