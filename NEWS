@@ -87,6 +87,11 @@ Version 1.3pre1
 
 ** Add SetUDPChecksum, TimestampAccum, PaintSwitch, KernelTun, MixedQueue.
 
+** Add a set of elements for trace analysis via a new packet annotation,
+   the aggregate annotation. Elements include AggregateIPFlows,
+   ToIPFlowDumps, AggregateIP, AggregateLength, AggregateCounter,
+   AggregateFilter, AggregateFirst, AggregateLast.
+
 ** Added notification support to ToDevice, DelayUnqueue, Unqueue,
    ToIPSummaryDump, ToDump.
 
