@@ -8,10 +8,10 @@ elementclass TTLChecker {
   // output [1] produces ICMP error packets to be passed back to IP routing layer
   
   input 
-    -> cl :: Classifier(15/GRID_NBR_ENCAP_PROTO !90/GRID_HEX_IP, 
+    -> cl :: Classifier(19/GRID_NBR_ENCAP_PROTO !94/GRID_HEX_IP, 
 			-);
 
-  cl [0] -> MarkIPHeader(78) // 78 is offset of IP in GRID_NBR_ENCAP
+  cl [0] -> MarkIPHeader(82) // 82 is offset of IP in GRID_NBR_ENCAP
          -> dec :: DecIPTTL;
   cl [1] -> output; // don't dec ttl for packets we originate
 
@@ -26,8 +26,8 @@ elementclass TTLChecker {
 #endif // CPP_IS_GATEWAY
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
-ChatterSocket(tcp, 7776);
-ChatterSocket(tcp, 7766, CHANNEL routelog);
+ChatterSocket(tcp, CHATTER_PORT);
+ChatterSocket(tcp, ROUTELOG_PORT, CHANNEL ROUTELOG_CHANNEL);
 
 li :: GridLocationInfo(POS_LAT, POS_LON);
 

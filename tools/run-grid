@@ -42,7 +42,11 @@ $BOGUS_IP = "10.3.4.5";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
-$HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
+$CHATTER_PORT = "7776";
+$ROUTELOG_PORT = "7766";
+$ROUTELOG_CHANNEL = "routelog";
+
+$HEADROOM = "68"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "100"; # always run DSDV -- assumer less than 100 hops in net ;>
 
 $RANGE = "-1"; # don't filter
@@ -259,6 +263,11 @@ while(<click_config>) {
     s/NUM_HOPS/$NUM_HOPS/;
     s/CONTROL_PORT/$CONTROL_PORT/;
     s/CONTROL_RO/$CONTROL_RO/;
+    s/CHATTER_PORT/$CHATTER_PORT/;
+    s/ROUTELOG_PORT/$ROUTELOG_PORT/;
+    s/ROUTELOG_CHANNEL/$ROUTELOG_CHANNEL/;
+
+
     s/RANGE/$RANGE/;
     s/POS_LAT/$POS_LAT/;
     s/POS_LON/$POS_LON/;
