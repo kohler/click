@@ -72,7 +72,7 @@
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
- * LinkStat, LinkTracker */
+ * LinkStat, LinkTracker, GridGatewayInfo */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
