@@ -1,3 +1,19 @@
+2001-12-12 Wednesday 00:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridprobehandler.cc (1.8): bbbbug
+
+2001-12-11 Tuesday 23:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.45): added routing element args to probe reply
+	handler
+
+2001-12-11 Tuesday 23:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc (1.27),
+	floodinglocquerier.hh (1.13), gridprobehandler.cc (1.7),
+	gridprobehandler.hh (1.3), gridroutecb.hh (1.5): took care of
+	forgotten loc query case in grid route action callbacks
+
 2001-12-11 Tuesday 21:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridprobehandler.cc (1.6),
