@@ -1,3 +1,12 @@
+2003-03-01 Saturday 18:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: grid.hh (1.46), gridheaderinfo.cc (1.9),
+	gridheaderinfo.hh (1.8), linkstat.cc (1.18), linkstat.hh (1.8),
+	printgrid.cc (1.31): Two changes: 1) compile to option to reduce
+	link probe packet sizes (changes to grid.hh, linkstat, printgrid);
+	2) fixup probe sending code in linkstat to avoid accumulating timer
+	errors in average send rate
+
 2003-02-27 Thursday 12:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/local/: print80211.cc (1.1), print80211.hh (1.1),
