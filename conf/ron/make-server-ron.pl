@@ -58,8 +58,8 @@ print "c[1] -> Discard;\n\n";
 
 print "setgw :: SetIPAddress(", $gwIP, ")\n";
 print "\t-> arpq\n";
-print "\t-> Queue(100)\n";
-print "\t-> ToDevice(", $device, ");\n";
+print "\t-> QueueNotify(100)\n";
+print "\t-> ToDeviceNotify(", $device, ");\n";
 print "\n";
 
 print "iprw :: IPRewriter(\n";
@@ -96,7 +96,7 @@ for($i=0; $i<$n; $i++) {
     print "\t-> CheckIPHeader\n";
     print "\t-> [", $i, "]iprw;\n\n";
 }
-print "ipc[", $n, "] -> Discard\n";
+print "ipc[", $n, "] -> DiscardNotify;\n";
 
 print "// Incoming NAT reply packets\n";
 print "DivertSocket(3001)\n";

@@ -158,8 +158,8 @@ for($i=0; $i<$n; $i++) {
 
 print "setgw\t-> arpq\n";
 print "//\t-> Print(outeth0,40)\n";
-print "\t-> Queue(100)\n";
-print "\t-> ToDevice(", $device, ");\n";
+print "\t-> QueueNotify(100)\n";
+print "\t-> ToDeviceNotify(", $device, ");\n";
 
 
 
