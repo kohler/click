@@ -52,7 +52,9 @@ print "require(ron);\n";
 print "\n";
 
 print "iprw :: IPRewriter(pattern - - - - 0 1,\n";
-print "\t\tpattern - - - - 2 3);\n";
+print "\t\tpattern - - - - 2 3,\n";
+print "\t\tTCP_TIMEOUT 1200,\n";
+print "\t\tREAP_TCP 300);\n";
 print "\n";
 
 print "rt :: LookupIPRouteRON(", $n + 1, ");\n";
@@ -87,7 +89,7 @@ print "\n";
 
 print "// ------------- Divert Sockets ---------------\n";
 print "// Outgoing TCP Packets\n";
-print "DivertSocket(", $device, ", 4000, 2, 6, ", $meIP, ", 0.0.0.0/0, out)\n";
+print "DivertSocket(", $device, ", 4000, 50, 6, ", $meIP, ", 0.0.0.0/0, out)\n";
 print "//\t-> Print(OUT_TCP)\n";
 print "\t-> MarkIPHeader\n";
 print "\t-> SetIPChecksum\n";
@@ -98,7 +100,7 @@ print "\t-> [0]iprw;\n";
 print "\n";
 
 print "// Incoming TCP Packets\n";
-print "DivertSocket(", $device, ", 4001, 2, 6, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "DivertSocket(", $device, ", 4001, 50, 6, 0.0.0.0/0, ", $meIP, ", in)\n";
 print "\t-> sIn[1]\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN__TCP)\n";
@@ -107,7 +109,7 @@ print "\t-> [1]iprw;\n";
 print "\n";
 
 print "// Incoming UDP Encapsulated Packets\n";
-print "DivertSocket(", $device, ", 4002, 2, 17, 0.0.0.0/0, 4001, ", $meIP, ", 4001, in)\n";
+print "DivertSocket(", $device, ", 4002, 50, 17, 0.0.0.0/0, 4001, ", $meIP, ", 4001, in)\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN-ENCAP-RAW)\n";
 print "\t-> GetIPAddress(16)\n";
@@ -118,6 +120,7 @@ print "\n";
 for($i=0; $i<$n; $i++) {
     print "neighborclass[", $i, "]\n";
     print "\t-> StripIPHeader\n";
+    print "\t-> Strip(8)\n";
     print "\t-> CheckIPHeader\n";
     print "//\t-> IPPrint(IN-ENCAP-STR)\n";
     print "\t-> IPReassembler\n";
