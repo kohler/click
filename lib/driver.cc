@@ -295,7 +295,8 @@ CLICK_ENDDECLS
 
 
 #ifdef CLICK_USERLEVEL
-extern void click_export_elements(CLICK_NAME(Lexer) *);
+extern void click_export_elements();
+extern void click_unexport_elements();
 
 CLICK_DECLS
 namespace {
@@ -379,6 +380,8 @@ click_static_initialize()
 
     Router::add_read_handler(0, "classes", read_handler, (void *)GH_CLASSES);
     Router::add_read_handler(0, "packages", read_handler, (void *)GH_PACKAGES);
+
+    click_export_elements();
 }
 
 void
@@ -386,6 +389,8 @@ click_static_cleanup()
 {
     delete click_lexer;
     click_lexer = 0;
+    
+    click_unexport_elements();
     
     Router::static_cleanup();
     ErrorHandler::static_cleanup();
