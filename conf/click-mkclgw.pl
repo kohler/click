@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.11 2004/08/05 14:52:42 max Exp $
+# $Id: click-mkclgw.pl,v 1.12 2004/08/05 15:13:01 max Exp $
 #
 # click-mkclgw
 #
@@ -93,13 +93,16 @@ package CLGW::Const;
 # they specify config file groups more than they specify ports.
 # 
 $CLGW::Const::PORT_ALL = 0;
-$CLGW::Const::PORT_HTTP = 1;
-$CLGW::Const::PORT_SSH = 2;
-$CLGW::Const::PORT_NAPT = 3;
-$CLGW::Const::INFO = 4;
-$CLGW::Const::PARAM = 5;
+
+$CLGW::Const::PORT_NAPT = 1;
+$CLGW::Const::INFO = 2;
+$CLGW::Const::PARAM = 3;
+
+$CLGW::Const::PORT_HTTP = 4;
+$CLGW::Const::PORT_SSH = 5;
 $CLGW::Const::PORT_SFS = 6;
 $CLGW::Const::PORT_HTTPS = 7;
+$CLGW::Const::PORT_TELNET = 8;
 
 #
 # Different types of definable addressing schemes
@@ -128,14 +131,12 @@ $CLGW::Const::TAB_IN = 45;  # formatting constant
 			  "ssh" => $CLGW::Const::PORT_SSH,
 			  "sfs" => $CLGW::Const::PORT_SFS,
 			  "https" => $CLGW::Const::PORT_HTTPS,
-			  "telnet" => $CLGW::Const::PORT_TELNET,
-			  "ilo_virtual_media" => $CLGW::Const::PORT_ILO_VM );
+			  "telnet" => $CLGW::Const::PORT_TELNET );
 
 %CLGW::Const::R_PORTMAP = ( $CLGW::Const::PORT_SSH => "ssh",
 			    $CLGW::Const::PORT_HTTP => "www",
 			    $CLGW::Const::PORT_HTTPS => "https",
 			    $CLGW::Const::PORT_TELNET => "telnet",
-			    $CLGW::Const::POERT_ILO_VM => 17988,
 			    $CLGW::Const::PORT_SFS => 4  );
 
 # 
