@@ -385,6 +385,9 @@ click_inode(struct super_block *sb, unsigned long ino)
 	    inode->i_mode = S_IFREG | (h.read_visible() ? click_mode_r : 0) | (h.write_visible() ? click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
 	    inode->i_op = &click_handler_inode_ops;
+#ifdef LINUX_2_4
+	    inode->i_fop = &click_handler_file_ops;
+#endif
 	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
 	} else {
 	    iput(inode);
@@ -398,6 +401,9 @@ click_inode(struct super_block *sb, unsigned long ino)
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
+#ifdef LINUX_2_4
+	inode->i_fop = &click_handler_file_ops;
+#endif
 	calculate_inode_nlink(inode);
     }
 
@@ -662,6 +668,7 @@ click_read_inode(struct inode *inode)
     proclikefs_read_inode(inode);
 }
 
+#ifdef LINUX_2_2
 static void
 click_write_inode(struct inode *)
 {
@@ -674,6 +681,7 @@ click_put_inode(struct inode *inode)
     if (inode->i_count == 1)
 	inode->i_nlink = 0;
 }
+#endif
 
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
@@ -687,7 +695,11 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
     if (!root_inode)
 	goto out_no_root;
+#ifdef LINUX_2_4
+    sb->s_root = d_alloc_root(root_inode);
+#else
     sb->s_root = d_alloc_root(root_inode, 0);
+#endif
     if (!sb->s_root)
 	goto out_no_root;
     // XXX options
@@ -720,11 +732,19 @@ click_reread_super(struct super_block *sb)
     unlock_super(sb);
 }
 
+#ifdef CLICK_2_4
 static void
 click_delete_dentry(struct dentry *dentry)
 {
     d_drop(dentry);
 }
+#else
+static int
+click_delete_dentry(struct dentry *)
+{
+    return 1;
+}
+#endif
 
 } // extern "C"
 
@@ -1025,8 +1045,12 @@ init_clickfs()
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
     
     click_superblock_ops.read_inode = click_read_inode;
+#ifdef LINUX_2_4
+    click_superblock_ops.put_inode = force_delete;
+#else
     click_superblock_ops.write_inode = click_write_inode;
     click_superblock_ops.put_inode = click_put_inode;
+#endif
     click_superblock_ops.delete_inode = proclikefs_delete_inode;
     click_superblock_ops.put_super = proclikefs_put_super;
     // XXX statfs
@@ -1040,7 +1064,9 @@ init_clickfs()
     click_dir_file_ops.readdir = click_dir_readdir;
     click_dir_inode_ops.lookup = click_dir_lookup;
     click_dir_inode_ops.revalidate = click_dir_revalidate;
+#ifdef LINUX_2_2
     click_dir_inode_ops.default_file_ops = &click_dir_file_ops;
+#endif
 
 #ifdef LINUX_2_4
     click_handler_file_ops.owner = THIS_MODULE;

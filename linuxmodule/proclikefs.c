@@ -17,6 +17,7 @@
  * legally binding.
  */
 
+#undef CLICK_LINUXMODULE
 #include <linux/config.h>
 #ifndef EXPORT_SYMTAB
 # define EXPORT_SYMTAB
@@ -121,16 +122,30 @@ proclikefs_register_filesystem(const char *name,
 }
 
 static void
-proclikefs_kill_super(struct super_block *sb)
+proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
 {
     struct dentry *dentry, *all_dentries;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    struct list_head *p;
+    file_list_lock();
+    for (p = sb->s_files.next; p != &sb->s_files; p = p->next) {
+	struct file *filp = list_entry(p, struct file, f_list);
+	filp->f_op = dummy_inode->i_fop;
+    }
+    file_list_unlock();
+#else
+    (void) dummy_inode;
+#endif
 
     lock_super(sb);
 
     sb->s_op = &proclikefs_null_super_operations;
+    /* will not create new dentries any more */
 
     /* clear out dentries, starting from the root */
     /* XXX locking? */
+    
     all_dentries = sb->s_root;
     if (all_dentries) {
 	d_drop(all_dentries);
@@ -167,11 +182,13 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     
     spin_lock(&fslist_lock);
 
+    /* Borrow make_bad_inode's file operations. */
+    make_bad_inode(&dummy_inode);
+    
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
     /* clear out file operations */
     /* inuse_filps is protected by the single kernel lock */
-    /* Borrow make_bad_inode's file operations. */
     /* XXX locking? */
-    make_bad_inode(&dummy_inode);
     for (filp = inuse_filps; filp; filp = filp->f_next) {
 	struct dentry *dentry = filp->f_dentry;
 	if (!dentry)
@@ -181,9 +198,12 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	    continue;
 	filp->f_op = dummy_inode.i_op->default_file_ops;
     }
+#else
+    /* file operations cleared out superblock by superblock, below */
+    (void) filp;
+#endif
     
     spin_lock(&pfs->lock);
-    spin_lock(&inode_lock);
 
     /* clear out inode operations */
     {
@@ -201,11 +221,9 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	 sb = sb_entry(sb->s_list.next)) {
 	if (sb->s_type != &pfs->fs)
 	    continue;
-	proclikefs_kill_super(sb);
+	proclikefs_kill_super(sb, &dummy_inode);
     }
 
-    spin_unlock(&inode_lock);
-    
     pfs->live = 0;
     pfs->fs.read_super = proclikefs_null_read_super;
     MOD_DEC_USE_COUNT;
@@ -284,3 +302,7 @@ cleanup_module(void)
     }
     spin_unlock(&fslist_lock);
 }
+
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("Dual BSD/GPL");
+#endif

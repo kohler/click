@@ -108,10 +108,14 @@ ToHostSniffers::push(int port, Packet *p)
 
   // be nice to libpcap
   if (skb->stamp.tv_sec == 0) {
-#ifndef CONFIG_CPU_IS_SLOW
-    get_fast_time(&skb->stamp);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 18)
+      do_gettimeofday(&skb->stamp);
 #else
-    skb->stamp = xtime;
+# ifndef CONFIG_CPU_IS_SLOW
+      get_fast_time(&skb->stamp);
+# else
+      skb->stamp = xtime;
+# endif
 #endif
   }
   

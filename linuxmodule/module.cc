@@ -292,3 +292,7 @@ cleanup_module()
   printk("<1>net_skbcount: %d\n", read_net_skbcount());
 #endif
 }
+
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("Dual BSD/GPL");
+#endif
