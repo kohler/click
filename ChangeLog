@@ -1,3 +1,9 @@
+2003-12-15 Monday 13:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.74), dsdvroutetable.hh
+	(1.52): oops, needed to change some invariants to accomodate
+	IGNORE_INVALID_ROUTES option
+
 2003-12-15 Monday 09:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsrroutetable.cc (1.6): merge typos
