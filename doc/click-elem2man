@@ -210,6 +210,9 @@ sub nroffize ($) {
       }
     }
     $o =~ s/\n\.fi\n\.PP\n\n\.nf\n/\n/g;
+    if (@Over > 0) {
+      $o =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
+    }
     $o;
   } else {
     nroffize_text($t);
