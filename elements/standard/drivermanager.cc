@@ -3,7 +3,7 @@
  * drivermanager.{cc,hh} -- element manages router driver stopping
  * Eddie Kohler
  *
- * Copyright (c) 2001 ACIRI
+ * Copyright (c) 2001 International Computer Science Institute
  * Copyright (c) 2001 Mazu Networks, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -145,6 +145,7 @@ DriverManager::initialize(ErrorHandler *errh)
 	}
 
     _insn_pos = 0;
+    _insn_arg = 0;
     _stopped_count = 0;
     _timer.initialize(this);
 
