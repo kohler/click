@@ -1,20 +1,6 @@
 #ifndef NEIGHBOR_HH
 #define NEIGHBOR_HH
 
-/*
- * =c
- * Neighbor
- * =d
- * Maintain a table of neigboring Grid network participants MAC and IP
- * addresses.  Expects Grid HELLO packets.
- *
- * =a Hello 
- */
-
-
-
-// XXX this is probably already implemented in some click element?  i
-// don't know...
 
 #include "element.hh"
 #include "glue.hh"
@@ -26,6 +12,7 @@ class Neighbor : public Element {
 
 public:
 
+#if 0
   class eth_ip_pair {
     bool _init;
   public:
@@ -37,8 +24,9 @@ public:
     unsigned int hashcode() const { return *(unsigned int *)ip.data(); }
     String s() const { return eth.s() + " -- " + ip.s(); }
   };
+#endif
 
-  HashMap<eth_ip_pair, int> _addresses;
+  HashMap<IPAddress, EtherAddress> _addresses;
 
   Neighbor();
   ~Neighbor();
@@ -58,7 +46,8 @@ public:
   void push(int port, Packet *);
 
 private:
-  
+  IPAddress _ipaddr;
+  EtherAddress _ethaddr;
 };
 
 #endif

@@ -10,6 +10,7 @@
  * distribution.
  */
 
+#include <stddef.h>
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -17,9 +18,11 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "click_ether.h"
+#include "click_ip.h"
 #include "elements/standard/scheduleinfo.hh"
+#include "grid.hh"
 
-Neighbor::Neighbor() : Element(1, 0)
+Neighbor::Neighbor() : Element(2, 2)
 {
 }
 
@@ -60,26 +63,77 @@ Neighbor::run_scheduled()
 }
 
 void
-Neighbor::push(int, Packet *packet)
+Neighbor::push(int port, Packet *packet)
 {
+  /* 
+   * input 1 and output 1 hook up to higher level (e.g. ip), input 0
+   * and output 0 hook up to lower level (e.g. ethernet) 
+   */
+
   assert(packet);
-  click_ether *eh = (click_ether *) packet->data();
-  if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("Neighbor: got non-Grid packet");
-    return;
-  }
-  eth_ip_pair k(eh->ether_shost, packet->data() + sizeof(click_ether));
-  int *num = _addresses.findp(k);
-  if (num == 0) {
-    // this src addr not already in map, so add it
-    _addresses.insert(k, 1);
+  if (port == 0) {
+    /*
+     * input from net device
+     */
+
+    // update neighbor table
+    click_ether *eh = (click_ether *) packet->data();
+    if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
+      click_chatter("Neighbor: got non-Grid packet");
+      return;
+    }
+    grid_hdr *gh = (grid_hdr *) packet->data() + sizeof(click_ether);
+    IPAddress ipaddr((unsigned char *) &gh->ip);
+    EtherAddress *ethaddr = _addresses.findp(ipaddr);
+    if (ethaddr == 0) {
+      // this src addr not already in map, so add it
+      _addresses.insert(ipaddr, EtherAddress((unsigned char *) eh->ether_shost));
+    }
+
+    // perform further packet processing
+    switch (gh->type) {
+    case GRID_HELLO:
+      // nothing further to do
+      packet->kill();
+      break;
+    case GRID_NBR_ENCAP:
+      // XXX do we need to annotate the packet??
+      packet->pull(sizeof(click_ether) + sizeof(grid_hdr));
+      output(1).push(packet);
+      break;
+    default:
+      click_chatter("Neighbor: received unknown Grid packet: %d", (int) gh->type);
+    }
   }
   else {
-    // increment existing count... // XXX why are we even counting. could use bool?
-    assert(_addresses.insert(k, *num + 1) == false);
+    /*
+     * input from higher level protocol -- expects IP packets
+     */
+    assert(port == 1);
+    // check to see is the desired dest is our neighbor
+    IPAddress dst(packet->data() + offsetof(click_ip, ip_dst));
+    EtherAddress *ethaddr = _addresses.findp(dst);
+    if (ethaddr == 0) {
+      click_chatter("Neighbor: dropping packet for %s", dst.s().cc());
+      packet->kill(); // too bad!
+    }
+    else {
+      // encapsulate packet with grid hdr and send it out!
+      packet->push(sizeof(click_ether) + sizeof(grid_hdr));
+      bzero(packet->data(), sizeof(click_ether) + sizeof(grid_hdr));
+      
+      click_ether *eh = (click_ether *) packet->data();
+      memcpy(eh->ether_dhost, ethaddr->data(), 6);
+      memcpy(eh->ether_shost, _ethaddr.data(), 6);
+      eh->ether_type = htons(ETHERTYPE_GRID);
+      
+      grid_hdr *gh = (grid_hdr *) packet->data() + sizeof(click_ether);
+      gh->len = sizeof(grid_hdr);
+      gh->type = GRID_NBR_ENCAP;
+      memcpy((unsigned char *) &gh->ip, _ipaddr.data(), 4);
+      output(1).push(packet);
+    }
   }
-
-  packet->kill();
 }
 
 Neighbor *
@@ -98,10 +152,12 @@ print_nbrs(Element *f, void *)
   s += "):\n";
 
   int i = 0;
-  Neighbor::eth_ip_pair addr;
-  int num;
-  while (n->_addresses.each(i, addr, num)) {
-    s += addr.s();
+  IPAddress ipaddr;
+  EtherAddress ethaddr;
+  while (n->_addresses.each(i, ipaddr, ethaddr)) {
+    s += ipaddr.s();
+    s += " -- ";
+    s += ethaddr.s();
     s += '\n';
   }
   return s;
@@ -114,5 +170,6 @@ Neighbor::add_handlers()
 }
 
 EXPORT_ELEMENT(Neighbor)
-#include "hashmap.cc"
-template class HashMap<Neighbor::eth_ip_pair, int>;
+  // below already in lib/templatei.cc
+  // #include "hashmap.cc"
+  // template class HashMap<IPAddress, EtherAddress>;

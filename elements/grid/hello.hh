@@ -1,16 +1,6 @@
 #ifndef Hello_HH
 #define Hello_HH
 
-/*
- * =c
- * Hello(T, eth, ip)
- * =d
- * Every T seconds,
- * sends a Grid HELLO packet from eth advertising ip
- *
- * =a Neighbor 
- */
-
 #include "element.hh"
 #include "timer.hh"
 #include "etheraddress.hh"

@@ -18,6 +18,9 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "elements/standard/scheduleinfo.hh"
+#include "elements/userlevel/tobpf.hh"
+#include "router.hh"
+#include "grid.hh"
 
 Hello::Hello()
   : Element(0, 1), _timer(this)
@@ -37,6 +40,7 @@ Hello::clone() const
 int
 Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  // XXX make src MAC optionally override actual hardware MAC
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "period (sec)", &_period,
 		     cpEthernetAddress, "source Ethernet address", &_from_eth,
@@ -47,6 +51,18 @@ Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Hello::initialize(ErrorHandler *errh)
 {
+#if 0
+  // find downstream ToBPF 
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *f = router()->element(fi);
+    ToBPF *to = (ToBPF *)f->cast("ToBPF");
+    if (to) {
+      _from_eth = to->get_mac();
+      break;
+    }
+  } // XXX way broken, what if not using ToBPF, or if ToBPF initialized after us?
+#endif
+
   ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
   _timer.schedule_after_ms(_period * 1000); // Send Grid HELLO periodically
@@ -63,13 +79,16 @@ Hello::run_scheduled()
 Packet *
 Hello::make_hello()
 {
-  Packet *p = Packet::make(sizeof(click_ether) + 4); // XXX 
+  Packet *p = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hdr)); 
   memset(p->data(), 0, p->length());
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from_eth.data(), 6);
-  memcpy(p->data() + sizeof(click_ether), _from_ip.data(), 4);
+  grid_hdr *gh = (grid_hdr *) p->data() + sizeof(click_ether);
+  gh->len = sizeof(grid_hdr);
+  gh->type = GRID_HELLO;
+  memcpy(&gh->ip, _from_ip.data(), 4);
   return p;
 }
 
