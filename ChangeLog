@@ -1,3 +1,13 @@
+2001-06-04 Monday 20:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/samplepackage/Makefile.in (1.16): nitlet
+
+2001-06-04 Monday 20:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: fakepcap.h (1.6), fromdump.cc (1.31),
+	todump.cc (1.28): add initial support for modified libpcap files, a
+	la Linux (which sometimes is pretty stupid, apparently)
+
 2001-06-04 Monday 17:36  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/: rfc2507c.cc (1.20), rfc2507c.hh (1.9), rfc2507d.hh
