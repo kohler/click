@@ -11,13 +11,14 @@ my($INSTALL) = 1;
 my($ELEMENTS) = 1;
 my($PROGMAN) = 1;
 my($DOC_TAR_GZ) = 1;
+my($NEWS) = 1;
 while ($ARGV[0] =~ /^-/) {
     $_ = shift @ARGV;
     if (/^-x$/ || /^--no-install$/) {
 	$INSTALL = 0;
     } elsif (/^-p$/ || /^--progman$/) {
 	$PROGMAN = 1;
-	$ELEMENTS = $DOC_TAR_GZ = 0;
+	$ELEMENTS = $DOC_TAR_GZ = $NEWS = 0;
     } else {
 	die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
     }
@@ -238,25 +239,29 @@ if ($ELEMENTS) {
 mysystem("man2html -l -m '<b>@</b>' -t $DOCDIR/template -d $DOCDIR /tmp/%click-webdoc/man/man*/*.?");
 
 # 5. call `changelog2html'
-mysystem("changelog2html -d $DOCDIR click-$VERSION/NEWS $WEBDIR/news.html");
+if ($NEWS) {
+    mysystem("changelog2html -d $DOCDIR click-$VERSION/NEWS $WEBDIR/news.html");
+}
 
 # 6. edit `news.html'
-open(IN, "$WEBDIR/news.html") || die "$WEBDIR/news.html: $!\n";
-open(OUT, ">$WEBDIR/news.html.new") || die "$WEBDIR/news.html.new: $!\n";
-my(%good);
-while (<IN>) {
-  while (/\b([A-Z][A-Za-z0-9]*)\b/g) {
-    if (!exists $good{$1}) {
-      $good{$1} = -r "$DOCDIR/$1.n.html";
+if ($NEWS) {
+    open(IN, "$WEBDIR/news.html") || die "$WEBDIR/news.html: $!\n";
+    open(OUT, ">$WEBDIR/news.html.new") || die "$WEBDIR/news.html.new: $!\n";
+    my(%good);
+    while (<IN>) {
+	while (/\b([A-Z][A-Za-z0-9]*)\b/g) {
+	    if (!exists $good{$1}) {
+		$good{$1} = -r "$DOCDIR/$1.n.html";
+	    }
+	}
+	s#\b([A-Z][A-Za-z0-9]*)\b#$good{$1} ? '<a href="doc/' . $1 . '.n.html">' . $1 . '</a>' : $1#eg;
+	print OUT;
     }
-  }
-  s#\b([A-Z][A-Za-z0-9]*)\b#$good{$1} ? '<a href="doc/' . $1 . '.n.html">' . $1 . '</a>' : $1#eg;
-  print OUT;
+    close IN;
+    close OUT;
+    unlink("$WEBDIR/news.html") || die "unlink $WEBDIR/news.html: $!\n";
+    rename("$WEBDIR/news.html.new", "$WEBDIR/news.html") || die "rename $WEBDIR/news.html.new: $!\n";
 }
-close IN;
-close OUT;
-unlink("$WEBDIR/news.html") || die "unlink $WEBDIR/news.html: $!\n";
-rename("$WEBDIR/news.html.new", "$WEBDIR/news.html") || die "rename $WEBDIR/news.html.new: $!\n";
 
 # 7. install programming manual
 if ($PROGMAN) {

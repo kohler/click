@@ -420,7 +420,7 @@ dnl
 dnl CLICK_CHECK_INTEGER_TYPES
 dnl Finds definitions for 'int8_t' ... 'int32_t' and 'uint8_t' ... 'uint32_t'.
 dnl Also defines shell variable 'have_inttypes_h' to 'yes' iff the header
-dnl file <inttypes.h> exists.
+dnl file <inttypes.h> exists.  If 'uintXX_t' doesn't exist, try 'u_intXX_t'.
 dnl
 
 AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
@@ -428,15 +428,26 @@ AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
 
     if test $have_inttypes_h = no; then
 	AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
-	[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
-	if test $ac_cv_uint_t = no; then
-	    AC_MSG_ERROR([
+	[AC_EGREP_HEADER(dnl
+changequote(<<,>>)<<(^|[^a-zA-Z_0-9])uint32_t[^a-zA-Z_0-9]>>changequote([,]),
+	sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
+    fi
+    if test $have_inttypes_h = no -a "$ac_cv_uint_t" = no; then
+	AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_int_t,
+	[AC_EGREP_HEADER(dnl
+changequote(<<,>>)<<(^|[^a-zA-Z_0-9])u_int32_t[^a-zA-Z_0-9]>>changequote([,]),
+	sys/types.h, ac_cv_u_int_t=yes, ac_cv_u_int_t=no)])
+    fi
+    if test $have_inttypes_h = yes -o "$ac_cv_uint_t" = yes; then :
+    elif test "$ac_cv_u_int_t" = yes; then
+	AC_DEFINE(HAVE_U_INT_TYPES)
+    else
+	AC_MSG_ERROR([
 =========================================
 
-uint32_t not defined by <inttypes.h> or <sys/types.h>!
+Neither uint32_t nor u_int32_t defined by <inttypes.h> or <sys/types.h>!
 
 =========================================])
-	fi
     fi])
 
 
@@ -444,7 +455,7 @@ dnl
 dnl CLICK_CHECK_INT64_TYPES
 dnl Finds definitions for 'int64_t' and 'uint64_t'.
 dnl On input, shell variable 'have_inttypes_h' should be 'yes' if the header
-dnl file <inttypes.h> exists.
+dnl file <inttypes.h> exists.  If no 'uint64_t', looks for 'u_int64_t'.
 dnl
 
 AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
@@ -455,9 +466,13 @@ AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
     fi
 
     AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
-[AC_EGREP_HEADER(int64_t, $inttypes_hdr, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
+	[AC_EGREP_HEADER(dnl
+changequote(<<,>>)<<(^|[^a-zA-Z_0-9])int64_t[^a-zA-Z_0-9]>>changequote([,]),
+	$inttypes_hdr, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
     AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
-[AC_EGREP_HEADER(uint64_t, $inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
+	[AC_EGREP_HEADER(dnl
+changequote(<<,>>)<<(^|[^a-zA-Z_0-9])u_?int64_t[^a-zA-Z_0-9]>>changequote([,]),
+	$inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
 
     have_int64_types=
     if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
@@ -501,7 +516,7 @@ EOF
 	    AC_TRY_EVAL(ac_try)
 	    ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 	    if test -z "$ac_err"; then
-		ac_cv_endian=`grep '^[1234]' conftest.result`
+		ac_cv_endian=`grep '^[[1234]]' conftest.result`
 		test -z "$ac_cv_endian" && ac_cv_endian=0
 	    else
 		echo "$ac_err" >&5

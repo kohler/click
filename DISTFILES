@@ -277,7 +277,6 @@ linuxmodule/skbmgr.cc
 
 bsdmodule
 bsdmodule/Makefile.in
-bsdmodule/click-mount.c
 bsdmodule/clickfs.cc
 bsdmodule/clickfs_element.cc
 bsdmodule/clickfs_tree.cc
