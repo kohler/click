@@ -1,3 +1,8 @@
+2002-07-14 Sunday 19:16  Eddie Kohler <kohler@icir.org>
+
+	* include/click/crc32.h, include/click/crc32.h, libsrc/crc32.c:
+	various cleanups to support click-devirtualize changes
+
 2002-07-11 Thursday 20:48  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/ino.cc: nlink() supports handler inode numbers

@@ -1,3 +1,16 @@
+2002-07-14 Sunday 19:16  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/iprw.cc (1.44), elements/standard/checkcrc32.cc
+	(1.12), elements/standard/print.cc (1.23),
+	elements/standard/setcrc32.cc (1.12), include/click/crc32.h (1.2),
+	lib/crc32.c (1.4): various cleanups to support click-devirtualize
+	changes
+
+2002-07-14 Sunday 19:15  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-devirtualize/: cxxclass.cc (1.9), specializer.cc
+	(1.27), specializer.hh (1.10): click-devirtualize again works
+
 2002-07-11 Thursday 20:52  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/clickfs.cc (1.17): stupid typo
