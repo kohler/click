@@ -1,3 +1,40 @@
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh (1.25), lib/router.cc (1.110): add
+	Router::root_element()
+
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/handlercall.hh (1.3), lib/handlercall.cc (1.2):
+	HandlerCall updates: add more methods, bug fixes
+
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh (1.23), lib/confparse.cc (1.89): add
+	cp_handler_call, cpReadHandlerCall, cpWriteHandlerCall
+
+2001-10-22 Monday 16:21  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: progressbar.cc (1.9), progressbar.hh (1.5):
+	ProgressBar updates
+
+2001-10-22 Monday 16:21  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdump.cc (1.54), fromdump.hh (1.31):
+	FromDump: add END_CALL handler, use HandlerCall to decide what to
+	do when you run out of data
+
+2001-10-22 Monday 16:20  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.14),
+	include/click/standard/drivermanager.hh (1.7): DriverManager: add
+	write_skip instruction
+
+2001-10-22 Monday 16:20  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: counter.cc (1.21), counter.hh (1.22):
+	Counter: have 64-bit counters if 64 bits are supported
+
 2001-10-20 Saturday 03:48  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: analysis/fromipsumdump.cc (1.7),

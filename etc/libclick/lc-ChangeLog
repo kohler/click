@@ -1,3 +1,27 @@
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	libsrc/router.cc: add Router::root_element()
+
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/handlercall.hh, include/click/handlercall.hh,
+	libsrc/handlercall.cc: HandlerCall updates: add more methods, bug
+	fixes
+
+2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_handler_call, cpReadHandlerCall,
+	cpWriteHandlerCall
+
+2001-10-22 Monday 16:20  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc, include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh: DriverManager: add
+	write_skip instruction
+
 2001-10-20 Saturday 02:58  Eddie Kohler <kohler@aciri.org>
 
 	* config-userlevel.h.in, configure.in: add HAVE_TERMIO_H
