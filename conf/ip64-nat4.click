@@ -79,11 +79,12 @@ pt46 :: ProtocolTranslator46();
 
 FromDevice(eth0, 1)
   	-> c; 
+to_eth0 :: ToDevice(eth0);
 
 c[0] 	-> nda
 	//-> Print(nda, 200)
 	-> Queue(1024)
-	-> ToDevice(eth0);
+	-> to_eth0;
 
 c[1] 	-> [1]nds;
 
@@ -98,7 +99,7 @@ c[3] 	-> arr
 c[4] 	-> arr2
 	-> q;
 
-q	-> ToDevice(eth0) ;
+q	-> to_eth0 ;
 	
 c[5] 	//-> Print(arp-reply, 200) 
 	->[1]arp;
@@ -155,10 +156,10 @@ pt46[0]	-> Print(after-pt46, 200)
 	-> [1]at;
 
 arp[0] 	//-> Print(arp0, 200)
-	-> ToDevice(eth0);
+	-> to_eth0;
 
 nds[0]  -> Print(nds, 200)
-	-> ToDevice(eth0);
+	-> to_eth0;
 	
 	
 
