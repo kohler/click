@@ -1,3 +1,8 @@
+2004-02-04 Wednesday 15:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/aggregateipflows.cc (1.25): use a less crappy
+	hash function
+
 2004-02-04 Wednesday 03:35  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/aggregateipflows.cc (1.24): nit: break two
