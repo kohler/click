@@ -63,7 +63,10 @@ cp_skip_space(const char *begin, const char *end)
 bool
 cp_eat_space(String &str)
 {
-  return str.substring(cp_skip_space(str.begin(), str.end()), str.end());
+  const char *begin = str.begin(), *end = str.end();
+  const char *space = cp_skip_space(begin, end);
+  str = str.substring(space, end);
+  return space != begin;
 }
 
 bool
