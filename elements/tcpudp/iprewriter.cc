@@ -379,7 +379,7 @@ IPRewriter::push(int port, Packet *p_in)
   m->apply(p);
 
   if (ip_p == IP_PROTO_TCP) {
-    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+    click_tcp *tcph = p->tcp_header();
     if (tcph->th_flags & (TH_SYN | TH_FIN | TH_RST)) {
 #if IPRW_RWLOCKS
       if (!has_lock) {

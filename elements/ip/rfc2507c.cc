@@ -119,7 +119,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   int flen = 0;
   char fbuf[512]; /* encode into this buf[flen] */
   const click_ip *ipp = p->ip_header();
-  const click_tcp *tcpp = reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcpp = p->tcp_header();
   int x;
   struct tcpip *ctx = &_ccbs[cid]._context;
 
@@ -221,8 +221,7 @@ RFC2507c::simple_action(Packet *p)
 {
   const click_ip *ipp = p->ip_header();
   assert(ipp && p->ip_header_offset() == 0);
-  const click_tcp *tcpp =
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcpp = p->tcp_header();
   int cid;
   Packet *q = 0;
   

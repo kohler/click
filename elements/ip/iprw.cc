@@ -108,7 +108,7 @@ IPRw::Mapping::apply(WritablePacket *p)
   // UDP/TCP header
   if (_ip_p == IP_PROTO_TCP) {
     
-    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+    click_tcp *tcph = p->tcp_header();
     tcph->th_sport = _mapto.sport();
     tcph->th_dport = _mapto.dport();
     unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
@@ -125,7 +125,7 @@ IPRw::Mapping::apply(WritablePacket *p)
     
   } else if (_ip_p == IP_PROTO_UDP) {
     
-    click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
+    click_udp *udph = p->udp_header();
     udph->uh_sport = _mapto.sport();
     udph->uh_dport = _mapto.dport();
     if (udph->uh_sum) {		// 0 checksum is no checksum

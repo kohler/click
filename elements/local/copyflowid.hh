@@ -20,7 +20,7 @@ private:
     (const String &, Element *, void *, ErrorHandler *);
 
   void monitor(Packet *);
-  void set(Packet *);
+  Packet *set(Packet *);
 
   bool _start;
   IPFlowID _flow;

@@ -171,8 +171,7 @@ IPPrint::simple_action(Packet *p)
   switch (iph->ip_p) {
     
   case IP_PROTO_TCP: {
-    const click_tcp *tcph =
-      reinterpret_cast<const click_tcp *>(p->transport_header());
+    const click_tcp *tcph = p->tcp_header();
     unsigned short srcp = ntohs(tcph->th_sport);
     unsigned short dstp = ntohs(tcph->th_dport);
     unsigned seq = ntohl(tcph->th_seq);
@@ -202,8 +201,7 @@ IPPrint::simple_action(Packet *p)
   }
   
   case IP_PROTO_UDP: {
-    const click_udp *udph =
-      reinterpret_cast<const click_udp *>(p->transport_header());
+    const click_udp *udph = p->udp_header();
     unsigned short srcp = ntohs(udph->uh_sport);
     unsigned short dstp = ntohs(udph->uh_dport);
     unsigned len = ntohs(udph->uh_ulen);

@@ -57,8 +57,7 @@ int
 TCPDemux::find_flow(Packet *p)
 {
   const click_ip *iph = p->ip_header();
-  const click_tcp *tcph = 
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
 
   // match (sa,sp,da,dp)
   IPFlowID fid(p);

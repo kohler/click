@@ -99,22 +99,15 @@ TCPConn::pull(int port)
 
   assert(port == 1);
   Packet *p = input(1).pull();
-  if (p) {
-    if (oput(p))
-      return p;
-    else {
-      p->kill();
-      return 0;
-    }
-  }
+  if (p)
+    return oput(p);
   return 0;
 }
 
 bool
 TCPConn::iput(Packet *p)
 {
-  const click_tcp *tcph = 
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
 
   if (_listen) {
     if (tcph->th_flags & TH_SYN) {
@@ -136,21 +129,23 @@ TCPConn::iput(Packet *p)
   }
 }
 
-bool
+Packet *
 TCPConn::oput(Packet *p)
 {
-  click_ip *iph = p->uniqueify()->ip_header();
-  click_tcp *tcph = 
-    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
-  unsigned int sa = _flow.saddr();
-  unsigned int da = _flow.daddr();
-  memmove((void *) &(iph->ip_src), (void *) &sa, 4);
-  memmove((void *) &(iph->ip_dst), (void *) &da, 4);
-  tcph->th_sport = _flow.sport();
-  tcph->th_dport = _flow.dport();
-  tcph->th_seq = ntohl(_seq_nxt);
-  _seq_nxt += TCPBuffer::seqlen(p);
-  return true;
+  if (WritablePacket *q = p->uniqueify()) {
+    click_ip *iph = q->ip_header();
+    click_tcp *tcph = q->tcp_header();
+    unsigned int sa = _flow.saddr();
+    unsigned int da = _flow.daddr();
+    memmove((void *) &(iph->ip_src), (void *) &sa, 4);
+    memmove((void *) &(iph->ip_dst), (void *) &da, 4);
+    tcph->th_sport = _flow.sport();
+    tcph->th_dport = _flow.dport();
+    tcph->th_seq = ntohl(_seq_nxt);
+    _seq_nxt += TCPBuffer::seqlen(p);
+    return q;
+  } else
+    return 0;
 }
   
 bool

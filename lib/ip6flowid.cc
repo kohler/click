@@ -30,7 +30,7 @@ IP6FlowID::IP6FlowID(Packet *p)
   _saddr = IP6Address(iph->ip6_src);
   _daddr = IP6Address(iph->ip6_dst);
 
-  const click_udp *udph = (const click_udp *)p->transport_header();
+  const click_udp *udph = p->udp_header();
   _sport = udph->uh_sport;	// network byte order
   _dport = udph->uh_dport;	// network byte order
 }

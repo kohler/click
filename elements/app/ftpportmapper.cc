@@ -101,7 +101,7 @@ FTPPortMapper::simple_action(Packet *p)
 {
   const click_ip *iph = p->ip_header();
   assert(iph->ip_p == IP_PROTO_TCP);
-  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
   unsigned data_offset = p->transport_header_offset() + (tcph->th_off<<2);
   const unsigned char *data = p->data() + data_offset;
   unsigned len = p->length() - data_offset;
@@ -201,7 +201,7 @@ FTPPortMapper::simple_action(Packet *p)
 
   // set TCP checksum
   // XXX should check old TCP checksum first!!!
-  click_tcp *wp_tcph = reinterpret_cast<click_tcp *>(wp->transport_header());
+  click_tcp *wp_tcph = wp->tcp_header();
 
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);

@@ -128,8 +128,7 @@ BufferConverter::iput()
   Packet *p;
   while((p = input(0).pull())) {
     const click_ip *iph = p->ip_header();
-    const click_tcp *tcph =
-      reinterpret_cast<const click_tcp *>(p->transport_header());
+    const click_tcp *tcph = p->tcp_header();
     unsigned dlen = ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2);
     if (dlen == 0) {
       p->kill();

@@ -75,7 +75,7 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
     return;
   
   // TCP header
-  click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  click_tcp *tcph = p->tcp_header();
   tcph->th_sport = _mapto.sport();
   tcph->th_dport = _mapto.dport();
 
@@ -301,7 +301,7 @@ TCPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
-  click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  click_tcp *tcph = p->tcp_header();
 
   // handle non-first fragments
   if (!IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP) {

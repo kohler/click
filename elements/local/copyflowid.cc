@@ -56,7 +56,7 @@ CopyFlowID::push(int port, Packet *p)
   if (port == 0)
     monitor(p);
   else
-    set(p);
+    p = set(p);
   output(port).push(p);
 }
 
@@ -69,10 +69,8 @@ CopyFlowID::pull(int port)
       monitor(p);
       return p;
     }
-    else {
-      set(p);
-      return p;
-    }
+    else
+      return set(p);
   }
   return 0;
 }
@@ -86,18 +84,21 @@ CopyFlowID::monitor(Packet *p)
   }
 }
 
-void
+Packet *
 CopyFlowID::set(Packet *p)
 {
-  click_ip *iph = p->uniqueify()->ip_header();
-  click_tcp *tcph =
-    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
-  unsigned int sa = _flow.saddr();
-  unsigned int da = _flow.daddr();
-  memmove((void *) &(iph->ip_src), (void *) &sa, 4);
-  memmove((void *) &(iph->ip_dst), (void *) &da, 4);
-  tcph->th_sport = _flow.sport();
-  tcph->th_dport = _flow.dport();
+  if (WritablePacket *q = p->uniqueify()) {
+    click_ip *iph = q->ip_header();
+    click_tcp *tcph = q->tcp_header();
+    unsigned int sa = _flow.saddr();
+    unsigned int da = _flow.daddr();
+    memmove((void *) &(iph->ip_src), (void *) &sa, 4);
+    memmove((void *) &(iph->ip_dst), (void *) &da, 4);
+    tcph->th_sport = _flow.sport();
+    tcph->th_dport = _flow.dport();
+    return q;
+  } else
+    return 0;
 }
 
 void

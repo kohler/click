@@ -100,8 +100,8 @@ Packet *
 CheckTCPHeader::simple_action(Packet *p)
 {
   const click_ip *iph = p->ip_header();
+  const click_tcp *tcph = p->tcp_header();
   unsigned len, iph_len, tcph_len, csum;
-  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   
   if (!iph || iph->ip_p != IP_PROTO_TCP)
     return drop(NOT_TCP, p);

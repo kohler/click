@@ -56,7 +56,7 @@ CopyTCPSeq::push(int port, Packet *p)
   if (port == 0)
     monitor(p);
   else
-    set(p);
+    p = set(p);
   output(port).push(p);
 }
 
@@ -69,10 +69,8 @@ CopyTCPSeq::pull(int port)
       monitor(p);
       return p;
     }
-    else {
-      set(p);
-      return p;
-    }
+    else
+      return set(p);
   }
   return 0;
 }
@@ -80,8 +78,7 @@ CopyTCPSeq::pull(int port)
 void
 CopyTCPSeq::monitor(Packet *p)
 {
-  const click_tcp *tcph =
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
   unsigned seq = ntohl(tcph->th_seq);
   if (!_start) {
     _seq = seq;
@@ -92,12 +89,15 @@ CopyTCPSeq::monitor(Packet *p)
   }
 }
 
-void
+Packet *
 CopyTCPSeq::set(Packet *p)
 {
-  click_tcp *tcph =
-    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
-  tcph->th_seq = htonl(_seq);
+  if (WritablePacket *q = p->uniqueify()) {
+    click_tcp *tcph = q->tcp_header();
+    tcph->th_seq = htonl(_seq);
+    return q;
+  } else
+    return 0;
 }
 
 void

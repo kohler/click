@@ -39,7 +39,7 @@ private:
 
   void reset();
   bool iput(Packet *p);
-  bool oput(Packet *p);
+  Packet *oput(Packet *p);
 
 public:
   TCPConn();

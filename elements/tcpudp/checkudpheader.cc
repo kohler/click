@@ -99,9 +99,8 @@ Packet *
 CheckUDPHeader::simple_action(Packet *p)
 {
   const click_ip *iph = p->ip_header();
+  const click_udp *udph = p->udp_header();
   unsigned len, iph_len;
-  const click_udp *udph =
-    reinterpret_cast<const click_udp *>(p->transport_header());
   
   if (!iph || iph->ip_p != IP_PROTO_UDP)
     return drop(NOT_UDP, p);

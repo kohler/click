@@ -115,8 +115,7 @@ TCPAck::pull(int port)
 bool
 TCPAck::iput(Packet *p)
 {
-  const click_tcp *tcph =
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
   if (!_synack && (tcph->th_flags&(TH_SYN|TH_ACK))==(TH_SYN|TH_ACK)) {
     // synack on input, meaning next ackn is the seqn in packet
     _ack_nxt = ntohl(tcph->th_seq)+1;
@@ -150,8 +149,7 @@ TCPAck::iput(Packet *p)
 bool
 TCPAck::oput(Packet *p)
 {
-  const click_tcp *tcph =
-    reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
   if (tcph->th_flags&(TH_SYN|TH_ACK) == (TH_SYN|TH_ACK)) {
     // synack on output, meaning next ackn is the ackn in packet
     _ack_nxt = ntohl(tcph->th_ack);
@@ -160,8 +158,8 @@ TCPAck::oput(Packet *p)
   if (!_synack)
     return false;
   _needack = false;
-  click_tcp *tcph_new =
-    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
+  // XXX BUGGY, BUGGY CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  click_tcp *tcph_new = p->uniqueify()->tcp_header();
   tcph_new->th_ack = htonl(_ack_nxt);
   return true;
 }

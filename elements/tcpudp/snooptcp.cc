@@ -374,7 +374,7 @@ SnoopTCP::handle_packet(int port, Packet *p)
     return p;
   }
   
-  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
+  const click_tcp *tcph = p->tcp_header();
   int header_len = (iph->ip_hl << 2) + (tcph->th_off << 2);
   int datalen = p->length() - header_len;
   
