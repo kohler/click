@@ -1,3 +1,39 @@
+2001-08-03 Friday 18:21  Eddie Kohler <kohler@aciri.org>
+
+	* elements/app/ftpportmapper.cc (1.17), elements/ip/ipmirror.cc
+	(1.16), elements/ip/ipprint.cc (1.29), elements/ip/iprw.cc (1.35),
+	elements/ip/rfc2507c.cc (1.21), elements/local/bufconv.cc (1.3),
+	elements/local/copyflowid.cc (1.2), elements/local/copyflowid.hh
+	(1.2), elements/local/copytcpseq.cc (1.2),
+	elements/local/copytcpseq.hh (1.2), elements/local/tcpack.cc (1.9),
+	elements/local/tcpconn.cc (1.5), elements/local/tcpconn.hh (1.4),
+	elements/local/tcpdemux.cc (1.5), elements/tcpudp/checktcpheader.cc
+	(1.7), elements/tcpudp/checkudpheader.cc (1.7),
+	elements/tcpudp/iprewriter.cc (1.23), elements/tcpudp/snooptcp.cc
+	(1.6), elements/tcpudp/tcprewriter.cc (1.12),
+	etc/ron/lookupiprouteron.cc (1.5), lib/ip6flowid.cc (1.5),
+	lib/ipflowid.cc (1.11): use Packet::tcp_header() and
+	Packet::udp_header() convenience functions; also, some uniqueify()
+	bug fixes
+
+2001-08-03 Friday 18:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.20), lib/packet.cc (1.46): add
+	Packet::tcp_header() and Packet::udp_header() convenience functions
+
+2001-08-03 Friday 18:16  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in (1.10), configure.in (1.135): do not define
+	HAVE_LINUXMODULE_TARGET or HAVE_BSDMODULE_TARGET symbols -- no one
+	used those symbols, anywhere
+
+2001-08-03 Friday 16:56  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: tcpreflector.cc (1.1), tcpreflector.hh (1.1),
+	webgen.cc (1.8): Added TCPReflector, which acts as a stupid but
+	fast tcp server, just cooking up a plausible reply to all incoming
+	TCP packets.
+
 2001-08-03 Friday 14:40  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool (1.26), elements/ip/lookupiproutelinux.cc (1.21):
