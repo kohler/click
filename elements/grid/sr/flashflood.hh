@@ -73,6 +73,8 @@ class FlashFlood : public Element {
 				void *, ErrorHandler *errh); 
   static int static_write_min_p(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
+  static int static_write_threshold(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
   static int static_write_clear(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
 
@@ -82,6 +84,7 @@ class FlashFlood : public Element {
   String print_stats();
 
   static String static_print_packets(Element *e, void *);
+  static String static_print_threshold(Element *e, void *);
   String print_packets();
 
   void push(int, Packet *);
