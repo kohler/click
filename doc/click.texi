@@ -18,6 +18,10 @@
 @end macro
 @end ifnotinfo
 
+@macro handler {arg}
+`\arg\'
+@end macro
+
 @macro strcode {arg}
 @t{\arg\}
 @end macro
@@ -44,6 +48,7 @@ This document describes@dots{}
 * Basics::                      
 * Element Characteristics::      		
 * Element Initialization::      
+* Element Runtime::
 * Tasks::                       
 * Timers::                      
 * Index::                       
@@ -97,8 +102,12 @@ ErrorHandler
 Element Characteristics
 
 * Element Class::               
+* Element Casting::             
 * Element Names::               
 * Element Router::              
+* Creating Element Ports::      
+* Using Element Ports::         
+* When to Call Element Methods::  
 
 Element Initialization
 
@@ -109,7 +118,21 @@ Element Initialization
 * flow_code::                   
 * initialize::                  
 * uninitialize::                
+* add_handlers::                
 * Initialization Phases::       
+
+Element Runtime
+
+* Handlers::                    
+* Live Reconfiguration::        
+
+Handlers
+
+* add_read_handler add_write_handler::  
+
+Live Reconfiguration
+
+* can_live_reconfigure::        
 
 Tasks
 
@@ -202,6 +225,11 @@ an instance variable named @code{_x}, the getter method should be named
 A variable or method which counts something is often named
 @code{n@var{object}s}---for instance, @code{_nwarnings},
 @code{ninputs()}, @code{_npackets}.
+
+@item
+Use a bare @samp{0} for a null pointer, except where some ambiguity
+might arise (for example, if a different overloading might be selected
+for a pointer).
 @end itemize
 
 
@@ -1319,11 +1347,15 @@ base_errh}.
 
 @menu
 * Element Class::               
+* Element Casting::             
 * Element Names::               
 * Element Router::              
+* Creating Element Ports::      
+* Using Element Ports::         
+* When to Call Element Methods::  
 @end menu
 
-@node Element Class, Element Names, Element Characteristics, Element Characteristics
+@node Element Class, Element Casting, Element Characteristics, Element Characteristics
 @section Element Class
 
 Every element belongs to a single element class, and every element class
@@ -1377,35 +1409,299 @@ class ARPQuerier : public Element @{ public: // ...
 @noindent
 Note that @code{clone}'s return type has been changed to
 @code{ARPQuerier *} rather than @w{@code{Element *}}. This is considered
-good style, since it makes typing more specific, but it is not really
+good style, since it makes the types more specific, but it is not really
 necessary. @code{clone} need not be defined in the class definition,
 although many elements do define it this way.
 @end deftypemethod
 
-Click elements do support a simple form of multiple inheritance,
-however. An element may belong to multiple That element class virtual
+
+@node Element Casting, Element Names, Element Class, Element Characteristics
+@section Casting
+
+Each element conforms to one or more named @dfn{interfaces}. Each
+element class is an interface, whose name is just the element class
+name, but the user can create additional interfaces at will. Generally,
+these interfaces export functionality that elements may be interested
+in, but that is not specific to any one element class. For example, the
+@click{Storage} interface provides information about how many packets
+are stored in an element; elements that implement this interface include
+@click{Queue}, @click{FrontDropQueue}, and @click{FromDevice}. Elements
+interested in packet storage, such as @click{RED}, then look for
+@click{Storage} elements, making them independent of any particular
+storage strategy.
+
+A caller can discover whether an element implements a particular
+interface by calling its @code{cast} method. This method takes an
+interface name and returns a non-null pointer if and only if the
+element implements that interface.
 
 @deftypemethod Element {virtual void *} cast {(const char *@var{name})}
-Returns a new element with the same element class as this element.
+The @var{name} argument is an interface name represented a
+null-terminated C string. If this element implements the @var{name}
+interface, @code{cast} should return a pointer to the corresponding
+data. If it does not, @code{cast} should return a null pointer.
+
+The default representation returns @code{this} if @var{name} equals the
+element's @code{class_name()}, or a null pointer if it does not.
+@end deftypemethod
+
+Some care is required when one element class is a subclass of another.
+Say that element class @code{Derived} is a subclass of @code{Base}. Then
+@code{Derived}'s @code{cast} method should return a non-null pointer
+when passed either @code{"Derived"}, @code{"Base"}, or any additional
+interfaces that @code{Derived} or @code{Base} might implement. Here is a
+first try at @code{Derived}'s @code{cast} implementation:
+
+@example
+void *
+Derived::cast(const char *name)
+@{
+  if (strcmp(name, "Derived") == 0)
+    return (Derived *)this;
+  else // rely on Base::cast to check for "Base"
+    return Base::cast(name);
+@}
+@end example
+
+@noindent
+This code is correct and preferred as long as @code{Base} has its own
+@code{cast} implementation. Unfortunately, if @code{Base} took advantage
+of @code{cast}'s default implementation, which uses @code{class_name},
+the code is broken. Since a @code{Derived} element's @code{class_name}
+method returns @code{"Derived"}, the default @code{cast} method will
+check only for @code{"Derived"}, not for @code{"Base"} as we wished. The
+solution is either to write an explicit @code{cast} method for
+@code{Base}, or to write @code{Derived::cast} differently---like so, for
+example:
+
+@example
+void *
+Derived::cast(const char *name)
+@{
+  if (strcmp(name, "Derived") == 0)
+    return (Derived *)this;
+  else if (strcmp(name, "Base") == 0)
+    return (Base *)this;
+  else
+    return 0;
+@}
+@end example
+
+Always explicitly cast @code{this} to the correct type before returning
+it. This is important because of multiple inheritance, where the value
+of a pointer to a supertype may be different from the value of
+@code{this}. Generally in C++, the type system determines when pointer
+arithmetic is necessary; unfortunately, @code{cast}'s @w{@code{void *}}
+return type hides type information, requiring explicit casts.
+
+We encourage you to write simple @code{cast} methods that compare the
+@var{name} argument against a set of fixed strings. Arbitrary
+computation inside @var{cast} is discouraged; we may eventually want to
+automatically parse @code{cast} definitions.
+
+
+@node Element Names, Element Router, Element Casting, Element Characteristics
+@section Names
+
+Each element in a router configuration has a @dfn{name} under which it
+was declared and a @dfn{landmark}, a string indicating where it was
+declared in the configuration file.
+
+@deftypemethod Element String id () const
+Returns the element's name.
+@end deftypemethod
+
+@deftypemethod Element String declaration () const
+Returns a textual representation of the element's declaration. The
+result has the form @w{@samp{@var{id} :: @var{cname}}}, where @var{id}
+is the element's @code{id()} and @var{cname} is its @code{class_name()}.
+@end deftypemethod
+
+@deftypemethod Element String landmark () const
+Returns a string indicating where the element was declared in the
+configuration file. The result generally has the form
+@samp{@var{filename}:@var{linenumber}}.
 @end deftypemethod
 
 
-@node Element Names, Element Router, Element Class, Element Characteristics
-@section Names
 
-  String id() const;
-  String declaration() const;
-  String landmark() const;
-
-@node Element Router,  , Element Names, Element Characteristics
+@node Element Router, Creating Element Ports, Element Names, Element Characteristics
 @section Router Relationship
 
-  Router *router() const		@{ return _router; @}
-  int eindex() const			@{ return _eindex; @}
-  int eindex(Router *) const;
+Elements may be part of some router configuration, which is represented
+by a @code{Router} object. Elements in a @code{Router} are numbered
+between 0 and that router's @code{nelements()}; @code{eindex} returns
+that number.
+
+@deftypemethod Element {Router *} router () const
+Returns the element's corresponding @code{Router} object.
+@end deftypemethod
+
+@deftypemethod Element int eindex () const
+Returns the element's index in its router.
+@end deftypemethod
+
+@deftypemethod Element int eindex (Router *@var{r}) const
+Returns the element's index in its router, if that router is @var{r}, or
+@math{-1}, if that router is not @var{r}. Equivalent to:
+
+@example
+return (router() == @var{r} ? eindex() : -1);
+@end example
+@end deftypemethod
 
 
-@node Element Initialization, Tasks, Element Characteristics, Top
+@node Creating Element Ports, Using Element Ports, Element Router, Element Characteristics
+@section Creating Ports
+
+These methods return or change how many input and output ports an
+element has.
+
+@deftypemethod Element int ninputs () const
+@deftypemethodx Element int noutputs () const
+Returns the element's number of input or output ports.
+@end deftypemethod
+
+The @code{set_} and @code{add_} methods, which add or remove ports, must
+be called only by the element itself. For example, the Click
+infrastructure never calls @code{set_ninputs} or @code{set_noutputs}.
+Click will inform the element how many of its ports were used in a
+particular router configuration; see @ref{notify_ninputs
+notify_noutputs}.
+
+You may change an element's number of ports only during router
+initialization. You may not, for example, call @code{set_ninputs} at run
+time, or even during the element's @code{initialize} method
+(@pxref{initialize}). @xref{When to Call Element Methods}, for more
+information.
+
+@deftypemethod Element void set_ninputs (int @var{n}) const
+@deftypemethodx Element void set_noutputs (int @var{n}) const
+Sets the element's number of input or output ports to @var{n}, which
+must be greater than or equal to zero.
+@end deftypemethod
+
+@deftypemethod Element void add_input () const
+@deftypemethodx Element void add_output () const
+Add an input or output port to the element. Same as
+@code{set_ninputs(ninputs() + 1)} or @code{set_noutputs(noutputs() +
+1)}.
+@end deftypemethod
+
+
+@node Using Element Ports, When to Call Element Methods, Creating Element Ports, Element Characteristics
+@section Using Ports
+
+Each of an element's input and output ports is represented by an
+@code{Element::Port} object. The @code{input} and @code{output} methods
+return the @code{Port} object corresponding to a given port number.
+
+@deftypemethod Element {const Port &} input (int @var{p}) const
+@deftypemethodx Element {const Port &} output (int @var{p}) const
+Returns the @code{Element::Port} object corresponding to the
+element's @var{p}th input or output port. @var{p} must be a valid port
+number: greater than or equal to zero and less than @code{ninputs()} or
+@code{noutputs()}, respectively.
+@end deftypemethod
+
+The following methods return information about a port.
+@code{input_is_pull} and @code{output_is_push} are @code{Element}
+methods; the rest are methods on @code{Element::Port}. All of these
+methods return meaningful results only after the router has been
+partially initialized; see @ref{When to Call Element Methods}.
+
+@deftypemethod Element bool input_is_pull (int @var{p}) const
+@deftypemethodx Element bool output_is_push (int @var{p}) const
+Returns true if input port @var{p} is pull or output port @var{p} is
+push, respectively. @var{p} must be a valid port number.
+@end deftypemethod
+
+@deftypemethod {Element::Port} {Element *} element () const
+Returns the element this port is connected to, if one exists. Pull input
+ports and push output ports are always connected to another element;
+push input ports and pull output ports never are. @code{element()}
+returns a null pointer when called on a push input port or pull output
+port.
+@end deftypemethod
+
+@deftypemethod {Element::Port} int port () const
+Returns the port number this port is connected to, if one exists. Pull
+input ports and push output ports are always connected to another port;
+push input ports and pull output ports never are. @code{port()} returns
+@math{-1} when called on a push input port or pull output port.
+@end deftypemethod
+
+For example, consider this router configuration.
+
+@example
+x :: X; y :: Y;
+x [0] -> [1] y; // push connection
+@end example
+
+@noindent
+Because @code{x [0]} is a push output port,
+@code{x->output(0).element()} will return @code{y} and
+@code{@w{x->}output(0).port()} will return 1. On the other hand,
+@code{@w{y->}input(1).element()} will return a null pointer and
+@code{@w{y->}input(1).port()} will return @math{-1}.
+
+The @code{element} and @code{port} methods only supply local information
+about how elements are connected. Furthermore, they provide no
+information about how push input ports and pull output ports are
+connected. For these reasons, most elements interested in router
+configuration topology call @code{Router}'s @code{upstream_elements} and
+@code{downstream_elements} methods instead.
+
+
+@node When to Call Element Methods,  , Using Element Ports, Element Characteristics
+@section When Element Methods May Be Called
+
+This chart shows when it is OK to call particular @code{Element}
+methods. Methods not mentioned here are generally not called by the
+user; for example, generally only the system calls @code{clone}.
+
+@example
+  Method Name                    constr notify config  init   run  
++-------------------------------+------+------+------+------+------+
+| class_name, cast              |  OK  |  OK  |  OK  |  OK  |  OK  |
+| id, declaration, landmark     |      |  OK  |  OK  |  OK  |  OK  |
+| router, eindex                |      |  OK  |  OK  |  OK  |  OK  |
++-------------------------------+------+------+------+------+------+
+| ninputs, noutputs             |  OK  |  OK  |  OK  |  OK  |  OK  |
+| set_ninputs, set_noutputs     |  OK  |  OK  |  OK  |      |      |
+| add_input, add_output         |  OK  |  OK  |  OK  |      |      |
++-------------------------------+------+------+------+------+------+
+| input, output                 |      |      |      |  OK  |  OK  |
+| input_is_pull, output_is_push |      |      |      |  OK  |  OK  |
+| Port::element, Port::port     |      |      |      |  OK  |  OK  |
++-------------------------------+------+------+------+------+------+
+  Method Name                    constr notify config  init   run  
+@end example
+
+The headings on the right mean as follows:
+
+@table @samp
+@item constr
+Construction time. This includes the element's constructor and its
+destructor.
+
+@item notify
+Inside the @code{notify_ninputs} and @code{notify_noutputs} methods.
+
+@item config
+Inside the @code{configure} method.
+
+@item init
+Inside the @code{initialize} and @code{uninitialize} methods.
+
+@item run
+At run time. That is, inside some @code{run_scheduled}, @code{push}, or
+@code{pull} method, or some handler, or some function called from one of
+these places.
+@end table
+
+
+@node Element Initialization, Element Runtime, Element Characteristics, Top
 @chapter Element Initialization
 
 The process of making an element ready for inclusion in an active router
@@ -1426,6 +1722,7 @@ successfully complete one phase before the next phase begins.
 * flow_code::                   
 * initialize::                  
 * uninitialize::                
+* add_handlers::                
 * Initialization Phases::       
 @end menu
 
@@ -1846,7 +2143,7 @@ Opening files.
 @end itemize
 
 
-@node uninitialize, Initialization Phases, initialize, Element Initialization
+@node uninitialize, add_handlers, initialize, Element Initialization
 @section @code{uninitialize}---Removing Initialization State
 
 The @code{uninitialize} method should undo any effects of
@@ -1879,7 +2176,116 @@ uninitialized, but kept around for debugging purposes until another
 router is installed.
 
 
-@node Initialization Phases,  , uninitialize, Element Initialization
+@node add_handlers, Initialization Phases, uninitialize, Element Initialization
+@section @code{add_handlers}---Adding Handlers
+
+If a router configuration successfully initializes, the driver will call
+every element's @code{add_handlers} method. This method should create
+any handlers the element provides. @xref{Handlers}, for more information
+on handlers.
+
+@deftypemethod Element {virtual void} add_handlers ()
+This method takes no arguments and returns no results. It is called
+after the router has successfully initialized, and is expected to create
+the element's class-specific handlers. Most @code{add_handlers} methods
+simply call @code{add_read_handler} and @code{add_write_handler} one or
+more times (@pxref{add_read_handler add_write_handler}), and possibly
+@code{add_task_handlers} (@pxref{Task Handlers}). The
+@code{add_handlers} method should not change the element's state.
+
+The default implementation does nothing.
+@end deftypemethod
+
+@anchor{add_default_handlers} The driver will also call every element's
+@code{add_default_handlers} method. This nonvirtual method adds the
+default handlers that every element shares: @handler{class},
+@handler{name}, @handler{config}, @handler{ports}, and
+@handler{handlers}.
+
+@deftypemethod Element {void} add_default_handlers (bool @var{config_writable})
+Adds the default collection of handlers for the element. Most of these
+handlers are read-only. The @handler{config} handler may be read/write,
+but only if @var{config_writable} is true and the
+@code{can_live_reconfigure} method also returns true
+(@pxref{can_live_reconfigure}).
+@end deftypemethod
+
+The default handlers are as follows:
+
+@table @handler
+@item class
+Returns the element's class name, as returned by @code{class_name()},
+followed by a newline. Example result: @strcode{"ARPQuerier\n"}.
+
+@item name
+Returns the element's name, as returned by @code{id()}, followed by a
+newline. Example result: @strcode{"arpq_0\n"}.
+
+@item config
+Returns the element's configuration string. If the configuration string
+does not end in @samp{\} or newline, the hander appends a newline
+itself. Example result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
+
+If @code{can_live_reconfigure} returns true, @handler{config} is also a
+write handler. Writing to it reconfigures the element.
+@xref{Live Reconfiguration}.
+
+@item ports
+Returns a multi-line string describing the element's ports and what they
+are connected to. The string has the form
+
+@example
+@var{M} input[s]
+@r{@dots{} @var{M} input port descriptions, one per line @dots{}}
+@var{N} output[s]
+@r{@dots{} @var{N} output port descriptions, one per line @dots{}}
+@end example
+
+@noindent
+Each port description lists the port's processing type, a dash, and then
+a comma-separated list of all the ports to which this port is connected.
+The processing type is either @samp{push} or @samp{pull}; formerly
+agnostic ports are indicated by a trailing hyphen (@samp{push-} or
+@samp{pull-}). Example result:
+
+@example
+1 input
+push-   -       Strip@@2 [0]
+2 outputs
+push-   -       [0] GetIPAddress@@4
+push    -       [0] Print@@7
+@end example
+
+@noindent
+If Click was compiled with statistics collection enabled, the dash on
+each line is replaced by a packet count.
+
+@item handlers
+Returns a string listing the element's handlers, one per line. Each line
+contains the handler name, a tab, and then either @samp{r}, @samp{w}, or
+@samp{rw}, depending on whether the handler is read-only, write-only, or
+read/write. Example result for an @click{InfiniteSource} element, which
+has many handlers:
+
+@example
+scheduled       r
+tickets r
+reset   w
+count   r
+active  rw
+burstsize       rw
+limit   rw
+data    rw
+handlers        r
+ports   r
+config  rw
+name    r
+class   r
+@end example
+@end table
+
+
+@node Initialization Phases,  , add_handlers, Element Initialization
 @section Initialization Phases
 
 @enumerate
@@ -1933,17 +2339,71 @@ configuration order. No @code{initialize} methods are called if there
 were any errors in any previous phase.
 
 @item
-If there were no errors, then router initialization has succeeded: the
-router can be placed on line.
+If there were no errors, then router initialization has succeeded.
+
+@enumerate a
+@item
+Calls every element's @code{add_handlers} method.
 
 @item
-If there were errors, then Click calls the @code{uninitialize} method on
-each element whose @code{initialize} method returned successfully.
-Router initialization has failed.
+Calls every element's @code{add_default_handlers} method. The
+@handler{config} handler may be read-write.
+
+@item
+Places the router on line.
+@end enumerate
+
+@item
+If there were errors, then router initialization has failed.
+
+@enumerate a
+@item
+Calls the @code{uninitialize} method on each element whose
+@code{initialize} method returned successfully.
+
+@item
+Some drivers, such as the Linux kernel module driver, call every
+element's @code{add_default_handlers} method to make information about
+the erroneous configuration available for debugging. The
+@handler{config} handler is always read-only.
+@end enumerate
 @end enumerate
 
 
-@node Tasks, Timers, Element Initialization, Top
+@node Element Runtime, Tasks, Element Initialization, Top
+@chapter Element Runtime
+
+@menu
+* Handlers::                    
+* Live Reconfiguration::        
+@end menu
+
+
+@node Handlers, Live Reconfiguration, Element Runtime, Element Runtime
+@section Handlers
+
+Click users interact with a running router through @dfn{handlers}.
+
+@menu
+* add_read_handler add_write_handler::  
+@end menu
+
+
+@node add_read_handler add_write_handler,  , Handlers, Handlers
+@subsection Adding Handlers
+
+@node Live Reconfiguration,  , Handlers, Element Runtime
+@section Live Reconfiguration
+
+@menu
+* can_live_reconfigure::        
+@end menu
+
+@node can_live_reconfigure,  , Live Reconfiguration, Live Reconfiguration
+@subsection can_live_reconfigure
+
+
+@node Tasks, Timers, Element Runtime, Top
 @chapter Tasks
 
 Click schedules a router's CPU or CPUs with one or more @dfn{task
@@ -2007,20 +2467,19 @@ Attaches the task to the router object @var{r} (or
 @end deftypemethod
 
 Many elements call @code{ScheduleInfo::join_scheduler} instead of
-calling @code{Task::initialize} directly. The @code{join_scheduler}
-method queries any @click{ScheduleInfo} elements in the configuration to
-determine the task's scheduling parameters, then calls
-@code{Task::initialize} to schedule the task. The
-@code{ScheduleInfo::join_scheduler} method is defined in the
-@code{"elements/standard/scheduleinfo.hh"} header file.
+calling @code{Task::initialize} directly. This method queries any
+@click{ScheduleInfo} elements in the configuration to determine the
+task's scheduling parameters, then calls @code{Task::initialize} to
+schedule the task. The @code{ScheduleInfo::join_scheduler} method is
+defined in the @code{"elements/standard/scheduleinfo.hh"} header file.
 
 @deftypeop {Static method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
 Sets @var{task}'s scheduling parameters as specified by any
 @click{ScheduleInfo} elements in the router configuration. The element
-@var{e} is used to find the correct router, and to look up
-parameters---the user supplies parameters to @click{ScheduleInfo} based
-on element name. Also schedules @var{task} on @code{@var{e}->router()}'s
-task queue. Reports any errors to @var{errh}.
+@var{e} is used to find the correct router, and provides the relevant
+name for parameter lookup---the user supplies parameters to
+@click{ScheduleInfo} by element name. Also schedules @var{task} on
+@code{@var{e}->router()}'s task queue. Reports any errors to @var{errh}.
 @end deftypeop
 
 The @code{join_scheduler} method is generally called like this:
