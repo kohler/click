@@ -1,3 +1,12 @@
+2003-05-10 Saturday 12:34  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.2), rtmdsr.hh (1.2): xx
+
+2003-05-10 Saturday 12:31  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.1), rtmdsr.hh (1.1): dsr-like
+	protocol
+
 2003-05-09 Friday 14:05  Eddie Kohler <kohler@icir.org>
 
 	* conf/ip64-nat.click (1.6), conf/ip64-nat2.click (1.6),
