@@ -67,10 +67,7 @@ Switch::configuration(Vector<String> &conf) const
 void
 Switch::push(int, Packet *p)
 {
-  if (_output < 0)
-    p->kill();
-  else
-    output(_output).push(p);
+  checked_output_push(_output, p);
 }
 
 String
