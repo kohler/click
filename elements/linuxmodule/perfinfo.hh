@@ -13,7 +13,9 @@
  * on the configuration line.
  * Valid metrics are:
  * DCU_MISS_OUTSTANDING,
- * IFU_IFETCH_MISS,
+ * IFU_FETCH_MISS,
+ * IFU_FETCH, 
+ * INST_RETIRED,
  * L2_IFETCH,
  * L2_RQSTS,
  * L2_LINES_OUTM,

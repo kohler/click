@@ -40,8 +40,8 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
   HashMap<String, int> metrics(0);
   metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
   metrics.insert("INST_RETIRED", 0xC0);
-  metrics.insert("IFU_IFETCH", 0x80);
-  metrics.insert("IFU_IFETCH_MISS", 0x81);
+  metrics.insert("IFU_FETCH", 0x80);
+  metrics.insert("IFU_FETCH_MISS", 0x81);
   metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
   metrics.insert("L2_LINES_OUTM", 0x27);
   metrics.insert("L2_RQSTS", 0x2e | (0xf<<8));
