@@ -67,14 +67,6 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   }
   clean(_base);
 
-  _base->counter[2].flags = SPLIT;
-  _base->counter[2].next_level = new struct _stats;
-  clean(_base->counter[2].next_level);
-
-  _base->counter[2].next_level->counter[0].flags = SPLIT;
-  _base->counter[2].next_level->counter[0].next_level = new struct _stats;
-  clean(_base->counter[2].next_level->counter[0].next_level);
-
   // VAL1, ..., VALn
   int change;
   for (int i = 2; i < args.size(); i++) {
