@@ -1,7 +1,7 @@
 /*
- * lookupiproute.{cc,hh} -- element looks up next-hop address in static
+ * lookupip6route.{cc,hh} -- element looks up next-hop ip6 address in static
  * routing table
- * Robert Morris
+ * Robert Morris, Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -95,7 +95,9 @@ LookupIP6Route::push(int, Packet *p)
   if (a) {
     if (a == _last_addr     ) {
       if (_last_gw)
-	p->set_dst_ip6_anno(_last_gw);
+	{
+	  p->set_dst_ip6_anno(_last_gw);
+	}
       output(_last_output).push(p);
       return;
     }
@@ -108,8 +110,8 @@ LookupIP6Route::push(int, Packet *p)
       EXCHANGE(_last_gw, _last_gw2, tmpa);
       EXCHANGE(_last_output, _last_output2, tmpi);
 #endif
-      if (_last_gw2)
-	p->set_dst_ip6_anno(_last_gw2);
+      if (_last_gw2) {
+	p->set_dst_ip6_anno(_last_gw2); }
       output(_last_output2).push(p);
       return;
     }
@@ -128,7 +130,9 @@ LookupIP6Route::push(int, Packet *p)
     _last_gw = gw;
     _last_output = ifi;
     if (gw != 0)
-      p->set_dst_ip6_anno(IP6Address(gw));
+      {
+	p->set_dst_ip6_anno(IP6Address(gw));
+      }
     output(ifi).push(p);
     
   } else {

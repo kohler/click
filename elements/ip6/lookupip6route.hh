@@ -8,7 +8,7 @@
  * V<IPv6>
  * =d
  * Input: IP6 packets (no ether header).
- * Expects a destination IP address annotation with each packet.
+ * Expects a destination IP6 address annotation with each packet.
  * Looks up the address, sets the destination annotation to
  * the corresponding GW (if non-zero), and emits the packet
  * on the indicated OUTput.
@@ -22,17 +22,19 @@
  * host (::1261:027d) to itself, all others via gateway ::ffff:c0a8:1:
  *
  *   ... -> GetIP6Address(24) -> rt;
- *   rt :: LookupIP6Route(::ffff:1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
- *	                  ::0 ::0 ::ffff:c0a8:1 1);
+ *   rt :: LookupIP6Route(
+ *          3ffe:1ce1:2::1 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
+ *          3ffe:1ce1:2:0:200::1 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
+ *          3ffe:1ce1:2:: ffff:ffff:ffff:ffff:ffff:: ::0 1,
+ *          3ffe:1ce1:2:0:200:: ffff:ffff:ffff:ffff:ffff:: ::0 2,
+ *          0::ffff:0:0 ffff:ffff:ffff:ffff:ffff:ffff:: ::0 3,
+ *          ::0 ::0 3ffe:1ce1:2::2 1);
+	
  *   rt[0] -> ToLinux;
  *   rt[1] -> ... -> ToDevice(eth0);
+ *   rt[2] -> ... -> ToDevice(eth1);
+ *   ...
  *
- * =n
- * Only static routes are allowed. If you need a dynamic routing
- * protocol such as RIP, run it at user-level and use
- * LookupIPRouteLinux.
- *
- * =a LookupIPRouteLinux
  */
 
 #include "element.hh"
