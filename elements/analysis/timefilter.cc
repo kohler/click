@@ -21,9 +21,10 @@
 #include "timefilter.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
+#include <click/handlercall.hh>
 
 TimeFilter::TimeFilter()
-    : Element(1, 1)
+    : Element(1, 1), _last_h(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -31,6 +32,7 @@ TimeFilter::TimeFilter()
 TimeFilter::~TimeFilter()
 {
     MOD_DEC_USE_COUNT;
+    delete _last_h;
 }
 
 void
@@ -58,6 +60,7 @@ TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "END_AFTER", cpTimeval, "end after", &last_delta,
 		    "INTERVAL", cpTimeval, "interval", &interval,
 		    "STOP", cpBool, "stop when after end?", &stop,
+		    "END_CALL", cpWriteHandlerCall, "handler to call at end", &_last_h,
 		    0) < 0)
 	return -1;
 
@@ -68,7 +71,7 @@ TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
     else
 	_first = first_delta, _first_relative = true;
     
-    if ((timerisset(&last) != 0) + (timerisset(&last_delta) != 0) + (timerisset(&interval) > 1))
+    if ((timerisset(&last) != 0) + (timerisset(&last_delta) != 0) + (timerisset(&interval) != 0) > 1)
 	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
     else if (timerisset(&last))
 	_last = last, _last_relative = false, _last_interval = false;
@@ -81,8 +84,20 @@ TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	_last_relative = false, _last_interval = false;
     }
 
+    if (_last_h && stop)
+	return errh->error("`END_CALL' and `STOP' are mutually exclusive");
+    else if (stop)
+	_last_h = new HandlerCall("stop true");
+    
     _ready = false;
-    _stop = stop;
+    return 0;
+}
+
+int
+TimeFilter::initialize(ErrorHandler *errh)
+{
+    if (_last_h && _last_h->initialize_write(this, errh) < 0)
+	return -1;
     return 0;
 }
 
@@ -116,8 +131,11 @@ TimeFilter::simple_action(Packet *p)
     else if (timercmp(&tv, &_last, <))
 	return p;
     else {
-	if (_stop)
-	    router()->please_stop_driver();
+	if (_last_h) {
+	    (void) _last_h->call_write(this);
+	    delete _last_h;
+	    _last_h = 0;
+	}
 	return kill(p);
     }
 }

@@ -2,6 +2,7 @@
 #ifndef CLICK_TIMEFILTER_HH
 #define CLICK_TIMEFILTER_HH
 #include <click/element.hh>
+class HandlerCall;
 
 /*
 =c
@@ -51,6 +52,11 @@ as specified by START or START_AFTER.
 Boolean. If true, stop the driver once the end time is exceeded. Default is
 false.
 
+=item END_CALL
+
+Specifies a write handler to call when the first packet after END is seen.
+STOP and END_CALL are mutually exclusive.
+
 =back
 
 Supply at most one of START and START_AFTER, and at most one of END,
@@ -71,6 +77,7 @@ class TimeFilter : public Element { public:
 
     void notify_noutputs(int);
     int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
 
     Packet *simple_action(Packet *);
     
@@ -83,7 +90,7 @@ class TimeFilter : public Element { public:
     bool _first_relative : 1;
     bool _last_relative : 1;
     bool _last_interval : 1;
-    bool _stop : 1;
+    HandlerCall *_last_h;
 
     void first_packet(const struct timeval &);
     Packet *kill(Packet *);
