@@ -23,6 +23,17 @@ AggregateFlows::~AggregateFlows()
     MOD_DEC_USE_COUNT;
 }
 
+void *
+AggregateFlows::cast(const char *n)
+{
+    if (strcmp(n, "AggregateNotifier") == 0)
+	return (AggregateNotifier *)this;
+    else if (strcmp(n, "AggregateFlows") == 0)
+	return (Element *)this;
+    else
+	return Element::cast(n);
+}
+
 void
 AggregateFlows::notify_noutputs(int n)
 {
@@ -76,6 +87,7 @@ AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 
     while (to_free) {
 	FlowInfo *next = to_free->uu.other;
+	notify(to_free->_aggregate, AggregateListener::DELETE_AGG, 0);
 	IPFlowID flow = table.key_of_value(to_free);
 	table.remove(flow);
 	table.remove(flow.rev());
@@ -121,6 +133,7 @@ AggregateFlows::simple_action(Packet *p)
 	rfinfo->uu.other = finfo;
 	rfinfo->_reverse = true;
 	paint = 0;
+	notify(_next, AggregateListener::NEW_AGG, p);
 	_next++;		// XXX check for 2^32
 	goto new_flow;
     } else if (finfo->reverse()) {
@@ -139,6 +152,8 @@ AggregateFlows::simple_action(Packet *p)
 	else
 	    timeout = _tcp_timeout;
 	if (p_sec > finfo->uu.active_sec + timeout) {
+	    // old flow; kill old aggregate and create new aggregate
+	    notify(finfo->_aggregate, AggregateListener::DELETE_AGG, 0);
 	    if (paint) {	// switch sides
 		FlowInfo *rfinfo = m.findp(flow);
 		assert(rfinfo && rfinfo != finfo);
@@ -151,6 +166,7 @@ AggregateFlows::simple_action(Packet *p)
 	    }
 	    finfo->_aggregate = _next;
 	    finfo->flow_over = 0;
+	    notify(_next, AggregateListener::NEW_AGG, p);
 	    _next++;
 	}
     }
@@ -179,7 +195,7 @@ AggregateFlows::simple_action(Packet *p)
     return p;
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel AggregateNotifier)
 EXPORT_ELEMENT(AggregateFlows)
 
 #include <click/bighashmap.cc>

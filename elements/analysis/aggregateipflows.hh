@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/ipflowid.hh>
 #include <click/bighashmap.hh>
+#include "aggregatenotifier.hh"
 
 /*
 =c
@@ -59,12 +60,13 @@ The garbage collection interval. Default is 10 minutes of packet time.
 
 AggregateIP, AggregateCounter */
 
-class AggregateFlows : public Element { public:
+class AggregateFlows : public Element, public AggregateNotifier { public:
 
     AggregateFlows();
     ~AggregateFlows();
 
     const char *class_name() const	{ return "AggregateFlows"; }
+    void *cast(const char *);
     AggregateFlows *clone() const	{ return new AggregateFlows; }
 
     void notify_noutputs(int);
