@@ -1,3 +1,16 @@
+2003-05-18 Sunday 18:02  jbicket
+
+	* elements/: grid/dsdvroutetable.cc (1.50), grid/dsdvroutetable.hh
+	(1.35), grid/gridgatewayinfo.cc (1.5), grid/gridgatewayinfo.hh
+	(1.5), local/gridproxy.cc (1.1), local/gridproxy.hh (1.1): Added
+	GridProxy, which is a simple mobileip proxy for the roofnet
+	network.  Also changed DSDVRouteTable to allow for dynamic gateway
+	selection and routing, as well as extended GridGatewayInfo to set
+	the dst annotation of a given packet to the gateway with the best
+	metric it knows about.
+	
+	--john
+
 2003-05-18 Sunday 09:42  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.12), rtmdsr.hh (1.13): Small metric
