@@ -1,0 +1,52 @@
+%info
+This test installs two fake devices in the kernel, then initiates
+%script
+click-install KERNELCONFIG
+(usleep 50000; echo Hopefully this worked.; usleep 40000) | nc -l -p 3000 >NETCAT2 &
+usleep 5000
+(echo PORT 200,200,200,200,200,200; usleep 20000; echo money; usleep 20000) | nc 1.0.0.2 3000 >NETCAT3
+cat /click/c1/c/count >COUNTERS
+cat /click/c2/c/count >>COUNTERS
+click-uninstall
+
+%file KERNELCONFIG
+fh1 :: FromHost(fake0, 1.0.0.1/24);
+fh2 :: FromHost(fake1, 2.0.0.1/24);
+th1 :: ToHost(fake0);
+th2 :: ToHost(fake1);
+
+elementclass ARPer {
+    input -> c :: Classifier(12/0806, 12/0800 23/06)
+	 -> ARPResponder(0/0 0:1:2:3:4:5) -> [0]output;
+    c[1] -> MarkIPHeader(14) -> [1]output
+}
+elementclass RSTCounter { $what |
+    input -> IPPrint($what, PAYLOAD ascii) -> i :: IPClassifier(tcp rst, -) -> c :: Counter -> output;
+    i[1] -> output
+}
+
+fh1 -> a1 :: ARPer -> th1;
+fh2 -> a2 :: ARPer -> th2;
+
+IPRewriterPatterns(pat 2.0.0.2 1024-65535 1.0.0.1 -)
+
+a1[1] -> FTPPortMapper(rw, rw, pat 0 1)
+      -> rw :: TCPRewriter(pattern pat 0 1, drop);
+a2[1] -> [1] rw;
+rw[0] -> c2 :: RSTCounter(2) -> th2;
+rw[1] -> c1 :: RSTCounter(1) -> th1;
+
+%file NETCAT1
+PORT 200,200,200,200,200,200
+%file NETCAT2
+%file NETCAT3
+%file NETCAT4
+Hopefully this worked.
+%expect NETCAT2
+PORT 2,0,0,2,{{\d+,\d+}}
+money
+%expect NETCAT3
+Hopefully this worked.
+%expect COUNTERS
+0
+0
