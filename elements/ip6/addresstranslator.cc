@@ -542,6 +542,7 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
  
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance

@@ -225,6 +225,13 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   if (where)
     msg << fix_landmark(where);
 
+  // declare and initialize these here to make gcc shut up about possible 
+  // use before initialization
+  int flags = 0;
+  int field_width = -1;
+  int precision = -1;
+  int width_flag = 0;
+  int base = 10;
   while (1) {
     
     const char *pct = strchr(s, '%');
@@ -238,7 +245,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
     }
     
     // parse flags
-    int flags = 0;
+    flags = 0;
    flags:
     switch (*++s) {
      case '#': flags |= ALTERNATE_FORM; goto flags;
@@ -249,7 +256,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
     }
     
     // parse field width
-    int field_width = -1;
+    field_width = -1;
     if (*s == '*') {
       field_width = va_arg(val, int);
       if (field_width < 0) {
@@ -262,7 +269,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
 	field_width = 10*field_width + *s - '0';
     
     // parse precision
-    int precision = -1;
+    precision = -1;
     if (*s == '.') {
       s++;
       precision = 0;
@@ -275,7 +282,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
     }
     
     // parse width flags
-    int width_flag = 0;
+    width_flag = 0;
    width_flags:
     switch (*s) {
      case 'h': width_flag = 'h'; s++; goto width_flags;
@@ -286,7 +293,7 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
     // conversion character
     // after switch, data lies between `s1' and `s2'
     const char *s1 = 0, *s2 = 0;
-    int base = 10;
+    base = 10;
     switch (*s++) {
       
      case 's': {

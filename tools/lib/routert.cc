@@ -756,10 +756,11 @@ RouterT::remove_duplicate_connections()
 
   for (int i = 0; i < nelem; i++) {
     int trav = _hookup_first[i].from;
+    int next = 0;		// initialize here to avoid gcc warnings
     while (trav >= 0) {
       int prev = _hookup_first[i].from;
       int trav_port = _hookup_from[trav].port;
-      int next = _hookup_next[trav].from;
+      next = _hookup_next[trav].from;
       while (prev >= 0 && prev != trav) {
 	if (_hookup_from[prev].port == trav_port
 	    && _hookup_to[prev] == _hookup_to[trav]) {

@@ -55,6 +55,8 @@ class StringAccum {
   StringAccum &operator<<(PermString);
 #endif
   StringAccum &operator<<(const String &);
+  StringAccum &operator<<(short);
+  StringAccum &operator<<(unsigned short);
   StringAccum &operator<<(int);
   StringAccum &operator<<(unsigned);
   StringAccum &operator<<(long);
@@ -127,6 +129,18 @@ inline char *
 StringAccum::take()
 {
   return (char *)take_bytes();
+}
+
+inline StringAccum &
+StringAccum::operator<<(short i)
+{
+  return *this << static_cast<long>(i);
+}
+
+inline StringAccum &
+StringAccum::operator<<(unsigned short u)
+{
+  return *this << static_cast<unsigned long>(u);
 }
 
 inline StringAccum &

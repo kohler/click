@@ -28,6 +28,9 @@ class String { public:
   explicit String(long);
   explicit String(unsigned long);
   explicit String(unsigned long long);
+#ifndef __KERNEL__
+  explicit String(double);
+#endif
   ~String();
   
   static const String &null_string()	{ return *null_string_p; }

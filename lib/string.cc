@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include <click/string.hh>
+#include <click/straccum.hh>
 #ifdef __KERNEL__
-# include <click/straccum.hh>
 # include <linux/ctype.h>
 #else
 # include <ctype.h>
@@ -85,22 +85,21 @@ String::String(unsigned long u)
   assign(buf, -1);
 }
 
-#ifdef __KERNEL__
-
 String::String(unsigned long long u)
 {
   StringAccum sa;
   // Implemented a lovely unsigned long long converter in StringAccum
+  // (use the code even at user level to hunt out bugs)
   sa << u;
   assign(sa.data(), sa.length());
 }
 
-#else
+#ifndef __KERNEL__
 
-String::String(unsigned long long u)
+String::String(double d)
 {
   char buf[128];
-  sprintf(buf, "%Lu", u);
+  sprintf(buf, "%f", d);
   assign(buf, -1);
 }
 
