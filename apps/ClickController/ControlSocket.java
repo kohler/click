@@ -83,6 +83,8 @@ public class ControlSocket {
 	 */
 	try {
 	    String banner = _in.readLine();
+	    if (banner == null)
+		throw new IOException("ControlSocket stream closed unexpectedly");
 	    int slash = banner.indexOf('/');
 	    int dot = (slash >= 0 ? banner.indexOf('.', slash + 1) : -1);
 	    if (slash < 0 || dot < 0) {
@@ -389,6 +391,8 @@ public class ControlSocket {
 	String lastLine = null;
 	do {
 	    lastLine = _in.readLine();
+	    if (lastLine == null)
+		throw new IOException("ControlSocket stream closed unexpectedly");
 	    if (lastLine.length() < 4)
 		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4);
@@ -478,6 +482,8 @@ public class ControlSocket {
 	String lastLine = null;
 	do {
 	    lastLine = _in.readLine();
+	    if (lastLine == null)
+		throw new IOException("ControlSocket stream closed unexpectedly");
 	    if (lastLine.length() < 4)
 		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4);
@@ -488,6 +494,8 @@ public class ControlSocket {
 	    handleErrCode(code, elementName, handlerName, response);
 	
 	response = _in.readLine();
+	if (response == null)
+	    throw new IOException("ControlSocket stream closed unexpectedly");
 	int num_bytes = getDataLength(response);
 	if (num_bytes < 0)
 	    throw new ClickException("Bad length returned from ControlSocket");
@@ -523,6 +531,8 @@ public class ControlSocket {
 	String lastLine = null;
 	do {
 	    lastLine = _in.readLine();
+	    if (lastLine == null)
+		throw new IOException("ControlSocket stream closed unexpectedly");
 	    if (lastLine.length() < 4)
 		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4) + "\n";
