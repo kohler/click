@@ -326,26 +326,26 @@ FromDevice::get_packet(u_char* clientdata,
 		       const struct pcap_pkthdr* pkthdr,
 		       const u_char* data)
 {
-  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-  
-  FromDevice *fd = (FromDevice *) clientdata;
-  int length = pkthdr->caplen;
-  Packet *p = Packet::make(data, length);
+    static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-  // set packet type annotation
-  if (p->data()[0] & 1) {
-    if (memcmp(bcast_addr, p->data(), 6) == 0)
-      p->set_packet_type_anno(Packet::BROADCAST);
-    else
-      p->set_packet_type_anno(Packet::MULTICAST);
-  }
+    FromDevice *fd = (FromDevice *) clientdata;
+    int length = pkthdr->caplen;
+    Packet *p = Packet::make(data, length);
 
-  // set annotations
-  p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
-  SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
+    // set packet type annotation
+    if (p->data()[0] & 1) {
+	if (memcmp(bcast_addr, p->data(), 6) == 0)
+	    p->set_packet_type_anno(Packet::BROADCAST);
+	else
+	    p->set_packet_type_anno(Packet::MULTICAST);
+    }
 
-  if (!fd->_force_ip || fd->check_force_ip(p))
-    fd->output(0).push(p);
+    // set annotations
+    p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
+
+    if (!fd->_force_ip || fd->check_force_ip(p))
+	fd->output(0).push(p);
 }
 #endif
 
@@ -353,32 +353,70 @@ void
 FromDevice::selected(int)
 {
 #ifdef FROMDEVICE_PCAP
-  // Read and push() at most one packet.
-  pcap_dispatch(_pcap, 1, FromDevice::get_packet, (u_char *) this);
+    // Read and push() at most one packet.
+    pcap_dispatch(_pcap, 1, FromDevice::get_packet, (u_char *) this);
 #endif
 #ifdef FROMDEVICE_LINUX
-  struct sockaddr_ll sa;
-  socklen_t fromlen = sizeof(sa);
-  // store data offset 2 bytes into the packet, assuming that first 14
-  // bytes are ether header, and that we want remaining data to be
-  // 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
-  // and that the buffer allocated by Packet::make is also 4-byte
-  // aligned.  Actually, it doesn't matter if the packet is 4-byte
-  // aligned; perhaps there is some efficiency aspect?  who cares....
-  WritablePacket *p = Packet::make(2, 0, _packetbuf_size, 0);
-  int len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
-  if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
-    p->change_headroom_and_length(2, len);
-    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-    (void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
-    if (!_force_ip || check_force_ip(p))
-      output(0).push(p);
-  } else {
-    p->kill();
-    if (len <= 0 && errno != EAGAIN)
-      click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
-  }
+    struct sockaddr_ll sa;
+    socklen_t fromlen = sizeof(sa);
+    // store data offset 2 bytes into the packet, assuming that first 14
+    // bytes are ether header, and that we want remaining data to be
+    // 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
+    // and that the buffer allocated by Packet::make is also 4-byte
+    // aligned.  Actually, it doesn't matter if the packet is 4-byte
+    // aligned; perhaps there is some efficiency aspect?  who cares....
+    WritablePacket *p = Packet::make(2, 0, _packetbuf_size, 0);
+    int len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
+    if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
+	p->change_headroom_and_length(2, len);
+	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
+	if (!_force_ip || check_force_ip(p))
+	    output(0).push(p);
+    } else {
+	p->kill();
+	if (len <= 0 && errno != EAGAIN)
+	    click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+    }
 #endif
+}
+
+void
+FromDevice::kernel_drops(bool& known, int& max_drops) const
+{
+#ifdef FROMDEVICE_PCAP
+    struct pcap_stat stats;
+    if (pcap_stats(fd->_pcap, &stats) >= 0)
+	known = true, max_drops = stats.ps_drop;
+    else
+	known = false, max_drops = -1;
+#endif
+#ifdef FROMDEVICE_LINUX
+    // You might be able to do this better by parsing netstat/ifconfig output,
+    // but for now, we just give up.
+    known = false, max_drops = -1;
+#endif
+}
+
+String
+FromDevice::read_kernel_drops(Element* e, void*)
+{
+    FromDevice* fd = static_cast<FromDevice*>(e);
+    int max_drops;
+    bool known;
+    fd->kernel_drops(known, max_drops);
+    if (known)
+	return String(max_drops) + "\n";
+    else if (max_drops >= 0)
+	return "<" + String(max_drops) + "\n";
+    else
+	return "??\n";
+}
+
+void
+FromDevice::add_handlers()
+{
+    add_read_handler("kernel_drops", read_kernel_drops, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)

@@ -67,6 +67,13 @@ using the pcap library to read its packets, any filter expression is ignored.
 
 FromDevice sets packets' extra length annotations as appropriate.
 
+=h kernel_drops read-only
+
+Returns the number of packets dropped by the kernel, probably due to memory
+constraints, before FromDevice could get them. This may be an integer; the
+notation C<"<I<d>">, meaning at most C<I<d>> drops; or C<"??">, meaning the
+number of drops is not known.
+
 =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
 #include <click/element.hh>
@@ -98,6 +105,7 @@ class FromDevice : public Element { public:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
   
   String ifname() const			{ return _ifname; }
 #if FROMDEVICE_PCAP
@@ -113,6 +121,8 @@ class FromDevice : public Element { public:
   static int open_packet_socket(String, ErrorHandler *);
   static int set_promiscuous(int, String, bool);
 #endif
+
+  void kernel_drops(bool& known, int& max_drops) const;
   
  private:
   
@@ -137,6 +147,8 @@ class FromDevice : public Element { public:
 #endif
 
   bool check_force_ip(Packet *);
+  
+  static String read_kernel_drops(Element*, void*);
 
 };
 
