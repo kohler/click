@@ -48,7 +48,7 @@ class AggregateLength : public Element { public:
     AggregateLength *clone() const	{ return new AggregateLength; }
 
     const char *processing() const	{ return AGNOSTIC; }
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
 
     void push(int, Packet *);
     Packet *pull(int);

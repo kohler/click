@@ -118,7 +118,7 @@ class AggregateIP : public Element { public:
 
     void notify_noutputs(int);
     const char *processing() const	{ return "a/ah"; }
-    int configure(const Vector<String> &, ErrorHandler *);
+    int configure(Vector<String> &, ErrorHandler *);
 
     void push(int, Packet *);
     Packet *pull(int);

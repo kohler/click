@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
+#include <click/integers.hh>	// for first_bit_set
 #include <click/router.hh>
 
 AggregateCounter::AggregateCounter()
@@ -63,7 +64,7 @@ AggregateCounter::notify_noutputs(int n)
 }
 
 int
-AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
+AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool bytes = false;
     bool ip_bytes = false;
@@ -153,34 +154,6 @@ AggregateCounter::cleanup(CleanupStage)
     _call_nnz_h = _call_count_h = 0;
 }
 
-// from tcpdpriv
-static int
-bi_ffs(uint32_t value)
-{
-    int add = 0;
-    static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-    if ((value & 0xFFFF0000) == 0) {
-	if (value == 0) {	/* zero input ==> zero output */
-	    return 0;
-	}
-	add += 16;
-    } else {
-	value >>= 16;
-    }
-    if ((value & 0xFF00) == 0) {
-	add += 8;
-    } else {
-	value >>= 8;
-    }
-    if ((value & 0xF0) == 0) {
-	add += 4;
-    } else {
-	value >>= 4;
-    }
-    return add + bvals[value & 0xf];
-}
-
 AggregateCounter::Node *
 AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
 {
@@ -202,7 +175,7 @@ AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
     }
 
     // swivel is first bit 'a' and 'old->input' differ
-    int swivel = bi_ffs(a ^ n->aggregate);
+    int swivel = first_bit_set(a ^ n->aggregate);
     // bitvalue is the value of that bit of 'a'
     int bitvalue = (a >> (32 - swivel)) & 1;
     // mask masks off all bits before swivel
@@ -238,8 +211,8 @@ AggregateCounter::find_node(uint32_t a, bool frozen)
 	    n = make_peer(a, n, frozen);
 	else {
 	    // swivel is the first bit in which the two children differ
-	    int swivel = bi_ffs(n->child[0]->aggregate ^ n->child[1]->aggregate);
-	    if (bi_ffs(a ^ n->aggregate) < swivel) // input differs earlier
+	    int swivel = first_bit_set(n->child[0]->aggregate ^ n->child[1]->aggregate);
+	    if (first_bit_set(a ^ n->aggregate) < swivel) // input differs earlier
 		n = make_peer(a, n, frozen);
 	    else if (a & (1 << (32 - swivel)))
 		n = n->child[1];

@@ -395,7 +395,7 @@ AggregateIP::notify_noutputs(int n)
 }
 
 int
-AggregateIP::configure(const Vector<String> &conf, ErrorHandler *errh)
+AggregateIP::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     String arg;
     _incremental = false;

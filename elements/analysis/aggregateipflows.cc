@@ -30,7 +30,7 @@ AggregateFlows::notify_noutputs(int n)
 }
 
 int
-AggregateFlows::configure(const Vector<String> &conf, ErrorHandler *errh)
+AggregateFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _bidi = false;
     _ports = true;

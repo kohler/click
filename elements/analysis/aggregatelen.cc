@@ -21,7 +21,7 @@ AggregateLength::~AggregateLength()
 }
 
 int
-AggregateLength::configure(const Vector<String> &conf, ErrorHandler *errh)
+AggregateLength::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _ip = false;
     if (cp_va_parse(conf, this, errh,
