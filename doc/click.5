@@ -419,10 +419,10 @@ makes MyQueue a synonym for Queue.
 .SS "Configuration parameters"
 '
 Compound elements may take configuration parameters, which are expanded
-into the configuration strings of its components. The parameters must be
-named at the beginning of the compound element. Each parameter looks like
-a Perl variable\*Ea dollar sign followed by one or more letters, numbers,
-and underscores. For example, this compound element
+into the configuration strings of its components. The parameters are named
+at the beginning of the compound element. Each parameter looks like a Perl
+variable\*Ea dollar sign followed by one or more letters, numbers, and
+underscores. For example, this compound element
 .Rs
 { $a, $b | ... }
 .Re
@@ -440,17 +440,19 @@ errors; for example:
 .br
 \%{ COUNT $count | ... } (1)   // Error: missing 'COUNT' parameter
 .Re
-The exception is the special keyword `__REST__', which matches any
-additional arguments supplied to the compound element. For example:
+The special keyword `__REST__' matches any additional arguments supplied to
+the compound element. For example:
 .Rs
 \%{ $a, COUNT $count, __REST__ $rest | ... } 
 .br
 \%           (1, 2, COUNT 3, FOO 4)
 .Re
 This compound element will be expanded with `$a' set to `1', `$count' set
-to `3', and `$rest' set to `2, FOO 4'. All positional parameters must
-precede any keyword parameters, and `__REST__', if present, must appear
-last of all.
+to `3', and `$rest' set to `2, FOO 4'. 
+.PP
+In a compound element definition, all positional parameters must precede
+any keyword parameters, and `__REST__', if present, must appear last of
+all.
 .PP
 As the compound is expanded, its components' configuration strings are
 searched for references to the parameters. Any such references are replaced
