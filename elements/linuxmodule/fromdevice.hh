@@ -1,10 +1,6 @@
 #ifndef FROMDEVICE_HH
 #define FROMDEVICE_HH
 
-extern "C" {
-#include <linux/netdevice.h>
-}
-
 /*
  * =c
  * FromDevice(DEVNAME)
@@ -28,17 +24,14 @@ extern "C" {
  * =a FromLinux
  * =a ToLinux */
 
-#include "element.hh"
-#include "string.hh"
-#include "glue.hh"
+#include "anydevice.hh"
 
 #define FROMDEV_QSIZE 512
-class FromDevice : public Element {
+class FromDevice : public AnyDevice {
   
  public:
   
   FromDevice();
-  FromDevice(const String &);
   ~FromDevice();
   
   static void static_initialize();
@@ -46,8 +39,8 @@ class FromDevice : public Element {
   
   const char *class_name() const		{ return "FromDevice"; }
   const char *processing() const		{ return PUSH; }
+  FromDevice *clone() const			{ return new FromDevice; }
   
-  FromDevice *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
@@ -56,19 +49,17 @@ class FromDevice : public Element {
   int got_skb(struct sk_buff *);
   
   void run_scheduled();
-  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
   
  private:
   
-  String _devname;
-  struct device *_dev;
-  unsigned _registered;
+  bool _registered;
   unsigned _drops;
   unsigned _puller_ptr;
   unsigned _pusher_ptr;
 
   Packet* _queue[FROMDEV_QSIZE];
-  unsigned next_i(int i) const	{ return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); } 
+  unsigned next_i(int i) const	{ return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); }
+  
 };
 
 #endif

@@ -1,10 +1,6 @@
 #ifndef POLLDEVICE_HH
 #define POLLDEVICE_HH
 
-extern "C" {
-#include <linux/netdevice.h>
-}
-
 /*
  * =c
  * PollDevice(DEVNAME)
@@ -26,16 +22,12 @@ extern "C" {
  * =a FromLinux
  * =a ToLinux */
 
-#include "element.hh"
-#include "string.hh"
-#include "glue.hh"
-#include "netdev.h"
+#include "anydevice.hh"
 
-class PollDevice : public Element {
+class PollDevice : public AnyDevice {
  public:
   
   PollDevice();
-  PollDevice(const String &);
   ~PollDevice();
   
   static void static_initialize();
@@ -43,8 +35,8 @@ class PollDevice : public Element {
   
   const char *class_name() const		{ return "PollDevice"; }
   const char *processing() const		{ return PUSH; }
+  PollDevice *clone() const			{ return new PollDevice; }
   
-  PollDevice *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
@@ -70,14 +62,13 @@ class PollDevice : public Element {
   unsigned long long _perfcnt2_pushing;
 #endif
   unsigned long _activations;
-  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
-
+  
  private:
-  struct device *_dev;
-  String _devname;
-  unsigned _registered;
+  
+  bool _registered;
   unsigned int _last_rx;
   unsigned _manage_tx;
+  
 };
 
 #endif 

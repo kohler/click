@@ -1,6 +1,5 @@
 /*
  * polldevice.{cc,hh} -- element steals packets from Linux devices by polling.
- * 
  * Benjie Chen
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -16,6 +15,7 @@
 #endif
 #include "glue.hh"
 #include "polldevice.hh"
+#include "fromdevice.hh"
 #include "todevice.hh"
 #include "error.hh"
 #include "packet.hh"
@@ -33,31 +33,8 @@ extern "C" {
 #include "asm/msr.h"
 
 PollDevice::PollDevice()
-  : _activations(0), _dev(0), _registered(0), _last_rx(0), _manage_tx(1)
+  : _activations(0), _registered(0), _last_rx(0), _manage_tx(1)
 {
-  add_output();
-#if _CLICK_STATS_
-  _idle_calls = 0;
-  _pkts_received = 0;
-  _time_poll = 0;
-  _time_refill = 0;
-  _time_pushing = 0;
-  _perfcnt1_poll = 0;
-  _perfcnt1_refill = 0;
-  _perfcnt1_pushing = 0;
-  _perfcnt2_poll = 0;
-  _perfcnt2_refill = 0;
-  _perfcnt2_pushing = 0;
-#endif
-}
-
-PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _activations(0), _dev(0), _registered(0), 
-    _last_rx(0), _manage_tx(1)
-{
-#ifdef CLICK_BENCHMARK
-  _bm_done = 0;
-#endif
   add_output();
 #if _CLICK_STATS_
   _idle_calls = 0;
@@ -90,12 +67,6 @@ PollDevice::static_cleanup()
 }
 
 
-PollDevice *
-PollDevice::clone() const
-{
-  return new PollDevice();
-}
-
 int
 PollDevice::configure(const String &conf, ErrorHandler *errh)
 {
@@ -124,20 +95,22 @@ PollDevice::initialize(ErrorHandler *errh)
 #if HAVE_POLLING
   /* try to find a ToDevice with the same device: if none exists, then we need
    * to manage tx queue as well as rx queue */
-  for(int fi = 0; fi < router()->nelements(); fi++) {
-    Element *f = router()->element(fi);
-    ToDevice *td = (ToDevice *) (f->cast("ToDevice"));
-    if (td && td->ifnum() == _dev->ifindex) {
-      _manage_tx = 0;
-      break;
+  // need to do it this way because ToDevice may not have been initialized
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *e = router()->element(fi);
+    if (ToDevice *td = (ToDevice *) (e->cast("ToDevice"))) {
+      if (td->ifindex() == ifindex())
+	_manage_tx = 0;
+    } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {
+      if (pd->ifindex() == ifindex())
+	return errh->error("duplicate PollDevice for `%s'", _devname.cc());
+    } else if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
+      if (fd->ifindex() == ifindex())
+	return errh->error("both FromDevice and PollDevice for `%s'", _devname.cc());
     }
   }
-  
-  void *p = update_ifindex_map(_dev->ifindex, errh, POLLDEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate PollDevice for device `%s'", _devname.cc());
 
+  // install PollDevice
   _registered = 1;
   _dev->intr_off(_dev);
 #ifndef RR_SCHED
@@ -160,10 +133,8 @@ void
 PollDevice::uninitialize()
 {
 #if HAVE_POLLING
-  if (_dev) {
+  if (_dev && _dev->pollable)
     _dev->intr_on(_dev);
-  }
-  remove_ifindex_map(_dev->ifindex, POLLDEV_OBJ);
   _registered = 0;
   unschedule();
 #endif
@@ -287,3 +258,4 @@ PollDevice::add_handlers()
 }
 
 EXPORT_ELEMENT(PollDevice)
+ELEMENT_REQUIRES(AnyDevice)

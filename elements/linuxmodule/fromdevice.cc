@@ -2,7 +2,7 @@
  * fromdevice.{cc,hh} -- element steals packets from Linux devices using
  * register_net_in
  * Robert Morris
- * Eddie Kohler : register once per configuration
+ * Eddie Kohler: register once per configuration
  * Benjie Chen: scheduling, internal queue
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -17,37 +17,23 @@
 # include <config.h>
 #endif
 #include "glue.hh"
-#include "polldevice.hh"
 #include "fromdevice.hh"
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
 #include "router.hh"
 #include "elements/standard/scheduleinfo.hh"
-extern "C" {
-#include <linux/netdevice.h>
-}
-#include "netdev.h"
 
+static AnyDeviceMap from_device_map;
 static int registered_readers;
 static struct notifier_block notifier;
-static unsigned first_time = 1;
-static void* ifindex_map[MAX_DEVICES][DEV_ELEM_TYPES];
 
 extern "C" int click_FromDevice_in
   (struct notifier_block *nb, unsigned long val, void *v);
 
 
 FromDevice::FromDevice()
-  : _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
-{
-  add_output();
-  for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
-}
-
-FromDevice::FromDevice(const String &devname)
-  : _devname(devname), _registered(0), _dev(0),
-    _puller_ptr(0), _pusher_ptr(0), _drops(0)
+  : _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
   add_output();
   for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
@@ -63,6 +49,7 @@ FromDevice::static_initialize()
 {
   notifier.notifier_call = click_FromDevice_in;
   notifier.priority = 1;
+  from_device_map.initialize();
 }
 
 void
@@ -74,12 +61,6 @@ FromDevice::static_cleanup()
 #endif
 }
 
-
-FromDevice *
-FromDevice::clone() const
-{
-  return new FromDevice();
-}
 
 int
 FromDevice::configure(const String &conf, ErrorHandler *errh)
@@ -101,19 +82,18 @@ FromDevice::configure(const String &conf, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-  /* can't have a PollDevice with the same device */
-  for(int fi = 0; fi < router()->nelements(); fi++) {
-    Element *f = router()->element(fi);
-    PollDevice *pd = (PollDevice *)(f->cast("PollDevice"));
-    if (pd && pd->ifnum() == _dev->ifindex)
-      return errh->error("have PollDevice and FromDevice for device `%s'", 
-	                  _devname.cc());
+  // check for duplicates; FromDevice <-> PollDevice conflicts checked by
+  // PollDevice
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *e = router()->element(fi);
+    if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
+      if (fd->ifindex() == ifindex())
+	return errh->error("duplicate FromDevice for `%s'", _devname.cc());
+    }
   }
 
-  void *p = update_ifindex_map(_dev->ifindex, errh, FROMDEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate FromDevice for device `%s'", _devname.cc());
+  if (from_device_map.insert(this) < 0)
+    return errh->error("cannot use FromDevice for device `%s'", _devname.cc());
   
   _registered = 1;
   
@@ -145,7 +125,8 @@ FromDevice::uninitialize()
   if (registered_readers == 0)
     unregister_net_in(&notifier);
 #endif
-  remove_ifindex_map(_dev->ifindex, FROMDEV_OBJ);
+  if (_registered)
+    from_device_map.remove(this);
   _registered = 0;
   unschedule();
 }
@@ -158,17 +139,18 @@ extern "C" int
 click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 		    void *v)
 {
+#if 0 && !HAVE_POLLING
   static int called_times;
+#endif
   struct sk_buff *skb = (struct sk_buff *)v;
 
   int stolen = 0;
   int ifindex = skb->dev->ifindex;
   if (ifindex >= 0 && ifindex < MAX_DEVICES)
-    if (FromDevice *kr = 
-	(FromDevice*) lookup_ifindex_map(ifindex, FROMDEV_OBJ)) {
+    if (FromDevice *kr = (FromDevice *)from_device_map.lookup(ifindex)) {
       stolen = kr->got_skb(skb);
 
-#ifndef HAVE_POLLING
+#if 0 && !HAVE_POLLING
       // Call scheduled things - in a nonpolling environment, this is
       // important because we really don't want packets to sit in a queue
       // under high load w/o having ToDevice pull them out of there. This
@@ -247,3 +229,4 @@ FromDevice::run_scheduled()
 }
 
 EXPORT_ELEMENT(FromDevice)
+ELEMENT_REQUIRES(AnyDevice)

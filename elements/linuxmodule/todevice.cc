@@ -1,7 +1,8 @@
 /*
  * todevice.{cc,hh} -- element sends packets to Linux devices.
  * Robert Morris
- * Eddie Kohler : register once per configuration
+ * Eddie Kohler: register once per configuration
+ * Benjie Chen: polling
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -26,7 +27,6 @@ extern "C" {
 #define new xxx_new
 #define class xxx_class
 #define delete xxx_delete
-#include <linux/netdevice.h>
 #include <net/pkt_sched.h>
 #undef new
 #undef class
@@ -36,38 +36,18 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
+static AnyDeviceMap to_device_map;
 static int registered_writers;
 static struct notifier_block notifier;
 
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
 
 ToDevice::ToDevice()
-  : Element(1, 0), _dev(0), _polling(0), _registered(0),
+  : _polling(0), _registered(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0), _activations(0)
 {
-#if _CLICK_STATS_
-  _idle_pulls = 0; 
-  _idle_calls = 0; 
-  _busy_returns = 0; 
-  _pkts_sent = 0; 
-  _time_pull = 0;
-  _time_clean = 0;
-  _time_queue = 0;
-  _perfcnt1_pull = 0;
-  _perfcnt1_clean = 0;
-  _perfcnt1_queue = 0;
-  _perfcnt2_pull = 0;
-  _perfcnt2_clean = 0;
-  _perfcnt2_queue = 0;
-#endif
-}
-
-ToDevice::ToDevice(const String &devname)
-  : Element(1, 0), _devname(devname), _dev(0), _polling(0), _registered(0),
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0), _activations(0)
-{
+  add_input();
 #if _CLICK_STATS_
   _idle_pulls = 0; 
   _idle_calls = 0; 
@@ -95,6 +75,7 @@ ToDevice::static_initialize()
 {
   notifier.notifier_call = click_ToDevice_out;
   notifier.priority = 1;
+  to_device_map.initialize();
 }
 
 void
@@ -106,12 +87,6 @@ ToDevice::static_cleanup()
 #endif
 }
 
-
-ToDevice *
-ToDevice::clone() const
-{
-  return new ToDevice(_devname);
-}
 
 int
 ToDevice::configure(const String &conf, ErrorHandler *errh)
@@ -135,20 +110,20 @@ ToDevice::initialize(ErrorHandler *errh)
 
   /* see if a PollDevice with the same device exists: if so, use polling
    * extensions */
-  for(int fi = 0; fi < router()->nelements(); fi++) {
-    Element *f = router()->element(fi);
-    PollDevice *pd = (PollDevice *) (f->cast("PollDevice"));
-    if (pd && pd->ifnum() == _dev->ifindex) {
-      click_chatter("todevice: found polling partner");
-      _polling = 1;
-      break;
+  // need to do it this way because ToDevice may not have been initialized
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *e = router()->element(fi);
+    if (ToDevice *td = (ToDevice *) (e->cast("ToDevice"))) {
+      if (td->ifindex() == ifindex())
+	return errh->error("duplicate ToDevice for `%s'", _devname.cc());
+    } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {
+      if (pd->ifindex() == ifindex())
+	_polling = 1;
     }
   }
-  
-  void *p = update_ifindex_map(_dev->ifindex, errh, TODEV_OBJ, this);
-  if (p == 0) return -1;
-  else if (p != this)
-    return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
+
+  if (to_device_map.insert(this) < 0)
+    return errh->error("cannot use ToDevice for device `%s'", _devname.cc());
   
   _registered = 1;
   if (!registered_writers) {
@@ -179,7 +154,8 @@ ToDevice::uninitialize()
     unregister_net_out(&notifier);
 #endif
   /* remove from ifindex_map */
-  remove_ifindex_map(_dev->ifindex, TODEV_OBJ);
+  if (_registered)
+    to_device_map.remove(this);
   _registered = 0;
   unschedule();
 }
@@ -199,7 +175,7 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
   int retval = 0;
   int ifindex = dev->ifindex;
   if (ifindex >= 0 && ifindex < MAX_DEVICES)
-    if (ToDevice *kw = (ToDevice*) lookup_ifindex_map(ifindex, TODEV_OBJ)) {
+    if (ToDevice *kw = (ToDevice*)to_device_map.lookup(ifindex)) {
       if (!kw->polling())
         retval = kw->tx_intr();
     }
@@ -283,7 +259,7 @@ ToDevice::tx_intr()
   }
 #endif
  
-#ifndef HAVE_POLLING
+#if !HAVE_POLLING
   if (!_polling) {
     /* If we have packets left in the queue, arrange for
      * net_bh()/qdisc_run_queues() to call us when the device decides it's idle.
@@ -415,3 +391,4 @@ ToDevice::add_handlers()
 }
 
 EXPORT_ELEMENT(ToDevice)
+ELEMENT_REQUIRES(AnyDevice)

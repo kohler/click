@@ -1,10 +1,6 @@
 #ifndef TODEVICE_HH
 #define TODEVICE_HH
 
-extern "C" {
-#include <linux/netdevice.h>
-}
-
 /*
  * =c
  * ToDevice(DEVNAME)
@@ -40,24 +36,21 @@ extern "C" {
  * =a ToLinux
  */
 
-#include "element.hh"
-#include "string.hh"
-#include "netdev.h"
+#include "anydevice.hh"
 
-class ToDevice : public Element {
+class ToDevice : public AnyDevice {
   
  public:
   
   ToDevice();
-  ToDevice(const String &);
   ~ToDevice();
   static void static_initialize();
   static void static_cleanup();
   
   const char *class_name() const	{ return "ToDevice"; }
   const char *processing() const	{ return PULL; }
+  ToDevice *clone() const		{ return new ToDevice; }
   
-  ToDevice *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
@@ -87,20 +80,19 @@ class ToDevice : public Element {
   unsigned long _hard_start;
   unsigned long _activations; 
 
-  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
-  int polling()				{return _polling;}
+  bool polling() const			{ return _polling; }
   
  private:
 
-  int queue_packet(Packet *p);
-  struct device *_dev;
-  String _devname;
-  unsigned _registered;
-  unsigned _polling;
+  bool _registered;
+  bool _polling;
   int _dev_idle;
   int _last_dma_length;
   int _last_tx;
   int _last_busy;
+  
+  int queue_packet(Packet *p);
+  
 };
 
 #endif
