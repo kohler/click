@@ -20,7 +20,7 @@ total accumulated difference.
 A packet has room for either exactly one cycle count or exactly one
 performance metric.
 
-=h packets read-only
+=h count read-only
 Returns the number of packets that have passed.
 
 =h cycles read-only
@@ -52,7 +52,7 @@ class CycleCountAccum : public Element { public:
  private:
   
   uint64_t _accum;
-  uint64_t _npackets;
+  uint64_t _count;
 
   static String read_handler(Element *, void *);
   static int reset_handler(const String &, Element *, void *, ErrorHandler *);

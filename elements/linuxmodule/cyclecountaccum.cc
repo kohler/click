@@ -39,7 +39,7 @@ CycleCountAccum::clone() const
 int
 CycleCountAccum::initialize(ErrorHandler *)
 {
-  _npackets = _accum = 0;
+  _count = _accum = 0;
   return 0;
 }
 
@@ -47,7 +47,7 @@ inline void
 CycleCountAccum::smaction(Packet *p)
 {
   _accum += click_get_cycles() - p->perfctr_anno();
-  _npackets++;
+  _count++;
 }
 
 void
@@ -73,7 +73,7 @@ CycleCountAccum::read_handler(Element *e, void *thunk)
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
-    return String(cca->_npackets) + "\n";
+    return String(cca->_count) + "\n";
    case 1:
     return String(cca->_accum) + "\n";
    default:
@@ -85,7 +85,7 @@ int
 CycleCountAccum::reset_handler(const String &, Element *e, void *, ErrorHandler *)
 {
   CycleCountAccum *cca = static_cast<CycleCountAccum *>(e);
-  cca->_npackets = 0;
+  cca->_count = 0;
   cca->_accum = 0;
   return 0;
 }
@@ -93,7 +93,7 @@ CycleCountAccum::reset_handler(const String &, Element *e, void *, ErrorHandler 
 void
 CycleCountAccum::add_handlers()
 {
-  add_read_handler("packets", read_handler, (void *)0);
+  add_read_handler("count", read_handler, (void *)0);
   add_read_handler("cycles", read_handler, (void *)1);
   add_write_handler("reset_counts", reset_handler, (void *)0);
 }

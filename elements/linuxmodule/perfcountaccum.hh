@@ -20,7 +20,7 @@
  *
  * See SetPerfCount for valid performance metric names.
  *
- * =h packets read-only
+ * =h count read-only
  * Returns the number of packets that have passed.
  *
  * =h accum read-only
@@ -55,7 +55,7 @@ class PerfCountAccum : public PerfCountUser { public:
   
   int _which;
   uint64_t _accum;
-  uint64_t _npackets;
+  uint64_t _count;
 
   static String read_handler(Element *, void *);
   static int reset_handler(const String &, Element *, void *, ErrorHandler *);

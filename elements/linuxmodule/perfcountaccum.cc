@@ -68,7 +68,7 @@ PerfCountAccum::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 PerfCountAccum::initialize(ErrorHandler *errh)
 {
-  _npackets = _accum = 0;
+  _count = _accum = 0;
   return PerfCountUser::initialize(errh);
 }
 
@@ -84,7 +84,7 @@ PerfCountAccum::smaction(Packet *p)
 #else
   // add other architectures here
 #endif
-  _npackets++;
+  _count++;
 }
 
 void
@@ -110,7 +110,7 @@ PerfCountAccum::read_handler(Element *e, void *thunk)
   int which = reinterpret_cast<int>(thunk);
   switch (which) {
    case 0:
-    return String(pca->_npackets) + "\n";
+    return String(pca->_count) + "\n";
    case 1:
     return String(pca->_accum) + "\n";
    default:
@@ -122,7 +122,7 @@ int
 PerfCountAccum::reset_handler(const String &, Element *e, void *, ErrorHandler *)
 {
   PerfCountAccum *pca = static_cast<PerfCountAccum *>(e);
-  pca->_npackets = 0;
+  pca->_count = 0;
   pca->_accum = 0;
   return 0;
 }
@@ -130,7 +130,7 @@ PerfCountAccum::reset_handler(const String &, Element *e, void *, ErrorHandler *
 void
 PerfCountAccum::add_handlers()
 {
-  add_read_handler("packets", read_handler, (void *)0);
+  add_read_handler("count", read_handler, (void *)0);
   add_read_handler("accum", read_handler, (void *)1);
   add_write_handler("reset_counts", reset_handler, (void *)0);
 }
