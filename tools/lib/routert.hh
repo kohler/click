@@ -6,51 +6,9 @@
 #include <click/archive.hh>
 typedef HashMap<String, int> StringMap;
 
-class RouterT {
+class RouterT { public:
 
-  struct Pair {
-    int from;
-    int to;
-    Pair() : from(-1), to(-1) { }
-    Pair(int f, int t) : from(f), to(t) { }
-  };
-
-  int _use_count;
-  
-  StringMap _element_type_map;
-  Vector<String> _element_type_names;
-  Vector<ElementClassT *> _element_classes;
-  
-  StringMap _element_name_map;
-  Vector<ElementT> _elements;	// contains types
-  int _free_element;
-  int _real_ecount;
-  Vector<int> *_new_eindex_collector;
-  
-  Vector<Hookup> _hookup_from;
-  Vector<Hookup> _hookup_to;
-  Vector<String> _hookup_landmark;
-  Vector<Pair> _hookup_next;
-  Vector<Pair> _hookup_first;
-  int _free_hookup;
-
-  Vector<String> _requirements;
-
-  StringMap _archive_map;
-  Vector<ArchiveElement> _archive;
-
-  int add_element(const ElementT &);
-  int prev_connection_from(int, int) const;
-  int prev_connection_to(int, int) const;
-  void finish_remove_elements(Vector<int> &, ErrorHandler *);
-  void finish_free_elements(Vector<int> &);
-  void finish_remove_element_types(Vector<int> &);
-  void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
-  String interpolate_arguments(const String &, const Vector<String> &) const;
-
- public:
-
-  enum { TUNNEL_TYPE = 0 };
+  enum { TUNNEL_TYPE = 0, FIRST_REAL_TYPE = 1 };
   
   RouterT(RouterT * = 0);
   RouterT(const RouterT &);
@@ -165,6 +123,48 @@ class RouterT {
   String configuration_string() const;
 
   RouterT *cast_router()		{ return this; }
+
+ private:
+  
+  struct Pair {
+    int from;
+    int to;
+    Pair() : from(-1), to(-1) { }
+    Pair(int f, int t) : from(f), to(t) { }
+  };
+
+  int _use_count;
+  
+  StringMap _element_type_map;
+  Vector<String> _element_type_names;
+  Vector<ElementClassT *> _element_classes;
+  
+  StringMap _element_name_map;
+  Vector<ElementT> _elements;	// contains types
+  int _free_element;
+  int _real_ecount;
+  Vector<int> *_new_eindex_collector;
+  
+  Vector<Hookup> _hookup_from;
+  Vector<Hookup> _hookup_to;
+  Vector<String> _hookup_landmark;
+  Vector<Pair> _hookup_next;
+  Vector<Pair> _hookup_first;
+  int _free_hookup;
+
+  Vector<String> _requirements;
+
+  StringMap _archive_map;
+  Vector<ArchiveElement> _archive;
+
+  int add_element(const ElementT &);
+  int prev_connection_from(int, int) const;
+  int prev_connection_to(int, int) const;
+  void finish_remove_elements(Vector<int> &, ErrorHandler *);
+  void finish_free_elements(Vector<int> &);
+  void finish_remove_element_types(Vector<int> &);
+  void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
+  String interpolate_arguments(const String &, const Vector<String> &) const;
 
 };
 
