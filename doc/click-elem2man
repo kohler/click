@@ -39,7 +39,9 @@ my(%xsection_takes_args) =
 
 my(%podentities) =
     ( 'lt' => '<', 'gt' => '>', 'amp' => '&', 'solid' => '/',
-      'verbar' => '|', 'eq' => '=', 'star' => '*' );
+      'verbar' => '|', 'eq' => '=', 'star' => '*', 'lparen' => '(',
+      'rparen' => ')', 'lbrack' => '[', 'rbrack' => ']', 'lbrace' => '{',
+      'rbrace' => '}' );
 
 my $directory;
 my $section = 'n';
