@@ -1,5 +1,5 @@
-#ifndef SETIPDSCP_HH
-#define SETIPDSCP_HH
+#ifndef CLICK_SETIPDSCP_HH
+#define CLICK_SETIPDSCP_HH
 
 /*
  * =c

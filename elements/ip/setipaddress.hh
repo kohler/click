@@ -1,5 +1,5 @@
-#ifndef SETADDRESS_HH
-#define SETADDRESS_HH
+#ifndef CLICK_SETIPADDRESS_HH
+#define CLICK_SETIPADDRESS_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 
