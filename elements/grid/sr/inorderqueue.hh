@@ -14,7 +14,7 @@ InOrderQueue(CAPACITY)
 
 =s storage
 
-stores packets in a queue
+stores packets in a push-to-push queue.
 
 =a Queue, SimpleQueue, FrontDropQueue */
 
@@ -26,10 +26,10 @@ class InOrderQueue : public NotifierQueue { public:
     const char *class_name() const	{ return "InOrderQueue"; }
     void *cast(const char *);
     InOrderQueue *clone() const		{ return new InOrderQueue; }
-    const char *processing() const	{ return "hhh/lh"; }
+    const char *processing() const	{ return "h/h"; }
     inline bool enq(Packet *p);
-    Packet *pull(int);
     void push(int port, Packet *);
+    void shove_out();
     int configure(Vector<String> &, ErrorHandler *);    
     void run_timer();
 private:

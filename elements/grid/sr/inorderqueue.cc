@@ -92,7 +92,8 @@ InOrderQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 void
 InOrderQueue::run_timer() 
 {
-    _timer.schedule_after_ms(10000);
+    shove_out();
+    _timer.schedule_after_ms(1000);
 }
 
 
@@ -180,24 +181,6 @@ InOrderQueue::ready_for(const Packet *p_in) {
     return false;
 }
 
-Packet *
-InOrderQueue::pull(int)
-{
-    Packet *packet = NULL;
-    packet = yank1(yank_filter(this));
-
-    if (!size()) {
-	if (++_sleepiness == SLEEPINESS_TRIGGER) {
-	    sleep_listeners();	
-	}
-    } else {
-	_sleepiness = 0;
-    }
-    return packet;
-}
-
-
-
 int 
 InOrderQueue::bubble_up(Packet *p_in)
 {
@@ -259,8 +242,21 @@ void
 InOrderQueue::push(int, Packet *p_in)
 {
     bubble_up(p_in);
-    /* there is work to be done! */
-    wake_listeners();
+    shove_out();
+    return;
+}
+
+void 
+InOrderQueue::shove_out() {
+    Packet *packet = NULL;
+    do {
+	if (packet) {
+	    output(0).push(packet);
+	}
+	packet = yank1(yank_filter(this));
+    } while (packet);
+
+
 }
 
 String
@@ -322,9 +318,9 @@ InOrderQueue::static_clear(const String &arg, Element *e,
 void
 InOrderQueue::clear() 
 {
-  
-  struct timeval now;
-  click_gettimeofday(&now);
+    _paths.clear();
+    struct timeval now;
+    click_gettimeofday(&now);
 }
 
 int
