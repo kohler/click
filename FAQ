@@ -42,6 +42,13 @@ A. As a kernel thread. It continually loops over a list of things to do,
    will get run, but not as often as on a machine without Click.
 
 
+Q. What are the Grid elements?
+
+A. Grid is a set of protocols for routing in multi-hop ad-hoc
+   wireless networks.  See http://pdos.lcs.mit.edu/grid for further
+   details.
+
+
 SECTION 2: QUESTIONS ABOUT POLLING
 ----------------------------------
 
