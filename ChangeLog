@@ -1,3 +1,11 @@
+2000-11-03 Friday 10:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/glue.hh: new get usec helper
+
+2000-11-03 Friday 10:11  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/linuxmodule/: fastudpsrc.cc, todevice.cc: xx
+
 2000-11-02 Thursday 14:39  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/scheduleinfo.cc, include/click/elemlink.hh,
