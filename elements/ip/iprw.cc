@@ -32,9 +32,6 @@
 extern "C" {
 #include <asm/softirq.h>
 #include <net/sock.h>
-#ifdef HAVE_TCP_PROT
-extern struct proto tcp_prot;
-#endif
 }
 #endif
 

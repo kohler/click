@@ -3,10 +3,12 @@
 #include <click/glue.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
-#ifdef __KERNEL__
-extern "C" {
-#include <linux/sched.h>
-}
+#ifdef CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <linux/sched.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 
 #define DEBUG_RT_SCHED		0

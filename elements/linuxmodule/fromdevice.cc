@@ -98,7 +98,7 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "burst", &_burst,
 		  cpEnd) < 0)
     return -1;
-  _dev = dev_get(_devname.cc());
+  _dev = dev_get_by_name(_devname.cc());
   if (!_dev)
     _dev = find_device_by_ether_address(_devname, this);
   if (!_dev)

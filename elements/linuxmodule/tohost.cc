@@ -22,15 +22,16 @@
 #include "tolinux.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-extern "C" {
-#define new xxx_new
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <net/dst.h>
 #include <linux/smp_lock.h>
 #include <linux/if_ether.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
-#undef new
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 ToLinux::ToLinux()
   : Element(1, 0)
@@ -59,7 +60,7 @@ ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
   if (devname) {
-    _dev = dev_get(devname.cc());
+    _dev = dev_get_by_name(devname.cc());
     if (!_dev)
       _dev = find_device_by_ether_address(devname, this);
     if (!_dev)

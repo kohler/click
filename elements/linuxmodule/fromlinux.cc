@@ -24,15 +24,16 @@
 #include "fromlinux.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-extern "C" {
-#define new xxx_new
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <asm/types.h>
 #include <asm/uaccess.h>
 #include <linux/ip.h>
 #include <linux/inetdevice.h>
 #include <net/route.h>
-#undef new
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
@@ -95,9 +96,11 @@ FromLinux::init_dev()
   if (!_dev)
     goto bad;
   memset(_dev, 0, sizeof(net_device));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
   _dev->name = new char[IFNAMSIZ];
   if (!_dev->name)
     goto bad;
+#endif
   strncpy(_dev->name, _devname.cc(), IFNAMSIZ);
   _dev->init = fl_init;
   return 0;
@@ -116,7 +119,7 @@ FromLinux::initialize_device(ErrorHandler *errh)
   int res = 0;
   _device_up = false;
   
-  _dev = dev_get(_devname.cc());
+  _dev = dev_get_by_name(_devname.cc());
   if (_dev) {
     if (fromlinux_map.insert(this) < 0) 
       return errh->error("cannot use FromLinux for device `%s'",_devname.cc());

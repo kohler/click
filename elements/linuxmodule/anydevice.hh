@@ -2,9 +2,12 @@
 #define ANYDEVICE_HH
 #include <click/element.hh>
 #include <click/task.hh>
-extern "C" {
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 #define MAX_DEVICES	1024
 

@@ -2,7 +2,7 @@
 #define PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
 #endif
 

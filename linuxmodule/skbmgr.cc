@@ -9,15 +9,16 @@
 #include <click/atomic.hh>
 #include <click/skbmgr.hh>
 #include <assert.h>
-extern "C" {
-#define new xxx_new
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <asm/bitops.h>
 #include <asm/atomic.h>
 #include <linux/netdevice.h>
 #include <net/dst.h>
 #include <linux/if_packet.h>
-#undef new
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 #define DEBUG_SKBMGR 1
 
@@ -238,7 +239,9 @@ skb_recycled_init_fast(struct sk_buff *skb)
       skb->destructor(skb);
       skb->destructor = NULL;
     }
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
     skb->pkt_bridged = 0;
+#endif
     skb->prev = NULL;
     skb->list = NULL;
     skb->sk = NULL;

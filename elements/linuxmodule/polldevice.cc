@@ -30,11 +30,12 @@
 #include <click/skbmgr.hh>
 #include "elements/standard/scheduleinfo.hh"
 
-extern "C" {
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #include <linux/sched.h>
-#include <unistd.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 #include <asm/msr.h>
 
@@ -86,7 +87,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
 #if HAVE_POLLING
-  _dev = dev_get(_devname.cc());
+  _dev = dev_get_by_name(_devname.cc());
   if (!_dev)
     _dev = find_device_by_ether_address(_devname, this);
   if (!_dev)

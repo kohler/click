@@ -30,15 +30,12 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
-extern "C" {
-#define new xxx_new
-#define class xxx_class
-#define delete xxx_delete
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <net/pkt_sched.h>
-#undef new
-#undef class
-#undef delete
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 #include <asm/msr.h>
 
@@ -67,7 +64,7 @@ ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "burst", &_burst,
 		  cpEnd) < 0)
     return -1;
-  _dev = dev_get(_devname.cc());
+  _dev = dev_get_by_name(_devname.cc());
   if (!_dev)
     _dev = find_device_by_ether_address(_devname, this);
   if (!_dev)

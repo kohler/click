@@ -41,12 +41,17 @@
  *
  * =a ToLinux, FromDevice, PollDevice, ToDevice */
 
-extern "C" {
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
 #include <linux/route.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 #include "elements/linuxmodule/anydevice.hh"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+typedef struct enet_statistics net_device_stats;
+#endif
 
 class FromLinux : public AnyDevice { public:
 
@@ -60,7 +65,7 @@ class FromLinux : public AnyDevice { public:
   FromLinux *clone() const;
   const char *processing() const	{ return PUSH; }
 
-  enet_statistics *stats()		{ return &_stats; }
+  net_device_stats *stats()		{ return &_stats; }
 
   int configure_phase() const		{ return CONFIGURE_PHASE_FROMLINUX; }
   int configure(const Vector<String> &, ErrorHandler *);
@@ -73,7 +78,7 @@ class FromLinux : public AnyDevice { public:
   IPAddress _destaddr;
   IPAddress _destmask;
 
-  struct enet_statistics _stats;
+  net_device_stats _stats;
 
   bool _device_up : 1;
   

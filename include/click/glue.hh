@@ -10,7 +10,7 @@
 // produce debugging output on the console or stderr
 void click_chatter(const char *fmt, ...);
 
-#ifdef __KERNEL__
+#ifdef CLICK_LINUXMODULE
 
 #if CLICK_DMALLOC
 extern int click_dmalloc_where;
@@ -23,35 +23,31 @@ extern int click_dmalloc_where;
 #define _LOOSE_KERNEL_NAMES 1
 #undef __KERNEL_STRICT_NAMES
 
-extern "C" {
-
 #ifndef __OPTIMIZE__
 # define __OPTIMIZE__ /* get ntohl() macros. otherwise undefined. */
 #endif
 
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
-#define new xxx_new
-#define this xxx_this
-#define delete xxx_delete
-#define class xxx_class
-typedef unsigned long long u_quad_t;
+#include <linux/string.h>
 #include <linux/skbuff.h>
 #include <linux/malloc.h>
-#include <linux/string.h>
 #include <linux/ctype.h>
 #include <linux/time.h>
 #include <linux/errno.h>
-#undef new
-#undef this
-#undef delete
-#undef class
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 // provide a definition for net_device for kernel compatibility
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 typedef struct device net_device;
+#define dev_get_by_name dev_get
 #endif
+
+extern "C" {
 
 __inline__ unsigned
 random()
@@ -87,7 +83,7 @@ strtoul(const char *nptr, char **endptr, int base)
 #define click_gettimeofday(tvp) (do_gettimeofday(tvp))
 #define click_jiffies()		((unsigned)jiffies)
 
-#else /* not __KERNEL__ */
+#else /* not CLICK_LINUXMODULE */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,7 +109,7 @@ extern unsigned click_jiffies();
 // provide a definition for net_device
 typedef struct device net_device;
 
-#endif /* __KERNEL__ */
+#endif /* CLICK_LINUXMODULE */
 
 #ifndef timercmp
 /* Convenience macros for operations on timevals.

@@ -29,12 +29,12 @@
 #include <click/straccum.hh>
 #include <click/subvector.hh>
 #if CLICK_LINUXMODULE
-extern "C" {
-# define new xxx_new
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 # include <asm/types.h>
 # include <asm/uaccess.h>
-# undef new
-}
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 
 const char * const Element::AGNOSTIC = "a";

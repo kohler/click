@@ -23,13 +23,6 @@
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
-#if CLICK_LINUXMODULE
-extern "C" {
-# include <linux/kernel.h>
-}
-#else
-# include <stdio.h>
-#endif
 
 EtherAddress::EtherAddress(unsigned char *addr)
 {

@@ -23,12 +23,15 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "elements/linuxmodule/anydevice.hh"
-extern "C" {
+
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #include <linux/smp_lock.h>
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
-}
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 ToLinuxSniffers::ToLinuxSniffers()
   : Element(1, 0)
@@ -57,7 +60,7 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
   if (devname) {
-    _dev = dev_get(devname.cc());
+    _dev = dev_get_by_name(devname.cc());
     if (!_dev)
       _dev = find_device_by_ether_address(devname, this);
     if (!_dev)

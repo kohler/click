@@ -1,25 +1,19 @@
 #ifndef CLICK_IP_H
 #define CLICK_IP_H
 // get struct in_addr
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 #if CLICK_LINUXMODULE
-# ifdef __cplusplus
-#  define new xxx_new
-# endif
 # include <net/checksum.h>
 # include <linux/in.h>
-# undef new
 # define in_cksum(addr, len) ip_compute_csum((addr), (len))
 #else
 # include <sys/types.h>
 # include <netinet/in.h>
 unsigned short in_cksum(const unsigned char *addr, int len);
 #endif
-#ifdef __cplusplus
-}
-#endif
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 
 /*
  * click_ip.h -- our own definitions of IP headers

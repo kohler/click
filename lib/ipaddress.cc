@@ -20,15 +20,9 @@
 
 #include <click/config.h>
 
+#include <click/glue.hh>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
-#if CLICK_LINUXMODULE
-extern "C" {
-# include <linux/kernel.h>
-}
-#else
-# include <stdio.h>
-#endif
 #include <click/straccum.hh>
 
 IPAddress::IPAddress(const unsigned char *data)

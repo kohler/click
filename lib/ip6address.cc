@@ -20,16 +20,10 @@
 
 #include <click/config.h>
 
+#include <click/glue.hh>
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
-#if CLICK_LINUXMODULE
-extern "C" {
-# include <linux/kernel.h>
-}
-#else
-# include <stdio.h>
-#endif
 
 IP6Address::IP6Address()
 {
