@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/confparse.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/confparse.hh" -*-
 /*
  * confparse.{cc,hh} -- configuration string parsing
  * Eddie Kohler
@@ -97,14 +97,14 @@ cp_is_click_id(const String &str)
 static int
 xvalue(int x)
 {
-  if (x >= '0' && x <= '9')
-    return x - '0';
-  else if (x >= 'A' && x <= 'F')
-    return x - 'A' + 10;
-  else if (x >= 'a' && x <= 'f')
-    return x - 'a' + 10;
-  else
-    return -1;
+    if (x >= '0' && x <= '9')
+	return x - '0';
+    else if (x >= 'A' && x <= 'F')
+	return x - 'A' + 10;
+    else if (x >= 'a' && x <= 'f')
+	return x - 'a' + 10;
+    else
+	return -1;
 }
 
 static const char *
@@ -2057,40 +2057,40 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 		    cp_parsefunc parse, cp_storefunc store, int internal,
 		    void *user_data = 0)
 {
-  if (cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name))) {
-    t->use_count++;
-    if (strcmp(desc, t->description) != 0
-	|| flags != t->flags
-	|| parse != t->parse
-	|| store != t->store
-	|| internal != t->internal)
-      return -1;
-    else
-      return t->use_count - 1;
-  }
+    if (cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name))) {
+	t->use_count++;
+	if (strcmp(desc, t->description) != 0
+	    || flags != t->flags
+	    || parse != t->parse
+	    || store != t->store
+	    || internal != t->internal)
+	    return -EEXIST;
+	else
+	    return t->use_count - 1;
+    }
   
-  if (cp_argtype *t = new cp_argtype) {
-    t->name = name;
-    t->parse = parse;
-    t->store = store;
-    t->user_data = user_data;
-    t->flags = flags;
-    t->description = desc;
-    t->internal = internal;
-    t->use_count = 1;
-    int bucket = argtype_bucket(name);
-    t->next = argtype_hash[bucket];
-    argtype_hash[bucket] = t;
-    return 0;
-  } else
-    return -2;
+    if (cp_argtype *t = new cp_argtype) {
+	t->name = name;
+	t->parse = parse;
+	t->store = store;
+	t->user_data = user_data;
+	t->flags = flags;
+	t->description = desc;
+	t->internal = internal;
+	t->use_count = 1;
+	int bucket = argtype_bucket(name);
+	t->next = argtype_hash[bucket];
+	argtype_hash[bucket] = t;
+	return 0;
+    } else
+	return -ENOMEM;
 }
 
 int
 cp_register_argtype(const char *name, const char *desc, int flags,
 		    cp_parsefunc parse, cp_storefunc store, void *user_data)
 {
-  return cp_register_argtype(name, desc, flags, parse, store, -1, user_data);
+    return cp_register_argtype(name, desc, flags, parse, store, -1, user_data);
 }
 
 
@@ -2606,80 +2606,82 @@ static void
 stringlist_parsefunc(cp_value *v, const String &arg,
 		     ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
 {
-  const char *desc = v->description;
-  const cp_argtype *argtype = v->argtype;
+    const char *desc = v->description;
+    const cp_argtype *argtype = v->argtype;
 #ifndef CLICK_TOOL
-  (void) context;
+    (void) context;
 #endif
 
-  if (HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(argtype->user_data)) {
-    String word;
-    if (cp_word(arg, &word))
-      if (int *valp = m->findp(word)) {
-	v->v.i = *valp;
-	return;
-      }
-  }
+    if (HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(argtype->user_data)) {
+	String word;
+	if (cp_word(arg, &word))
+	    if (int *valp = m->findp(word)) {
+		v->v.i = *valp;
+		return;
+	    }
+    }
 
-  if (argtype->flags & cpArgAllowNumbers) {
-    if (!cp_integer(arg, &v->v.i))
-      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
-    else if (cp_errno == CPE_OVERFLOW)
-      errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
-  } else
-    errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+    if (argtype->flags & cpArgAllowNumbers) {
+	if (!cp_integer(arg, &v->v.i))
+	    errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+	else if (cp_errno == CPE_OVERFLOW)
+	    errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
+    } else
+	errh->error("%s takes %s (%s)", argname, argtype->description, desc);
 }
 
 int
 cp_register_stringlist_argtype(const char *name, const char *desc, int flags)
 {
-  return cp_register_argtype(name, desc, flags, stringlist_parsefunc, default_storefunc, cpiInteger);
+    return cp_register_argtype(name, desc, flags, stringlist_parsefunc, default_storefunc, cpiInteger);
 }
 
 int
 cp_extend_stringlist_argtype(const char *name, ...)
 {
-  cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name));
-  if (!t || t->parse != stringlist_parsefunc)
-    return -2;
-  HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(t->user_data);
-  if (!m)
-    t->user_data = m = new HashMap<String, int>();
+    cp_argtype *t = const_cast<cp_argtype *>(cp_find_argtype(name));
+    if (!t || t->parse != stringlist_parsefunc)
+	return -ENOENT;
+    HashMap<String, int> *m = reinterpret_cast<HashMap<String, int> *>(t->user_data);
+    if (!m)
+	t->user_data = m = new HashMap<String, int>();
+    if (!m)
+	return -ENOMEM;
   
-  va_list val;
-  va_start(val, name);
-  const char *s;
-  int retval = 0;
-  while ((s = va_arg(val, const char *))) {
-    int value = va_arg(val, int);
-    if (cp_is_word(s))
-      m->insert(String(s), value);
-    else
-      retval = -1;
-  }
-  va_end(val);
-  return retval;
+    va_list val;
+    va_start(val, name);
+    const char *s;
+    int retval = 0;
+    while ((s = va_arg(val, const char *))) {
+	int value = va_arg(val, int);
+	if (cp_is_word(s))
+	    m->insert(String(s), value);
+	else
+	    retval = -1;
+    }
+    va_end(val);
+    return retval;
 }
 
 
 void
 cp_unregister_argtype(const char *name)
 {
-  cp_argtype **prev = &argtype_hash[argtype_bucket(name)];
-  cp_argtype *trav = *prev;
-  while (trav && strcmp(trav->name, name) != 0) {
-    prev = &trav->next;
-    trav = trav->next;
-  }
-  if (trav) {
-    trav->use_count--;
-    if (trav->use_count <= 0) {
-      if (trav->parse == stringlist_parsefunc)
-	delete reinterpret_cast<HashMap<String, int> *>(trav->user_data);
-      *prev = trav->next;
-      delete trav;
+    cp_argtype **prev = &argtype_hash[argtype_bucket(name)];
+    cp_argtype *trav = *prev;
+    while (trav && strcmp(trav->name, name) != 0) {
+	prev = &trav->next;
+	trav = trav->next;
     }
-  }
+    if (trav) {
+	trav->use_count--;
+	if (trav->use_count <= 0) {
+	    if (trav->parse == stringlist_parsefunc)
+		delete reinterpret_cast<HashMap<String, int> *>(trav->user_data);
+	    *prev = trav->next;
+	    delete trav;
+	}
+    }
 }
 
 
@@ -2688,17 +2690,17 @@ static cp_value *cp_values;
 static Vector<int> *cp_parameter_used;
 
 enum {
-  kwSuccess = 0,
-  kwDupKeyword = -1,
-  kwNoKeyword = -2,
-  kwUnkKeyword = -3,
-  kwMissingKeyword = -4
+    kwSuccess = 0,
+    kwDupKeyword = -1,
+    kwNoKeyword = -2,
+    kwUnkKeyword = -3,
+    kwMissingKeyword = -4
 };
 
 static inline bool
 special_argtype_for_keyword(const cp_argtype *t)
 {
-  return t && t->internal == cpiArguments;
+    return t && t->internal == cpiArguments;
 }
 
 static int
@@ -2902,14 +2904,14 @@ CpVaHelper::add_keyword_error(StringAccum &sa, int err, const String &arg,
 int
 CpVaHelper::finish_keyword_error(const char *format, const char *bad_keywords, ErrorHandler *errh)
 {
-  StringAccum keywords_sa;
-  for (int i = npositional; i < nvalues; i++) {
-    if (i > npositional)
-      keywords_sa << ", ";
-    keywords_sa << cp_values[i].keyword;
-  }
-  errh->error(format, bad_keywords, keywords_sa.cc());
-  return -1;
+    StringAccum keywords_sa;
+    for (int i = npositional; i < nvalues; i++) {
+	if (i > npositional)
+	    keywords_sa << ", ";
+	keywords_sa << cp_values[i].keyword;
+    }
+    errh->error(format, bad_keywords, keywords_sa.cc());
+    return -EINVAL;
 }
 
 int
@@ -2995,7 +2997,7 @@ CpVaHelper::assign_arguments(const Vector<String> &args, const char *argname, Er
       errh->error("%s %ss; expected '%s'", whoops, argname, signature.cc());
     else
       errh->error("expected empty %s list", argname);
-    return -1;
+    return -EINVAL;
   }
 
   // clear 'argtype' on unused arguments
@@ -3040,7 +3042,7 @@ CpVaHelper::parse_arguments(const char *argname,
 
   // check for failure
   if (errh->nerrors() != nerrors_in)
-    return -1;
+    return -EINVAL;
   
   // if success, actually set the values
   int nset = 0;
@@ -3181,7 +3183,7 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
   // check common case
   if (keys.size() == 0 || !keys.back()) {
     if (argv.size() != keys.size())
-      return -1;
+      return -EINVAL;
     else {
       if (values)
 	*values = argv;
@@ -3190,7 +3192,7 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
   }
 
   if (!cp_values || !cp_parameter_used || keys.size() > CP_VALUES_SIZE)
-    return -1; /*errh->error("out of memory in cp_va_parse");*/
+    return -ENOMEM; /*errh->error("out of memory in cp_va_parse");*/
 
   CpVaHelper cpva(cp_values, CP_VALUES_SIZE, false);
   if (keys.size() && keys.back() == "__REST__") {
@@ -3484,82 +3486,82 @@ cp_unparse_bandwidth(uint32_t bw)
 void
 cp_va_static_initialize()
 {
-  assert(!cp_values);
+    assert(!cp_values);
   
-  cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
-  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
-  cp_register_argtype(cpConfirmKeywords, "<confirmed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiConfirmKeywords);
-  cp_register_argtype(cpMandatoryKeywords, "<mandatory keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMandatoryKeywords);
-  cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
-  cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
+    cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
+    cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
+    cp_register_argtype(cpConfirmKeywords, "<confirmed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiConfirmKeywords);
+    cp_register_argtype(cpMandatoryKeywords, "<mandatory keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMandatoryKeywords);
+    cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
+    cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
   
-  cp_register_argtype(cpArgument, "arg", 0, default_parsefunc, default_storefunc, cpiArgument);
-  cp_register_argtype(cpArguments, "args", 0, default_parsefunc, default_storefunc, cpiArguments);
-  cp_register_argtype(cpString, "string", 0, default_parsefunc, default_storefunc, cpiString);
-  cp_register_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc, cpiWord);
-  cp_register_argtype(cpKeyword, "keyword", 0, default_parsefunc, default_storefunc, cpiKeyword);
-  cp_register_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc, cpiBool);
-  cp_register_argtype(cpByte, "byte", 0, default_parsefunc, default_storefunc, cpiByte);
-  cp_register_argtype(cpShort, "short", 0, default_parsefunc, default_storefunc, cpiShort);
-  cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
-  cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
-  cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
+    cp_register_argtype(cpArgument, "arg", 0, default_parsefunc, default_storefunc, cpiArgument);
+    cp_register_argtype(cpArguments, "args", 0, default_parsefunc, default_storefunc, cpiArguments);
+    cp_register_argtype(cpString, "string", 0, default_parsefunc, default_storefunc, cpiString);
+    cp_register_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc, cpiWord);
+    cp_register_argtype(cpKeyword, "keyword", 0, default_parsefunc, default_storefunc, cpiKeyword);
+    cp_register_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc, cpiBool);
+    cp_register_argtype(cpByte, "byte", 0, default_parsefunc, default_storefunc, cpiByte);
+    cp_register_argtype(cpShort, "short", 0, default_parsefunc, default_storefunc, cpiShort);
+    cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
+    cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
+    cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
 #ifdef HAVE_INT64_TYPES
-  cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
-  cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
+    cp_register_argtype(cpInteger64, "64-bit int", 0, default_parsefunc, default_storefunc, cpiInteger64);
+    cp_register_argtype(cpUnsigned64, "64-bit unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
 #endif
 #ifdef CLICK_USERLEVEL
-  cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
+    cp_register_argtype(cpFileOffset, "file offset", 0, default_parsefunc, default_storefunc, cpiFileOffset);
 #endif
-  cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
-  cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
-  cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
-  cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
+    cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
+    cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
+    cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
+    cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
 #ifdef HAVE_FLOAT_TYPES
-  cp_register_argtype(cpDouble, "double", 0, default_parsefunc, default_storefunc, cpiDouble);
+    cp_register_argtype(cpDouble, "double", 0, default_parsefunc, default_storefunc, cpiDouble);
 #endif
-  cp_register_argtype(cpSeconds, "time in sec", 0, default_parsefunc, default_storefunc, cpiSeconds);
-  cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
-  cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
-  cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
-  cp_register_argtype(cpInterval, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiInterval);
-  cp_register_argtype(cpBandwidth, "bandwidth", 0, default_parsefunc, default_storefunc, cpiBandwidth);
-  cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
-  cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
-  cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
-  cp_register_argtype(cpIPAddressList, "list of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressList);
-  cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
-  cp_register_argtype(cpTCPPort, "TCP port", 0, default_parsefunc, default_storefunc, cpiTCPPort);
-  cp_register_argtype(cpUDPPort, "UDP port", 0, default_parsefunc, default_storefunc, cpiUDPPort);
+    cp_register_argtype(cpSeconds, "time in sec", 0, default_parsefunc, default_storefunc, cpiSeconds);
+    cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
+    cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
+    cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
+    cp_register_argtype(cpInterval, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiInterval);
+    cp_register_argtype(cpBandwidth, "bandwidth", 0, default_parsefunc, default_storefunc, cpiBandwidth);
+    cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
+    cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
+    cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
+    cp_register_argtype(cpIPAddressList, "list of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressList);
+    cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
+    cp_register_argtype(cpTCPPort, "TCP port", 0, default_parsefunc, default_storefunc, cpiTCPPort);
+    cp_register_argtype(cpUDPPort, "UDP port", 0, default_parsefunc, default_storefunc, cpiUDPPort);
 #ifndef CLICK_TOOL
-  cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
-  cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
-  cp_register_argtype(cpReadHandlerCall, "read handler name", 0, default_parsefunc, default_storefunc, cpiReadHandlerCall);
-  cp_register_argtype(cpWriteHandlerCall, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiWriteHandlerCall);
+    cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
+    cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
+    cp_register_argtype(cpReadHandlerCall, "read handler name", 0, default_parsefunc, default_storefunc, cpiReadHandlerCall);
+    cp_register_argtype(cpWriteHandlerCall, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiWriteHandlerCall);
 #endif
 #ifdef HAVE_IP6
-  cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
-  cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
-  cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
+    cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
+    cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
+    cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
 #endif
 #ifdef HAVE_IPSEC
-  cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
+    cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
 #endif
 #ifdef CLICK_USERLEVEL
-  cp_register_argtype(cpFilename, "filename", 0, default_parsefunc, default_storefunc, cpiFilename);
+    cp_register_argtype(cpFilename, "filename", 0, default_parsefunc, default_storefunc, cpiFilename);
 #endif
 
-  cp_values = new cp_value[CP_VALUES_SIZE];
-  cp_parameter_used = new Vector<int>;
+    cp_values = new cp_value[CP_VALUES_SIZE];
+    cp_parameter_used = new Vector<int>;
 
 #ifdef TEST_REAL2
-  test_unparse_real2();
+    test_unparse_real2();
 #endif
 
 #if CLICK_USERLEVEL && HAVE_IP6
-  // force all IP6 library objects to be included
-  extern int IP6FlowID_linker_trick;
-  IP6FlowID_linker_trick++;
+    // force all IP6 library objects to be included
+    extern int IP6FlowID_linker_trick;
+    IP6FlowID_linker_trick++;
 #endif
 }
 

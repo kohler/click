@@ -30,7 +30,7 @@ CLICK_DECLS
 void
 ICMPError::static_initialize()
 {
-  if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) == 0)
+  if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) >= 0)
     cp_extend_stringlist_argtype("ICMP.type",
 				 "echo-reply", ICMP_ECHOREPLY,
 				 "unreachable", ICMP_UNREACH,
@@ -48,7 +48,7 @@ ICMPError::static_initialize()
 				 "maskreq", ICMP_MASKREQ,
 				 "maskreq-reply", ICMP_MASKREQREPLY,
 				 (const char*) 0);
-  if (cp_register_stringlist_argtype("ICMP.code", "ICMP message code", cpArgAllowNumbers) == 0) {
+  if (cp_register_stringlist_argtype("ICMP.code", "ICMP message code", cpArgAllowNumbers) >= 0) {
     cp_extend_stringlist_argtype("ICMP.code",
 				 "net", ICMP_UNREACH_NET,
 				 "host", ICMP_UNREACH_HOST,
