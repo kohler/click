@@ -1,4 +1,4 @@
-/*
+/* -*- c-basic-offset: 4 -*-
  * ControlSocket.java -- class for manipulating ControlSockets
  * Douglas S. J. De Couto, Eddie Kohler
  *
@@ -121,7 +121,7 @@ public class ControlSocket {
      * @see #socketName
      */
     public String toString() {
-	return socketName();
+	return _host + ":" + _port;
     }
   
 
