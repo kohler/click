@@ -1,3 +1,12 @@
+2001-10-27 Saturday 11:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc (1.24), grid.hh (1.29),
+	gridroutetable.cc (1.15), hello.cc (1.35), locqueryresponder.cc
+	(1.19), lookuplocalgridroute.cc (1.26), lrhello.cc (1.20),
+	updateroutes.cc (1.22): fixed some possible null reference bugs
+	(ala dawson's sosp01 papers); ruthlessly rectified dan's coding
+	style errors, and no, i am not a martinet always...
+
 2001-10-26 Friday 10:45  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/lookupiprouteron.cc (1.8): reordered push to prevent
