@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPRateMonitor(PB, OFF, RATIO, THRESH [, MEMORY, ANNO])
+ * IPRateMonitor(PB, RATIO, THRESH [, MEMORY, ANNO])
  * =s measures coming and going IP traffic rates
  *
  * =d
@@ -18,8 +18,6 @@
  * annotate packets with both the forward rate and reverse rate.
  *
  * PB: PACKETS or BYTES. Count number of packets or bytes.
- *
- * OFF: offset in packet where IP header starts
  *
  * RATIO: chance that EWMA gets updated before packet is annotated with EWMA
  * value.
@@ -140,7 +138,6 @@ private:
   
   bool _count_packets;		// packets or bytes
   bool _anno_packets;		// annotate packets?
-  int _offset;			// offset in packet
   int _thresh;			// threshold, when to split
   unsigned int _memmax;		// max. memory usage
   unsigned int _ratio;		// inspect 1 in how many packets?
@@ -308,7 +305,7 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
 inline void
 IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
 {
-  click_ip *ip = (click_ip *) (p->data() + _offset);
+  const click_ip *ip = p->ip_header();
   int val = _count_packets ? 1 : ip->ip_len;
 
   if (forward)

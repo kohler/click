@@ -24,7 +24,7 @@
 
 IPRateMonitor::IPRateMonitor()
   : _count_packets(true), _anno_packets(true),
-    _offset(0), _thresh(1), _memmax(0), _ratio(1),
+    _thresh(1), _memmax(0), _ratio(1),
     _base(NULL), _alloced_mem(0), _first(0), 
     _last(0), _prev_deleted(0)
 {
@@ -55,7 +55,6 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
   _anno_packets = true;
   if (cp_va_parse(conf, this, errh,
 		  cpWord, "monitor type", &count_what,
-		  cpUnsigned, "offset", &_offset,
 		  cpNonnegFixed, "ratio", 16, &_ratio,
 		  cpUnsigned, "threshold", &_thresh,
 		  cpOptional, 
