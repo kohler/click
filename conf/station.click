@@ -47,8 +47,8 @@ winfo :: WirelessInfo(SSID "", BSSID 00:00:00:00:00:00, CHANNEL 1);
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
--> SetTXRate(RATE 2)
--> SetTXPower(POWER 63)
+-> SetTXRate(2)
+-> SetTXPower(63)
 -> extra_encap :: ExtraEncap()
 -> ToDevice (ath0);
 
@@ -56,6 +56,7 @@ q :: Queue(10)
 FromDevice(ath0)
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
+-> FilterPhyErr()
 -> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter(WINDOW 20)
 -> wifi_cl :: Classifier(0/00%0c, //mgt
@@ -91,7 +92,10 @@ station_assoc ::  AssociationRequester(ETH station_address,
 
 management_cl [0] -> Print ("assoc_req") -> Discard;
 management_cl [1] -> Print ("assoc_resp", 60) -> station_assoc;
-management_cl [2] -> bs :: BeaconScanner(RT rates, WIRELESS_INFO winfo) ->  Discard;
+management_cl [2] -> beacon_t :: Tee(2) 
+-> bs :: BeaconScanner(RT rates, WIRELESS_INFO winfo) ->  Discard;
+beacon_t [1] -> tracker :: BeaconTracker(WIRELESS_INFO winfo, TRACK 10) -> Discard;
+
 management_cl [3] -> station_assoc;
 management_cl [4] -> PrintWifi(probe_resp) -> bs;
 management_cl [5] -> PrintWifi(auth) -> station_auth;

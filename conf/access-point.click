@@ -11,7 +11,7 @@
 // 'click access_point.click'
 
 // Run it in the Linux kernel with
-// 'click-install test.click'
+// 'click-install access-point.click'
 // Messages are printed to the system log (run 'dmesg' to see them, or look
 // in /var/log/messages), and to the file '/click/messages'.
 
@@ -27,7 +27,7 @@ q :: Queue(10)
 FromDevice(ath0)
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
--> phyerr_filter :: PhyErrFilter()
+-> phyerr_filter :: FilterPhyErr()
 -> tx_filter :: FilterTX()
 -> dupe :: WifiDupeFilter(WINDOW 20) 
 -> wifi_cl :: Classifier(0/08%0c 1/01%03, //data
