@@ -1,3 +1,8 @@
+2005-02-27 Sunday 23:14  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* elements/ethernet/: arpquerier.cc (1.49), arpquerier.hh (1.35):
+	Added a read handler for the number of received ARP responses.
+
 2005-02-25 Friday 19:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* README (1.49): nit
