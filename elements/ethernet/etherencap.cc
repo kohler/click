@@ -45,15 +45,18 @@ EtherEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 EtherEncap::smaction(Packet *p)
 {
-  WritablePacket *q = p->push(14);
-  memcpy(q->data(), &_ethh, 14);
-  return q;
+  if (WritablePacket *q = p->push(14)) {
+    memcpy(q->data(), &_ethh, 14);
+    return q;
+  } else
+    return 0;
 }
 
 void
 EtherEncap::push(int, Packet *p)
 {
-  output(0).push(smaction(p));
+  if (Packet *q = smaction(p))
+    output(0).push(q);
 }
 
 Packet *

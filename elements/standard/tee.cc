@@ -69,7 +69,8 @@ Tee::push(int, Packet *p)
 {
   int n = noutputs();
   for (int i = 0; i < n - 1; i++)
-    output(i).push(p->clone());
+    if (Packet *q = p->clone())
+      output(i).push(q);
   output(n - 1).push(p);
 }
 
@@ -122,7 +123,8 @@ PullTee::pull(int)
   if (p) {
     int n = noutputs();
     for (int i = 1; i < n; i++)
-      output(i).push(p->clone());
+      if (Packet *q = p->clone())
+	output(i).push(q);
   }
   return p;
 }
