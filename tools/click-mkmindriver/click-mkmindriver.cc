@@ -281,7 +281,7 @@ print_k_makefile(const String &directory, const String &pkg, ErrorHandler *errh)
   sa << "INSTALLOBJS = " << pkg << "click.o\n\
 include Makefile\n\n";
   sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2make -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
+	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
 elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
 	(cd $(top_srcdir); ./click-buildtool elem2export) < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
 	@rm -f elements_" << pkg << ".d\n";
