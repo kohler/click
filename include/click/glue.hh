@@ -48,6 +48,7 @@ typedef unsigned long long u_quad_t;
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <linux/time.h>
+#include <linux/errno.h>
 #undef new
 #undef this
 #undef delete
@@ -105,6 +106,7 @@ void _leaving_ipb(void);
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

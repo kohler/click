@@ -24,7 +24,7 @@ class ErrorHandler {
   virtual int nerrors() const = 0;
   virtual void reset_counts() = 0;
   
-  // all error functions always return -1
+  // all error functions always return -EINVAL
   int verror(Seriousness, const String &, const char *, va_list);
 
   void ldebug(const String &, const char *, ...);

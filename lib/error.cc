@@ -53,7 +53,7 @@ ErrorHandler::warning(const char *format, ...)
   va_start(val, format);
   verror(Warning, String(), format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 int
@@ -63,7 +63,7 @@ ErrorHandler::error(const char *format, ...)
   va_start(val, format);
   verror(Error, String(), format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 int
@@ -73,7 +73,7 @@ ErrorHandler::fatal(const char *format, ...)
   va_start(val, format);
   verror(Fatal, String(), format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 void
@@ -101,7 +101,7 @@ ErrorHandler::lwarning(const String &where, const char *format, ...)
   va_start(val, format);
   verror(Warning, where, format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 int
@@ -111,7 +111,7 @@ ErrorHandler::lerror(const String &where, const char *format, ...)
   va_start(val, format);
   verror(Error, where, format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 int
@@ -121,7 +121,7 @@ ErrorHandler::lfatal(const String &where, const char *format, ...)
   va_start(val, format);
   verror(Fatal, where, format, val);
   va_end(val);
-  return -1;
+  return -EINVAL;
 }
 
 String
@@ -447,7 +447,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   String text = make_text(seriousness, s, val);
   text = decorate_text(seriousness, where, text);
   handle_text(seriousness, text);
-  return -1;
+  return -EINVAL;
 }
 
 String
