@@ -69,6 +69,22 @@ class AnyDevice : public Element { public:
 
 };
 
+
+class AnyTaskDevice : public AnyDevice { public:
+
+    AnyTaskDevice();
+
+    void adjust_tickets(int work);
+
+  protected:
+
+    Task _task;
+    int _max_tickets;
+    int _idles;
+
+};
+
+
 inline int
 AnyDevice::wakeup()
 {

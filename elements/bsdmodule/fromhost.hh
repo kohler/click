@@ -2,6 +2,7 @@
 #ifndef CLICK_FROMHOST_HH
 #define CLICK_FROMHOST_HH
 #include <click/element.hh>
+#include <click/notifier.hh>
 #include "elements/bsdmodule/anydevice.hh"
 
 class FromHost : public AnyDevice {

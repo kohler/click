@@ -28,11 +28,6 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
-#include <click/cxxprotect.h>
-CLICK_CXX_PROTECT
-
-CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
@@ -108,6 +103,8 @@ ToDevice::initialize(ErrorHandler *errh)
     to_device_map.insert(this);
   
     ScheduleInfo::initialize_task(this, &_task, device() != 0, errh);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+
 #ifdef HAVE_STRIDE_SCHED
     // start out with max number of tickets
     set_max_tickets( _task.tickets() );
@@ -136,6 +133,7 @@ ToDevice::run_task()
 {
     int busy;
     int sent = 0;
+    // click_chatter("ToDevice::run_task().");
 
     while (sent < _burst && (busy = IF_QFULL(&device()->if_snd)) == 0) {
 
@@ -155,7 +153,8 @@ ToDevice::run_task()
 #if 0
     adjust_tickets(sent);
 #endif
-    _task.fast_reschedule();
+    if (sent > 0 || busy || _signal)
+	_task.fast_reschedule();
     return sent > 0;
 }
 

@@ -171,7 +171,8 @@ RouterThread::unsleep()
 	wake_up_process(_sleeper);
 #endif
 #ifdef CLICK_BSDMODULE
-    wakeup_one(&_sleep_ident);
+    if (_sleep_ident)
+	wakeup_one(&_sleep_ident);
 #endif
 }
 

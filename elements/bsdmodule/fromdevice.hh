@@ -69,6 +69,12 @@ which can be used for better performance and stability).
 #include "elements/bsdmodule/anydevice.hh"
 #include <click/standard/storage.hh>
 
+enum poll_cmd { POLL_ONLY, POLL_AND_CHECK_STATUS, POLL_DEREGISTER };
+
+typedef void poll_handler_t (struct ifnet *ifp,
+                enum poll_cmd cmd, int count);
+
+
 class FromDevice : public AnyDevice, public Storage { public:
     
     FromDevice();
@@ -90,6 +96,8 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     bool run_task();
 
+    poll_handler_t *_poll_handler;
+
     int _npackets;
 #if CLICK_DEVICE_STATS
     int _perfcnt1_read, _perfcnt2_read;
@@ -100,6 +108,10 @@ class FromDevice : public AnyDevice, public Storage { public:
     unsigned _readers;		// how many readers registered for this?
 
     struct ifqueue *_inq;
+    int _polling;
+    int _poll_status_tick;
+    uint64_t _tstamp;
+
   private:
 
     bool _promisc;

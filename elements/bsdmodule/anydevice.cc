@@ -85,12 +85,10 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
     _dev = 0;
 }
 
-#if 0 /* MARKO XXX */
 AnyTaskDevice::AnyTaskDevice()
     : _task(this), _idles(0)
 {
 }
-#endif
 
 void
 AnyDeviceMap::initialize()

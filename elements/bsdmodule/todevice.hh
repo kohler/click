@@ -65,6 +65,7 @@ Resets C<packets> counter to zero when written.
 =a FromDevice, FromHost, ToHost, ToDevice.u */
 
 #include "elements/bsdmodule/anydevice.hh"
+#include <click/notifier.hh>
 
 class ToDevice : public AnyDevice {
   
@@ -92,6 +93,7 @@ class ToDevice : public AnyDevice {
  private:
 
   unsigned _burst;
+  NotifierSignal _signal;
   
 };
 

@@ -1,15 +1,16 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * fromdevice.{cc,hh} -- element steals packets from kernel devices using
- * register_net_in
+ * fromdevice.{cc,hh} -- element steals packets from kernel devices
+ *
  * Robert Morris
  * Eddie Kohler: AnyDevice, other changes
  * Benjie Chen: scheduling, internal queue
- * Nickolai Zeldovich, Luigi Rizzo: BSD
+ * Nickolai Zeldovich, Luigi Rizzo, Marko Zec: BSD
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2004 International Computer Science Institute
+ * Copyright (c) 2004 University of Zagreb
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,12 +32,31 @@
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
 
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <sys/linker.h>
+#include <net/if_var.h>
+#include <net/ethernet.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+
+#define POLL_LIST_LEN 128	// XXX should refernce a proper #include
+
+struct pollrec {
+        poll_handler_t  *handler;
+        struct ifnet    *ifp;
+};
+
+static int *polling;		// 1 = BSD poller; 2 = Click poller
+static int *poll_handlers;	// # of NICs registered for BSD kernel polling
+static int *reg_frac;		// How often we have to check status registers
+static struct pollrec *pr;	// BSD kernel polling handlers
+
 static AnyDeviceMap from_device_map;
 static int registered_readers;
 static int from_device_count;
 
-#include <net/if_var.h>
-#include <net/ethernet.h>
 
 /*
  * Process incoming packets using the ng_ether_input_p hook.
@@ -70,6 +90,32 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 
     FromDevice *me = (FromDevice *)(ifp->if_poll_intren);
 
+    /*
+     * If sysctl kern.polling.enable == 2 we should take care of polling
+     * this NIC from inside a Click thread, so steal the handler from BSD.
+     */
+    if (!me->_polling && (ifp->if_ipending & IFF_POLLING) &&
+	polling && *polling == 2) {
+	struct pollrec *prp = pr;
+	int i;
+
+	for (i = 0; i < *poll_handlers; i++, prp++)
+	    if (prp->ifp == ifp) {
+		me->_poll_handler = prp->handler;
+		me->_poll_status_tick = ticks;
+		prp->handler = NULL;
+		prp->ifp = NULL;
+		printf("Click FromDevice(%s%d) taking control over NIC driver polling\n", ifp->if_name, ifp->if_unit);
+		me->_polling = -1; // wakeup task thread only once more
+		break;
+	    }
+	if (!me->_polling) {
+	    printf("Strange, couldn't find polling handler for %s%d\n",
+			ifp->if_name, ifp->if_unit);
+	    me->_polling = -2; // Do not bother trying to register again
+	}
+    }
+
     // put the ethernet header back into the mbuf.
     M_PREPEND(m, sizeof(*eh), M_WAIT);
     bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
@@ -79,7 +125,13 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 	m_freem(m);
     } else
 	IF_ENQUEUE(me->_inq, m);
-    me->wakeup();
+    if (me->_polling != 1)
+	me->wakeup();
+    if (me->_polling == -1)
+	me->_polling = 1; // no need to wakeup task thread any more
+#ifdef FROMDEVICE_TSTAMP
+    me->_tstamp = rdtsc();
+#endif
 }
 
 /*
@@ -118,6 +170,20 @@ click_ether_output(struct ifnet *ifp, struct mbuf **mp)
 static void
 fromdev_static_initialize()
 {
+    linker_file_t kernel_lf = linker_find_file_by_id(1); /* kernel file */
+
+    pr = (struct pollrec *) linker_file_lookup_symbol(kernel_lf, "pr", 0);
+    reg_frac = (int *) linker_file_lookup_symbol(kernel_lf, "reg_frac", 0);
+    poll_handlers = (int *)
+		    linker_file_lookup_symbol(kernel_lf, "poll_handlers", 0);
+    if (pr && poll_handlers && reg_frac)
+	polling = (int *) linker_file_lookup_symbol(kernel_lf, "polling", 0);
+    else
+	polling = NULL;
+
+    if (polling)
+	printf("Cool, we are running Click on a polling capable kernel!\n");
+
     if (++from_device_count == 1)
 	from_device_map.initialize();
 }
@@ -135,6 +201,7 @@ FromDevice::FromDevice()
 {
     // no MOD_INC_USE_COUNT; rely on AnyDevice
     _readers = 0; // noone registered so far
+    _polling = 0; // we do not poll until NIC driver registers itself
     add_output();
     fromdev_static_initialize();
 }
@@ -261,6 +328,17 @@ FromDevice::cleanup(CleanupStage)
 	_inq = NULL ;
 	device()->if_poll_intren = NULL ;
     }
+    if (_polling == 1) {	// return polling handler to the kernel
+	struct pollrec *prp = pr;
+	int i;
+	for (i = 0; i < *poll_handlers; i++, prp++)
+	    if (prp->ifp == NULL)
+		break;
+	prp->handler = _poll_handler;
+	prp->ifp = _dev;
+	if (*poll_handlers == 0 && (_dev->if_flags & IFF_RUNNING))
+	    *poll_handlers = 1;
+    }
     splx(s);
     if (q) {		// we do not mutex for this.
 	int i, max = q->ifq_maxlen ;
@@ -291,6 +369,42 @@ FromDevice::run_task()
 {
     int npq = 0;
     // click_chatter("FromDevice::run_task().");
+
+    if (_dev && _polling == 1) {
+	if (_dev->if_ipending & IFF_POLLING) {
+	    enum poll_cmd cmd;
+
+	    if ( _poll_status_tick <= ticks ) {
+		_poll_status_tick = ticks + *reg_frac;
+		cmd = POLL_AND_CHECK_STATUS;
+	    } else
+		cmd = POLL_ONLY;
+
+	    if ( *polling != 2 ) { // Need to return the handler to the kernel
+		struct pollrec *prp = pr;
+		int i;
+		_polling = 0;		// No more polling in Click
+		for (i = 0; i < *poll_handlers; i++, prp++)
+		    if (prp->ifp == NULL)
+			break;
+		prp->handler = _poll_handler;
+		prp->ifp = _dev;
+		if (*poll_handlers == 0 && (_dev->if_flags & IFF_RUNNING))
+		    *poll_handlers = 1;
+	    } else
+		_poll_handler(_dev, cmd, _burst);
+	} else
+	    _polling = 0;		// No more polling
+    }
+
+#ifdef FROMDEVICE_TSTAMP
+    if (_tstamp) {
+	uint64_t now = rdtsc();
+	click_chatter("FromDevice::run_task() latency=%ld", now - _tstamp);
+	_tstamp = 0;
+    }
+#endif
+
     while (npq < _burst) {
 	struct mbuf *m = 0;
 
@@ -301,6 +415,8 @@ FromDevice::run_task()
 	    set_need_wakeup();
 	    splx(s);
 	    adjust_tickets(npq);
+	    if (_polling)
+		_task.fast_reschedule();
 	    return npq > 0;
 	}
 	splx(s);

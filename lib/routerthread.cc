@@ -318,8 +318,13 @@ RouterThread::run_os()
     }
     SET_STATE(S_RUNNING);
 # elif defined(CLICK_BSDMODULE)
-    /*yield(curproc, NULL);*/
-    tsleep(&_sleep_ident, PPAUSE, "pause", 1);
+    if (!empty()) {	// just schedule others for a moment
+	yield(curproc, NULL);
+    } else {
+	_sleep_ident = &_sleep_ident;	// arbitrary address, != NULL
+	tsleep(&_sleep_ident, PPAUSE, "pause", 1);
+	_sleep_ident = NULL;
+    }
 # else
 #  error "Compiling for unknown target."
 # endif
