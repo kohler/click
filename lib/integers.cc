@@ -66,4 +66,30 @@ first_bit_set(uint64_t value)
 
 #endif
 
+uint32_t
+int_sqrt(uint32_t u)
+{
+    uint32_t prev = 0x7FFFFFFF;
+    uint32_t work = u;
+    if (work > 0)
+	while (work < prev)
+	    prev = work, work = (work + (u/work))/2;
+    return work;
+}
+
+#ifdef HAVE_INT64_TYPES
+
+uint64_t
+int_sqrt(uint64_t u)
+{
+    uint64_t prev = ~((uint64_t)1 << 63);
+    uint64_t work = u;
+    if (work > 0)
+	while (work < prev)
+	    prev = work, work = (work + (u/work))/2;
+    return work;
+}
+
+#endif
+
 CLICK_ENDDECLS

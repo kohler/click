@@ -25,5 +25,10 @@ int first_bit_set(uint32_t);
 int first_bit_set(uint64_t);
 #endif
 
+uint32_t int_sqrt(uint32_t);
+#ifdef HAVE_INT64_TYPES
+uint64_t int_sqrt(uint64_t);
+#endif
+
 CLICK_ENDDECLS
 #endif
