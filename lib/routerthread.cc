@@ -248,28 +248,31 @@ RouterThread::run_tasks(int ntasks)
 inline void
 RouterThread::run_os()
 {
+#if CLICK_LINUXMODULE
+    // set state to interruptible early to avoid race conditions
+    _sleeper = current;
+    current->state = TASK_INTERRUPTIBLE;
+#endif
+    
     unlock_tasks();
 
 #if CLICK_USERLEVEL
     _master->run_selects(!empty());
 #elif !defined(CLICK_GREEDY)
 # if CLICK_LINUXMODULE		/* Linux kernel module */
-    if (!empty())		// just schedule others for a second
+    if (!empty()) {		// just schedule others for a second
+	current->state = TASK_RUNNING;
 	schedule();
-    else {
+    } else {
 	struct timeval wait;
-	if (_id != 0 || !_master->timer_delay(&wait)) {
-	    _sleeper = current;
-	    current->state = TASK_INTERRUPTIBLE;
+	if (_id != 0 || !_master->timer_delay(&wait))
 	    schedule();
-	    _sleeper = 0;
-	} else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ)) {
-	    _sleeper = current;
-	    current->state = TASK_INTERRUPTIBLE;
+	else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ))
 	    (void) schedule_timeout((wait.tv_sec * CLICK_HZ) + (wait.tv_usec * CLICK_HZ / 1000000) - 1);
-	    _sleeper = 0;
-	} else
+	else {
+	    current->state = TASK_RUNNING;
 	    schedule();
+	}
     }
 # else				/* BSD kernel module */
     extern int click_thread_priority;
@@ -282,6 +285,11 @@ RouterThread::run_os()
 #endif
     
     nice_lock_tasks();
+
+#if CLICK_LINUXMODULE
+    // set state to interruptible early to avoid race conditions
+    _sleeper = 0;
+#endif
 }
 
 void
@@ -305,6 +313,10 @@ RouterThread::driver()
   driver_loop:
 #endif
 
+    // run task requests (1)
+    if (_pending)
+	_master->process_pending(this);
+    
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
     run_tasks(DRIVER_TASKS_PER_ITER);
@@ -336,10 +348,6 @@ RouterThread::driver()
     }
 #endif
 
-    // run task requests
-    if (_pending)
-	_master->process_pending(this);
-    
     if (*runcount > 0) {
 	// run occasional tasks: timers, select, etc.
 	iter++;
