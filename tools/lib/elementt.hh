@@ -21,10 +21,11 @@ struct ElementT {
 
     const String &name() const		{ return _name; }
     const char *name_cc() const		{ return _name.cc(); }
+    bool anonymous() const		{ return _name && _name[0] == ';'; }
     
     ElementClassT *type() const		{ return _type; }
     String type_name() const		{ return _type->name(); }
-    const char *type_name_cc() const	{ return _type->name_cc(); }
+    const char *type_name_cc() const	{ return _type->printable_name_cc(); }
     int type_uid() const		{ return _type ? _type->uid() : -1; }
     void set_type(ElementClassT *);
 
@@ -48,6 +49,9 @@ struct ElementT {
     int noutputs() const		{ return _noutputs; }
     
     String declaration() const;
+
+    static bool name_ok(const String &, bool allow_anon_names = false);
+    static void redeclaration_error(ErrorHandler *, const char *type, String name, const String &landmark, const String &old_landmark);
     
   private:
 

@@ -155,8 +155,7 @@ where the
 is chosen to make the name unique. These numbers are predictable: when the
 system parses a Click file twice, that file's anonymous elements will get
 the same generated names each time. Nothing prevents a user from declaring
-an element named like an anonymous element, which can lead to errors if the
-system tries to use that name itself. We suggest that users avoid the `@'
+an element named like an anonymous element. We suggest that users avoid the `@'
 character in their element names.
 .PP
 Not all elements can usefully be anonymous, since an anonymous element can
@@ -358,7 +357,7 @@ a -> compound/x :: X -> b;
 .Re
 For this purpose, anonymous compound elements are given constructed names
 like
-.RI `@Class number '.
+.RI `@ number '.
 Nothing prevents a user from declaring an element named like a compound
 element component. We suggest that users generally avoid using the `/'
 character in their element names.

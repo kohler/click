@@ -53,7 +53,6 @@ class LexerT { public:
   
     void reset(const String &data, const String &filename = String());
     void clear();
-    void set_router(RouterT *);
     void set_lexinfo(LexerTInfo *);
     void ignore_line_directives(bool g)	{ _ignore_line_directives = g; }
 
@@ -77,7 +76,7 @@ class LexerT { public:
     bool ystatement(bool nested = false);
 
     RouterT *router() const		{ return _router; }
-    RouterT *take_router();
+    RouterT *finish();
   
   protected:
   
@@ -122,7 +121,6 @@ class LexerT { public:
     int lerror(int, int, const char *, ...);
     int lerror(const Lexeme &, const char *, ...);
     String anon_element_name(const String &) const;
-    String anon_element_class_name(String) const;
 
     bool expect(int, bool report_error = true);
     int next_pos() const;

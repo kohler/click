@@ -28,7 +28,7 @@ class ElementClassT { public:
     void unuse()			{ if (--_use_count <= 0) delete this; }
 
     const String &name() const		{ return _name; }
-    const char *name_cc()		{ return _name.cc(); }
+    const char *printable_name_cc();
     int unique_id() const		{ return _unique_id; }
     int uid() const			{ return _unique_id; }
     enum { UNUSED_UID = -1, TUNNEL_UID = 0 };

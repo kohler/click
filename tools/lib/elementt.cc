@@ -42,6 +42,7 @@ ElementT::ElementT(const String &n, ElementClassT *eclass,
       _owner(0)
 {
     assert(_type);
+    assert(name_ok(_name, true));
     _type->use();
 }
 
@@ -59,6 +60,53 @@ ElementT::~ElementT()
 {
     if (_type)
 	_type->unuse();
+}
+
+bool
+ElementT::name_ok(const String &name, bool allow_anon_names)
+{
+    const char *data = name.data();
+    int pos = 0, len = name.length();
+
+    // check anonymous name syntax
+    if (len > 0 && data[pos] == ';' && allow_anon_names) {
+	pos++;
+	int epos = len - 1;
+	while (epos > 1 && isdigit(data[epos]))
+	    epos--;
+	if (epos == len - 1 || data[epos] != '@')
+	    return false;
+    }
+    
+    // must have at least one character, must not start with slash
+    if (pos >= len || data[pos] == '/')
+	return false;
+    while (1) {
+	if (isdigit(data[pos])) { // check for all-digit component
+	    while (pos < len && isdigit(data[pos]))
+		pos++;
+	    if (pos >= len || data[pos] == '/')
+		return false;
+	}
+	while (pos < len && (isalnum(data[pos]) || data[pos] == '_' || data[pos] == '@'))
+	    pos++;
+	if (pos == len)
+	    return true;
+	else if (data[pos] != '/' || pos == len - 1 || data[pos + 1] == '/')
+	    return false;
+	else
+	    pos++;
+    }
+}
+
+void
+ElementT::redeclaration_error(ErrorHandler *errh, const char *what, String name, const String &landmark, const String &old_landmark)
+{
+    if (!what)
+	what = "";
+    const char *sp = (strlen(what) ? " " : "");
+    errh->lerror(landmark, "redeclaration of %s%s`%s'", what, sp, name.cc());
+    errh->lerror(old_landmark, "`%s' previously declared here", name.cc());
 }
 
 

@@ -118,7 +118,7 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
 	return -2;
 
       default:
-	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->name_cc());
+	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->printable_name_cc());
 	pos++;
 	return -1;
     
@@ -137,7 +137,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
     String landmark = e->landmark();
     String pc = etype->traits().processing_code();
     if (!pc) {
-	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->name_cc());
+	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->printable_name_cc());
 	return;
     }
 

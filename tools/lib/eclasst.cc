@@ -81,6 +81,15 @@ ElementClassT::ElementClassT(const String &name, int uid)
     unique_id_storage = uid + 1;
 }
 
+const char *
+ElementClassT::printable_name_cc()
+{
+    if (_name)
+	return _name.cc();
+    else
+	return "<anonymous>";
+}
+
 void
 ElementClassT::set_default_class(ElementClassT *ec)
 {
@@ -176,10 +185,8 @@ ElementClassT::direct_expand_element(
     }
 
     // check for old element
-    if (ElementT *new_e = tor->element(new_name)) {
-	errh->lerror(e->landmark(), "redeclaration of element `%s'", new_name.cc());
-	errh->lerror(new_e->landmark(), "`%s' previously declared here", new_e->declaration().cc());
-    }
+    if (ElementT *new_e = tor->element(new_name))
+	ElementT::redeclaration_error(errh, "element", new_name, e->landmark(), new_e->landmark());
     
     // add element
     return tor->get_element(new_name, this, new_configuration, e->landmark());
@@ -346,7 +353,7 @@ CompoundElementClassT::finish(ErrorHandler *errh)
     if (ElementT *einput = _router->element("input")) {
 	_ninputs = einput->noutputs();
 	if (einput->ninputs())
-	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", name_cc());
+	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", printable_name_cc());
 
 	if (_ninputs) {
 	    Vector<int> used;
@@ -354,7 +361,7 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 	    assert(used.size() == _ninputs);
 	    for (int i = 0; i < _ninputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_landmark, "compound element `%s' input %d unused", name_cc(), i);
+		    errh->lerror(_landmark, "compound element `%s' input %d unused", printable_name_cc(), i);
 	}
     } else
 	_ninputs = 0;
@@ -362,7 +369,7 @@ CompoundElementClassT::finish(ErrorHandler *errh)
     if (ElementT *eoutput = _router->element("output")) {
 	_noutputs = eoutput->ninputs();
 	if (eoutput->noutputs())
-	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", name_cc());
+	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", printable_name_cc());
 
 	if (_noutputs) {
 	    Vector<int> used;
@@ -370,10 +377,13 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 	    assert(used.size() == _noutputs);
 	    for (int i = 0; i < _noutputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_landmark, "compound element `%s' output %d unused", name_cc(), i);
+		    errh->lerror(_landmark, "compound element `%s' output %d unused", printable_name_cc(), i);
 	}
     } else
 	_noutputs = 0;
+
+    // resolve anonymous element names
+    _router->deanonymize_elements();
 }
 
 void
@@ -387,8 +397,7 @@ CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler 
     CompoundElementClassT *nc = n->cast_compound();
     if (!nc) break;
     if (nc->_ninputs == _ninputs && nc->_noutputs == _noutputs && nc->_formals.size() == _formals.size()) {
-      errh->lerror(_landmark, "redeclaration of `%s'", signature().cc());
-      errh->lerror(nc->_landmark, "`%s' previously declared here", signature().cc());
+      ElementT::redeclaration_error(errh, "", signature(), _landmark, nc->_landmark);
       break;
     }
     n = nc->_next;
@@ -463,7 +472,7 @@ CompoundElementClassT::complex_expand_element(
 	if (errh)
 	    errh->lerror(compound->landmark(),
 			 "too %s arguments to compound element `%s(%s)'",
-			 whoops, name_cc(), signature.cc());
+			 whoops, printable_name_cc(), signature.cc());
 	for (int i = args.size(); i < nargs; i++)
 	    args.push_back("");
     }

@@ -45,11 +45,11 @@ RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
 
 RouterT::~RouterT()
 {
-  for (int i = 0; i < _etypes.size(); i++)
-    if (_etypes[i].eclass)
-      _etypes[i].eclass->unuse();
-  for (int i = 0; i < _elements.size(); i++)
-      delete _elements[i];
+    for (int i = 0; i < _etypes.size(); i++)
+	if (_etypes[i].eclass)
+	    _etypes[i].eclass->unuse();
+    for (int i = 0; i < _elements.size(); i++)
+	delete _elements[i];
 }
 
 void
@@ -241,21 +241,50 @@ ElementT *
 RouterT::add_anon_element(ElementClassT *type, const String &config,
 			  const String &landmark)
 {
-    String name = type->name() + "@" + String(_real_ecount + 1);
-    return add_element(ElementT(name, type, config, landmark));
+    String name = ";" + type->name() + "@" + String(_real_ecount + 1);
+    ElementT *result = add_element(ElementT(name, type, config, landmark));
+    assign_element_name(result->idx());
+    return result;
 }
 
 void
 RouterT::change_ename(int ei, const String &new_name)
 {
-    assert(new_name);
+    assert(ElementT::name_ok(new_name));
     ElementT &e = *_elements[ei];
     if (e.live()) {
-	if (_element_name_map[e.name()] == ei)
+	if (eindex(e.name()) == ei)
 	    _element_name_map.insert(e.name(), -1);
 	e._name = new_name;
 	_element_name_map.insert(new_name, ei);
     }
+}
+
+void
+RouterT::assign_element_name(int ei)
+{
+    assert(_elements[ei]->anonymous());
+    String name = _elements[ei]->name().substring(1);
+    if (eindex(name) >= 0) {
+	int at_pos = name.find_right('@');
+	assert(at_pos >= 0);
+	String prefix = name.substring(0, at_pos + 1);
+	int anonymizer;
+	cp_integer(name.substring(at_pos + 1), &anonymizer);
+	do {
+	    anonymizer++;
+	    name = prefix + String(anonymizer);
+	} while (eindex(name) >= 0);
+    }
+    change_ename(ei, name);
+}
+
+void
+RouterT::deanonymize_elements()
+{
+    for (int i = 0; i < _elements.size(); i++)
+	if (_elements[i]->anonymous())
+	    assign_element_name(i);
 }
 
 void
@@ -637,25 +666,34 @@ RouterT::insert_after(const PortT &inserter, const PortT &h)
 
 
 void
-RouterT::add_tunnel(String in, String out, const String &landmark,
-		    ErrorHandler *errh)
+RouterT::add_tunnel(const String &namein, const String &nameout,
+		    const String &landmark, ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
 
     ElementClassT *tun = ElementClassT::tunnel_type();
-    ElementT *ein = get_element(in, tun, String(), landmark);
-    ElementT *eout = get_element(out, tun, String(), landmark);
+    ElementT *ein = get_element(namein, tun, String(), landmark);
+    ElementT *eout = get_element(nameout, tun, String(), landmark);
 
-    if (!ein->tunnel())
-	errh->lerror(landmark, "redeclaration of element `%s'", in.cc());
-    else if (!eout->tunnel())
-	errh->lerror(landmark, "redeclaration of element `%s'", out.cc());
-    else if (ein->tunnel_output())
-	errh->lerror(landmark, "redeclaration of connection tunnel input `%s'", in.cc());
-    else if (eout->tunnel_input())
-	errh->lerror(landmark, "redeclaration of connection tunnel output `%s'", out.cc());
-    else {
+    bool ok = true;
+    if (!ein->tunnel()) {
+	ElementT::redeclaration_error(errh, "element", namein, landmark, ein->landmark());
+	ok = false;
+    }
+    if (!eout->tunnel()) {
+	ElementT::redeclaration_error(errh, "element", nameout, landmark, eout->landmark());
+	ok = false;
+    }
+    if (ein->tunnel_output()) {
+	ElementT::redeclaration_error(errh, "connection tunnel input", namein, landmark, ein->landmark());
+	ok = false;
+    }
+    if (eout->tunnel_input()) {
+	ElementT::redeclaration_error(errh, "connection tunnel output", nameout, landmark, eout->landmark());
+	ok = false;
+    }
+    if (ok) {
 	ein->_tunnel_output = eout;
 	eout->_tunnel_input = ein;
     }
@@ -1107,7 +1145,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     for (int i = 0; i < nelements; i++) {
 	const ElementT &e = *_elements[i];
 	if (e.dead() || e.tunnel())
-	    continue; // skip tunnels
+	    continue;		// skip tunnels
 	add_line_directive(sa, e.landmark());
 	sa << indent << e.name() << " :: " << e.type()->name();
 	if (e.configuration())

@@ -106,7 +106,7 @@ read_router_string(String text, const String &landmark, bool empty_ok,
     /* nada */;
 
   // done
-  return lexer.take_router();
+  return lexer.finish();
 }
 
 RouterT *

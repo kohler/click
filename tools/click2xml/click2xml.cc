@@ -125,6 +125,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 
     // print elements
     for (RouterT::iterator e = r->first_element(); e; e++) {
+	// XXX anonymous element class names?
 	fprintf(outf, "<element name='%s' class='%s'",
 		e->name_cc(), e->type_name_cc());
 	String s = e->landmark();

@@ -511,7 +511,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
 	/* nada */;
 
     // done
-    return lexer.take_router();
+    return lexer.finish();
 }
 
 

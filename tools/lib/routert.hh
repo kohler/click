@@ -58,6 +58,7 @@ class RouterT { public:
     ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
     void change_ename(int, const String &);
+    void deanonymize_elements();
     void free_element(ElementT *);
     void free_dead_elements();
 
@@ -68,7 +69,7 @@ class RouterT { public:
     const ConnectionT &connection(int c) const	{ return _conn[c]; }
     bool connection_live(int c) const		{ return _conn[c].live(); }
 
-    void add_tunnel(String, String, const String &, ErrorHandler *);
+    void add_tunnel(const String &, const String &, const String &, ErrorHandler *);
 
     bool add_connection(const PortT &, const PortT &, const String &landmark = String());
     bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
@@ -174,6 +175,7 @@ class RouterT { public:
     void update_noutputs(int);
     void update_ninputs(int);
     ElementT *add_element(const ElementT &);
+    void assign_element_name(int);
     void free_connection(int ci);
     void unlink_connection_from(int ci);
     void unlink_connection_to(int ci);

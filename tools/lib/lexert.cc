@@ -35,17 +35,17 @@ LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
     _tpos(0), _tfull(0), _router(0),
     _errh(errh)
 {
-  if (!_errh)
-    _errh = ErrorHandler::default_handler();
-  if (!stub_lexinfo)
-    stub_lexinfo = new LexerTInfo;
-  _lexinfo = stub_lexinfo;
-  clear();
+    if (!_errh)
+	_errh = ErrorHandler::default_handler();
+    if (!stub_lexinfo)
+	stub_lexinfo = new LexerTInfo;
+    _lexinfo = stub_lexinfo;
+    clear();
 }
 
 LexerT::~LexerT()
 {
-  clear();
+    clear();
 }
 
 void
@@ -70,36 +70,28 @@ LexerT::reset(const String &data, const String &filename)
 void
 LexerT::clear()
 {
-  if (_router)
-    delete _router;
-  _router = new RouterT;
-  
-  _big_string = "";
-  // _data was freed by _big_string
-  _data = 0;
-  _len = 0;
-  _pos = 0;
-  _filename = "";
-  _lineno = 0;
-  _tpos = 0;
-  _tfull = 0;
-  
-  _anonymous_offset = 0;
-  _compound_depth = 0;
+    if (_router)
+	delete _router;
+    _router = new RouterT;
+
+    _big_string = "";
+    // _data was freed by _big_string
+    _data = 0;
+    _len = 0;
+    _pos = 0;
+    _filename = "";
+    _lineno = 0;
+    _tpos = 0;
+    _tfull = 0;
+
+    _anonymous_offset = 0;
+    _compound_depth = 0;
 }
 
 void
 LexerT::set_lexinfo(LexerTInfo *li)
 {
-  _lexinfo = (li ? li : stub_lexinfo);
-}
-
-void
-LexerT::set_router(RouterT *r)
-{
-  if (_router)
-    delete _router;
-  _router = r;
+    _lexinfo = (li ? li : stub_lexinfo);
 }
 
 
@@ -518,26 +510,8 @@ LexerT::force_element_type(const Lexeme &t)
 String
 LexerT::anon_element_name(const String &class_name) const
 {
-    String prefix = class_name + "@";
     int anonymizer = _router->nelements() - _anonymous_offset + 1;
-    String name = prefix + String(anonymizer);
-    while (_router->eindex(name) >= 0) {
-	anonymizer++;
-	name = prefix + String(anonymizer);
-    }
-    return name;
-}
-
-String
-LexerT::anon_element_class_name(String prefix) const
-{
-    int anonymizer = _router->nelements() - _anonymous_offset + 1;
-    String name = prefix + String(anonymizer);
-    while (_router->try_type(name)) {
-	anonymizer++;
-	name = prefix + String(anonymizer);
-    }
-    return name;
+    return ";" + class_name + "@" + String(anonymizer);
 }
 
 int
@@ -729,10 +703,9 @@ LexerT::ydeclaration(const Lexeme &first_element)
 
     for (int i = 0; i < decls.size(); i++) {
 	String name = decls[i].string();
-	if (ElementT *old_e = _router->element(name)) {
-	    lerror(decls[i], "redeclaration of element `%s'", name.cc());
-	    _errh->lerror(old_e->landmark(), "`%s' previously declared here", old_e->declaration().cc());
-	} else if (_router->try_type(name))
+	if (ElementT *old_e = _router->element(name))
+	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
+	else if (_router->try_type(name))
 	    lerror(decls[i], "`%s' is an element class", name.cc());
 	else
 	    make_element(name, decls[i], decl_pos2, etype, configuration.string(), lm);
@@ -889,8 +862,6 @@ ElementClassT *
 LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 {
     bool anonymous = (name.length() == 0);
-    if (anonymous)
-	name = anon_element_class_name("@Class");
 
     // '{' was already read
     RouterT *old_router = _router;
@@ -1025,11 +996,13 @@ LexerT::ystatement(bool nested)
 // COMPLETION
 
 RouterT *
-LexerT::take_router()
+LexerT::finish()
 {
-  RouterT *r = _router;
-  _router = 0;
-  return r;
+    RouterT *r = _router;
+    _router = 0;
+    // resolve anonymous element names
+    r->deanonymize_elements();
+    return r;
 }
 
 #include <click/vector.cc>
