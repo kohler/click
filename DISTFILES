@@ -98,6 +98,7 @@ sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
 test-device.click
+test-tap.click
 test-tun.click
 test.click
 test2.click
@@ -107,12 +108,6 @@ udpcount.click
 udpgen.click
 unarp.clickpat
 wifi
-
-./conf/roofnet:
-etx.click
-gen_config_roofnet.pl
-read_handler.pl
-srcr.click
 
 ./conf/wifi:
 access-point.click
