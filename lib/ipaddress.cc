@@ -22,6 +22,7 @@
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/integers.hh>
 CLICK_DECLS
 
 IPAddress::IPAddress(const unsigned char *data)
@@ -53,11 +54,13 @@ int
 IPAddress::mask_to_prefix_len() const
 {
     uint32_t host_addr = ntohl(_addr);
-    uint32_t umask = 0xFFFFFFFFU;
-    for (int i = 32; i >= 0; i--, umask <<= 1)
-	if (host_addr == umask)
-	    return i;
-    return -1;
+    int prefix = ffs_lsb(host_addr);
+    if (prefix == 0)
+	return 0;
+    else if (host_addr == (0xFFFFFFFFU << (prefix - 1)))
+	return 33 - prefix;
+    else
+	return -1;
 }
 
 String
