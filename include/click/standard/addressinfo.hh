@@ -62,11 +62,13 @@ network address, and C<NAME:eth> is always an Ethernet address.
 
 =head1 DEFAULT ADDRESSES
 
-AddressInfo gives some names default values: if you do not define a value,
-AddressInfo will use the default.
+If you do not define an address for a given name, AddressInfo will use the
+default, if any.  Specifically, C<DEVNAME:eth> defaults to DEVNAME's Ethernet
+address, if DEVNAME refers to an Ethernet device such as C<eth0>.
 
-In the Linux kernel driver, C<DEVNAME:eth> defaults to DEVNAME's Ethernet
-address, if DEVNAME refers to an Ethernet device such as C<eth0>. */
+=a
+
+PortInfo */
 
 class AddressInfo : public Element { public:
   
@@ -89,11 +91,8 @@ class AddressInfo : public Element { public:
 
  private:
 
-  static const unsigned INFO_IP = 1;
-  static const unsigned INFO_IP_PREFIX = 2;
-  static const unsigned INFO_IP6 = 4;
-  static const unsigned INFO_IP6_PREFIX = 8;
-  static const unsigned INFO_ETHER = 16;
+  enum { INFO_IP = 1, INFO_IP_PREFIX = 2, INFO_IP6 = 4, INFO_IP6_PREFIX = 8,
+	 INFO_ETHER = 16 };
   
   struct Info {
     unsigned have;

@@ -171,8 +171,11 @@ AddressInfo::configure(Vector<String> &conf, ErrorHandler *errh)
   // put everything in the first AddressInfo
   const Vector<Element *> &ev = router()->elements();
   for (int i = 0; i <= eindex(); i++)
-    if (AddressInfo *si = (AddressInfo *)ev[i]->cast("AddressInfo"))
+    if (AddressInfo *si = (AddressInfo *)ev[i]->cast("AddressInfo")) {
+      if (si == this)
+	router()->set_attachment("AddressInfo", si);
       return si->add_info(conf, prefix, errh);
+    }
 
   // should never get here
   return -1;
@@ -202,11 +205,8 @@ AddressInfo::find_element(Element *e)
 {
   if (!e)
     return 0;
-  const Vector<Element *> &ev = e->router()->elements();
-  for (int i = 0; i < ev.size(); i++)
-    if (AddressInfo *e = (AddressInfo *)ev[i]->cast("AddressInfo"))
-      return e;
-  return 0;
+  else
+    return static_cast<AddressInfo *>(e->router()->attachment("AddressInfo"));
 }
 
 bool
