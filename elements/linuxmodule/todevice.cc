@@ -100,7 +100,6 @@ ToDevice::initialize(ErrorHandler *errh)
 
   // reset stats
   _busy_returns = 0; 
-  _pkts_sent = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_pulls = 0; 
@@ -116,8 +115,9 @@ ToDevice::initialize(ErrorHandler *errh)
   _perfcnt2_clean = 0;
   _perfcnt2_queue = 0;
 #endif
-#if CLICK_DEVICE_THESIS_STATS
+
   _npackets = 0;
+#if CLICK_DEVICE_THESIS_STATS
   _pull_cycles = 0;
 #endif
   
@@ -173,8 +173,8 @@ ToDevice::tx_intr()
     
     if (Packet *p = input(0).pull()) {
       
-#if CLICK_DEVICE_THESIS_STATS
       _npackets++;
+#if CLICK_DEVICE_THESIS_STATS
       _pull_cycles += click_get_cycles() - before_pull_cycles;
 #endif
     
@@ -225,7 +225,6 @@ ToDevice::tx_intr()
   }
 #endif
   if (busy) _busy_returns++;
-  if (sent > 0) _pkts_sent+=sent;
 
 #if HAVE_POLLING
   if (_polling) {
@@ -325,7 +324,7 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_rejected) + " packets rejected\n" +
     String(td->_hard_start) + " hard start xmit\n" +
     String(td->_busy_returns) + " device busy returns\n" +
-    String(td->_pkts_sent) + " packets sent\n" +
+    String(td->_npackets) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_idle_pulls) + " idle pulls\n" +
@@ -345,7 +344,6 @@ ToDevice_read_calls(Element *f, void *)
 #endif
 }
 
-#if CLICK_DEVICE_THESIS_STATS
 static String
 ToDevice_read_stats(Element *e, void *thunk)
 {
@@ -354,8 +352,10 @@ ToDevice_read_stats(Element *e, void *thunk)
   switch (which) {
    case 0:
     return String(td->_npackets) + "\n";
+#if CLICK_DEVICE_THESIS_STATS
    case 1:
     return String(td->_pull_cycles) + "\n";
+#endif
    default:
     return String();
   }
@@ -366,20 +366,21 @@ ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
   ToDevice *td = (ToDevice *)e;
   td->_npackets = 0;
+#if CLICK_DEVICE_THESIS_STATS
   td->_pull_cycles = 0;
+#endif
   return 0;
 }
-#endif
 
 void
 ToDevice::add_handlers()
 {
   add_read_handler("calls", ToDevice_read_calls, 0);
-#if CLICK_DEVICE_THESIS_STATS
   add_read_handler("packets", ToDevice_read_stats, 0);
+#if CLICK_DEVICE_THESIS_STATS
   add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
-  add_write_handler("reset_counts", ToDevice_write_stats, 0);
 #endif
+  add_write_handler("reset_counts", ToDevice_write_stats, 0);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
