@@ -212,7 +212,7 @@ dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h)
 CLICK_CHECK_DYNAMIC_LINKING
-if test "$HOST_TOOLS" ne host; then
+if test "$HOST_TOOLS" != host; then
 		CLICK_CHECK_BUILD_DYNAMIC_LINKING
 fi
 
