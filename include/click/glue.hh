@@ -85,17 +85,6 @@ strtoul(const char *nptr, char **endptr, int base)
 
 }
 
-/* do cycle counters over all the ipb code. */
-#if CLICK_STATS > 0
-void _entering_ipb(void);
-void _leaving_ipb(void);
-#define entering_ipb() _entering_ipb()
-#define leaving_ipb() _leaving_ipb()
-#else
-#define entering_ipb() 0
-#define leaving_ipb() 0
-#endif
-
 #define CLICK_HZ HZ
 #define click_gettimeofday(tvp) (do_gettimeofday(tvp))
 #define click_jiffies()		((unsigned)jiffies)

@@ -98,48 +98,6 @@ install_current_router(Router *r)
     start_click_sched(r, click_threads(), kernel_errh);
 }
 
-/*
- * Count cycles for all of IPB code.
- * FromDevice and ToDevice call entering_ipb() and leaving_ipb().
- */
-unsigned long long click_cycles = 0;
-unsigned int click_calls = 0;
-unsigned long long click_enter_time;
-int click_entered;
-
-static unsigned long cli_flags;
-
-#if CLICK_STATS > 0
-void
-_entering_ipb()
-{
-#if 1
-  save_flags(cli_flags);
-  cli();
-#endif
-
-  assert(click_entered == 0);
-  click_entered++;
-  click_enter_time = click_get_cycles();
-}
-
-void
-_leaving_ipb()
-{
-  unsigned long long t;
-  
-  t = click_get_cycles();
-  click_cycles += t - click_enter_time;
-  click_calls += 1;
-  assert(click_entered == 1);
-  click_entered -= 1;
-  
-#if 1
-  restore_flags(cli_flags);
-#endif
-}
-#endif /* CLICK_STATS */
-
 extern "C" void
 click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp);
 
@@ -148,10 +106,6 @@ read_cycles(Element *, void *)
 {
   StringAccum sa;
   sa << click_get_cycles() << " cycles\n";
-  sa << click_calls << " ipb calls\n";
-  sa << click_cycles << " ipb cycles\n";
-  click_calls = 0;
-  click_cycles = 0;
   return sa.take_string();
 }
 
