@@ -1,3 +1,36 @@
+2000-11-27 Monday 00:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man, elements/icmp/icmperror.cc,
+	elements/icmp/icmpsendpings.cc, elements/ip/fixipsrc.cc,
+	elements/ip/fixipsrc.hh, elements/ip/ipgwoptions.cc,
+	elements/ip/ipinputcombo.cc, elements/ip/ipoutputcombo.cc,
+	elements/ip/ipprint.cc, elements/ip/ipprint.hh,
+	elements/ip6/icmp6error.cc, elements/standard/checkpaint.cc,
+	elements/standard/counter.cc, elements/standard/counter.hh,
+	elements/standard/paint.cc, elements/standard/paint.hh,
+	elements/standard/painttee.cc, elements/standard/pokehandlers.cc,
+	elements/userlevel/controlsocket.cc,
+	elements/userlevel/controlsocket.hh, include/click/llrpc.h,
+	include/click/packet.hh, include/click/packet_anno.hh,
+	lib/confparse.cc, lib/packet.cc: bug fixes; added userlevel
+	destructor included in Packet data (so Packet might not own its
+	memory -- more flexible); removed specialized annotations from
+	packet.hh in favor of general annotations like user_anno_c(3) --
+	mnemonic names for these annotations are defined in
+	<click/packet_anno.hh>; updated NEWS
+
+2000-11-27 Monday 00:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: added support for "*"
+	write handler, which gives an element to create handlers as they
+	are requested (Mazu)
+
+2000-11-27 Monday 00:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/: proc_config.cc, proc_element.cc: use the "flush"
+	file operation when write handlers are closed, not "release"; that
+	way, user close() operation may get error message (Mazu)
+
 2000-11-21 Tuesday 23:59  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.5, lib/confparse.cc, lib/lexer.cc,
@@ -120,13 +153,13 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_vendor_info.h: file e1000_vendor_info.h was
-	initially added on branch smp_click.
+	* tools/e1000/e1000_proc.h: file e1000_proc.h was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_proc.h: file e1000_proc.h was initially added
-	on branch smp_click.
+	* tools/e1000/e1000_vendor_info.h: file e1000_vendor_info.h was
+	initially added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -155,17 +188,22 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000_fxhw.h: file e1000_fxhw.h was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
 	* tools/e1000/e1000_kcompat.h: file e1000_kcompat.h was initially
 	added on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
+	* tools/e1000/e1000_fxhw.h: file e1000_fxhw.h was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
 	* tools/e1000/e1000_fxhw.c: file e1000_fxhw.c was initially added
+	on branch smp_click.
+
+2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* tools/e1000/e1000.h.orig: file e1000.h.orig was initially added
 	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -175,22 +213,17 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/e1000.h.orig: file e1000.h.orig was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
 	* tools/e1000/base_comm.h: file base_comm.h was initially added on
 	branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/ans_os.c: file ans_os.c was initially added on branch
+	* tools/e1000/ans_os.h: file ans_os.h was initially added on branch
 	smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/ans_os.h: file ans_os.h was initially added on branch
+	* tools/e1000/ans_os.c: file ans_os.c was initially added on branch
 	smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -205,12 +238,12 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/ans_driver.c: file ans_driver.c was initially added
+	* tools/e1000/ans_driver.h: file ans_driver.h was initially added
 	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/ans_driver.h: file ans_driver.h was initially added
+	* tools/e1000/ans_driver.c: file ans_driver.c was initially added
 	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
@@ -230,13 +263,13 @@
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/Makefile.orig: file Makefile.orig was initially added
-	on branch smp_click.
+	* tools/e1000/README: file README was initially added on branch
+	smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
-	* tools/e1000/README: file README was initially added on branch
-	smp_click.
+	* tools/e1000/Makefile.orig: file Makefile.orig was initially added
+	on branch smp_click.
 
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -1574,12 +1607,12 @@
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.cc: file msqueue.cc was initially added
+	* elements/standard/msqueue.hh: file msqueue.hh was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.hh: file msqueue.hh was initially added
+	* elements/standard/msqueue.cc: file msqueue.cc was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 13:01  Eddie Kohler <eddietwo@lcs.mit.edu>
@@ -1947,12 +1980,12 @@
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
+	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
+	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
