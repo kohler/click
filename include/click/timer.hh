@@ -21,21 +21,21 @@ class Timer { public:
 
     bool initialized() const		{ return _router != 0; }
     bool scheduled() const		{ return _prev != 0; }
-    const struct timeval &expiry() const { return _expiry; }
+    const timeval &expiry() const	{ return _expiry; }
   
     inline void initialize(Router *);
     inline void initialize(Element *);
     void cleanup()			{ unschedule(); }
     void uninitialize()			{ cleanup(); }	// deprecated
 
-    void schedule_at(const struct timeval &);
-    inline void reschedule_at(const struct timeval &); // synonym
+    void schedule_at(const timeval &);
+    inline void reschedule_at(const timeval &); // synonym
 
     inline void schedule_now();
-    void schedule_after(const struct timeval &);
-    void schedule_after_s(uint32_t);
-    void schedule_after_ms(uint32_t);
-    inline void reschedule_after(const struct timeval &);
+    void schedule_after(const timeval &);
+    inline void schedule_after_s(uint32_t);
+    inline void schedule_after_ms(uint32_t);
+    inline void reschedule_after(const timeval &);
     void reschedule_after_s(uint32_t);
     void reschedule_after_ms(uint32_t);
 
@@ -45,7 +45,7 @@ class Timer { public:
   
     Timer *_prev;
     Timer *_next;
-    struct timeval _expiry;
+    timeval _expiry;
     TimerHook _hook;
     void *_thunk;
     Router *_router;
@@ -81,13 +81,25 @@ Timer::schedule_now()
 }
 
 inline void
-Timer::reschedule_after(const struct timeval &delta)
+Timer::schedule_after_s(uint32_t s)
+{
+    schedule_after(make_timeval(s, 0));
+}
+
+inline void
+Timer::schedule_after_ms(uint32_t ms)
+{
+    schedule_after(make_timeval(ms / 1000, (ms % 1000) * 1000));
+}
+
+inline void
+Timer::reschedule_after(const timeval &delta)
 {
     schedule_at(_expiry + delta);
 }
 
 inline void
-Timer::reschedule_at(const struct timeval &tv)
+Timer::reschedule_at(const timeval &tv)
 {
     schedule_at(tv);
 }

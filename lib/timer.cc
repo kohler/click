@@ -85,7 +85,7 @@ Timer::unmake_list()
 }
 
 void
-Timer::schedule_at(const struct timeval &when)
+Timer::schedule_at(const timeval &when)
 {
     // acquire lock, unschedule
     assert(_router && initialized());
@@ -119,29 +119,17 @@ Timer::schedule_at(const struct timeval &when)
 }
 
 void
-Timer::schedule_after_s(uint32_t s)
+Timer::schedule_after(const timeval &delta)
 {
-    struct timeval t;
+    timeval t;
     click_gettimeofday(&t);
-    t.tv_sec += s;
-    schedule_at(t);
-}
-
-void
-Timer::schedule_after_ms(uint32_t ms)
-{
-    struct timeval t, interval;
-    click_gettimeofday(&t);
-    interval.tv_sec = ms / 1000;
-    interval.tv_usec = (ms % 1000) * 1000;
-    timeradd(&t, &interval, &t);
-    schedule_at(t);
+    schedule_at(t + delta);
 }
 
 void
 Timer::reschedule_after_s(uint32_t s)
 {
-    struct timeval t = _expiry;
+    timeval t = _expiry;
     t.tv_sec += s;
     schedule_at(t);
 }
@@ -149,8 +137,8 @@ Timer::reschedule_after_s(uint32_t s)
 void
 Timer::reschedule_after_ms(uint32_t ms)
 {
-    struct timeval t = _expiry;
-    struct timeval interval;
+    timeval t = _expiry;
+    timeval interval;
     interval.tv_sec = ms / 1000;
     interval.tv_usec = (ms % 1000) * 1000;
     timeradd(&t, &interval, &t);
