@@ -1176,7 +1176,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
 --- ../linux-2.4.20-pure/include/asm-i386/highmem.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/asm-i386/highmem.h	2003-01-22 17:35:07.000000000 -0800
++++ ./include/asm-i386/highmem.h	2003-01-26 18:57:06.000000000 -0800
 @@ -91,7 +91,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -1268,9 +1268,21 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  static inline void * __memcpy(void * to, const void * from, size_t n)
  {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/atalk.h ./include/linux/atalk.h
+--- ../linux-2.4.20-pure/include/linux/atalk.h	2001-11-22 11:47:11.000000000 -0800
++++ ./include/linux/atalk.h	2003-01-27 15:57:46.000000000 -0800
+@@ -163,7 +163,7 @@
+ 
+ static inline struct atalk_iface *atalk_find_dev(struct net_device *dev)
+ {
+-	return dev->atalk_ptr;
++	return (struct atalk_iface *) dev->atalk_ptr;
+ }
+ 
+ extern struct at_addr *atalk_find_dev_addr(struct net_device *dev);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/highmem.h ./include/linux/highmem.h
 --- ../linux-2.4.20-pure/include/linux/highmem.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/highmem.h	2003-01-22 17:35:07.000000000 -0800
++++ ./include/linux/highmem.h	2003-01-26 18:57:06.000000000 -0800
 @@ -17,7 +17,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -1302,7 +1314,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	kunmap_atomic(vto, KM_USER1);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/if_vlan.h ./include/linux/if_vlan.h
 --- ../linux-2.4.20-pure/include/linux/if_vlan.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/if_vlan.h	2003-01-22 17:53:56.000000000 -0800
++++ ./include/linux/if_vlan.h	2003-01-26 19:01:47.000000000 -0800
 @@ -183,7 +183,7 @@
  		break;
  	};
@@ -1340,7 +1352,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /**
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/mm.h ./include/linux/mm.h
 --- ../linux-2.4.20-pure/include/linux/mm.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/linux/mm.h	2003-01-22 17:35:06.000000000 -0800
++++ ./include/linux/mm.h	2003-01-26 18:57:06.000000000 -0800
 @@ -576,7 +576,6 @@
  		return 0;
  }
@@ -1351,7 +1363,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern unsigned long page_unuse(struct page *);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/netdevice.h ./include/linux/netdevice.h
 --- ../linux-2.4.20-pure/include/linux/netdevice.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/netdevice.h	2003-01-22 17:36:21.000000000 -0800
++++ ./include/linux/netdevice.h	2003-01-26 18:58:26.000000000 -0800
 @@ -438,6 +438,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -1420,7 +1432,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void		dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
 --- ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/reiserfs_fs_sb.h	2003-01-22 17:35:06.000000000 -0800
++++ ./include/linux/reiserfs_fs_sb.h	2003-01-26 18:57:06.000000000 -0800
 @@ -405,8 +405,7 @@
    } journal;
  } reiserfs_proc_info_data_t;
@@ -1433,7 +1445,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /* reiserfs union of in-core super block data */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/skbuff.h ./include/linux/skbuff.h
 --- ../linux-2.4.20-pure/include/linux/skbuff.h	2002-08-02 17:39:46.000000000 -0700
-+++ ./include/linux/skbuff.h	2003-01-22 17:35:25.000000000 -0800
++++ ./include/linux/skbuff.h	2003-01-26 18:57:28.000000000 -0800
 @@ -126,15 +126,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -1617,7 +1629,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif /* _LINUX_TYPES_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/net/route.h ./include/net/route.h
 --- ../linux-2.4.20-pure/include/net/route.h	2002-08-02 17:39:46.000000000 -0700
-+++ ./include/net/route.h	2003-01-22 17:43:15.000000000 -0800
++++ ./include/net/route.h	2003-01-26 18:59:42.000000000 -0800
 @@ -140,7 +140,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)
