@@ -1,3 +1,20 @@
+2004-10-14 Thursday 11:55  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/sr/: metricflood.cc (1.1), metricflood.hh (1.1):
+	the actual flooding elements
+
+2004-10-14 Thursday 11:54  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: linktable.cc (1.11), phyerrfilter.cc (1.3),
+	sr/srquerier.cc (1.7), sr/srquerier.hh (1.3),
+	sr/srqueryresponder.cc (1.7), sr/txcountmetric.cc (1.2): chage the
+	way flooding queries work.
+
+2004-10-14 Thursday 11:54  John Bicket <jbicket@mit.edu>
+
+	* conf/: etx.click (1.1), gen_config_roofnet.pl (1.9), srcr.click
+	(1.1): update configs, more modular srcr and etx configs.
+
 2004-10-10 Sunday 14:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* bsdmodule/clickfs_tree.cc (1.4), bsdmodule/clickfs_tree.hh (1.4),
