@@ -1,3 +1,18 @@
+2003-02-13 Thursday 14:04  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.197): extra [] quotes, and add --with-linux-map
+	for Bart Samwel
+
+2003-02-13 Thursday 13:25  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh (1.17), lib/routerthread.cc (1.32),
+	linuxmodule/sched.cc (1.39): rename "fraction" to "cpu_share" in
+	methods and handlers
+
+2003-02-13 Thursday 12:53  Eddie Kohler <kohler@icir.org>
+
+	* lib/routerthread.cc (1.31): nits
+
 2003-02-13 Thursday 11:58  Eddie Kohler <kohler@icir.org>
 
 	* lib/routerthread.cc (1.30): unlock_tasks() around run_os()

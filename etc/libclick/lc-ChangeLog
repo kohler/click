@@ -1,3 +1,13 @@
+2003-02-13 Thursday 13:25  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: rename "fraction" to "cpu_share" in methods
+	and handlers
+
+2003-02-13 Thursday 12:53  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/routerthread.cc: nits
+
 2003-02-13 Thursday 11:58  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/routerthread.cc: unlock_tasks() around run_os()
