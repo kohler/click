@@ -47,7 +47,7 @@ private:
   static const int KEYSIZE = 32;
 };
 
-class RadixIPLookup : public Element {
+class RadixIPLookup : public IPRouteTable {
 public:
   RadixIPLookup();
   ~RadixIPLookup();
