@@ -14,19 +14,19 @@ reads packets from network device (kernel)
 
 =d
 
-This manual page describes the Linux kernel module version of the FromDevice
+This manual page describes the BSD kernel module version of the FromDevice
 element. For the user-level element, read the FromDevice.u manual page.
 
-Intercepts all packets received by the Linux network interface named DEVNAME
+Intercepts all packets received by the BSD network interface named DEVNAME
 and pushes them out output 0. The packets include the link-level header.
 DEVNAME may also be an Ethernet address, in which case FromDevice searches for
 a device with that address.
 
-FromDevice receives packets at interrupt time. As this happens, FromDevice
-simply stores the packets in an internal queue. Later, in the Click kernel
-thread -- that is, not at interrupt time -- FromDevice emits packets from that
-queue as it is scheduled by the driver. It emits at most BURST packets per
-scheduling; BURST is 8 by default.
+FromDevice pulls packets from a per-interface queue in the context of the
+Click kernel thread.  It emits at most BURST packets per scheduling;
+BURST is 8 by default.  At interrupt time, the kernel queues packets
+onto the per-interface queue if there is a FromDevice attached to that
+interface.
 
 If PROMISC is set (by default, it is not), then the device is put into
 promiscuous mode while FromDevice is active.
@@ -55,14 +55,15 @@ false.
 
 =n
 
-Linux won't see any packets from the device. If you want Linux to process
-packets, you should hand them to ToLinux.
+The BSD network stack (above the device layer) won't see any packets from
+the device. If you want BSD to process packets, you should hand them to
+ToBSD.
 
-FromDevice accesses packets the same way Linux does: through interrupts.
+FromDevice accesses packets the same way BSD does: through interrupts.
 This is bad for performance. If you care about performance and have a
 polling-capable device, use PollDevice instead.
 
-=a PollDevice, ToDevice, FromLinux, ToLinux, FromDevice.u */
+=a PollDevice, ToDevice, FromBSD, ToBSD, FromDevice.u */
 
 #include "elements/bsdmodule/anydevice.hh"
 #include "elements/standard/queue.hh"
@@ -88,13 +89,22 @@ class FromDevice : public AnyDevice, public Storage { public:
     /* process a packet. return 0 if not wanted after all. */
     int got_m(struct mbuf *);
 
+    /* get some performance stats */
+    int get_inq_drops();
+
     void run_scheduled();
+
+    int _npackets;
+#if CLICK_DEVICE_STATS
+    int _perfcnt1_read, _perfcnt2_read;
+    int _perfcnt1_push, _perfcnt2_push;
+    long long _time_read, _time_push;
+#endif
 
   private:
 
     bool _promisc;
     unsigned _burst;
-    unsigned _drops;
 
     static const int QSIZE = 511;
 

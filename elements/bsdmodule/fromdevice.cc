@@ -182,8 +182,21 @@ FromDevice::initialize(ErrorHandler *errh)
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
+    // Clear the input queue drop counter
+    _dev->click_intrq.ifq_drops = 0;
+
+#if CLICK_DEVICE_STATS
+    // Initialize performance stats
+    _time_read = 0;
+    _time_push = 0;
+    _perfcnt1_read = 0;
+    _perfcnt2_read = 0;
+    _perfcnt1_push = 0;
+    _perfcnt2_push = 0;
+#endif
+    _npackets = 0;
+
     _capacity = QSIZE;
-    _drops = 0;
     return 0;
 }
 
@@ -215,11 +228,20 @@ FromDevice::run_scheduled()
 {
     int npq = 0;
     while (npq < _burst) {
+#if CLICK_DEVICE_STATS
+	unsigned low0, low1;
+	unsigned long long time_now;
+#endif
+
 	/*
 	 * Try to dequeue a packet from the interrupt input queue.
 	 */
+	SET_STATS(low0, low1, time_now);
+
 	struct mbuf *m;
+	int s = splimp();
 	IF_DEQUEUE(&_dev->click_intrq, m);
+	splx(s);
 	if (NULL == m) break;
 
 	/*
@@ -232,8 +254,13 @@ FromDevice::run_scheduled()
 	m->m_pkthdr.len += push_len;
 
 	Packet *p = Packet::make(m);
+	GET_STATS_RESET(low0, low1, time_now,
+			_perfcnt1_read, _perfcnt2_read, _time_read);
 	output(0).push(p);
+	GET_STATS_RESET(low0, low1, time_now,
+			_perfcnt1_push, _perfcnt2_push, _time_push);
 	npq++;
+	_npackets++;
     }
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
@@ -241,9 +268,34 @@ FromDevice::run_scheduled()
     _task.fast_reschedule();
 }
 
+int
+FromDevice::get_inq_drops()
+{
+    return _dev->click_intrq.ifq_drops;
+}
+
+static String
+FromDevice_read_stats(Element *f, void *)
+{
+    FromDevice *fd = (FromDevice *)f;
+    return
+	String(fd->_npackets) + " packets received\n" +
+	String(fd->get_inq_drops()) + " input queue drops\n" +
+#if CLICK_DEVICE_STATS
+	String(fd->_time_read) + " cycles read\n" +
+	String(fd->_time_push) + " cycles push\n" +
+	String(fd->_perfcnt1_read) + " perfcnt1 read\n" +
+	String(fd->_perfcnt2_read) + " perfcnt2 read\n" +
+	String(fd->_perfcnt1_push) + " perfcnt1 push\n" +
+	String(fd->_perfcnt2_push) + " perfcnt2 push\n" +
+#endif
+	String();
+}
+
 void
 FromDevice::add_handlers()
 {
+    add_read_handler("stats", FromDevice_read_stats, 0);
     add_task_handlers(&_task);
 }
 
