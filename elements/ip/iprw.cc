@@ -329,7 +329,7 @@ IPRw::Pattern::s() const
     sport = String(_sporth);
   else
     sport = String(_sportl) + "-" + String(_sporth);
-  return saddr + ":" + sport + " / " + daddr + ":" + dport;
+  return saddr + " " + sport + " " + daddr + " " + dport;
 }
 
 //

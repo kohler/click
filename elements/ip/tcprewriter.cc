@@ -262,6 +262,16 @@ TCPRewriter::push(int port, Packet *p_in)
   click_ip *iph = p->ip_header();
   assert(iph->ip_p == IP_PROTO_TCP);
 
+  // handle non-first fragments
+  if (!IP_FIRSTFRAG(iph)) {
+    const InputSpec &is = _input_specs[port];
+    if (is.kind == INPUT_SPEC_NOCHANGE)
+      output(is.u.output).push(p);
+    else
+      p->kill();
+    return;
+  }
+
   TCPMapping *m = static_cast<TCPMapping *>(_tcp_map.find(flow));
   
   if (!m) {			// create new mapping

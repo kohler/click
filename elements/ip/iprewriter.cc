@@ -186,9 +186,18 @@ IPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
-  assert(iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP);
-  bool tcp = iph->ip_p == IP_PROTO_TCP;
 
+  // handle non-TCP and non-first fragments
+  bool tcp = iph->ip_p == IP_PROTO_TCP;
+  if ((!tcp && iph->ip_p != IP_PROTO_UDP) || !IP_FIRSTFRAG(iph)) {
+    const InputSpec &is = _input_specs[port];
+    if (is.kind == INPUT_SPEC_NOCHANGE)
+      output(is.u.output).push(p);
+    else
+      p->kill();
+    return;
+  }
+  
   Mapping *m = (tcp ? _tcp_map.find(flow) : _udp_map.find(flow));
   
   if (!m) {			// create new mapping
@@ -264,6 +273,13 @@ IPRewriter::dump_mappings_handler(Element *e, void *)
 }
 
 String
+IPRewriter::dump_nmappings_handler(Element *e, void *)
+{
+  IPRewriter *rw = (IPRewriter *)e;
+  return String(rw->_tcp_map.size()) + " " + String(rw->_udp_map.size()) + "\n";
+}
+
+String
 IPRewriter::dump_patterns_handler(Element *e, void *)
 {
   IPRewriter *rw = (IPRewriter *)e;
@@ -278,6 +294,7 @@ void
 IPRewriter::add_handlers()
 {
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
+  add_read_handler("nmappings", dump_nmappings_handler, (void *)0);
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }
 

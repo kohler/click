@@ -76,9 +76,9 @@ class IPRw::Mapping { protected:
   int _output;
   Mapping *_reverse;
     
-  bool _used;
-  bool _is_reverse;
-    
+  bool _used : 1;
+  bool _is_reverse : 1;
+  
   Pattern *_pat;
   Mapping *_pat_prev;
   Mapping *_pat_next;
