@@ -16,6 +16,7 @@
 #endif
 #include "checkipheader.hh"
 #include "click_ip.h"
+#include "ipaddressset.hh"
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -51,43 +52,19 @@ CheckIPHeader::notify_noutputs(int n)
 int
 CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  IPAddressSet ips;
+  ips.insert(0);
+  ips.insert(0xFFFFFFFFU);
   _offset = 0;
-  if (conf.size() > 2)
-    return errh->error("too many arguments to `CheckIPHeader([ADDRS, OFFSET])'");
-  else if (conf.size() == 2) {
-    if (!cp_unsigned(conf[1], &_offset))
-      return errh->error("argument 2 should be IP header offset (unsigned)");
-  }
-  
-  Vector<u_int> ips;
-  ips.push_back(0);
-  ips.push_back(0xffffffff);
-
-  if (conf.size()) {
-    Vector<String> words;
-    u_int a;
-    cp_spacevec(conf[0], words);
-    if (words.size() == 1 && words[0] == "-")
-      ips.clear();
-    else
-      for (int j = 0; j < words.size(); j++) {
-	if (!cp_ip_address(words[j], (unsigned char *)&a, this))
-	  return errh->error("expects IPADDRESS");
-	for (int j = 0; j < ips.size(); j++)
-	  if (ips[j] == a)
-	    goto repeat;
-	ips.push_back(a);
-       repeat: ;
-      }
-  }
-
+  if (cp_va_parse(conf, this, errh,
+		  cpOptional,
+		  cpIPAddressSet, "bad source addresses", &ips,
+		  cpUnsigned, "IP header offset", &_offset,
+		  0) < 0)
+    return -1;
   delete[] _bad_src;
   _n_bad_src = ips.size();
-  if (_n_bad_src) {
-    _bad_src = new u_int [_n_bad_src];
-    memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
-  } else
-    _bad_src = 0;
+  _bad_src = ips.list_copy();
 
 #ifdef __KERNEL__
   // check alignment

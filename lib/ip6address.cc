@@ -51,7 +51,7 @@ IP6Address::IP6Address(IPAddress ip)
 
 IP6Address::IP6Address(const String &str)
 {
-  if (!cp_ip6_address(str, *this))
+  if (!cp_ip6_address(str, this))
     for (int i = 0; i < 4; i++)
       _addr.s6_addr32[i] = 0;
 }

@@ -128,6 +128,7 @@ SimpleLocQuerier::add_handlers()
   add_write_handler("add", add_entry, (void *)0);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SimpleLocQuerier)
 
 #include "bighashmap.cc"

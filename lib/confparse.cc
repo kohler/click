@@ -19,6 +19,7 @@
 #include "error.hh"
 #include "straccum.hh"
 #include "ipaddress.hh"
+#include "ipaddressset.hh"
 #include "ip6address.hh"
 #include "etheraddress.hh"
 #ifndef CLICK_TOOL
@@ -902,18 +903,18 @@ cp_ip_prefix(const String &str,
 }
 
 bool
-cp_ip_address(const String &str, IPAddress &address
+cp_ip_address(const String &str, IPAddress *address
 	      CP_CONTEXT_ARG)
 {
-  return cp_ip_address(str, address.data()
+  return cp_ip_address(str, address->data()
 		       CP_PASS_CONTEXT);
 }
 
 bool
-cp_ip_prefix(const String &str, IPAddress &address, IPAddress &mask,
+cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask,
 	     bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  return cp_ip_prefix(str, address.data(), mask.data(),
+  return cp_ip_prefix(str, address->data(), mask->data(),
 		      allow_bare_address  CP_PASS_CONTEXT);
 }
 
@@ -926,11 +927,29 @@ cp_ip_prefix(const String &str, unsigned char *address, unsigned char *mask
 }
 
 bool
-cp_ip_prefix(const String &str, IPAddress &address, IPAddress &mask
+cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 	     CP_CONTEXT_ARG)
 {
-  return cp_ip_prefix(str, address.data(), mask.data(),
+  return cp_ip_prefix(str, address->data(), mask->data(),
 		      false  CP_PASS_CONTEXT);
+}
+
+bool
+cp_ip_address_set(const String &str, IPAddressSet *set
+		  CP_CONTEXT_ARG)
+{
+  Vector<String> words;
+  Vector<unsigned> additions;
+  IPAddress ip;
+  cp_spacevec(str, words);
+  for (int i = 0; i < words.size(); i++) {
+    if (!cp_ip_address(words[i], &ip  CP_PASS_CONTEXT))
+      return false;
+    additions.push_back(ip);
+  }
+  for (int i = 0; i < additions.size(); i++)
+    set->insert(additions[i]);
+  return true;
 }
 
 
@@ -1119,29 +1138,29 @@ cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask
 }
 
 bool
-cp_ip6_prefix(const String &str, IP6Address &address, IP6Address &mask
+cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *mask
 	      CP_CONTEXT_ARG)
 {
   int bits;
-  if (cp_ip6_prefix(str, address.data(), &bits, false  CP_PASS_CONTEXT)) {
-    mask = IP6Address::make_prefix(bits);
+  if (cp_ip6_prefix(str, address->data(), &bits, false  CP_PASS_CONTEXT)) {
+    *mask = IP6Address::make_prefix(bits);
     return true;
   } else
     return false;
 }
 
 bool
-cp_ip6_address(const String &str, IP6Address &address
+cp_ip6_address(const String &str, IP6Address *address
 	       CP_CONTEXT_ARG)
 {
-  return cp_ip6_address(str, address.data()  CP_PASS_CONTEXT);
+  return cp_ip6_address(str, address->data()  CP_PASS_CONTEXT);
 }
 
 bool
-cp_ip6_prefix(const String &str, IP6Address &address, IP6Address &prefix,
+cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
 	      bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  return cp_ip6_prefix(str, address.data(), prefix.data(), allow_bare_address
+  return cp_ip6_prefix(str, address->data(), prefix->data(), allow_bare_address
 		       CP_PASS_CONTEXT);
 }
 
@@ -1184,10 +1203,10 @@ cp_ethernet_address(const String &str, unsigned char *return_value
 }
 
 bool
-cp_ethernet_address(const String &str, EtherAddress &address
+cp_ethernet_address(const String &str, EtherAddress *address
 		    CP_CONTEXT_ARG)
 {
-  return cp_ethernet_address(str, address.data()
+  return cp_ethernet_address(str, address->data()
 			     CP_PASS_CONTEXT);
 }
 
@@ -1285,6 +1304,7 @@ cp_command_name(int cp_command)
    case cpIPAddress: return "IP address";
    case cpIPPrefix: return "IP address prefix";
    case cpIPAddressOrPrefix: return "IP address or address prefix";
+   case cpIPAddressSet: return "set of IP addresses";
    case cpIP6Address: return "IPv6 address";
    case cpIP6Prefix: return "IPv6 address prefix";
    case cpIP6AddressOrPrefix: return "IPv6 address or address prefix";
@@ -1296,7 +1316,7 @@ cp_command_name(int cp_command)
 }
 
 static void
-store_value(int cp_command, Values &v)
+store_value(int cp_command, Values &v  CP_CONTEXT_ARG)
 {
   int address_bytes;
   switch (cp_command) {
@@ -1374,6 +1394,13 @@ store_value(int cp_command, Values &v)
      memcpy(addrstore, v.v.address, 16);
      unsigned char *maskstore = (unsigned char *)v.store2;
      memcpy(maskstore, v.v.address + 16, 16);
+     break;
+   }
+
+   case cpIPAddressSet: {
+     // oog... parse set into stored set only when we know there are no errors
+     IPAddressSet *setstore = (IPAddressSet *)v.store;
+     cp_ip_address_set(v.v_string, setstore  CP_PASS_CONTEXT);
      break;
    }
 
@@ -1581,6 +1608,18 @@ cp_va_parsev(const Vector<String> &args,
        break;
      }
      
+     case cpIPAddressSet: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, IPAddressSet *);
+       if (skip) break;
+       IPAddressSet crap;
+       if (!cp_ip_address_set(args[argno], &crap CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (set of IP addresses)", argname, argno+1, desc);
+       else
+	 v.v_string = args[argno];
+       break;
+     }     
+    
      case cpIP6Address: {
       const char *desc = va_arg(val, const char *);
       v.store = va_arg(val, unsigned char *);  
@@ -1680,7 +1719,7 @@ cp_va_parsev(const Vector<String> &args,
   // if success, actually set the values
   if (errh->nerrors() == nerrors_in) {
     for (int i = 0; i < args.size() && i < argno; i++)
-      store_value(cp_commands[i], values[i]);
+      store_value(cp_commands[i], values[i]  CP_PASS_CONTEXT);
   }
   
   delete[] cp_commands;

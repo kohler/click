@@ -17,6 +17,7 @@
 #include "string.hh"
 #include "routert.hh"
 template class Vector<int>;
+template class Vector<unsigned>;
 template class Vector<String>;
 template class Vector<Hookup>;
 template class Vector<ElementT>;

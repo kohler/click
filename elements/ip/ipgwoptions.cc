@@ -16,6 +16,7 @@
 #endif
 #include "ipgwoptions.hh"
 #include "click_ip.h"
+#include "ipaddressset.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
@@ -36,44 +37,22 @@ IPGWOptions::~IPGWOptions()
 int
 IPGWOptions::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  IPAddress a;
+  IPAddress my_ip;
+  IPAddressSet ips;
   if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "local addr", &a,
-		  cpIgnoreRest,
+                  cpIPAddress, "local IP address", &my_ip,
+		  cpOptional,
+		  cpIPAddressSet, "other interface IP addresses", &ips,
 		  0) < 0)
     return -1;
-  _my_ip = a.in_addr();
-
-  if (conf.size() > 2)
-    return errh->error("too many arguments to `IPGWOptions(MYADDR [, OTHERADDRS])'");
-
-  Vector<u_int> ips;
-  ips.push_back(_my_ip.s_addr);
-  if (conf.size() == 2) {
-    Vector<String> words;
-    u_int a;
-    cp_spacevec(conf[0], words);
-    if (words.size() == 1 && words[0] == "-")
-      ips.clear();
-    else
-      for (int j = 0; j < words.size(); j++) {
-	if (!cp_ip_address(words[j], (unsigned char *)&a, this))
-	  return errh->error("expects IPADDRESS");
-	for (int j = 0; j < ips.size(); j++)
-	  if (ips[j] == a)
-	    goto repeat;
-	ips.push_back(a);
-       repeat: ;
-      }
-  }
+  
+  _my_ip = my_ip.in_addr();
+  
+  ips.insert(my_ip);
   delete[] _other_ips;
   _n_other_ips = ips.size();
-  if (_n_other_ips) {
-    _other_ips = new u_int[_n_other_ips];
-    memcpy(_other_ips, &ips[0], sizeof(u_int) * _n_other_ips);
-  } else
-    _other_ips = 0;
-
+  _other_ips = ips.list_copy();
+  
   return 0;
 }
 

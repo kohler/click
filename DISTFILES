@@ -107,6 +107,8 @@ lib/ipaddress.cc
 lib/ipaddress.hh
 lib/ip6address.cc
 lib/ip6address.hh
+lib/ipaddressset.cc
+lib/ipaddressset.hh
 lib/ipflowid.cc
 lib/ipflowid.hh
 lib/iptable.cc

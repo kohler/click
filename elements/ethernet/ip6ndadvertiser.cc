@@ -69,9 +69,9 @@ IP6NDAdvertiser::configure(const Vector<String> &conf, ErrorHandler *errh)
     for (int j = 0; j < words.size(); j++)
       if (cp_ip6_prefix(words[j], (unsigned char *)&ipa, (unsigned char *)&mask, true, this))
 	add_map(ipa, mask, EtherAddress());
-      else if (cp_ip6_address(words[j], ipa, this))
+      else if (cp_ip6_address(words[j], &ipa, this))
 	add_map(ipa, IP6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), EtherAddress());
-      else if (cp_ethernet_address(words[j], ena, this)) {	
+      else if (cp_ethernet_address(words[j], &ena, this)) {	
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;

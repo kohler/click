@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPInputCombo(COLOR, BADADDRS)
+ * IPInputCombo(COLOR [, BADADDRS])
  * =s input combo for IP routing
  * =d
  * A single element encapsulating common tasks on an IP router's input path.
@@ -29,7 +29,7 @@ class IPInputCombo : public Element {
   int _color;
 
   int _n_bad_src;
-  u_int *_bad_src; // array of illegal IP src addresses.
+  unsigned *_bad_src; // array of illegal IP src addresses.
 #ifdef __KERNEL__
   bool _aligned;
 #endif

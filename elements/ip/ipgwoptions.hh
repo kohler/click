@@ -33,6 +33,7 @@
 #include "glue.hh"
 
 class IPGWOptions : public Element {
+  
   int _drops;
   struct in_addr _my_ip;
   unsigned *_other_ips;

@@ -63,11 +63,11 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], words);
     
     for (int j = 0; j < words.size(); j++)
-      if (cp_ip_prefix(words[j], ipa, mask, this))
+      if (cp_ip_prefix(words[j], &ipa, &mask, this))
 	add_map(ipa, mask, EtherAddress());
-      else if (cp_ip_address(words[j], ipa, this))
+      else if (cp_ip_address(words[j], &ipa, this))
 	add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
-      else if (cp_ethernet_address(words[j], ena, this)) {
+      else if (cp_ethernet_address(words[j], &ena, this)) {
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;
@@ -78,7 +78,7 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
 
     // check for an argument that is both IP address and Ethernet address
     for (int j = 0; !have_ena && j < words.size(); j++)
-      if (cp_ethernet_address(words[j], ena, this))
+      if (cp_ethernet_address(words[j], &ena, this))
 	have_ena = true;
     
     if (first == _v.size())

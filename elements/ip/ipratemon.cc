@@ -451,7 +451,7 @@ IPRateMonitor::anno_level_write_handler
     return -1;
   }
   
-  if (!cp_ip_address(args[0], a)) {
+  if (!cp_ip_address(args[0], &a)) {
     errh->error("not an IP address");
     return -1;
   }

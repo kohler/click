@@ -15,6 +15,7 @@
 #endif
 #include "ipinputcombo.hh"
 #include "click_ip.h"
+#include "ipaddressset.hh"
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -41,34 +42,19 @@ IPInputCombo::clone() const
 int
 IPInputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  IPAddressSet ips;
+  ips.insert(0);
+  ips.insert(0xFFFFFFFFU);
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,
-		  cpIgnoreRest,
+		  cpOptional,
+		  cpIPAddressSet, "bad source addresses", &ips,
 		  0) < 0)
     return -1;
 
-  Vector<u_int> ips;
-  ips.push_back(0);
-  ips.push_back(0xffffffff);
-
-  if (conf.size() > 1) {
-    Vector<String> words;
-    u_int a;
-    cp_spacevec(conf[1], words);
-    for (int j = 0; j < words.size(); j++) {
-      if (!cp_ip_address(words[j], (unsigned char *)&a, this))
-	return errh->error("expects IPADDRESS");
-      for (int j = 0; j < ips.size(); j++)
-	if (ips[j] == a)
-	  goto repeat;
-      ips.push_back(a);
-     repeat: ;
-    }
-  }
-
+  delete[] _bad_src;
   _n_bad_src = ips.size();
-  _bad_src = new u_int [_n_bad_src];
-  memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
+  _bad_src = ips.list_copy();
 
 #ifdef __KERNEL__
   // check alignment

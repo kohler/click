@@ -158,7 +158,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
   
   if (words[0] == "-")
     saddr = 0;
-  else if (!cp_ip_address(words[0], saddr, e))
+  else if (!cp_ip_address(words[0], &saddr, e))
     return errh->error("bad source address `%s' in pattern spec", words[0].cc());
   
   if (words[1] == "-")
@@ -179,7 +179,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
 
   if (words[2] == "-")
     daddr = 0;
-  else if (!cp_ip_address(words[2], daddr, e))
+  else if (!cp_ip_address(words[2], &daddr, e))
     return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
   
   if (words[3] == "-")

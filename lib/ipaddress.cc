@@ -1,7 +1,7 @@
 /*
  * ipaddress.{cc,hh} -- an IP address class. Useful for its hashcode()
  * method
- * Robert Morris / John Jannotti
+ * Robert Morris / John Jannotti / Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -31,7 +31,7 @@ IPAddress::IPAddress(const unsigned char *data)
 
 IPAddress::IPAddress(const String &str)
 {
-  if (!cp_ip_address(str, *this))
+  if (!cp_ip_address(str, this))
     _addr = 0;
 }
 

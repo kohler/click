@@ -49,25 +49,27 @@ bool cp_string(const String &, String *, String *rest = 0);
 
 // network addresses
 class IPAddress;
+class IPAddressSet;
 bool cp_ip_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ip_address(const String &, IPAddress &  CP_CONTEXT);
+bool cp_ip_address(const String &, IPAddress *  CP_CONTEXT);
 bool cp_ip_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_CONTEXT);
-bool cp_ip_prefix(const String &, IPAddress &, IPAddress &, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip_prefix(const String &, IPAddress *, IPAddress *, bool allow_bare_address  CP_CONTEXT);
 bool cp_ip_prefix(const String &, unsigned char *, unsigned char *  CP_CONTEXT);
-bool cp_ip_prefix(const String &, IPAddress &, IPAddress &  CP_CONTEXT);
+bool cp_ip_prefix(const String &, IPAddress *, IPAddress *  CP_CONTEXT);
+bool cp_ip_address_set(const String &, IPAddressSet *  CP_CONTEXT);
 
 class IP6Address;
 bool cp_ip6_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ip6_address(const String &, IP6Address &  CP_CONTEXT);
+bool cp_ip6_address(const String &, IP6Address *  CP_CONTEXT);
 bool cp_ip6_prefix(const String &, unsigned char *, int *, bool allow_bare_address  CP_CONTEXT);
 bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_CONTEXT);
-bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, IPAddress *, IP6Address *, bool allow_bare_address  CP_CONTEXT);
 bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *  CP_CONTEXT);
-bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, IPAddress *, IP6Address *  CP_CONTEXT);
 
 class EtherAddress;
 bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
-bool cp_ethernet_address(const String &, EtherAddress &  CP_CONTEXT);
+bool cp_ethernet_address(const String &, EtherAddress *  CP_CONTEXT);
 
 #ifndef CLICK_TOOL
 Element *cp_element(const String &, Element *, ErrorHandler *);
@@ -97,6 +99,7 @@ enum CpVaParseCmd {
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
   cpIPPrefix,	// unsigned char value[4], unsigned char mask[4]
   cpIPAddressOrPrefix,	// unsigned char value[4], unsigned char mask[4]
+  cpIPAddressSet,	// IPAddressSet *
   cpEthernetAddress,	// unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]

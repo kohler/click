@@ -15,6 +15,7 @@
 #endif
 #include "click_icmp.h"
 #include "click_ip.h"
+#include "ipaddressset.hh"
 #include "icmperror.hh"
 #include "ipaddress.hh"
 #include "confparse.hh"
@@ -38,37 +39,19 @@ int
 ICMPError::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String bad_addr_str;
+  IPAddressSet bad_addrs;
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "Source IP address", &_src_ip,
                   cpInteger, "ICMP Type", &_type,
                   cpInteger, "ICMP Code", &_code,
 		  cpOptional,
-		  cpArgument, "bad IP addresses", &bad_addr_str,
+		  cpIPAddressSet, "bad IP addresses", &bad_addrs,
 		  0) < 0)
     return -1;
 
-  Vector<u_int> ips;
-  Vector<String> words;
-  cp_spacevec(bad_addr_str, words);
-  if (words.size() != 1 || words[0] != "-") {
-    unsigned a;
-    for (int j = 0; j < words.size(); j++) {
-      if (!cp_ip_address(words[j], (unsigned char *)&a, this))
-	return errh->error("expects IPADDRESS");
-      for (int j = 0; j < ips.size(); j++)
-	if (ips[j] == a)
-	  goto repeat;
-      ips.push_back(a);
-     repeat: ;
-    }
-  }
   delete[] _bad_addrs;
-  _n_bad_addrs = ips.size() - 1;
-  if (_n_bad_addrs) {
-    _bad_addrs = new unsigned[_n_bad_addrs];
-    memcpy(_bad_addrs, &ips[1], sizeof(unsigned) * _n_bad_addrs);
-  } else
-    _bad_addrs = 0;
+  _n_bad_addrs = bad_addrs.size();
+  _bad_addrs = bad_addrs.list_copy();
 
   return 0;
 }
