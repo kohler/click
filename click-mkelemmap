@@ -409,8 +409,9 @@ umask(022);
 open(OUT, ">&STDOUT");
 
 print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
-<?xml-stylesheet type=\"application/xml\" href=\"http://www.lcdf.org/click/xml/elementmap.xsl\"?>
-<elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
+<?xml-stylesheet type=\"application/xml\" href=\"http://www.lcdf.org/click/xml/elementmap.xsl\"?>\n";
+print OUT "<?xml-stylesheet type=\"application/xml\" href=\"file://$sourcedir/etc/elementmap.xsl\"?>\n" if defined($sourcedir) && $sourcedir =~ m|^/|;
+print OUT "<elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
 print OUT " sourcedir=\"$sourcedir\"" if defined($sourcedir);
 print OUT " src=\"file://$sourcedir\"" if defined($sourcedir) && $sourcedir =~ m|^/|;
 print OUT " provides=\"", join(' ', @provides), "\"";
