@@ -209,24 +209,30 @@ exec_command () {
 
 compile_file () {
   option=
-  if test -r "$1"; then
-    option=`head -5 $1 | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
+  source="$1"; shift
+  if test -r "$source"; then
+    option=`head -5 $source | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
   fi
-  exec_command $command $option $1
+  exec_command $command $option $source "$@"
 }
 
 # do stuff
 if test "x$package" != "xNONE"; then
   command="$command -DCLICK_PACKAGE"
+  files=; rmfiles=
+  trap 'rm -f $files $rmfiles' 0
+  trap 'rm -f $files $rmfiles; exit 1' 1 2 15
   for file; do
-    compile_file $file
-    files="$files "`echo $file | sed 's/\.c*$/\.o/;s/^.*\///'`
+    objfile=`echo $file | sed 's/\.c*$/'"$$"'\.o/;s/^.*\///'`
+    compile_file $file -o $objfile
+    files="$files $objfile"
+    rmfiles="$rmfiles "`echo $objfile | sed 's/\.o/\.d/'`
   done
   if test $target = linuxmodule; then
-    vfile=kernelversion
+    vfile=kernelversion$$
     test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
-    trap 'rm -f $vfile.c $vfile.o' 0
-    trap 'rm -f $vfile.c $vfile.o; exit 1' 1 2 15
+    files="$files $vfile.o"
+    rmfiles="$rmfiles $vfile.c $vfile.d"
     cat > $vfile.c <<EOF
 #include <click/config.h>
 #include <linux/module.h>
@@ -241,7 +247,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 EOF
     fi
     exec_command $c_command $vfile.c
-    exec_command "ld -r -o $package $files $vfile.o"
+    exec_command "ld -r -o $package $files"
     exit 0 
   elif test $target = userlevel -o $target = tool -o $target = ns; then
     exec_command "ld -shared -o $package $files"
