@@ -57,7 +57,7 @@ install-local: click-compile
 	$(mkinstalldirs) $(bindir)
 	@chmod +x click-compile
 	$(INSTALL) click-compile $(bindir)/click-compile
-install-subdirs:
+install-subdirs: lib
 	@for d in $(TARGETS); do (cd $$d 2>/dev/null && $(MAKE) install); done
 
 DISTFILES = Makefile.in lib/Makefile.in \
