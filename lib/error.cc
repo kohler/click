@@ -680,7 +680,7 @@ ContextErrorHandler::decorate_text(Seriousness seriousness, const String &prefix
       context_lines += '\n';
     _context = String();
   }
-  return context_lines + _errh->decorate_text(seriousness, prefix, landmark, prepend_lines(_indent, text));
+  return context_lines + _errh->decorate_text(seriousness, String(), landmark, prepend_lines(_indent + prefix, text));
 }
 
 
@@ -714,7 +714,7 @@ IndentErrorHandler::IndentErrorHandler(ErrorHandler *errh,
 String
 IndentErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, prefix, landmark, _indent + text);
+  return _errh->decorate_text(seriousness, String(), landmark, _indent + prefix + text);
 }
 
 

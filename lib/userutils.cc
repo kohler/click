@@ -161,7 +161,7 @@ file_string(const char *filename, ErrorHandler *errh)
 
   String s;
   if (errh) {
-    PrefixErrorHandler perrh(errh, filename + String(": "));
+    IndentErrorHandler perrh(errh, filename + String(": "));
     s = file_string(f, &perrh);
   } else
     s = file_string(f);
