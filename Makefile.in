@@ -115,9 +115,10 @@ clean:
 	-rm -f elementmap conftest.*
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
-	-rm -f Makefile config.status
+	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-compile stamp-h
+	-rm -f elementmap conftest.*
 
 
 distdir = $(PACKAGE)-$(VERSION)
