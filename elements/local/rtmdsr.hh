@@ -176,6 +176,7 @@ private:
   Route &best_route(IPAddress);
   bool find_arp(IPAddress ip, u_char en[6]);
   void got_arp(IPAddress ip, u_char xen[6]);
+  u_short get_metric(IPAddress other);
   void got_pkt(Packet *p_in);
   void start_query(IPAddress);
   void forward_query(struct pkt *pk);

@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <elements/grid/linkstat.hh>
 CLICK_DECLS
 
 RTMDSR::RTMDSR()
@@ -307,6 +308,7 @@ RTMDSR::send(WritablePacket *p)
     memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
+    assert(next < MaxHops + 2);
     struct in_addr nxt = pk->_hops[next];
     find_arp(IPAddress(nxt), pk->ether_dhost);
   } else {
@@ -315,6 +317,31 @@ RTMDSR::send(WritablePacket *p)
   }
 
   output(1).push(p);
+}
+
+// Ask LinkStat for the metric for the link from XXX to us.
+u_short
+RTMDSR::get_metric(IPAddress other)
+{
+  u_short dft = 150; // default metric
+  if(_link_stat){
+    unsigned int tau;
+    struct timeval tv;
+    unsigned int frate, rrate;
+    bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
+    if(res == false)
+      return dft;
+    res = _link_stat->get_reverse_rate(other, &rrate, &tau);
+    if(res == false)
+      return dft;
+    if(frate == 0 || rrate == 0)
+      return dft;
+    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
+    click_chatter("f %d r %d m %d", frate, rrate, m);
+    return m;
+  } else {
+    return dft;
+  }
 }
 
 // Continue flooding a query by broadcast.
@@ -348,7 +375,8 @@ RTMDSR::forward_query(struct pkt *pk1)
 
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
-  pk->_metric = htons(ntohs(pk->_metric) + 1);
+  pk->_metric = htons(ntohs(pk->_metric) +
+                      get_metric(IPAddress(pk->_hops[nhops-1])));
 
   send(p);
 }
@@ -398,7 +426,8 @@ RTMDSR::start_reply(struct pkt *pk1)
   pk->_type = htonl(PT_REPLY);
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
-  pk->_metric = htons(ntohs(pk->_metric) + 1);
+  pk->_metric = htons(ntohs(pk->_metric) +
+                      get_metric(IPAddress(pk->_hops[nhops-1])));
   pk->_next = htons(nhops - 1); // Indicates next hop.
 
   send(p);
