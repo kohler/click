@@ -7,16 +7,15 @@
  * Forward packets according to the tables accumulated
  * by Neighbor.
  *
- * Input 0 is from the device, output 0 is to the device.
- * Both should be ethernet format.
+ * Input 0 is from the device, output 0 is to the device.  Both should
+ * be GRID_NBR_ENCAP packets with MAC headers.
  *
- * Input 1 is down from higher level protocols, output 1 is
- * is up to higher level protocols. The format of both
- * is IP packets.
+ * Input 1 is down from higher level protocols, output 1 is is up to
+ * higher level protocols. The format of both is IP packets.
  *
- * Expects to find a Neighbor element, whose tables LocalRoute
- * uses to choose next hops.
- */
+ * Output 2 is where all the packets go the LocalRoute doesn't know
+ * what to do with.  e.g., Grid protocol packets with an unknown type,
+ * too many hops have been travelled, or there is no next hop.  */
 
 #include "element.hh"
 #include "glue.hh"

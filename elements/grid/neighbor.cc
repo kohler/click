@@ -143,7 +143,7 @@ Neighbor::simple_action(Packet *packet)
    * perform further packet processing
    */
   switch (gh->type) {
-  case GRID_HELLO:
+  case GRID_LR_HELLO:
     {    /* 
 	  * add this sender's nbrs to our far neighbor list.  
 	  */
@@ -201,7 +201,7 @@ print_nbrs(Element *f, void *)
   int jiff = click_jiffies();
   Neighbor *n = (Neighbor *) f;
 
-  String s = "\nneighbor addrs (";
+  String s = "\nimmediate neighbor addrs (";
   s += String(n->_addresses.count());
   s += "):\n";
 
@@ -217,6 +217,20 @@ print_nbrs(Element *f, void *)
       s += '\n';
     }
   }
+
+  s += "\nmulti-hop neighbors (";
+  s += String(n->_nbrs.size());
+  s += "):\n";
+
+  for (int i = 0; i < n->_nbrs.size(); i++) {
+    Neighbor::far_entry f = n->_nbrs[i];
+    if (n->_timeout_jiffies < 0 || 
+	(jiff - f.last_updated_jiffies) < n->_timeout_jiffies) {
+      s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
+	+ " " + String(f.nbr.num_hops) + " " + f.nbr.loc.s() + "\n";
+    }
+  }
+
   return s;
 }
 

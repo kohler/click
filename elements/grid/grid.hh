@@ -28,12 +28,12 @@ struct grid_location {
   }
 
   // Latitude in degrees.
-  double lat() {
+  double lat() const {
     return(toDeg(_mslat));
   }
 
   // Longitude in degrees.
-  double lon() {
+  double lon() const {
     return(toDeg(_mslon));
   }
 
@@ -42,13 +42,22 @@ struct grid_location {
     _mslat = toMS(lat);
     _mslon = toMS(lon);
   }
+
+  String s() const {
+    char buf[255];
+    snprintf(buf, 255, "%f %f", lat(), lon());
+    return String(buf);
+  }
 };
 
 struct grid_hdr {
   unsigned char hdr_len;    // sizeof(grid_hdr)
+
   unsigned char type;
-#define GRID_HELLO     1
-#define GRID_NBR_ENCAP 2
+#define GRID_HELLO     1    // no additional info in packet beyond header
+#define GRID_LR_HELLO  2    // followed by grid_hello and grid_nbr_entries
+#define GRID_NBR_ENCAP 3    // followed by grid_nbr_encap
+
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
@@ -56,6 +65,8 @@ struct grid_hdr {
 
   grid_hdr()
     : hdr_len(sizeof(grid_hdr)), total_len(sizeof(grid_hdr)), cksum(0) { }
+
+  static String type_string(int type);
 };
 
 struct grid_nbr_entry {
@@ -73,7 +84,8 @@ struct grid_nbr_entry {
 struct grid_hello {
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
-  // followed by num_nbrs grid_nbr_entry structs
+  // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry
+  // structs.
 
   grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) { }
 };
@@ -82,5 +94,18 @@ struct grid_nbr_encap {
   unsigned int dst_ip;
   unsigned char hops_travelled;
 };
+
+
+inline String
+grid_hdr::type_string(int type)
+{
+  switch (type) {
+  case GRID_HELLO: return String("GRID_HELLO"); break;
+  case GRID_LR_HELLO: return String("GRID_LR_HELLO"); break;
+  case GRID_NBR_ENCAP: return String("GRID_NBR_ENCAP"); break;
+  default: return String("Unknown");
+  }
+}
+
 
 #endif

@@ -24,7 +24,7 @@
 #include "router.hh"
 #include "glue.hh"
 
-LocalRoute::LocalRoute() : Element(2, 2), _nbr(0), _max_forwarding_hops(5)
+LocalRoute::LocalRoute() : Element(2, 3), _nbr(0), _max_forwarding_hops(5)
 {
 }
 
@@ -99,11 +99,6 @@ LocalRoute::push(int port, Packet *packet)
     grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
     switch (gh->type) {
 
-    case GRID_HELLO:
-      // nothing further to do, Hello packets are not forwarded
-      packet->kill();
-      break;
-
     case GRID_NBR_ENCAP:
       {/* 
 	* try to either receive the packet or forward it
@@ -127,8 +122,9 @@ LocalRoute::push(int port, Packet *packet)
       break;
 
     default:
-      click_chatter("%s: received unknown Grid packet type: %d", id().cc(), (int) gh->type);
-      packet->kill();
+      click_chatter("%s: received unexpected Grid packet type: %s", 
+		    id().cc(), grid_hdr::type_string(gh->type).cc());
+      output(2).push(packet);
     }
   }
   else {
@@ -192,7 +188,8 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   if (_nbr == 0) {
     // no Neighbor next-hop table in configuration
-    packet->kill();
+    click_chatter("%s: can't forward packet for %s; there is no neighbor table", id().cc(), dest_ip.s().cc());
+    output(2).push(packet);
     return;
   }
 
@@ -202,7 +199,7 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
                   id().cc(),
                   encap->hops_travelled,
                   dest_ip.s().cc());
-    packet->kill();
+    output(2).push(packet);
     return;
   }
 
@@ -221,7 +218,7 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   }
   else {
     click_chatter("%s: unable to forward packet for %s", id().cc(), dest_ip.s().cc());
-    packet->kill();
+    output(2).push(packet);
   }
 }
 

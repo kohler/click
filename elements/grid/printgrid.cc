@@ -57,21 +57,17 @@ PrintGrid::simple_action(Packet *p)
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     return p;
   }
-  EtherAddress deth = EtherAddress(eh->ether_dhost);
+  /*  EtherAddress deth = EtherAddress(eh->ether_dhost); */
   EtherAddress seth = EtherAddress(eh->ether_shost);
 
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   IPAddress xip = IPAddress((unsigned) gh->ip);
 
-  char *type = "?";
-  if(gh->type == GRID_HELLO)
-    type = "HELLO";
-  else if(gh->type == GRID_NBR_ENCAP)
-    type = "ENCAP";
+  String type = grid_hdr::type_string(gh->type);
 
   char *buf = 0;
 
-  if(gh->type == GRID_HELLO){
+  if(gh->type == GRID_LR_HELLO) {
     grid_hello *h = (grid_hello *) (gh + 1);
     grid_nbr_entry *na = (grid_nbr_entry *) (h + 1);
     buf = new char [h->num_nbrs * 100 + 1];
@@ -94,7 +90,7 @@ PrintGrid::simple_action(Packet *p)
                 _label.cc()[0] ? " " : "",
                 _label.cc(),
                 seth.s().cc(),
-                type,
+                type.cc(),
                 xip.s().cc(),
                 gh->loc.lat(),
                 gh->loc.lon(),
