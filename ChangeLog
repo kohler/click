@@ -1,3 +1,7 @@
+2004-01-16 Friday 09:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/linkstat.cc (1.29): nitlets
+
 2004-01-14 Wednesday 22:32  Eddie Kohler <kohler@icir.org>
 
 	* lib/master.cc (1.2): avoid Mac OS X crashes via a dummy struct
