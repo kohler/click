@@ -110,7 +110,7 @@ Bitvector::Bitvector(int n, bool b)
     : _max(n - 1), _data(&_f0), _f0(0), _f1(0)
 {
     if (n > INLINE_BITS)
-	resize_x(n, b);
+	resize_x(n, false);
     if (b)
 	assign(n, b);
 }
