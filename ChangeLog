@@ -1,3 +1,13 @@
+2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/glue.hh (1.18), lib/glue.cc (1.25): BSD performance
+	fixes
+
+2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* elements/bsdmodule/: fastudpsrc.cc (1.1), fastudpsrc.hh (1.1):
+	Add FastUDPSource for BSD
+
 2001-08-24 Friday 19:02  Eddie Kohler <kohler@aciri.org>
 
 	* elements/local/: mergebyts.cc (1.1), mergebyts.hh (1.1): add
