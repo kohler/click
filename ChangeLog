@@ -1,3 +1,14 @@
+2003-06-01 Sunday 00:50  jbicket
+
+	* elements/grid/: linktable.cc (1.3), linktable.hh (1.3),
+	printsrcr.cc (1.3), srcr.cc (1.3), srcr.hh (1.3): linktable: Fixed
+	linktable dijstra bug, now works and has been tested.
+	
+	srcr: Added route updates for failing links	  Re-query after
+	route degrades by 50% since last query.
+	
+	--john
+
 2003-05-28 Wednesday 23:33  jbicket
 
 	* include/clicknet/ether.h (1.3): defined srcr ethertype
