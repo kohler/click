@@ -42,6 +42,7 @@ This document describes@dots{}
 @menu
 * Coding Standards::            
 * Basics::                      
+* Element Characteristics::      		
 * Element Initialization::      
 * Tasks::                       
 * Timers::                      
@@ -93,14 +94,20 @@ ErrorHandler
 * Error Veneers::               
 * Writing Error Handlers::       
 
+Element Characteristics
+
+* Element Class::               
+* Element Names::               
+* Element Router::              
+
 Element Initialization
 
 * notify_ninputs notify_noutputs::  
+* configure_phase::             
 * configure::                   
 * processing::                  
 * flow_code::                   
 * initialize::                  
-* configure_phase::             
 * uninitialize::                
 * Initialization Phases::       
 
@@ -198,7 +205,7 @@ A variable or method which counts something is often named
 @end itemize
 
 
-@node Basics, Element Initialization, Coding Standards, Top
+@node Basics, Element Characteristics, Coding Standards, Top
 @chapter Basics
 
 @menu
@@ -1262,11 +1269,17 @@ Decorates the error message @var{text} as appropriate and returns the
 result. At minimum, every line of the result should be prepended by
 @var{prefix} and, if it is nonempty, the landmark string @var{landmark}.
 
-The default implementation prepends every line of @var{text} with
-@samp{@var{landmark}:@w{@ }}, if @var{landmark} is nonempty. Any spaces
-and/or a final colon are stripped from the end of @var{landmark}.
-Special landmarks, which begin and end with a backslash @samp{\}, are
-ignored. @var{landmark} is added between @var{prefix} and @var{text}.
+The default implementation creates lines like this:
+
+@example
+@var{prefix}@var{landmark}: @var{text}     @r{(if @var{landmark} is nonempty)}
+@var{prefix}@var{text}               @r{(if @var{landmark} is empty)}
+@end example
+
+@noindent
+Any spaces and/or a final colon are stripped from the end of
+@var{landmark}. Special landmarks, which begin and end with a backslash
+@samp{\}, are ignored.
 @end deftypemethod
 
 @deftypemethod ErrorHandler {virtual void} handle_text (Seriousness @var{s}, const String &@var{text})
@@ -1301,7 +1314,98 @@ base_errh}.
 @end deftypeop
 
 
-@node Element Initialization, Tasks, Basics, Top
+@node Element Characteristics, Element Initialization, Basics, Top
+@chapter Element Characteristics
+
+@menu
+* Element Class::               
+* Element Names::               
+* Element Router::              
+@end menu
+
+@node Element Class, Element Names, Element Characteristics, Element Characteristics
+@section Element Class
+
+Every element belongs to a single element class, and every element class
+has a name. The @code{class_name} virtual function returns that name.
+
+@deftypemethod Element {virtual const char *} class_name {() const}
+Returns the element's class name as a null-terminated C string. This
+method has no default implementation; every element must supply a
+definition.
+
+The @code{class_name} method should be declared on a single line in the
+element's class definition, and should return a C string constant. This
+makes the element's class name easy to automatically extract from the
+source code.
+
+Here is a typical @code{class_name} method.
+
+@example
+class ARPQuerier : public Element @{ public: // ...
+  const char *class_name() const @{ return "ARPQuerier"; @}
+@}
+@end example
+@end deftypemethod
+
+Click creates new element objects by cloning existing element objects.
+The system maintains one prototype element for each element class it
+understands. When a router configuration declares a new element, the
+system finds the appropriate prototype and calls its @code{clone}
+method. This method creates and returns a new element with the same
+element class as the prototype.
+
+@deftypemethod Element {virtual Element *} clone {() const}
+Returns a new element with the same element class as this element. This
+method has no default implementation; every element must supply a
+definition.
+
+The @code{clone} method should return a completely fresh element object.
+In particular, the resulting element should not be configured or
+initialized, and should not share this element's configuration state. It
+will be configured independently through element initialization methods;
+see @ref{Element Initialization}, for more information.
+
+Here is a typical @code{clone} method.
+
+@example
+class ARPQuerier : public Element @{ public: // ...
+  ARPQuerier *clone() const @{ return new ARPQuerier; @}
+@}
+@end example
+
+@noindent
+Note that @code{clone}'s return type has been changed to
+@code{ARPQuerier *} rather than @w{@code{Element *}}. This is considered
+good style, since it makes typing more specific, but it is not really
+necessary. @code{clone} need not be defined in the class definition,
+although many elements do define it this way.
+@end deftypemethod
+
+Click elements do support a simple form of multiple inheritance,
+however. An element may belong to multiple That element class virtual
+
+@deftypemethod Element {virtual void *} cast {(const char *@var{name})}
+Returns a new element with the same element class as this element.
+@end deftypemethod
+
+
+@node Element Names, Element Router, Element Class, Element Characteristics
+@section Names
+
+  String id() const;
+  String declaration() const;
+  String landmark() const;
+
+@node Element Router,  , Element Names, Element Characteristics
+@section Router Relationship
+
+  Router *router() const		@{ return _router; @}
+  int eindex() const			@{ return _eindex; @}
+  int eindex(Router *) const;
+
+
+@node Element Initialization, Tasks, Element Characteristics, Top
 @chapter Element Initialization
 
 The process of making an element ready for inclusion in an active router
@@ -1316,17 +1420,17 @@ successfully complete one phase before the next phase begins.
 
 @menu
 * notify_ninputs notify_noutputs::  
+* configure_phase::             
 * configure::                   
 * processing::                  
 * flow_code::                   
 * initialize::                  
-* configure_phase::             
 * uninitialize::                
 * Initialization Phases::       
 @end menu
 
 
-@node notify_ninputs notify_noutputs, configure, Element Initialization, Element Initialization
+@node notify_ninputs notify_noutputs, configure_phase, Element Initialization, Element Initialization
 @section @code{notify_ninputs} and @code{notify_noutputs}
 
 The router calls each element's @code{notify_ninputs} and
@@ -1356,21 +1460,82 @@ input and output ports or set other private element state.
 
 A @code{notify_ninputs} or @code{notify_noutputs} method should
 generally be very short and stylized. It should call no Element methods
-except for possibly @code{set_ninputs} or @code{set_noutputs}. The
-following typical @code{notify_noutputs} method sets the element's
-number of outputs to one or two, depending on how many outputs were
-actually used:
+except for possibly @code{set_ninputs} or @code{set_noutputs}. This
+typical @code{notify_noutputs} method sets the element's number of
+outputs to one or two, depending on how many outputs were actually used:
 
 @example
 void
-CheckIPHeader::notify_noutputs(int n)
+ARPQuerier::notify_noutputs(int n)
 @{
   set_noutputs(n < 2 ? 1 : 2);
 @}
 @end example
 
 
-@node configure, processing, notify_ninputs notify_noutputs, Element Initialization
+@node configure_phase, configure, notify_ninputs notify_noutputs, Element Initialization
+@section @code{configure_phase}---Initialization Order
+
+Some elements depend on being configured and initialized before or after
+other elements. For example, the @click{AddressInfo} element must be
+configured before all other elements, since its address abbreviations
+must be available in their configuration strings. The
+@code{configure_phase} method makes this possible.
+
+@deftypemethod Element {virtual int} configure_phase () const
+Returns the element's @dfn{configure phase}, an integer that specifies
+when it should be configured and initialized relative to other elements.
+
+An element with a low configure phase will be configured before an
+element with a high configure phase. Elements with the same configure
+phase might be configured in any order relative to one another.
+
+The following basic configure phase constants are defined in
+@code{<click/element.hh>}:
+
+@table @code
+@item CONFIGURE_PHASE_FIRST
+Configure before most other elements. Only used by @click{AddressInfo}
+in the Click distribution.
+@item CONFIGURE_PHASE_INFO
+Configure early. Appropriate for most information elements.
+@item CONFIGURE_PHASE_DEFAULT
+Default configuration phase. Appropriate for most elements.
+@item CONFIGURE_PHASE_LAST
+Configure after most other elements. No elements in the Click
+distribution use this configure phase.
+@end table
+
+@code{configure_phase} may also return a number based on these
+constants. For example, all @click{FromLinux} elements should be
+initialized before any @click{ToDevice} elements. The @click{FromLinux}
+element therefore contains the following definitions:
+
+@example
+enum @{ CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
+       CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 @};
+@end example
+
+@noindent
+@code{FromLinux::configure_phase} returns
+@code{CONFIGURE_PHASE_FROMLINUX}, and @code{ToDevice::configure_phase}
+returns @code{FromLinux::CONFIGURE_PHASE_TODEVICE}.
+
+The default implementation returns @code{CONFIGURE_PHASE_DEFAULT}.
+@end deftypemethod
+
+Click uses all elements' configure phases to construct a single element
+configuration order. It then configures elements in this order and, if
+there were no errors, initializes them in the same order. The
+@code{configure_phase} method is called once, relatively early---before
+@code{configure} and @code{initialize}.
+
+An element's configure phase should depend only on its class. In
+particular, the body of a @code{configure_phase} method should consist
+of a single @code{return} statement returning some constant.
+
+
+@node configure, processing, configure_phase, Element Initialization
 @section @code{configure}---Parsing Configure Strings
 
 The @code{configure} method is passed the element's configuration
@@ -1463,33 +1628,32 @@ processing codes:
 The default implementation for @code{Element::processing} returns
 @code{AGNOSTIC}.
 
-The @code{processing} method should be declared as an inline function in
-the element's class definition. It should return a C string constant or
-one of the five mnemonic names above. This makes the element's
-processing code easy to automatically extract from the source code.
+The @code{processing} method should be declared on a single line in the
+element's class definition. It should return a C string constant or one
+of the five mnemonic names above. These guidelines make the element's
+processing code easy to automatically extract from the source code. 
+
+Here is a typical @code{processing} method.
+
+@example
+class ARPQuerier : public Element @{ public: // ...
+  const char *processing() const @{ return PUSH; @}
+@}
+@end example
 
 
 @node flow_code, initialize, processing, Element Initialization
 @section @code{flow_code}---Packet Flow Within an Element
 
-In most cases, a packet arriving on an element's input port might then
-be emitted on any of that element's output ports. A packet arriving at a
-@click{Tee} element will be emitted on each of @click{Tee}'s output
-ports; a packet arriving at a @click{CheckIPHeader} element may be
-emitted on either of its two output ports, although it is impossible to
-say which port a priori. However, it is sometimes possible to rule out
-certain port combinations. The @click{Idle} element, for example, drops
-every packet it receives, so packets will never travel between its input
-ports and its output ports. Packets arriving on one of
-@click{Suppressor}'s input ports can exit only on the corresponding
-output port. Click needs to know this precise flow information, since it
-affects the agnostic port assignment algorithm and the algorithms for
-finding upstream and downstream elements.
-
-The @code{flow_code} method specifies how packets travel within an
-element. @code{flow_code} returns a @dfn{flow code}---an ASCII string
-that, properly interpreted, defines how packets may travel within the
-element.
+Connections determine how packets flow between elements in a router
+configuration. Packets flow @emph{within} elements as well: packets
+arriving on an element's input port will then be emitted on zero or more
+output ports, possibly after some modification. The user supplies
+connection information explicitly, but information about packet flow
+within an element is provided by the element itself, via its
+@code{flow_code} method. This method returns a @dfn{flow code}: an ASCII
+string that, properly interpreted, defines how packets may travel within
+the element.
 
 @deftypemethod Element {virtual const char *} flow_code () const
 Returns the element's flow code as a null-terminated C string.
@@ -1528,22 +1692,28 @@ This table describes some simple flow codes.
 
 @table @code
 @item "x/x"
-Packets may travel from any input port to any output port.
+Packets may travel from any input port to any output port. Most elements
+use this flow code.
 
 @item "xy/x"
-Packets arriving on input port 0 may travel to output port 0, but those
-arriving on input port 1 will not be emitted on any output.
+Packets arriving on input port 0 may travel to any output port, but
+those arriving on other input ports will not be emitted on any output.
+@click{ARPQuerier} uses this flow code, for example.
 
 @item "x/y"
-Packets never travel between input and output ports.
+Packets never travel between input and output ports. @click{Idle} and
+@click{Error} use this flow code. So does @click{KernelTap}, since its
+input port and output port are decoupled (packets received on its input
+are sent to the kernel; packets received from the kernel are sent to its
+output).
 
 @item "#/#"
 Packets arriving on input port @var{K} may travel only to output port
-@var{K}.
+@var{K}. @click{Suppressor} uses this flow code.
 
 @item "#/[^#]"
 Packets arriving on input port @var{K} may travel to any output port
-except @var{K}.
+except @var{K}. @click{EtherSwitch} uses this flow code.
 @end table
 
 The @code{Element} class provides a mnemonic name for a common flow
@@ -1557,13 +1727,83 @@ code:
 The default implementation for @code{Element::processing} returns
 @code{COMPLETE_FLOW}.
 
-The @code{flow_code} method should be declared as an inline function in
-the element's class definition. It should return a C string constant or
-@code{COMPLETE_FLOW}. This makes the element's flow code easy to
-automatically extract from the source code.
+The @code{flow_code} method should be declared on a single line in the
+element's class definition. It should return a C string constant or
+@code{COMPLETE_FLOW}. These guidelines make the element's flow code easy
+to automatically extract from the source code. 
+
+Here is a typical @code{flow_code} method.
+
+@example
+class ARPQuerier : public Element @{ public: // ...
+  const char *flow_code() const @{ return "xy/x"; @}
+@}
+@end example
+
+@noindent
+Most elements do not declare a @code{flow_code} method, relying on the
+default implementation instead.
+
+Click uses flow code information in its agnostic port assignment
+algorithm and its algorithms for finding upstream and downstream
+elements.
+
+@subsection What Is a Flow Code?
+
+Flow codes conveniently encode a more primitive concept, @dfn{flow
+matrices}. An element's flow matrix, @math{M}, is a Boolean matrix with
+@code{ninputs} rows and @code{noutputs} columns. The matrix element
+@math{m[i,j]} is true if and only if packets can ``travel'' from input
+port @math{i} to output port @math{j}. Note that this is independent of
+the element's processing code; it holds for push, pull, and agnostic
+ports.
+
+But what does it mean for a packet to ``travel'' from one port to
+another? The following principle will help you pick the right flow code
+for an element.
+
+The basic idea is to consider how an element's flow matrix would affect
+a simple router. Take an input port, @math{i}, and output port,
+@math{j}, on some element @click{M}. To decide whether @math{m[i,j]}
+should be true, imagine this simple configuration (or a similar
+configuration):
+
+@example
+... -> RED -> [@math{i}] M [@math{j}] -> Queue -> ...;
+@end example
+
+@noindent
+Now, should the @click{RED} element include the @click{Queue} element in
+its queue length calculation? The @math{m[i,j]} element should be true
+if and only if the answer is yes.
+
+For example, consider @click{ARPQuerier}'s second input port, which
+receives ARP responses. @click{ARPQuerier} may, on receiving an ARP
+response, emit a held-over IP packet on its first output. However, a
+@click{RED} element upstream of that second input port would probably
+not include the downstream @click{Queue} in its queue length
+configuration. After all, the ARP responses are effectively dropped;
+packets emitted onto the @click{Queue} originally came from
+@click{ARPQuerier}'s first input port. Therefore, @math{m[1,0]} is
+false, and @click{ARPQuerier}'s flow code specifies that packets
+arriving on the second input port are not emitted on any output port.
+
+The @click{ARPResponder} element provides a contrasting example. It has
+one input port, which receives ARP queries, and one output port, which
+emits the corresponding ARP responses. A @click{RED} element upstream of
+@click{ARPResponder} would probably want to include a downstream
+@click{Queue}, since @click{ARPResponder}'s received queries are
+effectively transmuted, one-to-one, into emitted responses. Thus,
+@math{m[0,0]} is true, even though the packets @click{ARPResponder}
+emits are completely different from the packets it receives.
+
+If you find this confusing, don't fret. It is perfectly fine to be
+conservative when assigning flow codes. Most elements work well with
+@code{COMPLETE_FLOW}. Only about 4% of the Click distribution's elements
+use other flow codes.
 
 
-@node initialize, configure_phase, flow_code, Element Initialization
+@node initialize, uninitialize, flow_code, Element Initialization
 @section @code{initialize}---Element Initialization
 
 The @code{initialize} method is called just before the router is placed
@@ -1606,69 +1846,7 @@ Opening files.
 @end itemize
 
 
-@node configure_phase, uninitialize, initialize, Element Initialization
-@section @code{configure_phase}---Initialization Order
-
-Some elements depend on being configured and initialized before or after
-other elements. For example, the @click{AddressInfo} element must be
-configured before all other elements, since its address abbreviations
-must be available in their configuration strings. The
-@code{configure_phase} method makes this possible.
-
-@deftypemethod Element {virtual int} configure_phase () const
-Returns the element's @dfn{configure phase}, an integer that specifies
-when it should be configured and initialized relative to other elements.
-
-An element with a low configure phase will be configured before an
-element with a high configure phase. Elements with the same configure
-phase might be configured in any order relative to one another.
-
-The following basic configure phase constants are defined in
-@code{<click/element.hh>}:
-
-@table @code
-@item CONFIGURE_PHASE_FIRST
-Configure before most other elements. Only used by @click{AddressInfo}
-in the Click distribution.
-@item CONFIGURE_PHASE_INFO
-Configure early. Appropriate for most information elements.
-@item CONFIGURE_PHASE_DEFAULT
-Default configuration phase. Appropriate for most elements.
-@item CONFIGURE_PHASE_LAST
-Configure after most other elements. No elements in the Click
-distribution use this configure phase.
-@end table
-
-@code{configure_phase} may also return a number based on these
-constants. For example, all @click{FromLinux} elements should be
-initialized before any @click{ToDevice} elements. The @click{FromLinux}
-element therefore contains the following definitions:
-
-@example
-enum @{ CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
-       CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 @};
-@end example
-
-@noindent
-@code{FromLinux::configure_phase} returns
-@code{CONFIGURE_PHASE_FROMLINUX}, and @code{ToDevice::configure_phase}
-returns @code{FromLinux::CONFIGURE_PHASE_TODEVICE}.
-
-The default implementation returns @code{CONFIGURE_PHASE_DEFAULT}.
-@end deftypemethod
-
-Click uses all elements' configure phases to construct a single element
-configuration order. It then configures elements in this order and, if
-there were no errors, initializes them in the same order. The
-@code{configure_phase} method is called once, relatively early---before
-@code{configure} and @code{initialize}.
-
-An element's configure phase should depend only on its class. In
-particular, the body of a @code{configure_phase} method should consist
-of a single @code{return} statement returning some constant.
-
-
-@node uninitialize, Initialization Phases, configure_phase, Element Initialization
+@node uninitialize, Initialization Phases, initialize, Element Initialization
 @section @code{uninitialize}---Removing Initialization State
 
 The @code{uninitialize} method should undo any effects of
