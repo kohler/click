@@ -90,7 +90,7 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   if (tcph->th_ack != newval) {
     csum_delta += (~tcph->th_ack >> 16) + (~tcph->th_ack & 0xFFFF)
       + (newval >> 16) + (newval & 0xFFFF);
-    tcph->th_ack = htonl(newval);
+    tcph->th_ack = newval;
   }
 
   // update checksum
