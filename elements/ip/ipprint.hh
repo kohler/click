@@ -86,7 +86,7 @@ network byte order, while Linux/i386 writes them in host byte order
 
 =item OUTFILE
 
-String. Only available at user level. Print information to the file specified
+String. Only available at user level. PrintV<> information to the file specified
 by OUTFILE instead of standard error.
 
 =back
