@@ -27,7 +27,7 @@ datadir = @datadir@/click
 
 all: libsrc Makefile
 
-libsrc: Makefile stamp-h
+libsrc: Makefile always stamp-h
 	@cd libsrc && $(MAKE) all
 
 install: install-lib install-local install-include
@@ -66,13 +66,17 @@ stamp-h: $(srcdir)/config.h.in config.status
 	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
 	echo > stamp-h
 
+always:
+	@:
+
 
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
 
-dist: distdir
+dist: $(distdir).tar.gz
+	rm -rf $(distdir)
+$(distdir).tar.gz: always distdir
 	tar czf $(distdir).tar.gz $(distdir)
-	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
 	-rm -rf $(distdir)
 	mkdir $(distdir)
@@ -101,5 +105,5 @@ distclean:
 	-rm -f config.cache config.log click-compile stamp-h
 
 
-.PHONY: all libsrc clean distclean distdir dist \
+.PHONY: all always libsrc clean distclean distdir dist \
 	install install-lib install-local install-include

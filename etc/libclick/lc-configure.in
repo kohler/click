@@ -338,16 +338,15 @@ elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; th
   ac_cv_gnu_make='gmake'
 else
   AC_MSG_RESULT(not found)
-  AC_MSG_ERROR(can't find GNU make. Either put "'`'"gmake' on your PATH and
-rerun "'`'"./configure', or set the GMAKE environment variable to
-GNU make's pathname.)
+  AC_MSG_WARNING([can't find GNU make, not doing dependency tracking])
+  ac_cv_gnu_make=''
 fi])
   GMAKE="$ac_cv_gnu_make"
 fi
 
 SUBMAKE=''
 AC_SUBST(SUBMAKE)
-if test $GMAKE != make; then
+if test "x$GMAKE" != xmake -a "x$GMAKE" != x; then
   AC_MSG_WARN(You must compile with GNU make ("'`'"$GMAKE').)
   SUBMAKE="MAKE = $ac_cv_gnu_make"
 fi
@@ -492,5 +491,6 @@ AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
 done
 for ac_file in $CONFIG_FILES; do
   test $ac_file = click-compile && chmod +x click-compile
-done)
+  test -z "$GMAKE" && echo $ac_file | grep Makefile >/dev/null && $ac_given_srcdir/missing gmake $ac_file
+done, GMAKE="$GMAKE")
 AC_OUTPUT($config_files)

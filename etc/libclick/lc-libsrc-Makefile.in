@@ -38,10 +38,6 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
-ifndef INSTALLPROGS
-INSTALLPROGS = click
-endif
-
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
@@ -87,10 +83,12 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+#!gmake
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
+#!end gmake
 
 install: libclick.a
 	$(mkinstalldirs) $(libdir)
