@@ -110,7 +110,6 @@ class LexerT { public:
   
     // router
     RouterT *_router;
-    CompoundElementClassT *_compound_class;
     
     int _anonymous_offset;
     int _compound_depth;

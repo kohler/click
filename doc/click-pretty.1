@@ -482,14 +482,30 @@ will figure out the right answer by looking at the configuration.
 .TP
 .BI \-u " url"
 .TP
-.BI \-\-class\-urls " url"
+.BI \-\-class\-docs " url"
 Web documentation for primitive element classes is available at
 .IR url .
 The
 .I url
-may contain a single "%s", which is replaced with the element class's name.
-URLs specified in  elementmap files take precedence over
+may contain a single "%s", which is replaced with the element class's
+documentation name. (This is the same as its regular name, unless
+.B =title
+was specified in the documentation comment.) URLs specified in elementmap
+files with $webdoc take precedence over
 .BR \-u .
+'
+.Sp
+.TP
+.BI \-\-package\-docs " package\fR=\fIurl"
+Web documentation for primitive element classes in package
+.I package
+is available at
+.IR url .
+The
+.I url
+may contain a single "%s", which is replaced with the element class's
+documentation name. URLs specified in elementmap files take precedence over
+.BR \-\-package\-docs .
 '
 .Sp
 .TP

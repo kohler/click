@@ -47,7 +47,7 @@ if ($INSTALL) {
 
 # 1.5. read elementmap
 open(EMAP, "/tmp/%click-webdoc/share/click/elementmap") || die "/tmp/%click-webdoc/share/click/elementmap: $!\n";
-my(%ereq, $reqindex, $classindex, $provindex);
+my(%ereq, $reqindex, $classindex, $provindex, $docnameindex);
 
 sub em_unquote ($) {
     my($x) = @_;
@@ -72,9 +72,10 @@ while (<EMAP>) {
 	    $reqindex = $i - 1 if $x[$i] eq 'requirements';
 	    $classindex = $i - 1 if $x[$i] eq 'class';
 	    $provindex = $i - 1 if $x[$i] eq 'provisions';
+	    $docnameindex = $i - 1 if $x[$i] eq 'doc_name';
 	}
     } elsif ($x[0] !~ /^\$/ && defined($reqindex) && $reqindex < @x) {
-	my($e, $r, $p) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]));
+	my($e, $r, $p, $dn) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]), em_unquote($x[$docnameindex]));
 	$ereq{$e} = ($ereq{$e} ? 'xxx' : $r) if $e;
 	foreach $i (split(/\s+/, $p)) {
 	    $ereq{$i} = $r;

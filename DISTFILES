@@ -284,18 +284,25 @@ tools/Makefile.in
 
 tools/lib
 tools/lib/Makefile.in
+tools/lib/eclasst.cc
+tools/lib/eclasst.hh
+tools/lib/elementmap.cc
+tools/lib/elementmap.hh
 tools/lib/elementt.cc
 tools/lib/elementt.hh
+tools/lib/etraits.cc
+tools/lib/etraits.hh
+tools/lib/hashmapi.cc
 tools/lib/lexert.cc 
 tools/lib/lexert.hh
+tools/lib/lexertinfo.cc
 tools/lib/lexertinfo.hh
-tools/lib/routert.cc
-tools/lib/routert.hh
 tools/lib/processingt.cc
 tools/lib/processingt.hh
+tools/lib/routert.cc
+tools/lib/routert.hh
 tools/lib/toolutils.cc
 tools/lib/toolutils.hh
-tools/lib/hashmapi.cc
 tools/lib/vectori.cc
 
 tools/click-align

@@ -40,6 +40,7 @@ class ElementClassT { public:
     bool requires(const String &) const;
     bool provides(const String &) const;
     const String &package() const;
+    const String &documentation_name() const;
     String documentation_url() const;
 
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
@@ -70,8 +71,6 @@ class ElementClassT { public:
     
     static ElementClassT *the_unused_type;
     static ElementClassT *the_tunnel_type;
-    static ElementMap *the_emap;
-    static const int *the_emap_version_ptr;
     
     ElementClassT(const String &, int);
     ElementClassT(const ElementClassT &);
@@ -167,6 +166,12 @@ ElementClassT::traits() const
 	return *_traits;
     else
 	return find_traits();
+}
+
+inline const String &
+ElementClassT::documentation_name() const
+{
+    return traits().documentation_name;
 }
 
 inline const String &

@@ -140,6 +140,7 @@ ElementTraits::component(int what)
       case D_FLAGS:		return &flags;
       case D_REQUIREMENTS:	return &requirements;
       case D_PROVISIONS:	return &provisions;
+      case D_DOC_NAME:		return &documentation_name;
       default:			return 0;
     }
 }
@@ -163,6 +164,8 @@ ElementTraits::parse_component(const String &s)
 	return D_REQUIREMENTS;
     else if (s == "provisions")
 	return D_PROVISIONS;
+    else if (s == "doc_name")
+	return D_DOC_NAME;
     else
 	return D_NONE;
 }

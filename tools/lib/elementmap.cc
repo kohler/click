@@ -92,10 +92,13 @@ ElementMap::driver_elt_index(int i) const
 String
 ElementMap::documentation_url(const ElementTraits &t) const
 {
-    String name = t.name;
-    return percent_substitute(_def[t.def_index].webdoc,
-			      's', name.cc(),
-			      0);
+    String name = t.documentation_name;
+    if (name)
+	return percent_substitute(_def[t.def_index].webdoc,
+				  's', name.cc(),
+				  0);
+    else
+	return "";
 }
 
 int
@@ -248,13 +251,14 @@ String
 ElementMap::unparse() const
 {
     StringAccum sa;
-    sa << "$data\tclass\tcxx_class\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
+    sa << "$data\tclass\tcxx_class\tdoc_name\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
     for (int i = 1; i < _e.size(); i++) {
 	const Traits &e = _e[i];
 	if (!e.name && !e.cxx)
 	    continue;
 	sa << cp_quote(e.name) << '\t'
 	   << cp_quote(e.cxx) << '\t'
+	   << cp_quote(e.documentation_name) << '\t'
 	   << cp_quote(e.header_file) << '\t'
 	   << cp_quote(e.processing_code()) << '\t'
 	   << cp_quote(e.flow_code()) << '\t'

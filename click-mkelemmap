@@ -20,7 +20,7 @@ my(%processing_constants) =
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
 my(%flow_code_constants) =
     ('COMPLETE_FLOW' => 'x/x');
-my(@source_file, @header_file, @click_name, @cxx_name,
+my(@source_file, @header_file, @click_name, @cxx_name, @doc_name,
    @parents, @processing, @flow_code, @flags, @requirements, @provisions,
    %click_name_to_id, %cxx_name_to_id);
 my(@includes) = ( '.' );
@@ -36,7 +36,7 @@ sub driver_mask ($) {
 
 sub process_file ($) {
   my($filename) = @_;
-  my($headername, $headerfile, $i);
+  my($headername, $headerfile, $i, $comment);
 
   if ($filename =~ /^(.*):"(.*)"$/) {
       ($filename, $headername) = ($1, $2);
@@ -107,6 +107,36 @@ sub process_file ($) {
     }
   }
 
+  # process element documentation
+  my(%doc_titles);
+  foreach $comment (split(m{(/\*.*?\*/)}s, $text)) {
+      if ($comment =~ /^\/\*/ && $comment =~ /^[\/*\s]+=/) {
+	  $comment =~ s/^\/\*\s*//g;
+	  $comment =~ s/\s*\*\/$//g;
+	  $comment =~ s/^ ?\* ?//gm;
+	  my($title, $count);
+	  while ($comment =~ m{^=(\w+)( *)(.*)([\0-\377]*?)(?=^=\w|\Z)}mg) {
+	      if ($1 eq 'title') {
+		  $title = $3;
+	      } elsif ($1 eq 'c') {
+		  $_ = $4;
+		  while (/^\s*(\w+)\(/mg) {
+		      $doc_titles{$1} = ($title ? $title : $1);
+		  }
+		  if (!%doc_titles && /^\s*([\w@]+)\s*$/) {
+		      $doc_titles{$1} = ($title ? $title : $1);
+		  }
+		  last;
+	      }
+	  }
+      }
+  }
+
+  # apply element documentation to element names
+  for ($i = $first; $i < @processing; $i++) {
+      push @doc_name, $doc_titles{$click_name[$i]};
+  }
+
   # process ELEMENT_REQUIRES and ELEMENT_PROVIDES
   if (!open(IN, $filename)) {
     print STDERR "$filename: $!\n";
@@ -126,6 +156,7 @@ sub process_file ($) {
   # add a fake class if there were no classes
   if (@cxx_name == $first && $prov) {
     push @cxx_name, '""';
+    push @doc_name, "";
     push @source_file, $filename;
     push @header_file, $headername;
     push @parents, [];
@@ -331,11 +362,14 @@ my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
 print OUT "\$sourcedir \"$sourcedir\"\n";
 print OUT "\$provides \"", join(' ', @provides), "\"\n";
-print OUT "\$data class cxx_class header_file source_file processing flow_code flags requirements provisions\n";
+print OUT "\$data class cxx_class doc_name header_file source_file processing flow_code flags requirements provisions\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];
   $n = '""' if !$n;
+
+  my($docname) = $doc_name[$id];
+  $docname = '""' if !$docname;
   
   my($hf) = $header_file[$id];
   $hf =~ s/^$prefix\/*//;
@@ -358,7 +392,7 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($req) = $requirements[$id];
   my($prov) = $provisions[$id];
   
-  print OUT $n, " ", $cxx_name[$id], " ", $hf, " ", $sf, " ", $p, " ", $flow;
+  print OUT $n, " ", $cxx_name[$id], " ", $docname, " ", $hf, " ", $sf, " ", $p, " ", $flow;
   print OUT ' "', $flags, '" "', $req, '" "', $prov, '"'
       if $flags || $req || $prov;
   print OUT "\n";

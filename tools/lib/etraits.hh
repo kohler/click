@@ -4,7 +4,7 @@
 
 struct Driver {
     enum {
-	LINUXMODULE = 0, USERLEVEL = 1, BSDMODULE = 2,
+	USERLEVEL = 0, LINUXMODULE = 1, BSDMODULE = 2,
 	ALLMASK = 0x7, COUNT = 3
     };
     static const char *name(int);
@@ -16,6 +16,7 @@ struct ElementTraits {
     
     String name;
     String cxx;
+    String documentation_name;
     String header_file;
     String source_file;
     String flags;
@@ -45,7 +46,7 @@ struct ElementTraits {
 	D_NONE,
 	D_CLASS, D_CXX_CLASS, D_HEADER_FILE, D_PROCESSING,
 	D_FLOW_CODE, D_FLAGS, D_REQUIREMENTS, D_PROVISIONS,
-	D_SOURCE_FILE,
+	D_SOURCE_FILE, D_DOC_NAME,
 	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS
     };
     static int parse_component(const String &);

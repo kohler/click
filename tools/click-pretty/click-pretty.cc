@@ -41,6 +41,7 @@
 #define TEMPLATE_OPT		306
 #define WRITE_TEMPLATE_OPT	307
 #define DEFINE_OPT		308
+#define PACKAGE_URLS_OPT	309
 
 #define FIRST_DRIVER_OPT	1000
 #define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
@@ -50,13 +51,14 @@
 static Clp_Option options[] = {
     { "bsdmodule", 'b', BSDMODULE_OPT, 0, 0 },
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
-    { "class-urls", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
+    { "class-docs", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
     { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
     { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+    { "package-docs", 0, PACKAGE_URLS_OPT, Clp_ArgString, 0 },
     { "template", 't', TEMPLATE_OPT, Clp_ArgString, 0 },
     { "userlevel", 0, USERLEVEL_OPT, 0, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
@@ -182,7 +184,7 @@ TABLE.conntable {\n\
 
 static Vector<ElementClassT *> classes;
 static HashMap<int, String> class_hrefs;
-static String default_class_href;
+static HashMap<String, String> package_hrefs;
 
 static void
 notify_class(ElementClassT *c)
@@ -208,10 +210,16 @@ class_href(ElementClassT *ec)
     else if (String href = ec->documentation_url()) {
 	add_class_href(ec->unique_id(), href);
 	return href;
-    } else {
-	String href = percent_substitute(default_class_href, 's', ec->name_cc(), 0);
+    } else if (String doc_name = ec->documentation_name()) {
+	String package_href = package_hrefs[ec->package()];
+	if (!package_href)
+	    package_href = package_hrefs[""];
+	String href = percent_substitute(package_href, 's', doc_name.cc(), 0);
 	add_class_href(ec->unique_id(), href);
 	return href;
+    } else {
+	add_class_href(ec->unique_id(), String());
+	return String();
     }
 }
 
@@ -1005,7 +1013,7 @@ pretty_process(const char *infile, const char *outfile,
 		if (driver_mask & (1 << d))
 		    driver = d;
 	    if (!emap.driver_indifferent(r, driver_mask, errh))
-		errh->warning("configuration not indifferent to driver; arbitrarily picking %s", Driver::name(driver));
+		errh->warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(driver));
 	}
     } else if (!emap.driver_compatible(r, driver))
 	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
@@ -1037,15 +1045,16 @@ based on a template, showing that configuration with syntax highlighting.\n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE           Read router configuration from FILE.\n\
-  -o, --output FILE         Write HTML output to FILE.\n\
-  -t, --template FILE       Use FILE as the template instead of default.\n\
-  -d, --define NAME=TEXT    Define a new tag, NAME, that expands to TEXT.\n\
-  -u, --class-urls URL      Link primitive element classes to URL.\n\
-      --write-template      Write template as is, without including router.\n\
-  -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
-      --help                Print this message and exit.\n\
-  -v, --version             Print version number and exit.\n\
+  -f, --file FILE             Read router configuration from FILE.\n\
+  -o, --output FILE           Write HTML output to FILE.\n\
+  -t, --template FILE         Use FILE as the template instead of default.\n\
+  -d, --define NAME=TEXT      Define a new tag, NAME, that expands to TEXT.\n\
+  -u, --class-docs URL        Link primitive element classes to URL.\n\
+      --package-docs PKG=URL  Link element classes in package PKG to URL.\n\
+      --write-template        Write template as is, without including router.\n\
+  -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
+      --help                  Print this message and exit.\n\
+  -v, --version               Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -1094,8 +1103,19 @@ particular purpose.\n");
 	    break;
 
 	  case CLASS_URLS_OPT:
-	    default_class_href = clp->arg;
+	    package_hrefs.insert("", clp->arg);
 	    break;
+
+	  case PACKAGE_URLS_OPT: {
+	      String s = clp->arg;
+	      int equals = s.find_left('=');
+	      if (!equals) {
+		  p_errh->error("`--package-urls' option must contain an equals sign");
+		  goto bad_option;
+	      }
+	      package_hrefs.insert(s.substring(0, equals), s.substring(equals + 1));
+	      break;
+	  }
 
 	  case TEMPLATE_OPT:
 	    html_template = file_string(clp->arg, p_errh);
