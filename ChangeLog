@@ -1,3 +1,8 @@
+2001-10-01 Monday 19:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.7), lookupiprouteron.hh (1.6):
+	added printlns for path selection
+
 2001-10-01 Monday 15:26  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/packet.hh (1.24), lib/packet.cc (1.48): Packet
