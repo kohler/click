@@ -86,24 +86,39 @@ Specializer::add_type_info(const String &click_name, const String &cxx_name,
 }
 
 void
+ElementTypeInfo::locate_header_file(RouterT *for_archive, ErrorHandler *errh)
+{
+  if (!found_header_file) {
+    if (!source_directory && for_archive->archive_index(header_file) >= 0)
+      found_header_file = header_file;
+    else if (String found = clickpath_find_file(header_file, 0, source_directory))
+      found_header_file = found;
+    else {
+      errh->warning("can't locate header file \"%s\"", header_file.cc());
+      found_header_file = header_file;
+    }
+  }
+}
+
+void
 Specializer::parse_source_file(ElementTypeInfo &etinfo,
-			       //const String &fn, const String &source_dir,
 			       bool do_header, String *includes)
 {
   String fn = etinfo.header_file;
-  if (do_header && fn.substring(-3) == ".hh")
+  if (!do_header && fn.substring(-3) == ".hh")
     fn = etinfo.header_file.substring(0, -3) + ".cc";
   
   // don't parse a source file twice
   if (_parsed_sources[fn] < 0) {
     String text;
-    if (!etinfo.source_directory && _router->archive_index(fn) >= 0)
+    if (!etinfo.source_directory && _router->archive_index(fn) >= 0) {
       text = _router->archive(fn).data;
-    else {
-      if (String found = clickpath_find_file(fn, 0, etinfo.source_directory)) {
+      if (do_header)
+	etinfo.found_header_file = fn;
+    } else if (String found = clickpath_find_file(fn, 0, etinfo.source_directory)) {
+      text = file_string(found);
+      if (do_header)
 	etinfo.found_header_file = found;
-	text = file_string(found);
-      }
     }
     _cxxinfo.parse_file(text, do_header, includes);
     _parsed_sources.insert(fn, 1);
@@ -248,7 +263,7 @@ Specializer::create_class(SpecializedClass &spc)
 		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
 		 "", ""));
   new_cxxc->defun
-    (CxxFunction("devirtualize_never", true, "void", "()", "", ""));
+    (CxxFunction("never_devirtualize", true, "void", "()", "", ""));
 
   // transfer reachable rewritable functions to new C++ class
   // with pattern replacements
@@ -475,23 +490,40 @@ Specializer::output_includes(const ElementTypeInfo &eti, StringAccum &out)
       p2++;
     while (p < p2 && isspace(s[p]))
       p++;
+
     if (p < p2 && s[p] == '#') {
-      for (p++; p < p2 && isspace(s[p]); p++) ;
+      // we have a preprocessing directive!
+      
+      // skip space after '#'
+      for (p++; p < p2 && isspace(s[p]); p++)
+	/* nada */;
+
+      // check for '#include'
       if (p + 7 < p2 && strncmp(s+p, "include", 7) == 0) {
-	for (p += 7; p < p2 && isspace(s[p]); p++) ;
+	
+	// find what is "#include"d
+	for (p += 7; p < p2 && isspace(s[p]); p++)
+	  /* nada */;
+
+	// interested in "user includes", not <system includes>
 	if (p < p2 && s[p] == '\"') {
 	  int left = p + 1;
-	  for (p++; p < p2 && s[p] != '\"'; p++) ;
+	  for (p++; p < p2 && s[p] != '\"'; p++)
+	    /* nada */;
 	  String include = includes.substring(left, p - left);
 	  int include_index = _header_file_map[include];
 	  if (include_index >= 0) {
+	    if (!_etinfo[include_index].found_header_file)
+	      _etinfo[include_index].locate_header_file(_router, ErrorHandler::default_handler());
 	    out << "#include \"" << _etinfo[include_index].found_header_file << "\"\n";
 	    p = p2 + 1;
-	    continue;
+	    continue;		// don't use previous #include text
 	  }
 	}
       }
+      
     }
+
     out << includes.substring(start, p2 + 1 - start);
     p = p2 + 1;
   }

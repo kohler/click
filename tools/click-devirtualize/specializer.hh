@@ -19,6 +19,7 @@ struct ElementTypeInfo {
   bool read_source;
 
   ElementTypeInfo();
+  void locate_header_file(RouterT *, ErrorHandler *);
 };
 
 struct SpecializedClass {
