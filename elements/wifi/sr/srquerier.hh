@@ -57,24 +57,15 @@ class SRQuerier : public Element {
     int _best_metric;
     int _count;
     struct timeval _last_query;
-
-  };
-
-  
-  class CurrentPath {
-  public:
     Path _p;
     struct timeval _last_switch;    // last time we picked a new best route
     struct timeval _first_selected; // when _p was first selected as best route
-    CurrentPath() { }
-    CurrentPath(Path p) { _p = p; }
+    
   };
 
-  typedef HashMap<IPAddress, CurrentPath> PathCache;
-  PathCache _path_cache;
-
-  typedef HashMap<IPAddress, DstInfo> DstInfoTable;
-  DstInfoTable _queries;
+  
+  typedef HashMap<IPAddress, DstInfo> DstTable;
+  DstTable _queries;
 
   struct timeval _query_wait;
 

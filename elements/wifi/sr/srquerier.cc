@@ -167,48 +167,8 @@ SRQuerier::push(int port, Packet *p_in)
   bool best_valid = _link_table->valid_route(best);
   int best_metric = _link_table->get_route_metric(best);
   
-  if (best_valid) {
-    CurrentPath *current_path = _path_cache.findp(dst);
-      if (!current_path) {
-	_path_cache.insert(dst, CurrentPath(best));
-	current_path = _path_cache.findp(dst);
-	click_gettimeofday(&current_path->_last_switch);
-	click_gettimeofday(&current_path->_first_selected);
-      }
-      bool current_path_valid = _link_table->valid_route(current_path->_p);
-      int current_path_metric = _link_table->get_route_metric(current_path->_p);
-
-      struct timeval expire;
-      struct timeval now;
-      click_gettimeofday(&now);
-
-      struct timeval max_switch;
-      max_switch.tv_sec = _time_before_switch_sec;
-      max_switch.tv_usec = 0;
-      timeradd(&current_path->_last_switch, &max_switch, &expire);
-
-      if (!_route_dampening ||
-	  !current_path_valid || 
-	  current_path_metric > 100 + best_metric ||
-	  timercmp(&expire, &now, <)) {
-	if (current_path->_p != best) {
-	  click_gettimeofday(&current_path->_first_selected);
-	}
-	current_path->_p = best;
-	click_gettimeofday(&current_path->_last_switch);
-      }
-      p_in = _sr_forwarder->encap(p_in, current_path->_p, 0);
-      if (p_in) {
-	output(0).push(p_in);
-      }
-      //_sr_forwarder->send(p_in, current_path->_p, 0);
-      sent_packet = true;
-    } else {
-      p_in->kill();
-    }
-
-
   bool send_query = false;
+
   DstInfo *q = _queries.findp(dst);
   if (!q) {
     DstInfo foo = DstInfo(dst);
@@ -218,6 +178,46 @@ SRQuerier::push(int port, Packet *p_in)
     send_query = true;
   }
   sr_assert(q);
+
+  if (best_valid) {
+    if (!q->_p.size()) {
+      q->_p = best;
+      click_gettimeofday(&q->_last_switch);
+      click_gettimeofday(&q->_first_selected);
+    }
+    bool current_path_valid = _link_table->valid_route(q->_p);
+    int current_path_metric = _link_table->get_route_metric(q->_p);
+    
+    struct timeval expire;
+    struct timeval now;
+    click_gettimeofday(&now);
+    
+    struct timeval max_switch;
+    max_switch.tv_sec = _time_before_switch_sec;
+    max_switch.tv_usec = 0;
+    timeradd(&q->_last_switch, &max_switch, &expire);
+    
+    if (!_route_dampening ||
+	!current_path_valid || 
+	current_path_metric > 100 + best_metric ||
+	timercmp(&expire, &now, <)) {
+      if (q->_p != best) {
+	click_gettimeofday(&q->_first_selected);
+      }
+      q->_p = best;
+      click_gettimeofday(&q->_last_switch);
+    }
+    p_in = _sr_forwarder->encap(p_in, q->_p, 0);
+    if (p_in) {
+      output(0).push(p_in);
+    }
+    sent_packet = true;
+  } else {
+    /* no valid route, don't send. */
+    p_in->kill();
+  }
+
+
   
   if (!best_valid) {
     send_query = true;
@@ -269,35 +269,28 @@ SRQuerier_read_param(Element *e, void *thunk)
         StringAccum sa;
 	struct timeval now;
 	click_gettimeofday(&now);
-	for (SRQuerier::DstInfoTable::const_iterator iter = td->_queries.begin(); iter; iter++) {
+	for (SRQuerier::DstTable::const_iterator iter = td->_queries.begin(); iter; iter++) {
 	  SRQuerier::DstInfo dst = iter.value();
 	  sa << dst._ip;
 	  sa << " seq " << dst._seq;
-	  sa << " best_metric " << dst._best_metric;
 	  sa << " query_count " << dst._count;
+	  sa << " best_metric " << dst._best_metric;
 	  sa << " last_query_ago " << now - dst._last_query;
-	  sa << "\n";
-	}
-	return sa.take_string();
-    }
-    case H_PATH_CACHE: {
-        StringAccum sa;
-	struct timeval now;
-	click_gettimeofday(&now);
-	for (SRQuerier::PathCache::const_iterator iter = td->_path_cache.begin(); iter; iter++) {
-	  SRQuerier::CurrentPath cp = iter.value();
-	  int current_path_metric = td->_link_table->get_route_metric(cp._p);
-	  if (cp._p.size() > 0) {
-	    sa << cp._p[cp._p.size()-1];
-	  } else {
-	    sa << "???";
-	  }
-	  sa << " " << current_path_metric;
-	  sa << " " << now - cp._first_selected;
-	  sa << " " << now - cp._last_switch;
+	  sa << " first_selected_ago " << now - dst._first_selected;
+	  sa << " last_switch_ago " << now - dst._last_switch;
+	  int current_path_metric = td->_link_table->get_route_metric(dst._p);
+	  sa << " current_path_metric " << current_path_metric;
 	  sa << " [ ";
-	  sa << path_to_string(cp._p);
-	  sa << " ]\n";
+	  sa << path_to_string(dst._p);
+	  sa << " ]";
+	  Path best = td->_link_table->best_route(dst._ip);
+	  bool best_valid = td->_link_table->valid_route(best);
+	  int best_metric = td->_link_table->get_route_metric(best);
+	  sa << " best_metric " << best_metric;
+	  sa << " best_route [ ";
+	  sa << path_to_string(best);
+	  sa << " ]";
+	  sa << "\n";
 	}
 	return sa.take_string();
     }
@@ -320,7 +313,7 @@ SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
     break;
   }
   case H_CLEAR:
-    f->_link_table->clear();
+    f->_queries.clear();
     break;
   case H_START:
     IPAddress dst;
@@ -335,7 +328,6 @@ SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
 void
 SRQuerier::add_handlers()
 {
-  add_read_handler("path_cache", SRQuerier_read_param, (void *) H_PATH_CACHE);
   add_read_handler("queries", SRQuerier_read_param, (void *) H_QUERIES);
   add_read_handler("debug", SRQuerier_read_param, (void *) H_DEBUG);
   add_read_handler("ip", SRQuerier_read_param, (void *) H_IP);
