@@ -356,7 +356,7 @@ GridRouteTable::simple_action(Packet *packet)
        */
       else if (route.seq_no < our_rte->seq_no) {
 	assert(!(our_rte->seq_no & 1)); // valid routes have even seq_no
-	if (our_rte->ttl > 0)
+	if (our_rte->ttl > 0 && our_rte->metric_valid)
 	  triggered_rtes.push_back(*our_rte);
       }
       continue;
@@ -657,7 +657,8 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
     /* because we called expire_routes() at the top of this function,
      * we know we are not propagating any route entries with ttl of 0
      * or that have timed out */
-    rte_entries.push_back(i.value());
+    if (i.value().metric_valid)
+      rte_entries.push_back(i.value());
   }
 
   // make and send the packet
@@ -690,7 +691,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   /* 
    * if requested by caller, calculate the ttls each route entry
-   * should be sent with.  Each entry's ttl must be decremeneted by a
+   * should be sent with.  Each entry's ttl must be decremented by a
    * minimum amount.  Only send the routes with valid ttls (> 0).
    */
   for (int i = 0; i < rtes_to_send.size(); i++) {
@@ -805,7 +806,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);
-
+  nb->metric = htonl(metric);
   nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
 }

@@ -69,7 +69,7 @@ nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER,
 		     GRID_MAC_ADDR, GRID_IP, 
 		     ggi,
-		     NUM_HOPS);
+		     MAX_HOPS NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
 

@@ -29,7 +29,7 @@
 #include "filterbyrange.hh"
 
 LookupGeographicGridRoute::LookupGeographicGridRoute()
-  : Element(1, 3), _rt(0), _task(this)
+  : Element(1, 2), _rt(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
