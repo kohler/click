@@ -1,3 +1,58 @@
+2001-10-30 Tuesday 12:29  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.8), aclocal.m4 (1.8), acclick.m4 (1.9), aclocal.m4
+	(1.9), acclick.m4 (1.10), aclocal.m4 (1.10), acclick.m4 (1.11),
+	aclocal.m4 (1.11), configure.in (1.162): another try
+
+2001-10-30 Tuesday 12:25  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.7), aclocal.m4 (1.7): another nitlet
+
+2001-10-30 Tuesday 12:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/.cvsignore (1.3): .cvsignore update
+
+2001-10-30 Tuesday 12:20  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/Makefile.in (1.13), click-check/Makefile.in
+	(1.9), click-combine/Makefile.in (1.9),
+	click-devirtualize/Makefile.in (1.9),
+	click-fastclassifier/Makefile.in (1.14), click-flatten/Makefile.in
+	(1.5), click-install/Makefile.in (1.16),
+	click-mkmindriver/Makefile.in (1.8), click-undead/Makefile.in
+	(1.8), click-xform/Makefile.in (1.17): DL_LIBS fix
+
+2001-10-30 Tuesday 12:17  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.161): nitlet
+
+2001-10-30 Tuesday 12:16  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.6), aclocal.m4 (1.6), configure.in (1.160): blech
+
+2001-10-30 Tuesday 11:54  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: Makefile.in (1.19), .cvsignore (1.2), Makefile.in
+	(1.20): duh
+
+2001-10-30 Tuesday 11:50  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.159), tools/click-align/Makefile.in (1.12),
+	tools/click-check/Makefile.in (1.8),
+	tools/click-combine/Makefile.in (1.8),
+	tools/click-devirtualize/Makefile.in (1.8),
+	tools/click-fastclassifier/Makefile.in (1.13),
+	tools/click-flatten/Makefile.in (1.4),
+	tools/click-install/Makefile.in (1.15),
+	tools/click-mkmindriver/Makefile.in (1.7),
+	tools/click-undead/Makefile.in (1.7), tools/click-xform/Makefile.in
+	(1.16), tools/lib/Makefile.in (1.18): fix confusion between build,
+	host, and target
+
+2001-10-30 Tuesday 11:38  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/Makefile.in (1.17): actually generate .ho files
+
 2001-10-30 Tuesday 03:08  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.158): nitlet
