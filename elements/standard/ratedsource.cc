@@ -83,7 +83,8 @@ int
 RatedSource::initialize(ErrorHandler *errh)
 {
   _count = 0;
-  ScheduleInfo::join_scheduler(this, errh);
+  if (output_is_push(0)) 
+    ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 
@@ -112,6 +113,23 @@ RatedSource::run_scheduled()
   reschedule();
 }
 
+Packet *
+RatedSource::pull(int)
+{
+  Packet *p = 0;
+  
+  if (!_active || (_limit != NO_LIMIT && _count >= _limit))
+    return p;
+
+  struct timeval now;
+  click_gettimeofday(&now);
+  if (_rate.need_update(now)) { 
+    _rate.update();
+    _count++;
+    p = _packet->clone();
+  }
+  return p;
+}
 
 String
 RatedSource::read_param(Element *e, void *vparam)

@@ -59,7 +59,7 @@ class RatedSource : public Element { protected:
   ~RatedSource();
   
   const char *class_name() const		{ return "RatedSource"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
   
   RatedSource *clone() const;
@@ -68,6 +68,7 @@ class RatedSource : public Element { protected:
   void uninitialize();
 
   void run_scheduled();
+  Packet *pull(int);
   
 };
 
