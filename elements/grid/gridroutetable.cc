@@ -204,7 +204,8 @@ GridRouteTable::simple_action(Packet *packet)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
-  _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
+  if (ntohl(hlo->ttl) > 0)
+    _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
   
   /*
    * loop through and process other route entries in hello message 
@@ -218,9 +219,14 @@ GridRouteTable::simple_action(Packet *packet)
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
+    RTEntry route(ipaddr, ethaddr, curr, jiff);
+
+    /* ignore route if ttl has run out */
+    if (route.ttl <= 0)
+      continue;
 
     /* ignore route to ourself */
-    if (curr->ip == (unsigned int) _ip)
+    if (route.dest_ip == _ip)
       continue;
 
     /* pseudo-split-horizon: ignore routes from nbrs that go back
@@ -235,7 +241,7 @@ GridRouteTable::simple_action(Packet *packet)
      */
     if (curr->num_hops == 0) {
 
-      assert(ntohl(curr->seq_no) & 1); // broken routes have odd seq_no
+      assert(route.seq_no & 1); // broken routes have odd seq_no
     
       /* if we don't have a route to this destination, ignore it */
       if (!our_rte)
@@ -246,21 +252,19 @@ GridRouteTable::simple_action(Packet *packet)
        * AND if the seq_no is newer than any information we have.
        * remove the broken route. 
        */
-      if ((unsigned int) our_rte->next_hop_ip == gh->ip &&
-	  ntohl(curr->seq_no) > our_rte->seq_no) {
-	broken_dests.push_back(curr->ip);
+      if (our_rte->next_hop_ip == ipaddr &&
+	  route.seq_no > our_rte->seq_no) {
+	broken_dests.push_back(route.dest_ip);
 	
 	/* generate triggered broken route advertisement */
-	RTEntry broken_entry(ipaddr, ethaddr, curr, jiff);
-	if (broken_entry.ttl > 0)
-	  triggered_rtes.push_back(broken_entry);
+	triggered_rtes.push_back(route);
       }
       /*
-       * triggered advertisement: if we have a good route to the
-       * destination with a newer seq_no, advertise our new
-       * information.  
+       * otherwise, triggered advertisement: if we have a good route
+       * to the destination with a newer seq_no, advertise our new
+       * information. 
        */
-      else if (ntohl(curr->seq_no) < our_rte->seq_no) {
+      else if (route.seq_no < our_rte->seq_no) {
 	assert(!(our_rte->seq_no & 1)); // valid routes have even seq_no
 	if (our_rte->ttl > 0)
 	  triggered_rtes.push_back(*our_rte);
@@ -270,25 +274,22 @@ GridRouteTable::simple_action(Packet *packet)
 
     /* skip routes with too many hops */
     // this would change if using proxies
-    if (curr->num_hops + 1 > _max_hops)
+    if (route.num_hops + 1 > _max_hops)
       continue;
-
 
     /* 
      * regular route entry 
      */
 
     /* ignore old routes and long routes */
-    if (our_rte                                        // we already have a route
-	&& (our_rte->seq_no > ntohl(curr->seq_no)      // which has a newer seq_no
-	    || (our_rte->seq_no == ntohl(curr->seq_no) // or the same seq_no
-		&& curr->num_hops + 1 >= our_rte->num_hops))) // and is as close
+    if (our_rte                                  // we already have a route
+	&& (our_rte->seq_no > route.seq_no       // which has a newer seq_no
+	    || (our_rte->seq_no == route.seq_no  // or the same seq_no
+		&& route.num_hops + 1 >= our_rte->num_hops))) // and is as close
       continue;
-    
-    
+
     /* add the entry */
-    RTEntry new_entry(ipaddr, ethaddr, curr, jiff);
-    _rtes.insert(curr->ip, new_entry);
+    _rtes.insert(route.dest_ip, route);
   }
 
   /* delete broken routes */
@@ -297,7 +298,7 @@ GridRouteTable::simple_action(Packet *packet)
     assert(removed);
   }
 
-  log_route_table ();  // extended logging
+  log_route_table();  // extended logging
 
   /* send triggered updates */
   if (triggered_rtes.size() > 0)
@@ -409,7 +410,7 @@ GridRouteTable::expire_routes()
   xip_t expired_next_hops;
 
   timeval tv;
-  gettimeofday (&tv, NULL);
+  gettimeofday(&tv, NULL);
 
   bool table_changed = false;
 
@@ -451,7 +452,7 @@ GridRouteTable::expire_routes()
     r->num_hops = 0;
     r->seq_no++; // odd numbers indicate broken routes
     assert(r->seq_no & 1);
-    r->ttl = grid_hello::MAX_AGE_DEFAULT;
+    r->ttl = grid_hello::MAX_TTL_DEFAULT;
     retval.push_back(*r);
   }
   for (xip_t::Iterator i = expired_rtes.first(); i; i++) {
@@ -460,7 +461,7 @@ GridRouteTable::expire_routes()
   }
 
   if (table_changed)
-    log_route_table ();  // extended logging
+    log_route_table();  // extended logging
 
   return retval;
 }
@@ -478,7 +479,7 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
   Vector<RTEntry> rte_entries;
   for (RTIter i = n->_rtes.first(); i; i++) {
     /* because we called expire_routes() at the top of this function,
-     * we know we are not propagating any route entries with age of 0
+     * we know we are not propagating any route entries with ttl of 0
      * or that have timed out */
     rte_entries.push_back(i.value());
   }
@@ -496,14 +497,38 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
 
 
 void
-GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
-				    bool update_seq)
+GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
+				    bool update_seq, bool check_ttls)
 {
   /*
    * build and send routing update packet advertising the contents of
    * the rte_info vector.  iff update_seq, increment the sequence
-   * number.  calling function must fill in each nbr entry 
+   * number before sending.  The calling function must fill in each
+   * nbr entry.  If check_ttls, decrement and check ttls before
+   * building the packet.
    */
+
+  int jiff = click_jiffies();
+
+  Vector<RTEntry> &rte_info = rtes_to_send;
+  /* 
+   * if requested by caller, calculate the ttls each route entry
+   * should be sent with.  Each entry's ttl must be decremeneted by a
+   * minimum amount.  Only send the routes with valid ttls (> 0).
+   */
+  if (check_ttls) {
+    rte_info = Vector<RTEntry>();
+    for (int i = 0; i < rtes_to_send.size(); i++) {
+      RTEntry &r = rtes_to_send[i];
+      unsigned int age = jiff_to_msec(jiff - r.last_updated_jiffies);
+      unsigned int new_ttl = decr_ttl(r.ttl, (age > grid_hello::MIN_TTL_DECREMENT ? age : grid_hello::MIN_TTL_DECREMENT));
+      if (new_ttl > 0) {
+	rte_info.push_back(r);
+	rte_info.back().ttl = new_ttl;
+      }
+    }
+
+  }
 
   int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   int max_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
@@ -558,11 +583,11 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   if (update_seq) 
     _seq_no += 2;
   
-  // extended logging
+  /* extended logging */
   gettimeofday (&tv, NULL);
   _extended_logging_errh->message ("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
 
-  hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
+  hlo->ttl = htonl(grid_hello::MAX_TTL_DEFAULT);
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (hlo + 1);
 
@@ -579,11 +604,12 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
 	     f.num_hops,
 	     (f.is_gateway ? 'y' : 'n'),
 	     f.seq_no);
-    _extended_logging_errh->message (str);
+    _extended_logging_errh->message(str);
 
     rte_info[i].fill_in(curr);
   }
-  _extended_logging_errh->message ("\n");
+  
+  _extended_logging_errh->message("\n");
 
   output(0).push(p);
 }
@@ -599,7 +625,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb)
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);
-  nb->age = htonl(ttl);
+  nb->ttl = htonl(ttl);
 }
 
 ELEMENT_REQUIRES(userlevel)

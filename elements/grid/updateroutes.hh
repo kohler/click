@@ -20,7 +20,7 @@
  * Routing message entries are marked with both a sequence number
  * (originated by the destination of the entry) and an age.  Entries
  * with higher sequence numbers always supersede entries with lower
- * sequence numbers.  For entries with the same age, the lower
+ * sequence numbers.  For entries with the same sequence number, the lower
  * hop-count entry prevails.  Entries increase in age while sitting in
  * a node's routing table, as well as when being propagated to another
  * node.  Thus an individual entry will only propagate through the
@@ -48,8 +48,10 @@
  * PERIOD must be greater than 0, JITTER must be positive and less
  * than JITTER.  Produces MAC layer Grid packets.
  *
+ * This element is deprecated.  Use GridRouteTable instead.
+ *
  * =a
- * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute */
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, GridRouteTable */
 
 
 #include <click/element.hh>

@@ -2,7 +2,46 @@
 #define GRIDROUTETABLE_HH
 
 /*
- * manpage info goes here
+ * =c
+ * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW [, MAX-HOPS])
+ *
+ * =s Grid
+ * Run DSDV-like local routing protocol
+ *
+ * =d 
+ * Implements a DSDV-like loop-free routing protocol by originating
+ * routing messages based on its routing tables, and processing
+ * routing update messages from other nodes.  Maintains an immediate
+ * neighbor table, and a multi-hop route table.  Route entries are
+ * removed TIMEOUT milliseconds after being installed.
+ *
+ * Routing message entries are marked with both a sequence number
+ * (originated by the destination of the entry) and a real-time ttl.
+ * Entries with higher sequence numbers always supersede entries with
+ * lower sequence numbers.  For entries with the same sequence number,
+ * the lower hop-count entry prevails.  Entry ttls decrease while the
+ * entry resides in a node's routing table, as well as being decreased
+ * by a minimum amount when the route is propagated to another node.
+ * Thus an individual route entry will only propagate through the
+ * network for a finite amount of time.  A route entry is not
+ * propagated if its ttl is less than the minimum decrement amount.  A
+ * route is not accepted if its ttl is <= 0.
+ *
+ * New routes are advertised with even sequence numbers originated by
+ * the route destination (obtained from LR_HELLO messages); broken
+ * routes are advertised with odd sequence numbers formed by adding 1
+ * to the sequence number of the last known good route.  Broken route
+ * advertisements are originally initiated when an immediate neighbor
+ * entry times out, and will always supersede the route they are
+ * concerned with; any new route will always supersede the previous
+ * broken route.  When a node receives a broken route advertisement
+ * for a destination to which it knows a newer route, it kills the
+ * broken route advertisement and sends an advertisement for the the
+ * new route.
+ *
+ *
+ * =a
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes 
  */
 
 #include <click/bighashmap.hh>
@@ -78,7 +117,7 @@ public:
     { 
       loc_err = ntohs(gh->loc_err); 
       seq_no = ntohl(hlo->seq_no); 
-      ttl = decr_ttl(ntohl(hlo->age), grid_hello::MIN_TTL_DECREMENT);      
+      ttl = ntohl(hlo->ttl);
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
@@ -90,7 +129,7 @@ public:
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
-      ttl = decr_ttl(ntohl(nbr->age), grid_hello::MIN_TTL_DECREMENT);
+      ttl = ntohl(nbr->ttl);
     }
     
     /* copy data from this into nb, converting to net byte order */
@@ -123,9 +162,9 @@ private:
   /* interval at which to check RT entries for expiry */
   static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
 
-  // extended logging
+  /* extended logging */
   ErrorHandler *_extended_logging_errh;
-  void GridRouteTable::log_route_table (); // print route table on 'routelog' chatter channel
+  void GridRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
 
   /* this node's addresses */
   IPAddress _ip;
@@ -150,7 +189,7 @@ private:
   static void hello_hook(Timer *, void *);
   
   /* send a route advertisement containing the entries in rte_info */
-  void send_routing_update(Vector<RTEntry> &rte_info, bool update_seq = true);
+  void send_routing_update(Vector<RTEntry> &rtes_to_send, bool update_seq = true, bool check_ttls = true);
 
   static unsigned int decr_ttl(unsigned int ttl, unsigned int decr)
   { return (ttl > decr ? ttl - decr : 0); }

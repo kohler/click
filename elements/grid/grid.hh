@@ -144,7 +144,10 @@ struct grid_nbr_entry {
   bool loc_good;
   bool is_gateway;
   unsigned int seq_no;
-  unsigned int age; 
+  union {
+    unsigned int age; /* keep ``age'' for legacy code */
+    unsigned int ttl;
+  };
 
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
@@ -159,7 +162,10 @@ struct grid_hello {
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
   unsigned int seq_no;
-  unsigned int age; // decreasing, approximately in milliseconds
+  union {
+    unsigned int age; /* keep age field for legacy code */
+    unsigned int ttl; // decreasing, approximately in milliseconds
+  };
 
   bool is_gateway; // is the hello's transmitter also a gateway?
 
