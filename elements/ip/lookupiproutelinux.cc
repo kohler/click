@@ -163,13 +163,7 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
 bool
 LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
 {
-  unsigned xgw;
-
-  if(_t.lookup(a.addr(), xgw, ifi)){
-    gw = IPAddress(xgw);
-    return(true);
-  }
-  return(false);
+  return _t.lookup(a, gw, ifi);
 }
 
 #endif /* __KERNEL__ */
@@ -181,7 +175,7 @@ LookupIPRouteLinux::push(int, Packet *p)
   IPAddress gw;
   int ifi = -1;
 
-  if(lookup(a, gw, ifi) == true){
+  if (lookup(a, gw, ifi) == true){
     click_chatter("routed %x to %x %d",
                 a.addr(),
                 gw.addr(),

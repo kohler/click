@@ -105,7 +105,7 @@ void
 LookupIPRouteMP::push(int, Packet *p)
 {
   IPAddress a = p->dst_ip_anno();
-  unsigned gw = 0;
+  IPAddress gw;
   int ifi = -1;
 #ifdef __KERNEL__
   int bucket = current->processor;
@@ -129,15 +129,15 @@ LookupIPRouteMP::push(int, Packet *p)
     } 
   }
   
-  if (_t.lookup(a.addr(), gw, ifi) == true) {
+  if (_t.lookup(a, gw, ifi)) {
     e->_last_addr_2 = e->_last_addr_1;
     e->_last_gw_2 = e->_last_gw_1;
     e->_last_output_2 = e->_last_output_1;
     e->_last_addr_1 = a;
     e->_last_gw_1 = gw;
     e->_last_output_1 = ifi;
-    if (gw != 0)
-      p->set_dst_ip_anno(IPAddress(gw));
+    if (gw)
+      p->set_dst_ip_anno(gw);
     output(ifi).push(p);
   } else {
     click_chatter("LookupIPRouteMP: no gw for %x", a.addr());

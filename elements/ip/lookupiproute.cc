@@ -98,7 +98,7 @@ LookupIPRoute::push(int, Packet *p)
 {
 #define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
   IPAddress a = p->dst_ip_anno();
-  unsigned gw = 0;
+  IPAddress gw;
   int ifi = -1;
 
   if (a) {
@@ -125,7 +125,7 @@ LookupIPRoute::push(int, Packet *p)
 #endif
   }
   
-  if (_t.lookup(a.addr(), gw, ifi) == true) {
+  if (_t.lookup(a, gw, ifi) == true) {
 #ifdef IP_RT_CACHE2
     _last_addr2 = _last_addr;
     _last_gw2 = _last_gw;
@@ -134,7 +134,7 @@ LookupIPRoute::push(int, Packet *p)
     _last_addr = a;
     _last_gw = gw;
     _last_output = ifi;
-    if (gw != 0)
+    if (gw)
       p->set_dst_ip_anno(IPAddress(gw));
     output(ifi).push(p);
   } else {
