@@ -1,5 +1,6 @@
-#ifndef SORTED_SCHED_HH
-#define SORTED_SCHED_HH
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_SORTEDSCHED_HH
+#define CLICK_SORTEDSCHED_HH
 
 /*
  * =c
@@ -13,27 +14,30 @@
  * (1 second). If increasing is specified, first sort tasks in increasing
  * order based on cost, then binpack. Otherwise, tasks are decreasingly
  * sorted. By default, INCREASING is true.
+ *
+ * =a ThreadMonitor
  */
 
 #include <click/element.hh>
 #include <click/timer.hh>
 
-class SortedTaskSched : public Element {
+class SortedTaskSched : public Element { public:
 
-  Timer _timer;
-  int _interval;
-  bool _increasing;
-
- public:
-
-  SortedTaskSched();
-  ~SortedTaskSched();
+    SortedTaskSched();
+    ~SortedTaskSched();
   
-  const char *class_name() const	{ return "SortedTaskSched"; }
-  int configure(Vector<String> &, ErrorHandler *);
+    const char *class_name() const	{ return "SortedTaskSched"; }
+    int configure(Vector<String> &, ErrorHandler *);
 
-  int initialize(ErrorHandler *);
-  void run_timer();
+    int initialize(ErrorHandler *);
+    void run_timer();
+
+  private:
+
+    Timer _timer;
+    int _interval;
+    bool _increasing;
+
 };
 
 #endif
