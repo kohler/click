@@ -27,60 +27,6 @@ import java.util.Vector;
 
 public class ControlSocket {
     
-    static public class ControlSocketException extends Exception {
-	ControlSocketException() {
-	    super("ControlSocket error");
-	}
-	ControlSocketException(String s) {
-	    super(s);
-	}
-    }
-
-    static public class NoSuchElementException extends ControlSocketException {
-	NoSuchElementException() { 
-	    super("No such element"); 
-	}
-	NoSuchElementException(String s) { 
-	    super("No such element `" + s + "'"); 
-	}
-    }
-    
-    static public class NoSuchHandlerException extends ControlSocketException {
-	NoSuchHandlerException() { 
-	    super("No such handler"); 
-	}
-	NoSuchHandlerException(String hid) {
-	    super("No such handler `" + hid + "'"); 
-	}
-    }
-
-    static public class PermissionDeniedException extends ControlSocketException {
-	PermissionDeniedException() {
-	    super("Permission denied calling handler"); 
-	}
-	PermissionDeniedException(String hid) {
-	    super("Permission denied calling handler `" + hid + "'"); 
-	}
-    }
-
-    static public class HandlerErrorException extends ControlSocketException {
-	HandlerErrorException() { 
-	    super("Unspecified error calling handler"); 
-	}
-	HandlerErrorException(String hid, String description) { 
-	    super(description); 
-	}
-    }
-
-    static public class HandlerFormatException extends ControlSocketException {
-	HandlerFormatException() { 
-	    super("Unspecified error calling handler"); 
-	}
-	HandlerFormatException(String hid) { 
-	    super("Bad format in handler `" + hid + "'"); 
-	}
-    }
-
     private InetAddress _host;
     private int _port;
     private Socket _sock;
@@ -183,7 +129,7 @@ public class ControlSocket {
      * @see #getConfigElementNames
      */
     public String getRouterConfig() 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	return readString(null, "config");
     }
     
@@ -202,7 +148,7 @@ public class ControlSocket {
      * @see #getConfigElementNames
      */
     public String getRouterFlatConfig()
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	return readString(null, "flatconfig");
     }
 
@@ -220,7 +166,7 @@ public class ControlSocket {
      * @see java.lang.String
      */
     public String getRouterVersion()
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	return readString(null, "version").trim();
     }
     
@@ -240,7 +186,7 @@ public class ControlSocket {
      * @see #getRouterFlatConfig
      */
     public Vector getConfigElementNames() 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	char[] buf = read(null, "list");
 	
 	// how many elements?
@@ -252,12 +198,12 @@ public class ControlSocket {
 	try {
 	    numElements = Integer.parseInt(new String(buf, 0, i));
 	} catch (NumberFormatException ex) { 
-	    throw new HandlerFormatException("element list"); 
+	    throw new ClickException.HandlerFormatException("element list"); 
 	}
 	
 	Vector v = StringUtils.split(buf, i + 1, '\n');
 	if (v.size() != numElements)
-	    throw new HandlerFormatException("element list");
+	    throw new ClickException.HandlerFormatException("element list");
 	return v;
     }
     
@@ -274,7 +220,7 @@ public class ControlSocket {
      * response could otherwise not be understood). 
      */
     public Vector getRouterClasses()
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	char[] buf = read(null, "classes");
 	return StringUtils.split(buf, 0, '\n');
     }
@@ -292,7 +238,7 @@ public class ControlSocket {
      * response could otherwise not be understood). 
      */
     public Vector getRouterPackages()
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	char[] buf = read(null, "packages");
 	return StringUtils.split(buf, 0, '\n');
     }
@@ -312,7 +258,7 @@ public class ControlSocket {
      * @see #getRouterFlatConfig
      */
     public Vector getConfigRequirements()
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	char[] buf = read(null, "requirements");
 	return StringUtils.split(buf, 0, '\n');
     }
@@ -367,7 +313,7 @@ public class ControlSocket {
      * @see #getRouterFlatConfig
      */
     public Vector getElementHandlers(String elementName)
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	char[] buf = read(elementName, "handlers");
 	Vector vh = StringUtils.split(buf, 0, '\n');
 	
@@ -378,7 +324,7 @@ public class ControlSocket {
 	    for (j = 0; j < s.length() && !Character.isWhitespace(s.charAt(j)); j++)
 		; // find record split
 	    if (j == s.length())
-		throw new HandlerFormatException(elementName + ".handlers");
+		throw new ClickException.HandlerFormatException(elementName + ".handlers");
 	    HandlerInfo hi = new HandlerInfo(elementName, s.substring(0, j).trim());
 	    while (j < s.length() && Character.isWhitespace(s.charAt(j)))
 		j++;
@@ -404,7 +350,7 @@ public class ControlSocket {
      * @param writeHandler True to check write handler, otherwise false.
      * @return True if handler exists, otherwise false.
      * @exception IOException If there was a stream or socket error.
-     * @exception ControlSocketException If there was some other error
+     * @exception ClickException If there was some other error
      * accessing the handler (e.g., the ControlSocket returned an unknown
      * unknown error code, or the response could otherwise not be understood).
      * @see #read
@@ -414,7 +360,7 @@ public class ControlSocket {
 
     public boolean checkHandler(String elementName, String handlerName,
 				boolean writeHandler)
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	String handler = handlerName;
 	if (elementName != null)
 	    handler = elementName + "." + handlerName;
@@ -428,7 +374,7 @@ public class ControlSocket {
 	do {
 	    lastLine = _in.readLine();
 	    if (lastLine.length() < 4)
-		throw new ControlSocketException("Bad response line from ControlSocket");
+		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4);
 	} while (lastLine.charAt(3) == '-');
 	
@@ -453,7 +399,7 @@ public class ControlSocket {
     }
     
     private boolean checkHandlerWorkaround(String elementName, String handlerName, boolean writeHandler)
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	// If talking to an old ControlSocket, try the "handlers" handler
 	// instead.
 	String s = readString(elementName, "handlers");
@@ -495,7 +441,7 @@ public class ControlSocket {
      * @exception HandlerErrorException If the handler returned an error.
      * @exception PermissionDeniedException If the router would not let us access the handler.
      * @exception IOException If there was a stream or socket error.
-     * @exception ControlSocketException If there was some other error
+     * @exception ClickException If there was some other error
      * accessing the handler (e.g., the ControlSocket returned an unknown
      * unknown error code, or the response could otherwise not be understood).
      * @see #checkHandler
@@ -504,7 +450,7 @@ public class ControlSocket {
      * @see #getElementHandlers
      */
     public char[] read(String elementName, String handlerName) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	String handler = handlerName;
 	if (elementName != null)
 	    handler = elementName + "." + handlerName;
@@ -517,7 +463,7 @@ public class ControlSocket {
 	do {
 	    lastLine = _in.readLine();
 	    if (lastLine.length() < 4)
-		throw new ControlSocketException("Bad response line from ControlSocket");
+		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4);
 	} while (lastLine.charAt(3) == '-');
 	
@@ -528,7 +474,7 @@ public class ControlSocket {
 	response = _in.readLine();
 	int num_bytes = getDataLength(response);
 	if (num_bytes < 0)
-	    throw new ControlSocketException("Bad length returned from ControlSocket");
+	    throw new ClickException("Bad length returned from ControlSocket");
 
 	if (num_bytes == 0) 
 	    return new char[0];
@@ -545,24 +491,24 @@ public class ControlSocket {
     }
     
     public String readString(String el, String handler) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	return new String(read(el, handler));
     }
     
     public String readString(HandlerInfo hinfo) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	return new String(read(hinfo.elementName, hinfo.handlerName));
     }
 
 
     private void handleWriteResponse(String elementName, String handlerName)
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	String response = "";
 	String lastLine = null;
 	do {
 	    lastLine = _in.readLine();
 	    if (lastLine.length() < 4)
-		throw new ControlSocketException("Bad response line from ControlSocket");
+		throw new ClickException("Bad response line from ControlSocket");
 	    response = response + lastLine.substring(4) + "\n";
 	} while (lastLine.charAt(3) == '-');
 	
@@ -582,7 +528,7 @@ public class ControlSocket {
      * @exception HandlerErrorException If the handler returned an error.
      * @exception PermissionDeniedException If the router would not let us access the handler.
      * @exception IOException If there was a stream or socket error.
-     * @exception ControlSocketException If there was some other error
+     * @exception ClickException If there was some other error
      * accessing the handler (e.g., the ControlSocket returned an unknown
      * unknown error code, or the response could otherwise not be understood).
      * @see #checkHandler
@@ -591,7 +537,7 @@ public class ControlSocket {
      * @see #getElementHandlers
      */
     public void write(String elementName, String handlerName, char[] data) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 
 	String handler = handlerName;
 	if (elementName != null)
@@ -605,7 +551,7 @@ public class ControlSocket {
     }
 
     public void write(String elementName, String handlerName, String data) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 
 	String handler = handlerName;
 	if (elementName != null)
@@ -619,12 +565,12 @@ public class ControlSocket {
     }
 
     public void write(HandlerInfo info, char[] data) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	write(info.elementName, info.handlerName, data);
     }
 
     public void write(HandlerInfo info, String data) 
-	throws ControlSocketException, IOException {
+	throws ClickException, IOException {
 	write(info.elementName, info.handlerName, data);
     }
 
@@ -663,7 +609,7 @@ public class ControlSocket {
 
     private void handleErrCode(int code, String elementName, 
 			       String handlerName, String response) 
-	throws ControlSocketException {
+	throws ClickException {
 
 	String hid = handlerName;
 	if (elementName != null)
@@ -671,19 +617,19 @@ public class ControlSocket {
 
 	switch (code) {
 	 case CODE_SYNTAX_ERR: 
-	  throw new ControlSocketException("Syntax error calling handler `" + hid + "'");
+	  throw new ClickException("Syntax error calling handler `" + hid + "'");
 	 case CODE_UNIMPLEMENTED: 
-	  throw new ControlSocketException("Unimplemented ControlSocket command");
+	  throw new ClickException("Unimplemented ControlSocket command");
 	 case CODE_NO_ELEMENT:
-	  throw new NoSuchElementException(elementName);
+	  throw new ClickException.NoSuchElementException(elementName);
 	 case CODE_NO_HANDLER: 
-	  throw new NoSuchHandlerException(hid); 
+	  throw new ClickException.NoSuchHandlerException(hid); 
 	 case CODE_HANDLER_ERR: 
-	  throw new HandlerErrorException(hid, response);
+	  throw new ClickException.HandlerErrorException(hid, response);
 	 case CODE_PERMISSION: 
-	  throw new PermissionDeniedException(hid); 
+	  throw new ClickException.PermissionDeniedException(hid); 
 	 default:
-	  throw new ControlSocketException("Unknown ControlSocket error code " + code);
+	  throw new ClickException("Unknown ControlSocket error code " + code);
 	}
     }
 
@@ -757,7 +703,7 @@ public class ControlSocket {
 	} catch (IOException ex) {
 	    System.out.println("I/O error calling ControlSocket: " + ex.getMessage());
 	    System.exit(1);
-	} catch (ControlSocket.ControlSocketException ex) {
+	} catch (ClickException ex) {
 	    System.out.println(ex.getMessage());
 	    System.exit(1);
 	}

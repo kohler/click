@@ -244,7 +244,7 @@ class ClickController extends JPanel {
 			_handlerText.setText(_cs.readString(_selectedHandler));
 		    else
 			_handlerText.setText("");
-		} catch (ControlSocket.ControlSocketException e) {
+		} catch (ClickException e) {
 		    JOptionPane.showMessageDialog(getFrame(), e.getMessage(), "Write Handler Error", JOptionPane.ERROR_MESSAGE);
 		} catch (java.io.IOException e) {
 		    JOptionPane.showMessageDialog(getFrame(), e.getMessage(), "Write Handler Network Error", JOptionPane.ERROR_MESSAGE);
