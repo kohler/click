@@ -10,6 +10,7 @@
  */
 
 #include <click/element.hh>
+#include "gridlogger.hh"
 
 class GridTxError : public Element { public:
   
@@ -23,6 +24,9 @@ class GridTxError : public Element { public:
   int initialize(ErrorHandler *);
   
   void push(int, Packet *);
+
+private:
+  GridLogger *_log;
 
 };
 

@@ -20,17 +20,20 @@
 #include "gridtxerror.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-
+#include <click/packet_anno.hh>
 
 GridTxError::GridTxError() 
-  : Element(1, 0)
+  : Element(1, 0), _log(0)
 {
   MOD_INC_USE_COUNT;
+  _log = GridLogger::get_log();
 }
 
 GridTxError::~GridTxError() 
 {
   MOD_DEC_USE_COUNT;
+  if (_log)
+    delete _log;
 }
 
 int
@@ -43,6 +46,12 @@ void
 GridTxError::push(int, Packet *p) 
 {
   /* log the error */
+  int err = SEND_ERR_ANNO(p);
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+
+  _log->log_tx_err(p, err, tv);
+
   p->kill();
 }
 

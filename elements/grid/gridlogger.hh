@@ -1,24 +1,31 @@
 #ifndef GRIDLOGGER_HH
 #define GRIDLOGGER_HH
 
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <click/click_ether.h>
+#include "grid.hh"
 #include "gridroutetable.hh"
+
+/* this code won't work if multithreaded and more than one thread is logging */
 
 class GridLogger {
   
-  GridLogger() { }
+  GridLogger() : _state(WAITING), _bufptr(0) {  }
 
   enum state_t {
-    NOT_READY,
     WAITING,
     RECV_AD,
     EXPIRE_HANDLER
   };
 
   state_t _state;
-  int _fd;
-  String _fn;
-  bool _log_full_ip;
+
+  static int _fd;
+  static String _fn;
+  static bool _log_full_ip;
   
   unsigned char _buf[1024];
   size_t _bufptr; // index of next byte available in buf
@@ -33,6 +40,8 @@ class GridLogger {
     return true;
   }
   void write_buf() {
+    if (!log_is_open())
+      return; // no log active now
     int res = write(_fd, _buf, _bufptr);
     if (res < 0)
       click_chatter("GridLogger: error writing log buffer: %s",
@@ -66,6 +75,35 @@ class GridLogger {
 
 public:
 
+  static class GridLogger *get_log() { return new GridLogger;  }
+  ~GridLogger() { }
+
+  static bool open_log(const String &filename, bool log_full_ip = false) {
+    if (_fd != -1)
+      close_log();
+
+    _log_full_ip = log_full_ip;
+    _fn = filename;
+    _fd = open(_fn.cc(), O_WRONLY | O_CREAT, 0777);
+    if (_fd == -1) {
+      click_chatter("GridLogger: unable to open log file %s, %s",
+		    _fn.cc(), strerror(errno));
+      return false;
+    }
+    
+    click_chatter("GridLogger: started logging to %s", _fn.cc());
+    return true;
+  }
+
+  static void close_log() {
+    if (_fd != -1) {
+      close(_fd);
+      click_chatter("GridLogger: stopped logging on %s", _fn.cc());
+    }
+  }
+
+  static bool log_is_open() { return _fd >= 0; } 
+
   static const unsigned char SENT_AD_CODE               = 0x01;
   static const unsigned char BEGIN_RECV_CODE            = 0x02;
   static const unsigned char END_RECV_CODE              = 0x03;
@@ -76,6 +114,8 @@ public:
   static const unsigned char RECV_TRIGGER_ROUTE_CODE    = 0x08;
   static const unsigned char RECV_EXPIRE_ROUTE_CODE     = 0x09;
   static const unsigned char ROUTE_DUMP_CODE            = 0x0A;
+  static const unsigned char TX_ERR_CODE                = 0x0B;
+
 
   // these need to be different than the above codes
   enum reason_t {
@@ -85,21 +125,6 @@ public:
     TIMEOUT           = 0xf4,
     NEXT_HOP_EXPIRED  = 0xf5
   };
-
-  GridLogger(const String &filename, bool log_full_ip = false) 
-    : _state(NOT_READY), _fd(-1), _fn(filename),
-      _log_full_ip(log_full_ip), _bufptr(0) {
-    _fd = open(_fn.cc(), O_WRONLY | O_CREAT, 0777);
-    if (_fd == -1) {
-      click_chatter("GridLogger: unable to open log file %s, %s",
-		    _fn.cc(), strerror(errno));
-      return;
-    }
-    _state = WAITING;
-    click_chatter("GridLogger: started logging to %s", _fn.cc());
-  }
-
-  bool ok() { return _state != NOT_READY; }
 
   void log_sent_advertisement(unsigned seq_no, struct timeval when) { 
     if (_state != WAITING) 
@@ -197,12 +222,36 @@ public:
     write_buf();
   }
 
-  ~GridLogger() {
-    if (_fd != -1) {
-      close(_fd);
-      click_chatter("GridLogger: stopped logging on %s",_fn.cc());
+  // assumes Grid packet
+  void log_tx_err(const Packet *p, int err, struct timeval when) {
+    if (_state != WAITING)
+      return;
+    struct click_ether *eh = (click_ether *) (p->data());
+    if (eh->ether_type != ETHERTYPE_GRID)
+      return;
+    add_one_byte(TX_ERR_CODE);
+    add_long((unsigned long) err);
+    add_timeval(when);
+    struct grid_hdr *gh = (struct grid_hdr *) (eh + 1);
+    add_one_byte(gh->type);
+    switch (gh->type) {
+    case grid_hdr::GRID_LR_HELLO:
+    case grid_hdr::GRID_HELLO: {
+      struct grid_hello *hlo = (struct grid_hello *) (gh + 1);
+      add_long(hlo->seq_no);
+      break;
     }
+    case grid_hdr::GRID_NBR_ENCAP: {
+      struct grid_nbr_encap *nbr = (struct grid_nbr_encap *) (gh + 1);
+      add_ip(nbr->dst_ip);
+      break;
+    }
+    default:
+      ; /* nothing */
+    }
+    write_buf();
   }
+
 };
 
 #endif

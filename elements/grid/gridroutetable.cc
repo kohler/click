@@ -29,6 +29,12 @@
 #include "timeutils.hh"
 #include "gridlogger.hh"
 
+/* these are here because I am too lazy to make a gridlogger.cc file */
+int GridLogger::_fd = -1;
+bool GridLogger::_log_full_ip = false;
+String GridLogger::_fn;
+
+
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
@@ -48,6 +54,9 @@ GridRouteTable::~GridRouteTable()
   MOD_DEC_USE_COUNT;
   if (_log)
     delete _log;
+
+  if (GridLogger::log_is_open())
+    GridLogger::close_log();
 }
 
 
@@ -135,15 +144,11 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
-  
-  if (logfile.length() > 0) {
-    _log = new GridLogger(logfile.cc());
-    if (!_log->ok()) {
-      delete _log;
-      _log = 0;
-    }
-  }
 
+  _log = GridLogger::get_log();
+  if (logfile.length() > 0) 
+    GridLogger::open_log(logfile);
+  
   return res;
 }
 
@@ -1125,36 +1130,31 @@ GridRouteTable::write_seq_delay(const String &arg, Element *el,
 
 
 int
-GridRouteTable::write_start_log(const String &arg, Element *el, 
+GridRouteTable::write_start_log(const String &arg, Element *, 
 				void *, ErrorHandler *errh)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
-  if (rt->_log) {
-    delete rt->_log;
-    rt->_log = 0;
-  }
-
-  rt->_log = new GridLogger(arg);
-  if (!rt->_log->ok()) {
+  // GridRouteTable *rt = (GridRouteTable *) el;
+  
+  if (GridLogger::log_is_open())
+    GridLogger::close_log();
+  
+  bool res = GridLogger::open_log(arg);
+  if (!res) 
     return errh->error("unable to start logging to file %s; any previous logging has been disabled",
 		       ((String) arg).cc());
-    delete rt->_log;
-    rt->_log = 0;
-  }
-
   return 0;
 }
 
 
 int
-GridRouteTable::write_stop_log(const String &, Element *el, 
+GridRouteTable::write_stop_log(const String &, Element *, 
 			       void *, ErrorHandler *)
 {
-  GridRouteTable *rt = (GridRouteTable *) el;
-  if (rt->_log) {
-    delete rt->_log;
-    rt->_log = 0;
-  }
+  // GridRouteTable *rt = (GridRouteTable *) el;
+
+  if (GridLogger::log_is_open())
+    GridLogger::close_log();
+
   return 0;
 }
 
