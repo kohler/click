@@ -1,3 +1,23 @@
+2001-07-24 Tuesday 03:29  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.88), configure.in (1.131), linuxmodule/Makefile.in
+	(1.58), userlevel/Makefile.in (1.56): update to build process
+	changes
+
+2001-07-24 Tuesday 03:29  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/: Makefile.in (1.2), lc-Makefile.in (1.2): libclick
+	updates: getting there
+
+2001-07-24 Tuesday 03:23  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.11): add --defs and --libs options
+
+2001-07-24 Tuesday 03:23  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.22): add -S/--standards option to
+	click-buildtool elem2{export,package}
+
 2001-07-23 Monday 21:17  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.34), Makefile.in (1.87), configure.in (1.130),
