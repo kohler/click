@@ -159,6 +159,10 @@ GridProbeHandler::push(int port, Packet *p)
     output(1).push(q);
   }
   
+#if 0
+  set_route_cb_bit(p, _gf_cb_id);
+  set_route_cb_bit(p, _lr_cb_id);
+#endif
 
   /* pass through probe if we aren't the destination */
   if (_ip != nb->dst_ip)
@@ -208,7 +212,7 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
     _cached_reply_pkt = 0;
     break;
   case FallbackToGF:
-    /* XXX could perhaps do some moe sanity checking here */
+    /* XXX could perhaps do some more sanity checking here */
     break;
   case UnknownAction:
   default:

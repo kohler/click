@@ -42,7 +42,7 @@ public:
 
   virtual void route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2) = 0;
 
-private:
+protected:
   static void set_route_cb_bit(Packet *p, unsigned int cb_num) {
     unsigned int mask = 1 << cb_num;
     unsigned int newval = mask | GRID_ROUTE_CB_ANNO(p);
@@ -59,6 +59,7 @@ public:
     if (id < 0)
       return -1;
     _cbs[id] = cb;
+    click_chatter("YYY just installed cb %d, set to %p\n", id, (void *) cb);
     return id;
   }
 
@@ -90,8 +91,10 @@ protected:
   void notify_route_cbs(Packet *p, unsigned int dest_ip, GridRouteActionCallback::Action a,
 			unsigned int data, unsigned int data2) {
     for (int i = 0; i < _max_route_cbs; i++) {
-      if (_cbs[i] && cb_is_set(p, i))
+      if (_cbs[i] && cb_is_set(p, i)) {
+	click_chatter("XXX cb %d is set\n", i);
 	_cbs[i]->route_cb(i, dest_ip, a, data, data2);
+      }
     }    
   }
 };
