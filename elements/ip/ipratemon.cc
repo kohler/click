@@ -523,13 +523,17 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     
     int averages[256];
     
+    _lock->acquire();
+    
     // ipaddr is in network order
     Stats *s = _base;
     ipaddr = ntohl(ipaddr);
     for (int bitshift = 24; bitshift > 0 && level > 0; bitshift -= 8, level--) {
       unsigned char b = (ipaddr >> bitshift) & 255;
-      if (!s->counter[b] || !s->counter[b]->next_level)
+      if (!s->counter[b] || !s->counter[b]->next_level) {
+        _lock->release();
 	return -EAGAIN;
+      }
       s = s->counter[b]->next_level;
     }
 
@@ -542,9 +546,12 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       else
 	averages[i] = -1;
     }
+    
+    _lock->release();
+
     return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
     
-  } 
+  }
 
   else if (command == CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG) {
     
@@ -564,6 +571,8 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     int averages[9];
     int n = 0;
     
+    _lock->acquire();
+
     // ipaddr is in network order
     Stats *s = _base;
     ipaddr = ntohl(ipaddr);
@@ -584,8 +593,42 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 	break;
       s = s->counter[b]->next_level;
     }
+    
+    _lock->release();
+
     averages[0] = n;
     return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
+  }
+
+  else if (command == CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL) {
+    
+    // Data	: int data[3]
+    // Incoming : data[0] is the network-byte-order IP address. data[1] is the
+    //            level at which annotations and expansion should stop.
+    //            data[2] is the duration of this rule.
+    // Outgoing : nada.
+
+    unsigned *udata = (unsigned *)data;
+    unsigned ipaddr, level, when;
+    
+    if (CLICK_LLRPC_GET(ipaddr, udata) < 0)
+      return -EFAULT;
+    
+    if (CLICK_LLRPC_GET(level, udata+1) < 0 || level > 3)
+      return -EFAULT;
+    
+    if (CLICK_LLRPC_GET(when, udata+2) < 0 || when < 1)
+      return -EFAULT;
+  
+    when *= MyEWMA::freq(); 
+    when += MyEWMA::now();
+    ipaddr = ntohl(ipaddr);
+
+    _lock->acquire();
+    set_anno_level(ipaddr, static_cast<unsigned>(level), 
+	           static_cast<unsigned>(when));
+    _lock->release();
+    return 0;
   }
   
   else
