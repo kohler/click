@@ -2,6 +2,13 @@ Click NEWS
 
 Version
 
+* Fixed reentrancy bug: in this release, when running in polling mode in
+  kernel, timers are maintained by click, in the same fashion userlevel timers
+  are maintained. Previously, we use linux timers, and so callbacks may get
+  called by linux when click is running, creating possible race conditions.
+  Note: in polling mode, if the click thread yields to other processes, timers
+  will not get called until the click thread runs again.
+
 * Added Rewriter, MappingCreator, and IPMirror elements for rewriting
   TCP/IP and UDP/IP streams.
 
