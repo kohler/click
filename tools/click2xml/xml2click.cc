@@ -304,11 +304,11 @@ do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
 
     CxConfig *cx = xstack.back();
     for (const XML_Char **a = attrs; *a; a += 2)
-	if (strcmp(a[0], "prevclassname") == 0) {
+	if (strcmp(a[0], "overloadclassname") == 0) {
 	    if (!cp_is_click_id(a[1]))
-		errh->lerror(landmark, "'prevclassname' attribute not a valid Click identifier");
+		errh->lerror(landmark, "'overloadclassname' attribute not a valid Click identifier");
 	    cx->_prev_class_name = a[1];
-	} else if (strcmp(a[0], "prevclassid") == 0)
+	} else if (strcmp(a[0], "overloadclassid") == 0)
 	    cx->_prev_class_id = a[1];
 	else if (strcmp(a[0], "ninputs") == 0) {
 	    if (!cp_integer(a[1], &cx->_decl_ninputs))
@@ -487,6 +487,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     _type->use();
     _router->use();
     enclosing_type->add_declared_type(_type, true);
+    enclosing_type->check();
     _router->set_overload_type(prev_class);
 
     // handle formals
@@ -495,8 +496,10 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     for (int i = 0; i < _formals.size(); i++)
 	if (!_formals[i])
 	    cerrh.lerror(_xml_landmark, "definition missing for formal %d", i);
+	else if (_formals[i][0] != '$')
+	    cerrh.lerror(_xml_landmark, "formal %d ('%s') does not begin with '$'", i, _formals[i].c_str());
 	else if (formal_map[_formals[i]] >= 0)
-	    cerrh.lerror(_xml_landmark, "redeclaration of formal '$%s'", _formals[i].cc());
+	    cerrh.lerror(_xml_landmark, "redeclaration of formal '%s'", _formals[i].cc());
 	else {
 	    if ((!_formal_types[i] && formal_state == 1)
 		|| (_formal_types[i] == "__REST__" && i != _formals.size() - 1))
@@ -625,6 +628,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	for (int i = 0; i < classes.size(); i++)
 	    classes[i]->complete_elementclass(errh);
 	xstack.back()->complete(errh);
+	xstack.back()->router(errh)->check();
     }
 
     // flatten router if appropriate
@@ -678,11 +682,10 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 int
 main(int argc, char **argv)
 {
-    String::static_initialize();
-    ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+    click_static_initialize();
+    CLICK_DEFAULT_PROVIDES;
     ErrorHandler *errh = ErrorHandler::default_handler();
     ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-pretty: ");
-    CLICK_DEFAULT_PROVIDES;
 
     // read command line arguments
     Clp_Parser *clp =

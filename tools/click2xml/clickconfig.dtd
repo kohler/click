@@ -14,8 +14,8 @@ line NMTOKEN #IMPLIED>
 <!ATTLIST synonym classname CDATA #IMPLIED
 classid IDREF #IMPLIED>
 
-<!ATTLIST compound prevclassname CDATA #IMPLIED
-prevclassid IDREF #IMPLIED
+<!ATTLIST compound overloadclassname CDATA #IMPLIED
+overloadclassid IDREF #IMPLIED
 ninputs NMTOKEN #IMPLIED
 noutputs NMTOKEN #IMPLIED
 nformals NMTOKEN #IMPLIED>

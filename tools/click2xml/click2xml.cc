@@ -158,15 +158,20 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	fprintf(f, ">\n%s  <compound", indent.cc());
 	if (ElementClassT *prev = compound->overload_type()) {
 	    fprintf(f, " ");
-	    print_class_reference(f, prev, "prev");
+	    print_class_reference(f, prev, "overload");
 	}
 	fprintf(f, " ninputs=\"%d\" noutputs=\"%d\" nformals=\"%d\">\n",
 		compound->ninputs(), compound->noutputs(), compound->nformals());
 
 	String new_indent = add_indent(indent, 4);
-	for (int i = 0; i < compound->nformals(); i++)
-	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" />\n",
-		    new_indent.cc(), i, compound->formals()[i].substring(1).cc());
+	for (int i = 0; i < compound->nformals(); i++) {
+	    assert(compound->formals()[i]);
+	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" ",
+		    new_indent.cc(), i, compound->formals()[i].c_str());
+	    if (compound->formal_types()[i])
+		fprintf(f, "key=\"%s\" ", compound->formal_types()[i].c_str());
+	    fprintf(f, "/>\n");
+	}
 	generate_router(compound->cast_router(), f, new_indent, false, errh);
 	
 	fprintf(f, "%s  </compound>\n", indent.cc());
@@ -302,11 +307,10 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 int
 main(int argc, char **argv)
 {
-    String::static_initialize();
-    ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+    click_static_initialize();
+    CLICK_DEFAULT_PROVIDES;
     ErrorHandler *errh = ErrorHandler::default_handler();
     ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-pretty: ");
-    CLICK_DEFAULT_PROVIDES;
 
     // read command line arguments
     Clp_Parser *clp =
