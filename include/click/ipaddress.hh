@@ -3,11 +3,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 
-class IPAddress {
-  
-  u_int32_t _addr;
-  
- public:
+class IPAddress { public:
   
   IPAddress()			: _addr(0) { }
   explicit IPAddress(const unsigned char *);
@@ -32,6 +28,13 @@ class IPAddress {
   unsigned hashcode() const	{ return _addr; }
   int mask_to_prefix_bits() const;
 
+  // bool operator==(IPAddress, IPAddress);
+  // bool operator!=(IPAddress, IPAddress);
+  
+  // IPAddress operator&(IPAddress, IPAddress);
+  // IPAddress operator|(IPAddress, IPAddress);
+  // IPAddress operator~(IPAddress);
+  
   IPAddress &operator&=(IPAddress);
   IPAddress &operator|=(IPAddress);
 
@@ -41,7 +44,11 @@ class IPAddress {
   
   operator String() const	{ return unparse(); }
   String s() const		{ return unparse(); }
+
+ private:
   
+  u_int32_t _addr;
+
 };
 
 inline
