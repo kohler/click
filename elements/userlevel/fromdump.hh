@@ -3,18 +3,23 @@
 
 /*
  * =c
- * FromDump(filename)
+ * FromDump(FILENAME [, TIMING])
  * =d
- * Reads packets from a file produced by tcpdump -w.
- * Pushes them out the output.
- * Tries to maintain the timing of the original packet stream.
+ *
+ * Reads packets from a file produced by `tcpdump -w FILENAME'. Pushes them
+ * out the output, and stops the driver when there are no more packets. If
+ * TIMING is true, then FromDump tries to maintain the timing of the original
+ * packet stream. TIMING is true by default.
+ *
+ * Note: By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
+ * each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
+ * such.
  *
  * Only available in user-level processes.
  *
  * =a ToDump
  * =a FromBPF
- * =a ToBPF
- */
+ * =a ToBPF */
 
 #ifdef HAVE_PCAP
 extern "C" {
@@ -27,22 +32,7 @@ extern "C" {
 #include "element.hh"
 
 class FromDump : public Element {
- public:
-  FromDump();
-  FromDump(String filename);
-  ~FromDump();
-
-  bool ready();
-  void go();
   
-  const char *class_name() const		{ return "FromDump"; }
-  Processing default_processing() const	{ return PUSH; }
-  FromDump *clone() const;
-  
-  int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-
- private:
   pcap_t* _pcap;
 #ifdef HAVE_PCAP
   pcap_pkthdr _pending_pkthdr;
@@ -50,17 +40,29 @@ class FromDump : public Element {
   Packet* _pending_packet;
   timeval _offset;
   String _filename;
+  bool _timing;
 
-  // static get_packet just casts clientdata to a FromDump and calls
-  // the method. (used only as a callback)
 #ifdef HAVE_PCAP
-  static void get_packet(u_char* clientdata,
-			 const struct pcap_pkthdr* pkthdr,
-			 const u_char* data);
-  void get_packet(const pcap_pkthdr* pkthdr, const u_char* data);
+  static void pcap_packet_hook(u_char* clientdata,
+			       const struct pcap_pkthdr* pkthdr,
+			       const u_char* data);
 #endif
   
+ public:
+  
+  FromDump();
+  ~FromDump();
 
+  const char *class_name() const		{ return "FromDump"; }
+  Processing default_processing() const	{ return PUSH; }
+  FromDump *clone() const;
+  
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
+
+  void run_scheduled();
+  
 };
 
 #endif
