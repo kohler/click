@@ -195,19 +195,30 @@ void
 DriverManager::handle_stopped_driver()
 {
     _stopped_count++;
+
+    // process current instruction
     int insn = _insns[_insn_pos];
-    if (insn != INSN_STOP && insn != INSN_WRITE_SKIP)
-	router()->reserve_driver();
-    if (insn == INSN_WAIT_STOP) {
+    assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT);
+    if (insn == INSN_STOP)
+	return;
+    else if (insn == INSN_WAIT_STOP) {
 	_insn_arg++;
-	if (_insn_arg >= _args[_insn_pos])
-	    while (step_insn())
-		/* nada */;
-    } else if (insn == INSN_WAIT) {
+	if (_insn_arg < _args[_insn_pos]) {
+	    router()->reserve_driver();
+	    return;
+	}
+    } else if (insn == INSN_WAIT)
 	_timer.unschedule();
-	while (step_insn())
-	    /* nada */;
-    }
+
+    // process following instructions
+    while (step_insn())
+	/* nada */;
+
+    // reserve driver if current instruction says so
+    insn = _insns[_insn_pos];
+    assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT);
+    if (insn != INSN_STOP)
+	router()->reserve_driver();
 }
 
 void
