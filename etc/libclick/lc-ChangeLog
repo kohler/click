@@ -1,3 +1,11 @@
+2001-10-23 Tuesday 16:12  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/routerthread.cc: nitlets
+
+2001-10-23 Tuesday 16:10  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: task.hh, task.hh: regularization
+
 2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh, include/click/router.hh,

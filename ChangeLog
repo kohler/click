@@ -1,3 +1,34 @@
+2001-10-23 Tuesday 16:12  Eddie Kohler <kohler@aciri.org>
+
+	* conf/urewrite.click (1.4), lib/routerthread.cc (1.18): nitlets
+
+2001-10-23 Tuesday 16:11  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: ip/ipaddrrewriter.cc (1.8), ip/ipaddrrewriter.hh
+	(1.2), ip/iprw.cc (1.39), ip/iprw.hh (1.18), tcpudp/iprewriter.cc
+	(1.25), tcpudp/tcprewriter.cc (1.14): IPRewriter updates for Alex
+	Yip: hopefully they fix the problem he observed
+
+2001-10-23 Tuesday 16:10  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh (1.12): regularization
+
+2001-10-23 Tuesday 16:10  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: progressbar.cc (1.10), progressbar.hh (1.6):
+	ProgressBar: add several handlers, and support for multiple
+	position and size handlers
+
+2001-10-23 Tuesday 16:10  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.55): avoid crashes when setting
+	active to true while FromDump is being processed
+
+2001-10-23 Tuesday 16:09  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: timefilter.cc (1.3), timefilter.hh (1.3):
+	TimeFilter: add END_CALL and handler support
+
 2001-10-22 Monday 16:22  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh (1.25), lib/router.cc (1.110): add
