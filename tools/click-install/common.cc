@@ -88,7 +88,7 @@ kill_current_configuration(ErrorHandler *errh)
     errh->message("Installing blank configuration in kernel");
 
   String clickfs_config = clickfs_prefix + String("/config");
-  String clickfs_threads = clickfs_prefix + String("/config");
+  String clickfs_threads = clickfs_prefix + String("/threads");
   
   FILE *f = fopen(clickfs_config.cc(), "w");
   if (!f)
@@ -101,7 +101,7 @@ kill_current_configuration(ErrorHandler *errh)
     errh->message("Waiting for Click threads to die");
   for (int wait = 0; wait < 6; wait++) {
     String s = file_string(clickfs_threads);
-    if (!s || s == "0\n")
+    if (!s)
       return;
     struct timeval tv;
     tv.tv_sec = 0;
