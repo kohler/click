@@ -6,7 +6,7 @@ CLICK_DECLS
 
 /*
  * =c
- * E2ELossMetric(LinkStat)
+ * E2ELossMetric(LinkStat, [, I<KEYWORDS>])
  * =s Grid
  * =io
  * None

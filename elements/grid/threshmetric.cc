@@ -1,5 +1,5 @@
 /*
- * e2elossmetric.{cc,hh} -- end-to-end delivery ratio metric
+ * threshmetric.{cc,hh} -- delivery ratio threshold metric
  *
  * Copyright (c) 2003 Massachusetts Institute of Technology
  *
@@ -16,26 +16,26 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/grid/e2elossmetric.hh"
+#include "elements/grid/threshmetric.hh"
 #include "elements/grid/linkstat.hh"
 CLICK_DECLS 
 
-E2ELossMetric::E2ELossMetric()
-  : GridGenericMetric(0, 0), _ls(0), _twoway(false)
+ThresholdMetric::ThresholdMetric()
+  : GridGenericMetric(0, 0), _ls(0), _thresh(63), _twoway(false)
 {
   MOD_INC_USE_COUNT;
 }
 
-E2ELossMetric::~E2ELossMetric()
+ThresholdMetric::~ThresholdMetric()
 {
   MOD_DEC_USE_COUNT;
 }
 
 void *
-E2ELossMetric::cast(const char *n) 
+ThresholdMetric::cast(const char *n) 
 {
-  if (strcmp(n, "E2ELossMetric") == 0)
-    return (E2ELossMetric *) this;
+  if (strcmp(n, "ThresholdMetric") == 0)
+    return (ThresholdMetric *) this;
   else if (strcmp(n, "GridGenericMetric") == 0)
     return (GridGenericMetric *) this;
   else
@@ -43,12 +43,13 @@ E2ELossMetric::cast(const char *n)
 }
 
 int
-E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
+ThresholdMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpElement, "LinkStat element", &_ls,
-			cpKeywords, 
-			"TWOWAY", cpBool, "use delivery ratios in both link directions?", &_twoway,
+			cpKeywords,
+			"THRESH", cpUnsigned, "delivery ratio threshold, 0--100 percent", &_thresh,
+			"TWOWAY", cpBool, "apply threshold to delivery ratios in both link directions?", &_twoway,
 			0);
   if (res < 0)
     return res;
@@ -56,18 +57,25 @@ E2ELossMetric::configure(Vector<String> &conf, ErrorHandler *errh)
     errh->error("no LinkStat element specified");
   if (_ls->cast("LinkStat") == 0)
     return errh->error("LinkStat argument is wrong element type (should be LinkStat)");
+  if (_thresh > 100)
+    return errh->error("THRESH keyword argument is too large, it must be <= 100 percent");
   return 0;
 }
 
 
 bool
-E2ELossMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
+ThresholdMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 {
-  return m1.val() > m2.val();
+  if (m1.good() && m2.good())
+    return m1.val() < m2.val();
+  else if (m2.good()) 
+    return false;
+  else 
+    return true;
 }
 
 GridGenericMetric::metric_t 
-E2ELossMetric::get_link_metric(const EtherAddress &e) const
+ThresholdMetric::get_link_metric(const EtherAddress &e) const
 {
   unsigned tau_fwd, tau_rev;
   unsigned r_fwd, r_rev;
@@ -78,45 +86,39 @@ E2ELossMetric::get_link_metric(const EtherAddress &e) const
 
   if (!res_fwd || (_twoway && !res_rev))
     return _bad_metric;
+  if (r_fwd == 0 || r_rev == 0)
+    return _bad_metric;
 
-  if (r_fwd > 100)
-    r_fwd = 100;
-  if (_twoway && r_rev > 100)
-    r_rev = 100;
-
-  unsigned val = r_fwd;
-  if (_twoway)
-    val = val * r_rev / 100;
-
-  assert(val <= 100);
-
-  return metric_t(val);      
+  if (r_fwd >= _thresh && (!_twoway || r_rev >= _thresh))
+      return metric_t(1);      
+  else
+    return _bad_metric;
 }
 
 GridGenericMetric::metric_t
-E2ELossMetric::append_metric(const metric_t &r, const metric_t &l) const
+ThresholdMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
     return _bad_metric;
   
-  if (r.val() > 100)
-    click_chatter("E2ELossMetric %s: append_metric WARNING: metric %u%% transmissions is too large for route metric",
+  if (r.val() < 1)
+    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",
 		  id().cc(), r.val());
-  if (l.val() > 100)
-    click_chatter("E2ELossMetric %s: append_metric WARNING: metric %u%% transmissions is too large for link metric",
+  if (l.val() != 1)
+    click_chatter("ThresholdMetric %s: append_metric WARNING: metric %u%% transmissions should be one for link metric",
 		  id().cc(), r.val());
 
-  return metric_t(r.val() * l.val() / 100);
+  return metric_t(r.val() + l.val());
 }
 
 void
-E2ELossMetric::add_handlers()
+ThresholdMetric::add_handlers()
 {
   add_default_handlers(true);
 }
 
 
 ELEMENT_PROVIDES(GridGenericMetric)
-EXPORT_ELEMENT(E2ELossMetric)
+EXPORT_ELEMENT(ThresholdMetric)
 
 CLICK_ENDDECLS

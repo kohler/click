@@ -47,7 +47,7 @@ public:
 
   // generic metric methods
   bool metric_val_lt(const metric_t &, const metric_t &) const;
-  metric_t get_link_metric(const EtherAddress &n) const;
+  metric_t get_link_metric(const EtherAddress &) const;
   metric_t append_metric(const metric_t &, const metric_t &) const;
 
 private:

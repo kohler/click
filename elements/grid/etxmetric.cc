@@ -94,7 +94,7 @@ GridGenericMetric::metric_t
 ETXMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
-    return metric_t(777777, false); // `bad' metric
+    return _bad_metric;
   
   if (r.val() < 100)
     click_chatter("ETXMetric %s: append_metric WARNING: metric %u%% transmissions is too low for route metric",

@@ -18,10 +18,11 @@
 #include <click/error.hh>
 #include "elements/grid/lirmetric.hh"
 #include "elements/grid/linkstat.hh"
+#include "elements/grid/gridgenericrt.hh"
 CLICK_DECLS 
 
 LIRMetric::LIRMetric()
-  : GridGenericMetric(0, 0), _ls(0)
+  : GridGenericMetric(0, 0), _rt(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -46,7 +47,7 @@ int
 LIRMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpElement, "GridGenericRouteTable element", &_ls,
+			cpElement, "GridGenericRouteTable element", &_rt,
 			0);
   if (res < 0)
     return res;
@@ -65,7 +66,7 @@ LIRMetric::metric_val_lt(const metric_t &m1, const metric_t &m2) const
 }
 
 GridGenericMetric::metric_t 
-LIRMetric::get_link_metric(const EtherAddress &e) const
+LIRMetric::get_link_metric(const EtherAddress &) const
 {
   // XXX number of nbrs of senders, or number of neighbors of
   // receivers.  that is, for a an n+1 node route with n hops, do we
@@ -78,7 +79,7 @@ GridGenericMetric::metric_t
 LIRMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
-    return metric_t(777777, false); // `bad' metric
+    return _bad_metric;
   
   // every node must have at least one 1-hop neighbor, or it wouldn't
   // be part of the network!
