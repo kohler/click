@@ -1,3 +1,10 @@
+2002-10-14 Monday 18:35  Eddie Kohler <kohler@icir.org>
+
+	* Makefile.in (1.111), click-mkelemmap (1.22), doc/mkwebdoc.pl
+	(1.36), etc/samplepackage/acclick.m4 (1.10),
+	etc/samplepackage/aclocal.m4 (1.6): mkwebdoc understands
+	elementmap.xml format
+
 2002-10-14 Monday 16:17  Eddie Kohler <kohler@icir.org>
 
 	* .cvsignore (1.8), Makefile.in (1.110), click-mkelemmap (1.21),
