@@ -1,3 +1,18 @@
+2003-02-05 Wednesday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: infinitesource.cc (1.38), infinitesource.hh
+	(1.33): Allow user to specify minimum packet size, without having
+	to specify that much actual data
+
+2003-02-05 Wednesday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/ip/setipaddress.hh (1.16): Make live reconfigurable
+
+2003-02-05 Wednesday 15:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: incseqno.cc (1.2), incseqno.hh (1.2): Allow user
+	to specify sequence number byte order: host or net
+
 2003-02-05 Wednesday 13:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: incseqno.cc (1.1), incseqno.hh (1.1): Element to
