@@ -15,21 +15,9 @@ lets through one packet per aggregate annotation
 
 =d
 
-AggregateCounter maintains counts of how many packets or bytes it has seen for
-each aggregate value. Each aggregate annotation value gets a different count.
-Call its C<write_file> or C<write_ascii_file> write handler to get a dump of
-the information.
-
-The C<freeze> handler, and the C<AGGREGATE_FREEZE> and C<COUNT_FREEZE>
-keyword arguments, can put AggregateCounter in a frozen state. Frozen
-AggregateCounters only update existing counters; they do not create new
-counters for previously unseen aggregate values.
-
-AggregateCounter may have one or two inputs. The optional second input is
-always frozen. (It is only useful when the element is push.) It may also have
-two outputs. If so, and the element is push, then packets that were counted
-are emitted on the first output, while other packets are emitted on the second
-output.
+AggregateUniq forwards only the first packet it sees for each aggregate
+annotation value. Second and subsequent packets with that aggregate annotation
+are emitted on the second output, if it exists, or dropped if it does not.
 
 Keyword arguments are:
 
@@ -38,23 +26,18 @@ Keyword arguments are:
 =item NOTIFIER
 
 The name of an AggregateNotifier element, like AggregateIPFlows. If given,
-then ToIPFlowDumps will ask the element for notification when flows are
-deleted. It uses that notification to free its state early. It's a very good
-idea to supply a NOTIFIER.
+then AggregateUniq will prune information about old aggregates. This can save
+significant memory on long traces.
 
 =back
 
-
 =n
-
-The aggregate identifier is stored in host byte order. Thus, the aggregate ID
-corresponding to IP address 128.0.0.0 is 2147483648.
 
 Only available in user-level processes.
 
 =a
 
-AggregateIP, FromIPSummaryDump, FromDump, tcpdpriv(1) */
+AggregateIP, AggregateIPFlows, AggregateCounter, AggregateFilter */
 
 class AggregateUniq : public Element, public AggregateListener { public:
   
