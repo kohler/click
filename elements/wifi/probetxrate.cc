@@ -55,7 +55,6 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords, 
 			"WINDOW", cpUnsigned, "window", &_rate_window_ms,
 			"THRESHOLD", cpUnsigned, "window", &_packet_size_threshold,
-			"ETH", cpEthernetAddress, "eth", &_eth,
 			"RT", cpElement, "availablerates", &_rtable,
 			0);
   if (ret < 0) {
@@ -76,21 +75,14 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 
-Packet *
-ProbeTXRate::pull(int port)
-{
-  Packet *p = input(port).pull();
-  if (p) {
-    assign_rate(p);
-  }
-  return p;
-}
 
 void
 ProbeTXRate::assign_rate(Packet *p_in) {
 
   assert(p_in);
   if (!p_in) {
+    click_chatter("%{element} ah, !p_in\n",
+		  this);
     return;
   }
 
@@ -107,6 +99,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     _neighbors.insert(dst, DstInfo(dst));
     nfo = _neighbors.findp(dst);
     nfo->_rates = _rtable->lookup(dst);
+    nfo->_total_usecs = Vector<int>(nfo->_rates.size(), 0);
     nfo->_total_tries = Vector<int>(nfo->_rates.size(), 0);
     nfo->_total_success = Vector<int>(nfo->_rates.size(), 0);
   }
@@ -123,20 +116,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   return;
 }
 
-void
-ProbeTXRate::push(int port, Packet *p_in)
-{
-  if (!p_in) {
-    return;
-  }
-  if (port != 0) {
-    process_feedback(p_in);
-    p_in->kill();
-  } else {
-    assign_rate(p_in);
-    output(port).push(p_in);
-  }
-}
+
 void
 ProbeTXRate::process_feedback(Packet *p_in) {
 
@@ -146,7 +126,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   }
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
-  int success = (WIFI_TX_STATUS_ANNO(p_in) == 0);  
+  int status = WIFI_TX_STATUS_ANNO(p_in);  
   int retries = WIFI_RETRIES_ANNO(p_in);
   int rate = WIFI_RATE_ANNO(p_in);
 
@@ -167,7 +147,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     /* rate wasn't set */
     return;
   }
-  if (success && p_in->length() < _packet_size_threshold) {
+  if (!status && p_in->length() < _packet_size_threshold) {
     /* 
      * don't deal with short packets, 
      * since they can skew what rate
@@ -181,10 +161,34 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
-
-  nfo->add_result(now, rate, retries + 1, success);
+  nfo->add_result(now, rate, retries , (status == 0));
 
   return ;
+}
+
+Packet *
+ProbeTXRate::pull(int port)
+{
+  Packet *p = input(port).pull();
+  if (p) {
+    assign_rate(p);
+  }
+  return p;
+}
+
+void
+ProbeTXRate::push(int port, Packet *p_in)
+{
+  if (!p_in) {
+    return;
+  }
+  if (port != 0) {
+    process_feedback(p_in);
+    p_in->kill();
+  } else {
+    assign_rate(p_in);
+    output(port).push(p_in);
+  }
 }
 
 
@@ -197,19 +201,25 @@ ProbeTXRate::print_rates()
     DstInfo nfo = iter.value();
     sa << nfo._eth << "\n";
     for (int x = 0; x < nfo._rates.size(); x++) {
-      sa << " " << nfo._rates[x] << " " << nfo._total_tries[x] << " " << nfo._total_success[x] << " ";
+      sa << " " << nfo._rates[x];
+      sa << " " << nfo._total_tries[x];
+      sa << " " << nfo._total_success[x];
+      sa << " " << nfo._total_usecs[x];
+      sa << " ";
       if (nfo._total_success[x]) {
-	int tput = rate_to_tput(nfo._rates[x]) * nfo._total_tries[x] / nfo._total_success[x];
-	sa << tput;
+	int usecs = nfo._total_usecs[x] / nfo._total_success[x];
+	sa << usecs;
       } else {
-	sa << "*";
+	sa << "* *";
       }
       sa << "\n";
     }
   }
   return sa.take_string();
 }
-enum {H_DEBUG, H_ETH, H_RATES, H_THRESHOLD};
+
+
+enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET};
 
 
 static String
@@ -219,8 +229,6 @@ ProbeTXRate_read_param(Element *e, void *thunk)
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
-  case H_ETH:
-    return td->_eth.s() + "\n";
   case H_THRESHOLD:
     return String(td->_packet_size_threshold) + "\n";
   case H_RATES: {
@@ -251,13 +259,9 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
     f->_packet_size_threshold = m;
     break;
   }
-  case H_ETH: {
-    EtherAddress e;
-    if (!cp_ethernet_address(s, &e)) 
-      return errh->error("bssid parameter must be ethernet address");
-    f->_eth = e;
+  case H_RESET:
+    f->_neighbors.clear();
     break;
-  }
   }
   return 0;
 }
@@ -270,13 +274,12 @@ ProbeTXRate::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", ProbeTXRate_read_param, (void *) H_DEBUG);
-  add_read_handler("eth", ProbeTXRate_read_param, (void *) H_ETH);
   add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);
 
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
-  add_write_handler("eth", ProbeTXRate_write_param, (void *) H_ETH);
   add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
+  add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
   
 }
 // generate Vector template instance

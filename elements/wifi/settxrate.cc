@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include "settxrate.hh"
 #include <clicknet/ether.h>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 SetTXRate::SetTXRate()
@@ -38,7 +39,6 @@ SetTXRate::~SetTXRate()
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _auto_l = 0;
   _ett_l = 0;
   _rate = 0;
   _et = 0;
@@ -46,7 +46,6 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords, 
 		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
-		  "AUTO", cpElement, "AutoTXRate element", &_auto_l,
 		  "ETT", cpElement, "ETTMetric element", &_ett_l,
 		  0) < 0) {
     return -1;
@@ -56,20 +55,15 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("RATE must be >= 0");
   }
 
-  if (_auto_l && _auto_l->cast("AutoTXRate") == 0) {
-    return errh->error("AUTO element is not a AutoTXRate");
-  }
-
-
+  
+  
+  
   if (_ett_l && _ett_l->cast("ETTMetric") == 0) {
     return errh->error("ETT element is not a ETTMetric");
   }
-
-  if (_auto_l && _ett_l) {
-    return errh->error("can't specify both ETT and AUTO");
-  }
-  _auto = (_auto_l) || (_ett_l);
-
+  
+  _auto = (_ett_l);
+  
   return 0;
 }
 
@@ -86,9 +80,7 @@ SetTXRate::simple_action(Packet *p_in)
   if (_auto) {
     EtherAddress dst = EtherAddress(eh->ether_dhost);
     int rate = 0;
-    if (_auto_l) {
-      rate = _auto_l->get_tx_rate(dst);
-    } else if (_ett_l) {
+    if (_ett_l) {
       rate = _ett_l->get_tx_rate(dst);
     }
     
@@ -134,7 +126,7 @@ SetTXRate::auto_write_handler(const String &arg, Element *e,
   if (!cp_bool(arg, &b))
     return errh->error("`auto' must be an boolean");
   
-  if (b && !((n->_auto_l) || (n->_ett_l))) {
+  if (b && !(n->_ett_l)) {
     return errh->error("`auto' is true but no auto_rate element configured");
   }
 
@@ -145,7 +137,7 @@ String
 SetTXRate::auto_read_handler(Element *e, void *)
 {
   SetTXRate *foo = (SetTXRate *)e;
-  if (foo->_auto && (foo->_auto_l || foo->_ett_l)) {
+  if (foo->_auto && foo->_ett_l) {
     return String("true") + "\n";
   }
   return String("false") + "\n";

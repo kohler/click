@@ -46,39 +46,57 @@ CLICK_DECLS
  * SetTXRate, WifiTXFeedback
  */
 
-static inline int rate_to_tput(int rate) {
-  return 100 * rate;
-  switch (rate) {
-  case 108:
-    return 0;
-  case 96:
-    return 0;
-  case 72:
-    return 0;
-  case 48:
-    return 0;
-  case 36:
-    return 0;
-  case 24:
-    return 0;
-  case 22:
-    return 0;
-  case 18:
-    return 0;
-  case 12:
-    return 0;
-  case 11:
-    return 0;
-  case 4:
-    return 0;
-  case 2:
-    return 0;
-    
-  default:
-    return 0;
-  }
-}
+static inline int calc_usecs_packet(int length, int rate, int retries) {
+  assert(rate);
+  assert(length);
+  assert(retries < 0);
 
+  if (!rate || !length || retries < 0) {
+    return 1;
+  }
+
+  int pbcc = 0;
+  int t_plcp_header = 96;
+  int t_slot = 20;
+  int t_ack = 304;
+  int t_difs = 50;
+  int t_sifs = 10;
+  int cw_min = 31;
+  int cw_max = 1023;
+
+
+  switch (rate) {
+  case 2:
+    /* short preamble at 1 mbit/s */
+    t_plcp_header = 192;
+    /* fallthrough */
+  case 4:
+  case 11:
+  case 22:
+    t_ack = 304;
+    break;
+  default:
+    /* with 802.11g, things are at 6 mbit/s */
+    t_plcp_header = 46;
+    t_slot = 9;
+    t_ack = 20;
+    t_difs = 28;
+  }
+  int packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
+  
+  int cw = cw_min;
+  int expected_backoff = 0;
+
+  /* there is backoff, even for the first packet */
+  for (int x = -1; x < retries; x++) {
+    expected_backoff += t_slot * cw / 2;
+    cw = (cw + 1) * 2;
+  }
+
+  return expected_backoff + t_difs + (retries + 1) * (
+					     packet_tx_time + 
+					     t_sifs + t_ack);
+}
 
 class ProbeTXRate : public Element { public:
   
@@ -102,11 +120,10 @@ class ProbeTXRate : public Element { public:
 
 
 
-  EtherAddress _eth;
   bool _debug;
   unsigned _packet_size_threshold;
   String print_rates();
- private:
+
   struct tx_result {
     struct timeval _when;
     int _rate;
@@ -132,6 +149,7 @@ class ProbeTXRate : public Element { public:
     Vector<int> _rates;
     
     
+    Vector<int> _total_usecs;
     Vector<int> _total_tries;
     Vector<int> _total_success;
 
@@ -168,6 +186,8 @@ class ProbeTXRate : public Element { public:
 	if (t._success) {
 	  _total_success[ndx]--;
 	}
+	int usecs = calc_usecs_packet(1500, t._rate, t._tries - 1);
+	_total_usecs[ndx] -= usecs;
 	_total_tries[ndx] -= t._tries;
 	
       }
@@ -176,7 +196,8 @@ class ProbeTXRate : public Element { public:
 
     int pick_rate() {
       int best_ndx = -1;
-      int best_tput = 0;
+      int best_usecs = 0;
+      bool found = false;
       if (!_rates.size()) {
 	click_chatter("no rates for %s\n",
 		      _eth.s().cc());
@@ -184,15 +205,16 @@ class ProbeTXRate : public Element { public:
       }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x]) {
-	  int tput = rate_to_tput(_rates[x]) * _total_tries[x] / _total_success[x];
-	  if (tput > best_tput) {
+	  int usecs = _total_usecs[x] / _total_success[x];
+	  if (!found || usecs < best_usecs) {
 	    best_ndx = x;
-	    best_tput = tput;
+	    best_usecs = usecs;
+	    found = true;
 	  }
 	}
       }
       
-      if (random() % 9 == 0) {
+      if (random() % 23 == 0) {
 	int r = random() % _rates.size();
 	//click_chatter("picking random %d\n", r);
 	if (r < 0 || r > _rates.size()) {
@@ -204,7 +226,9 @@ class ProbeTXRate : public Element { public:
       }
       if (best_ndx < 0) {
 	int r = random() % _rates.size();
-	click_chatter("no rates to pick from..random %d\n", r);
+	click_chatter("no rates to pick from for %s ..random %d\n", 
+		      _eth.s().cc(),
+		      r);
 	if (r < 0 || r > _rates.size()) {
 	  click_chatter("weird random rates for %s, index %d\n",
 			_eth.s().cc(), r);
@@ -217,16 +241,17 @@ class ProbeTXRate : public Element { public:
     }
 
 
-    void add_result(struct timeval now, int rate, int tries, int success) {
+    void add_result(struct timeval now, int rate, int retries, int success) {
       int ndx = rate_index(rate);
       if (ndx < 0 || ndx > _rates.size()){
 	return;
       }
-      _total_tries[ndx] += tries;
+      _total_usecs[ndx] += calc_usecs_packet(1500, rate, retries);
+      _total_tries[ndx] += retries + 1;
       if (success) {
 	_total_success[ndx]++;
       }
-      _results.push_back(tx_result(now, rate, tries, success));
+      _results.push_back(tx_result(now, rate, retries + 1, success));
     }
   };
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;

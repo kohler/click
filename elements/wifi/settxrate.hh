@@ -2,7 +2,6 @@
 #define CLICK_SETTXRATE_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <elements/wifi/autotxrate.hh>
 #include <elements/wifi/sr/ettmetric.hh>
 CLICK_DECLS
 
@@ -61,7 +60,6 @@ class SetTXRate : public Element { public:
  private:
   
   int _rate;
-  class AutoTXRate *_auto_l;
   class ETTMetric *_ett_l;
   bool _auto;
   uint16_t _et;     // This protocol's ethertype
