@@ -1,3 +1,8 @@
+2002-01-21 Monday 15:38  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.18), lookupiprouteron.hh (1.13):
+	got 3probe policy working
+
 2002-01-21 Monday 12:15  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.17), lookupiprouteron.hh (1.12):
