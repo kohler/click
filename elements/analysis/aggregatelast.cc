@@ -174,11 +174,11 @@ AggregateLast::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
     }
 }
 
-void
-AggregateLast::run_scheduled()
+bool
+AggregateLast::run_task()
 {
     if (!_needs_clear)
-	return;
+	return false;
     _needs_clear = 0;
     
     // may take a long time!
@@ -201,6 +201,7 @@ AggregateLast::run_scheduled()
 
     if (_stop_after_clear)
 	router()->please_stop_driver();
+    return true;
 }
 
 enum { H_CLEAR };

@@ -157,7 +157,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     void push(int, Packet *);
     Packet *pull(int);
-    void run_scheduled();
+    bool run_task();
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
 
