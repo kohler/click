@@ -1,3 +1,10 @@
+2002-02-20 Wednesday 18:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.50), elements/grid/gridroutetable.cc (1.34),
+	elements/grid/gridroutetable.hh (1.19), elements/grid/linkstat.cc
+	(1.4), elements/grid/linktracker.cc (1.5): further evolution of
+	metric calculation
+
 2002-02-19 Tuesday 21:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: linkstat.cc (1.3), linkstat.hh (1.3): added
