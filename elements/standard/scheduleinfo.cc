@@ -166,8 +166,8 @@ ScheduleInfo::join_scheduler(Element *e, Task *task, ErrorHandler *errh)
 #ifndef RR_SCHED
   int tickets = query(e, errh);
   if (tickets > 0) {
-    task->set_tickets(tickets);
     task->initialize(e, true);
+    task->set_tickets(tickets);
   }
 #else
   task->initialize(e, true);
