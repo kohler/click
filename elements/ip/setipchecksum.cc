@@ -47,9 +47,9 @@ SetIPChecksum::simple_action(Packet *p)
   if (hlen < sizeof(click_ip) || hlen > plen)
     goto bad;
 
+  p = p->uniqueify();
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
-  
   return p;
 
  bad:
