@@ -34,8 +34,8 @@ CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/etc			Linux patches
 CLICKDIR/lib			common non-element source code
-CLICKDIR/linuxmodule		source code for Linux kernel module
-CLICKDIR/tools			source code for Click tools
+CLICKDIR/linuxmodule		source code for Linux kernel module driver
+CLICKDIR/tools			Click tools
 CLICKDIR/tools/lib		... common code for tools
 CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
 CLICKDIR/tools/click-combine	... merges routers into combined configuration
@@ -44,9 +44,7 @@ CLICKDIR/tools/click-devirtualize   ... removes virtual functions from source
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-install	... installs configuration into Linux module
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
-CLICKDIR/tools/udpgen		... Linux kernel modules for quickly 
-				    generating and counting UDP packets
-CLICKDIR/userlevel		source code for user-level `click' program
+CLICKDIR/userlevel		source code for user-level `click' driver
 
 DOCUMENTATION
 -------------
@@ -103,9 +101,8 @@ Configurations
     A few configurations are included in the `conf' directory, including a
 Perl script that generated the IP router configurations used in our TOCS
 paper (`conf/make-ip-conf.pl') and a set of patterns for the Click pattern
-optimizer, click-xform (`conf/ip.clickpat'). The configurations are
-presently un- or under-documented. Please check back to our Web site for
-more up-to-date configurations.
+optimizer, click-xform (`conf/ip.clickpat'). Please check back to our Web
+site for more up-to-date configurations.
 
 COPYRIGHT AND LICENSE
 =====================

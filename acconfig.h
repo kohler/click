@@ -59,6 +59,9 @@
 /* Define if your Linux kernel has sk_buff reuse extensions. */
 #undef HAVE_REUSE_SKB
 
+/* Define if your Linux kernel has tulip_interrupt_hook. */
+#undef HAVE_TULIP_INTERRUPT_HOOK
+
 /* Define if your Linux kernel is running in SMP mode. */
 #ifdef __KERNEL__
 #undef __SMP__
