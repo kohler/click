@@ -175,7 +175,7 @@ ARPQuerier::send_query_for(const IPAddress &want_ip)
 {
   static bool zero_warned = false;  
   if (!want_ip && !zero_warned) {
-    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?");
+    click_chatter("%s: querying for 0.0.0.0; missing dest IP addr annotation?", declaration().cc());
     zero_warned = true;
   }
       
@@ -183,7 +183,7 @@ ARPQuerier::send_query_for(const IPAddress &want_ip)
   if (q == 0) {
     click_chatter("in arp querier: cannot make packet!");
     assert(0);
-  } 
+  }
   memset(q->data(), '\0', q->length());
   click_ether *e = (click_ether *) q->data();
   click_ether_arp *ea = (click_ether_arp *) (e + 1);
