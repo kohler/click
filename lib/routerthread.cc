@@ -33,7 +33,7 @@ CLICK_DECLS
 #define DEBUG_RT_SCHED		0
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
-# define DRIVER_TASKS_PER_ITER	64
+# define DRIVER_TASKS_PER_ITER	128
 #elif defined(CLICK_NS)
 # define DRIVER_TASKS_PER_ITER	256
 #else
@@ -57,7 +57,7 @@ CLICK_DECLS
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 # define DRIVER_TOTAL_TICKETS	128	/* # tickets shared between clients */
 # define DRIVER_GLOBAL_STRIDE	(Task::STRIDE1 / DRIVER_TOTAL_TICKETS)
-# define DRIVER_QUANTUM		8	/* # microseconds per stride */
+# define DRIVER_QUANTUM		8	/* microseconds per stride */
 # define DRIVER_RESTRIDE_INTERVAL 80	/* microseconds between restrides */
 #endif
 
@@ -186,7 +186,7 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 	// mark new measurement period
 	t_before = t_now;
 	
-	// reset passes every 10 _m_quanta, or if time moved backwards
+	// reset passes every 10 intervals, or when time moves backwards
 	if (++restride_iter == 10 || elapsed < 0) {
 	    _global_pass = _clients[C_CLICK].tickets = _clients[C_KERNEL].tickets = 0;
 	    restride_iter = 0;
