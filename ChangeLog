@@ -1,3 +1,8 @@
+2001-08-10 Friday 11:01  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.1), divertsocket.hh (1.1): Initial
+	add
+
 2001-08-08 Wednesday 20:44  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdump.cc (1.40): use caddr_t to improve
