@@ -56,7 +56,7 @@ class Router { public:
   int upstream_elements(Element *, Vector<Element *> &);
 
   void preinitialize();
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *, bool verbose_errors = true);
   void take_state(Router *, ErrorHandler *);
 
   // handlers

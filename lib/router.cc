@@ -849,7 +849,7 @@ Router::initialize_handlers(bool defaults, bool specifics)
 }
 
 int
-Router::initialize(ErrorHandler *errh)
+Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
 {
   assert(!_initialized);
   if (!_preinitialized)
@@ -886,13 +886,14 @@ Router::initialize(ErrorHandler *errh)
 #endif
     ContextErrorHandler cerrh
       (errh, context_message(i, "While configuring"));
-    int before = cerrh.nerrors();
+    ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
+    int before = errh1->nerrors();
     Vector<String> conf;
     cp_argvec(_configurations[i], conf);
-    if (_elements[i]->configure(conf, &cerrh) < 0) {
+    if (_elements[i]->configure(conf, errh1) < 0) {
       element_ok[i] = all_ok = false;
-      if (cerrh.nerrors() == before)
-	cerrh.error("unspecified error");
+      if (errh1->nerrors() == before)
+	errh1->error("unspecified error");
     }
   }
 
@@ -922,13 +923,14 @@ Router::initialize(ErrorHandler *errh)
 #endif
 	ContextErrorHandler cerrh
 	  (errh, context_message(i, "While initializing"));
-	int before = cerrh.nerrors();
-	if (_elements[i]->initialize(&cerrh) < 0) {
+	ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
+	int before = errh1->nerrors();
+	if (_elements[i]->initialize(errh1) < 0) {
 	  element_ok[i] = all_ok = false;
 	  // don't report `unspecified error' for ErrorElements: keep error
 	  // messages clean
-	  if (cerrh.nerrors() == before && !_elements[i]->cast("Error"))
-	    cerrh.error("unspecified error");
+	  if (errh1->nerrors() == before && !_elements[i]->cast("Error"))
+	    errh1->error("unspecified error");
 	}
       }
     }
@@ -942,7 +944,8 @@ Router::initialize(ErrorHandler *errh)
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
   if (!all_ok) {
-    errh->error("Router could not be initialized!");
+    if (verbose_errors)
+      errh->error("Router could not be initialized!");
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])
 	_elements[i]->uninitialize();
