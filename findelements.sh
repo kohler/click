@@ -10,7 +10,7 @@ case $1 in
   -x|--e|--ex|--exp|--expa|--expan|--expand)
      expand=1; shift 1;;
   *)
-     echo "Usage: ./mkelemlist.sh [-m|-c|-x] < [FILES AND DIRECTORIES]" 1>&2
+     echo "Usage: ./findelements.sh [-m|-c|-x] < [FILES AND DIRECTORIES]" 1>&2
      exit 1;;
 esac
 

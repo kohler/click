@@ -57,6 +57,7 @@ AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
 int main(int c, char **v) {
   int a;
   int *b = new(&a) int;
+  return 0;
 }], ac_cv_good_new_h=yes, ac_cv_good_new_h=no, ac_cv_good_new_h=no))
 if test $ac_cv_good_new_h = yes; then
   AC_DEFINE_UNQUOTED(HAVE_NEW_H, 1)
@@ -75,10 +76,10 @@ dnl
 dnl check for stuff in the linux kernel
 dnl
 
-AC_CACHE_CHECK(for Click kernel extensions, ac_cv_click_kernel,
-[if grep -q register_net_out /proc/ksyms 2>/dev/null; then
+AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
+if grep -q register_net_out /proc/ksyms 2>/dev/null; then
   ac_cv_click_kernel=yes
-else ac_cv_click_kernel=no; fi])
+else ac_cv_click_kernel=no; fi)
 if test $ac_cv_click_kernel = yes; then
   AC_DEFINE_UNQUOTED(HAVE_CLICK_KERNEL, 1)
 fi
@@ -107,8 +108,25 @@ else
   AC_MSG_ERROR(can't find GNU make!)
 fi])
 if test $ac_cv_gnu_make != make; then
-  echo "*** Warning: you must compile with GNU make ("'`'"$ac_cv_gnu_make')."
+  AC_MSG_WARN(You must compile with GNU make ("'`'"$ac_cv_gnu_make').)
   SUBMAKE="MAKE = $ac_cv_gnu_make"
+fi
+
+dnl
+dnl possible targets
+dnl
+
+POSSIBLE_TARGETS=
+AC_SUBST(POSSIBLE_TARGETS)
+
+if test -d $srcdir/linuxmodule; then
+  POSSIBLE_TARGETS="$POSSIBLE_TARGETS linuxmodule"
+fi
+if test -d $srcdir/userlevel; then
+  POSSIBLE_TARGETS="$POSSIBLE_TARGETS userlevel"
+fi
+if test -d $srcdir/exopc; then
+  POSSIBLE_TARGETS="$POSSIBLE_TARGETS exopc"
 fi
 
 dnl
@@ -141,20 +159,33 @@ fi
 dnl check linuxmodule for Linux
 
 if test `uname` = Linux; then
-  TARGETS="$TARGETS linuxmodule"
+  AC_CACHE_CHECK(for C++-includable system header files,
+    ac_cv_cxx_aware_system,
+    AC_TRY_RUN([#include <signal.h>
+int main(int c, char **v) {
+  return 0;
+}], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no, 
+    ac_cv_cxx_aware_system=no))
+  if test $ac_cv_cxx_aware_system = yes; then
+    TARGETS="$TARGETS linuxmodule"
+  else
+    AC_MSG_WARN(Your header files must be patched before a C++ program
+can include them. Apply the patch that came with this distribution
+if you want to compile Click as a Linux module.)
+  fi
 fi
 
 dnl
 dnl Output
 dnl
 
-config_files="Makefile linuxmodule/Makefile userlevel/Makefile tools/Makefile tools/click-xform/Makefile stamp-h"
-if test -d $srcdir/exopc; then
-  config_files="$config_files exopc/Makefile"
-fi
+config_files="Makefile tools/Makefile tools/click-xform/Makefile stamp-h mkelemlist.sh"
+for dir in $POSSIBLE_TARGETS; do
+  config_files="$config_files $dir/Makefile"
+done
 
 AC_OUTPUT_COMMANDS([if test ${CONFIG_ELEMLISTS-yes} = yes; then
   echo creating element lists
-  make elemlist-simple
+  /bin/sh mkelemlist.sh
 fi])
 AC_OUTPUT($config_files)

@@ -6,8 +6,6 @@ SHELL = @SHELL@
 
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
-AUTOHEADER = autoheader
-AUTOCONF = autoconf
 
 all: click-xform
 

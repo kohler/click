@@ -23,26 +23,8 @@ exopc: stamp-h Makefile
 tools: stamp-h Makefile
 	@cd tools; $(MAKE) all
 
-elemlist elemlists: stamp-h elemlist-simple
-
-elemlist-simple:
-	@f=linuxmodule/elements.conf; \
-	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
-	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
-	  rm $$f~; echo "$$f is unchanged"; exit 0; \
-	fi; fi; mv $$f~ $$f; rm -f linuxmodule/elements.d
-	@f=userlevel/elements.conf; \
-	echo "userlevel@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
-	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
-	  rm $$f~; echo "$$f is unchanged"; exit 0; \
-	fi; fi; mv $$f~ $$f; rm -f userlevel/elements.d
-	@f=exopc/elements.conf; \
-	if test -d exopc; then \
-	echo "exopc@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
-	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
-	  rm $$f~; echo "$$f is unchanged"; exit 0; \
-	fi; fi; mv $$f~ $$f; rm -f exopc/elements.d; \
-	fi
+elemlist elemlists: stamp-h
+	/bin/sh mkelemlist.sh
 
 stamp-h: $(srcdir)/configure
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/config.h.in
