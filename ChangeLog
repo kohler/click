@@ -1,3 +1,14 @@
+2003-11-17 Monday 00:58  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: checksrheader.cc (1.2), ettmetric.cc (1.1),
+	ettmetric.hh (1.1), gatewayselector.cc (1.13), gatewayselector.hh
+	(1.12), linkmetric.hh (1.1), printsr.cc (1.5), srcr.cc (1.29),
+	srcr.hh (1.25), srcrstat.cc (1.7), srcrstat.hh (1.4),
+	srforwarder.cc (1.11), srforwarder.hh (1.7), srpacket.hh (1.7),
+	top5.cc (1.8), top5.hh (1.8), top5pathtracker.cc (1.2),
+	top5pathtracker.hh (1.2): - remove top5 cruft - add bi-directional
+	metrics to srcr - adjust etx for different packet size
+
 2003-11-16 Sunday 22:16  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.75), elements/analysis/toipflowdumps.cc (1.29),
