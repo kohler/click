@@ -1,3 +1,8 @@
+2001-09-26 Wednesday 03:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/arpquerier.cc (1.38): Atanu Ghosh found a bug:
+	missing argument to click_chatter! Duh.
+
 2001-09-25 Tuesday 20:00  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.147): more improvements to --with-freebsd and
