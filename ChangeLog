@@ -1,3 +1,38 @@
+2001-08-30 Thursday 18:26  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/: ip/iplookupradix.cc (1.2), ip/iplookupradix.hh (1.2),
+	ip/iproutetable.cc (1.2), ip/iproutetable.hh (1.3),
+	ip/lookupiproute2.cc (1.20), ip/lookupiproute2.hh (1.11),
+	ip/radixiplookup.cc (1.1), ip/radixiplookup.hh (1.1),
+	local/indextreesiplookup.cc (1.1), local/indextreesiplookup.hh
+	(1.1): name change: iplookupradix to radixiplookup... unfinished
+	indextreesiplookup element
+
+2001-08-30 Thursday 18:20  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.28), elements/ip/lookupiproute.cc (1.24),
+	elements/ip/lookupiproutelinux.cc (1.23): oops, bug
+
+2001-08-30 Thursday 18:16  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: lookupiproutelinux.cc (1.22), lookupiproutelinux.hh
+	(1.12): update NEWS, LookupIPRouteLinux
+
+2001-08-30 Thursday 18:13  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipmirror.cc (1.17): nitlet
+
+2001-08-30 Thursday 18:12  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: lookupiproute.cc (1.23), lookupiproute.hh (1.16):
+	use element synonyms
+
+2001-08-30 Thursday 18:12  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.27): support element synonyms; you can say
+	EXPORT_ELEMENT(A=B), and that will export element class B under
+	name A
+
 2001-08-30 Thursday 15:16  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.98), click-mkelemmap (1.15), doc/click-elem2man
