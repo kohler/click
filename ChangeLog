@@ -1,3 +1,17 @@
+2005-03-29 Tuesday 23:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.66): buildtool nit
+
+2005-03-29 Tuesday 23:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdumpinfo.cc (1.22),
+	elements/analysis/ipsumdumpinfo.hh (1.19),
+	elements/analysis/toipsumdump.cc (1.61),
+	elements/analysis/toipsumdump.hh (1.53), elements/ip/ipfilter.cc
+	(1.54), lib/clp.c (1.15), lib/driver.cc (1.28), lib/nameinfo.cc
+	(1.4), lib/string.cc (1.51), userlevel/click.cc (1.96): fix memory
+	leaks and errors caught by valgrind; now click-uninstall is clean
+
 2005-03-29 Tuesday 22:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.50), configure.in (1.260), pathvars.h.in (1.7),
