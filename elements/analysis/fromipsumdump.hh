@@ -140,12 +140,12 @@ class FromIPSummaryDump : public Element { public:
     static int parse_content(const String &);
     static const char *unparse_content(int);
 
-    static const char * const tcp_flags_word = "FSRPAUXY";
+    static const char * const tcp_flags_word;
+    enum { MAJOR_VERSION = 1, MINOR_VERSION = 1 };
 
   private:
 
-    static const int BUFFER_SIZE = 32768;
-    static const int SAMPLING_SHIFT = 28;
+    enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
     
     int _fd;
     char *_buffer;
@@ -172,6 +172,7 @@ class FromIPSummaryDump : public Element { public:
     String _filename;
     FILE *_pipe;
     off_t _file_offset;
+    int _minor_version;
 
     int error_helper(ErrorHandler *, const char *);
     int read_buffer(ErrorHandler *);

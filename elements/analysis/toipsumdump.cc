@@ -105,7 +105,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     _active = true;
 
     // magic number
-    fprintf(_f, "!IPSummaryDump 1.0\n");
+    fprintf(_f, "!IPSummaryDump %d.%d\n", FromIPSummaryDump::MAJOR_VERSION, FromIPSummaryDump::MINOR_VERSION);
 
     if (_banner)
 	fprintf(_f, "!creator %s\n", cp_quote(_banner).cc());

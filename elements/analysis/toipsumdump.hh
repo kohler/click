@@ -94,6 +94,7 @@ is false.
 
 Here are a couple lines from the start of a sample verbose dump.
 
+  !IPSummaryDump 1.1
   !creator "aciri-ipsumdump -i wvlan0"
   !host no.lcdf.org
   !starttime 996022410.322317 (Tue Jul 24 17:53:30 2001)
@@ -124,6 +125,9 @@ The characters corresponding to TCP flags are as follows:
 
 Some old IP summary dumps might contain an unsigned integer, representing the
 flags byte, instead.
+
+Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
+8-byte units, not bytes.
 
 =a
 

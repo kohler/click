@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+const char * const FromIPSummaryDump::tcp_flags_word = "FSRPAUXY";
 static uint8_t flag_mapping[256];
 
 FromIPSummaryDump::FromIPSummaryDump()
@@ -207,11 +208,19 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	goto retry_file;
     }
 
+    _minor_version = MINOR_VERSION; // expected minor version
     String line;
     if (read_line(line, errh) < 0)
 	return -1;
-    else if (line.substring(0, 14) != "!IPSummaryDump"
-	     && line.substring(0, 8) != "!creator") {
+    else if (line.substring(0, 14) == "!IPSummaryDump") {
+	int major_version;
+	if (sscanf(line.cc() + 14, " %d.%d", &major_version, &_minor_version) == 2) {
+	    if (major_version != MAJOR_VERSION || _minor_version > MINOR_VERSION) {
+		errh->warning("%s: unexpected IPSummaryDump version %d.%d", _filename.cc(), major_version, _minor_version);
+		_minor_version = MINOR_VERSION;
+	    }
+	}
+    } else if (line.substring(0, 8) != "!creator") {
 	if (!_contents.size() /* don't warn on DEFAULT_CONTENTS */)
 	    errh->warning("%s: missing banner line; is this an IP summary dump?", _filename.cc());
 	if (_save_char)
@@ -398,7 +407,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	      case W_FRAGOFF:
 		u1 = strtoul(data + pos, &next, 0);
-		if (next > data + pos && (u1 & 7) == 0) {
+		if (_minor_version == 0) // old-style file
+		    u1 <<= 3;
+		if (next > data + pos && (u1 & 7) == 0 && u1 < 65536) {
 		    u1 >>= 3;
 		    pos = next - data;
 		    if (data[pos] == '+') {
@@ -550,7 +561,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	} else if (have_payload_len) {
 	    iph->ip_len = ntohs(q->length() + payload_len);
 	    SET_EXTRA_LENGTH_ANNO(q, payload_len);
-	}
+	} else
+	    iph->ip_len = ntohs(q->length());
 
 	return q;
     }
