@@ -1,3 +1,17 @@
+2001-04-13 Friday 14:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: polldevice.cc, polldevice.hh: keep counter
+	of empty polls by PollDevice
+
+2001-04-13 Friday 13:55  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ethernet/arpquerier.cc: fix missing packet problem:
+	arpquerier dropped a packet on timeout before; now it doesn't
+
+2001-04-13 Friday 13:42  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ethernet/arpquerier.cc: make arp timeout less frequent
+
 2001-04-13 Friday 11:20  Benjie Chen <benjie@lcs.mit.edu>
 
 	* lib/routerthread.cc: don't lock and swap if nothing is on the
