@@ -407,7 +407,7 @@ sub process_comment ($$) {
   }
   map(delete $RelatedSource{$_}, @outfiles);
   @Related = sort { length($b) <=> length($a) } (keys %RelatedSource, @classes);
-  @Related = map { s{([][^$()|\\.])}{\\$1}g; $_ } @Related;
+  @Related = map { s{([\]\[\^\$\(\)\|\\\.])}{\\$1}g; $_ } @Related;
 
   # front matter
   my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");

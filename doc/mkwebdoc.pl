@@ -86,13 +86,13 @@ if (system("cmp $WEBDIR/template $WEBDIR/template.new")) {
 mysystem("man2html -l -m '<b>@</b>' -t $WEBDIR/template -d $WEBDIR /tmp/%click-webdoc/man/man*/*.?");
 
 # 4. change `elements.n.html' into `index.html'
-# 3. change template to index.html
 open(IN, "$WEBDIR/elements.n.html") || die "$WEBDIR/elements.n.html: $!\n";
 open(OUT, ">$WEBDIR/index.html") || die "$WEBDIR/index.html: $!\n";
 while (<IN>) {
   s|<h1><a.*?>elements</a></h1>|<h1>Click documentation</h1>|;
   s|<p>documented Click element classes||;
   s|<h2><a.*?>DESCRIPTION</a></h2>||;
+  s|<a href="index\.html">(.*?)</a>|<b>$1</b>|;
   if (/<p>This page lists all Click element classes that have manual page documentation./) {
     print OUT <<'EOF';
 <p>This page presents programmer's documentation available for Click. All
@@ -102,7 +102,9 @@ href="http://www.pdos.lcs.mit.edu/click/">here</a>. You may also be
 interested in <a
 href="http://www.pdos.lcs.mit.edu/papers/click:tocs00/">our TOCS
 paper</a>.</p>
+<p>Below are all Click element classes that have manual page documentation.</p>
 EOF
+    next;
   }
   print OUT;
 }
