@@ -120,14 +120,14 @@ IPSummaryDumpInfo::content_binary_size(int content)
 	return content_binary_sizes[content];
 }
     
-const char * const IPSummaryDumpInfo::tcp_flags_word = "FSRPAUEW";
+const char * const IPSummaryDumpInfo::tcp_flags_word = "FSRPAUEWN";
 
 const uint8_t IPSummaryDumpInfo::tcp_flag_mapping[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x0-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x1-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x2-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x3-
-    0, 5, 0, 0, 0, 7, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x4-
+    0, 5, 0, 0, 0, 7, 1, 0, 0, 0, 0, 0, 0, 0, 9, 0, // 0x4-
     4, 0, 3, 2, 0, 6, 0, 8, 7, 8, 0, 0, 0, 0, 0, 0, // 0x5-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x6-
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x7-

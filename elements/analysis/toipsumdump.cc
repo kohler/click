@@ -589,12 +589,17 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	  case W_TCP_FLAGS: {
 	      if (!tcph)
 		  goto no_data;
-	      int flags = tcph->th_flags;
-	      for (int flag = 0; flag < 7; flag++)
-		  if (flags & (1 << flag))
-		      sa << tcp_flags_word[flag];
-	      if (!flags)
+	      int flags = tcph->th_flags | (tcph->th_flags2 << 8);
+	      if (flags == (TH_ACK | TH_PUSH))
+		  sa << 'P' << 'A';
+	      else if (flags == TH_ACK)
+		  sa << 'A';
+	      else if (flags == 0)
 		  sa << '.';
+	      else
+		  for (int flag = 0; flag < 9; flag++)
+		      if (flags & (1 << flag))
+			  sa << tcp_flags_word[flag];
 	      break;
 	  }
 	  case W_TCP_WINDOW:

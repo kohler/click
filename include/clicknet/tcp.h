@@ -15,14 +15,15 @@ struct click_tcp {
     tcp_seq_t	th_seq;			/* 4-7   sequence number */
     tcp_seq_t	th_ack;			/* 8-11  acknowledgement number */
 #if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    unsigned	th_x2 : 4;		/* 12    (unused) */
+    unsigned	th_flags2 : 4;		/* 12    more flags */
     unsigned	th_off : 4;		/*       data offset in words */
 #elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     unsigned	th_off : 4;		/* 12    data offset in words */
-    unsigned	th_x2 : 4;		/*       (unused) */
+    unsigned	th_flags2 : 4;		/*       more flags */
 #else
 #   error "unknown byte order"
 #endif
+#define TH_NS	0x01			/*       in 'th_flags2' */
     uint8_t	th_flags;		/* 13    flags */
 #define	TH_FIN	0x01
 #define	TH_SYN	0x02

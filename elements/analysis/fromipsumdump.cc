@@ -1185,6 +1185,9 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TCP_FLAGS:
 		if (u1 <= 0xFF)
 		    q->tcp_header()->th_flags = u1, ip_ok++;
+		else if (u1 <= 0xFFF)
+		    // th_off will be set later
+		    *reinterpret_cast<uint16_t *>(q->transport_header() + 12) = htons(u1), ip_ok++;
 		break;
 
 	      case W_TCP_WINDOW:

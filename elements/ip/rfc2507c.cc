@@ -206,7 +206,7 @@ RFC2507c::make_key(const struct tcpip &from, struct tcpip &to)
   to._ip.ip_sum = 0;
   to._tcp.th_seq = 0;
   to._tcp.th_ack = 0;
-  to._tcp.th_x2 = 0;
+  to._tcp.th_flags2 = 0;
   to._tcp.th_off = 0;
   to._tcp.th_flags = 0;
   to._tcp.th_win = 0;
