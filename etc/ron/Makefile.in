@@ -2,38 +2,32 @@ SHELL = @SHELL@
 @SUBMAKE@
 
 
-# THESE VARIABLES WILL CHANGE FOR EVERY PACKAGE
+# THESE VARIABLES MAY CHANGE BETWEEN PACKAGES
 
+# Set `package' to the name of your package.
 package := ron
 
+
 # Set these variables appropriately.
-top_builddir := ../..
-subdir := etc/ron
+top_builddir := .
+subdir := .
 
 # Set `clicksrcdir' to the Click source directory.
-# If you are making a standalone package, provide a `--with-click=CLICKPREFIX'
-# configuration option, and set
-#	clicksrcdir := @clickprefix@/share/click/src
-clicksrcdir := @prefix@/share/click/src
+# Generally, you will provide a `--with-click=CLICKPREFIX' option, and set:
+clicksrcdir := @clickprefix@/share/click/src
 
 # Set `clickbindir' to the Click binary directory.
-# If you are making a standalone package, set
-#	clickbindir := @clickprefix@/bin
-clickbindir := @prefix@/bin
+# Generally, you will set:
+clickbindir := @clickprefix@/bin
 
 # Set `clickincludedir' to the Click include directory.
-# If you are making a standalone package, set
-#	clickincludedir := @clickprefix@/include
-clickincludedir := @prefix@/include
+# Generally, you will set:
+clickincludedir := @clickprefix@/include
 
-# END OF VARIABLES THAT WILL CHANGE FOR EVERY PACKAGE
-
-
-# THESE VARIABLES MAY CHANGE FOR SOME PACKAGES
 
 # Set `MAKE_UPACKAGE' and `MAKE_KPACKAGE' to `0' or `1' to determine
 # whether to build userlevel and kernel driver packages, respectively.
-MAKE_UPACKAGE = 1
+MAKE_UPACKAGE = @HAVE_USERLEVEL_TARGET@
 MAKE_KPACKAGE = @HAVE_LINUXMODULE_TARGET@
 
 # Set `STRIP_UPACKAGE' to `strip -g' to strip debugging symbols from the
@@ -46,7 +40,7 @@ DEFS = @DEFS@
 K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
 U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir)
 
-# END OF VARIABLES THAT MAY CHANGE FOR SOME PACKAGES
+# END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES
 
 
 # Everything below here will probably stay unchanged
@@ -179,8 +173,8 @@ install-man: always
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
 
 clean:
-	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package)
+	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package) conftest.[12]
 distclean: clean
-	-rm -f Makefile
+	-rm -f Makefile config.h config.status config.cache config.log 
 
 .PHONY: all always clean distclean elemlist install install-obj install-man
