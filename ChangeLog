@@ -1,3 +1,32 @@
+2002-05-28 Tuesday 22:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.3), dsdvroutetable.hh (1.3),
+	gridgenericrt.hh (1.3): convert route entries to be derived from
+	generic route entry
+
+2002-05-28 Tuesday 21:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.2), dsdvroutetable.hh (1.2):
+	remove deprecated cruft that makes my life miserable
+
+2002-05-28 Tuesday 21:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridlogger.hh (1.13), lookuplocalgridroute.cc
+	(1.39), lookuplocalgridroute.hh (1.13): nitlets: include files
+	changed around a bit
+
+2002-05-28 Tuesday 21:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridlogger.cc (1.1), gridroutetable.cc (1.52):
+	move static gridlogger members to their own file
+
+2002-05-28 Tuesday 20:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.1), dsdvroutetable.hh (1.1),
+	gridgenericrt.hh (1.2), gridlogger.hh (1.12), gridroutetable.cc
+	(1.51), gridroutetable.hh (1.29): beginning new 'official'
+	DSDV-compliant route protocol
+
 2002-05-28 Tuesday 19:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridgenericrt.hh (1.1): oops need this to compile,
