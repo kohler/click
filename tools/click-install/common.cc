@@ -92,7 +92,7 @@ read_active_modules(StringMap &packages, ErrorHandler *errh)
 #endif
 }
 
-static void
+static int
 kill_current_configuration(ErrorHandler *errh)
 {
   if (verbose)
@@ -113,17 +113,17 @@ kill_current_configuration(ErrorHandler *errh)
   for (int wait = 0; wait < 6; wait++) {
     String s = file_string(clickfs_threads);
     if (!s)
-      return;
+      return 0;
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 100000;
     select(0, 0, 0, 0, &tv);
   }
   
-  errh->error("failed to kill current Click configuration");
+  return errh->error("failed to kill current Click configuration");
 }
 
-void
+int
 remove_unneeded_packages(const StringMap &active_modules, const StringMap &packages, ErrorHandler *errh)
 {
   // remove extra packages
@@ -157,6 +157,7 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
     }
 
   // actually remove the packages
+  int retval = 0;
   if (removals.size()) {
     String to_remove;
     for (int i = 0; i < removals.size(); i++)
@@ -166,14 +167,19 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
 
 #if FOR_LINUXMODULE
     String cmdline = "/sbin/rmmod" + to_remove + " 2>/dev/null";
-    (void) system(cmdline.c_str());
+    int status = system(cmdline.c_str());
+    if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+      retval = errh->error("cannot remove package(s) '%s'", to_remove.c_str());
 #elif FOR_BSDMODULE
     for (int i = 0; i < removals.size(); i++) {
       String cmdline = "/sbin/kldunload " + removals[i];
-      (void) system(cmdline.c_str());
+      int status = system(cmdline.c_str());
+      if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+	retval = errh->error("cannot remove package '%s'", removals[i].c_str());
     }
 #endif
   }
+  return retval;
 }
 
 int
@@ -186,7 +192,8 @@ unload_click(ErrorHandler *errh)
     return 0;
   
   // first, write nothing to /proc/click/config -- frees up modules
-  kill_current_configuration(errh);
+  if (kill_current_configuration(errh) < 0)
+    return -1;
 
   // find current packages
   HashMap<String, int> active_modules(-1);
@@ -195,7 +202,7 @@ unload_click(ErrorHandler *errh)
   read_package_file(clickfs_prefix + String("/packages"), packages, errh);
 
   // remove unused packages
-  remove_unneeded_packages(active_modules, packages, errh);
+  (void) remove_unneeded_packages(active_modules, packages, errh);
 
 #if FOR_BSDMODULE
   // unmount Click file system
@@ -203,17 +210,20 @@ unload_click(ErrorHandler *errh)
     errh->message("Unmounting Click filesystem at %s", clickfs_prefix);
   int unmount_retval = unmount(clickfs_prefix, MNT_FORCE);
   if (unmount_retval < 0)
-    errh->error("could not unmount %s: %s", clickfs_prefix, strerror(errno));
+    errh->error("cannot unmount %s: %s", clickfs_prefix, strerror(errno));
 #endif
 
   // remove Click module
   if (verbose)
     errh->message("Removing Click module");
+  int status;
 #if FOR_LINUXMODULE
-  (void) system("/sbin/rmmod click");
+  status = system("/sbin/rmmod click");
 #elif FOR_BSDMODULE
-  (void) system("/sbin/kldunload click.ko");
+  status = system("/sbin/kldunload click.ko");
 #endif
+  if (status < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    return errh->error("cannot remove Click module from kernel");
 
 #if FOR_LINUXMODULE && HAVE_CLICKFS
   // proclikefs will take care of the unmount for us, but we'll give it a shot
@@ -225,7 +235,7 @@ unload_click(ErrorHandler *errh)
 
   // see if we successfully removed it
   if (access(clickfs_packages.c_str(), F_OK) >= 0) {
-    errh->warning("could not uninstall Click module");
+    errh->warning("cannot uninstall Click module");
     return -1;
   }
   return 0;

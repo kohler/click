@@ -35,7 +35,7 @@ extern bool verbose;
 
 bool read_package_file(String filename, StringMap &packages, ErrorHandler *);
 bool read_active_modules(StringMap &packages, ErrorHandler *);
-void remove_unneeded_packages(const StringMap &active, const StringMap &packages, ErrorHandler *);
+int remove_unneeded_packages(const StringMap &active, const StringMap &packages, ErrorHandler *);
 int unload_click(ErrorHandler *);
 
 #endif
