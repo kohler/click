@@ -1,3 +1,12 @@
+2004-09-15 Wednesday 19:27  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/frag/defragment.hh (1.2): make gcc warning stop
+
+2004-09-15 Wednesday 19:06  John Bicket <jbicket@mit.edu>
+
+	* include/clicknet/wifi.h (1.8): more stuff that's not in the
+	802.11 spec I have, but that everyone seems to know.
+
 2004-09-14 Tuesday 03:00  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/udpcount.click (1.2): improve comment
