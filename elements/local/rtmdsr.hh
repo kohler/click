@@ -92,9 +92,9 @@ private:
   uint16_t _et;     // This protocol's ethertype.
   class LinkStat *_link_stat;
 
-  enum PacketType { PT_QUERY = 0x01010101,
-                    PT_REPLY = 0x02020202,
-                    PT_DATA  = 0x03030303 };
+  enum PacketType { PT_QUERY = 0x0101,
+                    PT_REPLY = 0x0202,
+                    PT_DATA  = 0x0303 };
 
   // Packet format.
   struct pkt {
