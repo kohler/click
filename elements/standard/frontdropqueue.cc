@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * frontdropqueue.{cc,hh} -- queue element that drops front when full
  * Eddie Kohler
@@ -37,7 +38,7 @@ FrontDropQueue::cast(const char *n)
   if (strcmp(n, "FrontDropQueue") == 0)
     return (FrontDropQueue *)this;
   else
-    return SimpleQueue::cast(n);
+    return NotifierQueue::cast(n);
 }
 
 int
@@ -104,26 +105,30 @@ FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-FrontDropQueue::push(int, Packet *packet)
+FrontDropQueue::push(int, Packet *p)
 {
-  assert(packet);
+    assert(p);
 
-  // inline Queue::enq() for speed
-  int next = next_i(_tail);
+    // inline Queue::enq() for speed
+    int next = next_i(_tail);
   
-  // should this stuff be in Queue::enq?
-  if (next == _head) {
-    _q[_head]->kill();
-    _drops++;
-    _head = next_i(_head);
-  }
+    // should this stuff be in Queue::enq?
+    if (next == _head) {
+	if (_drops == 0)
+	    click_chatter("%{element}: overflow", this);
+	_q[_head]->kill();
+	_drops++;
+	_head = next_i(_head);
+    }
   
-  _q[_tail] = packet;
-  _tail = next;
+    _q[_tail] = p;
+    _tail = next;
   
-  int s = size();
-  if (s > _highwater_length)
-    _highwater_length = s;
+    int s = size();
+    if (s > _highwater_length)
+	_highwater_length = s;
+    if (s == 1 && listeners_asleep())
+	wake_listeners();
 }
 
 CLICK_ENDDECLS
