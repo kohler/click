@@ -7,6 +7,13 @@
 
 class RouterT : public ElementClassT {
 
+  struct Pair {
+    int from;
+    int to;
+    Pair() : from(-1), to(-1) { }
+    Pair(int f, int t) : from(f), to(t) { }
+  };
+
   RouterT *_enclosing_scope;
   Vector<String> _formals;
   
@@ -23,6 +30,9 @@ class RouterT : public ElementClassT {
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
   Vector<String> _hookup_landmark;
+  Vector<Pair> _hookup_next;
+  Vector<Pair> _hookup_first;
+  int _free_hookup;
 
   HashMap<String, int> _require_map;
 
@@ -30,10 +40,12 @@ class RouterT : public ElementClassT {
   Vector<ArchiveElement> _archive;
 
   int add_element(const ElementT &);
+  int prev_connection_from(int, int) const;
+  int prev_connection_to(int, int) const;
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
   void finish_free_elements(Vector<int> &);
   void finish_remove_element_types(Vector<int> &);
-  void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
+  void expand_tunnel(Vector<Hookup> *, bool is_input, int magice, int which,
 		     Vector<Hookup> &results) const;
   String interpolate_arguments(const String &, const Vector<String> &) const;
 
@@ -90,10 +102,10 @@ class RouterT : public ElementClassT {
   
   bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
   bool add_connection(int fidx, int fport, int tport, int tidx);
-  void remove_connection(int);
-  void change_connection_to(int i, const Hookup &h) { _hookup_to[i] = h; }
-  void change_connection_from(int i, const Hookup &h) { _hookup_from[i] = h; }
-  void kill_connection(int i)			{ _hookup_from[i].idx = -1; }
+  void kill_connection(int);
+  void compact_connections();
+  void change_connection_to(int, const Hookup &);
+  void change_connection_from(int, const Hookup &);
 
   void add_requirement(const String &);
   void remove_requirement(const String &);
@@ -109,6 +121,8 @@ class RouterT : public ElementClassT {
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
   void find_connections_to(const Hookup &, Vector<Hookup> &) const;
+  void find_connection_vector_from(int, Vector<int> &) const;
+  void find_connection_vector_to(int, Vector<int> &) const;
   void count_ports(Vector<int> &, Vector<int> &) const;
 
   bool insert_before(int fidx, const Hookup &);
@@ -118,9 +132,9 @@ class RouterT : public ElementClassT {
 
   int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
   
+  void check() const;
   void remove_unused_element_types();
   
-  void remove_bad_connections();
   void remove_duplicate_connections();
   
   void free_blank_elements();

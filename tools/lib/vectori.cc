@@ -15,8 +15,9 @@
 #endif
 #include "vector.cc"
 #include "string.hh"
-#include "elementt.hh"
+#include "routert.hh"
 template class Vector<int>;
 template class Vector<String>;
 template class Vector<Hookup>;
 template class Vector<ElementT>;
+template class Vector<RouterT::Pair>;
