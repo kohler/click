@@ -272,7 +272,7 @@ cleanup_module()
 
   cp_va_static_cleanup();
 
-  // clean up error handlers
+  // error handlers
   ErrorHandler::static_cleanup();
   delete click_logged_errh;
   delete syslog_errh;
@@ -281,9 +281,10 @@ cleanup_module()
   
   printk("<1>click module exiting\n");
   
-  // String cleanup
-  // call after any operations that might create strings
+  // String (after any operations that might create Strings)
   String::static_cleanup();
+
+  // report memory leaks
   if (Element::nelements_allocated)
     printk("<1>click error: %d elements still allocated\n", Element::nelements_allocated);
   if (click_outstanding_news) {

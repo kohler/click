@@ -1,8 +1,9 @@
 /*
  * sched.cc -- kernel scheduler thread for click
- * Benjie Chen
+ * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -52,7 +53,7 @@ CLICK_CXX_UNPROTECT
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
-static spinlock_t click_thread_spinlock;
+static spinlock_t click_thread_lock;
 static int click_thread_priority = DEF_PRIO;
 static Vector<int> *click_thread_pids;
 
@@ -82,10 +83,10 @@ click_sched(void *thunk)
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
   // add pid to thread list
-  soft_spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_lock);
   if (click_thread_pids)
     click_thread_pids->push_back(current->pid);
-  spin_unlock(&click_thread_spinlock);
+  spin_unlock(&click_thread_lock);
 
   // preserve router
   rt->router()->use();
@@ -97,7 +98,7 @@ click_sched(void *thunk)
   rt->router()->unuse();
 
   // remove pid from thread list
-  soft_spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_lock);
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++) {
       if ((*click_thread_pids)[i] == current->pid) {
@@ -106,7 +107,7 @@ click_sched(void *thunk)
 	break;
       }
     }
-  spin_unlock(&click_thread_spinlock);
+  spin_unlock(&click_thread_lock);
   
   printk("<1>click: stopping router thread pid %d\n", current->pid);
   return 0;
@@ -115,7 +116,7 @@ click_sched(void *thunk)
 int
 click_start_sched(Router *r, int threads, ErrorHandler *errh)
 {
-  /* no thread if no router */
+  // no thread if no router
   if (r->nelements() == 0)
     return 0;
 
@@ -158,9 +159,9 @@ click_kill_router_threads()
   unsigned long out_jiffies = jiffies + 5 * HZ;
   int num_threads;
   do {
-    soft_spin_lock(&click_thread_spinlock);
+    soft_spin_lock(&click_thread_lock);
     num_threads = click_thread_pids->size();
-    spin_unlock(&click_thread_spinlock);
+    spin_unlock(&click_thread_lock);
     if (num_threads > 0)
       schedule();
   } while (num_threads > 0 && jiffies < out_jiffies);
@@ -179,11 +180,11 @@ static String
 read_threads(Element *, void *)
 {
   StringAccum sa;
-  soft_spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_lock);
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++)
       sa << (*click_thread_pids)[i] << '\n';
-  spin_unlock(&click_thread_spinlock);
+  spin_unlock(&click_thread_lock);
   return sa.take_string();
 }
 
@@ -210,7 +211,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
   }
 
   // change current thread priorities
-  soft_spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_lock);
   click_thread_priority = priority;
   if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++) {
@@ -218,7 +219,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
       if (task)
 	TASK_PRIO(task) = priority;
     }
-  spin_unlock(&click_thread_spinlock);
+  spin_unlock(&click_thread_lock);
   
   return 0;
 }
@@ -229,7 +230,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 void
 click_init_sched()
 {
-  spin_lock_init(&click_thread_spinlock);
+  spin_lock_init(&click_thread_lock);
   click_thread_pids = new Vector<int>;
   Router::add_global_read_handler("threads", read_threads, 0);
   Router::add_global_read_handler("priority", read_priority, 0);
@@ -241,10 +242,10 @@ click_cleanup_sched()
 {
   if (click_kill_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n");
-    soft_spin_lock(&click_thread_spinlock);
+    soft_spin_lock(&click_thread_lock);
     for (int i = 0; i < click_thread_pids->size(); i++)
       printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
-    spin_unlock(&click_thread_spinlock);
+    spin_unlock(&click_thread_lock);
     return -1;
   } else {
     delete click_thread_pids;
