@@ -662,7 +662,7 @@ ErrorHandler::remove_conversion(ErrorHandler::Conversion *conv)
 
 #ifndef CLICK_TOOL
 static String
-error_element_hook(int, va_list *val)
+element_error_hook(int, va_list *val)
 {
   Element *e = va_arg(*val, Element *);
   if (e)
@@ -678,7 +678,7 @@ ErrorHandler::static_initialize(ErrorHandler *default_handler)
   the_default_handler = default_handler;
   the_silent_handler = new SilentErrorHandler;
 #ifndef CLICK_TOOL
-  add_conversion("element", error_element_hook);
+  add_conversion("element", element_error_hook);
 #endif
 }
 
