@@ -23,6 +23,7 @@
 #include "modulepriv.hh"
 #include <click/straccum.hh>
 #include <click/router.hh>
+#include <click/error.hh>
 
 static int config_write_lock = 0;
 static String *current_config = 0;
@@ -168,6 +169,7 @@ static int
 hotswap_config()
 {
   String s = build_config->take_string();
+  int before_errors = kernel_errh->nerrors();
   Router *r = parse_router(s);
   if (!r)
     return -EINVAL;
@@ -177,7 +179,8 @@ hotswap_config()
   save_flags(cli_flags);
   cli();
 
-  if (r->initialize(kernel_errh) >= 0) {
+  if (kernel_errh->nerrors() == before_errors
+      && r->initialize(kernel_errh) >= 0) {
     // perform hotswap
     if (current_router && current_router->initialized())
       r->take_state(current_router, kernel_errh);
@@ -198,9 +201,12 @@ swap_config()
 {
   set_current_config(build_config->take_string());
   kill_current_router();
+  int before_errors = kernel_errh->nerrors();
   Router *router = parse_router(*current_config);
   if (router) {
-    router->initialize(kernel_errh);
+    router->preinitialize();
+    if (kernel_errh->nerrors() == before_errors)
+      router->initialize(kernel_errh);
     install_current_router(router);
     return router->initialized() ? 0 : -EINVAL;
   } else

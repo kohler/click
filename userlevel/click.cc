@@ -652,7 +652,7 @@ particular purpose.\n");
   // catch control-C
   signal(SIGINT, catch_sigint);
 
-  if (router->initialize(errh) < 0)
+  if (errh->nerrors() > 0 || router->initialize(errh) < 0)
     exit(1);
 
   int exit_value = 0;
