@@ -1,6 +1,7 @@
 #ifndef EWMA_HH
 #define EWMA_HH
 #include <click/glue.hh>
+#include <click/confparse.hh>
 
 template <unsigned Stability_shift, unsigned Scale>
 class DirectEWMAX {
@@ -33,12 +34,16 @@ class RateEWMAX {
 
   RateEWMAX()				{ }
 
+  // note: must be 'signed int'
   int average(unsigned which = 0) const	{ return _avg[which].average(); }
+  int rate(unsigned which = 0) const;
+  
   static const int stability_shift = Stability_shift;
   static const int scale = Scale;
   static unsigned now()			{ return Timer::now(); }
   static unsigned freq()		{ return Timer::freq(); }
-  
+
+  String unparse(unsigned which = 0) const;
   void initialize();
  
   inline void update_time(unsigned now);
@@ -117,6 +122,20 @@ RateEWMAX<stability_shift, scale, n, Timer>::update(int delta, unsigned which)
 {
   update_time();
   update_now(delta, which);
+}
+
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
+inline int
+RateEWMAX<stability_shift, scale, n, Timer>::rate(unsigned which) const
+{
+  return (average(which) * Timer::freq()) >> scale;
+}
+
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
+inline String
+RateEWMAX<stability_shift, scale, n, Timer>::unparse(unsigned which) const
+{
+  return cp_unparse_real(average(which) * Timer::freq(), scale);
 }
 
 #endif
