@@ -1,3 +1,11 @@
+2002-08-06 Tuesday 16:59  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.64), Makefile.in (1.108), config-ns.h.in (1.1),
+	config.h.in (1.20), configure.in (1.189),
+	elements/userlevel/todump.cc (1.40), ns/Makefile.in (1.1),
+	tools/lib/etraits.cc (1.5), tools/lib/etraits.hh (1.4): add "ns"
+	driver
+
 2002-08-06 Tuesday 15:47  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/ipreassembler.hh (1.11): nitlet
