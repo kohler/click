@@ -31,19 +31,15 @@
 #include <click/error.hh>
 
 CheckIPHeader2::CheckIPHeader2()
-  : _drops(0)
 {
   MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
-  _bad_src = 0;
-  _n_bad_src = 0;
+  // other stuff belongs to CheckIPHeader
 }
 
 CheckIPHeader2::~CheckIPHeader2()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _bad_src;
+  // other stuff belongs to CheckIPHeader
 }
 
 CheckIPHeader2 *
@@ -52,28 +48,36 @@ CheckIPHeader2::clone() const
   return new CheckIPHeader2();
 }
 
-void
-CheckIPHeader2::notify_noutputs(int n)
-{
-  set_noutputs(n < 2 ? 1 : 2);
-}
-
 int
 CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  // same as CheckIPHeader's configure, only don't check alignment
+  
   IPAddressSet ips;
   ips.insert(0);
   ips.insert(0xFFFFFFFFU);
   _offset = 0;
+  bool verbose = false;
+  bool details = false;
+  
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpIPAddressSet, "bad source addresses", &ips,
 		  cpUnsigned, "IP header offset", &_offset,
+		  cpKeywords,
+		  "VERBOSE", cpBool, "be verbose?", &verbose,
+		  "DETAILS", cpBool, "keep detailed counts?", &details,
 		  0) < 0)
     return -1;
+  
   delete[] _bad_src;
   _n_bad_src = ips.size();
   _bad_src = ips.list_copy();
+  
+  _verbose = verbose;
+  if (details)
+    _reason_drops = new int[NREASONS];
+
   return 0;
 }
 
@@ -86,18 +90,18 @@ CheckIPHeader2::smaction(Packet *p)
   unsigned hlen, len;
   
   if ((int)plen < (int)sizeof(click_ip))
-    goto bad;
+    return drop(MINISCULE_PACKET, p);
   
   if (ip->ip_v != 4)
-    goto bad;
+    return drop(BAD_VERSION, p);
   
   hlen = ip->ip_hl << 2;
   if (hlen < sizeof(click_ip))
-    goto bad;
+    return drop(BAD_HLEN, p);
   
   len = ntohs(ip->ip_len);
   if (len > plen || len < hlen)
-    goto bad;
+    return drop(BAD_IP_LEN, p);
 
   /*
    * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
@@ -107,7 +111,7 @@ CheckIPHeader2::smaction(Packet *p)
   src = ip->ip_src.s_addr;
   for(int i = 0; i < _n_bad_src; i++)
     if(src == _bad_src[i])
-      goto bad;
+      return drop(BAD_SADDR, p);
 
   /*
    * RFC1812 4.2.3.1: discard illegal destinations.
@@ -121,18 +125,6 @@ CheckIPHeader2::smaction(Packet *p)
     p->take(plen - len);
   
   return(p);
-  
- bad:
-  if (_drops == 0)
-    click_chatter("IP checksum failed");
-  _drops++;
-  
-  if (noutputs() == 2)
-    output(1).push(p);
-  else
-    p->kill();
-  
-  return 0;
 }
 
 void
@@ -149,19 +141,6 @@ CheckIPHeader2::pull(int)
   if (p)
     p = smaction(p);
   return p;
-}
-
-static String
-CheckIPHeader2_read_drops(Element *xf, void *)
-{
-  CheckIPHeader2 *f = (CheckIPHeader2 *)xf;
-  return String(f->drops()) + "\n";
-}
-
-void
-CheckIPHeader2::add_handlers()
-{
-  add_read_handler("drops", CheckIPHeader2_read_drops, 0);
 }
 
 EXPORT_ELEMENT(CheckIPHeader2)

@@ -36,8 +36,8 @@ The first mapping changes requests (I<src>, I<dst>, I<ident>) into requests
 (I<src2>, I<dst2>, I<ident2>). The second mapping changes I<replies> (I<dst2>, I<src2>, I<ident2>) into replies (I<dst>, I<src>, I<ident>). Mappings are removed if they go unused for 5 minutes.
 
 ICMPPingRewriter may have one or two outputs. If it has two outputs,
-then requests are sent on output 1, replies on output 2. Otherwise,
-all packets are sent on output 1.
+then requests are emitted on output 0, replies on output 1. Otherwise,
+all packets are emitted on output 0.
 
 It may also have one or two inputs. They differ in how unexpected packets
 are handled. On the first input, echo requests with no corresponding

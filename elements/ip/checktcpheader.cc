@@ -30,12 +30,17 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/bitvector.hh>
+#include <click/straccum.hh>
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif
 
+const char *CheckTCPHeader::reason_texts[NREASONS] = {
+  "not TCP", "bad packet length", "bad TCP checksum"
+};
+
 CheckTCPHeader::CheckTCPHeader()
-  : _drops(0)
+  : _drops(0), _reason_drops(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -45,6 +50,7 @@ CheckTCPHeader::CheckTCPHeader()
 CheckTCPHeader::~CheckTCPHeader()
 {
   MOD_DEC_USE_COUNT;
+  delete[] _reason_drops;
 }
 
 CheckTCPHeader *
@@ -59,6 +65,44 @@ CheckTCPHeader::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
+int
+CheckTCPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  bool verbose = false;
+  bool details = false;
+  
+  if (cp_va_parse(conf, this, errh,
+		  cpKeywords,
+		  "VERBOSE", cpBool, "be verbose?", &verbose,
+		  "DETAILS", cpBool, "keep detailed counts?", &details,
+		  0) < 0)
+    return -1;
+  
+  _verbose = verbose;
+  if (details)
+    _reason_drops = new int[NREASONS];
+  
+  return 0;
+}
+
+Packet *
+CheckTCPHeader::drop(Reason reason, Packet *p)
+{
+  if (_drops == 0 || _verbose)
+    click_chatter("TCP header check failed: %s", reason_texts[reason]);
+  _drops++;
+
+  if (_reason_drops)
+    _reason_drops[reason]++;
+  
+  if (noutputs() == 2)
+    output(1).push(p);
+  else
+    p->kill();
+
+  return 0;
+}
+
 Packet *
 CheckTCPHeader::simple_action(Packet *p)
 {
@@ -67,21 +111,21 @@ CheckTCPHeader::simple_action(Packet *p)
   const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   
   if (!iph || iph->ip_p != IP_PROTO_TCP)
-    goto bad;
+    return drop(NOT_TCP, p);
 
   iph_len = iph->ip_hl << 2;
   len = ntohs(iph->ip_len) - iph_len;
   tcph_len = tcph->th_off << 2;
   if (tcph_len < sizeof(click_tcp) || len < tcph_len
       || p->length() < len + iph_len + p->ip_header_offset())
-    goto bad;
+    return drop(BAD_LENGTH, p);
 
   csum = ~in_cksum((unsigned char *)tcph, len) & 0xFFFF;
 #ifdef __KERNEL__
   csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
 			   len, IP_PROTO_TCP, csum);
   if (csum != 0)
-    goto bad;
+    return drop(BAD_CHECKSUM, p);
 #else
   {
     unsigned short *words = (unsigned short *)&iph->ip_src;
@@ -93,36 +137,41 @@ CheckTCPHeader::simple_action(Packet *p)
     csum += htons(len);
     csum = (csum & 0xFFFF) + (csum >> 16);
     if (((csum + (csum >> 16)) & 0xFFFF) != 0xFFFF)
-      goto bad;
+      return drop(BAD_CHECKSUM, p);
   }
 #endif
 
   return p;
-  
- bad:
-  if (_drops == 0)
-    click_chatter("TCP header check failed");
-  _drops++;
-  
-  if (noutputs() == 2)
-    output(1).push(p);
-  else
-    p->kill();
-  
-  return 0;
 }
 
-static String
-CheckTCPHeader_read_drops(Element *thunk, void *)
+String
+CheckTCPHeader::read_handler(Element *e, void *thunk)
 {
-  CheckTCPHeader *e = (CheckTCPHeader *)thunk;
-  return String(e->drops()) + "\n";
+  CheckTCPHeader *c = reinterpret_cast<CheckTCPHeader *>(e);
+  switch ((int)thunk) {
+
+   case 0:			// drops
+    return String(c->_drops) + "\n";
+
+   case 1: {			// drop_details
+     StringAccum sa;
+     for (int i = 0; i < NREASONS; i++)
+       sa << c->_reason_drops[i] << '\t' << reason_texts[i] << '\n';
+     return sa.take_string();
+   }
+
+   default:
+    return String("<error>\n");
+
+  }
 }
 
 void
 CheckTCPHeader::add_handlers()
 {
-  add_read_handler("drops", CheckTCPHeader_read_drops, 0);
+  add_read_handler("drops", read_handler, (void *)0);
+  if (_reason_drops)
+    add_read_handler("drop_details", read_handler, (void *)1);
 }
 
 EXPORT_ELEMENT(CheckTCPHeader)

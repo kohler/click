@@ -28,14 +28,20 @@
 #include <click/ipaddressset.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/error.hh>
 #include "elements/standard/alignmentinfo.hh"
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif
 
+const char *CheckIPHeader::reason_texts[NREASONS] = {
+  "tiny packet", "bad IP version", "bad IP header length",
+  "bad IP length", "bad IP checksum", "bad source address"
+};
+
 CheckIPHeader::CheckIPHeader()
-  : _bad_src(0), _drops(0)
+  : _bad_src(0), _drops(0), _reason_drops(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -46,6 +52,7 @@ CheckIPHeader::~CheckIPHeader()
 {
   MOD_DEC_USE_COUNT;
   delete[] _bad_src;
+  delete[] _reason_drops;
 }
 
 CheckIPHeader *
@@ -67,16 +74,26 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
   ips.insert(0);
   ips.insert(0xFFFFFFFFU);
   _offset = 0;
+  bool verbose = false;
+  bool details = false;
+  
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpIPAddressSet, "bad source addresses", &ips,
 		  cpUnsigned, "IP header offset", &_offset,
+		  cpKeywords,
+		  "VERBOSE", cpBool, "be verbose?", &verbose,
+		  "DETAILS", cpBool, "keep detailed counts?", &details,
 		  0) < 0)
     return -1;
   
   delete[] _bad_src;
   _n_bad_src = ips.size();
   _bad_src = ips.list_copy();
+
+  _verbose = verbose;
+  if (details)
+    _reason_drops = new int[NREASONS];
 
 #ifdef __KERNEL__
   // check alignment
@@ -95,17 +112,22 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-void
-CheckIPHeader::drop_it(Packet *p)
+Packet *
+CheckIPHeader::drop(Reason reason, Packet *p)
 {
-  if (_drops == 0)
-    click_chatter("IP header check failed");
+  if (_drops == 0 || _verbose)
+    click_chatter("IP header check failed: %s", reason_texts[reason]);
   _drops++;
+
+  if (_reason_drops)
+    _reason_drops[reason]++;
   
   if (noutputs() == 2)
     output(1).push(p);
   else
     p->kill();
+
+  return 0;
 }
 
 Packet *
@@ -118,27 +140,27 @@ CheckIPHeader::simple_action(Packet *p)
 
   // cast to int so very large plen is interpreted as negative 
   if ((int)plen < (int)sizeof(click_ip))
-    goto bad;
+    return drop(MINISCULE_PACKET, p);
 
   if (ip->ip_v != 4)
-    goto bad;
+    return drop(BAD_VERSION, p);
   
   hlen = ip->ip_hl << 2;
   if (hlen < sizeof(click_ip))
-    goto bad;
+    return drop(BAD_HLEN, p);
   
   len = ntohs(ip->ip_len);
   if (len > plen || len < hlen)
-    goto bad;
+    return drop(BAD_IP_LEN, p);
 
 #ifdef __KERNEL__
   if (_aligned) {
     if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
-      goto bad;
+      return drop(BAD_CHECKSUM, p);
   } else {
 #endif
     if (in_cksum((unsigned char *)ip, hlen) != 0)
-      goto bad;
+      return drop(BAD_CHECKSUM, p);
 #ifdef __KERNEL__
   }
 #endif
@@ -151,7 +173,7 @@ CheckIPHeader::simple_action(Packet *p)
   src = ip->ip_src.s_addr;
   for(int i = 0; i < _n_bad_src; i++)
     if(src == _bad_src[i])
-      goto bad;
+      return drop(BAD_SADDR, p);
 
   /*
    * RFC1812 4.2.3.1: discard illegal destinations.
@@ -165,23 +187,36 @@ CheckIPHeader::simple_action(Packet *p)
     p->take(plen - len);
   
   return(p);
-  
- bad:
-  drop_it(p);
-  return 0;
 }
 
-static String
-CheckIPHeader_read_drops(Element *xf, void *)
+String
+CheckIPHeader::read_handler(Element *e, void *thunk)
 {
-  CheckIPHeader *f = (CheckIPHeader *)xf;
-  return String(f->drops()) + "\n";
+  CheckIPHeader *c = reinterpret_cast<CheckIPHeader *>(e);
+  switch ((int)thunk) {
+
+   case 0:			// drops
+    return String(c->_drops) + "\n";
+
+   case 1: {			// drop_details
+     StringAccum sa;
+     for (int i = 0; i < NREASONS; i++)
+       sa << c->_reason_drops[i] << '\t' << reason_texts[i] << '\n';
+     return sa.take_string();
+   }
+
+   default:
+    return String("<error>\n");
+
+  }
 }
 
 void
 CheckIPHeader::add_handlers()
 {
-  add_read_handler("drops", CheckIPHeader_read_drops, 0);
+  add_read_handler("drops", read_handler, (void *)0);
+  if (_reason_drops)
+    add_read_handler("drop_details", read_handler, (void *)1);
 }
 
 EXPORT_ELEMENT(CheckIPHeader)

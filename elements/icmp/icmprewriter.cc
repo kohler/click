@@ -40,7 +40,7 @@ ICMPRewriter::~ICMPRewriter()
 }
 
 void
-ICMPRewriter::notify_ninputs(int n)
+ICMPRewriter::notify_noutputs(int n)
 {
   set_ninputs(n < 2 ? 1 : 2);
 }
@@ -103,7 +103,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 }
 
 void
-ICMPRewriter::push(int port, Packet *p_in)
+ICMPRewriter::push(int, Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   click_ip *iph = p->ip_header();
@@ -131,7 +131,7 @@ ICMPRewriter::push(int port, Packet *p_in)
      else if (embedded_iph->ip_p == IP_PROTO_UDP)
        is_tcp = false;
      else
-       goto bad;
+       goto unmapped;
 
      // create flow ID
      click_udp *embedded_udph = reinterpret_cast<click_udp *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
@@ -154,10 +154,10 @@ ICMPRewriter::push(int port, Packet *p_in)
 
    unmapped:
    default:
-    if (port == 1)
+    if (noutputs() == 1)
       p->kill();
     else
-      output(0).push(p);
+      output(1).push(p);
     break;
 
   }
