@@ -161,7 +161,8 @@ hotswap_config()
     kill_current_router();
     install_current_router(r);
     *current_config = s;
-  }
+  } else
+    delete r;
   
   /* allow interrupts */
   restore_flags(cli_flags);
