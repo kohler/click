@@ -140,7 +140,7 @@ Task::add_pending(int p)
 {
     Master *m = _router->master();
     SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
-    if (_router->_running >= Router::RUNNING_ACTIVE) {
+    if (_router->_running >= Router::RUNNING_PAUSED) {
 	_pending |= p;
 	if (!_pending_next && _pending) {
 	    _pending_next = m->_task_list._pending_next;
@@ -181,7 +181,7 @@ Task::true_reschedule()
     else
 #endif
     if (attempt_lock_tasks()) {
-	if (_router->_running == Router::RUNNING_ACTIVE) {
+	if (_router->_running >= Router::RUNNING_BACKGROUND) {
 	    if (!scheduled()) {
 		fast_schedule();
 		_thread->unsleep();

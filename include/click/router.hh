@@ -101,9 +101,9 @@ class Router { public:
 
     // MASTER
     Master *master() const			{ return _master; }
-    enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_ACTIVE = 0, RUNNING_PAUSED = 1 };
+    enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_PAUSED = 0, RUNNING_BACKGROUND = 1, RUNNING_ACTIVE = 2 };
   
-    // DRIVER RESERVATIONS
+    // RUNCOUNT AND RUNCLASS
     void please_stop_driver()			{ adjust_runcount(-1); }
     void reserve_driver()			{ adjust_runcount(1); }
     void set_runcount(int);
@@ -126,7 +126,8 @@ class Router { public:
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
     int initialize(ErrorHandler *);
-    void activate(ErrorHandler *);
+    void activate(bool foreground, ErrorHandler *);
+    void activate(ErrorHandler *errh)		{ activate(true, errh); }
 
 #if CLICK_NS
     int sim_get_ifid(const char *ifname);

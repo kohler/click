@@ -571,7 +571,7 @@ Router::set_connections()
 }
 
 
-// DRIVER STOPPAGE
+// RUNCOUNT
 
 void
 Router::set_runcount(int x)
@@ -934,7 +934,7 @@ Router::initialize(ErrorHandler *errh)
 }
 
 void
-Router::activate(ErrorHandler *errh)
+Router::activate(bool foreground, ErrorHandler *errh)
 {
     if (_state != ROUTER_LIVE || _running != RUNNING_PAUSED)
 	return;
@@ -959,7 +959,8 @@ Router::activate(ErrorHandler *errh)
     }
 
     // Activate router
-    master()->run_router(this);	// sets _running to RUNNING_ACTIVE
+    master()->run_router(this, foreground);
+    // sets _running to RUNNING_BACKGROUND or RUNNING_ACTIVE
 }
 
 

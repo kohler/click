@@ -97,7 +97,7 @@ class Master { public:
     Master &operator=(const Master &);
     
     void register_router(Router *);
-    void run_router(Router *);
+    void run_router(Router *, bool foreground);
 
     void remove_pollfd(int);
 

@@ -106,11 +106,11 @@ Master::register_router(Router *router)
 }
 
 void
-Master::run_router(Router *router)
+Master::run_router(Router *router, bool foreground)
 {
     assert(router->_running == Router::RUNNING_PAUSED);
     _master_lock.acquire();
-    router->_running = Router::RUNNING_ACTIVE;
+    router->_running = (foreground ? Router::RUNNING_ACTIVE : Router::RUNNING_BACKGROUND);
     _master_paused--;
     _master_lock.release();
 }
@@ -125,7 +125,7 @@ Master::remove_router(Router *router)
     _master_lock.acquire();
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
-    if (was_running == Router::RUNNING_ACTIVE)
+    if (was_running >= Router::RUNNING_BACKGROUND)
 	_master_paused++;
     else if (was_running == Router::RUNNING_PAUSED)
 	/* nada */;
@@ -139,21 +139,23 @@ Master::remove_router(Router *router)
     // Remove router, fix runcount
     {
 	_runcount_lock.acquire();
-	_runcount = 0;
+	_runcount = -0x7FFFFFFF;
 	Router **pprev = &_routers;
 	bool found = false;
 	for (Router *r = *pprev; r; r = r->_next_router)
-	    if (r != router) {
+	    if (r == router)
+		found = true;
+	    else {
 		*pprev = r;
 		pprev = &r->_next_router;
-		if (r->_runcount > _runcount)
+		if (r->_running == Router::RUNNING_ACTIVE
+		    && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
 		    _runcount = r->_runcount;
-	    } else
-		found = true;
+	    }
 	*pprev = 0;
 	_runcount_lock.release();
 	if (!found) {
-	    if (was_running == Router::RUNNING_ACTIVE) {
+	    if (was_running >= Router::RUNNING_BACKGROUND) {
 		_master_lock.acquire();
 		_master_paused--;
 		_master_lock.release();
@@ -271,10 +273,10 @@ Master::check_driver()
     _runcount_lock.acquire();
 
     if (_runcount <= 0) {
-	_runcount = 0;
+	_runcount = -0x7FFFFFFF;
 	for (Router *r = _routers; r; ) {
 	    Router *next_router = r->_next_router;
-	    if (r->_runcount <= 0 && r->_running == Router::RUNNING_ACTIVE) {
+	    if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
 		if (dm)
 		    while (dm->handle_stopped_driver() && r->_runcount <= 0)
@@ -282,7 +284,8 @@ Master::check_driver()
 	    }
 	    if (r->_runcount <= 0)
 		remove_router(r);
-	    else if (r->_runcount > _runcount)
+	    else if (r->_running == Router::RUNNING_ACTIVE
+		     && (_runcount == -0x7FFFFFFF || r->_runcount < _runcount))
 		_runcount = r->_runcount;
 	    r = next_router;
 	}
@@ -293,10 +296,6 @@ Master::check_driver()
     _master_lock.release();
     return more;
 }
-
-
-// Procedure for unscheduling a router:
-// 
 
 
 // PENDING TASKS
