@@ -648,7 +648,10 @@ static int
 handler_ioctl(struct inode *inode, struct file *filp,
 	      unsigned command, unsigned long address)
 {
-    lock_config_read();
+    if (command & _CLICK_IOC_SAFE)
+	lock_config_read();
+    else
+	lock_config_write();
 
     int retval;
     Element *e;
@@ -677,19 +680,19 @@ handler_ioctl(struct inode *inode, struct file *filp,
 
 	// fetch incoming data if necessary
 	address_ptr = reinterpret_cast<void *>(address);
-	if (_IOC_SIZE(command) && (command & IOC_IN)
+	if (_IOC_SIZE(command) && (command & _CLICK_IOC_IN)
 	    && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, _IOC_SIZE(command))) < 0)
 	    goto free_exit;
 
 	// call llrpc
-	arg_ptr = (_IOC_SIZE(command) && (command & (IOC_INOUT)) ? data : address_ptr);
+	arg_ptr = (_IOC_SIZE(command) && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) ? data : address_ptr);
 	if (click_router->initialized())
 	    retval = e->llrpc(command, arg_ptr);
 	else
 	    retval = e->Element::llrpc(command, arg_ptr);
 
 	// store outgoing data if necessary
-	if (retval >= 0 && _IOC_SIZE(command) && (command & IOC_OUT))
+	if (retval >= 0 && _IOC_SIZE(command) && (command & _CLICK_IOC_OUT))
 	    retval = CLICK_LLRPC_PUT_DATA(address_ptr, data, _IOC_SIZE(command));
 
       free_exit:
@@ -698,7 +701,10 @@ handler_ioctl(struct inode *inode, struct file *filp,
     }
 
   exit:
-    unlock_config_read();
+    if (command & _CLICK_IOC_SAFE)
+	unlock_config_read();
+    else
+	unlock_config_write();
     return retval;
 }
 
