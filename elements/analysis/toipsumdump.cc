@@ -233,7 +233,7 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 	    goto print_route;
 	  print_route: {
 		const uint8_t *o = opt + 3, *ol = opt + opt[1], *op = opt + opt[2] - 1;
-		const char *sep = "";
+		sep = "";
 		sa << '{';
 		for (; o + 4 <= ol; o += 4) {
 		    if (o == op) {
@@ -253,6 +253,52 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 		sep = ",";
 		break;
 	    }
+	  case IPOPT_TS: {
+	      if (opt + opt[1] > end_opt || opt[1] < 4 || opt[2] < 5)
+		  goto bad_opt;
+	      const uint8_t *o = opt + 4, *ol = opt + opt[1], *op = opt + opt[2] - 1;
+	      int flag = opt[3] & 0xF;
+	      int size = (flag >= 1 && flag <= 3 ? 8 : 4);
+	      sa << sep << "ts";
+	      if (flag == 1)
+		  sa << ".ip";
+	      else if (flag == 3)
+		  sa << ".preip";
+	      else if (flag != 0)
+		  sa << "." << flag;
+	      sa << '{';
+	      sep = "";
+	      for (; o + size <= ol; o += 4) {
+		  if (o == op) {
+		      if (flag != 3)
+			  break;
+		      sep = "*";
+		  }
+		  if (flag != 0) {
+		      sa << sep << (int)o[0] << '.' << (int)o[1] << '.' << (int)o[2] << '.' << (int)o[3] << '=';
+		      o += 4;
+		  }
+		  if (flag == 3 && o > op)
+		      sa.pop_back();
+		  else {
+		      uint32_t v = (o[0] << 24) | (o[1] << 16) | (o[2] << 8) | o[3];
+		      if (v & 0x80000000U)
+			  sa << '!';
+		      sa << (v & 0x7FFFFFFFU);
+		  }
+		  sep = ":";
+	      }
+	      if (o == ol && o == op && opt[0] != IPOPT_RR)
+		  sa << '*';
+	      sa << '}';
+	      if (o + size <= ol && o == op && opt[0] == IPOPT_RR)
+		  sa << '+' << (ol - o) / size;
+	      if (opt[3] & 0xF0)
+		  sa << '+' << '+' << (opt[3] >> 4);
+	      opt = ol;
+	      sep = ",";
+	      break;
+	  }
 	  default: {
 	      if (opt + opt[1] > end_opt || opt[1] < 2)
 		  goto bad_opt;
@@ -678,7 +724,7 @@ static int ip_opt_contents_mapping[] = {
     U, U, U, U, U, U, U, U, U, U, 		// 41-50
     U, U, U, U, U, U, U, U, U, U, 		// 51-60
     U, U, U, U, U, U, U,	 		// 61-67
-    T::DO_IPOPT_UNKNOWN, U, U,			// TS, 69-70
+    T::DO_IPOPT_TS, U, U,			// TS, 69-70
     U, U, U, U, U, U, U, U, U, U, 		// 71-80
     U, U, U, U, U, U, U, U, U, U, 		// 81-90
     U, U, U, U, U, U, U, U, U, U, 		// 91-100

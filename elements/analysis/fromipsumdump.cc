@@ -444,6 +444,7 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 
 	if (strncmp(data + pos, "rr{", 3) == 0
 	    && (contents & DO_IPOPT_ROUTE)) {
+	    // record route
 	    sa << (char)IPOPT_RR;
 	    pos += 3;
 	  parse_route:
@@ -451,23 +452,24 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 	    int pointer = -1;
 	    sa << '\0' << '\0';
 	    next = const_cast<char *>(data + pos);
-	    if (*next == '*')
+	    if (*next == '*')	// initial pointer?
 		pointer = 4, next++;
+	    // loop over entries
 	    while (isdigit(*next)) {
-		for (int i = 0; i < 4 && isdigit(*next); i++) {
+		for (int i = 0; i < 4; i++) {
 		    if (!isdigit(*next)
 			|| (u1 = strtoul(next, &next, 0)) > 255
-			|| (i < 3 && *next != '.'))
+			|| (i < 3 && *next++ != '.'))
 			goto bad_opt;
 		    sa << (char)u1;
-		    next++;
 		}
-		if (next[-1] == '*' && pointer < 0)
+		if (next[0] == '*' && pointer < 0)
 		    pointer = sa.length() - sa_pos + 1;
-		else if (next[-1] != '-' && next[-1] != ':')
-		    next--;
+		else if (next[0] != '-' && next[0] != ':')
+		    break;
+		next++;
 	    }
-	    if (*next != '}')
+	    if (*next != '}')	// must end with a brace
 		goto bad_opt;
 	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
 	    if (next[1] == '+' && isdigit(next[2])
@@ -479,18 +481,122 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 		goto bad_opt;
 	    sa[sa_pos + 1] = sa.length() - sa_pos;
 	    pos = next - data;
+	    
 	} else if (strncmp(data + pos, "ssrr{", 5) == 0
 		   && (contents & DO_IPOPT_ROUTE)) {
+	    // strict source route option
 	    sa << (char)IPOPT_SSRR;
 	    pos += 5;
 	    goto parse_route;
+	    
 	} else if (strncmp(data + pos, "lsrr{", 5) == 0
 		   && (contents & DO_IPOPT_ROUTE)) {
+	    // loose source route option
 	    sa << (char)IPOPT_LSRR;
 	    pos += 5;
 	    goto parse_route;
+	    
+	} else if ((strncmp(data + pos, "ts{", 3) == 0
+		    || strncmp(data + pos, "ts.", 3) == 0)
+		   && (contents & DO_IPOPT_TS)) {
+	    // timestamp option
+	    int sa_pos = sa.length();
+	    sa << (char)IPOPT_TS << (char)0 << (char)0 << (char)0;
+	    uint32_t top_bit;
+	    int flag = -1;
+	    if (data[pos + 2] == '.') {
+		if (strncmp(data + pos + 2, ".ip{", 4) == 0)
+		    flag = 1, pos += 6;
+		else if (strncmp(data + pos + 2, ".preip{", 7) == 0)
+		    flag = 3, pos += 9;
+		else if (isdigit(data[pos + 3])
+			 && (flag = strtoul(data + pos + 3, &next, 0)) <= 15
+			 && *next == '{')
+		    pos = (next + 1) - data;
+		else
+		    goto bad_opt;
+	    } else
+		pos += 3;
+	    next = const_cast<char *>(data + pos);
+	    int pointer = -1;
+	    // check for initial pointer
+	    if (*next == '*')
+		pointer = 5, next++;
+	    
+	    // loop over timestamp entries
+	    while (isdigit(*next) || *next == '!') {
+		char *entry = next;
+	      retry_entry:
+		if (flag == 1 || flag == 3 || flag == -2) {
+		    // parse IP address
+		    for (int i = 0; i < 4; i++) {
+			if (!isdigit(*next)
+			    || (u1 = strtoul(next, &next, 0)) > 255
+			    || (i < 3 && *next++ != '.'))
+			    goto bad_opt;
+			sa << (char)u1;
+		    }
+		    // prespecified IPs if we get here
+		    if (pointer >= 0 && flag == -2)
+			flag = 3;
+		    // check for valid value
+		    if (next[0] == '=' && (isdigit(next[1]) || next[1] == '!'))
+			next++;
+		    else if ((next[0] != '=' || next[1] == '?') && pointer < 0)
+			goto bad_opt;
+		    else {
+			next += (next[0] == '=' ? 2 : 0);
+			sa << (char)0 << (char)0 << (char)0 << (char)0;
+			goto done_entry;
+		    }
+		}
+		
+		// parse timestamp value
+		top_bit = 0;
+		if (next[0] == '!')
+		    top_bit = 0x80000000U, next++;
+		if (!isdigit(*next))
+		    goto bad_opt;
+		u1 = strtoul(next, &next, 0);
+		if (*next == '.' && flag == -1) {
+		    flag = -2;
+		    next = entry;
+		    goto retry_entry;
+		} else if (flag == -1)
+		    flag = 0;
+		u1 |= top_bit;
+		sa << (char)(u1 >> 24) << (char)(u1 >> 16) << (char)(u1 >> 8) << (char)u1;
+	      done_entry:
+		// check separator
+		if (*next == '*' && pointer < 0)
+		    pointer = sa.length() - sa_pos + 1;
+		else if (*next != '-' && *next != ':')
+		    break;
+		next++;
+	    }
+	    
+	    // done with entries
+	    if (*next++ != '}')
+		goto bad_opt;
+	    if (flag == -2)
+		flag = 1;
+	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
+	    if (next[0] == '+' && isdigit(next[1])
+		&& (u1 = strtoul(next + 1, &next, 0)) < 64)
+		sa.append_fill('\0', u1 * (flag == 1 || flag == 3 ? 8 : 4));
+	    int overflow = 0;
+	    if (next[0] == '+' && next[1] == '+' && isdigit(next[2])
+		&& (u1 = strtoul(next + 2, &next, 0)) < 16)
+		overflow = u1;
+	    sa[sa_pos + 3] = (overflow << 4) | flag;
+	    if (sa.length() - sa_pos > 255)
+		goto bad_opt;
+	    sa[sa_pos + 1] = sa.length() - sa_pos;
+	    pos = next - data;
+	    
 	} else if (isdigit(data[pos])
 		   && (contents & DO_IPOPT_UNKNOWN)) {
+	    // unknown option
 	    u1 = strtoul(data + pos, &next, 0);
 	    if (u1 >= 256)
 		goto bad_opt;

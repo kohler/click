@@ -140,7 +140,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool run_task();
     Packet *pull(int);
 
-    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2,
+    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2, DO_IPOPT_TS = 4,
 	   DO_IPOPT_UNKNOWN = 32,
 	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
     static int parse_ip_opt_ascii(const char *, int, String *, int);
