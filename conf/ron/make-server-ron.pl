@@ -68,7 +68,9 @@ for($i=0; $i<$n; $i++) {
     print 50000 + $i * 100, "-", 50099 + $i * 100, " - - ";
     print 2*$i, " ", 2*$i + 1, ",\n";
 }
-print "\tdrop);\n\n";
+print "\tdrop,\n";
+print "\tTCP_TIMEOUT 1200,\n";
+print "\tREAP_TCP 300);\n\n";
 
 print "ipc :: IPClassifier(\n";
 for($i=0; $i<$n; $i++) {
@@ -78,15 +80,16 @@ print "-);\n\n";
 
 
 print "// Incoming Encapsulated Packets\n";
-print "DivertSocket(", $device, ", 3000, 2, 4, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "DivertSocket(", $device, ", 3000, 2, 17, 0.0.0.0/0, 4000, ", $meIP, ", 4000, in)\n";
 print "\t-> CheckIPHeader\n";
 #//	-> Print(IN-ENCAP-RAW)
-print "\t-> ipc\n\n";
+print "\t-> ipc;\n\n";
 
 for($i=0; $i<$n; $i++) {
     print "ipc[$i]\n";
     print "//\t-> IPPrint(IN-ENCAP-RAW)\n";
     print "\t-> StripIPHeader\n";
+    print "\t-> Strip(8)\n";
     print "\t-> CheckIPHeader\n";
     print "//\t-> IPPrint(IN-ENCAP-STR)\n";
     print "\t-> IPReassembler\n";
@@ -111,7 +114,7 @@ for($i=0; $i<$n; $i++) {
     print "iprw[", $i*2+1,"] -> CheckIPHeader\n";
     print "//\t-> IPPrint(Rewritten", $i+1, "__)\n";
     print "\t-> frag", $i , " :: IPFragmenter(1400, false)\n";
-    print "\t-> IPEncap(4, ", $meIP, ", ", $clients[$i], ")\n";
+    print "\t-> UDPIPEncap(", $meIP, ", 4001, ", $clients[$i], ", 4001)\n";
     print "\t-> setgw;\n\n";
 }
 
