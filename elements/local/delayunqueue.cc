@@ -52,7 +52,10 @@ DelayUnqueue::initialize(ErrorHandler *errh)
 void
 DelayUnqueue::uninitialize()
 {
-  _p->kill();
+  if (_p) {
+    _p->kill();
+    _p = 0;
+  }
   _task.unschedule();
 }
 
