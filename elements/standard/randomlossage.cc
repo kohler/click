@@ -120,7 +120,6 @@ random_lossage_read(Element *f, void *vwhich)
 void
 RandomLossage::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read_write("p_drop", random_lossage_read, (void *)0,
 		      reconfigure_write_handler, (void *)0);
   fcr->add_read_write("active", random_lossage_read, (void *)1,

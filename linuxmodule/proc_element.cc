@@ -78,9 +78,9 @@ struct Handler {
   WriteHandler write;
   void *wthunk;
   
-  void clear(const char *n, int l)	{ name=n; namelen=l; read=0; write=0; }
-  void add_read(ReadHandler r, void *t)		{ read = r; rthunk = t; }
-  void add_write(WriteHandler w, void *t)	{ write = w; wthunk = t; }
+  void set(const char *n, int l, ReadHandler r, void *rt, WriteHandler w, void *wt) {
+    name=n; namelen=l; read=r; rthunk=rt; write=w; wthunk=wt;
+  }
   
 };
 
@@ -334,101 +334,32 @@ KernelHandlerRegistry::grow_handlers()
 }
 
 void
-KernelHandlerRegistry::add_read(const char *name, int namelen,
-				ReadHandler call, void *thunk)
-{
-  if (nhandlers >= handlers_cap && grow_handlers() < 0)
-    return;
-  handlers[nhandlers].clear(name, namelen);
-  handlers[nhandlers].add_read(call, thunk);
-  nhandlers++;
-  if (namelen < 0) namelen = strlen(name);
-  click_register_new_dynamic_pde
-    (_directory, proc_element_read_handler_prototype,
-     namelen, name, (void *)(nhandlers - 1));
-}
-
-void
-KernelHandlerRegistry::add_write(const char *name, int namelen,
-				 WriteHandler call, void *thunk)
-{
-  if (nhandlers >= handlers_cap && grow_handlers() < 0)
-    return;
-  handlers[nhandlers].clear(name, namelen);
-  handlers[nhandlers].add_write(call, thunk);
-  nhandlers++;
-  if (namelen < 0) namelen = strlen(name);
-  click_register_new_dynamic_pde
-    (_directory, proc_element_write_handler_prototype,
-     namelen, name, (void *)(nhandlers - 1));
-}
-
-void
 KernelHandlerRegistry::add_read_write(const char *name, int namelen,
 				      ReadHandler rcall, void *rthunk,
 				      WriteHandler wcall, void *wthunk)
 {
+  const proc_dir_entry *pattern = 0;
+  if (rcall && wcall)
+    pattern = &proc_element_read_write_handler_prototype;
+  else if (wcall)
+    pattern = &proc_element_write_handler_prototype;
+  else if (rcall)
+    pattern = &proc_element_read_handler_prototype;
+  else
+    return;
+  
   if (nhandlers >= handlers_cap && grow_handlers() < 0)
     return;
-  handlers[nhandlers].clear(name, namelen);
-  handlers[nhandlers].add_read(rcall, rthunk);
-  handlers[nhandlers].add_write(wcall, wthunk);
+  handlers[nhandlers].set(name, namelen, rcall, rthunk, wcall, wthunk);
   nhandlers++;
-  if (namelen < 0) namelen = strlen(name);
+  
   click_register_new_dynamic_pde
-    (_directory, proc_element_read_write_handler_prototype,
-     namelen, name, (void *)(nhandlers - 1));
+    (_directory, pattern, namelen, name, (void *)(nhandlers - 1));
 }
 
 //
 // ROUTER ELEMENT PROCS
 //
-
-static String
-read_element_class(Element *f, void *)
-{
-  return String(f->class_name()) + "\n";
-}
-
-static String
-read_element_name(Element *f, void *)
-{
-  return f->id() + "\n";
-}
-
-static String
-read_element_config(Element *f, void *)
-{
-  String s = current_router->configuration(f->number());
-  if (s) {
-    int c = s[s.length() - 1];
-    if (c != '\n' && c != '\\')
-      s += "\n";
-  }
-  return s;
-}
-
-static int
-write_element_config(const String &conf, Element *f, void *,
-		     ErrorHandler *errh)
-{
-  if (f->can_live_reconfigure())
-    return f->router()->live_reconfigure(f->number(), conf, errh);
-  else
-    return -EPERM;
-}
-
-static String
-read_element_inputs(Element *f, void *)
-{
-  return current_router->element_inputs_string(f->number());
-}
-
-static String
-read_element_outputs(Element *f, void *)
-{
-  return current_router->element_outputs_string(f->number());
-}
 
 void
 cleanup_router_element_procs()
@@ -491,7 +422,7 @@ make_compound_element_symlink(int fi)
     if (!subdir) {
       // make the directory
       subdir = click_register_new_dynamic_pde
-	(parent_dir, proc_element_elemdir_prototype,
+	(parent_dir, &proc_element_elemdir_prototype,
 	 last_pos - first_pos, data + first_pos, (void *)0);
       if (parent_dir == &proc_click_entry)
 	element_pdes[fi + nelements] = subdir;
@@ -515,7 +446,7 @@ make_compound_element_symlink(int fi)
 
   // make the link
   proc_dir_entry *link = click_register_new_dynamic_pde
-    (parent_dir, proc_element_elemdir_link_prototype,
+    (parent_dir, &proc_element_elemdir_link_prototype,
      last_pos - first_pos, data + first_pos, (void *)fi);
   if (parent_dir == &proc_click_entry)
     element_pdes[fi + nelements] = link;
@@ -554,7 +485,7 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++) {
     if (i+1 >= next_namegap) namelen++, next_namegap *= 10;
     element_pdes[i] = click_register_new_dynamic_pde
-      (&proc_click_entry, proc_element_elemdir_prototype,
+      (&proc_click_entry, &proc_element_elemdir_prototype,
        namelen, numbers + numbers_ndigits * i, (void *)i);
   }
   
@@ -567,7 +498,7 @@ init_router_element_procs()
       else {
 	if (click_find_pde(&proc_click_entry, id)) continue;
 	element_pdes[i + nelements] = click_register_new_dynamic_pde
-	  (&proc_click_entry, proc_element_elemdir_link_prototype,
+	  (&proc_click_entry, &proc_element_elemdir_link_prototype,
 	   id.length(), id.data(), (void *)i);
       }
     }
@@ -580,15 +511,7 @@ init_router_element_procs()
       Element *element = current_router->element(i);
       if (element->is_a("Error")) continue;
       KernelHandlerRegistry kfr(fpde);
-      kfr.add_read("class", -1, read_element_class, 0);
-      kfr.add_read("name", -1, read_element_name, 0);
-      if (add_per_element && element->can_live_reconfigure())
-	kfr.add_read_write("config", -1, read_element_config, 0,
-			   write_element_config, 0);
-      else
-	kfr.add_read("config", -1, read_element_config, 0);
-      kfr.add_read("inputs", -1, read_element_inputs, 0);
-      kfr.add_read("outputs", -1, read_element_outputs, 0);
+      element->add_default_handlers(&kfr, add_per_element);
       if (add_per_element)
 	element->add_handlers(&kfr);
     }

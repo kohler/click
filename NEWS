@@ -1,5 +1,10 @@
 Click NEWS
 
+Version 0.52
+
+* Added `--help', `--version', etc. options to tools.
+
+
 Version 0.51   12.Nov.1999
 
 * Support for required-alignment machines via `click-align' tool. Added

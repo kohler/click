@@ -90,6 +90,7 @@ class Element : public ElementLink { public:
   virtual int live_reconfigure(const String &, ErrorHandler *);
   
   // HANDLERS
+  void add_default_handlers(HandlerRegistry *, bool allow_write_config);
   virtual void add_handlers(HandlerRegistry *);
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,

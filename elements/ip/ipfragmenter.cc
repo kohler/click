@@ -183,7 +183,6 @@ IPFragmenter_read_fragments(Element *xf, void *)
 void
 IPFragmenter::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", IPFragmenter_read_drops, 0);
   fcr->add_read("fragments", IPFragmenter_read_fragments, 0);
 }

@@ -173,7 +173,6 @@ CheckIPHeader_read_drops(Element *xf, void *)
 void
 CheckIPHeader::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", CheckIPHeader_read_drops, 0);
 }
 

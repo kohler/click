@@ -182,7 +182,6 @@ queue_read_drops(Element *f, void *)
 void
 Queue::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("length", queue_read_length, (void *)0);
   fcr->add_read_write("max_length", queue_read_length, (void *)1,
 		      reconfigure_write_handler, (void *)0);

@@ -44,6 +44,13 @@
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 
+/* Prototype strerror if we don't have it. */
+#ifndef CLICK_LINUXMODULE
+# ifndef HAVE_STRERROR
+char *strerror(int errno);
+# endif
+#endif
+
 #ifdef __cplusplus
 /* Get rid of inline macro under C++ */
 # undef inline

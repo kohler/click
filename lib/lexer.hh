@@ -12,6 +12,7 @@ enum Lexemes {
   lex2Colon,
   lexTunnel,
   lexElementclass,
+  lexRequire,
 };
 
 class Lexeme {
@@ -63,9 +64,10 @@ class Lexer {
   // element types
   HashMap<String, int> _element_type_map;
   Vector<Element *> _element_types;
+  Vector<String> _element_type_names;
+  Vector<int> _prev_element_type;
   Element *_default_element_type;
   Element *_tunnel_element_type;
-  HashMap<String, int> _reset_element_type_map;
   int _reset_element_types;
   
   // elements
@@ -83,6 +85,9 @@ class Lexer {
   // compound elements
   String _element_prefix;
   int _anonymous_offset;
+
+  // requirements
+  Vector<String> _requirements;
   
   // errors
   ErrorHandler *_errh;
@@ -119,12 +124,15 @@ class Lexer {
   int add_element_type(const String &, Element *);
   int element_type(const String &) const;
   int force_element_type(String);
-  void element_types_permanent();
+  void save_element_types();
 
   int first_element_type() const	{ return FIRST_REAL_TYPE; }
   int permanent_element_types() const	{ return _reset_element_types; }
   Element *element_type(int i) const	{ return _element_types[i]; }
   
+  void remove_element_type(int);
+  void remove_element_type(const String &);
+
   void connect(int f1, int p1, int f2, int p2);
   String element_name(int) const;
   
@@ -138,6 +146,7 @@ class Lexer {
   void yelementclass();
   void ytunnel();
   int ylocal();
+  void yrequire();
   bool ystatement(bool nested = false);
   
   void clear();
@@ -156,6 +165,7 @@ class LexerSource { public:
   
   virtual unsigned more_data(char *, unsigned) = 0;
   virtual String landmark(unsigned) const;
+  virtual void require(const String &, ErrorHandler *);
 
 };
   

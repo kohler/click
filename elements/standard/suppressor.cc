@@ -86,7 +86,6 @@ Suppressor::read_status(Element* f, void *) {
 void
 Suppressor::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("status", read_status, 0);
 }
 

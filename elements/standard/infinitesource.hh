@@ -19,7 +19,7 @@
  * Useful for profiling and experiments.
  */
 
-class InfiniteSource : public Element {
+class InfiniteSource : public Element { protected:
   
   String _data;
   int _count;

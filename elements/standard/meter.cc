@@ -130,7 +130,6 @@ read_rate_handler(Element *f, void *)
 void
 Meter::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("rate", read_rate_handler, 0);
   fcr->add_read("meters", Meter::meters_read_handler, 0);
 }

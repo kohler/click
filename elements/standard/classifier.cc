@@ -697,7 +697,6 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
   }
 
   optimize_exprs(errh);
-  errh->warning(decompile_string(this, 0));
   return 0;
 }
 
@@ -749,7 +748,6 @@ Classifier::decompile_string(Element *element, void *)
 void
 Classifier::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("program", Classifier::decompile_string, 0);
 }
 

@@ -235,7 +235,6 @@ RED::read_stats(Element *f, void *)
 void
 RED::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", red_read_drops, 0);
   fcr->add_read("stats", read_stats, 0);
   fcr->add_read_write("min_thresh", read_parameter, (void *)0,

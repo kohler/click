@@ -53,7 +53,6 @@ dropbroadcasts_read_drops(Element *f, void *)
 void
 DropBroadcasts::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", dropbroadcasts_read_drops, 0);
 }
 

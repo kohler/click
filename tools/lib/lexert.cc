@@ -15,6 +15,7 @@
 #endif
 #include "lexert.hh"
 #include "routert.hh"
+#include "confparse.hh"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -183,6 +184,8 @@ LexerT::next_lexeme()
       return Lexeme(lexTunnel, word);
     else if (word.length() == 12 && word == "elementclass")
       return Lexeme(lexElementclass, word);
+    else if (word.length() == 7 && word == "require")
+      return Lexeme(lexRequire, word);
     else
       return Lexeme(lexIdent, word);
   }
@@ -685,6 +688,21 @@ LexerT::ylocal()
   return tindex;
 }
 
+void
+LexerT::yrequire()
+{
+  if (expect('(')) {
+    String requirement = lex_config();
+    Vector<String> args;
+    cp_argvec(requirement, args);
+    for (int i = 0; i < args.size(); i++) {
+      _source->require(args[i], _errh);
+      _router->add_requirement(args[i]);
+    }
+    expect(')');
+  }
+}
+
 bool
 LexerT::ystatement(bool nested)
 {
@@ -703,6 +721,10 @@ LexerT::ystatement(bool nested)
     
    case lexTunnel:
     ytunnel();
+    return true;
+
+   case lexRequire:
+    yrequire();
     return true;
 
    case ';':
@@ -746,6 +768,11 @@ String
 LexerTSource::landmark(unsigned lineno) const
 {
   return String("line ") + String(lineno);
+}
+
+void
+LexerTSource::require(const String &, ErrorHandler *)
+{
 }
 
 

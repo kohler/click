@@ -38,11 +38,29 @@ ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
 Router *current_router = 0;
 
+static Vector<String> provisions;
+
+
+class LinuxModuleLexerSource : public MemoryLexerSource {
+ public:
+  LinuxModuleLexerSource(const char *d, unsigned l)
+    : MemoryLexerSource(d, l) { }
+  void require(const String &, ErrorHandler *);
+};
+
+void
+LinuxModuleLexerSource::require(const String &r, ErrorHandler *errh)
+{
+  for (int i = 0; i < provisions.size(); i++)
+    if (provisions[i] == r)
+      return;
+  errh->error("unsatisfied requirement `%s'", String(r).cc());
+}
 
 void
 initialize_router(const char *data, unsigned len)
 {
-  MemoryLexerSource memsource(data, len);
+  LinuxModuleLexerSource memsource(data, len);
   lexer->reset(&memsource);
   cleanup_router_element_procs();
   reset_proc_click_errors();
@@ -257,6 +275,19 @@ read_classes(Element *, void *)
   return sa.take_string();
 }
 
+static String
+read_requirements(Element *, void *)
+{
+  if (current_router) {
+    const Vector<String> &v = current_router->requirements();
+    StringAccum sa;
+    for (int i = 0; i < v.size(); i++)
+      sa << cp_unsubst(v[i]) << "\n";
+    return sa.take_string();
+  } else
+    return "";
+}
+
 static int
 write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
 {
@@ -278,7 +309,40 @@ write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
   return 0;
 }
 
-void init_click_nulls(Lexer *);
+
+extern "C" void
+click_provide(const char *name)
+{
+  MOD_INC_USE_COUNT;
+  provisions.push_back(String(name));
+}
+
+extern "C" void
+click_unprovide(const char *name)
+{
+  String n = name;
+  for (int i = 0; i < provisions.size(); i++)
+    if (provisions[i] == n) {
+      MOD_DEC_USE_COUNT;
+      provisions[i] = provisions.back();
+      provisions.pop_back();
+      break;
+    }
+}
+
+extern "C" void
+click_add_element_type(const char *name, Element *e)
+{
+  lexer->add_element_type(name, e);
+}
+
+extern "C" void
+click_remove_element_type(const char *name)
+{
+  lexer->remove_element_type(name);
+}
+
+
 extern void export_elements(Lexer *);
 
 extern "C" int
@@ -297,7 +361,7 @@ init_module()
   
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
-  lexer->element_types_permanent();
+  lexer->save_element_types();
   
   current_router = 0;
   
@@ -307,77 +371,16 @@ init_module()
   init_proc_click_elements();
   init_proc_click_errors();
 
-#if 0
-  // Benchmark Packet new+delete.
-  {
-    int i;
-    unsigned long long c0, nc;
-    struct sk_buff *skb;
-
-    skb = alloc_skb(100, GFP_ATOMIC);
-    c0 = click_get_cycles();
-    for(i = 0; i < 1000000; i++){
-      Packet *p = new Packet(skb);
-      p->steal_skb();
-    }
-    nc = click_get_cycles() - c0;
-    printk("<1>%u %u for %d packet alloc/dealloc\n",
-           (int) (nc >> 32),
-           (int) nc,
-           i);
-    kfree_skb(skb);
-  }
-#endif
-
-#if 0
-  // Benchmark Linux routing table lookup.
-  {
-    int i, lookups = 0;
-    struct rtable *rt = 0;
-    unsigned long long c0, nc;
-
-    c0 = click_get_cycles();
-    for(i = 0; i < 1000000; i++){
-      if (ip_route_output(&rt,
-                          0x121a0426,   /* dst */
-                          0,          /* src */
-                          0,          /* tos */
-                          0) == 0){
-        ip_rt_put(rt);
-        lookups++;
-      } else {
-        printk("<1>ip_route_output failed\n");
-        break;
-      }
-      if (ip_route_output(&rt,
-                          0x121a0427,   /* dst */
-                          0,          /* src */
-                          0,          /* tos */
-                          0) == 0){
-        ip_rt_put(rt);
-        lookups++;
-      } else {
-        printk("<1>ip_route_output failed\n");
-        break;
-      }
-    }
-    nc = click_get_cycles() - c0;
-    printk("<1>%u %u for %d ip_route_output()\n",
-           (int) (nc >> 32),
-           (int) nc,
-           lookups);
-  }
-#endif
-
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
   KernelHandlerRegistry kfr(&proc_click_entry);
-  kfr.add_read("meminfo", -1, read_meminfo, 0);
-  kfr.add_read("cycles", -1, read_cycles, 0);
-  kfr.add_read("flatconfig", -1, read_flatconfig, 0);
-  kfr.add_read("list", -1, read_list, 0);
-  kfr.add_read("classes", -1, read_classes, 0);
-  kfr.add_write("driver", -1, write_driver, 0);
+  kfr.add_read("meminfo", read_meminfo, 0);
+  kfr.add_read("cycles", read_cycles, 0);
+  kfr.add_read("flatconfig", read_flatconfig, 0);
+  kfr.add_read("list", read_list, 0);
+  kfr.add_read("classes", read_classes, 0);
+  kfr.add_read("requirements", read_requirements, 0);
+  kfr.add_write("driver", write_driver, 0);
   
   return 0;
 }

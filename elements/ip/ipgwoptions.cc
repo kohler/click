@@ -193,7 +193,6 @@ IPGWOptions_read_drops(Element *xf, void *)
 void
 IPGWOptions::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", IPGWOptions_read_drops, 0);
 }
 

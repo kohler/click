@@ -36,31 +36,23 @@ click-xform \- pattern-based Click router configuration optimizer
 '
 .SH SYNOPSIS
 .B click-xform
-.I patternfile
-.I \%[configfile]
+.I \%[options]
+.I \%[router\-file]
+.I \%[pattern\-files]
 '
 .SH DESCRIPTION
 The
 .B click-xform
-tool is a Click router configuration optimizer. It reads a file giving
-Click configuration patterns and their replacements
-.RI ( patternfile ),
-and a router configuration file
-.RI ( configfile ).
-Then it replaces patterns in the configuration until no patterns remain,
-and writes the new configuration to the standard output. If either
-.IR patternfile " or " configfile
-is a single dash "-",
-or if
-.I configfile
-is missing,
-.B click-xform
-will read that file from the standard input.
+tool is a Click router configuration optimizer. It reads files giving Click
+configuration patterns and their replacements, and a router configuration
+file. Then it replaces patterns in the configuration until none remain and
+writes the new configuration to the standard output.
 .PP
-The pattern file uses the Click language (see
+Each pattern file uses the Click language (see
 .M click 5 ).
-It should contain an even number of `elementclass' definitions: half are
-patterns, and half are replacements. The replacement for a pattern named 
+It should contain pairs of `elementclass' definitions, where one of each
+pair is a pattern and the other is a replacement. The replacement for a
+pattern named
 .RI ` pattern '
 must be named
 .RI ` pattern _Replacement'.
@@ -82,8 +74,8 @@ number of input and output ports. Basically, a pattern matches a
 configuration subset when all its component elements match; all its
 connections are duplicated in the configuration subset; and any connections
 into or out of the configuration subset correspond to connections to or
-from the pattern's input and output ports. The full definition of matching
-is given below.
+from the pattern's input and output ports. The formal definition of
+matching is given below.
 .PP
 Any configuration strings in the pattern must match the configuration
 strings in the configuration subset. The pattern can use variables, which
@@ -146,7 +138,52 @@ elementclass Evil2_Replacement {
 This collection of patterns will make the optimizer run forever on any
 configuration that has a Queue.
 '
-.SS "Full definition of matching"
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-xform
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-p " file"
+.PD 0
+.TP
+.BI \-\-patterns " file"
+Read patterns and replacements from
+.IR file .
+You can give any number of these options.
+'
+.Sp
+.TP
+.BI \-f " file"
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "FORMAL DEFINITION OF MATCHING"
 '
 A pattern
 .I P

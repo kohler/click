@@ -19,6 +19,8 @@ class RouterT : public ElementClassT {
   Vector<Hookup> _hookup_to;
   Vector<String> _hookup_landmark;
 
+  HashMap<String, int> _require_map;
+
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
   void finish_remove_element_types(Vector<int> &);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
@@ -72,6 +74,8 @@ class RouterT : public ElementClassT {
   bool add_connection(int fidx, int fport, int tport, int tidx);
   void remove_connection(int);
 
+  void add_requirement(const String &);
+  
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
   void find_connections_to(const Hookup &, Vector<Hookup> &) const;

@@ -136,6 +136,12 @@ AC_SUBST(CFLAGS_NDEBUG)
 AC_SUBST(CXXFLAGS_NDEBUG)
 
 dnl
+dnl strerror()
+dnl
+
+AC_REPLACE_FUNCS(strerror)
+
+dnl
 dnl check for stuff in the linux kernel
 dnl
 

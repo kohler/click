@@ -257,13 +257,13 @@ cp_unargvec(const Vector<String> &args)
 	   && (s[i+1] == '/' || s[i+1] == '*'))) {
 	sa << args[an].substring(start, i - start) << '\\';
 	start = i;
-      } else if (s[i] < ' ' || s[i] > '\126') {
+      } else if (s[i] < ' ' || s[i] > '\x7E') {
 	sa << args[an].substring(start, i - start) << "\\";
 	int c = (unsigned char)s[i];
 	sa << (char)('0' + ((c >> 6) & 0x7))
 	   << (char)('0' + ((c >> 3) & 0x7))
 	   << (char)('0' + ((c) & 0x7));
-	start = i;
+	start = i + 1;
       }
     sa << args[an].substring(start, i - start);
     if (i > start && isspace(s[i-1])) sa << "\\\n";

@@ -15,12 +15,14 @@
 #endif
 #include "routert.hh"
 #include "bitvector.hh"
+#include "confparse.hh"
 #include "straccum.hh"
 #include <stdio.h>
 
 RouterT::RouterT(RouterT *enclosing)
   : _enclosing_scope(enclosing),
-    _element_type_map(-1), _element_name_map(-1)
+    _element_type_map(-1), _element_name_map(-1),
+    _require_map(-1)
 {
   if (_enclosing_scope)
     _enclosing_scope->use();
@@ -43,7 +45,8 @@ RouterT::RouterT(const RouterT &o)
     _elements(o._elements),
     _hookup_from(o._hookup_from),
     _hookup_to(o._hookup_to),
-    _hookup_landmark(o._hookup_landmark)
+    _hookup_landmark(o._hookup_landmark),
+    _require_map(o._require_map)
 {
   if (_enclosing_scope)
     _enclosing_scope->use();
@@ -169,6 +172,13 @@ RouterT::remove_connection(int i)
   _hookup_from.pop_back();
   _hookup_to.pop_back();
   _hookup_landmark.pop_back();
+}
+
+
+void
+RouterT::add_requirement(const String &s)
+{
+  _require_map.insert(s, 0);
 }
 
 
@@ -645,6 +655,15 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 		      _hookup_landmark[i]);
   }
 
+  // add requirements
+  {
+    int thunk = 0, val;
+    String key;
+    while (_require_map.each(thunk, key, val))
+      if (val >= 0)
+	r->add_requirement(key);
+  }
+  
   // yes, we expanded it
   return true;
 }
@@ -874,6 +893,20 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
 {
   int nelements = _elements.size();
   int nelemtype = _element_classes.size();
+
+  // print requirements
+  {
+    StringAccum require_sa;
+    int thunk = 0, val;
+    String key;
+    while (_require_map.each(thunk, key, val))
+      if (val >= 0) {
+	if (require_sa.length()) require_sa << ", ";
+	require_sa << cp_unsubst(key);
+      }
+    if (require_sa.length())
+      sa << "require(" << require_sa.take_string() << ");\n\n";
+  }
 
   // print element classes
   int old_sa_len = sa.length();

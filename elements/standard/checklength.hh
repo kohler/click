@@ -11,7 +11,7 @@
  *
  */
 
-class CheckLength : public Element {
+class CheckLength : public Element { protected:
   
   unsigned _max;
   

@@ -147,7 +147,6 @@ EtherSwitch::read_table(Element* f, void *) {
 void
 EtherSwitch::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("table", read_table, 0);
 }
 

@@ -255,7 +255,6 @@ ARPQuerier_read_table(Element *f, void *)
 void
 ARPQuerier::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("table", ARPQuerier_read_table, (void *)0);
 }
 

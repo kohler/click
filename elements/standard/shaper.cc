@@ -104,7 +104,6 @@ read_rate_handler(Element *f, void *)
 void
 Shaper::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("rate", read_rate_handler, 0);
 }
 

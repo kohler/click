@@ -110,7 +110,6 @@ DecIPTTL_read_drops(Element *xf, void *)
 void
 DecIPTTL::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("drops", DecIPTTL_read_drops, 0);
 }
 

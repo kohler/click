@@ -17,8 +17,11 @@
 #include "lexert.hh"
 #include "error.hh"
 #include "confparse.hh"
+#include "clp.h"
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 bool match_config(const String &, const String &, HashMap<String, String> &);
 // TODO: allow some special pports to be unconnected
@@ -358,13 +361,62 @@ match_config(const String &pat, const String &conf,
 }
 
 
+#define HELP_OPT		300
+#define VERSION_OPT		301
+#define ROUTER_OPT		302
+#define PATTERNS_OPT		303
+#define OUTPUT_OPT		304
+
+static Clp_Option options[] = {
+  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "help", 'h', HELP_OPT, 0, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "patterns", 'p', PATTERNS_OPT, Clp_ArgString, 0 },
+  { "version", 'v', VERSION_OPT, 0, 0 },
+};
+
+static const char *program_name;
+
+void
+short_usage()
+{
+  fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE] [PATTERNFILE]...\n\
+Try `%s --help' for more information.\n",
+	  program_name, program_name);
+}
+
+void
+usage()
+{
+  printf("\
+`Click-xform' replaces patterns of elements with other sets of elements inside\n\
+a Click router configuration. Both patterns and configuration are Click-\n\
+language files. The transformed router configuration is written to the\n\
+standard output.\n\
+\n\
+Usage: %s [OPTION]... [ROUTERFILE] [PATTERNFILE]...\n\
+\n\
+Options:\n\
+  -p, --patterns PATTERNFILE    Read patterns from PATTERNFILE. Can be given\n\
+                                more than once.\n\
+  -f, --file FILE               Read router configuration from FILE.\n\
+  -o, --output FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+  -v, --version                 Print version number and exit.\n\
+\n\
+Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
 RouterT *
 read_router_file(const char *filename, ErrorHandler *errh)
 {
   FILE *f;
   if (filename && strcmp(filename, "-") != 0) {
     f = fopen(filename, "r");
-    if (!f) return 0;
+    if (!f) {
+      errh->error("%s: %s", filename, strerror(errno));
+      return 0;
+    }
   } else {
     f = stdin;
     filename = "<stdin>";
@@ -375,28 +427,23 @@ read_router_file(const char *filename, ErrorHandler *errh)
   lexer.reset(&lex_source);
   while (lexer.ystatement()) ;
   RouterT *r = lexer.take_router();
-
+  
   if (f != stdin) fclose(f);
   return r;
 }
-  
 
-int
-main(int argc, char **argv)
+static Vector<RouterT *> patterns;
+static Vector<RouterT *> replacements;
+static Vector<String> pat_names;
+static int patterns_attempted;
+
+void
+read_pattern_file(const char *name, ErrorHandler *errh)
 {
-  String::static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = ErrorHandler::default_handler();
-
-  RouterT *pat_file = read_router_file(argv[1], errh);
+  patterns_attempted++;
+  RouterT *pat_file = read_router_file(name, errh);
+  if (!pat_file) return;
   
-  RouterT *r = read_router_file((argc >= 3 ? argv[2] : 0), errh);
-  if (!r) exit(1);
-  r->flatten(errh);
-
-  Vector<RouterT *> patterns;
-  Vector<RouterT *> replacements;
-  Vector<String> pat_names;
   for (int i = 0; i < pat_file->ntypes(); i++) {
     ElementClassT *fclass = pat_file->type_class(i);
     String name = pat_file->type_name(i);
@@ -415,7 +462,94 @@ main(int argc, char **argv)
       }
     }
   }
+}
 
+int
+main(int argc, char **argv)
+{
+  String::static_initialize();
+  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+  ErrorHandler *errh = ErrorHandler::default_handler();
+
+  // read command line arguments
+  Clp_Parser *clp =
+    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  program_name = Clp_ProgramName(clp);
+
+  int num_nondash_args = 0;
+  const char *router_file = 0;
+  const char *output_file = 0;
+  
+  while (1) {
+    int opt = Clp_Next(clp);
+    switch (opt) {
+      
+     case HELP_OPT:
+      usage();
+      exit(0);
+      break;
+      
+     case VERSION_OPT:
+      printf("click-xform (Click) %s\n", VERSION);
+      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+This is free software; see the source for copying conditions.\n\
+There is NO warranty, not even for merchantability or fitness for a\n\
+particular purpose.\n");
+      exit(0);
+      break;
+      
+     case PATTERNS_OPT:
+      read_pattern_file(clp->arg, errh);
+      break;
+
+     case ROUTER_OPT:
+      if (router_file) {
+	errh->error("router file specified twice");
+	goto bad_option;
+      }
+      router_file = clp->arg;
+      break;
+
+     case OUTPUT_OPT:
+      if (output_file) {
+	errh->error("output file specified twice");
+	goto bad_option;
+      }
+      output_file = clp->arg;
+      break;
+      
+     case Clp_NotOption:
+      if (num_nondash_args == 0 && router_file) {
+	errh->error("router file specified twice");
+	goto bad_option;
+      } else if (num_nondash_args == 0)
+	router_file = clp->arg;
+      else
+	read_pattern_file(clp->arg, errh);
+      num_nondash_args++;
+      break;
+
+     bad_option:
+     case Clp_BadOption:
+      short_usage();
+      exit(1);
+      break;
+      
+     case Clp_Done:
+      goto done;
+      
+    }
+  }
+  
+ done:
+  RouterT *r = read_router_file(router_file, errh);
+  if (!r || errh->nerrors() > 0)
+    exit(1);
+  r->flatten(errh);
+
+  if (!patterns_attempted)
+    errh->warning("no patterns read");
+  
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
@@ -434,7 +568,16 @@ main(int argc, char **argv)
     }
   }
 
+  // write result
   String s = r->configuration_string();
-  fputs(s.cc(), stdout);
+  if (output_file && strcmp(output_file, "-") != 0) {
+    FILE *f = fopen(output_file, "w");
+    if (!f)
+      errh->fatal("%s: %s", output_file, strerror(errno));
+    fputs(s.cc(), f);
+    fclose(f);
+  } else
+    fputs(s.cc(), stdout);
+  
   return 0;
 }

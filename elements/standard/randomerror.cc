@@ -192,7 +192,6 @@ random_bit_errors_read(Element *f, void *vwhich)
 void
 RandomBitErrors::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read_write("p_bit_error", random_bit_errors_read, (void *)0,
 		      reconfigure_write_handler, (void *)0);
   fcr->add_read_write("error_kind", random_bit_errors_read, (void *)1,

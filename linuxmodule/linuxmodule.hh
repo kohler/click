@@ -31,7 +31,7 @@ proc_dir_entry *click_new_dynamic_pde();
 int click_kill_dynamic_pde(proc_dir_entry *);
 
 proc_dir_entry *click_register_new_dynamic_pde
-	(proc_dir_entry *parent, const proc_dir_entry &pattern,
+	(proc_dir_entry *parent, const proc_dir_entry *pattern,
 	 int namelen = -1, const char *name = 0, void *data = 0);
 
 void init_proc_click_config();
@@ -58,8 +58,6 @@ class KernelHandlerRegistry : public Element::HandlerRegistry {
   
   int grow_handlers();
   
-  void add_read(const char *, int, ReadHandler, void *);
-  void add_write(const char *, int, WriteHandler, void *);
   void add_read_write(const char *, int, ReadHandler, void *,
 		      WriteHandler, void *);
   

@@ -73,12 +73,12 @@ click_new_dynamic_pde()
 
 proc_dir_entry *
 click_register_new_dynamic_pde(proc_dir_entry *parent,
-			     const proc_dir_entry &pattern,
-			     int namelen, const char *name, void *data)
+			       const proc_dir_entry *pattern,
+			       int namelen, const char *name, void *data)
 {
   proc_dir_entry *pde = click_new_dynamic_pde();
   if (!pde) return 0;
-  *pde = pattern;
+  *pde = *pattern;
   if (namelen >= 0) {
     pde->namelen = namelen;
     pde->name = name;

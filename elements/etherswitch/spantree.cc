@@ -111,7 +111,6 @@ EtherSpanTree::read_msgs(Element* f, void *) {
 void
 EtherSpanTree::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("msgs", read_msgs, 0);
 }
 

@@ -283,10 +283,56 @@ Element::live_reconfigure(const String &conf, ErrorHandler *errh)
 
 // HANDLERS
 
+static String
+read_element_class(Element *e, void *)
+{
+  return String(e->class_name()) + "\n";
+}
+
+static String
+read_element_name(Element *e, void *)
+{
+  return e->id() + "\n";
+}
+
+static String
+read_element_config(Element *e, void *)
+{
+  String s = e->router()->configuration(e->number());
+  if (s) {
+    int c = s[s.length() - 1];
+    if (c != '\n' && c != '\\')
+      s += "\n";
+  }
+  return s;
+}
+
+static int
+write_element_config(const String &conf, Element *e, void *,
+		     ErrorHandler *errh)
+{
+  if (e->can_live_reconfigure())
+    return e->router()->live_reconfigure(e->number(), conf, errh);
+  else
+    return -EPERM;
+}
+
+static String
+read_element_inputs(Element *e, void *)
+{
+  return e->router()->element_inputs_string(e->number());
+}
+
+static String
+read_element_outputs(Element *e, void *)
+{
+  return e->router()->element_outputs_string(e->number());
+}
+
 #if CLICK_STATS >= 1
 
 static String
-element_read_icounts(Element *f, void *)
+read_element_icounts(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->ninputs(); i++)
@@ -298,7 +344,7 @@ element_read_icounts(Element *f, void *)
 }
 
 static String
-element_read_ocounts(Element *f, void *)
+read_element_ocounts(Element *f, void *)
 {
   StringAccum sa;
   for (int i = 0; i < f->noutputs(); i++)
@@ -319,13 +365,39 @@ element_read_ocounts(Element *f, void *)
  * cycles spent in the elements this one pulls and pushes.
  */
 static String
-element_read_cycles(Element *f, void *)
+read_element_cycles(Element *f, void *)
 {
   return(String(f->_calls) + "\n" +
          String(f->_self_cycles) + "\n" +
          String(f->_child_cycles) + "\n");
 }
 #endif
+
+void
+Element::add_default_handlers(HandlerRegistry *hr, bool allow_write_config)
+{
+  hr->add_read("class", read_element_class, 0);
+  hr->add_read("name", read_element_name, 0);
+  if (allow_write_config && can_live_reconfigure())
+    hr->add_read_write("config", read_element_config, 0,
+		       write_element_config, 0);
+  else
+    hr->add_read("config", read_element_config, 0);
+  hr->add_read("inputs", read_element_inputs, 0);
+  hr->add_read("outputs", read_element_outputs, 0);
+#if CLICK_STATS >= 1
+  hr->add_read("icounts", element_read_icounts, 0);
+  hr->add_read("ocounts", element_read_ocounts, 0);
+# if CLICK_STATS >= 2
+  hr->add_read("cycles", element_read_cycles, 0);
+# endif
+#endif
+}
+
+void
+Element::add_handlers(HandlerRegistry *)
+{
+}
 
 String
 Element::configuration_read_handler(Element *element, void *vno)
@@ -365,27 +437,15 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
 }
 
 void
-Element::add_handlers(HandlerRegistry *fcr)
+Element::HandlerRegistry::add_read(const char *n, int l, ReadHandler f, void *t)
 {
-#if CLICK_STATS >= 1
-  fcr->add_read("icounts", element_read_icounts, 0);
-  fcr->add_read("ocounts", element_read_ocounts, 0);
-# if CLICK_STATS >= 2
-  fcr->add_read("cycles", element_read_cycles, 0);
-# endif
-#else
-  (void)fcr;			// avoid warnings
-#endif
+  add_read_write(n, l, f, t, 0, 0);
 }
 
 void
-Element::HandlerRegistry::add_read(const char *, int, ReadHandler, void *)
+Element::HandlerRegistry::add_write(const char *n, int l, WriteHandler f, void *t)
 {
-}
-
-void
-Element::HandlerRegistry::add_write(const char *, int, WriteHandler, void *)
-{
+  add_read_write(n, l, 0, 0, f, t);
 }
 
 void

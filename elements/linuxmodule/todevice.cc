@@ -333,7 +333,6 @@ ToDevice_read_calls(Element *f, void *)
 void
 ToDevice::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("calls", ToDevice_read_calls, 0);
 }
 

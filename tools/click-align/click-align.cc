@@ -20,6 +20,9 @@
 #include "routert.hh"
 #include "alignment.hh"
 #include "alignclass.hh"
+#include "clp.h"
+#include <string.h>
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -206,13 +209,58 @@ prepare_router(RouterT *r)
   r->get_type_index("ARPQuerier", new AlignClass(a));
 }
 
+
+#define HELP_OPT		300
+#define VERSION_OPT		301
+#define ROUTER_OPT		302
+#define OUTPUT_OPT		304
+
+static Clp_Option options[] = {
+  { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "help", 'h', HELP_OPT, 0, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "version", 'v', VERSION_OPT, 0, 0 },
+};
+
+static const char *program_name;
+
+void
+short_usage()
+{
+  fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
+Try `%s --help' for more information.\n",
+	  program_name, program_name);
+}
+
+void
+usage()
+{
+  printf("\
+`Click-align' adds any required `Align' elements to a Click router\n\
+configuration. The resulting router will work on machines that don't allow\n\
+unaligned accesses. Its configuration is written to the standard output.\n\
+\n\
+Usage: %s [OPTION]... [ROUTERFILE]\n\
+\n\
+Options:\n\
+  -f, --file FILE               Read router configuration from FILE.\n\
+  -o, --output FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+  -v, --version                 Print version number and exit.\n\
+\n\
+Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
 RouterT *
 read_router_file(const char *filename, ErrorHandler *errh)
 {
   FILE *f;
   if (filename && strcmp(filename, "-") != 0) {
     f = fopen(filename, "r");
-    if (!f) return 0;
+    if (!f) {
+      errh->error("%s: %s", filename, strerror(errno));
+      return 0;
+    }
   } else {
     f = stdin;
     filename = "<stdin>";
@@ -237,14 +285,71 @@ aligner_name(int anonymizer)
 }
 
 int
-main(int, char **argv)
+main(int argc, char **argv)
 {
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
 
-  RouterT *router = read_router_file(argv[1], errh);
-  if (!router) exit(1);
+  // read command line arguments
+  Clp_Parser *clp =
+    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  program_name = Clp_ProgramName(clp);
+
+  const char *router_file = 0;
+  const char *output_file = 0;
+  
+  while (1) {
+    int opt = Clp_Next(clp);
+    switch (opt) {
+      
+     case HELP_OPT:
+      usage();
+      exit(0);
+      break;
+      
+     case VERSION_OPT:
+      printf("click-align (Click) %s\n", VERSION);
+      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+This is free software; see the source for copying conditions.\n\
+There is NO warranty, not even for merchantability or fitness for a\n\
+particular purpose.\n");
+      exit(0);
+      break;
+      
+     case Clp_NotOption:
+     case ROUTER_OPT:
+      if (router_file) {
+	errh->error("router file specified twice");
+	goto bad_option;
+      }
+      router_file = clp->arg;
+      break;
+
+     case OUTPUT_OPT:
+      if (output_file) {
+	errh->error("output file specified twice");
+	goto bad_option;
+      }
+      output_file = clp->arg;
+      break;
+      
+     bad_option:
+     case Clp_BadOption:
+      short_usage();
+      exit(1);
+      break;
+      
+     case Clp_Done:
+      goto done;
+      
+    }
+  }
+  
+ done:
+  RouterT *router = read_router_file(router_file, errh);
+  if (!router || errh->nerrors() > 0)
+    exit(1);
   router->flatten(errh);
   int align_tindex = router->type_index("Align");
 
@@ -376,6 +481,20 @@ main(int, char **argv)
 		       sa.take_string());
   }
   
-  fputs(router->configuration_string(), stdout);
+  // write result
+  String config = router->configuration_string();
+  if (output_file && strcmp(output_file, "-") != 0) {
+    FILE *f = fopen(output_file, "w");
+    if (!f)
+      errh->fatal("%s: %s", output_file, strerror(errno));
+    fputs(config.cc(), f);
+    fclose(f);
+  } else
+    fputs(config.cc(), stdout);
+  
   return 0;
 }
+
+// generate Vector template instance
+#include "vector.cc"
+template class Vector<Alignment>;

@@ -18,6 +18,7 @@
 #include "error.hh"
 #include "straccum.hh"
 #include "elemfilter.hh"
+#include "confparse.hh"
 #ifndef __KERNEL__
 # include "timer.hh"
 #endif
@@ -169,6 +170,12 @@ Router::close(ErrorHandler *errh)
 {
   _closed = true;
   return check_hookup_elements(errh);
+}
+
+void
+Router::add_requirement(const String &r)
+{
+  _requirements.push_back(r);
 }
 
 
@@ -913,7 +920,18 @@ String
 Router::flat_configuration_string() const
 {
   StringAccum sa;
+
+  // requirements
+  if (_requirements.size()) {
+    sa << "require(";
+    for (int i = 0; i < _requirements.size(); i++) {
+      if (i) sa << ", ";
+      sa << cp_unsubst(_requirements[i]);
+    }
+    sa << ");\n\n";
+  }
   
+  // element classes
   for (int i = 0; i < nelements(); i++) {
     sa << _elements[i]->id() << " :: " << _elements[i]->class_name();
     if (_configurations[i])

@@ -7,6 +7,9 @@
 // configuration arguments to specify invalid source addresses, but we
 // haven't updated BigIn to support this.
 
+// To transform a router configuration according to these patterns, run
+//     % click-xform -p ip.clickpat ROUTER > TRANSFORMED-ROUTER
+
 elementclass IPOutput {
   input -> DropBroadcasts
 	-> cp :: CheckPaint($paint)

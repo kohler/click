@@ -82,7 +82,6 @@ counter_reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
 void
 Counter::add_handlers(HandlerRegistry *fcr)
 {
-  Element::add_handlers(fcr);
   fcr->add_read("count", counter_read_count_handler, 0);
   fcr->add_read("rate", counter_read_rate_handler, 0);
   fcr->add_write("reset", counter_reset_write_handler, 0);

@@ -9,10 +9,10 @@
  * =d
  * Counts arriving packets. Makes the count available in
  * /proc/click/xxx/count, and the current rate (measured by
- * by exponential weight moving average) in /proc/click/xxx/rate.
+ * exponential weight moving average) in /proc/click/xxx/rate.
  */
 
-class Counter : public Element {
+class Counter : public Element { protected:
   
   int _count;
   EWMA _rate;

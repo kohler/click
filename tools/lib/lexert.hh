@@ -12,6 +12,7 @@ enum {
   lex2Colon,
   lexTunnel,
   lexElementclass,
+  lexRequire,
 };
 
 class Lexeme {
@@ -98,6 +99,7 @@ class LexerT { protected:
   void yelementclass();
   void ytunnel();
   int ylocal();
+  void yrequire();
   bool ystatement(bool nested = false);
 
   RouterT *router() const		{ return _router; }
@@ -112,6 +114,7 @@ class LexerTSource { public:
   
   virtual unsigned more_data(char *, unsigned) = 0;
   virtual String landmark(unsigned) const;
+  virtual void require(const String &, ErrorHandler *);
 
 };
   

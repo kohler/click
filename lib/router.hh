@@ -21,6 +21,8 @@ class Router : public ElementLink {
   
   Vector<int> _hookpidx_from;
   Vector<int> _hookpidx_to;
+
+  Vector<String> _requirements;
   
   bool _closed: 1;
   bool _initialized: 1;
@@ -83,6 +85,9 @@ class Router : public ElementLink {
   const Vector<Element *> &elements() const	{ return _elements; }
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(Element *, const String &, ErrorHandler * = 0) const;
+
+  void add_requirement(const String &);
+  const Vector<String> &requirements() const	{ return _requirements; }
 
   int ninput_pidx() const			{ return _input_fidx.size(); }
   int noutput_pidx() const			{ return _output_fidx.size(); }

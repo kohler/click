@@ -57,12 +57,10 @@ class Lexer::Compound : public Element {
   mutable String _name;
   String _body;
   unsigned _lineno;
-  int _previous_type;
-  int _type_count;
   
  public:
   
-  Compound(const String &, const String &, unsigned, int, int);
+  Compound(const String &, const String &, unsigned);
   
   const char *class_name() const	{ return _name.cc(); }
   bool is_a(const char *) const;
@@ -70,15 +68,12 @@ class Lexer::Compound : public Element {
   
   const String &body() const		{ return _body; }
   unsigned lineno() const		{ return _lineno; }
-  int previous_type() const		{ return _previous_type; }
-  int type_count() const		{ return _type_count; }
   
 };
 
 Lexer::Compound::Compound(const String &name, const String &body,
-			  unsigned lineno, int previous_type, int tcount)
-  : _name(name), _body(body), _lineno(lineno), _previous_type(previous_type),
-    _type_count(tcount)
+			  unsigned lineno)
+  : _name(name), _body(body), _lineno(lineno)
 {
 }
 
@@ -98,19 +93,17 @@ Lexer::Lexer(ErrorHandler *errh)
     _element_type_map(-1),
     _default_element_type(new ErrorElement),
     _tunnel_element_type(new ErrorElement),
-    _reset_element_type_map(-1), _reset_element_types(0),
+    _reset_element_types(0),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(errh)
 {
   if (!_errh) _errh = ErrorHandler::default_handler();
   clear();
-  _element_types.push_back(_default_element_type);
-  _default_element_type->use();
-  _element_types.push_back(_tunnel_element_type);
-  _tunnel_element_type->use();
+  add_element_type("<default>", _default_element_type);
+  add_element_type("<tunnel>", _tunnel_element_type);
   add_element_type(new ErrorElement);
-  element_types_permanent();
+  save_element_types();
 }
 
 Lexer::~Lexer()
@@ -132,10 +125,7 @@ void
 Lexer::clear()
 {
   for (int i = _reset_element_types; i < _element_types.size(); i++)
-    if (_element_types[i])
-      _element_types[i]->unuse();
-  _element_types.resize(_reset_element_types);
-  _element_type_map = _reset_element_type_map;
+    remove_element_type(i);
   
   for (int i = 0; i < _elements.size(); i++)
     if (_elements[i])
@@ -152,6 +142,7 @@ Lexer::clear()
   _element_map.clear();
   _hookup_from.clear();
   _hookup_to.clear();
+  _requirements.clear();
   
   _big_string = "";
   // _data was freed by _big_string
@@ -288,6 +279,8 @@ Lexer::next_lexeme()
       return Lexeme(lexTunnel, word);
     else if (word.length() == 12 && word == "elementclass")
       return Lexeme(lexElementclass, word);
+    else if (word.length() == 7 && word == "require")
+      return Lexeme(lexRequire, word);
     else
       return Lexeme(lexIdent, word);
   }
@@ -467,11 +460,12 @@ Lexer::add_element_type(Element *f)
 int
 Lexer::add_element_type(const String &name, Element *f)
 {
-  if (_element_type_map[name] >= 0)
-    return -1;
+  int old_ftid = _element_type_map[name];
   int ftid = _element_types.size();
   _element_type_map.insert(name, ftid);
   _element_types.push_back(f);
+  _element_type_names.push_back(name);
+  _prev_element_type.push_back(old_ftid);
   f->use();
   return ftid;
 }
@@ -493,10 +487,39 @@ Lexer::force_element_type(String s)
 }
 
 void
-Lexer::element_types_permanent()
+Lexer::save_element_types()
 {
-  _reset_element_type_map = _element_type_map;
   _reset_element_types = _element_types.size();
+}
+
+void
+Lexer::remove_element_type(int j)
+{
+  if (j > 2 && j < _element_types.size() && _element_types[j]) {
+    // fix up element name orders
+    const String &name = _element_type_names[j];
+    int p = _prev_element_type[j];
+    if (_element_type_map[name] == j)
+      _element_type_map.insert(name, p);
+    else
+      for (int i = 0; i < _element_types.size(); i++)
+	if (_prev_element_type[i] == j)
+	  _prev_element_type[i] = p;
+    
+    _element_types[j]->unuse();
+    _element_types[j] = 0;
+    
+    for (int i = j + 1; i < _element_types.size(); i++)
+      if (_element_types[i])
+	return;
+    _element_types.resize(j);
+  }
+}
+
+void
+Lexer::remove_element_type(const String &name)
+{
+  remove_element_type(_element_type_map[name]);
 }
 
 
@@ -572,26 +595,15 @@ Lexer::lexical_scoping_back(int first, int last)
 {
   // must go backwards in case more than one new element class with the same
   // name -- want to restore earliest one last, to get oldest definition
-  for (int i = last - 1; i >= first; i--) {
-    Element *e = _element_types[i];
-    String name = e->class_name();
-    if (_element_type_map[name] == i) {
-      if (e->is_a("Lexer::Compound"))
-	_element_type_map.insert(name, ((Compound *)e)->previous_type());
-      else // can't happen
-	_element_type_map.insert(name, -1);
-    }
-  }
+  for (int i = last - 1; i >= first; i--)
+    _element_type_map.insert(_element_type_names[i], _prev_element_type[i]);
 }
 
 void
 Lexer::lexical_scoping_forward(int first, int last)
 {
-  for (int i = first; i < last; i++) {
-    Element *e = _element_types[i];
-    String name = e->class_name();
-    _element_type_map.insert(name, i);
-  }
+  for (int i = first; i < last; i++)
+    _element_type_map.insert(_element_type_names[i], i);
 }
 
 int
@@ -960,14 +972,7 @@ Lexer::yelementclass()
 
   if (tname.is(lexIdent)) {
     String name = tname.string();
-    int previous_type = _element_type_map[name];
-    Compound *c = new Compound(name, body, original_lineno, previous_type,
-			       _element_types.size());
-
-    int i = _element_types.size();
-    _element_type_map.insert(name, i);
-    _element_types.push_back(c);
-    c->use();
+    add_element_type(name, new Compound(name, body, original_lineno));
   }
 }
 
@@ -1010,14 +1015,23 @@ Lexer::ylocal()
   unsigned original_lineno = _lineno;
   String body = lex_compound_body();
   expect('}');
-  
-  Compound *c = new Compound(name, body, original_lineno, -1,
-			     _element_types.size());
 
-  int etid = _element_types.size();
-  _element_types.push_back(c);
-  c->use();
-  return etid;
+  return add_element_type(name, new Compound(name, body, original_lineno));
+}
+
+void
+Lexer::yrequire()
+{
+  if (expect('(')) {
+    String requirement = lex_config();
+    Vector<String> args;
+    cp_argvec(requirement, args);
+    for (int i = 0; i < args.size(); i++) {
+      _source->require(args[i], _errh);
+      _requirements.push_back(args[i]);
+    }
+    expect(')');
+  }
 }
 
 bool
@@ -1038,6 +1052,10 @@ Lexer::ystatement(bool nested)
     
    case lexTunnel:
     ytunnel();
+    return true;
+
+   case lexRequire:
+    yrequire();
     return true;
 
    case ';':
@@ -1113,13 +1131,17 @@ Lexer::create_router()
     else
       add_router_connections(i, router_id, router);
   }
+
+  // add requirements to router
+  for (int i = 0; i < _requirements.size(); i++)
+    router->add_requirement(_requirements[i]);
   
   String context = landmark();
   if (context) context += ": ";
   context += "While defining the router:";
   ContextErrorHandler cerrh(_errh, context);
   router->close(&cerrh);
-  
+
   return router;
 }
 
@@ -1132,6 +1154,11 @@ String
 LexerSource::landmark(unsigned lineno) const
 {
   return String("line ") + String(lineno);
+}
+
+void
+LexerSource::require(const String &, ErrorHandler *)
+{
 }
 
 
