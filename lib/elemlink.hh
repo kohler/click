@@ -131,7 +131,11 @@ inline void
 ElementLink::join_scheduler()
 {
   if (_ntickets < 1 || scheduled()) return;
-  _pass = scheduled_list()->scheduled_next()->_pass;
+  if (scheduled_list()->scheduled_next() == scheduled_list())
+    /* nothing on worklist */
+    _pass = 0;
+  else 
+    _pass = scheduled_list()->scheduled_next()->_pass;
   reschedule();
 }
 

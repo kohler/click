@@ -81,7 +81,7 @@ Idle::run_scheduled()
 	p->kill();
 	_idle = 0;
       }
-  if (_idle <= 128) reschedule();
+  if (_idle <= 32) reschedule();
 }
 
 EXPORT_ELEMENT(Idle)

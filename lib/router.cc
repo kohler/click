@@ -25,29 +25,16 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#ifdef __KERNEL__
-unsigned long long router_cycles = 0;
-unsigned long long scheduler_cycles = 0;
-#endif
 
 Router::Router()
   : _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
     _please_stop_driver(0)
 {
   initialize_head();
-#ifdef __KERNEL__
-  router_cycles = 0;
-  scheduler_cycles = 0;
-#endif
 }
 
 Router::~Router()
 {
-#ifdef __KERNEL__
-  String s = String(router_cycles)+"\n"+String(scheduler_cycles);
-  click_chatter("%s",s.cc());
-#endif
-
   if (_initialized)
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
@@ -763,21 +750,9 @@ Router::initialize(ErrorHandler *errh)
 	_elements[i]->uninitialize();
     return -1;
   } else {
-    for (int i = 0; i < _elements.size(); i++)
-    {
+    for (int i = 0; i < _elements.size(); i++) {
       Element *e = _elements[i]; 
-      if (e->ntickets() > 0) { 
-	bool schedulable = false; 
-	for(int j = 0; j < e->ninputs(); j++) 
-	  if (e->input_is_pull(j) || e->ninputs()==0) { 
-	    schedulable = true; 
-	    break; 
-	  } 
-        if (!schedulable) 
-	  click_chatter("warning: scheduling %s: not a pull element", 
-	      e->declaration().cc()); 
-        e->join_scheduler();
-      }
+      if (e->ntickets() > 0) e->join_scheduler();
     }
     _initialized = true;
     return 0;
@@ -865,7 +840,7 @@ Router::wait()
     f->set_wakeup_when_busy();
   }
 
-  if (current->state != TASK_RUNNING) 
+  if (current->state != TASK_RUNNING)
     schedule();
   
   for (int i = 0; i < _waiting_elements.size(); i++) 
@@ -887,27 +862,11 @@ Router::run_scheduled()
 {
   ElementLink *fl;
  
-#ifdef __KERNEL__
-  unsigned long long c0 = click_get_cycles();
-  unsigned long long c00 = click_get_cycles();
-#endif
-  
   while (fl=scheduled_next(), fl != this) {
+    // click_chatter("running %s", ((Element*)fl)->declaration().cc());
     fl->unschedule();
-    
-#ifdef __KERNEL__
-    scheduler_cycles += click_get_cycles() - c00;
-#endif
     ((Element *)fl)->run_scheduled();
-#ifdef __KERNEL__
-    c00 = click_get_cycles();
-#endif
   }
-  
-#ifdef __KERNEL__
-  scheduler_cycles += click_get_cycles() - c00;
-  router_cycles += click_get_cycles() - c0;
-#endif
 }
 
 bool

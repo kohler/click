@@ -36,7 +36,7 @@ PullToPush::run_scheduled()
     i++;
   } 
 
-  if (_idle <= 128)
+  if (_idle <= 32)
     reschedule();
 }
 

@@ -48,7 +48,7 @@ Discard::run_scheduled()
     i++;
   }
 
-  if (_idle > 128) return;
+  if (_idle > 32) return;
   reschedule();
 }
 
