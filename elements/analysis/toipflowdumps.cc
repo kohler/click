@@ -96,10 +96,11 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
     if (!_outputted) {
-	fprintf(f, "!IPSummaryDump 1.1\n!flowid %s %d %s %d %c\n",
+	fprintf(f, "!IPSummaryDump 1.1\n!flowid %s %d %s %d %c\n!aggregate %d\n",
 		_flowid.saddr().s().cc(), ntohs(_flowid.sport()),
 		_flowid.daddr().s().cc(), ntohs(_flowid.dport()),
-		(_ip_p == IP_PROTO_TCP ? 'T' : 'U'));
+		(_ip_p == IP_PROTO_TCP ? 'T' : 'U'),
+		_aggregate);
 	if (_ip_p == IP_PROTO_TCP)
 	    fprintf(f, "!data 'timestamp' 'direction' 'tcp flags' 'tcp seq' 'tcp ack' 'payload len'\n");
 	else
