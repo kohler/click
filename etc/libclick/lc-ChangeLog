@@ -1,3 +1,7 @@
+2002-07-11 Thursday 20:48  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/ino.cc: nlink() supports handler inode numbers
+
 2002-07-11 Thursday 20:41  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/glue.cc: bsdmodule nitlet

@@ -1,3 +1,16 @@
+2002-07-11 Thursday 20:52  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.17): stupid typo
+
+2002-07-11 Thursday 20:48  Eddie Kohler <kohler@icir.org>
+
+	* lib/ino.cc (1.4): nlink() supports handler inode numbers
+
+2002-07-11 Thursday 20:42  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.16): slightly more consistency: EIO on
+	failures, for example
+
 2002-07-11 Thursday 20:41  Eddie Kohler <kohler@icir.org>
 
 	* lib/glue.cc (1.35): bsdmodule nitlet
