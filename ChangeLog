@@ -1,3 +1,41 @@
+2001-04-25 Wednesday 16:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: burster.cc, timedsink.cc, timedsource.cc: use
+	the new Timer::reschedule_after_ms() function where appropriate
+
+2001-04-25 Wednesday 16:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh, lib/timer.cc: add
+	Timer::reschedule_after_ms() function, which reschedules the Timer
+	relative to the last time it was scheduled, not relative to now
+
+2001-04-25 Wednesday 16:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* userlevel/click.cc: nitlets
+
+2001-04-25 Wednesday 16:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/task.cc: use the HAVE_STRIDE_SCHED symbol, not RR_SCHED;
+	also, fix Task::uninitialize() so that it does Task::unschedule()
+	when required
+
+2001-04-25 Wednesday 16:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/scheduleinfo.cc, include/click/task.hh,
+	lib/element.cc: use the HAVE_STRIDE_SCHED symbol, not RR_SCHED
+
+2001-04-25 Wednesday 16:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/: Makefile.in, click.texi: doc updates
+
+2001-04-25 Wednesday 16:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: [no log message]
+
+2001-04-25 Wednesday 16:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: eliminated pull scheduling for tuns
+
 2001-04-24 Tuesday 21:44  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/rfc2507c.cc: don't redefine random()
