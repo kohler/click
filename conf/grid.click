@@ -134,16 +134,26 @@ grid_demux [0]
                -> Align(4, 2)
 //               -> Print("after_gd0_align")
 	       -> [0] lr;
+
 grid_demux [1]
 //	       -> Print("gd1 ")
+ifdef(`DISABLE_GF',
+               -> Discard;
+               Idle
+)
                -> query_demux :: Classifier(OFFSET_LOC_QUERY_DST/GRID_HEX_IP, 
 					    OFFSET_LOC_QUERY_DST/GRID_ANY_GATEWAY_HEX_IP,
 					    -);
 grid_demux [2]
 //	       -> Print("gd2 ")
+ifdef(`DISABLE_GF',
+               -> Discard;
+               Idle
+)
                -> repl_demux :: Classifier(OFFSET_LOC_REPLY_DST/GRID_HEX_IP, 
 					   OFFSET_LOC_REPLY_DST/GRID_ANY_GATEWAY_HEX_IP,
 					   -); 
+
 grid_demux [3]
 //	       -> Print("gd3 ")
                -> nb;
@@ -230,16 +240,17 @@ lr [2]
 //       -> Print ("lr2 ") // packets for GF
 ifdef(`DISABLE_GF',
        -> Discard;
-       Idle
-, dnl else
-       -> [0] fq;
+       Idle 
 )
+       -> [0] fq;
+
 
 lr [3]
 //       -> Print ("lr3 ")
        -> Discard; // bad packets
 
 geo [0] -> to_grid_if;
+
 geo [1] -> Discard; // geo route can't handle
 
 fr [1] -> Discard; // out of range

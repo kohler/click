@@ -157,7 +157,7 @@ case $1 in
 	shift 1; gw_ip=$1;
 	shift 1;;
     --disable-gf)
-        disable_gf=1;;
+        disable_gf=1; shift 1;;
     *)
 	usage;;
     esac
@@ -252,7 +252,7 @@ fi
 
 # turn off geographic forwarding?
 if [ $disable_gf -eq 1 ]; then
-    defines="$define -DDISABLE_GF"
+	defines="$defines -DDISABLE_GF"
 fi
 
 # get protocol numbers from Click binary 

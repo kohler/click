@@ -374,6 +374,11 @@ sub setup_net_info {
 	    my_system "ancontrol $ANCIFFLAG $GRID_IF -t 1"; # force 1 Mbps
 	    my_system "ancontrol $ANCIFFLAG $GRID_IF -c $GRID_CHANNEL";
 	    my_system "ancontrol $ANCIFFLAG $GRID_IF -n $GRID_SSID";
+
+	    my_system "date >> /usr/grid/bootup-settings";
+	    my_system "/usr/grid/new-ancontrol -S >> /usr/grid/bootup-settings";
+
+
 	} elsif ($RADIO_TYPE eq 'wavelan') {
 	    
 	    print "-----------------------------------------------------------------------------\n";
