@@ -199,6 +199,28 @@ do_number_flags(char *pos, char *after_last, int base, int flags,
   return pos;
 }
 
+static String
+protect_string(const char *sin)
+{
+  const unsigned char *s = (const unsigned char *)sin;
+  StringAccum sa;
+  sa.reserve(40);
+  for (; *s; s++) {
+    if (*s == '\n')
+      sa << "\\n";
+    else if (*s == '\t')
+      sa << "\\t";
+    else if (*s == '\r')
+      sa << "\\r";
+    else if (*s < 32 || *s >= 0177) {
+      if (char *k = sa.extend(4))
+	sprintf(k, "\\%03o", *s);
+    } else
+      sa << *s;
+  }
+  return sa.take_string();
+}
+
 String
 ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 {
@@ -292,6 +314,10 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        s1 = va_arg(val, const char *);
        if (!s1)
 	 s1 = "(null)";
+       if (flags & ALTERNATE_FORM) {
+	 placeholder = protect_string(s1);
+	 s1 = placeholder.cc();
+       }
        for (s2 = s1; *s2 && precision != 0; s2++)
 	 if (precision > 0)
 	   precision--;
