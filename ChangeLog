@@ -1,3 +1,7 @@
+2003-06-27 Friday 11:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/ip/trieiplookup.cc (1.3): squash spurious warning
+
 2003-06-26 Thursday 15:42  xwxin
 
 	* elements/ip/: trieiplookup.cc (1.2), trieiplookup.hh (1.2):
