@@ -507,10 +507,8 @@ FromDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
-#ifdef HAVE_INT64_TYPES
       case H_PACKET_FILEPOS:
 	return String(fd->_packet_filepos) + "\n";
-#endif
       default:
 	return "<error>\n";
     }
@@ -558,9 +556,7 @@ FromDump::add_handlers()
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP);
-#ifdef HAVE_INT64_TYPES
     add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
-#endif
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     if (output_is_push(0))
 	add_task_handlers(&_task);
