@@ -3,7 +3,7 @@
 
 /*
  * =c
- * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, LinkTracker, LinkStat [, I<KEYWORDS>])
+ * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GridGatewayInfo, LinkTracker, LinkStat [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV-like local routing protocol
