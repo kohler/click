@@ -341,6 +341,7 @@ icmp6.h
 ip.h
 ip6.h
 llc.h
+ppp.h
 rfc1483.h
 tcp.h
 udp.h

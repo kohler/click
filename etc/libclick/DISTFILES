@@ -93,6 +93,7 @@ include/clicknet/icmp6.h
 include/clicknet/ip.h
 include/clicknet/ip6.h
 include/clicknet/llc.h
+include/clicknet/ppp.h
 include/clicknet/rfc1483.h
 include/clicknet/tcp.h
 include/clicknet/udp.h
