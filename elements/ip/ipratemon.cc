@@ -107,10 +107,11 @@ IPRateMonitor::fold(void)
   // Go backwards through the age list, starting at longest non-touched.
   _prev_deleted = 0;
   Stats *s = _last;
+  int now = MyEWMA::now();
+
   while(true) {
-    int now = MyEWMA::now();
     if(!s->_parent) {
-      assert(s == _base);
+      // s == _base
       _prev_deleted = s->_prev;
       goto done;
     }
