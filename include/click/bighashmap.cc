@@ -142,7 +142,7 @@ template <class K, class V>
 inline int
 HashMap<K, V>::bucket(const K &key) const
 {
-  return ((unsigned)hashcode(key)) % _nbuckets;
+  return ((unsigned) hashcode(key)) % _nbuckets;
 }
 
 template <class K, class V>
@@ -322,12 +322,12 @@ HashMap<K, V>::swap(HashMap<K, V> &o)
 }
 
 template <class K, class V>
-_HashMap_const_iterator<K, V>::_HashMap_const_iterator(const HashMap<K, V> *hm)
+_HashMap_const_iterator<K, V>::_HashMap_const_iterator(const HashMap<K, V> *hm, bool begin)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
   typename HashMap<K, V>::Elt **b = _hm->_buckets;
-  for (_bucket = 0; _bucket < nb; _bucket++)
+  for (_bucket = 0; _bucket < nb && begin; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
       return;
@@ -504,7 +504,7 @@ template <class K>
 inline int
 HashMap<K, void *>::bucket(const K &key) const
 {
-  return ((unsigned)hashcode(key)) % _nbuckets;
+  return ((unsigned) hashcode(key)) % _nbuckets;
 }
 
 template <class K>
@@ -683,12 +683,12 @@ HashMap<K, void *>::swap(HashMap<K, void *> &o)
 
 
 template <class K>
-_HashMap_const_iterator<K, void *>::_HashMap_const_iterator(const HashMap<K, void *> *hm)
+_HashMap_const_iterator<K, void *>::_HashMap_const_iterator(const HashMap<K, void *> *hm, bool begin)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
   typename HashMap<K, void *>::Elt **b = _hm->_buckets;
-  for (_bucket = 0; _bucket < nb; _bucket++)
+  for (_bucket = 0; _bucket < nb && begin; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
       return;

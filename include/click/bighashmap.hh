@@ -36,6 +36,7 @@ class HashMap { public:
 
   Pair *find_pair(const K &) const;
   inline V *findp(const K &) const;
+  inline const V &find(const K &, const V &) const;
   inline const V &find(const K &) const;
   inline const V &operator[](const K &) const;
 
@@ -57,6 +58,8 @@ class HashMap { public:
   typedef _HashMap_iterator<K, V> iterator;
   inline const_iterator begin() const;
   inline iterator begin();
+  inline const_iterator end() const;
+  inline iterator end();
   
   // dynamic resizing
   void resize(int);
@@ -102,8 +105,6 @@ class HashMap { public:
 template <class K, class V>
 class _HashMap_const_iterator { public:
 
-  _HashMap_const_iterator(const HashMap<K, V> *m);
-
   operator bool() const			{ return _elt; }
   void operator++(int);
   void operator++()			{ (*this)++; }
@@ -119,6 +120,10 @@ class _HashMap_const_iterator { public:
   typename HashMap<K, V>::Elt *_elt;
   int _bucket;
 
+  _HashMap_const_iterator(const HashMap<K, V> *m, bool begin);
+  friend class HashMap<K, V>;
+  friend class _HashMap_iterator<K, V>;
+
 };
 
 template <class K, class V>
@@ -126,24 +131,41 @@ class _HashMap_iterator : public _HashMap_const_iterator<K, V> { public:
 
   typedef _HashMap_const_iterator<K, V> inherited;
   
-  _HashMap_iterator(HashMap<K, V> *m) : inherited(m) { }
-
   V &value() const		{ return const_cast<V &>(inherited::value()); }
+
+ private:
   
+  _HashMap_iterator(HashMap<K, V> *m, bool begin) : inherited(m, begin) { }
+  friend class HashMap<K, V>;
+
 };
 
 template <class K, class V>
 inline typename HashMap<K, V>::const_iterator
 HashMap<K, V>::begin() const
 {
-  return const_iterator(this);
+  return const_iterator(this, true);
 }
 
 template <class K, class V>
 inline typename HashMap<K, V>::iterator
 HashMap<K, V>::begin()
 {
-  return iterator(this);
+  return iterator(this, true);
+}
+
+template <class K, class V>
+inline typename HashMap<K, V>::const_iterator
+HashMap<K, V>::end() const
+{
+  return const_iterator(this, false);
+}
+
+template <class K, class V>
+inline typename HashMap<K, V>::iterator
+HashMap<K, V>::end()
+{
+  return iterator(this, false);
 }
 
 template <class K, class V>
@@ -156,11 +178,18 @@ HashMap<K, V>::findp(const K &key) const
 
 template <class K, class V>
 inline const V &
-HashMap<K, V>::find(const K &key) const
+HashMap<K, V>::find(const K &key, const V &default_value) const
 {
   Pair *p = find_pair(key);
-  const V *v = (p ? &p->value : &_default_value);
+  const V *v = (p ? &p->value : &default_value);
   return *v;
+}
+
+template <class K, class V>
+inline const V &
+HashMap<K, V>::find(const K &key) const
+{
+  return find(key, _default_value);
 }
 
 template <class K, class V>
@@ -189,6 +218,7 @@ class HashMap<K, void *> { public:
 
   Pair *find_pair(const K &) const;
   inline void **findp(const K &) const;
+  inline void *find(const K &, void *) const;
   inline void *find(const K &) const;
   inline void *operator[](const K &) const;
 
@@ -210,6 +240,8 @@ class HashMap<K, void *> { public:
   typedef _HashMap_iterator<K, void *> iterator;
   inline const_iterator begin() const;
   inline iterator begin();
+  inline const_iterator end() const;
+  inline iterator end();
 
   // dynamic resizing
   void resize(int);
@@ -255,8 +287,6 @@ class HashMap<K, void *> { public:
 template <class K>
 class _HashMap_const_iterator<K, void *> { public:
 
-  _HashMap_const_iterator(const HashMap<K, void *> *);
-
   operator bool() const			{ return _elt; }
   void operator++(int);
   void operator++()			{ (*this)++; }
@@ -272,7 +302,10 @@ class _HashMap_const_iterator<K, void *> { public:
   typename HashMap<K, void *>::Elt *_elt;
   int _bucket;
 
+  _HashMap_const_iterator(const HashMap<K, void *> *, bool begin);
+  template <class, class> friend class _HashMap_const_iterator;
   template <class, class> friend class _HashMap_iterator;
+  template <class, class> friend class HashMap;
 
 };
 
@@ -280,10 +313,13 @@ template <class K>
 class _HashMap_iterator<K, void *> : public _HashMap_const_iterator<K, void *> { public:
 
   typedef _HashMap_const_iterator<K, void *> inherited;
-
-  _HashMap_iterator(HashMap<K, void *> *m) : inherited(m) { }
   
   void *&value() const			{ return _elt->value; }
+
+ private:
+
+  _HashMap_iterator(HashMap<K, void *> *m, bool begin) : inherited(m, begin) { }
+  template <class, class> friend class HashMap;
 
 };
 
@@ -291,14 +327,28 @@ template <class K>
 inline typename HashMap<K, void *>::const_iterator
 HashMap<K, void *>::begin() const
 {
-  return const_iterator(this);
+  return const_iterator(this, true);
 }
 
 template <class K>
 inline typename HashMap<K, void *>::iterator
 HashMap<K, void *>::begin()
 {
-  return iterator(this);
+  return iterator(this, true);
+}
+
+template <class K>
+inline typename HashMap<K, void *>::const_iterator
+HashMap<K, void *>::end() const
+{
+  return const_iterator(this, false);
+}
+
+template <class K>
+inline typename HashMap<K, void *>::iterator
+HashMap<K, void *>::end()
+{
+  return iterator(this, false);
 }
 
 template <class K>
@@ -311,10 +361,17 @@ HashMap<K, void *>::findp(const K &key) const
 
 template <class K>
 inline void *
-HashMap<K, void *>::find(const K &key) const
+HashMap<K, void *>::find(const K &key, void *default_value) const
 {
   Pair *p = find_pair(key);
-  return (p ? p->value : _default_value);
+  return (p ? p->value : default_value);
+}
+
+template <class K>
+inline void *
+HashMap<K, void *>::find(const K &key) const
+{
+  return find(key, _default_value);
 }
 
 template <class K>
@@ -345,6 +402,7 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
   
   Pair *find_pair(const K &k) const { return reinterpret_cast<Pair *>(inherited::find_pair(k)); }
   T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
+  T *find(const K &k, T *v) const { return reinterpret_cast<T *>(inherited::find(k, v)); }
   T *find(const K &k) const { return reinterpret_cast<T *>(inherited::find(k)); }
   T *operator[](const K &k) const { return reinterpret_cast<T *>(inherited::operator[](k)); }
   
@@ -366,6 +424,8 @@ class HashMap<K, T *> : public HashMap<K, void *> { public:
   typedef _HashMap_iterator<K, T *> iterator;  
   inline const_iterator begin() const;
   inline iterator begin();
+  inline const_iterator end() const;
+  inline iterator end();
 
   // dynamic resizing methods		inherited
 
@@ -383,8 +443,6 @@ class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void 
 
   typedef _HashMap_const_iterator<K, void *> inherited;
 
-  _HashMap_const_iterator(const HashMap<K, T *> *t) : inherited(t) { }
-
   operator bool() const	{ return inherited::operator bool(); }
   void operator++(int)	{ inherited::operator++(0); }
   void operator++()	{ inherited::operator++(); }
@@ -394,7 +452,11 @@ class _HashMap_const_iterator<K, T *> : private _HashMap_const_iterator<K, void 
   typedef typename HashMap<K, T *>::Pair Pair;
   const Pair *pair() const { return reinterpret_cast<const Pair *>(inherited::pair()); }
 
+ private:
+
+  _HashMap_const_iterator(const HashMap<K, T *> *t, bool begin) : inherited(t, begin) { }  
   friend class _HashMap_iterator<K, T *>;
+  template <class, class> friend class HashMap;
   
 };
 
@@ -403,9 +465,12 @@ class _HashMap_iterator<K, T *> : public _HashMap_const_iterator<K, T *> { publi
 
   typedef _HashMap_const_iterator<K, T *> inherited;
 
-  _HashMap_iterator(HashMap<K, T *> *t) : inherited(t) { }
-
   T *&value() const	{ return reinterpret_cast<T *&>(_elt->value); }
+
+ private:
+  
+  _HashMap_iterator(HashMap<K, T *> *t, bool begin) : inherited(t, begin) { }
+  template <class, class> friend class HashMap;
   
 };
 
@@ -413,20 +478,54 @@ template <class K, class T>
 inline typename HashMap<K, T *>::const_iterator
 HashMap<K, T *>::begin() const
 {
-  return const_iterator(this);
+  return const_iterator(this, true);
 }
 
 template <class K, class T>
 inline typename HashMap<K, T *>::iterator
 HashMap<K, T *>::begin()
 {
-  return iterator(this);
+  return iterator(this, true);
+}
+
+template <class K, class T>
+inline typename HashMap<K, T *>::const_iterator
+HashMap<K, T *>::end() const
+{
+  return const_iterator(this, false);
+}
+
+template <class K, class T>
+inline typename HashMap<K, T *>::iterator
+HashMap<K, T *>::end()
+{
+  return iterator(this, false);
+}
+
+template <class K, class V>
+inline bool
+operator==(const typename HashMap<K, V>::const_iterator &a, const typename HashMap<K, V>::const_iterator &b)
+{
+  return a.pair() == b.pair();
+}
+
+template <class K, class V>
+inline bool
+operator!=(const typename HashMap<K, V>::const_iterator &a, const typename HashMap<K, V>::const_iterator &b)
+{
+  return a.pair() != b.pair();
 }
 
 inline unsigned
 hashcode(unsigned u)
 {
   return u;
+}
+
+inline uintptr_t
+hashcode(void *v)
+{
+  return reinterpret_cast<uintptr_t>(v) >> 3;
 }
 
 CLICK_ENDDECLS
