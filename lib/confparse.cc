@@ -2764,7 +2764,7 @@ cp_unparse_real10(unsigned real, int frac_digits)
 
   StringAccum sa(30);
   sa << int_part << '.';
-  if (char *x = sa.extend(frac_digits))
+  if (char *x = sa.extend(frac_digits, 1))
     sprintf(x, "%0*d", frac_digits, frac_part);
   else				// out of memory
     return sa.take_string();

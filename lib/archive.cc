@@ -188,16 +188,16 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh = 0)
     // write name, or nameish thing
     if ((nlen >= 3 && ndata[0] == '#' && ndata[1] == '1' && ndata[2] == '/')
 	|| must_longname || nlen > 14) {
-      if (char *x = sa.extend(16))
+      if (char *x = sa.extend(16, 1))
 	sprintf(x, "#1/%-13u", (unsigned)nlen);
       must_longname = true;
     } else
-      if (char *x = sa.extend(16))
+      if (char *x = sa.extend(16, 1))
 	sprintf(x, "%-16.*s", nlen, ndata);
 
     // write other data
     int wrote_size = ae.data.length() + (must_longname ? nlen : 0);
-    if (char *x = sa.extend(12 + 6 + 6 + 8 + 10 + 2))
+    if (char *x = sa.extend(12 + 6 + 6 + 8 + 10 + 2, 1))
       sprintf(x, "%-12u%-6u%-6u%-8o%-10u`\n", (unsigned)ae.date,
 	      (unsigned)ae.uid, (unsigned)ae.gid, (unsigned)ae.mode,
 	      (unsigned)wrote_size);

@@ -209,7 +209,7 @@ int
 ControlSocket::message(int fd, int code, const String &s, bool continuation)
 {
   assert(code >= 100 && code <= 999);
-  _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s + "\r\n";
+  _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s.printable() + "\r\n";
   return ANY_ERR;
 }
 
