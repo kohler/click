@@ -1,3 +1,9 @@
+2003-02-20 Thursday 14:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.36), dsdvroutetable.hh
+	(1.27): Get rid of static initializer for bad metric; check for
+	valid est_type in est_type write handler
+
 2003-02-19 Wednesday 22:40  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/Makefile.in (1.77): nit
