@@ -22,7 +22,7 @@
 #include "lexert.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include <stdio.h>

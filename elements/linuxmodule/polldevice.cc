@@ -257,7 +257,7 @@ PollDevice::run_scheduled()
 #endif
 
     if (new_skbs) {
-      click_chatter("too much skbs for refill");
+      click_chatter("%s: too much skbs for refill %d", declaration().cc(), nskbs);
       skbmgr_recycle_skbs(new_skbs, 0);
     }
   }

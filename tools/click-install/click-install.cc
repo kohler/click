@@ -24,7 +24,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/clp.h>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>

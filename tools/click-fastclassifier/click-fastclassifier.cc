@@ -25,7 +25,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/clp.h>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include "toolutils.hh"
 #include "click-fastclassifier.hh"
 #include <stdio.h>

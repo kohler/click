@@ -20,6 +20,4 @@ void click_remove_element_type(int);
 
 }
 
-#define CLICK_DEFAULT_PROVIDES	/* nada */
-
 #endif

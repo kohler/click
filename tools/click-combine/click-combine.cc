@@ -25,7 +25,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

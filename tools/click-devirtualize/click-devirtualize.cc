@@ -30,7 +30,7 @@
 #include "specializer.hh"
 #include "signature.hh"
 #include <click/clp.h>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>

@@ -40,7 +40,7 @@
 #include <click/clp.h>
 #include <click/archive.hh>
 #include <click/glue.hh>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include <click/userutils.hh>
 #include <click/confparse.hh>
 #include "elements/standard/quitwatcher.hh"

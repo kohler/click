@@ -2,7 +2,7 @@
 #define MODULEPRIV_HH
 #define WANT_MOD_USE_COUNT 1	/* glue.hh should use the actual macros */
 #include <click/router.hh>
-#include <click/package.hh>
+#include <click/driver.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT

@@ -25,7 +25,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
-#include <click/package.hh>
+#include <click/driver.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include <click/bitvector.hh>
