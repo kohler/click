@@ -194,8 +194,6 @@ s/ELEMENT_PROVIDES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
     if test -n "$bad_files"; then
 	files=`echo "$files
 $bad_files" | sort | uniq -u`
-	unprovisions="$unprovisions
-"`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $bad_files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
     fi
 
     # then cycle, removing files that require something not provided
@@ -236,8 +234,6 @@ $bad_files" | sort | uniq -u`
 $new_bad_files" | sort | uniq -u`
 	    bad_files="$new_bad_files
 $bad_files"
-	    unprovisions="$unprovisions
-"`egrep '^EXPORT_ELEMENT|^ELEMENT_PROVIDES' $new_bad_files | sed 's/.*(\(.*\)).*/\1/' | tr ' \011' '\012'`
 	fi
     done
 
