@@ -1,4 +1,4 @@
-dnl -*- mode: shell-script -*-
+dnl -*- mode: shell-script; tab-width: 2 -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-userlevel.h:config-userlevel.h.in)
@@ -132,6 +132,34 @@ AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
 #error "fuckers! fuckers!"
 #endif
 return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
+
+
+dnl
+dnl check whether tools should be built for host or target
+dnl
+
+AC_ARG_ENABLE(tools,
+  [  --enable-tools=WHERE    build tools to run WHERE [mixed]],
+  :, enable_tools=mixed)
+
+if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != target; then
+  AC_MSG_ERROR([
+=========================================
+
+Bad value for --enable-tools! Try 'host', 'target', or 'mixed'.
+
+=========================================])
+elif test "$cross_compiling" = no -o "$enable_tools" = target; then
+  HOST_TOOLS=target
+else
+  dnl This is wrong!! Should at least check that HOST_CC and HOST_CXX work.
+  AC_CHECK_PROGS(HOST_CC, gcc)
+  AC_CHECK_PROGS(HOST_CXX, g++)
+  AC_CHECK_PROGS(HOST_AR, ar)
+  AC_CHECK_PROGS(HOST_RANLIB, ranlib, :)
+  HOST_TOOLS=$enable_tools
+fi
+AC_SUBST(HOST_TOOLS)
 
 
 dnl

@@ -10,17 +10,19 @@ conf_auxdir = @conf_auxdir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-sbindir = @sbindir@
-libdir = @libdir@
-mandir = @mandir@
-datadir = @datadir@/click
+HOST_TOOLS = @HOST_TOOLS@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/include
 
+ifneq ($(HOST_TOOLS),target)
+CC = @HOST_CC@
+CXX = @HOST_CXX@
+LIBCLICKTOOL = libclicktool_host.a
+else
 CC = @CC@
-CPP = @CPP@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
+LIBCLICKTOOL = libclicktool.a
+endif
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
@@ -56,14 +58,14 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libclicktool.a all-local
+all: $(LIBCLICKTOOL) all-local
 all-local: click-mkmindriver
 
-libclicktool.a:
-	@cd ../lib; $(MAKE) libclicktool.a
+$(LIBCLICKTOOL):
+	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
-click-mkmindriver: Makefile $(OBJS) ../lib/libclicktool.a
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/libclicktool.a
+click-mkmindriver: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -84,4 +86,4 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all all-local clean distclean install install-bin install-man libclicktool.a
+.PHONY: all all-local clean distclean install install-bin install-man $(LIBCLICKTOOL)
