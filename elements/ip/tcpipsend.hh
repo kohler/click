@@ -3,7 +3,7 @@
 
 /*
  * =c
- * TCPIPSend(THRESH)
+ * TCPIPSend()
  * =d
  *
  * Sends TCP/IP packets when asked to do so. No inputs. One output.
@@ -11,8 +11,8 @@
  * =e
  *
  * =h send (write)
- * Expects a string "saddr sport daddr dport bits" with their obvious meaning.
- * Bits is the value of the 6 TCP flags.
+ * Expects a string "saddr sport daddr dport seqn ackn bits" with their
+ * obvious meaning. Bits is the value of the 6 TCP flags.
  *
  * =a
  */
@@ -30,13 +30,13 @@ public:
   const char *processing() const	{ return PUSH; }
   
   TCPIPSend *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
 
 private:
   void add_handlers();
-  static int send_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int send_write_handler
+    (const String &conf, Element *e, void *, ErrorHandler *errh);
   Packet * make_packet(unsigned int, unsigned int, unsigned short,
-                       unsigned short, unsigned char);
+                       unsigned short, unsigned, unsigned, unsigned char);
 };
 
 

@@ -243,6 +243,20 @@ strtol(const char *nptr, char **endptr, int base)
     return (long)ul;
 }
 
+unsigned long
+strtoul(const char *nptr, char **endptr, int base)
+{
+  const char *orig_nptr = nptr;
+  while (isspace(*nptr))
+    nptr++;
+  if (!isdigit(*nptr)) {
+    *endptr = (char *)orig_nptr;
+    return INT_MIN;
+  }
+  unsigned long ul = simple_strtoul(nptr, endptr, base);
+  return ul;
+}
+
 };
 
 #else /* !__KERNEL__ */

@@ -418,6 +418,23 @@ cp_integer(String str, int *return_value, String *rest = 0)
 }
 
 bool
+cp_ulong(String str, unsigned long &return_value, String *rest = 0)
+{
+  const char *s = str.cc();
+  int len = str.length();
+  char *end;
+  return_value = strtoul(s, &end, 10);
+  if (end == s)        // no characters in integer
+    return false;
+
+  if (rest) {
+    *rest = str.substring(end - s);
+    return true;
+  } else
+    return end - s == len;
+}
+
+bool
 cp_real(const String &str, int frac_digits,
 	int *return_int_part, int *return_frac_part,
 	String *rest = 0)
@@ -918,6 +935,7 @@ struct Values {
   union {
     bool b;
     int i;
+    unsigned long ul;
     unsigned char address[8];
 #ifndef CLICK_TOOL
     Element *element;
@@ -938,6 +956,7 @@ cp_command_name(int cp_command)
    case cpByte: return "byte";
    case cpInteger: return "int";
    case cpUnsigned: return "unsigned";
+   case cpUnsignedLong: return "unsigned long";
    case cpReal: return "real";
    case cpMilliseconds: return "time in seconds";
    case cpNonnegReal: case cpNonnegFixed: return "unsigned real";
@@ -981,7 +1000,13 @@ store_value(int cp_command, Values &v)
      *istore = v.v.i;
      break;
    }
-   
+  
+   case cpUnsignedLong: { 
+     unsigned long *istore = (unsigned long *)v.store; 
+     *istore = v.v.ul; 
+     break; 
+   }
+
    case cpString:
    case cpWord:
    case cpArgument: {
@@ -1108,6 +1133,15 @@ cp_va_parsev(const Vector<String> &args,
 	 errh->error("argument %d should be %s (integer)", argno+1, desc);
        else if (cp_command == cpUnsigned && v.v.i < 0)
 	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+       break;
+     }
+
+     case cpUnsignedLong: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, int *);
+       if (skip) break;
+       if (!cp_ulong(args[argno], &v.v.i))
+	 errh->error("argument %d should be %s (unsigned long)", argno+1, desc);
        break;
      }
      
