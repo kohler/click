@@ -1,3 +1,11 @@
+2004-03-16 Tuesday 03:08  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/Makefile.in (1.40): Makefile nitlet
+
+2004-03-16 Tuesday 03:07  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.47): print warning if no elements found
+
 2004-03-11 Thursday 14:33  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: ipclassifier.hh (1.29), ipfilter.cc (1.42),
