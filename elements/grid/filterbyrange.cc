@@ -80,7 +80,7 @@ FilterByRange::push(int, Packet *p)
   grid_location our_loc = _locinfo->get_current_location();
   double dist = calc_range(our_loc, remote_loc);
 #if 1
-  click_chatter("XXXXX range %f", range);
+  click_chatter("XXXXX range %f", dist);
 #endif
   if (dist < 0) {
     click_chatter("bogus location info in grid header");
