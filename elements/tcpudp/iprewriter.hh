@@ -159,8 +159,8 @@ UDP mappings.
 Returns a human-readable description of the IPRewriter's current set of
 mappings for completed TCP sessions.
 
-=a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
-ICMPRewriter, ICMPPingRewriter */
+=a TCPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
+RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
 #if defined(CLICK_LINUXMODULE) && __MTCLICK__
 # define IPRW_SPINLOCKS 1

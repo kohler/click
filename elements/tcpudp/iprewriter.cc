@@ -342,13 +342,7 @@ IPRewriter::push(int port, Packet *p_in)
      case INPUT_SPEC_DROP:
       break;
 
-     case INPUT_SPEC_KEEP: {
-       int fport = is.u.keep.fport;
-       int rport = is.u.keep.rport;
-       m = IPRewriter::apply_pattern(0, ip_p, flow, fport, rport);
-       break;
-     }
-
+     case INPUT_SPEC_KEEP:
      case INPUT_SPEC_PATTERN: {
        Pattern *pat = is.u.pattern.p;
        int fport = is.u.pattern.fport;
@@ -424,7 +418,7 @@ IPRewriter::dump_mappings_handler(Element *e, void *thunk)
   for (Map::iterator iter = map->begin(); iter; iter++) {
     Mapping *m = iter.value();
     if (m->is_primary())
-      sa << m->s() << "\n";
+      sa << m->unparse() << "\n";
   }
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
@@ -443,7 +437,7 @@ IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
   StringAccum sa;
   for (Mapping *m = rw->_tcp_done; m; m = m->free_next()) {
     if (m->session_over())
-      sa << m->s() << "\n";
+      sa << m->unparse() << "\n";
   }
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
@@ -471,7 +465,7 @@ IPRewriter::dump_patterns_handler(Element *e, void *)
 #endif
   for (int i = 0; i < rw->_input_specs.size(); i++)
     if (rw->_input_specs[i].kind == INPUT_SPEC_PATTERN)
-      s += rw->_input_specs[i].u.pattern.p->s() + "\n";
+      s += rw->_input_specs[i].u.pattern.p->unparse() + "\n";
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif

@@ -80,8 +80,8 @@ Returns the number of currently installed mappings.
 Returns a human-readable description of the patterns associated with this
 IPAddrRewriter.
 
-=a IPRewriter, TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper,
-FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
+=a IPRewriter, IPAddrPairRewriter, TCPRewriter, IPRewriterPatterns,
+RoundRobinIPMapper, FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
 class IPAddrRewriter : public IPRw { public:
 
@@ -93,7 +93,7 @@ class IPAddrRewriter : public IPRw { public:
 
 	void apply(WritablePacket *p);
 
-	String s() const;
+	String unparse() const;
     
     };
 

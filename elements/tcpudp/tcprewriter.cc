@@ -389,13 +389,7 @@ TCPRewriter::push(int port, Packet *p_in)
      case INPUT_SPEC_DROP:
       break;
 
-     case INPUT_SPEC_KEEP: {
-       int fport = is.u.keep.fport;
-       int rport = is.u.keep.rport;
-       m = TCPRewriter::apply_pattern(0, IP_PROTO_TCP, flow, fport, rport);
-       break;
-     }
-
+     case INPUT_SPEC_KEEP:
      case INPUT_SPEC_PATTERN: {
        Pattern *pat = is.u.pattern.p;
        int fport = is.u.pattern.fport;
@@ -442,12 +436,12 @@ TCPRewriter::dump_mappings_handler(Element *e, void *)
 String
 TCPRewriter::dump_patterns_handler(Element *e, void *)
 {
-  TCPRewriter *rw = (TCPRewriter *)e;
-  String s;
-  for (int i = 0; i < rw->_input_specs.size(); i++)
-    if (rw->_input_specs[i].kind == INPUT_SPEC_PATTERN)
-      s += rw->_input_specs[i].u.pattern.p->s() + "\n";
-  return s;
+    TCPRewriter *rw = (TCPRewriter *)e;
+    String s;
+    for (int i = 0; i < rw->_input_specs.size(); i++)
+	if (rw->_input_specs[i].kind == INPUT_SPEC_PATTERN)
+	    s += rw->_input_specs[i].u.pattern.p->unparse() + "\n";
+    return s;
 }
 
 String

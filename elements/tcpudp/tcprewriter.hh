@@ -66,7 +66,8 @@ packets to the rewritten destination address. Default is true.
 Returns a human-readable description of the TCPRewriter's current set of
 mappings.
 
-=a IPRewriter, IPRewriterPatterns, FTPPortMapper */
+=a IPRewriter, IPAddrRewriter, IPAddrPairRewriter, IPRewriterPatterns,
+FTPPortMapper */
 
 class TCPRewriter : public IPRw { public:
 

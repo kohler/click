@@ -49,23 +49,16 @@ IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
 }
 
 String
-IPAddrRewriter::IPAddrMapping::s() const
+IPAddrRewriter::IPAddrMapping::unparse() const
 {
   IPFlowID rev_rev = reverse()->flow_id().rev();
-  const char *format;
-  IPAddress one, two;
-  if (is_primary()) {
-    format = "(%d.%d.%d.%d, -) => (%d.%d.%d.%d, -) [%d]";
-    one = rev_rev.saddr();
-    two = flow_id().saddr();
-  } else {
-    format = "(-, %d.%d.%d.%d) => (-, %d.%d.%d.%d) [%d]";
-    one = rev_rev.daddr();
-    two = flow_id().daddr();
-  }
-  char buf[128];
-  sprintf(buf, format, one.data()[0], one.data()[1], one.data()[2], one.data()[3], two.data()[0], two.data()[1], two.data()[2], two.data()[3], output());
-  return String(buf);
+  StringAccum sa;
+  if (is_primary())
+    sa << '(' << rev_rev.saddr() << ", -) => (" << flow_id().saddr() << ", -) [";
+  else
+    sa << "(-, " << rev_rev.daddr() << ") => (-, " << flow_id().daddr() << ") [";
+  sa << output() << ']';
+  return sa.take_string();
 }
 
 IPAddrRewriter::IPAddrRewriter()
@@ -209,13 +202,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
      case INPUT_SPEC_DROP:
       break;
 
-     case INPUT_SPEC_KEEP: {
-       int fport = is.u.keep.fport;
-       int rport = is.u.keep.rport;
-       m = IPAddrRewriter::apply_pattern(0, 0, flow, fport, rport);
-       break;
-     }
-
+     case INPUT_SPEC_KEEP:
      case INPUT_SPEC_PATTERN: {
        Pattern *pat = is.u.pattern.p;
        int fport = is.u.pattern.fport;
@@ -250,7 +237,7 @@ IPAddrRewriter::dump_mappings_handler(Element *e, void *)
   for (Map::iterator iter = rw->_map.begin(); iter; iter++) {
     Mapping *m = iter.value();
     if (m->is_primary())
-      sa << m->s() << "\n";
+      sa << m->unparse() << "\n";
   }
   return sa.take_string();
 }
@@ -269,7 +256,7 @@ IPAddrRewriter::dump_patterns_handler(Element *e, void *)
   String s;
   for (int i = 0; i < rw->_input_specs.size(); i++)
     if (rw->_input_specs[i].kind == INPUT_SPEC_PATTERN)
-      s += rw->_input_specs[i].u.pattern.p->s() + "\n";
+      s += rw->_input_specs[i].u.pattern.p->unparse() + "\n";
   return s;
 }
 
