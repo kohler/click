@@ -110,7 +110,7 @@ IP6Print::simple_action(Packet *p)
     sa << ":";
   
   sa << " plen " << ntohs(iph->ip6_plen) 
-     << ", nextheader " << (int)iph->ip6_nxt
+     << ", next " << (int)iph->ip6_nxt
      << ", hlim " << (int)iph->ip6_hlim << "\n";
   const unsigned char *data = p->data();
   if (_contents) {
