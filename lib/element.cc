@@ -469,6 +469,7 @@ read_element_handlers(Element *e, void *)
   return sa.take_string();
 }
 
+
 #if CLICK_STATS >= 1
 
 static String
@@ -548,6 +549,15 @@ read_task_scheduled(Element *, void *thunk)
   return String(task->scheduled() ? "true\n" : "false\n");
 }
 
+#if __MTCLICK__
+static String
+read_task_thread_preference(Element *, void *thunk)
+{
+  Task *task = (Task *)thunk;
+  return String(task->thread_preference())+String("\n");
+}
+#endif
+
 void
 Element::add_task_handlers(Task *task, bool = false)
 {
@@ -555,6 +565,9 @@ Element::add_task_handlers(Task *task, bool = false)
   add_read_handler("tickets", read_task_tickets, task);
 #endif
   add_read_handler("scheduled", read_task_scheduled, task);
+#if __MTCLICK__
+  add_read_handler("thread_preference", read_task_thread_preference, task);
+#endif
 }
 
 void
@@ -667,3 +680,4 @@ Element::run_scheduled()
 {
   assert(0 && "bad run_scheduled");
 }
+
