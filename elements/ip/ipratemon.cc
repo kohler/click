@@ -24,6 +24,9 @@
 IPRateMonitor::IPRateMonitor()
   : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL), _alloced_mem(0)
 {
+  click_chatter("EWMA %d", sizeof(MyEWMA));
+  click_chatter("Counter %d", sizeof(Counter));
+  click_chatter("Stats %d", sizeof(Stats));
   _stats_struct_size = sizeof(Stats);
 }
 
@@ -95,6 +98,7 @@ IPRateMonitor::pull(int port)
 //
 // Recursively destroys tables.
 //
+int IPRateMonitor::Stats::_my_size = 0;
 
 IPRateMonitor::Stats::Stats()
 {
@@ -103,6 +107,9 @@ IPRateMonitor::Stats::Stats()
     counter[i].rev_rate.initialize();
     counter[i].next_level = 0;
   }
+
+  if(!_my_size)
+    _my_size = sizeof(Stats);
 }
 
 IPRateMonitor::Stats::Stats(const MyEWMA &fwd, const MyEWMA &rev)
@@ -113,7 +120,8 @@ IPRateMonitor::Stats::Stats(const MyEWMA &fwd, const MyEWMA &rev)
     counter[i].next_level = 0;
   }
 
-  _my_size = sizeof(Stats);
+  if(!_my_size)
+    _my_size = sizeof(Stats);
 }
 
 IPRateMonitor::Stats::~Stats()

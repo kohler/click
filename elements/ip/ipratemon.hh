@@ -103,7 +103,7 @@ class IPRateMonitor : public Element { public:
     void destroy(int &);
 
     private:
-    int _my_size;
+    static int _my_size;
   };
   int _stats_struct_size;
 
@@ -132,10 +132,10 @@ class IPRateMonitor : public Element { public:
 // Dives in tables based on a and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress from_addr, IPAddress, int val,
+IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
 		      Packet *p, bool forward)
 {
-  unsigned int addr = from_addr.addr();
+  unsigned int addr = paddr.addr();
   int now = MyEWMA::now();
 
   struct Stats *s = _base;
@@ -151,6 +151,7 @@ IPRateMonitor::update(IPAddress from_addr, IPAddress, int val,
     else 
       c->rev_rate.update(now, val);
 
+    // XXX: update not called on break.
     if(!(s = c->next_level))
       break;
   }
