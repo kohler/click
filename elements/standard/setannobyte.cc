@@ -26,11 +26,9 @@
 CLICK_DECLS
 
 SetAnnoByte::SetAnnoByte()
-  : Element(1, 1)
+  : Element(1, 1), _offset(0), _value(0)
 {
   MOD_INC_USE_COUNT;
-  _offset = 0;
-  _value = 0;
 }
 
 SetAnnoByte::~SetAnnoByte()
@@ -48,15 +46,14 @@ int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-		     cpInteger, "offset", &_offset,
+		     cpUnsigned, "offset", &_offset,
 		     cpByte, "value", &_value,
 		     0);
   if (res < 0) 
     return res;
 
-  /* 24 should be defined to be Packet.USER_ANNO_SIZE */
-  if (_offset < 0 || _offset >= 24) 
-    return errh->error("invalid offset value");
+  if (_offset >= Packet::USER_ANNO_SIZE) 
+    return errh->error("offset value is too large, max valid offset is %u", Packet::USER_ANNO_SIZE - 1);
 
   return res;
 }
@@ -90,6 +87,7 @@ SetAnnoByte::value_read_handler(Element *e, void *)
 void
 SetAnnoByte::add_handlers()
 {
+  add_default_handlers(true);
   add_read_handler("offset", offset_read_handler, (void *)0);
   add_read_handler("value", value_read_handler, (void *)0);
 }

@@ -14,18 +14,21 @@ sets packet user annotations
 
 =d
 
-Sets each packet's user annotation at OFFSET to VALUE, an integer 0..255. 
+Sets each packet's user annotation byte at OFFSET to VALUE, an integer
+0..255.  Permissible values for OFFSET are 0 to n-1, inclusive, where
+n is typically 24.
 
-=n
-
-VALUE is stored in user annotation OFFSET.
+=h offset read-only  
+Returns OFFSET
+=h value read-only   
+Returns VALUE 
 
 =a Paint */
 
 class SetAnnoByte : public Element {
   
+  unsigned int _offset;
   unsigned char _value;
-  int _offset;
  public:
   
   SetAnnoByte();
@@ -34,6 +37,8 @@ class SetAnnoByte : public Element {
   const char *class_name() const		{ return "SetAnnoByte"; }
   const char *processing() const		{ return AGNOSTIC; }
   SetAnnoByte *clone() const;
+
+  bool can_live_reconfigure() const             { return true; }
   
   int configure(Vector<String> &, ErrorHandler *);
 
