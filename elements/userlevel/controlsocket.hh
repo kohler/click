@@ -67,52 +67,44 @@ new connection or drops an old one. Default is false.
 
 =head1 SERVER COMMANDS
 
-The server currently supports the following commands:
+The server currently supports the following six commands. Many of the commands
+take a I<handler> argument. These arguments name handlers, and take one of
+three forms: C<I<elementname>.I<handlername>> names a particular element's
+handler; C<I<elementnumber>.I<handlername>> also names an element handler, but
+the element is identified by index, starting from 1; and C<I<handlername>>
+names a global handler. (There are seven global read handlers, named
+C<version>, C<list>, C<classes>, C<config>, C<flatconfig>, C<packages>, and
+C<requirements>. See click.o(8) for more information.)
 
 =over 5
 
-=item READ I<element>.I<handlername>
+=item READ I<handler>
 
-Call the read handler named I<handlername> on the element named I<element>
+Call a read I<handler>
 and return the results. On success, responds with a "success" message
 (response code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
 decimal integer indicating the length of the read handler data. The I<n>
 bytes immediately following (the CRLF that terminates) the DATA line are
 the handler's results.
 
-I<element> is either an element name or an integer, where the integer is the
-index of the element, starting from 1.
+=item WRITE I<handler> I<args...>
 
-=item READ I<handlername>
+Call a write I<handler>, passing the I<args> (if any) as arguments.
 
-Call the global read handler named I<handlername> and return the results as
-in READ I<element>.I<handlername>. There are seven global read handlers,
-named `version', `list', `classes', `config', `flatconfig', `packages', and
-`requirements'. See the handlers of the same name in click.o(8) for more
-information.
+=item WRITEDATA I<handler> I<n>
 
-A global handler named I<handlername> may also be referred to as `C<0.>I<handlername>'.
-
-=item WRITE I<element>.I<handlername> I<args...>
-
-Call the write handler named I<handlername> on the element named
-I<element>, passing the I<args> (if any) as arguments.
-
-=item WRITEDATA I<element>.I<handlername> I<n>
-
-Call the write handler named I<handlername> on the element named
-I<element>. The arguments to pass are the I<n> bytes immediately following
-(the CRLF that terminates) the WRITEDATA line.
-
-You can also write a global handler with WRITE or WRITEDATA.
+Call a write I<handler>. The arguments to pass are the I<n> bytes immediately
+following (the CRLF that terminates) the WRITEDATA line.
 
 =item CHECKREAD I<handler>
 
-Returns 1 if I<handler> exists and is readable; 0 if it does not exist, or is write-only; and -1 if ControlSocket can't tell without invoking the handler. I<handler> may be an element handler or a global handler.
+Checks whether a I<handler> exists and is readable. The return status is 200
+for readable handlers, and an appropriate error status for non-readable
+handlers or nonexistent handlers.
 
 =item CHECKWRITE I<handler>
 
-Returns 1 if I<handler> exists and is writable; 0 if it does not exist, or is read-only; and -1 if ControlSocket can't tell without invoking the handler. I<handler> may be an element handler or a global handler.
+Checks whether a I<handler> exists and is writable.
 
 =item QUIT
 
