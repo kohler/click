@@ -101,10 +101,12 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
   strcpy(dev_prefix, "tun");
 #endif
 
-  for (int i = 0; i < 32; i++) {
+  for (int i = 0; i < 1 /*32*/; i++) {
+    click_chatter("fuck 0 i=%d", i);
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, O_RDWR | O_NONBLOCK);
     if (fd < 0) {
+      click_chatter("fuck 1 errno=%d", errno);
       if (saved_errno == 0 || errno != ENOENT)
         saved_errno = errno;
       continue;
@@ -150,7 +152,8 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
     if (system(tmp) != 0) {
       close(fd);
 # if defined(__linux__)
-    // Is Ethertap available? If it is moduleified, then it might not be.
+      // Is Ethertap available? If it is moduleified, then it might not be.
+      // beside the ethertap module, you may also need the netlink_dev module to be loaded.
       return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.cc(), tmp);
 # else
       return errh->error("%s: `%s' failed", _dev_name.cc(), tmp);
@@ -172,8 +175,8 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
     return fd;
   }
 
-  return errh->error("could not allocate a /dev/%s* device: %s",
-                     dev_prefix, strerror(saved_errno));
+  return errh->error("could not allocate a /dev/%s* device: %s (errno: %d)",
+                     dev_prefix, strerror(saved_errno), saved_errno);
 }
 
 void
