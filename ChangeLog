@@ -1,3 +1,12 @@
+2001-09-25 Tuesday 20:00  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.147): more improvements to --with-freebsd and
+	--enable-bsdmodule: catch user mistakes
+
+2001-09-25 Tuesday 19:47  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.146): use $freebsddir to search for include files
+
 2001-09-25 Tuesday 12:57  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: ipclassifier.hh (1.23), ipfilter.cc (1.28),
