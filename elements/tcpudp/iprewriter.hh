@@ -1,7 +1,6 @@
 #ifndef IPREWRITER_HH
 #define IPREWRITER_HH
 #include "elements/ip/iprw.hh"
-#include <click/task.hh>
 #include <click/sync.hh>
 
 /*
@@ -195,15 +194,13 @@ class IPRewriter : public IPRw { public:
 
   Vector<InputSpec> _input_specs;
 
+  bool _tcp_done_gc_incr;
   int _tcp_done_gc_interval;
-  Timer _tcp_done_gc_timer;
-  Task _tcp_done_gc_task;
   int _tcp_gc_interval;
-  Timer _tcp_gc_timer;
-  Task _tcp_gc_task;
   int _udp_gc_interval;
+  Timer _tcp_done_gc_timer;
+  Timer _tcp_gc_timer;
   Timer _udp_gc_timer;
-  Task _udp_gc_task;
   int _udp_timeout_interval;
   int _tcp_timeout_interval;
   int _tcp_done_timeout_interval;
@@ -215,9 +212,9 @@ class IPRewriter : public IPRw { public:
 
   int _nmapping_failures;
   
-  static void tcp_gc_hook(Task *, void *);
-  static void udp_gc_hook(Task *, void *);
-  static void tcp_done_gc_hook(Task *, void *);
+  static void tcp_gc_hook(Timer *, void *);
+  static void udp_gc_hook(Timer *, void *);
+  static void tcp_done_gc_hook(Timer *, void *);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_tcp_done_mappings_handler(Element *, void *);

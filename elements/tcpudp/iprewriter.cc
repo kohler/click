@@ -36,12 +36,9 @@ IPRewriter::_global_instance_counter = 0;
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0), 
     _tcp_done_tail(0),
-    _tcp_done_gc_task(tcp_done_gc_hook, this),
-    _tcp_done_gc_timer(&_tcp_done_gc_task),
-    _tcp_gc_task(tcp_gc_hook, this),
-    _tcp_gc_timer(&_tcp_gc_task),
-    _udp_gc_task(udp_gc_hook, this),
-    _udp_gc_timer(&_udp_gc_task)
+    _tcp_done_gc_timer(tcp_done_gc_hook, this),
+    _tcp_gc_timer(tcp_gc_hook, this),
+    _udp_gc_timer(udp_gc_hook, this)
 {
   // no MOD_INC_USE_COUNT; rely on IPRw
 }
@@ -85,6 +82,7 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   _tcp_gc_interval = 3600000;		// 1 hour
   _udp_gc_interval = 10000;		// 10 seconds
   _tcp_done_gc_interval = 10000;	// 10 seconds
+  _tcp_done_gc_incr = false;
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
@@ -94,6 +92,7 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 			    "TCP_TIMEOUT", cpMilliseconds, "TCP timeout interval", &_tcp_timeout_interval,
 			    "TCP_DONE_TIMEOUT", cpMilliseconds, "Completed TCP timeout interval", &_tcp_done_timeout_interval,
 			    "UDP_TIMEOUT", cpMilliseconds, "UDP timeout interval", &_udp_timeout_interval,
+			    "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
 			    0) != 0)
       continue;
     InputSpec is;
@@ -118,18 +117,15 @@ int
 IPRewriter::initialize(ErrorHandler *)
 {
   _instance_index = IPRewriter::_global_instance_counter++;
-
-  _tcp_gc_timer.initialize(this);
-  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
-  _tcp_done_gc_timer.initialize(this);
-  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
-  _udp_gc_timer.initialize(this);
-  _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
   _nmapping_failures = 0;
 
-  _tcp_gc_task.initialize(this, false);
-  _tcp_done_gc_task.initialize(this, false);
-  _udp_gc_task.initialize(this, false);
+  _tcp_gc_timer.initialize(this);
+  _tcp_done_gc_timer.initialize(this);
+  _udp_gc_timer.initialize(this);
+
+  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
+  _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
+  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
 
   return 0;
 }
@@ -195,8 +191,9 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-IPRewriter::tcp_gc_hook(Task *task, void *thunk)
+IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
+  click_chatter("tcp_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_gc_interval;
 #if IPRW_SPINLOCKS
@@ -207,41 +204,32 @@ IPRewriter::tcp_gc_hook(Task *task, void *thunk)
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  if (task->thread_preference()!=rw->_instance_index%rw->router()->nthreads()) 
-    task->change_thread(rw->_instance_index % rw->router()->nthreads());
-  rw->_tcp_gc_timer.schedule_after_ms(wait);
+  timer->schedule_after_ms(wait);
 }
 
 void
-IPRewriter::tcp_done_gc_hook(Task *task, void *thunk)
+IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
+  click_chatter("tcp_done_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_done_gc_interval;
 #if IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
-#if 0
-  unsigned long long c0 = click_get_cycles();
-#endif
   rw->clean_map_free_ordered_tracked 
     (rw->_tcp_map, rw->_tcp_done_timeout_interval, 
      &rw->_tcp_done, &rw->_tcp_done_tail);
-#if 0
-  unsigned long c1 = click_get_cycles() - c0;
-  click_chatter("done hook %u", c1);
-#endif
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  if (task->thread_preference()!=rw->_instance_index%rw->router()->nthreads()) 
-    task->change_thread(rw->_instance_index % rw->router()->nthreads());
-  rw->_tcp_done_gc_timer.schedule_after_ms(wait);
+  timer->schedule_after_ms(wait);
 }
 
 void
-IPRewriter::udp_gc_hook(Task *task, void *thunk)
+IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 {
+  click_chatter("udp_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_udp_gc_interval;
 #if IPRW_SPINLOCKS
@@ -252,9 +240,7 @@ IPRewriter::udp_gc_hook(Task *task, void *thunk)
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  if (task->thread_preference()!=rw->_instance_index%rw->router()->nthreads()) 
-    task->change_thread(rw->_instance_index % rw->router()->nthreads());
-  rw->_udp_gc_timer.schedule_after_ms(wait);
+  timer->schedule_after_ms(wait);
 }
 
 IPRw::Mapping *
@@ -360,6 +346,13 @@ IPRewriter::push(int port, Packet *p_in)
       p->kill();
       return;
     }
+  }
+
+  if (_tcp_done_gc_incr && ip_p == IP_PROTO_TCP) {
+    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+    if (tcph->th_flags & TH_SYN)
+      clean_map_free_ordered_tracked
+	(_tcp_map, _tcp_done_timeout_interval, &_tcp_done, &_tcp_done_tail);
   }
   
 #if IPRW_SPINLOCKS
