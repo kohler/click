@@ -39,8 +39,13 @@ public class Util {
     }
     
     public static String printDouble(double d, int p) {
-	int i = (int) d;
-	StringBuffer s = new StringBuffer(Integer.toString((int) d) + ".");
+	String sgn = "";
+	if (d < 0) {
+	    sgn = "-";
+	    d = -d;
+	}
+	int i = (int) Math.floor(d);
+	StringBuffer s = new StringBuffer(sgn + Integer.toString(i) + ".");
 	d = Math.abs(d - i);
 	for (int j = 0; j < p; j++) {
 	    d *= 10;
