@@ -42,12 +42,12 @@ void kill_current_router();
 void install_current_router(Router *);
 void reset_proc_click_errors();
 
-extern spinlock_t click_thread_spinlock;
-extern Vector<int> *click_thread_pids;
 extern int click_thread_priority;
 void init_click_sched();
 int start_click_sched(Router *, int, ErrorHandler *);
 int cleanup_click_sched();
+void get_click_thread_pids(Vector<int> &);
+void change_click_thread_priority(int);
 
 void register_handler(proc_dir_entry *, int handlerno);
 

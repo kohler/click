@@ -134,15 +134,13 @@ read_meminfo(Element *, void *)
 static String
 read_threads(Element *, void *)
 {
+  Vector<int> threads;
+  get_click_thread_pids(threads);
+  
   StringAccum sa;
-  spin_lock(&click_thread_spinlock);
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++)
-      sa << (*click_thread_pids)[i] << '\n';
-  spin_unlock(&click_thread_spinlock);
+  for (int i = 0; i < threads.size(); i++)
+    sa << threads[i] << '\n';
   return sa.take_string();
-  //int x = atomic_read(&num_click_threads);
-  //return String(x) + "\n";
 }
 
 static String
@@ -234,14 +232,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
     errh->warning("priority pinned at %d", PRIO2NICE(priority));
   }
 
-  spin_lock(&click_thread_spinlock);
-  click_thread_priority = priority;
-  for (int i = 0; i < click_thread_pids->size(); i++) {
-    struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
-    if (task)
-      TASK_PRIO(task) = priority;
-  }
-  spin_unlock(&click_thread_spinlock);
+  change_click_thread_priority(priority);
   
   return 0;
 }

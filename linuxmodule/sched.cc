@@ -43,12 +43,13 @@ CLICK_CXX_UNPROTECT
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
-spinlock_t click_thread_spinlock;
+static spinlock_t click_thread_spinlock;
 int click_thread_priority = DEF_PRIO;
-Vector<int> *click_thread_pids;
+static Vector<int> *click_thread_pids;
 
 static void
-soft_spin_lock(spinlock_t *l) {
+soft_spin_lock(spinlock_t *l)
+{
   while (!spin_trylock(l))
     schedule();
 }
@@ -56,13 +57,19 @@ soft_spin_lock(spinlock_t *l) {
 static int
 click_sched(void *thunk)
 {
-  RouterThread *rt = (RouterThread *)thunk;
-  current->session = 1;
-  current->pgrp = 1;
+#ifdef LINUX_2_2
+  // In Linux 2.2, daemonize() doesn't do exit_files.
+  exit_files(current);
+  current->files = init_task.files;
+  atomic_inc(&current->files->count);
+#endif
+  daemonize();
+  
   TASK_PRIO(current) = click_thread_priority;
-  sprintf(current->comm, "click");
-  printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
+  strcpy(current->comm, "click");
 
+  RouterThread *rt = (RouterThread *)thunk;
+  printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
   rt->driver();
   
   rt->router()->unuse();
@@ -160,4 +167,27 @@ cleanup_click_sched()
     click_thread_pids = 0;
     return 0;
   }
+}
+
+void
+get_click_thread_pids(Vector<int> &out)
+{
+  soft_spin_lock(&click_thread_spinlock);
+  if (click_thread_pids)
+    for (int i = 0; i < click_thread_pids->size(); i++)
+      out.push_back((*click_thread_pids)[i]);
+  spin_unlock(&click_thread_spinlock);
+}
+
+void
+change_click_thread_priority(int priority)
+{
+  soft_spin_lock(&click_thread_spinlock);
+  click_thread_priority = priority;
+  for (int i = 0; i < click_thread_pids->size(); i++) {
+    struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
+    if (task)
+      TASK_PRIO(task) = priority;
+  }
+  spin_unlock(&click_thread_spinlock);
 }
