@@ -2,7 +2,7 @@
 # run-grid-node
 # Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.9 2000/08/06 03:30:15 decouto Exp $
+# $Id: run-grid-node,v 1.10 2000/08/06 18:13:01 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -20,6 +20,7 @@ $CONTROL_RO = "false";
 
 $POS_LAT = "0";
 $POS_LON = "0";
+$RANGE = "250";
 $GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
 $GRID_NET_HEX = "16/121a07"; # 18.26.7.*
@@ -39,7 +40,7 @@ sub ip_to_hex {
 
 
 if (@ARGV < 2) { 
-    print stderr "usage: $0 <ip-addr> <interface> [no-gw]\n";
+    print stderr "usage: $0 <ip-addr> <interface> [-debug -no-cleanup -no-gw  -pos <lat> <lon> -range <rng>]\n";
     exit 1;
 }
 
@@ -78,6 +79,14 @@ for ($i = 2; $i < @ARGV; $i++) {
 	$POS_LAT = $ARGV[$i];
 	$i++;
 	$POS_LON = $ARGV[$i];
+    }
+    if ($ARGV[$i] eq "-range") {
+	if (@ARGV - $i < 2) {
+	    print "must specify range\n";
+	    exit 1;
+	}
+	$i++;
+	$RANGE = $ARGV[$i];
     }
 }
 
@@ -215,6 +224,7 @@ while(<click_config_file>) {
 
     s/CONTROL_PORT/$CONTROL_PORT/;
     s/CONTROL_RO/$CONTROL_RO/;
+    s/RANGE/$RANGE/;
     s/POS_LAT/$POS_LAT/;
     s/POS_LON/$POS_LON/;
     s/GRID_NETMASK/$GRID_NETMASK/;
