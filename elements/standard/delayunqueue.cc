@@ -68,14 +68,14 @@ void
 DelayUnqueue::run_scheduled()
 {
   if (!_p && (_p = input(0).pull())) {
+    if (!_p->timestamp_anno().tv_sec) // get timestamp if not set
+      click_gettimeofday(&_p->timestamp_anno());
     timeradd(&_p->timestamp_anno(), &_delay, &_p->timestamp_anno());
     if (_timer.initialized()) {	// long delay, use timer
       _timer.schedule_at(_p->timestamp_anno());
       return;			// without rescheduling
     }
-  }
-  
-  if (_p) {
+  } else if (_p) {
     struct timeval now;
     click_gettimeofday(&now);
     if (!timercmp(&now, &_p->timestamp_anno(), <)) {
