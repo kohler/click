@@ -24,6 +24,38 @@ AC_SUBST(KERNEL_CXX)
 AC_PROG_RANLIB
 
 dnl
+dnl autoconf and autoheader
+dnl
+
+missing_dir=`cd $srcdir && pwd`
+
+AC_MSG_CHECKING(working autoheader)
+if (autoheader --version) < /dev/null > /dev/null 2>&1; then
+  AUTOHEADER=autoheader
+  AC_MSG_RESULT(found)
+else
+  AUTOHEADER="$missing_dir/missing autoheader"
+  AC_MSG_RESULT(missing)
+fi
+
+AC_MSG_CHECKING(working autoconf)
+if (autoconf --version) < /dev/null > conftest.out 2>&1; then
+  if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
+    AUTOCONF=autoconf
+    AC_MSG_RESULT(found)
+  else
+    AUTOCONF="$missing_dir/missing autoconf"
+    AC_MSG_RESULT(old)
+  fi
+else
+  AUTOCONF="$missing_dir/missing autoconf"
+  AC_MSG_RESULT(missing)
+fi
+
+AC_SUBST(AUTOHEADER)
+AC_SUBST(AUTOCONF)
+
+dnl
 dnl element collections
 dnl
 
@@ -179,7 +211,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile tools/Makefile tools/click-xform/Makefile stamp-h mkelemlist.sh"
+config_files="Makefile tools/Makefile tools/click-xform/Makefile mkelemlist.sh"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done
