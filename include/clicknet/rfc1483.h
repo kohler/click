@@ -7,11 +7,14 @@
  */
 
 struct click_rfc1483 {
-    uint8_t	snap[6];
+    uint8_t	dsap;
+    uint8_t	ssap;
+    uint8_t	ui;
+    uint8_t	orgcode[3];
     uint16_t	ether_type;
 };
 
-#define RFC1483_SNAP_EXPECTED		"\xAA\xAA\x03\x00\x00\x00"
-#define RFC1483_SNAP_EXPECTED_LEN	6
+#define RFC1483_SNAP_IP_EXPECTED	"\xAA\xAA\x03\x00\x00\x00"
+#define RFC1483_SNAP_IP_EXPECTED_LEN	6
 
 #endif
