@@ -45,9 +45,6 @@ RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
 
 RouterT::~RouterT()
 {
-    for (int i = 0; i < _etypes.size(); i++)
-	if (_etypes[i].eclass)
-	    _etypes[i].eclass->unuse();
     for (int i = 0; i < _elements.size(); i++)
 	delete _elements[i];
 }
@@ -154,9 +151,8 @@ bool
 RouterT::is_flat() const
 {
     for (int i = 0; i < _etypes.size(); i++)
-	if (ElementClassT *ec = _etypes[i].eclass)
-	    if (ec->cast_router())
-		return false;
+	if (_etypes[i].eclass->cast_router())
+	    return false;
     return true;
 }
 
@@ -171,9 +167,9 @@ RouterT::try_type(const String &name) const
 ElementClassT *
 RouterT::get_type(ElementClassT *ec, bool install_name)
 {
+    assert(ec);
     if (install_name) {
-	ec->use();
-	if (!ec->name())
+	if (!ec->name()) 
 	    _etypes.push_back(ElementType(ec, _scope_cookie, -1));
 	else if (try_type(ec->name()) != ec) {
 	    int prev = _etype_map[ec->name()];
@@ -1165,14 +1161,14 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 	}
     }
     // XXX FIXME
-    for (const_iterator e = begin_elements(); e; e++)
-	assert(e->tunnel() || uid_to_scope[e->type_uid()] >= -1);
+    //for (const_iterator e = begin_elements(); e; e++)
+    //    assert(e->tunnel() || uid_to_scope[e->type_uid()] >= -1);
 
     // For each scope:
     // First print the element class declarations with that scope,
     // then print the elements whose classes are good only at that scope.
     int print_state = 0;
-    for (int scope = -1; scope <= _scope_cookie; scope++) {
+    for (int scope = -2; scope <= _scope_cookie; scope++) {
 	for (int i = 0; i < ntypes; i++)
 	    if (_etypes[i].scope_cookie == scope && _etypes[i].name()
 		&& !_etypes[i].eclass->simple()) {

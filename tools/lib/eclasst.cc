@@ -72,6 +72,7 @@ ElementClassT::ElementClassT(const String &name)
     : _name(name), _use_count(0), _unique_id(unique_id_storage++),
       _traits_version(-1)
 {
+    //fprintf(stderr, "%p: %s\n", this, printable_name_cc());
 }
 
 ElementClassT::ElementClassT(const String &name, int uid)
@@ -79,6 +80,12 @@ ElementClassT::ElementClassT(const String &name, int uid)
 {
     assert(uid >= unique_id_storage);
     unique_id_storage = uid + 1;
+    //fprintf(stderr, "%p: %s\n", this, printable_name_cc());
+}
+
+ElementClassT::~ElementClassT()
+{
+    //fprintf(stderr, "%p: ~%s\n", this, printable_name_cc());
 }
 
 const char *

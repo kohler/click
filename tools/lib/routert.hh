@@ -140,12 +140,15 @@ class RouterT { public:
     };
 
     struct ElementType {
-	ElementClassT *eclass;
+	ElementClassT * const eclass;
 	int scope_cookie;
 	int prev_name;
-	ElementType() : eclass(0) { }
-	ElementType(ElementClassT *c, int sc, int pn) : eclass(c), scope_cookie(sc), prev_name(pn) { }
-	const String &name() const { return eclass->name(); }
+	ElementType(ElementClassT *c, int sc, int pn) : eclass(c), scope_cookie(sc), prev_name(pn) { assert(eclass); eclass->use(); }
+	ElementType(const ElementType &o) : eclass(o.eclass), scope_cookie(o.scope_cookie), prev_name(o.prev_name) { eclass->use(); }
+	~ElementType()			{ eclass->unuse(); }
+	const String &name() const	{ return eclass->name(); }
+      private:
+	ElementType &operator=(const ElementType &);
     };
 
     int _use_count;

@@ -18,7 +18,7 @@ class SynonymElementClassT;
 class ElementClassT { public:
 
     ElementClassT(const String &);
-    virtual ~ElementClassT()		{ }
+    virtual ~ElementClassT();
 
     static void set_default_class(ElementClassT *);
     static ElementClassT *default_class(const String &);
