@@ -283,18 +283,13 @@ ToDevice::tx_intr()
   }
 #endif
  
+#ifndef HAVE_POLLING
   if (!_polling) {
     /* If we have packets left in the queue, arrange for
      * net_bh()/qdisc_run_queues() to call us when the device decides it's idle.
      * This is a lot like qdisc_wakeup(), but we don't want to bother trying to
      * send a packet from Linux's queues.
      */
-    /* if we don't have a scheduler, that means we are called by a bh handler,
-     * so no race conditions. if we are in interrupt mode, but uses a
-     * scheduler thread, then we lock out bh to avoid race conditions. */
-#if HAVE_POLLING
-    start_bh_atomic();
-#endif
     if (_dev->tbusy) {
       struct Qdisc *q = _dev->qdisc;
       if(q->h.forw == NULL) {
@@ -302,10 +297,8 @@ ToDevice::tx_intr()
         qdisc_head.forw = &q->h;
       }
     }
-#if HAVE_POLLING
-    end_bh_atomic();
-#endif
   }
+#endif
 
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS

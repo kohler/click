@@ -27,7 +27,7 @@ extern "C" {
 #include "string.hh"
 #include "glue.hh"
 
-#define FROMDEV_QSIZE 64
+#define FROMDEV_QSIZE 512
 class FromDevice : public Element {
   
  public:
@@ -58,10 +58,11 @@ class FromDevice : public Element {
   String _devname;
   struct device *_dev;
   unsigned _registered;
-  
-  Packet* _queue[FROMDEV_QSIZE];
+  unsigned _drops;
   unsigned _puller_ptr;
   unsigned _pusher_ptr;
+
+  Packet* _queue[FROMDEV_QSIZE];
   unsigned next_i(int i) const	{ return (i!=(FROMDEV_QSIZE-1) ? i+1 : 0); } 
 };
 

@@ -39,14 +39,15 @@ extern "C" int click_FromDevice_in
 
 
 FromDevice::FromDevice()
-  : _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0)
+  : _dev(0), _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
   add_output();
   for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
 }
 
 FromDevice::FromDevice(const String &devname)
-  : _devname(devname), _registered(0), _dev(0), _puller_ptr(0), _pusher_ptr(0)
+  : _devname(devname), _registered(0), _dev(0),
+    _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
   add_output();
   for(int i=0;i<FROMDEV_QSIZE;i++) _queue[i] = 0;
@@ -212,6 +213,7 @@ FromDevice::got_skb(struct sk_buff *skb)
   } else {
     /* queue full, drop */
     kfree_skb(skb);
+    _drops++;
   }
 
   return 1;
@@ -231,7 +233,7 @@ FromDevice::run_scheduled()
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
   int adj = tickets() / 4;
-  if (adj < 2) adj = 2;
+  if (adj < 4) adj = 4;
   
   if (i == INPUT_MAX_PKTS_PER_RUN);
   else if (i < INPUT_MAX_PKTS_PER_RUN/4) adj = 0 - adj;
