@@ -1,3 +1,20 @@
+2004-06-10 Thursday 16:16  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: printwifi.cc (1.1), printwifi.hh (1.1): print
+	wifi headers
+
+2004-06-10 Thursday 16:16  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifidecap.cc (1.2), elements/wifi/wifiencap.cc
+	(1.1), elements/wifi/wifiencap.hh (1.1), include/clicknet/llc.h
+	(1.1): add llc header file.  Add wifiencap element fix wifidecap.
+
+2004-06-10 Thursday 16:14  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: settxrate.cc (1.12), settxrate.hh (1.9),
+	sr/settxrate.cc (1.2), sr/settxrate.hh (1.2): move to the right
+	spot (?)
+
 2004-06-10 Thursday 11:55  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/wifidecap.cc (1.1), elements/wifi/wifidecap.hh
