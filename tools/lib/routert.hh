@@ -382,19 +382,25 @@ operator!=(const RouterT::const_iterator &i, const RouterT::const_iterator &j)
 }
 
 inline bool
-operator==(const RouterT::type_iterator &i, const RouterT::type_iterator &j)
+operator==(const RouterT::const_type_iterator &i, const RouterT::const_type_iterator &j)
 {
     return i.operator->() == j.operator->();
 }
 
 inline bool
-operator!=(const RouterT::type_iterator &i, const RouterT::type_iterator &j)
+operator!=(const RouterT::const_type_iterator &i, const RouterT::const_type_iterator &j)
 {
     return i.operator->() != j.operator->();
 }
 
 inline bool
-operator!=(const RouterT::type_iterator &i, const RouterT::const_iterator &j)
+operator==(const RouterT::const_type_iterator &i, const RouterT::const_iterator &j)
+{
+    return i.operator->() == j.operator->();
+}
+
+inline bool
+operator!=(const RouterT::const_type_iterator &i, const RouterT::const_iterator &j)
 {
     return i.operator->() != j.operator->();
 }
