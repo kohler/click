@@ -105,6 +105,7 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
     dirty = false;
   }
     
+  // XXX: don't do it this way.
   dst = ntohl(dst);
 
   u_int16_t ix = (dst & 0xfff00000) >> 20;      // upper 12 bits.
