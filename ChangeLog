@@ -1,7 +1,9 @@
 2003-11-07 Friday 17:35  Eddie Kohler <kohler@icir.org>
 
 	* include/click/llrpc.h (1.24), elements/userlevel/controlsocket.cc
-	(1.47), elements/userlevel/controlsocket.hh (1.34): add
+	(1.47), elements/userlevel/controlsocket.hh (1.34),
+	test/userlevel/ControlSocket-llrpc-01.testie (1.3),
+	test/userlevel/ControlSocket-llrpc-02.testie (1.3): add
 	_CLICK_IOC_FLAT, to make ControlSocket LLRPCs safe
 
 2003-11-07 Friday 16:04  Eddie Kohler <kohler@icir.org>
@@ -16,9 +18,10 @@
 
 	* elements/userlevel/controlsocket.cc (1.46),
 	elements/userlevel/controlsocket.hh (1.32), include/click/llrpc.h
-	(1.23): rename CLICK_NTOH_LLRPC to CLICK_LLRPC_NTOH; update
-	documentation; all LLRPC constants in ControLSocket use network
-	format
+	(1.23), test/userlevel/ControlSocket-llrpc-01.testie (1.2),
+	test/userlevel/ControlSocket-llrpc-02.testie (1.2): rename
+	CLICK_NTOH_LLRPC to CLICK_LLRPC_NTOH; update documentation; all
+	LLRPC constants in ControLSocket use network format
 
 2003-11-07 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
@@ -26,8 +29,10 @@
 	elements/userlevel/controlsocket.hh (1.31),
 	elements/userlevel/khandlerproxy.cc (1.13),
 	elements/userlevel/khandlerproxy.hh (1.6), include/click/llrpc.h
-	(1.22): add support for user-level LLRPCs via the ControlSocket
-	element, requested by bc Wong
+	(1.22), test/userlevel/ControlSocket-llrpc-01.testie (1.1),
+	test/userlevel/ControlSocket-llrpc-02.testie (1.1): add support for
+	user-level LLRPCs via the ControlSocket element, requested by bc
+	Wong
 
 2003-11-07 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
@@ -41,19 +46,34 @@
 
 2003-11-05 Wednesday 17:23  Eddie Kohler <kohler@icir.org>
 
-	* elements/standard/: drr.cc (1.7), drr.hh (1.6), priosched.cc
-	(1.12), priosched.hh (1.13), priosched2.cc (1.2), priosched2.hh
-	(1.2), rrsched.cc (1.11), rrsched.hh (1.14), stridesched.cc (1.19),
-	stridesched.hh (1.20), strideswitch.cc (1.12): schedulers use
-	notification
+	* elements/: simple/simplepriosched.cc (1.1),
+	simple/simplepriosched.hh (1.1), simple/simplerrsched.cc (1.1),
+	simple/simplerrsched.hh (1.1), standard/drr.cc (1.7),
+	standard/drr.hh (1.6), standard/priosched.cc (1.12),
+	standard/priosched.hh (1.13), standard/priosched2.cc (1.2),
+	standard/priosched2.hh (1.2), standard/rrsched.cc (1.11),
+	standard/rrsched.hh (1.14), standard/stridesched.cc (1.19),
+	standard/stridesched.hh (1.20), standard/strideswitch.cc (1.12):
+	schedulers use notification
+
+2003-11-04 Tuesday 02:16  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/settxrate.cc (1.8): I hate copy and paste errors.
 
 2003-11-02 Sunday 01:25  John Bicket <jbicket@mit.edu>
 
-	* elements/: grid/linktable.hh (1.17), standard/notifierqueue.hh
-	(1.11), standard/simplequeue.hh (1.9): Add ECNQueue, which
-	explicitly signals congestion along a path and reorders packets on
-	a per-path basis.  Also edit inorderqueue to account properly for
-	congestion.  Make link-failure notification be more sane.
+	* elements/: grid/linktable.hh (1.17), grid/sr/ecnqueue.cc (1.1),
+	grid/sr/ecnqueue.hh (1.1), grid/sr/inorderqueue.cc (1.5),
+	grid/sr/inorderqueue.hh (1.5), grid/sr/printsr.cc (1.4),
+	grid/sr/setsrchecksum.cc (1.2), grid/sr/srcr.cc (1.28),
+	grid/sr/srcr.hh (1.24), grid/sr/srpacket.hh (1.6),
+	grid/sr/tokenqueue.cc (1.5), standard/notifierqueue.hh (1.11),
+	standard/simplequeue.hh (1.9), wifi/linkfailuredetection.cc (1.5),
+	wifi/settxrate.cc (1.7), wifi/settxrate.hh (1.6): Add ECNQueue,
+	which explicitly signals congestion along a path and reorders
+	packets on a per-path basis.  Also edit inorderqueue to account
+	properly for congestion.  Make link-failure notification be more
+	sane.
 
 2003-10-31 Friday 18:07  Eddie Kohler <kohler@icir.org>
 
@@ -82,9 +102,22 @@
 
 	* test/testie (1.19): testie supports %eot
 
+2003-10-27 Monday 13:40  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srcr.cc (1.27), srcr.hh (1.23), srforwarder.cc
+	(1.10): add a path cache so routes' don't flap.
+	
+	--john
+
+2003-10-24 Friday 14:27  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: inorderqueue.cc (1.4), inorderqueue.hh (1.4):
+	make inorderqueue a push-to-push queue.
+
 2003-10-24 Friday 14:10  Eddie Kohler <kohler@icir.org>
 
-	* test/testie (1.18): better error messages on bad %file names
+	* test/: testie (1.18), tools/lexer-02.testie (1.2): better error
+	messages on bad %file names
 
 2003-10-23 Thursday 14:50  Eddie Kohler <kohler@icir.org>
 
@@ -131,10 +164,30 @@
 	String::c_str() is a const method, thanks to prodding from Matt
 	Seitz
 
+2003-10-14 Tuesday 01:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: inorderqueue.cc (1.3), inorderqueue.hh (1.3),
+	srforwarder.cc (1.9), srforwarder.hh (1.6), stripsrheader.cc (1.1),
+	stripsrheader.hh (1.1): add stripsrheader to take of sr packet
+	headers.  make inorderqueue work with sr packets, not tcp packets. 
+	make srforwarder spit out sr packets always, not ip packets.
+
+2003-10-13 Monday 15:06  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/sr/setgateway.cc (1.4), grid/sr/srpacket.hh
+	(1.5), grid/sr/tokenqueue.cc (1.4), grid/sr/tokenqueue.hh (1.4),
+	wifi/copyrxstats.cc (1.2), wifi/settxrate.cc (1.6),
+	wifi/settxrate.hh (1.5): add handlers to setgateway, make
+	copyrxstats work as documented, modifications to tokenq.
+
 2003-10-13 Monday 13:39  Eddie Kohler <kohler@icir.org>
 
 	* tools/click2xml/: xml2click.cc (1.12), xml2click.hh (1.2):
 	xml2click compiles
+
+2003-10-13 Monday 11:58  Eddie Kohler <kohler@icir.org>
+
+	* test/tools/lexer-02.testie (1.1): add new test
 
 2003-10-13 Monday 11:57  Eddie Kohler <kohler@icir.org>
 
@@ -186,6 +239,12 @@
 
 	* linuxmodule/sched.cc (1.43): error bugfix
 
+2003-10-10 Friday 11:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/sr/srcr.hh (1.22): don't memset(..,0) a
+	[Big]HashMap! (Shouldn't have done it to normal HashMaps either,
+	tsk tsk
+
 2003-10-10 Friday 00:40  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.72), elements/analysis/aggregateipflows.hh (1.18),
@@ -209,14 +268,33 @@
 	elements/grid/simplelocquerier.cc (1.17),
 	elements/grid/simplelocquerier.hh (1.8),
 	elements/grid/updateroutes.cc (1.32), elements/grid/updateroutes.hh
-	(1.14), elements/icmp/icmppingrewriter.hh (1.10),
+	(1.14), elements/grid/sr/gatewayselector.hh (1.11),
+	elements/grid/sr/inorderqueue.cc (1.2),
+	elements/grid/sr/inorderqueue.hh (1.2),
+	elements/grid/sr/setgateway.hh (1.4), elements/grid/sr/srcr.hh
+	(1.21), elements/grid/sr/srcrstat.cc (1.6),
+	elements/grid/sr/srcrstat.hh (1.3), elements/grid/sr/srforwarder.hh
+	(1.5), elements/grid/sr/srscheduler.cc (1.11),
+	elements/grid/sr/srscheduler.hh (1.7),
+	elements/grid/sr/tokenqueue.cc (1.3),
+	elements/grid/sr/tokenqueue.hh (1.3), elements/grid/sr/top5.hh
+	(1.7), elements/icmp/icmppingrewriter.hh (1.10),
 	elements/ip/iprw.cc (1.49), elements/ip/iprw.hh (1.27),
 	elements/ip/trieiplookup.cc (1.4),
 	elements/ip6/addresstranslator.cc (1.19),
 	elements/ip6/addresstranslator.hh (1.11),
 	elements/local/tcpdemux.cc (1.11), elements/local/tcpdemux.hh
-	(1.7), elements/test/bhmtest.cc (1.3), include/click/bighashmap.cc
-	(1.23), include/click/bighashmap.hh (1.23),
+	(1.7), elements/test/bhmtest.cc (1.3), elements/wifi/autotxpower.cc
+	(1.2), elements/wifi/autotxpower.hh (1.2),
+	elements/wifi/autotxrate.cc (1.5), elements/wifi/autotxrate.hh
+	(1.5), elements/wifi/linkfailuredetection.cc (1.4),
+	elements/wifi/linkfailuredetection.hh (1.2),
+	elements/wifi/rxstats.cc (1.7), elements/wifi/rxstats.hh (1.6),
+	elements/wifi/txfeedbackstats.cc (1.2),
+	elements/wifi/txfeedbackstats.hh (1.2), elements/wifi/txstat.hh
+	(1.2), elements/wifi/wifiqueue.cc (1.2), elements/wifi/wifiqueue.hh
+	(1.3), include/click/bighashmap.cc (1.23),
+	include/click/bighashmap.hh (1.23),
 	include/click/bighashmap_arena.hh (1.9), include/click/hashmap.cc
 	(1.17), include/click/hashmap.hh (1.14), include/click/router.hh
 	(1.50), lib/bighashmap_arena.cc (1.12), lib/lexer.cc (1.69),
@@ -266,7 +344,8 @@
 
 2003-10-09 Thursday 15:12  Eddie Kohler <kohler@icir.org>
 
-	* tools/click-xform/click-xform.cc (1.54): fix click-xform, and add
+	* test/tools/xform-ip-01.testie (1.1),
+	tools/click-xform/click-xform.cc (1.54): fix click-xform, and add
 	click-xform regression test
 
 2003-10-09 Thursday 14:52  Eddie Kohler <kohler@icir.org>
@@ -288,6 +367,8 @@
 2003-10-09 Thursday 13:58  Eddie Kohler <kohler@icir.org>
 
 	* doc/click-combine.1 (1.5), doc/click-flatten.1 (1.6),
+	test/tools/align-01.testie (1.1), test/tools/combine-01.testie
+	(1.1), test/tools/lexer-01.testie (1.1),
 	tools/click-align/click-align.cc (1.47),
 	tools/click-combine/click-combine.cc (1.32),
 	tools/click-combine/click-uncombine.cc (1.28),
@@ -321,11 +402,18 @@
 	ContextErrorHandler gains a fourth (optional) argument: the default
 	landmark
 
+2003-10-07 Tuesday 13:19  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/wifi/: copyrxstats.cc (1.1), copyrxstats.hh (1.1): cheap
+	hack to facilitate roofnet experiment logging
+
 2003-10-06 Monday 22:50  John Bicket <jbicket@mit.edu>
 
-	* elements/standard/notifierqueue.hh (1.10): make config and
-	tokenqueue work with non-token packets so it can be the masquerade
-	as a normal queue.
+	* elements/: grid/sr/setgateway.cc (1.3), grid/sr/setgateway.hh
+	(1.3), grid/sr/tokenqueue.cc (1.2), grid/sr/tokenqueue.hh (1.2),
+	standard/notifierqueue.hh (1.10): make config and tokenqueue work
+	with non-token packets so it can be the masquerade as a normal
+	queue.
 
 2003-10-06 Monday 12:00  Eddie Kohler <kohler@icir.org>
 
@@ -371,19 +459,64 @@
 2003-10-05 Sunday 20:29  John Bicket <jbicket@mit.edu>
 
 	* elements/standard/simplequeue.hh (1.8),
-	include/click/packet_anno.hh (1.18): minor tweaks to wifi elements,
-	make tokenqueue work.
+	elements/wifi/filterfailures.cc (1.3),
+	elements/wifi/filterfailures.hh (1.3),
+	elements/wifi/linkfailuredetection.cc (1.3),
+	elements/wifi/settxrate.cc (1.5), include/click/packet_anno.hh
+	(1.18), elements/grid/sr/inorderqueue.cc (1.1),
+	elements/grid/sr/inorderqueue.hh (1.1), elements/grid/sr/printsr.cc
+	(1.3), elements/grid/sr/setsourceroute.cc (1.6),
+	elements/grid/sr/srcr.cc (1.26), elements/grid/sr/srforwarder.cc
+	(1.8), elements/grid/sr/srforwarder.hh (1.4),
+	elements/grid/sr/srpacket.hh (1.4), elements/grid/sr/srscheduler.cc
+	(1.10), elements/grid/sr/tokenqueue.cc (1.1),
+	elements/grid/sr/tokenqueue.hh (1.1), elements/grid/sr/top5.cc
+	(1.7), elements/wifi/settxrate.hh (1.4): minor tweaks to wifi
+	elements, make tokenqueue work.
 	
 	--jbicket
+
+2003-09-26 Friday 01:47  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autotxrate.cc (1.4), autotxrate.hh (1.4),
+	filterfailures.hh (1.2), settxrate.cc (1.4), settxrate.hh (1.3),
+	wifitxfeedback.hh (1.5): added man pages to some wifi elements set
+	WIFI_FROM_CLICK in settxrate
+
+2003-09-25 Thursday 23:31  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autotxrate.cc (1.3), autotxrate.hh (1.3),
+	settxrate.cc (1.3): make autotxrate and settxrate work.
+	
+	--jbicket
+
+2003-09-25 Thursday 02:20  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/filterfailures.cc (1.2): stupid bugfix.
 
 2003-09-25 Thursday 01:08  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/arptable.hh (1.6): make _bcast public
 
+2003-09-25 Thursday 00:11  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/sr/path.hh (1.3), grid/sr/srcr.cc (1.25),
+	grid/sr/srcr.hh (1.20), grid/sr/srforwarder.cc (1.7),
+	grid/sr/srscheduler.cc (1.9), grid/sr/srscheduler.hh (1.6),
+	wifi/filterfailures.cc (1.1), wifi/filterfailures.hh (1.1),
+	wifi/wifitxfeedback.cc (1.7): added element to filter out packets
+	that have failed more than n times.  modified srcr to have a debug
+	read/write handler fixed some scheduler bugs
+
 2003-09-25 Thursday 00:09  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.17): add wifi_packet_failures
 	anno, which indicates how many times a given packet has failed.
+
+2003-09-24 Wednesday 11:27  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srscheduler.cc (1.8), srscheduler.hh (1.5):
+	add handlers for debug, more corner cases fixed
 
 2003-09-23 Tuesday 14:46  Eddie Kohler <kohler@icir.org>
 
@@ -395,6 +528,21 @@
 	* elements/standard/simplequeue.hh (1.7): add yank1_peek, which,
 	like yank, returns the first packet that matches a filter, but
 	doesn't remove it from the queue.
+
+2003-09-23 Tuesday 13:17  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srscheduler.cc (1.7), srscheduler.hh (1.4):
+	make srscheduler work using yank
+
+2003-09-23 Tuesday 13:15  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/srcrstat.cc (1.5): make etx favor potential
+	high-bitrate links so we get better throughput
+
+2003-09-23 Tuesday 13:14  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: gatewayselector.cc (1.12), setsourceroute.cc
+	(1.5): bugfixes
 
 2003-09-22 Monday 21:02  Eddie Kohler <kohler@icir.org>
 
@@ -432,10 +580,59 @@
 	explicit lexer; will make it easier to write programs using limited
 	sets of elements
 
+2003-09-14 Sunday 11:54  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/srscheduler.cc (1.6): token fixes
+
+2003-09-12 Friday 16:32  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srscheduler.cc (1.5), srscheduler.hh (1.3):
+	add remove timeouts
+
+2003-09-12 Friday 16:11  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: printsr.cc (1.2), setsrflag.cc (1.1),
+	setsrflag.hh (1.1), srforwarder.cc (1.6), srforwarder.hh (1.3),
+	srpacket.hh (1.3), srscheduler.cc (1.4), srscheduler.hh (1.2): make
+	scheduler work
+
+2003-09-11 Thursday 14:20  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srforwarder.cc (1.5), srscheduler.cc (1.3):
+	minor element output changes
+
+2003-09-10 Wednesday 20:39  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srcr.cc (1.24), srforwarder.cc (1.4): crash
+	fixes
+
+2003-09-10 Wednesday 16:03  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srcr.cc (1.23), srscheduler.cc (1.2): fix
+	element outputs.
+
 2003-09-10 Wednesday 15:06  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linktable.cc (1.18): top5 fixes first cut of
-	srscheduler
+	* elements/grid/sr/: top5pathtracker.cc (1.1), top5pathtracker.hh
+	(1.1): see previous message; missed these files
+
+2003-09-10 Wednesday 15:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.18), sr/path.hh (1.2),
+	sr/setsourceroute.cc (1.4), sr/srcr.cc (1.22), sr/srforwarder.cc
+	(1.3), sr/srforwarder.hh (1.2), sr/srpacket.hh (1.2),
+	sr/srscheduler.cc (1.1), sr/srscheduler.hh (1.1), sr/top5.cc (1.6),
+	sr/top5.hh (1.6): top5 fixes first cut of srscheduler
+
+2003-09-08 Monday 23:52  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/setsourceroute.hh (1.3): fix for debian
+
+2003-09-08 Monday 11:31  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: srcrstat.cc (1.4), srcrstat.hh (1.2):
+	srcrstat: only advertize links that we've gotten packets from in
+	the last 30sec.
 
 2003-09-07 Sunday 23:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -445,15 +642,39 @@
 	couldn't actually reproduce the compile error, so I wonder how
 	their configuration is different...
 
+2003-09-07 Sunday 03:09  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: top5.cc (1.5), top5.hh (1.5): towards a
+	working implementation...
+
+2003-09-07 Sunday 03:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: setsourceroute.cc (1.3), srforwarder.cc (1.2):
+	typoes
+
 2003-09-06 Saturday 19:10  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/: linktable.cc (1.17), linktable.hh (1.15): code
-	re-org for source routing. Also more top5 changes on the way to a
-	working implementation.
+	* elements/grid/: linktable.cc (1.17), linktable.hh (1.15),
+	sr/checksrcrheader.cc (1.5), sr/checksrcrheader.hh (1.3),
+	sr/checksrheader.cc (1.1), sr/checksrheader.hh (1.1), sr/ett.cc
+	(1.26), sr/ett.hh (1.17), sr/gatewayselector.cc (1.11),
+	sr/gatewayselector.hh (1.10), sr/printsr.cc (1.1), sr/printsr.hh
+	(1.1), sr/printsrcr.cc (1.6), sr/printsrcr.hh (1.2),
+	sr/setsourceroute.cc (1.2), sr/setsourceroute.hh (1.2),
+	sr/setsrchecksum.cc (1.1), sr/setsrchecksum.hh (1.1),
+	sr/setsrcrchecksum.cc (1.4), sr/setsrcrchecksum.hh (1.2),
+	sr/srcr.cc (1.21), sr/srcr.hh (1.19), sr/srcrstat.cc (1.3),
+	sr/srforwarder.cc (1.1), sr/srforwarder.hh (1.1), sr/srpacket.hh
+	(1.1), sr/top5.cc (1.4), sr/top5.hh (1.4): code re-org for source
+	routing. Also more top5 changes on the way to a working
+	implementation.
 
 2003-09-05 Friday 22:00  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linktable.cc (1.16): modify keyword ordering
+	* elements/grid/: linktable.cc (1.16), sr/ett.cc (1.25),
+	sr/gatewayselector.cc (1.10), sr/gatewayselector.hh (1.9),
+	sr/srcr.cc (1.20), sr/srcr.hh (1.18), sr/srcrstat.cc (1.2): modify
+	keyword ordering
 
 2003-09-05 Friday 21:29  Eddie Kohler <kohler@icir.org>
 
@@ -472,10 +693,25 @@
 
 	* elements/ip/ipprint.hh (1.22): nit
 
+2003-09-05 Friday 01:54  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.24), setsourceroute.cc (1.1),
+	setsourceroute.hh (1.1): bugfix for ett, add setsourceroute for
+	static source routes.
+	
+	--jbicket
+
 2003-09-05 Friday 01:53  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.7), arptable.hh (1.5): add insert
 	write handlers
+
+2003-09-04 Thursday 14:57  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: checksrcrheader.cc (1.4), ett.cc (1.23),
+	ett.hh (1.16), gatewayselector.cc (1.9), gatewayselector.hh (1.8),
+	srcr.cc (1.19), srcr.hh (1.17), srcrstat.cc (1.1), srcrstat.hh
+	(1.1), top5.cc (1.3), top5.hh (1.3): add modified linkstat.
 
 2003-09-04 Thursday 11:58  Eddie Kohler <kohler@icir.org>
 
@@ -504,9 +740,21 @@
 	* lib/lexer.cc (1.68): fix bug: re-allow anonymous compound
 	elements
 
+2003-08-29 Friday 16:36  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: setgateway.cc (1.2), setgateway.hh (1.2):
+	expire old tcp sessions
+
+2003-08-29 Friday 12:44  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: setgateway.cc (1.1), setgateway.hh (1.1): see
+	previous message.
+
 2003-08-29 Friday 12:30  John Bicket <jbicket@mit.edu>
 
-	* include/click/packet_anno.hh (1.16): added per-flow gateway
+	* elements/grid/sr/gatewayselector.cc (1.8),
+	elements/grid/sr/gatewayselector.hh (1.7), elements/grid/sr/srcr.cc
+	(1.18), include/click/packet_anno.hh (1.16): added per-flow gateway
 	selection. --jbicket
 
 2003-08-28 Thursday 16:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
@@ -516,12 +764,29 @@
 
 2003-08-27 Wednesday 14:21  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/arptable.cc (1.6): some bugfixes
+	* elements/grid/: arptable.cc (1.6), sr/ett.cc (1.22), sr/ett.hh
+	(1.15), sr/gatewayselector.cc (1.7), sr/gatewayselector.hh (1.6),
+	sr/srcr.cc (1.17), sr/srcr.hh (1.16), sr/top5.cc (1.2), sr/top5.hh
+	(1.2): some bugfixes
+
+2003-08-26 Tuesday 12:25  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.21), gatewayselector.cc (1.6),
+	srcr.cc (1.16), ett.hh (1.14), gatewayselector.hh (1.5), srcr.hh
+	(1.15): use gridgenericmetric
+
+2003-08-26 Tuesday 11:35  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: top5.cc (1.1), top5.hh (1.1): initial top5
+	routing.
 
 2003-08-26 Tuesday 11:33  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linktable.hh (1.14): fix alignment bugs and man
-	pages for elements I wrote.
+	* elements/grid/: linktable.hh (1.14), sr/checksrcrheader.hh (1.2),
+	sr/ett.hh (1.13), sr/gatewayselector.cc (1.5),
+	sr/gatewayselector.hh (1.4), sr/printsrcr.cc (1.5), sr/srcr.cc
+	(1.15), sr/srcr.hh (1.14): fix alignment bugs and man pages for
+	elements I wrote.
 
 2003-08-24 Sunday 21:23  Eddie Kohler <kohler@icir.org>
 
@@ -605,6 +870,16 @@
 	* conf/: udpcount.click (1.1), udpgen.click (1.8): udpgen and
 	udpcount
 
+2003-08-21 Thursday 19:24  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/wifi/wifitxfeedback.cc (1.6): whoops.  add missing
+	notify_noutputs.
+
+2003-08-21 Thursday 18:28  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/checksrcrheader.cc (1.3): added chatter messages
+	for failures
+
 2003-08-21 Thursday 16:55  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/toolutils.cc (1.49): do not artificially limit how much
@@ -626,6 +901,20 @@
 
 	* etc/diagrams/samp04_iprouter.mp (1.4): more up-to-date IP router
 
+2003-08-21 Thursday 16:46  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/wifi/: rxfcserr.cc (1.1), rxfcserr.hh (1.1),
+	wifitxfeedback.cc (1.5), wifitxfeedback.hh (1.4): - split up TX
+	feedback if a second output exists - RXFCSErr element for getting
+	frames received with a bad CRC
+
+2003-08-21 Thursday 15:21  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: checksrcrheader.cc (1.2), ett.cc (1.20),
+	gatewayselector.cc (1.4), printsrcr.cc (1.4), setsrcrchecksum.cc
+	(1.3), srcr.cc (1.14), srcr.hh (1.13): fix alignment.  use
+	click_ether instead of embedding it in packets.  --jbicket
+
 2003-08-21 Thursday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/ratedunqueue.hh (1.14): man page nitlet
@@ -646,6 +935,26 @@
 	* elements/grid/: dsr.hh (1.1), dsrarptable.cc (1.1),
 	dsrarptable.hh (1.1), dsrroutetable.cc (1.1), dsrroutetable.hh
 	(1.1), linktable.hh (1.13): a DSR implementation
+
+2003-08-19 Tuesday 11:08  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: gatewayselector.cc (1.3), gatewayselector.hh
+	(1.3): wait one more period after warmup before picking gateway.
+	
+	--jbicket
+
+2003-08-18 Monday 23:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: gatewayselector.cc (1.2), gatewayselector.hh
+	(1.2): handler name changes
+
+2003-08-18 Monday 20:59  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.19), ett.hh (1.12),
+	gatewayselector.cc (1.1), gatewayselector.hh (1.1), srcr.hh (1.12):
+	Added proactive gateway selection.
+	
+	--jbicket
 
 2003-08-18 Monday 14:07  Eddie Kohler <kohler@icir.org>
 
@@ -717,14 +1026,26 @@
 
 2003-08-11 Monday 03:43  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/: linktable.cc (1.14), linktable.hh (1.11): add
-	stale expire timer to linktable, fix bug in ett that would respond
-	to querys with stale route info.
+	* elements/grid/sr/path.hh (1.1): oops forgot this file
+
+2003-08-11 Monday 03:43  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.14), linktable.hh (1.11),
+	sr/ett.cc (1.18), sr/ett.hh (1.11), sr/setsrcrchecksum.cc (1.2):
+	add stale expire timer to linktable, fix bug in ett that would
+	respond to querys with stale route info.
 
 2003-08-09 Saturday 02:36  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linktable.cc (1.13): srcr random link propogation,
-	new link updates in place of errors, linktable nits
+	* elements/grid/: linktable.cc (1.13), sr/ett.cc (1.17), sr/ett.hh
+	(1.10), sr/srcr.cc (1.13), sr/srcr.hh (1.11): srcr random link
+	propogation, new link updates in place of errors, linktable nits
+
+2003-08-08 Friday 16:43  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: wifitxfeedback.cc (1.4), wifitxfeedback.hh (1.3):
+	took out internal queue; push packets to msqueue in configs instead
+	to avoid potential race conditions.  --jbicket
 
 2003-08-08 Friday 15:32  Eddie Kohler <kohler@icir.org>
 
@@ -739,9 +1060,24 @@
 	_element_type_next indicating whether or not a given type was
 	scoped.
 
+2003-08-08 Friday 14:30  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.16), ett.hh (1.9), srcr.cc (1.12),
+	srcr.hh (1.10): add random link updating.
+	
+	--jbicket
+
 2003-08-08 Friday 13:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* README (1.38): changed my name!
+
+2003-08-08 Friday 13:02  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: checksrcrheader.cc (1.1), checksrcrheader.hh
+	(1.1), ett.cc (1.15), setsrcrchecksum.cc (1.1), setsrcrchecksum.hh
+	(1.1), srcr.cc (1.11), srcr.hh (1.9): added checksumming facility.
+	
+	--jbicket
 
 2003-08-08 Friday 13:01  John Bicket <jbicket@mit.edu>
 
@@ -793,11 +1129,11 @@
 2003-08-07 Thursday 13:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.66), linkstat.cc (1.26),
-	linkstat.hh (1.13), printgrid.cc (1.33), printgrid.hh (1.10):
-	Create new ethernet packet type for LinkStat broadcast probes, to
-	decouple LinkStat from specific routing protocol.  Modify PrintGrid
-	to understand new LinkStat packets.  Modify routing protocols to
-	work with new LinkStat for metrics
+	linkstat.hh (1.13), printgrid.cc (1.33), printgrid.hh (1.10),
+	sr/ett.cc (1.14): Create new ethernet packet type for LinkStat
+	broadcast probes, to decouple LinkStat from specific routing
+	protocol.  Modify PrintGrid to understand new LinkStat packets. 
+	Modify routing protocols to work with new LinkStat for metrics
 
 2003-08-06 Wednesday 21:12  jastr
 
@@ -828,27 +1164,58 @@
 	* elements/grid/linkstat.cc (1.25): error msgs should not be
 	commented out, configurations should be fixed
 
+2003-08-06 Wednesday 12:07  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/linkfailuredetection.cc (1.2): debug message
+	modification
+
 2003-08-05 Tuesday 14:58  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linktable.cc (1.11): minor tweaks to handlers for
-	linktable add random delay to query forwarding to avoid broadcast
-	storms finished route errors
+	* elements/grid/: linktable.cc (1.11), sr/ett.cc (1.13), sr/ett.hh
+	(1.8), sr/printsrcr.cc (1.3), sr/srcr.cc (1.10), sr/srcr.hh (1.8):
+	minor tweaks to handlers for linktable add random delay to query
+	forwarding to avoid broadcast storms finished route errors
 
 2003-08-03 Sunday 13:57  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/: arptable.cc (1.5), arptable.hh (1.4): added
+	* elements/grid/: arptable.cc (1.5), arptable.hh (1.4), sr/ett.cc
+	(1.12), sr/ett.hh (1.7), sr/srcr.cc (1.9), sr/srcr.hh (1.7): added
 	reverse_lookup to arptable, made slight changes to srcr header. 
 	--john
+
+2003-08-03 Sunday 13:55  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: linkfailuredetection.cc (1.1),
+	linkfailuredetection.hh (1.1): Added element to detect wifi link
+	failures.
+	
+	--jbicket
 
 2003-08-01 Friday 23:18  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.10), linktable.hh (1.10): bugfix:
 	don't call findp inside an iter!!!! --jbicket
 
+2003-08-01 Friday 17:19  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.11), srcr.cc (1.8), srcr.hh (1.6):
+	fix memory leak track metrics better fix casting bug
+
 2003-07-31 Thursday 13:26  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/linkstat.cc (1.24): made multi-hop work and tested
-	it.  --jbicket
+	* elements/grid/: linkstat.cc (1.24), sr/ett.cc (1.10), sr/srcr.cc
+	(1.7): made multi-hop work and tested it.  --jbicket
+
+2003-07-30 Wednesday 22:37  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.9), ett.hh (1.6): added warmup
+	configure option
+
+2003-07-30 Wednesday 17:28  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: esrcr.cc (1.3), esrcr.hh (1.3), ett.cc (1.8),
+	ett.hh (1.5), srcr.cc (1.6), srcr.hh (1.5): added linkstat support
+	added warmup period to ett
 
 2003-07-30 Wednesday 15:02  Eddie Kohler <kohler@icir.org>
 
@@ -890,16 +1257,47 @@
 	* elements/tcpudp/: tcprewriter.cc (1.31), tcprewriter.hh (1.15):
 	TCPRewriter takes account of tcp sack options (but untested)
 
+2003-07-29 Tuesday 22:16  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/ett.cc (1.7): fix multihop query/reply sequence
+
 2003-07-29 Tuesday 18:00  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.9), linktable.hh (1.9): fixed
 	dijstra bug. what was I thinking?
 
+2003-07-29 Tuesday 15:10  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.6), ett.hh (1.4), srcr.cc (1.5),
+	srcr.hh (1.4): bug updates
+
+2003-07-28 Monday 14:33  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.5), srcr.cc (1.4), srcr.hh (1.3):
+	mark ip header in srcr.  add version number to protocol.
+	
+	--jbicket
+
+2003-07-28 Monday 00:43  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.4), srcr.cc (1.3): fix mem leaks,
+	and the problem with trying to broadcast unicast packets....  now
+	my internet connection works.
+	
+	--jbicket
+
+2003-07-27 Sunday 22:08  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ett.cc (1.3), ett.hh (1.3): fixed some reoute
+	request/reply bugs.
+
 2003-07-27 Sunday 18:59  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.4), arptable.hh (1.3),
-	linktable.cc (1.8), linktable.hh (1.8): move back to ip4 (doh!).
-	plus gateway fixes for ett.
+	linktable.cc (1.8), linktable.hh (1.8), sr/esrcr.cc (1.2),
+	sr/esrcr.hh (1.2), sr/ett.cc (1.2), sr/ett.hh (1.2),
+	sr/printsrcr.cc (1.2), sr/srcr.cc (1.2), sr/srcr.hh (1.2): move
+	back to ip4 (doh!). plus gateway fixes for ett.
 	
 	--jbicket
 
@@ -907,9 +1305,20 @@
 
 	* elements/grid/: esrcr.cc (1.5), esrcr.hh (1.4), etx.cc (1.3),
 	etx.hh (1.3), linktable.cc (1.7), linktable.hh (1.7), printsrcr.cc
-	(1.7), printsrcr.hh (1.4), srcr.cc (1.10), srcr.hh (1.7): - move
-	source routing elments to elements/grid/sr.  - first working
-	version of ett.  - make linktable work for ip6.
+	(1.7), printsrcr.hh (1.4), srcr.cc (1.10), srcr.hh (1.7),
+	sr/esrcr.cc (1.1), sr/esrcr.hh (1.1), sr/ett.cc (1.1), sr/ett.hh
+	(1.1), sr/printsrcr.cc (1.1), sr/printsrcr.hh (1.1), sr/srcr.cc
+	(1.1), sr/srcr.hh (1.1): - move source routing elments to
+	elements/grid/sr.  - first working version of ett.  - make
+	linktable work for ip6.
+	
+	--jbicket
+
+2003-07-25 Friday 00:57  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: rxstats.cc (1.6), rxstats.hh (1.5), txstat.cc
+	(1.2): minor tweaks to rxstats, remove srcr dependency from
+	txstats.
 	
 	--jbicket
 
@@ -949,10 +1358,13 @@
 
 2003-07-22 Tuesday 19:02  Eddie Kohler <kohler@icir.org>
 
-	* elements/: standard/simplequeue.cc (1.6), standard/simplequeue.hh
-	(1.6), test/queueyanktest.cc (1.1), test/queueyanktest.hh (1.1):
-	reimplement yank() functionality in a more STL-ish style; only move
-	tail pointer; add yank1() [yank first match]; add validation test
+	* elements/standard/simplequeue.cc (1.6),
+	elements/standard/simplequeue.hh (1.6),
+	test/standard/Queue-yank-01.testie (1.1),
+	elements/test/queueyanktest.cc (1.1),
+	elements/test/queueyanktest.hh (1.1): reimplement yank()
+	functionality in a more STL-ish style; only move tail pointer; add
+	yank1() [yank first match]; add validation test
 
 2003-07-22 Tuesday 18:55  Eddie Kohler <kohler@icir.org>
 
@@ -989,6 +1401,23 @@
 	
 	--john
 
+2003-07-21 Monday 23:24  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autotxrate.cc (1.2), autotxrate.hh (1.2),
+	rxstats.cc (1.5), rxstats.hh (1.4): fixed minor autotxrate bugs,
+	added more rxstats details.
+	
+	--john
+
+2003-07-21 Monday 15:30  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/rxstats.cc (1.4): more fine-grained measurements
+
+2003-07-21 Monday 15:28  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: rxstats.cc (1.3), rxstats.hh (1.3): added rate
+	approximation from received broadcasts.
+
 2003-07-21 Monday 00:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh (1.49): increase max ttl
@@ -1019,7 +1448,8 @@
 
 2003-07-14 Monday 00:01  John Bicket <jbicket@mit.edu>
 
-	* elements/grid/: arptable.cc (1.2), esrcr.cc (1.2), srcr.cc (1.6):
+	* elements/: grid/arptable.cc (1.2), grid/esrcr.cc (1.2),
+	grid/srcr.cc (1.6), wifi/rxstats.cc (1.2), wifi/rxstats.hh (1.2):
 	make srcr roofnet click config function.  make rxstats ignore
 	broadcast messages.
 	
@@ -1047,6 +1477,13 @@
 	(1.1), esrcr.hh (1.1), linktable.cc (1.5), linktable.hh (1.5),
 	printsrcr.cc (1.5), srcr.cc (1.5), srcr.hh (1.4): Initial version
 	of end-to-end source routing.  Also added a simple arp table.
+	
+	--jbicket
+
+2003-07-13 Sunday 20:04  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: wifitxfeedback.cc (1.3), wifitxfeedback.hh (1.2):
+	fix click_wifi unregister in wifitxfeedback.
 	
 	--jbicket
 
@@ -1113,6 +1550,16 @@
 	* include/click/straccum.hh (1.26), lib/straccum.cc (1.32): add
 	StringAccum&operator<<(StringAccum&, void*)
 
+2003-07-12 Saturday 15:52  Eddie Kohler <kohler@icir.org>
+
+	* test/standard/: DelayShaper-notifier-01.testie (1.1),
+	notifier-01.testie (1.1): add tests for new Notifier functionality
+
+2003-07-12 Saturday 15:51  Eddie Kohler <kohler@icir.org>
+
+	* test/icmp/ICMPError-sourceroute-01.testie (1.2): update test for
+	new ssrr{} format
+
 2003-07-11 Friday 19:45  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/trieiplookup.hh (1.3), include/click/hashmap.hh
@@ -1134,6 +1581,16 @@
 	* elements/grid/dsdvroutetable.cc (1.59): use correct packets zie
 	for prediction
 
+2003-07-10 Thursday 22:51  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autotxpower.cc (1.1), autotxpower.hh (1.1),
+	autotxrate.cc (1.1), autotxrate.hh (1.1), rxstats.cc (1.1),
+	rxstats.hh (1.1), settxrate.cc (1.2), settxrate.hh (1.2),
+	wifitxfeedback.cc (1.2): Added more wifi elements.  Now support
+	auto tx rate scaling, and gathering of rx packet statistics.
+	
+	--jbicket
+
 2003-07-09 Wednesday 21:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/delivery_rate_table.hh (1.2): put right packet
@@ -1145,9 +1602,21 @@
 	(1.58), dsdvroutetable.hh (1.41), gen-loss-rate-tables.pl (1.1),
 	linkstat.hh (1.11): add two-size link estimation to DSDVRouteTable
 
+2003-07-09 Wednesday 17:11  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/wifiqueue.hh (1.2): removed erroneous doc info
+
 2003-07-09 Wednesday 16:56  John Bicket <jbicket@mit.edu>
 
 	* configure.in (1.210): added experimental flag for --enable-wifi
+
+2003-07-09 Wednesday 16:02  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: settxpower.cc (1.1), settxpower.hh (1.1),
+	settxrate.cc (1.1), settxrate.hh (1.1): Added elements to set
+	txpower and txrate via wifi packet annotations.
+	
+	--jbicket
 
 2003-07-09 Wednesday 15:36  Eddie Kohler <kohler@icir.org>
 
@@ -1168,7 +1637,15 @@
 	(1.3), elements/grid/txstat.hh (1.2), elements/grid/wifiqueue.cc
 	(1.4), elements/grid/wifiqueue.hh (1.2),
 	elements/grid/wifitxfeedback.cc (1.3),
-	elements/grid/wifitxfeedback.hh (1.3): Made directory for wifi
+	elements/grid/wifitxfeedback.hh (1.3),
+	elements/wifi/ratepowercontrol.cc (1.1),
+	elements/wifi/ratepowercontrol.hh (1.1),
+	elements/wifi/txfeedbackstats.cc (1.1),
+	elements/wifi/txfeedbackstats.hh (1.1), elements/wifi/txstat.cc
+	(1.1), elements/wifi/txstat.hh (1.1), elements/wifi/wifiqueue.cc
+	(1.1), elements/wifi/wifiqueue.hh (1.1),
+	elements/wifi/wifitxfeedback.cc (1.1),
+	elements/wifi/wifitxfeedback.hh (1.1): Made directory for wifi
 	elements (use the --enable-wifi configure flag).
 	
 	--john
@@ -1488,6 +1965,24 @@
 	icmpsendpings.cc (1.24), icmpsendpings.hh (1.9): rename
 	ICMPSendPings to ICMPPingSource (old name still available, but
 	deprecated), and add ICMPPingEncap
+
+2003-06-10 Tuesday 13:35  Eddie Kohler <kohler@icir.org>
+
+	* test/icmp/ICMPPingEncap-01.testie (1.1): add check for
+	ICMPPingEncap
+
+2003-06-10 Tuesday 02:09  Eddie Kohler <kohler@icir.org>
+
+	* test/linuxmodule/ToHost-01.testie (1.3): uninstall the kernel
+
+2003-06-10 Tuesday 02:07  Eddie Kohler <kohler@icir.org>
+
+	* test/linuxmodule/ToHost-01.testie (1.2): better description for
+	the test
+
+2003-06-10 Tuesday 02:04  Eddie Kohler <kohler@icir.org>
+
+	* test/linuxmodule/ToHost-01.testie (1.1): new ToHost test
 
 2003-06-10 Tuesday 02:04  Eddie Kohler <kohler@icir.org>
 
@@ -2247,8 +2742,9 @@
 
 2003-03-16 Sunday 17:03  Eddie Kohler <kohler@icir.org>
 
-	* test/testie (1.12): better testie semantics: allow %file FILE1
-	FILE2 and the like
+	* test/: testie (1.12), analysis/FromIPSummaryDump-ipopt-01.testie
+	(1.6): better testie semantics: allow %file FILE1 FILE2 and the
+	like
 
 2003-03-16 Sunday 17:02  Eddie Kohler <kohler@icir.org>
 
@@ -2284,10 +2780,12 @@
 
 2003-03-09 Sunday 20:02  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.49), toipsumdump.cc
-	(1.43), toipsumdump.hh (1.36): change IP and TCP option formats
-	(especially: use ; as a separator, not ,); plus parsing bug fixes
-	from test
+	* elements/analysis/fromipsumdump.cc (1.49),
+	elements/analysis/toipsumdump.cc (1.43),
+	elements/analysis/toipsumdump.hh (1.36),
+	test/analysis/FromIPSummaryDump-ipopt-01.testie (1.5): change IP
+	and TCP option formats (especially: use ; as a separator, not ,);
+	plus parsing bug fixes from test
 
 2003-03-09 Sunday 20:01  Eddie Kohler <kohler@icir.org>
 
@@ -2300,9 +2798,12 @@
 
 2003-03-07 Friday 01:05  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.48), fromipsumdump.hh
-	(1.27), toipsumdump.cc (1.42), toipsumdump.hh (1.35): add TS option
-	to IPSummaryDump (more to go)
+	* elements/analysis/fromipsumdump.cc (1.48),
+	elements/analysis/fromipsumdump.hh (1.27),
+	elements/analysis/toipsumdump.cc (1.42),
+	elements/analysis/toipsumdump.hh (1.35),
+	test/analysis/FromIPSummaryDump-ipopt-01.testie (1.4): add TS
+	option to IPSummaryDump (more to go)
 
 2003-03-06 Thursday 21:04  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
@@ -2366,17 +2867,24 @@
 
 2003-03-04 Tuesday 16:19  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.47), toipsumdump.cc
-	(1.41): update ipopt01 test for empty options and the like; improve
-	output for SSRR and LSRR (show pointer as *); add ICMPError source
-	routing test
+	* elements/analysis/fromipsumdump.cc (1.47),
+	elements/analysis/toipsumdump.cc (1.41),
+	test/analysis/FromIPSummaryDump-ipopt-01.testie (1.3),
+	test/icmp/ICMPError-sourceroute-01.testie (1.1): update ipopt01
+	test for empty options and the like; improve output for SSRR and
+	LSRR (show pointer as *); add ICMPError source routing test
 
 2003-03-04 Tuesday 15:53  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11):
-	update regression test for binary options; fix testie against perl
-	bugs; and regression test found bug with binary option handling
-	(fixed)
+	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11),
+	test/analysis/FromIPSummaryDump-ipopt-01.testie (1.2): update
+	regression test for binary options; fix testie against perl bugs;
+	and regression test found bug with binary option handling (fixed)
+
+2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
+
+	* test/analysis/FromIPSummaryDump-ipopt-01.testie (1.1): test for
+	IP options stuff (ASCII only)
 
 2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
 
@@ -2697,11 +3205,12 @@
 	elements/standard/simplequeue.hh (1.3),
 	elements/standard/unqueue.cc (1.23), elements/standard/unqueue2.cc
 	(1.12), include/click/glue.hh (1.34),
-	include/click/standard/scheduleinfo.hh (1.18): add MixedQueue
-	element, and lifo_enq() to SimpleQueue; add tests for MixedQueue;
-	make FrontDropQueue plausibly work again; use initialize_task(),
-	not join_scheduler(); Unqueue(ACTIVE false) would crash: fixed;
-	nits
+	include/click/standard/scheduleinfo.hh (1.18),
+	test/standard/MixedQueue-01.testie (1.1),
+	test/standard/MixedQueue-02.testie (1.1): add MixedQueue element,
+	and lifo_enq() to SimpleQueue; add tests for MixedQueue; make
+	FrontDropQueue plausibly work again; use initialize_task(), not
+	join_scheduler(); Unqueue(ACTIVE false) would crash: fixed; nits
 
 2003-02-15 Saturday 03:22  Eddie Kohler <kohler@icir.org>
 
@@ -3775,18 +4284,6 @@
 	src/idiag_e1000.h (1.1), src/idiag_pro.h (1.1), src/idiag_test.c
 	(1.1), src/kcompat.c (1.1), src/kcompat.h (1.1): add new e1000
 	driver (4.3.15, works on Linux 2.4)
-
-2002-11-22 Friday 12:12  Eddie Kohler <kohler@icir.org>
-
-	* drivers/e1000/: LICENSE (1.3), Makefile (1.7), Makefile.orig
-	(1.3), README (1.3), README-rtm (1.3), ans.c (1.3), ans.h (1.3),
-	ans_driver.c (1.3), ans_driver.h (1.3), ans_hw.c (1.3), ans_hw.h
-	(1.3), ans_os.c (1.3), ans_os.h (1.3), base_comm.h (1.3), e1000.h
-	(1.3), e1000.h.orig (1.3), e1000_fxhw.c (1.3), e1000_fxhw.h (1.3),
-	e1000_kcompat.h (1.4), e1000_main.c (1.6), e1000_main.c.orig (1.3),
-	e1000_phy.c (1.3), e1000_phy.h (1.3), e1000_proc.c (1.3),
-	e1000_proc.h (1.3), e1000_vendor_info.h (1.3): remove old e1000
-	driver
 
 2002-11-21 Thursday 18:32  Eddie Kohler <kohler@icir.org>
 
@@ -8922,8 +9419,8 @@
 
 2002-01-11 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
-	* drivers/: e1000/e1000_kcompat.h (1.3), e1000-2.x/e1000_kcompat.h
-	(1.3): fixes for compilation under 2.2.19, from Brecht Vermeulen
+	* drivers/e1000-2.x/e1000_kcompat.h (1.3): fixes for compilation
+	under 2.2.19, from Brecht Vermeulen
 
 2002-01-11 Friday 02:42  Eddie Kohler <kohler@icir.org>
 
