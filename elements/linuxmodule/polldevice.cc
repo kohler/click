@@ -228,9 +228,6 @@ PollDevice::run_scheduled()
     skb_push(skb, 14);
 
     Packet *p = Packet::make(skb);
-    if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
-      p->set_mac_broadcast_anno(1);
-  
     output(0).push(p);
   }
 

@@ -887,18 +887,11 @@ cp_ip_prefix(const String &str,
   else if (cp_integer(mask_part, &relevant_bits)
 	   && relevant_bits >= 0 && relevant_bits <= 32) {
     // set bits
-    mask[0] = mask[1] = mask[2] = mask[3] = 0;
-    unsigned char *pos = mask;
-    unsigned char bit = 0x80;
-    for (int i = 0; i < relevant_bits; i++) {
-      *pos |= bit;
-      bit >>= 1;
-      if (!bit) {
-	pos++;
-	bit = 0x80;
-      }
-    }
-    /* OK */;
+    unsigned umask = 0;
+    if (relevant_bits > 0)
+      umask = 0xFFFFFFFFU << (32 - relevant_bits);
+    for (int i = 0; i < 4; i++, umask <<= 8)
+      mask[i] = (umask >> 24) & 255;
     
   } else
     return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);

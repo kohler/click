@@ -15,6 +15,8 @@
 #endif
 #include "alignclass.hh"
 #include "confparse.hh"
+#include "error.hh"
+#include "routert.hh"
 
 Alignment
 common_alignment(const Vector<Alignment> &a, int off, int n)
@@ -151,14 +153,37 @@ StripAlignClass::StripAlignClass()
 }
 
 Aligner *
-StripAlignClass::create_aligner(ElementT &e, RouterT *, ErrorHandler *errh)
+StripAlignClass::create_aligner(ElementT &e, RouterT *r, ErrorHandler *errh)
 {
   int m;
-  if (cp_va_parse(e.configuration, errh,
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + r->edeclaration(e) + "':");
+  if (cp_va_parse(e.configuration, &cerrh,
 		  cpInteger, "amount to strip", &m,
 		  0) < 0)
     return default_aligner();
   return new ShifterAligner(m);
+}
+
+
+CheckIPHeaderAlignClass::CheckIPHeaderAlignClass(int argno)
+  : _argno(argno)
+{
+}
+
+Aligner *
+CheckIPHeaderAlignClass::create_aligner(ElementT &e, RouterT *r, ErrorHandler *errh)
+{
+  unsigned offset = 0;
+  Vector<String> args;
+  cp_argvec(e.configuration, args);
+  if (args.size() > _argno) {
+    if (!cp_unsigned(args[_argno], &offset)) {
+      ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + r->edeclaration(e) + "':");
+      cerrh.error("argument %d should be IP header offset (unsigned)", _argno + 1);
+      return default_aligner();
+    }
+  }
+  return new WantAligner(Alignment(4, 0) - (int)offset);
 }
 
 
@@ -167,10 +192,11 @@ AlignAlignClass::AlignAlignClass()
 }
 
 Aligner *
-AlignAlignClass::create_aligner(ElementT &e, RouterT *, ErrorHandler *errh)
+AlignAlignClass::create_aligner(ElementT &e, RouterT *r, ErrorHandler *errh)
 {
   int offset, chunk;
-  if (cp_va_parse(e.configuration, errh,
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + r->edeclaration(e) + "':");
+  if (cp_va_parse(e.configuration, &cerrh,
 		  cpUnsigned, "alignment modulus", &chunk,
 		  cpUnsigned, "alignment offset", &offset,
 		  0) < 0)

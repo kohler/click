@@ -16,6 +16,7 @@ class IPAddress {
   explicit IPAddress(struct in_addr);
   
   operator bool() const		{ return _addr != 0; }
+  operator unsigned() const	{ return _addr; }
   unsigned addr() const		{ return _addr; }
   
   operator struct in_addr() const;

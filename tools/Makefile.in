@@ -21,27 +21,27 @@ TARGETS = @TOOL_TARGETS@
 all: $(TARGETS)
 
 lib: always Makefile
-	@cd lib; $(MAKE) all
+	@cd lib && $(MAKE) all
 click-align: lib Makefile
-	@cd click-align; $(MAKE) all-local
+	@cd click-align && $(MAKE) all-local
 click-check: lib Makefile
-	@cd click-check; $(MAKE) all-local
+	@cd click-check && $(MAKE) all-local
 click-combine: lib Makefile
-	@cd click-combine; $(MAKE) all-local
+	@cd click-combine && $(MAKE) all-local
 click-devirtualize: lib Makefile
-	@cd click-devirtualize; $(MAKE) all-local
+	@cd click-devirtualize && $(MAKE) all-local
 click-fastclassifier: lib Makefile
-	@cd click-fastclassifier; $(MAKE) all-local
+	@cd click-fastclassifier && $(MAKE) all-local
 click-install: lib Makefile
-	@cd click-install; $(MAKE) all-local
+	@cd click-install && $(MAKE) all-local
 click-ipopt: lib Makefile
-	@cd click-ipopt; $(MAKE) all-local
+	@cd click-ipopt && $(MAKE) all-local
 click-undead: lib Makefile
-	@cd click-undead; $(MAKE) all-local
+	@cd click-undead && $(MAKE) all-local
 click-xform: lib Makefile
-	@cd click-xform; $(MAKE) all-local
+	@cd click-xform && $(MAKE) all-local
 udpgen: Makefile
-	@cd udpgen; $(MAKE) all
+	@cd udpgen && $(MAKE) all
 always:
 	@:
 

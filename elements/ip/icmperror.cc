@@ -172,7 +172,7 @@ ICMPError::simple_action(Packet *p)
     goto out;
 
   /* Don't respond to e.g. Ethernet broadcasts or multicasts. */
-  if(p->mac_broadcast_anno())
+  if (p->packet_type_anno() == Packet::BROADCAST || p->packet_type_anno() == Packet::MULTICAST)
     goto out;
 
   /* Don't respond is src is net 0 or invalid. */

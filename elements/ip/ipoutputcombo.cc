@@ -52,7 +52,7 @@ IPOutputCombo::push(int, Packet *p_in)
   int problem_offset = -1;
 
   // DropBroadcasts
-  if (p_in->mac_broadcast_anno()) {
+  if (p_in->packet_type_anno() == Packet::BROADCAST || p_in->packet_type_anno() == Packet::MULTICAST) {
     p_in->kill();
     return;
   }

@@ -1,6 +1,5 @@
 #ifndef TOLINUXSNIFFERS_HH
 #define TOLINUXSNIFFERS_HH
-#include "element.hh"
 #include "elements/linuxmodule/fromlinux.hh"
 
 /*

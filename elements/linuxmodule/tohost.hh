@@ -1,14 +1,15 @@
 #ifndef TOLINUX_HH
 #define TOLINUX_HH
-#include "element.hh"
+#include "elements/linuxmodule/fromlinux.hh"
 
 /*
  * =c
- * ToLinux
+ * ToLinux([DEVNAME])
  * =s
  * sends packets to Linux
  * V<sinks>
  * =d
+ *
  * Hands packets to the ordinary Linux protocol stack.
  * Expects packets with Ethernet headers.
  * 
@@ -16,12 +17,19 @@
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
  *
+ * If DEVNAME is present, each packet is marked to appear as if it originated
+ * from that network device. As with ToDevice, DEVNAME can be an Ethernet
+ * address.
+ * 
  * This element is only available in the Linux kernel module.
  *
  * =a ToLinuxSniffers, FromLinux, FromDevice, PollDevice, ToDevice
  */
 
 class ToLinux : public Element {
+  
+  struct device *_dev;
+  
  public:
   
   ToLinux();
@@ -31,10 +39,12 @@ class ToLinux : public Element {
   const char *processing() const		{ return PUSH; }
   const char *flags() const			{ return "S2"; }
   
+  int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
+  int configure(const Vector<String> &, ErrorHandler *);
   ToLinux *clone() const;
   
   void push(int port, Packet *);
 
 };
 
-#endif TOLINUX_HH
+#endif

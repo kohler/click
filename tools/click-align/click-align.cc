@@ -173,6 +173,9 @@ prepared_router()
   RouterT *r = new RouterT;
   r->get_type_index("Align", new AlignAlignClass);
   r->get_type_index("Strip", new StripAlignClass);
+  r->get_type_index("CheckIPHeader", new CheckIPHeaderAlignClass(1));
+  r->get_type_index("CheckIPHeader2", new CheckIPHeaderAlignClass(1));
+  r->get_type_index("MarkIPHeader", new CheckIPHeaderAlignClass(0));
   r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
   r->get_type_index("EtherEncap", new AlignClass(new ShifterAligner(-14)));
   Aligner *a = new GeneratorAligner(Alignment(4, 2));
@@ -184,9 +187,6 @@ prepared_router()
   a = new WantAligner(Alignment(4, 2));
   r->get_type_index("ToLinux", new AlignClass(a));
   a = new WantAligner(Alignment(4, 0));
-  r->get_type_index("CheckIPHeader", new AlignClass(a));
-  r->get_type_index("CheckIPHeader2", new AlignClass(a));
-  r->get_type_index("MarkIPHeader", new AlignClass(a));
   r->get_type_index("IPEncap", new AlignClass(a));
   r->get_type_index("UDPIPEncap", new AlignClass(a));
   r->get_type_index("ICMPPingEncap", new AlignClass(a));
@@ -343,7 +343,7 @@ particular purpose.\n");
       for (int j = 0; j < ral._icount[i]; j++) {
 	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
 	Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
-	if (have <= want)
+	if (have <= want || want.bad())
 	  /* do nothing */;
 	else {
 	  int ei = router->get_eindex

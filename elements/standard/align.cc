@@ -26,7 +26,7 @@ Align::Align()
 int
 Align::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int count;
+  unsigned count;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "alignment modulus", &count,
 		  cpUnsigned, "alignment offset", &_offset,

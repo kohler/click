@@ -57,7 +57,7 @@ class ARPResponder : public Element {
   Packet *simple_action(Packet *);
   
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
-                        unsigned char sha[6], unsigned char spa[4]);
+                        unsigned char sha[6], unsigned char spa[4], Packet *);
 
   bool lookup(IPAddress, EtherAddress &);
 

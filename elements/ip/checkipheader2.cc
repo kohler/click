@@ -65,15 +65,18 @@ CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
     Vector<String> words;
     u_int a;
     cp_spacevec(conf[0], words);
-    for (int j = 0; j < words.size(); j++) {
-      if (!cp_ip_address(words[j], (unsigned char *)&a, this))
-	return errh->error("expects IPADDRESS");
-      for (int j = 0; j < ips.size(); j++)
-	if (ips[j] == a)
-	  goto repeat;
-      ips.push_back(a);
-     repeat: ;
-    }
+    if (words.size() == 1 && words[0] == "-")
+      ips.clear();
+    else
+      for (int j = 0; j < words.size(); j++) {
+	if (!cp_ip_address(words[j], (unsigned char *)&a, this))
+	  return errh->error("expects IPADDRESS");
+	for (int j = 0; j < ips.size(); j++)
+	  if (ips[j] == a)
+	    goto repeat;
+	ips.push_back(a);
+       repeat: ;
+      }
   }
   
   _n_bad_src = ips.size();

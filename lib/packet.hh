@@ -7,75 +7,9 @@ struct click_ip;
 struct click_ip6;
 class WritablePacket;
 
-class Packet {
+class Packet { public:
 
-public:
-  // Anno must fit in sk_buff's char cb[48].
-  struct Anno {
-    union {
-      unsigned dst_ip4;
-      unsigned char dst_ip6[16];
-    } dst_ip;
-    unsigned char sniff_flags; // flags used for sniffers
-    bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
-    bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
-    char param_off;     // for ICMP Parameter Problem, byte offset of error
-    char color;         // one of 255 colors set by Paint element
-    int fwd_rate;
-    int rev_rate;
-#ifdef __KERNEL__
-    union {
-      cycles_t cycles[4];
-      struct {
-	unsigned m0[2];
-	unsigned m1[2];
-      } perf;
-    } p;
-#endif
-  };
-
-private:
-  
-#ifndef __KERNEL__
-  int _use_count;
-  Packet *_data_packet;
-  /* mimic Linux sk_buff */
-  unsigned char *_head; /* start of allocated buffer */
-  unsigned char *_data; /* where the packet starts */
-  unsigned char *_tail; /* one beyond end of packet */
-  unsigned char *_end;  /* one beyond end of allocated buffer */
-  unsigned char _cb[48];
-  union {
-    click_ip *iph;
-    click_ip6 *ip6h;
-    unsigned char *raw;
-  } _nh;
-  unsigned char *_h_raw;
-#endif
-  
-  Packet();
-  Packet(const Packet &);
-  ~Packet();
-  Packet &operator=(const Packet &);
-
-#ifndef __KERNEL__
-  Packet(int, int, int)			{ }
-  static WritablePacket *make(int, int, int);
-  void alloc_data(unsigned, unsigned, unsigned);
-#endif
-
-  WritablePacket *uniqueify_copy();
-
-  WritablePacket *expensive_push(unsigned int nbytes);
-  
-#ifndef __KERNEL__
-  const Anno *anno() const		{ return (const Anno *)_cb; }
-  Anno *anno()				{ return (Anno *)_cb; }
-#endif
-  
-  friend class WritablePacket;
-  
- public:
+  // PACKET CREATION
   static unsigned default_headroom()	{ return 28; }
   static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
   
@@ -85,21 +19,11 @@ private:
   static WritablePacket *make(unsigned, const unsigned char *, unsigned, unsigned);
   
 #ifdef __KERNEL__
-  /*
-   * Wraps a Packet around an existing sk_buff.
-   * Packet now owns the sk_buff (ie we don't increment skb->users).
-   */
+  // Packet::make(sk_buff *) wraps a Packet around an existing sk_buff.
+  // Packet now owns the sk_buff (ie we don't increment skb->users).
   static Packet *make(struct sk_buff *);
   struct sk_buff *skb() const		{ return (struct sk_buff *)this; }
   struct sk_buff *steal_skb()		{ return skb(); }
-
- private:
-  const Anno *anno() const		{ return (const Anno *)skb()->cb; }
-  Anno *anno()				{ return (Anno *)skb()->cb; }
-#endif
-
- public:
-#ifdef __KERNEL__
   void kill() 				{ kfree_skb(skb()); }
 #else
   void kill()				{ if (--_use_count <= 0) delete this; }
@@ -129,6 +53,7 @@ private:
   WritablePacket *put(unsigned nb);	// Add bytes to end of pkt.
   void take(unsigned nb);		// Delete bytes from end of pkt.
 
+  // HEADER ANNOTATIONS
 #ifdef __KERNEL__
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
@@ -147,6 +72,24 @@ private:
   
   unsigned transport_header_offset() const;
 
+  // ANNOTATIONS
+
+ private:
+  class Anno;
+#ifdef __KERNEL__
+  const Anno *anno() const		{ return (const Anno *)skb()->cb; }
+  Anno *anno()				{ return (Anno *)skb()->cb; }
+#else
+  const Anno *anno() const		{ return (const Anno *)_cb; }
+  Anno *anno()				{ return (Anno *)_cb; }
+#endif
+ public:
+
+  enum PacketType {		// must agree with if_packet.h
+    HOST = 0, BROADCAST = 1, MULTICAST = 2, OTHERHOST = 3, OUTGOING = 4,
+    LOOPBACK = 5, FASTROUTE = 6
+  };
+
   void copy_annotations(Packet *);
   void zero_annotations();
   
@@ -157,8 +100,17 @@ private:
 
   unsigned char sniff_flags_anno() const{ return anno()->sniff_flags; }
   void set_sniff_flags_anno(unsigned char c)   { anno()->sniff_flags = c; }
-  bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
-  void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
+#ifdef __KERNEL__
+  PacketType packet_type_anno() const	{ return skb()->pkt_type; }
+  void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
+  struct device *device_anno() const	{ return skb()->dev; }
+  void set_device_anno(struct device *dev) { skb()->dev = dev; }
+#else
+  PacketType packet_type_anno() const	{ return _pkt_type; }
+  void set_packet_type_anno(PacketType p) { _pkt_type = p; }
+  struct device *device_anno() const	{ return 0; }
+  void set_device_anno(struct device *) { }
+#endif
   bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
   void set_fix_ip_src_anno(bool f)	{ anno()->fix_ip_src = f; }
   char param_off_anno() const		{ return anno()->param_off; }
@@ -178,6 +130,65 @@ private:
   unsigned metric1_anno(int i) const	{ return anno()->p.perf.m1[i]; }
 #endif
   
+ private:
+  
+  // Anno must fit in sk_buff's char cb[48].
+  struct Anno {
+    union {
+      unsigned dst_ip4;
+      unsigned char dst_ip6[16];
+    } dst_ip;
+    unsigned char sniff_flags; // flags used for sniffers
+    bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
+    char param_off;     // for ICMP Parameter Problem, byte offset of error
+    char color;         // one of 255 colors set by Paint element
+    int fwd_rate;
+    int rev_rate;
+#ifdef __KERNEL__
+    union {
+      cycles_t cycles[4];
+      struct {
+	unsigned m0[2];
+	unsigned m1[2];
+      } perf;
+    } p;
+#endif
+  };
+
+#ifndef __KERNEL__
+  int _use_count;
+  Packet *_data_packet;
+  /* mimic Linux sk_buff */
+  unsigned char *_head; /* start of allocated buffer */
+  unsigned char *_data; /* where the packet starts */
+  unsigned char *_tail; /* one beyond end of packet */
+  unsigned char *_end;  /* one beyond end of allocated buffer */
+  unsigned char _cb[48];
+  union {
+    click_ip *iph;
+    click_ip6 *ip6h;
+    unsigned char *raw;
+  } _nh;
+  unsigned char *_h_raw;
+  PacketType _pkt_type;
+#endif
+  
+  Packet();
+  Packet(const Packet &);
+  ~Packet();
+  Packet &operator=(const Packet &);
+
+#ifndef __KERNEL__
+  Packet(int, int, int)			{ }
+  static WritablePacket *make(int, int, int);
+  void alloc_data(unsigned, unsigned, unsigned);
+#endif
+
+  WritablePacket *uniqueify_copy();
+  WritablePacket *expensive_push(unsigned int nbytes);
+  
+  friend class WritablePacket;
+
 };
 
 

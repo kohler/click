@@ -80,7 +80,7 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-FromLinux::init_dev(void)
+FromLinux::init_dev()
 {
   _dev = new struct device;
   if (!_dev)
@@ -115,7 +115,7 @@ FromLinux::init_rt(void)
   memset(_rt, 0, sizeof(struct rtentry));
 
   s.m.sin_family = AF_INET;
-  s.m.sin_addr.s_addr = _destaddr.addr();
+  s.m.sin_addr.s_addr = _destaddr.addr() & _destmask.addr();
   _rt->rt_dst = s.d;
   s.m.sin_addr.s_addr = _destmask.addr();
   _rt->rt_genmask = s.d;
@@ -124,9 +124,9 @@ FromLinux::init_rt(void)
   return 0;
 }
 
-#define CLEAN_RT  { delete _rt; _rt = 0L; }
+#define CLEAN_RT  { delete _rt; _rt = 0; }
 #define CLEAN_DEV { if (_dev->name) delete[] _dev->name; \
-		    delete _dev; _dev = 0L; }
+		    delete _dev; _dev = 0; }
 #define UNREG_DEV { unregister_netdev(_dev); }
 #define IF_DOWN { \
   struct ifreq ifr; \
@@ -167,7 +167,7 @@ FromLinux::initialize_device(ErrorHandler *errh)
   strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
   struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
   sin->sin_family = AF_INET;
-  sin->sin_addr.s_addr = 0;
+  sin->sin_addr = _destaddr;
 
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
@@ -179,6 +179,16 @@ FromLinux::initialize_device(ErrorHandler *errh)
     return errh->error("error %d setting address for interface %s",
 		         res, _devname.cc());
   }
+  
+  sin->sin_addr = _destmask;
+  if ((res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0) {
+    set_fs(oldfs);
+    UNREG_DEV;
+    CLEAN_DEV;
+    return errh->error("error %d setting netmask for interface %s",
+		         res, _devname.cc());
+  }
+  
   if ((res = iff_set(&ifr, IFF_UP|IFF_RUNNING)) < 0) {
     set_fs(oldfs);
     UNREG_DEV;
@@ -272,8 +282,9 @@ FromLinux::initialize(ErrorHandler *errh)
 static int
 fl_open(struct device *dev)
 {
+  // set to an arbitrary Ethernet address
   for (int i = 0; i < ETH_ALEN; i++)
-    dev->dev_addr[i] = 0;
+    dev->dev_addr[i] = i;
   dev->start = 1;
   dev->tbusy = 0;
   return 0;

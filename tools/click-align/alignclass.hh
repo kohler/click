@@ -73,6 +73,13 @@ class StripAlignClass : public AlignClass {
   Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
 };
 
+class CheckIPHeaderAlignClass : public AlignClass {
+  int _argno;
+ public:
+  CheckIPHeaderAlignClass(int);
+  Aligner *create_aligner(ElementT &, RouterT *, ErrorHandler *);
+};
+
 class AlignAlignClass : public AlignClass {
  public:
   AlignAlignClass();

@@ -14,6 +14,8 @@
 # include <config.h>
 #endif
 #include "tolinux.hh"
+#include "confparse.hh"
+#include "error.hh"
 extern "C" {
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
@@ -42,6 +44,26 @@ ToLinux::clone() const
   return new ToLinux();
 }
 
+int
+ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  String devname;
+  if (cp_va_parse(conf, this, errh,
+		  cpOptional,
+		  cpString, "device name", &devname,
+		  cpEnd) < 0)
+    return -1;
+  if (devname) {
+    _dev = dev_get(devname.cc());
+    if (!_dev)
+      _dev = find_device_by_ether_address(devname, this);
+    if (!_dev)
+      return errh->error("no such device `%s'", devname.cc());
+  } else
+    _dev = 0;
+  return 0;
+}
+
 void
 ToLinux::push(int port, Packet *p)
 {
@@ -51,6 +73,17 @@ ToLinux::push(int port, Packet *p)
   skb->mac.raw = skb->data;
   skb->protocol = skb->mac.ethernet->h_proto;
   /* skb->pkt_type = ???; */
+
+  // set device if specified
+  if (_dev)
+    skb->dev = _dev;
+
+  // skb->dst may be set if the packet came from Linux originally. In this
+  // case, we must clear skb->dst so Linux finds the correct dst.
+  if (skb->dst) {
+    dst_release(skb->dst);
+    skb->dst = 0;
+  }
 
   // be nice to libpcap
   if (skb->stamp.tv_sec == 0) {
@@ -65,6 +98,7 @@ ToLinux::push(int port, Packet *p)
   skb_pull(skb, 14);
 #ifdef HAVE_CLICK_KERNEL
   skb->nh.raw = skb->data;
+  skb->h.raw = 0;
   start_bh_atomic();
 #if 0
   unsigned long c0 = click_get_cycles();

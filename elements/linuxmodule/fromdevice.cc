@@ -226,9 +226,6 @@ FromDevice::got_skb(struct sk_buff *skb)
     skb_push(skb, 14);
 
     Packet *p = Packet::make(skb);
-    if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
-      p->set_mac_broadcast_anno(1);
-
     _queue[_pusher_ptr] = p; /* hand it to run_scheduled */
     _pusher_ptr = next;
 

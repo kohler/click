@@ -42,7 +42,7 @@ DropBroadcasts::drop_it(Packet *p)
 Packet *
 DropBroadcasts::simple_action(Packet *p)
 {
-  if (p->mac_broadcast_anno()) {
+  if (p->packet_type_anno() == Packet::BROADCAST || p->packet_type_anno() == Packet::MULTICAST) {
     drop_it(p);
     return 0;
   } else

@@ -35,6 +35,12 @@ ToLinuxSniffers::~ToLinuxSniffers()
   // click_chatter("%d %d", c0, i0);
 }
 
+ToLinuxSniffers *
+ToLinuxSniffers::clone() const
+{
+  return new ToLinuxSniffers();
+}
+
 int
 ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -53,12 +59,6 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
   } else
     _dev = 0;
   return 0;
-}
-
-ToLinuxSniffers *
-ToLinuxSniffers::clone() const
-{
-  return new ToLinuxSniffers();
 }
 
 void

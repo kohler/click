@@ -96,18 +96,22 @@ Packet *
 ARPResponder::make_response(u_char tha[6], /* him */
                             u_char tpa[4],
                             u_char sha[6], /* me */
-                            u_char spa[4])
+                            u_char spa[4],
+			    Packet *p /* only used for annotations */)
 {
-  click_ether *e;
-  click_ether_arp *ea;
-  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
   if (q == 0) {
     click_chatter("in arp responder: cannot make packet!");
     assert(0);
-  } 
+  }
+  
+  // in case of FromLinux, set the device annotation: want to make it seem
+  // that ARP response came from the device that the query arrived on
+  q->set_device_anno(p->device_anno());
+  
   memset(q->data(), '\0', q->length());
-  e = (click_ether *) q->data();
-  ea = (click_ether_arp *) (e + 1);
+  click_ether *e = (click_ether *) q->data();
+  click_ether_arp *ea = (click_ether_arp *) (e + 1);
   memcpy(e->ether_dhost, tha, 6);
   memcpy(e->ether_shost, sha, 6);
   e->ether_type = htons(ETHERTYPE_ARP);
@@ -160,9 +164,8 @@ ARPResponder::simple_action(Packet *p)
       ntohs(ea->ea_hdr.ar_pro) == ETHERTYPE_IP &&
       ntohs(ea->ea_hdr.ar_op) == ARPOP_REQUEST) {
     EtherAddress ena;
-    if(lookup(ipa, ena)){
-      q = make_response(ea->arp_sha, ea->arp_spa,
-			ena.data(), ea->arp_tpa);
+    if (lookup(ipa, ena)) {
+      q = make_response(ea->arp_sha, ea->arp_spa, ena.data(), ea->arp_tpa, p);
     }
   } else {
     struct in_addr ina;

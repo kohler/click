@@ -88,6 +88,7 @@ class RouterT : public ElementClassT {
   int etype(int) const;
   String etype_name(int) const;
   String edeclaration(int) const;
+  String edeclaration(const ElementT &) const;
   ElementClassT *etype_class(int) const;
   const String &econfiguration(int) const;
   String &econfiguration(int i)		{ return _elements[i].configuration; }
@@ -217,6 +218,12 @@ inline String
 RouterT::edeclaration(int idx) const
 {
   return ename(idx) + " :: " + etype_name(idx);
+}
+
+inline String
+RouterT::edeclaration(const ElementT &e) const
+{
+  return e.name + " :: " + type_name(e.type);
 }
 
 inline ElementClassT *
