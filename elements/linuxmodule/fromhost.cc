@@ -36,8 +36,9 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#define netif_start_queue(dev)	do { dev->start=1; dev->tbusy=0; } while(0)
-#define netif_stop_queue(dev)	do { dev->start=0; dev->tbusy=1; } while(0)
+# define netif_start_queue(dev)	do { dev->start=1; dev->tbusy=0; } while (0)
+# define netif_stop_queue(dev)	do { dev->tbusy=1; } while (0)
+# define netif_wake_queue(dev)	do { dev->tbusy=0; } while (0)
 #endif
 
 static int fl_open(net_device *);
@@ -332,7 +333,7 @@ FromHost::run_task()
     _task.fast_reschedule();
     if (Packet *p = _queue) {
 	_queue = 0;
-	netif_start_queue(_dev);
+	netif_wake_queue(_dev);
 	output(0).push(p);
 	return true;
     } else
