@@ -84,6 +84,7 @@ class Router { public:
   void *set_attachment(const String &, void *);
   const Vector<String> &requirements() const	{ return _requirements; }
 
+  Router *hotswap_router() const		{ return _hotswap_router; }
   ErrorHandler *chatter_channel(const String &) const;
   BigHashMap_ArenaFactory *arena_factory() const;
 
@@ -132,8 +133,9 @@ class Router { public:
   int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
   void preinitialize();
+  void pre_take_state(Router *);
   int initialize(ErrorHandler *);
-  void take_state(Router *, ErrorHandler *);
+  void take_state(ErrorHandler *);
 
 #if CLICK_NS
   int sim_get_ifid(const char *ifname);
@@ -221,6 +223,7 @@ class Router { public:
   String _configuration;
 
   BigHashMap_ArenaFactory *_arena_factory;
+  Router *_hotswap_router;
   
   Router(const Router &);
   Router &operator=(const Router &);
@@ -391,7 +394,7 @@ Router::Handler::compatible(const Handler &h) const
 inline void
 Router::run_timers()
 {
-  _timer_list.run();
+  _timer_list.run(&_driver_runcount);
 }
 
 inline BigHashMap_ArenaFactory *

@@ -48,7 +48,8 @@ Router::Router(const String &configuration)
   : _preinitialized(false), _initialized(false), _initialize_attempted(false),
     _cleaned(false), _have_connections(false), _have_hookpidx(false),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
-    _configuration(configuration), _arena_factory(new BigHashMap_ArenaFactory)
+    _configuration(configuration), _arena_factory(new BigHashMap_ArenaFactory),
+    _hotswap_router(0)
 {
   _refcount = 0;
   _driver_runcount = 0;
@@ -980,18 +981,25 @@ Router::initialize(ErrorHandler *errh)
 // steal state
 
 void
-Router::take_state(Router *r, ErrorHandler *errh)
+Router::pre_take_state(Router *r)
 {
-  assert(_initialized);
+  assert(!_initialized && !_hotswap_router && (!r || r->initialized()));
+  _hotswap_router = r;
+}
+
+void
+Router::take_state(ErrorHandler *errh)
+{
+  assert(_initialized && _hotswap_router);
   for (int i = 0; i < _elements.size(); i++) {
     Element *e = _elements[i];
-    Element *other = r->find(_element_names[e->eindex()]);
-    if (other) {
+    if (Element *other = e->hotswap_element()) {
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While hot-swapping state into"));
       e->take_state(other, &cerrh);
     }
   }
+  _hotswap_router = 0;
 }
 
 
