@@ -47,8 +47,7 @@
  * =h look read-only
  * Returns the contents of the routing table.
  *
- * =a LookupIPRoute, LookupIPRouteRadix, LookupIPRouteIndexTree,
- * LookupIPRouteStrideTrie.
+ * =a LookupIPRoute, IPLookupRadix, IPLookupIndexTree, IPLookupStrideTrie.
  */
 
 #include <click/glue.hh>
