@@ -9,14 +9,20 @@ CLICK_DECLS
 #define FAKE_PCAP_VERSION_MAJOR		2
 #define FAKE_PCAP_VERSION_MINOR		4
 
+/* Canonical (pcap file) data link types (may differ from host versions) */
+#define FAKE_DLT_NONE			0	/* Unknown */ 
 #define FAKE_DLT_EN10MB			1	/* Ethernet (10Mb) */
 #define FAKE_DLT_FDDI			10	/* FDDI */
-#define FAKE_DLT_ATM_RFC1483		11	/* RFC 1483-encapsulated ATM */
-#define FAKE_DLT_RAW			12	/* raw IP */
+#define FAKE_DLT_ATM_RFC1483		100	/* RFC 1483-encapsulated ATM */
+#define FAKE_DLT_RAW			101	/* raw IP */
 #define FAKE_DLT_C_HDLC			104	/* Cisco HDLC */
 #define FAKE_DLT_IEEE802_11             105     /* IEEE 802.11 wireless */
 #define FAKE_DLT_LINUX_SLL              113     /* Linux cooked socket */
 #define FAKE_DLT_AIRONET_HEADER	        120     /* Aironet wireless header */
+#define FAKE_DLT_SUNATM			123	/* Full Frontal ATM: ATM header + ATM_RFC1483 */
+
+/* Host data link types */
+#define FAKE_DLT_HOST_RAW		12	/* raw IP */
 
 /*
  * The first record in the file contains saved values for some
@@ -64,6 +70,7 @@ struct fake_modified_pcap_pkthdr {
 // Parsing and unparsing.
 int fake_pcap_parse_dlt(const String &);
 const char *fake_pcap_unparse_dlt(int);
+int fake_pcap_canonical_dlt(int, bool from_file);
 
 // Handling FORCE_IP.
 bool fake_pcap_dlt_force_ipable(int);

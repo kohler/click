@@ -245,7 +245,8 @@ FromDump::initialize(ErrorHandler *errh)
     if (fh->version_major != FAKE_PCAP_VERSION_MAJOR)
 	return _ff.error(errh, "unknown major version %d", fh->version_major);
     _minor_version = fh->version_minor;
-    _linktype = fh->linktype;
+    // map possible host link types to global link types
+    _linktype = fake_pcap_canonical_dlt(fh->linktype, true);
 
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {

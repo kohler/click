@@ -44,6 +44,8 @@ fake_pcap_parse_dlt(const String &str)
 	return FAKE_DLT_AIRONET_HEADER;
     else if (str == "HDLC")
 	return FAKE_DLT_C_HDLC;
+    else if (str == "SUNATM")
+	return FAKE_DLT_SUNATM;
     else
 	return -1;
 }
@@ -53,6 +55,7 @@ fake_pcap_unparse_dlt(int dlt)
 {
     switch (dlt) {
       case FAKE_DLT_RAW:
+      case FAKE_DLT_HOST_RAW:
 	return "IP";
       case FAKE_DLT_EN10MB:
 	return "ETHER";
@@ -68,6 +71,8 @@ fake_pcap_unparse_dlt(int dlt)
 	return "AIRONET";
       case FAKE_DLT_C_HDLC:
 	return "HDLC";
+      case FAKE_DLT_SUNATM:
+	return "SUNATM";
       default:
 	return "??";
     }
@@ -78,9 +83,19 @@ fake_pcap_unparse_dlt(int dlt)
 bool
 fake_pcap_dlt_force_ipable(int dlt)
 {
-    return (dlt == FAKE_DLT_RAW || dlt == FAKE_DLT_EN10MB
+    return (dlt == FAKE_DLT_RAW || dlt == FAKE_DLT_HOST_RAW
+	    || dlt == FAKE_DLT_EN10MB || dlt == FAKE_DLT_SUNATM
 	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483
 	    || dlt == FAKE_DLT_LINUX_SLL || dlt == FAKE_DLT_C_HDLC);
+}
+
+int
+fake_pcap_canonical_dlt(int dlt, bool)
+{
+    if (dlt == FAKE_DLT_HOST_RAW)
+	return FAKE_DLT_RAW;
+    else
+	return dlt;
 }
 
 #if HAVE_INDIFFERENT_ALIGNMENT
@@ -104,7 +119,8 @@ fake_pcap_force_ip(Packet *&p, int dlt)
     const click_ip *iph = 0;
     switch (dlt) {
 
-      case FAKE_DLT_RAW: {
+      case FAKE_DLT_RAW:
+      case FAKE_DLT_HOST_RAW: {
 	  iph = (const click_ip *) p->data();
 	  break;
       }
@@ -138,17 +154,26 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  break;
       }
 
+      case FAKE_DLT_SUNATM: {
+	  const click_rfc1483 *rh = (const click_rfc1483 *) (p->data() + 4);
+	  if (p->length() >= sizeof(click_rfc1483) + 4
+	      && memcmp(rh->snap, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) == 0
+	      && IP_ETHERTYPE(rh->ether_type))
+	      iph = (const click_ip *) (rh + 1);
+	  break;
+      }
+
       case FAKE_DLT_LINUX_SLL: {
 	  CLICK_SIZE_PACKED_STRUCTURE(
-	  struct linux_sll {,
+	  struct click_linux_sll {,
 	      uint16_t sll_pkttype;
 	      uint16_t sll_hatype;
 	      uint16_t sll_halen;
 	      uint8_t sll_addr[8];
 	      uint16_t sll_protocol;
 	  });
-	  const linux_sll *sllh = (const linux_sll *) p->data();
-	  if (p->length() >= sizeof(linux_sll) &&
+	  const click_linux_sll* sllh = (const click_linux_sll*) p->data();
+	  if (p->length() >= sizeof(click_linux_sll) &&
 	      IP_ETHERTYPE(sllh->sll_protocol))
 	      iph = (const click_ip *)(sllh + 1);
 	  break;
@@ -159,13 +184,13 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	      uint16_t hdlc_address;
 	      uint16_t hdlc_protocol;
 	  };
-	  const click_pcap_hdlc *hdlch = (const click_pcap_hdlc *) p->data();
+	  const click_pcap_hdlc* hdlch = (const click_pcap_hdlc*) p->data();
 	  if (p->length() >= sizeof(click_pcap_hdlc) &&
 	      IP_ETHERTYPE(hdlch->hdlc_protocol))
 	      iph = (const click_ip *)(hdlch + 1);
 	  break;
       }
-      
+
       default:
 	break;
 
