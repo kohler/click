@@ -3,7 +3,7 @@
 #include <click/glue.hh>
 #include <click/atomic.hh>
 #include <assert.h>
-#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
+#if defined(__KERNEL__) && defined(__SMP__)
 # include <linux/tasks.h>
 # include <linux/sched.h>
 # define my_cpu current->processor
@@ -12,7 +12,7 @@
 // loop-in-cache spinlock implementation: 12 bytes. if the size of this class
 // changes, change size of padding in ReadWriteLock below.
 
-#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
+#if defined(__KERNEL__) && defined(__SMP__)
 
 class Spinlock { public:
 
@@ -127,7 +127,7 @@ Spinlock::release()
   }
 }
 
-#else /* defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__) */
+#else /* defined(__KERNEL__) && defined(__SMP__) */
 
 class Spinlock { public:
 
@@ -142,7 +142,7 @@ class Spinlock { public:
   
 };
 
-#endif /* defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__) */
+#endif /* defined(__KERNEL__) && defined(__SMP__) */
 
 
 // read-write lock:
@@ -154,19 +154,22 @@ class Spinlock { public:
 // that because we'd like to avoid a cache miss for read acquires. this makes
 // reads very fast, and writes more expensive
 
-#if defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__)
+#if defined(__KERNEL__) && defined(__SMP__)
 
 class ReadWriteLock {
 
   // allocate 32 bytes (size of a cache line) for every member
-  struct {
+  struct lock_t {
     Spinlock _lock;
     unsigned char reserved[20];
-  } _l[NUM_CLICK_CPUS];
+  };
+
+  lock_t *_l;
 
 public:
   
-  ReadWriteLock()				{ }
+  ReadWriteLock();
+  ~ReadWriteLock();
   
   void acquire_read();
   bool attempt_read();
@@ -175,6 +178,18 @@ public:
   bool attempt_write();
   void release_write();
 };
+
+inline
+ReadWriteLock::ReadWriteLock()
+{
+  _l = new lock_t[smp_num_cpus];
+}
+
+inline
+ReadWriteLock::~ReadWriteLock()
+{
+  delete[] _l;
+}
 
 inline void
 ReadWriteLock::acquire_read()
@@ -200,7 +215,7 @@ ReadWriteLock::release_read()
 inline void
 ReadWriteLock::acquire_write()
 {
-  for(unsigned i=0; i<NUM_CLICK_CPUS; i++)
+  for(unsigned i=0; i<smp_num_cpus; i++)
     _l[i]._lock.acquire();
 }
 
@@ -209,7 +224,7 @@ ReadWriteLock::attempt_write()
 {
   bool all = true;
   unsigned i;
-  for(i=0; i<NUM_CLICK_CPUS; i++) {
+  for(i=0; i<smp_num_cpus; i++) {
     if (!(_l[i]._lock.attempt())) {
       all = false;
       break;
@@ -225,11 +240,11 @@ ReadWriteLock::attempt_write()
 inline void
 ReadWriteLock::release_write()
 {
-  for(unsigned i=0; i<NUM_CLICK_CPUS; i++)
+  for(unsigned i=0; i<smp_num_cpus; i++)
     _l[i]._lock.release();
 }
 
-#else /* defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__) */
+#else /* defined(__KERNEL__) && defined(__SMP__) */
 
 class ReadWriteLock { public:
   
@@ -244,7 +259,7 @@ class ReadWriteLock { public:
 
 };
 
-#endif /* defined(__KERNEL__) && defined(__SMP__) && defined(__MTCLICK__) */
+#endif /* defined(__KERNEL__) && defined(__SMP__) */
 
 #endif
 
