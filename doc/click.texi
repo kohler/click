@@ -46,9 +46,10 @@ This document describes@dots{}
 @menu
 * Coding Standards::            
 * Basics::                      
-* Element Characteristics::      		
+* Element Characteristics::     
 * Element Initialization::      
-* Element Runtime::
+* Element Runtime::             
+* Configuration Strings::       
 * Tasks::                       
 * Timers::                      
 * Index::                       
@@ -396,7 +397,7 @@ Returns a mutable pointer to the string's data as a C string.
 @node String Characters, Derived Strings, String Contents, String
 @subsection Characters and Indices
 
-@deftypemethod String char {operator []} (int @var{i}) const
+@deftypemethod String char {operator[]} (int @var{i}) const
 Returns the @var{i}th character of the string. @var{i} should be between
 0 and @math{@code{length()} - 1}.
 @end deftypemethod
@@ -2371,7 +2372,7 @@ the erroneous configuration available for debugging. The
 @end enumerate
 
 
-@node Element Runtime, Tasks, Element Initialization, Top
+@node Element Runtime, Configuration Strings, Element Initialization, Top
 @chapter Element Runtime
 
 @menu
@@ -2404,7 +2405,11 @@ Click users interact with a running router through @dfn{handlers}.
 @subsection can_live_reconfigure
 
 
-@node Tasks, Timers, Element Runtime, Top
+@node Configuration Strings, Tasks, Element Runtime, Top
+@chapter Configuration Strings
+
+
+@node Tasks, Timers, Configuration Strings, Top
 @chapter Tasks
 
 Click schedules a router's CPU or CPUs with one or more @dfn{task
