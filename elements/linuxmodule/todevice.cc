@@ -113,7 +113,8 @@ ToDevice::initialize(ErrorHandler *errh)
   // need to do it this way because ToDevice may not have been initialized
   for (int fi = 0; fi < router()->nelements(); fi++) {
     Element *e = router()->element(fi);
-    if (ToDevice *td = (ToDevice *) (e->cast("ToDevice"))) {
+    if (e == this) continue;
+    if (ToDevice *td=(ToDevice *) (e->cast("ToDevice"))) {
       if (td->ifindex() == ifindex())
 	return errh->error("duplicate ToDevice for `%s'", _devname.cc());
     } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {

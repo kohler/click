@@ -85,7 +85,8 @@ FromDevice::initialize(ErrorHandler *errh)
   // PollDevice
   for (int fi = 0; fi < router()->nelements(); fi++) {
     Element *e = router()->element(fi);
-    if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
+    if (e == this) continue;
+    if (FromDevice *fd=(FromDevice *)(e->cast("FromDevice"))) {
       if (fd->ifindex() == ifindex())
 	return errh->error("duplicate FromDevice for `%s'", _devname.cc());
     }

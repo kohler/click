@@ -94,19 +94,22 @@ PollDevice::initialize(ErrorHandler *errh)
 {
 #if HAVE_POLLING
   /* try to find a ToDevice with the same device: if none exists, then we need
-   * to manage tx queue as well as rx queue */
-  // need to do it this way because ToDevice may not have been initialized
+   * to manage tx queue as well as rx queue. need to do it this way because
+   * ToDevice may not have been initialized
+   */
   for (int fi = 0; fi < router()->nelements(); fi++) {
     Element *e = router()->element(fi);
+    if (e == this) continue;
     if (ToDevice *td = (ToDevice *) (e->cast("ToDevice"))) {
       if (td->ifindex() == ifindex())
 	_manage_tx = 0;
-    } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {
+    } else if (PollDevice *pd=(PollDevice *)(e->cast("PollDevice"))) {
       if (pd->ifindex() == ifindex())
 	return errh->error("duplicate PollDevice for `%s'", _devname.cc());
     } else if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
       if (fd->ifindex() == ifindex())
-	return errh->error("both FromDevice and PollDevice for `%s'", _devname.cc());
+	return errh->error("both FromDevice and PollDevice for `%s'", 
+	                   _devname.cc());
     }
   }
 
