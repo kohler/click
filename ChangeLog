@@ -1,3 +1,12 @@
+2004-10-07 Thursday 20:42  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: settxpower.hh (1.5), sr/ettmetric.cc (1.8),
+	sr/ettmetric.hh (1.9), sr/ettstat.cc (1.10), sr/ettstat.hh (1.8),
+	sr/flashflood.cc (1.7), sr/linkmetric.hh (1.5), sr/txcountmetric.cc
+	(1.1), sr/txcountmetric.hh (1.1): make ettstat interact better with
+	other metrics than ett (ie etx).  add etx metric (TXCountMetric) to
+	work with ettstat.  other .hh fixes.
+
 2004-10-07 Thursday 20:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.56),
