@@ -116,9 +116,8 @@ and running Linux kernels.
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
-    `struct device' kernel data structure. Therefore, if you compiled your
-    old kernel without module versioning, you WILL need to recompile
-    modules.
+    `struct device' kernel data structure. Therefore, you WILL need to
+    recompile any kernel modules that touch 'struct device'.
 
  4. If your archived, working kernel has the same version number as the
     patched kernel (they're both 2.4.18, for example), then it is a good
