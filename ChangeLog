@@ -1,3 +1,13 @@
+2001-03-20 Tuesday 20:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates, particularly flow_code and Element
+	Characteristics
+
+2001-03-20 Tuesday 20:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh: rearranged method declarations for
+	greater clarity
+
 2001-03-20 Tuesday 16:32  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi: updates
