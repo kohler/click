@@ -28,7 +28,7 @@ The file may be compressed with gzip(1) or bzip2(1); FromIPSummaryDump will
 run zcat(1) or bzcat(1) to uncompress it.
 
 FromIPSummaryDump reads from the file named FILENAME unless FILENAME is a
-single dash `C<->', in which case it reads from the standard input. It will
+single dash 'C<->', in which case it reads from the standard input. It will
 not uncompress the standard input, however.
 
 Keyword arguments are:
@@ -43,7 +43,7 @@ is done reading. Default is false.
 =item ACTIVE
 
 Boolean. If false, then FromIPSummaryDump will not emit packets (until the
-`C<active>' handler is written). Default is true.
+'C<active>' handler is written). Default is true.
 
 =item ZERO
 
@@ -113,7 +113,7 @@ Value is a Boolean.
 
 =h encap read-only
 
-Returns `IP'. Useful for ToDump's USE_ENCAP_FROM option.
+Returns 'IP'. Useful for ToDump's USE_ENCAP_FROM option.
 
 =h filesize read-only
 
@@ -126,7 +126,7 @@ Returns FromIPSummaryDump's position in the file, in bytes.
 
 =h stop write-only
 
-When written, sets `active' to false and stops the driver.
+When written, sets 'active' to false and stops the driver.
 
 =a
 

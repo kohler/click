@@ -160,11 +160,12 @@ The characters corresponding to TCP flags are as follows:
    ACK        A          0x10
    URG        U          0x20
    ECE        E          0x40
-   CWR        W          0x80
+   CWR        C          0x80
+   NS         N          0x100
 
-Some old IP summary dumps might contain an unsigned integer, representing the
-flags byte, or might use characters X and Y for flags ECE and CWR,
-respectively.
+The 'C<W>' character is also acceptable for CWR.  Old IP summary dumps might
+contain an unsigned integer, representing the flags byte, or might use 'C<X>'
+and 'C<Y>' for ECE and CWR, respectively.
 
 Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
 8-byte units, not bytes. Content types in old dumps were sometimes quoted and
