@@ -160,14 +160,15 @@ class Router { public:
 
     Vector<Hookup> _hookup_from;
     Vector<Hookup> _hookup_to;
+
+    struct Gport {
+	Vector<int> e2g;
+	Vector<int> g2e;
+	int size() const			{ return g2e.size(); }
+    };
+    Gport _gports[2];
   
-    Vector<int> _input_pidx;
-    Vector<int> _output_pidx;
-    Vector<int> _input_eidx;
-    Vector<int> _output_eidx;
-  
-    Vector<int> _hookpidx_from;
-    Vector<int> _hookpidx_to;
+    Vector<int> _hookup_gports[2];
 
     Vector<String> _requirements;
 
@@ -214,16 +215,12 @@ class Router { public:
     int processing_error(const Hookup&, const Hookup&, bool, int, ErrorHandler*);
     int check_push_and_pull(ErrorHandler*);
     
-    void make_pidxes();
-    int ninput_pidx() const			{ return _input_eidx.size(); }
-    int noutput_pidx() const			{ return _output_eidx.size(); }
-    inline int input_pidx(const Hookup&) const;
-    inline int input_pidx_element(int) const;
-    inline int input_pidx_port(int) const;
-    inline int output_pidx(const Hookup&) const;
-    inline int output_pidx_element(int) const;
-    inline int output_pidx_port(int) const;
-    void make_hookpidxes();
+    void make_gports();
+    int ngports(bool isout) const	{ return _gports[isout].g2e.size(); }
+    inline int gport(bool isoutput, const Hookup&) const;
+    inline Hookup gport_hookup(bool isoutput, int) const;
+    void gport_list_elements(bool, const Bitvector&, Vector<Element*>&) const;
+    void make_hookup_gports();
   
     void set_connections();
   
@@ -239,8 +236,7 @@ class Router { public:
     static void store_global_handler(const Handler&);
     static inline void store_handler(const Element*, const Handler&);
 
-    int downstream_inputs(Element*, int o, ElementFilter*, Bitvector&);
-    int upstream_outputs(Element*, int i, ElementFilter*, Bitvector&);
+    int global_port_flow(bool forward, Element* first_element, int first_port, ElementFilter* stop_filter, Bitvector& results);
 
     // global handlers
     static String router_read_handler(Element*, void*);
