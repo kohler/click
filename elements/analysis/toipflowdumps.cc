@@ -149,7 +149,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
     // make a guess about how much data we'll need
-    StringAccum sa(_npkt * (_binary ? 28 : 50) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
+    StringAccum sa(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
     
     if (!_outputted) {
 	sa << "!IPSummaryDump 1.1\n!flowid "
