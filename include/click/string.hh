@@ -509,6 +509,14 @@ inline const char *find(const char *a, const char *b, char c)
   return a;
 }
 
+inline const char *rfind(const char *a, const char *b, char c)
+{
+  for (const char *bb = b - 1; bb >= a; bb--)
+    if (*bb == c)
+      return bb;
+  return b;
+}
+
 inline const char *find(const String &s, char c)
 {
   return find(s.begin(), s.end(), c);
