@@ -1,3 +1,12 @@
+2001-02-21 Wednesday 18:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.old.c: file skbmgr.old.c was initially added
+	on branch smp_click.
+
+2001-02-21 Wednesday 18:21  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.cc: bug fix: size method was incorrect
+
 2001-02-18 Sunday 16:50  Robert Morris <rtm@lcs.mit.edu>
 
 	* include/click/ipaddress.hh: fix for freebsd
