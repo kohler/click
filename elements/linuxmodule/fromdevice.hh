@@ -1,5 +1,5 @@
-#ifndef FROMDEVICE_HH
-#define FROMDEVICE_HH
+#ifndef CLICK_FROMDEVICE_HH
+#define CLICK_FROMDEVICE_HH
 
 /*
 =c
@@ -90,7 +90,6 @@ class FromDevice : public AnyDevice, public Storage { public:
 
   private:
 
-    bool _promisc;
     unsigned _burst;
     unsigned _drops;
 
