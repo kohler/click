@@ -164,9 +164,10 @@ distdir:
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
 	      || exit 1; \
 	done
-	@cd $(distdir); for i in `cat $(srcdir)/NODIST`; do \
-	  rm -r $$i; \
-	done
+	@if test -r $(srcdir)/NODIST; then \
+	for i in `cat $(srcdir)/NODIST`; do \
+	  rm -r $(distdir)/$$i; \
+	done; fi
 
 
 .PHONY: all elemlist elemlists elemlist-simple \
