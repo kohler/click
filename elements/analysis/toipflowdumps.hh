@@ -125,6 +125,8 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     void aggregate_notify(uint32_t, AggregateEvent, const Packet *);
 
+    bool absolute_time() const		{ return _absolute_time; }
+    bool absolute_seq() const		{ return _absolute_seq; }
     virtual void add_note(uint32_t, const String &, ErrorHandler * = 0);
 
     struct Pkt {
