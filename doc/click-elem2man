@@ -93,7 +93,8 @@ my(%default_packages) =
       'etherswitch' => 'etherswitch (non-default standard package)',
       'radio' => 'radio (non-default standard package)',
       'local' => 'local (non-default standard package)',
-      'grid' => 'grid (non-default standard package)' );
+      'grid' => 'grid (non-default standard package)',
+      'test' => 'test (non-default standard package)' );
 
 # find date
 my($today) = '';

@@ -1,0 +1,95 @@
+// -*- c-basic-offset: 4 -*-
+/*
+ * packettest.{cc,hh} -- regression test element for packets
+ * Eddie Kohler
+ *
+ * Copyright (c) 2002 International Computer Science Institute
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
+ */
+
+#include <click/config.h>
+#include "packettest.hh"
+#include <click/error.hh>
+
+PacketTest::PacketTest()
+{
+    MOD_INC_USE_COUNT;
+}
+
+PacketTest::~PacketTest()
+{
+    MOD_DEC_USE_COUNT;
+}
+
+#define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
+#define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
+
+int
+PacketTest::initialize(ErrorHandler *errh)
+{
+    const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyz";
+    IPAddress addr(String("1.2.3.4"));
+    
+    WritablePacket *p = Packet::make(10, lowers, 20, 30);
+    CHECK(p->headroom() >= 10);
+    CHECK(p->tailroom() >= 30);
+    CHECK(p->length() == 20);
+    CHECK(p->buffer_length() >= 60);
+    CHECK_DATA(p->data(), lowers, 20);
+    CHECK(!p->mac_header());
+    CHECK(!p->network_header());
+    CHECK(!p->transport_header());
+    p->set_mac_header(p->data(), 10);
+    CHECK(p->network_header() == p->data() + 10);
+    p->set_dst_ip_anno(addr);
+
+    WritablePacket *p1 = p->push(5);
+    // p is dead
+    CHECK(p == p1);
+    CHECK(p1->headroom() >= 5);
+    CHECK(p1->tailroom() >= 30);
+    CHECK(p1->length() == 25);
+    CHECK_DATA(p1->data() + 5, lowers, 20);
+    CHECK(p1->mac_header() == p->data() + 5);
+    CHECK(p1->network_header() == p->data() + 15);
+    CHECK(p1->dst_ip_anno() == addr);
+
+    Packet *p2 = p1->clone();
+    CHECK(p2 != p1);
+    CHECK(p2->data() == p1->data());
+    CHECK(p2->length() == 25);
+    CHECK(p1->shared() && p2->shared());
+    CHECK(p1->mac_header() == p2->mac_header());
+    CHECK(p2->dst_ip_anno() == addr);
+
+    WritablePacket *p3 = p2->push(5);
+    // p2 is dead
+    CHECK(p3 != p1);
+    CHECK(p3->length() == 30);
+    CHECK_DATA(p3->data() + 10, lowers, 20);
+    memcpy(p3->data(), lowers, 10);
+    memcpy(p1->data(), lowers, 5);
+    CHECK_DATA(p3->data(), lowers, 10);
+    CHECK_DATA(p1->data(), lowers, 5);
+    CHECK(p3->mac_header() != p1->mac_header());
+    CHECK(p3->mac_header() == p3->data() + 10);
+    CHECK(p3->network_header() == p3->data() + 20);
+    CHECK(!p1->shared() && !p3->shared());
+    CHECK(p3->dst_ip_anno() == addr);
+
+    p1->kill();
+    p3->kill();
+    errh->message("All tests pass!");
+    return 0;
+}
+
+EXPORT_ELEMENT(PacketTest)
