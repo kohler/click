@@ -484,11 +484,11 @@ Router::check_push_and_pull(ErrorHandler *errh)
   
   if (errh->nerrors() != before)
     return -1;
-  
-  for (int f = 0; f < nelements(); f++) {
-    Subvector<int> i(input_pers, _input_pidx[f], _elements[f]->ninputs());
-    Subvector<int> o(output_pers, _output_pidx[f], _elements[f]->noutputs());
-    _elements[f]->set_processing_vector(i, o);
+
+  for (int e = 0; e < nelements(); e++) {
+    Subvector<int> i(input_pers, _input_pidx[e], _elements[e]->ninputs());
+    Subvector<int> o(output_pers, _output_pidx[e], _elements[e]->noutputs());
+    _elements[e]->set_processing_vector(i, o);
   }
   return 0;
 }

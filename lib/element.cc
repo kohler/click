@@ -314,7 +314,7 @@ Element::set_processing_vector(const Subvector<int> &in_v,
     else
       _inputs[i].disallow();
   for (int o = 0; o < noutputs(); o++)
-    if (out_v[o] == VPUSH)
+    if (out_v[o] != VPULL)
       _outputs[o].clear();
     else
       _outputs[o].disallow();

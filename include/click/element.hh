@@ -131,7 +131,7 @@ class Element : public ElementLink { public:
   class Connection {
    public:
     
-    Element *_f;
+    Element *_e;
     int _port;
     
     // Statistics.
@@ -148,12 +148,12 @@ class Element : public ElementLink { public:
     Connection(Element *);
     Connection(Element *, Element *, int);
     
-    operator bool() const		{ return _f != 0; }
+    operator bool() const		{ return _e != 0; }
     bool allowed() const		{ return _port >= 0; }
-    void clear()			{ _f = 0; _port = 0; }
-    void disallow()			{ _f = 0; _port = -1; }
+    void clear()			{ _e = 0; _port = 0; }
+    void disallow()			{ _e = 0; _port = -1; }
     
-    Element *element() const		{ return _f; }
+    Element *element() const		{ return _e; }
     int port() const			{ return _port; }
     
     void push(Packet *p) const;
@@ -232,58 +232,58 @@ Element::input_is_pull(int i) const
 
 inline
 Element::Connection::Connection()
-  : _f(0), _port(0) CONNECTION_CTOR_INIT(0)
+  : _e(0), _port(0) CONNECTION_CTOR_INIT(0)
 {
 }
 
 inline
 Element::Connection::Connection(CONNECTION_CTOR_ARG(owner))
-  : _f(0), _port(0) CONNECTION_CTOR_INIT(owner)
+  : _e(0), _port(0) CONNECTION_CTOR_INIT(owner)
 {
 }
 
 inline
-Element::Connection::Connection(CONNECTION_CTOR_ARG(owner), Element *f, int p)
-  : _f(f), _port(p) CONNECTION_CTOR_INIT(owner)
+Element::Connection::Connection(CONNECTION_CTOR_ARG(owner), Element *e, int p)
+  : _e(e), _port(p) CONNECTION_CTOR_INIT(owner)
 {
 }
 
 inline void
 Element::Connection::push(Packet *p) const
 {
-  assert(_f);
+  assert(_e);
 #if CLICK_STATS >= 1
   _packets++;
 #endif
 #if CLICK_STATS >= 2
-  _f->input(_port)._packets++;
+  _e->input(_port)._packets++;
   unsigned long long c0 = click_get_cycles();
-  _f->push(_port, p);
+  _e->push(_port, p);
   unsigned long long c1 = click_get_cycles();
   unsigned long long x = c1 - c0;
-  _f->_calls += 1;
-  _f->_self_cycles += x;
+  _e->_calls += 1;
+  _e->_self_cycles += x;
   _owner->_child_cycles += x;
 #else
-  _f->push(_port, p);
+  _e->push(_port, p);
 #endif
 }
 
 inline Packet *
 Element::Connection::pull() const
 {
-  assert(_f);
+  assert(_e);
 #if CLICK_STATS >= 2
-  _f->output(_port)._packets++;
+  _e->output(_port)._packets++;
   unsigned long long c0 = click_get_cycles();
-  Packet *p = _f->pull(_port);
+  Packet *p = _e->pull(_port);
   unsigned long long c1 = click_get_cycles();
   unsigned long long x = c1 - c0;
-  _f->_calls += 1;
-  _f->_self_cycles += x;
+  _e->_calls += 1;
+  _e->_self_cycles += x;
   _owner->_child_cycles += x;
 #else
-  Packet *p = _f->pull(_port);
+  Packet *p = _e->pull(_port);
 #endif
 #if CLICK_STATS >= 1
   if (p) _packets++;
