@@ -43,7 +43,9 @@ class LexerT { protected:
   unsigned _pos;
   
   String _filename;
+  String _original_filename;
   unsigned _lineno;
+  bool _ignore_line_directives;
   
   bool get_data();
   unsigned skip_line(unsigned);
@@ -73,12 +75,13 @@ class LexerT { protected:
   
  public:
   
-  LexerT(ErrorHandler * = 0);
+  LexerT(ErrorHandler * = 0, bool ignore_line_directives = false);
   virtual ~LexerT();
   
   void reset(const String &data, const String &filename = String());
   void clear();
   void set_router(RouterT *);
+  void ignore_line_directives(bool g)	{ _ignore_line_directives = g; }
   
   const Lexeme &lex();
   void unlex(const Lexeme &);

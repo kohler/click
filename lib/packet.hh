@@ -1,7 +1,6 @@
 #ifndef PACKET_HH
 #define PACKET_HH
 #include "ipaddress.hh"
-#include "ip6address.hh"
 #include "glue.hh"
 class IP6Address;
 struct click_ip;
@@ -303,7 +302,7 @@ Packet::dst_ip6_anno() const
 inline void
 Packet::set_dst_ip6_anno(const IP6Address &a)
 {
-  memcpy(anno()->dst_ip6, a.data(), 16);
+  memcpy(anno()->dst_ip6, &a, 16);
 }
 
 inline void

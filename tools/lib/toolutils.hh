@@ -2,6 +2,7 @@
 #define TOOLUTILS_HH
 #include "userutils.hh"
 
+extern bool ignore_line_directives;
 RouterT *read_router_file(const char *, ErrorHandler * = 0, RouterT * = 0);
 void write_router_file(RouterT *, FILE *, ErrorHandler * = 0);
 int write_router_file(RouterT *, const char *, ErrorHandler * = 0);

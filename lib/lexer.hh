@@ -48,6 +48,7 @@ class Lexer {
   unsigned _pos;
   
   String _filename;
+  String _original_filename;
   unsigned _lineno;
   LexerExtra *_lextra;
   

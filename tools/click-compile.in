@@ -51,19 +51,19 @@ done
 case $target in
   k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
-    iincludes="-I${srcdir} -I${srcdir}/lib -I${linuxdir}/include"
+    iincludes="-I${includedir} -I${srcdir} -I${srcdir}/lib -I${linuxdir}/include"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=module;;
   u|us|use|user)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
-    iincludes="-I${srcdir} -I${srcdir}/lib"
+    iincludes="-I${includedir} -I${srcdir} -I${srcdir}/lib"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=user;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
-    iincludes="-I${srcdir} -I${srcdir}/lib"
+    iincludes="-I${includedir} -I${srcdir} -I${srcdir}/lib"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=tool;;

@@ -28,6 +28,8 @@
 #include <dirent.h>
 #include <stdarg.h>
 
+bool ignore_line_directives = false;
+
 RouterT *
 read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
 {
@@ -59,7 +61,7 @@ read_router_file(const char *filename, ErrorHandler *errh, RouterT *router)
   // read router
   if (!filename || strcmp(filename, "-") == 0)
     filename = "<stdin>";
-  LexerT lexer(errh);
+  LexerT lexer(errh, ignore_line_directives);
   lexer.reset(s, filename);
   if (router)
     lexer.set_router(router);

@@ -22,8 +22,6 @@
 #include "click_tcp.h"
 #include "hashmap.hh"
 
-#define UBYTES ((int)sizeof(unsigned))
-
 IPClassifier::IPClassifier()
 {
 }
@@ -225,13 +223,17 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
     if (_data == DATA_INT)
       _data = DATA_ICMP_TYPE;
     if (_data != DATA_ICMP_TYPE)
-      return errh->error("pattern %d: `icmptype' directive requires ICMP type", slot);
+      return errh->error("pattern %d: `icmp type' directive requires ICMP type", slot);
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_ICMP;
     else if (_transp_proto != IP_PROTO_ICMP)
-      return errh->error("pattern %d: bad protocol %d for `icmptype' directive", slot, _transp_proto);
+      return errh->error("pattern %d: bad protocol %d for `icmp type' directive", slot, _transp_proto);
     if (set_mask(&_u.i, 0xFF, 0, slot, errh) < 0)
       return -1;
+    
+  } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
+    if (_data != DATA_NONE)
+      return errh->error("pattern %d: `ip frag' directive takes no data", slot);
   }
 
   // fix _srcdst
@@ -250,6 +252,20 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
   Expr e;
   bool negated = _negated;
 
+  // handle transport protocol uniformly
+  c->start_expr_subtree(tree);
+  if (_transp_proto != UNKNOWN) {
+    if (_transp_proto == IP_PROTO_TCP_OR_UDP) {
+      c->start_expr_subtree(tree);
+      c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
+      c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
+      c->finish_expr_subtree(tree, false);
+    } else {
+      unsigned mask = (_type == TYPE_PROTO ? _mask : 0xFF);
+      c->add_expr(tree, 8, htonl(_transp_proto << 16), htonl(mask << 16));
+    }
+  }
+  
   if (_type == TYPE_HOST || _type == TYPE_NET) {
     e.mask.u = (_type == TYPE_NET ? _u.ipnet.mask.s_addr : 0xFFFFFFFFU);
     e.value.u = _u.ip.s_addr;
@@ -261,40 +277,26 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     c->finish_expr_subtree(tree, _srcdst != SD_OR);
     if (_op_negated) c->negate_expr_subtree(tree);
     
-  } else if (_type == TYPE_PROTO || _type == TYPE_PORT) {
-    if (_type == TYPE_PORT) c->start_expr_subtree(tree);
-
-    c->start_expr_subtree(tree);
-    if (_transp_proto == IP_PROTO_TCP_OR_UDP) {
-      c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
-      c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
-    } else {
-      unsigned mask = (_type == TYPE_PROTO ? _mask : 0xFF);
-      c->add_expr(tree, 8, htonl(_transp_proto << 16), htonl(mask << 16));
-    }
-    c->finish_expr_subtree(tree, false);
+  } else if (_type == TYPE_PORT) {
+    unsigned mask = (htons(_mask) << 16) | htons(_mask);
+    unsigned ports = (htons(_u.i) << 16) | htons(_u.i);
     
-    if (_type == TYPE_PORT) {
-      unsigned mask = (htons(_mask) << 16) | htons(_mask);
-      unsigned ports = (htons(_u.i) << 16) | htons(_u.i);
-      
-      c->start_expr_subtree(tree);
-      if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
-	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
-      if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
-	c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
-      c->finish_expr_subtree(tree, _srcdst != SD_OR);
-      if (_op_negated) c->negate_expr_subtree(tree);
-
-      c->finish_expr_subtree(tree, true);
-    }
+    // enforce first fragment: fragmentation offset == 0
+    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
+    
+    c->start_expr_subtree(tree);
+    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
+      c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
+    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
+      c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
+    c->finish_expr_subtree(tree, _srcdst != SD_OR);
+    if (_op_negated) c->negate_expr_subtree(tree);
 
   } else if (_type == TYPE_TCPOPT) {
-    c->start_expr_subtree(tree);
-    c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
+    // enforce first fragment: fragmentation offset == 0
+    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
     unsigned val = (negated ? 0 : _u.i);
     c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(val << 16), htonl(_u.i << 16));
-    c->finish_expr_subtree(tree, true);
     negated = false;		// did our own negation
 
   } else if (_type == TYPE_TOS) {
@@ -304,14 +306,22 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     if (_op_negated) c->negate_expr_subtree(tree);
 
   } else if (_type == TYPE_ICMP_TYPE) {
-    c->start_expr_subtree(tree);
-    c->add_expr(tree, 8, htonl(IP_PROTO_ICMP << 16), htonl(0x00FF0000));
+    // enforce first fragment: fragmentation offset == 0
+    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
     c->start_expr_subtree(tree);
     c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.i << 24), htonl(_mask << 24));
     c->finish_expr_subtree(tree, true);
     if (_op_negated) c->negate_expr_subtree(tree);
+
+  } else if (_type == TYPE_IPFRAG || _type == TYPE_IPUNFRAG) {
+    c->start_expr_subtree(tree);
+    c->add_expr(tree, 4, 0, htonl(0x00003FFF));
     c->finish_expr_subtree(tree, true);
+    if (_type == TYPE_IPFRAG)
+      c->negate_expr_subtree(tree);
   }
+
+  c->finish_expr_subtree(tree, true);
 
   if (negated)
     c->negate_expr_subtree(tree);
@@ -367,6 +377,8 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   type_map.insert("tos", TYPE_TOS);
   type_map.insert("dscp", TYPE_DSCP);
   type_map.insert("type", TYPE_ICMP_TYPE);
+  type_map.insert("frag", TYPE_IPFRAG);
+  type_map.insert("unfrag", TYPE_IPUNFRAG);
   
   HashMap<String, int> ip_proto_map(-1);
   ip_proto_map.insert("icmp", IP_PROTO_ICMP);
@@ -592,9 +604,48 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 //
 
 void
+IPClassifier::length_checked_push(Packet *p)
+{
+  const unsigned char *neth_data = (const unsigned char *)p->ip_header();
+  const unsigned char *transph_data = (const unsigned char *)p->transport_header();
+  int packet_length = p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset();
+  Expr *ex = &_exprs[0];	// avoid bounds checking
+  int pos = 0;
+  
+  do {
+    int off = ex[pos].offset;
+    unsigned data;
+    if (off + 4 > packet_length)
+      goto check_length;
+    
+   length_ok:
+    if (off >= TRANSP_FAKE_OFFSET)
+      data = *(const unsigned *)(transph_data + off - TRANSP_FAKE_OFFSET);
+    else
+      data = *(const unsigned *)(neth_data + off);
+    if ((data & ex[pos].mask.u)	== ex[pos].value.u)
+      pos = ex[pos].yes;
+    else
+      pos = ex[pos].no;
+    continue;
+    
+   check_length:
+    if (ex[pos].offset < packet_length) {
+      unsigned available = packet_length - ex[pos].offset;
+      if (!(ex[pos].mask.c[3]
+	    || (ex[pos].mask.c[2] && available <= 2)
+	    || (ex[pos].mask.c[1] && available == 1)))
+	goto length_ok;
+    }
+    pos = ex[pos].no;
+  } while (pos > 0);
+  
+  checked_push_output(-pos, p);
+}
+
+void
 IPClassifier::push(int, Packet *p)
 {
-  // XXX length checks
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
   Expr *ex = &_exprs[0];	// avoid bounds checking
@@ -605,6 +656,10 @@ IPClassifier::push(int, Packet *p)
     // out of range
     pos = -_output_everything;
     goto found;
+  } else if (p->length() + TRANSP_FAKE_OFFSET - p->transport_header_offset() < _safe_length) {
+    // common case never checks packet length
+    length_checked_push(p);
+    return;
   }
   
   do {

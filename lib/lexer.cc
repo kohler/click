@@ -138,6 +138,7 @@ Lexer::begin_parse(const String &data, const String &filename,
     _filename = filename + ":";
   else
     _filename = filename;
+  _original_filename = _filename;
   _lineno = 1;
 
   _lextra = lextra;
@@ -267,6 +268,9 @@ Lexer::process_line_directive(unsigned pos)
       if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
 	pos++;
     _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+    // an empty filename means return to the input file's name
+    if (_filename == ":")
+      _filename = _original_filename;
   }
 
   // reach end of line
@@ -1108,7 +1112,8 @@ Lexer::yconnection()
       
      default:
       lerror("syntax error near `%s'", t.string().cc());
-      unlex(t);
+      if (t.kind() >= lexIdent)	// save meaningful tokens
+	unlex(t);
       return true;
       
     }

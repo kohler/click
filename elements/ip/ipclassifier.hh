@@ -57,6 +57,15 @@
  * DSCP is a value between 0 and 63. Matches IP packets with the given DSCP
  * value (the upper 6 bits of TOS).
  *
+ * =item B<ip frag>
+ *
+ * Matches fragmented IP packets (that is, packets with the more-fragments bit
+ * set and/or a nonzero fragment offset).
+ *
+ * =item B<ip unfrag>
+ *
+ * Equivalent to `not ip frag'.
+ *
  * =item B<icmp type TYPE>
  *
  * TYPE is a value between 0 and 255. Matches ICMP packets with the given ICMP
@@ -78,17 +87,20 @@
  * or `>= POW' if POW is a power of 2.) If no OPERATION is specified, `==' is
  * assumed.
  *
- * For B<port> and B<icmp type> directives, `DIRECTIVE != VALUE' is
- * not the same as `not (DIRECTIVE == VALUE)'. For example, `tcp port != 5'
- * will not match UDP packets. (The option is effectively equivalent to `tcp
- * and not tcp port 5'.) Similarly, `icmp type != 4' will not match non-ICMP
- * packets. The same goes for the `<', `>', `<=', and `>=' relations.
+ * For B<port> and B<icmp type> directives, `DIRECTIVE != VALUE' is not the
+ * same as `not (DIRECTIVE == VALUE)'. For example, `src tcp port != 5'
+ * matches TCP packets whose source port is not 5, while `!(src tcp port ==
+ * 5)' matches non-TCP packets as well. (The `src tcp port != 5' option is
+ * effectively equivalent to `tcp and not src tcp port 5'.) Similarly, `icmp
+ * type != 4' will not match non-ICMP packets. The same goes for the `<', `>',
+ * `<=', and `>=' relations.
  *
  * You can omit a lot of this syntax. For example, instead of `ip proto tcp',
  * you can just say `tcp'; and similarly for `port www' (just say `www'), `tcp
- * opt syn' (just say `syn'), or `net 10.0.0.0/24' (just say `10.0.0.0/24').
- * You can often eliminate repetitive qualifiers, too: `src port 80 or 81' is
- * the same as `src port 80 or src port 81'.
+ * opt syn' (just say `syn'), `net 10.0.0.0/24' (just say `10.0.0.0/24'), and
+ * `ip unfrag' (just say `unfrag'). You can often eliminate repetitive
+ * qualifiers, too: `src port 80 or 81' is the same as `src port 80 or src
+ * port 81'.
  *
  * As a special case, a pattern consisting of "-" matches every packet.
  *
@@ -110,6 +122,9 @@
  * Valid TCP options: `syn', `fin', `ack', `rst', `psh', `urg'
  *
  * This element correctly handles IP packets with options.
+ *
+ * B<[tcp | udp] port> and B<icmp type> directives can only be true on the
+ * first fragment of a fragmented packet.
  *
  * =e
  * For example,
@@ -150,6 +165,7 @@ class IPClassifier : public Classifier {
     
     TYPE_HOST = 1, TYPE_NET = 2, TYPE_PORT = 3, TYPE_PROTO = 4,
     TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7, TYPE_ICMP_TYPE = 8,
+    TYPE_IPFRAG = 9, TYPE_IPUNFRAG = 10,
     
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
 
@@ -200,6 +216,8 @@ class IPClassifier : public Classifier {
     void add_exprs(Classifier *, Vector<int> &) const;
     
   };
+
+  void length_checked_push(Packet *);
   
  public:
   

@@ -93,9 +93,10 @@ class RouterT : public ElementClassT {
   int get_eindex(const String &name, int etype_index, const String &configuration, const String &landmark);
   int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
   int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
+  void change_ename(int, const String &);
   void free_element(int);
   void kill_element(int i)			{ _elements[i].type = -1; }
-  void change_ename(int, const String &);
+  void free_dead_elements();
 
   void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector = v; }
   
@@ -149,7 +150,6 @@ class RouterT : public ElementClassT {
   
   void remove_duplicate_connections();
   
-  void free_dead_elements();
   void remove_dead_elements(ErrorHandler * = 0);
   
   void remove_compound_elements(ErrorHandler *);
@@ -208,7 +208,8 @@ RouterT::etype_name(int idx) const
 inline ElementClassT *
 RouterT::etype_class(int idx) const
 {
-  return type_class(_elements[idx].type);
+  int t = _elements[idx].type;
+  return (t >= 0 ? _element_classes[t] : 0);
 }
 
 inline const String &

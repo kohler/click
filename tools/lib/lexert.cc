@@ -19,8 +19,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-LexerT::LexerT(ErrorHandler *errh)
+LexerT::LexerT(ErrorHandler *errh, bool ignore_line_directives)
   : _data(0), _len(0), _pos(0), _lineno(1),
+    _ignore_line_directives(ignore_line_directives),
     _tpos(0), _tfull(0), _router(0),
     _errh(errh)
 {
@@ -49,6 +50,7 @@ LexerT::reset(const String &data, const String &filename)
     _filename = filename + ":";
   else
     _filename = filename;
+  _original_filename = _filename;
   _lineno = 1;
 }
 
@@ -150,7 +152,8 @@ LexerT::process_line_directive(unsigned pos)
     // complain about bad directive
     lerror("unknown preprocessor directive");
     return skip_line(pos);
-  }
+  } else if (_ignore_line_directives)
+    return skip_line(pos);
   
   // parse line number
   for (_lineno = 0; pos < len && isdigit(data[pos]); pos++)
@@ -166,6 +169,9 @@ LexerT::process_line_directive(unsigned pos)
       if (data[pos] == '\\' && pos < len - 1 && data[pos+1] != '\n' && data[pos+1] != '\r')
 	pos++;
     _filename = cp_unquote(_big_string.substring(first_in_filename, pos - first_in_filename) + "\":");
+    // an empty filename means return to the input file's name
+    if (_filename == ":")
+      _filename = _original_filename;
   }
 
   // reach end of line
@@ -641,8 +647,9 @@ LexerT::yconnection()
       return true;
       
      default:
-      lerror("syntax error near `%s'", t.string().cc());
-      unlex(t);
+      lerror("syntax error near `%s'", String(t.string()).cc());
+      if (t.kind() >= lexIdent)	// save meaningful tokens
+	unlex(t);
       return true;
       
     }

@@ -413,18 +413,20 @@ particular purpose.\n");
     router->remove_duplicate_connections();
   }
 
-  // remove unused Aligns (they have no input)
+  // remove unused Aligns (they have no input) and old AlignmentInfos
+  int aligninfo_tindex = router->get_type_index("AlignmentInfo", 0);
   {
     Vector<int> ninputs, noutputs;
     router->count_ports(ninputs, noutputs);
     int nelem = router->nelements();
     for (int i = 0; i < nelem; i++)
-      if (router->etype(i) == align_tindex
-	  && (ninputs[i] == 0 || noutputs[i] == 0))
+      if ((router->etype(i) == align_tindex
+	   && (ninputs[i] == 0 || noutputs[i] == 0))
+	  || router->etype(i) == aligninfo_tindex)
 	router->kill_element(i);
     router->remove_dead_elements();
   }
-
+  
   // make the AlignmentInfo element
   {
     RouterAlign ral(router, errh);
@@ -432,6 +434,7 @@ particular purpose.\n");
       ral.have_output();
     } while (ral.have_input());
 
+    // collect alignment information, delete old AlignmentInfos
     StringAccum sa;
     int nelem = router->nelements();
     for (int i = 0; i < nelem; i++) {
@@ -442,11 +445,9 @@ particular purpose.\n");
 	sa << "  " << a.chunk() << " " << a.offset();
       }
     }
-
-    int aligninfo_t = router->get_type_index("AlignmentInfo", 0);
+    
     router->get_eindex(String("AlignmentInfo@click_align@") + String(nelem+1),
-		       aligninfo_t,
-		       sa.take_string(),
+		       aligninfo_tindex, sa.take_string(),
 		       "<click-align>");
   }
   

@@ -83,17 +83,17 @@ has both Click-language files and object files.\n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE             Read router configuration from FILE.\n\
-  -o, --output FILE           Write output to FILE.\n\
-      --no-combine            Do not combine adjacent Classifiers.\n\
-      --no-classes            Do not generate FastClassifier elements.\n\
-  -k, --kernel                Compile into Linux kernel binary package.\n\
-  -u, --user                  Compile into user-level binary package.\n\
-  -s, --source                Write source code only.\n\
-  -c, --config                Write new configuration only.\n\
-  -r, --reverse               Reverse transformation.\n\
-      --help                  Print this message and exit.\n\
-  -v, --version               Print version number and exit.\n\
+  -f, --file FILE               Read router configuration from FILE.\n\
+  -o, --output FILE             Write output to FILE.\n\
+      --no-combine              Do not combine adjacent Classifiers.\n\
+      --no-classes              Do not generate FastClassifier elements.\n\
+  -k, --kernel                  Compile into Linux kernel binary package.\n\
+  -u, --user                    Compile into user-level binary package.\n\
+  -s, --source                  Write source code only.\n\
+  -c, --config                  Write new configuration only.\n\
+  -r, --reverse                 Reverse transformation.\n\
+      --help                    Print this message and exit.\n\
+  -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -104,6 +104,9 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 static bool
 combine_classifiers(RouterT *router, int from_i, int from_port, int to_i)
 {
+  int classifier_t = router->type_index("Classifier");
+  assert(router->etype(from_i) == classifier_t && router->etype(to_i) == classifier_t);
+  
   // find where `to_i' is heading for
   Vector<int> first_hop, second_hop;
   router->find_connection_vector_from(from_i, first_hop);
@@ -155,6 +158,9 @@ static bool
 try_combine_classifiers(RouterT *router, int class_i)
 {
   int classifier_t = router->type_index("Classifier");
+  if (router->etype(class_i) != classifier_t)
+    // cannot combine IPClassifiers yet
+    return false;
 
   const Vector<Hookup> &hf = router->hookup_from();
   const Vector<Hookup> &ht = router->hookup_to();
@@ -290,10 +296,15 @@ translate_class_name(const String &s)
 static void
 write_checked_program(const Classificand &c, StringAccum &source)
 {
-  assert(c.type == AC_CLASSIFIER);
-  
-  source << "  const unsigned *data = (const unsigned *)(p->data() - " << c.align_offset << ");\n";
-  source << "  int l = p->length();\n  assert(l < " << c.safe_length << ");\n";
+  if (c.type == AC_CLASSIFIER)
+    source << "  const unsigned *data = (const unsigned *)(p->data() - "
+	   << c.align_offset << ");\n  int l = p->length();\n";
+  else if (c.type == AC_IPCLASSIFIER)
+    source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
+  const unsigned *transp_data = (const unsigned *)p->transport_header();\n\
+  int l = p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset();\n";
+
+  source << "  assert(l < " << c.safe_length << ");\n";
 
   for (int i = 0; i < c.program.size(); i++) {
     const ProgramStep &e = c.program[i];
@@ -311,19 +322,41 @@ write_checked_program(const Classificand &c, StringAccum &source)
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
+    
     source << " lstep_" << i << ":\n";
+    
+    int offset;
+    String datavar;
+    String length_check;
+    if (c.type == AC_CLASSIFIER) {
+      offset = e.offset/4;
+      datavar = "data";
+      length_check = "l < " + String(want_l);
+    } else { // c.type == AC_IPCLASSIFIER
+      if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET) {
+	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4;
+	datavar = "transp_data";
+	length_check = "l < " + String(want_l);
+      } else {
+	offset = e.offset/4;
+	datavar = "ip_data";
+	length_check = "false";
+      }
+    }
     
     if (want_l >= c.safe_length) {
       branch2 = e.no;
       goto output_branch2;
     }
-    
+
     if (switched)
-      source << "  if (l < " << want_l << " || (data[" << e.offset/4
-	     << "] & " << e.mask.u << "U) != " << e.value.u << "U)";
+      source << "  if (" << length_check << " || ("
+	     << datavar << "[" << offset << "] & "
+	     << e.mask.u << "U) != " << e.value.u << "U)";
     else
-      source << "  if (l >= " << want_l << " && (data[" << e.offset/4
-	     << "] & " << e.mask.u << "U) == " << e.value.u << "U)";
+      source << "  if (!(" << length_check << ") && ("
+	     << datavar << "[" << offset << "] & "
+	     << e.mask.u << "U) == " << e.value.u << "U)";
     if (branch1 <= -c.noutputs)
       source << " {\n    p->kill();\n    return;\n  }\n";
     else if (branch1 <= 0)
@@ -398,13 +431,24 @@ static Vector<String> old_configurations;
 static Vector<Classificand> all_programs;
 
 static void
+change_landmark(ElementT &classifier_e)
+{
+  int colon = classifier_e.landmark.find_right(':');
+  if (colon >= 0)
+    classifier_e.landmark = classifier_e.landmark.substring(0, colon)
+      + "<click-fastclassifier>" + classifier_e.landmark.substring(colon);
+  else
+    classifier_e.landmark = classifier_e.landmark + "<click-fastclassifier>";
+}
+
+static void
 analyze_classifier(RouterT *r, int classifier_ei,
 		   StringAccum &header, StringAccum &source,
 		   ErrorHandler *errh)
 {
   // check what kind it is
   String classifier_tname = r->etype_name(classifier_ei);
-  
+
   // count number of output ports
   Vector<String> args;
   cp_argvec(r->econfiguration(classifier_ei), args);
@@ -417,7 +461,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
   
   int classifier_nei =
     nr.get_eindex(r->ename(classifier_ei), classifier_nti,
-		  r->econfiguration(classifier_ei), "");
+		  r->econfiguration(classifier_ei), r->elandmark(classifier_ei));
   
   int idle_nei = nr.get_anon_eindex(idle_nti);
   nr.add_connection(idle_nei, 0, 0, classifier_nei);
@@ -495,6 +539,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
       ElementT &classifier_e = r->element(classifier_ei);
       classifier_e.type = all_programs[i].type_index;
       classifier_e.configuration = String();
+      change_landmark(classifier_e);
       return;
     }
   
@@ -524,7 +569,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
       source << "  p->kill();\n";
     source << "}\n";
   } else {
-    if (c.type == AC_CLASSIFIER) {
+    if (c.type == AC_CLASSIFIER || c.safe_length >= IPCLASSIFIER_TRANSP_FAKE_OFFSET) {
       header << "  void length_checked_push(Packet *);\n";
       source << "void\n" << cxx_name << "::length_checked_push(Packet *p)\n{\n";
       write_checked_program(c, source);
@@ -540,8 +585,13 @@ analyze_classifier(RouterT *r, int classifier_ei,
       source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
   if (p->length() < " << c.safe_length << ")\n    length_checked_push(p);\n\
   else\n    length_unchecked_push(p);\n}\n";
-    } else if (c.type == AC_IPCLASSIFIER) {
-      source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
+    } else { // c.type == AC_IPCLASSIFIER
+      if (c.safe_length >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
+	source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
+  if (p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset() < " << c.safe_length << ")\n    length_checked_push(p);\n\
+  else\n    length_unchecked_push(p);\n}\n";
+      else
+	source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
   length_unchecked_push(p);\n}\n";
     }
   }
@@ -551,7 +601,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
   ElementT &classifier_e = r->element(classifier_ei);
   classifier_e.type = c.type_index;
   classifier_e.configuration = String();
-  classifier_e.landmark = "<click-fastclassifier>" + classifier_e.landmark;
+  change_landmark(classifier_e);
   all_programs.push_back(c);
 }
 
@@ -839,7 +889,7 @@ particular purpose.\n");
      case USERLEVEL_OPT:
       compile_user = !clp->negated;
       break;
-      
+
      bad_option:
      case Clp_BadOption:
       short_usage();

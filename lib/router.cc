@@ -1107,7 +1107,7 @@ Router::wait()
   bool any = (_selectors.size() > 0);
 
   struct timeval tv;
-  if (!_timer_head.get_next_delay(&tv) && !any)
+  if (!any && !_timer_head.get_next_delay(&tv))
     return;
   // never wait if anything is scheduled
   if (scheduled_next() != this)

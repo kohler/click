@@ -1307,7 +1307,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     if (e.type < nelemtype)
       sa << _element_type_names[e.type];
     else
-      sa << "/*BAD_TYPE_" << e.type << "*/";
+      sa << "Error /*BAD_TYPE_" << e.type << "*/";
     if (e.configuration)
       sa << "(" << e.configuration << ")";
     sa << ";\n";
@@ -1341,6 +1341,17 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     }
   }
 
+  // count line numbers so we can give reasonable error messages
+  {
+    int lineno = 1;
+    const char *s = sa.data();
+    int len = sa.length();
+    for (int i = 0; i < len; i++)
+      if (s[i] == '\n')
+	lineno++;
+    sa << "# " << lineno + 1 << " \"\"\n";
+  }
+  
   // print hookup
   bool done = false;
   while (!done) {

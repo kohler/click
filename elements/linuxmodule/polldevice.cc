@@ -211,15 +211,16 @@ PollDevice::run_scheduled()
 #endif
 
   for(int i=0; i<got; i++) {
-    struct sk_buff *skb_next;
     skb = skb_list;
-    skb_next = skb_list = skb_list->next;
+    skb_list = skb_list->next;
     skb->next = skb->prev = NULL;
-    
+   
+#if 0
     assert(skb);
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
     assert(skb_shared(skb) == 0);
+#endif
 
     /* Retrieve the ether header. */
     skb_push(skb, 14);
@@ -230,7 +231,6 @@ PollDevice::run_scheduled()
   
     output(0).push(p);
   }
-  assert(skb_list == NULL);
 
 #if CLICK_DEVICE_STATS
   if (_activations > 0 && got > 0) {
