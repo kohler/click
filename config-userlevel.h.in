@@ -8,6 +8,10 @@
 /* Define if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
+/* Define to 1 if you have the declaration
+   of 'madvise', and to 0 if you don't. */
+#undef HAVE_DECL_MADVISE
+
 /* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -156,6 +160,11 @@ char *strerror(int errno);
 # include <new.h>
 #else
 inline void *operator new(size_t, void *v) { return v; }
+#endif
+
+/* Prototype madvise if we have it, but we don't have the prototype. */
+#if ALLOW_MMAP && HAVE_MADVISE && !HAVE_DECL_MADVISE
+extern "C" int madvise(void *addr, size_t len, int behav);
 #endif
 
 /* Define macros that surround Click declarations. */

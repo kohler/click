@@ -169,6 +169,10 @@ AC_CHECK_HEADERS(sys/mman.h)
 AC_FUNC_MMAP
 AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(madvise)
+AC_CHECK_DECLS(madvise, [], [], [#if HAVE_SYS_MMAN_H
+#include <sys/types.h>
+#include <sys/mman.h>
+#endif])
 
 
 dnl
