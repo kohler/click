@@ -66,7 +66,8 @@ PrintGrid::simple_action(Packet *p)
 {
   click_ether *eh = (click_ether *) p->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("PrintGrid%s%s : not a Grid packet", 
+    click_chatter("PrintGrid %s%s%s : not a Grid packet", 
+		  id().cc(),
 		  _label.cc()[0] ? " " : "",
 		  _label.cc());
     return p;
@@ -85,6 +86,7 @@ PrintGrid::simple_action(Packet *p)
   String type = grid_hdr::type_string(gh->type);
 
   String line("PrintGrid ");
+  line += id() + " ";
   if (_label[0] != 0)
     line += _label + " ";
   line += ": " + type + " ";
