@@ -1,3 +1,9 @@
+2002-02-23 Saturday 15:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.51), elements/grid/gridroutetable.cc (1.36),
+	elements/grid/gridroutetable.hh (1.20), elements/grid/linkstat.cc
+	(1.5), elements/grid/linkstat.hh (1.4): more route metric fixups
+
 2002-02-22 Friday 15:23  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: analysis/anonipaddr.cc (1.3), ip/ipaddrrewriter.cc
