@@ -170,6 +170,8 @@ class FromDump : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
+    FromDump *hotswap_element() const;
+    void take_state(Element *, ErrorHandler *);
 
     bool run_task();
     Packet *pull(int);

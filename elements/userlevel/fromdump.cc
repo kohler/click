@@ -325,6 +325,16 @@ FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
     return dlen;
 }
 
+FromDump *
+FromDump::hotswap_element() const
+{
+    if (Element *e = Element::hotswap_element())
+	if (FromDump *fd = static_cast<FromDump *>(e->cast("FromDump")))
+	    if (fd->_filename == _filename)
+		return fd;
+    return 0;
+}
+
 int
 FromDump::initialize(ErrorHandler *errh)
 {
@@ -332,6 +342,17 @@ FromDump::initialize(ErrorHandler *errh)
     if (!output_is_push(0))
 	_notifier.initialize(router());
     
+    // check handler call, initialize Task
+    if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
+	return -1;
+    if (output_is_push(0))
+	ScheduleInfo::initialize_task(this, &_task, _active, errh);
+
+    // skip if hotswapping
+    if (hotswap_element())
+	return 0;
+    
+    // open file
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
 	_filename = "<stdin>";
@@ -397,16 +418,51 @@ FromDump::initialize(ErrorHandler *errh)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
-    // check handler call
-    if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
-	return -1;
-    
     // done
     _pos = sizeof(fake_pcap_file_header);
     _packet_filepos = 0;
-    if (output_is_push(0))
-	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
+}
+
+void
+FromDump::take_state(Element *e, ErrorHandler *errh)
+{
+    FromDump *o = static_cast<FromDump *>(e); // checked by hotswap_element()
+
+    _fd = o->_fd;
+    o->_fd = -1;
+    _buffer = o->_buffer;
+    _pos = o->_pos;
+    _len = o->_len;
+
+    _data_packet = o->_data_packet;
+    o->_data_packet = 0;
+    _packet = o->_packet;
+    o->_packet = 0;
+
+    _swapped = o->_swapped;
+    _extra_pkthdr_crap = o->_extra_pkthdr_crap;
+    _minor_version = o->_minor_version;
+    
+    _linktype = o->_linktype;
+    if (_linktype == FAKE_DLT_RAW)
+	_force_ip = true;
+    else if (_force_ip && !fake_pcap_dlt_force_ipable(_linktype))
+	errh->warning("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
+
+#ifdef ALLOW_MMAP
+    if (_mmap != o->_mmap)
+	errh->warning("different MMAP states");
+    _mmap = o->_mmap;
+    _mmap_unit = o->_mmap_unit;
+    _mmap_off = o->_mmap_off;
+#endif
+
+    _time_offset = o->_time_offset;
+    _pipe = o->_pipe;
+    o->_pipe = 0;
+    _file_offset = o->_file_offset;
+    _packet_filepos = o->_packet_filepos;
 }
 
 void

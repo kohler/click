@@ -87,6 +87,8 @@ class ToDump : public Element { public:
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
     void add_handlers();
+    ToDump *hotswap_element() const;
+    void take_state(Element *, ErrorHandler *);
 
     void push(int, Packet *);
     Packet *pull(int);

@@ -109,6 +109,17 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
+ToDump *
+ToDump::hotswap_element() const
+{
+    if (Element *e = Element::hotswap_element())
+	if (ToDump *td = (ToDump *)e->cast("ToDump"))
+	    if (td->_filename == _filename
+		&& td->_encap_type == _encap_type)
+		return td;
+    return 0;
+}
+
 int
 ToDump::initialize(ErrorHandler *errh)
 {
@@ -129,31 +140,35 @@ ToDump::initialize(ErrorHandler *errh)
 	}
     }
 
-    // if OK, prepare files and move onward
-    assert(!_fp);
-    if (_filename != "-") {
-	_fp = fopen(_filename.c_str(), "wb");
-	if (!_fp)
-	    return errh->error("%s: %s", _filename.c_str(), strerror(errno));
-    } else {
-	_fp = stdout;
-	_filename = "<stdout>";
+    // skip initialization if we're hotswapping later
+    if (!hotswap_element()) {
+
+	// prepare files
+	assert(!_fp);
+	if (_filename != "-") {
+	    _fp = fopen(_filename.c_str(), "wb");
+	    if (!_fp)
+		return errh->error("%s: %s", _filename.c_str(), strerror(errno));
+	} else {
+	    _fp = stdout;
+	    _filename = "<stdout>";
+	}
+
+	struct fake_pcap_file_header h;
+
+	h.magic = FAKE_PCAP_MAGIC;
+	h.version_major = FAKE_PCAP_VERSION_MAJOR;
+	h.version_minor = FAKE_PCAP_VERSION_MINOR;
+
+	h.thiszone = 0;		// timestamps are in GMT
+	h.sigfigs = 0;		// XXX accuracy of timestamps?
+	h.snaplen = _snaplen;
+	h.linktype = _encap_type;
+
+	size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
+	if (wrote_header != 1)
+	    return errh->error("%s: unable to write file header", _filename.cc());
     }
-
-    struct fake_pcap_file_header h;
-
-    h.magic = FAKE_PCAP_MAGIC;
-    h.version_major = FAKE_PCAP_VERSION_MAJOR;
-    h.version_minor = FAKE_PCAP_VERSION_MINOR;
-
-    h.thiszone = 0;		// timestamps are in GMT
-    h.sigfigs = 0;		// XXX accuracy of timestamps?
-    h.snaplen = _snaplen;
-    h.linktype = _encap_type;
-
-    size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
-    if (wrote_header != 1)
-	return errh->error("%s: unable to write file header", _filename.cc());
 
     if (input_is_pull(0) && noutputs() == 0) {
 	ScheduleInfo::join_scheduler(this, &_task, errh);
@@ -164,11 +179,19 @@ ToDump::initialize(ErrorHandler *errh)
 }
 
 void
+ToDump::take_state(Element *e, ErrorHandler *)
+{
+    ToDump *td = static_cast<ToDump *>(e); // result of hotswap_element()
+    _fp = td->_fp;
+    td->_fp = 0;
+}
+
+void
 ToDump::cleanup(CleanupStage)
 {
-  if (_fp && _fp != stdout)
-    fclose(_fp);
-  _fp = 0;
+    if (_fp && _fp != stdout)
+	fclose(_fp);
+    _fp = 0;
 }
 
 void
