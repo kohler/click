@@ -18,14 +18,17 @@ q :: ToDevice(NET_DEVICE)
 
 // linux ip layer els
 linux :: Tun(TUN_DEVICE, GRID_IP, GRID_NETMASK)
+  to_linux :: Queue -> linux
 
 // hook it all up
 ps -> Classifier(GRID_ETH_PROTO) -> [0] nb [0] -> q 
 
-linux -> cl :: Classifier(GRID_NET_HEX, // ip for Grid network
+linux -> cl :: Classifier(GRID_IP_HEX, // ip for us
+			  GRID_NET_HEX, // ip for Grid network
 			  -) // the rest of the world
-cl [0] -> GetIPAddress(16) -> [1] nb [1] -> Queue -> ck :: CheckIPHeader [0] -> linux
-ck [1] -> Discard
-cl [1] -> SetIPAddress(GRID_GW) -> [1] nb // for grid gateway
+cl [0] -> to_linux
+cl [1] -> GetIPAddress(16) -> [1] nb [1] -> check :: CheckIPHeader [0] -> to_linux
+check [1] -> Discard
+cl [2] -> SetIPAddress(GRID_GW) -> [1] nb // for grid gateway
 h -> q 
 

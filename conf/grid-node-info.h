@@ -11,6 +11,7 @@
 
 // this node's Grid address information
 #define GRID_IP 18.26.7.2
+#define GRID_IP_HEX 16/121a0702 // 18.26.7.2
 #define GRID_NETMASK 255.255.255.0
 
 // Grid network number in Click hex notation, with IP source address
