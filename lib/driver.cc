@@ -265,7 +265,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if (!package)
       package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
     if (!package)
-      cerrh.error("cannot find required package `%s.%s'\nin CLICKPATH or `%s'", name.cc(), suffix.cc(), CLICK_LIBDIR);
+      cerrh.error("can't find required package `%s%s'\nin CLICKPATH or `%s'", name.cc(), suffix.cc(), CLICK_LIBDIR);
   }
 
   p->loaded = true;
