@@ -1,3 +1,17 @@
+2003-12-04 Thursday 16:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.72), e2elossmetric.cc (1.3),
+	e2elossmetric.hh (1.3), etxmetric.cc (1.3), etxmetric.hh (1.3),
+	gridgenericmetric.hh (1.4), hopcountmetric.cc (1.3),
+	hopcountmetric.hh (1.2), lirmetric.cc (1.3), lirmetric.hh (1.3),
+	threshmetric.cc (1.2), threshmetric.hh (1.2): changed generic
+	metric interface to account for building routes in forward or
+	reverse directions
+
+2003-12-04 Thursday 16:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/glue.hh (1.39): added swap(x, y) template function
+
 2003-12-04 Thursday 03:48  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.9), arptable.hh (1.8),
