@@ -23,8 +23,7 @@ None
 Opens a control socket that allows other user-level programs to call read or
 write handlers on the router. Depending on its configuration string,
 ControlSocket will listen on TCP port PORTNUMBER, or on a UNIX-domain socket
-named FILENAME. Disallows write handlers if READONLY? is true (it is false by
-default). With the PROXY keyword argument, you can make ControlSocket speak to
+named FILENAME. With the PROXY keyword argument, you can make ControlSocket speak to
 a kernel driver; see below.
 
 The "server" (that is, the ControlSocket element) speaks a relatively
@@ -51,7 +50,8 @@ Keyword arguments are:
 
 =item READONLY
 
-Boolean. Same as the READONLY? argument.
+Boolean.  Disallows write handlers if true (it is false by
+default). 
 
 =item PROXY
 
