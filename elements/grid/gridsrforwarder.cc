@@ -115,7 +115,7 @@ GridSRForwarder::handle_host(Packet *p)
     *sp = htons(route_len - 1);
     sp++;
     for (int i = 1; i < route_len; i++, sp++) 
-      *sp = htons(hops[1]);
+      *sp = htons(hops[i]);
     lp = (unsigned long *)sp;
     *lp = htonl(src);
     lp++;
