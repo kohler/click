@@ -84,7 +84,7 @@ CheckGridHeader::simple_action(Packet *p)
     goto bad;
   */
 
-  if (gh->version != GRID_VERSION) {
+  if (gh->version != grid_hdr::GRID_VERSION) {
      click_chatter ("%s: unknown grid version %x", id().cc(), gh->version);
      p->kill();
      return 0;

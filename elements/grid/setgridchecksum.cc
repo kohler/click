@@ -57,7 +57,7 @@ SetGridChecksum::simple_action(Packet *xp)
       tlen > plen - sizeof(click_ether))
     goto bad;
 
-  gh->version = GRID_VERSION;
+  gh->version = grid_hdr::GRID_VERSION;
 
   gh->cksum = 0;
   gh->cksum = click_in_cksum((unsigned char *) gh, tlen);

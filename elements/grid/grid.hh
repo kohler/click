@@ -62,7 +62,7 @@ struct grid_location {
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-#define GRID_VERSION 0xfecf
+  static const unsigned int GRID_VERSION = 0xfecf;
 
   unsigned int version; // look, doug, a coherent variable name
                         // (should maybe be called nbr_vrs or something)
