@@ -1,3 +1,7 @@
+2004-11-12 Friday 20:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/man2html (1.2): add man2html
+
 2004-11-11 Thursday 11:17  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: autoratefallback.cc (1.11), madwifirate.cc
