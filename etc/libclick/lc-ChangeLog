@@ -1,3 +1,9 @@
+2002-02-22 Friday 15:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc-Makefile.in, include/click/integers.hh,
+	include/click/integers.hh, libsrc/integers.cc: add first_bit_set
+	method to integers.hh
+
 2002-02-14 Thursday 16:30  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in, config-linuxmodule.h.in: restore
