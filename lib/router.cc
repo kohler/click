@@ -556,8 +556,8 @@ Router::set_connections()
 	Element* frome = _elements[hfrom.idx];
 	Hookup& hto = _hookup_to[c];
 	Element* toe = _elements[hto.idx];
-	frome->connect_output(hfrom.port, toe, hto.port);
-	toe->connect_input(hto.port, frome, hfrom.port);
+	frome->connect_port(true, hfrom.port, toe, hto.port);
+	toe->connect_port(false, hto.port, frome, hfrom.port);
     }
 }
 
