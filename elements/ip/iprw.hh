@@ -124,7 +124,7 @@ class IPRw::Pattern {
   int _sportl;			// host byte order
   int _sporth;			// host byte order
   IPAddress _daddr;
-  int _dport;				// host byte order
+  int _dport;			// host byte order
 
   Mapping *_rover;		// walks along circular list ordered by port
 
@@ -139,9 +139,9 @@ class IPRw::Pattern {
   static int parse_with_ports(const String &, Pattern **, int *, int *,
 			      Element *, ErrorHandler *);
 
-  void use()				{ _refcount++; }
+  void use()			{ _refcount++; }
   void unuse()			{ if (--_refcount <= 0) delete this; }
-    
+  
   operator bool() const { return _saddr || _sporth || _daddr || _dport; }
     
   bool can_accept_from(const Pattern &) const;

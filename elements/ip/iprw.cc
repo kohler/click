@@ -131,7 +131,7 @@ IPRw::Mapping::s() const
 IPRw::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
 		       const IPAddress &daddr, int dport)
   : _saddr(saddr), _sportl(sportl), _sporth(sporth), _daddr(daddr),
-    _dport(dport), _rover(0)
+    _dport(dport), _rover(0), _refcount(0)
 {
 }
 
