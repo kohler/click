@@ -94,6 +94,13 @@ void
 CounterFlood::forward(Broadcast *bcast) {
 
   if (_debug) {
+    click_chatter("%{element} seq %d sender %s my_expected_rx %d sending\n",
+		  this,
+		  bcast->_seq,
+		  bcast->_rx_from.s().cc(),
+		  0);
+  }
+  if (_debug) {
     click_chatter("%{element} forwarding seq %d\n",
 		  this,
 		  bcast->_seq);
@@ -211,6 +218,7 @@ CounterFlood::push(int port, Packet *p_in)
     _packets[index]._actually_sent = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
+    _packets[index]._rx_from = _ip;
     if (_debug) {
       click_chatter("%{element} original packet %d, seq %d\n",
 		    this,
@@ -235,6 +243,7 @@ CounterFlood::push(int port, Packet *p_in)
       }
     }
 
+    IPAddress src = pk->get_hop(pk->num_hops() - 1);
     if (index == -1) {
       /* haven't seen this packet before */
       index = _packets.size();
@@ -247,6 +256,7 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._forwarded = false;
       _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
+      _packets[index]._rx_from = src;
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
@@ -260,10 +270,23 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index].t->initialize(this);
       _packets[index].t->schedule_at(_packets[index]._to_send);
 
+      if (_debug) {
+	click_chatter("%{element} first_rx seq %d src %s",
+		      this,
+		      _packets[index]._seq,
+		      src.s().cc());
+      }
       /* finally, clone the packet and push it out */
       output(1).push(p_in);
     } else {
+      if (_debug) {
+	click_chatter("%{element} extra_rx seq %d src %s",
+		      this,
+		      _packets[index]._seq,
+		      src.s().cc());
+      }
       /* we've seen this packet before */
+      _packets[index]._extra_rx.push_back(src);
       p_in->kill();
       _packets[index]._num_rx++;
     }
@@ -334,6 +357,21 @@ CounterFlood::static_write_count(const String &arg, Element *e,
   n->_count = b;
   return 0;
 }
+
+int
+CounterFlood::static_write_clear(const String &, Element *e,
+			void *, ErrorHandler *) 
+{
+  CounterFlood *n = (CounterFlood *) e;
+  n->clear();
+  return 0;
+}
+
+void 
+CounterFlood::clear() 
+{
+  _packets.clear();
+}
 String
 CounterFlood::static_print_debug(Element *f, void *)
 {
@@ -348,13 +386,18 @@ CounterFlood::print_packets()
 {
   StringAccum sa;
   for (int x = 0; x < _packets.size(); x++) {
-    sa << "seq " << _packets[x]._seq;
+    sa << "ip " << _ip;
+    sa << " seq " << _packets[x]._seq;
     sa << " originated " << _packets[x]._originated;
     sa << " num_rx " << _packets[x]._num_rx;
-    sa << " first_rx " << _packets[x]._first_rx;
-    sa << " forwarded " << _packets[x]._forwarded;
-    sa << " actually_sent " << _packets[x]._actually_sent;
-    sa << " to_send " << _packets[x]._to_send;
+    sa << " num_tx " << (int) _packets[x]._actually_sent;
+    sa << " rx_from " << _packets[x]._rx_from;
+
+    sa << " ";
+    for (int y = 0; y < _packets[x]._extra_rx.size(); y++) {
+      sa << _packets[x]._extra_rx[y] << " ";
+    }
+
     sa << "\n";
   }
   return sa.take_string();
@@ -376,6 +419,7 @@ CounterFlood::add_handlers()
 
   add_write_handler("debug", static_write_debug, 0);
   add_write_handler("count", static_write_count, 0);
+  add_write_handler("clear", static_write_clear, 0);
 }
 
 // generate Vector template instance

@@ -73,6 +73,10 @@ class FlashFlood : public Element {
 				void *, ErrorHandler *errh); 
   static int static_write_min_p(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
+  static int static_write_clear(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+
+  void clear();
 
   static String static_print_stats(Element *e, void *);
   String print_stats();
@@ -87,6 +91,15 @@ private:
 
   typedef HashMap<IPAddress, int> IPProbMap;
 
+
+  class SeqProbMap {
+  public:
+    uint32_t _seq;
+    IPProbMap _node_to_prob;
+  };
+
+
+
   class Broadcast {
   public:
     uint32_t _seq;
@@ -95,12 +108,21 @@ private:
     int _num_rx;
     int _num_tx;
     struct timeval _first_rx;
+    bool _actual_first_rx;
     bool _scheduled;
     bool _sent;
     Timer *t;
     struct timeval _to_send;
+    
+    IPAddress _rx_from; /* who I got this packet from */
+    Vector<IPAddress> _extra_rx;
 
-    IPProbMap _node_to_prob;
+    int _delay_ms;
+    int _nweight;
+    int _expected_rx;
+    int _slot;
+
+
 
     void del_timer() {
       if (t) {
@@ -109,9 +131,11 @@ private:
 	t = NULL;
       }
     }
+
   };
 
 
+  DEQueue<SeqProbMap> _mappings;
   DEQueue<Broadcast> _packets;
 
   IPAddress _ip;    // My IP address.
@@ -126,6 +150,9 @@ private:
 
   bool _debug;
   bool _lossy;
+  bool _pick_slots;
+  bool _slots_nweight;
+  bool _slots_erx;
 
   int _packets_originated;
   int _packets_tx;
@@ -136,15 +163,21 @@ private:
 
   int _threshold;
   int _neighbor_threshold;
+  int _slot_time_ms;
   void forward(Broadcast *bcast);
   void forward_hook();
   void trim_packets();
   int get_link_prob(IPAddress from, IPAddress to);
-  void update_probs(IPAddress ip, Broadcast *bcast);
-  void reschedule_bcast(Broadcast *bcast);
+  void update_probs(int seq, IPAddress ip);
+  void schedule_bcast(Broadcast *bcast);
+  SeqProbMap *findmap(uint32_t seq);
+  int expected_rx(uint32_t seq, IPAddress src);
+  int neighbor_weight(IPAddress src);
   static void static_forward_hook(Timer *, void *e) { 
     ((FlashFlood *) e)->forward_hook(); 
   }
+  bool get_prob(uint32_t seq, IPAddress, int *);
+  bool set_prob(uint32_t seq, IPAddress, int);
 };
 
 

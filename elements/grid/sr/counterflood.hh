@@ -70,6 +70,10 @@ class CounterFlood : public Element {
   static int static_write_count(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
 
+  static int static_write_clear(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+
+  void clear();
   static String static_print_stats(Element *e, void *);
   String print_stats();
   static String static_print_count(Element *e, void *);
@@ -95,6 +99,8 @@ private:
     bool _actually_sent;
     Timer *t;
     struct timeval _to_send;
+    IPAddress _rx_from;
+    Vector<IPAddress> _extra_rx;
 
     void del_timer() {
       if (t) {

@@ -27,6 +27,7 @@
 #include "srpacket.hh"
 CLICK_DECLS
 
+
 FlashFlood::FlashFlood()
   :  Element(2,2),
      _en(),
@@ -58,7 +59,9 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _threshold = 100;
   _neighbor_threshold = 66;
   _pick_slots = false;
-
+  _slots_nweight = false;
+  _slots_erx = false;
+  _slot_time_ms = 15;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -74,6 +77,9 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "THRESHOLD", cpInteger, "Threshold", &_threshold,
 		    "NEIGHBOR_THRESHOLD", cpInteger, "Neighbor Threshold", &_neighbor_threshold,
 		    "PICK_SLOTS", cpBool, "Wait time selection", &_pick_slots,
+		    "SLOTS_NEIGHBOR_WEIGHT", cpBool, "use max neighbor weight for slots", &_slots_nweight,
+		    "SLOTS_EXPECTED_RX", cpBool, "foo", &_slots_erx,
+		    "SLOT_TIME_MS", cpInteger, "time (in ms) for a slot", &_slot_time_ms,
                     0);
 
   if (!_et) 
@@ -89,6 +95,13 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_link_table->cast("LinkTable") == 0)
     return errh->error("LinkTable element is not a LinkTable");
 
+  if (_pick_slots && !(_slots_erx ^ _slots_nweight)) {
+    return errh->error("One of SLOTS_NEIGHBOR_WEIGHT or SLOTS_EXPECTED_RX may be true");
+  }
+
+  if (_slot_time_ms < 0) {
+    return errh->error("SLOT_TIME_MS must be positive\n");
+  }
   return ret;
 }
 
@@ -104,8 +117,74 @@ FlashFlood::initialize (ErrorHandler *)
   return 0;
 }
 
+FlashFlood::SeqProbMap *
+FlashFlood::findmap(uint32_t seq) 
+{
+  int index = -1;
+  for (int x = 0; x < _mappings.size(); x++) {
+    if (_mappings[x]._seq == seq) {
+      index = x;
+      break;
+    }
+  }
+  
+  if (index == -1) {
+    return 0;
+  }
+  return &_mappings[index];
+}
+
+
+bool
+FlashFlood::get_prob(uint32_t seq, IPAddress src, int *p)
+{
+  if (!p) {
+    click_chatter("%{element} error, seq %d p is null\n",
+		  this,
+		  seq);
+    return false;
+  }
+  SeqProbMap *m = findmap(seq);
+  if (!m) {
+    click_chatter("%{element} error, couldn't find seq %d in get_prob\n",
+		  this,
+		  seq);
+    return false;
+  }
+
+  int *p_ptr = m->_node_to_prob.findp(src);
+  *p = (p_ptr) ? *p_ptr : 0;
+  return true;
+  
+}
+
+bool
+FlashFlood::set_prob(uint32_t seq, IPAddress src, int p)
+{
+  SeqProbMap *m = findmap(seq);
+  if (!m) {
+    click_chatter("%{element} error, couldn't find seq %d in set_prob\n",
+		  this,
+		  seq);
+    return false;
+  }
+  m->_node_to_prob.insert(src, p);
+  return true;
+}
+
 int 
-FlashFlood::expected_rx(Broadcast *bcast, IPAddress src) {
+FlashFlood::expected_rx(uint32_t seq, IPAddress src) {
+
+
+  SeqProbMap *m = findmap(seq);
+  if (!m) {
+    click_chatter("%{element} error, couldn't find seq %d in expected_rx\n",
+		  this,
+		  seq);
+    return 0;
+
+  }
+
   Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
   int my_expected_rx = 0;
   
@@ -113,10 +192,10 @@ FlashFlood::expected_rx(Broadcast *bcast, IPAddress src) {
     if (neighbors[x] == src || neighbors[x] == _ip) {
       continue;
     }
-    int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+    int *p_ever_ptr = m->_node_to_prob.findp(neighbors[x]);
     if (!p_ever_ptr) {
-      bcast->_node_to_prob.insert(neighbors[x], 0);
-      p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+      m->_node_to_prob.insert(neighbors[x], 0);
+      p_ever_ptr = m->_node_to_prob.findp(neighbors[x]);
     }
     int p_ever = *p_ever_ptr;
     if (p_ever > 100) {
@@ -150,14 +229,14 @@ FlashFlood::neighbor_weight(IPAddress src) {
 void
 FlashFlood::forward(Broadcast *bcast) {
   
-  int my_expected_rx = expected_rx(bcast, _ip);
+  int my_expected_rx = expected_rx(bcast->_seq, _ip);
 
   if (my_expected_rx < _threshold) {
     if (_debug) {
-      click_chatter("%{element} seq %d sender %s my_expected_rx %d not sending\n",
+      click_chatter("%{element} seq %d sender %s my_expected_rx %d not_sending\n",
 		    this,
 		    bcast->_seq,
-		    bcast->_last_heard_sender.s().cc(),
+		    bcast->_rx_from.s().cc(),
 		    my_expected_rx);
     }
 
@@ -165,6 +244,13 @@ FlashFlood::forward(Broadcast *bcast) {
     bcast->_scheduled = false;
     bcast->del_timer();
     return;
+  }
+  if (_debug) {
+    click_chatter("%{element} seq %d sender %s my_expected_rx %d sending\n",
+		  this,
+		  bcast->_seq,
+		  bcast->_rx_from.s().cc(),
+		  my_expected_rx);
   }
 
 
@@ -221,9 +307,8 @@ FlashFlood::forward(Broadcast *bcast) {
   bcast->_num_tx++;
   _packets_tx++;
   bcast->del_timer();
-  update_probs(_ip, bcast);
-  reschedule_bcast(bcast);
-
+  bcast->_rx_from = _ip;
+  update_probs(bcast->_seq, _ip);
 }
 
 void
@@ -249,7 +334,7 @@ FlashFlood::trim_packets() {
   while ((_packets.size() > _history)) {
     /* unschedule and remove packet*/
     if (_debug) {
-      click_chatter("%{element} removing seq %d\n",
+      click_chatter("%{element} removing packet seq %d\n",
 		    this,
 		    _packets[0]._seq);
     }
@@ -258,6 +343,14 @@ FlashFlood::trim_packets() {
       _packets[0]._p->kill();
     }
     _packets.pop_front();
+  }
+
+  while ((_mappings.size() > _history)) {
+    /* unschedule and remove packet*/
+      click_chatter("%{element} removing mapping seq %d\n",
+		    this,
+		    _mappings[0]._seq);
+    _mappings.pop_front();
   }
 }
 void
@@ -269,19 +362,35 @@ FlashFlood::push(int port, Packet *p_in)
   if (port == 1) {
     _packets_originated++;
     /* from me */
-    int index = _packets.size();
+    int seq = random();
+
+    int map_index = _mappings.size();
+    _mappings.push_back(SeqProbMap());
+    _mappings[map_index]._seq = seq;
+
+
+    int bcast_index = _packets.size();
     _packets.push_back(Broadcast());
-    _packets[index]._seq = random();
-    _packets[index]._originated = true;
-    _packets[index]._p = p_in;
-    _packets[index]._num_rx = 0;
-    _packets[index]._num_tx = 0;
-    _packets[index]._first_rx = now;
-    _packets[index]._sent = false;
-    _packets[index]._scheduled = false;
-    _packets[index].t = NULL;
-    _packets[index]._to_send = now;
-    forward(&_packets[index]);
+    _packets[bcast_index]._seq = seq;
+    _packets[bcast_index]._originated = true;
+    _packets[bcast_index]._p = p_in;
+    _packets[bcast_index]._num_rx = 0;
+    _packets[bcast_index]._num_tx = 0;
+    _packets[bcast_index]._first_rx = now;
+    _packets[bcast_index]._actual_first_rx = true;
+    _packets[bcast_index]._sent = false;
+    _packets[bcast_index]._scheduled = false;
+    _packets[bcast_index].t = NULL;
+    _packets[bcast_index]._to_send = now;
+    _packets[bcast_index]._rx_from = _ip;
+    _packets[bcast_index]._expected_rx = expected_rx(seq, _ip);
+    _packets[bcast_index]._nweight = neighbor_weight(_ip);
+    _packets[bcast_index]._slot = 0;
+    _packets[bcast_index]._delay_ms = 0;
+    forward(&_packets[bcast_index]);
+
+
+
   } else {
     _packets_rx++;
 
@@ -290,41 +399,78 @@ FlashFlood::push(int port, Packet *p_in)
     
     uint32_t seq = pk->seq();
     
-    int index = -1;
-    for (int x = 0; x < _packets.size(); x++) {
-      if (_packets[x]._seq == seq) {
-	index = x;
+    int map_index = -1;
+    for (int x = 0; x < _mappings.size(); x++) {
+      if (_mappings[x]._seq == seq) {
+	map_index = x;
 	break;
       }
     }
 
-    if (index == -1) {
-      /* haven't seen this packet before */
-      index = _packets.size();
-      _packets.push_back(Broadcast());
-      _packets[index]._seq = seq;
-      _packets[index]._originated = false;
-      _packets[index]._p = p_in;
-      _packets[index]._num_rx = 0;
-      _packets[index]._num_tx = 0;
-      _packets[index]._first_rx = now;
-      _packets[index]._sent = false;
-      _packets[index]._scheduled = false;
-      _packets[index].t = NULL;
+    bool seen_before = false;
+    if (map_index == - 1) {
+      map_index = _mappings.size();
+      _mappings.push_back(SeqProbMap());
+      _mappings[map_index]._seq = seq;
+    }
 
-      /* clone the packet and push it out */
-      Packet *p_out = p_in->clone();
-      output(1).push(p_out);
+
+    int bcast_index = -1;
+    for (int x = 0; x < _packets.size(); x++) {
+      if (_packets[x]._seq == seq) {
+	seen_before = true;
+	if (!_packets[x]._sent) {
+	  bcast_index = x;
+	  break;
+	}
+      }
     }
-    _packets[index]._num_rx++;
+    
     IPAddress src = pk->get_hop(pk->num_hops() - 1);
-    if (_debug) {
-      click_chatter("%{element} got packet from %s",
-		    this,
-		    src.s().cc());
+    if (bcast_index == -1) {
+      /* haven't seen this packet before */
+      bcast_index = _packets.size();
+      _packets.push_back(Broadcast());
+      _packets[bcast_index]._seq = seq;
+      _packets[bcast_index]._originated = false;
+      _packets[bcast_index]._p = p_in;
+      _packets[bcast_index]._num_rx = 0;
+      _packets[bcast_index]._num_tx = 0;
+      _packets[bcast_index]._first_rx = now;
+      _packets[bcast_index]._actual_first_rx = !seen_before;
+      _packets[bcast_index]._sent = false;
+      _packets[bcast_index]._scheduled = false;
+      
+      _packets[bcast_index].t = NULL;
+
+      if (_debug) {
+	click_chatter("%{element} first_rx seq %d src %s",
+		      this,
+		      _packets[bcast_index]._seq,
+		      src.s().cc());
+      }
+      if (!seen_before) {
+	/* clone the packet and push it out */
+	Packet *p_out = p_in->clone();
+	output(1).push(p_out);
+      }
+    } else {
+      if (_debug) {
+	click_chatter("%{element} extra_rx seq %d src %s",
+		      this,
+		      _packets[bcast_index]._seq,
+		      src.s().cc());
+      }
     }
-    update_probs(src, &_packets[index]);
-    reschedule_bcast(&_packets[index]);
+    if (!_packets[bcast_index]._scheduled) {
+      _packets[bcast_index]._rx_from = src;
+    } else {
+      _packets[bcast_index]._extra_rx.push_back(src);
+    }
+    _packets[bcast_index]._num_rx++;
+
+    update_probs(_packets[bcast_index]._seq, src);
+    schedule_bcast(&_packets[bcast_index]);
   }
   trim_packets();
 }
@@ -352,10 +498,16 @@ FlashFlood::get_link_prob(IPAddress from, IPAddress to)
 
 
 void 
-FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
+FlashFlood::update_probs(int seq, IPAddress src) {
 
   Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
-  bcast->_node_to_prob.insert(src, 100);
+  if (!set_prob(seq, src, 100)) {
+    click_chatter("%{element} error setting prob seq d src %s to %d\n",
+		  this, 
+		  seq,
+		  src.s().cc(),
+		  100);
+  }
   for (int x = 0; x < neighbors.size(); x++) {
     if (neighbors[x] == _ip) {
       /* don't update my prob, it's one */
@@ -368,8 +520,14 @@ FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
      *
      */
     int p_now = get_link_prob(src, neighbors[x]);
-    int *p_before_ptr = bcast->_node_to_prob.findp(neighbors[x]);
-    int p_before = (p_before_ptr) ? *p_before_ptr : 0;
+    int p_before = 0;
+    if (!get_prob(seq, neighbors[x], &p_before)) {
+      click_chatter("%{element} error getting prob seq d src %s\n",
+		    this, 
+		    seq,
+		    neighbors[x].s().cc());
+    }
+
     int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
     if (p_ever > 100) {
       click_chatter("%{element} src %s neighbor %s p_ever %d p_before %d p_now %d\n",
@@ -381,23 +539,32 @@ FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
 		    p_now);
       sr_assert(false);
     }
-    bcast->_node_to_prob.insert(neighbors[x], p_ever);
+    if (!set_prob(seq, neighbors[x], p_ever)) {
+      click_chatter("%{element} error setting prob seq d src %s to %d\n",
+		    this, 
+		    seq,
+		    neighbors[x].s().cc(),
+		    p_ever);
+    }
   }
-  bcast->_last_heard_sender = src;
+  
 }
 
 void
-FlashFlood::reschedule_bcast(Broadcast *bcast) {    
+FlashFlood::schedule_bcast(Broadcast *bcast) {    
 
   if (bcast->_scheduled) {
     return;
   }
   Vector<IPAddress> neighbors = _link_table->get_neighbors(_ip);
-  int my_expected_rx = expected_rx(bcast, _ip);
+  int my_expected_rx = expected_rx(bcast->_seq, _ip);
   int my_neighbor_weight = neighbor_weight(_ip);
   
   int delay_ms = 0;
 
+
+  bcast->_expected_rx = my_expected_rx;
+  bcast->_nweight = my_neighbor_weight;
 
   int max_neighbor_weight = 0;
   for (int x = 0; x< neighbors.size(); x++) {
@@ -407,56 +574,63 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
 
 
   if (_pick_slots) {
-  int slot = 0;
-
+    int slot_erx = 0;
+    int slot_nweight = 0;
+    
     /* 
      * now see what slot I should fit in
      */
-    
     for (int x = 0; x < neighbors.size(); x++) {
       if (neighbors[x] == _ip) {
 	/* don't update my prob, it's one */
 	continue;
       }
-      int neighbor_expected_rx = expected_rx(bcast, neighbors[x]);
+      int neighbor_expected_rx = expected_rx(bcast->_seq, neighbors[x]);
       
-      int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
-      if (!p_ever_ptr) {
-	bcast->_node_to_prob.insert(neighbors[x], 0);
-	p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
-      }
-      int p_ever = *p_ever_ptr;
+      int neighbor_nweight = neighbor_weight(neighbors[x]);
+      
+      int p_ever;
+      get_prob(bcast->_seq, neighbors[x], &p_ever);
       
       int metric = get_link_prob(_ip, neighbors[x]);
       
-      
-      int metric_from_sender = get_link_prob(bcast->_last_heard_sender, neighbors[x]);
+      int metric_from_sender = get_link_prob(bcast->_rx_from, neighbors[x]);
       if (_debug) {
-	click_chatter("%{element} seq %d sender %s neighbor %s prob %d expected_rx %d metric %d\n",
+	click_chatter("%{element} seq %d sender %s neighbor %s prob %d neighbor-weight %d expected_rx %d metric %d\n",
 		      this,
 		      bcast->_seq,
-		      bcast->_last_heard_sender.s().cc(),
+		      bcast->_rx_from.s().cc(),
 		      neighbors[x].s().cc(),
 		      p_ever,
+		      neighbor_nweight,
 		      neighbor_expected_rx,
 		      metric);
       }
       if (neighbor_expected_rx > my_expected_rx && 
-	  metric_from_sender > 1) {
-	
-	slot++;
+	   metric_from_sender > 1) {
+	slot_erx++;
+      } else if (my_neighbor_weight < neighbor_nweight ) {
+	slot_nweight++;
       }
     }
 
-
-    delay_ms = 10 * slot;
+    if (_slots_erx) {
+      delay_ms = _slot_time_ms * slot_erx;
+      bcast->_slot = slot_erx;
+    } else if (_slots_nweight) {
+      delay_ms = _slot_time_ms * slot_nweight;
+      bcast->_slot = slot_nweight;
+    }
 
     if (my_expected_rx > 0 && _debug) {
-      click_chatter("%{element} seq %d sender %s slot %d expected_rx %d\n",
+      click_chatter("%{element} seq %d sender %s erx_slot %d nweight_slot %d neighbor_weight %d max_neighbor_weight %d expected_rx %d\n",
 		    this,
 		    bcast->_seq,
-		    bcast->_last_heard_sender.s().cc(),
-		    slot,
+		    bcast->_rx_from.s().cc(),
+		    slot_erx,
+		    slot_nweight,
+		    my_neighbor_weight,
+		    max_neighbor_weight,
 		    my_expected_rx
 		    );
     }
@@ -467,14 +641,14 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
     /* don't pick slots */
     /* pick based on relative neighbor weight */
     if (my_neighbor_weight) {
-      int max_delay_ms = 10 * max_neighbor_weight / my_neighbor_weight;
+      int max_delay_ms = _slot_time_ms * max_neighbor_weight / my_neighbor_weight;
       delay_ms = random() % max_delay_ms;
 
       if (_debug) {
 	click_chatter("%{element} seq %d sender %s max_delay_ms %d delay_ms %d expected_rx %d\n",
 		      this,
 		      bcast->_seq,
-		      bcast->_last_heard_sender.s().cc(),
+		      bcast->_rx_from.s().cc(),
 		      max_delay_ms,
 		      delay_ms,
 		      my_expected_rx
@@ -484,9 +658,6 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
     }
   }
 
-  if (my_expected_rx < 1 || !my_neighbor_weight) {
-    return;
-  }
 
   /*
    * now, schedule a broadcast 
@@ -501,7 +672,9 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
   }
   
   delay_ms = max(delay_ms, 1);
-  
+
+  bcast->_delay_ms = delay_ms;
+
   sr_assert(delay_ms > 0);
   struct timeval now;
   click_gettimeofday(&now);
@@ -555,6 +728,20 @@ FlashFlood::static_write_debug(const String &arg, Element *e,
 }
 
 int
+FlashFlood::static_write_clear(const String &, Element *e,
+			void *, ErrorHandler *) 
+{
+  FlashFlood *n = (FlashFlood *) e;
+  n->clear();
+  return 0;
+}
+
+void
+FlashFlood::clear() {
+  _mappings.clear();
+  _packets.clear();
+}
+int
 FlashFlood::static_write_min_p(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
@@ -591,13 +778,23 @@ FlashFlood::print_packets()
 {
   StringAccum sa;
   for (int x = 0; x < _packets.size(); x++) {
-    sa << "seq " << _packets[x]._seq;
+    sa << "ip " << _ip;
+    sa << " seq " << _packets[x]._seq;
     sa << " originated " << _packets[x]._originated;
+    sa << " actual_first_rx " << _packets[x]._actual_first_rx;
     sa << " num_rx " << _packets[x]._num_rx;
-    sa << " first_rx " << _packets[x]._first_rx;
     sa << " num_tx " << _packets[x]._num_tx;
-    sa << " sent " << _packets[x]._sent;
-    sa << " to_send " << _packets[x]._to_send;
+    sa << " delay " << _packets[x]._delay_ms;
+    sa << " nweight " << _packets[x]._nweight;
+    sa << " erx " << _packets[x]._expected_rx;
+    sa << " slot " << _packets[x]._slot;
+    sa << " rx_from " << _packets[x]._rx_from;
+    
+    sa << " ";
+    for (int y = 0; y < _packets[x]._extra_rx.size(); y++) {
+      sa << _packets[x]._extra_rx[y] << " ";
+    }
+
     sa << "\n";
   }
   return sa.take_string();
@@ -621,6 +818,7 @@ FlashFlood::add_handlers()
 
   add_write_handler("debug", static_write_debug, 0);
   add_write_handler("min_p", static_write_min_p, 0);
+  add_write_handler("clear", static_write_clear, 0);
 }
 
 // generate Vector template instance
