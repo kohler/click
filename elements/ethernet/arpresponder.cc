@@ -175,7 +175,8 @@ ARPResponder::simple_action(Packet *p)
 
 EXPORT_ELEMENT(ARPResponder)
 
-
 // generate Vector template instance
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<ARPResponder::Entry>;
+#endif

@@ -151,4 +151,6 @@ EtherSwitch::add_handlers()
 EXPORT_ELEMENT(EtherSwitch)
 
 #include "hashmap.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<EtherAddress, EtherSwitch::AddrInfo*>;
+#endif

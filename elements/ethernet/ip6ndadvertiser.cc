@@ -291,8 +291,6 @@ EXPORT_ELEMENT(IP6NDAdvertiser)
 
 // generate Vector template instance
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<IP6NDAdvertiser::Entry>;
-
-
-
-
+#endif

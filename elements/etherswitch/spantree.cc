@@ -329,4 +329,6 @@ ELEMENT_REQUIRES(Suppressor EtherSwitchBridgeMessage)
 
 // generate Vector template instance
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<EtherSpanTree::PortInfo>;
+#endif

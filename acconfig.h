@@ -97,6 +97,11 @@ char *strerror(int errno);
 #else
 inline void *operator new(size_t, void *v) { return v; }
 #endif
+
+/* Explicit template instances? */
+#if __GNUC__ && __GNUC_MINOR__ < 90
+#define EXPLICIT_TEMPLATE_INSTANCES 1
+#endif
 #endif
 
 #endif CONFIG_H

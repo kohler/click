@@ -517,6 +517,8 @@ ELEMENT_PROVIDES(IPRw)
 
 #include "bighashmap.cc"
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class BigHashMap<IPFlowID, IPRw::Mapping *>;
 template class BigHashMapIterator<IPFlowID, IPRw::Mapping *>;
 template class Vector<IPRw::InputSpec>;
+#endif

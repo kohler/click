@@ -1024,4 +1024,6 @@ EXPORT_ELEMENT(Classifier)
 
 // generate Vector template instance
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<Classifier::Expr>;
+#endif

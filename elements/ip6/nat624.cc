@@ -397,4 +397,6 @@ EXPORT_ELEMENT(Nat624)
 
 // generate Vector template instance
 #include "vector.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<Nat624::Entry64>;
+#endif

@@ -281,4 +281,6 @@ RFC2507c::tcpip::hashcode() const
 EXPORT_ELEMENT(RFC2507c)
 
 #include "hashmap.cc"
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<struct RFC2507c::tcpip, int>;
+#endif
