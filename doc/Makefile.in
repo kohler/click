@@ -38,6 +38,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-combine.1 $(mandir)/man1/click-combine.1
 	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(mandir)/man1/click-devirtualize.1
 	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(mandir)/man1/click-fastclassifier.1
+	$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(mandir)/man1/click-flatten.1
 	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
 	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(mandir)/man1/click-mkmindriver.1
 	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1

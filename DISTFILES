@@ -31,6 +31,7 @@ doc/click-elem2man
 doc/click-combine.1
 doc/click-devirtualize.1
 doc/click-fastclassifier.1
+doc/click-flatten.1
 doc/click-install.1
 doc/click-mkmindriver.1
 doc/click-uncombine.1
@@ -150,6 +151,7 @@ lib/iptable.cc
 lib/iptable2.cc
 lib/ip6table.cc
 lib/lexer.cc
+lib/packageutils.cc
 lib/packet.cc
 lib/radix.cc
 lib/router.cc
@@ -242,6 +244,10 @@ tools/click-fastclassifier/click-fastclassifier.cc
 tools/click-fastclassifier/click-fastclassifier.hh
 tools/click-fastclassifier/fc_classifier.cc
 tools/click-fastclassifier/fc_ipclassifier.cc
+
+tools/click-flatten
+tools/click-flatten/Makefile.in
+tools/click-flatten/click-flatten.cc
 
 tools/click-install
 tools/click-install/Makefile.in

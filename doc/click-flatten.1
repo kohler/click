@@ -1,0 +1,108 @@
+.\" -*- mode: nroff -*-
+.ds V 1.2.1
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-FLATTEN 1 "21/May/2001" "Version \*V"
+.SH NAME
+click-flatten \- flattens Click router configurations
+'
+.SH SYNOPSIS
+.B click-flatten
+.RI \%[ options ]
+.RI \%[ router\-file ]
+'
+.SH DESCRIPTION
+The
+.B click-flatten
+tool flattens a Click router configuration, compiling all its compound
+elements away, and writes the resulting configuration to the standard
+output. It can also change how the router configuration is parsed by
+changing its unparser package.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-flatten
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to flatten from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the flattened router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP
+.BI \-p " parser"
+.TP
+.BI \-\-parser " parser"
+Unparse the flattened router configuration using the
+.I parser
+parsing package.
+If
+.I parser
+is `none' (or a dash, `\-'), any existing parsing package is removed.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 5 ,
+.M click-check 1 ,
+.M click-xform 1
+'
+.SH AUTHOR
+.na
+Eddie Kohler, kohler@aciri.org
+.br
+http://www.pdos.lcs.mit.edu/click/
+'
