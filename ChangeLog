@@ -1,3 +1,12 @@
+2003-01-30 Thursday 13:31  Eddie Kohler <kohler@icir.org>
+
+	* doc/click-elem2man (1.22): improve documentation generation:
+	change .M Foo "n" (n) to .M Foo "n"
+
+2003-01-30 Thursday 13:30  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/todevice.hh (1.61): add to documentation
+
 2003-01-30 Thursday 12:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/linktracker.hh (1.5): doc typo nitlet
