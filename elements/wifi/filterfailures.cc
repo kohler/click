@@ -56,8 +56,9 @@ FilterFailures::simple_action(Packet *p)
      _drops++;
      if (noutputs() == 2){
        output(1).push(p);
+     } else {
+       p->kill();
      }
-     p->kill();
      return (0);
    }
    return p;
