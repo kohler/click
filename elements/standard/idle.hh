@@ -1,5 +1,5 @@
-#ifndef Idle_HH
-#define Idle_HH
+#ifndef CLICK_IDLE_HH
+#define CLICK_IDLE_HH
 
 /*
  * =c

@@ -1,5 +1,5 @@
-#ifndef TEE_HH
-#define TEE_HH
+#ifndef CLICK_TEE_HH
+#define CLICK_TEE_HH
 #include <click/element.hh>
 
 /*

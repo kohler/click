@@ -1,5 +1,5 @@
-#ifndef RATEDSOURCE_HH
-#define RATEDSOURCE_HH
+#ifndef CLICK_RATEDSOURCE_HH
+#define CLICK_RATEDSOURCE_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
 #include <click/task.hh>

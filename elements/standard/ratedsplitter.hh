@@ -1,5 +1,5 @@
-#ifndef RATEDSPLITTER_HH
-#define RATEDSPLITTER_HH
+#ifndef CLICK_RATEDSPLITTER_HH
+#define CLICK_RATEDSPLITTER_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
 

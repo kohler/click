@@ -1,5 +1,5 @@
-#ifndef QUITWATCHER_HH
-#define QUITWATCHER_HH
+#ifndef CLICK_QUITWATCHER_HH
+#define CLICK_QUITWATCHER_HH
 
 /*
 =c

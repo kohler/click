@@ -1,5 +1,5 @@
-#ifndef TCPREWRITER_HH
-#define TCPREWRITER_HH
+#ifndef CLICK_TCPREWRITER_HH
+#define CLICK_TCPREWRITER_HH
 #include "elements/ip/iprw.hh"
 
 /*

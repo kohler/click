@@ -1,5 +1,5 @@
-#ifndef SETCRC32_HH
-#define SETCRC32_HH
+#ifndef CLICK_SETCRC32_HH
+#define CLICK_SETCRC32_HH
 
 /*
  * =c

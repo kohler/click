@@ -1,5 +1,5 @@
-#ifndef DROPBROADCASTS_HH
-#define DROPBROADCASTS_HH
+#ifndef CLICK_DROPBROADCASTS_HH
+#define CLICK_DROPBROADCASTS_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
 

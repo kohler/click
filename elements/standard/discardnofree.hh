@@ -1,5 +1,5 @@
-#ifndef DISCARDNOFREE_HH
-#define DISCARDNOFREE_HH
+#ifndef CLICK_DISCARDNOFREE_HH
+#define CLICK_DISCARDNOFREE_HH
 #include <click/element.hh>
 #include <click/task.hh>
 

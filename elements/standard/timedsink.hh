@@ -1,5 +1,5 @@
-#ifndef TIMEDSINK_HH
-#define TIMEDSINK_HH
+#ifndef CLICK_TIMEDSINK_HH
+#define CLICK_TIMEDSINK_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 

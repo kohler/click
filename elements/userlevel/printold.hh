@@ -1,5 +1,5 @@
-#ifndef PRINTOLD_HH
-#define PRINTOLD_HH
+#ifndef CLICK_PRINTOLD_HH
+#define CLICK_PRINTOLD_HH
 #include <click/element.hh>
 #include <click/string.hh>
 

@@ -1,5 +1,5 @@
-#ifndef RANDOMSOURCE_HH
-#define RANDOMSOURCE_HH
+#ifndef CLICK_RANDOMSOURCE_HH
+#define CLICK_RANDOMSOURCE_HH
 #include <click/element.hh>
 #include <click/task.hh>
 

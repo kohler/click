@@ -1,5 +1,5 @@
-#ifndef PAINTTEE_HH
-#define PAINTTEE_HH
+#ifndef CLICK_PAINTTEE_HH
+#define CLICK_PAINTTEE_HH
 #include <click/element.hh>
 
 /*

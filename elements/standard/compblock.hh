@@ -1,5 +1,5 @@
-#ifndef COMPBLOCK_HH
-#define COMPBLOCK_HH
+#ifndef CLICK_COMPBLOCK_HH
+#define CLICK_COMPBLOCK_HH
 #include <click/element.hh>
 
 /*

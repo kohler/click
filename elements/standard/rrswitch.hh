@@ -1,5 +1,5 @@
-#ifndef RRSWITCH_HH
-#define RRSWITCH_HH
+#ifndef CLICK_RRSWITCH_HH
+#define CLICK_RRSWITCH_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
 

@@ -1,5 +1,5 @@
-#ifndef SNOOPTCP_HH
-#define SNOOPTCP_HH
+#ifndef CLICK_SNOOPTCP_HH
+#define CLICK_SNOOPTCP_HH
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 #include <click/ipflowid.hh>

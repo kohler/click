@@ -1,5 +1,5 @@
-#ifndef CHECKLENGTH_HH
-#define CHECKLENGTH_HH
+#ifndef CLICK_CHECKLENGTH_HH
+#define CLICK_CHECKLENGTH_HH
 #include <click/element.hh>
 
 /*

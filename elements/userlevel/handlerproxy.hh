@@ -1,5 +1,5 @@
-#ifndef HANDLERPROXY_HH
-#define HANDLERPROXY_HH
+#ifndef CLICK_HANDLERPROXY_HH
+#define CLICK_HANDLERPROXY_HH
 #include <click/element.hh>
 
 class HandlerProxy : public Element { public:

@@ -1,5 +1,5 @@
-#ifndef METER_HH
-#define METER_HH
+#ifndef CLICK_METER_HH
+#define CLICK_METER_HH
 #include "bandwidthmeter.hh"
 
 /*

@@ -1,5 +1,5 @@
-#ifndef PROBSPLITTER_HH
-#define PROBSPLITTER_HH
+#ifndef CLICK_PROBSPLITTER_HH
+#define CLICK_PROBSPLITTER_HH
 #include <click/element.hh>
 
 /*

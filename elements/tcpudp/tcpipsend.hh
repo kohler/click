@@ -1,5 +1,5 @@
-#ifndef TCPIPSEND_HH
-#define TCPIPSEND_HH
+#ifndef CLICK_TCPIPSEND_HH
+#define CLICK_TCPIPSEND_HH
 
 /*
  * =c
@@ -42,4 +42,4 @@ private:
 
 
 
-#endif // TCPIPSEND_HH
+#endif

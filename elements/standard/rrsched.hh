@@ -1,5 +1,5 @@
-#ifndef RRSCHED_HH
-#define RRSCHED_HH
+#ifndef CLICK_RRSCHED_HH
+#define CLICK_RRSCHED_HH
 #include <click/element.hh>
 
 /*
@@ -40,4 +40,4 @@ class RRSched : public Element {
   
 };
 
-#endif RRSCHED_HH
+#endif

@@ -1,5 +1,5 @@
-#ifndef BURSTER_HH
-#define BURSTER_HH
+#ifndef CLICK_BURSTER_HH
+#define CLICK_BURSTER_HH
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/timer.hh>

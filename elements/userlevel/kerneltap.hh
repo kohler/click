@@ -1,5 +1,5 @@
-#ifndef TUN_HH
-#define TUN_HH
+#ifndef CLICK_KERNELTAP_HH
+#define CLICK_KERNELTAP_HH
 
 /*
  * =c

@@ -1,5 +1,5 @@
-#ifndef IPREWRITER_HH
-#define IPREWRITER_HH
+#ifndef CLICK_IPREWRITER_HH
+#define CLICK_IPREWRITER_HH
 #include "elements/ip/iprw.hh"
 #include <click/sync.hh>
 

@@ -1,5 +1,5 @@
-#ifndef BWRATEDSPLITTER_HH
-#define BWRATEDSPLITTER_HH
+#ifndef CLICK_BWRATEDSPLITTER_HH
+#define CLICK_BWRATEDSPLITTER_HH
 #include "elements/standard/ratedsplitter.hh"
 
 /*

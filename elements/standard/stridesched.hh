@@ -1,5 +1,5 @@
-#ifndef STRIDESCHED_HH
-#define STRIDESCHED_HH
+#ifndef CLICK_STRIDESCHED_HH
+#define CLICK_STRIDESCHED_HH
 #include <click/element.hh>
 #include <click/task.hh>
 
@@ -127,4 +127,4 @@ StrideSched::Client::stride()
   _pass += _stride;
 }
 
-#endif STRIDESCHED_HH
+#endif

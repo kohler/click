@@ -1,5 +1,5 @@
-#ifndef RANDOMLOSSAGE_HH
-#define RANDOMLOSSAGE_HH
+#ifndef CLICK_RANDOMLOSSAGE_HH
+#define CLICK_RANDOMLOSSAGE_HH
 #include <click/element.hh>
 #include <click/atomic.hh>
 

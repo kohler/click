@@ -1,5 +1,5 @@
-#ifndef CHATTERSOCKET_HH
-#define CHATTERSOCKET_HH
+#ifndef CLICK_CHATTERSOCKET_HH
+#define CLICK_CHATTERSOCKET_HH
 #include <click/element.hh>
 #include <click/error.hh>
 

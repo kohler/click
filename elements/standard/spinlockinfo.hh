@@ -1,5 +1,5 @@
-#ifndef SPINLOCKINFO_HH
-#define SPINLOCKINFO_HH
+#ifndef CLICK_SPINLOCKINFO_HH
+#define CLICK_SPINLOCKINFO_HH
 #include <click/element.hh>
 #include <click/vector.hh>
 #include <click/hashmap.hh>

@@ -1,5 +1,5 @@
-#ifndef AVERAGECOUNTER_HH
-#define AVERAGECOUNTER_HH
+#ifndef CLICK_AVERAGECOUNTER_HH
+#define CLICK_AVERAGECOUNTER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/atomic.hh>

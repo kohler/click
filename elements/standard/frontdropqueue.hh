@@ -1,5 +1,5 @@
-#ifndef FRONTDROPQUEUE_HH
-#define FRONTDROPQUEUE_HH
+#ifndef CLICK_FRONTDROPQUEUE_HH
+#define CLICK_FRONTDROPQUEUE_HH
 #include "queue.hh"
 
 /*

@@ -1,5 +1,5 @@
-#ifndef RATEDUNQUEUE_HH
-#define RATEDUNQUEUE_HH
+#ifndef CLICK_RATEDUNQUEUE_HH
+#define CLICK_RATEDUNQUEUE_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
 #include <click/task.hh>

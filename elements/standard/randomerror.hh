@@ -1,5 +1,5 @@
-#ifndef RANDOMERROR_HH
-#define RANDOMERROR_HH
+#ifndef CLICK_RANDOMERROR_HH
+#define CLICK_RANDOMERROR_HH
 #include <click/element.hh>
 
 /*

@@ -1,5 +1,5 @@
-#ifndef UNQUEUE_HH
-#define UNQUEUE_HH
+#ifndef CLICK_UNQUEUE_HH
+#define CLICK_UNQUEUE_HH
 #include <click/element.hh>
 #include <click/task.hh>
 

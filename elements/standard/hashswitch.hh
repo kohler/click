@@ -1,5 +1,5 @@
-#ifndef HASHSWITCH_HH
-#define HASHSWITCH_HH
+#ifndef CLICK_HASHSWITCH_HH
+#define CLICK_HASHSWITCH_HH
 #include <click/element.hh>
 
 /*

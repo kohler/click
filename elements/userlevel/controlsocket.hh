@@ -1,5 +1,5 @@
-#ifndef CONTROLSOCKET_HH
-#define CONTROLSOCKET_HH
+#ifndef CLICK_CONTROLSOCKET_HH
+#define CLICK_CONTROLSOCKET_HH
 #include "elements/userlevel/handlerproxy.hh"
 class ControlSocketErrorHandler;
 

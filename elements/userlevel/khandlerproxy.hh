@@ -1,5 +1,5 @@
-#ifndef KERNELHANDLERPROXY_HH
-#define KERNELHANDLERPROXY_HH
+#ifndef CLICK_KERNELHANDLERPROXY_HH
+#define CLICK_KERNELHANDLERPROXY_HH
 #include "elements/userlevel/handlerproxy.hh"
 
 /*

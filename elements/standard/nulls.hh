@@ -1,5 +1,5 @@
-#ifndef NULLS_HH
-#define NULLS_HH
+#ifndef CLICK_NULLS_HH
+#define CLICK_NULLS_HH
 #include <click/element.hh>
 
 /*

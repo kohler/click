@@ -1,5 +1,5 @@
-#ifndef DRR_HH
-#define DRR_HH
+#ifndef CLICK_DRR_HH
+#define CLICK_DRR_HH
 #include <click/element.hh>
 
 /*

@@ -1,5 +1,5 @@
-#ifndef SETTIMESTAMP_HH
-#define SETTIMESTAMP_HH
+#ifndef CLICK_SETTIMESTAMP_HH
+#define CLICK_SETTIMESTAMP_HH
 #include <click/element.hh>
 
 /*

@@ -1,5 +1,5 @@
-#ifndef ALIGN_HH
-#define ALIGN_HH
+#ifndef CLICK_ALIGN_HH
+#define CLICK_ALIGN_HH
 #include <click/element.hh>
 
 /* =c

@@ -1,5 +1,5 @@
-#ifndef INFINITESOURCE_HH
-#define INFINITESOURCE_HH
+#ifndef CLICK_INFINITESOURCE_HH
+#define CLICK_INFINITESOURCE_HH
 #include <click/element.hh>
 #include <click/task.hh>
 

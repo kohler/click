@@ -1,5 +1,5 @@
-#ifndef BLOCK_HH
-#define BLOCK_HH
+#ifndef CLICK_BLOCK_HH
+#define CLICK_BLOCK_HH
 #include <click/element.hh>
 
 /*

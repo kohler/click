@@ -1,5 +1,5 @@
-#ifndef MSQUEUE_HH
-#define MSQUEUE_HH
+#ifndef CLICK_MSQUEUE_HH
+#define CLICK_MSQUEUE_HH
 
 /*
  * =c

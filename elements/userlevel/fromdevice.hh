@@ -1,5 +1,5 @@
-#ifndef FROMDEVICE_HH
-#define FROMDEVICE_HH
+#ifndef CLICK_FROMDEVICE_HH
+#define CLICK_FROMDEVICE_HH
 
 /*
 =title FromDevice.u

@@ -1,5 +1,5 @@
-#ifndef SPINLOCKRELEASE_HH
-#define SPINLOCKRELEASE_HH
+#ifndef CLICK_SPINLOCKRELEASE_HH
+#define CLICK_SPINLOCKRELEASE_HH
 #include <click/element.hh>
 #include <click/sync.hh>
 

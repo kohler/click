@@ -1,5 +1,5 @@
-#ifndef SUPPRESSER_HH
-#define SUPPRESSER_HH
+#ifndef CLICK_SUPPRESSOR_HH
+#define CLICK_SUPPRESSOR_HH
 #include <click/element.hh>
 
 /*

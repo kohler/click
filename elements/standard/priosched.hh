@@ -1,5 +1,5 @@
-#ifndef PRIOSCHED_HH
-#define PRIOSCHED_HH
+#ifndef CLICK_PRIOSCHED_HH
+#define CLICK_PRIOSCHED_HH
 #include <click/element.hh>
 
 /*
@@ -35,4 +35,4 @@ class PrioSched : public Element {
   
 };
 
-#endif PRIOSCHED_HH
+#endif

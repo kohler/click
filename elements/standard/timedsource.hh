@@ -1,5 +1,5 @@
-#ifndef TIMEDSOURCE_HH
-#define TIMEDSOURCE_HH
+#ifndef CLICK_TIMEDSOURCE_HH
+#define CLICK_TIMEDSOURCE_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 

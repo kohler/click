@@ -1,5 +1,5 @@
-#ifndef STRIDESWITCH_HH
-#define STRIDESWITCH_HH
+#ifndef CLICK_STRIDESWITCH_HH
+#define CLICK_STRIDESWITCH_HH
 #include "elements/standard/stridesched.hh"
 
 /*

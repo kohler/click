@@ -1,5 +1,5 @@
-#ifndef UDPIPENCAP_HH
-#define UDPIPENCAP_HH
+#ifndef CLICK_UDPIPENCAP_HH
+#define CLICK_UDPIPENCAP_HH
 
 /*
  * =c

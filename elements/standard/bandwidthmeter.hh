@@ -1,5 +1,5 @@
-#ifndef BANDWIDTHMETER_HH
-#define BANDWIDTHMETER_HH
+#ifndef CLICK_BANDWIDTHMETER_HH
+#define CLICK_BANDWIDTHMETER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
 

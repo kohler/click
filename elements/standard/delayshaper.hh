@@ -1,5 +1,5 @@
-#ifndef DELAYSHAPER_HH
-#define DELAYSHAPER_HH
+#ifndef CLICK_DELAYSHAPER_HH
+#define CLICK_DELAYSHAPER_HH
 #include <click/element.hh>
 #include <click/task.hh>
 

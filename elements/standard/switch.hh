@@ -1,5 +1,5 @@
-#ifndef SWITCH_HH
-#define SWITCH_HH
+#ifndef CLICK_SWITCH_HH
+#define CLICK_SWITCH_HH
 #include <click/element.hh>
 
 /*

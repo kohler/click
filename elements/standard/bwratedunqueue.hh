@@ -1,5 +1,5 @@
-#ifndef BWRATEDUNQUEUE_HH
-#define BWRATEDUNQUEUE_HH
+#ifndef CLICK_BWRATEDUNQUEUE_HH
+#define CLICK_BWRATEDUNQUEUE_HH
 #include "elements/standard/ratedunqueue.hh"
 
 /*

@@ -1,5 +1,5 @@
-#ifndef CHECKPAINT_HH
-#define CHECKPAINT_HH
+#ifndef CLICK_CHECKPAINT_HH
+#define CLICK_CHECKPAINT_HH
 #include <click/element.hh>
 
 /*

@@ -1,5 +1,5 @@
-#ifndef UNSTRIP_HH
-#define UNSTRIP_HH
+#ifndef CLICK_UNSTRIP_HH
+#define CLICK_UNSTRIP_HH
 #include <click/element.hh>
 
 /*
