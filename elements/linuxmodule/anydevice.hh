@@ -8,7 +8,7 @@ extern "C" {
 
 #define MAX_DEVICES	1024
 
-#define CLICK_DEVICE_CYCLES 1
+// #define CLICK_DEVICE_CYCLES 1
 // #define CLICK_DEVICE_PRFCTR 1
 // #define CLICK_DEVICE_THESIS_STATS 1
 // #define _DEV_OVRN_STATS_ 1
