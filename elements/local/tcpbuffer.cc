@@ -81,7 +81,7 @@ TCPBuffer::push(int, Packet *p)
   TCPBufferElt *elt = _chain;
   while(elt) {
     Packet *pp = elt->packet();
-    click_tcp *tcph = reinterpret_cast<click_tcp*>(pp->transport_header());
+    const click_tcp *tcph = reinterpret_cast<const click_tcp *>(pp->transport_header());
     click_chatter("elt %p (%p): %u", elt, pp, ntohl(tcph->th_seq));
     elt = elt->next();
   }

@@ -82,7 +82,7 @@ class TCPBuffer : public Element {
 inline
 TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
 {
-  click_tcp *tcph = reinterpret_cast<click_tcp*>(p->transport_header());
+  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   unsigned int seqn = ntohl(tcph->th_seq);
     
   _chain_ptr = chain_ptr;
@@ -98,7 +98,7 @@ TCPBuffer::TCPBufferElt::TCPBufferElt(TCPBufferElt **chain_ptr, Packet *p)
     TCPBufferElt *lprev = 0L;
     do {
       Packet *pp = list->packet();
-      click_tcp *tcph_pp = reinterpret_cast<click_tcp*>(pp->transport_header());
+      const click_tcp *tcph_pp = reinterpret_cast<const click_tcp *>(pp->transport_header());
       if (seqn < ntohl(tcph_pp->th_seq)) {
 	/* insert here */
 	_next = list;
