@@ -25,13 +25,14 @@ class PortSwitch : public Element { public:
   const char *processing() const		{ return PUSH; }
   
   PortSwitch *clone() const;
-  void notify_noutputs(int);
+  //  void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);
   
  private:
   int _noutputs;
+  int _breakpoint;
 
 };
 

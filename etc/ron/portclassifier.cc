@@ -22,9 +22,9 @@
 #include <click/click_tcp.h>
 
 PortSwitch::PortSwitch()
+  : Element(1,2)
 {
   MOD_INC_USE_COUNT;
-  add_input();
 }
 
 PortSwitch::~PortSwitch()
@@ -37,7 +37,7 @@ PortSwitch::clone() const
 {
   return new PortSwitch;
 }
-
+/*
 void
 PortSwitch::notify_noutputs(int n)
 {
@@ -45,16 +45,21 @@ PortSwitch::notify_noutputs(int n)
   set_noutputs(n);
 
 }
-
+*/
 int
 PortSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  if (cp_va_parse(conf, this, errh,
+                  cpUnsigned, "breakpoint", &_breakpoint,
+		  0) < 0)
+    return -1;
   return 0;
 }
 
 void
 PortSwitch::push(int, Packet *p)
 {
+#if 0
   int stepping = 100;
   int base = 60000;
 
@@ -71,10 +76,18 @@ PortSwitch::push(int, Packet *p)
     port = _noutputs-1;
 
   click_chatter("  sport: %d, dport: %d chose: %d", sport, dport, port);
+#endif
+
+  unsigned int sport;
+  const click_tcp *tcph= p->tcp_header();
+  sport = ntohs(tcph->th_sport);
   
-  output(0).push(p);
+  if (sport < _breakpoint) 
+    output(0).push(p);
+  else 
+    output(1).push(p);
 
-
+  return;
 }
 
 EXPORT_ELEMENT(PortSwitch)

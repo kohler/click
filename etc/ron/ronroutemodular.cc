@@ -1,5 +1,5 @@
 /*
- * lookupiprouteron.{cc,hh} -- element looks up next-hop address for NAT-RON
+ * ronroutemodular.{cc,hh} -- element looks up next-hop address for NAT-RON
  * Alexander Yip
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
