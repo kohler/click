@@ -1,3 +1,8 @@
+2003-12-03 Wednesday 16:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/linkstat.hh (1.15): clarify API comments for
+	get_forward/reverse_rate
+
 2003-12-02 Tuesday 14:22  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/linkunqueue.cc (1.1),
