@@ -222,6 +222,7 @@ include/click/notifier.hh
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
+include/click/pair.hh
 include/click/perfctr-i586.hh
 include/click/router.hh
 include/click/routerthread.hh
@@ -422,6 +423,12 @@ tools/click-xform/Makefile.in
 tools/click-xform/adjacency.cc
 tools/click-xform/adjacency.hh
 tools/click-xform/click-xform.cc
+
+tools/click2xml/Makefile.in
+tools/click2xml/clickconfig.dtd
+tools/click2xml/click2xml.cc
+tools/click2xml/xml2click.cc
+tools/click2xml/xml2click.hh
 
 apps
 apps/ClickController
