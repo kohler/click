@@ -3,8 +3,7 @@
 // This simple test demonstrates how RoundRobinSched works as a round robin
 // scheduler.
 
-// Run with
-// userlevel/click < conf/test3.click
+// Run with 'click test3.click'
 
 rr :: RoundRobinSched;
 
