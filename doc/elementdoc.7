@@ -110,6 +110,8 @@ filename (italics)
 hyperlink
 .IP "\f(CWN<>\fR" 15
 line break
+.IP "\f(CWE<\fIname\f(CW>\fR" 15
+entity
 .PD
 .RE
 '
@@ -308,6 +310,14 @@ just comes out as \fItext\fR.
 .TP 10
 \f(CWN<>\fR
 Put a line break here.
+.TP 10
+\f(CWE<\fIname\f(CW>\fR
+'
+Print the HTML-style entity named \fIname\fR. There are six entities:
+\f(CWE<lt>\fR is `<', \f(CWE<gt>\fR is `>', \f(CWE<amp>\fR is `&',
+\f(CWE<solid>\fR is `/', \f(CWE<verbar>\fR is `|', and \f(CWE<eq>\fR is
+`='. This is useful for typing one of these characters in a context that
+would seem like a command or formatting command.
 '
 .SH VERBATIM TEXT
 Lines that start with a space or tab character are printed out
