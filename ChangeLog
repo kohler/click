@@ -1,3 +1,29 @@
+2003-07-25 Friday 01:02  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: esrcr.cc (1.5), esrcr.hh (1.4), etx.cc (1.3),
+	etx.hh (1.3), linktable.cc (1.7), linktable.hh (1.7), printsrcr.cc
+	(1.7), printsrcr.hh (1.4), srcr.cc (1.10), srcr.hh (1.7): - move
+	source routing elments to elements/grid/sr.  - first working
+	version of ett.  - make linktable work for ip6.
+	
+	--jbicket
+
+2003-07-25 Friday 00:55  John Bicket <jbicket@mit.edu>
+
+	* include/click/ip6address.hh (1.10), lib/ip6address.cc (1.28): -
+	make match_prefix work with ip6 - add ether_address which gets
+	ether address from ip6 address if   properly specified in lower 64
+	bits
+	
+	--jbicket
+
+2003-07-25 Friday 00:51  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.15): make sure we don't rely
+	assume that only click touches skb.cb
+	
+	--jbicket
+
 2003-07-23 Wednesday 14:57  Eddie Kohler <kohler@icir.org>
 
 	* include/click/bighashmap.hh (1.21): don't return objects of void
