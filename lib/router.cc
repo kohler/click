@@ -59,8 +59,13 @@ Router::~Router()
   }
   for (int i = 0; i < _threads.size(); i++)
     delete _threads[i];
-  for (int i = 0; i < _elements.size(); i++)
-    delete _elements[i];
+  // delete elements in reverse configuration order
+  if (_configure_order.size())
+    for (int ord = _elements.size() - 1; ord >= 0; ord--)
+      delete _elements[ _configure_order[ord] ];
+  else
+    for (int i = 0; i < _elements.size(); i++)
+      delete _elements[i];
   delete[] _handlers;
 }
 
