@@ -6,12 +6,12 @@
  * FromDump(FILENAME [, TIMING])
  * =d
  *
- * Reads packets from a file produced by `tcpdump -w FILENAME'. Pushes them
- * out the output, and stops the driver when there are no more packets. If
- * TIMING is true, then FromDump tries to maintain the timing of the original
- * packet stream. TIMING is true by default.
+ * Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump.
+ * Pushes them out the output, and stops the driver when there are no more
+ * packets. If TIMING is true, then FromDump tries to maintain the timing of
+ * the original packet stream. TIMING is true by default.
  *
- * Note: By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
+ * By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
  * each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
  * such.
  *
@@ -54,7 +54,7 @@ class FromDump : public Element {
   ~FromDump();
 
   const char *class_name() const		{ return "FromDump"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   FromDump *clone() const;
   
   int configure(const String &, ErrorHandler *);

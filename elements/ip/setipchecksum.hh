@@ -7,11 +7,12 @@
  * =d
  * Expects an IP packet as input.
  * Calculates the IP header's checksum and sets the checksum header field.
- * You will not normally need SetIPChecksum. Many elements that modify an
- * IP header, like DecIPTTL, already update the checksum incrementally.
- * =a CheckIPHeader
- * =a DecIPTTL
- */
+ *
+ * You will not normally need SetIPChecksum. Most elements that modify an IP
+ * header, like DecIPTTL, SetIPDSCP, and Rewriter, already update the checksum
+ * incrementally.
+ *
+ * =a CheckIPHeader DecIPTTL SetIPDSCP Rewriter */
 
 #include "element.hh"
 #include "glue.hh"

@@ -5,22 +5,32 @@
 
 /*
  * =c
- * Meter(rate1, rate2, ..., rate<i>n</i>)
+ * Meter(RATE1, RATE2, ..., RATE<i>n</i>)
  * =d
- * Classifies packets based on how fast bytes are arriving. The configuration
- * string consists of one or more rate arguments. Each rate is measured in
- * bytes per second, and earlier rates in the list must be less than later
- * rates. A Meter element with <i>n</i> rate arguments will have
- * <i>n</i>+1 outputs. The Meter measures the incoming data rate using a
- * exponential weighted moving average, and sends packets out the
- * output corresponding to the current rate. (So if the rate is less than
- * rate1, packets will be sent on output 0; if it is >= rate1 but < rate2,
- * packets will be sent on output 1; and so on. If it is >= rate<i>n</i>,
- * packets will be sent on output <i>n</i>.)
+ *
+ * Classifies packets based on the rate of packet arrival. The rate is
+ * measured in bytes per second using an exponential weighted moving average.
+ * (The related PacketMeter element measures rates in packets per second.)
+ * 
+ * The configuration string consists of one or more rate arguments. Earlier
+ * rates in the list must be less than later rates. A Meter with <i>n</i> rate
+ * arguments will have <i>n</i>+1 outputs. It sends packets out the output
+ * corresponding to the current rate. If the rate is less than RATE1 packets
+ * are sent to output 0; if it is >= RATE1 but < RATE2, packets are sent to
+ * output 1; and so on. If it is >= RATE<i>n</i>, packets are sent to output
+ * <i>n</i>.
+ *
+ * =e
+ *
+ * This configuration fragment drops the input stream when it is generating
+ * more than 20,000 bytes per second.
+ *
+ * = ... -> m :: Meter(20000) -> ...;
+ * = m[1] -> Discard;
+ *
  * =a PacketMeter
  * =a Shaper
- * =a PacketShaper
- */
+ * =a PacketShaper */
 
 class Meter : public Element { protected:
 

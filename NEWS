@@ -14,12 +14,14 @@ Version
 
 * Added MarkIPHeader, CheckTCPHeader, and CheckUDPHeader elements.
 
-* Fixed FromDump.
+* Fixed FromDump and ToDump.
 
 * Added optional queue names to RED.
 
 * Removed `is_a()' and `is_a_cast()' methods of Element. The new way,
   `cast()', allows arbitrary interfaces.
+
+* Use Linux's fast checksum routines in CheckIPHeader and IPInputCombo.
 
 
 Version 1.0.1   28.Feb.2000

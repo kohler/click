@@ -6,9 +6,10 @@
 
 /*
  * =c
- * ToDump(filename)
- * =c
- * Writes incoming packets to filename in tcpdump -w format.
+ * ToDump(FILENAME)
+ * =d
+ * Writes incoming packets to FILENAME in `tcpdump -w' format. This file
+ * can be read by FromDump on a later run.
  *
  * This element is only available at user level.
  * 
@@ -21,22 +22,22 @@ class ToDump : public Element {
   
   String _filename;
   FILE *_fp;
-  Timer _timer;
+  
+  void write_packet(Packet *);
   
  public:
   
   ToDump();
-  ToDump(String filename);
   ~ToDump();
   
   const char *class_name() const		{ return "ToDump"; }
-  Processing default_processing() const	{ return PULL; }
   ToDump *clone() const;
   
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 
+  void push(int, Packet *);
   void run_scheduled();
   
 };

@@ -13,7 +13,7 @@
  * Null7()
  * Null8()
  * =d
- * Copies of Null() that do not share code.
+ * Copies of Null that do not share code.
  * =a Null
  */
 

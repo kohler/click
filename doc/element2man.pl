@@ -37,23 +37,32 @@ my $prologue = <<'EOD;';
 EOD;
 chomp $prologue;
 
-sub nroffize ($@) {
-  my($t) = shift @_;
+sub nroffize ($;$$) {
+  my($t, $embolden, $otherelts) = @_;
+  my($i);
+
+  # embolden & manpageize
+  foreach $i (sort { length($b) <=> length($a) } @$embolden) {
+    $t =~ s{(^|[^\w@/])$i($|[^\w@/])}{$1<B>$i</B>$2}gs;
+  }
+  foreach $i (sort { length($b) <=> length($a) } @$otherelts) {
+    $t =~ s{(^|[^\w@/])$i($|[^\w@/(])}{$1<\#>$i</\#>$2}gs;
+  }
+
+  # remove emboldening & manpaging on examples
+  1 while ($t =~ s{^= (.*)</?[B\#]>}{= $1}gm);
+  
   $t =~ s/\\/\\\\/g;
   $t =~ s/^(= )?\./$1\\&./gm;
   $t =~ s/^(= )?'/$1\\&'/gm;
   $t =~ s/^\s*$/.PP\n/gm;
-  $t =~ s/<i>(.*?)<\/i>/\\fI$1\\fP/g;
-  $t =~ s/<b>(.*?)<\/b>/\\fB$1\\fP/g;
-  while ($t =~ /^\.PP\n\.PP\n/m) {
-    $t =~ s/^\.PP\n\.PP\n/.PP\n/gm;
-  }
+  $t =~ s/<i>(.*?)<\/i>/\\fI$1\\fP/ig;
+  $t =~ s/<b>(.*?)<\/b>/\\fB$1\\fP/ig;
+  $t =~ s/<\#>(.*?)<\/\#>(\S*)\s*/\n.M $1 n $2\n/g;
+  1 while ($t =~ s/^\.PP\n\.PP\n/.PP\n/gm);
   $t =~ s/^= (.*\n)/.nf\n$1.fi\n/mg;
   $t =~ s/^\.fi\n\.nf\n//mg;
-  my($i);
-  foreach $i (sort { length($b) <=> length($a) } @_) {
-    $t =~ s{(^|[^\w@/])$i($|[^\w@/])}{$1\\fB$i\\fR$2}g;
-  }
+  $t =~ s/\n+/\n/sg;
   $t;
 }
 
@@ -98,7 +107,7 @@ EOD;
   if ($x{'c'}) {
     print OUT ".SH \"SYNOPSIS\"\n";
     while ($x{'c'} =~ /^\s*(\S.*)$/mg) {
-      print OUT nroffize($1, @classes), "\n.br\n";
+      print OUT nroffize($1, \@classes), "\n.br\n";
     }
   }
 
@@ -112,19 +121,24 @@ EOD;
     print OUT nroffize($x{'io'});
   }
 
+  my @related;
+  if ($x{'a'}) {
+    @related = sort map(split(/\s+/), @{$x{'a'}});
+  }
+
   if ($x{'d'}) {
     print OUT ".SH \"DESCRIPTION\"\n";
-    print OUT nroffize($x{'d'}, @classes);
+    print OUT nroffize($x{'d'}, \@classes, \@related);
   }
 
   if ($x{'n'}) {
     print OUT ".SH \"NOTES\"\n";
-    print OUT nroffize($x{'n'});
+    print OUT nroffize($x{'n'}, \@classes, \@related);
   }
 
   if ($x{'e'}) {
     print OUT ".SH \"EXAMPLES\"\n";
-    print OUT nroffize($x{'e'});
+    print OUT nroffize($x{'e'}, \@classes, \@related);
   }
 
   if (@{$x{'h'}}) {
@@ -141,9 +155,6 @@ EOD;
 
   if (@{$x{'a'}}) {
     print OUT ".SH \"SEE ALSO\"\n";
-    my(@related) = @{$x{'a'}};
-    map(s/\s//sg, @related);
-    @related = sort @related;
     my($last) = pop @related;
     print OUT map(".M $_ n ,\n", @related);
     print OUT ".M $last n\n";

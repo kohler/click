@@ -15,12 +15,12 @@
 # include <config.h>
 #endif
 #include "todump.hh"
-
 #include "confparse.hh"
 #include "error.hh"
-
+#include "elements/standard/scheduleinfo.hh"
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #ifdef HAVE_PCAP
 extern "C" {
@@ -35,13 +35,9 @@ extern "C" {
 #endif
 
 ToDump::ToDump()
-  : Element(1, 0), _fp(0), _timer(this)
+  : _fp(0)
 {
-}
-
-ToDump::ToDump(String filename)
-  : Element(1, 0), _filename(filename), _fp(0), _timer(this)
-{
+  add_input();
 }
 
 ToDump::~ToDump()
@@ -52,7 +48,7 @@ ToDump::~ToDump()
 ToDump*
 ToDump::clone() const
 {
-  return new ToDump(_filename);
+  return new ToDump;
 }
 
 int
@@ -69,7 +65,7 @@ ToDump::initialize(ErrorHandler *errh)
   assert(!_fp);  
   _fp = fopen(_filename, "wb");
   if (!_fp)
-    return errh->error("unable to open dump file");
+    return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
 #ifdef HAVE_PCAP
   struct pcap_file_header h;
@@ -88,6 +84,8 @@ ToDump::initialize(ErrorHandler *errh)
   errh->warning("dropping all packets: not compiled with pcap support");
 #endif
   
+  if (input_is_pull(0))
+    ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 
@@ -97,15 +95,11 @@ ToDump::uninitialize()
   if (_fp)
     fclose(_fp);
   _fp = 0;
-  _timer.unschedule();
 }
 
 void
-ToDump::run_scheduled()
+ToDump::write_packet(Packet *p)
 {
-  Packet *p = input(0).pull();
-  if (!p) return;
-
 #if HAVE_PCAP
   struct pcap_pkthdr h;
   click_gettimeofday(&h.ts);
@@ -118,11 +112,26 @@ ToDump::run_scheduled()
   size_t wrote_data = fwrite(p->data(), 1, p->length(), _fp);
   assert(wrote_data == p->length());
   
-  fflush(_fp);
-  _timer.schedule_after_ms(1);
+  // fflush(_fp);
 #endif
+}
 
+void
+ToDump::push(int, Packet *p)
+{
+  write_packet(p);
   p->kill();
+}
+
+void
+ToDump::run_scheduled()
+{
+  Packet *p = input(0).pull();
+  if (p) {
+    write_packet(p);
+    p->kill();
+  }
+  reschedule();
 }
 
 EXPORT_ELEMENT(ToDump)

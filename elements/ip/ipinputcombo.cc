@@ -105,16 +105,31 @@ IPInputCombo::smaction(Packet *p)
   if(hlen > p->length())
     goto bad;
   
+#ifndef __KERNEL__
   if(in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
+#else
+  if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
+    goto bad;
+#endif
   
   if(ntohs(ip->ip_len) < hlen)
     goto bad;
 
+  /*
+   * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
+   * Configuration string should have listed all subnet
+   * broadcast addresses known to this router.
+   */
   src = ip->ip_src.s_addr;
   for(int i = 0; i < _n_bad_src; i++)
     if(src == _bad_src[i])
       goto bad;
+
+  /*
+   * RFC1812 4.2.3.1: discard illegal destinations.
+   * We now do this in the IP routing table.
+   */
 
   p->set_ip_header(ip);
   return(p);
