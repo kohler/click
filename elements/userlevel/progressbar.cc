@@ -116,90 +116,6 @@ getttywidth()
 	return 80;
 }
 
-#if 0
-void
-progressmeter(int flag)
-{
-	static const char prefixes[] = " KMGTP";
-	static struct timeval lastupdate;
-	static off_t lastsize;
-	struct timeval now, td, wait;
-	off_t cursize, abbrevsize;
-	double elapsed;
-	int ratio, barlength, i, remaining;
-	char buf[256];
-
-	snprintf(buf, sizeof(buf), "\r%-20.20s %3d%% ", curfile, ratio);
-
-	barlength = getttywidth() - 51;
-	barlength = (barlength <= MAX_BARLENGTH)?barlength:MAX_BARLENGTH;
-	if (barlength > 0) {
-		i = barlength * ratio / 100;
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			 "|%.*s%*s|", i, BAR, barlength - i, "");
-	}
-	i = 0;
-	abbrevsize = cursize;
-	while (abbrevsize >= 100000 && i < sizeof(prefixes)) {
-		i++;
-		abbrevsize >>= 10;
-	}
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %5lu %c%c ",
-	    (unsigned long) abbrevsize, prefixes[i],
-	    prefixes[i] == ' ' ? ' ' : 'B');
-
-	timersub(&now, &lastupdate, &wait);
-	if (cursize > lastsize) {
-		lastupdate = now;
-		lastsize = cursize;
-		if (wait.tv_sec >= STALLTIME) {
-			start.tv_sec += wait.tv_sec;
-			start.tv_usec += wait.tv_usec;
-		}
-		wait.tv_sec = 0;
-	}
-	timersub(&now, &start, &td);
-	elapsed = td.tv_sec + (td.tv_usec / 1000000.0);
-
-	if (flag != 1 &&
-	    (statbytes <= 0 || elapsed <= 0.0 || cursize > totalbytes)) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-		    "   --:-- ETA");
-	} else if (wait.tv_sec >= STALLTIME) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-		    " - stalled -");
-	} else {
-		if (flag != 1)
-			remaining = (int)(totalbytes / (statbytes / elapsed) -
-			    elapsed);
-		else
-			remaining = elapsed;
-
-		i = remaining / 3600;
-		if (i)
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			    "%2d:", i);
-		else
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			    "   ");
-		i = remaining % 3600;
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-		    "%02d:%02d%s", i / 60, i % 60,
-		    (flag != 1) ? " ETA" : "    ");
-	}
-	atomicio(write, fileno(stdout), buf, strlen(buf));
-
-	if (flag == -1) {
-		mysignal(SIGALRM, updateprogressmeter);
-		alarm(PROGRESSTIME);
-	} else if (flag == 1) {
-		alarm(0);
-		atomicio(write, fileno(stdout), "\n", 1);
-		statbytes = 0;
-	}
-}
-#endif
-
 static const char * const bar = 
 "************************************************************"
 "************************************************************"
@@ -307,8 +223,8 @@ ProgressBar::run_scheduled()
     // print percentage
     if (have_pos && _have_size)
 	sa.snprintf(6, "%3d%% ", thermpos);
-    else
-	sa << "     ";
+    else if (_have_size)
+	sa << "  -% ";
 
     // print the bar
     int barlength = getttywidth() - (sa.length() + 25);
