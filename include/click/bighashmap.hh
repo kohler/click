@@ -34,7 +34,7 @@ class BigHashMap { public:
   
   const V &find(const K &) const;
   V *findp(const K &) const;
-  const V &operator[](const K &k) const;
+  const V &operator[](const K &) const;
   V &find_force(const K &);
   V *findp_force(const K &);
   
