@@ -1,3 +1,10 @@
+2003-07-22 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.211), bsdmodule/Makefile.in (1.26),
+	exopc/Makefile.in (1.15), linuxmodule/Makefile.in (1.82),
+	ns/Makefile.in (1.8), userlevel/Makefile.in (1.72): allow for
+	recursive element directories at John Bicket's request
+
 2003-07-22 Tuesday 17:25  Eddie Kohler <kohler@icir.org>
 
 	* include/click/ipaddress.hh (1.25), lib/ipaddress.cc (1.27):
