@@ -224,6 +224,7 @@ SRCR::push(int port, Packet *p_in)
     update_link(neighbor, _ip, m);
   }
 
+  _arp_table->insert(neighbor, pk->get_shost());
   if(pk->next() == pk->num_hops() - 1){
     //click_chatter("got data from %s for me\n", pk->get_hop(0).s().cc());
     // I'm the ultimate consumer of this data.

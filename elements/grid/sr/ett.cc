@@ -445,10 +445,12 @@ ETT::push(int port, Packet *p_in)
 	Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
 	if (p_out) {
 	  sent_packet = true;
-	output(1).push(p_out);
+	  output(1).push(p_out);
 	}
       }
     }
+
+    p_in->kill();
 
     Query *q = _queries.findp(dst);
     if (!q) {
@@ -459,7 +461,6 @@ ETT::push(int port, Packet *p_in)
     ett_assert(q);
     
     if (sent_packet && q->_metric && metric * 2 > q->_metric) {
-      p_in->kill();
       return;
     }
     //click_chatter("ETT %s: need route to %s\n", _ip.s().cc(), dst.s().cc());
@@ -477,7 +478,6 @@ ETT::push(int port, Packet *p_in)
     } else {
 	//click_chatter("recent query to %s, so discarding packet\n", dst.s().cc());
     }
-    p_in->kill();
     return;
   } else if (port ==  0 || port == 1) {
     struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
@@ -501,92 +501,94 @@ ETT::push(int port, Packet *p_in)
       p_in->kill();
       return;
     }
-
-  u_char type = pk->_type;
-
-  /* update the metrics from the packet */
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    u_short m = pk->get_fwd_metric(i);
-    click_chatter("ETT %s: on address a= %s\n", 
-		  _ip.s().cc(), 
-		  a.s().cc());
-    if (m != 0) {
-      click_chatter("ETT %s: updating metric %i %s <%d> %s", 
-		    _ip.s().cc(),
-		    i, a.s().cc(), m, b.s().cc());
-      update_link(a,b,m);
+    
+    u_char type = pk->_type;
+    
+    /* update the metrics from the packet */
+    for(int i = 0; i < pk->num_hops()-1; i++) {
+      IPAddress a = pk->get_hop(i);
+      IPAddress b = pk->get_hop(i+1);
+      u_short m = pk->get_fwd_metric(i);
+      click_chatter("ETT %s: on address a= %s\n", 
+		    _ip.s().cc(), 
+		    a.s().cc());
+      if (m != 0) {
+	click_chatter("ETT %s: updating metric %i %s <%d> %s", 
+		      _ip.s().cc(),
+		      i, a.s().cc(), m, b.s().cc());
+	update_link(a,b,m);
+      }
     }
-  }
-  
-
-  if (port == 1) {
-    p_in->kill();
-    return;
-  }
-  IPAddress neighbor = IPAddress();
-  switch (type) {
-  case PT_QUERY:
-    neighbor = pk->get_hop(pk->num_hops()-1);
-    click_chatter("ETT %s: q neighbor = %s, index %d\n", 
-		  _ip.s().cc(),
-		  neighbor.s().cc(), pk->num_hops()-1);
-    if (_link_table->get_hop_metric(_ip, neighbor) == 0) {
-      click_chatter("ETT %s: updating reverse link to %s", 
-		    _ip.s().cc(),
-		    neighbor.s().cc());
-      update_link(_ip, neighbor, rate_to_metric(0));
-    }
-    break;
-  case PT_REPLY:
-    neighbor = pk->get_hop(pk->next()+1);
-    click_chatter("ETT %s: r neighbor = %s, index %d\n", 
-		  _ip.s().cc(),
-		  neighbor.s().cc(), pk->num_hops()+1);
-    break;
-  default:
-    ett_assert(0);
-  }
-
-  u_short m = get_metric(neighbor);
-  click_chatter("ETT %s: updating neighbor %s <%d> %s", 
-		_ip.s().cc(),
-		neighbor.s().cc(), m, _ip.s().cc());
-  update_link(neighbor, _ip, m);
-
-  if(type == PT_QUERY){
-      process_query(pk);
-
-  } else if(type == PT_REPLY){
-    if(pk->get_hop(pk->next()) != _ip){
-      // it's not for me. these are supposed to be unicast,
-      // so how did this get to me?
-      click_chatter("ETT %s: reply not for me %d/%d %s",
-                    _ip.s().cc(),
-                    pk->next(),
-                    pk->num_hops(),
-                    pk->get_hop(pk->next()).s().cc());
+    
+    
+    if (port == 1) {
+      p_in->kill();
       return;
     }
-    if(pk->next() == 0){
-      // I'm the ultimate consumer of this reply. Add to routing tbl.
-      got_reply(pk);
-    } else {
-      // Forward the reply.
-      forward_reply(pk);
+    IPAddress neighbor = IPAddress();
+    switch (type) {
+    case PT_QUERY:
+      neighbor = pk->get_hop(pk->num_hops()-1);
+      click_chatter("ETT %s: q neighbor = %s, index %d\n", 
+		    _ip.s().cc(),
+		    neighbor.s().cc(), pk->num_hops()-1);
+      if (_link_table->get_hop_metric(_ip, neighbor) == 0) {
+	click_chatter("ETT %s: updating reverse link to %s", 
+		      _ip.s().cc(),
+		      neighbor.s().cc());
+	update_link(_ip, neighbor, rate_to_metric(0));
+      }
+      break;
+    case PT_REPLY:
+      neighbor = pk->get_hop(pk->next()+1);
+      click_chatter("ETT %s: r neighbor = %s, index %d\n", 
+		    _ip.s().cc(),
+		    neighbor.s().cc(), pk->num_hops()+1);
+      break;
+    default:
+      ett_assert(0);
     }
-  } else {
-    click_chatter("ETT %s: bad sr_pkt type=%x",
-                  _ip.s().cc(),
-                  type);
-  }
-
-  return;
-
-
+    _arp_table->insert(neighbor, pk->get_shost());
+    u_short m = get_metric(neighbor);
+    click_chatter("ETT %s: updating neighbor %s <%d> %s", 
+		  _ip.s().cc(),
+		  neighbor.s().cc(), m, _ip.s().cc());
+    update_link(neighbor, _ip, m);
+    
+    if(type == PT_QUERY){
+      process_query(pk);
+      
+    } else if(type == PT_REPLY){
+      if(pk->get_hop(pk->next()) != _ip){
+	// it's not for me. these are supposed to be unicast,
+	// so how did this get to me?
+	click_chatter("ETT %s: reply not for me %d/%d %s",
+		      _ip.s().cc(),
+		      pk->next(),
+		      pk->num_hops(),
+		      pk->get_hop(pk->next()).s().cc());
+	p_in->kill();
+	return;
+      }
+      if(pk->next() == 0){
+	// I'm the ultimate consumer of this reply. Add to routing tbl.
+	got_reply(pk);
+      } else {
+	// Forward the reply.
+	forward_reply(pk);
+      }
+    } else {
+      click_chatter("ETT %s: bad sr_pkt type=%x",
+		    _ip.s().cc(),
+		    type);
+    }
+    
   }
   p_in->kill();
+  return;
+  
+
+
 }
 
 
