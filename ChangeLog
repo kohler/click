@@ -1,3 +1,7 @@
+2002-06-28 Friday 10:41  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/elemfig.sty (1.3): featurelet
+
 2002-06-24 Monday 18:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridsrforwarder.cc (1.3): one day i'll learn to
