@@ -1,3 +1,17 @@
+2004-08-20 Friday 02:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/master.hh (1.7), include/click/timer.hh (1.23),
+	lib/master.cc (1.15), lib/timer.cc (1.33): use a heap for Timers.
+	Jonathan K. Lee at UCLA provided an implementation, and showed that
+	linked lists are never significantly faster than heaps (even for
+	small numbers of concurrent timers), and are often slower; and
+	showed that skip lists are slower all the time.
+
+2004-08-20 Friday 02:49  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdumpinfo.hh (1.11): bump minor version
+	number to indicate CWR change
+
 2004-08-19 Thursday 22:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* acclick.m4 (1.41), aclocal.m4 (1.41), configure (1.26): obvious
