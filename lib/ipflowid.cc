@@ -22,6 +22,7 @@
 #include <click/click_udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
+#include <click/straccum.hh>
 
 IPFlowID::IPFlowID(Packet *p)
 {
@@ -46,4 +47,10 @@ IPFlowID::unparse() const
 	  p[0], p[1], p[2], p[3], ntohs(_sport),
 	  q[0], q[1], q[2], q[3], ntohs(_dport));
   return String(tmp);
+}
+
+StringAccum &
+operator<<(StringAccum &sa, const IPFlowID &flow_id)
+{
+  return (sa << flow_id.unparse());
 }

@@ -86,4 +86,13 @@ operator==(const IPFlowID &a, const IPFlowID &b)
     && a.daddr() == b.daddr() && a.saddr() == b.saddr();
 }
 
+inline bool
+operator!=(const IPFlowID &a, const IPFlowID &b)
+{
+  return a.dport() != b.dport() || a.sport() != b.sport()
+    || a.daddr() != b.daddr() || a.saddr() != b.saddr();
+}
+
+StringAccum &operator<<(StringAccum &, const IPFlowID &);
+
 #endif
