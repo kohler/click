@@ -1,3 +1,23 @@
+2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/analysis/: errorthreshold.cc (1.1),
+	errorthreshold.hh (1.1): more byte-error analysis elements
+
+2004-08-29 Sunday 13:31  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: wifidecap.cc (1.7), wifiencap.cc (1.8),
+	analysis/counterrors.cc (1.2), analysis/counterrors.hh (1.2),
+	frag/checkfragment.cc (1.1), frag/checkfragment.hh (1.1),
+	frag/defragment.cc (1.1), frag/defragment.hh (1.1), frag/frag.hh
+	(1.1), frag/fragment.cc (1.1), frag/fragment.hh (1.1),
+	frag/fragmentack.cc (1.1), frag/fragmentack.hh (1.1),
+	frag/fragmentdecap.cc (1.1), frag/fragmentdecap.hh (1.1),
+	frag/fragmentdupefilter.cc (1.1), frag/fragmentdupefilter.hh (1.1),
+	frag/fragmentencap.cc (1.1), frag/fragmentencap.hh (1.1),
+	frag/fragmentresender.cc (1.1), frag/fragmentresender.hh (1.1),
+	frag/printfragment.cc (1.1), frag/printfragment.hh (1.1),
+	station/beaconscanner.hh (1.3): first fragment elements.
+
 2004-08-27 Friday 03:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.123), tools/Makefile.in (1.52): small Makefile
