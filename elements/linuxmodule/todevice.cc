@@ -42,14 +42,14 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), _busy_returns(0),
-    _rejected(0), _idle(0)
+    _rejected(0), _idle(0), _pkts_sent(0)
 {
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), 
-    _busy_returns(0), _idle(0)
+    _busy_returns(0), _idle(0), _pkts_sent(0)
 {
 }
 
@@ -176,6 +176,7 @@ ToDevice::uninitialize()
       ifindex_map->pop_back();
     
     _registered = 0;
+    click_chatter("ToDevice(%s): %d sent", declaration().cc(), _pkts_sent);
   }
   unschedule();
 }
@@ -237,6 +238,7 @@ ToDevice::tx_intr()
     Packet *p;
     _idle++;
     if (p = input(0).pull()) {
+      _pkts_sent++;
       push(0, p);
       total_packets_sent++;
       _idle = 0;
@@ -246,7 +248,6 @@ ToDevice::tx_intr()
   
 #if CLICK_POLLDEV
   int tx_left = _dev->clean_tx(_dev);
-  _last_txlen = tx_left;
 #endif
 
   /*

@@ -60,12 +60,12 @@ class ToDevice : public Element {
   int _rejected;     // # of packets rejected by hard_start_xmit().
   
  private:
-  
+
   String _devname;
   struct device *_dev;
   int _registered;
-  int _last_txlen;
   int _idle; // # of times pull didn't get a packet
+  int _pkts_sent;
 };
 
 #endif

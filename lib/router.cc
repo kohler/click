@@ -833,13 +833,13 @@ Router::wait()
    * someone triggers an event we want to wait on, it will be captured */
 
   current->state = TASK_INTERRUPTIBLE;
-
+    
   for (int i = 0; i < _waiting_elements.size(); i++) 
   {
     Element *f = _waiting_elements[i];
     f->set_wakeup_when_busy();
   }
-
+  
   if (current->state != TASK_RUNNING)
     schedule();
   

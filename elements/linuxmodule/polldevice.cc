@@ -131,6 +131,7 @@ PollDevice::run_scheduled()
 
   while((skb = _dev->rx_poll(_dev)) && got<32) {
     _pkts_received++;
+    _dev->fill_rx(_dev);
 
     if (_idle >= 32)
       _num_idle_polldevices--; 
@@ -152,7 +153,6 @@ PollDevice::run_scheduled()
     output(0).push(p);
     got++;
   }
-  _dev->fill_rx(_dev);
   _dev->clean_tx(_dev);
   _idle++;
 
