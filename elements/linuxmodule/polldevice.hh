@@ -113,6 +113,8 @@ class PollDevice : public AnyDevice { public:
   unsigned long long _push_cycles;
 #endif
     
+  unsigned long _buffers_reused;
+
  private:
 
   unsigned _burst;

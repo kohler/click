@@ -182,6 +182,7 @@ PollDevice::reset_counts()
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   _push_cycles = 0;
 #endif
+  _buffers_reused = 0;
 }
 
 void
@@ -261,8 +262,9 @@ PollDevice::run_scheduled()
 #endif
 
     if (new_skbs) {
-      click_chatter("%s: too much skbs for refill %d", declaration().cc(), nskbs);
-      skbmgr_recycle_skbs(new_skbs, 0);
+	for (struct sk_buff *skb = new_skbs; skb; skb = skb->next)
+	    _buffers_reused++;
+	skbmgr_recycle_skbs(new_skbs);
     }
   }
 
@@ -371,6 +373,7 @@ PollDevice_read_calls(Element *f, void *)
   PollDevice *kw = (PollDevice *)f;
   return
     String(kw->_npackets) + " packets received\n" +
+    String(kw->_buffers_reused) + " buffers reused\n" +
 #if CLICK_DEVICE_STATS
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
@@ -409,6 +412,8 @@ PollDevice_read_stats(Element *e, void *thunk)
    case 3:
     return String(pd->_time_refill) + "\n";
 #endif
+   case 4:
+    return String(pd->_buffers_reused) + "\n";
    default:
     return String();
   }
@@ -435,6 +440,7 @@ PollDevice::add_handlers()
   add_read_handler("refill_dma_cycles", PollDevice_read_stats, (void *)3);
 #endif
   add_write_handler("reset_counts", PollDevice_write_stats, 0);
+  add_read_handler("buffers_reused", PollDevice_read_stats, (void *)4);
   add_task_handlers(&_task);
 }
 

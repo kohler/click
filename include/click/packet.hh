@@ -332,7 +332,7 @@ Packet::kill()
   struct sk_buff *b = skb();
   b->next = b->prev = 0;
   b->list = 0;
-  skbmgr_recycle_skbs(b, 1);
+  skbmgr_recycle_skbs(b);
 }
 #endif
 

@@ -1,6 +1,20 @@
+// -*- c-basic-offset: 2; related-file-name: "../include/click/skbmgr.hh" -*-
 /*
  * skbmgr.cc -- Linux kernel module sk_buff manager
  * Benjie Chen, Eddie Kohler
+ *
+ * Copyright (c) 2001 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file. These conditions include: you must
+ * preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding.
  */
 
 #include <click/config.h>
@@ -78,14 +92,14 @@ class RecycledSkbPool { public:
   void lock();
   void unlock();
   struct sk_buff *allocate(unsigned hr, unsigned sz, int, int *);
-  void recycle(struct sk_buff *, bool);
+  void recycle(struct sk_buff *);
 
 #if __MTCLICK__ 
   static int find_producer(int, int);
 #endif
   
   friend struct sk_buff *skbmgr_allocate_skbs(unsigned, unsigned, int *);
-  friend void skbmgr_recycle_skbs(struct sk_buff *, int);
+  friend void skbmgr_recycle_skbs(struct sk_buff *);
 };
 
 
@@ -301,7 +315,7 @@ RecycledSkbPool::find_producer(int cpu, int bucket)
 
 
 void
-RecycledSkbPool::recycle(struct sk_buff *skbs, bool dirty)
+RecycledSkbPool::recycle(struct sk_buff *skbs)
 {
   while (skbs) {
     struct sk_buff *skb = skbs;
@@ -314,7 +328,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs, bool dirty)
       int next = _buckets[bucket].next_i(tail);
       if (next != _buckets[bucket]._head) {
 	// Note: skb_recycle_fast will free the skb if it cannot recycle it
-	if (!dirty || (skb = skb_recycle_fast(skb))) {
+	if ((skb = skb_recycle_fast(skb))) {
 	  _buckets[bucket]._skbs[tail] = skb;
 	  _buckets[bucket]._tail = next;
 	}
@@ -427,12 +441,12 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 }
 
 void
-skbmgr_recycle_skbs(struct sk_buff *skbs, int dirty)
+skbmgr_recycle_skbs(struct sk_buff *skbs)
 {
 #if __MTCLICK__
   int cpu = current->processor;
-  pool[cpu].recycle(skbs, dirty);
+  pool[cpu].recycle(skbs);
 #else
-  pool.recycle(skbs, dirty);
+  pool.recycle(skbs);
 #endif
 }

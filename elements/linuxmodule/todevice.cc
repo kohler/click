@@ -212,7 +212,7 @@ ToDevice::run_scheduled()
 #endif
 
     if (skbs)
-      skbmgr_recycle_skbs(skbs, 1);
+      skbmgr_recycle_skbs(skbs);
     
 #if CLICK_DEVICE_STATS
     if (_activations > 0 && skbs) {
