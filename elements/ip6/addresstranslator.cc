@@ -1,11 +1,11 @@
 /*
- * addresstranslator{cc,hh} -- element that translates an IPv6 packet to 
- * an IP6 packet with src and dst addresses mapped with ipv4-mapped ipv6
- * addresses. 
+ * addresstranslator{cc,hh} -- element that translates an IPv6 packet by 
+ * replacing with the src/dst IPv6 address and/or port by mapped IPv6address 
+ * and port. 
  * 
  * Peilei Fan
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2001 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -39,7 +39,7 @@ AddressTranslator::AddressTranslator()
 AddressTranslator::~AddressTranslator()
 { }
 
-//add an entry to the table for dynamic mapping
+//add an entry to the mapping table for dynamic mapping
 void
 AddressTranslator::add_map(IP6Address &mai, unsigned short mpi,  bool binding)
 { 
@@ -60,7 +60,7 @@ AddressTranslator::add_map(IP6Address &mai, unsigned short mpi,  bool binding)
   _v.push_back(e);
 }
 
-//add an entry for the table for static mapping
+//add an entry to the mapping table for static mapping
 void
 AddressTranslator::add_map(IP6Address &iai, unsigned short ipi, IP6Address &mai, unsigned short mpi, IP6Address &ea, unsigned short ep, bool binding)
 {
@@ -90,7 +90,6 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
   _v.clear();
   int before = errh->nerrors();
   int s = 0;
-  //int number_of_smap; 
   IP6Address ia, ma, ea;
   int ip, mp, ep;
 
@@ -98,7 +97,7 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
     _static_mapping[i] = 0;
 
  
-  //get the static mapping set up
+  //get the static mapping entries for the mapping table
   if (cp_integer(conf[0], &_number_of_smap))
     {
       Vector<String> words3;
@@ -134,7 +133,7 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
   else
     errh->error("argument %d should be : integer", 0);
   
-  //get the dynamic mapping set up
+  //get the dynamic mapping entries for the mapping table
   bool fields[4][6];
   //get first 2 arguments: _outwardLookupFields,  _inwardLookupFields, 
   for (int i=0; i<2; i++)
@@ -158,10 +157,9 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
   for (int i=0; i<6; i++)
     _inwardLookupFields[i] = fields[1][i];
   
-  //get the rest of the arguments, direction, IP6Address port# port#, ...
+  //get the rest of the arguments, direction, Mapped_IP6Address port_start# port_end#, ...
   Vector<String> words;
   cp_spacevec(conf[s+2], words);
-  //click_chatter(words[0]);
   if (cp_bool(words[0], &_direction))
     ;
   else
@@ -189,17 +187,16 @@ AddressTranslator::configure(const Vector<String> &conf, ErrorHandler *errh)
 	{
 	  errh->error("argument %d should be : <IP6Address> <unsigned char> <unsigned char>", i);
 	}
+
     }
  
   return (before ==errh->nerrors() ? 0: -1);
-
 }
 
 bool
 AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai, unsigned short &mpi, IP6Address &ea, unsigned short &ep, bool lookup_direction)
 { 
   bool lookupFields[6];
-  //bool mapFields[6];
   if (lookup_direction ==0) {
     for (int i = 0; i<6; i++)
       {
@@ -261,24 +258,36 @@ AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai,
 	  match = match && (!lookupFields[5] || (lookupFields[5] && (_v[i]._ep == ep)));	
 	  if (match)
 	    {
-	     
-	      iai = _v[i]._iai;
-	      ipi = _v[i]._ipi;
-	      mai = _v[i]._mai;
-	      mpi = _v[i]._mpi;
+	      if (lookup_direction==0) //outward packet
+		{
+		  mai = _v[i]._mai;
+		  mpi = _v[i]._mpi;
+		}
+	      else //inward packet
+		{
+		  iai = _v[i]._iai;
+		  ipi = _v[i]._ipi;
+		}
+		  
 	      _v[i]._t = time(NULL); 
 
 	      return (true);
 	    }
+	  else
+	    {
+
+	    }
+	
 	}
-    
     }
 
+  // no match found, 
   // if it is the allocation direction, then allocate a free entry for the connection.
   if (_direction == lookup_direction) { 
     
-    //check if there's unbinded entry available or there's an outdated entry need to be unbinded then bind
-    time_t  t = time(NULL) -120;
+    //check if there's unbinded entry available or 
+    //there's an outdated entry need to be unbinded then bind
+    time_t  t = time(NULL) - 10000000; 
     for (int i=0; i<_v.size(); i++) {  
       if ((_v[i]._binding == false ) || ((_v[i]._t < t) && (!_v[i]._static)))
 	{
@@ -313,6 +322,7 @@ AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai,
   return (false);
 }
 
+
 void
 AddressTranslator::push(int port, Packet *p)
 {
@@ -323,6 +333,7 @@ AddressTranslator::push(int port, Packet *p)
 }
 
 
+
 void 
 AddressTranslator::handle_outward(Packet *p)
 {
@@ -331,10 +342,9 @@ AddressTranslator::handle_outward(Packet *p)
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
   IP6Address ip6_msrc;
   IP6Address ip6_dst = IP6Address(ip6->ip6_dst);
-  unsigned short th_sport;
-  unsigned short th_mport;
-  unsigned short th_dport;
-
+  unsigned short sport;
+  unsigned short dport;
+  unsigned short mport;
   
   WritablePacket *q= Packet::make(p->length());
   if (q==0) {
@@ -344,104 +354,108 @@ AddressTranslator::handle_outward(Packet *p)
      
  
   // create the new packet
-  // replace src ip6, src port, and tcp checksum  fields in the packet
+  // replace src IP6, src port, and tcp checksum fields in the packet
   unsigned char *start_new = (unsigned char *)q->data();
   memset(q->data(), '\0', q->length());
   memcpy(start_new, start, p->length());
   click_ip6 *ip6_new = (click_ip6 * )q->data();
       
-  
 
   if (ip6_new->ip6_nxt ==0x3a) //the upper layer is an icmp6 packet
-    {}
-    /*
-      {
-      click_chatter("a icmp6 packet");
-      unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      click_ip6 * ip6_new2 = 0;
-      
-      switch (icmp6_start[0])  {
-      case 1  : ;
-      case 3  : ;
-      case 128: ;
-      case 129: {
-	icmp6_generic * icmp6 = (icmp6_generic *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
-	break;
-      case 2: {
-	icmp6_pkt_toobig * icmp6 = (icmp6_pkt_toobig *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
-	break;
-      case 4: {
-	icmp6_param * icmp6 = (icmp6_param *)(ip6_new +1); 
-	ip6_new2 = (click_ip6 *)(icmp6+1); }
-	break;
-      default: ; break;
-      }
-	
- 
-      //replace with the mapped port in the tcp packet  
-      // click_ip6 *ip6_new2 = (click_ip6 *)(icmp6+1);
-      unsigned char * tcp2 = (unsigned char *)(ip6_new2+1);
-      th_sport = tcp2[0];
-      th_dport = tcp2[1];
-      
+    {
 
-      if (lookup(ip6_src, th_dport, ip6_msrc, th_mport, ip6_dst, th_sport, _direction))
+      unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
+      unsigned char * ip6_new2 = 0;
+       if (lookup(ip6_src, dport, ip6_msrc, mport, ip6_dst, sport, _direction))
 	{
-	  ip6_new->ip6_src = ip6_msrc.in6_addr();
-	  ip6_new2->ip6_dst = ip6_msrc.in6_addr();
-	  tcp2[1]=th_mport;   
-	  
-	  WritablePacket *q2 = 0;
-	  q2= Packet::make(q->length());
-	  memset(q2->data(), '\0', q2->length());
-	  memcpy(q2->data(), q->data(), q2->length());
-	  p->kill();
-	  q2= q;
-	  //q->kill();
+	 
+	  ip6_new->ip6_src = ip6_msrc;
+	  switch (icmp6_start[0])  {
+	  case 1  : ;
+	  case 3  : ;
+	  case 128: ;
+	  case 129: {
+	    icmp6_echo * icmp6 = (icmp6_echo *) (ip6_new+1); 
+	    icmp6->icmp6_cksum=0;
+	    icmp6->icmp6_cksum= htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	  }
+	  break;
+	  case 2: {
+	    icmp6_pkt_toobig * icmp6 = (icmp6_pkt_toobig *)(ip6_new +1); 
+	    icmp6->icmp6_cksum=0;
+	    icmp6->icmp6_cksum= htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	  }
+	  break;
+	  case 4: {
+	    icmp6_param * icmp6 = (icmp6_param *)(ip6_new +1); 
+	    icmp6->icmp6_cksum=0;
+	    icmp6->icmp6_cksum= htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	  }
+	  break;
+	  default: ; break;
+	  }
+
+  	  p->kill();
 	  output(0).push(q);
 	}
       else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port");
+	  click_chatter(" failed for mapping the ip6 address and port for icmpv6 packet ");
 	  p->kill();
 	}
     }
 
-  */
 
-  else //the upper layer is an tcp/udp packet
+  else if (ip6_new->ip6_nxt ==0x6) //the upper layer is a tcp packet
     {
        click_tcp *tcp_new  = (click_tcp *)(ip6_new+1);
-       th_sport = ntohs(tcp_new->th_sport);
-       th_dport = ntohs(tcp_new->th_dport);
+       sport = ntohs(tcp_new->th_sport);
+       dport = ntohs(tcp_new->th_dport);
 
-      if (lookup(ip6_src, th_sport, ip6_msrc, th_mport, ip6_dst, th_dport, _direction))
+      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, _direction))
 	{
 	  ip6_new->ip6_src = ip6_msrc;
-	  tcp_new->th_sport = htons(th_mport);
+	  tcp_new->th_sport = htons(mport);
 	  //recalculate the checksum for TCP, deal with fragment later
-	  //tcp_new->th_sum = 0;
-	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
-	 
-	 
-	  WritablePacket *q2 =0;
-	  q2 = Packet::make(q->length());
-	  //unsigned char x = q->length();
-	  memset(q2->data(), '\0', q2->length());
-	  memcpy(q2->data(), q->data(), q2->length());
-	  q2= q;
+	  tcp_new->th_sum = 0;
+	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));  
 	  p->kill();
-	  //q->kill(); //why I can't kill q?
-	  
-	  output(0).push(q2);
+	  output(0).push(q);
 	}
-       else
+      else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port");
+	  click_chatter(" failed to map the ip6 address and portfor tcp packet");
 	  p->kill();
 	}
+    }
+
+  else if (ip6_new->ip6_nxt ==0x11) //the upper layer is a udp packet
+    {
+      click_udp *udp_new  = (click_udp *)(ip6_new+1);
+      sport = ntohs(udp_new->uh_sport);
+      dport = ntohs(udp_new->uh_dport);
+
+      if (lookup(ip6_src, sport, ip6_msrc, mport, ip6_dst, dport, _direction))
+	{
+	  ip6_new->ip6_src = ip6_msrc;
+	  udp_new->uh_sport = htons(mport);
+	  //recalculate the checksum for UDP, deal with fragment later
+	  udp_new->uh_sum = 0;
+	  udp_new->uh_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, udp_new->uh_sum, (unsigned char *)udp_new, ip6_new->ip6_plen));
+	  p->kill();
+	  output(0).push(q);
+	}
+      else 
+	{
+	  click_chatter(" failed to map the ip6 address and portfor tcp packet");
+	  p->kill();
+	}
+    }
+
+  else //discard other packets
+    {
+      click_chatter(" discard the packet, protocol unrecognized");
+      p->kill();
     }
  
 }
@@ -454,9 +468,9 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
   IP6Address ip6_mdst = IP6Address(ip6->ip6_dst);
   IP6Address ip6_dst ;
-  unsigned short th_sport;
-  unsigned short th_mport;
-  unsigned short th_dport;
+  unsigned short sport;
+  unsigned short mport;
+  unsigned short dport;
 
   
   WritablePacket *q= Packet::make(p->length());
@@ -477,79 +491,91 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
     
      {
       unsigned char * icmp6_start = (unsigned char *)(ip6_new +1);
-      icmp6_generic * icmp6;
-      //click_ip6 *ip6_new2 = 0;
       unsigned char *ip6_new2 = 0;
-      switch (icmp6_start[0])  {
-      case 1  : ;
-      case 3  : ;
-      case 128: ;
-      case 129: {
-	icmp6 = (icmp6_generic *)(ip6_new +1); 
-	//ip6_new2 = (click_ip6 *)(icmp6+1); 
-       }
-      break;
-      case 2: { 
-	icmp6_pkt_toobig * icmp6 = (icmp6_pkt_toobig *)(ip6_new +1); 
-	//ip6_new2 = (click_ip6 *)(icmp6+1); 
-        ip6_new2 = (unsigned char *)(icmp6+1); }
-      break;
-      case 4: {
-	icmp6_param * icmp6 = (icmp6_param *)(ip6_new +1); 
-	//ip6_new2 = (click_ip6 *)(icmp6+1); 
-	ip6_new2 = (unsigned char *)(icmp6+1); }
-      break;
-      default: ;
-      }
-	 
-      //replace with the mapped port in the tcp packet  
-     
-      //unsigned char * tcp2 = (unsigned char *)(ip6_new2+1);
-      //th_sport = tcp2[0];
-      //th_mport = tcp2[1];
-
+      
       if (lookup(ip6_dst, th_dport, ip6_mdst, th_mport, ip6_src, th_sport, 1))
 	{
-	  ip6_new->ip6_dst = ip6_dst;
-	  //ip6_new2->ip6_src = ip6_dst;
-	  //tcp2[0]=th_dport;   
-	 
-	  icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, icmp6->icmp6_cksum, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	   ip6_new->ip6_dst = ip6_dst;
+	   switch (icmp6_start[0])  {
+	   case 1  : ;  //need to change
+	   case 3  : ;  //need to change
+	   case 128: ;
+	   case 129: {
+	     icmp6_echo * icmp6 = (icmp6_echo *)(ip6_new +1); 
+	     icmp6->icmp6_cksum = 0;
+	     icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	   }
+	   break;
+	   case 2: { 
+	     icmp6_pkt_toobig * icmp6 = (icmp6_pkt_toobig *)(ip6_new +1); 
+	     icmp6->icmp6_cksum = 0;
+	     icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	   }
+	   break;
+	   case 4: {
+	     icmp6_param * icmp6 = (icmp6_param *)(ip6_new +1); 
+	     icmp6->icmp6_cksum = 0;
+	     icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, 0x3a, 0, (unsigned char *)icmp6, ip6_new->ip6_plen));
+	   }
+	   break;
+	   default: ;
+	   }
 
-	  Packet *q2 = 0;
-	  q2= q;
-	  p->kill();
-	  //q->kill();
-	  output(1).push(q2);
+//    	  Packet *q2 = 0;
+//    	  q2= q;
+  	  p->kill();
+//  	  q->kill();
+	  // output(1).push(q2);
+	  output(1).push(q);
 	}
       else
 	{
-	  click_chatter(" failed for mapping the dst ip6 address and port -1");
+	  click_chatter(" failed for mapping the dst ip6 address and port for icmpv6 packet");
 	  p->kill();
 	}
     }
     
 
-  else //the upper layer is an tcp/udp packet
+  else if (ip6_new->ip6_nxt ==0x6) //the upper layer is a tcp packet
     {
        click_tcp *tcp_new  = (click_tcp *)(ip6_new+1);
-       th_sport = tcp_new->th_sport;
-       th_mport = tcp_new->th_dport;
-      if (lookup(ip6_dst, th_dport,ip6_mdst, th_mport, ip6_src, th_sport, 1))
+       sport = ntohs(tcp_new->th_sport);
+       mport = ntohs(tcp_new->th_dport);
+      if (lookup(ip6_dst, dport,ip6_mdst, mport, ip6_src, sport, 1))
 	{
 	  ip6_new->ip6_dst = ip6_dst;
-	  tcp_new->th_dport = th_dport;
+	  tcp_new->th_dport = htons(dport);
 	  //recalculate the checksum for TCP, deal with fragment later
-	  //tcp_new->th_sum = 0;
+	  tcp_new->th_sum = 0;
 	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
 	 
-	  WritablePacket *q2 = 0;
-	  q2 = Packet::make(q->length());
-	  memset(q2->data(), '\0', q2->length());
-	  memcpy(q2->data(), q->data(), q2->length());
-	  q2= q;
+	  
 	  p->kill();
-	  output(1).push(q2);
+	  output(1).push(q);
+	}
+       else
+	{
+	  click_chatter(" failed for mapping the dst ip6 address and port for an tcp packet ");
+	  p->kill();
+	}
+    }
+
+  else if (ip6_new->ip6_nxt ==0x6) //the upper layer is a tcp packet
+    {
+       click_tcp *tcp_new  = (click_tcp *)(ip6_new+1);
+       sport = ntohs(tcp_new->th_sport);
+       mport = ntohs(tcp_new->th_dport);
+      if (lookup(ip6_dst, dport,ip6_mdst, mport, ip6_src, sport, 1))
+	{
+	  ip6_new->ip6_dst = ip6_dst;
+	  tcp_new->th_dport = htons(dport);
+	  //recalculate the checksum for TCP, deal with fragment later
+	  tcp_new->th_sum = 0;
+	  tcp_new->th_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, tcp_new->th_sum, (unsigned char *)tcp_new, ip6_new->ip6_plen));
+	 
+	  
+	  p->kill();
+	  output(1).push(q);
 	}
        else
 	{
@@ -558,6 +584,34 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
 	}
     }
  
+  else if (ip6_new->ip6_nxt ==0x11) //the upper layer is a udp packet
+    {
+       click_udp *udp_new  = (click_udp *)(ip6_new+1);
+       sport = ntohs(udp_new->uh_sport);
+       mport = ntohs(udp_new->uh_dport);
+      if (lookup(ip6_dst, dport,ip6_mdst, mport, ip6_src, sport, 1))
+	{
+	  ip6_new->ip6_dst = ip6_dst;
+	  udp_new->uh_dport = htons(dport);
+	  //recalculate the checksum for TCP, deal with fragment later
+	  udp_new->uh_sum = 0;
+	  udp_new->uh_sum = htons(in6_fast_cksum(&ip6_new->ip6_src, &ip6_new->ip6_dst, ip6_new->ip6_plen, ip6_new->ip6_nxt, udp_new->uh_sum, (unsigned char *)udp_new, ip6_new->ip6_plen));
+	  
+	  p->kill();
+	  output(1).push(q);
+	}
+       else
+	{
+	  click_chatter(" failed for mapping the dst ip6 address and port for an udp packet");
+	  p->kill();
+	}
+    }
+
+  else //discard other packets
+    {
+      click_chatter(" discard the packet, protocol unrecognized");
+      p->kill();
+    }
 }
 
 ELEMENT_REQUIRES(userlevel)

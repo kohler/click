@@ -12,21 +12,21 @@
  * =c
  * AddressTranslator(number_of_static_Mapping,
  *                   StaticMappingFields,
- *                   StaticMapping1,..
+ *                   StaticMapping1,...
  *                   StaticMappingm,
  *                   OutwardLookupFields,
  *                   InwardLookupFields,
  *                   Direction,
- *                   Mapped_IP6Address1 Port_start1 Port_end1, ..
+ *                   Mapped_IP6Address1 Port_start1 Port_end1, ...
  *                   Mapped_IP6Addressn Port_startn Port_endn)   
  *
  *
  * =s IPv6
- * translates UDP/TCP packets' addresses and ports
+ * translates IP/ICMP, TCP, and UDP packets' addresses and ports
  *
  * =d
- * Rewrites UDP and TCP flows by changing their source address, source port,
- * destination address, and/or destination port.
+ * Translates IP/ICMP, TCP, and UDP packets by changing their source address, 
+ * source port, destination address, and/or destination port.
  * 
  * Has one or more inputs and one or more outputs. Input packets must have
  * their IP6 header annotations set. Output packets are valid IP6 packets; for
@@ -43,7 +43,8 @@
  * If there is no such an entry, then the translator will create a binding for the new 
  * mapping if the flow comes from the right direction (the direction that allocate a 
  * new mapping is allowed).
- */
+ *
+ * =a ProtocolTranslator */
 
 class AddressTranslator : public Element {
   
@@ -60,9 +61,6 @@ class AddressTranslator : public Element {
 
   void handle_outward(Packet *p);
   void handle_inward(Packet *p);
-
-//    bool outward_lookup(IP6Address &, unsigned short &, IP6Address &, unsigned short &, IP6Address &, unsigned short &);
-//    bool inward_lookup(IP6Address &, unsigned short &, IP6Address &, unsigned short &, IP6Address &, unsigned short &);
   
   bool lookup(IP6Address &, unsigned short &, IP6Address &, unsigned short &, IP6Address &, unsigned short &, bool);
 
@@ -74,24 +72,22 @@ private:
     unsigned short _mpi;
     IP6Address _ea;
     unsigned short _ep;
-    time_t  _t;  //the time when FIN received from both direction for TCP
-                //the time that the UDP packet has been sent for this session.
+    time_t  _t;  //the last time that the packet passed the address translator
+                 //later: the time when FIN received from both direction for TCP
+                 //the time that the UDP packet has been sent for this session.
     unsigned char _state; 
     bool _binding;
     bool _static;
 };
   Vector<EntryMap> _v;
   
-  //bool _has_static_mapping;
-  int _number_of_smap;
+  int _number_of_smap; // number of static-mapping entry
   bool _direction;
  
   //the index of the following bool array corresponds to the colums of 
   //_iai, _ipi, _mai, _mpi, _ea, _ep
   bool _outwardLookupFields[6];
-  //bool _outwardMapFields[6];
   bool _inwardLookupFields[6];
-  //bool _inwardMapFields[6];
   bool _static_mapping[6];
 
   void add_map(IP6Address &mai, unsigned short mpi, bool binding);

@@ -6,7 +6,25 @@
 #include <click/vector.hh>
 #include <click/element.hh>
 
-
+/*
+ * =c
+ * ProtocolTranslator()
+ *
+ *
+ * =s IPv6
+ * translate IP/ICMP, TCP, and UDP packets between IPv4 and IPv6 protocols
+ *
+ * =d
+ *
+ * 
+ * Has two inputs and two outputs. Input packets are valid IPv6 packets or 
+ * IPv4 packets.  IPv4 packets will be translated to IPv6 packets.  IPv6 
+ * packets will be translated to IPv4 packets.  Output packets are valid 
+ * IPv4/v6 packets; for instance, translated packets have their IP, ICMP/ICMPv6, 
+ * TCP and/or UDP checksums updated.
+ *
+ * 
+ * =a AddressTranslator */
 
 class ProtocolTranslator : public Element {
   
@@ -21,7 +39,6 @@ class ProtocolTranslator : public Element {
   ProtocolTranslator *clone() const { return new ProtocolTranslator; }
   int configure(const Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
-  //Packet *simple_action(Packet *);
   void handle_ip6(Packet *);
   void handle_ip4(Packet *);
  
@@ -34,18 +51,15 @@ private:
 				 IP6Address ip6_dst,
 				 unsigned char *a,
 				 unsigned char payload_length);
-
+  
   Packet * make_translate64(IPAddress src,
-			   IPAddress dst,
-                           unsigned short ip6_plen, 
-                           unsigned char ip6_hlim, 
-			   unsigned char ip6_nxt,
-			   unsigned char *a);
+			    IPAddress dst,
+			    click_ip6 * ip6,
+			    unsigned char *a); 
+
   Packet * make_translate46(IP6Address src, 
 			    IP6Address dst,
-			    unsigned short ip_len,
-			    unsigned char ip_p, 
-			    unsigned char ip_ttl,
+			    click_ip * ip,
 			    unsigned char *a);
 
 };
