@@ -1,3 +1,28 @@
+2005-02-04 Friday 00:06  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: ipsumdump_ip.cc (1.5), toipsumdump.hh (1.52):
+	add ip_sum type to ToIPSummaryDump (Jose' Maria [Chema] Gonza'lez)
+
+2005-02-03 Thursday 23:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/ipsumdump_ip.cc (1.4): fix possible null
+	dereference (Mark Allman)
+
+2005-02-03 Thursday 23:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/userlevel/iprouter-01.testie (1.2): include click-align in
+	test
+
+2005-02-03 Thursday 23:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/straccum.hh (1.32), include/click/string.hh (1.37),
+	lib/straccum.cc (1.37), lib/string.cc (1.49): slightly faster
+	handling of out-of-memory strings (LCDF)
+
+2005-02-03 Thursday 23:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip6/getip6address.hh (1.11): fix typo (Marko)
+
 2005-02-03 Thursday 12:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip6/ip6routetable.cc (1.2): IP6RouteTable fixes from
