@@ -185,7 +185,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 		  data = reinterpret_cast<const uint8_t*>(&rh->ether_type) - 12;
 		  goto ethernet;
 	      } else if (orgcode == OUI_RFC2684) {
-		  uint32_t ethertype = unaligned_net_short(rh->ether_type);
+		  uint32_t ethertype = unaligned_net_short(&rh->ether_type);
 		  if (ethertype == PID_RFC2684_ETH_FCS || ethertype == PID_RFC2684_ETH_NOFCS) {
 		      data = reinterpret_cast<const uint8_t*>(rh + 1);
 		      goto ethernet;
