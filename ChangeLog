@@ -1,3 +1,7 @@
+2003-05-08 Thursday 21:40  Eddie Kohler <kohler@icir.org>
+
+	* conf/fromhost-tunnel.click (1.2): use CheckIPHeader
+
 2003-05-08 Thursday 21:35  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: storeipaddress.hh (1.11), storeipaddress.hh (1.12),
