@@ -1,3 +1,8 @@
+2005-03-03 Thursday 13:36  John Bicket <jbicket@mit.edu>
+
+	* conf/wifi/: access-point.click (1.5), gen_config_roofnet.pl
+	(1.5): update configs.
+
 2005-03-02 Wednesday 16:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/variableenv.cc (1.12): fix variable interpolation bug that
