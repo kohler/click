@@ -1,3 +1,13 @@
+2004-08-14 Saturday 16:36  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: availablerates.cc (1.4), linktable.cc (1.6),
+	rxstats.cc (1.10), rxstats.hh (1.8), wifidecap.cc (1.6),
+	wifidupefilter.cc (1.2), ap/associationresponder.cc (1.5),
+	sr/flashflood.cc (1.4), sr/srquerier.cc (1.4),
+	sr/srqueryforwarder.cc (1.2), station/associationrequester.cc
+	(1.6): fix wifiencap/decap for station mode.  fix
+	associationrequester to use correct request packet format.
+
 2004-08-12 Thursday 14:39  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: madwifirate.cc (1.4), wifidecap.cc (1.5),
