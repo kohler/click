@@ -3,7 +3,7 @@
 
 /*
  * =c
- * GridLocationInfo(LATITUDE, LONGITUDE, [ MOVE, KEYWORDS ])
+ * GridLocationInfo(LATITUDE, LONGITUDE [, I<KEYWORDS>])
  * =s Grid
  * =io
  * None
@@ -16,15 +16,19 @@
  * rounding is not performed on the remaining digits.  This should
  * provide about 1 metre of precision near the equator.
  *
- * If the optional move parameter is 1, the node will move
- * randomly at a few meters per second.
- *
- * If the optional move parameter is 2, the node will accept external
- * ``set_new_dest'' directives for setting its speed etc.
  *
  * Keyword arguments are:
  *
  * =over 8
+ *
+ * =item MOVESIM
+ *
+ * Integer.  If the optional move parameter is 1, the node will move
+ * randomly at a few meters per second.
+ *
+ * If the optional move parameter is 2, the node will accept external
+ * ``set_new_dest'' directives for setting its speed etc.
+ * 
  *
  * =item LOC_GOOD
  *
@@ -38,6 +42,11 @@
  * location is within a circle of ERR_RADIUS metres, centered at the
  * supplied location.
  *
+ * =item TAG
+ *
+ * String.  A symbolic name used to identify this node's location,
+ * e.g. "ne43-521b", or "Robert's office".
+ *
  * =h loc read/write 
  *
  * When reading, returns the element's location information, in this
@@ -50,6 +59,10 @@
  *  other parameters change.
  *
  * When writing, use the same syntax as the configuration arguments.
+ *
+ * =h tag read/write
+ *
+ * Read/write the location tag.  Read format is: ``tag=<tag>''.
  *
  * =a
  * FixSrcLoc */
@@ -84,6 +97,8 @@ public:
   unsigned short loc_err() { return _loc_err; }
 
   unsigned int _seq_no;
+  String _tag;
+
 protected:
 
   bool _loc_good; // if false, don't believe loc

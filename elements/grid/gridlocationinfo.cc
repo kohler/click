@@ -33,6 +33,8 @@ GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, 
   _vlat = 0;
   _vlon = 0;
 
+  _tag = "<unknown>";
+
   _loc_err = 0;
   _loc_good = true;
 }
@@ -43,7 +45,7 @@ GridLocationInfo::~GridLocationInfo()
 }
 
 void
-GridLocationInfo::logging_hook (Timer *, void *thunk) {
+GridLocationInfo::logging_hook(Timer *, void *thunk) {
   // extended logging
   GridLocationInfo *l = (GridLocationInfo *) thunk;
   grid_location loc = l->get_current_location();
@@ -70,12 +72,12 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			// 5 fractional digits ~= 1 metre precision at the equator
 			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
-                        cpOptional,
-                        cpInteger, "move?", &do_move,
 			cpKeywords,
+                        "MOVESIM", cpInteger, "simulate moving?", &do_move,
 			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
 			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
+			"TAG", cpString, "location tag", &_tag,
 			0);
   if (res < 0)
     return res;
@@ -216,12 +218,31 @@ loc_write_handler(const String &arg, Element *element,
   return l->read_args(arg_list, errh);
 }
 
+static String
+tag_read_handler(Element *f, void *)
+{
+  GridLocationInfo *l = (GridLocationInfo *) f;
+  return "tag=" + l->_tag + "\n";
+}
+
+
+static int
+tag_write_handler(const String &arg, Element *element,
+		  void *, ErrorHandler *)
+{
+  GridLocationInfo *l = (GridLocationInfo *) element;
+  l->_tag = arg;
+  return 0;
+}
+
 void
 GridLocationInfo::add_handlers()
 {
   add_default_handlers(true);
   add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("loc", loc_read_handler, (void *) 0);
+  add_write_handler("tag", tag_write_handler, (void *) 0);
+  add_read_handler("tag", tag_read_handler, (void *) 0);
 }
 
 

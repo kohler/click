@@ -100,6 +100,10 @@ while (<grid_config>) {
 	$LOC_AWARE = $1;
     }
 
+    if (/LOC_TAG=(\w+)/) {
+	$LOC_TAG = $1;
+    }
+
     # XXX doesn't handle numbers without a digit before the point, e.g. `.005'
     if (/LAT=(-?\d+\.?\d*|\.d+)/) {
 	$POS_LAT = $1;
@@ -128,6 +132,7 @@ while (<grid_config>) {
     if (/RADIO_TYPE=(\w+)/) {
 	$RADIO_TYPE = $1;
     }
+
 }
 
 close grid_config;
@@ -147,6 +152,7 @@ print "run_grid:  GW_NETMASK = $GW_NETMASK\n";
 print "run_grid:  LOC_AWARE = $LOC_AWARE\n";
 print "run_grid:  POS_LAT = $POS_LAT\n";
 print "run_grid:  POS_LON = $POS_LON\n";
+print "run_grid:  LOC_TAG = $LOC_TAG\n";
       
 print "run_grid:  GRID_CHANNEL = $GRID_CHANNEL\n";
 print "run_grid:  GRID_SSID = $GRID_SSID\n";
@@ -224,11 +230,15 @@ $CLICK_CONFIG_OUT = "$GRID_DIR/runtime_grid.click";
 
 $GW_OPTIONS = "";
 if ($IS_GATEWAY) {
-    $GW_OPTIONS = "--gateway-device $GW_IF --gateway-ip $GW_IP"
+    $GW_OPTIONS = "--gateway-device $GW_IF --gateway-ip $GW_IP";
 }
 
+$LOC_TAG_OPTION = "";
+if (defined($LOC_TAG)) {
+    $LOC_TAG_OPTION = "--loc-tag $LOC_TAG";
+}
 
-my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
+my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS $LOC_TAG_OPTION --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
 $CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
 
 

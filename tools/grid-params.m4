@@ -132,6 +132,7 @@ dnl define(POS_LAT, ?)  dnl Latitude and longitude, in decimal degrees.
 dnl define(POS_LON, ?)  
 dnl define(ARG_LOC_GOOD, ?) dnl Boolean
 dnl define(ARG_LOC_ERR, ?) dnl Metres (unsigned short)
+dnl define(ARG_LOC_TAG, ?) dnl String tag, no spaces or weird characters
 
 dnl This node's IP address, e.g 18.26.7.96 
 dnl define(GRID_IP, ?) 
