@@ -2,7 +2,8 @@
  * Pair.java -- utilities class for manipulating Strings
  * Eddie Kohler
  *
- * Copyright (c) 2000 Massachusetts Institute of Technology.
+ * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
