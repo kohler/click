@@ -21,6 +21,7 @@
 #include "fromlinux.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/etheraddress.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -81,14 +82,17 @@ FromLinux::clone() const
 int
 FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  EtherAddress ea((unsigned char *)"\000\001\002\003\004\005");
   int res = cp_va_parse(conf, this, errh,
 			cpString, "interface name", &_devname,
 			cpIPPrefix, "destination IP prefix", &_destaddr, &_destmask,
+			cpKeywords,
+			"ETHER", cpEthernetAddress, "fake device Ethernet address", &ea,
 			cpEnd);
   if (res < 0)
     return res;
   _devname = _devname.substring(0, IFNAMSIZ-1);
-  return initialize_device(errh);
+  return initialize_device(errh, ea);
 }
 
 int
@@ -105,6 +109,7 @@ FromLinux::init_dev()
 #endif
   strncpy(_dev->name, _devname.cc(), IFNAMSIZ);
   _dev->init = fl_init;
+  memset(&_stats, 0, sizeof(net_device_stats));
   return 0;
 
  bad:
@@ -116,7 +121,7 @@ FromLinux::init_dev()
 }
 
 int
-FromLinux::initialize_device(ErrorHandler *errh)
+FromLinux::initialize_device(ErrorHandler *errh, const EtherAddress &mac_addr)
 {
   int res = 0;
   _device_up = false;
@@ -136,30 +141,35 @@ FromLinux::initialize_device(ErrorHandler *errh)
   // Bring up the interface
   struct ifreq ifr;
   strncpy(ifr.ifr_name, _dev->name, IFNAMSIZ);
-  struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
-  sin->sin_family = AF_INET;
-  sin->sin_addr = _destaddr;
 
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
 
+  ifr.ifr_hwaddr.sa_family = _dev->type;
+  memcpy(ifr.ifr_hwaddr.sa_data, mac_addr.data(), 6);
+  if (res >= 0 && (res = dev_ioctl(SIOCSIFHWADDR, &ifr)) < 0)
+    errh->error("error %d setting hardware address for interface %s", res, _devname.cc());
+  
+  struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
+  sin->sin_family = AF_INET;
+  sin->sin_addr = _destaddr;
   if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
     errh->error("error %d setting address for interface %s", res, _devname.cc());
   
   sin->sin_addr = _destmask;
   if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
     errh->error("error %d setting netmask for interface %s", res, _devname.cc());
-  
+
   if (res >= 0 && (res = iff_set(&ifr, IFF_UP | IFF_RUNNING)) < 0)
     errh->error("error %d bringing up interface %s", res, _devname.cc());
-  else
-    _device_up = true;
 
-  if (res >= 0)
-      fromlinux_map.insert(this);
+  if (res >= 0) {
+    _device_up = true;
+    fromlinux_map.insert(this);
+  }
 
   set_fs(oldfs);
-  
+
   if (res < 0)
     uninitialize();
   return res;
@@ -225,9 +235,6 @@ FromLinux::initialize(ErrorHandler *errh)
 static int
 fl_open(net_device *dev)
 {
-  // set to an arbitrary Ethernet address
-  for (int i = 0; i < ETH_ALEN; i++)
-    dev->dev_addr[i] = i;
   netif_start_queue(dev);
   return 0;
 }
