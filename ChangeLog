@@ -1,3 +1,12 @@
+2004-07-10 Saturday 00:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/confparse.cc (1.131): fix cp_eat_space bug, reported by Erik
+	VandeKieft
+
+2004-07-10 Saturday 00:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iprw.cc (1.53): remove backticks
+
 2004-07-09 Friday 12:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/test-tun.click (1.14): document tun-ping lines
