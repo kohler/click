@@ -72,6 +72,13 @@ class String { public:
   // bool operator!=(const String &, const String &);
   // bool operator!=(const String &, const char *);
   // bool operator!=(const char *, const String &);
+
+  int compare(const char *, int) const;
+  int compare(const String &x) const	{ return compare(x._data, x._length); }
+  // bool operator<(const String &, const String &);
+  // bool operator<=(const String &, const String &);
+  // bool operator>(const String &, const String &);
+  // bool operator>=(const String &, const String &);
   
   String substring(int, int) const;
   String substring(int left) const	{ return substring(left, _length); }
@@ -194,6 +201,7 @@ String::~String()
   deref();
 }
 
+
 inline bool
 operator==(const String &s1, const String &s2)
 {
@@ -229,6 +237,31 @@ operator!=(const String &s1, const char *cc2)
 {
   return !s1.equals(cc2, -1);
 }
+
+inline bool
+operator<(const String &s1, const String &s2)
+{
+  return s1.compare(s2.data(), s2.length()) < 0;
+}
+
+inline bool
+operator<=(const String &s1, const String &s2)
+{
+  return s1.compare(s2.data(), s2.length()) <= 0;
+}
+
+inline bool
+operator>(const String &s1, const String &s2)
+{
+  return s1.compare(s2.data(), s2.length()) > 0;
+}
+
+inline bool
+operator>=(const String &s1, const String &s2)
+{
+  return s1.compare(s2.data(), s2.length()) >= 0;
+}
+
 
 inline String &
 String::operator=(const String &s)

@@ -527,6 +527,23 @@ String::equals(const char *s, int len) const
   return memcmp(_data, s, len) == 0;
 }
 
+int
+String::compare(const char *s, int len) const
+{
+  if (len < 0) len = strlen(s);
+  if (_data == s && _length == len) return 0;
+  if (_length == len)
+    return memcmp(_data, s, len);
+  else if (_length < len) {
+    int v = memcmp(_data, s, _length);
+    return (v ? v : -1);
+  } else {
+    int v = memcmp(_data, s, len);
+    return (v ? v : 1);
+  }
+}
+
+
 String::Initializer::Initializer()
 {
   String::static_initialize();
