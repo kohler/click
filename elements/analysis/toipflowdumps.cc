@@ -32,13 +32,9 @@
 CLICK_DECLS
 
 #ifdef i386
-# define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
 # define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
-# define PUT2NET(p, d)	*reinterpret_cast<uint16_t *>((p)) = (d)
 #else
-# define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
 # define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
-# define PUT2NET(p, d)	do { uint16_t d__ = ntohs((d)); (p)[0] = d__>>8; (p)[1] = d__; } while (0)
 #endif
 #define PUT1(p, d)	((p)[0] = (d))
 
@@ -145,7 +141,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	    if (opt < end_opt && opt[0] == pi) {
 		int original_pos = sa.length() - pos;
 		ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], ToIPSummaryDump::DO_TCPOPT_MSS | ToIPSummaryDump::DO_TCPOPT_WSCALE | ToIPSummaryDump::DO_TCPOPT_SACK, sa);
-		PUT4NET(sa.data() + original_pos, sa.length() - original_pos);
+		PUT4(sa.data() + original_pos, sa.length() - original_pos);
 		opt += 2 + (opt[1] / 2);
 	    }
 
