@@ -49,13 +49,11 @@ CLICK_DECLS
 FromSimDevice::FromSimDevice()
   : Element(0, 1), _packetbuf_size(0),_packetbuf(0)
 {
-  MOD_INC_USE_COUNT;
 
 }
 
 FromSimDevice::~FromSimDevice()
 {
-  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

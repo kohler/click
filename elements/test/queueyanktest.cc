@@ -25,12 +25,10 @@ CLICK_DECLS
 QueueYankTest::QueueYankTest()
     : Element(0, 0), _t(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 QueueYankTest::~QueueYankTest()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

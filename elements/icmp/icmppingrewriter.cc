@@ -29,12 +29,10 @@ CLICK_DECLS
 ICMPPingRewriter::ICMPPingRewriter()
   : Element(1, 1), _request_map(0), _reply_map(0), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ICMPPingRewriter::~ICMPPingRewriter()
 {
-  MOD_DEC_USE_COUNT;
   assert(!_timer.scheduled());
 }
 

@@ -30,12 +30,10 @@ CLICK_DECLS
 ICMPPingEncap::ICMPPingEncap()
     : Element(1, 1), _icmp_id(0), _ip_id(1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ICMPPingEncap::~ICMPPingEncap()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

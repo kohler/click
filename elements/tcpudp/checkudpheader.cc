@@ -36,13 +36,11 @@ const char *CheckUDPHeader::reason_texts[NREASONS] = {
 CheckUDPHeader::CheckUDPHeader()
   : Element(1, 1), _reason_drops(0)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckUDPHeader::~CheckUDPHeader()
 {
-  MOD_DEC_USE_COUNT;
   delete[] _reason_drops;
 }
 

@@ -59,14 +59,12 @@ FromHost::FromHost()
     : _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
       _task(this), _wakeup_timer(fl_wakeup, this), _queue(0)
 {
-    MOD_INC_USE_COUNT;
     add_output();
     memset(&_stats, 0, sizeof(_stats));
 }
 
 FromHost::~FromHost()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 net_device *

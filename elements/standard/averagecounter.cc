@@ -27,12 +27,10 @@ CLICK_DECLS
 AverageCounter::AverageCounter()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 AverageCounter::~AverageCounter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -6,13 +6,11 @@ CLICK_DECLS
 DropBroadcasts::DropBroadcasts()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 DropBroadcasts::~DropBroadcasts()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

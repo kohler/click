@@ -200,7 +200,6 @@ fromdev_static_cleanup()
 
 FromDevice::FromDevice()
 {
-    // no MOD_INC_USE_COUNT; rely on AnyDevice
     _readers = 0; // noone registered so far
     _polling = 0; // we do not poll until NIC driver registers itself
     add_output();
@@ -209,7 +208,6 @@ FromDevice::FromDevice()
 
 FromDevice::~FromDevice()
 {
-    // no MOD_DEC_USE_COUNT; rely on AnyDevice
     fromdev_static_cleanup();
 }
 

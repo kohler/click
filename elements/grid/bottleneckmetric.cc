@@ -23,12 +23,10 @@ CLICK_DECLS
 BottleneckMetric::BottleneckMetric()
   : GridGenericMetric(0, 0), _ls(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 BottleneckMetric::~BottleneckMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

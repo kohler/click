@@ -24,12 +24,10 @@ CLICK_DECLS
 CopyFlowID::CopyFlowID()
   : Element(2, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CopyFlowID::~CopyFlowID()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

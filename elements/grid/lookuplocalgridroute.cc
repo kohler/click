@@ -43,12 +43,10 @@ LookupLocalGridRoute::LookupLocalGridRoute()
   _any_gateway_ip(0), _task(this), 
   _log(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 LookupLocalGridRoute::~LookupLocalGridRoute()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

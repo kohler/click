@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../../lib/lexer.cc" -*-
+// -*- c-basic-offset: 4; related-file-name: "../../lib/lexer.cc" -*-
 #ifndef CLICK_LEXER_HH
 #define CLICK_LEXER_HH
 #include <click/hashmap.hh>
@@ -9,179 +9,186 @@ class LexerExtra;
 class VariableEnvironment;
 
 enum Lexemes {
-  lexEOF = 0,
-  lexIdent = 256,
-  lexVariable,
-  lexArrow,
-  lex2Colon,
-  lex2Bar,
-  lex3Dot,
-  lexTunnel,
-  lexElementclass,
-  lexRequire
+    lexEOF = 0,
+    lexIdent = 256,
+    lexVariable,
+    lexArrow,
+    lex2Colon,
+    lex2Bar,
+    lex3Dot,
+    lexTunnel,
+    lexElementclass,
+    lexRequire
 };
 
 class Lexeme { public:
 
-  Lexeme()				: _kind(lexEOF) { }
-  Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
+    Lexeme()				: _kind(lexEOF) { }
+    Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
   
-  int kind() const			{ return _kind; }
-  bool is(int k) const			{ return _kind == k; }
+    int kind() const			{ return _kind; }
+    bool is(int k) const		{ return _kind == k; }
   
-  const String &string() const		{ return _s; }
-  String &string()			{ return _s; }
+    const String &string() const	{ return _s; }
+    String &string()			{ return _s; }
   
- private:
+  private:
   
-  int _kind;
-  String _s;
+    int _kind;
+    String _s;
   
 };
 
 class Lexer { public:
 
-  enum { TUNNEL_TYPE = 0, ERROR_TYPE = 1 };
+    enum { TUNNEL_TYPE = 0, ERROR_TYPE = 1 };
   
-  class TunnelEnd;
-  class Compound;
-  typedef Router::Hookup Hookup;
+    class TunnelEnd;
+    class Compound;
+    typedef Router::Hookup Hookup;
   
-  Lexer();
-  virtual ~Lexer();
+    Lexer();
+    virtual ~Lexer();
   
-  int begin_parse(const String &data, const String &filename, LexerExtra *, ErrorHandler * = 0);
-  void end_parse(int);
+    int begin_parse(const String &data, const String &filename, LexerExtra *, ErrorHandler * = 0);
+    void end_parse(int);
 
-  ErrorHandler *errh() const		{ return _errh; }
+    ErrorHandler *errh() const		{ return _errh; }
   
-  String remaining_text() const;
-  void set_remaining_text(const String &);
+    String remaining_text() const;
+    void set_remaining_text(const String &);
   
-  const Lexeme &lex();
-  void unlex(const Lexeme &);
-  String lex_config();
-  String landmark() const;
+    const Lexeme &lex();
+    void unlex(const Lexeme &);
+    String lex_config();
+    String landmark() const;
   
-  bool expect(int, bool report_error = true);
+    bool expect(int, bool report_error = true);
 
-  typedef Element *(*ElementFactory)(uintptr_t);
-  int add_element_type(const String &, ElementFactory factory, uintptr_t thunk, bool scoped = false);
-  int element_type(const String &) const;
-  int force_element_type(String);
+    typedef Element *(*ElementFactory)(uintptr_t);
+#ifdef CLICK_LINUXMODULE
+    int add_element_type(const String &, ElementFactory factory, uintptr_t thunk, struct module *module, bool scoped = false);
+#else
+    int add_element_type(const String &, ElementFactory factory, uintptr_t thunk, bool scoped = false);
+#endif
+    int element_type(const String &) const;
+    int force_element_type(String);
 
-  void element_type_names(Vector<String> &) const;
+    void element_type_names(Vector<String> &) const;
   
-  int remove_element_type(int t)	{ return remove_element_type(t, 0); }
+    int remove_element_type(int t)	{ return remove_element_type(t, 0); }
 
-  void connect(int element1, int port1, int element2, int port2);
-  String element_name(int) const;
-  String element_landmark(int) const;
-  
-  void add_tunnel(String, String);
-  
-  bool yport(int &port);
-  bool yelement(int &element, bool comma_ok);
-  void ydeclaration(const String &first_element = String());
-  bool yconnection();
-  void yelementclass();
-  void ytunnel();
-  void ycompound_arguments(Compound *);
-  int ycompound(String name = String());
-  void yrequire();
-  bool ystatement(bool nested = false);
-  
-  void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
-  void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
-  
-  Router *create_router(Master *);
-
- private:
+    void connect(int element1, int port1, int element2, int port2);
+    String element_name(int) const;
+    String element_landmark(int) const;
     
-  // lexer
-  String _big_string;
+    void add_tunnel(String, String);
   
-  const char *_data;
-  unsigned _len;
-  unsigned _pos;
+    bool yport(int &port);
+    bool yelement(int &element, bool comma_ok);
+    void ydeclaration(const String &first_element = String());
+    bool yconnection();
+    void yelementclass();
+    void ytunnel();
+    void ycompound_arguments(Compound *);
+    int ycompound(String name = String());
+    void yrequire();
+    bool ystatement(bool nested = false);
   
-  String _filename;
-  String _original_filename;
-  unsigned _lineno;
-  LexerExtra *_lextra;
+    void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
+    void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
   
-  unsigned skip_line(unsigned);
-  unsigned skip_slash_star(unsigned);
-  unsigned skip_backslash_angle(unsigned);
-  unsigned skip_quote(unsigned, char);
-  unsigned process_line_directive(unsigned);
-  Lexeme next_lexeme();
-  static String lexeme_string(int);
-  
-  // parser
-  enum { TCIRCLE_SIZE = 8 };
-  Lexeme _tcircle[TCIRCLE_SIZE];
-  int _tpos;
-  int _tfull;
-  
-  // element types
-  struct ElementType {
-    ElementFactory factory;
-    uintptr_t thunk;
-    String name;
-    int next;
-  };
-  HashMap<String, int> _element_type_map;
-  Vector<ElementType> _element_types;
-  enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
-  int _last_element_type;
-  int _free_element_type;
+    Router *create_router(Master *);
 
-  // elements
-  HashMap<String, int> _element_map;
-  Vector<int> _elements;
-  Vector<String> _element_names;
-  Vector<String> _element_configurations;
-  Vector<String> _element_landmarks;
-
-  Vector<Hookup> _hookup_from;
-  Vector<Hookup> _hookup_to;
+  private:
+    
+    // lexer
+    String _big_string;
   
-  TunnelEnd *_definputs;
-  TunnelEnd *_defoutputs;
+    const char *_data;
+    unsigned _len;
+    unsigned _pos;
   
-  // compound elements
-  int _anonymous_offset;
-  int _compound_depth;
-
-  // requirements
-  Vector<String> _requirements;
+    String _filename;
+    String _original_filename;
+    unsigned _lineno;
+    LexerExtra *_lextra;
   
-  // errors
-  ErrorHandler *_errh;
+    unsigned skip_line(unsigned);
+    unsigned skip_slash_star(unsigned);
+    unsigned skip_backslash_angle(unsigned);
+    unsigned skip_quote(unsigned, char);
+    unsigned process_line_directive(unsigned);
+    Lexeme next_lexeme();
+    static String lexeme_string(int);
   
-  int lerror(const char *, ...);
+    // parser
+    enum { TCIRCLE_SIZE = 8 };
+    Lexeme _tcircle[TCIRCLE_SIZE];
+    int _tpos;
+    int _tfull;
+  
+    // element types
+    struct ElementType {
+	ElementFactory factory;
+	uintptr_t thunk;
+#ifdef CLICK_LINUXMODULE
+	struct module *module;
+#endif
+	String name;
+	int next;
+    };
+    HashMap<String, int> _element_type_map;
+    Vector<ElementType> _element_types;
+    enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
+    int _last_element_type;
+    int _free_element_type;
 
-  String anon_element_name(const String &) const;
-  String deanonymize_element_name(const String &, int);
-  int get_element(String, int, const String & = String(), const String & = String());
-  int lexical_scoping_in() const;
-  void lexical_scoping_out(int);
-  int remove_element_type(int, int *);
-  int make_compound_element(int);
-  void expand_compound_element(int, const VariableEnvironment &);
-  void add_router_connections(int, const Vector<int> &, Router *);
+    // elements
+    HashMap<String, int> _element_map;
+    Vector<int> _elements;
+    Vector<String> _element_names;
+    Vector<String> _element_configurations;
+    Vector<String> _element_landmarks;
 
-  friend class Compound;
+    Vector<Hookup> _hookup_from;
+    Vector<Hookup> _hookup_to;
+  
+    TunnelEnd *_definputs;
+    TunnelEnd *_defoutputs;
+  
+    // compound elements
+    int _anonymous_offset;
+    int _compound_depth;
+
+    // requirements
+    Vector<String> _requirements;
+  
+    // errors
+    ErrorHandler *_errh;
+  
+    int lerror(const char *, ...);
+
+    String anon_element_name(const String &) const;
+    String deanonymize_element_name(const String &, int);
+    int get_element(String, int, const String & = String(), const String & = String());
+    int lexical_scoping_in() const;
+    void lexical_scoping_out(int);
+    int remove_element_type(int, int *);
+    int make_compound_element(int);
+    void expand_compound_element(int, const VariableEnvironment &);
+    void add_router_connections(int, const Vector<int> &, Router *);
+
+    friend class Compound;
   
 };
 
 class LexerExtra { public:
   
-  LexerExtra()				{ }
-  virtual ~LexerExtra()			{ }
+    LexerExtra()			{ }
+    virtual ~LexerExtra()		{ }
   
-  virtual void require(String, ErrorHandler *);
+    virtual void require(String, ErrorHandler *);
 
 };
 

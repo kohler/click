@@ -28,7 +28,6 @@ CLICK_DECLS
 ToyTCP::ToyTCP()
   : _timer(this)
 {
-  MOD_INC_USE_COUNT;
 
   add_input();
   add_output();
@@ -60,7 +59,6 @@ ToyTCP::restart()
 
 ToyTCP::~ToyTCP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -23,13 +23,11 @@ CLICK_DECLS
 
 Tee::Tee()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 Tee::~Tee()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void
@@ -69,13 +67,11 @@ Tee::push(int, Packet *p)
 
 PullTee::PullTee()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 PullTee::~PullTee()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -42,12 +42,10 @@ FromCapDump::FromCapDump()
 {
     _p2s_map[0] = 0;
     _ff.set_landmark_pattern("%f:%l");
-    MOD_INC_USE_COUNT;
 }
 
 FromCapDump::~FromCapDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -27,7 +27,6 @@ CLICK_DECLS
 ForceICMP::ForceICMP()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _count = 0;
   _type = -1;
   _code = -1;
@@ -35,7 +34,6 @@ ForceICMP::ForceICMP()
 
 ForceICMP::~ForceICMP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

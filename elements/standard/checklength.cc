@@ -24,12 +24,10 @@ CLICK_DECLS
 CheckLength::CheckLength()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CheckLength::~CheckLength()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

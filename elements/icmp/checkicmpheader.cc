@@ -37,13 +37,11 @@ const char *CheckICMPHeader::reason_texts[NREASONS] = {
 CheckICMPHeader::CheckICMPHeader()
   : Element(1, 1), _reason_drops(0)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckICMPHeader::~CheckICMPHeader()
 {
-  MOD_DEC_USE_COUNT;
   delete[] _reason_drops;
 }
 

@@ -56,13 +56,11 @@ ToHost::static_cleanup()
 ToHost::ToHost()
     : _sniffers(false), _allow_nonexistent(false), _drops(0)
 {
-    MOD_INC_USE_COUNT;
     add_input();
 }
 
 ToHost::~ToHost()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

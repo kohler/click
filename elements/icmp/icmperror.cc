@@ -77,12 +77,10 @@ ICMPError::static_cleanup()
 ICMPError::ICMPError()
   : Element(1, 1), _type(-1), _code(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ICMPError::~ICMPError()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

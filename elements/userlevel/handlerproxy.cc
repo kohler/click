@@ -23,12 +23,10 @@ CLICK_DECLS
 HandlerProxy::HandlerProxy()
     : _err_rcvs(0), _nerr_rcvs(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 HandlerProxy::~HandlerProxy()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -33,13 +33,11 @@ PrintGrid::PrintGrid()
   : Element(1, 1), _print_routes(false), _print_probe_entries(false),
     _verbose(true), _timestamp(false), _print_eth(false)
 {
-  MOD_INC_USE_COUNT;
   _label = "";
 }
 
 PrintGrid::~PrintGrid()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -133,13 +133,11 @@ ETTStat::ETTStat()
     _ads_rs_index(0),
     _rtable(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 ETTStat::~ETTStat()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

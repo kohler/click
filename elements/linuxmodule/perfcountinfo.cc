@@ -21,12 +21,10 @@
 
 PerfCountInfo::PerfCountInfo()
 {
-  MOD_INC_USE_COUNT;
 }
 
 PerfCountInfo::~PerfCountInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

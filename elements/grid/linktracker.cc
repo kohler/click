@@ -29,14 +29,12 @@ CLICK_DECLS
 
 LinkTracker::LinkTracker()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 LinkTracker::~LinkTracker()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

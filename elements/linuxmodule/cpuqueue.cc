@@ -6,14 +6,12 @@
 CPUQueue::CPUQueue()
   : _last(0), _drops(0)
 {
-  MOD_INC_USE_COUNT;
   set_ninputs(1);
   memset(&_q, 0, sizeof(_q));
 }
 
 CPUQueue::~CPUQueue()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

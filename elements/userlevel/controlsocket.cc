@@ -68,12 +68,10 @@ ControlSocketErrorHandler::handle_text(Seriousness, const String &m)
 ControlSocket::ControlSocket()
   : _socket_fd(-1), _proxy(0), _full_proxy(0), _retry_timer(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ControlSocket::~ControlSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

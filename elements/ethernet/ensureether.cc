@@ -26,12 +26,10 @@ CLICK_DECLS
 EnsureEther::EnsureEther()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 EnsureEther::~EnsureEther()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -36,7 +36,6 @@ SRQuerier::SRQuerier()
      _sr_forwarder(0),
      _link_table(0)
 {
-  MOD_INC_USE_COUNT;
 
   // Pick a starting sequence number that we have not used before.
   struct timeval tv;
@@ -51,7 +50,6 @@ SRQuerier::SRQuerier()
 
 SRQuerier::~SRQuerier()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

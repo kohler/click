@@ -27,7 +27,6 @@ CLICK_DECLS
 AvailableRates::AvailableRates()
   : Element(0, 0)
 {
-  MOD_INC_USE_COUNT;
 
   /* bleh */
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -37,7 +36,6 @@ AvailableRates::AvailableRates()
 
 AvailableRates::~AvailableRates()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

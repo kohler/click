@@ -88,12 +88,10 @@ static ErrorHandler *base_default_errh;
 ChatterSocket::ChatterSocket()
   : _socket_fd(-1), _channel("default"), _retry_timer(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ChatterSocket::~ChatterSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

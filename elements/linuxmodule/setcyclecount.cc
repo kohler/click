@@ -22,12 +22,10 @@
 SetCycleCount::SetCycleCount()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetCycleCount::~SetCycleCount()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -26,14 +26,12 @@ CLICK_DECLS
 AggregateLast::AggregateLast()
     : Element(1, 1), _agg_notifier(0), _clear_task(this), _needs_clear(0)
 {
-    MOD_INC_USE_COUNT;
     memset(_packets, 0, sizeof(_packets));
     memset(_counts, 0, sizeof(_counts));
 }
 
 AggregateLast::~AggregateLast()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

@@ -21,12 +21,10 @@ CLICK_DECLS
 
 Idle::Idle() 
 {
-  MOD_INC_USE_COUNT;
 }
 
 Idle::~Idle()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

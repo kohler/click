@@ -30,7 +30,6 @@ CLICK_DECLS
 
 GridProbeReplyReceiver::GridProbeReplyReceiver() 
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
@@ -42,7 +41,6 @@ GridProbeReplyReceiver::initialize(ErrorHandler *)
 
 GridProbeReplyReceiver::~GridProbeReplyReceiver()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

@@ -27,12 +27,10 @@ CLICK_DECLS
 HostEtherFilter::HostEtherFilter()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 HostEtherFilter::~HostEtherFilter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

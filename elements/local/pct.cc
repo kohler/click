@@ -7,12 +7,10 @@ CLICK_DECLS
 
 Pct::Pct() 
 {
-  MOD_INC_USE_COUNT;
 }
 
 Pct::~Pct()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

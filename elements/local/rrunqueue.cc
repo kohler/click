@@ -25,12 +25,10 @@ CLICK_DECLS
 RoundRobinUnqueue::RoundRobinUnqueue()
   : _task(this), _next(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 RoundRobinUnqueue::~RoundRobinUnqueue()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

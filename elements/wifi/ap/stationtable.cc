@@ -27,13 +27,11 @@ CLICK_DECLS
 StationTable::StationTable()
   : Element(0, 0)
 {
-  MOD_INC_USE_COUNT;
 
 }
 
 StationTable::~StationTable()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

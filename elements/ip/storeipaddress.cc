@@ -24,12 +24,10 @@ CLICK_DECLS
 StoreIPAddress::StoreIPAddress()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 StoreIPAddress::~StoreIPAddress()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -29,12 +29,10 @@ const unsigned RatedSource::NO_LIMIT;
 RatedSource::RatedSource()
   : Element(0, 1), _packet(0), _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 RatedSource::~RatedSource()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

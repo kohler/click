@@ -28,12 +28,10 @@ CLICK_DECLS
 ReadAnno::ReadAnno()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ReadAnno::~ReadAnno()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

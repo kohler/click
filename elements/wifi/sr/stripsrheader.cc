@@ -25,12 +25,10 @@ CLICK_DECLS
 StripSRHeader::StripSRHeader()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 StripSRHeader::~StripSRHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

@@ -29,12 +29,10 @@
 IPEncap2::IPEncap2()
   : Element(1, 1), _ip_p(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPEncap2::~IPEncap2()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,12 +25,10 @@ CLICK_DECLS
 IP6Mirror::IP6Mirror()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IP6Mirror::~IP6Mirror()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

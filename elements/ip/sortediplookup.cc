@@ -26,12 +26,10 @@ CLICK_DECLS
 
 SortedIPLookup::SortedIPLookup()
 {
-    MOD_INC_USE_COUNT;
 }
 
 SortedIPLookup::~SortedIPLookup()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 bool

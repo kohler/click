@@ -35,13 +35,11 @@ CLICK_DECLS
 
 LookupIPRouteMP::LookupIPRouteMP()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 LookupIPRouteMP::~LookupIPRouteMP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -18,6 +18,7 @@
  * legally binding.
  */
 
+#define WANT_MOD_USE_COUNT 1
 #include <click/config.h>
 #include <click/router.hh>
 #include <click/routerthread.hh>
@@ -99,6 +100,18 @@ Router::~Router()
 	    delete _elements[i];
   
     delete _root_element;
+
+#if CLICK_LINUXMODULE
+    // decrement module use counts
+    for (struct module **m = _modules.begin(); m < _modules.end(); m++) {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	module_put(*m);
+# else
+	__MOD_DEC_USE_COUNT(*m);
+# endif
+    }
+#endif
+    
     for (int i = 0; i < _nhandlers_bufs; i += HANDLER_BUFSIZ)
 	delete[] _handler_bufs[i / HANDLER_BUFSIZ];
     delete[] _handler_bufs;
@@ -201,17 +214,43 @@ Router::elandmark(int ei) const
 // CREATION 
 
 int
-Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark)
+Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark
+#if CLICK_LINUXMODULE
+		    , struct module *module
+#endif
+		    )
 {
-    // router now owns the element
     if (_state != ROUTER_NEW || !e || e->router())
 	return -1;
+
+#if CLICK_LINUXMODULE
+    // increment module use count
+    if (!module)
+	goto found_module;
+    for (struct module **m = _modules.begin(); m < _modules.end(); m++)
+	if (*m == module)
+	    goto found_module;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 9)
+    if (try_module_get(module) == 0) {
+	delete e;
+	e = new ErrorElement;
+	goto found_module;
+    }
+# else
+    __MOD_INC_USE_COUNT(module);
+# endif
+    _modules.push_back(module);
+  found_module:
+#endif
+
     _elements.push_back(e);
     _element_names.push_back(ename);
     _element_landmarks.push_back(landmark);
     _element_configurations.push_back(conf);
     int i = _elements.size() - 1;
     e->attach_router(this, i);
+
+    // router now owns the element
     return i;
 }
 

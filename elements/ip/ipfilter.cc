@@ -267,12 +267,10 @@ IPFilter::static_cleanup()
 
 IPFilter::IPFilter()
 {
-  // no MOD_INC_USE_COUNT; rely on Classifier
 }
 
 IPFilter::~IPFilter()
 {
-  // no MOD_DEC_USE_COUNT; rely on Classifier
 }
 
 //

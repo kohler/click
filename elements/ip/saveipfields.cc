@@ -26,12 +26,10 @@ CLICK_DECLS
 SaveIPFields::SaveIPFields()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SaveIPFields::~SaveIPFields()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

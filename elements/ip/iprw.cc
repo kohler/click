@@ -454,12 +454,10 @@ IPMapper::get_map(IPRw *, int, const IPFlowID &, Packet *)
 
 IPRw::IPRw()
 {
-    MOD_INC_USE_COUNT;
 }
 
 IPRw::~IPRw()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

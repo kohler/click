@@ -26,7 +26,6 @@ CLICK_DECLS
 
 ScheduleInfo::ScheduleInfo()
 {
-  MOD_INC_USE_COUNT;
 #ifdef HAVE_STRIDE_SCHED
   static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
 #endif
@@ -34,7 +33,6 @@ ScheduleInfo::ScheduleInfo()
 
 ScheduleInfo::~ScheduleInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -30,12 +30,10 @@ CLICK_DECLS
 IP6NDAdvertiser::IP6NDAdvertiser()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IP6NDAdvertiser::~IP6NDAdvertiser()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

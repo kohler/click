@@ -26,12 +26,10 @@ CLICK_DECLS
 Strip::Strip()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 Strip::~Strip()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

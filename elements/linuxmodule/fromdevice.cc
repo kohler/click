@@ -71,14 +71,12 @@ FromDevice::static_cleanup()
 
 FromDevice::FromDevice()
 {
-    MOD_INC_USE_COUNT;
     add_output();
     _head = _tail = 0;
 }
 
 FromDevice::~FromDevice()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

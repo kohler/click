@@ -26,12 +26,10 @@ CLICK_DECLS
 CompareBlock::CompareBlock()
   : Element(1, 2), _fwd_weight(0), _rev_weight(1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CompareBlock::~CompareBlock()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

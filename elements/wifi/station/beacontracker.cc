@@ -42,12 +42,10 @@ BeaconTracker::BeaconTracker()
   : Element(1, 1),
     _winfo(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 BeaconTracker::~BeaconTracker()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

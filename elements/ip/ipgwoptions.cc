@@ -28,7 +28,6 @@ CLICK_DECLS
 
 IPGWOptions::IPGWOptions()
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
   add_input();
   add_output();
@@ -36,7 +35,6 @@ IPGWOptions::IPGWOptions()
 
 IPGWOptions::~IPGWOptions()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -24,12 +24,10 @@ CLICK_DECLS
 LIRMetric::LIRMetric()
   : GridGenericMetric(0, 0), _rt(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 LIRMetric::~LIRMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

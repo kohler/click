@@ -23,12 +23,10 @@ CLICK_DECLS
 ETXMetric::ETXMetric()
   : GridGenericMetric(0, 0), _ls(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ETXMetric::~ETXMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

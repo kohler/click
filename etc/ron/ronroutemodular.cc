@@ -31,7 +31,6 @@
 #define d2printf if(1)click_chatter
 
 RONRouteModular::RONRouteModular() {
-  MOD_INC_USE_COUNT;
   add_input();
 
   _flowtable = new FlowTable();
@@ -46,7 +45,6 @@ RONRouteModular::RONRouteModular() {
 RONRouteModular::~RONRouteModular(){
   int i;
 
-  MOD_DEC_USE_COUNT;
   delete(_flowtable);
   for(i=0; i<_policies.size(); i++)
     delete(_policies[i]);

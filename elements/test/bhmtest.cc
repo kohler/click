@@ -30,12 +30,10 @@ CLICK_DECLS
 
 BigHashMapTest::BigHashMapTest()
 {
-    MOD_INC_USE_COUNT;
 }
 
 BigHashMapTest::~BigHashMapTest()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 #define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);

@@ -23,14 +23,12 @@ CLICK_DECLS
 
 MarkIP6Header::MarkIP6Header()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 MarkIP6Header::~MarkIP6Header()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

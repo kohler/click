@@ -29,12 +29,10 @@ CLICK_DECLS
 ExtraDecap::ExtraDecap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ExtraDecap::~ExtraDecap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

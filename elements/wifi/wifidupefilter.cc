@@ -35,12 +35,10 @@ WifiDupeFilter::WifiDupeFilter()
     _dupes(0),
     _packets(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WifiDupeFilter::~WifiDupeFilter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

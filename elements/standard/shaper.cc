@@ -28,12 +28,10 @@ CLICK_DECLS
 Shaper::Shaper()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 Shaper::~Shaper()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

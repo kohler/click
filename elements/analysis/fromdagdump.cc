@@ -45,13 +45,11 @@ CLICK_DECLS
 FromDAGDump::FromDAGDump()
     : Element(0, 1), _packet(0), _end_h(0), _task(this)
 {
-    MOD_INC_USE_COUNT;
     static_assert(sizeof(DAGCell) == 64 && DAGCell::CELL_SIZE == 64);
 }
 
 FromDAGDump::~FromDAGDump()
 {
-    MOD_DEC_USE_COUNT;
     delete _end_h;
 }
 

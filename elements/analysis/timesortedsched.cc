@@ -27,12 +27,10 @@ CLICK_DECLS
 TimeSortedSched::TimeSortedSched()
     : Element(1, 1), _vec(0), _signals(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 TimeSortedSched::~TimeSortedSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

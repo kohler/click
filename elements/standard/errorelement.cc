@@ -23,12 +23,10 @@ CLICK_DECLS
 
 ErrorElement::ErrorElement()
 {
-    MOD_INC_USE_COUNT;
 }
 
 ErrorElement::~ErrorElement()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

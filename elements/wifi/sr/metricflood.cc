@@ -36,7 +36,6 @@ MetricFlood::MetricFlood()
      _link_table(0),
      _arp_table(0)
 {
-  MOD_INC_USE_COUNT;
 
   MaxSeen = 200;
   MaxHops = 30;
@@ -56,7 +55,6 @@ MetricFlood::MetricFlood()
 
 MetricFlood::~MetricFlood()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

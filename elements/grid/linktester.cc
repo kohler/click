@@ -43,13 +43,11 @@ LinkTester::LinkTester() :
   _bcast_lambda(1),
   _data_buf(0)
 {
-  MOD_INC_USE_COUNT;
   add_output();
 }
 
 LinkTester::~LinkTester()
 {
-  MOD_DEC_USE_COUNT;
   if (_data_buf)
     delete[] _data_buf;
 }

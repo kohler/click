@@ -28,12 +28,10 @@ CLICK_DECLS
 Unqueue::Unqueue()
     : Element(1, 1), _task(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 Unqueue::~Unqueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

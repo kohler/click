@@ -25,14 +25,12 @@ CLICK_DECLS
 AggregateFirst::AggregateFirst()
     : Element(1, 1), _agg_notifier(0)
 {
-    MOD_INC_USE_COUNT;
     memset(_kills, 0, sizeof(_kills));
     memset(_counts, 0, sizeof(_counts));
 }
 
 AggregateFirst::~AggregateFirst()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

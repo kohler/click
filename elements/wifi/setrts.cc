@@ -28,12 +28,10 @@ CLICK_DECLS
 SetRTS::SetRTS()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetRTS::~SetRTS()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

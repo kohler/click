@@ -26,14 +26,12 @@
 
 PerfCountAccum::PerfCountAccum()
 {
-  // no MOD_INC_USE_COUNT; rely on PerfCountUser
   add_input();
   add_output();
 }
 
 PerfCountAccum::~PerfCountAccum()
 {
-  // no MOD_DEC_USE_COUNT; rely on PerfCountUser
 }
 
 void *

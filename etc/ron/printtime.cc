@@ -36,7 +36,6 @@
 IPPrintTime::IPPrintTime()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 #if CLICK_USERLEVEL
   _outfile = 0;
 #endif
@@ -44,7 +43,6 @@ IPPrintTime::IPPrintTime()
 
 IPPrintTime::~IPPrintTime()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

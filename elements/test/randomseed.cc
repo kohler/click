@@ -24,12 +24,10 @@ CLICK_DECLS
 
 RandomSeed::RandomSeed()
 {
-    MOD_INC_USE_COUNT;
 }
 
 RandomSeed::~RandomSeed()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -24,12 +24,10 @@ CLICK_DECLS
 CopyTCPSeq::CopyTCPSeq()
   : Element(2, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CopyTCPSeq::~CopyTCPSeq()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

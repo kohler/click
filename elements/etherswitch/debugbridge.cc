@@ -25,12 +25,10 @@ CLICK_DECLS
 DebugBridge::DebugBridge()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 DebugBridge::~DebugBridge()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

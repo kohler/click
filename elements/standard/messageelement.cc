@@ -24,12 +24,10 @@ CLICK_DECLS
 
 MessageElement::MessageElement()
 {
-    MOD_INC_USE_COUNT;
 }
 
 MessageElement::~MessageElement()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

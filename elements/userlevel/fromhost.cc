@@ -42,12 +42,10 @@ FromHost::FromHost()
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
     _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FromHost::~FromHost()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

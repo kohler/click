@@ -22,12 +22,10 @@ CLICK_DECLS
 NullElement::NullElement()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 NullElement::~NullElement()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *
@@ -39,12 +37,10 @@ NullElement::simple_action(Packet *p)
 PushNullElement::PushNullElement()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PushNullElement::~PushNullElement()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void
@@ -56,12 +52,10 @@ PushNullElement::push(int, Packet *p)
 PullNullElement::PullNullElement()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PullNullElement::~PullNullElement()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

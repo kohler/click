@@ -34,13 +34,11 @@ SetGateway::SetGateway()
      _gw_sel(0),
      _timer(this)
 {
-  MOD_INC_USE_COUNT;
 
 }
 
 SetGateway::~SetGateway()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

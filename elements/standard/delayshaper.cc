@@ -28,12 +28,10 @@ CLICK_DECLS
 DelayShaper::DelayShaper()
     : Element(1, 1), _p(0), _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 DelayShaper::~DelayShaper()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

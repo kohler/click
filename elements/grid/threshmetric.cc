@@ -23,12 +23,10 @@ CLICK_DECLS
 ThresholdMetric::ThresholdMetric()
   : GridGenericMetric(0, 0), _ls(0), _thresh(63), _twoway(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ThresholdMetric::~ThresholdMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

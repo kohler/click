@@ -43,14 +43,12 @@ BeaconSource::BeaconSource()
     _timer(this),
     _rtable(0)
 {
-  MOD_INC_USE_COUNT;
   _bcast = EtherAddress();
   memset(_bcast.data(), 0xff, 6);
 }
 
 BeaconSource::~BeaconSource()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,14 +25,12 @@ CLICK_DECLS
 
 StrideSched::StrideSched()
 {
-    MOD_INC_USE_COUNT;
     _list = new Client;
     _list->make_head();
 }
 
 StrideSched::~StrideSched()
 {
-    MOD_DEC_USE_COUNT;
     delete _list;
 }
 

@@ -33,7 +33,6 @@ CLICK_DECLS
 BIM::BIM()
   : Element(1, 1), _task(this)
 {
-  MOD_INC_USE_COUNT;
   _speed = 9600;
   _fd = -1;
   _len = _started = _escaped = 0;
@@ -41,7 +40,6 @@ BIM::BIM()
 
 BIM::~BIM()
 {
-  MOD_DEC_USE_COUNT;
   if(_fd >= 0)
     close(_fd);
 }

@@ -24,12 +24,10 @@ CLICK_DECLS
 TimestampAccum::TimestampAccum()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 TimestampAccum::~TimestampAccum()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -27,12 +27,10 @@ CLICK_DECLS
 SendGridHello::SendGridHello()
   : Element(0, 1), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SendGridHello::~SendGridHello()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

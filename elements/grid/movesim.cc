@@ -27,14 +27,12 @@ CLICK_DECLS
 MovementSimulator::MovementSimulator() 
   : _event_timer(event_hook, this)
 {
-  MOD_INC_USE_COUNT;
   _events = new event_entry;
   _events->next = _events;
 }
 
 MovementSimulator::~MovementSimulator()
 {
-  MOD_DEC_USE_COUNT;
   event_entry *cur = _events->next;
   event_entry *next;
   while (cur != _events) {

@@ -29,12 +29,10 @@ CLICK_DECLS
 
 FilterByGridHops::FilterByGridHops() : Element(1, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FilterByGridHops::~FilterByGridHops()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

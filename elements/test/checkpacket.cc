@@ -25,12 +25,10 @@ CLICK_DECLS
 CheckPacket::CheckPacket()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 CheckPacket::~CheckPacket()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

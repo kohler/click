@@ -30,12 +30,10 @@ CLICK_DECLS
 TCPConn::TCPConn()
   : Element(2, 3), _active(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TCPConn::~TCPConn()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

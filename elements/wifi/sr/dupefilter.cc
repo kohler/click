@@ -34,12 +34,10 @@ DupeFilter::DupeFilter()
     _window(10),
     _debug(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 DupeFilter::~DupeFilter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

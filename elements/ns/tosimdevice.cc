@@ -45,12 +45,10 @@ CLICK_DECLS
 ToSimDevice::ToSimDevice()
   : Element(1, 0), _fd(-1), _my_fd(false), _task(this), _encap_type(SIMCLICK_PTYPE_ETHER)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ToSimDevice::~ToSimDevice()
 {
-  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

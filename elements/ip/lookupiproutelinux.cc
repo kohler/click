@@ -40,7 +40,6 @@ CLICK_DECLS
 
 LinuxIPLookup::LinuxIPLookup()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 
   _nout = 0;
@@ -51,7 +50,6 @@ LinuxIPLookup::LinuxIPLookup()
 
 LinuxIPLookup::~LinuxIPLookup()
 {
-  MOD_DEC_USE_COUNT;
 #ifdef CLICK_LINUXMODULE
   if(_out2dev)
     delete[] _out2dev;

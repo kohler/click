@@ -31,12 +31,10 @@ FilterPhyErr::FilterPhyErr()
     _drops(0)
   
 {
-  MOD_INC_USE_COUNT;
 }
 
 FilterPhyErr::~FilterPhyErr()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

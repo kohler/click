@@ -29,14 +29,12 @@ CLICK_DECLS
 CheckGridHeader::CheckGridHeader()
   : _drops(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 CheckGridHeader::~CheckGridHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

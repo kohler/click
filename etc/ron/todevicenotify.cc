@@ -55,7 +55,6 @@ ToDeviceNotify::ToDeviceNotify()
 
 ToDeviceNotify::~ToDeviceNotify() 
 {
-  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

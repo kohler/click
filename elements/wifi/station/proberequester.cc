@@ -43,12 +43,10 @@ ProbeRequester::ProbeRequester()
     _rtable(0),
     _winfo(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ProbeRequester::~ProbeRequester()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

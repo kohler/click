@@ -34,12 +34,10 @@ CLICK_DECLS
 LookupLocalGridRoute2::LookupLocalGridRoute2()
   : Element(1, 1), _rtes(0), _log(0), _verbose(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 LookupLocalGridRoute2::~LookupLocalGridRoute2()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

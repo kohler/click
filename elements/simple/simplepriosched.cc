@@ -22,13 +22,11 @@ CLICK_DECLS
 
 SimplePrioSched::SimplePrioSched()
 {
-    MOD_INC_USE_COUNT;
     add_output();
 }
 
 SimplePrioSched::~SimplePrioSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

@@ -73,12 +73,10 @@ handler_info_array[] = {
 
 GridHeaderInfo::GridHeaderInfo()
 {
-  MOD_INC_USE_COUNT;
 }
 
 GridHeaderInfo::~GridHeaderInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

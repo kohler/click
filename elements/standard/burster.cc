@@ -25,12 +25,10 @@ CLICK_DECLS
 Burster::Burster()
   : Element(1, 1), _npackets(0), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Burster::~Burster()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -30,12 +30,10 @@ CLICK_DECLS
 UDPIPEncap::UDPIPEncap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 UDPIPEncap::~UDPIPEncap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

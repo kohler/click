@@ -28,34 +28,30 @@
 
 SamplePackageElement::SamplePackageElement()
 {
-  // CONSTRUCTOR MUST MOD_INC_USE_COUNT
-  MOD_INC_USE_COUNT;
 }
 
 SamplePackageElement::~SamplePackageElement()
 {
-  // DESTRUCTOR MUST MOD_DEC_USE_COUNT
-  MOD_DEC_USE_COUNT;
 }
 
 int
 SamplePackageElement::initialize(ErrorHandler *errh)
 {
-  errh->message("Successfully linked with package!");
-  return 0;
+    errh->message("Successfully linked with package!");
+    return 0;
 }
 
 static String
 read_handler(Element *, void *)
 {
-  return "false\n";
+    return "false\n";
 }
 
 void
 SamplePackageElement::add_handlers()
 {
-  // needed for QuitWatcher
-  add_read_handler("scheduled", read_handler, 0);
+    // needed for QuitWatcher
+    add_read_handler("scheduled", read_handler, 0);
 }
 
 EXPORT_ELEMENT(SamplePackageElement)

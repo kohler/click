@@ -85,14 +85,12 @@ AggregatePacketCounter::Flow::undelivered(Vector<uint32_t> &undelivered, const A
 
 AggregatePacketCounter::AggregatePacketCounter()
 {
-    MOD_INC_USE_COUNT;
     for (int i = 0; i < NFLOWMAP; i++)
 	_flowmap[i] = 0;
 }
 
 AggregatePacketCounter::~AggregatePacketCounter()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

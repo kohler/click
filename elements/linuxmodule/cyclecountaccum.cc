@@ -23,12 +23,10 @@
 CycleCountAccum::CycleCountAccum()
     : Element(1, 1), _accum(0), _count(0), _zero_count(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 CycleCountAccum::~CycleCountAccum()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 inline void

@@ -109,12 +109,10 @@ TulipStats::static_initialize()
 TulipStats::TulipStats()
   : _task(this)
 {
-  // no MOD_INC_USE_COUNT; rely on AnyDevice
 }
 
 TulipStats::~TulipStats()
 {
-  // no MOD_DEC_USE_COUNT; rely on AnyDevice
 }
 
 

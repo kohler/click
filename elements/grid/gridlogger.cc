@@ -25,11 +25,9 @@ CLICK_DECLS
 GridLogger::GridLogger() 
   : GridGenericLogger(), _state(WAITING), _fd(-1), _bufptr(0) 
 { 
-  MOD_INC_USE_COUNT; 
 }
 
 GridLogger::~GridLogger() { 
-  MOD_DEC_USE_COUNT;
   if (log_is_open())
     close_log();
 }

@@ -33,14 +33,12 @@ CLICK_CXX_UNPROTECT
 AnyDevice::AnyDevice()
     : _dev(0), _promisc(false), _in_map(false), _next(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AnyDevice::~AnyDevice()
 {
     if (_in_map || _dev)
 	click_chatter("%s: bad device destructor!", id().cc());
-    MOD_DEC_USE_COUNT;
 }
 
 int

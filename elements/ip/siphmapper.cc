@@ -1,7 +1,7 @@
 /*
  * sourceipmapper.{cc,hh} -- source IP mapper (using consistent hashing)
  *
- * $Id: siphmapper.cc,v 1.5 2005/01/04 03:25:04 eddietwo Exp $
+ * $Id: siphmapper.cc,v 1.6 2005/02/07 20:40:53 eddietwo Exp $
  *
  */
 
@@ -18,12 +18,10 @@ CLICK_DECLS
 SourceIPHashMapper::SourceIPHashMapper()
   : _hasher (NULL)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SourceIPHashMapper::~SourceIPHashMapper()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

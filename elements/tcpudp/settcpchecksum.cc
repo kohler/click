@@ -27,12 +27,10 @@ CLICK_DECLS
 SetTCPChecksum::SetTCPChecksum()
   : Element(1, 1), _fixoff(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetTCPChecksum::~SetTCPChecksum()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

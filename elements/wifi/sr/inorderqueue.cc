@@ -42,12 +42,10 @@ InOrderQueue::InOrderQueue()
 {
     set_ninputs(1);
     set_noutputs(1);
-    MOD_INC_USE_COUNT;
 }
 
 InOrderQueue::~InOrderQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

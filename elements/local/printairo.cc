@@ -56,12 +56,10 @@ struct an_rxframe {
 PrintAiro::PrintAiro()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PrintAiro::~PrintAiro()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

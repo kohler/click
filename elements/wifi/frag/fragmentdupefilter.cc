@@ -32,12 +32,10 @@ CLICK_DECLS
 FragmentDupeFilter::FragmentDupeFilter()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FragmentDupeFilter::~FragmentDupeFilter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

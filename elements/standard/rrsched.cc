@@ -24,12 +24,10 @@ CLICK_DECLS
 RRSched::RRSched()
     : Element(0, 1), _next(0), _signals(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 RRSched::~RRSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

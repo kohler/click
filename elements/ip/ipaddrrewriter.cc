@@ -64,12 +64,10 @@ IPAddrRewriter::IPAddrMapping::unparse() const
 IPAddrRewriter::IPAddrRewriter()
     : _map(0), _timer(this)
 {
-    // no MOD_INC_USE_COUNT; rely on IPRw
 }
 
 IPAddrRewriter::~IPAddrRewriter()
 {
-    // no MOD_DEC_USE_COUNT; rely on IPRw
     assert(!_timer.scheduled());
 }
 

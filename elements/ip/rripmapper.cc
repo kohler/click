@@ -23,12 +23,10 @@ CLICK_DECLS
 
 RoundRobinIPMapper::RoundRobinIPMapper()
 {
-  MOD_INC_USE_COUNT;
 }
 
 RoundRobinIPMapper::~RoundRobinIPMapper()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

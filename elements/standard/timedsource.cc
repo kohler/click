@@ -26,12 +26,10 @@ CLICK_DECLS
 TimedSource::TimedSource()
   : Element(0, 1), _packet(0), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TimedSource::~TimedSource()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -37,13 +37,11 @@ const char *CheckTCPHeader::reason_texts[NREASONS] = {
 CheckTCPHeader::CheckTCPHeader()
   : Element(1, 1), _reason_drops(0)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckTCPHeader::~CheckTCPHeader()
 {
-  MOD_DEC_USE_COUNT;
   delete[] _reason_drops;
 }
 

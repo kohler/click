@@ -25,12 +25,10 @@ CLICK_DECLS
 CheckPaint::CheckPaint()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CheckPaint::~CheckPaint()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

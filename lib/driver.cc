@@ -95,24 +95,16 @@ extern "C" void
 click_provide(const char *package)
 {
     ClickProvision *p = find_provision(package);
-    if (p) {
-#ifndef CLICK_TOOL
-	MOD_INC_USE_COUNT;
-#endif
+    if (p)
 	p->provided++;
-    }
 }
 
 extern "C" void
 click_unprovide(const char *package)
 {
     ClickProvision *p = find_provision(package);
-    if (p && p->provided > 0) {
-#ifndef CLICK_TOOL
-	MOD_DEC_USE_COUNT;
-#endif
+    if (p && p->provided > 0)
 	p->provided--;
-    }
 }
 
 extern "C" bool

@@ -26,12 +26,10 @@
 DiscardNotify::DiscardNotify() : 
   Discard()
 {
-  //MOD_INC_USE_COUNT;
 }
 
 DiscardNotify::~DiscardNotify()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

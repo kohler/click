@@ -29,12 +29,10 @@ EtherSpanTree::EtherSpanTree()
     _long_cache_timeout(5*60),
     _hello_timer(hello_hook, this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 EtherSpanTree::~EtherSpanTree()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

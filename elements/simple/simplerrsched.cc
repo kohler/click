@@ -21,14 +21,12 @@ CLICK_DECLS
 
 SimpleRRSched::SimpleRRSched()
 {
-  MOD_INC_USE_COUNT;
   add_output();
   _next = 0;
 }
 
 SimpleRRSched::~SimpleRRSched()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

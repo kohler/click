@@ -29,7 +29,6 @@ CLICK_DECLS
 IP6NDSolicitor::IP6NDSolicitor()
 : _expire_timer(expire_hook, this)
 {
-  MOD_INC_USE_COUNT;
   add_input(); /* IP6 packets */
   add_input(); /* ether/N.Advertisement responses */
   add_output();/* ether/IP6 and ether/N.Solicitation queries */
@@ -39,7 +38,6 @@ IP6NDSolicitor::IP6NDSolicitor()
 
 IP6NDSolicitor::~IP6NDSolicitor()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -27,12 +27,10 @@ GridLocationInfo2::GridLocationInfo2()
   : _seq_no(0), _tag("<unknown>"),
     _loc_good(false), _loc_err(0), _loc(0L, 0L, 0L)
 {
-  MOD_INC_USE_COUNT;
 }
 
 GridLocationInfo2::~GridLocationInfo2()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

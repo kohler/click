@@ -35,12 +35,10 @@ CLICK_DECLS
 LookupGeographicGridRoute::LookupGeographicGridRoute()
   : Element(1, 2), _rt(0), _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 LookupGeographicGridRoute::~LookupGeographicGridRoute()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -32,14 +32,12 @@ AggregateFilter::Group::Group(uint32_t aggregate)
 AggregateFilter::AggregateFilter()
     : Element(1, 1), _default_output(1)
 {
-    MOD_INC_USE_COUNT;
     for (unsigned i = 0; i < NBUCKETS; i++)
 	_groups[i] = 0;
 }
 
 AggregateFilter::~AggregateFilter()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

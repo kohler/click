@@ -27,12 +27,10 @@ CLICK_DECLS
 
 FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FilterByRange::~FilterByRange()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

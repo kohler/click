@@ -64,13 +64,11 @@ PollDevice::static_cleanup()
 
 PollDevice::PollDevice()
 {
-    MOD_INC_USE_COUNT;
     add_output();
 }
 
 PollDevice::~PollDevice()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 

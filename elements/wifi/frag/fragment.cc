@@ -31,12 +31,10 @@ CLICK_DECLS
 Fragment::Fragment()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Fragment::~Fragment()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

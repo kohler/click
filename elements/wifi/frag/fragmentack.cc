@@ -32,12 +32,10 @@ CLICK_DECLS
 FragmentAck::FragmentAck()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FragmentAck::~FragmentAck()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

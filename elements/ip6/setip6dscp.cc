@@ -25,12 +25,10 @@ CLICK_DECLS
 SetIP6DSCP::SetIP6DSCP()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetIP6DSCP::~SetIP6DSCP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

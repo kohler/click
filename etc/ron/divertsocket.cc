@@ -55,14 +55,12 @@
 
 DivertSocket::DivertSocket()
 {
-  MOD_INC_USE_COUNT;
   _fd = -1;
 }
 
 
 DivertSocket::~DivertSocket() 
 {
-  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

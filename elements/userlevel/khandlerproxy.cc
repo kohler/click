@@ -31,12 +31,10 @@ CLICK_DECLS
 KernelHandlerProxy::KernelHandlerProxy()
   : _detailed_error_message(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 KernelHandlerProxy::~KernelHandlerProxy()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

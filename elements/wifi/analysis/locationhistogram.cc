@@ -28,12 +28,10 @@ CLICK_DECLS
 LocationHistogram::LocationHistogram()
   : Element(1,1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 LocationHistogram::~LocationHistogram()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -41,12 +41,10 @@ AssociationResponder::AssociationResponder()
     _rtable(0),
     _winfo(0)  
 {
-  MOD_INC_USE_COUNT;
 }
 
 AssociationResponder::~AssociationResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

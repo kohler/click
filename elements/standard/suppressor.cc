@@ -24,12 +24,10 @@ CLICK_DECLS
 
 Suppressor::Suppressor()
 {
-  MOD_INC_USE_COUNT;
 }
 
 Suppressor::~Suppressor()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

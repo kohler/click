@@ -25,12 +25,10 @@ CLICK_DECLS
 
 LocationTable::LocationTable()
 {
-  MOD_INC_USE_COUNT;
 }
 
 LocationTable::~LocationTable()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -30,12 +30,10 @@ ChangeUID::ChangeUID()
   : Element(0, 0),
     _timer(timer_hook, this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ChangeUID::~ChangeUID()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

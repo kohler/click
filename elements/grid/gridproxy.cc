@@ -25,7 +25,6 @@ CLICK_DECLS
 
 GridProxy::GridProxy()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_input();
   add_output();
@@ -34,7 +33,6 @@ GridProxy::GridProxy()
 
 GridProxy::~GridProxy()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void 

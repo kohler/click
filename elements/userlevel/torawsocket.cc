@@ -39,12 +39,10 @@ CLICK_DECLS
 ToRawSocket::ToRawSocket()
   : Element(1, 0), _task(this), _fd(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ToRawSocket::~ToRawSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

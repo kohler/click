@@ -39,12 +39,10 @@ ProbeResponder::ProbeResponder()
   : Element(1, 1),
     _rtable(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ProbeResponder::~ProbeResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

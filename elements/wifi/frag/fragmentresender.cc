@@ -90,12 +90,10 @@ FragmentResender::FragmentResender()
     _timer(this),
     _max_retries(15)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FragmentResender::~FragmentResender()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

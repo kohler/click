@@ -23,12 +23,10 @@ CLICK_DECLS
 DiscardNoFree::DiscardNoFree()
   : Element(1, 0), _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 DiscardNoFree::~DiscardNoFree()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

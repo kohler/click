@@ -32,13 +32,11 @@ static AnyDeviceMap fromhost_map;
 FromHost::FromHost()
 	: _inq(0)
 {
-    MOD_INC_USE_COUNT;
     add_output();
 }
 
 FromHost::~FromHost()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -7,7 +7,6 @@ CLICK_DECLS
 DupPath::DupPath()
   : Element(1,2)
 {
-  MOD_INC_USE_COUNT;
   set_ninputs(1);
   _q._q = 0;
   _q._head = _q._tail = 0;
@@ -15,7 +14,6 @@ DupPath::DupPath()
 
 DupPath::~DupPath()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int 

@@ -28,12 +28,10 @@ CLICK_DECLS
 TCPDemux::TCPDemux()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TCPDemux::~TCPDemux()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

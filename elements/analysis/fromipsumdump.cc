@@ -49,12 +49,10 @@ FromIPSummaryDump::FromIPSummaryDump()
     : Element(0, 1), _work_packet(0), _task(this)
 {
     _ff.set_landmark_pattern("%f:%l");
-    MOD_INC_USE_COUNT;
 }
 
 FromIPSummaryDump::~FromIPSummaryDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

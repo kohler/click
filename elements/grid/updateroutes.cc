@@ -32,12 +32,10 @@ UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3),
   _sanity_timer(sanity_hook, this),
   _num_updates_sent(0), _seq_no(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 UpdateGridRoutes::~UpdateGridRoutes()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

@@ -39,12 +39,10 @@ CLICK_DECLS
 ICMPPingSource::ICMPPingSource()
     : Element(0, 1), _limit(-1), _timer(this), _receiver(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ICMPPingSource::~ICMPPingSource()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

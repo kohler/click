@@ -26,14 +26,12 @@ CLICK_DECLS
 
 CheckIPHeader2::CheckIPHeader2()
 {
-  MOD_INC_USE_COUNT;
   // other stuff belongs to CheckIPHeader
   _checksum = false;
 }
 
 CheckIPHeader2::~CheckIPHeader2()
 {
-  MOD_DEC_USE_COUNT;
   // other stuff belongs to CheckIPHeader
 }
 

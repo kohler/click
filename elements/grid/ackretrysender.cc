@@ -33,12 +33,10 @@ ACKRetrySender::ACKRetrySender()
     _waiting_packet(0), _verbose(true), 
     _timer(this), _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ACKRetrySender::~ACKRetrySender()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -23,12 +23,10 @@ CLICK_DECLS
 UnstripIPHeader::UnstripIPHeader()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 UnstripIPHeader::~UnstripIPHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

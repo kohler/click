@@ -31,12 +31,10 @@ CLICK_DECLS
 WifiSeq::WifiSeq()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WifiSeq::~WifiSeq()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

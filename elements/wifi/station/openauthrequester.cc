@@ -35,12 +35,10 @@ CLICK_DECLS
 OpenAuthRequester::OpenAuthRequester()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 OpenAuthRequester::~OpenAuthRequester()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

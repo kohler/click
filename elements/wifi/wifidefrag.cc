@@ -30,12 +30,10 @@ CLICK_DECLS
 WifiDefrag::WifiDefrag()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WifiDefrag::~WifiDefrag()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

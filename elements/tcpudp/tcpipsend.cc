@@ -30,12 +30,10 @@ CLICK_DECLS
 TCPIPSend::TCPIPSend()
   : Element(0, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TCPIPSend::~TCPIPSend()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

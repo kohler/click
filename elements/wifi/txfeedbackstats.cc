@@ -29,14 +29,12 @@ CLICK_DECLS
 TXFeedbackStats::TXFeedbackStats()
   : _tau(10000), _min_pkts(10)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 TXFeedbackStats::~TXFeedbackStats()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

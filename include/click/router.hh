@@ -123,7 +123,11 @@ class Router { public:
   
     // INITIALIZATION
     void add_requirement(const String&);
+#if CLICK_LINUXMODULE
+    int add_element(Element*, const String& name, const String& conf, const String& landmark, struct module *);
+#else
     int add_element(Element*, const String& name, const String& conf, const String& landmark);
+#endif
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
   
     int initialize(ErrorHandler*);
@@ -201,7 +205,11 @@ class Router { public:
     ThreadSched* _thread_sched;
 
     Router* _next_router;
-  
+
+#if CLICK_LINUXMODULE
+    Vector<struct module*> _modules;
+#endif
+    
     Router(const Router&);
     Router& operator=(const Router&);
   

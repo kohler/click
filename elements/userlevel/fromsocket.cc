@@ -35,12 +35,10 @@ FromSocket::FromSocket()
   : Element(0, 1), _verbose(false), _fd(-1),
     _snaplen(2048), _frame(true)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FromSocket::~FromSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -26,12 +26,10 @@ CLICK_DECLS
 
 AlignmentInfo::AlignmentInfo()
 {
-  MOD_INC_USE_COUNT;
 }
 
 AlignmentInfo::~AlignmentInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

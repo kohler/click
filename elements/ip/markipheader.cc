@@ -24,12 +24,10 @@ CLICK_DECLS
 MarkIPHeader::MarkIPHeader()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 MarkIPHeader::~MarkIPHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,12 +25,10 @@ CLICK_DECLS
 Block::Block()
   : Element(1, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Block::~Block()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

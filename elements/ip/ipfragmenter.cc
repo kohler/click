@@ -28,14 +28,12 @@ CLICK_DECLS
 IPFragmenter::IPFragmenter()
     : Element(1, 1), _honor_df(true), _verbose(false), _mtu(0)
 {
-    MOD_INC_USE_COUNT;
     _fragments = 0;
     _drops = 0;
 }
 
 IPFragmenter::~IPFragmenter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

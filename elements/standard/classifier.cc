@@ -151,12 +151,10 @@ Classifier::Expr::s() const
 Classifier::Classifier()
   : Element(1, 0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Classifier::~Classifier()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 //

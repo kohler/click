@@ -12,12 +12,10 @@ CLICK_DECLS
 TXFLog::TXFLog()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TXFLog::~TXFLog()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

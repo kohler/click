@@ -42,12 +42,10 @@ ToHost::ToHost()
   : Element(1, 0), 
     _fd(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ToHost::~ToHost()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

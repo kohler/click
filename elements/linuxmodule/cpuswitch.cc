@@ -19,13 +19,11 @@
 
 CPUSwitch::CPUSwitch()
 {
-  MOD_INC_USE_COUNT;
   set_ninputs(1);
 }
 
 CPUSwitch::~CPUSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

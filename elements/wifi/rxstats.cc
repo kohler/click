@@ -29,14 +29,12 @@ CLICK_DECLS
 RXStats::RXStats()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
 }
 
 RXStats::~RXStats()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

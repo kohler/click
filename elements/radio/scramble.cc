@@ -22,12 +22,10 @@ CLICK_DECLS
 Scramble::Scramble()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Scramble::~Scramble()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 static unsigned char pattern[] = {

@@ -35,7 +35,6 @@ LocalBroadcast::LocalBroadcast()
      _packets_tx(0),
      _packets_rx(0)
 {
-  MOD_INC_USE_COUNT;
 
   // Pick a starting sequence number that we have not used before.
   struct timeval tv;
@@ -48,7 +47,6 @@ LocalBroadcast::LocalBroadcast()
 
 LocalBroadcast::~LocalBroadcast()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

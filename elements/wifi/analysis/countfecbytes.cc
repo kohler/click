@@ -28,14 +28,12 @@ CLICK_DECLS
 CountFecBytes::CountFecBytes()
   : Element(1,1)
 {
-  MOD_INC_USE_COUNT;
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
 }
 
 CountFecBytes::~CountFecBytes()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

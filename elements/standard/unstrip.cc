@@ -25,12 +25,10 @@ CLICK_DECLS
 Unstrip::Unstrip(unsigned nbytes)
   : Element(1, 1), _nbytes(nbytes)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Unstrip::~Unstrip()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

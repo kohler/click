@@ -14,13 +14,11 @@ CLICK_DECLS
 MSQueue::MSQueue()
   : Element(1, 1), _q(0)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 MSQueue::~MSQueue()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

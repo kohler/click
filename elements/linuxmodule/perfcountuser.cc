@@ -28,13 +28,11 @@
 
 PerfCountUser::PerfCountUser()
 {
-  MOD_INC_USE_COUNT;
   _metric0 = _metric1 = -2;
 }
 
 PerfCountUser::~PerfCountUser()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 static int

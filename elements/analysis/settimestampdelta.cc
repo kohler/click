@@ -26,12 +26,10 @@ CLICK_DECLS
 SetTimestampDelta::SetTimestampDelta()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 SetTimestampDelta::~SetTimestampDelta()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 Packet *

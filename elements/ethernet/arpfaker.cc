@@ -28,13 +28,11 @@ CLICK_DECLS
 ARPFaker::ARPFaker()
   : _timer(this)
 {
-  MOD_INC_USE_COUNT;
   add_output();
 }
 
 ARPFaker::~ARPFaker()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

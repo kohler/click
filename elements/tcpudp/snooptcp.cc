@@ -35,12 +35,10 @@ CLICK_DECLS
 SnoopTCP::SnoopTCP()
   : Element(2, 4)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SnoopTCP::~SnoopTCP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -24,14 +24,12 @@ CLICK_DECLS
 SetRandIPAddress::SetRandIPAddress()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _max = -1;
   _addrs = 0;
 }
 
 SetRandIPAddress::~SetRandIPAddress()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

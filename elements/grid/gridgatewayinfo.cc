@@ -26,13 +26,11 @@ CLICK_DECLS
 GridGatewayInfo::GridGatewayInfo()
   : Element(1,1)
 {
-  MOD_INC_USE_COUNT;
   _is_gateway = false;
 }
 
 GridGatewayInfo::~GridGatewayInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

@@ -24,12 +24,10 @@ CLICK_DECLS
 ChuckCheck::ChuckCheck()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ChuckCheck::~ChuckCheck()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

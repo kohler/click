@@ -25,12 +25,10 @@ CLICK_DECLS
 SimpleQueue::SimpleQueue()
     : Element(1, 1), _q(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 SimpleQueue::~SimpleQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

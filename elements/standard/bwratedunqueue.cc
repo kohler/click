@@ -23,12 +23,10 @@ CLICK_DECLS
 
 BandwidthRatedUnqueue::BandwidthRatedUnqueue()
 {
-    // no MOD_INC_USE_COUNT; rely on RatedUnqueue
 }
 
 BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
 {
-    // no MOD_DEC_USE_COUNT; rely on RatedUnqueue
 }
 
 bool

@@ -30,12 +30,10 @@ CLICK_DECLS
 WifiFragment::WifiFragment()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WifiFragment::~WifiFragment()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

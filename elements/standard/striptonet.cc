@@ -25,12 +25,10 @@ CLICK_DECLS
 StripToNetworkHeader::StripToNetworkHeader()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 StripToNetworkHeader::~StripToNetworkHeader()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 Packet *

@@ -39,7 +39,6 @@ CLICK_DECLS
 DSRArpTable::DSRArpTable()
   : _debug(false)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_input();
   add_input();
@@ -50,7 +49,6 @@ DSRArpTable::DSRArpTable()
 
 DSRArpTable::~DSRArpTable()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -28,12 +28,10 @@ CLICK_DECLS
 PushAnno::PushAnno()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PushAnno::~PushAnno()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

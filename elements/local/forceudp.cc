@@ -27,14 +27,12 @@ CLICK_DECLS
 ForceUDP::ForceUDP()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _count = 0;
   _dport = -1;
 }
 
 ForceUDP::~ForceUDP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -33,12 +33,10 @@ CLICK_DECLS
 ToIPSummaryDump::ToIPSummaryDump()
     : Element(1, 0), _f(0), _task(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ToIPSummaryDump::~ToIPSummaryDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

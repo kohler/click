@@ -29,12 +29,10 @@ CLICK_DECLS
 SetTXRate::SetTXRate()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetTXRate::~SetTXRate()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -65,13 +65,11 @@ ToDevice::static_cleanup()
 ToDevice::ToDevice()
     : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)
 {
-    MOD_INC_USE_COUNT;
     add_input();
 }
 
 ToDevice::~ToDevice()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 

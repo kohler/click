@@ -24,12 +24,10 @@ CLICK_DECLS
 
 StrideSwitch::StrideSwitch()
 {
-  // no MOD_INC_USE_COUNT; rely on StrideSched
 }
 
 StrideSwitch::~StrideSwitch()
 {
-  // no MOD_DEC_USE_COUNT; rely on StrideSched
 }
 
 int

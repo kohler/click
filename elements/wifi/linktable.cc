@@ -28,14 +28,12 @@ CLICK_DECLS
 LinkTable::LinkTable() 
   : _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 
 
 LinkTable::~LinkTable() 
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

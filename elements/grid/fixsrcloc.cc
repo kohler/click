@@ -28,12 +28,10 @@ CLICK_DECLS
 
 FixSrcLoc::FixSrcLoc() : Element(1, 1), _locinfo(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FixSrcLoc::~FixSrcLoc()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

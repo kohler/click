@@ -37,12 +37,10 @@ ToSocket::ToSocket()
   : Element(1, 0), _task(this), _verbose(false), _fd(-1), _active(-1),
     _snaplen(2048), _nodelay(1), _frame(true)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ToSocket::~ToSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -386,12 +386,10 @@ AggregateIP::Field::unparse() const
 AggregateIP::AggregateIP()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AggregateIP::~AggregateIP()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

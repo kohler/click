@@ -38,7 +38,6 @@ CLICK_DECLS
 IPPrint::IPPrint()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 #if CLICK_USERLEVEL
   _outfile = 0;
 #endif
@@ -46,7 +45,6 @@ IPPrint::IPPrint()
 
 IPPrint::~IPPrint()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

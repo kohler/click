@@ -23,7 +23,6 @@ prefix_order_compar(const void *athunk, const void *bthunk)
 
 TrieIPLookup::TrieIPLookup()
 {
-    MOD_INC_USE_COUNT;
     add_input();
 
     // initialize _default_rope
@@ -40,7 +39,6 @@ TrieIPLookup::TrieIPLookup()
 
 TrieIPLookup::~TrieIPLookup()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void TrieIPLookup::notify_noutputs(int n)

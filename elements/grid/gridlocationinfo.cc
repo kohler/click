@@ -27,7 +27,6 @@ CLICK_DECLS
 
 GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, this)
 {
-  MOD_INC_USE_COUNT;
   _move = 0;
   _lat0 = 32.2816;  // Doug's house in Bermuda.
   _lon0 = -64.7685;
@@ -45,7 +44,6 @@ GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, 
 
 GridLocationInfo::~GridLocationInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

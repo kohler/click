@@ -31,12 +31,10 @@ CLICK_DECLS
 ICMPPingResponder::ICMPPingResponder()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ICMPPingResponder::~ICMPPingResponder()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

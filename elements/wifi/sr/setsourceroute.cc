@@ -35,12 +35,10 @@ SetSourceRoute::SetSourceRoute()
   :  Element(1,1),
      _sr_forwarder(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetSourceRoute::~SetSourceRoute()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

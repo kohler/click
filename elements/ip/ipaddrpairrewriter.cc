@@ -59,12 +59,10 @@ IPAddrPairRewriter::IPAddrPairMapping::unparse() const
 IPAddrPairRewriter::IPAddrPairRewriter()
     : _map(0), _timer(this)
 {
-    // no MOD_INC_USE_COUNT; rely on IPRw
 }
 
 IPAddrPairRewriter::~IPAddrPairRewriter()
 {
-    // no MOD_DEC_USE_COUNT; rely on IPRw
 }
 
 void *

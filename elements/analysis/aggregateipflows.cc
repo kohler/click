@@ -52,12 +52,10 @@ flip_ports(uint32_t ports)
 AggregateIPFlows::AggregateIPFlows()
     : Element(1, 1), _traceinfo_file(0), _packet_source(0), _filepos_h(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AggregateIPFlows::~AggregateIPFlows()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -181,12 +181,10 @@ DSDVRouteTable::DSDVRouteTable() :
   _log_dump_timer(static_log_dump_hook, this),
   _verbose(true)
 {
-  MOD_INC_USE_COUNT;
 }
 
 DSDVRouteTable::~DSDVRouteTable()
 {
-  MOD_DEC_USE_COUNT;
 
   for (TMIter i = _expire_timers.begin(); i; i++) {
     if (i.value()->scheduled())

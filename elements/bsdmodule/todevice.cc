@@ -65,14 +65,12 @@ todev_static_cleanup()
 
 ToDevice::ToDevice()
 {
-    // no MOD_INC_USE_COUNT; rely on AnyDevice
     add_input();
     todev_static_initialize();
 }
 
 ToDevice::~ToDevice()
 {
-    // no MOD_DEC_USE_COUNT; rely on AnyDevice
     todev_static_cleanup();
 }
 

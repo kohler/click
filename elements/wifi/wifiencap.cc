@@ -32,12 +32,10 @@ WifiEncap::WifiEncap()
   : Element(1, 1),
     _winfo(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WifiEncap::~WifiEncap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -24,13 +24,11 @@ CLICK_DECLS
 
 PaintSwitch::PaintSwitch()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 PaintSwitch::~PaintSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

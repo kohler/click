@@ -25,13 +25,11 @@ CLICK_DECLS
 HashSwitch::HashSwitch()
   : _offset(-1)
 {
-  MOD_INC_USE_COUNT;
   set_ninputs(1);
 }
 
 HashSwitch::~HashSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

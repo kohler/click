@@ -213,25 +213,19 @@ Specializer::create_class(SpecializedClass &spc)
   // add helper functions: constructor, destructor, class_name, cast
   if (specialize_away) {
     CxxFunction *f = old_cxxc->find(old_eti.cxx_name);
-    CxxFunction &constructor = new_cxxc->defun
+    new_cxxc->defun
       (CxxFunction(spc.cxx_name, true, "", "()", f->body(), f->clean_body()));
-    if (!constructor.find_expr(compile_pattern("MOD_INC_USE_COUNT")))
-      constructor.set_body(constructor.body() + "\nMOD_INC_USE_COUNT; ");
 
     f = old_cxxc->find("~" + old_eti.cxx_name);
-    CxxFunction &destructor = new_cxxc->defun
+    new_cxxc->defun
       (CxxFunction("~" + spc.cxx_name, true, "", "()", f->body(), f->clean_body()));
-    if (!destructor.find_expr(compile_pattern("MOD_DEC_USE_COUNT")))
-      destructor.set_body(destructor.body() + "\nMOD_DEC_USE_COUNT; ");
-    
   } else {
     new_cxxc->defun
-      (CxxFunction(spc.cxx_name, true, "", "()",
-		   " MOD_INC_USE_COUNT; ", ""));
+      (CxxFunction(spc.cxx_name, true, "", "()", " ", ""));
     new_cxxc->defun
-      (CxxFunction("~" + spc.cxx_name, true, "", "()",
-		   " MOD_DEC_USE_COUNT; ", ""));
+      (CxxFunction("~" + spc.cxx_name, true, "", "()", " ", ""));
   }
+  
   new_cxxc->defun
     (CxxFunction("class_name", true, "const char *", "() const",
 		 String(" return \"") + spc.click_name + "\"; ", ""));
@@ -241,6 +235,7 @@ Specializer::create_class(SpecializedClass &spc)
     return v;\n  else if (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0)\n\
     return (Element *)this;\n  else\n    return 0;\n", ""));
+  
   // placeholders for input_pull and output_push
   new_cxxc->defun
     (CxxFunction("input_pull", false, "inline Packet *",

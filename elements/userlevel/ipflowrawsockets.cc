@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.8 2005/01/03 06:10:47 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.9 2005/02/07 20:41:11 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -177,14 +177,12 @@ IPFlowRawSockets::IPFlowRawSockets()
     : Element(1, 1), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
       _gc_timer(gc_hook, this)
 {
-    MOD_INC_USE_COUNT;
     for (int i = 0; i < NFLOWMAP; i++)
 	_flowmap[i] = 0;
 }
 
 IPFlowRawSockets::~IPFlowRawSockets()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -36,12 +36,10 @@ SRQueryResponder::SRQueryResponder()
      _link_table(0),
      _arp_table(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SRQueryResponder::~SRQueryResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

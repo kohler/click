@@ -23,13 +23,11 @@
 
 PortClassifier::PortClassifier()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 PortClassifier::~PortClassifier()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

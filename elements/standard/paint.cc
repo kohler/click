@@ -26,13 +26,11 @@ CLICK_DECLS
 Paint::Paint()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _color = 0;
 }
 
 Paint::~Paint()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -70,12 +70,10 @@ GridRouteTable::GridRouteTable() :
   _est_type(EstBySigQual),
   _frozen(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 GridRouteTable::~GridRouteTable()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

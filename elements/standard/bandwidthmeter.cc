@@ -25,12 +25,10 @@ CLICK_DECLS
 BandwidthMeter::BandwidthMeter()
   : Element(1, 1), _meters(0), _nmeters(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 BandwidthMeter::~BandwidthMeter()
 {
-  MOD_DEC_USE_COUNT;
   delete[] _meters;
 }
 

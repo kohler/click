@@ -25,13 +25,11 @@ CLICK_DECLS
 
 LookupIP6Route::LookupIP6Route()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 LookupIP6Route::~LookupIP6Route()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

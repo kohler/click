@@ -36,7 +36,6 @@ GatewaySelector::GatewaySelector()
      _arp_table(0),
      _timer(this)
 {
-  MOD_INC_USE_COUNT;
 
   MaxSeen = 200;
   MaxHops = 30;
@@ -52,7 +51,6 @@ GatewaySelector::GatewaySelector()
 
 GatewaySelector::~GatewaySelector()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

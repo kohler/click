@@ -23,13 +23,11 @@
 RTCycles::RTCycles()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _accum = _npackets = 0;
 }
 
 RTCycles::~RTCycles()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

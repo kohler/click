@@ -25,13 +25,11 @@ CLICK_DECLS
 DRRSched::DRRSched()
     : _quantum(500), _head(0), _deficit(0), _signals(0), _next(0)
 {
-    MOD_INC_USE_COUNT;
     add_output();
 }
 
 DRRSched::~DRRSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -29,14 +29,12 @@ SchedOrderTest::SchedOrderTest()
     : Element(0, 0), _count(0), _limit(0), _buf_begin(0), _bufsiz(0),
       _task(this), _stop(false)
 {
-    MOD_INC_USE_COUNT;
 }
 
 SchedOrderTest::~SchedOrderTest()
 {
     if (_bufpos_ptr == &_bufpos)
 	delete[] _buf_begin;
-    MOD_DEC_USE_COUNT;
 }
 
 int

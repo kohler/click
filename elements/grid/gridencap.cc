@@ -28,12 +28,10 @@ CLICK_DECLS
 GridEncap::GridEncap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 GridEncap::~GridEncap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

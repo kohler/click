@@ -34,12 +34,10 @@ CLICK_DECLS
 ToDump::ToDump()
     : Element(1, 0), _fp(0), _task(this), _use_encap_from(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ToDump::~ToDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

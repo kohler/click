@@ -573,8 +573,8 @@ output_classifier_program(int which,
   void devirtualize_all() { }\n\
  public:\n  "
 	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << prog.noutputs
-	 << "); MOD_INC_USE_COUNT; }\n  ~"
-	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
+	 << "); }\n  ~"
+	 << cxx_name << "() { }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
   " << cxx_name << " *clone() const { return new " << cxx_name << "; }\n\
   const char *processing() const { return PUSH; }\n";

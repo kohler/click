@@ -25,13 +25,11 @@ CLICK_DECLS
 SendPattern::SendPattern()
   : Element(0, 1)
 {
-  MOD_INC_USE_COUNT;
   _len = 1;
 }
 
 SendPattern::~SendPattern()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

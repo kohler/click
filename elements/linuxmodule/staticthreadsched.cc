@@ -9,12 +9,10 @@
 StaticThreadSched::StaticThreadSched()
     : _next_thread_sched(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 StaticThreadSched::~StaticThreadSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -26,14 +26,12 @@ CLICK_DECLS
 
 FixIPSrc::FixIPSrc()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 FixIPSrc::~FixIPSrc()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,12 +25,10 @@ CLICK_DECLS
 SetTimestamp::SetTimestamp()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 SetTimestamp::~SetTimestamp()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

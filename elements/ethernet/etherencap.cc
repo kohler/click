@@ -25,12 +25,10 @@ CLICK_DECLS
 EtherEncap::EtherEncap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 EtherEncap::~EtherEncap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

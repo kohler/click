@@ -31,12 +31,10 @@ CLICK_DECLS
 Defragment::Defragment()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Defragment::~Defragment()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

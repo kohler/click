@@ -53,12 +53,10 @@ ToDevice::ToDevice()
     _q(0),
     _pulls(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ToDevice::~ToDevice()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -26,12 +26,10 @@ CLICK_DECLS
 RandomSample::RandomSample()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 RandomSample::~RandomSample()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

@@ -32,12 +32,10 @@ CLICK_DECLS
 CheckFragment::CheckFragment()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CheckFragment::~CheckFragment()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -25,12 +25,10 @@ CLICK_DECLS
 EraseIPPayload::EraseIPPayload()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 EraseIPPayload::~EraseIPPayload()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 Packet *

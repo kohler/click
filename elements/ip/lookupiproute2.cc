@@ -27,14 +27,12 @@ CLICK_DECLS
 
 LookupIPRoute2::LookupIPRoute2()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 LookupIPRoute2::~LookupIPRoute2()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

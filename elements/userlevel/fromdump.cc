@@ -48,12 +48,10 @@ CLICK_DECLS
 FromDump::FromDump()
     : Element(0, 1), _packet(0), _end_h(0), _task(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 FromDump::~FromDump()
 {
-    MOD_DEC_USE_COUNT;
     delete _end_h;
 }
 

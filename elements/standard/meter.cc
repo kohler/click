@@ -22,12 +22,10 @@ CLICK_DECLS
 
 Meter::Meter()
 {
-  // no MOD_INC_USE_COUNT; rely on BandwidthMeter
 }
 
 Meter::~Meter()
 {
-  // no MOD_DEC_USE_COUNT; rely on BandwidthMeter
 }
 
 void

@@ -24,12 +24,10 @@ CLICK_DECLS
 SetIPAddress::SetIPAddress()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetIPAddress::~SetIPAddress()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -39,7 +39,6 @@ AutoRateFallback::AutoRateFallback()
     _offset(0),
     _packet_size_threshold(0)
 {
-  MOD_INC_USE_COUNT;
 
   /* bleh */
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -48,7 +47,6 @@ AutoRateFallback::AutoRateFallback()
 
 AutoRateFallback::~AutoRateFallback()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

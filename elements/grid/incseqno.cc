@@ -24,14 +24,12 @@ CLICK_DECLS
 IncrementSeqNo::IncrementSeqNo() 
   : _seqno(0), _offset(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 IncrementSeqNo::~IncrementSeqNo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

@@ -27,12 +27,10 @@ CLICK_DECLS
 BufferConverter::BufferConverter()
   : Element(2, 1), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 BufferConverter::~BufferConverter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

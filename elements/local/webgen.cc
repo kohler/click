@@ -42,7 +42,6 @@ timeval_add (struct timeval *tv, int us)
 WebGen::WebGen()
   : _timer(this)
 {
-  MOD_INC_USE_COUNT;
 
   add_input();
   add_output();
@@ -57,7 +56,6 @@ WebGen::WebGen()
 
 WebGen::~WebGen()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

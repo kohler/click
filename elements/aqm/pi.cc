@@ -32,12 +32,10 @@ CLICK_DECLS
 PI::PI()
     : Element(1, 1), _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 PI::~PI()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

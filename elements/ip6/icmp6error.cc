@@ -29,7 +29,6 @@ CLICK_DECLS
 
 ICMP6Error::ICMP6Error()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
   _code = _type = -1;
@@ -37,7 +36,6 @@ ICMP6Error::ICMP6Error()
 
 ICMP6Error::~ICMP6Error()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -26,12 +26,10 @@ CLICK_DECLS
 UpstreamNotifier::UpstreamNotifier()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 UpstreamNotifier::~UpstreamNotifier()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

@@ -27,12 +27,10 @@ CLICK_DECLS
 IPEncap::IPEncap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPEncap::~IPEncap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

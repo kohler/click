@@ -23,12 +23,10 @@ CLICK_DECLS
 YarvisMetric::YarvisMetric()
   : GridGenericMetric(0, 0), _ls(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 YarvisMetric::~YarvisMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

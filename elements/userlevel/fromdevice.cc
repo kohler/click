@@ -53,7 +53,6 @@ CLICK_DECLS
 FromDevice::FromDevice()
   : Element(0, 1), _promisc(0), _snaplen(0)
 {
-  MOD_INC_USE_COUNT;
 #if FROMDEVICE_PCAP
   _pcap = 0;
 #endif
@@ -64,7 +63,6 @@ FromDevice::FromDevice()
 
 FromDevice::~FromDevice()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -24,14 +24,12 @@ CLICK_DECLS
 DecIP6HLIM::DecIP6HLIM()
   : _drops(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 DecIP6HLIM::~DecIP6HLIM()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

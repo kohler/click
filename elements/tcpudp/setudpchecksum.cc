@@ -28,12 +28,10 @@ CLICK_DECLS
 SetUDPChecksum::SetUDPChecksum()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 SetUDPChecksum::~SetUDPChecksum()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 Packet *

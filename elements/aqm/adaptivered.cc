@@ -26,12 +26,10 @@ CLICK_DECLS
 AdaptiveRED::AdaptiveRED()
     : _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AdaptiveRED::~AdaptiveRED()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -32,13 +32,11 @@ LinkStat::LinkStat()
   _probe_size(1000), _seq(0), _send_timer(0), 
   _use_proto2(false)
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 LinkStat::~LinkStat()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

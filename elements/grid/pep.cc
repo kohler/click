@@ -27,7 +27,6 @@ CLICK_DECLS
 PEP::PEP()
   : _timer(this)
 {
-  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   add_input();
   add_output();
   _fixed = 0;
@@ -37,7 +36,6 @@ PEP::PEP()
 
 PEP::~PEP()
 {
-  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 void *

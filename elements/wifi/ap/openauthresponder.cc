@@ -35,12 +35,10 @@ CLICK_DECLS
 OpenAuthResponder::OpenAuthResponder()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 OpenAuthResponder::~OpenAuthResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -54,12 +54,10 @@ KernelTun::KernelTun()
     : Element(1, 1), _fd(-1), _task(this),
       _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
-    MOD_INC_USE_COUNT;
 }
 
 KernelTun::~KernelTun()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

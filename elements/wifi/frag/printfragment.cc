@@ -32,12 +32,10 @@ CLICK_DECLS
 PrintFragment::PrintFragment()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PrintFragment::~PrintFragment()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

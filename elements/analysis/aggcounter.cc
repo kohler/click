@@ -28,12 +28,10 @@ CLICK_DECLS
 AggregateCounter::AggregateCounter()
     : Element(1, 1), _root(0), _free(0), _call_nnz_h(0), _call_count_h(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AggregateCounter::~AggregateCounter()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 AggregateCounter::Node *

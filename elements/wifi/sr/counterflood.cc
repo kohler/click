@@ -34,7 +34,6 @@ CounterFlood::CounterFlood()
      _packets_tx(0),
      _packets_rx(0)
 {
-  MOD_INC_USE_COUNT;
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -42,7 +41,6 @@ CounterFlood::CounterFlood()
 
 CounterFlood::~CounterFlood()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

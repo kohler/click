@@ -25,12 +25,10 @@ CLICK_DECLS
 PrioSched::PrioSched()
     : Element(0, 1), _signals(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 PrioSched::~PrioSched()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

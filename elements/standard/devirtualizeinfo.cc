@@ -22,12 +22,10 @@ CLICK_DECLS
 
 DevirtualizeInfo::DevirtualizeInfo()
 {
-  MOD_INC_USE_COUNT;
 }
 
 DevirtualizeInfo::~DevirtualizeInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -35,7 +35,6 @@ ProbeTXRate::ProbeTXRate()
     _rate_window_ms(0),
     _rtable(0)
 {
-  MOD_INC_USE_COUNT;
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -43,7 +42,6 @@ ProbeTXRate::ProbeTXRate()
 
 ProbeTXRate::~ProbeTXRate()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -33,12 +33,10 @@ ACKRetrySender2::ACKRetrySender2()
     sum_tx(0), num_pkts(0), num_fail(0),
     max_txc(0), min_txc(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ACKRetrySender2::~ACKRetrySender2()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

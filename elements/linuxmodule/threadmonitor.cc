@@ -28,12 +28,10 @@
 ThreadMonitor::ThreadMonitor()
     : _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 ThreadMonitor::~ThreadMonitor()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int 

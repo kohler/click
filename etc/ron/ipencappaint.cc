@@ -32,12 +32,10 @@
 IPEncapPaint::IPEncapPaint()
   : Element(1, 1), _ip_p(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPEncapPaint::~IPEncapPaint()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

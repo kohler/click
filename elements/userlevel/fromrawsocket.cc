@@ -46,12 +46,10 @@ CLICK_DECLS
 FromRawSocket::FromRawSocket()
   : Element(0, 1), _fd(-1), _snaplen(2048), _sniff(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FromRawSocket::~FromRawSocket()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

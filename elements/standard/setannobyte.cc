@@ -28,12 +28,10 @@ CLICK_DECLS
 SetAnnoByte::SetAnnoByte()
   : Element(1, 1), _offset(0), _value(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetAnnoByte::~SetAnnoByte()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -32,13 +32,11 @@ WirelessInfo::WirelessInfo()
     _interval(100),
     _wep(false)
 {
-  MOD_INC_USE_COUNT;
 
 }
 
 WirelessInfo::~WirelessInfo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

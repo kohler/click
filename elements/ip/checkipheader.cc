@@ -117,13 +117,11 @@ CheckIPHeader::static_cleanup()
 CheckIPHeader::CheckIPHeader()
   : Element(1, 1), _checksum(true), _reason_drops(0)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckIPHeader::~CheckIPHeader()
 {
-  MOD_DEC_USE_COUNT;
   delete[] _reason_drops;
 }
 

@@ -32,7 +32,6 @@ CLICK_DECLS
 LocQueryResponder::LocQueryResponder()
   : _expire_timer(expire_hook, this)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
@@ -48,7 +47,6 @@ LocQueryResponder::initialize(ErrorHandler *)
 
 LocQueryResponder::~LocQueryResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

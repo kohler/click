@@ -25,14 +25,12 @@ CLICK_DECLS
 
 TCPReflector::TCPReflector()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 TCPReflector::~TCPReflector()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

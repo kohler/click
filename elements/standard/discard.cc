@@ -25,12 +25,10 @@ CLICK_DECLS
 Discard::Discard()
   : Element(1, 0), _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Discard::~Discard()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

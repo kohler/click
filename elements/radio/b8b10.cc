@@ -26,12 +26,10 @@ CLICK_DECLS
 B8B10::B8B10()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 B8B10::~B8B10()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 /*

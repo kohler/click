@@ -34,12 +34,10 @@ FastUDPSource::FastUDPSource()
   _first = _last = 0;
   _count = 0;
   add_output();
-  MOD_INC_USE_COUNT;
 }
 
 FastUDPSource::~FastUDPSource()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

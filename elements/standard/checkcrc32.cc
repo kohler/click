@@ -23,13 +23,11 @@ CLICK_DECLS
 CheckCRC32::CheckCRC32()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckCRC32::~CheckCRC32()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

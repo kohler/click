@@ -25,12 +25,10 @@ CLICK_DECLS
 PaintTee::PaintTee()
   : Element(1, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PaintTee::~PaintTee()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

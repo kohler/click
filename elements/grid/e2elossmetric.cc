@@ -23,12 +23,10 @@ CLICK_DECLS
 E2ELossMetric::E2ELossMetric()
   : GridGenericMetric(0, 0), _ls(0), _twoway(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 E2ELossMetric::~E2ELossMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

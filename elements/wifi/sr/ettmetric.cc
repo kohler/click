@@ -29,12 +29,10 @@ ETTMetric::ETTMetric()
   : LinkMetric(), 
     _link_table(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ETTMetric::~ETTMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -22,14 +22,12 @@
 
 ToHostSniffers::ToHostSniffers()
 {
-    MOD_INC_USE_COUNT;
     // other stuff belongs to ToHost
     _sniffers = true;
 }
 
 ToHostSniffers::~ToHostSniffers()
 {
-    MOD_DEC_USE_COUNT;
     // other stuff belongs to ToHost
 }
 

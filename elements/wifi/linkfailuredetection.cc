@@ -31,14 +31,12 @@ LinkFailureDetection::LinkFailureDetection()
   : Element(1, 1),
     _threshold(1)
 {
-  MOD_INC_USE_COUNT;
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
 }
 
 LinkFailureDetection::~LinkFailureDetection()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

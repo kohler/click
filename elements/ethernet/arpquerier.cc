@@ -30,7 +30,6 @@ CLICK_DECLS
 ARPQuerier::ARPQuerier()
   : _expire_timer(expire_hook, this)
 {
-  MOD_INC_USE_COUNT;
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
   add_output();/* ether/IP and ether/ARP queries */
@@ -40,7 +39,6 @@ ARPQuerier::ARPQuerier()
 
 ARPQuerier::~ARPQuerier()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

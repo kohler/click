@@ -23,13 +23,11 @@ CLICK_DECLS
 
 StaticPullSwitch::StaticPullSwitch()
 {
-  MOD_INC_USE_COUNT;
   add_output();
 }
 
 StaticPullSwitch::~StaticPullSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

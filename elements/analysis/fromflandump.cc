@@ -44,14 +44,12 @@
 FromFlanDump::FromFlanDump()
     : Element(0, 1), _task(this)
 {
-    MOD_INC_USE_COUNT;
     for (int i = 0; i < FF_LAST; i++)
 	_ff[i] = 0;
 }
 
 FromFlanDump::~FromFlanDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

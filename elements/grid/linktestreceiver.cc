@@ -27,14 +27,12 @@ CLICK_DECLS
 
 LinkTestReceiver::LinkTestReceiver() : _ai(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 LinkTestReceiver::~LinkTestReceiver()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

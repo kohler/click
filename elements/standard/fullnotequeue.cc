@@ -22,12 +22,10 @@ CLICK_DECLS
 
 FullNoteQueue::FullNoteQueue()
 {
-    MOD_INC_USE_COUNT;
 }
 
 FullNoteQueue::~FullNoteQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -41,7 +41,6 @@ TokenQueue::TokenQueue()
 {
     set_ninputs(3);
     set_noutputs(2);
-    MOD_INC_USE_COUNT;
     _catchup_timeout = Timestamp(2, 0);
     _tokens = 0;
     _retransmits = 0;
@@ -50,7 +49,6 @@ TokenQueue::TokenQueue()
 
 TokenQueue::~TokenQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -27,12 +27,10 @@ CLICK_DECLS
 ICMPRewriter::ICMPRewriter()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ICMPRewriter::~ICMPRewriter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

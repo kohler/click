@@ -28,14 +28,12 @@ CLICK_DECLS
 
 SetSRChecksum::SetSRChecksum()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 SetSRChecksum::~SetSRChecksum()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

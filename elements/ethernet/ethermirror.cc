@@ -23,12 +23,10 @@ CLICK_DECLS
 EtherMirror::EtherMirror()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 EtherMirror::~EtherMirror()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

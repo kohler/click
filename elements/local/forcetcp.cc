@@ -27,7 +27,6 @@ CLICK_DECLS
 ForceTCP::ForceTCP()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _count = 0;
   _random = false;
   _dport = -1;
@@ -36,7 +35,6 @@ ForceTCP::ForceTCP()
 
 ForceTCP::~ForceTCP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

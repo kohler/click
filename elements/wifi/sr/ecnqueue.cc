@@ -41,12 +41,10 @@ ECNQueue::ECNQueue()
 {
     set_ninputs(1);
     set_noutputs(1);
-    MOD_INC_USE_COUNT;
 }
 
 ECNQueue::~ECNQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -11,12 +11,10 @@ CLICK_DECLS
 PacketLogger::PacketLogger()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PacketLogger::~PacketLogger()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -32,12 +32,10 @@ CLICK_DECLS
 RED::RED()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
 }
 
 RED::~RED()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

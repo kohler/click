@@ -28,7 +28,6 @@ CLICK_DECLS
 
 GridProbeSender::GridProbeSender() 
 {
-  MOD_INC_USE_COUNT;
   add_output();
 }
 
@@ -40,7 +39,6 @@ GridProbeSender::initialize(ErrorHandler *)
 
 GridProbeSender::~GridProbeSender()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

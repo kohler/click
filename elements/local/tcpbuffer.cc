@@ -25,12 +25,10 @@ CLICK_DECLS
 TCPBuffer::TCPBuffer()
   : Element(1, 1), _chain(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TCPBuffer::~TCPBuffer()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

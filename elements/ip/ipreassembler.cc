@@ -36,7 +36,6 @@ CLICK_DECLS
 IPReassembler::IPReassembler()
     : Element(1, 1)
 {
-    MOD_INC_USE_COUNT;
     for (int i = 0; i < NMAP; i++)
 	_map[i] = 0;
     static_assert(sizeof(PacketInfo) <= Packet::USER_ANNO_SIZE);
@@ -45,7 +44,6 @@ IPReassembler::IPReassembler()
 
 IPReassembler::~IPReassembler()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

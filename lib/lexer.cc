@@ -30,6 +30,14 @@
 #include <click/standard/errorelement.hh>
 CLICK_DECLS
 
+#ifdef CLICK_LINUXMODULE
+# define ADD_ELEMENT_TYPE(name, factory, thunk, scoped) \
+		add_element_type((name), (factory), (thunk), 0, (scoped))
+#else
+# define ADD_ELEMENT_TYPE(name, factory, thunk, scoped) \
+		add_element_type((name), (factory), (thunk), (scoped))
+#endif
+
 static void
 redeclaration_error(ErrorHandler *errh, const char *what, String name, const String &landmark, const String &old_landmark)
 {
@@ -374,8 +382,8 @@ Lexer::Lexer()
     _errh(ErrorHandler::default_handler())
 {
   end_parse(ET_NULL);		// clear private state
-  add_element_type("<tunnel>", error_element_factory, 0);
-  add_element_type("Error", error_element_factory, 0);
+  ADD_ELEMENT_TYPE("<tunnel>", error_element_factory, 0, false);
+  ADD_ELEMENT_TYPE("Error", error_element_factory, 0, false);
   assert(element_type("<tunnel>") == TUNNEL_TYPE && element_type("Error") == ERROR_TYPE);
 }
 
@@ -799,25 +807,28 @@ Lexer::lerror(const char *format, ...)
 // ELEMENT TYPES
 
 int
-Lexer::add_element_type(const String &name, ElementFactory factory, uintptr_t thunk, bool scoped)
+Lexer::add_element_type(const String &name, ElementFactory factory, uintptr_t thunk,
+#ifdef CLICK_LINUXMODULE
+			struct module *module,
+#endif
+			bool scoped)
 {
   assert(factory);	       // 3.Sep.2003: anonymous compounds have name ""
   int tid;
   if (_free_element_type < 0) {
     tid = _element_types.size();
     _element_types.push_back(ElementType());
-    _element_types[tid].factory = factory;
-    _element_types[tid].thunk = thunk;
-    _element_types[tid].name = name;
-    _element_types[tid].next = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   } else {
     tid = _free_element_type;
     _free_element_type = _element_types[tid].next;
-    _element_types[tid].factory = factory;
-    _element_types[tid].thunk = thunk;
-    _element_types[tid].name = name;
-    _element_types[tid].next = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   }
+  _element_types[tid].factory = factory;
+  _element_types[tid].thunk = thunk;
+#ifdef CLICK_LINUXMODULE
+  _element_types[tid].module = module;
+#endif
+  _element_types[tid].name = name;
+  _element_types[tid].next = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   if (name)
     _element_type_map.insert(name, tid);
   _last_element_type = tid;
@@ -837,7 +848,7 @@ Lexer::force_element_type(String s)
   if (ftid >= 0)
     return ftid;
   lerror("unknown element class '%s'", s.cc());
-  return add_element_type(s, error_element_factory, 0, true);
+  return ADD_ELEMENT_TYPE(s, error_element_factory, 0, true);
 }
 
 int
@@ -1275,11 +1286,11 @@ Lexer::yelementclass()
   else if (tnext.is(lexIdent)) {
     // define synonym type
     int t = force_element_type(tnext.string());
-    add_element_type(name, _element_types[t].factory, _element_types[t].thunk, true);
+    ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
     lerror("syntax error near '%#s'", tnext.string().cc());
-    add_element_type(name, error_element_factory, 0, true);
+    ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
   }
 }
 
@@ -1386,7 +1397,7 @@ Lexer::ycompound(String name)
       // '...' marks an extension type
       if (_element_type_map[name] < 0) {
 	lerror("cannot extend unknown element class '%s'", name.cc());
-	add_element_type(name, error_element_factory, 0, true);
+	ADD_ELEMENT_TYPE(name, error_element_factory, 0, true);
       }
       extension = _element_type_map[name];
       
@@ -1419,7 +1430,7 @@ Lexer::ycompound(String name)
     ct->finish(this, _errh);
 
     if (last) {
-      int t = add_element_type(name, compound_element_factory, (uintptr_t) ct, true);
+      int t = ADD_ELEMENT_TYPE(name, compound_element_factory, (uintptr_t) ct, true);
       last->set_overload_type(t);
     } else
       first = ct;
@@ -1437,7 +1448,7 @@ Lexer::ycompound(String name)
   // add all types to ensure they're freed later
   if (extension)
     last->set_overload_type(extension);
-  return add_element_type(name, compound_element_factory, (uintptr_t) first, true);
+  return ADD_ELEMENT_TYPE(name, compound_element_factory, (uintptr_t) first, true);
 }
 
 void
@@ -1613,7 +1624,11 @@ Lexer::create_router(Master *master)
     if (etype == TUNNEL_TYPE)
       router_id.push_back(-1);
     else if (Element *e = (*_element_types[etype].factory)(_element_types[etype].thunk)) {
-      int ei = router->add_element(e, _element_names[i], _element_configurations[i], _element_landmarks[i]);
+      int ei = router->add_element(e, _element_names[i], _element_configurations[i], _element_landmarks[i]
+#if CLICK_LINUXMODULE
+				   , _element_types[etype].module
+#endif
+				   );
       router_id.push_back(ei);
     } else {
       _errh->lerror(_element_landmarks[i], "failed to create element '%s'", _element_names[i].c_str());
@@ -1626,8 +1641,7 @@ Lexer::create_router(Master *master)
     int fromi = router_id[ _hookup_from[i].idx ];
     int toi = router_id[ _hookup_to[i].idx ];
     if (fromi >= 0 && toi >= 0)
-      router->add_connection(fromi, _hookup_from[i].port,
-			     toi, _hookup_to[i].port);
+      router->add_connection(fromi, _hookup_from[i].port, toi, _hookup_to[i].port);
     else
       add_router_connections(i, router_id, router);
   }

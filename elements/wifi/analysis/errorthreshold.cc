@@ -28,12 +28,10 @@ CLICK_DECLS
 ErrorThreshold::ErrorThreshold()
   : Element(1,1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ErrorThreshold::~ErrorThreshold()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

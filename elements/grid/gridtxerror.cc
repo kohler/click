@@ -28,12 +28,10 @@ CLICK_DECLS
 GridTxError::GridTxError() 
   : Element(1, 0), _log(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 GridTxError::~GridTxError() 
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

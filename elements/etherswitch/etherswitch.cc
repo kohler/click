@@ -26,12 +26,10 @@ CLICK_DECLS
 EtherSwitch::EtherSwitch()
   : _table(0), _timeout(300)
 {
-  MOD_INC_USE_COUNT;
 }
 
 EtherSwitch::~EtherSwitch()
 {
-  MOD_DEC_USE_COUNT;
   for (Table::iterator iter = _table.begin(); iter; iter++)
     delete iter.value();
   _table.clear();

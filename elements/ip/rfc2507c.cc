@@ -21,14 +21,12 @@ CLICK_DECLS
 
 RFC2507c::RFC2507c()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 RFC2507c::~RFC2507c()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 inline

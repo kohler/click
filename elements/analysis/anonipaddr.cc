@@ -35,12 +35,10 @@ CLICK_DECLS
 AnonymizeIPAddr::AnonymizeIPAddr()
     : Element(1, 0), _root(0), _free(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 AnonymizeIPAddr::~AnonymizeIPAddr()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 AnonymizeIPAddr::Node *

@@ -33,12 +33,10 @@ Element * const PokeHandlers::PAUSE_MARKER = (Element *)3;
 PokeHandlers::PokeHandlers()
     : _timer(timer_hook, this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 PokeHandlers::~PokeHandlers()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

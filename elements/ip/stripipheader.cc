@@ -23,12 +23,10 @@ CLICK_DECLS
 StripIPHeader::StripIPHeader()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 StripIPHeader::~StripIPHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

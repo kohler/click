@@ -23,12 +23,10 @@ CLICK_DECLS
 MixedQueue::MixedQueue()
 {
     set_ninputs(2);
-    MOD_INC_USE_COUNT;
 }
 
 MixedQueue::~MixedQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

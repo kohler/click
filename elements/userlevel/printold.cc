@@ -27,12 +27,10 @@ CLICK_DECLS
 PrintOld::PrintOld()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 PrintOld::~PrintOld()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

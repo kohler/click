@@ -31,12 +31,10 @@ CLICK_DECLS
 FragmentDecap::FragmentDecap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FragmentDecap::~FragmentDecap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

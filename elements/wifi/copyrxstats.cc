@@ -12,12 +12,10 @@ CLICK_DECLS
 CopyRXStats::CopyRXStats()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 CopyRXStats::~CopyRXStats()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

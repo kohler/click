@@ -23,12 +23,10 @@ CLICK_DECLS
 NotifierQueue::NotifierQueue()
     : _sleepiness(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 NotifierQueue::~NotifierQueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

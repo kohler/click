@@ -29,12 +29,10 @@ CLICK_DECLS
 TCPAck::TCPAck()
   : Element(2, 3), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TCPAck::~TCPAck()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

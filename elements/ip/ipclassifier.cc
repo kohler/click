@@ -24,12 +24,10 @@ CLICK_DECLS
 
 IPClassifier::IPClassifier()
 {
-  // no MOD_INC_USE_COUNT; rely on Classifier
 }
 
 IPClassifier::~IPClassifier()
 {
-  // no MOD_DEC_USE_COUNT; rely on Classifier
 }
 
 int

@@ -29,12 +29,10 @@ CLICK_DECLS
 Prism2Encap::Prism2Encap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Prism2Encap::~Prism2Encap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

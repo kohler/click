@@ -35,12 +35,10 @@ IPRewriter::IPRewriter()
     _tcp_gc_timer(tcp_gc_hook, this),
     _udp_gc_timer(udp_gc_hook, this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPRewriter::~IPRewriter()
 {
-  MOD_DEC_USE_COUNT;
   assert(!_tcp_gc_timer.scheduled() && !_udp_gc_timer.scheduled());
 }
 

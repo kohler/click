@@ -23,12 +23,10 @@ CLICK_DECLS
 SetCRC32::SetCRC32()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetCRC32::~SetCRC32()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

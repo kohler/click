@@ -29,12 +29,10 @@ TXCountMetric::TXCountMetric()
   : LinkMetric(), 
     _link_table(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TXCountMetric::~TXCountMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -25,7 +25,6 @@ CLICK_DECLS
 EstimateRouterRegion::EstimateRouterRegion()
   : _timer(this)
 {
-  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   add_input();
   add_output();
   _fixed = false;
@@ -35,7 +34,6 @@ EstimateRouterRegion::EstimateRouterRegion()
 
 EstimateRouterRegion::~EstimateRouterRegion()
 {
-  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 void *

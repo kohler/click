@@ -26,14 +26,12 @@ CLICK_DECLS
 
 IPAddressCounter::IPAddressCounter()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 IPAddressCounter::~IPAddressCounter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

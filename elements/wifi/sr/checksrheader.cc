@@ -33,14 +33,12 @@ CLICK_DECLS
 CheckSRHeader::CheckSRHeader()
   : _drops(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 CheckSRHeader::~CheckSRHeader()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

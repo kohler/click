@@ -38,13 +38,11 @@ CLICK_DECLS
 FromNetFlowSummaryDump::FromNetFlowSummaryDump()
     : Element(0, 1), _work_packet(0), _task(this)
 {
-    MOD_INC_USE_COUNT;
     _ff.set_landmark_pattern("%f:%l");
 }
 
 FromNetFlowSummaryDump::~FromNetFlowSummaryDump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

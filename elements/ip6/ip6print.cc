@@ -19,12 +19,10 @@ CLICK_DECLS
 IP6Print::IP6Print()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IP6Print::~IP6Print()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

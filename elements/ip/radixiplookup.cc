@@ -40,13 +40,11 @@ Radix::RadixNode::~RadixNode()
 RadixIPLookup::RadixIPLookup()
     : _entries(0)
 {
-    MOD_INC_USE_COUNT;
     _radix = new Radix;
 }
 
 RadixIPLookup::~RadixIPLookup()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 

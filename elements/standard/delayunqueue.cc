@@ -27,12 +27,10 @@ CLICK_DECLS
 DelayUnqueue::DelayUnqueue()
     : Element(1, 1), _p(0), _task(this), _timer(&_task)
 {
-    MOD_INC_USE_COUNT;
 }
 
 DelayUnqueue::~DelayUnqueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

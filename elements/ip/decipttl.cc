@@ -24,13 +24,11 @@ CLICK_DECLS
 DecIPTTL::DecIPTTL()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 DecIPTTL::~DecIPTTL()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

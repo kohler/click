@@ -28,7 +28,6 @@ CLICK_DECLS
 
 TXStat::TXStat()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -37,7 +36,6 @@ TXStat::TXStat()
 
 TXStat::~TXStat()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

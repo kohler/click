@@ -57,12 +57,10 @@ CLICK_DECLS
 AiroInfo::AiroInfo() : 
   Element(0, 0), _fd(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 AiroInfo::~AiroInfo()
 {
-  MOD_DEC_USE_COUNT;
   if (_fd > -1)
     close(_fd);
 }

@@ -26,12 +26,10 @@ CLICK_DECLS
 IPOutputCombo::IPOutputCombo()
   : Element(1, 5)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPOutputCombo::~IPOutputCombo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

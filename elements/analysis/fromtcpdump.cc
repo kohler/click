@@ -38,13 +38,11 @@ CLICK_DECLS
 FromTcpdump::FromTcpdump()
     : Element(0, 1), _task(this)
 {
-    MOD_INC_USE_COUNT;
     _ff.set_landmark_pattern("%f:%l");
 }
 
 FromTcpdump::~FromTcpdump()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -25,12 +25,10 @@ CLICK_DECLS
 
 ACKResponder::ACKResponder() : Element(1, 2)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ACKResponder::~ACKResponder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 Packet *

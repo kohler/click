@@ -27,7 +27,6 @@ CLICK_DECLS
 
 IPInputCombo::IPInputCombo()
 {
-  MOD_INC_USE_COUNT;
   _drops = 0;
   add_input();
   add_output();
@@ -35,7 +34,6 @@ IPInputCombo::IPInputCombo()
 
 IPInputCombo::~IPInputCombo()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -514,14 +514,12 @@ ToIPFlowDumps::ToIPFlowDumps()
     : Element(1, 0), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
       _gc_timer(gc_hook, this), _compress_child(-1)
 {
-    MOD_INC_USE_COUNT;
     for (int i = 0; i < NFLOWMAP; i++)
 	_flowmap[i] = 0;
 }
 
 ToIPFlowDumps::~ToIPFlowDumps()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 String

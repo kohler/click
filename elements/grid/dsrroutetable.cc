@@ -53,7 +53,6 @@ DSRRouteTable::DSRRouteTable()
   click_gettimeofday(&tv);
   _rreq_id = tv.tv_sec & 0xffff;
 
-  MOD_INC_USE_COUNT;
   
   add_input();  // IP packets - input 0
   add_input();  // incoming DSR packets - input 1
@@ -66,7 +65,6 @@ DSRRouteTable::DSRRouteTable()
 
 DSRRouteTable::~DSRRouteTable()
 {
-  MOD_DEC_USE_COUNT;
   flush_sendbuffer();
   uninitialize();
 

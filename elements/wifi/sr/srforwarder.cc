@@ -40,7 +40,6 @@ SRForwarder::SRForwarder()
      _link_table(0),
      _arp_table(0)
 {
-  MOD_INC_USE_COUNT;
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -48,7 +47,6 @@ SRForwarder::SRForwarder()
 
 SRForwarder::~SRForwarder()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

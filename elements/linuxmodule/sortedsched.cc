@@ -36,12 +36,10 @@
 BalancedThreadSched::BalancedThreadSched()
     : _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 BalancedThreadSched::~BalancedThreadSched()
 {
-    MOD_DEC_USE_COUNT;
 }
   
 int 

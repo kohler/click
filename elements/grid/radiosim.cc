@@ -27,12 +27,10 @@ CLICK_DECLS
 RadioSim::RadioSim()
   : _task(this), _use_xy(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 RadioSim::~RadioSim()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

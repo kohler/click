@@ -32,7 +32,6 @@ GridProbeHandler::GridProbeHandler() :
   _lr_el(0), _gf_el(0), _fq_el(0), 
   _cached_reply_pkt(0)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
   add_output();
@@ -79,7 +78,6 @@ GridProbeHandler::initialize(ErrorHandler *errh)
 
 GridProbeHandler::~GridProbeHandler()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

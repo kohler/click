@@ -26,12 +26,10 @@ CLICK_DECLS
 GetIP6Address::GetIP6Address()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 GetIP6Address::~GetIP6Address()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 

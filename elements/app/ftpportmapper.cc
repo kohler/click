@@ -28,12 +28,10 @@ CLICK_DECLS
 FTPPortMapper::FTPPortMapper()
   : Element(1, 1), _pattern(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FTPPortMapper::~FTPPortMapper()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

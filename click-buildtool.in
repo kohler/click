@@ -6,7 +6,7 @@
 # Copyright (c) 2000-2001 Massachusetts Institute of Technology
 # Copyright (c) 2000-2004 Mazu Networks, Inc.
 # Copyright (c) 2001-2003 International Computer Science Institute
-# Copyright (c) 2004 Regents of the University of California
+# Copyright (c) 2004-2005 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -566,8 +566,9 @@ END {
   print "CLICK_USING_DECLS";
   print "static int hatred_of_rebecca[", nrebecca, "];";
   print "static Element *\nbeetlemonkey(uintptr_t heywood)\n{\n  switch (heywood) {\n", D, "   default: return 0;\n  }\n}\n";
+  print "#ifdef CLICK_LINUXMODULE\n#define click_add_element_type(n, f, t) click_add_element_type((n), (f), (t), THIS_MODULE)\n#endif";
   print "#ifdef CLICK_BSDMODULE\nstatic int\nmodevent(module_t, int t, void *)\n{\n  if (t == MOD_LOAD) {\n#else\nextern \"C\" int\ninit_module()\n{\n#endif";
-  print "  click_provide(\"", packname, "\");\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;";
+  print "  click_provide(\"", packname, "\");\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n  return 0;";
   print "#ifdef CLICK_BSDMODULE\n  } else if (t == MOD_UNLOAD) {\n#else\n}\nextern \"C\" void\ncleanup_module()\n{\n#endif";
   print C, "  click_unprovide(\"", packname, "\");";
   print "#ifdef CLICK_BSDMODULE\n  return 0;\n  } else\n    return 0;\n}\nstatic moduledata_t modinfo = {\n  \"", packname, "\", modevent, 0\n};\nDECLARE_MODULE(", packname, ", modinfo, SI_SUB_PSEUDO, SI_ORDER_ANY);\n#else\n}\n#endif";
@@ -601,6 +602,7 @@ END {
 '"$includes"'
   print "CLICK_USING_DECLS";
   print "static Element *\nbeetlemonkey(uintptr_t heywood)\n{\n  switch (heywood) {\n", D, "   default: return 0;\n  }\n}\n";
+  print "#ifdef CLICK_LINUXMODULE\n#define click_add_element_type(n, f, t) click_add_element_type((n), (f), (t), 0)\n#endif";
   print "void\nclick_export_elements()\n{\n", B, "  CLICK_DMALLOC_REG(\"nXXX\");\n}\n";
   print "void\nclick_unexport_elements()\n{\n", C, "}";
 }

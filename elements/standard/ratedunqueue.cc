@@ -27,12 +27,10 @@ CLICK_DECLS
 RatedUnqueue::RatedUnqueue()
     : Element(1, 1), _task(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 RatedUnqueue::~RatedUnqueue()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

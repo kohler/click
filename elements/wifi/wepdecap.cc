@@ -60,12 +60,10 @@ CLICK_DECLS
 WepDecap::WepDecap()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 WepDecap::~WepDecap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

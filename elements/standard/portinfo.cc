@@ -30,12 +30,10 @@ CLICK_DECLS
 PortInfo::PortInfo()
     : _map(0)
 {
-    MOD_INC_USE_COUNT;
 }
 
 PortInfo::~PortInfo()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

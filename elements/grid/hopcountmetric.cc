@@ -23,12 +23,10 @@ const GridGenericMetric::metric_t GridGenericMetric::_bad_metric(777777, false);
 HopcountMetric::HopcountMetric()
   : GridGenericMetric(0, 0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 HopcountMetric::~HopcountMetric()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -25,12 +25,10 @@ CLICK_DECLS
 SetIPDSCP::SetIPDSCP()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 SetIPDSCP::~SetIPDSCP()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

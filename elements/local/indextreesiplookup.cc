@@ -26,7 +26,6 @@ CLICK_DECLS
 
 IndexTreesIPLookup::IndexTreesIPLookup()
 {
-  MOD_INC_USE_COUNT;
   add_input();
   add_output();
   for (int i=0; i<INDEX_SIZE; i++)
@@ -35,7 +34,6 @@ IndexTreesIPLookup::IndexTreesIPLookup()
 
 IndexTreesIPLookup::~IndexTreesIPLookup()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

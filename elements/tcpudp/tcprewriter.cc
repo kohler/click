@@ -182,12 +182,10 @@ TCPRewriter::TCPRewriter()
     _tcp_gc_timer(tcp_gc_hook, this),
     _tcp_done_gc_timer(tcp_done_gc_hook, this)
 {
-  // no MOD_INC_USE_COUNT; rely on IPRw
 }
 
 TCPRewriter::~TCPRewriter()
 {
-  // no MOD_DEC_USE_COUNT; rely on IPRw
   assert(!_tcp_gc_timer.scheduled() && !_tcp_done_gc_timer.scheduled());
 }
 

@@ -24,13 +24,11 @@ CLICK_DECLS
 
 PullSwitch::PullSwitch()
 {
-  MOD_INC_USE_COUNT;
   add_output();
 }
 
 PullSwitch::~PullSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

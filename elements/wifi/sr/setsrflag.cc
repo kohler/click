@@ -30,13 +30,11 @@ CLICK_DECLS
 SetSRFlag::SetSRFlag()
   : Element(1, 1)
 {
-  MOD_INC_USE_COUNT;
   _flags = 0;
 }
 
 SetSRFlag::~SetSRFlag()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

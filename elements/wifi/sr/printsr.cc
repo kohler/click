@@ -33,13 +33,11 @@ PrintSR::PrintSR()
     _print_anno(false),
     _print_checksum(false)
 {
-  MOD_INC_USE_COUNT;
   _label = "";
 }
 
 PrintSR::~PrintSR()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

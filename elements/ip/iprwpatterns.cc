@@ -25,12 +25,10 @@ CLICK_DECLS
 IPRewriterPatterns::IPRewriterPatterns()
   : _name_map(-1)
 {
-  MOD_INC_USE_COUNT;
 }
 
 IPRewriterPatterns::~IPRewriterPatterns()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,12 +25,10 @@
 ScheduleLinux::ScheduleLinux()
   : _task(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 ScheduleLinux::~ScheduleLinux()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

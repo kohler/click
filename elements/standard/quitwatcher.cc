@@ -29,12 +29,10 @@ CLICK_DECLS
 QuitWatcher::QuitWatcher()
   : _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 QuitWatcher::~QuitWatcher()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

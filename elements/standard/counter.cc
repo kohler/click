@@ -31,12 +31,10 @@ CLICK_DECLS
 Counter::Counter()
   : Element(1, 1), _count_trigger_h(0), _byte_trigger_h(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 Counter::~Counter()
 {
-  MOD_DEC_USE_COUNT;
   delete _count_trigger_h;
   delete _byte_trigger_h;
 }

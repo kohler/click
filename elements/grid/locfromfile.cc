@@ -25,14 +25,12 @@ CLICK_DECLS
 
 LocFromFile::LocFromFile()
 {
-  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   _next = 0;
   _move = 1;
 }
 
 LocFromFile::~LocFromFile()
 {
-  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 void *

@@ -24,12 +24,10 @@ CLICK_DECLS
 
 FrontDropQueue::FrontDropQueue()
 {
-  // no MOD_INC_USE_COUNT; rely on SimpleQueue
 }
 
 FrontDropQueue::~FrontDropQueue()
 {
-  // no MOD_DEC_USE_COUNT; rely on SimpleQueue
 }
 
 void *

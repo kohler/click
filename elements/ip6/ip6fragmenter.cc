@@ -26,7 +26,6 @@ CLICK_DECLS
 IP6Fragmenter::IP6Fragmenter()
   : _drops(0)
 {
-  MOD_INC_USE_COUNT;
   _fragments = 0;
   _mtu = 0;
   add_input();
@@ -35,7 +34,6 @@ IP6Fragmenter::IP6Fragmenter()
 
 IP6Fragmenter::~IP6Fragmenter()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

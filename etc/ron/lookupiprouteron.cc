@@ -33,7 +33,6 @@
 LookupIPRouteRON::LookupIPRouteRON() 
   : _expire_timer(expire_hook, (void *) this)
 {
-  MOD_INC_USE_COUNT;
   add_input();
   _flow_table = new FlowTable();
   _dst_table  = new DstTable();
@@ -41,7 +40,6 @@ LookupIPRouteRON::LookupIPRouteRON()
 
 LookupIPRouteRON::~LookupIPRouteRON()
 {
-  MOD_DEC_USE_COUNT;
   delete(_flow_table);
   delete(_dst_table);
   _expire_timer.unschedule();

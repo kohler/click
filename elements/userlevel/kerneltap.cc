@@ -54,12 +54,10 @@ KernelTap::KernelTap()
     _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
     _ignore_q_errs(false), _printed_write_err(false), _printed_read_err(false)
 {
-  MOD_INC_USE_COUNT;
 }
 
 KernelTap::~KernelTap()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

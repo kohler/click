@@ -26,12 +26,10 @@ CLICK_DECLS
 RatedSplitter::RatedSplitter()
     : Element(1, 2)
 {
-    MOD_INC_USE_COUNT;
 }
 
 RatedSplitter::~RatedSplitter()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int

@@ -25,12 +25,10 @@ CLICK_DECLS
 TimedSink::TimedSink()
   : Element(1, 0), _timer(this)
 {
-  MOD_INC_USE_COUNT;
 }
 
 TimedSink::~TimedSink()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int

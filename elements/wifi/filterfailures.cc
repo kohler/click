@@ -14,12 +14,10 @@ FilterFailures::FilterFailures()
   : Element(1, 1),
     _drops(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FilterFailures::~FilterFailures()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

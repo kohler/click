@@ -29,12 +29,10 @@ CLICK_DECLS
 DriverManager::DriverManager()
     : _timer(this)
 {
-    MOD_INC_USE_COUNT;
 }
 
 DriverManager::~DriverManager()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 void

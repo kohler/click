@@ -22,12 +22,10 @@ CLICK_DECLS
 
 BandwidthRatedSplitter::BandwidthRatedSplitter()
 {
-    // no MOD_INC_USE_COUNT; rely on RatedSplitter
 }
 
 BandwidthRatedSplitter::~BandwidthRatedSplitter()
 {
-    // no MOD_DEC_USE_COUNT; rely on RatedSplitter
 }
 
 void

@@ -23,13 +23,11 @@ CLICK_DECLS
 
 StaticSwitch::StaticSwitch()
 {
-  MOD_INC_USE_COUNT;
   add_input();
 }
 
 StaticSwitch::~StaticSwitch()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 void

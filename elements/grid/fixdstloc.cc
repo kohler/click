@@ -27,12 +27,10 @@ CLICK_DECLS
 
 FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
 {
-  MOD_INC_USE_COUNT;
 }
 
 FixDstLoc::~FixDstLoc()
 {
-  MOD_DEC_USE_COUNT;
 }
 
 int
