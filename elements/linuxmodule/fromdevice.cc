@@ -213,11 +213,12 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 #endif
 
 #ifndef CLICK_POLLDEV
-      // Call scheduled things.
-      // This causes a bit of batching, so that not every packet causes
-      // Queue to put ToDevice on the work list.
-      // What about the last packet? If net_bh's backlog queue is
-      // empty, we want to run_scheduled().
+      // Call scheduled things - in a nonpolling environment, this is
+      // important because we really don't want packets to sit in a queue
+      // under high load w/o having ToDevice pull them out of there. This
+      // causes a bit of batching, so that not every packet causes Queue to
+      // put ToDevice on the work list.  What about the last packet? If
+      // net_bh's backlog queue is empty, we want to run_scheduled().
       called_times++;
       if (called_times == 8 || backlog_len == 0) {
 	extern Router *current_router; // module.cc
