@@ -53,8 +53,24 @@ AggregatePacketCounter::Flow::column_count(int column) const
 }
 
 void
-AggregatePacketCounter::Flow::undelivered(Vector<uint32_t> &undelivered) const
+AggregatePacketCounter::Flow::received(Vector<uint32_t> &v, const AggregatePacketCounter *apc) const
 {
+    int n = 0;
+    for (int port = 0; port < apc->noutputs(); port++)
+	if (_counts[port].size() > n)
+	    n = _counts[port].size();
+    for (int packetno = 0; packetno < n; packetno++)
+	for (int port = 0; port < apc->noutputs(); port++)
+	    if (packetno < _counts[port].size() && _counts[port].at_u(packetno)) {
+		v.push_back(packetno);
+		break;
+	    }
+}
+
+void
+AggregatePacketCounter::Flow::undelivered(Vector<uint32_t> &undelivered, const AggregatePacketCounter *apc) const
+{
+    assert(apc->noutputs() >= 2);
     int packetno;
     int min_n = (_counts[0].size() < _counts[1].size() ? _counts[0].size() : _counts[1].size());
     for (packetno = 0; packetno < min_n; packetno++)
@@ -271,25 +287,40 @@ AggregatePacketCounter::write_handler(const String &, Element *e, void *thunk, E
 }
 
 String
+AggregatePacketCounter::flow_handler(uint32_t aggregate, FlowFunc func)
+{
+    Vector<uint32_t> v;
+    if (Flow *f = find_flow(aggregate))
+	(f->*func)(v, this);
+    StringAccum sa;
+    for (int i = 0; i < v.size(); i++)
+	sa << v[i] << '\n';
+    return sa.take_string();
+}
+
+String
+AggregatePacketCounter::received_read_handler(Element *e, void *thunk)
+{
+    AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
+    return apc->flow_handler((uintptr_t) thunk, &Flow::received);
+}
+
+String
 AggregatePacketCounter::undelivered_read_handler(Element *e, void *thunk)
 {
-    AggregatePacketCounter *ac = static_cast<AggregatePacketCounter *>(e);
-    uint32_t aggregate = (uintptr_t)thunk;
-    Vector<uint32_t> undelivered;
-    if (Flow *f = ac->find_flow(aggregate))
-	f->undelivered(undelivered);
-    StringAccum sa;
-    for (int i = 0; i < undelivered.size(); i++)
-	sa << undelivered[i] << '\n';
-    return sa.take_string();
+    AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
+    return apc->flow_handler((uintptr_t) thunk, &Flow::undelivered);
 }
 
 int
 AggregatePacketCounter::star_write_handler(const String &s, Element *e, void *, ErrorHandler *)
 {
-    uint32_t aggregate;
-    if (s.substring(0, 11) == "undelivered" && cp_unsigned(s.substring(11), &aggregate) && e->ninputs() > 1) {
-	e->add_read_handler(s, undelivered_read_handler, (void *)((uintptr_t)aggregate));
+    uint32_t u;
+    if (s.substring(0, 11) == "undelivered" && cp_unsigned(s.substring(11), &u) && u > 0 && e->ninputs() > 1) {
+	e->add_read_handler(s, undelivered_read_handler, (void *)((uintptr_t)u));
+	return 0;
+    } else if (s.substring(0, 8) == "received" && cp_unsigned(s.substring(8), &u) && u > 0) {
+	e->add_read_handler(s, received_read_handler, (void *)((uintptr_t)u));
 	return 0;
     } else
 	return -1;
