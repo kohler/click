@@ -37,9 +37,11 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
+#define VERBOSE_OPT		302
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
+  { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -62,8 +64,9 @@ usage()
 Usage: %s [OPTION]...\n\
 \n\
 Options:\n\
-      --help                    Print this message and exit.\n\
-  -v, --version                 Print version number and exit.\n\
+  -V, --verbose            Print information about uninstallation process.\n\
+      --help               Print this message and exit.\n\
+  -v, --version            Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -87,6 +90,10 @@ main(int argc, char **argv)
     int opt = Clp_Next(clp);
     switch (opt) {
       
+     case VERBOSE_OPT:
+      verbose = !clp->negated;
+      break;
+
      case HELP_OPT:
       usage();
       exit(0);
@@ -95,7 +102,8 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click-uninstall (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
-Copyright (c) 2000 Mazu Networks, Inc.\n\
+Copyright (c) 2000-2002 Mazu Networks, Inc.\n\
+Copyright (c) 2000-2002 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

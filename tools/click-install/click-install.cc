@@ -73,7 +73,7 @@ static Clp_Option options[] = {
 #endif
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
-  { "version", 'v', VERSION_OPT, 0, Clp_Negate },
+  { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
 static const char *program_name;

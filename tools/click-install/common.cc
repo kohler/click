@@ -199,6 +199,8 @@ unload_click(ErrorHandler *errh)
 
 #if FOR_BSDMODULE
   // unmount Click file system
+  if (verbose)
+    errh->message("Unmounting Click filesystem at %s", clickfs_prefix);
   int unmount_retval = unmount(clickfs_prefix, MNT_FORCE);
   if (unmount_retval < 0)
     errh->error("could not unmount %s: %s", clickfs_prefix, strerror(errno));
@@ -216,6 +218,8 @@ unload_click(ErrorHandler *errh)
 #if FOR_LINUXMODULE && HAVE_CLICKFS
   // proclikefs will take care of the unmount for us, but we'll give it a shot
   // anyway.
+  if (verbose)
+    errh->message("Unmounting Click filesystem at %s", clickfs_prefix);
   (void) umount(clickfs_prefix);
 #endif
 
