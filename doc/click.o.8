@@ -199,14 +199,9 @@ Read-only. A Boolean value: "true" if the element is currently on the task
 list, "false" if it is not.
 .TP
 .BI /proc/click/xxx/tickets
-Read-only. Describes the element's tickets, which influence task scheduling
-priority: the more tickets a task has, the more often it will be scheduled
-relative to other tasks. The handler's value is a single line of the form
-"\fItickets\fP \fImaxtickets\fP", where
-.I tickets
-and
-.I maxtickets
-are integer numbers of tickets.
+Read-only. Returns the element's tickets, an integer that influences task
+scheduling priority. The more tickets a task has, the more often it will be
+scheduled relative to other tasks.
 '
 .PP
 Particular elements may add additional handlers to their directories. For

@@ -73,7 +73,7 @@ always:
 	@:
 
 clean:
-	rm -f click.aux click.cp click.cps click.dvi click.fn click.html click.ky click.pg click.tmp click.toc click.tp click.tps click.vr *.log
+	rm -f click.aux click.cp click.cps click.dvi click.fn click.fns click.html click.ky click.kys click.pg click.pgs click.tmp click.toc click.tp click.tps click.vr click.vrs *.log
 distclean: clean
 	-rm -f Makefile
 

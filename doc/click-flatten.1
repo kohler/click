@@ -44,8 +44,7 @@ The
 .B click-flatten
 tool flattens a Click router configuration, compiling all its compound
 elements away, and writes the resulting configuration to the standard
-output. It can also change how the router configuration is parsed by
-changing its unparser package.
+output.
 '
 .SH "OPTIONS"
 '
@@ -70,18 +69,6 @@ The default is the standard input.
 Write the flattened router configuration to
 .IR file .
 The default is the standard output.
-'
-.Sp
-.TP
-.BI \-p " parser"
-.TP
-.BI \-\-parser " parser"
-Unparse the flattened router configuration using the
-.I parser
-parsing package.
-If
-.I parser
-is `none' (or a dash, `\-'), any existing parsing package is removed.
 '
 .Sp
 .TP 5
