@@ -37,7 +37,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
       exit 0;;
     -*)
-      if test $1 = -E -o $1 = -c; then
+      if test $1 = -E -o $1 = -c -o $1 = -S; then
         compileflag=$1
       else cflags="$cflags '$1'"; fi
       shift 1;;
@@ -105,5 +105,5 @@ EOF
   fi
 else
   echo $command "$@" 1>&2
-  exec $command "$@"
+  eval $command "$@"
 fi

@@ -56,10 +56,7 @@ class Packet {
 
   Packet *expensive_push(unsigned int nbytes);
   
-#ifdef __KERNEL__
-  const Anno *anno() const		{ return (const Anno *)skb()->cb; }
-  Anno *anno()				{ return (Anno *)skb()->cb; }
-#else
+#ifndef __KERNEL__
   const Anno *anno() const		{ return (const Anno *)_cb; }
   Anno *anno()				{ return (Anno *)_cb; }
 #endif
@@ -81,6 +78,11 @@ class Packet {
   static Packet *make(struct sk_buff *);
   struct sk_buff *skb() const		{ return (struct sk_buff *)this; }
   struct sk_buff *steal_skb()		{ return skb(); }
+
+ private:
+  const Anno *anno() const		{ return (const Anno *)skb()->cb; }
+  Anno *anno()				{ return (Anno *)skb()->cb; }
+ public:
 #endif
 
 #ifdef __KERNEL__
