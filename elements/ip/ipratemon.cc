@@ -261,7 +261,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
       int j;
   
       for(j = 1; j < _no_of_rates; j++) {
-        s->counter[i].values[j].update(0);
+        // s->counter[i].values[j].update(0);
 	if (s->counter[i].values[j].average() > 0)
 	  nonzero = true;
       }
@@ -277,11 +277,9 @@ IPRateMonitor::print(_stats *s, String ip = "")
 	for(j = 1; j < _no_of_rates; j++) ret += "\t0";
     }
     
-    if (nonzero) {
-      ret += "\n";
-      if(s->counter[i].flags & SPLIT) 
-	ret += print(s->counter[i].next_level, "\t" + this_ip);
-    }
+    ret += "\n";
+    if(s->counter[i].flags & SPLIT) 
+      ret += print(s->counter[i].next_level, "\t" + this_ip);
   }
   return ret;
 }
