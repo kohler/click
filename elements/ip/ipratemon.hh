@@ -184,7 +184,7 @@ IPRateMonitor::update(IPAddress a, int val)
   c->last_update = c->values[0].now();
 
   // did value get larger than THRESH in the specified period?
-  if((c->values[0].average() >> c->values[0].scale()) >= _thresh) {
+  if(((c->values[0].average()*CLICK_HZ) >> c->values[0].scale()) >= _thresh) {
     if(bitshift < MAX_SHIFT) {
       c->flags |= SPLIT;
       struct _stats *tmp = new struct _stats;
