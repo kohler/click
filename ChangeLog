@@ -1,3 +1,8 @@
+2003-01-02 Thursday 17:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/: build-grid-config.sh (1.10), run-grid (1.17): updated for
+	running on linux
+
 2002-12-19 Thursday 18:20  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/addressinfo.cc (1.24): fix device reference
