@@ -1,7 +1,7 @@
 
 Index: include/linux/netdevice.h
 --- include/linux/netdevice.h.orig	Thu Mar  2 18:27:42 2000
-+++ include/linux/netdevice.h	Wed Apr 19 10:55:57 2000
++++ include/linux/netdevice.h	Sat Apr 22 15:31:35 2000
 @@ -317,6 +317,32 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
@@ -55,8 +55,8 @@ Index: net/core/skbuff.c
   *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
   *			Florian La Roche <rzsfl@rz.uni-sb.de>
   *
-- *	Version:	$Id: click-patch-1.0.5,v 1.8 2000/04/22 16:26:47 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.5,v 1.8 2000/04/22 16:26:47 benjie Exp $
+- *	Version:	$Id: click-patch-1.0.5,v 1.9 2000/04/22 20:48:12 benjie Exp $
++ *	Version:	$Id: click-patch-1.0.5,v 1.9 2000/04/22 20:48:12 benjie Exp $
   *
   *	Fixes:	
   *		Alan Cox	:	Fixed the worst of the load balancer bugs.
@@ -448,7 +448,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Thu Mar  2 18:27:40 2000
-+++ drivers/net/tulip.c	Sat Apr 22 12:14:37 2000
++++ drivers/net/tulip.c	Sat Apr 22 12:33:42 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -1676,7 +1676,7 @@ Index: include/linux/signal.h
 
 Index: include/linux/skbuff.h
 --- include/linux/skbuff.h.orig	Thu Mar  2 18:27:42 2000
-+++ include/linux/skbuff.h	Wed Apr 19 10:45:32 2000
++++ include/linux/skbuff.h	Sat Apr 22 15:31:21 2000
 @@ -145,6 +145,7 @@
  extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
  extern struct sk_buff *		alloc_skb(unsigned int size, int priority);
@@ -1689,7 +1689,7 @@ Index: include/linux/skbuff.h
  extern __inline__ struct sk_buff *dev_alloc_skb(unsigned int length)
  {
  	struct sk_buff *skb;
-+#if 0
++#if 1
 +#define SKB_RESERVE_LENGTH 32
 +#else
 +#define SKB_RESERVE_LENGTH 16
