@@ -331,6 +331,7 @@ FromDump::initialize(ErrorHandler *errh)
     _mmap_unit = 0;
 #endif
     _file_offset = 0;
+    _pos = _len = 0;
     int result = read_buffer(errh);
     if (result < 0)
 	return -1;
