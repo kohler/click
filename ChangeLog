@@ -1,3 +1,10 @@
+2004-11-19 Friday 15:05  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/filtertx.hh (1.2), elements/wifi/rxstats.cc (1.12),
+	elements/wifi/rxstats.hh (1.9), elements/wifi/setrts.cc (1.1),
+	elements/wifi/setrts.hh (1.1), include/clicknet/wifi.h (1.15): add
+	setrts element and flags. fix some filtertx documentation.
+
 2004-11-18 Thursday 14:58  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: kerneltun.cc (1.50), kerneltun.hh (1.21):
