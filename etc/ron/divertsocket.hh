@@ -36,7 +36,7 @@ public:
 
   DivertSocket *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int initialize(ErrorHandler *errh);
   void uninitialize();
 
   void selected(int fd);

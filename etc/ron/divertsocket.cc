@@ -21,17 +21,19 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include <unistd.h>
-//#include <fcntl.h>
+#include <fcntl.h>
 
 # include <net/if.h>
 
 #if defined(__FreeBSD__ )
-# include <sys/socket.hh>
+# include <sys/ioctl.h>
+# include <sys/socket.h>
 # include <sys/types.h>
-# include <net/if_packet.h>
-# include <features.h>
+# include <net/if.h>
 
 #elif defined(__linux__)
+# include <features.h>
+# include <net/if_packet.h>
 # include <netinet/ip.h>
 # include <netinet/in.h>
 # include <netinet/tcp.h>
@@ -90,23 +92,26 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "dst port low", &dportl,
 		  cpUnsigned, "dst port high", &dporth,
 		  
+		  cpOptional,
 		  cpString, "in/out", &inout,
 		  cpEnd) < 0) 
     return -1;
 
   if ( (inout != "in") && (inout != "out"))
     return -1;
-
-  
+ 
+  printf("done configuring\n");
 
   return 0;
 }
 		  
 
 int
-DivertSocket::initialize(ErrorHandler *) 
+DivertSocket::initialize(ErrorHandler *errh) 
 {
-  struct sockaddr_in bindPort, sin;
+  int ret;
+  struct sockaddr_in bindPort; //, sin;
+
 
   // Setup socket
   _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
@@ -115,7 +120,7 @@ DivertSocket::initialize(ErrorHandler *)
     return -1;
   }
   bindPort.sin_family=AF_INET;
-  bindPort.sin_port=htons(atol(2002));
+  bindPort.sin_port=htons(2002);
   bindPort.sin_addr.s_addr=0;
 
   ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
@@ -130,7 +135,7 @@ DivertSocket::initialize(ErrorHandler *)
   
   
   // Setup firewall
-  if (system("/sbin/ipfw add 50 divert 2002 ip from 18.239.0.139 to me in") != 0) {
+  if (system("/sbin/ipfw add 50 divert 2002 ip from 18.239.0.139 to me in via fxp0") != 0) {
     close (_fd);
     errh->error("ipfw failed");
     return -1;
@@ -139,6 +144,7 @@ DivertSocket::initialize(ErrorHandler *)
   
 
   add_select(_fd, SELECT_READ);
+  printf("done initializing\n");
   return 0;
 }
 
@@ -147,6 +153,7 @@ void
 DivertSocket::uninitialize()
 {
   if (_fd >= 0) {
+    system("/sbin/ipfw delete 50");
     close (_fd);
     remove_select(_fd, SELECT_READ);
     _fd = -1;
@@ -157,7 +164,7 @@ DivertSocket::uninitialize()
 void
 DivertSocket::selected(int fd) 
 {
-  struct sockaddr_ll sa;
+  struct sockaddr_in sa;
   socklen_t fromlen;
   
   WritablePacket *p;
@@ -167,21 +174,27 @@ DivertSocket::selected(int fd)
     return;
 
   fromlen = sizeof(sa);
-  p  = Packet::make(2, 0, _packetbuf_size, 2046, 0); // YIPAL bufsize
+  p  = Packet::make(2, 0, 2046, 0); // YIPAL bufsize
   len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
 
-  if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
-    p->change_headroom_and_length(2, len);
-    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-    (void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
-    if (!_force_ip || check_force_ip(p))
-      output(0).push(p);
+  if (len > 0 /* && sa.sll_pkttype != PACKET_OUTGOING) {
+		 p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+	      */) {
+
+    //(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno()); 
+    // YIPAL fix this timestamp 
+    
+    p->change_headroom_and_length(2, len);		 
+    output(0).push(p);
+
   } else {
     p->kill();
     if (len <= 0 && errno != EAGAIN)
-      click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+      click_chatter("DivertSocket: recvfrom: %s", strerror(errno));
   }
 }
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(DivertSocket)
+
+
