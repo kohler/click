@@ -802,13 +802,13 @@ DSDVRouteTable::init_metric(RTEntry &r)
     r.metric = metric_t(r.num_hops());
     DEQueue<unsigned> *q = _seq_history.findp(r.dest_ip);
     if (!q || q->size() < MAX_BCAST_HISTORY) {
-      r.metric.val += 2;
+      r.metric.valid = false;
       break;
     }
     dsdv_assert(q->size() == MAX_BCAST_HISTORY);
     unsigned num_missing = q->back() - (q->front() + MAX_BCAST_HISTORY - 1);
     if (num_missing > MAX_BCAST_HISTORY - OLD_BCASTS_NEEDED)
-      r.metric.val += 2;
+      r.metric.valid = false;
     break;
   }
 #endif
@@ -1661,17 +1661,28 @@ DSDVRouteTable::write_paused(const String &arg, Element *el,
 }
 #endif
 
-#if USE_OLD_SEQ
 String
 DSDVRouteTable::print_use_old_route(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  String s(rt->_use_old_route ? "true " : "false ");
-#if USE_GOOD_NEW_ROUTES
-  s += (rt->_use_good_new_route ? "(use good new routes immediately)\n" : 
-	"(wait to use good new routes)\n");
+
+#define pb(x) ((x) ? "true" : "false")
+
+  StringAccum sa;
+#if USE_OLD_SEQ
+  sa << "use old routes: " << pb(rt->_use_old_route)
+     << (rt->_use_old_route ? " (don't use until advertised)" : " (use new sequence numbers immediately)") << "\n";
 #endif
-  return s;
+#if USE_GOOD_NEW_ROUTES
+  sa << "use good new routes: " << pb(rt->_use_good_new_route) 
+     << (rt->_use_good_new_route ? " (use good new routes immediately)" : " (wait to use good new routes)") << "\n";
+#endif
+#if USE_SEEN
+  sa << "use seen: " << pb(rt->_use_seen) 
+     << (rt->_use_seen ? " (check for `seen' handshake)" : " (ignore asymmetry)") << "\n";
+#endif
+  return sa.take_string();
+#undef pb
 }
 
 int
@@ -1693,10 +1704,11 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
     use_old = use_good = true;
   if (u & 4)
     use_seen = true;
-
+#if USE_OLD_SEQ
   rt->_use_old_route = use_old;
   click_chatter("DSDVRouteTable %s: setting _use_old_route to %s", 
 		rt->id().cc(), rt->_use_old_route ? "true" : "false");
+#endif
 #if USE_GOOD_NEW_ROUTES
   rt->_use_good_new_route = use_good;
   click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
@@ -1709,7 +1721,6 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
 #endif
   return 0;
 }
-#endif
 
 String
 DSDVRouteTable::print_dump(Element *e, void *)
@@ -1772,10 +1783,8 @@ DSDVRouteTable::add_handlers()
   add_read_handler("paused", print_paused, 0);
   add_write_handler("paused", write_paused, 0);
 #endif
-#if USE_OLD_SEQ
   add_read_handler("use_old_route", print_use_old_route, 0);
   add_write_handler("use_old_route", write_use_old_route, 0);
-#endif
   add_read_handler("dump", print_dump, 0);
 }
 
