@@ -1,3 +1,15 @@
+2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh (1.32), lib/router.cc (1.124): add
+	support for handler flags
+
+2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: clickfs_core.cc (1.3), module.cc (1.65),
+	modulepriv.hh (1.27), proc_config.cc (1.32), proc_element.cc
+	(1.41): clickfs has support for config and hotconfig via handlers;
+	and change /proc/click support to use the same mechanism
+
 2002-05-03 Friday 19:39  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/: clickfs_core.cc (1.2), proc_element.cc (1.40):

@@ -1,3 +1,8 @@
+2002-05-04 Saturday 16:54  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	libsrc/router.cc: add support for handler flags
+
 2002-05-03 Friday 12:00  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4: protect config variables that might contain spaces;
