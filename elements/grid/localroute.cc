@@ -219,5 +219,5 @@ LocalRoute::forward_grid_packet(Packet *packet, IPAddress dest_ip)
   }
 }
 
-
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocalRoute)

@@ -52,9 +52,6 @@ class FromLinux : public AnyDevice {
   ~FromLinux();
   FromLinux *clone() const;
 
-  static void static_initialize();
-  static void static_cleanup();
-  
   const char *class_name() const	{ return "FromLinux"; }
   const char *processing() const	{ return PUSH; }
 

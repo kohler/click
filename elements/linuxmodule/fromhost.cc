@@ -34,7 +34,7 @@ static AnyDeviceMap fromlinux_map;
 static int from_linux_count;
 
 static void
-static_initialize()
+fromlinux_static_initialize()
 {
   from_linux_count++;
   if (from_linux_count > 1) return;
@@ -42,7 +42,7 @@ static_initialize()
 }
 
 static void
-static_cleanup()
+fromlinux_static_cleanup()
 {
   from_linux_count--;
 }
@@ -51,12 +51,12 @@ FromLinux::FromLinux()
 {
   _dev = 0; _rt = 0;
   add_output();
-  static_initialize();
+  fromlinux_static_initialize();
 }
 
 FromLinux::~FromLinux()
 {
-  static_cleanup();
+  fromlinux_static_cleanup();
 }
 
 FromLinux *

@@ -90,4 +90,5 @@ LocationInfo::add_handlers()
   add_read_handler("loc", loc_read_handler, (void *) 0);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationInfo)

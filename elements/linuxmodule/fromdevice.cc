@@ -34,7 +34,7 @@ extern "C" int click_FromDevice_in
 
 
 static void
-static_initialize()
+fromdev_static_initialize()
 {
   from_device_count++;
   if (from_device_count > 1) return;
@@ -44,7 +44,7 @@ static_initialize()
 }
 
 static void
-static_cleanup()
+fromdev_static_cleanup()
 {
   from_device_count--;
   if (from_device_count > 0) return;
@@ -57,14 +57,14 @@ static_cleanup()
 FromDevice::FromDevice()
   : _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
-  static_initialize();
+  fromdev_static_initialize();
   add_output();
 }
 
 FromDevice::~FromDevice()
 {
   if (_registered) uninitialize();
-  static_cleanup();
+  fromdev_static_cleanup();
 }
 
 

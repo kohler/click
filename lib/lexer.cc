@@ -97,7 +97,6 @@ Lexer::Lexer(ErrorHandler *errh)
   : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
-    _default_element_type(new ErrorElement),
     _tunnel_element_type(new ErrorElement),
     _last_element_type(-1),
     _free_element_type(-1),
@@ -108,7 +107,6 @@ Lexer::Lexer(ErrorHandler *errh)
 {
   if (!_errh) _errh = ErrorHandler::default_handler();
   end_parse(-1);		// clear private state
-  add_element_type("<default>", _default_element_type);
   add_element_type("<tunnel>", _tunnel_element_type);
   add_element_type(new ErrorElement);
 }
@@ -473,14 +471,16 @@ Lexer::lerror(const char *format, ...)
 // ELEMENT TYPES
 
 int
-Lexer::add_element_type(Element *f)
+Lexer::add_element_type(Element *e)
 {
-  return add_element_type(f->class_name(), f);
+  // Lexer now owns `e'
+  return add_element_type(e->class_name(), e);
 }
 
 int
 Lexer::add_element_type(const String &name, Element *e)
 {
+  // Lexer now owns `e'
   int tid;
   if (_free_element_type < 0) {
     tid = _element_types.size();
@@ -512,7 +512,7 @@ Lexer::force_element_type(String s)
   if (ftid >= 0)
     return ftid;
   lerror("unknown element class `%s'", s.cc());
-  return add_element_type(s, _default_element_type);
+  return add_element_type(s, new ErrorElement);
 }
 
 int
@@ -1267,7 +1267,7 @@ Lexer::create_router()
     router->add_requirement(_requirements[i]);
 
   // clear _elements, as all elements are owned by router
-  _elements.clear();
+  _elements.assign(_elements.size(), (Element *)0);
   
   return router;
 }

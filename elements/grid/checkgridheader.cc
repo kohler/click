@@ -100,4 +100,5 @@ CheckGridHeader::add_handlers()
   add_read_handler("drops", CheckGridHeader_read_drops, 0);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(CheckGridHeader)

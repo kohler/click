@@ -68,7 +68,6 @@ class Lexer {
   Vector<Element *> _element_types;
   Vector<String> _element_type_names;
   Vector<int> _element_type_next;
-  Element *_default_element_type;
   Element *_tunnel_element_type;
   int _last_element_type;
   int _free_element_type;

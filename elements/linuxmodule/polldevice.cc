@@ -38,7 +38,7 @@ static int poll_device_count;
 
 
 static void
-static_initialize()
+polldev_static_initialize()
 {
   poll_device_count++;
   if (poll_device_count > 1) return;
@@ -46,7 +46,7 @@ static_initialize()
 }
 
 static void
-static_cleanup()
+polldev_static_cleanup()
 {
   poll_device_count--;
 }
@@ -69,13 +69,13 @@ PollDevice::PollDevice()
   _perfcnt2_refill = 0;
   _perfcnt2_pushing = 0;
 #endif
-  static_initialize();
+  polldev_static_initialize();
 }
 
 PollDevice::~PollDevice()
 {
   assert(!_registered);
-  static_cleanup();
+  polldev_static_cleanup();
 }
 
 

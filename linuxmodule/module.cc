@@ -60,6 +60,7 @@ Router *
 parse_router(String s)
 {
   LinuxModuleLexerExtra lextra;
+
   int cookie = lexer->begin_parse(s, "line ", &lextra);
   while (lexer->ystatement())
     /* do nothing */;

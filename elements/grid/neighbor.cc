@@ -281,6 +281,7 @@ Neighbor::get_nbrs(Vector<grid_nbr_entry> *retval) const
 }
 
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Neighbor)
 
 #include "hashmap.cc"
@@ -289,6 +290,3 @@ EXPORT_ELEMENT(Neighbor)
 #include "vector.cc"
 template class Vector<Neighbor::far_entry>;
 template class Vector<grid_nbr_entry>;
-
-
-

@@ -143,9 +143,5 @@ Hello::make_hello()
   return p;
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Hello)
-
-
-
-
-
