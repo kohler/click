@@ -516,9 +516,7 @@ IPRw::clear_map(Map &table)
 ELEMENT_PROVIDES(IPRw)
 
 #include "bighashmap.cc"
-template class BigHashMap<IPFlowID, IPRw::Mapping *>;
-
 #include "vector.cc"
-template class Vector<IPRw::InputSpec>;
-
+template class BigHashMap<IPFlowID, IPRw::Mapping *>;
 template class BigHashMapIterator<IPFlowID, IPRw::Mapping *>;
+template class Vector<IPRw::InputSpec>;
