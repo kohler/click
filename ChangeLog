@@ -1,3 +1,42 @@
+2001-02-15 Thursday 22:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* conf/: test.click, test2.click: use keyword arguments in sample
+	configurations
+
+2001-02-15 Thursday 22:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ip/ipprint.cc, standard/infinitesource.cc,
+	standard/infinitesource.hh, standard/ratedsource.cc,
+	standard/ratedsource.hh: add keyword arguments to
+	{Infinite,Rated}Source, including new STOP argument
+
+2001-02-15 Thursday 22:45  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: add mixed keywords:
+	keyword arguments can be mixed in with regular, positional
+	arguments. cpKeywords gives mixed keywords by default.
+	(cpUnmixedKeywords gives unmixed keywords.) Also, "-" is no longer
+	a valid character in keywords; and keywords must start with a
+	letter or "_".
+
+2001-02-15 Thursday 12:28  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuqueue.cc: oops: remove debug messages
+
+2001-02-15 Thursday 12:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuqueue.cc: fix cpuqueue bug in configure:
+	default queue length is 128
+
+2001-02-15 Thursday 12:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.cc: nitlets: find_consumer -> find_producer
+	name change, small optimization
+
+2001-02-15 Thursday 11:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* linuxmodule/skbmgr.cc: fix bug in skbmgr.cc
+
 2001-02-14 Wednesday 23:51  Benjie Chen <benjie@lcs.mit.edu>
 
 	* linuxmodule/skbmgr.cc: fix compile problems under __MTCLICK__
