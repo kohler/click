@@ -1,3 +1,7 @@
+2004-06-17 Thursday 19:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/grid/dsrroutetable.cc (1.8): add ELEMENT_REQUIRES
+
 2004-06-17 Thursday 18:08  John Bicket <jbicket@mit.edu>
 
 	* configure.in (1.228): fix for grid and wifi enabled userlevel
