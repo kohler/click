@@ -141,7 +141,7 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	if (d.iph && (d.iph->ip_hl <= 5 || network_length >= (int)(d.iph->ip_hl << 2)))
 	    return true;
 	else
-	    return field_missing(d, MISSING_IP, "IP", d.iph->ip_hl << 2);
+	    return field_missing(d, MISSING_IP, "IP", (d.iph ? d.iph->ip_hl << 2 : 20));
       case T_IP_LEN:
 	if (d.iph)
 	    d.v = ntohs(d.iph->ip_len) + (d.force_extra_length ? EXTRA_LENGTH_ANNO(d.p) : 0);
