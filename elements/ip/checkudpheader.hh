@@ -1,0 +1,45 @@
+#ifndef CHECKUDPHEADER_HH
+#define CHECKUDPHEADER_HH
+
+/*
+ * =c
+ * CheckUDPHeader
+ * =d
+ * Expects UDP/IP packets as input.
+ * Checks that the UDP header length and checksum fields are valid.
+ * Pushes invalid packets out on output 1, unless output 1 was unused;
+ * if so, drops invalid packets.
+ *
+ * =a CheckIPHeader
+ * =a CheckTCPHeader
+ * =a MarkIPHeader
+ */
+
+#include "element.hh"
+#include "glue.hh"
+
+class CheckUDPHeader : public Element {
+
+  int _drops;
+  
+ public:
+  
+  CheckUDPHeader();
+  
+  const char *class_name() const		{ return "CheckUDPHeader"; }
+  void notify_noutputs(int);
+  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
+  
+  int drops() const				{ return _drops; }
+  
+  CheckUDPHeader *clone() const;
+  void add_handlers();
+
+  Packet *simple_action(Packet *);
+  /* inline Packet *smaction(Packet *);
+     void push(int, Packet *p);
+     Packet *pull(int); */
+
+};
+
+#endif
