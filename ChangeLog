@@ -1,3 +1,102 @@
+2001-02-26 Monday 10:29  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/grid/hello.cc, elements/grid/lookupgeogridroute.cc,
+	elements/grid/lookupgeogridroute.hh,
+	elements/grid/lookuplocalgridroute.cc,
+	elements/grid/lookuplocalgridroute.hh, elements/grid/lrhello.cc,
+	elements/grid/radiosim.cc, elements/grid/radiosim.hh,
+	elements/ip/ipprint.cc, elements/linuxmodule/anydevice.cc,
+	elements/linuxmodule/anydevice.hh,
+	elements/linuxmodule/fromdevice.cc,
+	elements/linuxmodule/fromdevice.hh,
+	elements/linuxmodule/polldevice.cc,
+	elements/linuxmodule/schedulelinux.cc,
+	elements/linuxmodule/schedulelinux.hh,
+	elements/linuxmodule/todevice.cc,
+	elements/linuxmodule/tulipstats.cc,
+	elements/linuxmodule/tulipstats.hh, elements/local/toytcp.cc,
+	elements/radio/bim.cc, elements/radio/bim.hh,
+	elements/standard/bandwidthmeter.cc, elements/standard/burster.cc,
+	elements/standard/burster.hh, elements/standard/bwratedunqueue.cc,
+	elements/standard/discard.cc, elements/standard/discard.hh,
+	elements/standard/discardnofree.cc,
+	elements/standard/discardnofree.hh,
+	elements/standard/infinitesource.cc,
+	elements/standard/infinitesource.hh,
+	elements/standard/nullelement.hh, elements/standard/pulltopush.cc,
+	elements/standard/pulltopush.hh, elements/standard/quitwatcher.cc,
+	elements/standard/quitwatcher.hh,
+	elements/standard/randomsource.cc,
+	elements/standard/randomsource.hh,
+	elements/standard/ratedsource.cc, elements/standard/ratedsource.hh,
+	elements/standard/ratedunqueue.cc,
+	elements/standard/ratedunqueue.hh, elements/standard/red.cc,
+	elements/standard/scheduleinfo.cc,
+	elements/standard/scheduleinfo.hh,
+	elements/standard/stridesched.hh, elements/standard/unqueue.cc,
+	elements/standard/unqueue.hh, elements/userlevel/controlsocket.cc,
+	elements/userlevel/fromdevice.cc, elements/userlevel/fromdump.cc,
+	elements/userlevel/fromdump.hh, elements/userlevel/kerneltap.cc,
+	elements/userlevel/kerneltap.hh, elements/userlevel/todevice.cc,
+	elements/userlevel/todevice.hh, elements/userlevel/todump.cc,
+	elements/userlevel/todump.hh, include/click/element.hh,
+	include/click/elemlink.hh, include/click/router.hh,
+	include/click/task.hh, include/click/timer.hh, lib/element.cc,
+	lib/elemlink.cc, lib/router.cc, lib/task.cc, lib/timer.cc,
+	linuxmodule/Makefile.in, userlevel/Makefile.in: Great Scheduling
+	Rewrite: removed ElementLink. The task queues consist of Task
+	objects. Schedulable elements, therefore, must include Task data
+	members, and schedule themselves using those members. Changed all
+	elements to conform to the new interface. Some other changes folded
+	in. ACIRI; previous changes Mazu.
+
+2001-02-26 Monday 10:26  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: new version number
+
+2001-02-26 Monday 10:25  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc: fix cp_va_parse_keyword(), which previously
+	didnt work. A keyword which is not followed by any data is not
+	recognized as a keyword at all. Different keyword parsing: keywords
+	are not prevented from having [0-9.] as their first character by
+	cp_keyword(), although users are discouraged from recognizing such
+	keywords. Add cpTimeval for real.
+
+2001-02-26 Monday 10:23  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/packet.hh, lib/packet.cc: use new skbmgr allocate()
+	function, which takes a headroom argument. (Previously, both the
+	skbmgr and class Packet allocated headroom on packets. Furthermore,
+	the skbmgr could allocate headroom twice per packet!!) Also, fix
+	expensive_push() to use only Click functions -- never
+	skb_realloc_headroom(). Remove default_{head,tail}room() functions
+	in favor of DEFAULT_HEADROOM and MIN_TOTAL_LENGTH constants. (Mazu)
+
+2001-02-26 Monday 10:20  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, include/click/glue.hh, lib/error.cc:
+	ErrorHandler functions return -EINVAL instead of -1.
+	<click/glue.hh> includes the right version of <errno.h> (either
+	<errno.h> or <linux/errno.h>, depending on whether we are in the
+	kernel). In other checkins, elements no longer include <errno.h>
+	directly, but rely on <click/glue.hh>.
+
+2001-02-26 Monday 10:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/module.cc, doc/click-install.1, doc/click.o.8,
+	linuxmodule/modulepriv.hh, linuxmodule/sched.cc,
+	tools/click-install/click-install.cc: change the "threads" handler:
+	now it returns the PIDs of any running Click threads, one per line.
+	Access to the Vector of Click thread PIDs is protected by a
+	spinlock. Added "priority" handler to set Click threads' priority.
+	Added --priority option to click-install. Documentation fixes.
+
+2001-02-26 Monday 10:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/skbmgr.hh, linuxmodule/skbmgr.cc: skbmgr functions
+	include headroom arguments. also, removed extern "C"
+
 2001-02-25 Sunday 19:23  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/binpackingsched.hh: file binpackingsched.hh was
