@@ -160,17 +160,15 @@ AC_SUBST(elements_vpath)
 
 
 dnl 
-dnl  start wifi
+dnl wifi driver
 dnl
 
 AC_ARG_WITH(wifi, [  --with-wifi[[=DIR]]       Wifi driver (madwifi.stripped) source code is in DIR],
   [wifidir=$withval],
   wifidir=NONE)
 
-AC_DEFINE_UNQUOTED(WIFI_SRCDIR, "${wifidir}")
-
 if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
-    if expr "_$wifidir" : '_[[^/\\]]' >/dev/null; then 
+    if test "$wifidir" != NONE && expr "_$wifidir" : '_[[^/\\]]' >/dev/null; then 
 	AC_MSG_ERROR([
 =========================================
 
@@ -179,8 +177,8 @@ You must supply an absolute path starting with /.
 
 =========================================])
     elif test -f $wifidir/click_wifi/click_wifi.h; then
-	AC_DEFINE(HAVE_WIFI)
-	HAVE_WIFI=1
+	WIFI_INCLUDES=-I$wifidir/click_wifi
+	AC_SUBST(WIFI_INCLUDES)
 	dnl TARGETS="$TARGETS wifi"
     else
 	AC_MSG_ERROR([
@@ -193,17 +191,8 @@ the madwifi.stripped driver and supply the correct argument to
 
 =========================================])
     fi
-else
-    HAVE_WIFI=0
 fi
-AC_SUBST(HAVE_WIFI)
 
-AC_SUBST(wifidir)
-AC_DEFINE_UNQUOTED(WIFI_SRCDIR, "${wifidir}")
-
-dnl
-dnl end wifi
-dnl
 
 
 dnl

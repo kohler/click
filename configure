@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath HAVE_WIFI wifidir freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath WIFI_INCLUDES freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4364,13 +4364,8 @@ else
   wifidir=NONE
 fi;
 
-cat >>confdefs.h <<_ACEOF
-#define WIFI_SRCDIR "${wifidir}"
-_ACEOF
-
-
 if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
-    if expr "_$wifidir" : '_[^/\\]' >/dev/null; then
+    if test "$wifidir" != NONE && expr "_$wifidir" : '_[^/\\]' >/dev/null; then
 	{ { echo "$as_me:$LINENO: error:
 =========================================
 
@@ -4387,11 +4382,8 @@ You must supply an absolute path starting with /.
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
     elif test -f $wifidir/click_wifi/click_wifi.h; then
-	cat >>confdefs.h <<\_ACEOF
-#define HAVE_WIFI 1
-_ACEOF
+	WIFI_INCLUDES=-I$wifidir/click_wifi
 
-	HAVE_WIFI=1
 	    else
 	{ { echo "$as_me:$LINENO: error:
 =========================================
@@ -4413,16 +4405,7 @@ the madwifi.stripped driver and supply the correct argument to
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
     fi
-else
-    HAVE_WIFI=0
 fi
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define WIFI_SRCDIR "${wifidir}"
-_ACEOF
-
 
 
 
@@ -6740,7 +6723,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6743 "configure"
+#line 6726 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -12030,8 +12013,7 @@ s,@AR_CREATEFLAGS@,$AR_CREATEFLAGS,;t t
 s,@linuxdir@,$linuxdir,;t t
 s,@element_groups@,$element_groups,;t t
 s,@elements_vpath@,$elements_vpath,;t t
-s,@HAVE_WIFI@,$HAVE_WIFI,;t t
-s,@wifidir@,$wifidir,;t t
+s,@WIFI_INCLUDES@,$WIFI_INCLUDES,;t t
 s,@freebsd_srcdir@,$freebsd_srcdir,;t t
 s,@freebsd_includedir@,$freebsd_includedir,;t t
 s,@BUILD_CC@,$BUILD_CC,;t t

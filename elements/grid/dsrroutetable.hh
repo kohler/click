@@ -15,6 +15,7 @@
 #include "dsr.hh"
 
 CLICK_DECLS
+class LinkTable;
 
 
 /*
@@ -375,7 +376,7 @@ private:
 
   IPAddress *me;
 
-  class LinkTable *_link_table;
+  LinkTable *_link_table;
 
   SBMap _sendbuffer_map;
   ForwardedReqMap _forwarded_rreq_map;

@@ -14,7 +14,6 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 linuxdir = @linuxdir@
-wifidir = @wifidir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/linuxmodule
 
@@ -82,7 +81,8 @@ DEPCFLAGS = @DEPCFLAGS@
 
 DEFS = @DEFS@ 
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include -I$(wifidir)/click_wifi
+	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include \
+	@WIFI_INCLUDES@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

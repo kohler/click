@@ -187,27 +187,27 @@ sub process_file ($) {
 	push @flags, undef;
     }
 
-  # apply requirements and provisions
-  for ($i = $first; $i < @processing; $i++) {
-    push @requirements, $req;
-    push @provisions, $prov;
+    # apply requirements and provisions
+    for ($i = $first; $i < @processing; $i++) {
+	push @requirements, $req;
+	push @provisions, $prov;
     
-    # check to see if overloading is valid
-    if ($click_name[$i] && exists($click_name_to_id{$click_name[$i]})) {
-      my($j) = $click_name_to_id{$click_name[$i]};
-      my($dm_a) = driver_mask($requirements[$i]);
-      my($dm_b) = driver_mask($requirements[$j]);
-      if (($dm_a & $dm_b) == 0) {
-	# ok
-      } else {
-	print STDERR "invalid multiple definition of element class '$click_name[$i]'\n";
-	print STDERR $header_file[$j], ": first definition here\n";
-	print STDERR $header_file[$i], ": second definition here\n";
-	print STDERR "(Two classes may share a name only if they work in disjoint drivers.\nAdd explicit ELEMENT_REQUIRES() statements.)\n";
-      }
+	# check to see if overloading is valid
+	if ($click_name[$i] && exists($click_name_to_id{$click_name[$i]})) {
+	    my($j) = $click_name_to_id{$click_name[$i]};
+	    my($dm_a) = driver_mask($requirements[$i]);
+	    my($dm_b) = driver_mask($requirements[$j]);
+	    if (($dm_a & $dm_b) == 0) {
+		# ok
+	    } else {
+		print STDERR "invalid multiple definition of element class '$click_name[$i]'\n";
+		print STDERR $header_file[$j], ": first definition here\n";
+		print STDERR $header_file[$i], ": second definition here\n";
+		print STDERR "(Two classes may share a name only if they work in disjoint drivers.\nAdd explicit ELEMENT_REQUIRES() statements.)\n";
+	    }
+	}
+	$click_name_to_id{$click_name[$i]} = $i;
     }
-    $click_name_to_id{$click_name[$i]} = $i;
-  }
 }
 
 sub parents_processing ($) {
