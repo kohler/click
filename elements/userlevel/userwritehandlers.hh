@@ -14,13 +14,13 @@
  * get the select-based implementation working right now.
  *
  * Runs write handlers as read from the UNIX domain socket named SOCK.
- * Command strings of the form ``handler-name;handler-arg\n'', causing
+ * Command strings are of the form ``handler-name;handler-arg\n'', causing
  * handler-name(handler-arg) to be run.
  *
  * The number of chars in the command string must be less than
- * MAXCMDLEN, which default to 255.  
+ * MAXCMDLEN, which defaults to 255.  
  *
- * see ~decouto/src/writeunixsock.cc for a program that will write
+ * See ~decouto/src/writeunixsock.cc for a program that will write
  * properly formatted commands to this element.
  */
 
