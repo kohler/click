@@ -59,6 +59,18 @@ Aligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alig
 }
 
 void
+CombinedAligner::have_flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Alignment> &aout, int offout, int nout)
+{
+  _have->have_flow(ain, offin, nin, aout, offout, nout);
+}
+
+void
+CombinedAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &aout, int offout, int nout)
+{
+  _want->want_flow(ain, offin, nin, aout, offout, nout);
+}
+
+void
 GeneratorAligner::have_flow(const Vector<Alignment> &, int, int, Vector<Alignment> &aout, int offout, int nout)
 {
   for (int j = 0; j < nout; j++)

@@ -12,6 +12,17 @@ class Aligner {
 			 const Vector<Alignment> &out, int ooff, int nout);
 };
 
+class CombinedAligner : public Aligner {
+  Aligner *_have;
+  Aligner *_want;
+ public:
+  CombinedAligner(Aligner *have, Aligner *want) : _have(have), _want(want) { }
+  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
+		 Vector<Alignment> &out, int ooff, int nout);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
+};
+
 class GeneratorAligner : public Aligner {
   Alignment _alignment;
  public:

@@ -188,6 +188,8 @@ prepared_router()
   r->get_type_index("CheckIPHeader2", new AlignClass(a));
   r->get_type_index("MarkIPHeader", new AlignClass(a));
   r->get_type_index("IPEncap", new AlignClass(a));
+  a = new CombinedAligner(new ShifterAligner(14), new WantAligner(Alignment(4, 2)));
+  r->get_type_index("IPInputCombo", new AlignClass(a));
   a = new WantAligner(Alignment(2, 0));
   r->get_type_index("ARPResponder", new AlignClass(a));
   r->get_type_index("ARPQuerier", new AlignClass(a));
