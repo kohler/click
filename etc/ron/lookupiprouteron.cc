@@ -95,7 +95,6 @@ void LookupIPRouteRON::duplicate_pkt(Packet *p) {
 
 void LookupIPRouteRON::push_forward_syn(Packet *p) 
 {
-  struct timeval tp;
   // what to do in the case of a forward direction syn.
   FlowTableEntry *match = NULL;
   FlowTableEntry *new_entry = NULL;
@@ -106,8 +105,9 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
   //click_chatter("syn seq: %u\n", tcp_seq);
 
-  gettimeofday(&tp, NULL);
-  click_chatter("SAWSYN: (%ld,%ld)", tp.tv_sec, tp.tv_usec);
+  //gettimeofday(&tp, NULL);
+  //click_chatter("SAWSYN: (%ld,%ld)", tp.tv_sec, tp.tv_usec);
+  print_time("SAWSYN:");
 
   tcph = p->tcp_header();
 
@@ -115,7 +115,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
   rtprintf ("FOR TCP SYN\n");
-  fflush(NULL);
+  //fflush(NULL);
 
   if (match) {
     // Match found
@@ -132,7 +132,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 	     match->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc());
-      fflush(NULL);
+      //fflush(NULL);
       output(match->outgoing_port).push(p);
       return;
     }    
@@ -152,7 +152,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 	     new_entry->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc() );
-      fflush(NULL);
+      //fflush(NULL);
       output(new_entry->outgoing_port).push(p);
       return;
 
@@ -276,18 +276,19 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
   unsigned int portno;
 #endif
 
-  struct timeval tp;
-
+  char buf[128];
   const click_tcp *tcph;
   FlowTableEntry *match = NULL;
   tcph = p->tcp_header();
 
-  gettimeofday(&tp, NULL);
+  //gettimeofday(&tp, NULL);
 
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
   
-  click_chatter("REV TCP SYN-ACK inport(%d) (%ld,%ld)", inport,tp.tv_sec, tp.tv_usec);
+  //click_chatter("REV TCP SYN-ACK inport(%d) (%ld,%ld)", inport,tp.tv_sec, tp.tv_usec);
+  sprintf(buf, "REV TCP SYN-ACK inport(%d)", inport);
+  print_time(buf);
   
   if (match) { 
     match->saw_reply_packet();
@@ -297,10 +298,11 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	     inport, 
 	     p->dst_ip_anno().s().cc(), 
 	     IPAddress(p->ip_header()->ip_src).s().cc() );
-      fflush(NULL);
+      //fflush(NULL);
 
 #if MEASURE_NATRON
       portno = 1+ (unsigned int) (((float)(random() & 0xff)/256) * (noutputs()-1) );
+      portno = 2;
       click_chatter("Choosing(%d)", portno);
       // dont save to dst_table
       // _dst_table->insert(IPAddress(p->ip_header()->ip_src), portno); 
@@ -570,7 +572,6 @@ LookupIPRouteRON::FlowTable::~FlowTable() {
 LookupIPRouteRON::FlowTableEntry *
 LookupIPRouteRON::FlowTable::lookup(IPAddress src, IPAddress dst,
 				    unsigned short sport, unsigned short dport){
-
   rtprintf("LOOKUP: %d.%d.%d.%d(%d) -> %d.%d.%d.%d(%d)\n",
 	   src.data()[0], src.data()[1], src.data()[2], src.data()[3], sport,
 	   dst.data()[0], dst.data()[1], dst.data()[2], dst.data()[3], dport);
@@ -593,7 +594,7 @@ LookupIPRouteRON::FlowTable::lookup(IPAddress src, IPAddress dst,
 
 	// exact match is found
       _last_entry = &_v[i]; // cache this match
-	return &_v[i];
+      return &_v[i];
     }
   }
   // no match found
@@ -762,6 +763,11 @@ LookupIPRouteRON::DstTable::print() {
   }
 }
 
+void LookupIPRouteRON::print_time(char* s) {
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  click_chatter("%s (%ld,%ld)", s, tp.tv_sec, tp.tv_usec);
+}
 
 
 // generate Vector template instance

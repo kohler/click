@@ -48,6 +48,7 @@ public:
   void add_handlers();
 
   void push(int inport, Packet *p);
+  static void print_time(char* s);
 
 
 
@@ -72,7 +73,6 @@ protected:
 
   void duplicate_pkt(Packet *p);
   void send_rst(Packet *p, FlowTableEntry *match, int outport);
-
 private:
   FlowTable *_flow_table;
   DstTable  *_dst_table;
