@@ -9,6 +9,10 @@
 #include <string.h>
 #ifndef __linux__
 #define tcphdr tcp_header
+#ifndef IPOPT_OFFSET
+/* for alpha */
+#define IPOPT_OFFSET          2
+#endif
 # include <netinet/ip_var.h>
 # include <netinet/tcpip.h>
 #endif
