@@ -1,3 +1,7 @@
+2002-04-25 Thursday 18:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.32): [no log message]
+
 2002-04-24 Wednesday 17:37  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.181), tools/lib/Makefile.in (1.24),
