@@ -47,7 +47,6 @@ int
 CPUQueue::initialize(ErrorHandler *errh)
 {
   for (int i=0; i<NUM_CLICK_CPUS; i++) {
-    click_chatter("initializing %d", _capacity);
     _q[i]._q = new Packet*[_capacity+1];
     _q[i]._head = 0;
     _q[i]._tail = 0;
