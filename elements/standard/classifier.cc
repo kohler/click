@@ -509,6 +509,8 @@ Classifier::combine_compatible_states()
       ee.flip();
     if (e.no == ee.no && ee.compatible(e)) {
       e.yes = ee.yes;
+      if (!e.mask.u)		// but probably ee.mask.u is always != 0...
+	e.offset = ee.offset;
       e.value.u = (e.value.u & e.mask.u) | (ee.value.u & ee.mask.u);
       e.mask.u |= ee.mask.u;
       i--;
