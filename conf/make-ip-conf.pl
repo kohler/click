@@ -20,10 +20,11 @@
 # Make a Click IP router configuration.  This script generates a
 # configuration using PollDevices. You can change it to use
 # FromDevices; see the comment above the $ifs array, below.  The
-# output is intended for the Linux kernel module; however, by
-# replacing "toh :: ToHost\n" with "toh :: Print(toh)->Discard;\n",
-# below, and making the change from PollDevices to FromDevices, the
-# configuration will also work at userlevel.
+# output is intended for the Linux kernel module; however, by making
+# the change from PollDevices to FromDevices, and setting $local_host
+# appropriately, the configuration will also work at userlevel.
+
+# --------------------------- Begin configuration ----------------------------
 
 # Change this array to suit your router.
 # One line per network interface, containing:
@@ -38,6 +39,7 @@ my $ifs = [ [ "eth0", 1, "18.26.4.92", "255.255.255.0", "00:00:C0:3B:71:EF" ],
 #           [ "eth2", 1, "2.0.0.1", "255.0.0.0", "00:00:C0:8A:67:EF" ],
            ];
 
+# This used for testing purposes at MIT.
 if ($#ARGV >= 0) {
   $ifs = [];
   for ($i = 0; $i < $ARGV[0]; $i++) {
@@ -51,12 +53,17 @@ if ($#ARGV >= 0) {
 #   The mask;
 #   The gateway IP address (next hop);
 #   The output network interface name.
-# A default route can be specified as the last entry.
+# A default route (mask 0.0.0.0) can be specified as the last entry.
 my $srts = [ [ "0.0.0.0", "0.0.0.0", "18.26.4.1", "eth0" ]
 	   ];
 
-# Set to 1 if you want the configuration to handle echo requests itself.
+# Set to, e.g., "Print(toh) -> Discard" for user-level.
+my $local_host = "ToHost";
+
+# Set to 1 if you want the configuration to handle ICMP echo requests itself.
 my $handle_pings = 0;
+
+# --------------------------- End of configuration ---------------------------
 
 my $nifs = $#$ifs + 1;
 my $nsrts = $#$srts + 1;
@@ -70,15 +77,9 @@ for($i = 0; $i < $nifs; $i++){
            $ifs->[$i]->[2],
            $ifs->[$i]->[4]);
 }
-print "\n";
-
-# ARP updates are copied to each ARPQuerier and the host.
-print "toh :: ToHost;\n";
-printf("arpt :: Tee(%d);\n", $nifs + 1);
-print "arpt[$nifs] -> toh;\n";
 
 # Set up the routing table.
-my @routes, @invalid_src;
+my(@routes, @invalid_src);
 
 # For delivery to the local host
 for($i = 0; $i < $nifs; $i++){
@@ -86,7 +87,7 @@ for($i = 0; $i < $nifs; $i++){
     my $mask = ip2i($ifs->[$i]->[3]);
 
     push @routes, sprintf("%s/32 0", i2ip($ii));# This host.
-    
+
     my $dirbcast = ($ii & $mask) | ~$mask;	# Directed broadcast.
     push @routes, sprintf("%s/32 0", i2ip($dirbcast));
     push @invalid_src, i2ip($dirbcast);
@@ -95,7 +96,7 @@ for($i = 0; $i < $nifs; $i++){
     						# Directed broadcast (obsolete).
 }
 
-# For forwarding to connected networks 
+# For forwarding to connected networks
 for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);
@@ -127,12 +128,14 @@ for ($i = 0; $i < $nsrts; $i++) {
         $gw, $out + 1);
 }
 
-print "\n// Shared input path and routing table\n";
+print "\n// Shared IP input path and routing table\n";
 print "ip :: Strip(14);\n";
 print "rt :: StaticIPLookup(\n\t", join(",\n\t", @routes), ");\n";
-print "ip -> CheckIPHeader(", join(' ', @invalid_src), ") -> rt;\n\n";
+print "ip -> CheckIPHeader(", join(' ', @invalid_src), ") -> rt;\n";
 
-# Link level devices, classification, and ARP.
+# Link-level devices, classification, and ARP
+print "\n// ARP responses are copied to each ARPQuerier and the host.\n";
+printf("arpt :: Tee(%d);\n", $nifs + 1);
 for($i = 0; $i < $nifs; $i++){
     my $devname = $ifs->[$i]->[0];
     my $ip = $ifs->[$i]->[2];
@@ -143,19 +146,21 @@ for($i = 0; $i < $nifs; $i++){
 
 // Input and output paths for $devname
 c$i :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -);
-$fromdevice($devname) -> [0]c$i;
+$fromdevice($devname) -> c$i;
 out$i :: Queue(200) -> todevice$i :: ToDevice($devname);
 c$i\[0] -> ar$i :: ARPResponder($ip $ena) -> out$i;
 arpq$i :: ARPQuerier($ip, $ena) -> out$i;
 c$i\[1] -> arpt;
 arpt[$i] -> [1]arpq$i;
 c$i\[2] -> Paint($paint) -> ip;
-c$i\[3] -> Print(xx$i) -> Discard;
+c$i\[3] -> Print("$devname non-IP") -> Discard;
 EOD;
 }
 
 # Local delivery path.
 print "\n// Local delivery\n";
+print "toh :: $local_host;\n";
+print "arpt[$nifs] -> toh;\n";
 if ($handle_pings) {
     print <<"EOD;";
 rt[0] -> IPReassembler -> ping_ipc :: IPClassifier(icmp type echo, -);
@@ -181,12 +186,13 @@ rt[$i1] -> DropBroadcasts
     -> dt$i :: DecIPTTL
     -> fr$i :: IPFragmenter(1500)
     -> [0]arpq$i;
-dt$i\[1] -> ICMPError($ipa, 11, 0) -> [0]rt;
-fr$i\[1] -> ICMPError($ipa, 3, 4) -> [0]rt;
-gio$i\[1] -> ICMPError($ipa, 12, 1) -> [0]rt;
-cp$i\[1] -> ICMPError($ipa, 5, 1) -> [0]rt;
+dt$i\[1] -> ICMPError($ipa, 11, 0) -> rt;
+fr$i\[1] -> ICMPError($ipa, 3, 4) -> rt;
+gio$i\[1] -> ICMPError($ipa, 12, 1) -> rt;
+cp$i\[1] -> ICMPError($ipa, 5, 1) -> rt;
 EOD;
 }
+
 
 sub ip2i {
     my($ip) = @_;
@@ -202,4 +208,3 @@ sub i2ip {
     my $d = $i & 0xff;
     return sprintf("%d.%d.%d.%d", $a, $b, $c, $d);
 }
-
