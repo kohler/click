@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_FROMIPSUMDUMP_HH
 #define CLICK_FROMIPSUMDUMP_HH
 #include <click/element.hh>
@@ -72,6 +73,10 @@ substantially from the requested sampling probability. Use the
 C<sampling_prob> handler to find out the actual probability. If MULTIPACKET is
 true, then the sampling probability applies separately to the multiple packets
 generated per record.
+
+=item DEFAULT_CONTENTS
+
+String. Provides the default contents of the dump.
 
 =back
 

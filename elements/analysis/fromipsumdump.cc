@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * fromipsumdump.{cc,hh} -- element reads packets from IP summary dump file
  * Eddie Kohler
@@ -58,6 +59,7 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = false, multipacket = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
+    String default_contents;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -68,6 +70,7 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "PROTO", cpByte, "default IP protocol", &default_proto,
 		    "MULTIPACKET", cpBool, "generate multiple packets per record?", &multipacket,
+		    "DEFAULT_CONTENTS", cpArgument, "default contents of log", &default_contents,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -81,6 +84,8 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     _active = active;
     _zero = zero;
     _multipacket = multipacket;
+    if (default_contents)
+	bang_data(default_contents, errh);
     return 0;
 }
 
@@ -239,13 +244,13 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 
     _contents.clear();
     uint32_t all_contents = 0;
-    for (int i = 1; i < words.size(); i++) {
+    for (int i = 0; i < words.size(); i++) {
 	String word = cp_unquote(words[i]);
 	int what = parse_content(word);
 	if (what > W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
 	    all_contents |= (1 << (what - W_NONE - 1));
-	} else {
+	} else if (i > 0 || word != "!data") {
 	    error_helper(errh, "warning: unknown content type `" + word + "'");
 	    _contents.push_back(W_NONE);
 	}
