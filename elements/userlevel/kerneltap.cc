@@ -327,6 +327,8 @@ KernelTap::selected(int fd)
 	    perror("KernelTap read");
 	}
     }
+#else
+    (void) fd;
 #endif
 }
 
@@ -409,6 +411,7 @@ KernelTap::push(int, Packet *p)
     num_written = write(_fd, big, length + 16);
     num_expected_written = (int) length + 16;
 #else
+    (void) type;
     num_written = write(_fd, data, length);
     num_expected_written = (int) length;
 #endif

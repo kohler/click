@@ -151,7 +151,7 @@ percent_substitute(const String &pattern, int format1, ...)
   }
   va_end(val);
 
-  results['%'] = "%";
+  results[(uint8_t)'%'] = "%";
 
   const char *s = pattern.begin();
   const char *end = pattern.end();
