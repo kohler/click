@@ -30,7 +30,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #include <click/string.hh>
-#include <click/straccum.hh>
+#include <click/error.hh>
 
 #define UIO_MX			32
 #define	CLICKFS_DEBUG		1
@@ -51,7 +51,6 @@ struct clickfs_node {
 };
 
 String *current_config = 0;
-static StringAccum *build_config = 0;
 
 int
 clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
@@ -171,9 +170,10 @@ clickfs_setattr(struct vop_setattr_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
     struct vattr *vap = ap->a_vap;
 
-    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG)
-	return 0;
-    return EOPNOTSUPP;
+    /*
+     * This doesn't do anything, so we just pretend that it worked.
+     */
+    return 0;
 }
 
 int
@@ -285,6 +285,26 @@ find_handler(int eindex, int handlerno)
     return 0;
 }
 
+static const Router::Handler *
+clickfs_int_get_handler(struct clickfs_node *cp)
+{
+    int *handler_params = (int *) cp->dirent->param;
+    int eindex = handler_params[1];
+    const Router::Handler *h = find_handler(eindex, handler_params[0]);
+
+    return h;
+}
+
+static Element *
+clickfs_int_get_element(struct clickfs_node *cp)
+{
+    int *handler_params = (int *) cp->dirent->param;
+    int eindex = handler_params[1];
+    Element *e = eindex >= 0 ? current_router->element(eindex) : 0;
+
+    return e;
+}
+
 int
 clickfs_open(struct vop_open_args *ap)
 {
@@ -294,32 +314,31 @@ clickfs_open(struct vop_open_args *ap)
 
     if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
 	if (mode & FWRITE) {
-	    if (!build_config)
-		build_config = new StringAccum;
-	    if (!build_config)
+	    cp->rwbuf = new String();
+	    if (!cp->rwbuf)
 		return ENOMEM;
-	    build_config->clear();
-	    if (!build_config->reserve(1024))
-		return ENOMEM;
+	}
+	if (mode & FREAD) {
+	    cp->rwbuf = current_config;
 	}
 	return 0;
     }
 
     if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	int *handler_params = (int *) cp->dirent->param;
-	int eindex = handler_params[1];
-	Element *e = eindex >= 0 ? current_router->element(eindex) : 0;
-	const Router::Handler *h = find_handler(eindex, handler_params[0]);
+	Element *e = clickfs_int_get_element(cp);
+	const Router::Handler *h = clickfs_int_get_handler(cp);
 
 	if (!h) return ENOENT;
 
 	if (mode & FWRITE) {
 	    if (!h->write_visible()) return EPERM;
-	    return EOPNOTSUPP;
+	    cp->rwbuf = new String();
+	    if (!cp->rwbuf) return ENOMEM;
 	}
 	if (mode & FREAD) {
 	    if (!h->read_visible()) return EPERM;
 	    String *s = new String();
+	    if (!s) return ENOMEM;
 	    *s = h->call_read(e);
 	    cp->rwbuf = s;
 	}
@@ -338,19 +357,10 @@ clickfs_read(struct vop_read_args *ap)
     struct uio *uio = ap->a_uio;
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
     int len, off = uio->uio_offset;
-    String *read_str = NULL;
+    String *read_str = cp->rwbuf;
 
     if (vp->v_type != VREG)
 	return EOPNOTSUPP;
-
-    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG)
-	read_str = current_config;
-    else
-    if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE)
-	read_str = cp->rwbuf;
-    else
-	return EOPNOTSUPP;
-
     if (!read_str)
 	return 0;
 
@@ -368,16 +378,17 @@ clickfs_write(struct vop_write_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *) vp->v_data;
     int off = uio->uio_offset;
     int len = uio->uio_resid;
+    String *write_str = cp->rwbuf;
 
-    if (!build_config)
+    if (!write_str)
 	return ENOMEM;
 
-    int last_len = build_config->length();
+    int last_len = write_str->length();
     int end_pos = off + len;
-    if (end_pos > last_len && !build_config->extend(end_pos - last_len))
-	return ENOMEM;
+    if (end_pos > last_len)
+	write_str->append_fill(0, end_pos - last_len);
 
-    char *x = build_config->data() + off;
+    char *x = write_str->mutable_data() + off;
     if (end_pos > last_len)
 	memset(x, 0, end_pos - last_len);
     return uiomove(x, len, uio);
@@ -391,7 +402,8 @@ clickfs_close(struct vop_close_args *ap)
     int flags = ap->a_fflag;
 
     if (cp->dirent->type == CLICKFS_DIRENT_CONFIG && (flags & FWRITE)) {
-	*current_config = build_config->take_string();
+	*current_config = *cp->rwbuf;
+	cp->rwbuf = NULL;
 	kill_current_router();
 
 	Router *r = parse_router(*current_config);
@@ -403,6 +415,19 @@ clickfs_close(struct vop_close_args *ap)
 	} else {
 	    return EINVAL;
 	}
+    }
+
+    if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE && (flags & FWRITE)) {
+	Element *e = clickfs_int_get_element(cp);
+	const Router::Handler *h = clickfs_int_get_handler(cp);
+
+	String context_string = "In write handler `" + h->name() + "'";
+	if (e) context_string += String(" for `") + e->declaration() + "'";
+	ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+
+	int result = h->call_write(*cp->rwbuf, e, &cerrh);
+	if (result < 0)
+	    return EINVAL;
     }
 
     return 0;
