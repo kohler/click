@@ -105,7 +105,7 @@ class TaskList : public Task { public:
 
   TaskList();
 
-  bool empty() const			{ return _next == this; }
+  bool empty() const;
 
   void lock()				{ }
   void unlock()				{ }
@@ -157,6 +157,12 @@ Task::Task(Element *e)
 #endif
     _list(0), _all_prev(0), _all_next(0)
 {
+}
+
+inline bool
+TaskList::empty() const
+{
+  return _next == const_cast<Task*>(reinterpret_cast<const Task*>(this));
 }
 
 inline bool
