@@ -1,3 +1,238 @@
+2001-05-24 Thursday 20:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* LICENSE (1.4), elements/app/ftpportmapper.cc (1.14),
+	elements/ethernet/arpfaker.cc (1.17),
+	elements/ethernet/arpquerier.cc (1.36),
+	elements/ethernet/arpresponder.cc (1.33),
+	elements/ethernet/etherencap.cc (1.15),
+	elements/ethernet/ethermirror.cc (1.8),
+	elements/ethernet/hostetherfilter.cc (1.10),
+	elements/ethernet/ip6ndadvertiser.cc (1.12),
+	elements/ethernet/ip6ndsolicitor.cc (1.12),
+	elements/etherswitch/bridgemessage.cc (1.16),
+	elements/etherswitch/debugbridge.cc (1.13),
+	elements/etherswitch/etherswitch.cc (1.13),
+	elements/etherswitch/spantree.cc (1.27),
+	elements/grid/checkgridheader.cc (1.17),
+	elements/grid/filterbyhops.cc (1.8), elements/grid/filterbyrange.cc
+	(1.22), elements/grid/fixdstloc.cc (1.8),
+	elements/grid/fixsrcloc.cc (1.23),
+	elements/grid/floodinglocquerier.cc (1.23),
+	elements/grid/gridlocationinfo.cc (1.7),
+	elements/grid/gridroutetable.cc (1.5), elements/grid/hello.cc
+	(1.33), elements/grid/locationinfo.cc (1.22),
+	elements/grid/locfromfile.cc (1.11),
+	elements/grid/locqueryresponder.cc (1.18),
+	elements/grid/loctable.cc (1.9),
+	elements/grid/lookupgeogridroute.cc (1.16),
+	elements/grid/lookuplocalgridroute.cc (1.21),
+	elements/grid/lrhello.cc (1.18), elements/grid/movesim.cc (1.15),
+	elements/grid/pep.cc (1.20), elements/grid/printgrid.cc (1.15),
+	elements/grid/radiosim.cc (1.12), elements/grid/region.cc (1.8),
+	elements/grid/regionpep.cc (1.12), elements/grid/setgridchecksum.cc
+	(1.14), elements/grid/simplelocquerier.cc (1.9),
+	elements/grid/updateroutes.cc (1.20),
+	elements/icmp/checkicmpheader.cc (1.7), elements/icmp/icmperror.cc
+	(1.7), elements/icmp/icmppingresponder.cc (1.5),
+	elements/icmp/icmppingrewriter.cc (1.6),
+	elements/icmp/icmprewriter.cc (1.7), elements/icmp/icmpsendpings.cc
+	(1.8), elements/ip/checkipheader.cc (1.36),
+	elements/ip/checkipheader2.cc (1.23), elements/ip/decipttl.cc
+	(1.21), elements/ip/fixipsrc.cc (1.18), elements/ip/getipaddress.cc
+	(1.16), elements/ip/ipaddrrewriter.cc (1.7),
+	elements/ip/ipclassifier.cc (1.22), elements/ip/ipencap.cc (1.28),
+	elements/ip/ipfilter.cc (1.26), elements/ip/ipfragmenter.cc (1.22),
+	elements/ip/ipgwoptions.cc (1.25), elements/ip/ipinputcombo.cc
+	(1.22), elements/ip/ipmirror.cc (1.15),
+	elements/ip/ipoutputcombo.cc (1.16), elements/ip/ipprint.cc (1.25),
+	elements/ip/ipratemon.cc (1.91), elements/ip/iprw.cc (1.33),
+	elements/ip/iprwpatterns.cc (1.11), elements/ip/lookupiproute.cc
+	(1.21), elements/ip/lookupiproute2.cc (1.18),
+	elements/ip/lookupiproutelinux.cc (1.20),
+	elements/ip/lookupiproutemp.cc (1.8), elements/ip/markipce.cc
+	(1.5), elements/ip/markipheader.cc (1.13), elements/ip/rfc2507c.cc
+	(1.19), elements/ip/rfc2507d.cc (1.17), elements/ip/ripsend.cc
+	(1.25), elements/ip/rripmapper.cc (1.9),
+	elements/ip/saveipfields.cc (1.12), elements/ip/setipaddress.cc
+	(1.16), elements/ip/setipchecksum.cc (1.14),
+	elements/ip/setipdscp.cc (1.22), elements/ip/setrandipaddress.cc
+	(1.5), elements/ip/storeipaddress.cc (1.14),
+	elements/ip/stripipheader.cc (1.9), elements/ip/unstripipheader.cc
+	(1.8), elements/ip6/checkip6header.cc (1.15),
+	elements/ip6/decip6hlim.cc (1.10), elements/ip6/getip6address.cc
+	(1.9), elements/ip6/icmp6error.cc (1.18),
+	elements/ip6/ip6fragmenter.cc (1.8), elements/ip6/ip6mirror.cc
+	(1.5), elements/ip6/lookupip6route.cc (1.16),
+	elements/ip6/markip6header.cc (1.8), elements/ip6/setip6address.cc
+	(1.8), elements/ipsec/des.cc (1.16), elements/ipsec/desp.cc (1.20),
+	elements/ipsec/esp.cc (1.23), elements/ipsec/sha1.cc (1.4),
+	elements/linuxmodule/anydevice.cc (1.16),
+	elements/linuxmodule/cpuswitch.cc (1.5),
+	elements/linuxmodule/cyclecount.cc (1.11),
+	elements/linuxmodule/cyclecountaccum.cc (1.7),
+	elements/linuxmodule/fasttcpflows.cc (1.3),
+	elements/linuxmodule/fastudpflows.cc (1.4),
+	elements/linuxmodule/fastudpsrc.cc (1.9),
+	elements/linuxmodule/fastudpsrcip6.cc (1.8),
+	elements/linuxmodule/fromdevice.cc (1.58),
+	elements/linuxmodule/fromlinux.cc (1.29),
+	elements/linuxmodule/perfcount.cc (1.15),
+	elements/linuxmodule/perfcountaccum.cc (1.7),
+	elements/linuxmodule/perfcountinfo.cc (1.5),
+	elements/linuxmodule/perfcountuser.cc (1.11),
+	elements/linuxmodule/perfinfo.cc (1.21),
+	elements/linuxmodule/polldevice.cc (1.108),
+	elements/linuxmodule/rtcycles.cc (1.8),
+	elements/linuxmodule/schedulelinux.cc (1.16),
+	elements/linuxmodule/setcyclecount.cc (1.7),
+	elements/linuxmodule/setperfcount.cc (1.7),
+	elements/linuxmodule/storecycles.cc (1.14),
+	elements/linuxmodule/todevice.cc (1.107),
+	elements/linuxmodule/tolinux.cc (1.24),
+	elements/linuxmodule/tolinuxsniffers.cc (1.21),
+	elements/linuxmodule/tulipstats.cc (1.9),
+	elements/local/chuckcheck.cc (1.10), elements/local/forceicmp.cc
+	(1.4), elements/local/forceip.cc (1.9), elements/local/forcetcp.cc
+	(1.11), elements/local/forceudp.cc (1.4),
+	elements/local/rrunqueue.cc (1.3), elements/local/toytcp.cc (1.17),
+	elements/local/webgen.cc (1.6), elements/radio/b8b10.cc (1.12),
+	elements/radio/bim.cc (1.23), elements/radio/checkpattern.cc
+	(1.11), elements/radio/scramble.cc (1.9),
+	elements/radio/sendpattern.cc (1.12),
+	elements/standard/addressinfo.cc (1.13), elements/standard/align.cc
+	(1.14), elements/standard/alignmentinfo.cc (1.16),
+	elements/standard/averagecounter.cc (1.9),
+	elements/standard/bandwidthmeter.cc (1.9),
+	elements/standard/bandwidthshaper.cc (1.10),
+	elements/standard/block.cc (1.17), elements/standard/burster.cc
+	(1.19), elements/standard/bwratedsplitter.cc (1.6),
+	elements/standard/bwratedunqueue.cc (1.10),
+	elements/standard/checkcrc32.cc (1.11),
+	elements/standard/checklength.cc (1.12),
+	elements/standard/checkpaint.cc (1.17),
+	elements/standard/classifier.cc (1.33),
+	elements/standard/compblock.cc (1.16), elements/standard/counter.cc
+	(1.20), elements/standard/devirtualizeinfo.cc (1.8),
+	elements/standard/discard.cc (1.19),
+	elements/standard/discardnofree.cc (1.16),
+	elements/standard/drivermanager.cc (1.3), elements/standard/drr.cc
+	(1.4), elements/standard/errorelement.cc (1.6),
+	elements/standard/frontdropqueue.cc (1.9),
+	elements/standard/hashdemux.cc (1.16),
+	elements/standard/hashswitch.cc (1.8), elements/standard/idle.cc
+	(1.18), elements/standard/infinitesource.cc (1.28),
+	elements/standard/meter.cc (1.19), elements/standard/nullelement.cc
+	(1.10), elements/standard/nulls.cc (1.8),
+	elements/standard/paint.cc (1.17), elements/standard/painttee.cc
+	(1.9), elements/standard/peekhandlers.cc (1.15),
+	elements/standard/pokehandlers.cc (1.16),
+	elements/standard/print.cc (1.18), elements/standard/priosched.cc
+	(1.10), elements/standard/probsplitter.cc (1.10),
+	elements/standard/pullswitch.cc (1.14),
+	elements/standard/pulltopush.cc (1.24), elements/standard/queue.cc
+	(1.36), elements/standard/quitwatcher.cc (1.12),
+	elements/standard/randomerror.cc (1.20),
+	elements/standard/randomlossage.cc (1.22),
+	elements/standard/randomsource.cc (1.12),
+	elements/standard/ratedsource.cc (1.39),
+	elements/standard/ratedsplitter.cc (1.13),
+	elements/standard/ratedunqueue.cc (1.12), elements/standard/red.cc
+	(1.30), elements/standard/rrsched.cc (1.9),
+	elements/standard/rrswitch.cc (1.11),
+	elements/standard/scheduleinfo.cc (1.30),
+	elements/standard/setcrc32.cc (1.11),
+	elements/standard/settimestamp.cc (1.3),
+	elements/standard/shaper.cc (1.26),
+	elements/standard/staticpullswitch.cc (1.8),
+	elements/standard/staticswitch.cc (1.8),
+	elements/standard/stridesched.cc (1.14),
+	elements/standard/strideswitch.cc (1.9), elements/standard/strip.cc
+	(1.14), elements/standard/suppressor.cc (1.17),
+	elements/standard/switch.cc (1.14), elements/standard/tee.cc
+	(1.17), elements/standard/timedsink.cc (1.20),
+	elements/standard/timedsource.cc (1.23),
+	elements/standard/unqueue.cc (1.12), elements/standard/unqueue2.cc
+	(1.4), elements/standard/unstrip.cc (1.3),
+	elements/tcpudp/checktcpheader.cc (1.5),
+	elements/tcpudp/checkudpheader.cc (1.5),
+	elements/tcpudp/dynudpipencap.cc (1.5),
+	elements/tcpudp/iprewriter.cc (1.21),
+	elements/tcpudp/settcpchecksum.cc (1.5),
+	elements/tcpudp/snooptcp.cc (1.5), elements/tcpudp/tcpipsend.cc
+	(1.4), elements/tcpudp/tcprewriter.cc (1.10),
+	elements/tcpudp/udpipencap.cc (1.7),
+	elements/userlevel/chattersocket.cc (1.3),
+	elements/userlevel/controlsocket.cc (1.23),
+	elements/userlevel/frombpf.cc (1.23),
+	elements/userlevel/fromdevice.cc (1.24),
+	elements/userlevel/fromdump.cc (1.29),
+	elements/userlevel/kerneltap.cc (1.23),
+	elements/userlevel/printold.cc (1.6), elements/userlevel/tobpf.cc
+	(1.26), elements/userlevel/todevice.cc (1.13),
+	elements/userlevel/todump.cc (1.26),
+	etc/samplepackage/kernelversion.c (1.3),
+	etc/samplepackage/sampleelt.cc (1.6), include/click/bighashmap.cc
+	(1.6), include/click/ewma.cc (1.3), include/click/hashmap.cc (1.2),
+	include/click/vector.cc (1.2), lib/archive.cc (1.11), lib/atomic.cc
+	(1.4), lib/bigewma.cc (1.4), lib/bighashmap_arena.cc (1.4),
+	lib/bitvector.cc (1.12), lib/confparse.cc (1.70), lib/element.cc
+	(1.59), lib/elemfilter.cc (1.10), lib/error.cc (1.28),
+	lib/etheraddress.cc (1.12), lib/gaprate.cc (1.5), lib/glue.cc
+	(1.21), lib/integers.cc (1.7), lib/ip6address.cc (1.22),
+	lib/ip6flowid.cc (1.4), lib/ip6table.cc (1.8), lib/ipaddress.cc
+	(1.21), lib/ipaddressset.cc (1.6), lib/ipflowid.cc (1.10),
+	lib/iptable.cc (1.10), lib/iptable2.cc (1.14), lib/lexer.cc (1.51),
+	lib/lulea.cc (1.5), lib/packageutils.cc (1.2), lib/packet.cc
+	(1.43), lib/radix.cc (1.10), lib/router.cc (1.93), lib/straccum.cc
+	(1.17), lib/string.cc (1.26), lib/task.cc (1.15), lib/templatei.cc
+	(1.8), lib/timer.cc (1.21), lib/userutils.cc (1.14),
+	lib/variableenv.cc (1.4), lib/vectorv.cc (1.9),
+	linuxmodule/kernelerror.cc (1.19), linuxmodule/kernelversion.c
+	(1.7), linuxmodule/module.cc (1.55), linuxmodule/proc_config.cc
+	(1.24), linuxmodule/proc_element.cc (1.31), linuxmodule/proc_mgr.cc
+	(1.15), linuxmodule/sched.cc (1.27),
+	tools/click-align/alignclass.cc (1.11),
+	tools/click-align/alignment.cc (1.8),
+	tools/click-align/click-align.cc (1.33),
+	tools/click-check/click-check.cc (1.18),
+	tools/click-combine/click-combine.cc (1.18),
+	tools/click-combine/click-uncombine.cc (1.16),
+	tools/click-devirtualize/click-devirtualize.cc (1.24),
+	tools/click-devirtualize/cxxclass.cc (1.7),
+	tools/click-devirtualize/signature.cc (1.7),
+	tools/click-devirtualize/specializer.cc (1.21),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.39),
+	tools/click-fastclassifier/fc_classifier.cc (1.3),
+	tools/click-fastclassifier/fc_ipclassifier.cc (1.3),
+	tools/click-install/click-install.cc (1.39),
+	tools/click-install/click-uninstall.cc (1.17),
+	tools/click-undead/click-undead.cc (1.17),
+	tools/click-xform/adjacency.cc (1.12),
+	tools/click-xform/click-xform.cc (1.34), tools/lib/elementt.cc
+	(1.15), tools/lib/hashmapi.cc (1.7), tools/lib/lexert.cc (1.34),
+	tools/lib/processingt.cc (1.11), tools/lib/routert.cc (1.45),
+	tools/lib/toolutils.cc (1.36), tools/lib/vectori.cc (1.8),
+	userlevel/click.cc (1.57), click-buildtool (1.15), click-mkelemmap
+	(1.8), doc/click-elem2man (1.10): everywhere: updated license
+	summary (license remains the same)
+
+2001-05-24 Thursday 19:58  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.121): look for ptype_dispatch, not
+	register_net_out; no one uses register_net_out
+
+2001-05-24 Thursday 19:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: fromdevice.cc (1.57), todevice.cc (1.106),
+	tolinux.cc (1.23), tolinuxsniffers.cc (1.20): update to support
+	Linux 2.4
+
+2001-05-24 Thursday 19:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/glue.hh (1.14), lib/glue.cc (1.20): include a
+	definition of strcmp on Linux 2.4 with newer gccs, because
+	otherwise gcc crashes horribly
+
 2001-05-24 Thursday 14:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* DISTFILES (1.26): added ClickController to DISTFILES
