@@ -1,8 +1,10 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * icmppingresponder.{cc,hh} -- element constructs ICMP echo response packets
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,9 +25,10 @@
 #include <click/click_ether.h>
 #include <click/click_ip.h>
 #include <click/click_icmp.h>
+#include <click/packet_anno.hh>
 
 ICMPPingResponder::ICMPPingResponder()
-    : Element(1,1)
+    : Element(1, 1)
 {
     MOD_INC_USE_COUNT;
 }
@@ -50,45 +53,49 @@ ICMPPingResponder::notify_noutputs(int n)
 Packet *
 ICMPPingResponder::simple_action(Packet *p_in)
 {
-  const click_ip *iph_in = p_in->ip_header();
-  const icmp_generic *icmph_in = reinterpret_cast<const icmp_generic *>(p_in->transport_header());
+    const click_ip *iph_in = p_in->ip_header();
+    const icmp_generic *icmph_in = reinterpret_cast<const icmp_generic *>(p_in->transport_header());
 
-  if (iph_in->ip_p != IP_PROTO_ICMP || icmph_in->icmp_type != ICMP_ECHO) {
-      if (noutputs() == 2)
-	  output(1).push(p_in);
-      else
-	  p_in->kill();
-      return 0;
-  }
+    if (iph_in->ip_p != IP_PROTO_ICMP || icmph_in->icmp_type != ICMP_ECHO) {
+	if (noutputs() == 2)
+	    output(1).push(p_in);
+	else
+	    p_in->kill();
+	return 0;
+    }
 
-  WritablePacket *q = p_in->uniqueify();
-  if (!q)			// out of memory
-      return 0;
-  
-  // swap src and target ip addresses (checksum remains valid)
-  click_ip *iph = q->ip_header();
-  struct in_addr tmp_addr = iph->ip_dst;
-  iph->ip_dst = iph->ip_src;
-  iph->ip_src = tmp_addr;
+    WritablePacket *q = p_in->uniqueify();
+    if (!q)			// out of memory
+	return 0;
 
-  // set annotations
-  // (dst_ip_anno bug reported by Sven Hirsch <hirschs@gmx.de>)
-  q->set_dst_ip_anno(iph->ip_dst);
-  
-  // set ICMP packet type to ICMP_ECHO_REPLY and recalculate checksum
-  icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(q->transport_header());
-  unsigned short old_hw = ((unsigned short *)icmph)[0];
-  icmph->icmp_type = ICMP_ECHO_REPLY;
-  icmph->icmp_code = 0;
-  unsigned short new_hw = ((unsigned short *)icmph)[0];
-  
-  // incrementally update IP checksum according to RFC1624:
-  // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
-  unsigned sum = (~icmph->icmp_cksum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
-  sum = (sum & 0xFFFF) + (sum >> 16);
-  icmph->icmp_cksum = ~(sum + (sum >> 16));
+    // swap src and target ip addresses (checksum remains valid)
+    click_ip *iph = q->ip_header();
+    struct in_addr tmp_addr = iph->ip_dst;
+    iph->ip_dst = iph->ip_src;
+    iph->ip_src = tmp_addr;
 
-  return q;
+    // set TTL to 255, update checksum
+    // (bug reported by <kp13@gmx.co.uk>)
+    uint16_t old_hw = ((uint16_t *)iph)[4];
+    iph->ip_ttl = 255;
+    uint16_t new_hw = ((uint16_t *)iph)[4];
+    click_update_in_cksum(&iph->ip_sum, old_hw, new_hw);
+    
+    // set annotations
+    // (dst_ip_anno bug reported by Sven Hirsch <hirschs@gmx.de>)
+    q->set_dst_ip_anno(iph->ip_dst);
+    click_gettimeofday(&q->timestamp_anno());
+    SET_PAINT_ANNO(q, 0);
+
+    // set ICMP packet type to ICMP_ECHO_REPLY and recalculate checksum
+    icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(q->transport_header());
+    old_hw = ((uint16_t *)icmph)[0];
+    icmph->icmp_type = ICMP_ECHO_REPLY;
+    icmph->icmp_code = 0;
+    new_hw = ((uint16_t *)icmph)[0];
+    click_update_in_cksum(&icmph->icmp_cksum, old_hw, new_hw);
+
+    return q;
 }
 
 EXPORT_ELEMENT(ICMPPingResponder)
