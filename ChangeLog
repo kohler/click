@@ -1,3 +1,8 @@
+2001-12-13 Thursday 14:35  Eddie Kohler <kohler@aciri.org>
+
+	* elements/bsdmodule/: polldevice.cc (1.6), polldevice.hh (1.3):
+	remove PollDevice in favor of BSD polling
+
 2001-12-13 Thursday 03:48  Eddie Kohler <kohler@aciri.org>
 
 	* apps/ClickController/Pair.java (1.2): nitlet (mostly to check CVS
