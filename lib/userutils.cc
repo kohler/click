@@ -302,11 +302,32 @@ path_find_file_2(const String &filename, String path, String default_path,
   }
 }
 
+
+static const char *the_clickpath = 0;
+
+const char *
+clickpath()
+{
+  if (!the_clickpath) {
+    the_clickpath = getenv("CLICKPATH");
+    if (!the_clickpath)
+      the_clickpath = "";
+  }
+  return the_clickpath;
+}
+
+void
+set_clickpath(const char *p)
+{
+  the_clickpath = p;
+}
+
+
 String
 clickpath_find_file(const String &filename, const char *subdir,
 		    String default_path, ErrorHandler *errh = 0)
 {
-  const char *path = getenv("CLICKPATH");
+  const char *path = clickpath();
   String was_default_path = default_path;
 
   if (filename && filename[0] == '/')
