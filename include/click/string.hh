@@ -25,6 +25,7 @@ class String { public:
   explicit String(unsigned char);
   explicit String(int);
   explicit String(unsigned);
+  explicit String(long);
   explicit String(unsigned long);
   explicit String(unsigned long long);
   ~String();

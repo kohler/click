@@ -71,6 +71,13 @@ String::String(unsigned u)
   assign(buf, -1);
 }
 
+String::String(long d)
+{
+  char buf[128];
+  sprintf(buf, "%ld", d);
+  assign(buf, -1);
+}
+
 String::String(unsigned long u)
 {
   char buf[128];
