@@ -78,7 +78,7 @@ If the element implements the \fIname\fP interface, this function will
 return the address of that interface. Otherwise, it returns a null pointer.
 \fIName\fP is most frequently an element class name, but could be anything.
 The default implementation returns
-.K true
+.K this
 iff \fIname\fP equals
 .BR class_name() .
 '
@@ -204,7 +204,7 @@ Should set elements of \fIinput_vector\fP and \fIoutput_vector\fP to
 indicate whether the element's input and output ports are push, pull, or
 agnostic. If \fIn\fP is a valid input port (0 <= \fIn\fP <
 \fBninputs()\fP), then the value at
-.BR input_vector[input_offset+\fIn\fP]
+.BR input_vector[\fIn\fP]
 should be that port's initial processing type, and similarly for output
 ports. Possible processing types are
 .BR VPUSH ", " VPULL ", and " VAGNOSTIC .

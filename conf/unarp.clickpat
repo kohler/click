@@ -1,0 +1,26 @@
+elementclass UnARP {
+  input -> arpq :: ARPQuerier($ip1, $eth1)
+	-> q :: Queue($q1)
+	-> RouterLink($r0, $r1, $r2, $r3)
+	-> c :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
+	-> ARPResponder($eth2)
+	-> output;
+  input[1] -> [1]arpq;
+  input[2] -> q;
+  c[1] -> [1]output;
+  c[2] -> [2]output;
+  c[3] -> [3]output;
+}
+
+elementclass UnARP_Replacement {
+  input -> EtherEncap(0x0800, $eth1, $eth2)
+        -> q :: Queue($q1)
+        -> RouterLink($r0, $r1, $r2, $r3)
+        -> c :: Classifier(12/0800, -)
+        -> [2]output;
+  input[1] -> Discard;
+  input[2] -> q;
+  c[1] -> [3]output;
+  Idle -> output;
+  Idle -> [1]output;
+}
