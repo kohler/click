@@ -4843,7 +4843,7 @@ calling @code{Task::initialize} directly. This method queries any
 @click{ScheduleInfo} elements in the configuration to determine the
 task's scheduling parameters, then calls @code{Task::initialize} to
 schedule the task. The @code{ScheduleInfo::join_scheduler} method is
-defined in the @code{"elements/standard/scheduleinfo.hh"} header file.
+defined in the @code{<click/standard/scheduleinfo.hh>} header file.
 
 @deftypeop {Static Method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
 Sets @var{task}'s scheduling parameters as specified by any
