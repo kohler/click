@@ -1,3 +1,18 @@
+2005-01-04 Tuesday 13:16  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/: todevice.cc (1.46), todevice.hh (1.31):
+	check to see if {add,remove}_selects fail, add a few debugging
+	handlers.
+
+2005-01-04 Tuesday 13:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.25): small logical cleanup along the lines of
+	john's suggestion
+
+2005-01-04 Tuesday 12:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.24): idiot! fix add_select
+
 2005-01-04 Tuesday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.23): be careful in remove_select():
