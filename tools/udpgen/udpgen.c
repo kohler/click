@@ -263,6 +263,7 @@ cache_udp_packet(struct udpgen_opt *uopt)
   /* packet length */
   {
     int dev_header_len = rt->u.dst.dev->hard_header_len;
+    printk("<1>%d hard header %d src %d dst\n", dev_header_len, rt->rt_src, rt->rt_dst);
     int min_packet_size =
       dev_header_len + sizeof(struct iphdr) + sizeof(struct udphdr);
     if (min_packet_size < uopt->packet_size)
