@@ -485,7 +485,7 @@ Master::add_select(int fd, Element *element, int mask)
 	if (r < 0) {
 	    // Not all file descriptors are kqueueable.  So if we encounter
 	    // a problem, fall back to select() or poll().
-	    click_chatter("Master::add_select(%d, %d): kevent: %s", (int) kev[0].ident, kev[0].filter, strerror(errno));
+	    // click_chatter("Master::add_select(%d, %d): kevent: %s", (int) kev[0].ident, kev[0].filter, strerror(errno));
 	    close(_kqueue);
 	    _kqueue = -1;
 	    // Clean blank entries out of the _pollfds array.
