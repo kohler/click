@@ -907,6 +907,7 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   set_noutputs(conf.size());
   
   _output_everything = -1;
+  int before = errh->nerrors();
 
   // set align offset
   {
@@ -1053,7 +1054,7 @@ Classifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   optimize_exprs(errh);
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
-  return 0;
+  return (errh->nerrors() == before ? 0 : -1);
 }
 
 String
