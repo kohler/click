@@ -129,8 +129,6 @@ static bool started = 0;
 static void
 catch_sigint(int)
 {
-  /* call exit so -pg file is written */
-  // exit(0);
   signal(SIGINT, SIG_DFL);
   if (!started)
     kill(getpid(), SIGINT);
@@ -735,14 +733,6 @@ particular purpose.\n");
   struct timeval before_time, after_time;
   getrusage(RUSAGE_SELF, &before);
   gettimeofday(&before_time, 0);
-
-  // register handlers
-  int nelements = router->nelements();
-  for (int i = 0; i < nelements; i++) {
-    Element *e = router->element(i);
-    e->add_default_handlers(true);
-    e->add_handlers();
-  }
 
   // run driver
   if (!quit_immediately) {

@@ -518,27 +518,15 @@ init_router_element_procs()
       }
     }
 
-  bool add_per_element = current_router->initialized();
-  
-  // add handlers
-  for (int i = 0; i < nelements; i++)
-    if (proc_dir_entry *fpde = element_pdes[i]) {
-      Element *element = current_router->element(i);
-      if (element->cast("Error")) continue;
-      element->add_default_handlers(add_per_element);
-      if (add_per_element) element->add_handlers();
-    }
-
   // hook up per-element proc entries
   Vector<int> handlers;
-  for (int i = 0; i < nelements; i++) {
-    handlers.clear();
-    current_router->element_handlers(i, handlers);
-    for (int j = 0; j < handlers.size(); j++) {
-      if (proc_dir_entry *fpde = element_pdes[i])
+  for (int i = 0; i < nelements; i++)
+    if (proc_dir_entry *fpde = element_pdes[i]) {
+      handlers.clear();
+      current_router->element_handlers(i, handlers);
+      for (int j = 0; j < handlers.size(); j++)
 	register_handler(fpde, i, handlers[j]);
     }
-  }
 }
 
 
