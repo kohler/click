@@ -59,7 +59,7 @@ class RecycledSkbPool { public:
 
   RecycledSkbBucket _buckets[NBUCKETS];
   atomic_t _lock;
-#ifdef __MTCLICK__
+#if __MTCLICK__
   int _last_producer;
   u_atomic32_t _consumers;
 #else
@@ -80,7 +80,7 @@ class RecycledSkbPool { public:
   struct sk_buff *allocate(unsigned hr, unsigned sz, int, int *);
   void recycle(struct sk_buff *, bool);
 
-#ifdef __MTCLICK__ 
+#if __MTCLICK__ 
   static int find_producer(int, int);
 #endif
   
@@ -155,7 +155,7 @@ RecycledSkbPool::initialize()
   atomic_set(&_lock, 0);
   for (int i = 0; i < NBUCKETS; i++)
     _buckets[i].initialize();
-#ifdef __MTCLICK__
+#if __MTCLICK__
   _last_producer = -1;
   _consumers = 0;
 #endif
@@ -173,7 +173,7 @@ RecycledSkbPool::cleanup()
   lock();
   for (int i = 0; i < NBUCKETS; i++)
     _buckets[i].cleanup();
-#ifdef __MTCLICK__
+#if __MTCLICK__
   _last_producer = -1;
   _consumers = 0;
 #endif
@@ -217,7 +217,7 @@ RecycledSkbPool::size_to_higher_bucket_size(unsigned size)
 }
 
 
-#ifdef __MTCLICK__
+#if __MTCLICK__
 static RecycledSkbPool pool[NR_CPUS];
 #else
 static RecycledSkbPool pool;
@@ -267,7 +267,7 @@ skb_recycle_fast(struct sk_buff *skb)
 }
 
 
-#ifdef __MTCLICK__
+#if __MTCLICK__
 
 inline int
 RecycledSkbPool::find_producer(int cpu, int bucket)
@@ -381,7 +381,7 @@ RecycledSkbPool::allocate(unsigned headroom, unsigned size, int want, int *store
 void
 skbmgr_init()
 {
-#ifdef __MTCLICK__
+#if __MTCLICK__
   for(int i=0; i<NR_CPUS; i++) pool[i].initialize();
 #else
   pool.initialize();
@@ -391,7 +391,7 @@ skbmgr_init()
 void
 skbmgr_cleanup()
 {
-#ifdef __MTCLICK__
+#if __MTCLICK__
   for(int i=0; i<NR_CPUS; i++) pool[i].cleanup();
 #else
   pool.cleanup();
@@ -404,7 +404,7 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
   if (headroom < SKBMGR_DEF_HEADSZ)
     headroom = SKBMGR_DEF_HEADSZ;
   
-#ifdef __MTCLICK__
+#if __MTCLICK__
   int cpu = current->processor;
   int producer = cpu;
   size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
@@ -427,7 +427,7 @@ skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 void
 skbmgr_recycle_skbs(struct sk_buff *skbs, int dirty)
 {
-#ifdef __MTCLICK__
+#if __MTCLICK__
   int cpu = current->processor;
   pool[cpu].recycle(skbs, dirty);
 #else

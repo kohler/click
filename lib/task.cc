@@ -87,7 +87,7 @@ Task::join_scheduler(RouterThread *rt)
 
   _all_list->lock();
   _list = rt;
-#ifdef __MTCLICK__
+#if __MTCLICK__
   set_thread_preference(rt->thread_id());
 #endif
   _all_list->unlock();

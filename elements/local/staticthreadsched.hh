@@ -1,8 +1,6 @@
 #ifndef STATICTHREADSCHED_HH
 #define STATICTHREADSCHED_HH
 
-#ifdef __MTCLICK__
-
 /*
  * =c
  * StaticThreadSched(ELEMENT THREAD, ...)
@@ -39,7 +37,5 @@ class StaticThreadSched : public Element {
   int initialize(ErrorHandler *);
   void run_scheduled();
 };
-
-#endif
 
 #endif

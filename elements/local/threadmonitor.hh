@@ -13,8 +13,6 @@
  * above THRESH are printed. By default THRESH is 1000 cycles.
  */
 
-#ifdef __MTCLICK__
-
 #include <click/element.hh>
 #include <click/timer.hh>
 
@@ -39,4 +37,3 @@ class ThreadMonitor : public Element {
 
 #endif
 
-#endif

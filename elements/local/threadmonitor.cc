@@ -1,4 +1,3 @@
-#ifdef __MTCLICK__
 #include <click/config.h>
 #include <click/package.hh>
 #include "threadmonitor.hh"
@@ -29,6 +28,7 @@ ThreadMonitor::initialize(ErrorHandler *)
 int 
 ThreadMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+#if __MTCLICK__
   _interval = 1000;
   _thresh = 1000;
   if (cp_va_parse(conf, this, errh, 
@@ -37,11 +37,15 @@ ThreadMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 	          cpUnsigned, "thresh", &_thresh, 0) < 0)
     return -1;
   return 0;
+#else
+  return errh->error("ThreadMonitor requires multithreading\n");
+#endif
 }
 
 void
 ThreadMonitor::run_scheduled()
 {
+#if __MTCLICK__
   int print = 0;
   Vector<Task *> schedule[router()->nthreads()];
 
@@ -58,7 +62,7 @@ ThreadMonitor::run_scheduled()
   task_list->unlock();
 
   if (print) {
-    unsigned tnow = click_getusecofday();
+    unsigned tnow = click_jiffies();
     for (int i=0; i<router()->nthreads(); i++) {
       for (int j=0; j<schedule[i].size(); j++) {
 	Task *t = schedule[i][j]; 
@@ -75,9 +79,8 @@ ThreadMonitor::run_scheduled()
   }
 
   _timer.schedule_after_ms(_interval);
+#endif
 }
 
 EXPORT_ELEMENT(ThreadMonitor)
-
-#endif
 

@@ -1,4 +1,3 @@
-#ifdef __MTCLICK__
 #include <click/config.h>
 #include <click/package.hh>
 #include "../standard/scheduleinfo.hh"
@@ -24,6 +23,7 @@ StaticThreadSched::~StaticThreadSched()
 int
 StaticThreadSched::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+#if __MTCLICK__
   for (int i = 0; i < conf.size(); i++) {
     Vector<String> parts;
     int thread;
@@ -38,6 +38,9 @@ StaticThreadSched::configure(const Vector<String> &conf, ErrorHandler *errh)
     }
   }
   return 0;
+#else
+  return errh->error("StaticThreadSched requires multithreading\n");
+#endif
 }
 
 int
@@ -51,6 +54,7 @@ StaticThreadSched::initialize(ErrorHandler *)
 void
 StaticThreadSched::run_scheduled()
 {
+#if __MTCLICK__
   TaskList *task_list = router()->task_list();
   task_list->lock();
   Task *t = task_list->initialized_next();
@@ -78,9 +82,8 @@ StaticThreadSched::run_scheduled()
     t = t->initialized_next();
   }
   task_list->unlock();
+#endif
 }
 
 EXPORT_ELEMENT(StaticThreadSched)
-
-#endif
 

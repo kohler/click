@@ -13,8 +13,6 @@
  * load balance. By default it is 1000 (1 second).
  */
 
-#ifdef __MTCLICK__
-
 #include <click/element.hh>
 #include <click/timer.hh>
 
@@ -35,8 +33,6 @@ class BinPackingScheduler : public Element {
   int initialize(ErrorHandler *);
   void run_scheduled();
 };
-
-#endif
 
 #endif
 

@@ -1,4 +1,3 @@
-#ifdef __MTCLICK__
 #include <click/config.h>
 #include <click/package.hh>
 #include "../standard/scheduleinfo.hh"
@@ -35,17 +34,22 @@ BinPackingScheduler::initialize(ErrorHandler *)
 int 
 BinPackingScheduler::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+#if __MTCLICK__
   _interval = 1000;
   if (cp_va_parse(conf, this, errh, 
 	          cpOptional,
 	          cpUnsigned, "interval", &_interval, 0) < 0)
     return -1;
   return 0;
+#else
+  return errh->error("BinPackingScheduler requires multithreading\n");
+#endif
 }
 
 void
 BinPackingScheduler::run_scheduled()
 {
+#if __MTCLICK__
   Vector<Task*> tasks;
   TaskList *task_list = router()->task_list();
   task_list->lock();
@@ -83,7 +87,7 @@ BinPackingScheduler::run_scheduled()
 #if DEBUG > 0
   if (high > 1000 && !((random()>>2)%50)) {
     print = 1;
-    unsigned now = click_getusecofday();
+    unsigned now = click_jiffies();
     for(int i=0; i<sorted.size(); i++) {
 	Element *e = sorted[i]->element();
 	if (e) 
@@ -123,7 +127,7 @@ BinPackingScheduler::run_scheduled()
   
 #if DEBUG > 0
   if (print) {
-    unsigned now = click_getusecofday();
+    unsigned now = click_jiffies();
     for(int i=0; i<sorted.size(); i++) {
 	Element *e = sorted[i]->element();
 	if (e) 
@@ -137,8 +141,8 @@ BinPackingScheduler::run_scheduled()
 #endif
 
   _timer.schedule_after_ms(_interval);
+#endif
 }
 
 EXPORT_ELEMENT(BinPackingScheduler)
 
-#endif
