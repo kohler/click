@@ -91,6 +91,7 @@ int
 AvailableRates::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = 0;
+  _debug = false;
   for (int x = 0; x < conf.size(); x++) {
     res = parse_and_insert(conf[x], errh);
     if (res != 0) {
@@ -134,9 +135,11 @@ int
 AvailableRates::insert(EtherAddress eth, Vector<int> rates) 
 {
   if (!(eth)) {
-    click_chatter("AvailableRates %s: You fool, you tried to insert %s\n",
-		  id().cc(),
-		  eth.s().cc());
+    if (_debug) {
+      click_chatter("AvailableRates %s: You fool, you tried to insert %s\n",
+		    id().cc(),
+		    eth.s().cc());
+    }
     return -1;
   }
   DstInfo *dst = _rtable.findp(eth);

@@ -123,6 +123,11 @@ OpenAuthResponder::push(int, Packet *p)
     return;
   }
 
+  if (seq != 0) {
+    p->kill();
+    return;
+  }
+
   if (_debug) {
     click_chatter("%{element}: auth %d seq %d status %d\n",
 		  this, 

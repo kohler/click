@@ -201,13 +201,15 @@ WifiTXFeedback::run_task()
     Packet *p = _queue[_head];
     _head = next_i(_head);
 
-    int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p));
-    if (success) {
-      _successes++;
-    } else {
+    int status = WIFI_TX_STATUS_ANNO(p);
+
+    if (status & WIFI_FAILURE) {
       _failures++;
+    } else {
+      _successes++;
     }
-    if (noutputs() == 2 && !success) {
+
+    if ((status & WIFI_FAILURE) && noutputs() == 2) {
       output(1).push(p);
     } else {
       output(0).push(p);
