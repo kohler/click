@@ -1,3 +1,12 @@
+2003-06-23 Monday 21:55  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: wifiqueue.cc (1.1), wifiqueue.hh (1.1): WifiQueue
+	eleminates head-of-line blocking in when used in conjunction with
+	WifiTXFeedback element. Also functions as a scheduler on a per-link
+	basis.
+	
+	--john
+
 2003-06-21 Saturday 22:54  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: txstat.cc (1.1), txstat.hh (1.1),
