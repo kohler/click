@@ -804,6 +804,62 @@ cp_word(const String &str, String *return_value, String *rest = 0)
   }
 }
 
+static bool
+cp_keyword(const String &str, String *return_value, String *rest)
+{
+  const char *s = str.data();
+  int len = str.length();
+  int i = 0;
+
+  // accumulate a word
+  int quote_state = 0;
+  
+  for (; i < len; i++)
+    switch (s[i]) {
+      
+     case ' ':
+     case '\f':
+     case '\n':
+     case '\r':
+     case '\t':
+     case '\v':
+     case '=':
+      if (quote_state == 0)
+	goto done;
+      break;
+
+     case '\"':
+     case '\'':
+      if (quote_state == 0)
+	quote_state = s[i];
+      else if (quote_state == s[i])
+	quote_state = 0;
+      break;
+
+     default:
+      if (quote_state == 0 && !isalnum(s[i]) && s[i] != '_' && s[i] != '-'
+	  && s[i] != '.')
+	return false;
+      break;
+      
+    }
+  
+ done:
+  if (i == 0 || quote_state != 0)
+    return false;
+
+  *return_value = cp_unquote(str.substring(0, i)).upper();
+
+  if (i < len && s[i] == '=')
+    i++;
+  for (; i < len; i++)
+    if (!isspace(s[i]))
+      break;
+  *rest = str.substring(i);
+  return true;
+}
+
+
 bool
 cp_ip_address(const String &str, unsigned char *return_value
 	      CP_CONTEXT_ARG)
@@ -1330,11 +1386,11 @@ cp_remove_argtype(cp_argtype *t)
 }
 
 static void
-default_parsefunc(int cp_command, const String &arg, cp_value *v,
+default_parsefunc(cp_value *v, const String &arg,
 		  ErrorHandler *errh, const char *argname  CP_CONTEXT_ARG)
 {
   const char *desc = v->description;
-  switch (cp_command) {
+  switch (v->command) {
     
    case cpArgument:
     v->v_string = arg;
@@ -1385,7 +1441,7 @@ default_parsefunc(int cp_command, const String &arg, cp_value *v,
 	errh->error("overflow on %s (%s)", argname, desc);
       else
 	errh->error("%s should be %s (real)", argname, desc);
-    } else if (cp_command == cpNonnegReal && v->v.i < 0)
+    } else if (v->command == cpNonnegReal && v->v.i < 0)
       errh->error("%s (%s) must be >= 0", argname, desc);
     break;
      
@@ -1419,7 +1475,7 @@ default_parsefunc(int cp_command, const String &arg, cp_value *v,
     
    case cpIPPrefix:
    case cpIPAddressOrPrefix: {
-     bool mask_optional = (cp_command == cpIPAddressOrPrefix);
+     bool mask_optional = (v->command == cpIPAddressOrPrefix);
      if (!cp_ip_prefix(arg, v->v.address, v->v.address + 4, mask_optional CP_PASS_CONTEXT))
        errh->error("%s should be %s (IP address prefix)", argname, desc);
      break;
@@ -1441,7 +1497,7 @@ default_parsefunc(int cp_command, const String &arg, cp_value *v,
 
    case cpIP6Prefix:
    case cpIP6AddressOrPrefix: {
-     bool mask_optional = (cp_command == cpIP6AddressOrPrefix);
+     bool mask_optional = (v->command == cpIP6AddressOrPrefix);
      if (!cp_ip6_prefix(arg, v->v.address, v->v.address + 16, mask_optional CP_PASS_CONTEXT))
        errh->error("%s should be %s (IPv6 address prefix)", argname, desc);
      break;
@@ -1472,10 +1528,10 @@ default_parsefunc(int cp_command, const String &arg, cp_value *v,
 }
 
 static void
-default_storefunc(int cp_command, cp_value *v  CP_CONTEXT_ARG)
+default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 {
   int address_bytes;
-  switch (cp_command) {
+  switch (v->command) {
     
    case cpBool: {
      bool *bstore = (bool *)v->store;
@@ -1575,6 +1631,42 @@ default_storefunc(int cp_command, cp_value *v  CP_CONTEXT_ARG)
   }
 }
 
+
+#define CP_VALUES_SIZE 80
+static cp_value *cp_values;
+
+static void
+assign_keyword_argument(const Vector<String> &args, int argno,
+			const char *argname, StringAccum &nonassigned_sa,
+			int npositional, int nvalues)
+{
+  String keyword, rest;
+  // find keyword
+  if (!cp_keyword(args[argno], &keyword, &rest)) {
+    if (nonassigned_sa.length())
+      nonassigned_sa << ", ";
+    nonassigned_sa << "<" << argname << " " << (argno + 1) << ">";
+    return;
+  }
+  // look for keyword
+  for (int i = npositional; i < nvalues; i++)
+    if (keyword == cp_values[i].keyword) {
+      if (cp_values[i].v.i) {
+	if (nonassigned_sa.length())
+	  nonassigned_sa << ", ";
+	nonassigned_sa << keyword << " (duplicate keyword)";
+      } else {
+	cp_values[i].v.i = 1;
+	cp_values[i].v_string = rest;
+      }
+      return;
+    }
+  // no keyboard found
+  if (nonassigned_sa.length())
+    nonassigned_sa << ", ";
+  nonassigned_sa << keyword;
+}
+
 static int
 cp_va_parsev(const Vector<String> &args,
 #ifndef CLICK_TOOL
@@ -1583,46 +1675,55 @@ cp_va_parsev(const Vector<String> &args,
 	     const char *argname, const char *separator,
 	     ErrorHandler *errh, va_list val)
 {
-  int argno = 0;
-  
-  int *cp_commands = new int[args.size() + 11];
-  cp_value *values = new cp_value[args.size() + 11];
-  if (!cp_commands || !values) {
-    delete[] cp_commands;
-    delete[] values;
+  if (!cp_values)
     return errh->error("out of memory in cp_va_parse");
-  }
-  
-  char argname_buf[128];
-  int argname_offset;
-  sprintf(argname_buf, "%s %n", argname, &argname_offset);
-  
-  int nrequired = -1;
-  int nerrors_in = errh->nerrors();
-  
-  while (int cp_command = va_arg(val, int)) {
 
-    if (argno == args.size() + 10) {
-      // no more space to store information about the arguments; append
-      // a `...' and break
-      cp_commands[argno] = cpIgnoreRest;
-      argno++;
-      goto done;
+  int nvalues = 0;
+  int nrequired = -1;
+  int npositional = -1;
+  int nerrors_in = errh->nerrors();
+
+  while (1) {
+    
+    if (nvalues == CP_VALUES_SIZE - 1)
+      // no more space to store information about the arguments; break
+      return errh->error("too many arguments to cp_va_parsev!");
+
+    cp_value *v = &cp_values[nvalues];
+    v->argtype = 0;
+    
+    if (npositional >= 0) {
+      // read keyword if necessary
+      v->keyword = va_arg(val, const char *);
+      if (v->keyword == 0)
+	goto done;
     }
 
-    // check for controls
-    assert(cp_command != cpEnd);
+    int cp_command = va_arg(val, int);
+    if (cp_command == 0)
+      goto done;
+
+    // check for special commands
     if (cp_command == cpOptional) {
-      nrequired = argno;
+      if (nrequired < 0)
+	nrequired = nvalues;
+      continue;
+    } else if (cp_command == cpKeywords) {
+      if (nrequired < 0)
+	nrequired = nvalues;
+      if (npositional < 0)
+	npositional = nvalues;
+      continue;
+    } else if (cp_command == cpIgnore) {
+      v->command = cpIgnore;
+      nvalues++;
       continue;
     } else if (cp_command == cpIgnoreRest) {
-      cp_commands[argno] = cpIgnoreRest;
-      argno++;
+      if (nrequired < 0)
+	nrequired = nvalues;
+      v->command = cpIgnoreRest;
+      nvalues++;
       goto done;
-    } else if (cp_command == cpIgnore) {
-      cp_commands[argno] = (argno >= args.size() ? -cpIgnore : cpIgnore);
-      argno++;
-      continue;
     }
 
     // find cp_argtype
@@ -1633,72 +1734,110 @@ cp_va_parsev(const Vector<String> &args,
     }
 
     // store stuff in v
-    cp_value &v = values[argno];
-    v.description = va_arg(val, const char *);
+    v->command = cp_command;
+    v->argtype = t;
+    v->description = va_arg(val, const char *);
     if (t->extra == cpArgExtraInt)
-      v.extra = va_arg(val, int);
-    v.store = va_arg(val, void *);
+      v->extra = va_arg(val, int);
+    v->store = va_arg(val, void *);
     if (t->extra == cpArgStore2)
-      v.store2 = va_arg(val, void *);
-
-    // parse argument
-    if (argno < args.size()) {
-      sprintf(argname_buf + argname_offset, "%d", argno + 1);
-      t->parse(cp_command, args[argno], &v, errh, argname_buf  CP_PASS_CONTEXT);
-      cp_commands[argno] = cp_command;
-    } else
-      cp_commands[argno] = -cp_command;
-
-    argno++;
+      v->store2 = va_arg(val, void *);
+    v->v.i = 0;
+    nvalues++;
   }
 
  done:
   
-  // if wrong number of arguments, print signature
   if (nrequired < 0)
-    nrequired = argno;
-  if (args.size() == nrequired - 1 && cp_commands[nrequired-1] == cpIgnoreRest)
+    nrequired = nvalues;
+  if (npositional < 0)
+    npositional = nvalues;
+
+  // assign keyword arguments
+  if (npositional < nvalues && npositional < args.size()) {
+    StringAccum nonassigned_sa;
+    for (int i = npositional; i < args.size(); i++)
+      assign_keyword_argument(args, i, argname, nonassigned_sa, npositional, nvalues);
+    if (nonassigned_sa.length()) {
+      StringAccum keywords_sa;
+      for (int i = npositional; i < nvalues; i++) {
+	if (i > npositional)
+	  keywords_sa << ", ";
+	keywords_sa << cp_values[i].keyword;
+      }
+      errh->error("bad keyword(s) %s\n(valid keywords are %s)", nonassigned_sa.cc(), keywords_sa.cc());
+      return -1;
+    }
+  }
+  
+  // if wrong number of arguments, print signature
+  if (args.size() > nvalues && nvalues && cp_values[nvalues-1].command == cpIgnoreRest)
     /* not an error */;
-  else if (args.size() > argno && argno && cp_commands[argno-1] == cpIgnoreRest)
-    /* not an error */;
-  else if (args.size() > argno || args.size() < nrequired) {
+  else if (args.size() > nvalues || args.size() < nrequired) {
     StringAccum signature;
-    for (int i = 0; i < argno; i++) {
+    for (int i = 0; i < npositional; i++) {
       if (i == nrequired)
 	signature << (nrequired > 0 ? " [" : "[");
       if (i)
 	signature << separator;
-      int cmd = cp_commands[i];
-      if (cmd < 0) cmd = -cmd;
-      cp_argtype *t = find_argtype(cmd);
-      if (t)
+      if (cp_argtype *t = cp_values[i].argtype)
 	signature << t->name;
-      else if (cmd == cpIgnoreRest)
+      else if (t->command == cpIgnoreRest)
 	signature << "...";
       else
 	signature << "??";
     }
-    if (nrequired < argno)
+    if (nrequired < npositional)
       signature << "]";
+    if (npositional < nvalues)
+      signature << (npositional == 0 ? "[keywords]" : ", [keywords]");
 
-    const char *whoops = (args.size() > argno ? "many" : "few");
+    const char *whoops = (args.size() > nvalues ? "too many" : "too few");
     if (signature.length())
-      errh->error("too %s %ss; expected `%s'", whoops, argname, signature.cc());
+      errh->error("%s %ss; expected `%s'", whoops, argname, signature.cc());
     else
       errh->error("expected empty %s list", argname);
+    return -1;
   }
+
+  // parse arguments
+  char argname_buf[128];
+  int argname_offset;
+  sprintf(argname_buf, "%s %n", argname, &argname_offset);
+
+  for (int i = 0; i < nrequired; i++)
+    if (cp_argtype *t = cp_values[i].argtype) {
+      sprintf(argname_buf + argname_offset, "%d", i + 1);
+      t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
+    }
+  for (int i = nrequired; i < npositional && i < args.size(); i++)
+    if (cp_argtype *t = cp_values[i].argtype) {
+      sprintf(argname_buf + argname_offset, "%d", i + 1);
+      t->parse(&cp_values[i], args[i], errh, argname_buf  CP_PASS_CONTEXT);
+    }
+  for (int i = npositional; i < nvalues; i++) {
+    cp_value *v = &cp_values[i];
+    if (v->argtype && v->v.i) {
+      StringAccum sa;
+      sa << "keyword " << v->keyword;
+      v->argtype->parse(v, v->v_string, errh, sa.cc()  CP_PASS_CONTEXT);
+    } else
+      v->argtype = 0;
+  }
+
+  // check for failure
+  if (errh->nerrors() != nerrors_in)
+    return -1;
   
   // if success, actually set the values
-  if (errh->nerrors() == nerrors_in)
-    for (int i = 0; i < args.size() && i < argno; i++) {
-      cp_argtype *t = find_argtype(cp_commands[i]);
-      if (t)
-	t->store(cp_commands[i], &values[i]  CP_PASS_CONTEXT);
-    }
-  
-  delete[] cp_commands;
-  delete[] values;
-  return (errh->nerrors() == nerrors_in ? 0 : -1);
+  // mark unset optional arguments as dead
+  for (int i = args.size(); i < npositional; i++)
+    cp_values[i].argtype = 0;
+  for (int i = 0; i < nvalues; i++)
+    if (cp_argtype *t = cp_values[i].argtype)
+      t->store(&cp_values[i]  CP_PASS_CONTEXT);
+
+  return 0;
 }
 
 int
@@ -1775,7 +1914,7 @@ cp_unparse_real(unsigned real, int frac_bits)
   // this context but not sure.
   // Works well with cp_real2 above; as an invariant,
   // unsigned x, y;
-  // cp_real2(cp_unparse_real(x, FRAC_BITS), &y) == true && x == y
+  // cp_real2(cp_unparse_real(x, FRAC_BITS), FRAC_BITS, &y) == true && x == y
   
   StringAccum sa;
   assert(frac_bits < 29);
@@ -1898,6 +2037,8 @@ cp_va_static_initialize()
   cp_add_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc);
   cp_add_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc);
   cp_add_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc);
+
+  cp_values = new cp_value[CP_VALUES_SIZE];
 }
 
 void
@@ -1911,4 +2052,6 @@ cp_va_static_cleanup()
       t = n;
     }
   }
+
+  delete[] cp_values;
 }

@@ -91,8 +91,9 @@ bool cp_des_cblock(const String &, unsigned char *, String *rest = 0);
 enum CpVaParseCmd {
   cpEnd = 0,
   cpOptional,
-  cpIgnoreRest,
+  cpKeywords,
   cpIgnore,
+  cpIgnoreRest,
   cpArgument,	// String *value
   cpString,	// String *value
   cpWord,	// String *value
@@ -134,9 +135,9 @@ void cp_va_static_cleanup();
 struct cp_value;
 struct cp_argtype;
 
-typedef void (*cp_parsefunc)(int command, const String &arg, cp_value *,
+typedef void (*cp_parsefunc)(cp_value *, const String &arg,
 			     ErrorHandler *, const char *argdesc  CP_CONTEXT);
-typedef void (*cp_storefunc)(int command, cp_value *  CP_CONTEXT);
+typedef void (*cp_storefunc)(cp_value *  CP_CONTEXT);
 
 enum { cpArgNormal = 0, cpArgStore2, cpArgExtraInt };
 cp_argtype *cp_add_argtype(int cp_command, const char *name, int extra,
@@ -144,10 +145,15 @@ cp_argtype *cp_add_argtype(int cp_command, const char *name, int extra,
 void cp_remove_argtype(cp_argtype *);
 
 struct cp_value {
-  int extra;
+  // set by cp_va_parse:
+  int command;
+  cp_argtype *argtype;
+  const char *keyword;
   const char *description;
+  int extra;
   void *store;
   void *store2;
+  // set by parsefunc, used by storefunc:
   union {
     bool b;
     int i;
