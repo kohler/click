@@ -1,3 +1,8 @@
+2003-01-22 Wednesday 11:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/printgrid.cc (1.27): nitlet: properly initialize
+	_timestamp option to false, don't print timetamps by default.
+
 2003-01-22 Wednesday 10:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: linktester.cc (1.1), linktester.hh (1.1),
