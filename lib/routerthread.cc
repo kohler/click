@@ -198,7 +198,9 @@ RouterThread::wait(int iter)
 #if CLICK_USERLEVEL
     if (iter % DRIVER_ITER_SELECT == 0)
       router()->run_selects(!empty());
-#elif defined(CLICK_LINUXMODULE)	/* Linux kernel module */
+#else
+#ifndef CLICK_GREEDY
+#if defined(CLICK_LINUXMODULE)	/* Linux kernel module */
     if (iter % DRIVER_ITER_LINUXSCHED == 0) 
       schedule();
 #elif defined(CLICK_BSDMODULE)		/* BSD kernel module */
@@ -206,7 +208,9 @@ RouterThread::wait(int iter)
       yield(curproc, NULL);
 #else
 #error Compiling for unknown target.
-#endif
+#endif  /* CLICK_LINUXMODULE */
+#endif  /* CLICK_GREEDY */
+#endif  /* !CLICK_USERLEVEL */
     lock_tasks();
   }
 
