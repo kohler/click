@@ -14,7 +14,7 @@
  * is specified, they will all run. The one that runs later may override an
  * earlier run.
  * =a
- * ThreadMonitor, BalanceThreadSched
+ * ThreadMonitor, BalancedThreadSched
  */
 
 #include <click/element.hh>

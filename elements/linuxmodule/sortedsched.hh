@@ -4,7 +4,7 @@
 
 /*
  * =c
- * BalanceThreadSched([INTERVAL, INCREASING])
+ * BalancedThreadSched([INTERVAL, INCREASING])
  * =s IP
  * bin packing scheduler
  * =d
@@ -21,12 +21,12 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 
-class BalanceThreadSched : public Element { public:
+class BalancedThreadSched : public Element { public:
 
-    BalanceThreadSched();
-    ~BalanceThreadSched();
+    BalancedThreadSched();
+    ~BalancedThreadSched();
   
-    const char *class_name() const	{ return "BalanceThreadSched"; }
+    const char *class_name() const	{ return "BalancedThreadSched"; }
     int configure(Vector<String> &, ErrorHandler *);
 
     int initialize(ErrorHandler *);

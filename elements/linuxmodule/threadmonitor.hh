@@ -13,7 +13,8 @@
  * tasks are busy. INTERVAL by default is 1000 ms. Only tasks with cycle count
  * of at least THRESH are printed. By default THRESH is 1000 cycles.
  *
- * =a StaticThreadSched, SortedTaskSched
+ * =a
+ * StaticThreadSched, BalancedThreadSched
  */
 
 #include <click/element.hh>

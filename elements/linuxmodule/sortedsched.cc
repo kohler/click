@@ -33,19 +33,19 @@
 #define KEEP_GOOD_ASSIGNMENT 1
 
 
-BalanceThreadSched::BalanceThreadSched()
+BalancedThreadSched::BalancedThreadSched()
     : _timer(this)
 {
     MOD_INC_USE_COUNT;
 }
 
-BalanceThreadSched::~BalanceThreadSched()
+BalancedThreadSched::~BalancedThreadSched()
 {
     MOD_DEC_USE_COUNT;
 }
   
 int 
-BalanceThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
+BalancedThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _increasing = true;
@@ -58,7 +58,7 @@ BalanceThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-BalanceThreadSched::initialize(ErrorHandler *)
+BalancedThreadSched::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
     _timer.schedule_after_ms(2000);
@@ -78,7 +78,7 @@ static int task_rev_sorter(void *va, void *vb) {
 }
 
 void
-BalanceThreadSched::run_timer()
+BalancedThreadSched::run_timer()
 {
     Master *m = router()->master();
 
@@ -150,7 +150,7 @@ BalanceThreadSched::run_timer()
 
 #if 0
 void
-BalanceThreadSched::run_timer()
+BalancedThreadSched::run_timer()
 {
     Vector<Task*> tasks;
     unsigned total_load = 0;
@@ -275,4 +275,4 @@ BalanceThreadSched::run_timer()
 #endif
 
 ELEMENT_REQUIRES(linuxmodule smpclick)
-EXPORT_ELEMENT(BalanceThreadSched BalanceThreadSched-SortedTaskSched)
+EXPORT_ELEMENT(BalancedThreadSched BalancedThreadSched-SortedTaskSched)
