@@ -58,8 +58,9 @@ IPFilter::create_wordmap()
   wordmap->insert("ipip",	WT(TYPE_PROTO, IP_PROTO_IPIP));
   wordmap->insert("tcp",	WT(TYPE_PROTO, IP_PROTO_TCP));
   wordmap->insert("udp",	WT(TYPE_PROTO, IP_PROTO_UDP));
+  wordmap->insert("tcpudp",	WT(TYPE_PROTO, IP_PROTO_TCP_OR_UDP));
   
-  wordmap->insert("echo",	WT(TYPE_PORT, 7) | WT_MORE);
+  wordmap->insert("echo",	WT(TYPE_PORT, 7));
   wordmap->insert("discard",	WT(TYPE_PORT, 9));
   wordmap->insert("daytime",	WT(TYPE_PORT, 13));
   wordmap->insert("chargen",	WT(TYPE_PORT, 19));
@@ -74,6 +75,8 @@ IPFilter::create_wordmap()
   wordmap->insert("www",	WT(TYPE_PORT, 80));
   wordmap->insert("pop3",	WT(TYPE_PORT, 110));
   wordmap->insert("auth",	WT(TYPE_PORT, 113));
+  wordmap->insert("nntp",	WT(TYPE_PORT, 119));
+  wordmap->insert("ntp",	WT(TYPE_PORT, 123));
   wordmap->insert("imap3",	WT(TYPE_PORT, 220));
   wordmap->insert("https",	WT(TYPE_PORT, 443));
   wordmap->insert("imaps",	WT(TYPE_PORT, 993));
@@ -211,10 +214,12 @@ IPFilter::clone() const
 void
 IPFilter::Primitive::clear()
 {
+  _negated = false;
   _type = _srcdst = 0;
   _transp_proto = UNKNOWN;
   _data = 0;
-  _op = 0;
+  _op = OP_EQ;
+  _op_negated = false;
 }
 
 void
@@ -315,7 +320,7 @@ IPFilter::Primitive::unparse_transp_proto(int transp_proto)
    case IP_PROTO_IPIP: return "ipip";
    case IP_PROTO_TCP: return "tcp";
    case IP_PROTO_UDP: return "udp";
-   case IP_PROTO_TCP_OR_UDP: return "(tcp || udp)";
+   case IP_PROTO_TCP_OR_UDP: return "tcpudp";
    default: return "ip proto " + String(transp_proto);
   }
 }
@@ -364,14 +369,14 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 	_data = p._type;
 	goto retry;
       } else
-	return errh->error("bare integer `%d'; specify `proto', `port', or `icmp type'", _u.i);
+	return errh->error("specify `proto', `port', or `icmp type'", _u.i);
       break;
 
      case TYPE_NONE:
       if (_transp_proto != UNKNOWN)
 	_type = TYPE_PROTO;
       else
-	return errh->error("syntax error: empty directive");
+	return errh->error("partial directive");
       break;
       
      default:
@@ -386,13 +391,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
   // check that _data and _type agree
   if (_type == TYPE_HOST) {
     if (_data != TYPE_HOST)
-      return errh->error("`host' directive requires IP address");
+      return errh->error("IP address missing in `host' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `host'");
     
   } else if (_type == TYPE_NET) {
     if (_data != TYPE_NET)
-      return errh->error("`net' directive requires IP address and mask");
+      return errh->error("IP prefix missing in `net' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `net'");
     
@@ -403,19 +408,21 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _data = TYPE_NONE;
     } else
       _u.i = _transp_proto;
-    _transp_proto = (_op_negated || _op != OP_EQ ? (int)UNKNOWN : _u.i);
-    if (_data != TYPE_NONE)
-      return errh->error("`proto' directive requires IP protocol");
-    if (_u.i == IP_PROTO_TCP_OR_UDP && _op != OP_EQ)
-      return errh->error("can't use relational operators with `tcp or udp'");
-    if (set_mask(0xFF, 0, errh) < 0)
+    _transp_proto = ((_op_negated || _op != OP_EQ) ? (int)UNKNOWN : _u.i);
+    if (_data != TYPE_NONE || _u.i == UNKNOWN)
+      return errh->error("IP protocol missing in `proto' directive");
+    if (_u.i == IP_PROTO_TCP_OR_UDP) {
+      if (_op != OP_EQ)
+	return errh->error("can't use relational operators with `tcpudp'");
+      _mask = 0xFF;
+    } else if (set_mask(0xFF, 0, errh) < 0)
       return -1;
     
   } else if (_type == TYPE_PORT) {
     if (_data == TYPE_INT)
       _data = TYPE_PORT;
     if (_data != TYPE_PORT)
-      return errh->error("`port' directive requires port number (have %d)", _data);
+      return errh->error("port number missing in `port' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
     else if (_transp_proto != IP_PROTO_TCP && _transp_proto != IP_PROTO_UDP && _transp_proto != IP_PROTO_TCP_OR_UDP)
@@ -427,7 +434,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data == TYPE_INT)
       _data = TYPE_TCPOPT;
     if (_data != TYPE_TCPOPT)
-      return errh->error("`tcp opt' directive requires TCP options");
+      return errh->error("TCP options missing in `tcp opt' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP;
     else if (_transp_proto != IP_PROTO_TCP)
@@ -439,13 +446,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 
   } else if (_type == TYPE_TOS) {
     if (_data != TYPE_INT)
-      return errh->error("`ip tos' directive requires TOS value");
+      return errh->error("TOS value missing in `ip tos' directive");
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
 
   } else if (_type == TYPE_DSCP) {
     if (_data != TYPE_INT)
-      return errh->error("`ip dscp' directive requires TOS value");
+      return errh->error("DSCP missing in `ip dscp' directive");
     if (set_mask(0x3F, 2, errh) < 0)
       return -1;
     _type = TYPE_TOS;
@@ -454,7 +461,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data == TYPE_INT)
       _data = TYPE_ICMP_TYPE;
     if (_data != TYPE_ICMP_TYPE)
-      return errh->error("`icmp type' directive requires ICMP type");
+      return errh->error("ICMP type missing in `icmp type' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_ICMP;
     else if (_transp_proto != IP_PROTO_ICMP)
@@ -480,7 +487,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 static void
 add_exprs_for_proto(int proto, int mask, Classifier *c, Vector<int> &tree)
 {
-  if (mask == 0xFF && proto == IPFilter::IP_PROTO_TCP_OR_UDP) {
+  if (mask == 0xFF && proto == IP_PROTO_TCP_OR_UDP) {
     c->start_expr_subtree(tree);
     c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
     c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
@@ -775,8 +782,6 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // optional relational operation
   String wd = (pos >= words.size() ? String() : words[pos]);
   pos++;
-  prim._op = OP_EQ;
-  prim._op_negated = false;
   if (wd == "=" || wd == "==")
     /* nada */;
   else if (wd == "!=")

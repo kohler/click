@@ -128,7 +128,6 @@ class IPFilter : public Classifier { public:
     WT_TYPE_MASK = 0x3FFF0000,
     WT_DATA	= 0x0000FFFF,
     WT_TYPE_SHIFT = 16,
-    WT_MORE	= 0x80000000,
 
     TYPE_NONE	= 0,
     TYPE_TYPE	= 1,
@@ -150,8 +149,6 @@ class IPFilter : public Classifier { public:
 
     OP_EQ = 0, OP_GT = 1, OP_LT = 2,
     
-    IP_PROTO_TCP_OR_UDP = 0x10000,
-
     // if you change this, change click-fastclassifier.cc also
     TRANSP_FAKE_OFFSET = 64,
   };
