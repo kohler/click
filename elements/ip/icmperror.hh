@@ -3,7 +3,7 @@
 
 /*
  * =c
- * ICMPError(IPADDR, TYPE, CODE)
+ * ICMPError(IPADDR, TYPE, CODE [, BADADDRS])
  * =s
  * generates ICMP error packets
  * V<encapsulation>
@@ -21,8 +21,11 @@
  * Perhaps the ICMPError()s should be followed by a rate limiting
  * element.
  *
- * ICMPError never generates a packet in response to an ICMP error packet,
- * a fragment, or a link broadcast.
+ * ICMPError never generates a packet in response to an ICMP error packet, a
+ * fragment, or a link broadcast. BADADDRS is an optional list of bad IP
+ * addresses; if it is present, then ICMPError doesn't generate packets in
+ * response to packets with one of those addresses as either source or
+ * destination.
  *
  * The output of ICMPError should be connected to the routing lookup
  * machinery, much as if the ICMP errors came from a hardware interface.
@@ -31,10 +34,10 @@
  * takes the error pointer from the packet's param_off annotation.
  * The IPGWOptions element sets the annotation.
  *
- * If TYPE is 5, produces an ICMP redirect message. The gateway
- * address is taken from the destination annotation. Usually a
- * Paint/CheckPaint element pair hands the packet to a redirect ICMPError.
- * RFC1812 says only code 1 (host redirect) should be used.
+ * If TYPE is 5, produces an ICMP redirect message. The gateway address is
+ * taken from the destination annotation. Usually a Paint-PaintTee element
+ * pair hands the packet to a redirect ICMPError. RFC1812 says only code 1
+ * (host redirect) should be used.
  *
  * =e
  * This configuration fragment produces ICMP Time Exceeded error
@@ -73,6 +76,8 @@ private:
   IPAddress _src_ip;
   int _type;
   int _code;
+  unsigned *_bad_addrs;
+  int _n_bad_addrs;
 
   bool is_error_type(int);
   bool unicast(struct in_addr);

@@ -26,21 +26,50 @@ ICMPError::ICMPError()
   add_input();
   add_output();
   _code = _type = -1;
+  _bad_addrs = 0;
 }
 
 ICMPError::~ICMPError()
 {
+  delete[] _bad_addrs;
 }
 
 int
 ICMPError::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  String bad_addr_str;
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "Source IP address", &_src_ip,
                   cpInteger, "ICMP Type", &_type,
                   cpInteger, "ICMP Code", &_code,
+		  cpOptional,
+		  cpArgument, "bad IP addresses", &bad_addr_str,
 		  0) < 0)
     return -1;
+
+  Vector<u_int> ips;
+  Vector<String> words;
+  cp_spacevec(bad_addr_str, words);
+  if (words.size() != 1 || words[0] != "-") {
+    unsigned a;
+    for (int j = 0; j < words.size(); j++) {
+      if (!cp_ip_address(words[j], (unsigned char *)&a, this))
+	return errh->error("expects IPADDRESS");
+      for (int j = 0; j < ips.size(); j++)
+	if (ips[j] == a)
+	  goto repeat;
+      ips.push_back(a);
+     repeat: ;
+    }
+  }
+  delete[] _bad_addrs;
+  _n_bad_addrs = ips.size() - 1;
+  if (_n_bad_addrs) {
+    _bad_addrs = new unsigned[_n_bad_addrs];
+    memcpy(_bad_addrs, &ips[1], sizeof(unsigned) * _n_bad_addrs);
+  } else
+    _bad_addrs = 0;
+
   return 0;
 }
 
@@ -66,7 +95,6 @@ ICMPError::initialize(ErrorHandler *errh)
 
 /*
  * Is an IP address unicast?
- * Can't detect directed broadcast here!
  */
 bool
 ICMPError::unicast(struct in_addr aa)
@@ -82,6 +110,11 @@ ICMPError::unicast(struct in_addr aa)
   if((ha & 0xf0000000u) == 0xe0000000u)
     return(0);
 
+  /* limited broadcast */
+  for (int i = 0; i < _n_bad_addrs; i++)
+    if (a == _bad_addrs[i])
+      return 0;
+  
   return(1);
 }
 
@@ -96,15 +129,13 @@ ICMPError::valid_source(struct in_addr aa)
   unsigned int ha = ntohl(a);
   unsigned net = (ha >> 24) & 0xff;
 
-  /* broadcast or multicast */
+  /* broadcast, multicast, or (local) directed broadcast */
   if(unicast(aa) == 0)
     return(0);
 
   /* local net or host: */
   if(net == 0)
     return(0);
-
-  /* I don't know how to detect directed broadcast. */
 
   /* 127.0.0.1 */
   if(net == 127)

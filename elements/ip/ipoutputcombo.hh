@@ -58,7 +58,7 @@ class IPOutputCombo : public Element {
   
  private:
 
-  int _color;			// CheckPaint
+  int _color;			// PaintTee
   struct in_addr _my_ip;	// IPGWOptions, FixIPSrc
   unsigned _mtu;		// Fragmenter
   

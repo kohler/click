@@ -37,7 +37,7 @@ int
 IPOutputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "color (CheckPaint)", &_color,
+		  cpUnsigned, "color (PaintTee)", &_color,
 		  cpIPAddress, "dest IP address", &_my_ip,
 		  cpUnsigned, "MTU (IPFragmenter)", &_mtu,
 		  0) < 0)
@@ -57,7 +57,7 @@ IPOutputCombo::push(int, Packet *p_in)
     return;
   }
   
-  // CheckPaint
+  // PaintTee
   if (p_in->color_anno() == _color)
     output(1).push(p_in->clone());
   
