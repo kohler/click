@@ -50,8 +50,9 @@ bool cp_unsigned(const String &, unsigned *);
 bool cp_unsigned(const String &, int base, unsigned *);
 bool cp_real2(const String &, int frac_bits, int *);
 bool cp_unsigned_real2(const String &, int frac_bits, unsigned *);
-bool cp_real10(const String &, int frac_digits, int *, int *);
 bool cp_real10(const String &, int frac_digits, int *);
+bool cp_unsigned_real10(const String &, int frac_digits, unsigned *);
+bool cp_unsigned_real10(const String &, int frac_dig, unsigned *, unsigned *);
 bool cp_milliseconds(const String &, int *);
 bool cp_timeval(const String &, struct timeval *);
 
@@ -78,10 +79,9 @@ class IP6Address;
 bool cp_ip6_address(const String &, unsigned char *  CP_OPT_CONTEXT);
 bool cp_ip6_address(const String &, IP6Address *  CP_OPT_CONTEXT);
 bool cp_ip6_prefix(const String &, unsigned char *, int *, bool allow_bare_address  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String &, IP6Address *, int *, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String &, IPAddress *, IP6Address *, bool allow_bare_address  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *  CP_OPT_CONTEXT);
-bool cp_ip6_prefix(const String &, IPAddress *, IP6Address *  CP_OPT_CONTEXT);
+bool cp_ip6_prefix(const String &, IP6Address *, IP6Address *, bool allow_bare_address  CP_OPT_CONTEXT);
 
 class EtherAddress;
 bool cp_ethernet_address(const String &, unsigned char *  CP_OPT_CONTEXT);

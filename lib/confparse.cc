@@ -74,7 +74,7 @@ cp_is_word(const String &str)
   const char *s = str.data();
   int len = str.length();
   for (int i = 0; i < len; i++)
-    if (s[i] == '\"' || s[i] == '\'' || s[i] == ','
+    if (s[i] == '\"' || s[i] == '\'' || s[i] == '\\' || s[i] == ','
 	|| s[i] <= 32 || s[i] >= 127)
       return false;
   return len > 0;
@@ -667,42 +667,50 @@ cp_unsigned(const String &str, int base, unsigned *return_value)
   if (i < len && s[i] == '+')
     i++;
 
-  if ((base <= 0 || base == 16) && i < len - 1
+  if ((base == 0 || base == 16) && i < len - 1
       && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X')) {
     i += 2;
     base = 16;
-  } else if (base <= 0 && s[i] == '0')
+  } else if (base == 0 && s[i] == '0')
     base = 8;
-  else if (base <= 0)
+  else if (base == 0)
     base = 10;
+  else if (base < 2 || base > 36) {
+    cp_errno = CPE_INVALID;
+    return false;
+  }
 
   if (i == len)			// no digits
     return false;
+
+  unsigned overflow_val = 0xFFFFFFFFU / base;
+  int overflow_digit = 0xFFFFFFFFU - (overflow_val * base);
   
   unsigned val = 0;
   cp_errno = CPE_OK;
   while (i < len) {
-    unsigned new_val = val * base;
-    if (s[i] >= '0' && s[i] <= '9' && s[i] - '0' < base)
-      new_val += s[i] - '0';
-    else if (s[i] >= 'A' && s[i] <= 'Z' && s[i] - 'A' + 10 < base)
-      new_val += s[i] - 'A' + 10;
-    else if (s[i] >= 'a' && s[i] <= 'z' && s[i] - 'a' + 10 < base)
-      new_val += s[i] - 'a' + 10;
+    // find digit
+    int digit;
+    if (s[i] >= '0' && s[i] <= '9')
+      digit = s[i] - '0';
+    else if (s[i] >= 'A' && s[i] <= 'Z')
+      digit = s[i] - 'A' + 10;
+    else if (s[i] >= 'a' && s[i] <= 'z')
+      digit = s[i] - 'a' + 10;
     else
-      break;
-    if (new_val < val)
+      digit = 36;
+    if (digit >= base)
+      return false;
+    // check for overflow
+    if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
       cp_errno = CPE_OVERFLOW;
-    val = new_val;
+    // assign new value
+    val = val * base + digit;
     i++;
   }
 
-  if (i != len)			// bad characters
-    return false;
-  else {
-    *return_value = (cp_errno ? 0xFFFFFFFFU : val);
-    return true;
-  }
+  *return_value = (cp_errno ? 0xFFFFFFFFU : val);
+  return true;
 }
 
 bool
@@ -712,75 +720,82 @@ cp_unsigned(const String &str, unsigned *return_value)
 }
 
 bool
-cp_integer(const String &str, int base, int *return_value)
+cp_integer(const String &in_str, int base, int *return_value)
 {
-  unsigned value;
+  String str = in_str;
   bool negative = false;
-  bool ok;
-  if (str.length() == 0)
-    return false;
-  else if (str[0] == '-') {
+  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
     negative = true;
-    ok = cp_unsigned(str.substring(1), base, &value);
-  } else
-    ok = cp_unsigned(str, base, &value);
+    str = in_str.substring(1);
+  }
 
-  if (!ok)
+  unsigned value;
+  if (!cp_unsigned(str, base, &value))
     return false;
-  if (cp_errno == CPE_OVERFLOW)
-    *return_value = 0x7FFFFFFF;
-  else if (!negative && value >= 0x80000000U) {
+
+  unsigned max = (negative ? 0x80000000U : 0x7FFFFFFFU);
+  if (value > max) {
     cp_errno = CPE_OVERFLOW;
-    *return_value = 0x7FFFFFFF;
-  } else if (negative && value > 0x80000000U) {
-    cp_errno = CPE_OVERFLOW;
-    *return_value = 0x80000000;
-  } else if (negative)
-    *return_value = -value;
-  else
-    *return_value = value;
+    value = max;
+  }
+
+  *return_value = (negative ? -value : value);
   return true;
 }
 
 bool
 cp_integer(const String &str, int *return_value)
 {
-  return cp_integer(str, -1, return_value);
+  return cp_integer(str, 0, return_value);
+}
+
+static unsigned
+exp10(int exponent)
+{
+  assert(exponent >= 0);
+  unsigned val = 1;
+  while (exponent-- > 0)
+    val *= 10;
+  return val;
 }
 
 bool
-cp_real10(const String &str, int frac_digits,
-	  int *return_int_part, int *return_frac_part)
+cp_unsigned_real10(const String &str, int frac_digits,
+		   unsigned *return_int_part, unsigned *return_frac_part)
 {
   const char *s = str.data();
   const char *last = s + str.length();
+  
   cp_errno = CPE_FORMAT;
   if (s == last)
     return false;
-  if (frac_digits > 9) {
+  if (frac_digits < 0 || frac_digits > 9) {
     cp_errno = CPE_INVALID;
     return false;
   }
   
-  bool negative = (*s == '-');
-  if (*s == '-' || *s == '+') s++;
+  if (*s == '+')
+    s++;
   
   // find integer part of string
   const char *int_s = s;
-  while (s < last && isdigit(*s)) s++;
-  const char *int_e = s;
+  while (s < last && isdigit(*s))
+    s++;
+  int int_chars = s - int_s;
   
   // find fractional part of string
-  const char *frac_s, *frac_e;
+  const char *frac_s;
+  int frac_chars;
   if (s < last && *s == '.') {
     frac_s = ++s;
-    while (s < last && isdigit(*s)) s++;
-    frac_e = s;
+    while (s < last && isdigit(*s))
+      s++;
+    frac_chars = s - frac_s;
   } else
-    frac_s = frac_e = s;
+    frac_s = s, frac_chars = 0;
   
   // no integer or fraction? illegal real
-  if (int_s == int_e && frac_s == frac_e)
+  if (int_chars == 0 && frac_chars == 0)
     return false;
   
   // find exponent, if any
@@ -788,8 +803,10 @@ cp_real10(const String &str, int frac_digits,
   if (s < last && (*s == 'E' || *s == 'e')) {
     if (++s == last)
       return false;
+    
     bool negexp = (*s == '-');
-    if (*s == '-' || *s == '+') s++;
+    if (*s == '-' || *s == '+')
+      s++;
     if (s >= last || !isdigit(*s))
       return false;
     
@@ -797,120 +814,169 @@ cp_real10(const String &str, int frac_digits,
     for (; s < last && isdigit(*s); s++)
       exponent = 10*exponent + *s - '0';
     
-    if (negexp) exponent = -exponent;
+    if (negexp)
+      exponent = -exponent;
   }
   
-  // determine integer part
-  int int_part = 0;
-  const char *c;
-  for (c = int_s; c < int_e && c < int_e + exponent; c++)
-    int_part = 10*int_part + *c - '0';
-  for (c = frac_s; c < frac_e && c < frac_s + exponent; c++)
-    int_part = 10*int_part + *c - '0';
-  for (c = frac_e; c < frac_s + exponent; c++)
-    int_part = 10*int_part;
-  if (negative) int_part = -int_part;
+  if (s != last)
+    return false;
+
+  // OK! now create the result
+  // determine integer part; careful about overflow
+  unsigned int_part = 0;
+  cp_errno = CPE_OK;
+  
+  for (int i = 0; i < int_chars + exponent; i++) {
+    int digit;
+    if (i < int_chars)
+      digit = int_s[i] - '0';
+    else if (i - int_chars < frac_chars)
+      digit = frac_s[i - int_chars] - '0';
+    else
+      digit = 0;
+    if (int_part > 0x19999999U || (int_part == 0x19999999U && digit > 5))
+      cp_errno = CPE_OVERFLOW;
+    int_part = int_part * 10 + digit;
+  }
   
   // determine fraction part
-  int frac_part = 0;
-  for (c = int_e + exponent; c < int_s && frac_digits > 0; c++, frac_digits--)
-    /* do nothing */;
-  for (; c < int_e && frac_digits > 0; c++, frac_digits--)
-    frac_part = 10*frac_part + *c - '0';
-  c = frac_s + (exponent > 0 ? exponent : 0);
-  for (; c < frac_e && frac_digits > 0; c++, frac_digits--)
-    frac_part = 10*frac_part + *c - '0';
-  for (; frac_digits > 0; frac_digits--)
-    frac_part = 10*frac_part;
-  if (negative) frac_part = -frac_part;
+  unsigned frac_part = 0;
+  int digit = 0;
+  
+  for (int i = 0; i <= frac_digits; i++) {
+    if (i + exponent + int_chars < 0)
+      digit = 0;
+    else if (i + exponent < 0)
+      digit = int_s[i + exponent + int_chars] - '0';
+    else if (i + exponent < frac_chars)
+      digit = frac_s[i + exponent] - '0';
+    else
+      digit = 0;
+    // skip out on the last digit
+    if (i == frac_digits)
+      break;
+    // no overflow possible b/c frac_digits was limited
+    frac_part = frac_part * 10 + digit;
+  }
+
+  // round fraction part if required
+  if (digit >= 5) {
+    if (frac_part == exp10(frac_digits) - 1) {
+      frac_part = 0;
+      if (int_part == 0xFFFFFFFFU)
+	cp_errno = CPE_OVERFLOW;
+      int_part++;
+    } else
+      frac_part++;
+  }
   
   // done!
-  if (s - str.data() != str.length())
-    return false;
-  else {
-    *return_int_part = int_part;
-    *return_frac_part = frac_part;
-    cp_errno = CPE_OK;
-    return true;
+  if (cp_errno) {		// overflow
+    int_part = 0xFFFFFFFFU;
+    frac_part = exp10(frac_digits) - 1;
   }
+
+  //click_chatter("%d: %u %u", frac_digits, int_part, frac_part);
+  *return_int_part = int_part;
+  *return_frac_part = frac_part;
+  return true;
 }
 
 bool
-cp_real10(const String &str, int frac_digits, int *return_value)
+cp_unsigned_real10(const String &str, int frac_digits, unsigned *return_value)
 {
-  int int_part, frac_part;
-  if (!cp_real10(str, frac_digits, &int_part, &frac_part))
+  unsigned int_part, frac_part;
+  if (!cp_unsigned_real10(str, frac_digits, &int_part, &frac_part))
     return false;
-  
-  int one = 1;
-  for (int i = 0; i < frac_digits; i++)
-    one *= 10;
-  int max = 0x7FFFFFFF / one;
-  if (int_part >= 0 ? int_part >= max : -int_part >= max) {
+
+  // check for overflow
+  unsigned one = exp10(frac_digits);
+  unsigned int_max = 0xFFFFFFFFU / one;
+  unsigned frac_max = 0xFFFFFFFFU - int_max * one;
+  if (int_part > int_max || (int_part == int_max && frac_part > frac_max)) {
     cp_errno = CPE_OVERFLOW;
-    return false;
-  }
+    *return_value = 0xFFFFFFFFU;
+  } else
+    *return_value = int_part * one + frac_part;
   
-  *return_value = (int_part * one + frac_part);
-  cp_errno = CPE_OK;  
   return true;
 }
 
 bool
 cp_unsigned_real2(const String &str, int frac_bits, unsigned *return_value)
 {
-  if (frac_bits >= 29) {
+  if (frac_bits < 0 || frac_bits >= 29) {
     cp_errno = CPE_INVALID;
     return false;
   }
   
-  int int_part, frac_part;
-  if (!cp_real10(str, 9, &int_part, &frac_part)) {
+  unsigned int_part, frac_part;
+  if (!cp_unsigned_real10(str, 9, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
-  } else if (int_part < 0 || frac_part < 0) {
-    cp_errno = CPE_NEGATIVE;
-    return false;
-  } else if (int_part > (1 << (32 - frac_bits)) - 1) {
-    cp_errno = CPE_OVERFLOW;
-    return false;
   }
-  
+
   // method from Knuth's TeX, round_decimals. Works well with
   // cp_unparse_real2 below
-  int fraction = 0;
-  unsigned two = 2 << frac_bits;
+  unsigned fraction = 0;
+  unsigned two = 2U << frac_bits;
   for (int i = 0; i < 9; i++) {
     unsigned digit = frac_part % 10;
     fraction = (fraction + digit*two) / 10;
     frac_part /= 10;
   }
   fraction = (fraction + 1) / 2;
-  cp_errno = CPE_OK;
-  *return_value = (int_part << frac_bits) + fraction;
+
+  // This can happen! (for example, 16 bits of fraction, .999999) Why?
+  if (fraction == (1U << frac_bits) && int_part < 0xFFFFFFFFU)
+    int_part++, fraction = 0;
+
+  // check for overflow
+  if (cp_errno || int_part > (1U << (32 - frac_bits)) - 1) {
+    cp_errno = CPE_OVERFLOW;
+    *return_value = 0xFFFFFFFFU;
+  } else
+    *return_value = (int_part << frac_bits) + fraction;
+  
   return true;
 }
 
-bool
-cp_real2(const String &in_str, int frac_bits, int *return_value)
+static bool
+cp_real_base(const String &in_str, int frac_digits, int *return_value,
+	     bool (*func)(const String &, int, unsigned *))
 {
   String str = in_str;
   bool negative = false;
-  if (str.length() && str[0] == '-') {
+  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
     negative = true;
     str = str.substring(1);
   }
 
   unsigned value;
-  if (!cp_unsigned_real2(str, frac_bits, &value))
+  if (!func(str, frac_digits, &value))
     return false;
-  else if (value > 0x80000000U || (value == 0x80000000U && !negative)) {
+
+  // check for overflow
+  unsigned umax = (negative ? 0x80000000 : 0x7FFFFFFF);
+  if (value > umax) {
     cp_errno = CPE_OVERFLOW;
-    return false;
+    value = umax;
   }
 
   *return_value = (negative ? -value : value);
   return true;
+}
+
+bool
+cp_real10(const String &str, int frac_digits, int *return_value)
+{
+  return cp_real_base(str, frac_digits, return_value, cp_unsigned_real10);
+}
+
+bool
+cp_real2(const String &str, int frac_bits, int *return_value)
+{
+  return cp_real_base(str, frac_bits, return_value, cp_unsigned_real2);
 }
 
 bool
@@ -1180,12 +1246,19 @@ cp_ip6_address(const String &str, unsigned char *return_value
   }
 }
 
+bool
+cp_ip6_address(const String &str, IP6Address *address
+	       CP_CONTEXT_ARG)
+{
+  return cp_ip6_address(str, address->data()  CP_PASS_CONTEXT);
+}
+
 
 static bool
 bad_ip6_prefix(const String &str,
-	      unsigned char *return_value, int *return_bits,
-	      bool allow_bare_address
-	      CP_CONTEXT_ARG)
+	       unsigned char *return_value, int *return_bits,
+	       bool allow_bare_address
+	       CP_CONTEXT_ARG)
 {
 #ifndef CLICK_TOOL
   if (AddressInfo::query_ip6_prefix(str, return_value, return_bits, context))
@@ -1234,21 +1307,8 @@ cp_ip6_prefix(const String &str,
   if (cp_ip6_address(mask_part, mask  CP_PASS_CONTEXT)) {
     // check that it really is a prefix. if not, return false right away
     // (don't check with AddressInfo)
-    int pos = 0;
-    for (; pos < 16 && mask[pos] == 255; pos++)
-      relevant_bits += 8;
-    if (pos < 16) {
-      int comp_plus_1 = ((~mask[pos]) & 255) + 1;
-      for (int i = 0; i < 8; i++)
-	if (comp_plus_1 == (1 << (8-i))) {
-	  relevant_bits += i;
-	  pos++;
-	  break;
-	}
-    }
-    for (; pos < 16 && mask[pos] == 0; pos++)
-      pos++;
-    if (pos < 16)
+    relevant_bits = IP6Address(mask).mask_to_prefix_bits();
+    if (relevant_bits < 0)
       return false;
     
   } else if (cp_integer(mask_part, &relevant_bits)
@@ -1277,43 +1337,17 @@ cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
 }
 
 bool
-cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask
-	      CP_CONTEXT_ARG)
+cp_ip6_prefix(const String &str, IP6Address *address, int *prefix,
+	      bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  int bits;
-  if (cp_ip6_prefix(str, address, &bits, false  CP_PASS_CONTEXT)) {
-    IP6Address m = IP6Address::make_prefix(bits);
-    memcpy(mask, m.data(), 16);
-    return true;
-  } else
-    return false;
-}
-
-bool
-cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *mask
-	      CP_CONTEXT_ARG)
-{
-  int bits;
-  if (cp_ip6_prefix(str, address->data(), &bits, false  CP_PASS_CONTEXT)) {
-    *mask = IP6Address::make_prefix(bits);
-    return true;
-  } else
-    return false;
-}
-
-bool
-cp_ip6_address(const String &str, IP6Address *address
-	       CP_CONTEXT_ARG)
-{
-  return cp_ip6_address(str, address->data()  CP_PASS_CONTEXT);
+  return cp_ip6_prefix(str, address->data(), prefix, allow_bare_address  CP_PASS_CONTEXT);
 }
 
 bool
 cp_ip6_prefix(const String &str, IP6Address *address, IP6Address *prefix,
 	      bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  return cp_ip6_prefix(str, address->data(), prefix->data(), allow_bare_address
-		       CP_PASS_CONTEXT);
+  return cp_ip6_prefix(str, address->data(), prefix->data(), allow_bare_address  CP_PASS_CONTEXT);
 }
 
 
@@ -1377,8 +1411,8 @@ cp_element(const String &name, Element *owner, ErrorHandler *errh)
     if (i < 0)
       break;
     String n = id.substring(0, i + 1) + name;
-    Element *f = router->find(n, 0);
-    if (f) return f;
+    if (Element *e = router->find(n, 0))
+      return e;
   }
   return router->find(name, errh);
 }
@@ -1537,7 +1571,7 @@ cp_register_argtype(const char *name, const char *desc, int extra,
 
 int
 cp_register_argtype(const char *name, const char *desc, int extra,
-	       cp_parsefunc parse, cp_storefunc store)
+		    cp_parsefunc parse, cp_storefunc store)
 {
   return cp_register_argtype(name, desc, extra, parse, store, -1);
 }
@@ -1616,7 +1650,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.i))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("integer overflow on %s (%s)", argname, desc);
+      errh->error("overflow on %s (%s); max %d", argname, desc, v->v.i);
     else if (v->v.i < underflower)
       errh->error("%s (%s) must be >= %d", argname, desc, underflower);
     else if (v->v.i > (int)overflower)
@@ -1627,43 +1661,44 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_unsigned(arg, &v->v.u))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("integer overflow on %s (%s)", argname, desc);
+      errh->error("overflow on %s (%s); max %u", argname, desc, v->v.u);
     else if (v->v.u > overflower)
       errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
 
    case cpiReal10:
    case cpiNonnegReal10:
-    if (!cp_real10(arg, v->extra, &v->v.i)) {
-      if (cp_errno == CPE_OVERFLOW)
-	errh->error("overflow on %s (%s)", argname, desc);
-      else
-	errh->error("%s takes real (%s)", argname, desc);
+    if (!cp_real10(arg, v->extra, &v->v.i))
+      errh->error("%s takes real (%s)", argname, desc);
+    else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_real10(v->v.i, v->extra);
+      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
     } else if (argtype->internal == cpiNonnegReal10 && v->v.i < 0)
       errh->error("%s (%s) must be >= 0", argname, desc);
     break;
 
    case cpiMilliseconds:
     if (!cp_milliseconds(arg, &v->v.i)) {
-      if (cp_errno == CPE_OVERFLOW)
-	errh->error("overflow on %s (%s)", argname, desc);
-      else if (cp_errno == CPE_NEGATIVE)
+      if (cp_errno == CPE_NEGATIVE)
 	errh->error("%s (%s) must be >= 0", argname, desc);
       else
 	errh->error("%s takes time in seconds (%s)", argname, desc);
+    } else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_milliseconds(v->v.i);
+      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
     }
     break;
 
    case cpiTimeval: {
      struct timeval tv;
      if (!cp_timeval(arg, &tv)) {
-       if (cp_errno == CPE_OVERFLOW)
-	 errh->error("overflow on %s (%s)", argname, desc);
-       else if (cp_errno == CPE_NEGATIVE)
+       if (cp_errno == CPE_NEGATIVE)
 	 errh->error("%s (%s) must be >= 0", argname, desc);
        else
 	 errh->error("%s takes seconds since the epoch (%s)", argname, desc);
-     } else {
+     } else if (cp_errno == CPE_OVERFLOW)
+       errh->error("overflow on %s (%s)", argname, desc);
+     else {
        v->v.is[0] = tv.tv_sec;
        v->v.is[1] = tv.tv_usec;
      }
@@ -1673,26 +1708,22 @@ default_parsefunc(cp_value *v, const String &arg,
    case cpiReal2:
     assert(v->extra > 0);
     if (!cp_real2(arg, v->extra, &v->v.i)) {
-      if (cp_errno == CPE_OVERFLOW)
-	errh->error("overflow on %s (%s)", argname, desc);
-      else if (cp_errno == CPE_INVALID)
-	errh->error("%s (%s) is an invalid real", argname, desc);
-      else
-	errh->error("%s takes real (%s)", argname, desc);
+      /* CPE_INVALID would indicate a bad 'v->extra' */
+      errh->error("%s takes real (%s)", argname, desc);
+    } else if (cp_errno == CPE_OVERFLOW) {
+      String m = cp_unparse_real2(v->v.i, v->extra);
+      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
     }
     break;
 
    case cpiNonnegReal2:
     assert(v->extra > 0);
     if (!cp_unsigned_real2(arg, v->extra, &v->v.u)) {
-      if (cp_errno == CPE_NEGATIVE)
-	errh->error("%s (%s) must be >= 0", argname, desc);
-      else if (cp_errno == CPE_OVERFLOW)
-	errh->error("overflow on %s (%s)", argname, desc);
-      else if (cp_errno == CPE_INVALID)
-	errh->error("%s (%s) is an invalid real", argname, desc);
-      else
-	errh->error("%s takes real (%s)", argname, desc);
+      /* CPE_INVALID would indicate a bad 'v->extra' */
+      errh->error("%s takes unsigned real (%s)", argname, desc);
+    } else if (cp_errno == CPE_OVERFLOW) {
+      String m  = cp_unparse_real2(v->v.u, v->extra);
+      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
     }
     break;
 
@@ -2346,10 +2377,7 @@ cp_unparse_real2(int real, int frac_bits)
 String
 cp_unparse_real10(unsigned real, int frac_digits)
 {
-  int one = 1;
-  for (int i = 0; i < frac_digits; i++)
-    one *= 10;
-
+  unsigned one = exp10(frac_digits);
   unsigned int_part = real / one;
   unsigned frac_part = real - (int_part * one);
 
