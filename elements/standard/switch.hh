@@ -31,7 +31,8 @@ stored.
 
 Argument is a pointer to an integer. Sets the K parameter to that integer.
 
-=a StaticSwitch, PullSwitch, RoundRobinSwitch, StrideSwitch, HashSwitch */
+=a StaticSwitch, PullSwitch, RoundRobinSwitch, StrideSwitch, HashSwitch,
+RandomSwitch */
 
 class Switch : public Element { public:
 

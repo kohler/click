@@ -17,7 +17,7 @@
  * =h tickets0...ticketsI<N-1> read/write
  * Returns or sets the number of tickets for each output port.
  *
- * =a RoundRobinSwitch, HashSwitch, Switch, StrideSched
+ * =a RoundRobinSwitch, Switch, HashSwitch, RandomSwitch, StrideSched
  */
 
 class StrideSwitch : public StrideSched { public:

@@ -18,7 +18,7 @@
  * 
  *   HashSwitch(16, 4)
  * =a
- * RoundRobinSwitch, StrideSwitch, Switch
+ * Switch, RoundRobinSwitch, StrideSwitch, RandomSwitch
  */
 
 class HashSwitch : public Element {

@@ -14,7 +14,7 @@
  * Pushes each arriving packet to one of the N outputs. The next packet
  * will be pushed to the following output in round-robin order.
  *
- * =a StrideSwitch, HashSwitch, Switch, RoundRobinSched
+ * =a StrideSwitch, Switch, HashSwitch, RandomSwitch, RoundRobinSched
  */
 
 class RoundRobinSwitch : public Element {
