@@ -283,23 +283,20 @@ LinkStat::read_bcast_stats(Element *xf, void *)
 }
 
 
-#ifdef CLICK_USERLEVEL
 int
 LinkStat::write_window(const String &arg, Element *el, 
 		       void *, ErrorHandler *errh)
 {
   LinkStat *e = (LinkStat *) el;
-  int window = atoi(((String) arg).cc());
-  if (window < 0)
+  if (!cp_unsigned(arg, &e->_window))
     return errh->error("window must be >= 0");
-  e->_window = window;
 
   /* clear all stats to avoid confusing data */
   e->_bcast_stats.clear();
 
   return 0;
 }
-#endif
+
 
 void
 LinkStat::add_handlers()

@@ -27,8 +27,13 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
-#include "dsdvroutetable.hh"
-#include "timeutils.hh"
+#include <elements/grid/dsdvroutetable.hh>
+#ifdef CLICK_USERLEVEL
+  #include <elements/grid/linktracker.hh>
+#endif
+#include <elements/grid/linkstat.hh>
+#include <elements/grid/gridgatewayinfo.hh>
+#include <elements/grid/timeutils.hh>
 CLICK_DECLS
 
 #define DBG 0
@@ -63,7 +68,7 @@ DSDVRouteTable::DSDVRouteTable() :
   GridGenericRouteTable(1, 1), _gw_info(0),
   _link_tracker(0), _link_stat(0), _log(0), 
   _seq_no(0), _bcast_count(0),
-  _max_hops(3), _alpha(0.875), _wst0(6000),
+  _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
   _last_triggered_update(0), 
   _hello_timer(static_hello_hook, this),
@@ -124,9 +129,9 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"LS", cpElement, "LinkStat element", &_link_stat,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
-			"LOG", cpElement, "GridLogger element", &_log,
+			"LOG", cpElement, "GridGenericLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
-			"ALPHA", cpDouble, "alpha parameter for settling time computation (0 <= ALPHA <= 1)", &_alpha,
+			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
 			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
 			0);
 
@@ -145,12 +150,15 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("jitter is bigger than period");
   if (_max_hops == 0)
     return errh->error("max hops must be greater than 0");
-  if (_alpha <= 0 || _alpha > 1) 
-    return errh->error("alpha must be between 0 and 1 inclusive");
+  if (_alpha > 100) 
+    return errh->error("alpha must be between 0 and 100 inclusive");
 
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
+
+  if (_log && _log->cast("GridGenericLogger") == 0) 
+    return errh->error("LOG element is not a GridGenericLogger");
 
   if (_gw_info == 0)
     errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
@@ -186,13 +194,19 @@ DSDVRouteTable::current_gateway(RouteEntry &entry)
 }
 
 bool
-DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, double &rate)
+DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rate)
 {
   switch (_est_type) {
   case EstByMeas: {
+#ifdef CLICK_USERLEVEL
     struct timeval last;
-    bool res = _link_tracker ? _link_tracker->get_bcast_stat(ip, rate, last) : false;
+    double r1;
+    bool res = _link_tracker ? _link_tracker->get_bcast_stat(ip, r1, last) : false;
+    rate = (unsigned) (100 * r1);
     return res;
+#else
+    return false;
+#endif
     break;
   }
   default:
@@ -201,10 +215,11 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, double &rate)
 }
 
 bool
-DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
+DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rate)
 {
   switch (_est_type) {
   case EstByMeas: {
+#ifdef CLICK_USERLEVEL
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
     if (r == 0 || r->num_hops() > 1)
@@ -215,13 +230,14 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
     bool res = _link_stat ? _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected) : false;
     if (!res || num_expected <= 1)
       return false;
-    double num_rx_ = num_rx;
-    double num_expected_ = num_expected;
     if (num_rx > num_expected)
       click_chatter("WARNING: est_reverse_delivery_rate: num_rx (%d) > num_expected (%d) for %s",
 		    num_rx, num_expected, r->next_hop_eth.s().cc());
-    rate = (num_rx_ - 0.5) / num_expected_;
+    rate = (100*num_rx - 50) / num_expected;
     return true;
+#else
+    return false;
+#endif
     break;
   }
   default:
@@ -230,7 +246,7 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
 }
 
 void
-DSDVRouteTable::insert_route(const RTEntry &r, const GridLogger::reason_t why)
+DSDVRouteTable::insert_route(const RTEntry &r, const GridGenericLogger::reason_t why)
 {
   check_invariants();
   r.check();
@@ -305,9 +321,9 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
   if (_log) {
     timeval tv;
-    gettimeofday(&tv, 0);
+    click_gettimeofday(&tv);
     _log->log_start_expire_handler(tv);
-    _log->log_expired_route(GridLogger::TIMEOUT, ip);
+    _log->log_expired_route(GridGenericLogger::TIMEOUT, ip);
   }
 
   // Note that for metrics other than hopcount the loop (copied from
@@ -336,7 +352,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 	  r.next_hop_ip == ip) {
 	expired_dests.push_back(r.dest_ip);
 	if (_log)
-	  _log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, r.dest_ip);
+	  _log->log_expired_route(GridGenericLogger::NEXT_HOP_EXPIRED, r.dest_ip);
       }
     }
   }
@@ -491,26 +507,26 @@ DSDVRouteTable::init_metric(RTEntry &r)
     r.metric = metric_t(r.num_hops());
     break;
   case MetricEstTxCount: {
-    double fwd_rate = 0;
-    double rev_rate = 0;
+    unsigned fwd_rate = 0;
+    unsigned rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
 
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
-      if (fwd_rate >= 1) {
-	click_chatter("init_metric ERROR: fwd rate %d is too high for %s",
-		      (int) (100 * fwd_rate), r.next_hop_ip.s().cc());
-	fwd_rate = 1;
+      if (fwd_rate > 100) {
+	click_chatter("DSDVRouteTable %s: init_metric ERROR: fwd rate %d%% is too high for %s, capping at 100%%",
+		      id().cc(), fwd_rate, r.next_hop_ip.s().cc());
+	fwd_rate = 100;
       }
-      if (rev_rate >= 1) {
-	click_chatter("init_metric ERROR: rev rate %d is too high for %s",
-		      (int) (100 * rev_rate), r.next_hop_ip.s().cc());
-	rev_rate = 1;
+      if (rev_rate > 100) {
+	click_chatter("DSDVRouteTable %s: init_metric ERROR: rev rate %d%% is too high for %s, capping at 100%%",
+		      id().cc(), rev_rate, r.next_hop_ip.s().cc());
+	rev_rate = 100;
       }
-      r.metric = metric_t((unsigned int) (100 / (fwd_rate * rev_rate)));
-      if (r.metric .val < 100) 
-	click_chatter("init_metric WARNING: metric too small (%d) for %s",
-		      r.metric.val, r.next_hop_ip.s().cc());
+      r.metric = metric_t(100 * 100 * 100 / (fwd_rate * rev_rate));
+      if (r.metric.val < 100) 
+	click_chatter("DSDVRouteTable %s: init_metric WARNING: metric %d%% transmissions to %s is too low for one hop",
+		      id().cc(), r.metric.val, r.next_hop_ip.s().cc());
     } 
     else 
       r.metric = _bad_metric;
@@ -542,7 +558,8 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
   else if (old_r->seq_no() < new_r.seq_no()) {
     dsdv_assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies); // XXX failed!
     new_r.wst = _alpha * old_r->wst + 
-      (1 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
+      (100 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
+    new_r.wst /= 100; // since _alpha is 0-100 percent
     new_r.last_seq_jiffies = jiff;
     new_r.check();
   }
@@ -568,8 +585,8 @@ DSDVRouteTable::update_metric(RTEntry &r)
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
-    click_chatter("DSDVRouteTable: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
-		  r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
+    click_chatter("DSDVRouteTable %s: ERROR updating metric for %s; no information for next hop %s; invalidating metric",
+		  id().cc(), r.dest_ip.s().cc(), r.next_hop_ip.s().cc());
     r.metric = _bad_metric;
     return;
   }
@@ -590,10 +607,10 @@ DSDVRouteTable::update_metric(RTEntry &r)
   case MetricEstTxCount: 
     if (_metric_type == MetricEstTxCount) {
       if (r.metric.val < (unsigned) 100 * (r.num_hops() - 1))
-	click_chatter("update_metric WARNING received metric (%u) too low for %s (%d hops)",
+	click_chatter("update_metric WARNING received metric (%u%% transmissions) is too low for %s (%d hops)",
 		      r.metric.val, r.dest_ip.s().cc(), r.num_hops());
       if (next_hop->metric.val < 100)
-	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%u)",
+	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%u%% transmissions)",
 		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric.val);
     }
     r.metric.val += next_hop->metric.val;
@@ -790,7 +807,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 		    new_r.dest_ip.s().cc(), new_r.advertise_ok_jiffies - jiff);
 #endif
     }
-    insert_route(new_r, was_sender ? GridLogger::NEW_DEST_SENDER : GridLogger::NEW_DEST);
+    insert_route(new_r, was_sender ? GridGenericLogger::NEW_DEST_SENDER : GridGenericLogger::NEW_DEST);
   }
   else if (old_r->seq_no() == new_r.seq_no()) {
     // Accept if better route
@@ -800,7 +817,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 	new_r.need_metric_ad = true;
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
       }
-      insert_route(new_r, was_sender ? GridLogger::BETTER_RTE_SENDER : GridLogger::BETTER_RTE);
+      insert_route(new_r, was_sender ? GridGenericLogger::BETTER_RTE_SENDER : GridGenericLogger::BETTER_RTE);
     }
   }
   else if (old_r->seq_no() < new_r.seq_no()) {
@@ -809,7 +826,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
     if (metrics_differ(new_r.metric, new_r.last_adv_metric))
       new_r.need_metric_ad = true;
-    insert_route(new_r, was_sender ? GridLogger::NEWER_SEQ_SENDER : GridLogger::NEWER_SEQ);
+    insert_route(new_r, was_sender ? GridGenericLogger::NEWER_SEQ_SENDER : GridGenericLogger::NEWER_SEQ);
   }
   else {
     dsdv_assert(old_r->seq_no() > new_r.seq_no());
@@ -834,7 +851,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 	new_r.last_seq_jiffies = jiff; // not done by update_wst() becaue seq is less, so do it here
 	dsdv_assert(new_r.last_updated_jiffies == new_r.last_seq_jiffies);
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
-	insert_route(new_r, was_sender ? GridLogger::REBOOT_SEQ_SENDER : GridLogger::REBOOT_SEQ);
+	insert_route(new_r, was_sender ? GridGenericLogger::REBOOT_SEQ_SENDER : GridGenericLogger::REBOOT_SEQ);
       }
     }
   }
@@ -881,7 +898,7 @@ DSDVRouteTable::simple_action(Packet *packet)
    
   if (_log) {
     struct timeval tv;
-    gettimeofday(&tv, 0);
+    click_gettimeofday(&tv);
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
   }
   
@@ -922,11 +939,13 @@ DSDVRouteTable::simple_action(Packet *packet)
     // Check for ping-pong link stats about us. We still do the
     // ping-ponging in route ads as well as pigybacking on unicast
     // data, in case we aren't sending data to that destination.
+#ifdef CLICK_USERLEVEL
     if (curr->ip == (unsigned int) _ip && curr->num_hops == 1 && _link_tracker) {
       _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), 
 			      ntoh(curr->measurement_time));
       _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
     }
+#endif
 
     RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
     
@@ -1146,10 +1165,11 @@ DSDVRouteTable::print_est_type(Element *e, void *)
 
 int
 DSDVRouteTable::write_est_type(const String &arg, Element *el, 
-			       void *, ErrorHandler *)
+			       void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  rt->_est_type = atoi(((String) arg).cc());
+  if (!cp_unsigned(arg, &rt->_est_type))
+    return errh->error("est_type must be unsigned");
   return 0;
 }
 
@@ -1165,9 +1185,11 @@ DSDVRouteTable::write_seqno(const String &arg, Element *el,
 			       void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  unsigned u = atoi(((String) arg).cc());
+  unsigned u;
+  if (!cp_unsigned(arg, &u)) 
+    return errh->error("sequence number must be unsigned");
   if (u & 1)
-    return errh->error("DSDVRouteTable %s: sequence number must be even", rt->id().cc());
+    return errh->error("sequence number must be even");
   rt->_seq_no = u;
   return 0;
 }
@@ -1181,10 +1203,12 @@ DSDVRouteTable::print_frozen(Element *e, void *)
 
 int
 DSDVRouteTable::write_frozen(const String &arg, Element *el, 
-			     void *, ErrorHandler *)
+			     void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  rt->_frozen = atoi(((String) arg).cc());
+  if (!cp_bool(arg, &rt->_frozen))
+    return errh->error("`frozen' must be a boolean");
+  
   click_chatter("DSDVRouteTable %s: setting _frozen to %s", 
 		rt->id().cc(), rt->_frozen ? "true" : "false");
   return 0;
@@ -1215,7 +1239,7 @@ DSDVRouteTable::print_links(Element *e, void *)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
-#if 0
+#if 0 // #ifdef CLICK_USERLEVEL
     LinkStat::stat_t *s1 = rt->_link_stat ? rt->_link_stat->_stats.findp(r.next_hop_eth) : 0;
 #else
     struct {
@@ -1233,18 +1257,25 @@ DSDVRouteTable::print_links(Element *e, void *)
     /* get estimates of our link *to* this neighbor */
     int tx_sig = 0;
     int tx_qual = 0;
+    unsigned int bcast_rate = 0;
+#ifdef CLICK_USERLEVEL
+    double b;
     bool res2 = rt->_link_tracker ? rt->_link_tracker->get_stat(r.dest_ip, tx_sig, tx_qual, last) : false;
-    double bcast_rate = 0;
-    bool res3 = rt->_link_tracker? rt->_link_tracker->get_bcast_stat(r.dest_ip, bcast_rate, last) : false;
+    bool res3 = rt->_link_tracker? rt->_link_tracker->get_bcast_stat(r.dest_ip, b, last) : false;
+    bcast_rate = (unsigned int) (b * 100);
+#else
+    bool res2 = false;
+    bool res3 = false;
+#endif
 
     char buf[255];
-    double tx_rate = num_rx;
-    tx_rate -= 0.5;
+    int tx_rate = 100 * num_rx;
+    tx_rate -= 50;
     tx_rate /= num_expected;
     snprintf(buf, 255, "%s %s metric=%u (%s) rx_sig=%d rx_qual=%d rx_rate=%d tx_sig=%d tx_qual=%d tx_rate=%d\n",
 	     r.dest_ip.s().cc(), r.next_hop_eth.s().cc(), r.metric.val, r.metric.valid ? "valid" : "invalid",
-	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * tx_rate)) : -1,
-	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) (100 * bcast_rate) : -1);
+	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? tx_rate : -1,
+	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) bcast_rate : -1);
     s += buf;
   }
   return s;
@@ -1295,11 +1326,11 @@ DSDVRouteTable::hello_hook()
   }
 
   // reschedule periodic update
-  int r2 = random();
-  double r = (double) (r2 >> 1);
-  unsigned int jitter = (unsigned int) (((double) _jitter) * r / ((double) 0x7FffFFff));
+  long r2 = random();
+  long r = (r2 >> 1);
+  unsigned int jitter = (unsigned int) (r % (_jitter + 1));
   if (r2 & 1) {
-    if (jitter <= msecs_to_next_ad)
+    if (jitter <= msecs_to_next_ad) // hello can only happen in the future
       msecs_to_next_ad -= jitter;
   }
   else 
@@ -1339,9 +1370,8 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 
   /* fill in the timestamp */
   struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
+  click_gettimeofday(&tv);
+  p->set_timestamp_anno(tv);
 
   /* fill in ethernet header */
   click_ether *eh = (click_ether *) p->data();
@@ -1406,7 +1436,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
   if (ls && num_hops() == 1) {
-#if 0
+#if 0 // #ifdef CLICK_USERLEVEL
     LinkStat::stat_t *s = ls ? ls->_stats.findp(next_hop_eth) : 0;
 #else
     struct {
@@ -1450,7 +1480,7 @@ DSDVRouteTable::log_dump_hook(bool reschedule)
 {
   if (_log) {
     struct timeval tv;
-    gettimeofday(&tv, 0);
+    click_gettimeofday(&tv);
     Vector<RouteEntry> vec;
     get_all_entries(vec);
     _log->log_route_dump(vec, tv);
@@ -1536,17 +1566,19 @@ DSDVRouteTable::check_invariants(const IPAddress *ignore) const
 void
 DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 {
-  click_chatter("DSDVRouteTable assertion \"%s\" failed: file %s, line %d",
-		expr, file, line);
+  click_chatter("DSDVRouteTable %s assertion \"%s\" failed: file %s, line %d",
+		id().cc(), expr, file, line);
   click_chatter("Routing table state:");
   for (RTIter i = _rtes.begin(); i; i++) {
     click_chatter("%s\n", i.value().dump().cc());
   }
-  
+#ifdef CLICK_USERLEVEL  
   abort();
+#else
+  click_chatter("Continuing execution anyway, hold on to your hats!\n");
+#endif
 }
 
-ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(GridGenericRouteTable)
 EXPORT_ELEMENT(DSDVRouteTable)
 

@@ -3,13 +3,10 @@
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <elements/grid/gridgatewayinfo.hh>
-#include <elements/grid/linktracker.hh>
-#include <elements/grid/linkstat.hh>
-#include "grid.hh"
-#include "gridgenericrt.hh"
+#include <elements/grid/grid.hh>
+#include <elements/grid/gridgenericrt.hh>
 #include <click/timer.hh>
-#include "gridlogger.hh"
+#include <elements/grid/gridgenericlogger.hh>
 CLICK_DECLS
 
 /*
@@ -92,7 +89,7 @@ CLICK_DECLS
  *
  * =item LOG
  *
- * GridLogger element.  Object to log Grid events to.
+ * GridGenericLogger element.  Object to log Grid events to.
  *
  * =item WST0 (zero, not ``oh'')
  * 
@@ -100,7 +97,7 @@ CLICK_DECLS
  *
  * =item ALPHA
  * 
- * Double.  DSDV settling time weighting parameter.  Between 0 and 1 inclusive.
+ * Unsigned integer.  DSDV settling time weighting parameter, in percent.  Between 0 and 100 inclusive.
  *
  * =item SEQ0 (zero, not ``oh'')
  *
@@ -110,6 +107,10 @@ CLICK_DECLS
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
  * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger, Paint */
+
+class GridGatewayInfo;
+class LinkStat;
+class LinkTracker;
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -169,7 +170,7 @@ private:
 
 
     // DSDV book-keeping
-    double              wst;                   // weighted settling time (msecs)
+    unsigned int        wst;                   // weighted settling time (msecs)
     metric_t            last_adv_metric;       // last metric we advertised
     unsigned int        last_seq_jiffies;      // last time the seq_no changed
     unsigned int        advertise_ok_jiffies;  // when it is ok to advertise route
@@ -184,8 +185,8 @@ private:
     void   check() const { 
       assert(_init); 
       assert((num_hops() > 0) != (seq_no() & 1)); 
-      assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true); // only check if last_seq_jiff has been set
-      assert(wst >= 0);
+      // only check if last_seq_jiff has been set
+      assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true); 
     } 
 
     void invalidate(unsigned int jiff) {
@@ -262,7 +263,7 @@ private:
   class RTable _rtes;
 
   void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
-  void insert_route(const RTEntry &, const GridLogger::reason_t why);
+  void insert_route(const RTEntry &, const GridGenericLogger::reason_t why);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
@@ -301,7 +302,8 @@ private:
   class TMap _trigger_timers;
   class HMap _trigger_hooks;
 
-  void check_invariants(const IPAddress *ignore = 0) const; // check table, timer, and trigger hook invariants
+  // check table, timer, and trigger hook invariants
+  void check_invariants(const IPAddress *ignore = 0) const; 
 
   /* max time to keep an entry in RT */
   unsigned int _timeout; // msecs
@@ -317,7 +319,7 @@ private:
   class LinkStat        *_link_stat;
 
   /* binary logging */
-  class GridLogger          *_log;
+  class GridGenericLogger  *_log;
   static const unsigned int _log_dump_period = 5 * 1000; // msecs
 
   /* this node's addresses */
@@ -332,7 +334,7 @@ private:
   unsigned int _max_hops;
 
   /* settling time constants */
-  double          _alpha;
+  unsigned int    _alpha; // percent, 0-100
   unsigned int    _wst0;  // msecs
 
   /* track route ads */
@@ -419,8 +421,10 @@ private:
 
   static String print_dump(Element *e, void *);
 
-  bool est_forward_delivery_rate(const IPAddress &, double &);
-  bool est_reverse_delivery_rate(const IPAddress &, double &);
+  // estimate link delivery rates, as 0-100 percent.  return false if
+  // no good data available for estimation.
+  bool est_forward_delivery_rate(const IPAddress &, unsigned int &);
+  bool est_reverse_delivery_rate(const IPAddress &, unsigned int &);
 
   enum MetricType {
     MetricUnknown = -1,
