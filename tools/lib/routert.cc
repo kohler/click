@@ -989,7 +989,7 @@ RouterT::remove_tunnels()
   int old_nhook = _hookup_from.size();
   for (int i = 0; i < old_nhook; i++) {
     Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
-    const String &landmark = _hookup_landmark[i];
+    String landmark = _hookup_landmark[i]; // must not be reference!
     
     // skip if uninteresting
     if (hf.idx != magice)
@@ -1007,6 +1007,7 @@ RouterT::remove_tunnels()
       new_to.push_back(ht);
     
     // add cross product
+    // hf, ht are invalidated by adding new connections!
     for (int j = 0; j < new_from.size(); j++)
       for (int k = 0; k < new_to.size(); k++)
 	add_connection(new_from[j], new_to[k], landmark);
