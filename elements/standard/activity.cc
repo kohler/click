@@ -98,13 +98,19 @@ ActivitySignal
 ActivityNotifier::listen_upstream_pull(Element *e, int port, Task *t)
 {
     CastElementFilter notifier_filter("ActivityNotifier");
-    InputProcessingElementFilter push_filter(true);
+    OutputProcessingElementFilter push_filter(true);
     DisjunctionElementFilter filter;
     filter.add(&notifier_filter);
     filter.add(&push_filter);
     
     Vector<Element *> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
+
+    // All bets are off if filter ran into a push output. That means there was
+    // a regular Queue in the way (for example).
+    if (push_filter.match_count())
+	return ActivitySignal();
+    
     notifier_filter.filter(v);
 
     ActivitySignal signal;
