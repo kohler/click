@@ -17,10 +17,10 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-INSTALL = @INSTALL@
-INSTALL_DATA = @INSTALL@ -m 644
 AR = ar
 RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:

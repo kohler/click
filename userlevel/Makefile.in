@@ -17,6 +17,8 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
+AR = ar
+RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
@@ -45,11 +47,12 @@ GENERIC_OBJS = string.o straccum.o \
 	crc32.o in_cksum.o iptable.o iptable2.o ip6table.o radix.o \
 	userutils.o
 
-USERLEVEL_OBJS = clp.o click.o
-
 -include elements.mk
 
-OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
+LIBOBJS = $(GENERIC_OBJS) \
+	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
+	clp.o
+OBJS = $(ELEMENT_OBJS) elements.o click.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
@@ -70,8 +73,12 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: click
 
-click: Makefile $(OBJS)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS)
+click: Makefile libclick.a $(OBJS)
+	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) libclick.a
+
+libclick.a: Makefile $(LIBOBJS)
+	$(AR) cru libclick.a $(LIBOBJS)
+	$(RANLIB) libclick.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -83,7 +90,7 @@ elemlist:
 elements.conf: $(top_builddir)/config.status
 	echo "userlevel@element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
-	(cd $(top_srcdir); ./click-buildtool elem2make) < elements.conf > elements.mk
+	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o) < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2export) < elements.conf > elements.cc
 	@rm -f elements.d
@@ -93,13 +100,15 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click
+install: click libclick.a
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click $(bindir)/click
+	$(mkinstalldirs) $(libdir)
+	$(INSTALL) libclick.a $(libdir)/libclick.a
 install-man:
 
 clean:
-	rm -f *.d *.o click elements.mk elements.cc elements.conf
+	rm -f *.d *.o click elements.mk elements.cc elements.conf libclick.a
 distclean: clean
 	-rm -f Makefile
 
