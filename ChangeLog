@@ -1,3 +1,7 @@
+2003-02-13 Thursday 15:01  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.198), configure.in (1.199): configury
+
 2003-02-13 Thursday 14:04  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.197): extra [] quotes, and add --with-linux-map
