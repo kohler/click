@@ -119,8 +119,6 @@ ToDevice::reset_counts()
   _busy_returns = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
-  _idle_pulls = 0; 
-  _idle_calls = 0; 
   _linux_pkts_sent = 0; 
   _time_clean = 0;
   _time_queue = 0;
@@ -232,12 +230,6 @@ ToDevice::tx_intr()
   if (sent > 0 || _activations > 0) _activations++;
 #endif
 
-#if CLICK_DEVICE_STATS
-  if (_activations > 0) {
-    if (sent == 0) _idle_calls++;
-    if (sent == 0 && !busy) _idle_pulls++;
-  }
-#endif
   if (busy) _busy_returns++;
 
 #if HAVE_POLLING
@@ -254,17 +246,9 @@ ToDevice::tx_intr()
       _dev_idle = 0;
   }
 #endif
- 
-#if CLICK_DEVICE_ADJUST_TICKETS
-  // simple additive increase multiplicative decrease scheme
-  int adj = 0;
-  if (sent > 3)
-    adj = sent;
-  else if (sent == 0)
-    adj = 0-(tickets()>>4);
-  adj_tickets(adj);
-#endif
-  
+
+  if (sent > 0 || !busy) 
+    adjust_tickets(sent);
   reschedule();
 }
 
@@ -323,8 +307,6 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_npackets) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
-    String(td->_idle_calls) + " idle tx calls\n" +
-    String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_linux_pkts_sent) + " linux packets sent\n" +
     String(td->_pull_cycles) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +

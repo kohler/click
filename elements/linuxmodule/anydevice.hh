@@ -75,6 +75,8 @@ class AnyDevice : public Element { protected:
   String _devname;
   struct device *_dev;
   AnyDevice *_next;
+ 
+  void adjust_tickets(int work);
 
  public:
 
@@ -87,6 +89,21 @@ class AnyDevice : public Element { protected:
   void set_next(AnyDevice *d)		{ _next = d; }
   
 };
+
+  
+inline void
+AnyDevice::adjust_tickets(int work)
+{
+#if CLICK_DEVICE_ADJUST_TICKETS  
+  // simple additive increase multiplicative decrease scheme
+  int adj = 0;
+  if (work > 2)
+    adj = work;
+  else if (work == 0)
+    adj = 0-(tickets()>>4);
+  adj_tickets(adj);
+#endif
+}
 
 class AnyDeviceMap {
 

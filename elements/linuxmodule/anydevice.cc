@@ -91,5 +91,6 @@ find_device_by_ether_address(const String &name, Element *context)
   return 0;
 }
 
+
 ELEMENT_REQUIRES(linuxmodule)
 ELEMENT_PROVIDES(AnyDevice)

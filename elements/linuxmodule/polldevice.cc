@@ -161,7 +161,6 @@ PollDevice::reset_counts()
 
 #if CLICK_DEVICE_STATS
   _activations = 0;
-  _idle_calls = 0;
   _time_poll = 0;
   _time_refill = 0;
   _perfcnt1_poll = 0;
@@ -214,8 +213,6 @@ PollDevice::run_scheduled()
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
   if (got > 0)
     _activations++;
-  else if (_activations > 0)
-    _idle_calls++;
 #endif
   
   _dev->rx_refill(_dev);
@@ -263,17 +260,7 @@ PollDevice::run_scheduled()
   }
 #endif
 
-#if CLICK_DEVICE_ADJUST_TICKETS  
-  // simple additive increase multiplicative decrease scheme
-  int adj = 0;
-  if (got > 3)
-    adj = got;
-  else if (got == 0)
-    adj = 0-(tickets()>>4);
-
-  adj_tickets(adj);
-#endif
-
+  adjust_tickets(got);
   reschedule();
 
 #endif /* HAVE_POLLING */
@@ -286,7 +273,6 @@ PollDevice_read_calls(Element *f, void *)
   return
 #if CLICK_DEVICE_STATS
     String(kw->_npackets) + " packets received\n" +
-    String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
     String(kw->_push_cycles) + " cycles pushing\n" +
