@@ -186,9 +186,7 @@ Packet::uniqueify_copy()
 
 /*
  * Prepend some empty space before a packet.
- * Creates and returns a new packet if the packet
- * has other references.
- * May return the same packet if it has only one reference.
+ * May kill this packet and return a new one.
  */
 Packet *
 Packet::expensive_push(unsigned int nbytes)
@@ -196,6 +194,8 @@ Packet::expensive_push(unsigned int nbytes)
   click_chatter("expensive Packet::push");
 #ifdef __KERNEL__
   Packet *q = Packet::make(skb_realloc_headroom(skb(), nbytes));
+  // oops! -- patch from Richard Mortier
+  (void)skb_push(q->skb(), nbytes);
 #else
   Packet *q = Packet::make(length() + nbytes);
   memcpy(q->data() + nbytes, data(), length());
