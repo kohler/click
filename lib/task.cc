@@ -32,7 +32,7 @@ Task::error_hook(void *)
 
 Task::~Task()
 {
-  assert(!scheduled());
+  assert(!scheduled() || _list == this);
   //assert(!initialized());
 }
 
