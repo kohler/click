@@ -140,11 +140,11 @@ Version 1.1
 
 * Elements
 
-** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, IPPrint,
-   FTPPortMapper, IPRewriterPatterns, Switch, PullSwitch, RoundRobinSwitch,
-   and StrideSwitch, among others. Also mentioned above: user-level
-   FromDevice, ToDevice, and ControlSocket; kernel module ToLinuxSniffers;
-   generic SetIPAddress, StoreIPAddress.
+** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier,
+   IPFilter, IPPrint, FTPPortMapper, IPRewriterPatterns, Switch,
+   PullSwitch, RoundRobinSwitch, and StrideSwitch, among others. Also
+   mentioned above: user-level FromDevice, ToDevice, and ControlSocket;
+   kernel module ToLinuxSniffers; generic SetIPAddress, StoreIPAddress.
 
 ** Added AddressInfo element, which supports network address mnemonics. For
    example, you can now say `AddressInfo(butt 18.26.4.44); IPEncap(6, butt,
@@ -185,7 +185,7 @@ Version 1.1
 
 ** Added PollDevice and EtherEncap specifications to click-align(1).
 
-** click-fastclassifier(1) works on IPClassifier.
+** click-fastclassifier(1) works on IPClassifier and IPFilter.
 
 ** Added `--verbose' option to click-install(1).
 

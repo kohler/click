@@ -38,8 +38,8 @@
  *
  * =n
  *
- * The IPClassifier element has a friendlier syntax if you are classifying IP
- * packets.
+ * The IPClassifier and IPFilter elements have a friendlier syntax if you are
+ * classifying IP packets.
  *
  * =e
  * For example,
@@ -69,7 +69,7 @@
  *   safe length 22
  *   alignment offset 0
  *
- * =a IPClassifier */
+ * =a IPClassifier, IPFilter */
 
 class Classifier : public Element { protected:
   

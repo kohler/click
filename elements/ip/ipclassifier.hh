@@ -1,6 +1,6 @@
 #ifndef IPCLASSIFIER_HH
 #define IPCLASSIFIER_HH
-#include "elements/standard/classifier.hh"
+#include "elements/ip/ipfilter.hh"
 
 /*
  * =c
@@ -126,6 +126,11 @@
  * B<[tcp | udp] port> and B<icmp type> directives can only be true on the
  * first fragment of a fragmented packet.
  *
+ * Every IPClassifier element has an equivalent corresponding IPFilter element
+ * and vice versa. Use the element whose syntax is more convenient for your
+ * needs.
+ *
+ *
  * =e
  * For example,
  *
@@ -155,70 +160,12 @@
  * of packet data are ANDed with a mask and compared against four bytes of
  * classifier pattern.
  *
- * =a Classifier, CheckIPHeader, MarkIPHeader, CheckIPHeader2, tcpdump(1) */
+ * =a
+ * Classifier, IPFilter, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
+ * tcpdump(1) */
 
-class IPClassifier : public Classifier {
+class IPClassifier : public IPFilter {
 
-  enum {
-    UNKNOWN = -1000,
-    NONE = 0,
-    
-    TYPE_HOST = 1, TYPE_NET = 2, TYPE_PORT = 3, TYPE_PROTO = 4,
-    TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7, TYPE_ICMP_TYPE = 8,
-    TYPE_IPFRAG = 9, TYPE_IPUNFRAG = 10,
-    
-    SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
-
-    OP_EQ = 0, OP_GT = 1, OP_LT = 2,
-    
-    PROTO_IP = 1,
-    
-    DATA_NONE = 0, DATA_IP = 1, DATA_IPNET = 2, DATA_PROTO = 3,
-    DATA_PORT = 4, DATA_INT = 5, DATA_TCPOPT = 6, DATA_ICMP_TYPE = 7,
-    
-    IP_PROTO_TCP_OR_UDP = 0x10000,
-
-    // if you change this, change click-fastclassifier.cc also
-    TRANSP_FAKE_OFFSET = 64,
-  };
-
-  struct Primitive {
-    
-    int _type;
-    int _srcdst;
-    int _op;
-    int _net_proto;
-    int _transp_proto;
-    
-    int _data;
-
-    union {
-      struct in_addr ip;
-      struct {
-	struct in_addr ip, mask;
-      } ipnet;
-      int i;
-    } _u;
-    int _mask;
-    bool _negated;
-    bool _op_negated;
-    
-    Primitive()	{ clear(); }
-    
-    void clear();
-    void set_type(int, int slot, ErrorHandler *);
-    void set_srcdst(int, int slot, ErrorHandler *);
-    void set_net_proto(int, int slot, ErrorHandler *);
-    void set_transp_proto(int, int slot, ErrorHandler *);
-    
-    int set_mask(int *data, int full_mask, int shift, int, ErrorHandler *);
-    int check(int slot, const Primitive &, ErrorHandler *);
-    void add_exprs(Classifier *, Vector<int> &) const;
-    
-  };
-
-  void length_checked_push(Packet *);
-  
  public:
   
   IPClassifier();
@@ -229,8 +176,6 @@ class IPClassifier : public Classifier {
   
   IPClassifier *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
-  
-  void push(int port, Packet *);
   
 };
 

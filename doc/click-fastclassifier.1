@@ -43,10 +43,13 @@ click-fastclassifier \- specializes Classifier code in a Click router configurat
 The
 .B click-fastclassifier
 tool speeds up a Click configuration by creating fast versions of all its
-.M Classifier n
+.M Classifier n ,
+.M IPClassifier n ,
+and
+.M IPFilter n
 elements. It reads a router configuration file in the
 .M click 5
-language and creates specialized C++ source code for each Classifier
+language and creates specialized C++ source code for each Classifier-like
 element. A Classifier is expanded into a series of if statements; for
 example, the expansion of `Classifier(0/80, -)' contains something like
 this function:
@@ -163,7 +166,9 @@ Print the version number and some quickie warranty information and exit.
 .M click-install 1 ,
 .M click 5 ,
 .M click.o 8 ,
-.M Classifier n
+.M Classifier n ,
+.M IPClassifier n ,
+.M IPFilter n
 '
 .SH AUTHOR
 .na

@@ -250,7 +250,7 @@ operator!=(const ProgramStep &s1, const ProgramStep &s2)
 	  || s1.value.u != s2.value.u);
 }
 
-enum { AC_CLASSIFIER, AC_IPCLASSIFIER } ClassifierType;
+enum { AC_CLASSIFIER, AC_IPCLASSIFIER, AC_IPFILTER } ClassifierType;
 
 struct Classificand {
   int type;
@@ -300,7 +300,7 @@ write_checked_program(const Classificand &c, StringAccum &source)
   if (c.type == AC_CLASSIFIER)
     source << "  const unsigned *data = (const unsigned *)(p->data() - "
 	   << c.align_offset << ");\n  int l = p->length();\n";
-  else if (c.type == AC_IPCLASSIFIER)
+  else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
     source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
   const unsigned *transp_data = (const unsigned *)p->transport_header();\n\
   int l = p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset();\n";
@@ -333,7 +333,7 @@ write_checked_program(const Classificand &c, StringAccum &source)
       offset = e.offset/4;
       datavar = "data";
       length_check = "l < " + String(want_l);
-    } else { // c.type == AC_IPCLASSIFIER
+    } else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
       if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET) {
 	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4;
 	datavar = "transp_data";
@@ -381,7 +381,7 @@ write_unchecked_program(const Classificand &c, StringAccum &source)
   if (c.type == AC_CLASSIFIER)
     source << "  const unsigned *data = (const unsigned *)(p->data() - "
 	   << c.align_offset << ");\n";
-  else if (c.type == AC_IPCLASSIFIER)
+  else if (c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER)
     source << "  const unsigned *ip_data = (const unsigned *)p->ip_header();\n\
   const unsigned *transp_data = (const unsigned *)p->transport_header();\n";
 
@@ -397,7 +397,7 @@ write_unchecked_program(const Classificand &c, StringAccum &source)
     String datavar;
     if (c.type == AC_CLASSIFIER)
       offset = e.offset/4, datavar = "data";
-    else { // c.type == AC_IPCLASSIFIER
+    else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
       if (e.offset >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
 	offset = (e.offset - IPCLASSIFIER_TRANSP_FAKE_OFFSET)/4, datavar = "transp_data";
       else
@@ -443,6 +443,19 @@ change_landmark(ElementT &classifier_e)
 }
 
 static void
+copy_elements(RouterT *oldr, RouterT *newr, const String &tname)
+{
+  int old_ti = oldr->type_index(tname);
+  if (old_ti >= 0) {
+    int new_ti = newr->get_type_index(tname);
+    int nelements = oldr->nelements();
+    for (int i = 0; i < nelements; i++)
+      if (oldr->etype(i) == old_ti)
+	newr->get_eindex(oldr->ename(i), new_ti, oldr->econfiguration(i), "");
+  }
+}
+
+static void
 analyze_classifier(RouterT *r, int classifier_ei,
 		   StringAccum &header, StringAccum &source,
 		   ErrorHandler *errh)
@@ -451,9 +464,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
   String classifier_tname = r->etype_name(classifier_ei);
 
   // count number of output ports
-  Vector<String> args;
-  cp_argvec(r->econfiguration(classifier_ei), args);
-  int noutputs = args.size();
+  int noutputs = r->noutputs(classifier_ei);
 
   // set up new router
   RouterT nr;
@@ -469,13 +480,9 @@ analyze_classifier(RouterT *r, int classifier_ei,
   for (int i = 0; i < noutputs; i++)
     nr.add_connection(classifier_nei, i, 0, idle_nei);
 
-  // copy AlignmentInfos
-  int alignmentinfo_ti = r->get_type_index("AlignmentInfo");
-  int alignmentinfo_nti = nr.get_type_index("AlignmentInfo");
-  int nelements = r->nelements();
-  for (int i = 0; i < nelements; i++)
-    if (r->etype(i) == alignmentinfo_ti)
-      nr.get_eindex(r->ename(i), alignmentinfo_nti, r->econfiguration(i), "");
+  // copy AlignmentInfos and AddressInfos
+  copy_elements(r, &nr, "AlignmentInfo");
+  copy_elements(r, &nr, "AddressInfo");
 
   // get the resulting program from user-level `click'
   String router_str = nr.configuration_string();
@@ -488,6 +495,8 @@ analyze_classifier(RouterT *r, int classifier_ei,
     c.type = AC_CLASSIFIER;
   else if (classifier_tname == "IPClassifier")
     c.type = AC_IPCLASSIFIER;
+  else if (classifier_tname == "IPFilter")
+    c.type = AC_IPFILTER;
   else
     assert(0);
   c.safe_length = c.output_everything = c.align_offset = -1;
@@ -586,7 +595,7 @@ analyze_classifier(RouterT *r, int classifier_ei,
       source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
   if (p->length() < " << c.safe_length << ")\n    length_checked_push(p);\n\
   else\n    length_unchecked_push(p);\n}\n";
-    } else { // c.type == AC_IPCLASSIFIER
+    } else { // c.type == AC_IPCLASSIFIER || c.type == AC_IPFILTER
       if (c.safe_length >= IPCLASSIFIER_TRANSP_FAKE_OFFSET)
 	source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n\
   if (p->length() + " << IPCLASSIFIER_TRANSP_FAKE_OFFSET << " - p->transport_header_offset() < " << c.safe_length << ")\n    length_checked_push(p);\n\
@@ -801,6 +810,7 @@ compile_classifiers(RouterT *r, const String &package_name,
       switch (all_programs[i].type) {
        case AC_CLASSIFIER: sa << "Classifier\t"; break;
        case AC_IPCLASSIFIER: sa << "IPClassifier\t"; break;
+       case AC_IPFILTER: sa << "IPFilter\t"; break;
       }
       sa << cp_quote(old_configurations[i]) << '\n';
     }
@@ -938,10 +948,11 @@ particular purpose.\n");
   // find Classifiers
   Vector<int> classifiers;
   {
-    int t1 = r->type_index("Classifier");
-    int t2 = r->type_index("IPClassifier");
+    int t1 = r->get_type_index("Classifier");
+    int t2 = r->get_type_index("IPClassifier");
+    int t3 = r->get_type_index("IPFilter");
     for (int i = 0; i < r->nelements(); i++)
-      if ((r->etype(i) == t1 || r->etype(i) == t2) && r->etype(i) >= 0)
+      if (r->etype(i) == t1 || r->etype(i) == t2 || r->etype(i) == t3)
 	classifiers.push_back(i);
   }
 

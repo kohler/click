@@ -384,7 +384,7 @@ sub process_comment ($$) {
   %RelatedSource = ();
   $i = $first_in_section{'a'};
   if (defined($i)) {
-    $section_text[$i] = $section_args[$i] . "\n" . $section_text[$i]
+    $section_text[$i] = $section_args[$i] . $section_text[$i]
 	if $section_args[$i];
     if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
       my($bit, $last) = ($1, $2);
