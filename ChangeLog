@@ -1,3 +1,15 @@
+2004-07-23 Friday 18:12  John Bicket <jbicket@mit.edu>
+
+	* elements/linuxmodule/anydevice.cc (1.28),
+	elements/wifi/phyerrfilter.cc (1.1), elements/wifi/phyerrfilter.hh
+	(1.1), elements/wifi/printwifi.cc (1.4), elements/wifi/rxfcserr.cc
+	(1.3), elements/wifi/rxfcserr.hh (1.3),
+	elements/wifi/ap/proberesponder.cc (1.6), include/clicknet/wifi.h
+	(1.7): make anydevice support 802.11 arptypes, add support for phy
+	error filtering.  packets with phy errors can now come out of
+	fromdevice, and can be filtered with phyerrfilter. this replaces
+	the rxfcserr functionality.
+
 2004-07-23 Friday 00:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.24), configure.in (1.242): fix @WIFI_INCLUDES@
