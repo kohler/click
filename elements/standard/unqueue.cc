@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * unqueue.{cc,hh} -- element pulls as many packets as possible from
  * its input, pushes them out its output
@@ -25,63 +26,63 @@
 CLICK_DECLS
 
 Unqueue::Unqueue()
-  : Element(1, 1), _task(this)
+    : Element(1, 1), _task(this)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 Unqueue::~Unqueue()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 Unqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _burst = 1;
-  _active = true;
-  return cp_va_parse(conf, this, errh,
-		     cpOptional,
-		     cpInteger, "burst size", &_burst,
-		     cpKeywords,
-		     "ACTIVE", cpBool, "is active?", &_active,
-		     0);
+    _burst = 1;
+    _active = true;
+    return cp_va_parse(conf, this, errh,
+		       cpOptional,
+		       cpInteger, "burst size", &_burst,
+		       cpKeywords,
+		       "ACTIVE", cpBool, "is active?", &_active,
+		       0);
 }
 
 int
 Unqueue::initialize(ErrorHandler *errh)
 {
-  _count = 0;
-  ScheduleInfo::initialize_task(this, &_task, _active, errh);
-  _signal = Notifier::upstream_empty_signal(this, 0, &_task);
-  if (_burst < 0)
-    _burst = 0x7FFFFFFFU;
-  else if (_burst == 0)
-    errh->warning("BURST size 0, no packets will be pulled");
-  return 0;
+    _count = 0;
+    ScheduleInfo::initialize_task(this, &_task, _active, errh);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
+    if (_burst < 0)
+	_burst = 0x7FFFFFFFU;
+    else if (_burst == 0)
+	errh->warning("BURST size 0, no packets will be pulled");
+    return 0;
 }
 
 bool
 Unqueue::run_task()
 {
-  if (!_active)
-    return false;
+    if (!_active)
+	return false;
 
-  int worked = 0;
-  while (worked < _burst) {
-    if (Packet *p = input(0).pull()) {
-      worked++;
-      output(0).push(p);
-    } else {
-      if (!_signal)
-	return worked > 0;
-      break;
+    int worked = 0;
+    while (worked < _burst) {
+	if (Packet *p = input(0).pull()) {
+	    worked++;
+	    output(0).push(p);
+	} else {
+	    if (!_signal)
+		return worked > 0;
+	    break;
+	}
     }
-  }
-  
-  _task.fast_reschedule();
-  _count += worked;
-  return worked > 0;
+    
+    _task.fast_reschedule();
+    _count += worked;
+    return worked > 0;
 }
 
 #if 0 && defined(CLICK_LINUXMODULE)
@@ -95,39 +96,45 @@ Unqueue::run_task()
 #endif
 #endif
 
+enum { H_COUNT, H_ACTIVE };
+
 String
-Unqueue::read_param(Element *e, void *)
+Unqueue::read_param(Element *e, void *thunk)
 {
-  Unqueue *u = (Unqueue *)e;
-  return String(u->_count) + "\n";
+    Unqueue *u = (Unqueue *)e;
+    switch ((uintptr_t) thunk) {
+      case H_COUNT:
+	return cp_unparse_bool(u->_count) + "\n";
+      case H_ACTIVE:
+	return String(u->_active) + "\n";
+      default:
+	return "<error>\n";
+    }
 }
 
 int 
-Unqueue::write_param(const String &conf, Element *e, 
-		     void *thunk, ErrorHandler *errh)
+Unqueue::write_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh)
 {
-  Unqueue *uq = (Unqueue *)e;
-  String s = cp_uncomment(conf);
-  switch ((intptr_t)thunk) {
-    
-   case 1: {			// active
-     if (!cp_bool(s, &uq->_active))
-       return errh->error("active parameter must be boolean");    
-     if (uq->_active && !uq->_task.scheduled())
-       uq->_task.reschedule();
-     break;
-   }
-   
-  }
-  return 0;
+    Unqueue *u = (Unqueue *)e;
+    String s = cp_uncomment(conf);
+    switch ((uintptr_t) thunk) {
+      case H_ACTIVE:		// active
+	if (!cp_bool(s, &u->_active))
+	    return errh->error("active parameter must be boolean");    
+	if (u->_active && !u->_task.scheduled())
+	    u->_task.reschedule();
+	break;
+    }
+    return 0;
 }
 
 void
 Unqueue::add_handlers()
 {
-  add_read_handler("count", read_param, (void *)0);
-  add_write_handler("active", write_param, (void *)1);
-  add_task_handlers(&_task);
+    add_read_handler("count", read_param, (void *)H_COUNT);
+    add_read_handler("active", read_param, (void *)H_ACTIVE);
+    add_write_handler("active", write_param, (void *)H_ACTIVE);
+    add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS

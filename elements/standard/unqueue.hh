@@ -38,7 +38,8 @@ The default value is true.
 
 Returns the count of packets that have passed through Unqueue.
 
-=h active write-only
+=h active read/write
+
 The same as ACTIVE keyword.
 
 =a RatedUnqueue, BandwidthRatedUnqueue
@@ -52,7 +53,6 @@ class Unqueue : public Element { public:
   const char *class_name() const		{ return "Unqueue"; }
   const char *processing() const		{ return PULL_TO_PUSH; }
   
-  Unqueue *clone() const			{ return new Unqueue; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();
