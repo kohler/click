@@ -2,13 +2,15 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.4 2004/03/24 22:22:15 max Exp $
+# $Id: click-mkclgw.pl,v 1.5 2004/04/14 19:54:42 max Exp $
 #
 # click-mkclgw
 #
-#    Imagine a cluster of servers that havs a skmall block IPs externally
-#    and a whole boatload of IPs internally.  This script accepts
-#    input configuration files, and outputs Click configurations
+#   Click Make Cluster Gateway
+#
+#    Imagine a cluster of servers that have a small block of IPs 
+#    externally and a whole boatload of IPs internally.  This script 
+#    accepts input configuration files, and outputs Click configurations
 #    for managing packet rewriting for the cluster.  Incudes 
 #    NATing and load balancing functionality.
 #
@@ -1210,7 +1212,7 @@ package CLGW::Rule::Param;
 #   The outputter class simply runs the output functions in sequence
 #   to output the target Click configuration.  The functions are split
 #   up into different functions mainly for readability.  But usually,
-#   they're only called once in the output procewss.
+#   they're only called once in the output process.
 #
 package CLGW::Output;
 @CLGW::Output::ISA = qw [ CLGW::Base ];

@@ -1,5 +1,5 @@
 # 
-# $Id: example.clgw,v 1.2 2004/02/26 03:42:33 max Exp $
+# $Id: example.clgw,v 1.3 2004/04/14 19:54:42 max Exp $
 #
 #  Script to be processed with click-mkclgw.pl, to make a click configuration
 #
@@ -28,6 +28,25 @@ INTDNS		10.0.12.20;
 }
 
 #
+# All traffic on 10.0.30.0/24 will be NATed to 77.59.77.40
+#
+{(napt);
+foo	77.59.77.40 	10.0.30.1 	10.0.30.0/24 
+}
+
+#
+# Up to now, the rule format has been {(<tag>); <rules> }
+# The <tag>'s above are all reserved keywords used by the 
+# generation script.  
+#
+# Below, the format used is {(ports); <rules> }
+# Each rule set is associated with a set of TCP ports.
+# For instance, a cluster might accept ssh and www connections.
+# Or for individual holes in the firewall, maybe only certain
+# types of TCP packets are let through.  
+#
+
+#
 # Reverse NAT; Each server stage[i] has a unique internal
 # and external IP address. Let ssh and www in through the FW
 #
@@ -54,9 +73,3 @@ grave		77.59.77.14		10.0.10.14
 ws[1-14]/[2,3,5-7]  77.59.77.10	 10.0.11.[11-24]  10.0.11.1  10.0.11.0/24
 }
 
-#
-# All traffic on 10.0.30.0/24 will be NATed to 77.59.77.40
-#
-{(napt);
-foo	77.59.77.40 	10.0.30.1 	10.0.30.0/24 
-}
