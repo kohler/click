@@ -214,7 +214,7 @@ Specializer::create_class(SpecializedClass &spc)
 		 "\n  if (void *v = " + parent_cxx_name + "::cast(n))\n\
     return v;\n  else if (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0)\n\
-    return v;\n  else\n    return 0;\n", ""));
+    return (Element *)this;\n  else\n    return 0;\n", ""));
   // placeholders for pull_input and push_output
   new_cxxc->defun
     (CxxFunction("pull_input", false, "inline Packet *",
