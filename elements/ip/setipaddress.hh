@@ -5,17 +5,17 @@
 
 /*
  * =c
- * SetIPAddress(OFFSET)
+ * SetIPAddress(IP)
  * =d
- * Copy the destination IP address annotation into the packet
- * at offset OFFSET.
+ * Set the destination IP address annotation of incoming packets to the
+ * static IP address IP.
  *
- * =a GetIPAddress
+ * =a StoreIPAddress GetIPAddress
  */
 
 class SetIPAddress : public Element {
   
-  unsigned _offset;
+  IPAddress _ip;
   
  public:
   

@@ -50,42 +50,37 @@ ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 int
 ARPResponder::configure(const String &conf, ErrorHandler *errh)
 {
-  IPAddress ipa, mask;
-  EtherAddress ena;
-  
   Vector<String> args;
   cp_argvec(conf, args);
-
   _v.clear();
 
   int before = errh->nerrors();
-  int last_ip_only = -1;
   for (int i = 0; i < args.size(); i++) {
-    String arg;
-    if (cp_ip_address_mask(args[i], ipa, mask, &arg)
-        && cp_eat_space(arg)
-	&& cp_ethernet_address(arg, ena)) {
-      if (last_ip_only >= 0)
-	errh->error("argument %d should be Ethernet address", i);
-      add_map(ipa, mask, ena);
-    } else if (cp_ip_address_mask(args[i], ipa, mask)) {
-      if (last_ip_only < 0) last_ip_only = _v.size();
-      add_map(ipa, mask, EtherAddress());
-    } else if (cp_ip_address(args[i], ipa)) {
-      if (last_ip_only < 0) last_ip_only = _v.size();
-      add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
-    } else if (cp_ethernet_address(args[i], ena)) {
-      for (int j = last_ip_only; j >= 0 && j < _v.size(); j++)
-	_v[j]._ena = ena;
-      last_ip_only = -1;
-    } else
-      errh->error("argument %d should be `IPADDR MASK ETHADDR'", i);
+    String arg = args[i];
+    IPAddress ipa, mask;
+    EtherAddress ena;
+    bool have_ena = false;
+    int first = _v.size();
+
+    for (; arg; cp_eat_space(arg))
+      if (cp_ip_address_mask(arg, ipa, mask, &arg))
+	add_map(ipa, mask, EtherAddress());
+      else if (cp_ethernet_address(arg, ena, &arg)) {
+	if (have_ena)
+	  errh->error("argument %d has more than one Ethernet address", i);
+	have_ena = true;
+      } else {
+	errh->error("argument %d should be `IPADDR MASK ETHADDR'", i);
+	arg = "";
+      }
+
+    if (first == _v.size())
+      errh->error("argument %d had no IP address and masks", i);
+    for (int j = first; j < _v.size(); j++)
+      _v[j]._ena = ena;
   }
-  if (last_ip_only >= 0)
-    errh->error("missing Ethernet address");
-  if (before != errh->nerrors()) return -1;
-  
-  return 0;
+
+  return (before == errh->nerrors() ? 0 : -1);
 }
 
 Packet *

@@ -19,7 +19,7 @@
  *
  * =a ARPQuerier
  * =a LookupIPRoute
- * =a SetIPAddress
+ * =a SetIPAddress StoreIPAddress
  */
 
 

@@ -628,14 +628,21 @@ cp_ip_address_mask(String str, unsigned char *return_value,
   if (!cp_ip_address(str, return_value, &mask))
     return false;
 
-  if (mask[0] == '/') {
-    // CIDR mask
-    int relevant_bits;
-    if (!cp_integer(mask.substring(1), relevant_bits, rest))
-      return false;
-    if (relevant_bits < 0 || relevant_bits > 32)
-      return false;
-    
+  // move past space or /
+  if (mask.length() && mask[0] == '/')
+    mask = mask.substring(1);
+  else if (mask.length() && isspace(mask[0]))
+    cp_eat_space(mask);
+  else
+    return false;
+
+  // check for complete IP address
+  int relevant_bits;
+  if (cp_ip_address(mask, return_mask, rest))
+    return true;
+  
+  else if (cp_integer(mask, relevant_bits, rest)
+	   && relevant_bits >= 0 && relevant_bits <= 32) {
     // set bits
     return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 0;
     unsigned char *pos = return_mask;
@@ -649,11 +656,6 @@ cp_ip_address_mask(String str, unsigned char *return_value,
       }
     }
     return true;
-    
-  } else if (isspace(mask[0])) {
-    // explicitly specified mask
-    cp_eat_space(mask);
-    return cp_ip_address(mask, return_mask, rest);
     
   } else
     return false;
