@@ -40,6 +40,9 @@ RouterThread::process_task_requests()
   Vector<unsigned> ops;
   Vector<Task *> tasks;
 
+  if (_taskreq_ops.size() == 0)
+    return;
+
   _taskreq_lock.acquire();
   ops.swap(_taskreq_ops);
   tasks.swap(_taskreq_tasks);
