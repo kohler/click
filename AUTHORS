@@ -36,7 +36,7 @@ IP rewriting elements, stride scheduling element, round robin scheduler
 
 Nickolai B. Zeldovich
 kolya@lcs.mit.edu
-Linux 2.4
+Linux 2.4, BSD
 
 
 Thanks to:
@@ -59,8 +59,17 @@ Thanks for patches and comments:
 Joe Elliott
 joe@inetd.com
 
+Julio Garcia
+julio_garcia@agilent.com
+
 Prem Gopalan
 gopalan@purdue.edu
+
+Kyle Jamieson
+jamieson@mit.edu
+
+Kevin Mitchell
+kevin_mitchell@agilent.com
 
 Richard Mortier
 Richard.Mortier@cl.cam.ac.uk
