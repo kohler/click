@@ -45,7 +45,7 @@ Version 1.1
    *)', and updated elements.
 
 ** The `cp_DATATYPE' functions take pointers instead of references. This
-   makes using them much clearer.
+   makes their use easier to read.
 
 ** Changed Element method `bool configure_first() const' to `int
    configure_phase() const'. Now element classes can specify their relative
@@ -77,7 +77,12 @@ Version 1.1
 
 ** Click configurations can contain cpp(1)-style `#line LINENUMBER' or `#
    LINENUMBER' directives. The tools generate them, too, so you will get
-   better error messages than you used to.
+   better error messages than formerly.
+
+** Improved element documentation by adding summaries. The generated
+   elements(n) manual page now groups the elements by function. Also
+   updated and documented the format for doc comments (see
+   `doc/elementdoc.7').
 
 * User-level driver
 
@@ -97,11 +102,11 @@ Version 1.1
 
 * Kernel driver
 
-** Added patch for Linux kernel 2.2.16. Linux kernel 2.2.16 patch contains
-   the latest changes to Linux. While Click will continue to work under
-   2.2.14 for the time being, it may not work in the future. If you have a
-   previous version of Click, you must unapply the old kernel patch and
-   apply the new kernel patch before compiling.
+** Added patch for Linux kernel 2.2.16. This patch contains the latest
+   changes to Linux. While Click will continue to work under 2.2.14 for the
+   time being, it may not work in the future. If you have a previous
+   version of Click, you must unapply the old kernel patch and apply the
+   new kernel patch before compiling.
 
 ** Improved /proc handling. It is now safe to keep open file descriptors to
    handler files even while uninstalling the kernel module or installing a
@@ -119,6 +124,9 @@ Version 1.1
    and StrideSwitch, among others. Also mentioned above: user-level
    FromDevice, ToDevice, and ControlSocket; kernel module ToLinuxSniffers;
    generic SetIPAddress, StoreIPAddress.
+
+** Added experimental IPv6 elements; `./configure --enable-ip6' to compile
+   them.
 
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
@@ -151,16 +159,9 @@ Version 1.1
 
 ** Added PollDevice and EtherEncap specifications to click-align(1).
 
-** click-fastclassifier(1): Works on IPClassifier.
+** click-fastclassifier(1) works on IPClassifier.
 
 ** Added `--verbose' option to click-install(1).
-
-* Documentation
-
-** Changed element documentation format to add functionality. Now it is a
-   lot like Perl PODs. See elementdoc(7) for details.
-
-** Added grouping to the elements(n) manual page.
 
 
 Version 1.0.6   6.May.2000
