@@ -564,14 +564,6 @@ Classifier::optimize_exprs(ErrorHandler *errh)
     (void) remove_unused_states();
   }
   
-  // optimize edges by drifting
-  /*if (_exprs.size() < 100)
-    do {
-      for (int i = 0; i < _exprs.size(); i++)
-	drift_expr(i);
-      combine_compatible_states();
-      } while (remove_unused_states());*/
-  
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   
   // Check for case where all patterns have conflicts: _exprs will be empty
