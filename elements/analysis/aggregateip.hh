@@ -33,8 +33,8 @@ fragmentation offset field), C<"ip rf">, C<"ip df">, C<"ip mf">, C<"ip
 fragoff"> (just the fragmentation offset value, without the RF, DF, and MF
 bits), C<"ip ttl">, C<"ip proto">, C<"ip sum">, C<"ip src">, C<"ip dst">,
 C<"udp sport">, C<"udp dport">, C<"udp len">, C<"udp sum">, C<"tcp sport">,
-C<"tcp dport">, C<"tcp seqno">, C<"tcp ackno">, C<"tcp hl">, C<"tcp flags">,
-C<"tcp fin">, C<"tcp syn">, C<"tcp rst">, C<"tcp psh">, C<"tcp ack">, C<"tcp
+C<"tcp dport">, C<"tcp seq">, C<"tcp ack">, C<"tcp hl">, C<"tcp flags">,
+C<"tcp fin">, C<"tcp syn">, C<"tcp rst">, C<"tcp psh">, C<"tcp ackf">, C<"tcp
 urg">, C<"tcp win">, C<"tcp sum">, C<"tcp urp">, C<"icmp type">, C<"icmp
 code">, and C<"icmp sum">.
 
