@@ -173,7 +173,7 @@ Neighbor::simple_action(Packet *packet)
 	  // hop is different, only update if old info is timed out or
 	  // more hops away.
 	  if (_nbrs[j].nbr.next_hop_ip == gh->ip ||
-	      jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies ||
+	      jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies ||
 	      _nbrs[j].nbr.num_hops > curr->num_hops) {
 	    _nbrs[j].nbr.num_hops = curr->num_hops + 1;
 	    _nbrs[j].nbr.next_hop_ip = gh->ip;
