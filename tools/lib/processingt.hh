@@ -13,6 +13,9 @@ class ProcessingT { public:
     ProcessingT();
     ProcessingT(const RouterT *, ErrorHandler *);
     ProcessingT(const RouterT *, ElementMap *, ErrorHandler *);
+    ProcessingT(const RouterT *, ElementMap *, bool flatten, ErrorHandler *);
+    int reset(const RouterT *, ElementMap *, bool flatten, ErrorHandler *);
+    void resolve_agnostics();	// change remaining AGNOSTICs to PUSH
 
     int nelements() const	{ return _input_pidx.size() - 1; }
     int ninput_pidx() const	{ return _input_pidx.back(); }
@@ -35,8 +38,6 @@ class ProcessingT { public:
     bool output_is_push(int ei, int p) const;
     const PortT &input_connection(int ei, int p) const;
     const PortT &output_connection(int ei, int p) const;
-
-    int reset(const RouterT *, ErrorHandler *);
 
     bool same_processing(int, int) const;
 

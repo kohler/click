@@ -40,8 +40,8 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
   }
 
   // prepare from element map
-  for (ElementMap::IndexIterator x = em.first(); x; x++) {
-    const Traits &e = em.traits_at(x.value());
+  for (ElementMap::TraitsIterator x = em.first_element(); x; x++) {
+    const Traits &e = x.value();
     add_type_info(e.name, e.cxx, e.header_file, em.source_directory(e));
   }
 }

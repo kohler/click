@@ -37,15 +37,20 @@ ProcessingT::ProcessingT()
 ProcessingT::ProcessingT(const RouterT *r, ErrorHandler *errh)
     : _router(0)
 {
-    reset(r, errh);
+    reset(r, ElementMap::default_map(), false, errh);
 }
 
 ProcessingT::ProcessingT(const RouterT *r, ElementMap *em, ErrorHandler *errh)
     : _router(0)
 {
-    ElementMap::push_default(em);
-    reset(r, errh);
-    ElementMap::pop_default();
+    reset(r, em, false, errh);
+}
+
+ProcessingT::ProcessingT(const RouterT *r, ElementMap *em, bool flatten,
+			 ErrorHandler *errh)
+    : _router(0)
+{
+    reset(r, em, flatten, errh);
 }
 
 void
@@ -294,7 +299,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 			   hf.elt->name_cc(), hf.port);
 	} else
 	    output_used[fp] = c;
-    
+
 	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' pull input %d",
@@ -342,22 +347,44 @@ ProcessingT::check_connections(ErrorHandler *errh)
 }
 
 int
-ProcessingT::reset(const RouterT *r, ErrorHandler *errh)
+ProcessingT::reset(const RouterT *r, ElementMap *emap, bool flatten,
+		   ErrorHandler *errh)
 {
-  _router = r;
-  if (!errh)
-      errh = ErrorHandler::silent_handler();
-  int before = errh->nerrors();
+    _router = r;
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    int before = errh->nerrors();
 
-  // create pidx and elt arrays, warn about dead elements
-  create_pidx(errh);
-  
-  initial_processing(errh);
-  check_processing(errh);
-  check_connections(errh);
-  if (errh->nerrors() != before)
-    return -1;
-  return 0;
+    ElementMap::push_default(emap);
+
+    // create pidx and elt arrays, warn about dead elements
+    create_pidx(errh);
+    
+    initial_processing(errh);
+    check_processing(errh);
+
+    // 'flat' configurations have no agnostic ports; change them to push
+    if (flatten)
+	resolve_agnostics();
+    
+    check_connections(errh);
+
+    ElementMap::pop_default();
+
+    if (errh->nerrors() != before)
+	return -1;
+    return 0;
+}
+
+void
+ProcessingT::resolve_agnostics()
+{
+    for (int i = 0; i < _input_processing.size(); i++)
+	if (_input_processing[i] == VAGNOSTIC)
+	    _input_processing[i] = VPUSH;
+    for (int i = 0; i < _output_processing.size(); i++)
+	if (_output_processing[i] == VAGNOSTIC)
+	    _output_processing[i] = VPUSH;
 }
 
 bool
