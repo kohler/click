@@ -25,13 +25,24 @@ grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets
 			 15/GRID_LOC_QUERY_PROTO,  // loc query packets
 			 15/GRID_LOC_REPLY_PROTO); // loc reply packets
 
+
+connectiontunnel to_ttl_check -> ttl_check/in;
+connectiontunnel ttl_check/out -> from_ttl_check;
+
+ttl_check/in -> ckip1 :: CheckIPHeader( , 78) -> dt1 :: DecIPTTL -> ttl_check/out;
+ckip1 [1] -> Discard;
+dt1 [1] -> icmp_err :: ICMPError(GRID_IP, 11, 0) -> [1] lr;
+
 // hook it all up
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
 //  -> fr :: FilterByRange(RANGE, li) [0] 
   -> [0] nb [0]
   -> grid_demux [0] 
-  -> [0] lr [0] -> to_wvlan;
+  -> [0] lr [0] 
+  -> to_ttl_check;
+     from_ttl_check
+  -> to_wvlan;
 
 query_demux :: Classifier(62/GRID_HEX_IP, // loc query for us
 			  -);
