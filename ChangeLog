@@ -1,3 +1,49 @@
+2001-03-04 Sunday 16:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/arpfaker.cc, ethernet/arpquerier.cc,
+	ethernet/ip6ndsolicitor.cc, etherswitch/spantree.cc,
+	grid/floodinglocquerier.cc, grid/hello.cc,
+	grid/locqueryresponder.cc, grid/lookupgeogridroute.cc,
+	grid/lookuplocalgridroute.cc, grid/lrhello.cc, grid/movesim.cc,
+	grid/pep.cc, grid/radiosim.cc, grid/regionpep.cc,
+	grid/updateroutes.cc, icmp/icmppingrewriter.cc,
+	icmp/icmpsendpings.cc, ip/ipaddrrewriter.cc, ip/ripsend.cc,
+	linuxmodule/fromdevice.cc, linuxmodule/polldevice.cc,
+	linuxmodule/schedulelinux.cc, linuxmodule/todevice.cc,
+	linuxmodule/tulipstats.cc, local/toytcp.cc, radio/bim.cc,
+	standard/burster.cc, standard/bwratedunqueue.cc,
+	standard/discard.cc, standard/discardnofree.cc,
+	standard/infinitesource.cc, standard/peekhandlers.cc,
+	standard/pokehandlers.cc, standard/pulltopush.cc,
+	standard/quitwatcher.cc, standard/randomsource.cc,
+	standard/ratedsource.cc, standard/ratedunqueue.cc,
+	standard/scheduleinfo.cc, standard/timedsink.cc,
+	standard/timedsource.cc, standard/unqueue.cc, tcpudp/iprewriter.cc,
+	tcpudp/tcprewriter.cc, userlevel/fromdump.cc,
+	userlevel/kerneltap.cc, userlevel/todevice.cc, userlevel/todump.cc:
+	renamed Timer::attach() to Timer::initialize(); also, use
+	Task::fast_reschedule() when possible
+
+2001-03-04 Sunday 16:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: TaskList is now a
+	separate type
+
+2001-03-04 Sunday 16:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/task.hh, lib/task.cc: added timer list locking;
+	renamed some methods; added fast_unschedule() and fast_reschedule()
+	(no locking)
+
+2001-03-04 Sunday 16:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh, lib/timer.cc: renamed Timer::attach()
+	methods to Timer::initialize(); it's just a better name
+
+2001-03-04 Sunday 16:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: make click-compile executable
+
 2001-03-02 Friday 13:16  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/sync.hh: rearranged code for readability
