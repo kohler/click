@@ -65,7 +65,7 @@ elementclass GatewayDevice {
 }
 
 // The following version of GatewayDevice sends a copy of every packet to
-// ToLinuxSniffers, so that you can use tcpdump(1) to debug the gateway.
+// ToHostSniffers, so that you can use tcpdump(1) to debug the gateway.
 
 elementclass SniffGatewayDevice {
   $device |
@@ -75,16 +75,16 @@ elementclass SniffGatewayDevice {
   input -> q :: Queue(1024)
 	-> t2 :: PullTee
 	-> to :: ToDevice($device);
-  t1[1] -> ToLinuxSniffers;
-  t2[1] -> ToLinuxSniffers($device);
+  t1[1] -> ToHostSniffers;
+  t2[1] -> ToHostSniffers($device);
   ScheduleInfo(from .1, to 1);
 }
 
 extern_dev :: SniffGatewayDevice(extern:eth);
 intern_dev :: SniffGatewayDevice(intern:eth);
 
-ip_to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
-	-> ToLinux;
+ip_to_host :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
+	-> ToHost;
 
 
 // ARP MACHINERY
@@ -96,14 +96,14 @@ intern_arpq :: ARPQuerier(intern);
 extern_dev -> extern_arp_class;
 extern_arp_class[0] -> ARPResponder(extern)	// ARP queries
 	-> extern_dev;
-extern_arp_class[1] -> ToLinux;			// ARP responses
+extern_arp_class[1] -> ToHost;			// ARP responses
 extern_arp_class[3] -> Discard;
 
 intern_dev -> intern_arp_class;
 intern_arp_class[0] -> ARPResponder(intern)	// ARP queries
 	-> intern_dev;
 intern_arp_class[1] -> intern_arpr_t :: Tee;
-	intern_arpr_t[0] -> ToLinux;
+	intern_arpr_t[0] -> ToHost;
 	intern_arpr_t[1] -> [1]intern_arpq;
 intern_arp_class[3] -> Discard;
 
@@ -144,13 +144,13 @@ ip_to_intern :: GetIPAddress(16)
 
 // to outside world or gateway from inside network
 rw[0] -> ip_to_extern_class :: IPClassifier(dst host intern, -);
-  ip_to_extern_class[0] -> ip_to_linux;
+  ip_to_extern_class[0] -> ip_to_host;
   ip_to_extern_class[1] -> ip_to_extern;
 // to server
 rw[1] -> ip_to_intern;
 // only accept packets from outside world to gateway
 rw[2] -> IPClassifier(dst host extern)
-	-> ip_to_linux;
+	-> ip_to_host;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -196,15 +196,15 @@ intern_arp_class[2] -> Strip(14)
   	-> CheckIPHeader
 	-> ip_from_intern;
 ip_from_intern[0] -> my_ip_from_intern; // stuff for 10.0.0.1 from inside
-  my_ip_from_intern[0] -> ip_to_linux; // SSH traffic to gw
+  my_ip_from_intern[0] -> ip_to_host; // SSH traffic to gw
   my_ip_from_intern[1] -> [2]rw; // HTTP(S) traffic, redirect to server instead
   my_ip_from_intern[2] -> Discard;  // DNS (no DNS allowed yet)
-  my_ip_from_intern[3] -> ip_to_linux; // auth traffic, gw will reject it
+  my_ip_from_intern[3] -> ip_to_host; // auth traffic, gw will reject it
   my_ip_from_intern[4] -> [3]rw; // other TCP or UDP traffic, send to linux
                              	// but pass it thru rw in case it is the
 				// returning redirect HTTP traffic from server
-  my_ip_from_intern[5] -> ip_to_linux; // non TCP or UDP traffic, to linux
-ip_from_intern[1] -> ip_to_linux; // other net 10 stuff, like broadcasts
+  my_ip_from_intern[5] -> ip_to_host; // non TCP or UDP traffic, to linux
+ip_from_intern[1] -> ip_to_host; // other net 10 stuff, like broadcasts
 ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_world_pat 0 1)
 		-> [0]tcp_rw;	// FTP traffic for outside needs special
 				// treatment

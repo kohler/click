@@ -55,13 +55,13 @@ false.
 =n
 
 Linux won't see any packets from the device. If you want Linux to process
-packets, you should hand them to ToLinux.
+packets, you should hand them to ToHost.
 
 FromDevice accesses packets the same way Linux does: through interrupts.
 This is bad for performance. If you care about performance and have a
 polling-capable device, use PollDevice instead.
 
-=a PollDevice, ToDevice, FromLinux, ToLinux, FromDevice.u */
+=a PollDevice, ToDevice, FromHost, ToHost, FromDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/standard/queue.hh"

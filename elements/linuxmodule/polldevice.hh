@@ -50,7 +50,7 @@ false.
 =n
 
 Linux won't see any packets from the device. If you want Linux to process
-packets, you should hand them to ToLinux. Also, if you would like to send
+packets, you should hand them to ToHost. Also, if you would like to send
 packets while using PollDevice, you should also define a ToDevice on the same
 device.
 
@@ -65,7 +65,7 @@ Returns the number of packets ToDevice has pulled.
 
 Resets C<packets> counter to zero when written.
 
-=a FromDevice, ToDevice, FromLinux, ToLinux */
+=a FromDevice, ToDevice, FromHost, ToHost */
 
 #include "elements/linuxmodule/anydevice.hh"
 

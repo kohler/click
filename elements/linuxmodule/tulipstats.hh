@@ -130,7 +130,7 @@
  * =a ScheduleInfo, FromDevice, PollDevice */
 
 #include "elements/linuxmodule/anydevice.hh"
-#include "elements/linuxmodule/fromlinux.hh"
+#include "elements/linuxmodule/fromhost.hh"
 
 class TulipStats : public AnyDevice {
   
@@ -142,7 +142,7 @@ class TulipStats : public AnyDevice {
   const char *class_name() const	{ return "TulipStats"; }
   TulipStats *clone() const		{ return new TulipStats; }
   
-  int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
+  int configure_phase() const	{ return FromHost::TODEVICE_CONFIGURE_PHASE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

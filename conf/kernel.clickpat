@@ -6,34 +6,34 @@
 // To transform a router configuration according to these patterns, run
 //     % click-xform -p kernel.clickpat ROUTER > TRANSFORMED-ROUTER
 
-elementclass ToLinuxRemover {
-  input[0] -> t :: ToLinux;
-  input[1] -> ToLinux;
+elementclass ToHostRemover {
+  input[0] -> t :: ToHost;
+  input[1] -> ToHost;
 }
 
-elementclass ToLinuxRemover_Replacement {
-  input[0] -> t :: ToLinux;
+elementclass ToHostRemover_Replacement {
+  input[0] -> t :: ToHost;
   input[1] -> t;
 }
 
 
-elementclass ToLinuxSniffersRemover1 {
-  input[0] -> t :: ToLinuxSniffers;
-  input[1] -> ToLinuxSniffers;
+elementclass ToHostSniffersRemover1 {
+  input[0] -> t :: ToHostSniffers;
+  input[1] -> ToHostSniffers;
 }
 
-elementclass ToLinuxSniffersRemover1_Replacement {
-  input[0] -> t :: ToLinuxSniffers;
+elementclass ToHostSniffersRemover1_Replacement {
+  input[0] -> t :: ToHostSniffers;
   input[1] -> t;
 }
 
 
-elementclass ToLinuxSniffersRemover2 {
-  input[0] -> t :: ToLinuxSniffers($device);
-  input[1] -> ToLinuxSniffers($device);
+elementclass ToHostSniffersRemover2 {
+  input[0] -> t :: ToHostSniffers($device);
+  input[1] -> ToHostSniffers($device);
 }
 
-elementclass ToLinuxSniffersRemover2_Replacement {
-  input[0] -> t :: ToLinuxSniffers($device);
+elementclass ToHostSniffersRemover2_Replacement {
+  input[0] -> t :: ToHostSniffers($device);
   input[1] -> t;
 }

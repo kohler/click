@@ -26,7 +26,7 @@ elementclass UDPGen {
 
   source :: FastUDPSource($rate, $limit, $size, $seth, $sip, $sport,
                                                 $deth, $dip, $dport);
-  pd :: PollDevice($device) -> ToLinux;
+  pd :: PollDevice($device) -> ToHost;
   source -> td :: ToDevice($device);
 }
 

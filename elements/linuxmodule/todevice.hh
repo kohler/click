@@ -63,7 +63,7 @@ Returns the number of packets ToDevice has pulled.
 
 Resets C<packets> counter to zero when written.
 
-=a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
+=a FromDevice, PollDevice, FromHost, ToHost, ToDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/linuxmodule/fromhost.hh"

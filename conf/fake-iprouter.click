@@ -102,7 +102,7 @@ c0[2] -> Paint(1) -> ip;
 c1[2] -> Paint(2) -> ip;
 
 // IP packets for this machine.
-// ToLinux expects ethernet packets, so cook up a fake header.
+// ToHost expects ethernet packets, so cook up a fake header.
 rt[0] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tol;
 
 // These are the main output paths; we've committed to a

@@ -51,7 +51,7 @@ with any Ethernet address you'd like. Here is one common idiom:
 
   FromHost(fake0, 192.0.0.1/8)
     -> fromhost_cl :: Classifier(12/0806, 12/0800);
-  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToLinux;
+  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToHost;
   fromhost_cl[1] -> ... // IP packets
 
 =e

@@ -1,6 +1,6 @@
 				// Fake interface fl0 to net 1.0.0.0
-fromlinux :: FromLinux(fl0, 10.0.0.0/24)
-tolinux :: ToLinux
+fromlinux :: FromHost(fl0, 10.0.0.0/24)
+tolinux :: ToHost
 t :: Tee
 				// IP packets from 18.26.4.45 --> output(0)
 				// ARP replies --> output(1)

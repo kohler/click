@@ -19,7 +19,7 @@
  * 
  * This element is only available in the Linux kernel module.
  *
- * =a ToHost, FromLinux, FromDevice, PollDevice, ToDevice */
+ * =a ToHost, FromHost, FromDevice, PollDevice, ToDevice */
 
 class ToHostSniffers : public Element { public:
 

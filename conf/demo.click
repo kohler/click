@@ -13,7 +13,7 @@ c0[0]
 
 // ARP responses are handed to Linux
 c0[1]
-    -> ToLinux();
+    -> ToHost();
 
 // Non-IP packets are dropped
 c0[3]

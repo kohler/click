@@ -67,7 +67,7 @@ c0	:: Classifier(12/0806 20/0001, -);
 pd	:: PollDevice($cltifs->[$s-1]->[1]);
 td	:: ToDevice($cltifs->[$s-1]->[1]);
 out	:: Queue(8192) -> Counter -> td;
-tol	:: ToLinux;
+tol	:: ToHost;
 
 pd -> [0]c0;
 c0[0] -> ar -> out;
