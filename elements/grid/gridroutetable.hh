@@ -66,6 +66,10 @@
  * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
  * use hopcount.
  *
+ * =item LOGFILE
+ *
+ * String.  Filename of file to log activity to in binary format.
+ *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
  * LinkStat, LinkTracker */
@@ -78,6 +82,8 @@
 #include <elements/grid/linkstat.hh>
 #include "grid.hh"
 #include <click/timer.hh>
+
+class GridLogger;
 
 class GridRouteTable : public Element {
 
@@ -209,6 +215,9 @@ private:
   ErrorHandler *_extended_logging_errh;
   void GridRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
 
+  /* binary logging */
+  GridLogger *_log;
+
   /* this node's addresses */
   IPAddress _ip;
   EtherAddress _eth;
@@ -280,6 +289,9 @@ private:
 
   static String print_seq_delay(Element *e, void *);
   static int write_seq_delay(const String &, Element *, void *, ErrorHandler *);
+
+  static int write_start_log(const String &, Element *, void *, ErrorHandler *);
+  static int write_stop_log(const String &, Element *, void *, ErrorHandler *);
 
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);

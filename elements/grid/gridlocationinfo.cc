@@ -103,8 +103,6 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   _move = do_move;
 
   _extended_logging_errh = router()->chatter_channel(chan);
-  _logging_timer.initialize(this);
-  _logging_timer.schedule_after_ms(100);
 
   return res;
 }
@@ -112,7 +110,14 @@ int
 GridLocationInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _seq_no++;
-  return read_args(conf, errh);
+  int res = read_args(conf, errh);
+  if (res < 0)
+    return res;
+
+  _logging_timer.initialize(this);
+  _logging_timer.schedule_after_ms(100);
+  
+  return res;
 }
 
 double

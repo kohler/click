@@ -27,10 +27,10 @@
 #include <click/glue.hh>
 #include "gridroutetable.hh"
 #include "timeutils.hh"
-
+#include "gridlogger.hh"
 
 GridRouteTable::GridRouteTable() : 
-  Element(1, 1), 
+  Element(1, 1), _log(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
   _max_hops(3), 
@@ -87,6 +87,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
   String metric("est_tx_count");
+  String logfile;
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
 			cpInteger, "route broadcast period (msec)", &_period,
@@ -100,6 +101,7 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
 			"METRIC", cpString, "route metric", &metric,
+			"LOGFILE", cpString, "binary log file", &logfile,
 			0);
 
   if (res < 0)
@@ -132,6 +134,14 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
   
+  if (logfile.length() > 0) {
+    _log = new GridLogger(logfile.cc());
+    if (!_log->ok()) {
+      delete _log;
+      _log = 0;
+    }
+  }
+
   return res;
 }
 
@@ -604,7 +614,9 @@ GridRouteTable::simple_action(Packet *packet)
   timeval tv;
   gettimeofday(&tv, NULL);
   _extended_logging_errh->message("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
-
+  if (_log)
+    _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
+  
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
    * checking if entry already existed 
@@ -668,12 +680,14 @@ GridRouteTable::simple_action(Packet *packet)
     RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
     init_metric(new_r);
     if (r == 0 || should_replace_old_route(*r, new_r)) {
-	_rtes.insert(ipaddr, new_r);
-	if (new_r.num_hops > 1 && r && r->num_hops == 1) {
-	  /* clear old 1-hop stats */
-	  _link_tracker->remove_all_stats(r->dest_ip);
-	  _link_stat->remove_all_stats(r->next_hop_eth);
-	}
+      if (_log)
+	_log->log_added_route(GridLogger::WAS_SENDER, new_r);
+      _rtes.insert(ipaddr, new_r);
+      if (new_r.num_hops > 1 && r && r->num_hops == 1) {
+	/* clear old 1-hop stats */
+	_link_tracker->remove_all_stats(r->dest_ip);
+	_link_stat->remove_all_stats(r->next_hop_eth);
+      }
     }
   }
   
@@ -733,6 +747,9 @@ GridRouteTable::simple_action(Packet *packet)
 	
 	/* generate triggered broken route advertisement */
 	triggered_rtes.push_back(route);
+
+	if (_log)
+	  _log->log_expired_route(GridLogger::BROKEN_AD, route.dest_ip);
       }
       /*
        * otherwise, triggered advertisement: if we have a good route
@@ -741,8 +758,12 @@ GridRouteTable::simple_action(Packet *packet)
        */
       else if (route.seq_no < our_rte->seq_no) {
 	assert(!(our_rte->seq_no & 1)); // valid routes have even seq_no
-	if (our_rte->ttl > 0 && our_rte->metric_valid)
+	if (our_rte->ttl > 0 && our_rte->metric_valid) {
 	  triggered_rtes.push_back(*our_rte);
+
+	  if (_log)
+	    _log->log_triggered_route(our_rte->dest_ip);
+	}
       }
       continue;
     }
@@ -762,6 +783,9 @@ GridRouteTable::simple_action(Packet *packet)
 	_link_tracker->remove_all_stats(our_rte->dest_ip);
 	_link_stat->remove_all_stats(our_rte->next_hop_eth);
       }
+      
+      if (_log)
+	_log->log_added_route(GridLogger::WAS_ENTRY, route);
     }
   }
 
@@ -772,6 +796,9 @@ GridRouteTable::simple_action(Packet *packet)
   }
 
   log_route_table();  // extended logging
+
+  if (_log)
+    _log->log_end_recv_advertisement();
 
   /* send triggered updates */
   if (triggered_rtes.size() > 0)
@@ -1021,7 +1048,7 @@ GridRouteTable::print_est_type(Element *e, void *)
 
 int
 GridRouteTable::write_est_type(const String &arg, Element *el, 
-				   void *, ErrorHandler *)
+			       void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
   rt->_est_type = atoi(((String) arg).cc());
@@ -1040,11 +1067,46 @@ GridRouteTable::print_seq_delay(Element *e, void *)
 
 int
 GridRouteTable::write_seq_delay(const String &arg, Element *el, 
-				   void *, ErrorHandler *)
+				void *, ErrorHandler *)
 {
   GridRouteTable *rt = (GridRouteTable *) el;
   rt->_seq_delay = atoi(((String) arg).cc());
 
+  return 0;
+}
+
+
+int
+GridRouteTable::write_start_log(const String &arg, Element *el, 
+				void *, ErrorHandler *errh)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  if (rt->_log) {
+    delete rt->_log;
+    rt->_log = 0;
+  }
+
+  rt->_log = new GridLogger(arg);
+  if (!rt->_log->ok()) {
+    return errh->error("unable to start logging to file %s; any previous logging has been disabled",
+		       ((String) arg).cc());
+    delete rt->_log;
+    rt->_log = 0;
+  }
+
+  return 0;
+}
+
+
+int
+GridRouteTable::write_stop_log(const String &, Element *el, 
+			       void *, ErrorHandler *)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  if (rt->_log) {
+    delete rt->_log;
+    rt->_log = 0;
+  }
   return 0;
 }
 
@@ -1108,6 +1170,8 @@ GridRouteTable::add_handlers()
   add_write_handler("est_type", write_est_type, 0);
   add_read_handler("seq_delay", print_seq_delay, 0);
   add_write_handler("seq_delay", write_seq_delay, 0);
+  add_write_handler("start_log", write_start_log, 0);
+  add_write_handler("stop_log", write_stop_log, 0);
 }
 
 
@@ -1141,6 +1205,9 @@ GridRouteTable::expire_routes()
   timeval tv;
   gettimeofday(&tv, NULL);
 
+  if (_log)
+    _log->log_start_expire_handler(tv);
+
   bool table_changed = false;
 
   /* 1. loop through RT once, remembering destinations which have been
@@ -1154,6 +1221,9 @@ GridRouteTable::expire_routes()
 
       _extended_logging_errh->message ("expiring %s %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
       table_changed = true;
+
+      if (_log)
+	_log->log_expired_route(GridLogger::TIMEOUT, i.value().dest_ip);
 
       if (i.value().num_hops == 1) {
 	/* may be another route's next hop */
@@ -1175,6 +1245,9 @@ GridRouteTable::expire_routes()
       expired_rtes.insert(i.value().dest_ip, true);
 
       _extended_logging_errh->message("next to %s expired %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      
+      if (_log)
+	_log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, i.value().dest_ip);
     }
   }
   
@@ -1196,6 +1269,9 @@ GridRouteTable::expire_routes()
 
   if (table_changed)
     log_route_table();  // extended logging
+
+  if (_log)
+    _log->log_end_expire_handler();
 
   return retval;
 }
@@ -1319,6 +1395,8 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   /* extended logging */
   gettimeofday(&tv, NULL);
   _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
+  if (_log)
+    _log->log_sent_advertisement(_seq_no, tv);
 
   /* 
    * Update the sequence number for periodic updates, but not for
