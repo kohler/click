@@ -252,7 +252,7 @@ if ($system_type =~ /Linux/) {
 
     # set the adapter to ad-hoc mode
     if ($radio_type eq "wavelan") {
-	my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
+	my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel essid $grid_ssid";
     }
     elsif ($radio_type eq "aironet") {
 	my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
