@@ -4,6 +4,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -132,10 +133,7 @@ String::stable_string(const char *str, int len)
 {
   if (len < 0)
     len = (str ? strlen(str) : 0);
-  if (len == 0)
-    return String();
-  else
-    return String(str, len, permanent_memo);
+  return String(str, len, permanent_memo);
 }
 
 String
