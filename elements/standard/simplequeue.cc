@@ -172,7 +172,7 @@ SimpleQueue::pull(int)
 }
 
 Vector<Packet *>
-SimpleQueue::yank(bool (filter)(const Packet *))
+SimpleQueue::yank(bool (filter)(const Packet *, void *), void *thunk)
 {
   // remove all packets from the queue that match filter(); return in
   // a vector.  caller is responsible for managing the yank()-ed
@@ -181,7 +181,7 @@ SimpleQueue::yank(bool (filter)(const Packet *))
   
   int next_slot = _head;
   for (int i = _head; i != _tail; i = next_i(i)) {
-    if (filter(_q[i]))
+    if (filter(_q[i], thunk))
       v.push_back(_q[i]);
     else {
       _q[next_slot] = _q[i];
