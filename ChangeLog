@@ -1,3 +1,8 @@
+2003-03-17 Monday 14:34  Eddie Kohler <kohler@icir.org>
+
+	* lib/driver.cc (1.13): another attempt at OS X compilation fix
+	(Scott Page)
+
 2003-03-17 Monday 00:49  Eddie Kohler <kohler@icir.org>
 
 	* include/clicknet/icmp6.h (1.3): undefine symbols defined by
