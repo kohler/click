@@ -76,8 +76,6 @@ main(int argc, char **argv)
   
   signal(SIGINT, catchint);
 
-  fprintf(stderr, "%d\n", sizeof(BridgeMessage::wire));
-  
   if (router->initialize(errh) >= 0) {
     //router->print_structure(errh);
     errh->message(router->flat_configuration_string());

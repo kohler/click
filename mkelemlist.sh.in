@@ -3,7 +3,7 @@ for dir in @POSSIBLE_TARGETS@; do
   f=$dir/elements.conf
   echo "$dir@element_groups@" | (cd @top_srcdir@; sh ./findelements.sh -x) > $f~
   if test -r $f; then
-    if diff -q $f $f~ > /dev/null; then
+    if diff $f $f~ >/dev/null 2>&1; then
       rm $f~
       continue
     fi
