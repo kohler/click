@@ -90,6 +90,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_NS
     bool per_node = false;
 #endif
+    _packet_filepos = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -111,6 +112,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 #if CLICK_NS
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
 #endif
+		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
 		    0) < 0)
 	return -1;
 
@@ -336,6 +338,46 @@ FromDump::hotswap_element() const
 }
 
 int
+FromDump::skip_ahead(ErrorHandler *errh)
+{
+    off_t want = _packet_filepos;
+    _packet_filepos = 0;
+    
+    if (want < _len) {
+	_pos = want;
+	return 0;
+    }
+    
+#ifdef ALLOW_MMAP
+    if (_mmap) {
+	_mmap_off = want / _mmap_unit;
+	_pos = _len + want - _mmap_off;
+	return 0;
+    }
+#endif
+
+    // check length of file
+    struct stat statbuf;
+    if (fstat(_fd, &statbuf) < 0)
+	return error_helper(errh, "stat: ", strerror(errno));
+    if (S_ISREG(statbuf.st_mode) && statbuf.st_size && _packet_filepos > statbuf.st_size)
+	return errh->error("FILEPOS out of range");
+
+    // try to seek
+    if (lseek(_fd, want, SEEK_SET) != (off_t) -1) {
+	_pos = _len;
+	return 0;
+    }
+
+    // otherwise, read data
+    while (_file_offset + _len < want && _len)
+	if (read_buffer(errh) < 0)
+	    return -1;
+
+    return 0;
+}
+
+int
 FromDump::initialize(ErrorHandler *errh)
 {
     // make sure notifier is initialized
@@ -420,8 +462,12 @@ FromDump::initialize(ErrorHandler *errh)
 
     // done
     _pos = sizeof(fake_pcap_file_header);
-    _packet_filepos = 0;
-    return 0;
+
+    // maybe skip ahead in the file
+    if (_packet_filepos != 0)
+	return skip_ahead(errh);
+    else
+	return 0;
 }
 
 void

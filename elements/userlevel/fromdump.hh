@@ -97,6 +97,13 @@ This can result in slightly better performance on some machines. FromDump's
 regular file discipline is pretty optimized, so the difference is often small
 in practice. Default is true on most operating systems, but false on Linux.
 
+=item FILEPOS
+
+File offset. If supplied, then FromDump will start emitting packets from
+this (uncompressed) file position. This is dangerous; there's no cheap way
+to check whether you got the offset wrong, and if you did get it wrong,
+FromDump will emit garbage.
+
 =back
 
 You can supply at most one of START and START_AFTER, and at most one of END,
@@ -238,6 +245,7 @@ class FromDump : public Element { public:
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
+    int skip_ahead(ErrorHandler *);
 
     void prepare_times(const struct fake_bpf_timeval &);
 
