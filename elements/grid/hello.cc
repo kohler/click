@@ -40,11 +40,19 @@ Hello::clone() const
 int
 Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
-		     cpInteger, "period (msec)", &_period,
-		     cpEthernetAddress, "source Ethernet address", &_from_eth,
-		     cpIPAddress, "source IP address", &_from_ip,
-		     0);
+  int res = cp_va_parse(conf, this, errh,
+			cpInteger, "period (msec)", &_period,
+			cpInteger, "jitter (msec)", &_jitter,
+			cpEthernetAddress, "source Ethernet address", &_from_eth,
+			cpIPAddress, "source IP address", &_from_ip,
+			0);
+  if (_period <= 0)
+    return errh->error("period must be greater than 0");
+  if (_jitter < 0)
+    return errh->error("period must be positive");
+  if (_jitter > _period)
+    return errh->error("jitter is bigger than period");
+  return res;
 }
 
 int
@@ -60,7 +68,15 @@ void
 Hello::run_scheduled()
 {
   output(0).push(make_hello());
-  _timer.schedule_after_ms(_period * 1000);
+
+  // XXX this random stuff is not right i think... wouldn't it be nice
+  // if click had a phat RNG like ns?
+  int r2 = random();
+  double r = (double) (r2 >> 1);
+  int  jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
+  if (r2 & 1)
+    jitter *= -1;
+  _timer.schedule_after_ms(_period + (int) jitter);
 }
 
 Packet *

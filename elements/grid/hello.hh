@@ -3,17 +3,19 @@
 
 /*
  * =c
- * Hello(PERIOD, ETH, IP)
+ * Hello(PERIOD, JITTER, ETH, IP)
  * =d
  *
- * Every PERIOD millseconds, emit a Grid protocol ``Hello'' packet for
- * the Grid node at address IP with MAC address ETH.  Produces Ethernet packets.
+ * Every PERIOD millseconds (+/- a jitter bounded by JITTER
+ * milliseconds), emit a Grid protocol ``Hello'' packet for the Grid
+ * node at address IP with MAC address ETH.  PERIOD must be greater
+ * than 0, JITTER must be positive and less than JITTER.  Produces
+ * Ethernet packets.
  *
  * =e
  * Hello(500, 00:E0:98:09:27:C5, 18.26.4.115) -> ... -> ToDevice(eth0)
  *
- * =a Neighbor
- */
+ * =a Neighbor */
 
 #include "element.hh"
 #include "timer.hh"
@@ -43,8 +45,10 @@ private:
   EtherAddress _from_eth;
   IPAddress _from_ip;
   int _period;
+  int _jitter;
   Timer _timer;
-  
+
 };
 
 #endif
+
