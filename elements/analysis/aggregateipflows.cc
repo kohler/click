@@ -433,7 +433,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 int
 AggregateIPFlows::handle_fragment(Packet *p, int paint, Map &table, HostPairInfo *hpinfo)
 {
-    if (hpinfo->_fragment_tail)
+    if (hpinfo->_fragment_head)
 	hpinfo->_fragment_tail->set_next(p);
     else
 	hpinfo->_fragment_head = p;
