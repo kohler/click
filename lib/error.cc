@@ -29,6 +29,15 @@
 #include <click/confparse.hh>
 
 void
+ErrorHandler::debug(const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  verror(Debug, String(), format, val);
+  va_end(val);
+}
+
+void
 ErrorHandler::message(const char *format, ...)
 {
   va_list val;
@@ -73,6 +82,15 @@ ErrorHandler::lmessage(const String &where, const char *format, ...)
   va_list val;
   va_start(val, format);
   verror(Message, where, format, val);
+  va_end(val);
+}
+
+void
+ErrorHandler::ldebug(const String &where, const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  verror(Debug, where, format, val);
   va_end(val);
 }
 
@@ -519,8 +537,7 @@ class SilentErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _nerrors; }
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
 
-  void handle_text(Seriousness, const String &);
-  
+  void handle_text(Seriousness, const String &);  
 };
 
 void

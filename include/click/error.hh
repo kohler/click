@@ -10,7 +10,7 @@ class ErrorHandler {
   
  public:
   
-  enum Seriousness { Message, Warning, Error, Fatal };
+  enum Seriousness { Debug, Message, Warning, Error, Fatal };
   
   ErrorHandler()			{ }
   virtual ~ErrorHandler()		{ }
@@ -27,12 +27,14 @@ class ErrorHandler {
   // all error functions always return -1
   int verror(Seriousness, const String &, const char *, va_list);
 
+  void ldebug(const String &, const char *, ...);
   void lmessage(const String &, const char *, ...);
   int lwarning(const String &, const char *, ...);
   int lerror(const String &, const char *, ...);
   int lfatal(const String &, const char *, ...);
   static String fix_landmark(const String &);
   
+  void debug(const char *, ...);
   void message(const char *, ...);
   int warning(const char *, ...);
   int error(const char *, ...);
