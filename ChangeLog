@@ -1,3 +1,7 @@
+2005-01-12 Wednesday 12:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click.spec (1.6): fix click.spec file (Jonathan Day)
+
 2005-01-12 Wednesday 04:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.26): fix amd64 ipsumdump; problem reported by
