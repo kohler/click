@@ -214,7 +214,7 @@ RTMDSR::start_query(IPAddress dstip)
   send(p);
 }
 
-// Forward a query, data, or reply packet.
+// Forward a data or reply packet.
 // Makes a copy.
 // _next should point to this node; forward() adjusts
 // it to point to the next node.
@@ -337,7 +337,6 @@ RTMDSR::get_metric(IPAddress other)
     if(frate == 0 || rrate == 0)
       return dft;
     u_short m = 100 * 100 * 100 / (frate * (int) rrate);
-    click_chatter("f %d r %d m %d", frate, rrate, m);
     return m;
   } else {
     return dft;
@@ -410,6 +409,16 @@ RTMDSR::Route::s()
   return s;
 }
 
+RTMDSR::Route::Route(const struct pkt *pk)
+{
+  _when = time();
+  _metric = ntohs(pk->_metric);
+  int i;
+  for(i = 0; i < ntohs(pk->_nhops); i++){
+    _hops.push_back(Hop(pk->_hops[i]));
+  }
+}
+
 void
 RTMDSR::start_reply(struct pkt *pk1)
 {
@@ -429,6 +438,10 @@ RTMDSR::start_reply(struct pkt *pk1)
   pk->_metric = htons(ntohs(pk->_metric) +
                       get_metric(IPAddress(pk->_hops[nhops-1])));
   pk->_next = htons(nhops - 1); // Indicates next hop.
+
+  click_chatter("DSR %s: start_reply [%s]",
+                _ip.s().cc(),
+                Route(pk).s().cc());
 
   send(p);
 }
@@ -454,13 +467,7 @@ RTMDSR::got_reply(struct pkt *pk)
     return;
   }
 
-  Route r;
-  r._when = time();
-  r._metric = ntohs(pk->_metric);
-  int i;
-  for(i = 0; i < ntohs(pk->_nhops); i++){
-    r._hops.push_back(Hop(pk->_hops[i]));
-  }
+  Route r(pk);
   dst._routes.push_back(r);
   click_chatter("DSR %s: installed route to %s via [%s]",
                 _ip.s().cc(),

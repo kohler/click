@@ -10,20 +10,27 @@ CLICK_DECLS
 
 /*
  * =c
- * RTMDSR(IP, ETH, ETHERTYPE)
+ * RTMDSR(IP, ETH, ETHERTYPE, [LS link-state-element])
  * =d
  * DSR-inspired ad-hoc routing protocol.
- * Input 0: packets from higher layer (probably IP), w/ ip addr anno.
+ * Input 0: IP packets from higher layer, w/ ip addr anno.
  * Input 1: ethernet packets.
- * Output 0: packets for higher layer (probably IP).
+ * Output 0: IP packets for higher layer.
  * Output 1: ethernet packets.
  *
  * To Do:
- * Assumes just one network interface.
+ * Work sensibly with multiple network interfaces.
  * Save the packet we're querying for, like ARP does.
  * Signal broken links &c.
- * Integrate with tx count machinery.
- * Stall each query long enough to find best path, not just first.
+ * Reliability of the unicast REPLY would be a serious problem
+ *   were it not for 802.11 ACK.
+ * How to use a metric effectively?
+ *   1) Let any better new route through.
+ *   2) Stall every query long enough to hear from all neighbors.
+ *      Has trouble with longer hop-count paths.
+ *   3) Unicast to neighbors in order of link quality.
+ *   4) Stall every query proportional to link quality from
+ *      neighbor we heard it from.
  * Accumulate current path quality in each packet, re-query if it's
  *   too much worse that original quality.
  * Be aware if path to some other destination reveals potentially
@@ -32,15 +39,22 @@ CLICK_DECLS
  *   routing.
  * Be sensitive to congestion? If dst receives packets out of order along
  *   different paths, prefer paths that delivered packets first?
+ *   Maybe use expected transmission *time*.
 =e
 kt :: KernelTun(1.0.0.1/24);
-dsr :: RTMDSR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807);
+ls :: LinkStat(ETH 00:20:e0:8b:5d:d6, IP 1.0.0.1);
+dsr :: RTMDSR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807, LS ls);
 fd :: FromDevice(wi0, 0);
 td :: ToDevice(wi0);
-kt -> [0]dsr;
-dsr[0] -> CheckIPHeader -> Print(x, 100) -> kt;
-fd -> Classifier(12/0807) -> [1]dsr;
+kt -> icl :: Classifier(12/080045, -);
+icl[0] -> Strip(14) -> [0]dsr;
+icl[1] -> [0]dsr;
+dsr[0] -> CheckIPHeader -> kt;
+fd -> ncl :: Classifier(12/0807, 12/7fff);
+ncl[0] -> [1]dsr;
 dsr[1] -> td;
+ncl[1] -> ls;
+ls -> td;
  */
 
 class RTMDSR : public Element {
@@ -57,7 +71,7 @@ class RTMDSR : public Element {
   
   void push(int, Packet *);
   void run_timer();
-  time_t time(void);
+  static time_t time(void);
 
 private:
   int MaxSeen; // Max size of table of already-seen queries.
@@ -128,6 +142,7 @@ private:
     Vector<Hop> _hops;
     String s();
     Route() { _when = 0; _metric = 9999; };
+    Route(const struct pkt *pk);
   };
 
   // State of a destination.
