@@ -803,7 +803,7 @@ PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 String
 PrefixErrorHandler::decorate_text(Seriousness seriousness, const String &prefix, const String &landmark, const String &text)
 {
-  return _errh->decorate_text(seriousness, _prefix + prefix, landmark, text);
+  return _errh->decorate_text(seriousness, prefix, landmark, prepend_lines(_prefix, text));
 }
 
 
