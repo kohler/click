@@ -36,7 +36,7 @@ static StringAccum *build_config = 0;
 extern "C" {
 
 static int click_config_open(struct inode *, struct file *);
-static int click_config_release(struct inode *, struct file *);
+static int click_config_flush(struct file *);
 static ssize_t click_config_read(struct file *, char *, size_t, loff_t *);
 static ssize_t click_config_write(struct file *, const char *, size_t, loff_t *);
 static unsigned click_config_poll(struct file *, struct poll_table_struct *);
@@ -50,8 +50,8 @@ static struct file_operations proc_click_config_operations = {
     NULL,			// ioctl
     NULL,			// mmap
     click_config_open,		// open
-    NULL,			// flush
-    click_config_release,	// release
+    click_config_flush,		// flush
+    NULL,			// release
     NULL			// fsync
 };
 
@@ -214,7 +214,7 @@ swap_config()
 }
 
 static int
-click_config_release(struct inode *, struct file *filp)
+click_config_flush(struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   if (!writing)

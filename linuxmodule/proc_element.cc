@@ -58,7 +58,7 @@ proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
 static int proc_element_handler_open(struct inode *, struct file *);
 static ssize_t proc_element_handler_read(struct file *, char *, size_t, loff_t *);
 static ssize_t proc_element_handler_write(struct file *, const char *, size_t, loff_t *);
-static int proc_element_handler_release(struct inode *, struct file *);
+static int proc_element_handler_flush(struct file *);
 static int proc_element_handler_ioctl(struct inode *, struct file *, unsigned, unsigned long);
 
 static struct file_operations proc_element_handler_operations = {
@@ -70,8 +70,8 @@ static struct file_operations proc_element_handler_operations = {
     proc_element_handler_ioctl,	// ioctl
     NULL,			// mmap
     proc_element_handler_open,	// open
-    NULL,			// flush
-    proc_element_handler_release, // release
+    proc_element_handler_flush,	// flush
+    NULL,			// release
     NULL			// fsync
 };
 
@@ -217,7 +217,7 @@ finish_handler_write(int eindex, int handlerno, int stringno)
 
   // restore interrupts
   restore_flags(cli_flags);
-  
+
   return result;
 }
 
@@ -326,7 +326,7 @@ proc_element_handler_write(struct file *filp, const char *buffer, size_t count, 
 }
 
 static int
-proc_element_handler_release(struct inode *, struct file *filp)
+proc_element_handler_flush(struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   int stringno = reinterpret_cast<int>(filp->private_data);
