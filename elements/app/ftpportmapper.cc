@@ -16,6 +16,8 @@
 #include "ftpportmapper.hh"
 #include "click_ip.h"
 #include "click_tcp.h"
+#include "router.hh"
+#include "elemfilter.hh"
 #include "confparse.hh"
 #include "error.hh"
 
@@ -29,26 +31,46 @@ FTPPortMapper::FTPPortMapper()
 int
 FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() != 2)
+  if (conf.size() != 3)
     return errh->error("wrong number of arguments; expected `FTPPortMapper(element, pattern)'");
 
+  // get control packet rewriter
   Element *e = cp_element(conf[0], this, errh);
   if (!e)
     return -1;
-  _rewriter = (TCPRewriter *)e->cast("TCPRewriter");
-  if (!_rewriter)
+  _control_rewriter = (TCPRewriter *)e->cast("TCPRewriter");
+  if (!_control_rewriter)
     return errh->error("first argument must be a TCPRewriter-like element");
 
+  // make sure that _control_rewriter is downstream
+  CastElementFilter filter("TCPRewriter");
+  Vector<Element *> downstream;
+  router()->downstream_elements(this, 0, &filter, downstream);
+  filter.filter(downstream);
+  for (int i = 0; i < downstream.size(); i++)
+    if (downstream[i] == _control_rewriter)
+      goto found_control_rewriter;
+  errh->warning("control packet rewriter `%s' is not downstream", String(conf[0]).cc());
+  
+  // get data packet rewriter
+ found_control_rewriter:
+  e = cp_element(conf[1], this, errh);
+  if (!e)
+    return -1;
+  _data_rewriter = (IPRw *)e->cast("IPRw");
+  if (!_data_rewriter)
+    return errh->error("second argument must be an IPRewriter-like element");
+
   _pattern = 0;
-  if (IPRw::Pattern::parse_with_ports(conf[1], &_pattern, &_forward_port,
+  if (IPRw::Pattern::parse_with_ports(conf[2], &_pattern, &_forward_port,
 				      &_reverse_port, this, errh) < 0)
     return -1;
   _pattern->use();
-  _rewriter->notify_pattern(_pattern);
+  _data_rewriter->notify_pattern(_pattern);
   
-  if (_forward_port >= _rewriter->noutputs()
-      || _reverse_port >= _rewriter->noutputs())
-    return errh->error("port out of range for `%s'", _rewriter->declaration().cc());
+  if (_forward_port >= _data_rewriter->noutputs()
+      || _reverse_port >= _data_rewriter->noutputs())
+    return errh->error("port out of range for `%s'", _data_rewriter->declaration().cc());
   else
     return 0;
 }
@@ -116,11 +138,11 @@ FTPPortMapper::simple_action(Packet *p)
 		IPAddress(iph->ip_dst), dst_data_port);
 
   // check for existing mapping
-  IPRw::Mapping *forward = _rewriter->get_mapping(true, flow);
+  IPRw::Mapping *forward = _data_rewriter->get_mapping(true, flow);
   if (!forward) {
     // create new mapping
-    forward = _rewriter->apply_pattern(_pattern, _forward_port, _reverse_port,
-				       true, flow);
+    forward = _data_rewriter->apply_pattern(_pattern, _forward_port,
+					    _reverse_port, true, flow);
     if (!forward)
       return p;
   }
@@ -170,11 +192,10 @@ FTPPortMapper::simple_action(Packet *p)
 
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);
-  if (TCPRewriter::TCPMapping *p_mapping = _rewriter->get_mapping(true, p_flow)) {
+  if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(true, p_flow)) {
     p_mapping->update_seqno_delta(buflen - port_arg_len);
     p_mapping->reverse()->update_ackno_delta(port_arg_len - buflen);
     // update sequence number in this packet so TCPRewriter will fix it
-    // XXX check if _rewriter is downstream
     wp_tcph->th_seq = htonl(ntohl(wp_tcph->th_seq) - buflen + port_arg_len);
   }
 

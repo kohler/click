@@ -4,19 +4,27 @@
 
 /*
  * =c
- * FTPPortMapper(REWRITER_ELEMENT, PATTERN FOUTPUT ROUTPUT)
+ * FTPPortMapper(CONTROL_REWRITER, DATA_REWRITER, PATTERN FOUTPUT ROUTPUT)
  * =d
  *
  * Expects FTP control packets. Watches packets for PORT commands and installs
  * corresponding mappings into the specified IPRewriter. This makes FTP
  * possible through a NAT-like IPRewriter setup.
  *
- * REWRITER_ELEMENT is the name of an IPRewriter element. PATTERN is a pattern
- * specification -- either a pattern name (see IPRewriterPatterns(n)) or a
- * `SADDR SPORT DADDR DPORT' quadruple. See IPRewriter(n) for more
- * information. The address and port specified in the PORT command correspond
- * to `SADDR' and `SPORT' in the pattern. If a new SADDR and SPORT are chosen,
- * then the PORT command is rewritten to reflect the new SADDR and SPORT.
+ * CONTROL_REWRITER and DATA_REWRITER are the names of IPRewriter-like
+ * elements. CONTROL_REWRITER must be a TCPRewriter element, through which the
+ * FTP control packets are passed. Packets from FTPPortMapper must pass
+ * downstream through CONTROL_REWRITER. DATA_REWRITER can be any
+ * IPRewriter-like element; packets from the FTP data port must pass through
+ * DATA_REWRITER. CONTROL_REWRITER and DATA_REWRITER might be the same
+ * element.
+ *
+ * PATTERN is a pattern specification -- either a pattern name (see
+ * IPRewriterPatterns(n)) or a `SADDR SPORT DADDR DPORT' quadruple. See
+ * IPRewriter(n) for more information. The address and port specified in the
+ * PORT command correspond to `SADDR' and `SPORT' in the pattern. If a new
+ * SADDR and SPORT are chosen, then the PORT command is rewritten to reflect
+ * the new SADDR and SPORT.
  *
  * In summary: Assume that an FTP packet with source address and port
  * 1.0.0.2:6587 and destination address and port 2.0.0.2:21 contains a command
@@ -52,7 +60,8 @@
 
 class FTPPortMapper : public Element {
 
-  TCPRewriter *_rewriter;
+  TCPRewriter *_control_rewriter;
+  IPRw *_data_rewriter;
   IPRw::Pattern *_pattern;
   int _forward_port;
   int _reverse_port;
