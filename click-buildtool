@@ -386,10 +386,9 @@ EOF
     next;
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
-    split($i, ans, /=/);
-    if (ans[2] == "")
-      ans[2] = ans[1];
-    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  hatred_of_rebecca[" nrebecca "] = click_add_element_type(\"" ans[1] "\", new " ans[2] ");\n";
+    split($i, ans, /-/);
+    name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
+    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", new " ans[1] ");\n";
     C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
     nrebecca++;
   }
@@ -418,10 +417,9 @@ END {
     next;
   INCLUDES[$2] = 1;
   for (i = 3; i <= NF; i++) {
-    split($i, ans, /=/);
-    if (ans[2] == "")
-      ans[2] = ans[1];
-    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  lexer->add_element_type(\"" ans[1] "\", new " ans[2] ");\n";
+    split($i, ans, /-/);
+    name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
+    B = B "  CLICK_DMALLOC_REG(\"" ans[1] "\");\n  lexer->add_element_type(" name ", new " ans[1] ");\n";
   }
 }
 END {

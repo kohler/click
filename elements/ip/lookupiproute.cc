@@ -140,4 +140,4 @@ StaticIPLookup::push(int, Packet *p)
   }
 }
 
-EXPORT_ELEMENT(StaticIPLookup LookupIPRoute=StaticIPLookup)
+EXPORT_ELEMENT(StaticIPLookup StaticIPLookup-LookupIPRoute)
