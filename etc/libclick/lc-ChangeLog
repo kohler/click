@@ -1,3 +1,14 @@
+2003-02-13 Thursday 02:28  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: task.hh, task.hh: add variables to track usage
+	and work, when HAVE_ADAPTIVE_SCHEDULER
+
+2003-02-13 Thursday 02:26  Eddie Kohler <kohler@icir.org>
+
+	* config.h.in: enable clickfs by default; add
+	HAVE_ADAPTIVE_SCHEDULER symbol and --enable-adaptive; move
+	CLICK_GREEDY into config-{linux,bsd}module.h.in
+
 2003-02-13 Thursday 00:39  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh, include/click/routerthread.hh,
