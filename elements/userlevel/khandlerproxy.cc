@@ -231,7 +231,7 @@ KernelHandlerProxy::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_PROXY) {
     click_llrpc_proxy_st* proxy = static_cast<click_llrpc_proxy_st*>(data);
-    const Handler* h = static_cast<const Handler*>(proxy->proxied_handler);
+    const Handler* h = static_cast<Handler*>(proxy->proxied_handler);
     
     String fn = handler_name_to_file_name(h->name());
     int fd = open(fn.c_str(), O_RDONLY);
