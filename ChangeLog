@@ -1,3 +1,9 @@
+2004-05-20 Thursday 04:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmpsendpings.hh (1.16), include/click/integers.hh
+	(1.8), lib/integers.cc (1.12): don't use uint64_t multiplication
+	and division in the kernel: it doesnt exist there
+
 2004-05-19 Wednesday 17:12  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/routerthread.cc (1.45): NS nit (Antonio again)
