@@ -210,17 +210,17 @@ prepare_sorted_elements()
 {
     // config lock must be held!
     nsorted_elements = 0;
-    if (!current_router || current_router->nelements() == 0) {
+    if (!click_router || click_router->nelements() == 0) {
 	sorted_elements_generation = atomic_read(&click_config_generation);
 	return 0;
     }
-    else if (grow_sorted_elements(current_router->nelements()) < 0)
+    else if (grow_sorted_elements(click_router->nelements()) < 0)
 	return -ENOMEM;
 
     // initialize sorted_elements with info from the current router
-    int nelem = current_router->nelements();
+    int nelem = click_router->nelements();
     for (int i = 0; i < nelem; i++) {
-	sorted_elements[i].name = current_router->ename(i);
+	sorted_elements[i].name = click_router->ename(i);
 	sorted_elements[i].elementno = i;
 	sorted_elements[i].skip = 0;
 	sorted_elements[i].flags = 0;
@@ -292,7 +292,7 @@ calculate_handler_conflicts(int parent_eindex)
     // no conflicts if no router
     assert(parent_eindex < nsorted_elements);
     int parent_sindex = (parent_eindex < 0 ? -1 : sorted_elements[parent_eindex].sorted_index);
-    if (!current_router)
+    if (!click_router)
 	return;
     if (parent_sindex >= 0 && (sorted_elements[parent_sindex].flags & CSE_SUBDIR_CONFLICTS_CALCULATED))
 	return;
@@ -303,10 +303,10 @@ calculate_handler_conflicts(int parent_eindex)
 
     // find the relevant handler indexes and names
     Vector<int> hindexes;
-    current_router->element_handlers(parent_eindex, hindexes);
+    click_router->element_handlers(parent_eindex, hindexes);
     Vector<String> names;
     for (int i = 0; i < hindexes.size(); i++) {
-	const Router::Handler &h = current_router->handler(hindexes[i]);
+	const Router::Handler &h = click_router->handler(hindexes[i]);
 	if (h.visible())
 	    names.push_back(h.name());
     }
@@ -348,8 +348,8 @@ calculate_inode_nlink(struct inode *inode)
     int elementno = INO_ELEMENTNO(ino);
     inode->i_nlink = 2;
     if (INO_DIRTYPE(ino) != INO_DT_H) {
-	if (INO_DT_HAS_U(ino) && current_router)
-	    inode->i_nlink += current_router->nelements();
+	if (INO_DT_HAS_U(ino) && click_router)
+	    inode->i_nlink += click_router->nelements();
 	if (INO_DT_HAS_N(ino)) {
 	    int first_sindex = (elementno < 0 ? 0 : sorted_elements[elementno].sorted_index + 1);
 	    if (elementno >= 0
@@ -381,9 +381,9 @@ click_inode(struct super_block *sb, unsigned long ino)
     
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
-	if (Router::handler_ok(current_router, hi)) {
-	    const Router::Handler &h = Router::handler(current_router, hi);
-	    inode->i_mode = S_IFREG | (h.read_visible() ? proc_click_mode_r : 0) | (h.write_visible() ? proc_click_mode_w : 0);
+	if (Router::handler_ok(click_router, hi)) {
+	    const Router::Handler &h = Router::handler(click_router, hi);
+	    inode->i_mode = S_IFREG | (h.read_visible() ? click_mode_r : 0) | (h.write_visible() ? click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
 	    inode->i_op = &click_handler_inode_ops;
 	    inode->i_nlink = (elementno < 0 ? INO_NLINK_GLOBAL_HANDLER : INO_NLINK_LOCAL_HANDLER);
@@ -391,12 +391,12 @@ click_inode(struct super_block *sb, unsigned long ino)
 	    iput(inode);
 	    inode = 0;
 	}
-    } else if (elementno >= 0 && (!current_router || elementno >= nsorted_elements)) {
+    } else if (elementno >= 0 && (!click_router || elementno >= nsorted_elements)) {
 	// invalid directory
 	iput(inode);
 	inode = 0;
     } else {
-	inode->i_mode = proc_click_mode_dir;
+	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
 	calculate_inode_nlink(inode);
@@ -446,7 +446,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 	    else
 		goto number_failed;
 	eindex--;
-	if (!current_router || eindex >= current_router->nelements())
+	if (!click_router || eindex >= click_router->nelements())
 	    goto number_failed;
 	inode = click_inode(dir->i_sb, INO_MKHDIR(eindex));
 	goto found;
@@ -455,9 +455,9 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
   number_failed:
     // look for handlers
     if (INO_DT_HAS_H(ino)) {
-	int hi = Router::find_handler(current_router, elementno, dentry_name);
+	int hi = Router::find_handler(click_router, elementno, dentry_name);
 	if (hi >= 0) {
-	    const Router::Handler &h = Router::handler(current_router, hi);
+	    const Router::Handler &h = Router::handler(click_router, hi);
 	    if (h.visible()) {
 		inode = click_inode(dir->i_sb, INO_MKHANDLER(elementno, hi));
 		goto found;
@@ -575,9 +575,9 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     // handler names
     if (f_pos < RD_UOFF && INO_DT_HAS_H(ino)) {
 	Vector<int> hi;
-	Router::element_handlers(current_router, elementno, hi);
+	Router::element_handlers(click_router, elementno, hi);
 	while (f_pos >= RD_HOFF && f_pos < hi.size() + RD_HOFF) {
-	    const Router::Handler &h = Router::handler(current_router, hi[f_pos - RD_HOFF]);
+	    const Router::Handler &h = Router::handler(click_router, hi[f_pos - RD_HOFF]);
 	    if (h.visible())
 		DO_FILLDIR(dirent, h.name().data(), h.name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG);
 	    f_pos++;
@@ -601,7 +601,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	/* do nothing */;
     else if (INO_DIRTYPE(ino) == INO_DT_GLOBAL) {
 	char buf[10];
-	int nelem = (current_router ? current_router->nelements() : 0);
+	int nelem = (click_router ? click_router->nelements() : 0);
 	while (f_pos >= RD_UOFF && f_pos < RD_UOFF + nelem) {
 	    int elem = f_pos - RD_UOFF;
 	    sprintf(buf, "%d", elem + 1);
@@ -789,8 +789,8 @@ free_handler_string(int hs)
 static const Router::Handler *
 find_handler(int eindex, int handlerno)
 {
-    if (Router::handler_ok(current_router, handlerno))
-	return &Router::handler(current_router, handlerno);
+    if (Router::handler_ok(click_router, handlerno))
+	return &Router::handler(click_router, handlerno);
     else
 	return 0;
 }
@@ -856,7 +856,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	    retval = -EPERM;
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
-	    Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+	    Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
 	    handler_strings[stringno] = h->call_read(e);
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
@@ -942,11 +942,11 @@ handler_flush(struct file *filp)
 	    retval = -ENOMEM;
 	else {
 	    int eindex = INO_ELEMENTNO(inode->i_ino);
-	    Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+	    Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
 	    String context_string = "In write handler `" + h->name() + "'";
 	    if (e)
 		context_string += String(" for `") + e->declaration() + "'";
-	    ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
 	}
 
@@ -977,11 +977,11 @@ handler_ioctl(struct inode *inode, struct file *filp,
     
     if (inode_out_of_date(inode))
 	retval = -EIO;
-    else if (!current_router)
+    else if (!click_router)
 	retval = -EINVAL;
-    else if (!(e = current_router->element(INO_ELEMENTNO(inode->i_ino))))
+    else if (!(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
 	retval = -EIO;
-    else if (current_router->initialized())
+    else if (click_router->initialized())
 	retval = e->llrpc(command, reinterpret_cast<void *>(address));
     else
 	retval = e->Element::llrpc(command, reinterpret_cast<void *>(address));

@@ -4,6 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,7 +29,41 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+static proc_dir_entry *proc_click_entry = 0;
 static proc_dir_entry **element_pdes = 0;
+
+static struct file_operations proc_element_handler_operations;
+#ifdef LINUX_2_2
+static struct inode_operations proc_element_handler_inode_operations;
+#endif
+
+
+/************************ General /proc manipulation *************************/
+
+static proc_dir_entry *
+find_pde(proc_dir_entry *parent, const String &s)
+{
+  int len = s.length();
+  if (!parent)
+    parent = &proc_root;
+  for (proc_dir_entry *pde = parent->subdir; pde; pde = pde->next)
+    if (pde->namelen == len && memcmp(pde->name, s.data(), len) == 0)
+      return pde;
+  return 0;
+}
+
+static void
+remove_proc_entry_recursive(proc_dir_entry *pde, proc_dir_entry *parent)
+{
+  if (pde) {
+    while (pde->subdir)
+      remove_proc_entry_recursive(pde->subdir, pde);
+    remove_proc_entry(pde->name, parent);
+  }
+}
+
+
+/***************************** handler_strings *******************************/
 
 struct HandlerStringInfo {
   int next;
@@ -40,45 +75,6 @@ static HandlerStringInfo *handler_strings_info = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
 static spinlock_t handler_strings_lock;
-
-
-//
-// ELEMENT NAME SYMLINK OPERATIONS
-//
-
-static int
-proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
-{
-  // must add 1 to (int)pde->data as directories are numbered from 1
-  int pos = 0;
-  proc_dir_entry *parent = pde->parent;
-  while (parent != proc_click_entry) {
-    sprintf(page + pos, "../");
-    pos += 3;
-    parent = parent->parent;
-  }
-  return pos + sprintf(page + pos, "%d", (int)pde->data + 1);
-}
-
-
-//
-// PER-ELEMENT STUFF
-//
-
-static int proc_element_handler_open(struct inode *, struct file *);
-static ssize_t proc_element_handler_read(struct file *, char *, size_t, loff_t *);
-static ssize_t proc_element_handler_write(struct file *, const char *, size_t, loff_t *);
-static int proc_element_handler_flush(struct file *);
-static int proc_element_handler_release(struct inode *, struct file *);
-static int proc_element_handler_ioctl(struct inode *, struct file *, unsigned, unsigned long);
-
-static struct file_operations proc_element_handler_operations;
-#ifdef LINUX_2_2
-static struct inode_operations proc_element_handler_inode_operations;
-#endif
-
-
-// OPERATIONS
 
 static int
 increase_handler_strings()
@@ -140,11 +136,14 @@ free_handler_string(int hs)
   spin_unlock(&handler_strings_lock);
 }
 
+
+/*********************** Operations on handler files *************************/
+
 static const Router::Handler *
 find_handler(int eindex, int handlerno)
 {
-  if (Router::handler_ok(current_router, handlerno))
-    return &Router::handler(current_router, handlerno);
+  if (Router::handler_ok(click_router, handlerno))
+    return &Router::handler(click_router, handlerno);
   else
     return 0;
 }
@@ -152,7 +151,7 @@ find_handler(int eindex, int handlerno)
 static int
 prepare_handler_read(int eindex, int handlerno, int stringno)
 {
-  Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+  Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
   String s;
 
   const Router::Handler *h = find_handler(eindex, handlerno);
@@ -200,7 +199,7 @@ prepare_handler_write(int eindex, int handlerno, int stringno)
 static int
 finish_handler_write(int eindex, int handlerno, int stringno)
 {
-  Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+  Element *e = (eindex >= 0 ? click_router->element(eindex) : 0);
   const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
@@ -211,7 +210,7 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   
   String context_string = "In write handler `" + h->name() + "'";
   if (e) context_string += String(" for `") + e->declaration() + "'";
-  ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+  ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
   
   // prevent interrupts
   unsigned cli_flags;
@@ -237,8 +236,8 @@ parent_proc_dir_eindex(proc_dir_entry *pde)
     return -1;
   else {
     int eindex = (int)(pde->parent->data);
-    if (!current_router || eindex < 0
-	|| eindex >= current_router->nelements())
+    if (!click_router || eindex < 0
+	|| eindex >= click_router->nelements())
       return -ENOENT;
     else
       return eindex;
@@ -384,28 +383,41 @@ proc_element_handler_ioctl(struct inode *ino, struct file *filp,
   int eindex = parent_proc_dir_eindex(pde);
   if (eindex < 0) return eindex;
   
-  Element *e = current_router->element(eindex);
-  if (current_router->initialized())
+  Element *e = click_router->element(eindex);
+  if (click_router->initialized())
     return e->llrpc(command, reinterpret_cast<void *>(address));
   else
     return e->Element::llrpc(command, reinterpret_cast<void *>(address));
 }
 
-//
-// CREATING HANDLERS
-//
+static int
+proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
+{
+  // must add 1 to (int)pde->data as directories are numbered from 1
+  int pos = 0;
+  proc_dir_entry *parent = pde->parent;
+  while (parent != proc_click_entry) {
+    sprintf(page + pos, "../");
+    pos += 3;
+    parent = parent->parent;
+  }
+  return pos + sprintf(page + pos, "%d", (int)pde->data + 1);
+}
 
-void
+
+/************************ Creating handler entries ***************************/
+
+static void
 register_handler(proc_dir_entry *directory, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
-  const Router::Handler *h = &Router::handler(current_router, handlerno);
+  const Router::Handler *h = &Router::handler(click_router, handlerno);
   
   mode_t mode = S_IFREG;
   if (h->read_visible())
-    mode |= proc_click_mode_r;
+    mode |= click_mode_r;
   if (h->write_visible())
-    mode |= proc_click_mode_w;
+    mode |= click_mode_w;
 
   String name = h->name();
   proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
@@ -418,15 +430,12 @@ register_handler(proc_dir_entry *directory, int handlerno)
   pde->data = (void *)handlerno;
 }
 
-//
-// ROUTER ELEMENT PROCS
-//
-
 void
 cleanup_router_element_procs()
 {
-  if (!current_router) return;
-  int nelements = current_router->nelements();
+  if (!click_router)
+    return;
+  int nelements = click_router->nelements();
   for (int i = 0; i < 2*nelements; i++) {
     if (proc_dir_entry *pde = element_pdes[i])
       remove_proc_entry_recursive(pde, proc_click_entry);
@@ -438,7 +447,7 @@ cleanup_router_element_procs()
 static void
 make_compound_element_symlink(int ei)
 {
-  const String &id = current_router->element(ei)->id();
+  const String &id = click_router->element(ei)->id();
   const char *data = id.data();
   int len = id.length();
   if (len == 0)
@@ -450,7 +459,7 @@ make_compound_element_symlink(int ei)
   // element_pdes[ei+nelements]. otherwise it will not be removed when the
   // router is destroyed.
   proc_dir_entry *parent_dir = proc_click_entry;
-  int nelements = current_router->nelements();
+  int nelements = click_router->nelements();
   
   // divide into path components and create directories
   int first_pos = -1, last_pos = -1;
@@ -478,10 +487,10 @@ make_compound_element_symlink(int ei)
     // otherwise, it was an intermediate component. make a directory for it
     assert(last_pos > first_pos && last_pos < len);
     String component = id.substring(first_pos, last_pos - first_pos);
-    proc_dir_entry *subdir = click_find_pde(parent_dir, component);
+    proc_dir_entry *subdir = find_pde(parent_dir, component);
     if (!subdir) {
       // make the directory
-      subdir = create_proc_entry(component.cc(), proc_click_mode_dir, parent_dir);
+      subdir = create_proc_entry(component.cc(), click_mode_dir, parent_dir);
       if (parent_dir == proc_click_entry)
 	element_pdes[ei + nelements] = subdir;
     } else if (!S_ISDIR(subdir->mode))
@@ -499,7 +508,7 @@ make_compound_element_symlink(int ei)
   
   // have a final component; it is a link.
   String component = id.substring(first_pos, last_pos - first_pos);
-  if (click_find_pde(parent_dir, component))
+  if (find_pde(parent_dir, component))
     // name already exists; nothing to do
     return;
 
@@ -523,7 +532,7 @@ make_compound_element_symlink(int ei)
 void
 init_router_element_procs()
 {
-  int nelements = current_router->nelements();
+  int nelements = click_router->nelements();
   
   element_pdes = (proc_dir_entry **)
     kmalloc(sizeof(proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
@@ -537,9 +546,9 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++) {
     // are there any visible handlers? if not, skip
     handlers.clear();
-    current_router->element_handlers(i, handlers);
+    click_router->element_handlers(i, handlers);
     for (int j = 0; j < handlers.size(); j++) {
-      const Router::Handler &h = current_router->handler(handlers[j]);
+      const Router::Handler &h = click_router->handler(handlers[j]);
       if (!h.read_visible() && !h.write_visible()) {
 	handlers[j] = handlers.back();
 	handlers.pop_back();
@@ -551,7 +560,7 @@ init_router_element_procs()
 
     // otherwise, make EINDEX directory
     sprintf(namebuf, "%d", i + 1);
-    proc_dir_entry *pde = create_proc_entry(namebuf, proc_click_mode_dir, proc_click_entry);
+    proc_dir_entry *pde = create_proc_entry(namebuf, click_mode_dir, proc_click_entry);
     if (!pde)
       continue;
 
@@ -569,9 +578,16 @@ init_router_element_procs()
 }
 
 
-void
-init_proc_click_elements()
+/********************* Initialization and cleanup ****************************/
+
+int
+init_proc_click()
 {
+  proc_click_entry = create_proc_entry("click", click_mode_dir, 0);
+  if (!proc_click_entry)
+    return -ENOMEM;
+
+  // operations structures
 #ifdef LINUX_2_4
   proc_element_handler_operations.owner = THIS_MODULE;
 #endif
@@ -587,15 +603,43 @@ init_proc_click_elements()
   proc_element_handler_inode_operations.default_file_ops = &proc_element_handler_operations;
 #endif
 
+  // handler_strings
   spin_lock_init(&handler_strings_lock);
+
+  // /proc/click entries for global handlers
+  for (int i = 0; i < Router::nglobal_handlers(); i++)
+    register_handler(proc_click_entry, Router::FIRST_GLOBAL_HANDLER + i);
 }
 
 void
-cleanup_proc_click_elements()
+cleanup_proc_click()
 {
+  // remove /proc/click entries for global and local handlers
   cleanup_router_element_procs();
+  for (int i = 0; i < Router::nglobal_handlers(); i++) {
+    const Router::Handler &h = Router::global_handler(Router::FIRST_GLOBAL_HANDLER + i);
+    remove_proc_entry(String(h.name()).cc(), proc_click_entry);
+  }
 
-  // clean up handler_strings
+  // remove the `/proc/click' directory
+  remove_proc_entry("click", 0);
+
+  // invalidate any remaining `/proc/click' dentry, which would be hanging
+  // around because someone has a handler open
+#ifdef LINUX_2_2
+  struct dentry *click_de = lookup_dentry("/proc/click", 0, LOOKUP_DIRECTORY);
+#else
+  struct nameidata lookup_data;
+  struct dentry *click_de = 0;
+  if (user_path_walk("/proc/click", &lookup_data) >= 0)
+    click_de = lookup_data.dentry;
+#endif
+  if (click_de && !IS_ERR(click_de)) {
+    d_drop(click_de);		// XXX ok for 2.4?
+    dput(click_de);
+  }
+  
+  // delete handler_strings
   spin_lock(&handler_strings_lock);
   delete[] handler_strings;
   delete[] handler_strings_info;

@@ -4,10 +4,13 @@
 #include <click/router.hh>
 #include <click/driver.hh>
 #include <click/pathvars.h>	/* for HAVE_CLICKFS */
+#define HAVE_PROC_CLICK 1
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <linux/proc_fs.h>
+#ifdef HAVE_PROC_CLICK
+# include <linux/proc_fs.h>
+#endif
 #include <asm/uaccess.h>
 #include <linux/poll.h>
 CLICK_CXX_UNPROTECT
@@ -24,44 +27,31 @@ CLICK_CXX_UNPROTECT
 #define HANDLER_SPECIAL_INODE		(Router::Handler::FIRST_USER_FLAG << 2)
 #define HANDLER_WRITE_UNLIMITED		(Router::Handler::FIRST_USER_FLAG << 3)
 
-extern int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;
-extern int proc_click_mode_dir;
+extern ErrorHandler *click_logged_errh;
+void click_clear_error_log();
 
-extern proc_dir_entry *proc_click_entry;
+void click_init_config();
+void click_cleanup_config();
 
-proc_dir_entry *click_find_pde(proc_dir_entry *, const String &);
-void remove_proc_entry_recursive(proc_dir_entry *, proc_dir_entry *parent);
+extern Router *click_router;
+int click_kill_router_threads();
 
-void init_proc_click_config();
-void cleanup_proc_click_config();
-void init_router_element_procs();
-void cleanup_router_element_procs();
-void init_proc_click_elements();
-void cleanup_proc_click_elements();
-void init_proc_click_errors();
-void cleanup_proc_click_errors();
+void click_init_sched();
+int click_cleanup_sched();
+int click_start_sched(Router *, int, ErrorHandler *);
+
+extern int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
 #ifdef HAVE_CLICKFS
 void init_clickfs();
 void cleanup_clickfs();
 #endif
 
-extern ErrorHandler *kernel_errh;
-extern ErrorHandler *kernel_syslog_errh;
-extern Router *current_router;
-Router *parse_router(String);
-void kill_current_router();
-int kill_current_router_threads();
-void install_current_router(Router *);
-void reset_proc_click_errors();
-
-extern int click_thread_priority;
-void init_click_sched();
-int start_click_sched(Router *, int, ErrorHandler *);
-int cleanup_click_sched();
-void get_click_thread_pids(Vector<int> &);
-void change_click_thread_priority(int);
-
-void register_handler(proc_dir_entry *, int handlerno);
+#ifdef HAVE_PROC_CLICK
+int init_proc_click();
+void cleanup_proc_click();
+void init_router_element_procs();
+void cleanup_router_element_procs();
+#endif
 
 #endif

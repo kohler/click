@@ -19,10 +19,11 @@
 #include <click/config.h>
 #include "modulepriv.hh"
 
-#include "kernelerror.hh"
 #include <click/routerthread.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
+#include <click/error.hh>
+#include <click/straccum.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -36,15 +37,23 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 #ifdef LINUX_2_2
+# define MIN_PRIO	1
+# define MAX_PRIO	(2 * DEF_PRIORITY)
+# define PRIO2NICE(p)	(DEF_PRIORITY - (p))
+# define NICE2PRIO(n)	(DEF_PRIORITY - (n))
 # define DEF_PRIO	DEF_PRIORITY
 # define TASK_PRIO(t)	((t)->priority)
 #else
+# define MIN_PRIO	(-20)
+# define MAX_PRIO	19
+# define PRIO2NICE(p)	(p)
+# define NICE2PRIO(n)	(n)
 # define DEF_PRIO	DEF_NICE
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
 static spinlock_t click_thread_spinlock;
-int click_thread_priority = DEF_PRIO;
+static int click_thread_priority = DEF_PRIO;
 static Vector<int> *click_thread_pids;
 
 static void
@@ -70,12 +79,25 @@ click_sched(void *thunk)
 
   RouterThread *rt = (RouterThread *)thunk;
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
+
+  // add pid to thread list
+  soft_spin_lock(&click_thread_spinlock);
+  if (click_thread_pids)
+    click_thread_pids->push_back(current->pid);
+  spin_unlock(&click_thread_spinlock);
+
+  // preserve router
+  rt->router()->use();
+
+  // driver loop; does not return for a while
   rt->driver();
-  
+
+  // release router
   rt->router()->unuse();
 
+  // remove pid from thread list
   soft_spin_lock(&click_thread_spinlock);
-  if (click_thread_pids) {
+  if (click_thread_pids)
     for (int i = 0; i < click_thread_pids->size(); i++) {
       if ((*click_thread_pids)[i] == current->pid) {
 	(*click_thread_pids)[i] = click_thread_pids->back();
@@ -83,7 +105,6 @@ click_sched(void *thunk)
 	break;
       }
     }
-  }
   spin_unlock(&click_thread_spinlock);
   
   printk("<1>click: stopping router thread pid %d\n", current->pid);
@@ -91,7 +112,7 @@ click_sched(void *thunk)
 }
 
 int
-start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
+click_start_sched(Router *r, int threads, ErrorHandler *errh)
 {
   /* no thread if no router */
   if (r->nelements() == 0)
@@ -103,7 +124,6 @@ start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
 	          NUM_CLICK_CPUS, smp_num_cpus);
 #endif
 
-  soft_spin_lock(&click_thread_spinlock);
   if (threads < 1)
     threads = 1;
   click_chatter((threads == 1 ? "starting %d thread" : "starting %d threads"), threads);
@@ -114,38 +134,24 @@ start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
       rt = new RouterThread(r);
     else
       rt = r->thread(0);
-    r->use();
     pid_t pid = kernel_thread 
       (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
     if (pid < 0) {
-      r->unuse();
       delete rt;
-      spin_unlock(&click_thread_spinlock);
-      kernel_errh->error("cannot create kernel thread!"); 
+      errh->error("cannot create kernel thread!"); 
       return -1;
-    } else {
-      if (click_thread_pids)
-        click_thread_pids->push_back(pid);
     }
     threads--;
   }
 
-  spin_unlock(&click_thread_spinlock);
   return 0;
 }
 
-void
-init_click_sched()
-{
-  spin_lock_init(&click_thread_spinlock);
-  click_thread_pids = new Vector<int>;
-}
-
 int
-kill_current_router_threads()
+click_kill_router_threads()
 {
-  if (current_router)
-    current_router->please_stop_driver();
+  if (click_router)
+    click_router->please_stop_driver();
   
   // wait up to 5 seconds for routers to exit
   unsigned long out_jiffies = jiffies + 5 * HZ;
@@ -165,10 +171,74 @@ kill_current_router_threads()
     return 0;
 }
 
-int
-cleanup_click_sched()
+
+/******************************* Handlers ************************************/
+
+static String
+read_threads(Element *, void *)
 {
-  if (kill_current_router_threads() < 0) {
+  StringAccum sa;
+  soft_spin_lock(&click_thread_spinlock);
+  if (click_thread_pids)
+    for (int i = 0; i < click_thread_pids->size(); i++)
+      sa << (*click_thread_pids)[i] << '\n';
+  spin_unlock(&click_thread_spinlock);
+  return sa.take_string();
+}
+
+static String
+read_priority(Element *, void *)
+{
+  return String(PRIO2NICE(click_thread_priority)) + "\n";
+}
+
+static int
+write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
+{
+  int priority;
+  if (!cp_integer(cp_uncomment(conf), &priority))
+    return errh->error("priority must be integer");
+
+  priority = NICE2PRIO(priority);
+  if (priority < MIN_PRIO) {
+    priority = MIN_PRIO;
+    errh->warning("priority pinned at %d", PRIO2NICE(priority));
+  } else if (priority > MAX_PRIO) {
+    priority = MAX_PRIO;
+    errh->warning("priority pinned at %d", PRIO2NICE(priority));
+  }
+
+  // change current thread priorities
+  soft_spin_lock(&click_thread_spinlock);
+  click_thread_priority = priority;
+  if (click_thread_pids)
+    for (int i = 0; i < click_thread_pids->size(); i++) {
+      struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
+      if (task)
+	TASK_PRIO(task) = priority;
+    }
+  spin_unlock(&click_thread_spinlock);
+  
+  return 0;
+}
+
+
+/********************** Initialization and cleanup ***************************/
+
+void
+click_init_sched()
+{
+  spin_lock_init(&click_thread_spinlock);
+  click_thread_pids = new Vector<int>;
+  Router::add_global_read_handler("threads", read_threads, 0);
+  Router::add_global_read_handler("priority", read_priority, 0);
+  Router::add_global_write_handler("priority", write_priority, 0);
+}
+
+int
+click_cleanup_sched()
+{
+  if (click_kill_router_threads() < 0) {
     printk("<1>click: Following threads still active, expect a crash:\n");
     soft_spin_lock(&click_thread_spinlock);
     for (int i = 0; i < click_thread_pids->size(); i++)
@@ -180,27 +250,4 @@ cleanup_click_sched()
     click_thread_pids = 0;
     return 0;
   }
-}
-
-void
-get_click_thread_pids(Vector<int> &out)
-{
-  soft_spin_lock(&click_thread_spinlock);
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++)
-      out.push_back((*click_thread_pids)[i]);
-  spin_unlock(&click_thread_spinlock);
-}
-
-void
-change_click_thread_priority(int priority)
-{
-  soft_spin_lock(&click_thread_spinlock);
-  click_thread_priority = priority;
-  for (int i = 0; i < click_thread_pids->size(); i++) {
-    struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
-    if (task)
-      TASK_PRIO(task) = priority;
-  }
-  spin_unlock(&click_thread_spinlock);
 }
