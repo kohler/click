@@ -248,7 +248,9 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
   nskb->tail = nskb->data + old_length;
   nskb->end = new_data + size;
   nskb->len = old_length;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
   nskb->is_clone = 0;
+# endif
   nskb->cloned = 0;
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
