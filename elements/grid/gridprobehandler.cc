@@ -51,7 +51,7 @@ GridProbeHandler::initialize(ErrorHandler *errh)
 		  id().cc());
     _gf_el = 0;
   }
-  if (!_fq_el || !_gf_el->cast("FloodingLocQuerier")) {
+  if (!_fq_el || !_fq_el->cast("FloodingLocQuerier")) {
     errh->warning("%s: FloodingLocQuerier argument is missing or has the wrong type, probe replies will not contain all info",
 		  id().cc());
     _fq_el = 0;
@@ -62,7 +62,7 @@ GridProbeHandler::initialize(ErrorHandler *errh)
   if (_gf_el)
     _gf_cb_id = _gf_el->add_callback(this);
   if (_fq_el)
-    _gf_cb_id = _fq_el->add_callback(this);
+    _fq_cb_id = _fq_el->add_callback(this);
 
   if (_lr_cb_id < 0) 
     errh->warning("%s: unable to install local routing action callback, probe replies will not contain all info",
@@ -71,7 +71,7 @@ GridProbeHandler::initialize(ErrorHandler *errh)
     errh->warning("%s: unable to install geographic forwarding action callback, probe replies will not contain all info",
 		  id().cc());
   if (_fq_cb_id < 0) 
-    errh->warning("%s: unable to loc query action callback, probe replies will not contain all info",
+    errh->warning("%s: unable to install loc query action callback, probe replies will not contain all info",
 		  id().cc());
   
   return 0;
