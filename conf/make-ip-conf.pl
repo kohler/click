@@ -107,6 +107,21 @@ for($i = 0; $i < $nifs; $i++){
 }
 print "\n";
 
+# Classifier for junking crap ICMP errors (from packets destined for
+# directed broadcast addrs)
+my($icmpjunkarg) = '';
+my($nicmpjunkarg) = 0;
+while ($ipharg =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/g) {
+  $icmpjunkarg .= "44/" . sprintf("%02X%02X%02X%02X", $1, $2, $3, $4) . ",";
+  $nicmpjunkarg++;
+}
+$icmpjunkarg .= "-";
+print "icmpjunk :: Classifier($icmpjunkarg);\nicmpdisc :: Discard;\n";
+for ($i = 0; $i < $nicmpjunkarg; $i++) {
+  print "icmpjunk[$i] -> icmpdisc;\n";
+}
+print "icmpjunk[$nicmpjunkarg] -> [0]rt;\n\n";
+
 for($i = 0; $i < $nifs; $i++){
     my $i1 = $i + 1;
     my $ipa = $ifs->[$i]->[1];
@@ -118,10 +133,10 @@ rt[$i1] -> DropBroadcasts
         -> dt$i :: DecIPTTL
         -> fr$i :: IPFragmenter(1500)
         -> [0]arpq$i;
-dt$i [1] -> ICMPError($ipa, 11, 0) -> [0]rt;
-fr$i [1] -> ICMPError($ipa, 3, 4) -> [0]rt;
-gio$i [1] -> ICMPError($ipa, 12, 1) -> [0]rt;
-cp$i [1] -> ICMPError($ipa, 5, 1) -> [0]rt;
+dt$i [1] -> ICMPError($ipa, 11, 0) -> icmpjunk;
+fr$i [1] -> ICMPError($ipa, 3, 4) -> icmpjunk;
+gio$i [1] -> ICMPError($ipa, 12, 1) -> icmpjunk;
+cp$i [1] -> ICMPError($ipa, 5, 1) -> icmpjunk;
 c$i [3] -> Print(xx$i) -> Discard;
 EOF
 }

@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 0.6
+Version 0.6   11.Dec.1999
 
 * Added dynamic linking support. Click configuration files can now be ar(1)
   archives, possibly containing "packages"---dynamically linked object

@@ -65,7 +65,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: udpgen.o udpcount
+install: udpgen.o udpcount.o
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL) udpgen.o $(libdir)/udpgen.o
 	$(INSTALL) udpcount.o $(libdir)/udpcount.o

@@ -46,17 +46,17 @@ DOCUMENTATION
     The `INSTALL' file in this directory contains installation
 instructions. User documentation is in the `doc' subdirectory. This
 directory contains manual pages for the Click language, the Linux kernel
-module, and the `click-xform' configuration optimizer; it also has a script
-that generates manual pages for many of the elements distributed in this
-package. To install these manual pages so you can read them, follow the
-`INSTALL' instructions, but `make install-man' instead of `make install'.
+module, and several tools; it also has a script that generates manual pages
+for many of the elements distributed in this package. To install these
+manual pages so you can read them, follow the `INSTALL' instructions, but
+`make install-man' instead of `make install'.
 
 RUNNING A CLICK ROUTER
 ----------------------
 
     Before playing with a Click router, you should get familiar with the
 Click configuration language. You use this to tell Click how to process
-packets. The language describes a graph of "elements," or packet processing
+packets. The language describes a graph of "elements", or packet processing
 modules. See the `doc/click.5' manual page for a detailed description, or
 check the `conf' directory for some simple examples.
 
@@ -79,8 +79,9 @@ Linux Kernel Module
 -------------------
 
     See the `doc/click.o.8' manual page for a detailed description. To
-summarize, install the module with `insmod PATH/click.o'; then initialize
-it with a configuration with `cat CONFIGFILE > /proc/click/config'. If any
+summarize, install the module with `insmod PATH/click.o'; then install a
+configuration with `click-install CONFIGFILE'. You can also install a
+configuration by hand with `cat CONFIGFILE > /proc/click/config'; if any
 errors occured, they will appear in `/proc/click/errors'.
 
 Configurations
@@ -110,4 +111,6 @@ to give us. Write us at
 	- The Click software team:
 	  Eddie Kohler
 	  Robert Morris
+	  Benjie Chen
 	  John Jannotti
+	  Max Poletto

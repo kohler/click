@@ -141,3 +141,7 @@ before installing them. `Click-align' (see doc/click-align.1) figures out
 what alignment is required and adds elements as necessary to make that
 alignment happen. It also adds an `AlignmentInfo' element to tell every
 element what kind of alignment it can expect.
+
+    Note that some parts of the system have not yet been updated for
+non-x86 portability. In particular, IP checksums appear to be computed
+incorrectly on SPARCs, probably due to endian issues.
