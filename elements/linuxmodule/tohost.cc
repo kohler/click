@@ -139,4 +139,4 @@ ToHost::push(int port, Packet *p)
 }
 
 ELEMENT_REQUIRES(linuxmodule)
-EXPORT_ELEMENT(ToHost ToHost-ToLinux)
+EXPORT_ELEMENT(ToHost)

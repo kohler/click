@@ -310,4 +310,4 @@ fl_stats(net_device *dev)
  */
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
-EXPORT_ELEMENT(FromHost FromHost-FromLinux)
+EXPORT_ELEMENT(FromHost)

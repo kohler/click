@@ -61,4 +61,4 @@ StaticIPLookup::add_handlers()
 }
 
 ELEMENT_REQUIRES(LinearIPLookup)
-EXPORT_ELEMENT(StaticIPLookup StaticIPLookup-LookupIPRoute)
+EXPORT_ELEMENT(StaticIPLookup)

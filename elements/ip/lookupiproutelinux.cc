@@ -33,7 +33,7 @@ CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
 
-LookupIPRouteLinux::LookupIPRouteLinux()
+LinuxIPLookup::LinuxIPLookup()
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -44,7 +44,7 @@ LookupIPRouteLinux::LookupIPRouteLinux()
 #endif
 }
 
-LookupIPRouteLinux::~LookupIPRouteLinux()
+LinuxIPLookup::~LinuxIPLookup()
 {
   MOD_DEC_USE_COUNT;
 #ifdef CLICK_LINUXMODULE
@@ -54,7 +54,7 @@ LookupIPRouteLinux::~LookupIPRouteLinux()
 }
 
 int
-LookupIPRouteLinux::configure(Vector<String> &conf, ErrorHandler *)
+LinuxIPLookup::configure(Vector<String> &conf, ErrorHandler *)
 {
   _out2devname = conf;
   _nout = _out2devname.size();
@@ -63,7 +63,7 @@ LookupIPRouteLinux::configure(Vector<String> &conf, ErrorHandler *)
 }
 
 int
-LookupIPRouteLinux::initialize(ErrorHandler *errh)
+LinuxIPLookup::initialize(ErrorHandler *errh)
 {
   if(init_routes(errh) < 0)
     return(-1);
@@ -71,16 +71,16 @@ LookupIPRouteLinux::initialize(ErrorHandler *errh)
   return 0;
 }
 
-LookupIPRouteLinux *
-LookupIPRouteLinux::clone() const
+LinuxIPLookup *
+LinuxIPLookup::clone() const
 {
-  return new LookupIPRouteLinux;
+  return new LinuxIPLookup;
 }
 
 #ifdef CLICK_LINUXMODULE
 
 int
-LookupIPRouteLinux::init_routes(ErrorHandler *errh)
+LinuxIPLookup::init_routes(ErrorHandler *errh)
 {
   if(_out2dev)
     delete[] _out2dev;
@@ -96,7 +96,7 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
 }
 
 bool
-LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
+LinuxIPLookup::lookup(IPAddress a, IPAddress &gw, int &ifi)
 {
   struct rtable *rt = 0;
 
@@ -114,7 +114,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
         ifi = i;
     }
     if(ifi == -1)
-      click_chatter("LookupIPRouteLinux: unknown dev %x", dev);
+      click_chatter("LinuxIPLookup: unknown dev %x", dev);
     ip_rt_put(rt);
     return(true);
   }
@@ -124,7 +124,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
 #else /* !CLICK_LINUXMODULE */
 
 int
-LookupIPRouteLinux::init_routes(ErrorHandler *errh)
+LinuxIPLookup::init_routes(ErrorHandler *errh)
 {
   _t.clear();
 
@@ -149,7 +149,7 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
       if(i < _nout){
         _t.add(dst, mask, gw, i);
       } else {
-        click_chatter("LookupIPRouteLinux: no output for dev %s", devname);
+        click_chatter("LinuxIPLookup: no output for dev %s", devname);
       }
     }
   }
@@ -159,7 +159,7 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
 }
 
 bool
-LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
+LinuxIPLookup::lookup(IPAddress a, IPAddress &gw, int &ifi)
 {
   return _t.lookup(a, gw, ifi);
 }
@@ -167,7 +167,7 @@ LookupIPRouteLinux::lookup(IPAddress a, IPAddress &gw, int &ifi)
 #endif /* CLICK_LINUXMODULE */
 
 void
-LookupIPRouteLinux::push(int, Packet *p)
+LinuxIPLookup::push(int, Packet *p)
 {
   IPAddress a = p->dst_ip_anno();
   IPAddress gw;
@@ -182,10 +182,10 @@ LookupIPRouteLinux::push(int, Packet *p)
       p->set_dst_ip_anno(gw);
     output(ifi).push(p);
   } else {
-    click_chatter("LookupIPRouteLinux: no gw for %x", a.addr());
+    click_chatter("LinuxIPLookup: no gw for %x", a.addr());
     output(_nout).push(p);
   }
 }
 
 ELEMENT_REQUIRES(userlevel|linuxmodule)
-EXPORT_ELEMENT(LookupIPRouteLinux LookupIPRouteLinux-LinuxIPLookup)
+EXPORT_ELEMENT(LinuxIPLookup)

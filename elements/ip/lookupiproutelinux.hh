@@ -1,10 +1,9 @@
-#ifndef LOOKUPIPROUTELINUX_HH
-#define LOOKUPIPROUTELINUX_HH
+#ifndef CLICK_LINUXIPLOOKUP_HH
+#define CLICK_LINUXIPLOOKUP_HH
 
 /*
  * =c
  * LinuxIPLookup(if0, if1, ..., ifN)
- * LookupIPRouteLinux(if0, if1, ..., ifN)
  * =s IP, classification
  * interface to Linux's routing table
  * =d
@@ -26,7 +25,7 @@
  * just once (at startup) from /proc/net/route.
  *
  * =e
- *   r : LookupIPRouteLinux(eth0, eth1)
+ *   r : LinuxIPLookup(eth0, eth1)
  *   r[0] -> ... -> ToDevice(eth0)
  *   r[1] -> ... -> ToDevice(eth1)
  *   r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
@@ -38,14 +37,14 @@
 #include <click/element.hh>
 #include <click/iptable.hh>
 
-class LookupIPRouteLinux : public Element {
+class LinuxIPLookup : public Element {
 public:
-  LookupIPRouteLinux();
-  ~LookupIPRouteLinux();
+  LinuxIPLookup();
+  ~LinuxIPLookup();
   
-  const char *class_name() const	{ return "LookupIPRouteLinux"; }
+  const char *class_name() const	{ return "LinuxIPLookup"; }
   const char *processing() const	{ return AGNOSTIC; }
-  LookupIPRouteLinux *clone() const;
+  LinuxIPLookup *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

@@ -132,4 +132,4 @@ ToHostSniffers::push(int port, Packet *p)
 }
 
 ELEMENT_REQUIRES(linuxmodule AnyDevice)
-EXPORT_ELEMENT(ToHostSniffers ToHostSniffers-ToLinuxSniffers)
+EXPORT_ELEMENT(ToHostSniffers)
