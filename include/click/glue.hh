@@ -76,6 +76,7 @@ extern void srandom(uint32_t);
 __inline__ uint64_t
 click_get_cycles()
 {
+#if __i386__
   uint32_t low, high;
   uint64_t x;
   __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
@@ -83,6 +84,10 @@ click_get_cycles()
   x <<= 32;
   x |= low;
   return x;
+#else
+  // add other architectures here
+  return 0;
+#endif
 }
 
 long strtol(const char *, char **, int);
