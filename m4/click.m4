@@ -387,7 +387,7 @@ dnl CLICK_PROG_PERL5
 dnl Substitute PERL.
 dnl
 
-AC_DEFUN(CLICK_PROG_PERL5, [
+AC_DEFUN([CLICK_PROG_PERL5], [
     dnl A IS-NOT A
     ac_foo=`echo 'exit($A<5);' | tr A \135`
 
