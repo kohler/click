@@ -93,7 +93,7 @@ while (<IN>) {
 	# find last section number
 	$index += $amt;
 	for ($secno2 = $secno; $secno2 < @esections; $secno2++) {
-	    my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno - $index, $esections[$secno2]->[2] + 2*($secno + 1) - $index);
+	    my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno2 - $index, $esections[$secno2]->[2] + 2*($secno2 + 1) - $index);
 	    last if $diffa >= 0;
 	    last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
 	}
