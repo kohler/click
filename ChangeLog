@@ -1,3 +1,7 @@
+2004-12-30 Thursday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.88), NEWS (1.156): DISTFILES update and NEWS
+
 2004-12-23 Thursday 01:26  John Bicket <jbicket@mit.edu>
 
 	* conf/: access-point.click (1.4), pseudo-ibss.click (1.2),
