@@ -1,3 +1,8 @@
+2004-12-17 Friday 21:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/icmperror.cc (1.21), lib/confparse.cc (1.136):
+	cp_va functions return -EINVAL on error; reported by Pavlin
+
 2004-12-16 Thursday 13:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/click-install/Makefile.in (1.24): Makefile bug reported by
