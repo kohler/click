@@ -46,11 +46,15 @@
 #define OUTPUT_OPT		304
 #define HANDLER_OPT		305
 #define TIME_OPT		306
+#define DURATION_OPT		307
+#define DIR_OPT			308
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "duration", 'u', DURATION_OPT, Clp_ArgUnsigned, 0 },
+  { "directory", 'd', DIR_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
   { "time", 't', TIME_OPT, 0, 0 },
@@ -81,6 +85,9 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
                                 driver and print result to standard output.\n\
+  -u, --duration DURATION	Call specified read handlers once every \n\
+                                DURATION number of seconds while running. \n\
+  -d, --directory DIR		Write output of read handlers into DIR. \n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
   -t, --time                    Print information on how long driver took.\n\
@@ -91,6 +98,9 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
 static Router *router;
+static Vector<String> call_handlers;
+static int handler_duration = -1;
+static const char *handler_dir = 0;
 
 static void
 catch_sigint(int)
@@ -168,7 +178,7 @@ click_remove_element_type(int which)
 // register handlers
 
 static int
-call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh)
+call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh, FILE *fout)
 {
   int dot = s.find_left('.');
   if (dot < 0)
@@ -189,10 +199,10 @@ call_read_handler(String s, Router *r, bool print_name, ErrorHandler *errh)
     return errh->error("`%s' is a write handler", s.cc());
   String result = rh.read(e, rh.read_thunk);
   if (print_name)
-    fprintf(stdout, "%s:\n", s.cc());
-  fputs(result.cc(), stdout);
+    fprintf(fout, "%s:\n", s.cc());
+  fputs(result.cc(), fout);
   if (print_name)
-    fputs("\n", stdout);
+    fputs("\n", fout);
   return 0;
 }
 
@@ -311,7 +321,49 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
 }
 
 #endif
+  
+int call_read_handlers()
+{
+  ErrorHandler *errh = new FileErrorHandler(stderr, "");
+  ErrorHandler::static_initialize(errh);
 
+  // call handlers
+  if (call_handlers.size()) {
+    int nerrors = errh->nerrors();
+    for (int i = 0; i < call_handlers.size(); i++) {
+      FILE *fout;
+      char *fpath = 0;
+      if (!handler_dir)
+	fout = stdout;
+      else {
+	fpath = new char[strlen(handler_dir)+call_handlers[i].length()+2];
+	sprintf(fpath, "%s/%s", handler_dir, call_handlers[i].cc());
+        fout = fopen(fpath,"w");
+	if (fout == NULL) {
+	  delete fpath;
+	  fpath = 0;
+	  fout = stdout;
+	}
+      }
+      call_read_handler(call_handlers[i], router, 
+	                call_handlers.size() > 1 && !fpath, errh, fout);
+      if (fpath) {
+	fclose(fout);
+	delete fpath;
+      }
+    }
+    if (nerrors != errh->nerrors())
+      return 1;
+  }
+  return 0;
+}
+
+static void
+catch_sigalrm(int)
+{
+  call_read_handlers();
+  alarm(handler_duration);
+}
 
 // main
 
@@ -334,7 +386,6 @@ main(int argc, char **argv)
   const char *output_file = 0;
   bool quit_immediately = false;
   bool report_time = false;
-  Vector<String> call_handlers;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -355,6 +406,22 @@ main(int argc, char **argv)
 	goto bad_option;
       }
       output_file = clp->arg;
+      break;
+     
+     case DIR_OPT:
+      if (handler_dir) {
+	errh->error("hander output directory specified twice");
+	goto bad_option;
+      }
+      handler_dir = clp->arg;
+      break;
+
+     case DURATION_OPT:
+      if (handler_duration > -1) {
+	errh->error("duration specified twice");
+	goto bad_option;
+      }
+      handler_duration = clp->val.u;
       break;
 
      case HANDLER_OPT:
@@ -450,6 +517,7 @@ particular purpose.\n");
   lexer->end_parse(cookie);
   
   signal(SIGINT, catch_sigint);
+  signal(SIGALRM, catch_sigalrm);
 
   if (router->initialize(errh) < 0)
     exit(1);
@@ -487,6 +555,8 @@ particular purpose.\n");
     e->add_handlers();
   }
 
+  alarm(handler_duration);
+
   // run driver
   if (!quit_immediately)
     router->driver();
@@ -507,14 +577,9 @@ particular purpose.\n");
   }
   
   // call handlers
-  if (call_handlers.size()) {
-    int nerrors = errh->nerrors();
-    for (int i = 0; i < call_handlers.size(); i++)
-      call_read_handler(call_handlers[i], router, call_handlers.size() > 1,
-			errh);
-    if (nerrors != errh->nerrors())
-      exit_value = 1;
-  }
+  int ev = 0;
+  if ((ev = call_read_handlers()))
+    exit_value = ev;
 
   delete router;
   delete lexer;

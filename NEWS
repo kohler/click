@@ -1,5 +1,14 @@
 Click NEWS
 
+Version 1.0.7
+
+* User-level driver
+
+** User-level Click can optionally dump the output of element read handlers
+   into a directory (directory path specified using -d option) or stdout on a
+   regular basis (duration between each dump specified using -u option).
+
+
 Version 1.0.6   6.May.2000
 
 * Kernel and user-level drivers
