@@ -1,3 +1,8 @@
+2003-07-07 Monday 23:47  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc (1.22), bighashmap.hh (1.20):
+	BigHashMap cleanups, mostly around resizing
+
 2003-07-07 Monday 23:26  Eddie Kohler <kohler@icir.org>
 
 	* elements/ethernet/ip6ndadvertiser.cc (1.18): fix neighbor
