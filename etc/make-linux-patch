@@ -19,6 +19,7 @@ my @files = (
              "net/sched/sch_generic.c",
              "net/netsyms.c",
 	     "fs/proc/inode.c",
+	     "drivers/net/eepro100.c",
 	     "drivers/net/tulip.c",
 	     "drivers/net/acenic.c",
 	     "drivers/net/acenic.h"
