@@ -1,3 +1,8 @@
+2002-06-17 Monday 13:05  Eddie Kohler <kohler@icir.org>
+
+	* conf/make-ip-conf.pl (1.19): use /usr/bin/perl instead of
+	/usr/local/bin/perl
+
 2002-06-14 Friday 21:46  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/module.cc (1.69): rearrange orders of initialization
