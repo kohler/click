@@ -1844,23 +1844,16 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/net/netsyms.c ./net/netsyms.c
 --- ../linux-2.4.20-pure/net/netsyms.c	2002-11-28 15:53:16.000000000 -0800
-+++ ./net/netsyms.c	2003-01-22 17:24:23.000000000 -0800
-@@ -277,6 +277,10 @@
++++ ./net/netsyms.c	2003-02-09 22:25:12.000000000 -0800
+@@ -277,6 +277,11 @@
  EXPORT_SYMBOL(register_inetaddr_notifier);
  EXPORT_SYMBOL(unregister_inetaddr_notifier);
  
 +/* Click */
 +EXPORT_SYMBOL(register_net_in);
 +EXPORT_SYMBOL(unregister_net_in);
++EXPORT_SYMBOL(skb_recycle);
 +
  /* needed for ip_gre -cw */
  EXPORT_SYMBOL(ip_statistics);
  
-@@ -492,6 +496,7 @@
- EXPORT_SYMBOL(__kfree_skb);
- EXPORT_SYMBOL(skb_clone);
- EXPORT_SYMBOL(skb_copy);
-+EXPORT_SYMBOL(skb_recycle);
- EXPORT_SYMBOL(netif_rx);
- EXPORT_SYMBOL(netif_receive_skb);
- EXPORT_SYMBOL(dev_add_pack);
