@@ -421,7 +421,7 @@ particular purpose.\n");
     anonymizer++;
 
   /*
-   * Add Align elements directly required
+   * Add Align elements for required alignments
    */
   int num_aligns_added = 0;
   {
@@ -456,7 +456,9 @@ particular purpose.\n");
       }
   }
 
-  // remove useless Aligns
+  /*
+   * remove duplicate Aligns (Align_1 -> Align_2)
+   */
   {
     const Vector<ConnectionT> &conn = router->connections();
     int nhook = conn.size();
@@ -480,7 +482,12 @@ particular purpose.\n");
   }
 
   /*
-   * Add Aligns required for adjustment purposes
+   * Add Aligns required for adjustment alignments
+   *
+   * Classifier is an example: it can cope with any alignment that is
+   * consistent and has a chunk >= 4. Rather than require a specific alignment
+   * above, we handle Classifier here; required alignments may have generated
+   * an alignment we can deal with.
    */
   {
     // calculate current alignment
