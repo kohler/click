@@ -1,3 +1,7 @@
+2002-05-08 Wednesday 19:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.7): [no log message]
+
 2002-05-08 Wednesday 08:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.53): [no log message]
