@@ -576,15 +576,6 @@ Router::set_connections()
 }
 
 
-// TIMERS
-
-void
-Router::run_timers()
-{
-  _timer_list.run();
-}
-
-
 // DRIVER STOPPAGE
 
 void

@@ -335,4 +335,10 @@ Router::Handler::compatible(const Handler &h) const
 	  && _write == h._write && _write_thunk == h._write_thunk);
 }
 
+inline void
+Router::run_timers()
+{
+  _timer_list.run();
+}
+
 #endif
