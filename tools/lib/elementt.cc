@@ -153,3 +153,32 @@ ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm,
       _next_from(next_from), _next_to(next_to)
 {
 }
+
+Hookup::Hookup(const HookupI &h, const RouterT *r)
+    : elt(const_cast<ElementT *>(r->elt(h.idx))), port(h.port)
+{
+}
+
+String
+Hookup::unparse_input() const
+{
+    if (elt)
+	return "[" + String(port) + "]" + elt->name();
+    else
+	return "<>";
+}
+
+String
+Hookup::unparse_output() const
+{
+    if (elt)
+	return elt->name() + "[" + String(port) + "]";
+    else
+	return "<>";
+}
+
+String
+ConnectionT::unparse() const
+{
+    return _from.unparse_output() + " -> " + _to.unparse_input();
+}

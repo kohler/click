@@ -95,6 +95,7 @@ struct Hookup {
 
     Hookup()				: elt(0) { }
     Hookup(ElementT *e, int p)		: elt(e), port(p) { }
+    Hookup(const HookupI &, const RouterT *);
 
     bool live() const			{ return elt != 0; }
     bool dead() const			{ return elt == 0; }
@@ -105,6 +106,9 @@ struct Hookup {
     int index_in(const Vector<Hookup> &, int start = 0) const;
     int force_index_in(Vector<Hookup> &, int start = 0) const;
 
+    String unparse_input() const;
+    String unparse_output() const;
+    
     static int sorter(const void *, const void *);
     static void sort(Vector<Hookup> &);
 
@@ -133,6 +137,8 @@ class ConnectionT { public:
     int next_from() const		{ return _next_from; }
     int next_to() const			{ return _next_to; }
     
+    String unparse() const;
+
   private:
 
     Hookup _from;
