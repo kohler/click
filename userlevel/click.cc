@@ -244,7 +244,7 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     return 0;
 
   if (r->nelements() == 0 && warnings)
-    errh->warning("%s: configuration has no elements", (text_is_expr ? "<expr>" : text.c_str()));
+    errh->warning("%s: configuration has no elements", filename_landmark(text.c_str(), text_is_expr));
 
   // add new ControlSockets
   String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");
@@ -437,7 +437,8 @@ particular purpose.\n");
   gettimeofday(&before_time, 0);
 
   // run driver
-  if (!quit_immediately) {
+  // 10.Apr.2004 - Don't run the router if it has no elements.
+  if (!quit_immediately && router->nelements()) {
     started = true;
     router->activate(errh);
     if (allow_reconfigure) {
