@@ -160,7 +160,7 @@ Build system and host system don't have the same dynamic linking state!
 =========================================])
     fi
     AC_SUBST(BUILD_DL_LIBS)
-    eval "export $saver"
+    $saver
 ])
 
 
