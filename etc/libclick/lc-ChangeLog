@@ -1,3 +1,51 @@
+2002-02-07 Thursday 20:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.cc: allow use of old configuration() methods (too
+	bad...)
+
+2002-02-07 Thursday 20:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/straccum.cc: add assertion
+
+2002-02-07 Thursday 19:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc, libsrc/alignmentinfo.cc,
+	libsrc/drivermanager.cc, libsrc/errorelement.cc,
+	libsrc/scheduleinfo.cc, include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/router.cc,
+	libsrc/routerthread.cc: adapt to Element changes: mostly make
+	"const Vector<String> &conf" arguments into "Vector<String> &conf".
+	Additional refactoring in FromDump
+
+2002-02-07 Thursday 18:56  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: add Element::input_is_push() and
+	output_is_pull() methods, for completeness; Element::configure()
+	and live_reconfigure() Vector<String> arguments are regular
+	references, not const references; the configuration() method
+	doesn't take a useless bool *.
+
+2002-02-07 Thursday 18:55  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_va_parse_remove_keywords() function:
+	parse, and remove from the argument list, any keywords supplied in
+	...
+
 2002-01-27 Sunday 20:07  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_fddi.h, click_fddi.h, click_rfc1483.h,
