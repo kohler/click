@@ -66,10 +66,10 @@ for($i=0; $i<$neigh; $i++) {
     print " 23/04, \t// IP encap from neighbor ", $i+1, "(", $neighbors[$i], ")\n";
 }
 
-print "\t12/0800 30/", (do TOHEX($exitIP));
+print "\t12/0800 30/", (do TOHEX($exitIP)), " !26/", (do TOHEX($exitIP));
 print ", \t\t// IP to my exit point (", $exitIP, ")\n";
 
-print "\t12/0800 !30/", (do TOHEX($meIP));
+print "\t12/0800 !30/", (do TOHEX($meIP)), " !26/", (do TOHEX($exitIP)) ;
 print " !19/ff,	// IP not to me, not broadcast (forward path entracepoint)\n";
 
 print "\t12/0806 20/0002,		// ARP Replies\n";
