@@ -8,15 +8,20 @@ AC_CONFIG_HEADER(config.h include/click/config.h:config.h.in)
 
 dnl support for cross compiling
 AC_CANONICAL_SYSTEM
-AC_CHECK_TOOL(RANLIB, ranlib)
+
+dnl This is wrong!!
 AC_CHECK_TOOL(CC, gcc)
 AC_CHECK_TOOL(CXX, g++)
-AC_CHECK_TOOL(AR, ar)
 
 AC_PROG_CC
 AC_PROG_CPP
 
-AC_PROG_RANLIB
+AC_PROG_CXX
+AC_PROG_CXXCPP
+
+AC_CHECK_TOOL(RANLIB, ranlib, :)
+AC_CHECK_TOOL(AR, ar)
+
 AC_PROG_INSTALL
 
 dnl check for install -C
@@ -33,18 +38,15 @@ fi
 AC_SUBST(INSTALL_IF_CHANGED)
 
 dnl
-dnl check for C++
+dnl check C++ suitability
 dnl
-
-AC_PROG_CXX
-AC_PROG_CXXCPP
 
 if test -z "$GXX"; then
   AC_MSG_WARN(Your C++ compiler ($CXX) is not a GNU C++ compiler!
 Either set the "'`'"CXX' environment variable to tell me where
 [a GNU C++ compiler is, or compile at your own risk.
 (This code uses a few GCC extensions and GCC-specific compiler options,
-and Linux header files are really GCC-specific.)])
+and Linux header files are GCC-specific.)])
 fi
 
 AC_LANG_CPLUSPLUS
@@ -153,13 +155,10 @@ fi
 AC_SUBST(linuxdir)
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
-  AC_TRY_RUN([int main(int c, char **v) {
-#ifdef __linux__
-  return 0;
-#else
-  return 1;
+  AC_TRY_COMPILE([], [#ifndef __linux__
+#error "fuckers! fuckers!"
 #endif
-}], ac_cv_under_linux=yes, ac_cv_under_linux=no, ac_cv_under_linux=no))
+return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
 
 dnl 
 dnl build with multithread support?
@@ -491,23 +490,22 @@ dnl check linuxmodule for Linux
 
 HAVE_LINUXMODULE_TARGET=
 if test $ac_have_linux_kernel = y; then
-  AC_CACHE_CHECK(for C++-includable system header files,
+
+  dnl include the correct version of Linux
+  SAVE_CXX="$CXX"
+  CXX="$KERNEL_CXX"
+  saveflags="$CPPFLAGS"
+  CPPFLAGS="$saveflags -I$linuxdir/include"
+
+  AC_CACHE_CHECK(for C++-includable kernel header files,
     ac_cv_cxx_aware_system,
     AC_LANG_CPLUSPLUS
-    AC_TRY_RUN([#include <signal.h>
-int main(int c, char **v) {
-  return 0;
-}], ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no, 
-    ac_cv_cxx_aware_system=no))
+    AC_TRY_COMPILE([#define __KERNEL__
+#include <linux/signal.h>], [return 0],
+	ac_cv_cxx_aware_system=yes, ac_cv_cxx_aware_system=no))
 
   dnl check whether -fpermissive is required
   if test $ac_cv_cxx_aware_system = yes; then
-    SAVE_CXX="$CXX"
-    CXX="$KERNEL_CXX"
-
-    dnl include the correct version of Linux
-    saveflags="$CPPFLAGS"
-    CPPFLAGS="$saveflags -I$linuxdir/include"
 
     AC_CACHE_CHECK(whether -fpermissive is required, ac_cv_f_permissive,
       AC_LANG_CPLUSPLUS
@@ -541,10 +539,10 @@ int main(int c, char **v) {
 	KERNEL_CXX="$KERNEL_CXX -fpermissive"
       fi
     fi
-
-    CXX="$SAVE_CXX"
-    CPPFLAGS="$saveflags"
   fi
+
+  CXX="$SAVE_CXX"
+  CPPFLAGS="$saveflags"
 
   if test $ac_cv_cxx_aware_system = yes; then
     TARGETS="$TARGETS linuxmodule"
