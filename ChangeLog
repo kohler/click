@@ -1,3 +1,28 @@
+2004-07-31 Saturday 22:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/IPRewriter/: IPAddrPairRewriter-01.testie (1.1),
+	IPAddrRewriter-02.testie (1.1), IPRewriter-03.testie (1.1): add
+	tests
+
+2004-07-31 Saturday 22:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipaddrpairrewriter.cc (1.1), ipaddrpairrewriter.hh
+	(1.1): add IPAddrPairRewriter for Erik VandeKieft
+
+2004-07-31 Saturday 22:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/: randomseed.cc (1.1), randomseed.hh (1.1): add
+	RandomSeed element for testing purposes
+
+2004-07-31 Saturday 22:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/glue.hh (1.42): nit
+
+2004-07-31 Saturday 22:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/iprwpatterns.hh (1.14), tcpudp/iprewriter.hh
+	(1.26), ip/ipaddrrewriter.hh (1.14): update documentation
+
 2004-07-31 Saturday 14:58  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipaddrrewriter.cc (1.22),
