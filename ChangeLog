@@ -1,3 +1,9 @@
+2005-01-06 Thursday 18:04  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: rc4.cc (1.2), rc4.hh (1.2), wepdecap.cc (1.2),
+	wepdecap.hh (1.2), wepencap.cc (1.2), wepencap.hh (1.2): make wep
+	elements work.
+
 2005-01-06 Thursday 13:07  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/printwifi.cc (1.10), include/clicknet/wifi.h
