@@ -1,3 +1,140 @@
+2001-02-10 Saturday 21:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* conf/make-ip-conf.pl: buglet caught by the ever-enterprising
+	Brecht Vermeulen!
+
+2001-02-10 Saturday 21:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/lexer.cc, lib/router.cc, linuxmodule/Makefile.in,
+	userlevel/Makefile.in: nitlets: missing dependency, generate error
+	messages differently, whitespace (Mazu)
+
+2001-02-10 Saturday 21:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: frontdropqueue.hh, queue.cc, queue.hh: add
+	next_i() and prev_i() functions to Storage (Mazu)
+
+2001-02-10 Saturday 21:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* userlevel/click.cc: ignore SIGPIPE (Mazu)
+
+2001-02-10 Saturday 21:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/kernelerror.cc, linuxmodule/kernelversion.c,
+	linuxmodule/module.cc, linuxmodule/modulepriv.hh,
+	linuxmodule/proc_config.cc, linuxmodule/proc_element.cc,
+	tools/click-install/click-install.cc: added "accessible" module
+	parameter, and --private option to click-install that uses that
+	parameter; also set ErrorHandler::default_handler() correctly; and
+	nitlets (Mazu)
+
+2001-02-10 Saturday 21:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/elemlink.hh: initialize the _list member to a null
+	pointer (Mazu)
+
+2001-02-10 Saturday 21:06  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh: the parts of an Element::Connection
+	should not be public
+
+2001-02-10 Saturday 21:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: controlsocket.cc, controlsocket.hh: use new
+	cpUnsignedShort argument (Mazu)
+
+2001-02-10 Saturday 21:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/arpquerier.cc, ethernet/arpquerier.hh,
+	ethernet/arpresponder.cc, ethernet/arpresponder.hh,
+	standard/paint.cc, standard/paint.hh: Dimitri Vlachos
+	<d@mazunetworks.com> added live_reconfigure support (Mazu)
+
+2001-02-10 Saturday 21:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc: added bootps and
+	bootpc (Max did it, Mazu)
+
+2001-02-10 Saturday 21:03  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/etherencap.cc, ip/ipencap.cc,
+	standard/tee.cc: be careful: Packet::push(), for example, can
+	return null (Mazu)
+
+2001-02-10 Saturday 21:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: nitlets, and support for SNMP directory (no
+	elements yet) (Mazu)
+
+2001-02-10 Saturday 21:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool: avoid error messages on nonexistent files
+
+2001-02-10 Saturday 21:01  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ipaddress.hh, lib/ipaddress.cc: added unparse(),
+	unparse_mask(), and unparse_with_mask() functions (Mazu)
+
+2001-02-10 Saturday 21:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/glue.hh, lib/glue.cc: click_chatter() now always
+	uses an ErrorHandler, the default_handler(). Also, be more careful
+	about placement new. (Mazu)
+
+2001-02-10 Saturday 21:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, lib/error.cc: add LandmarkErrorHandler:
+	apply landmark if no other landmark is supplied
+
+2001-02-10 Saturday 20:59  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/element.cc: nitlet
+
+2001-02-10 Saturday 20:59  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/bighashmap.cc, lib/bighashmap_arena.cc, acconfig.h:
+	be more careful about placement new (Mazu)
+
+2001-02-10 Saturday 20:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/local/chuckcheck.cc: change argument type to
+	claim_string()
+
+2001-02-10 Saturday 20:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh, lib/string.cc: add
+	String::stable_string(const char *) creator function; bug fixes and
+	changes to make substring, mutable_data, and c_str functions work
+	on stable strings; changed claim_string() to take a non-const char
+	*; added c_str method (Mazu)
+
+2001-02-10 Saturday 20:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/packet.hh, lib/packet.cc: Be more careful with
+	respect to out-of-memory conditions: for example, if Packet::push()
+	fails and returns null, then it will delete the old packet too.
+	Also, added USER_ANNO{_U,_I,}_SIZE to Packet; suggested by Dimitri
+	Stratton Vlachos <d@mazunetworks.com>. Also, WritablePacket
+	{con,de}structors private. Added change_headroom_and_length() and
+	nonunique_put(). Moved put() to header file. User-level packet
+	memory destructors take poitner and length, not just pointer. All
+	(Mazu)
+
+2001-02-10 Saturday 20:48  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/subvector.hh: changed Subvector<T *> inheritance to
+	"public"; avoids instantiation errors found by Anne
+	<anne@dumbfuck.dudfield.mazunetworks.com> (Mazu)
+
+2001-02-10 Saturday 20:48  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc, include/click/confparse.hh: CpVaParseCmd is now
+	a C string type: const char *. Constants such as cpInteger are now
+	"const char *" constants. The "cp_argtype" structure is exported.
+	Changed the definition of cp_add_argtype; new function is
+	cp_register_argtype. All should make it much easier to add and
+	remove argtypes dynamically.
+
 2001-02-02 Friday 10:56  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/: ip6/ip6mirror.cc, ip6/ip6mirror.hh,
