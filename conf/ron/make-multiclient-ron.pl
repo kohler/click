@@ -14,7 +14,7 @@ sub TOHEX {
 # --------- MAIN ----------
 if (scalar(@ARGV) < 5){
     print("Not enough arguments\n");
-    print("usage: make-client-ron.pl device meIP meHW gwIP serverIP0 [serverIP1 ...]\n\n");
+    print("usage: make-multiclient-ron.pl device meIP meHW gwIP serverIP0 [serverIP1 ...]\n\n");
     exit(-1);
 }
 
@@ -66,7 +66,9 @@ print "\t\tTCP_TIMEOUT 1200,\n";
 print "\t\tREAP_TCP 300);\n";
 print "\n";
 
-print "rt :: LookupIPRouteRON(", $n + 1, ");\n";
+#print "rt :: LookupIPRouteRON(", $n + 1, ");\n";
+print "bigswitch :: Switch(0) [0] -> Discard;\n";
+
 
 print "neighborclass :: IPClassifier(\n";
 for($i=0; $i<$n; $i++) {
@@ -77,6 +79,10 @@ print "-);\n";
 print "toktap :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)\n";
 print "\t-> KernelTap(1.0.0.1/255.255.255.0)\n";
 print "\t-> Discard;\n";
+print "synacks :: SYNACKPrinter[0]\n";
+print "\t-> toktap;\n";
+print "\n";
+
 print "setgw :: SetIPAddress(", $gwIP, ");\n";
 print "arpq :: ARPQuerier(", $meIP, ", ", $meHW, ")\n";
 print "from0 :: FromDevice(", $device, ");\n";
@@ -135,7 +141,7 @@ for($i=0; $i<$n; $i++) {
     print "\t-> IPReassembler\n";
     print "\t-> CheckIPHeader\n";
     print "\t-> GetIPAddress(16)\n";
-    print "\t-> [", $i+2, "]rt;\n";
+    print "\t-> synacks;\n";
     print "\n";
 }
 
@@ -143,22 +149,22 @@ print "neighborclass[", $n, "]\n";
 print "\t-> toktap;\n";
 print "\n";
 
-print "iprw[0] -> [0]rt;\n";
-print "iprw[1] -> [1]rt;\n";
+print "iprw[0] -> [0]bigswitch;\n";
+print "iprw[1] -> synacks;\n";
 print "iprw[2] //-> Print(OUTSIDE-IN,40)\n";
 print "\t-> toktap;\n";
 print "iprw[3] //-> Print(OUTSIDE-OUT,40)\n";
 print "\t-> setgw;\n";
 print "\n";
 
-print "rt[0]\t-> toktap;\n";
-print "rt[1]\t//-> IPPrint(OUT_RT_PORT1)\n";
+print "bigswitch[1]\n";
+print "\t//-> IPPrint(OUT_RT_PORT1)\n";
 print "\t-> setgw;\n";
 print "//\t-> Discard;\n";
 print "\n";
 
 for($i=0; $i<$n; $i++) {
-    print "rt[", $i+2, "]\t-> IPFragmenter(1400, false)\n";
+    print "bigswitch[", $i+2, "]\t-> IPFragmenter(1400, false)\n";
     print "\t-> UDPIPEncap($meIP, 4000, $servers[$i], 4000)\n";
     print "//\t-> IPPrint(OUT_RT_PORT", $i+2, ")\n";
     print "\t-> setgw;\n";

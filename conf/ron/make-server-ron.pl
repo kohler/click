@@ -65,7 +65,7 @@ print "\n";
 print "iprw :: IPRewriter(\n";
 for($i=0; $i<$n; $i++) {
     print "\tpattern ", $meIP, " ";
-    print 50000 + $i * 100, "-", 50099 + $i * 100, " - - ";
+    print 50000 + $i * 50, "-", 50049 + $i * 50, " - - ";
     print 2*$i, " ", 2*$i + 1, ",\n";
 }
 print "\tdrop,\n";

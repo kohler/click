@@ -1,7 +1,7 @@
 
 Server:
 divert 3000 udp from any 4000 to me 4000 in recv fxp0
-divert 3001 tcp from any to me 50000-50299 in recv fxp
+divert 3001 tcp from any to me 50000-50999 in recv fxp
 
 Client:
 divert 4000 tcp from 18.26.4.106 49990-49999 to any out xmit vr0
