@@ -28,14 +28,12 @@ CLICK_DECLS
 
 DirectIPLookup::DirectIPLookup()
 {
-    MOD_INC_USE_COUNT;
     add_input();
     flush_table();
 }
 
 DirectIPLookup::~DirectIPLookup()
 {
-    MOD_DEC_USE_COUNT;
 }
 
 int
@@ -400,12 +398,12 @@ DirectIPLookup::flush_table()
     _rt_empty_head = -1;
 
     // Bzeroed lookup tables resolve 0.0.0.0/0 to _vport[0]
-    bzero(&_tbl_0_23, sizeof(_tbl_0_23));
-    bzero(&_tbl_24_31, sizeof(_tbl_24_31));
+    memset(&_tbl_0_23, 0, sizeof(_tbl_0_23));
+    memset(&_tbl_24_31, 0, sizeof(_tbl_24_31));
 
     // Prefix len helper tables also have to be cleared
-    bzero(&_tbl_0_23_plen, sizeof(_tbl_0_23_plen));
-    bzero(&_tbl_24_31_plen, sizeof(_tbl_24_31_plen));
+    memset(&_tbl_0_23_plen, 0, sizeof(_tbl_0_23_plen));
+    memset(&_tbl_24_31_plen, 0, sizeof(_tbl_24_31_plen));
 
     _sec_t_size = 0;
     _sec_t_empty_head = 0x8000;
