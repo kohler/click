@@ -206,6 +206,15 @@ progress, even under high network load.
 Read-only. The fraction of CPU time Click is currently using, expressed as
 a real number between 0 and 1.
 '
+.PP
+When compiled with --enable-kassert, Click provides one additional
+handler:
+'
+.TP
+.B /click/assert_stop
+Read/write. A Boolean value. If true, then Click will attempt to stop the
+running router, if any, if an assertion fails. Default is false.
+'
 .SS "Element directories"
 '
 Every element in the current router configuration has a directory under
@@ -259,9 +268,9 @@ Read-only. A Boolean value: "true" if the element is currently on the task
 list, "false" if it is not.
 .TP
 .BI /click/xxx/tickets
-Read-only. Returns the element's tickets, an integer that influences task
-scheduling priority. The more tickets a task has, the more often it will be
-scheduled relative to other tasks.
+Read/write. Returns or sets the element's tickets, an integer that
+influences task scheduling priority. The more tickets a task has, the more
+often it will be scheduled relative to other tasks.
 '
 .PP
 Particular elements may add additional handlers to their directories. For

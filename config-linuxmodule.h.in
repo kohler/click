@@ -35,13 +35,9 @@
    fairly with the kernel. */
 #undef HAVE_ADAPTIVE_SCHEDULER
 
-/* Include integer type definitions. */
-#include <linux/types.h>
-typedef ptrdiff_t intptr_t;
-typedef unsigned long uintptr_t; /* XXX? */
-
-/* Define assert macro. */
-#define assert(x) /* nada */
+/* Define to enable assertion checking. Failed assertions will print a message
+   and optionally stop the router. */
+#undef HAVE_KERNEL_ASSERT
 
 /* Define if fast checksum functions available. */
 #define HAVE_FAST_CHECKSUM 1
@@ -50,6 +46,11 @@ typedef unsigned long uintptr_t; /* XXX? */
 #ifndef __i386__
 # define FAST_CHECKSUM_ALIGNED 1
 #endif
+
+/* Include integer type definitions. */
+#include <linux/types.h>
+typedef ptrdiff_t intptr_t;
+typedef unsigned long uintptr_t; /* XXX? */
 
 #ifdef __cplusplus
 
@@ -68,5 +69,19 @@ inline void *operator new(size_t, void *v) { return v; }
 #define CLICK_NAME(name)	name
 
 #endif /* __cplusplus */
+
+/* Define assert macro. */
+#ifdef HAVE_KERNEL_ASSERT
+# ifdef __cplusplus
+extern "C" {
+# endif
+void click_assert_failed(const char *file, int line, const char *problem_text);
+# ifdef __cplusplus
+}
+# endif
+# define assert(x)	((x) ? (void)0 : click_assert_failed(__FILE__, __LINE__, #x))
+#else
+# define assert(x)	/* nada */
+#endif
 
 #endif /* CLICK_CONFIG_LINUXMODULE_H */

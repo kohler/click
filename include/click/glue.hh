@@ -61,7 +61,7 @@ CLICK_CXX_UNPROTECT
 # include <netinet/in.h>
 # include <sys/time.h>
 # ifdef CLICK_NS
-# include "simclick.h"
+#  include "simclick.h"
 # endif
 
 #endif

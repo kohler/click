@@ -479,6 +479,16 @@ fi
 
 
 dnl
+dnl kernel assert
+dnl
+
+AC_ARG_ENABLE(kassert, [  --enable-kassert        enable kernel assertions], :, enable_kassert=no)
+if test $enable_kassert = yes; then
+    AC_DEFINE(HAVE_KERNEL_ASSERT)
+fi
+
+
+dnl
 dnl kernel interfaces
 dnl
 

@@ -76,6 +76,48 @@ read_packages(Element *, void *)
 }
 
 
+/******************************* Assertions **********************************/
+
+#if HAVE_KERNEL_ASSERT
+static bool assert_stops_router = false;
+#endif
+
+extern "C" void
+click_assert_failed(const char *file, int line, const char *problem_text)
+{
+  click_chatter("%s:%d: assertion failed: %s", file, line, problem_text);
+#if HAVE_KERNEL_ASSERT
+  if (assert_stops_router) {
+    if (click_router) {
+      click_chatter("%s:%d: assertion failed: Asking router to stop", file, line);
+      click_router->set_driver_reservations(-10000);
+    } else
+      click_chatter("%s:%d: assertion failed: No router to stop", file, line);
+  }
+#endif
+}
+
+#if HAVE_KERNEL_ASSERT
+static String
+read_assert_stop(Element *, void *)
+{
+  return (assert_stops_router ? "true\n" : "false\n");
+}
+
+static int
+write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
+{
+  bool stop;
+  if (!cp_bool(cp_uncomment(s), &stop))
+    return errh->error("assert_stop must be a boolean");
+  else {
+    assert_stops_router = stop;
+    return 0;
+  }
+}
+#endif
+
+
 /****************************** Error handlers *******************************/
 
 class KernelErrorHandler : public BaseErrorHandler { public:
@@ -172,6 +214,10 @@ init_module()
   Router::add_read_handler(0, "cycles", read_cycles, 0);
   Router::add_read_handler(0, "errors", read_errors, 0);
   Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
+#if HAVE_KERNEL_ASSERT
+  Router::add_read_handler(0, "assert_stop", read_assert_stop, 0);
+  Router::add_write_handler(0, "assert_stop", write_assert_stop, 0);
+#endif
 
   // filesystem interface
   // set modes based on 'accessible'
