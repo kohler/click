@@ -1,3 +1,17 @@
+2003-05-26 Monday 21:04  jbicket
+
+	* elements/: grid/gridgatewayinfo.cc (1.6), grid/gridproxy.cc
+	(1.1), grid/gridproxy.hh (1.1), grid/linktable.cc (1.1),
+	grid/linktable.hh (1.1), grid/printsrcr.cc (1.1), grid/printsrcr.hh
+	(1.1), grid/srcr.cc (1.1), grid/srcr.hh (1.1), local/gridproxy.cc
+	(1.2), local/gridproxy.hh (1.2), local/printdsr.cc (1.2),
+	local/printdsr.hh (1.2), local/rtmdsr.cc (1.19), local/rtmdsr.hh
+	(1.22): Moved all of the dsr-elements into the grid directory. 
+	Also added linktable element, which is a linkstate-type database
+	for ad-hoc protocols. It implements dijstra's algorithm.
+	
+	--john
+
 2003-05-25 Sunday 18:32  Eddie Kohler <kohler@icir.org>
 
 	* etc/samplepackage/.cvsignore (1.6): nit
