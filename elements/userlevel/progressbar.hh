@@ -27,7 +27,9 @@ POSHANDLER and SIZEHANDLER are read handlers. Each of them should return an
 unsigned number. POSHANDLER is checked each time the progress bar displays;
 SIZEHANDLER is checked just once, the first time the progress bar comes up.
 Intuitively, POSHANDLER represents the "position"; the process is complete
-when its value equals the "size" returned by SIZEHANDLER.
+when its value equals the "size" returned by SIZEHANDLER. You may give
+multiple position and/or size handlers, as a space-separated list; their
+values are added together.
 
 Keyword arguments are:
 
@@ -90,6 +92,21 @@ will not redraw itself.
 =h banner read/write
 
 Returns or sets the BANNER string.
+
+=h poshandler read/write
+
+Returns or sets the read handlers used to read the position, as a
+space-separated list.
+
+=h sizehandler read/write
+
+Returns or sets the read handlers used to read the size, as a space-separated
+list.
+
+=h reset write-only
+
+When written, resets the progress bar to its initial state: the size is read
+again, for example. Also sets ACTIVE to true.
 
 =a
 

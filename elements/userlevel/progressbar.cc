@@ -51,13 +51,12 @@ ProgressBar::initialize(ErrorHandler *errh)
     configuration(conf);
     _interval = 1000;
     _active = true;
-    Element *pos_element = 0, *size_element = 0;
-    int pos_hi = -1, size_hi = -1;
+    String position_str, size_str;
 
     if (cp_va_parse(conf, this, errh,
-		    cpReadHandler, "position handler", &pos_element, &pos_hi,
+		    cpArgument, "position handler", &position_str,
 		    cpOptional,
-		    cpReadHandler, "size handler", &size_element, &size_hi,
+		    cpArgument, "size handler", &size_str,
 		    cpKeywords,
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
 		    "BANNER", cpString, "banner string", &_banner,
@@ -65,14 +64,17 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    0) < 0)
 	return -1;
 
-    if (size_hi >= 0) {
-	_es.push_back(size_element);
-	_his.push_back(size_hi);
-    }
-    _first_pos = _es.size();
-    _es.push_back(pos_element);
-    _his.push_back(pos_hi);
-    
+    Vector<String> words;
+    cp_spacevec(size_str, words);
+    _first_pos = words.size();
+    cp_spacevec(position_str, words);
+    _es.assign(words.size(), 0);
+    _his.assign(words.size(), -1);
+
+    for (int i = 0; i < words.size(); i++)
+	if (!cp_handler(words[i], this, true, false, &_es[i], &_his[i], errh))
+	    return -1;
+
     _have_size = false;
     _status = ST_FIRST;
     _timer.initialize(this);
@@ -365,7 +367,8 @@ ProgressBar::complete(bool is_full)
 }
 
 
-enum { H_MARK_STOPPED, H_MARK_DONE, H_BANNER, H_ACTIVE };
+enum { H_MARK_STOPPED, H_MARK_DONE, H_BANNER, H_ACTIVE,
+       H_POSHANDLER, H_SIZEHANDLER, H_RESET };
 
 String
 ProgressBar::read_handler(Element *e, void *thunk)
@@ -376,6 +379,17 @@ ProgressBar::read_handler(Element *e, void *thunk)
 	return pb->_banner + "\n";
       case H_ACTIVE:
 	return cp_unparse_bool(pb->_active) + "\n";
+      case H_POSHANDLER:
+      case H_SIZEHANDLER: {
+	  bool is_pos = ((int)thunk == H_POSHANDLER);
+	  StringAccum sa;
+	  for (int i = (is_pos ? pb->_first_pos : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos); i++) {
+	      if (sa.length()) sa << ' ';
+	      sa << pb->router()->handler(pb->_his[i]).unparse_name(pb->_es[i]);
+	  }
+	  sa << '\n';
+	  return sa.take_string();
+      }
       default:
 	return "<error>";
     }
@@ -394,6 +408,35 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
       case H_BANNER:
 	pb->_banner = str;
 	return 0;
+      case H_POSHANDLER:
+      case H_SIZEHANDLER: {
+	  Vector<String> words;
+	  cp_spacevec(str, words);
+	  bool is_pos = ((int)thunk == H_POSHANDLER);
+	  int total = (is_pos ? pb->_first_pos + words.size() : pb->_es.size() - pb->_first_pos + words.size());
+	  int offset = (is_pos ? pb->_first_pos : 0);
+	  
+	  Vector<Element *> es;
+	  Vector<int> his;
+	  es.assign(total, 0);
+	  his.assign(total, -1);
+
+	  for (int i = 0; i < words.size(); i++)
+	      if (!cp_handler(words[i], pb, true, false, &es[i + offset], &his[i + offset], errh))
+		  return -1;
+
+	  offset = (is_pos ? 0 : words.size() - pb->_first_pos);
+	  for (int i = (is_pos ? 0 : pb->_first_pos); i < (is_pos ? pb->_first_pos : pb->_es.size()); i++)
+	      es[i + offset] = pb->_es[i], his[i + offset] = pb->_his[i];
+	  
+	  es.swap(pb->_es);
+	  his.swap(pb->_his);
+	  if (!is_pos) {
+	      pb->_have_size = false;
+	      pb->_first_pos = words.size();
+	  }
+	  return 0;
+      }
       case H_ACTIVE:
 	if (cp_bool(str, &pb->_active)) {
 	    if (pb->_active && !pb->_timer.scheduled())
@@ -401,6 +444,12 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	    return 0;
 	} else
 	    return errh->error("`active' should be bool (active setting)");
+      case H_RESET:
+	pb->_have_size = false;
+	pb->_status = ST_FIRST;
+	pb->_active = true;
+	pb->_timer.schedule_now();
+	return 0;
       default:
 	return errh->error("internal");
     }
@@ -415,6 +464,11 @@ ProgressBar::add_handlers()
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("banner", read_handler, (void *)H_BANNER);
     add_write_handler("banner", write_handler, (void *)H_BANNER);
+    add_read_handler("poshandler", read_handler, (void *)H_POSHANDLER);
+    add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
+    add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);
+    add_write_handler("sizehandler", write_handler, (void *)H_SIZEHANDLER);
+    add_write_handler("reset", write_handler, (void *)H_RESET);
 }
 
 ELEMENT_REQUIRES(userlevel)
