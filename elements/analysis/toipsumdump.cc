@@ -119,6 +119,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
     }
     _active = true;
+    _output_count = 0;
 
     // magic number
     StringAccum sa;
@@ -157,7 +158,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 
     // print output
     fwrite(sa.data(), 1, sa.length(), _f);
-    _output_count = 0;
+
     return 0;
 }
 
