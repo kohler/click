@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
 
 # make-ip-conf.pl -- make a Click IP router configuration
 # Robert Morris, Eddie Kohler, David Scott Page
