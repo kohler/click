@@ -1,3 +1,8 @@
+2003-01-17 Friday 18:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/iprw.cc (1.48): fix "keep" rule parse error reported
+	by Jose Vasconcellos
+
 2003-01-17 Friday 17:35  Eddie Kohler <kohler@icir.org>
 
 	* tools/click-viz (1.2): new version of click-viz from Jose
