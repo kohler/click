@@ -18,6 +18,7 @@
  */
 
 #include <click/config.h>
+#include <click/pathvars.h>
 
 #include <click/straccum.hh>
 #include <click/confparse.hh>
@@ -33,6 +34,11 @@
 #include <signal.h>
 #include <dirent.h>
 #include <stdarg.h>
+
+#if HAVE_DYNAMIC_LINKING && defined(HAVE_DLFCN_H)
+# include <dlfcn.h>
+#endif
+
 
 bool
 glob_match(const String &str, const String &pattern)
@@ -390,7 +396,7 @@ click_mktmpdir(ErrorHandler *errh = 0)
     int result = mkdir(tmpsubdir.cc(), 0700);
     if (result >= 0) {
       remove_file_on_exit(tmpsubdir);
-      return tmpsubdir;
+      return tmpsubdir + "/";
     }
     if (result < 0 && errno != EEXIST) {
       if (errh)
@@ -454,3 +460,31 @@ init_archive_element(const String &name, int mode)
   ae.data = String();
   return ae;
 }
+
+
+#if HAVE_DYNAMIC_LINKING
+
+extern "C" {
+typedef int (*init_module_func)(void);
+}
+
+int
+clickdl_load_package(String package, ErrorHandler *errh)
+{
+#ifndef RTLD_NOW
+  void *handle = dlopen((char *)package.cc(), RTLD_LAZY);
+#else
+  void *handle = dlopen((char *)package.cc(), RTLD_NOW);
+#endif
+  if (!handle)
+    return errh->error("package %s", dlerror());
+  void *init_sym = dlsym(handle, "init_module");
+  if (!init_sym)
+    return errh->error("package `%s' has no `init_module'", package.cc());
+  init_module_func init_func = (init_module_func)init_sym;
+  if ((*init_func)() != 0)
+    return errh->error("error initializing package `%s'", package.cc());
+  return 0;
+}
+
+#endif
