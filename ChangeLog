@@ -1,3 +1,8 @@
+2001-05-30 Wednesday 01:29  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.122), missing (1.5): search for install-info, as
+	it isn't always in a predictable place
+
 2001-05-29 Tuesday 21:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/lexer.cc (1.52), doc/click.5 (1.24), tools/lib/lexert.cc
