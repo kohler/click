@@ -182,7 +182,7 @@ Aligner *
 StripAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int m;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
   if (cp_va_parse(e->configuration(), &cerrh,
 		  cpInteger, "amount to strip", &m,
 		  cpEnd) < 0)
@@ -204,7 +204,7 @@ CheckIPHeaderAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *er
   cp_argvec(e->configuration(), args);
   if (args.size() > _argno) {
     if (!cp_unsigned(args[_argno], &offset)) {
-      ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
+      ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
       cerrh.error("argument %d should be IP header offset (unsigned)", _argno + 1);
       return default_aligner();
     }
@@ -222,7 +222,7 @@ Aligner *
 AlignAlignClass::create_aligner(ElementT *e, RouterT *, ErrorHandler *errh)
 {
   int offset, chunk;
-  ContextErrorHandler cerrh(errh, "While analyzing alignment for `" + e->declaration() + "':");
+  ContextErrorHandler cerrh(errh, "While analyzing alignment for '" + e->declaration() + "':");
   if (cp_va_parse(e->configuration(), &cerrh,
 		  cpUnsigned, "alignment modulus", &chunk,
 		  cpUnsigned, "alignment offset", &offset,

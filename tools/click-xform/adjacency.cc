@@ -221,7 +221,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
     } else if (output_0_of[match_eindex] >= 0) {
       // Speed hack: often we have E1[0] -> [p]E2, the only connection from
       // E1[0], where E1 and E2 are both real elements in the pattern (not
-      // `input' or `output'). In this case, the match to E2 will be the
+      // 'input' or 'output'). In this case, the match to E2 will be the
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
       PortT output(input_r->element(match[output_0_of[match_eindex]]), 0), result;

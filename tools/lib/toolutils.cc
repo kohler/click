@@ -51,7 +51,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
   String new_cmdline = cmdline + " 0<&" + String(fileno(f));
   FILE *p = popen(new_cmdline.cc(), "r");
   if (!p)
-    errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
+    errh->fatal("'%s': %s", cmdline.cc(), strerror(errno));
 
   StringAccum sa;
   while (!feof(p)) {
@@ -63,7 +63,7 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
       break;
   }
   if (!feof(p))
-    errh->warning("`%s' output too long, truncated", cmdline.cc());
+    errh->warning("'%s' output too long, truncated", cmdline.cc());
 
   fclose(f);
   pclose(p);
@@ -86,7 +86,7 @@ read_router_string(String text, const String &landmark, bool empty_ok,
     if (found >= 0)
       text = archive[found].data;
     else {
-      errh->lerror(landmark, "archive has no `config' section");
+      errh->lerror(landmark, "archive has no 'config' section");
       text = String();
     }
   }

@@ -89,7 +89,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -97,7 +97,7 @@ void
 usage()
 {
   printf("\
-`Click-install' installs a kernel Click configuration. It loads the Click\n\
+'Click-install' installs a kernel Click configuration. It loads the Click\n\
 kernel module, and any other necessary modules, as required.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
@@ -182,7 +182,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     ArchiveElement ae = r->archive(source_ae);
     errh->message("Compiling package %s from config archive", ae.name.cc());
     ContextErrorHandler cerrh
-      (errh, "While compiling package `" + req + OBJSUFFIX "':");
+      (errh, "While compiling package '" + req + OBJSUFFIX "':");
 
     // write .cc file
     String filename = req + ".cc";
@@ -197,11 +197,11 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     String compile_command = click_compile_prog + " --target=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
-      cerrh.fatal("could not run `%s'", compile_command.cc());
+      cerrh.fatal("could not run '%s'", compile_command.cc());
     else if (compile_retval < 0)
-      cerrh.fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      cerrh.fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
     else if (compile_retval != 0)
-      cerrh.fatal("`%s' failed", compile_command.cc());
+      cerrh.fatal("'%s' failed", compile_command.cc());
     
     // grab object file and add to archive
     ArchiveElement obj_ae = init_archive_element(req + OBJSUFFIX, 0600);
@@ -223,13 +223,13 @@ install_module(const String &filename, const String &options,
     cmdline += " " + options;
   int retval = system(cmdline.cc());
   if (retval != 0)
-    errh->fatal("`%s' failed", cmdline.cc());
+    errh->fatal("'%s' failed", cmdline.cc());
 #else
   String cmdline = "/sbin/kldload " + filename;
   assert(!options);
   int retval = system(cmdline.cc());
   if (retval != 0)
-    errh->fatal("`%s' failed", cmdline.cc());
+    errh->fatal("'%s' failed", cmdline.cc());
 #endif
 }
 
@@ -251,7 +251,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
     int obj_aei = r->archive_index(req + OBJSUFFIX);
     if (obj_aei >= 0) {
       // install archived objects. mark them with leading underscores.
-      // may require renaming to avoid clashes in `insmod'
+      // may require renaming to avoid clashes in 'insmod'
       
       // choose module name
       String insmod_name = "_" + req + OBJSUFFIX;
@@ -286,7 +286,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 	filename = req + ".o";
 	pathname = clickpath_find_file(filename, "lib", CLICK_LIBDIR);
 	if (!pathname)
-	  errh->fatal("cannot find required package `%s" OBJSUFFIX "'\nin CLICKPATH or `%s'", req.cc(), CLICK_LIBDIR);
+	  errh->fatal("cannot find required package '%s" OBJSUFFIX "'\nin CLICKPATH or '%s'", req.cc(), CLICK_LIBDIR);
       }
 
       // install module
@@ -420,7 +420,7 @@ particular purpose.\n");
  done:
   // check options
   if (hotswap && uninstall)
-    errh->warning("`--hotswap' and `--uninstall' are mutually exclusive");
+    errh->warning("'--hotswap' and '--uninstall' are mutually exclusive");
   
   RouterT *r = read_router(router_file, file_is_expr, nop_errh);
   if (r)
@@ -501,7 +501,7 @@ particular purpose.\n");
   } else {
 #if FOR_LINUXMODULE
     if (threads > 1)
-      errh->warning("Click module already installed, `--threads' ignored");
+      errh->warning("Click module already installed, '--threads' ignored");
 #endif
   }
 

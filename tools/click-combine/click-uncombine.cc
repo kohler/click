@@ -59,7 +59,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -67,7 +67,7 @@ void
 usage()
 {
   printf("\
-`Click-uncombine' reads a combined Click configuration produced by\n\
+'Click-uncombine' reads a combined Click configuration produced by\n\
 click-combine and writes one of its components to the standard output.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE [COMPONENTNAME]]\n\
@@ -106,7 +106,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
     int ninputs = links[i]->ninputs();
     int noutputs = links[i]->noutputs();
     if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
-      errh->error("RouterLink `%s' has strange configuration", link_name.cc());
+      errh->error("RouterLink '%s' has strange configuration", link_name.cc());
       continue;
     }
     
@@ -116,7 +116,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       Vector<String> clauses;
       cp_spacevec(words[j], clauses);
       if (clauses.size() != 3) {
-	errh->error("RouterLink `%s' has strange configuration", link_name.cc());
+	errh->error("RouterLink '%s' has strange configuration", link_name.cc());
 	bad = true;
       } else if (clauses[0] == component)
 	interesting = true;
@@ -136,7 +136,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       cp_spacevec(words[j], clauses);
       String name = clauses[0] + "/" + clauses[1];
       if (ElementT *preexist = r->element(name)) {
-	errh->lerror(links[i]->landmark(), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
+	errh->lerror(links[i]->landmark(), "RouterLink '%s' element '%s' already exists", link_name.cc(), name.cc());
 	errh->lerror(preexist->landmark(), "(previous definition was here)");
       } else if (clauses[0] == component) {
 	ElementT *newe = r->get_element(clauses[1], ElementClassT::base_type(clauses[2]), words[j+1], "<click-uncombine>");
@@ -165,7 +165,7 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   for (int i = 0; i < component_endpoints.size(); i++)
     live[component_endpoints[i]->eindex()] = 1;
 
-  // mark everything named with a `compname' prefix
+  // mark everything named with a 'compname' prefix
   int compname_len = compname.length();
   for (RouterT::iterator e = r->begin_elements(); e; e++)
     if (e->name().substring(0, compname_len) == compname)
@@ -226,7 +226,7 @@ remove_toplevel_component(String component, RouterT *r, const char *filename,
   // check if component exists
   if (component_map[component] < 0) {
     String g = component_prefix + component;
-    errh->fatal("%s: no `%s' component", filename, g.cc());
+    errh->fatal("%s: no '%s' component", filename, g.cc());
   }
 
   // remove top-level links
@@ -370,7 +370,7 @@ particular purpose.\n");
 
   // find component names
   if (r->archive_index("componentmap") < 0)
-    errh->fatal("%s: not created by `click-combine' (no `componentmap')", router_file);
+    errh->fatal("%s: not created by 'click-combine' (no 'componentmap')", router_file);
   else if (!component)
     p_errh->fatal("no component specified");
   

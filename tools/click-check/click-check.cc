@@ -74,7 +74,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -82,7 +82,7 @@ void
 usage()
 {
   printf("\
-`Click-check' checks a Click router configuration for correctness and reports\n\
+'Click-check' checks a Click router configuration for correctness and reports\n\
 any error messages to standard error.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
@@ -253,7 +253,7 @@ particular purpose.\n");
       errh->fatal("%s: %s", output_file, strerror(errno));
   }
 
-  // parse `elementmap's
+  // parse 'elementmap's
   ElementMap elementmap;
   elementmap.parse_all_files(r, CLICK_SHAREDIR, p_errh);
 

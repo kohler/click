@@ -532,7 +532,7 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 	    if (t > 0)
 		indexes.push_back(t);
 	    else if (errh)
-		errh->error("unknown element class `%s'", i.key()->printable_name_c_str());
+		errh->error("unknown element class '%s'", i.key()->printable_name_c_str());
 	}
 }
 
@@ -643,7 +643,7 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
 	} else {
 	    if (not_found)
 		not_found += ", ";
-	    not_found += "`" + req + "'";
+	    not_found += "'" + req + "'";
 	}
     }
 
@@ -675,18 +675,18 @@ ElementMap::report_file_not_found(String default_path, bool found_default,
 				  ErrorHandler *errh)
 {
     if (!found_default)
-	errh->message("(You may get unknown element class errors.\nTry `make install' or set the CLICKPATH evironment variable.");
+	errh->message("(You may get unknown element class errors.\nTry 'make install' or set the CLICKPATH evironment variable.");
     else
 	errh->message("(You may get unknown element class errors.");
 
     const char *path = clickpath();
     bool allows_default = path_allows_default_path(path);
     if (!allows_default)
-	errh->message("Searched in CLICKPATH `%s'.)", path);
+	errh->message("Searched in CLICKPATH '%s'.)", path);
     else if (!path)
-	errh->message("Searched in install directory `%s'.)", default_path.cc());
+	errh->message("Searched in install directory '%s'.)", default_path.cc());
     else
-	errh->message("Searched in CLICKPATH and `%s'.)", default_path.cc());
+	errh->message("Searched in CLICKPATH and '%s'.)", default_path.cc());
 }
 
 

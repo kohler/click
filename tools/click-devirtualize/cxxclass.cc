@@ -153,7 +153,7 @@ CxxFunction::find_expr(const String &pattern, int *pos1, int *pos2,
 
     if (ppos >= plen) {
       // check that this pattern match didn't occur after some evil qualifier,
-      // namely `.', `::', or `->'
+      // namely '.', '::', or '->'
       int p = tpos1 - 1;
       while (p >= 0 && isspace(ts[p]))
 	p--;
@@ -465,7 +465,7 @@ remove_crap(const String &original_text)
 	if (!backslash)
 	  break;
       }
-      // check for `#if 0 .. #endif'
+      // check for '#if 0 .. #endif'
       const char *ss = first_s + 1;
       while (ss < s && isspace(*ss))
 	ss++;
@@ -752,8 +752,8 @@ CxxInfo::parse_file(const String &original_text, bool header,
   parse_class(clean_text, 0, original_text, 0);
 
   // save initial comments and #defines and #includes for replication.
-  // Also skip over `CLICK_CXX_whatever', enum definitions, typedefs,
-  // and `extern "C" { }' blocks enclosing headers only.
+  // Also skip over 'CLICK_CXX_whatever', enum definitions, typedefs,
+  // and 'extern "C" { }' blocks enclosing headers only.
   // XXX Should save up to an arbitrary comment or something
   if (store_includes) {
     const char *s = clean_text.data();
@@ -769,7 +769,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	
       } else if (p + 7 < len && memcmp(s + p, "extern", 6) == 0
 		 && isspace(s[p+6])) {
-	// include `extern ["C"] { -HEADERS- }'
+	// include 'extern ["C"] { -HEADERS- }'
 	int p1 = p + 6;
 	while (p1 < len && (isspace(s[p1]) || s[p1] == '$'))
 	  p1++;
@@ -783,7 +783,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	
       } else if (p + 5 < len && memcmp(s + p, "enum", 4) == 0
 		 && isspace(s[p+4])) {
-	// include `enum [IDENTIFIER] { ... }'
+	// include 'enum [IDENTIFIER] { ... }'
 	int p1 = p + 5;
 	while (p1 < len && isspace(s[p1]))
 	  p1++;
@@ -808,7 +808,7 @@ CxxInfo::parse_file(const String &original_text, bool header,
 	  /* nada */;
 	
       } else if (p + 9 < len && memcmp(s + p, "CLICK_CXX", 9) == 0) {
-	// include `CLICK_CXX' (used in <click/cxxprotect.h>)
+	// include 'CLICK_CXX' (used in <click/cxxprotect.h>)
 	for (p += 9; p < len && (isalnum(s[p]) || s[p] == '_'); p++)
 	  /* nada */;
 	

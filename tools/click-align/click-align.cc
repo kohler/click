@@ -306,7 +306,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -314,7 +314,7 @@ void
 usage()
 {
   printf("\
-`Click-align' adds any required `Align' elements to a Click router\n\
+'Click-align' adds any required 'Align' elements to a Click router\n\
 configuration. The resulting router will work on machines that don't allow\n\
 unaligned accesses. Its configuration is written to the standard output.\n\
 \n\

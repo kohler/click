@@ -126,7 +126,7 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
     return;
   etinfo.read_source = true;
   if (!etinfo.header_file) {
-    errh->warning("element class `%s' has no source file", etinfo.click_name.cc());
+    errh->warning("element class '%s' has no source file", etinfo.click_name.cc());
     return;
   }
 
@@ -157,7 +157,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
   // get type info
   ElementTypeInfo &old_eti = etype_info(eindex);
   if (!old_eti.click_name) {
-    errh->warning("no information about element class `%s'",
+    errh->warning("no information about element class '%s'",
 		  _router->etype_name(eindex).cc());
     return;
   }
@@ -167,7 +167,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
     read_source(old_eti, errh);
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
   if (!old_cxxc) {
-    errh->warning("C++ class `%s' not found for element class `%s'",
+    errh->warning("C++ class '%s' not found for element class '%s'",
 		  old_eti.cxx_name.cc(), old_eti.click_name.cc());
     return;
   }
@@ -454,9 +454,9 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
     return;
   
   // must massage includes.
-  // we may have something like `#include "element.hh"', relying on the
-  // assumption that we are compiling `element.cc'. must transform this
-  // to `#include "path/to/element.hh"'.
+  // we may have something like '#include "element.hh"', relying on the
+  // assumption that we are compiling 'element.cc'. must transform this
+  // to '#include "path/to/element.hh"'.
   // XXX this is probably not the best way to do this
   const String &includes = eti.includes;
   const char *s = includes.data();

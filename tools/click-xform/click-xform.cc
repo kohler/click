@@ -87,7 +87,7 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
     else if (x->name() == "output" && !_pat_output)
       _pat_output = x;
     else
-      errh->lerror(x->landmark(), "connection tunnel with funny name `%s'", x->name_c_str());
+      errh->lerror(x->landmark(), "connection tunnel with funny name '%s'", x->name_c_str());
   }
 }
 
@@ -313,10 +313,10 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
       old_names.push_back(String());
   
   // add replacement
-  // collect new element indices in `changed_elements'
+  // collect new element indices in 'changed_elements'
   _body->set_new_eindex_collector(&changed_elements);
 
-  // make element named `prefix'
+  // make element named 'prefix'
   ElementT *new_e = _body->get_element(prefix, ElementClassT::tunnel_type(), String(), landmark);
 
   // expand 'replacement' into '_body'; need crap compound element
@@ -353,7 +353,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   
   // cleanup
   _body->remove_tunnels();
-  // remember to clear `new_eindex_collector'!
+  // remember to clear 'new_eindex_collector'!
   _body->set_new_eindex_collector(0);
   _match.clear();
 
@@ -431,7 +431,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE] [PATTERNFILE]...\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -439,7 +439,7 @@ void
 usage()
 {
   printf("\
-`Click-xform' replaces patterns of elements with other sets of elements inside\n\
+'Click-xform' replaces patterns of elements with other sets of elements inside\n\
 a Click router configuration. Both patterns and configuration are Click-\n\
 language files. The transformed router configuration is written to the\n\
 standard output.\n\

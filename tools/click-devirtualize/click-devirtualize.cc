@@ -107,14 +107,14 @@ parse_instruction(const String &text, Signatures &sigs,
     /* nada */;
   else if (words[0] == "like") {
     if (words.size() < 3)
-      errh->error("too few arguments to `like'");
+      errh->error("too few arguments to 'like'");
   } else if (words[0] == "noclass") {
     if (words.size() < 2)
-      errh->error("too few arguments to `noclass'");
+      errh->error("too few arguments to 'noclass'");
     for (int i = 1; i < words.size(); i++)
       sigs.specialize_class(words[i], 0);
   } else
-    errh->error("unknown command `%s'", words[0].cc());
+    errh->error("unknown command '%s'", words[0].cc());
 }
 
 static void
@@ -183,7 +183,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -191,7 +191,7 @@ void
 usage()
 {
   printf("\
-`Click-devirtualize' transforms a router configuration by removing virtual\n\
+'Click-devirtualize' transforms a router configuration by removing virtual\n\
 function calls from its elements' source code. The resulting configuration has\n\
 both Click-language files and object files.\n\
 \n\
@@ -388,7 +388,7 @@ particular purpose.\n");
       (router, Driver::USERLEVEL);
     if (linuxmodule_ok && userlevel_ok
 	&& (compile_kernel > 0) == (compile_user > 0))
-      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify either `-k' or `-u'");
+      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify either '-k' or '-u'");
     else if (!linuxmodule_ok && compile_kernel > 0)
       p_errh->fatal("configuration incompatible with kernel driver");
     else if (!userlevel_ok && compile_user > 0)
@@ -484,11 +484,11 @@ particular purpose.\n");
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.cc());
       else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.cc());
     }
     
     // compile userlevel
@@ -496,11 +496,11 @@ particular purpose.\n");
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.cc());
       else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.cc());
     }
   }
 

@@ -54,7 +54,7 @@ RouterT::RouterT(const String &name, const String &landmark, RouterT *declaratio
       _ninputs(0), _noutputs(0), _overload_type(0),
       _type_landmark(landmark), _circularity_flag(false)
 {
-    // borrow definitions from `declaration'
+    // borrow definitions from 'declaration'
     if (_declaration_scope) {
 	_declaration_scope_cookie = _declaration_scope->_scope_cookie;
 	_declaration_scope->_scope_cookie++;
@@ -948,7 +948,7 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
 	const ArchiveElement &ae = _archive[i];
 	if (ae.live() && ae.name != "config") {
 	    if (tor->archive_index(ae.name) >= 0)
-		errh->error("expansion confict: two archive elements named `%s'", ae.name.c_str());
+		errh->error("expansion confict: two archive elements named '%s'", ae.name.c_str());
 	    else
 		tor->add_archive(ae);
 	}
@@ -991,16 +991,16 @@ RouterT::expand_tunnel(Vector<PortT> *port_expansions,
 	String in_name = in_elt->name();
 	String out_name = out_elt->name();
 	if (in_name + "/input" == out_name) {
-	    const char *message = (is_output ? "`%s' input %d unused"
-				   : "`%s' has no input %d");
+	    const char *message = (is_output ? "'%s' input %d unused"
+				   : "'%s' has no input %d");
 	    errh->lerror(in_elt->landmark(), message, in_name.cc(), me.port);
 	} else if (in_name == out_name + "/output") {
-	    const char *message = (is_output ? "`%s' has no output %d"
-				   : "`%s' output %d unused");
+	    const char *message = (is_output ? "'%s' has no output %d"
+				   : "'%s' output %d unused");
 	    errh->lerror(out_elt->landmark(), message, out_name.cc(), me.port);
 	} else {
 	    errh->lerror(other_elt->landmark(),
-			 "tunnel `%s -> %s' %s %d unused",
+			 "tunnel '%s -> %s' %s %d unused",
 			 in_name.cc(), out_name.cc(),
 			 (is_output ? "input" : "output"), me.port);
 	}
@@ -1175,7 +1175,7 @@ RouterT::finish_type(ErrorHandler *errh)
     if (ElementT *einput = element("input")) {
 	_ninputs = einput->noutputs();
 	if (einput->ninputs())
-	    errh->lerror(_type_landmark, "`%s' pseudoelement `input' may only be used as output", printable_name_c_str());
+	    errh->lerror(_type_landmark, "'%s' pseudoelement 'input' may only be used as output", printable_name_c_str());
 
 	if (_ninputs) {
 	    Vector<int> used;
@@ -1183,7 +1183,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _ninputs);
 	    for (int i = 0; i < _ninputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_type_landmark, "compound element `%s' input %d unused", printable_name_c_str(), i);
+		    errh->lerror(_type_landmark, "compound element '%s' input %d unused", printable_name_c_str(), i);
 	}
     } else
 	_ninputs = 0;
@@ -1191,7 +1191,7 @@ RouterT::finish_type(ErrorHandler *errh)
     if (ElementT *eoutput = element("output")) {
 	_noutputs = eoutput->ninputs();
 	if (eoutput->noutputs())
-	    errh->lerror(_type_landmark, "`%s' pseudoelement `output' may only be used as input", printable_name_c_str());
+	    errh->lerror(_type_landmark, "'%s' pseudoelement 'output' may only be used as input", printable_name_c_str());
 
 	if (_noutputs) {
 	    Vector<int> used;
@@ -1199,7 +1199,7 @@ RouterT::finish_type(ErrorHandler *errh)
 	    assert(used.size() == _noutputs);
 	    for (int i = 0; i < _noutputs; i++)
 		if (used[i] == -1)
-		    errh->lerror(_type_landmark, "compound element `%s' output %d unused", printable_name_c_str(), i);
+		    errh->lerror(_type_landmark, "compound element '%s' output %d unused", printable_name_c_str(), i);
 	}
     } else
 	_noutputs = 0;
@@ -1277,7 +1277,7 @@ RouterT::complex_expand_element(
 	}
 	if (errh)
 	    errh->lerror(compound->landmark(),
-			 "too %s arguments to compound element `%s(%s)'",
+			 "too %s arguments to compound element '%s(%s)'",
 			 whoops, printable_name_c_str(), signature.c_str());
 	for (int i = args.size(); i < nargs; i++)
 	    args.push_back("");
@@ -1298,7 +1298,7 @@ RouterT::complex_expand_element(
     tor->add_tunnel(new_prefix + "output", prefix + compound->name(), compound->landmark(), errh);
     ElementT *new_e = tor->element(prefix + compound->name());
 
-    // dump compound router into `tor'
+    // dump compound router into 'tor'
     expand_into(tor, new_env, errh);
 
     // yes, we expanded it

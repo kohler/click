@@ -438,7 +438,7 @@ void
 short_usage()
 {
     fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	    program_name, program_name);
 }
 
@@ -475,7 +475,7 @@ pretty_read_router(const char *filename, bool file_is_expr,
 	if (found >= 0)
 	    config = archive[found].data;
 	else {
-	    errh->error("%s: archive has no `config' section", filename);
+	    errh->error("%s: archive has no 'config' section", filename);
 	    config = String();
 	}
     }
@@ -1044,7 +1044,7 @@ void
 usage()
 {
     printf("\
-`Click-pretty' reads a Click router configuration and outputs an HTML file,\n\
+'Click-pretty' reads a Click router configuration and outputs an HTML file,\n\
 based on a template, showing that configuration with syntax highlighting.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
@@ -1115,7 +1115,7 @@ particular purpose.\n");
 	      String s = clp->arg;
 	      const char *equals = find(s, '=');
 	      if (equals == s.end()) {
-		  p_errh->error("`--package-urls' option must contain an equals sign");
+		  p_errh->error("'--package-urls' option must contain an equals sign");
 		  goto bad_option;
 	      }
 	      package_hrefs.insert("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));

@@ -280,7 +280,7 @@ void
 short_usage()
 {
     fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	    program_name, program_name);
 }
 
@@ -288,7 +288,7 @@ void
 usage()
 {
     printf("\
-`Click2xml' reads a Click router configuration and outputs an XML file\n\
+'Click2xml' reads a Click router configuration and outputs an XML file\n\
 corresponding to that configuration.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\

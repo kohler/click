@@ -46,7 +46,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -54,7 +54,7 @@ void
 usage()
 {
   printf("\
-`Click-flatten' reads a Click configuration, flattens it (removing any\n\
+'Click-flatten' reads a Click configuration, flattens it (removing any\n\
 compound elements), and writes an equivalent configuration to the standard\n\
 output.\n\
 \n\

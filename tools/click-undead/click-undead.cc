@@ -77,7 +77,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -85,7 +85,7 @@ void
 usage()
 {
   printf("\
-`Click-undead' transforms a router configuration by removing dead code. This\n\
+'Click-undead' transforms a router configuration by removing dead code. This\n\
 includes any elements that are not connected both to a packet source and to a\n\
 packet sink. It also removes redundant elements, such as Null and StaticSwitch.\n\
 \n\
@@ -127,7 +127,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_c_str(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration 'StaticSwitch(%s)'", x->name_c_str(), config.cc());
       val = -1;
     }
 
@@ -135,7 +135,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     r->find_connection_vector_from(x, connv_out);
     for (int i = 0; i < connv_out.size(); i++)
       if (connv_out[i] < 0) {
-	errh->lerror(x->landmark(), "odd connections from `%s'", x->declaration().cc());
+	errh->lerror(x->landmark(), "odd connections from '%s'", x->declaration().cc());
 	break;
       }
     
@@ -174,7 +174,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_c_str(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration 'StaticSwitch(%s)'", x->name_c_str(), config.cc());
       val = -1;
     }
 
@@ -182,7 +182,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     r->find_connection_vector_to(x, connv_in);
     for (int i = 0; i < connv_in.size(); i++)
       if (connv_in[i] < 0) {
-	errh->lerror(x->landmark(), "odd connections to `%s'", x->declaration().cc());
+	errh->lerror(x->landmark(), "odd connections to '%s'", x->declaration().cc());
 	break;
       }
     
@@ -237,7 +237,7 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
     if (x->ninputs() != 1 || x->noutputs() != 1) {
-      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
+      errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().cc());
       continue;
     }
     
@@ -245,7 +245,7 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
     r->find_connections_to(PortT(x, 0), hprev);
     r->find_connections_from(PortT(x, 0), hnext);
     if (hprev.size() > 1 && hnext.size() > 1)
-      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
+      errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().cc());
     else if (hprev.size() == 1)
       skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
     else if (hnext.size() == 1)
@@ -266,7 +266,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
     if (x->noutputs() != 1) {
-      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
+      errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().cc());
       continue;
     }
     
@@ -305,7 +305,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     
     if (hprev.size() == 1) {
       if (verbose)
-	errh->lerror(x->landmark(), "removing redundant scheduler `%s'", x->declaration().cc());
+	errh->lerror(x->landmark(), "removing redundant scheduler '%s'", x->declaration().cc());
       skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
       x->kill();
       changed = true;
@@ -329,7 +329,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
   for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     assert(x->type() == t);
     if (x->ninputs() != 1) {
-      errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
+      errh->lwarning(x->landmark(), "odd connections to '%s'", x->declaration().cc());
       continue;
     }
     
@@ -352,7 +352,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     
     if (hnext.size() == 1) {
       if (verbose)
-	errh->lerror(x->landmark(), "removing redundant tee `%s'", x->declaration().cc());
+	errh->lerror(x->landmark(), "removing redundant tee '%s'", x->declaration().cc());
       if (is_pull_tee) {
 	Vector<int> hprev;
 	r->find_connection_vector_to(x, hprev);
@@ -405,20 +405,20 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
     } else if (source_flag == 1) { // source
       sources[ei] = true;
       if (verbose)
-	errh->lmessage(x->landmark(), "`%s' is source", x->declaration().cc());
+	errh->lmessage(x->landmark(), "'%s' is source", x->declaration().cc());
       continue;
     } else if (source_flag == 2) { // sink
       sinks[ei] = true;
       if (verbose)
-	errh->lmessage(x->landmark(), "`%s' is sink", x->declaration().cc());
+	errh->lmessage(x->landmark(), "'%s' is sink", x->declaration().cc());
       continue;
     } else if (source_flag == 3) { // source and sink
       sources[ei] = sinks[ei] = true;
       if (verbose)
-	errh->lmessage(x->landmark(), "`%s' is source and sink", x->declaration().cc());
+	errh->lmessage(x->landmark(), "'%s' is source and sink", x->declaration().cc());
       continue;
     } else if (source_flag > 0)
-      errh->lwarning(x->landmark(), "`%s' has strange source/sink flag value %d", x->declaration().cc(), source_flag);
+      errh->lwarning(x->landmark(), "'%s' has strange source/sink flag value %d", x->declaration().cc(), source_flag);
 
     // if no source/sink flags, make an educated guess
     if (nin == 0) {
@@ -426,7 +426,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 	if (processing.output_is_push(ei, p)) {
 	  sources[ei] = true;
 	  if (verbose)
-	    errh->lmessage(x->landmark(), "assuming `%s' is source", x->declaration().cc());
+	    errh->lmessage(x->landmark(), "assuming '%s' is source", x->declaration().cc());
 	  break;
 	}
     }
@@ -435,7 +435,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 	if (processing.input_is_pull(ei, p)) {
 	  sinks[ei] = true;
 	  if (verbose)
-	    errh->lmessage(x->landmark(), "assuming `%s' is sink", x->declaration().cc());
+	    errh->lmessage(x->landmark(), "assuming '%s' is sink", x->declaration().cc());
 	  break;
 	}
     }
@@ -480,13 +480,13 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
 	live_elements[ei] = true;
 	continue;
       } else if (live_flag > 0)
-	errh->lwarning(x->landmark(), "`%s' has strange live flag value %d", x->declaration().cc(), live_flag);
+	errh->lwarning(x->landmark(), "'%s' has strange live flag value %d", x->declaration().cc(), live_flag);
 
       // if no live flag, make an educated guess
       if (x->ninputs() == 0 && x->noutputs() == 0) {
 	live_elements[ei] = true;
 	if (verbose)
-	  errh->lmessage(x->landmark(), "assuming `%s' is live", x->declaration().cc());
+	  errh->lmessage(x->landmark(), "assuming '%s' is live", x->declaration().cc());
       }
     }
 }
@@ -630,7 +630,7 @@ particular purpose.\n");
       default_errh->fatal("%s: %s", output_file, strerror(errno));
   }
 
-  // find and parse `elementmap'
+  // find and parse 'elementmap'
   ElementMap *emap = ElementMap::default_map();
   emap->parse_all_files(r, CLICK_SHAREDIR, p_errh);
 
@@ -682,7 +682,7 @@ particular purpose.\n");
     if (!live_vec[i]) {
       ElementT *e = r->element(i);
       if (verbose)
-	default_errh->lmessage(e->landmark(), "removing `%s'", e->declaration().cc());
+	default_errh->lmessage(e->landmark(), "removing '%s'", e->declaration().cc());
       e->kill();
     }
   

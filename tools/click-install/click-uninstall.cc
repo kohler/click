@@ -51,7 +51,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]...\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -59,7 +59,7 @@ void
 usage()
 {
   printf("\
-`Click-uninstall' uninstalls Click from the current Linux kernel.\n\
+'Click-uninstall' uninstalls Click from the current Linux kernel.\n\
 \n\
 Usage: %s [OPTION]...\n\
 \n\

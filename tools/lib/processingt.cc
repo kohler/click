@@ -118,7 +118,7 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
 	return -2;
 
       default:
-	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->printable_name_c_str());
+	errh->lerror(landmark, "bad character '%c' in processing code for '%s'", s[pos], etype->printable_name_c_str());
 	pos++;
 	return -1;
     
@@ -137,7 +137,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
     String landmark = e->landmark();
     String pc = etype->traits().processing_code();
     if (!pc) {
-	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->printable_name_c_str());
+	errh->lwarning(landmark, "'%s' has no processing code; assuming agnostic", etype->printable_name_c_str());
 	return;
     }
 
@@ -191,12 +191,12 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
   const char *type2 = (processing_from == VPUSH ? "pull" : "push");
   if (conn.landmark() == "<agnostic>")
     errh->lerror(conn.from_element()->landmark(),
-		 "agnostic `%s' in mixed context: %s input %d, %s output %d",
+		 "agnostic '%s' in mixed context: %s input %d, %s output %d",
 		 conn.from_element()->name_c_str(), type2, conn.to_port(),
 		 type1, conn.from_port());
   else
     errh->lerror(conn.landmark(),
-		 "`%s' %s output %d connected to `%s' %s input %d",
+		 "'%s' %s output %d connected to '%s' %s input %d",
 		 conn.from_element()->name_c_str(), type1, conn.from_port(),
 		 conn.to_element()->name_c_str(), type2, conn.to_port());
 }
@@ -292,20 +292,20 @@ ProcessingT::check_connections(ErrorHandler *errh)
 
 	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
-			 "reuse of `%s' push output %d",
+			 "reuse of '%s' push output %d",
 			 hf.element->name_c_str(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].landmark(),
-			   "  `%s' output %d previously used here",
+			   "  '%s' output %d previously used here",
 			   hf.element->name_c_str(), hf.port);
 	} else
 	    output_used[fp] = c;
 
 	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
-			 "reuse of `%s' pull input %d",
+			 "reuse of '%s' pull input %d",
 			 ht.element->name_c_str(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].landmark(),
-			   "  `%s' input %d previously used here",
+			   "  '%s' input %d previously used here",
 			   ht.element->name_c_str(), ht.port);
 	} else
 	    input_used[tp] = c;
@@ -319,7 +319,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 		continue;
 	    int port = i - _input_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
-			 "`%s' %s input %d not connected",
+			 "'%s' %s input %d not connected",
 			 e->name_c_str(), processing_name(_input_processing[i]), port);
 	}
 
@@ -330,7 +330,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 		continue;
 	    int port = i - _output_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
-			 "`%s' %s output %d not connected",
+			 "'%s' %s output %d not connected",
 			 e->name_c_str(), processing_name(_output_processing[i]), port);
 	}
 
@@ -458,13 +458,13 @@ next_flow_code(const char *&p, const char *last,
 	    else if (*p == '#')
 		code[port + 128] = true;
 	    else if (errh)
-		errh->error("flow code: invalid character `%c'", *p);
+		errh->error("flow code: invalid character '%c'", *p);
 	}
 	if (negated)
 	    code.negate();
 	if (p == last) {
 	    if (errh)
-		errh->error("flow code: missing `]'");
+		errh->error("flow code: missing ']'");
 	    p--;		// don't skip over final '\0'
 	}
     } else if (isalpha(*p))
@@ -473,7 +473,7 @@ next_flow_code(const char *&p, const char *last,
 	code[port + 128] = true;
     else {
 	if (errh)
-	    errh->error("flow code: invalid character `%c'", *p);
+	    errh->error("flow code: invalid character '%c'", *p);
 	p++;
 	return -1;
     }
@@ -498,7 +498,7 @@ ProcessingT::forward_flow(const String &flow_code, int input_port,
 
     const char *slash = find(flow_code, '/');
     if (slash == flow_code.begin() || slash >= flow_code.end() - 1 || slash[1] == '/')
-	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
+	return (errh ? errh->error("flow code: missing or bad '/'") : -1);
 
     const char *f_in = flow_code.begin();
     const char *f_out = slash + 1;
@@ -535,7 +535,7 @@ ProcessingT::backward_flow(const String &flow_code, int output_port,
 
     const char *slash = find(flow_code, '/');
     if (slash == flow_code.begin() || slash >= flow_code.end() - 1 || slash[1] == '/')
-	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
+	return (errh ? errh->error("flow code: missing or bad '/'") : -1);
 
     const char *f_in = flow_code.begin();
     const char *f_out = slash + 1;
@@ -693,7 +693,7 @@ ProcessingT::compound_flow_code(ErrorHandler *errh) const
     if (ninputs == 0 || noutputs == 0)
 	return "x/y";
 
-    // read flow codes, create `codes' array
+    // read flow codes, create 'codes' array
     Bitvector *codes = new Bitvector[noutputs];
     for (int i = 0; i < noutputs; i++)
 	codes[i].assign(ninputs, false);

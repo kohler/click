@@ -84,7 +84,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -92,7 +92,7 @@ void
 usage()
 {
   printf("\
-`Click-fastclassifier' transforms a router configuration by replacing generic\n\
+'Click-fastclassifier' transforms a router configuration by replacing generic\n\
 Classifier elements with specific generated code. The resulting configuration\n\
 has both Click-language files and object files.\n\
 \n\
@@ -126,7 +126,7 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   ElementClassT *classifier_t = ElementClassT::base_type("Classifier");
   assert(from->type() == classifier_t && to->type() == classifier_t);
   
-  // find where `to' is heading for
+  // find where 'to' is heading for
   Vector<int> first_hop, second_hop;
   router->find_connection_vector_from(from, first_hop);
   router->find_connection_vector_from(to, second_hop);
@@ -395,7 +395,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
     iprograms.push_back(Classifier_Program());
   }
 
-  // read the relevant handlers from user-level `click'
+  // read the relevant handlers from user-level 'click'
   String handler_text;
   {
     StringAccum cmd_sa;
@@ -551,7 +551,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
   // complain if any programs missing
   for (int i = 0; i < iprograms.size(); i++)
     if (program_map[i] < 0)
-      errh->fatal("classifier program missing for `%s :: %s'!", classifiers[i]->name_c_str(), classifiers[i]->type_name().cc());
+      errh->fatal("classifier program missing for '%s :: %s'!", classifiers[i]->name_c_str(), classifiers[i]->type_name().cc());
 }
 
 static void
@@ -692,11 +692,11 @@ compile_classifiers(RouterT *r, const String &package_name,
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.cc());
       else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.cc());
     }
 
     // compile userlevel
@@ -704,11 +704,11 @@ compile_classifiers(RouterT *r, const String &package_name,
       String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
-	errh->fatal("could not run `%s'", compile_command.cc());
+	errh->fatal("could not run '%s'", compile_command.cc());
       else if (compile_retval < 0)
-	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
       else if (compile_retval != 0)
-	errh->fatal("`%s' failed", compile_command.cc());
+	errh->fatal("'%s' failed", compile_command.cc());
     }
   }
 
