@@ -1,3 +1,17 @@
+2005-02-20 Sunday 12:27  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/: fromhost.hh (1.6), tohost.hh (1.2):
+	documentation fixes.
+
+2005-02-20 Sunday 12:21  John Bicket <jbicket@mit.edu>
+
+	* doc/click-elem2man (1.31): tell you which elements use a
+	documentation category beginning with a lowercase name.
+
+2005-02-20 Sunday 12:06  John Bicket <jbicket@mit.edu>
+
+	* elements/ip/directiplookup.cc (1.10): fix compile bug.
+
 2005-02-19 Saturday 23:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/portinfo.cc (1.5), include/click/nameinfo.hh
