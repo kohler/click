@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "modulepriv.hh"
+#include "clickfs_tree.hh"
 
 #include "kernelerror.hh"
 #include <click/lexer.hh>
@@ -261,6 +262,7 @@ init_module()
   ErrorHandler::static_initialize(default_errh);
 
   init_click_sched();
+  clickfs_tree_init();
   
   CLICK_DEFAULT_PROVIDES;
   lexer = new Lexer(kernel_errh);
@@ -287,6 +289,9 @@ cleanup_module()
   
   Router::cleanup_global_handlers();
   cp_va_static_cleanup();
+
+  /* Clean up the click filesystem tree */
+  clickfs_tree_cleanup();
 
 #if 0 /* XXX ?? */ 
   click_cleanup_packages();

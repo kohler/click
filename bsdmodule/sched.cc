@@ -33,11 +33,17 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 struct simplelock click_thread_lock;
+int click_thread_priority = MAXPRI;
 Vector<int> *click_thread_pids;
 
 static void
 click_sched(void *thunk)
 {
+  curproc->p_priority = curproc->p_usrpri = click_thread_priority;
+  curproc->p_nice = 0;
+  curproc->p_rtprio.type = RTP_PRIO_NORMAL;
+  curproc->p_rtprio.prio = RTP_PRIO_MAX;
+
   RouterThread *rt = (RouterThread *)thunk;
   printf("click: starting router thread pid %d (%p)\n", curproc->p_pid, rt);
 

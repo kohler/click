@@ -134,6 +134,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	   M_TEMP, M_WAITOK);
     cp = (struct clickfs_node *) (*vpp)->v_data;
 
+    clickfs_tree_ref_dirent(cde);
     cp->dirent = cde;
     cp->rwbuf = NULL;
     (*vpp)->v_type = clickfs_vtype[cp->dirent->type];
@@ -183,8 +184,10 @@ clickfs_reclaim(struct vop_reclaim_args *ap)
     struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
 
     if (cp) {
-	if(cp->rwbuf)
+	if (cp->rwbuf)
 	    delete cp->rwbuf;
+	if (cp->dirent)
+	    clickfs_tree_put_dirent(cp->dirent);
 	free(cp, M_TEMP);
     }
 
@@ -195,9 +198,17 @@ int
 clickfs_inactive(struct vop_inactive_args *ap)
 {
     struct vnode *vp = ap->a_vp;
+    struct clickfs_node *cp = (struct clickfs_node *)vp->v_data;
 
-    VOP_UNLOCK(vp, 0, ap->a_p);
+    if (cp) {
+	if (cp->dirent) {
+	    clickfs_tree_put_dirent(cp->dirent);
+	    cp->dirent = NULL;
+	}
+    }
+
     vp->v_type = VNON;
+    VOP_UNLOCK(vp, 0, ap->a_p);
 
     return 0;
 }

@@ -39,6 +39,7 @@ clickfs_tree_init()
     *de->name = '\0';		/* The root doesn't have a useful name */
     de->param = d;
     de->next = NULL;
+    de->refcnt = 1;
     clickfs_tree_root = de;
 
     clickfs_tree_add_file(d, "config", CLICKFS_DIRENT_CONFIG, 0644, 0);
@@ -65,6 +66,7 @@ clickfs_tree_add_dir(struct clickfs_dir *d, char *name, int perm)
     de->perm = perm;
     de->param = nd;
     de->next = d->ent_head;
+    de->refcnt = 1;
     d->ent_head = de;
 
     return nd;
@@ -82,6 +84,7 @@ clickfs_tree_add_file(struct clickfs_dir *d, char *name,
     de->param = param;
     strncpy(de->name, name, sizeof(de->name));
     de->next = d->ent_head;
+    de->refcnt = 1;
     d->ent_head = de;
 
     return 0;
@@ -99,13 +102,42 @@ clickfs_tree_add_link(struct clickfs_dir *d, char *name, char *lnk_name)
     strncpy(de->lnk_name, lnk_name, sizeof(de->lnk_name));
     de->param = NULL;
     de->next = d->ent_head;
+    de->refcnt = 1;
     d->ent_head = de;
 
     return 0;
 }
 
 static void
-clickfs_int_free_dirent(struct clickfs_dirent *de)
+clickfs_tree_int_free_dirent(struct clickfs_dirent *de)
+{
+    if (!de) {
+	printf("clickfs_tree: trying to free null dirent!\n");
+	return;
+    }
+
+    if (de->refcnt)
+	printf("clickfs_tree: nonzero refcnt %d for a dirent!\n", de->refcnt);
+    if (de->param)
+	FREE(de->param, M_TEMP);
+    FREE(de, M_TEMP);
+}
+
+int
+clickfs_tree_put_dirent(struct clickfs_dirent *de)
+{
+    if (--de->refcnt <= 0)
+	clickfs_tree_int_free_dirent(de);
+}
+
+int
+clickfs_tree_ref_dirent(struct clickfs_dirent *de)
+{
+    de->refcnt++;
+}
+
+static void
+clickfs_tree_int_put_dirent_r(struct clickfs_dirent *de)
 {
     if (de->type == CLICKFS_DIRENT_DIR) {
 	/*
@@ -117,13 +149,12 @@ clickfs_int_free_dirent(struct clickfs_dirent *de)
 
 	while (tde) {
 	    struct clickfs_dirent *nde = tde->next;
-	    clickfs_int_free_dirent(tde);
+	    clickfs_tree_unlink(dp, tde->name);
 	    tde = nde;
 	}
     }
-    if (de->param)
-	FREE(de->param, M_TEMP);
-    FREE(de, M_TEMP);
+
+    clickfs_tree_put_dirent(de);
 }
 
 int
@@ -138,7 +169,7 @@ clickfs_tree_unlink(struct clickfs_dir *d, char *name)
 	    tde = *depp;
 	    *depp = tde->next;
 
-	    clickfs_int_free_dirent(tde);
+	    clickfs_tree_int_put_dirent_r(tde);
 	    return 0;
 	}
 
@@ -152,4 +183,11 @@ struct clickfs_dir *
 clickfs_tree_rootdir()
 {
     return (clickfs_dir *) clickfs_tree_root->param;
+}
+
+int
+clickfs_tree_cleanup()
+{
+    clickfs_tree_unlink(clickfs_tree_rootdir(), "config");
+    clickfs_tree_put_dirent(clickfs_tree_root);
 }

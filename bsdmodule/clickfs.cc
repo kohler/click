@@ -147,7 +147,12 @@ clickfs_init(struct vfsconf *vfsp)
     String::static_initialize();
 
     current_config = new String;
-    clickfs_tree_init();
+    return 0;
+}
+
+static int
+clickfs_uninit(struct vfsconf *vfsp)
+{
     return 0;
 }
 
@@ -164,6 +169,6 @@ struct vfsops clickfs_vfsops = {
     vfs_stdcheckexp,
     vfs_stdvptofh,
     clickfs_init,
-    vfs_stduninit,
+    clickfs_uninit,
     vfs_stdextattrctl
 };
