@@ -68,7 +68,13 @@ ForceTCP::simple_action(Packet *p_in)
 
   off = th->th_off << 2;
   if(off < sizeof(click_tcp) || off > (ilen - hlen)){
-    th->th_off = (ilen - hlen) >> 2;
+    int noff;
+    if(ilen - hlen - sizeof(click_tcp) > 0){
+      noff = random() % (ilen - hlen - sizeof(click_tcp));
+    } else {
+      noff = ilen - hlen;
+    }
+    th->th_off = noff >> 2;
   }
 
   if((_count & 7) < 2){
