@@ -73,6 +73,7 @@ contain those fields. Valid field names, with examples, are:
    count        Number of packets: '1'
    direction    Link number (PAINT_ANNO): '2', or '>'/'L'
                 for paint 0, '<'/'R'/'X' for paint 1
+   link         Like 'direction', but always numeric
    aggregate    Aggregate number (AGGREGATE_ANNO): '973'
    first_timestamp   Packet "first timestamp" (FIRST_
                 TIMESTAMP_ANNO): '996033261.451094'
@@ -127,7 +128,7 @@ Actual packet output immediately follows the 'C<!bad>' line.  Default is true.
 
 Here are a couple lines from the start of a sample verbose dump.
 
-  !IPSummaryDump 1.1
+  !IPSummaryDump 1.2
   !creator "aciri-ipsumdump -i wvlan0"
   !host no.lcdf.org
   !runtime 996022410.322317 (Tue Jul 24 17:53:30 2001)

@@ -25,7 +25,7 @@
 CLICK_DECLS
 
 enum { T_TIMESTAMP, T_TIMESTAMP_SEC, T_TIMESTAMP_USEC, T_TIMESTAMP_USEC1,
-       T_FIRST_TIMESTAMP, T_COUNT, T_LINK, T_AGGREGATE };
+       T_FIRST_TIMESTAMP, T_COUNT, T_LINK, T_DIRECTION, T_AGGREGATE };
 
 namespace IPSummaryDump {
 
@@ -64,6 +64,7 @@ static bool anno_extract(PacketDesc& d, int thunk)
 	d.v = 1 + EXTRA_PACKETS_ANNO(p);
 	return true;
       case T_LINK:
+      case T_DIRECTION:
 	d.v = PAINT_ANNO(p);
 	return true;
       case T_AGGREGATE:
@@ -90,7 +91,7 @@ static void anno_outa(const PacketDesc& d, int thunk)
 	*d.sa << d.v2;
 #endif
 	break;
-      case T_LINK:
+      case T_DIRECTION:
 	if (d.v == 0)
 	    *d.sa << '>';
 	else if (d.v == 1)
@@ -109,7 +110,8 @@ void anno_register_unparsers()
     register_parser("ts_usec1", T_TIMESTAMP_USEC1 | B_8, 0, anno_extract, anno_outa, outb);
     register_parser("first_timestamp", T_FIRST_TIMESTAMP | B_8, 0, anno_extract, anno_outa, outb);
     register_parser("count", T_COUNT | B_4, 0, anno_extract, num_outa, outb);
-    register_parser("link", T_LINK | B_1, 0, anno_extract, anno_outa, outb);
+    register_parser("link", T_LINK | B_1, 0, anno_extract, num_outa, outb);
+    register_parser("direction", T_DIRECTION | B_1, 0, anno_extract, anno_outa, outb);
     register_parser("aggregate", T_AGGREGATE | B_4, 0, anno_extract, num_outa, outb);
     
     register_synonym("ts", "timestamp");
@@ -119,7 +121,6 @@ void anno_register_unparsers()
     register_synonym("first_ts", "first_timestamp");
     register_synonym("pkt_count", "count");
     register_synonym("packet_count", "count");
-    register_synonym("direction", "link");
     register_synonym("agg", "aggregate");
 }
 
