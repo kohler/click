@@ -25,8 +25,8 @@ $WEBDIR .= "/doc" if !-r "$WEBDIR/template";
 
 # 1. install documentation into fake directory
 if ($INSTALL) {
-  chdir('..') if !-d 'elements';
-  -d 'elements' || die "must be in CLICKDIR or CLICKDIR/doc";
+  chdir('..') if -r 'click-install.1';
+  -d 'linuxmodule' || die "must be in CLICKDIR or CLICKDIR/doc";
   mysystem("gmake dist");
   
   open(MK, 'Makefile') || die "no Makefile";
