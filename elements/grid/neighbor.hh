@@ -17,8 +17,8 @@
  * (IP) addresses, respectively.
  *
  * Neighbor expects and produces Grid packets with MAC headers on
- * input and output 0, and expects and produces IP packets on input
- * and output 1.
+ * input and output 0, expects IP packets annotated with a destination
+ * address on input 1, and produces IP packets on output 1.
  *
  * =e This example runs the neighbor protocol for a host with Grid
  * address 13.0.0.2 listening on eth0.  Note that you need a Hello
@@ -30,8 +30,7 @@
  * = FromLinux(...) -> [1] nb [1] -> Queue -> ToLinux
  * = Hello(...) -> q
  *
- * =a Hello
- */
+ * =a Hello */
 
 
 #include "element.hh"
@@ -77,6 +76,9 @@ public:
   void run_scheduled();
 
   void push(int port, Packet *);
+
+  // true iff nbr is an immediate neighbor we have heard from
+  bool knows_about(IPAddress nbr); 
 
   int _timeout_jiffies; // -1 if we are not timing out entries
 private:

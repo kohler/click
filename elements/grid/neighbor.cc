@@ -129,7 +129,7 @@ Neighbor::push(int port, Packet *packet)
       packet->kill();
       break;
     case GRID_NBR_ENCAP:
-      // XXX do we need to annotate the packet??
+      // XXX do we need to annotate the packet??  
       packet->pull(sizeof(click_ether) + sizeof(grid_hdr));
       output(1).push(packet);
       break;
@@ -140,10 +140,11 @@ Neighbor::push(int port, Packet *packet)
   else {
     /*
      * input from higher level protocol -- expects IP packets
+     * annotated with src IP address
      */
     assert(port == 1);
     // check to see is the desired dest is our neighbor
-    IPAddress dst(packet->data() + offsetof(click_ip, ip_dst));
+    IPAddress dst = packet->dst_ip_anno();
     NbrEntry *nbr = _addresses.findp(dst);
     if (nbr == 0) {
       click_chatter("Neighbor: dropping packet for unknown destination: %s", dst.s().cc());
@@ -213,6 +214,18 @@ Neighbor::add_handlers()
 {
   add_read_handler("nbrs", print_nbrs, 0);
 }
+
+bool
+Neighbor::knows_about(IPAddress nbr)
+{
+  int jiff = click_jiffies();
+  NbrEntry *n = _addresses.findp(nbr);
+  if (n == 0) 
+    return false;
+  else // check if timed out!
+    return (jiff - n->last_updated_jiffies) < _timeout_jiffies;
+}
+
 
 EXPORT_ELEMENT(Neighbor)
 
