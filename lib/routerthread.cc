@@ -364,7 +364,7 @@ RouterThread::driver()
 	    run_os();
 #endif
 
-	if (iter % _iters_per_timers == 0) {
+	if ((iter % _iters_per_timers) == 0) {
 	    _master->run_timers();
 #ifdef CLICK_NS
 	    // If there's another timer, tell the simulator to make us
