@@ -1,3 +1,82 @@
+2001-04-30 Monday 17:20  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES: dont distribute old Linux patches
+
+2001-04-30 Monday 17:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in, acconfig.h, click-buildtool, config.h.in,
+	configure.in, missing, pathvars.h.in, doc/.cvsignore,
+	doc/Makefile.in, doc/click-combine.1, doc/click-mkmindriver.1,
+	elements/standard/drivermanager.hh, elements/standard/priosched.hh,
+	elements/standard/red.hh, elements/standard/rrsched.hh,
+	elements/standard/stridesched.hh, include/click/clp.h,
+	include/click/ewma.cc, lib/archive.cc, lib/atomic.cc,
+	lib/bigewma.cc, lib/bighashmap_arena.cc, lib/bitvector.cc,
+	lib/clp.c, lib/confparse.cc, lib/element.cc, lib/elemfilter.cc,
+	lib/error.cc, lib/etheraddress.cc, lib/gaprate.cc, lib/glue.cc,
+	lib/in_cksum.c, lib/integers.cc, lib/ip6address.cc,
+	lib/ip6flowid.cc, lib/ip6table.cc, lib/ipaddress.cc,
+	lib/ipaddressset.cc, lib/ipflowid.cc, lib/iptable.cc,
+	lib/iptable2.cc, lib/lexer.cc, lib/lulea.cc, lib/packet.cc,
+	lib/radix.cc, lib/router.cc, lib/routerthread.cc, lib/straccum.cc,
+	lib/strerror.c, lib/string.cc, lib/task.cc, lib/templatei.cc,
+	lib/timer.cc, lib/userutils.cc, lib/variableenv.cc, lib/vectorv.cc,
+	linuxmodule/Makefile.in, linuxmodule/kernelerror.cc,
+	linuxmodule/module.cc, linuxmodule/proc_config.cc,
+	linuxmodule/proc_element.cc, linuxmodule/proc_mgr.cc,
+	linuxmodule/sched.cc, linuxmodule/skbmgr.cc,
+	tools/click-align/Makefile.in, tools/click-align/alignclass.cc,
+	tools/click-align/alignment.cc, tools/click-align/click-align.cc,
+	tools/click-check/Makefile.in, tools/click-check/click-check.cc,
+	tools/click-combine/Makefile.in,
+	tools/click-combine/click-combine.cc,
+	tools/click-combine/click-uncombine.cc,
+	tools/click-devirtualize/Makefile.in,
+	tools/click-devirtualize/click-devirtualize.cc,
+	tools/click-devirtualize/cxxclass.cc,
+	tools/click-devirtualize/signature.cc,
+	tools/click-devirtualize/specializer.cc,
+	tools/click-fastclassifier/Makefile.in,
+	tools/click-fastclassifier/click-fastclassifier.cc,
+	tools/click-fastclassifier/fc_classifier.cc,
+	tools/click-fastclassifier/fc_ipclassifier.cc,
+	tools/click-install/Makefile.in,
+	tools/click-install/click-install.cc,
+	tools/click-install/click-uninstall.cc,
+	tools/click-undead/Makefile.in, tools/click-undead/click-undead.cc,
+	tools/click-xform/Makefile.in, tools/click-xform/adjacency.cc,
+	tools/click-xform/click-xform.cc, tools/lib/Makefile.in,
+	tools/lib/elementt.cc, tools/lib/hashmapi.cc, tools/lib/lexert.cc,
+	tools/lib/processingt.cc, tools/lib/routert.cc,
+	tools/lib/toolutils.cc, tools/lib/vectori.cc,
+	userlevel/Makefile.in, userlevel/click.cc: updates taking us to
+	1.2.0, mostly rearranging #include files: always put config.h in
+	include/click (don't put it in the build directory); do't depend on
+	HAVE_CONFIG_H: just always #include <click/config.h>; add
+	pathvars.h
+
+2001-04-30 Monday 17:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: drr.cc, drr.hh: rearrange DRR and rename it
+	DRRSched by analogy with all the other Sched elements
+
+2001-04-30 Monday 16:59  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
+2001-04-30 Monday 16:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* AUTHORS, FAQ, README, DISTFILES, NODIST: updated for release of
+	1.2.0
+
+2001-04-30 Monday 16:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: standard/settimestamp.cc, standard/settimestamp.hh,
+	userlevel/settimestamp.cc, userlevel/settimestamp.hh: moved
+	SetTimestamp element to standard collection; use
+	click_gettimeofday(), not gettimeofday(); compilable in the kernel
+	too
+
 2001-04-29 Sunday 20:27  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/: revsortedsched.cc, revsortedsched.hh,
