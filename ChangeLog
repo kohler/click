@@ -1,3 +1,8 @@
+2003-03-23 Sunday 00:10  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* include/click/simclick.h (1.2): Added field for keeping original
+	ns-2 packet type. Used for the new raw packet scheme.
+
 2003-03-22 Saturday 11:08  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* ns/nsclick.cc (1.11): #ifdef out a couple of functions which
