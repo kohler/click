@@ -1,3 +1,17 @@
+2002-02-08 Friday 14:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: iproutetable.cc (1.6), iproutetable.hh (1.7),
+	lineariplookup.cc (1.1), lineariplookup.hh (1.1), lookupiproute.cc
+	(1.26), lookupiproute.hh (1.18), radixiplookup.cc (1.5),
+	radixiplookup.hh (1.5): update IPRouteTable interface; add
+	LinearIPLookup element (a dynamic version of StaticIPLookup); make
+	StaticIPLookup a child of LinearIPLookup
+
+2002-02-08 Friday 14:26  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/arpquerier.cc (1.41): cleanup because conf
+	argument is now a regular reference
+
 2002-02-07 Thursday 20:31  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: aqm/pi.cc (1.4), aqm/pi.hh (1.3), aqm/red.cc (1.39),
