@@ -39,7 +39,7 @@ IP6Address::IP6Address(const String &str)
 }
 
 bool
-IP6Address::get_IP4Address(unsigned char ip4[4])
+IP6Address::get_ip4address(unsigned char ip4[4]) const
 {
   if (_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF) {
     ip4[0] = _addr.s6_addr[12];

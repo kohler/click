@@ -151,8 +151,8 @@ private:
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
-  IP6Address dst_ip6_anno() const;
-  void set_dst_ip6_anno(const IP6Address a);
+  const IP6Address &dst_ip6_anno() const;
+  void set_dst_ip6_anno(const IP6Address &a);
 
   bool sniffed_anno() const		{ return anno()->sniffed; }
   void set_sniffed_anno(bool s)		{ anno()->sniffed = s; }
@@ -294,15 +294,14 @@ Packet::pull(unsigned int nbytes)
 #endif
 }
 
-inline IP6Address 
+inline const IP6Address &
 Packet::dst_ip6_anno() const
 {
-  //return *(reinterpret_cast<const IP6Address *>(anno()->dst_ip6));
-  return IP6Address(anno()->dst_ip6);
+  return reinterpret_cast<const IP6Address &>(anno()->dst_ip6);
 }
 
 inline void
-Packet::set_dst_ip6_anno(const IP6Address a)
+Packet::set_dst_ip6_anno(const IP6Address &a)
 {
   memcpy(anno()->dst_ip6, a.data(), 16);
 }

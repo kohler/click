@@ -178,7 +178,7 @@ Nat624::simple_action(Packet *p)
   ip6_dst = IP6Address(ip6->ip6_dst);
   
   // get the corresponding ipv4 src and dst addresses
-  if (ip6_dst.get_IP4Address(ip4_dst)
+  if (ip6_dst.get_ip4address(ip4_dst)
       && lookup(IP6Address(ip6->ip6_src), ipa_src))
     {
       ipa_dst = IPAddress(ip4_dst);

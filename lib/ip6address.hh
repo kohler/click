@@ -23,8 +23,7 @@ class IP6Address {
   unsigned char *data()			{ return &_addr.s6_addr[0]; }
   const unsigned char *data() const	{ return &_addr.s6_addr[0]; }
   // int *hashcode() const	{ return (unsigned *)&(_addr); }
-  bool  get_IP4Address(unsigned char ip4[4]);
-
+  bool get_ip4address(unsigned char ip4[4]) const;
   
   operator String() const	{ return s(); }
   String s() const;
