@@ -659,15 +659,18 @@ String
 Master::info() const
 {
     StringAccum sa;
+    sa << "paused:\t" << _master_paused << '\n';
     sa << "runcount:\t" << _runcount << '\n';
     sa << "pending:\t" << (_task_list._pending_next != &_task_list) << '\n';
     for (int i = 0; i < _threads.size(); i++) {
 	RouterThread *t = _threads[i];
 	sa << "thread " << (i - 1) << ":";
+# ifdef CLICK_LINUXMODULE
 	if (t->_sleeper)
 	    sa << "\tsleep";
 	else
 	    sa << "\twake";
+# endif
 	if (t->_pending)
 	    sa << "\tpending";
 	sa << '\n';
