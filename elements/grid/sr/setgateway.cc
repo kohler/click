@@ -50,15 +50,20 @@ SetGateway::~SetGateway()
 int
 SetGateway::configure (Vector<String> &conf, ErrorHandler *errh)
 {
+  _gw = IPAddress();
   int ret;
   ret = cp_va_parse(conf, this, errh,
-		    cpElement, "GatewaySelector element", &_gw_sel,
                     cpKeywords,
+		    "GW", cpIPAddress, "Gateway IP Address", &_gw,
+		    "SEL", cpElement, "GatewaySelector element", &_gw_sel,
                     0);
 
-  if (!_gw_sel || _gw_sel->cast("GatewaySelector") == 0) 
+  if (_gw_sel && _gw_sel->cast("GatewaySelector") == 0) 
     return errh->error("GatewaySelector element is not a GatewaySelector");
 
+  if (!_gw_sel && !_gw) {
+    return errh->error("Either GW or SEL must be specified!\n");
+  }
   return ret;
 }
 
@@ -200,6 +205,21 @@ SetGateway::push_rev(Packet *p_in)
 void
 SetGateway::push(int port, Packet *p_in)
 {
+  if (_gw) {
+    if (port == 0) {
+      p_in->set_dst_ip_anno(_gw);
+    } else {
+      p_in->set_dst_ip_anno(IPAddress());
+    }
+    output(port).push(p_in);
+    return;
+  } else if (!_gw_sel) {
+    /* this should never happen */
+    click_chatter("%{element}: _gw and _gw_sel not specified! killing packet\n");
+    p_in->kill();
+    return;
+  }
+
   if (p_in->ip_header()->ip_p != IP_PROTO_TCP) {
     if (port == 0 && _gw_sel) {
       /* non tcp packets go to best gw */
@@ -267,10 +287,51 @@ SetGateway::print_flows()
   return sa.take_string();
 
 }
+String
+SetGateway::read_param(Element *e, void *vparam)
+{
+  SetGateway *d = (SetGateway *) e;
+  switch ((int)vparam) {
+  case 0:
+    if (d->_gw) {
+      return d->_gw.s() + "\n";
+    }
+    return "auto:" + d->_gw_sel->id();
+  default:
+    return "";
+  }
+}
+int 
+SetGateway::change_param(const String &in_s, Element *e, void *thunk, ErrorHandler *errh)
+{
+  SetGateway *d = static_cast<SetGateway *>(e);
+  int which = reinterpret_cast<int>(thunk);
+  String s = cp_uncomment(in_s);
+  switch (which) {
+  case 0:
+    {
+      IPAddress ip;
+      if (!cp_ip_address(s, &ip)) {
+	return errh->error("gateway parameter must be IPAddress");
+      }
+      if (!ip && !d->_gw_sel) {
+	return errh->error("gateway cannot be %s if _gw_sel is unspecified");
+      }
+      d->_gw = ip;
+      return 0;
+    }
+  default:
+    return errh->error("internal error");
+  }
+
+}
 void
 SetGateway::add_handlers()
 {
   add_read_handler("flows", static_print_flows, 0);
+
+  add_read_handler("gateway", read_param, (void *) 0);
+  add_write_handler("gateway", change_param, (void *) 0);
 }
 
 void

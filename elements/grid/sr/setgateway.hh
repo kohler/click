@@ -20,21 +20,12 @@ CLICK_DECLS
 
 /*
  * =c
- * SetGateway(IP, ETH, ETHERTYPE, LinkTable, ARPTable, 
- *                 [PERIOD timeout], [GW is_gateway], 
- *                 [METRIC GridGenericMetric])
+ * SetGateway([GW ipaddress], [SEL GatewaySelector element])
  * =d
-
- * Input 0: packets from dev
- * Input 1: packets for gateway node
- * Output 0: packets to dev
- * Output 1: packets with dst_ip anno set
- *
- * This element provides proactive gateway selection.  
- * Each gateway broadcasts an ad every PERIOD seconds.  
- * Non-gateway nodes select the gateway with the best metric
- * and forward ads.
  * 
+ * This element marks the gateway for a packet to be sent to.
+ * Either manually specifiy an gw using the GW keyword
+ * or automatically select it using a GatewaySelector element.
  * 
  *
  */
@@ -55,7 +46,8 @@ class SetGateway : public Element {
 
   /* handler stuff */
   void add_handlers();
-
+  static int change_param(const String &in_s, Element *e, void *thunk, ErrorHandler *errh);
+  static String read_param(Element *e, void *vparam);
   void push(int, Packet *);
   void run_timer();
   static String static_print_flows(Element *, void *);
@@ -118,6 +110,7 @@ private:
   typedef FlowTable::const_iterator FTIter;
   class FlowTable _flow_table;
 
+  IPAddress _gw;
   void push_fwd(Packet *, IPAddress);
   void push_rev(Packet *);
   void cleanup();

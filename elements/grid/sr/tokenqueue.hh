@@ -168,7 +168,7 @@ private:
     static String static_print_packet_timeout(Element *, void *);
     static String static_print_threshold(Element *, void *);
     
-    IPAddress _ip;
+    uint16_t _et;     // This protocol's ethertype
     class SRForwarder *_sr_forwarder;
     bool _debug;
     int _threshold;
@@ -178,6 +178,7 @@ private:
     Timer _timer;
     int _tokens;
     int _retransmits;
+    int _normal;
 };
 
 inline bool
@@ -189,8 +190,13 @@ TokenQueue::enq(Packet *p)
 	_q[_tail] = p;
 	_tail = next;
 	return true;
-    } else
+    } else {
 	p->kill();
+	if (_drops == 0) {
+	    click_chatter("%{element}: overflow", this);
+	}
+	_drops++;
+    }
 
     return false;
 }

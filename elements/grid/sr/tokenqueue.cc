@@ -46,6 +46,7 @@ TokenQueue::TokenQueue()
     _catchup_timeout.tv_usec = 0;
     _tokens = 0;
     _retransmits = 0;
+    _normal = 0;
 }
 
 TokenQueue::~TokenQueue()
@@ -75,6 +76,7 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   int new_capacity = 1000;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
+		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		    "LENGTH", cpUnsigned, "maximum queue length", &new_capacity,
 		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &packet_to,
 		    "THRESHOLD", cpInteger, "packets", &threshold,
@@ -84,6 +86,9 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   if (ret < 0) {
     return ret;
   }
+
+  if (!_et) 
+      return errh->error("ETHTYPE not specified");
 
   _capacity = new_capacity;
   ret = set_packet_timeout(errh, packet_to);
@@ -186,6 +191,11 @@ TokenQueue::find_path_info(Path p)
 bool
 TokenQueue::ready_for(const Packet *p_in, Path match) {
     click_ether *eh = (click_ether *) p_in->data();
+    if (eh->ether_type != htons(_et)) {
+	return true;
+    }
+    
+
     struct srpacket *pk = (struct srpacket *) (eh+1);
     Path p = pk->get_path();
 
@@ -233,7 +243,7 @@ TokenQueue::pull(int)
     Path p = Path();
     PathInfo *nfo = NULL;
     struct timeval now;
-    if (!_tokens && !_retransmits) {
+    if (!_normal && !_tokens && !_retransmits) {
 	goto done;
     }
     click_gettimeofday(&now);
@@ -241,6 +251,11 @@ TokenQueue::pull(int)
     if (packet) {
 	p_in = packet->uniqueify();
 	click_ether *eh = (click_ether *) p_in->data();
+
+	if (eh->ether_type != htons(_et)) {
+	    _normal--;
+	    goto done;
+	}
 	struct srpacket *pk = (struct srpacket *) (eh+1);
 	p = pk->get_path();
 	nfo = find_path_info(p);
@@ -351,12 +366,28 @@ TokenQueue::pull(int)
 	} else {
 	    nfo->_active = false;
 	}
+
+
+	/* finally, we altered the packet, so we need to redo 
+	 * the checksum
+	 */
+	unsigned int tlen = 0;
+	if (pk->_type & PT_DATA) {
+	    tlen = pk->hlen_with_data();
+	} else {
+	    tlen = pk->hlen_wo_data();
+	}
+	pk->_cksum = 0;
+	pk->_cksum = click_in_cksum((unsigned char *) pk, tlen);
     }
     
-
  done:
-    if (_tokens == 0 && _retransmits == 0) {
-	sleep_listeners();
+    if (_normal == 0 && _tokens == 0 && _retransmits == 0) {
+	if (++_sleepiness == SLEEPINESS_TRIGGER) {
+	    sleep_listeners();	
+	}
+    } else {
+	_sleepiness = 0;
     }
     return p_in;
 }
@@ -409,10 +440,6 @@ TokenQueue::bubble_up(Packet *p_in)
     if (!enq(p_in)) {
 	/* mark the ecn bit of the next packet */
 	nfo->_congestion = true;
-	if (_drops == 0) {
-	    click_chatter("%{element}: overflow", this);
-	}
-	_drops++;
     } else {
 	if (nfo->_congestion) {
 	    pk->set_flag(FLAG_ECN);
@@ -543,10 +570,17 @@ TokenQueue::push(int port, Packet *p_in)
 {
 
     WritablePacket *p_out = p_in->uniqueify();
+    
     if (!p_out) {
 	return;
     }
-    if (port == 1) {
+    click_ether *eh = (click_ether *) p_in->data();
+    if (eh->ether_type != htons(_et)) {
+	if (enq(p_in)) {
+	    _normal++;
+	}
+	goto done;
+    } else if (port == 2) {
 	_retransmits++;
 	if (_debug) {
 	    struct timeval now;
@@ -560,7 +594,7 @@ TokenQueue::push(int port, Packet *p_in)
     } else {
 	click_ether *eh = (click_ether *) p_out->data();
 	struct srpacket *pk = (struct srpacket *) (eh+1);
-	if (port == 2) {
+	if (port == 3) {
 	    process_forward(pk);
 	    if (pk->flag(FLAG_SCHEDULE_FAKE)) {
 		p_out->kill();
@@ -581,7 +615,8 @@ TokenQueue::push(int port, Packet *p_in)
 
     bubble_up(p_out);
 
-    if ((_tokens > 0  || _retransmits > 0) && !signal_active()) {
+ done: 
+    if ((_normal > 0 || _tokens > 0  || _retransmits > 0) && !signal_active()) {
 	/* there is work to be done! */
 	wake_listeners();
     }

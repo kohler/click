@@ -80,7 +80,8 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
     int _sleepiness;
 
     friend class MixedQueue;
-
+    friend class InOrderQueue;
+    friend class TokenQueue;
 #if NOTIFIERQUEUE_DEBUG
     static String read_handler(Element *, void *);
 #endif
