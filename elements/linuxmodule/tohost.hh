@@ -46,7 +46,7 @@
  *
  * =a
  *
- * ToHostSniffers, FromLinux, FromDevice, PollDevice, ToDevice,
+ * ToHostSniffers, FromHost, FromDevice, PollDevice, ToDevice,
  * SetPacketType, InfiniteSource */
 
 class ToHost : public Element { public:

@@ -50,15 +50,15 @@ queries in order to receive any IP packets, but you can obviously respond
 with any Ethernet address you'd like. Here is one common idiom:
 
   FromHost(fake0, 192.0.0.1/8)
-    -> fromlinux_cl :: Classifier(12/0806, 12/0800);
-  fromlinux_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToLinux;
-  fromlinux_cl[1] -> ... // IP packets
+    -> fromhost_cl :: Classifier(12/0806, 12/0800);
+  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToLinux;
+  fromhost_cl[1] -> ... // IP packets
 
 =e
 
   FromHost(fake0, 192.0.0.1/8) -> ...;
 
-=a ToLinux, FromDevice, PollDevice, ToDevice */
+=a ToHost, FromDevice, PollDevice, ToDevice */
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
